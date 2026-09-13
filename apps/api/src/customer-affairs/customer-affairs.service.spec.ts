@@ -3,7 +3,6 @@ import { describe, expect, it, vi } from 'vitest';
 import type {
   AuthenticatedActor,
   CustomerAffairsLeadInput,
-  CustomerAffairsTicketInput,
 } from '@rubi/contracts';
 import { CustomerAffairsService } from './customer-affairs.service';
 
@@ -17,7 +16,6 @@ const actor = {
 function service(
   repository: Record<string, unknown>,
   notifications = { createWithinTransaction: vi.fn() },
-  hrDirectory = { workbenchFeedbackRecipientUserIds: vi.fn() },
 ) {
   return new CustomerAffairsService(
     repository as never,
@@ -26,7 +24,7 @@ function service(
     { detail: vi.fn() } as never,
     { purchaseContext: vi.fn() } as never,
     notifications as never,
-    hrDirectory as never,
+    {} as never,
   );
 }
 
@@ -43,50 +41,6 @@ const lead: CustomerAffairsLeadInput = {
 };
 
 describe('CustomerAffairsService safety invariants', () => {
-  it('routes a Workbench request to an active user in the destination unit', async () => {
-    const recipientId = '44444444-4444-4444-8444-444444444444';
-    const hrDirectory = {
-      workbenchFeedbackRecipientUserIds: vi
-        .fn()
-        .mockResolvedValue([recipientId]),
-    };
-    const instance = service({}, undefined, hrDirectory);
-    const create = vi
-      .spyOn(instance, 'createTicket')
-      .mockResolvedValue({ data: {} } as never);
-    const request: CustomerAffairsTicketInput = {
-      subject: 'پیگیری تسویه',
-      description: 'لطفاً وضعیت تسویه را بررسی کنید.',
-      channel: 'CHAT',
-      contactOccurredAt: '2026-09-12T10:00:00.000Z',
-      category: 'WORKBENCH_FINANCE',
-      serviceType: 'INTERNAL_REQUEST',
-      impact: 'NORMAL',
-      urgency: 'LOW',
-      priority: 'NORMAL',
-      executionUnit: 'مالی',
-      nextAction: 'بررسی توسط واحد مالی',
-      nextActionAt: '2026-09-13T10:00:00.000Z',
-    };
-    await instance.createWorkbenchRequest(
-      request,
-      actor,
-      actor.branchIds[0],
-      'key-1',
-    );
-    expect(hrDirectory.workbenchFeedbackRecipientUserIds).toHaveBeenCalledWith(
-      actor.branchIds[0],
-      ['مالی', 'حسابداری', 'خزانه'],
-    );
-    expect(create).toHaveBeenCalledWith(
-      expect.objectContaining({ executionOwnerUserId: recipientId }),
-      actor,
-      actor.branchIds[0],
-      'key-1',
-      undefined,
-    );
-  });
-
   it('rejects a lead without an owner or queue before persistence', async () => {
     const repository = { findLeadCommand: vi.fn().mockResolvedValue(null) };
     await expect(

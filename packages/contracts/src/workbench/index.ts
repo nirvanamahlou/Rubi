@@ -92,3 +92,56 @@ export interface WorkbenchActivityV1 {
 export interface WorkbenchActivityResponseV1 {
   data: WorkbenchActivityV1[];
 }
+
+export type WorkbenchPerformanceSectionV1<T> =
+  | { status: 'ready'; data: T }
+  | { status: 'forbidden' | 'error'; message: string };
+
+export interface WorkbenchHrPerformanceV1 {
+  employee: {
+    name: string;
+    personnelCode: string;
+    unit: string;
+    position: string;
+  } | null;
+  leaves: WorkbenchHrPerformanceRecordV1[];
+  shifts: WorkbenchHrPerformanceRecordV1[];
+  leaveBalances: {
+    type: string;
+    granted: string;
+    used: string;
+    balance: string;
+  }[];
+  leaveYear: number | null;
+  payslipVisible: boolean;
+  latestPayslip: WorkbenchHrPerformanceRecordV1 | null;
+}
+
+export interface WorkbenchHrPerformanceRecordV1 {
+  id: string;
+  status: string;
+  fields: { label: string; value: string }[];
+  updatedAt: string;
+}
+
+export interface WorkbenchSalesPerformanceV1 {
+  contracts: number;
+  confirmedContracts: number;
+  customers: number;
+  amounts: { currencyCode: string; amount: string }[];
+  partial: boolean;
+}
+
+export interface WorkbenchJobActivityV1 {
+  modules: { key: string; label: string; count: number }[];
+  recent: (WorkbenchActivityV1 & { moduleLabel: string })[];
+  sourceLimit: number;
+}
+
+export interface WorkbenchPerformanceResponseV1 {
+  generatedAt: string;
+  period: { from: string; to: string; days: number };
+  hr: WorkbenchPerformanceSectionV1<WorkbenchHrPerformanceV1>;
+  sales: WorkbenchPerformanceSectionV1<WorkbenchSalesPerformanceV1>;
+  activity: WorkbenchPerformanceSectionV1<WorkbenchJobActivityV1>;
+}

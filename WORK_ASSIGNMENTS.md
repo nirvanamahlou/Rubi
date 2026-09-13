@@ -6,6 +6,37 @@
 - Branch مستقل `codex/pc-b-workbench-remove-hr-link` از `origin/develop@dd177cfd`؛ محدوده فقط مقصدهای نمایشی Workbench، تست همان قرارداد و اسناد وضعیت این Task است.
 - هیچ API، Backend، Schema/Migration/Seed، Shared Contract، Permission، داده، Dependency/Lockfile یا منوی اصلی تغییر نمی‌کند.
 - نتیجه: کارت و لینک پایین «درخواست‌های منابع انسانی» از خانه میزکار حذف شد؛ منطق خواندن اعلان HR و کنترل مجوز آن بدون تغییر باقی ماند. چهار تست هدفمند Workbench، lint فایل‌های متاثر، Web typecheck و Production Build با ۴۶ Route موفق‌اند.
+## WORKBENCH-038-RUNTIME — PC-B — ACTIVE / USER_AUTHORIZED
+
+- User explicitly requests activation on 3100. Branch
+  `codex/pc-b-workbench-performance-runtime` combines tested WORKBENCH-038 with the
+  currently running Customer Affairs branch, preserving both public interfaces.
+- Reserve integration conflicts, build artifacts and the Web3100/API4190 runtime
+  replacement. Keep existing database, document storage and authentication settings.
+  No seed, fixture load, destructive migration or remote merge is authorized here.
+- Runtime readiness found two released, additive migrations pending, including the
+  Workbench persistence tables. Reserve the application lock for this deployment;
+  use Prisma's advisory lock, take a full database backup, and apply only the existing
+  approved migration set. No new migration is authored.
+
+## WORKBENCH-038 — PC-B — COMPLETE / TESTED
+
+- User requests a real, self-only My Performance tab: HR leave, shifts and latest
+  payslip, own sales/customer metrics and permission-scoped recent job activity.
+  Branch `codex/pc-b-workbench-my-performance` preserves WORKBENCH-037.
+- Reserve additive HR self-performance service/module export, Workbench aggregation,
+  controller/module, Workbench contracts/UI/tests and task/status documentation.
+  HR and Workbench producers are PC-B-owned; consume existing Sales and IAM public
+  services without changing their contracts, ownership or tables. No Reporting edits.
+- Additive contract producer: HR/Workbench; consumer: Workbench Web. Only the signed-in
+  actor is accepted, never a client-supplied employee/user ID. HR self-service may see
+  only its own released payslip projection; draft payroll and colleagues remain hidden.
+- No migration, schema, dependency, shared runtime or permission seed changes. Existing
+  completed WORKBENCH-037 reservations are released. Push a PR to develop after checks.
+- Delivered the self-only HR/Sales/activity backend and native Performance tab.
+  18 targeted API tests and 49 Workbench Web tests pass, with scoped ESLint,
+  API/Web TypeScript and both production builds (46 Web routes). No migration or
+  operational data/runtime change. Implementation reservations are released.
 
 ## APP-SHELL-HEADER-UTILITY-LEFT-001 — PC-A — READY_FOR_REVIEW
 
@@ -151,6 +182,28 @@ Merged via PR #254 at `e40878f1`. Web3100 runs the production build `55JsHVl1EIR
   into `develop` as `1707d980`. All temporary reservations are released and the
   dependency/lockfile remained unassigned.
 
+## WORKBENCH-037 — PC-B — COMPLETE / TESTED
+
+- Remove the date and authorized-branch count block from the Workbench greeting card
+  at the user's explicit request. Reserve `workbench-workspace.tsx` and this status
+  entry only on `codex/pc-b-workbench-remove-greeting-meta`. No API, schema,
+  dependency, shared layout or operational-data change.
+- Removed the complete metadata block and its unused `HeaderToday` import. Web lint,
+  Repository typecheck (9 jobs) and the production Web build (46 routes) pass. The
+  initial greeting-card source reservation is released.
+- User follow-up restores the unit-message directory alongside contacts, groups and
+  conversations, while keeping the persisted Messaging/IAM/Documents integration.
+  Extend this work item to reserve `message-composer.tsx`, its focused tests and the
+  Workbench status entry on the same pre-merge branch. No API, schema, dependency or
+  cross-module contract change.
+- Delivered four explicit messenger views for units, contacts, groups and
+  conversations. All seven unit/template collections are visible again; direct/group
+  selection, group creation, persistence, attachments and forwarding keep using the
+  existing backend services. 47 Workbench tests, 42 isolated HR tests, scoped lint,
+  Repository typecheck (9 jobs) and the 46-route production Web build pass. A full
+  Web run passed 1337 tests and hit only the same two HR parallel 5-second timeouts;
+  both passed in the isolated rerun. All scoped reservations are released.
+
 ## B2B-CRM-CONNECTIONS-002 — PC-B — READY_FOR_REVIEW / TESTED
 
 - درخواست مالک محصول: ارتباط پرونده ۳۶۰ آژانس با داده‌های واقعی موجود CRM بررسی و اتصال‌های غایب در محدوده مجاز تکمیل شود. شاخه `codex/pc-b-b2b-crm-connections` از `origin/develop@6a4e041` و Worktree مستقل `C:\Users\admin\Rubi-b2b-crm-connections` استفاده می‌شود.
@@ -173,6 +226,108 @@ Merged via PR #254 at `e40878f1`. Web3100 runs the production build `55JsHVl1EIR
   Reservations template `استعلام از کارگزار` to the existing composer. This is
   presentation data only and creates no Finance, Procurement or Reservations
   mutation. The completed source is carried by WORKBENCH-036.
+## CUSTOMER-AFFAIRS-REPORT-DATA-E2E — PC-B — VERIFIED / LOCAL_RUNTIME_ACTIVE
+
+- Added 24 synthetic requests, 36 tickets, 20 satisfaction responses and 8 corrective actions; preview rolled back and repeat apply added zero. Existing data preserved. Removed end-date parenthetical and localized DONE/CANCELLED report labels. Web 46 focused tests, scoped lint, typecheck/build passed; date-filter 3 tests rerun passed. Authenticated browser ticket lifecycle, search, same-day date range and month/year grids verified. One API database-connection termination interrupted the first note attempt; runtime recovered and workflow rerun passed, root cause unresolved. Details and runtime handoff: `docs/tasks/CUSTOMER-AFFAIRS-REPORT-DATA-E2E.md`. Reservation released after documentation commit; no HR UI changes included.
+
+- User authorizes additive synthetic report data and E2E on local CA, plus remove parenthetical end-date label. Reserve CA-only repeatable local fixture script (own tables), one UI label/test, own docs and browser QA. Preserve existing rows, no real contacts/customer linkage, no messages/permission/migration changes. Dataset provenance in audit and deterministic IDs; rollback rehearsal before apply, duplicate run must add zero rows. Branch `codex/pc-b-customer-affairs-report-data-e2e` from 0d699946; same Web3100/API4190. Verify workflows only on new synthetic records.
+
+## CUSTOMER-AFFAIRS-DATE-FILTER — PC-B — VERIFIED / LOCAL_RUNTIME_ACTIVE
+
+- API 84 tests and Web 46 tests passed, scoped lint and build TypeScript checks passed. Boundary/branch/pagination and shared-calendar render tests included. Runtime handoff recorded in task doc; no migration or data mutation.
+- Both production builds passed. Combined Web3100/PID22416 and API4190/PID30152 restarted with the existing local configuration after ownership validation, source 758ad5b6. Web identity and HTTP200 verified; unauthenticated filtered API correctly returns401. No authenticated filter-save or visual browser QA claimed. Reservation released.
+
+- Reserve CA API list DTO/service/date validation tests, CA Web list filter/client/tests, own docs. Add optional v1 createdFrom/createdBefore UTC instants (inclusive/exclusive) to both list routes; producer/consumer PC-B, omitted means unfiltered, no schema/dependency changes. UI Gregorian date values from shared Persian/grid DatePicker convert browser-local day boundaries to UTC, including the entire end day. Scope lists including handoffs/followups/queues, not aggregate dashboards/reports. Branch `codex/pc-b-customer-affairs-date-filter`; preserve all data and other modules. Existing frontend/backend planning targets unchanged. Rebuild and activate the verified combined runtime after checks.
+
+## CUSTOMER-AFFAIRS-REQUEST-LABELS — PC-B — CODE VERIFIED / ACTIVATION PENDING
+
+- Removed lead terminology in CA forms, report/metric/tab labels and `apps/web/src/messages/fa.ts` navigation title/description; navigation expectation updated. 56 focused tests, scoped lint and 46-route build/typecheck passed. No stored records removed or workflow changed. Reservation released; existing runtime not restarted.
+
+- User clarified remove only lead terminology, keep customer requests. Reserve CA Web display strings and regression tests, the existing module navigation label and its expectation, own status docs. Branch `codex/pc-b-customer-affairs-request-labels` from `b8a60215`. No workflow/data deletion, API/schema/dependency/permission changes. Preserve technical leads keys for compatibility. Existing UI targets/assumptions unchanged; no runtime replacement.
+
+## CUSTOMER-AFFAIRS-CUSTOMER-PICKER — PC-B — CODE VERIFIED / ACTIVATION PENDING
+
+- Complete: 43 focused tests, scoped ESLint, standalone typecheck and 46-route production build passed. No data/API/schema/permissions changed. Runtime restart not retried; new-build browser QA not claimed. Reservation released; `docs/tasks/CUSTOMER-AFFAIRS-CUSTOMER-PICKER.md` records handoff.
+
+- Reserve only CA Web picker, form consumers and focused tests/docs on `codex/pc-b-customer-affairs-customer-picker` from `7a146dca`. Consume existing Customers public list/detail: include customer and passenger roles, paginate, preserve selection and show existing linked person in edit forms. No Customers producer/schema/contracts/dependency/permission changes; no live business writes or runtime replacement. Prior desktop/corporate, auth-walled Rubi UI assumptions remain: p75 LCP2500ms/INP200ms/CLS0.1, 200KB initial +80KB route JS, Lighthouse a11y90/performance80, WCAG AA owner PC-B; planning targets, not measured claims.
+
+## CUSTOMER-AFFAIRS-WORKFLOW-COMPLETION — PC-B — CODE VERIFIED / ACTIVATION PENDING
+
+- Delivered atomic lead-to-person conversion, Sales response popup, persisted manual probability, site filter, opt-in transactional reminder notifications, resolution waiting pause, and opt-in sms.ir sending with durable idempotency and uncertain-outcome handling. API 177 tests / Web 39 tests, scoped ESLint, both typechecks and both builds passed. No migration, dependency change, real SMS or business submissions. Runtime restart remains blocked; no new-runtime visual verification. Reservation released for this slice; remaining backlog and activation runbook: `docs/tasks/CUSTOMER-AFFAIRS-WORKFLOW-COMPLETION.md`.
+
+- User selected sms.ir for messaging. Reserve CA-local outbound SMS API/controller and explicit send popup, using existing timeline/command persistence. Provider endpoint and header verified against IPeCompany/SmsPanelV2.DotNet official SDK. Secret/line/sender allowlist remain environment-only and disabled by default. Network acceptance is not handset delivery; timeout/uncertain outcome is persisted without automatic resend. No real SMS during QA.
+
+- Public Customers contract extension reserved under user's cross-module delegation: transaction-aware person creation through CustomerService, only Customers owns validation/encryption/audit and its tables. CA locks its own lead, invokes public creation, then links customerId atomically. Customers files match fetched develop (no competing diff found); no Sales/Finance producer edits (their newer remote changes are preserved).
+
+- Additive CA contract reservation: optional pausedAt/pausedMinutes read projection for existing stored fields; producer CA API, consumer CA Web, old clients ignore new fields. No schema mutation. WAITING_CUSTOMER pauses resolution only; first-response and unit delays remain counted.
+
+- User requests completion of the audited operational backlog, retaining four tabs. Branch `codex/pc-b-customer-affairs-workflow-completion` from combined `48d3989e` preserves previous CA work. Reserve CA backend/frontend, module-owned scheduler and tests, own docs; consume Notifications/Sales/Customers public services only. No shared schema/dependency locks acquired in this slice. Provisional backend targets retained from BACKEND-ROUTING (internal/PII, shared branch scope, 10:1 read/write, 50QPS, p50/p95/p99 100/300/600ms, SLO99.5%, RPO24h/RTO4h, PC-B); these are unmeasured planning targets. Runtime restart previously blocked; newer PC-A shared Web3100 must not be replaced. Live site/message activation requires external adapters/credentials, never a fabricated connection.
+
+## CUSTOMER-AFFAIRS-THEMED-SELECTS — PC-B — CODE VERIFIED / RUNTIME RESTART BLOCKED
+
+- Reserve only CA Web components/tests and own task/status documentation on `codex/pc-b-customer-affairs-themed-selects` from combined `ac19de0a`. Replace native visible dropdowns with existing Rubi Select primitives, preserving form values and HR selection. No shared UI edits, API, schema, dependencies or permissions. Preserve API4190; verify and rebuild owned Web3100. No merge.
+- All four CA form/filter/assignee surfaces now use a module-local adapter over Rubi Select primitives (RTL, theme tokens, elevated/scrollable popup). 38 tests and 46-route production build/typecheck passed; scoped lint rerun after correcting unused prop. Attempted owned Web3100 restart was rejected by execution policy before command execution; no runtime replacement or visual QA of the new build is claimed. Module reservation released; activation remains pending.
+
+## CUSTOMER-AFFAIRS-SITE-BRIDGE — PC-B — IMPLEMENTED / LIVE ADAPTERS PENDING
+
+- User explicitly delegates the cross-module connection scope formerly requiring PC-A coordination. Branch `codex/pc-b-customer-affairs-site-bridge` from combined `0b3117ad`; preserve existing local runtime. Reserve CA backend, additive CA site/ticket-origin schema and migration, CA contracts, IAM public authenticate consumption (no IAM implementation change), own docs and tests. Migration owner PC-B for this additive slice after fetched develop shows the latest WORKBENCH-036 migration reservation released; dependency lock not needed. No other active producer implementation is overwritten.
+- Contract v1 producer CA/site bridge, consumers future jahanbastan.ir/nystkt.ir servers: authenticated Bearer IAM session plus explicit server binding to site/user/branch; create minimal ticket and read safe status projection. Existing ticket list gains optional sourceSite filter; existing APIs remain compatible. Credentials/permissions are not generated or granted; unset bindings disable ingress. Reference to the ticket uses an FK and external identity has a unique constraint. No new frontend section, payment/refund execution, migration of existing data or automatic merge.
+- Added CA-side authenticated queues/responses for Sales, Reservations, Finance and Documents with destination permissions and existing response workflow. 64 scoped tests, lint/typechecks/API build pass. Additive migration rehearsed in rollback-only PostgreSQL schema, then applied locally after named DB backup; unrelated newer Workbench migration retained. Migration/schema reservation released. Live adapters, dedicated IAM bindings and public deployment controls remain pending, not silently enabled. See `docs/tasks/CUSTOMER-AFFAIRS-SITE-BRIDGE.md`.
+
+## CUSTOMER-AFFAIRS-BACKEND-ROUTING — PC-B — DONE / READY FOR INTEGRATION
+
+- Backend-only continuation authorized by user with standard pre-production assumptions. Reserve `apps/api/src/customer-affairs/**` and scoped tests plus own task/status entries on `codex/pc-b-customer-affairs-backend-routing` from combined `503c39c`. Complete assignment and Sales-response notification routing through the existing Notifications public service, retaining existing endpoint/schema contracts. No producer/consumer API changes, schema/migration, dependency, IAM grants, or other-owner modules. No shared runtime takeover: newer PC-A Web/API work must be preserved. External websites and new cross-module contracts remain separate owner-coordinated work, not claimed active.
+- Implemented owner/execution-owner and Sales-response notifications, working record deep links and idempotent/concurrency-safe response handling for handoff/referrals. 52 scoped tests, ESLint/typecheck and API build passed. No live business writes. Local process inspection confirmed Web3100 belongs to this combined worktree; vacant API4190 was started with its existing approved local configuration, not another PC's runtime. Module-local reservation released; website and producer-contract backlog remains incomplete. See `docs/tasks/CUSTOMER-AFFAIRS-BACKEND-ROUTING.md` for review/activation limits.
+
+## CUSTOMER-AFFAIRS-INTERNAL-LINKS — PC-B — UI SLICE WITHDRAWN / BACKEND PENDING
+
+- User requests cross-module connections. Reserve Customer Affairs Web public API consumers, reference/handoff forms and tests plus own docs, branch `codex/pc-b-customer-affairs-internal-links` based on live `a1d4cf0`. Consume existing Sales, Reservations and Documents read APIs and CA reference/handoff mutation contracts; do not modify producer modules, shared schema/contracts, credentials or permissions. External ingress/providers remain pending their owner contract and credentials. Existing referrals already feed Workbench. Preserve combined Web3100/API4190; no merge.
+- User clarified backend-only, no separate section. All new consumer UI/client/tests in this work item were withdrawn before commit; previous code/API preserved. Read-only QA found Documents accessible and Sales/Reservations 403 for the current account; no business mutations or permission changes. Frontend reservation released. Backend cross-module callbacks and website integration are not implemented; shared producer contracts/ownership must be coordinated before reserving that scope.
+
+## CUSTOMER-AFFAIRS-OPERATIONAL-FORMS — PC-B — DONE / BACKLOG PARTIAL
+
+- User requests completion of audited gaps. Reserve Customer Affairs Web components/client/tests and own docs on `codex/pc-b-customer-affairs-operational-forms` from live `cc9970b`. Implement existing-contract record editing, source/preferences, scoped HR directory assignment, lead stage/loss and corrective action forms, explicit ticket categories. Shared API/schema/dependency/other-module changes are not reserved; external messaging/site ingress, probability persistence and producer-side customer conversion/sales intake need separate contracts/coordination. Preserve Web3100 combined runtime and API4190. No merge.
+- Existing-contract slice verified: 35 tests, scoped ESLint/typecheck and production build (46 routes) passed. Authenticated browser verified edit fields, retained data/customer lookup, allowed stage/loss controls. The checked branch has no user-linked HR employees; picker shows this rather than inventing recipients. No data submissions; API4190 retained and Web3100 restarted with its configured public API. Own reservation released; larger backlog remains incomplete as documented.
+
+## CUSTOMER-AFFAIRS-FORM-DIALOGS — PC-B — DONE / VERIFIED
+
+- User requests popup forms. Reserve Customer Affairs Web components and scoped tests plus own task/status entries on `codex/pc-b-customer-affairs-form-dialogs`, based on live combined `304953b` to preserve Web3100. Reuse shared overlays without editing shared files. Convert creation, followup, qualification, referral, outcome and communication forms; keep underlying views mounted and API/data unchanged. No schema/dependency locks needed. Verify scoped checks, production build and browser; restart Web3100 only, retain API4190. No merge.
+- Completed seven modal editing surfaces. Scoped ESLint, 30 tests, typecheck and 46-route production build passed. Authenticated QA verified creation/customer lookup, followup/calendar, qualification, communication, Escape/focus return and 390px layout. Final build explicitly targets API4190; Web3100/PID10196 active, API4190/PID12504 unchanged. No business submissions. Reservation released; no merge.
+
+## CUSTOMER-AFFAIRS-WORKFLOW-REDESIGN — PC-B — DONE / VERIFIED
+
+- User authorizes logical restructuring and frontend redesign. Base is the live combined source `87239f4` to preserve unmerged Customer Affairs and shared Web3100 functionality; branch `codex/pc-b-customer-affairs-workflow-redesign`. Reserve Customer Affairs Web components/styles/client and focused tests plus this entry and own status/task documentation. Four primary sections; contextual filters, actionable overview, explicit qualification/communication/result forms using existing APIs. No schema, shared contract or dependency changes. Verify build and authenticated Web3100; API4190 retained. No merge.
+- Completed the four-section interface, overdue worklist, contextual filters, explicit qualification, editable followups and stage-specific support actions. Scoped ESLint, 29 focused tests and production build/typecheck (46 routes) passed; authenticated desktop/mobile QA verified existing records and no horizontal overflow at 390px. Web3100 restarted; API4190/data unchanged. Implementation reservation released; see task document for integration boundaries. No merge.
+
+## CUSTOMER-AFFAIRS-REMOVE-HR-OUTLET — PC-B — DONE / VERIFIED
+
+- User requests removal of the supplementary «درخواست‌های منابع انسانی» card from Customer Affairs only. Reserve the Customer Affairs Rubi workspace, its scoped structural test and own status entry on `codex/pc-b-customer-affairs-remove-hr-outlet`; use the existing public HR visibility contract so the HR module and its outlet on all other routes remain unchanged. Rebuild/restart owned Web3100 only and verify in the authenticated browser; API4190, stored data, schema, permissions and dependencies stay untouched. No merge.
+- Activated the existing page-level HR outlet suppression contract only in the Customer Affairs Rubi workspace, without changing the HR outlet or its default behavior. Scoped ESLint/formatting and the focused suite passed (5/5); production Web build/typecheck completed across 46 routes. Authenticated browser QA confirmed four retained navigation sections, six open leads, five open tickets, zero visible «درخواست‌های منابع انسانی» headings and no console errors on Web3100/PID15936 from source `010c655`; API4190/PID12504 and stored data remain unchanged. Draft PR #233; no merge.
+
+## CUSTOMER-AFFAIRS-REMOVE-SETTINGS — PC-B — DONE / VERIFIED
+
+- User requests removal of the Customer Affairs settings section. Reserve only the Rubi workspace/component CSS, scoped navigation test and own status entry on `codex/pc-b-customer-affairs-remove-settings`; remove the settings tab, route view, read-only panel and dead local styling while preserving the four remaining sections, visual polish, data, API, schema, permissions, dependencies and global system settings. Rebuild/restart owned Web3100 only and verify in the authenticated browser; API4190 stays untouched. No merge.
+- Removed the module-local settings tab, view, read-only policy panel, icon import and dead policy CSS. The remaining four navigation sections are explicitly covered by the updated regression test. Scoped ESLint/formatting and the focused suite passed (4/4); production Web build/typecheck completed across 46 routes. Authenticated browser QA verified exactly the four retained Customer Affairs tabs on Web3100/PID15724 from source `5ebca3d`; the global company-settings navigation, API4190/PID12504 and stored data remain unchanged. No merge.
+
+## CUSTOMER-AFFAIRS-REMOVE-TAGLINE — PC-B — DONE / VERIFIED
+
+- User requests removal of the visible header tagline «همراه مشتری، از اولین درخواست تا آخرین پیگیری». Reserve only the Customer Affairs Rubi workspace, its scoped structural test and own status entry on `codex/pc-b-customer-affairs-remove-tagline`, preserving the title, actions, visual polish, data, API, schema, dependencies and all other modules. Rebuild/restart owned Web3100 only and verify in the authenticated browser; API4190 stays untouched. No merge.
+- Removed the tagline only and extended the structural regression assertion. Scoped ESLint and formatting passed, the focused workspace suite passed (4/4), and the production Web build/typecheck completed across 46 routes. Authenticated browser QA verified the populated overview without the tagline on Web3100/PID29056 from source `f894409`; API4190/PID12504 and stored data were unchanged. No merge.
+
+## CUSTOMER-AFFAIRS-VISUAL-POLISH — PC-B — DONE / VERIFIED
+
+- User requests richer visual treatment for the existing Customer Affairs overview. Reserve the module CSS and own status entry on `codex/pc-b-customer-affairs-visual-polish`; preserve content, behavior, data, API, schema, dependencies and all other modules. Use existing Rubi/theme tokens with accessible contrast, responsive states and reduced-motion support; verify with scoped checks, production build and authenticated browser QA on Web3100. No merge.
+- Completed with Rubi-blue/teal and status-color gradients, accent rails, stronger selected-tab treatment, layered cards, subtle hover depth, richer panels and reduced-motion fallbacks. Scoped workspace tests passed (4/4), CSS formatting and diff checks passed, and the Web production build/typecheck completed across 46 routes. Authenticated desktop browser QA verified the populated overview on Web3100/PID15612 from source `a7a8ab7`; API4190/PID12504 and stored data were unchanged. No merge.
+
+## CUSTOMER-AFFAIRS-REMOVE-INTRO — PC-B — DONE / VERIFIED
+
+- User requests removal of the overview introduction banner and its two texts only. Reserve CA workspace, scoped regression test and own status entry on `codex/pc-b-customer-affairs-remove-intro` from shared runtime `7566d20`. Preserve all modules; Web3100-only rebuild/restart after checks. No API/database/schema/dependency changes.
+- Removed only the overview banner; metrics, hub and reports preserved. Scoped lint and tests passed (21 existing CA tests plus the new regression); production build/typecheck passed. Browser authenticated overview verified on Web3100, runtime source `ac15df6`, Web PID13128; API PID12504 unchanged. Draft PR #225; no merge.
+
+## UNIFIED-CUSTOMER-AFFAIRS-3100 — PC-B — LIVE / VERIFIED
+
+- User explicitly requests combining Excel/current Rubi and Customer Affairs on Web3100 with its API. Base `origin/develop@6a4e041`; branch `codex/pc-b-unified-customer-affairs-3100`. Integrate published CA branch `f34166c` without replacing current modules. Reserve integration conflict resolution in schema reverse relations, app/contract wiring and task/status documents; no new domain contract or dependency change. Existing source worktrees remain untouched. Reuse the current local database and document storage; inspect/back up/rehearse the existing additive CA migration before applying it. Runtime cutover is authorized for the verified current Web3100/API4190 only, after build/test gates. No main/develop mutation, credential reset or broad seed.
+- Completed: shared source `09b3b18` is live on Web3100/PID1628 and API4190/PID12504, build `unified-vnpjB6iJEmubY1N0rxXr5`. Backup/rehearsal/additive CA migration succeeded; 38 users, 5 branches and 44 documents preserved. User separately approved 19 CA permissions for administrator only, audited without changing other roles. All 15 lint/typecheck tasks and six builds passed; API 1230 tests passed, Web 1336 plus the separately retried 42-test HR file passed (one original load-related timeout). Browser sign-in, CA overview/report and agency Excel dialog verified. Old preview3102 and rehearsal API4192 stopped. Implementation/central integration reservation released; future runtime replacement requires coordination and must retain this combined source. See `docs/tasks/UNIFIED-CUSTOMER-AFFAIRS-3100.md`.
 
 ## WORKBENCH-021 — PC-B — LOCAL_COMPLETE / RUNTIME_ACTIVE
 
@@ -204,6 +359,11 @@ Merged via PR #254 at `e40878f1`. Web3100 runs the production build `55JsHVl1EIR
   1,327 Web tests, lint, typechecks and both production builds passed. Migration,
   central-contract and implementation reservations are RELEASED for review.
 
+## CUSTOMER-AFFAIRS-003 — PC-B — IMPLEMENTED / AWAITING AUTHENTICATED VISUAL QA
+
+- Reserve Customer Affairs Web components, local styles, API client presentation/query support and task documentation for the supplied customer-affairs.html reference. Branch `codex/pc-b-customer-affairs-rubi-ui` continues the unmerged operational slice `b39c93d` (PR #221) in its clean worktree. Reuse Rubi theme and live API; no schema, migration, dependency or shared shell edits. Central Docs reservation is limited to this entry, project status and own task report. Runtime ownership must be checked before restart.
+- Implementation and automated verification are complete: full Web lint, TypeScript/build (46 routes), 1329 full-suite tests and 3 additional new render tests passed. Preview on 3102 requires API CORS/runtime coordination and user sign-in for visual QA. Existing 3100/4190 runtimes were not changed. Central Docs reservation released for handoff; no migration or dependency lock was acquired. See `docs/tasks/CUSTOMER-AFFAIRS-003.md`.
+
 ## B2B-REMOVE-HR-REQUESTS-001 — PC-B — VALIDATED
 
 - The global Human Resources requests outlet is suppressed throughout the agency/corporate dossier route, including the directory and every 360 section. The profile-level exception that previously made the outlet visible again was removed. All 126 Organizations tests, focused lint, Web TypeScript and the 46-route production build passed. HR records, APIs, permissions and the Human Resources module remain unchanged; no schema, migration, dependency or central AppShell change.
@@ -217,6 +377,11 @@ Merged via PR #254 at `e40878f1`. Web3100 runs the production build `55JsHVl1EIR
 - `COMPUTER_ID=PC-B`; branch `codex/pc-b-customer-affairs-operational` and worktree
   `C:/Users/admin/Rubi-customer-affairs-operational` start from
   `origin/develop@700168e67cc0a495178946bb44bdd3528d2d49d7`.
+## CUSTOMER-AFFAIRS-002 — PC-B — READY_FOR_REVIEW
+
+- `COMPUTER_ID=PC-B`; branch `codex/pc-b-customer-affairs-operational` and worktree
+  `C:/Users/admin/Rubi-customer-affairs-operational` are rebased onto
+  `origin/develop@b2098bc76521c35518cbb64ab5337bcaf565f8f0`.
 - Reserve Customer Affairs ownership for the operational vertical slice in
   `apps/api/src/customer-affairs/**`, `apps/web/src/modules/customer-affairs/**`,
   `apps/web/src/app/(crm)/customer-affairs/**`,
@@ -248,6 +413,9 @@ Merged via PR #254 at `e40878f1`. Web3100 runs the production build `55JsHVl1EIR
   authenticated API smoke and desktop/mobile browser QA are complete. Migration, public
   contract and Central Docs locks remain owned by this Task only until its Draft PR is
   opened; final release and handoff are recorded in the follow-up delivery commit.
+  authenticated API smoke and desktop/mobile browser QA are complete. Draft PR #221 is the
+  review handoff. `Migration Owner`, `Customer Affairs public contract/root export Owner`
+  and `Central Docs Owner` are `RELEASED`; Dependency/Lockfile remained unassigned.
 
 ## B2B-EXCEL-IMPORT-EXPORT-001 — PC-B — UI_VERIFIED
 
