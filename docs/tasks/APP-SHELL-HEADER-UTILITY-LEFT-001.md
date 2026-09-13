@@ -12,4 +12,4 @@
 
 ## وضعیت
 
-در حال پیاده‌سازی روی `codex/pc-a-header-utility-left` از `origin/develop@dd177cfd`.
+پیاده‌سازی روی `codex/pc-a-header-utility-left` از `origin/develop@dd177cfd` کامل شد. تاریخ و HeaderActions در یک بلوک واحد با `ms-auto` قرار گرفتند؛ ۴ تست متمرکز، lint، Web typecheck و build تولیدی ۴۶ مسیر موفق بود.

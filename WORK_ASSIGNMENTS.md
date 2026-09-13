@@ -1,8 +1,10 @@
 # Work Assignments
 
-## APP-SHELL-HEADER-UTILITY-LEFT-001 — PC-A — IN_PROGRESS
+## APP-SHELL-HEADER-UTILITY-LEFT-001 — PC-A — READY_FOR_REVIEW
 
 Base `dd177cfd`; COMPUTER_ID=PC-A. انتقال یکپارچه گروه تاریخ، زبان، پوسته، اعلان و منوی کاربر به لبه چپ نوار بالای AppShell طبق تصویر کاربر. محدوده فقط `app-shell.tsx`، تست header موجود و اسناد وضعیت است؛ رفتار کنترل‌ها، API، داده، Schema/Migration و وابستگی تغییر نمی‌کنند. PRهای قدیمی #155/#156/#159/#161 این فایل را در شاخه‌های قدیمی لمس کرده‌اند اما مبنای فعلی `develop` است و تغییر فعال تازه‌ای روی این چیدمان ندارند.
+
+Completed: تاریخ و HeaderActions داخل یک بلوک `ms-auto` قرار گرفتند تا در RTL به لبه چپ هدر منتقل شوند. نمایش دسکتاپ تاریخ و رفتار زبان/پوسته/اعلان/کاربر حفظ شد. ۴ تست متمرکز، lint محدوده، Web typecheck و build تولیدی ۴۶ مسیر پاس شدند؛ بدون تغییر API یا داده.
 
 ## FINANCE-006-DELIVERY-PANEL-REDESIGN — PC-A — COMPLETE / MERGED / ACTIVE
 
