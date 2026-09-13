@@ -1,6 +1,8 @@
 # Work Assignments
 
-## CA-REMOVE-REPORT-INTRO — PC-B — IN_PROGRESS
+## CA-REMOVE-REPORT-INTRO — PC-B — VERIFIED / LOCAL_RUNTIME_ACTIVE
+
+- Four report tests, scoped lint and Web production build/TypeScript passed. Runtime identity confirms359766ca on3100, build unified-YUzeB-mg7CVo9EfwTs7gY. API/data unchanged; reservation released. PR creation command has not returned a result yet.
 
 - Reserve report intro JSX/test and own docs on codex/pc-b-ca-remove-report-intro from8d365d9b. Remove requested heading/subtitle only, preserve timestamp and report data. No API/data/permissions/dependencies changes; retain prior Rubi targets. Web-only activation after checks.
 
