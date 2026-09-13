@@ -1,8 +1,19 @@
 import { strFromU8, unzipSync } from 'fflate';
 import { describe, expect, it } from 'vitest';
-import { procurementPrintHtml, renderProcurementXlsx } from './procurement.rendering';
+import {
+  procurementPrintHtml,
+  renderProcurementXlsx,
+} from './procurement.rendering';
 
-const table = { title: 'خرید آزمایشی', headings: ['شرح','مبلغ'], rows: [['=HYPERLINK("https://invalid.test")','12345678901234567890.1234'], ['<script>alert(1)</script>','0']], notes: ['IRR — ارز مستقل'] };
+const table = {
+  title: 'خرید آزمایشی',
+  headings: ['شرح', 'مبلغ'],
+  rows: [
+    ['=HYPERLINK("https://invalid.test")', '12345678901234567890.1234'],
+    ['<script>alert(1)</script>', '0'],
+  ],
+  notes: ['IRR — ارز مستقل'],
+};
 describe('Procurement export rendering', () => {
   it('creates a valid RTL OpenXML archive preserving decimals and source text without formulas', () => {
     const files = unzipSync(renderProcurementXlsx(table));

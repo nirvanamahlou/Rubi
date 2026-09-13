@@ -8,7 +8,6 @@
 - [x] اعتبارسنجی کامل Monorepo، بار و مرورگر؛ تحویل برای Draft PR بدون Merge
 - [ ] پس از قرارداد مصوب: Policy تجاری، مصرف Finance/Tasks و ارجاع Reservations
 
-
 ## CUSTOMER-AFFAIRS-002 — برش عملیاتی
 
 - [x] Persistence افزایشی Lead/Ticket/Timeline/Handoff/Referral/SLA/Survey/Corrective Action/Command/Audit
