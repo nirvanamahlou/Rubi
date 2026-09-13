@@ -2309,3 +2309,16 @@ Runtime3397f2b/hr005-1ba72d053599fc53/PID11368 preserves96b6d2d.46-route build p
 Source f03d34c removes the requested home360 subtitle without leaving an empty paragraph. Subsection descriptions unchanged. Scoped lint/typecheck passed; combined runtime build coordinated.
 
 Combined runtime1bf840b/PID8604/hr005-ef61a0178f542c46 built by Workbench owner. Browser confirms360heading present and requestedsubtitle absent. NoAPI/data change. PR209.
+
+## 2026-09-12 — قالب XLSX منیفست و فرم ساده فرودگاه (PC-B)
+
+قالب Manifest اکنون با انتخاب ایرلاین و مقصد و بارگذاری مستقیم فایل XLSX ایجاد می‌شود؛
+نام، فرمت، نسخه و وضعیت Draft در Backend تعیین و شناسه فایل از API عمومی Documents روی
+رکورد Master Data ثبت می‌شود. مقصد FK واقعی شهر است و ذخیره فایل یا Query مستقیم جدول
+Documents در Master Data انجام نمی‌شود. فرم ایجاد فرودگاه دیگر ICAO، Timezone IANA و طول/
+عرض جغرافیایی را نمی‌خواهد؛ این مشخصات برای سازگاری داده‌های قبلی اختیاری و در Edit/View
+قابل دسترس‌اند. Migration افزایشی و غیرمخرب است و Manifest اجرایی همچنان در مالکیت
+Reservations باقی می‌ماند.
+
+اعتبارسنجی نهایی شامل ۳۳ تست هدفمند API، ۳۸ تست Web و ۲ تست Migration، lint محدوده،
+Prisma validate/format و typecheck/build دیتابیس، API و Web موفق است.

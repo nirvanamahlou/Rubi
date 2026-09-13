@@ -80,6 +80,7 @@ const configs: Partial<
   },
   'manifest-templates': {
     airlineId: { target: 'airlines', payload: 'id' },
+    destinationCityId: { target: 'cities', payload: 'id' },
   },
   'rail-companies': {
     organizationId: {

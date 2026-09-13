@@ -39,6 +39,7 @@ export class MasterDataApiError extends Error {
 
 export type MasterDataLogoChange =
   { kind: 'replace'; file: File } | { kind: 'remove' };
+export type MasterDataManifestFileChange = { kind: 'replace'; file: File };
 
 export interface MasterDataPersistWithLogoInput {
   resource: MasterDataResource;
@@ -63,7 +64,7 @@ function assertPersistedSourceId(recordId: string) {
     );
 }
 
-async function logoIdempotencyMarker(file: File) {
+async function fileIdempotencyMarker(file: File, prefix: string) {
   const digest = await crypto.subtle.digest(
     'SHA-256',
     await file.arrayBuffer(),
@@ -75,7 +76,7 @@ async function logoIdempotencyMarker(file: File) {
     byte.toString(16).padStart(2, '0'),
   ).join('');
   const uuid = `${opaqueToken.slice(0, 8)}-${opaqueToken.slice(8, 12)}-${opaqueToken.slice(12, 16)}-${opaqueToken.slice(16, 20)}-${opaqueToken.slice(20)}`;
-  return `master-data-logo-v1:${uuid}`;
+  return `${prefix}:${uuid}`;
 }
 
 async function requestFile(
@@ -167,7 +168,7 @@ async function documentsRequest<T>(
     throw new MasterDataApiError(
       envelope?.error?.message ??
         envelope?.message ??
-        'بارگذاری لوگو ناموفق بود.',
+        'بارگذاری فایل در اسناد ناموفق بود.',
       response.status,
     );
   }
@@ -217,7 +218,10 @@ export const masterDataApi = {
     if (input.file.size > maxSize)
       throw new MasterDataApiError('حجم فایل لوگو بیشتر از حد مجاز است.', 413);
 
-    const idempotencyMarker = await logoIdempotencyMarker(input.file);
+    const idempotencyMarker = await fileIdempotencyMarker(
+      input.file,
+      'master-data-logo-v1',
+    );
     const canonical = new URLSearchParams({
       domain: 'BRAND',
       archiveStatus: 'ACTIVE',
@@ -272,6 +276,209 @@ export const masterDataApi = {
       scanStatus: response.data.currentVersion.scanStatus,
       reused: false,
     };
+  },
+  async uploadManifestTemplateFile(input: {
+    file: File;
+    recordId: string;
+    title: string;
+  }) {
+    assertPersistedSourceId(input.recordId);
+    const xlsxMime =
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+    if (input.file.type !== xlsxMime || !/\.xlsx$/i.test(input.file.name))
+      throw new MasterDataApiError(
+        'قالب منیفست باید فایل Excel با پسوند XLSX باشد.',
+        400,
+      );
+
+    const options =
+      await documentsRequest<DocumentOptionsResponseV1>('/options');
+    const documentType = options.data.documentTypes.find(
+      (item) => item.code === 'MANIFEST',
+    );
+    const category = options.data.categories.find(
+      (item) => item.code === 'TRAVEL_RESERVATIONS',
+    );
+    const branch = options.data.branches[0];
+    const owner =
+      options.data.owners.find(
+        (item) => item.id === options.data.currentUserId,
+      ) ?? options.data.owners[0];
+    if (!documentType || !category || !branch || !owner)
+      throw new MasterDataApiError(
+        'پیش‌نیاز ذخیره قالب منیفست در اسناد کامل نیست.',
+        409,
+      );
+    const maxSize = Math.min(
+      options.data.uploadPolicy.maxFileSizeBytes,
+      documentType.maxFileSizeBytes,
+    );
+    if (
+      !options.data.uploadPolicy.allowedMimeTypes.includes(xlsxMime) ||
+      !documentType.allowedMimeTypes.includes(xlsxMime)
+    )
+      throw new MasterDataApiError(
+        'فایل XLSX در سیاست فعلی اسناد مجاز نیست.',
+        400,
+      );
+    if (input.file.size > maxSize)
+      throw new MasterDataApiError(
+        'حجم قالب منیفست بیشتر از حد مجاز اسناد است.',
+        413,
+      );
+
+    const idempotencyMarker = await fileIdempotencyMarker(
+      input.file,
+      'master-data-manifest-v1',
+    );
+    const canonical = new URLSearchParams({
+      domain: 'TRAVEL',
+      archiveStatus: 'ACTIVE',
+      branchId: branch.id,
+      sourceModule: 'master-data',
+      sourceEntityType: 'manifest-templates',
+      sourceEntityId: input.recordId,
+      sortBy: 'updatedAt',
+      sortDirection: 'desc',
+      page: '1',
+      pageSize: '100',
+    });
+    const existing = await documentsRequest<DocumentListResponseV1>(
+      `?${canonical.toString()}`,
+    );
+    const duplicate = existing.data.find(
+      (item) => item.currentVersion.versionNote === idempotencyMarker,
+    );
+    if (duplicate)
+      return {
+        id: duplicate.id,
+        scanStatus: duplicate.currentVersion.scanStatus,
+        reused: true,
+      };
+
+    const form = new FormData();
+    form.set('file', input.file);
+    form.set('title', input.title.trim() || 'قالب منیفست');
+    form.set('documentTypeId', documentType.id);
+    form.set('categoryId', category.id);
+    form.set('branchId', branch.id);
+    form.set('ownerUserId', owner.id);
+    form.set('confidentiality', 'INTERNAL');
+    form.set('sourceModule', 'master-data');
+    form.set('sourceEntityType', 'manifest-templates');
+    form.set('sourceEntityId', input.recordId);
+    form.set('sourceDisplayLabel', input.title.trim() || 'قالب منیفست');
+    form.set('versionNote', idempotencyMarker);
+    const response = await documentsRequest<DocumentDetailResponseV1>(
+      '/upload',
+      {
+        method: 'POST',
+        body: form,
+        headers: { 'Idempotency-Key': idempotencyMarker },
+      },
+    );
+    return {
+      id: response.data.id,
+      scanStatus: response.data.currentVersion.scanStatus,
+      reused: false,
+    };
+  },
+  async persistManifestTemplate(input: {
+    values: Record<string, string>;
+    file?: File;
+    existing?: MasterDataRecord;
+    title: string;
+  }): Promise<MasterDataPersistWithLogoResult> {
+    if (!input.existing && !input.file)
+      throw new MasterDataApiError('انتخاب فایل XLSX الزامی است.', 400);
+    const values = { ...input.values };
+    delete values.fileReferenceId;
+    const base = input.existing
+      ? await masterDataApi.update('manifest-templates', input.existing.id, {
+          values,
+          version: input.existing.version,
+        })
+      : await masterDataApi.create('manifest-templates', { values });
+    if (!input.file) return base;
+
+    let uploaded: Awaited<
+      ReturnType<typeof masterDataApi.uploadManifestTemplateFile>
+    >;
+    try {
+      uploaded = await masterDataApi.uploadManifestTemplateFile({
+        file: input.file,
+        recordId: base.data.id,
+        title: input.title,
+      });
+    } catch (error) {
+      if (!input.existing) {
+        try {
+          await masterDataApi.remove(
+            'manifest-templates',
+            base.data.id,
+            base.data.version,
+          );
+        } catch {
+          throw new MasterDataApiError(
+            `بارگذاری فایل انجام نشد و پیش‌نویس ناقص نیازمند حذف دستی است: ${error instanceof Error ? error.message : 'خطای نامشخص'}`,
+            error instanceof MasterDataApiError ? error.status : 500,
+          );
+        }
+      }
+      throw error;
+    }
+
+    try {
+      const attached = await masterDataApi.update(
+        'manifest-templates',
+        base.data.id,
+        {
+          values: { fileReferenceId: uploaded.id },
+          version: base.data.version,
+        },
+      );
+      const previousFile = String(
+        input.existing?.attributes.fileReferenceId ?? '',
+      ).trim();
+      if (previousFile && previousFile !== uploaded.id) {
+        try {
+          await masterDataApi.archiveManifestTemplateFile(previousFile);
+        } catch (error) {
+          return {
+            ...attached,
+            warning: `قالب جدید متصل شد؛ بایگانی نسخه فایل قبلی نیازمند اقدام مجدد است: ${error instanceof Error ? error.message : 'خطای نامشخص'}`,
+          };
+        }
+      }
+      return uploaded.scanStatus === 'CLEAN'
+        ? attached
+        : {
+            ...attached,
+            warning:
+              'قالب ذخیره شد و تا پایان اسکن امنیتی اسناد به‌صورت پیش‌نویس باقی می‌ماند.',
+          };
+    } catch (error) {
+      try {
+        await masterDataApi.archiveManifestTemplateFile(uploaded.id);
+      } catch {
+        // The attach error remains primary; orphan cleanup is retried by Documents.
+      }
+      if (!input.existing) {
+        try {
+          await masterDataApi.remove(
+            'manifest-templates',
+            base.data.id,
+            base.data.version,
+          );
+        } catch {
+          // Preserve the original attach failure and surface the incomplete draft.
+        }
+      }
+      throw new MasterDataApiError(
+        `اتصال فایل به قالب انجام نشد: ${error instanceof Error ? error.message : 'خطای نامشخص'}`,
+        error instanceof MasterDataApiError ? error.status : 500,
+      );
+    }
   },
   async persistWithLogo(
     input: MasterDataPersistWithLogoInput,
@@ -374,6 +581,21 @@ export const masterDataApi = {
         method: 'POST',
         body: JSON.stringify({
           reason: 'حذف یا جایگزینی لوگوی مرجع اطلاعات پایه',
+          version: detail.data.version,
+        }),
+      },
+    );
+  },
+  async archiveManifestTemplateFile(documentId: string) {
+    const detail = await documentsRequest<DocumentDetailResponseV1>(
+      `/${encodeURIComponent(documentId)}`,
+    );
+    return documentsRequest<DocumentDetailResponseV1>(
+      `/${encodeURIComponent(documentId)}/archive`,
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          reason: 'جایگزینی فایل قالب منیفست اطلاعات پایه',
           version: detail.data.version,
         }),
       },

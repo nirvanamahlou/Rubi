@@ -732,6 +732,7 @@ model MasterCity {
   masterHotelImportSessions MasterHotelImportSession[]
   leaders                   MasterLeader[]
   organizationAddresses     MasterOrganizationAddress[]
+  manifestTemplates         MasterManifestTemplate[]
 
   @@unique([countryId, code])
   @@unique([id, countryId])
@@ -773,12 +774,12 @@ model MasterAirport {
   id                  String             @id @default(uuid()) @db.Uuid
   cityId              String             @db.Uuid
   iataCode            String             @unique @db.Char(3)
-  icaoCode            String             @unique @db.Char(4)
+  icaoCode            String?            @unique @db.Char(4)
   name                String             @db.VarChar(160)
   englishName         String             @db.VarChar(160)
-  ianaTimezone        String             @db.VarChar(80)
-  latitude            Decimal            @db.Decimal(9, 6)
-  longitude           Decimal            @db.Decimal(9, 6)
+  ianaTimezone        String?            @db.VarChar(80)
+  latitude            Decimal?           @db.Decimal(9, 6)
+  longitude           Decimal?           @db.Decimal(9, 6)
   displayOrder        Int                @default(0)
   isActive            Boolean            @default(true)
   version             Int                @default(1)
@@ -1620,16 +1621,17 @@ model MasterBaggageRule {
 model MasterManifestTemplate {
   id                  String                       @id @default(uuid()) @db.Uuid
   airlineId           String                       @db.Uuid
+  destinationCityId   String?                      @db.Uuid
   code                String                       @unique @db.VarChar(32)
   name                String                       @db.VarChar(160)
   versionNumber       Int
-  fileFormat          MasterManifestFileFormat
+  fileFormat          MasterManifestFileFormat     @default(XLSX)
   fileReferenceId     String?                      @db.Uuid
   sheetName           String?                      @db.VarChar(120)
   headerRow           Int                          @default(1)
   dateFormat          String?                      @db.VarChar(40)
-  requiredColumns     String[]
-  columnOrder         String[]
+  requiredColumns     String[]                     @default([])
+  columnOrder         String[]                     @default([])
   validFrom           DateTime                     @db.Date
   validTo             DateTime?                    @db.Date
   publicationStatus   MasterManifestTemplateStatus @default(DRAFT)
@@ -1643,9 +1645,11 @@ model MasterManifestTemplate {
   createdAt           DateTime                     @default(now()) @db.Timestamptz(3)
   updatedAt           DateTime                     @updatedAt @db.Timestamptz(3)
   airline             MasterAirline                @relation(fields: [airlineId], references: [id], onDelete: Restrict)
+  destinationCity     MasterCity?                  @relation(fields: [destinationCityId], references: [id], onDelete: Restrict)
 
   @@unique([airlineId, versionNumber])
   @@index([airlineId, publicationStatus, validFrom, validTo])
+  @@index([destinationCityId, publicationStatus, isActive])
   @@map("master_manifest_templates")
 }
 

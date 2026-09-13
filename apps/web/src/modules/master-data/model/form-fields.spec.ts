@@ -8,6 +8,28 @@ import { getMasterDataFormFields } from './form-fields';
 import { validateMasterDataDraft } from './validation';
 
 describe('payment-method form fields', () => {
+  it('keeps airport enrichment out of create while preserving it for later editing', () => {
+    const definition = getMasterDataDefinition('airports');
+    const createFields = getMasterDataFormFields(definition, 'create').map(
+      (field) => field.key,
+    );
+    const editFields = getMasterDataFormFields(definition, 'edit').map(
+      (field) => field.key,
+    );
+    for (const field of ['icaoCode', 'ianaTimezone', 'latitude', 'longitude']) {
+      expect(createFields).not.toContain(field);
+      expect(editFields).toContain(field);
+    }
+    expect(
+      validateMasterDataDraft('airports', {
+        name: 'فرودگاه کیش',
+        englishName: 'Kish Airport',
+        countryId: 'country-id',
+        cityId: 'city-id',
+        iataCode: 'KIH',
+      }).success,
+    ).toBe(true);
+  });
   it('omits channel only while creating without changing stored payment metadata', () => {
     const definition = getMasterDataDefinition('payment-methods');
     expect(

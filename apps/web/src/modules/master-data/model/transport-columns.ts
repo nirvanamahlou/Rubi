@@ -53,6 +53,7 @@ export function transportColumns(
         ['code', 'کد'],
         ['name', 'عنوان'],
         ['airlineName', 'ایرلاین'],
+        ['destinationCityName', 'مقصد'],
         ['versionNumber', 'نسخه قالب'],
         ['fileFormat', 'فرمت'],
         ['fileReferenceId', 'File Reference'],

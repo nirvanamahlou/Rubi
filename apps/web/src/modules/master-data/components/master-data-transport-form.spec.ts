@@ -62,6 +62,25 @@ const expected = {
 };
 
 describe('transport mockup form coverage', () => {
+  it('renders the manifest upload workflow without manual template metadata', () => {
+    const html = renderToStaticMarkup(
+      createElement(MasterDataLiveForm, {
+        definition: getMasterDataDefinition('manifest-templates'),
+        mode: 'create',
+        open: true,
+        onOpenChange: () => {},
+        onPersist: async () => {},
+      }),
+    );
+    expect(html).toContain('ایجاد قالب منیفست از Excel');
+    expect(html).toContain('ایرلاین');
+    expect(html).toContain('مقصد (شهر)');
+    expect(html).toContain('فایل قالب Excel');
+    expect(html).toContain('type="file"');
+    expect(html).not.toContain('شماره نسخه');
+    expect(html).not.toContain('ستون‌های الزامی');
+    expect(html).not.toContain('Reference سند');
+  });
   it.each(MASTER_TRANSPORT_FORM_RESOURCES)(
     '%s renders every editable field and generated metadata',
     (resource) => {
