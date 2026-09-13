@@ -1,5 +1,15 @@
 # وضعیت پروژه
 
+## WORKBENCH-040 — Performance summary
+
+Personal performance now shows leave count, dated shifts, approved payslip period/net amount, today's entry/exit, own customers and sales. Raw activity rows were removed. Additive HR projection preserves self/branch scope and applies approved attendance corrections. No employee reassignment or migration. See [WORKBENCH-040](tasks/WORKBENCH-040-PERFORMANCE-SUMMARY.md).
+
+
+## WORKBENCH-039 — Selected department contrast
+
+The messenger unit list no longer overrides the selected primary button with a light surface background. Selected labels and icons use theme foreground contrast, unselected units retain their surface style, and aria-pressed exposes selection. No message delivery or API behavior changes. Validation is recorded in docs/tasks/WORKBENCH-039-UNIT-CONTRAST.md.
+
+
 ## FINANCE-007 — تکمیل کارتابل درخواست‌های مالی
 
 کارتابل مالی بازطراحی و ساده شد: Preview قدیمی، نوشته‌های فنی و اقدام غیرفعال حذف شدند و درخواست‌های واقعی فروش، ارجاع‌های مالی منابع انسانی و خرید خدمات رزرواسیون اکنون از مرز عمومی ماژول‌های مالک وارد صف واحد می‌شوند. منبع خرید مستقل چون Producer عملیاتی ندارد، داده ساختگی نمایش نمی‌دهد. ۳ تست API، ۸ تست قرارداد Web، ۳ تست Migration، lint محدوده، typecheck و build تولیدی API/Web موفق‌اند؛ Web3100 و API4190 فعال‌اند. مشخصات Seed نقش مالی کامل شده، اما انتساب افزایشی `finance_staff` به `Ramtin` برای رفع نهایی 403 هنوز منتظر تأیید صریح مالک محصول است. جزئیات در [FINANCE-007](tasks/FINANCE-007-INBOX-COMPLETION.md) ثبت شده است.

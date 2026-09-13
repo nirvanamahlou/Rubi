@@ -19,7 +19,10 @@ function fixture() {
   };
   const client = {
     hrEmployee: { findFirst: vi.fn().mockResolvedValue(employee) },
-    hrRecord: { findMany: vi.fn().mockResolvedValue([]) },
+    hrRecord: {
+      findMany: vi.fn().mockResolvedValue([]),
+      count: vi.fn().mockResolvedValue(12),
+    },
     hrAuditEvent: { findMany: vi.fn().mockResolvedValue([]) },
   };
   const hr = {
@@ -114,7 +117,7 @@ describe('HR self performance public projection', () => {
     const f = fixture();
     const result = await f.service.get({ ...actor, permissions: ['hr.read'] });
     expect(result.payslipVisible).toBe(false);
-    expect(f.client.hrRecord.findMany).toHaveBeenCalledTimes(2);
+    expect(f.client.hrRecord.findMany).toHaveBeenCalledTimes(3);
   });
   it('queries job actions only by the signed-in actor and current branches', async () => {
     const f = fixture();
@@ -128,5 +131,58 @@ describe('HR self performance public projection', () => {
         select: { id: true, action: true, createdAt: true },
       }),
     );
+  });
+  it('counts all approved own leave requests without the ten-record display cap', async () => {
+    const f = fixture();
+    const result = await f.service.get(actor);
+    expect(result.approvedLeaveCount).toBe(12);
+    expect(f.client.hrRecord.count).toHaveBeenCalledWith({
+      where: expect.objectContaining({
+        employeeId: 'employee',
+        employee: { userId: 'self', deletedAt: null },
+        branchId: { in: ['allowed'] },
+        deletedAt: null,
+        status: { in: expect.not.arrayContaining(['پیش‌نویس', 'ردشده']) },
+      }),
+    });
+  });
+  it('uses Tehran calendar date and approved correction punches, never the original times', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-09-13T21:00:00Z'));
+    try {
+      const f = fixture();
+      f.client.hrRecord.findMany.mockImplementation(async (query) =>
+        query.where.tab === 'checkins'
+          ? [
+              {
+                parentId: 'correction',
+                values: ['User', '2026-09-14', '۱۷:۳۰', 'خروج'],
+              },
+              {
+                parentId: 'correction',
+                values: ['User', '2026-09-14', '۰۹:۰۰', 'ورود'],
+              },
+              {
+                parentId: null,
+                values: ['User', '2026-09-14', '08:00', 'ورود'],
+              },
+            ]
+          : [],
+      );
+      const result = await f.service.get(actor);
+      expect(result.todayAttendance).toEqual({
+        date: '2026-09-14',
+        firstIn: '09:00',
+        lastOut: '17:30',
+      });
+      const query = f.client.hrRecord.findMany.mock.calls.find(
+        ([item]) => item.where.tab === 'checkins',
+      )![0];
+      expect(query.where.values).toEqual({ path: ['1'], equals: '2026-09-14' });
+      expect(query.where.employeeId).toBe('employee');
+      expect(query.where.branchId).toEqual({ in: ['allowed'] });
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

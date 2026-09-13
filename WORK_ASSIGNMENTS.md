@@ -1,5 +1,13 @@
 # Work Assignments
 
+## WORKBENCH-040 — PC-B — VALIDATED / RELEASED
+
+- Reserve Workbench performance UI, HR self-performance projection/tests, additive Workbench contracts and own documentation for screenshot582 summary redesign. Add self-only today check-in/out and total approved leave request count, keep payslip period and shift dates explicit, remove raw activity rows. Producer HR/Workbench; consumer Workbench Web; new response fields are optional for compatibility. No employee reassignment, migration, dependency, permission change or shared runtime replacement.
+
+## WORKBENCH-039-UNIT-CONTRAST — PC-B — VALIDATED / RELEASED
+
+- Reserve message-composer.tsx and this task's status documentation for the screenshot581 selected department contrast fix. Branch codex/pc-b-workbench-unit-contrast from develop@e82d8216. Remove the unconditional surface background from selected unit buttons, retain Rubi primary colors, match selected icon contrast and expose pressed state. No API, data, migration, dependency or shared component edits.
+
 ## FINANCE-007-INBOX-COMPLETION — PC-A — READY_FOR_REVIEW / RUNTIME PERMISSION PENDING
 
 Base `4a84f844`; COMPUTER_ID=PC-A. مشخصات نقش `finance_staff` با مجوزهای حداقلی کارتابل و تحویل مالی تکمیل شد؛ کارتابل اکنون درخواست‌های واقعی فروش، ارجاع‌های مالی منابع انسانی و خرید خدمات رزرواسیون را از Public Service ماژول‌ها جمع می‌کند. Preview قدیمی، متن‌های فنی، وضعیت اتصال Producer و اقدام نمایشی غیرفعال از `/finance/requests` حذف شد. ماژول خرید مستقل Backend عملیاتی ندارد و تا ایجاد Producer واقعی داده‌ای برای آن جعل نمی‌شود. ۳ تست API، ۸ تست قرارداد Web، ۳ تست Migration، lint محدوده، typecheck و build تولیدی API/Web موفق‌اند و Web3100/API4190 فعال‌اند. انتساب افزایشی نقش `finance_staff` به کاربر `Ramtin` هنوز اجرا نشده و منتظر تأیید صریح مالک است؛ هیچ نقش یا مجوز قبلی حذف نخواهد شد.
