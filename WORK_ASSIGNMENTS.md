@@ -1,5 +1,9 @@
 # Work Assignments
 
+## WORKBENCH-039-UNIT-CONTRAST — PC-B — VALIDATED / RELEASED
+
+- Reserve message-composer.tsx and this task's status documentation for the screenshot581 selected department contrast fix. Branch codex/pc-b-workbench-unit-contrast from develop@e82d8216. Remove the unconditional surface background from selected unit buttons, retain Rubi primary colors, match selected icon contrast and expose pressed state. No API, data, migration, dependency or shared component edits.
+
 ## WORKBENCH-038-PUBLISH — PC-B — MERGE_AUTHORIZED
 
 - User explicitly authorizes pushing and merging all changes from this Workbench task.

@@ -1,5 +1,10 @@
 # وضعیت پروژه
 
+## WORKBENCH-039 — Selected department contrast
+
+The messenger unit list no longer overrides the selected primary button with a light surface background. Selected labels and icons use theme foreground contrast, unselected units retain their surface style, and aria-pressed exposes selection. No message delivery or API behavior changes. Validation is recorded in docs/tasks/WORKBENCH-039-UNIT-CONTRAST.md.
+
+
 ## WORKBENCH-038 — عملکرد من
 
 تب «عملکرد من» و endpoint فقط‌خواندنی خود کاربر اضافه شد: مرخصی، شیفت و آخرین فیش
