@@ -22,7 +22,7 @@
 - Merge Commit `b5fdbe75` روی `develop` پوش شد؛ رزرو پیاده‌سازی این واحد آزاد است.
 - Web3100 از Worktree همین واحد با Build ID `RAhkQQeixfqHkOKXiubFX` فعال است.
 
-## FINANCE-003-INBOX-REDESIGN-INTEGRATION — PC-A — MERGE_AUTHORIZED / RETESTED
+## FINANCE-003-INBOX-REDESIGN-INTEGRATION — PC-A — COMPLETE / MERGED / ACTIVE
 
 - درخواست مالک محصول در 2026-09-13: بازطراحی حرفه‌ای `/finance/requests` و ورود درخواست‌های
   واقعی بخش‌های دیگر به کارتابل مالی. Branch مستقل
@@ -49,6 +49,9 @@
 - مالک محصول در 2026-09-13 نمایش کارتابل جدید روی Web3100 را مطالبه و ادغام/فعال‌سازی
   نسخه ترکیبی را مجاز کرد. پس از ادغام با آخرین `develop`، ۵۵ تست هدفمند، lint و
   typecheck چهار package و build تولیدی API/Web دوباره موفق شدند.
+- هر چهار Gate نهایی CI پاس شدند؛ PR #237 با Merge Commit `2fc5e6d2` وارد `develop`
+  شد. Web3100 با Build ID `H2SQ5Bcvdx249ZC-GP-m1` و API4190 سالم فعال‌اند و رزرو این
+  واحد آزاد است.
 
 ## HR-014-BACKEND-ONLY — PC-B — MERGE_AUTHORIZED
 

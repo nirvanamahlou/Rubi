@@ -3,7 +3,7 @@
 - **Computer:** PC-A
 - **Branch:** `codex/pc-a-finance-inbox-redesign-integration`
 - **Base:** `origin/develop@d65d8acc`
-- **Status:** MERGE_AUTHORIZED / RETESTED
+- **Status:** COMPLETE / MERGED / ACTIVE
 - **Ports:** Web 3200 / API 4200
 
 ## هدف
@@ -49,6 +49,9 @@
 - پس از درخواست مالک محصول برای نمایش تغییر در Web3100، شاخه روی آخرین `develop`
   ادغام شد؛ ۵۵ تست هدفمند، lint و typecheck چهار package و build تولیدی API/Web مجدداً
   موفق شدند. فعال‌سازی Web3100 و API لازم برای endpoint زنده مجاز است.
+- هر چهار Gate نهایی CI موفق شدند و PR #237 با Merge Commit `2fc5e6d2` وارد `develop`
+  شد. Web3100 با Build ID `H2SQ5Bcvdx249ZC-GP-m1` و API4190 سالم از نسخه ترکیبی
+  اجرا می‌شوند.
 
 ## محدودیت باقی‌مانده
 
