@@ -30,6 +30,10 @@ describe('header date integration', () => {
     expect(header.indexOf('<HeaderToday />')).toBeLessThan(
       header.indexOf('<HeaderActions />'),
     );
+    expect(header).toContain('data-header-utility-group');
+    expect(header).toContain(
+      'className="ms-auto flex shrink-0 items-center gap-1"',
+    );
     expect(header).toContain(
       'className="hidden shrink-0 whitespace-nowrap lg:flex"',
     );
