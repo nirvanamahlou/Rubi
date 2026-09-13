@@ -24,7 +24,7 @@ foreach ($port in @(3100,$ApiPort)) {
     $approved = $false
     foreach ($root in $approvedRoots) {
       $expected = if ($port -eq 3100) { Join-Path $root 'apps/web/node_modules/next/dist/bin/next' } else { Join-Path $root 'infrastructure/scripts/start-hr-api.mjs' }
-      if ($process.Name -eq 'node.exe' -and $process.CommandLine.Contains($expected)) { $approved = $true }
+      if ($process.Name -eq 'node.exe' -and $process.CommandLine.Replace('\','/').Contains($expected.Replace('\','/'))) { $approved = $true }
     }
     if (!$approved) { throw "Port $port belongs to an unapproved runtime; nothing was stopped." }
     $ownedProcesses += $process
