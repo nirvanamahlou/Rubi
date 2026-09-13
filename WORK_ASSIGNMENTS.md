@@ -1,5 +1,10 @@
 # Work Assignments
 
+## HR-014-BACKEND-ONLY — PC-B — MERGE_AUTHORIZED
+
+- User explicitly removes the standalone HR connections panel and wants integrations behind the existing forms. Reserve the central AppShell outlet removal, HR record referral link and now-unreachable referral UI/client/tests on `codex/pc-b-hr-backend-only-0912` from `origin/develop@6a4e0410`. Backend services, contracts, persisted records, permissions and the form directory/document/currency integrations stay intact. No migration, dependency or runtime takeover. Existing visibility context is retained for consumer compatibility. Push a review PR to develop; no automatic merge under the updated instructions.
+- Removed the global outlet and referral entry point plus its unused presentation files. Web lint/typecheck, all 260 existing HR/Organizations/layout tests and the 46-route production build passed. No backend/contract/database diff and no remaining `hrConnections` UI entry points. Implementation reservation released. User explicitly authorized merging PR #226; reconcile documentation additions from develop while preserving both work items, then merge after CI. No shared-runtime activation.
+
 ## DASHBOARDS-001 — PC-C — AUTHORIZED / PLANNED
 
 - با دستور صریح مالک محصول در 2026-09-13، اجرای Full-Stack بخش Dashboard به
