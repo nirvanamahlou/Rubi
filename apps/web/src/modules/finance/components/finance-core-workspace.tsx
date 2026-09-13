@@ -735,7 +735,7 @@ function ActionDialog({
   );
 }
 
-function InboxSpace() {
+export function FinanceInboxPreviewWorkspace() {
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<string>('ALL');
   const [selected, setSelected] = useState<FinanceInboxPreviewRequest | null>(
