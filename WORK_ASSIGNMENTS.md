@@ -1,5 +1,21 @@
 # Work Assignments
 
+## REPORTING-REMOVE-SCHEDULING — PC-C — READY_FOR_REVIEW / LOCAL_RUNTIME
+
+- درخواست مالک در 2026-09-13: سکشن «زمان‌بندی‌ها» و قابلیت «زمان‌بندی گزارش» از
+  فرم پیکربندی تمام گزارش‌ها، Frontend و Backend حذف شوند.
+- محدوده رزرو: `apps/web/src/modules/reports/**`، `apps/api/src/reporting/**`،
+  تست‌های هدفمند Reports و مستندات همین واحد کار. جدول تاریخی
+  `reporting_schedules` و Migrationهای اعمال‌شده برای جلوگیری از حذف داده دست‌نخورده
+  می‌مانند؛ Endpoint، DTO، Service و Repository اختصاصی زمان‌بندی از API عمومی حذف
+  می‌شوند.
+- Branchهای اجرایی: `codex/pc-c-reporting-remove-scheduling-ui` برای Web و
+  `codex/pc-c-reporting-remove-scheduling-api` برای API موجود در Worktree اجرای
+  Reporting. بدون تغییر Dependency/Lockfile، Seed، مجوز IAM یا ماژول‌های دیگر.
+- نتیجه: ۳۶ تست هدفمند Web و ۲۲ تست هدفمند API، lint و TypeScript هر دو بخش و
+  build تولیدی Web/API موفق‌اند. Smoke محلی Web و health API پاسخ ۲۰۰ و Endpoint
+  حذف‌شده زمان‌بندی پاسخ ۴۰۴ داد؛ Runtime جدید روی پورت‌های ۳۰۰۰ و ۴۰۰۰ فعال است.
+
 ## REPORTING-REMOVE-FAVORITES-UI — PC-C — READY_FOR_REVIEW
 
 - درخواست مالک در 2026-09-13: آیکن ستاره از تمام کارت‌های کاتالوگ حذف شود و

@@ -1,7 +1,6 @@
 import {
   ArrowLeft,
   BarChart3,
-  CalendarClock,
   Download,
   History,
 } from 'lucide-react';
@@ -36,15 +35,6 @@ export function ReportingOverview() {
       hint: 'تاریخچه واقعی اجراها، مدت و تعداد رکورد از پایگاه داده دریافت می‌شود.',
     },
     {
-      view: 'schedules' as ReportingView,
-      icon: CalendarClock,
-      label: 'اجرای خودکار بعدی',
-      value: 'مدیریت برنامه‌ها',
-      detail: 'فعال‌سازی، توقف و اجرای دستی',
-      action: 'مشاهده زمان‌بندی‌ها',
-      hint: 'زمان‌بندی‌ها در پایگاه داده ثبت می‌شوند؛ اجرای خودکار نیازمند Worker است.',
-    },
-    {
       view: 'downloads' as ReportingView,
       icon: Download,
       label: 'وضعیت خروجی‌ها',
@@ -58,7 +48,7 @@ export function ReportingOverview() {
   return (
     <section
       aria-label="خلاصه گزارش‌ها"
-      className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"
+      className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3"
     >
       {cards.map(({ view, icon: Icon, label, value, detail, action, hint }) => (
         <Link

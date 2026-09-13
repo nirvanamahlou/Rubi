@@ -57,3 +57,9 @@ currency و status. timezone گزارش و FX basis همراه report metadata �
 - تغییر View/KPI versioned و با نمونه قبل/بعد review می‌شود.
 
 تعاریف KPI در [KPI_DICTIONARY.md](KPI_DICTIONARY.md) است.
+
+## وضعیت زمان‌بندی گزارش
+
+قابلیت زمان‌بندی گزارش بنا بر تصمیم مالک محصول از UI و API عمومی Reports حذف شده
+است. مدل و جدول تاریخی فعلاً فقط برای جلوگیری از حذف داده نگه‌داری می‌شوند و هیچ
+Endpoint عمومی برای خواندن، ایجاد یا تغییر زمان‌بندی وجود ندارد.

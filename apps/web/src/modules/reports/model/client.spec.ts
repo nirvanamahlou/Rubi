@@ -124,7 +124,6 @@ describe('reporting public projection client', () => {
       myReports: 2,
       sharedWithMe: 1,
       runs: 5,
-      schedules: 3,
       exports: 4,
     };
     const fetch = vi

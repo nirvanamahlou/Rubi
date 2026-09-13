@@ -118,14 +118,12 @@ describe('ReportingWorkspace', () => {
       myReports: 3,
       sharedWithMe: 2,
       runs: 9,
-      schedules: 4,
       exports: 7,
     };
 
     expect(workspaceCountForView('saved', counts)).toBe(3);
     expect(workspaceCountForView('shared', counts)).toBe(2);
     expect(workspaceCountForView('recent', counts)).toBe(9);
-    expect(workspaceCountForView('schedules', counts)).toBe(4);
     expect(workspaceCountForView('downloads', counts)).toBe(7);
     expect(workspaceCountForView('saved', null)).toBeUndefined();
   });

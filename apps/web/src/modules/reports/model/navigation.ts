@@ -3,7 +3,6 @@ export const reportingViewIds = [
   'saved',
   'shared',
   'recent',
-  'schedules',
   'downloads',
 ] as const;
 

@@ -41,7 +41,6 @@ export const REPORTING_PERMISSION_MATRIX = [
   'reporting.sensitive.read',
   'reporting.export',
   'reporting.export_sensitive',
-  'reporting.schedule',
   'reporting.manage',
   'reporting.audit.read',
 ] as const;

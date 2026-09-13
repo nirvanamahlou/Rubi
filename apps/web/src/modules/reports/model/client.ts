@@ -89,7 +89,6 @@ export interface ReportingWorkspaceCounts {
   myReports: number;
   sharedWithMe: number;
   runs: number;
-  schedules: number;
   exports: number;
 }
 
@@ -260,7 +259,7 @@ export const reportingApi = {
       } satisfies SalesByOrganizationReportResult;
     });
   },
-  listWorkspace<T>(resource: 'saved' | 'runs' | 'schedule-items' | 'exports') {
+  listWorkspace<T>(resource: 'saved' | 'runs' | 'exports') {
     return request<readonly T[]>(`/${resource}`, { method: 'GET' });
   },
   workspaceCounts() {
@@ -272,10 +271,6 @@ export const reportingApi = {
     return request<Record<string, unknown>>('/saved', { method: 'POST', body: JSON.stringify(input) });
   },
   deleteSaved(id: string) { return request<{ deleted: true }>(`/saved/${id}`, { method: 'DELETE' }); },
-  toggleSchedule(id: string, status: 'ACTIVE' | 'PAUSED') { return request<{ id: string; status: string }>(`/schedule-items/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) }); },
-  createSchedule(input: { savedReportId: string; name: string; frequency: 'DAILY' | 'WEEKLY' | 'MONTHLY'; runAtLocalTime: string; recipients: string[]; format: 'CSV' | 'XLSX' | 'PDF' }) {
-    return request<Record<string, unknown>>('/schedule-items', { method: 'POST', body: JSON.stringify(input) });
-  },
   createExport(reportCode: string, input: { format: 'CSV' | 'XLSX' | 'PDF'; query: Record<string, unknown>; simulateFailure?: boolean }) {
     return request<Record<string, unknown>>(`/${reportCode}/exports`, { method: 'POST', body: JSON.stringify(input) });
   },

@@ -38,7 +38,7 @@ describe('Reporting navigation', () => {
     }
   });
 
-  it('keeps favorites within saved reports and restores its URL filter', () => {
+  it('parses the legacy favorites URL without rendering removed controls', () => {
     const state = parseReportingNavigation({
       view: 'saved',
       filter: 'favorites',
@@ -49,23 +49,24 @@ describe('Reporting navigation', () => {
         .savedFilter,
     ).toBe('all');
     const html = renderToStaticMarkup(<ReportingWorkspace {...state} />);
-    expect(html).toContain('فیلتر گزارش‌های من');
     expect(html).toContain('aria-busy="true"');
-    expect(html).toContain('/reports?view=saved&amp;filter=favorites');
+    expect(html).not.toContain('فیلتر گزارش‌های من');
+    expect(html).not.toContain('/reports?view=saved&amp;filter=favorites');
     expect(html).not.toContain('/reports?view=favorites');
   });
 
-  it('renders six useful report views without the redundant home entry', () => {
+  it('renders five useful report views without home or scheduling entries', () => {
     const html = renderToStaticMarkup(<ReportingWorkspace />);
     const nav =
       html.match(/<nav[^>]*aria-label="نماهای گزارش"[\s\S]*?<\/nav>/)?.[0] ??
       '';
-    expect(nav.match(/<a /g)).toHaveLength(6);
+    expect(nav.match(/<a /g)).toHaveLength(5);
     expect(nav).toContain('اشتراک‌گذاری‌شده با من');
     expect(nav).not.toContain('محبوب‌ها');
     expect(nav).toContain('در حال دریافت تعداد گزارش‌های من');
     expect(nav).not.toContain('تعداد هنوز در دسترس نیست');
     expect(nav).not.toContain('خانه گزارش‌ها');
+    expect(nav).not.toContain('زمان‌بندی‌ها');
     expect(nav).toContain('!text-white');
     expect(nav).toContain('[&amp;_*]:!text-white');
     expect(html).not.toContain('گزارش‌های متصل');
@@ -174,7 +175,7 @@ describe('Reporting navigation', () => {
     ).toBe(
       '/reports?view=saved&report=sales_by_service_route&from=2026-09-01&to=2026-09-10&company=NIYAYESH_SEIR_SAHAR&currency=USD&route=%D8%AA%D9%87%D8%B1%D8%A7%D9%86+%E2%86%90+%D8%B4%DB%8C%D8%B1%D8%A7%D8%B2',
     );
-    for (const view of ['shared', 'recent', 'schedules'] as const) {
+    for (const view of ['shared', 'recent'] as const) {
       expect(
         reportingOperationConfigurationHref(view, 'all', state),
       ).toContain(`view=${view}&report=sales_by_service_route`);

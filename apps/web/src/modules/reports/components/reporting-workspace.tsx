@@ -8,7 +8,6 @@ import {
   BarChart3,
   Bookmark,
   Check,
-  CalendarPlus,
   CalendarClock,
   ChevronDown,
   Clock3,
@@ -520,7 +519,6 @@ const workspaceViews: readonly {
   { id: 'saved', label: 'گزارش‌های من', icon: Bookmark },
   { id: 'shared', label: 'اشتراک‌گذاری‌شده با من', icon: Users },
   { id: 'recent', label: 'اجراها', icon: History },
-  { id: 'schedules', label: 'زمان‌بندی‌ها', icon: CalendarClock },
   { id: 'downloads', label: 'خروجی‌ها', icon: Download },
 ];
 
@@ -533,7 +531,6 @@ export function workspaceCountForView(
   if (view === 'saved') return counts.myReports;
   if (view === 'shared') return counts.sharedWithMe;
   if (view === 'recent') return counts.runs;
-  if (view === 'schedules') return counts.schedules;
   return counts.exports;
 }
 
@@ -572,124 +569,6 @@ export async function createAndDownloadReportExport({
     throw new Error('شناسه فایل خروجی از سرور دریافت نشد.');
   startDownload(reportingApi.exportDownloadUrl(artifactId));
   return artifactId;
-}
-
-function ScheduleDialog({
-  onMutation,
-  onOpenChange,
-  open,
-  report,
-}: {
-  onMutation: () => void | Promise<void>;
-  onOpenChange: (open: boolean) => void;
-  open: boolean;
-  report: ReportDefinition;
-}) {
-  const [name, setName] = useState(`گزارش دوره‌ای ${report.title}`);
-  const [frequency, setFrequency] = useState<'DAILY' | 'WEEKLY' | 'MONTHLY'>('WEEKLY');
-  const [runAtLocalTime, setRunAtLocalTime] = useState('08:30');
-  const [format, setFormat] = useState<'CSV' | 'XLSX' | 'PDF'>('XLSX');
-  const [recipients, setRecipients] = useState('');
-  const [saving, setSaving] = useState(false);
-  const [feedback, setFeedback] = useState('');
-  return (
-    <Dialog onOpenChange={onOpenChange} open={open}>
-      <DialogContent>
-        <DialogTitle>زمان‌بندی {report.title}</DialogTitle>
-        <DialogDescription>
-          Permission و دامنه شرکت/شعبه گیرندگان در هر اجرا دوباره بررسی می‌شود؛
-          دسترسی زمان ساخت Schedule کافی نیست.
-        </DialogDescription>
-        <div className="mt-5 grid gap-4 sm:grid-cols-2">
-          <label className="space-y-2 text-sm font-semibold">
-            نام زمان‌بندی
-            <Input onChange={(event) => setName(event.target.value)} placeholder="نام گزارش" value={name} />
-          </label>
-          <label className="space-y-2 text-sm font-semibold">
-            تناوب
-            <Select onValueChange={(value) => setFrequency(value as typeof frequency)} value={frequency}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="DAILY">روزانه</SelectItem>
-                <SelectItem value="WEEKLY">هفتگی</SelectItem>
-                <SelectItem value="MONTHLY">ماهانه</SelectItem>
-              </SelectContent>
-            </Select>
-          </label>
-          <label className="space-y-2 text-sm font-semibold">
-            ساعت اجرا
-            <Input onChange={(event) => setRunAtLocalTime(event.target.value)} value={runAtLocalTime} type="time" />
-          </label>
-          <label className="space-y-2 text-sm font-semibold">
-            نوع خروجی
-            <Select onValueChange={(value) => setFormat(value as typeof format)} value={format}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {report.outputs
-                  .filter((item) => item !== 'API')
-                  .map((item) => (
-                    <SelectItem key={item} value={item}>
-                      {item}
-                    </SelectItem>
-                  ))}
-              </SelectContent>
-            </Select>
-          </label>
-          <label className="space-y-2 text-sm font-semibold sm:col-span-2">
-            گیرندگان مجاز
-            <Input onChange={(event) => setRecipients(event.target.value)} inputMode="email" placeholder="ایمیل‌ها با ویرگول جدا شوند" value={recipients} />
-          </label>
-        </div>
-        <p className="mt-4 rounded-xl bg-primary/5 p-3 text-xs leading-6 text-muted-foreground">
-          زمان‌بندی در پایگاه داده ثبت می‌شود. در نسخه دمو اجرای دستی در صفحه
-          زمان‌بندی‌ها فعال است؛ اجرای خودکار پس از اتصال Worker انجام خواهد شد.
-        </p>
-        <div className="mt-6 flex justify-end gap-2">
-          <Button
-            onClick={() => onOpenChange(false)}
-            type="button"
-            variant="ghost"
-          >
-            بستن
-          </Button>
-          <Button
-            disabled={saving || !name.trim() || !recipients.trim()}
-            loading={saving}
-            onClick={async () => {
-              setSaving(true); setFeedback('');
-              try {
-                const saved = await reportingApi.saveReport({
-                  reportCode: report.code,
-                  name: `${name.trim()} — مبنا`,
-                  sharingScope: 'PERSONAL',
-                  isFavorite: false,
-                  filterState: {},
-                });
-                await reportingApi.createSchedule({
-                  savedReportId: String(saved.id), name: name.trim(), frequency,
-                  runAtLocalTime,
-                  recipients: recipients.split(',').map((value) => value.trim()).filter(Boolean),
-                  format,
-                });
-                setFeedback('زمان‌بندی با موفقیت ذخیره شد.');
-                await onMutation();
-              } catch (error) {
-                setFeedback(error instanceof Error ? error.message : 'ذخیره زمان‌بندی ناموفق بود.');
-              } finally { setSaving(false); }
-            }}
-            type="button"
-          >
-            <CalendarPlus className="size-4" /> ذخیره زمان‌بندی
-          </Button>
-        </div>
-        {feedback ? <p className="mt-3 rounded-xl bg-primary/5 p-3 text-sm" role="status">{feedback}</p> : null}
-      </DialogContent>
-    </Dialog>
-  );
 }
 
 function ReportCard({
@@ -1566,7 +1445,6 @@ export function ReportingWorkspace({
     'idle' | 'generating' | 'ready' | 'error'
   >('idle');
   const [exportFeedback, setExportFeedback] = useState('');
-  const [scheduleOpen, setScheduleOpen] = useState(false);
   const [resultPreviewVisible, setResultPreviewVisible] = useState(false);
   const [resultMode, setResultMode] = useState<ReportResultMode>('table');
   const [resultChartType, setResultChartType] =
@@ -1862,12 +1740,6 @@ export function ReportingWorkspace({
   return (
     <main className="space-y-6" dir="rtl">
       <PageHeader title="گزارش‌ها و خروجی‌های مدیریتی" />
-      <ScheduleDialog
-        onMutation={refreshWorkspaceCounts}
-        onOpenChange={setScheduleOpen}
-        open={scheduleOpen}
-        report={selected}
-      />
       <nav
         aria-label="نماهای گزارش"
         className="flex gap-2 overflow-x-auto pb-1"
@@ -2231,7 +2103,7 @@ export function ReportingWorkspace({
                     <div>
                       <h2 className="text-sm font-bold">عملیات گزارش</h2>
                       <p className="mt-1 text-xs leading-5 text-muted-foreground">
-                        اجرا، ذخیره، زمان‌بندی و خروجی در همین Workspace
+                        اجرا، ذخیره و خروجی در همین Workspace
                       </p>
                     </div>
                     <Button
@@ -2279,15 +2151,6 @@ export function ReportingWorkspace({
                       ذخیره گزارش
                     </Button>
                     {saveFeedback ? <p className="rounded-lg bg-primary/5 p-2 text-xs leading-5" role="status">{saveFeedback}</p> : null}
-                    <Button
-                      className="w-full"
-                      onClick={() => setScheduleOpen(true)}
-                      type="button"
-                      variant="outline"
-                    >
-                      <CalendarPlus aria-hidden="true" className="size-4" />
-                      زمان‌بندی گزارش
-                    </Button>
                     <div className="border-t pt-3">
                       <label
                         className="mb-1.5 block text-xs font-semibold"

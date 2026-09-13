@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
-import { AlertTriangle, Download, Pause, Play, RefreshCw, Trash2 } from 'lucide-react';
+import { AlertTriangle, Download, Play, RefreshCw, Trash2 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Badge, Card, EmptyState, Skeleton } from '@/components/ui/surfaces';
@@ -23,7 +23,6 @@ const statusClass = (status: unknown) => status === 'SUCCEEDED' || status === 'R
 function resource(view: ReportingView) {
   if (view === 'saved' || view === 'shared') return 'saved' as const;
   if (view === 'recent') return 'runs' as const;
-  if (view === 'schedules') return 'schedule-items' as const;
   return 'exports' as const;
 }
 
@@ -75,8 +74,7 @@ export function ReportingOperationsView({ view, savedFilter, onMutation }: { vie
                 `reporting.filters.${reportCode}`,
                 JSON.stringify(configurationState.filterValues),
               );
-            }}><Play className="size-4" /> {view === 'schedules' ? 'اجرای دستی' : status === 'FAILED' ? 'تلاش مجدد' : 'اجرا'}</Link></Button>}
-            {view === 'schedules' ? <Button size="sm" variant="outline" onClick={async () => { const next = status === 'ACTIVE' ? 'PAUSED' : 'ACTIVE'; await reportingApi.toggleSchedule(row.id, next); setFeedback(next === 'ACTIVE' ? 'زمان‌بندی فعال شد.' : 'زمان‌بندی متوقف شد.'); await load(); await onMutation?.(); }}>{status === 'ACTIVE' ? <Pause className="size-4" /> : <Play className="size-4" />}{status === 'ACTIVE' ? 'توقف' : 'فعال‌سازی'}</Button> : null}
+            }}><Play className="size-4" /> {status === 'FAILED' ? 'تلاش مجدد' : 'اجرا'}</Link></Button>}
             {view === 'saved' ? <Button size="sm" variant="ghost" onClick={async () => { if (!window.confirm('این گزارش ذخیره‌شده حذف شود؟')) return; await reportingApi.deleteSaved(row.id); setFeedback('گزارش حذف شد.'); await load(); await onMutation?.(); }}><Trash2 className="size-4" /> حذف</Button> : null}
           </div></td>
         </tr>;

@@ -15,7 +15,7 @@ const configuredReport: ReportingFilterUrlState = {
 };
 
 describe('report operation configuration navigation', () => {
-  it.each(['saved', 'shared', 'recent', 'schedules'] as const)(
+  it.each(['saved', 'shared', 'recent'] as const)(
     'keeps the %s view active while opening its configured report',
     (view) => {
       const href = reportingOperationConfigurationHref(
