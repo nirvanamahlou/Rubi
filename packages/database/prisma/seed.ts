@@ -142,6 +142,8 @@ async function seed(): Promise<void> {
             code: 'finance_staff',
             name: 'کارشناس مالی',
             permissions: [
+              'finance.read',
+              'hr.connections.finance.receive',
               'documents.list',
               'documents.metadata.read',
               'documents.file.read',

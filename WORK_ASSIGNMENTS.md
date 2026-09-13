@@ -1,6 +1,6 @@
 # Work Assignments
 
-## FINANCE-003-INBOX-REDESIGN-INTEGRATION — PC-A — IN_PROGRESS
+## FINANCE-003-INBOX-REDESIGN-INTEGRATION — PC-A — READY_FOR_REVIEW
 
 - درخواست مالک محصول در 2026-09-13: بازطراحی حرفه‌ای `/finance/requests` و ورود درخواست‌های
   واقعی بخش‌های دیگر به کارتابل مالی. Branch مستقل
@@ -19,6 +19,11 @@
 - بدون Schema/Migration/Dependency، بدون ثبت/تأیید مالی عملیاتی، بدون Query مستقیم جدول
   ماژول دیگر از Finance و بدون تغییر runtime مشترک 3100/4190. Web/API این Task فقط روی
   3200/4200 بررسی می‌شوند. Push و PR به develop مجاز؛ Merge/Force Push ممنوع.
+- پیاده‌سازی کامل شد: endpoint فقط‌خواندنی Finance، projection شعبه‌محور Sales، مصرف
+  سرویس عمومی HR، permission `finance.read` و رابط بازطراحی‌شده با وضعیت اتصال، KPI،
+  جست‌وجو، فیلتر و master-detail. ۸۲ تست هدفمند، lint محدوده، typecheck چهار package و
+  build تولیدی API/Web موفق؛ QA مرورگر ایزوله روی 3201 انجام شد و runtime مشترک تغییر
+  نکرد. Reservations/Purchases همچنان صریحاً `NOT_CONNECTED` و عملیات مالی غیرفعال‌اند.
 
 ## HR-014-BACKEND-ONLY — PC-B — MERGE_AUTHORIZED
 

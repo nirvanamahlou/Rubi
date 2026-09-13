@@ -28,6 +28,17 @@ const coreModelSource = readFileSync(
   join(process.cwd(), 'src', 'modules', 'finance', 'model', 'finance-core.ts'),
   'utf8',
 );
+const liveInboxSource = readFileSync(
+  join(
+    process.cwd(),
+    'src',
+    'modules',
+    'finance',
+    'components',
+    'finance-inbox-live-workspace.tsx',
+  ),
+  'utf8',
+);
 const formSource = readFileSync(
   join(
     process.cwd(),
@@ -83,6 +94,13 @@ describe('finance workspace component contract', () => {
     expect(coreSource).not.toContain('label="Idempotency Key"');
     expect(coreSource).not.toContain('label="Version"');
     expect(coreSource).toContain('هیچ درخواست عملیاتی ثبت نمی‌شود');
+    expect(coreSource).toContain('<FinanceInboxLiveWorkspace />');
+    expect(coreSource).toContain('پیش‌نمایش فرم‌های دریافت و پرداخت');
+    expect(liveInboxSource).toContain('مرکز درخواست‌های مالی');
+    expect(liveInboxSource).toContain('فقط منابع دارای Producer واقعی');
+    expect(liveInboxSource).toContain('در انتظار Producer');
+    expect(liveInboxSource).toContain('origin');
+    expect(liveInboxSource).not.toContain('financeInboxPreviewRequests');
     expect(coreSource).toContain('<FinanceWorkspace />');
   });
 

@@ -363,6 +363,26 @@ export interface SalesFinanceSubmissionV1 {
   occurredAt: string;
 }
 
+export interface SalesFinanceInboxPaymentV1 {
+  version: 1;
+  paymentId: string;
+  contractId: string;
+  contractNumber: string;
+  customerId: string;
+  customerNameSnapshot: string;
+  branchId: string;
+  amount: string;
+  currencyCode: string;
+  method: SalesPaymentMethod;
+  description: string | null;
+  paymentReference: string | null;
+  dueAt: string;
+  createdAt: string;
+  createdByUserId: string;
+  createdByName: string | null;
+  contractVersion: number;
+}
+
 export interface SalesFinancePaymentConfirmedV1 {
   version: 1;
   eventId: string;

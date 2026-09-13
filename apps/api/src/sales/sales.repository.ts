@@ -72,6 +72,30 @@ export class SalesRepository {
     });
   }
 
+  pendingFinancePayments(branchIds: readonly string[]) {
+    if (!branchIds.length) return Promise.resolve([]);
+    return this.database.client.salesContractPaymentEntry.findMany({
+      where: {
+        status: 'PENDING_FINANCE_CONFIRMATION',
+        contract: { branchId: { in: [...branchIds] } },
+      },
+      include: {
+        contract: {
+          select: {
+            id: true,
+            contractNumber: true,
+            customerId: true,
+            customerNameSnapshot: true,
+            branchId: true,
+            version: true,
+          },
+        },
+      },
+      orderBy: [{ dueAt: 'asc' }, { createdAt: 'asc' }, { id: 'asc' }],
+      take: 200,
+    });
+  }
+
   pendingReservationRequests() {
     return this.database.client.salesReservationRequest.findMany({
       where: {

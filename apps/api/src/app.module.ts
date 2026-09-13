@@ -6,6 +6,7 @@ import { environmentValidationSchema } from './config/environment.validation';
 import { CustomersModule } from './customers/customers.module';
 import { DatabaseModule } from './database/database.module';
 import { DocumentsModule } from './documents/documents.module';
+import { FinanceModule } from './finance/finance.module';
 import { HealthController } from './health/health.controller';
 import { HealthService } from './health/health.service';
 import { HrModule } from './hr/hr.module';
@@ -30,6 +31,7 @@ import { SalesModule } from './sales/sales.module';
     DatabaseModule,
     B2bModule,
     DocumentsModule,
+    FinanceModule,
     CustomersModule,
     MasterDataModule,
     MessagingModule,

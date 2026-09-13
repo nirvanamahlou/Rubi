@@ -23,6 +23,7 @@ import type {
   SalesContractSummary,
   SalesPaymentCreateRequest,
   SalesReservationRequestV1,
+  SalesFinanceInboxPaymentV1,
 } from '@rubi/contracts';
 import type { Prisma } from '@rubi/database';
 
@@ -433,6 +434,43 @@ export class SalesService {
         total: result.total,
       },
     };
+  }
+
+  async financeInbox(
+    actor: AuthenticatedActor,
+  ): Promise<readonly SalesFinanceInboxPaymentV1[]> {
+    if (!has(actor, 'finance.read'))
+      throw new ForbiddenException({
+        code: 'FINANCE_INBOX_FORBIDDEN',
+        message: 'مجوز مشاهده کارتابل مالی وجود ندارد.',
+      });
+    const rows = await this.repository.pendingFinancePayments(actor.branchIds);
+    const names = new Map(
+      (
+        await this.repository.findUserDisplayNames(
+          rows.map(({ createdByUserId }) => createdByUserId),
+        )
+      ).map((user) => [user.id, user.displayName]),
+    );
+    return rows.map((row) => ({
+      version: 1,
+      paymentId: row.id,
+      contractId: row.contract.id,
+      contractNumber: row.contract.contractNumber,
+      customerId: row.contract.customerId,
+      customerNameSnapshot: row.contract.customerNameSnapshot,
+      branchId: row.contract.branchId,
+      amount: row.amount.toString(),
+      currencyCode: row.currencyCode,
+      method: row.method,
+      description: row.description,
+      paymentReference: row.paymentReference,
+      dueAt: row.dueAt.toISOString(),
+      createdAt: row.createdAt.toISOString(),
+      createdByUserId: row.createdByUserId,
+      createdByName: names.get(row.createdByUserId) ?? null,
+      contractVersion: row.contract.version,
+    }));
   }
 
   async detail(id: string, actor: AuthenticatedActor) {

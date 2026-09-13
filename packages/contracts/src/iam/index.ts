@@ -1,6 +1,6 @@
 import { HR_PERMISSION_CODES } from '../hr';
 
-export const IAM_PERMISSION_CONTRACT_VERSION = 9 as const;
+export const IAM_PERMISSION_CONTRACT_VERSION = 10 as const;
 export const IAM_STEP_UP_CONTRACT_VERSION = 1 as const;
 
 export const IAM_CORE_PERMISSION_CODES = [
@@ -124,6 +124,7 @@ export const IAM_PERMISSION_CODES = [
   'ticket_catalog.manage',
   'reservations.read',
   'reservations.documents.manage',
+  'finance.read',
   'finance.financial_release.read',
   'finance.financial_release.approve',
   'reservations.hotel_purchase.write',

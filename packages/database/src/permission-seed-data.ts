@@ -174,6 +174,7 @@ export const PERMISSION_SEED_DATA = [
   ['ticket_catalog.read', 'ticket_catalog', 'مشاهده بلیت قابل فروش'],
   ['ticket_catalog.manage', 'ticket_catalog', 'مدیریت بلیت قابل فروش'],
   ['reservations.documents.manage', 'reservations', 'عملیات مدارک رزرواسیون'],
+  ['finance.read', 'finance', 'مشاهده کارتابل مالی'],
   ['finance.financial_release.read', 'finance', 'مشاهده مجوز تحویل مدارک'],
   ['finance.financial_release.approve', 'finance', 'تأیید یا لغو تحویل مدارک'],
   ['reservations.read', 'reservations', 'مشاهده صف رزرواسیون شعبه'],
