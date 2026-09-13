@@ -1,8 +1,8 @@
 # Work Assignments
 
-## FINANCE-007-INBOX-COMPLETION — PC-A — IN_PROGRESS
+## FINANCE-007-INBOX-COMPLETION — PC-A — READY_FOR_REVIEW / RUNTIME PERMISSION PENDING
 
-Base `4a84f844`; COMPUTER_ID=PC-A. رفع 403 کارتابل برای نقش واقعی Finance، تکمیل مجوزهای حداقلی `finance_staff`، اتصال Producer ثبت‌شده خرید خدمات رزرواسیون، حذف preview و پیام‌های فنی/غیرفعال از `/finance/requests` و تست‌های متمرکز. محدوده Finance API/Web، Reservations public boundary، seed role specification و اسناد وضعیت است. بدون Schema/Migration، وابستگی، داده ساختگی یا دسترسی مستقیم Finance به جدول ماژول دیگر. تغییر عملیاتی مجاز: همگام‌سازی افزایشی مجوزهای نقش Finance و انتساب نقش به کاربر `Ramtin`؛ هیچ نقش یا مجوز قبلی حذف نمی‌شود. ماژول خرید مستقل Backend عملیاتی ندارد و تا ایجاد Producer واقعی، داده‌ای برای آن جعل نمی‌شود.
+Base `4a84f844`; COMPUTER_ID=PC-A. مشخصات نقش `finance_staff` با مجوزهای حداقلی کارتابل و تحویل مالی تکمیل شد؛ کارتابل اکنون درخواست‌های واقعی فروش، ارجاع‌های مالی منابع انسانی و خرید خدمات رزرواسیون را از Public Service ماژول‌ها جمع می‌کند. Preview قدیمی، متن‌های فنی، وضعیت اتصال Producer و اقدام نمایشی غیرفعال از `/finance/requests` حذف شد. ماژول خرید مستقل Backend عملیاتی ندارد و تا ایجاد Producer واقعی داده‌ای برای آن جعل نمی‌شود. ۳ تست API، ۸ تست قرارداد Web، ۳ تست Migration، lint محدوده، typecheck و build تولیدی API/Web موفق‌اند و Web3100/API4190 فعال‌اند. انتساب افزایشی نقش `finance_staff` به کاربر `Ramtin` هنوز اجرا نشده و منتظر تأیید صریح مالک است؛ هیچ نقش یا مجوز قبلی حذف نخواهد شد.
 
 ## WORKBENCH-038-PUBLISH — PC-B — MERGE_AUTHORIZED
 
