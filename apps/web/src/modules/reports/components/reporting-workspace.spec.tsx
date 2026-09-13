@@ -200,7 +200,8 @@ describe('ReportingWorkspace', () => {
     expect(html).not.toContain('وضعیت اتصال داده');
     expect(html).not.toContain('خروجی جدید');
     expect(html).toContain('whitespace-nowrap');
-    expect(html).toContain('aria-label="افزودن به محبوب‌های این نشست"');
+    expect(html).not.toContain('aria-label="افزودن به محبوب‌های این نشست"');
+    expect(html).not.toContain('aria-label="حذف از محبوب‌های این نشست"');
     expect(html).not.toContain('فیلترهای قابل استفاده');
     expect(html).not.toContain('>Filter Snapshot</h2>');
     expect(html).not.toContain('id="report-from-date"');
@@ -428,12 +429,12 @@ describe('ReportingWorkspace', () => {
     });
   });
 
-  it('forces white content for active dark report controls', () => {
+  it('does not render saved-report favorite filters', () => {
     const html = renderToStaticMarkup(
       <ReportingWorkspace savedFilter="all" view="saved" />,
     );
-    expect(html).toContain('همه گزارش‌های من');
-    expect(html).toContain('!text-white');
-    expect(html).toContain('[&amp;_svg]:!text-white');
+    expect(html).not.toContain('همه گزارش‌های من');
+    expect(html).not.toContain('محبوب‌ها');
+    expect(html).not.toContain('aria-label="فیلتر گزارش‌های من"');
   });
 });

@@ -23,7 +23,6 @@ import {
   Users,
   Search,
   ShieldCheck,
-  Star,
   Table2,
   WifiOff,
   X,
@@ -694,14 +693,10 @@ function ScheduleDialog({
 }
 
 function ReportCard({
-  favorite,
-  onFavoriteChange,
   onSelect,
   report,
   selected,
 }: {
-  favorite: boolean;
-  onFavoriteChange: (report: ReportDefinition) => void;
   onSelect: (report: ReportDefinition) => void;
   report: ReportDefinition;
   selected: boolean;
@@ -716,8 +711,7 @@ function ReportCard({
           : 'flex h-full flex-col p-4'
       }
     >
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
+      <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-1.5">
             <Badge className="font-mono font-semibold" dir="ltr">
               {report.displayCode}
@@ -743,28 +737,6 @@ function ReportCard({
             <span className="font-semibold text-foreground">خروجی: </span>
             {report.description}
           </p>
-        </div>
-        <Button
-          aria-label={
-            favorite
-              ? 'حذف از محبوب‌های این نشست'
-              : 'افزودن به محبوب‌های این نشست'
-          }
-          aria-pressed={favorite}
-          className="shrink-0"
-          onClick={() => onFavoriteChange(report)}
-          size="sm"
-          title="این انتخاب در نسخه فعلی فقط تا بازبودن صفحه حفظ می‌شود."
-          type="button"
-          variant="ghost"
-        >
-          <Star
-            aria-hidden="true"
-            className={
-              favorite ? 'size-4 fill-current text-amber-500' : 'size-4'
-            }
-          />
-        </Button>
       </div>
       <Button
         aria-haspopup="dialog"
@@ -1502,9 +1474,6 @@ export function ReportingWorkspace({
   const [availability, setAvailability] = useState<ReportAvailability | 'all'>(
     'all',
   );
-  const [favoriteReportCodes, setFavoriteReportCodes] = useState<Set<string>>(
-    () => new Set(),
-  );
   const [configurationOpen, setConfigurationOpen] = useState(
     Boolean(initialFilterState?.reportCode),
   );
@@ -1693,15 +1662,6 @@ export function ReportingWorkspace({
     setQuery('');
     setCategory('all');
     setAvailability('all');
-  }
-
-  function toggleFavorite(report: ReportDefinition) {
-    setFavoriteReportCodes((current) => {
-      const next = new Set(current);
-      if (next.has(report.code)) next.delete(report.code);
-      else next.add(report.code);
-      return next;
-    });
   }
 
   function clearAllReportFilters() {
@@ -1920,9 +1880,7 @@ export function ReportingWorkspace({
                 <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
                   {visible.map((report) => (
                     <ReportCard
-                      favorite={favoriteReportCodes.has(report.code)}
                       key={report.code}
-                      onFavoriteChange={toggleFavorite}
                       onSelect={(nextReport) => {
                         setSelected(nextReport);
                         setPersistFilterState(true);
@@ -1970,34 +1928,6 @@ export function ReportingWorkspace({
           <h2 className="text-lg font-bold">
             {workspaceViews.find((item) => item.id === view)?.label}
           </h2>
-          {view === 'saved' ? (
-            <nav
-              aria-label="فیلتر گزارش‌های من"
-              className="flex flex-wrap gap-2"
-            >
-              {(['all', 'favorites'] as const).map((filter) => (
-                <Button
-                  asChild
-                  className={
-                    savedFilter === filter ? darkSurfaceContentClass : undefined
-                  }
-                  key={filter}
-                  variant={savedFilter === filter ? 'primary' : 'outline'}
-                  aria-current={savedFilter === filter ? 'page' : undefined}
-                >
-                  <Link
-                    href={reportingViewHref('saved', filter)}
-                    scroll={false}
-                  >
-                    {filter === 'favorites' ? (
-                      <Star aria-hidden="true" className="size-4" />
-                    ) : null}
-                    {filter === 'all' ? 'همه گزارش‌های من' : 'محبوب‌ها'}
-                  </Link>
-                </Button>
-              ))}
-            </nav>
-          ) : null}
           <ReportingOperationsView
             onMutation={refreshWorkspaceCounts}
             view={view}
@@ -2248,7 +2178,7 @@ export function ReportingWorkspace({
                             reportCode: selected.code,
                             name: selected.title,
                             sharingScope: 'PERSONAL',
-                            isFavorite: favoriteReportCodes.has(selected.code),
+                            isFavorite: false,
                             filterState: {
                               fromDate,
                               toDate,
