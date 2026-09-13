@@ -1,5 +1,13 @@
 # برنامه اجرای Rubi
 
+## PROCUREMENT-001 — PC-B
+
+- [x] مدل و Migration افزایشی، مجوزهای deny-by-default و مرزهای عمومی مالک‌ها
+- [x] جریان خرید نسخه‌دار، UI فارسی، گزارش/صف واقعی و خروجی Documents
+- [x] PostgreSQL18 خالی، Seed تکرارپذیر و تست‌های یکپارچگی/جریان تجاری
+- [x] اعتبارسنجی کامل Monorepo، بار و مرورگر؛ تحویل برای Draft PR بدون Merge
+- [ ] پس از قرارداد مصوب: Policy تجاری، مصرف Finance/Tasks و ارجاع Reservations
+
 ## CUSTOMER-AFFAIRS-002 — برش عملیاتی
 
 - [x] Persistence افزایشی Lead/Ticket/Timeline/Handoff/Referral/SLA/Survey/Corrective Action/Command/Audit

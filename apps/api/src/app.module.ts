@@ -19,6 +19,7 @@ import { NotificationsModule } from './notifications/notifications.module';
 import { SalesModule } from './sales/sales.module';
 import { WorkbenchFeedbackModule } from './workbench-feedback/workbench-feedback.module';
 import { WorkbenchModule } from './workbench/workbench.module';
+import { ProcurementModule } from './procurement/procurement.module';
 
 @Module({
   imports: [
@@ -46,6 +47,7 @@ import { WorkbenchModule } from './workbench/workbench.module';
     HrModule,
     WorkbenchFeedbackModule,
     WorkbenchModule,
+    ProcurementModule,
   ],
   controllers: [HealthController],
   providers: [HealthService],

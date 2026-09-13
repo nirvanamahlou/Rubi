@@ -236,21 +236,23 @@ async function seed(): Promise<void> {
           },
         ] as const;
         await Promise.all(
-          seededPermissions.map((permission) =>
-            transaction.rolePermission.upsert({
-              where: {
-                roleId_permissionId: {
+          seededPermissions
+            .filter((permission) => !permission.code.startsWith('procurement.'))
+            .map((permission) =>
+              transaction.rolePermission.upsert({
+                where: {
+                  roleId_permissionId: {
+                    roleId: administrator.id,
+                    permissionId: permission.id,
+                  },
+                },
+                create: {
                   roleId: administrator.id,
                   permissionId: permission.id,
                 },
-              },
-              create: {
-                roleId: administrator.id,
-                permissionId: permission.id,
-              },
-              update: {},
-            }),
-          ),
+                update: {},
+              }),
+            ),
         );
         for (const spec of documentRoleSpecs) {
           const role = await transaction.role.upsert({

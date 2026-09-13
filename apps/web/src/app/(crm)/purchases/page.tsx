@@ -1,10 +1,9 @@
 import type { Metadata } from 'next';
 
-import { ModuleFoundationWorkspace } from '@/modules/module-foundation/components/module-foundation-workspace';
-import { foundationModules } from '@/modules/module-foundation/model/foundation';
+import { ProcurementWorkspace } from '@/modules/procurement/workspace';
 
 export const metadata: Metadata = { title: 'خرید و تأمین' };
 
 export default function Page() {
-  return <ModuleFoundationWorkspace config={foundationModules['purchases']} />;
+  return <ProcurementWorkspace />;
 }

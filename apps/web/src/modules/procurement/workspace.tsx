@@ -1,0 +1,1060 @@
+'use client';
+import { Suspense, useEffect, useRef, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import type {
+  ProcurementPermission,
+  ProcurementRequestV1,
+} from '@rubi/contracts';
+import { Button } from '@/components/ui/button';
+import { Input, FormField, Textarea } from '@/components/ui/form-controls';
+import {
+  Alert,
+  Badge,
+  Card,
+  EmptyState,
+  PageHeader,
+  Skeleton,
+} from '@/components/ui/surfaces';
+import { procurementApi, commandAttempt, type Bootstrap } from './api';
+import { DraftForm, selectClass } from './draft-form';
+import { statusLabels } from './model';
+import { OperationForm } from './operation-form';
+import { ProcurementReports } from './reports';
+import { ProcurementOwnerPicker } from './owner-picker';
+import { ProcurementExportPanel } from './export-panel';
+import {
+  formatProcurementDate,
+  formatProcurementRecordValue,
+} from './presentation';
+
+const groups = [
+  'میزکار خرید',
+  'درخواست‌های خرید',
+  'تأییدهای من',
+  'تأمین‌کنندگان',
+  'استعلام‌ها و پیشنهادها',
+  'سفارش‌های خرید',
+  'دریافت، پذیرش و مغایرت',
+  'فاکتورها و ارتباط مالی',
+  'گزارش و تنظیمات',
+] as const;
+const queues = [
+  ['own', 'کارهای من'],
+  ['unit', 'صف واحد'],
+  ['unassigned', 'بدون مسئول'],
+  ['approvals', 'تأییدهای معوق'],
+  ['returned', 'برگشتی‌ها'],
+  ['late', 'سفارش‌های دیرکرددار'],
+  ['partial', 'تحویل ناقص'],
+  ['discrepant', 'فاکتور دارای مغایرت'],
+  ['finance', 'منتظر مالی'],
+] as const;
+const kinds = [
+  ['quotations', 'استعلام‌ها'],
+  ['orders', 'سفارش‌ها'],
+  ['receipts', 'رسید کالا'],
+  ['adjustments', 'اصلاحات جبرانی'],
+  ['acceptances', 'پذیرش خدمت'],
+  ['discrepancies', 'مغایرت‌ها'],
+  ['returns', 'مرجوعی‌ها'],
+  ['invoices', 'فاکتورها'],
+  ['handoffs', 'ارجاع مالی'],
+  ['audit', 'تاریخچه'],
+] as const;
+const nextAction: Record<ProcurementRequestV1['status'], string> = {
+  DRAFT: 'تکمیل و ارسال درخواست',
+  SUBMITTED: 'تعیین مسئول و بررسی',
+  IN_REVIEW: 'ثبت تصمیم تأییدکننده',
+  CHANGES_REQUESTED: 'اصلاح و ارسال مجدد',
+  APPROVED: 'دریافت پیشنهاد تأمین‌کنندگان',
+  SOURCING: 'پیگیری سفارش و تحویل',
+  REJECTED: 'پایان بررسی',
+  CANCELLED: 'لغوشده',
+  CLOSED: 'پرونده بسته است',
+};
+const errorText = (error: unknown) =>
+  error instanceof Error ? error.message : 'دریافت اطلاعات ناموفق بود.';
+function Pager({
+  page,
+  hasMore,
+  setPage,
+}: {
+  page: number;
+  hasMore: boolean;
+  setPage: (value: number) => void;
+}) {
+  return (
+    <nav
+      aria-label="صفحه‌بندی"
+      className="flex items-center justify-between gap-3 pt-4"
+    >
+      <Button
+        variant="outline"
+        disabled={page === 1}
+        onClick={() => setPage(page - 1)}
+      >
+        قبلی
+      </Button>
+      <span className="text-sm">صفحه {page.toLocaleString('fa-IR')}</span>
+      <Button
+        variant="outline"
+        disabled={!hasMore}
+        onClick={() => setPage(page + 1)}
+      >
+        بعدی
+      </Button>
+    </nav>
+  );
+}
+export function ProcurementWorkspace() {
+  const bootstrap = useQuery({
+    queryKey: ['procurement', 'bootstrap'],
+    queryFn: procurementApi.bootstrap,
+    retry: false,
+  });
+  return (
+    <section dir="rtl" className="space-y-6">
+      <PageHeader
+        eyebrow="عملیات شرکت"
+        title="خرید و تأمین"
+        description="از نیاز سازمان تا تأمین، تحویل و پیگیری مالی؛ هر پرونده با مسئول و سابقه مشخص."
+      />
+      {bootstrap.isPending ? (
+        <div role="status" aria-label="در حال دریافت دسترسی‌ها">
+          <Skeleton className="h-72" />
+        </div>
+      ) : bootstrap.isError ? (
+        <Alert
+          tone="error"
+          title="دسترسی به خرید برقرار نشد"
+          description={errorText(bootstrap.error)}
+        >
+          <Button
+            className="mt-3"
+            variant="outline"
+            onClick={() => void bootstrap.refetch()}
+          >
+            تلاش دوباره
+          </Button>
+        </Alert>
+      ) : (
+        <Suspense fallback={<Skeleton className="h-72" />}>
+          <WorkspaceContent bootstrap={bootstrap.data} />
+        </Suspense>
+      )}
+    </section>
+  );
+}
+function WorkspaceContent({ bootstrap }: { bootstrap: Bootstrap }) {
+  const requestFromUrl = useSearchParams().get('request');
+  return (
+    <WorkspaceState
+      key={requestFromUrl ?? 'list'}
+      bootstrap={bootstrap}
+      initialRequestId={requestFromUrl}
+    />
+  );
+}
+function WorkspaceState({
+  bootstrap,
+  initialRequestId,
+}: {
+  bootstrap: Bootstrap;
+  initialRequestId: string | null;
+}) {
+  const client = useQueryClient();
+  const [group, setGroup] = useState(0);
+  const [queue, setQueue] = useState('own');
+  const [status, setStatus] = useState('');
+  const [search, setSearch] = useState('');
+  const [querySearch, setQuerySearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [selectedId, setSelectedId] = useState<string | null>(initialRequestId);
+  const [editing, setEditing] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const can = (permission: ProcurementPermission) =>
+    bootstrap.permissions.includes(permission);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setQuerySearch(search);
+      setPage(1);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [search]);
+  const queryQueue = group === 2 ? 'approvals' : group === 0 ? queue : '';
+  const list = useQuery({
+    queryKey: [
+      'procurement',
+      'requests',
+      page,
+      querySearch,
+      status,
+      queryQueue,
+    ],
+    queryFn: () =>
+      procurementApi.list(
+        new URLSearchParams({
+          page: String(page),
+          search: querySearch,
+          status,
+          queue: queryQueue,
+        }),
+      ),
+    enabled: group !== 3 && group !== 8,
+    retry: false,
+  });
+  const suppliers = useQuery({
+    queryKey: ['procurement', 'suppliers', page, querySearch],
+    queryFn: () => procurementApi.suppliers(page, querySearch),
+    enabled: group === 3,
+    retry: false,
+  });
+  const detail = useQuery({
+    queryKey: ['procurement', 'request', selectedId],
+    queryFn: () => procurementApi.get(selectedId!),
+    enabled: !!selectedId,
+    retry: false,
+  });
+  function saved(request: ProcurementRequestV1) {
+    setCreating(false);
+    setEditing(false);
+    setSelectedId(request.id);
+    client.setQueryData(['procurement', 'request', request.id], request);
+    void client.invalidateQueries({ queryKey: ['procurement', 'requests'] });
+    void client.invalidateQueries({
+      queryKey: ['procurement', 'operation-options'],
+    });
+    void client.invalidateQueries({ queryKey: ['procurement', 'reports'] });
+  }
+  if (creating || (editing && detail.data))
+    return (
+      <DraftForm
+        key={creating ? 'new' : detail.data!.id}
+        bootstrap={bootstrap}
+        {...(!creating && detail.data ? { request: detail.data } : {})}
+        onSaved={saved}
+        onClose={() => {
+          setCreating(false);
+          setEditing(false);
+        }}
+      />
+    );
+  return (
+    <>
+      <nav
+        aria-label="بخش‌های خرید و تأمین"
+        className="grid gap-2 rounded-2xl border border-border bg-surface p-3 sm:grid-cols-3 xl:grid-cols-9"
+      >
+        {groups.map((label, index) => (
+          <button
+            key={label}
+            aria-current={group === index ? 'page' : undefined}
+            className={`min-h-12 rounded-xl px-3 py-2 text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${group === index ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted'}`}
+            onClick={() => {
+              setGroup(index);
+              setPage(1);
+              setSelectedId(null);
+            }}
+          >
+            {label}
+          </button>
+        ))}
+      </nav>
+      {bootstrap.policy === 'POLICY_NOT_CONFIGURED' && (
+        <Alert
+          tone="warning"
+          title="سیاست تأیید خرید هنوز تنظیم نشده است"
+          description="پیش‌نویس قابل ثبت است. ارسال و مراحل وابسته به سیاست، تا تنظیم مسیر تأیید معتبر مسدود می‌ماند."
+        />
+      )}
+      {selectedId ? (
+        <div className="space-y-4">
+          <Button variant="outline" onClick={() => setSelectedId(null)}>
+            بازگشت به فهرست
+          </Button>
+          {detail.isPending ? (
+            <Skeleton className="h-72" />
+          ) : detail.isError ? (
+            <Alert
+              tone="error"
+              title="پرونده دریافت نشد"
+              description={errorText(detail.error)}
+            >
+              <Button variant="outline" onClick={() => void detail.refetch()}>
+                تلاش دوباره
+              </Button>
+            </Alert>
+          ) : (
+            detail.data && (
+              <RequestDetail
+                key={detail.data.id}
+                request={detail.data}
+                bootstrap={bootstrap}
+                onEdit={() => setEditing(true)}
+                onChanged={saved}
+                initialKind={
+                  group === 4
+                    ? 'quotations'
+                    : group === 5
+                      ? 'orders'
+                      : group === 6
+                        ? 'receipts'
+                        : group === 7
+                          ? 'invoices'
+                          : 'audit'
+                }
+              />
+            )
+          )}
+        </div>
+      ) : group === 8 ? (
+        <div className="space-y-5">
+          <ProcurementReports bootstrap={bootstrap} />
+          <Card className="space-y-5 p-6">
+            <h2 className="text-lg font-bold">گزارش و تنظیمات خرید</h2>
+            <Alert
+              title="سیاست تأیید خرید هنوز تنظیم نشده است"
+              description="برای پیشگیری از تأیید ناخواسته، مسیر و سقف تأیید پیش‌فرض ایجاد نشده است."
+            />
+            <p className="text-sm text-muted-foreground">
+              دسترسی گزارش:{' '}
+              {can('procurement.export')
+                ? 'دارای مجوز تولید خروجی'
+                : 'بدون مجوز خروجی'}{' '}
+              · تنظیمات:{' '}
+              {can('procurement.settings.manage') ? 'دارای مجوز' : 'بدون مجوز'}
+            </p>
+            <p className="text-sm">
+              تاریخچه هر پرونده در صفحه جزئیات و براساس مجوز نمایش داده می‌شود.
+            </p>
+          </Card>
+        </div>
+      ) : (
+        <>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 className="text-xl font-bold">{groups[group]}</h2>
+            {can('procurement.request.create') && (
+              <Button onClick={() => setCreating(true)}>
+                درخواست خرید جدید
+              </Button>
+            )}
+          </div>
+          {group === 0 && (
+            <div className="flex flex-wrap gap-2" aria-label="صف کاری">
+              {queues.map(([value, label]) => (
+                <Button
+                  key={value}
+                  variant={queue === value ? 'secondary' : 'outline'}
+                  aria-pressed={queue === value}
+                  onClick={() => {
+                    setQueue(value);
+                    setPage(1);
+                  }}
+                >
+                  {label}
+                </Button>
+              ))}
+            </div>
+          )}
+          {group >= 4 && group <= 7 && (
+            <Alert
+              title="نمایش براساس پرونده خرید"
+              description="پرونده را انتخاب کنید تا اسناد و عملیات مربوط به آن را ببینید."
+            />
+          )}
+          {group === 7 && bootstrap.finance === 'NOT_CONNECTED' && (
+            <Alert
+              tone="warning"
+              title="اتصال مالی فعال نیست"
+              description="ثبت و تطبیق فاکتور در خرید انجام می‌شود. تا پذیرش قرارداد توسط مالی، ایجاد تعهد یا ثبت مالی تأیید نمی‌شود."
+            />
+          )}
+          <Card className="grid gap-4 p-4 sm:grid-cols-2">
+            <FormField
+              id="proc-search"
+              label={
+                group === 3 ? 'جست‌وجوی تأمین‌کننده' : 'جست‌وجوی شماره یا عنوان'
+              }
+            >
+              <Input
+                id="proc-search"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+              />
+            </FormField>
+            {group !== 3 && (
+              <FormField id="proc-status" label="وضعیت درخواست">
+                <select
+                  id="proc-status"
+                  className={selectClass}
+                  value={status}
+                  onChange={(event) => {
+                    setStatus(event.target.value);
+                    setPage(1);
+                  }}
+                >
+                  <option value="">همه وضعیت‌ها</option>
+                  {Object.entries(statusLabels).map(([value, label]) => (
+                    <option key={value} value={value}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+              </FormField>
+            )}
+          </Card>
+          {group === 3 ? (
+            suppliers.isPending ? (
+              <Skeleton className="h-64" />
+            ) : suppliers.isError ? (
+              <Alert
+                tone="error"
+                title="تأمین‌کنندگان دریافت نشدند"
+                description={errorText(suppliers.error)}
+              >
+                <Button
+                  variant="outline"
+                  onClick={() => void suppliers.refetch()}
+                >
+                  تلاش دوباره
+                </Button>
+              </Alert>
+            ) : (
+              <>
+                <Alert
+                  title="اطلاعات مرجع تأمین‌کنندگان"
+                  description="نام، وضعیت فعالیت و وضعیت همکاری از اطلاعات پایه دریافت می‌شود. ویرایش اطلاعات مرجع در ماژول اطلاعات پایه انجام می‌شود."
+                />
+                {!suppliers.data.items.length ? (
+                  <EmptyState
+                    title="تأمین‌کننده‌ای پیدا نشد"
+                    description="فیلتر جست‌وجو یا اطلاعات پایه را بررسی کنید."
+                  />
+                ) : (
+                  <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                    {suppliers.data.items.map((supplier) => (
+                      <Card key={supplier.id} className="space-y-3 p-5">
+                        <h3 className="font-bold">{supplier.name}</h3>
+                        <p className="text-sm text-muted-foreground">
+                          {supplier.code}
+                        </p>
+                        <Badge>{supplier.isActive ? 'فعال' : 'غیرفعال'}</Badge>
+                        <p className="text-sm">
+                          وضعیت همکاری: {supplier.collaborationStatus}
+                        </p>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+                <Pager
+                  page={page}
+                  hasMore={suppliers.data.hasMore}
+                  setPage={setPage}
+                />
+              </>
+            )
+          ) : list.isPending ? (
+            <Skeleton className="h-64" />
+          ) : list.isError ? (
+            <Alert
+              tone="error"
+              title="درخواست‌ها دریافت نشدند"
+              description={errorText(list.error)}
+            >
+              <Button variant="outline" onClick={() => void list.refetch()}>
+                تلاش دوباره
+              </Button>
+            </Alert>
+          ) : (
+            <>
+              {!list.data.items.length ? (
+                <EmptyState
+                  title="درخواستی در این صف نیست"
+                  description="با تغییر صف یا فیلتر دوباره بررسی کنید؛ درخواست‌های مجاز شما اینجا نمایش داده می‌شوند."
+                />
+              ) : (
+                <div className="grid gap-3 lg:grid-cols-2">
+                  {list.data.items.map((request) => (
+                    <Card key={request.id} className="p-5">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-xs text-muted-foreground">
+                            {request.number}
+                          </p>
+                          <h3 className="mt-2 font-bold">
+                            {request.draft.title || 'پیش‌نویس بدون عنوان'}
+                          </h3>
+                        </div>
+                        <Badge>{statusLabels[request.status]}</Badge>
+                      </div>
+                      <dl className="mt-5 grid grid-cols-2 gap-3 text-sm">
+                        <div>
+                          <dt className="text-muted-foreground">برآورد</dt>
+                          <dd className="mt-1">
+                            {request.draft.estimatedAmount ?? 'نامشخص'}{' '}
+                            {request.draft.currencyCode}
+                          </dd>
+                        </div>
+                        <div>
+                          <dt className="text-muted-foreground">مسئول فعلی</dt>
+                          <dd className="mt-1 break-all">
+                            {request.ownerUserId ?? 'تخصیص داده نشده'}
+                          </dd>
+                        </div>
+                      </dl>
+                      <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
+                        <p className="text-xs text-muted-foreground">
+                          اقدام بعدی: {nextAction[request.status]}
+                        </p>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setSelectedId(request.id)}
+                        >
+                          باز کردن پرونده
+                        </Button>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              )}
+              <Pager
+                page={page}
+                hasMore={list.data.hasMore}
+                setPage={setPage}
+              />
+            </>
+          )}
+        </>
+      )}
+      {!selectedId && group !== 3 && group !== 8 && (
+        <ProcurementExportPanel
+          bootstrap={bootstrap}
+          kind="REQUESTS"
+          query={{ status, search: querySearch, queue: queryQueue }}
+        />
+      )}
+    </>
+  );
+}
+
+function RequestDetail({
+  request,
+  bootstrap,
+  onEdit,
+  onChanged,
+  initialKind,
+}: {
+  request: ProcurementRequestV1;
+  bootstrap: Bootstrap;
+  onEdit: () => void;
+  onChanged: (request: ProcurementRequestV1) => void;
+  initialKind: string;
+}) {
+  const heading = useRef<HTMLHeadingElement>(null);
+  useEffect(() => {
+    heading.current?.focus();
+  }, []);
+  const [reason, setReason] = useState('');
+  const [owner, setOwner] = useState('');
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [kind, setKind] = useState(initialKind);
+  const [page, setPage] = useState(1);
+  const identity = useRef<ReturnType<typeof commandAttempt> | null>(null);
+  const can = (permission: ProcurementPermission) =>
+    bootstrap.permissions.includes(permission);
+  const records = useQuery({
+    queryKey: [
+      'procurement',
+      'records',
+      request.id,
+      request.version,
+      kind,
+      page,
+    ],
+    queryFn: () => procurementApi.records(request.id, kind, page),
+    enabled: kind !== 'audit' || can('procurement.audit.read'),
+    retry: false,
+  });
+  async function command(body: Record<string, unknown>) {
+    setBusy(true);
+    setError('');
+    identity.current = commandAttempt(identity.current, request, body);
+    try {
+      onChanged(
+        await procurementApi.command(
+          identity.current.request,
+          body,
+          identity.current.key,
+        ),
+      );
+      setReason('');
+      identity.current = null;
+    } catch (caught) {
+      setError(errorText(caught));
+    } finally {
+      setBusy(false);
+    }
+  }
+  const editable = ['DRAFT', 'CHANGES_REQUESTED'].includes(request.status);
+  return (
+    <div className="space-y-5">
+      <Card className="space-y-5 p-6">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="text-sm text-muted-foreground">
+              {request.number} · نسخه {request.version.toLocaleString('fa-IR')}
+            </p>
+            <h2 ref={heading} tabIndex={-1} className="mt-2 text-xl font-bold">
+              {request.draft.title || 'پیش‌نویس بدون عنوان'}
+            </h2>
+          </div>
+          <Badge>{statusLabels[request.status]}</Badge>
+        </div>
+        <dl className="grid gap-4 text-sm sm:grid-cols-2 lg:grid-cols-4">
+          {[
+            [
+              'برآورد',
+              `${request.draft.estimatedAmount ?? 'نامشخص'} ${request.draft.currencyCode ?? ''}`,
+            ],
+            ['واحد', request.draft.unitId ?? 'ثبت نشده'],
+            ['دسته', request.draft.category || 'ثبت نشده'],
+            [
+              'فوریت',
+              request.draft.urgent
+                ? `اضطراری: ${request.draft.urgencyReason}`
+                : 'عادی',
+            ],
+            ['شرح نیاز', request.draft.needReason || 'ثبت نشده'],
+            ['تحویل', request.draft.deliveryLocation || 'ثبت نشده'],
+            ['مسئول', request.ownerUserId ?? 'بدون مسئول'],
+            ['اقدام بعدی', nextAction[request.status]],
+          ].map(([label, value]) => (
+            <div key={label}>
+              <dt className="text-muted-foreground">{label}</dt>
+              <dd className="mt-1 break-words leading-6">{value}</dd>
+            </div>
+          ))}
+        </dl>
+        <div className="space-y-2">
+          {request.draft.items.map((item) => (
+            <p className="rounded-lg bg-muted/40 p-3 text-sm" key={item.id}>
+              {item.kind === 'GOODS' ? 'کالا' : 'خدمت'} · {item.description} ·{' '}
+              {item.quantity} {item.unit} · معیار پذیرش:{' '}
+              {item.acceptanceCriteria || 'ثبت نشده'}
+            </p>
+          ))}
+        </div>
+        <p className="text-sm text-muted-foreground">
+          مدارک: {request.draft.documents.length.toLocaleString('fa-IR')} ·{' '}
+          {request.draft.notes}
+        </p>
+        <DocumentLinks documents={request.draft.documents} />
+        {error && (
+          <Alert tone="error" title="عملیات انجام نشد" description={error} />
+        )}
+        <fieldset disabled={busy} className="space-y-4">
+          <legend className="mb-3 font-semibold">اقدامات پرونده</legend>
+          <FormField id="proc-action-reason" label="دلیل تصمیم یا لغو">
+            <Textarea
+              id="proc-action-reason"
+              value={reason}
+              onChange={(event) => setReason(event.target.value)}
+            />
+          </FormField>
+          <div className="flex flex-wrap gap-2">
+            {editable && can('procurement.request.update') && (
+              <Button variant="outline" onClick={onEdit}>
+                ویرایش درخواست
+              </Button>
+            )}
+            {!['CANCELLED', 'CLOSED', 'REJECTED'].includes(request.status) &&
+              can('procurement.order.cancel') && (
+                <Button
+                  variant="outline"
+                  disabled={!reason.trim()}
+                  onClick={() => {
+                    if (
+                      window.confirm(
+                        'پرونده پس از کنترل بسته‌بودن سفارش‌ها و تعیین تکلیف مغایرت‌ها بسته شود؟',
+                      )
+                    )
+                      void command({ action: 'CLOSE_REQUEST', reason });
+                  }}
+                >
+                  بستن پرونده خرید
+                </Button>
+              )}
+            {editable && can('procurement.request.submit') && (
+              <Button
+                disabled={bootstrap.policy !== 'CONFIGURED'}
+                onClick={() => void command({ action: 'SUBMIT' })}
+              >
+                ارسال برای تأیید
+              </Button>
+            )}
+            {['SUBMITTED', 'IN_REVIEW'].includes(request.status) &&
+              can('procurement.approve') && (
+                <>
+                  <Button
+                    onClick={() =>
+                      void command({
+                        action: 'DECIDE',
+                        decision: 'APPROVED',
+                        reason,
+                      })
+                    }
+                  >
+                    تأیید
+                  </Button>
+                  <Button
+                    variant="outline"
+                    disabled={!reason.trim()}
+                    onClick={() =>
+                      void command({
+                        action: 'DECIDE',
+                        decision: 'CHANGES_REQUESTED',
+                        reason,
+                      })
+                    }
+                  >
+                    بازگشت برای اصلاح
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    disabled={!reason.trim()}
+                    onClick={() =>
+                      void command({
+                        action: 'DECIDE',
+                        decision: 'REJECTED',
+                        reason,
+                      })
+                    }
+                  >
+                    رد درخواست
+                  </Button>
+                </>
+              )}
+            {!['CANCELLED', 'CLOSED', 'REJECTED'].includes(request.status) &&
+              can('procurement.request.cancel') && (
+                <Button
+                  variant="outline"
+                  disabled={!reason.trim()}
+                  onClick={() => {
+                    if (window.confirm('درخواست با دلیل واردشده لغو شود؟'))
+                      void command({ action: 'CANCEL', reason });
+                  }}
+                >
+                  لغو درخواست
+                </Button>
+              )}
+          </div>
+          {can('procurement.assign') && (
+            <div className="flex flex-wrap items-end gap-3">
+              <ProcurementOwnerPicker
+                branchId={request.draft.branchId}
+                value={owner}
+                onChange={setOwner}
+              />
+              <Button
+                variant="outline"
+                disabled={!owner.trim()}
+                onClick={() =>
+                  void command({ action: 'ASSIGN', ownerUserId: owner })
+                }
+              >
+                تخصیص مسئول
+              </Button>
+            </div>
+          )}
+        </fieldset>
+      </Card>
+      <Card className="space-y-4 p-5">
+        <nav aria-label="اسناد پرونده" className="flex flex-wrap gap-2">
+          {kinds
+            .filter(
+              ([value]) => value !== 'audit' || can('procurement.audit.read'),
+            )
+            .map(([value, label]) => (
+              <Button
+                size="sm"
+                variant={kind === value ? 'secondary' : 'ghost'}
+                key={value}
+                aria-pressed={kind === value}
+                onClick={() => {
+                  setKind(value);
+                  setPage(1);
+                }}
+              >
+                {label}
+              </Button>
+            ))}
+        </nav>
+        {kind === 'audit' && !can('procurement.audit.read') ? (
+          <EmptyState
+            title="دسترسی به تاریخچه ندارید"
+            description="یکی از بخش‌های مجاز پرونده را انتخاب کنید."
+          />
+        ) : records.isPending ? (
+          <Skeleton className="h-40" />
+        ) : records.isError ? (
+          <Alert
+            tone="error"
+            title="سوابق دریافت نشد"
+            description={errorText(records.error)}
+          >
+            <Button variant="outline" onClick={() => void records.refetch()}>
+              تلاش دوباره
+            </Button>
+          </Alert>
+        ) : (
+          <>
+            {!records.data.items.length ? (
+              <EmptyState
+                title="رکوردی ثبت نشده است"
+                description="سوابق واقعی این پرونده پس از ثبت عملیات نمایش داده می‌شوند."
+              />
+            ) : (
+              <div className="space-y-3">
+                {kind === 'quotations' && (
+                  <QuotationComparison records={records.data.items} />
+                )}
+                {records.data.items.map((record, index) => (
+                  <RecordCard
+                    key={String(record.id ?? index)}
+                    record={record}
+                  />
+                ))}
+              </div>
+            )}
+            <Pager
+              page={page}
+              hasMore={records.data.hasMore}
+              setPage={setPage}
+            />
+          </>
+        )}
+      </Card>
+      <OperationForm
+        key={kind}
+        kind={kind}
+        request={request}
+        bootstrap={bootstrap}
+        onChanged={onChanged}
+      />
+      {kind === 'orders' && (
+        <ProcurementExportPanel
+          bootstrap={bootstrap}
+          kind="ORDER"
+          request={request}
+        />
+      )}
+    </div>
+  );
+}
+const recordLabels: Record<string, string> = {
+  number: 'شماره',
+  status: 'وضعیت',
+  action: 'عملیات',
+  reason: 'دلیل',
+  createdAt: 'زمان ثبت',
+  updatedAt: 'آخرین تغییر',
+  amount: 'مبلغ',
+  totalAmount: 'مبلغ کل',
+  currencyCode: 'ارز',
+  supplierId: 'تأمین‌کننده',
+  orderId: 'سفارش',
+  invoiceNumber: 'شماره فاکتور',
+  dueAt: 'سررسید',
+  expectedAt: 'موعد تحویل',
+  version: 'نسخه',
+  quantity: 'مقدار',
+  description: 'شرح',
+  deliveryAt: 'تاریخ تحویل',
+  paymentTerms: 'شرایط پرداخت',
+  warranty: 'ضمانت',
+  qualityNote: 'ارزیابی کیفیت',
+  validUntil: 'اعتبار پیشنهاد',
+  quotedAt: 'تاریخ پیشنهاد',
+  acceptedQuantity: 'مقدار پذیرفته‌شده',
+  rejectedQuantity: 'مقدار ردشده',
+  unitPrice: 'قیمت واحد',
+  taxAmount: 'مالیات',
+  discountAmount: 'تخفیف',
+  extraCostAmount: 'هزینه جانبی',
+  resolution: 'نتیجه رسیدگی',
+  evidence: 'شواهد پذیرش',
+  receivedAt: 'تاریخ دریافت',
+  acceptedAt: 'تاریخ پذیرش',
+  returnedAt: 'تاریخ مرجوعی',
+  receivedDelta: 'تغییر مقدار دریافت',
+  acceptedDelta: 'تغییر مقدار پذیرفته‌شده',
+  rejectedDelta: 'تغییر مقدار ردشده',
+  disposition: 'مبدأ مقدار مرجوعی',
+};
+function recordData(record: Record<string, unknown>) {
+  return {
+    ...(typeof record.data === 'object' && record.data !== null
+      ? record.data
+      : {}),
+    ...record,
+  } as Record<string, unknown>;
+}
+function RecordCard({ record }: { record: Record<string, unknown> }) {
+  const entries = Object.entries(recordData(record)).filter(
+    ([key, value]) =>
+      key in recordLabels && value !== null && typeof value !== 'object',
+  );
+  return (
+    <div className="rounded-xl border border-border p-4">
+      <dl className="grid gap-3 text-sm sm:grid-cols-3">
+        {entries.map(([key, value]) => (
+          <div key={key}>
+            <dt className="text-muted-foreground">{recordLabels[key]}</dt>
+            <dd className="mt-1 break-words">
+              {formatProcurementRecordValue(key, value)}
+            </dd>
+          </div>
+        ))}
+      </dl>
+      {!entries.length && <p className="text-sm">رکورد ثبت‌شده</p>}
+      <DocumentLinks documents={recordData(record).documents} />
+      {Array.isArray(record.lines) && record.lines.length > 0 && (
+        <details className="mt-4 rounded-xl bg-muted/30 p-3">
+          <summary className="cursor-pointer text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+            اقلام و مبالغ ({record.lines.length.toLocaleString('fa-IR')} ردیف)
+          </summary>
+          <div className="mt-3 space-y-3">
+            {(record.lines as Record<string, unknown>[]).map((line, index) => (
+              <RecordCard key={String(line.id ?? index)} record={line} />
+            ))}
+          </div>
+        </details>
+      )}
+      <p className="mt-3 break-all text-xs text-muted-foreground">
+        شناسه: {String(record.id ?? '—')}
+      </p>
+    </div>
+  );
+}
+function DocumentLinks({ documents }: { documents: unknown }) {
+  if (!Array.isArray(documents)) return null;
+  const references = documents.filter(
+    (value): value is { id: string; versionId: string } =>
+      value !== null &&
+      typeof value === 'object' &&
+      typeof value.id === 'string' &&
+      typeof value.versionId === 'string',
+  );
+  if (!references.length) return null;
+  return (
+    <div className="space-y-2">
+      <p className="text-xs text-muted-foreground">
+        مدرک در آرشیو اسناد باز می‌شود؛ نسخه مرجع این پرونده کنار هر پیوند درج
+        شده است.
+      </p>
+      {references.map((reference, index) => (
+        <div
+          key={`${reference.id}-${reference.versionId}`}
+          className="flex flex-wrap items-center gap-2"
+        >
+          <Button asChild variant="outline" size="sm">
+            <a
+              href={`/documents?document=${encodeURIComponent(reference.id)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              مشاهده مدرک {(index + 1).toLocaleString('fa-IR')} (زبانه جدید)
+            </a>
+          </Button>
+          <span className="break-all text-xs text-muted-foreground">
+            نسخه مرجع: {reference.versionId}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export function QuotationComparison({
+  records,
+}: {
+  records: Record<string, unknown>[];
+}) {
+  const currencies = new Set(records.map((row) => String(row.currencyCode)));
+  return (
+    <div className="space-y-3">
+      {currencies.size > 1 && (
+        <Alert
+          tone="warning"
+          title="پیشنهادها ارز متفاوت دارند"
+          description="بدون تصویر نرخ ارز معتبر، تبدیل و رتبه‌بندی بین ارزها انجام نمی‌شود. مبالغ با ارز اصلی نمایش داده می‌شوند."
+        />
+      )}
+      <div className="overflow-x-auto rounded-xl border border-border">
+        <table className="w-full min-w-[760px] text-right text-sm">
+          <caption className="p-3 text-start font-semibold">
+            مقایسه پیشنهادهای این صفحه
+          </caption>
+          <thead className="border-y border-border bg-muted/40">
+            <tr>
+              {[
+                'تأمین‌کننده',
+                'مبلغ و ارز',
+                'وضعیت و اعتبار',
+                'کیفیت',
+                'موعد تحویل',
+                'ضمانت',
+                'شرایط پرداخت',
+              ].map((label) => (
+                <th key={label} scope="col" className="p-3 font-semibold">
+                  {label}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {records.map((record) => {
+              const data = recordData(record);
+              return (
+                <tr
+                  key={String(record.id)}
+                  className="border-b border-border last:border-0"
+                >
+                  <td className="max-w-40 break-all p-3">
+                    {String(data.supplierName ?? data.supplierId)}
+                  </td>
+                  <td className="p-3" dir="ltr">
+                    {String(data.totalAmount ?? '—')}{' '}
+                    {String(data.currencyCode ?? '')}
+                  </td>
+                  <td className="p-3">
+                    {String(data.status ?? '—')}
+                    <br />
+                    {data.validUntil
+                      ? formatProcurementDate(data.validUntil)
+                      : 'اعتبار ثبت نشده'}
+                  </td>
+                  <td className="p-3">
+                    {String(data.qualityNote ?? 'ثبت نشده')}
+                  </td>
+                  <td className="p-3">
+                    {data.deliveryAt
+                      ? formatProcurementDate(data.deliveryAt)
+                      : 'ثبت نشده'}
+                  </td>
+                  <td className="p-3">{String(data.warranty ?? 'ثبت نشده')}</td>
+                  <td className="p-3">
+                    {String(data.paymentTerms ?? 'ثبت نشده')}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
