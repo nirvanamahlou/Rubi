@@ -22,7 +22,7 @@ import type {
   DuplicateCandidate,
   DuplicateReviewRequest,
 } from '@rubi/contracts';
-import { CustomerKind } from '@rubi/database';
+import { CustomerKind, type Prisma } from '@rubi/database';
 
 import { CustomerContactCrypto } from './customer-contact.crypto';
 import {
@@ -654,6 +654,45 @@ export class CustomerService {
       throw error;
     }
     return { data: await this.present(row, actor, traceId) };
+  }
+
+  /** Public module contract for atomic lead conversion; returns no sensitive fields. */
+  async createPersonWithinTransaction(
+    input: { firstName: string; lastName: string; nationalId: string },
+    actor: AuthenticatedActor,
+    branchId: string,
+    transaction: Prisma.TransactionClient,
+  ): Promise<{ id: string }> {
+    if (!actor.permissions.includes('customers.create'))
+      throw new ForbiddenException();
+    const data = prepareMutation(
+      {
+        kind: 'person',
+        ...input,
+        displayName: `${input.firstName.trim()} ${input.lastName.trim()}`,
+        roles: ['customer'],
+      },
+      false,
+      this.nationalIdProtector.protect(input.nationalId),
+    );
+    try {
+      const row = await this.repository.create(
+        data,
+        actor.userId,
+        branchOf(actor, branchId),
+        undefined,
+        transaction,
+      );
+      return { id: row.id };
+    } catch (error) {
+      if (prismaCode(error) === 'P2002')
+        throw new ConflictException({
+          code: 'CUSTOMER_NATIONAL_ID_EXISTS',
+          message:
+            'این مشتری قبلاً ثبت شده است؛ از انتخاب مشتری موجود استفاده کنید.',
+        });
+      throw error;
+    }
   }
 
   async update(

@@ -29,6 +29,13 @@ const CHANNELS = [
 ];
 const PRIORITIES = ['LOW', 'NORMAL', 'HIGH', 'URGENT', 'CRITICAL'];
 
+export class LeadCustomerConversionDto {
+  @IsString() @Length(1, 100) firstName!: string;
+  @IsString() @Length(1, 100) lastName!: string;
+  @IsString() @Matches(/^[0-9]{10}$/) nationalId!: string;
+  @IsInt() @Min(1) expectedVersion!: number;
+}
+
 export class MoneyDto {
   @IsOptional() @Matches(/^\d+(?:\.\d{1,4})?$/) minimum?: string | null;
   @IsOptional() @Matches(/^\d+(?:\.\d{1,4})?$/) maximum?: string | null;
@@ -175,6 +182,8 @@ export class LeadTransitionDto {
 }
 
 export class QualificationDto {
+  @IsOptional() @IsInt() @Min(0) @Max(100) conversionProbability?:
+    number | null;
   @IsBoolean() travelNeedConfirmed!: boolean;
   @IsBoolean() destinationKnown!: boolean;
   @IsBoolean() timingKnown!: boolean;
@@ -234,6 +243,9 @@ export class SatisfactionDto {
 }
 
 export class ListQueryDto {
+  @IsOptional() @IsISO8601({ strict: true }) createdFrom?: string;
+  @IsOptional() @IsISO8601({ strict: true }) createdBefore?: string;
+  @IsOptional() @IsIn(['jahanbastan', 'nystkt']) sourceSite?: string;
   @IsOptional() @IsString() @MaxLength(100) search?: string;
   @IsOptional() @IsString() @MaxLength(48) status?: string;
   @IsOptional() @IsString() @MaxLength(48) stage?: string;

@@ -31,6 +31,7 @@ import {
   HandoffDto,
   HandoffResponseDto,
   LeadMutationDto,
+  LeadCustomerConversionDto,
   LeadTransitionDto,
   ListQueryDto,
   QualificationDto,
@@ -187,6 +188,16 @@ export class CustomerAffairsController {
     return this.service.proposeHandoff(id, dto.expectedVersion, req.actor, key);
   }
 
+  @Post('leads/:id/customer')
+  @RequirePermissions('customer_affairs.lead.update', 'customers.create')
+  convertCustomer(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: LeadCustomerConversionDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.service.convertLeadCustomer(id, dto, req.actor);
+  }
+
   @Post('handoffs/:id/respond')
   @RequirePermissions('customer_affairs.lead.handoff.respond')
   respondHandoff(
@@ -230,29 +241,6 @@ export class CustomerAffairsController {
       key,
       traceId,
     );
-  }
-
-  @Post('workbench/requests')
-  createWorkbenchRequest(
-    @Body() dto: TicketMutationDto,
-    @Req() req: AuthenticatedRequest,
-    @Headers('x-branch-id') branchId?: string,
-    @Headers('idempotency-key') key?: string,
-    @Headers('x-request-id') traceId?: string,
-  ) {
-    return this.service.createWorkbenchRequest(
-      dto as CustomerAffairsTicketInput,
-      req.actor,
-      branchId,
-      key,
-      traceId,
-    );
-  }
-
-  @Get('workbench/requests')
-  @Header('Cache-Control', 'private, no-store')
-  workbenchRequests(@Req() req: AuthenticatedRequest) {
-    return this.service.workbenchRequests(req.actor);
   }
 
   @Patch('tickets/:id')
@@ -380,6 +368,28 @@ export class CustomerAffairsController {
     @Req() req: AuthenticatedRequest,
   ) {
     return this.service.updateCorrectiveAction(id, dto, req.actor);
+  }
+
+  @Post('workbench/requests')
+  createWorkbenchRequest(
+    @Body() dto: TicketMutationDto,
+    @Req() req: AuthenticatedRequest,
+    @Headers('x-branch-id') branchId?: string,
+    @Headers('idempotency-key') key?: string,
+    @Headers('x-request-id') traceId?: string,
+  ) {
+    return this.service.createWorkbenchRequest(
+      dto as CustomerAffairsTicketInput,
+      req.actor,
+      branchId,
+      key,
+      traceId,
+    );
+  }
+  @Get('workbench/requests')
+  @Header('Cache-Control', 'private, no-store')
+  workbenchRequests(@Req() req: AuthenticatedRequest) {
+    return this.service.workbenchRequests(req.actor);
   }
 }
 
