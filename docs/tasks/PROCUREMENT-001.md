@@ -6,6 +6,9 @@ Base: `060fc35cf42493edd9d579fbf51fe62ff512261e`.
 Review-compatibility scope: isolate the already authorized HR Procurement projection
 in its own public module and move only this task's central-document sections to avoid
 concurrent develop insertions. No merge, rebase, force push or other task source is used.
+The isolated public HR module passed focused lint, API production build and real Nest
+application-context startup. Read-only integration preview against `develop@eb6af3ff`
+reported no conflicts after this adjustment; this preview did not merge either branch.
 
 ## Sources and execution gate
 
@@ -190,7 +193,7 @@ Draft PR: [#269](https://github.com/nirvanamahlou/Rubi/pull/269), target `develo
 The branch was pushed normally; the PR remains a draft and was not merged.
 
 The complete changed-file inventory is [PROCUREMENT-001-files.txt](PROCUREMENT-001-files.txt).
-Source implementation revision: `fa21d3dccff4307396f9edc4e8818e8f9cd63dca`.
+Source implementation revision: `9612e64b4c5986098bec5144417994a9c89d1110`.
 Reviewers should use the final branch HEAD for documentation/evidence as well as code.
 
 Migration, central-doc and Procurement contract reservations for this task are RELEASED;
