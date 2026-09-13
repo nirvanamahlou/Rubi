@@ -4212,6 +4212,8 @@ model ProcurementRequest {
   receiptAdjustments ProcurementReceiptAdjustment[]
   exportJobs ProcurementExportJob[]
   @@unique([id, branchId])
+  @@index([branchId, createdAt, id])
+  @@index([branchId, unitId, createdAt, id])
   id String @id @default(uuid()) @db.Uuid
   number String @unique @db.VarChar(60)
   branchId String @db.Uuid
