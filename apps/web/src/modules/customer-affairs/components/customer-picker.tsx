@@ -10,7 +10,7 @@ import {
   UserRound,
 } from 'lucide-react';
 import Link from 'next/link';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useId, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { FormField, Input } from '@/components/ui/form-controls';
@@ -25,7 +25,6 @@ import {
 import {
   customerAffairsCustomersApi,
   CustomerLookupApiError,
-  CUSTOMER_AFFAIRS_CUSTOMERS_CONTRACT_VERSION,
 } from '../api/customers-client';
 
 type LookupState =
@@ -35,14 +34,40 @@ export function CustomerPicker({
   disabled = false,
   onSelect,
   selected,
+  initialCustomerId,
 }: {
   disabled?: boolean;
   onSelect: (customer: CustomerSummary | null) => void;
   selected: CustomerSummary | null;
+  initialCustomerId?: string | null;
 }) {
+  const id = useId();
   const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [retry, setRetry] = useState(0);
+  const [current, setCurrent] = useState<CustomerSummary | null>(null);
+  const [currentError, setCurrentError] = useState(false);
   const [records, setRecords] = useState<readonly CustomerSummary[]>([]);
   const [state, setState] = useState<LookupState>('loading');
+  const chosen =
+    selected ?? (current?.id === initialCustomerId ? current : null);
+
+  useEffect(() => {
+    if (!initialCustomerId) return;
+    const controller = new AbortController();
+    void customerAffairsCustomersApi
+      .detail(initialCustomerId, controller.signal)
+      .then(({ data }) => {
+        if (controller.signal.aborted) return;
+        setCurrent(data);
+        setCurrentError(false);
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) setCurrentError(true);
+      });
+    return () => controller.abort();
+  }, [initialCustomerId, retry]);
 
   const load = useCallback(
     async (signal?: AbortSignal) => {
@@ -52,17 +77,20 @@ export function CustomerPicker({
           {
             search,
             status: 'active',
-            role: 'customer',
+            role: 'all',
             sortBy: 'displayName',
             sortDirection: 'asc',
-            page: 1,
+            page,
             pageSize: 10,
           },
           signal,
         );
+        if (signal?.aborted) return;
         setRecords(response.data);
+        setTotal(response.meta.total);
         setState(response.data.length ? 'ready' : 'empty');
       } catch (error) {
+        if (signal?.aborted) return;
         if (error instanceof DOMException && error.name === 'AbortError')
           return;
         setRecords([]);
@@ -75,7 +103,7 @@ export function CustomerPicker({
         );
       }
     },
-    [search],
+    [search, page],
   );
 
   useEffect(() => {
@@ -85,26 +113,32 @@ export function CustomerPicker({
       window.clearTimeout(timer);
       controller.abort();
     };
-  }, [load]);
+  }, [load, retry]);
 
   return (
     <section
-      aria-labelledby="customer-picker-title"
+      aria-labelledby={`${id}-title`}
       className="space-y-3 rounded-2xl border border-border bg-primary/5 p-4"
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h3 className="font-bold" id="customer-picker-title">
-            انتخاب مشتری موجود از Customer 360
+          <h3 className="font-bold" id={`${id}-title`}>
+            انتخاب از مشتریان و مسافران
           </h3>
           <p className="mt-1 text-xs text-muted-foreground">
-            اتصال فقط خواندنی از قرارداد عمومی Customers؛ بدون دسترسی مستقیم به
-            داده.
+            مشتری یا مسافر ثبت‌شده را جست‌وجو و به این پرونده متصل کنید.
           </p>
         </div>
-        <Badge>customers.v{CUSTOMER_AFFAIRS_CUSTOMERS_CONTRACT_VERSION}</Badge>
+        <a
+          href="/customers"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-sm text-primary underline"
+        >
+          بازکردن مشتریان و مسافران
+        </a>
       </div>
-      <FormField id="customer-affairs-customer-search" label="جست‌وجوی مشتری">
+      <FormField id={`${id}-search`} label="جست‌وجوی مشتری یا مسافر">
         <div className="relative">
           <Search
             aria-hidden="true"
@@ -113,9 +147,13 @@ export function CustomerPicker({
           <Input
             className="pe-10"
             disabled={disabled}
-            id="customer-affairs-customer-search"
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="نام یا راه تماس ماسک‌شده"
+            id={`${id}-search`}
+            onChange={(event) => {
+              setSearch(event.target.value);
+              setPage(1);
+              setState('loading');
+            }}
+            placeholder="نام مشتری یا مسافر"
             value={search}
           />
         </div>
@@ -128,7 +166,7 @@ export function CustomerPicker({
           </div>
         ) : state === 'unauthorized' ? (
           <EmptyState
-            description="نشست معتبر نیست؛ برای جست‌وجوی Customers دوباره وارد شوید."
+            description="نشست معتبر نیست؛ برای جست‌وجوی مشتریان دوباره وارد شوید."
             icon={LogIn}
             title="نیاز به ورود"
           />
@@ -136,13 +174,13 @@ export function CustomerPicker({
           <EmptyState
             description="مجوز customers.read برای این عملیات لازم است."
             icon={Ban}
-            title="دسترسی Customers مجاز نیست"
+            title="دسترسی به مشتریان و مسافران مجاز نیست"
           />
         ) : state === 'error' ? (
           <ErrorState
             action={
               <Button
-                onClick={() => void load()}
+                onClick={() => setRetry((value) => value + 1)}
                 size="sm"
                 type="button"
                 variant="outline"
@@ -151,12 +189,12 @@ export function CustomerPicker({
                 تلاش دوباره
               </Button>
             }
-            description="اتصال Backend و NEXT_PUBLIC_API_BASE_URL را بررسی کنید."
+            description="فهرست مشتریان دریافت نشد؛ دوباره تلاش کنید. انتخاب قبلی حفظ می‌شود."
             title="جست‌وجوی مشتری ناموفق بود"
           />
         ) : state === 'empty' ? (
           <EmptyState
-            description="با عبارت فعلی مشتری فعالی پیدا نشد."
+            description="با عبارت فعلی مشتری یا مسافر فعالی پیدا نشد."
             title="نتیجه‌ای وجود ندارد"
           />
         ) : (
@@ -164,7 +202,7 @@ export function CustomerPicker({
             {records.map((customer) => (
               <Card
                 className={
-                  selected?.id === customer.id
+                  chosen?.id === customer.id
                     ? 'border-primary bg-primary/10 p-3'
                     : 'p-3'
                 }
@@ -177,6 +215,13 @@ export function CustomerPicker({
                   />
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-bold">{customer.displayName}</p>
+                    <Badge>
+                      {customer.roles
+                        .map((role) =>
+                          role === 'passenger' ? 'مسافر' : 'مشتری',
+                        )
+                        .join(' / ')}
+                    </Badge>
                     <p className="mt-1 text-xs text-muted-foreground" dir="ltr">
                       {customer.maskedPrimaryContact ?? 'بدون تماس'}
                     </p>
@@ -184,23 +229,24 @@ export function CustomerPicker({
                 </div>
                 <div className="mt-3 flex flex-wrap gap-2">
                   <Button
-                    aria-pressed={selected?.id === customer.id}
+                    aria-pressed={chosen?.id === customer.id}
+                    aria-label={`انتخاب ${customer.displayName}`}
                     disabled={disabled}
                     onClick={() => onSelect(customer)}
                     size="sm"
                     type="button"
-                    variant={
-                      selected?.id === customer.id ? 'primary' : 'outline'
-                    }
+                    variant={chosen?.id === customer.id ? 'primary' : 'outline'}
                   >
                     انتخاب
                   </Button>
                   <Button asChild size="sm" type="button" variant="ghost">
                     <Link
-                      href={`/customer-affairs/customer/${encodeURIComponent(customer.id)}`}
+                      href={`/customers?customerId=${encodeURIComponent(customer.id)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
                     >
                       <ExternalLink aria-hidden="true" className="size-4" />
-                      Customer 360 / موارد مشابه
+                      پرونده مشتری / مسافر
                     </Link>
                   </Button>
                 </div>
@@ -209,12 +255,67 @@ export function CustomerPicker({
           </div>
         )}
       </div>
-      {selected ? (
+      <div className="flex items-center justify-between gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          disabled={disabled || state === 'loading' || page === 1}
+          onClick={() => {
+            setPage((value) => value - 1);
+            setState('loading');
+          }}
+        >
+          قبلی
+        </Button>
+        <span className="text-xs text-muted-foreground">
+          صفحه {page.toLocaleString('fa-IR')} · {total.toLocaleString('fa-IR')}{' '}
+          نتیجه
+        </span>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          disabled={disabled || state !== 'ready' || page * 10 >= total}
+          onClick={() => {
+            setPage((value) => value + 1);
+            setState('loading');
+          }}
+        >
+          بعدی
+        </Button>
+      </div>
+      {chosen ? (
         <Alert
-          description={`${selected.displayName} · ${selected.maskedPrimaryContact ?? 'بدون تماس'}`}
-          title="CustomerReference انتخاب‌شده"
+          description={`${chosen.displayName} · ${chosen.maskedPrimaryContact ?? 'بدون تماس'}`}
+          title="مشتری / مسافر انتخاب‌شده"
         />
       ) : null}
+      {initialCustomerId && !chosen && (
+        <p role="status" className="text-sm">
+          {currentError
+            ? 'نام مشتری فعلی دریافت نشد؛ اتصال فعلی بدون تغییر حفظ می‌شود.'
+            : 'در حال دریافت نام مشتری فعلی…'}{' '}
+          <a
+            className="text-primary underline"
+            href={`/customers?customerId=${encodeURIComponent(initialCustomerId)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            مشاهده پرونده فعلی
+          </a>
+          {currentError && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => setRetry((value) => value + 1)}
+            >
+              تلاش دوباره
+            </Button>
+          )}
+        </p>
+      )}
     </section>
   );
 }

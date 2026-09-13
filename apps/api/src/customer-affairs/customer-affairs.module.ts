@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
 
 import { CustomersModule } from '../customers/customers.module';
+import { HrDirectoryModule } from '../hr/hr-directory.module';
 import { DocumentsModule } from '../documents/documents.module';
 import { IamModule } from '../iam/iam.module';
-import { HrDirectoryModule } from '../hr/hr-directory.module';
 import { AuthGuard } from '../iam/auth.guard';
 import { PermissionGuard } from '../iam/permission.guard';
 import { NotificationsModule } from '../notifications/notifications.module';
@@ -15,23 +15,40 @@ import {
 } from './customer-affairs.controller';
 import { CustomerAffairsRepository } from './customer-affairs.repository';
 import { CustomerAffairsService } from './customer-affairs.service';
+import {
+  CustomerAffairsSiteController,
+  CustomerAffairsSiteGuard,
+} from './customer-affairs-site.controller';
+import { CustomerAffairsInternalController } from './customer-affairs-internal.controller';
+import { CustomerAffairsRemindersService } from './customer-affairs-reminders.service';
+import { CustomerAffairsSmsService } from './customer-affairs-sms.service';
+import { CustomerAffairsSmsController } from './customer-affairs-sms.controller';
 
 @Module({
   imports: [
     IamModule,
-    HrDirectoryModule,
     CustomersModule,
+    HrDirectoryModule,
     DocumentsModule,
     SalesModule,
     ReservationsRuntimeModule,
     NotificationsModule,
   ],
-  controllers: [CustomerAffairsController, CustomerAffairsPublicController],
+  controllers: [
+    CustomerAffairsController,
+    CustomerAffairsPublicController,
+    CustomerAffairsSiteController,
+    CustomerAffairsInternalController,
+    CustomerAffairsSmsController,
+  ],
   providers: [
     AuthGuard,
     PermissionGuard,
     CustomerAffairsRepository,
     CustomerAffairsService,
+    CustomerAffairsSiteGuard,
+    CustomerAffairsRemindersService,
+    CustomerAffairsSmsService,
   ],
   exports: [CustomerAffairsService],
 })

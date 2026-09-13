@@ -9,6 +9,7 @@ export const customerAffairsLeadInclude = {
 } satisfies Prisma.CustomerAffairsLeadInclude;
 
 export const customerAffairsTicketInclude = {
+  siteOrigin: { include: { site: true } },
   timeline: { orderBy: { occurredAt: 'desc' as const } },
   referrals: { orderBy: { createdAt: 'desc' as const } },
   satisfactions: { orderBy: { createdAt: 'desc' as const } },
@@ -24,6 +25,50 @@ export type CustomerAffairsTicketRow = Prisma.CustomerAffairsTicketGetPayload<{
 
 @Injectable()
 export class CustomerAffairsRepository {
+  async dueReminderIds(kind: 'lead' | 'ticket', now: Date, after?: string) {
+    const page = {
+      select: { id: true },
+      orderBy: { id: 'asc' as const },
+      take: 100,
+    };
+    const cursor = after ? { id: { gt: after } } : {};
+    return kind === 'lead'
+      ? this.database.client.customerAffairsLead.findMany({
+          ...page,
+          where: {
+            ...cursor,
+            stage: { notIn: ['LOST', 'HANDED_OFF'] },
+            nextActionAt: { lte: now },
+          },
+        })
+      : this.database.client.customerAffairsTicket.findMany({
+          ...page,
+          where: {
+            ...cursor,
+            status: { notIn: ['CLOSED', 'CANCELLED', 'RESOLVED'] },
+            OR: [
+              { nextActionAt: { lte: now } },
+              { firstRespondedAt: null, firstResponseDueAt: { lte: now } },
+              {
+                pausedAt: null,
+                resolvedAt: null,
+                resolutionDueAt: { lte: now },
+              },
+            ],
+          },
+        });
+  }
+  findSite(code: string) {
+    return this.database.client.customerAffairsSite.findUnique({
+      where: { code },
+    });
+  }
+
+  findSiteTicket(siteId: string, externalId: string) {
+    return this.database.client.customerAffairsSiteTicket.findUnique({
+      where: { siteId_externalId: { siteId, externalId } },
+    });
+  }
   constructor(
     @Inject(DatabaseService) private readonly database: DatabaseService,
   ) {}
@@ -131,11 +176,16 @@ export class CustomerAffairsRepository {
     return { data, total };
   }
 
-  workbenchReferrals(userId: string, branchIds: string[]) {
+  workbenchReferrals(
+    userId: string,
+    branchIds: string[],
+    destinationModule?: string,
+  ) {
     return this.database.client.customerAffairsReferral.findMany({
       where: {
         ticket: { branchId: { in: branchIds } },
         status: { in: ['OPEN', 'IN_PROGRESS'] },
+        ...(destinationModule ? { destinationModule } : {}),
         OR: [{ assignedUserId: userId }, { assignedUserId: null }],
       },
       include: { ticket: { select: { trackingNumber: true, subject: true } } },
@@ -144,21 +194,16 @@ export class CustomerAffairsRepository {
     });
   }
 
-  workbenchRequests(userId: string, branchIds: string[]) {
-    return this.database.client.customerAffairsTicket.findMany({
-      where: {
-        createdByUserId: userId,
-        branchId: { in: branchIds },
-        category: { startsWith: 'WORKBENCH_' },
-      },
-      orderBy: [{ updatedAt: 'desc' }, { id: 'asc' }],
-      take: 100,
-    });
-  }
-
   findReferralByKey(ticketId: string, idempotencyKey: string) {
     return this.database.client.customerAffairsReferral.findUnique({
       where: { ticketId_idempotencyKey: { ticketId, idempotencyKey } },
+    });
+  }
+
+  findReferral(id: string) {
+    return this.database.client.customerAffairsReferral.findUnique({
+      where: { id },
+      include: { ticket: { select: { branchId: true } } },
     });
   }
 
@@ -220,7 +265,7 @@ export class CustomerAffairsRepository {
             { firstResponseBreachedAt: { not: null } },
             { resolutionBreachedAt: { not: null } },
             { firstRespondedAt: null, firstResponseDueAt: { lt: now } },
-            { resolvedAt: null, resolutionDueAt: { lt: now } },
+            { pausedAt: null, resolvedAt: null, resolutionDueAt: { lt: now } },
           ],
         },
       }),
@@ -297,5 +342,17 @@ export class CustomerAffairsRepository {
       },
       correctiveActions,
     };
+  }
+
+  workbenchRequests(userId: string, branchIds: string[]) {
+    return this.database.client.customerAffairsTicket.findMany({
+      where: {
+        createdByUserId: userId,
+        branchId: { in: branchIds },
+        category: { startsWith: 'WORKBENCH_' },
+      },
+      orderBy: [{ updatedAt: 'desc' }, { id: 'asc' }],
+      take: 100,
+    });
   }
 }

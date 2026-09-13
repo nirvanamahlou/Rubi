@@ -3,7 +3,7 @@
 ## محدوده و مبنا
 
 - رایانه: `PC-B`
-- Base: `origin/develop@700168e67cc0a495178946bb44bdd3528d2d49d7`
+- Base: `origin/develop@b2098bc76521c35518cbb64ab5337bcaf565f8f0`
 - Branch: `codex/pc-b-customer-affairs-operational`
 - Worktree: `C:/Users/admin/Rubi-customer-affairs-operational`
 - مرجع محصول: PRD امور مشتریان و اسناد معماری/مرزبندی Repository. فایل PRD فقط منبع
@@ -143,8 +143,8 @@ DELIVERED ارائه نمی‌شود.
 - QA مرورگر در `localhost:3100` و `127.0.0.1:3100` با Login واقعی، فهرست و
   Detail/Timeline Lead و Ticket، ارجاع Workbench، فرم عمومی رضایت و viewport
   موبایل ۳۹۰×۸۴۴ موفق بود؛ اسکرول افقی مشاهده نشد.
-- Runtime محلی این Worktree: Web PID `7576` روی ۳۱۰۰ و API PID `28564` روی
-  ۴۱۹۰؛ هر دو به DB ایزوله و کلیدهای محلی غیرواقعی متصل‌اند.
+- Runtime محلی این Worktree با Web روی ۳۱۰۰ و API روی ۴۱۹۰ به DB ایزوله و
+  کلیدهای محلی غیرواقعی متصل است؛ PIDهای Listener در گزارش نهایی Handoff ثبت می‌شوند.
 
-هیچ merge، force-push یا حذف شاخه مجاز نیست. Migration/Contract/Central Docs lock پس از
-Push و ساخت Draft PR آزاد می‌شود.
+Draft PR #221 به `develop` ساخته شد. Migration/Contract/Central Docs lock آزاد و
+Handoff برای Review ثبت شد. هیچ merge، force-push یا حذف شاخه انجام نشد.
