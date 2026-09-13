@@ -314,12 +314,18 @@ export function CustomerAffairsRubiWorkspace() {
         form === 'leads' ? (
           <LeadForm
             onCancel={() => setForm(null)}
-            onCreated={(row) => navigate('leads', row.id)}
+            onCreated={() => {
+              setRevision((value) => value + 1);
+              navigate('leads');
+            }}
           />
         ) : (
           <TicketForm
             onCancel={() => setForm(null)}
-            onCreated={(row) => navigate('tickets', row.id)}
+            onCreated={() => {
+              setRevision((value) => value + 1);
+              navigate('tickets');
+            }}
           />
         )
       ) : null}

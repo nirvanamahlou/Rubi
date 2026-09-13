@@ -151,7 +151,7 @@ export function LeadForm({
     const passengers = Number(data.get('passengerCount'));
     const input: CustomerAffairsLeadInput = {
       title: String(data.get('title')),
-      sourceReference: String(data.get('sourceReference')),
+      sourceReference: 'ثبت مستقیم در امور مشتریان',
       inboundChannel: String(
         data.get('channel'),
       ) as CustomerAffairsLeadInput['inboundChannel'],
@@ -182,7 +182,7 @@ export function LeadForm({
       priority: String(
         data.get('priority'),
       ) as CustomerAffairsLeadInput['priority'],
-      queueCode: String(data.get('queueCode')),
+      queueCode: 'customer-affairs-front-office',
       nextAction: String(data.get('nextAction')),
       nextActionAt: new Date(String(data.get('nextActionAt'))).toISOString(),
     };
@@ -204,17 +204,12 @@ export function LeadForm({
       busy={busy}
       onClose={onCancel}
     >
-      <form className="mt-5 grid gap-4 lg:grid-cols-2" onSubmit={submit}>
+      <form
+        className="mt-5 grid items-start gap-4 lg:grid-cols-2"
+        onSubmit={submit}
+      >
         <FormField label="عنوان">
           <Input name="title" required minLength={3} />
-        </FormField>
-        <FormField label="منبع درخواست / نام کمپین یا معرف">
-          <Input
-            name="sourceReference"
-            required
-            maxLength={160}
-            placeholder="مثلاً تماس مستقیم، معرفی مشتری یا نام کمپین"
-          />
         </FormField>
         <FormField label="توضیحات خاص">
           <Textarea name="specialPreferences" maxLength={1000} />
@@ -271,18 +266,6 @@ export function LeadForm({
             <option value="NORMAL">عادی</option>
             <option value="HIGH">زیاد</option>
             <option value="URGENT">فوری</option>
-          </AffairsSelect>
-        </FormField>
-        <FormField label="صف مسئول">
-          <AffairsSelect
-            className={s.select}
-            name="queueCode"
-            defaultValue="customer-affairs-front-office"
-            required
-          >
-            <option value="customer-affairs-front-office">
-              پذیرش امور مشتریان
-            </option>
           </AffairsSelect>
         </FormField>
         <FormField label="مبدأ (اختیاری)">
@@ -419,7 +402,10 @@ export function TicketForm({
       busy={busy}
       onClose={onCancel}
     >
-      <form className="mt-5 grid gap-4 lg:grid-cols-2" onSubmit={submit}>
+      <form
+        className="mt-5 grid items-start gap-4 lg:grid-cols-2"
+        onSubmit={submit}
+      >
         <FormField label="موضوع">
           <Input name="subject" required minLength={3} />
         </FormField>
@@ -1496,7 +1482,7 @@ export function CustomerAffairsWorkspace() {
             onCreated={(row) => {
               setCreating(false);
               setLeads((items) => [row, ...items]);
-              void open(row.id);
+              setDetail(null);
             }}
           />
         ) : (
@@ -1505,7 +1491,7 @@ export function CustomerAffairsWorkspace() {
             onCreated={(row) => {
               setCreating(false);
               setTickets((items) => [row, ...items]);
-              void open(row.id);
+              setDetail(null);
             }}
           />
         )

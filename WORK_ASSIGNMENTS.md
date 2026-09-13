@@ -1,5 +1,9 @@
 # Work Assignments
 
+## CA-FORM-LIST-FLOW — PC-B — IN_PROGRESS
+
+- Reserve CA creation forms, post-create callbacks/tests and own docs on codex/pc-b-ca-form-list-flow from3f3f33c4. Remove source/queue inputs, preserve backend-required direct-intake defaults, align fields at start, return successful creations to refreshed row lists instead of auto-opening details. No schema/API/dependency/data changes. Preserve prior report/HR changes; Web-only activation after checks. Existing frontend targets retained. Fetch attempted and still fails on pre-existing internal checkpoint ref; no ref changes.
+
 ## CA-REPORT-LAYOUT — PC-B — VERIFIED / LOCAL_RUNTIME_ACTIVE
 
 - 51 tests, scoped lint and production build/TypeScript passed. Web3100 PID8060, build unified-kuRKDyFYTAGyiLhQbOT_w, implementation8332b8e5 activated; HTTP200/runtime identity and authenticated desktop report screenshots verified. API/DB untouched. Draft PR262; reservation released. Responsive CSS implemented; mobile browser audit not claimed.
