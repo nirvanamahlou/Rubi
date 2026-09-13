@@ -39,6 +39,17 @@ const liveInboxSource = readFileSync(
   ),
   'utf8',
 );
+const deliveryPanelSource = readFileSync(
+  join(
+    process.cwd(),
+    'src',
+    'modules',
+    'finance',
+    'components',
+    'finance-delivery-panel.tsx',
+  ),
+  'utf8',
+);
 const formSource = readFileSync(
   join(
     process.cwd(),
@@ -149,6 +160,8 @@ describe('finance workspace component contract', () => {
     expect(coreSource).not.toContain('label="Version"');
     expect(coreSource).toContain('هیچ درخواست عملیاتی ثبت نمی‌شود');
     expect(coreSource).toContain('<FinanceInboxLiveWorkspace />');
+    expect(coreSource).toContain('<FinanceDeliveryPanel />');
+    expect(componentSource).not.toContain('<FinanceDeliveryPanel />');
     expect(coreSource).toContain('پیش‌نمایش فرم‌های دریافت و پرداخت');
     expect(liveInboxSource).toContain('مرکز درخواست‌های مالی');
     expect(liveInboxSource).toContain('فقط منابع دارای Producer واقعی');
@@ -156,6 +169,18 @@ describe('finance workspace component contract', () => {
     expect(liveInboxSource).toContain('origin');
     expect(liveInboxSource).not.toContain('financeInboxPreviewRequests');
     expect(coreSource).toContain('<FinanceWorkspace />');
+  });
+
+  it('presents supplier settlement and document delivery as two clear steps', () => {
+    expect(deliveryPanelSource).toContain('کنترل مالی قرارداد');
+    expect(deliveryPanelSource).toContain('۱. پرداخت خدمات به کارگزاران');
+    expect(deliveryPanelSource).toContain('۲. مجوز تحویل مدارک به فروش');
+    expect(deliveryPanelSource).toContain('وضعیت پرداخت هر خدمت این قرارداد');
+    expect(deliveryPanelSource).toContain('این مرحله هنوز فعال نیست');
+    expect(deliveryPanelSource).toContain('صدور مجوز تحویل مدارک');
+    expect(deliveryPanelSource).toContain('void load()');
+    expect(deliveryPanelSource).toContain('savePayment');
+    expect(deliveryPanelSource).toContain('updateDelivery');
   });
 
   it('covers dashboard, filters, internal navigation and all preview states', () => {
