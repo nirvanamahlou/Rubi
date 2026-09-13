@@ -9,3 +9,5 @@
 - No API/schema/dependency, permissions or existing-data changes. Pre-existing internal checkpoint fetch error persists; no refs removed.
 
 Frontend skill used existing Rubi controls and scoped alignment. Production build and runtime/browser results are appended after completion.
+
+Completion: scoped ESLint and production build/TypeScript46 routes passed. Web-only guarded cutover produced PID16408, build `unified-gHKl3GgFbMmPI9-TYA1Qm`, implementation `eeb8c56b5a88e0097b5bfea6bf997b2655fec9fb`; HTTP200 and runtime identity verified. Authenticated browser screenshot confirms source/queue input absence and label immediately above special-preferences textarea. Closed dialog without submission; post-create behavior verified by regression contracts, not a new live creation. Company selector independently displayed a retry prompt during browser inspection; no claim to fix that external request issue. API/DB and existing records unchanged. Draft PR264 published; no merge.

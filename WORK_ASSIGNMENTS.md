@@ -1,6 +1,8 @@
 # Work Assignments
 
-## CA-FORM-LIST-FLOW — PC-B — IN_PROGRESS
+## CA-FORM-LIST-FLOW — PC-B — VERIFIED / LOCAL_RUNTIME_ACTIVE
+
+- 53 tests, scoped lint and production build/TypeScript passed. Web3100 PID16408, build unified-gHKl3GgFbMmPI9-TYA1Qm, implementationeeb8c56b active. Authenticated browser confirms removed inputs and tight special-description spacing; no data saved during QA. API/DB untouched, Draft PR264, reservation released.
 
 - Reserve CA creation forms, post-create callbacks/tests and own docs on codex/pc-b-ca-form-list-flow from3f3f33c4. Remove source/queue inputs, preserve backend-required direct-intake defaults, align fields at start, return successful creations to refreshed row lists instead of auto-opening details. No schema/API/dependency/data changes. Preserve prior report/HR changes; Web-only activation after checks. Existing frontend targets retained. Fetch attempted and still fails on pre-existing internal checkpoint ref; no ref changes.
 
