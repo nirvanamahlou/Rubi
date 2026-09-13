@@ -30,7 +30,6 @@ const approvedRoutes = [
 ] as const;
 
 const foundationRoutes = [
-  'purchases',
   'marketing',
   'human-resources',
   'documents',
@@ -62,6 +61,7 @@ describe('main-route module foundation', () => {
   });
 
   it('preserves connected workspaces and the Master Data hub-to-section flow', () => {
+    expect(readFileSync(resolve(crmRoot, 'purchases/page.tsx'), 'utf8')).toContain('ProcurementWorkspace');
     expect(
       readFileSync(resolve(crmRoot, 'reservations/page.tsx'), 'utf8'),
     ).toContain('LiveReservationQueue');
