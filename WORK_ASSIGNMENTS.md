@@ -1,5 +1,9 @@
 # Work Assignments
 
+## CA-REMOVE-REPORT-INTRO — PC-B — IN_PROGRESS
+
+- Reserve report intro JSX/test and own docs on codex/pc-b-ca-remove-report-intro from8d365d9b. Remove requested heading/subtitle only, preserve timestamp and report data. No API/data/permissions/dependencies changes; retain prior Rubi targets. Web-only activation after checks.
+
 ## CA-FORM-LIST-FLOW — PC-B — VERIFIED / LOCAL_RUNTIME_ACTIVE
 
 - 53 tests, scoped lint and production build/TypeScript passed. Web3100 PID16408, build unified-gHKl3GgFbMmPI9-TYA1Qm, implementationeeb8c56b active. Authenticated browser confirms removed inputs and tight special-description spacing; no data saved during QA. API/DB untouched, Draft PR264, reservation released.

@@ -26,6 +26,13 @@ const render = (value = report, showRequests = true) =>
     />,
   );
 describe('Customer Affairs report layout', () => {
+  it('omits the report introduction while retaining data and timestamp', () => {
+    const html = render();
+    expect(html).not.toContain('گزارش امور مشتریان');
+    expect(html).not.toContain('نمای وضعیت درخواست‌ها، رسیدگی و بازخورد مشتریان');
+    expect(html).toContain('آخرین دریافت:');
+    expect(html).toContain('وضعیت تیکت‌های پشتیبانی');
+  });
   it('shows real totals, part-of-total bars, counts and localized corrective statuses', () => {
     const html = render();
     expect(html).toContain('width:75%');
