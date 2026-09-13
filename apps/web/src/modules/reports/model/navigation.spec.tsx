@@ -7,6 +7,7 @@ import {
   parseReportingNavigation,
   reportingConfigurationState,
   reportingFilterStateHref,
+  reportingOperationConfigurationHref,
   reportingViewHref,
   reportingViewIds,
   reportingWorkspaceKey,
@@ -143,7 +144,7 @@ describe('Reporting navigation', () => {
     });
   });
 
-  it('remounts the workspace when an operation opens a configured report', () => {
+  it('opens configured reports without leaving the active operations view', () => {
     const state = reportingConfigurationState('sales_by_service_route', {
       currency: 'USD',
       filterValues: { مسیر: 'تهران ← شیراز' },
@@ -159,18 +160,25 @@ describe('Reporting navigation', () => {
       currency: 'ALL',
       filterValues: {},
     });
-    const configuredKey = reportingWorkspaceKey('catalog', 'all', state);
+    const configuredKey = reportingWorkspaceKey('saved', 'all', state);
 
     expect(configuredKey).not.toBe(savedKey);
     expect(
-      reportingWorkspaceKey('catalog', 'all', {
+      reportingWorkspaceKey('saved', 'all', {
         ...state,
         filterValues: { مسیر: 'تهران ← شیراز', وضعیت: 'ACTIVE' },
       }),
     ).not.toBe(configuredKey);
     expect(
-      reportingFilterStateHref('/reports?view=catalog', state),
-    ).toContain('report=sales_by_service_route');
+      reportingOperationConfigurationHref('saved', 'all', state),
+    ).toBe(
+      '/reports?view=saved&report=sales_by_service_route&from=2026-09-01&to=2026-09-10&company=NIYAYESH_SEIR_SAHAR&currency=USD&route=%D8%AA%D9%87%D8%B1%D8%A7%D9%86+%E2%86%90+%D8%B4%DB%8C%D8%B1%D8%A7%D8%B2',
+    );
+    for (const view of ['shared', 'recent', 'schedules'] as const) {
+      expect(
+        reportingOperationConfigurationHref(view, 'all', state),
+      ).toContain(`view=${view}&report=sales_by_service_route`);
+    }
   });
 
   it('restores legacy saved filters and server run snapshots', () => {

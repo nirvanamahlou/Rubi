@@ -169,7 +169,7 @@ describe('ReportingWorkspace', () => {
     expect(html).toContain('کاتالوگ گزارش‌ها');
     expect(html).toContain('aria-haspopup="dialog"');
     expect(html).toContain(
-      'مبلغ قراردادهای قابل‌مشاهده به تفکیک کارشناس و ارز چقدر است؟',
+      'هر کارشناس چه تعداد قرارداد و چه مبلغ فروشی ثبت کرده است؟',
     );
     expect(html).toContain(
       'کدام پروازها و مسیرها بیشترین صدور و ظرفیت مصرف‌شده را دارند؟',

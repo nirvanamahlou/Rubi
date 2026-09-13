@@ -1,5 +1,17 @@
 # Work Assignments
 
+## REPORTING-OPERATIONS-STAY-IN-VIEW — PC-C — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-13: اجرای گزارش از «گزارش‌های من»،
+  «اشتراک‌گذاری‌شده با من»، «اجراها» و «زمان‌بندی‌ها» باید فرم پیکربندی را در همان
+  نمای فعال باز کند و کاربر را به کاتالوگ منتقل نکند.
+- محدوده رزرو: Navigation و Workspace/Operations View ماژول Reports و تست‌های
+  هدفمند همان رفتار، به‌همراه سند Task و مدخل‌های وضعیت. بدون API، Schema/Migration،
+  Seed/Data، قرارداد، Dependency/Lockfile یا تصرف Runtime همکاران.
+- نتیجه: آدرس اجرای هر ردیف همان View و Filter Snapshot را حفظ می‌کند و Dialog
+  پیکربندی در سطح مشترک Workspace باز می‌شود. 15 تست هدفمند، TypeScript، lint و
+  بررسی Git موفق‌اند؛ قفل فایل‌های این واحد آزاد شد.
+
 ## REPORTING-CATALOG-MANAGEMENT-DECISIONS — PC-C — READY_FOR_REVIEW
 
 - درخواست مالک در 2026-09-13: بازبینی دوباره مدل واقعی CRM، افزودن گزارش‌های

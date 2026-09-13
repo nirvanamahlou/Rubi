@@ -1859,8 +1859,7 @@ export function ReportingWorkspace({
         })}
       </nav>
       {view === 'catalog' ? (
-        <>
-          <section>
+        <section>
             <div className="space-y-4">
               <Card className="p-4">
                 <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[minmax(20rem,1fr)_repeat(2,minmax(13rem,auto))]">
@@ -1962,8 +1961,56 @@ export function ReportingWorkspace({
                 />
               )}
             </div>
-          </section>
-          <Dialog onOpenChange={setConfigurationOpen} open={configurationOpen}>
+        </section>
+      ) : (
+        <Card
+          className="space-y-4 p-6"
+          aria-label={workspaceViews.find((item) => item.id === view)?.label}
+        >
+          <h2 className="text-lg font-bold">
+            {workspaceViews.find((item) => item.id === view)?.label}
+          </h2>
+          {view === 'saved' ? (
+            <nav
+              aria-label="فیلتر گزارش‌های من"
+              className="flex flex-wrap gap-2"
+            >
+              {(['all', 'favorites'] as const).map((filter) => (
+                <Button
+                  asChild
+                  className={
+                    savedFilter === filter ? darkSurfaceContentClass : undefined
+                  }
+                  key={filter}
+                  variant={savedFilter === filter ? 'primary' : 'outline'}
+                  aria-current={savedFilter === filter ? 'page' : undefined}
+                >
+                  <Link
+                    href={reportingViewHref('saved', filter)}
+                    scroll={false}
+                  >
+                    {filter === 'favorites' ? (
+                      <Star aria-hidden="true" className="size-4" />
+                    ) : null}
+                    {filter === 'all' ? 'همه گزارش‌های من' : 'محبوب‌ها'}
+                  </Link>
+                </Button>
+              ))}
+            </nav>
+          ) : null}
+          <ReportingOperationsView
+            onMutation={refreshWorkspaceCounts}
+            view={view}
+            savedFilter={savedFilter}
+          />
+          <Button asChild variant="outline">
+            <Link href={reportingViewHref('catalog')}>
+              رفتن به کاتالوگ گزارش‌ها
+            </Link>
+          </Button>
+        </Card>
+      )}
+      <Dialog onOpenChange={setConfigurationOpen} open={configurationOpen}>
             <DialogContent
               className="max-h-[calc(100vh-1rem)] max-w-6xl overflow-y-auto p-4 sm:p-6"
               dir="rtl"
@@ -2321,56 +2368,7 @@ export function ReportingWorkspace({
                 </div>
               </div>
             </DialogContent>
-          </Dialog>
-        </>
-      ) : (
-        <Card
-          className="space-y-4 p-6"
-          aria-label={workspaceViews.find((item) => item.id === view)?.label}
-        >
-          <h2 className="text-lg font-bold">
-            {workspaceViews.find((item) => item.id === view)?.label}
-          </h2>
-          {view === 'saved' ? (
-            <nav
-              aria-label="فیلتر گزارش‌های من"
-              className="flex flex-wrap gap-2"
-            >
-              {(['all', 'favorites'] as const).map((filter) => (
-                <Button
-                  asChild
-                  className={
-                    savedFilter === filter ? darkSurfaceContentClass : undefined
-                  }
-                  key={filter}
-                  variant={savedFilter === filter ? 'primary' : 'outline'}
-                  aria-current={savedFilter === filter ? 'page' : undefined}
-                >
-                  <Link
-                    href={reportingViewHref('saved', filter)}
-                    scroll={false}
-                  >
-                    {filter === 'favorites' ? (
-                      <Star aria-hidden="true" className="size-4" />
-                    ) : null}
-                    {filter === 'all' ? 'همه گزارش‌های من' : 'محبوب‌ها'}
-                  </Link>
-                </Button>
-              ))}
-            </nav>
-          ) : null}
-          <ReportingOperationsView
-            onMutation={refreshWorkspaceCounts}
-            view={view}
-            savedFilter={savedFilter}
-          />
-          <Button asChild variant="outline">
-            <Link href={reportingViewHref('catalog')}>
-              رفتن به کاتالوگ گزارش‌ها
-            </Link>
-          </Button>
-        </Card>
-      )}
+      </Dialog>
     </main>
   );
 }

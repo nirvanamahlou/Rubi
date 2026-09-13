@@ -1,5 +1,18 @@
 # وضعیت پروژه
 
+## REPORTING-OPERATIONS-STAY-IN-VIEW — حفظ نمای عملیاتی هنگام اجرا
+
+- دکمه اجرا در «گزارش‌های من»، «اشتراک‌گذاری‌شده با من»، «اجراها» و
+  «زمان‌بندی‌ها» اکنون فرم پیکربندی و Filter Snapshot همان ردیف را بدون تغییر
+  نمای فعال باز می‌کند؛ زیرنمای محبوب‌ها نیز حفظ می‌شود.
+- Dialog پیکربندی در سطح Workspace رندر می‌شود، بنابراین جدول همان بخش پشت فرم
+  باقی می‌ماند و بستن فرم کاربر را به کاتالوگ منتقل نمی‌کند. API، داده، مجوز و
+  Schema/Migration تغییر نکرد.
+- 15 تست هدفمند، TypeScript، lint محدوده و بررسی Git موفق‌اند. Build پس از Compile
+  و TypeScript روی prerender دو مسیر نامرتبط `/_global-error` و
+  `/pricing-management` با Invariant داخلی Next.js متوقف می‌شود. جزئیات در
+  [گزارش واحد کار](tasks/REPORTING-OPERATIONS-STAY-IN-VIEW.md) ثبت شده است.
+
 ## REPORTING-CATALOG-MANAGEMENT-DECISIONS — بازبینی تصمیم‌محور کاتالوگ
 
 - مدل واقعی CRM دوباره بررسی و پنج گزارش مدیریتی برای تعهد سفرهای پیش‌رو، سررسید

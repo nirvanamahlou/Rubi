@@ -324,3 +324,11 @@ export function reportingViewHref(
 ): string {
   return `/reports?view=${view}${view === 'saved' && filter === 'favorites' ? '&filter=favorites' : ''}`;
 }
+
+export function reportingOperationConfigurationHref(
+  view: ReportingView,
+  savedFilter: SavedReportFilter,
+  state: ReportingFilterUrlState,
+): string {
+  return reportingFilterStateHref(reportingViewHref(view, savedFilter), state);
+}
