@@ -470,6 +470,7 @@ export function WorkbenchWorkspace() {
               <TabsContent value="messages">
                 <MessageComposer
                   key={`${home.user.id}-${messageUnit}`}
+                  currentUserId={home.user.id}
                   initialUnit={messageUnit}
                 />
               </TabsContent>
