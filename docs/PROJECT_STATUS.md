@@ -1,5 +1,20 @@
 # وضعیت پروژه
 
+## REPORTING-CATALOG-FEATURE-COVERAGE — توسعه کاتالوگ بر مبنای مدل واقعی
+
+- ساختار Prisma و فیچرهای فعلی Sales، B2B، Ticket Catalog، Reservations، Finance،
+  Customer Affairs، Customers، Documents، HR، Workbench و Master Data بررسی شد.
+- ۱۳ گزارش کاربردی جدید با کدهای پایدار `RPT-020` تا `RPT-032`، عنوان پرسشی،
+  خروجی رسمی، Grain، Dimensions، Measures، فیلتر، Drill-down و Permission به
+  کاتالوگ اضافه شدند؛ تعداد کل گزارش‌ها اکنون ۳۲ است.
+- چون Public Projection و Endpoint اجرایی این ۱۳ گزارش هنوز توسط مالکان دامنه
+  ارائه نشده، وضعیت آن‌ها صادقانه «در انتظار منبع داده» است. Schema، Migration،
+  Seed، API، داده عملیاتی و مجوزها تغییر نکردند.
+- ۲۲ تست هدفمند Reports، lint فایل‌های تغییرکرده، typecheck وب، build قراردادها و
+  build تولیدی ۴۶ مسیر Web موفق شدند.
+- جزئیات نگاشت مدل‌ها و مسیر اجرایی‌کردن در
+  [گزارش واحد کار](tasks/REPORTING-CATALOG-FEATURE-COVERAGE.md) ثبت شده است.
+
 ## REPORTING-RESTORE-219-LATEST — بازیابی نسخه نهایی Reports روی مبنای جدید
 
 - آخرین `origin/develop` در `40d8f1f4` دریافت شد و UI اختصاصی Reports فقط از

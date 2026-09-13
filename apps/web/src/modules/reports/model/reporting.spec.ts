@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   filterReportCatalog,
   reportCatalog,
+  reportPriorityGroups,
   reportPriorityFor,
   searchReports,
 } from './reporting';
@@ -39,6 +40,12 @@ describe('reporting catalog', () => {
     ]);
     expect(searchReports('002').map((report) => report.code)).toEqual([
       'sales_by_service_route',
+    ]);
+    expect(searchReports('ظرفیت پرواز').map((report) => report.code)).toEqual([
+      'ticket_capacity',
+    ]);
+    expect(searchReports('RPT-028').map((report) => report.code)).toEqual([
+      'document_compliance',
     ]);
   });
 
@@ -110,6 +117,49 @@ describe('reporting catalog', () => {
           report.outputs.join(',') === 'XLSX,PDF,CSV,API',
       ),
     ).toBe(true);
+  });
+
+  it('publishes feature-backed catalog coverage without claiming an unavailable connection', () => {
+    const featureBackedReports = [
+      'sales_contract_pipeline',
+      'agency_contract_risk',
+      'ticket_capacity',
+      'supplier_payment_queue',
+      'reservation_delivery_readiness',
+      'lead_pipeline',
+      'customer_satisfaction',
+      'customer_consent_coverage',
+      'document_compliance',
+      'hr_record_expiry',
+      'workbench_due_actions',
+      'hotel_rate_comparison',
+      'exchange_rate_governance',
+    ];
+
+    expect(
+      featureBackedReports.map((code) =>
+        reportCatalog.find((report) => report.code === code),
+      ),
+    ).toEqual(
+      featureBackedReports.map((code) =>
+        expect.objectContaining({
+          code,
+          availability: 'PENDING_CONNECTION',
+          approvedView: expect.stringMatching(/^reporting_/),
+        }),
+      ),
+    );
+  });
+
+  it('assigns every report to exactly one internal priority group', () => {
+    const assignedCodes = reportPriorityGroups.flatMap(
+      (group) => group.reportCodes,
+    );
+    expect(assignedCodes).toHaveLength(reportCatalog.length);
+    expect(new Set(assignedCodes).size).toBe(reportCatalog.length);
+    expect(assignedCodes).toEqual(
+      expect.arrayContaining(reportCatalog.map((report) => report.code)),
+    );
   });
 
   it('uses formal Persian business-output descriptions on every catalog card', () => {
