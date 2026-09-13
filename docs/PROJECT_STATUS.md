@@ -1,5 +1,10 @@
 # وضعیت پروژه
 
+## B2B-BACKEND-ONLY-CONNECTIONS-001 — حذف نمایش مستقل ارتباطات CRM
+
+- تب و پنل مستقل «ارتباطات CRM» از پرونده سازمان/آژانس حذف شد. ارتباط واقعی Backend، قرارداد و client آن حفظ شده و همان داده‌ها همچنان در KPIهای پرونده و نمای مالی مصرف می‌شوند.
+- بدون Migration، تغییر Schema/API/Permission/Dependency یا دست‌کاری داده. ۱۳۰ تست Organizations، ۸ تست API، lint و typecheck وب و build تولیدی ۴۶ مسیر موفق‌اند. شاخه `codex/pc-b-b2b-backend-only-connections` برای Review به `develop` تحویل می‌شود؛ جزئیات در `docs/tasks/B2B-BACKEND-ONLY-CONNECTIONS-001.md` ثبت شده است.
+
 ## FINANCE-004 — منوی داخلی حسابداری
 
 صفحه حسابداری اکنون یک منوی داخلی مستقل و جمع‌شونده کنار سایدبار اصلی دارد. «دفتر
