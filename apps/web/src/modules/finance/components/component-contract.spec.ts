@@ -107,6 +107,11 @@ describe('finance workspace component contract', () => {
     }
     expect(accountingNavigationSource).toContain('بازکردن منوی حسابداری');
     expect(accountingNavigationSource).toContain('جمع‌کردن منوی حسابداری');
+    expect(accountingNavigationSource).toContain(
+      'accountingNavigationGroups.map((group) => group.id)',
+    );
+    expect(accountingNavigationSource).toContain('group.items.length > 0');
+    expect(accountingNavigationSource).not.toContain('if (group.href)');
     expect(accountingNavigationSource).toContain('در انتظار تعریف جزئیات');
     expect(accountingNavigationSource).toContain('usePageBreadcrumbs');
     expect(accountingNavigationSource).not.toMatch(
