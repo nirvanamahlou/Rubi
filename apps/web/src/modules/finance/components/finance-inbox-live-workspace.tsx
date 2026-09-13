@@ -6,18 +6,26 @@ import {
   CircleDollarSign,
   Clock3,
   Inbox,
+  PlusCircle,
   RefreshCw,
+  RotateCcw,
   Search,
+  WalletCards,
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import type {
   FinanceInboxItemV1,
   FinanceInboxSource,
   FinanceInboxV1,
+  FinanceBankOptionV1,
+  FinancePaymentMethodOptionV1,
   FinanceRequestStatus,
+  FinanceSettlementAccountKind,
+  FinanceSettlementAccountV1,
 } from '@rubi/contracts';
 
 import { Button } from '@/components/ui/button';
+import { DatePicker } from '@/components/ui/date-picker';
 import {
   Input,
   Select,
@@ -25,7 +33,14 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Textarea,
 } from '@/components/ui/form-controls';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from '@/components/ui/overlays';
 import { Alert, Badge, Card, EmptyState } from '@/components/ui/surfaces';
 import {
   FinanceInboxApiError,
@@ -95,6 +110,32 @@ export function FinanceInboxLiveWorkspace() {
   const [source, setSource] = useState<FinanceInboxSource | 'ALL'>('ALL');
   const [status, setStatus] = useState<'ALL' | 'OPEN' | 'CLOSED'>('OPEN');
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [accounts, setAccounts] = useState<
+    readonly FinanceSettlementAccountV1[]
+  >([]);
+  const [methods, setMethods] = useState<
+    readonly FinancePaymentMethodOptionV1[]
+  >([]);
+  const [banks, setBanks] = useState<readonly FinanceBankOptionV1[]>([]);
+  const [actionItem, setActionItem] = useState<FinanceInboxItemV1 | null>(null);
+  const [actionKind, setActionKind] = useState<
+    'APPROVE' | 'CORRECTION_REQUIRED' | 'PAYMENT' | null
+  >(null);
+  const [actionBusy, setActionBusy] = useState(false);
+  const [actionError, setActionError] = useState('');
+  const [reason, setReason] = useState('');
+  const [accountId, setAccountId] = useState('');
+  const [paymentMethodId, setPaymentMethodId] = useState('');
+  const [paidAmount, setPaidAmount] = useState('');
+  const [exchangeRate, setExchangeRate] = useState('');
+  const [paidAt, setPaidAt] = useState(new Date().toISOString());
+  const [paymentReference, setPaymentReference] = useState('');
+  const [accountDialog, setAccountDialog] = useState(false);
+  const [accountTitle, setAccountTitle] = useState('');
+  const [accountKind, setAccountKind] =
+    useState<FinanceSettlementAccountKind>('BANK');
+  const [accountBankId, setAccountBankId] = useState('');
+  const [accountMaskedId, setAccountMaskedId] = useState('');
   const loading = state?.revision !== revision;
   const data = loading ? null : state.data;
   const error = loading ? '' : state.error;
@@ -117,6 +158,17 @@ export function FinanceInboxLiveWorkspace() {
                 : 'دریافت کارتابل مالی ناموفق بود.',
           });
       });
+    void Promise.allSettled([
+      financeInboxApi.accounts(),
+      financeInboxApi.methods(),
+      financeInboxApi.banks(),
+    ]).then(([accountResult, methodResult, bankResult]) => {
+      if (!active) return;
+      if (accountResult.status === 'fulfilled')
+        setAccounts(accountResult.value);
+      if (methodResult.status === 'fulfilled') setMethods(methodResult.value);
+      if (bankResult.status === 'fulfilled') setBanks(bankResult.value);
+    });
     return () => {
       active = false;
     };
@@ -181,6 +233,110 @@ export function FinanceInboxLiveWorkspace() {
       tone: 'text-rose-600 bg-rose-50 dark:bg-rose-950/40',
     },
   ];
+
+  function openReceiptAction(
+    item: FinanceInboxItemV1,
+    kind: 'APPROVE' | 'CORRECTION_REQUIRED',
+  ) {
+    setActionItem(item);
+    setActionKind(kind);
+    setReason('');
+    setActionError('');
+  }
+
+  function openSupplierPayment(item: FinanceInboxItemV1) {
+    const eligibleAccounts = accounts.filter(
+      (account) =>
+        account.branchId === item.branchReference &&
+        account.currencyCode === item.amount?.currencyCode,
+    );
+    setActionItem(item);
+    setActionKind('PAYMENT');
+    setAccountId(eligibleAccounts[0]?.id ?? '');
+    setPaymentMethodId(methods[0]?.id ?? '');
+    setPaidAmount(
+      item.settlement?.remainingAmount ?? item.amount?.amount ?? '',
+    );
+    setExchangeRate(item.amount?.currencyCode === 'IRR' ? '1' : '');
+    setPaidAt(new Date().toISOString());
+    setPaymentReference('');
+    setReason('');
+    setActionError('');
+  }
+
+  async function submitAction() {
+    if (!actionItem || !actionKind) return;
+    setActionBusy(true);
+    setActionError('');
+    try {
+      if (actionKind === 'PAYMENT') {
+        await financeInboxApi.paySupplier(
+          actionItem.sourceContextReference,
+          actionItem.sourceReference,
+          {
+            expectedVersion: actionItem.sourceVersion,
+            status: 'PAID',
+            accountId,
+            paymentMethodId,
+            paidAmount,
+            exchangeRateToIrr: exchangeRate,
+            transferAt: paidAt,
+            paymentReference: paymentReference.trim() || null,
+            reason,
+          },
+        );
+      } else {
+        await financeInboxApi.decideReceipt(actionItem.sourceReference, {
+          version: 1,
+          contractId: actionItem.sourceContextReference,
+          action: actionKind,
+          reason: reason.trim() || null,
+        });
+      }
+      setActionItem(null);
+      setActionKind(null);
+      setRevision((value) => value + 1);
+    } catch (cause) {
+      setActionError(
+        cause instanceof FinanceInboxApiError
+          ? cause.message
+          : 'ثبت عملیات مالی ناموفق بود.',
+      );
+    } finally {
+      setActionBusy(false);
+    }
+  }
+
+  async function createAccount() {
+    if (!actionItem) return;
+    setActionBusy(true);
+    setActionError('');
+    try {
+      const created = await financeInboxApi.createAccount({
+        version: 1,
+        branchId: actionItem.branchReference,
+        title: accountTitle,
+        kind: accountKind,
+        currencyCode: actionItem.amount?.currencyCode ?? 'IRR',
+        bankId: accountKind === 'BANK' ? accountBankId : null,
+        maskedIdentifier: accountMaskedId.trim() || null,
+      });
+      setAccounts((current) => [...current, created]);
+      setAccountId(created.id);
+      setAccountDialog(false);
+      setAccountTitle('');
+      setAccountBankId('');
+      setAccountMaskedId('');
+    } catch (cause) {
+      setActionError(
+        cause instanceof FinanceInboxApiError
+          ? cause.message
+          : 'تعریف حساب مالی ناموفق بود.',
+      );
+    } finally {
+      setActionBusy(false);
+    }
+  }
 
   return (
     <section className="space-y-5" aria-label="کارتابل یکپارچه مالی">
@@ -370,6 +526,18 @@ export function FinanceInboxLiveWorkspace() {
                   ['قرارداد', selected.contractReference ?? '—'],
                   ['طرف‌حساب / کارمند', selected.partyDisplaySnapshot ?? '—'],
                   ['مبلغ', money(selected)],
+                  ...(selected.settlement
+                    ? [
+                        [
+                          'پرداخت‌شده',
+                          `${selected.settlement.paidAmount} ${selected.amount?.currencyCode ?? ''}`,
+                        ],
+                        [
+                          'مانده',
+                          `${selected.settlement.remainingAmount} ${selected.amount?.currencyCode ?? ''}`,
+                        ],
+                      ]
+                    : []),
                   ['درخواست‌کننده', selected.requesterDisplaySnapshot ?? '—'],
                   ['تاریخ ایجاد', faDate(selected.createdAt)],
                   ['تاریخ سررسید', faDate(selected.dueAt)],
@@ -387,11 +555,313 @@ export function FinanceInboxLiveWorkspace() {
                     </strong>
                   </div>
                 ))}
+                {selected.kind === 'RECEIPT_VERIFICATION' ? (
+                  <div className="grid grid-cols-2 gap-2 pt-2">
+                    <Button
+                      onClick={() => openReceiptAction(selected, 'APPROVE')}
+                    >
+                      <CheckCircle2 className="size-4" />
+                      تأیید دریافت
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() =>
+                        openReceiptAction(selected, 'CORRECTION_REQUIRED')
+                      }
+                    >
+                      <RotateCcw className="size-4" />
+                      درخواست اصلاح
+                    </Button>
+                  </div>
+                ) : null}
+                {selected.kind === 'PAYMENT_REQUEST' &&
+                selected.source === 'RESERVATIONS' ? (
+                  <div className="space-y-2 rounded-2xl border border-blue-200 bg-blue-50/50 p-3 dark:border-blue-900 dark:bg-blue-950/20">
+                    <p className="text-xs leading-5 text-muted-foreground">
+                      پرداخت به کارگزار با انتخاب حساب مبدأ و روش پرداخت ثبت
+                      می‌شود. پرداخت جزئی نیز مجاز است.
+                    </p>
+                    <Button
+                      className="w-full"
+                      onClick={() => openSupplierPayment(selected)}
+                    >
+                      <WalletCards className="size-4" />
+                      ثبت پرداخت کارگزار
+                    </Button>
+                  </div>
+                ) : null}
               </div>
             </Card>
           ) : null}
         </div>
       ) : null}
+
+      <Dialog
+        open={actionItem !== null && actionKind !== null}
+        onOpenChange={(open) => {
+          if (!open && !actionBusy) {
+            setActionItem(null);
+            setActionKind(null);
+          }
+        }}
+      >
+        <DialogContent dir="rtl">
+          <DialogTitle>
+            {actionKind === 'APPROVE'
+              ? 'تأیید دریافت مسافر'
+              : actionKind === 'CORRECTION_REQUIRED'
+                ? 'ارسال برای اصلاح'
+                : 'ثبت پرداخت کارگزار'}
+          </DialogTitle>
+          <DialogDescription>
+            {actionItem?.title} · {actionItem && money(actionItem)}
+          </DialogDescription>
+          <form
+            className="mt-4 grid gap-3"
+            onSubmit={(event) => {
+              event.preventDefault();
+              void submitAction();
+            }}
+          >
+            {actionKind === 'PAYMENT' ? (
+              <>
+                <label className="grid gap-2">
+                  <span>حساب پرداخت‌کننده</span>
+                  <Select value={accountId} onValueChange={setAccountId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="انتخاب حساب مبدأ" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {accounts
+                        .filter(
+                          (account) =>
+                            account.branchId === actionItem?.branchReference &&
+                            account.currencyCode ===
+                              actionItem?.amount?.currencyCode,
+                        )
+                        .map((account) => (
+                          <SelectItem key={account.id} value={account.id}>
+                            {account.title} · {account.currencyCode}
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      setAccountDialog(true);
+                      setActionError('');
+                    }}
+                  >
+                    <PlusCircle className="size-4" />
+                    تعریف حساب جدید
+                  </Button>
+                </label>
+                <label className="grid gap-2">
+                  <span>روش پرداخت</span>
+                  <Select
+                    value={paymentMethodId}
+                    onValueChange={setPaymentMethodId}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="حواله، چک، نقد، پوز یا…" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {methods.map((method) => (
+                        <SelectItem key={method.id} value={method.id}>
+                          {method.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </label>
+                <label className="grid gap-2">
+                  <span>مبلغ این پرداخت</span>
+                  <Input
+                    required
+                    dir="ltr"
+                    inputMode="decimal"
+                    value={paidAmount}
+                    onChange={(event) => setPaidAmount(event.target.value)}
+                  />
+                  <small className="text-muted-foreground">
+                    مانده فعلی: {actionItem?.settlement?.remainingAmount ?? '—'}{' '}
+                    {actionItem?.amount?.currencyCode}
+                  </small>
+                </label>
+                {actionItem?.amount?.currencyCode !== 'IRR' ? (
+                  <label className="grid gap-2">
+                    <span>نرخ روز ارز به ریال</span>
+                    <Input
+                      required
+                      dir="ltr"
+                      inputMode="decimal"
+                      value={exchangeRate}
+                      onChange={(event) => setExchangeRate(event.target.value)}
+                    />
+                  </label>
+                ) : null}
+                <label className="grid gap-2">
+                  <span>تاریخ و ساعت پرداخت</span>
+                  <DatePicker includeTime value={paidAt} onChange={setPaidAt} />
+                </label>
+                <label className="grid gap-2">
+                  <span>شماره پیگیری (اختیاری)</span>
+                  <Input
+                    dir="ltr"
+                    maxLength={160}
+                    value={paymentReference}
+                    onChange={(event) =>
+                      setPaymentReference(event.target.value)
+                    }
+                  />
+                </label>
+              </>
+            ) : null}
+            <label className="grid gap-2">
+              <span>
+                {actionKind === 'CORRECTION_REQUIRED'
+                  ? 'دلیل اصلاح (الزامی)'
+                  : 'توضیح مالی (اختیاری)'}
+              </span>
+              <Textarea
+                required={actionKind === 'CORRECTION_REQUIRED'}
+                maxLength={500}
+                value={reason}
+                onChange={(event) => setReason(event.target.value)}
+              />
+            </label>
+            {actionError ? (
+              <p className="text-sm text-destructive" role="alert">
+                {actionError}
+              </p>
+            ) : null}
+            <div className="flex gap-2">
+              <Button
+                type="submit"
+                disabled={
+                  actionBusy ||
+                  (actionKind === 'PAYMENT' &&
+                    (!accountId || !paymentMethodId || !paidAmount))
+                }
+              >
+                {actionBusy ? 'در حال ثبت…' : 'ثبت عملیات'}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={actionBusy}
+                onClick={() => {
+                  setActionItem(null);
+                  setActionKind(null);
+                }}
+              >
+                انصراف
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={accountDialog} onOpenChange={setAccountDialog}>
+        <DialogContent dir="rtl">
+          <DialogTitle>تعریف حساب پرداخت</DialogTitle>
+          <DialogDescription>
+            این حساب فقط برای شعبه و ارز همین درخواست قابل انتخاب است.
+          </DialogDescription>
+          <form
+            className="mt-4 grid gap-3"
+            onSubmit={(event) => {
+              event.preventDefault();
+              void createAccount();
+            }}
+          >
+            <label className="grid gap-2">
+              <span>عنوان حساب</span>
+              <Input
+                required
+                maxLength={160}
+                placeholder="مثلاً حساب جاری شرکت"
+                value={accountTitle}
+                onChange={(event) => setAccountTitle(event.target.value)}
+              />
+            </label>
+            <label className="grid gap-2">
+              <span>نوع حساب</span>
+              <Select
+                value={accountKind}
+                onValueChange={(value) =>
+                  setAccountKind(value as FinanceSettlementAccountKind)
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="BANK">حساب بانکی</SelectItem>
+                  <SelectItem value="CASH">صندوق نقدی</SelectItem>
+                  <SelectItem value="POS">دستگاه پوز</SelectItem>
+                  <SelectItem value="GATEWAY">درگاه پرداخت</SelectItem>
+                </SelectContent>
+              </Select>
+            </label>
+            {accountKind === 'BANK' ? (
+              <label className="grid gap-2">
+                <span>بانک</span>
+                <Select value={accountBankId} onValueChange={setAccountBankId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="انتخاب بانک" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {banks.map((bank) => (
+                      <SelectItem key={bank.id} value={bank.id}>
+                        {bank.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </label>
+            ) : null}
+            <label className="grid gap-2">
+              <span>شناسه پوشیده حساب (اختیاری)</span>
+              <Input
+                dir="ltr"
+                maxLength={80}
+                placeholder="IR••••1234"
+                value={accountMaskedId}
+                onChange={(event) => setAccountMaskedId(event.target.value)}
+              />
+            </label>
+            {actionError ? (
+              <p className="text-sm text-destructive" role="alert">
+                {actionError}
+              </p>
+            ) : null}
+            <div className="flex gap-2">
+              <Button
+                type="submit"
+                disabled={
+                  actionBusy ||
+                  !accountTitle.trim() ||
+                  (accountKind === 'BANK' && !accountBankId)
+                }
+              >
+                ذخیره حساب
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={actionBusy}
+                onClick={() => setAccountDialog(false)}
+              >
+                انصراف
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </section>
   );
 }

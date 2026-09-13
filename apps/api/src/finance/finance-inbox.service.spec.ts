@@ -71,15 +71,24 @@ describe('FinanceInboxService', () => {
               amount: '85000000',
               currencyCode: 'IRR',
               createdAt: '2026-09-12T10:00:00.000Z',
-              finance: { status: 'PENDING' },
+              finance: {
+                version: 0,
+                status: 'PENDING',
+                paidAmount: '0',
+                remainingAmount: '85000000',
+              },
             },
           ],
         },
       ]),
     } as unknown as ReservationsPublicService;
-    const result = await new FinanceInboxService(sales, hr, reservations).list(
-      actor,
-    );
+    const result = await new FinanceInboxService(
+      sales,
+      hr,
+      reservations,
+      {} as never,
+      {} as never,
+    ).list(actor);
     expect(result.items.map(({ source }) => source)).toEqual([
       'SALES',
       'HR',
@@ -96,6 +105,15 @@ describe('FinanceInboxService', () => {
     ]);
     expect(hr.list).toHaveBeenCalledWith({ target: 'finance', page: 1 }, actor);
     expect(reservations.list).toHaveBeenCalledWith(['branch-a']);
+    expect(result.items[0]).toMatchObject({
+      sourceContextReference: 'contract-1',
+      settlement: null,
+    });
+    expect(result.items[2]).toMatchObject({
+      sourceContextReference: 'intake-1',
+      sourceVersion: 0,
+      settlement: { paidAmount: '0', remainingAmount: '85000000' },
+    });
   });
 
   it('isolates a failed producer and never substitutes preview rows', async () => {
@@ -105,6 +123,8 @@ describe('FinanceInboxService', () => {
       } as never,
       { list: vi.fn().mockResolvedValue({ items: [] }) } as never,
       { list: vi.fn().mockResolvedValue([]) } as never,
+      {} as never,
+      {} as never,
     ).list(actor);
     expect(result.items).toEqual([]);
     expect(result.sources[0]).toMatchObject({
@@ -119,10 +139,118 @@ describe('FinanceInboxService', () => {
       sales as never,
       {} as never,
       {} as never,
+      {} as never,
+      {} as never,
     );
     await expect(
       service.list({ ...actor, permissions: [] }),
     ).rejects.toBeInstanceOf(ForbiddenException);
     expect(sales.financeInbox).not.toHaveBeenCalled();
+  });
+
+  it('approves a persisted Sales receipt through the Sales public service', async () => {
+    const sales = {
+      financeInbox: vi
+        .fn()
+        .mockResolvedValue([
+          {
+            paymentId: 'payment-1',
+            contractId: 'contract-1',
+            branchId: 'branch-a',
+          },
+        ]),
+      applyFinancePaymentConfirmed: vi.fn().mockResolvedValue('confirmed'),
+    };
+    const service = new FinanceInboxService(
+      sales as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      {} as never,
+    );
+    await expect(
+      service.decideReceipt(
+        'payment-1',
+        { version: 1, contractId: 'contract-1', action: 'APPROVE' },
+        actor,
+      ),
+    ).resolves.toEqual({ status: 'RECEIPT_CONFIRMED' });
+    expect(sales.applyFinancePaymentConfirmed).toHaveBeenCalledWith(
+      expect.objectContaining({
+        contractId: 'contract-1',
+        paymentId: 'payment-1',
+        reviewedByUserId: 'finance-user',
+      }),
+    );
+  });
+
+  it('sends a Sales receipt back for correction with the required reason', async () => {
+    const sales = {
+      financeInbox: vi
+        .fn()
+        .mockResolvedValue([
+          {
+            paymentId: 'payment-1',
+            contractId: 'contract-1',
+            branchId: 'branch-a',
+          },
+        ]),
+      applyFinancePaymentCorrection: vi.fn().mockResolvedValue('corrected'),
+    };
+    const service = new FinanceInboxService(
+      sales as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      {} as never,
+    );
+    await expect(
+      service.decideReceipt(
+        'payment-1',
+        {
+          version: 1,
+          contractId: 'contract-1',
+          action: 'CORRECTION_REQUIRED',
+          reason: 'شماره پیگیری اصلاح شود',
+        },
+        actor,
+      ),
+    ).resolves.toEqual({ status: 'CORRECTION_REQUIRED' });
+    expect(sales.applyFinancePaymentCorrection).toHaveBeenCalledWith({
+      contractId: 'contract-1',
+      paymentId: 'payment-1',
+      reason: 'شماره پیگیری اصلاح شود',
+      reviewedByUserId: 'finance-user',
+      branchId: 'branch-a',
+    });
+  });
+
+  it('forwards supplier payment to the Reservations-owned purchase', async () => {
+    const delivery = { updateSupplierPayment: vi.fn().mockResolvedValue({}) };
+    const service = new FinanceInboxService(
+      {} as never,
+      {} as never,
+      {} as never,
+      delivery as never,
+      {} as never,
+    );
+    const input = {
+      expectedVersion: 0,
+      status: 'PAID' as const,
+      accountId: 'account-1',
+      paymentMethodId: 'method-1',
+      paidAmount: '50',
+      exchangeRateToIrr: '1',
+      transferAt: '2026-09-13T12:00:00.000Z',
+      reason: '',
+    };
+    await service.supplierPayment('intake-1', 'purchase-1', input, actor);
+    expect(delivery.updateSupplierPayment).toHaveBeenCalledWith(
+      'intake-1',
+      'purchase-1',
+      input,
+      'finance-user',
+      ['branch-a'],
+    );
   });
 });

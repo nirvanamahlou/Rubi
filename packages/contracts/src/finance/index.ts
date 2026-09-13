@@ -376,12 +376,18 @@ export interface FinanceInboxItemV1 {
   source: FinanceInboxSource;
   kind: 'RECEIPT_VERIFICATION' | 'PAYMENT_REQUEST' | 'HR_REFERRAL';
   sourceReference: string;
+  /** Stable reference needed by the owning module to apply an inbox action. */
+  sourceContextReference: string;
   contractReference: string | null;
   title: string;
   partyDisplaySnapshot: string | null;
   description: string;
   /** The producer's exact decimal string and registered currency code. */
   amount: { amount: string; currencyCode: string } | null;
+  settlement: {
+    paidAmount: string;
+    remainingAmount: string;
+  } | null;
   status: FinanceRequestStatus;
   dueAt: string | null;
   createdAt: string;
@@ -389,6 +395,56 @@ export interface FinanceInboxItemV1 {
   branchReference: string;
   sourceVersion: number;
   origin: 'PERSISTED_SOURCE';
+}
+
+export type FinanceSettlementAccountKind = 'BANK' | 'CASH' | 'POS' | 'GATEWAY';
+
+export interface FinanceSettlementAccountV1 {
+  version: number;
+  id: string;
+  branchId: string;
+  title: string;
+  kind: FinanceSettlementAccountKind;
+  currencyCode: string;
+  bankId: string | null;
+  bankName: string | null;
+  maskedIdentifier: string | null;
+  isActive: boolean;
+}
+
+export interface FinanceSettlementAccountCreateV1 {
+  version: 1;
+  branchId: string;
+  title: string;
+  kind: FinanceSettlementAccountKind;
+  currencyCode: string;
+  bankId?: string | null;
+  maskedIdentifier?: string | null;
+}
+
+export interface FinancePaymentMethodOptionV1 {
+  id: string;
+  name: string;
+  channel:
+    | 'CASH'
+    | 'POS'
+    | 'BANK_TRANSFER'
+    | 'ONLINE_GATEWAY'
+    | 'CREDIT'
+    | 'WALLET'
+    | 'OTHER';
+}
+
+export interface FinanceBankOptionV1 {
+  id: string;
+  name: string;
+}
+
+export interface FinanceReceiptDecisionCommandV1 {
+  version: 1;
+  contractId: string;
+  action: 'APPROVE' | 'CORRECTION_REQUIRED';
+  reason?: string | null;
 }
 
 export interface FinanceInboxV1 {

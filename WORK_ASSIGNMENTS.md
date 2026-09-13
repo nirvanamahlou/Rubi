@@ -1,5 +1,16 @@
 # Work Assignments
 
+## FINANCE-008-INBOX-ACTIONS — PC-A — READY_FOR_REVIEW / ACTIVE LOCAL
+
+Base `eb6af3ff`; COMPUTER_ID=PC-A. عملیاتی‌کردن کارتابل مالی برای تأیید دریافت مسافر یا برگشت برای اصلاح، و ثبت پرداخت خرید خدمات رزرواسیون به کارگزار با حساب مبدأ، روش، مبلغ، ارز، نرخ روز، زمان و مانده. اتصال فقط از قرارداد/سرویس عمومی Sales و Reservations انجام می‌شود و Finance به جدول داخلی ماژول دیگر دسترسی مستقیم ندارد. محدوده Finance API/Web/contracts، Public boundaryهای لازم در Sales/Reservations، Prisma schema و یک Migration افزایشی، seed permission و اسناد همین Task است. بدون داده ساختگی، حذف دسترسی موجود، تغییر Migration تاریخی یا Dependency/Lockfile.
+
+Completed: عملیات تأیید/اصلاح دریافت فروش و پرداخت جزئی/کامل کارگزار با حساب،
+روش پرداخت، نرخ روز و مانده پایدار شد و نتیجه در Sales/Reservations بازتاب دارد.
+Migration و Seed محلی اعمال شد؛ `Ramtin` نقش افزایشی `finance_staff` و شش مجوز
+لازم را دارد. ۱۲۸۳ تست کامل API، ۱۳۴۳ تست کامل Web، typecheck، lint و build
+تولیدی API/Web موفق‌اند. Web3100/API4190 با build نهایی فعال‌اند؛ ادغام نیازمند
+تأیید جداگانه مالک محصول است.
+
 ## WORKBENCH-040 — PC-B — VALIDATED / RELEASED
 
 - Reserve Workbench performance UI, HR self-performance projection/tests, additive Workbench contracts and own documentation for screenshot582 summary redesign. Add self-only today check-in/out and total approved leave request count, keep payslip period and shift dates explicit, remove raw activity rows. Producer HR/Workbench; consumer Workbench Web; new response fields are optional for compatibility. No employee reassignment, migration, dependency, permission change or shared runtime replacement.
