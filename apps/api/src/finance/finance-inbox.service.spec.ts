@@ -150,15 +150,13 @@ describe('FinanceInboxService', () => {
 
   it('approves a persisted Sales receipt through the Sales public service', async () => {
     const sales = {
-      financeInbox: vi
-        .fn()
-        .mockResolvedValue([
-          {
-            paymentId: 'payment-1',
-            contractId: 'contract-1',
-            branchId: 'branch-a',
-          },
-        ]),
+      financeInbox: vi.fn().mockResolvedValue([
+        {
+          paymentId: 'payment-1',
+          contractId: 'contract-1',
+          branchId: 'branch-a',
+        },
+      ]),
       applyFinancePaymentConfirmed: vi.fn().mockResolvedValue('confirmed'),
     };
     const service = new FinanceInboxService(
@@ -186,15 +184,13 @@ describe('FinanceInboxService', () => {
 
   it('sends a Sales receipt back for correction with the required reason', async () => {
     const sales = {
-      financeInbox: vi
-        .fn()
-        .mockResolvedValue([
-          {
-            paymentId: 'payment-1',
-            contractId: 'contract-1',
-            branchId: 'branch-a',
-          },
-        ]),
+      financeInbox: vi.fn().mockResolvedValue([
+        {
+          paymentId: 'payment-1',
+          contractId: 'contract-1',
+          branchId: 'branch-a',
+        },
+      ]),
       applyFinancePaymentCorrection: vi.fn().mockResolvedValue('corrected'),
     };
     const service = new FinanceInboxService(
