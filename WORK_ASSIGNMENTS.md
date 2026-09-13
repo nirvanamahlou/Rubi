@@ -2732,3 +2732,5 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 
 User authorizes PR268 merge and activation on3100. Reserve combined runtime integration and replacement of Web3100/API4191 after builds, preserving all-sections runtime code, existing database, documents and authentication. No migration, seed or account linkage.
 
+
+WORKBENCH-040-RUNTIME completed: PR268 merged, combined Web3100/API4191 activated and HTTP-verified. Runtime ownership released; details in docs/tasks/WORKBENCH-040-PERFORMANCE-SUMMARY.md. No data or migration changes.
