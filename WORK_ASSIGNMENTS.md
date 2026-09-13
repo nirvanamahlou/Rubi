@@ -1,5 +1,9 @@
 # Work Assignments
 
+## CA-REPORT-LAYOUT — PC-B — IN_PROGRESS
+
+- Reserve CA report component/CSS/tests and own docs; branch codex/pc-b-ca-report-layout from active1ada1e5f. No API/data/schema/dependency changes. User authorizes Web3100 activation after tests; preserve HR removal and API4190. Fetch/refetch failed on pre-existing internal checkpoint ref; no ref deletion or remote replacement. Rubi authenticated desktop/corporate, responsive mobile; WCAG AA owner PC-B; targets p75 LCP2500ms/INP200ms/CLS0.1, JS200KB initial+80KB route, Lighthouse a11y90/perf80 (not measured claims).
+
 ## HR-015-RUNTIME — PC-B — VERIFIED / ACTIVATION_BLOCKED
 
 - User authorizes applying merged PR226 UI removal to Web3100. CA owner explicitly handed off runtime at b1da23bd. Reserve AppShell outlet and HR referral UI removal on codex/pc-b-hr-panel-runtime-0913; preserve all CA commits and API4190/PID33612, database and contracts. Isolated build, Web-only cutover after checks. No migration or dependency changes.
