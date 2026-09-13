@@ -1,4 +1,7 @@
+import { PROCUREMENT_PERMISSION_SEED_DATA } from './procurement-permission-seed-data';
+
 export const PERMISSION_SEED_DATA = [
+  ...PROCUREMENT_PERMISSION_SEED_DATA,
   ['hr.directory.read', 'hr', 'انتخاب کارکنان در فرم‌های بین‌بخشی'],
   [
     'hr.connections.tasks.receive',
