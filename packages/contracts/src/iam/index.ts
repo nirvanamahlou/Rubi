@@ -126,6 +126,7 @@ export const IAM_PERMISSION_CODES = [
   'ticket_catalog.manage',
   'reservations.read',
   'reservations.documents.manage',
+  'finance.read',
   'finance.financial_release.read',
   'finance.financial_release.approve',
   'reservations.hotel_purchase.write',

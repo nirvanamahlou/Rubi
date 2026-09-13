@@ -44,6 +44,7 @@ import {
   PageHeader,
 } from '@/components/ui/surfaces';
 import { FinanceWorkspace } from './finance-workspace';
+import { FinanceInboxLiveWorkspace } from './finance-inbox-live-workspace';
 import {
   accountTreePreview,
   financeInboxPreviewRequests,
@@ -980,7 +981,19 @@ export function FinanceRequestInboxWorkspace() {
         description="بررسی مستقل درخواست‌های دریافت و پرداخت فروش، رزرواسیون، خرید و منابع انسانی"
       />
       <FinanceContext />
-      <InboxSpace />
+      <FinanceInboxLiveWorkspace />
+      <details className="rounded-3xl border border-border bg-surface p-4">
+        <summary className="cursor-pointer font-black">
+          پیش‌نمایش فرم‌های دریافت و پرداخت
+        </summary>
+        <p className="mt-2 text-xs text-muted-foreground">
+          این بخش فقط برای بازبینی فرم‌هاست و داده‌های آن وارد صف عملیاتی بالا
+          نمی‌شوند.
+        </p>
+        <div className="mt-5">
+          <InboxSpace />
+        </div>
+      </details>
       <FinanceModuleFooter />
     </main>
   );
