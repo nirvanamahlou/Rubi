@@ -37,6 +37,12 @@ const reportResult: SalesByOrganizationReportResult = {
       amount: '1250000',
       currencyCode: 'IRR',
       contractCount: 2,
+      passengerCount: 4,
+      ticketCount: 3,
+      purchaseAmount: '900000',
+      grossProfit: '350000',
+      refundAmount: '50000',
+      settlementBalance: '125000',
     },
   ],
   total: 1,
@@ -343,6 +349,14 @@ describe('ReportingWorkspace', () => {
     expect(table).not.toContain('نوع نمودار');
     expect(table).toContain('مبلغ قرارداد');
     expect(table).toContain('text-center');
+    expect(table).toContain('تعداد مسافر');
+    expect(table).toContain('تعداد بلیت');
+    expect(table).toContain('مبلغ خرید');
+    expect(table).toContain('سود ناخالص');
+    expect(table).toContain('مبلغ استرداد');
+    expect(table).toContain('مانده تسویه');
+    expect(table).toContain('900000');
+    expect(table).toContain('350000');
     expect(table).toContain('صفحه');
     expect(table).toContain('تطبیق مبلغ با نمای مرجع: تأییدشده');
 

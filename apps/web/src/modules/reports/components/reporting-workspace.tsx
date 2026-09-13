@@ -978,6 +978,27 @@ export function ReportResultPanel({
     });
   }, [result]);
   const availableChartTypes = reportChartTypes(report);
+  const detailColumns = useMemo(() => {
+    const rows = result?.rows ?? [];
+    return {
+      passengerCount: rows.some(
+        (row) => typeof row.passengerCount === 'number',
+      ),
+      ticketCount: rows.some((row) => typeof row.ticketCount === 'number'),
+      purchaseAmount: rows.some(
+        (row) => typeof row.purchaseAmount === 'string',
+      ),
+      grossProfit: rows.some(
+        (row) => typeof row.grossProfit === 'string',
+      ),
+      refundAmount: rows.some(
+        (row) => typeof row.refundAmount === 'string',
+      ),
+      settlementBalance: rows.some(
+        (row) => typeof row.settlementBalance === 'string',
+      ),
+    };
+  }, [result]);
 
   return (
     <Card
@@ -1235,6 +1256,36 @@ export function ReportResultPanel({
                       onSortChange={onSortChange}
                       sort={sort}
                     />
+                    {detailColumns.passengerCount ? (
+                      <th className="p-3 text-center font-semibold">
+                        تعداد مسافر
+                      </th>
+                    ) : null}
+                    {detailColumns.ticketCount ? (
+                      <th className="p-3 text-center font-semibold">
+                        تعداد بلیت
+                      </th>
+                    ) : null}
+                    {detailColumns.purchaseAmount ? (
+                      <th className="p-3 text-center font-semibold">
+                        مبلغ خرید
+                      </th>
+                    ) : null}
+                    {detailColumns.grossProfit ? (
+                      <th className="p-3 text-center font-semibold">
+                        سود ناخالص
+                      </th>
+                    ) : null}
+                    {detailColumns.refundAmount ? (
+                      <th className="p-3 text-center font-semibold">
+                        مبلغ استرداد
+                      </th>
+                    ) : null}
+                    {detailColumns.settlementBalance ? (
+                      <th className="p-3 text-center font-semibold">
+                        مانده تسویه
+                      </th>
+                    ) : null}
                   </tr>
                 </thead>
                 <tbody>
@@ -1255,6 +1306,36 @@ export function ReportResultPanel({
                       <td className="p-3 text-center font-semibold" dir="ltr">
                         {row.amount}
                       </td>
+                      {detailColumns.passengerCount ? (
+                        <td className="p-3 text-center" dir="ltr">
+                          {row.passengerCount?.toLocaleString('fa-IR') ?? '—'}
+                        </td>
+                      ) : null}
+                      {detailColumns.ticketCount ? (
+                        <td className="p-3 text-center" dir="ltr">
+                          {row.ticketCount?.toLocaleString('fa-IR') ?? '—'}
+                        </td>
+                      ) : null}
+                      {detailColumns.purchaseAmount ? (
+                        <td className="p-3 text-center font-semibold" dir="ltr">
+                          {row.purchaseAmount ?? '—'}
+                        </td>
+                      ) : null}
+                      {detailColumns.grossProfit ? (
+                        <td className="p-3 text-center font-semibold" dir="ltr">
+                          {row.grossProfit ?? '—'}
+                        </td>
+                      ) : null}
+                      {detailColumns.refundAmount ? (
+                        <td className="p-3 text-center font-semibold" dir="ltr">
+                          {row.refundAmount ?? '—'}
+                        </td>
+                      ) : null}
+                      {detailColumns.settlementBalance ? (
+                        <td className="p-3 text-center font-semibold" dir="ltr">
+                          {row.settlementBalance ?? '—'}
+                        </td>
+                      ) : null}
                     </tr>
                   ))}
                 </tbody>

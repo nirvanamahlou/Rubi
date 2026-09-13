@@ -16,6 +16,12 @@ export interface SalesByOrganizationReportResult {
     amount: string;
     currencyCode: string;
     contractCount: number;
+    passengerCount?: number;
+    ticketCount?: number;
+    purchaseAmount?: string;
+    grossProfit?: string;
+    refundAmount?: string;
+    settlementBalance?: string;
   }[];
   total: number;
   page: number;
@@ -225,7 +231,20 @@ export const reportingApi = {
       return {
         reportCode: travel.reportCode, reportVersion: travel.reportVersion, grain: travel.grain,
         rowGrain: 'ORDER_ITEM_CURRENCY', sourceProjection: travel.sourceProjection,
-        rows: travel.rows.map((row) => ({ grainId: row.grainId, branchId: row.primaryDimension, ownerUserId: row.secondaryDimension, amount: row.salesAmount, currencyCode: row.currencyCode, contractCount: row.orderCount })),
+        rows: travel.rows.map((row) => ({
+          grainId: row.grainId,
+          branchId: row.primaryDimension,
+          ownerUserId: row.secondaryDimension,
+          amount: row.salesAmount,
+          currencyCode: row.currencyCode,
+          contractCount: row.orderCount,
+          passengerCount: row.passengerCount,
+          ticketCount: row.ticketCount,
+          purchaseAmount: row.purchaseAmount,
+          grossProfit: row.grossProfit,
+          refundAmount: row.refundAmount,
+          settlementBalance: row.settlementBalance,
+        })),
         total: travel.total, page: travel.page, pageSize: travel.pageSize, previewLimit: travel.previewLimit,
         generatedAtUtc: travel.generatedAtUtc, sourceDataAsOfUtc: travel.sourceDataAsOfUtc,
         totalsByCurrency: travel.totalsByCurrency.map((item) => ({ currencyCode: item.currencyCode, amount: item.salesAmount })),

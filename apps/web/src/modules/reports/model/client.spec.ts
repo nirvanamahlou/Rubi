@@ -58,6 +58,60 @@ describe('reporting public projection client', () => {
     });
   });
 
+  it('keeps every travel output measure when normalizing it for the preview table', async () => {
+    const payload = {
+      reportCode: 'sales_by_service_route',
+      reportVersion: 1,
+      grain: 'SERVICE_ROUTE_CURRENCY',
+      sourceProjection: 'travel.reporting.service-route.v1',
+      rows: [
+        {
+          grainId: 'tour:tehran-shiraz:IRR',
+          primaryDimension: 'تور',
+          secondaryDimension: 'تهران ← شیراز',
+          currencyCode: 'IRR',
+          orderCount: 2,
+          passengerCount: 5,
+          ticketCount: 3,
+          salesAmount: '1250000',
+          purchaseAmount: '900000',
+          grossProfit: '350000',
+          refundAmount: '50000',
+          settlementBalance: '125000',
+        },
+      ],
+      total: 1,
+      page: 1,
+      pageSize: 25,
+      previewLimit: 100,
+      generatedAtUtc: '2026-09-13T10:00:00.000Z',
+      sourceDataAsOfUtc: '2026-09-13T09:55:00.000Z',
+      totalsByCurrency: [{ currencyCode: 'IRR', salesAmount: '1250000' }],
+      filterSnapshot: { capturedAtUtc: '2026-09-13T10:00:00.000Z', branchIds: [], filters: {} },
+      filterOptions: {},
+      warnings: [],
+    };
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(new Response(JSON.stringify(payload))),
+    );
+
+    const result = await reportingApi.salesByOrganization({
+      reportCode: 'sales_by_service_route',
+    });
+
+    expect(result.rows[0]).toMatchObject({
+      contractCount: 2,
+      passengerCount: 5,
+      ticketCount: 3,
+      amount: '1250000',
+      purchaseAmount: '900000',
+      grossProfit: '350000',
+      refundAmount: '50000',
+      settlementBalance: '125000',
+    });
+  });
+
   it('does not replace a network failure with zero-valued report data', async () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('offline')));
     await expect(reportingApi.salesByOrganization()).rejects.toMatchObject({

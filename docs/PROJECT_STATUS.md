@@ -2343,3 +2343,7 @@ Runtime3397f2b/hr005-1ba72d053599fc53/PID11368 preserves96b6d2d.46-route build p
 Source f03d34c removes the requested home360 subtitle without leaving an empty paragraph. Subsection descriptions unchanged. Scoped lint/typecheck passed; combined runtime build coordinated.
 
 Combined runtime1bf840b/PID8604/hr005-ef61a0178f542c46 built by Workbench owner. Browser confirms360heading present and requestedsubtitle absent. NoAPI/data change. PR209.
+
+## 2026-09-13 — Reporting preview / export column parity (PC-C)
+
+The Web Reporting adapter now preserves all existing Travel projection measures in the preview response: order, passenger and ticket counts plus sales, purchase, gross-profit, refund and settlement-balance amounts. The configuration form's result table renders every measure that is actually present in the response, alongside the existing dimensions and currency, so it is no longer limited to the prior five-column summary. Existing server-backed sort headers remain available for the supported fields; no client-side fabricated values, API, schema, migration, seed or operational data were added. Nineteen focused Reports tests, scoped lint and Web TypeScript validation passed.
