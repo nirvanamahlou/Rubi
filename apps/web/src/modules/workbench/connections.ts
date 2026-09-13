@@ -15,12 +15,6 @@ export async function readWorkbenchHrNotification(
 }
 export const workbenchDestinations = [
   {
-    href: '/hr',
-    title: 'درخواست‌های منابع انسانی',
-    description: 'مرخصی، مأموریت و پرونده کارکنان در سامانه منابع انسانی',
-    prefixes: ['hr.'],
-  },
-  {
     href: '/sales',
     title: 'فروش و قراردادها',
     description: 'ثبت و پیگیری در پرونده اصلی فروش',
@@ -53,10 +47,8 @@ export const workbenchDestinations = [
 ] as const;
 export function allowedWorkbenchDestinations(permissions: readonly string[]) {
   return workbenchDestinations.filter((destination) =>
-    destination.href === '/hr'
-      ? canReadWorkbenchHr(permissions)
-      : permissions.some((permission) =>
-          destination.prefixes.some((prefix) => permission.startsWith(prefix)),
-        ),
+    permissions.some((permission) =>
+      destination.prefixes.some((prefix) => permission.startsWith(prefix)),
+    ),
   );
 }

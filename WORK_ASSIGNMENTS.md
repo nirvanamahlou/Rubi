@@ -4,6 +4,13 @@
 
 Base `4a84f844`; COMPUTER_ID=PC-A. رفع 403 کارتابل برای نقش واقعی Finance، تکمیل مجوزهای حداقلی `finance_staff`، اتصال Producer ثبت‌شده خرید خدمات رزرواسیون، حذف preview و پیام‌های فنی/غیرفعال از `/finance/requests` و تست‌های متمرکز. محدوده Finance API/Web، Reservations public boundary، seed role specification و اسناد وضعیت است. بدون Schema/Migration، وابستگی، داده ساختگی یا دسترسی مستقیم Finance به جدول ماژول دیگر. تغییر عملیاتی مجاز: همگام‌سازی افزایشی مجوزهای نقش Finance و انتساب نقش به کاربر `Ramtin`؛ هیچ نقش یا مجوز قبلی حذف نمی‌شود. ماژول خرید مستقل Backend عملیاتی ندارد و تا ایجاد Producer واقعی، داده‌ای برای آن جعل نمی‌شود.
 
+## WORKBENCH-037-REMOVE-HR-DESTINATION-CARD — PC-B — READY_FOR_REVIEW
+
+- درخواست صریح مالک محصول در 2026-09-13: پوسته پایین «درخواست‌های منابع انسانی» از صفحه میزکار حذف شود، اما Backend، مسیر `/hr`، مجوزها و اعلان‌های منابع انسانی باقی بمانند. `COMPUTER_ID=PC-B`.
+- Branch مستقل `codex/pc-b-workbench-remove-hr-link` از `origin/develop@dd177cfd`؛ محدوده فقط مقصدهای نمایشی Workbench، تست همان قرارداد و اسناد وضعیت این Task است.
+- هیچ API، Backend، Schema/Migration/Seed، Shared Contract، Permission، داده، Dependency/Lockfile یا منوی اصلی تغییر نمی‌کند.
+- نتیجه: کارت و لینک پایین «درخواست‌های منابع انسانی» از خانه میزکار حذف شد؛ منطق خواندن اعلان HR و کنترل مجوز آن بدون تغییر باقی ماند. چهار تست هدفمند Workbench، lint فایل‌های متاثر، Web typecheck و Production Build با ۴۶ Route موفق‌اند.
+
 ## APP-SHELL-HEADER-UTILITY-LEFT-001 — PC-A — READY_FOR_REVIEW
 
 Base `dd177cfd`; COMPUTER_ID=PC-A. انتقال یکپارچه گروه تاریخ، زبان، پوسته، اعلان و منوی کاربر به لبه چپ نوار بالای AppShell طبق تصویر کاربر. محدوده فقط `app-shell.tsx`، تست header موجود و اسناد وضعیت است؛ رفتار کنترل‌ها، API، داده، Schema/Migration و وابستگی تغییر نمی‌کنند. PRهای قدیمی #155/#156/#159/#161 این فایل را در شاخه‌های قدیمی لمس کرده‌اند اما مبنای فعلی `develop` است و تغییر فعال تازه‌ای روی این چیدمان ندارند.
