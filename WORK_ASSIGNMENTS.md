@@ -1,5 +1,9 @@
 # Work Assignments
 
+## FINANCE-007-INBOX-COMPLETION — PC-A — IN_PROGRESS
+
+Base `4a84f844`; COMPUTER_ID=PC-A. رفع 403 کارتابل برای نقش واقعی Finance، تکمیل مجوزهای حداقلی `finance_staff`، اتصال Producer ثبت‌شده خرید خدمات رزرواسیون، حذف preview و پیام‌های فنی/غیرفعال از `/finance/requests` و تست‌های متمرکز. محدوده Finance API/Web، Reservations public boundary، seed role specification و اسناد وضعیت است. بدون Schema/Migration، وابستگی، داده ساختگی یا دسترسی مستقیم Finance به جدول ماژول دیگر. تغییر عملیاتی مجاز: همگام‌سازی افزایشی مجوزهای نقش Finance و انتساب نقش به کاربر `Ramtin`؛ هیچ نقش یا مجوز قبلی حذف نمی‌شود. ماژول خرید مستقل Backend عملیاتی ندارد و تا ایجاد Producer واقعی، داده‌ای برای آن جعل نمی‌شود.
+
 ## APP-SHELL-HEADER-UTILITY-LEFT-001 — PC-A — READY_FOR_REVIEW
 
 Base `dd177cfd`; COMPUTER_ID=PC-A. انتقال یکپارچه گروه تاریخ، زبان، پوسته، اعلان و منوی کاربر به لبه چپ نوار بالای AppShell طبق تصویر کاربر. محدوده فقط `app-shell.tsx`، تست header موجود و اسناد وضعیت است؛ رفتار کنترل‌ها، API، داده، Schema/Migration و وابستگی تغییر نمی‌کنند. PRهای قدیمی #155/#156/#159/#161 این فایل را در شاخه‌های قدیمی لمس کرده‌اند اما مبنای فعلی `develop` است و تغییر فعال تازه‌ای روی این چیدمان ندارند.
