@@ -39,8 +39,9 @@
   تخصیص‌یافته خود را توسعه می‌دهند؛ تقسیم ثابت Backend/Frontend معتبر نیست.
   اضافه‌شدن PC-C/PC-D مالکیت ماژول‌های موجود را منتقل نمی‌کند؛ پیش از تغییر، واحد کار
   و محدوده باید با مالک فعلی هماهنگ و در `WORK_ASSIGNMENTS.md` رزرو شود.
-- `PC-C` یک شناسه مجاز اجرایی است. مجوز جاری Reporting و حدود آن در
-  `docs/tasks/REPORTING-PC-C-AUTHORIZATION.md` ثبت شده است؛ این مجوز به‌تنهایی
+- `PC-C` یک شناسه مجاز اجرایی است. مجوزهای جاری Reporting و Dashboard و حدود
+  آنها در `docs/tasks/REPORTING-PC-C-AUTHORIZATION.md` و
+  `docs/tasks/DASHBOARDS-PC-C-AUTHORIZATION.md` ثبت شده‌اند؛ این مجوزها به‌تنهایی
   قفل Migration، قرارداد مشترک، فایل مرکزی یا دسترسی سیستم‌عامل دستگاه مقصد ایجاد
   نمی‌کند و هر واحد بعدی همچنان باید جداگانه رزرو شود.
 - در هر لحظه فقط یک Migration Owner و یک Dependency/Lockfile Owner مجاز است؛

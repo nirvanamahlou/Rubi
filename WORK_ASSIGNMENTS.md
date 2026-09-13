@@ -1,5 +1,27 @@
 # Work Assignments
 
+## DASHBOARDS-001 — PC-C — AUTHORIZED / PLANNED
+
+- با دستور صریح مالک محصول در 2026-09-13، اجرای Full-Stack بخش Dashboard به
+  `COMPUTER_ID=PC-C` واگذار شد. Workspace مقصد `F:/Projects/Rubi` و Worktree
+  پیشنهادی `F:/Projects/Rubi/.worktrees/dashboards-001` است؛ PC-C باید وجود،
+  Writable بودن و Remote صحیح را روی دستگاه خودش تایید کند.
+- محدوده انحصاری این واحد: `apps/web/src/modules/dashboard/**`،
+  `apps/web/src/app/(crm)/dashboard/**`، Aggregationهای Dashboard در
+  `apps/api/src/reporting/**` و `docs/tasks/DASHBOARDS-*.md`. Branchها فقط با الگوی
+  `codex/pc-c-dashboards-<task>` ساخته شوند. اجرای محلی روی پورت 3000 مجاز است و
+  فقط Listener متعلق به همان Worktree قابل توقف یا جایگزینی است.
+- Dashboard فقط Public Contract، Approved View یا Projection نسخه‌دار ماژول مالک
+  را مصرف می‌کند. تعریف و صحت شاخص‌های Finance، Sales، Reservations، Customers،
+  HR، Marketing، Documents و Master Data نزد مالک همان ماژول باقی می‌ماند؛ Query
+  مستقیم جدول یا Repository خصوصی، محاسبه مجدد وضعیت کسب‌وکار و داده ساختگی ممنوع است.
+- Migration، Schema، Seed، Dependency/Lockfile، Dashboard shared-contract/root
+  export و Central UI/Navigation برای این مجوز رزرو نشده‌اند. هر نیاز واقعی به فایل
+  مشترک یا قرارداد producer باید پیش از تغییر با مالک آن ثبت و جداگانه رزرو شود.
+- مرجع کامل Scope، امنیت، قفل‌ها و خروجی اجباری:
+  `docs/tasks/DASHBOARDS-PC-C-AUTHORIZATION.md`. Merge، Force Push، تغییر مستقیم
+  `main`/`develop` و بازنویسی تغییرات PC-A/PC-B مجاز نیست.
+
 ## WORKBENCH-021 — PC-B — LOCAL_COMPLETE / RUNTIME_ACTIVE
 
 - User authorizes the bounded CRM messaging slice on
