@@ -1,5 +1,9 @@
 # Work Assignments
 
+## FINANCE-007-INBOX-COMPLETION — PC-A — READY_FOR_REVIEW / RUNTIME PERMISSION PENDING
+
+Base `4a84f844`; COMPUTER_ID=PC-A. مشخصات نقش `finance_staff` با مجوزهای حداقلی کارتابل و تحویل مالی تکمیل شد؛ کارتابل اکنون درخواست‌های واقعی فروش، ارجاع‌های مالی منابع انسانی و خرید خدمات رزرواسیون را از Public Service ماژول‌ها جمع می‌کند. Preview قدیمی، متن‌های فنی، وضعیت اتصال Producer و اقدام نمایشی غیرفعال از `/finance/requests` حذف شد. ماژول خرید مستقل Backend عملیاتی ندارد و تا ایجاد Producer واقعی داده‌ای برای آن جعل نمی‌شود. ۳ تست API، ۸ تست قرارداد Web، ۳ تست Migration، lint محدوده، typecheck و build تولیدی API/Web موفق‌اند و Web3100/API4190 فعال‌اند. انتساب افزایشی نقش `finance_staff` به کاربر `Ramtin` هنوز اجرا نشده و منتظر تأیید صریح مالک است؛ هیچ نقش یا مجوز قبلی حذف نخواهد شد.
+
 ## WORKBENCH-038-PUBLISH — PC-B — MERGE_AUTHORIZED
 
 - User explicitly authorizes pushing and merging all changes from this Workbench task.
