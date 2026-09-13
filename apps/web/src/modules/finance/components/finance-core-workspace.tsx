@@ -976,27 +976,9 @@ export function FinanceAccountingWorkspace() {
 export function FinanceRequestInboxWorkspace() {
   return (
     <main className="space-y-6">
-      <PageHeader
-        eyebrow="Rubi Finance"
-        title="کارتابل درخواست‌ها"
-        description="بررسی مستقل درخواست‌های دریافت و پرداخت فروش، رزرواسیون، خرید و منابع انسانی"
-      />
-      <FinanceContext />
+      <PageHeader title="کارتابل درخواست‌ها" />
       <FinanceInboxLiveWorkspace />
       <FinanceDeliveryPanel />
-      <details className="rounded-3xl border border-border bg-surface p-4">
-        <summary className="cursor-pointer font-black">
-          پیش‌نمایش فرم‌های دریافت و پرداخت
-        </summary>
-        <p className="mt-2 text-xs text-muted-foreground">
-          این بخش فقط برای بازبینی فرم‌هاست و داده‌های آن وارد صف عملیاتی بالا
-          نمی‌شوند.
-        </p>
-        <div className="mt-5">
-          <InboxSpace />
-        </div>
-      </details>
-      <FinanceModuleFooter />
     </main>
   );
 }
