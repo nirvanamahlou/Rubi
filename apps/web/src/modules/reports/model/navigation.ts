@@ -70,6 +70,31 @@ export interface ReportingFilterUrlState {
   filterValues: Readonly<Record<string, string>>;
 }
 
+/**
+ * Forces a fresh client workspace when navigation changes from an operations
+ * table to a report configuration deep-link. React otherwise keeps the same
+ * component instance and its useState initializers do not apply the new URL
+ * snapshot.
+ */
+export function reportingWorkspaceKey(
+  view: ReportingView,
+  savedFilter: SavedReportFilter,
+  state: ReportingFilterUrlState,
+): string {
+  return JSON.stringify([
+    view,
+    savedFilter,
+    state.reportCode ?? '',
+    state.fromDate,
+    state.toDate,
+    state.legalEntity,
+    state.currency,
+    Object.entries(state.filterValues).sort(([left], [right]) =>
+      left.localeCompare(right, 'fa-IR'),
+    ),
+  ]);
+}
+
 type UnknownRecord = Record<string, unknown>;
 
 const legalEntityCodesByLabel: Readonly<Record<string, string>> = {

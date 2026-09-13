@@ -1,5 +1,17 @@
 # وضعیت پروژه
 
+## REPORTING-OPERATIONS-CONFIG-LAUNCH — بازیابی فرم و فیلتر از عملیات
+
+- Deep Link دکمه «اجرا» در گزارش‌های من، اشتراک‌گذاری‌شده، اجراها و زمان‌بندی‌ها
+  اکنون Workspace را با گزارش انتخاب‌شده و Filter Snapshot همان ردیف remount می‌کند؛
+  در نتیجه فرم پیکربندی به‌جای کاتالوگ خالی باز می‌شود.
+- تاریخ، شرکت، ارز و فیلترهای غیرهویتی از URL و فیلترهای هویت‌دار از Session Storage
+  بازیابی می‌شوند. هیچ API، Schema/Migration/Seed، داده یا مجوزی تغییر نکرد.
+- ۳۶ تست هدفمند Reports، lint محدوده، typecheck وب و build تولیدی ۴۶ مسیر Web
+  موفق شدند.
+- جزئیات فنی در
+  [گزارش واحد کار](tasks/REPORTING-OPERATIONS-CONFIG-LAUNCH.md) ثبت شده است.
+
 ## REPORTING-CATALOG-FEATURE-COVERAGE — توسعه کاتالوگ بر مبنای مدل واقعی
 
 - ساختار Prisma و فیچرهای فعلی Sales، B2B، Ticket Catalog، Reservations، Finance،

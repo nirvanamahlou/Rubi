@@ -9,6 +9,7 @@ import {
   reportingFilterStateHref,
   reportingViewHref,
   reportingViewIds,
+  reportingWorkspaceKey,
 } from './navigation';
 
 describe('Reporting navigation', () => {
@@ -140,6 +141,36 @@ describe('Reporting navigation', () => {
       currency: 'USD',
       filterValues: { شعبه: 'BRANCH-01', کارشناس: 'user-1' },
     });
+  });
+
+  it('remounts the workspace when an operation opens a configured report', () => {
+    const state = reportingConfigurationState('sales_by_service_route', {
+      currency: 'USD',
+      filterValues: { مسیر: 'تهران ← شیراز' },
+      fromDate: '2026-09-01',
+      legalEntity: 'NIYAYESH_SEIR_SAHAR',
+      toDate: '2026-09-10',
+    });
+    const savedKey = reportingWorkspaceKey('saved', 'all', {
+      reportCode: undefined,
+      fromDate: '',
+      toDate: '',
+      legalEntity: 'ALL',
+      currency: 'ALL',
+      filterValues: {},
+    });
+    const configuredKey = reportingWorkspaceKey('catalog', 'all', state);
+
+    expect(configuredKey).not.toBe(savedKey);
+    expect(
+      reportingWorkspaceKey('catalog', 'all', {
+        ...state,
+        filterValues: { مسیر: 'تهران ← شیراز', وضعیت: 'ACTIVE' },
+      }),
+    ).not.toBe(configuredKey);
+    expect(
+      reportingFilterStateHref('/reports?view=catalog', state),
+    ).toContain('report=sales_by_service_route');
   });
 
   it('restores legacy saved filters and server run snapshots', () => {
