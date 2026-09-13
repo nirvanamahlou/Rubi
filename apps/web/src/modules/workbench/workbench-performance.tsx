@@ -1,33 +1,37 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import type { ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import type {
   WorkbenchPerformanceResponseV1,
   WorkbenchHrPerformanceRecordV1,
 } from '@rubi/contracts';
 import {
-  Activity,
   CalendarDays,
   ChartNoAxesCombined,
   RefreshCw,
   Wallet,
   UsersRound,
+  LogIn,
+  LogOut,
+  BriefcaseBusiness,
 } from 'lucide-react';
 import { Alert, Badge, Button, Card, Skeleton } from '@/components/ui';
 import { workbenchPersonalApi } from './workbench-personal-api';
 import { WorkbenchSelect } from './workbench-select';
 import { workbenchDate } from './model';
 
-const number = (value: number) => value.toLocaleString('fa-IR');
-function fieldValue(value: string) {
-  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
-    const date = new Date(`${value}T12:00:00Z`);
-    if (!Number.isNaN(date.getTime())) return date.toLocaleDateString('fa-IR');
-  }
+const number = (value: number | undefined) =>
+  value === undefined ? '—' : value.toLocaleString('fa-IR');
+const field = (
+  record: WorkbenchHrPerformanceRecordV1 | null | undefined,
+  label: string,
+) => record?.fields.find((item) => item.label === label)?.value;
+function date(value: string | undefined) {
+  if (!value) return '—';
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value))
+    return new Date(`${value}T12:00:00Z`).toLocaleDateString('fa-IR');
   return value;
 }
-
 export function WorkbenchPerformance() {
   const [days, setDays] = useState('30');
   const [version, setVersion] = useState(0);
@@ -59,40 +63,57 @@ export function WorkbenchPerformance() {
     setDays(value);
     setVersion((current) => current + 1);
   }
+  const hr = data?.hr.status === 'ready' ? data.hr.data : null;
+  const sales = data?.sales.status === 'ready' ? data.sales.data : null;
+  const linked = Boolean(hr?.employee);
+  const attendance = hr?.todayAttendance;
+  const payslip = hr?.latestPayslip;
+  const hrHint = linked ? 'از منابع انسانی' : 'نیازمند اتصال پرونده پرسنلی';
   return (
     <section className="space-y-5" aria-label="عملکرد من">
-      <Card className="flex flex-wrap items-center justify-between gap-4 border-primary/20 bg-primary/5 p-5">
-        <div className="flex items-center gap-3">
-          <ChartNoAxesCombined
-            className="size-9 text-primary"
-            aria-hidden="true"
-          />
-          <div>
-            <h2 className="text-xl font-bold">عملکرد من</h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              کارنامه شغلی و اطلاعات منابع انسانیِ حساب شما
-            </p>
+      <Card className="overflow-hidden border-primary/20">
+        <div className="flex flex-wrap items-center justify-between gap-4 bg-gradient-to-l from-primary/15 via-sky-500/10 to-violet-500/10 p-6">
+          <div className="flex items-center gap-4">
+            <span className="grid size-14 place-items-center rounded-2xl bg-primary text-primary-foreground shadow-sm">
+              <ChartNoAxesCombined aria-hidden="true" className="size-7" />
+            </span>
+            <div>
+              <h2 className="text-2xl font-black">عملکرد من</h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                حضور امروز، برنامه کاری و دستاوردهای شما
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <WorkbenchSelect
+              label="بازه آمار فروش و مشتریان"
+              value={days}
+              onValueChange={reload}
+              options={[
+                { value: '30', label: '۳۰ روز اخیر' },
+                { value: '90', label: '۹۰ روز اخیر' },
+                { value: '365', label: '۳۶۵ روز اخیر' },
+              ]}
+            />
+            <Button
+              variant="outline"
+              onClick={() => reload()}
+              aria-label="به‌روزرسانی عملکرد"
+            >
+              <RefreshCw className="size-4" aria-hidden="true" />
+            </Button>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <WorkbenchSelect
-            label="بازه آمار شغلی"
-            value={days}
-            onValueChange={reload}
-            options={[
-              { value: '30', label: '۳۰ روز اخیر' },
-              { value: '90', label: '۹۰ روز اخیر' },
-              { value: '365', label: '۳۶۵ روز اخیر' },
-            ]}
-          />
-          <Button
-            variant="outline"
-            onClick={() => reload()}
-            aria-label="به‌روزرسانی عملکرد"
-          >
-            <RefreshCw className="size-4" aria-hidden="true" />
-          </Button>
-        </div>
+        {data && (
+          <div className="flex flex-wrap justify-between gap-2 px-6 py-3 text-xs text-muted-foreground">
+            <span>
+              {hr?.employee
+                ? `${hr.employee.name} · ${hr.employee.position} · ${hr.employee.unit}`
+                : 'خلاصه حساب شخصی شما'}
+            </span>
+            <span>آخرین دریافت: {workbenchDate(data.generatedAt)}</span>
+          </div>
+        )}
       </Card>
       {error ? (
         <Alert
@@ -106,222 +127,218 @@ export function WorkbenchPerformance() {
         </div>
       ) : (
         <>
-          <p className="text-xs text-muted-foreground">
-            آخرین دریافت: {workbenchDate(data.generatedAt)} · اطلاعات منابع
-            انسانی مستقل از بازه آمار شغلی است.
-          </p>
           {data.hr.status !== 'ready' ? (
             <Alert
               title="منابع انسانی"
               description={data.hr.message}
               tone={data.hr.status === 'error' ? 'error' : 'info'}
             />
-          ) : !data.hr.data.employee ? (
-            <Card className="p-5">
-              <h3 className="font-bold">
-                پرونده پرسنلی به حساب شما متصل نشده است
-              </h3>
-              <p className="mt-2 text-sm text-muted-foreground">
-                منابع انسانی باید حساب CRM شما را در پرونده پرسنلی انتخاب کند تا
-                مرخصی، شیفت و فیش حقوقی همین‌جا نمایش داده شود.
+          ) : (
+            !linked && (
+              <Alert
+                title="اتصال پرونده پرسنلی"
+                description="برای نمایش مرخصی، شیفت، تردد و حقوق، منابع انسانی باید حساب CRM شما را به پرونده پرسنلی‌تان متصل کند."
+              />
+            )
+          )}
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <Metric
+              label="تعداد مرخصی‌ها"
+              value={number(linked ? hr?.approvedLeaveCount : undefined)}
+              hint={linked ? 'درخواست تأییدشده · همه دوره‌ها' : hrHint}
+              icon={<CalendarDays />}
+              tone="border-emerald-500/20 bg-emerald-500/10"
+            />
+            <Metric
+              label="دریافتی ماه"
+              value={
+                linked && hr?.payslipVisible
+                  ? (field(payslip, 'خالص پرداختی') ?? '—')
+                  : '—'
+              }
+              hint={
+                payslip
+                  ? `خالص فیش تأییدشده · ${field(payslip, 'دوره') ?? 'دوره نامشخص'} · ${field(payslip, 'ارز') ?? ''}`
+                  : linked
+                    ? hr?.payslipVisible
+                      ? 'فیش تأییدشده‌ای ثبت نشده'
+                      : 'نیازمند مجوز مشاهده فیش'
+                    : hrHint
+              }
+              icon={<Wallet />}
+              tone="border-violet-500/20 bg-violet-500/10"
+            />
+            <Metric
+              label="تعداد مشتری‌ها"
+              value={number(sales?.customers)}
+              hint={
+                sales
+                  ? 'مشتریان یکتای فروش‌های تأییدشده در بازه'
+                  : 'آمار در دسترس این حساب نیست'
+              }
+              icon={<UsersRound />}
+              tone="border-sky-500/20 bg-sky-500/10"
+            />
+            <Metric
+              label="تعداد فروش‌ها"
+              value={number(sales?.confirmedContracts)}
+              hint={
+                sales
+                  ? 'قرارداد تأییدشده در بازه انتخابی'
+                  : 'آمار در دسترس این حساب نیست'
+              }
+              icon={<ChartNoAxesCombined />}
+              tone="border-amber-500/20 bg-amber-500/10"
+            />
+          </div>
+          <div className="grid gap-5 lg:grid-cols-2">
+            <Card className="space-y-5 p-6">
+              <div className="flex items-center justify-between gap-3">
+                <h3 className="text-lg font-bold">ورود و خروج امروز</h3>
+                <Badge>{date(attendance?.date)}</Badge>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <Metric
+                  label="اولین ورود"
+                  value={attendance?.firstIn ?? '—'}
+                  hint={linked ? 'ساعت تهران' : hrHint}
+                  icon={<LogIn />}
+                  tone="border-emerald-500/20 bg-emerald-500/5"
+                />
+                <Metric
+                  label="آخرین خروج"
+                  value={attendance?.lastOut ?? '—'}
+                  hint={linked ? 'ساعت تهران' : hrHint}
+                  icon={<LogOut />}
+                  tone="border-orange-500/20 bg-orange-500/5"
+                />
+              </div>
+              {linked && !attendance?.firstIn && !attendance?.lastOut && (
+                <p className="text-sm text-muted-foreground">
+                  ترددی برای امروز ثبت نشده است.
+                </p>
+              )}
+              <p className="text-xs text-muted-foreground">
+                ترددهای روز تقویمی امروز، با اعمال اصلاحات تأییدشده منابع انسانی
               </p>
             </Card>
-          ) : (
-            <>
-              <div className="flex flex-wrap items-center gap-3">
-                <Badge>{data.hr.data.employee.position || 'همکار'}</Badge>
-                <span className="font-semibold">
-                  {data.hr.data.employee.name}
-                </span>
-                <span className="text-sm text-muted-foreground">
-                  {data.hr.data.employee.unit} · کد پرسنلی{' '}
-                  {data.hr.data.employee.personnelCode}
-                </span>
-              </div>
-              <div className="grid gap-4 lg:grid-cols-3">
-                <Panel
-                  title="مرخصی‌های من"
-                  icon={<CalendarDays />}
-                  tone="bg-emerald-500/5 border-emerald-500/20"
-                >
-                  {!!data.hr.data.leaveBalances.length && (
-                    <div className="space-y-2 border-b border-border pb-3">
-                      <p className="text-xs text-muted-foreground">
-                        مانده دفتر مرخصی سال{' '}
-                        {number(data.hr.data.leaveYear ?? 0)} میلادی · روز
-                      </p>
-                      {data.hr.data.leaveBalances.map((balance) => (
-                        <div
-                          key={balance.type}
-                          className="flex justify-between gap-2 text-sm"
-                        >
-                          <span>{balance.type}</span>
-                          <strong>{balance.balance}</strong>
-                          <span className="text-muted-foreground">
-                            مصرف: {balance.used}
-                          </span>
-                        </div>
-                      ))}
+            <Card className="space-y-4 p-6">
+              <h3 className="flex items-center gap-2 text-lg font-bold">
+                <BriefcaseBusiness
+                  className="size-5 text-primary"
+                  aria-hidden="true"
+                />
+                تاریخ شیفت‌های من
+              </h3>
+              {hr?.shifts.length ? (
+                <div className="max-h-72 space-y-3 overflow-y-auto">
+                  {hr.shifts.map((shift) => (
+                    <div
+                      key={shift.id}
+                      className="rounded-xl border border-primary/15 bg-primary/5 p-4"
+                    >
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <strong>
+                          {field(shift, 'عنوان شیفت') ??
+                            field(shift, 'شیفت') ??
+                            'برنامه کاری'}
+                        </strong>
+                        <Badge>{shift.status}</Badge>
+                      </div>
+                      <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-sm">
+                        {shift.fields
+                          .filter((item) =>
+                            /تاریخ|هفته|شنبه|ساعت شروع|ساعت پایان/.test(
+                              item.label,
+                            ),
+                          )
+                          .map((item) => (
+                            <span key={item.label}>
+                              <span className="text-muted-foreground">
+                                {item.label}:{' '}
+                              </span>
+                              {date(item.value)}
+                            </span>
+                          ))}
+                      </div>
                     </div>
-                  )}
-                  <p className="text-xs text-muted-foreground">
-                    ۱۰ درخواست آخر، همراه با وضعیت تأیید
-                  </p>
-                  <Records
-                    records={data.hr.data.leaves}
-                    empty="درخواست مرخصی ثبت نشده است."
-                  />
-                </Panel>
-                <Panel
-                  title="شیفت‌های من"
-                  icon={<UsersRound />}
-                  tone="bg-sky-500/5 border-sky-500/20"
-                >
-                  <p className="text-xs text-muted-foreground">
-                    ۱۰ برنامه اخیر ثبت‌شده در منابع انسانی
-                  </p>
-                  <Records
-                    records={data.hr.data.shifts}
-                    empty="شیفتی به پرونده شما اختصاص داده نشده است."
-                  />
-                </Panel>
-                <Panel
-                  title="آخرین فیش حقوقی من"
-                  icon={<Wallet />}
-                  tone="bg-violet-500/5 border-violet-500/20"
-                >
-                  <p className="text-xs text-muted-foreground">
-                    آخرین فیش تأییدشده؛ مبلغ فیش به‌تنهایی تأیید واریز بانکی
-                    نیست.
-                  </p>
-                  <Records
-                    records={
-                      data.hr.data.latestPayslip
-                        ? [data.hr.data.latestPayslip]
-                        : []
-                    }
-                    empty={
-                      data.hr.data.payslipVisible
-                        ? 'فیش تأییدشده‌ای ثبت نشده است.'
-                        : 'دسترسی مشاهده فیش شخصی برای حساب شما تعریف نشده است.'
-                    }
-                  />
-                </Panel>
+                  ))}
+                </div>
+              ) : (
+                <div className="rounded-xl border border-dashed border-border px-4 py-8 text-center text-sm text-muted-foreground">
+                  {linked ? 'هنوز برنامه شیفتی ثبت نشده است.' : hrHint}
+                </div>
+              )}
+              <p className="text-xs text-muted-foreground">
+                ۱۰ برنامه اخیر ثبت‌شده در منابع انسانی
+              </p>
+            </Card>
+          </div>
+          {!!hr?.leaveBalances.length && (
+            <Card className="space-y-4 p-6">
+              <h3 className="text-lg font-bold">مانده مرخصی</h3>
+              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                {hr.leaveBalances.map((balance) => (
+                  <div
+                    key={balance.type}
+                    className="rounded-xl bg-emerald-500/5 p-4"
+                  >
+                    <span className="text-sm">{balance.type}</span>
+                    <strong className="mt-2 block text-xl">
+                      {balance.balance} روز
+                    </strong>
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      مصرف‌شده: {balance.used} روز · سهمیه: {balance.granted}{' '}
+                      روز
+                    </p>
+                  </div>
+                ))}
               </div>
-            </>
+              <p className="text-xs text-muted-foreground">
+                دفتر مرخصی سال {number(hr.leaveYear ?? undefined)} میلادی
+              </p>
+            </Card>
           )}
-          {data.sales.status === 'error' ? (
+          {data.sales.status === 'error' && (
             <Alert
               tone="error"
               title="آمار فروش دریافت نشد"
               description={data.sales.message}
             />
-          ) : (
-            data.sales.status === 'ready' && (
-              <Card className="space-y-4 p-5">
-                <h3 className="text-lg font-bold">فروش و مشتریان من</h3>
-                <p className="text-sm text-muted-foreground">
-                  قراردادهایی که در بازه انتخابی ایجاد شده‌اند و شما مالک آن‌ها
-                  هستید. مبلغ فروش و مشتریان از قراردادهای تأییدشده محاسبه
-                  می‌شود؛ پیش‌نویس‌ها و لغوشده‌ها در آن‌ها محاسبه نمی‌شوند.
-                </p>
-                {data.sales.data.partial && (
-                  <Alert
-                    title="بخشی از آمار"
-                    description="سقف ۱۰۰۰ قرارداد دریافت شده است؛ اعداد زیر فقط مربوط به قراردادهای دریافت‌شده‌اند. بازه کوتاه‌تری انتخاب کنید."
-                  />
-                )}
-                <div className="grid gap-3 sm:grid-cols-3">
-                  <Metric
-                    label="کل قراردادهای من"
-                    value={number(data.sales.data.contracts)}
-                  />
-                  <Metric
-                    label="قراردادهای تأییدشده"
-                    value={number(data.sales.data.confirmedContracts)}
-                  />
-                  <Metric
-                    label="مشتریان یکتای قراردادهای تأییدشده"
-                    value={number(data.sales.data.customers)}
-                  />
-                </div>
-                <div className="flex flex-wrap gap-3">
-                  {data.sales.data.amounts.length ? (
-                    data.sales.data.amounts.map((amount) => (
-                      <div
-                        key={amount.currencyCode}
-                        className="rounded-xl bg-primary/5 px-5 py-3"
-                      >
-                        <span className="block text-xs text-muted-foreground">
-                          مبلغ فروش · {amount.currencyCode}
-                        </span>
-                        <strong className="mt-1 block text-xl" dir="ltr">
-                          {amount.amount}
-                        </strong>
-                      </div>
-                    ))
-                  ) : (
-                    <p className="text-sm text-muted-foreground">
-                      فروش تأییدشده‌ای در این بازه ثبت نشده است.
-                    </p>
-                  )}
-                </div>
-              </Card>
-            )
           )}
-          {data.activity.status !== 'ready' ? (
-            <Alert
-              tone="error"
-              title="فعالیت شغلی دریافت نشد"
-              description={data.activity.message}
-            />
-          ) : (
-            <Card className="space-y-4 p-5">
-              <h3 className="flex items-center gap-2 text-lg font-bold">
-                <Activity className="size-5 text-primary" aria-hidden="true" />
-                فعالیت من در بخش‌های CRM
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                فعالیت‌های شما در بازه انتخابی: حداکثر{' '}
-                {number(data.activity.data.sourceLimit)} رویداد اخیر حساب، ۱۰۰
-                عملیات اخیر منابع انسانی، تاریخچه وضعیت ۲۰ قرارداد شما و فعالیت
-                شما در پرونده مشتریان همان قراردادها. این اعداد شمارش همین
-                رویدادها هستند. بخش‌ها مطابق دسترسی فعلی شما نمایش داده می‌شوند.
-              </p>
-              <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-                {data.activity.data.modules.map((module) => (
-                  <Metric
-                    key={module.key}
-                    label={module.label}
-                    value={number(module.count)}
-                  />
-                ))}
-              </div>
-              <ul className="divide-y divide-border">
-                {data.activity.data.recent.map((activity) => (
-                  <li
-                    key={activity.id}
-                    className="flex flex-wrap items-center justify-between gap-2 py-3 text-sm"
-                  >
-                    <span>
-                      <Badge>{activity.moduleLabel}</Badge>
-                      <span className="ms-2">
-                        {activityLabel(activity.action)}
-                      </span>
-                    </span>
-                    <time
-                      dateTime={activity.occurredAt}
-                      className="text-xs text-muted-foreground"
+          {sales && (
+            <Card className="space-y-4 p-6">
+              <h3 className="text-lg font-bold">مبلغ فروش من</h3>
+              <div className="flex flex-wrap gap-3">
+                {sales.amounts.length ? (
+                  sales.amounts.map((amount) => (
+                    <div
+                      key={amount.currencyCode}
+                      className="min-w-40 rounded-xl bg-primary/5 p-4"
                     >
-                      {workbenchDate(activity.occurredAt)}
-                    </time>
-                  </li>
-                ))}
-              </ul>
-              {!data.activity.data.recent.length && (
-                <p className="text-sm text-muted-foreground">
-                  فعالیتی در این بازه و فهرست رویدادهای اخیر ثبت نشده است.
-                </p>
+                      <span className="text-xs text-muted-foreground">
+                        {amount.currencyCode}
+                      </span>
+                      <strong className="mt-2 block text-2xl" dir="ltr">
+                        {amount.amount}
+                      </strong>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    فروش تأییدشده‌ای در این بازه ثبت نشده است.
+                  </p>
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                فقط قراردادهای متعلق به شما که در بازه انتخابی ایجاد و تأیید
+                شده‌اند؛ پیش‌نویس و لغوشده محاسبه نمی‌شود.
+              </p>
+              {sales.partial && (
+                <Alert
+                  title="آمار محدود"
+                  description="سقف ۱۰۰۰ قرارداد دریافت شده است؛ برای آمار کامل بازه کوتاه‌تری انتخاب کنید."
+                />
               )}
             </Card>
           )}
@@ -330,87 +347,34 @@ export function WorkbenchPerformance() {
     </section>
   );
 }
-
-function Panel({
-  title,
+function Metric({
+  label,
+  value,
+  hint,
   icon,
   tone,
-  children,
 }: {
-  title: string;
+  label: string;
+  value: string;
+  hint: string;
   icon: ReactNode;
   tone: string;
-  children: ReactNode;
 }) {
   return (
-    <Card className={`space-y-3 p-5 ${tone}`}>
-      <h3 className="flex items-center gap-2 font-bold">
-        <span className="[&>svg]:size-5 text-primary" aria-hidden="true">
+    <div className={`min-w-0 rounded-2xl border p-5 ${tone}`}>
+      <div className="flex items-center justify-between gap-3">
+        <span className="text-sm font-semibold">{label}</span>
+        <span
+          className="rounded-xl bg-surface/70 p-2 text-primary [&>svg]:size-5"
+          aria-hidden="true"
+        >
           {icon}
         </span>
-        {title}
-      </h3>
-      {children}
-    </Card>
-  );
-}
-function Metric({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-xl border border-border bg-muted/30 p-4">
-      <span className="text-sm text-muted-foreground">{label}</span>
-      <strong className="mt-2 block text-2xl">{value}</strong>
+      </div>
+      <strong className="my-4 block break-words text-3xl font-black tabular-nums">
+        {value}
+      </strong>
+      <p className="text-xs leading-6 text-muted-foreground">{hint}</p>
     </div>
   );
-}
-function Records({
-  records,
-  empty,
-}: {
-  records: WorkbenchHrPerformanceRecordV1[];
-  empty: string;
-}) {
-  return records.length ? (
-    <div className="max-h-96 space-y-3 overflow-y-auto">
-      {records.map((record) => (
-        <div
-          key={record.id}
-          className="space-y-2 rounded-xl border border-border bg-card p-3"
-        >
-          <Badge>{record.status}</Badge>
-          <dl className="space-y-2">
-            {record.fields.map((field, index) => (
-              <div key={index} className="flex justify-between gap-3 text-sm">
-                <dt className="text-muted-foreground">{field.label}</dt>
-                <dd className="text-end font-medium">
-                  {fieldValue(field.value)}
-                </dd>
-              </div>
-            ))}
-          </dl>
-        </div>
-      ))}
-    </div>
-  ) : (
-    <p className="py-3 text-sm text-muted-foreground">{empty}</p>
-  );
-}
-function activityLabel(action: string) {
-  const salesStatus: Record<string, string> = {
-    'sales.status.draft': 'ایجاد پیش‌نویس قرارداد',
-    'sales.status.pending_confirmation': 'ارسال قرارداد برای تأیید',
-    'sales.status.confirmed': 'تأیید قرارداد',
-    'sales.status.sent_to_reservations': 'ارسال قرارداد به رزرواسیون',
-    'sales.status.in_progress': 'شروع رسیدگی به قرارداد',
-    'sales.status.completed': 'تکمیل قرارداد',
-    'sales.status.cancelled': 'لغو قرارداد',
-  };
-  if (salesStatus[action]) return salesStatus[action];
-  if (/created?$/.test(action)) return 'ایجاد رکورد';
-  if (/updated?$/.test(action)) return 'ویرایش اطلاعات';
-  if (/deleted?$/.test(action)) return 'حذف رکورد';
-  if (/export/.test(action)) return 'خروجی گزارش';
-  if (/preview|read/.test(action)) return 'مشاهده اطلاعات';
-  if (/confirm|approve/.test(action)) return 'تأیید';
-  if (/submit|send/.test(action)) return 'ارسال برای پیگیری';
-  return 'عملیات ثبت‌شده';
 }
