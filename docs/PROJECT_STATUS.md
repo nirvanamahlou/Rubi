@@ -9,6 +9,7 @@
 ساخته نشده است. ۲۰ تست Finance/Navigation، Prettier، ESLint، TypeScript، build تولیدی ۴۶
 مسیر و QA مرورگر موفق‌اند. جزئیات در
 [FINANCE-004](tasks/FINANCE-004-ACCOUNTING-SECONDARY-NAV.md) ثبت شده است.
+مالک محصول در 2026-09-13 ادغام این واحد با `develop` و فعال‌سازی Web3100 را تأیید کرد.
 
 ## HR-014 — حذف پنل مستقل ارتباطات از رابط کاربری
 

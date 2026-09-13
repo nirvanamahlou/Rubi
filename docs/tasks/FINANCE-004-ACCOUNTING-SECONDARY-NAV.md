@@ -3,7 +3,7 @@
 - **Computer:** PC-A
 - **Branch:** `codex/pc-a-accounting-secondary-navigation`
 - **Base:** `origin/develop@40d8f1f4`
-- **Status:** READY_FOR_REVIEW / TESTED
+- **Status:** MERGE_AUTHORIZED / TESTED
 
 ## هدف
 
@@ -40,3 +40,4 @@
   `/finance/accounting/[...slug]`
 - QA مرورگر: نمایش منوی داخلی، همه عنوان‌ها، پوسته خالی و مسیر «اطلاعات پایه» بررسی شد؛
   جابه‌جایی به مسیر و جمع‌شدن منو نیز روی Preview کنترل شد.
+- مالک محصول در 2026-09-13 ادغام با `develop` و فعال‌سازی Web3100 را صریحاً تأیید کرد.
