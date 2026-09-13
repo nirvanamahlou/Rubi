@@ -3,6 +3,10 @@
 Status: READY_FOR_REVIEW. COMPUTER_ID=PC-B. Branch `codex/pc-b-procurement-001`.
 Base: `060fc35cf42493edd9d579fbf51fe62ff512261e`.
 
+Review-compatibility scope: isolate the already authorized HR Procurement projection
+in its own public module and move only this task's central-document sections to avoid
+concurrent develop insertions. No merge, rebase, force push or other task source is used.
+
 ## Sources and execution gate
 
 The user's pasted request is the execution instruction. The supplied PRD at

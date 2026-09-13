@@ -1,6 +1,6 @@
 apps/api/src/app.module.ts
 apps/api/src/hr/hr-procurement-directory.ts
-apps/api/src/hr/hr.module.ts
+apps/api/src/hr/hr-procurement.module.ts
 apps/api/src/iam/iam-procurement-directory.ts
 apps/api/src/iam/iam.module.ts
 apps/api/src/master-data/master-data.module.ts

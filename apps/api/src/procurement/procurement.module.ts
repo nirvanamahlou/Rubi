@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { DocumentsModule } from '../documents/documents.module';
-import { HrModule } from '../hr/hr.module';
+import { HrProcurementModule } from '../hr/hr-procurement.module';
 import { IamModule } from '../iam/iam.module';
 import { AuthGuard } from '../iam/auth.guard';
 import { LegalEntitiesModule } from '../legal-entities/legal-entities.module';
@@ -15,7 +15,7 @@ import { NotificationsModule } from '../notifications/notifications.module';
 @Module({
   imports: [
     IamModule,
-    HrModule,
+    HrProcurementModule,
     MasterDataModule,
     DocumentsModule,
     LegalEntitiesModule,
