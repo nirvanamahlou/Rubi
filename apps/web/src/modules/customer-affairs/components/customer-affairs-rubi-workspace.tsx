@@ -1,5 +1,6 @@
 'use client';
 
+import { AffairsReportPanel } from './affairs-report-panel';
 import { AffairsSelect } from './affairs-select';
 import { CreatedDateFilter } from './created-date-filter';
 import type {
@@ -313,12 +314,18 @@ export function CustomerAffairsRubiWorkspace() {
         form === 'leads' ? (
           <LeadForm
             onCancel={() => setForm(null)}
-            onCreated={(row) => navigate('leads', row.id)}
+            onCreated={() => {
+              setRevision((value) => value + 1);
+              navigate('leads');
+            }}
           />
         ) : (
           <TicketForm
             onCancel={() => setForm(null)}
-            onCreated={(row) => navigate('tickets', row.id)}
+            onCreated={() => {
+              setRevision((value) => value + 1);
+              navigate('tickets');
+            }}
           />
         )
       ) : null}
@@ -787,111 +794,12 @@ export function CustomerAffairsRubiWorkspace() {
               </>
             )}
             {report && (
-              <>
-                <section className={s.hero}>
-                  <span className={s.icon}>
-                    <BarChart3 />
-                  </span>
-                  <div>
-                    <h2>{title}</h2>
-                    <p className={s.muted}>
-                      داده‌های ثبت‌شده تا {date(report.generatedAt)}؛ در محدوده
-                      دسترسی شما
-                    </p>
-                  </div>
-                </section>
-                <div className={s.columns}>
-                  {view === 'reports' && (
-                    <section className={s.panel}>
-                      <div className={s.panelHead}>
-                        <h2>وضعیت درخواست‌های مشتریان</h2>
-                      </div>
-                      <div className={s.panelBody}>
-                        {report.leadStages.length ? (
-                          report.leadStages.map((x) => (
-                            <div key={x.stage} className={s.reportRow}>
-                              <div>
-                                <span>{stageLabel[x.stage] || x.stage}</span>
-                                <strong>{number(x._count._all)}</strong>
-                              </div>
-                              <div className={s.bar}>
-                                <i
-                                  style={{
-                                    width: `${(100 * x._count._all) / Math.max(1, ...report.leadStages.map((y) => y._count._all))}%`,
-                                  }}
-                                />
-                              </div>
-                            </div>
-                          ))
-                        ) : (
-                          <p className={s.empty}>داده‌ای ثبت نشده است.</p>
-                        )}
-                      </div>
-                    </section>
-                  )}
-                  <section className={s.panel}>
-                    <div className={s.panelHead}>
-                      <h2>رضایت مشتری</h2>
-                    </div>
-                    <div className={s.panelBody}>
-                      <p>
-                        میانگین امتیاز:{' '}
-                        {report.satisfaction.average === null
-                          ? 'هنوز ثبت نشده'
-                          : number(report.satisfaction.average)}
-                      </p>
-                      <p className={s.muted}>
-                        {number(report.satisfaction.count)} پاسخ ثبت‌شده
-                      </p>
-                      <p className={s.muted}>
-                        دعوت رضایت و جزئیات اقدام اصلاحی از داخل پرونده پشتیبانی
-                        در دسترس است.
-                      </p>
-                      <Button
-                        variant="outline"
-                        onClick={() => navigate('tickets')}
-                      >
-                        مشاهده پرونده‌های پشتیبانی
-                      </Button>
-                    </div>
-                  </section>
-                </div>
-                <section className={s.panel}>
-                  <div className={s.panelHead}>
-                    <h2>وضعیت تیکت‌ها و اقدام اصلاحی</h2>
-                  </div>
-                  <div className={s.panelBody}>
-                    {report.ticketStatuses.map((x) => (
-                      <div className={s.reportRow} key={x.status}>
-                        {statusLabel[x.status] || x.status}:{' '}
-                        {number(x._count._all)}
-                      </div>
-                    ))}
-                    {!report.ticketStatuses.length && (
-                      <p className={s.muted}>تیکتی ثبت نشده است.</p>
-                    )}
-                    <h3>اقدام‌های اصلاحی</h3>
-                    {report.correctiveActions.map((item) => (
-                      <p className={s.muted} key={item.status}>
-                        {(
-                          {
-                            OPEN: 'باز',
-                            IN_PROGRESS: 'در حال انجام',
-                            DONE: 'تکمیل‌شده',
-                            CANCELLED: 'لغوشده',
-                            COMPLETED: 'تکمیل‌شده',
-                            CLOSED: 'بسته',
-                          } as Record<string, string>
-                        )[item.status] || item.status}
-                        : {number(item._count._all)}
-                      </p>
-                    ))}
-                    {!report.correctiveActions.length && (
-                      <p className={s.muted}>اقدام اصلاحی ثبت نشده است.</p>
-                    )}
-                  </div>
-                </section>
-              </>
+              <AffairsReportPanel
+                report={report}
+                showRequests={view === 'reports'}
+                onTickets={() => navigate('tickets')}
+                onRequests={() => navigate('leads')}
+              />
             )}
           </>
         )}

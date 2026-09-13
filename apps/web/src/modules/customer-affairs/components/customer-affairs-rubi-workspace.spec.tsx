@@ -65,7 +65,7 @@ describe('Rubi Customer Affairs navigation', () => {
     expect(source).toContain('className={s.metrics}');
     expect(source).not.toContain('className={s.hub}');
     expect(source).toContain('className={s.attention}');
-    expect(source).toContain('className={s.hero}');
+    expect(source).toContain('<AffairsReportPanel');
   });
   it('renders the four reference sections inside the existing application shell', () => {
     route.query = '';
