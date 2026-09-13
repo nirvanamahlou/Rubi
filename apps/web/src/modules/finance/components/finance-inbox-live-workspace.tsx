@@ -1,8 +1,6 @@
 'use client';
 
 import {
-  AlertCircle,
-  Building2,
   CheckCircle2,
   ChevronLeft,
   CircleDollarSign,
@@ -10,8 +8,6 @@ import {
   Inbox,
   RefreshCw,
   Search,
-  Send,
-  ShieldCheck,
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import type {
@@ -162,9 +158,9 @@ export function FinanceInboxLiveWorkspace() {
         item.dueAt !== null &&
         data.generatedAt > item.dueAt,
     ).length ?? 0;
-  const connectedCount =
-    data?.sources.filter(({ connection }) => connection === 'CONNECTED')
-      .length ?? 0;
+  const availableSources = (data?.sources ?? []).filter(
+    ({ connection }) => connection !== 'NOT_CONNECTED',
+  );
   const kpis = [
     {
       label: 'کل درخواست‌های واقعی',
@@ -184,53 +180,29 @@ export function FinanceInboxLiveWorkspace() {
       icon: Clock3,
       tone: 'text-rose-600 bg-rose-50 dark:bg-rose-950/40',
     },
-    {
-      label: 'منابع متصل',
-      value: `${connectedCount} از ۴`,
-      icon: CheckCircle2,
-      tone: 'text-violet-600 bg-violet-50 dark:bg-violet-950/40',
-    },
   ];
 
   return (
     <section className="space-y-5" aria-label="کارتابل یکپارچه مالی">
-      <div className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-[#082f6b] via-[#0e56ae] to-[#1194b8] p-6 text-white shadow-lg shadow-blue-950/10 md:p-8">
-        <div className="absolute -start-20 -top-24 size-64 rounded-full bg-white/10 blur-2xl" />
-        <div className="absolute -bottom-32 end-16 size-72 rounded-full bg-cyan-300/15 blur-3xl" />
-        <div className="relative flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
-          <div>
-            <div className="mb-4 flex w-fit items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-bold backdrop-blur">
-              <ShieldCheck className="size-4" /> صف امن و شعبه‌محور
-            </div>
-            <h2 className="text-2xl font-black md:text-3xl">
-              مرکز درخواست‌های مالی
-            </h2>
-            <p className="mt-2 max-w-2xl text-sm leading-7 text-blue-50/90">
-              درخواست‌های ثبت‌شده واحدها، با منبع و وضعیت اتصال مشخص، در یک صف
-              قابل پیگیری
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2 text-xs">
-            <span className="rounded-xl bg-white/12 px-3 py-2 backdrop-blur">
-              آخرین دریافت: {data ? faDate(data.generatedAt) : '—'}
-            </span>
-            <Button
-              className="border-white/30 bg-white/10 text-white hover:bg-white/20"
-              disabled={loading}
-              onClick={() => setRevision((value) => value + 1)}
-              size="sm"
-              variant="outline"
-            >
-              <RefreshCw
-                className={`size-4 ${loading ? 'animate-spin' : ''}`}
-              />
-              به‌روزرسانی
-            </Button>
-          </div>
+      <Card className="flex flex-col justify-between gap-3 p-4 sm:flex-row sm:items-center">
+        <div>
+          <h2 className="font-black">صف درخواست‌های مالی</h2>
+          <p className="mt-1 text-xs text-muted-foreground">
+            آخرین به‌روزرسانی: {data ? faDate(data.generatedAt) : '—'}
+          </p>
         </div>
-      </div>
+        <Button
+          disabled={loading}
+          onClick={() => setRevision((value) => value + 1)}
+          size="sm"
+          variant="outline"
+        >
+          <RefreshCw className={`size-4 ${loading ? 'animate-spin' : ''}`} />
+          به‌روزرسانی
+        </Button>
+      </Card>
 
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-3 sm:grid-cols-3">
         {kpis.map(({ label, value, icon: Icon, tone }) => (
           <Card className="flex items-center gap-4 p-4" key={label}>
             <span className={`rounded-2xl p-3 ${tone}`}>
@@ -243,54 +215,6 @@ export function FinanceInboxLiveWorkspace() {
           </Card>
         ))}
       </div>
-
-      <Card className="p-4">
-        <div className="mb-3 flex items-center justify-between">
-          <div>
-            <h3 className="font-black">وضعیت اتصال واحدها</h3>
-            <p className="mt-1 text-xs text-muted-foreground">
-              فقط منابع دارای Producer واقعی وارد صف می‌شوند.
-            </p>
-          </div>
-          <Badge>Live sources</Badge>
-        </div>
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          {(data?.sources ?? []).map((item) => (
-            <div
-              className={`rounded-2xl border p-3 ${sourceTone(item.source)}`}
-              key={item.source}
-            >
-              <div className="flex items-center justify-between gap-2">
-                <strong>{sourceLabels[item.source]}</strong>
-                <span className="flex items-center gap-1 text-xs font-bold">
-                  <span
-                    className={`size-2 rounded-full ${item.connection === 'CONNECTED' ? 'bg-emerald-500' : item.connection === 'UNAVAILABLE' ? 'bg-rose-500' : 'bg-amber-500'}`}
-                  />
-                  {item.connection === 'CONNECTED'
-                    ? 'متصل'
-                    : item.connection === 'UNAVAILABLE'
-                      ? 'پاسخ نمی‌دهد'
-                      : 'در انتظار Producer'}
-                </span>
-              </div>
-              <p className="mt-2 text-xs leading-5 opacity-80">
-                {item.message}
-              </p>
-              <p className="mt-2 text-sm font-black">
-                {item.itemCount.toLocaleString('fa-IR')} درخواست
-              </p>
-            </div>
-          ))}
-          {loading
-            ? Array.from({ length: 4 }, (_, index) => (
-                <div
-                  className="h-28 animate-pulse rounded-2xl bg-muted"
-                  key={index}
-                />
-              ))
-            : null}
-        </div>
-      </Card>
 
       <Card className="p-4">
         <div className="grid gap-3 lg:grid-cols-[1fr_13rem_13rem_auto]">
@@ -312,9 +236,9 @@ export function FinanceInboxLiveWorkspace() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="ALL">همه واحدها</SelectItem>
-              {Object.entries(sourceLabels).map(([value, label]) => (
+              {availableSources.map(({ source: value }) => (
                 <SelectItem key={value} value={value}>
-                  {label}
+                  {sourceLabels[value]}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -361,7 +285,7 @@ export function FinanceInboxLiveWorkspace() {
       {!loading && !error && !items.length ? (
         <EmptyState
           title="درخواستی با این فیلتر پیدا نشد"
-          description="اگر منبعی هنوز متصل نیست، پس از انتشار Producer همان واحد وارد این صف خواهد شد."
+          description="فیلترها را تغییر دهید یا کارتابل را به‌روزرسانی کنید."
         />
       ) : null}
       {!loading && !error && items.length ? (
@@ -463,24 +387,11 @@ export function FinanceInboxLiveWorkspace() {
                     </strong>
                   </div>
                 ))}
-                <div className="rounded-2xl border border-amber-200 bg-amber-50 p-3 text-xs leading-6 text-amber-800 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
-                  <AlertCircle className="mb-1 inline size-4" /> این مرحله فقط
-                  خواندن درخواست واقعی است؛ تأیید دریافت یا پرداخت تا فعال‌شدن
-                  Persistence مالی انجام نمی‌شود.
-                </div>
-                <Button className="w-full" disabled>
-                  <Send className="size-4" /> عملیات مالی پس از فعال‌سازی
-                </Button>
               </div>
             </Card>
           ) : null}
         </div>
       ) : null}
-
-      <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-border bg-muted/30 px-4 py-3 text-xs text-muted-foreground">
-        <Building2 className="size-4" /> دامنه نمایش از شعب مجاز کاربر گرفته
-        می‌شود؛ Finance مستقیماً جدول Sales یا HR را Query نمی‌کند.
-      </div>
     </section>
   );
 }
