@@ -28,6 +28,7 @@ describe('finance public proposal contract', () => {
     expect(Object.values(financeEndpointProposals)).toEqual(
       expect.arrayContaining([
         '/api/v1/finance/journals',
+        '/api/v1/finance/inbox',
         '/api/v1/finance/checks',
         '/api/v1/finance/financial-releases',
       ]),
