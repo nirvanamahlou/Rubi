@@ -1,5 +1,17 @@
 # Work Assignments
 
+## FINANCE-005-ACCOUNTING-DROPDOWN-DEFAULTS — PC-A — IN_PROGRESS
+
+- درخواست مالک محصول در 2026-09-13: هر چهار گروه منوی داخلی حسابداری هنگام ورود بسته
+  باشند و دو گروه «ارتباط با سامانه مودیان مالیاتی» و «حسابداری مالیاتی» نیز بدون
+  زیرگروه فعلی به شکل دراپ‌داون نمایش داده شوند.
+- Branch مستقل `codex/pc-a-accounting-dropdown-defaults` از
+  `origin/develop@f925ccda`؛ `COMPUTER_ID=PC-A`.
+- محدوده رزروشده: مؤلفه و تست قراردادی منوی داخلی حسابداری و اسناد همین Task. بدون
+  API، داده، Permission، Schema/Migration، Seed، Dependency یا تغییر منوی اصلی.
+- Push و PR به `develop` مجاز است؛ ادغام و به‌روزرسانی Web3100 پس از تست در ادامه
+  درخواست جاری مالک محصول انجام می‌شود. Force Push ممنوع است.
+
 ## FINANCE-004-ACCOUNTING-SECONDARY-NAV — PC-A — COMPLETE / MERGED
 
 - درخواست مالک محصول در 2026-09-13: افزودن منوی داخلی جمع‌شونده برای صفحه «حسابداری»
