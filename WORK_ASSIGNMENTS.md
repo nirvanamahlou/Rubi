@@ -4,6 +4,31 @@
 
 Base `4a84f844`; COMPUTER_ID=PC-A. رفع 403 کارتابل برای نقش واقعی Finance، تکمیل مجوزهای حداقلی `finance_staff`، اتصال Producer ثبت‌شده خرید خدمات رزرواسیون، حذف preview و پیام‌های فنی/غیرفعال از `/finance/requests` و تست‌های متمرکز. محدوده Finance API/Web، Reservations public boundary، seed role specification و اسناد وضعیت است. بدون Schema/Migration، وابستگی، داده ساختگی یا دسترسی مستقیم Finance به جدول ماژول دیگر. تغییر عملیاتی مجاز: همگام‌سازی افزایشی مجوزهای نقش Finance و انتساب نقش به کاربر `Ramtin`؛ هیچ نقش یا مجوز قبلی حذف نمی‌شود. ماژول خرید مستقل Backend عملیاتی ندارد و تا ایجاد Producer واقعی، داده‌ای برای آن جعل نمی‌شود.
 
+## WORKBENCH-038-PUBLISH — PC-B — MERGE_AUTHORIZED
+
+- User explicitly authorizes pushing and merging all changes from this Workbench task.
+- Reserve only integration of PR #259 and its ancestor #239 into current develop; preserve the independently merged HR destination removal. Resolve additive status documentation conflicts and run final CI on the updated head before merge.
+- No new migration, dependency, runtime replacement or unrelated open PR is included. Runtime integration branch remains pushed separately.
+
+## WORKBENCH-038 — PC-B — COMPLETE / TESTED
+
+- User requests a real, self-only My Performance tab: HR leave, shifts and latest
+  payslip, own sales/customer metrics and permission-scoped recent job activity.
+  Branch `codex/pc-b-workbench-my-performance` preserves WORKBENCH-037.
+- Reserve additive HR self-performance service/module export, Workbench aggregation,
+  controller/module, Workbench contracts/UI/tests and task/status documentation.
+  HR and Workbench producers are PC-B-owned; consume existing Sales and IAM public
+  services without changing their contracts, ownership or tables. No Reporting edits.
+- Additive contract producer: HR/Workbench; consumer: Workbench Web. Only the signed-in
+  actor is accepted, never a client-supplied employee/user ID. HR self-service may see
+  only its own released payslip projection; draft payroll and colleagues remain hidden.
+- No migration, schema, dependency, shared runtime or permission seed changes. Existing
+  completed WORKBENCH-037 reservations are released. Push a PR to develop after checks.
+- Delivered the self-only HR/Sales/activity backend and native Performance tab.
+  18 targeted API tests and 49 Workbench Web tests pass, with scoped ESLint,
+  API/Web TypeScript and both production builds (46 Web routes). No migration or
+  operational data/runtime change. Implementation reservations are released.
+
 ## WORKBENCH-037-REMOVE-HR-DESTINATION-CARD — PC-B — READY_FOR_REVIEW
 
 - درخواست صریح مالک محصول در 2026-09-13: پوسته پایین «درخواست‌های منابع انسانی» از صفحه میزکار حذف شود، اما Backend، مسیر `/hr`، مجوزها و اعلان‌های منابع انسانی باقی بمانند. `COMPUTER_ID=PC-B`.
@@ -154,6 +179,28 @@ Merged via PR #254 at `e40878f1`. Web3100 runs the production build `55JsHVl1EIR
   were applied from an empty database and seed repeatability passed. PR #234 merged
   into `develop` as `1707d980`. All temporary reservations are released and the
   dependency/lockfile remained unassigned.
+
+## WORKBENCH-037 — PC-B — COMPLETE / TESTED
+
+- Remove the date and authorized-branch count block from the Workbench greeting card
+  at the user's explicit request. Reserve `workbench-workspace.tsx` and this status
+  entry only on `codex/pc-b-workbench-remove-greeting-meta`. No API, schema,
+  dependency, shared layout or operational-data change.
+- Removed the complete metadata block and its unused `HeaderToday` import. Web lint,
+  Repository typecheck (9 jobs) and the production Web build (46 routes) pass. The
+  initial greeting-card source reservation is released.
+- User follow-up restores the unit-message directory alongside contacts, groups and
+  conversations, while keeping the persisted Messaging/IAM/Documents integration.
+  Extend this work item to reserve `message-composer.tsx`, its focused tests and the
+  Workbench status entry on the same pre-merge branch. No API, schema, dependency or
+  cross-module contract change.
+- Delivered four explicit messenger views for units, contacts, groups and
+  conversations. All seven unit/template collections are visible again; direct/group
+  selection, group creation, persistence, attachments and forwarding keep using the
+  existing backend services. 47 Workbench tests, 42 isolated HR tests, scoped lint,
+  Repository typecheck (9 jobs) and the 46-route production Web build pass. A full
+  Web run passed 1337 tests and hit only the same two HR parallel 5-second timeouts;
+  both passed in the isolated rerun. All scoped reservations are released.
 
 ## B2B-CRM-CONNECTIONS-002 — PC-B — READY_FOR_REVIEW / TESTED
 
