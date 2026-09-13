@@ -1,5 +1,17 @@
 # Work Assignments
 
+## PROCUREMENT-001 — PC-B — IN_PROGRESS
+
+- Explicit user request, 2026-09-13. Base `060fc35cf42493edd9d579fbf51fe62ff512261e`, branch `codex/pc-b-procurement-001`, isolated checkout `C:/Users/admin/Rubi-procurement-001`.
+- Reserve Procurement API/domain/repository, `/purchases` Web workspace, Procurement v1 contracts/tests and task documentation. Producer Procurement; consumers Procurement Web and future owner-approved Finance/Reservations integrations. Additive contracts preserve all existing consumers.
+- `Migration Owner = PC-B/PROCUREMENT-001`: additive Procurement tables, restrictive relations/indexes/checks and permission catalog/seed slice. Latest WORKBENCH-036 and MASTER-DATA-MANIFEST-AIRPORT-001 reservations are explicitly released; remote CUSTOMER-AFFAIRS-SITE-BRIDGE and WORKBENCH-038 also record release. Existing historical migrations are immutable.
+- `Central Docs Owner = PC-B/PROCUREMENT-001`: additive own entries in WORK_ASSIGNMENTS, PROJECT_STATUS, DATA_MODEL, DECISIONS and PLANS. `Procurement shared-contract/root export Owner = PC-B/PROCUREMENT-001`; reserve additive IAM permission catalog integration and AppModule Procurement wiring. No existing producer behavior or contract is replaced.
+- Dependency/Lockfile remains `RELEASED / UNASSIGNED`; use installed pinned dependencies. No other task's files, worktrees, processes or runtime ports are taken over. Shared Web3100/API4190 belong to Rubi-unified-customer-affairs-3100.
+- Public owner boundary additions: MasterProcurementDirectory validates supplier/currency and lists bounded references; HrProcurementDirectory exposes only current actor's active unit; IamProcurementDirectory validates bounded active candidate IDs and required Procurement permission. Reserve new owner files and additive module exports only; no existing API contract is changed. These implement the explicitly requested IAM/HR/Master Data integrations and preserve authentication/role lifecycle.
+- Missing approved business policy must return `POLICY_NOT_CONFIGURED` on submission while allowing incomplete drafts. Finance remains `NOT_CONNECTED` until an approved receiving contract exists; no manufactured payable/payment or re-posting of historical travel purchases.
+- User accepted planning assumptions: read/write 10:1, peak 50 QPS, SLO 99.5%, RPO 24h/RTO 4h, error-budget owner PC-B; list p95 <2s at 50 concurrent users/100k synthetic cases. These are targets, not measured guarantees.
+- Normal push and Draft PR to develop authorized. Merge, force push, source-branch deletion, shared-runtime activation and direct main/develop writes are prohibited.
+
 ## WORKBENCH-037-REMOVE-HR-DESTINATION-CARD — PC-B — READY_FOR_REVIEW
 
 - درخواست صریح مالک محصول در 2026-09-13: پوسته پایین «درخواست‌های منابع انسانی» از صفحه میزکار حذف شود، اما Backend، مسیر `/hr`، مجوزها و اعلان‌های منابع انسانی باقی بمانند. `COMPUTER_ID=PC-B`.
