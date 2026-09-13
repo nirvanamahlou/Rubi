@@ -13,19 +13,27 @@ import {
   Textarea,
 } from '@/components/ui';
 import { messageUnits } from './message-templates';
+import { customerAffairsApi } from '@/modules/customer-affairs/api/customer-affairs-client';
 
 export function NewRequestDialog({
   open,
   onOpenChange,
+  branchId,
+  onCreated,
 }: {
   open: boolean;
   onOpenChange: (value: boolean) => void;
+  branchId?: string;
+  onCreated?: () => void;
 }) {
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
   const [unit, setUnit] = useState('sales');
   const [priority, setPriority] = useState('normal');
   const [reference, setReference] = useState('');
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
@@ -34,12 +42,64 @@ export function NewRequestDialog({
       >
         <DialogTitle>درخواست جدید</DialogTitle>
         <DialogDescription>
-          عنوان، شرح و واحد مقصد را مشخص کنید. متن تا زمانی که در همین صفحه
-          هستید حفظ می‌شود.
+          عنوان، شرح و واحد مقصد را مشخص کنید؛ درخواست در کارتابل ثبت می‌شود.
         </DialogDescription>
         <form
           className="mt-5 grid gap-5 sm:grid-cols-2"
-          onSubmit={(event) => event.preventDefault()}
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (!branchId || pending) return;
+            setPending(true);
+            setError('');
+            setSuccess('');
+            const unitLabel =
+              messageUnits.find((item) => item.id === unit)?.label ?? unit;
+            const nextActionAt = new Date(
+              Date.now() + 24 * 60 * 60 * 1000,
+            ).toISOString();
+            void customerAffairsApi
+              .createWorkbenchRequest(
+                {
+                  subject: title.trim(),
+                  description: `${body.trim()}${reference.trim() ? `\n\nمرجع پرونده: ${reference.trim()}` : ''}`,
+                  channel: 'CHAT',
+                  contactOccurredAt: new Date().toISOString(),
+                  category: `WORKBENCH_${unit.toUpperCase()}`,
+                  serviceType: 'INTERNAL_REQUEST',
+                  impact: priority === 'normal' ? 'NORMAL' : 'HIGH',
+                  urgency:
+                    priority === 'urgent'
+                      ? 'HIGH'
+                      : priority === 'high'
+                        ? 'NORMAL'
+                        : 'LOW',
+                  priority: priority.toUpperCase() as
+                    'NORMAL' | 'HIGH' | 'URGENT',
+                  executionUnit: unitLabel,
+                  references: [],
+                  nextAction: `بررسی توسط واحد ${unitLabel}`,
+                  nextActionAt,
+                },
+                branchId,
+              )
+              .then((response) => {
+                setSuccess(
+                  `درخواست ثبت شد. کد پیگیری: ${response.data.trackingNumber}`,
+                );
+                setTitle('');
+                setBody('');
+                setReference('');
+                onCreated?.();
+              })
+              .catch((reason) =>
+                setError(
+                  reason instanceof Error
+                    ? reason.message
+                    : 'ثبت درخواست انجام نشد.',
+                ),
+              )
+              .finally(() => setPending(false));
+          }}
         >
           <label className="space-y-2 text-sm font-semibold">
             <span>عنوان درخواست *</span>
@@ -93,14 +153,20 @@ export function NewRequestDialog({
               onChange={(e) => setReference(e.target.value)}
             />
           </label>
-          <div className="sm:col-span-2">
-            <Alert
-              title="ثبت درخواست هنوز فعال نیست"
-              description="سرویس ثبت و ارجاع درخواست به واحد و مسئول پاسخ‌گو آماده نیست. تکمیل فرم، درخواست را ارسال یا ذخیره نمی‌کند."
-            />
-          </div>
+          {error ? (
+            <div className="sm:col-span-2">
+              <Alert tone="error" title={error} />
+            </div>
+          ) : null}
+          {success ? (
+            <div className="sm:col-span-2">
+              <Alert title={success} />
+            </div>
+          ) : null}
           <div className="flex gap-3 sm:col-span-2">
-            <Button disabled>ثبت درخواست</Button>
+            <Button type="submit" disabled={pending || !branchId}>
+              {pending ? 'در حال ثبت…' : 'ثبت درخواست'}
+            </Button>
             <Button
               type="button"
               variant="outline"

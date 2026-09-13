@@ -363,6 +363,77 @@ export class DocumentsRepository {
     });
   }
 
+  feedbackAttachmentIds(input: {
+    documentIds: readonly string[];
+    feedbackId: string;
+    branchId: string;
+    ownerUserId: string;
+  }) {
+    return this.workbenchOwnedAttachmentIds({
+      documentIds: input.documentIds,
+      sourceEntityType: 'WorkbenchFeedback',
+      sourceEntityId: input.feedbackId,
+      branchId: input.branchId,
+      ownerUserId: input.ownerUserId,
+    });
+  }
+
+  workbenchOwnedAttachmentIds(input: {
+    documentIds: readonly string[];
+    sourceEntityType: string;
+    sourceEntityId: string;
+    branchId: string;
+    ownerUserId: string;
+  }) {
+    if (!input.documentIds.length) return Promise.resolve([]);
+    return this.database.client.document.findMany({
+      where: {
+        id: { in: [...input.documentIds] },
+        branchId: input.branchId,
+        ownerUserId: input.ownerUserId,
+        sourceModule: 'WORKBENCH',
+        sourceEntityType: input.sourceEntityType,
+        sourceEntityId: input.sourceEntityId,
+        archiveStatus: 'ACTIVE',
+        deletedAt: null,
+      },
+      select: { id: true, title: true },
+    });
+  }
+
+  favoriteDocuments(
+    userId: string,
+    branchIds: readonly string[],
+    domains: readonly string[],
+  ) {
+    return this.database.client.document.findMany({
+      where: {
+        branchId: { in: [...branchIds] },
+        archiveStatus: { not: 'DELETED' },
+        deletedAt: null,
+        documentType: { domain: { in: [...domains] as never[] } },
+        favorites: { some: { userId } },
+      },
+      include: documentListInclude,
+      orderBy: [{ updatedAt: 'desc' }, { id: 'asc' }],
+      take: 500,
+    });
+  }
+
+  async setFavorite(userId: string, documentId: string, favorite: boolean) {
+    if (favorite) {
+      await this.database.client.documentFavorite.upsert({
+        where: { userId_documentId: { userId, documentId } },
+        create: { userId, documentId },
+        update: {},
+      });
+    } else {
+      await this.database.client.documentFavorite.deleteMany({
+        where: { userId, documentId },
+      });
+    }
+  }
+
   findDetails(ids: readonly string[], branchIds: readonly string[]) {
     return this.database.client.document.findMany({
       where: {

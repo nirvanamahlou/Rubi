@@ -152,4 +152,54 @@ export class HrDirectoryService {
         })),
     };
   }
+
+  /**
+   * Public routing lookup for Workbench. It returns user identifiers only and
+   * keeps personnel records inside HR. An active branch administrator is used
+   * as the delivery fallback when a department has no linked employee account.
+   */
+  async workbenchFeedbackRecipientUserIds(
+    branchId: string,
+    searchTerms: readonly string[],
+  ): Promise<string[]> {
+    const terms = [...new Set(searchTerms.map((term) => term.trim()))].filter(
+      Boolean,
+    );
+    const employees = await this.database.client.hrEmployee.findMany({
+      where: {
+        branchId,
+        deletedAt: null,
+        status: 'فعال',
+        userId: { not: null },
+        ...(terms.length
+          ? {
+              OR: terms.flatMap((term) => [
+                { unit: { contains: term, mode: 'insensitive' as const } },
+                { position: { contains: term, mode: 'insensitive' as const } },
+              ]),
+            }
+          : {}),
+      },
+      select: { userId: true },
+    });
+    const recipients = employees.flatMap(({ userId }) =>
+      userId ? [userId] : [],
+    );
+    if (recipients.length) return [...new Set(recipients)];
+
+    const users = await this.iam.listUsers();
+    return users
+      .filter(
+        (user) =>
+          user.status === 'ACTIVE' &&
+          user.branches.some(({ branch }) => branch.id === branchId) &&
+          user.roles.some(
+            ({ role }) =>
+              role.code === 'administrator' ||
+              role.name.includes('مدیر') ||
+              role.name.toLowerCase().includes('admin'),
+          ),
+      )
+      .map(({ id }) => id);
+  }
 }

@@ -97,6 +97,14 @@ export interface DocumentListQueryV1 {
   pageSize?: number;
 }
 
+export interface DocumentFavoritesResponseV1 {
+  data: DocumentListItemV1[];
+}
+
+export interface DocumentFavoriteResponseV1 {
+  data: { documentId: string; favorite: boolean };
+}
+
 export interface DocumentTypeOptionV1 {
   id: string;
   code: string;

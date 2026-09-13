@@ -27,6 +27,37 @@
   `docs/tasks/DASHBOARDS-PC-C-AUTHORIZATION.md`. Merge، Force Push، تغییر مستقیم
   `main`/`develop` و بازنویسی تغییرات PC-A/PC-B مجاز نیست.
 
+## WORKBENCH-036 — PC-B — PR_OPEN / LOCKS_RELEASED
+
+- COMPUTER_ID=PC-B. User explicitly requests a full Workbench integration audit,
+  implementation of missing internal/cross-CRM connections, push and merge. Branch
+  `codex/pc-b-workbench-integrations` starts from `origin/develop@6a4e041`.
+- Reserve the Workbench Web module, additive Workbench/Messaging API and contracts,
+  focused tests, and task/status documentation. Integrate the already completed
+  persisted-feedback, messaging-template and Customer Affairs producer slices while
+  preserving their module ownership, authorization, branch scope and migrations.
+- Cross-module rule: Workbench consumes IAM, Notifications, Documents, HR and Customer
+  Affairs only through their public services/contracts. It stores references and deep
+  links, never edits another module's tables. No dependency/lockfile change. Any new
+  Prisma migration or shared-contract expansion remains pending an explicit current
+  lock check before implementation; existing completed additive migrations may be
+  integrated and rehearsed together.
+- Current lock check completed after integrating the released WORKBENCH-034,
+  WORKBENCH-021 and CUSTOMER-AFFAIRS-002 migrations. No newer active owner exists on
+  fetched `origin/develop`; reserve `Migration Owner = PC-B/WORKBENCH-036`, the
+  additive Workbench/Profile/Messaging/Documents reference tables and compatible
+  public-contract additions. This task adds no destructive DDL and releases these
+  locks after its combined PR is opened.
+- Backend audit completed: Workbench-owned notes/calendar persist locally; IAM owns
+  profile and activity; Documents owns file metadata/favorites; Messaging owns
+  conversations/read state/attachments; Customer Affairs owns requests/referrals;
+  HR resolves destination users; Notifications owns delivery/read state. Cross-module
+  calls use exported services, including server-side calendar aggregation.
+- Full Repository lint (6 jobs), typecheck (9 jobs) and production build (6 jobs,
+  46 Web routes) pass on the rebased tree. Migration/shared-contract/Central Docs
+  reservations are released after opening PR #234 to `develop`; dependency/lockfile
+  remained unassigned. Merge is explicitly authorized by the user after CI passes.
+
 ## B2B-CRM-CONNECTIONS-002 — PC-B — READY_FOR_REVIEW / TESTED
 
 - درخواست مالک محصول: ارتباط پرونده ۳۶۰ آژانس با داده‌های واقعی موجود CRM بررسی و اتصال‌های غایب در محدوده مجاز تکمیل شود. شاخه `codex/pc-b-b2b-crm-connections` از `origin/develop@6a4e041` و Worktree مستقل `C:\Users\admin\Rubi-b2b-crm-connections` استفاده می‌شود.
@@ -34,6 +65,21 @@
 - مرز مالکیت: هیچ Query مستقیم جدول، Migration، Dependency/Lockfile، IAM grant یا تغییر در producerهای فعال PC-A در Customers/Sales/Reservations/Finance انجام نمی‌شود. B2B shared-contract Owner برای قرارداد صرفاً خواندنی این endpoint در اختیار `PC-B/B2B-CRM-CONNECTIONS-002` است. Finance هنوز producer حسابداری سازمانی منتشر نکرده است؛ پورت رسمی B2B وضعیت unavailable را برمی‌گرداند و داده Sales به‌عنوان فاکتور یا دفترکل Finance معرفی نمی‌شود.
 - نتیجه: endpoint تجمیع Backend با اتصال دقیق `Organization → Customer → Sales Contract → Reservation`، کنترل مجوز و شعبه، projection حداقلی، failure isolation و مصرف تک-endpoint در Web تکمیل شد. ۱۲۶ تست B2B API و ۱۲۹ تست Organizations Web، lint و typecheck محدوده Contracts/API/Web و Production Build هر دو API و Web موفق‌اند. سند اجرا و مرزهای باقی‌مانده در `docs/tasks/B2B-CRM-CONNECTIONS-002.md` است.
 - Final lock state: `RELEASED — PC-B/B2B-CRM-CONNECTIONS-002 ready for review`. هیچ Migration، Dependency/Lockfile، IAM grant یا قفل producer دریافت نشد؛ B2B shared-contract slice این Task نیز آزاد است.
+
+## WORKBENCH-034 — PC-B — LOCAL_COMPLETE / INTEGRATED_BY_WORKBENCH-036
+
+- Persisted and idempotent Workbench feedback is integrated with department routing,
+  anonymous recipient projection, Documents-backed attachments, recipient
+  Notifications and sender/recipient detail authorization. Its additive migration
+  and shared-contract locks were released after isolated rehearsal and full checks;
+  WORKBENCH-036 now carries the completed producer without changing its boundaries.
+
+## WORKBENCH-035 — PC-B — SOURCE_COMPLETE / INTEGRATED_BY_WORKBENCH-036
+
+- Add the editable Finance templates `خرید` and `پیگیری صورتحساب` and the
+  Reservations template `استعلام از کارگزار` to the existing composer. This is
+  presentation data only and creates no Finance, Procurement or Reservations
+  mutation. The completed source is carried by WORKBENCH-036.
 
 ## WORKBENCH-021 — PC-B — LOCAL_COMPLETE / RUNTIME_ACTIVE
 
@@ -72,6 +118,43 @@
 ## B2B-ORGANIZATION-PERMANENT-DELETE-001 — PC-B — UI_VERIFIED
 
 - Organizations permanent-delete dialog now keeps the destructive action available after an authoritative API rejection, clears the previous error before retry and changes the label to an explicit retry action. Only transport/unknown outcomes require refresh, preventing a duplicate delete after an uncertain response. Referenced organizations remain protected and unused organizations are physically removed through the existing Master Data owner endpoint. Focused lint, Web TypeScript/build, all 125 Organizations tests and the seven-test isolated PostgreSQL deletion suite passed. Authenticated Web3100 QA confirmed the merged dialog and active destructive action with the eight-record directory; no user data was deleted during UI QA. Runtime `b9244f4` / `hr005-72ea3c0ada5a1190`; API4190 healthy. No schema, migration, dependency, IAM grant, cascade or business-history deletion.
+
+## CUSTOMER-AFFAIRS-002 — PC-B — UI_VERIFIED
+
+- `COMPUTER_ID=PC-B`; branch `codex/pc-b-customer-affairs-operational` and worktree
+  `C:/Users/admin/Rubi-customer-affairs-operational` start from
+  `origin/develop@700168e67cc0a495178946bb44bdd3528d2d49d7`.
+- Reserve Customer Affairs ownership for the operational vertical slice in
+  `apps/api/src/customer-affairs/**`, `apps/web/src/modules/customer-affairs/**`,
+  `apps/web/src/app/(crm)/customer-affairs/**`,
+  `apps/web/src/modules/workbench/workbench-customer-affairs-referrals.tsx` and the
+  additive requests-tab integration in `workbench-workspace.tsx`, its focused tests and
+  the new task report.
+  Preserve the existing foundation and consume Customers, Sales, Reservations, Finance,
+  Tasks/Workbench, Documents, HR/IAM, Settings/Notifications, Marketing and Reporting only
+  through their public services or versioned references.
+- `Migration Owner = PC-B/CUSTOMER-AFFAIRS-002` for additive Customer Affairs-owned
+  request/lead, timeline, handoff, ticket/SLA, referral, message-delivery, survey and
+  corrective-action persistence plus required FK reverse relations, indexes and checks.
+  The earlier `PC-A/SUPPLIER-PURCHASE-FINANCE-0912` and manifest migrations are already in
+  `origin/develop` through merged PRs #177/#191 and no open PR owns a newer migration; their
+  stale `LOCAL_COMPLETE` reservation is treated as released by the merged baseline.
+- `Customer Affairs public contract/root export Owner = PC-B/CUSTOMER-AFFAIRS-002` for an
+  additive v1 contract. Producers are Customer Affairs API/domain services; consumers are
+  Customer Affairs Web and approved module adapters. Existing clients remain compatible;
+  no internal table or repository of another module may be queried.
+- `Central Docs Owner = PC-B/CUSTOMER-AFFAIRS-002` only for additive entries in
+  `WORK_ASSIGNMENTS.md`, `docs/PROJECT_STATUS.md`, `PLANS.md`, `docs/DATA_MODEL.md`,
+  `docs/DECISIONS.md` if an actual conflict is found, and
+  `docs/tasks/CUSTOMER-AFFAIRS-002.md`. Existing entries from other tasks are preserved.
+- `Dependency/Lockfile Owner = RELEASED / UNASSIGNED`; no dependency, workspace manifest or
+  lockfile change is planned. P0 must use the repository's existing Prisma, Nest, Next,
+  Tasks, Documents, Notifications and export infrastructure. External SMS/email/survey
+  automation remains fail-closed unless a configured adapter already exists.
+- P0 implementation, isolated PostgreSQL-18 migration/seed verification, monorepo gates,
+  authenticated API smoke and desktop/mobile browser QA are complete. Migration, public
+  contract and Central Docs locks remain owned by this Task only until its Draft PR is
+  opened; final release and handoff are recorded in the follow-up delivery commit.
 
 ## B2B-EXCEL-IMPORT-EXPORT-001 — PC-B — UI_VERIFIED
 

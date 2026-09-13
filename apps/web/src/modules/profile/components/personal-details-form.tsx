@@ -14,10 +14,12 @@ export function PersonalDetailsForm({
   initial,
   username,
   onSave,
+  initialPhotoUrl,
 }: {
   initial: PersonalDetails;
   username: string;
   onSave?: (details: PersonalDetails, photo: File | null) => Promise<void>;
+  initialPhotoUrl?: string;
 }) {
   const [details, setDetails] = useState(initial);
   const [photo, setPhoto] = useState<File | null>(null);
@@ -138,12 +140,12 @@ export function PersonalDetailsForm({
           <legend className="sr-only">ویرایش اطلاعات شخصی</legend>
           <div className="flex flex-wrap items-center gap-5 rounded-2xl border border-border bg-muted/30 p-4">
             <div className="grid size-24 shrink-0 place-items-center overflow-hidden rounded-full bg-primary/10 text-primary">
-              {photo && preview ? (
+              {preview || initialPhotoUrl ? (
                 // A local object URL is revoked when the selected preview changes.
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
-                  src={preview}
-                  alt="پیش‌نمایش عکس پروفایل انتخاب‌شده"
+                  src={preview || initialPhotoUrl}
+                  alt="عکس پروفایل"
                   className="size-full object-cover"
                 />
               ) : (

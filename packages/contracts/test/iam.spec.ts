@@ -28,8 +28,8 @@ describe('IAM public permission contract', () => {
       ]),
     );
   });
-  it('publishes the version 9 domain permission catalogs without duplicates', () => {
-    expect(IAM_PERMISSION_CONTRACT_VERSION).toBe(9);
+  it('publishes the version 10 domain permission catalogs without duplicates', () => {
+    expect(IAM_PERMISSION_CONTRACT_VERSION).toBe(10);
     expect(MASTER_DATA_PERMISSION_CODES).toEqual([
       'master_data.read',
       'master_data.create',

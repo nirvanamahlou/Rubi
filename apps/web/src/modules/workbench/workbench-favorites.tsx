@@ -5,12 +5,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { FileText, RefreshCw, Star } from 'lucide-react';
 import { Alert, Button, Card, EmptyState, Skeleton } from '@/components/ui';
-import {
-  DOCUMENT_FAVORITES_CHANGED,
-  documentFavoritesKey,
-  readDocumentFavorites,
-} from '@/modules/documents/model/favorites';
-import { loadFavoriteDocuments } from './favorites';
+import { DOCUMENT_FAVORITES_CHANGED } from '@/modules/documents/model/favorites';
+import { documentsApi } from '@/modules/documents/api/client';
 
 export function WorkbenchFavorites({ user }: { user: LoginResponse['user'] }) {
   const [items, setItems] = useState<DocumentListItemV1[]>([]);
@@ -28,11 +24,8 @@ export function WorkbenchFavorites({ user }: { user: LoginResponse['user'] }) {
     setLoading(true);
     try {
       if (!canRead) return;
-      const result = await loadFavoriteDocuments(
-        readDocumentFavorites(user.id),
-        () => request === generation.current,
-      );
-      if (request === generation.current) setItems(result);
+      const result = await documentsApi.favorites();
+      if (request === generation.current) setItems(result.data);
     } catch (reason) {
       if (request === generation.current)
         setError(
@@ -43,30 +36,24 @@ export function WorkbenchFavorites({ user }: { user: LoginResponse['user'] }) {
     } finally {
       if (request === generation.current) setLoading(false);
     }
-  }, [user.id, canRead]);
+  }, [canRead]);
   useEffect(() => {
     const timer = setTimeout(() => void load(), 0);
     const refresh = () => void load();
-    const storage = (event: StorageEvent) => {
-      if (event.key === null || event.key === documentFavoritesKey(user.id))
-        refresh();
-    };
     const visible = () => {
       if (document.visibilityState === 'visible') refresh();
     };
     window.addEventListener(DOCUMENT_FAVORITES_CHANGED, refresh);
-    window.addEventListener('storage', storage);
     window.addEventListener('focus', refresh);
     document.addEventListener('visibilitychange', visible);
     return () => {
       clearTimeout(timer);
       invalidate();
       window.removeEventListener(DOCUMENT_FAVORITES_CHANGED, refresh);
-      window.removeEventListener('storage', storage);
       window.removeEventListener('focus', refresh);
       document.removeEventListener('visibilitychange', visible);
     };
-  }, [load, user.id, invalidate]);
+  }, [load, invalidate]);
   if (!canRead)
     return (
       <EmptyState
@@ -93,9 +80,8 @@ export function WorkbenchFavorites({ user }: { user: LoginResponse['user'] }) {
         </div>
       </div>
       <p className="text-sm leading-7 text-muted-foreground">
-        فایل‌هایی که در «اسناد و فایل‌ها» با این حساب و در همین مرورگر ستاره
-        زده‌اید، اینجا هم نمایش داده می‌شوند. این فهرست هنوز بین دستگاه‌ها همگام
-        نمی‌شود.
+        فایل‌هایی که در «اسناد و فایل‌ها» با این حساب ستاره زده‌اید، اینجا و در
+        همه دستگاه‌های شما همگام نمایش داده می‌شوند.
       </p>
       {loading ? (
         <Skeleton className="h-48" />

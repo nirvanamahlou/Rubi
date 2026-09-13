@@ -8,6 +8,8 @@ export interface NoteDraft {
   pinned: boolean;
   updatedAt: string | null;
   template: boolean;
+  version?: number;
+  reminderAt?: string | null;
 }
 
 export const noteTemplates: NoteDraft[] = [

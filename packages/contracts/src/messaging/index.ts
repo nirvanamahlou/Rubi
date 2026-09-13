@@ -31,6 +31,7 @@ export interface MessagingMessageV1 {
     id: string;
     senderDisplayName: string;
   } | null;
+  attachments: Array<{ documentId: string; title: string }>;
   createdAt: string;
 }
 
@@ -41,6 +42,7 @@ export interface MessagingConversationV1 {
   branchId: string;
   participants: MessagingParticipantV1[];
   lastMessage: MessagingMessageV1 | null;
+  unreadCount: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -76,6 +78,7 @@ export interface CreateGroupConversationInputV1 {
 export interface SendMessagingMessageInputV1 {
   body: string;
   clientRequestId: string;
+  attachmentDocumentIds?: string[];
 }
 
 export interface ForwardMessagingMessageInputV1 {

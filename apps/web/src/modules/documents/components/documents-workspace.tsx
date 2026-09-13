@@ -321,7 +321,6 @@ export function DocumentsWorkspace() {
   const [detailError, setDetailError] = useState('');
   const [detail, setDetail] = useState<DocumentDetailV1 | null>(null);
   const [audit, setAudit] = useState<readonly DocumentAuditEventV1[]>([]);
-  const [currentUserId, setCurrentUserId] = useState('');
   const [personalView, setPersonalView] = useState<PersonalViewKey | null>(
     null,
   );
@@ -419,18 +418,17 @@ export function DocumentsWorkspace() {
     setLoading(true);
     setError('');
     try {
-      const response = await documentsApi.list(effectiveQuery);
-      const visible =
-        personalView === 'favorites'
-          ? response.data.filter((item) => favoriteIds.has(item.id))
-          : response.data;
-      setDocuments(visible);
-      setTotal(
-        personalView === 'favorites' ? visible.length : response.meta.total,
-      );
-      setTotalPages(
-        personalView === 'favorites' ? 1 : response.meta.totalPages,
-      );
+      if (personalView === 'favorites') {
+        const response = await documentsApi.favorites();
+        setDocuments(response.data);
+        setTotal(response.data.length);
+        setTotalPages(1);
+      } else {
+        const response = await documentsApi.list(effectiveQuery);
+        setDocuments(response.data);
+        setTotal(response.meta.total);
+        setTotalPages(response.meta.totalPages);
+      }
       setSelected(new Set());
     } catch (caught) {
       const apiError = caught instanceof DocumentsApiError ? caught : null;
@@ -439,7 +437,7 @@ export function DocumentsWorkspace() {
     } finally {
       setLoading(false);
     }
-  }, [effectiveQuery, favoriteIds, personalView, shouldLoadDocuments]);
+  }, [effectiveQuery, personalView, shouldLoadDocuments]);
 
   useEffect(() => {
     void load();
@@ -451,7 +449,6 @@ export function DocumentsWorkspace() {
       .then((documentOptions) => {
         setOptions(documentOptions.data);
         setBranches(documentOptions.data.branches);
-        setCurrentUserId(documentOptions.data.currentUserId);
       })
       .catch((caught) => {
         setUploadError(
@@ -463,28 +460,13 @@ export function DocumentsWorkspace() {
   }, []);
 
   useEffect(() => {
-    if (!currentUserId || typeof window === 'undefined') return;
-    const stored = window.localStorage.getItem(
-      `rubi.documents.favorites.${currentUserId}`,
-    );
-    if (!stored) return;
-    try {
-      const values = JSON.parse(stored) as unknown;
-      if (Array.isArray(values)) {
-        setFavoriteIds(
-          new Set(
-            values.filter(
-              (value): value is string => typeof value === 'string',
-            ),
-          ),
-        );
-      }
-    } catch {
-      window.localStorage.removeItem(
-        `rubi.documents.favorites.${currentUserId}`,
-      );
-    }
-  }, [currentUserId]);
+    void documentsApi
+      .favorites()
+      .then((response) =>
+        setFavoriteIds(new Set(response.data.map(({ id }) => id))),
+      )
+      .catch(() => setFavoriteIds(new Set()));
+  }, []);
 
   function updateQuery(patch: Partial<DocumentListQueryV1>) {
     setQuery((current) => ({ ...current, ...patch, page: patch.page ?? 1 }));
@@ -555,22 +537,20 @@ export function DocumentsWorkspace() {
     }
   }
 
-  function toggleFavorite(document: DocumentListItemV1) {
+  async function toggleFavorite(document: DocumentListItemV1) {
+    const wasFavorite = favoriteIds.has(document.id);
+    const next = new Set(favoriteIds);
+    if (wasFavorite) next.delete(document.id);
+    else next.add(document.id);
+    setFavoriteIds(next);
     try {
-      const next = new Set(favoriteIds);
-      if (next.has(document.id)) next.delete(document.id);
-      else next.add(document.id);
-      if (currentUserId && typeof window !== 'undefined') {
-        window.localStorage.setItem(
-          `rubi.documents.favorites.${currentUserId}`,
-          JSON.stringify([...next]),
-        );
-      }
-      setFavoriteIds(next);
+      await documentsApi.setFavorite(document.id, !wasFavorite);
       window.dispatchEvent(new Event(DOCUMENT_FAVORITES_CHANGED));
-    } catch {
+      if (personalView === 'favorites') await load();
+    } catch (caught) {
+      setFavoriteIds(favoriteIds);
       setNotice(
-        'ذخیره ستاره در این مرورگر انجام نشد. تنظیمات فضای ذخیره‌سازی مرورگر را بررسی کنید.',
+        caught instanceof Error ? caught.message : 'ذخیره ستاره انجام نشد.',
       );
     }
   }

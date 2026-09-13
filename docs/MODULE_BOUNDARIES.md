@@ -32,8 +32,19 @@
 | Tasks/Automation  | task, checklist, rule/run, approval task                                                                                                                                           | create urgent task, evaluate event                                     | IAM assignee، domain events                                                        |
 | Reporting/Exports | approved views, report definition/run, export artifact                                                                                                                             | query/export/schedule                                                  | read-only از مالک‌ها، Documents                                                    |
 | Notifications     | notification record، recipient scope، read state، request/delivery/template rendering                                                                                             | list own/mark read، enqueue داخل transaction یا event/outbox           | IAM user reference، Settings، external messaging adapters                          |
+| Messaging         | conversation، member/read state، message، forward reference و document attachment reference                                                                                       | list contacts/conversations، create direct/group، send/forward          | IAM contact/branch validation، Documents attachment validation، Notifications      |
+| Workbench         | personal note/folder، personal calendar event و orchestration read model                                                                                                           | notes/calendar/profile/activity، aggregate authorized owner projections | IAM، Documents، Customer Affairs و owner APIs؛ بدون دسترسی مستقیم به جدول آن‌ها   |
 | Audit             | audit event                                                                                                                                                                        | append/query authorized                                                | همه ماژول‌ها append می‌کنند                                                        |
 | Dashboard         | فقط read model و saved filters                                                                                                                                                     | aggregate/drill-down                                                   | Reporting only                                                                     |
+
+### Workbench در برابر ماژول‌های مالک
+
+Workbench مالک داده شخصی یادداشت و تقویم است. هویت و پروفایل در IAM، فایل و
+علاقه‌مندی در Documents، گفت‌وگو در Messaging، درخواست/ارجاع در Customer Affairs،
+اعلان در Notifications و ساختار واحدها در HR می‌ماند. Workbench فقط public
+application service آن‌ها را فراخوانی و projection مجاز را ترکیب می‌کند. نتیجه
+تقویم، ارجاع Customer Affairs را در بک‌اند و پس از کنترل permission ترکیب می‌کند؛
+رابط کاربری برای ساخت این ارتباط به API مالک دوم مراجعه نمی‌کند.
 
 ## مرزهای حساس
 

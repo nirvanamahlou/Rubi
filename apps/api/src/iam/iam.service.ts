@@ -18,6 +18,7 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import type {
   AuthenticatedActor,
+  IamPersonalProfileUpdateInputV1,
   IamPermissionCode,
   LoginResponse,
   MessagingContactV1,
@@ -823,6 +824,116 @@ export class IamService implements IamStepUpPort {
         occurredAt: true,
       },
     });
+  }
+
+  async listSelfActivity(actor: AuthenticatedActor) {
+    const rows = await this.database.client.auditEvent.findMany({
+      where: { actorUserId: actor.userId, outcome: AuditOutcome.SUCCESS },
+      take: 100,
+      orderBy: { occurredAt: 'desc' },
+      select: {
+        id: true,
+        action: true,
+        entityType: true,
+        entityId: true,
+        occurredAt: true,
+      },
+    });
+    return {
+      data: rows.map((row) => ({
+        ...row,
+        occurredAt: row.occurredAt.toISOString(),
+      })),
+    };
+  }
+
+  recordSelfActivity(
+    actor: AuthenticatedActor,
+    action: string,
+    entityType: string,
+    entityId?: string,
+  ) {
+    return this.audit(
+      actor.userId,
+      action,
+      entityType,
+      entityId,
+      AuditOutcome.SUCCESS,
+      {},
+    );
+  }
+
+  async personalProfile(userId: string) {
+    return this.database.client.user.findUniqueOrThrow({
+      where: { id: userId },
+      select: {
+        id: true,
+        displayName: true,
+        email: true,
+        profile: {
+          select: { phone: true, photoDocumentId: true, updatedAt: true },
+        },
+      },
+    });
+  }
+
+  async updateOwnProfile(
+    actor: AuthenticatedActor,
+    input: IamPersonalProfileUpdateInputV1,
+  ) {
+    const displayName = input.displayName.trim();
+    const email = input.email?.trim().toLowerCase() || null;
+    const phone = input.phone?.trim() || null;
+    if (displayName.length < 2 || displayName.length > 160)
+      throw new BadRequestException('نام نمایشی معتبر نیست.');
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
+      throw new BadRequestException('ایمیل معتبر نیست.');
+    if (phone && !/^\+?[0-9۰-۹٠-٩ -]{7,32}$/.test(phone))
+      throw new BadRequestException('شماره تماس معتبر نیست.');
+    try {
+      return await this.database.client.$transaction(async (transaction) => {
+        const [identity, profile] = await Promise.all([
+          transaction.user.update({
+            where: { id: actor.userId },
+            data: { displayName, email },
+            select: { id: true, displayName: true, email: true },
+          }),
+          transaction.iamUserProfile.upsert({
+            where: { userId: actor.userId },
+            create: {
+              userId: actor.userId,
+              phone,
+              photoDocumentId: input.photoDocumentId ?? null,
+            },
+            update: {
+              phone,
+              photoDocumentId: input.photoDocumentId ?? null,
+            },
+          }),
+        ]);
+        await transaction.auditEvent.create({
+          data: {
+            actorUserId: actor.userId,
+            action: 'iam.profile.update',
+            entityType: 'User',
+            entityId: actor.userId,
+            outcome: AuditOutcome.SUCCESS,
+          },
+        });
+        return { ...identity, profile };
+      });
+    } catch (error) {
+      if (
+        error &&
+        typeof error === 'object' &&
+        'code' in error &&
+        error.code === 'P2002'
+      )
+        throw new ConflictException(
+          'این ایمیل قبلاً برای حساب دیگری ثبت شده است.',
+        );
+      throw error;
+    }
   }
 
   async createUser(

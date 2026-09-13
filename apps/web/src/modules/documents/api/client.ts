@@ -8,6 +8,8 @@ import type {
   DocumentCaseOptionsQueryV1,
   DocumentCaseOptionsResponseV1,
   DocumentDetailResponseV1,
+  DocumentFavoriteResponseV1,
+  DocumentFavoritesResponseV1,
   DocumentListQueryV1,
   DocumentListResponseV1,
   DocumentOptionsResponseV1,
@@ -138,6 +140,15 @@ export const documentsApi = {
   },
   options() {
     return request<DocumentOptionsResponseV1>('/options');
+  },
+  favorites() {
+    return request<DocumentFavoritesResponseV1>('/favorites');
+  },
+  setFavorite(id: string, favorite: boolean) {
+    return request<DocumentFavoriteResponseV1>(
+      `/${encodeURIComponent(id)}/favorite`,
+      { method: favorite ? 'POST' : 'DELETE' },
+    );
   },
   caseOptions(query: DocumentCaseOptionsQueryV1, signal?: AbortSignal) {
     return request<DocumentCaseOptionsResponseV1>(

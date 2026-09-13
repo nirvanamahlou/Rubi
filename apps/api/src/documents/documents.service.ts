@@ -240,6 +240,70 @@ export class DocumentsService {
     }
   }
 
+  /** Public ownership/reference check; Workbench never reads Documents tables. */
+  async assertWorkbenchFeedbackAttachments(
+    documentIds: readonly string[],
+    feedbackId: string,
+    branchId: string,
+    actor: AuthenticatedActor,
+  ): Promise<void> {
+    await this.assertWorkbenchOwnedAttachments(
+      documentIds,
+      'WorkbenchFeedback',
+      feedbackId,
+      branchId,
+      actor,
+    );
+  }
+
+  async assertWorkbenchOwnedAttachments(
+    documentIds: readonly string[],
+    sourceEntityType: string,
+    sourceEntityId: string,
+    branchId: string,
+    actor: AuthenticatedActor,
+  ): Promise<Array<{ id: string; title: string }>> {
+    if (!documentIds.length) return [];
+    if (!actor.branchIds.includes(branchId))
+      throw new ForbiddenException('شعبه فایل در دامنه دسترسی نیست.');
+    const uniqueIds = [...new Set(documentIds)];
+    const matches = await this.repository.workbenchOwnedAttachmentIds({
+      documentIds: uniqueIds,
+      sourceEntityType,
+      sourceEntityId,
+      branchId,
+      ownerUserId: actor.userId,
+    });
+    if (matches.length !== uniqueIds.length) {
+      throw new BadRequestException(
+        'یک یا چند فایل پیوست متعلق به این رکورد میزکار نیست.',
+      );
+    }
+    return matches;
+  }
+
+  async favorites(actor: AuthenticatedActor) {
+    const rows = await this.repository.favoriteDocuments(
+      actor.userId,
+      actor.branchIds,
+      allowedDocumentDomains(actor.permissions),
+    );
+    return { data: rows.map((row) => mapListItem(row, actor.permissions)) };
+  }
+
+  async setFavorite(id: string, favorite: boolean, actor: AuthenticatedActor) {
+    const row = await this.repository.findDetail(id, actor.branchIds);
+    if (
+      !row ||
+      !allowedDocumentDomains(actor.permissions).includes(
+        row.documentType.domain,
+      )
+    )
+      throw new ForbiddenException('سند در محدوده دسترسی شما نیست.');
+    await this.repository.setFavorite(actor.userId, id, favorite);
+    return { data: { documentId: id, favorite } };
+  }
+
   /** Public reference-only lookup; file contents and metadata stay inside Documents. */
   async organizationVersionReferences(
     versionIds: readonly string[],

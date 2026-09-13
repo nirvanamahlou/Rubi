@@ -22,44 +22,39 @@ function moduleSources(directory: string): string {
 }
 
 describe('customer affairs workspace contract', () => {
-  it('renders the required operational preview surfaces', () => {
+  it('renders the required operational surfaces', () => {
     for (const marker of [
-      'قبل از فروش',
-      'بعد از فروش',
-      'Pipeline پیش از فروش',
-      'Timeline فعالیت‌ها',
+      'پیش‌فروش',
+      'پشتیبانی',
+      'Timeline',
       "state === 'loading'",
       'EmptyState',
       'ErrorState',
       "state === 'forbidden'",
-      "state === 'unauthorized'",
-      'Customer 360',
-      'SalesHandoffRequested',
-      'Persistence',
       'SLA',
-      'Qualification',
-      'منبع آشنایی',
       'تعداد مسافر',
-      'دسته‌بندی Ticket',
-      'موعد حل SLA',
+      'ثبت پایدار',
+      'ارسال به فروش',
+      'بازگشایی',
     ]) {
       expect(moduleSources(moduleRoot)).toContain(marker);
     }
   });
 
-  it('keeps preview UI detached from persistence and internal modules', () => {
+  it('uses the public API contract and stays detached from persistence', () => {
     const source = moduleSources(moduleRoot);
     expect(source).not.toMatch(
       /@rubi\/database|PrismaClient|modules\/customers|modules\/master-data|iam\//,
     );
-    expect(source).toContain('preview-lead-');
-    expect(source).toContain('preview-ticket-');
+    expect(source).toContain('/customer-affairs');
+    expect(source).toContain("credentials: 'include'");
+    expect(source).toContain('CustomerAffairsLeadView');
   });
 
-  it('exposes create, view and edit preview modes', () => {
-    expect(workspaceSource).toContain(
-      "type FormMode = 'create' | 'view' | 'edit'",
-    );
-    expect(workspaceSource).toContain('بررسی بدون ذخیره');
+  it('exposes create, list, detail and real mutation actions', () => {
+    expect(workspaceSource).toContain('LeadForm');
+    expect(workspaceSource).toContain('TicketForm');
+    expect(workspaceSource).toContain('DetailPanel');
+    expect(workspaceSource).toContain('customerAffairsApi.action');
   });
 });

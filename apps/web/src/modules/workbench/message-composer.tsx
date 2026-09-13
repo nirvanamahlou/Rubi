@@ -18,6 +18,7 @@ import {
   X,
 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
 
 import {
   Alert,
@@ -40,6 +41,7 @@ import {
 import { MessageUnitIcon } from './message-unit-icon';
 import { messagingApi, messagingRequestId } from './messaging-api';
 import { messageUnits } from './message-templates';
+import { uploadWorkbenchAttachments } from './workbench-attachments';
 
 type SidebarMode = 'conversations' | 'contacts';
 const initials = (name: string) => name.trim().slice(0, 2) || 'ر';
@@ -86,6 +88,7 @@ export function MessageComposer({
   const [attachments, setAttachments] = useState<File[]>([]);
   const input = useRef<HTMLTextAreaElement>(null);
   const selection = useRef({ start: 0, end: 0 });
+  const messageSubmissionId = useRef('');
 
   const reloadConversations = useCallback(
     async (selected?: string) => {
@@ -130,7 +133,16 @@ export function MessageComposer({
     messagingApi
       .messages(activeId)
       .then((response) => {
-        if (!cancelled) setMessages(response.data);
+        if (!cancelled) {
+          setMessages(response.data);
+          setConversations((current) =>
+            current.map((conversation) =>
+              conversation.id === activeId
+                ? { ...conversation, unreadCount: 0 }
+                : conversation,
+            ),
+          );
+        }
       })
       .catch((reason: unknown) => {
         if (!cancelled)
@@ -235,19 +247,29 @@ export function MessageComposer({
 
   async function sendMessage() {
     if (!active || busy) return;
-    if (attachments.length)
-      return setError(
-        'برای ارسال متن، فایل‌های انتخاب‌شده را حذف کنید؛ پیوست پیام در این نسخه ذخیره نمی‌شود.',
-      );
     setBusy(true);
     setError('');
     try {
+      const clientRequestId =
+        messageSubmissionId.current || messagingRequestId('message');
+      messageSubmissionId.current = clientRequestId;
+      const attachmentDocumentIds = await uploadWorkbenchAttachments({
+        entityType: 'MessagingMessage',
+        entityId: clientRequestId,
+        title: `پیوست پیام: ${active.title}`,
+        description: 'پیوست ثبت‌شده از پیام‌رسان داخلی میزکار',
+        branchId: active.branchId,
+        files: attachments,
+      });
       const response = await messagingApi.send(active.id, {
         body: text,
-        clientRequestId: messagingRequestId('message'),
+        clientRequestId,
+        attachmentDocumentIds,
       });
       setMessages((current) => [...current, response.data]);
       setText('');
+      setAttachments([]);
+      messageSubmissionId.current = '';
       await reloadConversations(active.id);
     } catch (reason) {
       setError(
@@ -383,6 +405,11 @@ export function MessageComposer({
                         `${conversation.participants.length.toLocaleString('fa-IR')} عضو`}
                     </span>
                   </span>
+                  {conversation.unreadCount > 0 ? (
+                    <span className="ms-auto rounded-full bg-rose-500 px-2 py-0.5 text-xs font-bold text-white">
+                      {conversation.unreadCount.toLocaleString('fa-IR')}
+                    </span>
+                  ) : null}
                 </Button>
               ))}
               {!loading && !conversations.length && (
@@ -444,6 +471,24 @@ export function MessageComposer({
                       <p className="mt-2 whitespace-pre-wrap break-words leading-7">
                         {message.body}
                       </p>
+                      {message.attachments.length ? (
+                        <ul className="mt-2 space-y-1">
+                          {message.attachments.map((attachment) => (
+                            <li key={attachment.documentId}>
+                              <Link
+                                className="inline-flex items-center gap-2 rounded-lg bg-white/15 px-2 py-1 text-xs hover:underline"
+                                href={`/documents?document=${encodeURIComponent(attachment.documentId)}`}
+                              >
+                                <Paperclip
+                                  className="size-3"
+                                  aria-hidden="true"
+                                />
+                                {attachment.title}
+                              </Link>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : null}
                       <Button
                         size="sm"
                         variant="ghost"
@@ -606,7 +651,7 @@ export function MessageComposer({
                   افزودن ایموجی
                 </Button>
                 <Button
-                  disabled={busy || !text.trim()}
+                  disabled={busy || (!text.trim() && !attachments.length)}
                   onClick={() => void sendMessage()}
                 >
                   <Send className="size-4" aria-hidden="true" />

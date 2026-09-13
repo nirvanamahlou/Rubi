@@ -1,5 +1,29 @@
 # مدل داده و ERD اولیه
 
+## WORKBENCH-036 — داده‌های شخصی و ارتباط‌های بک‌اند
+
+- `workbench_note_folders` و `workbench_notes` در مالکیت Workbench و با کلید
+  کاربر IAM هستند. FK مرکب پوشه مانع انتساب یادداشت به پوشه کاربر دیگر می‌شود؛
+  JSON چک‌لیست باید آرایه باشد و `version` برای optimistic concurrency است.
+- `workbench_calendar_events` رویداد کاربر را در شعبه مجاز نگه می‌دارد. کاربر،
+  شعبه و تصویر Documents FK واقعی‌اند؛ لینک فقط metadata رویداد است. ارجاع‌های
+  Customer Affairs کپی نمی‌شوند و در query service تقویم از مالک دریافت می‌شوند.
+- `iam_user_profiles` افزونه یک‌به‌یک User برای تلفن و مرجع عکس است. تغییر هویت
+  و این رکورد در سرویس IAM و یک تراکنش همراه Audit انجام می‌شود.
+- `document_favorites` رابطه چندبه‌چند شخصی User/Document است. Documents مالک
+  ایجاد/حذف و projection دسترسی آن است؛ Workbench جدول را مستقیم نمی‌خواند.
+- `messaging_message_attachments` مرجع پیام/سند و عنوان snapshot را نگه می‌دارد.
+  `messaging_members.last_read_at` مبنای شمارش خوانده‌نشده همان عضو است.
+  Documents مالک فایل و Messaging مالک رابطه پیوست است.
+
+جزئیات قرارداد، مجوز و QA در [WORKBENCH-036](tasks/WORKBENCH-036.md) آمده است.
+
+## WORKBENCH-034 — نظرسنجی و پیشنهادها
+
+Workbench مالک `workbench_feedback` است. هر رکورد UUID و کد پیگیری یکتا، FK واقعی شعبه و فرستنده، واحد مقصد محدودشده، موضوع و متن، انتخاب ناشناس، تعداد پیوست و زمان UTC دارد. `request_hash` همراه UUID ارسالی از ایجاد دوباره یا استفاده متفاوت از همان شناسه جلوگیری می‌کند. شناسه فرستنده برای Audit ذخیره می‌شود و در اعلان ناشناس Actor تهی است؛ projection گیرنده نباید فرستنده ناشناس را بازگرداند.
+
+فایل داخل این جدول ذخیره نمی‌شود. هر پیوست یک Document با `sourceModule=WORKBENCH`، `sourceEntityType=WorkbenchFeedback` و `sourceEntityId` برابر UUID نظرسنجی است. Workbench فقط از سرویس عمومی Documents برای احراز مالک/شعبه/مرجع پیوست استفاده می‌کند و اسکن، دسترسی، نگهداری باینری و تاریخچه نسخه در مالکیت Documents می‌ماند. HR فقط شناسه حساب‌های متصل به واحد مقصد را برمی‌گرداند و Notifications اعلان گیرنده را داخل همان Transaction ثبت می‌کند.
+
 ## B2B-ORGANIZATION-USERS-001 — agency portal membership
 
 B2B owns B2bOrganizationUser with restrictive organization, unique IAM user and internal branch foreign keys. It stores roleName, selected section identifiers (organization/access/contracts/credit/finance/audit), active status, optimistic version and UTC actor/timestamps. A database check restricts section identifiers and requires at least one section for active membership. Membership writes and B2bAuditEvent snapshots are atomic; credentials are never sent to that repository. IAM public services alone create/hash credentials; dedicated agency users receive no global roles or branches. The membership is not a contact, signatory or approval authority. Its branch is the internal cooperation scope, not the agency's street address. Deactivation keeps membership and history, and the portal boundary still applies.
@@ -343,6 +367,24 @@ erDiagram
   جدا و audit داشته باشد.
 
 ## تاریخچه و Audit
+
+### Customer Affairs operational aggregate
+
+- `customer_affairs_leads` منبع درخواست، نیاز سفر، Customer اختیاری، owner/queue، اقدام
+  بعدی و optimistic version را مالک است؛ `(branch_id, source_reference)` یکتا است.
+- `customer_affairs_handoffs` بسته نسخه‌دار و پاسخ Sales را نگه می‌دارد؛ تنها شناسه
+  قرارداد Sales پس از تایید سرویس عمومی ذخیره می‌شود.
+- `customer_affairs_tickets` مالک Ticket، SLA snapshot، مسئول پاسخ مشتری، مجری، reference
+  snapshot و state حل/بستن/بازگشایی است. ارجاع در `customer_affairs_referrals` مسئولیت
+  پاسخ به مشتری را منتقل نمی‌کند.
+- `customer_affairs_timeline` ارتباطات و delivery state،
+  `customer_affairs_satisfactions` دعوت هش‌شده و پاسخ واقعی مشتری، و
+  `customer_affairs_corrective_actions` پیگیری رضایت پایین را نگه می‌دارند.
+- `customer_affairs_commands` مرز idempotency و `customer_affairs_audit_events` ممیزی
+  branch/entity/version را نگه می‌دارند. actor رویداد survey عمومی nullable است؛ سایر
+  عملیات authenticated actor دارند.
+- Customer، User، Branch FK واقعی‌اند. Contract/Reservation/Document با سرویس عمومی
+  اعتبارسنجی می‌شوند و Customer Affairs جدول ماژول دیگر را مستقیم query نمی‌کند.
 
 جداول state history برای sales contract، service allocation، capacity hold، reservation،
 issue، manifest، financial release، purchase request/price، invoice، payment، check،

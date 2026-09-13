@@ -117,6 +117,25 @@ export class DocumentsController {
     );
   }
 
+  @Get('favorites')
+  @Header('Cache-Control', 'private, no-store')
+  @RequirePermissions('documents.list')
+  favorites(@Req() request: AuthenticatedRequest) {
+    return this.service.favorites(request.actor);
+  }
+
+  @Post(':id/favorite')
+  @RequirePermissions('documents.list')
+  favorite(@Param('id') id: string, @Req() request: AuthenticatedRequest) {
+    return this.service.setFavorite(id, true, request.actor);
+  }
+
+  @Delete(':id/favorite')
+  @RequirePermissions('documents.list')
+  unfavorite(@Param('id') id: string, @Req() request: AuthenticatedRequest) {
+    return this.service.setFavorite(id, false, request.actor);
+  }
+
   @Post('upload')
   @ApiConsumes('multipart/form-data')
   @ApiBody({
