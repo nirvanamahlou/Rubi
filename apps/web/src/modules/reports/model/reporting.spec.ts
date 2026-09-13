@@ -47,6 +47,12 @@ describe('reporting catalog', () => {
     expect(searchReports('RPT-028').map((report) => report.code)).toEqual([
       'document_compliance',
     ]);
+    expect(searchReports('تعهد سفر').map((report) => report.code)).toContain(
+      'future_travel_commitments',
+    );
+    expect(searchReports('RPT-036').map((report) => report.code)).toEqual([
+      'customer_portfolio_growth',
+    ]);
   });
 
   it('assigns a unique stable public code to every report', () => {
@@ -133,7 +139,11 @@ describe('reporting catalog', () => {
       'hr_record_expiry',
       'workbench_due_actions',
       'hotel_rate_comparison',
-      'exchange_rate_governance',
+      'future_travel_commitments',
+      'customer_payment_aging',
+      'reservation_cycle_time',
+      'manifest_finance_exclusions',
+      'customer_portfolio_growth',
     ];
 
     expect(
@@ -160,6 +170,31 @@ describe('reporting catalog', () => {
     expect(assignedCodes).toEqual(
       expect.arrayContaining(reportCatalog.map((report) => report.code)),
     );
+  });
+
+  it('keeps master-data governance out of the managerial report catalog', () => {
+    expect(
+      reportCatalog.some((report) => report.category === 'اطلاعات پایه'),
+    ).toBe(false);
+    expect(
+      reportCatalog.some(
+        (report) => report.code === 'exchange_rate_governance',
+      ),
+    ).toBe(false);
+  });
+
+  it('uses decision-oriented question titles for every report card', () => {
+    expect(reportCatalog.every((report) => report.title.endsWith('؟'))).toBe(
+      true,
+    );
+    expect(
+      reportCatalog.find((report) => report.code === 'sales_by_organization')
+        ?.title,
+    ).toBe('هر کارشناس چه تعداد قرارداد و چه مبلغ فروشی ثبت کرده است؟');
+    expect(
+      reportCatalog.find((report) => report.code === 'cancellations_refunds')
+        ?.title,
+    ).not.toContain('Refund');
   });
 
   it('uses formal Persian business-output descriptions on every catalog card', () => {

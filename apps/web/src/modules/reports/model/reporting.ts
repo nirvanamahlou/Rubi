@@ -81,7 +81,11 @@ const reportDisplayCodes: Readonly<Record<string, string>> = {
   hr_record_expiry: 'RPT-029',
   workbench_due_actions: 'RPT-030',
   hotel_rate_comparison: 'RPT-031',
-  exchange_rate_governance: 'RPT-032',
+  future_travel_commitments: 'RPT-032',
+  customer_payment_aging: 'RPT-033',
+  reservation_cycle_time: 'RPT-034',
+  manifest_finance_exclusions: 'RPT-035',
+  customer_portfolio_growth: 'RPT-036',
 };
 
 function report(
@@ -106,7 +110,7 @@ function report(
 export const reportCatalog: readonly ReportDefinition[] = [
   report({
     code: 'sales_by_organization',
-    title: 'مبلغ قراردادهای قابل‌مشاهده به تفکیک کارشناس و ارز چقدر است؟',
+    title: 'هر کارشناس چه تعداد قرارداد و چه مبلغ فروشی ثبت کرده است؟',
     category: 'فروش و قراردادها',
     description:
       'مبالغ قراردادهای در دسترس کاربر، به تفکیک کارشناس مسئول و ارز قرارداد.',
@@ -208,7 +212,7 @@ export const reportCatalog: readonly ReportDefinition[] = [
   }),
   report({
     code: 'payments_refunds',
-    title: 'چه میزان دریافت، پرداخت و استرداد انجام شده است؟',
+    title: 'در بازه انتخابی چه میزان دریافت، پرداخت و استرداد قطعی شده است؟',
     category: 'مالی و خزانه‌داری',
     description:
       'جمع دریافت‌ها، پرداخت‌ها و استردادهای تکمیل‌شده، به تفکیک نوع و روش تراکنش.',
@@ -238,7 +242,8 @@ export const reportCatalog: readonly ReportDefinition[] = [
   }),
   report({
     code: 'reservation_errors',
-    title: 'بیشترین خطاهای رزرواسیون مربوط به کدام Provider یا عملیات است؟',
+    title:
+      'بیشترین خطاهای رزرواسیون مربوط به کدام ارائه‌دهنده یا مرحله عملیاتی است؟',
     category: 'رزرواسیون و عملیات سفر',
     description:
       'تعداد و نرخ خطاهای رزرواسیون، به تفکیک ارائه‌دهنده، عملیات و کد خطا.',
@@ -253,7 +258,7 @@ export const reportCatalog: readonly ReportDefinition[] = [
   }),
   report({
     code: 'cancellations_refunds',
-    title: 'چه تعداد رزرو لغو یا Refund شده و علت اصلی آن چیست؟',
+    title: 'چه تعداد رزرو لغو یا مسترد شده و علت و مبلغ آن‌ها چیست؟',
     category: 'رزرواسیون و عملیات سفر',
     description:
       'تعداد و مبلغ رزروهای لغوشده، درخواست‌های استرداد و استردادهای تکمیل‌شده، به تفکیک علت و وضعیت.',
@@ -290,7 +295,8 @@ export const reportCatalog: readonly ReportDefinition[] = [
   }),
   report({
     code: 'customer_service_sla',
-    title: 'کدام درخواست‌های مشتری از SLA عبور کرده‌اند؟',
+    title:
+      'کدام درخواست‌های مشتری از زمان توافق‌شده برای پاسخ یا حل عبور کرده‌اند؟',
     category: 'امور مشتریان و SLA',
     description:
       'زمان پاسخ نخست، زمان حل و موارد نقض توافق‌نامه سطح خدمت برای درخواست‌های واجد شرایط مشتریان.',
@@ -304,7 +310,7 @@ export const reportCatalog: readonly ReportDefinition[] = [
   }),
   report({
     code: 'hr_performance',
-    title: 'عملکرد و ظرفیت کاری کارکنان چگونه است؟',
+    title: 'کارکرد، مرخصی و اضافه‌کاری کارکنان هر واحد چگونه است؟',
     category: 'منابع انسانی',
     description:
       'کارکرد، حضور، مرخصی، اضافه‌کاری و نتایج ارزیابی کارکنان، بدون نمایش اطلاعات حقوقی.',
@@ -349,31 +355,48 @@ export const reportCatalog: readonly ReportDefinition[] = [
   },
   report({
     code: 'agency_performance',
-    title: 'کدام آژانس‌ها و مشتریان سازمانی بیشترین فروش و سود را ایجاد کرده‌اند؟',
+    title:
+      'کدام آژانس‌ها و مشتریان سازمانی بیشترین فروش و سود را ایجاد کرده‌اند؟',
     category: 'گزارش‌های مدیریتی تجمیعی',
-    description: 'فروش، خرید و سود ناخالص به تفکیک آژانس، نوع مشتری و کانال فروش.',
+    description:
+      'فروش، خرید و سود ناخالص به تفکیک آژانس، نوع مشتری و کانال فروش.',
     grain: 'Order Item Currency Grain',
-    permission: 'reporting.b2b.read', availability: 'READY', approvedView: 'reporting.travel.facts.v1',
-    dimensions: ['آژانس', 'نوع مشتری', 'کانال فروش'], measures: ['فروش', 'خرید', 'سود ناخالص'],
-    filters: [...commonFilters, 'آژانس', 'کانال فروش'], drillDown: 'اقلام سفر تشکیل‌دهنده مبلغ بدون تکثیر مسافر',
+    permission: 'reporting.b2b.read',
+    availability: 'READY',
+    approvedView: 'reporting.travel.facts.v1',
+    dimensions: ['آژانس', 'نوع مشتری', 'کانال فروش'],
+    measures: ['فروش', 'خرید', 'سود ناخالص'],
+    filters: [...commonFilters, 'آژانس', 'کانال فروش'],
+    drillDown: 'اقلام سفر تشکیل‌دهنده مبلغ بدون تکثیر مسافر',
   }),
   report({
     code: 'lead_to_order_conversion',
-    title: 'هر منبع لید چه تعداد سفارش و چه میزان فروش ایجاد کرده است؟',
+    title: 'هر منبع جذب چه تعداد سفارش و چه میزان فروش ایجاد کرده است؟',
     category: 'مارکتینگ',
-    description: 'ردیابی منبع جذب تا سفارش سفر و ارزش فروش حاصل از هر منبع لید.',
-    grain: 'Order Item Currency Grain', permission: 'reporting.sales.read', availability: 'READY', approvedView: 'reporting.travel.facts.v1',
-    dimensions: ['منبع لید', 'نوع مشتری'], measures: ['تعداد سفارش', 'مبلغ فروش'],
-    filters: [...commonFilters, 'منبع لید', 'نوع مشتری'], drillDown: 'سفارش‌های سفر منتسب به منبع لید',
+    description:
+      'ردیابی منبع جذب تا سفارش سفر و ارزش فروش حاصل از هر منبع لید.',
+    grain: 'Order Item Currency Grain',
+    permission: 'reporting.sales.read',
+    availability: 'READY',
+    approvedView: 'reporting.travel.facts.v1',
+    dimensions: ['منبع لید', 'نوع مشتری'],
+    measures: ['تعداد سفارش', 'مبلغ فروش'],
+    filters: [...commonFilters, 'منبع لید', 'نوع مشتری'],
+    drillDown: 'سفارش‌های سفر منتسب به منبع لید',
   }),
   report({
     code: 'route_passengers',
     title: 'کدام مقصدها و مسیرهای سفر بیشترین سفارش و مسافر را داشته‌اند؟',
     category: 'رزرواسیون و عملیات سفر',
     description: 'تعداد سفارش، مسافر و بلیت به تفکیک مقصد و مسیر سفر.',
-    grain: 'Order Item Currency Grain', permission: 'reporting.sales.read', availability: 'READY', approvedView: 'reporting.travel.facts.v1',
-    dimensions: ['مقصد', 'مسیر'], measures: ['تعداد سفارش', 'تعداد مسافر', 'تعداد بلیت'],
-    filters: [...commonFilters, 'مقصد', 'مسیر'], drillDown: 'اقلام سفارش و شمارنده‌های مستقل مسافر و Segment',
+    grain: 'Order Item Currency Grain',
+    permission: 'reporting.sales.read',
+    availability: 'READY',
+    approvedView: 'reporting.travel.facts.v1',
+    dimensions: ['مقصد', 'مسیر'],
+    measures: ['تعداد سفارش', 'تعداد مسافر', 'تعداد بلیت'],
+    filters: [...commonFilters, 'مقصد', 'مسیر'],
+    drillDown: 'اقلام سفارش و شمارنده‌های مستقل مسافر و Segment',
   }),
   report({
     code: 'sales_contract_pipeline',
@@ -391,7 +414,8 @@ export const reportCatalog: readonly ReportDefinition[] = [
   }),
   report({
     code: 'agency_contract_risk',
-    title: 'کدام قراردادها، تضامین یا سقف‌های اعتباری آژانس نیازمند اقدام هستند؟',
+    title:
+      'کدام قراردادها و تضامین آژانس‌ها رو به انقضا هستند و سقف اعتبارشان چقدر است؟',
     category: 'آژانس‌ها و مشتریان سازمانی',
     description:
       'قراردادهای رو به پایان، تضامین در آستانه انقضا و سیاست‌های اعتباری فعال آژانس‌ها به تفکیک ارز.',
@@ -400,12 +424,19 @@ export const reportCatalog: readonly ReportDefinition[] = [
     approvedView: 'reporting_b2b_agency_risk_facts_v1',
     dimensions: ['آژانس', 'قرارداد', 'مدیر حساب', 'نوع تضمین', 'ارز'],
     measures: ['سقف اعتبار', 'مبلغ تضمین', 'روز تا انقضا', 'مهلت تسویه'],
-    filters: [...commonFilters, 'آژانس', 'وضعیت قرارداد', 'نوع تضمین', 'مدیر حساب'],
+    filters: [
+      ...commonFilters,
+      'آژانس',
+      'وضعیت قرارداد',
+      'نوع تضمین',
+      'مدیر حساب',
+    ],
     drillDown: 'قرارداد، نسخه مصوب، سیاست اعتبار و تضمین مرتبط',
   }),
   report({
     code: 'ticket_capacity',
-    title: 'ظرفیت کدام پروازها رو به تکمیل است و چه تعداد صندلی باقی مانده است؟',
+    title:
+      'ظرفیت کدام پروازها رو به تکمیل است و چه تعداد صندلی باقی مانده است؟',
     category: 'مدیریت بلیت‌ها',
     description:
       'ظرفیت کل، تخصیص فعال و ظرفیت باقی‌مانده پیشنهادهای پرواز به تفکیک مسیر، تاریخ و کلاس پروازی.',
@@ -413,7 +444,12 @@ export const reportCatalog: readonly ReportDefinition[] = [
     permission: 'reporting.tickets.read',
     approvedView: 'reporting_ticket_capacity_facts_v1',
     dimensions: ['پرواز', 'ایرلاین', 'مسیر', 'تاریخ حرکت', 'کلاس پروازی'],
-    measures: ['ظرفیت کل', 'تخصیص فعال', 'ظرفیت باقی‌مانده', 'درصد تکمیل ظرفیت'],
+    measures: [
+      'ظرفیت کل',
+      'تخصیص فعال',
+      'ظرفیت باقی‌مانده',
+      'درصد تکمیل ظرفیت',
+    ],
     filters: [...commonFilters, 'ایرلاین', 'مبدأ', 'مقصد', 'کلاس پروازی'],
     drillDown: 'پیشنهاد پرواز و تخصیص‌های فعال قرارداد',
   }),
@@ -428,7 +464,13 @@ export const reportCatalog: readonly ReportDefinition[] = [
     approvedView: 'reporting_supplier_payment_queue_facts_v1',
     dimensions: ['تأمین‌کننده', 'نوع خدمت', 'وضعیت پرداخت', 'بانک', 'مسئول'],
     measures: ['مبلغ خرید', 'تعداد خرید', 'مدت انتظار', 'تعداد تلاش پرداخت'],
-    filters: [...commonFilters, 'تأمین‌کننده', 'نوع خدمت', 'وضعیت پرداخت', 'بانک'],
+    filters: [
+      ...commonFilters,
+      'تأمین‌کننده',
+      'نوع خدمت',
+      'وضعیت پرداخت',
+      'بانک',
+    ],
     drillDown: 'آخرین نسخه خرید خدمت و تاریخچه پرداخت مالی',
   }),
   report({
@@ -441,13 +483,19 @@ export const reportCatalog: readonly ReportDefinition[] = [
     permission: 'reporting.reservations.read',
     approvedView: 'reporting_reservation_delivery_readiness_facts_v1',
     dimensions: ['وضعیت رزرو', 'مانع تحویل', 'نوع خدمت', 'مسئول فروش', 'شعبه'],
-    measures: ['تعداد رزرو', 'خریدهای ناقص', 'پرداخت‌های تأمین‌کننده معوق', 'زمان انتظار'],
+    measures: [
+      'تعداد رزرو',
+      'خریدهای ناقص',
+      'پرداخت‌های تأمین‌کننده معوق',
+      'زمان انتظار',
+    ],
     filters: [...commonFilters, 'مانع تحویل', 'نوع خدمت', 'مسئول فروش'],
     drillDown: 'رزرو، آخرین وضعیت گردش کار، خریدها و تأیید تحویل مالی',
   }),
   report({
     code: 'lead_pipeline',
-    title: 'لیدهای سفر در چه مراحلی هستند و کدام پیگیری‌ها عقب افتاده‌اند؟',
+    title:
+      'سرنخ‌های فروش سفر در چه مراحلی هستند و کدام پیگیری‌ها عقب افتاده‌اند؟',
     category: 'امور مشتریان و SLA',
     description:
       'تعداد و ارزش احتمالی لیدهای سفر به تفکیک مرحله، منبع، کانال ورودی، مسئول و موعد اقدام بعدی.',
@@ -456,12 +504,19 @@ export const reportCatalog: readonly ReportDefinition[] = [
     approvedView: 'reporting_customer_affairs_lead_facts_v1',
     dimensions: ['مرحله لید', 'منبع لید', 'کانال ورودی', 'مسئول', 'مقصد'],
     measures: ['تعداد لید', 'بودجه احتمالی', 'پیگیری معوق', 'میانگین عمر لید'],
-    filters: [...commonFilters, 'مرحله لید', 'منبع لید', 'کانال ورودی', 'مسئول'],
+    filters: [
+      ...commonFilters,
+      'مرحله لید',
+      'منبع لید',
+      'کانال ورودی',
+      'مسئول',
+    ],
     drillDown: 'لید و خط زمانی اقدامات مجاز آن',
   }),
   report({
     code: 'customer_satisfaction',
-    title: 'رضایت مشتریان از رسیدگی به درخواست‌ها چگونه است؟',
+    title:
+      'کدام خدمات یا واحدها کمترین رضایت مشتری و بیشترین اقدام اصلاحی را دارند؟',
     category: 'امور مشتریان و SLA',
     description:
       'امتیاز رضایت، نرخ مشارکت و درخواست‌های نیازمند اقدام اصلاحی به تفکیک نوع خدمت و واحد پاسخ‌گو.',
@@ -469,13 +524,24 @@ export const reportCatalog: readonly ReportDefinition[] = [
     permission: 'reporting.customer_affairs.read',
     approvedView: 'reporting_customer_satisfaction_facts_v1',
     dimensions: ['نوع درخواست', 'نوع خدمت', 'واحد پاسخ‌گو', 'کارشناس'],
-    measures: ['میانگین امتیاز', 'نرخ پاسخ', 'تعداد امتیاز پایین', 'اقدام اصلاحی باز'],
-    filters: [...commonFilters, 'نوع درخواست', 'نوع خدمت', 'واحد پاسخ‌گو', 'کارشناس'],
+    measures: [
+      'میانگین امتیاز',
+      'نرخ پاسخ',
+      'تعداد امتیاز پایین',
+      'اقدام اصلاحی باز',
+    ],
+    filters: [
+      ...commonFilters,
+      'نوع درخواست',
+      'نوع خدمت',
+      'واحد پاسخ‌گو',
+      'کارشناس',
+    ],
     drillDown: 'پاسخ رضایت و اقدام اصلاحی مرتبط بدون نمایش اطلاعات حساس',
   }),
   report({
     code: 'customer_consent_coverage',
-    title: 'برای ارتباط با مشتریان در هر کانال چه میزان رضایت معتبر داریم؟',
+    title: 'در هر کانال با چه تعداد مشتری اجازه معتبر برای ارتباط داریم؟',
     category: 'مارکتینگ',
     description:
       'آخرین وضعیت رضایت مشتریان برای اهداف و کانال‌های ارتباطی به تفکیک نوع مشتری و شعبه مالک.',
@@ -489,16 +555,33 @@ export const reportCatalog: readonly ReportDefinition[] = [
   }),
   report({
     code: 'document_compliance',
-    title: 'کدام اسناد ناقص، منقضی یا در انتظار پردازش هستند؟',
+    title: 'کدام اسناد عملیاتی ناقص، منقضی یا در انتظار پردازش هستند؟',
     category: 'اسناد و انطباق',
     description:
       'اسناد نیازمند اقدام به تفکیک نوع، دسته، ماژول مبدأ، وضعیت بایگانی و موعد اعتبار.',
     grain: 'Document Grain',
     permission: 'reporting.audit.read',
     approvedView: 'reporting_document_compliance_facts_v1',
-    dimensions: ['نوع سند', 'دسته', 'ماژول مبدأ', 'وضعیت بایگانی', 'وضعیت پردازش'],
-    measures: ['تعداد سند ناقص', 'تعداد منقضی', 'روز تا انقضا', 'کار پردازشی ناموفق'],
-    filters: [...commonFilters, 'نوع سند', 'دسته', 'ماژول مبدأ', 'وضعیت بایگانی'],
+    dimensions: [
+      'نوع سند',
+      'دسته',
+      'ماژول مبدأ',
+      'وضعیت بایگانی',
+      'وضعیت پردازش',
+    ],
+    measures: [
+      'تعداد سند ناقص',
+      'تعداد منقضی',
+      'روز تا انقضا',
+      'کار پردازشی ناموفق',
+    ],
+    filters: [
+      ...commonFilters,
+      'نوع سند',
+      'دسته',
+      'ماژول مبدأ',
+      'وضعیت بایگانی',
+    ],
     drillDown: 'سند، نسخه جاری و آخرین کار پردازشی مجاز',
   }),
   report({
@@ -511,7 +594,12 @@ export const reportCatalog: readonly ReportDefinition[] = [
     permission: 'reporting.hr.read',
     approvedView: 'reporting_hr_record_expiry_facts_v1',
     dimensions: ['نوع سابقه', 'کارمند', 'واحد', 'سمت', 'شعبه'],
-    measures: ['تعداد در آستانه انقضا', 'تعداد منقضی', 'روز تا انقضا', 'تعداد ناقص'],
+    measures: [
+      'تعداد در آستانه انقضا',
+      'تعداد منقضی',
+      'روز تا انقضا',
+      'تعداد ناقص',
+    ],
     filters: [...commonFilters, 'نوع سابقه', 'کارمند', 'واحد', 'سمت'],
     drillDown: 'رکورد منابع انسانی و سند مرتبط در محدوده مجاز',
   }),
@@ -531,7 +619,8 @@ export const reportCatalog: readonly ReportDefinition[] = [
   }),
   report({
     code: 'hotel_rate_comparison',
-    title: 'نرخ خرید هتل‌ها در هر بازه و نزد هر تأمین‌کننده چگونه مقایسه می‌شود؟',
+    title:
+      'نرخ خرید هتل‌ها در هر بازه و نزد هر تأمین‌کننده چگونه مقایسه می‌شود؟',
     category: 'خرید و تأمین',
     description:
       'نرخ پایه و عوامل مؤثر ثبت‌شده برای هتل و تأمین‌کننده در بازه اقامت و ارز انتخابی.',
@@ -544,18 +633,113 @@ export const reportCatalog: readonly ReportDefinition[] = [
     drillDown: 'بسته نرخ و عوامل محاسبه همان ردیف',
   }),
   report({
-    code: 'exchange_rate_governance',
-    title: 'کدام نرخ‌های ارز در انتظار تأیید، اصلاح یا انقضا هستند؟',
-    category: 'اطلاعات پایه',
+    code: 'future_travel_commitments',
+    title: 'در هفته‌های آینده چه میزان فروش، مانده وصول‌نشده و تعهد سفر داریم؟',
+    category: 'گزارش‌های مدیریتی تجمیعی',
     description:
-      'نرخ‌های ارز ثبت‌شده به تفکیک جفت ارز، نوع نرخ، منبع، وضعیت تصویب و دوره اعتبار.',
-    grain: 'Exchange Rate Observation Grain',
+      'تعهدات سفر آینده بر پایه تاریخ حرکت قرارداد، مبلغ فروش، مانده وصول‌نشده و وضعیت آمادگی رزرو.',
+    grain: 'Sales Contract Currency Departure Week Grain',
+    permission: 'reporting.sales.read',
+    approvedView: 'reporting_future_travel_commitment_facts_v1',
+    dimensions: ['هفته حرکت', 'مقصد', 'نوع خدمت', 'وضعیت رزرو', 'وضعیت تسویه'],
+    measures: ['تعداد قرارداد', 'مبلغ فروش', 'مانده وصول‌نشده', 'تعداد مسافر'],
+    filters: [...commonFilters, 'بازه حرکت', 'مقصد', 'نوع خدمت', 'وضعیت رزرو'],
+    drillDown: 'قرارداد، خدمات، مسافران و برنامه پرداخت همان تعهد سفر',
+  }),
+  report({
+    code: 'customer_payment_aging',
+    title:
+      'چه مبلغی از تعهدات پرداخت مشتریان سررسید شده یا در آستانه سررسید است؟',
+    category: 'مالی و خزانه‌داری',
+    description:
+      'تعهدات پرداخت قراردادهای فروش به تفکیک سررسید، وضعیت تأیید مالی، روش پرداخت، مشتری و ارز.',
+    grain: 'Sales Contract Payment Entry Grain',
     permission: 'reporting.finance.read',
-    approvedView: 'reporting_exchange_rate_governance_facts_v1',
-    dimensions: ['ارز مبدأ', 'ارز مقصد', 'نوع نرخ', 'منبع', 'وضعیت'],
-    measures: ['نرخ', 'تعداد در انتظار تأیید', 'سن نرخ', 'روز تا انقضا'],
-    filters: ['بازه تاریخ', 'جفت ارز', 'نوع نرخ', 'منبع', 'وضعیت'],
-    drillDown: 'نرخ ارز و سابقه تصمیم‌گیری مجاز',
+    approvedView: 'reporting_customer_payment_aging_facts_v1',
+    dimensions: ['بازه سررسید', 'مشتری', 'روش پرداخت', 'وضعیت تأیید', 'ارز'],
+    measures: ['مبلغ سررسیدشده', 'مبلغ آتی', 'تعداد تعهد', 'میانگین روز تأخیر'],
+    filters: [
+      ...commonFilters,
+      'مشتری',
+      'روش پرداخت',
+      'وضعیت تأیید',
+      'بازه سررسید',
+    ],
+    drillDown: 'برنامه پرداخت قرارداد و آخرین تأیید مالی مجاز',
+  }),
+  report({
+    code: 'reservation_cycle_time',
+    title:
+      'کدام مرحله رزرواسیون بیشترین زمان انتظار و گلوگاه عملیاتی را ایجاد می‌کند؟',
+    category: 'رزرواسیون و عملیات سفر',
+    description:
+      'زمان سپری‌شده از دریافت درخواست تا خرید، تأیید مالی و آمادگی تحویل به تفکیک مرحله و نوع خدمت.',
+    grain: 'Reservation Intake Latest Workflow Grain',
+    permission: 'reporting.reservations.read',
+    approvedView: 'reporting_reservation_cycle_time_facts_v1',
+    dimensions: ['مرحله جاری', 'نوع خدمت', 'تأمین‌کننده', 'شعبه', 'مسئول'],
+    measures: [
+      'میانگین زمان مرحله',
+      'صدک ۹۰ زمان انتظار',
+      'تعداد رزرو متوقف',
+      'عمر رزرو',
+    ],
+    filters: [
+      ...commonFilters,
+      'مرحله جاری',
+      'نوع خدمت',
+      'تأمین‌کننده',
+      'مسئول',
+    ],
+    drillDown: 'درخواست رزرو و آخرین نسخه گردش کار، خرید و تأیید تحویل',
+  }),
+  report({
+    code: 'manifest_finance_exclusions',
+    title:
+      'چه تعداد قرارداد به علت تأیید مالی‌نشده از فهرست مسافران حذف شده‌اند؟',
+    category: 'مدیریت بلیت‌ها',
+    description:
+      'تعداد قراردادها و مسافرانی که در هر اجرای فهرست مسافران پذیرفته یا به علت مانع مالی کنار گذاشته شده‌اند.',
+    grain: 'Reservation Manifest Export Run Grain',
+    permission: 'reporting.tickets.read',
+    approvedView: 'reporting_manifest_finance_exclusion_facts_v1',
+    dimensions: ['بازه حرکت', 'اجراکننده', 'شعبه', 'وضعیت پذیرش'],
+    measures: [
+      'قرارداد پذیرفته‌شده',
+      'مسافر پذیرفته‌شده',
+      'حذف‌شده به علت مانع مالی',
+      'نرخ حذف',
+    ],
+    filters: ['بازه تاریخ', 'شرکت', 'شعبه', 'اجراکننده', 'وضعیت پذیرش'],
+    drillDown:
+      'اجرای فهرست مسافران و اقلام پذیرفته‌شده بدون افشای اطلاعات هویتی',
+  }),
+  report({
+    code: 'customer_portfolio_growth',
+    title: 'ترکیب و رشد مشتریان فعال در هر بخش و کانال جذب چگونه است؟',
+    category: 'گزارش‌های مدیریتی تجمیعی',
+    description:
+      'تعداد مشتریان فعال، مشتریان جدید و غیرفعال‌شده به تفکیک نوع مشتری، روش آشنایی و شعبه مالک.',
+    grain: 'Customer Cohort Month Grain',
+    permission: 'reporting.customers.read',
+    approvedView: 'reporting_customer_portfolio_growth_facts_v1',
+    dimensions: [
+      'ماه عضویت',
+      'نوع مشتری',
+      'روش آشنایی',
+      'شعبه مالک',
+      'وضعیت فعالیت',
+    ],
+    measures: ['مشتری فعال', 'مشتری جدید', 'مشتری غیرفعال‌شده', 'نرخ رشد خالص'],
+    filters: [
+      'بازه تاریخ',
+      'شرکت',
+      'شعبه',
+      'نوع مشتری',
+      'روش آشنایی',
+      'وضعیت فعالیت',
+    ],
+    drillDown: 'پرونده‌های مشتری مجاز بدون نمایش داده هویتی حساس',
   }),
 ];
 
@@ -583,6 +767,9 @@ export const reportPriorityGroups: readonly ReportPriorityGroup[] = [
       'reservation_delivery_readiness',
       'lead_pipeline',
       'workbench_due_actions',
+      'future_travel_commitments',
+      'customer_payment_aging',
+      'reservation_cycle_time',
     ],
   },
   {
@@ -602,7 +789,8 @@ export const reportPriorityGroups: readonly ReportPriorityGroup[] = [
       'document_compliance',
       'hr_record_expiry',
       'hotel_rate_comparison',
-      'exchange_rate_governance',
+      'manifest_finance_exclusions',
+      'customer_portfolio_growth',
     ],
   },
   {
@@ -672,7 +860,11 @@ const reportSearchAliases: Readonly<Record<string, string>> = {
   hr_record_expiry: 'سوابق کارکنان انقضا منابع انسانی',
   workbench_due_actions: 'میزکار کارها پیگیری سررسید معوق',
   hotel_rate_comparison: 'مقایسه نرخ خرید هتل تأمین‌کننده',
-  exchange_rate_governance: 'نرخ ارز تأیید اصلاح انقضا',
+  future_travel_commitments: 'تعهد سفر آینده فروش وصول رزرو ظرفیت',
+  customer_payment_aging: 'سررسید تعهد پرداخت مشتری وصول مطالبات قرارداد',
+  reservation_cycle_time: 'زمان چرخه رزرواسیون گلوگاه عملیات توقف',
+  manifest_finance_exclusions: 'حذف مالی فهرست مسافران مانیفست قرارداد',
+  customer_portfolio_growth: 'رشد ترکیب مشتری فعال جدید کانال جذب',
 };
 
 export function searchReports(query: string): readonly ReportDefinition[] {

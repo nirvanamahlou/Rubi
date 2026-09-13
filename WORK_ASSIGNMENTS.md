@@ -1,5 +1,22 @@
 # Work Assignments
 
+## REPORTING-CATALOG-MANAGEMENT-DECISIONS — PC-C — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-13: بازبینی دوباره مدل واقعی CRM، افزودن گزارش‌های
+  اثرگذار بر تصمیم‌گیری مدیریتی، شفاف‌سازی عنوان تمام کارت‌های کاتالوگ و حذف
+  گزارش «اطلاعات پایه».
+- محدوده رزرو: `apps/web/src/modules/reports/model/reporting.ts` و تست همان مدل،
+  به‌همراه `docs/tasks/REPORTING-CATALOG-MANAGEMENT-DECISIONS.md` و مدخل‌های
+  Reporting در اسناد وضعیت/تخصیص. بدون API، Schema/Migration/Seed، داده عملیاتی،
+  مجوز، قرارداد مشترک، Dependency/Lockfile یا تصرف Runtime همکاران.
+- گزارش‌های فاقد Public Projection و Endpoint تأییدشده فقط با وضعیت صادقانه
+  «در انتظار منبع داده» وارد کاتالوگ می‌شوند؛ هیچ عدد یا داده نمونه‌ای وارد Git
+  نخواهد شد.
+- نتیجه: گزارش «اطلاعات پایه» حذف و پنج گزارش تصمیم‌محور با کدهای `RPT-032` تا
+  `RPT-036` اضافه شد؛ عنوان‌های مبهم بازنویسی شدند. آزمون هدفمند 10/10، TypeScript
+  و lint محدوده موفق‌اند. محدودیت دو Suite تاریخی JSX و prerender دو مسیر نامرتبط
+  در سند Task ثبت شده است. قفل فایل‌های پیاده‌سازی آزاد شد.
+
 ## HR-014-BACKEND-ONLY — PC-B — MERGE_AUTHORIZED
 
 - User explicitly removes the standalone HR connections panel and wants integrations behind the existing forms. Reserve the central AppShell outlet removal, HR record referral link and now-unreachable referral UI/client/tests on `codex/pc-b-hr-backend-only-0912` from `origin/develop@6a4e0410`. Backend services, contracts, persisted records, permissions and the form directory/document/currency integrations stay intact. No migration, dependency or runtime takeover. Existing visibility context is retained for consumer compatibility. Push a review PR to develop; no automatic merge under the updated instructions.
