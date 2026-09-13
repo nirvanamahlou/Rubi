@@ -2459,3 +2459,8 @@ Reservations باقی می‌ماند.
 
 اعتبارسنجی نهایی شامل ۳۳ تست هدفمند API، ۳۸ تست Web و ۲ تست Migration، lint محدوده،
 Prisma validate/format و typecheck/build دیتابیس، API و Web موفق است.
+
+## LOCAL-ALL-SECTIONS-3100-0913 — ACTIVE
+
+Combined develop, latest published Customer Affairs forms/reports, Workbench performance and Finance inbox are active at Web3100/API4191. Code/launcher commit 2fd10a9f, Web build LYH1PTQ_i1saQILyrG74V. 98 targeted tests, scoped lint, sequential API typecheck, full build and final HTTP smoke passed. Existing database and storage retained; no migration/seed/role assignment. Port4190 was replaced because Fetch restricts it. See tasks/LOCAL-ALL-SECTIONS-3100-0913.md.
+

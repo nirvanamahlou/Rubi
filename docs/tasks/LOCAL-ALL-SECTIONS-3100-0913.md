@@ -35,3 +35,8 @@ disabled. API4191 health returned 200 and login CORS preflight returned 204.
 The original running checkouts remain available for rollback. A corrupt internal
 Codex checkpoint ref containing only NUL bytes was backed up under ignored tmp
 and removed to restore Git fetch; no branch or user working file was removed.
+
+## Activation verified
+
+Web3100 PID18772 serves build unified-LYH1PTQ_i1saQILyrG74V from code/launcher commit 2fd10a9f. API4191 PID15828 serves the combined API against the existing database/storage. Final Web build passed all 46 routes. HTTP smoke passed login/runtime 200, all 13 selected protected module routes 307, API health 200 and Performance/Finance guards 401. No operational account credentials were used, so this is startup/route verification rather than end-to-end testing of every feature. Chrome automation is not connected; the login page was opened in the available in-app browser.
+
