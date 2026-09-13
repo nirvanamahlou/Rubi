@@ -3,7 +3,7 @@
 - **Computer:** PC-A
 - **Branch:** `codex/pc-a-accounting-dropdown-defaults`
 - **Base:** `origin/develop@f925ccda`
-- **Status:** IN_PROGRESS
+- **Status:** MERGE_AUTHORIZED / TESTED
 
 ## هدف
 
@@ -15,3 +15,12 @@
 
 فقط رفتار نمایشی منوی داخلی حسابداری و تست قراردادی آن تغییر می‌کند. API، داده،
 Permission، Schema/Migration، Seed، Dependency و منوی اصلی سامانه خارج از محدوده‌اند.
+
+## نتیجه و کنترل کیفیت
+
+- هر چهار عنوان به button دراپ‌داون تبدیل شدند؛ دو گروه مالیاتی آرایه زیرگروه خالی
+  دارند و هیچ مسیر یا محتوای جدیدی برای آن‌ها ایجاد نشد.
+- state اولیه شامل شناسه هر چهار گروه است، بنابراین در ورود اولیه همه بسته‌اند.
+- ۲۵ تست Finance/Navigation/Foundation، lint، TypeScript و build تولیدی ۴۶ مسیر موفق
+  شدند. build با API پایه `http://localhost:4190/api/v1` ساخته شد.
+- مالک محصول در درخواست جاری ادغام و به‌روزرسانی Web3100 را مجاز کرده است.

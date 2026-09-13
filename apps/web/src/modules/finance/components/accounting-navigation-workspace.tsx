@@ -36,7 +36,6 @@ interface AccountingNavigationGroup {
   id: string;
   title: string;
   icon: LucideIcon;
-  href?: string;
   items: readonly AccountingNavigationItem[];
 }
 
@@ -88,14 +87,12 @@ const accountingNavigationGroups: readonly AccountingNavigationGroup[] = [
   {
     id: 'taxpayer-system',
     title: 'ارتباط با سامانه مودیان مالیاتی',
-    href: '/finance/accounting/taxpayer-system',
     icon: ScrollText,
     items: [],
   },
   {
     id: 'tax-accounting',
     title: 'حسابداری مالیاتی',
-    href: '/finance/accounting/tax-accounting',
     icon: Calculator,
     items: [],
   },
@@ -105,8 +102,6 @@ function findSelected(pathname: string) {
   for (const group of accountingNavigationGroups) {
     const child = group.items.find((item) => item.href === pathname);
     if (child) return { groupTitle: group.title, title: child.title };
-    if (group.href === pathname)
-      return { groupTitle: 'حسابداری', title: group.title };
   }
   return null;
 }
@@ -119,7 +114,9 @@ function AccountingSecondaryNavigation({
   onToggle: () => void;
 }) {
   const pathname = usePathname();
-  const [closedGroups, setClosedGroups] = useState<string[]>([]);
+  const [closedGroups, setClosedGroups] = useState<string[]>(() =>
+    accountingNavigationGroups.map((group) => group.id),
+  );
   const toggleGroup = (id: string) =>
     setClosedGroups((current) =>
       current.includes(id)
@@ -162,27 +159,6 @@ function AccountingSecondaryNavigation({
         {accountingNavigationGroups.map((group) => {
           const GroupIcon = group.icon;
           const groupClosed = closedGroups.includes(group.id);
-          if (group.href) {
-            const active = pathname === group.href;
-            return (
-              <Link
-                aria-current={active ? 'page' : undefined}
-                className={cn(
-                  'flex min-h-11 items-center gap-2.5 rounded-xl px-3 text-sm font-bold outline-none transition focus-visible:ring-2 focus-visible:ring-ring',
-                  active
-                    ? 'bg-primary text-primary-foreground shadow-sm'
-                    : 'text-foreground hover:bg-muted',
-                  collapsed && 'justify-center px-0',
-                )}
-                href={group.href}
-                key={group.id}
-                title={collapsed ? group.title : undefined}
-              >
-                <GroupIcon className="size-[18px] shrink-0" />
-                {!collapsed ? <span>{group.title}</span> : null}
-              </Link>
-            );
-          }
           return (
             <section className="min-w-0" key={group.id}>
               <button
@@ -207,7 +183,7 @@ function AccountingSecondaryNavigation({
                   </>
                 ) : null}
               </button>
-              {!collapsed && !groupClosed ? (
+              {!collapsed && !groupClosed && group.items.length > 0 ? (
                 <div className="mt-1 space-y-1 border-s border-border ps-2">
                   {group.items.map((item) => {
                     const ItemIcon = item.icon;

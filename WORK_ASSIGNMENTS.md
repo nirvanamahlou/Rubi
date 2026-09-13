@@ -1,6 +1,6 @@
 # Work Assignments
 
-## FINANCE-005-ACCOUNTING-DROPDOWN-DEFAULTS — PC-A — IN_PROGRESS
+## FINANCE-005-ACCOUNTING-DROPDOWN-DEFAULTS — PC-A — MERGE_AUTHORIZED / TESTED
 
 - درخواست مالک محصول در 2026-09-13: هر چهار گروه منوی داخلی حسابداری هنگام ورود بسته
   باشند و دو گروه «ارتباط با سامانه مودیان مالیاتی» و «حسابداری مالیاتی» نیز بدون
@@ -11,6 +11,9 @@
   API، داده، Permission، Schema/Migration، Seed، Dependency یا تغییر منوی اصلی.
 - Push و PR به `develop` مجاز است؛ ادغام و به‌روزرسانی Web3100 پس از تست در ادامه
   درخواست جاری مالک محصول انجام می‌شود. Force Push ممنوع است.
+- پیاده‌سازی تکمیل شد: هر چهار عنوان دراپ‌داون‌اند، state اولیه همه را بسته نگه می‌دارد
+  و دو گروه مالیاتی فعلاً هیچ زیرگروهی رندر نمی‌کنند. ۲۵ تست هدفمند، lint، TypeScript
+  و build تولیدی ۴۶ مسیر موفق‌اند؛ ادغام و فعال‌سازی Web3100 مجاز است.
 
 ## FINANCE-004-ACCOUNTING-SECONDARY-NAV — PC-A — COMPLETE / MERGED
 
