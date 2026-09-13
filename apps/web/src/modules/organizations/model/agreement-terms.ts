@@ -17,7 +17,7 @@ export function blankAgreementTerms(): B2bAgreementTermsV1 {
     cancellationTerms: '',
     refundTerms: '',
     notes: '',
-    changeReason: 'ثبت اولیه قرارداد',
+    changeReason: '',
     documentId: null,
     creditPolicies: [],
     guarantees: [],

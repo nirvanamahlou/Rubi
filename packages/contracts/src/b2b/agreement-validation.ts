@@ -68,8 +68,11 @@ export function b2bAgreementTermsIssue(
       terms.slaHours > 720)
   )
     return 'زمان پاسخ‌گویی باید بین ۱ تا ۷۲۰ ساعت باشد.';
-  if (terms.changeReason.trim().length < 3 || terms.changeReason.length > 500)
-    return 'دلیل ثبت یا تغییر شرایط را وارد کنید.';
+  if (
+    terms.changeReason.length > 500 ||
+    (terms.changeReason.trim() && terms.changeReason.trim().length < 3)
+  )
+    return 'دلیل ثبت یا تغییر شرایط باید حداقل ۳ و حداکثر ۵۰۰ نویسه باشد.';
   if (
     [terms.notes, terms.refundTerms, terms.cancellationTerms].some(
       (text) => text.length > 2000,

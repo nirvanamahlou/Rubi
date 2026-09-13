@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { MasterDataRecord } from '@rubi/contracts';
 import { masterDataApi } from '@/modules/master-data/api/client';
+import { documentsApi } from '@/modules/documents/api/client';
 import { agencyClient } from '../api/agency-client';
 import {
   blankCooperationDraft,
@@ -110,6 +111,122 @@ describe('cooperation wizard writes', () => {
       terms,
     });
     expect(profile).not.toHaveBeenCalled();
+  });
+  it('accepts an empty change reason and uploads staged contract and guarantee files before saving a new agency agreement', async () => {
+    const organization = {
+      id: 'organization-new',
+      resource: 'organizations',
+      code: 'ORG_NEW',
+      version: 1,
+      attributes: { roleCodes: 'AGENCY' },
+    } as unknown as MasterDataRecord;
+    vi.spyOn(masterDataApi, 'list').mockResolvedValue({
+      data: [],
+      meta: { page: 1, pageSize: 1, total: 0 },
+    });
+    vi.spyOn(masterDataApi, 'create').mockResolvedValue({ data: organization });
+    vi.spyOn(documentsApi, 'options').mockResolvedValue({
+      data: {
+        currentUserId: 'owner',
+        branches: [{ id: 'branch', code: 'B1', name: 'دفتر مرکزی' }],
+        owners: [{ id: 'owner', displayName: 'کاربر آزمون' }],
+        categories: [{ id: 'category', code: 'ORG', name: 'سازمان' }],
+        documentTypes: [
+          {
+            id: 'type',
+            code: 'AGREEMENT',
+            name: 'قرارداد',
+            domain: 'ORGANIZATION',
+            defaultConfidentiality: 'CONFIDENTIAL',
+            requiresExpiry: false,
+            maxFileSizeBytes: 1_000_000,
+            allowedMimeTypes: ['application/pdf'],
+          },
+        ],
+        uploadPolicy: {
+          maxFileSizeBytes: 1_000_000,
+          allowedMimeTypes: ['application/pdf'],
+          antivirusAvailable: true,
+        },
+      },
+    });
+    const upload = vi
+      .spyOn(documentsApi, 'upload')
+      .mockResolvedValueOnce({ data: { id: 'contract-document' } } as never)
+      .mockResolvedValueOnce({ data: { id: 'guarantee-document' } } as never);
+    const save = vi
+      .spyOn(agencyClient, 'saveAgreementTerms')
+      .mockResolvedValue({} as never);
+    const staged = (title: string) => ({
+      input: {
+        title,
+        branchId: 'branch',
+        documentTypeId: 'type',
+        categoryId: 'category',
+        validUntil: '',
+        requiresStepUpVerification: false,
+      },
+      file: new File(['%PDF-test'], `${title}.pdf`, {
+        type: 'application/pdf',
+      }),
+    });
+    const agreementTerms = {
+      ...blankAgreementTerms(),
+      title: 'قرارداد آژانس جدید',
+      startsAt: '2026-09-12',
+      currencyCodes: ['IRR'],
+      paymentMethodId: '11111111-1111-4111-8111-111111111111',
+      changeReason: '',
+      guarantees: [
+        {
+          kind: 'BANK_GUARANTEE' as const,
+          reference: 'BG-001',
+          amount: '1000000',
+          currencyCode: 'IRR',
+          issuer: 'بانک آزمون',
+          receivedAt: '2026-09-12',
+          expiresAt: null,
+          status: 'RECEIVED' as const,
+          documentId: null,
+        },
+      ],
+    };
+    const inputDraft = {
+      ...draft,
+      withAgreement: true,
+      branchId: 'branch',
+      agreementTerms,
+      pendingAgreementDocument: staged('سند قرارداد'),
+      pendingGuaranteeDocuments: [staged('سند تضمین')],
+    };
+    expect(cooperationIssue(inputDraft, 3)).toBeUndefined();
+    await saveCooperation(inputDraft, [
+      'master_data.read',
+      'master_data.create',
+      'b2b.agreement.read',
+      'b2b.agreement.manage',
+      'b2b.credit.read',
+      'b2b.credit.manage',
+      'documents.upload',
+      'documents.list',
+      'documents.organization.read',
+    ]);
+    expect(upload).toHaveBeenCalledTimes(2);
+    expect(save).toHaveBeenCalledWith(
+      'organization-new',
+      expect.objectContaining({
+        terms: expect.objectContaining({
+          changeReason: '',
+          documentId: 'contract-document',
+          guarantees: [
+            expect.objectContaining({ documentId: 'guarantee-document' }),
+          ],
+        }),
+      }),
+    );
+    expect(upload.mock.invocationCallOrder[1]).toBeLessThan(
+      save.mock.invocationCallOrder[0]!,
+    );
   });
   it('removes review metadata from editable terms and preserves pinned document versions', () => {
     const terms = {

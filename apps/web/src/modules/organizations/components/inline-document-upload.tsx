@@ -9,7 +9,9 @@ import { masterDataApi } from '@/modules/master-data/api/client';
 import { DatePicker } from '@/components/ui/date-picker';
 import {
   organizationDocumentForm,
+  validateOrganizationDocumentInput,
   type OrganizationDocumentOptions,
+  type StagedOrganizationDocument,
 } from '../model/organization-documents';
 
 /** Upload through the Documents owner; only its saved ID is attached to the form. */
@@ -19,27 +21,36 @@ export function InlineDocumentUpload({
   label,
   permissions,
   onUploaded,
+  onStaged,
+  staged,
   onBusyChange,
   expanded = false,
 }: {
-  organizationId: string;
+  organizationId?: string | undefined;
   branchId: string;
   label: string;
   permissions: readonly IamPermissionCode[];
   onUploaded: (id: string) => void;
+  onStaged?:
+    ((document: StagedOrganizationDocument | null) => void) | undefined;
+  staged?: StagedOrganizationDocument | null | undefined;
   onBusyChange: (busy: boolean) => void;
   expanded?: boolean;
 }) {
   const [options, setOptions] = useState<OrganizationDocumentOptions>();
   const [organization, setOrganization] = useState<MasterDataRecord>();
-  const [typeId, setTypeId] = useState(''),
-    [categoryId, setCategoryId] = useState('');
-  const [title, setTitle] = useState(label),
-    [expiry, setExpiry] = useState('');
-  const [file, setFile] = useState<File>(),
+  const [typeId, setTypeId] = useState(staged?.input.documentTypeId ?? ''),
+    [categoryId, setCategoryId] = useState(staged?.input.categoryId ?? '');
+  const [title, setTitle] = useState(staged?.input.title ?? label),
+    [expiry, setExpiry] = useState(staged?.input.validUntil ?? '');
+  const [file, setFile] = useState<File | undefined>(staged?.file),
     [busy, setBusy] = useState(false);
   const [error, setError] = useState(''),
-    [notice, setNotice] = useState(''),
+    [notice, setNotice] = useState(
+      staged
+        ? 'فایل آماده است و پس از ایجاد سازمان، در اسناد و فایل‌ها ذخیره و متصل می‌شود.'
+        : '',
+    ),
     [uncertain, setUncertain] = useState(false);
   const callbacks = useRef({ onUploaded, onBusyChange });
   useLayoutEffect(() => {
@@ -50,19 +61,25 @@ export function InlineDocumentUpload({
     let active = true;
     void Promise.all([
       documentsApi.options(),
-      masterDataApi.detail('organizations', organizationId),
+      organizationId
+        ? masterDataApi.detail('organizations', organizationId)
+        : Promise.resolve(undefined),
     ])
       .then(([o, org]) => {
         if (!active) return;
         setOptions(o.data);
-        setOrganization(org.data);
+        setOrganization(org?.data);
         setTypeId(
-          o.data.documentTypes.find((t) => t.domain === 'ORGANIZATION')?.id ??
+          (current) =>
+            current ||
+            o.data.documentTypes.find((t) => t.domain === 'ORGANIZATION')?.id ||
             '',
         );
         setCategoryId(
-          o.data.categories.find((c) => c.code === 'ORGANIZATION')?.id ??
-            o.data.categories[0]?.id ??
+          (current) =>
+            current ||
+            o.data.categories.find((c) => c.code === 'ORGANIZATION')?.id ||
+            o.data.categories[0]?.id ||
             '',
         );
       })
@@ -76,33 +93,41 @@ export function InlineDocumentUpload({
   }, [organizationId]);
   const type = options?.documentTypes.find((t) => t.id === typeId);
   async function upload() {
-    if (pending.current || uncertain || !options || !organization) return;
+    if (pending.current || uncertain || !options) return;
     setError('');
     setNotice('');
     if (!file) {
       setError('فایل مدرک را انتخاب کنید.');
       return;
     }
-    let form: FormData;
+    const input = {
+      title,
+      branchId,
+      documentTypeId: typeId,
+      categoryId,
+      validUntil: expiry,
+      requiresStepUpVerification: false,
+    };
     try {
-      form = organizationDocumentForm(
-        organization,
-        {
-          title,
-          branchId,
-          documentTypeId: typeId,
-          categoryId,
-          validUntil: expiry,
-          requiresStepUpVerification: false,
-        },
-        file,
-        options,
-        permissions,
-      );
+      validateOrganizationDocumentInput(input, file, options, permissions);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'فایل معتبر نیست.');
       return;
     }
+    if (!organization) {
+      onStaged?.({ input, file });
+      setNotice(
+        'فایل آماده است و پس از ایجاد سازمان، در اسناد و فایل‌ها ذخیره و متصل می‌شود.',
+      );
+      return;
+    }
+    const form = organizationDocumentForm(
+      organization,
+      input,
+      file,
+      options,
+      permissions,
+    );
     pending.current = true;
     setBusy(true);
     callbacks.current.onBusyChange(true);
@@ -148,7 +173,11 @@ export function InlineDocumentUpload({
             className="input"
             value={title}
             maxLength={240}
-            onChange={(e) => setTitle(e.target.value)}
+            onChange={(e) => {
+              setTitle(e.target.value);
+              onStaged?.(null);
+              setNotice('');
+            }}
           />
         </label>
         <label className="field">
@@ -159,6 +188,8 @@ export function InlineDocumentUpload({
             onChange={(e) => {
               setTypeId(e.target.value);
               setFile(undefined);
+              onStaged?.(null);
+              setNotice('');
             }}
           >
             <option value="">انتخاب نوع مدرک</option>
@@ -176,7 +207,11 @@ export function InlineDocumentUpload({
           <select
             className="input"
             value={categoryId}
-            onChange={(e) => setCategoryId(e.target.value)}
+            onChange={(e) => {
+              setCategoryId(e.target.value);
+              onStaged?.(null);
+              setNotice('');
+            }}
           >
             {options?.categories.map((c) => (
               <option key={c.id} value={c.id}>
@@ -191,16 +226,24 @@ export function InlineDocumentUpload({
             withinDialog
             aria-label={`انقضای مدرک ${label}`}
             value={expiry}
-            onChange={setExpiry}
+            onChange={(next) => {
+              setExpiry(next);
+              onStaged?.(null);
+              setNotice('');
+            }}
           />
         </div>
         <label className="field full">
           <span>فایل {label}</span>
           <input
-            key={`${typeId}-${notice}`}
+            key={typeId}
             type="file"
             accept={type?.allowedMimeTypes.join(',')}
-            onChange={(e) => setFile(e.target.files?.[0])}
+            onChange={(e) => {
+              setFile(e.target.files?.[0]);
+              onStaged?.(null);
+              setNotice('');
+            }}
           />
         </label>
         <button
@@ -209,8 +252,17 @@ export function InlineDocumentUpload({
           disabled={busy || uncertain || !file || !type}
           onClick={() => void upload()}
         >
-          {busy ? 'در حال بارگذاری…' : 'بارگذاری و اتصال مدرک'}
+          {busy
+            ? 'در حال بارگذاری…'
+            : organization
+              ? 'بارگذاری و اتصال مدرک'
+              : 'افزودن فایل به فرم'}
         </button>
+        {!organization ? (
+          <small className="full">
+            فایل هنگام ذخیره پرونده و پس از تخصیص شناسه سازمان بارگذاری می‌شود.
+          </small>
+        ) : null}
         {error ? (
           <p role="alert" className="form-error full">
             {error}

@@ -55,21 +55,22 @@ export interface OrganizationDocumentInput {
   requiresStepUpVerification: boolean;
 }
 
-/** The canonical identity, owner and classification never come from editable inputs. */
-export function organizationDocumentForm(
-  organization: MasterDataRecord,
+export interface StagedOrganizationDocument {
+  input: OrganizationDocumentInput;
+  file: File;
+}
+
+export function validateOrganizationDocumentInput(
   input: OrganizationDocumentInput,
   file: File,
   options: OrganizationDocumentOptions,
   permissions: readonly IamPermissionCode[],
-): FormData {
+) {
   if (
     !permissions.includes('documents.upload') ||
     !canReadOrganizationDocuments(permissions)
   )
     throw new Error('مجوز بارگذاری اسناد سازمان را ندارید.');
-  if (!organization.id || organization.resource !== 'organizations')
-    throw new Error('هویت ذخیره‌شده سازمان معتبر نیست.');
   if (!options.branches.some((branch) => branch.id === input.branchId))
     throw new Error('شعبه در دسترسی فعلی شما نیست.');
   if (
@@ -108,6 +109,25 @@ export function organizationDocumentForm(
     )
       throw new Error('تاریخ انقضا معتبر نیست.');
   }
+  return type;
+}
+
+/** The canonical identity, owner and classification never come from editable inputs. */
+export function organizationDocumentForm(
+  organization: MasterDataRecord,
+  input: OrganizationDocumentInput,
+  file: File,
+  options: OrganizationDocumentOptions,
+  permissions: readonly IamPermissionCode[],
+): FormData {
+  if (!organization.id || organization.resource !== 'organizations')
+    throw new Error('هویت ذخیره‌شده سازمان معتبر نیست.');
+  const type = validateOrganizationDocumentInput(
+    input,
+    file,
+    options,
+    permissions,
+  );
   const form = new FormData();
   form.set('file', file);
   form.set('title', input.title.trim());
