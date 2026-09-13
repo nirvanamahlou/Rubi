@@ -16,7 +16,12 @@ import { IamModule } from '../iam/iam.module';
 import { PermissionGuard } from '../iam/permission.guard';
 import { MasterDataModule } from '../master-data/master-data.module';
 import { DocumentsModule } from '../documents/documents.module';
+import { CustomersModule } from '../customers/customers.module';
+import { ReservationsRuntimeModule } from '../reservations/reservations-runtime.module';
+import { SalesModule } from '../sales/sales.module';
 import { B2bAgreementDocuments } from './b2b-agreement-documents';
+import { B2bCrmConnectionsController } from './b2b-crm-connections.controller';
+import { B2bCrmConnectionsService } from './b2b-crm-connections.service';
 import { B2bController } from './b2b.controller';
 import { B2bRepository } from './b2b.repository';
 import { B2bService } from './b2b.service';
@@ -30,15 +35,24 @@ import {
 } from './finance-exposure.port';
 
 @Module({
-  imports: [IamModule, MasterDataModule, DocumentsModule],
+  imports: [
+    IamModule,
+    MasterDataModule,
+    DocumentsModule,
+    CustomersModule,
+    SalesModule,
+    ReservationsRuntimeModule,
+  ],
   controllers: [
     B2bActivityController,
+    B2bCrmConnectionsController,
     B2bController,
     B2bOrganizationUserController,
     B2bPortalController,
   ],
   providers: [
     B2bActivityService,
+    B2bCrmConnectionsService,
     B2bActivityRepository,
     B2bOrganizationUserRepository,
     B2bOrganizationUserService,

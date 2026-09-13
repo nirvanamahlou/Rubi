@@ -27,6 +27,14 @@
   `docs/tasks/DASHBOARDS-PC-C-AUTHORIZATION.md`. Merge، Force Push، تغییر مستقیم
   `main`/`develop` و بازنویسی تغییرات PC-A/PC-B مجاز نیست.
 
+## B2B-CRM-CONNECTIONS-002 — PC-B — READY_FOR_REVIEW / TESTED
+
+- درخواست مالک محصول: ارتباط پرونده ۳۶۰ آژانس با داده‌های واقعی موجود CRM بررسی و اتصال‌های غایب در محدوده مجاز تکمیل شود. شاخه `codex/pc-b-b2b-crm-connections` از `origin/develop@6a4e041` و Worktree مستقل `C:\Users\admin\Rubi-b2b-crm-connections` استفاده می‌شود.
+- محدوده رزرو: Query Service و endpoint نسخه‌دار ارتباطات در `apps/api/src/b2b/**`، قرارداد افزایشی B2B در `packages/contracts/src/b2b/**` و مصرف‌کننده Web Organizations و تست‌هایشان، به‌همراه همین Work Item و سند Task. Backend تطبیق خواندنی Customers → Sales → Reservations را فقط از سرویس عمومی مالک و با Permission/Branch سرور انجام می‌دهد؛ Web هیچ API مالک دیگری را برای این نما مستقیماً تجمیع نمی‌کند.
+- مرز مالکیت: هیچ Query مستقیم جدول، Migration، Dependency/Lockfile، IAM grant یا تغییر در producerهای فعال PC-A در Customers/Sales/Reservations/Finance انجام نمی‌شود. B2B shared-contract Owner برای قرارداد صرفاً خواندنی این endpoint در اختیار `PC-B/B2B-CRM-CONNECTIONS-002` است. Finance هنوز producer حسابداری سازمانی منتشر نکرده است؛ پورت رسمی B2B وضعیت unavailable را برمی‌گرداند و داده Sales به‌عنوان فاکتور یا دفترکل Finance معرفی نمی‌شود.
+- نتیجه: endpoint تجمیع Backend با اتصال دقیق `Organization → Customer → Sales Contract → Reservation`، کنترل مجوز و شعبه، projection حداقلی، failure isolation و مصرف تک-endpoint در Web تکمیل شد. ۱۲۶ تست B2B API و ۱۲۹ تست Organizations Web، lint و typecheck محدوده Contracts/API/Web و Production Build هر دو API و Web موفق‌اند. سند اجرا و مرزهای باقی‌مانده در `docs/tasks/B2B-CRM-CONNECTIONS-002.md` است.
+- Final lock state: `RELEASED — PC-B/B2B-CRM-CONNECTIONS-002 ready for review`. هیچ Migration، Dependency/Lockfile، IAM grant یا قفل producer دریافت نشد؛ B2B shared-contract slice این Task نیز آزاد است.
+
 ## WORKBENCH-021 — PC-B — LOCAL_COMPLETE / RUNTIME_ACTIVE
 
 - User authorizes the bounded CRM messaging slice on

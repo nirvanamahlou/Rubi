@@ -26,6 +26,7 @@ import type {
   B2bOrganizationUserInput,
   B2bPortalIdentity,
   B2bPortalSection,
+  B2bCrmConnectionsV1,
 } from '@rubi/contracts';
 
 import { refreshAuthenticatedSession } from '@/lib/auth-session';
@@ -93,6 +94,19 @@ async function b2bRequest<T>(
 }
 
 export const agencyClient = {
+  crmConnections(
+    organizationId: string,
+    branchId?: string,
+    signal?: AbortSignal,
+  ) {
+    return b2bRequest<B2bCrmConnectionsV1>(
+      `/agencies/${encodeURIComponent(organizationId)}/crm-connections`,
+      {
+        ...(branchId ? { headers: { 'x-branch-id': branchId } } : {}),
+        ...(signal ? { signal } : {}),
+      },
+    );
+  },
   activity(
     organizationId: string,
     branchId: string,
