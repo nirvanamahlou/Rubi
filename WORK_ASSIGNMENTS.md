@@ -1,6 +1,8 @@
 # Work Assignments
 
-## CA-REPORT-LAYOUT — PC-B — IN_PROGRESS
+## CA-REPORT-LAYOUT — PC-B — VERIFIED / LOCAL_RUNTIME_ACTIVE
+
+- 51 tests, scoped lint and production build/TypeScript passed. Web3100 PID8060, build unified-kuRKDyFYTAGyiLhQbOT_w, implementation8332b8e5 activated; HTTP200/runtime identity and authenticated desktop report screenshots verified. API/DB untouched. Draft PR262; reservation released. Responsive CSS implemented; mobile browser audit not claimed.
 
 - Reserve CA report component/CSS/tests and own docs; branch codex/pc-b-ca-report-layout from active1ada1e5f. No API/data/schema/dependency changes. User authorizes Web3100 activation after tests; preserve HR removal and API4190. Fetch/refetch failed on pre-existing internal checkpoint ref; no ref deletion or remote replacement. Rubi authenticated desktop/corporate, responsive mobile; WCAG AA owner PC-B; targets p75 LCP2500ms/INP200ms/CLS0.1, JS200KB initial+80KB route, Lighthouse a11y90/perf80 (not measured claims).
 

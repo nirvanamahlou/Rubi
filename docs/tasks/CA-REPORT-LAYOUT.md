@@ -7,3 +7,9 @@ Replaced stretched report panels with four summary cards, two equal-width status
 51 CA tests passed in11 files, including empty results, actual totals, part-of-total percentages, Persian corrective labels and legacy view. Frontend skill guided shared theme/accessibility and no-dependency design. Build and runtime verification are recorded below when completed.
 
 Known repository issue: ordinary fetch/prune and a refetch attempt fail on an existing internal refs/codex/turn-diffs checkpoint object. No internal reference was deleted and remote was not replaced. This is distinct from Web build/runtime functionality.
+
+## Completed verification and activation
+
+Scoped ESLint and production build/TypeScript (46 routes) passed. Web-only cutover succeeded after verifying the old PID2416 command path; first guard stopped safely because of mixed path separators, before changing any process, then the normalized exact path check succeeded. New Web3100 PID8060, build `unified-kuRKDyFYTAGyiLhQbOT_w`, implementation `8332b8e5bba4985dc4cb2deb7ad1d90b29d14adc`. HTTP200 and runtime identity match. API and database were not restarted or changed.
+
+Authenticated in-app browser confirmed report31 requests,43 tickets,20 responses,4 pending corrective actions; average3/5 and8 total corrective actions. These are live existing totals, not fixtures inserted this turn. Desktop screenshots of top and bottom confirm populated cards, proportional bars, localized labels and compact bottom panels. Mobile breakpoint styles are implemented but mobile browser QA is not claimed. Draft PR262 published successfully despite the fetch issue; no merge.
