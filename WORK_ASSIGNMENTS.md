@@ -344,6 +344,17 @@ Source9b1c33c includes scoped corporate-profile boundary copy.111 tests, scoped 
   مستقیم `main`/`develop` مجاز نیست. مرجع کامل:
   `docs/tasks/REPORTING-PC-C-AUTHORIZATION.md`.
 
+## REPORTING-RESTORE-219-LATEST — PC-C — READY_FOR_REVIEW / LOCAL_RUNTIME
+
+- شاخه `codex/pc-c-reporting-219-latest` از آخرین `origin/develop` ساخته شد تا
+  تغییرات یکپارچه همکاران حفظ شود و فقط UI ماژول Reports به snapshot نهایی
+  `219091bf962ed5ce5a8dfff9ba949e13b0e0b1fd` بازگردد.
+- محدوده این واحد فقط `apps/web/src/modules/reports/**`،
+  `apps/web/src/app/(crm)/reports/page.tsx` و مستندات همین task است. فایل‌های مشترک،
+  schema، migration، seed، dependency و تاریخچه شاخه‌های همکاران تغییر نمی‌کنند.
+- اعتبارسنجی شامل typecheck، تست‌های قابل‌اجرای Reports، production build و smoke
+  محلی روی پورت 3000 است. API موجود روی پورت 4000 دست‌نخورده می‌ماند.
+
 ## SALES-PRICE-MANAGEMENT-0912 — PC-A — READY_FOR_REVIEW / UI_PREVIEW
 
 - درخواست صریح مالک در 2026-09-12: افزودن آیتم مستقل «مدیریت قیمت» در گروه «فروش»

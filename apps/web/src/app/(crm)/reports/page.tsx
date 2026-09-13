@@ -1,10 +1,23 @@
 import type { Metadata } from 'next';
 
-import { ModuleFoundationWorkspace } from '@/modules/module-foundation/components/module-foundation-workspace';
-import { foundationModules } from '@/modules/module-foundation/model/foundation';
+import { ReportingWorkspace } from '@/modules/reports/components/reporting-workspace';
+import {
+  parseReportingFilterState,
+  parseReportingNavigation,
+} from '@/modules/reports/model/navigation';
 
-export const metadata: Metadata = { title: 'گزارش‌ها' };
+export const metadata: Metadata = { title: 'گزارش‌ها و خروجی‌های مدیریتی' };
 
-export default function Page() {
-  return <ModuleFoundationWorkspace config={foundationModules['reports']} />;
+export default async function Page({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const params = await searchParams;
+  return (
+    <ReportingWorkspace
+      {...parseReportingNavigation(params)}
+      initialFilterState={parseReportingFilterState(params)}
+    />
+  );
 }
