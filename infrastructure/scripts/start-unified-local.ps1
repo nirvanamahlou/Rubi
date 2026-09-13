@@ -1,7 +1,8 @@
 param(
   [Parameter(Mandatory=$true)][string]$ApiEnvFile,
   [Parameter(Mandatory=$true)][string]$DocumentStorageRoot,
-  [string]$PreviousRuntimeRoot
+  [string]$PreviousRuntimeRoot,
+  [ValidateRange(1024,65535)][int]$ApiPort = 4191
 )
 $ErrorActionPreference = 'Stop'
 $unifiedRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
@@ -17,7 +18,7 @@ $approvedRoots = @($unifiedRoot)
 if ($PreviousRuntimeRoot) { $approvedRoots += (Resolve-Path -LiteralPath $PreviousRuntimeRoot).Path }
 # Validate both listeners before stopping either. Never stop another task's unknown runtime.
 $ownedProcesses = @()
-foreach ($port in @(3100,4190)) {
+foreach ($port in @(3100,$ApiPort)) {
   foreach ($connection in @(Get-NetTCPConnection -State Listen -LocalPort $port -ErrorAction SilentlyContinue)) {
     $process = Get-CimInstance Win32_Process -Filter "ProcessId=$($connection.OwningProcess)"
     $approved = $false
@@ -39,6 +40,6 @@ foreach ($process in ($ownedProcesses | Sort-Object ProcessId -Unique)) {
   if ($fresh) { Stop-Process -Id $fresh.ProcessId -ErrorAction Stop }
 }
 $node = (Get-Command node).Source
-$api = Start-Process -FilePath $node -ArgumentList @(('--env-file="'+$apiEnv+'"'), ('"'+$apiFile+'"'), '--api-port','4190','--web-port','3100','--database','rubi_hr_current_20260908','--documents',('"'+$storage+'"')) -WorkingDirectory (Join-Path $unifiedRoot 'apps/api') -WindowStyle Hidden -PassThru -RedirectStandardOutput (Join-Path $logRoot 'api.log') -RedirectStandardError (Join-Path $logRoot 'api-error.log')
+$api = Start-Process -FilePath $node -ArgumentList @(('--env-file="'+$apiEnv+'"'), ('"'+$apiFile+'"'), '--api-port',"$ApiPort",'--web-port','3100','--database','rubi_hr_current_20260908','--documents',('"'+$storage+'"')) -WorkingDirectory (Join-Path $unifiedRoot 'apps/api') -WindowStyle Hidden -PassThru -RedirectStandardOutput (Join-Path $logRoot 'api.log') -RedirectStandardError (Join-Path $logRoot 'api-error.log')
 $web = Start-Process -FilePath $node -ArgumentList @(('"'+$nextFile+'"'),'start','--port','3100','--hostname','127.0.0.1') -WorkingDirectory $webRoot -WindowStyle Hidden -PassThru -RedirectStandardOutput (Join-Path $logRoot 'web.log') -RedirectStandardError (Join-Path $logRoot 'web-error.log')
 @{webPid=$web.Id;apiPid=$api.Id;url='http://127.0.0.1:3100/customer-affairs';commit=$env:RUBI_HR_COMMIT;build=$env:RUBI_HR_BUILD_ID} | ConvertTo-Json

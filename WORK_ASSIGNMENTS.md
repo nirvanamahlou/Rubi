@@ -2706,3 +2706,6 @@ B2B-360-REMOVE-SUBTITLE-001: READY_FOR_REVIEW. Combined runtime1bf840b/PID8604 b
 ## LOCAL-ALL-SECTIONS-3100-0913 — PC-B — ACTIVE
 User authorizes latest combined local Web3100/API4190 activation. Branch codex/pc-b-all-sections-3100-0913 combines develop 060fc35c, Workbench f174c3fe, Customer Affairs eeb8c56b and Finance 977bfeab. Scope: integration documentation, build checks and local runtime; preserve existing database/storage/authentication. No new schema or dependency changes. Runtime reservation supersedes previous pending local activation under the new user request.
 
+
+Runtime correction: reserve infrastructure/scripts/start-unified-local.ps1 for a configurable API port, default 4191. The Fetch-standard restricted port 4190 failed browser access despite HTTP health. Rebuild the local Web configuration against API4191; preserve the same database, storage and authentication. No browser security override.
+
