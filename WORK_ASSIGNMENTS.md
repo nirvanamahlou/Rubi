@@ -37,6 +37,9 @@
   18 targeted API tests and 49 Workbench Web tests pass, with scoped ESLint,
   API/Web TypeScript and both production builds (46 Web routes). No migration or
   operational data/runtime change. Implementation reservations are released.
+## FINANCE-007-INBOX-COMPLETION — PC-A — READY_FOR_REVIEW / RUNTIME PERMISSION PENDING
+
+Base `4a84f844`; COMPUTER_ID=PC-A. مشخصات نقش `finance_staff` با مجوزهای حداقلی کارتابل و تحویل مالی تکمیل شد؛ کارتابل اکنون درخواست‌های واقعی فروش، ارجاع‌های مالی منابع انسانی و خرید خدمات رزرواسیون را از Public Service ماژول‌ها جمع می‌کند. Preview قدیمی، متن‌های فنی، وضعیت اتصال Producer و اقدام نمایشی غیرفعال از `/finance/requests` حذف شد. ماژول خرید مستقل Backend عملیاتی ندارد و تا ایجاد Producer واقعی داده‌ای برای آن جعل نمی‌شود. ۳ تست API، ۸ تست قرارداد Web، ۳ تست Migration، lint محدوده، typecheck و build تولیدی API/Web موفق‌اند و Web3100/API4190 فعال‌اند. انتساب افزایشی نقش `finance_staff` به کاربر `Ramtin` هنوز اجرا نشده و منتظر تأیید صریح مالک است؛ هیچ نقش یا مجوز قبلی حذف نخواهد شد.
 
 ## APP-SHELL-HEADER-UTILITY-LEFT-001 — PC-A — READY_FOR_REVIEW
 
@@ -2699,3 +2702,7 @@ B2B-360-REMOVE-SUBTITLE-001: READY_FOR_REVIEW. Combined runtime1bf840b/PID8604 b
 - Producer داده مرجع Master Data و مصرف‌کننده فعلی Web است. فایل اصلی فقط از API عمومی Documents با نوع `MANIFEST` ذخیره می‌شود و Master Data فقط شناسه نسخه فایل را نگه می‌دارد؛ هیچ query مستقیم به جدول Documents و هیچ تغییر در Reservations/Sales انجام نمی‌شود. مقصد یک FK واقعی به شهر فعال است. قالب جدید به‌صورت Draft و نسخه خودکار ذخیره می‌شود تا مصرف عملیاتی بدون Review ممکن نباشد.
 - فیلدهای تکمیلی فرودگاه فقط در Create پنهان و در Schema اختیاری می‌شوند؛ ویرایش/نمایش داده‌های موجود حفظ می‌شود و هیچ مقدار ساختگی برای ICAO، timezone یا مختصات تولید نخواهد شد. Migrationهای محلی منتشرنشده PC-A اعمال یا بازنویسی نمی‌شوند.
 - پیاده‌سازی کامل شد: فرم اختصاصی Manifest فقط ایرلاین، مقصد و XLSX را می‌گیرد؛ نام/نسخه/فرمت/Draft در Backend تولید می‌شود و فایل از قرارداد عمومی Documents با نوع `MANIFEST` ثبت و سپس با optimistic version متصل می‌شود. فرم Create فرودگاه چهار مشخصه تکمیلی را نمایش نمی‌دهد و Schema/API آن‌ها را nullable می‌پذیرد. ۳۳ تست هدفمند API، ۳۸ تست Web و ۲ تست Migration، lint محدوده، Prisma validate/format و typecheck/build دیتابیس، API و Web موفق بودند. پس از تحویل، `Migration Owner = RELEASED / UNASSIGNED` و رزرو این واحد آزاد است.
+
+## LOCAL-ALL-SECTIONS-3100-0913 — PC-B — ACTIVE
+User authorizes latest combined local Web3100/API4190 activation. Branch codex/pc-b-all-sections-3100-0913 combines develop 060fc35c, Workbench f174c3fe, Customer Affairs eeb8c56b and Finance 977bfeab. Scope: integration documentation, build checks and local runtime; preserve existing database/storage/authentication. No new schema or dependency changes. Runtime reservation supersedes previous pending local activation under the new user request.
+
