@@ -3,7 +3,7 @@
 - **Computer:** PC-A
 - **Branch:** `codex/pc-a-accounting-secondary-navigation`
 - **Base:** `origin/develop@40d8f1f4`
-- **Status:** MERGE_AUTHORIZED / TESTED
+- **Status:** COMPLETE / MERGED
 
 ## هدف
 
@@ -41,3 +41,4 @@
 - QA مرورگر: نمایش منوی داخلی، همه عنوان‌ها، پوسته خالی و مسیر «اطلاعات پایه» بررسی شد؛
   جابه‌جایی به مسیر و جمع‌شدن منو نیز روی Preview کنترل شد.
 - مالک محصول در 2026-09-13 ادغام با `develop` و فعال‌سازی Web3100 را صریحاً تأیید کرد.
+- تغییرات با Merge Commit `b5fdbe75` وارد `develop` شد.

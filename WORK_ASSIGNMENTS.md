@@ -1,6 +1,6 @@
 # Work Assignments
 
-## FINANCE-004-ACCOUNTING-SECONDARY-NAV — PC-A — MERGE_AUTHORIZED / TESTED
+## FINANCE-004-ACCOUNTING-SECONDARY-NAV — PC-A — COMPLETE / MERGED
 
 - درخواست مالک محصول در 2026-09-13: افزودن منوی داخلی جمع‌شونده برای صفحه «حسابداری»
   با چهار گروه «دفتر کل»، «دریافت و پرداخت»، «ارتباط با سامانه مودیان مالیاتی» و
@@ -19,6 +19,7 @@
   TypeScript و build تولیدی ۴۶ مسیر موفق‌اند؛ QA مرورگر نیز ساختار و ناوبری را تأیید کرد.
   هیچ API، Schema/Migration، Permission، داده عملیاتی یا Dependency تغییر نکرد.
 - مالک محصول در 2026-09-13 ادغام با `develop` و فعال‌سازی Web3100 را صریحاً مجاز کرد.
+- Merge Commit `b5fdbe75` روی `develop` پوش شد؛ رزرو پیاده‌سازی این واحد آزاد است.
 
 ## HR-014-BACKEND-ONLY — PC-B — MERGE_AUTHORIZED
 
