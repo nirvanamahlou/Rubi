@@ -182,7 +182,8 @@ Source scan found no matching credential/private-key/token literals, foreign Pri
 model access in Procurement source, added broken Markdown links or dependency changes.
 This targeted scan is not a guarantee against every form of secret or PII.
 No merge, deployment, main/develop write or lockfile change is part of this task.
-Final delivery revision and Draft PR are recorded below after the scoped commits.
+Draft PR: [#269](https://github.com/nirvanamahlou/Rubi/pull/269), target `develop`.
+The branch was pushed normally; the PR remains a draft and was not merged.
 
 The complete changed-file inventory is [PROCUREMENT-001-files.txt](PROCUREMENT-001-files.txt).
 Source implementation revision: `fa21d3dccff4307396f9edc4e8818e8f9cd63dca`.
