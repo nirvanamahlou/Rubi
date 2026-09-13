@@ -1,5 +1,18 @@
 # Work Assignments
 
+## DASHBOARD-REPORTING-LATEST-009 — PC-C — LOCAL_COMPLETE / RUNTIME_ACTIVE
+
+- درخواست صریح مالک برای اجرای هم‌زمان آخرین نسخه Dashboard و Reports روی
+  `localhost:3000`.
+- شاخه یکپارچه از `codex/pc-c-reporting-remove-scheduling-ui@9d8d985f` ساخته می‌شود
+  و فقط commitهای مستقل Dashboard از `c4dc3c26` تا `af6de805` روی آن اعمال می‌شوند.
+- محدوده رزروشده: `apps/web/src/modules/dashboard/**`، اسناد وضعیت این Task و
+  یکپارچه‌سازی runtime؛ ماژول Reports مبناست و API، Prisma/Migration و dependency
+  تغییر نمی‌کنند.
+- نتیجه: Reports تا `9d8d985f` و Dashboard تا `af6de805` در یک شاخه قرار گرفتند؛
+  route `/dashboard` نیز از Shell اولیه به Workspace نهایی متصل شد. ۵۶ تست، lint،
+  typecheck و build تولیدی ۴۶ route پاس‌اند و runtime مشترک روی پورت ۳۰۰۰ فعال است.
+
 ## REPORTING-REMOVE-SCHEDULING — PC-C — READY_FOR_REVIEW / LOCAL_RUNTIME
 
 - درخواست مالک در 2026-09-13: سکشن «زمان‌بندی‌ها» و قابلیت «زمان‌بندی گزارش» از

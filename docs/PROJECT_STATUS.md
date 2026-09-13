@@ -1,5 +1,13 @@
 # وضعیت پروژه
 
+## DASHBOARD-REPORTING-LATEST-009 — نسخه یکپارچه Dashboard و Reports
+
+آخرین نسخه Reports تا `9d8d985f` و Dashboard تا `af6de805` روی شاخه مستقل
+`codex/pc-c-dashboard-reporting-latest` ترکیب شدند. route `/dashboard` به Workspace
+نهایی متصل است و `/reports` آخرین کاتالوگ و فرم‌های گزارش را حفظ می‌کند. ۵۶ تست،
+lint، typecheck و build تولیدی ۴۶ route پاس شدند. جزئیات در
+[DASHBOARD-REPORTING-LATEST-009](tasks/DASHBOARD-REPORTING-LATEST-009.md) ثبت شده است.
+
 ## REPORTING-REMOVE-SCHEDULING — حذف قابلیت زمان‌بندی گزارش
 
 - تب و صفحه «زمان‌بندی‌ها» و دکمه/فرم «زمان‌بندی گزارش» از Workspace گزارش‌ها حذف

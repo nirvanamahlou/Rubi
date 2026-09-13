@@ -1,5 +1,10 @@
 # برنامه اجرای Rubi
 
+## DASHBOARD-REPORTING-LATEST-009 — runtime مشترک
+
+- [x] ترکیب آخرین Dashboard و Reports، اتصال route نهایی Dashboard و اعتبارسنجی
+      مشترک با تست، lint، typecheck و build.
+
 ## CUSTOMER-AFFAIRS-002 — برش عملیاتی
 
 - [x] Persistence افزایشی Lead/Ticket/Timeline/Handoff/Referral/SLA/Survey/Corrective Action/Command/Audit
