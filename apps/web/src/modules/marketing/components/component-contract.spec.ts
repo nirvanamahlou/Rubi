@@ -66,6 +66,10 @@ const pageSource = readFileSync(
   join(process.cwd(), 'src', 'app', '(crm)', 'marketing', 'page.tsx'),
   'utf8',
 );
+const contractsSource = readFileSync(
+  join(process.cwd(), 'src', 'modules', 'marketing', 'api', 'contracts.ts'),
+  'utf8',
+);
 const appShellSource = readFileSync(
   join(process.cwd(), 'src', 'components', 'layout', 'app-shell.tsx'),
   'utf8',
@@ -79,7 +83,7 @@ describe('marketing workspace component contract', () => {
     expect(pageSource).toContain("key={initialSection ?? 'marketing-hub'}");
   });
 
-  it('covers the eight active sections and all required preview states', () => {
+  it('covers the eight active sections without the hub preview-state selector', () => {
     for (const label of [
       'داشبورد',
       'کمپین‌ها',
@@ -92,18 +96,9 @@ describe('marketing workspace component contract', () => {
     ]) {
       expect(referenceDataSource).toContain(label);
     }
-    for (const state of [
-      'preview',
-      'loading',
-      'empty',
-      'error',
-      'unauthorized',
-      'forbidden',
-      'conflict',
-      'awaiting-integration',
-    ]) {
-      expect(workspaceSource).toContain(state);
-    }
+    expect(workspaceSource).not.toContain('aria-label="انتخاب حالت نمایش"');
+    expect(workspaceSource).not.toContain('const previewStates');
+    expect(workspaceSource).not.toContain('function StateGate');
     expect(marketingSections.map((section) => section.key)).not.toContain(
       'reports',
     );
@@ -322,8 +317,8 @@ describe('marketing workspace component contract', () => {
     expect(referencePagesSource).not.toContain('در محیط آزمایشی باز شد');
   });
 
-  it('keeps attribution and dispatch contract gates in their relevant details', () => {
+  it('keeps attribution and dispatch contract gates after removing the hub simulator', () => {
     expect(workspaceSource).toContain('MARKETING_ATTRIBUTION_STATUS');
-    expect(workspaceSource).toContain('MARKETING_DISPATCH_STATUS');
+    expect(contractsSource).toContain('MARKETING_DISPATCH_STATUS');
   });
 });

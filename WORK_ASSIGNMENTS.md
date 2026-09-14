@@ -28,6 +28,13 @@
   use Prisma's advisory lock, take a full database backup, and apply only the existing
   approved migration set. No new migration is authored.
 
+## MARKETING-001H-REMOVE-HUB-PREVIEW-SELECT — PC-B — READY_FOR_REVIEW
+
+- درخواست صریح مالک محصول در 2026-09-14 و مرجع Screenshot 602: انتخاب‌گر نمایشی «پیش‌نمایش» از سمت چپ سربرگ Hub مارکتینگ حذف شود. `COMPUTER_ID=PC-B`.
+- Branch مستقل `codex/pc-b-marketing-remove-preview-select` از `origin/develop@2ad9c613`؛ محدوده فقط `apps/web/src/modules/marketing/components/marketing-workspace.tsx`، تست قرارداد همان ماژول و ورودی‌های وضعیت همین Task است.
+- شبیه‌ساز حالت‌های Preview وابسته به همان کنترل حذف می‌شود؛ پیش‌نمایش‌های تخصصی فرم‌ها دست‌نخورده می‌مانند. بدون تغییر Backend، API/Contract، داده، Schema/Migration/Seed، Permission، Dependency/Lockfile یا فایل UI مرکزی.
+- نتیجه: انتخاب‌گر و شبیه‌ساز حالت‌های نمایشی وابسته از Header و مسیر رندر Hub حذف شدند. ۲۱ تست مارکتینگ، lint فایل‌های متاثر، Web typecheck و Production Build با ۴۶ Route موفق‌اند.
+
 ## FINANCE-008-INBOX-ACTIONS — PC-A — READY_FOR_REVIEW / ACTIVE LOCAL
 
 Base `eb6af3ff`; COMPUTER_ID=PC-A. عملیاتی‌کردن کارتابل مالی برای تأیید دریافت مسافر یا برگشت برای اصلاح، و ثبت پرداخت خرید خدمات رزرواسیون به کارگزار با حساب مبدأ، روش، مبلغ، ارز، نرخ روز، زمان و مانده. اتصال فقط از قرارداد/سرویس عمومی Sales و Reservations انجام می‌شود و Finance به جدول داخلی ماژول دیگر دسترسی مستقیم ندارد. محدوده Finance API/Web/contracts، Public boundaryهای لازم در Sales/Reservations، Prisma schema و یک Migration افزایشی، seed permission و اسناد همین Task است. بدون داده ساختگی، حذف دسترسی موجود، تغییر Migration تاریخی یا Dependency/Lockfile.

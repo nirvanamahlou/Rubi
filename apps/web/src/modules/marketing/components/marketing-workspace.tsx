@@ -15,7 +15,6 @@ import {
   MousePointerClick,
   Plus,
   Power,
-  RefreshCw,
   Route,
   Search,
   Settings2,
@@ -50,19 +49,13 @@ import {
   Badge,
   Card,
   EmptyState,
-  ErrorState,
   FilterBar,
   PageHeader,
   PaginationShell,
-  Skeleton,
 } from '@/components/ui/surfaces';
 import { cn } from '@/lib/utils';
 import { MARKETING_SECTION_CHANGE_EVENT } from '@/lib/navigation';
-import {
-  MARKETING_ATTRIBUTION_STATUS,
-  MARKETING_DISPATCH_STATUS,
-  type MarketingPreviewState,
-} from '../api/contracts';
+import { MARKETING_ATTRIBUTION_STATUS } from '../api/contracts';
 import {
   campaignChannelLabels,
   campaignStatusLabels,
@@ -92,17 +85,6 @@ import {
   MarketingDashboardReference,
   MarketingReferenceSection,
 } from './marketing-reference-pages';
-
-const previewStates: readonly [MarketingPreviewState, string][] = [
-  ['preview', 'پیش‌نمایش'],
-  ['loading', 'در حال بارگذاری'],
-  ['empty', 'خالی'],
-  ['error', 'خطای سرور'],
-  ['unauthorized', 'بدون احراز هویت'],
-  ['forbidden', 'دسترسی ممنوع'],
-  ['conflict', 'تعارض نسخه'],
-  ['awaiting-integration', 'در انتظار اتصال ارسال'],
-];
 
 const statusOptions = Object.entries(campaignStatusLabels) as [
   CampaignStatus,
@@ -178,75 +160,6 @@ function statusTone(status: CampaignStatus) {
   if (status === 'PAUSED' || status === 'READY_FOR_APPROVAL')
     return 'bg-amber-100 text-amber-800';
   return 'bg-secondary text-secondary-foreground';
-}
-
-function StateGate({
-  state,
-  onReset,
-}: {
-  state: MarketingPreviewState;
-  onReset: () => void;
-}) {
-  if (state === 'preview') return null;
-  if (state === 'loading') {
-    return (
-      <div
-        aria-label="در حال بارگذاری"
-        className="grid gap-4 md:grid-cols-2 xl:grid-cols-3"
-      >
-        {Array.from({ length: 9 }, (_, index) => (
-          <Skeleton className="h-44" key={index} />
-        ))}
-      </div>
-    );
-  }
-  if (state === 'empty') {
-    return (
-      <EmptyState
-        action={<Button onClick={onReset}>نمایش داده‌های نمونه</Button>}
-        description="پس از اتصال Persistence، داده‌های مجاز اینجا نمایش داده می‌شوند."
-        title="هنوز داده‌ای وجود ندارد"
-      />
-    );
-  }
-  const states: Record<
-    Exclude<MarketingPreviewState, 'preview' | 'loading' | 'empty'>,
-    { title: string; description: string }
-  > = {
-    error: {
-      title: 'دریافت اطلاعات مارکتینگ ناموفق بود',
-      description:
-        'خطای موقت با Trace ID امن نمایش داده می‌شود و داده جعلی جای پاسخ واقعی قرار نمی‌گیرد.',
-    },
-    unauthorized: {
-      title: 'ابتدا وارد حساب سازمانی شوید',
-      description: 'پاسخ 401 کاربر را به جریان ورود هدایت می‌کند.',
-    },
-    forbidden: {
-      title: 'مجوز مشاهده مارکتینگ را ندارید',
-      description: 'دسترسی طبق سیاست deny-by-default توسط IAM تعیین می‌شود.',
-    },
-    conflict: {
-      title: 'نسخه اطلاعات تغییر کرده است',
-      description: 'اطلاعات تازه را دریافت و تغییر را دوباره بررسی کنید.',
-    },
-    'awaiting-integration': {
-      title: 'ارسال واقعی هنوز متصل نیست',
-      description: `نیت‌های ارسال با وضعیت ${MARKETING_DISPATCH_STATUS} باقی می‌مانند.`,
-    },
-  };
-  return (
-    <ErrorState
-      action={
-        <Button onClick={onReset} variant="outline">
-          <RefreshCw aria-hidden="true" className="size-4" /> بازگشت به
-          پیش‌نمایش
-        </Button>
-      }
-      description={states[state].description}
-      title={states[state].title}
-    />
-  );
 }
 
 function MarketingHub({
@@ -981,7 +894,6 @@ export function MarketingWorkspace({
   initialSection?: string | null;
 }) {
   const router = useRouter();
-  const [state, setState] = useState<MarketingPreviewState>('preview');
   const [section, setSection] = useState<MarketingSectionKey | null>(() =>
     resolveMarketingSection(initialSection),
   );
@@ -1043,38 +955,13 @@ export function MarketingWorkspace({
       dir="rtl"
     >
       <PageHeader
-        actions={
-          <>
-            {section === null ? (
-              <Select
-                value={state}
-                onValueChange={(value) =>
-                  setState(value as MarketingPreviewState)
-                }
-              >
-                <SelectTrigger aria-label="انتخاب حالت نمایش" className="w-52">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {previewStates.map(([value, label]) => (
-                    <SelectItem key={value} value={value}>
-                      {label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            ) : null}
-          </>
-        }
         description={
           selectedSection?.description ??
           'مدیریت یکپارچه کمپین، مخاطب، محتوا، پیشنهاد و سفر مشتری'
         }
         title={selectedSection?.title ?? 'مرکز مارکتینگ'}
       />
-      {state !== 'preview' ? (
-        <StateGate onReset={() => setState('preview')} state={state} />
-      ) : section === null ? (
+      {section === null ? (
         <MarketingHub
           onSelect={(value) => {
             navigateToSection(value);
