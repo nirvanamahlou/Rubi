@@ -31,7 +31,7 @@ const expected = {
     'countryId',
     'logoFileReference',
   ],
-  'aircraft-types': ['name', 'englishName', 'manufacturer', 'model'],
+  'aircraft-types': ['englishName', 'manufacturerModel'],
   'baggage-rules': [
     'name',
     'airlineId',
@@ -62,6 +62,28 @@ const expected = {
 };
 
 describe('transport mockup form coverage', () => {
+  it('renders cabin class with a required English title and no Persian title', () => {
+    const definition = getMasterDataDefinition('cabin-classes');
+    const fields = getMasterDataFormFields(definition);
+    const html = renderToStaticMarkup(
+      createElement(MasterDataLiveForm, {
+        definition,
+        mode: 'create',
+        open: true,
+        onOpenChange: () => {},
+        onPersist: async () => {},
+      }),
+    );
+
+    expect(fields.map((field) => field.key)).not.toContain('name');
+    expect(fields.find((field) => field.key === 'englishName')).toMatchObject({
+      required: true,
+    });
+    expect(html).toContain('id="live-cabin-classes-englishName"');
+    expect(html).toContain('required=""');
+    expect(html).not.toContain('عنوان فارسی');
+  });
+
   it('renders the manifest upload workflow without manual template metadata', () => {
     const html = renderToStaticMarkup(
       createElement(MasterDataLiveForm, {
@@ -90,6 +112,11 @@ describe('transport mockup form coverage', () => {
       );
       for (const field of [...expected[resource], 'transportStatus'])
         expect(keys).toContain(field);
+      if (resource === 'aircraft-types') {
+        expect(keys).not.toContain('name');
+        expect(keys).not.toContain('manufacturer');
+        expect(keys).not.toContain('model');
+      }
       const html = renderToStaticMarkup(
         createElement(MasterDataLiveForm, {
           definition,
@@ -106,6 +133,10 @@ describe('transport mockup form coverage', () => {
       expect(html).not.toContain('name="capacity"');
       if (resource !== 'airlines')
         expect(html).toContain('خودکار تولید می‌شود');
+      if (resource === 'aircraft-types') {
+        expect(html).toContain('سازنده و مدل');
+        expect(html).not.toContain('عنوان فارسی');
+      }
       if (resource === 'bus-types' || resource === 'train-types') {
         expect(html).toContain('aria-multiselectable="true"');
         expect(getReferenceFieldConfig(resource, 'facilityIds')).toMatchObject({

@@ -91,7 +91,6 @@ const tabs = [
   { resource: 'airlines', label: 'ایرلاین‌ها', icon: Plane },
   { resource: 'aircraft-types', label: 'انواع هواپیما', icon: Plane },
   { resource: 'cabin-classes', label: 'کلاس پروازی', icon: Armchair },
-  { resource: 'baggage-rules', label: 'قواعد بار', icon: Luggage },
   {
     resource: 'manifest-templates',
     label: 'قالب Manifest',
@@ -107,7 +106,16 @@ const tabs = [
   icon: typeof Plane;
 }[];
 
-type TransportResource = (typeof tabs)[number]['resource'];
+type TransportResource = (typeof tabs)[number]['resource'] | 'baggage-rules';
+
+const airlineViews = [
+  { resource: 'airlines', label: 'فهرست ایرلاین‌ها', icon: Plane },
+  { resource: 'baggage-rules', label: 'قواعد بار', icon: Luggage },
+] as const satisfies readonly {
+  resource: Extract<TransportResource, 'airlines' | 'baggage-rules'>;
+  label: string;
+  icon: typeof Plane;
+}[];
 
 const attributeLabels: Record<string, string> = {
   englishName: 'نام انگلیسی',
@@ -116,6 +124,7 @@ const attributeLabels: Record<string, string> = {
   organizationName: 'سازمان',
   manufacturer: 'سازنده',
   model: 'مدل',
+  manufacturerModel: 'سازنده و مدل',
   bodyType: 'نوع بدنه',
   bookingCode: 'کد رزرو',
   cabinType: 'Cabin',
@@ -153,6 +162,33 @@ function attribute(record: MasterDataRecord, key: string, fallback = '—') {
     : String(value);
 }
 
+function aircraftManufacturerModel(record: MasterDataRecord) {
+  return [record.attributes.manufacturer, record.attributes.model]
+    .filter((value) => value !== null && value !== undefined && value !== '')
+    .join(' / ');
+}
+
+function transportDisplayName(record: MasterDataRecord) {
+  if (record.resource === 'cabin-classes')
+    return String(record.attributes.englishName ?? '').trim() || record.code;
+  if (record.resource === 'aircraft-types')
+    return (
+      String(record.attributes.englishName ?? '').trim() ||
+      aircraftManufacturerModel(record) ||
+      record.code
+    );
+  return record.name;
+}
+
+function profileAttributeEntries(record: MasterDataRecord) {
+  const entries = Object.entries(record.attributes);
+  if (record.resource !== 'aircraft-types') return entries;
+  return [
+    ['manufacturerModel', aircraftManufacturerModel(record)],
+    ...entries.filter(([key]) => key !== 'manufacturer' && key !== 'model'),
+  ] as const;
+}
+
 function needsCompletion(record: MasterDataRecord) {
   if (
     record.resource === 'airlines' ||
@@ -162,6 +198,7 @@ function needsCompletion(record: MasterDataRecord) {
     return !record.attributes.englishName || !record.attributes.countryId;
   if (
     record.resource === 'aircraft-types' ||
+    record.resource === 'cabin-classes' ||
     record.resource === 'train-types' ||
     record.resource === 'bus-types'
   )
@@ -189,7 +226,17 @@ export function MasterDataTransportationWorkspace() {
   const [notice, setNotice] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
   const definition = getMasterDataDefinition(resource);
-  const currentTab = tabs.find((tab) => tab.resource === resource) ?? tabs[0];
+  const isAirlineSection =
+    resource === 'airlines' || resource === 'baggage-rules';
+  const pageDefinition = isAirlineSection
+    ? getMasterDataDefinition('airlines')
+    : definition;
+  const currentTab =
+    tabs.find((tab) =>
+      tab.resource === 'airlines'
+        ? isAirlineSection
+        : tab.resource === resource,
+    ) ?? tabs[0];
   const CurrentIcon = currentTab.icon;
 
   const { columnFilters, columnFilterControls, resetColumnFilters } =
@@ -452,7 +499,9 @@ export function MasterDataTransportationWorkspace() {
         columns: [
           ...new Set([
             'code',
-            'name',
+            ...(['aircraft-types', 'cabin-classes'].includes(resource)
+              ? []
+              : ['name']),
             ...getMasterDataFormFields(definition).map((field) => field.key),
             'status',
             'updatedAt',
@@ -541,14 +590,19 @@ export function MasterDataTransportationWorkspace() {
                 </td>
                 {columns.map(([key]) => (
                   <td key={key} className="p-4 min-w-28">
-                    {key === 'name' ? (
+                    {key === 'name' ||
+                    (resource === 'cabin-classes' && key === 'englishName') ||
+                    (resource === 'aircraft-types' &&
+                      key === 'manufacturerModel') ? (
                       <>
                         <button
                           type="button"
                           className="text-start font-bold text-primary focus-visible:ring-2 focus-visible:ring-ring"
                           onClick={() => openProfile(record)}
                         >
-                          {record.name}
+                          {key === 'name'
+                            ? record.name
+                            : transportColumnValue(record, key)}
                         </button>
                         {[
                           'airlines',
@@ -588,7 +642,7 @@ export function MasterDataTransportationWorkspace() {
                 <td className="p-4">
                   <div className="flex flex-wrap justify-end gap-2">
                     <Button
-                      aria-label={`مشاهده ${record.name}`}
+                      aria-label={`مشاهده ${transportDisplayName(record)}`}
                       onClick={() => openProfile(record)}
                       size="icon"
                       variant="outline"
@@ -596,7 +650,7 @@ export function MasterDataTransportationWorkspace() {
                       <Eye className="size-4" />
                     </Button>
                     <Button
-                      aria-label={`ویرایش ${record.name}`}
+                      aria-label={`ویرایش ${transportDisplayName(record)}`}
                       onClick={() => {
                         setSelected(record);
                         setFormMode('edit');
@@ -634,8 +688,8 @@ export function MasterDataTransportationWorkspace() {
             <ArrowRight className="size-4" /> همه بخش‌ها
           </Link>
         }
-        description={definition.description}
-        title={definition.label}
+        description={pageDefinition.description}
+        title={pageDefinition.label}
       />
       <div className="flex w-full flex-wrap justify-end gap-2">
         <Button
@@ -662,9 +716,13 @@ export function MasterDataTransportationWorkspace() {
         >
           {tabs.map((tab) => {
             const Icon = tab.icon;
+            const isCurrent =
+              tab.resource === 'airlines'
+                ? isAirlineSection
+                : resource === tab.resource;
             return (
               <button
-                aria-current={resource === tab.resource ? 'page' : undefined}
+                aria-current={isCurrent ? 'page' : undefined}
                 className="flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring aria-[current=page]:bg-background aria-[current=page]:text-primary aria-[current=page]:shadow-sm"
                 key={tab.resource}
                 onClick={() => changeResource(tab.resource)}
@@ -676,6 +734,29 @@ export function MasterDataTransportationWorkspace() {
           })}
         </nav>
       </Card>
+      {isAirlineSection ? (
+        <Card className="overflow-x-auto p-2">
+          <nav
+            aria-label="بخش‌های داخلی فرم ایرلاین"
+            className="flex min-w-max gap-1"
+          >
+            {airlineViews.map((view) => {
+              const Icon = view.icon;
+              return (
+                <button
+                  aria-current={resource === view.resource ? 'page' : undefined}
+                  className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring aria-[current=page]:bg-primary/10 aria-[current=page]:text-primary"
+                  key={view.resource}
+                  onClick={() => changeResource(view.resource)}
+                  type="button"
+                >
+                  <Icon className="size-4" /> {view.label}
+                </button>
+              );
+            })}
+          </nav>
+        </Card>
+      ) : null}
       <MasterDataKpiGrid items={kpis} label={`شاخص‌های ${definition.label}`} />
       <FilterBar className="grid sm:grid-cols-2 lg:grid-cols-[minmax(14rem,1fr)_12rem_auto]">
         {columnFilterControls}
@@ -810,9 +891,14 @@ export function MasterDataTransportationWorkspace() {
                   <CurrentIcon className="size-11" />
                 </span>
                 <div>
-                  <h2 className="text-2xl font-black">{selected.name}</h2>
+                  <h2 className="text-2xl font-black">
+                    {transportDisplayName(selected)}
+                  </h2>
                   <p className="mt-1 text-muted-foreground" dir="ltr">
-                    {selected.code} · {attribute(selected, 'englishName')}
+                    {selected.code}
+                    {resource === 'cabin-classes'
+                      ? ''
+                      : ` · ${attribute(selected, 'englishName')}`}
                   </p>
                   <Badge className="mt-3">
                     {selected.attributes.transportStatus === 'UNDER_REVIEW'
@@ -836,7 +922,7 @@ export function MasterDataTransportationWorkspace() {
                   <Database className="size-5" /> مشخصات مرجع
                 </h3>
                 <dl className="grid gap-4 sm:grid-cols-2">
-                  {Object.entries(selected.attributes)
+                  {profileAttributeEntries(selected)
                     .filter(
                       ([key, value]) =>
                         attributeLabels[key] && value !== null && value !== '',

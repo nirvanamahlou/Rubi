@@ -160,10 +160,8 @@ describe.skipIf(!enabled)('transport forms on isolated PostgreSQL 18', () => {
         countryId: country.id,
       },
       'aircraft-types': {
-        name: 'Test aircraft',
-        englishName: 'Test aircraft',
-        manufacturer: 'Test',
-        model: 'Aircraft',
+        englishName: 'Test Aircraft A1',
+        manufacturerModel: 'Test Manufacturer / Aircraft A1',
       },
       'rail-companies': {
         name: 'Test rail',
