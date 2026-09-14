@@ -18,6 +18,34 @@
   Workbench persistence tables. Reserve the application lock for this deployment;
   use Prisma's advisory lock, take a full database backup, and apply only the existing
   approved migration set. No new migration is authored.
+## FINANCE-008-INBOX-ACTIONS — PC-A — READY_FOR_REVIEW / ACTIVE LOCAL
+
+Base `eb6af3ff`; COMPUTER_ID=PC-A. عملیاتی‌کردن کارتابل مالی برای تأیید دریافت مسافر یا برگشت برای اصلاح، و ثبت پرداخت خرید خدمات رزرواسیون به کارگزار با حساب مبدأ، روش، مبلغ، ارز، نرخ روز، زمان و مانده. اتصال فقط از قرارداد/سرویس عمومی Sales و Reservations انجام می‌شود و Finance به جدول داخلی ماژول دیگر دسترسی مستقیم ندارد. محدوده Finance API/Web/contracts، Public boundaryهای لازم در Sales/Reservations، Prisma schema و یک Migration افزایشی، seed permission و اسناد همین Task است. بدون داده ساختگی، حذف دسترسی موجود، تغییر Migration تاریخی یا Dependency/Lockfile.
+
+Completed: عملیات تأیید/اصلاح دریافت فروش و پرداخت جزئی/کامل کارگزار با حساب،
+روش پرداخت، نرخ روز و مانده پایدار شد و نتیجه در Sales/Reservations بازتاب دارد.
+Migration و Seed محلی اعمال شد؛ `Ramtin` نقش افزایشی `finance_staff` و شش مجوز
+لازم را دارد. ۱۲۸۳ تست کامل API، ۱۳۴۳ تست کامل Web، typecheck، lint و build
+تولیدی API/Web موفق‌اند. Web3100/API4190 با build نهایی فعال‌اند؛ ادغام نیازمند
+تأیید جداگانه مالک محصول است.
+
+## WORKBENCH-040 — PC-B — VALIDATED / RELEASED
+
+- Reserve Workbench performance UI, HR self-performance projection/tests, additive Workbench contracts and own documentation for screenshot582 summary redesign. Add self-only today check-in/out and total approved leave request count, keep payslip period and shift dates explicit, remove raw activity rows. Producer HR/Workbench; consumer Workbench Web; new response fields are optional for compatibility. No employee reassignment, migration, dependency, permission change or shared runtime replacement.
+
+## WORKBENCH-039-UNIT-CONTRAST — PC-B — VALIDATED / RELEASED
+
+- Reserve message-composer.tsx and this task's status documentation for the screenshot581 selected department contrast fix. Branch codex/pc-b-workbench-unit-contrast from develop@e82d8216. Remove the unconditional surface background from selected unit buttons, retain Rubi primary colors, match selected icon contrast and expose pressed state. No API, data, migration, dependency or shared component edits.
+
+## FINANCE-007-INBOX-COMPLETION — PC-A — READY_FOR_REVIEW / RUNTIME PERMISSION PENDING
+
+Base `4a84f844`; COMPUTER_ID=PC-A. مشخصات نقش `finance_staff` با مجوزهای حداقلی کارتابل و تحویل مالی تکمیل شد؛ کارتابل اکنون درخواست‌های واقعی فروش، ارجاع‌های مالی منابع انسانی و خرید خدمات رزرواسیون را از Public Service ماژول‌ها جمع می‌کند. Preview قدیمی، متن‌های فنی، وضعیت اتصال Producer و اقدام نمایشی غیرفعال از `/finance/requests` حذف شد. ماژول خرید مستقل Backend عملیاتی ندارد و تا ایجاد Producer واقعی داده‌ای برای آن جعل نمی‌شود. ۳ تست API، ۸ تست قرارداد Web، ۳ تست Migration، lint محدوده، typecheck و build تولیدی API/Web موفق‌اند و Web3100/API4190 فعال‌اند. انتساب افزایشی نقش `finance_staff` به کاربر `Ramtin` هنوز اجرا نشده و منتظر تأیید صریح مالک است؛ هیچ نقش یا مجوز قبلی حذف نخواهد شد.
+
+## WORKBENCH-038-PUBLISH — PC-B — MERGE_AUTHORIZED
+
+- User explicitly authorizes pushing and merging all changes from this Workbench task.
+- Reserve only integration of PR #259 and its ancestor #239 into current develop; preserve the independently merged HR destination removal. Resolve additive status documentation conflicts and run final CI on the updated head before merge.
+- No new migration, dependency, runtime replacement or unrelated open PR is included. Runtime integration branch remains pushed separately.
 
 ## WORKBENCH-038 — PC-B — COMPLETE / TESTED
 
@@ -40,6 +68,13 @@
 ## FINANCE-007-INBOX-COMPLETION — PC-A — READY_FOR_REVIEW / RUNTIME PERMISSION PENDING
 
 Base `4a84f844`; COMPUTER_ID=PC-A. مشخصات نقش `finance_staff` با مجوزهای حداقلی کارتابل و تحویل مالی تکمیل شد؛ کارتابل اکنون درخواست‌های واقعی فروش، ارجاع‌های مالی منابع انسانی و خرید خدمات رزرواسیون را از Public Service ماژول‌ها جمع می‌کند. Preview قدیمی، متن‌های فنی، وضعیت اتصال Producer و اقدام نمایشی غیرفعال از `/finance/requests` حذف شد. ماژول خرید مستقل Backend عملیاتی ندارد و تا ایجاد Producer واقعی داده‌ای برای آن جعل نمی‌شود. ۳ تست API، ۸ تست قرارداد Web، ۳ تست Migration، lint محدوده، typecheck و build تولیدی API/Web موفق‌اند و Web3100/API4190 فعال‌اند. انتساب افزایشی نقش `finance_staff` به کاربر `Ramtin` هنوز اجرا نشده و منتظر تأیید صریح مالک است؛ هیچ نقش یا مجوز قبلی حذف نخواهد شد.
+
+## WORKBENCH-037-REMOVE-HR-DESTINATION-CARD — PC-B — READY_FOR_REVIEW
+
+- درخواست صریح مالک محصول در 2026-09-13: پوسته پایین «درخواست‌های منابع انسانی» از صفحه میزکار حذف شود، اما Backend، مسیر `/hr`، مجوزها و اعلان‌های منابع انسانی باقی بمانند. `COMPUTER_ID=PC-B`.
+- Branch مستقل `codex/pc-b-workbench-remove-hr-link` از `origin/develop@dd177cfd`؛ محدوده فقط مقصدهای نمایشی Workbench، تست همان قرارداد و اسناد وضعیت این Task است.
+- هیچ API، Backend، Schema/Migration/Seed، Shared Contract، Permission، داده، Dependency/Lockfile یا منوی اصلی تغییر نمی‌کند.
+- نتیجه: کارت و لینک پایین «درخواست‌های منابع انسانی» از خانه میزکار حذف شد؛ منطق خواندن اعلان HR و کنترل مجوز آن بدون تغییر باقی ماند. چهار تست هدفمند Workbench، lint فایل‌های متاثر، Web typecheck و Production Build با ۴۶ Route موفق‌اند.
 
 ## APP-SHELL-HEADER-UTILITY-LEFT-001 — PC-A — READY_FOR_REVIEW
 

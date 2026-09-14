@@ -373,10 +373,21 @@ export function MessageComposer({
                     <Button
                       key={item.id}
                       variant={unitId === item.id ? 'primary' : 'ghost'}
-                      className="h-auto min-h-16 justify-start border border-white/70 bg-surface/80 p-3 text-start dark:border-white/10"
+                      aria-pressed={unitId === item.id}
+                      className={`h-auto min-h-16 justify-start border p-3 text-start ${
+                        unitId === item.id
+                          ? 'border-primary'
+                          : 'border-white/70 bg-surface/80 text-foreground dark:border-white/10'
+                      }`}
                       onClick={() => setUnitId(item.id)}
                     >
-                      <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
+                      <span
+                        className={`grid size-10 shrink-0 place-items-center rounded-xl ${
+                          unitId === item.id
+                            ? 'bg-white/15 text-primary-foreground'
+                            : 'bg-primary/10 text-primary'
+                        }`}
+                      >
                         <MessageUnitIcon id={item.id} />
                       </span>
                       <span className="min-w-0">

@@ -194,6 +194,7 @@ export class ReservationRequestsController {
         purchaseId,
         input,
         req.actor.userId,
+        req.actor.branchIds,
       ),
     };
   }

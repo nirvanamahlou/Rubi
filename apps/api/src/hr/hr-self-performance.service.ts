@@ -8,7 +8,7 @@ import {
 import type { Prisma } from '@rubi/database';
 import { DatabaseService } from '../database/database.service';
 import { HrService } from './hr.service';
-import { APPROVED } from './hr.validation';
+import { APPROVED, digits, localClockParts } from './hr.validation';
 
 /** Public HR projection; broad HR permissions never widen the subject beyond self. */
 @Injectable()
@@ -87,57 +87,101 @@ export class HrSelfPerformanceService {
       branchId: { in: actor.branchIds },
       deletedAt: null,
     };
-    const [leaves, shifts, payslips, balances] = await Promise.all([
-      this.database.client.hrRecord.findMany({
-        where: {
-          ...scope,
-          OR: [
-            { section: 'time', tab: 'leave' },
-            { section: 'requests', tab: 'leave' },
-          ],
-        },
-        orderBy: [
-          { effectiveAt: { sort: 'desc', nulls: 'last' } },
-          { createdAt: 'desc' },
-          { id: 'asc' },
-        ],
-        take: 10,
-      }),
-      this.database.client.hrRecord.findMany({
-        where: {
-          ...scope,
-          OR: [
-            { section: 'time', tab: 'shift' },
-            { section: 'employee', tab: 'shift' },
-            { section: 'time', tab: 'roster' },
-          ],
-        },
-        orderBy: [
-          { effectiveAt: { sort: 'desc', nulls: 'last' } },
-          { createdAt: 'desc' },
-          { id: 'asc' },
-        ],
-        take: 10,
-      }),
-      payslipVisible
-        ? this.database.client.hrRecord.findMany({
-            where: {
-              ...scope,
-              section: 'payroll',
-              tab: 'payslips',
-              status: { in: [...APPROVED] },
-            },
-            orderBy: [
-              { effectiveAt: { sort: 'desc', nulls: 'last' } },
-              { createdAt: 'desc' },
-              { id: 'asc' },
+    const today = localClockParts(new Date()).date;
+    const [leaves, shifts, payslips, balances, approvedLeaveCount, punches] =
+      await Promise.all([
+        this.database.client.hrRecord.findMany({
+          where: {
+            ...scope,
+            OR: [
+              { section: 'time', tab: 'leave' },
+              { section: 'requests', tab: 'leave' },
             ],
-            take: 1,
-          })
-        : Promise.resolve([]),
-      this.hr.leaveBalances({ employeeId: employee.id }, actor),
-    ]);
+          },
+          orderBy: [
+            { effectiveAt: { sort: 'desc', nulls: 'last' } },
+            { createdAt: 'desc' },
+            { id: 'asc' },
+          ],
+          take: 10,
+        }),
+        this.database.client.hrRecord.findMany({
+          where: {
+            ...scope,
+            OR: [
+              { section: 'time', tab: 'shift' },
+              { section: 'employee', tab: 'shift' },
+              { section: 'time', tab: 'roster' },
+            ],
+          },
+          orderBy: [
+            { effectiveAt: { sort: 'desc', nulls: 'last' } },
+            { createdAt: 'desc' },
+            { id: 'asc' },
+          ],
+          take: 10,
+        }),
+        payslipVisible
+          ? this.database.client.hrRecord.findMany({
+              where: {
+                ...scope,
+                section: 'payroll',
+                tab: 'payslips',
+                status: { in: [...APPROVED] },
+              },
+              orderBy: [
+                { effectiveAt: { sort: 'desc', nulls: 'last' } },
+                { createdAt: 'desc' },
+                { id: 'asc' },
+              ],
+              take: 1,
+            })
+          : Promise.resolve([]),
+        this.hr.leaveBalances({ employeeId: employee.id }, actor),
+        this.database.client.hrRecord.count({
+          where: {
+            ...scope,
+            status: { in: [...APPROVED] },
+            OR: [
+              { section: 'time', tab: 'leave' },
+              { section: 'requests', tab: 'leave' },
+            ],
+          },
+        }),
+        this.database.client.hrRecord.findMany({
+          where: {
+            ...scope,
+            section: 'time',
+            tab: 'checkins',
+            values: { path: ['1'], equals: today },
+          },
+          orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
+          take: 201,
+        }),
+      ]);
+    if (punches.length > 200)
+      throw new Error('Daily attendance limit exceeded');
+    // An approved correction replaces the day's original punches, as in HR attendance.
+    const correction = punches.find((row) => row.parentId != null);
+    const selected = correction
+      ? punches.filter((row) => row.parentId === correction.parentId)
+      : punches;
+    const times = (kind: string) =>
+      selected
+        .map((row) => row.values as string[])
+        .filter(
+          (values) =>
+            values[3] === kind && /^\d{2}:\d{2}$/.test(digits(values[2] ?? '')),
+        )
+        .map((values) => digits(values[2]!))
+        .sort();
     return {
+      approvedLeaveCount,
+      todayAttendance: {
+        date: today,
+        firstIn: times('ورود')[0] ?? null,
+        lastOut: times('خروج').at(-1) ?? null,
+      },
       employee: {
         name: employee.name,
         personnelCode: employee.personnelCode,

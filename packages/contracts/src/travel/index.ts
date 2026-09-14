@@ -84,8 +84,16 @@ export interface ReservationServicePurchaseV1 {
   createdAt: string;
   finance: {
     version: number;
-    status: 'PENDING' | 'PAID' | 'REJECTED';
+    status: 'PENDING' | 'PARTIALLY_PAID' | 'PAID' | 'REJECTED';
     bankId: string | null;
+    accountId: string | null;
+    accountTitle: string | null;
+    paymentMethodId: string | null;
+    paymentMethodName: string | null;
+    paidAmount: string;
+    remainingAmount: string;
+    exchangeRateToIrr: string | null;
+    rialEquivalent: string | null;
     transferAt: string | null;
     paymentReference: string | null;
     reason: string;
@@ -107,6 +115,10 @@ export interface FinanceSupplierPaymentCommandV1 {
   expectedVersion: number;
   status: 'PAID' | 'REJECTED';
   bankId?: string | null;
+  accountId?: string | null;
+  paymentMethodId?: string | null;
+  paidAmount?: string | null;
+  exchangeRateToIrr?: string | null;
   transferAt?: string | null;
   paymentReference?: string | null;
   reason: string;

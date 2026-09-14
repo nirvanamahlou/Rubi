@@ -98,6 +98,12 @@ export type WorkbenchPerformanceSectionV1<T> =
   | { status: 'forbidden' | 'error'; message: string };
 
 export interface WorkbenchHrPerformanceV1 {
+  approvedLeaveCount?: number;
+  todayAttendance?: {
+    date: string;
+    firstIn: string | null;
+    lastOut: string | null;
+  };
   employee: {
     name: string;
     personnelCode: string;

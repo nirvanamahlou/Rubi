@@ -3,6 +3,33 @@
 ## WORKBENCH-037 — حذف کارت پایین درخواست‌های منابع انسانی
 
 کارت نمایشی «درخواست‌های منابع انسانی» از مقصدهای پایین خانه میزکار حذف شد. این تغییر فقط پوسته Frontend را پوشش می‌دهد؛ Backend، مسیر `/hr`، مجوزهای خواندن HR و اعلان‌های منابع انسانی دست‌نخورده ماندند. چهار تست هدفمند، lint، TypeScript و Production Build با ۴۶ Route موفق‌اند.
+## FINANCE-008 — عملیات واقعی کارتابل مالی
+
+کارتابل مالی اکنون فقط نمایش‌دهنده نیست: دریافت ثبت‌شده مسافر از همان‌جا تأیید یا
+با علت برای اصلاح به فروش بازگردانده می‌شود. برای خرید خدمات رزرواسیون نیز مالی
+حساب واقعی و روش پرداخت را انتخاب می‌کند، پرداخت جزئی یا کامل ثبت می‌شود و مبلغ
+پرداخت‌شده/مانده در هر دو بخش دیده می‌شود. پرداخت ارزی Snapshot نرخ روز، معادل
+ریالی و زمان UTC دارد؛ توضیح مالی و شماره پیگیری اختیاری‌اند.
+
+Migration و Seed محلی اعمال شده و نقش `finance_staff` بدون حذف دسترسی قبلی به
+`Ramtin` افزوده شده است. کل ۱۲۸۳ تست API و ۱۳۴۳ تست Web، typecheck، lint و
+build تولیدی API/Web با ۴۶ مسیر موفق‌اند و Web3100/API4190 فعال‌اند. جزئیات در
+[FINANCE-008](tasks/FINANCE-008-INBOX-ACTIONS.md) ثبت شده است.
+
+## WORKBENCH-040 — Performance summary
+
+Personal performance now shows leave count, dated shifts, approved payslip period/net amount, today's entry/exit, own customers and sales. Raw activity rows were removed. Additive HR projection preserves self/branch scope and applies approved attendance corrections. No employee reassignment or migration. See [WORKBENCH-040](tasks/WORKBENCH-040-PERFORMANCE-SUMMARY.md).
+
+
+## WORKBENCH-039 — Selected department contrast
+
+The messenger unit list no longer overrides the selected primary button with a light surface background. Selected labels and icons use theme foreground contrast, unselected units retain their surface style, and aria-pressed exposes selection. No message delivery or API behavior changes. Validation is recorded in docs/tasks/WORKBENCH-039-UNIT-CONTRAST.md.
+
+
+## FINANCE-007 — تکمیل کارتابل درخواست‌های مالی
+
+کارتابل مالی بازطراحی و ساده شد: Preview قدیمی، نوشته‌های فنی و اقدام غیرفعال حذف شدند و درخواست‌های واقعی فروش، ارجاع‌های مالی منابع انسانی و خرید خدمات رزرواسیون اکنون از مرز عمومی ماژول‌های مالک وارد صف واحد می‌شوند. منبع خرید مستقل چون Producer عملیاتی ندارد، داده ساختگی نمایش نمی‌دهد. ۳ تست API، ۸ تست قرارداد Web، ۳ تست Migration، lint محدوده، typecheck و build تولیدی API/Web موفق‌اند؛ Web3100 و API4190 فعال‌اند. مشخصات Seed نقش مالی کامل شده، اما انتساب افزایشی `finance_staff` به `Ramtin` برای رفع نهایی 403 هنوز منتظر تأیید صریح مالک محصول است. جزئیات در [FINANCE-007](tasks/FINANCE-007-INBOX-COMPLETION.md) ثبت شده است.
+
 ## WORKBENCH-038 — عملکرد من
 
 تب «عملکرد من» و endpoint فقط‌خواندنی خود کاربر اضافه شد: مرخصی، شیفت و آخرین فیش
@@ -17,6 +44,10 @@ Dependency؛ جزئیات در [WORKBENCH-038](tasks/WORKBENCH-038-MY-PERFORMANC
 ## FINANCE-007 — تکمیل کارتابل درخواست‌های مالی
 
 کارتابل مالی بازطراحی و ساده شد: Preview قدیمی، نوشته‌های فنی و اقدام غیرفعال حذف شدند و درخواست‌های واقعی فروش، ارجاع‌های مالی منابع انسانی و خرید خدمات رزرواسیون اکنون از مرز عمومی ماژول‌های مالک وارد صف واحد می‌شوند. منبع خرید مستقل چون Producer عملیاتی ندارد، داده ساختگی نمایش نمی‌دهد. ۳ تست API، ۸ تست قرارداد Web، ۳ تست Migration، lint محدوده، typecheck و build تولیدی API/Web موفق‌اند؛ Web3100 و API4190 فعال‌اند. مشخصات Seed نقش مالی کامل شده، اما انتساب افزایشی `finance_staff` به `Ramtin` برای رفع نهایی 403 هنوز منتظر تأیید صریح مالک محصول است. جزئیات در [FINANCE-007](tasks/FINANCE-007-INBOX-COMPLETION.md) ثبت شده است.
+
+## WORKBENCH-037 — حذف کارت پایین درخواست‌های منابع انسانی
+
+کارت نمایشی «درخواست‌های منابع انسانی» از مقصدهای پایین خانه میزکار حذف شد. این تغییر فقط پوسته Frontend را پوشش می‌دهد؛ Backend، مسیر `/hr`، مجوزهای خواندن HR و اعلان‌های منابع انسانی دست‌نخورده ماندند. چهار تست هدفمند، lint، TypeScript و Production Build با ۴۶ Route موفق‌اند.
 
 ## APP-SHELL — انتقال کنترل‌های نوار بالا به چپ
 

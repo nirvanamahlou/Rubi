@@ -32,7 +32,13 @@ const intakeInclude = {
   servicePurchases: {
     orderBy: { version: 'desc' },
     include: {
-      financeRevisions: { orderBy: { version: 'desc' }, take: 1 },
+      financeRevisions: {
+        orderBy: { version: 'desc' },
+        include: {
+          account: { select: { title: true, bankId: true } },
+          paymentMethod: { select: { name: true } },
+        },
+      },
     },
   },
 } satisfies Prisma.ReservationIntakeInclude;
@@ -62,6 +68,7 @@ function present(
     })),
     servicePurchases: [...latestServicePurchases.values()].map((purchase) => {
       const finance = purchase.financeRevisions[0];
+      const legacyPaid = finance?.status === 'PAID' && !finance.cumulativePaid;
       return {
         id: purchase.id,
         version: purchase.version,
@@ -78,7 +85,20 @@ function present(
           ? {
               version: finance.version,
               status: finance.status,
-              bankId: finance.bankId,
+              bankId: finance.account?.bankId ?? finance.bankId,
+              accountId: finance.accountId,
+              accountTitle: finance.account?.title ?? null,
+              paymentMethodId: finance.paymentMethodId,
+              paymentMethodName: finance.paymentMethod?.name ?? null,
+              paidAmount: legacyPaid
+                ? purchase.amount.toString()
+                : (finance.cumulativePaid?.toString() ?? '0'),
+              remainingAmount: legacyPaid
+                ? '0'
+                : (finance.remainingAmount?.toString() ??
+                  purchase.amount.toString()),
+              exchangeRateToIrr: finance.exchangeRateToIrr?.toString() ?? null,
+              rialEquivalent: finance.rialEquivalent?.toString() ?? null,
               transferAt: finance.transferAt?.toISOString() ?? null,
               paymentReference: finance.paymentReference,
               reason: finance.reason,
@@ -89,6 +109,14 @@ function present(
               version: 0,
               status: 'PENDING' as const,
               bankId: null,
+              accountId: null,
+              accountTitle: null,
+              paymentMethodId: null,
+              paymentMethodName: null,
+              paidAmount: '0',
+              remainingAmount: purchase.amount.toString(),
+              exchangeRateToIrr: null,
+              rialEquivalent: null,
               transferAt: null,
               paymentReference: null,
               reason: '',

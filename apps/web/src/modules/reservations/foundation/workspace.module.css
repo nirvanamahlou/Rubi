@@ -411,9 +411,9 @@
   --tone-text: #ffffff;
 }
 :global(.dark) .workspace [data-tone='darkGray'] {
-  --tone-bg: #1d1d21;
-  --tone-edge: #d4d4d8;
-  --tone-text: #fafafa;
+  --tone-bg: #334b5c;
+  --tone-edge: #8fb4cc;
+  --tone-text: #f3f8fb;
 }
 :global(.dark) .workspace [data-tone='red'] {
   --tone-bg: #482426;

@@ -123,6 +123,7 @@ export function presentSalesContract(
     createdByName: paymentCreatorNames.get(item.createdByUserId) ?? null,
     createdAt: item.createdAt.toISOString(),
     financeConfirmedAt: date(item.financeConfirmedAt),
+    financeDecisionReason: item.financeDecisionReason,
   }));
   return {
     id: row.id,
@@ -919,6 +920,8 @@ export class SalesService {
     paymentId: string;
     financePaymentReference: string;
     confirmedAt: string;
+    reviewedByUserId?: string;
+    reason?: string;
   }) {
     return this.repository.applyFinanceConfirmation({
       contractId: event.contractId,
@@ -926,6 +929,27 @@ export class SalesService {
       financePaymentReference: event.financePaymentReference,
       financeConfirmationId: event.eventId,
       confirmedAt: event.confirmedAt,
+      ...(event.reviewedByUserId
+        ? { reviewedByUserId: event.reviewedByUserId }
+        : {}),
+      ...(event.reason !== undefined ? { reason: event.reason } : {}),
+    });
+  }
+
+  applyFinancePaymentCorrection(event: {
+    contractId: string;
+    paymentId: string;
+    reason: string;
+    reviewedByUserId: string;
+    branchId: string;
+  }) {
+    return this.repository.applyFinanceCorrection({
+      contractId: event.contractId,
+      paymentId: event.paymentId,
+      reason: event.reason,
+      reviewedByUserId: event.reviewedByUserId,
+      reviewedAt: new Date().toISOString(),
+      branchId: event.branchId,
     });
   }
 }
