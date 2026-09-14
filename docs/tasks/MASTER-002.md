@@ -20,7 +20,7 @@ Persistence، Repository، Application Service، REST API نسخه‌دار، ق
 ## مرز IAM و شعبه
 
 مصرف IAM فقط از `AuthenticatedActor`، `IamPermissionCode` و `BranchReference` در
-`@rubi/contracts` انجام می‌شود. هیچ جدول، Prisma model یا Repository داخلی IAM از Master
+`@nora/contracts` انجام می‌شود. هیچ جدول، Prisma model یا Repository داخلی IAM از Master
 Data query یا import نمی‌شود. Permissionها deny-by-default و عملیات تغییر با actor، branch
 scope و Audit ماژول ثبت می‌شوند.
 

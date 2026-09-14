@@ -6,7 +6,7 @@ import type {
   WorkbenchActivityResponseV1,
   WorkbenchCalendarResponseV1,
   WorkbenchNotesResponseV1,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 
 export const workbenchTabs = [
   ['today', 'خانه'],

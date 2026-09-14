@@ -44,7 +44,7 @@ describe('finance gate on passenger documents', () => {
   const get = () =>
     request(app.getHttpServer())
       .get(`/sales/contracts/${id}/travel-documents`)
-      .set('Cookie', 'rubi_access=allowed');
+      .set('Cookie', 'nora_access=allowed');
   it('rejects unauthenticated access before loading a snapshot', async () => {
     await request(app.getHttpServer())
       .get(`/sales/contracts/${id}/travel-documents`)

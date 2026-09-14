@@ -9,7 +9,7 @@ import type {
   TourDepartureV1,
   TourPackageInputV1,
   TourPackageV1,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import {
   Button,
   Card,

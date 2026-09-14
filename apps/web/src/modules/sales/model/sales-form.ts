@@ -2,7 +2,7 @@ import {
   addInsuranceExtra,
   insuranceExtraRials,
   passengerOverSixty,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import {
   servicePriceComponents,
   SALES_ACCOMMODATION_LABELS,
@@ -11,7 +11,7 @@ import {
   salesContractOnlyFlights,
   type SalesFlightSnapshotV1,
   type SalesServicePricingV1,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import type {
   CustomerSummary,
   SalesMoney,
@@ -25,7 +25,7 @@ import type {
   SalesTicketDirection,
   TicketOfferV1,
   TourDepartureV1,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 
 import {
   salesInsuranceService,

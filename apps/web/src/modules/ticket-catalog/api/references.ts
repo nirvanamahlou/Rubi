@@ -3,7 +3,7 @@ import {
   masterDataEndpoints,
   type MasterDataListResponse,
   type MasterDataRecord,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import { getPublicApiBaseUrl } from '../../../lib/environment';
 import type { Reference } from '../model/catalog';
 

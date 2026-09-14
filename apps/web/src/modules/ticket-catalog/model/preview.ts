@@ -610,7 +610,7 @@ export interface CatalogBrowserSnapshot {
   products: Product[];
   references: Reference[];
 }
-export const catalogStorageKey = 'rubi.ticket-catalog.browser.v1';
+export const catalogStorageKey = 'nora.ticket-catalog.browser.v1';
 export function parseCatalogSnapshot(
   raw: string | null,
 ): CatalogBrowserSnapshot | undefined {

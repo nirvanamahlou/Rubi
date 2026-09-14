@@ -22,7 +22,7 @@ import type {
   AuthenticatedActor,
   CustomerDetail,
   ReservationIntakeV1,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import type { Response } from 'express';
 import { DatabaseService } from '../database/database.service';
 import { AuthGuard } from '../iam/auth.guard';
@@ -615,10 +615,10 @@ export class ReservationManifestBatchController {
       req.actor,
       req.headers['x-request-id'] as string | undefined,
     );
-    response.setHeader('X-Rubi-Manifest-Contracts', result.contractCount);
-    response.setHeader('X-Rubi-Manifest-Passengers', result.passengerCount);
+    response.setHeader('X-Nora-Manifest-Contracts', result.contractCount);
+    response.setHeader('X-Nora-Manifest-Passengers', result.passengerCount);
     response.setHeader(
-      'X-Rubi-Manifest-Skipped-Finance',
+      'X-Nora-Manifest-Skipped-Finance',
       result.skippedFinanceCount,
     );
     const mode = result.includePreviouslyExported ? 'all' : 'new';

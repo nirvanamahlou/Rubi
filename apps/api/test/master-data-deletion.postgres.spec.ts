@@ -4,8 +4,8 @@ import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { parseEnv } from 'node:util';
 import { ConflictException } from '@nestjs/common';
-import type { AuthenticatedActor } from '@rubi/contracts';
-import { createDatabaseClient, type DatabaseClient } from '@rubi/database';
+import type { AuthenticatedActor } from '@nora/contracts';
+import { createDatabaseClient, type DatabaseClient } from '@nora/database';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import type { DatabaseService } from '../src/database/database.service';
@@ -16,9 +16,9 @@ import { MasterDataService } from '../src/master-data/master-data.service';
 import { postgresTestTarget } from './postgres-test-target';
 const postgresTarget = postgresTestTarget();
 
-const enabled = process.env.RUBI_RUN_DELETE_POSTGRES_TESTS === '1';
+const enabled = process.env.NORA_RUN_DELETE_POSTGRES_TESTS === '1';
 const container = postgresTarget.container;
-const databaseName = `rubi_md_delete_test_${randomUUID().replaceAll('-', '')}`;
+const databaseName = `nora_md_delete_test_${randomUUID().replaceAll('-', '')}`;
 const owner = postgresTarget.user;
 const actorId = '11111111-1111-4111-8111-111111111111';
 const branchId = '33333333-3333-4333-8333-333333333333';
@@ -79,9 +79,9 @@ describe.skipIf(!enabled)('safe deletion on isolated PostgreSQL 18', () => {
       configured.port !== postgresTarget.port
     )
       throw new Error(
-        'Deletion integration tests require the local Rubi PostgreSQL port.',
+        'Deletion integration tests require the local Nora PostgreSQL port.',
       );
-    if (!/^rubi_md_delete_test_[a-f0-9]{32}$/.test(databaseName))
+    if (!/^nora_md_delete_test_[a-f0-9]{32}$/.test(databaseName))
       throw new Error('Invalid test database name');
     sql('postgres', `CREATE DATABASE "${databaseName}";`);
     created = true;
@@ -132,7 +132,7 @@ describe.skipIf(!enabled)('safe deletion on isolated PostgreSQL 18', () => {
 
   afterAll(async () => {
     if (client) await client.$disconnect();
-    if (created && /^rubi_md_delete_test_[a-f0-9]{32}$/.test(databaseName))
+    if (created && /^nora_md_delete_test_[a-f0-9]{32}$/.test(databaseName))
       sql('postgres', `DROP DATABASE "${databaseName}" WITH (FORCE);`);
   }, 30000);
 

@@ -8,7 +8,7 @@ Owner explicitly requested access to every agency 360 section after the commerci
 - Created `b2b-dossier-manager` with all ten canonical B2B permissions, including profile, agreement, credit and rate read/manage, plus independent agreement/credit review. Assigned this role only to Nirvana, preserving existing roles and HQ membership. Self-approval remains prohibited by the existing workflow even for a reviewer.
 - The existing 21 relevant Master Data/Documents permissions already cover organization/contact/address editing/deletion, import/export/audit, organization and logo files, upload/download/version metadata and access history.
 - Used the existing public IAM role and user-access services inside a serializable transaction, together with the narrow catalog reconciliation and audit records. The previous role sets and every other user's role/branch assignments were compared before commit. No password, session, credentials or other user access changed.
-- Private pre-change and verified evidence: `C:/Users/admin/Rubi-backups/b2b-dossier-access`. The one-off maintenance helper is outside Git; no user IDs, credentials or session material are added to repository documentation.
+- Private pre-change and verified evidence: `C:/Users/admin/Nora-backups/b2b-dossier-access`. The one-off maintenance helper is outside Git; no user IDs, credentials or session material are added to repository documentation.
 
 ## Verification
 

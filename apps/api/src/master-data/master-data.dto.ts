@@ -14,7 +14,7 @@ import {
   Matches,
   Min,
 } from 'class-validator';
-import { MASTER_ORGANIZATION_ROLE_CODES } from '@rubi/contracts';
+import { MASTER_ORGANIZATION_ROLE_CODES } from '@nora/contracts';
 
 export class MasterDataListQueryDto {
   @IsOptional() @IsString() @MaxLength(100) columnFilter1?: string;

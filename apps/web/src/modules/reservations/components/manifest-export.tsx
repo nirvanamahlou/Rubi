@@ -73,11 +73,11 @@ export function ManifestExport() {
         );
       }
       const contracts =
-        response.headers.get('X-Rubi-Manifest-Contracts') ?? '—';
+        response.headers.get('X-Nora-Manifest-Contracts') ?? '—';
       const passengers =
-        response.headers.get('X-Rubi-Manifest-Passengers') ?? '—';
+        response.headers.get('X-Nora-Manifest-Passengers') ?? '—';
       const skipped =
-        response.headers.get('X-Rubi-Manifest-Skipped-Finance') ?? '0';
+        response.headers.get('X-Nora-Manifest-Skipped-Finance') ?? '0';
       const url = URL.createObjectURL(await response.blob());
       const link = document.createElement('a');
       link.href = url;

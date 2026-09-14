@@ -5,7 +5,7 @@ import {
   type ReservationIntakeV1,
   type ReservationServicePurchaseV1,
   type TravelWorkflowStateV1,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import { Button } from '@/components/ui/button';
 import { FormField, Input } from '@/components/ui/form-controls';
 import { MoneyInput, formatSalesMoney } from '@/components/ui/money-input';

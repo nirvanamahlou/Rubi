@@ -1,9 +1,9 @@
-import { salesContractFlights } from '@rubi/contracts';
+import { salesContractFlights } from '@nora/contracts';
 import type {
   MasterDataRecord,
   ReservationIntakeV1,
   TravelWorkflowStateV1,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 export type ReservationFormIntake = ReservationIntakeV1 & {
   workflow: TravelWorkflowStateV1;
 };

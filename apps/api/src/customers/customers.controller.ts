@@ -13,7 +13,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
-import type { CustomerListQuery } from '@rubi/contracts';
+import type { CustomerListQuery } from '@nora/contracts';
 
 import { AuthGuard } from '../iam/auth.guard';
 import { RequirePermissions } from '../iam/iam.decorators';
@@ -36,7 +36,7 @@ import {
 import { CustomerService } from './customer.service';
 
 @ApiTags('Customers')
-@ApiCookieAuth('rubi_access')
+@ApiCookieAuth('nora_access')
 @UseGuards(AuthGuard, PermissionGuard)
 @Controller('customers')
 export class CustomersController {

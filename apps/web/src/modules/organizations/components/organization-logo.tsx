@@ -1,6 +1,6 @@
 'use client';
 
-import type { IamPermissionCode, MasterDataRecord } from '@rubi/contracts';
+import type { IamPermissionCode, MasterDataRecord } from '@nora/contracts';
 import { Building2 } from 'lucide-react';
 import Image from 'next/image';
 import { useEffect, useState } from 'react';

@@ -75,7 +75,7 @@ export class MfaTotpService {
   }
 
   otpAuthUri(username: string, secret: string): string {
-    const issuer = 'Rubi';
+    const issuer = 'Nora';
     const label = encodeURIComponent(`${issuer}:${username}`);
     return `otpauth://totp/${label}?secret=${secret}&issuer=${encodeURIComponent(issuer)}&algorithm=SHA1&digits=${TOTP_DIGITS}&period=${TOTP_PERIOD_SECONDS}`;
   }

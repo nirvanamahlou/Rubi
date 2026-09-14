@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import { getHrResource, type HrRecordDto } from '@rubi/contracts';
+import { getHrResource, type HrRecordDto } from '@nora/contracts';
 import {
   Dialog,
   DialogContent,

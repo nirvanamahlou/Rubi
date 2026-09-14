@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
-import type { SalesReservationRequestV1 } from '@rubi/contracts';
+import type { SalesReservationRequestV1 } from '@nora/contracts';
 import { FlightTicketSheet } from '@/modules/sales/public/tickets';
 import { reservationTickets } from './reservation-tickets';
 

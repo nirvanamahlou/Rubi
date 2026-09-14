@@ -5,7 +5,7 @@ import {
   type HrRecordCreate,
   type HrRecordDto,
   type HrWorkflowData,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import {
   Dialog,
   DialogContent,

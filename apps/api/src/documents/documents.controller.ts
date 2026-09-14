@@ -22,7 +22,7 @@ import { ApiBody, ApiConsumes, ApiCookieAuth, ApiTags } from '@nestjs/swagger';
 import type {
   DocumentCaseOptionsQueryV1,
   DocumentListQueryV1,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 
 import { AuthGuard } from '../iam/auth.guard';
 import { RequirePermissions } from '../iam/iam.decorators';
@@ -74,7 +74,7 @@ function requestMetadata(
 }
 
 @ApiTags('Documents')
-@ApiCookieAuth('rubi_access')
+@ApiCookieAuth('nora_access')
 @UseGuards(AuthGuard, PermissionGuard)
 @Controller('documents')
 export class DocumentsController {

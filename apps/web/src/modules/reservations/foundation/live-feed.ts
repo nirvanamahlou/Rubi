@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import type { LoginResponse } from '@rubi/contracts';
+import type { LoginResponse } from '@nora/contracts';
 import {
   isCivilDate,
   type RequestView,

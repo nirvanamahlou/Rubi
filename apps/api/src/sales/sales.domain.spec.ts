@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import type { SalesContractCreateRequest } from '@rubi/contracts';
-import { servicePriceComponents } from '@rubi/contracts';
+import type { SalesContractCreateRequest } from '@nora/contracts';
+import { servicePriceComponents } from '@nora/contracts';
 
 import {
   calculateSalesBalances,

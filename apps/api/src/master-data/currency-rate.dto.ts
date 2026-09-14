@@ -11,7 +11,7 @@ import {
   Min,
   Matches,
 } from 'class-validator';
-import type { MasterCurrencyRateQuoteRequest } from '@rubi/contracts';
+import type { MasterCurrencyRateQuoteRequest } from '@nora/contracts';
 
 export class CurrencyRateQuoteDto implements MasterCurrencyRateQuoteRequest {
   @Transform(({ value }) =>

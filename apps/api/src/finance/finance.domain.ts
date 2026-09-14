@@ -6,7 +6,7 @@ import {
   type FinancePublicReference,
   type FinancialReleaseBasis,
   type FinancialReleaseStatus,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 
 import { DecimalValue, FinanceDomainError, Money } from './finance.money';
 

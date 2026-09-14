@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { isMasterTransportFormResource } from '@rubi/contracts';
+import { isMasterTransportFormResource } from '@nora/contracts';
 
 import { getMasterDataDefinition, type MasterDataResourceKey } from './catalog';
 import { getMasterDataFormFields } from './form-fields';

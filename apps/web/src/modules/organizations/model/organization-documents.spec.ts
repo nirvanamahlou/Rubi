@@ -1,4 +1,4 @@
-import type { IamPermissionCode, MasterDataRecord } from '@rubi/contracts';
+import type { IamPermissionCode, MasterDataRecord } from '@nora/contracts';
 import { describe, expect, it } from 'vitest';
 import {
   formatOrganizationDocumentExpiry,

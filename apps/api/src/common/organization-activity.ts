@@ -3,8 +3,8 @@ import type {
   OrganizationActivityEvent,
   OrganizationActivityQuery,
   OrganizationActivitySource,
-} from '@rubi/contracts';
-import { Prisma } from '@rubi/database';
+} from '@nora/contracts';
+import { Prisma } from '@nora/database';
 
 export interface ActivityWindow {
   from?: Date | undefined;
@@ -54,7 +54,7 @@ export function activityWindow(
       new Date(s).toISOString().slice(0, 10) !== s
     )
       throw new BadRequestException('تاریخ گزارش نامعتبر است.');
-    // Rubi date filters are calendar days in Asia/Tehran (UTC+03:30).
+    // Nora date filters are calendar days in Asia/Tehran (UTC+03:30).
     return new Date(`${s}T${end ? '23:59:59.999' : '00:00:00.000'}+03:30`);
   };
   const from = day(query.from),

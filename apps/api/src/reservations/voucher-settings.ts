@@ -3,7 +3,7 @@ import {
   voucherNumberKeys,
   voucherFlagKeys,
   type VoucherSettingsV1,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 export function validateVoucherSettings(
   value: unknown,
   passengerIds: readonly string[],

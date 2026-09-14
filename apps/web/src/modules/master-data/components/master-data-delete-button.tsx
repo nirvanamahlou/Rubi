@@ -1,6 +1,6 @@
 'use client';
 
-import type { MasterDataRecord } from '@rubi/contracts';
+import type { MasterDataRecord } from '@nora/contracts';
 import { Trash2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 

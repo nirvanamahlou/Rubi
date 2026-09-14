@@ -1,4 +1,4 @@
-import type { HrRecordDto } from '@rubi/contracts';
+import type { HrRecordDto } from '@nora/contracts';
 import { sectionTabs, type HrSectionId } from './hr.model';
 import { hrGroups, type HrSource } from './hr-navigation';
 

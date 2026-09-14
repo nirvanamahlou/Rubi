@@ -4,7 +4,7 @@ import type {
   MessagingContactV1,
   MessagingConversationV1,
   MessagingMessageV1,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import {
   Forward,
   MessageCircleMore,

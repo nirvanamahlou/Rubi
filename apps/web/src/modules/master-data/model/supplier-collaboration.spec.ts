@@ -3,7 +3,7 @@ import type {
   MasterDataListQuery,
   MasterDataListResponse,
   MasterDataRecord,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import { describe, expect, it, vi } from 'vitest';
 
 import {

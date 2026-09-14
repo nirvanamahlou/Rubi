@@ -2,7 +2,7 @@ import type {
   CustomerConsentChannel,
   CustomerConsentRequest,
   CustomerConsentStatus,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 
 import { CustomersApiError } from '../api/client';
 

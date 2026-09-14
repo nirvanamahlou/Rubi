@@ -454,7 +454,7 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
         label: 'لوگوی بانک',
         type: 'text',
         placeholder: '',
-        hint: 'تصویر از طریق اسناد امن روبی بارگذاری می‌شود.',
+        hint: 'تصویر از طریق اسناد امن نورا بارگذاری می‌شود.',
       },
     ],
     preview: {

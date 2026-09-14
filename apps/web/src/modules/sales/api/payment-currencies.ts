@@ -1,4 +1,4 @@
-import type { MasterDataRecord } from '@rubi/contracts';
+import type { MasterDataRecord } from '@nora/contracts';
 import { masterDataApi } from '@/modules/master-data/api/client';
 
 /** Load the complete active reference list; a partial list is not a fallback. */

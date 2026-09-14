@@ -1,4 +1,6 @@
+import { HrDirectoryService } from '../hr/hr-directory.service';
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
+import { createdDateFilter } from './customer-affairs-date-filter';
 import {
   BadRequestException,
   ConflictException,
@@ -16,15 +18,15 @@ import type {
   CustomerAffairsTicketInput,
   CustomerAffairsTicketView,
   CustomerAffairsTimelineInput,
-} from '@rubi/contracts';
-import { Prisma } from '@rubi/database';
+} from '@nora/contracts';
+import { Prisma } from '@nora/database';
 
 import { CustomerService } from '../customers/customer.service';
 import { DocumentsService } from '../documents/documents.service';
 import { SalesService } from '../sales/sales.service';
 import { NotificationsService } from '../notifications/notifications.service';
-import { HrDirectoryService } from '../hr/hr-directory.service';
 import { ReservationsPublicService } from '../reservations/reservations-public.service';
+import { resolutionPausePatch } from './customer-affairs-sla';
 import {
   canTransitionLead,
   canTransitionTicket,
@@ -232,53 +234,6 @@ export class CustomerAffairsService {
     private readonly hrDirectory: HrDirectoryService,
   ) {}
 
-  async createWorkbenchRequest(
-    input: CustomerAffairsTicketInput,
-    actor: AuthenticatedActor,
-    requestedBranch: string | undefined,
-    idempotencyValue: string | undefined,
-    traceId?: string,
-  ) {
-    const branchId = branchScope(actor, requestedBranch);
-    const recipients = await this.hrDirectory.workbenchFeedbackRecipientUserIds(
-      branchId,
-      this.workbenchUnitTerms(input.executionUnit),
-    );
-    const executionOwnerUserId =
-      input.executionOwnerUserId ??
-      recipients.find((userId) => userId !== actor.userId) ??
-      recipients[0];
-    return this.createTicket(
-      {
-        ...input,
-        ...(executionOwnerUserId ? { executionOwnerUserId } : {}),
-      },
-      actor,
-      branchId,
-      idempotencyValue,
-      traceId,
-    );
-  }
-
-  async workbenchRequests(actor: AuthenticatedActor) {
-    const rows = await this.repository.workbenchRequests(
-      actor.userId,
-      actor.branchIds,
-    );
-    return {
-      data: rows.map((row) => ({
-        id: row.id,
-        trackingNumber: row.trackingNumber,
-        subject: row.subject,
-        destinationUnit: row.executionUnit,
-        status: row.status,
-        priority: row.priority,
-        nextActionAt: row.nextActionAt.toISOString(),
-        updatedAt: row.updatedAt.toISOString(),
-      })),
-    };
-  }
-
   async dashboard(
     actor: AuthenticatedActor,
   ): Promise<{ data: CustomerAffairsDashboard }> {
@@ -313,6 +268,7 @@ export class CustomerAffairsService {
     const pageSize = query.pageSize ?? 25;
     const now = new Date();
     const where: Prisma.CustomerAffairsLeadWhereInput = {
+      ...createdDateFilter(query),
       branchId: { in: branchIds },
       ...(query.stage ? { stage: query.stage } : {}),
       ...(query.priority ? { priority: query.priority } : {}),
@@ -413,7 +369,7 @@ export class CustomerAffairsService {
             message: `${trackingNumber} به شما تخصیص یافت.`,
             entityType: 'customer-affairs-lead',
             entityId: row.id,
-            href: `/customer-affairs?lead=${row.id}`,
+            href: `/customer-affairs?view=leads&lead=${row.id}`,
           });
         await tx.customerAffairsAuditEvent.create({
           data: {
@@ -481,6 +437,18 @@ export class CustomerAffairsService {
       const row = await tx.customerAffairsLead.findUniqueOrThrow({
         where: { id },
       });
+      if (row.assigneeUserId && row.assigneeUserId !== current.assigneeUserId)
+        await this.notifications.createWithinTransaction(tx, {
+          recipientUserIds: [row.assigneeUserId],
+          actorUserId: actor.userId,
+          sourceModule: 'customer-affairs',
+          eventType: 'lead.assigned',
+          title: 'تخصیص پیگیری سرنخ',
+          message: `${row.trackingNumber} به شما تخصیص یافت.`,
+          entityType: 'customer-affairs-lead',
+          entityId: id,
+          href: `/customer-affairs?view=leads&lead=${id}`,
+        });
       await tx.customerAffairsAuditEvent.create({
         data: {
           branchId: current.branchId,
@@ -528,7 +496,14 @@ export class CustomerAffairsService {
       const changed = await tx.customerAffairsLead.updateMany({
         where: { id, version: input.expectedVersion },
         data: {
-          qualification: json(qualification),
+          qualification: json({
+            ...qualification,
+            conversionProbability:
+              input.conversionProbability ??
+              (current.qualification as Record<string, unknown> | null)
+                ?.conversionProbability ??
+              null,
+          }),
           stage:
             qualification.state === 'QUALIFIED' ? 'QUALIFIED' : 'QUALIFYING',
           updatedByUserId: actor.userId,
@@ -622,6 +597,66 @@ export class CustomerAffairsService {
     return this.getLead(result.id, actor);
   }
 
+  async convertLeadCustomer(
+    id: string,
+    input: {
+      firstName: string;
+      lastName: string;
+      nationalId: string;
+      expectedVersion: number;
+    },
+    actor: AuthenticatedActor,
+  ) {
+    await this.repository.transaction(async (tx) => {
+      await tx.$queryRaw(
+        Prisma.sql`SELECT id FROM customer_affairs_leads WHERE id = ${id}::uuid FOR UPDATE`,
+      );
+      const lead = await tx.customerAffairsLead.findUnique({ where: { id } });
+      if (!lead || !actor.branchIds.includes(lead.branchId))
+        throw new NotFoundException();
+      if (lead.customerId) return;
+      if (lead.version !== input.expectedVersion) throw conflict();
+      if (['LOST', 'HANDED_OFF'].includes(lead.stage))
+        throw new BadRequestException('این مرحله قابل تبدیل نیست.');
+      const customer = await this.customers.createPersonWithinTransaction(
+        input,
+        actor,
+        lead.branchId,
+        tx,
+      );
+      await tx.customerAffairsLead.update({
+        where: { id },
+        data: {
+          customerId: customer.id,
+          version: { increment: 1 },
+          updatedByUserId: actor.userId,
+        },
+      });
+      await tx.customerAffairsTimeline.create({
+        data: {
+          leadId: id,
+          type: 'STATUS_CHANGE',
+          outcome: 'CUSTOMER_CREATED',
+          summary: 'پرونده مشتری ایجاد و به سرنخ متصل شد.',
+          actorUserId: actor.userId,
+          documentVersionIds: [],
+        },
+      });
+      await tx.customerAffairsAuditEvent.create({
+        data: {
+          branchId: lead.branchId,
+          actorUserId: actor.userId,
+          entityType: 'LEAD',
+          entityId: id,
+          action: 'CUSTOMER_CONVERTED',
+          version: lead.version + 1,
+          afterSnapshot: { customerId: customer.id },
+        },
+      });
+    });
+    return this.getLead(id, actor);
+  }
+
   async proposeHandoff(
     id: string,
     expectedVersion: number,
@@ -712,7 +747,8 @@ export class CustomerAffairsService {
       if (handoff.status !== 'WAITING_SALES') {
         if (
           handoff.status === input.status &&
-          handoff.salesContractId === (input.salesContractId ?? null)
+          handoff.salesContractId === (input.salesContractId ?? null) &&
+          handoff.responseReason === input.reason
         )
           return handoff.lead;
         throw conflict();
@@ -724,6 +760,10 @@ export class CustomerAffairsService {
         });
       if (input.status === 'ACCEPTED') {
         const contract = await this.sales.detail(input.salesContractId!, actor);
+        if (contract.data.branchId !== handoff.lead.branchId)
+          throw new BadRequestException(
+            'شعبه قرارداد با درخواست مشتری یکسان نیست.',
+          );
         if (
           handoff.lead.customerId &&
           contract.data.customerId !== handoff.lead.customerId
@@ -733,8 +773,8 @@ export class CustomerAffairsService {
             message: 'مشتری قرارداد فروش با سرنخ یکسان نیست.',
           });
       }
-      await tx.customerAffairsHandoff.update({
-        where: { id: handoffId },
+      const response = await tx.customerAffairsHandoff.updateMany({
+        where: { id: handoffId, status: 'WAITING_SALES' },
         data: {
           status: input.status,
           salesContractId:
@@ -746,6 +786,7 @@ export class CustomerAffairsService {
           respondedByUserId: actor.userId,
         },
       });
+      if (!response.count) throw conflict();
       const stage = input.status === 'ACCEPTED' ? 'HANDED_OFF' : 'QUALIFIED';
       const updated = await tx.customerAffairsLead.update({
         where: { id: handoff.leadId },
@@ -764,6 +805,19 @@ export class CustomerAffairsService {
           actorUserId: actor.userId,
           documentVersionIds: [],
         },
+      });
+      await this.notifications.createWithinTransaction(tx, {
+        recipientUserIds: [
+          handoff.lead.assigneeUserId ?? handoff.lead.createdByUserId,
+        ],
+        actorUserId: actor.userId,
+        sourceModule: 'customer-affairs',
+        eventType: 'handoff.responded',
+        title: 'پاسخ فروش به درخواست مشتری',
+        message: `${handoff.lead.trackingNumber}: ${input.status === 'ACCEPTED' ? 'پذیرفته شد' : input.status === 'RETURNED' ? 'برای تکمیل برگشت داده شد' : 'پذیرفته نشد'}.`,
+        entityType: 'customer-affairs-lead',
+        entityId: handoff.leadId,
+        href: `/customer-affairs?view=leads&lead=${handoff.leadId}`,
       });
       await tx.customerAffairsAuditEvent.create({
         data: {
@@ -792,7 +846,11 @@ export class CustomerAffairsService {
     const page = query.page ?? 1;
     const pageSize = query.pageSize ?? 25;
     const where: Prisma.CustomerAffairsTicketWhereInput = {
+      ...createdDateFilter(query),
       branchId: { in: branchIds },
+      ...(query.sourceSite
+        ? { siteOrigin: { site: { code: query.sourceSite } } }
+        : {}),
       ...(query.status ? { status: query.status } : {}),
       ...(query.priority ? { priority: query.priority } : {}),
       ...(query.overdueOnly
@@ -829,10 +887,21 @@ export class CustomerAffairsService {
     requestedBranch: string | undefined,
     idempotencyValue: string | undefined,
     traceId?: string,
+    siteOrigin?: { siteId: string; externalId: string },
   ) {
     const branchId = branchScope(actor, requestedBranch);
     const key = requiredIdempotencyKey(idempotencyValue);
-    const hash = fingerprint(input);
+    const hash = fingerprint(siteOrigin ? { input, siteOrigin } : input);
+    if (siteOrigin) {
+      const existing = await this.repository.findSiteTicket(
+        siteOrigin.siteId,
+        siteOrigin.externalId,
+      );
+      if (existing) {
+        if (existing.fingerprint !== hash) throw conflict();
+        return this.getTicket(existing.ticketId, actor);
+      }
+    }
     const prior = await this.repository.findTicketCommand(actor.userId, key);
     if (prior) {
       if (prior.requestFingerprint !== hash) throw conflict();
@@ -862,6 +931,10 @@ export class CustomerAffairsService {
             updatedByUserId: actor.userId,
           },
         });
+        if (siteOrigin)
+          await tx.customerAffairsSiteTicket.create({
+            data: { ...siteOrigin, ticketId: row.id, fingerprint: hash },
+          });
         await tx.customerAffairsTimeline.create({
           data: {
             ticketId: row.id,
@@ -883,11 +956,8 @@ export class CustomerAffairsService {
         });
         await this.notifications.createWithinTransaction(tx, {
           recipientUserIds: [
-            ...new Set(
-              [owner, input.executionOwnerUserId].filter(
-                (userId): userId is string => Boolean(userId),
-              ),
-            ),
+            owner,
+            ...(row.executionOwnerUserId ? [row.executionOwnerUserId] : []),
           ],
           actorUserId: actor.userId,
           sourceModule: 'customer-affairs',
@@ -896,7 +966,7 @@ export class CustomerAffairsService {
           message: `${trackingNumber} به شما تخصیص یافت.`,
           entityType: 'customer-affairs-ticket',
           entityId: row.id,
-          href: `/customer-affairs?ticket=${row.id}`,
+          href: `/customer-affairs?view=tickets&ticket=${row.id}`,
         });
         await tx.customerAffairsAuditEvent.create({
           data: {
@@ -918,6 +988,17 @@ export class CustomerAffairsService {
         error instanceof Prisma.PrismaClientKnownRequestError &&
         error.code === 'P2002'
       ) {
+        // The site identity survives rotation of its bound IAM account.
+        if (siteOrigin) {
+          const origin = await this.repository.findSiteTicket(
+            siteOrigin.siteId,
+            siteOrigin.externalId,
+          );
+          if (origin) {
+            if (origin.fingerprint !== hash) throw conflict();
+            return this.getTicket(origin.ticketId, actor);
+          }
+        }
         const replay = await this.repository.findTicketCommand(
           actor.userId,
           key,
@@ -962,6 +1043,26 @@ export class CustomerAffairsService {
       const row = await tx.customerAffairsTicket.findUniqueOrThrow({
         where: { id },
       });
+      const recipients = new Set<string>();
+      if (row.customerOwnerUserId !== current.customerOwnerUserId)
+        recipients.add(row.customerOwnerUserId);
+      if (
+        row.executionOwnerUserId &&
+        row.executionOwnerUserId !== current.executionOwnerUserId
+      )
+        recipients.add(row.executionOwnerUserId);
+      if (recipients.size)
+        await this.notifications.createWithinTransaction(tx, {
+          recipientUserIds: [...recipients],
+          actorUserId: actor.userId,
+          sourceModule: 'customer-affairs',
+          eventType: 'ticket.assigned',
+          title: 'تخصیص رسیدگی تیکت',
+          message: `${row.trackingNumber} برای پیگیری به شما تخصیص یافت.`,
+          entityType: 'customer-affairs-ticket',
+          entityId: id,
+          href: `/customer-affairs?view=tickets&ticket=${id}`,
+        });
       await tx.customerAffairsAuditEvent.create({
         data: {
           branchId: current.branchId,
@@ -1028,6 +1129,7 @@ export class CustomerAffairsService {
         where: { id, version: input.expectedVersion },
         data: {
           status: input.status,
+          ...resolutionPausePatch(current, input.status, new Date()),
           updatedByUserId: actor.userId,
           version: { increment: 1 },
         },
@@ -1210,21 +1312,27 @@ export class CustomerAffairsService {
         throw new ForbiddenException(
           'این ارجاع به کاربر دیگری تخصیص یافته است.',
         );
-      if (['DONE', 'CANCELLED'].includes(current.status)) {
-        if (
-          current.status === input.status &&
-          current.responseSummary === input.responseSummary
-        )
-          return current;
-        throw conflict();
-      }
-      const updated = await tx.customerAffairsReferral.update({
-        where: { id },
+      if (
+        current.status === input.status &&
+        current.responseSummary === input.responseSummary
+      )
+        return current;
+      if (['DONE', 'CANCELLED'].includes(current.status)) throw conflict();
+      const response = await tx.customerAffairsReferral.updateMany({
+        where: {
+          id,
+          status: current.status,
+          responseSummary: current.responseSummary,
+        },
         data: {
           status: input.status,
           responseSummary: input.responseSummary,
           respondedByUserId: actor.userId,
         },
+      });
+      if (!response.count) throw conflict();
+      const updated = await tx.customerAffairsReferral.findUniqueOrThrow({
+        where: { id },
       });
       await tx.customerAffairsTimeline.create({
         data: {
@@ -1245,7 +1353,7 @@ export class CustomerAffairsService {
         message: input.responseSummary,
         entityType: 'customer-affairs-referral',
         entityId: id,
-        href: `/customer-affairs?ticket=${current.ticketId}`,
+        href: `/customer-affairs?view=tickets&ticket=${current.ticketId}`,
       });
       await tx.customerAffairsAuditEvent.create({
         data: {
@@ -1309,10 +1417,16 @@ export class CustomerAffairsService {
         data.escalationLevel =
           input.level ?? Math.min(3, (current.escalationLevel ?? 0) + 1);
       if (action === 'RESOLVE') {
+        const pause = resolutionPausePatch(current, 'RESOLVED', now);
+        Object.assign(data, pause);
         data.status = 'RESOLVED';
         data.resolvedAt = now;
         data.resolutionOutcome = input.resolutionOutcome ?? null;
-        data.resolutionBreachedAt = now > current.resolutionDueAt ? now : null;
+        data.resolutionBreachedAt =
+          current.resolutionBreachedAt ??
+          (now > (pause.resolutionDueAt ?? current.resolutionDueAt)
+            ? now
+            : null);
       }
       if (action === 'CLOSE') {
         data.status = 'CLOSED';
@@ -1357,7 +1471,7 @@ export class CustomerAffairsService {
           message: `${current.trackingNumber}: ${input.reason}`,
           entityType: 'customer-affairs-ticket',
           entityId: id,
-          href: `/customer-affairs?ticket=${id}`,
+          href: `/customer-affairs?view=tickets&ticket=${id}`,
         });
       await tx.customerAffairsAuditEvent.create({
         data: {
@@ -1483,7 +1597,7 @@ export class CustomerAffairsService {
             message: `${current.ticket.trackingNumber} نیازمند پیگیری سرپرست است.`,
             entityType: 'customer-affairs-corrective-action',
             entityId: action.id,
-            href: `/customer-affairs?ticket=${current.ticketId}`,
+            href: `/customer-affairs?view=tickets&ticket=${current.ticketId}`,
           });
         }
       }
@@ -1609,6 +1723,13 @@ export class CustomerAffairsService {
   } {
     return {
       ...ticketInput(row),
+      sourceSite: row.siteOrigin
+        ? {
+            code: row.siteOrigin.site.code,
+            domain: row.siteOrigin.site.domain,
+            externalId: row.siteOrigin.externalId,
+          }
+        : null,
       id: row.id,
       trackingNumber: row.trackingNumber,
       branchId: row.branchId,
@@ -1618,6 +1739,8 @@ export class CustomerAffairsService {
       resolutionDueAt: row.resolutionDueAt.toISOString(),
       firstRespondedAt: row.firstRespondedAt?.toISOString() ?? null,
       resolvedAt: row.resolvedAt?.toISOString() ?? null,
+      pausedAt: row.pausedAt?.toISOString() ?? null,
+      pausedMinutes: row.pausedMinutes,
       firstResponseBreachedAt:
         row.firstResponseBreachedAt?.toISOString() ?? null,
       resolutionBreachedAt: row.resolutionBreachedAt?.toISOString() ?? null,
@@ -1755,19 +1878,6 @@ export class CustomerAffairsService {
       );
   }
 
-  private workbenchUnitTerms(unit: string | null | undefined): string[] {
-    const normalized = unit?.trim() ?? '';
-    const terms: Readonly<Record<string, string[]>> = {
-      مالی: ['مالی', 'حسابداری', 'خزانه'],
-      رزرواسیون: ['رزرواسیون', 'رزرو'],
-      فروش: ['فروش'],
-      ویزا: ['ویزا'],
-      'منابع انسانی': ['منابع انسانی', 'سرمایه انسانی', 'اداری'],
-      مدیریت: ['مدیریت', 'مدیر'],
-    };
-    return terms[normalized] ?? (normalized ? [normalized] : []);
-  }
-
   private ticketData(input: CustomerAffairsTicketInput) {
     return {
       subject: input.subject.trim(),
@@ -1862,5 +1972,63 @@ export class CustomerAffairsService {
         message: 'برای این نوع مرجع، اعتبارسنج عمومی و امن فعال نیست.',
       });
     }
+  }
+
+  async createWorkbenchRequest(
+    input: CustomerAffairsTicketInput,
+    actor: AuthenticatedActor,
+    requestedBranch: string | undefined,
+    idempotencyValue: string | undefined,
+    traceId?: string,
+  ) {
+    const branchId = branchScope(actor, requestedBranch);
+    const recipients = await this.hrDirectory.workbenchFeedbackRecipientUserIds(
+      branchId,
+      this.workbenchUnitTerms(input.executionUnit),
+    );
+    const executionOwnerUserId =
+      input.executionOwnerUserId ??
+      recipients.find((userId) => userId !== actor.userId) ??
+      recipients[0];
+    return this.createTicket(
+      {
+        ...input,
+        ...(executionOwnerUserId ? { executionOwnerUserId } : {}),
+      },
+      actor,
+      branchId,
+      idempotencyValue,
+      traceId,
+    );
+  }
+  async workbenchRequests(actor: AuthenticatedActor) {
+    const rows = await this.repository.workbenchRequests(
+      actor.userId,
+      actor.branchIds,
+    );
+    return {
+      data: rows.map((row) => ({
+        id: row.id,
+        trackingNumber: row.trackingNumber,
+        subject: row.subject,
+        destinationUnit: row.executionUnit,
+        status: row.status,
+        priority: row.priority,
+        nextActionAt: row.nextActionAt.toISOString(),
+        updatedAt: row.updatedAt.toISOString(),
+      })),
+    };
+  }
+  private workbenchUnitTerms(unit: string | null | undefined): string[] {
+    const normalized = unit?.trim() ?? '';
+    const terms: Readonly<Record<string, string[]>> = {
+      مالی: ['مالی', 'حسابداری', 'خزانه'],
+      رزرواسیون: ['رزرواسیون', 'رزرو'],
+      فروش: ['فروش'],
+      ویزا: ['ویزا'],
+      'منابع انسانی': ['منابع انسانی', 'سرمایه انسانی', 'اداری'],
+      مدیریت: ['مدیریت', 'مدیر'],
+    };
+    return terms[normalized] ?? (normalized ? [normalized] : []);
   }
 }

@@ -1,6 +1,6 @@
 'use client';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { B2bAgencyProfileDetailsV1 } from '@rubi/contracts';
+import type { B2bAgencyProfileDetailsV1 } from '@nora/contracts';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/form-controls';
 import { agencyClient } from '../api/agency-client';

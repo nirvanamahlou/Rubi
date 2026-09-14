@@ -15,7 +15,7 @@ import type {
   FinanceSettlementAccountV1,
   SupplierPurchaseGateV1,
   TravelDeliveryAuthorizationV1,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
 import {

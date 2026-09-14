@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { DocumentOptionsResponseV1 } from '@rubi/contracts';
+import type { DocumentOptionsResponseV1 } from '@nora/contracts';
 import { printFixture } from './contract-print.fixture';
 import {
   paymentDocumentQuery,

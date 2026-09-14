@@ -2,7 +2,7 @@ import type {
   B2bCrmConnectionsV1,
   B2bCrmSalesContractV1,
   B2bCrmSalesPaymentV1,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 
 export interface ConnectedFinanceRow {
   id: string;

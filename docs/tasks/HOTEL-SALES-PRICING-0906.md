@@ -19,7 +19,7 @@ Final gates:
 
 - All 15 lint/typecheck tasks; 733 Web tests, 883 API tests (81 optional cases
   skipped in the full run), 38 Contracts tests, 71 Database tests passed.
-- 37 migrations passed on fresh rubi_combined_pricing_test_0906. Seed twice
+- 37 migrations passed on fresh nora_combined_pricing_test_0906. Seed twice
   passed with 86 permissions. One earlier seed attempt under concurrent
   test/build load timed out; the independent rerun succeeded without altering
   seed behavior or running it on the operational database.
@@ -27,14 +27,14 @@ Final gates:
   reservation purchase/arrangement persistence, immutable snapshot, idempotency,
   branch scope and concurrent ticket oversell protection.
 - API build and direct Web production build (36 routes) passed.
-- Fresh backup restored to rubi_hotel_integration_upgrade_0906 and the pending
+- Fresh backup restored to nora_hotel_integration_upgrade_0906 and the pending
   migration was applied successfully there. Operational rollout then took
   another backup and applied only 20260906100000_hotel_service_pricing. All
   historical checksums and existing customer/user/contract/intake/arrangement/
   capacity-allocation row counts remained unchanged.
 - Backups retained locally, ignored by Git:
-  tmp/rubi-before-pricing-integration-rehearsal-0906.dump and
-  tmp/rubi-before-pricing-integration-live-0906.dump, each 660386 bytes.
+  tmp/nora-before-pricing-integration-rehearsal-0906.dump and
+  tmp/nora-before-pricing-integration-live-0906.dump, each 660386 bytes.
   Earlier Web output remains in tmp/hotel-pricing-integrated-web-before-0906.
 - Combined Web3100 and API4000 are active. HTTP health and login redirect,
   the new pricing chunk, CORS credentials/preflight and 401 denial of an
@@ -76,7 +76,7 @@ until that versioned public cost bridge and Procurement approval exist.
   pricing panel/review tests. Initial unconstrained parallel run exceeded timing
   limits in unrelated calendar/HR tests; the full bounded Web rerun passed.
 - Prisma generated and all 35 migrations deployed to fresh
-  rubi_pricing_test_0906. Seed ran twice (85 permissions). The focused real
+  nora_pricing_test_0906. Seed ran twice (85 permissions). The focused real
   PostgreSQL/domain suite passed 37 tests, including permission/branch rejection,
   immutable snapshots, repeated idempotent requests, stale version rejection
   and concurrent single-winner updates. Test data was isolated, not real travelers.
@@ -84,7 +84,7 @@ until that versioned public cost bridge and Procurement approval exist.
   No authenticated browser QA or real-contract/purchase creation is claimed.
 
 Operational preflight refused migration deployment before any schema mutation:
-local rubi already contains 20260906095000_ticket_offer_capacity_allocations
+local nora already contains 20260906095000_ticket_offer_capacity_allocations
 and 20260906113000_reservation_arrangements, absent from this branch. Those
 belong to codex/pc-a-sales-contracts (6f827d1 and da2e5fe; tip 3d3095e).
 Both touch overlapping Sales/Reservations contracts and runtime. Owner-aware
@@ -101,5 +101,5 @@ ramtin_hotel_purchase_local. No branch grant or shared role was altered. Other
 user-role links and shared-role permission links were checked unchanged inside
 the transaction. An audit record explicitly identifies user-authorized offline
 maintenance, not a fabricated authenticated actor.
-Backup: tmp/rubi-before-ramtin-hotel-permission-0906.dump (659987 bytes, ignored,
+Backup: tmp/nora-before-ramtin-hotel-permission-0906.dump (659987 bytes, ignored,
 local only). The feature endpoint is not live until the integration gate is solved.

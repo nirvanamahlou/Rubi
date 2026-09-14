@@ -4,7 +4,7 @@ import {
   moneyUnits,
   resolveSalesPrice,
   type SalesServicePricingV1,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import { Button } from '@/components/ui/button';
 import {
   SalesCurrencySelect,

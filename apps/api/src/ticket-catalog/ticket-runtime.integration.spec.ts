@@ -4,8 +4,8 @@ import type {
   AuthenticatedActor,
   SalesReservationRequestV1,
   TicketOfferCreateV1,
-} from '@rubi/contracts';
-import { createDatabaseClient } from '@rubi/database';
+} from '@nora/contracts';
+import { createDatabaseClient } from '@nora/database';
 import type { DatabaseService } from '../database/database.service';
 import { ReservationsPublicService } from '../reservations/reservations-public.service';
 import {

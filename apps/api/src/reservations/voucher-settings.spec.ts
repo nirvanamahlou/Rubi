@@ -4,7 +4,7 @@ import {
   voucherNumberKeys,
   voucherFlagKeys,
   type VoucherSettingsV1,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import { validateVoucherSettings } from './voucher-settings';
 import {
   initialTravelWorkflow,

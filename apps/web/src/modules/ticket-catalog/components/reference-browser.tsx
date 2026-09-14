@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import type { MasterDataRecord } from '@rubi/contracts';
+import type { MasterDataRecord } from '@nora/contracts';
 import {
   Alert,
   Badge,

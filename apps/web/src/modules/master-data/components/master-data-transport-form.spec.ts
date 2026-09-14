@@ -3,7 +3,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import {
   MASTER_TRANSPORT_FORM_RESOURCES,
   type MasterDataRecord,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/components/ui/overlays', () => {

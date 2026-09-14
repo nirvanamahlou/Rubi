@@ -12,7 +12,7 @@ import type {
   MasterDataResource,
   MasterDataStatus,
   MasterTravelServicesSummary,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import {
   ArrowRight,
   CheckCircle2,

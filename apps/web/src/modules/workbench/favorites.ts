@@ -1,4 +1,4 @@
-import type { DocumentListItemV1 } from '@rubi/contracts';
+import type { DocumentListItemV1 } from '@nora/contracts';
 import { documentsApi } from '@/modules/documents/api/client';
 
 /** Only public list results are eligible; a stored ID never grants access. */

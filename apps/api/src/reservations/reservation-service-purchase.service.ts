@@ -12,8 +12,8 @@ import {
   type AuthenticatedActor,
   type ReservationServicePurchaseInputV1,
   type SalesReservationRequestV1,
-} from '@rubi/contracts';
-import { Prisma } from '@rubi/database';
+} from '@nora/contracts';
+import { Prisma } from '@nora/database';
 import { DatabaseService } from '../database/database.service';
 import { MasterTravelDirectory } from '../master-data/master-travel-directory';
 

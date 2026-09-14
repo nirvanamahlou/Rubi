@@ -1,5 +1,5 @@
-import type { AuthenticatedActor } from '@rubi/contracts';
-import { UserStatus } from '@rubi/database';
+import type { AuthenticatedActor } from '@nora/contracts';
+import { UserStatus } from '@nora/database';
 import { describe, expect, it, vi } from 'vitest';
 
 import type { DatabaseService } from '../database/database.service';

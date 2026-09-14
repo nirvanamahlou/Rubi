@@ -16,8 +16,8 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { createHash } from 'node:crypto';
-import type { AuthenticatedActor } from '@rubi/contracts';
-import type { Prisma } from '@rubi/database';
+import type { AuthenticatedActor } from '@nora/contracts';
+import type { Prisma } from '@nora/database';
 import { DatabaseService } from '../database/database.service';
 import { AuthGuard } from '../iam/auth.guard';
 import { IamModule } from '../iam/iam.module';

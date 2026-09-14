@@ -43,7 +43,7 @@ describe('B2B module boundaries', () => {
     expect(crmConnections).toContain('MasterOrganizationDirectory');
     expect(crmConnections).toContain('FINANCE_PARTY_EXPOSURE_PORT');
     expect(crmConnections).not.toMatch(
-      /DatabaseService|@rubi\/database|\.repository|Repository/,
+      /DatabaseService|@nora\/database|\.repository|Repository/,
     );
   });
 

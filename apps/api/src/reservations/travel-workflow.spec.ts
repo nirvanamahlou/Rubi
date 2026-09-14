@@ -6,7 +6,7 @@ import {
 import type {
   TravelWorkflowCommandV1,
   TravelWorkflowStateV1,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 const command = (
   state: TravelWorkflowStateV1,
   action: TravelWorkflowCommandV1['action'],

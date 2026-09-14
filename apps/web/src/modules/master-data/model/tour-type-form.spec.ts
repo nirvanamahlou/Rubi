@@ -1,4 +1,4 @@
-import type { MasterDataRecord } from '@rubi/contracts';
+import type { MasterDataRecord } from '@nora/contracts';
 import { describe, expect, it } from 'vitest';
 import {
   tourTypeFormValues,

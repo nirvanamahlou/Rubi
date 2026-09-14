@@ -6,7 +6,7 @@ import {
   type INestApplication,
 } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import type { AuthenticatedActor } from '@rubi/contracts';
+import type { AuthenticatedActor } from '@nora/contracts';
 import request from 'supertest';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 

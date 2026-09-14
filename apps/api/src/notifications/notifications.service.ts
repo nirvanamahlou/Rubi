@@ -8,7 +8,7 @@ import type {
   NotificationItemV1,
   NotificationListResponseV1,
   NotificationReadResponseV1,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 
 import {
   type NotificationRow,

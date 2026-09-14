@@ -17,7 +17,7 @@ import {
   B2B_DOSSIER_SECTIONS,
   type B2bDossierSection,
   type B2bOrganizationUserInput,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 export class SaveB2bOrganizationUserDto implements B2bOrganizationUserInput {
   @IsUUID() branchId!: string;
   @IsString() @MinLength(2) @MaxLength(120) roleName!: string;

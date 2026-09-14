@@ -209,8 +209,8 @@ export interface AutomaticHrHistoryEvent {
   eventId?: string;
 }
 
-const previewDatasetStorageKey = 'rubi.hr.preview-dataset-overrides.v1';
-const previewEmployeeStorageKey = 'rubi.hr.preview-employees.v1';
+const previewDatasetStorageKey = 'nora.hr.preview-dataset-overrides.v1';
+const previewEmployeeStorageKey = 'nora.hr.preview-employees.v1';
 
 export function parsePreviewEmployees(
   serialized: string | null,

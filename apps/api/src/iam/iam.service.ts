@@ -22,8 +22,8 @@ import type {
   IamPermissionCode,
   LoginResponse,
   MessagingContactV1,
-} from '@rubi/contracts';
-import { AuditOutcome, SessionStatus, UserStatus } from '@rubi/database';
+} from '@nora/contracts';
+import { AuditOutcome, SessionStatus, UserStatus } from '@nora/database';
 import { hash, verify } from 'argon2';
 
 import { DatabaseService } from '../database/database.service';

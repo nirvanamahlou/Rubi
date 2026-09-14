@@ -50,7 +50,7 @@ export async function renderTicketPdf(html: string): Promise<Buffer> {
       Buffer.byteLength(document) > 10_000_000
     )
       throw new Error('PDF_INPUT_INVALID');
-    directory = await mkdtemp(join(tmpdir(), 'rubi-ticket-pdf-'));
+    directory = await mkdtemp(join(tmpdir(), 'nora-ticket-pdf-'));
     const input = join(directory, 'ticket.html');
     const output = join(directory, 'ticket.pdf');
     await writeFile(input, document, { mode: 0o600 });

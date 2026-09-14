@@ -1,4 +1,4 @@
-import type { MasterDataRecord, MasterDataResource } from '@rubi/contracts';
+import type { MasterDataRecord, MasterDataResource } from '@nora/contracts';
 
 import type { MasterDataResourceKey } from './catalog';
 

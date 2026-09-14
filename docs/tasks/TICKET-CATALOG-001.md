@@ -24,7 +24,7 @@ Schema، Migration، Seed، تنظیم Database، dependency/lockfile/workspace�
 
 ## مبنای قراردادهای قابل مصرف
 
-Master Data v4 در develop، `MasterDataRecord` و `masterDataEndpoints` را برای airlines/currencies/countries/cities منتشر کرده است. مصرف فقط از `@rubi/contracts` و HTTP GET با `credentials: include` است؛ permission موجود `master_data.read` را Backend مالک بررسی می‌کند. Adapter هیچ mutation، تغییر شعبه یا پارامتر Legal Entity ندارد.
+Master Data v4 در develop، `MasterDataRecord` و `masterDataEndpoints` را برای airlines/currencies/countries/cities منتشر کرده است. مصرف فقط از `@nora/contracts` و HTTP GET با `credentials: include` است؛ permission موجود `master_data.read` را Backend مالک بررسی می‌کند. Adapter هیچ mutation، تغییر شعبه یا پارامتر Legal Entity ندارد.
 
 فرودگاه، هواپیما، کلاس پروازی و بار در این develop عمومی نیستند. UI آن‌ها را غیرفعال و «منتظر API» نمایش می‌دهد، کشور/شهر را جای فرودگاه نمی‌نشاند و شناسه ساختگی تولید نمی‌کند.
 
@@ -87,7 +87,7 @@ Master Data v4 در develop، `MasterDataRecord` و `masterDataEndpoints` را �
 ## کیفیت و شواهد
 
 - Frozen install در Worktree مستقل؛ هیچ تغییر package/lockfile.
-- `@rubi/contracts`، `@rubi/config` و `@rubi/database` محلی build شدند. Prisma Client فقط برای compile با URL غیرمتصل `postgresql://localhost:1/ticket_catalog_compile_only` تولید شد؛ هیچ اتصال، Migration، Seed یا کلید جدید وجود ندارد.
+- `@nora/contracts`، `@nora/config` و `@nora/database` محلی build شدند. Prisma Client فقط برای compile با URL غیرمتصل `postgresql://localhost:1/ticket_catalog_compile_only` تولید شد؛ هیچ اتصال، Migration، Seed یا کلید جدید وجود ندارد.
 - Web و API: lint، typecheck و production build پاس.
 - Dedicated Web: **58 tests passed** (domain, preview/query, public adapter, real React SSR form/workspace/state rendering).
 - Dedicated API: **38 tests passed** (domain + fail-closed permission/branch port).
@@ -102,16 +102,16 @@ Master Data v4 در develop، `MasterDataRecord` و `masterDataEndpoints` را �
 Commands (Node 24 on PATH):
 
 ```powershell
-pnpm --filter @rubi/web exec vitest run --config src/modules/ticket-catalog/vitest.config.mts src/modules/ticket-catalog
-pnpm --filter @rubi/api exec vitest run src/ticket-catalog
-pnpm --filter @rubi/web exec vitest run --config src/modules/ticket-catalog/vitest.config.mts
-pnpm --filter @rubi/api test
-pnpm --filter @rubi/web lint
-pnpm --filter @rubi/api lint
-pnpm --filter @rubi/web typecheck
-pnpm --filter @rubi/api typecheck
-pnpm --filter @rubi/web build
-pnpm --filter @rubi/api build
+pnpm --filter @nora/web exec vitest run --config src/modules/ticket-catalog/vitest.config.mts src/modules/ticket-catalog
+pnpm --filter @nora/api exec vitest run src/ticket-catalog
+pnpm --filter @nora/web exec vitest run --config src/modules/ticket-catalog/vitest.config.mts
+pnpm --filter @nora/api test
+pnpm --filter @nora/web lint
+pnpm --filter @nora/api lint
+pnpm --filter @nora/web typecheck
+pnpm --filter @nora/api typecheck
+pnpm --filter @nora/web build
+pnpm --filter @nora/api build
 ```
 
 ## لوکال و تحویل
@@ -132,7 +132,7 @@ User explicitly requested fixing the Preview/server connection. Reserved additio
 
 Connection follow-up outcome: RESOLVED. The current build uses NEXT_PUBLIC_API_BASE_URL=/api/v1. Local process 2072 listens on 3211 (proxy), and task-only Next process 24392 listens on 3212. Existing 3100/4000 processes remain 3340/15952, unchanged.
 
-Validation: five node:test transport checks passed (routing/query, method/body/Origin, status/Set-Cookie fidelity, foreign-origin/DNS-rebinding rejection, unavailable upstream). Full Web lint, typecheck and production build passed. Live smoke through 3211: health 200, login page 200, protected Master Data 401, protected ticket route 307, empty login body 400 from existing server validation, foreign origin rejected 403. Served login JavaScript contains the relative /api/v1 base and no old direct localhost:4000 API URL. No real credential or synthetic authentication token was submitted to Rubi. Successful account login still requires the user's existing credentials; this is connection verification, not an authenticated visual test.
+Validation: five node:test transport checks passed (routing/query, method/body/Origin, status/Set-Cookie fidelity, foreign-origin/DNS-rebinding rejection, unavailable upstream). Full Web lint, typecheck and production build passed. Live smoke through 3211: health 200, login page 200, protected Master Data 401, protected ticket route 307, empty login body 400 from existing server validation, foreign origin rejected 403. Served login JavaScript contains the relative /api/v1 base and no old direct localhost:4000 API URL. No real credential or synthetic authentication token was submitted to Nora. Successful account login still requires the user's existing credentials; this is connection verification, not an authenticated visual test.
 
 Reproduction (Node 24 on PATH, run in apps/web):
 
@@ -142,7 +142,7 @@ pnpm build
 # Separate background processes; both loopback only, do not stop 3100 or 4000:
 node node_modules/next/dist/bin/next start --hostname 127.0.0.1 --port 3212
 node src/modules/ticket-catalog/preview/server.mjs
-# Isolated transport fixture tests (no connection to Rubi DB or API):
+# Isolated transport fixture tests (no connection to Nora DB or API):
 node --test src/modules/ticket-catalog/preview/server.check.mjs
 ```
 

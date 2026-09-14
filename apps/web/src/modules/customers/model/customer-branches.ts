@@ -1,4 +1,4 @@
-import type { BranchReference } from '@rubi/contracts';
+import type { BranchReference } from '@nora/contracts';
 
 export function customerBranchOptions(
   allowedIds: readonly string[],

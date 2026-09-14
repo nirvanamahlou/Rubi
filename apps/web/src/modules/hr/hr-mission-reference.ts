@@ -1,4 +1,4 @@
-import type { HrBootstrapDto, HrRecordDto } from '@rubi/contracts';
+import type { HrBootstrapDto, HrRecordDto } from '@nora/contracts';
 import { recordValue } from './hr-form-model';
 
 export const isMissionExpense = (section: string, tab: string) =>

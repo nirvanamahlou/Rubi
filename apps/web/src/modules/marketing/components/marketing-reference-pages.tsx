@@ -40,7 +40,7 @@ import {
 import type {
   DocumentDetailV1,
   DocumentOptionsResponseV1,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
 
@@ -4895,7 +4895,7 @@ function ChannelSettings({ onNotice }: { onNotice: NoticeHandler }) {
       'نیازمند اقدام',
     ],
     ['push', 'پوش‌نوتیفیکیشن', 'Firebase · هر دو سایت', true, 'سالم'],
-    ['internal', 'اعلان داخل سایت', 'Rubi Notification Service', true, 'سالم'],
+    ['internal', 'اعلان داخل سایت', 'Nora Notification Service', true, 'سالم'],
   ] as const;
   const [enabled, setEnabled] = useState<Record<string, boolean>>(
     Object.fromEntries(services.map(([id, , , initial]) => [id, initial])),

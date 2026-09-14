@@ -291,7 +291,7 @@ export function buildContextualHrFields(
 }
 
 const hrAttachmentPrefix = 'hr-attachment://';
-const hrAttachmentStoragePrefix = 'rubi.hr.attachment.';
+const hrAttachmentStoragePrefix = 'nora.hr.attachment.';
 
 export interface HrAttachmentReference {
   id: string;

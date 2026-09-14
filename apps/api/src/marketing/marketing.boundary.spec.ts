@@ -18,7 +18,7 @@ describe('marketing Phase A architecture boundary', () => {
     const source = ownedFiles
       .map((file) => readFileSync(join(marketingRoot, file), 'utf8'))
       .join('\n');
-    expect(source).not.toMatch(/@rubi\/database|PrismaClient|\.repository/);
+    expect(source).not.toMatch(/@nora\/database|PrismaClient|\.repository/);
     expect(source).not.toMatch(
       /src\/(customers|customer-affairs|sales|finance|master-data|documents|integrations)/,
     );

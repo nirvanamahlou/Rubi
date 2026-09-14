@@ -7,7 +7,7 @@ import {
   salesContractFlights,
   type SalesContractOutputV1,
   type VoucherSettingsV1,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import { contractPendingQrHtml } from './contract-pending-qr';
 const amendmentLabels: Record<string, string> = {
   country: 'کشور',

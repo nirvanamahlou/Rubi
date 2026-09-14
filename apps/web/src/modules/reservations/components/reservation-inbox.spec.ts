@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { ReservationIntakeV1 } from '@rubi/contracts';
+import type { ReservationIntakeV1 } from '@nora/contracts';
 import { initialDraft } from './reservation-inbox';
 
 const request: ReservationIntakeV1 = {

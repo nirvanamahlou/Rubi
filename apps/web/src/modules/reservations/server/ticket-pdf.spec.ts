@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
   ReservationIntakeV1,
   TravelWorkflowStateV1,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 
 const renderer = vi.hoisted(() =>
   vi.fn().mockResolvedValue(Buffer.from('%PDF-1.4 synthetic')),

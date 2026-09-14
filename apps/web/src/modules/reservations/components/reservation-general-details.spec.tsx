@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { CustomerDetail } from '@rubi/contracts';
+import type { CustomerDetail } from '@nora/contracts';
 import type { RequestView } from '../foundation/model';
 import type { ReservationFormIntake } from '../model/reservation-form';
 import {

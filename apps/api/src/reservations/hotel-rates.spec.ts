@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { randomUUID } from 'node:crypto';
-import type { AuthenticatedActor } from '@rubi/contracts';
+import type { AuthenticatedActor } from '@nora/contracts';
 import type { DatabaseService } from '../database/database.service';
 import type { MasterTravelDirectory } from '../master-data/master-travel-directory';
 import { HotelRatesService } from './hotel-rates.module';

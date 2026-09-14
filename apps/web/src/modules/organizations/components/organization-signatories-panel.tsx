@@ -7,7 +7,7 @@ import {
   type B2bSignatoryV1,
   type DocumentListItemV1,
   type IamPermissionCode,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import { FileSignature, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input, Textarea } from '@/components/ui/form-controls';
