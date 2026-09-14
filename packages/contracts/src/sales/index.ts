@@ -284,6 +284,7 @@ export interface SalesContractDetail extends SalesContractSummary {
     createdByName?: string | null;
     createdAt: string;
     financeConfirmedAt: string | null;
+    financeDecisionReason?: string | null;
   })[];
   fxSnapshot: SalesContractCreateRequest['fxSnapshot'];
   pricingNotes: string | null;

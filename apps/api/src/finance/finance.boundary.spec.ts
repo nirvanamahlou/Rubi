@@ -11,7 +11,7 @@ function productionSources() {
 }
 
 describe('finance foundation boundary', () => {
-  it('contains domain/application ports and a read-only public inbox without persistence', () => {
+  it('contains domain/application ports and scoped finance inbox commands', () => {
     const source = productionSources();
     expect(source).toContain('FinanceCommandPort');
     expect(source).toContain('FinanceIntegrationPort');
@@ -20,7 +20,14 @@ describe('finance foundation boundary', () => {
       /@rubi\/database|PrismaClient|\.\.\/customers|\.\.\/master-data/,
     );
     expect(source).toContain("@Get('inbox')");
-    expect(source).not.toMatch(/@Post|@Patch|@Put|@Delete/);
+    expect(source).toContain("@Post('settlement-accounts')");
+    expect(source).toContain("@Post('inbox/sales/:paymentId/decision')");
+    expect(source).toContain(
+      "@Post('inbox/reservations/:intakeId/purchases/:purchaseId/payments')",
+    );
+    expect(source).toContain("@RequirePermissions('finance.receipt.approve')");
+    expect(source).toContain("@RequirePermissions('finance.payment.create')");
+    expect(source).not.toMatch(/@Patch|@Put|@Delete/);
   });
 
   it('does not add a finance repository or persistence adapter', () => {

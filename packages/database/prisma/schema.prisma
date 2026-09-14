@@ -35,6 +35,8 @@ model User {
   reservationManifestExports        ReservationManifestExport[]
   reservationServicePurchases       ReservationServicePurchase[]
   financeSupplierPaymentRevisions   FinanceSupplierPaymentRevision[]
+  financeSettlementAccountsCreated  FinanceSettlementAccount[]        @relation("FinanceSettlementAccountCreator")
+  salesPaymentsFinanceReviewed      SalesContractPaymentEntry[]       @relation("SalesPaymentFinanceReviewer")
   ownedTravelIntakes                ReservationIntake[]               @relation("TravelSalesOwner")
   travelWorkflowRevisions           ReservationWorkflowRevision[]
   travelDeliveryRevisions           FinanceDeliveryRevision[]
@@ -205,6 +207,7 @@ model Branch {
   customerAffairsLeads       CustomerAffairsLead[]
   customerAffairsTickets     CustomerAffairsTicket[]
   customerAffairsAuditEvents CustomerAffairsAuditEvent[]
+  financeSettlementAccounts  FinanceSettlementAccount[]
 
   @@map("branches")
 }
@@ -887,6 +890,7 @@ model MasterDraftExchangeRate {
 
 model MasterBank {
   financeSupplierPaymentRevisions FinanceSupplierPaymentRevision[]
+  financeSettlementAccounts       FinanceSettlementAccount[]
   id                              String                           @id @default(uuid()) @db.Uuid
   countryId                       String                           @db.Uuid
   code                            String                           @unique @db.VarChar(32)
@@ -938,24 +942,25 @@ model MasterBankBranch {
 }
 
 model MasterPaymentMethod {
-  b2bAgreementRevisions  B2bAgreementRevision[]
-  id                     String                       @id @default(uuid()) @db.Uuid
-  code                   String                       @unique @db.VarChar(32)
-  name                   String                       @db.VarChar(160)
-  englishName            String?                      @db.VarChar(160)
-  description            String?                      @db.VarChar(500)
-  channel                MasterPaymentMethodChannel
-  direction              MasterPaymentMethodDirection @default(BOTH)
-  requiresManualApproval Boolean                      @default(false)
-  displayOrder           Int                          @default(0)
-  isActive               Boolean                      @default(true)
-  version                Int                          @default(1)
-  createdByUserId        String                       @db.Uuid
-  updatedByUserId        String                       @db.Uuid
-  deactivatedByUserId    String?                      @db.Uuid
-  deactivatedAt          DateTime?                    @db.Timestamptz(3)
-  createdAt              DateTime                     @default(now()) @db.Timestamptz(3)
-  updatedAt              DateTime                     @updatedAt @db.Timestamptz(3)
+  b2bAgreementRevisions           B2bAgreementRevision[]
+  financeSupplierPaymentRevisions FinanceSupplierPaymentRevision[]
+  id                              String                           @id @default(uuid()) @db.Uuid
+  code                            String                           @unique @db.VarChar(32)
+  name                            String                           @db.VarChar(160)
+  englishName                     String?                          @db.VarChar(160)
+  description                     String?                          @db.VarChar(500)
+  channel                         MasterPaymentMethodChannel
+  direction                       MasterPaymentMethodDirection     @default(BOTH)
+  requiresManualApproval          Boolean                          @default(false)
+  displayOrder                    Int                              @default(0)
+  isActive                        Boolean                          @default(true)
+  version                         Int                              @default(1)
+  createdByUserId                 String                           @db.Uuid
+  updatedByUserId                 String                           @db.Uuid
+  deactivatedByUserId             String?                          @db.Uuid
+  deactivatedAt                   DateTime?                        @db.Timestamptz(3)
+  createdAt                       DateTime                         @default(now()) @db.Timestamptz(3)
+  updatedAt                       DateTime                         @updatedAt @db.Timestamptz(3)
 
   @@index([isActive, displayOrder, name])
   @@index([channel, direction, isActive])
@@ -3538,13 +3543,18 @@ model SalesContractPaymentEntry {
   financePaymentReference String?            @map("finance_payment_reference") @db.VarChar(160)
   financeConfirmedByRef   String?            @map("finance_confirmed_by_ref") @db.VarChar(160)
   financeConfirmedAt      DateTime?          @map("finance_confirmed_at") @db.Timestamptz(3)
+  financeDecisionReason   String?            @map("finance_decision_reason") @db.VarChar(500)
+  financeReviewedByUserId String?            @map("finance_reviewed_by_user_id") @db.Uuid
+  financeReviewedAt       DateTime?          @map("finance_reviewed_at") @db.Timestamptz(3)
   createdAt               DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt               DateTime           @updatedAt @map("updated_at") @db.Timestamptz(3)
   contract                SalesContract      @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  financeReviewedBy       User?              @relation("SalesPaymentFinanceReviewer", fields: [financeReviewedByUserId], references: [id], onDelete: Restrict)
 
   @@unique([contractId, idempotencyKey])
   @@index([contractId, status, dueAt])
   @@index([financePaymentReference])
+  @@index([financeReviewedByUserId, financeReviewedAt])
   @@map("sales_contract_payment_entries")
 }
 
@@ -3754,8 +3764,32 @@ model ReservationHotelPurchase {
 }
 
 enum FinanceSupplierPaymentStatus {
+  PARTIALLY_PAID
   PAID
   REJECTED
+}
+
+model FinanceSettlementAccount {
+  id               String                           @id @default(uuid()) @db.Uuid
+  branchId         String                           @db.Uuid
+  title            String                           @db.VarChar(160)
+  kind             String                           @db.VarChar(24)
+  currencyCode     String                           @db.VarChar(3)
+  bankId           String?                          @db.Uuid
+  maskedIdentifier String?                          @db.VarChar(80)
+  isActive         Boolean                          @default(true)
+  version          Int                              @default(1)
+  createdByUserId  String                           @db.Uuid
+  createdAt        DateTime                         @default(now()) @db.Timestamptz(3)
+  updatedAt        DateTime                         @updatedAt @db.Timestamptz(3)
+  branch           Branch                           @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  bank             MasterBank?                      @relation(fields: [bankId], references: [id], onDelete: Restrict)
+  createdBy        User                             @relation("FinanceSettlementAccountCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  supplierPayments FinanceSupplierPaymentRevision[]
+
+  @@unique([branchId, title, currencyCode])
+  @@index([branchId, isActive, title])
+  @@index([bankId, isActive])
 }
 
 model ReservationServicePurchase {
@@ -3785,23 +3819,34 @@ model ReservationServicePurchase {
 }
 
 model FinanceSupplierPaymentRevision {
-  id               String                       @id @default(uuid()) @db.Uuid
-  purchaseId       String                       @db.Uuid
-  purchase         ReservationServicePurchase   @relation(fields: [purchaseId], references: [id], onDelete: Restrict)
-  version          Int
-  status           FinanceSupplierPaymentStatus
-  bankId           String?                      @db.Uuid
-  bank             MasterBank?                  @relation(fields: [bankId], references: [id], onDelete: Restrict)
-  transferAt       DateTime?                    @db.Timestamptz(3)
-  paymentReference String?                      @db.VarChar(160)
-  reason           String                       @db.VarChar(500)
-  actorUserId      String                       @db.Uuid
-  actor            User                         @relation(fields: [actorUserId], references: [id], onDelete: Restrict)
-  createdAt        DateTime                     @default(now()) @db.Timestamptz(3)
+  id                String                       @id @default(uuid()) @db.Uuid
+  purchaseId        String                       @db.Uuid
+  purchase          ReservationServicePurchase   @relation(fields: [purchaseId], references: [id], onDelete: Restrict)
+  version           Int
+  status            FinanceSupplierPaymentStatus
+  bankId            String?                      @db.Uuid
+  bank              MasterBank?                  @relation(fields: [bankId], references: [id], onDelete: Restrict)
+  accountId         String?                      @db.Uuid
+  account           FinanceSettlementAccount?    @relation(fields: [accountId], references: [id], onDelete: Restrict)
+  paymentMethodId   String?                      @db.Uuid
+  paymentMethod     MasterPaymentMethod?         @relation(fields: [paymentMethodId], references: [id], onDelete: Restrict)
+  paidAmount        Decimal?                     @db.Decimal(24, 4)
+  exchangeRateToIrr Decimal?                     @db.Decimal(24, 8)
+  rialEquivalent    Decimal?                     @db.Decimal(24, 4)
+  cumulativePaid    Decimal?                     @db.Decimal(24, 4)
+  remainingAmount   Decimal?                     @db.Decimal(24, 4)
+  transferAt        DateTime?                    @db.Timestamptz(3)
+  paymentReference  String?                      @db.VarChar(160)
+  reason            String                       @db.VarChar(500)
+  actorUserId       String                       @db.Uuid
+  actor             User                         @relation(fields: [actorUserId], references: [id], onDelete: Restrict)
+  createdAt         DateTime                     @default(now()) @db.Timestamptz(3)
 
   @@unique([purchaseId, version])
   @@index([status, createdAt])
   @@index([bankId, transferAt])
+  @@index([accountId, transferAt])
+  @@index([paymentMethodId, transferAt])
 }
 
 model ReservationArrangementRevision {
