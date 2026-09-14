@@ -33,6 +33,7 @@ it('uses saved voucher settings, selected passengers and service flags without r
     selected: true,
     age: 'CHD',
     roomType: 'DBL',
+    hotelChildAgeBand: 'CHD_2_TO_6',
     sex: 'FEMALE',
   };
   settings.passengers[1] = {
@@ -49,6 +50,7 @@ it('uses saved voucher settings, selected passengers and service flags without r
   expect(output.rooms).toBe(3);
   expect(output.nights).toBe(3);
   expect(output.children).toBe(1);
+  expect(output.passengers[0]?.hotelChildAgeBand).toBe('CHD_2_TO_6');
   expect(output.adults).toBe(0);
   expect(output.passengers.map((p) => p.id)).toEqual(['a']);
   expect(output.leader).toBe('-');

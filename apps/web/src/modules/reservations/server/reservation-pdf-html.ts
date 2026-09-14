@@ -35,6 +35,11 @@ export function reservationPdfHtml(
         p.name,
         p.sex,
         p.age,
+        p.hotelChildAgeBand === 'CHD_2_TO_6'
+          ? 'CHD 2-6'
+          : p.hotelChildAgeBand === 'CHD_6_TO_12'
+            ? 'CHD 6-12'
+            : '-',
       ]);
       first += people.length;
       return `<article class="page" dir="ltr"><header class="header"><div><h1>RESERVATION FORM</h1><p>TRAVEL SERVICES / HOTEL / TRANSFER / TOUR LEADER</p></div><div class="brand"><img class="${intake.workflow.branding?.kind === 'OWN' ? 'logo' : 'agencyLogo'}" src="${logo}" alt=""/></div></header>
@@ -68,7 +73,7 @@ export function reservationPdfHtml(
       ${table(['DBL · DOUBLE', 'SGL · SINGLE', 'EXT · EXTRA BED'], [[data.double, data.single, data.extra]], 'roomCounts').replace('<thead>', '<caption>ROOM QUANTITIES BY TYPE</caption><thead>')}
     </div>
     ${heading('04', 'TOUR SERVICES', 'Leader & excursion')}${table(['TOUR LEADER', 'EXCURSION'], [[data.leader, data.excursion]])}
-    ${heading('05', 'PASSENGERS', 'Passenger MANIFEST')}${table(['#', 'SURNAME / NAME', 'SEX', 'AGE RATE'], rows.length ? rows : [['-', '-', '-', '-']], 'passengers')}
+    ${heading('05', 'PASSENGERS', 'Passenger MANIFEST')}${table(['#', 'SURNAME / NAME', 'SEX', 'TICKET AGE', 'HOTEL CHILD AGE'], rows.length ? rows : [['-', '-', '-', '-', '-']], 'passengers')}
     ${heading('06', 'NOTICE', 'Notes & confirmation')}<div class="notice"><span>SPECIAL REQUESTS / REMARKS</span><p dir="auto">${escape(data.notes) || '&nbsp;'}</p><div></div></div>
     <footer class="footer"><div><strong dir="auto">${escape(data.brand)}</strong><span>Reservation request - subject to supplier confirmation.</span></div><b>${index + 1} / ${pages.length}</b></footer></article>`;
     })
