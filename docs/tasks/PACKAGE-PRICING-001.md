@@ -1,5 +1,7 @@
 # PACKAGE-PRICING-001 — مدیریت قیمت و پکیج‌ها
 
+Branch: `codex/pc-a-package-pricing` · Draft PR: `#278` به `develop` (merge نشده)
+
 ## محدوده تحویل
 
 - Route داخلی Sales: `/sales/pricing`؛ مسیر legacy به آن redirect می‌شود و آیتم مستقل منو حذف شده است.

@@ -7,6 +7,7 @@
 - قفل `Dependency/Lockfile Owner` رزرو نمی‌شود و `RELEASED / UNASSIGNED` می‌ماند. هیچ Query مستقیمی به جدول‌های Master Data، Ticket Catalog، Reservations، Finance، Procurement، Sales Contracts، Documents یا Legal Entity انجام نمی‌شود؛ فقط Public Contract، Approved Projection یا Snapshot نسخه‌دار مصرف می‌شود. Renderer غیرمتصل با وضعیت واقعی `AWAITING_RENDERER` ثبت می‌شود و هیچ فایل/موفقیت ساختگی تولید نمی‌شود.
 - بررسی قفل در آخرین `origin/develop` و PRهای باز: Migration و Central Docs در `PROCUREMENT-001` صریحاً آزاد شده‌اند؛ Migration `FINANCE-008` با PR #270 در develop ادغام شده است. شاخه قدیمی `codex/pc-a-pricing-management` در develop حضور دارد و رزرو فعالی ندارد؛ UI نمونه‌ای آن با قابلیت عملیاتی این Task جایگزین/همگرا می‌شود.
 - نتیجه: قرارداد/API/UI/۱۳ مدل و Migration افزایشی، permissions، Decimal engine، immutable publication، maker/checker، quote/template/render/audit و حالت‌های fail-closed تکمیل و validate شدند. تولید/انتشار واقعی تا Public Contract نرخ پایه هتل و بلیت/ظرفیت upstream مسدود است؛ Renderer نیز هنوز متصل نیست. `Migration Owner`، `Package Pricing shared-contract/root export Owner` و `Central Docs Owner` پس از commit این Task `RELEASED` هستند؛ Dependency/Lockfile هرگز رزرو نشد.
+- Draft PR مستقل به `develop`: `#278`؛ merge نشده است.
 
 ## WORKBENCH-041-MESSAGING-EMPTY-PARTICIPANT — PC-B — READY_FOR_REVIEW
 
