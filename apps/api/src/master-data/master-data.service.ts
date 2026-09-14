@@ -237,6 +237,35 @@ function normalizedWebsite(value: unknown): string | null {
   return website;
 }
 
+function normalizeManufacturerModel(value: unknown): {
+  manufacturer: string;
+  model: string;
+} {
+  if (typeof value !== 'string')
+    throw new BadRequestException('سازنده و مدل باید متن باشد.');
+  const normalized = value.trim().replace(/\s+/g, ' ');
+  if (!normalized || normalized.length > 240)
+    throw new BadRequestException(
+      'سازنده و مدل الزامی و حداکثر ۲۴۰ نویسه است.',
+    );
+  const explicitParts = normalized
+    .split(/\s*[/|،,]\s*/)
+    .map((part) => part.trim())
+    .filter(Boolean);
+  const [manufacturer = '', ...modelParts] =
+    explicitParts.length > 1
+      ? explicitParts
+      : normalized.split(/\s+/).filter(Boolean);
+  const model = modelParts.join(explicitParts.length > 1 ? ' / ' : ' ').trim();
+  if (!manufacturer || !model)
+    throw new BadRequestException(
+      'سازنده و مدل را به صورت «Airbus / A320-200» وارد کنید.',
+    );
+  if (manufacturer.length > 120 || model.length > 120)
+    throw new BadRequestException('سازنده یا مدل بیش از حد مجاز است.');
+  return { manufacturer, model };
+}
+
 const allowedFields: Record<MasterDataResource, readonly string[]> = {
   countries: ['iso2Code', 'name', 'englishName', 'displayOrder'],
   regions: ['code', 'name', 'englishName', 'countryId'],
@@ -351,8 +380,14 @@ const allowedFields: Record<MasterDataResource, readonly string[]> = {
     'countryId',
     'logoFileReference',
   ],
-  'aircraft-types': ['name', 'englishName', 'manufacturer', 'model'],
-  'cabin-classes': ['name', 'englishName', 'bookingCode', 'displayOrder'],
+  'aircraft-types': [
+    'name',
+    'englishName',
+    'manufacturer',
+    'model',
+    'manufacturerModel',
+  ],
+  'cabin-classes': ['englishName', 'bookingCode', 'displayOrder'],
   'baggage-rules': [
     'name',
     'airlineId',
@@ -593,8 +628,11 @@ const requiredFields: Record<MasterDataResource, readonly string[]> = {
   ],
   'insurance-coverages': ['name', 'currencyId', 'coverageLimit'],
   airlines: ['airlineCodes', 'name'],
-  'aircraft-types': ['name', 'manufacturer', 'model'],
-  'cabin-classes': ['name', 'bookingCode'],
+  // The current UI submits a single manufacturerModel value. Legacy clients may
+  // still submit manufacturer/model separately, so aircraft validation happens
+  // in prepare() after the compatibility payload has been normalized.
+  'aircraft-types': [],
+  'cabin-classes': ['englishName', 'bookingCode'],
   'baggage-rules': ['name', 'airlineId', 'passengerType', 'allowance', 'unit'],
   'manifest-templates': ['name', 'airlineId', 'destinationCityId'],
   'rail-companies': ['name', 'organizationId', 'countryId'],
@@ -1458,6 +1496,27 @@ export class MasterDataService {
         throw new BadRequestException(`فیلد الزامی: ${missing.join(', ')}`);
     }
     const data: Record<string, unknown> = { ...values };
+    if (resource === 'aircraft-types') {
+      if (Object.hasOwn(data, 'manufacturerModel')) {
+        const { manufacturer, model } = normalizeManufacturerModel(
+          data.manufacturerModel,
+        );
+        data.manufacturer = manufacturer;
+        data.model = model;
+        delete data.manufacturerModel;
+        if (!String(data.name ?? '').trim())
+          data.name =
+            String(data.englishName ?? '').trim() || `${manufacturer} ${model}`;
+      } else if (!partial) {
+        const manufacturer = String(data.manufacturer ?? '').trim();
+        const model = String(data.model ?? '').trim();
+        if (!manufacturer || !model)
+          throw new BadRequestException('سازنده و مدل الزامی است.');
+        if (!String(data.name ?? '').trim())
+          data.name =
+            String(data.englishName ?? '').trim() || `${manufacturer} ${model}`;
+      }
+    }
     if (
       resource !== 'exchange-rates' &&
       !partial &&
@@ -1619,6 +1678,17 @@ export class MasterDataService {
       ]) {
         if (data[field] === '') data[field] = null;
       }
+    }
+    if (resource === 'cabin-classes' && Object.hasOwn(data, 'englishName')) {
+      const englishName = String(data.englishName ?? '').trim();
+      if (!englishName)
+        throw new BadRequestException('نام انگلیسی کلاس پروازی الزامی است.');
+      if (englishName.length > 160)
+        throw new BadRequestException(
+          'نام انگلیسی کلاس پروازی حداکثر ۱۶۰ نویسه است.',
+        );
+      data.englishName = englishName;
+      data.name = englishName;
     }
     if (
       (resource === 'payment-methods' || resource === 'meal-services') &&

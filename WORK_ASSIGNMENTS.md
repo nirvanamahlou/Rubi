@@ -1,5 +1,28 @@
 # Work Assignments
 
+## MASTER-010-CABIN-CLASS-TITLE — PC-B — MERGE_AUTHORIZED
+
+- درخواست مالک محصول: در «کلاس پروازی» عنوان فارسی از فرم و نمایش حذف و عنوان انگلیسی اجباری شود.
+- محدوده رزروشده: Catalog/Validation/Workspace حمل‌ونقل Web، آماده‌سازی و اعتبارسنجی Master Data API، Fixtureهای نمایشی کلاس پروازی، تست‌های هدفمند و اسناد Task. ستون پایدار `name` برای سازگاری Schema و مصرف‌کنندگان حفظ و از مقدار اجباری `englishName` در مرز API همگام می‌شود.
+- وابستگی: شاخه `codex/pc-b-cabin-class-title` از HEAD PR #240 (`f7affc37`) ساخته شده و به‌ترتیب به PRهای #240 و #236 وابسته است؛ شاخه‌ها و PRهای والد دست‌نخورده می‌مانند.
+- مرزها: هیچ Schema/Migration، Contract مشترک، Dependency/Lockfile، IAM، داده عملیاتی یا فایل متعلق به PC-A تغییر نمی‌کند. تغییر با حفظ API عمومی و FKهای Ticket Catalog/Baggage تحویل می‌شود و سازنده آن را خودکار Merge نمی‌کند.
+- مالک محصول ادغام مجموعه کامل PR #241 با `develop` را برای بازیابی اصلاحات جاافتاده صریحاً مجاز کرده است؛ همگام‌سازی باید تغییرات جدید `develop` را حفظ کند و بدون Force Push انجام شود.
+
+## MASTER-009-AIRLINE-BAGGAGE — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک محصول: «قواعد بار» از تب مستقل حمل‌ونقل خارج و داخل بخش/فرم ایرلاین مدیریت شود.
+- محدوده رزروشده: Workspace حمل‌ونقل Web در `apps/web/src/modules/master-data/**`، تست‌های هدفمند همین تجربه کاربری و اسناد Task. قواعد بار همچنان رکورد مستقل Master Data با ارتباط واقعی `airlineId` باقی می‌ماند تا مصرف‌کنندگان فعلی، از جمله Ticket Catalog، بدون تغییر قرارداد ادامه دهند.
+- وابستگی: این شاخه از HEAD آماده بازبینی PR #236 (`96b605b7`) ساخته شده و همان اصلاحات انواع هواپیما را حفظ می‌کند؛ PR #236 در طول این کار دست‌نخورده می‌ماند.
+- مرزها: هیچ Schema/Migration، API/Contract مشترک، Seed عملیاتی، Dependency/Lockfile، IAM یا فایل متعلق به PC-A تغییر نمی‌کند. خروجی فقط به PR مستقل علیه `develop` تحویل می‌شود و سازنده آن را خودکار Merge نمی‌کند.
+- تحویل: تب مستقل حذف و «قواعد بار» در زیرناوبری داخلی ایرلاین‌ها قرار گرفت؛ فرم، فیلتر، KPI، جدول و عملیات واقعی همان منبع `baggage-rules` در بخش ایرلاین حفظ شد. ۳۲ تست هدفمند، lint، typecheck، build تولیدی ۴۶مسیره و `git diff --check` موفق‌اند. PR #240 برای Review به `develop` باز است و باید پس از وابستگی #236 بررسی شود. جزئیات در `docs/tasks/MASTER-009-AIRLINE-BAGGAGE.md`.
+
+## MASTER-008-AIRCRAFT-FIELDS — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک محصول: در «انواع هواپیما» عنوان فارسی از فرم، فهرست و پروفایل حذف شود؛ سازنده و مدل به یک ورودی/نمایش واحد تبدیل و داده‌های آزمایشی با آن هم‌راستا شوند.
+- محدوده رزروشده: مدل و Workspace حمل‌ونقل Web در `apps/web/src/modules/master-data/**`، سازگاری ورودی و خروجی Master Data در `apps/api/src/master-data/**`، Fixtureهای آزمایشی همین ماژول، تست‌های هدفمند و اسناد Task. PR #232 لوگو و PRهای تاریخی Master Data بدون تغییر می‌مانند.
+- سازگاری: Schema موجود `manufacturer`، `model` و `name` حفظ می‌شود؛ API ورودی ترکیبی را در مرز Master Data به ستون‌های موجود تبدیل و برای مصرف‌کنندگان قدیمی payload جداگانه را نیز می‌پذیرد. هیچ Schema/Migration/Seed عملیاتی، Dependency/Lockfile، قرارداد مرکزی یا IAM تغییر نمی‌کند.
+- تحویل: عنوان فارسی از فرم، جدول، پروفایل و Excel انواع هواپیما حذف شد؛ ورودی و نمایش «سازنده و مدل» یکپارچه و Fixtureهای ساده/واقع‌نما هماهنگ شدند. ۲۹ تست هدفمند Web، ۲۷ تست هدفمند API، lint محدوده، TypeScript Web/API و build تولیدی هر دو برنامه موفق‌اند. جزئیات در `docs/tasks/MASTER-008-AIRCRAFT-FIELDS.md`.
+
 ## WORKBENCH-041-MESSAGING-EMPTY-PARTICIPANT — PC-B — READY_FOR_REVIEW
 
 - User-reported Workbench messaging `INTERNAL_SERVER_ERROR` is reproduced in the shared API logs for conversation listing and direct conversation creation. Scope is limited to the Workbench messaging participant mapping and its regression test: omit the empty forwarded-sender placeholder from IAM UUID queries. No schema, migration, permissions, data or runtime ownership change.
