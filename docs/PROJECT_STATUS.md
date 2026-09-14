@@ -4,6 +4,8 @@
 
 عنوان فارسی از فرم ایجاد/ویرایش، فهرست، پروفایل و خروجی Excel کلاس پروازی حذف و عنوان انگلیسی در Web و API اجباری شد. برای حفظ Schema و FKهای موجود، ستون داخلی `name` بدون Migration از `englishName` همگام می‌شود؛ Fixtureهای ساده و واقع‌نما نیز English-only شدند. ۳۹ تست هدفمند Web و ۳۲ تست هدفمند API، lint، TypeScript و build تولیدی Web/API موفق‌اند. این تحویل به‌ترتیب روی PRهای #240 و #236 متکی است و جزئیات در [MASTER-010-CABIN-CLASS-TITLE](tasks/MASTER-010-CABIN-CLASS-TITLE.md) ثبت شده است.
 
+مالک محصول ادغام PR تجمیعی #241 با `develop` را برای بازیابی این سه اصلاح جاافتاده مجاز کرده است؛ آخرین `develop` داخل شاخه ادغام و هر دو مجموعه تغییر حفظ می‌شوند.
+
 ## MASTER-009 — انتقال قواعد بار به بخش ایرلاین
 
 تب مستقل «قواعد بار» از ناوبری اصلی حمل‌ونقل حذف و مدیریت آن به زیرناوبری داخلی «ایرلاین‌ها» منتقل شد. صفحه هنگام مشاهده قواعد بار همچنان عنوان و مالکیت «ایرلاین‌ها» را حفظ می‌کند، اما فرم، فیلتر، KPI، جدول و عملیات واقعی قواعد بار با ارتباط `airlineId` بدون کپی داده یا تغییر قرارداد در همان بخش باقی مانده‌اند. ۳۲ تست هدفمند، lint، typecheck و build تولیدی ۴۶مسیره Web موفق‌اند. این تحویل روی PR #236 متکی است و جزئیات در [MASTER-009-AIRLINE-BAGGAGE](tasks/MASTER-009-AIRLINE-BAGGAGE.md) ثبت شده است.
@@ -11,6 +13,116 @@
 ## MASTER-008 — یکپارچه‌سازی فیلدهای نوع هواپیما
 
 در فرم، جدول، پروفایل و خروجی Excel «انواع هواپیما»، عنوان فارسی حذف و سازنده/مدل به یک فیلد «سازنده و مدل» تبدیل شد. API مقدار ترکیبی را اعتبارسنجی و در ستون‌های فعلی تفکیک می‌کند و برای سازگاری مصرف‌کنندگان قبلی یک نام داخلی غیرنمایشی می‌سازد؛ بنابراین Schema، Migration و قرارداد مرکزی تغییر نکرده‌اند. Fixtureهای آزمایشی ساده و واقع‌نما نیز با `Airbus / A320-200` و `Boeing / 777-300ER` هماهنگ شدند. ۲۹ تست هدفمند Web، ۲۷ تست هدفمند API، lint محدوده، TypeScript Web/API و build تولیدی هر دو برنامه موفق‌اند. جزئیات در [MASTER-008-AIRCRAFT-FIELDS](tasks/MASTER-008-AIRCRAFT-FIELDS.md).
+## MARKETING-001H — حذف انتخاب‌گر Preview از Hub
+
+انتخاب‌گر «پیش‌نمایش» مشخص‌شده در Screenshot 602 و شبیه‌ساز حالت‌های وابسته از سربرگ صفحه اصلی مارکتینگ حذف شدند. این تغییر فقط پوسته نمایشی Hub را پوشش می‌دهد؛ کارت‌ها، مسیرها، فرم‌ها، پیش‌نمایش‌های تخصصی و Backend تغییری نکردند. ۲۱ تست مارکتینگ، lint، TypeScript و Production Build با ۴۶ Route موفق‌اند.
+
+## FINANCE-008 — عملیات واقعی کارتابل مالی
+
+کارتابل مالی اکنون فقط نمایش‌دهنده نیست: دریافت ثبت‌شده مسافر از همان‌جا تأیید یا
+با علت برای اصلاح به فروش بازگردانده می‌شود. برای خرید خدمات رزرواسیون نیز مالی
+حساب واقعی و روش پرداخت را انتخاب می‌کند، پرداخت جزئی یا کامل ثبت می‌شود و مبلغ
+پرداخت‌شده/مانده در هر دو بخش دیده می‌شود. پرداخت ارزی Snapshot نرخ روز، معادل
+ریالی و زمان UTC دارد؛ توضیح مالی و شماره پیگیری اختیاری‌اند.
+
+Migration و Seed محلی اعمال شده و نقش `finance_staff` بدون حذف دسترسی قبلی به
+`Ramtin` افزوده شده است. کل ۱۲۸۳ تست API و ۱۳۴۳ تست Web، typecheck، lint و
+build تولیدی API/Web با ۴۶ مسیر موفق‌اند و Web3100/API4190 فعال‌اند. جزئیات در
+[FINANCE-008](tasks/FINANCE-008-INBOX-ACTIONS.md) ثبت شده است.
+
+## WORKBENCH-040 — Performance summary
+
+Personal performance now shows leave count, dated shifts, approved payslip period/net amount, today's entry/exit, own customers and sales. Raw activity rows were removed. Additive HR projection preserves self/branch scope and applies approved attendance corrections. No employee reassignment or migration. See [WORKBENCH-040](tasks/WORKBENCH-040-PERFORMANCE-SUMMARY.md).
+
+
+## WORKBENCH-039 — Selected department contrast
+
+The messenger unit list no longer overrides the selected primary button with a light surface background. Selected labels and icons use theme foreground contrast, unselected units retain their surface style, and aria-pressed exposes selection. No message delivery or API behavior changes. Validation is recorded in docs/tasks/WORKBENCH-039-UNIT-CONTRAST.md.
+
+
+## FINANCE-007 — تکمیل کارتابل درخواست‌های مالی
+
+کارتابل مالی بازطراحی و ساده شد: Preview قدیمی، نوشته‌های فنی و اقدام غیرفعال حذف شدند و درخواست‌های واقعی فروش، ارجاع‌های مالی منابع انسانی و خرید خدمات رزرواسیون اکنون از مرز عمومی ماژول‌های مالک وارد صف واحد می‌شوند. منبع خرید مستقل چون Producer عملیاتی ندارد، داده ساختگی نمایش نمی‌دهد. ۳ تست API، ۸ تست قرارداد Web، ۳ تست Migration، lint محدوده، typecheck و build تولیدی API/Web موفق‌اند؛ Web3100 و API4190 فعال‌اند. مشخصات Seed نقش مالی کامل شده، اما انتساب افزایشی `finance_staff` به `Ramtin` برای رفع نهایی 403 هنوز منتظر تأیید صریح مالک محصول است. جزئیات در [FINANCE-007](tasks/FINANCE-007-INBOX-COMPLETION.md) ثبت شده است.
+
+## WORKBENCH-038 — عملکرد من
+
+تب «عملکرد من» و endpoint فقط‌خواندنی خود کاربر اضافه شد: مرخصی، شیفت و آخرین فیش
+تأییدشده از سرویس عمومی منابع انسانی، مبلغ فروش با Decimal و تعداد مشتریان قراردادهای
+تأییدشده خود کاربر از Sales، و رویدادهای شغلی از IAM/HR/Sales/Customers. دامنه خود
+کاربر و شعب مجاز حتی برای مدیران حفظ می‌شود؛ داده ساختگی یا تأیید واریز بانکی تولید
+نمی‌شود. محدوده شمارش فعالیت‌ها و سقف آمار در UI مشخص است. بدون Migration یا
+Dependency؛ جزئیات در [WORKBENCH-038](tasks/WORKBENCH-038-MY-PERFORMANCE.md).
+
+۱۸ آزمون هدفمند API و ۴۹ آزمون Web، lint محدوده، TypeScript و build تولیدی هر دو
+برنامه (۴۶ مسیر وب) موفق‌اند. این واحد هنوز runtime مشترک ۳۱۰۰/۴۱۹۰ را تغییر نداده است.
+
+## WORKBENCH-037 — حذف کارت پایین درخواست‌های منابع انسانی
+
+کارت نمایشی «درخواست‌های منابع انسانی» از مقصدهای پایین خانه میزکار حذف شد. این تغییر فقط پوسته Frontend را پوشش می‌دهد؛ Backend، مسیر `/hr`، مجوزهای خواندن HR و اعلان‌های منابع انسانی دست‌نخورده ماندند. چهار تست هدفمند، lint، TypeScript و Production Build با ۴۶ Route موفق‌اند.
+
+## APP-SHELL — انتقال کنترل‌های نوار بالا به چپ
+
+گروه تاریخ، زبان، پوسته، اعلان و منوی کاربر اکنون به‌صورت یک بلوک منسجم در لبه چپ هدر RTL قرار دارد. رفتار کنترل‌ها و نمایش واکنش‌گرا حفظ شده و ۴ تست متمرکز، lint، typecheck و build ۴۶ مسیر موفق بوده است. جزئیات در [APP-SHELL-HEADER-UTILITY-LEFT-001](tasks/APP-SHELL-HEADER-UTILITY-LEFT-001.md) ثبت شده است.
+
+## FINANCE-006 — بازطراحی کنترل پرداخت و تحویل مدارک
+
+نمای پرداخت کارگزاران و مجوز تحویل مدارک اکنون در خود کارتابل درخواست‌ها یک جریان دو مرحله‌ای روشن دارد. هر قرارداد، وضعیت خدمات و اقدام بعدی را در کارت مستقل نشان می‌دهد و علت قفل بودن تحویل مدارک را صریح اعلام می‌کند. کنترل از Workspace قدیمی حسابداری به `/finance/requests` منتقل شده و منطق/API مالی تغییری نکرده است. تست کامل Web (۱۳۴۰ مورد)، تست متمرکز، lint، typecheck و build ۴۶ مسیر موفق بود. جزئیات در [FINANCE-006](tasks/FINANCE-006-DELIVERY-PANEL-REDESIGN.md) ثبت شده است.
+
+PR #254 در `e40878f1` Merge و build `55JsHVl1EIROpWDpoCZuS` روی Web3100 فعال شد؛ API4190 سالم است.
+
+## FINANCE-005 — دراپ‌داون‌های بسته حسابداری
+
+هر چهار گروه منوی داخلی حسابداری هنگام ورود بسته‌اند. «ارتباط با سامانه مودیان
+مالیاتی» و «حسابداری مالیاتی» نیز به دراپ‌داون تبدیل شدند، ولی مطابق دستور مالک محصول
+فعلاً هیچ زیرگروه یا محتوایی ندارند. ۲۵ تست هدفمند، lint، TypeScript و build تولیدی ۴۶
+مسیر موفق‌اند؛ بدون تغییر API، داده، Permission، Schema/Migration یا Dependency.
+جزئیات در [FINANCE-005](tasks/FINANCE-005-ACCOUNTING-DROPDOWN-DEFAULTS.md) ثبت شده است.
+هر چهار Gate CI موفق شدند و PR #246 با Merge Commit `88d26ebc` وارد `develop` شد.
+Web3100 با Build ID `60YeidM5vzsZuojUx7D85` فعال و API4190 سالم است.
+
+## FINANCE-004 — منوی داخلی حسابداری
+
+صفحه حسابداری اکنون یک منوی داخلی مستقل و جمع‌شونده کنار سایدبار اصلی دارد. «دفتر
+کل» با پنج زیرگروه، «دریافت و پرداخت» با گزارش پرداخت و دریافت، و ورودی‌های «ارتباط
+با سامانه مودیان مالیاتی» و «حسابداری مالیاتی» به مسیرهای پایدار متصل‌اند. همه مقصدها
+طبق دستور مالک محصول تا اعلام جزئیات فقط پوسته خالی دارند و هیچ عملیات یا داده مالی
+ساخته نشده است. ۲۰ تست Finance/Navigation، Prettier، ESLint، TypeScript، build تولیدی ۴۶
+مسیر و QA مرورگر موفق‌اند. جزئیات در
+[FINANCE-004](tasks/FINANCE-004-ACCOUNTING-SECONDARY-NAV.md) ثبت شده است.
+مالک محصول در 2026-09-13 ادغام این واحد با `develop` و فعال‌سازی Web3100 را تأیید کرد.
+تغییرات با Merge Commit `b5fdbe75` وارد `develop` شد.
+Web3100 با Build ID `RAhkQQeixfqHkOKXiubFX` از Worktree ادغام‌شده فعال است و مسیر
+حسابداری پاسخ مورد انتظار احراز هویت را می‌دهد.
+## FINANCE-003 — کارتابل واقعی و بازطراحی‌شده مالی
+
+کارتابل `/finance/requests` به صف فقط‌خواندنی داده‌های persisted تبدیل شد: پرداخت‌های
+فروش با وضعیت انتظار تأیید مالی و ارجاع‌های منابع انسانی به مقصد Finance، از طریق public
+application serviceهای ماژول مالک و با دامنه شعبه/مجوز تجمیع می‌شوند. رابط جدید شامل
+hero، KPI، وضعیت اتصال واحدها، جست‌وجو، فیلتر و نمای جزئیات است؛ Preview قدیمی جدا و
+غیرعملیاتی باقی مانده و داده synthetic وارد صف زنده نمی‌شود. `finance.read` به IAM و seed
+نقش مالی افزوده شد، اما seed روی دیتابیس عملیاتی اجرا نشده است. Reservations و Purchases
+تا انتشار producer استاندارد با وضعیت «متصل نیست» نمایش داده می‌شوند و تأیید/پرداخت تا
+Persistence مستقل Finance غیرفعال است. ۸۲ تست هدفمند، lint، typecheck و build API/Web
+موفق و QA مرورگر ایزوله تأیید شد؛ runtime مشترک تغییر نکرد. جزئیات در
+[FINANCE-003](tasks/FINANCE-003-INBOX-REDESIGN-INTEGRATION.md) ثبت شده است.
+مالک محصول در 2026-09-13 ادغام نسخه ترکیبی و نمایش کارتابل جدید روی Web3100 را مجاز
+کرد؛ بازآزمایی روی آخرین `develop` شامل ۵۵ تست هدفمند، lint/typecheck و build API/Web
+موفق بود.
+هر چهار Gate نهایی CI موفق شدند و PR #237 با Merge Commit `2fc5e6d2` وارد `develop`
+شد. Web3100 با Build ID `H2SQ5Bcvdx249ZC-GP-m1` و API4190 سالم از نسخه ترکیبی فعال‌اند.
+
+## WORKBENCH-037 — اصلاح کارت خوشامدگویی و پیام‌های واحدی
+
+تاریخ امروز و تعداد شعب مجاز از کارت خوشامدگویی میزکار حذف شدند و کارت فقط هویت
+کاربر و شرکت فعال را نمایش می‌دهد. lint وب، typecheck سراسری ۹ Job و build تولیدی
+۴۶ مسیر موفق بودند؛ بدون تغییر API، دیتابیس، وابستگی یا داده عملیاتی.
+
+فهرست واحدهای مالی، رزرواسیون، AI، فروش، ویزا، منابع انسانی و مدیریت به پیام‌رسان
+بازگشت و اکنون کنار نماهای مستقل مخاطبان، گروه‌ها و گفت‌وگوها قرار دارد. آیکن، جست‌وجو
+و تعداد قالب‌های هر واحد نمایش داده می‌شود و انتخاب مخاطب/گروه، ساخت گروه، ارسال پایدار،
+پیوست و فوروارد از سرویس‌های موجود Messaging، IAM و Documents استفاده می‌کنند. ۴۷ تست
+Workbench و ۴۲ تست مجزای HR موفق بودند؛ اجرای کامل Web نیز ۱۳۳۷ تست موفق داشت و دو
+Timeout پنج‌ثانیه‌ای قدیمی HR زیر بار موازی در اجرای مجزا پاس شدند.
 
 ## HR-014 — حذف پنل مستقل ارتباطات از رابط کاربری
 
@@ -46,8 +158,10 @@ Documents، Messaging، Customer Affairs، HR و Notifications را فقط از 
 [WORKBENCH-036](tasks/WORKBENCH-036.md) ثبت است.
 
 در درخت نهایی بازپایه‌شده، lint سراسری ۶ Job، typecheck سراسری ۹ Job و build
-تولیدی ۶ Job شامل ۴۶ مسیر Web نیز بدون خطا تمام شد.
-PR #234 به `develop` باز شد و قفل‌های موقت این واحد کار آزاد شدند.
+تولیدی ۶ Job شامل ۴۶ مسیر Web نیز بدون خطا تمام شد. CI روی exact head همهٔ چهار
+Gate تست کامل، کیفیت، build و PostgreSQL 18 را گذراند؛ هر ۵۹ Migration از دیتابیس
+خالی اعمال شد و تکرارپذیری Seed نیز تأیید شد. PR #234 با Merge Commit
+`1707d980` وارد `develop` شد و همهٔ قفل‌های موقت این واحد کار آزاد شدند.
 
 ## WORKBENCH-021 — مخاطبان، گروه و فوروارد پیام
 
@@ -2278,3 +2392,16 @@ Runtime3397f2b/hr005-1ba72d053599fc53/PID11368 preserves96b6d2d.46-route build p
 Source f03d34c removes the requested home360 subtitle without leaving an empty paragraph. Subsection descriptions unchanged. Scoped lint/typecheck passed; combined runtime build coordinated.
 
 Combined runtime1bf840b/PID8604/hr005-ef61a0178f542c46 built by Workbench owner. Browser confirms360heading present and requestedsubtitle absent. NoAPI/data change. PR209.
+
+## 2026-09-12 — قالب XLSX منیفست و فرم ساده فرودگاه (PC-B)
+
+قالب Manifest اکنون با انتخاب ایرلاین و مقصد و بارگذاری مستقیم فایل XLSX ایجاد می‌شود؛
+نام، فرمت، نسخه و وضعیت Draft در Backend تعیین و شناسه فایل از API عمومی Documents روی
+رکورد Master Data ثبت می‌شود. مقصد FK واقعی شهر است و ذخیره فایل یا Query مستقیم جدول
+Documents در Master Data انجام نمی‌شود. فرم ایجاد فرودگاه دیگر ICAO، Timezone IANA و طول/
+عرض جغرافیایی را نمی‌خواهد؛ این مشخصات برای سازگاری داده‌های قبلی اختیاری و در Edit/View
+قابل دسترس‌اند. Migration افزایشی و غیرمخرب است و Manifest اجرایی همچنان در مالکیت
+Reservations باقی می‌ماند.
+
+اعتبارسنجی نهایی شامل ۳۳ تست هدفمند API، ۳۸ تست Web و ۲ تست Migration، lint محدوده،
+Prisma validate/format و typecheck/build دیتابیس، API و Web موفق است.

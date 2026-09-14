@@ -23,6 +23,7 @@ import type {
   SalesContractSummary,
   SalesPaymentCreateRequest,
   SalesReservationRequestV1,
+  SalesFinanceInboxPaymentV1,
 } from '@rubi/contracts';
 import type { Prisma } from '@rubi/database';
 
@@ -122,6 +123,7 @@ export function presentSalesContract(
     createdByName: paymentCreatorNames.get(item.createdByUserId) ?? null,
     createdAt: item.createdAt.toISOString(),
     financeConfirmedAt: date(item.financeConfirmedAt),
+    financeDecisionReason: item.financeDecisionReason,
   }));
   return {
     id: row.id,
@@ -433,6 +435,43 @@ export class SalesService {
         total: result.total,
       },
     };
+  }
+
+  async financeInbox(
+    actor: AuthenticatedActor,
+  ): Promise<readonly SalesFinanceInboxPaymentV1[]> {
+    if (!has(actor, 'finance.read'))
+      throw new ForbiddenException({
+        code: 'FINANCE_INBOX_FORBIDDEN',
+        message: 'مجوز مشاهده کارتابل مالی وجود ندارد.',
+      });
+    const rows = await this.repository.pendingFinancePayments(actor.branchIds);
+    const names = new Map(
+      (
+        await this.repository.findUserDisplayNames(
+          rows.map(({ createdByUserId }) => createdByUserId),
+        )
+      ).map((user) => [user.id, user.displayName]),
+    );
+    return rows.map((row) => ({
+      version: 1,
+      paymentId: row.id,
+      contractId: row.contract.id,
+      contractNumber: row.contract.contractNumber,
+      customerId: row.contract.customerId,
+      customerNameSnapshot: row.contract.customerNameSnapshot,
+      branchId: row.contract.branchId,
+      amount: row.amount.toString(),
+      currencyCode: row.currencyCode,
+      method: row.method,
+      description: row.description,
+      paymentReference: row.paymentReference,
+      dueAt: row.dueAt.toISOString(),
+      createdAt: row.createdAt.toISOString(),
+      createdByUserId: row.createdByUserId,
+      createdByName: names.get(row.createdByUserId) ?? null,
+      contractVersion: row.contract.version,
+    }));
   }
 
   async detail(id: string, actor: AuthenticatedActor) {
@@ -881,6 +920,8 @@ export class SalesService {
     paymentId: string;
     financePaymentReference: string;
     confirmedAt: string;
+    reviewedByUserId?: string;
+    reason?: string;
   }) {
     return this.repository.applyFinanceConfirmation({
       contractId: event.contractId,
@@ -888,6 +929,27 @@ export class SalesService {
       financePaymentReference: event.financePaymentReference,
       financeConfirmationId: event.eventId,
       confirmedAt: event.confirmedAt,
+      ...(event.reviewedByUserId
+        ? { reviewedByUserId: event.reviewedByUserId }
+        : {}),
+      ...(event.reason !== undefined ? { reason: event.reason } : {}),
+    });
+  }
+
+  applyFinancePaymentCorrection(event: {
+    contractId: string;
+    paymentId: string;
+    reason: string;
+    reviewedByUserId: string;
+    branchId: string;
+  }) {
+    return this.repository.applyFinanceCorrection({
+      contractId: event.contractId,
+      paymentId: event.paymentId,
+      reason: event.reason,
+      reviewedByUserId: event.reviewedByUserId,
+      reviewedAt: new Date().toISOString(),
+      branchId: event.branchId,
     });
   }
 }

@@ -558,6 +558,133 @@ describe('MasterDataService', () => {
     );
   });
 
+  it('creates an airport without inventing optional ICAO, timezone or coordinates', async () => {
+    const countryId = '55555555-5555-4555-8555-555555555555';
+    const cityId = '66666666-6666-4666-8666-666666666666';
+    const repository = {
+      fieldExists: vi.fn().mockResolvedValue(false),
+      find: vi.fn().mockResolvedValue({ isActive: true, countryId }),
+      create: vi
+        .fn()
+        .mockImplementation(
+          async (_resource: string, data: Record<string, unknown>) => ({
+            ...row,
+            ...data,
+          }),
+        ),
+    } as unknown as MasterDataRepository;
+    const service = new MasterDataService(repository);
+
+    await service.create(
+      'airports',
+      {
+        name: 'فرودگاه کیش',
+        englishName: 'Kish Airport',
+        countryId,
+        cityId,
+        iataCode: 'kih',
+      },
+      actor,
+    );
+
+    expect(repository.create).toHaveBeenCalledWith(
+      'airports',
+      {
+        name: 'فرودگاه کیش',
+        englishName: 'Kish Airport',
+        cityId,
+        iataCode: 'KIH',
+        displayOrder: 0,
+      },
+      actor.userId,
+      actor.branchIds[0],
+    );
+  });
+
+  it('creates a destination-bound XLSX manifest draft with automatic metadata', async () => {
+    const airlineId = '55555555-5555-4555-8555-555555555555';
+    const destinationCityId = '66666666-6666-4666-8666-666666666666';
+    const repository = {
+      codeExists: vi.fn().mockResolvedValue(false),
+      find: vi.fn().mockResolvedValue({ isActive: true }),
+      create: vi
+        .fn()
+        .mockImplementation(
+          async (_resource: string, data: Record<string, unknown>) => ({
+            ...row,
+            ...data,
+          }),
+        ),
+    } as unknown as MasterDataRepository;
+    const service = new MasterDataService(repository);
+
+    await service.create(
+      'manifest-templates',
+      {
+        name: 'Iran Airtour Antalya',
+        airlineId,
+        destinationCityId,
+      },
+      actor,
+    );
+
+    expect(repository.find).toHaveBeenCalledWith('airlines', airlineId);
+    expect(repository.find).toHaveBeenCalledWith('cities', destinationCityId);
+    expect(repository.create).toHaveBeenCalledWith(
+      'manifest-templates',
+      expect.objectContaining({
+        name: 'Iran Airtour Antalya',
+        airlineId,
+        destinationCityId,
+        fileFormat: 'XLSX',
+        publicationStatus: 'DRAFT',
+        validFrom: expect.any(Date),
+        displayOrder: 0,
+        code: expect.stringMatching(/^MANIFEST_[A-Z0-9]{12}$/),
+      }),
+      actor.userId,
+      actor.branchIds[0],
+    );
+  });
+
+  it('attaches the uploaded manifest file without requiring hidden validity fields again', async () => {
+    const fileReferenceId = '77777777-7777-4777-8777-777777777777';
+    const validFrom = new Date('2026-09-12T00:00:00.000Z');
+    const repository = {
+      find: vi.fn().mockResolvedValue({
+        ...row,
+        resource: 'manifest-templates',
+        validFrom,
+        validTo: null,
+      }),
+      update: vi.fn().mockResolvedValue({
+        ...row,
+        resource: 'manifest-templates',
+        fileReferenceId,
+        validFrom,
+        validTo: null,
+      }),
+    } as unknown as MasterDataRepository;
+    const service = new MasterDataService(repository);
+
+    await service.update(
+      'manifest-templates',
+      row.id,
+      { fileReferenceId },
+      1,
+      actor,
+    );
+
+    expect(repository.update).toHaveBeenCalledWith(
+      'manifest-templates',
+      row.id,
+      { fileReferenceId, validFrom, validTo: null },
+      1,
+      actor.userId,
+      actor.branchIds[0],
+    );
+  });
+
   it('rejects invalid IANA timezones and out-of-range coordinates', async () => {
     const repository = {
       fieldExists: vi.fn().mockResolvedValue(false),

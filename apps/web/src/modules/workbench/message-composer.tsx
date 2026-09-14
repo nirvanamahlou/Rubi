@@ -43,7 +43,7 @@ import { messagingApi, messagingRequestId } from './messaging-api';
 import { messageUnits } from './message-templates';
 import { uploadWorkbenchAttachments } from './workbench-attachments';
 
-type SidebarMode = 'conversations' | 'contacts';
+type SidebarMode = 'units' | 'contacts' | 'groups' | 'conversations';
 const initials = (name: string) => name.trim().slice(0, 2) || 'ر';
 const messageTime = (value: string) =>
   new Intl.DateTimeFormat('fa-IR', {
@@ -67,7 +67,7 @@ export function MessageComposer({
       : 'finance',
   );
   const unit = messageUnits.find((item) => item.id === unitId)!;
-  const [sidebarMode, setSidebarMode] = useState<SidebarMode>('conversations');
+  const [sidebarMode, setSidebarMode] = useState<SidebarMode>('units');
   const [contacts, setContacts] = useState<MessagingContactV1[]>([]);
   const [conversations, setConversations] = useState<MessagingConversationV1[]>(
     [],
@@ -76,6 +76,7 @@ export function MessageComposer({
   const active = conversations.find((item) => item.id === activeId) ?? null;
   const [messages, setMessages] = useState<MessagingMessageV1[]>([]);
   const [contactSearch, setContactSearch] = useState('');
+  const [unitSearch, setUnitSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -320,13 +321,16 @@ export function MessageComposer({
       </div>
       <div className="grid min-h-[680px] lg:grid-cols-[320px_minmax(0,1fr)]">
         <aside className="space-y-4 border-b border-primary/15 bg-gradient-to-b from-primary/10 via-sky-100/60 to-violet-100/50 p-4 dark:via-sky-950/20 dark:to-violet-950/20 lg:border-b-0 lg:border-e">
-          <div className="grid grid-cols-2 gap-2">
+          <div
+            className="grid grid-cols-2 gap-2"
+            aria-label="بخش‌های پیام‌رسان"
+          >
             <Button
-              variant={sidebarMode === 'conversations' ? 'primary' : 'outline'}
-              onClick={() => setSidebarMode('conversations')}
+              variant={sidebarMode === 'units' ? 'primary' : 'outline'}
+              onClick={() => setSidebarMode('units')}
             >
-              <MessagesSquare className="size-4" aria-hidden="true" />
-              گفت‌وگوها
+              <Sparkles className="size-4" aria-hidden="true" />
+              واحدها
             </Button>
             <Button
               variant={sidebarMode === 'contacts' ? 'primary' : 'outline'}
@@ -335,8 +339,75 @@ export function MessageComposer({
               <Users className="size-4" aria-hidden="true" />
               مخاطبان
             </Button>
+            <Button
+              variant={sidebarMode === 'groups' ? 'primary' : 'outline'}
+              onClick={() => setSidebarMode('groups')}
+            >
+              <UserPlus className="size-4" aria-hidden="true" />
+              گروه‌ها
+            </Button>
+            <Button
+              variant={sidebarMode === 'conversations' ? 'primary' : 'outline'}
+              onClick={() => setSidebarMode('conversations')}
+            >
+              <MessagesSquare className="size-4" aria-hidden="true" />
+              گفت‌وگوها
+            </Button>
           </div>
-          {sidebarMode === 'contacts' ? (
+          {sidebarMode === 'units' ? (
+            <>
+              <Input
+                aria-label="جست‌وجوی واحد"
+                placeholder="جست‌وجوی واحد…"
+                value={unitSearch}
+                onChange={(event) => setUnitSearch(event.target.value)}
+              />
+              <div className="grid gap-2" aria-label="واحدهای پیام‌رسان">
+                {messageUnits
+                  .filter((item) =>
+                    item.label
+                      .toLowerCase()
+                      .includes(unitSearch.trim().toLowerCase()),
+                  )
+                  .map((item) => (
+                    <Button
+                      key={item.id}
+                      variant={unitId === item.id ? 'primary' : 'ghost'}
+                      aria-pressed={unitId === item.id}
+                      className={`h-auto min-h-16 justify-start border p-3 text-start ${
+                        unitId === item.id
+                          ? 'border-primary'
+                          : 'border-white/70 bg-surface/80 text-foreground dark:border-white/10'
+                      }`}
+                      onClick={() => setUnitId(item.id)}
+                    >
+                      <span
+                        className={`grid size-10 shrink-0 place-items-center rounded-xl ${
+                          unitId === item.id
+                            ? 'bg-white/15 text-primary-foreground'
+                            : 'bg-primary/10 text-primary'
+                        }`}
+                      >
+                        <MessageUnitIcon id={item.id} />
+                      </span>
+                      <span className="min-w-0">
+                        <span className="block truncate font-bold">
+                          {item.label}
+                        </span>
+                        <span className="block truncate text-xs font-normal opacity-75">
+                          {item.templates.length.toLocaleString('fa-IR')} قالب
+                          آماده
+                        </span>
+                      </span>
+                    </Button>
+                  ))}
+              </div>
+              <p className="rounded-xl border border-primary/15 bg-surface/75 p-3 text-xs leading-6 text-muted-foreground">
+                واحد و قالب را انتخاب کنید؛ مقصد واقعی پیام را از مخاطبان یا
+                گروه‌ها برگزینید.
+              </p>
+            </>
+          ) : sidebarMode === 'contacts' ? (
             <>
               <Input
                 aria-label="جست‌وجوی مخاطب"
@@ -344,15 +415,6 @@ export function MessageComposer({
                 value={contactSearch}
                 onChange={(event) => setContactSearch(event.target.value)}
               />
-              <Button
-                className="w-full"
-                variant="outline"
-                onClick={() => setGroupOpen(true)}
-                disabled={!contacts.length}
-              >
-                <UserPlus className="size-4" aria-hidden="true" />
-                ایجاد گروه
-              </Button>
               <div className="grid gap-2" aria-label="مخاطبان CRM">
                 {contacts.map((contact) => (
                   <Button
@@ -382,6 +444,60 @@ export function MessageComposer({
                     مخاطبی در شعب مجاز پیدا نشد.
                   </p>
                 )}
+              </div>
+            </>
+          ) : sidebarMode === 'groups' ? (
+            <>
+              <Button
+                className="w-full"
+                variant="outline"
+                onClick={() => setGroupOpen(true)}
+                disabled={!contacts.length}
+              >
+                <UserPlus className="size-4" aria-hidden="true" />
+                ایجاد گروه جدید
+              </Button>
+              <div className="grid gap-2" aria-label="گروه‌های من">
+                {conversations
+                  .filter((conversation) => conversation.type === 'GROUP')
+                  .map((conversation) => (
+                    <Button
+                      key={conversation.id}
+                      variant={
+                        activeId === conversation.id ? 'primary' : 'ghost'
+                      }
+                      className="h-auto min-h-20 justify-start border border-white/70 p-3 text-start dark:border-white/10"
+                      onClick={() => setActiveId(conversation.id)}
+                    >
+                      <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-surface/20">
+                        <Users className="size-5" aria-hidden="true" />
+                      </span>
+                      <span className="min-w-0">
+                        <span className="block truncate font-bold">
+                          {conversation.title}
+                        </span>
+                        <span className="block truncate text-xs font-normal opacity-75">
+                          {conversation.participants.length.toLocaleString(
+                            'fa-IR',
+                          )}{' '}
+                          عضو
+                        </span>
+                      </span>
+                      {conversation.unreadCount > 0 ? (
+                        <span className="ms-auto rounded-full bg-rose-500 px-2 py-0.5 text-xs font-bold text-white">
+                          {conversation.unreadCount.toLocaleString('fa-IR')}
+                        </span>
+                      ) : null}
+                    </Button>
+                  ))}
+                {!loading &&
+                  !conversations.some(
+                    (conversation) => conversation.type === 'GROUP',
+                  ) && (
+                    <p className="p-4 text-center text-sm text-muted-foreground">
+                      هنوز گروهی نساخته‌اید.
+                    </p>
+                  )}
               </div>
             </>
           ) : (
@@ -426,7 +542,7 @@ export function MessageComposer({
               <EmptyState
                 icon={Users}
                 title="یک مخاطب انتخاب کنید"
-                description="برای شروع پیام، مخاطبان را باز کنید یا یک گروه بسازید."
+                description="واحد و قالب را انتخاب کنید، سپس از مخاطبان یا گروه‌ها مقصد پیام را برگزینید."
               />
             </div>
           ) : (

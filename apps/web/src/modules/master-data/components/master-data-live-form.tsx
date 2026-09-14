@@ -30,13 +30,18 @@ import {
   getMasterDataDefinition,
   type MasterDataCatalogItem,
 } from '../model/catalog';
-import { masterDataApi, type MasterDataLogoChange } from '../api/client';
+import {
+  masterDataApi,
+  type MasterDataLogoChange,
+  type MasterDataManifestFileChange,
+} from '../api/client';
 import { getMasterDataFormFields } from '../model/form-fields';
 import { validateMasterDataDraft } from '../model/validation';
 import { getReferenceFieldConfig } from '../model/reference-fields';
 import { MasterDataClearableField } from './master-data-clearable-field';
 import { MasterDataLogoUpload } from './master-data-logo-upload';
 import { MasterDataMealServiceForm } from './master-data-meal-service-form';
+import { MasterDataManifestTemplateForm } from './master-data-manifest-template-form';
 import { MasterDataNumberInput } from './master-data-number-input';
 import {
   MasterDataReferenceSelector,
@@ -109,6 +114,15 @@ export function MasterDataLiveForm(
         {...(props.record ? { record: props.record } : {})}
       />
     ) : null;
+  if (props.definition.key === 'manifest-templates')
+    return props.open ? (
+      <MasterDataManifestTemplateForm
+        mode={props.mode}
+        onOpenChange={props.onOpenChange}
+        onPersist={props.onPersist}
+        {...(props.record ? { record: props.record } : {})}
+      />
+    ) : null;
   return <GenericMasterDataLiveForm {...props} />;
 }
 
@@ -128,6 +142,7 @@ function GenericMasterDataLiveForm({
   onPersist: (
     values: Record<string, string>,
     logoChange?: MasterDataLogoChange,
+    manifestFileChange?: MasterDataManifestFileChange,
   ) => Promise<void>;
   open: boolean;
   record?: MasterDataRecord;

@@ -9,6 +9,7 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
+  Query,
   Req,
   UseGuards,
 } from '@nestjs/common';
@@ -25,6 +26,7 @@ import {
   WorkbenchProfileDto,
 } from './workbench.dto';
 import { WorkbenchService } from './workbench.service';
+import { WorkbenchPerformanceService } from './workbench-performance.service';
 
 @ApiTags('Workbench')
 @ApiCookieAuth('rubi_access')
@@ -34,7 +36,15 @@ export class WorkbenchController {
   constructor(
     @Inject(WorkbenchService) private readonly service: WorkbenchService,
     @Inject(IamService) private readonly iam: IamService,
+    @Inject(WorkbenchPerformanceService)
+    private readonly performanceService: WorkbenchPerformanceService,
   ) {}
+
+  @Get('performance')
+  @Header('Cache-Control', 'private, no-store')
+  performance(@Req() req: AuthenticatedRequest, @Query('days') days?: string) {
+    return this.performanceService.get(req.actor, days);
+  }
 
   @Get('notes')
   @Header('Cache-Control', 'private, no-store')

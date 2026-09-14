@@ -304,6 +304,7 @@ export function hasFinancePermission(
 
 export const financeEndpointProposals = {
   dashboard: `${FINANCE_API_PREFIX}/dashboard`,
+  inbox: `${FINANCE_API_PREFIX}/inbox`,
   journals: `${FINANCE_API_PREFIX}/journals`,
   receipts: `${FINANCE_API_PREFIX}/receipts`,
   payments: `${FINANCE_API_PREFIX}/payments`,
@@ -357,6 +358,101 @@ export type FinanceRequestStatus =
 
 export type FinanceRequestSourceModule =
   'SALES' | 'RESERVATIONS' | 'PROCUREMENT' | 'HR' | 'OTHER';
+
+export type FinanceInboxSource = 'SALES' | 'HR' | 'RESERVATIONS' | 'PURCHASES';
+export type FinanceInboxSourceConnection =
+  'CONNECTED' | 'NOT_CONNECTED' | 'UNAVAILABLE';
+
+export interface FinanceInboxSourceStateV1 {
+  source: FinanceInboxSource;
+  connection: FinanceInboxSourceConnection;
+  itemCount: number;
+  message: string;
+}
+
+export interface FinanceInboxItemV1 {
+  version: 1;
+  id: string;
+  source: FinanceInboxSource;
+  kind: 'RECEIPT_VERIFICATION' | 'PAYMENT_REQUEST' | 'HR_REFERRAL';
+  sourceReference: string;
+  /** Stable reference needed by the owning module to apply an inbox action. */
+  sourceContextReference: string;
+  contractReference: string | null;
+  title: string;
+  partyDisplaySnapshot: string | null;
+  description: string;
+  /** The producer's exact decimal string and registered currency code. */
+  amount: { amount: string; currencyCode: string } | null;
+  settlement: {
+    paidAmount: string;
+    remainingAmount: string;
+  } | null;
+  status: FinanceRequestStatus;
+  dueAt: string | null;
+  createdAt: string;
+  requesterDisplaySnapshot: string | null;
+  branchReference: string;
+  sourceVersion: number;
+  origin: 'PERSISTED_SOURCE';
+}
+
+export type FinanceSettlementAccountKind = 'BANK' | 'CASH' | 'POS' | 'GATEWAY';
+
+export interface FinanceSettlementAccountV1 {
+  version: number;
+  id: string;
+  branchId: string;
+  title: string;
+  kind: FinanceSettlementAccountKind;
+  currencyCode: string;
+  bankId: string | null;
+  bankName: string | null;
+  maskedIdentifier: string | null;
+  isActive: boolean;
+}
+
+export interface FinanceSettlementAccountCreateV1 {
+  version: 1;
+  branchId: string;
+  title: string;
+  kind: FinanceSettlementAccountKind;
+  currencyCode: string;
+  bankId?: string | null;
+  maskedIdentifier?: string | null;
+}
+
+export interface FinancePaymentMethodOptionV1 {
+  id: string;
+  name: string;
+  channel:
+    | 'CASH'
+    | 'POS'
+    | 'BANK_TRANSFER'
+    | 'ONLINE_GATEWAY'
+    | 'CREDIT'
+    | 'WALLET'
+    | 'OTHER';
+}
+
+export interface FinanceBankOptionV1 {
+  id: string;
+  name: string;
+}
+
+export interface FinanceReceiptDecisionCommandV1 {
+  version: 1;
+  contractId: string;
+  action: 'APPROVE' | 'CORRECTION_REQUIRED';
+  reason?: string | null;
+}
+
+export interface FinanceInboxV1 {
+  version: 1;
+  generatedAt: string;
+  items: readonly FinanceInboxItemV1[];
+  sources: readonly FinanceInboxSourceStateV1[];
+}
 
 export interface FinanceRequestBaseV1 {
   requestReference: string;

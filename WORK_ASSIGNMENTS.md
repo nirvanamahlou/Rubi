@@ -1,11 +1,12 @@
 # Work Assignments
 
-## MASTER-010-CABIN-CLASS-TITLE — PC-B — READY_FOR_REVIEW
+## MASTER-010-CABIN-CLASS-TITLE — PC-B — MERGE_AUTHORIZED
 
 - درخواست مالک محصول: در «کلاس پروازی» عنوان فارسی از فرم و نمایش حذف و عنوان انگلیسی اجباری شود.
 - محدوده رزروشده: Catalog/Validation/Workspace حمل‌ونقل Web، آماده‌سازی و اعتبارسنجی Master Data API، Fixtureهای نمایشی کلاس پروازی، تست‌های هدفمند و اسناد Task. ستون پایدار `name` برای سازگاری Schema و مصرف‌کنندگان حفظ و از مقدار اجباری `englishName` در مرز API همگام می‌شود.
 - وابستگی: شاخه `codex/pc-b-cabin-class-title` از HEAD PR #240 (`f7affc37`) ساخته شده و به‌ترتیب به PRهای #240 و #236 وابسته است؛ شاخه‌ها و PRهای والد دست‌نخورده می‌مانند.
 - مرزها: هیچ Schema/Migration، Contract مشترک، Dependency/Lockfile، IAM، داده عملیاتی یا فایل متعلق به PC-A تغییر نمی‌کند. تغییر با حفظ API عمومی و FKهای Ticket Catalog/Baggage تحویل می‌شود و سازنده آن را خودکار Merge نمی‌کند.
+- مالک محصول ادغام مجموعه کامل PR #241 با `develop` را برای بازیابی اصلاحات جاافتاده صریحاً مجاز کرده است؛ همگام‌سازی باید تغییرات جدید `develop` را حفظ کند و بدون Force Push انجام شود.
 
 ## MASTER-009-AIRLINE-BAGGAGE — PC-B — READY_FOR_REVIEW
 
@@ -21,6 +22,151 @@
 - محدوده رزروشده: مدل و Workspace حمل‌ونقل Web در `apps/web/src/modules/master-data/**`، سازگاری ورودی و خروجی Master Data در `apps/api/src/master-data/**`، Fixtureهای آزمایشی همین ماژول، تست‌های هدفمند و اسناد Task. PR #232 لوگو و PRهای تاریخی Master Data بدون تغییر می‌مانند.
 - سازگاری: Schema موجود `manufacturer`، `model` و `name` حفظ می‌شود؛ API ورودی ترکیبی را در مرز Master Data به ستون‌های موجود تبدیل و برای مصرف‌کنندگان قدیمی payload جداگانه را نیز می‌پذیرد. هیچ Schema/Migration/Seed عملیاتی، Dependency/Lockfile، قرارداد مرکزی یا IAM تغییر نمی‌کند.
 - تحویل: عنوان فارسی از فرم، جدول، پروفایل و Excel انواع هواپیما حذف شد؛ ورودی و نمایش «سازنده و مدل» یکپارچه و Fixtureهای ساده/واقع‌نما هماهنگ شدند. ۲۹ تست هدفمند Web، ۲۷ تست هدفمند API، lint محدوده، TypeScript Web/API و build تولیدی هر دو برنامه موفق‌اند. جزئیات در `docs/tasks/MASTER-008-AIRCRAFT-FIELDS.md`.
+## MARKETING-001H-REMOVE-HUB-PREVIEW-SELECT — PC-B — READY_FOR_REVIEW
+
+- درخواست صریح مالک محصول در 2026-09-14 و مرجع Screenshot 602: انتخاب‌گر نمایشی «پیش‌نمایش» از سمت چپ سربرگ Hub مارکتینگ حذف شود. `COMPUTER_ID=PC-B`.
+- Branch مستقل `codex/pc-b-marketing-remove-preview-select` از `origin/develop@2ad9c613`؛ محدوده فقط `apps/web/src/modules/marketing/components/marketing-workspace.tsx`، تست قرارداد همان ماژول و ورودی‌های وضعیت همین Task است.
+- شبیه‌ساز حالت‌های Preview وابسته به همان کنترل حذف می‌شود؛ پیش‌نمایش‌های تخصصی فرم‌ها دست‌نخورده می‌مانند. بدون تغییر Backend، API/Contract، داده، Schema/Migration/Seed، Permission، Dependency/Lockfile یا فایل UI مرکزی.
+- نتیجه: انتخاب‌گر و شبیه‌ساز حالت‌های نمایشی وابسته از Header و مسیر رندر Hub حذف شدند. ۲۱ تست مارکتینگ، lint فایل‌های متاثر، Web typecheck و Production Build با ۴۶ Route موفق‌اند.
+
+## FINANCE-008-INBOX-ACTIONS — PC-A — READY_FOR_REVIEW / ACTIVE LOCAL
+
+Base `eb6af3ff`; COMPUTER_ID=PC-A. عملیاتی‌کردن کارتابل مالی برای تأیید دریافت مسافر یا برگشت برای اصلاح، و ثبت پرداخت خرید خدمات رزرواسیون به کارگزار با حساب مبدأ، روش، مبلغ، ارز، نرخ روز، زمان و مانده. اتصال فقط از قرارداد/سرویس عمومی Sales و Reservations انجام می‌شود و Finance به جدول داخلی ماژول دیگر دسترسی مستقیم ندارد. محدوده Finance API/Web/contracts، Public boundaryهای لازم در Sales/Reservations، Prisma schema و یک Migration افزایشی، seed permission و اسناد همین Task است. بدون داده ساختگی، حذف دسترسی موجود، تغییر Migration تاریخی یا Dependency/Lockfile.
+
+Completed: عملیات تأیید/اصلاح دریافت فروش و پرداخت جزئی/کامل کارگزار با حساب،
+روش پرداخت، نرخ روز و مانده پایدار شد و نتیجه در Sales/Reservations بازتاب دارد.
+Migration و Seed محلی اعمال شد؛ `Ramtin` نقش افزایشی `finance_staff` و شش مجوز
+لازم را دارد. ۱۲۸۳ تست کامل API، ۱۳۴۳ تست کامل Web، typecheck، lint و build
+تولیدی API/Web موفق‌اند. Web3100/API4190 با build نهایی فعال‌اند؛ ادغام نیازمند
+تأیید جداگانه مالک محصول است.
+
+## WORKBENCH-040 — PC-B — VALIDATED / RELEASED
+
+- Reserve Workbench performance UI, HR self-performance projection/tests, additive Workbench contracts and own documentation for screenshot582 summary redesign. Add self-only today check-in/out and total approved leave request count, keep payslip period and shift dates explicit, remove raw activity rows. Producer HR/Workbench; consumer Workbench Web; new response fields are optional for compatibility. No employee reassignment, migration, dependency, permission change or shared runtime replacement.
+
+## WORKBENCH-039-UNIT-CONTRAST — PC-B — VALIDATED / RELEASED
+
+- Reserve message-composer.tsx and this task's status documentation for the screenshot581 selected department contrast fix. Branch codex/pc-b-workbench-unit-contrast from develop@e82d8216. Remove the unconditional surface background from selected unit buttons, retain Rubi primary colors, match selected icon contrast and expose pressed state. No API, data, migration, dependency or shared component edits.
+
+## FINANCE-007-INBOX-COMPLETION — PC-A — READY_FOR_REVIEW / RUNTIME PERMISSION PENDING
+
+Base `4a84f844`; COMPUTER_ID=PC-A. مشخصات نقش `finance_staff` با مجوزهای حداقلی کارتابل و تحویل مالی تکمیل شد؛ کارتابل اکنون درخواست‌های واقعی فروش، ارجاع‌های مالی منابع انسانی و خرید خدمات رزرواسیون را از Public Service ماژول‌ها جمع می‌کند. Preview قدیمی، متن‌های فنی، وضعیت اتصال Producer و اقدام نمایشی غیرفعال از `/finance/requests` حذف شد. ماژول خرید مستقل Backend عملیاتی ندارد و تا ایجاد Producer واقعی داده‌ای برای آن جعل نمی‌شود. ۳ تست API، ۸ تست قرارداد Web، ۳ تست Migration، lint محدوده، typecheck و build تولیدی API/Web موفق‌اند و Web3100/API4190 فعال‌اند. انتساب افزایشی نقش `finance_staff` به کاربر `Ramtin` هنوز اجرا نشده و منتظر تأیید صریح مالک است؛ هیچ نقش یا مجوز قبلی حذف نخواهد شد.
+
+## WORKBENCH-038-PUBLISH — PC-B — MERGE_AUTHORIZED
+
+- User explicitly authorizes pushing and merging all changes from this Workbench task.
+- Reserve only integration of PR #259 and its ancestor #239 into current develop; preserve the independently merged HR destination removal. Resolve additive status documentation conflicts and run final CI on the updated head before merge.
+- No new migration, dependency, runtime replacement or unrelated open PR is included. Runtime integration branch remains pushed separately.
+
+## WORKBENCH-038 — PC-B — COMPLETE / TESTED
+
+- User requests a real, self-only My Performance tab: HR leave, shifts and latest
+  payslip, own sales/customer metrics and permission-scoped recent job activity.
+  Branch `codex/pc-b-workbench-my-performance` preserves WORKBENCH-037.
+- Reserve additive HR self-performance service/module export, Workbench aggregation,
+  controller/module, Workbench contracts/UI/tests and task/status documentation.
+  HR and Workbench producers are PC-B-owned; consume existing Sales and IAM public
+  services without changing their contracts, ownership or tables. No Reporting edits.
+- Additive contract producer: HR/Workbench; consumer: Workbench Web. Only the signed-in
+  actor is accepted, never a client-supplied employee/user ID. HR self-service may see
+  only its own released payslip projection; draft payroll and colleagues remain hidden.
+- No migration, schema, dependency, shared runtime or permission seed changes. Existing
+  completed WORKBENCH-037 reservations are released. Push a PR to develop after checks.
+- Delivered the self-only HR/Sales/activity backend and native Performance tab.
+  18 targeted API tests and 49 Workbench Web tests pass, with scoped ESLint,
+  API/Web TypeScript and both production builds (46 Web routes). No migration or
+  operational data/runtime change. Implementation reservations are released.
+
+## WORKBENCH-037-REMOVE-HR-DESTINATION-CARD — PC-B — READY_FOR_REVIEW
+
+- درخواست صریح مالک محصول در 2026-09-13: پوسته پایین «درخواست‌های منابع انسانی» از صفحه میزکار حذف شود، اما Backend، مسیر `/hr`، مجوزها و اعلان‌های منابع انسانی باقی بمانند. `COMPUTER_ID=PC-B`.
+- Branch مستقل `codex/pc-b-workbench-remove-hr-link` از `origin/develop@dd177cfd`؛ محدوده فقط مقصدهای نمایشی Workbench، تست همان قرارداد و اسناد وضعیت این Task است.
+- هیچ API، Backend، Schema/Migration/Seed، Shared Contract، Permission، داده، Dependency/Lockfile یا منوی اصلی تغییر نمی‌کند.
+- نتیجه: کارت و لینک پایین «درخواست‌های منابع انسانی» از خانه میزکار حذف شد؛ منطق خواندن اعلان HR و کنترل مجوز آن بدون تغییر باقی ماند. چهار تست هدفمند Workbench، lint فایل‌های متاثر، Web typecheck و Production Build با ۴۶ Route موفق‌اند.
+
+## APP-SHELL-HEADER-UTILITY-LEFT-001 — PC-A — READY_FOR_REVIEW
+
+Base `dd177cfd`; COMPUTER_ID=PC-A. انتقال یکپارچه گروه تاریخ، زبان، پوسته، اعلان و منوی کاربر به لبه چپ نوار بالای AppShell طبق تصویر کاربر. محدوده فقط `app-shell.tsx`، تست header موجود و اسناد وضعیت است؛ رفتار کنترل‌ها، API، داده، Schema/Migration و وابستگی تغییر نمی‌کنند. PRهای قدیمی #155/#156/#159/#161 این فایل را در شاخه‌های قدیمی لمس کرده‌اند اما مبنای فعلی `develop` است و تغییر فعال تازه‌ای روی این چیدمان ندارند.
+
+Completed: تاریخ و HeaderActions داخل یک بلوک `ms-auto` قرار گرفتند تا در RTL به لبه چپ هدر منتقل شوند. نمایش دسکتاپ تاریخ و رفتار زبان/پوسته/اعلان/کاربر حفظ شد. ۴ تست متمرکز، lint محدوده، Web typecheck و build تولیدی ۴۶ مسیر پاس شدند؛ بدون تغییر API یا داده.
+
+## FINANCE-006-DELIVERY-PANEL-REDESIGN — PC-A — COMPLETE / MERGED / ACTIVE
+
+Base `6026370f`; COMPUTER_ID=PC-A. بازطراحی نمای «پرداخت کارگزاران و تحویل مدارک به فروش» در کارتابل مالی برای تفکیک روشن مراحل، نمایش کارت قرارداد، وضعیت تسویه خدمات و اقدام بعدی. محدوده `finance-delivery-panel.tsx`، انتقال محل نمایش آن از Workspace قدیمی حسابداری به `FinanceRequestInboxWorkspace`، تست متمرکز و اسناد وضعیت است؛ منطق API، مجوزها، داده، Schema/Migration و قراردادهای اشتراکی تغییر نمی‌کنند. PR قدیمی #126 فایل را در گذشته ایجاد کرده اما تغییر فعال تازه‌ای روی این محدوده ندارد؛ پیاده‌سازی فعلی `develop` مبناست.
+
+Completed: هدر راهنما و جریان دو مرحله‌ای، کارت مستقل قرارداد، شمارنده تسویه خدمات، وضعیت و اقدام صریح هر خدمت، علت غیرفعال بودن تحویل و وضعیت نهایی مجوز اضافه شد. کنترل از Workspace قدیمی حسابداری به `/finance/requests` منتقل شد. ۱۳۴۰ تست Web، تست متمرکز ۸ موردی، lint محدوده، typecheck و build تولیدی ۴۶ مسیر موفق بود. بدون تغییر API، داده، مجوز یا Migration.
+
+Merged via PR #254 at `e40878f1`. Web3100 runs the production build `55JsHVl1EIROpWDpoCZuS` from this checkout and API4190 is healthy; unauthenticated route check returns the expected 307 login redirect. Scope released.
+
+## FINANCE-005-ACCOUNTING-DROPDOWN-DEFAULTS — PC-A — COMPLETE / MERGED / ACTIVE
+
+- درخواست مالک محصول در 2026-09-13: هر چهار گروه منوی داخلی حسابداری هنگام ورود بسته
+  باشند و دو گروه «ارتباط با سامانه مودیان مالیاتی» و «حسابداری مالیاتی» نیز بدون
+  زیرگروه فعلی به شکل دراپ‌داون نمایش داده شوند.
+- Branch مستقل `codex/pc-a-accounting-dropdown-defaults` از
+  `origin/develop@f925ccda`؛ `COMPUTER_ID=PC-A`.
+- محدوده رزروشده: مؤلفه و تست قراردادی منوی داخلی حسابداری و اسناد همین Task. بدون
+  API، داده، Permission، Schema/Migration، Seed، Dependency یا تغییر منوی اصلی.
+- Push و PR به `develop` مجاز است؛ ادغام و به‌روزرسانی Web3100 پس از تست در ادامه
+  درخواست جاری مالک محصول انجام می‌شود. Force Push ممنوع است.
+- پیاده‌سازی تکمیل شد: هر چهار عنوان دراپ‌داون‌اند، state اولیه همه را بسته نگه می‌دارد
+  و دو گروه مالیاتی فعلاً هیچ زیرگروهی رندر نمی‌کنند. ۲۵ تست هدفمند، lint، TypeScript
+  و build تولیدی ۴۶ مسیر موفق‌اند؛ ادغام و فعال‌سازی Web3100 مجاز است.
+- هر چهار Gate CI پاس شدند؛ PR #246 با Merge Commit `88d26ebc` وارد `develop` شد.
+  Web3100 با Build ID `60YeidM5vzsZuojUx7D85` فعال و API4190 سالم است؛ رزرو آزاد شد.
+
+## FINANCE-004-ACCOUNTING-SECONDARY-NAV — PC-A — COMPLETE / MERGED
+
+- درخواست مالک محصول در 2026-09-13: افزودن منوی داخلی جمع‌شونده برای صفحه «حسابداری»
+  با چهار گروه «دفتر کل»، «دریافت و پرداخت»، «ارتباط با سامانه مودیان مالیاتی» و
+  «حسابداری مالیاتی». زیرگروه‌های فعلی فقط پوسته ناوبری هستند و محتوای عملیاتی آن‌ها
+  تا دریافت توضیحات بعدی مالک محصول عمداً خالی می‌ماند.
+- Branch مستقل `codex/pc-a-accounting-secondary-navigation` از
+  `origin/develop@40d8f1f4`؛ `COMPUTER_ID=PC-A`.
+- محدوده رزروشده: `apps/web/src/modules/finance/**`، routeهای افزایشی زیر
+  `apps/web/src/app/(crm)/finance/accounting/**`، و تست‌های همان محدوده. منوی اصلی، API،
+  Schema/Migration/Seed، Permission، Dependency/Lockfile و داده عملیاتی تغییر نمی‌کنند.
+- زیرگروه دفتر کل: اطلاعات پایه، حساب‌ها، اسناد، عملیات پایان سال و گزارش‌ها. زیرگروه
+  دریافت و پرداخت: گزارش پرداخت و دریافت. دو گروه مالیاتی تا اعلام زیرگروه‌های بعدی فقط
+  ورودی سطح اول دارند. Push و Draft PR به develop مجاز؛ Merge/Force Push ممنوع.
+- پیاده‌سازی تکمیل شد: منوی داخلی مستقل و جمع‌شونده، مسیرهای پایدار، وضعیت انتخاب‌شده و
+  Empty Stateهای بدون داده اضافه شدند. ۲۰ تست Finance/Navigation، Prettier، ESLint،
+  TypeScript و build تولیدی ۴۶ مسیر موفق‌اند؛ QA مرورگر نیز ساختار و ناوبری را تأیید کرد.
+  هیچ API، Schema/Migration، Permission، داده عملیاتی یا Dependency تغییر نکرد.
+- مالک محصول در 2026-09-13 ادغام با `develop` و فعال‌سازی Web3100 را صریحاً مجاز کرد.
+- Merge Commit `b5fdbe75` روی `develop` پوش شد؛ رزرو پیاده‌سازی این واحد آزاد است.
+- Web3100 از Worktree همین واحد با Build ID `RAhkQQeixfqHkOKXiubFX` فعال است.
+
+## FINANCE-003-INBOX-REDESIGN-INTEGRATION — PC-A — COMPLETE / MERGED / ACTIVE
+
+- درخواست مالک محصول در 2026-09-13: بازطراحی حرفه‌ای `/finance/requests` و ورود درخواست‌های
+  واقعی بخش‌های دیگر به کارتابل مالی. Branch مستقل
+  `codex/pc-a-finance-inbox-redesign-integration` از `origin/develop@d65d8acc`؛
+  `COMPUTER_ID=PC-A`.
+- محدوده رزروشده: `apps/web/src/modules/finance/**` و route/test مالی،
+  `apps/api/src/finance/**`، projection عمومی و فقط‌خواندنی پرداخت‌های منتظر تأیید در
+  `apps/api/src/sales/{sales.service,sales.repository,sales.controller}.ts` و تست‌های آن،
+  قراردادهای افزایشی Finance/Sales، ثبت `FinanceModule` در AppModule، و permission seed
+  حداقلی `finance.read` و `hr.connections.finance.receive` برای نقش مالی. PC-A مالک هر دو
+  ماژول Sales و Finance است؛ فایل HR تغییر نمی‌کند و فقط سرویس عمومی export‌شده مصرف می‌شود.
+- اتصال فعلی فقط درخواست‌های واقعاً persisted فروش و ارجاع‌های persisted منابع انسانی را
+  از public serviceهای مالک و با branch/permission scope تجمیع می‌کند. Reservations و
+  Purchases تا انتشار producer استاندارد `finance.payment-request.v1` در UI صریحاً
+  «متصل نیست» می‌مانند؛ داده Preview جای درخواست واقعی نمایش داده نمی‌شود.
+- بدون Schema/Migration/Dependency، بدون ثبت/تأیید مالی عملیاتی، بدون Query مستقیم جدول
+  ماژول دیگر از Finance و بدون تغییر runtime مشترک 3100/4190. Web/API این Task فقط روی
+  3200/4200 بررسی می‌شوند. Push و PR به develop مجاز؛ Merge/Force Push ممنوع.
+- پیاده‌سازی کامل شد: endpoint فقط‌خواندنی Finance، projection شعبه‌محور Sales، مصرف
+  سرویس عمومی HR، permission `finance.read` و رابط بازطراحی‌شده با وضعیت اتصال، KPI،
+  جست‌وجو، فیلتر و master-detail. ۸۲ تست هدفمند، lint محدوده، typecheck چهار package و
+  build تولیدی API/Web موفق؛ QA مرورگر ایزوله روی 3201 انجام شد و runtime مشترک تغییر
+  نکرد. Reservations/Purchases همچنان صریحاً `NOT_CONNECTED` و عملیات مالی غیرفعال‌اند.
+- مالک محصول در 2026-09-13 نمایش کارتابل جدید روی Web3100 را مطالبه و ادغام/فعال‌سازی
+  نسخه ترکیبی را مجاز کرد. پس از ادغام با آخرین `develop`، ۵۵ تست هدفمند، lint و
+  typecheck چهار package و build تولیدی API/Web دوباره موفق شدند.
+- هر چهار Gate نهایی CI پاس شدند؛ PR #237 با Merge Commit `2fc5e6d2` وارد `develop`
+  شد. Web3100 با Build ID `H2SQ5Bcvdx249ZC-GP-m1` و API4190 سالم فعال‌اند و رزرو این
+  واحد آزاد است.
 
 ## HR-014-BACKEND-ONLY — PC-B — MERGE_AUTHORIZED
 
@@ -49,7 +195,7 @@
   `docs/tasks/DASHBOARDS-PC-C-AUTHORIZATION.md`. Merge، Force Push، تغییر مستقیم
   `main`/`develop` و بازنویسی تغییرات PC-A/PC-B مجاز نیست.
 
-## WORKBENCH-036 — PC-B — PR_OPEN / LOCKS_RELEASED
+## WORKBENCH-036 — PC-B — COMPLETE / MERGED
 
 - COMPUTER_ID=PC-B. User explicitly requests a full Workbench integration audit,
   implementation of missing internal/cross-CRM connections, push and merge. Branch
@@ -76,9 +222,33 @@
   HR resolves destination users; Notifications owns delivery/read state. Cross-module
   calls use exported services, including server-side calendar aggregation.
 - Full Repository lint (6 jobs), typecheck (9 jobs) and production build (6 jobs,
-  46 Web routes) pass on the rebased tree. Migration/shared-contract/Central Docs
-  reservations are released after opening PR #234 to `develop`; dependency/lockfile
-  remained unassigned. Merge is explicitly authorized by the user after CI passes.
+  46 Web routes) pass on the rebased tree. Exact-head CI also passed the full test,
+  PostgreSQL 18 migration/seed, quality and production-build gates; all 59 migrations
+  were applied from an empty database and seed repeatability passed. PR #234 merged
+  into `develop` as `1707d980`. All temporary reservations are released and the
+  dependency/lockfile remained unassigned.
+
+## WORKBENCH-037 — PC-B — COMPLETE / TESTED
+
+- Remove the date and authorized-branch count block from the Workbench greeting card
+  at the user's explicit request. Reserve `workbench-workspace.tsx` and this status
+  entry only on `codex/pc-b-workbench-remove-greeting-meta`. No API, schema,
+  dependency, shared layout or operational-data change.
+- Removed the complete metadata block and its unused `HeaderToday` import. Web lint,
+  Repository typecheck (9 jobs) and the production Web build (46 routes) pass. The
+  initial greeting-card source reservation is released.
+- User follow-up restores the unit-message directory alongside contacts, groups and
+  conversations, while keeping the persisted Messaging/IAM/Documents integration.
+  Extend this work item to reserve `message-composer.tsx`, its focused tests and the
+  Workbench status entry on the same pre-merge branch. No API, schema, dependency or
+  cross-module contract change.
+- Delivered four explicit messenger views for units, contacts, groups and
+  conversations. All seven unit/template collections are visible again; direct/group
+  selection, group creation, persistence, attachments and forwarding keep using the
+  existing backend services. 47 Workbench tests, 42 isolated HR tests, scoped lint,
+  Repository typecheck (9 jobs) and the 46-route production Web build pass. A full
+  Web run passed 1337 tests and hit only the same two HR parallel 5-second timeouts;
+  both passed in the isolated rerun. All scoped reservations are released.
 
 ## B2B-CRM-CONNECTIONS-002 — PC-B — READY_FOR_REVIEW / TESTED
 
@@ -2429,3 +2599,11 @@ B2B-360-REMOVE-SUBTITLE-001: READY_FOR_REVIEW. Combined runtime1bf840b/PID8604 b
 - درخواست مالک در 2026-09-12: محل بارگذاری سند قرارداد و سند تضمین در فرم مرحله‌ای ثبت آژانس برای سازمان جدید نیز نمایش داده شود و دلیل ثبت/اصلاح قرارداد اختیاری باشد. شاخه `codex/pc-b-restore-agency-document-guarantee` از `origin/develop@b2098bc` ساخته شد.
 - محدوده رزروشده: Organizations Web wizard/editor/model/tests، اعتبارسنجی افزایشی B2B contract/API DTO و اسناد وضعیت همین واحد کار. فایل انتخاب‌شده سازمان جدید پس از ایجاد شناسه پایدار سازمان و پیش از ذخیره پیش‌نویس، فقط از API عمومی Documents بارگذاری و به قرارداد یا تضمین متصل می‌شود. بدون Schema/Migration/Seed، IAM grant، Dependency/Lockfile یا دسترسی مستقیم به جدول ماژول دیگر.
 - پیاده‌سازی و QA کامل شد: کنترل‌های فایل قرارداد و تضمین برای سازمان جدید پس از انتخاب شعبه نمایش داده می‌شوند؛ گزینه‌های نوع/دسته سند از Documents بارگذاری می‌شوند و دلیل ثبت/اصلاح اختیاری است. ۱۲۸ تست Organizations، ۱۲۱ تست B2B API، ۶۷ تست Contracts، lint محدوده، TypeScript و build Web/API موفق بودند. بررسی Web3100 بدون خطای کنسول و بدون ذخیره داده آزمایشی انجام شد. برای دریافت PC-A، نتیجه از طریق PR همین شاخه در `origin/develop` منتشر می‌شود.
+
+## MASTER-DATA-MANIFEST-AIRPORT-001 — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-12: قالب Manifest با بارگذاری مستقیم فایل XLSX و فقط انتخاب ایرلاین و مقصد ساخته و ذخیره شود؛ همچنین فیلدهای ICAO، Timezone IANA، طول و عرض جغرافیایی از فرم ایجاد فرودگاه حذف شوند. شاخه `codex/pc-b-manifest-template-airport` از `origin/develop@d1f5c9d9` ساخته شد.
+- محدوده رزروشده: مدل و Migration افزایشی/سازگار Master Data برای مقصد قالب Manifest و nullable شدن مشخصات تکمیلی فرودگاه، API/Repository/DTO همین ماژول، فرم‌ها و client اطلاعات پایه Web، تست‌های هدفمند و اسناد همین واحد. `Migration Owner = PC-B/MASTER-DATA-MANIFEST-AIRPORT-001`؛ قفل Dependency/Lockfile گرفته نمی‌شود.
+- Producer داده مرجع Master Data و مصرف‌کننده فعلی Web است. فایل اصلی فقط از API عمومی Documents با نوع `MANIFEST` ذخیره می‌شود و Master Data فقط شناسه نسخه فایل را نگه می‌دارد؛ هیچ query مستقیم به جدول Documents و هیچ تغییر در Reservations/Sales انجام نمی‌شود. مقصد یک FK واقعی به شهر فعال است. قالب جدید به‌صورت Draft و نسخه خودکار ذخیره می‌شود تا مصرف عملیاتی بدون Review ممکن نباشد.
+- فیلدهای تکمیلی فرودگاه فقط در Create پنهان و در Schema اختیاری می‌شوند؛ ویرایش/نمایش داده‌های موجود حفظ می‌شود و هیچ مقدار ساختگی برای ICAO، timezone یا مختصات تولید نخواهد شد. Migrationهای محلی منتشرنشده PC-A اعمال یا بازنویسی نمی‌شوند.
+- پیاده‌سازی کامل شد: فرم اختصاصی Manifest فقط ایرلاین، مقصد و XLSX را می‌گیرد؛ نام/نسخه/فرمت/Draft در Backend تولید می‌شود و فایل از قرارداد عمومی Documents با نوع `MANIFEST` ثبت و سپس با optimistic version متصل می‌شود. فرم Create فرودگاه چهار مشخصه تکمیلی را نمایش نمی‌دهد و Schema/API آن‌ها را nullable می‌پذیرد. ۳۳ تست هدفمند API، ۳۸ تست Web و ۲ تست Migration، lint محدوده، Prisma validate/format و typecheck/build دیتابیس، API و Web موفق بودند. پس از تحویل، `Migration Owner = RELEASED / UNASSIGNED` و رزرو این واحد آزاد است.

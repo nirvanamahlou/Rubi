@@ -69,6 +69,7 @@ import {
   masterDataApi,
   MasterDataApiError,
   type MasterDataLogoChange,
+  type MasterDataManifestFileChange,
 } from '../api/client';
 import { MasterDataDeleteButton } from './master-data-delete-button';
 import { MasterDataFilterActions } from './master-data-filter-actions';
@@ -437,15 +438,26 @@ export function MasterDataTransportationWorkspace() {
   async function persist(
     values: Record<string, string>,
     logoChange?: MasterDataLogoChange,
+    manifestFileChange?: MasterDataManifestFileChange,
   ) {
-    const result = await masterDataApi.persistWithLogo({
-      resource,
-      values,
-      title:
-        `${definition.singularLabel} ${values.name ?? selected?.name ?? ''}`.trim(),
-      ...(formMode === 'edit' && selected ? { existing: selected } : {}),
-      ...(logoChange ? { logoChange } : {}),
-    });
+    const title =
+      `${definition.singularLabel} ${values.name ?? selected?.name ?? ''}`.trim();
+    const existing = formMode === 'edit' && selected ? selected : undefined;
+    const result =
+      resource === 'manifest-templates'
+        ? await masterDataApi.persistManifestTemplate({
+            values,
+            title,
+            ...(existing ? { existing } : {}),
+            ...(manifestFileChange ? { file: manifestFileChange.file } : {}),
+          })
+        : await masterDataApi.persistWithLogo({
+            resource,
+            values,
+            title,
+            ...(existing ? { existing } : {}),
+            ...(logoChange ? { logoChange } : {}),
+          });
     setNotice(
       result.warning ??
         `${definition.singularLabel} با نسخه جدید و Audit ${formMode === 'edit' ? 'ویرایش' : 'ثبت'} شد.`,

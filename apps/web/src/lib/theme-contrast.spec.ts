@@ -65,6 +65,9 @@ describe('dark theme readability', () => {
       ),
     ];
     expect(blocks).toHaveLength(5);
+    expect(statuses).toMatch(
+      /\[data-tone='darkGray'\][\s\S]*--tone-bg:\s*#334b5c;[\s\S]*--tone-edge:\s*#8fb4cc;/,
+    );
     for (const [, block] of blocks) {
       const background = block!.match(/--tone-bg:\s*(#[\da-f]{6})/)![1]!;
       const foreground = block!.match(/--tone-text:\s*(#[\da-f]{6})/)![1]!;

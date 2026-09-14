@@ -67,6 +67,15 @@ Reservations مالک intent و state داخلی رزرو/صدور است. Integ
 mapping و response خام redacted است. Adapter اجازه تغییر مستقیم جدول‌های Reservation را
 ندارد؛ نتیجه normalized را برمی‌گرداند و Reservations transition را اعمال می‌کند.
 
+### قالب Manifest در برابر Documents و Reservations
+
+Master Data مالک اتصال معنایی قالب به ایرلاین و مقصد، نسخه قالب و وضعیت انتشار است.
+Documents مالک فایل XLSX، اسکن، دسترسی، آرشیو و تاریخچه نسخه فایل است؛ Master Data فقط
+شناسه سند را از API عمومی Documents دریافت می‌کند و اجازه Query یا ذخیره مستقیم در جدول
+Documents را ندارد. Reservations برای ساخت Manifest مسافر فقط قالب فعال و فایل سالم را از
+قراردادهای عمومی مالکان مصرف می‌کند و مالک رکورد Manifest اجرایی، Snapshot مسافر و تاریخچه
+ارسال باقی می‌ماند.
+
 ### Reservations در برابر Procurement
 
 Sales Contract Service Item تعهد فروش را مدل می‌کند. Reservations از public command یک

@@ -284,6 +284,7 @@ export interface SalesContractDetail extends SalesContractSummary {
     createdByName?: string | null;
     createdAt: string;
     financeConfirmedAt: string | null;
+    financeDecisionReason?: string | null;
   })[];
   fxSnapshot: SalesContractCreateRequest['fxSnapshot'];
   pricingNotes: string | null;
@@ -361,6 +362,26 @@ export interface SalesFinanceSubmissionV1 {
   priceComponents: readonly SalesPriceComponentInput[];
   payments: readonly SalesPaymentInput[];
   occurredAt: string;
+}
+
+export interface SalesFinanceInboxPaymentV1 {
+  version: 1;
+  paymentId: string;
+  contractId: string;
+  contractNumber: string;
+  customerId: string;
+  customerNameSnapshot: string;
+  branchId: string;
+  amount: string;
+  currencyCode: string;
+  method: SalesPaymentMethod;
+  description: string | null;
+  paymentReference: string | null;
+  dueAt: string;
+  createdAt: string;
+  createdByUserId: string;
+  createdByName: string | null;
+  contractVersion: number;
 }
 
 export interface SalesFinancePaymentConfirmedV1 {

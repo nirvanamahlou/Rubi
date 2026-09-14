@@ -48,13 +48,14 @@ Migration افزایشی `20260912200000_workbench_integrations` پوشه/یاد
 - ۴۷ تست Workbench Web و ۱۰ تست مرز HTTP اسناد پاس شد.
 - lint سراسری با ۶ Job، typecheck سراسری با ۹ Job و build تولیدی با ۶ Job و ۴۶
   مسیر Web پاس شد.
-- Prisma format، generate و validate پاس شد. تمرین کامل تاریخچه روی دیتابیس
-  موقت محلی به‌دلیل پاسخ‌ندادن Docker Desktop در Migration سوم متوقف شد؛ SQL
-  همین Migration، schema و کل تاریخچه در CI روی PostgreSQL موقت دوباره اجرا
-  می‌شوند و Merge فقط پس از عبور Gateهای Repository انجام می‌شود.
+- Prisma format، generate و validate پاس شد. تمرین محلی تاریخچه در Migration
+  تاریخی سوم به‌دلیل پاسخ‌ندادن Docker Desktop متوقف و کنار گذاشته شد؛ سپس CI روی
+  exact head همهٔ ۵۹ Migration را از دیتابیس خالی PostgreSQL 18 اعمال کرد، وضعیت
+  Migration را تأیید کرد و تکرارپذیری Seed را با موفقیت آزمود.
 
 هیچ پیام، گروه، درخواست، نظرسنجی یا فایل ساختگی برای کاربران واقعی ایجاد نشد و
 هیچ داده عملیاتی در بررسی این تغییر دست‌کاری نشد.
 
-شاخه `codex/pc-b-workbench-integrations` در PR #234 برای `develop` منتشر شد و
-قفل‌های Migration، قرارداد مشترک و اسناد مرکزی پس از انتشار آزاد شدند.
+PR #234 با Merge Commit `1707d980` وارد `develop` شد. هر چهار Gate تست کامل،
+Migration/Seed، کیفیت و build روی exact head موفق بودند و قفل‌های Migration،
+قرارداد مشترک و اسناد مرکزی آزاد شدند.

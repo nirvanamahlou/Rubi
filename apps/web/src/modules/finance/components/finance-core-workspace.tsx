@@ -44,6 +44,8 @@ import {
   PageHeader,
 } from '@/components/ui/surfaces';
 import { FinanceWorkspace } from './finance-workspace';
+import { FinanceInboxLiveWorkspace } from './finance-inbox-live-workspace';
+import { FinanceDeliveryPanel } from './finance-delivery-panel';
 import {
   accountTreePreview,
   financeInboxPreviewRequests,
@@ -733,7 +735,7 @@ function ActionDialog({
   );
 }
 
-function InboxSpace() {
+export function LegacyInboxPreview() {
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<string>('ALL');
   const [selected, setSelected] = useState<FinanceInboxPreviewRequest | null>(
@@ -974,14 +976,9 @@ export function FinanceAccountingWorkspace() {
 export function FinanceRequestInboxWorkspace() {
   return (
     <main className="space-y-6">
-      <PageHeader
-        eyebrow="Rubi Finance"
-        title="کارتابل درخواست‌ها"
-        description="بررسی مستقل درخواست‌های دریافت و پرداخت فروش، رزرواسیون، خرید و منابع انسانی"
-      />
-      <FinanceContext />
-      <InboxSpace />
-      <FinanceModuleFooter />
+      <PageHeader title="کارتابل درخواست‌ها" />
+      <FinanceInboxLiveWorkspace />
+      <FinanceDeliveryPanel />
     </main>
   );
 }
