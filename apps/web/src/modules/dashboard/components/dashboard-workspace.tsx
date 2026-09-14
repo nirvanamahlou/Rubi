@@ -177,7 +177,7 @@ function KpiCard({
       aria-expanded={selected}
       aria-haspopup="dialog"
       className={cn(
-        'group relative min-h-48 min-w-0 overflow-hidden rounded-2xl border bg-surface p-4 text-start shadow-sm outline-none transition hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-lg focus-visible:ring-2 focus-visible:ring-ring',
+        'group relative min-h-40 min-w-0 overflow-hidden rounded-2xl border bg-surface p-4 text-start shadow-sm outline-none transition hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-lg focus-visible:ring-2 focus-visible:ring-ring',
         selected ? 'border-primary ring-2 ring-primary/15' : 'border-border',
         featured && 'bg-gradient-to-bl from-blue-50/60 via-surface to-surface dark:from-blue-950/20',
       )}
@@ -210,21 +210,6 @@ function KpiCard({
         </span>
       </span>
       <EmptyMetric compact />
-      <span className="mt-4 flex flex-wrap gap-1.5 border-t border-border/80 pt-3">
-        <Badge className="bg-muted text-[10px] text-muted-foreground">
-          مبنا: {definition.dateBasis}
-        </Badge>
-        <Badge className="bg-muted text-[10px] text-muted-foreground">
-          {definition.currency === 'required'
-            ? 'ارز/FX الزامی'
-            : 'بدون واحد پول'}
-        </Badge>
-        {definition.reportCode ? (
-          <Badge className="bg-muted text-[10px] text-muted-foreground">
-            {definition.reportCode}
-          </Badge>
-        ) : null}
-      </span>
     </button>
   );
 }
@@ -345,39 +330,6 @@ function KpiDefinitionPanel({
                 ))}
               </div>
             </section>
-
-            <dl className="grid gap-3 sm:grid-cols-2">
-              <div className="rounded-xl border border-border p-3">
-                <dt className="text-xs font-bold text-muted-foreground">
-                  سطح محاسبه (Grain)
-                </dt>
-                <dd className="mt-1 leading-6">{definition.grain}</dd>
-              </div>
-              <div className="rounded-xl border border-border p-3">
-                <dt className="text-xs font-bold text-muted-foreground">
-                  مبنای زمانی
-                </dt>
-                <dd className="mt-1 leading-6" dir="ltr">
-                  {definition.dateBasis}
-                </dd>
-              </div>
-              <div className="rounded-xl border border-border p-3">
-                <dt className="text-xs font-bold text-muted-foreground">
-                  سیاست واحد پول
-                </dt>
-                <dd className="mt-1 leading-6">
-                  {definition.currency === 'required'
-                    ? 'ارز و سیاست تبدیل FX الزامی است.'
-                    : 'واحد پول برای این شاخص کاربرد ندارد.'}
-                </dd>
-              </div>
-              <div className="rounded-xl border border-border p-3">
-                <dt className="text-xs font-bold text-muted-foreground">
-                  مبنای مقایسه
-                </dt>
-                <dd className="mt-1 leading-6">{definition.comparison}</dd>
-              </div>
-            </dl>
 
             <section
               aria-labelledby="kpi-exclusions-title"

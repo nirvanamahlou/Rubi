@@ -221,6 +221,25 @@ describe('dashboard permission and data states', () => {
       'این شاخص برای پاسخ به این تصمیم استفاده می‌شود:',
     );
     expect(source).not.toContain('تصمیم: </span>');
+    const kpiCardSource = source.slice(
+      source.indexOf('function KpiCard'),
+      source.indexOf('function KpiDefinitionPanel'),
+    );
+    expect(kpiCardSource).not.toContain('definition.dateBasis');
+    expect(kpiCardSource).not.toContain('definition.reportCode');
+    expect(kpiCardSource).not.toContain('ارز/FX الزامی');
+    const kpiDefinitionPanelSource = source.slice(
+      source.indexOf('function KpiDefinitionPanel'),
+      source.indexOf('function DimensionFilter'),
+    );
+    expect(kpiDefinitionPanelSource).not.toContain('سطح محاسبه (Grain)');
+    expect(kpiDefinitionPanelSource).not.toContain('مبنای زمانی');
+    expect(kpiDefinitionPanelSource).not.toContain('سیاست واحد پول');
+    expect(kpiDefinitionPanelSource).not.toContain('مبنای مقایسه');
+    expect(kpiDefinitionPanelSource).not.toContain('definition.grain');
+    expect(kpiDefinitionPanelSource).not.toContain('definition.dateBasis');
+    expect(kpiDefinitionPanelSource).not.toContain('definition.currency');
+    expect(kpiDefinitionPanelSource).not.toContain('definition.comparison');
     expect(source).toContain('فرمول و قاعده محاسبه');
     expect(source).toContain('فیچرها و منابع داده');
     expect(source).toContain('حذف‌ها و محدودیت‌های محاسبه');
