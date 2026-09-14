@@ -261,6 +261,8 @@ export interface VoucherSettingsV1 {
     selected: boolean;
     roomType: string;
     age: 'ADL' | 'CHD' | 'INF';
+    /** Hotel-only split for a child. Ticket age remains CHD. */
+    hotelChildAgeBand?: 'CHD_2_TO_6' | 'CHD_6_TO_12' | '';
     sex?: 'MALE' | 'FEMALE' | '';
     birthDate?: string;
     documentNumber?: string;

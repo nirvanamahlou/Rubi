@@ -66,6 +66,7 @@ export function defaultVoucherSettings(
       selected: true,
       roomType: text.roomType,
       age: p.age === 'CHD' ? 'CHD' : p.age === 'INF' ? 'INF' : 'ADL',
+      hotelChildAgeBand: '',
     })),
   };
 }
@@ -135,6 +136,8 @@ export function voucherFormData(
     .map((p) => ({
       ...p,
       age: v.passengers.find((s) => s.id === p.id)!.age,
+      hotelChildAgeBand: v.passengers.find((s) => s.id === p.id)
+        ?.hotelChildAgeBand,
       sex:
         v.passengers.find((s) => s.id === p.id)?.sex === 'MALE'
           ? 'Male'
