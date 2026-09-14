@@ -22,6 +22,7 @@
 - محدوده رزروشده: مدل و Workspace حمل‌ونقل Web در `apps/web/src/modules/master-data/**`، سازگاری ورودی و خروجی Master Data در `apps/api/src/master-data/**`، Fixtureهای آزمایشی همین ماژول، تست‌های هدفمند و اسناد Task. PR #232 لوگو و PRهای تاریخی Master Data بدون تغییر می‌مانند.
 - سازگاری: Schema موجود `manufacturer`، `model` و `name` حفظ می‌شود؛ API ورودی ترکیبی را در مرز Master Data به ستون‌های موجود تبدیل و برای مصرف‌کنندگان قدیمی payload جداگانه را نیز می‌پذیرد. هیچ Schema/Migration/Seed عملیاتی، Dependency/Lockfile، قرارداد مرکزی یا IAM تغییر نمی‌کند.
 - تحویل: عنوان فارسی از فرم، جدول، پروفایل و Excel انواع هواپیما حذف شد؛ ورودی و نمایش «سازنده و مدل» یکپارچه و Fixtureهای ساده/واقع‌نما هماهنگ شدند. ۲۹ تست هدفمند Web، ۲۷ تست هدفمند API، lint محدوده، TypeScript Web/API و build تولیدی هر دو برنامه موفق‌اند. جزئیات در `docs/tasks/MASTER-008-AIRCRAFT-FIELDS.md`.
+
 ## WORKBENCH-041-MESSAGING-EMPTY-PARTICIPANT — PC-B — READY_FOR_REVIEW
 
 - User-reported Workbench messaging `INTERNAL_SERVER_ERROR` is reproduced in the shared API logs for conversation listing and direct conversation creation. Scope is limited to the Workbench messaging participant mapping and its regression test: omit the empty forwarded-sender placeholder from IAM UUID queries. No schema, migration, permissions, data or runtime ownership change.
