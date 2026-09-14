@@ -7,7 +7,7 @@ import {
   stat,
   writeFile,
 } from 'node:fs/promises';
-import { dirname, isAbsolute, join } from 'node:path';
+import { dirname, isAbsolute, join, win32 } from 'node:path';
 import { tmpdir } from 'node:os';
 import { pathToFileURL } from 'node:url';
 import { promisify } from 'node:util';
@@ -19,10 +19,14 @@ const uniqueAbsolute = (values: Array<string | undefined>) => [
   ...new Set(
     values.filter(
       (value): value is string =>
-        typeof value === 'string' && isAbsolute(value),
+        typeof value === 'string' &&
+        (isAbsolute(value) || win32.isAbsolute(value)),
     ),
   ),
 ];
+
+const joinRuntimePath = (base: string, ...parts: string[]) =>
+  win32.isAbsolute(base) ? win32.join(base, ...parts) : join(base, ...parts);
 
 export async function resolveTicketPdfRuntime(
   env: Readonly<Record<string, string | undefined>> = process.env,
@@ -34,23 +38,35 @@ export async function resolveTicketPdfRuntime(
   const chromeCandidates = uniqueAbsolute([
     env.SALES_PDF_CHROME_PATH,
     env.ProgramFiles &&
-      join(env.ProgramFiles, 'Google/Chrome/Application/chrome.exe'),
+      joinRuntimePath(env.ProgramFiles, 'Google/Chrome/Application/chrome.exe'),
     env['ProgramFiles(x86)'] &&
-      join(env['ProgramFiles(x86)'], 'Google/Chrome/Application/chrome.exe'),
+      joinRuntimePath(
+        env['ProgramFiles(x86)'],
+        'Google/Chrome/Application/chrome.exe',
+      ),
     env.LOCALAPPDATA &&
-      join(env.LOCALAPPDATA, 'Google/Chrome/Application/chrome.exe'),
+      joinRuntimePath(env.LOCALAPPDATA, 'Google/Chrome/Application/chrome.exe'),
     env.ProgramFiles &&
-      join(env.ProgramFiles, 'Microsoft/Edge/Application/msedge.exe'),
+      joinRuntimePath(
+        env.ProgramFiles,
+        'Microsoft/Edge/Application/msedge.exe',
+      ),
     env['ProgramFiles(x86)'] &&
-      join(env['ProgramFiles(x86)'], 'Microsoft/Edge/Application/msedge.exe'),
+      joinRuntimePath(
+        env['ProgramFiles(x86)'],
+        'Microsoft/Edge/Application/msedge.exe',
+      ),
     env.LOCALAPPDATA &&
-      join(env.LOCALAPPDATA, 'Microsoft/Edge/Application/msedge.exe'),
+      joinRuntimePath(
+        env.LOCALAPPDATA,
+        'Microsoft/Edge/Application/msedge.exe',
+      ),
   ]);
   const fontCandidates = uniqueAbsolute([
     env.SALES_PDF_NAZANIN_PATH,
     env.LOCALAPPDATA &&
-      join(env.LOCALAPPDATA, 'Microsoft/Windows/Fonts/BNazanin.ttf'),
-    env.WINDIR && join(env.WINDIR, 'Fonts/BNazanin.ttf'),
+      joinRuntimePath(env.LOCALAPPDATA, 'Microsoft/Windows/Fonts/BNazanin.ttf'),
+    env.WINDIR && joinRuntimePath(env.WINDIR, 'Fonts/BNazanin.ttf'),
   ]);
   const firstReadable = async (candidates: readonly string[]) => {
     for (const candidate of candidates)
