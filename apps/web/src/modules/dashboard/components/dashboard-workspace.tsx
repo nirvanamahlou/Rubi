@@ -177,17 +177,17 @@ function KpiCard({
       aria-expanded={selected}
       aria-haspopup="dialog"
       className={cn(
-        'group min-w-0 rounded-2xl border bg-surface p-4 text-start shadow-sm outline-none transition hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-md focus-visible:ring-2 focus-visible:ring-ring',
+        'group relative min-h-48 min-w-0 overflow-hidden rounded-2xl border bg-surface p-4 text-start shadow-sm outline-none transition hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-lg focus-visible:ring-2 focus-visible:ring-ring',
         selected ? 'border-primary ring-2 ring-primary/15' : 'border-border',
-        featured && 'min-h-44',
+        featured && 'bg-gradient-to-bl from-blue-50/60 via-surface to-surface dark:from-blue-950/20',
       )}
       onClick={onSelect}
       type="button"
     >
-      <span className="flex items-start justify-between gap-2">
+      <span className="flex items-start justify-between gap-3">
         <span className="min-w-0">
-          <span className="flex flex-wrap items-center gap-2">
-            <span className="block text-sm font-black text-foreground">
+          <span className="flex flex-wrap items-center gap-1.5">
+            <span className="block text-[15px] font-black text-foreground">
               {definition.title}
             </span>
             {definition.role ? (
@@ -196,23 +196,21 @@ function KpiCard({
               </Badge>
             ) : null}
           </span>
-          <span
-            className="mt-1 block truncate text-[11px] text-muted-foreground"
-            dir="ltr"
-          >
-            {definition.technicalName}
+          <span className="mt-1.5 block text-xs leading-5 text-muted-foreground">
+            شاخص {definition.role === 'outcome' ? 'نتیجه' : 'عملکرد'} در بازه
+            انتخاب‌شده
           </span>
         </span>
-        <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300">
+        <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-blue-50 text-blue-700 shadow-sm ring-1 ring-blue-100 dark:bg-blue-950/50 dark:text-blue-300 dark:ring-blue-900">
           {definition.currency === 'required' ? (
-            <CircleDollarSign aria-hidden="true" className="size-4" />
+            <CircleDollarSign aria-hidden="true" className="size-5" />
           ) : (
-            <TrendingUp aria-hidden="true" className="size-4" />
+            <TrendingUp aria-hidden="true" className="size-5" />
           )}
         </span>
       </span>
-      <EmptyMetric compact={!featured} />
-      <span className="mt-3 flex flex-wrap gap-1.5">
+      <EmptyMetric compact />
+      <span className="mt-4 flex flex-wrap gap-1.5 border-t border-border/80 pt-3">
         <Badge className="bg-muted text-[10px] text-muted-foreground">
           مبنا: {definition.dateBasis}
         </Badge>
@@ -461,6 +459,69 @@ function DimensionFilter({ label }: { label: string }) {
   );
 }
 
+function EmptyVisualCanvas({ kind }: { kind: DashboardVisualKind }) {
+  if (kind === 'table' || kind === 'queue') {
+    return (
+      <div
+        aria-label={`نمای خالی ${visualLabels[kind]}`}
+        className="overflow-hidden rounded-xl border border-border/80 bg-muted/[0.18]"
+      >
+        <div className="grid grid-cols-4 gap-3 border-b border-border/80 bg-muted/45 px-4 py-2.5">
+          {[0, 1, 2, 3].map((item) => (
+            <span className="h-2 rounded-full bg-muted-foreground/15" key={item} />
+          ))}
+        </div>
+        <div className="space-y-3 px-4 py-4" aria-hidden="true">
+          {[0, 1, 2].map((item) => (
+            <div className="grid grid-cols-4 gap-3" key={item}>
+              <span className="col-span-2 h-2.5 rounded-full bg-muted-foreground/10" />
+              <span className="h-2.5 rounded-full bg-muted-foreground/10" />
+              <span className="h-2.5 rounded-full bg-muted-foreground/10" />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (kind === 'funnel') {
+    return (
+      <div
+        aria-label="نمای خالی قیف تصمیم"
+        className="grid min-h-44 place-items-center rounded-xl border border-border/80 bg-muted/[0.18] p-5"
+      >
+        <div aria-hidden="true" className="w-full max-w-sm space-y-2">
+          <span className="mx-auto block h-8 w-full rounded-lg bg-blue-100/80 dark:bg-blue-950/40" />
+          <span className="mx-auto block h-8 w-4/5 rounded-lg bg-blue-100/60 dark:bg-blue-950/30" />
+          <span className="mx-auto block h-8 w-3/5 rounded-lg bg-blue-100/40 dark:bg-blue-950/20" />
+          <span className="mx-auto block h-8 w-2/5 rounded-lg bg-blue-100/25 dark:bg-blue-950/10" />
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      aria-label={`نمای خالی ${visualLabels[kind]}`}
+      className="relative min-h-44 overflow-hidden rounded-xl border border-border/80 bg-[linear-gradient(to_bottom,transparent_24%,hsl(var(--border)/0.55)_25%,transparent_26%,transparent_49%,hsl(var(--border)/0.55)_50%,transparent_51%,transparent_74%,hsl(var(--border)/0.55)_75%,transparent_76%)]"
+    >
+      <span className="absolute inset-y-4 right-9 border-r border-border/80" />
+      <span className="absolute inset-x-4 bottom-9 border-t border-border/80" />
+      {kind === 'bar' || kind === 'stacked-bar' ? (
+        <div aria-hidden="true" className="absolute inset-x-14 bottom-10 flex h-20 items-end justify-between gap-3 opacity-35">
+          {[45, 70, 55, 82, 62, 38].map((height, item) => (
+            <span
+              className="w-full rounded-t-md bg-blue-200 dark:bg-blue-900"
+              key={item}
+              style={{ height: `${height}%` }}
+            />
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 function ProjectionSlot({
   kind,
   title,
@@ -468,6 +529,7 @@ function ProjectionSlot({
   source,
   decision,
   drilldown,
+  featured = false,
 }: {
   kind: DashboardVisualKind;
   title: string;
@@ -475,48 +537,54 @@ function ProjectionSlot({
   source: readonly string[];
   decision?: string | undefined;
   drilldown: string;
+  featured?: boolean;
 }) {
   const Icon = visualIcons[kind];
   return (
-    <div className="min-w-0 rounded-2xl border border-dashed border-blue-200 bg-blue-50/30 p-4 dark:border-blue-900 dark:bg-blue-950/10">
-      <div className="flex items-start gap-3">
-        <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-white text-blue-700 shadow-sm dark:bg-blue-950 dark:text-blue-300">
+    <Card
+      className={cn(
+        'min-w-0 overflow-hidden p-4 shadow-sm',
+        featured && 'xl:col-span-2',
+      )}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex min-w-0 items-start gap-3">
+          <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-blue-50 text-blue-700 ring-1 ring-blue-100 dark:bg-blue-950/50 dark:text-blue-300 dark:ring-blue-900">
           <Icon aria-hidden="true" className="size-5" />
-        </span>
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <h3 className="font-black">{title}</h3>
-            <Badge className="bg-white text-[10px] text-blue-700 dark:bg-blue-950 dark:text-blue-200">
-              {visualLabels[kind]}
-            </Badge>
+          </span>
+          <div className="min-w-0">
+            <h3 className="font-black text-foreground">{title}</h3>
+            <p className="mt-1 text-xs leading-6 text-muted-foreground">
+              {description}
+            </p>
           </div>
-          <p className="mt-1 text-xs leading-6 text-muted-foreground">
-            {description}
-          </p>
+        </div>
+        <Badge className="shrink-0 bg-blue-50 text-[10px] text-blue-700 dark:bg-blue-950/50 dark:text-blue-200">
+          {visualLabels[kind]}
+        </Badge>
+      </div>
+      <div className="relative mt-4">
+        <EmptyVisualCanvas kind={kind} />
+        <div className="pointer-events-none absolute inset-0 grid place-items-center p-4 text-center">
+          <div className="max-w-xs rounded-xl border border-border/80 bg-surface/95 px-4 py-3 shadow-sm backdrop-blur-sm">
+            <DatabaseZap
+              aria-hidden="true"
+              className="mx-auto size-5 text-blue-700 dark:text-blue-300"
+            />
+            <p className="mt-1.5 text-xs font-black text-foreground">
+              دادهٔ تأییدشده برای نمایش موجود نیست
+            </p>
+          </div>
         </div>
       </div>
-      <div className="relative mt-5 grid min-h-40 place-items-center overflow-hidden rounded-xl border border-border/70 bg-surface/70 p-4 text-center">
-        <span className="pointer-events-none absolute inset-x-4 bottom-8 border-t border-dashed border-border" />
-        <span className="pointer-events-none absolute inset-y-4 right-8 border-r border-dashed border-border" />
-        <div>
-          <DatabaseZap
-            aria-hidden="true"
-            className="mx-auto size-6 text-muted-foreground"
-          />
-          <p className="mt-2 text-xs font-black">
-            {visualLabels[kind]} آماده است؛ داده‌ای رسم نشده
-          </p>
-          <p
-            className="mt-1 break-words font-mono text-[10px] leading-5 text-muted-foreground"
-            dir="ltr"
-          >
-            {source.join(' + ')}
-          </p>
-        </div>
-      </div>
-      <div className="mt-3 flex flex-wrap items-center gap-2">
-        <span className="text-[11px] font-semibold text-muted-foreground">
-          در انتظار دادهٔ تأییدشده
+      <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-border/80 pt-3">
+        <span className="text-[11px] text-muted-foreground">منبع:</span>
+        <span
+          className="min-w-0 truncate font-mono text-[10px] text-muted-foreground"
+          dir="ltr"
+          title={source.join(' + ')}
+        >
+          {source.join(' + ')}
         </span>
         {decision ? (
           <Badge className="bg-amber-100 text-[10px] text-amber-800 dark:bg-amber-950 dark:text-amber-200">
@@ -527,7 +595,7 @@ function ProjectionSlot({
           <Link href={drilldown}>بررسی گزارش مرتبط</Link>
         </Button>
       </div>
-    </div>
+    </Card>
   );
 }
 
@@ -1026,13 +1094,13 @@ export function DashboardWorkspace() {
 
         <div className="min-w-0 space-y-5">
           <section aria-labelledby="active-dashboard-page-title">
-            <Card className="overflow-hidden p-4 sm:p-5">
-              <div className="border-b border-border pb-4">
+            <div className="space-y-4">
+              <header className="border-b border-border pb-4 sm:flex sm:items-end sm:justify-between sm:gap-4">
                 <div>
                   <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
                     <h2
                       id="active-dashboard-page-title"
-                      className="text-xl font-black"
+                      className="text-2xl font-black tracking-tight"
                     >
                       {activePage.title}
                     </h2>
@@ -1040,14 +1108,17 @@ export function DashboardWorkspace() {
                       {activePage.technicalName}
                     </span>
                   </div>
-                  <p className="mt-1 text-sm text-muted-foreground">
+                  <p className="mt-1.5 text-sm text-muted-foreground">
                     {activePage.description}
                   </p>
                 </div>
-              </div>
+                <span className="mt-3 inline-flex rounded-full bg-blue-50 px-3 py-1.5 text-xs font-bold text-blue-700 dark:bg-blue-950/50 dark:text-blue-200 sm:mt-0">
+                  KPI و تحلیل‌های عملیاتی
+                </span>
+              </header>
 
               {activePageKpis.length > 0 ? (
-                <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
                   {activePageKpis.map((item) => (
                     <KpiCard
                       key={item.id}
@@ -1063,15 +1134,16 @@ export function DashboardWorkspace() {
                   ))}
                 </div>
               ) : (
-                <p className="mt-4 rounded-xl bg-muted/50 p-3 text-sm text-muted-foreground">
+                <p className="rounded-xl bg-muted/50 p-3 text-sm text-muted-foreground">
                   برای این صفحه هنوز KPI تأییدشده‌ای در Projection عمومی منتشر
                   نشده است.
                 </p>
               )}
 
-              <div className="mt-4 grid gap-3 xl:grid-cols-2">
-                {activePage.visualizations.map((visualization) => (
+              <div className="grid gap-4 xl:grid-cols-2">
+                {activePage.visualizations.map((visualization, index) => (
                   <ProjectionSlot
+                    featured={index === 0}
                     key={visualization.id}
                     kind={visualization.kind}
                     title={visualization.title}
@@ -1082,7 +1154,7 @@ export function DashboardWorkspace() {
                   />
                 ))}
               </div>
-            </Card>
+            </div>
           </section>
 
           {selectedKpi ? (

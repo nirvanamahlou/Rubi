@@ -227,8 +227,9 @@ describe('dashboard permission and data states', () => {
     expect(source).toContain('حاکمیت و ردگیری');
     expect(source).toContain('رفتن به فرم پیکربندی گزارش مرتبط');
     expect(source).toContain('visualLabels');
-    expect(source).toContain('داده‌ای رسم نشده');
-    expect(source).toContain('در انتظار دادهٔ تأییدشده');
+    expect(source).toContain('EmptyVisualCanvas');
+    expect(source).toContain('دادهٔ تأییدشده برای نمایش موجود نیست');
+    expect(source).toContain('KPI و تحلیل‌های عملیاتی');
     expect(source).toContain('items-baseline');
     expect(source).toContain('dashboard-sidebar-filters-title');
     expect(source).toContain('پاک‌کردن فیلترهای داشبورد');
