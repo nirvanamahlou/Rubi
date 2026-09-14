@@ -34,6 +34,7 @@ import { useMemo, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
+import type { CalendarSystem } from '@/components/ui/date-picker.utils';
 import {
   FormField,
   Select,
@@ -565,6 +566,9 @@ function DashboardSidebar({
   onPageSelect(pageId: string): void;
   onRefresh(): void;
 }) {
+  const [dateCalendarSystem, setDateCalendarSystem] =
+    useState<CalendarSystem>('persian');
+
   return (
     <Card
       className={cn(
@@ -764,8 +768,10 @@ function DashboardSidebar({
                           : undefined
                       }
                       aria-invalid={Boolean(dateRangeError)}
+                      calendarSystem={dateCalendarSystem}
                       gregorianEnglish
                       id="dashboard-from"
+                      onCalendarSystemChange={setDateCalendarSystem}
                       onChange={(from) =>
                         onFiltersChange({ from, range: 'custom' })
                       }
@@ -781,8 +787,10 @@ function DashboardSidebar({
                           : undefined
                       }
                       aria-invalid={Boolean(dateRangeError)}
+                      calendarSystem={dateCalendarSystem}
                       gregorianEnglish
                       id="dashboard-to"
+                      onCalendarSystemChange={setDateCalendarSystem}
                       onChange={(to) =>
                         onFiltersChange({ range: 'custom', to })
                       }

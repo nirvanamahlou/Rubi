@@ -34,6 +34,7 @@ function formatCalendarNumber(value: number, system: CalendarSystem): string {
 }
 
 export interface DatePickerProps {
+  calendarSystem?: CalendarSystem;
   defaultCalendarSystem?: CalendarSystem;
   withinDialog?: boolean;
   gregorianEnglish?: boolean;
@@ -42,6 +43,7 @@ export interface DatePickerProps {
   value?: string;
   defaultValue?: string;
   onChange?: (value: string) => void;
+  onCalendarSystemChange?: (system: CalendarSystem) => void;
   includeTime?: boolean;
   disabled?: boolean;
   readOnly?: boolean;
@@ -54,6 +56,7 @@ export interface DatePickerProps {
 }
 
 export function DatePicker({
+  calendarSystem: controlledCalendarSystem,
   withinDialog = false,
   className,
   gregorianEnglish = false,
@@ -64,6 +67,7 @@ export function DatePicker({
   includeTime = false,
   name,
   onChange,
+  onCalendarSystemChange,
   placeholder = 'انتخاب تاریخ',
   readOnly,
   required,
@@ -72,9 +76,9 @@ export function DatePicker({
 }: DatePickerProps) {
   const [internalValue, setInternalValue] = React.useState(defaultValue);
   const currentValue = value ?? internalValue;
-  const [calendarSystem, setCalendarSystem] = React.useState<CalendarSystem>(
-    defaultCalendarSystem,
-  );
+  const [internalCalendarSystem, setInternalCalendarSystem] =
+    React.useState<CalendarSystem>(defaultCalendarSystem);
+  const calendarSystem = controlledCalendarSystem ?? internalCalendarSystem;
   const english = gregorianEnglish && calendarSystem === 'gregorian';
   const t = (fa: string, en: string) => (english ? en : fa);
   const [calendarView, setCalendarView] = React.useState<CalendarView>('days');
@@ -200,7 +204,10 @@ export function DatePicker({
   };
 
   const changeCalendarSystem = (system: CalendarSystem) => {
-    setCalendarSystem(system);
+    if (controlledCalendarSystem === undefined) {
+      setInternalCalendarSystem(system);
+    }
+    onCalendarSystemChange?.(system);
     setCalendarView('days');
   };
 

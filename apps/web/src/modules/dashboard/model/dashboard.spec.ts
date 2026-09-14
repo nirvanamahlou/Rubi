@@ -229,6 +229,12 @@ describe('dashboard permission and data states', () => {
     expect(source.match(/id="dashboard-range"/g)).toHaveLength(2);
     expect(source).toContain('dashboard-date-range-error');
     expect(source.match(/gregorianEnglish/g)).toHaveLength(2);
+    expect(source.match(/calendarSystem=\{dateCalendarSystem\}/g)).toHaveLength(
+      2,
+    );
+    expect(
+      source.match(/onCalendarSystemChange=\{setDateCalendarSystem\}/g),
+    ).toHaveLength(2);
     expect(source).not.toContain("disabled={filters.range !== 'custom'}");
     expect(source.indexOf('id="dashboard-from"')).toBeLessThan(
       source.indexOf('id="dashboard-range"'),
