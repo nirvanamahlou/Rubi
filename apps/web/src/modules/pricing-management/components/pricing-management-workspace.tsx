@@ -169,8 +169,8 @@ function PackageList({ rows }: { rows: readonly PackageSummaryV1[] }) {
 function OperationalEmpty({ tab }: { tab: Exclude<PricingTab, 'packages'> }) {
   const content: Record<typeof tab, readonly [string, string]> = {
     create: [
-      'ثبت پکیج تا تکمیل قرارداد نرخ مبنا بسته است',
-      'اطلاعات ساختاری جعل نمی‌شود. قرارداد عمومی نرخ هتل در Master Data و نرخ پایه بلیت در Ticket Management باید ابتدا ارائه شوند؛ API در نبود آن‌ها با SOURCE_RATE_UNAVAILABLE متوقف می‌شود.',
+      'نرخ هتل متصل است؛ نرخ و ظرفیت بلیت باقی مانده',
+      'بازه‌های نسخه‌دار هتل از Master Data قابل ارجاع‌اند. ساخت پکیج ترکیبی تا ارائه نرخ پایه و ظرفیت قابل recheck بلیت با SOURCE_RATE_UNAVAILABLE متوقف می‌شود.',
     ],
     periods: [
       'بازه‌ای انتخاب نشده است',
@@ -245,17 +245,25 @@ export function PricingManagementWorkspace() {
         title="مدیریت قیمت و پکیج‌ها"
         description="پکیج، قواعد، نسخه قیمت، پیش‌فاکتور و خروجی برندشده با کنترل شعبه و سازوکار maker/checker"
         actions={
-          <Link
-            className={buttonVariants({ variant: 'outline', size: 'sm' })}
-            href="/sales"
-          >
-            بازگشت به قراردادها
-          </Link>
+          <>
+            <Link
+              className={buttonVariants({ variant: 'primary', size: 'sm' })}
+              href="/master-data/accommodation/hotel-rates"
+            >
+              نرخ‌های هتل
+            </Link>
+            <Link
+              className={buttonVariants({ variant: 'outline', size: 'sm' })}
+              href="/sales"
+            >
+              بازگشت به قراردادها
+            </Link>
+          </>
         }
       />
       <Alert
         title="مرز مالکیت نرخ مبنا"
-        description="این بخش نرخ هتل یا بلیت را مالک نمی‌شود و به جدول ماژول دیگر دسترسی مستقیم ندارد. تا ارائه قرارداد عمومی upstream، محاسبه قیمت به‌صورت fail-closed متوقف است."
+        description="قرارداد نسخه‌دار نرخ پایه هتل از Master Data متصل است. این بخش به جدول ماژول دیگر دسترسی مستقیم ندارد و تا ارائه نرخ/ظرفیت بلیت، محاسبه پکیج ترکیبی fail-closed می‌ماند."
       />
       <div
         className="flex gap-2 overflow-x-auto rounded-2xl border border-border bg-surface p-2"

@@ -14,6 +14,8 @@ describe('pricing management workspace', () => {
     expect(html).toContain('قالب‌های بنر');
     expect(html).toContain('خروجی‌ها');
     expect(html).toContain('ردپای تغییرات');
+    expect(html).toContain('نرخ‌های هتل');
+    expect(html).toContain('/master-data/accommodation/hotel-rates');
     expect(html).not.toContain('synthetic');
     expect(html).not.toContain('با موفقیت ساخته شد');
   });
