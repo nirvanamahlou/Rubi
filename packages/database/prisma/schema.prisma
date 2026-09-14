@@ -3344,6 +3344,85 @@ enum SalesReservationRequestStatus {
   FAILED
 }
 
+enum PackagePricingStatus {
+  DRAFT
+  READY_FOR_REVIEW
+  APPROVED
+  PUBLISHED
+  STOPPED
+  EXPIRED
+  ARCHIVED
+}
+
+enum PackagePricingComponentKind {
+  OUTBOUND_TICKET
+  RETURN_TICKET
+  HOTEL
+  VISA
+  INSURANCE
+  TRANSFER
+  TOUR
+  LEADER
+  OTHER
+}
+
+enum PackagePricingRuleOperation {
+  ADD_FIXED
+  SUBTRACT_FIXED
+  ADD_PERCENT
+  SUBTRACT_PERCENT
+  MULTIPLY
+  DIVIDE
+  FEE
+  COMMISSION
+  TAX
+  PROFIT
+  ROUND
+  MINIMUM_PROFIT
+  MINIMUM_SALE_PRICE
+}
+
+enum PackagePricingPassengerCategory {
+  ADULT
+  CHILD_WITH_BED
+  CHILD_WITHOUT_BED
+  INFANT
+  SINGLE_ROOM
+  DOUBLE_ROOM
+  TRIPLE_ROOM
+}
+
+enum PackagePricingVersionStatus {
+  DRAFT
+  READY_FOR_REVIEW
+  PUBLISHED
+  STOPPED
+}
+
+enum PackagePricingQuoteStatus {
+  DRAFT
+  APPROVED
+  CONVERTED_TO_CONTRACT
+  EXPIRED
+  CANCELLED
+}
+
+enum PackagePricingBannerFormat {
+  SQUARE_POST
+  STORY
+  HORIZONTAL
+  WEBSITE
+  A4
+}
+
+enum PackagePricingRenderStatus {
+  AWAITING_RENDERER
+  QUEUED
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
 model SalesContract {
   id                        String                         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   contractNumber            String                         @unique @map("contract_number") @db.VarChar(40)
@@ -3885,6 +3964,320 @@ model SalesContractAuditEvent {
   @@index([actorUserId, occurredAt])
   @@index([actorBranchId, occurredAt])
   @@map("sales_contract_audit_events")
+}
+
+model PackagePricingPackage {
+  id                       String                        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  branchId                 String                        @map("branch_id") @db.Uuid
+  code                     String                        @db.VarChar(40)
+  titleFa                  String                        @map("title_fa") @db.VarChar(200)
+  titleEn                  String                        @map("title_en") @db.VarChar(200)
+  issuerLegalEntityId      String                        @map("issuer_legal_entity_id") @db.Uuid
+  issuerLegalEntityVersion Int                           @map("issuer_legal_entity_version")
+  destinationId            String                        @map("destination_id") @db.Uuid
+  destinationNameSnapshot  String                        @map("destination_name_snapshot") @db.VarChar(200)
+  status                   PackagePricingStatus          @default(DRAFT)
+  version                  Int                           @default(1)
+  createdByUserId          String                        @map("created_by_user_id") @db.Uuid
+  updatedByUserId          String                        @map("updated_by_user_id") @db.Uuid
+  createIdempotencyKey     String                        @map("create_idempotency_key") @db.VarChar(160)
+  createRequestFingerprint String                        @map("create_request_fingerprint") @db.Char(64)
+  archivedAt               DateTime?                     @map("archived_at") @db.Timestamptz(3)
+  createdAt                DateTime                      @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt                DateTime                      @updatedAt @map("updated_at") @db.Timestamptz(3)
+  departures               PackagePricingDeparture[]
+  quotes                   PackagePricingQuote[]
+  renderRequests           PackagePricingRenderRequest[]
+  auditEvents              PackagePricingAuditEvent[]
+
+  @@unique([branchId, code])
+  @@unique([createdByUserId, createIdempotencyKey])
+  @@index([branchId, status, updatedAt])
+  @@index([destinationId, status])
+  @@map("package_pricing_packages")
+}
+
+model PackagePricingDeparture {
+  id              String                        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  packageId       String                        @map("package_id") @db.Uuid
+  departureDate   DateTime                      @map("departure_date") @db.Date
+  returnDate      DateTime                      @map("return_date") @db.Date
+  nights          Int
+  days            Int
+  capacity        Int
+  priceValidUntil DateTime                      @map("price_valid_until") @db.Timestamptz(3)
+  description     String?                       @db.VarChar(2000)
+  terms           String?                       @db.VarChar(4000)
+  version         Int                           @default(1)
+  isArchived      Boolean                       @default(false) @map("is_archived")
+  createdByUserId String                        @map("created_by_user_id") @db.Uuid
+  createdAt       DateTime                      @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime                      @updatedAt @map("updated_at") @db.Timestamptz(3)
+  package         PackagePricingPackage         @relation(fields: [packageId], references: [id], onDelete: Restrict)
+  components      PackagePricingComponent[]
+  hotelOptions    PackagePricingHotelOption[]
+  periods         PackagePricingPeriod[]
+  priceVersions   PackagePricingPriceVersion[]
+  quotes          PackagePricingQuote[]
+  renderRequests  PackagePricingRenderRequest[]
+
+  @@unique([packageId, departureDate])
+  @@index([departureDate, returnDate])
+  @@map("package_pricing_departures")
+}
+
+model PackagePricingComponent {
+  id                     String                      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  departureId            String                      @map("departure_id") @db.Uuid
+  clientKey              String                      @map("client_key") @db.VarChar(80)
+  kind                   PackagePricingComponentKind
+  sourceOwner            String                      @map("source_owner") @db.VarChar(40)
+  sourceKind             String                      @map("source_kind") @db.VarChar(80)
+  sourceReferenceId      String                      @map("source_reference_id") @db.Uuid
+  sourceReferenceVersion Int                         @map("source_reference_version")
+  titleSnapshot          String                      @map("title_snapshot") @db.VarChar(240)
+  quantity               Int
+  capacity               Int?
+  sourceBaseAmount       Decimal?                    @map("source_base_amount") @db.Decimal(24, 4)
+  sourceCurrencyCode     String?                     @map("source_currency_code") @db.VarChar(3)
+  sourceObservedAt       DateTime?                   @map("source_observed_at") @db.Timestamptz(3)
+  sourceSnapshot         Json?                       @map("source_snapshot")
+  metadata               Json?
+  createdAt              DateTime                    @default(now()) @map("created_at") @db.Timestamptz(3)
+  departure              PackagePricingDeparture     @relation(fields: [departureId], references: [id], onDelete: Restrict)
+
+  @@unique([departureId, clientKey])
+  @@index([sourceOwner, sourceKind, sourceReferenceId])
+  @@map("package_pricing_components")
+}
+
+model PackagePricingHotelOption {
+  id                          String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  departureId                 String                  @map("departure_id") @db.Uuid
+  hotelReferenceId            String                  @map("hotel_reference_id") @db.Uuid
+  hotelReferenceVersion       Int                     @map("hotel_reference_version")
+  hotelNameSnapshot           String                  @map("hotel_name_snapshot") @db.VarChar(200)
+  roomTypeReferenceId         String                  @map("room_type_reference_id") @db.Uuid
+  roomTypeReferenceVersion    Int                     @map("room_type_reference_version")
+  roomTypeNameSnapshot        String                  @map("room_type_name_snapshot") @db.VarChar(160)
+  mealServiceReferenceId      String                  @map("meal_service_reference_id") @db.Uuid
+  mealServiceReferenceVersion Int                     @map("meal_service_reference_version")
+  mealServiceNameSnapshot     String                  @map("meal_service_name_snapshot") @db.VarChar(160)
+  checkInDate                 DateTime                @map("check_in_date") @db.Date
+  checkOutDate                DateTime                @map("check_out_date") @db.Date
+  createdAt                   DateTime                @default(now()) @map("created_at") @db.Timestamptz(3)
+  departure                   PackagePricingDeparture @relation(fields: [departureId], references: [id], onDelete: Restrict)
+
+  @@unique([departureId, hotelReferenceId, roomTypeReferenceId, mealServiceReferenceId])
+  @@index([hotelReferenceId, checkInDate, checkOutDate])
+  @@map("package_pricing_hotel_options")
+}
+
+model PackagePricingPeriod {
+  id              String                       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  departureId     String                       @map("departure_id") @db.Uuid
+  title           String                       @db.VarChar(200)
+  validFrom       DateTime                     @map("valid_from") @db.Timestamptz(3)
+  validTo         DateTime                     @map("valid_to") @db.Timestamptz(3)
+  version         Int                          @default(1)
+  isArchived      Boolean                      @default(false) @map("is_archived")
+  createdByUserId String                       @map("created_by_user_id") @db.Uuid
+  createdAt       DateTime                     @default(now()) @map("created_at") @db.Timestamptz(3)
+  departure       PackagePricingDeparture      @relation(fields: [departureId], references: [id], onDelete: Restrict)
+  rules           PackagePricingRule[]
+  priceVersions   PackagePricingPriceVersion[]
+
+  @@index([departureId, validFrom, validTo])
+  @@map("package_pricing_periods")
+}
+
+model PackagePricingRule {
+  id                    String                      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  periodId              String                      @map("period_id") @db.Uuid
+  version               Int
+  sequence              Int
+  title                 String                      @db.VarChar(160)
+  operation             PackagePricingRuleOperation
+  value                 Decimal                     @db.Decimal(24, 10)
+  appliesToComponentKey String?                     @map("applies_to_component_key") @db.VarChar(80)
+  createdByUserId       String                      @map("created_by_user_id") @db.Uuid
+  createdAt             DateTime                    @default(now()) @map("created_at") @db.Timestamptz(3)
+  period                PackagePricingPeriod        @relation(fields: [periodId], references: [id], onDelete: Restrict)
+
+  @@unique([periodId, version, sequence])
+  @@index([periodId, version])
+  @@map("package_pricing_rules")
+}
+
+model PackagePricingPriceVersion {
+  id                  String                         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  departureId         String                         @map("departure_id") @db.Uuid
+  periodId            String                         @map("period_id") @db.Uuid
+  version             Int
+  status              PackagePricingVersionStatus    @default(DRAFT)
+  currencyCode        String                         @map("currency_code") @db.VarChar(3)
+  baseAmount          Decimal                        @map("base_amount") @db.Decimal(24, 4)
+  adjustmentAmount    Decimal                        @map("adjustment_amount") @db.Decimal(24, 4)
+  feeAmount           Decimal                        @map("fee_amount") @db.Decimal(24, 4)
+  taxAmount           Decimal                        @map("tax_amount") @db.Decimal(24, 4)
+  profitAmount        Decimal                        @map("profit_amount") @db.Decimal(24, 4)
+  finalAmount         Decimal                        @map("final_amount") @db.Decimal(24, 4)
+  marginPercent       Decimal                        @map("margin_percent") @db.Decimal(12, 6)
+  minimumProfitAmount Decimal?                       @map("minimum_profit_amount") @db.Decimal(24, 4)
+  minimumSaleAmount   Decimal?                       @map("minimum_sale_amount") @db.Decimal(24, 4)
+  sourceSnapshot      Json                           @map("source_snapshot")
+  ruleSnapshot        Json                           @map("rule_snapshot")
+  breakdown           Json
+  fxSnapshot          Json?                          @map("fx_snapshot")
+  createdByUserId     String                         @map("created_by_user_id") @db.Uuid
+  reviewedByUserId    String?                        @map("reviewed_by_user_id") @db.Uuid
+  publishedAt         DateTime?                      @map("published_at") @db.Timestamptz(3)
+  reason              String                         @db.VarChar(500)
+  createdAt           DateTime                       @default(now()) @map("created_at") @db.Timestamptz(3)
+  departure           PackagePricingDeparture        @relation(fields: [departureId], references: [id], onDelete: Restrict)
+  period              PackagePricingPeriod           @relation(fields: [periodId], references: [id], onDelete: Restrict)
+  passengerPrices     PackagePricingPassengerPrice[]
+  quotes              PackagePricingQuote[]
+  renderRequests      PackagePricingRenderRequest[]
+
+  @@unique([departureId, version])
+  @@index([departureId, status, createdAt])
+  @@index([periodId, createdAt])
+  @@map("package_pricing_price_versions")
+}
+
+model PackagePricingPassengerPrice {
+  id             String                          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  priceVersionId String                          @map("price_version_id") @db.Uuid
+  category       PackagePricingPassengerCategory
+  amount         Decimal                         @db.Decimal(24, 4)
+  currencyCode   String                          @map("currency_code") @db.VarChar(3)
+  priceVersion   PackagePricingPriceVersion      @relation(fields: [priceVersionId], references: [id], onDelete: Restrict)
+
+  @@unique([priceVersionId, category])
+  @@map("package_pricing_passenger_prices")
+}
+
+model PackagePricingQuote {
+  id                       String                     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  branchId                 String                     @map("branch_id") @db.Uuid
+  packageId                String                     @map("package_id") @db.Uuid
+  departureId              String                     @map("departure_id") @db.Uuid
+  priceVersionId           String                     @map("price_version_id") @db.Uuid
+  customerReference        String?                    @map("customer_reference") @db.Uuid
+  agencyReference          String?                    @map("agency_reference") @db.Uuid
+  status                   PackagePricingQuoteStatus  @default(DRAFT)
+  version                  Int                        @default(1)
+  passengerCounts          Json                       @map("passenger_counts")
+  subtotalAmount           Decimal                    @map("subtotal_amount") @db.Decimal(24, 4)
+  discountAmount           Decimal                    @map("discount_amount") @db.Decimal(24, 4)
+  finalAmount              Decimal                    @map("final_amount") @db.Decimal(24, 4)
+  currencyCode             String                     @map("currency_code") @db.VarChar(3)
+  validUntil               DateTime                   @map("valid_until") @db.Timestamptz(3)
+  notes                    String?                    @db.VarChar(2000)
+  salesContractReference   String?                    @map("sales_contract_reference") @db.Uuid
+  createdByUserId          String                     @map("created_by_user_id") @db.Uuid
+  createIdempotencyKey     String                     @map("create_idempotency_key") @db.VarChar(160)
+  createRequestFingerprint String                     @map("create_request_fingerprint") @db.Char(64)
+  createdAt                DateTime                   @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt                DateTime                   @updatedAt @map("updated_at") @db.Timestamptz(3)
+  package                  PackagePricingPackage      @relation(fields: [packageId], references: [id], onDelete: Restrict)
+  departure                PackagePricingDeparture    @relation(fields: [departureId], references: [id], onDelete: Restrict)
+  priceVersion             PackagePricingPriceVersion @relation(fields: [priceVersionId], references: [id], onDelete: Restrict)
+  items                    PackagePricingQuoteItem[]
+
+  @@unique([createdByUserId, createIdempotencyKey])
+  @@index([branchId, status, createdAt])
+  @@index([packageId, departureId])
+  @@map("package_pricing_quotes")
+}
+
+model PackagePricingQuoteItem {
+  id           String                          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  quoteId      String                          @map("quote_id") @db.Uuid
+  category     PackagePricingPassengerCategory
+  quantity     Int
+  unitAmount   Decimal                         @map("unit_amount") @db.Decimal(24, 4)
+  totalAmount  Decimal                         @map("total_amount") @db.Decimal(24, 4)
+  currencyCode String                          @map("currency_code") @db.VarChar(3)
+  quote        PackagePricingQuote             @relation(fields: [quoteId], references: [id], onDelete: Restrict)
+
+  @@unique([quoteId, category])
+  @@map("package_pricing_quote_items")
+}
+
+model PackagePricingBannerTemplate {
+  id                  String                        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  branchId            String                        @map("branch_id") @db.Uuid
+  issuerLegalEntityId String                        @map("issuer_legal_entity_id") @db.Uuid
+  code                String                        @db.VarChar(40)
+  title               String                        @db.VarChar(160)
+  format              PackagePricingBannerFormat
+  version             Int
+  width               Int
+  height              Int
+  templateDefinition  Json                          @map("template_definition")
+  isActive            Boolean                       @default(true) @map("is_active")
+  createdByUserId     String                        @map("created_by_user_id") @db.Uuid
+  createdAt           DateTime                      @default(now()) @map("created_at") @db.Timestamptz(3)
+  renderRequests      PackagePricingRenderRequest[]
+
+  @@unique([branchId, code, version])
+  @@index([issuerLegalEntityId, format, isActive])
+  @@map("package_pricing_banner_templates")
+}
+
+model PackagePricingRenderRequest {
+  id                       String                       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  branchId                 String                       @map("branch_id") @db.Uuid
+  packageId                String                       @map("package_id") @db.Uuid
+  departureId              String                       @map("departure_id") @db.Uuid
+  priceVersionId           String                       @map("price_version_id") @db.Uuid
+  templateId               String                       @map("template_id") @db.Uuid
+  templateVersion          Int                          @map("template_version")
+  brandingSnapshotId       String                       @map("branding_snapshot_id") @db.Uuid
+  brandingSnapshotVersion  Int                          @map("branding_snapshot_version")
+  outputFormat             String                       @map("output_format") @db.VarChar(8)
+  status                   PackagePricingRenderStatus   @default(AWAITING_RENDERER)
+  outputDocumentReference  String?                      @map("output_document_reference") @db.Uuid
+  failureCode              String?                      @map("failure_code") @db.VarChar(80)
+  createdByUserId          String                       @map("created_by_user_id") @db.Uuid
+  createIdempotencyKey     String                       @map("create_idempotency_key") @db.VarChar(160)
+  createRequestFingerprint String                       @map("create_request_fingerprint") @db.Char(64)
+  createdAt                DateTime                     @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt                DateTime                     @updatedAt @map("updated_at") @db.Timestamptz(3)
+  package                  PackagePricingPackage        @relation(fields: [packageId], references: [id], onDelete: Restrict)
+  departure                PackagePricingDeparture      @relation(fields: [departureId], references: [id], onDelete: Restrict)
+  priceVersion             PackagePricingPriceVersion   @relation(fields: [priceVersionId], references: [id], onDelete: Restrict)
+  template                 PackagePricingBannerTemplate @relation(fields: [templateId], references: [id], onDelete: Restrict)
+
+  @@unique([createdByUserId, createIdempotencyKey])
+  @@index([branchId, status, createdAt])
+  @@index([packageId, priceVersionId])
+  @@map("package_pricing_render_requests")
+}
+
+model PackagePricingAuditEvent {
+  id             String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  packageId      String                @map("package_id") @db.Uuid
+  actorUserId    String                @map("actor_user_id") @db.Uuid
+  actorBranchId  String                @map("actor_branch_id") @db.Uuid
+  action         String                @db.VarChar(120)
+  outcome        AuditOutcome
+  entityType     String                @map("entity_type") @db.VarChar(80)
+  entityId       String                @map("entity_id") @db.Uuid
+  entityVersion  Int                   @map("entity_version")
+  reason         String?               @db.VarChar(500)
+  beforeSnapshot Json?                 @map("before_snapshot")
+  afterSnapshot  Json?                 @map("after_snapshot")
+  traceId        String?               @map("trace_id") @db.VarChar(160)
+  occurredAt     DateTime              @default(now()) @map("occurred_at") @db.Timestamptz(3)
+  package        PackagePricingPackage @relation(fields: [packageId], references: [id], onDelete: Restrict)
+
+  @@index([packageId, occurredAt])
+  @@index([actorUserId, occurredAt])
+  @@index([actorBranchId, occurredAt])
+  @@map("package_pricing_audit_events")
 }
 
 model ReservationWorkflowRevision {
