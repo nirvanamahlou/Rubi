@@ -18,8 +18,8 @@ import {
 } from './registry';
 
 describe('dashboard registry', () => {
-  it('defines all 56 decision-oriented KPIs with auditable metadata', () => {
-    expect(dashboardKpis).toHaveLength(56);
+  it('defines all 60 decision-oriented KPIs with auditable metadata', () => {
+    expect(dashboardKpis).toHaveLength(60);
     expect(new Set(dashboardKpis.map((kpi) => kpi.id)).size).toBe(
       dashboardKpis.length,
     );
@@ -71,6 +71,38 @@ describe('dashboard registry', () => {
     expect(
       dashboardKpis.find((kpi) => kpi.id === 'returning-customers')?.rule,
     ).toContain('پیش از شروع بازه');
+  });
+
+  it('covers customer interests, destination, service and acquisition-channel analysis', () => {
+    const customerGrowth = dashboardPages.find(
+      (page) => page.id === 'customer-growth',
+    );
+    expect(customerGrowth?.kpiIds).toEqual(
+      expect.arrayContaining([
+        'customer-interest-coverage',
+        'customer-destination-demand',
+        'customer-service-usage',
+        'customers-by-acquisition-channel',
+      ]),
+    );
+    expect(customerGrowth?.visualizations.map((item) => item.id)).toEqual(
+      expect.arrayContaining([
+        'customer-interest-distribution',
+        'customer-destination-distribution',
+        'customer-service-distribution',
+        'customer-acquisition-channel-mix',
+        'customer-acquisition-channel-trend',
+      ]),
+    );
+    expect(
+      dashboardKpis.find((kpi) => kpi.id === 'customer-interest-coverage')
+        ?.exclusions,
+    ).toContain('متن آزاد طبقه‌بندی‌نشده');
+    expect(
+      dashboardKpis.find(
+        (kpi) => kpi.id === 'customers-by-acquisition-channel',
+      )?.source,
+    ).toContain('reporting_customer_portfolio_growth_facts_v1');
   });
 
   it('keeps fifteen decision-oriented pages with the requested sidebar hierarchy', () => {

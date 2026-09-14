@@ -62,6 +62,7 @@ const leadPipeline = 'reporting_customer_affairs_lead_facts_v1';
 const supportTickets = 'reporting_support_ticket_facts_v1';
 const customerSatisfaction = 'reporting_customer_satisfaction_facts_v1';
 const customerConsent = 'reporting_customer_consent_facts_v1';
+const customerPortfolio = 'reporting_customer_portfolio_growth_facts_v1';
 const agencyRisk = 'reporting_b2b_agency_risk_facts_v1';
 const campaign = 'reporting_campaign_facts_v1';
 const employeePerformance = 'reporting_employee_performance_facts_v1';
@@ -349,6 +350,78 @@ export const dashboardKpis: readonly DashboardKpiDefinition[] = [
     role: 'outcome',
     decision: 'چه تعداد مشتری دوباره از خدمات شرکت خرید کرده‌اند؟',
     comparison: 'دوره قبل، کانال جذب و نوع خدمت',
+    reportCode: 'RPT-036',
+  },
+  {
+    id: 'customer-interest-coverage',
+    title: 'مشتریان دارای علاقه ثبت‌شده',
+    technicalName: 'Customer Interest Coverage',
+    grain: 'یک مشتری با حداقل یک سیگنال علاقه معتبر در بازه',
+    source: [leadPipeline, salesContract, serviceItem],
+    rule:
+      'تعداد یکتای مشتریانی که در بازه انتخابی حداقل یک مقصد یا خدمت را در لید متصل به مشتری درخواست کرده‌اند یا خرید موفق همان مقصد یا خدمت را داشته‌اند',
+    exclusions:
+      'لید بدون customerId، متن آزاد طبقه‌بندی‌نشده، خرید ناموفق یا برگشت‌شده و مشتری ادغام‌شده خارج‌اند.',
+    dateBasis: 'effective',
+    currency: 'not-applicable',
+    permission: 'reports.dashboard.customers.read',
+    role: 'driver',
+    decision: 'برای چه سهمی از مشتریان می‌توان پیشنهاد مقصد یا خدمت مرتبط ساخت؟',
+    comparison: 'نوع علاقه، مقصد، خدمت و دوره قبل',
+    reportCode: 'RPT-025',
+  },
+  {
+    id: 'customer-destination-demand',
+    title: 'مقصدهای مورد تقاضای مشتریان',
+    technicalName: 'Customer Destination Demand',
+    grain: 'یک سفارش یا رزرو معتبر و مقصد',
+    source: [travelFacts],
+    rule:
+      'تعداد سفارش‌های یکتای معتبر دارای مقصد در بازه انتخابی؛ تعداد مسافر به‌عنوان اندازه تقاضای مکمل و جداگانه نمایش داده می‌شود',
+    exclusions:
+      'سفارش آزمایشی یا لغوشده، مقصد نامشخص و شمارش تکراری اقلام یک سفارش خارج‌اند.',
+    dateBasis: 'effective',
+    currency: 'not-applicable',
+    permission: 'reports.dashboard.customers.read',
+    role: 'diagnostic',
+    decision: 'کدام مقصدها بیشترین تقاضای ثبت‌شده مشتری را دارند؟',
+    comparison: 'مقصد، مسیر و دوره قبل',
+    reportCode: 'RPT-019',
+  },
+  {
+    id: 'customer-service-usage',
+    title: 'مشتریان استفاده‌کننده از خدمات',
+    technicalName: 'Customers Using Services',
+    grain: 'یک مشتری و نوع خدمت در خرید موفق',
+    source: [salesContract, serviceItem],
+    rule:
+      'تعداد یکتای مشتریان دارای حداقل یک قلم خدمت در خرید موفق، به تفکیک نوع خدمت در بازه انتخابی',
+    exclusions:
+      'خدمت پیش‌نویس یا لغوشده، خرید ناموفق یا برگشت‌شده و تکرار همان مشتری در یک نوع خدمت خارج‌اند.',
+    dateBasis: 'effective',
+    currency: 'not-applicable',
+    permission: 'reports.dashboard.customers.read',
+    role: 'driver',
+    decision: 'کدام نوع خدمت بیشترین پوشش مشتری را ایجاد کرده است؟',
+    comparison: 'نوع خدمت، تعداد مشتری و دوره قبل',
+    reportCode: 'RPT-002',
+  },
+  {
+    id: 'customers-by-acquisition-channel',
+    title: 'مشتریان منتسب به کانال جذب',
+    technicalName: 'Customers by Acquisition Channel',
+    grain: 'یک مشتری و روش آشنایی معتبر',
+    source: [customerPortfolio],
+    rule:
+      'تعداد یکتای مشتریان فعال یا جدید دارای روش آشنایی ثبت‌شده، به تفکیک کانال جذب در بازه انتخابی',
+    exclusions:
+      'روش آشنایی نامشخص، مشتری ادغام‌شده یا غیرفعال خارج از بازه و انتساب‌های فاقد سیاست معتبر خارج‌اند.',
+    dateBasis: 'created',
+    currency: 'not-applicable',
+    permission: 'reports.dashboard.customers.read',
+    role: 'diagnostic',
+    decision: 'کدام کانال بیشترین مشتری جدید و فعال را وارد سبد کرده است؟',
+    comparison: 'کانال جذب، دوره قبل و نوع مشتری',
     reportCode: 'RPT-036',
   },
   {
@@ -1385,6 +1458,10 @@ export const dashboardPages: readonly DashboardPageDefinition[] = [
       'new-orders',
       'lead-volume',
       'lead-conversion-rate',
+      'customer-interest-coverage',
+      'customer-destination-demand',
+      'customer-service-usage',
+      'customers-by-acquisition-channel',
       'consent-coverage',
       'open-tickets',
       'low-satisfaction',
@@ -1407,6 +1484,51 @@ export const dashboardPages: readonly DashboardPageDefinition[] = [
         [travelFacts],
         'reports.dashboard.customer-growth.read',
         '/reports?report=lead_to_order_conversion',
+      ),
+      visual(
+        'customer-interest-distribution',
+        'علایق ثبت‌شده مشتریان',
+        'مقایسه تعداد مشتریان دارای سیگنال صریح درخواست یا خرید برای هر مقصد و نوع خدمت؛ هر مشتری در هر دسته فقط یک‌بار شمرده می‌شود.',
+        'bar',
+        [leadPipeline, travelFacts],
+        'reports.dashboard.customer-growth.read',
+        '/reports?report=lead_pipeline',
+      ),
+      visual(
+        'customer-destination-distribution',
+        'مشتریان و تقاضا بر اساس مقصد',
+        'مقایسه مقصدها با تعداد سفارش یکتا و تعداد مسافر؛ این دو شمارنده جدا می‌مانند و به‌جای یکدیگر تفسیر نمی‌شوند.',
+        'bar',
+        [travelFacts],
+        'reports.dashboard.customer-growth.read',
+        '/reports?report=route_passengers',
+      ),
+      visual(
+        'customer-service-distribution',
+        'مشتریان بر اساس نوع خدمت',
+        'ترکیب مشتریان استفاده‌کننده از بلیت، تور، هتل، ویزا و بیمه همراه با تعداد سفارش؛ مبلغ فروش فقط در ارزهای مستقل مقایسه می‌شود.',
+        'stacked-bar',
+        [salesContract, serviceItem, travelFacts],
+        'reports.dashboard.customer-growth.read',
+        '/reports?report=sales_by_service_route',
+      ),
+      visual(
+        'customer-acquisition-channel-mix',
+        'ترکیب مشتریان بر اساس کانال جذب',
+        'سهم و تعداد مشتریان جدید یا فعال به تفکیک روش آشنایی ثبت‌شده؛ کانال نامشخص جداگانه و بدون انتساب حدسی نمایش داده می‌شود.',
+        'bar',
+        [customerPortfolio],
+        'reports.dashboard.customer-growth.read',
+        '/reports?report=customer_portfolio_growth',
+      ),
+      visual(
+        'customer-acquisition-channel-trend',
+        'روند جذب مشتری به تفکیک کانال',
+        'روند زمانی تعداد مشتریان جدید هر کانال در دوره‌های هم‌طول برای تشخیص رشد یا افت پایدار.',
+        'line',
+        [customerPortfolio],
+        'reports.dashboard.customer-growth.read',
+        '/reports?report=customer_portfolio_growth',
       ),
       visual(
         'customer-trust-guardrails',
