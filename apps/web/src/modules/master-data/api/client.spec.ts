@@ -79,6 +79,54 @@ describe('master data browser client', () => {
     );
   });
 
+  it('loads the safe Master Data notification feed', async () => {
+    process.env.NEXT_PUBLIC_API_BASE_URL = 'http://localhost:4000/api/v1';
+    const response = { data: [], meta: { limit: 25 } };
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue({ ok: true, json: async () => response });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(masterDataApi.notifications(25)).resolves.toEqual(response);
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://localhost:4000/api/v1/master-data/audit/notifications?limit=25',
+      expect.objectContaining({ credentials: 'include' }),
+    );
+  });
+
+  it('signals the bell after a successful Master Data mutation', async () => {
+    process.env.NEXT_PUBLIC_API_BASE_URL = 'http://localhost:4000/api/v1';
+    const dispatchEvent = vi.fn();
+    vi.stubGlobal('window', {
+      dispatchEvent,
+      location: {
+        hostname: 'localhost',
+        origin: 'http://localhost:3100',
+      },
+    });
+    vi.stubGlobal(
+      'Event',
+      class TestEvent {
+        constructor(readonly type: string) {}
+      },
+    );
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ data: { id: 'country-1' } }),
+      }),
+    );
+
+    await masterDataApi.create('countries', {
+      values: { iso2Code: 'IR', name: 'ایران', englishName: 'Iran' },
+    });
+
+    expect(dispatchEvent).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'nora:master-data-changed' }),
+    );
+  });
+
   it('downloads a credentialed XLSX file from the direct endpoint', async () => {
     process.env.NEXT_PUBLIC_API_BASE_URL = 'http://localhost:4000/api/v1';
     const blob = new Blob(['xlsx']);
@@ -134,7 +182,7 @@ describe('master data browser client', () => {
     });
   });
 
-  it('rejects temporary logo source ids before calling Documents', async () => {
+  it('rejects temporary logo source ids before calling the backend', async () => {
     const fetchMock = vi.fn();
     vi.stubGlobal('fetch', fetchMock);
     const file = new File(['logo'], 'logo.png', { type: 'image/png' });
@@ -145,12 +193,13 @@ describe('master data browser client', () => {
         resource: 'organizations',
         recordId: 'draft-client-id',
         title: 'لوگو',
+        version: 1,
       }),
     ).rejects.toMatchObject({ status: 400 });
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it('creates the real record before upload and attaches with optimistic lock', async () => {
+  it('creates the real record before the server uploads and attaches the logo', async () => {
     const created = {
       id: '11111111-1111-4111-8111-111111111111',
       resource: 'organizations',
@@ -166,13 +215,13 @@ describe('master data browser client', () => {
       .spyOn(masterDataApi, 'create')
       .mockResolvedValue({ data: created });
     const upload = vi.spyOn(masterDataApi, 'uploadLogo').mockResolvedValue({
-      id: 'document-id',
-      scanStatus: 'PENDING_SCAN',
-      reused: false,
+      data: {
+        ...created,
+        attributes: { logoFileReference: 'document-id' },
+        version: 2,
+      },
     });
-    const update = vi
-      .spyOn(masterDataApi, 'update')
-      .mockResolvedValue({ data: { ...created, version: 2 } });
+    const update = vi.spyOn(masterDataApi, 'update');
     const file = new File(['logo'], 'logo.png', { type: 'image/png' });
 
     await masterDataApi.persistWithLogo({
@@ -186,91 +235,44 @@ describe('master data browser client', () => {
       upload.mock.invocationCallOrder[0]!,
     );
     expect(upload).toHaveBeenCalledWith(
-      expect.objectContaining({ recordId: created.id }),
+      expect.objectContaining({ recordId: created.id, version: 1 }),
     );
-    expect(update).toHaveBeenCalledWith('organizations', created.id, {
-      values: { logoFileReference: 'document-id' },
-      version: 1,
-    });
+    expect(update).not.toHaveBeenCalled();
   });
 
-  it('reuses an existing canonical logo document on retry', async () => {
+  it('sends logo file and optimistic version only to the bounded Master Data endpoint', async () => {
     process.env.NEXT_PUBLIC_API_BASE_URL = 'http://localhost:4000/api/v1';
     const file = new File(['same-logo'], 'logo.png', { type: 'image/png' });
-    const digest = await crypto.subtle.digest(
-      'SHA-256',
-      await file.arrayBuffer(),
-    );
-    const opaqueBytes = new Uint8Array(digest).slice(0, 16);
-    opaqueBytes[6] = (opaqueBytes[6]! & 0x0f) | 0x50;
-    opaqueBytes[8] = (opaqueBytes[8]! & 0x3f) | 0x80;
-    const opaqueToken = Array.from(opaqueBytes, (byte) =>
-      byte.toString(16).padStart(2, '0'),
-    ).join('');
-    const marker = `master-data-logo-v1:${opaqueToken.slice(0, 8)}-${opaqueToken.slice(8, 12)}-${opaqueToken.slice(12, 16)}-${opaqueToken.slice(16, 20)}-${opaqueToken.slice(20)}`;
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          data: {
-            currentUserId: 'user-id',
-            branches: [{ id: 'branch-id', name: 'مرکزی' }],
-            owners: [{ id: 'user-id', displayName: 'کاربر' }],
-            categories: [
-              { id: 'category-id', code: 'BRAND_ASSETS', name: 'برند' },
-            ],
-            documentTypes: [
-              {
-                id: 'type-id',
-                code: 'BRAND_ASSET_TEMPLATE',
-                name: 'لوگو',
-                domain: 'BRAND',
-                allowedMimeTypes: ['image/png'],
-                maxFileSizeBytes: 1_000_000,
-              },
-            ],
-            uploadPolicy: {
-              maxFileSizeBytes: 1_000_000,
-              allowedMimeTypes: ['image/png'],
-              antivirusAvailable: true,
-            },
-          },
-        }),
-      })
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          data: [
-            {
-              id: 'existing-document',
-              currentVersion: {
-                versionNote: marker,
-                scanStatus: 'CLEAN',
-              },
-            },
-          ],
-          meta: { page: 1, pageSize: 100, total: 1, totalPages: 1 },
-        }),
-      });
+    const result = {
+      data: {
+        id: '11111111-1111-4111-8111-111111111111',
+        resource: 'airlines',
+        version: 4,
+      },
+    };
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => result,
+    });
     vi.stubGlobal('fetch', fetchMock);
 
     await expect(
       masterDataApi.uploadLogo({
         file,
-        resource: 'organizations',
+        resource: 'airlines',
         recordId: '11111111-1111-4111-8111-111111111111',
-        title: 'لوگو',
+        title: 'لوگوی ایرلاین',
+        version: 3,
       }),
-    ).resolves.toEqual({
-      id: 'existing-document',
-      scanStatus: 'CLEAN',
-      reused: true,
-    });
-    expect(fetchMock).toHaveBeenCalledTimes(2);
-    expect(fetchMock.mock.calls[1]?.[0]).toContain(
-      'sourceEntityId=11111111-1111-4111-8111-111111111111',
+    ).resolves.toEqual(result);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(
+      'http://localhost:4000/api/v1/master-data/airlines/11111111-1111-4111-8111-111111111111/logo',
     );
+    const form = fetchMock.mock.calls[0]?.[1]?.body as FormData;
+    expect(form.get('file')).toBe(file);
+    expect(form.get('title')).toBe('لوگوی ایرلاین');
+    expect(form.get('version')).toBe('3');
   });
 
   it('keeps the saved record and reports an actionable upload failure', async () => {
@@ -319,12 +321,7 @@ describe('master data browser client', () => {
       updatedAt: '2026-09-05T00:00:00.000Z',
     } as const;
     vi.spyOn(masterDataApi, 'create').mockResolvedValue({ data: created });
-    vi.spyOn(masterDataApi, 'uploadLogo').mockResolvedValue({
-      id: 'document-id',
-      scanStatus: 'CLEAN',
-      reused: true,
-    });
-    vi.spyOn(masterDataApi, 'update').mockRejectedValue(
+    vi.spyOn(masterDataApi, 'uploadLogo').mockRejectedValue(
       new MasterDataApiError('هم‌زمانی', 409),
     );
 

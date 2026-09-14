@@ -41,6 +41,7 @@ import { OrganizationAddressController } from './organization-address.controller
     HotelImportService,
   ],
   exports: [
+    MasterDataService,
     MasterOrganizationDirectory,
     MasterTravelDirectory,
     MasterHrDirectory,

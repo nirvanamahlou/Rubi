@@ -34,7 +34,7 @@ describe('global change notifications', () => {
     });
   });
 
-  it('labels status operations and routes each module to its owning section', () => {
+  it('delegates Master Data mutations to its persistent Audit feed', () => {
     const notification = buildChangeNotification(
       {
         method: 'POST',
@@ -44,8 +44,7 @@ describe('global change notifications', () => {
       apiBaseUrl,
       options,
     );
-    expect(notification?.title).toBe('غیرفعال‌سازی در اطلاعات پایه');
-    expect(notification?.href).toBe('/master-data');
+    expect(notification).toBeNull();
   });
 
   it('records a successful mutation after fetch without changing its response', async () => {

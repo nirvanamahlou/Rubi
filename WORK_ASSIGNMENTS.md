@@ -1,5 +1,14 @@
 # Work Assignments
 
+## MASTER-011-MISSING-FIXES — PC-B — READY_FOR_REVIEW / MERGE_AUTHORIZED
+
+- درخواست مالک محصول در 2026-09-14: همه اصلاحات قبلی اطلاعات پایه که روی شاخه‌های remote مانده‌اند، از جمله ذخیره لوگو و اعلان تغییرات در زنگوله، بازیابی، Push و با `develop` ادغام شوند. `COMPUTER_ID=PC-B`.
+- Branch مستقل `codex/pc-b-master-data-missing-fixes` از `origin/develop@7a6cc53e`؛ منبع بازیابی فقط commit `4a118fd6` از PR #232 و commitهای `6d54694f`/`f87cd27c` از PR #105 است.
+- محدوده رزروشده: Master Data API/Web، اتصال عمومی Documents برای ذخیره فایل لوگو، Notification Center و تست/اسناد همان دو تحویل. Producerهای Master Data/Documents و مصرف‌کننده Web همگی در مالکیت PC-B هستند؛ دسترسی مستقیم به جدول ماژول دیگر ایجاد نمی‌شود.
+- بدون Schema/Migration/Seed، Contract مشترک، Permission، داده عملیاتی یا Dependency/Lockfile. تغییرات جدید `develop` و runtime فعال 3100 حفظ می‌شوند؛ Force Push و حذف Branch انجام نمی‌شود.
+- تکمیل: سه اصلاح حمل‌ونقلِ جاافتاده پیش‌تر با PR #241 وارد `develop` شدند؛ در این واحد نیز ذخیره واقعی PNG/JPEG لوگوی رکوردهای اطلاعات پایه در Documents و خوراک Audit اطلاعات پایه در زنگوله روی آخرین `develop` بازیابی شد. ناسازگاری تاریخی namespace و Cookie با `Nora` رفع و هم‌زمان اعلان‌های پایدار عمومی و HR حفظ شدند.
+- صحت‌سنجی هدفمند: ۵۹ تست API و ۳۹ تست Web، lint و typecheck هر دو برنامه و build تولیدی API/Web با ۴۶ Route موفق‌اند. هیچ قفل Schema/Migration، Contract، Dependency یا داده‌ای گرفته نشد و رزرو فایل‌های این Task برای Review آزاد است.
+
 ## MASTER-010-CABIN-CLASS-TITLE — PC-B — MERGE_AUTHORIZED
 
 - درخواست مالک محصول: در «کلاس پروازی» عنوان فارسی از فرم و نمایش حذف و عنوان انگلیسی اجباری شود.
@@ -434,6 +443,15 @@ Merged via PR #254 at `e40878f1`. Web3100 runs the production build `55JsHVl1EIR
 
 - User explicitly requests combining Excel/current Nora and Customer Affairs on Web3100 with its API. Base `origin/develop@6a4e041`; branch `codex/pc-b-unified-customer-affairs-3100`. Integrate published CA branch `f34166c` without replacing current modules. Reserve integration conflict resolution in schema reverse relations, app/contract wiring and task/status documents; no new domain contract or dependency change. Existing source worktrees remain untouched. Reuse the current local database and document storage; inspect/back up/rehearse the existing additive CA migration before applying it. Runtime cutover is authorized for the verified current Web3100/API4190 only, after build/test gates. No main/develop mutation, credential reset or broad seed.
 - Completed: shared source `09b3b18` is live on Web3100/PID1628 and API4190/PID12504, build `unified-vnpjB6iJEmubY1N0rxXr5`. Backup/rehearsal/additive CA migration succeeded; 38 users, 5 branches and 44 documents preserved. User separately approved 19 CA permissions for administrator only, audited without changing other roles. All 15 lint/typecheck tasks and six builds passed; API 1230 tests passed, Web 1336 plus the separately retried 42-test HR file passed (one original load-related timeout). Browser sign-in, CA overview/report and agency Excel dialog verified. Old preview3102 and rehearsal API4192 stopped. Implementation/central integration reservation released; future runtime replacement requires coordination and must retain this combined source. See `docs/tasks/UNIFIED-CUSTOMER-AFFAIRS-3100.md`.
+
+## MASTER-007-LOGO-UPLOAD — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک محصول: بارگذاری لوگو در ایرلاین‌ها و دیگر فرم‌های دارای لوگوی اطلاعات پایه واقعاً ذخیره شود. شاخه مستقل `codex/pc-b-master-data-logo-upload` از `origin/develop@6a4e0410` و Working Tree آغاز کار تمیز است.
+- محدوده رزروشده: جریان لوگوی `apps/web/src/modules/master-data/**`، endpoint و orchestration محدود `apps/api/src/master-data/**`، public service محدود مالک فایل در `apps/api/src/documents/**`، ثبت افزایشی integration module در `apps/api/src/app.module.ts`، تست‌های هدفمند و اسناد همین Task. تغییر باز PR #105 در زمینه اعلان‌های نرخ ارز حفظ و وارد این واحد نمی‌شود.
+- قرارداد producer/consumer: Documents مالک باینری، اسکن، Audit و شناسه سند باقی می‌ماند و Master Data فقط Reference را نگه می‌دارد. endpoint افزایشی و backward-compatible است؛ ویرایشگر Master Data بدون اعطای دسترسی عمومی آرشیو، فقط برای رکورد مجاز خود لوگو را بارگذاری/جایگزین/حذف می‌کند.
+- بدون Schema/Migration/Seed، Dependency/Lockfile، IAM grant یا تغییر داده عملیاتی. نوع PNG/JPEG، سقف ۵ MB، شعبه مجاز، optimistic version و رابطه دقیق `master-data/resource/id` در Backend کنترل می‌شوند. API p95 هدف موجود `<500ms` بدون Provider است؛ آپلود فایل وابسته به Storage/Scan بوده و endpoint/SLO جدیدی تعریف نمی‌شود.
+- تکمیل: مسیر محدود `POST/DELETE /api/v1/master-data/:resource/:id/logo` جای دسترسی مستقیم Web به آرشیو اسناد را گرفت. ایرلاین، بانک، بیمه، هتل، زنجیره هتل، شرکت ریلی/اتوبوس، سازمان، تأمین‌کننده و کارگزار پوشش دارند؛ جایگزینی و حذف، نسخه خوش‌بینانه و رابطه مالک رکورد را کنترل می‌کنند.
+- صحت‌سنجی: ۵۰۶ تست مرز Master Data/Documents در API، ۳۳۸ تست Master Data در Web، lint محدوده، typecheck و production build هر دو برنامه موفق‌اند. قفل‌های Task آزاد و تحویل آماده Review است؛ جزئیات در `docs/tasks/MASTER-007-LOGO-UPLOAD.md` ثبت شد.
 
 ## WORKBENCH-021 — PC-B — LOCAL_COMPLETE / RUNTIME_ACTIVE
 
@@ -1225,6 +1243,18 @@ Explicit user follow-up: group headings toggle their own links like3200, whole-s
 - این Slice تغییرات عمومی را از همان Browser Profile پوشش می‌دهد. پیگیری DOCUMENTS-007 اعلان تغییرات اسناد را با قرارداد و Persistence مستقل Backend به همین مرکز متصل کرده است؛ بنابراین مسیرهای `documents/**` از رهگیری مرورگری حذف‌اند تا اعلان تکراری ساخته نشود. سایر ماژول‌ها تا پیگیری Backend خود، مرورگرمحور باقی می‌مانند.
 - نتیجه: زنگوله موجود به Notification Center واقعی تبدیل شد؛ Mutation موفق پس از دریافت Response به اعلان فارسیِ بخش و عملیات تبدیل می‌شود. Badge تعداد خوانده‌نشده، Empty State، زمان، Deep Link، خواندن تکی/همه، پاک‌کردن خوانده‌شده‌ها، سقف ۶۰ رکورد و همگام‌سازی Tabها فعال است؛ خطای Storage هرگز نتیجه درخواست اصلی را تغییر نمی‌دهد.
 - اعتبارسنجی: Web lint و typecheck، ۲۲ تست هدفمند و Production Build با ۳۴ Route موفق‌اند؛ Web/API روی ۳۱۰۰/۴۰۰۰ پاسخ ۲۰۰ دارند. Full Web برابر ۶۴۱ تست موفق از ۶۴۲ است و فقط assertion قدیمی و تغییرنیافته Customers درباره LF/CRLF روی Windows شکست دارد؛ فایل Customers خارج Scope دست‌نخورده ماند.
+
+## MASTER-006-AUDIT-NOTIFICATIONS — PC-B — READY_FOR_REVIEW
+
+- درخواست صریح مالک محصول در 2026-09-07: هر تغییر موفق اطلاعات پایه در زنگوله سراسری به‌صورت اعلان قابل مشاهده باشد. `COMPUTER_ID=PC-B`.
+- Branch مستقل `codex/pc-b-master-data-notifications` از `origin/develop@9b9d7a4` در Worktree `C:\Users\admin\Rubi-master-data-notifications`؛ محدوده فقط خواندن امن رویدادهای موجود `MasterDataAuditEvent`، API اعلان، Client و زنگوله Header، تست‌های هدفمند و ثبت همین Work Item است.
+- هیچ Schema/Migration/Seed، Shared Contract، Dependency/Lockfile یا جدول اعلان جدیدی تغییر نمی‌کند. اعلان‌ها metadata-only هستند و Snapshot، PII، Credential و دلیل داخلی Audit را افشا نمی‌کنند؛ وضعیت خوانده‌شدن فقط در مرورگر کاربر نگه‌داری می‌شود.
+- هماهنگی فایل مشترک: مرکز اعلان `NOTIFICATIONS-001` حین اجرا وارد `develop` شد؛ این Task زنگوله دوم نمی‌سازد و Feed پایدار و cross-device اطلاعات پایه را به همان `NotificationCenter` متصل می‌کند. PR #99 نیز `app-shell.tsx` را فقط در محدوده Breadcrumb تغییر می‌دهد و دست‌نخورده می‌ماند.
+- معیار پذیرش: ایجاد، ویرایش، حذف، فعال/غیرفعال‌سازی و تصمیم نرخ موفق از هر کاربر/PC در Feed سراسری دیده شود؛ رویدادهای صرفاً خواندنی و Preview/Export اعلان نسازند؛ شمارنده خوانده‌نشده، تازه‌سازی، Empty/Error/Loading، مسیر بخش مالک و دسترس‌پذیری صفحه‌کلید/Screen Reader کامل باشند.
+- فرض ظرفیت و کیفیت: Master Data مشترک و read-heavy با اوج کمتر از `50 QPS`؛ هدف `p50<150ms`، `p95<300ms`، `p99<600ms`، SLO `99.9%`، `RPO<=24h` و `RTO<=4h`. UI در برنامه داخلی احراز هویت‌شده و با Design System فعلی پیاده می‌شود.
+- نتیجه: Feed امن ۶۰ تغییر اخیر از Audit موجود اضافه شد و همان Notification Center سراسری آن را در شروع، هنگام بازشدن زنگوله، بلافاصله پس از Mutation همین مرورگر و هر ۳۰ ثانیه برای تغییرات PC/کاربر دیگر همگام می‌کند. عنوان رکورد، نوع تغییر و Deep Link بخش مالک نمایش داده می‌شود؛ وضعیت خوانده‌شدن قبلی حفظ و اعلان محلی تکراری Master Data حذف می‌شود.
+- هماهنگی Review: PR #103 یک Notifications Backend آینده و تغییر هم‌پوشان در `notification-center/app-shell` دارد و اکنون `CONFLICTING` است؛ این Task هیچ فایل یا Branch آن را تغییر نمی‌دهد و هنگام Rebase/Review #103 باید Adapter این Feed Audit حفظ یا به قرارداد پایدار همان ماژول منتقل شود.
+- اعتبارسنجی: ۱۴ تست هدفمند API و ۲۷ تست هدفمند Web، lint و typecheck هر دو بسته و Production Build API/Web با ۳۴ Route موفق‌اند. Schema/Migration/Seed، Shared Contract و Lockfile تغییر نکرده‌اند.
 
 ## MARKETING-001F-OFFER-AUDIENCE-TARGETS — PC-B — READY_FOR_REVIEW
 
