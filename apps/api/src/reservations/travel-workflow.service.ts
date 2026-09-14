@@ -205,17 +205,24 @@ export class TravelWorkflowService {
       if (
         intake.salesOwnerUserId &&
         ((next.voucherIssued && !state.voucherIssued) ||
-          command.action === 'CANCEL')
+          ['CANCEL', 'REOPEN'].includes(command.action))
       )
         await this.notifications.createWithinTransaction(tx, {
           recipientUserIds: [intake.salesOwnerUserId],
           actorUserId: actor.userId,
           sourceModule: 'reservations',
-          eventType: command.action === 'CANCEL' ? 'CANCEL' : 'ISSUE_VOUCHER',
+          eventType:
+            command.action === 'CANCEL'
+              ? 'CANCEL'
+              : command.action === 'REOPEN'
+                ? 'REOPEN'
+                : 'ISSUE_VOUCHER',
           title:
             command.action === 'CANCEL'
               ? 'ابطال درخواست رزرواسیون'
-              : 'واچر صادر شد',
+              : command.action === 'REOPEN'
+                ? 'لغو ابطال درخواست رزرواسیون'
+                : 'واچر صادر شد',
           message: `قرارداد ${intake.snapshot.contractNumber}؛ ${next.note}`,
           entityType: 'sales_contract',
           entityId: intake.contractId,
