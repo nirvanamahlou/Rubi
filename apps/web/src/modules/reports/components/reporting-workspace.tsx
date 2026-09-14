@@ -1886,11 +1886,6 @@ export function ReportingWorkspace({
             view={view}
             savedFilter={savedFilter}
           />
-          <Button asChild variant="outline">
-            <Link href={reportingViewHref('catalog')}>
-              رفتن به کاتالوگ گزارش‌ها
-            </Link>
-          </Button>
         </Card>
       )}
       <Dialog onOpenChange={setConfigurationOpen} open={configurationOpen}>

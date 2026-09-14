@@ -2511,3 +2511,9 @@ B2B-360-REMOVE-SUBTITLE-001: READY_FOR_REVIEW. Combined runtime1bf840b/PID8604 b
 - محدوده رزروشده: فقط adapter پاسخ Reports، پنل نتیجه و تست‌های هدفمند Web و مستندات وضعیت همین واحد کار. هیچ تغییر API، Schema/Migration/Seed، داده عملیاتی، مجوز یا Dependency انجام نمی‌شود.
 - راهکار: فیلدهای موجود Travel projection (سفارش، مسافر، بلیت، فروش، خرید، سود ناخالص، استرداد و مانده تسویه) هنگام normalizing حفظ و در جدول Preview، فقط در صورت موجودبودن در پاسخ، نمایش داده می‌شوند. ستون‌های قابل مرتب‌سازی فعلی بدون تغییر می‌مانند.
 - پیاده‌سازی کامل شد: adapter اکنون تمام سنجه‌های موجود در پاسخ Travel را حفظ می‌کند و جدول Preview ستون‌های متناظر را بدون نمایش فیلد ساختگی نشان می‌دهد. ۱۹ تست هدفمند Reports، lint محدوده و Web typecheck موفق‌اند؛ بدون تغییر API، Schema/Migration/Seed یا داده عملیاتی.
+
+# LOCAL-UNIFIED-RUNTIME — PC-C — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-14: تغییرات Dashboard و Reports باید روی یک نسخهٔ نهایی مشترک در `localhost:3000` نمایش داده شوند و اجرای یک Worktree قدیمی باعث بازگشت ماژول دیگر نشود.
+- محدودهٔ رزروشده: اسکریپت اجرای LocalHost، قرارداد package manager و مستندات وضعیت؛ بدون تغییر API، Schema/Migration/Seed یا دادهٔ نمونه.
+- پیاده‌سازی کامل شد: شاخهٔ canonical `codex/pc-c-dashboard-reporting-latest` (commit پایه `879b84fb`) مالک پورت 3000 است. `pnpm dev:local-unified` از همین Worktree اجرا می‌شود، شاخه/فایل‌های Dashboard و Reports را guard می‌کند، پورت اشغال را بدون `-Restart` نمی‌پذیرد و گزینهٔ پاک‌سازی کش را خارج از repository انجام می‌دهد. وضعیت Web و راهنمای handoff در `docs/tasks/LOCAL-UNIFIED-RUNTIME.md` ثبت شده است.

@@ -286,7 +286,7 @@ export function DatePicker({
         ref={triggerRef}
         type="button"
       >
-        <span>
+        <span className="min-w-0 flex-1 truncate text-start" dir="auto">
           {currentValue
             ? formatCalendarValue(
                 currentValue,
@@ -298,7 +298,10 @@ export function DatePicker({
               ? 'Select date'
               : placeholder}
         </span>
-        <CalendarDays aria-hidden="true" className="size-5 text-primary" />
+        <CalendarDays
+          aria-hidden="true"
+          className="size-5 shrink-0 text-primary"
+        />
       </button>
 
       {open && typeof document !== 'undefined'

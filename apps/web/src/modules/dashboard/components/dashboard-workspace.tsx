@@ -3,6 +3,7 @@
 import { useQuery } from '@tanstack/react-query';
 import {
   AlertTriangle,
+  ArrowUpRight,
   BarChart3,
   BriefcaseBusiness,
   CalendarRange,
@@ -52,6 +53,7 @@ import {
 import { cn } from '@/lib/utils';
 import { faMessages } from '@/messages/fa';
 import { useLegalEntityContext } from '@/modules/legal-entities/components/legal-entity-context';
+import { reportCatalog } from '@/modules/reports/model/reporting';
 import { dashboardProjectionClient } from '../model/projection-client';
 import {
   dashboardDateRangeError,
@@ -79,13 +81,6 @@ const rangeOptions: readonly [DashboardRange, string][] = [
   ['year', 'امسال'],
   ['custom', 'بازه سفارشی'],
 ];
-
-const dateBasisOptions = [
-  ['created', 'تاریخ ایجاد'],
-  ['issued', 'تاریخ صدور'],
-  ['paid', 'تاریخ پرداخت'],
-  ['effective', 'تاریخ مؤثر'],
-] as const;
 
 const dimensionFilters: readonly {
   key: keyof DashboardFilters;
@@ -242,6 +237,13 @@ function KpiDefinitionPanel({
   definition: DashboardKpiDefinition;
   onClose(): void;
 }) {
+  const report = reportCatalog.find(
+    (candidate) => candidate.displayCode === definition.reportCode,
+  );
+  const reportHref = report
+    ? `/reports?report=${encodeURIComponent(report.code)}`
+    : '/reports';
+
   return (
     <Card
       className="border-primary/30 bg-primary/[0.025] p-4"
@@ -266,6 +268,35 @@ function KpiDefinitionPanel({
         </Button>
       </div>
       <dl className="mt-4 grid gap-3 text-sm md:grid-cols-2 xl:grid-cols-4">
+        <div className="md:col-span-2 xl:col-span-4">
+          <dt className="text-xs font-bold text-muted-foreground">
+            تعریف کوتاه
+          </dt>
+          <dd className="mt-1 leading-6">
+            معیاری برای پایش {definition.title} در سطح {definition.grain}؛ این
+            شاخص برای پاسخ به این تصمیم استفاده می‌شود: {definition.decision}
+          </dd>
+        </div>
+        <div className="md:col-span-2 xl:col-span-4">
+          <dt className="text-xs font-bold text-muted-foreground">
+            فرمول محاسبه / قاعده اندازه‌گیری
+          </dt>
+          <dd className="mt-1 rounded-xl bg-surface/80 p-3 leading-6">
+            {definition.rule}
+          </dd>
+        </div>
+        <div className="md:col-span-2 xl:col-span-4">
+          <dt className="text-xs font-bold text-muted-foreground">
+            فیچرها و منابع مورد استفاده
+          </dt>
+          <dd className="mt-2 flex flex-wrap gap-2">
+            {definition.source.map((source) => (
+              <Badge className="font-mono text-[11px]" dir="ltr" key={source}>
+                {source}
+              </Badge>
+            ))}
+          </dd>
+        </div>
         <div>
           <dt className="text-xs font-bold text-muted-foreground">Grain</dt>
           <dd className="mt-1 leading-6">{definition.grain}</dd>
@@ -290,10 +321,6 @@ function KpiDefinitionPanel({
           </div>
         ) : null}
         <div>
-          <dt className="text-xs font-bold text-muted-foreground">قاعده</dt>
-          <dd className="mt-1 leading-6">{definition.rule}</dd>
-        </div>
-        <div>
           <dt className="text-xs font-bold text-muted-foreground">
             حذف‌ها / محدودیت
           </dt>
@@ -313,9 +340,18 @@ function KpiDefinitionPanel({
             وابسته به {definition.openDecision}
           </Badge>
         ) : null}
-        <Button disabled size="sm" variant="outline">
-          Drill-down پس از اتصال View
-        </Button>
+        {report ? (
+          <Button asChild size="sm" variant="outline">
+            <Link href={reportHref}>
+              پیکربندی گزارش مرتبط
+              <ArrowUpRight aria-hidden="true" className="size-3.5" />
+            </Link>
+          </Button>
+        ) : (
+          <Button disabled size="sm" variant="outline">
+            گزارش مرتبط در کاتالوگ موجود نیست
+          </Button>
+        )}
       </div>
     </Card>
   );
@@ -629,7 +665,7 @@ function DashboardSidebar({
 
             <div className="mt-4 space-y-3">
               <div>
-                <div className="grid gap-3 sm:grid-cols-2">
+                <div className="grid gap-3">
                   <FormField id="dashboard-from" label="از تاریخ">
                     <DatePicker
                       aria-describedby={
@@ -695,28 +731,6 @@ function DashboardSidebar({
                     {rangeOptions.map(([value, label]) => (
                       <SelectItem key={value} value={value}>
                         {label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </FormField>
-
-              <FormField id="dashboard-date-basis" label="مبنای تاریخ">
-                <Select
-                  value={filters.dateBasis}
-                  onValueChange={(value) =>
-                    onFiltersChange({
-                      dateBasis: value as DashboardFilters['dateBasis'],
-                    })
-                  }
-                >
-                  <SelectTrigger id="dashboard-date-basis">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {dateBasisOptions.map(([value, label]) => (
-                      <SelectItem key={value} value={value}>
-                        {label} ({value})
                       </SelectItem>
                     ))}
                   </SelectContent>

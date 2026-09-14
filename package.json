@@ -24,6 +24,7 @@
     "master-data:demo:apply": "node apps/api/scripts/run-local-master-data-demo.mjs --apply",
     "documents:demo:preview": "node apps/api/scripts/run-local-documents-demo.mjs --preview",
     "documents:demo:apply": "node apps/api/scripts/run-local-documents-demo.mjs --apply",
+    "dev:local-unified": "pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/start-unified-local-runtime.ps1",
     "infra:config": "docker compose --env-file .env.example -f infrastructure/compose.dev.yaml config",
     "infra:up": "docker compose --env-file .env -f infrastructure/compose.dev.yaml up -d",
     "infra:down": "docker compose --env-file .env -f infrastructure/compose.dev.yaml down"
