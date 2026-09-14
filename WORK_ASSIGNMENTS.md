@@ -1,5 +1,12 @@
 # Work Assignments
 
+## MASTER-011-MISSING-FIXES — PC-B — IN_PROGRESS / MERGE_AUTHORIZED
+
+- درخواست مالک محصول در 2026-09-14: همه اصلاحات قبلی اطلاعات پایه که روی شاخه‌های remote مانده‌اند، از جمله ذخیره لوگو و اعلان تغییرات در زنگوله، بازیابی، Push و با `develop` ادغام شوند. `COMPUTER_ID=PC-B`.
+- Branch مستقل `codex/pc-b-master-data-missing-fixes` از `origin/develop@7a6cc53e`؛ منبع بازیابی فقط commit `4a118fd6` از PR #232 و commitهای `6d54694f`/`f87cd27c` از PR #105 است.
+- محدوده رزروشده: Master Data API/Web، اتصال عمومی Documents برای ذخیره فایل لوگو، Notification Center و تست/اسناد همان دو تحویل. Producerهای Master Data/Documents و مصرف‌کننده Web همگی در مالکیت PC-B هستند؛ دسترسی مستقیم به جدول ماژول دیگر ایجاد نمی‌شود.
+- بدون Schema/Migration/Seed، Contract مشترک، Permission، داده عملیاتی یا Dependency/Lockfile. تغییرات جدید `develop` و runtime فعال 3100 حفظ می‌شوند؛ Force Push و حذف Branch انجام نمی‌شود.
+
 ## MASTER-010-CABIN-CLASS-TITLE — PC-B — MERGE_AUTHORIZED
 
 - درخواست مالک محصول: در «کلاس پروازی» عنوان فارسی از فرم و نمایش حذف و عنوان انگلیسی اجباری شود.
