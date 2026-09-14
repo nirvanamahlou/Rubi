@@ -214,6 +214,13 @@ describe('dashboard permission and data states', () => {
     expect(source).toContain('<Drawer');
     expect(source).toContain('id="kpi-definition-panel"');
     expect(source).toContain('تعریف و هدف کسب‌وکار');
+    expect(source).toContain(
+      'این شاخص نشان می‌دهد «{definition.title}» در بازه و فیلترهای',
+    );
+    expect(source).toContain(
+      'این شاخص برای پاسخ به این تصمیم استفاده می‌شود:',
+    );
+    expect(source).not.toContain('تصمیم: </span>');
     expect(source).toContain('فرمول و قاعده محاسبه');
     expect(source).toContain('فیچرها و منابع داده');
     expect(source).toContain('حذف‌ها و محدودیت‌های محاسبه');

@@ -227,12 +227,6 @@ function KpiCard({
           </Badge>
         ) : null}
       </span>
-      {definition.decision ? (
-        <span className="mt-3 block text-xs leading-5 text-muted-foreground">
-          <span className="font-bold text-foreground">تصمیم: </span>
-          {definition.decision}
-        </span>
-      ) : null}
     </button>
   );
 }
@@ -309,7 +303,11 @@ function KpiDefinitionPanel({
                 تعریف و هدف کسب‌وکار
               </h3>
               <p className="mt-2 leading-7 text-muted-foreground">
-                معیاری برای پایش {definition.title} در سطح {definition.grain}.
+                این شاخص نشان می‌دهد «{definition.title}» در بازه و فیلترهای
+                انتخاب‌شده چه وضعیتی دارد. از آن برای بررسی سریع عملکرد و تشخیص
+                موارد نیازمند پیگیری استفاده می‌شود.
+              </p>
+              <p className="mt-3 leading-7 text-muted-foreground">
                 این شاخص برای پاسخ به این تصمیم استفاده می‌شود:{' '}
                 <span className="font-semibold text-foreground">
                   {definition.decision}
