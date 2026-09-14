@@ -232,9 +232,6 @@ function KpiCard({
           {definition.decision}
         </span>
       ) : null}
-      <span className="mt-3 block text-[11px] font-semibold text-primary">
-        جزئیات تعریف شاخص
-      </span>
     </button>
   );
 }

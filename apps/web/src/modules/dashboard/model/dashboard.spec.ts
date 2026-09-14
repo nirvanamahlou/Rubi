@@ -210,6 +210,7 @@ describe('dashboard permission and data states', () => {
     expect(source).toContain('DashboardSidebar');
     expect(source).toContain('kpiRoleLabels');
     expect(source).toContain('aria-haspopup="dialog"');
+    expect(source).not.toContain('جزئیات تعریف شاخص');
     expect(source).toContain('<Drawer');
     expect(source).toContain('id="kpi-definition-panel"');
     expect(source).toContain('تعریف و هدف کسب‌وکار');
