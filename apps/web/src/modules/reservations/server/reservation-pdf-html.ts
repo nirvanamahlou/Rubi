@@ -30,17 +30,21 @@ export function reservationPdfHtml(
   let first = 0;
   const sheets = pages
     .map((people, index) => {
-      const rows = people.map((p, i) => [
-        String(first + i + 1).padStart(2, '0'),
-        p.name,
-        p.sex,
-        p.age,
-        p.hotelChildAgeBand === 'CHD_2_TO_6'
-          ? 'CHD 2-6'
-          : p.hotelChildAgeBand === 'CHD_6_TO_12'
-            ? 'CHD 6-12'
-            : '-',
-      ]);
+      const rows = people.map((p, i) => {
+        const hotelChildAgeBand =
+          'hotelChildAgeBand' in p ? p.hotelChildAgeBand : undefined;
+        return [
+          String(first + i + 1).padStart(2, '0'),
+          p.name,
+          p.sex,
+          p.age,
+          hotelChildAgeBand === 'CHD_2_TO_6'
+            ? 'CHD 2-6'
+            : hotelChildAgeBand === 'CHD_6_TO_12'
+              ? 'CHD 6-12'
+              : '-',
+        ];
+      });
       first += people.length;
       return `<article class="page" dir="ltr"><header class="header"><div><h1>RESERVATION FORM</h1><p>TRAVEL SERVICES / HOTEL / TRANSFER / TOUR LEADER</p></div><div class="brand"><img class="${intake.workflow.branding?.kind === 'OWN' ? 'logo' : 'agencyLogo'}" src="${logo}" alt=""/></div></header>
     ${fields(
