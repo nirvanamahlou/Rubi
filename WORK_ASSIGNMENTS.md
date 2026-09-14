@@ -2846,7 +2846,7 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
   تازه را جمع می‌کند. دو تست gateway، parse اسکریپت، build کامل ۴۶ route و سه نمونهٔ
   متوالی مالکیت/نسخه موفق بودند؛ API4191 سالم است. رزرو source آزاد و runtime محلی فعال است.
 
-## LOCAL-ALL-MODULES-3100-0914 — PC-B — ACTIVE
+## LOCAL-ALL-MODULES-3100-0914 — PC-B — COMPLETE / ACTIVE
 
 - درخواست مالک در 2026-09-14: خرید و تأمین، میزکار، منابع انسانی و سایر بخش‌ها از یک
   نسخهٔ به‌روز روی Web3100 اجرا شوند. شاخه `codex/pc-b-all-modules-current-3100` از
@@ -2855,3 +2855,7 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 - محدوده رزروشده: ادغام محلی Web خرید با پایهٔ فعلی `origin/develop@c823f012`، build و
   راه‌اندازی Gateway3100/Web3110/API4191. داده، Schema/Migration، Seed، Permission و
   Dependency/Lockfile تغییر نمی‌کنند؛ تغییرات موجود میزکار و منابع انسانی حفظ می‌شوند.
+- تکمیل شد: فقط سه فایل Web خرید از شاخهٔ جدید منتقل شدند و ادغام کامل شاخه به‌دلیل
+  تعارض با Schema و Backend جدید کنار گذاشته شد. lint محدوده، بررسی Syntax ماکاپ و build
+  تولیدی ۴۶ مسیر موفق‌اند. Gateway3100، Web3110 و API4191 از checkout تجمیعی فعال و
+  شناسهٔ runtime با commit کد `8843fe0b` منطبق است؛ رزرو source آزاد شد.
