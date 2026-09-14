@@ -90,6 +90,15 @@ const rangeOptions: readonly [DashboardRange, string][] = [
   ['custom', 'بازه سفارشی'],
 ];
 
+const executiveSalesTitles: Record<DashboardRange, string> = {
+  today: 'فروش امروز',
+  week: 'فروش این هفته',
+  month: 'فروش این ماه',
+  quarter: 'فروش این فصل',
+  year: 'فروش امسال',
+  custom: 'فروش بازه انتخابی',
+};
+
 const dimensionFilters: readonly {
   key: keyof DashboardFilters;
   label: string;
@@ -962,14 +971,18 @@ export function DashboardWorkspace() {
       return next;
     });
   };
-  const selectedKpi =
-    dashboardKpis.find((item) => item.id === filters.widget) ?? null;
   const activePage =
     dashboardPages.find((page) => page.id === filters.page) ??
     dashboardPages[0]!;
-  const activePageKpis = dashboardKpis.filter((kpi) =>
-    activePage.kpiIds.includes(kpi.id),
-  );
+  const activePageKpis = dashboardKpis
+    .filter((kpi) => activePage.kpiIds.includes(kpi.id))
+    .map((kpi) =>
+      activePage.id === 'executive-overview' && kpi.id === 'collected'
+        ? { ...kpi, title: executiveSalesTitles[filters.range] }
+        : kpi,
+    );
+  const selectedKpi =
+    activePageKpis.find((item) => item.id === filters.widget) ?? null;
 
   return (
     <div className="min-w-0 space-y-5 pb-8" data-dashboard-workspace>

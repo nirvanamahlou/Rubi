@@ -18,8 +18,8 @@ import {
 } from './registry';
 
 describe('dashboard registry', () => {
-  it('defines all 51 decision-oriented KPIs with auditable metadata', () => {
-    expect(dashboardKpis).toHaveLength(51);
+  it('defines all 56 decision-oriented KPIs with auditable metadata', () => {
+    expect(dashboardKpis).toHaveLength(56);
     expect(new Set(dashboardKpis.map((kpi) => kpi.id)).size).toBe(
       dashboardKpis.length,
     );
@@ -37,6 +37,40 @@ describe('dashboard registry', () => {
       expect(kpi.comparison).not.toBe('');
       expect(kpi.reportCode).toMatch(/^RPT-\d{3}$/);
     }
+  });
+
+  it('covers the requested executive sales, customer, lead and cancellation decisions', () => {
+    const executive = dashboardPages.find(
+      (page) => page.id === 'executive-overview',
+    );
+    expect(executive?.kpiIds).toEqual(
+      expect.arrayContaining([
+        'collected',
+        'net-sales',
+        'new-customers',
+        'returning-customers',
+        'new-leads',
+        'lead-growth-rate',
+        'lead-conversion-rate',
+        'cancelled-reservations',
+      ]),
+    );
+    expect(executive?.visualizations.map((item) => item.id)).toEqual(
+      expect.arrayContaining([
+        'executive-trend',
+        'executive-sales-by-service',
+        'executive-customer-retention',
+        'executive-lead-acquisition',
+        'executive-lead-conversion',
+        'executive-reservation-cancellations',
+      ]),
+    );
+    expect(
+      dashboardKpis.find((kpi) => kpi.id === 'new-customers')?.rule,
+    ).toContain('نخستین خرید پرداخت‌شده');
+    expect(
+      dashboardKpis.find((kpi) => kpi.id === 'returning-customers')?.rule,
+    ).toContain('پیش از شروع بازه');
   });
 
   it('keeps fifteen decision-oriented pages with the requested sidebar hierarchy', () => {
@@ -249,6 +283,14 @@ describe('dashboard permission and data states', () => {
     expect(source).toContain('EmptyVisualCanvas');
     expect(source).toContain('دادهٔ تأییدشده برای نمایش موجود نیست');
     expect(source).toContain('KPI و تحلیل‌های عملیاتی');
+    for (const title of [
+      'فروش امروز',
+      'فروش این هفته',
+      'فروش این ماه',
+      'فروش این فصل',
+      'فروش بازه انتخابی',
+    ])
+      expect(source).toContain(title);
     expect(source).toContain('items-baseline');
     expect(source).toContain('dashboard-sidebar-filters-title');
     expect(source).toContain('پاک‌کردن فیلترهای داشبورد');
