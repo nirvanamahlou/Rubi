@@ -1,5 +1,9 @@
 # وضعیت پروژه
 
+## WORKBENCH-041 — رفع خطای پیام‌رسان
+
+در نگاشت پیام‌های عادی، شناسهٔ خالیِ فرستندهٔ فورواردشده دیگر به کوئری UUID کاربران ارسال نمی‌شود؛ این مشکل باعث خطای ۵۰۰ در فهرست گفتگوها و ایجاد گفت‌وگوی مستقیم بود. تست رگرسیون پیام‌رسان، lint و rebuild API موفق شدند و API جدید روی ۴۱۹۱ فعال است.
+
 ## WORKBENCH-040 — Performance summary
 
 Personal performance now shows leave count, dated shifts, approved payslip period/net amount, today's entry/exit, own customers and sales. Raw activity rows were removed. Additive HR projection preserves self/branch scope and applies approved attendance corrections. No employee reassignment or migration. See [WORKBENCH-040](tasks/WORKBENCH-040-PERFORMANCE-SUMMARY.md).

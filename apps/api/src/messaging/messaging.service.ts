@@ -197,7 +197,7 @@ export class MessagingService {
     const names = await this.descriptions(
       rows.flatMap((row) => [
         row.senderUserId,
-        row.forwardedFrom?.senderUserId ?? '',
+        ...(row.forwardedFrom ? [row.forwardedFrom.senderUserId] : []),
       ]),
     );
     return rows.map((row) => {
