@@ -2828,3 +2828,20 @@ User authorizes latest combined local Web3100/API4190 activation. Branch codex/p
 Runtime correction: reserve infrastructure/scripts/start-unified-local.ps1 for a configurable API port, default 4191. The Fetch-standard restricted port 4190 failed browser access despite HTTP health. Rebuild the local Web configuration against API4191; preserve the same database, storage and authentication. No browser security override.
 
 LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runtime and launcher integration reservation released. No merge to develop/main. See docs/tasks/LOCAL-ALL-SECTIONS-3100-0913.md.
+
+## RUNTIME-STABLE-3100-0914 — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-14: نسخهٔ آخر میزکار روی پورت ۳۱۰۰ ثابت بماند و اجرای
+  checkoutهای قدیمی آن را جایگزین نکند. شاخه `codex/pc-b-runtime-stable-3100` از
+  `origin/develop@0c331314` ساخته شد.
+- محدوده رزروشده: `infrastructure/scripts/start-unified-local.ps1`، دروازه و تست runtime
+  محلی و اسناد وضعیت همین واحد. دروازهٔ ثابت پورت عمومی ۳۱۰۰ را نگه می‌دارد و Next
+  تولیدی روی پورت داخلی اجرا می‌شود؛ launcher فقط پردازش‌هایی را متوقف می‌کند که مسیر
+  دقیق آن‌ها در ریشه‌های صریحاً مجاز باشد.
+- بدون Schema/Migration/Seed، تغییر Dependency/Lockfile، API عمومی، داده یا دسترسی کاربر.
+  دیتابیس، storage و نشست‌های موجود حفظ می‌شوند. فایل‌های runtime پس از QA آزاد خواهند شد.
+- تکمیل شد: دروازهٔ ثابت ۳۱۰۰ درخواست‌های HTTP و upgrade را به Next داخلی ۳۱۱۰ عبور
+  می‌دهد و هنگام آماده‌نبودن Web پاسخ ۵۰۲ مشخص برمی‌گرداند. launcher مالکیت هر سه پورت
+  را پیش از توقف کنترل، نسخه و commit سرو‌شده را پیش از تحویل تطبیق و در خطا پردازش‌های
+  تازه را جمع می‌کند. دو تست gateway، parse اسکریپت، build کامل ۴۶ route و سه نمونهٔ
+  متوالی مالکیت/نسخه موفق بودند؛ API4191 سالم است. رزرو source آزاد و runtime محلی فعال است.
