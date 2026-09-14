@@ -1,5 +1,5 @@
 import { ConflictException, Inject, Injectable } from '@nestjs/common';
-import type { AuthenticatedActor, MasterDataRecord } from '@rubi/contracts';
+import type { AuthenticatedActor, MasterDataRecord } from '@nora/contracts';
 
 import {
   DocumentsService,

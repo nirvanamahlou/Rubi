@@ -44,7 +44,7 @@ function requestMetadata(
 }
 
 @ApiTags('Master Data')
-@ApiCookieAuth('rubi_access')
+@ApiCookieAuth('nora_access')
 @UseGuards(AuthGuard, PermissionGuard)
 @Controller('master-data')
 export class MasterDataLogoController {

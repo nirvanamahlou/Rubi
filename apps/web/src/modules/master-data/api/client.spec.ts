@@ -97,7 +97,13 @@ describe('master data browser client', () => {
   it('signals the bell after a successful Master Data mutation', async () => {
     process.env.NEXT_PUBLIC_API_BASE_URL = 'http://localhost:4000/api/v1';
     const dispatchEvent = vi.fn();
-    vi.stubGlobal('window', { dispatchEvent });
+    vi.stubGlobal('window', {
+      dispatchEvent,
+      location: {
+        hostname: 'localhost',
+        origin: 'http://localhost:3100',
+      },
+    });
     vi.stubGlobal(
       'Event',
       class TestEvent {
@@ -117,7 +123,7 @@ describe('master data browser client', () => {
     });
 
     expect(dispatchEvent).toHaveBeenCalledWith(
-      expect.objectContaining({ type: 'rubi:master-data-changed' }),
+      expect.objectContaining({ type: 'nora:master-data-changed' }),
     );
   });
 

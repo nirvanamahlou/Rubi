@@ -74,7 +74,7 @@ export interface MasterDataNotification {
   occurredAt: string;
 }
 
-export const MASTER_DATA_CHANGED_EVENT = 'rubi:master-data-changed';
+export const MASTER_DATA_CHANGED_EVENT = 'nora:master-data-changed';
 
 const UNSAVED_SOURCE_ID = /^(?:draft|temp|preview)(?:-|$)/i;
 

@@ -1,4 +1,4 @@
-import type { AuthenticatedActor, MasterDataRecord } from '@rubi/contracts';
+import type { AuthenticatedActor, MasterDataRecord } from '@nora/contracts';
 import { ConflictException } from '@nestjs/common';
 import { describe, expect, it, vi } from 'vitest';
 

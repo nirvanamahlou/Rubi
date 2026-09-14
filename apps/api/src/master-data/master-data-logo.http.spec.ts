@@ -1,7 +1,7 @@
 import type { INestApplication } from '@nestjs/common';
 import { ValidationPipe } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import type { AuthenticatedActor } from '@rubi/contracts';
+import type { AuthenticatedActor } from '@nora/contracts';
 import request from 'supertest';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -60,7 +60,7 @@ describe('Master Data logo HTTP boundary', () => {
     const recordId = '44444444-4444-4444-8444-444444444444';
     await request(app.getHttpServer())
       .post(`/api/v1/master-data/airlines/${recordId}/logo`)
-      .set('Cookie', 'rubi_access=test')
+      .set('Cookie', 'nora_access=test')
       .set('x-branch-id', actor.branchIds[0]!)
       .field('title', 'لوگوی ایرلاین')
       .field('version', '3')
@@ -92,7 +92,7 @@ describe('Master Data logo HTTP boundary', () => {
       .post(
         '/api/v1/master-data/airlines/44444444-4444-4444-8444-444444444444/logo',
       )
-      .set('Cookie', 'rubi_access=test')
+      .set('Cookie', 'nora_access=test')
       .field('title', 'لوگوی ایرلاین')
       .attach('file', Buffer.from([0x89, 0x50, 0x4e, 0x47]), {
         filename: 'airline.png',
@@ -106,7 +106,7 @@ describe('Master Data logo HTTP boundary', () => {
     const recordId = '44444444-4444-4444-8444-444444444444';
     await request(app.getHttpServer())
       .delete(`/api/v1/master-data/hotels/${recordId}/logo`)
-      .set('Cookie', 'rubi_access=test')
+      .set('Cookie', 'nora_access=test')
       .send({ version: 4 })
       .expect(200);
     expect(logos.remove).toHaveBeenCalledWith(
