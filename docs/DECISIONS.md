@@ -182,3 +182,13 @@ Package Pricing از adapter صریح fail-closed استفاده می‌کند (
 `CAPACITY_RECHECK_FAILED`). استفاده از داده ReservationHotelGroupRate به‌جای نرخ پایه ممنوع
 است، چون آن مدل هزینه واقعی خرید Reservations است. Renderer نیز producer مستقل است و نبود آن
 فقط Render Request واقعی `AWAITING_RENDERER` می‌سازد؛ فایل یا success ساختگی ممنوع است.
+
+## ADR-MASTER-HOTEL-BASE-RATES-0914 — versioned period grid
+
+با درخواست صریح مالک محصول، Master Data مالک نرخ پایه فروش هتل در بازه اقامت است: یک شهر،
+check-in/check-out و تعداد شب، همه هتل‌های فعال همان شهر، انتخاب حضور در تور، مبلغ پایه هر
+اتاق/شب و ضرایب رده‌های اقامت. ویرایش رکورد قبلی تاریخچه را بازنویسی نمی‌کند و نسخه immutable
+جدید می‌سازد. Package Pricing فقط Public Contract نسخه‌دار را مصرف می‌کند و reference غیرجاری،
+خارج از شعبه یا با ارز ناسازگار را fail-closed رد می‌کند. مدل خرید واقعی Reservations مستقل
+می‌ماند. این تصمیم blocker هتل را رفع می‌کند و blocker Ticket Catalog یا Renderer را رفع‌شده
+فرض نمی‌کند.

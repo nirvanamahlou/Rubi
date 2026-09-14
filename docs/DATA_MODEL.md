@@ -448,3 +448,15 @@ FKهای واقعی صرفاً بین ۱۳ جدول داخلی Package Pricing �
 Migration هر update/delete نسخه `PUBLISHED` را رد می‌کند. Quote به همان Price Version متصل است
 تا تغییر آینده مبلغ قبلی را عوض نکند. Render Request به Package/Departure/Price/Template Version
 و Branding Snapshot وصل و تا حضور Worker در `AWAITING_RENDERER` باقی می‌ماند.
+
+## Master Data hotel base-rate periods
+
+`master_hotel_rate_periods` بازه جاری branch/city/check-in/check-out و شماره نسخه فعلی را
+نگه می‌دارد. هر ذخیره در `master_hotel_rate_period_versions` یک snapshot append-only از
+شهر، عنوان، تاریخ، تعداد شب، ارز، مبنای `ROOM_PER_NIGHT`، دلیل و actor می‌سازد.
+`master_hotel_base_rate_rows` تمام هتل‌های فعال همان شهر را با FK واقعی هتل، نسخه و نام
+snapshot، انتخاب حضور در تور، `Decimal(24,4)` مبلغ پایه nullable و شش ضریب Decimal-string
+در JSON نگه می‌دارد. هتل انتخاب‌شده باید مبلغ مثبت داشته باشد و هتل انتخاب‌نشده مبلغ ندارد.
+Trigger هر update/delete روی نسخه و ردیف را رد می‌کند؛ اصلاح فقط با نسخه جدید، optimistic
+locking و idempotency انجام می‌شود. این نرخ فروش پایه Master Data است و با نرخ خرید واقعی
+`ReservationHotelGroupRate` یکی نیست.

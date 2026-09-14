@@ -25,17 +25,32 @@ Prefix: `/api/v1/sales/pricing`. Endpointهای اصلی: `GET/POST /packages`،
 Prisma.Decimal و currency code هستند. Legal Entity `ALL` برای render رد می‌شود. published price
 هرگز update/delete نمی‌شود و قرارداد/quote snapshot قبلی ثابت می‌ماند.
 
+## Follow-up مدیریت قیمت هتل
+
+مسیر `/master-data/accommodation/hotel-rates` یک workspace فارسی/RTL برای ساخت و
+بازکردن بازه‌ها دارد. شهر، شعبه، check-in/check-out، تعداد شب و ارز ثبت می‌شوند؛ سپس تمام
+هتل‌های فعال و فروش‌پذیر همان شهر در جدول sticky و قابل‌ویرایش با جست‌وجو، انتخاب گروهی،
+تیک حضور در تور، قیمت پایه هر اتاق/شب و ضرایب دوتخته، یک‌تخته، سه‌تخته، کودک با/بدون تخت
+و نوزاد نمایش داده می‌شوند. محاسبه مبلغ مشتق‌شده با عدد صحیح مقیاس‌دار انجام می‌شود، نه float.
+
+سه مدل افزایشی period/version/row، FKهای واقعی Master Data، idempotency، optimistic locking،
+Audit و triggerهای immutable اضافه شدند. Public service فقط ردیف انتخاب‌شده نسخه جاری با
+branch/currency معتبر را به Package Pricing resolve و recheck می‌کند؛ جدول نرخ خرید
+Reservations دست‌نخورده است.
+
 ## Blocker و handoff
 
-در develop فعلی Public Contract نرخ پایه هتل Master Data و نرخ پایه/ظرفیت Ticket Management وجود
-ندارد. adapter با کد پایدار fail-closed می‌ماند؛ بنابراین UI ساخت/محاسبه/انتشار را به‌جای جعل نرخ
-قفل و علت را نمایش می‌دهد. همچنین Renderer هنوز متصل نیست و درخواست در `AWAITING_RENDERER` ثبت
-می‌شود. تکمیل producerها، اتصال adapter، export Excel/PDF و تست end-to-end renderer کار handoff است.
+Public Contract نرخ پایه هتل Master Data اکنون وجود دارد و adapter آن را مصرف می‌کند. هر
+reference غیرهتلی همچنان با کد پایدار fail-closed می‌ماند؛ بنابراین پکیج ترکیبی تا نرخ پایه/
+ظرفیت Ticket Catalog قفل است. Renderer نیز هنوز متصل نیست و درخواست در
+`AWAITING_RENDERER` ثبت می‌شود. تکمیل Ticket/FX/Renderer، export Excel/PDF و تست
+end-to-end renderer کار handoff است.
 
 ## Validation
 
-Prisma format/validate/generate موفق است. همه ۶۳ Migration روی PostgreSQL 16 خالی اعمال شدند؛
-`migrate status` به‌روز بود، ۱۳ جدول و دو trigger immutable نصب شدند و seed دو بار پیاپی موفق بود.
-تست‌ها: ۲۰ تست هدفمند API، ۱۷ تست UI/navigation و ۷۵ تست database موفق. typecheck چهار package
+Prisma format/validate/generate موفق است. پس از follow-up همه ۶۴ Migration روی PostgreSQL 16
+خالی اعمال شدند؛ `migrate status` به‌روز بود، سه جدول نرخ هتل و دو trigger immutable
+جدید نصب شدند و seed دو بار پیاپی موفق بود. ۲۳ تست هدفمند follow-up و قرارداد بصری نیز
+موفق‌اند. تست تحویل اولیه: ۲۰ تست هدفمند API، ۱۷ تست UI/navigation و ۷۵ تست database موفق. typecheck چهار package
 Contracts/Database/API/Web، lint کامل API/Web/Contracts/Database و Production Build API/Web
 (۴۷ صفحه، شامل `/sales/pricing`) موفق‌اند. `git diff --check` و Secret/PII scan پیش از commit اجرا شد.

@@ -1,10 +1,11 @@
 # وضعیت پروژه
 
-## 2026-09-14 — PACKAGE-PRICING-001 — PC-A — IMPLEMENTED / UPSTREAM BLOCKED
+## 2026-09-14 — PACKAGE-PRICING-001 — PC-A — IMPLEMENTED / PARTIAL UPSTREAM BLOCKED
 
 - زیر‌بخش `/sales/pricing` بدون آیتم مستقل منوی اصلی به Sales افزوده شد. Preview و قیمت‌های synthetic قبلی حذف شدند و UI هشت‌برگه از API واقعی، branch scope و permissionهای مستقل استفاده می‌کند.
 - قرارداد نسخه‌دار، ۱۳ مدل Package Pricing، Migration افزایشی، موتور Decimal، نسخه قیمت immutable، maker/checker، quote، render request واقعی با `AWAITING_RENDERER`، توقف فروش، قالب نسخه‌دار و Audit پیاده‌سازی شده‌اند.
-- تولید Price Version و انتشار عمداً fail-closed است: `origin/develop` هنوز Public Contract نسخه‌دار نرخ پایه هتل در Master Data و نرخ پایه/ظرفیت قابل recheck بلیت در Ticket Management ندارد. تا تحویل producerها هیچ نرخ، ظرفیت، فایل یا موفقیت ساختگی تولید نمی‌شود.
+- Follow-up قیمت هتل تکمیل شد: در `/master-data/accommodation/hotel-rates` شهر و بازه اقامت انتخاب می‌شود، شب‌ها محاسبه و همه هتل‌های فعال همان شهر در Grid اکسل‌مانند با تیک حضور در تور، مبلغ پایه و ضرایب قابل ویرایش نمایش داده می‌شوند. هر Save یک نسخه immutable می‌سازد و بازه بعداً قابل بازکردن و اصلاح است.
+- Public Contract نسخه‌دار نرخ پایه هتل از Master Data به Package Pricing متصل شد؛ مبلغ و ضرایب snapshot می‌شوند و reference قدیمی یا خارج از شعبه fail-closed است. blocker هتل رفع شد، اما تولید Price Version ترکیبی همچنان تا producer نرخ/ظرفیت بلیت در Ticket Catalog fail-closed است؛ Renderer نیز در `AWAITING_RENDERER` می‌ماند.
 - جزئیات، endpointها، validation و handoff در [PACKAGE-PRICING-001](tasks/PACKAGE-PRICING-001.md) ثبت شده است.
 
 ## WORKBENCH-041 — رفع خطای پیام‌رسان

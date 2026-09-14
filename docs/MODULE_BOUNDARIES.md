@@ -60,6 +60,9 @@ Finance باقی می‌مانند. هیچ reference بیرونی FK یا Query 
 نسخه و snapshot تأییدشده ذخیره می‌شود. Renderer فایل PNG/JPEG/PDF را می‌سازد و Documents
 فقط آن را نگه می‌دارد. نبود producer یا renderer باید fail-closed یا `AWAITING_RENDERER`
 باشد. Price Version منتشرشده update/delete نمی‌شود؛ توقف فروش فقط وضعیت Package را عوض می‌کند.
+Master Data مالک تعریف بازه و Grid نرخ پایه هتل است و فقط ردیف انتخاب‌شده از نسخه جاری،
+در شعبه و ارز یکسان را resolve/recheck می‌کند. Package Pricing شناسه ردیف، نسخه، مبلغ و
+snapshot ضرایب را مصرف می‌کند و اجازه Query مستقیم یا ویرایش جدول نرخ هتل را ندارد.
 
 Sales Contracts مالک customer/payer/passengerهای قرارداد، service allocation، قیمت فروش،
 quotation و contract version است. Reservations snapshot versioned و فقط‌خواندنی قرارداد را
