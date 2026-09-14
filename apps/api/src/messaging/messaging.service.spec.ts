@@ -92,6 +92,31 @@ describe('MessagingService', () => {
     expect(response.data.title).toBe('گیرنده');
   });
 
+  it('does not query an empty participant id for ordinary messages', async () => {
+    repository.listConversations!.mockResolvedValue([
+      {
+        ...conversation,
+        messages: [
+          {
+            id: messageId,
+            conversationId,
+            senderUserId: recipientId,
+            body: 'سلام',
+            createdAt: now,
+            forwardedFrom: null,
+            attachments: [],
+          },
+        ],
+      },
+    ]);
+
+    await service.conversations(actor);
+
+    expect(iam.describeMessagingParticipants).toHaveBeenCalledWith([
+      recipientId,
+    ]);
+  });
+
   it('rejects message delivery when the actor is not a destination member', async () => {
     repository.conversation!.mockResolvedValue(null);
 

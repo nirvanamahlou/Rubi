@@ -1,5 +1,9 @@
 # Work Assignments
 
+## WORKBENCH-041-MESSAGING-EMPTY-PARTICIPANT — PC-B — READY_FOR_REVIEW
+
+- User-reported Workbench messaging `INTERNAL_SERVER_ERROR` is reproduced in the shared API logs for conversation listing and direct conversation creation. Scope is limited to the Workbench messaging participant mapping and its regression test: omit the empty forwarded-sender placeholder from IAM UUID queries. No schema, migration, permissions, data or runtime ownership change.
+
 ## BRAND-NORA-001 — PC-B — COMPLETE / VERIFIED / LOCAL_RUNTIME_ACTIVE
 
 - درخواست صریح مالک محصول در 2026-09-14: نام محصول و namespace پروژه در تمام بخش‌ها به `Nora/نورا` تغییر کند. `COMPUTER_ID=PC-B`؛ Branch مستقل `codex/pc-b-nora-brand` نسخه یکپارچه قبلی را با `origin/develop@2ad9c613` ترکیب می‌کند تا هیچ تغییر تاییدشده‌ای حذف نشود.
