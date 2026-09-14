@@ -2508,11 +2508,11 @@ Prisma validate/format و typecheck/build دیتابیس، API و Web موفق �
 
 ## 2026-09-14 — بازیابی پنل عملیات رزرواسیون (PC-A)
 
-شاخه `codex/pc-a-reservation-action-panel-recovery-0914` از `origin/develop@2ad9c613`
+شاخه `codex/pc-a-reservation-action-panel-recovery-0914` پس از بررسی overlap روی `origin/develop@19264e2a`
 آخرین چیدمان تأییدشدهٔ پنل قرارداد را بازیابی می‌کند. دکمهٔ تکی «دریافت» حذف شده،
 «دریافت‌ها» فقط در عملیات قرارداد است و «ویرایش» فرم کامل اصلاح قرارداد با شماره
 قرارداد، نه بخش عملیاتی و فرمان نسخه‌دار لغو ابطال را باز می‌کند. نسخهٔ جدید develop
-در conflictهای اسناد و قرارداد عمومی حفظ شد. ۱۷ تست هدفمند، lint، typecheck
+در conflictهای اسناد و قرارداد عمومی حفظ شد و import فرم با namespace فعلی Nora منطبق شد. ۱۷ تست هدفمند، lint، typecheck
 Contracts/API/Web و build تولیدی API/Web موفق‌اند؛ هیچ Migration یا تغییر داده‌ای
 وجود ندارد. localhost مشترک تا ادغام PR روی develop جابه‌جا نشده است.
 ## LOCAL-ALL-SECTIONS-3100-0913 — ACTIVE

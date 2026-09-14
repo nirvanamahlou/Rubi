@@ -6,7 +6,7 @@ import type {
   SalesContractDetail,
   TravelWorkflowCommandV1,
   TravelWorkflowStateV1,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/form-controls';
 import { salesApi } from '@/modules/sales/api/client';
