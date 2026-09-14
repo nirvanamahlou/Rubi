@@ -18,8 +18,8 @@ import {
 } from './registry';
 
 describe('dashboard registry', () => {
-  it('defines all 64 decision-oriented KPIs with auditable metadata', () => {
-    expect(dashboardKpis).toHaveLength(64);
+  it('defines all 74 decision-oriented KPIs with auditable metadata', () => {
+    expect(dashboardKpis).toHaveLength(74);
     expect(new Set(dashboardKpis.map((kpi) => kpi.id)).size).toBe(
       dashboardKpis.length,
     );
@@ -158,6 +158,79 @@ describe('dashboard registry', () => {
     expect(
       dashboardKpis.find((kpi) => kpi.id === 'net-profit')?.rule,
     ).toContain('حساب‌های درآمد Posted');
+  });
+
+  it('covers sales and travel-service analysis without duplicating time-grain charts', () => {
+    const commercial = dashboardPages.find(
+      (page) => page.id === 'commercial-performance',
+    );
+    const travel = dashboardPages.find(
+      (page) => page.id === 'travel-operations',
+    );
+    const inventory = dashboardPages.find(
+      (page) => page.id === 'inventory-products',
+    );
+
+    expect(commercial?.kpiIds).toEqual(
+      expect.arrayContaining([
+        'gross-sales',
+        'finalized-sales-count',
+        'average-sale-value',
+        'discount-amount',
+        'gross-profit',
+      ]),
+    );
+    expect(commercial?.visualizations.map((item) => item.id)).toEqual(
+      expect.arrayContaining([
+        'finalized-sales-trend',
+        'sales-weekday-pattern',
+        'average-sale-trend',
+        'discount-analysis',
+        'discount-trend',
+        'service-sales-portfolio',
+        'sales-destination-ranking',
+        'sales-country-ranking',
+        'sales-channel-trend',
+      ]),
+    );
+    expect(travel?.kpiIds).toEqual(
+      expect.arrayContaining([
+        'average-ticket-price',
+        'ticket-cancellation-rate',
+      ]),
+    );
+    expect(travel?.visualizations.map((item) => item.id)).toEqual(
+      expect.arrayContaining([
+        'airline-sales-performance',
+        'route-sales-performance',
+        'average-ticket-price-trend',
+        'ticket-cancellation-analysis',
+      ]),
+    );
+    expect(inventory?.kpiIds).toEqual(
+      expect.arrayContaining([
+        'tour-reservations',
+        'tour-remaining-capacity',
+        'tour-sell-through-rate',
+        'hotel-reservations',
+        'average-stay-length',
+      ]),
+    );
+    expect(inventory?.visualizations.map((item) => item.id)).toEqual(
+      expect.arrayContaining([
+        'tour-sales-ranking',
+        'tour-capacity-performance',
+        'hotel-sales-ranking',
+        'popular-hotel-cities',
+        'average-stay-analysis',
+      ]),
+    );
+    expect(
+      dashboardKpis.find((kpi) => kpi.id === 'average-sale-value')?.rule,
+    ).toContain('در صورت صفر بودن مخرج نتیجه ناموجود است');
+    expect(
+      dashboardKpis.find((kpi) => kpi.id === 'discount-amount')?.rule,
+    ).toContain('DISCOUNT');
   });
 
   it('keeps fifteen decision-oriented pages with the requested sidebar hierarchy', () => {
