@@ -1,3 +1,7 @@
+## RESERVATION-NAVIGATION-0914 — PC-A — READY_FOR_REVIEW
+
+- Base: `origin/develop@2ad9c613`. محدوده فقط نمایش دوباره تمام زیر‌بخش‌های موجود رزرواسیون، میان‌بر مدیریت قالب‌های MANIFEST و تست‌های مرتبط است. هیچ Schema، Migration، Seed، Permission، API، داده یا Dependency تغییر نمی‌کند. نتیجه: هر ۹ زیر‌بخش در ناوبری دیده می‌شوند و MANIFEST به مدیریت قالب‌های اطلاعات پایه لینک دارد؛ ۱۷ تست، lint و typecheck پاس شدند.
+
 # Work Assignments
 
 ## FINANCE-008-INBOX-ACTIONS — PC-A — READY_FOR_REVIEW / ACTIVE LOCAL
