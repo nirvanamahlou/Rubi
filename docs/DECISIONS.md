@@ -174,3 +174,11 @@ The owner selected: No affects supplier reservation form and purchasing basis on
 - A single independent reviewer approves contract/credit changes using the corresponding permission; the proposer cannot approve their own request. Confirmed explicitly in this task on the Screenshot527 follow-up.
 - Each currency has a separate credit limit; no implicit FX conversion. Contract/policy drafts have no effective financial authority before approval. Submitted/approved content is versioned and preserved, and edits require a new draft/revision.
 - Evolve existing B2B profile/agreement/credit persistence and public routes. Organization identity remains in Master Data, binary/version storage in Documents, and exposure/payment/deposit balances in Finance. This scope completes the contract/credit wizard and its management workflow, not every independent PRD module.
+# PACKAGE-PRICING-001 — Fail-closed upstream contracts (2026-09-14)
+
+مرزبندی صریح مالک محصول، نرخ پایه هتل را به Master Data و نرخ پایه/ظرفیت بلیت را به Ticket
+Catalog واگذار می‌کند. چون develop فعلی این دو Public Contract نسخه‌دار را ارائه نمی‌کند،
+Package Pricing از adapter صریح fail-closed استفاده می‌کند (`SOURCE_RATE_UNAVAILABLE` و
+`CAPACITY_RECHECK_FAILED`). استفاده از داده ReservationHotelGroupRate به‌جای نرخ پایه ممنوع
+است، چون آن مدل هزینه واقعی خرید Reservations است. Renderer نیز producer مستقل است و نبود آن
+فقط Render Request واقعی `AWAITING_RENDERER` می‌سازد؛ فایل یا success ساختگی ممنوع است.

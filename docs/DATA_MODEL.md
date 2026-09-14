@@ -435,3 +435,16 @@ Viewهای پیشنهادی: `reporting_sales_contract_facts` (یک ردیف/ق�
 
 واژه‌نامه entityها در [DATA_DICTIONARY.md](DATA_DICTIONARY.md) و KPIها در
 [KPI_DICTIONARY.md](KPI_DICTIONARY.md) است.
+# Package Pricing (PACKAGE-PRICING-001)
+
+`package_pricing_packages` ریشه branch-scoped و صادرکننده‌محور است. هر Package چند
+`package_pricing_departures` دارد و هر departure اجزای referenceشده، چند گزینه هتل/اتاق/خدمت،
+بازه‌های قیمت و نسخه‌های مستقل قیمت دارد. referenceهای بیرونی فقط UUID+version+snapshot هستند؛
+FKهای واقعی صرفاً بین ۱۳ جدول داخلی Package Pricing برقرارند.
+
+قواعد در `package_pricing_rules` با `(period_id, version, sequence)` یکتا می‌شوند. خروجی موتور
+در `package_pricing_price_versions` با Decimal(24,4)، currency، source/rule/fx snapshot و breakdown
+ذخیره می‌شود؛ `package_pricing_passenger_prices` رده‌های مسافر/اتاق را نگه می‌دارد. Trigger
+Migration هر update/delete نسخه `PUBLISHED` را رد می‌کند. Quote به همان Price Version متصل است
+تا تغییر آینده مبلغ قبلی را عوض نکند. Render Request به Package/Departure/Price/Template Version
+و Branding Snapshot وصل و تا حضور Worker در `AWAITING_RENDERER` باقی می‌ماند.

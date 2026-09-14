@@ -1,5 +1,12 @@
 # وضعیت پروژه
 
+## 2026-09-14 — PACKAGE-PRICING-001 — PC-A — IMPLEMENTED / UPSTREAM BLOCKED
+
+- زیر‌بخش `/sales/pricing` بدون آیتم مستقل منوی اصلی به Sales افزوده شد. Preview و قیمت‌های synthetic قبلی حذف شدند و UI هشت‌برگه از API واقعی، branch scope و permissionهای مستقل استفاده می‌کند.
+- قرارداد نسخه‌دار، ۱۳ مدل Package Pricing، Migration افزایشی، موتور Decimal، نسخه قیمت immutable، maker/checker، quote، render request واقعی با `AWAITING_RENDERER`، توقف فروش، قالب نسخه‌دار و Audit پیاده‌سازی شده‌اند.
+- تولید Price Version و انتشار عمداً fail-closed است: `origin/develop` هنوز Public Contract نسخه‌دار نرخ پایه هتل در Master Data و نرخ پایه/ظرفیت قابل recheck بلیت در Ticket Management ندارد. تا تحویل producerها هیچ نرخ، ظرفیت، فایل یا موفقیت ساختگی تولید نمی‌شود.
+- جزئیات، endpointها، validation و handoff در [PACKAGE-PRICING-001](tasks/PACKAGE-PRICING-001.md) ثبت شده است.
+
 ## WORKBENCH-041 — رفع خطای پیام‌رسان
 
 در نگاشت پیام‌های عادی، شناسهٔ خالیِ فرستندهٔ فورواردشده دیگر به کوئری UUID کاربران ارسال نمی‌شود؛ این مشکل باعث خطای ۵۰۰ در فهرست گفتگوها و ایجاد گفت‌وگوی مستقیم بود. تست رگرسیون پیام‌رسان، lint و rebuild API موفق شدند و API جدید روی ۴۱۹۱ فعال است.

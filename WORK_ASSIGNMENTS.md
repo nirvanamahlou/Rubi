@@ -1,5 +1,13 @@
 # Work Assignments
 
+## PACKAGE-PRICING-001 — PC-A — READY_FOR_REVIEW / UPSTREAM BLOCKED
+
+- درخواست صریح مالک محصول در 2026-09-14: پیاده‌سازی زیرماژول عملیاتی «مدیریت قیمت و پکیج‌ها» در گروه «فروش و ارتباط با مشتری» و route داخلی `/sales/pricing` بدون افزودن آیتم جدید به منوی اصلی ۱۷‌بخشی. `COMPUTER_ID=PC-A` و Branch مستقل `codex/pc-a-package-pricing` از `origin/develop@19264e2a` است.
+- محدوده رزروشده: Package Pricing API/Web زیر ماژول Sales، مدل‌ها و Migration افزایشی Prisma، قرارداد عمومی نسخه‌دار Package Pricing و root export آن، اتصال حداقلی AppModule/navigation و permission catalog/seed، تست‌ها و اسناد همین Task. `Migration Owner = PC-A/PACKAGE-PRICING-001`، `Package Pricing shared-contract/root export Owner = PC-A/PACKAGE-PRICING-001` و `Central Docs Owner = PC-A/PACKAGE-PRICING-001`.
+- قفل `Dependency/Lockfile Owner` رزرو نمی‌شود و `RELEASED / UNASSIGNED` می‌ماند. هیچ Query مستقیمی به جدول‌های Master Data، Ticket Catalog، Reservations، Finance، Procurement، Sales Contracts، Documents یا Legal Entity انجام نمی‌شود؛ فقط Public Contract، Approved Projection یا Snapshot نسخه‌دار مصرف می‌شود. Renderer غیرمتصل با وضعیت واقعی `AWAITING_RENDERER` ثبت می‌شود و هیچ فایل/موفقیت ساختگی تولید نمی‌شود.
+- بررسی قفل در آخرین `origin/develop` و PRهای باز: Migration و Central Docs در `PROCUREMENT-001` صریحاً آزاد شده‌اند؛ Migration `FINANCE-008` با PR #270 در develop ادغام شده است. شاخه قدیمی `codex/pc-a-pricing-management` در develop حضور دارد و رزرو فعالی ندارد؛ UI نمونه‌ای آن با قابلیت عملیاتی این Task جایگزین/همگرا می‌شود.
+- نتیجه: قرارداد/API/UI/۱۳ مدل و Migration افزایشی، permissions، Decimal engine، immutable publication، maker/checker، quote/template/render/audit و حالت‌های fail-closed تکمیل و validate شدند. تولید/انتشار واقعی تا Public Contract نرخ پایه هتل و بلیت/ظرفیت upstream مسدود است؛ Renderer نیز هنوز متصل نیست. `Migration Owner`، `Package Pricing shared-contract/root export Owner` و `Central Docs Owner` پس از commit این Task `RELEASED` هستند؛ Dependency/Lockfile هرگز رزرو نشد.
+
 ## WORKBENCH-041-MESSAGING-EMPTY-PARTICIPANT — PC-B — READY_FOR_REVIEW
 
 - User-reported Workbench messaging `INTERNAL_SERVER_ERROR` is reproduced in the shared API logs for conversation listing and direct conversation creation. Scope is limited to the Workbench messaging participant mapping and its regression test: omit the empty forwarded-sender placeholder from IAM UUID queries. No schema, migration, permissions, data or runtime ownership change.
