@@ -4,6 +4,23 @@
 
 در نگاشت پیام‌های عادی، شناسهٔ خالیِ فرستندهٔ فورواردشده دیگر به کوئری UUID کاربران ارسال نمی‌شود؛ این مشکل باعث خطای ۵۰۰ در فهرست گفتگوها و ایجاد گفت‌وگوی مستقیم بود. تست رگرسیون پیام‌رسان، lint و rebuild API موفق شدند و API جدید روی ۴۱۹۱ فعال است.
 
+## MARKETING-001H — حذف انتخاب‌گر Preview از Hub
+
+انتخاب‌گر «پیش‌نمایش» مشخص‌شده در Screenshot 602 و شبیه‌ساز حالت‌های وابسته از سربرگ صفحه اصلی مارکتینگ حذف شدند. این تغییر فقط پوسته نمایشی Hub را پوشش می‌دهد؛ کارت‌ها، مسیرها، فرم‌ها، پیش‌نمایش‌های تخصصی و Backend تغییری نکردند. ۲۱ تست مارکتینگ، lint، TypeScript و Production Build با ۴۶ Route موفق‌اند.
+
+## FINANCE-008 — عملیات واقعی کارتابل مالی
+
+کارتابل مالی اکنون فقط نمایش‌دهنده نیست: دریافت ثبت‌شده مسافر از همان‌جا تأیید یا
+با علت برای اصلاح به فروش بازگردانده می‌شود. برای خرید خدمات رزرواسیون نیز مالی
+حساب واقعی و روش پرداخت را انتخاب می‌کند، پرداخت جزئی یا کامل ثبت می‌شود و مبلغ
+پرداخت‌شده/مانده در هر دو بخش دیده می‌شود. پرداخت ارزی Snapshot نرخ روز، معادل
+ریالی و زمان UTC دارد؛ توضیح مالی و شماره پیگیری اختیاری‌اند.
+
+Migration و Seed محلی اعمال شده و نقش `finance_staff` بدون حذف دسترسی قبلی به
+`Ramtin` افزوده شده است. کل ۱۲۸۳ تست API و ۱۳۴۳ تست Web، typecheck، lint و
+build تولیدی API/Web با ۴۶ مسیر موفق‌اند و Web3100/API4190 فعال‌اند. جزئیات در
+[FINANCE-008](tasks/FINANCE-008-INBOX-ACTIONS.md) ثبت شده است.
+
 ## WORKBENCH-040 — Performance summary
 
 Personal performance now shows leave count, dated shifts, approved payslip period/net amount, today's entry/exit, own customers and sales. Raw activity rows were removed. Additive HR projection preserves self/branch scope and applies approved attendance corrections. No employee reassignment or migration. See [WORKBENCH-040](tasks/WORKBENCH-040-PERFORMANCE-SUMMARY.md).

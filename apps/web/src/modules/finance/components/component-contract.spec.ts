@@ -167,6 +167,12 @@ describe('finance workspace component contract', () => {
     expect(liveInboxSource).not.toContain('Live sources');
     expect(liveInboxSource).not.toContain('عملیات مالی پس از فعال‌سازی');
     expect(liveInboxSource).toContain('origin');
+    expect(liveInboxSource).toContain('تأیید دریافت');
+    expect(liveInboxSource).toContain('درخواست اصلاح');
+    expect(liveInboxSource).toContain('ثبت پرداخت کارگزار');
+    expect(liveInboxSource).toContain('حساب پرداخت‌کننده');
+    expect(liveInboxSource).toContain('نرخ روز ارز به ریال');
+    expect(liveInboxSource).toContain('مانده فعلی');
     expect(liveInboxSource).not.toContain('financeInboxPreviewRequests');
     expect(coreSource).toContain('<FinanceWorkspace />');
   });
