@@ -15,7 +15,7 @@ const nextConfig: NextConfig = {
         source: '/:path*',
         headers: [
           { key: 'X-Content-Type-Options', value: 'nosniff' },
-          { key: 'X-Frame-Options', value: 'DENY' },
+          { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
           { key: 'Referrer-Policy', value: 'no-referrer' },
           {
             key: 'Permissions-Policy',
@@ -25,7 +25,7 @@ const nextConfig: NextConfig = {
           {
             key: 'Content-Security-Policy',
             value:
-              "object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'",
+              "object-src 'none'; base-uri 'self'; frame-ancestors 'self'; form-action 'self'",
           },
         ],
       },
