@@ -2521,7 +2521,7 @@ Prisma validate/format و typecheck/build دیتابیس، API و Web موفق �
 
 ## 2026-09-14 — بازیابی پنل عملیات رزرواسیون (PC-A)
 
-شاخه `codex/pc-a-reservation-action-panel-recovery-0914` پس از بررسی overlap روی `origin/develop@19264e2a`
+شاخه `codex/pc-a-reservation-action-panel-recovery-0914` پس از بررسی overlap روی `origin/develop@7a6cc53e`
 آخرین چیدمان تأییدشدهٔ پنل قرارداد را بازیابی می‌کند. دکمهٔ تکی «دریافت» حذف شده،
 «دریافت‌ها» فقط در عملیات قرارداد است و «ویرایش» فرم کامل اصلاح قرارداد با شماره
 قرارداد، نه بخش عملیاتی و فرمان نسخه‌دار لغو ابطال را باز می‌کند. نسخهٔ جدید develop
