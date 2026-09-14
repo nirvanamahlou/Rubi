@@ -96,13 +96,13 @@ export const navigationGroups = [
     id: 'finance',
     dotClass: 'bg-[#f7d184]',
     title: 'مالی',
-    hrefs: ['/finance', '/finance/requests', '/purchases'],
+    hrefs: ['/finance', '/finance/requests'],
   },
   {
     id: 'hr',
     dotClass: 'bg-[#d4b4fc]',
     title: 'سرمایه انسانی',
-    hrefs: ['/human-resources'],
+    hrefs: ['/human-resources', '/purchases'],
   },
   {
     id: 'resources',

@@ -84,7 +84,7 @@ describe('CRM navigation', () => {
       groupedNavigationItems
         .find((group) => group.id === 'finance')
         ?.items.map((item) => item.href),
-    ).toEqual(['/finance', '/finance/requests', '/purchases']);
+    ).toEqual(['/finance', '/finance/requests']);
     expect(
       groupedNavigationItems.find((group) => group.id === 'finance')?.title,
     ).toBe('مالی');
@@ -96,7 +96,7 @@ describe('CRM navigation', () => {
       groupedNavigationItems
         .find((group) => group.id === 'hr')
         ?.items.map((item) => item.href),
-    ).toEqual(['/human-resources']);
+    ).toEqual(['/human-resources', '/purchases']);
   });
   it('contains the approved routes plus the separate finance inbox in order', () => {
     expect(navigationItems.map((item) => item.href)).toEqual(expectedRoutes);

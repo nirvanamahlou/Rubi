@@ -1,5 +1,10 @@
 # Work Assignments
 
+## NAVIGATION-001-PROCUREMENT-HR-GROUP — PC-B — READY_FOR_REVIEW / RELEASED
+
+- User request on 2026-09-14: move the existing `/purchases` navigation entry from the `مالی` group to `سرمایه انسانی`. Scope is limited to `apps/web/src/lib/navigation.ts`, its navigation contract test, and this task's documentation. Route, title, permissions, Procurement API and Finance behavior remain unchanged. No migration, dependency, shared runtime or data changes.
+- Completed and released after targeted tests, lint, typecheck and production build. No shared runtime was changed.
+
 ## WORKBENCH-037-REMOVE-HR-DESTINATION-CARD — PC-B — READY_FOR_REVIEW
 
 - درخواست صریح مالک محصول در 2026-09-13: پوسته پایین «درخواست‌های منابع انسانی» از صفحه میزکار حذف شود، اما Backend، مسیر `/hr`، مجوزها و اعلان‌های منابع انسانی باقی بمانند. `COMPUTER_ID=PC-B`.
