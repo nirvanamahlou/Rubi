@@ -13,8 +13,12 @@ const actor = {
   permissions: ['finance.read', 'hr.connections.finance.receive'],
 } as unknown as AuthenticatedActor;
 
+const emptyTicketPurchases = () => ({
+  listFinanceTicketPurchases: vi.fn().mockResolvedValue([]),
+});
+
 describe('FinanceInboxService', () => {
-  it('combines only persisted Sales, HR and Reservations sources', async () => {
+  it('combines persisted Sales, HR, Procurement and Reservations sources', async () => {
     const sales = {
       financeInbox: vi.fn().mockResolvedValue([
         {
@@ -82,16 +86,34 @@ describe('FinanceInboxService', () => {
         },
       ]),
     } as unknown as ReservationsPublicService;
+    const procurement = {
+      listFinanceTicketPurchases: vi.fn().mockResolvedValue([
+        {
+          id: 'ticket-purchase-1',
+          branchId: 'branch-a',
+          catalogProductReference: 'ticket-product-1',
+          title: 'پرواز تهران به آنتالیا',
+          serviceDate: '2026-09-15',
+          supplierDisplaySnapshot: 'ایران ایرتور',
+          amount: '420000000',
+          currencyCode: 'IRR',
+          requestVersion: 1,
+          createdAt: '2026-09-12T11:00:00.000Z',
+        },
+      ]),
+    };
     const result = await new FinanceInboxService(
       sales,
       hr,
       reservations,
       {} as never,
       {} as never,
+      procurement as never,
     ).list(actor);
     expect(result.items.map(({ source }) => source)).toEqual([
       'SALES',
       'HR',
+      'PURCHASES',
       'RESERVATIONS',
     ]);
     expect(
@@ -101,15 +123,20 @@ describe('FinanceInboxService', () => {
       { source: 'SALES', connection: 'CONNECTED', itemCount: 1 },
       { source: 'HR', connection: 'CONNECTED', itemCount: 1 },
       { source: 'RESERVATIONS', connection: 'CONNECTED', itemCount: 1 },
-      { source: 'PURCHASES', connection: 'NOT_CONNECTED', itemCount: 0 },
+      { source: 'PURCHASES', connection: 'CONNECTED', itemCount: 1 },
     ]);
     expect(hr.list).toHaveBeenCalledWith({ target: 'finance', page: 1 }, actor);
     expect(reservations.list).toHaveBeenCalledWith(['branch-a']);
+    expect(procurement.listFinanceTicketPurchases).toHaveBeenCalledWith([
+      'branch-a',
+    ]);
     expect(result.items[0]).toMatchObject({
       sourceContextReference: 'contract-1',
       settlement: null,
     });
-    expect(result.items[2]).toMatchObject({
+    expect(
+      result.items.find(({ source }) => source === 'RESERVATIONS'),
+    ).toMatchObject({
       sourceContextReference: 'intake-1',
       sourceVersion: 0,
       settlement: { paidAmount: '0', remainingAmount: '85000000' },
@@ -125,6 +152,7 @@ describe('FinanceInboxService', () => {
       { list: vi.fn().mockResolvedValue([]) } as never,
       {} as never,
       {} as never,
+      emptyTicketPurchases() as never,
     ).list(actor);
     expect(result.items).toEqual([]);
     expect(result.sources[0]).toMatchObject({
@@ -141,6 +169,7 @@ describe('FinanceInboxService', () => {
       {} as never,
       {} as never,
       {} as never,
+      emptyTicketPurchases() as never,
     );
     await expect(
       service.list({ ...actor, permissions: [] }),
@@ -165,6 +194,7 @@ describe('FinanceInboxService', () => {
       {} as never,
       {} as never,
       {} as never,
+      emptyTicketPurchases() as never,
     );
     await expect(
       service.decideReceipt(
@@ -199,6 +229,7 @@ describe('FinanceInboxService', () => {
       {} as never,
       {} as never,
       {} as never,
+      emptyTicketPurchases() as never,
     );
     await expect(
       service.decideReceipt(
@@ -229,6 +260,7 @@ describe('FinanceInboxService', () => {
       {} as never,
       delivery as never,
       {} as never,
+      emptyTicketPurchases() as never,
     );
     const input = {
       expectedVersion: 0,

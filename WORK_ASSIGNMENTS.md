@@ -2841,3 +2841,10 @@ User authorizes latest combined local Web3100/API4190 activation. Branch codex/p
 Runtime correction: reserve infrastructure/scripts/start-unified-local.ps1 for a configurable API port, default 4191. The Fetch-standard restricted port 4190 failed browser access despite HTTP health. Rebuild the local Web configuration against API4191; preserve the same database, storage and authentication. No browser security override.
 
 LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runtime and launcher integration reservation released. No merge to develop/main. See docs/tasks/LOCAL-ALL-SECTIONS-3100-0913.md.
+
+## TICKET-REPEAT-PURCHASE-0914 — PC-A — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-14: رفع خطای تکرار بلیط‌های بدون ساعت، افزودن تاریخ اولین بلیط به فرم تعریف، و ارسال قیمت خرید ثبت‌شده به کارتابل مالی. COMPUTER_ID=PC-A.
+- Branch مستقل codex/pc-a-ticket-repeat-purchase-0914 از origin/develop@b62054e3؛ main/develop و Branchهای دیگر دست‌نخورده می‌مانند و خروجی فقط با PR جدا به develop تحویل می‌شود.
+- محدوده رزروشده: Ticket Catalog Web/model/tests، اتصال عمومی Procurement و Finance inbox، قرارداد افزایشی Travel، مدل و Migration افزایشی Procurement، و اسناد همین Work Item. Migration Owner = PC-A/TICKET-REPEAT-PURCHASE-0914 و Travel contract/Central Docs فقط برای همین تغییر رزرو است؛ Dependency/Lockfile و Permission تغییر نمی‌کند.
+- تحویل: فرم تعریف بلیط تاریخ اولین اجرا را مستقل از ساعت می‌گیرد؛ تکرار هفتگی/ماهانه بلیط قدیمی بدون ساعت نیز کار می‌کند. قیمت خرید مثبت با Decimal و ارز در Procurement ثبت و تا پیش از رسیدگی مالی قابل ویرایش است؛ Finance آن را از سرویس عمومی Procurement در کارتابل نشان می‌دهد. ۱۹ تست Web، ۸ تست API، lint، typecheck و build کامل API/Web و اعتبارسنجی Prisma موفق‌اند.

@@ -6,11 +6,18 @@ import { IamModule } from '../iam/iam.module';
 import { PermissionGuard } from '../iam/permission.guard';
 import { ReservationsRuntimeModule } from '../reservations/reservations-runtime.module';
 import { SalesModule } from '../sales/sales.module';
+import { ProcurementModule } from '../procurement/procurement.module';
 import { FinanceInboxController } from './finance-inbox.controller';
 import { FinanceInboxService } from './finance-inbox.service';
 
 @Module({
-  imports: [IamModule, SalesModule, HrModule, ReservationsRuntimeModule],
+  imports: [
+    IamModule,
+    SalesModule,
+    HrModule,
+    ReservationsRuntimeModule,
+    ProcurementModule,
+  ],
   controllers: [FinanceInboxController],
   providers: [AuthGuard, PermissionGuard, FinanceInboxService],
 })

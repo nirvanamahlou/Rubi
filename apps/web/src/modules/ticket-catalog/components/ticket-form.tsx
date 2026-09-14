@@ -23,6 +23,7 @@ import {
 import { emptyInput, supplyLabels, transportLabels } from '../model/preview';
 import styles from './ticket-form.module.css';
 import { ReferencePicker } from './reference-picker';
+import { TicketDatePicker } from './ticket-date-picker';
 import type { PublishedResource } from '../api/references';
 
 type TicketDefinitionMode = 'one-way' | 'round-trip' | 'combined';
@@ -452,7 +453,10 @@ export function TicketForm({
   initial: ProductInput;
   references: readonly Reference[];
   onReference?: ((reference: Reference) => void) | undefined;
-  onSave: (inputs: readonly ProductInput[], reason: string) => void;
+  onSave: (
+    inputs: readonly ProductInput[],
+    reason: string,
+  ) => void | Promise<void>;
   onCancel: () => void;
   readOnly?: boolean;
   allowRoundTrip?: boolean;
@@ -470,6 +474,7 @@ export function TicketForm({
   );
   const [reason, setReason] = useState('');
   const [error, setError] = useState('');
+  const [saving, setSaving] = useState(false);
   const segment = input.segments[0]!;
   const returnSegment = returnInput.segments[0]!;
   const changeSegment = (patch: Partial<Segment>) =>
@@ -521,9 +526,12 @@ export function TicketForm({
       });
     }
   }
-  function submit(event: FormEvent) {
+  async function submit(event: FormEvent) {
     event.preventDefault();
+    setSaving(true);
     try {
+      if (!input.serviceDate && !input.segments[0]?.departureAt)
+        throw new Error('تاریخ اولین بلیط را انتخاب کنید.');
       const roundTrip = definitionMode === 'round-trip' && allowRoundTrip;
       const groupId = roundTrip ? crypto.randomUUID() : undefined;
       const baseDefinition: ProductInput = {
@@ -569,13 +577,15 @@ export function TicketForm({
           },
           references,
         );
-        onSave([definition, returnDefinition], reason);
-      } else onSave([definition], reason);
+        await onSave([definition, returnDefinition], reason);
+      } else await onSave([definition], reason);
       setError('');
     } catch (problem) {
       setError(
         problem instanceof Error ? problem.message : 'اطلاعات فرم معتبر نیست.',
       );
+    } finally {
+      setSaving(false);
     }
   }
   return (
@@ -585,6 +595,22 @@ export function TicketForm({
         <section className="space-y-4">
           <h3 className="font-bold text-primary">۱. نوع بلیط</h3>
           <div className={styles.fields}>
+            <FormField
+              label="تاریخ اولین بلیط"
+              id="ticket-service-date"
+              required
+            >
+              <TicketDatePicker
+                id="ticket-service-date"
+                required
+                value={
+                  input.serviceDate ||
+                  input.segments[0]?.departureAt.slice(0, 10) ||
+                  ''
+                }
+                onChange={(serviceDate) => setInput({ ...input, serviceDate })}
+              />
+            </FormField>
             <FormField label="نوع وسیله سفر" id="ticket-transport" required>
               <Select
                 value={input.transport}
@@ -745,6 +771,24 @@ export function TicketForm({
         {definitionMode === 'round-trip' && allowRoundTrip ? (
           <section className="space-y-4 rounded-2xl border border-primary/20 bg-primary/5 p-4">
             <h3 className="font-bold text-primary">۳. مشخصات حرکت برگشت</h3>
+            <FormField
+              label="تاریخ اولین بلیط برگشت"
+              id="ticket-return-service-date"
+              required
+            >
+              <TicketDatePicker
+                id="ticket-return-service-date"
+                required
+                value={
+                  returnInput.serviceDate ||
+                  returnInput.segments[0]?.departureAt.slice(0, 10) ||
+                  ''
+                }
+                onChange={(serviceDate) =>
+                  setReturnInput({ ...returnInput, serviceDate })
+                }
+              />
+            </FormField>
             <TransportFields
               prefix="ticket-return"
               suffix=" برگشت"
@@ -929,7 +973,7 @@ export function TicketForm({
         className={`${styles.actions} sticky bottom-0 flex flex-wrap gap-3 border-t bg-surface py-4`}
       >
         {!readOnly ? (
-          <Button type="submit">
+          <Button type="submit" loading={saving} disabled={saving}>
             {definitionMode === 'round-trip' && allowRoundTrip
               ? 'ذخیره دو بلیط رفت و برگشت'
               : definitionMode === 'combined'
