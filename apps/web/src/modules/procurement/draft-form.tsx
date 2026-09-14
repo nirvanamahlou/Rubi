@@ -359,7 +359,7 @@ export function DraftForm({
           </label>
           {draft.urgent && text('urgencyReason', 'دلیل اضطرار', true)}
           <div className="grid gap-4 sm:grid-cols-2">
-            <FormField id="proc-estimate" label="مبلغ برآوردی">
+            <FormField id="proc-estimate" label="مبلغ">
               <Input
                 id="proc-estimate"
                 dir="ltr"
