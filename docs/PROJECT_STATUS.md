@@ -2541,3 +2541,16 @@ Contracts/API/Web و build تولیدی API/Web موفق‌اند؛ هیچ Migra
 ## LOCAL-ALL-SECTIONS-3100-0913 — ACTIVE
 
 Combined develop, latest published Customer Affairs forms/reports, Workbench performance and Finance inbox are active at Web3100/API4191. Code/launcher commit 2fd10a9f, Web build LYH1PTQ_i1saQILyrG74V. 98 targeted tests, scoped lint, sequential API typecheck, full build and final HTTP smoke passed. Existing database and storage retained; no migration/seed/role assignment. Port4190 was replaced because Fetch restricts it. See tasks/LOCAL-ALL-SECTIONS-3100-0913.md.
+
+## RUNTIME-STABLE-3100-0914 — ACTIVE
+
+بررسی مالکیت پورت نشان داد checkoutهای مستقل خرید و رزرواسیون، Web3100 و API4191 را
+بعد از تحویل میزکار دوباره با نسخه‌های قدیمی اجرا کرده‌اند؛ سرویس یا Scheduled Task ویندوزی
+مرتبطی وجود ندارد. PC-B دروازهٔ ثابت محلی برای ۳۱۰۰ و پورت داخلی نسخه‌دار Next را اضافه
+می‌کند تا launcherهای محافظت‌شدهٔ قدیمی نتوانند runtime جاری را ناخواسته جایگزین کنند.
+این اصلاح فقط زیرساخت اجرای محلی است و هیچ تغییر داده، Schema، Dependency یا Permission ندارد.
+
+دروازهٔ ثابت اکنون Web3100 را به Next3110 متصل می‌کند و API4191 از همان checkout اجرا
+می‌شود. build کامل ۴۶ route، دو تست proxy/failure، parse launcher و سه بررسی متوالی PID،
+commit و پاسخ مسیر میزکار موفق بودند. API در `/api/v1/health` وضعیت `ok` دارد. اجرای
+محافظت‌شدهٔ checkoutهای قدیمی با دیدن gateway ناشناخته پیش از توقف هر پردازشی رد می‌شود.
