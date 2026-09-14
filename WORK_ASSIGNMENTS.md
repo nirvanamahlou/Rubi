@@ -2516,7 +2516,7 @@ B2B-360-REMOVE-SUBTITLE-001: READY_FOR_REVIEW. Combined runtime1bf840b/PID8604 b
 
 ## PROCUREMENT-001 — PC-B — READY_FOR_REVIEW / RESERVATIONS RELEASED
 
-- Latest UI refinement: the Procurement date controls and calendar picker now follow the Rubi reference layout, including Shamsi month/year grids, adjacent-day cells, Gregorian English labels and paired date-filter controls.
+- Latest UI refinement: the Procurement date controls and calendar picker now follow the Rubi reference layout, including Shamsi month/year grids, adjacent-day cells, Gregorian English labels and paired date-filter controls. The request-list filter bar now names search, request status and requester unit explicitly, and no longer exposes the internal demo-state selector.
 - Date-filter selection now persists visibly in both controls; after choosing a day, the selected Jalali date replaces the placeholder, and clearing restores both placeholders and the default range.
 - The calendar dialog now closes when the user clicks its backdrop while interactions inside the calendar remain active.
 
