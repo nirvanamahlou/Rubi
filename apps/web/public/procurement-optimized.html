@@ -149,7 +149,7 @@ render=function(){
  document.getElementById('crumb').textContent=group.title+(state.view!==key?' / '+(subLabels[state.view]||views[state.view][0]):'');
  if(!state.selected){document.getElementById('title').textContent=group.title;document.getElementById('subtitle').textContent=group.description}
  document.title=group.title+' | روبی';
- document.querySelector('.page-foot').textContent='ماکاپ بهینه خرید و تأمین • ۶ بخش اصلی • داده ساختگی و ذخیره در نشست جاری • هیچ سفارش خارجی یا پرداخت واقعی ایجاد نمی‌شود.';
+ const pageFoot=document.querySelector('.page-foot'); pageFoot.textContent=''; pageFoot.hidden=true;
 };
 
 const baseField=field;field=(id,label,...args)=>baseField(id,label==='مبلغ برآورد'?'مبلغ':label,...args);
