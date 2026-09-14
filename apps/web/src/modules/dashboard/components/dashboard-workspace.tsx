@@ -43,6 +43,13 @@ import {
   SelectValue,
 } from '@/components/ui/form-controls';
 import {
+  DialogDescription,
+  DialogTitle,
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+} from '@/components/ui/overlays';
+import {
   Alert,
   Badge,
   Card,
@@ -165,7 +172,9 @@ function KpiCard({
 }) {
   return (
     <button
+      aria-controls="kpi-definition-panel"
       aria-expanded={selected}
+      aria-haspopup="dialog"
       className={cn(
         'group min-w-0 rounded-2xl border bg-surface p-4 text-start shadow-sm outline-none transition hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-md focus-visible:ring-2 focus-visible:ring-ring',
         selected ? 'border-primary ring-2 ring-primary/15' : 'border-border',
@@ -245,115 +254,199 @@ function KpiDefinitionPanel({
     : '/reports';
 
   return (
-    <Card
-      className="border-primary/30 bg-primary/[0.025] p-4"
-      role="region"
-      aria-label={`تعریف ${definition.title}`}
+    <Drawer
+      open
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
     >
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-        <div>
-          <p className="text-xs font-bold text-primary">تعریف قابل ممیزی KPI</p>
-          <h3 className="mt-1 text-lg font-black">
-            {definition.title}{' '}
-            <span
-              className="text-sm font-medium text-muted-foreground"
-              dir="ltr"
+      <DrawerContent
+        aria-describedby={`kpi-definition-description-${definition.id}`}
+        className="w-[min(94vw,38rem)] p-0"
+        dir="rtl"
+        id="kpi-definition-panel"
+        style={{ left: 'auto', right: 0 }}
+      >
+        <div className="flex min-h-full flex-col">
+          <header className="border-b border-border bg-surface px-5 py-4">
+            <div className="flex items-start justify-between gap-4 pe-1">
+              <div className="min-w-0">
+                <p className="text-xs font-bold text-primary">
+                  تعریف قابل ممیزی KPI
+                </p>
+                <DialogTitle className="mt-1 text-xl font-black">
+                  {definition.title}
+                </DialogTitle>
+                <DialogDescription
+                  className="mt-1 break-words text-xs leading-6"
+                  dir="ltr"
+                  id={`kpi-definition-description-${definition.id}`}
+                >
+                  {definition.technicalName}
+                </DialogDescription>
+              </div>
+              <DrawerClose asChild>
+                <Button
+                  aria-label="بستن پنل تعریف شاخص"
+                  size="sm"
+                  variant="ghost"
+                >
+                  بستن
+                </Button>
+              </DrawerClose>
+            </div>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <Badge dir="ltr">KPI ID: {definition.id}</Badge>
+              <Badge>{kpiRoleLabels[definition.role]}</Badge>
+              <Badge dir="ltr">{definition.reportCode}</Badge>
+            </div>
+          </header>
+
+          <div className="flex-1 space-y-4 overflow-y-auto p-5 text-sm">
+            <section aria-labelledby="kpi-business-definition-title">
+              <h3
+                className="text-sm font-black text-foreground"
+                id="kpi-business-definition-title"
+              >
+                تعریف و هدف کسب‌وکار
+              </h3>
+              <p className="mt-2 leading-7 text-muted-foreground">
+                معیاری برای پایش {definition.title} در سطح {definition.grain}.
+                این شاخص برای پاسخ به این تصمیم استفاده می‌شود:{' '}
+                <span className="font-semibold text-foreground">
+                  {definition.decision}
+                </span>
+              </p>
+            </section>
+
+            <section
+              aria-labelledby="kpi-calculation-title"
+              className="rounded-2xl border border-primary/20 bg-primary/[0.035] p-4"
             >
-              ({definition.technicalName})
-            </span>
-          </h3>
-        </div>
-        <Button onClick={onClose} size="sm" variant="ghost">
-          بستن جزئیات
-        </Button>
-      </div>
-      <dl className="mt-4 grid gap-3 text-sm md:grid-cols-2 xl:grid-cols-4">
-        <div className="md:col-span-2 xl:col-span-4">
-          <dt className="text-xs font-bold text-muted-foreground">
-            تعریف کوتاه
-          </dt>
-          <dd className="mt-1 leading-6">
-            معیاری برای پایش {definition.title} در سطح {definition.grain}؛ این
-            شاخص برای پاسخ به این تصمیم استفاده می‌شود: {definition.decision}
-          </dd>
-        </div>
-        <div className="md:col-span-2 xl:col-span-4">
-          <dt className="text-xs font-bold text-muted-foreground">
-            فرمول محاسبه / قاعده اندازه‌گیری
-          </dt>
-          <dd className="mt-1 rounded-xl bg-surface/80 p-3 leading-6">
-            {definition.rule}
-          </dd>
-        </div>
-        <div className="md:col-span-2 xl:col-span-4">
-          <dt className="text-xs font-bold text-muted-foreground">
-            فیچرها و منابع مورد استفاده
-          </dt>
-          <dd className="mt-2 flex flex-wrap gap-2">
-            {definition.source.map((source) => (
-              <Badge className="font-mono text-[11px]" dir="ltr" key={source}>
-                {source}
-              </Badge>
-            ))}
-          </dd>
-        </div>
-        <div>
-          <dt className="text-xs font-bold text-muted-foreground">Grain</dt>
-          <dd className="mt-1 leading-6">{definition.grain}</dd>
-        </div>
-        <div>
-          <dt className="text-xs font-bold text-muted-foreground">
-            Reporting View
-          </dt>
-          <dd
-            className="mt-1 break-words font-mono text-xs leading-6"
-            dir="ltr"
-          >
-            {definition.source.join(' + ')}
-          </dd>
-        </div>
-        {definition.comparison ? (
-          <div>
-            <dt className="text-xs font-bold text-muted-foreground">
-              مقایسه لازم
-            </dt>
-            <dd className="mt-1 leading-6">{definition.comparison}</dd>
+              <h3
+                className="text-sm font-black text-foreground"
+                id="kpi-calculation-title"
+              >
+                فرمول و قاعده محاسبه
+              </h3>
+              <p className="mt-2 leading-7">{definition.rule}</p>
+            </section>
+
+            <section aria-labelledby="kpi-data-lineage-title">
+              <h3
+                className="text-sm font-black text-foreground"
+                id="kpi-data-lineage-title"
+              >
+                فیچرها و منابع داده
+              </h3>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {definition.source.map((source) => (
+                  <Badge
+                    className="max-w-full break-all font-mono text-[11px]"
+                    dir="ltr"
+                    key={source}
+                  >
+                    {source}
+                  </Badge>
+                ))}
+              </div>
+            </section>
+
+            <dl className="grid gap-3 sm:grid-cols-2">
+              <div className="rounded-xl border border-border p-3">
+                <dt className="text-xs font-bold text-muted-foreground">
+                  سطح محاسبه (Grain)
+                </dt>
+                <dd className="mt-1 leading-6">{definition.grain}</dd>
+              </div>
+              <div className="rounded-xl border border-border p-3">
+                <dt className="text-xs font-bold text-muted-foreground">
+                  مبنای زمانی
+                </dt>
+                <dd className="mt-1 leading-6" dir="ltr">
+                  {definition.dateBasis}
+                </dd>
+              </div>
+              <div className="rounded-xl border border-border p-3">
+                <dt className="text-xs font-bold text-muted-foreground">
+                  سیاست واحد پول
+                </dt>
+                <dd className="mt-1 leading-6">
+                  {definition.currency === 'required'
+                    ? 'ارز و سیاست تبدیل FX الزامی است.'
+                    : 'واحد پول برای این شاخص کاربرد ندارد.'}
+                </dd>
+              </div>
+              <div className="rounded-xl border border-border p-3">
+                <dt className="text-xs font-bold text-muted-foreground">
+                  مبنای مقایسه
+                </dt>
+                <dd className="mt-1 leading-6">{definition.comparison}</dd>
+              </div>
+            </dl>
+
+            <section
+              aria-labelledby="kpi-exclusions-title"
+              className="rounded-2xl bg-amber-50 p-4 dark:bg-amber-950/30"
+            >
+              <h3
+                className="text-sm font-black text-amber-900 dark:text-amber-100"
+                id="kpi-exclusions-title"
+              >
+                حذف‌ها و محدودیت‌های محاسبه
+              </h3>
+              <p className="mt-2 leading-7 text-amber-900/80 dark:text-amber-100/80">
+                {definition.exclusions}
+              </p>
+            </section>
+
+            <section aria-labelledby="kpi-governance-title">
+              <h3
+                className="text-sm font-black text-foreground"
+                id="kpi-governance-title"
+              >
+                حاکمیت و ردگیری
+              </h3>
+              <dl className="mt-2 grid gap-2">
+                <div className="flex flex-wrap items-baseline justify-between gap-2 rounded-xl bg-muted/50 p-3">
+                  <dt className="text-xs font-bold text-muted-foreground">
+                    مجوز مشاهده
+                  </dt>
+                  <dd className="break-all font-mono text-xs" dir="ltr">
+                    {definition.permission}
+                  </dd>
+                </div>
+                {definition.openDecision ? (
+                  <div className="flex flex-wrap items-baseline justify-between gap-2 rounded-xl bg-muted/50 p-3">
+                    <dt className="text-xs font-bold text-muted-foreground">
+                      تصمیم باز وابسته
+                    </dt>
+                    <dd className="font-mono text-xs" dir="ltr">
+                      {definition.openDecision}
+                    </dd>
+                  </div>
+                ) : null}
+              </dl>
+            </section>
           </div>
-        ) : null}
-        <div>
-          <dt className="text-xs font-bold text-muted-foreground">
-            حذف‌ها / محدودیت
-          </dt>
-          <dd className="mt-1 leading-6">{definition.exclusions}</dd>
+
+          <footer className="border-t border-border bg-surface p-4">
+            {report ? (
+              <Button asChild className="w-full" size="sm">
+                <Link href={reportHref}>
+                  رفتن به فرم پیکربندی گزارش مرتبط
+                  <ArrowUpRight aria-hidden="true" className="size-3.5" />
+                </Link>
+              </Button>
+            ) : (
+              <Button className="w-full" disabled size="sm" variant="outline">
+                گزارش مرتبط در کاتالوگ موجود نیست
+              </Button>
+            )}
+          </footer>
         </div>
-      </dl>
-      <div className="mt-4 flex flex-wrap gap-2 border-t border-border pt-3 text-xs">
-        <Badge>
-          Permission آینده:{' '}
-          <span dir="ltr" className="ms-1">
-            {definition.permission}
-          </span>
-        </Badge>
-        <Badge>تاریخ: {definition.dateBasis}</Badge>
-        {definition.openDecision ? (
-          <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-200">
-            وابسته به {definition.openDecision}
-          </Badge>
-        ) : null}
-        {report ? (
-          <Button asChild size="sm" variant="outline">
-            <Link href={reportHref}>
-              پیکربندی گزارش مرتبط
-              <ArrowUpRight aria-hidden="true" className="size-3.5" />
-            </Link>
-          </Button>
-        ) : (
-          <Button disabled size="sm" variant="outline">
-            گزارش مرتبط در کاتالوگ موجود نیست
-          </Button>
-        )}
-      </div>
-    </Card>
+      </DrawerContent>
+    </Drawer>
   );
 }
 

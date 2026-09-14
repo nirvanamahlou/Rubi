@@ -2370,3 +2370,7 @@ The Web Reporting adapter now preserves all existing Travel projection measures 
 ## 2026-09-14 — Unified Dashboard + Reports local runtime (PC-C)
 
 پورت `3000` به‌صورت قراردادی به Worktree یکپارچهٔ `codex/pc-c-dashboard-reporting-latest` با commit پایهٔ `879b84fb` اختصاص یافت تا تغییر یک ماژول نسخهٔ ماژول دیگر را روی LocalHost بازنویسی نکند. Launcher در `scripts/start-unified-local-runtime.ps1` شاخه و فایل‌های هر دو ماژول را بررسی می‌کند، در صورت اشغال بودن پورت متوقف می‌شود و فقط با `-Restart` و بررسی PID سرور قبلی را جایگزین می‌کند. دستور `pnpm dev:local-unified` ثبت شد؛ کش Next در صورت نیاز خارج از پروژه آرشیو می‌شود. تغییرات Dashboard/Reports و اصلاحات build/login در همین Worktree نگه‌داری شده‌اند؛ API، Schema، Migration، Seed و دادهٔ نمونه تغییر نکرده‌اند. بررسی parser اسکریپت، `tsc --noEmit` و تست مدل Dashboard موفق است و Web روی پورت 3000 فعال است.
+
+## 2026-09-14 — Auditable KPI definition drawer (PC-C)
+
+عمل «جزئیات تعریف شاخص» در Dashboard اکنون به‌جای Card پایین صفحه، یک Drawer سمت راست و قابل‌دسترسی باز می‌کند. پنل برای هر KPI شناسه و نام فنی، نقش، تعریف کسب‌وکار، فرمول/قاعده محاسبه، lineage منابع، Grain، مبنای زمانی، سیاست ارز، مبنای مقایسه، حذف‌ها و محدودیت‌ها، Permission و تصمیم باز را نمایش می‌دهد و در صورت وجود نگاشت کاتالوگ، کاربر را به فرم پیکربندی گزارش مرتبط می‌برد. هیچ مقدار KPI، منبع، فرمول یا مجوزی ساخته نشده و رجیستری موجود منبع حقیقت باقی مانده است. ۱۳۸۸ تست Web، lint، typecheck و build تولیدی ۴۶ مسیر موفق‌اند؛ صفحه Dashboard در مرورگر داخلی به‌درستی به login هدایت شد و بررسی تعاملی Drawer نیازمند نشست احرازشده کاربر است.

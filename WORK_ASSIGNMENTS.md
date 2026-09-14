@@ -2490,6 +2490,7 @@ B2B-360-REMOVE-SUBTITLE-001: READY_FOR_REVIEW. Combined runtime1bf840b/PID8604 b
 - درخواست مالک در 2026-09-12: محل بارگذاری سند قرارداد و سند تضمین در فرم مرحله‌ای ثبت آژانس برای سازمان جدید نیز نمایش داده شود و دلیل ثبت/اصلاح قرارداد اختیاری باشد. شاخه `codex/pc-b-restore-agency-document-guarantee` از `origin/develop@b2098bc` ساخته شد.
 - محدوده رزروشده: Organizations Web wizard/editor/model/tests، اعتبارسنجی افزایشی B2B contract/API DTO و اسناد وضعیت همین واحد کار. فایل انتخاب‌شده سازمان جدید پس از ایجاد شناسه پایدار سازمان و پیش از ذخیره پیش‌نویس، فقط از API عمومی Documents بارگذاری و به قرارداد یا تضمین متصل می‌شود. بدون Schema/Migration/Seed، IAM grant، Dependency/Lockfile یا دسترسی مستقیم به جدول ماژول دیگر.
 - پیاده‌سازی و QA کامل شد: کنترل‌های فایل قرارداد و تضمین برای سازمان جدید پس از انتخاب شعبه نمایش داده می‌شوند؛ گزینه‌های نوع/دسته سند از Documents بارگذاری می‌شوند و دلیل ثبت/اصلاح اختیاری است. ۱۲۸ تست Organizations، ۱۲۱ تست B2B API، ۶۷ تست Contracts، lint محدوده، TypeScript و build Web/API موفق بودند. بررسی Web3100 بدون خطای کنسول و بدون ذخیره داده آزمایشی انجام شد. برای دریافت PC-A، نتیجه از طریق PR همین شاخه در `origin/develop` منتشر می‌شود.
+
 # REPORTING-CATALOG-FEATURE-COVERAGE — PC-C — READY_FOR_REVIEW
 
 - مبنا: `origin/develop@40d8f1f4` به‌همراه بازگردانی محلی Workspace گزارش‌ها در `75726407`.
@@ -2497,6 +2498,7 @@ B2B-360-REMOVE-SUBTITLE-001: READY_FOR_REVIEW. Combined runtime1bf840b/PID8604 b
 - هدف: استخراج گزارش‌های قابل ارائه از مدل واقعی Prisma و فیچرهای موجود سفر، فروش، B2B، مشتریان، اسناد، منابع انسانی و میزکار؛ افزودن کارت‌های استاندارد با کد پایدار، Grain، فیلتر، سنجه، Drill-down و وضعیت اتصال صادقانه.
 - بدون تغییر Schema/Migration/Seed، داده عملیاتی، قرارداد مشترک، API، مجوز یا Dependency. گزارش فاقد Approved Projection اجرایی با وضعیت «در انتظار منبع داده» منتشر می‌شود.
 - پیاده‌سازی کامل شد: ۱۳ کارت جدید با کدهای `RPT-020` تا `RPT-032` اضافه شدند. ۲۲ تست هدفمند Reports، lint محدوده، typecheck وب، build قراردادها و build تولیدی ۴۶ مسیر Web موفق‌اند. Scope پیاده‌سازی آزاد شد؛ فعال‌سازی Runtime و Commit نهایی در ادامه همین تحویل انجام می‌شود.
+
 # REPORTING-OPERATIONS-CONFIG-LAUNCH — PC-C — READY_FOR_REVIEW
 
 - درخواست مالک در 2026-09-13: دکمه اجرای «گزارش‌های من»، «اشتراک‌گذاری‌شده با من»، «اجراها» و «زمان‌بندی‌ها» باید فرم پیکربندی همان گزارش را با Filter Snapshot ذخیره‌شده باز کند.
@@ -2517,3 +2519,9 @@ B2B-360-REMOVE-SUBTITLE-001: READY_FOR_REVIEW. Combined runtime1bf840b/PID8604 b
 - درخواست مالک در 2026-09-14: تغییرات Dashboard و Reports باید روی یک نسخهٔ نهایی مشترک در `localhost:3000` نمایش داده شوند و اجرای یک Worktree قدیمی باعث بازگشت ماژول دیگر نشود.
 - محدودهٔ رزروشده: اسکریپت اجرای LocalHost، قرارداد package manager و مستندات وضعیت؛ بدون تغییر API، Schema/Migration/Seed یا دادهٔ نمونه.
 - پیاده‌سازی کامل شد: شاخهٔ canonical `codex/pc-c-dashboard-reporting-latest` (commit پایه `879b84fb`) مالک پورت 3000 است. `pnpm dev:local-unified` از همین Worktree اجرا می‌شود، شاخه/فایل‌های Dashboard و Reports را guard می‌کند، پورت اشغال را بدون `-Restart` نمی‌پذیرد و گزینهٔ پاک‌سازی کش را خارج از repository انجام می‌دهد. وضعیت Web و راهنمای handoff در `docs/tasks/LOCAL-UNIFIED-RUNTIME.md` ثبت شده است.
+
+# DASHBOARD-KPI-AUDIT-DRAWER — PC-C — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-14: «جزئیات تعریف شاخص» هر KPI باید یک پنل بازشونده با تعریف قابل ممیزی نمایش دهد.
+- محدودهٔ رزروشده: فقط Dashboard workspace و تست مدل/قرارداد نمایش آن، به‌همراه اسناد وضعیت همین واحد کار. بدون تغییر API، Schema/Migration/Seed، داده عملیاتی، مجوز یا Dependency.
+- پیاده‌سازی کامل شد: کلیک روی هر KPI یک Drawer کنترل‌شده و قابل‌دسترسی از سمت راست باز می‌کند و عنوان، نام فنی، شناسه پایدار، نقش، تعریف کسب‌وکار، فرمول، منابع داده، Grain، مبنای زمانی، سیاست ارز، مقایسه، حذف‌ها، Permission، تصمیم باز و مسیر فرم گزارش مرتبط را نمایش می‌دهد. ۱۳۸۸ تست Web، lint، typecheck و build تولیدی ۴۶ مسیر موفق‌اند؛ مرورگر داخلی سلامت login و redirect امن Dashboard را تأیید کرد و بررسی بصری Drawer به نشست احرازشده کاربر واگذار شد.

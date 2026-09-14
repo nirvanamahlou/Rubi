@@ -209,6 +209,15 @@ describe('dashboard permission and data states', () => {
     expect(source).toContain('min-w-0');
     expect(source).toContain('DashboardSidebar');
     expect(source).toContain('kpiRoleLabels');
+    expect(source).toContain('aria-haspopup="dialog"');
+    expect(source).toContain('<Drawer');
+    expect(source).toContain('id="kpi-definition-panel"');
+    expect(source).toContain('تعریف و هدف کسب‌وکار');
+    expect(source).toContain('فرمول و قاعده محاسبه');
+    expect(source).toContain('فیچرها و منابع داده');
+    expect(source).toContain('حذف‌ها و محدودیت‌های محاسبه');
+    expect(source).toContain('حاکمیت و ردگیری');
+    expect(source).toContain('رفتن به فرم پیکربندی گزارش مرتبط');
     expect(source).toContain('visualLabels');
     expect(source).toContain('داده‌ای رسم نشده');
     expect(source).toContain('در انتظار دادهٔ تأییدشده');
