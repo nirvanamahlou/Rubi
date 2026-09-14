@@ -116,8 +116,29 @@ function home(){
 }
 const legacyDetail=detail;detail=function(kind,id){state.view=kind==='request'?'requests':kind==='order'?'orders':'invoices';legacyDetail(kind,id)};
 const legacyRender=render;
+const sectionActions={
+ home:['درخواست خرید جدید',()=>requestForm(),'plus'],
+ requests:['درخواست خرید جدید',()=>requestForm(),'plus'],
+ suppliers:['درخواست تکمیل اطلاعات',()=>referenceRequest(),'building'],
+ quotes:['ثبت پیشنهاد تأمین‌کننده',()=>quoteForm(),'compare'],
+ contracts:['قرارداد تأمین جدید',()=>contractForm(),'file'],
+ orders:['سفارش جدید',()=>orderForm(),'cart'],
+ receipts:['ثبت دریافت یا پذیرش',()=>receiptForm(),'box'],
+ invoices:['ثبت فاکتور خرید',()=>invoiceForm(),'file']
+};
+const sectionFilterCopy={
+ requests:['جست‌وجوی درخواست','وضعیت درخواست','واحد درخواست‌کننده'],
+ approvals:['جست‌وجوی پرونده تصمیم','وضعیت تصمیم','واحد درخواست‌کننده'],
+ suppliers:['جست‌وجوی تأمین‌کننده','وضعیت تأمین‌کننده','دسته تأمین‌کننده'],
+ quotes:['جست‌وجوی پیشنهاد','وضعیت پیشنهاد','واحد درخواست‌کننده'],
+ orders:['جست‌وجوی سفارش','وضعیت سفارش','واحد درخواست‌کننده'],
+ receipts:['جست‌وجوی دریافت','وضعیت دریافت','واحد درخواست‌کننده'],
+ invoices:['جست‌وجوی فاکتور','وضعیت مالی','واحد درخواست‌کننده']
+};
 render=function(){
  legacyRender();
+ const sectionAction=!state.selected&&sectionActions[state.view];
+ document.getElementById('topActions').innerHTML=sectionAction?btn(sectionAction[0],sectionAction[1],'primary',sectionAction[2]):'';
  const key=groupOf(state.view),group=groups[key];
  document.getElementById('side').innerHTML=Object.entries(groups).map(([k,g])=>btn(g.title,()=>navigate(k),'side-link '+(k===key?'active':''),g.icon)).join('');
  const tabs=document.getElementById('tabs');
@@ -125,7 +146,9 @@ render=function(){
  (key==='home'?'':group.members.map(v=>btn(subLabels[v]||views[v][0],()=>navigate(v),'tab '+(state.view===v?'active':''),views[v][2])).join(''));
  tabs.classList.toggle('home-tabs',key==='home'||group.members.length===1);
  const sel=document.getElementById('groupSelect');sel.onchange=e=>navigate(e.target.value);
- if(!state.selected&&['suppliers','quotes'].includes(state.view)){const bar=document.querySelector('.filters');if(bar){bar.querySelectorAll('button,select').forEach(e=>e.remove());const hint=document.createElement('span');hint.className='muted';hint.textContent=state.view==='suppliers'?'جستجو در نام، شناسه و مشخصات تأمین‌کننده':'جستجو در شناسه پیشنهاد، درخواست یا تأمین‌کننده';bar.append(hint)}}
+ if(!state.selected&&['suppliers','quotes'].includes(state.view)){const bar=document.querySelector('.filters');if(bar){bar.querySelectorAll('.filter-field:not(.search),.date-filter,button').forEach(e=>e.remove());const hint=document.createElement('span');hint.className='muted';hint.textContent=state.view==='suppliers'?'جستجو در نام، شناسه و مشخصات تأمین‌کننده':'جستجو در شناسه پیشنهاد، درخواست یا تأمین‌کننده';bar.append(hint)}}
+ const filterCopy=sectionFilterCopy[state.view],filterBar=document.querySelector('.filters');
+ if(filterCopy&&filterBar){const labels=filterBar.querySelectorAll('.filter-field>span');if(labels[0])labels[0].textContent=filterCopy[0];if(labels[1])labels[1].textContent=filterCopy[1];if(labels[2])labels[2].textContent=filterCopy[2];const query=filterBar.querySelector('#query');if(query)query.setAttribute('aria-label',filterCopy[0])}
  document.getElementById('crumb').textContent=group.title+(state.view!==key?' / '+(subLabels[state.view]||views[state.view][0]):'');
  if(!state.selected){document.getElementById('title').textContent=group.title;document.getElementById('subtitle').textContent=group.description}
  document.title=group.title+' | روبی';
