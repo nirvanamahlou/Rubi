@@ -2841,3 +2841,11 @@ User authorizes latest combined local Web3100/API4190 activation. Branch codex/p
 Runtime correction: reserve infrastructure/scripts/start-unified-local.ps1 for a configurable API port, default 4191. The Fetch-standard restricted port 4190 failed browser access despite HTTP health. Rebuild the local Web configuration against API4191; preserve the same database, storage and authentication. No browser security override.
 
 LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runtime and launcher integration reservation released. No merge to develop/main. See docs/tasks/LOCAL-ALL-SECTIONS-3100-0913.md.
+
+## RESERVATION-MANIFEST-TICKET-CARDS-0914 - PC-A - READY_FOR_REVIEW
+
+- Product request 2026-09-14: after choosing a MANIFEST date range, show each matching outbound or return ticket as a Ticket Management style card. Show whether an active airline/destination template is available and generate only through that template.
+- Independent branch codex/pc-a-manifest-ticket-cards-0914 from origin/develop@b62054e3; COMPUTER_ID=PC-A.
+- Reserved scope: public Manifest list/export contracts, Reservations Manifest service/controller, public Master Data template lookup, controlled Documents referenced-file read, Manifest card UI and focused tests, plus this task status. No migration, seed, passenger data, dependency/lockfile, or localhost runtime changes.
+- Reservations consumes public Master Data and Documents services only. A template must be active, XLSX, destination-matched, and CLEAN. If a shared file changes on refreshed origin/develop, stop before resolving and report the overlap.
+- Implementation complete: the date-range search returns outbound and return ticket cards, resolves the active airline/destination template, disables unsupported cards with an explicit reason, and downloads only the selected ticket through its stored XLSX document. Contract-level export history remains idempotent and is separated by the selected flight departure. Eight focused API tests and one Web render test, scoped lint, Contracts/API/Web typecheck, and API/Web production builds passed. No migration, seed, dependency, passenger data, or localhost runtime change.
