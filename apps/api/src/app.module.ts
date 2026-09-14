@@ -16,6 +16,7 @@ import { LegalEntitiesModule } from './legal-entities/legal-entities.module';
 import { MasterDataModule } from './master-data/master-data.module';
 import { MessagingModule } from './messaging/messaging.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { PackagePricingModule } from './package-pricing/package-pricing.module';
 import { SalesModule } from './sales/sales.module';
 import { WorkbenchFeedbackModule } from './workbench-feedback/workbench-feedback.module';
 import { WorkbenchModule } from './workbench/workbench.module';
@@ -41,6 +42,7 @@ import { WorkbenchModule } from './workbench/workbench.module';
     MessagingModule,
     IamModule,
     LegalEntitiesModule,
+    PackagePricingModule,
     SalesModule,
     NotificationsModule,
     HrModule,
