@@ -7,6 +7,7 @@ import { EnglishHotelName } from '../components/english-hotel-name';
 import { ReservationGeneralDetails } from '../components/reservation-general-details';
 import { ContractPdfPreview } from '../components/contract-pdf-preview';
 import { ReservationReceipts } from '../components/reservation-receipts';
+import { ReservationContractEditor } from '../components/reservation-contract-editor';
 
 import {
   Dialog,
@@ -30,13 +31,13 @@ export const contractActionGroups = [
       'خرید',
       'مفاد',
       'واچر',
-      'دریافت',
+      'دریافت‌ها',
       'بیمه‌نامه',
     ],
   },
   {
     title: 'اطلاعات قرارداد',
-    items: ['مشخصات کلی', 'اسامی مسافران', 'رزرواسیون', 'مدارک', 'دریافت‌ها'],
+    items: ['مشخصات کلی', 'اسامی مسافران', 'رزرواسیون', 'مدارک'],
   },
   {
     title: 'یادداشت‌ها',
@@ -59,19 +60,20 @@ export function ContractActionContent({
         contractNumber={request.contractNumber}
       />
     );
+  if (action === 'ویرایش')
+    return (
+      <ReservationContractEditor
+        requestId={request.id}
+        {...(request.contractId ? { contractId: request.contractId } : {})}
+        contractNumber={request.contractNumber}
+      />
+    );
   if (action === 'مشخصات کلی')
     return <ReservationGeneralDetails key={request.id} request={request} />;
   if (action === 'توضیحات')
     return <ReservationNotes key={request.id} id={request.id} />;
   if (
-    [
-      'رزرواسیون',
-      'Confirmation',
-      'بلیط',
-      'واچر',
-      'بیمه‌نامه',
-      'ویرایش',
-    ].includes(action)
+    ['رزرواسیون', 'Confirmation', 'بلیط', 'واچر', 'بیمه‌نامه'].includes(action)
   )
     return <TravelWorkflowForm id={request.id} action={action} />;
   if (action === 'رزرواسیون') {
@@ -194,7 +196,7 @@ export function ContractActionPanel({
                   {request && (
                     <DialogContent
                       dir="rtl"
-                      className={`max-h-[92dvh] overflow-y-auto ${['مشاهده', 'دریافت‌ها'].includes(action) ? 'sm:max-w-6xl' : 'sm:max-w-3xl'}`}
+                      className={`max-h-[92dvh] overflow-y-auto ${['مشاهده', 'دریافت‌ها', 'ویرایش'].includes(action) ? 'sm:max-w-6xl' : 'sm:max-w-3xl'}`}
                     >
                       <DialogTitle className="pe-10">{action}</DialogTitle>
                       <DialogDescription>
