@@ -18,8 +18,8 @@ import {
 } from './registry';
 
 describe('dashboard registry', () => {
-  it('defines all 60 decision-oriented KPIs with auditable metadata', () => {
-    expect(dashboardKpis).toHaveLength(60);
+  it('defines all 64 decision-oriented KPIs with auditable metadata', () => {
+    expect(dashboardKpis).toHaveLength(64);
     expect(new Set(dashboardKpis.map((kpi) => kpi.id)).size).toBe(
       dashboardKpis.length,
     );
@@ -103,6 +103,61 @@ describe('dashboard registry', () => {
         (kpi) => kpi.id === 'customers-by-acquisition-channel',
       )?.source,
     ).toContain('reporting_customer_portfolio_growth_facts_v1');
+  });
+
+  it('covers financial income, profit, expenses, commissions, debt and refunds without duplicate KPIs', () => {
+    const commercial = dashboardPages.find(
+      (page) => page.id === 'commercial-performance',
+    );
+    const finance = dashboardPages.find(
+      (page) => page.id === 'finance-treasury',
+    );
+    const revenue = dashboardPages.find(
+      (page) => page.id === 'revenue-collections',
+    );
+    const marketing = dashboardPages.find(
+      (page) => page.id === 'marketing-growth',
+    );
+
+    expect(finance?.kpiIds).toEqual(
+      expect.arrayContaining([
+        'gross-profit',
+        'net-profit',
+        'operating-expenses',
+        'paid-commissions',
+        'receivables',
+      ]),
+    );
+    expect(finance?.visualizations.map((item) => item.id)).toEqual(
+      expect.arrayContaining([
+        'finance-profit-trend',
+        'gross-profit-by-service',
+        'expense-structure',
+        'expense-trend',
+        'paid-commission-by-recipient',
+        'paid-commission-trend',
+        'customer-debt-aging',
+      ]),
+    );
+    expect(revenue?.visualizations.map((item) => item.id)).toContain(
+      'refund-by-service',
+    );
+    expect(marketing?.kpiIds).toContain('advertising-spend');
+    expect(marketing?.visualizations.map((item) => item.id)).toContain(
+      'advertising-spend-by-channel',
+    );
+    expect(
+      commercial?.visualizations.find((item) => item.id === 'service-type'),
+    ).toMatchObject({
+      title: 'درآمد به تفکیک نوع خدمت',
+      drilldown: '/reports?report=sales_by_service_route',
+    });
+    expect(dashboardKpis.filter((kpi) => kpi.id === 'receivables')).toHaveLength(
+      1,
+    );
+    expect(
+      dashboardKpis.find((kpi) => kpi.id === 'net-profit')?.rule,
+    ).toContain('حساب‌های درآمد Posted');
   });
 
   it('keeps fifteen decision-oriented pages with the requested sidebar hierarchy', () => {
