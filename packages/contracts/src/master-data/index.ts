@@ -1,4 +1,4 @@
-export const MASTER_DATA_CONTRACT_VERSION = 12 as const;
+export const MASTER_DATA_CONTRACT_VERSION = 13 as const;
 export const MASTER_DATA_API_PREFIX = '/api/v1/master-data' as const;
 
 export const MASTER_DATA_RESOURCES = [
@@ -523,6 +523,68 @@ export interface MasterHotelImportCommitResult {
   committedAt: string | null;
 }
 
+export const MASTER_HOTEL_RATE_FACTOR_KEYS = [
+  'double',
+  'single',
+  'triple',
+  'childWithBed',
+  'childWithoutBed',
+  'infant',
+] as const;
+export type MasterHotelRateFactorKey =
+  (typeof MASTER_HOTEL_RATE_FACTOR_KEYS)[number];
+export type MasterHotelRateFactorsV1 = Record<
+  MasterHotelRateFactorKey,
+  string
+>;
+
+export interface MasterHotelRateGridRowV1 {
+  id?: string;
+  hotelId: string;
+  hotelVersion: number;
+  hotelName: string;
+  starRating: number | null;
+  included: boolean;
+  baseAmount: string | null;
+  factors: MasterHotelRateFactorsV1;
+}
+
+export interface MasterHotelRatePeriodSaveV1 {
+  branchId: string;
+  cityId: string;
+  title: string;
+  checkIn: string;
+  checkOut: string;
+  currencyCode: string;
+  reason: string;
+  rows: readonly MasterHotelRateGridRowV1[];
+  expectedVersion?: number;
+}
+
+export interface MasterHotelRatePeriodSummaryV1 {
+  id: string;
+  branchId: string;
+  cityId: string;
+  cityName: string;
+  title: string;
+  checkIn: string;
+  checkOut: string;
+  nights: number;
+  currentVersion: number;
+  currencyCode: string;
+  includedHotels: number;
+  totalHotels: number;
+  updatedAt: string;
+  updatedByUserId: string;
+}
+
+export interface MasterHotelRatePeriodDetailV1
+  extends MasterHotelRatePeriodSummaryV1 {
+  pricingBasis: 'ROOM_PER_NIGHT';
+  reason: string;
+  rows: readonly MasterHotelRateGridRowV1[];
+}
+
 export const masterDataEndpoints = {
   list: (resource: MasterDataResource) =>
     `${MASTER_DATA_API_PREFIX}/${resource}` as const,
@@ -556,6 +618,12 @@ export const masterDataEndpoints = {
     `${MASTER_DATA_API_PREFIX}/hotel-imports/preview` as const,
   hotelImportCommit: (sessionId: string) =>
     `${MASTER_DATA_API_PREFIX}/hotel-imports/${encodeURIComponent(sessionId)}/commit` as const,
+  hotelRatePeriods:
+    `${MASTER_DATA_API_PREFIX}/hotel-rate-periods` as const,
+  hotelRatePeriod: (id: string) =>
+    `${MASTER_DATA_API_PREFIX}/hotel-rate-periods/${encodeURIComponent(id)}` as const,
+  hotelRateOptions:
+    `${MASTER_DATA_API_PREFIX}/hotel-rate-periods/options` as const,
 
   exports: `${MASTER_DATA_API_PREFIX}/exports` as const,
   excelDownload: `${MASTER_DATA_API_PREFIX}/exports/xlsx/download` as const,

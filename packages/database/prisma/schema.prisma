@@ -124,6 +124,9 @@ model User {
   customerAffairsCorrectiveActions  CustomerAffairsCorrectiveAction[]
   customerAffairsCommands           CustomerAffairsCommand[]
   customerAffairsAuditEvents        CustomerAffairsAuditEvent[]
+  masterHotelRatePeriodsCreated     MasterHotelRatePeriod[]           @relation("MasterHotelRatePeriodCreatedBy")
+  masterHotelRatePeriodsUpdated     MasterHotelRatePeriod[]           @relation("MasterHotelRatePeriodUpdatedBy")
+  masterHotelRateVersionsCreated    MasterHotelRatePeriodVersion[]    @relation("MasterHotelRateVersionCreatedBy")
 
   @@map("iam_users")
 }
@@ -208,6 +211,7 @@ model Branch {
   customerAffairsTickets     CustomerAffairsTicket[]
   customerAffairsAuditEvents CustomerAffairsAuditEvent[]
   financeSettlementAccounts  FinanceSettlementAccount[]
+  masterHotelRatePeriods     MasterHotelRatePeriod[]
 
   @@map("branches")
 }
@@ -736,6 +740,7 @@ model MasterCity {
   leaders                   MasterLeader[]
   organizationAddresses     MasterOrganizationAddress[]
   manifestTemplates         MasterManifestTemplate[]
+  hotelBaseRatePeriods      MasterHotelRatePeriod[]
 
   @@unique([countryId, code])
   @@unique([id, countryId])
@@ -1828,6 +1833,7 @@ model MasterHotel {
   mealServices         MasterHotelMealService[]
   roomTypes            MasterHotelRoomType[]
   compositeMemberships MasterCompositeHotelMember[]
+  baseRateRows         MasterHotelBaseRateRow[]
 
   @@index([cityId, isActive, name])
   @@index([chainId, isActive, name])
@@ -1835,6 +1841,80 @@ model MasterHotel {
   @@index([mealServiceId])
   @@index([defaultRoomTypeId])
   @@map("master_hotels")
+}
+
+model MasterHotelRatePeriod {
+  id              String                         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  branchId        String                         @map("branch_id") @db.Uuid
+  cityId          String                         @map("city_id") @db.Uuid
+  title           String                         @db.VarChar(200)
+  checkIn         DateTime                       @map("check_in") @db.Date
+  checkOut        DateTime                       @map("check_out") @db.Date
+  nights          Int
+  currentVersion  Int                            @default(1) @map("current_version")
+  createdByUserId String                         @map("created_by_user_id") @db.Uuid
+  updatedByUserId String                         @map("updated_by_user_id") @db.Uuid
+  createKey       String                         @map("create_key") @db.VarChar(160)
+  fingerprint     String                         @db.Char(64)
+  archivedAt      DateTime?                      @map("archived_at") @db.Timestamptz(3)
+  createdAt       DateTime                       @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime                       @updatedAt @map("updated_at") @db.Timestamptz(3)
+  branch          Branch                         @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  city            MasterCity                     @relation(fields: [cityId], references: [id], onDelete: Restrict)
+  createdBy       User                           @relation("MasterHotelRatePeriodCreatedBy", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  updatedBy       User                           @relation("MasterHotelRatePeriodUpdatedBy", fields: [updatedByUserId], references: [id], onDelete: Restrict)
+  versions        MasterHotelRatePeriodVersion[]
+
+  @@unique([branchId, cityId, checkIn, checkOut])
+  @@unique([createdByUserId, createKey])
+  @@index([branchId, cityId, checkIn, checkOut])
+  @@map("master_hotel_rate_periods")
+}
+
+model MasterHotelRatePeriodVersion {
+  id               String                   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  periodId         String                   @map("period_id") @db.Uuid
+  version          Int
+  title            String                   @db.VarChar(200)
+  cityIdSnapshot   String                   @map("city_id_snapshot") @db.Uuid
+  cityNameSnapshot String                   @map("city_name_snapshot") @db.VarChar(200)
+  checkIn          DateTime                 @map("check_in") @db.Date
+  checkOut         DateTime                 @map("check_out") @db.Date
+  nights           Int
+  currencyCode     String                   @map("currency_code") @db.VarChar(3)
+  pricingBasis     String                   @default("ROOM_PER_NIGHT") @map("pricing_basis") @db.VarChar(32)
+  reason           String                   @db.VarChar(500)
+  requestKey       String                   @map("request_key") @db.VarChar(160)
+  fingerprint      String                   @db.Char(64)
+  createdByUserId  String                   @map("created_by_user_id") @db.Uuid
+  createdAt        DateTime                 @default(now()) @map("created_at") @db.Timestamptz(3)
+  period           MasterHotelRatePeriod    @relation(fields: [periodId], references: [id], onDelete: Restrict)
+  createdBy        User                     @relation("MasterHotelRateVersionCreatedBy", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  rows             MasterHotelBaseRateRow[]
+
+  @@unique([periodId, version])
+  @@unique([createdByUserId, requestKey])
+  @@index([periodId, createdAt])
+  @@map("master_hotel_rate_period_versions")
+}
+
+model MasterHotelBaseRateRow {
+  id                 String                       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  periodVersionId    String                       @map("period_version_id") @db.Uuid
+  hotelId            String                       @map("hotel_id") @db.Uuid
+  hotelVersion       Int                          @map("hotel_version")
+  hotelNameSnapshot  String                       @map("hotel_name_snapshot") @db.VarChar(240)
+  starRatingSnapshot Int?                         @map("star_rating_snapshot")
+  included           Boolean                      @default(false)
+  baseAmount         Decimal?                     @map("base_amount") @db.Decimal(24, 4)
+  factors            Json
+  createdAt          DateTime                     @default(now()) @map("created_at") @db.Timestamptz(3)
+  periodVersion      MasterHotelRatePeriodVersion @relation(fields: [periodVersionId], references: [id], onDelete: Restrict)
+  hotel              MasterHotel                  @relation(fields: [hotelId], references: [id], onDelete: Restrict)
+
+  @@unique([periodVersionId, hotelId])
+  @@index([hotelId, included])
+  @@map("master_hotel_base_rate_rows")
 }
 
 model MasterMealService {
