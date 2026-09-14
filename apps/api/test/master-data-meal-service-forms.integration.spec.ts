@@ -21,26 +21,22 @@ describe('meal/service HTTP and permission contract', () => {
   let actor: AuthenticatedActor;
   const repository = {
     fieldExists: vi.fn().mockResolvedValue(false),
-    create: vi
-      .fn()
-      .mockImplementation(async (_resource, data) => ({
-        id,
-        ...data,
-        version: 1,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      })),
-    update: vi
-      .fn()
-      .mockImplementation(async (_resource, _id, data) => ({
-        id,
-        code: 'BB',
-        name: 'Meal',
-        ...data,
-        version: 2,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      })),
+    create: vi.fn().mockImplementation(async (_resource, data) => ({
+      id,
+      ...data,
+      version: 1,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    })),
+    update: vi.fn().mockImplementation(async (_resource, _id, data) => ({
+      id,
+      code: 'BB',
+      name: 'Meal',
+      ...data,
+      version: 2,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    })),
     list: vi.fn().mockResolvedValue({ rows: [], total: 0 }),
   };
   beforeEach(async () => {

@@ -30,10 +30,12 @@ function row(id: string, extra: Record<string, unknown> = {}) {
 
 describe('MasterDataService travel services', () => {
   it('normalizes leader lists and encrypts contact fields before persistence', async () => {
-    const create = vi.fn().mockImplementation(
-      async (_resource: string, data: Record<string, unknown>) =>
-        row('44444444-4444-4444-8444-444444444444', data),
-    );
+    const create = vi
+      .fn()
+      .mockImplementation(
+        async (_resource: string, data: Record<string, unknown>) =>
+          row('44444444-4444-4444-8444-444444444444', data),
+      );
     const repository = {
       codeExists: vi.fn().mockResolvedValue(false),
       find: vi.fn().mockResolvedValue(row(cityId)),
@@ -97,11 +99,21 @@ describe('MasterDataService travel services', () => {
 
   it('returns the real repository summary without mockup KPI values', async () => {
     const summary = {
-      leaders: { total: 0, active: 0, destinations: 0, incompleteDocuments: null },
+      leaders: {
+        total: 0,
+        active: 0,
+        destinations: 0,
+        incompleteDocuments: null,
+      },
       tourTypes: { total: 0, active: 0, domestic: 0, international: 0 },
       transferTypes: { total: 0, active: 0, private: 0, shared: 0 },
       cipServices: { total: 0, active: 0, airports: 0, providers: 0 },
-      visaServices: { total: 0, active: 0, countries: 0, incompleteGuidance: 0 },
+      visaServices: {
+        total: 0,
+        active: 0,
+        countries: 0,
+        incompleteGuidance: 0,
+      },
       busCompanies: { total: 0, active: 0, organizations: 0, providers: 0 },
       busTypes: { total: 0, active: 0, amenities: 0, companies: null },
     };

@@ -72,7 +72,9 @@ export async function removeOwnedMasterDataLinks(
       await tx.masterBusTypeFacility.deleteMany({ where: { busTypeId: id } });
       break;
     case 'train-types':
-      await tx.masterTrainTypeFacility.deleteMany({ where: { trainTypeId: id } });
+      await tx.masterTrainTypeFacility.deleteMany({
+        where: { trainTypeId: id },
+      });
       break;
   }
 }

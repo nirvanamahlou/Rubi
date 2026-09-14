@@ -40,13 +40,11 @@ function setup() {
   const create = vi
     .fn()
     .mockImplementation(async (_resource, data) => ({ ...row, ...data }));
-  const update = vi
-    .fn()
-    .mockImplementation(async (_resource, _id, data) => ({
-      ...row,
-      ...data,
-      version: 3,
-    }));
+  const update = vi.fn().mockImplementation(async (_resource, _id, data) => ({
+    ...row,
+    ...data,
+    version: 3,
+  }));
   const repository = {
     codeExists: vi.fn().mockResolvedValue(false),
     create,

@@ -44,13 +44,11 @@ const row = {
 };
 function setup() {
   const create = vi.fn(async (_resource, data) => ({ ...row, ...data }));
-  const update = vi
-    .fn()
-    .mockImplementation(async (_resource, _id, data) => ({
-      ...row,
-      ...data,
-      version: 3,
-    }));
+  const update = vi.fn().mockImplementation(async (_resource, _id, data) => ({
+    ...row,
+    ...data,
+    version: 3,
+  }));
   const repository = {
     create,
     update,

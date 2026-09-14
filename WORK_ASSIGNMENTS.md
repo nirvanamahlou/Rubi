@@ -14,6 +14,7 @@
 - Branch مستقل `codex/pc-b-workbench-remove-hr-link` از `origin/develop@dd177cfd`؛ محدوده فقط مقصدهای نمایشی Workbench، تست همان قرارداد و اسناد وضعیت این Task است.
 - هیچ API، Backend، Schema/Migration/Seed، Shared Contract، Permission، داده، Dependency/Lockfile یا منوی اصلی تغییر نمی‌کند.
 - نتیجه: کارت و لینک پایین «درخواست‌های منابع انسانی» از خانه میزکار حذف شد؛ منطق خواندن اعلان HR و کنترل مجوز آن بدون تغییر باقی ماند. چهار تست هدفمند Workbench، lint فایل‌های متاثر، Web typecheck و Production Build با ۴۶ Route موفق‌اند.
+
 ## WORKBENCH-038-RUNTIME — PC-B — ACTIVE / USER_AUTHORIZED
 
 - User explicitly requests activation on 3100. Branch
@@ -26,6 +27,7 @@
   Workbench persistence tables. Reserve the application lock for this deployment;
   use Prisma's advisory lock, take a full database backup, and apply only the existing
   approved migration set. No new migration is authored.
+
 ## FINANCE-008-INBOX-ACTIONS — PC-A — READY_FOR_REVIEW / ACTIVE LOCAL
 
 Base `eb6af3ff`; COMPUTER_ID=PC-A. عملیاتی‌کردن کارتابل مالی برای تأیید دریافت مسافر یا برگشت برای اصلاح، و ثبت پرداخت خرید خدمات رزرواسیون به کارگزار با حساب مبدأ، روش، مبلغ، ارز، نرخ روز، زمان و مانده. اتصال فقط از قرارداد/سرویس عمومی Sales و Reservations انجام می‌شود و Finance به جدول داخلی ماژول دیگر دسترسی مستقیم ندارد. محدوده Finance API/Web/contracts، Public boundaryهای لازم در Sales/Reservations، Prisma schema و یک Migration افزایشی، seed permission و اسناد همین Task است. بدون داده ساختگی، حذف دسترسی موجود، تغییر Migration تاریخی یا Dependency/Lockfile.
@@ -73,6 +75,7 @@ Base `4a84f844`; COMPUTER_ID=PC-A. مشخصات نقش `finance_staff` با مج
   18 targeted API tests and 49 Workbench Web tests pass, with scoped ESLint,
   API/Web TypeScript and both production builds (46 Web routes). No migration or
   operational data/runtime change. Implementation reservations are released.
+
 ## FINANCE-007-INBOX-COMPLETION — PC-A — READY_FOR_REVIEW / RUNTIME PERMISSION PENDING
 
 Base `4a84f844`; COMPUTER_ID=PC-A. مشخصات نقش `finance_staff` با مجوزهای حداقلی کارتابل و تحویل مالی تکمیل شد؛ کارتابل اکنون درخواست‌های واقعی فروش، ارجاع‌های مالی منابع انسانی و خرید خدمات رزرواسیون را از Public Service ماژول‌ها جمع می‌کند. Preview قدیمی، متن‌های فنی، وضعیت اتصال Producer و اقدام نمایشی غیرفعال از `/finance/requests` حذف شد. ماژول خرید مستقل Backend عملیاتی ندارد و تا ایجاد Producer واقعی داده‌ای برای آن جعل نمی‌شود. ۳ تست API، ۸ تست قرارداد Web، ۳ تست Migration، lint محدوده، typecheck و build تولیدی API/Web موفق‌اند و Web3100/API4190 فعال‌اند. انتساب افزایشی نقش `finance_staff` به کاربر `Ramtin` هنوز اجرا نشده و منتظر تأیید صریح مالک است؛ هیچ نقش یا مجوز قبلی حذف نخواهد شد.
@@ -272,6 +275,7 @@ Merged via PR #254 at `e40878f1`. Web3100 runs the production build `55JsHVl1EIR
   Reservations template `استعلام از کارگزار` to the existing composer. This is
   presentation data only and creates no Finance, Procurement or Reservations
   mutation. The completed source is carried by WORKBENCH-036.
+
 ## CA-FORM-LIST-FLOW — PC-B — VERIFIED / LOCAL_RUNTIME_ACTIVE
 
 - 53 tests, scoped lint and production build/TypeScript passed. Web3100 PID16408, build unified-gHKl3GgFbMmPI9-TYA1Qm, implementationeeb8c56b active. Authenticated browser confirms removed inputs and tight special-description spacing; no data saved during QA. API/DB untouched, Draft PR264, reservation released.
@@ -287,7 +291,6 @@ Merged via PR #254 at `e40878f1`. Web3100 runs the production build `55JsHVl1EIR
 ## HR-015-RUNTIME — PC-B — VERIFIED / ACTIVATION_BLOCKED
 
 - User authorizes applying merged PR226 UI removal to Web3100. CA owner explicitly handed off runtime at b1da23bd. Reserve AppShell outlet and HR referral UI removal on codex/pc-b-hr-panel-runtime-0913; preserve all CA commits and API4190/PID33612, database and contracts. Isolated build, Web-only cutover after checks. No migration or dependency changes.
-
 
 ## CA-STAFF-PICKER-CLARITY — PC-B — IMPLEMENTED / ACTIVATION_PENDING
 
@@ -446,6 +449,7 @@ Merged via PR #254 at `e40878f1`. Web3100 runs the production build `55JsHVl1EIR
 - `COMPUTER_ID=PC-B`; branch `codex/pc-b-customer-affairs-operational` and worktree
   `C:/Users/admin/Nora-customer-affairs-operational` start from
   `origin/develop@700168e67cc0a495178946bb44bdd3528d2d49d7`.
+
 ## CUSTOMER-AFFAIRS-002 — PC-B — READY_FOR_REVIEW
 
 - `COMPUTER_ID=PC-B`; branch `codex/pc-b-customer-affairs-operational` and worktree
@@ -2747,10 +2751,9 @@ B2B-360-REMOVE-SUBTITLE-001: READY_FOR_REVIEW. Combined runtime1bf840b/PID8604 b
 - پیاده‌سازی کامل شد: فرم اختصاصی Manifest فقط ایرلاین، مقصد و XLSX را می‌گیرد؛ نام/نسخه/فرمت/Draft در Backend تولید می‌شود و فایل از قرارداد عمومی Documents با نوع `MANIFEST` ثبت و سپس با optimistic version متصل می‌شود. فرم Create فرودگاه چهار مشخصه تکمیلی را نمایش نمی‌دهد و Schema/API آن‌ها را nullable می‌پذیرد. ۳۳ تست هدفمند API، ۳۸ تست Web و ۲ تست Migration، lint محدوده، Prisma validate/format و typecheck/build دیتابیس، API و Web موفق بودند. پس از تحویل، `Migration Owner = RELEASED / UNASSIGNED` و رزرو این واحد آزاد است.
 
 ## LOCAL-ALL-SECTIONS-3100-0913 — PC-B — ACTIVE
+
 User authorizes latest combined local Web3100/API4190 activation. Branch codex/pc-b-all-sections-3100-0913 combines develop 060fc35c, Workbench f174c3fe, Customer Affairs eeb8c56b and Finance 977bfeab. Scope: integration documentation, build checks and local runtime; preserve existing database/storage/authentication. No new schema or dependency changes. Runtime reservation supersedes previous pending local activation under the new user request.
 
-
 Runtime correction: reserve infrastructure/scripts/start-unified-local.ps1 for a configurable API port, default 4191. The Fetch-standard restricted port 4190 failed browser access despite HTTP health. Rebuild the local Web configuration against API4191; preserve the same database, storage and authentication. No browser security override.
-
 
 LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runtime and launcher integration reservation released. No merge to develop/main. See docs/tasks/LOCAL-ALL-SECTIONS-3100-0913.md.

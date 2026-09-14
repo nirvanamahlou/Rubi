@@ -45,13 +45,11 @@ function harness() {
     create: vi
       .fn()
       .mockImplementation(async (_resource, data) => ({ ...row, ...data })),
-    update: vi
-      .fn()
-      .mockImplementation(async (_resource, _id, data) => ({
-        ...row,
-        ...data,
-        version: 2,
-      })),
+    update: vi.fn().mockImplementation(async (_resource, _id, data) => ({
+      ...row,
+      ...data,
+      version: 2,
+    })),
   };
   return {
     repository,
