@@ -1,10 +1,10 @@
 import { randomUUID } from 'node:crypto';
 import { afterAll, describe, expect, it } from 'vitest';
-import { createDatabaseClient, type Prisma } from '@rubi/database';
+import { createDatabaseClient, type Prisma } from '@nora/database';
 import type {
   AuthenticatedActor,
   SalesReservationRequestV1,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import type { DatabaseService } from '../database/database.service';
 import { ReservationsPublicService } from './reservations-public.service';
 import {

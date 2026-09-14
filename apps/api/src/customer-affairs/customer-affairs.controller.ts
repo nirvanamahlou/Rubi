@@ -18,7 +18,7 @@ import type {
   CustomerAffairsLeadInput,
   CustomerAffairsTicketInput,
   CustomerAffairsTimelineInput,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 
 import { AuthGuard } from '../iam/auth.guard';
 import { Public, RequirePermissions } from '../iam/iam.decorators';
@@ -46,7 +46,7 @@ import {
 import { CustomerAffairsService } from './customer-affairs.service';
 
 @ApiTags('Customer Affairs')
-@ApiCookieAuth('rubi_access')
+@ApiCookieAuth('nora_access')
 @UseGuards(AuthGuard, PermissionGuard)
 @Controller('customer-affairs')
 export class CustomerAffairsController {

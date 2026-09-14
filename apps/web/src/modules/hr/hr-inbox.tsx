@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { getHrResource, type HrRecordDto } from '@rubi/contracts';
+import { getHrResource, type HrRecordDto } from '@nora/contracts';
 import { allHrRecords, type HrStore } from './hr-store';
 import {
   HrExportButton,

@@ -3,7 +3,7 @@ import type {
   AuthenticatedActor,
   CustomerAffairsLeadInput,
   CustomerAffairsTicketInput,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import { CustomerAffairsService } from './customer-affairs.service';
 
 const actor = {

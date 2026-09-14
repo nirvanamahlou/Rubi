@@ -50,7 +50,7 @@ export function buildReportPdf(images: readonly Uint8Array[]): Uint8Array {
       ),
     );
   });
-  const parts = [enc.encode('%PDF-1.4\n%Rubi\n')];
+  const parts = [enc.encode('%PDF-1.4\n%Nora\n')];
   const offsets = [0];
   let at = parts[0]!.length;
   objects.forEach((object, index) => {

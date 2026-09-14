@@ -39,7 +39,7 @@
 
 - فاز B فقط دامنه Customers را پوشش می‌دهد.
 - تغییر فایل‌های داخلی IAM یا Master Data ممنوع است.
-- Master Data فقط از قرارداد عمومی `@rubi/contracts` مصرف می‌شود؛ import، query یا
+- Master Data فقط از قرارداد عمومی `@nora/contracts` مصرف می‌شود؛ import، query یا
   وابستگی به مدل، Repository یا فایل داخلی Master Data مجاز نیست.
 - ذخیره مقدار یا فایل مدارک هویتی حساس تا تصمیم قطعی PII ممنوع است.
 - Duplicate auto-merge ممنوع است؛ فقط Candidate Detection و Review دستی همراه Permission

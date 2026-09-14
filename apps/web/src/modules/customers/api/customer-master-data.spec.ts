@@ -1,4 +1,4 @@
-import type { CustomerDetail, MasterDataRecord } from '@rubi/contracts';
+import type { CustomerDetail, MasterDataRecord } from '@nora/contracts';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { masterDataApi } from '@/modules/master-data/api/client';

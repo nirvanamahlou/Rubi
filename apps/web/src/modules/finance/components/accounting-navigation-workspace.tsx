@@ -248,7 +248,7 @@ export function AccountingNavigationWorkspace() {
     <main className="space-y-6">
       <PageHeader
         description="ساختار بخش‌های حسابداری؛ محتوای هر بخش پس از اعلام جزئیات تکمیل می‌شود."
-        eyebrow="Rubi Accounting"
+        eyebrow="Nora Accounting"
         title="حسابداری"
       />
       <div className="flex flex-col items-start gap-5 lg:flex-row">

@@ -1,4 +1,4 @@
-import type { MasterDataRecord, MasterDataResource } from '@rubi/contracts';
+import type { MasterDataRecord, MasterDataResource } from '@nora/contracts';
 import { strToU8, zipSync } from 'fflate';
 
 export const MASTER_DATA_XLSX_MIME =

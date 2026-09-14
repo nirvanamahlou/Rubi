@@ -7,14 +7,14 @@ import {
   Injectable,
 } from '@nestjs/common';
 import * as Joi from 'joi';
-import { Prisma } from '@rubi/database';
+import { Prisma } from '@nora/database';
 import type {
   AuthenticatedActor,
   SalesTicketSelectionInput,
   TicketOfferCreateV1,
   TicketOfferSearchV1,
   TicketOfferV1,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import { DatabaseService } from '../database/database.service';
 
 const uuid = Joi.string().guid();

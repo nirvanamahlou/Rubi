@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type {
   AuthenticatedActor,
   CustomerAffairsLeadInput,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import { CustomerAffairsService } from './customer-affairs.service';
 
 const actor = {

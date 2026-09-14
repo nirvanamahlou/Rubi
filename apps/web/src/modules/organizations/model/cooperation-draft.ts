@@ -1,9 +1,9 @@
-import { b2bAgreementTermsIssue } from '@rubi/contracts';
+import { b2bAgreementTermsIssue } from '@nora/contracts';
 import type {
   B2bAgreementTermsV1,
   IamPermissionCode,
   MasterDataRecord,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import { blankAgreementTerms } from './agreement-terms';
 import { masterDataApi } from '@/modules/master-data/api/client';
 import { agencyClient } from '../api/agency-client';

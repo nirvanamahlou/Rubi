@@ -6,12 +6,12 @@ WORKBENCH-038 (`4694d85f`) with the currently running Customer Affairs implement
 transport. Workbench request producer methods and clients are retained. The latest
 staff-picker/date-label changes from `299a48bc` are also included.
 
-The production database is `rubi_hr_current_20260908` at local port 55432; document
-storage remains `C:/Users/admin/AppData/Local/Rubi/hr007-documents`. Credentials are
+The production database is `nora_hr_current_20260908` at local port 55432; document
+storage remains `C:/Users/admin/AppData/Local/Nora/hr007-documents`. Credentials are
 read from the existing environment file, never committed or printed.
 
 A full custom-format backup was saved outside Git to
-`C:/Users/admin/AppData/Local/Rubi/backups/workbench-038-before-activation.dump`.
+`C:/Users/admin/AppData/Local/Nora/backups/workbench-038-before-activation.dump`.
 Prisma successfully applied only the two outstanding released migrations:
 `20260912200000_workbench_integrations` and
 `20260912213000_master_manifest_destination_airport_optional`. No seed or demo loader

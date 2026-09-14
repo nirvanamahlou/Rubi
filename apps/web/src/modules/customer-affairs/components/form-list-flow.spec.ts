@@ -6,7 +6,7 @@ const forms = readFileSync(
   'utf8',
 );
 const workspace = readFileSync(
-  new URL('./customer-affairs-rubi-workspace.tsx', import.meta.url),
+  new URL('./customer-affairs-nora-workspace.tsx', import.meta.url),
   'utf8',
 );
 

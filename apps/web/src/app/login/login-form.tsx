@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { FormField, Input } from '@/components/ui/form-controls';
 import { getPublicApiBaseUrl } from '@/lib/environment';
 import { rememberHeaderSession } from '@/lib/header-session';
-import type { LoginResponse } from '@rubi/contracts';
+import type { LoginResponse } from '@nora/contracts';
 import { loginErrorMessage } from './login-error';
 
 export function LoginForm() {

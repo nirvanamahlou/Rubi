@@ -8,8 +8,8 @@ import {
   type AuthenticatedActor,
   MASTER_DATA_RESOURCES,
   getMasterDataColumnFilters,
-} from '@rubi/contracts';
-import { createDatabaseClient, type DatabaseClient } from '@rubi/database';
+} from '@nora/contracts';
+import { createDatabaseClient, type DatabaseClient } from '@nora/database';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { DatabaseService } from '../src/database/database.service';
 import { masterDataDemoRecords } from '../src/master-data/demo/demo-data';
@@ -21,7 +21,7 @@ import { MasterDataContactCrypto } from '../src/master-data/master-data-contact.
 import { MasterDataRepository } from '../src/master-data/master-data.repository';
 import { MasterDataService } from '../src/master-data/master-data.service';
 
-const databaseName = `rubi_md_demo_test_${randomUUID().replaceAll('-', '')}`;
+const databaseName = `nora_md_demo_test_${randomUUID().replaceAll('-', '')}`;
 const contactKey = randomBytes(32).toString('base64');
 const attribution = {
   createdByUserId: DEMO_ACTOR_ID,
@@ -38,10 +38,10 @@ function sql(database: string, input: string) {
     [
       'exec',
       '-i',
-      'rubi-postgres-1',
+      'nora-postgres-1',
       'psql',
       '-U',
-      'rubi_local',
+      'nora_local',
       '-d',
       database,
       '-v',
@@ -58,13 +58,13 @@ const run = (apply: boolean) =>
     apply,
   });
 
-describe.skipIf(process.env.RUBI_RUN_DEMO_POSTGRES_TESTS !== '1')(
+describe.skipIf(process.env.NORA_RUN_DEMO_POSTGRES_TESTS !== '1')(
   'Master Data demo on isolated PostgreSQL 18',
   () => {
     beforeAll(async () => {
       const local = parseEnv(
         readFileSync(
-          process.env.RUBI_DEMO_TEST_ENV_FILE ?? resolve(process.cwd(), '.env'),
+          process.env.NORA_DEMO_TEST_ENV_FILE ?? resolve(process.cwd(), '.env'),
           'utf8',
         ),
       );
@@ -72,7 +72,7 @@ describe.skipIf(process.env.RUBI_RUN_DEMO_POSTGRES_TESTS !== '1')(
       if (
         !['localhost', '127.0.0.1'].includes(url.hostname) ||
         url.port !== '55432' ||
-        !/^rubi_md_demo_test_[a-f0-9]{32}$/.test(databaseName)
+        !/^nora_md_demo_test_[a-f0-9]{32}$/.test(databaseName)
       )
         throw new Error('Invalid local test target');
       sql('postgres', `CREATE DATABASE "${databaseName}";`);
@@ -127,7 +127,7 @@ describe.skipIf(process.env.RUBI_RUN_DEMO_POSTGRES_TESTS !== '1')(
 
     afterAll(async () => {
       if (client) await client.$disconnect();
-      if (created && /^rubi_md_demo_test_[a-f0-9]{32}$/.test(databaseName))
+      if (created && /^nora_md_demo_test_[a-f0-9]{32}$/.test(databaseName))
         sql('postgres', `DROP DATABASE "${databaseName}" WITH (FORCE);`);
     });
 

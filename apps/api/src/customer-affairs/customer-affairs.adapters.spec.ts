@@ -14,7 +14,7 @@ describe('customer affairs integration adapter boundary', () => {
   );
 
   it('consumes only the public Customers contract', () => {
-    expect(source).toContain("from '@rubi/contracts'");
+    expect(source).toContain("from '@nora/contracts'");
     expect(source).toContain('CustomerListQuery');
     expect(source).toContain('CustomerListResponse');
     expect(source).toContain('CustomerDetail');

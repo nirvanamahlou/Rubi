@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
-import type { MasterDataRecord, SalesContractDetail } from '@rubi/contracts';
+import type { MasterDataRecord, SalesContractDetail } from '@nora/contracts';
 
 import {
   ReservationReceipts,

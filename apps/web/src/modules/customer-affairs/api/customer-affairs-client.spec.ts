@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import type {
   CustomerAffairsLeadView,
   CustomerAffairsTicketView,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 
 import {
   customerAffairsApi,

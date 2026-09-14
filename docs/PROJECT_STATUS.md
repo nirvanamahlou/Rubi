@@ -1,5 +1,11 @@
 # وضعیت پروژه
 
+## 2026-09-14 — BRAND-NORA-001 — PC-B — IMPLEMENTED / VERIFIED
+
+- نام محصول و namespace داخلی در نسخه یکپارچه تمام بخش‌ها به `Nora/نورا` تغییر کرد. packageهای workspace اکنون `@nora/*` هستند و Web/API/Worker، Swagger، کوکی‌ها، هدرها، PDF/XLSX، اعلان‌ها، تنظیمات نمونه و فایل‌های برنددار با Nora هماهنگ‌اند.
+- شناسه‌های تاریخی GitHub/مسیر سیستم‌عامل و شناسه‌های سازگاری رمزنگاری/ذخیره‌سازی حفظ شدند تا لینک‌ها و داده‌های قبلی نشکنند. هیچ Schema/Migration/Seed، داده، نقش یا مجوز تغییر نکرد.
+- install frozen، lint، typecheck، build کامل ۴۶ route و همه تست‌ها موفق‌اند: ۱۳۷۹ Web، ۱۳۳۳ API و ۱۴۹ تست package. گزارش: `docs/tasks/BRAND-NORA-001.md`.
+
 ## WORKBENCH-037 — حذف کارت پایین درخواست‌های منابع انسانی
 
 کارت نمایشی «درخواست‌های منابع انسانی» از مقصدهای پایین خانه میزکار حذف شد. این تغییر فقط پوسته Frontend را پوشش می‌دهد؛ Backend، مسیر `/hr`، مجوزهای خواندن HR و اعلان‌های منابع انسانی دست‌نخورده ماندند. چهار تست هدفمند، lint، TypeScript و Production Build با ۴۶ Route موفق‌اند.
@@ -157,7 +163,7 @@ Gate تست کامل، کیفیت، build و PostgreSQL 18 را گذراند؛ �
 
 ## CA-REPORT-LAYOUT — چیدمان گزارش امور مشتریان
 
-نمای گزارش با کارت‌های خلاصه، توزیع دو ستونه وضعیت درخواست/تیکت و کارت‌های فشرده رضایت/اقدام اصلاحی بازطراحی شد. تعداد و سهم هر وضعیت از کل کنار نوار نمایش داده می‌شود؛ میانگین رضایت با درصد رضایت اشتباه گرفته نمی‌شود. تم روبی و حالت موبایل حفظ شده، بدون تغییر API یا داده. ۵۱ تست هدفمند موفق است؛ وضعیت بیلد و اجرای۳۱۰۰ در `docs/tasks/CA-REPORT-LAYOUT.md` ثبت می‌شود.
+نمای گزارش با کارت‌های خلاصه، توزیع دو ستونه وضعیت درخواست/تیکت و کارت‌های فشرده رضایت/اقدام اصلاحی بازطراحی شد. تعداد و سهم هر وضعیت از کل کنار نوار نمایش داده می‌شود؛ میانگین رضایت با درصد رضایت اشتباه گرفته نمی‌شود. تم نورا و حالت موبایل حفظ شده، بدون تغییر API یا داده. ۵۱ تست هدفمند موفق است؛ وضعیت بیلد و اجرای۳۱۰۰ در `docs/tasks/CA-REPORT-LAYOUT.md` ثبت می‌شود.
 
 ## HR-015 — حذف پنل از اجرای مشترک
 
@@ -166,7 +172,7 @@ Gate تست کامل، کیفیت، build و PostgreSQL 18 را گذراند؛ �
 
 ## CA-STAFF-PICKER-CLARITY — برچسب تاریخ و شفافیت انتخاب کارکنان
 
-«ثبت پرونده» از برچسب و نام دسترس‌پذیر فیلتر تاریخ حذف شد. انتخاب مسئول همچنان از قرارداد عمومی HR می‌خواند؛ کارکنان بدون userId به‌جای پنهان‌شدن با توضیح و به‌صورت غیرقابل‌انتخاب دیده می‌شوند. شناسه کارمند هرگز به‌جای شناسه کاربر ارسال نمی‌شود. اتصال هویت واقعی کارمند/حساب و فعال‌سازی نسخه تازه باقی است؛ حساب یا مجوز خودکار ساخته نشد. مهارت senior-frontend برای حفظ انتخاب‌گر تم روبی و حالت‌های بارگذاری/خطا استفاده شد.
+«ثبت پرونده» از برچسب و نام دسترس‌پذیر فیلتر تاریخ حذف شد. انتخاب مسئول همچنان از قرارداد عمومی HR می‌خواند؛ کارکنان بدون userId به‌جای پنهان‌شدن با توضیح و به‌صورت غیرقابل‌انتخاب دیده می‌شوند. شناسه کارمند هرگز به‌جای شناسه کاربر ارسال نمی‌شود. اتصال هویت واقعی کارمند/حساب و فعال‌سازی نسخه تازه باقی است؛ حساب یا مجوز خودکار ساخته نشد. مهارت senior-frontend برای حفظ انتخاب‌گر تم نورا و حالت‌های بارگذاری/خطا استفاده شد.
 
 ## CUSTOMER-AFFAIRS-REPORT-DATA-E2E — داده گزارش و تست مرورگری
 
@@ -174,7 +180,7 @@ Gate تست کامل، کیفیت، build و PostgreSQL 18 را گذراند؛ �
 
 ## CUSTOMER-AFFAIRS-DATE-FILTER — فیلتر تاریخ ثبت
 
-بازه از/تا تاریخ در فهرست درخواست‌ها و پشتیبانی و نماهای تحویل فروش/معوق اضافه شد. تقویم مشترک روبی با انتخاب گریدی ماه/سال بدون تغییر مصرف می‌شود. کل روز پایان لحاظ و مرزها با منطقه زمانی مرورگر به UTC تبدیل می‌شوند؛ API روی تاریخ ثبت، پیش از شمارش و صفحه‌بندی، با حفظ شعبه فیلتر می‌کند. پاک‌کردن بازه و حفظ آن در URL فعال است. ۸۴ تست API و ۴۶ تست Web، lint و کنترل TypeScript موفق‌اند؛ بدون migration یا تغییر داده. آمار کلی و گزارش تجمیعی خارج از این فیلتر هستند. جزئیات: `docs/tasks/CUSTOMER-AFFAIRS-DATE-FILTER.md`.
+بازه از/تا تاریخ در فهرست درخواست‌ها و پشتیبانی و نماهای تحویل فروش/معوق اضافه شد. تقویم مشترک نورا با انتخاب گریدی ماه/سال بدون تغییر مصرف می‌شود. کل روز پایان لحاظ و مرزها با منطقه زمانی مرورگر به UTC تبدیل می‌شوند؛ API روی تاریخ ثبت، پیش از شمارش و صفحه‌بندی، با حفظ شعبه فیلتر می‌کند. پاک‌کردن بازه و حفظ آن در URL فعال است. ۸۴ تست API و ۴۶ تست Web، lint و کنترل TypeScript موفق‌اند؛ بدون migration یا تغییر داده. آمار کلی و گزارش تجمیعی خارج از این فیلتر هستند. جزئیات: `docs/tasks/CUSTOMER-AFFAIRS-DATE-FILTER.md`.
 
 ## CUSTOMER-AFFAIRS-REQUEST-LABELS — حذف عنوان سرنخ، حفظ درخواست‌ها
 
@@ -190,7 +196,7 @@ Gate تست کامل، کیفیت، build و PostgreSQL 18 را گذراند؛ �
 
 ## CUSTOMER-AFFAIRS-THEMED-SELECTS — کد آماده، راه‌اندازی مجدد مسدود
 
-دراپ‌داون‌های فیلتر، فرم ایجاد/ویرایش و انتخاب مسئول از Select مشترک روبی با RTL و رنگ‌های تم استفاده می‌کنند. ۳۸ تست و build/typecheck تولیدی ۴۶ مسیر موفق شد. دستور راه‌اندازی مجدد وب۳۱۰۰ پیش از اجرا توسط سیاست محیط رد شد؛ فعال‌شدن و بررسی بصری نسخه جدید ادعا نمی‌شود. API و داده‌ها تغییری نکردند. فرض‌های قبلی رابط داخلی دسکتاپ و تم روبی حفظ شده‌اند؛ بدون تغییر dependency، schema یا کامپوننت مرکزی.
+دراپ‌داون‌های فیلتر، فرم ایجاد/ویرایش و انتخاب مسئول از Select مشترک نورا با RTL و رنگ‌های تم استفاده می‌کنند. ۳۸ تست و build/typecheck تولیدی ۴۶ مسیر موفق شد. دستور راه‌اندازی مجدد وب۳۱۰۰ پیش از اجرا توسط سیاست محیط رد شد؛ فعال‌شدن و بررسی بصری نسخه جدید ادعا نمی‌شود. API و داده‌ها تغییری نکردند. فرض‌های قبلی رابط داخلی دسکتاپ و تم نورا حفظ شده‌اند؛ بدون تغییر dependency، schema یا کامپوننت مرکزی.
 
 ## CUSTOMER-AFFAIRS-SITE-BRIDGE — بک‌اند پیاده شد، اتصال زنده سایت‌ها غیرفعال
 
@@ -210,7 +216,7 @@ Gate تست کامل، کیفیت، build و PostgreSQL 18 را گذراند؛ �
 
 ## CUSTOMER-AFFAIRS-FORM-DIALOGS — تکمیل
 
-هفت فرم ایجاد/ویرایش امور مشتریان به دیالوگ مشترک روبی منتقل شد؛ صفحه زمینه حفظ می‌شود و فرم‌های جست‌وجو در صفحه باقی مانده‌اند. خطای ذخیره داخل پنجره، جلوگیری از بستن با کلیک بیرون، قفل هنگام ذخیره و برگشت فوکوس اضافه شد. ۳۰ تست، ESLint، typecheck و build تولیدی ۴۶ مسیر موفق بود؛ نمایش موبایل ۳۹۰ پیکسلی و فرم/تقویم/دریافت مشتری در مرورگر احرازشده بررسی شد. Web3100/PID10196 با API عمومی ۴۱۹۰ فعال است؛ API4190/PID12504 و داده‌ها تغییر نکردند. جزئیات در `docs/tasks/CUSTOMER-AFFAIRS-FORM-DIALOGS.md`؛ بدون merge.
+هفت فرم ایجاد/ویرایش امور مشتریان به دیالوگ مشترک نورا منتقل شد؛ صفحه زمینه حفظ می‌شود و فرم‌های جست‌وجو در صفحه باقی مانده‌اند. خطای ذخیره داخل پنجره، جلوگیری از بستن با کلیک بیرون، قفل هنگام ذخیره و برگشت فوکوس اضافه شد. ۳۰ تست، ESLint، typecheck و build تولیدی ۴۶ مسیر موفق بود؛ نمایش موبایل ۳۹۰ پیکسلی و فرم/تقویم/دریافت مشتری در مرورگر احرازشده بررسی شد. Web3100/PID10196 با API عمومی ۴۱۹۰ فعال است؛ API4190/PID12504 و داده‌ها تغییر نکردند. جزئیات در `docs/tasks/CUSTOMER-AFFAIRS-FORM-DIALOGS.md`؛ بدون merge.
 
 ## CUSTOMER-AFFAIRS-WORKFLOW-REDESIGN — تکمیل
 
@@ -230,7 +236,7 @@ Gate تست کامل، کیفیت، build و PostgreSQL 18 را گذراند؛ �
 
 ## CUSTOMER-AFFAIRS-VISUAL-POLISH — تکمیل
 
-نمای امور مشتریان با رنگ‌های آبی روبی، فیروزه‌ای و رنگ‌های وضعیت بازپردازی شد: تب فعال، کارت‌های شاخص، کارت‌های دسترسی و پنل‌های فهرست عمق و تمایز بصری بیشتری دارند و حالت کاهش حرکت نیز حفظ شده است. چهار تست هدفمند، قالب‌بندی CSS، diff check و build/typecheck تولیدی ۴۶ مسیر موفق بودند. نمای داده‌دار در مرورگر احرازشده روی Web3100/PID15612 از source `a7a8ab7` تأیید شد؛ API4190/PID12504، داده، schema و dependency تغییری نکردند. بدون merge.
+نمای امور مشتریان با رنگ‌های آبی نورا، فیروزه‌ای و رنگ‌های وضعیت بازپردازی شد: تب فعال، کارت‌های شاخص، کارت‌های دسترسی و پنل‌های فهرست عمق و تمایز بصری بیشتری دارند و حالت کاهش حرکت نیز حفظ شده است. چهار تست هدفمند، قالب‌بندی CSS، diff check و build/typecheck تولیدی ۴۶ مسیر موفق بودند. نمای داده‌دار در مرورگر احرازشده روی Web3100/PID15612 از source `a7a8ab7` تأیید شد؛ API4190/PID12504، داده، schema و dependency تغییری نکردند. بدون merge.
 
 ## CUSTOMER-AFFAIRS-REMOVE-INTRO — تکمیل
 
@@ -259,11 +265,11 @@ API، ۱۳۲۷ تست Web، lint، typecheck و build تولیدی ۴۶ route پ
 
 فرم مرحله‌ای ثبت آژانس برای سازمان جدید دوباره کنترل کامل فایل سند قرارداد و فایل هر تضمین را نشان می‌دهد. فایل‌های انتخاب‌شده تا زمان ایجاد شناسهٔ پایدار سازمان در همان فرم نگه داشته می‌شوند، سپس از API عمومی Documents ذخیره و پیش از ثبت پیش‌نویس به قرارداد یا تضمین مربوط متصل می‌شوند. دلیل ثبت یا اصلاح نسخه اختیاری شد؛ دلیل تصمیم‌های ارسال، تأیید و رد همچنان برای Audit الزامی است. ۱۲۸ تست Organizations، ۱۲۱ تست B2B API، ۶۷ تست Contracts، lint محدوده، TypeScript و build تولیدی Web/API موفق بودند. مرورگر احرازهویت‌شده روی Web3100 نمایش کنترل‌های قرارداد و تضمین، گزینه‌های واقعی Documents و برچسب دلیل اختیاری را بدون خطای کنسول تأیید کرد؛ هیچ سازمان یا سند آزمایشی ذخیره نشد. بدون Schema، Migration، Seed، Dependency یا تغییر IAM.
 
-## CUSTOMER-AFFAIRS-003 — رابط امور مشتریان با تم روبی
+## CUSTOMER-AFFAIRS-003 — رابط امور مشتریان با تم نورا
 
 مانع QA زنده: API4190 سالم است اما مبدأ پیش‌نمایش ۳۱۰۲ در CORS آن مجاز نیست؛ ابتدا هماهنگی Runtime و سپس ورود لازم است. سرویس مشترک تغییر داده نشد.
 
-مرجع HTML کاربر به رابط متصل به API با ناوبری پنج‌بخشی، کارت‌های رنگی، فهرست و نمای مرحله‌ای سرنخ‌ها، پیگیری‌های معوق، صف پشتیبانی و گزارش واقعی تبدیل شد. فونت، رنگ‌های روشن/تیره، کنترل‌ها و پوسته اصلی روبی حفظ شده‌اند. فرم‌ها و عملیات برش عملیاتی قبلی بازاستفاده می‌شوند؛ تنظیمات خواندنی است و قابلیت ساختگی ندارد. این شاخه ادامه Draft PR #221 است و تغییری در Schema، Migration یا Backend ندارد. پیش‌نمایش مستقل ۳۱۰۲ پشت ورود عادی است؛ QA تصویری احرازهویت‌شده پس از ورود کاربر باقی می‌ماند. جزئیات و آزمون‌ها: `docs/tasks/CUSTOMER-AFFAIRS-003.md`.
+مرجع HTML کاربر به رابط متصل به API با ناوبری پنج‌بخشی، کارت‌های رنگی، فهرست و نمای مرحله‌ای سرنخ‌ها، پیگیری‌های معوق، صف پشتیبانی و گزارش واقعی تبدیل شد. فونت، رنگ‌های روشن/تیره، کنترل‌ها و پوسته اصلی نورا حفظ شده‌اند. فرم‌ها و عملیات برش عملیاتی قبلی بازاستفاده می‌شوند؛ تنظیمات خواندنی است و قابلیت ساختگی ندارد. این شاخه ادامه Draft PR #221 است و تغییری در Schema، Migration یا Backend ندارد. پیش‌نمایش مستقل ۳۱۰۲ پشت ورود عادی است؛ QA تصویری احرازهویت‌شده پس از ورود کاربر باقی می‌ماند. جزئیات و آزمون‌ها: `docs/tasks/CUSTOMER-AFFAIRS-003.md`.
 
 ## B2B-REMOVE-HR-REQUESTS-001 — حذف درخواست‌های منابع انسانی از پرونده ۳۶۰
 
@@ -350,7 +356,7 @@ Migration افزایشی `20260912173000_workbench_feedback` پس از Backup و
 
 ## WORKBENCH-023 — نظرسنجی خانه
 
-فرم نظرسنجی و پیشنهادها شامل موضوع/متن، واحد مقصد، فایل اختیاری و انتخاب با نام/ناشناس آماده است. کنترل‌ها با تم روبی هماهنگ‌اند. فایل‌ها فقط محلی انتخاب می‌شوند؛ سرویس ذخیره/ارسال و تضمین ناشناس‌بودن نزد گیرنده وجود ندارد، بنابراین دکمه ارسال غیرفعال و وضعیت پیش‌نویس صریح است. ۴۳ تست، lint، TypeScript و build۴۶route موفق؛ تغییرات لوگوی آژانس4786181 حفظ شده‌اند. بدون API/Schema/Migration. Draft PR199. مرورگر ورود/ویرایش متن، تغییر انتخاب ناشناس و بازنشانی فرم را تأیید کرد؛ داده آزمایشی پاک شد. Web3100 source37b72b8/PID12744/manifesthr005-33cbcefa9c0098c6؛ API بدون تغییر.
+فرم نظرسنجی و پیشنهادها شامل موضوع/متن، واحد مقصد، فایل اختیاری و انتخاب با نام/ناشناس آماده است. کنترل‌ها با تم نورا هماهنگ‌اند. فایل‌ها فقط محلی انتخاب می‌شوند؛ سرویس ذخیره/ارسال و تضمین ناشناس‌بودن نزد گیرنده وجود ندارد، بنابراین دکمه ارسال غیرفعال و وضعیت پیش‌نویس صریح است. ۴۳ تست، lint، TypeScript و build۴۶route موفق؛ تغییرات لوگوی آژانس4786181 حفظ شده‌اند. بدون API/Schema/Migration. Draft PR199. مرورگر ورود/ویرایش متن، تغییر انتخاب ناشناس و بازنشانی فرم را تأیید کرد؛ داده آزمایشی پاک شد. Web3100 source37b72b8/PID12744/manifesthr005-33cbcefa9c0098c6؛ API بدون تغییر.
 
 
 ## WORKBENCH-022 — قالب و پیوست ویزا
@@ -358,9 +364,9 @@ Migration افزایشی `20260912173000_workbench_feedback` پس از Backup و
 قالب‌های مدارک ویزا و فیش واریزی با متن قابل‌ویرایش افزوده شد. انتخاب حداکثر۱۰ فایل PDF/تصویر تا۱۰MB برای هر فایل، حذف و تعویض محلی پیوست‌ها و جداسازی پیوست هر واحد آماده است. بارگذاری/ارسال واقعی انجام نمی‌شود و این محدودیت در UI روشن است؛ WORKBENCH-021 منتظر هماهنگی Migration است. ۴۳ تست، lint، TypeScript و build۴۶route موفق؛ مرورگر انتخاب قالب فیش و ویرایش متن و حضور کنترل فایل را تأیید کرد، پیش‌نویس آزمایشی بازنشانی شد. Web3100 source3bd4f5b/PID26640/manifesthr005-8878b91f78e1ba9e با حفظ footer8ff2da8؛ API بدون تغییر. Draft PR197.
 
 
-## WORKBENCH-020 — دراپ‌داون هماهنگ روبی
+## WORKBENCH-020 — دراپ‌داون هماهنگ نورا
 
-شش انتخاب‌گر میزکار (درخواست، پیام، پوشه یادداشت و فیلتر تقویم) از Select مشترک روبی استفاده می‌کنند. حالت همه پوشه‌ها با مقدار خالی حفظ شد؛ بدون تغییر کنترل مشترک/API/وابستگی. ۴۳ تست، lint، TypeScript و build۴۶route موفق. مرورگر منوی درخواست در روشن/تیره و انتخاب با صفحه‌کلید را تأیید کرد؛ تم اولیه بازگردانده و پیش‌نویس آزمایشی بازنشانی شد. Web3100 sourcece2ca88/PID25968/manifesthr005-24fe5f715ad402af؛ API بدون تغییر. Draft PR195، بدون مرج.
+شش انتخاب‌گر میزکار (درخواست، پیام، پوشه یادداشت و فیلتر تقویم) از Select مشترک نورا استفاده می‌کنند. حالت همه پوشه‌ها با مقدار خالی حفظ شد؛ بدون تغییر کنترل مشترک/API/وابستگی. ۴۳ تست، lint، TypeScript و build۴۶route موفق. مرورگر منوی درخواست در روشن/تیره و انتخاب با صفحه‌کلید را تأیید کرد؛ تم اولیه بازگردانده و پیش‌نویس آزمایشی بازنشانی شد. Web3100 sourcece2ca88/PID25968/manifesthr005-24fe5f715ad402af؛ API بدون تغییر. Draft PR195، بدون مرج.
 
 
 ## WORKBENCH-019 — واحدهای پیام و خلاصه خانه
@@ -372,7 +378,7 @@ Migration افزایشی `20260912173000_workbench_feedback` پس از Backup و
 
 تأیید نهایی: ۴۳ تست، lint، TypeScript و build با ۴۶ مسیر موفق. مرورگر احرازهویت‌شده پیمایش ماه/امروز، هفته، برنامه، بدون تاریخ و انتخاب روز را تأیید کرد. Web3100 با source9f5ef8c، PID4996 و manifesthr005-de22f3cb4ce5141b فعال است؛ API4190 تغییر نکرد. PR192 پیش‌نویس و مرج نشده است. اتصال موعدهای واقعی همچنان ارائه نشده است.
 
-تب مستقل «تقویم من» با ظاهر هماهنگ روبی و مرجع تصویر558، نماهای ماه/هفته/برنامه/بدون تاریخ، پیمایش ماه و هفته، امروز، انتخاب روز، جست‌وجو و فیلتر وضعیت/اولویت اضافه شد. محاسبات شمسی از ابزار مشترک و انتساب موعد به روز از منطقه زمانی تهران استفاده می‌کند؛ هفته از شنبه است. مدل نمایش برای موعد اقدام آماده است، اما هیچ سرویس موعد کار/درخواست فعالی در میزکار وجود ندارد؛ این محدودیت صریح نمایش داده شده و زمان اعلان‌ها یا داده ساختگی جایگزین موعد نمی‌شوند. ۴۳ تست میزکار و lint موفق؛ بدون API، Schema یا وابستگی تازه.
+تب مستقل «تقویم من» با ظاهر هماهنگ نورا و مرجع تصویر558، نماهای ماه/هفته/برنامه/بدون تاریخ، پیمایش ماه و هفته، امروز، انتخاب روز، جست‌وجو و فیلتر وضعیت/اولویت اضافه شد. محاسبات شمسی از ابزار مشترک و انتساب موعد به روز از منطقه زمانی تهران استفاده می‌کند؛ هفته از شنبه است. مدل نمایش برای موعد اقدام آماده است، اما هیچ سرویس موعد کار/درخواست فعالی در میزکار وجود ندارد؛ این محدودیت صریح نمایش داده شده و زمان اعلان‌ها یا داده ساختگی جایگزین موعد نمی‌شوند. ۴۳ تست میزکار و lint موفق؛ بدون API، Schema یا وابستگی تازه.
 
 ## WORKBENCH-017 — فرم اطلاعات شخصی و عکس
 
@@ -432,7 +438,7 @@ Migration افزایشی `20260912173000_workbench_feedback` پس از Backup و
 
 - `COMPUTER_ID=PC-C` برای ادامه Reporting در محدوده ماژول‌های Web/API Reporting،
   اسناد `REPORTING-*` و اجرای محلی پورت 3000 مجاز شد. Workspace و Worktree اعلام‌شده
-  مقصد به‌ترتیب `F:/Projects/Rubi` و `F:/Projects/Rubi/.worktrees/reporting` هستند؛
+  مقصد به‌ترتیب `F:/Projects/Nora` و `F:/Projects/Nora/.worktrees/reporting` هستند؛
   وجود و Writable بودن آن‌ها باید روی خود PC-C تأیید شود.
 - مالکیت دائمی تغییر نکرد: PC-A مسئول Backend/grain و PC-B مسئول رابط مرکزی است؛ PC-C
   مجری تفویض‌شده P0 با Branch مستقل است. هیچ قفل Migration، Schema، Seed، Dependency،
@@ -579,7 +585,7 @@ Persisted Reservations supplier/insurance/voucher/cancellation workflow, version
 
 نسخهd711222 روی۳۱۰۰/PID27380 فعال شد؛ lint،۱۰تست مدل و build/typecheck موفق. راه‌اندازی در فاصله هماهنگ‌شده بین ثبت فرم‌های آژانس انجام شد. API و داده‌ها تغییر نکردند. PR165 پیش‌نویس است.
 
-## WORKBENCH-005 — میزکار بومی داخل پوسته روبی
+## WORKBENCH-005 — میزکار بومی داخل پوسته نورا
 
 در پاسخ به رد نسخه دمو توسط کاربر، مسیر مستقل `/workbench` با اجزای مشترک، تم روشن/تیره، حساب احرازشده، اعلان‌های مخاطب و فایل‌های شخصی Documents پیاده شد. منوی «میزکار من» مستقل از «وظایف و اتوماسیون» است؛ آدرس قدیمی دمو فقط به مسیر اصلی هدایت می‌شود. فایل HTML و پاسخ مستقل دمو حذف شدند. سرویس‌های فاقد ذخیره‌سازی مانند پیام خصوصی، یادداشت، علاقه‌مندی و کارتابل عمومی صریحاً غیرفعال‌اند. جزئیات و محدودیت‌ها در [WORKBENCH-005](tasks/WORKBENCH-005-NATIVE-SHELL.md) ثبت است.
 
@@ -649,7 +655,7 @@ Source d8de690 روی Web3100 / hr005-67cffe6403214472 و API4191 فعال و س
 
 ## B2B-DIRECTORY-ACTIONS-001 — نوار ثبت و اکسل صفحه آژانس‌ها
 
-نوار ثبت صفحه اول آژانس‌ها مطابق نمونه بخش مشتریان با همان Card، Button و فونت روبی اضافه شد: بازکردن فرم چهارمرحله‌ای، ورود از Excel، دانلود مستقیم قالب خالی و خروجی با فیلترهای فعلی. کنترل مجوزها و پیش‌نمایش ورود موجود حفظ شده‌اند. ۸۹ آزمون سازمان‌ها، lint/typecheck، Build چهل‌مسیره، بررسی کامپوننت در مرورگر و چهار Gate مربوط به Push موفق‌اند. پس از تحویل تسک اجرای لوکال، source963978d روی Web3100 و API4190 سالم فعال است؛ دیتابیس و فایل‌های موجود حفظ شده‌اند. جزئیات: [گزارش نوار ثبت](tasks/B2B-DIRECTORY-ACTIONS-001.md).
+نوار ثبت صفحه اول آژانس‌ها مطابق نمونه بخش مشتریان با همان Card، Button و فونت نورا اضافه شد: بازکردن فرم چهارمرحله‌ای، ورود از Excel، دانلود مستقیم قالب خالی و خروجی با فیلترهای فعلی. کنترل مجوزها و پیش‌نمایش ورود موجود حفظ شده‌اند. ۸۹ آزمون سازمان‌ها، lint/typecheck، Build چهل‌مسیره، بررسی کامپوننت در مرورگر و چهار Gate مربوط به Push موفق‌اند. پس از تحویل تسک اجرای لوکال، source963978d روی Web3100 و API4190 سالم فعال است؛ دیتابیس و فایل‌های موجود حفظ شده‌اند. جزئیات: [گزارش نوار ثبت](tasks/B2B-DIRECTORY-ACTIONS-001.md).
 
 ## B2B-DOSSIER-SALES-REMOVAL-001 — حذف عملیات فروش از پرونده ۳۶۰
 
@@ -673,7 +679,7 @@ Source d8de690 روی Web3100 / hr005-67cffe6403214472 و API4191 فعال و س
 
 ## B2B-FONT-001 — یکسان‌سازی فونت آژانس‌ها
 
-تعریف مستقل Tahoma از پوشش مشترک آژانس‌ها حذف شد و فهرست، پرونده و پاپ‌آپ‌ها روی ۳۱۰۰ فونت سراسری وزیرمتن روبی را دارند. فونت محاسبه‌شده عنوان، جدول، ورودی‌ها، انتخاب‌گرها و دکمه‌های پاپ‌آپ در مرورگر با بدنه برنامه یکسان است. Build تولیدی ۴۰ مسیر، ۸۷ آزمون سازمان‌ها و lint/typecheck موفق‌اند. اندازه و چیدمان قبلی حفظ است؛ بدون تغییر فونت سراسری، وابستگی، API یا داده. جزئیات: [B2B-FONT-001](tasks/B2B-FONT-001.md).
+تعریف مستقل Tahoma از پوشش مشترک آژانس‌ها حذف شد و فهرست، پرونده و پاپ‌آپ‌ها روی ۳۱۰۰ فونت سراسری وزیرمتن نورا را دارند. فونت محاسبه‌شده عنوان، جدول، ورودی‌ها، انتخاب‌گرها و دکمه‌های پاپ‌آپ در مرورگر با بدنه برنامه یکسان است. Build تولیدی ۴۰ مسیر، ۸۷ آزمون سازمان‌ها و lint/typecheck موفق‌اند. اندازه و چیدمان قبلی حفظ است؛ بدون تغییر فونت سراسری، وابستگی، API یا داده. جزئیات: [B2B-FONT-001](tasks/B2B-FONT-001.md).
 
 ## B2B-FORM-RUNTIME-001 — فرم چهارمرحله‌ای روی ۳۱۰۰ فعال است
 
@@ -752,7 +758,7 @@ PC-A added the real Tour definition/departure tab in Ticket Management. Template
 
 QA: 22 isolated PostgreSQL/domain tests passed including concurrent tour-versus-standalone capacity and concurrent idempotent departure creation; 58 targeted Sales/Master tests and 291 final affected Web tests passed. Full Web baseline: 900 passed, plus the new tour provenance test. Full API run: 948 passed, 83 optional skipped, one unrelated Customers hook timeout; all 13 tests in that file passed on isolated rerun. Contracts60 and Database73 tests passed; affected lint/typecheck and API/Web production builds passed (36 Web routes). Synthetic browser QA verifies themed selection, hotel city filtering, save, repeat prefill, Sales offer linkage and desktop/mobile width; no live authenticated business mutation is claimed.
 
-All43 migrations passed on an empty DB and the new additive migration passed on a restored backup. After a fresh private backup, only 20260908150000_tour_packages was applied to local rubi; existing record counts and historical migration checksums stayed unchanged. No live seed or permission change. Web3100/API4000 now serve the build; login/pages/health/new bundle HTTP200, protected tour routes401 without a session, credentialed CORS204. Existing Documents keys/storage and PDF browser/font environment preserved. Previous Web build and private backups remain under ignored tmp. Commits fd325c7 / 7844907 / 3949878; local-only, existing remote publication gate unchanged.
+All43 migrations passed on an empty DB and the new additive migration passed on a restored backup. After a fresh private backup, only 20260908150000_tour_packages was applied to local nora; existing record counts and historical migration checksums stayed unchanged. No live seed or permission change. Web3100/API4000 now serve the build; login/pages/health/new bundle HTTP200, protected tour routes401 without a session, credentialed CORS204. Existing Documents keys/storage and PDF browser/font environment preserved. Previous Web build and private backups remain under ignored tmp. Commits fd325c7 / 7844907 / 3949878; local-only, existing remote publication gate unchanged.
 
 ## SIDEBAR-LABELS-DOTS-0908 — COMPLETE_LOCAL
 
@@ -788,8 +794,8 @@ PC-A applied the owner-approved 7 sidebar groups to actual Web3100, retaining al
 
 ## HR-007 — منابع انسانی به‌روز روی ۳۱۰۰ — آماده بررسی
 
-- `PC-B` روی `codex/pc-b-hr3100-current` و پایه `30d67ec`: پیاده‌سازی HR-005/HR-006 با نسخه فعلی روبی سازگار شد؛ چهار شرکت، هدر، پروفایل، اعلان‌های عمومی و امنیت اسناد حفظ شدند. زنگوله فقط یک پنجره دارد و اعلان‌های HR را از API خودش دریافت می‌کند.
-- داده‌های موجود در کپی مستقل `rubi_hr_current_20260908` و فایل‌های اسناد در Snapshot جدا حفظ شدند؛ API۴۰۰۰، کپی یکپارچه قبلی و دیتابیس اصلی HR تغییر نکردند. تمام ۳۵ Migration از قبل اعمال شده‌اند.
+- `PC-B` روی `codex/pc-b-hr3100-current` و پایه `30d67ec`: پیاده‌سازی HR-005/HR-006 با نسخه فعلی نورا سازگار شد؛ چهار شرکت، هدر، پروفایل، اعلان‌های عمومی و امنیت اسناد حفظ شدند. زنگوله فقط یک پنجره دارد و اعلان‌های HR را از API خودش دریافت می‌کند.
+- داده‌های موجود در کپی مستقل `nora_hr_current_20260908` و فایل‌های اسناد در Snapshot جدا حفظ شدند؛ API۴۰۰۰، کپی یکپارچه قبلی و دیتابیس اصلی HR تغییر نکردند. تمام ۳۵ Migration از قبل اعمال شده‌اند.
 - نسخه جدید روی `localhost:3100/hr` با API۴۱۹۰ فعال است. ورود واقعی، چهار شرکت، پروفایل/MFA، زنگوله واحد، شش کارمند، هدایت آدرس قدیمی و بارگذاری مجدد روی هر دو میزبان `localhost` و `127.0.0.1` در پورت ۳۱۰۰ موفق‌اند.
 - lint/typecheck/build، آزمون‌های Web/API/Contracts و ۱۹ سناریوی PostgreSQL موفق‌اند؛ ۱۴ مقصد HR، فرم‌ها، خروجی‌های واقعی و نمایش موبایل بررسی شدند. جزئیات و فرمان اجرای همین نسخه در `docs/tasks/HR-007.md` ثبت است. هیچ Merge انجام نشده است.
 
@@ -824,7 +830,7 @@ PC-A applied the owner-approved 7 sidebar groups to actual Web3100, retaining al
 
 ## NOTIFICATIONS-001 — مرکز اعلان تغییرات — ادغام‌شده
 
-- `PC-B` روی Branch مستقل `codex/pc-b-global-change-notifications` زنگوله App Shell را به Notification Center سراسری Web تبدیل کرد. هر Mutation موفق `POST/PUT/PATCH/DELETE` به API تنظیم‌شده Rubi پس از موفقیت Response، یک اعلان فارسی شامل نوع عملیات، بخش، زمان و لینک داخلی می‌سازد؛ عملیات ناموفق، Auth، Preview، Search، Validation و Export اعلان تغییر تولید نمی‌کنند.
+- `PC-B` روی Branch مستقل `codex/pc-b-global-change-notifications` زنگوله App Shell را به Notification Center سراسری Web تبدیل کرد. هر Mutation موفق `POST/PUT/PATCH/DELETE` به API تنظیم‌شده Nora پس از موفقیت Response، یک اعلان فارسی شامل نوع عملیات، بخش، زمان و لینک داخلی می‌سازد؛ عملیات ناموفق، Auth، Preview، Search، Validation و Export اعلان تغییر تولید نمی‌کنند.
 - اعلان‌ها Payload درخواست یا PII نگه نمی‌دارند و در Browser Profile با سقف ۶۰ رکورد ذخیره می‌شوند. Badge خوانده‌نشده، فهرست RTL، Empty State، خواندن تکی/همه، پاک‌کردن خوانده‌شده‌ها، Sync بین Tabها و fallback امن Storage تکمیل است. اتصال DOCUMENTS-007، اعلان اسناد را از Backend پایدار می‌گیرد و برای آن مسیر اعلان مرورگری تکراری نمی‌سازد.
 - PR #104 با همه Gateهای CI سبز روی `develop` ادغام شد. پیگیری DOCUMENTS-007 قرارداد، Persistence و API اعلان‌های اسناد را به همین مرکز اضافه می‌کند؛ Dependency/Lockfile تغییر نکرده است.
 
@@ -1012,14 +1018,14 @@ Individual agreed package totals per passenger/currency are persisted with exact
 
 ## فعال‌شدن نسخه یکپارچه محلی — 2026-09-06
 
-- ارتقا روی کپی بازیابی‌شده بکاپ موفق بود؛ پس از بکاپ تازه، فقط Migration افزایشی آژانس‌ها روی rubi اجرا شد. checksumهای قبلی و شمار مشتری/کاربر/مدرک حفظ شدند؛ هیچ reset یا Seed عملیاتی انجام نشد.
+- ارتقا روی کپی بازیابی‌شده بکاپ موفق بود؛ پس از بکاپ تازه، فقط Migration افزایشی آژانس‌ها روی nora اجرا شد. checksumهای قبلی و شمار مشتری/کاربر/مدرک حفظ شدند؛ هیچ reset یا Seed عملیاتی انجام نشد.
 - وب ۳۱۰۰ و API۴۰۰۰ اکنون از شاخه یکپارچه اجرا می‌شوند و پاسخ HTTP موفق دارند. کلید و مسیر مدارک قبلی محفوظ است. ریشه تاریخی اختلاف checksum همچنان ثبت است، اما آزمون ارتقای کپی مانع اجرای محلی را رفع کرد.
 
 ## یکپارچه‌سازی محلی — 2026-09-06
 
 - نسخه آخر فروش، develop، آژانس، مارکتینگ، منابع انسانی، تقویم و بازیابی پاسپورت در شاخه مستقل codex/pc-a-local-integration-0906 ترکیب شدند. شاخه‌های اصلی، main/develop و ریموت تغییر نکردند.
 - lint، typecheck، تست کامل و Build موفق؛ ۳۴ Migration روی دیتابیس خالی و Seed دوگانه موفق. جزئیات و آزمون‌های اجرا‌نشده در docs/tasks/LOCAL-INTEGRATION-0906.md ثبت است.
-- اجرای نسخه جدید متوقف است: دو checksum قدیمی در دیتابیس rubi با تاریخچه Git تطبیق ندارند. بکاپ محلی تهیه شد؛ Migration عملیاتی، Seed یا جابه‌جایی سرور انجام نشده و نسخه جاری محفوظ است.
+- اجرای نسخه جدید متوقف است: دو checksum قدیمی در دیتابیس nora با تاریخچه Git تطبیق ندارند. بکاپ محلی تهیه شد؛ Migration عملیاتی، Seed یا جابه‌جایی سرور انجام نشده و نسخه جاری محفوظ است.
 
 ## ترکیب مسافر و چیدمان نسخه‌دار هتل — 2026-09-06
 
@@ -1185,7 +1191,7 @@ Individual agreed package totals per passenger/currency are persisted with exact
 ## MARKETING-001E — بازگردانی ارتباطات مارکتینگ — آماده بررسی
 
 - `PC-B` روی Branch مستقل `codex/pc-b-marketing-communications-restore` بخش «ارتباطات» را به Hub، Route مستقیم و Breadcrumb پویا برگرداند. چهار تب «ارسال پیام»، «ارسال‌های زمان‌بندی‌شده»، «تاریخچه ارسال‌ها» و «قالب‌های پیام» فعال‌اند و «عملکرد کانال‌ها» مطابق درخواست قبلی حذف باقی مانده است.
-- فرم ارسال با انتخاب کمپین، مخاطب، قالب، کانال، روش و تاریخ ارسال کار می‌کند و ورودی‌های لازم را اعتبارسنجی می‌کند. Action «ارسال پیام» فقط در تب ارسال و Action «قالب جدید» فقط در تب قالب‌ها دیده می‌شود. جدول‌ها داده آزمایشی مستقل، فیلتر تاریخ Rubi، خروجی Excel و عملیات رکورد دارند؛ هیچ ارسال واقعی یا نگهداری PII انجام نمی‌شود.
+- فرم ارسال با انتخاب کمپین، مخاطب، قالب، کانال، روش و تاریخ ارسال کار می‌کند و ورودی‌های لازم را اعتبارسنجی می‌کند. Action «ارسال پیام» فقط در تب ارسال و Action «قالب جدید» فقط در تب قالب‌ها دیده می‌شود. جدول‌ها داده آزمایشی مستقل، فیلتر تاریخ Nora، خروجی Excel و عملیات رکورد دارند؛ هیچ ارسال واقعی یا نگهداری PII انجام نمی‌شود.
 - Follow-up مالک تکمیل شد: «سناریو جدید» با فیلدهای واقعی و ثبت فوری، ویرایش مشخصات اتوماسیون و افزودن مرحله در سازنده فعال‌اند. دکمه‌های افزودن مخاطب کمپین، منبع ورود، کد تخفیف و پیشنهاد ویژه کنار خروجی Excel هم‌راستا شده‌اند.
 - فرم محتوای جدید و Upload متصل به Documents اکنون ده نوع محتوای مارکتینگ و دو انتخاب «نیایش سیر سحر» و «جهان باستان» دارد؛ شناسه‌های مجاز نوع سند/دسته/مالک/شعبه همچنان از Options احراز‌شده Documents گرفته می‌شوند و هیچ قرارداد یا Schema تغییر نکرده است.
 - ۱۸/۱۸ تست هدفمند مارکتینگ، lint کامل Web، typecheck کامل Web و Production Build با ۳۴ Route پاس شدند. Smoke لوکال Hub و مسیر ارتباطات پاسخ ۲۰۰ و محتوای مورد انتظار را تأیید کرد. یک تست قدیمی Customer به‌علت تطبیق متن LF روی Checkout ویندوز در اجرای کامل محلی شکست دارد و خارج از محدوده این Task دست‌نخورده مانده است.
@@ -1220,7 +1226,7 @@ Individual agreed package totals per passenger/currency are persisted with exact
 - فهرست‌های عملیاتی و اشتراک‌گذاری تا انتخاب فیلتر خالی می‌مانند. اشتراک‌گذاری جست‌وجو و فیلتر فشرده دارد؛ پاک‌سازی با آیکون سطل قرمز انجام می‌شود و Export رابط حذف شده است.
 - ویرایش، حذف دائمی، ناقص/کامل، آرشیو/بازیابی و عملیات گروهی به API و Persistence واقعی متصل‌اند. حذف دائمی با مجوز، دلیل، تأیید کد، کنترل نسخه و رد Legal Hold انجام می‌شود و تمام رکوردهای وابسته و فایل ذخیره‌شده را پاک می‌کند.
 - مدیریت آرشیو به چهار مسیر واقعی مدارک ناقص، اسناد تحت مسئولیت کاربر، نگهداری/انقضا و بازیابی اسناد آرشیوشده محدود شد. «پیگیری» نمای کلی و همه نماهای شخصی نیز به Queryهای واقعی وصل‌اند.
-- تقویم فرم‌های اسناد دیگر Dropdown ماه/سال ندارد: ماه‌ها و سال‌ها در شبکه‌های ۱۲تایی هم‌تم Rubi انتخاب می‌شوند و پیمایش بازه سال، شمسی/میلادی و ذخیره Gregorian ISO حفظ شده است. ۵۹۸ تست Web، lint، typecheck و Production Build موفق و انتخاب واقعی `۱۴۰۶ / مهر / ۱` در مرورگر تأیید شد.
+- تقویم فرم‌های اسناد دیگر Dropdown ماه/سال ندارد: ماه‌ها و سال‌ها در شبکه‌های ۱۲تایی هم‌تم Nora انتخاب می‌شوند و پیمایش بازه سال، شمسی/میلادی و ذخیره Gregorian ISO حفظ شده است. ۵۹۸ تست Web، lint، typecheck و Production Build موفق و انتخاب واقعی `۱۴۰۶ / مهر / ۱` در مرورگر تأیید شد.
 - Migration افزایشی `20260903110000_documents_incomplete_status` روی PostgreSQL خالی و دیتابیس محلی اعمال شد. ۷ Fixture تصویری آماده مشاهده‌اند؛ Full lint/typecheck/build و ۱٬۴۷۰ تست موفق است و ۷۰ تست PostgreSQL اختیاری skip شدند. Smoke مرورگر بدون تغییر داده تمام رفتارهای اصلی را تأیید کرد.
 - PR [#89](https://github.com/nirvanamahlou/Rubi/pull/89) با Merge Commit `1e5c55e3b2d9dcc58c407d0ca205abed86b4c605` وارد `develop` شد؛ `main` دست‌نخورده ماند و Task برابر `DONE/MERGED` است. جزئیات: `docs/tasks/DOCUMENTS-004-OPERATIONS.md`.
 
@@ -1234,10 +1240,10 @@ Individual agreed package totals per passenger/currency are persisted with exact
 
 - `PC-B` روی `codex/pc-b-marketing-inner-pages-parity` صفحات عمومی داخل سکشن‌ها را با
   ۴۵ زیرصفحه تخصصی همان مرجع جایگزین کرد؛ داشبورد کامل، ۹ تب جزئیات کمپین و همه داده‌های
-  آزمایشی مرجع نیز وارد Workspace واقعی Rubi شدند.
+  آزمایشی مرجع نیز وارد Workspace واقعی Nora شدند.
 - جست‌وجو، فیلتر، صفحه‌بندی، سگمنت‌ساز، پیش‌نمایش زنده پیام، کتابخانه محتوا، پیشنهادها،
   سفر مشتری، گزارش‌های ده‌گانه و تنظیمات تعاملی‌اند. تقویم و فیلترها فقط از کامپوننت‌های
-  مشترک Rubi استفاده می‌کنند و هیچ Persistence، API، ارسال واقعی یا اثر مالی ندارند.
+  مشترک Nora استفاده می‌کنند و هیچ Persistence، API، ارسال واقعی یا اثر مالی ندارند.
 - Web lint و `599/599` تست، Full lint با ۶ Task و Full test با `1,464` تست موفق و ۷۰
   تست PostgreSQL اختیاری skip شدند. Browser QA همه تب‌ها، فرم ۹مرحله‌ای و Mobile
   `390×844` را بدون Overflow یا Console warning/error تأیید کرد.
@@ -1536,7 +1542,7 @@ Individual agreed package totals per passenger/currency are persisted with exact
 
 - مرحله جاری: **Advanced Master Data Management Full-Stack**
 - وضعیت: **انتشار اصلاحات محلی در Sliceهای مستقل و تجمیع نسخه اجرایی کامل**
-- Repository: `Rubi`، Remote با نام `origin`
+- Repository: `Nora`، Remote با نام `origin`
 - Baseline: `origin/develop@b6da5d6300716a189958bc37d31ca195f0304dc5` شامل Merge PR #24
 - شاخه جاری: `codex/pc-b-master-data-demo-fixtures` از `codex/pc-b-master-data-list-visibility`، شامل نسخه تجمیعی و اصلاح نمایش فهرست؛ Runtime برنامه تغییر نکرده و داده آزمایشی به DB لوکال اضافه شده است.
 - Work Item جاری: `MASTER-003-LOCAL-DEMO-DATA` روی والد PR #55؛ نسخه تجمیعی و Sliceهای انتشار قبلی حفظ شده‌اند.
@@ -1551,7 +1557,7 @@ Individual agreed package totals per passenger/currency are persisted with exact
 - Migration افزایشی `20260831120000_master_data_transport_forms`: هفت پرچم بررسی با Constraint و جدول ارتباطی قطار/امکانات با FK محدودکننده؛ هر ۲۱ Migration روی PostgreSQL 18 موقت، Seed دوبار و ۹ آزمون واقعی موفق شدند. فقط دیتابیس موقت آزمون حذف شد؛ دیتابیس اصلی Deploy نشد.
 - کنترل کیفیت: API ۲۶۵، Web ۲۰۳، Contracts ۱۴ و Database ۵۵ تست موفق؛ Prisma format/validate/generate، typecheck و Production Build API/Web موفق. lint API/Database و کل ماژول Master Data وب موفق؛ lint سراسری Web فقط خطا/هشدار قبلی DatePicker مشترک را دارد و آن فایل دست‌نخورده است.
 - اتصال واقعی Documents/Integrations، شمارش انواع ناوگان و ظرفیت عملیاتی همچنان منتظر قرارداد مالک هستند. مرجع لوگوی قبلی فقط‌خواندنی نمایش داده می‌شود؛ UUID جدید تاییدنشده پذیرفته نمی‌شود. مقدار، Connection، Secret یا داده ساختگی ماکاپ Seed نشد.
-- Checkout مستقل `C:/Users/admin/Rubi-transport-forms` از `2088010` برای حفظ تغییرات محلی حذف امن، فرم ترمینال/تور/سفر و سایر کارهای هم‌زمان استفاده شد. Health API و Login نسخه اصلی ۲۰۰ هستند؛ Smoke مرورگر احراز‌شده نسخه جدید ادعا نمی‌شود. ادغام در Checkout مشترک و Deploy محلی نیازمند هماهنگی جداست.
+- Checkout مستقل `C:/Users/admin/Nora-transport-forms` از `2088010` برای حفظ تغییرات محلی حذف امن، فرم ترمینال/تور/سفر و سایر کارهای هم‌زمان استفاده شد. Health API و Login نسخه اصلی ۲۰۰ هستند؛ Smoke مرورگر احراز‌شده نسخه جدید ادعا نمی‌شود. ادغام در Checkout مشترک و Deploy محلی نیازمند هماهنگی جداست.
 - سه قفل Migration/Contract/Docs زیر `PC-B/MASTER-003` فعال باقی می‌مانند؛ والد #45 و کل زنجیره Stacked، Customers، Seed و Dependency/Lockfile تغییر نکردند. قبل از والدها Merge نشود. گزارش و جدول فیلدها: `docs/tasks/MASTER-003R-TRANSPORT-FORMS.md`.
 
 ### `MASTER-003Q-PARTNER-FORMS` — PC-B — `READY_FOR_REVIEW`
@@ -2181,7 +2187,7 @@ Individual agreed package totals per passenger/currency are persisted with exact
 - هیچ manifest، lockfile، Prisma، Migration یا فایل IAM تغییر نکرده است.
 - Consumer requirementهای IAM در `docs/tasks/MASTER-001.md` ثبت شده‌اند؛ مصرف
   `AuthenticatedActor`، `IamPermissionCode` و `BranchReference` اکنون از قرارداد عمومی
-  `@rubi/contracts` انجام می‌شود.
+  `@nora/contracts` انجام می‌شود.
 
 ## وضعیت Baseline مشترک
 
@@ -2247,7 +2253,7 @@ Individual agreed package totals per passenger/currency are persisted with exact
 ## Handoff نهایی Sprint اول
 
 1. PR شماره ۵ با Merge Commit `50eacca` وارد `develop` شده و قرارداد عمومی IAM در دسترس است.
-2. قرارداد `@rubi/contracts` و جزئیات مصرف در `docs/IAM.md` مبنای PC-B است؛ دسترسی مستقیم
+2. قرارداد `@nora/contracts` و جزئیات مصرف در `docs/IAM.md` مبنای PC-B است؛ دسترسی مستقیم
    به جدول‌ها یا repository داخلی IAM ممنوع می‌ماند.
 3. PR شماره ۶ با Merge Commit `cda0f9a` وارد `develop` شده است؛ Foundation بدون
    Persistence تکمیل و Persistence واقعی به `MASTER-002` منتقل شده است.
@@ -2255,7 +2261,7 @@ Individual agreed package totals per passenger/currency are persisted with exact
    Frontend منوی ۱۷ بخشی را وارد `develop` کرده‌اند.
 5. قفل‌های Migration، Dependency/Lockfile و shared-contract متعلق به `IAM-001` و قفل
    اسناد مرکزی متعلق به `ARCH-001` در 2026-08-23 آزاد شدند.
-6. قرارداد عمومی IAM از `@rubi/contracts` مصرف می‌شود؛ `BranchReference`،
+6. قرارداد عمومی IAM از `@nora/contracts` مصرف می‌شود؛ `BranchReference`،
    `AuthenticatedActor` و `IamPermissionCode` (از جمله `iam.audit.read`) عمومی‌اند و
    Audit با actor context عمومی ثبت می‌شود. مدل/Repository داخلی IAM یا Audit قابل
    دسترسی مستقیم برای Master Data نیست.
@@ -2290,7 +2296,7 @@ Individual agreed package totals per passenger/currency are persisted with exact
 Port 3100 composes Sales 385efaa (includes 3d3095e), sidebar efe6287 and Reservations 0946bdd. Main reservations route uses colored queue; original processing retained at /reservations/processing. Source worktrees preserved. API/Web builds, 41 navigation/reservation tests and targeted lint passed. Existing DB 55432 restarted; private pre-update pg_dump retained inside container; 14 existing non-destructive migrations applied. Official Sales/Reservations permissions synchronized to existing administrator. Stored local login and both API lists returned 200. No new migration/dependency or production deployment.
 
 ### Local database correction — 2026-09-09
-The 55432 preview database was the wrong dataset for the user's current work (2 customers, 0 contracts). Runtime now uses the original root .env database localhost:5432/rubi, with its matching contact keys explicitly loaded. Read-only verification found 350 customers and 5 contracts; all 43 migrations already applied, no main-database migration or data changes. Contact integrity check: 542 valid, 4 failed; those records remain unchanged. API remains loopback-only. Previous preview database and its backup are preserved. Login may need renewal after the database/session change.
+The 55432 preview database was the wrong dataset for the user's current work (2 customers, 0 contracts). Runtime now uses the original root .env database localhost:5432/nora, with its matching contact keys explicitly loaded. Read-only verification found 350 customers and 5 contracts; all 43 migrations already applied, no main-database migration or data changes. Contact integrity check: 542 valid, 4 failed; those records remain unchanged. API remains loopback-only. Previous preview database and its backup are preserved. Login may need renewal after the database/session change.
 
 ## RESERVATIONS-ACTION-PANEL-003 — PC-A
 Implemented the selected option 3 on the isolated local branch: twenty buttons grouped in a sticky right panel; all disabled until an authorized contract is selected. Each opens the standard accessible Dialog with selected-contract context. Changing selection/access unmounts the previous dialogs. Available overview/passenger/customer projections are read-only; unspecified forms explicitly remain pending with no write controls. Small screens stack the panel above the list. No API, credentials, database or migration changes. 34 reservation tests passed.
@@ -2494,4 +2500,3 @@ Prisma validate/format و typecheck/build دیتابیس، API و Web موفق �
 ## LOCAL-ALL-SECTIONS-3100-0913 — ACTIVE
 
 Combined develop, latest published Customer Affairs forms/reports, Workbench performance and Finance inbox are active at Web3100/API4191. Code/launcher commit 2fd10a9f, Web build LYH1PTQ_i1saQILyrG74V. 98 targeted tests, scoped lint, sequential API typecheck, full build and final HTTP smoke passed. Existing database and storage retained; no migration/seed/role assignment. Port4190 was replaced because Fetch restricts it. See tasks/LOCAL-ALL-SECTIONS-3100-0913.md.
-

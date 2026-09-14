@@ -1,7 +1,7 @@
 import {
   DOCUMENT_DOMAIN_CODES,
   type DocumentRelationV1,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import { describe, expect, it } from 'vitest';
 
 import {

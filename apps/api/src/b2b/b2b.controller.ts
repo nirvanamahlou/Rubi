@@ -35,7 +35,7 @@ import {
   DeleteB2bRecordDto,
 } from './b2b.dto';
 import { B2bService } from './b2b.service';
-import type { B2bCooperationRole } from '@rubi/contracts';
+import type { B2bCooperationRole } from '@nora/contracts';
 import { B2bAgreementWorkflowService } from './b2b-agreement-workflow.service';
 // Runtime classes are required by ValidationPipe.
 // eslint-disable-next-line @typescript-eslint/consistent-type-imports
@@ -45,7 +45,7 @@ import {
 } from './b2b-agreement-workflow.dto';
 
 @ApiTags('B2B Agencies')
-@ApiCookieAuth('rubi_access')
+@ApiCookieAuth('nora_access')
 @UseGuards(AuthGuard, PermissionGuard)
 @Controller('b2b/agencies')
 export class B2bController {

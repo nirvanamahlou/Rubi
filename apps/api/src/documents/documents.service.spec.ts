@@ -1,6 +1,6 @@
 import { Readable } from 'node:stream';
 
-import type { AuthenticatedActor } from '@rubi/contracts';
+import type { AuthenticatedActor } from '@nora/contracts';
 import {
   BadRequestException,
   ConflictException,

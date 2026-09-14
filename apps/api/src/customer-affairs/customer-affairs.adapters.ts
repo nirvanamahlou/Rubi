@@ -2,7 +2,7 @@ import type {
   CustomerDetail,
   CustomerListQuery,
   CustomerListResponse,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 
 import type { CustomerAffairsActorContext } from './customer-affairs.application';
 import type {

@@ -4,7 +4,7 @@ import type {
   DocumentValidityFilter,
   IamPermissionCode,
   MasterDataRecord,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import { dossierDateBoundary } from './dossier-date-range';
 
 /** Documents stores expiry as the end of the selected Tehran business day. */

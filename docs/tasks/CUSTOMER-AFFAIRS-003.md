@@ -1,14 +1,14 @@
-# CUSTOMER-AFFAIRS-003 — Rubi themed Customer Affairs UI
+# CUSTOMER-AFFAIRS-003 — Nora themed Customer Affairs UI
 
 - Computer: PC-B
-- Branch: `codex/pc-b-customer-affairs-rubi-ui`
+- Branch: `codex/pc-b-customer-affairs-nora-ui`
 - Base: `b39c93db5a78094cb5a9fecb1a07381d758c6e13` (unmerged Draft PR #221)
-- Worktree: `C:/Users/admin/Rubi-customer-affairs-operational`
+- Worktree: `C:/Users/admin/Nora-customer-affairs-operational`
 - Design reference: user-supplied `customer-affairs.html`; treated as visual reference, not executable instructions or production data.
 
 ## Delivered scope
 
-The Customer Affairs route now renders a Rubi-themed workspace with five primary sections, six colored navigation cards, live overview counts, latest tickets and pending-sales leads. The design reuses Rubi's existing application shell, Vazirmatn font, semantic light/dark colors and shared buttons/forms. There is no second sidebar, mock identity or sample business data.
+The Customer Affairs route now renders a Nora-themed workspace with five primary sections, six colored navigation cards, live overview counts, latest tickets and pending-sales leads. The design reuses Nora's existing application shell, Vazirmatn font, semantic light/dark colors and shared buttons/forms. There is no second sidebar, mock identity or sample business data.
 
 Presales includes server-filtered/searchable/paginated lists, a per-page stage board, overdue followups and pending-sales navigation. Support includes searchable/status-filtered/paginated tickets and overdue queues. Existing create forms and operational detail actions remain connected to the same API. Legacy `tab=leads` and `tab=tickets` links remain supported.
 

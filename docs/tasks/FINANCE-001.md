@@ -118,4 +118,4 @@ Workspace اصلی شامل پنج Tab داشبورد، ۳۰ بخش، عملیا
 - Prisma Model، Migration، Seed، Dependency و Lockfile: بدون تغییر
 - browser visual QA: ابزار Browser به‌دلیل ACL محیط Windows اجرا نشد و route احرازنشده
   به login redirect شد؛ HTTP route و Production Build تایید شدند.
-- dev server موقت Rubi روی پورت ۳۱۰۰ متوقف شد.
+- dev server موقت Nora روی پورت ۳۱۰۰ متوقف شد.

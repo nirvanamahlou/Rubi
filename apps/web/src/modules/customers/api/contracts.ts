@@ -1,6 +1,6 @@
-import type { CustomerListQuery } from '@rubi/contracts';
+import type { CustomerListQuery } from '@nora/contracts';
 
-export * from '@rubi/contracts';
+export * from '@nora/contracts';
 
 export function normalizeCustomerListQuery(
   input: Partial<CustomerListQuery>,

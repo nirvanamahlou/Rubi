@@ -8,7 +8,7 @@ import type {
   AuthenticatedActor,
   HrDirectoryResponse,
   HrFormReferences,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import { DatabaseService } from '../database/database.service';
 import { IamService } from '../iam/iam.service';
 import { MasterHrDirectory } from '../master-data/master-hr-directory';

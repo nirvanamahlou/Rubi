@@ -61,7 +61,7 @@ describe('customer affairs workspace contract', () => {
   it('uses the public API contract and stays detached from persistence', () => {
     const source = moduleSources(moduleRoot);
     expect(source).not.toMatch(
-      /@rubi\/database|PrismaClient|modules\/customers|modules\/master-data|iam\//,
+      /@nora\/database|PrismaClient|modules\/customers|modules\/master-data|iam\//,
     );
     expect(source).toContain('/customer-affairs');
     expect(source).toContain("credentials: 'include'");

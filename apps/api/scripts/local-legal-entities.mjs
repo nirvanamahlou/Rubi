@@ -27,7 +27,7 @@ try {
     throw new Error('Choose either --check or --apply.');
   if (!process.env.DATABASE_URL)
     loadEnvFile(
-      process.env.RUBI_API_ENV_FILE ?? new URL('../.env', import.meta.url),
+      process.env.NORA_API_ENV_FILE ?? new URL('../.env', import.meta.url),
     );
   assertLocalDatabase(process.env.DATABASE_URL ?? '', process.env.NODE_ENV);
   if (apply) {
@@ -41,7 +41,7 @@ try {
       throw new Error('The backup must be a non-empty file.');
   }
   const require = createRequire(import.meta.url);
-  const { LEGAL_ENTITY_CODES } = require('@rubi/contracts');
+  const { LEGAL_ENTITY_CODES } = require('@nora/contracts');
   if (
     !['JAHAN_ACADEMIA', 'GHESATI_RO'].every((code) =>
       LEGAL_ENTITY_CODES.includes(code),
@@ -50,7 +50,7 @@ try {
     throw new Error(
       'Build the current four-company public contract before applying.',
     );
-  const { createDatabaseClient } = require('@rubi/database');
+  const { createDatabaseClient } = require('@nora/database');
   database = createDatabaseClient();
   const result = apply
     ? await createMissingCompanies(database, value('--actor-id'))

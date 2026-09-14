@@ -23,7 +23,7 @@ import type {
   DocumentDetailResponseV1,
   DocumentListResponseV1,
   DocumentOptionsResponseV1,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 
 import { getPublicApiBaseUrl } from '../../../lib/environment';
 import { serializeMasterDataListQuery } from './contracts';

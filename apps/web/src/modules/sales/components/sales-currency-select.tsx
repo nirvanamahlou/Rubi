@@ -3,7 +3,7 @@
 import type {
   MasterDataRecord,
   SalesContractCreateRequest,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import { SearchableReference } from './searchable-reference';
 
 export type SalesCurrency = Pick<MasterDataRecord, 'code' | 'name' | 'status'>;

@@ -45,7 +45,7 @@ forbidden، success و conflict پوشش داده شده‌اند.
 
 ## قرارداد و API
 
-قرارداد versioned عمومی `customers.v2` از `@rubi/contracts` منتشر شده است. مسیرهای
+قرارداد versioned عمومی `customers.v2` از `@nora/contracts` منتشر شده است. مسیرهای
 فعال زیر پشت `/api/v1/customers` قرار دارند:
 
 - فهرست و ایجاد Customer
@@ -65,7 +65,7 @@ Master Data فقط از قرارداد عمومی و FKهای تعریف‌شد�
 byte-for-byte دست‌نخورده است و Migration سخت‌سازی جدید فقط additive است و DROP،
 TRUNCATE، DELETE یا UPDATE ندارد. Seed فقط fixtureهای ساختگی و non-login ایجاد می‌کند و
 دو اجرای متوالی آن idempotent بود؛ شمارش پایدار Customer/Contact/Address/Relationship
-برابر `2/1/1/1` باقی ماند. هیچ Volume یا داده موجود Rubi تغییر یا حذف نشد.
+برابر `2/1/1/1` باقی ماند. هیچ Volume یا داده موجود Nora تغییر یا حذف نشد.
 
 ## کنترل‌های تحویل
 

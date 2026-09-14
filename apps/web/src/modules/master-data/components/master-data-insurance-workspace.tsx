@@ -11,7 +11,7 @@ import type {
   MasterDataResource,
   MasterDataStatus,
   MasterInsuranceSummary,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import {
   ArrowRight,
   Banknote,

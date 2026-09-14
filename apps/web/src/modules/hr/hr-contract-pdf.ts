@@ -71,7 +71,7 @@ export function buildPdfFromJpeg(
   imageWidth: number,
   imageHeight: number,
 ): Uint8Array {
-  const header = ascii('%PDF-1.4\n%RUBI\n');
+  const header = ascii('%PDF-1.4\n%NORA\n');
   const pageContent = ascii('q 595 0 0 842 0 0 cm /Im0 Do Q\n');
   const objects = [
     ascii('1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n'),
@@ -175,7 +175,7 @@ export async function createContractPdf(
   const save = () => {
     context.fillStyle = '#71839a';
     draw(
-      `منابع انسانی Rubi · صفحه ${(pages.length + 1).toLocaleString('fa-IR')}`,
+      `منابع انسانی Nora · صفحه ${(pages.length + 1).toLocaleString('fa-IR')}`,
       1140,
       1685,
       20,

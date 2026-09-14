@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { HrWorkspace } from '@/modules/hr/hr-workspace';
-export const metadata: Metadata = { title: 'منابع انسانی | Rubi' };
+export const metadata: Metadata = { title: 'منابع انسانی | Nora' };
 export default async function Page({
   searchParams,
 }: {

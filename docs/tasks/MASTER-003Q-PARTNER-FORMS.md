@@ -28,7 +28,7 @@ Migration افزایشی، بدون Drop/Reset/Seed داده عملیاتی. ب�
 ## کنترل کیفیت
 
 - Frozen install، Prisma format/validate/generate موفق. تمام ۲۰ Migration روی PostgreSQL 18 خالی اجرا شدند؛ Seed دوبار بدون ساخت Supplier/Broker نمونه. چهار آزمون DB برای ثبت/ویرایش/پاک‌کردن، Version، Mask/Audit، FK مرکب، جلوگیری از حذف/انتقال مخاطب استفاده‌شده و Constraint نوع شخصیت موفق‌اند.
-- Migration جدید روی دیتابیس محلی Rubi نیز deploy شد، بدون Reset یا Seed داده عملیاتی. دیتابیس‌های موقت با نام تصادفیِ اعتبارسنجی‌شده پس از آزمون حذف شدند؛ رکورد کاربر حذف نشد.
+- Migration جدید روی دیتابیس محلی Nora نیز deploy شد، بدون Reset یا Seed داده عملیاتی. دیتابیس‌های موقت با نام تصادفیِ اعتبارسنجی‌شده پس از آزمون حذف شدند؛ رکورد کاربر حذف نشد.
 - API جاری: ۳۸۴ موفق/۱۱ skipped؛ Web جاری: ۲۴۸ موفق؛ Contract: ۱۴؛ Database: ۵۳. این اعداد شامل اصلاحات محلی هم‌زمان‌اند.
 - نسخه مستقل فقط همین Slice روی والد #44: API ۲۵۴ موفق/۴ آزمون opt-in DB skipped در اجرای عادی؛ Web ۱۸۶ موفق شامل ۶ آزمون SSR فرم واقعی؛ typecheck و Production Build هر دو برنامه، Web/webpack با ۳۴ صفحه، موفق. چهار آزمون opt-in DB جداگانه اجرا و موفق شدند.
 - lint کل API و فایل‌های Web همین تغییر موفق؛ lint کلی Web به خطا و هشدار از پیش موجود در `apps/web/src/components/ui/date-picker.tsx:67,99` محدود است؛ فایل خارج Scope دست‌نخورده ماند.

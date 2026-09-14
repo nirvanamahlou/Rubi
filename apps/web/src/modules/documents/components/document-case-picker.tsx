@@ -1,6 +1,6 @@
 'use client';
 
-import type { DocumentCaseOptionV1 } from '@rubi/contracts';
+import type { DocumentCaseOptionV1 } from '@nora/contracts';
 import {
   Check,
   ChevronDown,

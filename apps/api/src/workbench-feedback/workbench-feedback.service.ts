@@ -12,7 +12,7 @@ import type {
   WorkbenchFeedbackCreateResponseV1,
   WorkbenchFeedbackDepartment,
   WorkbenchFeedbackDetailResponseV1,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 
 import { DocumentsService } from '../documents/documents.service';
 import { HrDirectoryService } from '../hr/hr-directory.service';

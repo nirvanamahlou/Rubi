@@ -3,7 +3,7 @@ import type {
   AuthenticatedActor,
   WorkbenchCalendarEventInputV1,
   WorkbenchNoteInputV1,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import { describe, expect, it, vi } from 'vitest';
 
 import { WorkbenchService } from './workbench.service';

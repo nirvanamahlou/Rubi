@@ -1,5 +1,5 @@
-import type { voucherNumberKeys, voucherFlagKeys } from '@rubi/contracts';
-import { voucherTextKeys, type VoucherSettingsV1 } from '@rubi/contracts';
+import type { voucherNumberKeys, voucherFlagKeys } from '@nora/contracts';
+import { voucherTextKeys, type VoucherSettingsV1 } from '@nora/contracts';
 import {
   reservationFormData,
   type ReservationFormIntake,

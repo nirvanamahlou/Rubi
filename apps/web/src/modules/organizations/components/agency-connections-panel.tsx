@@ -6,7 +6,7 @@ import type {
   MasterDataRecord,
   IamPermissionCode,
   DocumentListItemV1,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import { CreditCard, FileText, MapPin, Percent, RefreshCw } from 'lucide-react';
 import type { FormEvent } from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';

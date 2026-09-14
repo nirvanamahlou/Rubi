@@ -1,6 +1,6 @@
 import { BadRequestException } from '@nestjs/common';
 import Joi from 'joi';
-import { Prisma } from '@rubi/database';
+import { Prisma } from '@nora/database';
 
 export const roomKinds = [
   'double',

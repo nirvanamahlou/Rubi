@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { HrDirectoryResponse } from '@rubi/contracts';
+import type { HrDirectoryResponse } from '@nora/contracts';
 import { assigneeOptions } from './assignee-options';
 
 describe('HR assignee options', () => {

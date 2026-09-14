@@ -1,6 +1,6 @@
 # Customer Affairs registration-date filters — PC-B
 
-Scope: requests, tickets and their handoff/followup/queue list views. Aggregate overview/report cards are not date-filtered by this slice. Shared Rubi DatePicker is reused unchanged, default Persian with existing month/year grids and Gregorian switching.
+Scope: requests, tickets and their handoff/followup/queue list views. Aggregate overview/report cards are not date-filtered by this slice. Shared Nora DatePicker is reused unchanged, default Persian with existing month/year grids and Gregorian switching.
 
 UI uses explicit Apply and Clear controls; date values persist in URL as createdFrom/createdTo, reset pagination and coexist with search/status/site filters. End day is included completely. Browser-local midnight boundaries are converted to UTC (next local midnight for the end), avoiding fixed 24-hour assumptions across daylight-saving transitions.
 

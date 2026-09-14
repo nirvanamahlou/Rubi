@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   HR_CONNECTION_TARGETS,
   type AuthenticatedActor,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import {
   assertHrConnectionTransition,
   canSendHrConnection,

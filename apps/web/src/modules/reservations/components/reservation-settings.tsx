@@ -5,7 +5,7 @@ import {
   voucherNumberKeys,
   voucherFlagKeys,
   type TravelWorkflowStateV1,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/form-controls';
 import {

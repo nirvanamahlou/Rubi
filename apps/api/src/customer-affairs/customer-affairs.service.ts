@@ -18,8 +18,8 @@ import type {
   CustomerAffairsTicketInput,
   CustomerAffairsTicketView,
   CustomerAffairsTimelineInput,
-} from '@rubi/contracts';
-import { Prisma } from '@rubi/database';
+} from '@nora/contracts';
+import { Prisma } from '@nora/database';
 
 import { CustomerService } from '../customers/customer.service';
 import { DocumentsService } from '../documents/documents.service';

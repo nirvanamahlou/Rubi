@@ -16,7 +16,7 @@ import type {
   WorkbenchCalendarPriorityV1,
   WorkbenchCalendarStatusV1,
   WorkbenchNoteItemV1,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 
 export class WorkbenchNoteDto {
   @IsString() @Length(1, 200) title!: string;

@@ -1,6 +1,6 @@
 import { ConflictException } from '@nestjs/common';
-import type { MasterDataResource } from '@rubi/contracts';
-import type { Prisma } from '@rubi/database';
+import type { MasterDataResource } from '@nora/contracts';
+import type { Prisma } from '@nora/database';
 
 function errorRecord(value: unknown): Record<string, unknown> | undefined {
   return typeof value === 'object' && value !== null

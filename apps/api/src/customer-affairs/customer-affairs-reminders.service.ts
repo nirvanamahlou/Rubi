@@ -7,7 +7,7 @@ import {
   type OnModuleDestroy,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Prisma } from '@rubi/database';
+import { Prisma } from '@nora/database';
 import { NotificationsService } from '../notifications/notifications.service';
 import { CustomerAffairsRepository } from './customer-affairs.repository';
 

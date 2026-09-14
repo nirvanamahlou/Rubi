@@ -18,7 +18,7 @@ import { PermissionGuard } from '../iam/permission.guard';
 import { B2bCrmConnectionsService } from './b2b-crm-connections.service';
 
 @ApiTags('B2B Agencies')
-@ApiCookieAuth('rubi_access')
+@ApiCookieAuth('nora_access')
 @UseGuards(AuthGuard, PermissionGuard)
 @Controller('b2b/agencies/:organizationId/crm-connections')
 export class B2bCrmConnectionsController {

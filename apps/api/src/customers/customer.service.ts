@@ -21,8 +21,8 @@ import type {
   CustomerStatusRequest,
   DuplicateCandidate,
   DuplicateReviewRequest,
-} from '@rubi/contracts';
-import { CustomerKind, type Prisma } from '@rubi/database';
+} from '@nora/contracts';
+import { CustomerKind, type Prisma } from '@nora/database';
 
 import { CustomerContactCrypto } from './customer-contact.crypto';
 import {

@@ -1,5 +1,12 @@
 # Work Assignments
 
+## BRAND-NORA-001 — PC-B — COMPLETE / VERIFIED
+
+- درخواست صریح مالک محصول در 2026-09-14: نام محصول و namespace پروژه در تمام بخش‌ها به `Nora/نورا` تغییر کند. `COMPUTER_ID=PC-B`؛ Branch مستقل `codex/pc-b-nora-brand` نسخه یکپارچه قبلی را با `origin/develop@2ad9c613` ترکیب می‌کند تا هیچ تغییر تاییدشده‌ای حذف نشود.
+- محدوده رزروشده: نام‌های نمایشی Web/API/Worker، metadata و Swagger، package scope داخلی، کوکی/هدر/کلیدهای runtime، نام فایل‌های برنددار، تست‌ها و مستندات جاری. `Dependency/Lockfile Owner = PC-B/BRAND-NORA-001` فقط برای rename نام پکیج‌ها و lockfile؛ هیچ نسخه وابستگی عوض نمی‌شود.
+- شناسه‌های رمزنگاری، magic bytes فایل‌های ذخیره‌شده، نام دیتابیس فعال و URL واقعی GitHub فقط در صورت حفظ سازگاری داده/لینک تغییر می‌کنند. این Task هیچ Schema/Migration/Seed، مجوز، نقش یا داده عملیاتی را تغییر نمی‌دهد. تغییرات نام در ماژول‌های دیگر صرفاً مکانیکی است و قرارداد رفتاری آن‌ها را عوض نمی‌کند.
+- اعتبارسنجی کامل موفق است: install frozen، ۹ Task TypeScript، ۶ Task lint، build تولیدی API/Worker/Web با ۴۶ route و تمام تست‌ها شامل ۱۳۷۹ Web، ۱۳۳۳ API و ۱۴۹ تست package. قفل Dependency/Lockfile پس از Commit آزاد است.
+
 ## WORKBENCH-037-REMOVE-HR-DESTINATION-CARD — PC-B — READY_FOR_REVIEW
 
 - درخواست صریح مالک محصول در 2026-09-13: پوسته پایین «درخواست‌های منابع انسانی» از صفحه میزکار حذف شود، اما Backend، مسیر `/hr`، مجوزها و اعلان‌های منابع انسانی باقی بمانند. `COMPUTER_ID=PC-B`.
@@ -35,7 +42,7 @@ Migration و Seed محلی اعمال شد؛ `Ramtin` نقش افزایشی `fin
 
 ## WORKBENCH-039-UNIT-CONTRAST — PC-B — VALIDATED / RELEASED
 
-- Reserve message-composer.tsx and this task's status documentation for the screenshot581 selected department contrast fix. Branch codex/pc-b-workbench-unit-contrast from develop@e82d8216. Remove the unconditional surface background from selected unit buttons, retain Rubi primary colors, match selected icon contrast and expose pressed state. No API, data, migration, dependency or shared component edits.
+- Reserve message-composer.tsx and this task's status documentation for the screenshot581 selected department contrast fix. Branch codex/pc-b-workbench-unit-contrast from develop@e82d8216. Remove the unconditional surface background from selected unit buttons, retain Nora primary colors, match selected icon contrast and expose pressed state. No API, data, migration, dependency or shared component edits.
 
 ## FINANCE-007-INBOX-COMPLETION — PC-A — READY_FOR_REVIEW / RUNTIME PERMISSION PENDING
 
@@ -168,8 +175,8 @@ Merged via PR #254 at `e40878f1`. Web3100 runs the production build `55JsHVl1EIR
 ## DASHBOARDS-001 — PC-C — AUTHORIZED / PLANNED
 
 - با دستور صریح مالک محصول در 2026-09-13، اجرای Full-Stack بخش Dashboard به
-  `COMPUTER_ID=PC-C` واگذار شد. Workspace مقصد `F:/Projects/Rubi` و Worktree
-  پیشنهادی `F:/Projects/Rubi/.worktrees/dashboards-001` است؛ PC-C باید وجود،
+  `COMPUTER_ID=PC-C` واگذار شد. Workspace مقصد `F:/Projects/Nora` و Worktree
+  پیشنهادی `F:/Projects/Nora/.worktrees/dashboards-001` است؛ PC-C باید وجود،
   Writable بودن و Remote صحیح را روی دستگاه خودش تایید کند.
 - محدوده انحصاری این واحد: `apps/web/src/modules/dashboard/**`،
   `apps/web/src/app/(crm)/dashboard/**`، Aggregationهای Dashboard در
@@ -274,7 +281,7 @@ Merged via PR #254 at `e40878f1`. Web3100 runs the production build `55JsHVl1EIR
 
 - 51 tests, scoped lint and production build/TypeScript passed. Web3100 PID8060, build unified-kuRKDyFYTAGyiLhQbOT_w, implementation8332b8e5 activated; HTTP200/runtime identity and authenticated desktop report screenshots verified. API/DB untouched. Draft PR262; reservation released. Responsive CSS implemented; mobile browser audit not claimed.
 
-- Reserve CA report component/CSS/tests and own docs; branch codex/pc-b-ca-report-layout from active1ada1e5f. No API/data/schema/dependency changes. User authorizes Web3100 activation after tests; preserve HR removal and API4190. Fetch/refetch failed on pre-existing internal checkpoint ref; no ref deletion or remote replacement. Rubi authenticated desktop/corporate, responsive mobile; WCAG AA owner PC-B; targets p75 LCP2500ms/INP200ms/CLS0.1, JS200KB initial+80KB route, Lighthouse a11y90/perf80 (not measured claims).
+- Reserve CA report component/CSS/tests and own docs; branch codex/pc-b-ca-report-layout from active1ada1e5f. No API/data/schema/dependency changes. User authorizes Web3100 activation after tests; preserve HR removal and API4190. Fetch/refetch failed on pre-existing internal checkpoint ref; no ref deletion or remote replacement. Nora authenticated desktop/corporate, responsive mobile; WCAG AA owner PC-B; targets p75 LCP2500ms/INP200ms/CLS0.1, JS200KB initial+80KB route, Lighthouse a11y90/perf80 (not measured claims).
 
 ## HR-015-RUNTIME — PC-B — VERIFIED / ACTIVATION_BLOCKED
 
@@ -285,7 +292,7 @@ Merged via PR #254 at `e40878f1`. Web3100 runs the production build `55JsHVl1EIR
 
 - Date visible/accessibility labels simplified. Public HR directory unlinked employees now remain visible as disabled options with explanation, loading/retry and user-ID guard. This does not create identity mappings or make unlinked employees assignable. HR rollout task reports policy-blocked activation; no restart attempted here. Runtime baseline retains earlier build. Details: `docs/tasks/CA-STAFF-PICKER-CLARITY.md`.
 
-- Reserve CA-only date labels/tests, assignee picker and helper tests, own docs on `codex/pc-b-ca-staff-picker-clarity` from b1da23bd. Consume unchanged public HR directory; show unlinked employees explicitly without using employee IDs as user IDs. No IAM/HR mutations, permission expansion, migration or dependency changes. HR task owns current Web rollout; no runtime replacement without handoff. Existing Rubi desktop/auth-walled UI targets preserved.
+- Reserve CA-only date labels/tests, assignee picker and helper tests, own docs on `codex/pc-b-ca-staff-picker-clarity` from b1da23bd. Consume unchanged public HR directory; show unlinked employees explicitly without using employee IDs as user IDs. No IAM/HR mutations, permission expansion, migration or dependency changes. HR task owns current Web rollout; no runtime replacement without handoff. Existing Nora desktop/auth-walled UI targets preserved.
 
 ## CUSTOMER-AFFAIRS-REPORT-DATA-E2E — PC-B — VERIFIED / LOCAL_RUNTIME_ACTIVE
 
@@ -310,7 +317,7 @@ Merged via PR #254 at `e40878f1`. Web3100 runs the production build `55JsHVl1EIR
 
 - Complete: 43 focused tests, scoped ESLint, standalone typecheck and 46-route production build passed. No data/API/schema/permissions changed. Runtime restart not retried; new-build browser QA not claimed. Reservation released; `docs/tasks/CUSTOMER-AFFAIRS-CUSTOMER-PICKER.md` records handoff.
 
-- Reserve only CA Web picker, form consumers and focused tests/docs on `codex/pc-b-customer-affairs-customer-picker` from `7a146dca`. Consume existing Customers public list/detail: include customer and passenger roles, paginate, preserve selection and show existing linked person in edit forms. No Customers producer/schema/contracts/dependency/permission changes; no live business writes or runtime replacement. Prior desktop/corporate, auth-walled Rubi UI assumptions remain: p75 LCP2500ms/INP200ms/CLS0.1, 200KB initial +80KB route JS, Lighthouse a11y90/performance80, WCAG AA owner PC-B; planning targets, not measured claims.
+- Reserve only CA Web picker, form consumers and focused tests/docs on `codex/pc-b-customer-affairs-customer-picker` from `7a146dca`. Consume existing Customers public list/detail: include customer and passenger roles, paginate, preserve selection and show existing linked person in edit forms. No Customers producer/schema/contracts/dependency/permission changes; no live business writes or runtime replacement. Prior desktop/corporate, auth-walled Nora UI assumptions remain: p75 LCP2500ms/INP200ms/CLS0.1, 200KB initial +80KB route JS, Lighthouse a11y90/performance80, WCAG AA owner PC-B; planning targets, not measured claims.
 
 ## CUSTOMER-AFFAIRS-WORKFLOW-COMPLETION — PC-B — CODE VERIFIED / ACTIVATION PENDING
 
@@ -326,8 +333,8 @@ Merged via PR #254 at `e40878f1`. Web3100 runs the production build `55JsHVl1EIR
 
 ## CUSTOMER-AFFAIRS-THEMED-SELECTS — PC-B — CODE VERIFIED / RUNTIME RESTART BLOCKED
 
-- Reserve only CA Web components/tests and own task/status documentation on `codex/pc-b-customer-affairs-themed-selects` from combined `ac19de0a`. Replace native visible dropdowns with existing Rubi Select primitives, preserving form values and HR selection. No shared UI edits, API, schema, dependencies or permissions. Preserve API4190; verify and rebuild owned Web3100. No merge.
-- All four CA form/filter/assignee surfaces now use a module-local adapter over Rubi Select primitives (RTL, theme tokens, elevated/scrollable popup). 38 tests and 46-route production build/typecheck passed; scoped lint rerun after correcting unused prop. Attempted owned Web3100 restart was rejected by execution policy before command execution; no runtime replacement or visual QA of the new build is claimed. Module reservation released; activation remains pending.
+- Reserve only CA Web components/tests and own task/status documentation on `codex/pc-b-customer-affairs-themed-selects` from combined `ac19de0a`. Replace native visible dropdowns with existing Nora Select primitives, preserving form values and HR selection. No shared UI edits, API, schema, dependencies or permissions. Preserve API4190; verify and rebuild owned Web3100. No merge.
+- All four CA form/filter/assignee surfaces now use a module-local adapter over Nora Select primitives (RTL, theme tokens, elevated/scrollable popup). 38 tests and 46-route production build/typecheck passed; scoped lint rerun after correcting unused prop. Attempted owned Web3100 restart was rejected by execution policy before command execution; no runtime replacement or visual QA of the new build is claimed. Module reservation released; activation remains pending.
 
 ## CUSTOMER-AFFAIRS-SITE-BRIDGE — PC-B — IMPLEMENTED / LIVE ADAPTERS PENDING
 
@@ -362,23 +369,23 @@ Merged via PR #254 at `e40878f1`. Web3100 runs the production build `55JsHVl1EIR
 
 ## CUSTOMER-AFFAIRS-REMOVE-HR-OUTLET — PC-B — DONE / VERIFIED
 
-- User requests removal of the supplementary «درخواست‌های منابع انسانی» card from Customer Affairs only. Reserve the Customer Affairs Rubi workspace, its scoped structural test and own status entry on `codex/pc-b-customer-affairs-remove-hr-outlet`; use the existing public HR visibility contract so the HR module and its outlet on all other routes remain unchanged. Rebuild/restart owned Web3100 only and verify in the authenticated browser; API4190, stored data, schema, permissions and dependencies stay untouched. No merge.
-- Activated the existing page-level HR outlet suppression contract only in the Customer Affairs Rubi workspace, without changing the HR outlet or its default behavior. Scoped ESLint/formatting and the focused suite passed (5/5); production Web build/typecheck completed across 46 routes. Authenticated browser QA confirmed four retained navigation sections, six open leads, five open tickets, zero visible «درخواست‌های منابع انسانی» headings and no console errors on Web3100/PID15936 from source `010c655`; API4190/PID12504 and stored data remain unchanged. Draft PR #233; no merge.
+- User requests removal of the supplementary «درخواست‌های منابع انسانی» card from Customer Affairs only. Reserve the Customer Affairs Nora workspace, its scoped structural test and own status entry on `codex/pc-b-customer-affairs-remove-hr-outlet`; use the existing public HR visibility contract so the HR module and its outlet on all other routes remain unchanged. Rebuild/restart owned Web3100 only and verify in the authenticated browser; API4190, stored data, schema, permissions and dependencies stay untouched. No merge.
+- Activated the existing page-level HR outlet suppression contract only in the Customer Affairs Nora workspace, without changing the HR outlet or its default behavior. Scoped ESLint/formatting and the focused suite passed (5/5); production Web build/typecheck completed across 46 routes. Authenticated browser QA confirmed four retained navigation sections, six open leads, five open tickets, zero visible «درخواست‌های منابع انسانی» headings and no console errors on Web3100/PID15936 from source `010c655`; API4190/PID12504 and stored data remain unchanged. Draft PR #233; no merge.
 
 ## CUSTOMER-AFFAIRS-REMOVE-SETTINGS — PC-B — DONE / VERIFIED
 
-- User requests removal of the Customer Affairs settings section. Reserve only the Rubi workspace/component CSS, scoped navigation test and own status entry on `codex/pc-b-customer-affairs-remove-settings`; remove the settings tab, route view, read-only panel and dead local styling while preserving the four remaining sections, visual polish, data, API, schema, permissions, dependencies and global system settings. Rebuild/restart owned Web3100 only and verify in the authenticated browser; API4190 stays untouched. No merge.
+- User requests removal of the Customer Affairs settings section. Reserve only the Nora workspace/component CSS, scoped navigation test and own status entry on `codex/pc-b-customer-affairs-remove-settings`; remove the settings tab, route view, read-only panel and dead local styling while preserving the four remaining sections, visual polish, data, API, schema, permissions, dependencies and global system settings. Rebuild/restart owned Web3100 only and verify in the authenticated browser; API4190 stays untouched. No merge.
 - Removed the module-local settings tab, view, read-only policy panel, icon import and dead policy CSS. The remaining four navigation sections are explicitly covered by the updated regression test. Scoped ESLint/formatting and the focused suite passed (4/4); production Web build/typecheck completed across 46 routes. Authenticated browser QA verified exactly the four retained Customer Affairs tabs on Web3100/PID15724 from source `5ebca3d`; the global company-settings navigation, API4190/PID12504 and stored data remain unchanged. No merge.
 
 ## CUSTOMER-AFFAIRS-REMOVE-TAGLINE — PC-B — DONE / VERIFIED
 
-- User requests removal of the visible header tagline «همراه مشتری، از اولین درخواست تا آخرین پیگیری». Reserve only the Customer Affairs Rubi workspace, its scoped structural test and own status entry on `codex/pc-b-customer-affairs-remove-tagline`, preserving the title, actions, visual polish, data, API, schema, dependencies and all other modules. Rebuild/restart owned Web3100 only and verify in the authenticated browser; API4190 stays untouched. No merge.
+- User requests removal of the visible header tagline «همراه مشتری، از اولین درخواست تا آخرین پیگیری». Reserve only the Customer Affairs Nora workspace, its scoped structural test and own status entry on `codex/pc-b-customer-affairs-remove-tagline`, preserving the title, actions, visual polish, data, API, schema, dependencies and all other modules. Rebuild/restart owned Web3100 only and verify in the authenticated browser; API4190 stays untouched. No merge.
 - Removed the tagline only and extended the structural regression assertion. Scoped ESLint and formatting passed, the focused workspace suite passed (4/4), and the production Web build/typecheck completed across 46 routes. Authenticated browser QA verified the populated overview without the tagline on Web3100/PID29056 from source `f894409`; API4190/PID12504 and stored data were unchanged. No merge.
 
 ## CUSTOMER-AFFAIRS-VISUAL-POLISH — PC-B — DONE / VERIFIED
 
-- User requests richer visual treatment for the existing Customer Affairs overview. Reserve the module CSS and own status entry on `codex/pc-b-customer-affairs-visual-polish`; preserve content, behavior, data, API, schema, dependencies and all other modules. Use existing Rubi/theme tokens with accessible contrast, responsive states and reduced-motion support; verify with scoped checks, production build and authenticated browser QA on Web3100. No merge.
-- Completed with Rubi-blue/teal and status-color gradients, accent rails, stronger selected-tab treatment, layered cards, subtle hover depth, richer panels and reduced-motion fallbacks. Scoped workspace tests passed (4/4), CSS formatting and diff checks passed, and the Web production build/typecheck completed across 46 routes. Authenticated desktop browser QA verified the populated overview on Web3100/PID15612 from source `a7a8ab7`; API4190/PID12504 and stored data were unchanged. No merge.
+- User requests richer visual treatment for the existing Customer Affairs overview. Reserve the module CSS and own status entry on `codex/pc-b-customer-affairs-visual-polish`; preserve content, behavior, data, API, schema, dependencies and all other modules. Use existing Nora/theme tokens with accessible contrast, responsive states and reduced-motion support; verify with scoped checks, production build and authenticated browser QA on Web3100. No merge.
+- Completed with Nora-blue/teal and status-color gradients, accent rails, stronger selected-tab treatment, layered cards, subtle hover depth, richer panels and reduced-motion fallbacks. Scoped workspace tests passed (4/4), CSS formatting and diff checks passed, and the Web production build/typecheck completed across 46 routes. Authenticated desktop browser QA verified the populated overview on Web3100/PID15612 from source `a7a8ab7`; API4190/PID12504 and stored data were unchanged. No merge.
 
 ## CUSTOMER-AFFAIRS-REMOVE-INTRO — PC-B — DONE / VERIFIED
 
@@ -387,7 +394,7 @@ Merged via PR #254 at `e40878f1`. Web3100 runs the production build `55JsHVl1EIR
 
 ## UNIFIED-CUSTOMER-AFFAIRS-3100 — PC-B — LIVE / VERIFIED
 
-- User explicitly requests combining Excel/current Rubi and Customer Affairs on Web3100 with its API. Base `origin/develop@6a4e041`; branch `codex/pc-b-unified-customer-affairs-3100`. Integrate published CA branch `f34166c` without replacing current modules. Reserve integration conflict resolution in schema reverse relations, app/contract wiring and task/status documents; no new domain contract or dependency change. Existing source worktrees remain untouched. Reuse the current local database and document storage; inspect/back up/rehearse the existing additive CA migration before applying it. Runtime cutover is authorized for the verified current Web3100/API4190 only, after build/test gates. No main/develop mutation, credential reset or broad seed.
+- User explicitly requests combining Excel/current Nora and Customer Affairs on Web3100 with its API. Base `origin/develop@6a4e041`; branch `codex/pc-b-unified-customer-affairs-3100`. Integrate published CA branch `f34166c` without replacing current modules. Reserve integration conflict resolution in schema reverse relations, app/contract wiring and task/status documents; no new domain contract or dependency change. Existing source worktrees remain untouched. Reuse the current local database and document storage; inspect/back up/rehearse the existing additive CA migration before applying it. Runtime cutover is authorized for the verified current Web3100/API4190 only, after build/test gates. No main/develop mutation, credential reset or broad seed.
 - Completed: shared source `09b3b18` is live on Web3100/PID1628 and API4190/PID12504, build `unified-vnpjB6iJEmubY1N0rxXr5`. Backup/rehearsal/additive CA migration succeeded; 38 users, 5 branches and 44 documents preserved. User separately approved 19 CA permissions for administrator only, audited without changing other roles. All 15 lint/typecheck tasks and six builds passed; API 1230 tests passed, Web 1336 plus the separately retried 42-test HR file passed (one original load-related timeout). Browser sign-in, CA overview/report and agency Excel dialog verified. Old preview3102 and rehearsal API4192 stopped. Implementation/central integration reservation released; future runtime replacement requires coordination and must retain this combined source. See `docs/tasks/UNIFIED-CUSTOMER-AFFAIRS-3100.md`.
 
 ## WORKBENCH-021 — PC-B — LOCAL_COMPLETE / RUNTIME_ACTIVE
@@ -413,7 +420,7 @@ Merged via PR #254 at `e40878f1`. Web3100 runs the production build `55JsHVl1EIR
   membership-gated read/send, server-side forwarding and the Workbench contacts,
   group and forward UI are active. All 56 baseline migrations plus Messaging
   passed on an isolated database. The additive migration was backed up and
-  applied to `rubi_hr_current_20260908`; existing 38 users, five branches and 44
+  applied to `nora_hr_current_20260908`; existing 38 users, five branches and 44
   documents were preserved. Combined runtime `05768d7` is healthy on Web3100
   (PID5864) and API4190 (PID22080); authenticated browser QA found three eligible
   contacts and the complete group form without creating real data. 1,222 API and
@@ -422,7 +429,7 @@ Merged via PR #254 at `e40878f1`. Web3100 runs the production build `55JsHVl1EIR
 
 ## CUSTOMER-AFFAIRS-003 — PC-B — IMPLEMENTED / AWAITING AUTHENTICATED VISUAL QA
 
-- Reserve Customer Affairs Web components, local styles, API client presentation/query support and task documentation for the supplied customer-affairs.html reference. Branch `codex/pc-b-customer-affairs-rubi-ui` continues the unmerged operational slice `b39c93d` (PR #221) in its clean worktree. Reuse Rubi theme and live API; no schema, migration, dependency or shared shell edits. Central Docs reservation is limited to this entry, project status and own task report. Runtime ownership must be checked before restart.
+- Reserve Customer Affairs Web components, local styles, API client presentation/query support and task documentation for the supplied customer-affairs.html reference. Branch `codex/pc-b-customer-affairs-nora-ui` continues the unmerged operational slice `b39c93d` (PR #221) in its clean worktree. Reuse Nora theme and live API; no schema, migration, dependency or shared shell edits. Central Docs reservation is limited to this entry, project status and own task report. Runtime ownership must be checked before restart.
 - Implementation and automated verification are complete: full Web lint, TypeScript/build (46 routes), 1329 full-suite tests and 3 additional new render tests passed. Preview on 3102 requires API CORS/runtime coordination and user sign-in for visual QA. Existing 3100/4190 runtimes were not changed. Central Docs reservation released for handoff; no migration or dependency lock was acquired. See `docs/tasks/CUSTOMER-AFFAIRS-003.md`.
 
 ## B2B-REMOVE-HR-REQUESTS-001 — PC-B — VALIDATED
@@ -436,12 +443,12 @@ Merged via PR #254 at `e40878f1`. Web3100 runs the production build `55JsHVl1EIR
 ## CUSTOMER-AFFAIRS-002 — PC-B — UI_VERIFIED
 
 - `COMPUTER_ID=PC-B`; branch `codex/pc-b-customer-affairs-operational` and worktree
-  `C:/Users/admin/Rubi-customer-affairs-operational` start from
+  `C:/Users/admin/Nora-customer-affairs-operational` start from
   `origin/develop@700168e67cc0a495178946bb44bdd3528d2d49d7`.
 ## CUSTOMER-AFFAIRS-002 — PC-B — READY_FOR_REVIEW
 
 - `COMPUTER_ID=PC-B`; branch `codex/pc-b-customer-affairs-operational` and worktree
-  `C:/Users/admin/Rubi-customer-affairs-operational` are rebased onto
+  `C:/Users/admin/Nora-customer-affairs-operational` are rebased onto
   `origin/develop@b2098bc76521c35518cbb64ab5337bcaf565f8f0`.
 - Reserve Customer Affairs ownership for the operational vertical slice in
   `apps/api/src/customer-affairs/**`, `apps/web/src/modules/customer-affairs/**`,
@@ -492,7 +499,7 @@ Merged via PR #254 at `e40878f1`. Web3100 runs the production build `55JsHVl1EIR
 
 ## WORKBENCH-032 — PC-B — UI_VERIFIED / CALENDAR_SESSION_LOCAL
 
-- Delivered Workbench UI polish: Notes date placeholders are short, the calendar creates session-local events with text/image/link attachments, the profile theme selector is removed, and the messenger has a colorful Rubi presentation without visible unavailable-state copy. Source `623fbb0`; 56 focused tests, scoped lint, TypeScript and 46-route production build passed. Authenticated browser verified all four requests and an event with image/link; no console errors. Web3100 PID14168/buildGhIUre85BIXBxND2PRsp2; API4190 unchanged. Draft PR211. Calendar persistence and message delivery remain outside this UI-only work item.
+- Delivered Workbench UI polish: Notes date placeholders are short, the calendar creates session-local events with text/image/link attachments, the profile theme selector is removed, and the messenger has a colorful Nora presentation without visible unavailable-state copy. Source `623fbb0`; 56 focused tests, scoped lint, TypeScript and 46-route production build passed. Authenticated browser verified all four requests and an event with image/link; no console errors. Web3100 PID14168/buildGhIUre85BIXBxND2PRsp2; API4190 unchanged. Draft PR211. Calendar persistence and message delivery remain outside this UI-only work item.
 
 ## WORKBENCH-031 — PC-B — UI_VERIFIED
 
@@ -540,7 +547,7 @@ Merged via PR #254 at `e40878f1`. Web3100 runs the production build `55JsHVl1EIR
 
 ## WORKBENCH-020 — PC-B — UI_VERIFIED
 
-- Reserve Workbench-only dropdown wrapper and six native select consumers; reuse shared Rubi Select without changing shared components/dependencies. Branch codex/pc-b-workbench-themed-selects, PC-B.
+- Reserve Workbench-only dropdown wrapper and six native select consumers; reuse shared Nora Select without changing shared components/dependencies. Branch codex/pc-b-workbench-themed-selects, PC-B.
 
 ## WORKBENCH-019 — PC-B — UI_VERIFIED
 
@@ -632,13 +639,13 @@ Source9b1c33c includes scoped corporate-profile boundary copy.111 tests, scoped 
 
 ## WORKBENCH-012-MESSAGE-TEMPLATES — PC-B — UI_READY / LOCAL_RUNTIME_3100
 
-- Reserve message-composer.tsx and module-local message-templates.ts plus own docs. Add Finance, Reservations, AI and Sales recipient choices with editable prepared texts. Branch codex/pc-b-workbench-message-templates, base d8b3e15. No message service, transmission, storage, owner API, schema or dependency changes. Existing authenticated desktop Rubi UI and accessibility conventions retained; runtime build coordinated with B2B.
+- Reserve message-composer.tsx and module-local message-templates.ts plus own docs. Add Finance, Reservations, AI and Sales recipient choices with editable prepared texts. Branch codex/pc-b-workbench-message-templates, base d8b3e15. No message service, transmission, storage, owner API, schema or dependency changes. Existing authenticated desktop Nora UI and accessibility conventions retained; runtime build coordinated with B2B.
 
 ## REPORTING-PC-C-AUTHORIZATION — PC-A → PC-C — AUTHORIZED / P0-04 LOCAL-GATE
 
 - مالک هماهنگی پروژه در 2026-09-10 به `COMPUTER_ID=PC-C` اجازه داد توسعه Reporting
-  را در Workspace اعلام‌شده `F:/Projects/Rubi` و Worktree مستقل
-  `F:/Projects/Rubi/.worktrees/reporting` ادامه دهد. این ثبت، مجوز سیستم‌عامل یا وجود
+  را در Workspace اعلام‌شده `F:/Projects/Nora` و Worktree مستقل
+  `F:/Projects/Nora/.worktrees/reporting` ادامه دهد. این ثبت، مجوز سیستم‌عامل یا وجود
   مسیر روی دستگاه مقصد را از PC-A ادعا نمی‌کند؛ PC-C باید آن‌ها را محلی تأیید کند.
 - محدوده انحصاری Task: `apps/web/src/modules/reports/**`،
   `apps/web/src/app/(crm)/reports/**`، `apps/api/src/reporting/**` و
@@ -691,7 +698,7 @@ Source9b1c33c includes scoped corporate-profile boundary copy.111 tests, scoped 
 - درخواست مالک محصول در 2026-09-12: تکمیل Phase A حسابداری و Vertical Slice کارتابل
   دریافت/پرداخت در فضای مستقل `/finance`. Branch مستقل
   `codex/pc-a-finance-core-accounting` از `origin/develop@4717b13` و Worktree مستقل
-  `C:/Users/niayeshseir-1/Rubi-finance-core-accounting` است؛ `COMPUTER_ID=PC-A`.
+  `C:/Users/niayeshseir-1/Nora-finance-core-accounting` است؛ `COMPUTER_ID=PC-A`.
 - محدوده رزروشده: `apps/api/src/finance/**`، `apps/web/src/modules/finance/**`، route موجود
   `/finance`، `packages/contracts/src/finance/**`، تست‌های Finance و سند
   `docs/tasks/FINANCE-002A-ACCOUNTING-AND-INBOX.md`. تغییرات اسناد مرکزی فقط به ورودی
@@ -794,7 +801,7 @@ Source9b1c33c includes scoped corporate-profile boundary copy.111 tests, scoped 
 
 ## WORKBENCH-005-NATIVE-SHELL — PC-B — READY_FOR_REVIEW / LOCAL_RUNTIME_3100
 
-- User explicitly rejects the standalone demo and requests alignment with Rubi theme and application structure. Reserve native Workbench module/routes, restoration of original/tasks, compatibility redirect from/workbench/demo, additive Workbench sidebar/user entry via lib/navigation.ts, messages/fa.ts, sidebar-icons.ts, user-menu.tsx and their tests. Keep the seventeen business modules separate; use existing shared UI/theme/provider/auth.
+- User explicitly rejects the standalone demo and requests alignment with Nora theme and application structure. Reserve native Workbench module/routes, restoration of original/tasks, compatibility redirect from/workbench/demo, additive Workbench sidebar/user entry via lib/navigation.ts, messages/fa.ts, sidebar-icons.ts, user-menu.tsx and their tests. Keep the seventeen business modules separate; use existing shared UI/theme/provider/auth.
 - Public consumers only: current identity, recipient-scoped Notifications, personal Documents lists/detail/upload and existing profile. No counterfeit requests/messages/notes/favorites, localStorage or new persistence. No changes to owner service contracts, API, permissions, schema/migration or dependencies. Migration remains with Reservations per active PR153; request storage/messaging/private features cannot be represented as operational without that handoff.
 - UI is functional for existing owner services and explicitly unavailable where services do not exist. Preserve runtime base8bf0446 including B2B date filters. Runtime changes coordinated with existing owners; API4190/data/storage remain untouched. No merge.
 - Shared shell reservation additionally covers the compact sidebar grid row sizing for the added personal entry. No business module is removed. B2B owner supplied c83d530 (KPI colors), authorized for inclusion in the combined build.
@@ -803,7 +810,7 @@ Source9b1c33c includes scoped corporate-profile boundary copy.111 tests, scoped 
 ## WORKBENCH-004-MENU-CURRENT-RUNTIME — PC-B — READY_FOR_REVIEW / LOCAL_RUNTIME_3100
 
 - User reports Workbench menu opens old `/tasks`. Runtime3100 changed to B2B source56d5d48/PID12500 after prior handoff; preserve the new B2B date filters by basing `codex/pc-b-workbench-menu-current-runtime` on56d5d48. Own worktree only; no edits to B2B checkout.
-- Reserve Workbench demo files, existing task page and own status/report entries. `/tasks` directly redirects to the demo when RUBI_WORKBENCH_DEMO=1; flag-off keeps the original workspace. All isolated demo protections remain. No shared shell/proxy/API/data/schema/dependency changes.
+- Reserve Workbench demo files, existing task page and own status/report entries. `/tasks` directly redirects to the demo when NORA_WORKBENCH_DEMO=1; flag-off keeps the original workspace. All isolated demo protections remain. No shared shell/proxy/API/data/schema/dependency changes.
 - B2B owner notified to coordinate3100 before replacement. Build/test candidate first; verify expected source/PID again. API4190 and all B2B/HR code remain unchanged. No merge.
 
 ## B2B-DOSSIER-DATE-FILTERS-001 — PC-B — IN_PROGRESS
@@ -813,7 +820,7 @@ Source9b1c33c includes scoped corporate-profile boundary copy.111 tests, scoped 
 ## B2B-NAMED-BRANCHES-001 — PC-B — DONE / LOCAL_RUNTIME_3196
 
 - User explicitly repeats that the four company names must be branches and requests alignment of the contract branch selector. Reserve a local branch-reference provisioning script, agreement header CSS/component, and status docs on `codex/pc-b-b2b-named-branches` from0146c4f. No active IAM implementation lock found; consume public IAM access updates, preserve roles/other users and existing HQ records. Back up before additive reference writes. New branches are distinct from LegalEntity records; no reassignment of existing business rows. No migration/dependency change or merge.
-- Created four references and verified existing operator sees all four plus retained HQ. Public IAM update preserves existing roles and other users; repeated preview has zero missing branches. Backup: C:/Users/admin/Rubi-backups/cooperation-branches/before-1789146731135.dump (SHA25686534a4b44ec8d932a98119d613d0d668e724e1981e3c5c8cf8836d77221af42). Script/Web lint, typecheck, 97 Organizations tests and production build pass. Source7ada379, PR157 draft, no merge.
+- Created four references and verified existing operator sees all four plus retained HQ. Public IAM update preserves existing roles and other users; repeated preview has zero missing branches. Backup: C:/Users/admin/Nora-backups/cooperation-branches/before-1789146731135.dump (SHA25686534a4b44ec8d932a98119d613d0d668e724e1981e3c5c8cf8836d77221af42). Script/Web lint, typecheck, 97 Organizations tests and production build pass. Source7ada379, PR157 draft, no merge.
 - During build, another workbench demo acquired3100 (PID22408, apps/web/src/modules/workbench/demo/preview.mjs); launcher refused to stop it. Preserve that process. Served owned build hr005-a63a90ce0594f86b on3196 with API4191 CORS verified for3196. Release implementation reservations; runtime coordination needed before restoring3100.
 
 ## B2B-FINANCE-DOCUMENTS-EXPORT-001 — PC-B — DONE / LOCAL_RUNTIME_ACTIVE
@@ -873,7 +880,7 @@ Source9b1c33c includes scoped corporate-profile boundary copy.111 tests, scoped 
 
 ## B2B-ORGANIZATION-USERS-001 — PC-B — DONE / LOCAL_RUNTIME_ACTIVE
 
-- Owner requests users/access forms, synthetic data and per-user section selection; explicitly confirms access is restricted to the same agency's 360 dossier, not the whole Rubi system. Reserve B2B org-user domain/API/portal access enforcement, Organizations UI and new standalone agency portal page, public Master Data reference projection if required, contracts/root export, scoped tests and docs. Clean branch `codex/pc-b-b2b-organization-users` starts from 3a3b9ab and preserves the owned runtime/PR142 stack. Prior implementation locks are released.
+- Owner requests users/access forms, synthetic data and per-user section selection; explicitly confirms access is restricted to the same agency's 360 dossier, not the whole Nora system. Reserve B2B org-user domain/API/portal access enforcement, Organizations UI and new standalone agency portal page, public Master Data reference projection if required, contracts/root export, scoped tests and docs. Clean branch `codex/pc-b-b2b-organization-users` starts from 3a3b9ab and preserves the owned runtime/PR142 stack. Prior implementation locks are released.
 - Migration Owner = PC-B for additive B2bOrganizationUser and FK/index/checks; reserve only its schema relations. No dependency lock. IAM remains owner of credentials, login, sessions and global permissions: consume existing exported IamService methods, with no IAM source/table writes outside that public service. New agency accounts have no global roles or branches. Organization membership/section grants are B2B-owned, rechecked on each portal request, with an additional global interceptor denying these accounts access to non-portal authenticated endpoints. Existing staff accounts are not converted to agency accounts.
 - Forms manage organization role, active status and viewable dossier sections; grants do not authorize contract/credit approval or administrative writes. Portal projections are scoped to the server-side membership and selected internal cooperation branch. No organization/branch supplied by a portal client is trusted. Preserve permissions, optimistic concurrency, atomic B2B audit and separate Master Data/Finance/Documents ownership.
 - Use existing modular monolith/PostgreSQL and synchronous service ports, existing backup/restore and operational targets; no new infrastructure/SLO is introduced. Data is internal identity/contact PII. Synthetic usernames/passwords are isolated from real users, credentials remain outside Git, and loader is idempotent with backup/verification. Rehearse additive migration before local3100/4190 cutover. No merge.
@@ -895,14 +902,14 @@ Source9b1c33c includes scoped corporate-profile boundary copy.111 tests, scoped 
 ## B2B-PROFILE-CLARITY-001 — PC-B — DONE / LOCAL_RUNTIME_ACTIVE
 
 - Owner clarifies that the requested branch options are the counterparty agency's own branches, and asks where cooperation status, account manager and national ID are determined. Clean branch `codex/pc-b-b2b-profile-clarity` starts from 65042b4, preserving the current combined runtime and fetched develop e07c0c6. Reserve Organizations profile/address presentation, cooperation form/model, scoped tests and documentation.
-- Counterparty branches come from the existing public Master Organization addresses service; never use an address ID as an IAM branch scope. Preserve internal Rubi branch authorization separately. Clarify the responsible employee and provide working navigation to the existing independent contract review flow.
+- Counterparty branches come from the existing public Master Organization addresses service; never use an address ID as an IAM branch scope. Preserve internal Nora branch authorization separately. Clarify the responsible employee and provide working navigation to the existing independent contract review flow.
 - Reserve the Master Data organization identity slice (API allowed fields/validation, form catalog and tests), the additive optional organization national-ID column/migration, and its DATA_MODEL/DECISIONS entries. Migration Owner = PC-B/B2B-PROFILE-CLARITY-001; no other current active migration reservation was found. Producer = Master Data; consumer = Organizations Web through the existing generic values/attributes contract, additive and optional for legacy clients/rows. No dependency/lockfile or IAM changes. Validate and back up/rehearse before applying the additive migration to the owned local runtime.
 - Completed source dbd7329: agency-address selector and CRUD, account-manager explanation/review navigation, optional persisted company national ID in forms/dossier/directory. 90 Web + 479 API + 14 PostgreSQL targeted tests, lint/typecheck/schema/API/Database/Web builds and all four CI gates (34450246803) pass. Migration applied after restore rehearsal and fresh cutover backup; all data across 127 business tables and historical migration checksums preserved. Web3100 PID12100 / hr005-b0658359a760157c and API4190 PID19300 are healthy on the same database/storage. Real React browser checks passed; production browser currently needs login. PR140 is draft against develop, no merge. Release implementation and migration locks; coordinate any subsequent runtime replacement with this task.
 
 ## B2B-DIRECTORY-ACTIONS-001 — PC-B — DONE / LOCAL_RUNTIME_ACTIVE
 
 - Owner requests the Customers registration/Excel action bar shown in Capture.PNG on the Agencies home page. COMPUTER_ID=PC-B; clean `codex/pc-b-b2b-directory-actions` starts from 38203ea, preserving the owned combined runtime and fetched develop e07c0c6. Reserve only Organizations workspace presentation and task/status documentation; prior Organizations implementation locks are released. The Customers component is a read-only visual reference.
-- Reuse Rubi Card/Button styling for registration, Excel import, template download and filtered export. Connect to the existing cooperation wizard and validated import/export implementations, preserving permissions and data boundaries. No API/schema/migration/dependency, IAM or business-data change. Run affected checks and browser verification, then refresh the owned Web3100 runtime while preserving API4190.
+- Reuse Nora Card/Button styling for registration, Excel import, template download and filtered export. Connect to the existing cooperation wizard and validated import/export implementations, preserving permissions and data boundaries. No API/schema/migration/dependency, IAM or business-data change. Run affected checks and browser verification, then refresh the owned Web3100 runtime while preserving API4190.
 - Completed source 963978d: 89 Organizations tests, Web lint/typecheck/format/build (40 routes), all four push CI gates and actual React browser checks pass. Template/export workbooks, registration/import dialogs, permission-disabled actions and final styling match the intended flow. LOCAL3100-LATEST-0909 explicitly handed over its temporary runtime; Web3100 PID13656 / hr005-78e8e205babdeb9f and API4190 PID8236 now serve the combined B2B source with existing database/storage. Temporary API4000 was stopped after 4190 health; no other checkout or data was changed. Release implementation reservation; coordinate subsequent runtime changes with this task.
 
 ## B2B-DOSSIER-SALES-REMOVAL-001 — PC-B — DONE / LOCAL_RUNTIME_ACTIVE
@@ -916,7 +923,7 @@ Source9b1c33c includes scoped corporate-profile boundary copy.111 tests, scoped 
 - Owner explicitly requests full access to every agency 360 section after the missing commercial-dossier permission error, continuing the concrete Nirvana-account permission question. COMPUTER_ID=PC-B; clean branch `codex/pc-b-b2b-dossier-access` starts from 1369efa, retaining the active runtime aa964d6 and fetched develop e07c0c6. Reserve only this local access administration and task/status documentation; no IAM implementation, schema, migration, dependency or runtime-listener change.
 - Inspect exact public IAM catalog/current role assignments, grant the missing dossier permissions to Nirvana through the existing IAM owner service, preserve all existing roles/branches and other users, and audit the action. Full B2B access may include reviewing another user's proposals; the enforced independent-review rule remains. Verify organization/Documents permissions and the existing branch scope, plus public B2B reads using the resulting permissions. No blanket grant of unrelated module administration.
 - Inspection found only the two B2B approval codes in the local permission catalog; the eight read/manage codes were absent. Reconcile only missing B2B entries from the existing canonical PERMISSION_SEED_DATA, following the repository's targeted permission-seed maintenance pattern. This is local reference-data administration, with no full seed, administrator-role expansion, or IAM source edit.
-- Completed: added the 8 missing canonical B2B permissions and assigned a dedicated `b2b-dossier-manager` role with all 10 B2B permissions only to Nirvana in existing HQ. Catalog repair, owner-service role creation/access update and audits committed in one serializable transaction. Existing roles/branches and other users were verified unchanged. All 21 related Master Data/Documents permissions already existed; four live synthetic dossier workspace/profile/rate/agreement/address reads succeed using the resulting effective permissions. 36 permission/workflow tests and runtime health checks pass; independent self-approval denial remains. Follow-up preview reports no missing catalog entries. No application source/build/migration or listener change; release this administration reservation. Private before/verified evidence is in `C:/Users/admin/Rubi-backups/b2b-dossier-access`.
+- Completed: added the 8 missing canonical B2B permissions and assigned a dedicated `b2b-dossier-manager` role with all 10 B2B permissions only to Nirvana in existing HQ. Catalog repair, owner-service role creation/access update and audits committed in one serializable transaction. Existing roles/branches and other users were verified unchanged. All 21 related Master Data/Documents permissions already existed; four live synthetic dossier workspace/profile/rate/agreement/address reads succeed using the resulting effective permissions. 36 permission/workflow tests and runtime health checks pass; independent self-approval denial remains. Follow-up preview reports no missing catalog entries. No application source/build/migration or listener change; release this administration reservation. Private before/verified evidence is in `C:/Users/admin/Nora-backups/b2b-dossier-access`.
 
 ## B2B-DOSSIER-FORMS-001 — PC-B — DONE / LOCAL_RUNTIME_ACTIVE
 
@@ -944,7 +951,7 @@ Source9b1c33c includes scoped corporate-profile boundary copy.111 tests, scoped 
 
 ## B2B-FONT-001 — PC-B — DONE / LOCAL_RUNTIME_ACTIVE
 
-- Owner requests the Agencies/Organizations section to use the same font as the rest of Rubi. Continue the clean combined runtime at 2c434c1 on codex/pc-b-b2b-font-alignment; fetch and PC-B module/runtime ownership verified.
+- Owner requests the Agencies/Organizations section to use the same font as the rest of Nora. Continue the clean combined runtime at 2c434c1 on codex/pc-b-b2b-font-alignment; fetch and PC-B module/runtime ownership verified.
 - Reserve only corporate-design.css and this task's status/report entries. Remove the reference-specific Tahoma override so the directory, dossier and popup forms inherit the existing global Vazirmatn font. No new font/dependency, shared theme, API, HR or business-data change.
 - Validate affected Web checks and production build, then refresh only this task's owned Web3100 listener. Keep API4190 and the existing database/Documents configuration. Verify computed fonts and popup appearance in the real browser before handoff.
 - Completed: 87 Organizations tests, Web lint/typecheck, formatting and the 40-route production build passed. Web3100 serves source da1ed41 with the same global Vazirmatn family on the directory, table, dossier and all popup controls; browser font loading and the desktop popup were verified. API4190 PID18812 is unchanged and healthy. No data mutation or migration. Implementation reservation released; shared runtime coordination remains with this task.
@@ -953,9 +960,9 @@ Source9b1c33c includes scoped corporate-profile boundary copy.111 tests, scoped 
 
 - Owner reports that localhost:3100/organizations still opens the generic organization form instead of the requested four-step B2B popup. Read-only diagnosis: active HR-011 checkout at 13b6f49 predates merged B2B PR113 (develop@7d716af).
 - Reserve this task's documentation and isolated runtime integration only on codex/pc-b-b2b-form-runtime. Combine published HR-010/011 with current develop, retaining both module implementations unchanged; do not modify the source checkouts or merge the HR PRs into develop.
-- HR owner explicitly handed over Web3100/API4190 after confirming no active work. Validate/build before replacing the reverified listeners. Preserve rubi_hr_current_20260908 on 127.0.0.1:55432 and hr007-documents; no schema, migration, seed, credential, permission, dependency or business-data changes.
+- HR owner explicitly handed over Web3100/API4190 after confirming no active work. Validate/build before replacing the reverified listeners. Preserve nora_hr_current_20260908 on 127.0.0.1:55432 and hr007-documents; no schema, migration, seed, credential, permission, dependency or business-data changes.
 - Acceptance: the real organizations entry opens the four-step cooperation popup on port 3100 while retaining current HR and the existing application shell. Record runtime identity and checks before releasing this reservation.
-- Completed: 196 targeted Web tests, 108 API tests, full lint/typecheck and production builds passed. The authenticated localhost:3100 browser now opens all four cooperation steps; existing organization search, seven-card agency profile, logo dialog and HR navigation work. No business form was submitted. Runtime source is f2981b5, fingerprint hr005-2fbd1e21da23276d; final listener/data configuration is recorded outside Git in Rubi-backups/b2b-form-runtime-final.json. Documentation-only follow-up commits do not change the built source. Implementation reservation released; coordinate later runtime changes with this task to preserve combined HR/B2B.
+- Completed: 196 targeted Web tests, 108 API tests, full lint/typecheck and production builds passed. The authenticated localhost:3100 browser now opens all four cooperation steps; existing organization search, seven-card agency profile, logo dialog and HR navigation work. No business form was submitted. Runtime source is f2981b5, fingerprint hr005-2fbd1e21da23276d; final listener/data configuration is recorded outside Git in Nora-backups/b2b-form-runtime-final.json. Documentation-only follow-up commits do not change the built source. Implementation reservation released; coordinate later runtime changes with this task to preserve combined HR/B2B.
 
 ## TOUR-RUNTIME-0910 — PC-A — VALIDATED / STARTUP_POLICY_BLOCKED
 
@@ -980,7 +987,7 @@ Delivered definition, pricing, ordered relative itinerary and public Documents i
 
 - Owner reports the mission-reference selector in independent expense entry is not connected to recorded missions. Branch `codex/pc-b-hr-expense-mission-link` starts from the clean current HR-010 runtime `40c362e` (PR #125), preserving its operation buttons and develop `0261b91`.
 - Reserve HR-local form/model and related tests, plus HR service/tests only if needed to persist permitted expense-parent edits. Scope mission references for travel/advances/claims to existing canonical or legacy HR missions and matching company/employee; retain independent expenses, approval restrictions, permission checks, audit and optimistic versions. No shared contract/schema/migration, IAM grant, dependency or other module change.
-- PC-B retains the handed-over local runtime at `C:/Users/admin/Rubi-hr115-integration`, Web3100/API4190 with the existing database and document root. Read-only diagnostics only; do not seed or change business data for QA. Build affected services before coordinated local activation, commit/push and open a stacked review PR without merging.
+- PC-B retains the handed-over local runtime at `C:/Users/admin/Nora-hr115-integration`, Web3100/API4190 with the existing database and document root. Read-only diagnostics only; do not seed or change business data for QA. Build affected services before coordinated local activation, commit/push and open a stacked review PR without merging.
 - Result: current/legacy mission choices identify destination/dates and respect company/employee scope; permitted draft expense references now persist on create/edit/clear and link back to their mission. API validation preserves permissions, optimistic versions, approval/final-state guards and audit. All 99 HR Web tests and 80 HR API tests (21 isolated PostgreSQL) passed after resolving initial environment timeouts by rerunning sequentially. Source reservation is released for review; local activation and runtime handoff are recorded with `docs/tasks/HR-011.md` and the PR. No migration or merge.
 
 ## HR-PUBLISH-012 — PC-B — IN_PROGRESS / OWNER_APPROVED_MERGE
@@ -992,9 +999,9 @@ Delivered definition, pricing, ordered relative itinerary and public Documents i
 
 ## HR-010-OPERATION-BUTTONS — PC-B — READY_FOR_REVIEW
 
-- Owner requests HR record operation buttons to match Master Data. Branch `codex/pc-b-hr-operation-buttons` starts from current runtime and `origin/develop@0261b91`; checkout is `C:/Users/admin/Rubi-hr115-integration`.
+- Owner requests HR record operation buttons to match Master Data. Branch `codex/pc-b-hr-operation-buttons` starts from current runtime and `origin/develop@0261b91`; checkout is `C:/Users/admin/Nora-hr115-integration`.
 - Reserve only the shared HR table controls/styles under `apps/web/src/modules/hr/**` and this task's status/report entries. Reuse the existing public UI Button appearance used by Master Data; keep existing permission checks, edit/detail callbacks, soft-delete confirmation, selection and export behavior. Master Data, app shell, API, IAM, database/schema/migrations and dependencies remain unchanged.
-- PC-B Uniting confirmed no active checkout/listener work and handed over Web3100 for this additive change after validation. Preserve API4190, `rubi_hr_current_20260908`, `hr007-documents` and all current develop changes; recheck listener ownership before restarting Web. Commit/push and open a review PR; no merge is requested for this work item.
+- PC-B Uniting confirmed no active checkout/listener work and handed over Web3100 for this additive change after validation. Preserve API4190, `nora_hr_current_20260908`, `hr007-documents` and all current develop changes; recheck listener ownership before restarting Web. Commit/push and open a review PR; no merge is requested for this work item.
 - HR tables now use direct outlined View/Edit/Delete buttons with Master Data's shared Button sizing/icons, 8px spacing and destructive text color. Existing callbacks, detail visibility, soft-delete confirmation and capability gating remain unchanged; buttons are disabled while the table loads. All 97 existing HR/shared-Button tests, full Web lint and typecheck passed. Browser attachment timed out, so interactive visual QA is not asserted; build/runtime results accompany the review handoff in `docs/tasks/HR-010.md` and PR. Implementation reservation is released; coordinate any later listener replacement.
 
 ## DOCUMENTS-008-BLUE-BUTTON-CONTRAST — PC-B — READY_FOR_APPROVED_MERGE
@@ -1042,7 +1049,7 @@ Delivered definition, pricing, ordered relative itinerary and public Documents i
 
 - Owner explicitly approved merging both the date change and PR #115, and receiving latest develop. Integration worktree codex/pc-b-hr115-integration starts from published PR115@628012a and incorporates develop@130606d without modifying source worktrees.
 - Temporary integration-only ownership: conflicting status/plans, IAM permission catalog union and Prisma model union. Preserve HR, Sales, Ticket/Reservations, current company/profile/notifications and both histories; no new domain feature, dependency, migration file or IAM grant.
-- HR owner handed over runtime3100/4190. Keep rubi_hr_current_20260908 and hr007-documents as active data/storage; no reset, seed or password changes. Rehearse existing pending migrations on a restored private backup before live cutover. Historical checksum differences remain unchanged and documented.
+- HR owner handed over runtime3100/4190. Keep nora_hr_current_20260908 and hr007-documents as active data/storage; no reset, seed or password changes. Rehearse existing pending migrations on a restored private backup before live cutover. Historical checksum differences remain unchanged and documented.
 - Combined production build, full lint/typecheck, 61 Contract tests, 150 targeted Web tests and 1001 API tests passed (107 opt-in API tests skipped). Restored-data rehearsal applied all ten pending existing migrations: 45 applied, preserving 6 employees, 144 HR records, 2 customers, 18 documents and 4 companies. Date PR #118 merged as e12c397; PR #115 receives that date before final CI/merge. Integration implementation reservation is released; operational runtime handoff remains with PC-B until cutover verification.
 
 ## LOCAL-HR-AGENCIES-009 — PC-B — READY_FOR_REVIEW
@@ -1056,13 +1063,13 @@ Delivered definition, pricing, ordered relative itinerary and public Documents i
 
 - Owner request: simplify HR forms and populated tables, remove duplicate employee/company inputs, use stored reference data in dropdowns, enable selected-row exports and expense-document upload. Preserve current sections, workflow permissions and the active 3100 runtime's database.
 - Branch `codex/pc-b-hr-connected-forms` from HR-007 `54c5ed7`; reserve `apps/web/src/modules/hr/**`, `apps/api/src/hr/**` and the HR-only resource registry/columns slice in `packages/contracts/src/hr/**` if needed for compatible field metadata. Producer/consumer remain HR API/Web; retain stored column positions and current transport contracts for existing records/imports. No shared IAM, Documents, App Shell, dependency, schema or migration changes are planned.
-- Runtime remains the HR-007 checkout on web3100/API4190 with database `rubi_hr_current_20260908`; validate before rebuilding the owned listeners. Commit/push this branch and open a review PR without merging main/develop.
+- Runtime remains the HR-007 checkout on web3100/API4190 with database `nora_hr_current_20260908`; validate before rebuilding the owned listeners. Commit/push this branch and open a review PR without merging main/develop.
 - Result: stored-reference dropdowns and applicant/opening FK, deduplicated forms, selectable chart placement, selected-row XLSX/PDF, real expense receipt archiving and simplified tables/detail header. Retired fields retain stored positions for compatibility; no migration or shared IAM/Documents change. Web/API lint/typecheck/build, 94 HR Web tests, 79 HR API tests (20 PostgreSQL), 22 Contract tests and production browser checks passed. Details: `docs/tasks/HR-008.md`.
 - Implementation reservations are released for review. Operational ownership of web3100/API4190 and its independent data snapshot remains PC-B/HR-008; do not replace its listener with an older checkout. No merge performed.
 
 ## HR-007-LOCAL-CURRENT — PC-B — READY_FOR_REVIEW
 
-- Owner request 2026-09-08: run the current HR experience on port 3100 while retaining the current Rubi application. Branch `codex/pc-b-hr3100-current` starts at `origin/develop@30d67ec`; port 3100 was handed over by Task «PC-B Uniting» after confirming no active work on its listener.
+- Owner request 2026-09-08: run the current HR experience on port 3100 while retaining the current Nora application. Branch `codex/pc-b-hr3100-current` starts at `origin/develop@30d67ec`; port 3100 was handed over by Task «PC-B Uniting» after confirming no active work on its listener.
 - Scope: carry the already reviewed HR-005/HR-006 implementation from `b9b525d` into this isolated checkout, adapting only additive HR registration, HR permission exports/seed, Prisma HR relations and the local launcher. Preserve current IAM/MFA, Documents, four-company header, Profile, Notifications, Master Data and other modules. No merge to main/develop and no edits to other checkouts.
 - Reserve `HR shared-contract/root export`, `IAM HR permission slice`, `AppModule HR registration`, HR proxy/runtime paths and the existing additive HR schema/migrations for this work item. The owner previously transferred the completed PC-A migration lock for HR; no new or destructive migration is planned. Dependency/lockfile and other module contracts remain unchanged.
 - Runtime/data: prepare and validate separately before replacing only the handed-over web listener. Preserve API4000, its integrated database copy and the original HR database; prepare a separate database copy if schema reconciliation is needed. Record the exact runtime/commit and complete authentication, HR and current-shell smoke checks before handoff.
@@ -1070,7 +1077,7 @@ Delivered definition, pricing, ordered relative itinerary and public Documents i
 - Compatibility reservation: `Central UI Owner = PC-B/HR-007-LOCAL-CURRENT` only for the existing notification-center/change-notifications integration. Consume the public HR notification client in the common bell and remove the legacy HR listener to avoid two popups; all current non-HR feeds/actions stay intact.
 - Local runtime reserves `apps/web/src/lib/environment.ts` and its focused tests to keep local API/web hostnames aligned (`localhost` or `127.0.0.1`) and prevent host-scoped login cookies from causing another login loop. Remote API addresses retain their existing behavior.
 - Browser compatibility found a 14px overflow in the current shared header at 390px; reserve only the header container layout class in `app-shell.tsx` to arrange the existing controls into two mobile rows. Current desktop layout, company branding, user menu and actions remain present.
-- Result: the current HR production build is active on `localhost:3100`, with API4190 and the isolated `rubi_hr_current_20260908` database/document snapshot. Real browser login, all four companies, Profile/MFA, one notification bell, the legacy HR redirect, six employees and reload passed on both `localhost:3100` and `127.0.0.1:3100`. Lint/typecheck/build and targeted Web/API/Contracts/PostgreSQL checks passed; details and restart command are in `docs/tasks/HR-007.md`.
+- Result: the current HR production build is active on `localhost:3100`, with API4190 and the isolated `nora_hr_current_20260908` database/document snapshot. Real browser login, all four companies, Profile/MFA, one notification bell, the legacy HR redirect, six employees and reload passed on both `localhost:3100` and `127.0.0.1:3100`. Lint/typecheck/build and targeted Web/API/Contracts/PostgreSQL checks passed; details and restart command are in `docs/tasks/HR-007.md`.
 - Implementation reservations are released for review. Operational ownership of web3100/API4190 remains PC-B/HR-007 until an explicit runtime handoff; preserve its database/document snapshot when replacing the listener. No merge to main/develop was performed.
 
 ## HEADER-TODAY-001 — PC-B — DONE / MERGED
@@ -1101,7 +1108,7 @@ Reserve Ticket Catalog Web/API/tests, additive travel public contracts/root expo
 
 Additive producer boundary scope: MasterTravelDirectory and its module export only, validating public active city/hotel/insurance references for tours. Existing MasterDataService/repository/controllers/forms remain unchanged; no cross-module direct query. Ticket Catalog provides public immutable departure selection validation to Sales. Expanded services keep the existing pricing model; the tour label adds no second charge.
 
-Delivered in fd325c7, 7844907 and 3949878. Tour definitions, dated departures, hotel/insurance selectors, included transfers/visa, repeat-week prefill with editable flight times, real offer publication and Sales selection are active locally. Shared stock/concurrent reservation, idempotency/replay, branch and reference tests passed. Forty-three migrations applied to an empty isolated DB and restored backup; seed twice passed only on isolated DB. Fresh private backup preceded the one additive migration on rubi; existing business counts and historical checksums unchanged. Web3100/API4000 serve the new build. This task's reservations released; no producer branch, grants, operational seed or public push. Details and exact QA limits are in the task document.
+Delivered in fd325c7, 7844907 and 3949878. Tour definitions, dated departures, hotel/insurance selectors, included transfers/visa, repeat-week prefill with editable flight times, real offer publication and Sales selection are active locally. Shared stock/concurrent reservation, idempotency/replay, branch and reference tests passed. Forty-three migrations applied to an empty isolated DB and restored backup; seed twice passed only on isolated DB. Fresh private backup preceded the one additive migration on nora; existing business counts and historical checksums unchanged. Web3100/API4000 serve the new build. This task's reservations released; no producer branch, grants, operational seed or public push. Details and exact QA limits are in the task document.
 
 ## SIDEBAR-LABELS-DOTS-0908 — PC-A — COMPLETE_LOCAL
 
@@ -1150,7 +1157,7 @@ Explicit user follow-up: group headings toggle their own links like3200, whole-s
 - Branch مستقل `codex/pc-b-marketing-remove-section-intro` از آخرین Snapshot محلی `origin/develop@54e5102`؛ `git fetch --prune origin` دو بار اجرا شد اما GitHub موقتاً روی پورت ۴۴۳ در دسترس نبود.
 - محدوده فقط `apps/web/src/modules/marketing/components/marketing-workspace.tsx`، تست قرارداد همان ماژول و ورودی‌های همین Work Item در `WORK_ASSIGNMENTS.md` و `docs/PROJECT_STATUS.md` است. هیچ Schema/Migration/Seed، API/Contract، Dependency/Lockfile، داده یا فایل مرکزی UI تغییر نمی‌کند.
 - نتیجه: عنوان «بخش‌های مارکتینگ» و توضیح «برای ورود به هر بخش، کارت مربوط را انتخاب کنید.» همراه Wrapper فاصله‌ساز حذف شدند؛ Grid کارت‌ها بدون فاصله اضافه از ابتدای Hub نمایش داده می‌شود و Section با نام دسترس‌پذیر غیرنمایشی باقی مانده است.
-- اعتبارسنجی: ۱۸ تست هدفمند مارکتینگ، Contracts build، Web typecheck و lint و Production Build با ۳۴ Route موفق‌اند. نسخه همین Branch جای اجرای قدیمی `Rubi-hr-foundation` روی پورت ۳۱۰۰ فعال شد.
+- اعتبارسنجی: ۱۸ تست هدفمند مارکتینگ، Contracts build، Web typecheck و lint و Production Build با ۳۴ Route موفق‌اند. نسخه همین Branch جای اجرای قدیمی `Nora-hr-foundation` روی پورت ۳۱۰۰ فعال شد.
 
 ## LEGAL-ENTITY-BRAND-HEADER-002 — PC-B — DONE/MERGED
 
@@ -1174,7 +1181,7 @@ Explicit user follow-up: group headings toggle their own links like3200, whole-s
 
 - درخواست صریح مالک محصول در 2026-09-07: هر تغییر موفقی که در سامانه انجام می‌شود در بخش زنگوله به‌صورت Notification نمایش داده شود. `COMPUTER_ID=PC-B` بر مبنای مالکیت فعلی این Workspace و ماژول‌های افقی رابط.
 - Branch مستقل `codex/pc-b-global-change-notifications` از `origin/develop@9b9d7a4`. محدوده رزروشده: یک Notification Center مستقل در `apps/web/src/components/layout/**`، اتصال محدود زنگوله موجود در `app-shell.tsx`، تست‌های همان Slice و ورودی‌های همین Task در `WORK_ASSIGNMENTS.md` و `docs/PROJECT_STATUS.md`.
-- نسخه اول بدون Schema/Migration/Seed و بدون تغییر API/Shared Contract/Dependency/Lockfile است: Mutationهای موفق `POST/PUT/PATCH/DELETE` که از Web احراز‌شده Rubi به API تنظیم‌شده ارسال می‌شوند در مرورگر ثبت می‌شوند. Auth/refresh/logout و عملیات غیرتغییردهنده Preview/Search/Export از Feed تغییر حذف‌اند.
+- نسخه اول بدون Schema/Migration/Seed و بدون تغییر API/Shared Contract/Dependency/Lockfile است: Mutationهای موفق `POST/PUT/PATCH/DELETE` که از Web احراز‌شده Nora به API تنظیم‌شده ارسال می‌شوند در مرورگر ثبت می‌شوند. Auth/refresh/logout و عملیات غیرتغییردهنده Preview/Search/Export از Feed تغییر حذف‌اند.
 - اعلان‌ها فاقد PII و Payload درخواست‌اند و فقط نوع عملیات، نام بخش، زمان و مسیر داخلی را نگه می‌دارند. نگهداری محدود، خوانده/خوانده‌نشده، پاک‌سازی اعلان‌های خوانده‌شده، Sync بین Tabها و fallback امن برای LocalStorage الزامی است.
 - این Slice تغییرات عمومی را از همان Browser Profile پوشش می‌دهد. پیگیری DOCUMENTS-007 اعلان تغییرات اسناد را با قرارداد و Persistence مستقل Backend به همین مرکز متصل کرده است؛ بنابراین مسیرهای `documents/**` از رهگیری مرورگری حذف‌اند تا اعلان تکراری ساخته نشود. سایر ماژول‌ها تا پیگیری Backend خود، مرورگرمحور باقی می‌مانند.
 - نتیجه: زنگوله موجود به Notification Center واقعی تبدیل شد؛ Mutation موفق پس از دریافت Response به اعلان فارسیِ بخش و عملیات تبدیل می‌شود. Badge تعداد خوانده‌نشده، Empty State، زمان، Deep Link، خواندن تکی/همه، پاک‌کردن خوانده‌شده‌ها، سقف ۶۰ رکورد و همگام‌سازی Tabها فعال است؛ خطای Storage هرگز نتیجه درخواست اصلی را تغییر نمی‌دهد.
@@ -1407,7 +1414,7 @@ Explicit user follow-up: group headings toggle their own links like3200, whole-s
 
 - Final approved integration: normal merge e31b8d1 retains parents 43111fd and 3d3095e. Both handoffs and all capacity/arrangement work preserved. Purchase and arrangement versions coexist in the public presenter; nullable legacy room composition is omitted, not fabricated. Producer branch/worktree remains clean at 3d3095e.
 - Combined gates: 15 lint/typecheck tasks, 733 Web tests, 883 API tests (81 optional skipped in the full run), 38 Contracts and 71 Database tests passed. Fresh 37 migrations, seed twice (86 permission definitions), and 46 focused PostgreSQL/domain tests passed, including oversell, independent purchase/arrangement revisions and immutable snapshots. API and 36-route Web production builds passed.
-- Restored-backup upgrade passed, then a fresh backup preceded the single pending additive pricing migration on local rubi. Existing business counts and all historical migration checksums were preserved. Local Web 3100/API 4000 now run the combined build; health, login redirect, served pricing bundle, credentialed CORS and unauthorized-write denial passed. Existing Documents key/storage and Ramtin-only grant preserved; no operational seed or extra grant.
+- Restored-backup upgrade passed, then a fresh backup preceded the single pending additive pricing migration on local nora. Existing business counts and all historical migration checksums were preserved. Local Web 3100/API 4000 now run the combined build; health, login redirect, served pricing bundle, credentialed CORS and unauthorized-write denial passed. Existing Documents key/storage and Ramtin-only grant preserved; no operational seed or extra grant.
 - This task's integration/Migration/shared-contract/central-doc/UI reservations are released on local completion; producer review responsibilities remain unchanged. Public publication is still unapproved. No authenticated browser walkthrough or real-contract creation is claimed. The older rollout blocker below is historical and superseded by this successful integration.
 
 - Follow-up user approval: reconcile the three committed Sales/Reservations changes through 3d3095e into this pricing branch with a normal local merge, retaining both histories. Reserve overlapping Sales/Reservations/Ticket public contracts, schema, UI/API and central documentation for reconciliation; preserve both producer handoffs. No producer worktree edits, main/develop changes, public push, additional grants or dependency changes. Validate combined migrations, restore-copy upgrade, tests/build and activate locally on 3100/4000 only after a fresh backup.
@@ -1431,7 +1438,7 @@ Explicit user follow-up: group headings toggle their own links like3200, whole-s
 - User explicitly authorized isolated local integration of latest module work and preserved passport changes. Branch codex/pc-a-local-integration-0906 starts at local Sales 2cc7a9c, retaining all six local commits. No source branch, main/develop, public push or PR mutation authorized.
 - Reserve integration conflict resolution and additive compatibility fixes in this worktree only, including central docs/contracts/schema consistency. Existing producer locks remain held; no concurrent producer worktree is edited. Merge current develop first; assess current module tips and preservation snapshot separately. No blanket merge of obsolete/demo/recovery branches.
 - Runtime replacement and operational migrations are gated by schema/security review, empty-database migrations, tests and builds. Existing local data and keys must remain intact. Recovery snapshot is not assumed production-ready.
-- Integrated current module tips and recovery with compatibility resolution; full lint/typecheck/tests/build and 34 empty-DB migrations plus seed twice passed. Existing rubi has two unexplained historical migration checksums; operational migration and runtime replacement stopped before mutation. Local backup retained. Details: docs/tasks/LOCAL-INTEGRATION-0906.md.
+- Integrated current module tips and recovery with compatibility resolution; full lint/typecheck/tests/build and 34 empty-DB migrations plus seed twice passed. Existing nora has two unexplained historical migration checksums; operational migration and runtime replacement stopped before mutation. Local backup retained. Details: docs/tasks/LOCAL-INTEGRATION-0906.md.
 - Follow-up authorized: restored-copy upgrade passed, fresh backup retained, only pending additive B2B migration applied without rewriting history. Integrated Web/API activated on 3100/4000; HTTP smoke passed. Historical provenance concern retained; no new IAM grants or public push.
 
 ## RESERVATION-ARRANGEMENT-0906 — PC-A — READY_FOR_REVIEW
@@ -1609,12 +1616,12 @@ Explicit user follow-up: group headings toggle their own links like3200, whole-s
 - ادامه درخواست صریح مالک در 2026-09-05: اصلاح ناوبری Breadcrumb سکشن‌های مارکتینگ، حذف ارتباطات و دکمه بازگشت، تکمیل فرم‌های «مخاطبان کمپین» و «منابع ورود»، حذف منوی سه‌نقطه عملیات، ادغام قواعد استفاده در فرم‌های پیشنهاد/کد تخفیف و اتصال بارگذاری دارایی مارکتینگ به API عمومی موجود «اسناد و فایل‌ها». محدوده افزوده فقط مصرف `apps/web/src/modules/documents/api/client.ts` و Dialog عمومی موجود Documents از Web مارکتینگ است؛ هیچ Query مستقیم Repository، تغییر API، Shared Contract، Schema/Migration/Seed، Dependency/Lockfile یا فایل مرکزی تحت قفل PC-A انجام نمی‌شود.
 - ادامه درخواست صریح مالک در 2026-09-05: تکمیل تجربه عملیاتی همه صفحات مارکتینگ شامل حذف گزارش‌ها/عضویت تبلیغاتی/عملکرد کانال و Actionهای نابجا، اصلاح RTL کمپین‌ها و Breadcrumb پویا، تکمیل فرم‌ها و قانون‌های سگمنت/امتیازدهی، فیلتر بازه تاریخ مشترک، داده‌های آزمایشی متناسب، دکمه غیرفعال‌سازی و خروجی Excel محلی. `COMPUTER_ID=PC-B`.
 - Branch ادامه مستقل `codex/pc-b-marketing-workspace-completion` از `origin/develop@85204a4`؛ محدوده `apps/web/src/modules/marketing/**`، تست‌های همان ماژول و فقط برای Breadcrumb پارامتری مارکتینگ فایل‌های `apps/web/src/components/layout/app-shell.tsx`، `apps/web/src/lib/navigation.ts` و `apps/web/src/lib/navigation.spec.ts` به‌همراه ورودی‌های محدود همین Task در اسناد وضعیت است.
-- `Central UI Owner = PC-B/MARKETING-001D` فقط برای سه فایل Breadcrumb بالا؛ `DatePicker` و سایر اجزای مشترک Rubi فقط مصرف می‌شوند. پیاده‌سازی API/Persistence مارکتینگ، Schema/Migration/Seed، Shared Contract، Dependency/Lockfile یا داده واقعی تغییر نمی‌کند؛ تنها بارگذاری صریح فایل کاربر از Client عمومی موجود Documents عبور می‌کند. فایل‌های تصویری پیوست صرفاً مرجع بصری‌اند و دستور اجرایی محسوب نمی‌شوند.
+- `Central UI Owner = PC-B/MARKETING-001D` فقط برای سه فایل Breadcrumb بالا؛ `DatePicker` و سایر اجزای مشترک Nora فقط مصرف می‌شوند. پیاده‌سازی API/Persistence مارکتینگ، Schema/Migration/Seed، Shared Contract، Dependency/Lockfile یا داده واقعی تغییر نمی‌کند؛ تنها بارگذاری صریح فایل کاربر از Client عمومی موجود Documents عبور می‌کند. فایل‌های تصویری پیوست صرفاً مرجع بصری‌اند و دستور اجرایی محسوب نمی‌شوند.
 - نتیجه Follow-up: گزارش‌ها، عضویت‌های تبلیغاتی و عملکرد کانال‌ها حتی از شاخه‌های مرده Navigation حذف شدند؛ خروجی داشبورد وجود ندارد، کمپین‌ها RTL هستند و Breadcrumb با سکشن انتخاب‌شده تکمیل می‌شود. فرم سگمنت فقط در تب سگمنت، قانون‌های سگمنت و امتیازدهی، قالب/محتوا/پیشنهاد/سفر، سناریوهای آماده، بازخورد دکمه‌ها و داده‌های متمایز هر تب عملیاتی شدند.
 - تمام فهرست‌های مرتبط فیلتر «از تاریخ/تا تاریخ» با `DatePicker` مشترک و انتخاب Grid ماه/سال دارند؛ رکوردها کنترل پاور قرمز برای غیرفعال‌سازی و خروجی واقعی Excel محلی با خنثی‌سازی Formula Injection دارند. به‌جز بارگذاری صریح دارایی محتوایی که در Documents ذخیره می‌شود، این رفتارها State محلی Preview هستند و هیچ ارسال یا اثر مالی ایجاد نمی‌کنند.
 - اعتبارسنجی: Web typecheck، Web lint، همه `603/603` تست Web و Production Build با ۳۴ Route موفق‌اند. نسخه همین Branch روی `http://localhost:3100` فعال است و مسیر محافظت‌شده مارکتینگ طبق انتظار به Login پاسخ می‌دهد. نشست مرورگر آزمایشی جدا از نشست Chrome بود؛ برای جلوگیری از تغییر حساب یا رمز، ورود خودکار انجام نشد.
 - Follow-up تصویر 486: ناوبری سکشن‌ها از History خام به Router رسمی Next منتقل شد و مسیر مستقیم کمپین اکنون Breadcrumb کامل «فضای کاری CRM / مارکتینگ / کمپین‌ها» می‌سازد. فیلد دیداری نسخه مورد انتظار، عبارت انگلیسی کنار ویرایش، کل تب A/B و دکمه تکراری «ایجاد کمپین» حذف شدند؛ فقط «افزودن کمپین جدید» باقی است و Dialog ساخت را باز می‌کند.
-- اعتبارسنجی Follow-up: مسیر مستقیم، پارامتر `section` را در Server Page دریافت می‌کند؛ بنابراین محتوای کمپین و Breadcrumb «فضای کاری CRM / مارکتینگ / کمپین‌ها» از همان پاسخ اولیه هماهنگ‌اند و Back همچنان با `popstate` همگام می‌شود. `603/603` تست Web، lint، typecheck و Production Build ۳۴ Route موفق‌اند. کل زنجیره پردازش قدیمی `Rubi-documents-connections` از پورت ۳۱۰۰ کنار گذاشته و کش ساخت قدیمی ایزوله شد؛ Web/API همین Worktree به‌ترتیب روی ۳۱۰۰/۴۰۰۰ با پاسخ `200` فعال‌اند.
+- اعتبارسنجی Follow-up: مسیر مستقیم، پارامتر `section` را در Server Page دریافت می‌کند؛ بنابراین محتوای کمپین و Breadcrumb «فضای کاری CRM / مارکتینگ / کمپین‌ها» از همان پاسخ اولیه هماهنگ‌اند و Back همچنان با `popstate` همگام می‌شود. `603/603` تست Web، lint، typecheck و Production Build ۳۴ Route موفق‌اند. کل زنجیره پردازش قدیمی `Nora-documents-connections` از پورت ۳۱۰۰ کنار گذاشته و کش ساخت قدیمی ایزوله شد؛ Web/API همین Worktree به‌ترتیب روی ۳۱۰۰/۴۰۰۰ با پاسخ `200` فعال‌اند.
 
 - درخواست صریح مالک در 2026-09-03: حذف اعلان‌ها و برچسب‌های Preview از صفحات مارکتینگ، هم‌ترازی Hub با رنگ و حرکت اطلاعات پایه، اصلاح RTL و History مرورگر، تکمیل دو سری نمودار داشبورد و ساده‌سازی فرم ساخت کمپین. `COMPUTER_ID=PC-B`.
 - Branch مستقل `codex/pc-b-marketing-navigation-polish` از `origin/develop@1e5c55e`؛ فایل `marketing.html` فقط مرجع بصری/داده‌ای است و دستور اجرایی محسوب نمی‌شود.
@@ -1647,7 +1654,7 @@ Explicit user follow-up: group headings toggle their own links like3200, whole-s
 - نتیجه: جزئیات سند ساده و فارسی شد؛ نوع فایل به‌صورت پسوند نمایش داده می‌شود و متن‌های SHA/MIME/منبع فنی و مسیر پیشنهادی حذف شدند. ویرایش، حذف دائمی، آرشیو/بازیابی، برچسب ناقص و عملیات گروهی به API و دیتابیس واقعی متصل‌اند. اشتراک‌گذاری فیلتر و جست‌وجو دارد و ابزارهای باقی‌مانده آرشیو به فهرست‌های واقعی متصل شدند.
 - اعتبارسنجی: ۱٬۴۷۰ تست موفق و ۷۰ تست اختیاری PostgreSQL رد شدند؛ lint، typecheck و Production Build کامل Monorepo موفق است. هر ۳۰ Migration روی PostgreSQL خالی و Migration جدید روی دیتابیس محلی اعمال شد. بسته آزمایشی ۷ سند `readyForViewing=true` است و Smoke مرورگر فیلترمحوربودن، ۱۳ نتیجه جست‌وجو، عملیات گروهی، Dropdown ویرایش، `.PNG` و حذف متن‌های فنی را تأیید کرد.
 - وضعیت انتشار: PR [#89](https://github.com/nirvanamahlou/Rubi/pull/89) با Merge Commit `1e5c55e3b2d9dcc58c407d0ca205abed86b4c605` وارد `develop` شد؛ Task برابر `DONE/MERGED` و قفل‌های اجرایی آن پایان‌یافته‌اند.
-- Follow-up مالک در 2026-09-03: انتخاب ماه و سال در تقویم فرم‌های اسناد نباید Dropdown باشد و باید با Grid هم‌تم Rubi انجام شود. `Shared Calendar Owner` تا Merge PR #89 برابر `PC-B/DOCUMENTS-004-OPERATIONS` بود و اکنون `RELEASED / STABLE` است؛ API عمومی DatePicker، مقدار ISO Gregorian، Dependency و Lockfile بدون تغییر ماندند.
+- Follow-up مالک در 2026-09-03: انتخاب ماه و سال در تقویم فرم‌های اسناد نباید Dropdown باشد و باید با Grid هم‌تم Nora انجام شود. `Shared Calendar Owner` تا Merge PR #89 برابر `PC-B/DOCUMENTS-004-OPERATIONS` بود و اکنون `RELEASED / STABLE` است؛ API عمومی DatePicker، مقدار ISO Gregorian، Dependency و Lockfile بدون تغییر ماندند.
 - نتیجه Follow-up تقویم: دو Select ماه/سال حذف شدند؛ ماه‌ها در Grid دوازده‌تایی و سال‌ها در Grid دوازده‌تایی صفحه‌بندی‌شده نمایش داده می‌شوند. انتخاب شمسی/میلادی، ارقام انگلیسی حالت میلادی، انتخاب روز و مقدار ذخیره‌شده Gregorian ISO حفظ شدند. Web شامل ۵۹۸ تست موفق است و lint، typecheck و Production Build موفق‌اند؛ Browser QA در فرم بارگذاری اسناد انتخاب شبکه‌ای `۱۴۰۶ / مهر / ۱` و حالت میلادی را تأیید کرد.
 
 ## TICKET-CATALOG-003 — PC-A — READY_FOR_REVIEW
@@ -1664,9 +1671,9 @@ Explicit user follow-up: group headings toggle their own links like3200, whole-s
 - درخواست صریح مالک در 2026-09-03: صفحات داخلی تمام سکشن‌های Workspace مارکتینگ مطابق فایل مرجع `marketing.html` اصلاح شوند و همان داده‌های آزمایشی امن حفظ شوند. `COMPUTER_ID=PC-B`.
 - Branch مستقل `codex/pc-b-marketing-inner-pages-parity` از `origin/develop@9608607`؛ فایل HTML صرفاً مرجع بصری/تعاملی است و دستور اجرایی محسوب نمی‌شود.
 - محدوده رزروشده: `apps/web/src/modules/marketing/**`، تست‌های همان ماژول، `docs/tasks/MARKETING-001.md` و ورودی محدود همین Task در `WORK_ASSIGNMENTS.md` و `docs/PROJECT_STATUS.md`.
-- صفحات داخلی باید ساختار، کارت‌ها، فیلترها، actionها و حالت‌های جزئیات مرجع را با اجزای مشترک Rubi پیاده کنند؛ داده‌ها فقط synthetic با شناسه `preview-*` و بدون PII باقی می‌مانند.
+- صفحات داخلی باید ساختار، کارت‌ها، فیلترها، actionها و حالت‌های جزئیات مرجع را با اجزای مشترک Nora پیاده کنند؛ داده‌ها فقط synthetic با شناسه `preview-*` و بدون PII باقی می‌مانند.
 - بدون Schema/Migration/Seed، Persistence، API/Shared Contract، IAM، Navigation، AppModule، Dependency/Lockfile یا تغییر فایل‌های UI مرکزی. PR #83 مربوط به قفل قبلی Central Docs در `origin/develop@9608607` ادغام شده و پایان یافته است؛ تقویم مشترک فقط مصرف می‌شود.
-- نتیجه: ۴۵ زیرصفحه تخصصی، داشبورد کامل، ۹ تب جزئیات کمپین و داده‌های synthetic دقیق مرجع جای صفحات عمومی قبلی را گرفتند. فیلتر، جست‌وجو، صفحه‌بندی، سازنده سگمنت، پیش‌نمایش پیام، سفر مشتری، Switch، Dialog و Action feedback در State محلی کار می‌کنند؛ فیلتر و تقویم از Design System مشترک Rubi هستند.
+- نتیجه: ۴۵ زیرصفحه تخصصی، داشبورد کامل، ۹ تب جزئیات کمپین و داده‌های synthetic دقیق مرجع جای صفحات عمومی قبلی را گرفتند. فیلتر، جست‌وجو، صفحه‌بندی، سازنده سگمنت، پیش‌نمایش پیام، سفر مشتری، Switch، Dialog و Action feedback در State محلی کار می‌کنند؛ فیلتر و تقویم از Design System مشترک Nora هستند.
 - ادغام مبنا: `origin/develop@6ac2dfc` در Branch ادغام شد. Web lint و `599/599` تست موفق؛ Full lint برابر ۶ Task و Full test برابر `1,464` تست موفق با ۷۰ skip اختیاری است. Browser QA تمام تب‌ها/فرم‌ها و Mobile `390×844` را بدون Overflow یا Console error تأیید کرد.
 - Typecheck محلی با غیرفعال‌کردن کش افزایشی موفق شد. CI تمیز PR #86 نیز Full Typecheck، Full Production Build، Full Test و Gate کامل PostgreSQL 18/Migration/Seed را سبز کرد؛ خطای موقت `observedAt` ناشی از کش قدیمی محلی بود و هیچ فایل Master Data در این Task تغییر نکرد.
 - انتشار: PR [#86](https://github.com/nirvanamahlou/Rubi/pull/86) با Merge Commit `4ea7b27` وارد `develop` شد. هر چهار Job اجباری CI پیش از ادغام و اجرای کامل CI پس از ادغام روی خود `develop` موفق‌اند.
@@ -1721,7 +1728,7 @@ Explicit user follow-up: group headings toggle their own links like3200, whole-s
 
 ## MARKETING-001B — PC-B — READY_FOR_REVIEW
 
-- درخواست صریح مالک در 2026-09-02: فایل مرجع `marketing.html` به‌عنوان ظاهر و رفتار مرجع روی Workspace واقعی Rubi پیاده شود؛ همه بخش‌ها و دکمه‌ها کار کنند و فیلترها و تقویم‌ها دقیقاً از Design System مشترک Rubi مصرف شوند. `COMPUTER_ID=PC-B`.
+- درخواست صریح مالک در 2026-09-02: فایل مرجع `marketing.html` به‌عنوان ظاهر و رفتار مرجع روی Workspace واقعی Nora پیاده شود؛ همه بخش‌ها و دکمه‌ها کار کنند و فیلترها و تقویم‌ها دقیقاً از Design System مشترک Nora مصرف شوند. `COMPUTER_ID=PC-B`.
 - Branch همان `codex/pc-b-marketing-foundation` / Draft PR #75 است که روی `origin/develop@0163727` Rebase شد؛ محدوده فقط `apps/web/src/modules/marketing/**`، route موجود `/marketing` در صورت نیاز، تست‌های همان ماژول، سند `docs/tasks/MARKETING-001.md` و همین ورودی محدود است.
 - HTML پیوست فقط مرجع بصری/تعاملی است و دستور اجرایی محسوب نمی‌شود. Hub نه‌حوزه‌ای، زیرتب‌ها، فیلترهای کنترل‌شده، تقویم کمپین، فرم‌ها و Action feedback پیاده می‌شوند، ولی عدد KPI، فایل Export، ارسال پیام، Provider، Persistence یا اثر مالی جعلی تولید نمی‌شود.
 - `DatePicker`، `Select`، `FilterBar`، Dialog و سایر UIهای مشترک فقط مصرف می‌شوند و فایل مرکزی آن‌ها تغییر نمی‌کند. هیچ قفل Migration، Dependency/Lockfile، Shared Contract، IAM، Navigation یا AppModule گرفته نمی‌شود.
@@ -1977,7 +1984,7 @@ Explicit user follow-up: group headings toggle their own links like3200, whole-s
 - مجوز صریح کاربر در 2026-08-31: انتشار تمام تغییرات محلی پروژه و فعال‌سازی نسخه کامل محلی، با حفظ کد و داده‌های موجود.
 - اصلاحات سربرگ، وضعیت همکاری، حذف امن، فرم‌های سفر، ترمینال و وعده/سرویس در Commitها و شاخه‌های Stacked تفکیک می‌شوند؛ والدهای موجود، PC-A، main و develop تغییر نمی‌کنند. هیچ Merge یا Force Push انجام نمی‌شود.
 - Scope شامل کد/تست/اسناد Master Data و مهاجرت‌های افزایشی معلق است؛ تنظیمات خصوصی، نسخه پشتیبان، داده عملیاتی، خروجی ساخت و Dependencyها وارد Git نمی‌شوند. سه قفل PC-B/MASTER-003 فعال و Dependency/Lockfile آزاد باقی می‌ماند.
-- قبل از Deploy محلی، Backup دیتابیس گرفته می‌شود؛ Seed یا Reset روی داده کاربردی اجرا نمی‌شود. آزمون‌ها در DB مستقل هستند. API4000، Web3100 و زیرساخت Rubi پس از بررسی روشن می‌مانند.
+- قبل از Deploy محلی، Backup دیتابیس گرفته می‌شود؛ Seed یا Reset روی داده کاربردی اجرا نمی‌شود. آزمون‌ها در DB مستقل هستند. API4000، Web3100 و زیرساخت Nora پس از بررسی روشن می‌مانند.
 - نتیجه: شش شاخه تخصصی و Draft PRهای #48 تا #53 منتشر شدند؛ نسخه حمل‌ونقل #47 نیز بدون تغییر والدها در شاخه `codex/pc-b-master-data-local-complete` قرار گرفت. اصلاح آزمون ترمینال با Fast-forward به #52 رسید؛ حذف امن امکانات وابسته قطار در نسخه تجمیعی با تست واقعی بررسی شد.
 - هر ۲۴ Migration محلی اعمال شده، داده قبلی محفوظ و API4000/Worker/Web3100 روشن‌اند. ۹۴۶ تست عمومی، Typecheck و Production Build موفق؛ آزمون واقعی ترمینال ۱۵ و حمل‌ونقل ۱۰ موفق. lint محدوده موفق؛ ایراد قبلی DatePicker و نبود Smoke احراز‌شده صریحاً گزارش شده‌اند. جزئیات: `docs/tasks/MASTER-003-LOCAL-PUBLISH.md`.
 
@@ -1995,7 +2002,7 @@ Explicit user follow-up: group headings toggle their own links like3200, whole-s
 ### `MASTER-003R-TRANSPORT-FORMS` — PC-B — `READY_FOR_REVIEW`
 
 - Branch: `codex/pc-b-master-data-transport-forms` از `origin/codex/pc-b-master-data-partner-forms@2088010`؛ Draft stacked روی #45، والدها دست‌نخورده.
-- اجرای مستقل در `C:/Users/admin/Rubi-transport-forms` برای حفظ همه تغییرات ثبت‌نشده و سرورهای Checkout اصلی؛ ادغام محلی تغییرات هم‌زمان نیازمند هماهنگی جداست.
+- اجرای مستقل در `C:/Users/admin/Nora-transport-forms` برای حفظ همه تغییرات ثبت‌نشده و سرورهای Checkout اصلی؛ ادغام محلی تغییرات هم‌زمان نیازمند هماهنگی جداست.
 - محدوده: هفت فرم حمل‌ونقل، API/Repository/Contract ماژول Master Data، Prisma/Migration افزایشی امکانات قطار و وضعیت بررسی، آزمون‌ها و اسناد همین Slice.
 - قفل Migration، Master Data shared-contract و اسناد مرکزی زیر مالکیت فعال `PC-B/MASTER-003`؛ بدون تغییر Dependency/Lockfile، Customers یا جداول ماژول‌های دیگر.
 - Producer/Consumer هر دو PC-B: افزودن اختیاری `values.transportStatus` و `train-types.values.facilityIds`، پاسخ attributes و فیلتر وضعیت حمل‌ونقل؛ قرارداد v12 سازگار، درخواست قدیمی رفتار قبلی را حفظ می‌کند. وضعیت بررسی در قرارداد عمومی قدیمی inactive است.
@@ -2180,7 +2187,7 @@ Explicit user follow-up: group headings toggle their own links like3200, whole-s
 | ------------------------- | --------------- | ---------- | -------------------------------------------------------------------------------- |
 | Migration Owner           | PC-A/IAM-001    | `RELEASED` | 2026-08-23؛ IAM baseline با Merge `50eaccaf` ادغام و Handoff عمومی ثبت شد        |
 | Dependency/Lockfile Owner | PC-A/IAM-001    | `RELEASED` | 2026-08-23؛ Dependencyهای IAM با Merge `50eaccaf` تثبیت و Sprint اول بسته شد     |
-| IAM shared-contract Owner | PC-A/IAM-001    | `RELEASED` | 2026-08-23؛ قرارداد عمومی IAM با Merge `50eaccaf` در `@rubi/contracts` منتشر شد  |
+| IAM shared-contract Owner | PC-A/IAM-001    | `RELEASED` | 2026-08-23؛ قرارداد عمومی IAM با Merge `50eaccaf` در `@nora/contracts` منتشر شد  |
 | Central architecture docs | PC-A/ARCH-001   | `RELEASED` | 2026-08-23؛ معماری تاییدشده با Merge `99dd1cf` وارد `develop` و به PC-B تحویل شد |
 
 آزادشدن این قفل‌ها به معنی مجوز هم‌زمان برای دو Task نبود. وضعیت تاریخی این بخش با
@@ -2190,7 +2197,7 @@ Explicit user follow-up: group headings toggle their own links like3200, whole-s
 
 ## Handoff رسمی IAM به PC-B
 
-- قرارداد عمومی IAM فقط از `@rubi/contracts` مصرف می‌شود.
+- قرارداد عمومی IAM فقط از `@nora/contracts` مصرف می‌شود.
 - `BranchReference`، `AuthenticatedActor` و `IamPermissionCode` (از جمله
   `iam.audit.read`) قراردادهای عمومی قابل مصرف برای `MASTER-002` هستند؛ Audit فقط با
   actor context عمومی ثبت می‌شود و مدل یا Repository داخلی Audit عمومی نیست.
@@ -2249,7 +2256,7 @@ Explicit user follow-up: group headings toggle their own links like3200, whole-s
 - فاز B با این Handoff فقط در دامنه Customers مجاز است: مدل/Repository/Migration، قرارداد
   عمومی، اتصال واقعی UI، permission/audit و تست Migration را تکمیل می‌کند و حق تغییر فایل
   داخلی IAM یا Master Data را ندارد.
-- Master Data فقط از قرارداد عمومی `@rubi/contracts` مصرف می‌شود؛ import یا query مستقیم
+- Master Data فقط از قرارداد عمومی `@nora/contracts` مصرف می‌شود؛ import یا query مستقیم
   از ساختار داخلی Master Data ممنوع است.
 - ذخیره فایل یا مقدار حساس مدارک هویتی تا حل `DEC-OPEN-006` ممنوع است؛ فقط metadata/reference
   غیرحساس طراحی می‌شود. Duplicate auto-merge تا حل `DEC-OPEN-011` ممنوع و فقط candidate
@@ -2270,7 +2277,7 @@ Explicit user follow-up: group headings toggle their own links like3200, whole-s
   `apps/api/src/customer-affairs/**` برای Domain/Application Port و Contract
   ماژول‌محلی بدون Controller فعال/Repository واقعی،
   `docs/tasks/CUSTOMER-AFFAIRS-001.md` و تست‌های هدفمند همین محدوده است.
-- UI فاز A فارسی، RTL، Responsive و هماهنگ با طراحی آبی Rubi است و Loading، Empty،
+- UI فاز A فارسی، RTL، Responsive و هماهنگ با طراحی آبی Nora است و Loading، Empty،
   Error، Forbidden، Preview، جست‌وجو، فیلتر، مرتب‌سازی و صفحه‌بندی را پوشش می‌دهد.
 - Persistence، Prisma، Migration، Seed، Dependency، manifest، Lockfile، قرارداد
   مشترک/root export و داده واقعی مشتری یا PII در فاز A ممنوع است.
@@ -2392,7 +2399,7 @@ Customers، Finance، Procurement، Reservations، Integrations و Documents خ�
 ### قفل تحویلی PC-B/DOCUMENTS-004-OPERATIONS — Calendar follow-up
 
 - محدوده: فقط `apps/web/src/components/ui/date-picker*` برای جایگزینی Dropdown ماه/سال
-  با انتخاب شبکه‌ای هم‌تم Rubi؛ مصرف‌کننده‌های فعلی بدون تغییر API باقی می‌مانند.
+  با انتخاب شبکه‌ای هم‌تم Nora؛ مصرف‌کننده‌های فعلی بدون تغییر API باقی می‌مانند.
 - تغییر Dependency/Lockfile، API، Database، Contract و Migration مجاز نیست.
 - مقدار ذخیره‌شده همچنان ISO Gregorian باقی می‌ماند؛ سوییچ شمسی/میلادی فقط لایه
   نمایش و انتخاب تاریخ است.
@@ -2507,7 +2514,7 @@ PAYMENT-DIALOGS-0909: 10 targeted tests, scoped lint, typecheck, production buil
 
 Reserve Reservations workflow transition/service/tests, Web workflow form/foundation styling/model/tests and docs. New request first column #FFC0C0; confirmation atomically issues voucher with existing insurance acknowledgement and Sales notification; financial release remains mandatory. Retain legacy confirmed-only voucher issue. No migration or live permission grants. Base 8297341 preserves local feature stack.
 
-CONFIRM-VOUCHER-0909: 12 API/34 Web tests, scoped lint, typechecks/builds and both-theme color checks passed; local API4000/Web3100 health 200. Scope released. Push blocked by automatic approval review; GitHub reports origin Rubi is public, contrary to earlier private-repository description. Publication awaits explicit approval.
+CONFIRM-VOUCHER-0909: 12 API/34 Web tests, scoped lint, typechecks/builds and both-theme color checks passed; local API4000/Web3100 health 200. Scope released. Push blocked by automatic approval review; GitHub reports origin Nora is public, contrary to earlier private-repository description. Publication awaits explicit approval.
 
 ## RESERVATION-COMPACT-ENGLISH-0909 — PC-A — LOCAL_COMPLETE_PENDING_PUBLICATION
 
@@ -2746,4 +2753,3 @@ Runtime correction: reserve infrastructure/scripts/start-unified-local.ps1 for a
 
 
 LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runtime and launcher integration reservation released. No merge to develop/main. See docs/tasks/LOCAL-ALL-SECTIONS-3100-0913.md.
-

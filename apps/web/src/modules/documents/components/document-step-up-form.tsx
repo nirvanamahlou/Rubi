@@ -4,7 +4,7 @@ import type {
   DocumentAccessPurposeCode,
   DocumentDetailV1,
   IamMfaSetupBeginResponseV1,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import { KeyRound, LoaderCircle, ShieldCheck } from 'lucide-react';
 import { useEffect, useState } from 'react';
 

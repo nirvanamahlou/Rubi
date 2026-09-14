@@ -69,7 +69,7 @@ describe('documents workspace contract', () => {
       'دسترسی به اسناد مجاز نیست',
       'تازه‌های آرشیو',
       'کارهای من',
-      'ارتباط اسناد با بخش‌های روبی',
+      'ارتباط اسناد با بخش‌های نورا',
       'همه مسیرهای آرشیو',
       'اسناد این بخش',
       'متصل به ماژول',
@@ -156,7 +156,7 @@ describe('documents workspace contract', () => {
     expect(source).toContain('documentsApi.list');
     expect(source).toContain("request<DocumentDetailResponseV1>('/upload'");
     expect(source).toContain('FormData');
-    expect(source).not.toMatch(/@rubi\/database|PrismaClient/);
+    expect(source).not.toMatch(/@nora\/database|PrismaClient/);
     expect(source).not.toContain('preview-document-');
     expect(source).not.toContain('documentsPhaseANotice');
   });

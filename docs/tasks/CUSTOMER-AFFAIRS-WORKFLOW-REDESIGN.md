@@ -5,7 +5,7 @@ PC-B owns this Web-only task on `codex/pc-b-customer-affairs-workflow-redesign`,
 ## Result
 
 - Four primary destinations: overview, requests/leads, support tickets and reports. Overdue followups and waiting-sales records are contextual filters; overdue tickets are a support filter. Legacy URL views remain supported, including satisfaction under reports.
-- Overview prioritizes real overdue followups and retains live counts, latest tickets and pending sales. Six duplicate navigation cards are removed. Tabs fill four columns and collapse to two on mobile; Rubi theme tokens and keyboard focus styling are preserved.
+- Overview prioritizes real overdue followups and retains live counts, latest tickets and pending sales. Six duplicate navigation cards are removed. Tabs fill four columns and collapse to two on mobile; Nora theme tokens and keyboard focus styling are preserved.
 - Lead creation supports origin, travel dates, services and optional budget/currency. Passenger count has no invented default. The current API still requires a positive passenger count.
 - Qualification requires an explicit six-item checklist; unchecked criteria reach the API as false. Sales handoff still depends on the existing server state and customer checks.
 - Detail views provide editable next action/date via version-checked existing PATCH endpoints. Only writable fields are serialized. Communication records distinguish internal notes, calls, meetings and received customer replies; no external delivery is claimed.

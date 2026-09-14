@@ -2,7 +2,7 @@
 
 import { AffairsSelect } from './affairs-select';
 import { useState, type FormEvent } from 'react';
-import type { CustomerSummary } from '@rubi/contracts';
+import type { CustomerSummary } from '@nora/contracts';
 import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
 import { FormField, Input, Textarea } from '@/components/ui/form-controls';

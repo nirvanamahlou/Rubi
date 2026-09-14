@@ -6,7 +6,7 @@ import type {
   CustomerAffairsTicketInput,
   CustomerAffairsTicketView,
   CustomerAffairsTimelineInput,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 
 import { getPublicApiBaseUrl } from '@/lib/environment';
 

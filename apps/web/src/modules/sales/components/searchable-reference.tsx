@@ -2,7 +2,7 @@
 
 import { Check, ChevronDown, Search } from 'lucide-react';
 import { useId, useRef, useState } from 'react';
-import type { MasterDataRecord } from '@rubi/contracts';
+import type { MasterDataRecord } from '@nora/contracts';
 import { FormField, Input } from '@/components/ui/form-controls';
 import { normalizeRouteSearch } from '../model/sales-form';
 

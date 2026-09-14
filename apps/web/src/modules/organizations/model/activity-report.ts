@@ -2,7 +2,7 @@ import type {
   OrganizationActivityEvent,
   OrganizationActivityPage,
   OrganizationActivityQuery,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 
 export const activityCategories = {
   PROFILE: 'مشخصات، شعب و نمایندگان',

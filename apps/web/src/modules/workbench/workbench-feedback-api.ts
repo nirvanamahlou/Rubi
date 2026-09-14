@@ -2,7 +2,7 @@ import type {
   WorkbenchFeedbackCreateInputV1,
   WorkbenchFeedbackCreateResponseV1,
   WorkbenchFeedbackDetailResponseV1,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import { refreshAuthenticatedSession } from '@/lib/auth-session';
 import { getPublicApiBaseUrl } from '@/lib/environment';
 import { documentsApi } from '@/modules/documents/api/client';

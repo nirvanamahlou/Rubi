@@ -14,8 +14,8 @@ import type {
   SalesReservationRequestV1,
   SupplierPurchaseGateV1,
   TravelDeliveryAuthorizationV1,
-} from '@rubi/contracts';
-import { Prisma } from '@rubi/database';
+} from '@nora/contracts';
+import { Prisma } from '@nora/database';
 import { DatabaseService } from '../../database/database.service';
 
 @Injectable()

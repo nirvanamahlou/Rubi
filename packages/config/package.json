@@ -1,5 +1,5 @@
 {
-  "name": "@rubi/config",
+  "name": "@nora/config",
   "version": "0.0.0",
   "private": true,
   "main": "dist/index.js",
@@ -15,8 +15,8 @@
     "test": "vitest run"
   },
   "devDependencies": {
-    "@rubi/eslint-config": "workspace:*",
-    "@rubi/typescript-config": "workspace:*",
+    "@nora/eslint-config": "workspace:*",
+    "@nora/typescript-config": "workspace:*",
     "@types/node": "26.2.0",
     "eslint": "9.39.5",
     "typescript": "6.0.3",

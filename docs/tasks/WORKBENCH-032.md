@@ -4,8 +4,8 @@
 
 - Replace the Notes date-filter placeholders with the compact Persian labels requested in Screenshot 562.
 - Add a calendar event dialog with a required title/date and optional text, safe HTTP(S) link and image attachment.
-- Remove the profile appearance/theme card so the shared Rubi header remains the only theme control.
-- Refresh the messenger with Rubi gradients, colorful unit/template surfaces and remove visible inactive/unavailable copy from the messenger and new-message dialog.
+- Remove the profile appearance/theme card so the shared Nora header remains the only theme control.
+- Refresh the messenger with Nora gradients, colorful unit/template surfaces and remove visible inactive/unavailable copy from the messenger and new-message dialog.
 
 ## Behavior and boundaries
 
@@ -16,10 +16,10 @@
 
 ## Verification
 
-- `pnpm --filter @rubi/web exec vitest run src/modules/workbench src/modules/profile` — 56 tests passed.
+- `pnpm --filter @nora/web exec vitest run src/modules/workbench src/modules/profile` — 56 tests passed.
 - Scoped ESLint for Workbench and Profile passed with zero warnings.
-- `pnpm --filter @rubi/web typecheck` passed.
-- `pnpm --filter @rubi/web build` passed with 46 routes.
+- `pnpm --filter @nora/web typecheck` passed.
+- `pnpm --filter @nora/web build` passed with 46 routes.
 - Authenticated browser QA on `localhost:3100` verified compact Notes dates, absence of the profile theme card, the colorful messenger without inactive/unavailable text, and calendar event creation with text, `https` link and a PNG image. The created item appeared on the current day with its link and image. Browser console had no warnings or errors.
 - Web runtime: source `623fbb0`, PID `14168`, build `GhIUre85BIXBxND2PRsp2`. API4190 remained PID `15024` and was not restarted.
 - Draft PR: <https://github.com/nirvanamahlou/Rubi/pull/211>.

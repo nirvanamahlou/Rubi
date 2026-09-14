@@ -7,8 +7,8 @@ import type {
   B2bCooperationRole,
   BranchReference,
   IamPermissionCode,
-} from '@rubi/contracts';
-import { b2bAgreementTermsIssue, B2B_AGREEMENT_TYPES } from '@rubi/contracts';
+} from '@nora/contracts';
+import { b2bAgreementTermsIssue, B2B_AGREEMENT_TYPES } from '@nora/contracts';
 import {
   Plus,
   RefreshCw,

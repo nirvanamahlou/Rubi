@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import {
   MASTER_TRANSPORT_FORM_RESOURCES,
   type AuthenticatedActor,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import { transportStatusData } from './transport-form.policy';
 import { MasterDataService } from './master-data.service';
 import { strFromU8, unzipSync } from 'fflate';

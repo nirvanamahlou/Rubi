@@ -3,10 +3,10 @@
 ## Runtime activated after restored-copy upgrade — 2026-09-06
 
 - User explicitly requested resolving the blocker and starting the integrated version.
-- Restored the preserved backup into rubi_upgrade_0906_copy; normal migrate deploy
+- Restored the preserved backup into nora_upgrade_0906_copy; normal migrate deploy
   successfully applied only 20260905150000_agency_b2b_integrations.
-- Took a fresh local backup at tmp/integration-backup-0906/rubi-before-launch.dump,
-  then applied the same additive migration to local rubi. All 33 old migration names
+- Took a fresh local backup at tmp/integration-backup-0906/nora-before-launch.dump,
+  then applied the same additive migration to local nora. All 33 old migration names
   and checksums were preserved; customer/user/document row counts were unchanged.
   No checksum rewrite, reset, operational seed or generated schema-diff SQL was used.
 - Historical checksum provenance remains a documented maintenance concern, not
@@ -48,17 +48,17 @@ producer locks or authorize future changes to their branches.
   Contract/database/config/worker suites passed as part of the full command.
 - Full monorepo build passed. Direct Next production build repeated with ignored
   local public API URL, bypassing stale Turbo environment cache: 36 routes.
-- All 34 migrations passed on new PostgreSQL database rubi_integration_0906_check.
+- All 34 migrations passed on new PostgreSQL database nora_integration_0906_check.
 - Seed ran twice there; counts stable: 84 permissions, 6 roles, 2 synthetic customers.
   No operational seed was run.
 - Authenticated browser/real document upload QA is not claimed.
 
 ## Historical blocker and investigation (resolved for this local rollout above)
 
-The existing local rubi database already has the passport migration. Its old API/Web
+The existing local nora database already has the passport migration. Its old API/Web
 remain running; no process replacement or operational migration was performed.
 Before any upgrade, a custom-format pg_dump backup was created and its archive list
-read successfully: tmp/integration-backup-0906/rubi-before.dump (621123 bytes).
+read successfully: tmp/integration-backup-0906/nora-before.dump (621123 bytes).
 The backup is ignored by Git and remains local; no data/key is published.
 
 Of 33 applied migrations, 26 match exact checksums and five differ only in LF/CRLF.

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { LegalEntitySummary } from '@rubi/contracts';
+import type { LegalEntitySummary } from '@nora/contracts';
 
 import {
   combinedOfficialDocumentAllowed,

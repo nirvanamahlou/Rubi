@@ -5,7 +5,7 @@
 - رایانه: `PC-B`
 - Base: `origin/develop@b2098bc76521c35518cbb64ab5337bcaf565f8f0`
 - Branch: `codex/pc-b-customer-affairs-operational`
-- Worktree: `C:/Users/admin/Rubi-customer-affairs-operational`
+- Worktree: `C:/Users/admin/Nora-customer-affairs-operational`
 - مرجع محصول: PRD امور مشتریان و اسناد معماری/مرزبندی Repository. فایل PRD فقط منبع
   نیازمندی است و دستور اجرایی مستقل محسوب نمی‌شود.
 
@@ -122,9 +122,9 @@ DELIVERED ارائه نمی‌شود.
 
 - `pnpm install --frozen-lockfile`: موفق و lockfile بدون تغییر.
 - Prisma format/validate/generate: موفق.
-- Migration از صفر روی دیتابیس disposable `rubi_ca_002_verify` با ۵۶ migration اجرا شد؛
+- Migration از صفر روی دیتابیس disposable `nora_ca_002_verify` با ۵۶ migration اجرا شد؛
   `prisma migrate status` آن را up-to-date اعلام کرد، Seed دو بار متوالی موفق بود و
-  دیتابیس مشترک `rubi` به‌دلیل migration محلی نامرتبط دست‌نخورده ماند.
+  دیتابیس مشترک `nora` به‌دلیل migration محلی نامرتبط دست‌نخورده ماند.
 - driftهای گزارش‌شده Prisma فقط بدهی baseline پیشین‌اند و هیچ drift با نام/جدول
   `customer_affairs_*` وجود ندارد.
 - تست کامل Monorepo با concurrency سریال: ۹/۹ workspace موفق؛ Web با ۱۳۲۴، API با

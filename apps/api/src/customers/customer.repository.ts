@@ -5,7 +5,7 @@ import type {
   CustomerDetail,
   CustomerListQuery,
   CustomerSummary,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import {
   AuditOutcome,
   CustomerDuplicateReviewStatus,
@@ -17,7 +17,7 @@ import {
   type CustomerKind,
   type CustomerRelationshipType,
   type Prisma,
-} from '@rubi/database';
+} from '@nora/database';
 
 import { DatabaseService } from '../database/database.service';
 import {

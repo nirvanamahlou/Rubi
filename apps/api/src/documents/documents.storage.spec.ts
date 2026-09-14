@@ -15,7 +15,7 @@ describe('LocalDocumentStorage encryption boundary', () => {
   let storage: LocalDocumentStorage;
 
   beforeEach(async () => {
-    root = await mkdtemp(join(tmpdir(), 'rubi-documents-storage-'));
+    root = await mkdtemp(join(tmpdir(), 'nora-documents-storage-'));
     storage = new LocalDocumentStorage(
       new ConfigService({
         DOCUMENTS_STORAGE_ROOT: root,

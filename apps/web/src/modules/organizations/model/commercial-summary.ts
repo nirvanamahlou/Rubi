@@ -2,7 +2,7 @@ import type {
   B2bAgreementCaseV1,
   B2bCooperationRole,
   IamPermissionCode,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import { agencyClient } from '../api/agency-client';
 
 export function isCurrentAgreement(record: B2bAgreementCaseV1, today: string) {

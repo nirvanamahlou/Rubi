@@ -9,7 +9,7 @@ handoff, and Finance inbox completion through `977bfeab`. Merge conflicts were
 limited to additive status/assignment documentation; both sides were retained.
 No application code conflict required a new implementation.
 
-Use the existing local database `rubi_hr_current_20260908` on port 55432 and the
+Use the existing local database `nora_hr_current_20260908` on port 55432 and the
 existing `hr007-documents` storage. The database inspection reported no pending
 migrations. No seed, role assignment, fixture load, credential change or new
 migration is part of this activation. Finance's separately documented role

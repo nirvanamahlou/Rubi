@@ -14,4 +14,4 @@ Server owns HTML/CSS, escapes saved values, accepts embedded raster logos only, 
 13 targeted tests passed, scoped ESLint passed, production Web build and TypeScript passed. Actual renderer produced a synthetic23-passenger3-page A4 PDF; all pages checked visually, hotel UALL and passenger23 present. Artifact: ignored tmp/pdfs/reservation-direct.pdf. Live3100 unauthenticated route redirects to login. Actual authenticated contract operations were not executed.
 
 ## Handoff
-User-started Next dev on3100 retained; frontend source changes reload automatically. Runtime uses SALES_PDF_CHROME_PATH and SALES_PDF_NAZANIN_PATH already provided by Start-Rubi-Live.cmd. No public push or merge; existing public-origin publication hold retained.
+User-started Next dev on3100 retained; frontend source changes reload automatically. Runtime uses SALES_PDF_CHROME_PATH and SALES_PDF_NAZANIN_PATH already provided by Start-Nora-Live.cmd. No public push or merge; existing public-origin publication hold retained.

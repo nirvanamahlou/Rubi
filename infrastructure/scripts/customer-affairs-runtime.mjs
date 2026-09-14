@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url';
 const [mode = 'inspect', database] = process.argv.slice(2);
 if (
   !['inspect', 'migrate', 'grant-administrator'].includes(mode) ||
-  !['rubi_hr_current_20260908', 'rubi_ca_unified_verify_20260912'].includes(
+  !['nora_hr_current_20260908', 'nora_ca_unified_verify_20260912'].includes(
     database,
   )
 )
@@ -19,7 +19,7 @@ if (
 const url = new URL(process.env.DATABASE_URL);
 if (!['localhost', '127.0.0.1'].includes(url.hostname) || url.port !== '55432')
   throw new Error(
-    'Only the existing local Rubi PostgreSQL instance is supported.',
+    'Only the existing local Nora PostgreSQL instance is supported.',
   );
 url.pathname = `/${database}`;
 const databaseDirectory = fileURLToPath(

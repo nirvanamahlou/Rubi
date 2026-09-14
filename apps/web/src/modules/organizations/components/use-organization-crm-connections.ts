@@ -1,6 +1,6 @@
 'use client';
 
-import type { B2bCrmConnectionsV1 } from '@rubi/contracts';
+import type { B2bCrmConnectionsV1 } from '@nora/contracts';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { agencyClient } from '../api/agency-client';

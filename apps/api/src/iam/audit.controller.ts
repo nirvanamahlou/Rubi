@@ -7,7 +7,7 @@ import { IamService } from './iam.service';
 import { PermissionGuard } from './permission.guard';
 
 @ApiTags('IAM / Audit')
-@ApiCookieAuth('rubi_access')
+@ApiCookieAuth('nora_access')
 @UseGuards(AuthGuard, PermissionGuard)
 @Controller('iam/audit-events')
 export class AuditController {

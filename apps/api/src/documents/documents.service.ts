@@ -29,7 +29,7 @@ import type {
   DocumentOptionsResponseV1,
   DocumentSortCode,
   DocumentVersionV1,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 
 import type {
   DocumentAccessGrantDto,

@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { AffairsSelect } from './affairs-select';
 
-describe('Rubi Customer Affairs dropdowns', () => {
+describe('Nora Customer Affairs dropdowns', () => {
   it('renders an RTL themed combobox and retains the named form control', () => {
     const html = renderToStaticMarkup(
       <AffairsSelect name="priority" defaultValue="NORMAL" required>
@@ -34,7 +34,7 @@ describe('Rubi Customer Affairs dropdowns', () => {
       'assignee-picker',
       'record-operations',
       'customer-affairs-workspace',
-      'customer-affairs-rubi-workspace',
+      'customer-affairs-nora-workspace',
     ]) {
       const source = readFileSync(
         `src/modules/customer-affairs/components/${file}.tsx`,

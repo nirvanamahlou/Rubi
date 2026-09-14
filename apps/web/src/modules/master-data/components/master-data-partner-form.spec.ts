@@ -1,6 +1,6 @@
 import { createElement, type ReactNode } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import type { MasterDataRecord } from '@rubi/contracts';
+import type { MasterDataRecord } from '@nora/contracts';
 import { describe, expect, it, vi } from 'vitest';
 
 // SSR exercises the real fields; only browser-mounted dialog portals are replaced.

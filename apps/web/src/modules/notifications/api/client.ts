@@ -1,12 +1,12 @@
 import type {
   NotificationListResponseV1,
   NotificationReadResponseV1,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 
 import { refreshAuthenticatedSession } from '@/lib/auth-session';
 import { getPublicApiBaseUrl } from '@/lib/environment';
 
-export const NOTIFICATIONS_CHANGED_EVENT = 'rubi:notifications:changed';
+export const NOTIFICATIONS_CHANGED_EVENT = 'nora:notifications:changed';
 
 export function notifyNotificationFeedChanged(): void {
   if (typeof window !== 'undefined') {

@@ -1,5 +1,5 @@
 import { BadRequestException, ForbiddenException } from '@nestjs/common';
-import type { AuthenticatedActor } from '@rubi/contracts';
+import type { AuthenticatedActor } from '@nora/contracts';
 
 type Values = Record<string, string | number | readonly string[] | null>;
 const hoursKeys = ['operatingHoursMode', 'opensAt', 'closesAt'] as const;

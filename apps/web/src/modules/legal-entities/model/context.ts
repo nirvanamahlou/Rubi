@@ -2,7 +2,7 @@ import {
   LEGAL_ENTITY_CONTEXT_ALL,
   type LegalEntitySelection,
   type LegalEntitySummary,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 
 export interface LegalEntityChoice {
   value: LegalEntitySelection;

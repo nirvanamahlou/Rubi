@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import type { IamPermissionCode, MasterDataRecord } from '@rubi/contracts';
+import type { IamPermissionCode, MasterDataRecord } from '@nora/contracts';
 import {
   documentsApi,
   DocumentsApiError,

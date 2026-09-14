@@ -64,14 +64,14 @@ describe('authenticated Sales XLSX HTTP route', () => {
       .expect(401);
     await request(app.getHttpServer())
       .get('/sales/contracts/export.xlsx')
-      .set('Cookie', 'rubi_access=denied')
+      .set('Cookie', 'nora_access=denied')
       .expect(403);
     expect(list).not.toHaveBeenCalled();
   });
   it('returns a private real XLSX attachment using the applied filter', async () => {
     const result = await request(app.getHttpServer())
       .get('/sales/contracts/export.xlsx?search=TRACK&settlementStatus=UNPAID')
-      .set('Cookie', 'rubi_access=allowed')
+      .set('Cookie', 'nora_access=allowed')
       .expect(200);
     expect(result.headers['content-type']).toContain('spreadsheetml.sheet');
     expect(result.headers['content-disposition']).toMatch(
@@ -90,7 +90,7 @@ describe('authenticated Sales XLSX HTTP route', () => {
       .get(
         '/sales/contracts/export.xlsx?exportLimit=100000&settlementStatus=bad',
       )
-      .set('Cookie', 'rubi_access=allowed')
+      .set('Cookie', 'nora_access=allowed')
       .expect(400);
   });
 });
