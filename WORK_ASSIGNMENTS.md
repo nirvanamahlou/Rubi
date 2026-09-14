@@ -2516,6 +2516,8 @@ B2B-360-REMOVE-SUBTITLE-001: READY_FOR_REVIEW. Combined runtime1bf840b/PID8604 b
 
 ## PROCUREMENT-001 — PC-B — READY_FOR_REVIEW / RESERVATIONS RELEASED
 
+- Latest UI refinement: the Procurement date controls and calendar picker now follow the Rubi reference layout, including Shamsi month/year grids, adjacent-day cells, Gregorian English labels and paired date-filter controls.
+
 - Delivery: source implementation and isolated QA completed. Migration Owner, Central Docs Owner and Procurement shared-contract/root export Owner reservations for this task are RELEASED. Dependency/Lockfile was never acquired. The reservation descriptions below are historical execution scope, not active locks. No other task's reservation is released by this entry. No merge or shared-runtime activation occurred; commercial policy and Finance/Tasks/Reservations adapters require owner handoff before production enablement.
 
 - Additive validation scope includes `packages/contracts/test/iam.spec.ts` (catalog version 11 and new permission membership) and `apps/web/src/modules/module-foundation/model/route-foundation.spec.ts` (move purchases from incomplete Foundation to connected workspace). These existing tests must follow the authorized module transition; no other route changes.
