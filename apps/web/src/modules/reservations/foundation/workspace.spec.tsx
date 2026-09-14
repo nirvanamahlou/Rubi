@@ -127,6 +127,18 @@ describe('reservations workspace access and states', () => {
       expect(html).not.toMatch(/href=".*\.(pdf|xlsx)"/);
     }
   });
+  it('keeps every reservation section visible in the primary navigation', () => {
+    const html = renderToStaticMarkup(
+      <ReservationOperationsWorkspace
+        state="SUCCESS"
+        rows={[row()]}
+        access={access}
+        now={now}
+        initialSection="dashboard"
+      />,
+    );
+    for (const [, label] of sections) expect(html).toContain(label);
+  });
   it('filters, sorts and clamps pagination without mutating source rows', () => {
     const rows = [
       row('b'),

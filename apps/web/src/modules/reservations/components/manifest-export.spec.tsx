@@ -10,4 +10,6 @@ it('offers date-range export with new-only selected by default', () => {
   expect(html).toContain('همه قراردادهای بازه');
   expect(html).toMatch(/name="manifest-scope"[^>]*checked=""[^>]*\/?>/);
   expect(html).toContain('دریافت MANIFEST بازه');
+  expect(html).toContain('href="/master-data/transportation"');
+  expect(html).toContain('مدیریت قالب‌های MANIFEST');
 });

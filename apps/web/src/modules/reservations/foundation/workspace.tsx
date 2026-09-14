@@ -223,27 +223,16 @@ export function ReservationOperationsWorkspace({
             </span>
           </header>
           <nav className={styles.tabs} aria-label="بخش‌های رزرواسیون">
-            {sections
-              .filter(
-                ([key]) =>
-                  ![
-                    'tickets',
-                    'hotels',
-                    'vouchers',
-                    'insurance',
-                    'costs',
-                  ].includes(key),
-              )
-              .map(([key, label]) => (
-                <button
-                  type="button"
-                  key={key}
-                  aria-current={section === key ? 'page' : undefined}
-                  onClick={() => setSection(key)}
-                >
-                  {label}
-                </button>
-              ))}
+            {sections.map(([key, label]) => (
+              <button
+                type="button"
+                key={key}
+                aria-current={section === key ? 'page' : undefined}
+                onClick={() => setSection(key)}
+              >
+                {label}
+              </button>
+            ))}
           </nav>
           {!available && (
             <section

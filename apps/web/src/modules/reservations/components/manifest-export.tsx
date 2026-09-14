@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
@@ -106,6 +107,11 @@ export function ManifestExport() {
           بازه براساس تاریخ پرواز رفت و با ساعت تهران محاسبه می‌شود. فقط
           قراردادهای دارای تأیید تحویل مدارک مالی وارد فایل می‌شوند.
         </p>
+        <Button asChild className="mt-3" size="sm" variant="outline">
+          <Link href="/master-data/transportation">
+            مدیریت قالب‌های MANIFEST
+          </Link>
+        </Button>
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="grid gap-2 text-sm font-medium">
