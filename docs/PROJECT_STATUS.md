@@ -1,5 +1,9 @@
 # وضعیت پروژه
 
+## 2026-09-14 — RESERVATION-TICKET-PDF-PASSENGER-0914 — PC-A — READY_FOR_REVIEW
+
+نام مسافر در درخواست‌های تازه Sales داخل Snapshot نسخه‌دار Reservations حفظ می‌شود. برای قراردادهای قدیمی مانند `SC-2026-000003` که نام در Snapshot جا افتاده، پنجره بلیط و PDF نام را از پرونده اصلی مسافر می‌خوانند، بدون بازنویسی Snapshot یا سند تاریخی. موتور PDF مسیر Chrome یا Edge و فونت نازنین محلی را خودکار پیدا می‌کند و نبود فونت سفارشی مانع صدور نیست. ۴ تست API، ۱۸ تست Web، lint/typecheck/build API/Web و ساخت واقعی PDF با Chrome نصب‌شده موفق‌اند. جزئیات در [RESERVATION-TICKET-PDF-PASSENGER-0914](tasks/RESERVATION-TICKET-PDF-PASSENGER-0914.md) ثبت شده است.
+
 ## 2026-09-14 — PROFILE-PLACEHOLDER-AVATAR-001 — PC-B — VERIFIED
 
 در منوی پروفایل، حالت‌های «در حال دریافت اطلاعات» و «کارمند سامانه» دیگر به حروف مخفف داخل آواتار تبدیل نمی‌شوند؛ متن کامل کنار یک دایره ساده با رنگ سالید نمایش داده می‌شود و نام واقعی کاربر پس از دریافت نشست همچنان initials خودش را دارد. دو narrowing فقط‌نوعی برای خروجی تازه‌مرج‌شده رزرواسیون، build دقیق `develop` را بدون تغییر رفتار بازیابی کرد. ۹ تست هدفمند، lint، typecheck کامل و build تولیدی ۴۶ Route موفق‌اند؛ بدون تغییر API، داده، Permission، Schema/Migration یا Dependency.

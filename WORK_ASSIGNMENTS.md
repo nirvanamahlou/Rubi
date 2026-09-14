@@ -1,5 +1,12 @@
 # Work Assignments
 
+## RESERVATION-TICKET-PDF-PASSENGER-0914 — PC-A — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-14: رفع خطای دانلود PDF بلیط قرارداد SC-2026-000003 و حذف وضعیت «نام مسافر ثبت نشده» برای Snapshotهای جدید. Branch مستقل `codex/pc-a-ticket-pdf-passenger-0914` از `origin/develop@b62054e3`؛ COMPUTER_ID=PC-A.
+- محدوده رزرو: نگاشت نام مسافر در Snapshot خروجی Sales، Renderer/Route PDF بلیط Reservations، تنظیم tracing دارایی همان Route، تست‌های هدفمند و اسناد Task. فایل‌های تاریخی RESERVATION-TICKET-PDF-0912 و RESERVATION-DIRECT-PDF-0910 آزاد شده‌اند؛ در آخرین `origin/develop` مالک فعال همپوشان پیدا نشد.
+- Renderer فقط Chrome/Edge نصب‌شده و فونت محلی خواندنی را کشف می‌کند؛ فونت اختیاری است و نبود آن صدور را متوقف نمی‌کند. هیچ Migration، Seed، داده عملیاتی، Permission، Dependency/Lockfile یا اجرای مشترک localhost در این شاخه انجام نمی‌شود.
+- نتیجه: نام در Snapshot درخواست‌های جدید حفظ می‌شود و قرارداد قدیمی دارای نام ناقص، نام را برای نمایش/PDF از پرونده اصلی مسافر می‌خواند. Chrome/Edge و فونت محلی بدون فرمان دستی کشف می‌شوند. ۴ تست API، ۱۸ تست Web، lint/typecheck/build API/Web و Smoke واقعی Chrome موفق‌اند؛ رزرو فایل‌ها برای Review آزاد است.
+
 ## PROFILE-PLACEHOLDER-AVATAR-001 — PC-B — VERIFIED / LOCAL_ACTIVATION
 
 - درخواست مالک محصول در 2026-09-14: عبارت‌های موقت منوی پروفایل به‌صورت کامل نمایش داده شوند و حروف مخفف «کارمند سامانه» یا «در حال دریافت اطلاعات» داخل آواتار نیاید. `COMPUTER_ID=PC-B`؛ شاخه `codex/pc-b-profile-placeholder-avatar` از `origin/develop@225be9bd`.

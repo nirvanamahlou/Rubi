@@ -15,6 +15,54 @@ import { promisify } from 'node:util';
 const run = promisify(execFile);
 let active = 0;
 
+const uniqueAbsolute = (values: Array<string | undefined>) => [
+  ...new Set(
+    values.filter(
+      (value): value is string =>
+        typeof value === 'string' && isAbsolute(value),
+    ),
+  ),
+];
+
+export async function resolveTicketPdfRuntime(
+  env: Readonly<Record<string, string | undefined>> = process.env,
+  readable: (path: string) => Promise<boolean> = async (path) =>
+    access(path)
+      .then(() => true)
+      .catch(() => false),
+): Promise<{ chromePath: string | null; fontPath: string | null }> {
+  const chromeCandidates = uniqueAbsolute([
+    env.SALES_PDF_CHROME_PATH,
+    env.ProgramFiles &&
+      join(env.ProgramFiles, 'Google/Chrome/Application/chrome.exe'),
+    env['ProgramFiles(x86)'] &&
+      join(env['ProgramFiles(x86)'], 'Google/Chrome/Application/chrome.exe'),
+    env.LOCALAPPDATA &&
+      join(env.LOCALAPPDATA, 'Google/Chrome/Application/chrome.exe'),
+    env.ProgramFiles &&
+      join(env.ProgramFiles, 'Microsoft/Edge/Application/msedge.exe'),
+    env['ProgramFiles(x86)'] &&
+      join(env['ProgramFiles(x86)'], 'Microsoft/Edge/Application/msedge.exe'),
+    env.LOCALAPPDATA &&
+      join(env.LOCALAPPDATA, 'Microsoft/Edge/Application/msedge.exe'),
+  ]);
+  const fontCandidates = uniqueAbsolute([
+    env.SALES_PDF_NAZANIN_PATH,
+    env.LOCALAPPDATA &&
+      join(env.LOCALAPPDATA, 'Microsoft/Windows/Fonts/BNazanin.ttf'),
+    env.WINDIR && join(env.WINDIR, 'Fonts/BNazanin.ttf'),
+  ]);
+  const firstReadable = async (candidates: readonly string[]) => {
+    for (const candidate of candidates)
+      if (await readable(candidate)) return candidate;
+    return null;
+  };
+  return {
+    chromePath: await firstReadable(chromeCandidates),
+    fontPath: await firstReadable(fontCandidates),
+  };
+}
+
 async function waitForPdf(path: string): Promise<void> {
   const deadline = Date.now() + 10_000;
   let previousSize = -1;
@@ -30,25 +78,23 @@ async function waitForPdf(path: string): Promise<void> {
 }
 
 export async function renderTicketPdf(html: string): Promise<Buffer> {
-  const chrome = process.env.SALES_PDF_CHROME_PATH;
-  const font = process.env.SALES_PDF_NAZANIN_PATH;
-  if (!chrome || !font || !isAbsolute(chrome) || !isAbsolute(font))
-    throw new Error('PDF_RUNTIME_UNAVAILABLE');
+  const { chromePath: chrome, fontPath: font } =
+    await resolveTicketPdfRuntime();
+  if (!chrome) throw new Error('PDF_RUNTIME_UNAVAILABLE');
   if (active >= 2) throw new Error('PDF_BUSY');
   active++;
   let directory: string | undefined;
   try {
-    await access(chrome);
-    const fontBytes = await readFile(font);
-    const document = html.replace(
-      '</style>',
-      `@font-face{font-family:ReservationNazanin;src:url(data:font/ttf;base64,${fontBytes.toString('base64')}) format("truetype")}</style>`,
-    );
-    if (
-      !fontBytes.length ||
-      fontBytes.length > 5_000_000 ||
-      Buffer.byteLength(document) > 10_000_000
-    )
+    let document = html;
+    if (font) {
+      const fontBytes = await readFile(/* turbopackIgnore: true */ font);
+      if (fontBytes.length && fontBytes.length <= 5_000_000)
+        document = html.replace(
+          '</style>',
+          `@font-face{font-family:ReservationNazanin;src:url(data:font/ttf;base64,${fontBytes.toString('base64')}) format("truetype")}</style>`,
+        );
+    }
+    if (Buffer.byteLength(document) > 10_000_000)
       throw new Error('PDF_INPUT_INVALID');
     directory = await mkdtemp(join(tmpdir(), 'nora-ticket-pdf-'));
     const input = join(directory, 'ticket.html');
