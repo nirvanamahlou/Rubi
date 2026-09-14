@@ -4,8 +4,8 @@ import {
   type AuthenticatedActor,
   type WorkbenchHrPerformanceV1,
   type WorkbenchHrPerformanceRecordV1,
-} from '@rubi/contracts';
-import type { Prisma } from '@rubi/database';
+} from '@nora/contracts';
+import type { Prisma } from '@nora/database';
 import { DatabaseService } from '../database/database.service';
 import { HrService } from './hr.service';
 import { APPROVED, digits, localClockParts } from './hr.validation';

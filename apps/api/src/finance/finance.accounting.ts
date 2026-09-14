@@ -1,4 +1,4 @@
-import type { FinanceRequestStatus } from '@rubi/contracts';
+import type { FinanceRequestStatus } from '@nora/contracts';
 
 import { DecimalValue, FinanceDomainError } from './finance.money';
 import { assertExpectedVersion, validateMakerChecker } from './finance.domain';

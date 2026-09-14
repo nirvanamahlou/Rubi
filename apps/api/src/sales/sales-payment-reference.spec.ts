@@ -7,7 +7,7 @@ import type {
   SalesCustomersPublicAdapter,
   SalesTicketAvailabilityPort,
 } from './sales.adapters';
-import type { AuthenticatedActor } from '@rubi/contracts';
+import type { AuthenticatedActor } from '@nora/contracts';
 
 describe('Sales payment tracking references', () => {
   it.each([true, false])(

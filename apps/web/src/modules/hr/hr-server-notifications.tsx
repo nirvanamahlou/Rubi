@@ -1,6 +1,6 @@
 'use client';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { HrNotificationDto } from '@rubi/contracts';
+import type { HrNotificationDto } from '@nora/contracts';
 import { X, CheckCheck } from 'lucide-react';
 import { hrApi } from './hr-api';
 import { HrButton, HrEmpty } from './hr-controls';
@@ -35,12 +35,12 @@ export function HrServerNotifications({
     const timer = window.setInterval(() => {
       if (document.visibilityState === 'visible') void refresh();
     }, 30000);
-    window.addEventListener('rubi:hr-server-change', update);
+    window.addEventListener('nora:hr-server-change', update);
     window.addEventListener('focus', update);
     return () => {
       window.clearInterval(timer);
       window.clearTimeout(initial);
-      window.removeEventListener('rubi:hr-server-change', update);
+      window.removeEventListener('nora:hr-server-change', update);
       window.removeEventListener('focus', update);
     };
   }, [refresh]);

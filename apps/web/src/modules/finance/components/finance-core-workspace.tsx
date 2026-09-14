@@ -962,7 +962,7 @@ export function FinanceAccountingWorkspace() {
   return (
     <main className="space-y-6">
       <PageHeader
-        eyebrow="Rubi Finance"
+        eyebrow="Nora Finance"
         title="حسابداری"
         description="کدینگ حساب‌ها، دوره مالی، اسناد، دفاتر و کنترل‌های خزانه"
       />

@@ -1,4 +1,4 @@
-import type { Prisma } from '@rubi/database';
+import type { Prisma } from '@nora/database';
 
 export interface NotificationCommand {
   recipientUserIds: readonly string[];

@@ -1,4 +1,4 @@
-import type { AuthenticatedActor } from '@rubi/contracts';
+import type { AuthenticatedActor } from '@nora/contracts';
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -90,6 +90,31 @@ describe('MessagingService', () => {
       }),
     );
     expect(response.data.title).toBe('گیرنده');
+  });
+
+  it('does not query an empty participant id for ordinary messages', async () => {
+    repository.listConversations!.mockResolvedValue([
+      {
+        ...conversation,
+        messages: [
+          {
+            id: messageId,
+            conversationId,
+            senderUserId: recipientId,
+            body: 'سلام',
+            createdAt: now,
+            forwardedFrom: null,
+            attachments: [],
+          },
+        ],
+      },
+    ]);
+
+    await service.conversations(actor);
+
+    expect(iam.describeMessagingParticipants).toHaveBeenCalledWith([
+      recipientId,
+    ]);
   });
 
   it('rejects message delivery when the actor is not a destination member', async () => {

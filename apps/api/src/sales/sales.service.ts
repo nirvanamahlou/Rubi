@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import Joi from 'joi';
 import { buildSalesXlsx, SALES_EXPORT_LIMIT } from './sales.xlsx';
-import { validatePassengerPackagePrices } from '@rubi/contracts';
+import { validatePassengerPackagePrices } from '@nora/contracts';
 
 import {
   BadRequestException,
@@ -24,8 +24,8 @@ import type {
   SalesPaymentCreateRequest,
   SalesReservationRequestV1,
   SalesFinanceInboxPaymentV1,
-} from '@rubi/contracts';
-import type { Prisma } from '@rubi/database';
+} from '@nora/contracts';
+import type { Prisma } from '@nora/database';
 
 import {
   SALES_TICKET_AVAILABILITY_PORT,

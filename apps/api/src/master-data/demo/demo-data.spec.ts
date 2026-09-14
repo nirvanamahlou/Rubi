@@ -1,4 +1,4 @@
-import { MASTER_DATA_RESOURCES } from '@rubi/contracts';
+import { MASTER_DATA_RESOURCES } from '@nora/contracts';
 import { describe, expect, it } from 'vitest';
 import { DEMO_EXCLUDED, masterDataDemoRecords } from './demo-data';
 import { assertLocalDemoTarget } from './local-demo';
@@ -74,9 +74,9 @@ describe('explicit local Master Data demo fixtures', () => {
   });
 
   it.each([
-    ['postgresql://localhost:55432/rubi?schema=public', 'development'],
+    ['postgresql://localhost:55432/nora?schema=public', 'development'],
     [
-      'postgresql://127.0.0.1:55432/rubi_md_demo_test_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+      'postgresql://127.0.0.1:55432/nora_md_demo_test_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
       'test',
     ],
   ])('allows only the intended local targets', (url, environment) => {
@@ -84,12 +84,12 @@ describe('explicit local Master Data demo fixtures', () => {
   });
 
   it.each([
-    ['postgresql://remote.example:55432/rubi', 'development'],
-    ['postgresql://127.0.0.1:5432/rubi', 'development'],
+    ['postgresql://remote.example:55432/nora', 'development'],
+    ['postgresql://127.0.0.1:5432/nora', 'development'],
     ['postgresql://127.0.0.1:55432/postgres', 'development'],
-    ['postgresql://127.0.0.1:55432/rubi', 'production'],
-    ['postgresql://127.0.0.1:55432/rubi?host=remote.example', 'development'],
-    ['postgresql://127.0.0.1:55432/rubi?schema=other', 'development'],
+    ['postgresql://127.0.0.1:55432/nora', 'production'],
+    ['postgresql://127.0.0.1:55432/nora?host=remote.example', 'development'],
+    ['postgresql://127.0.0.1:55432/nora?schema=other', 'development'],
   ])(
     'rejects remote, production, other databases and connection overrides',
     (url, environment) => {
@@ -115,7 +115,7 @@ describe('explicit local Master Data demo fixtures', () => {
   it('retains the environment acknowledgement and rejects accidental apply arguments', () => {
     expect(
       parseLocalDemoCli(['--apply'], {
-        RUBI_ALLOW_LOCAL_MASTER_DEMO: '1',
+        NORA_ALLOW_LOCAL_MASTER_DEMO: '1',
       }),
     ).toMatchObject({ apply: true, realistic: false });
     expect(() => parseLocalDemoCli(['--apply-realistic'], {})).toThrow(

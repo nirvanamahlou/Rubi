@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { temporaryCreditIssue } from './temporary-credit';
-import type { B2bAgreementTermsV1 } from '@rubi/contracts';
+import type { B2bAgreementTermsV1 } from '@nora/contracts';
 
 const policy = (
   creditLimit: string,

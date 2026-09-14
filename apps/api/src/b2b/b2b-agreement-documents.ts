@@ -4,7 +4,7 @@ import {
   Inject,
   Injectable,
 } from '@nestjs/common';
-import type { AuthenticatedActor } from '@rubi/contracts';
+import type { AuthenticatedActor } from '@nora/contracts';
 import { DocumentsService } from '../documents/documents.service';
 
 /** Documents remains the owner of file contents, access, scan and versions. */

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import type { TicketOfferSearchV1, TicketOfferV1 } from '@rubi/contracts';
+import type { TicketOfferSearchV1, TicketOfferV1 } from '@nora/contracts';
 import { Button } from '@/components/ui/button';
 import { Alert } from '@/components/ui/surfaces';
 import { getPublicApiBaseUrl } from '@/lib/environment';

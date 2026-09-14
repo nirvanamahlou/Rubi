@@ -22,7 +22,7 @@ import type {
   FinanceRequestStatus,
   FinanceSettlementAccountKind,
   FinanceSettlementAccountV1,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 
 import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';

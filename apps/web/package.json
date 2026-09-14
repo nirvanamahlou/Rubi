@@ -1,5 +1,5 @@
 {
-  "name": "@rubi/web",
+  "name": "@nora/web",
   "version": "0.0.0",
   "private": true,
   "scripts": {
@@ -19,7 +19,7 @@
     "@radix-ui/react-slot": "1.3.3",
     "@radix-ui/react-tabs": "1.1.21",
     "@radix-ui/react-tooltip": "1.2.16",
-    "@rubi/contracts": "workspace:*",
+    "@nora/contracts": "workspace:*",
     "@tanstack/react-query": "5.101.4",
     "class-variance-authority": "0.7.1",
     "clsx": "2.1.1",
@@ -33,8 +33,8 @@
     "zod": "4.4.3"
   },
   "devDependencies": {
-    "@rubi/eslint-config": "workspace:*",
-    "@rubi/typescript-config": "workspace:*",
+    "@nora/eslint-config": "workspace:*",
+    "@nora/typescript-config": "workspace:*",
     "@tailwindcss/postcss": "4.3.3",
     "@types/node": "26.2.0",
     "@types/react": "19.2.18",

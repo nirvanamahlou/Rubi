@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Plane } from 'lucide-react';
-import type { MasterDataRecord, TicketOfferV1 } from '@rubi/contracts';
+import type { MasterDataRecord, TicketOfferV1 } from '@nora/contracts';
 import { Button } from '@/components/ui/button';
 import type { SalesFormState } from '../model/sales-form';
 import { salesDirections, salesFlightSelection } from '../model/sales-form';

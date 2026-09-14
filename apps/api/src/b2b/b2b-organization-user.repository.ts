@@ -4,8 +4,8 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import type { B2bOrganizationUserInput } from '@rubi/contracts';
-import type { Prisma } from '@rubi/database';
+import type { B2bOrganizationUserInput } from '@nora/contracts';
+import type { Prisma } from '@nora/database';
 import { DatabaseService } from '../database/database.service';
 const snapshot = (row: unknown): Prisma.InputJsonValue =>
   JSON.parse(JSON.stringify(row)) as Prisma.InputJsonValue;

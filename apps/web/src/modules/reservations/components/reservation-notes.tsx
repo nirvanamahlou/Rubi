@@ -5,7 +5,7 @@ import { Textarea } from '@/components/ui/form-controls';
 import type {
   ReservationIntakeV1,
   TravelWorkflowStateV1,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import { travelRequest } from './travel-workflow-form';
 type Intake = ReservationIntakeV1 & { workflow: TravelWorkflowStateV1 };
 export function ReservationNotes({ id }: { id: string }) {

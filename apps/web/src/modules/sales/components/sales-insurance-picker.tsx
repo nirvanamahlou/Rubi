@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import type { MasterDataRecord } from '@rubi/contracts';
+import type { MasterDataRecord } from '@nora/contracts';
 import { Button } from '@/components/ui/button';
 import { SalesThemedSelect } from './sales-themed-select';
 import {

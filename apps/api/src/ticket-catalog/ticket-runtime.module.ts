@@ -10,7 +10,7 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
-import type { TicketOfferCreateV1, TicketOfferSearchV1 } from '@rubi/contracts';
+import type { TicketOfferCreateV1, TicketOfferSearchV1 } from '@nora/contracts';
 import { IamModule } from '../iam/iam.module';
 import { AuthGuard } from '../iam/auth.guard';
 import type { AuthenticatedRequest } from '../iam/iam.types';

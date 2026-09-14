@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { strFromU8, unzipSync } from 'fflate';
-import type { AuthenticatedActor, SalesContractSummary } from '@rubi/contracts';
+import type { AuthenticatedActor, SalesContractSummary } from '@nora/contracts';
 import { buildSalesXlsx, SALES_EXPORT_LIMIT } from './sales.xlsx';
 import { SalesService } from './sales.service';
 import { SalesRepository } from './sales.repository';

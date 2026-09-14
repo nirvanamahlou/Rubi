@@ -47,7 +47,7 @@ export function buildCommercialPdf(images: readonly Uint8Array[]): Uint8Array {
       ),
     );
   });
-  const parts = [enc.encode('%PDF-1.4\n%Rubi\n')];
+  const parts = [enc.encode('%PDF-1.4\n%Nora\n')];
   const offsets = [0];
   let at = parts[0]!.length;
   objects.forEach((object, index) => {
@@ -73,7 +73,7 @@ export function buildCommercialPdf(images: readonly Uint8Array[]): Uint8Array {
   return join(parts);
 }
 
-/** Browser text shaping preserves Persian ligatures and the loaded Rubi font. */
+/** Browser text shaping preserves Persian ligatures and the loaded Nora font. */
 export async function commercialPdf(
   report: CommercialReport,
 ): Promise<Uint8Array> {
@@ -93,7 +93,7 @@ export async function commercialPdf(
     ctx.direction = 'rtl';
     ctx.fillStyle = '#103c78';
     ctx.font = `bold 30px ${font}`;
-    ctx.fillText('روبی · قرارداد و شرایط تجاری', 1170, 65);
+    ctx.fillText('نورا · قرارداد و شرایط تجاری', 1170, 65);
     ctx.font = `20px ${font}`;
     ctx.fillText(
       `صفحه ${(images.length + 1).toLocaleString('fa-IR')}`,

@@ -20,7 +20,7 @@ import type { AuthenticatedRequest } from '../iam/iam.types';
 import { HrService } from './hr.service';
 
 @ApiTags('Human Resources')
-@ApiCookieAuth('rubi_access')
+@ApiCookieAuth('nora_access')
 @UseGuards(AuthGuard)
 @Controller('hr')
 export class HrController {

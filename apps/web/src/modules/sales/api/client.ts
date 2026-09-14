@@ -8,7 +8,7 @@ import type {
   SalesContractPage,
   SalesDashboard,
   SalesPaymentCreateRequest,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 
 import { refreshAuthenticatedSession } from '@/lib/auth-session';
 import { getPublicApiBaseUrl } from '@/lib/environment';

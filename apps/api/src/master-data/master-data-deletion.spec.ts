@@ -8,8 +8,8 @@ import {
   MASTER_DATA_RESOURCES,
   type AuthenticatedActor,
   type MasterDataResource,
-} from '@rubi/contracts';
-import type { Prisma } from '@rubi/database';
+} from '@nora/contracts';
+import type { Prisma } from '@nora/database';
 import { describe, expect, it, vi } from 'vitest';
 
 import type { DatabaseService } from '../database/database.service';

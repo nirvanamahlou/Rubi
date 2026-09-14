@@ -18,7 +18,7 @@ import type {
   FinanceSettlementAccountV1,
   FinanceSupplierPaymentCommandV1,
   HrConnectionStatus,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 
 import { HrConnectionsService } from '../hr/hr-connections.service';
 import { DatabaseService } from '../database/database.service';

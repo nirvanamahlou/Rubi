@@ -1,5 +1,5 @@
 import { ConflictException } from '@nestjs/common';
-import type { AuthenticatedActor } from '@rubi/contracts';
+import type { AuthenticatedActor } from '@nora/contracts';
 import { describe, expect, it, vi } from 'vitest';
 
 import { IamService } from './iam.service';
@@ -22,7 +22,7 @@ describe('IamService personal profile owner boundary', () => {
       user: {
         update: vi.fn().mockResolvedValue({
           id: actor.userId,
-          displayName: 'کاربر روبی',
+          displayName: 'کاربر نورا',
           email: 'person@example.com',
         }),
       },
@@ -43,7 +43,7 @@ describe('IamService personal profile owner boundary', () => {
     const result = await service({ $transaction: run }).updateOwnProfile(
       actor,
       {
-        displayName: ' کاربر روبی ',
+        displayName: ' کاربر نورا ',
         email: 'PERSON@EXAMPLE.COM',
         phone: '09120000000',
         photoDocumentId: null,
@@ -54,7 +54,7 @@ describe('IamService personal profile owner boundary', () => {
     expect(transaction.user.update).toHaveBeenCalledWith(
       expect.objectContaining({
         where: { id: actor.userId },
-        data: { displayName: 'کاربر روبی', email: 'person@example.com' },
+        data: { displayName: 'کاربر نورا', email: 'person@example.com' },
       }),
     );
     expect(transaction.iamUserProfile.upsert).toHaveBeenCalledOnce();
@@ -71,7 +71,7 @@ describe('IamService personal profile owner boundary', () => {
     const run = vi.fn().mockRejectedValue({ code: 'P2002' });
     await expect(
       service({ $transaction: run }).updateOwnProfile(actor, {
-        displayName: 'کاربر روبی',
+        displayName: 'کاربر نورا',
         email: 'used@example.com',
         phone: null,
         photoDocumentId: null,

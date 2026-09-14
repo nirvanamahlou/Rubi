@@ -14,7 +14,7 @@ import type {
   FinanceReceiptDecisionCommandV1,
   FinanceSettlementAccountCreateV1,
   FinanceSupplierPaymentCommandV1,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 
 import { AuthGuard } from '../iam/auth.guard';
 import { RequirePermissions } from '../iam/iam.decorators';

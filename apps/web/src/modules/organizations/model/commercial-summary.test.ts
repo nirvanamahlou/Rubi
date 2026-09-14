@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { B2bAgreementCaseV1 } from '@rubi/contracts';
+import type { B2bAgreementCaseV1 } from '@nora/contracts';
 import { agencyClient } from '../api/agency-client';
 import {
   isCurrentAgreement,

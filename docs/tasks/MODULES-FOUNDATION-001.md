@@ -17,8 +17,8 @@ PII ممنوع‌اند.
 
 ## کنترل اولیه
 
-- Dev Serverهای Rubi متوقف و Working Tree اولیه clean بود.
-- `origin` همان Repository خصوصی Rubi است و `develop` با `origin/develop` همگام شد.
+- Dev Serverهای Nora متوقف و Working Tree اولیه clean بود.
+- `origin` همان Repository خصوصی Nora است و `develop` با `origin/develop` همگام شد.
 - PRهای #18، #19، #20، #21 و #22 در `origin/develop` موجودند.
 - Merge Commitهای `45c107e471d53d1c724303de02ba01a5e0e16b2a` و
   `201ee096b07696a4df66a3602f2b93b9dc89daeb` ancestor قطعی develop هستند.

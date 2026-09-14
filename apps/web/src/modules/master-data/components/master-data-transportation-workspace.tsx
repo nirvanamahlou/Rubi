@@ -14,11 +14,11 @@ import type {
   MasterDataRecord,
   MasterDataResource,
   MasterDataStatus,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import {
   isMasterTransportFormResource,
   type MasterTransportStatus,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import { MasterDataTransportMetadata } from './master-data-transport-metadata';
 import { MasterDataTransportAudit } from './master-data-transport-audit';
 import {

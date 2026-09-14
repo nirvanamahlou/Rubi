@@ -1,7 +1,7 @@
 import type {
   B2bAgencyCreditPolicyV1,
   B2bFinanceExposureV1,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import { describe, expect, it } from 'vitest';
 import { projectCredit } from './credit-projection';
 

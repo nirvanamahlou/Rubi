@@ -1,4 +1,4 @@
-import type { MasterDataRecord, SalesServiceInput } from '@rubi/contracts';
+import type { MasterDataRecord, SalesServiceInput } from '@nora/contracts';
 import { masterDataApi } from '@/modules/master-data/api/client';
 
 export interface SalesInsuranceSelection {

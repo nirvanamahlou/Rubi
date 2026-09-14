@@ -23,10 +23,10 @@ describe('Jahan Bastan header brand integration', () => {
 
   it('synchronizes the active legal entity with the surrounding header', () => {
     expect(selectorSource).toContain(
-      'header.dataset.rubiActiveCompany = selection',
+      'header.dataset.noraActiveCompany = selection',
     );
     expect(globalStyles).toContain(
-      "header[data-rubi-active-company='JAHAN_BASTAN']",
+      "header[data-nora-active-company='JAHAN_BASTAN']",
     );
     expect(globalStyles).toContain('#061a3f');
   });
@@ -48,7 +48,7 @@ describe('Jahan Bastan header brand integration', () => {
     ];
     const gradients = codes.map((code) => {
       const start = globalStyles.indexOf(
-        `header[data-rubi-active-company='${code}'] {`,
+        `header[data-nora-active-company='${code}'] {`,
       );
       expect(start).toBeGreaterThanOrEqual(0);
       return globalStyles.slice(start, globalStyles.indexOf('}', start));

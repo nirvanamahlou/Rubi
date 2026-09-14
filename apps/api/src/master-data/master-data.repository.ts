@@ -5,13 +5,13 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { isMasterTransportFormResource } from '@rubi/contracts';
+import { isMasterTransportFormResource } from '@nora/contracts';
 import type {
   MasterDataListQuery,
   MasterDataRecord,
   MasterDataResource,
-} from '@rubi/contracts';
-import { AuditOutcome } from '@rubi/database';
+} from '@nora/contracts';
+import { AuditOutcome } from '@nora/database';
 
 import { DatabaseService } from '../database/database.service';
 import {

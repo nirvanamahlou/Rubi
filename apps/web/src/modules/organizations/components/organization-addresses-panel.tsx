@@ -5,7 +5,7 @@ import type {
   IamPermissionCode,
   MasterOrganizationAddressMutationV1,
   MasterOrganizationAddressV1,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import { MapPin, Pencil, Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input, Textarea } from '@/components/ui/form-controls';

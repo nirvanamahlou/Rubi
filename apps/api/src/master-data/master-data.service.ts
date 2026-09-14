@@ -5,7 +5,7 @@ import {
 } from './organization-identity.policy';
 import { createHash } from 'node:crypto';
 
-import { isMasterTransportFormResource } from '@rubi/contracts';
+import { isMasterTransportFormResource } from '@nora/contracts';
 import { transportStatusData } from './transport-form.policy';
 import {
   BadRequestException,
@@ -21,7 +21,7 @@ import {
   type MasterDataListQuery,
   type MasterDataResource,
   type MasterDataDeleteResponse,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 
 import { assertGenericCurrencyRateMutationAllowed } from './currency-rate.policy';
 import { buildMasterDataXlsx, MASTER_DATA_XLSX_MIME } from './master-data.xlsx';

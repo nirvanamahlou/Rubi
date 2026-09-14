@@ -18,12 +18,12 @@ import {
   ValidateIf,
   ValidateNested,
 } from 'class-validator';
-import { B2B_SERVICE_CODES, B2B_AGREEMENT_TYPES } from '@rubi/contracts';
+import { B2B_SERVICE_CODES, B2B_AGREEMENT_TYPES } from '@nora/contracts';
 import type {
   B2bAgreementTermsV1,
   B2bCreditDraftV1,
   B2bGuaranteeDraftV1,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 
 const nullable = (_: unknown, value: unknown) => value !== null;
 const optional = (_: unknown, value: unknown) => value !== undefined;

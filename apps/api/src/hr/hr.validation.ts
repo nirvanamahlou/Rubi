@@ -3,7 +3,7 @@ import {
   getHrResource,
   type HrResourceDefinition,
   type HrWorkflowData,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 
 export function object(
   value: unknown,

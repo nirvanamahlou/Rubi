@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { LoginResponse } from '@rubi/contracts';
+import type { LoginResponse } from '@nora/contracts';
 
 import {
   clearHeaderSession,
@@ -49,7 +49,7 @@ describe('header session identity', () => {
 
   it('rejects malformed or incomplete cached values', () => {
     const storage = memoryStorage();
-    storage.setItem('rubi:header-session:v1', '{"displayName":"ناقص"}');
+    storage.setItem('nora:header-session:v1', '{"displayName":"ناقص"}');
     expect(readHeaderSession(storage)).toBeNull();
   });
 

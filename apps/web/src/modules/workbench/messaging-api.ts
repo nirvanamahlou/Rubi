@@ -8,7 +8,7 @@ import type {
   MessagingMessageResponseV1,
   MessagingMessagesResponseV1,
   SendMessagingMessageInputV1,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 
 import { refreshAuthenticatedSession } from '@/lib/auth-session';
 import { getPublicApiBaseUrl } from '@/lib/environment';

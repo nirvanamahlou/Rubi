@@ -11,7 +11,7 @@ import type {
   MasterDataResource,
   MasterDataStatus,
   MasterOrganizationSupplierSummary,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import {
   AlertTriangle,
   ArrowRight,

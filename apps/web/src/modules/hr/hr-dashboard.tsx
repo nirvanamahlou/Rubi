@@ -12,8 +12,8 @@ import {
   ShieldCheck,
   UsersRound,
 } from 'lucide-react';
-import type { HrRecordDto } from '@rubi/contracts';
-import { getHrResource } from '@rubi/contracts';
+import type { HrRecordDto } from '@nora/contracts';
+import { getHrResource } from '@nora/contracts';
 import { allHrRecords, type HrStore } from './hr-store';
 import {
   HrButton,

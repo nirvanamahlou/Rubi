@@ -6,7 +6,7 @@ import type {
   SalesContractDetail,
   SalesPaymentMethod,
   SalesPaymentStatus,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 
 import { formatSalesMoney } from '@/components/ui/money-input';
 import { Alert } from '@/components/ui/surfaces';

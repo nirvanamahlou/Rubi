@@ -9,7 +9,7 @@ import type {
   HrRecordCreate,
   HrRecordDto,
   HrRecordUpdate,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import { getPublicApiBaseUrl } from '@/lib/environment';
 import { refreshAuthenticatedSession } from '@/lib/auth-session';
 

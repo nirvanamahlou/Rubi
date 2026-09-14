@@ -18,8 +18,8 @@ import { UsersController } from './users.controller';
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
         secret: config.getOrThrow<string>('IAM_ACCESS_TOKEN_SECRET'),
-        signOptions: { issuer: 'rubi-api', audience: 'rubi-web' },
-        verifyOptions: { issuer: 'rubi-api', audience: 'rubi-web' },
+        signOptions: { issuer: 'nora-api', audience: 'nora-web' },
+        verifyOptions: { issuer: 'nora-api', audience: 'nora-web' },
       }),
     }),
   ],

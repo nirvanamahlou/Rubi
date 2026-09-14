@@ -10,8 +10,8 @@ import type {
   AuthenticatedActor,
   MasterOrganizationAddressMutationV1,
   MasterOrganizationAddressV1,
-} from '@rubi/contracts';
-import { AuditOutcome, Prisma } from '@rubi/database';
+} from '@nora/contracts';
+import { AuditOutcome, Prisma } from '@nora/database';
 import {
   activityEvent,
   activityPredicate,

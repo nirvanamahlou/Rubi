@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { TourDepartureV1 } from '@rubi/contracts';
+import type { TourDepartureV1 } from '@nora/contracts';
 import { emptySalesForm, salesPayload } from './sales-form';
 
 describe('tour provenance in Sales', () => {

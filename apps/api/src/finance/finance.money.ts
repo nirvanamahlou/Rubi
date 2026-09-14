@@ -1,4 +1,4 @@
-import type { FinanceCurrencyCode, MoneyContract } from '@rubi/contracts';
+import type { FinanceCurrencyCode, MoneyContract } from '@nora/contracts';
 
 export type RoundingMode = 'HALF_UP' | 'HALF_EVEN' | 'DOWN';
 

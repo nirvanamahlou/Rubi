@@ -1,6 +1,6 @@
 import type { OnModuleDestroy } from '@nestjs/common';
 import { Injectable } from '@nestjs/common';
-import { createDatabaseClient, type DatabaseClient } from '@rubi/database';
+import { createDatabaseClient, type DatabaseClient } from '@nora/database';
 
 @Injectable()
 export class DatabaseService implements OnModuleDestroy {

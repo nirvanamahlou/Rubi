@@ -3,7 +3,7 @@ import type {
   B2bFinanceExposureV1,
   FinancePartyExposurePortV1,
   FinancePartyExposureQueryV1,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 
 export const FINANCE_PARTY_EXPOSURE_PORT = Symbol(
   'FINANCE_PARTY_EXPOSURE_PORT_V1',

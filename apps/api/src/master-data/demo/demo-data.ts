@@ -1,6 +1,6 @@
-import type { MasterDataResource } from '@rubi/contracts';
+import type { MasterDataResource } from '@nora/contracts';
 
-export const DEMO_PREFIX = 'rubi-master-demo-v1';
+export const DEMO_PREFIX = 'nora-master-demo-v1';
 export const DEMO_EXCLUDED = [
   'exchange-rates',
   'cip-services',

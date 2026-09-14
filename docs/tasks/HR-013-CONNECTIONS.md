@@ -27,7 +27,7 @@ Contract: additive hr connections v1, producer HR API, consumers HR and all main
 
 Actual finance posting/payment, travel issuance and external device syncing require destination services/provider configuration that this baseline lacks. A referral acknowledgement or response is never a payment, reservation or access revocation receipt. Their integration status remains explicit; this task must not be reported as full execution of those domain operations.
 
-UI assumptions: existing authenticated desktop/corporate application with responsive mobile support, existing Rubi components and AA keyboard/contrast target; PC-B owns this addition. No framework/rendering change. Performance budgets are design targets, not measured claims: p75 LCP 2500ms, INP 200ms, CLS 0.1; incremental lazy panel <=80KB gzip; Lighthouse accessibility >=90 and performance >=80. Server follows existing p95<500ms read target; p50/p99, uptime and RPO/RTO remain project decisions, not new architecture assumptions.
+UI assumptions: existing authenticated desktop/corporate application with responsive mobile support, existing Nora components and AA keyboard/contrast target; PC-B owns this addition. No framework/rendering change. Performance budgets are design targets, not measured claims: p75 LCP 2500ms, INP 200ms, CLS 0.1; incremental lazy panel <=80KB gzip; Lighthouse accessibility >=90 and performance >=80. Server follows existing p95<500ms read target; p50/p99, uptime and RPO/RTO remain project decisions, not new architecture assumptions.
 
 Preserve active Web3100/API4190 owned by B2B-DIRECTORY-ACTIONS-001; no live data QA or runtime replacement.
 

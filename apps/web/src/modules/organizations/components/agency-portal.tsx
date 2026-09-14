@@ -5,7 +5,7 @@ import {
   B2B_DOSSIER_SECTIONS,
   type B2bPortalIdentity,
   type B2bPortalSection,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import { Button } from '@/components/ui/button';
 import { clearHeaderSession } from '@/lib/header-session';
 import { logoutAuthenticatedSession } from '@/modules/profile/api/client';

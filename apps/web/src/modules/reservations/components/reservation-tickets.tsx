@@ -2,8 +2,8 @@
 import { useEffect, useState } from 'react';
 import { createPortal, flushSync } from 'react-dom';
 import { useTravelLogo } from './travel-document';
-import type { ReservationIntakeV1, TravelBrandingV1 } from '@rubi/contracts';
-import { salesContractFlights } from '@rubi/contracts';
+import type { ReservationIntakeV1, TravelBrandingV1 } from '@nora/contracts';
+import { salesContractFlights } from '@nora/contracts';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,

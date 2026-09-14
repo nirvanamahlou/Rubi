@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { join, isAbsolute, dirname } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { promisify } from 'node:util';
-import type { SalesContractOutputV1 } from '@rubi/contracts';
+import type { SalesContractOutputV1 } from '@nora/contracts';
 import {
   contractPrintHtml,
   type ContractPrintReferences,
@@ -36,7 +36,7 @@ export async function renderContractPdf(
         ') format("truetype");font-weight:normal}</style>',
     );
     if (Buffer.byteLength(html) > 10_000_000) throw new Error('PDF_TOO_LARGE');
-    directory = await mkdtemp(join(tmpdir(), 'rubi-contract-pdf-'));
+    directory = await mkdtemp(join(tmpdir(), 'nora-contract-pdf-'));
     const input = join(directory, 'contract.html');
     const result = join(directory, 'contract.pdf');
     await writeFile(input, html, { mode: 0o600 });

@@ -1,6 +1,6 @@
 'use client';
 
-import type { HrNotificationDto, NotificationItemV1 } from '@rubi/contracts';
+import type { HrNotificationDto, NotificationItemV1 } from '@nora/contracts';
 import {
   Bell,
   BellRing,
@@ -180,12 +180,12 @@ export function NotificationCenter() {
     const refresh = () => void loadHr();
     const initial = window.setTimeout(refresh, 0);
     const interval = window.setInterval(refresh, SERVER_POLL_INTERVAL_MS);
-    window.addEventListener('rubi:hr-server-change', refresh);
+    window.addEventListener('nora:hr-server-change', refresh);
     window.addEventListener('focus', refresh);
     return () => {
       window.clearTimeout(initial);
       window.clearInterval(interval);
-      window.removeEventListener('rubi:hr-server-change', refresh);
+      window.removeEventListener('nora:hr-server-change', refresh);
       window.removeEventListener('focus', refresh);
     };
   }, [loadHr]);
@@ -262,7 +262,7 @@ export function NotificationCenter() {
       );
       void hrApi
         .readNotification(notification.id)
-        .then(() => window.dispatchEvent(new Event('rubi:hr-server-change')))
+        .then(() => window.dispatchEvent(new Event('nora:hr-server-change')))
         .catch(() => loadHr());
       return;
     }

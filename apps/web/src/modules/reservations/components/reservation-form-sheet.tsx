@@ -2,8 +2,8 @@
 import Image from 'next/image';
 import { voucherFormData, supplierFormData } from '../model/voucher-settings';
 import { useEffect, useState } from 'react';
-import type { MasterDataResource } from '@rubi/contracts';
-import { salesContractFlights } from '@rubi/contracts';
+import type { MasterDataResource } from '@nora/contracts';
+import { salesContractFlights } from '@nora/contracts';
 import { masterDataApi } from '@/modules/master-data/api/client';
 import {
   reservationPassengerPages,

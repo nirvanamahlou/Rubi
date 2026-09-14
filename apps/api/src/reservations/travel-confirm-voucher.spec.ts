@@ -1,6 +1,6 @@
 import 'reflect-metadata';
 import { expect, it, vi } from 'vitest';
-import type { AuthenticatedActor } from '@rubi/contracts';
+import type { AuthenticatedActor } from '@nora/contracts';
 import { TravelWorkflowService } from './travel-workflow.service';
 import { initialTravelWorkflow } from './travel-workflow';
 

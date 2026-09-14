@@ -2,7 +2,7 @@ import type {
   DocumentDetailResponseV1,
   IamPermissionCode,
   MasterDataRecord,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { documentsApi } from '@/modules/documents/api/client';
 import { masterDataApi } from '@/modules/master-data/api/client';

@@ -1,4 +1,4 @@
-import type { CustomerDetail, CustomerMutationRequest } from '@rubi/contracts';
+import type { CustomerDetail, CustomerMutationRequest } from '@nora/contracts';
 import {
   customersApi,
   CustomersApiError,

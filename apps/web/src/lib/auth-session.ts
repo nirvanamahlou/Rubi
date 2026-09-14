@@ -1,6 +1,6 @@
-import type { LoginResponse } from '@rubi/contracts';
+import type { LoginResponse } from '@nora/contracts';
 
-const REFRESH_LOCK_NAME = 'rubi-auth-refresh';
+const REFRESH_LOCK_NAME = 'nora-auth-refresh';
 const CONFLICT_RETRY_DELAY_MS = 150;
 
 let refreshInFlight: Promise<LoginResponse | null> | null = null;

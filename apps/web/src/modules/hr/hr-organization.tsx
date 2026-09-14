@@ -1,6 +1,6 @@
 'use client';
 import { useMemo, useState } from 'react';
-import type { HrRecordDto } from '@rubi/contracts';
+import type { HrRecordDto } from '@nora/contracts';
 import { OrganizationChart, type OrganizationNode } from './organization-chart';
 import { HrButton, HrConfirmDelete, HrPanel, HrTabs } from './hr-controls';
 import type { HrFormTarget } from './hr-record-form';

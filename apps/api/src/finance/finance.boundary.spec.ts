@@ -17,7 +17,7 @@ describe('finance foundation boundary', () => {
     expect(source).toContain('FinanceIntegrationPort');
     expect(source).toContain('JournalEntry');
     expect(source).not.toMatch(
-      /@rubi\/database|PrismaClient|\.\.\/customers|\.\.\/master-data/,
+      /@nora\/database|PrismaClient|\.\.\/customers|\.\.\/master-data/,
     );
     expect(source).toContain("@Get('inbox')");
     expect(source).toContain("@Post('settlement-accounts')");

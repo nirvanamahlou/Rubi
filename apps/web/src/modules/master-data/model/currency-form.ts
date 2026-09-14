@@ -2,7 +2,7 @@ import type {
   MasterCurrencyRateQuoteRequest,
   MasterDataRecord,
   MasterDataStatus,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 
 import { getMasterDataDefinition } from './catalog';
 import { getMasterDataFormFields } from './form-fields';

@@ -9,15 +9,15 @@ import {
 
 test('rejects remote and production databases', () => {
   for (const url of [
-    'postgresql://example.test/rubi',
-    'https://localhost/rubi',
+    'postgresql://example.test/nora',
+    'https://localhost/nora',
   ])
     assert.throws(() => assertLocalDatabase(url, 'development'));
   assert.throws(() =>
-    assertLocalDatabase('postgresql://localhost/rubi', 'production'),
+    assertLocalDatabase('postgresql://localhost/nora', 'production'),
   );
   assert.doesNotThrow(() =>
-    assertLocalDatabase('postgresql://127.0.0.1:55433/rubi', 'development'),
+    assertLocalDatabase('postgresql://127.0.0.1:55433/nora', 'development'),
   );
 });
 

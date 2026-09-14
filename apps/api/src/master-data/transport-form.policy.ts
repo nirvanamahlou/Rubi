@@ -2,7 +2,7 @@ import { BadRequestException, ForbiddenException } from '@nestjs/common';
 import {
   isMasterTransportFormResource,
   type AuthenticatedActor,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 
 export function transportStatusData(
   resource: string,
