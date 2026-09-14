@@ -6,7 +6,7 @@ import {
   createDatabaseClient,
   Prisma,
   type DatabaseClient,
-} from '@rubi/database';
+} from '@nora/database';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { DatabaseService } from '../database/database.service';
 import { B2bRepository } from './b2b.repository';
@@ -19,10 +19,10 @@ import { B2bOrganizationUserRepository } from './b2b-organization-user.repositor
 import { B2bAgreementWorkflowRepository } from './b2b-agreement-workflow.repository';
 import { agreementTestTerms } from './agreement-test-fixtures';
 import { MasterOrganizationDirectory } from '../master-data/master-organization-directory';
-import type { AuthenticatedActor } from '@rubi/contracts';
+import type { AuthenticatedActor } from '@nora/contracts';
 
-const enabled = process.env.RUBI_RUN_B2B_POSTGRES_TESTS === '1';
-const container = `rubi-test-b2b-${randomUUID().slice(0, 8)}`;
+const enabled = process.env.NORA_RUN_B2B_POSTGRES_TESTS === '1';
+const container = `nora-test-b2b-${randomUUID().slice(0, 8)}`;
 let started = false;
 let client: DatabaseClient;
 let repository: B2bRepository;

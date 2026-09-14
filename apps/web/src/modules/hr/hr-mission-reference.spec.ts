@@ -3,7 +3,7 @@ import {
   getHrResource,
   type HrBootstrapDto,
   type HrRecordDto,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import {
   expenseMissionOptions,
   isMissionExpense,

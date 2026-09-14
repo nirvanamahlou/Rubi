@@ -1,4 +1,4 @@
-import type { MasterDataRecord } from '@rubi/contracts';
+import type { MasterDataRecord } from '@nora/contracts';
 import { getMasterDataDefinition } from './catalog';
 
 export type TravelReferenceResource = 'transfer-types' | 'visa-services';

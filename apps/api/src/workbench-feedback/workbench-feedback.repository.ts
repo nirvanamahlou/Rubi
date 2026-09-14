@@ -1,6 +1,6 @@
 import { ConflictException, Inject, Injectable } from '@nestjs/common';
-import type { WorkbenchFeedbackReceiptV1 } from '@rubi/contracts';
-import type { Prisma } from '@rubi/database';
+import type { WorkbenchFeedbackReceiptV1 } from '@nora/contracts';
+import type { Prisma } from '@nora/database';
 
 import { DatabaseService } from '../database/database.service';
 import { NotificationsService } from '../notifications/notifications.service';

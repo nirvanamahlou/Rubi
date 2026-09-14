@@ -1,7 +1,7 @@
 import type {
   SalesContractListQuery,
   SalesContractSummary,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import { strToU8, zipSync } from 'fflate';
 
 export const SALES_EXPORT_LIMIT = 2000;

@@ -1,7 +1,7 @@
 import type { CanActivate, ExecutionContext } from '@nestjs/common';
 import { Inject, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import type { IamPermissionCode } from '@rubi/contracts';
+import type { IamPermissionCode } from '@nora/contracts';
 
 import { PERMISSIONS_KEY } from './iam.constants';
 import { IamService } from './iam.service';

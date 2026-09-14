@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import { expect, it, vi } from 'vitest';
 import { SalesOperationalAmendmentService } from './sales-operational-amendment.module';
-import type { AuthenticatedActor, VoucherSettingsV1 } from '@rubi/contracts';
+import type { AuthenticatedActor, VoucherSettingsV1 } from '@nora/contracts';
 it('checks Sales scope and preserves existing metadata with a versioned audit', async () => {
   const row = {
     id: 'c',

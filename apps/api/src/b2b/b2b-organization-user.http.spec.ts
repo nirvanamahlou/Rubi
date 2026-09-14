@@ -17,7 +17,7 @@ import {
   expect,
 } from 'vitest';
 import request from 'supertest';
-import type { AuthenticatedActor } from '@rubi/contracts';
+import type { AuthenticatedActor } from '@nora/contracts';
 import { AuthGuard } from '../iam/auth.guard';
 import { IamService } from '../iam/iam.service';
 import {
@@ -97,7 +97,7 @@ describe('organization users HTTP and global portal boundary', () => {
     membership = { isActive: true };
     await request(app.getHttpServer())
       .get('/b2b/portal/me')
-      .set('Cookie', 'rubi_access=test-only')
+      .set('Cookie', 'nora_access=test-only')
       .expect(200);
     expect(service.identity).toHaveBeenCalledWith(actor);
   });
@@ -107,21 +107,21 @@ describe('organization users HTTP and global portal boundary', () => {
       membership = { isActive };
       await request(app.getHttpServer())
         .get('/other-module')
-        .set('Cookie', 'rubi_access=test-only')
+        .set('Cookie', 'nora_access=test-only')
         .expect(403);
     },
   );
   it('does not affect staff endpoints', async () => {
     await request(app.getHttpServer())
       .get('/other-module')
-      .set('Cookie', 'rubi_access=test-only')
+      .set('Cookie', 'nora_access=test-only')
       .expect(200);
   });
   it('rejects role injection, forged user linkage and weak DTO fields', async () => {
     actor.permissions = ['b2b.agency.manage'];
     await request(app.getHttpServer())
       .post(`/b2b/agencies/${id}/users`)
-      .set('Cookie', 'rubi_access=test-only')
+      .set('Cookie', 'nora_access=test-only')
       .send({
         branchId: id,
         displayName: 'Synthetic',
@@ -141,7 +141,7 @@ describe('organization users HTTP and global portal boundary', () => {
     actor.permissions = ['b2b.agency.read'];
     await request(app.getHttpServer())
       .put(`/b2b/agencies/${id}/users/${id}`)
-      .set('Cookie', 'rubi_access=test-only')
+      .set('Cookie', 'nora_access=test-only')
       .send({})
       .expect(403);
     expect(service.update).not.toHaveBeenCalled();

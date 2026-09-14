@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import type {
   B2bAgreementCaseV1,
   B2bAgencyAgreedRateV1,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import { blankAgreementTerms } from './agreement-terms';
 import {
   agreementReport,

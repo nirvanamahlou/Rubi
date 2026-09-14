@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 
-import { CustomerAffairsRubiWorkspace } from './customer-affairs-rubi-workspace';
+import { CustomerAffairsNoraWorkspace } from './customer-affairs-nora-workspace';
 import { DetailPanel, type Detail } from './customer-affairs-workspace';
 
 const route = vi.hoisted(() => ({ query: '' }));
@@ -11,7 +11,7 @@ vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
 }));
 
-describe('Rubi Customer Affairs navigation', () => {
+describe('Nora Customer Affairs navigation', () => {
   it.each(['NEW', 'RESOLVED', 'CLOSED'] as const)(
     'only offers ticket actions appropriate to %s',
     (status) => {
@@ -52,7 +52,7 @@ describe('Rubi Customer Affairs navigation', () => {
   );
   it('removes the overview introduction while retaining metrics and report hero', () => {
     const source = readFileSync(
-      new URL('./customer-affairs-rubi-workspace.tsx', import.meta.url),
+      new URL('./customer-affairs-nora-workspace.tsx', import.meta.url),
       'utf8',
     );
     expect(source).not.toContain('از اولین تماس تا حل مسئله');
@@ -69,7 +69,7 @@ describe('Rubi Customer Affairs navigation', () => {
   });
   it('renders the four reference sections inside the existing application shell', () => {
     route.query = '';
-    const html = renderToStaticMarkup(<CustomerAffairsRubiWorkspace />);
+    const html = renderToStaticMarkup(<CustomerAffairsNoraWorkspace />);
     for (const label of [
       'نمای کلی',
       'درخواست‌های مشتریان',
@@ -87,7 +87,7 @@ describe('Rubi Customer Affairs navigation', () => {
 
   it('suppresses the supplementary HR requests outlet on Customer Affairs', () => {
     const source = readFileSync(
-      new URL('./customer-affairs-rubi-workspace.tsx', import.meta.url),
+      new URL('./customer-affairs-nora-workspace.tsx', import.meta.url),
       'utf8',
     );
     expect(source).toContain('useSuppressHrConnections(true)');
@@ -95,7 +95,7 @@ describe('Rubi Customer Affairs navigation', () => {
 
   it('retains the legacy ticket URL and support subnavigation', () => {
     route.query = 'tab=tickets';
-    const html = renderToStaticMarkup(<CustomerAffairsRubiWorkspace />);
+    const html = renderToStaticMarkup(<CustomerAffairsNoraWorkspace />);
     expect(html).toContain('تیکت‌های معوق');
     expect(html).not.toContain('رضایت و اقدام اصلاحی');
     expect(html).not.toContain('منتظر پذیرش فروش');
@@ -103,7 +103,7 @@ describe('Rubi Customer Affairs navigation', () => {
 
   it('offers the presales views without duplicating support subnavigation', () => {
     route.query = 'view=handoffs';
-    const html = renderToStaticMarkup(<CustomerAffairsRubiWorkspace />);
+    const html = renderToStaticMarkup(<CustomerAffairsNoraWorkspace />);
     expect(html).toContain('منتظر پذیرش فروش');
     expect(html).toContain('پیگیری معوق');
     expect(html).not.toContain('رضایت و اقدام اصلاحی');

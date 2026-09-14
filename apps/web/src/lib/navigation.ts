@@ -30,7 +30,7 @@ import { normalizeSection, screenMeta } from '../modules/hr/hr.model';
 import { marketingSections } from '../modules/marketing/model/reference-data';
 import { getMasterDataSection } from '../modules/master-data/model/sections';
 
-export const MARKETING_SECTION_CHANGE_EVENT = 'rubi:marketing-section-change';
+export const MARKETING_SECTION_CHANGE_EVENT = 'nora:marketing-section-change';
 
 export interface HrBreadcrumbLocation {
   sectionKey: string | null;

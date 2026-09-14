@@ -18,8 +18,8 @@ import type {
   B2bAgencyProfileDetailsV1,
   FinancePartyExposurePortV1,
   IamPermissionCode,
-} from '@rubi/contracts';
-import { Prisma } from '@rubi/database';
+} from '@nora/contracts';
+import { Prisma } from '@nora/database';
 
 import { MasterOrganizationDirectory } from '../master-data/master-organization-directory';
 import type {

@@ -1,6 +1,6 @@
 'use client';
 
-import type { CustomerSummary } from '@rubi/contracts';
+import type { CustomerSummary } from '@nora/contracts';
 import {
   Ban,
   ExternalLink,

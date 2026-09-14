@@ -9,7 +9,7 @@ import type {
   ReservationIntakeV1,
   TravelBrandingV1,
   TravelWorkflowStateV1,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import { Button } from '@/components/ui/button';
 import { documentsApi } from '@/modules/documents/api/client';
 import { DocumentPreview } from './document-preview';

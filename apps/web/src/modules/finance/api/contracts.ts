@@ -2,7 +2,7 @@ import {
   FINANCE_CONTRACT_VERSION,
   financeEndpointProposals,
   financePermissionMatrix,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 
 export const FINANCE_UI_VERSION = 'finance.ui.v1-preview' as const;
 export const FINANCE_UI_CONTRACT_VERSION = FINANCE_CONTRACT_VERSION;

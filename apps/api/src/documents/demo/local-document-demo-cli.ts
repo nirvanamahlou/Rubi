@@ -23,10 +23,10 @@ export function parseLocalDocumentsDemoCli(
   if (
     apply &&
     acknowledgement !== LOCAL_DOCUMENTS_DEMO_ACKNOWLEDGEMENT &&
-    environment.RUBI_ALLOW_LOCAL_DOCUMENTS_DEMO !== '1'
+    environment.NORA_ALLOW_LOCAL_DOCUMENTS_DEMO !== '1'
   ) {
     throw new Error(
-      `Pass ${LOCAL_DOCUMENTS_DEMO_ACKNOWLEDGEMENT} or set RUBI_ALLOW_LOCAL_DOCUMENTS_DEMO=1 to acknowledge local synthetic document creation.`,
+      `Pass ${LOCAL_DOCUMENTS_DEMO_ACKNOWLEDGEMENT} or set NORA_ALLOW_LOCAL_DOCUMENTS_DEMO=1 to acknowledge local synthetic document creation.`,
     );
   }
   return { apply };

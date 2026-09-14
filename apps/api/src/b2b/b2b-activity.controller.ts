@@ -10,7 +10,7 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
-import type { OrganizationActivityQuery } from '@rubi/contracts';
+import type { OrganizationActivityQuery } from '@nora/contracts';
 import { AuthGuard } from '../iam/auth.guard';
 import { PermissionGuard } from '../iam/permission.guard';
 import { RequirePermissions } from '../iam/iam.decorators';

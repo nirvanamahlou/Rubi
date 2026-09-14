@@ -1,4 +1,4 @@
-import type { B2bAgreementTermsV1 } from '@rubi/contracts';
+import type { B2bAgreementTermsV1 } from '@nora/contracts';
 
 export function blankAgreementTerms(): B2bAgreementTermsV1 {
   return {

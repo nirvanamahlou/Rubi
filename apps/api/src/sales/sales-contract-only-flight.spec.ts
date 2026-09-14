@@ -3,7 +3,7 @@ import {
   contractFlightMetadata,
   type SalesContractCreateRequest,
   type AuthenticatedActor,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import { validateSalesContract } from './sales.domain';
 import { SalesService, presentSalesContract } from './sales.service';
 import { SalesRepository, type SalesContractRow } from './sales.repository';

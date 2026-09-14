@@ -15,7 +15,7 @@ was notified before cutover. Recheck runtime identity and PID before stopping We
 
 Only the isolated demo document/GET route from PR156 and a runtime opt-in entry on
 `/tasks` (the existing Workbench menu destination) are added. The existing workspace
-is retained. `RUBI_WORKBENCH_DEMO=1` enables the entry/route. Existing proxy applies;
+is retained. `NORA_WORKBENCH_DEMO=1` enables the entry/route. Existing proxy applies;
 no authentication cookie is fabricated. The document remains a synthetic in-memory
 sample, CSP-sandboxed without same-origin or network access.
 

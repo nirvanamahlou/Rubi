@@ -1,4 +1,4 @@
-import type { AuthenticatedActor } from '@rubi/contracts';
+import type { AuthenticatedActor } from '@nora/contracts';
 
 import type { RequestMetadata } from './iam.types';
 

@@ -1,4 +1,4 @@
-import type { DocumentListItemV1 } from '@rubi/contracts';
+import type { DocumentListItemV1 } from '@nora/contracts';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   documentFavoritesKey,

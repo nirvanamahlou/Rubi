@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { AuthenticatedActor } from '@rubi/contracts';
+import type { AuthenticatedActor } from '@nora/contracts';
 import { MasterDataService } from './master-data.service';
 import type { MasterDataRepository } from './master-data.repository';
 

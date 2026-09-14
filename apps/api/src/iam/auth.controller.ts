@@ -117,7 +117,7 @@ export class AuthController {
   ): Promise<void> {
     // Non-simple header requires a successful CORS preflight from other origins.
     if (
-      request.get('x-rubi-password-change') !== '1' ||
+      request.get('x-nora-password-change') !== '1' ||
       !request.is('application/json')
     )
       throw new ForbiddenException('درخواست تغییر رمز معتبر نیست.');

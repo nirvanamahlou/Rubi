@@ -1,4 +1,4 @@
-import type { B2bAgencyAgreementV1 } from '@rubi/contracts';
+import type { B2bAgencyAgreementV1 } from '@nora/contracts';
 import { describe, expect, it } from 'vitest';
 import { agreementLabel, cooperationLabel, moneyLabel } from './presentation';
 

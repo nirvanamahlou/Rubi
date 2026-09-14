@@ -2,7 +2,7 @@ import { Logger, ValidationPipe, type INestApplication } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { HttpAdapterHost } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { parseCommaSeparatedList } from '@rubi/config';
+import { parseCommaSeparatedList } from '@nora/config';
 
 import { AllExceptionsFilter } from './common/all-exceptions.filter';
 import { requestIdMiddleware } from './common/request-id.middleware';
@@ -21,9 +21,9 @@ export function configureApplication(app: INestApplication): void {
   app.enableCors({
     credentials: true,
     exposedHeaders: [
-      'X-Rubi-Manifest-Contracts',
-      'X-Rubi-Manifest-Passengers',
-      'X-Rubi-Manifest-Skipped-Finance',
+      'X-Nora-Manifest-Contracts',
+      'X-Nora-Manifest-Passengers',
+      'X-Nora-Manifest-Skipped-Finance',
     ],
     origin: corsOrigins,
   });
@@ -39,10 +39,10 @@ export function configureApplication(app: INestApplication): void {
 
   if (config.getOrThrow<boolean>('ENABLE_SWAGGER')) {
     const swaggerConfig = new DocumentBuilder()
-      .setTitle('Rubi Airline CRM API')
-      .setDescription('Rubi API including versioned IAM contracts')
+      .setTitle('Nora Airline CRM API')
+      .setDescription('Nora API including versioned IAM contracts')
       .setVersion('1.0')
-      .addCookieAuth('rubi_access')
+      .addCookieAuth('nora_access')
       .build();
     const documentFactory = () =>
       SwaggerModule.createDocument(app, swaggerConfig);

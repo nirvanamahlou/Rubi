@@ -1,7 +1,7 @@
 'use client';
 
 import { CheckCircle2, Circle, Plane } from 'lucide-react';
-import type { TicketOfferV1 } from '@rubi/contracts';
+import type { TicketOfferV1 } from '@nora/contracts';
 
 export function ticketDisplayTime(value: string) {
   const date = new Date(value);

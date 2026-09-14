@@ -14,8 +14,8 @@ import type {
   TourPackageV1,
   TourPackageInputV1,
   SalesContractCreateRequest,
-} from '@rubi/contracts';
-import type { Prisma } from '@rubi/database';
+} from '@nora/contracts';
+import type { Prisma } from '@nora/database';
 import { DatabaseService } from '../database/database.service';
 import { MasterTravelDirectory } from '../master-data/master-travel-directory';
 import { validateTourDeparture, validateTourPackage } from './tour-policy';

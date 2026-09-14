@@ -4,7 +4,7 @@ import {
   B2B_DOSSIER_SECTIONS,
   type B2bOrganizationUser,
   type B2bOrganizationUserInput,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import { Pencil, Plus, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input, Textarea } from '@/components/ui/form-controls';

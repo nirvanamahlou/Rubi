@@ -5,13 +5,13 @@ import type {
   TravelDeliveryAuthorizationV1,
   TravelWorkflowCommandV1,
   TravelWorkflowStateV1,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import { Button } from '@/components/ui/button';
 import { Input, Textarea } from '@/components/ui/form-controls';
 import { getPublicApiBaseUrl } from '@/lib/environment';
 import { refreshAuthenticatedSession } from '@/lib/auth-session';
 import { agencyClient } from '@/modules/organizations/api/agency-client';
-import type { MasterDataRecord } from '@rubi/contracts';
+import type { MasterDataRecord } from '@nora/contracts';
 import { TravelDocument } from './travel-document';
 import { ReservationSettings } from './reservation-settings';
 import { ReservationTickets } from './reservation-tickets';

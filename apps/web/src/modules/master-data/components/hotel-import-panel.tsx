@@ -6,7 +6,7 @@ import type {
   MasterHotelImportDuplicateBehavior,
   MasterHotelImportCommitResult,
   MasterHotelImportPreview,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import { FileCheck2, FileSpreadsheet, Upload } from 'lucide-react';
 import { useEffect, useState } from 'react';
 

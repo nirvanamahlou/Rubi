@@ -35,7 +35,7 @@ interface UploadedWorkbook {
 }
 
 @ApiTags('Master Data Hotel Import')
-@ApiCookieAuth('rubi_access')
+@ApiCookieAuth('nora_access')
 @UseGuards(AuthGuard, PermissionGuard)
 @Controller('master-data/hotel-imports')
 export class HotelImportController {

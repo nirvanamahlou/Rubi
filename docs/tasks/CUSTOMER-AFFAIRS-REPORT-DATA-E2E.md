@@ -9,7 +9,7 @@ Date: 2026-09-13. Branch: `codex/pc-b-customer-affairs-report-data-e2e`.
 - Natural display titles; synthetic provenance in CA audit/timeline and deterministic IDs. These are generated examples, not genuine customer feedback or business results.
 - Own CA tables only; existing CA anchor supplies branch/actor references. No existing rows overwritten, no real customer/contact linkage, no outbound SMS or website calls, no migration or permission changes.
 - Transactional preview rolled back successfully. Apply succeeded. Second apply returned zero added records in every category.
-- End-date label is now `تا تاریخ`; shared Rubi calendar unchanged. Report corrective statuses DONE/CANCELLED now display Persian labels.
+- End-date label is now `تا تاریخ`; shared Nora calendar unchanged. Report corrective statuses DONE/CANCELLED now display Persian labels.
 
 ## Verification
 
@@ -27,4 +27,4 @@ This was targeted browser E2E, not exhaustive coverage of every CA workflow. Ext
 
 ## Runtime handoff
 
-Combined checkout `C:/Users/admin/Rubi-unified-customer-affairs-3100`; implementation commit `bccbfb71e5432a765a8b65926543ec95b165939e`; Web build `unified-F6makayd3neGQ-tTvkrk7`. Last verified Web3100 PID24760 / API4190 PID33612. Subsequent documentation-only commit does not change this build. No HR panel-removal changes included. Release Web runtime ownership to the coordinating HR task after final documentation; preserve API, database, backend connections, permissions and shared form references.
+Combined checkout `C:/Users/admin/Nora-unified-customer-affairs-3100`; implementation commit `bccbfb71e5432a765a8b65926543ec95b165939e`; Web build `unified-F6makayd3neGQ-tTvkrk7`. Last verified Web3100 PID24760 / API4190 PID33612. Subsequent documentation-only commit does not change this build. No HR panel-removal changes included. Release Web runtime ownership to the coordinating HR task after final documentation; preserve API, database, backend connections, permissions and shared form references.

@@ -1,4 +1,4 @@
-# Shared Rubi runtime — Customer Affairs, Excel and existing modules
+# Shared Nora runtime — Customer Affairs, Excel and existing modules
 
 ## Authority and source
 
@@ -8,9 +8,9 @@ The merge preserved both Messaging and Customer Affairs reverse relations in Use
 
 ## Data upgrade
 
-- Existing database: `rubi_hr_current_20260908`; existing storage: `C:/Users/admin/AppData/Local/Rubi/hr007-documents`.
-- Local backup: `C:/Users/admin/AppData/Local/Rubi/backups/rubi-ca-unified-20260912.dump` (920533 bytes), copied from a PostgreSQL custom-format dump before upgrade.
-- Backup restored to separate rehearsal database `rubi_ca_unified_verify_20260912`.
+- Existing database: `nora_hr_current_20260908`; existing storage: `C:/Users/admin/AppData/Local/Nora/hr007-documents`.
+- Local backup: `C:/Users/admin/AppData/Local/Nora/backups/nora-ca-unified-20260912.dump` (920533 bytes), copied from a PostgreSQL custom-format dump before upgrade.
+- Backup restored to separate rehearsal database `nora_ca_unified_verify_20260912`.
 - Only pending repository migration was `20260912173000_customer_affairs_operational`. Standard Prisma migrate deploy succeeded on the rehearsal and current databases, adding nine Customer Affairs tables. Existing local feedback migration was neither reset nor overwritten.
 - Users/branches/documents stayed at 38 / 5 / 44 on rehearsal and current databases.
 - Exactly 19 Customer Affairs permissions were installed for the existing active system `administrator` role; other roles and user-role assignments were untouched. The change is recorded in IAM audit. Repeated rehearsal execution added zero grants. No global seed or credential reset was run.
@@ -18,7 +18,7 @@ The merge preserved both Messaging and Customer Affairs reverse relations in Use
 
 ## Runtime
 
-Working directory: `C:/Users/admin/Rubi-unified-customer-affairs-3100`.
+Working directory: `C:/Users/admin/Nora-unified-customer-affairs-3100`.
 Web: `http://127.0.0.1:3100`; API: `http://127.0.0.1:4190/api/v1`.
 The compiled public API address targets 4190; the existing launcher authorizes both localhost and 127.0.0.1 on 3100 in CORS. Existing secrets are loaded from the same local environment file without copying them into Git.
 
@@ -26,11 +26,11 @@ After building this worktree, restart with:
 
 ```powershell
 ./infrastructure/scripts/start-unified-local.ps1 `
-  -ApiEnvFile C:/Users/admin/Rubi-hr-foundation/apps/api/.env `
-  -DocumentStorageRoot C:/Users/admin/AppData/Local/Rubi/hr007-documents
+  -ApiEnvFile C:/Users/admin/Nora-hr-foundation/apps/api/.env `
+  -DocumentStorageRoot C:/Users/admin/AppData/Local/Nora/hr007-documents
 ```
 
-The initial approved cutover additionally supplies `-PreviousRuntimeRoot C:/Users/admin/Rubi-excel-integration-runtime`. The launcher validates both listener owners before stopping either and rejects unknown checkouts. Logs are under ignored `tmp/unified-runtime`. Runtime identity is available at `/api/hr-runtime` using the existing diagnostic endpoint.
+The initial approved cutover additionally supplies `-PreviousRuntimeRoot C:/Users/admin/Nora-excel-integration-runtime`. The launcher validates both listener owners before stopping either and rejects unknown checkouts. Logs are under ignored `tmp/unified-runtime`. Runtime identity is available at `/api/hr-runtime` using the existing diagnostic endpoint.
 
 For later module changes, integrate into this combined source before rebuilding; do not replace 3100 with a feature-only checkout. Runtime handoff must still be coordinated and rechecked.
 

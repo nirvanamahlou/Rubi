@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
-import type { DocumentListItemV1, HrRecordDto } from '@rubi/contracts';
+import type { DocumentListItemV1, HrRecordDto } from '@nora/contracts';
 import { documentsApi } from '../documents/api/client';
 import { DatePicker } from '@/components/ui/date-picker';
 import { hrRequest } from './hr-api';

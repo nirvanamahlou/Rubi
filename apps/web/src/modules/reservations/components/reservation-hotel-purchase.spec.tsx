@@ -4,7 +4,7 @@ import type {
   ReservationIntakeV1,
   TravelWorkflowStateV1,
   VoucherSettingsV1,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import { SupplierFormPurchaseContext } from './reservation-hotel-purchase';
 
 const request = (workflow?: TravelWorkflowStateV1) =>

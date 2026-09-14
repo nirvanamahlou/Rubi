@@ -4,7 +4,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import type { Prisma } from '@rubi/database';
+import type { Prisma } from '@nora/database';
 import { DatabaseService } from '../database/database.service';
 
 export interface SignatoryScope {

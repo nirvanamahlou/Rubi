@@ -5,7 +5,7 @@ import {
   type HrDirectoryEmployee,
   type HrDirectoryResponse,
   type HrFormReferences,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import { hrRequest } from './hr-api';
 
 export function useHrFormReferences(employeeId?: string) {

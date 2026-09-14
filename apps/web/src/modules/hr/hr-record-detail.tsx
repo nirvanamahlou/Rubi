@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { getHrResource, type HrRecordDto } from '@rubi/contracts';
+import { getHrResource, type HrRecordDto } from '@nora/contracts';
 import {
   Dialog,
   DialogContent,

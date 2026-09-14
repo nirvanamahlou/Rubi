@@ -2,7 +2,7 @@
 import { useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
-import type { HrEmployeeDto } from '@rubi/contracts';
+import type { HrEmployeeDto } from '@nora/contracts';
 import { hrApi } from './hr-api';
 import type { HrStore } from './hr-store';
 import {

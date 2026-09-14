@@ -3,7 +3,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { NewEmployeeForm } from './new-employee-dialog';
 import { HrDirectoryPicker } from './hr-directory-picker';
 import { ContextualHrForm } from './contextual-hr-form';
-import { getHrResource } from '@rubi/contracts';
+import { getHrResource } from '@nora/contracts';
 import {
   validateDocumentUpload,
   emptyDocumentUploadValues,

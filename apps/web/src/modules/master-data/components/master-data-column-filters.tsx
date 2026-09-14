@@ -3,7 +3,7 @@
 import {
   getMasterDataColumnFilters,
   type MasterDataResource,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import { useMemo, useState } from 'react';
 import {
   FormField,

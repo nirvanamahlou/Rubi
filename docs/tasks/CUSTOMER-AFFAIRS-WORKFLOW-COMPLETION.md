@@ -46,4 +46,4 @@ Request body: mobile (09… or +989…) and message (2–1000 characters). `Idem
 - Actual Sales/Reservations/Finance producer callbacks and final sales outcome synchronization remain incomplete; no edits made to their newer remote producer changes.
 - Scheduler creates Notifications, not Tasks module entities. Automatic supervisor escalation, business calendar/holidays and advanced reporting remain incomplete.
 - Structured dissatisfaction reasons are not implemented by this slice.
-- Preserve four tabs, modal forms and Rubi Select styling. No automatic permission grants, no fabricated site connection, no customer contact made in QA.
+- Preserve four tabs, modal forms and Nora Select styling. No automatic permission grants, no fabricated site connection, no customer contact made in QA.

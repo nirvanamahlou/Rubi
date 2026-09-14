@@ -1,4 +1,4 @@
-import { isMasterTransportFormResource } from '@rubi/contracts';
+import { isMasterTransportFormResource } from '@nora/contracts';
 import type {
   MasterDataCatalogItem,
   MasterDataFieldDefinition,

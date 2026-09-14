@@ -4,7 +4,7 @@ import {
   voucherNumberKeys,
   voucherFlagKeys,
   type VoucherSettingsV1,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import { contractPrintHtml } from './contract-print';
 import { printFixture, printReferences } from './contract-print.fixture';
 it('renders the recorded operational hotel amendment while preserving commercial totals and base data', () => {

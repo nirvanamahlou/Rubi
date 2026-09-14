@@ -37,7 +37,7 @@ const labels: Record<string, string> = {
   intakeQueue: 'صف مسئول',
 };
 
-/** Preserve existing option lists and FormData while using Rubi's themed menu. */
+/** Preserve existing option lists and FormData while using Nora's themed menu. */
 export function AffairsSelect({
   children,
   value,

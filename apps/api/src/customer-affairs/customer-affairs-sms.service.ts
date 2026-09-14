@@ -8,7 +8,7 @@ import {
   ServiceUnavailableException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import type { AuthenticatedActor } from '@rubi/contracts';
+import type { AuthenticatedActor } from '@nora/contracts';
 import { CustomerAffairsRepository } from './customer-affairs.repository';
 import { CustomerAffairsService } from './customer-affairs.service';
 

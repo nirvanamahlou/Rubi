@@ -2,9 +2,9 @@ import { HttpException, UnprocessableEntityException } from '@nestjs/common';
 import {
   LegalEntityContextMode,
   LegalEntityDocumentIssueStatus,
-} from '@rubi/database';
+} from '@nora/database';
 import { describe, expect, it, vi } from 'vitest';
-import type { AuthenticatedActor } from '@rubi/contracts';
+import type { AuthenticatedActor } from '@nora/contracts';
 
 import type { DatabaseService } from '../database/database.service';
 import type {

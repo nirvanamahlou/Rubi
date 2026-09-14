@@ -1,7 +1,7 @@
 'use client';
 
 import { AffairsSelect } from './affairs-select';
-import type { CustomerSummary } from '@rubi/contracts';
+import type { CustomerSummary } from '@nora/contracts';
 import type {
   CustomerAffairsDashboard,
   CustomerAffairsLeadInput,
@@ -9,7 +9,7 @@ import type {
   CustomerAffairsTicketInput,
   CustomerAffairsTicketView,
   CustomerAffairsTimelineInput,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import {
   AlertTriangle,
   ArrowLeft,
@@ -54,7 +54,7 @@ import { RecordOperations, ticketCategories } from './record-operations';
 import { SalesHandoffResponse } from './sales-handoff-response';
 import { LeadCustomerConversion } from './lead-customer-conversion';
 import { TicketSms } from './ticket-sms';
-import s from './customer-affairs-rubi.module.css';
+import s from './customer-affairs-nora.module.css';
 
 type Tab = 'leads' | 'tickets';
 type LoadState = 'loading' | 'ready' | 'empty' | 'error' | 'forbidden';

@@ -48,7 +48,7 @@ export function FrappeWorkspaceLauncher() {
           <h2 id="frappe-workspaces-title">فضاهای کاری منابع انسانی</h2>
           <p>
             ۹ فضای کاری با شاخص‌های پر، اطلاعات پایه و گزارش‌های متصل به صفحات
-            داخلی Rubi
+            داخلی Nora
           </p>
         </div>
         <span className={styles.previewBadge}>داده آزمایشی</span>
@@ -219,7 +219,7 @@ export function FrappeWorkspaceScreen({
           <div>
             <h2 id="workspace-groups-title">اطلاعات پایه و گزارش‌ها</h2>
             <p>
-              هر گزینه به صفحه و تب مرتبط در ماژول منابع انسانی Rubi متصل است.
+              هر گزینه به صفحه و تب مرتبط در ماژول منابع انسانی Nora متصل است.
             </p>
           </div>
           <span className={styles.previewBadge}>داده آزمایشی</span>

@@ -3,7 +3,7 @@ import { Readable } from 'node:stream';
 import { ValidationPipe } from '@nestjs/common';
 import type { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import type { AuthenticatedActor } from '@rubi/contracts';
+import type { AuthenticatedActor } from '@nora/contracts';
 import request from 'supertest';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -123,7 +123,7 @@ describe('Documents HTTP boundary', () => {
         page: 1,
         pageSize: 25,
       })
-      .set('Cookie', 'rubi_access=test')
+      .set('Cookie', 'nora_access=test')
       .expect(200);
 
     expect(response.headers['cache-control']).toBe('private, no-store');
@@ -151,7 +151,7 @@ describe('Documents HTTP boundary', () => {
     await request(app.getHttpServer())
       .get('/api/v1/documents')
       .query({ domain: 'PAYROLL', pageSize: 1000 })
-      .set('Cookie', 'rubi_access=test')
+      .set('Cookie', 'nora_access=test')
       .expect(400);
     expect(service.list).not.toHaveBeenCalled();
   });
@@ -160,7 +160,7 @@ describe('Documents HTTP boundary', () => {
     await request(app.getHttpServer())
       .get('/api/v1/documents')
       .query({ personalView: 'SOMEONE_ELSE' })
-      .set('Cookie', 'rubi_access=test')
+      .set('Cookie', 'nora_access=test')
       .expect(400);
     expect(service.list).not.toHaveBeenCalled();
   });
@@ -169,7 +169,7 @@ describe('Documents HTTP boundary', () => {
     const response = await request(app.getHttpServer())
       .get('/api/v1/documents/case-options')
       .query({ branchId, search: 'قرارداد', limit: 20 })
-      .set('Cookie', 'rubi_access=test')
+      .set('Cookie', 'nora_access=test')
       .expect(200);
 
     expect(response.headers['cache-control']).toBe('private, no-store');
@@ -185,7 +185,7 @@ describe('Documents HTTP boundary', () => {
   it('accepts a multipart file and validated ownership/source metadata', async () => {
     await request(app.getHttpServer())
       .post('/api/v1/documents/upload')
-      .set('Cookie', 'rubi_access=test')
+      .set('Cookie', 'nora_access=test')
       .field('title', 'قرارداد فروش')
       .field('documentTypeId', '55555555-5555-4555-8555-555555555555')
       .field('categoryId', '66666666-6666-4666-8666-666666666666')
@@ -213,7 +213,7 @@ describe('Documents HTTP boundary', () => {
     const id = '44444444-4444-4444-8444-444444444444';
     await request(app.getHttpServer())
       .patch(`/api/v1/documents/${id}`)
-      .set('Cookie', 'rubi_access=test')
+      .set('Cookie', 'nora_access=test')
       .send({
         title: 'قرارداد اصلاح‌شده',
         description: 'نسخه تکمیل‌نشده',
@@ -241,7 +241,7 @@ describe('Documents HTTP boundary', () => {
     const id = '44444444-4444-4444-8444-444444444444';
     await request(app.getHttpServer())
       .post('/api/v1/documents/bulk')
-      .set('Cookie', 'rubi_access=test')
+      .set('Cookie', 'nora_access=test')
       .send({
         ids: [id],
         action: 'MARK_INCOMPLETE',
@@ -257,7 +257,7 @@ describe('Documents HTTP boundary', () => {
 
     await request(app.getHttpServer())
       .delete(`/api/v1/documents/${id}`)
-      .set('Cookie', 'rubi_access=test')
+      .set('Cookie', 'nora_access=test')
       .send({ reason: 'حذف قطعی رکورد اشتباه', version: 1 })
       .expect(204);
 
@@ -274,7 +274,7 @@ describe('Documents HTTP boundary', () => {
   it('requires metadata, file and download permissions at the download route', async () => {
     await request(app.getHttpServer())
       .get('/api/v1/documents/44444444-4444-4444-8444-444444444444/download')
-      .set('Cookie', 'rubi_access=test')
+      .set('Cookie', 'nora_access=test')
       .expect(200);
 
     expect(iam.assertPermissions).toHaveBeenCalledWith(actor, [
@@ -288,14 +288,14 @@ describe('Documents HTTP boundary', () => {
     const id = '44444444-4444-4444-8444-444444444444';
     await request(app.getHttpServer())
       .post(`/api/v1/documents/${id}/access-grants`)
-      .set('Cookie', 'rubi_access=test')
+      .set('Cookie', 'nora_access=test')
       .send({ code: 'abcdef', purpose: 'PREVIEW' })
       .expect(400);
     expect(service.createAccessGrant).not.toHaveBeenCalled();
 
     await request(app.getHttpServer())
       .post(`/api/v1/documents/${id}/access-grants`)
-      .set('Cookie', 'rubi_access=test')
+      .set('Cookie', 'nora_access=test')
       .send({ code: '123456', purpose: 'PREVIEW' })
       .expect(201);
 
@@ -314,7 +314,7 @@ describe('Documents HTTP boundary', () => {
   it('serves an inline preview with read permissions and no download requirement', async () => {
     const response = await request(app.getHttpServer())
       .get('/api/v1/documents/44444444-4444-4444-8444-444444444444/preview')
-      .set('Cookie', 'rubi_access=test')
+      .set('Cookie', 'nora_access=test')
       .set('x-sensitive-read-reason', encodeURIComponent('بررسی پرونده'))
       .expect(200);
 

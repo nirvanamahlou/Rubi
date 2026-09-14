@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import type { SalesContractSummary } from '@rubi/contracts';
+import type { SalesContractSummary } from '@nora/contracts';
 import { Button } from '@/components/ui/button';
 import { FormField, Input, Textarea } from '@/components/ui/form-controls';
 import { salesApi } from '@/modules/sales/api/client';

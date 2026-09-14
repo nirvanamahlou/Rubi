@@ -9,7 +9,7 @@ import type {
   FinancialReleaseEvaluationContract,
   JournalDraftContract,
   MoneyContract,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 
 import type {
   Account,

@@ -1,8 +1,8 @@
 {
-  "name": "rubi-airline-crm",
+  "name": "nora-airline-crm",
   "version": "0.0.0",
   "private": true,
-  "description": "Rubi Airline CRM modular monolith monorepo",
+  "description": "Nora Airline CRM modular monolith monorepo",
   "license": "UNLICENSED",
   "packageManager": "pnpm@11.19.0",
   "engines": {
@@ -17,9 +17,9 @@
     "test": "pnpm db:generate && turbo run test",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "db:format": "pnpm --filter @rubi/database db:format",
-    "db:generate": "pnpm --filter @rubi/database db:generate",
-    "db:validate": "pnpm --filter @rubi/database db:validate",
+    "db:format": "pnpm --filter @nora/database db:format",
+    "db:generate": "pnpm --filter @nora/database db:generate",
+    "db:validate": "pnpm --filter @nora/database db:validate",
     "master-data:demo:preview": "node apps/api/scripts/run-local-master-data-demo.mjs --preview",
     "master-data:demo:apply": "node apps/api/scripts/run-local-master-data-demo.mjs --apply",
     "documents:demo:preview": "node apps/api/scripts/run-local-documents-demo.mjs --preview",
@@ -29,7 +29,7 @@
     "infra:down": "docker compose --env-file .env -f infrastructure/compose.dev.yaml down"
   },
   "devDependencies": {
-    "@rubi/eslint-config": "workspace:*",
+    "@nora/eslint-config": "workspace:*",
     "prettier": "3.9.6",
     "turbo": "2.10.11",
     "typescript": "6.0.3"

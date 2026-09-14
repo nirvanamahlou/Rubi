@@ -1,5 +1,5 @@
 import { BadRequestException } from '@nestjs/common';
-import { Prisma } from '@rubi/database';
+import { Prisma } from '@nora/database';
 import { describe, expect, it, vi } from 'vitest';
 
 import { FinanceDeliveryService } from './finance-delivery.module';

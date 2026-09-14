@@ -2,7 +2,7 @@
 
 import { AffairsSelect } from './affairs-select';
 import { useEffect, useState } from 'react';
-import type { HrDirectoryResponse } from '@rubi/contracts';
+import type { HrDirectoryResponse } from '@nora/contracts';
 import { getPublicApiBaseUrl } from '@/lib/environment';
 import { Input } from '@/components/ui/form-controls';
 import { Button } from '@/components/ui/button';

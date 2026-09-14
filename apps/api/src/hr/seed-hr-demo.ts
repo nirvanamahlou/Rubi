@@ -9,8 +9,8 @@ import {
   HR_PERMISSION_CODES,
   type AuthenticatedActor,
   type HrRecordCreate,
-} from '@rubi/contracts';
-import { createDatabaseClient } from '@rubi/database';
+} from '@nora/contracts';
+import { createDatabaseClient } from '@nora/database';
 
 import type { DatabaseService } from '../database/database.service';
 import type { DocumentsService } from '../documents/documents.service';
@@ -24,7 +24,7 @@ import { MasterHrDirectory } from '../master-data/master-hr-directory';
 async function main() {
   const env = parseEnv(
     readFileSync(
-      process.env.RUBI_HR_ENV_FILE ?? resolve(process.cwd(), '.env'),
+      process.env.NORA_HR_ENV_FILE ?? resolve(process.cwd(), '.env'),
       'utf8',
     ),
   );

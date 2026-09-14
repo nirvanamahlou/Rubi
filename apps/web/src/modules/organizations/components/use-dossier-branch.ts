@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import type { BranchReference, IamPermissionCode } from '@rubi/contracts';
+import type { BranchReference, IamPermissionCode } from '@nora/contracts';
 import { agencyClient } from '../api/agency-client';
 
 export function useDossierBranch() {

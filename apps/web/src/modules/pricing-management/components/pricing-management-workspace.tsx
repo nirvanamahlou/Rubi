@@ -117,7 +117,7 @@ export function PricingManagementWorkspace() {
   return (
     <main className="space-y-6">
       <PageHeader
-        eyebrow="Rubi Sales"
+        eyebrow="Nora Sales"
         title="مدیریت قیمت"
         description="ویرایش روزانه قیمت تورهای شرکت و بلیت‌های ملکی، همراه با خروجی بنر"
       />

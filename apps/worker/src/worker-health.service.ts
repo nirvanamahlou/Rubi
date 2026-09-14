@@ -6,8 +6,8 @@ import {
   type OnModuleInit,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { parseRedisUrl } from '@rubi/config';
-import { createHealthData, type HealthData } from '@rubi/contracts';
+import { parseRedisUrl } from '@nora/config';
+import { createHealthData, type HealthData } from '@nora/contracts';
 import { Queue } from 'bullmq';
 
 @Injectable()

@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type {
   AuthenticatedActor,
   OrganizationActivityEvent,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import { activityEvent, activityWindow } from '../common/organization-activity';
 import { B2bActivityService } from './b2b-activity.service';
 import type { B2bActivityRepository } from './b2b-activity.repository';

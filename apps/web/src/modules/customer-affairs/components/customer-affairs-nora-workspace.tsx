@@ -7,7 +7,7 @@ import type {
   CustomerAffairsDashboard,
   CustomerAffairsLeadView,
   CustomerAffairsTicketView,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import {
   ArrowLeft,
   BarChart3,
@@ -42,7 +42,7 @@ import {
   priorityLabel,
   type Detail,
 } from './customer-affairs-workspace';
-import s from './customer-affairs-rubi.module.css';
+import s from './customer-affairs-nora.module.css';
 
 type View =
   | 'overview'
@@ -123,7 +123,7 @@ type Loaded = {
   detail?: Detail;
 };
 
-export function CustomerAffairsRubiWorkspace() {
+export function CustomerAffairsNoraWorkspace() {
   useSuppressHrConnections(true);
   const router = useRouter();
   const params = useSearchParams();

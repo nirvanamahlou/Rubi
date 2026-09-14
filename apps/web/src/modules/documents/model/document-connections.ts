@@ -2,7 +2,7 @@ import {
   DOCUMENT_DOMAIN_CODES,
   type DocumentDomainCode,
   type DocumentRelationV1,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 
 export type ConnectedDocumentsSection =
   'all' | 'customer' | 'sales' | 'travel' | 'procurement' | 'hr';

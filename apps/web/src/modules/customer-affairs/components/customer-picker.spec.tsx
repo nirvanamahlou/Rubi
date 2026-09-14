@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { renderToStaticMarkup } from 'react-dom/server';
-import type { CustomerSummary } from '@rubi/contracts';
+import type { CustomerSummary } from '@nora/contracts';
 import { describe, expect, it } from 'vitest';
 import { CustomerPicker } from './customer-picker';
 

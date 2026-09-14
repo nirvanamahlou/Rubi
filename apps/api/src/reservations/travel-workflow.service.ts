@@ -15,8 +15,8 @@ import type {
   SalesReservationRequestV1,
   TravelWorkflowCommandV1,
   TravelWorkflowStateV1,
-} from '@rubi/contracts';
-import { Prisma } from '@rubi/database';
+} from '@nora/contracts';
+import { Prisma } from '@nora/database';
 import { DatabaseService } from '../database/database.service';
 import {
   initialTravelWorkflow,

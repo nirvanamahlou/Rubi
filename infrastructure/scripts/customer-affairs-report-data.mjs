@@ -13,8 +13,8 @@ if (
   throw new Error('Use preview|apply and an existing CA ticket UUID.');
 const url = new URL(process.env.DATABASE_URL);
 if (!['localhost', '127.0.0.1'].includes(url.hostname) || url.port !== '55432')
-  throw new Error('Local Rubi database only.');
-url.pathname = '/rubi_hr_current_20260908';
+  throw new Error('Local Nora database only.');
+url.pathname = '/nora_hr_current_20260908';
 const db = createDatabaseClient(url.toString());
 const dataset = 'ca-report-synthetic-20260913-v1';
 const hash = (value) => createHash('sha256').update(value).digest('hex');

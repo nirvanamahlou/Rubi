@@ -1,4 +1,4 @@
-import type { B2bAgencyAgreementV1 } from '@rubi/contracts';
+import type { B2bAgencyAgreementV1 } from '@nora/contracts';
 
 /** Keep Decimal precision: never convert money to a JavaScript Number. */
 export function moneyLabel(amount: string, currency: string): string {

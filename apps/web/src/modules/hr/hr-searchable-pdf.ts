@@ -79,7 +79,7 @@ export function buildSearchablePdf(pages: readonly HrPdfPage[]): Uint8Array {
     const cmap = add(
       stream(
         bytes(
-          `/CIDInit /ProcSet findresource begin 12 dict begin begincmap /CIDSystemInfo << /Registry (Rubi) /Ordering (Unicode) /Supplement 0 >> def /CMapName /RubiUnicode def /CMapType 2 def 1 begincodespacerange <00> <FF> endcodespacerange\n${mappings.length} beginbfchar\n${mappings.join('\n')}\nendbfchar endcmap CMapName currentdict /CMap defineresource pop end end`,
+          `/CIDInit /ProcSet findresource begin 12 dict begin begincmap /CIDSystemInfo << /Registry (Nora) /Ordering (Unicode) /Supplement 0 >> def /CMapName /NoraUnicode def /CMapType 2 def 1 begincodespacerange <00> <FF> endcodespacerange\n${mappings.length} beginbfchar\n${mappings.join('\n')}\nendbfchar endcmap CMapName currentdict /CMap defineresource pop end end`,
         ),
       ),
     );
@@ -131,7 +131,7 @@ export function buildSearchablePdf(pages: readonly HrPdfPage[]): Uint8Array {
   objects[pageTree - 1] = bytes(
     `<< /Type /Pages /Count ${kids.length} /Kids [${kids.map((id) => `${id} 0 R`).join(' ')}] >>`,
   );
-  const parts = [bytes('%PDF-1.7\n%Rubi\n')];
+  const parts = [bytes('%PDF-1.7\n%Nora\n')];
   const offsets = [0];
   let at = parts[0]!.length;
   objects.forEach((object, index) => {

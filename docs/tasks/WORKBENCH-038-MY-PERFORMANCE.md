@@ -6,7 +6,7 @@ PC-B · `codex/pc-b-workbench-my-performance` · 2026-09-13
 
 `GET /api/v1/workbench/performance?days=30|90|365` is authenticated,
 `private, no-store` and read-only. It never accepts an employee/user ID.
-The `performance` Workbench tab uses native Rubi controls and theme tokens.
+The `performance` Workbench tab uses native Nora controls and theme tokens.
 
 - HR exports `HrSelfPerformanceService`. Employee selection requires the unique
   authenticated user link, current branches and non-deleted records, even for admins.

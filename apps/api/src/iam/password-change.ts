@@ -4,14 +4,14 @@ import {
   HttpStatus,
   UnauthorizedException,
 } from '@nestjs/common';
-import type { AuthenticatedActor } from '@rubi/contracts';
+import type { AuthenticatedActor } from '@nora/contracts';
 import {
   AuditOutcome,
   SessionStatus,
   UserStatus,
   type DatabaseClient,
   type Prisma,
-} from '@rubi/database';
+} from '@nora/database';
 import { hash, verify } from 'argon2';
 import { LOCK_MINUTES, MAX_LOGIN_ATTEMPTS } from './iam.constants';
 import { passwordPolicyErrors } from './password-policy';

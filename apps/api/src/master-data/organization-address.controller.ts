@@ -26,7 +26,7 @@ import {
 import { MasterOrganizationDirectory } from './master-organization-directory';
 
 @ApiTags('Master Data Organization Addresses')
-@ApiCookieAuth('rubi_access')
+@ApiCookieAuth('nora_access')
 @UseGuards(AuthGuard, PermissionGuard)
 @Controller('master-data/organizations')
 export class OrganizationAddressController {

@@ -1,7 +1,7 @@
 import type {
   DocumentOptionsResponseV1,
   SalesContractDetail,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 
 export function paymentDocumentQuery(
   contract: SalesContractDetail,

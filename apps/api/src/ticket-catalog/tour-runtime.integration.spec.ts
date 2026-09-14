@@ -5,8 +5,8 @@ import type {
   SalesContractCreateRequest,
   SalesTicketSelectionInput,
   TicketOfferV1,
-} from '@rubi/contracts';
-import { createDatabaseClient } from '@rubi/database';
+} from '@nora/contracts';
+import { createDatabaseClient } from '@nora/database';
 import type { DatabaseService } from '../database/database.service';
 import type { MasterTravelDirectory } from '../master-data/master-travel-directory';
 import { TicketPublicService } from './ticket-public.service';

@@ -1,6 +1,6 @@
 'use client';
 
-import type { CustomerSummary, MasterDataRecord } from '@rubi/contracts';
+import type { CustomerSummary, MasterDataRecord } from '@nora/contracts';
 import { ExternalLink, RefreshCw, Search } from 'lucide-react';
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';

@@ -33,7 +33,7 @@ describe('dossier browser history', () => {
     expect(readDossierHistory(null)).toBeNull();
     expect(readDossierHistory({ __NA: true })).toBeNull();
     expect(
-      readDossierHistory({ rubiOrganizationDossier: { organizationId: 7 } }),
+      readDossierHistory({ noraOrganizationDossier: { organizationId: 7 } }),
     ).toBeNull();
   });
 });

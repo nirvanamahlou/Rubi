@@ -4,7 +4,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 import type {
   WorkbenchPerformanceResponseV1,
   WorkbenchHrPerformanceRecordV1,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import {
   CalendarDays,
   ChartNoAxesCombined,

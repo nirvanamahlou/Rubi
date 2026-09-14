@@ -5,7 +5,7 @@ import type {
   DocumentListItemV1,
   DocumentListResponseV1,
   DocumentOptionsResponseV1,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
 import {

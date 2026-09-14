@@ -158,7 +158,7 @@ describe('marketing workspace component contract', () => {
     );
   });
 
-  it('provides responsive campaign cards and Rubi-styled reference tables', () => {
+  it('provides responsive campaign cards and Nora-styled reference tables', () => {
     expect(workspaceSource).toContain('جزئیات کامل کمپین');
     expect(workspaceSource).toContain('sm:grid-cols-2');
     expect(referencePagesSource).toContain('overflow-x-auto');
@@ -166,7 +166,7 @@ describe('marketing workspace component contract', () => {
     expect(referencePagesSource).toContain('PaginationShell');
   });
 
-  it('uses Rubi filters and calendars for date-aware campaign controls', () => {
+  it('uses Nora filters and calendars for date-aware campaign controls', () => {
     expect(workspaceSource).toContain('@/components/ui/date-picker');
     expect(workspaceSource).toContain('startsAfter');
     expect(workspaceSource).toContain('endsBefore');
@@ -261,7 +261,7 @@ describe('marketing workspace component contract', () => {
     expect(referencePagesSource).not.toContain('title="داشبورد نمایشی"');
   });
 
-  it('keeps reference filters, forms and interactive actions on shared Rubi controls', () => {
+  it('keeps reference filters, forms and interactive actions on shared Nora controls', () => {
     expect(referencePagesSource).toContain('@/components/ui/date-picker');
     expect(referencePagesSource).toContain('FilterBar');
     expect(referencePagesSource).toContain('onValueChange={setTab}');

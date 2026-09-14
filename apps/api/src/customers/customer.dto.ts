@@ -1,5 +1,5 @@
 import { Transform, Type } from 'class-transformer';
-import { CUSTOMER_STATUS_REASON_CODES } from '@rubi/contracts';
+import { CUSTOMER_STATUS_REASON_CODES } from '@nora/contracts';
 import {
   IsArray,
   IsBoolean,

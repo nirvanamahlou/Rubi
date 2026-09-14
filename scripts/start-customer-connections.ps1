@@ -31,5 +31,5 @@ Set-Location -LiteralPath $repoRoot
 if ($Service -eq 'api') {
   node apps/api/dist/main.js
 } else {
-  pnpm --filter @rubi/web exec next dev --hostname localhost --port 3101
+  pnpm --filter @nora/web exec next dev --hostname localhost --port 3101
 }

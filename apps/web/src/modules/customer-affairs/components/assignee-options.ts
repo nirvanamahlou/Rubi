@@ -1,4 +1,4 @@
-import type { HrDirectoryResponse } from '@rubi/contracts';
+import type { HrDirectoryResponse } from '@nora/contracts';
 
 export function assigneeOptions(employees: HrDirectoryResponse['employees']) {
   return employees.map((employee) => ({

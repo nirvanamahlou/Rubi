@@ -32,8 +32,8 @@ foreach ($port in @(3100,$ApiPort)) {
 }
 $logRoot = Join-Path $unifiedRoot 'tmp/unified-runtime'
 New-Item -ItemType Directory -Path $logRoot -Force | Out-Null
-$env:RUBI_HR_BUILD_ID = 'unified-' + (Get-Content -LiteralPath (Join-Path $webRoot '.next/BUILD_ID')).Trim()
-$env:RUBI_HR_COMMIT = (& git -C $unifiedRoot rev-parse HEAD).Trim()
+$env:NORA_HR_BUILD_ID = 'unified-' + (Get-Content -LiteralPath (Join-Path $webRoot '.next/BUILD_ID')).Trim()
+$env:NORA_HR_COMMIT = (& git -C $unifiedRoot rev-parse HEAD).Trim()
 foreach ($process in ($ownedProcesses | Sort-Object ProcessId -Unique)) {
   $fresh = Get-CimInstance Win32_Process -Filter "ProcessId=$($process.ProcessId)"
   if ($fresh -and $fresh.CommandLine -ne $process.CommandLine) { throw 'Runtime ownership changed during cutover.' }
@@ -42,4 +42,4 @@ foreach ($process in ($ownedProcesses | Sort-Object ProcessId -Unique)) {
 $node = (Get-Command node).Source
 $api = Start-Process -FilePath $node -ArgumentList @(('--env-file="'+$apiEnv+'"'), ('"'+$apiFile+'"'), '--api-port',"$ApiPort",'--web-port','3100','--database','rubi_hr_current_20260908','--documents',('"'+$storage+'"')) -WorkingDirectory (Join-Path $unifiedRoot 'apps/api') -WindowStyle Hidden -PassThru -RedirectStandardOutput (Join-Path $logRoot 'api.log') -RedirectStandardError (Join-Path $logRoot 'api-error.log')
 $web = Start-Process -FilePath $node -ArgumentList @(('"'+$nextFile+'"'),'start','--port','3100','--hostname','127.0.0.1') -WorkingDirectory $webRoot -WindowStyle Hidden -PassThru -RedirectStandardOutput (Join-Path $logRoot 'web.log') -RedirectStandardError (Join-Path $logRoot 'web-error.log')
-@{webPid=$web.Id;apiPid=$api.Id;url='http://127.0.0.1:3100/customer-affairs';commit=$env:RUBI_HR_COMMIT;build=$env:RUBI_HR_BUILD_ID} | ConvertTo-Json
+@{webPid=$web.Id;apiPid=$api.Id;url='http://127.0.0.1:3100/customer-affairs';commit=$env:NORA_HR_COMMIT;build=$env:NORA_HR_BUILD_ID} | ConvertTo-Json

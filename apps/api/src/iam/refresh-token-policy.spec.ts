@@ -1,4 +1,4 @@
-import { SessionStatus } from '@rubi/database';
+import { SessionStatus } from '@nora/database';
 import { describe, expect, it } from 'vitest';
 
 import { classifyRefreshFailure } from './refresh-token-policy';
