@@ -27,7 +27,7 @@ import {
 } from '../ui/overlays';
 
 type UserIdentityState =
-  | { status: 'loading'; displayName: 'در حال دریافت کاربر' }
+  | { status: 'loading'; displayName: 'در حال دریافت اطلاعات' }
   | { status: 'ready'; displayName: string; loggedInAt: string }
   | { status: 'error'; displayName: typeof PROFILE_USER_FALLBACK };
 
@@ -35,7 +35,7 @@ export function UserMenu() {
   const router = useRouter();
   const [identity, setIdentity] = useState<UserIdentityState>({
     status: 'loading',
-    displayName: 'در حال دریافت کاربر',
+    displayName: 'در حال دریافت اطلاعات',
   });
 
   useEffect(() => {
@@ -71,7 +71,8 @@ export function UserMenu() {
     router.refresh();
   }
 
-  const initials = profileInitials(identity.displayName);
+  const initials =
+    identity.status === 'ready' ? profileInitials(identity.displayName) : null;
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -84,6 +85,9 @@ export function UserMenu() {
         >
           <span
             aria-hidden="true"
+            data-user-avatar-placeholder={
+              identity.status !== 'ready' || undefined
+            }
             className="grid size-8 shrink-0 place-items-center rounded-full bg-primary text-xs font-black text-primary-foreground"
           >
             {initials}
