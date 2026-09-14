@@ -533,10 +533,7 @@ export const MASTER_HOTEL_RATE_FACTOR_KEYS = [
 ] as const;
 export type MasterHotelRateFactorKey =
   (typeof MASTER_HOTEL_RATE_FACTOR_KEYS)[number];
-export type MasterHotelRateFactorsV1 = Record<
-  MasterHotelRateFactorKey,
-  string
->;
+export type MasterHotelRateFactorsV1 = Record<MasterHotelRateFactorKey, string>;
 
 export interface MasterHotelRateGridRowV1 {
   id?: string;
@@ -578,8 +575,7 @@ export interface MasterHotelRatePeriodSummaryV1 {
   updatedByUserId: string;
 }
 
-export interface MasterHotelRatePeriodDetailV1
-  extends MasterHotelRatePeriodSummaryV1 {
+export interface MasterHotelRatePeriodDetailV1 extends MasterHotelRatePeriodSummaryV1 {
   pricingBasis: 'ROOM_PER_NIGHT';
   reason: string;
   rows: readonly MasterHotelRateGridRowV1[];
@@ -618,8 +614,7 @@ export const masterDataEndpoints = {
     `${MASTER_DATA_API_PREFIX}/hotel-imports/preview` as const,
   hotelImportCommit: (sessionId: string) =>
     `${MASTER_DATA_API_PREFIX}/hotel-imports/${encodeURIComponent(sessionId)}/commit` as const,
-  hotelRatePeriods:
-    `${MASTER_DATA_API_PREFIX}/hotel-rate-periods` as const,
+  hotelRatePeriods: `${MASTER_DATA_API_PREFIX}/hotel-rate-periods` as const,
   hotelRatePeriod: (id: string) =>
     `${MASTER_DATA_API_PREFIX}/hotel-rate-periods/${encodeURIComponent(id)}` as const,
   hotelRateOptions:

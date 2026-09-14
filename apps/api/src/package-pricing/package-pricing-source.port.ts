@@ -56,9 +56,7 @@ export class FailClosedPackagePricingSourceAdapter implements PackagePricingSour
 }
 
 @Injectable()
-export class VersionedPackagePricingSourceAdapter
-  implements PackagePricingSourcePort
-{
+export class VersionedPackagePricingSourceAdapter implements PackagePricingSourcePort {
   constructor(
     @Inject(MasterHotelBaseRatePublicService)
     private readonly hotelRates: MasterHotelBaseRatePublicService,

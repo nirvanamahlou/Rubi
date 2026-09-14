@@ -42,10 +42,7 @@ async function request<T>(path: string, init?: RequestInit) {
       },
     });
   let response = await run().catch(() => null);
-  if (
-    response?.status === 401 &&
-    (await refreshAuthenticatedSession(baseUrl))
-  )
+  if (response?.status === 401 && (await refreshAuthenticatedSession(baseUrl)))
     response = await run().catch(() => null);
   if (!response)
     throw new HotelBaseRateApiError('ارتباط با سرور برقرار نشد.', 0);
@@ -94,11 +91,7 @@ export const hotelBaseRateApi = {
     request<{ version: 1; data: MasterHotelRatePeriodDetailV1 }>(
       `/${encodeURIComponent(id)}`,
     ),
-  save: (
-    input: MasterHotelRatePeriodSaveV1,
-    key: string,
-    id?: string,
-  ) =>
+  save: (input: MasterHotelRatePeriodSaveV1, key: string, id?: string) =>
     request<{ data: { id: string; version: number } }>(
       id ? `/${encodeURIComponent(id)}` : '',
       {

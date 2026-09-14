@@ -53,14 +53,19 @@ describe('hotel base-rate validation', () => {
       }),
     ).toThrowError(
       expect.objectContaining({
-        response: expect.objectContaining({ code: 'HOTEL_RATE_INVALID_AMOUNT' }),
+        response: expect.objectContaining({
+          code: 'HOTEL_RATE_INVALID_AMOUNT',
+        }),
       }),
     );
   });
 
   it('rejects duplicate hotels and an empty tour selection', () => {
     expect(() =>
-      validateHotelRatePeriod({ ...input, rows: [input.rows[0], input.rows[0]] }),
+      validateHotelRatePeriod({
+        ...input,
+        rows: [input.rows[0], input.rows[0]],
+      }),
     ).toThrowError(
       expect.objectContaining({
         response: expect.objectContaining({

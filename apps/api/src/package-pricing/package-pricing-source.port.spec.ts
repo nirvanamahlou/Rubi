@@ -47,7 +47,9 @@ describe('VersionedPackagePricingSourceAdapter', () => {
       recheckRateReferences,
     } as never);
 
-    await expect(adapter.resolve([reference], 'branch', 'EUR')).resolves.toEqual({
+    await expect(
+      adapter.resolve([reference], 'branch', 'EUR'),
+    ).resolves.toEqual({
       sources: [
         expect.objectContaining({
           reference,

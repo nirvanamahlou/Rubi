@@ -19,9 +19,16 @@ const schema = Joi.object({
   branchId: uuid.required(),
   cityId: uuid.required(),
   title: Joi.string().trim().min(3).max(200).required(),
-  checkIn: Joi.string().pattern(/^\d{4}-\d{2}-\d{2}$/).required(),
-  checkOut: Joi.string().pattern(/^\d{4}-\d{2}-\d{2}$/).required(),
-  currencyCode: Joi.string().uppercase().pattern(/^[A-Z]{3}$/).required(),
+  checkIn: Joi.string()
+    .pattern(/^\d{4}-\d{2}-\d{2}$/)
+    .required(),
+  checkOut: Joi.string()
+    .pattern(/^\d{4}-\d{2}-\d{2}$/)
+    .required(),
+  currencyCode: Joi.string()
+    .uppercase()
+    .pattern(/^[A-Z]{3}$/)
+    .required(),
   reason: Joi.string().trim().min(3).max(500).required(),
   expectedVersion: Joi.number().integer().min(1),
   rows: Joi.array()

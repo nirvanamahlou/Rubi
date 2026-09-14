@@ -118,20 +118,19 @@ export class MasterHotelBaseRatesService {
     const branchIds = branchId
       ? (assertBranch(actor, branchId), [branchId])
       : actor.branchIds;
-    const periods =
-      await this.database.client.masterHotelRatePeriod.findMany({
-        where: { branchId: { in: branchIds }, archivedAt: null },
-        include: {
-          city: { select: { name: true } },
-          versions: {
-            orderBy: { version: 'desc' },
-            take: 1,
-            include: { rows: { select: { included: true } } },
-          },
+    const periods = await this.database.client.masterHotelRatePeriod.findMany({
+      where: { branchId: { in: branchIds }, archivedAt: null },
+      include: {
+        city: { select: { name: true } },
+        versions: {
+          orderBy: { version: 'desc' },
+          take: 1,
+          include: { rows: { select: { included: true } } },
         },
-        orderBy: [{ checkIn: 'desc' }, { updatedAt: 'desc' }],
-        take: 200,
-      });
+      },
+      orderBy: [{ checkIn: 'desc' }, { updatedAt: 'desc' }],
+      take: 200,
+    });
     return {
       version: 1 as const,
       data: periods.map((period) => {
@@ -160,18 +159,17 @@ export class MasterHotelBaseRatesService {
     id: string,
     actor: AuthenticatedActor,
   ): Promise<{ version: 1; data: MasterHotelRatePeriodDetailV1 }> {
-    const period =
-      await this.database.client.masterHotelRatePeriod.findFirst({
-        where: { id, branchId: { in: actor.branchIds }, archivedAt: null },
-        include: {
-          city: { select: { name: true } },
-          versions: {
-            orderBy: { version: 'desc' },
-            take: 1,
-            include: { rows: { orderBy: { hotelNameSnapshot: 'asc' } } },
-          },
+    const period = await this.database.client.masterHotelRatePeriod.findFirst({
+      where: { id, branchId: { in: actor.branchIds }, archivedAt: null },
+      include: {
+        city: { select: { name: true } },
+        versions: {
+          orderBy: { version: 'desc' },
+          take: 1,
+          include: { rows: { orderBy: { hotelNameSnapshot: 'asc' } } },
         },
-      });
+      },
+    });
     if (!period)
       throw new NotFoundException({ code: 'HOTEL_RATE_PERIOD_NOT_FOUND' });
     const current = period.versions[0]!;
@@ -350,10 +348,7 @@ export class MasterHotelBaseRatesService {
         },
       });
     if (replay) {
-      if (
-        replay.fingerprint !== requestFingerprint ||
-        replay.periodId !== id
-      )
+      if (replay.fingerprint !== requestFingerprint || replay.periodId !== id)
         throw new ConflictException({
           code: 'HOTEL_RATE_IDEMPOTENCY_CONFLICT',
         });
