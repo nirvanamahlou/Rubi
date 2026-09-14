@@ -1,5 +1,5 @@
 import { hrApi } from '@/modules/hr/hr-api';
-export const HR_WORKBENCH_CHANGED = 'rubi:hr-server-change';
+export const HR_WORKBENCH_CHANGED = 'nora:hr-server-change';
 export function canReadWorkbenchHr(permissions: readonly string[]) {
   return ['hr.read', 'hr.manage', 'hr.self', 'hr.team'].some((permission) =>
     permissions.includes(permission),

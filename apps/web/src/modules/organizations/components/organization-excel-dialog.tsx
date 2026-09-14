@@ -86,7 +86,7 @@ export function OrganizationExcelDialog({
             onClick={async () => {
               const { downloadOrganizationXlsx } =
                 await import('../model/organization-xlsx');
-              downloadOrganizationXlsx('rubi-organizations-template.xlsx', [
+              downloadOrganizationXlsx('nora-organizations-template.xlsx', [
                 organizationHeaders,
                 ...syntheticOrganizations.map((row) => [
                   row.code,

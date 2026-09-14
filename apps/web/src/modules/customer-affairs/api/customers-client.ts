@@ -5,7 +5,7 @@ import {
   type CustomerDetail,
   type CustomerListQuery,
   type CustomerListResponse,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 
 import { getPublicApiBaseUrl } from '../../../lib/environment';
 

@@ -29,7 +29,7 @@ import { WorkbenchService } from './workbench.service';
 import { WorkbenchPerformanceService } from './workbench-performance.service';
 
 @ApiTags('Workbench')
-@ApiCookieAuth('rubi_access')
+@ApiCookieAuth('nora_access')
 @UseGuards(AuthGuard)
 @Controller('workbench')
 export class WorkbenchController {

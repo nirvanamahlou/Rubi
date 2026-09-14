@@ -4,7 +4,7 @@ import { validateSync } from 'class-validator';
 import { describe, it, expect, vi } from 'vitest';
 import type { ExecutionContext } from '@nestjs/common';
 import { of } from 'rxjs';
-import type { AuthenticatedActor } from '@rubi/contracts';
+import type { AuthenticatedActor } from '@nora/contracts';
 import { B2bOrganizationUserService } from './b2b-organization-user.service';
 import type { B2bOrganizationUserRepository } from './b2b-organization-user.repository';
 import { B2bPortalBoundaryInterceptor } from './b2b-portal-boundary.interceptor';

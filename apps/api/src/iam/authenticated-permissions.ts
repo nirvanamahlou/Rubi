@@ -1,5 +1,5 @@
-import type { IamPermissionCode } from '@rubi/contracts';
-import { LEGAL_ENTITY_AUTHENTICATED_BASELINE_PERMISSION_CODES } from '@rubi/contracts';
+import type { IamPermissionCode } from '@nora/contracts';
+import { LEGAL_ENTITY_AUTHENTICATED_BASELINE_PERMISSION_CODES } from '@nora/contracts';
 
 export interface PermissionBearingRole {
   role: {

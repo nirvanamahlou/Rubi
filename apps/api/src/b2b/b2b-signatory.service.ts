@@ -10,8 +10,8 @@ import {
   b2bSignatoryIssue,
   type AuthenticatedActor,
   type B2bSignatoryV1,
-} from '@rubi/contracts';
-import { Prisma } from '@rubi/database';
+} from '@nora/contracts';
+import { Prisma } from '@nora/database';
 import { MasterOrganizationDirectory } from '../master-data/master-organization-directory';
 import { B2bAgreementDocuments } from './b2b-agreement-documents';
 import { B2bSignatoryRepository } from './b2b-signatory.repository';

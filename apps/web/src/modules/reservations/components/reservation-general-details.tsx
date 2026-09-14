@@ -8,7 +8,7 @@ import {
   resolveSalesPrice,
   salesContractFlights,
   type CustomerDetail,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import { customersApi } from '@/modules/customers/api/client';
 import { formatSalesMoney } from '@/components/ui/money-input';
 import { masterDataApi } from '@/modules/master-data/api/client';

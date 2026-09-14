@@ -53,7 +53,7 @@ export function CommercialExportActions({
       );
       const link = document.createElement('a');
       link.href = url;
-      link.download = `روبی-${report.title}-${new Date().toISOString().slice(0, 10)}.${format}`;
+      link.download = `نورا-${report.title}-${new Date().toISOString().slice(0, 10)}.${format}`;
       link.click();
       setTimeout(() => URL.revokeObjectURL(url), 1000);
     } catch (caught) {

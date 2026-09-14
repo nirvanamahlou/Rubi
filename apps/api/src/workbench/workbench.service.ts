@@ -14,8 +14,8 @@ import type {
   WorkbenchNoteItemV1,
   WorkbenchNoteV1,
   IamPersonalProfileUpdateInputV1,
-} from '@rubi/contracts';
-import type { Prisma } from '@rubi/database';
+} from '@nora/contracts';
+import type { Prisma } from '@nora/database';
 import { randomUUID } from 'node:crypto';
 
 import { DatabaseService } from '../database/database.service';

@@ -6,7 +6,7 @@ const require = createRequire(import.meta.url);
 require('reflect-metadata');
 const { ConfigService } = require('@nestjs/config');
 const { JwtService } = require('@nestjs/jwt');
-const { createDatabaseClient } = require('@rubi/database');
+const { createDatabaseClient } = require('@nora/database');
 const { IamService } = require('../dist/iam/iam.service.js');
 const { MfaTotpService } = require('../dist/iam/mfa-totp.js');
 const {
@@ -52,7 +52,7 @@ const {
 const [mode, databaseName, actorId] = process.argv.slice(2);
 if (
   !['--preview', '--apply', '--verify'].includes(mode) ||
-  !/^rubi_hr_current_\d{8}$/.test(databaseName ?? '') ||
+  !/^nora_hr_current_\d{8}$/.test(databaseName ?? '') ||
   !/^[0-9a-f-]{36}$/i.test(actorId ?? '') ||
   process.argv.length !== 5
 )

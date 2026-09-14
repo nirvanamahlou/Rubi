@@ -18,8 +18,8 @@ import {
   type HrResourceDefinition,
   type HrWorkflowData,
   type IamPermissionCode,
-} from '@rubi/contracts';
-import { Prisma } from '@rubi/database';
+} from '@nora/contracts';
+import { Prisma } from '@nora/database';
 
 import { DatabaseService } from '../database/database.service';
 import { DocumentsService } from '../documents/documents.service';

@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import type { DocumentListItemV1 } from '@rubi/contracts';
+import type { DocumentListItemV1 } from '@nora/contracts';
 import { documentsApi } from '../documents/api/client';
 
 export function HrArchiveDocumentPicker({

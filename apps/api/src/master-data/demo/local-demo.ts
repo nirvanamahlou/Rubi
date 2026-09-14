@@ -1,6 +1,6 @@
 import { ConfigService } from '@nestjs/config';
-import type { AuthenticatedActor } from '@rubi/contracts';
-import { createDatabaseClient, type DatabaseClient } from '@rubi/database';
+import type { AuthenticatedActor } from '@nora/contracts';
+import { createDatabaseClient, type DatabaseClient } from '@nora/database';
 import type { DatabaseService } from '../../database/database.service';
 import { MasterDataContactCrypto } from '../master-data-contact.crypto';
 import { MasterDataRepository } from '../master-data.repository';
@@ -48,10 +48,10 @@ export function assertLocalDemoTarget(
     !['postgres:', 'postgresql:'].includes(url.protocol) ||
     !['127.0.0.1', 'localhost'].includes(url.hostname) ||
     url.port !== '55432' ||
-    !/^\/(?:rubi|rubi_md_demo_test_[a-f0-9]{32})$/.test(url.pathname)
+    !/^\/(?:nora|nora_md_demo_test_[a-f0-9]{32})$/.test(url.pathname)
   )
     throw new Error(
-      'Only the explicitly named local Rubi database is allowed.',
+      'Only the explicitly named local Nora database is allowed.',
     );
 }
 

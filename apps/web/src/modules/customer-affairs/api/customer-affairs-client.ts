@@ -6,7 +6,7 @@ import type {
   CustomerAffairsTicketInput,
   CustomerAffairsTicketView,
   CustomerAffairsTimelineInput,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 
 import { getPublicApiBaseUrl } from '@/lib/environment';
 
@@ -48,79 +48,60 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return response.json() as Promise<T>;
 }
 
-function query(search: string, status?: string) {
-  const params = new URLSearchParams({ page: '1', pageSize: '50' });
+export interface AffairsListOptions {
+  createdFrom?: string;
+  createdTo?: string;
+  sourceSite?: string;
+  page?: number;
+  pageSize?: number;
+  stage?: string;
+  priority?: string;
+  overdueOnly?: boolean;
+}
+
+export interface AffairsReport {
+  generatedAt: string;
+  leadStages: Array<{ stage: string; _count: { _all: number } }>;
+  ticketStatuses: Array<{ status: string; _count: { _all: number } }>;
+  satisfaction: { average: number | null; count: number };
+  correctiveActions: Array<{ status: string; _count: { _all: number } }>;
+}
+
+function query(
+  search: string,
+  status?: string,
+  options: AffairsListOptions = {},
+) {
+  const params = new URLSearchParams({
+    page: String(options.page ?? 1),
+    pageSize: String(options.pageSize ?? 50),
+  });
+  const boundary = (value: string, nextDay = false) => {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(value))
+      throw new Error('تاریخ فیلتر معتبر نیست.');
+    const date = new Date(`${value}T00:00:00`);
+    if (!Number.isFinite(date.getTime()))
+      throw new Error('تاریخ فیلتر معتبر نیست.');
+    if (nextDay) date.setDate(date.getDate() + 1);
+    return date.toISOString();
+  };
+  if (options.createdFrom)
+    params.set('createdFrom', boundary(options.createdFrom));
+  if (options.createdTo)
+    params.set('createdBefore', boundary(options.createdTo, true));
   if (search.trim()) params.set('search', search.trim());
   if (status && status !== 'ALL') params.set('status', status);
+  if (options.stage && options.stage !== 'ALL')
+    params.set('stage', options.stage);
+  if (options.priority && options.priority !== 'ALL')
+    params.set('priority', options.priority);
+  if (options.overdueOnly) params.set('overdueOnly', 'true');
+  if (options.sourceSite && options.sourceSite !== 'ALL')
+    params.set('sourceSite', options.sourceSite);
   return params.toString();
 }
 
 export const customerAffairsApi = {
-  dashboard: () => request<{ data: CustomerAffairsDashboard }>('/dashboard'),
-  leads: (search = '') =>
-    request<CustomerAffairsListResponse<CustomerAffairsLeadView>>(
-      `/leads?${query(search)}`,
-    ),
-  lead: (id: string) =>
-    request<{
-      data: CustomerAffairsLeadView & {
-        timeline: CustomerAffairsTimelineInput[];
-      };
-    }>(`/leads/${id}`),
-  createLead: (input: CustomerAffairsLeadInput, branchId?: string) =>
-    request<{ data: CustomerAffairsLeadView }>('/leads', {
-      method: 'POST',
-      headers: {
-        'idempotency-key': crypto.randomUUID(),
-        ...(branchId ? { 'x-branch-id': branchId } : {}),
-      },
-      body: JSON.stringify(input),
-    }),
-  addLeadTimeline: (id: string, input: CustomerAffairsTimelineInput) =>
-    request(`/leads/${id}/timeline`, {
-      method: 'POST',
-      body: JSON.stringify(input),
-    }),
-  qualify: (id: string, version: number) =>
-    request(`/leads/${id}/qualification`, {
-      method: 'POST',
-      body: JSON.stringify({
-        travelNeedConfirmed: true,
-        destinationKnown: true,
-        timingKnown: true,
-        budgetDiscussed: true,
-        decisionMakerReachable: true,
-        contactable: true,
-        expectedVersion: version,
-      }),
-    }),
-  proposeHandoff: (id: string, version: number) =>
-    request(`/leads/${id}/handoffs`, {
-      method: 'POST',
-      headers: { 'idempotency-key': crypto.randomUUID() },
-      body: JSON.stringify({ expectedVersion: version }),
-    }),
-  tickets: (search = '', status = 'ALL') =>
-    request<CustomerAffairsListResponse<CustomerAffairsTicketView>>(
-      `/tickets?${query(search, status)}`,
-    ),
-  ticket: (id: string) =>
-    request<{
-      data: CustomerAffairsTicketView & {
-        timeline: CustomerAffairsTimelineInput[];
-        referrals: Array<Record<string, unknown>>;
-        correctiveActions: Array<Record<string, unknown>>;
-      };
-    }>(`/tickets/${id}`),
-  createTicket: (input: CustomerAffairsTicketInput, branchId?: string) =>
-    request<{ data: CustomerAffairsTicketView }>('/tickets', {
-      method: 'POST',
-      headers: {
-        'idempotency-key': crypto.randomUUID(),
-        ...(branchId ? { 'x-branch-id': branchId } : {}),
-      },
-      body: JSON.stringify(input),
-    }),
   createWorkbenchRequest: (
     input: CustomerAffairsTicketInput,
     branchId: string,
@@ -146,6 +127,206 @@ export const customerAffairsApi = {
         updatedAt: string;
       }>;
     }>('/workbench/requests'),
+  sendSms: (
+    id: string,
+    input: { mobile: string; message: string },
+    key: string,
+  ) =>
+    request<{ data: { id: string; status: string; replay: boolean } }>(
+      `/tickets/${encodeURIComponent(id)}/sms`,
+      {
+        method: 'POST',
+        headers: { 'idempotency-key': key },
+        body: JSON.stringify(input),
+      },
+    ),
+  convertCustomer: (
+    id: string,
+    input: {
+      firstName: string;
+      lastName: string;
+      nationalId: string;
+      expectedVersion: number;
+    },
+  ) =>
+    request(`/leads/${encodeURIComponent(id)}/customer`, {
+      method: 'POST',
+      body: JSON.stringify(input),
+    }),
+  respondHandoff: (
+    id: string,
+    input: { status: string; reason: string; salesContractId?: string },
+  ) =>
+    request(`/handoffs/${encodeURIComponent(id)}/respond`, {
+      method: 'POST',
+      body: JSON.stringify(input),
+    }),
+  updateFollowup: (
+    record: CustomerAffairsLeadView | CustomerAffairsTicketView,
+    nextAction: string,
+    nextActionAt: string,
+    changes: Record<string, unknown> = {},
+  ) => {
+    const lead = 'stage' in record;
+    const keys = lead
+      ? [
+          'title',
+          'sourceReference',
+          'inboundChannel',
+          'contactOccurredAt',
+          'travelNeed',
+          'originReference',
+          'destinationReference',
+          'travelStart',
+          'travelEnd',
+          'datePrecision',
+          'dateFlexibility',
+          'passengerCount',
+          'passengerComposition',
+          'requestedServices',
+          'budget',
+          'specialPreferences',
+          'contactFingerprint',
+          'customerId',
+          'priority',
+          'assigneeUserId',
+          'queueCode',
+        ]
+      : [
+          'subject',
+          'description',
+          'channel',
+          'contactOccurredAt',
+          'category',
+          'serviceType',
+          'impact',
+          'urgency',
+          'priority',
+          'customerId',
+          'customerOwnerUserId',
+          'executionOwnerUserId',
+          'executionUnit',
+          'references',
+        ];
+    const input = Object.fromEntries(
+      keys
+        .filter((key) => key in record || key in changes)
+        .map((key) => [
+          key,
+          Object.prototype.hasOwnProperty.call(changes, key)
+            ? changes[key]
+            : (record as unknown as Record<string, unknown>)[key],
+        ]),
+    );
+    return request(`/${lead ? 'leads' : 'tickets'}/${record.id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({
+        ...input,
+        nextAction,
+        nextActionAt,
+        expectedVersion: record.version,
+      }),
+    });
+  },
+  transitionLead: (
+    id: string,
+    input: {
+      stage: string;
+      reason: string;
+      lostReason?: string;
+      expectedVersion: number;
+    },
+  ) =>
+    request(`/leads/${id}/transition`, {
+      method: 'POST',
+      body: JSON.stringify(input),
+    }),
+  updateCorrectiveAction: (
+    id: string,
+    input: {
+      status: string;
+      result: string;
+      effectivenessReview: string;
+      expectedVersion: number;
+    },
+  ) =>
+    request(`/corrective-actions/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(input),
+    }),
+  dashboard: () => request<{ data: CustomerAffairsDashboard }>('/dashboard'),
+  report: () => request<{ data: AffairsReport }>('/reports/summary'),
+  leads: (search = '', options: AffairsListOptions = {}) =>
+    request<CustomerAffairsListResponse<CustomerAffairsLeadView>>(
+      `/leads?${query(search, undefined, options)}`,
+    ),
+  lead: (id: string) =>
+    request<{
+      data: CustomerAffairsLeadView & {
+        timeline: CustomerAffairsTimelineInput[];
+      };
+    }>(`/leads/${id}`),
+  createLead: (input: CustomerAffairsLeadInput, branchId?: string) =>
+    request<{ data: CustomerAffairsLeadView }>('/leads', {
+      method: 'POST',
+      headers: {
+        'idempotency-key': crypto.randomUUID(),
+        ...(branchId ? { 'x-branch-id': branchId } : {}),
+      },
+      body: JSON.stringify(input),
+    }),
+  addLeadTimeline: (id: string, input: CustomerAffairsTimelineInput) =>
+    request(`/leads/${id}/timeline`, {
+      method: 'POST',
+      body: JSON.stringify(input),
+    }),
+  qualify: (
+    id: string,
+    version: number,
+    assessment: {
+      travelNeedConfirmed: boolean;
+      destinationKnown: boolean;
+      timingKnown: boolean;
+      budgetDiscussed: boolean;
+      decisionMakerReachable: boolean;
+      contactable: boolean;
+      conversionProbability?: number;
+    },
+  ) =>
+    request(`/leads/${id}/qualification`, {
+      method: 'POST',
+      body: JSON.stringify({
+        ...assessment,
+        expectedVersion: version,
+      }),
+    }),
+  proposeHandoff: (id: string, version: number) =>
+    request(`/leads/${id}/handoffs`, {
+      method: 'POST',
+      headers: { 'idempotency-key': crypto.randomUUID() },
+      body: JSON.stringify({ expectedVersion: version }),
+    }),
+  tickets: (search = '', status = 'ALL', options: AffairsListOptions = {}) =>
+    request<CustomerAffairsListResponse<CustomerAffairsTicketView>>(
+      `/tickets?${query(search, status, options)}`,
+    ),
+  ticket: (id: string) =>
+    request<{
+      data: CustomerAffairsTicketView & {
+        timeline: CustomerAffairsTimelineInput[];
+        referrals: Array<Record<string, unknown>>;
+        correctiveActions: Array<Record<string, unknown>>;
+      };
+    }>(`/tickets/${id}`),
+  createTicket: (input: CustomerAffairsTicketInput, branchId?: string) =>
+    request<{ data: CustomerAffairsTicketView }>('/tickets', {
+      method: 'POST',
+      headers: {
+        'idempotency-key': crypto.randomUUID(),
+        ...(branchId ? { 'x-branch-id': branchId } : {}),
+      },
+      body: JSON.stringify(input),
+    }),
   addTicketTimeline: (id: string, input: CustomerAffairsTimelineInput) =>
     request(`/tickets/${id}/timeline`, {
       method: 'POST',

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   getMasterDataColumnFilters,
   type MasterDataRecord,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import { transportColumns, transportColumnValue } from './transport-columns';
 import { serializeMasterDataListQuery } from '../api/contracts';
 describe('mockup column coverage', () => {

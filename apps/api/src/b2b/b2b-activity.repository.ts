@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
-import type { AuthenticatedActor } from '@rubi/contracts';
-import { Prisma } from '@rubi/database';
+import type { AuthenticatedActor } from '@nora/contracts';
+import { Prisma } from '@nora/database';
 import { DatabaseService } from '../database/database.service';
 import {
   activityEvent,

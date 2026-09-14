@@ -10,3 +10,9 @@ No account is automatically associated with an employee. Missing personnel links
 
 Validation: 26 focused API tests and all 50 Workbench Web tests passed, including self/branch isolation, salary privacy, Tehran midnight and correction precedence. Scoped API/Web ESLint and API typecheck passed. Build results are recorded at delivery. This branch does not replace shared Web3100/API4190.
 Delivery gates: API production build and Web production build with TypeScript/46 routes passed. Source reservations released for PR review; shared runtime unchanged.
+
+## Authorized merge and local activation
+
+User explicitly authorized merge and activation. PR268 merged into develop at eb6af3ffcadf395806ec8ee6875080680d86baaa after all CI gates passed. Runtime branch codex/pc-b-workbench-summary-3100 preserves the existing all-sections code, Finance and Customer Affairs, plus current develop and both Workbench fixes.
+
+Combined monorepo build passed all six tasks and 46 Web routes; 26 API and 50 Web focused tests passed. Web3100 PID8332 and API4191 PID3952 started from runtime code f62d13c2, build unified-1Xwg0O1XxOGe7M7jeb-GA. Runtime identity and API health returned200; login200 and protected Performance/Messages/Finance/Customer Affairs routes307 were verified. Startup error logs were empty. No authenticated user data was modified; account-level visual checks are not claimed. Existing database, documents and credentials were preserved without migration or seed. Previous runtime checkout remains available for rollback.

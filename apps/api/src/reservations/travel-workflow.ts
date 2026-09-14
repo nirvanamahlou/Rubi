@@ -2,7 +2,7 @@ import { validateVoucherSettings } from './voucher-settings';
 import type {
   TravelWorkflowCommandV1,
   TravelWorkflowStateV1,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 
 export const initialTravelWorkflow = (): TravelWorkflowStateV1 => ({
   version: 0,

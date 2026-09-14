@@ -1,7 +1,7 @@
 import type {
   MasterDataRecord,
   MasterTransportFormResource,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 
 export function transportMetadata(
   resource: MasterTransportFormResource,

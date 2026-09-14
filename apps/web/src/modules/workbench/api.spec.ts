@@ -1,4 +1,4 @@
-import type { LoginResponse } from '@rubi/contracts';
+import type { LoginResponse } from '@nora/contracts';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   notificationsApi,

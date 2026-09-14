@@ -1,5 +1,5 @@
-import type { AuthenticatedActor } from '@rubi/contracts';
-import { MasterHotelImportStatus } from '@rubi/database';
+import type { AuthenticatedActor } from '@nora/contracts';
+import { MasterHotelImportStatus } from '@nora/database';
 import { strToU8, zipSync } from 'fflate';
 import { createHash } from 'node:crypto';
 import { mkdir, writeFile } from 'node:fs/promises';

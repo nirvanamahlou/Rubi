@@ -40,7 +40,7 @@ describe('Saved contract PDF download route', () => {
     mocks.render.mockResolvedValue(Buffer.from('%PDF-test'));
     const r = await GET(
       new Request('http://web.test', {
-        headers: { cookie: 'rubi_access=test-session' },
+        headers: { cookie: 'nora_access=test-session' },
       }),
       { params: Promise.resolve({ id }) },
     );
@@ -51,7 +51,7 @@ describe('Saved contract PDF download route', () => {
     expect(await r.text()).toBe('%PDF-test');
     expect(mocks.render.mock.calls[0]?.[0]).toEqual(printFixture);
     expect(mocks.fetch.mock.calls[0]?.[1].headers.cookie).toBe(
-      'rubi_access=test-session',
+      'nora_access=test-session',
     );
   });
   it('reports unavailable renderer without leaking internal errors', async () => {

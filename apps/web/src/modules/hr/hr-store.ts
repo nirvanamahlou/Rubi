@@ -5,7 +5,7 @@ import type {
   HrRecordCreate,
   HrRecordDto,
   HrRecordUpdate,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import { hrApi } from './hr-api';
 
 export function useHrStore() {
@@ -71,7 +71,7 @@ export function useHrStore() {
   }, []);
   const mutated = useCallback(async () => {
     setRevision((value) => value + 1);
-    window.dispatchEvent(new Event('rubi:hr-server-change'));
+    window.dispatchEvent(new Event('nora:hr-server-change'));
     await refresh().catch(() => undefined);
   }, [refresh]);
   const create = useCallback(

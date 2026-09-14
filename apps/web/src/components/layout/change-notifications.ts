@@ -1,5 +1,5 @@
-export const CHANGE_NOTIFICATIONS_STORAGE_KEY = 'rubi.change-notifications.v1';
-export const CHANGE_NOTIFICATIONS_EVENT = 'rubi:change-notifications';
+export const CHANGE_NOTIFICATIONS_STORAGE_KEY = 'nora.change-notifications.v1';
+export const CHANGE_NOTIFICATIONS_EVENT = 'nora:change-notifications';
 export const CHANGE_NOTIFICATIONS_LIMIT = 60;
 
 export interface ChangeNotification {

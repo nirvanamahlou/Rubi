@@ -33,7 +33,7 @@ pnpm documents:demo:apply
 اگر فایل محیط API در مسیر پیش‌فرض نیست، پیش از فرمان آخر مسیر خصوصی همان PC تعیین می‌شود:
 
 ```powershell
-$env:RUBI_API_ENV_FILE = 'C:\path\to\private-api.env'
+$env:NORA_API_ENV_FILE = 'C:\path\to\private-api.env'
 pnpm documents:demo:apply
 ```
 

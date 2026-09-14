@@ -84,7 +84,7 @@
 
 ## Turkey/Antalya maintenance and ticket panel removal — 2026-09-05
 
-- Resolved the earlier reference-data blocker using an offline Nest context for the owner Master Data service, following the module's existing local-maintenance attribution pattern. Only the explicitly named local Rubi database was permitted. No HTTP auth weakening, IAM user/session/branch/permission creation, direct private-table queries or repository imports were used by the maintenance caller.
+- Resolved the earlier reference-data blocker using an offline Nest context for the owner Master Data service, following the module's existing local-maintenance attribution pattern. Only the explicitly named local Nora database was permitted. No HTTP auth weakening, IAM user/session/branch/permission creation, direct private-table queries or repository imports were used by the maintenance caller.
 - Created active Turkey (`TR`), the required Antalya region, and active Antalya city linked to that country/region. Read-back through the owner service verified the links/status; repeating the operation reused all three records without creating duplicates. Writes retain the owner's validation and audit path with explicit offline maintenance identifiers, not a real logged-in user identity.
 - Removed only the PublishedOffers panel mount/import from TicketWorkspace. Existing offer records, public API, sale revalidation and the component source remain intact. The existing weekly/monthly Repeat Ticket action is unchanged. Repeat Ticket remains the pre-existing local catalog workflow; removing this panel does not newly wire that workflow to offer publication.
 - Ticket Catalog tests: 96 passed; Ticket Catalog lint, Web typecheck and production build (35 routes) passed. No schema/migration/dependency or other module source changes in this follow-up. Concurrent Customers/Documents/Prisma changes are not part of these commits.
@@ -107,7 +107,7 @@ Latest follow-up supersedes the earlier activation gate and route UI limitations
 - Return search reverses the route and starts at the outbound ticket date (or travel date for a return-only booking), without an upper date bound. A chronological overlap with an outbound arrival is rejected. Return-only flights do not require a fabricated outbound ticket.
 - Sales v1 metadata.direction is OUTBOUND/RETURN for directional services. Distinct service keys flow through passenger assignments and the existing immutable Reservations snapshot. Legacy services without direction retain their original trip-type validation. No schema, migration, shared contract shape, dependency, Finance or permission changes in this follow-up.
 - Verification: 9 Web Sales tests; 26 API Sales tests including all 15 non-empty combinations; Web/API typecheck; Sales lint; Web/API production builds (35 routes). Local build includes unrelated concurrent changes, which are excluded from Sales commits. No authenticated visual browser QA claim.
-- Operational activation from the previous continuation completed after explicit user approval: four approved role-permission links added to local Rubi with IAM audit records; branch membership hashes unchanged and grants verified. This resolves the historical approval blocker below.
+- Operational activation from the previous continuation completed after explicit user approval: four approved role-permission links added to local Nora with IAM audit records; branch membership hashes unchanged and grants verified. This resolves the historical approval blocker below.
 
 ## Earlier authorized runtime continuation
 

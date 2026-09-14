@@ -4,8 +4,8 @@ import {
   ForbiddenException,
   ConflictException,
 } from '@nestjs/common';
-import { Prisma } from '@rubi/database';
-import type { AuthenticatedActor, VoucherSettingsV1 } from '@rubi/contracts';
+import { Prisma } from '@nora/database';
+import type { AuthenticatedActor, VoucherSettingsV1 } from '@nora/contracts';
 
 /** Public Sales boundary. The caller supplies its transaction for atomic cross-module work. */
 @Injectable()

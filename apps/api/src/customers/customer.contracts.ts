@@ -1,4 +1,4 @@
-import type { IamPermissionCode } from '@rubi/contracts';
+import type { IamPermissionCode } from '@nora/contracts';
 
 export const CUSTOMER_API_VERSION = 'customers.v1-draft' as const;
 export const CUSTOMER_API_PREFIX = '/api/v1/customers' as const;

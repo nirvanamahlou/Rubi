@@ -4,7 +4,7 @@ import type {
   MasterDataRecord,
   ReservationIntakeV1,
   TravelWorkflowStateV1,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import { getPublicApiBaseUrl } from '@/lib/environment';
 import { reservationTickets } from '@/modules/reservations/model/reservation-tickets';
 import { ticketPdfHtml } from '@/modules/reservations/server/ticket-pdf-html';

@@ -27,14 +27,14 @@ Branding Snapshot آن را اتمیک ایجاد می‌کند. رکورد مو
 Branding، کاربران، Permissionها و Context جاری را تغییر نمی‌دهد.
 
 1. روی Worktree تمیز با قرارداد چهارشرکتی، `pnpm install --frozen-lockfile` را اجرا کنید.
-2. متغیرهای محلی API را در `apps/api/.env` یا مسیر `RUBI_API_ENV_FILE` تنظیم کنید؛ فایل
+2. متغیرهای محلی API را در `apps/api/.env` یا مسیر `NORA_API_ENV_FILE` تنظیم کنید؛ فایل
    Secret نباید وارد Git شود. `DATABASE_URL` فقط PostgreSQL روی loopback را می‌پذیرد.
 3. بسته‌های موجود را بسازید:
 
 ```powershell
-pnpm --filter @rubi/contracts build
-pnpm --filter @rubi/database db:generate
-pnpm --filter @rubi/database build
+pnpm --filter @nora/contracts build
+pnpm --filter @nora/database db:generate
+pnpm --filter @nora/database build
 node apps/api/scripts/local-legal-entities.mjs --check
 ```
 
@@ -62,9 +62,9 @@ node apps/api/scripts/local-legal-entities.mjs --check
 
 - اجرای قدیمی HR روی 3100/4000 قرارداد دوشرکتی دارد و دیتابیس آن روی 55432 تنها دو
   شرکت را نگه می‌دارد؛ آن سرویس و دیتابیس در این Task تغییر داده نشدند.
-- Backup خصوصی: `C:/Users/admin/Rubi-backups/company-header-003-20260908.dump`.
+- Backup خصوصی: `C:/Users/admin/Nora-backups/company-header-003-20260908.dump`.
   SHA-256: `5C6D40D8DBF9B843F3401AD4003C9EBFC9E9B11D4C2D1F5C3AFBCD44DF957CD9`.
-- روی کپی مستقل `rubi_company_header_003`، اجرای اول دو شرکت را ایجاد و دو شرکت را حفظ
+- روی کپی مستقل `nora_company_header_003`، اجرای اول دو شرکت را ایجاد و دو شرکت را حفظ
   کرد؛ اجرای دوم صفر ایجاد و چهار حفظ داشت. هر چهار شرکت فعال و Snapshot اولیه معتبرند.
 - Schema، Migration، Seed مشترک، Dependency/Lockfile و Role/Permission تغییر ندارند.
 

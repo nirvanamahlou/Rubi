@@ -20,7 +20,7 @@ describe('Reauthentication and local build verification', () => {
   it('allows login even when an invalid or expired access cookie is present', () => {
     const response = proxy(
       new NextRequest('http://localhost:3100/login?next=%2Fhr', {
-        headers: { cookie: 'rubi_access=stale' },
+        headers: { cookie: 'nora_access=stale' },
       }),
     );
     expect(response.headers.get('location')).toBeNull();

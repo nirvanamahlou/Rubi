@@ -2,7 +2,7 @@
 import { createRequire } from 'node:module';
 const require = createRequire(import.meta.url);
 const { ConfigService } = require('@nestjs/config');
-const { createDatabaseClient } = require('@rubi/database');
+const { createDatabaseClient } = require('@nora/database');
 const {
   MasterDataRepository,
 } = require('../dist/master-data/master-data.repository.js');
@@ -15,7 +15,7 @@ const {
 const [mode, databaseName] = process.argv.slice(2);
 if (
   !['--preview', '--apply'].includes(mode) ||
-  !/^rubi_hr_current_\d{8}$/.test(databaseName ?? '') ||
+  !/^nora_hr_current_\d{8}$/.test(databaseName ?? '') ||
   process.argv.length !== 4
 )
   throw new Error(

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { HR_RESOURCE_KEYS, getHrResource } from '@rubi/contracts';
+import { HR_RESOURCE_KEYS, getHrResource } from '@nora/contracts';
 
 import {
   attendanceMinutes,

@@ -1,6 +1,6 @@
 # WORKBENCH-005 — native personal workspace
 
-Computer: PC-B. Branch: `codex/pc-b-workbench-native-shell`. User explicitly requested a real Rubi-themed application workspace instead of the standalone demo. This supersedes WORKBENCH-004's demo menu behavior.
+Computer: PC-B. Branch: `codex/pc-b-workbench-native-shell`. User explicitly requested a real Nora-themed application workspace instead of the standalone demo. This supersedes WORKBENCH-004's demo menu behavior.
 
 ## Scope
 

@@ -1,4 +1,4 @@
-import type { AuthenticatedActor, DocumentListItemV1 } from '@rubi/contracts';
+import type { AuthenticatedActor, DocumentListItemV1 } from '@nora/contracts';
 import { describe, expect, it, vi } from 'vitest';
 import type { DocumentsService } from '../documents/documents.service';
 import { B2bAgreementDocuments } from './b2b-agreement-documents';

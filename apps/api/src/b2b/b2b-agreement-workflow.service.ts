@@ -6,7 +6,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { b2bAgreementTermsIssue } from '@rubi/contracts';
+import { b2bAgreementTermsIssue } from '@nora/contracts';
 import type {
   AuthenticatedActor,
   B2bAgreementCaseV1,
@@ -14,7 +14,7 @@ import type {
   B2bAgreementTermsV1,
   B2bCooperationRole,
   IamPermissionCode,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import { MasterOrganizationDirectory } from '../master-data/master-organization-directory';
 import { B2bAgreementDocuments } from './b2b-agreement-documents';
 import { B2bAgreementWorkflowRepository } from './b2b-agreement-workflow.repository';

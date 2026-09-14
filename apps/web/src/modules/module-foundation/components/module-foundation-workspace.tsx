@@ -20,7 +20,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
-import type { HrDirectoryEmployee } from '@rubi/contracts';
+import type { HrDirectoryEmployee } from '@nora/contracts';
 import { HrDirectoryPicker } from '@/modules/hr/hr-directory-picker';
 
 import { Button } from '@/components/ui/button';

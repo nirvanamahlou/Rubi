@@ -1,6 +1,6 @@
 'use client';
 
-import type { DocumentListItemV1 } from '@rubi/contracts';
+import type { DocumentListItemV1 } from '@nora/contracts';
 import { Trash2 } from 'lucide-react';
 import { useState } from 'react';
 

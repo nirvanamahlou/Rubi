@@ -9,9 +9,9 @@ import {
 import type {
   AuthenticatedActor,
   MasterCurrencyRateQuoteRequest,
-} from '@rubi/contracts';
-import { AuditOutcome, MasterCurrencyRateStatus } from '@rubi/database';
-import type { Prisma } from '@rubi/database';
+} from '@nora/contracts';
+import { AuditOutcome, MasterCurrencyRateStatus } from '@nora/database';
+import type { Prisma } from '@nora/database';
 
 import { DatabaseService } from '../database/database.service';
 import type { CurrencyRateListDto } from './currency-rate.dto';

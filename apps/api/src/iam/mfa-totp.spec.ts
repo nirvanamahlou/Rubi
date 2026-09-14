@@ -46,7 +46,7 @@ describe('MfaTotpService', () => {
 
     expect(uri).toContain('otpauth://totp/');
     expect(uri).toContain('secret=BASE32SECRET');
-    expect(uri).toContain('issuer=Rubi');
+    expect(uri).toContain('issuer=Nora');
     expect(uri).not.toContain('password');
   });
 });

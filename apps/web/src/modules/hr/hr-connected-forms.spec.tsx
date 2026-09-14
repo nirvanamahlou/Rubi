@@ -4,7 +4,7 @@ import {
   getHrResource,
   type HrBootstrapDto,
   type HrRecordDto,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import { hrReferenceOptions, parentFieldLabel } from './hr-form-model';
 import { recordsDataset } from './hr-live-data';
 import { selectedHrDataset } from './hr-row-selection';

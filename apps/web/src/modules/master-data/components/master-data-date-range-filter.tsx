@@ -1,6 +1,6 @@
 'use client';
 
-import type { MasterDataListQuery } from '@rubi/contracts';
+import type { MasterDataListQuery } from '@nora/contracts';
 import { CalendarRange, X } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
 

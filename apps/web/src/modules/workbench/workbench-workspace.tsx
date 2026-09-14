@@ -3,7 +3,7 @@ import { WorkbenchFeedback } from './workbench-feedback';
 import { WorkbenchFeedbackDetail } from './workbench-feedback-detail';
 import { WorkbenchSelect } from './workbench-select';
 
-import type { NotificationItemV1, WorkbenchActivityV1 } from '@rubi/contracts';
+import type { NotificationItemV1, WorkbenchActivityV1 } from '@nora/contracts';
 import {
   Activity,
   ChartNoAxesCombined,
@@ -172,7 +172,7 @@ export function WorkbenchWorkspace() {
     <div className="space-y-6" data-workbench-native>
       <PageHeader
         title="میزکار من"
-        description="کارهای روزانه، فایل‌ها و ارتباط شما با بخش‌های روبی."
+        description="کارهای روزانه، فایل‌ها و ارتباط شما با بخش‌های نورا."
         actions={
           <div className="flex flex-wrap gap-2">
             <Button

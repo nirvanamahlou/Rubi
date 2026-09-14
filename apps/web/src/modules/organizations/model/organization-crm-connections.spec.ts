@@ -1,7 +1,7 @@
 import type {
   B2bCrmConnectionsV1,
   B2bCrmSalesContractV1,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import { describe, expect, it } from 'vitest';
 
 import {

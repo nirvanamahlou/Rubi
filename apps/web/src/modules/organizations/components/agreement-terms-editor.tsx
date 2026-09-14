@@ -6,7 +6,7 @@ import type {
   DocumentListItemV1,
   IamPermissionCode,
   MasterDataRecord,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import { Plus, Trash2, FileText, ShieldCheck, Wallet } from 'lucide-react';
 import { DatePicker } from '@/components/ui/date-picker';
 import { masterDataApi } from '@/modules/master-data/api/client';
@@ -17,7 +17,7 @@ import {
   type StagedOrganizationDocument,
 } from '../model/organization-documents';
 import { serviceLabels } from '../model/agreement-terms';
-import { B2B_AGREEMENT_TYPES } from '@rubi/contracts';
+import { B2B_AGREEMENT_TYPES } from '@nora/contracts';
 import { MasterDataReferenceSelector } from '@/modules/master-data/components/master-data-reference-selector';
 import { InlineDocumentUpload } from './inline-document-upload';
 

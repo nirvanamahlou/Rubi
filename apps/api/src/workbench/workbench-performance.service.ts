@@ -12,8 +12,8 @@ import type {
   WorkbenchJobActivityV1,
   SalesContractSummary,
   WorkbenchActivityV1,
-} from '@rubi/contracts';
-import { Prisma } from '@rubi/database';
+} from '@nora/contracts';
+import { Prisma } from '@nora/database';
 import { HrSelfPerformanceService } from '../hr/hr-self-performance.service';
 import { IamService } from '../iam/iam.service';
 import { SalesService } from '../sales/sales.service';

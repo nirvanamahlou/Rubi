@@ -23,7 +23,7 @@ import type {
   LegalEntityContext,
   LegalEntitySelection,
   LegalEntitySummary,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -53,7 +53,7 @@ interface ContextValue {
 }
 
 const LegalEntityContextState = createContext<ContextValue | null>(null);
-const channelName = 'rubi:legal-entity-context:v1';
+const channelName = 'nora:legal-entity-context:v1';
 
 export function LegalEntityProvider({ children }: { children: ReactNode }) {
   const [entities, setEntities] = useState<LegalEntitySummary[]>([]);
@@ -208,11 +208,11 @@ export function LegalEntityContextSelector() {
   useEffect(() => {
     const header = headerAnchor.current?.closest('header');
     if (!header) return;
-    if (selection) header.dataset.rubiActiveCompany = selection;
-    else delete header.dataset.rubiActiveCompany;
+    if (selection) header.dataset.noraActiveCompany = selection;
+    else delete header.dataset.noraActiveCompany;
     return () => {
-      if (header.dataset.rubiActiveCompany === selection)
-        delete header.dataset.rubiActiveCompany;
+      if (header.dataset.noraActiveCompany === selection)
+        delete header.dataset.noraActiveCompany;
     };
   }, [selection]);
 

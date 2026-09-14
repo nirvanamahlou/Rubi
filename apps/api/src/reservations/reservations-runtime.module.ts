@@ -22,7 +22,7 @@ import type {
   FinanceSupplierPaymentCommandV1,
   ReservationServicePurchaseInputV1,
   TravelWorkflowCommandV1,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import {
   Body,
   Controller,
@@ -40,13 +40,13 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import type { ReservationArrangementUpdateV1 } from '@rubi/contracts';
+import type { ReservationArrangementUpdateV1 } from '@nora/contracts';
 import { IamModule } from '../iam/iam.module';
 import { AuthGuard } from '../iam/auth.guard';
 import type { AuthenticatedRequest } from '../iam/iam.types';
 import { ReservationsPublicService } from './reservations-public.service';
 import { ReservationHotelPurchaseService } from './reservation-hotel-purchase.service';
-import type { ReservationHotelPurchaseInputV1 } from '@rubi/contracts';
+import type { ReservationHotelPurchaseInputV1 } from '@nora/contracts';
 import { ReservationServicePurchaseService } from './reservation-service-purchase.service';
 import {
   ReservationManifestBatchController,

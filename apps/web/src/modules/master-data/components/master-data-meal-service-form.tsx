@@ -1,6 +1,6 @@
 'use client';
 
-import type { MasterDataRecord } from '@rubi/contracts';
+import type { MasterDataRecord } from '@nora/contracts';
 import { useRef, useState, type FormEvent } from 'react';
 import { Save, UtensilsCrossed } from 'lucide-react';
 import { Button } from '@/components/ui/button';

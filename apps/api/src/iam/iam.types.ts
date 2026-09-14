@@ -1,4 +1,4 @@
-import type { AuthenticatedActor } from '@rubi/contracts';
+import type { AuthenticatedActor } from '@nora/contracts';
 import type { Request } from 'express';
 
 export interface AuthenticatedRequest extends Request {

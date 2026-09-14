@@ -9,7 +9,7 @@ describe('HR architecture boundary', () => {
     )) {
       const source = readFileSync(resolve(root, name), 'utf8');
       expect(source).not.toMatch(
-        /@Controller|Prisma|from ['"]@rubi\/database|localStorage|sessionStorage/,
+        /@Controller|Prisma|from ['"]@nora\/database|localStorage|sessionStorage/,
       );
       for (const match of source.matchAll(/from ['"]([^'"]+)['"]/g))
         expect(match[1]).toMatch(/^\.\/hr\./);

@@ -66,6 +66,10 @@ const pageSource = readFileSync(
   join(process.cwd(), 'src', 'app', '(crm)', 'marketing', 'page.tsx'),
   'utf8',
 );
+const contractsSource = readFileSync(
+  join(process.cwd(), 'src', 'modules', 'marketing', 'api', 'contracts.ts'),
+  'utf8',
+);
 const appShellSource = readFileSync(
   join(process.cwd(), 'src', 'components', 'layout', 'app-shell.tsx'),
   'utf8',
@@ -79,7 +83,7 @@ describe('marketing workspace component contract', () => {
     expect(pageSource).toContain("key={initialSection ?? 'marketing-hub'}");
   });
 
-  it('covers the eight active sections and all required preview states', () => {
+  it('covers the eight active sections without the hub preview-state selector', () => {
     for (const label of [
       'داشبورد',
       'کمپین‌ها',
@@ -92,18 +96,9 @@ describe('marketing workspace component contract', () => {
     ]) {
       expect(referenceDataSource).toContain(label);
     }
-    for (const state of [
-      'preview',
-      'loading',
-      'empty',
-      'error',
-      'unauthorized',
-      'forbidden',
-      'conflict',
-      'awaiting-integration',
-    ]) {
-      expect(workspaceSource).toContain(state);
-    }
+    expect(workspaceSource).not.toContain('aria-label="انتخاب حالت نمایش"');
+    expect(workspaceSource).not.toContain('const previewStates');
+    expect(workspaceSource).not.toContain('function StateGate');
     expect(marketingSections.map((section) => section.key)).not.toContain(
       'reports',
     );
@@ -163,7 +158,7 @@ describe('marketing workspace component contract', () => {
     );
   });
 
-  it('provides responsive campaign cards and Rubi-styled reference tables', () => {
+  it('provides responsive campaign cards and Nora-styled reference tables', () => {
     expect(workspaceSource).toContain('جزئیات کامل کمپین');
     expect(workspaceSource).toContain('sm:grid-cols-2');
     expect(referencePagesSource).toContain('overflow-x-auto');
@@ -171,7 +166,7 @@ describe('marketing workspace component contract', () => {
     expect(referencePagesSource).toContain('PaginationShell');
   });
 
-  it('uses Rubi filters and calendars for date-aware campaign controls', () => {
+  it('uses Nora filters and calendars for date-aware campaign controls', () => {
     expect(workspaceSource).toContain('@/components/ui/date-picker');
     expect(workspaceSource).toContain('startsAfter');
     expect(workspaceSource).toContain('endsBefore');
@@ -266,7 +261,7 @@ describe('marketing workspace component contract', () => {
     expect(referencePagesSource).not.toContain('title="داشبورد نمایشی"');
   });
 
-  it('keeps reference filters, forms and interactive actions on shared Rubi controls', () => {
+  it('keeps reference filters, forms and interactive actions on shared Nora controls', () => {
     expect(referencePagesSource).toContain('@/components/ui/date-picker');
     expect(referencePagesSource).toContain('FilterBar');
     expect(referencePagesSource).toContain('onValueChange={setTab}');
@@ -322,8 +317,8 @@ describe('marketing workspace component contract', () => {
     expect(referencePagesSource).not.toContain('در محیط آزمایشی باز شد');
   });
 
-  it('keeps attribution and dispatch contract gates in their relevant details', () => {
+  it('keeps attribution and dispatch contract gates after removing the hub simulator', () => {
     expect(workspaceSource).toContain('MARKETING_ATTRIBUTION_STATUS');
-    expect(workspaceSource).toContain('MARKETING_DISPATCH_STATUS');
+    expect(contractsSource).toContain('MARKETING_DISPATCH_STATUS');
   });
 });

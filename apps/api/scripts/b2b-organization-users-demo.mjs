@@ -7,7 +7,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve, relative, isAbsolute } from 'node:path';
 const require = createRequire(import.meta.url);
 require('reflect-metadata');
-const { createDatabaseClient } = require('@rubi/database');
+const { createDatabaseClient } = require('@nora/database');
 const { ConfigService } = require('@nestjs/config');
 const { IamService } = require('../dist/iam/iam.service.js');
 const {
@@ -47,7 +47,7 @@ if (
   process.env.NODE_ENV === 'production'
 )
   throw Error('Local development database required');
-url.pathname = '/rubi_hr_current_20260908';
+url.pathname = '/nora_hr_current_20260908';
 const client = createDatabaseClient(url.toString()),
   database = { client },
   iam = new IamService(database);
@@ -185,7 +185,7 @@ try {
       ? JSON.parse(readFileSync(credentialsFile, 'utf8'))
       : [];
     const dockerConfig = JSON.parse(
-      execFileSync('docker', ['inspect', 'rubi-postgres-1'], {
+      execFileSync('docker', ['inspect', 'nora-postgres-1'], {
         encoding: 'utf8',
       }),
     )[0];
@@ -196,12 +196,12 @@ try {
       'docker',
       [
         'exec',
-        'rubi-postgres-1',
+        'nora-postgres-1',
         'pg_dump',
         '-U',
         postgresUser,
         '-d',
-        'rubi_hr_current_20260908',
+        'nora_hr_current_20260908',
         '-Fc',
         '--no-owner',
         '--no-acl',
@@ -237,7 +237,7 @@ try {
           password,
         },
         actor,
-        { userAgent: 'Rubi local organization-user fixture' },
+        { userAgent: 'Nora local organization-user fixture' },
       );
       created++;
     }

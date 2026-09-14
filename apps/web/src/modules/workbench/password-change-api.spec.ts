@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { LoginResponse } from '@rubi/contracts';
+import type { LoginResponse } from '@nora/contracts';
 import {
   passwordChangeError,
   passwordChangeAvailable,
@@ -78,7 +78,7 @@ describe('password change consumer', () => {
           currentPassword: oldPassword,
           newPassword: nextPassword,
         }),
-        headers: expect.objectContaining({ 'X-Rubi-Password-Change': '1' }),
+        headers: expect.objectContaining({ 'X-Nora-Password-Change': '1' }),
       }),
     );
     expect(deps.clearSession).toHaveBeenCalledOnce();

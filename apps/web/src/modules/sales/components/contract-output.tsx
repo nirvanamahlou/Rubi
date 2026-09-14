@@ -3,7 +3,7 @@ import { useRef, useState } from 'react';
 import type {
   MasterDataResource,
   SalesContractOutputV1,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,

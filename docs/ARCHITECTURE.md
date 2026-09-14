@@ -1,4 +1,4 @@
-# معماری Rubi Airline CRM
+# معماری Nora Airline CRM
 
 وضعیت: Baseline پیشنهادی مرحله Bootstrap
 

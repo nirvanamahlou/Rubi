@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { randomUUID } from 'node:crypto';
-import type { AuthenticatedActor, CustomerDetail } from '@rubi/contracts';
+import type { AuthenticatedActor, CustomerDetail } from '@nora/contracts';
 import type { CustomerService } from '../customers/customer.service';
 import type { DocumentsService } from '../documents/documents.service';
 import type { TravelWorkflowService } from './travel-workflow.service';

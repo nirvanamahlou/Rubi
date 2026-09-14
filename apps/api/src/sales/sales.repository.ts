@@ -3,8 +3,8 @@ import type {
   SalesContractCreateRequest,
   SalesContractListQuery,
   SalesPaymentCreateRequest,
-} from '@rubi/contracts';
-import { AuditOutcome, Prisma, type SalesContractStatus } from '@rubi/database';
+} from '@nora/contracts';
+import { AuditOutcome, Prisma, type SalesContractStatus } from '@nora/database';
 
 import { DatabaseService } from '../database/database.service';
 import { calculateSalesBalances, passengerAgeCategory } from './sales.domain';

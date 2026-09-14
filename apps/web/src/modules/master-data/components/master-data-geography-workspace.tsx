@@ -12,7 +12,7 @@ import type {
   MasterDataResource,
   MasterDataStatus,
   MasterTerminalType,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import {
   ArrowRight,
   CheckCircle2,

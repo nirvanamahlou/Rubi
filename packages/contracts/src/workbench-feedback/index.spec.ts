@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { WORKBENCH_FEEDBACK_DEPARTMENTS } from './index';
 
 describe('workbench feedback contract', () => {
-  it('publishes only routable Rubi departments', () => {
+  it('publishes only routable Nora departments', () => {
     expect(WORKBENCH_FEEDBACK_DEPARTMENTS).toEqual([
       'finance',
       'reservations',

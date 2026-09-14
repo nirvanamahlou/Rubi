@@ -1,7 +1,7 @@
 import type {
   B2bAgencyCreditPolicyV1,
   B2bFinanceExposureV1,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 
 export type CreditProjection =
   | { status: 'UNAVAILABLE'; reason: string }

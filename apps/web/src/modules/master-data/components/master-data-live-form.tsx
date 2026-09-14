@@ -3,7 +3,7 @@
 import {
   isMasterTransportFormResource,
   type MasterDataRecord,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import { MasterDataTransportMetadata } from './master-data-transport-metadata';
 import { useState, type FormEvent } from 'react';
 

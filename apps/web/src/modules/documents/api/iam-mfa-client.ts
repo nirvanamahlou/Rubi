@@ -4,7 +4,7 @@ import type {
   IamMfaSetupConfirmInputV1,
   IamMfaSetupConfirmResponseV1,
   IamMfaStatusResponseV1,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 
 import { refreshAuthenticatedSession } from '@/lib/auth-session';
 import { getPublicApiBaseUrl } from '@/lib/environment';

@@ -7,5 +7,5 @@ export const environmentValidationSchema = Joi.object({
   REDIS_URL: Joi.string()
     .uri({ scheme: ['redis', 'rediss'] })
     .required(),
-  WORKER_QUEUE_NAME: Joi.string().trim().min(1).default('rubi-system-health'),
+  WORKER_QUEUE_NAME: Joi.string().trim().min(1).default('nora-system-health'),
 });
