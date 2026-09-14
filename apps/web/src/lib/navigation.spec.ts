@@ -17,7 +17,6 @@ const expectedRoutes = [
   '/reservations/hotel-rates',
   '/ticket-management',
   '/sales',
-  '/pricing-management',
   '/purchases',
   '/finance',
   '/finance/requests',
@@ -40,7 +39,6 @@ const expectedTitles = [
   'مدیریت گروهی نرخ‌های هتل‌ها',
   'مدیریت و تعریف بلیط‌ها',
   'قرارداد',
-  'مدیریت قیمت',
   'خرید و تأمین',
   'حسابداری',
   'کارتابل درخواست‌ها',
@@ -74,7 +72,6 @@ describe('CRM navigation', () => {
         ?.items.map((item) => item.href),
     ).toEqual([
       '/sales',
-      '/pricing-management',
       '/customers',
       '/customer-affairs',
       '/organizations',
@@ -100,13 +97,13 @@ describe('CRM navigation', () => {
   });
   it('contains the approved routes plus the separate finance inbox in order', () => {
     expect(navigationItems.map((item) => item.href)).toEqual(expectedRoutes);
-    expect(new Set(navigationItems.map((item) => item.href)).size).toBe(20);
+    expect(new Set(navigationItems.map((item) => item.href)).size).toBe(19);
   });
 
   it('uses distinct Persian titles for all navigation items', () => {
-    expect(navigationItems).toHaveLength(20);
+    expect(navigationItems).toHaveLength(19);
     expect(navigationItems.map((item) => item.title)).toEqual(expectedTitles);
-    expect(new Set(navigationItems.map((item) => item.title)).size).toBe(20);
+    expect(new Set(navigationItems.map((item) => item.title)).size).toBe(19);
   });
 
   it('resolves the Human Resources owner route', () => {
@@ -161,6 +158,19 @@ describe('CRM navigation', () => {
     expect(getNavigationItem('/sales')?.title).toBe('قرارداد');
     expect(getNavigationItem('/reservations')?.title).toContain('رزرواسیون');
     expect(getNavigationItem('/ticket-management')?.title).toContain('بلیط');
+  });
+
+  it('keeps package pricing beneath sales instead of adding a main item', () => {
+    expect(
+      navigationItems.some(
+        (item) => (item.href as string) === '/sales/pricing',
+      ),
+    ).toBe(false);
+    expect(getNavigationItem('/sales/pricing')?.href).toBe('/sales');
+    expect(getNavigationBreadcrumbs('/sales/pricing')).toEqual([
+      { href: '/sales', title: 'قرارداد' },
+      { href: '/sales/pricing', title: 'مدیریت قیمت و پکیج‌ها' },
+    ]);
   });
 
   it('combines user administration and settings only at navigation level', () => {

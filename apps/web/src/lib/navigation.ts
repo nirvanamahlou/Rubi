@@ -1,6 +1,5 @@
 import {
   BarChart3,
-  BadgeDollarSign,
   Building2,
   CalendarCheck2,
   CircleDollarSign,
@@ -46,7 +45,6 @@ const iconByHref: Record<NavigationHref, LucideIcon> = {
   '/reservations/hotel-rates': Building2,
   '/ticket-management': Ticket,
   '/sales': Handshake,
-  '/pricing-management': BadgeDollarSign,
   '/purchases': PackageSearch,
   '/finance': CircleDollarSign,
   '/finance/requests': Inbox,
@@ -79,7 +77,6 @@ export const navigationGroups = [
     title: 'فروش و ارتباط با مشتری',
     hrefs: [
       '/sales',
-      '/pricing-management',
       '/customers',
       '/customer-affairs',
       '/organizations',
@@ -133,6 +130,10 @@ export const groupedNavigationItems = navigationGroups.map((group) => ({
 }));
 
 export const navigationAliases = {
+  '/sales/pricing': {
+    parentHref: '/sales',
+    title: 'مدیریت قیمت و پکیج‌ها',
+  },
   '/sales/contracts/new': {
     parentHref: '/sales',
     title: 'قرارداد جدید',
