@@ -19,3 +19,4 @@
 - `pnpm lint`: ۶ از ۶ Task موفق، بدون warning.
 - `pnpm build`: ۶ از ۶ Task موفق؛ Web تولیدی با ۴۶ route، API و Worker ساخته شدند.
 - `pnpm test`: ۹ از ۹ Task موفق؛ Web برابر ۱۳۷۹ تست، API برابر ۱۳۳۳ تست و packageهای Contracts/Database/Config/Worker برابر ۱۴۹ تست موفق. تست‌های PostgreSQL که نیازمند opt-in هستند طبق قرارداد suite اجرا نشدند.
+- runtime محلی: Build `unified-ZyV35vImKKoEtH_BCsmJV` روی Web3100 و API4191 اجرا شد؛ readiness هر دو ۲۰۰ و صفحه ورود پس از reload قابل مشاهده است.

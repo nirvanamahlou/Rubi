@@ -1,11 +1,12 @@
 # Work Assignments
 
-## BRAND-NORA-001 — PC-B — COMPLETE / VERIFIED
+## BRAND-NORA-001 — PC-B — COMPLETE / VERIFIED / LOCAL_RUNTIME_ACTIVE
 
 - درخواست صریح مالک محصول در 2026-09-14: نام محصول و namespace پروژه در تمام بخش‌ها به `Nora/نورا` تغییر کند. `COMPUTER_ID=PC-B`؛ Branch مستقل `codex/pc-b-nora-brand` نسخه یکپارچه قبلی را با `origin/develop@2ad9c613` ترکیب می‌کند تا هیچ تغییر تاییدشده‌ای حذف نشود.
 - محدوده رزروشده: نام‌های نمایشی Web/API/Worker، metadata و Swagger، package scope داخلی، کوکی/هدر/کلیدهای runtime، نام فایل‌های برنددار، تست‌ها و مستندات جاری. `Dependency/Lockfile Owner = PC-B/BRAND-NORA-001` فقط برای rename نام پکیج‌ها و lockfile؛ هیچ نسخه وابستگی عوض نمی‌شود.
 - شناسه‌های رمزنگاری، magic bytes فایل‌های ذخیره‌شده، نام دیتابیس فعال و URL واقعی GitHub فقط در صورت حفظ سازگاری داده/لینک تغییر می‌کنند. این Task هیچ Schema/Migration/Seed، مجوز، نقش یا داده عملیاتی را تغییر نمی‌دهد. تغییرات نام در ماژول‌های دیگر صرفاً مکانیکی است و قرارداد رفتاری آن‌ها را عوض نمی‌کند.
 - اعتبارسنجی کامل موفق است: install frozen، ۹ Task TypeScript، ۶ Task lint، build تولیدی API/Worker/Web با ۴۶ route و تمام تست‌ها شامل ۱۳۷۹ Web، ۱۳۳۳ API و ۱۴۹ تست package. قفل Dependency/Lockfile پس از Commit آزاد است.
+- Runtime یکپارچه با Build `unified-ZyV35vImKKoEtH_BCsmJV` روی Web3100/API4191 فعال است؛ هر دو readiness برابر ۲۰۰ و صفحه ورود پس از reload قابل مشاهده است. همان دیتابیس و document storage قبلی حفظ شده‌اند.
 
 ## WORKBENCH-037-REMOVE-HR-DESTINATION-CARD — PC-B — READY_FOR_REVIEW
 

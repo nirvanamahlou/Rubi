@@ -5,6 +5,7 @@
 - نام محصول و namespace داخلی در نسخه یکپارچه تمام بخش‌ها به `Nora/نورا` تغییر کرد. packageهای workspace اکنون `@nora/*` هستند و Web/API/Worker، Swagger، کوکی‌ها، هدرها، PDF/XLSX، اعلان‌ها، تنظیمات نمونه و فایل‌های برنددار با Nora هماهنگ‌اند.
 - شناسه‌های تاریخی GitHub/مسیر سیستم‌عامل و شناسه‌های سازگاری رمزنگاری/ذخیره‌سازی حفظ شدند تا لینک‌ها و داده‌های قبلی نشکنند. هیچ Schema/Migration/Seed، داده، نقش یا مجوز تغییر نکرد.
 - install frozen، lint، typecheck، build کامل ۴۶ route و همه تست‌ها موفق‌اند: ۱۳۷۹ Web، ۱۳۳۳ API و ۱۴۹ تست package. گزارش: `docs/tasks/BRAND-NORA-001.md`.
+- Build `unified-ZyV35vImKKoEtH_BCsmJV` روی Web3100/API4191 فعال و هر دو readiness برابر ۲۰۰ است؛ صفحه ورود محلی بعد از reload بدون خطای اتصال نمایش داده شد.
 
 ## WORKBENCH-037 — حذف کارت پایین درخواست‌های منابع انسانی
 
