@@ -2938,7 +2938,7 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
   HR/IAM/Master Data، ثبت ماژول در AppModule، قرارداد additive Procurement،
   permission catalog/seed، Prisma schema، چهار migration منتشرشدهٔ PROCUREMENT-001
   و migration افزایشی اتصال درخواست‌کننده به کارمند HR،
-  route خرید و مستندات همین واحد. Migration Owner و قفل فایل‌های مرکزی این محدوده
+  route خرید، تست مرکزی وضعیت routeها و مستندات همین واحد. Migration Owner و قفل فایل‌های مرکزی این محدوده
   نزد PC-B/PROCUREMENT-LIVE-INTEGRATION-0915 هستند؛ Dependency/Lockfile تغییر نمی‌کند.
 - Prisma deploy در پایگاه محلی، migration افزایشی و منتشرشدهٔ
   `20260913163000_finance_inbox_actions` متعلق به PC-A را نیز به‌ترتیب پس از چهار
