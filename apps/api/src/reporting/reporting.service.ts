@@ -139,6 +139,23 @@ export class ReportingService {
     input: ReportQueryV1,
     actor: ReportingActor,
   ): Promise<TravelReportResultV1> {
+    return this.previewWithHistory(code, input, actor, false);
+  }
+
+  async previewRun(
+    code: string,
+    input: ReportQueryV1,
+    actor: ReportingActor,
+  ): Promise<TravelReportResultV1> {
+    return this.previewWithHistory(code, input, actor, true);
+  }
+
+  private async previewWithHistory(
+    code: string,
+    input: ReportQueryV1,
+    actor: ReportingActor,
+    recordAction: boolean,
+  ): Promise<TravelReportResultV1> {
     const report = this.metadata(code, actor);
     if (report.producerStatus === 'READY') {
       const serverBranchScope =
@@ -152,8 +169,40 @@ export class ReportingService {
       );
       if (!this.repository)
         throw new ConflictException('Persistence گزارش در دسترس نیست.');
-      const facts = await this.repository.facts(query, serverBranchScope);
-      return buildTravelReportResult({ code, query, facts, now: new Date() });
+      const started = Date.now();
+      const run = recordAction
+        ? await this.repository.createRun({
+            reportCode: code,
+            actorUserId: actor.userId,
+            filterSnapshot: { ...query, actionType: 'PREVIEW' },
+            viewName: report.approvedView,
+            viewVersion: report.version,
+          })
+        : null;
+      try {
+        const facts = await this.repository.facts(query, serverBranchScope);
+        const result = buildTravelReportResult({
+          code,
+          query,
+          facts,
+          now: new Date(),
+        });
+        if (run)
+          await this.repository.finishRun(
+            String(run.id),
+            result.total,
+            Date.now() - started,
+          );
+        return result;
+      } catch (error) {
+        if (run)
+          await this.repository.failRun(
+            String(run.id),
+            'نمایش نتیجه ناموفق بود.',
+            Date.now() - started,
+          );
+        throw error;
+      }
     }
     throw new ConflictException(
       `Approved View ${report.approvedView} هنوز توسط مالک دامنه منتشر نشده است.`,
@@ -430,13 +479,24 @@ export class ReportingService {
       sharingScope: string;
       isFavorite?: boolean;
       filterState: unknown;
+      recordAction?: boolean;
     },
     actor: ReportingActor,
   ) {
-    this.metadata(input.reportCode, actor);
+    const report = this.metadata(input.reportCode, actor);
     if (!this.repository)
       throw new ConflictException('Persistence گزارش در دسترس نیست.');
-    return this.repository.createSaved(actor.userId, input);
+    return this.repository.createSaved(actor.userId, {
+      ...input,
+      ...(input.recordAction
+        ? {
+            runMetadata: {
+              viewName: report.approvedView,
+              viewVersion: report.version,
+            },
+          }
+        : {}),
+    });
   }
 
   async sharingRecipients(reportCode: string, actor: ReportingActor) {
@@ -516,11 +576,17 @@ export class ReportingService {
     return { deleted: true };
   }
 
-  runs(actor: ReportingActor) {
+  async runs(actor: ReportingActor) {
     this.require(actor, 'reporting.read');
     if (!this.repository)
       throw new ConflictException('Persistence گزارش در دسترس نیست.');
-    return this.repository.listRuns(actor.userId);
+    const rows = await this.repository.listRuns(actor.userId);
+    return rows.map((row) => ({
+      ...row,
+      reportName:
+        REPORTING_CATALOG_V1.find((report) => report.code === row.reportCode)
+          ?.title ?? String(row.reportCode),
+    }));
   }
 
   exports(actor: ReportingActor) {
@@ -569,47 +635,77 @@ export class ReportingService {
   ) {
     this.require(actor, 'reporting.export');
     const started = Date.now();
-    const { report, result } = await this.travelResult(
-      code,
-      input.query,
-      actor,
-    );
     if (!this.repository || !this.exportFiles)
       throw new ConflictException('سرویس خروجی گزارش در دسترس نیست.');
+    const reportMetadata = this.metadata(code, actor);
+    const serverBranchScope =
+      actor.permissions.includes('sales.contracts.read.all') ||
+      actor.permissions.includes('reporting.read')
+        ? []
+        : actor.branchIds;
+    const query = validateReportQuery(
+      { ...input.query, branchIds: serverBranchScope },
+      MAX_PREVIEW_PAGE_SIZE,
+    );
     const run = await this.repository.createRun({
       reportCode: code,
       actorUserId: actor.userId,
-      filterSnapshot: result.filterSnapshot,
-      viewName: result.sourceProjection,
-      viewVersion: result.reportVersion,
+      filterSnapshot: { ...query, actionType: 'EXPORT' },
+      viewName: reportMetadata.approvedView,
+      viewVersion: reportMetadata.version,
     });
+    let report: typeof reportMetadata;
+    let result: TravelReportResultV1;
+    try {
+      ({ report, result } = await this.travelResult(code, input.query, actor));
+    } catch (error) {
+      await this.repository.failRun(
+        String(run.id),
+        'دریافت داده برای خروجی ناموفق بود.',
+        Date.now() - started,
+      );
+      throw error;
+    }
     const date = new Date().toISOString().slice(0, 10);
     const safeCode = code.replace(/[^a-z0-9_-]/g, '_');
     const extension = input.format.toLowerCase();
-    const artifact = await this.repository.createExport({
-      runId: String(run.id),
-      creatorUserId: actor.userId,
-      reportCode: code,
-      reportName: report.title,
-      format: input.format,
-      fileName: `${safeCode}_${date}.${extension}`,
-      contentType:
-        input.format === 'CSV'
-          ? 'text/csv; charset=utf-8'
-          : input.format === 'XLSX'
-            ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-            : 'application/pdf',
-      filterSnapshot: result.filterSnapshot,
-    });
+    let artifact: Awaited<ReturnType<ReportingRepository['createExport']>>;
+    try {
+      artifact = await this.repository.createExport({
+        runId: String(run.id),
+        creatorUserId: actor.userId,
+        reportCode: code,
+        reportName: report.title,
+        format: input.format,
+        fileName: `${safeCode}_${date}.${extension}`,
+        contentType:
+          input.format === 'CSV'
+            ? 'text/csv; charset=utf-8'
+            : input.format === 'XLSX'
+              ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+              : 'application/pdf',
+        filterSnapshot: result.filterSnapshot,
+      });
+    } catch (error) {
+      await this.repository.failRun(
+        String(run.id),
+        'شروع تولید خروجی ناموفق بود.',
+        Date.now() - started,
+      );
+      throw error;
+    }
     if (input.simulateFailure) {
-      await this.repository.failExport(
-        String(artifact.id),
-        'سناریوی کنترل‌شده خطای تولید خروجی برای دمو.',
+      const failureMessage = 'سناریوی کنترل‌شده خطای تولید خروجی برای دمو.';
+      await this.repository.failExport(String(artifact.id), failureMessage);
+      await this.repository.failRun(
+        String(run.id),
+        failureMessage,
+        Date.now() - started,
       );
       return {
         ...artifact,
         status: 'FAILED',
-        errorMessage: 'سناریوی کنترل‌شده خطای تولید خروجی برای دمو.',
+        errorMessage: failureMessage,
       };
     }
     try {
@@ -641,6 +737,11 @@ export class ReportingService {
       const message =
         error instanceof Error ? error.message : 'تولید خروجی ناموفق بود.';
       await this.repository.failExport(String(artifact.id), message);
+      await this.repository.failRun(
+        String(run.id),
+        'تولید خروجی ناموفق بود.',
+        Date.now() - started,
+      );
       throw new ConflictException(message);
     }
   }

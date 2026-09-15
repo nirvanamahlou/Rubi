@@ -12,6 +12,30 @@ vi.mock('@/lib/auth-session', () => ({
 afterEach(() => vi.unstubAllGlobals());
 
 describe('reporting public projection client', () => {
+  it('uses the recording endpoint only for the explicit result action', async () => {
+    const fetch = vi.fn().mockImplementation(() =>
+      Promise.resolve(
+        new Response(
+          JSON.stringify({
+            reportCode: 'sales_by_organization',
+            sourceProjection: 'sales.reporting.organization.v2',
+            rows: [],
+          }),
+        ),
+      ),
+    );
+    vi.stubGlobal('fetch', fetch);
+
+    await reportingApi.salesByOrganization({ recordAction: true });
+    await reportingApi.salesByOrganization({ page: 2 });
+    expect(fetch.mock.calls[0]?.[0]).toBe(
+      'http://localhost:4000/api/v1/reports/sales_by_organization/preview-run',
+    );
+    expect(fetch.mock.calls[1]?.[0]).toBe(
+      'http://localhost:4000/api/v1/reports/sales_by_organization/preview',
+    );
+  });
+
   it('queries the authenticated Reporting endpoint without bypassing its grain policy', async () => {
     const payload = {
       reportCode: 'sales_by_organization',

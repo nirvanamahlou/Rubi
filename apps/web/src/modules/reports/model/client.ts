@@ -78,6 +78,7 @@ export interface SalesByOrganizationPreviewInput {
   filterValues?: Readonly<Record<string, string>>;
   page?: number;
   pageSize?: number;
+  recordAction?: boolean;
   sort?: {
     column:
       | 'branchId'
@@ -239,7 +240,7 @@ export const reportingApi = {
       ...(input.filterValues ?? {}),
     };
     return request<SalesByOrganizationReportResult | TravelReportResult>(
-      `/${input.reportCode ?? 'sales_by_organization'}/preview`,
+      `/${input.reportCode ?? 'sales_by_organization'}/${input.recordAction ? 'preview-run' : 'preview'}`,
       {
         method: 'POST',
         body: JSON.stringify({
@@ -342,6 +343,7 @@ export const reportingApi = {
     sharingScope: 'PERSONAL' | 'TEAM';
     isFavorite: boolean;
     filterState: Record<string, unknown>;
+    recordAction?: boolean;
   }) {
     return request<ReportingSavedReportRecord>('/saved', {
       method: 'POST',

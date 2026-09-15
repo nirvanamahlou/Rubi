@@ -1,5 +1,11 @@
 # وضعیت پروژه
 
+## REPORTING-FORM-ACTION-HISTORY-0915 — ثبت اقدامات فرم در «اجراها»
+
+- کلیک‌های صریح «نمایش نتیجه»، «ذخیره گزارش» و «خروجی گرفتن نتیجه» اکنون با نوع اقدام، نام گزارش، کاربر، زمان سمت سرور و وضعیت موفق/ناموفق در فهرست اجراها دیده می‌شوند. Preview خودکار هنگام صفحه‌بندی/مرتب‌سازی و ذخیرهٔ علاقه‌مندی، اجراهای اضافی نمی‌سازند.
+- این تغییر روی شاخهٔ مستقل `codex/pc-c-reporting-run-actions-0915` از `origin/develop@0f5cc0e8` انجام شد؛ هیچ Schema/Migration/Seed یا فایل Dashboard تغییر نکرد. Worktree اجرایی مشترک روی پورت ۳۰۰۰ دست‌نخورده است تا نسخهٔ Dashboard/Reports کاربر جابه‌جا نشود.
+- ۳۲ تست Reporting API و ۵۳ تست Reports Web، typecheck، lint و build API/Web موفق‌اند. پس از PR و بررسی CI، برای نمایش روی localhost:3000 باید نسخهٔ یکپارچهٔ Dashboard/Reports این تغییر را جذب کند.
+
 ## 2026-09-15 — PC-C Dashboard/Reports + PC-A/PC-B develop integration
 
 شاخهٔ `codex/pc-c-dashboard-reporting-integration-0915` نسخهٔ ثبت‌شدهٔ Dashboard/Reports را با `origin/develop@ff15c7d3` ترکیب می‌کند. هر دو ماژول API Reporting و Procurement در AppModule حفظ شده‌اند، رابطه‌های Prisma افزایشی‌اند و ارجاع‌های Reporting به نام جدید `@nora/database` هماهنگ شده‌اند. دادهٔ نمونه و artifactهای محلی وارد Git نشده‌اند؛ Worktree اجرایی `dashboard-reporting-latest` و سرویس ۳۰۰۰ تغییر نکرده‌اند.

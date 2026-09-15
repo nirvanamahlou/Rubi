@@ -1661,6 +1661,7 @@ export function ReportingWorkspace({
   >(null);
   const [runError, setRunError] = useState<ReportRunError | null>(null);
   const [running, setRunning] = useState(false);
+  const [runHistoryRevision, setRunHistoryRevision] = useState(0);
   const [saveFeedback, setSaveFeedback] = useState('');
   const [workspaceCounts, setWorkspaceCounts] =
     useState<ReportingWorkspaceCounts | null>(null);
@@ -1916,7 +1917,7 @@ export function ReportingWorkspace({
     setRunError(null);
   }
 
-  async function runReport(page = 1, sort = resultSort) {
+  async function runReport(page = 1, sort = resultSort, recordAction = false) {
     if (dateRangeError) {
       setRunError({ kind: 'validation', message: dateRangeError });
       return;
@@ -1937,6 +1938,7 @@ export function ReportingWorkspace({
     try {
       const preview = await reportingApi.salesByOrganization({
         reportCode: selected.code,
+        recordAction,
         ...(currency === 'ALL' ? {} : { currencyCode: currency }),
         ...(fromDate ? { fromDate } : {}),
         ...(toDate ? { toDate } : {}),
@@ -1966,6 +1968,10 @@ export function ReportingWorkspace({
       setRunError(reportingRunError(error));
     } finally {
       setRunning(false);
+      if (recordAction) {
+        setRunHistoryRevision((current) => current + 1);
+        void refreshWorkspaceCounts();
+      }
     }
   }
 
@@ -1991,7 +1997,6 @@ export function ReportingWorkspace({
         query: reportExportQuery,
         reportCode: selected.code,
       });
-      await refreshWorkspaceCounts();
       setExportState('ready');
       setExportFeedback('فایل آماده شد و دانلود آن آغاز شد.');
     } catch (error) {
@@ -1999,6 +2004,9 @@ export function ReportingWorkspace({
       setExportFeedback(
         error instanceof Error ? error.message : 'تولید خروجی ناموفق بود.',
       );
+    } finally {
+      setRunHistoryRevision((current) => current + 1);
+      void refreshWorkspaceCounts();
     }
   }
 
@@ -2214,6 +2222,7 @@ export function ReportingWorkspace({
           </h2>
           <ReportingOperationsView
             onMutation={refreshWorkspaceCounts}
+            mutationRevision={runHistoryRevision}
             view={view}
             savedFilter={savedFilter}
           />
@@ -2429,7 +2438,7 @@ export function ReportingWorkspace({
                   loading={running}
                   onClick={() => {
                     setResultPreviewVisible(true);
-                    void runReport();
+                    void runReport(1, resultSort, true);
                   }}
                   type="button"
                 >
@@ -2445,6 +2454,7 @@ export function ReportingWorkspace({
                         name: selected.title,
                         sharingScope: 'PERSONAL',
                         isFavorite: false,
+                        recordAction: true,
                         filterState: {
                           fromDate,
                           toDate,
@@ -2454,6 +2464,7 @@ export function ReportingWorkspace({
                         },
                       });
                       setSaveFeedback('گزارش با تنظیمات فعلی ذخیره شد.');
+                      setRunHistoryRevision((current) => current + 1);
                       await refreshWorkspaceCounts();
                     } catch (error) {
                       setSaveFeedback(

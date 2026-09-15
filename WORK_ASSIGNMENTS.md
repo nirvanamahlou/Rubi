@@ -1,5 +1,13 @@
 # Work Assignments
 
+## REPORTING-FORM-ACTION-HISTORY-0915 — PC-C — READY_FOR_REVIEW
+
+- درخواست مالک 2026-09-15: صفحهٔ «اجراها» باید سه اقدام صریح فرم پیکربندی، «نمایش نتیجه»، «ذخیره گزارش» و «خروجی گرفتن نتیجه» را با کاربر، زمان، گزارش و وضعیت واقعی نشان دهد.
+- مبنا `origin/develop@0f5cc0e8`، شاخهٔ مستقل `codex/pc-c-reporting-run-actions-0915`. محدودهٔ موقت: `apps/api/src/reporting/**`، `apps/web/src/modules/reports/**`، تست‌های همان محدوده و مدخل‌های این Task در Docs.
+- قرارداد افزایشی و سازگار: تنها درخواست Preview صریح فرم ثبت اجرا می‌شود؛ Preview صفحه‌بندی/مرتب‌سازی و مصرف‌کننده‌های قبلی بدون ثبت اضافی می‌مانند. ذخیرهٔ صریح فرم opt-in است؛ ذخیرهٔ علاقه‌مندی یا اشتراک‌گذاری خودکار رخداد «ذخیره گزارش» نمی‌سازد. خروجی از مسیر موجود ثبت می‌شود. نوع اقدام در metadata ساخت‌یافتهٔ Filter Snapshot اجرا و پاسخ `runs` آشکار می‌شود.
+- `reporting_runs`، IAM actor، scope و Projection فعلی حفظ می‌شوند؛ Prisma/Migration/Seed، Dependency/Lockfile، فایل‌های Dashboard و Worktree اجرایی ۳۰۰۰ تغییر نمی‌کنند. هیچ دادهٔ نمونه‌ای وارد Git نمی‌شود.
+- هر اقدام صریح از فرم با `actionType` مستقل، زمان سمت سرور، کاربر و وضعیت در تب «اجراها» آشکار می‌شود. ذخیرهٔ فرم و رخداد اجرا در یک transaction ثبت می‌شوند؛ خطای Preview و Export نیز به وضعیت ناموفق همان اجرا تبدیل می‌شود. ۳۲ تست Reporting API و ۵۳ تست Reports Web، typecheck، lint و build هر دو برنامه موفق‌اند؛ PR و CI مرحلهٔ بعد است.
+
 ## DASHBOARD-REPORTING-PC-AB-INTEGRATION — PC-C — PR_OPEN / CI_PENDING
 
 - درخواست 2026-09-15: دریافت تغییرات یکپارچه‌شدهٔ PC-A/PC-B از `origin/develop` و حفظ نسخهٔ نهایی Dashboard/Reports در شاخهٔ اجرایی `codex/pc-c-dashboard-reporting-latest`، سپس انتشار و درخواست merge.

@@ -43,6 +43,13 @@ const statusClass = (status: unknown) =>
       ? 'bg-red-500/10 text-red-700'
       : 'bg-amber-500/10 text-amber-800';
 
+export function reportingRunActionLabel(action: unknown): string {
+  if (action === 'PREVIEW') return 'نمایش نتیجه';
+  if (action === 'SAVE') return 'ذخیره گزارش';
+  if (action === 'EXPORT') return 'خروجی گرفتن نتیجه';
+  return 'اجرای پیشین';
+}
+
 function resource(view: ReportingView) {
   if (view === 'saved' || view === 'shared') return 'saved' as const;
   if (view === 'recent') return 'runs' as const;
@@ -53,10 +60,12 @@ export function ReportingOperationsView({
   view,
   savedFilter,
   onMutation,
+  mutationRevision = 0,
 }: {
   view: Exclude<ReportingView, 'catalog'>;
   savedFilter: SavedReportFilter;
   onMutation?: () => void | Promise<void>;
+  mutationRevision?: number;
 }) {
   const [rows, setRows] = useState<readonly Row[]>([]);
   const [loading, setLoading] = useState(true);
@@ -78,7 +87,7 @@ export function ReportingOperationsView({
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => void load());
     return () => window.cancelAnimationFrame(frame);
-  }, [load]);
+  }, [load, mutationRevision]);
   const visible = rows.filter((row) => {
     if (view === 'shared') return row.isSharedWithActor === true;
     if (view === 'saved' && row.isSharedWithActor === true) return false;
@@ -132,9 +141,14 @@ export function ReportingOperationsView({
             <thead className="bg-muted/60">
               <tr>
                 <th className="p-3 text-start">عنوان</th>
+                {view === 'recent' ? (
+                  <th className="p-3 text-start">اقدام کاربر</th>
+                ) : null}
                 <th className="p-3 text-start">مالک / اجراکننده</th>
                 <th className="p-3 text-start">وضعیت و تنظیمات</th>
-                <th className="p-3 text-start">زمان</th>
+                <th className="p-3 text-start">
+                  {view === 'recent' ? 'زمان اقدام' : 'زمان'}
+                </th>
                 <th className="p-3 text-start">عملیات</th>
               </tr>
             </thead>
@@ -171,6 +185,11 @@ export function ReportingOperationsView({
                         {reportCode}
                       </p>
                     </td>
+                    {view === 'recent' ? (
+                      <td className="p-3">
+                        <Badge>{reportingRunActionLabel(row.actionType)}</Badge>
+                      </td>
+                    ) : null}
                     <td className="p-3">
                       {String(
                         row.ownerName ??
@@ -193,9 +212,20 @@ export function ReportingOperationsView({
                           ms
                         </p>
                       ) : null}
+                      {view === 'recent' &&
+                      status === 'FAILED' &&
+                      row.errorMessage ? (
+                        <p className="mt-2 text-xs text-red-700">
+                          {String(row.errorMessage)}
+                        </p>
+                      ) : null}
                     </td>
                     <td className="p-3">
-                      {faDate(row.updatedAt ?? row.createdAt ?? row.nextRunAt)}
+                      {faDate(
+                        view === 'recent'
+                          ? (row.startedAt ?? row.createdAt)
+                          : (row.updatedAt ?? row.createdAt ?? row.nextRunAt),
+                      )}
                     </td>
                     <td className="p-3">
                       <div className="flex flex-wrap gap-2">

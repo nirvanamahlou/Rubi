@@ -65,6 +65,12 @@ export class SaveReportDto {
     string,
     unknown
   >;
+  @ApiPropertyOptional({
+    description: 'ثبت ذخیرهٔ صریح فرم در تاریخچهٔ اجراها',
+  })
+  @IsOptional()
+  @IsBoolean()
+  recordAction?: boolean;
 }
 
 export class ShareSavedReportDto {
