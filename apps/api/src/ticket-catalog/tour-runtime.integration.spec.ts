@@ -9,6 +9,7 @@ import type {
 import { createDatabaseClient } from '@nora/database';
 import type { DatabaseService } from '../database/database.service';
 import type { MasterTravelDirectory } from '../master-data/master-travel-directory';
+import { ProcurementPublicService } from '../procurement/procurement-public.service';
 import { TicketPublicService } from './ticket-public.service';
 import { TourPublicService } from './tour-public.service';
 
@@ -23,8 +24,9 @@ describe.skipIf(!process.env.TRAVEL_TEST_DATABASE_URL)(
     const references = {
       assertTourReferences: vi.fn(async () => {}),
     } as unknown as MasterTravelDirectory;
-    const service = new TourPublicService(database, references);
-    const tickets = new TicketPublicService(database);
+    const procurement = new ProcurementPublicService(database);
+    const service = new TourPublicService(database, references, undefined, procurement);
+    const tickets = new TicketPublicService(database, procurement);
     const branchId = randomUUID();
     const actor: AuthenticatedActor = {
       userId: randomUUID(),

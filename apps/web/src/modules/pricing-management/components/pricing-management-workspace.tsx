@@ -1,368 +1,390 @@
 'use client';
 
+import type {
+  IamPermissionCode,
+  LoginResponse,
+  PackageListQueryV1,
+  PackagePageV1,
+  PackageStatus,
+  PackageSummaryV1,
+} from '@nora/contracts';
 import {
-  CalendarDays,
-  Download,
-  Image as ImageIcon,
-  Plane,
+  Archive,
+  ClipboardCheck,
+  FileImage,
+  FilePlus2,
+  FileText,
+  History,
+  Layers3,
+  ListFilter,
+  RefreshCw,
+  Scale,
   Search,
-  Sparkles,
-  Tags,
-  type LucideIcon,
 } from 'lucide-react';
-import { useMemo, useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { DatePicker } from '@/components/ui/date-picker';
+import Link from 'next/link';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/form-controls';
 import {
   Alert,
   Badge,
   Card,
   EmptyState,
+  ErrorState,
   PageHeader,
+  PaginationShell,
+  Skeleton,
 } from '@/components/ui/surfaces';
-import {
-  type BannerTheme,
-  downloadPriceBanner,
-  formatPrice,
-} from '../model/price-banner';
-import {
-  applyPreviewPrices,
-  bannerItems,
-  filterDailyPrices,
-  priceChanged,
-  pricingPreviewDate,
-  pricingPreviewItems,
-  validateDailyPrice,
-  type DailyPriceItem,
-  type PriceCurrency,
-  type PriceProductType,
-} from '../model/pricing-management';
+import { cn } from '@/lib/utils';
+import { packagePricingApi, PackagePricingApiError } from '../api/client';
 
-const productLabels: Record<PriceProductType, string> = {
-  TOUR: 'تور شرکت',
-  OWN_TICKET: 'بلیت ملکی',
+const tabs = [
+  ['packages', 'پکیج‌ها', Layers3],
+  ['create', 'ساخت پکیج', FilePlus2],
+  ['periods', 'بازه‌های قیمت', ListFilter],
+  ['rules', 'قواعد قیمت', Scale],
+  ['quotes', 'پیش‌فاکتورها', FileText],
+  ['templates', 'قالب‌های بنر', FileImage],
+  ['outputs', 'خروجی‌ها', Archive],
+  ['audit', 'ردپای تغییرات', History],
+] as const;
+type PricingTab = (typeof tabs)[number][0];
+
+const statusLabels: Record<PackageStatus, string> = {
+  DRAFT: 'پیش‌نویس',
+  READY_FOR_REVIEW: 'آماده بررسی',
+  APPROVED: 'تأییدشده',
+  PUBLISHED: 'منتشرشده',
+  STOPPED: 'متوقف',
+  EXPIRED: 'منقضی',
+  ARCHIVED: 'بایگانی',
 };
-const themes: Record<BannerTheme, string> = {
-  BLUE: 'از آبی سازمانی',
-  TEAL: 'از فیروزه‌ای',
-  RED: 'از نارنجی فروش',
+
+const tabPermissions: Record<PricingTab, IamPermissionCode> = {
+  packages: 'package_pricing.read',
+  create: 'package_pricing.create',
+  periods: 'package_pricing.period.manage',
+  rules: 'package_pricing.rule.manage',
+  quotes: 'package_pricing.quote.create',
+  templates: 'package_pricing.template.manage',
+  outputs: 'package_pricing.render',
+  audit: 'package_pricing.audit.read',
 };
-const bannerBackgrounds: Record<BannerTheme, string> = {
-  BLUE: 'from-[#123f8c] to-[#0872ce]',
-  TEAL: 'from-[#075985] to-[#0f766e]',
-  RED: 'from-[#7f1d1d] to-[#c2410c]',
-};
+
+export async function loadPricingWorkspace(
+  api: Pick<typeof packagePricingApi, 'session' | 'list'> = packagePricingApi,
+  query: PackageListQueryV1 = { page: 1, pageSize: 20 },
+) {
+  const activeSession = await api.session();
+  if (!activeSession.user.permissions.includes('package_pricing.read'))
+    throw new PackagePricingApiError(
+      'برای مشاهده پکیج‌ها مجوز package_pricing.read لازم است.',
+      403,
+      'PACKAGE_FORBIDDEN',
+    );
+  const packages = await api.list(query, activeSession);
+  return { activeSession, packages };
+}
+
+function money(amount: string, currencyCode: string) {
+  const [integer = '0', fraction] = amount.split('.');
+  const formatted = integer.replace(/\B(?=(\d{3})+(?!\d))/g, '٬');
+  return `${formatted}${fraction ? `٫${fraction}` : ''} ${currencyCode}`.replace(
+    /\d/g,
+    (digit) => '۰۱۲۳۴۵۶۷۸۹'[Number(digit)]!,
+  );
+}
+
+function errorTitle(error: unknown) {
+  if (error instanceof PackagePricingApiError) {
+    if (error.status === 401) return 'نشست معتبر نیست';
+    if (error.status === 403) return 'دسترسی مجاز نیست';
+    if (error.status === 409) return 'تعارض هم‌زمانی';
+  }
+  return 'اطلاعات قیمت‌گذاری در دسترس نیست';
+}
+
+function optionalQuery(
+  current: PackageListQueryV1,
+  key: 'branchId' | 'search',
+  value: string,
+): PackageListQueryV1 {
+  const next = { ...current, page: 1 };
+  if (value) next[key] = value;
+  else delete next[key];
+  return next;
+}
+
+function PackageList({ rows }: { rows: readonly PackageSummaryV1[] }) {
+  if (!rows.length)
+    return (
+      <EmptyState
+        title="پکیجی ثبت نشده است"
+        description="پس از ثبت اولین پکیج، نسخه، وضعیت انتشار، ظرفیت و قیمت نهایی آن اینجا دیده می‌شود."
+      />
+    );
+  return (
+    <div className="grid gap-3" aria-label="فهرست پکیج‌ها">
+      {rows.map((item) => (
+        <Card
+          className="grid gap-4 p-4 lg:grid-cols-[1.4fr_1fr_1fr_auto] lg:items-center"
+          key={item.id}
+        >
+          <div>
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge>{statusLabels[item.status]}</Badge>
+              <span className="font-mono text-xs text-muted-foreground">
+                {item.code}
+              </span>
+            </div>
+            <h2 className="mt-2 font-black">{item.titleFa}</h2>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {item.destinationNameSnapshot}
+            </p>
+          </div>
+          <div className="text-sm">
+            <p className="text-xs text-muted-foreground">حرکت / بازگشت</p>
+            <p className="mt-1 font-semibold" dir="ltr">
+              {item.departureDate || '—'} / {item.returnDate || '—'}
+            </p>
+          </div>
+          <div className="text-sm">
+            <p className="text-xs text-muted-foreground">آخرین قیمت منتشرشده</p>
+            <p className="mt-1 font-bold" dir="ltr">
+              {item.latestPrice
+                ? money(item.latestPrice.amount, item.latestPrice.currencyCode)
+                : '—'}
+            </p>
+          </div>
+          <div className="text-xs text-muted-foreground">
+            نسخه {item.version.toLocaleString('fa-IR')} · ظرفیت{' '}
+            {item.capacity.toLocaleString('fa-IR')}
+          </div>
+        </Card>
+      ))}
+    </div>
+  );
+}
+
+function OperationalEmpty({ tab }: { tab: Exclude<PricingTab, 'packages'> }) {
+  const content: Record<typeof tab, readonly [string, string]> = {
+    create: [
+      'نرخ هتل متصل است؛ نرخ و ظرفیت بلیت باقی مانده',
+      'بازه‌های نسخه‌دار هتل از Master Data قابل ارجاع‌اند. ساخت پکیج ترکیبی تا ارائه نرخ پایه و ظرفیت قابل recheck بلیت با SOURCE_RATE_UNAVAILABLE متوقف می‌شود.',
+    ],
+    periods: [
+      'بازه‌ای انتخاب نشده است',
+      'یک پکیج را از برگه پکیج‌ها انتخاب کنید تا بازه‌های نسخه‌دار قیمت مدیریت شوند.',
+    ],
+    rules: [
+      'قاعده‌ای انتخاب نشده است',
+      'قواعد به ترتیب sequence محاسبه و همراه نسخه قیمت snapshot می‌شوند.',
+    ],
+    quotes: [
+      'پیش‌فاکتوری ثبت نشده است',
+      'پیش‌فاکتور فقط از نسخه منتشرشده و با کنترل حداقل قیمت ساخته می‌شود.',
+    ],
+    templates: [
+      'قالب بنری ثبت نشده است',
+      'قالب‌ها نسخه‌دارند و برند صادرکننده را در زمان درخواست خروجی snapshot می‌کنند.',
+    ],
+    outputs: [
+      'خروجی آماده‌ای وجود ندارد',
+      'Renderer هنوز متصل نیست؛ درخواست معتبر با وضعیت AWAITING_RENDERER ثبت می‌شود و موفقیت جعلی نمایش داده نمی‌شود.',
+    ],
+    audit: [
+      'رویدادی انتخاب نشده است',
+      'برای مشاهده actor، شعبه، نسخه، دلیل و نتیجه، ابتدا یک پکیج را انتخاب کنید.',
+    ],
+  };
+  return <EmptyState title={content[tab][0]} description={content[tab][1]} />;
+}
 
 export function PricingManagementWorkspace() {
-  const [items, setItems] = useState<DailyPriceItem[]>(() =>
-    pricingPreviewItems.map((item) => ({ ...item })),
-  );
-  const [date, setDate] = useState(pricingPreviewDate);
-  const [type, setType] = useState<PriceProductType | 'ALL'>('ALL');
+  const [activeTab, setActiveTab] = useState<PricingTab>('packages');
+  const [session, setSession] = useState<LoginResponse | null>(null);
+  const [result, setResult] = useState<PackagePageV1 | null>(null);
+  const [query, setQuery] = useState<PackageListQueryV1>({
+    page: 1,
+    pageSize: 20,
+  });
   const [search, setSearch] = useState('');
-  const [notice, setNotice] = useState('');
-  const [bannerTitle, setBannerTitle] = useState('پیشنهادهای ویژه امروز');
-  const [theme, setTheme] = useState<BannerTheme>('BLUE');
-  const [exporting, setExporting] = useState(false);
-
-  const filtered = useMemo(
-    () => filterDailyPrices(items, search, type, date),
-    [date, items, search, type],
-  );
-  const selectedForBanner = bannerItems(items);
-  const changedCount = items.filter(priceChanged).length;
-  const summaryCards: readonly [string, string, LucideIcon][] = [
-    ['محصولات امروز', filtered.length.toLocaleString('fa-IR'), Tags],
-    [
-      'تورهای شرکت',
-      filtered
-        .filter((item) => item.productType === 'TOUR')
-        .length.toLocaleString('fa-IR'),
-      Sparkles,
-    ],
-    [
-      'بلیت‌های ملکی',
-      filtered
-        .filter((item) => item.productType === 'OWN_TICKET')
-        .length.toLocaleString('fa-IR'),
-      Plane,
-    ],
-    ['تغییر ذخیره‌نشده', changedCount.toLocaleString('fa-IR'), CalendarDays],
-  ];
-
-  const patchItem = (id: string, patch: Partial<DailyPriceItem>) => {
-    setItems((current) =>
-      current.map((item) => (item.id === id ? { ...item, ...patch } : item)),
-    );
-    setNotice('');
-  };
-
-  const apply = () => {
-    const invalid = items.map(validateDailyPrice).find(Boolean);
-    if (invalid) {
-      setNotice(invalid);
-      return;
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<unknown>(null);
+  const request = useRef(0);
+  const load = useCallback(async () => {
+    const current = ++request.current;
+    setLoading(true);
+    setError(null);
+    try {
+      const loaded = await loadPricingWorkspace(packagePricingApi, query);
+      if (current !== request.current) return;
+      setSession(loaded.activeSession);
+      setResult(loaded.packages);
+    } catch (cause) {
+      if (current !== request.current) return;
+      setSession(null);
+      setResult(null);
+      setError(cause);
+    } finally {
+      if (current === request.current) setLoading(false);
     }
-    if (!changedCount) {
-      setNotice('قیمتی برای اعمال تغییر نکرده است.');
-      return;
-    }
-    setItems(applyPreviewPrices(items));
-    setNotice(
-      `${changedCount.toLocaleString('fa-IR')} قیمت در پیش‌نمایش این نشست به‌روزرسانی شد؛ ذخیره سروری هنوز فعال نیست.`,
-    );
-  };
+  }, [query]);
+  useEffect(() => {
+    const timer = globalThis.setTimeout(() => void load(), 0);
+    return () => globalThis.clearTimeout(timer);
+  }, [load]);
+
+  const allowed = (tab: PricingTab) =>
+    Boolean(session?.user.permissions.includes(tabPermissions[tab]));
 
   return (
-    <main className="space-y-6">
+    <main className="mx-auto grid w-full max-w-7xl gap-5">
       <PageHeader
-        eyebrow="Nora Sales"
-        title="مدیریت قیمت"
-        description="ویرایش روزانه قیمت تورهای شرکت و بلیت‌های ملکی، همراه با خروجی بنر"
+        eyebrow="فروش و ارتباط با مشتری"
+        title="مدیریت قیمت و پکیج‌ها"
+        description="پکیج، قواعد، نسخه قیمت، پیش‌فاکتور و خروجی برندشده با کنترل شعبه و سازوکار maker/checker"
+        actions={
+          <>
+            <Link
+              className={buttonVariants({ variant: 'primary', size: 'sm' })}
+              href="/master-data/accommodation/hotel-rates"
+            >
+              نرخ‌های هتل
+            </Link>
+            <Link
+              className={buttonVariants({ variant: 'outline', size: 'sm' })}
+              href="/sales"
+            >
+              بازگشت به قراردادها
+            </Link>
+          </>
+        }
       />
       <Alert
-        tone="warning"
-        title="نسخه Preview؛ قیمت عملیاتی ذخیره یا منتشر نمی‌شود"
-        description="داده‌های این صفحه synthetic هستند. اعتبارسنجی مبلغ و خروجی PNG واقعی‌اند، اما ذخیره روزانه پس از قرارداد API، مجوز، Audit و Migration فعال می‌شود."
+        title="مرز مالکیت نرخ مبنا"
+        description="قرارداد نسخه‌دار نرخ پایه هتل از Master Data متصل است. این بخش به جدول ماژول دیگر دسترسی مستقیم ندارد و تا ارائه نرخ/ظرفیت بلیت، محاسبه پکیج ترکیبی fail-closed می‌ماند."
       />
-
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        {summaryCards.map(([label, value, Icon]) => (
-          <Card className="p-4" key={label}>
-            <div className="flex items-center justify-between">
-              <p className="text-xs text-muted-foreground">{label}</p>
-              <Icon className="size-5 text-primary" />
-            </div>
-            <p className="mt-3 text-2xl font-black">{value}</p>
-          </Card>
+      <div
+        className="flex gap-2 overflow-x-auto rounded-2xl border border-border bg-surface p-2"
+        role="tablist"
+        aria-label="بخش‌های مدیریت قیمت"
+      >
+        {tabs.map(([key, label, Icon]) => (
+          <button
+            aria-selected={activeTab === key}
+            className={cn(
+              'flex min-h-10 shrink-0 items-center gap-2 rounded-xl px-3 text-xs font-bold transition',
+              activeTab === key
+                ? 'bg-primary text-primary-foreground'
+                : 'text-muted-foreground hover:bg-muted',
+            )}
+            key={key}
+            onClick={() => setActiveTab(key)}
+            role="tab"
+            type="button"
+          >
+            <Icon className="size-4" />
+            {label}
+          </button>
         ))}
       </div>
-
-      <Card className="p-4">
-        <div className="grid gap-3 md:grid-cols-[12rem_13rem_1fr_auto] md:items-end">
-          <label className="text-xs font-bold">
-            تاریخ قیمت
-            <DatePicker className="mt-2" onChange={setDate} value={date} />
-          </label>
-          <label className="text-xs font-bold">
-            نوع محصول
-            <select
-              className="mt-2 h-11 w-full rounded-xl border border-input bg-surface px-3 text-sm"
-              onChange={(event) =>
-                setType(event.target.value as PriceProductType | 'ALL')
-              }
-              value={type}
-            >
-              <option value="ALL">همه محصولات ملکی</option>
-              <option value="TOUR">تورهای شرکت</option>
-              <option value="OWN_TICKET">بلیت‌های ملکی</option>
-            </select>
-          </label>
-          <label className="text-xs font-bold">
-            جست‌وجو
-            <span className="relative mt-2 block">
-              <Search className="absolute end-3 top-3 size-4 text-muted-foreground" />
-              <Input
-                className="pe-10"
-                onChange={(event) => setSearch(event.target.value)}
-                placeholder="نام، مسیر یا کد محصول"
-                value={search}
-              />
-            </span>
-          </label>
-          <Button disabled={!changedCount} onClick={apply}>
-            اعمال تغییرات Preview
-          </Button>
-        </div>
-        {notice ? <Alert className="mt-4" title={notice} /> : null}
-      </Card>
-
-      {filtered.length ? (
-        <div className="space-y-3" aria-label="فهرست قیمت‌های روزانه">
-          {filtered.map((item) => {
-            const error = validateDailyPrice(item);
-            return (
-              <Card className="p-4" key={item.id}>
-                <div className="grid gap-4 xl:grid-cols-[1.3fr_1fr_0.8fr_1fr_8rem] xl:items-center">
-                  <div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Badge>{productLabels[item.productType]}</Badge>
-                      {priceChanged(item) ? <Badge>تغییرکرده</Badge> : null}
-                    </div>
-                    <h2 className="mt-2 font-black">{item.productName}</h2>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      {item.routeLabel} · {item.serviceCode}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">قیمت فعلی</p>
-                    <p className="mt-1 font-bold" dir="ltr">
-                      {formatPrice(item.currentPrice, item.currencyCode)}
-                    </p>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      {item.capacityLabel}
-                    </p>
-                  </div>
-                  <label className="text-xs font-bold">
-                    ارز
-                    <select
-                      className="mt-2 h-11 w-full rounded-xl border border-input bg-surface px-3"
-                      onChange={(event) =>
-                        patchItem(item.id, {
-                          currencyCode: event.target.value as PriceCurrency,
-                        })
-                      }
-                      value={item.currencyCode}
-                    >
-                      {(['IRR', 'USD', 'EUR', 'AED', 'TRY'] as const).map(
-                        (currency) => (
-                          <option key={currency} value={currency}>
-                            {currency}
-                          </option>
-                        ),
-                      )}
-                    </select>
-                  </label>
-                  <label className="text-xs font-bold">
-                    قیمت جدید
-                    <Input
-                      aria-invalid={Boolean(error)}
-                      className="mt-2"
-                      dir="ltr"
-                      inputMode="decimal"
-                      onChange={(event) =>
-                        patchItem(item.id, { draftPrice: event.target.value })
-                      }
-                      value={item.draftPrice}
-                    />
-                    {error ? (
-                      <span className="mt-1 block text-destructive">
-                        {error}
-                      </span>
-                    ) : null}
-                  </label>
-                  <label className="flex min-h-11 items-center gap-2 rounded-xl border border-border px-3 text-sm">
-                    <input
-                      checked={item.featured}
-                      onChange={(event) =>
-                        patchItem(item.id, { featured: event.target.checked })
-                      }
-                      type="checkbox"
-                    />
-                    نمایش در بنر
-                  </label>
-                </div>
-              </Card>
-            );
-          })}
-        </div>
-      ) : (
-        <EmptyState
-          title="قیمتی برای این روز پیدا نشد"
-          description="تاریخ، نوع محصول یا عبارت جست‌وجو را تغییر دهید."
-        />
-      )}
-
-      <Card className="overflow-hidden">
-        <div className="grid lg:grid-cols-[0.9fr_1.1fr]">
-          <section className="space-y-4 p-5">
-            <div>
-              <h2 className="font-black">خروجی بنر قیمت</h2>
-              <p className="mt-1 text-xs leading-6 text-muted-foreground">
-                حداکثر شش ردیف انتخاب‌شده در فایل PNG مربع ۱۲۰۰ پیکسل قرار
-                می‌گیرند.
-              </p>
-            </div>
-            <label className="block text-xs font-bold">
-              عنوان بنر
-              <Input
-                className="mt-2"
-                maxLength={60}
-                onChange={(event) => setBannerTitle(event.target.value)}
-                value={bannerTitle}
-              />
+      {activeTab === 'packages' ? (
+        <>
+          <Card className="grid gap-3 p-4 md:grid-cols-[1fr_14rem_auto] md:items-end">
+            <label className="text-xs font-bold">
+              جست‌وجوی کد یا عنوان
+              <span className="relative mt-2 block">
+                <Search className="absolute end-3 top-3 size-4 text-muted-foreground" />
+                <Input
+                  className="pe-10"
+                  onChange={(event) => setSearch(event.target.value)}
+                  value={search}
+                />
+              </span>
             </label>
-            <label className="block text-xs font-bold">
-              رنگ بنر
+            <label className="text-xs font-bold">
+              شعبه
               <select
-                className="mt-2 h-11 w-full rounded-xl border border-input bg-surface px-3"
+                className="mt-2 h-11 w-full rounded-xl border border-input bg-surface px-3 text-sm"
+                disabled={!session}
                 onChange={(event) =>
-                  setTheme(event.target.value as BannerTheme)
+                  setQuery((value) =>
+                    optionalQuery(value, 'branchId', event.target.value),
+                  )
                 }
-                value={theme}
+                value={query.branchId ?? ''}
               >
-                {Object.entries(themes).map(([value, label]) => (
-                  <option key={value} value={value}>
-                    {label}
+                <option value="">همه شعب مجاز</option>
+                {session?.user.branches.map((branch) => (
+                  <option key={branch.id} value={branch.id}>
+                    {branch.name}
                   </option>
                 ))}
               </select>
             </label>
-            <Button
-              disabled={!selectedForBanner.length || exporting}
-              onClick={() => {
-                setExporting(true);
-                void downloadPriceBanner({
-                  title: bannerTitle,
-                  date,
-                  theme,
-                  items: selectedForBanner,
-                })
-                  .then(() => setNotice('فایل PNG بنر با موفقیت ساخته شد.'))
-                  .catch((reason: unknown) =>
-                    setNotice(
-                      reason instanceof Error
-                        ? reason.message
-                        : 'ساخت بنر ناموفق بود.',
-                    ),
+            <div className="flex gap-2">
+              <Button
+                onClick={() =>
+                  setQuery((value) =>
+                    optionalQuery(value, 'search', search.trim()),
                   )
-                  .finally(() => setExporting(false));
-              }}
-            >
-              <Download className="size-4" />
-              {exporting ? 'در حال ساخت…' : 'دریافت بنر PNG'}
-            </Button>
-          </section>
-          <section
-            aria-label="پیش‌نمایش بنر قیمت"
-            className={`bg-gradient-to-br ${bannerBackgrounds[theme]} p-6 text-white`}
-          >
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="text-xl font-black">{bannerTitle}</p>
-                <p className="mt-1 text-xs text-white/70">{date}</p>
-              </div>
-              <ImageIcon className="size-8 text-white/80" />
+                }
+              >
+                اعمال فیلتر
+              </Button>
+              <Button
+                aria-label="به‌روزرسانی"
+                disabled={loading}
+                onClick={() => void load()}
+                size="icon"
+                variant="outline"
+              >
+                <RefreshCw className="size-4" />
+              </Button>
             </div>
-            <div className="mt-5 space-y-2">
-              {selectedForBanner.length ? (
-                selectedForBanner.map((item) => (
-                  <div
-                    className="rounded-xl bg-white/10 p-3 backdrop-blur"
-                    key={item.id}
-                  >
-                    <div className="flex items-center justify-between gap-4">
-                      <span className="font-bold">{item.productName}</span>
-                      <span className="shrink-0 font-black" dir="ltr">
-                        {formatPrice(item.draftPrice, item.currencyCode)}
-                      </span>
-                    </div>
-                    <p className="mt-1 text-xs text-white/70">
-                      {item.routeLabel}
-                    </p>
-                  </div>
-                ))
-              ) : (
-                <p className="rounded-xl bg-white/10 p-5 text-sm">
-                  از فهرست قیمت‌ها، گزینه «نمایش در بنر» را انتخاب کنید.
-                </p>
-              )}
+          </Card>
+          {loading ? (
+            <div className="grid gap-3">
+              {Array.from({ length: 3 }, (_, index) => (
+                <Skeleton className="h-28" key={index} />
+              ))}
             </div>
-            <p className="mt-6 text-sm font-bold">شرکت نیایش سیر سحر</p>
-          </section>
-        </div>
-      </Card>
+          ) : null}
+          {!loading && error ? (
+            <ErrorState
+              title={errorTitle(error)}
+              description={
+                error instanceof Error
+                  ? error.message
+                  : 'خطای پیش‌بینی‌نشده رخ داد.'
+              }
+              action={
+                <Button onClick={() => void load()} variant="outline">
+                  تلاش دوباره
+                </Button>
+              }
+            />
+          ) : null}
+          {!loading && !error && result ? (
+            <>
+              <PackageList rows={result.data} />
+              <PaginationShell
+                currentPage={result.meta.page}
+                totalLabel={`${result.meta.total.toLocaleString('fa-IR')} پکیج`}
+              />
+            </>
+          ) : null}
+        </>
+      ) : allowed(activeTab) ? (
+        <OperationalEmpty tab={activeTab} />
+      ) : (
+        <EmptyState
+          title="دسترسی مجاز نیست"
+          description={`برای این برگه مجوز ${tabPermissions[activeTab]} لازم است.`}
+          icon={ClipboardCheck}
+        />
+      )}
     </main>
   );
 }

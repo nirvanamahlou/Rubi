@@ -15,6 +15,7 @@ export * from './sales';
 export * from './travel';
 export * from './travel/tours';
 export * from './notifications';
+export * from './package-pricing';
 export * from './workbench-feedback';
 export * from './workbench';
 export * from './customer-affairs';

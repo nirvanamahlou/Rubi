@@ -26,6 +26,7 @@ import { ReservationsPublicService } from '../reservations/reservations-public.s
 import { SalesService } from '../sales/sales.service';
 import { ProcurementPublicService } from '../procurement/procurement-public.service';
 import { FinanceDeliveryService } from './document-delivery/finance-delivery.module';
+import { FinanceTicketCostService } from './ticket-cost/finance-ticket-cost.service';
 
 const hrStatus: Record<HrConnectionStatus, FinanceRequestStatus> = {
   SUBMITTED: 'NEW',
@@ -47,6 +48,8 @@ export class FinanceInboxService {
     @Inject(DatabaseService) private readonly database: DatabaseService,
     @Inject(ProcurementPublicService)
     private readonly procurement: ProcurementPublicService,
+    @Inject(FinanceTicketCostService)
+    private readonly ticketCosts: FinanceTicketCostService,
   ) {}
 
   async list(actor: AuthenticatedActor): Promise<FinanceInboxV1> {
@@ -76,6 +79,7 @@ export class FinanceInboxService {
         : [];
     const ticketItems =
       ticketResult.status === 'fulfilled' ? ticketResult.value : [];
+    const ticketStates = await this.ticketCosts.queueStates(ticketItems.map((item) => item.id));
 
     const items: FinanceInboxItemV1[] = [
       ...salesItems.map((item): FinanceInboxItemV1 => ({
@@ -162,18 +166,23 @@ export class FinanceInboxService {
         source: 'PURCHASES',
         kind: 'PAYMENT_REQUEST',
         sourceReference: purchase.id,
-        sourceContextReference: purchase.catalogProductReference,
+        sourceContextReference: ticketStates.get(purchase.id)?.costRevisionId ?? purchase.catalogProductReference,
         contractReference: null,
         title: 'خرید بلیط ' + purchase.title,
         partyDisplaySnapshot: purchase.supplierDisplaySnapshot,
-        description: 'قیمت خرید بلیط برای تاریخ ' + purchase.serviceDate,
-        amount: {
-          amount: purchase.amount,
-          currencyCode: purchase.currencyCode,
-        },
-        settlement: null,
-        status: 'READY_FOR_PAYMENT',
-        dueAt: purchase.serviceDate + 'T00:00:00.000Z',
+        description: purchase.serviceDate
+          ? 'قیمت خرید بلیط برای تاریخ ' + purchase.serviceDate
+          : 'درخواست ثبت قیمت خرید بلیط توسط مالی',
+        amount: ticketStates.has(purchase.id)
+          ? { amount: ticketStates.get(purchase.id)!.invoiceAmount,
+              currencyCode: ticketStates.get(purchase.id)!.currencyCode }
+          : null,
+        settlement: ticketStates.has(purchase.id)
+          ? { paidAmount: ticketStates.get(purchase.id)!.paidAmount,
+              remainingAmount: ticketStates.get(purchase.id)!.remainingAmount }
+          : null,
+        status: ticketStates.get(purchase.id)?.status ?? 'NEW',
+        dueAt: purchase.serviceDate ? purchase.serviceDate + 'T00:00:00.000Z' : null,
         createdAt: purchase.createdAt,
         requesterDisplaySnapshot: null,
         branchReference: purchase.branchId,

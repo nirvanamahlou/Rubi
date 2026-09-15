@@ -445,3 +445,12 @@ Baseline برنامه: `origin/develop` در Merge Commit
 پیاده‌سازی، validation، permission، audit، migration، UI states، تست‌های مرتبط،
 خروجی لازم و مستندات تکمیل شده؛ هیچ Secret وارد Git نشده و وضعیت/تخصیص به‌روز و
 شاخه Push شده است.
+
+# PACKAGE-PRICING-001 handoff
+
+- [x] Package Pricing contract, permissions, schema/migration, Decimal rule engine, API and `/sales/pricing` shell.
+- [x] Immutable published prices, optimistic locking, maker/checker, quote snapshot, render intent and audit.
+- [x] Master Data publishes a versioned hotel base-rate period/grid and resolver owned by Master Data.
+- [ ] Ticket Management must publish a versioned base-fare/capacity resolver and recheck command.
+- [ ] Finance must expose only approved FX snapshots; Renderer/Worker must consume render intents and archive completed files through Documents.
+- [ ] After Ticket/FX/Renderer producers land, extend the adapter beyond hotel-only references, unlock the remaining mixed-package create/price/publish flow, and add end-to-end renderer tests and Excel/PDF exporters.

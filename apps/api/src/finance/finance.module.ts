@@ -9,6 +9,7 @@ import { SalesModule } from '../sales/sales.module';
 import { ProcurementModule } from '../procurement/procurement.module';
 import { FinanceInboxController } from './finance-inbox.controller';
 import { FinanceInboxService } from './finance-inbox.service';
+import { FinanceTicketCostModule } from './finance-ticket-cost.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { FinanceInboxService } from './finance-inbox.service';
     HrModule,
     ReservationsRuntimeModule,
     ProcurementModule,
+    FinanceTicketCostModule,
   ],
   controllers: [FinanceInboxController],
   providers: [AuthGuard, PermissionGuard, FinanceInboxService],

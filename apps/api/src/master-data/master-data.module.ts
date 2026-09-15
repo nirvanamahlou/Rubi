@@ -18,6 +18,11 @@ import { MasterDataService } from './master-data.service';
 import { MasterOrganizationDirectory } from './master-organization-directory';
 import { MasterTravelDirectory } from './master-travel-directory';
 import { OrganizationAddressController } from './organization-address.controller';
+import { MasterHotelBaseRatesController } from './hotel-base-rates.controller';
+import {
+  MasterHotelBaseRatePublicService,
+  MasterHotelBaseRatesService,
+} from './hotel-base-rates.service';
 
 @Module({
   imports: [IamModule],
@@ -25,6 +30,7 @@ import { OrganizationAddressController } from './organization-address.controller
     CurrencyRateController,
     MasterDataAuditController,
     HotelImportController,
+    MasterHotelBaseRatesController,
     MasterDataController,
     OrganizationAddressController,
   ],
@@ -39,12 +45,15 @@ import { OrganizationAddressController } from './organization-address.controller
     MasterTravelDirectory,
     CurrencyRateService,
     HotelImportService,
+    MasterHotelBaseRatesService,
+    MasterHotelBaseRatePublicService,
   ],
   exports: [
     MasterDataService,
     MasterOrganizationDirectory,
     MasterTravelDirectory,
     MasterHrDirectory,
+    MasterHotelBaseRatePublicService,
   ],
 })
 export class MasterDataModule {}

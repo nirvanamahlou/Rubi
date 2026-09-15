@@ -1,5 +1,79 @@
 # تصمیم‌های معماری
 
+## ADR-PACKAGE-FLIGHT-FINANCE-COST-0915 — owner clarification / isolated integration
+
+The owner clarified that adult/child flight amounts entered in Sales are sale
+prices. When a ticket is defined, its purchase-price request goes to Finance;
+Finance enters the purchase amount and pays it directly, with no separate
+Procurement approval for this pre-sale ticket request. This is a limited
+owner-approved exception to the older generic Procurement-first purchase flow;
+other contract/service procurement ownership remains unchanged. The latest
+develop has a ProcurementTicketPurchaseRequest envelope and Finance inbox
+projection, but Ticket Catalog currently sends the amount itself and the
+free-form catalogProductReference is not a tour offer FK. That behavior is
+not a confirmed Finance purchase price and must be changed before package
+publication. The current tour departure uses TicketPublishedOffer, which
+stores route/capacity but no purchase fare. Latest develop Finance inbox lists
+pending Purchases requests, but has no Finance price-entry/payment action for
+those requests yet.
+There is no existing public, Finance-paid ticket-cost projection keyed to the
+tour's offer IDs. Package Pricing must consume such a versioned Finance/Ticket
+public contract (branch, offer ID/version, adult/child amounts and currency,
+payment state), never infer cost by route/name/date, read private
+tables or copy a manual purchase amount into Sales. A new pre-sale request
+flow keeps the request envelope in its owning module while Finance owns cost
+entry and settlement. Until that producer and its payment
+policy exist, package publication and total net-profit claims fail closed;
+hotel-only sale previews remain explicitly non-published. No historical
+published snapshot is changed by this clarification.
+
+Implementation on `codex/pc-a-package-pricing` after merging `origin/develop`
+into that task branch: publishing a real TicketPublishedOffer creates an
+amount-free Procurement envelope with a true offer FK/version. The older local
+Ticket product editor is a preview and does not create a duplicate financial
+request. Finance owns append-only adult/child unit purchase costs, invoice
+amount and payment evidence. Recorded partial payments keep the offer cost
+unavailable to Sales; only full settlement atomically marks the Procurement
+envelope PAID and exposes Finance's public paid-cost projection. A recorded
+payment is not an external bank transfer or accounting journal. Old free-form
+requests and catalog estimates remain readable but cannot qualify as a tour
+offer cost. Sales saves one editable draft per TourDeparture and HotelRate
+batch, then a different actor may publish immutable per-hotel/per-room prices
+after source, capacity, branch, version and currency recheck. Commission is
+subtracted from net profit without increasing customer sale. Business uplift
+applies per adult when this tour's offer cabin is BUSINESS. Known occupancy
+codes map to 1/2/3 adults or 2 adults plus 1/2 children; family occupancy is
+undefined in current data, so only its hotel-stay amount is published. Cross-
+currency publication remains fail-closed until an approved FX source exists.
+
+## ADR-PACKAGE-PURCHASE-SOURCE-0915 — owner purchase-cost clarification
+
+The owner now requests package sale pricing to start from the actual hotel
+purchase-rate table for a defined tour/date range, rather than treating Master
+Data's hotel base-sale rate as purchase cost. This supersedes the
+PACKAGE-PRICING-001 prohibition on using Reservations purchase cost for this
+new tour-pricing flow, but does not relabel historical Master Data sale rates
+as purchase costs. The owner confirmed that the existing Ticket Catalog tour
+departure is the package anchor. In the current model, only Reservations'
+group rate register identifies broker purchase base per room/night, so it is
+the producer for this flow. Package Pricing receives a versioned,
+branch/date/hotel-scoped public projection, never queries Reservations tables
+directly. Costs from distinct alternative hotels are priced separately, not
+summed into one source base. Existing immutable published price snapshots
+are not rewritten. If the owner names a different purchase register, switch
+the producer before sale publication rather than silently mixing cost models.
+
+## ADR-PACKAGE-COMMISSION-NET-MARGIN-0915 — owner clarification
+
+For new Package Pricing calculations, commission is a selling expense deducted
+from realized margin, not an amount added to the published customer price.
+The version-1 breakdown adds optional commissionCost; older immutable price
+snapshots without that field remain readable as zero commission. Fixed/percent
+sale adjustments and existing fees retain their own behavior. This decision
+supersedes the prior generic COMMISSION-as-sale-uplift behavior for new versions;
+no historical published price, contract or operational purchase is rewritten.
+Package Pricing API produces the additive field and its Web client consumes it.
+
 ## B2B-DOSSIER-REPORTS-001 — 2026-09-09
 
 The dossier Reports/Audit UI consumes normalized metadata from B2B audit events and public Master Organization/Documents owner projections. It does not read another module's tables, change the central Reporting module or create financial events. Existing branch and source/domain permissions apply to every page. Snapshots stay server-side; the projection exposes changed field labels, action, actor and time, never private contact values, notes, document contents or credential fields. Export contains the same authorized filtered projection. Per-source keyset pages share a fixed upper timestamp, including a deterministic cross-source tie key; Tehran calendar-day filters include both day boundaries.
@@ -174,3 +248,21 @@ The owner selected: No affects supplier reservation form and purchasing basis on
 - A single independent reviewer approves contract/credit changes using the corresponding permission; the proposer cannot approve their own request. Confirmed explicitly in this task on the Screenshot527 follow-up.
 - Each currency has a separate credit limit; no implicit FX conversion. Contract/policy drafts have no effective financial authority before approval. Submitted/approved content is versioned and preserved, and edits require a new draft/revision.
 - Evolve existing B2B profile/agreement/credit persistence and public routes. Organization identity remains in Master Data, binary/version storage in Documents, and exposure/payment/deposit balances in Finance. This scope completes the contract/credit wizard and its management workflow, not every independent PRD module.
+# PACKAGE-PRICING-001 — Fail-closed upstream contracts (2026-09-14)
+
+مرزبندی صریح مالک محصول، نرخ پایه هتل را به Master Data و نرخ پایه/ظرفیت بلیت را به Ticket
+Catalog واگذار می‌کند. چون develop فعلی این دو Public Contract نسخه‌دار را ارائه نمی‌کند،
+Package Pricing از adapter صریح fail-closed استفاده می‌کند (`SOURCE_RATE_UNAVAILABLE` و
+`CAPACITY_RECHECK_FAILED`). استفاده از داده ReservationHotelGroupRate به‌جای نرخ پایه ممنوع
+است، چون آن مدل هزینه واقعی خرید Reservations است. Renderer نیز producer مستقل است و نبود آن
+فقط Render Request واقعی `AWAITING_RENDERER` می‌سازد؛ فایل یا success ساختگی ممنوع است.
+
+## ADR-MASTER-HOTEL-BASE-RATES-0914 — versioned period grid
+
+با درخواست صریح مالک محصول، Master Data مالک نرخ پایه فروش هتل در بازه اقامت است: یک شهر،
+check-in/check-out و تعداد شب، همه هتل‌های فعال همان شهر، انتخاب حضور در تور، مبلغ پایه هر
+اتاق/شب و ضرایب رده‌های اقامت. ویرایش رکورد قبلی تاریخچه را بازنویسی نمی‌کند و نسخه immutable
+جدید می‌سازد. Package Pricing فقط Public Contract نسخه‌دار را مصرف می‌کند و reference غیرجاری،
+خارج از شعبه یا با ارز ناسازگار را fail-closed رد می‌کند. مدل خرید واقعی Reservations مستقل
+می‌ماند. این تصمیم blocker هتل را رفع می‌کند و blocker Ticket Catalog یا Renderer را رفع‌شده
+فرض نمی‌کند.
