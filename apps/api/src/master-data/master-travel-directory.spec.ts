@@ -79,4 +79,46 @@ describe('public travel reference boundary', () => {
       fileReferenceId: 'manifest-file',
     });
   });
+
+  it('validates the exact template selected on a published ticket', async () => {
+    const record = {
+      id: 'chosen',
+      name: 'قالب ازمیر',
+      status: 'active',
+      attributes: {
+        airlineName: 'IRAN AIRTOUR',
+        destinationCityId: 'izmir',
+        publicationStatus: 'ACTIVE',
+        fileFormat: 'XLSX',
+        fileReferenceId: 'historical-file',
+        versionNumber: 4,
+        validFrom: '2026-09-01',
+      },
+    };
+    const detail = vi.fn().mockResolvedValue({ data: record });
+    const directory = new MasterTravelDirectory({ detail } as never);
+    await expect(
+      directory.manifestTemplateById(
+        'chosen',
+        'IRAN AIRTOUR',
+        'izmir',
+        '2026-09-15',
+      ),
+    ).resolves.toEqual({
+      id: 'chosen',
+      name: 'قالب ازمیر',
+      versionNumber: 4,
+      fileReferenceId: 'historical-file',
+    });
+    record.status = 'inactive';
+    await expect(
+      directory.manifestTemplateById(
+        'chosen',
+        'IRAN AIRTOUR',
+        'izmir',
+        '2026-09-15',
+      ),
+    ).rejects.toThrow('فعال نیست');
+    expect(detail).toHaveBeenCalledWith('manifest-templates', 'chosen');
+  });
 });

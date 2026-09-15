@@ -12,16 +12,18 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/overlays';
-import { masterDataApi } from '../api/client';
+import { MasterDataApiError, masterDataApi } from '../api/client';
 
 interface MasterDataDeleteButtonProps {
   record: Pick<MasterDataRecord, 'id' | 'resource' | 'name' | 'version'>;
   onDeleted: () => void | Promise<void>;
+  onChanged?: () => void | Promise<void>;
 }
 
 export function MasterDataDeleteButton({
   record,
   onDeleted,
+  onChanged,
 }: MasterDataDeleteButtonProps) {
   const [open, setOpen] = useState(false);
   const [target, setTarget] = useState(record);
@@ -42,21 +44,49 @@ export function MasterDataDeleteButton({
     inFlight.current = true;
     setPending(true);
     setError(null);
+    let deactivated = false;
     try {
       await masterDataApi.remove(target.resource, target.id, target.version);
     } catch (cause) {
-      if (mounted.current)
-        setError(
-          cause instanceof Error ? cause.message : 'حذف رکورد ناموفق بود.',
-        );
-      return;
+      const linkedTemplate =
+        target.resource === 'manifest-templates' &&
+        cause instanceof MasterDataApiError &&
+        cause.status === 409 &&
+        /استفاده|MASTER_DATA_IN_USE/.test(cause.message) &&
+        Boolean(onChanged);
+      if (linkedTemplate) {
+        try {
+          await masterDataApi.setStatus(
+            target.resource,
+            target.id,
+            'inactive',
+            target.version,
+          );
+          deactivated = true;
+        } catch (statusError) {
+          if (mounted.current)
+            setError(
+              statusError instanceof Error
+                ? statusError.message
+                : 'غیرفعال‌سازی قالب انجام نشد.',
+            );
+          return;
+        }
+      } else {
+        if (mounted.current)
+          setError(
+            cause instanceof Error ? cause.message : 'حذف رکورد ناموفق بود.',
+          );
+        return;
+      }
     } finally {
       inFlight.current = false;
       if (mounted.current) setPending(false);
     }
     if (mounted.current) {
       setOpen(false);
-      await onDeleted();
+      if (deactivated) await onChanged?.();
+      else await onDeleted();
     }
   }
 
@@ -91,10 +121,19 @@ export function MasterDataDeleteButton({
           cancelButton.current?.focus();
         }}
       >
-        <DialogTitle>حذف دائمی رکورد</DialogTitle>
+        {target.resource === 'manifest-templates' ? (
+          <DialogTitle>حذف یا غیرفعال‌سازی قالب</DialogTitle>
+        ) : (
+          <DialogTitle>حذف دائمی رکورد</DialogTitle>
+        )}
         <DialogDescription>
-          آیا از حذف «{target.name}» مطمئن هستید؟ این کار قابل بازگشت نیست. فقط
-          رکورد بدون استفاده حذف می‌شود و سابقه عملیات باقی می‌ماند.
+          {target.resource === 'manifest-templates'
+            ? 'آیا از حذف «' +
+              target.name +
+              '» مطمئن هستید؟ قالب بدون استفاده حذف می‌شود؛ قالب متصل به بلیط برای حفظ خروجی‌های قبلی غیرفعال می‌شود.'
+            : 'آیا از حذف «' +
+              target.name +
+              '» مطمئن هستید؟ این کار قابل بازگشت نیست. فقط رکورد بدون استفاده حذف می‌شود و سابقه عملیات باقی می‌ماند.'}
         </DialogDescription>
         {error ? (
           <p className="mt-4 text-sm text-destructive" role="alert">
@@ -116,7 +155,9 @@ export function MasterDataDeleteButton({
             onClick={() => void confirmDelete()}
             variant="destructive"
           >
-            حذف دائمی
+            {target.resource === 'manifest-templates'
+              ? 'حذف یا غیرفعال‌سازی'
+              : 'حذف دائمی'}
           </Button>
         </div>
       </DialogContent>

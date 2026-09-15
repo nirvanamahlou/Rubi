@@ -395,19 +395,8 @@ export const masterDataApi = {
           version: base.data.version,
         },
       );
-      const previousFile = String(
-        input.existing?.attributes.fileReferenceId ?? '',
-      ).trim();
-      if (previousFile && previousFile !== uploaded.id) {
-        try {
-          await masterDataApi.archiveManifestTemplateFile(previousFile);
-        } catch (error) {
-          return {
-            ...attached,
-            warning: `قالب جدید متصل شد؛ بایگانی نسخه فایل قبلی نیازمند اقدام مجدد است: ${error instanceof Error ? error.message : 'خطای نامشخص'}`,
-          };
-        }
-      }
+      // Published tickets retain their own file reference; keep earlier
+      // Documents versions active so their MANIFEST remains reproducible.
       return uploaded.scanStatus === 'CLEAN'
         ? attached
         : {

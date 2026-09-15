@@ -114,7 +114,7 @@ export function ManifestExport() {
   }
 
   async function download(ticket: ReservationManifestTicketCardV1) {
-    if (!ticket.template || busy) return;
+    if (busy) return;
     const base = getPublicApiBaseUrl();
     if (!base) {
       setError('نشانی سرور تنظیم نشده است.');
@@ -164,7 +164,7 @@ export function ManifestExport() {
           ' قرارداد و ' +
           passengers +
           ' مسافر در قالب «' +
-          ticket.template.name +
+          (ticket.template?.name || 'ساده') +
           '» قرار گرفت' +
           (skipped === '0'
             ? '.'
@@ -184,8 +184,8 @@ export function ManifestExport() {
       <div>
         <strong>MANIFEST بلیط‌ها</strong>
         <p className="mt-1 text-sm text-muted-foreground">
-          بازه را انتخاب کنید، سپس روی بلیط موردنظر بزنید. خروجی با قالب فعال
-          همان ایرلاین و مقصد ساخته می‌شود.
+          بازه را انتخاب کنید، سپس روی بلیط موردنظر بزنید. قالب هنگام تعریف بلیط
+          ثبت می‌شود؛ بلیط بدون قالب خروجی ساده دارد.
         </p>
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
@@ -310,26 +310,26 @@ export function ManifestExport() {
                   </p>
                   {ticket.template ? (
                     <p className="rounded-lg bg-emerald-50 p-2 text-sm text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-200">
-                      قالب فعال: {ticket.template.name} · نسخه{' '}
+                      قالب ثبت‌شده: {ticket.template.name} · نسخه{' '}
                       {ticket.template.versionNumber}
                     </p>
                   ) : (
                     <p
                       role="status"
-                      className="rounded-lg bg-destructive/10 p-2 text-sm text-destructive"
+                      className="rounded-lg bg-primary/5 p-2 text-sm text-foreground"
                     >
-                      {ticket.unavailableReason}
+                      خروجی ساده از اطلاعات ثبت‌شدهٔ مسافران
                     </p>
                   )}
                   <Button
-                    disabled={!ticket.template || Boolean(busy)}
+                    disabled={Boolean(busy)}
                     onClick={() => void download(ticket)}
                   >
                     {busy === ticket.offerId
                       ? 'در حال ساخت…'
                       : ticket.template
                         ? 'دانلود MANIFEST این بلیط'
-                        : 'خروجی ممکن نیست'}
+                        : 'دانلود MANIFEST ساده'}
                   </Button>
                 </div>
               </article>

@@ -98,6 +98,7 @@ export function TourWorkspace() {
     currencies: MasterDataRecord[];
     airlines: MasterDataRecord[];
     airports: MasterDataRecord[];
+    manifestTemplates: MasterDataRecord[];
   }>({
     cities: [],
     hotels: [],
@@ -105,6 +106,7 @@ export function TourWorkspace() {
     currencies: [],
     airlines: [],
     airports: [],
+    manifestTemplates: [],
   });
   const [draft, setDraft] = useState<TourPackageInputV1>(emptyPackage);
   const [creating, setCreating] = useState(false);
@@ -158,17 +160,27 @@ export function TourWorkspace() {
       if (!base) throw new Error('نشانی سرور تنظیم نشده است.');
       const session = await refreshAuthenticatedSession(base);
       if (!session) throw new Error('برای مدیریت تور وارد حساب شوید.');
-      const [p, d, cities, hotels, insurance, currencies, airlines, airports] =
-        await Promise.all([
-          toursApi.packages(),
-          toursApi.departures(),
-          loadRefs('cities'),
-          loadRefs('hotels'),
-          loadRefs('insurance-plans'),
-          loadRefs('currencies'),
-          loadRefs('airlines'),
-          loadRefs('airports'),
-        ]);
+      const [
+        p,
+        d,
+        cities,
+        hotels,
+        insurance,
+        currencies,
+        airlines,
+        airports,
+        manifestTemplates,
+      ] = await Promise.all([
+        toursApi.packages(),
+        toursApi.departures(),
+        loadRefs('cities'),
+        loadRefs('hotels'),
+        loadRefs('insurance-plans'),
+        loadRefs('currencies'),
+        loadRefs('airlines'),
+        loadRefs('airports'),
+        loadRefs('manifest-templates'),
+      ]);
       if (cancelled) return;
       setPackages(p.data);
       setDepartures(d.data);
@@ -179,6 +191,12 @@ export function TourWorkspace() {
         currencies,
         airlines,
         airports,
+        manifestTemplates: manifestTemplates.filter(
+          (row) =>
+            row.attributes.publicationStatus === 'ACTIVE' &&
+            row.attributes.fileFormat === 'XLSX' &&
+            typeof row.attributes.fileReferenceId === 'string',
+        ),
       });
       setBranches(session.user.branches);
       if (session.user.branches.length === 1)
@@ -276,6 +294,7 @@ export function TourWorkspace() {
         serviceNumber: source?.serviceNumber ?? '',
         cabinClassCode: source?.cabinClassCode ?? 'ECONOMY',
         totalCapacity: source?.totalCapacity ?? 0,
+        manifestTemplateId: source?.manifestTemplate?.id ?? null,
       },
     });
   };
@@ -696,6 +715,33 @@ export function TourWorkspace() {
                         patchFlight({
                           cabinClassCode:
                             value as TicketOfferCreateV1['cabinClassCode'],
+                        })
+                      }
+                    />
+                    <Choice
+                      label="قالب MANIFEST این بلیط"
+                      value={flight.draft.manifestTemplateId || 'simple'}
+                      options={[
+                        { id: 'simple', name: 'خروجی ساده (بدون قالب)' },
+                        ...references.manifestTemplates
+                          .filter(
+                            (row) =>
+                              row.attributes.destinationCityId ===
+                              flight.draft.destinationId,
+                          )
+                          .map((row) => ({
+                            id: row.id,
+                            name:
+                              row.name +
+                              ' · ' +
+                              String(row.attributes.airlineName || '') +
+                              ' · نسخه ' +
+                              String(row.attributes.versionNumber || '1'),
+                          })),
+                      ]}
+                      onChange={(value) =>
+                        patchFlight({
+                          manifestTemplateId: value === 'simple' ? null : value,
                         })
                       }
                     />

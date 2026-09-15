@@ -152,6 +152,59 @@ export class MasterTravelDirectory {
     };
   }
 
+  /** Validate an explicit choice once; Ticket Catalog freezes this reference at publication. */
+  async manifestTemplateById(
+    id: string,
+    carrierName: string,
+    destinationCityId: string,
+    travelDay: string,
+  ) {
+    const { data: record } = await this.master.detail('manifest-templates', id);
+    const attributes = record.attributes;
+    const normalize = (value: unknown) =>
+      String(value ?? '')
+        .normalize('NFKC')
+        .replace(/[يى]/g, 'ی')
+        .replace(/ك/g, 'ک')
+        .replace(/[^A-Za-z0-9آ-ی]/g, '')
+        .toUpperCase();
+    const carrier = normalize(carrierName);
+    const airlineMatches = [
+      attributes.airlineName,
+      attributes.airlineCode,
+    ].some((value) => {
+      const candidate = normalize(value);
+      return (
+        candidate.length > 0 &&
+        (carrier === candidate ||
+          carrier.includes(candidate) ||
+          candidate.includes(carrier))
+      );
+    });
+    const validFrom = String(attributes.validFrom ?? '');
+    const validTo = String(attributes.validTo ?? '');
+    if (
+      record.status !== 'active' ||
+      String(attributes.publicationStatus).toUpperCase() !== 'ACTIVE' ||
+      String(attributes.fileFormat).toUpperCase() !== 'XLSX' ||
+      String(attributes.destinationCityId) !== destinationCityId ||
+      !airlineMatches ||
+      (validFrom && validFrom > travelDay) ||
+      (validTo && validTo < travelDay) ||
+      typeof attributes.fileReferenceId !== 'string' ||
+      !attributes.fileReferenceId
+    )
+      throw new BadRequestException(
+        'قالب انتخاب‌شده برای این ایرلاین، مقصد و تاریخ منتشر و فعال نیست.',
+      );
+    return {
+      id: record.id,
+      name: record.name,
+      versionNumber: Number(attributes.versionNumber ?? 1),
+      fileReferenceId: attributes.fileReferenceId,
+    };
+  }
+
   async assertTourReferences(input: {
     originId: string;
     destinationId: string;

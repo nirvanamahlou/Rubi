@@ -2,7 +2,10 @@ import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { strFromU8, unzipSync } from 'fflate';
 import { describe, expect, it, vi } from 'vitest';
-import { buildIranAirtourManifest } from './reservation-manifest';
+import {
+  buildIranAirtourManifest,
+  buildSimpleManifest,
+} from './reservation-manifest';
 import { ReservationManifestService } from './reservation-manifest';
 
 describe('Iran Airtour Antalya MANIFEST', () => {
@@ -103,7 +106,7 @@ describe('MANIFEST financial delivery gate', () => {
 });
 
 describe('MANIFEST ticket cards', () => {
-  it('lists outbound and return tickets and disables only the ticket without a template', async () => {
+  it('lists both directions and uses the frozen ticket template or simple fallback', async () => {
     const snapshot = {
       contractNumber: 'SC-TEST',
       passengerIds: ['p1', 'p2'],
@@ -137,9 +140,16 @@ describe('MANIFEST ticket cards', () => {
         name: id,
         englishName: id.toUpperCase(),
       })),
-      manifestTemplate: vi.fn(async (carrier: string) =>
-        carrier === 'IRAN AIRTOUR'
-          ? { id: 'template', name: 'Sparta', versionNumber: 2 }
+    };
+    const tickets = {
+      manifestTemplateForOffer: vi.fn(async (offerId: string) =>
+        offerId === 'outbound-offer'
+          ? {
+              id: 'template',
+              name: 'Sparta',
+              versionNumber: 2,
+              fileReferenceId: 'original-file',
+            }
           : null,
       ),
     };
@@ -163,6 +173,8 @@ describe('MANIFEST ticket cards', () => {
           },
         },
       } as never,
+      undefined,
+      tickets as never,
     );
 
     const cards = await service.listTickets(
@@ -186,7 +198,68 @@ describe('MANIFEST ticket cards', () => {
       direction: 'RETURN',
       template: null,
     });
-    expect(cards[1]?.unavailableReason).toContain('قالب فعال');
+    expect(cards[1]?.unavailableReason).toBeNull();
+    expect(tickets.manifestTemplateForOffer).toHaveBeenCalledTimes(2);
+  });
+
+  it('fills Izmir CLASS while keeping the 11-column Sparta layout', async () => {
+    const passenger = {
+      firstName: 'SAMPLE',
+      lastName: 'TRAVELLER',
+      gender: 'MS' as const,
+      passengerType: 'ADULT' as const,
+      birthDate: '1990-01-02',
+      nationalId: '',
+      nationality: 'IRN',
+      passportNumber: 'TEST123',
+      passportIssuingCountry: 'IRN',
+      birthCountry: 'IRN',
+      passportExpiryDate: '2030-01-02',
+      cabinClass: 'Y',
+    };
+    for (const [kind, hasClass] of [
+      ['izmir', true],
+      ['sparta', false],
+    ] as const) {
+      const template = await readFile(
+        join(
+          __dirname,
+          '../../../web/public/manifest-templates/',
+          'iran-airtour-' + kind + '.xlsx',
+        ),
+      );
+      const files = unzipSync(buildIranAirtourManifest(template, [passenger]));
+      const sheet = strFromU8(files['xl/worksheets/sheet1.xml']!);
+      expect(sheet).toContain('SAMPLE');
+      expect(sheet.includes('r="L2"')).toBe(hasClass);
+      expect(Object.keys(files)).toContain('xl/worksheets/sheet7.xml');
+    }
+  });
+});
+
+describe('simple MANIFEST fallback', () => {
+  it('writes a readable XLSX without a supplier template', () => {
+    const bytes = buildSimpleManifest([
+      {
+        firstName: 'TEST',
+        lastName: 'PASSENGER',
+        gender: 'MS',
+        passengerType: 'CHILD',
+        birthDate: '2018-01-02',
+        nationalId: '',
+        nationality: 'IRN',
+        passportNumber: '',
+        passportIssuingCountry: '',
+        birthCountry: '',
+        passportExpiryDate: '',
+        cabinClass: 'Y',
+      },
+    ]);
+    const files = unzipSync(bytes);
+    const sheet = strFromU8(files['xl/worksheets/sheet1.xml']!);
+    expect(sheet).toContain('TEST');
+    expect(sheet).toContain('PASSENGER');
+    expect(sheet).toContain('PAX TYPE');
   });
 });
 
