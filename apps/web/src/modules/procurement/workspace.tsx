@@ -51,17 +51,6 @@ function sectionIndex(value: string | null): number {
   const index = sectionKeys.findIndex((key) => key === value);
   return index < 0 ? 0 : index;
 }
-const queues = [
-  ['own', 'کارهای من'],
-  ['unit', 'صف واحد'],
-  ['unassigned', 'بدون مسئول'],
-  ['approvals', 'تأییدهای معوق'],
-  ['returned', 'برگشتی‌ها'],
-  ['late', 'سفارش‌های دیرکرددار'],
-  ['partial', 'تحویل ناقص'],
-  ['discrepant', 'فاکتور دارای مغایرت'],
-  ['finance', 'منتظر مالی'],
-] as const;
 const kinds = [
   ['quotations', 'استعلام‌ها'],
   ['orders', 'سفارش‌ها'],
@@ -178,7 +167,6 @@ function WorkspaceState({
 }) {
   const client = useQueryClient();
   const [group, setGroup] = useState(() => sectionIndex(initialSection));
-  const [queue, setQueue] = useState('own');
   const [status, setStatus] = useState('');
   const [search, setSearch] = useState('');
   const [querySearch, setQuerySearch] = useState('');
@@ -235,7 +223,7 @@ function WorkspaceState({
     }, 300);
     return () => clearTimeout(timer);
   }, [search]);
-  const queryQueue = group === 2 ? 'approvals' : group === 0 ? queue : '';
+  const queryQueue = group === 2 ? 'approvals' : group === 0 ? 'own' : '';
   const list = useQuery({
     queryKey: [
       'procurement',
@@ -275,7 +263,6 @@ function WorkspaceState({
     !status &&
     !search &&
     !querySearch &&
-    (group !== 0 || queue === 'own') &&
     list.isSuccess &&
     list.data.items.length === 0;
   const rows: ProcurementListRow[] = showSamples
@@ -338,13 +325,6 @@ function WorkspaceState({
     );
   return (
     <>
-      {bootstrap.policy === 'POLICY_NOT_CONFIGURED' && (
-        <Alert
-          tone="warning"
-          title="سیاست تأیید خرید هنوز تنظیم نشده است"
-          description="پیش‌نویس قابل ثبت است. ارسال و مراحل وابسته به سیاست، تا تنظیم مسیر تأیید معتبر مسدود می‌ماند."
-        />
-      )}
       {selectedId ? (
         <div className="space-y-4">
           <Button variant="outline" onClick={closeRequest}>
@@ -467,7 +447,7 @@ function WorkspaceState({
                     <p className="mt-2 text-xs text-[#7789a6]">
                       {showSamples
                         ? 'نمونهٔ آزمایشی، بدون ثبت در سامانه'
-                        : 'در صفحهٔ فعلی صف انتخاب‌شده'}
+                        : 'در صفحهٔ فعلی'}
                     </p>
                   </div>
                 ))}
@@ -547,26 +527,6 @@ function WorkspaceState({
                 >
                   {groups[index]}
                 </button>
-              ))}
-            </div>
-          )}
-          {group === 0 && (
-            <div
-              className="flex flex-wrap gap-2 rounded-[14px] border border-[#dfe8f4] bg-white p-4"
-              aria-label="صف کاری"
-            >
-              {queues.map(([value, label]) => (
-                <Button
-                  key={value}
-                  variant={queue === value ? 'secondary' : 'outline'}
-                  aria-pressed={queue === value}
-                  onClick={() => {
-                    setQueue(value);
-                    setPage(1);
-                  }}
-                >
-                  {label}
-                </Button>
               ))}
             </div>
           )}
@@ -681,19 +641,10 @@ function WorkspaceState({
             </Alert>
           ) : (
             <>
-              {showSamples && (
-                <div
-                  role="note"
-                  className="rounded-lg border border-[#c8d9ee] bg-[#eaf4ff] px-4 py-3 text-sm text-[#183968]"
-                >
-                  این پرونده‌ها نمونهٔ آزمایشی برای بررسی ظاهر هستند؛ در سامانه
-                  ذخیره نشده‌اند و عملیات واقعی ندارند.
-                </div>
-              )}
               {!rows.length ? (
                 <EmptyState
                   title="درخواستی در این صف نیست"
-                  description="با تغییر صف یا فیلتر دوباره بررسی کنید؛ درخواست‌های مجاز شما اینجا نمایش داده می‌شوند."
+                  description="فیلترها را بررسی کنید؛ درخواست‌های مجاز شما اینجا نمایش داده می‌شوند."
                 />
               ) : (
                 <div className="overflow-hidden rounded-[14px] border border-[#dfe8f4] bg-white shadow-sm">
