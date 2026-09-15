@@ -33,7 +33,6 @@ import {
   FilePenLine,
   FileSpreadsheet,
   Link2,
-  Luggage,
   Plane,
   Plus,
   RefreshCw,
@@ -84,6 +83,7 @@ import {
   type MasterDataKpiItem,
 } from './master-data-kpi-grid';
 import { MasterDataProfileDialog } from './master-data-profile-dialog';
+import { MasterDataAirlineBaggageEditor } from './master-data-airline-baggage-editor';
 
 type RequestState = 'loading' | 'ready' | 'error' | 'forbidden';
 
@@ -106,16 +106,7 @@ const tabs = [
   icon: typeof Plane;
 }[];
 
-type TransportResource = (typeof tabs)[number]['resource'] | 'baggage-rules';
-
-const airlineViews = [
-  { resource: 'airlines', label: 'فهرست ایرلاین‌ها', icon: Plane },
-  { resource: 'baggage-rules', label: 'قواعد بار', icon: Luggage },
-] as const satisfies readonly {
-  resource: Extract<TransportResource, 'airlines' | 'baggage-rules'>;
-  label: string;
-  icon: typeof Plane;
-}[];
+type TransportResource = (typeof tabs)[number]['resource'];
 
 const attributeLabels: Record<string, string> = {
   englishName: 'نام انگلیسی',
@@ -226,17 +217,9 @@ export function MasterDataTransportationWorkspace() {
   const [notice, setNotice] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
   const definition = getMasterDataDefinition(resource);
-  const isAirlineSection =
-    resource === 'airlines' || resource === 'baggage-rules';
-  const pageDefinition = isAirlineSection
-    ? getMasterDataDefinition('airlines')
-    : definition;
+  const pageDefinition = definition;
   const currentTab =
-    tabs.find((tab) =>
-      tab.resource === 'airlines'
-        ? isAirlineSection
-        : tab.resource === resource,
-    ) ?? tabs[0];
+    tabs.find((tab) => tab.resource === resource) ?? tabs[0];
   const CurrentIcon = currentTab.icon;
 
   const { columnFilters, columnFilterControls, resetColumnFilters } =
@@ -367,15 +350,6 @@ export function MasterDataTransportationWorkspace() {
         'نیازمند بازبینی',
         incomplete,
       );
-    if (resource === 'baggage-rules')
-      return common(
-        'قواعد فعال',
-        'نسخه امروز',
-        'ایرلاین‌ها',
-        distinct('airlineId'),
-        'در انتظار تأیید',
-        '—',
-      );
     if (resource === 'manifest-templates')
       return common(
         'کل قالب‌ها',
@@ -462,7 +436,12 @@ export function MasterDataTransportationWorkspace() {
       result.warning ??
         `${definition.singularLabel} با نسخه جدید و Audit ${formMode === 'edit' ? 'ویرایش' : 'ثبت'} شد.`,
     );
-    setFormMode(null);
+    if (resource === 'airlines' && formMode === 'create') {
+      setSelected(result.data);
+      setFormMode('edit');
+    } else {
+      setFormMode(null);
+    }
     await Promise.all([load(), loadSummary()]);
   }
 
@@ -716,10 +695,7 @@ export function MasterDataTransportationWorkspace() {
         >
           {tabs.map((tab) => {
             const Icon = tab.icon;
-            const isCurrent =
-              tab.resource === 'airlines'
-                ? isAirlineSection
-                : resource === tab.resource;
+            const isCurrent = resource === tab.resource;
             return (
               <button
                 aria-current={isCurrent ? 'page' : undefined}
@@ -734,29 +710,6 @@ export function MasterDataTransportationWorkspace() {
           })}
         </nav>
       </Card>
-      {isAirlineSection ? (
-        <Card className="overflow-x-auto p-2">
-          <nav
-            aria-label="بخش‌های داخلی فرم ایرلاین"
-            className="flex min-w-max gap-1"
-          >
-            {airlineViews.map((view) => {
-              const Icon = view.icon;
-              return (
-                <button
-                  aria-current={resource === view.resource ? 'page' : undefined}
-                  className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring aria-[current=page]:bg-primary/10 aria-[current=page]:text-primary"
-                  key={view.resource}
-                  onClick={() => changeResource(view.resource)}
-                  type="button"
-                >
-                  <Icon className="size-4" /> {view.label}
-                </button>
-              );
-            })}
-          </nav>
-        </Card>
-      ) : null}
       <MasterDataKpiGrid items={kpis} label={`شاخص‌های ${definition.label}`} />
       <FilterBar className="grid sm:grid-cols-2 lg:grid-cols-[minmax(14rem,1fr)_12rem_auto]">
         {columnFilterControls}
@@ -884,6 +837,9 @@ export function MasterDataTransportationWorkspace() {
             ) : null}
             {profileOpen && isMasterTransportFormResource(resource) ? (
               <MasterDataTransportAudit key={selected.id} record={selected} />
+            ) : null}
+            {resource === 'airlines' && profileOpen ? (
+              <MasterDataAirlineBaggageEditor airline={selected} readOnly />
             ) : null}
             <Card className="overflow-hidden">
               <div className="grid gap-5 bg-gradient-to-l from-blue-50 via-background to-cyan-50 p-6 dark:from-blue-950/30 dark:to-cyan-950/30 md:grid-cols-[6rem_1fr_auto]">
