@@ -16,8 +16,13 @@ Typecheck و lint محدوده، ۴۸ تست قواعد دامنه، ۳۰ تست
 آخرین `origin/develop@3086f86e` شامل کارت‌های Manifest و فرم قواعد بار ایرلاین
 در شاخهٔ تجمیعی جذب شد؛ ۵۶ تست API و ۵ تست Web مرتبط و typecheck/build دوباره
 موفق‌اند. قالب‌بندی فایل‌های همین PR با Prettier پروژه یکسان شد و build دوباره
-موفق بود. Gateway3100/Web3110/API4191 از commit کد `0b4c33c7` با build
-`unified-1Ca0wD2g5EuE2Dqcmz2NM` فعال‌اند؛ runtime Web و health API هر دو ۲۰۰،
+موفق بود. پس از انتشار `develop@ff15c7d3`، port عمومی قیمت خرید بلیت، اتصال
+مصرف‌کنندهٔ Ticket Catalog/Finance و فرم جدید رزرواسیون نیز در همان ماژول فعال
+شدند. migration منتشرشدهٔ خرید بلیت و FK افزایشی شعبه/ثبت‌کننده ابتدا روی کپی
+داده و سپس با backup روی پایگاه محلی اجرا شدند. ۶۲ تست API و ۱۷ تست Web مرتبط،
+typecheck و build دوباره پاس شدند. Gateway3100/Web3110/API4191 از commit کد
+`ff56c883` با build `unified-olsoSZL_FaoPJEUpKljui` فعال‌اند؛ runtime Web و
+health API هر دو ۲۰۰،
 مسیرهای خرید/میزکار/HR به صفحهٔ ورود معتبر ۳۰۷ می‌دهند و endpoint خرید بدون
 نشست ۴۰۱ می‌دهد. تب مرورگر فعلی صفحهٔ ورود است؛ نمایش داخل حساب تا ورود کاربر و
 انتساب نقش ثبت به حساب‌های کارکنان قابل بررسی نیست.
