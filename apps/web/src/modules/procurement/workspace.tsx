@@ -13,7 +13,6 @@ import {
   Badge,
   Card,
   EmptyState,
-  PageHeader,
   Skeleton,
 } from '@/components/ui/surfaces';
 import { procurementApi, commandAttempt, type Bootstrap } from './api';
@@ -126,12 +125,10 @@ export function ProcurementWorkspace() {
     retry: false,
   });
   return (
-    <section dir="rtl" className="space-y-6 font-sans">
-      <PageHeader
-        eyebrow="عملیات شرکت"
-        title="خرید و تأمین"
-        description="از نیاز سازمان تا تأمین، تحویل و پیگیری مالی؛ هر پرونده با مسئول و سابقه مشخص."
-      />
+    <section
+      dir="rtl"
+      className="space-y-6 bg-[#f3f6fc] font-sans text-[#183968]"
+    >
       {bootstrap.isPending ? (
         <div role="status" aria-label="در حال دریافت دسترسی‌ها">
           <Skeleton className="h-72" />
@@ -322,13 +319,13 @@ function WorkspaceState({
     <>
       <nav
         aria-label="بخش‌های خرید و تأمین"
-        className="grid gap-2 rounded-2xl border border-border bg-surface p-3 sm:grid-cols-4 xl:grid-cols-8"
+        className="flex flex-wrap gap-2 border-b border-[#dfe8f4] pb-3"
       >
         {groups.map((label, index) => (
           <button
             key={label}
             aria-current={group === index ? 'page' : undefined}
-            className={`min-h-12 rounded-xl px-3 py-2 text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${group === index ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted'}`}
+            className={`min-h-10 rounded-lg border px-3 py-2 text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${group === index ? 'border-[#1657b5] bg-[#1657b5] text-white' : 'border-[#dfe8f4] bg-white text-[#183968] hover:bg-[#edf4ff]'}`}
             onClick={() => navigateGroup(index)}
           >
             {label}
@@ -384,16 +381,139 @@ function WorkspaceState({
         </div>
       ) : (
         <>
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <h2 className="text-xl font-bold">{groups[group]}</h2>
+          <div className="flex flex-wrap items-end justify-between gap-3 py-2">
+            <div>
+              <p className="mb-2 text-xs text-[#7789a6]">
+                روبی / خرید و تأمین / {groups[group]}
+              </p>
+              <h1 className="text-2xl font-black tracking-tight text-[#113975] sm:text-3xl">
+                {groups[group]}
+              </h1>
+              <p className="mt-2 text-sm text-[#7789a6]">
+                {group === 0
+                  ? 'درخواست، تأمین و تحویل را از یک مسیر پیگیری کنید.'
+                  : 'پرونده‌ها و عملیات این بخش را پیگیری کنید.'}
+              </p>
+            </div>
             {can('procurement.request.create') && (
-              <Button onClick={() => setCreating(true)}>
+              <Button
+                className="bg-[#1973df] text-white hover:bg-[#1657b5]"
+                onClick={() => setCreating(true)}
+              >
                 درخواست خرید جدید
               </Button>
             )}
           </div>
           {group === 0 && (
-            <div className="flex flex-wrap gap-2" aria-label="صف کاری">
+            <>
+              <div className="flex flex-wrap items-center justify-between gap-4 rounded-[14px] border border-[#bfe8eb] bg-gradient-to-l from-[#e5fbf8] to-[#eaf4ff] p-5 sm:p-7">
+                <div>
+                  <h2 className="text-xl font-black text-[#113975]">
+                    خرید را از یک مسیر دنبال کنید
+                  </h2>
+                  <p className="mt-2 text-sm text-[#7789a6]">
+                    از درخواست تا سفارش، تحویل و ارجاع مالی، وضعیت هر پرونده در
+                    همین میزکار دیده می‌شود.
+                  </p>
+                </div>
+                <Button
+                  variant="outline"
+                  className="border-[#c8d9ee] bg-white"
+                  onClick={() => navigateGroup(1)}
+                >
+                  دیدن درخواست‌ها
+                </Button>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-3">
+                {(
+                  [
+                    [
+                      'در انتظار بررسی',
+                      list.data?.items.filter(
+                        (item) =>
+                          item.status === 'SUBMITTED' ||
+                          item.status === 'IN_REVIEW',
+                      ).length ?? null,
+                    ],
+                    [
+                      'در مسیر تأمین',
+                      list.data?.items.filter(
+                        (item) =>
+                          item.status === 'APPROVED' ||
+                          item.status === 'SOURCING',
+                      ).length ?? null,
+                    ],
+                    [
+                      'نیازمند اصلاح',
+                      list.data?.items.filter(
+                        (item) => item.status === 'CHANGES_REQUESTED',
+                      ).length ?? null,
+                    ],
+                  ] as const
+                ).map(([label, count]) => (
+                  <div
+                    key={label}
+                    className="rounded-[14px] border border-[#dfe8f4] bg-white p-5 shadow-sm"
+                  >
+                    <p className="text-sm text-[#7789a6]">{label}</p>
+                    <p className="mt-4 text-2xl font-black text-[#113975]">
+                      {count === null ? '—' : count.toLocaleString('fa-IR')}
+                    </p>
+                    <p className="mt-2 text-xs text-[#7789a6]">
+                      در صفحهٔ فعلی صف انتخاب‌شده
+                    </p>
+                  </div>
+                ))}
+              </div>
+              <div className="grid gap-3 md:grid-cols-2">
+                {(
+                  [
+                    [
+                      1,
+                      'درخواست و تأیید',
+                      'ثبت نیاز و تصمیم‌گیری درباره درخواست‌ها',
+                      'bg-[#eff5ff]',
+                    ],
+                    [
+                      3,
+                      'تأمین‌کنندگان و استعلام',
+                      'مرجع تأمین‌کنندگان و پیشنهادهای مرتبط',
+                      'bg-[#f6efff]',
+                    ],
+                    [
+                      5,
+                      'سفارش و تحویل',
+                      'سفارش، رسید، پذیرش و مغایرت',
+                      'bg-[#eafbf8]',
+                    ],
+                    [
+                      7,
+                      'فاکتور و مالی',
+                      'تطبیق فاکتور و پیگیری ارجاع مالی',
+                      'bg-[#fff6e9]',
+                    ],
+                  ] as const
+                ).map(([index, label, description, tint]) => (
+                  <button
+                    key={label}
+                    onClick={() => navigateGroup(index)}
+                    className={`rounded-[14px] border border-[#dfe8f4] p-5 text-right shadow-sm transition-colors hover:border-[#1973df] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1973df] ${tint}`}
+                  >
+                    <h3 className="font-bold text-[#113975]">{label}</h3>
+                    <p className="mt-2 text-sm text-[#7789a6]">{description}</p>
+                    <span className="mt-5 block border-t border-[#dfe8f4] pt-3 text-xs font-semibold text-[#1657b5]">
+                      ورود به بخش ←
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+          {group === 0 && (
+            <div
+              className="flex flex-wrap gap-2 rounded-[14px] border border-[#dfe8f4] bg-white p-4"
+              aria-label="صف کاری"
+            >
               {queues.map(([value, label]) => (
                 <Button
                   key={value}
@@ -422,7 +542,7 @@ function WorkspaceState({
               description="ثبت و تطبیق فاکتور در خرید انجام می‌شود. تا پذیرش قرارداد توسط مالی، ایجاد تعهد یا ثبت مالی تأیید نمی‌شود."
             />
           )}
-          <Card className="grid gap-4 p-4 sm:grid-cols-2">
+          <Card className="grid gap-4 rounded-[14px] border-[#dfe8f4] bg-white p-4 sm:grid-cols-2">
             <FormField
               id="proc-search"
               label={
@@ -526,49 +646,74 @@ function WorkspaceState({
                   description="با تغییر صف یا فیلتر دوباره بررسی کنید؛ درخواست‌های مجاز شما اینجا نمایش داده می‌شوند."
                 />
               ) : (
-                <div className="grid gap-3 lg:grid-cols-2">
-                  {list.data.items.map((request) => (
-                    <Card key={request.id} className="p-5">
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <p className="text-xs text-muted-foreground">
-                            {request.number}
-                          </p>
-                          <h3 className="mt-2 font-bold">
-                            {request.draft.title || 'پیش‌نویس بدون عنوان'}
-                          </h3>
-                        </div>
-                        <Badge>{statusLabels[request.status]}</Badge>
-                      </div>
-                      <dl className="mt-5 grid grid-cols-2 gap-3 text-sm">
-                        <div>
-                          <dt className="text-muted-foreground">برآورد</dt>
-                          <dd className="mt-1">
-                            {request.draft.estimatedAmount ?? 'نامشخص'}{' '}
-                            {request.draft.currencyCode}
-                          </dd>
-                        </div>
-                        <div>
-                          <dt className="text-muted-foreground">مسئول فعلی</dt>
-                          <dd className="mt-1 break-all">
-                            {request.ownerUserId ?? 'تخصیص داده نشده'}
-                          </dd>
-                        </div>
-                      </dl>
-                      <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
-                        <p className="text-xs text-muted-foreground">
-                          اقدام بعدی: {nextAction[request.status]}
-                        </p>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => openRequest(request.id)}
-                        >
-                          باز کردن پرونده
-                        </Button>
-                      </div>
-                    </Card>
-                  ))}
+                <div className="overflow-hidden rounded-[14px] border border-[#dfe8f4] bg-white shadow-sm">
+                  <div className="border-b border-[#dfe8f4] px-5 py-4">
+                    <h2 className="font-bold text-[#113975]">
+                      {group === 0 ? 'پیگیری‌های من' : 'پرونده‌های درخواست'}
+                    </h2>
+                    <p className="mt-1 text-xs text-[#7789a6]">
+                      پرونده‌های قابل مشاهده در صف و فیلتر انتخاب‌شده
+                    </p>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full min-w-[760px] text-right text-sm">
+                      <thead className="bg-[#f4f8ff] text-xs text-[#536b91]">
+                        <tr>
+                          <th scope="col" className="px-5 py-3 font-semibold">
+                            شماره / عنوان
+                          </th>
+                          <th scope="col" className="px-5 py-3 font-semibold">
+                            مبلغ
+                          </th>
+                          <th scope="col" className="px-5 py-3 font-semibold">
+                            وضعیت
+                          </th>
+                          <th scope="col" className="px-5 py-3 font-semibold">
+                            اقدام بعدی
+                          </th>
+                          <th scope="col" className="px-5 py-3 font-semibold">
+                            عملیات
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-[#dfe8f4]">
+                        {list.data.items.map((request) => (
+                          <tr key={request.id} className="hover:bg-[#f8fbff]">
+                            <td className="px-5 py-4">
+                              <span className="block font-bold text-[#1657b5]">
+                                {request.draft.title || 'پیش‌نویس بدون عنوان'}
+                              </span>
+                              <span
+                                className="mt-1 block text-xs text-[#7789a6]"
+                                dir="ltr"
+                              >
+                                {request.number}
+                              </span>
+                            </td>
+                            <td className="px-5 py-4" dir="ltr">
+                              {request.draft.estimatedAmount ?? 'نامشخص'}{' '}
+                              {request.draft.currencyCode ?? ''}
+                            </td>
+                            <td className="px-5 py-4">
+                              <Badge>{statusLabels[request.status]}</Badge>
+                            </td>
+                            <td className="px-5 py-4 text-[#536b91]">
+                              {nextAction[request.status]}
+                            </td>
+                            <td className="px-5 py-4">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => openRequest(request.id)}
+                              >
+                                مشاهده
+                              </Button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               )}
               <Pager
