@@ -12,7 +12,7 @@ const source = readFileSync(
 );
 
 describe('transportation workspace', () => {
-  it('keeps baggage rules inside the airline section without a profile route', () => {
+  it('keeps baggage rules in the airline form without a separate section or profile route', () => {
     for (const label of [
       'ایرلاین‌ها',
       'انواع هواپیما',
@@ -31,11 +31,13 @@ describe('transportation workspace', () => {
     );
     expect(tabs).not.toContain('پروفایل ایرلاین');
     expect(tabs).not.toContain("resource: 'baggage-rules'");
-    expect(source).toContain('const airlineViews');
-    expect(source).toContain('بخش‌های داخلی فرم ایرلاین');
-    expect(source).toContain("resource: 'baggage-rules', label: 'قواعد بار'");
+    expect(source).not.toContain('const airlineViews');
+    expect(source).not.toContain('بخش‌های داخلی فرم ایرلاین');
+    expect(source).not.toContain(
+      "resource: 'baggage-rules', label: 'قواعد بار'",
+    );
     expect(source).toContain(
-      "resource === 'airlines' || resource === 'baggage-rules'",
+      "resource === 'airlines' && formMode === 'create'",
     );
     expect(source).toContain('<MasterDataProfileDialog');
     expect(source).toContain('setProfileOpen(true)');
@@ -52,10 +54,7 @@ describe('transportation workspace', () => {
       'سازندگان',
       'کلاس‌ها',
       'Cabinها',
-      'قواعد فعال',
-      'نسخه امروز',
       'ایرلاین‌ها',
-      'در انتظار تأیید',
       'کل قالب‌ها',
       'نسخه فعال',
       'فرمت‌های فایل',
