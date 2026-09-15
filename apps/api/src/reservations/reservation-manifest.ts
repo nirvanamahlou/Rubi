@@ -35,6 +35,7 @@ import { CustomerService } from '../customers/customer.service';
 import { DocumentsService } from '../documents/documents.service';
 import { FinanceDeliveryService } from '../finance/document-delivery/finance-delivery.module';
 import { MasterTravelDirectory } from '../master-data/master-travel-directory';
+import { TicketPublicService } from '../ticket-catalog/ticket-public.service';
 import { TravelWorkflowService } from './travel-workflow.service';
 
 export const MANIFEST_XLSX_MIME =
@@ -43,7 +44,7 @@ export const MANIFEST_XLSX_MIME =
 export interface IranAirtourManifestRow {
   firstName: string;
   lastName: string;
-  gender: 'MR' | 'MS';
+  gender: 'MR' | 'MS' | '';
   passengerType: 'ADULT' | 'CHILD' | 'INFANT';
   birthDate: string;
   nationalId: string;
@@ -112,11 +113,21 @@ export function buildIranAirtourManifest(
 ) {
   if (!passengers.length)
     throw new BadRequestException('مسافری برای ساخت MANIFEST وجود ندارد.');
-  if (passengers.length > 61)
-    throw new BadRequestException('این قالب حداکثر ۶۱ مسافر را می‌پذیرد.');
   const files = unzipSync(template);
   const path = 'xl/worksheets/sheet1.xml';
   let sheet = strFromU8(files[path]!);
+  const hasCabinClassColumn = /<x:c r="L1"/.test(sheet);
+  const availableRows = [...sheet.matchAll(/<x:row r="(\d+)"/g)]
+    .map((match) => Number(match[1]))
+    .filter((row) => row >= 2);
+  // Operational batch guard remains 61 even when a workbook has more blank rows.
+  const capacity = Math.min(61, availableRows.length);
+  if (passengers.length > capacity)
+    throw new BadRequestException(
+      'این قالب حداکثر ' +
+        capacity.toLocaleString('fa-IR') +
+        ' مسافر را می‌پذیرد.',
+    );
   passengers.forEach((passenger, index) => {
     const row = index + 2;
     const values = [
@@ -131,9 +142,11 @@ export function buildIranAirtourManifest(
       passenger.passportIssuingCountry,
       passenger.birthCountry,
       passenger.passportExpiryDate.replaceAll('-', '/'),
-      passenger.cabinClass,
+      ...(hasCabinClassColumn ? [passenger.cabinClass] : []),
     ];
-    const columns = 'ABCDEFGHIJKL'.split('');
+    const columns = (
+      hasCabinClassColumn ? 'ABCDEFGHIJKL' : 'ABCDEFGHIJK'
+    ).split('');
     const cells = values
       .map((value, column) =>
         cell(
@@ -159,6 +172,103 @@ export function buildIranAirtourManifest(
   });
   files[path] = strToU8(sheet);
   return zipSync(files, { level: 6 });
+}
+
+/** Portable fallback for tickets without a published airline workbook. */
+export function buildSimpleManifest(
+  passengers: readonly IranAirtourManifestRow[],
+) {
+  if (!passengers.length)
+    throw new BadRequestException('مسافری برای ساخت MANIFEST وجود ندارد.');
+  const headers = [
+    'FIRST NAME',
+    'LAST NAME',
+    'GENDER',
+    'PAX TYPE',
+    'BIRTHDAY',
+    'NATIONAL ID',
+    'NATIONALITY',
+    'PASSPORT NO',
+    'PASSPORT ISSUING COUNTRY',
+    'PLACE OF BIRTH',
+    'PASSPORT EXPIRY',
+    'CLASS',
+  ];
+  const values = passengers.map((passenger) => [
+    passenger.firstName,
+    passenger.lastName,
+    passenger.gender,
+    passenger.passengerType,
+    passenger.birthDate,
+    passenger.nationalId,
+    passenger.nationality,
+    passenger.passportNumber,
+    passenger.passportIssuingCountry,
+    passenger.birthCountry,
+    passenger.passportExpiryDate,
+    passenger.cabinClass,
+  ]);
+  const rows = [headers, ...values]
+    .map((row, index) => {
+      const number = index + 1;
+      return (
+        '<row r="' +
+        number +
+        '">' +
+        row
+          .map(
+            (value, column) =>
+              '<c r="' +
+              String.fromCharCode(65 + column) +
+              number +
+              '" t="inlineStr"><is><t xml:space="preserve">' +
+              xml(value) +
+              '</t></is></c>',
+          )
+          .join('') +
+        '</row>'
+      );
+    })
+    .join('');
+  return zipSync(
+    {
+      '[Content_Types].xml': strToU8(
+        '<?xml version="1.0" encoding="UTF-8"?>' +
+          '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
+          '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>' +
+          '<Default Extension="xml" ContentType="application/xml"/>' +
+          '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>' +
+          '<Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>' +
+          '</Types>',
+      ),
+      '_rels/.rels': strToU8(
+        '<?xml version="1.0" encoding="UTF-8"?>' +
+          '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+          '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>' +
+          '</Relationships>',
+      ),
+      'xl/workbook.xml': strToU8(
+        '<?xml version="1.0" encoding="UTF-8"?>' +
+          '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" ' +
+          'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">' +
+          '<sheets><sheet name="Pax List" sheetId="1" r:id="rId1"/></sheets></workbook>',
+      ),
+      'xl/_rels/workbook.xml.rels': strToU8(
+        '<?xml version="1.0" encoding="UTF-8"?>' +
+          '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+          '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>' +
+          '</Relationships>',
+      ),
+      'xl/worksheets/sheet1.xml': strToU8(
+        '<?xml version="1.0" encoding="UTF-8"?>' +
+          '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' +
+          '<sheetData>' +
+          rows +
+          '</sheetData></worksheet>',
+      ),
+    },
+    { level: 6 },
+  );
 }
 
 const required = (
@@ -188,6 +298,9 @@ export class ReservationManifestService {
     @Optional()
     @Inject(DocumentsService)
     private readonly documents?: DocumentsService,
+    @Optional()
+    @Inject(TicketPublicService)
+    private readonly tickets?: TicketPublicService,
   ) {}
 
   private validateRange(input: { fromDate: string; toDate: string }) {
@@ -250,11 +363,10 @@ export class ReservationManifestService {
       const [origin, destination, template] = await Promise.all([
         this.directory.cityReference(ticket.originId),
         this.directory.cityReference(ticket.destinationId),
-        this.directory.manifestTemplate(
-          ticket.carrierNameSnapshot,
-          ticket.destinationId,
-          tehranDay(ticket.departureAt),
-        ),
+        this.tickets?.manifestTemplateForOffer(
+          ticket.offerId,
+          actor.branchIds,
+        ) ?? Promise.resolve(null),
       ]);
       cards.push({
         offerId: ticket.offerId,
@@ -278,9 +390,7 @@ export class ReservationManifestService {
               versionNumber: template.versionNumber,
             }
           : null,
-        unavailableReason: template
-          ? null
-          : 'برای این ایرلاین و مقصد قالب فعال MANIFEST تعریف نشده است.',
+        unavailableReason: null,
       });
     }
     return cards;
@@ -302,6 +412,7 @@ export class ReservationManifestService {
     actor: AuthenticatedActor,
     traceId?: string,
     offerId?: string,
+    strictIdentity = true,
   ) {
     const flight = intake.snapshot.ticketSelections?.find((ticket) =>
       offerId ? ticket.offerId === offerId : ticket.direction === 'OUTBOUND',
@@ -334,36 +445,43 @@ export class ReservationManifestService {
       ).data;
       const override = intake.workflow.ageOverrides[customerId];
       const age = override ?? assignments.get(customerId)?.ageCategory;
+      const identity = (field: keyof CustomerDetail, label: string) =>
+        strictIdentity
+          ? required(customer, field, label)
+          : typeof customer[field] === 'string'
+            ? customer[field].trim().toUpperCase()
+            : '';
+      const displayName = customer.displayName?.trim().toUpperCase() || '';
       passengers.push({
-        firstName: required(customer, 'passportFirstName', 'نام لاتین پاسپورت'),
-        lastName: required(
-          customer,
-          'passportLastName',
-          'نام خانوادگی لاتین پاسپورت',
-        ),
-        gender: required(customer, 'gender', 'جنسیت') === 'M' ? 'MR' : 'MS',
+        firstName:
+          identity('passportFirstName', 'نام لاتین پاسپورت') ||
+          displayName.split(' ')[0] ||
+          '',
+        lastName:
+          identity('passportLastName', 'نام خانوادگی لاتین پاسپورت') ||
+          displayName.split(' ').slice(1).join(' '),
+        gender:
+          identity('gender', 'جنسیت') === 'M'
+            ? 'MR'
+            : identity('gender', 'جنسیت') === 'F'
+              ? 'MS'
+              : '',
         passengerType:
           age === 'INF' || age === 'INFANT'
             ? 'INFANT'
             : age === 'CHD' || age === 'CHILD'
               ? 'CHILD'
               : 'ADULT',
-        birthDate: required(customer, 'birthDate', 'تاریخ تولد'),
+        birthDate: identity('birthDate', 'تاریخ تولد'),
         nationalId: customer.nationalId?.trim() ?? '',
-        nationality: required(customer, 'nationalityCode', 'ملیت ISO3'),
-        passportNumber: required(customer, 'passportNumber', 'شماره پاسپورت'),
-        passportIssuingCountry: required(
-          customer,
+        nationality: identity('nationalityCode', 'ملیت ISO3'),
+        passportNumber: identity('passportNumber', 'شماره پاسپورت'),
+        passportIssuingCountry: identity(
           'passportIssuingCountryCode',
           'کشور صادرکننده پاسپورت ISO3',
         ),
-        birthCountry: required(
-          customer,
-          'birthCountryCode',
-          'کشور محل تولد ISO3',
-        ),
-        passportExpiryDate: required(
-          customer,
+        birthCountry: identity('birthCountryCode', 'کشور محل تولد ISO3'),
+        passportExpiryDate: identity(
           'passportExpiryDate',
           'تاریخ انقضای پاسپورت',
         ),
@@ -390,16 +508,12 @@ export class ReservationManifestService {
     if (!group)
       throw new BadRequestException('بلیط انتخاب‌شده در این بازه وجود ندارد.');
     const ticket = group.ticket;
-    const template = await this.directory.manifestTemplate(
-      ticket.carrierNameSnapshot,
-      ticket.destinationId,
-      tehranDay(ticket.departureAt),
-    );
-    if (!template)
-      throw new BadRequestException(
-        'برای این ایرلاین و مقصد قالب فعال MANIFEST تعریف نشده است.',
-      );
-    if (!this.documents)
+    const template =
+      (await this.tickets?.manifestTemplateForOffer(
+        ticket.offerId,
+        actor.branchIds,
+      )) ?? null;
+    if (template && !this.documents)
       throw new BadRequestException('سرویس فایل قالب MANIFEST آماده نیست.');
 
     const persistedKey = 'ticket:' + offerId + ':' + idempotencyKey.trim();
@@ -461,16 +575,29 @@ export class ReservationManifestService {
     const rows: IranAirtourManifestRow[] = [];
     for (const row of selected) {
       const intake = await this.workflow.detail(row.id, actor.branchIds);
-      rows.push(...(await this.passengerRows(intake, actor, traceId, offerId)));
+      rows.push(
+        ...(await this.passengerRows(
+          intake,
+          actor,
+          traceId,
+          offerId,
+          Boolean(template),
+        )),
+      );
     }
-    const delivery = await this.documents.readManifestTemplateReference(
-      template.fileReferenceId,
-      actor,
-    );
-    const chunks: Buffer[] = [];
-    for await (const chunk of delivery.stream)
-      chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
-    const bytes = buildIranAirtourManifest(Buffer.concat(chunks), rows);
+    let bytes: Uint8Array;
+    if (template) {
+      const file = await this.documents!.readManifestTemplateReference(
+        template.fileReferenceId,
+        actor,
+      );
+      const chunks: Buffer[] = [];
+      for await (const chunk of file.stream)
+        chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+      bytes = buildIranAirtourManifest(Buffer.concat(chunks), rows);
+    } else {
+      bytes = buildSimpleManifest(rows);
+    }
 
     if (!existing) {
       await this.database.client.reservationManifestExport.create({

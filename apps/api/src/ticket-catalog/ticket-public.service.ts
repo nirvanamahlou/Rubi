@@ -5,6 +5,7 @@ import {
   ForbiddenException,
   Inject,
   Injectable,
+  Optional,
 } from '@nestjs/common';
 import * as Joi from 'joi';
 import { Prisma } from '@nora/database';
@@ -16,6 +17,7 @@ import type {
   TicketOfferV1,
 } from '@nora/contracts';
 import { DatabaseService } from '../database/database.service';
+import { MasterTravelDirectory } from '../master-data/master-travel-directory';
 
 const uuid = Joi.string().guid();
 const createSchema = Joi.object({
@@ -27,6 +29,7 @@ const createSchema = Joi.object({
   serviceNumber: Joi.string().trim().max(80).required(),
   cabinClassCode: Joi.string().valid('ECONOMY', 'BUSINESS', 'FIRST').required(),
   totalCapacity: Joi.number().integer().min(0).max(100000).required(),
+  manifestTemplateId: uuid.allow(null).optional(),
 });
 
 export function validateTicketOffer(input: unknown): TicketOfferCreateV1 {
@@ -42,6 +45,9 @@ export function validateTicketOffer(input: unknown): TicketOfferCreateV1 {
 export class TicketPublicService {
   constructor(
     @Inject(DatabaseService) private readonly database: DatabaseService,
+    @Optional()
+    @Inject(MasterTravelDirectory)
+    private readonly directory?: MasterTravelDirectory,
   ) {}
 
   private require(
@@ -114,6 +120,13 @@ export class TicketPublicService {
             0,
           ),
         status: row.status as TicketOfferV1['status'],
+        manifestTemplate: row.manifestTemplateId
+          ? {
+              id: row.manifestTemplateId,
+              name: row.manifestTemplateName!,
+              versionNumber: row.manifestTemplateVersion!,
+            }
+          : null,
       })),
       hasMore: rows.length > 50,
     };
@@ -134,16 +147,58 @@ export class TicketPublicService {
     const fingerprint = createHash('sha256')
       .update(JSON.stringify({ branchId, ...value }))
       .digest('hex');
+    const identity = {
+      createdByUserId: actor.userId,
+      createKey: key,
+    };
+    const prior = await this.database.client.ticketPublishedOffer.findUnique({
+      where: { createdByUserId_createKey: identity },
+      select: { id: true, version: true, fingerprint: true },
+    });
+    if (prior) {
+      if (prior.fingerprint !== fingerprint)
+        throw new ConflictException(
+          'کلید درخواست قبلاً با اطلاعات متفاوت استفاده شده است.',
+        );
+      return { data: { id: prior.id, version: prior.version } };
+    }
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'Asia/Tehran',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).formatToParts(new Date(value.departureAt));
+    const dayPart = (type: string) =>
+      parts.find((part) => part.type === type)?.value ?? '';
+    const travelDay =
+      dayPart('year') + '-' + dayPart('month') + '-' + dayPart('day');
+    const template = value.manifestTemplateId
+      ? await this.directory?.manifestTemplateById(
+          value.manifestTemplateId,
+          value.carrierName,
+          value.destinationId,
+          travelDay,
+        )
+      : null;
+    if (value.manifestTemplateId && !template)
+      throw new BadRequestException('سرویس انتخاب قالب MANIFEST آماده نیست.');
+    const offerValue = { ...value };
+    delete offerValue.manifestTemplateId;
     const row = await this.database.client.ticketPublishedOffer.upsert({
       where: {
-        createdByUserId_createKey: {
-          createdByUserId: actor.userId,
-          createKey: key,
-        },
+        createdByUserId_createKey: identity,
       },
       update: {},
       create: {
-        ...value,
+        ...offerValue,
+        ...(template
+          ? {
+              manifestTemplateId: template.id,
+              manifestTemplateName: template.name,
+              manifestTemplateVersion: template.versionNumber,
+              manifestTemplateFileReferenceId: template.fileReferenceId,
+            }
+          : {}),
         branchId,
         departureAt: new Date(value.departureAt),
         arrivalAt: new Date(value.arrivalAt),
@@ -164,6 +219,38 @@ export class TicketPublicService {
         'کلید درخواست قبلاً با اطلاعات متفاوت استفاده شده است.',
       );
     return { data: { id: row.id, version: row.version } };
+  }
+
+  /** Public branch-scoped frozen template snapshot for Reservations MANIFEST. */
+  async manifestTemplateForOffer(
+    offerId: string,
+    branchIds: readonly string[],
+  ) {
+    const offer = await this.database.client.ticketPublishedOffer.findUnique({
+      where: { id: offerId },
+      select: {
+        branchId: true,
+        manifestTemplateId: true,
+        manifestTemplateName: true,
+        manifestTemplateVersion: true,
+        manifestTemplateFileReferenceId: true,
+      },
+    });
+    if (!offer || !branchIds.includes(offer.branchId))
+      throw new ForbiddenException('بلیط خارج از شعبه مجاز است.');
+    if (!offer.manifestTemplateId) return null;
+    if (
+      !offer.manifestTemplateName ||
+      !offer.manifestTemplateVersion ||
+      !offer.manifestTemplateFileReferenceId
+    )
+      throw new BadRequestException('مرجع نسخهٔ قالب این بلیط ناقص است.');
+    return {
+      id: offer.manifestTemplateId,
+      name: offer.manifestTemplateName,
+      versionNumber: offer.manifestTemplateVersion,
+      fileReferenceId: offer.manifestTemplateFileReferenceId,
+    };
   }
 
   /** Public module service; caller supplies the contract's authorized branch. This is revalidation, not a capacity hold. */

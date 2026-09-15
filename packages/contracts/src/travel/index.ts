@@ -17,12 +17,19 @@ export interface TicketOfferV1 {
   totalCapacity: number;
   remainingCapacity: number;
   status: 'ACTIVE' | 'PAUSED';
+  /** Frozen at publication so later template deactivation cannot rewrite this ticket. */
+  manifestTemplate?: ReservationManifestTicketTemplateV1 | null;
 }
 
 export type TicketOfferCreateV1 = Omit<
   TicketOfferV1,
-  'id' | 'version' | 'branchId' | 'remainingCapacity' | 'status'
->;
+  | 'id'
+  | 'version'
+  | 'branchId'
+  | 'remainingCapacity'
+  | 'status'
+  | 'manifestTemplate'
+> & { manifestTemplateId?: string | null };
 export interface TicketOfferSearchV1 {
   originId: string;
   destinationId: string;

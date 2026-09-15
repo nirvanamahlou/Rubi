@@ -1,5 +1,9 @@
 # مدل داده و ERD اولیه
 
+## MANIFEST-TEMPLATE-PER-TICKET-0915 — انتخاب قالب بلیط
+
+`TicketPublishedOffer.manifestTemplateId` یک FK اختیاری و restrictive به قالب Master Data است. نام، شمارهٔ نسخه و `fileReferenceId` در زمان انتشار بلیط snapshot می‌شوند؛ بلیط‌های قدیمی بدون قالب، خروجی ساده می‌گیرند. غیرفعال‌سازی قالب، انتخاب آن را برای بلیط جدید می‌بندد اما FK و مرجع فایل نسخهٔ قبلی حفظ می‌شود. Reservations تنها از API عمومی Ticket Catalog برای خواندن انتخاب بلیط و از Documents برای دریافت فایل استفاده می‌کند.
+
 ## TICKET-REPEAT-PURCHASE-0914
 
 Procurement owns `ProcurementTicketPurchaseRequest`: one current purchase request per branch and Ticket Catalog product reference. It stores a positive `Decimal(20,6)` amount, three-letter currency code, first service date, title and supplier snapshot, creator/idempotency audit, version and `PENDING/PAID/CANCELLED` status. A pending request may be revised in place with an incremented version; after Finance handles it the price is locked. Ticket Catalog and Finance use Procurement's public service and never query this table directly. Historical ticket definitions without `serviceDate` remain readable and are not backfilled.

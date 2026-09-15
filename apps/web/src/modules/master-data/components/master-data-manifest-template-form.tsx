@@ -11,6 +11,7 @@ import type {
   MasterDataLogoChange,
   MasterDataManifestFileChange,
 } from '../api/client';
+import { masterDataApi } from '../api/client';
 import { getReferenceFieldConfig } from '../model/reference-fields';
 import { MasterDataProfileDialog } from './master-data-profile-dialog';
 import { MasterDataReferenceSelector } from './master-data-reference-selector';
@@ -52,12 +53,64 @@ export function MasterDataManifestTemplateForm({
     initialValue(record, 'destinationCityId'),
   );
   const [file, setFile] = useState<File | null>(null);
+  const [publicationStatus, setPublicationStatus] = useState(
+    () => initialValue(record, 'publicationStatus') || 'DRAFT',
+  );
+  const [starterLoading, setStarterLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   const pending = useRef(false);
   const readonly = mode === 'view';
   const disabled = readonly || saving;
   const hasSavedFile = Boolean(initialValue(record, 'fileReferenceId'));
+
+  async function chooseStarter(kind: 'izmir' | 'sparta') {
+    if (disabled || starterLoading) return;
+    setStarterLoading(true);
+    setErrors({});
+    try {
+      const response = await fetch(
+        '/manifest-templates/iran-airtour-' + kind + '.xlsx',
+      );
+      if (!response.ok) throw new Error('فایل آمادهٔ قالب دریافت نشد.');
+      const label = kind === 'izmir' ? 'قالب ازمیر' : 'قالب اسپارتا';
+      setFile(
+        new File([await response.blob()], label + '.xlsx', {
+          type: XLSX_MIME,
+        }),
+      );
+      setPublicationStatus('DRAFT');
+      const destination = kind === 'izmir' ? 'ازمیر' : 'آنتالیا';
+      const query = {
+        status: 'active' as const,
+        sortBy: 'name' as const,
+        sortDirection: 'asc' as const,
+        page: 1,
+        pageSize: 100,
+      };
+      const [airlines, cities] = await Promise.all([
+        masterDataApi.list('airlines', { ...query, search: 'ایران ایرتور' }),
+        masterDataApi.list('cities', { ...query, search: destination }),
+      ]);
+      const airline = airlines.data.find((row) =>
+        /ایران.?ایرتور|AIRTOUR/i.test(
+          row.name + ' ' + String(row.attributes.englishName || ''),
+        ),
+      );
+      const city = cities.data.find((row) => row.name.includes(destination));
+      if (airline) setAirlineId(airline.id);
+      if (city) setDestinationCityId(city.id);
+    } catch (error) {
+      setErrors({
+        form:
+          error instanceof Error
+            ? error.message
+            : 'دریافت قالب آماده انجام نشد.',
+      });
+    } finally {
+      setStarterLoading(false);
+    }
+  }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -82,6 +135,7 @@ export function MasterDataManifestTemplateForm({
           destinationCityId,
           name: file ? templateName(file) : (record?.name ?? 'قالب منیفست'),
           displayOrder: initialValue(record, 'displayOrder') || '0',
+          publicationStatus: file ? 'DRAFT' : publicationStatus,
         },
         undefined,
         file ? { kind: 'replace', file } : undefined,
@@ -124,6 +178,33 @@ export function MasterDataManifestTemplateForm({
             <Badge>
               {initialValue(record, 'publicationStatus') || 'DRAFT'}
             </Badge>
+          </div>
+        ) : null}
+        {!readonly ? (
+          <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border p-3">
+            <span className="w-full text-sm font-semibold">
+              قالب‌های آمادهٔ ایران ایرتور
+            </span>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={starterLoading || saving}
+              onClick={() => void chooseStarter('izmir')}
+            >
+              قالب ازمیر
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={starterLoading || saving}
+              onClick={() => void chooseStarter('sparta')}
+            >
+              قالب اسپارتا
+            </Button>
+            <p className="w-full text-xs text-muted-foreground">
+              فایل‌های آماده بدون اطلاعات مسافر هستند. ایرلاین و مقصد را پیش از
+              ذخیره بررسی کنید.
+            </p>
           </div>
         ) : null}
         <div className="grid gap-4 sm:grid-cols-2">
@@ -227,6 +308,20 @@ export function MasterDataManifestTemplateForm({
             />
             <span dir="ltr">{file.name}</span>
           </div>
+        ) : null}
+        {mode === 'edit' && hasSavedFile && !readonly ? (
+          <FormField id="manifest-publication-status" label="وضعیت انتشار">
+            <select
+              id="manifest-publication-status"
+              className="h-10 w-full rounded-md border border-input bg-background px-3"
+              disabled={saving || Boolean(file)}
+              value={publicationStatus}
+              onChange={(event) => setPublicationStatus(event.target.value)}
+            >
+              <option value="DRAFT">پیش‌نویس</option>
+              <option value="ACTIVE">فعال برای بلیط‌های جدید</option>
+            </select>
+          </FormField>
         ) : null}
         {errors.form ? (
           <Alert

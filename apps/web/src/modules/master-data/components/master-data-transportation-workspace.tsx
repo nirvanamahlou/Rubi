@@ -641,6 +641,7 @@ export function MasterDataTransportationWorkspace() {
                     <MasterDataDeleteButton
                       record={record}
                       onDeleted={afterDelete}
+                      onChanged={afterStatusChange}
                     />
                     <MasterDataPowerButton
                       record={record}
