@@ -2955,6 +2955,7 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
   ۲۰۰ است. تست‌های تغییرات تازهٔ Manifest/قواعد بار و build ۴۶مسیره نیز پاس شدند.
   تب مرورگر بدون نشست به login
   هدایت می‌شود؛ grant فردی و smoke داخل حساب پس از معرفی حساب‌های مجاز پیگیری می‌شود.
+
 ## RESERVATION-MANIFEST-TICKET-CARDS-0914 - PC-A - READY_FOR_REVIEW
 
 - Product request 2026-09-14: after choosing a MANIFEST date range, show each matching outbound or return ticket as a Ticket Management style card. Show whether an active airline/destination template is available and generate only through that template.

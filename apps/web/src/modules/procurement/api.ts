@@ -61,7 +61,12 @@ export async function procurementRequest<T>(
   return response.json() as Promise<T>;
 }
 export type Bootstrap = ProcurementBootstrapV1 & {
-  requester: { id: string; userId: string; label: string; unitId: string | null } | null;
+  requester: {
+    id: string;
+    userId: string;
+    label: string;
+    unitId: string | null;
+  } | null;
 };
 export type Supplier = {
   id: string;
@@ -132,7 +137,9 @@ export const procurementApi = {
       `/owners?${new URLSearchParams({ branchId, search, page: String(page) })}`,
     ),
   requesters: (branchId: string, search: string, page: number) =>
-    procurementRequest<ProcurementListV1<{ id: string; label: string; unitId: string | null }>>(
+    procurementRequest<
+      ProcurementListV1<{ id: string; label: string; unitId: string | null }>
+    >(
       `/requesters?${new URLSearchParams({ branchId, search, page: String(page) })}`,
     ),
   bootstrap: () => procurementRequest<Bootstrap>('/bootstrap'),
@@ -164,7 +171,9 @@ export const procurementApi = {
         method: request ? 'PATCH' : 'POST',
         headers: { 'Content-Type': 'application/json', 'Idempotency-Key': key },
         body: JSON.stringify(
-          request ? { expectedVersion: request.version, draft } : { draft, requesterEmployeeId },
+          request
+            ? { expectedVersion: request.version, draft }
+            : { draft, requesterEmployeeId },
         ),
       },
     ),

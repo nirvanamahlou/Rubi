@@ -188,7 +188,9 @@ describe('Submission and policy fail closed', () => {
           estimatedAmount: null,
           unknownEstimateReason: '',
           deliveryLocation: '',
-          items: [{ ...draft().items[0]!, kind: 'SERVICE', acceptanceCriteria: '' }],
+          items: [
+            { ...draft().items[0]!, kind: 'SERVICE', acceptanceCriteria: '' },
+          ],
         }),
       ),
     ).not.toThrow();

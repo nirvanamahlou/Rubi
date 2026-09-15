@@ -38,8 +38,14 @@ const groups = [
   'فاکتورها و ارتباط مالی',
 ] as const;
 const sectionKeys = [
-  'home', 'requests', 'approvals', 'suppliers',
-  'quotes', 'orders', 'receipts', 'invoices',
+  'home',
+  'requests',
+  'approvals',
+  'suppliers',
+  'quotes',
+  'orders',
+  'receipts',
+  'invoices',
 ] as const;
 function sectionIndex(value: string | null): number {
   const index = sectionKeys.findIndex((key) => key === value);
@@ -202,7 +208,10 @@ function WorkspaceState({
     if (requestId) url.searchParams.set('request', requestId);
     else url.searchParams.delete('request');
     const next = `${url.pathname}${url.search}${url.hash}`;
-    if (next !== `${window.location.pathname}${window.location.search}${window.location.hash}`)
+    if (
+      next !==
+      `${window.location.pathname}${window.location.search}${window.location.hash}`
+    )
       window.history.pushState(window.history.state, '', next);
   }
   function navigateGroup(index: number) {
@@ -290,7 +299,12 @@ function WorkspaceState({
         }}
         role="presentation"
       >
-        <div role="dialog" aria-modal="true" aria-label="فرم درخواست خرید" className="mx-auto max-w-5xl">
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="فرم درخواست خرید"
+          className="mx-auto max-w-5xl"
+        >
           <DraftForm
             key={creating ? 'new' : detail.data!.id}
             bootstrap={bootstrap}

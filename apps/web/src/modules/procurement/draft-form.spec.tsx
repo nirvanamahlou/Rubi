@@ -9,7 +9,12 @@ const bootstrap: Bootstrap = {
   permissions: ['procurement.request.create'],
   branches: [{ id: 'branch-1', label: 'شعبه مرکزی' }],
   currencies: [],
-  requester: { id: 'employee', userId: 'user', label: 'کاربر جاری', unitId: null },
+  requester: {
+    id: 'employee',
+    userId: 'user',
+    label: 'کاربر جاری',
+    unitId: null,
+  },
   policy: 'POLICY_NOT_CONFIGURED',
   finance: 'NOT_CONNECTED',
   documents: 'UNAVAILABLE',
@@ -19,7 +24,11 @@ describe('Purchase draft accessibility and persisted input', () => {
   it('renders an incomplete draft with optional delivery location and explicit unavailable documents', () => {
     const html = renderToStaticMarkup(
       <QueryClientProvider client={new QueryClient()}>
-        <DraftForm bootstrap={bootstrap} onClose={() => undefined} onSaved={() => undefined} />
+        <DraftForm
+          bootstrap={bootstrap}
+          onClose={() => undefined}
+          onSaved={() => undefined}
+        />
       </QueryClientProvider>,
     );
     expect(html).toContain('for="proc-title"');
@@ -52,23 +61,25 @@ describe('Purchase draft accessibility and persisted input', () => {
       ],
     };
     const html = renderToStaticMarkup(
-      <QueryClientProvider client={new QueryClient()}><DraftForm
-        bootstrap={bootstrap}
-        request={{
-          id: 'draft',
-          number: 'PR-1',
-          version: 1,
-          requesterUserId: 'user',
-          requesterEmployeeId: null,
-          ownerUserId: null,
-          createdAt: '',
-          updatedAt: '',
-          status: 'DRAFT',
-          draft,
-        }}
-        onClose={() => undefined}
-        onSaved={() => undefined}
-      /></QueryClientProvider>,
+      <QueryClientProvider client={new QueryClient()}>
+        <DraftForm
+          bootstrap={bootstrap}
+          request={{
+            id: 'draft',
+            number: 'PR-1',
+            version: 1,
+            requesterUserId: 'user',
+            requesterEmployeeId: null,
+            ownerUserId: null,
+            createdAt: '',
+            updatedAt: '',
+            status: 'DRAFT',
+            draft,
+          }}
+          onClose={() => undefined}
+          onSaved={() => undefined}
+        />
+      </QueryClientProvider>,
     );
     expect(html).toContain('9007199254740993.1234');
     expect(html).toContain('اختلال در عملیات');

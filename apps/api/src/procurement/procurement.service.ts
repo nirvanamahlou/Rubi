@@ -396,7 +396,11 @@ export class ProcurementService {
         ? await this.hr.self(actor, draft.branchId)
         : await this.hr.requester(actor, requesterUserId, draft.branchId);
     if (requesterEmployeeId || requesterUserId !== actor.userId)
-      requireRule(self, 'INVALID_REFERENCE', 'درخواست‌کننده باید کارمند فعال شعبه باشد.');
+      requireRule(
+        self,
+        'INVALID_REFERENCE',
+        'درخواست‌کننده باید کارمند فعال شعبه باشد.',
+      );
     requireRule(
       !draft.unitId || self?.unitId === draft.unitId,
       'FORBIDDEN',
@@ -562,12 +566,21 @@ export class ProcurementService {
   }
   async create(body: unknown, key: unknown, actor: AuthenticatedActor) {
     this.require(actor, 'procurement.request.create');
-    const input = body && typeof body === 'object' && 'draft' in body
-      ? v.object(body, ['draft', 'requesterEmployeeId'])
-      : null;
+    const input =
+      body && typeof body === 'object' && 'draft' in body
+        ? v.object(body, ['draft', 'requesterEmployeeId'])
+        : null;
     const draft = v.draft(input ? input.draft : body);
-    const requesterEmployeeId = input?.requesterEmployeeId ? v.uuid(input.requesterEmployeeId) : null;
-    await this.validateReferences(draft, actor, false, actor.userId, requesterEmployeeId);
+    const requesterEmployeeId = input?.requesterEmployeeId
+      ? v.uuid(input.requesterEmployeeId)
+      : null;
+    await this.validateReferences(
+      draft,
+      actor,
+      false,
+      actor.userId,
+      requesterEmployeeId,
+    );
     return this.idempotent(
       actor,
       draft.branchId,

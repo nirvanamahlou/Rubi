@@ -87,19 +87,28 @@ export function DraftForm({
     request?.requesterEmployeeId ?? bootstrap.requester?.id ?? '',
   );
   const [requesterLabel, setRequesterLabel] = useState(
-    request ? request.requesterEmployeeId ?? request.requesterUserId : bootstrap.requester?.label ?? '',
+    request
+      ? (request.requesterEmployeeId ?? request.requesterUserId)
+      : (bootstrap.requester?.label ?? ''),
   );
   const [requesterSearch, setRequesterSearch] = useState('');
   const [requesterPage, setRequesterPage] = useState(1);
   const requesters = useQuery({
-    queryKey: ['procurement', 'requesters', draft.branchId, requesterSearch, requesterPage],
-    queryFn: () => procurementApi.requesters(draft.branchId, requesterSearch, requesterPage),
+    queryKey: [
+      'procurement',
+      'requesters',
+      draft.branchId,
+      requesterSearch,
+      requesterPage,
+    ],
+    queryFn: () =>
+      procurementApi.requesters(draft.branchId, requesterSearch, requesterPage),
     enabled: Boolean(draft.branchId),
     retry: false,
   });
   const resolvedRequesterLabel =
-    requesters.data?.items.find((item) => item.id === requesterEmployeeId)?.label ??
-    requesterLabel;
+    requesters.data?.items.find((item) => item.id === requesterEmployeeId)
+      ?.label ?? requesterLabel;
   const [busy, setBusy] = useState(false);
   const [baseRequest, setBaseRequest] = useState(request);
   const [conflict, setConflict] = useState(false);
@@ -164,7 +173,12 @@ export function DraftForm({
     });
     try {
       onSaved(
-        await procurementApi.save(draft, identity.current.key, baseRequest, requesterEmployeeId),
+        await procurementApi.save(
+          draft,
+          identity.current.key,
+          baseRequest,
+          requesterEmployeeId,
+        ),
       );
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'ذخیره انجام نشد.');
@@ -314,37 +328,61 @@ export function DraftForm({
             {text('title', 'عنوان درخواست')}
             <FormField id="proc-requester" label="درخواست‌کننده">
               {request ? (
-                <Input id="proc-requester" readOnly value={resolvedRequesterLabel} />
+                <Input
+                  id="proc-requester"
+                  readOnly
+                  value={resolvedRequesterLabel}
+                />
               ) : (
                 <div className="space-y-2">
                   <Input
                     aria-label="جست‌وجوی درخواست‌کننده در منابع انسانی"
                     placeholder="جست‌وجوی کارمند"
                     value={requesterSearch}
-                    onChange={(event) => { setRequesterSearch(event.target.value); setRequesterPage(1); }}
+                    onChange={(event) => {
+                      setRequesterSearch(event.target.value);
+                      setRequesterPage(1);
+                    }}
                   />
                   <select
                     id="proc-requester"
                     className={selectClass}
                     value={requesterEmployeeId}
                     onChange={(event) => {
-                      const candidate = requesters.data?.items.find((item) => item.id === event.target.value);
+                      const candidate = requesters.data?.items.find(
+                        (item) => item.id === event.target.value,
+                      );
                       setRequesterEmployeeId(event.target.value);
                       setRequesterLabel(candidate?.label ?? '');
                       update('unitId', candidate?.unitId ?? null);
                     }}
                   >
                     <option value="">انتخاب از کارکنان فعال</option>
-                    {requesterEmployeeId && !requesters.data?.items.some((item) => item.id === requesterEmployeeId) && (
-                      <option value={requesterEmployeeId}>{resolvedRequesterLabel || 'درخواست‌کننده انتخاب‌شده'}</option>
-                    )}
+                    {requesterEmployeeId &&
+                      !requesters.data?.items.some(
+                        (item) => item.id === requesterEmployeeId,
+                      ) && (
+                        <option value={requesterEmployeeId}>
+                          {resolvedRequesterLabel || 'درخواست‌کننده انتخاب‌شده'}
+                        </option>
+                      )}
                     {requesters.data?.items.map((item) => (
-                      <option key={item.id} value={item.id}>{item.label}</option>
+                      <option key={item.id} value={item.id}>
+                        {item.label}
+                      </option>
                     ))}
                   </select>
-                  {requesters.isError && <p className="text-sm text-destructive">فهرست کارکنان دریافت نشد.</p>}
+                  {requesters.isError && (
+                    <p className="text-sm text-destructive">
+                      فهرست کارکنان دریافت نشد.
+                    </p>
+                  )}
                   {requesters.data?.hasMore && (
-                    <Button type="button" variant="outline" onClick={() => setRequesterPage((page) => page + 1)}>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setRequesterPage((page) => page + 1)}
+                    >
                       کارکنان بعدی
                     </Button>
                   )}
@@ -358,7 +396,12 @@ export function DraftForm({
                 value={draft.branchId}
                 onChange={(event) => {
                   update('branchId', event.target.value);
-                  if (!request) { setRequesterEmployeeId(''); setRequesterLabel(''); update('unitId', null); setRequesterPage(1); }
+                  if (!request) {
+                    setRequesterEmployeeId('');
+                    setRequesterLabel('');
+                    update('unitId', null);
+                    setRequesterPage(1);
+                  }
                 }}
               >
                 <option value="">انتخاب شعبه</option>
@@ -409,11 +452,15 @@ export function DraftForm({
                 id="proc-deliveryLocation"
                 className={selectClass}
                 value={draft.deliveryLocation}
-                onChange={(event) => update('deliveryLocation', event.target.value)}
+                onChange={(event) =>
+                  update('deliveryLocation', event.target.value)
+                }
               >
                 <option value="">انتخاب محل تحویل (اختیاری)</option>
                 {bootstrap.branches.map((branch) => (
-                  <option key={branch.id} value={branch.label}>{branch.label}</option>
+                  <option key={branch.id} value={branch.label}>
+                    {branch.label}
+                  </option>
                 ))}
               </select>
             </FormField>
