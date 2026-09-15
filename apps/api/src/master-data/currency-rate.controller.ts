@@ -107,6 +107,12 @@ export class MasterDataAuditController {
     @Inject(CurrencyRateService) private readonly service: CurrencyRateService,
   ) {}
 
+  @Get('notifications')
+  @RequirePermissions('master_data.read')
+  notifications(@Query('limit') limit?: string) {
+    return this.service.notifications(Number(limit) || 25);
+  }
+
   @Get(':resource/:entityId')
   @RequirePermissions('master_data.audit.read')
   history(

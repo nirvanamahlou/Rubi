@@ -69,6 +69,7 @@ import formStyles from './ticket-form.module.css';
 import { TicketDatePicker } from './ticket-date-picker';
 import { IssuedTicketsWorkspace } from './issued-tickets-workspace';
 import { TourWorkspace } from './tour-workspace';
+import { registerTicketPurchase } from '../api/purchases';
 
 const actor = 'کاربر جاری';
 const transportIcons = {
@@ -208,13 +209,14 @@ function TicketCatalogWorkspace() {
       value,
     ]);
   }
-  function save(inputs: readonly ProductInput[], editReason: string) {
+  async function save(inputs: readonly ProductInput[], editReason: string) {
     if (!form || form.mode === 'view') throw new Error('فرم قابل ویرایش نیست.');
     const now = new Date().toISOString();
     const current = form.product;
     if (current && inputs.length !== 1)
       throw new Error('ویرایش باید روی همان بلیط انجام شود.');
     let updated = products;
+    const saved: Product[] = [];
     if (current) {
       const next = reviseProduct(
         current,
@@ -231,6 +233,7 @@ function TicketCatalogWorkspace() {
         },
       );
       updated = replacePreview(updated, next, current.version);
+      saved.push(next);
     } else {
       for (const input of inputs) {
         const next = createProduct(
@@ -241,8 +244,10 @@ function TicketCatalogWorkspace() {
           actor,
         );
         updated = replacePreview(updated, next);
+        saved.push(next);
       }
     }
+    await Promise.all(saved.map((product) => registerTicketPurchase(product)));
     setProducts(updated);
     setForm(null);
     setProblem('');
@@ -254,7 +259,7 @@ function TicketCatalogWorkspace() {
           : 'بلیط جدید ذخیره شد.',
     );
   }
-  function applyRepeat() {
+  async function applyRepeat() {
     if (!repeat) return;
     try {
       if (
@@ -269,6 +274,7 @@ function TicketCatalogWorkspace() {
       );
       const now = new Date().toISOString();
       let updated = products;
+      const saved: Product[] = [];
       for (let occurrence = 0; occurrence < repeat.count; occurrence += 1) {
         const definition =
           occurrence === 0
@@ -282,7 +288,11 @@ function TicketCatalogWorkspace() {
           actor,
         );
         updated = replacePreview(updated, next);
+        saved.push(next);
       }
+      await Promise.all(
+        saved.map((product) => registerTicketPurchase(product)),
+      );
       setProducts(updated);
       setRepeat(undefined);
       setProblem('');
@@ -797,7 +807,7 @@ function TicketCatalogWorkspace() {
           <Button
             className="mt-4"
             disabled={!repeat?.startDate}
-            onClick={applyRepeat}
+            onClick={() => void applyRepeat()}
           >
             ساخت بلیط‌های تکرارشونده
           </Button>

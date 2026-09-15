@@ -154,6 +154,63 @@ describe('transport forms policy and API compatibility', () => {
       actor.branchIds[0],
     );
   });
+  it('normalizes the combined aircraft manufacturer and model while keeping a compatible internal name', async () => {
+    const repository = {
+      codeExists: vi.fn().mockResolvedValue(false),
+      create: vi.fn().mockResolvedValue(base),
+    } as unknown as MasterDataRepository;
+    const service = new MasterDataService(repository);
+
+    await service.create(
+      'aircraft-types',
+      {
+        englishName: 'Airbus A320-200',
+        manufacturerModel: 'Airbus / A320-200',
+      },
+      actor,
+    );
+
+    expect(repository.create).toHaveBeenCalledWith(
+      'aircraft-types',
+      expect.objectContaining({
+        name: 'Airbus A320-200',
+        englishName: 'Airbus A320-200',
+        manufacturer: 'Airbus',
+        model: 'A320-200',
+      }),
+      actor.userId,
+      actor.branchIds[0],
+    );
+    expect(repository.create).not.toHaveBeenCalledWith(
+      'aircraft-types',
+      expect.objectContaining({ manufacturerModel: expect.anything() }),
+      expect.anything(),
+      expect.anything(),
+    );
+  });
+  it('exports aircraft manufacturer and model as one column without a Persian title', () => {
+    const row = toMasterDataRecord('aircraft-types', {
+      ...base,
+      name: 'نام سازگاری داخلی',
+      englishName: 'Airbus A320-200',
+      manufacturer: 'Airbus',
+      model: 'A320-200',
+    });
+    const files = unzipSync(
+      buildMasterDataXlsx({
+        resource: 'aircraft-types',
+        columns: ['code', 'manufacturerModel', 'englishName'],
+        records: [row],
+        locale: 'fa-IR',
+        timezone: 'UTC',
+      }),
+    );
+    const worksheet = strFromU8(files['xl/worksheets/sheet1.xml']!);
+    expect(worksheet).toContain('سازنده و مدل');
+    expect(worksheet).toContain('Airbus / A320-200');
+    expect(worksheet).toContain('Airbus A320-200');
+    expect(worksheet).not.toContain('نام سازگاری داخلی');
+  });
   it('validates train facilities and makes replacing/clearing atomic, preserving legacy text', async () => {
     const repository = {
       codeExists: vi.fn().mockResolvedValue(false),

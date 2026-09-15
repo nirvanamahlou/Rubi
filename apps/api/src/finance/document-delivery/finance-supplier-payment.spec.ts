@@ -105,3 +105,29 @@ describe('Finance supplier payment', () => {
     ).rejects.toBeInstanceOf(BadRequestException);
   });
 });
+
+describe('broker purchase gate', () => {
+  it('requires hotel and transfer payment while leaving ticket purchase to ticket management', async () => {
+    const snapshot = {
+      serviceSelections: [
+        { clientKey: 'flight', kind: 'FLIGHT', titleSnapshot: 'بلیط' },
+        { clientKey: 'hotel', kind: 'HOTEL', titleSnapshot: 'هتل' },
+        { clientKey: 'transfer', kind: 'TRANSFER', titleSnapshot: 'ترانسفر' },
+      ],
+    };
+    const database = {
+      client: {
+        reservationIntake: {
+          findUnique: vi
+            .fn()
+            .mockResolvedValue({ snapshot, servicePurchases: [] }),
+        },
+      },
+    };
+    const service = new FinanceDeliveryService(database as never, {} as never);
+    const gate = await service.supplierPurchaseGate('intake-1');
+    expect(gate.requiredServiceCount).toBe(2);
+    expect(gate.missingServiceTitles).toEqual(['هتل', 'ترانسفر']);
+    expect(gate.missingServiceTitles).not.toContain('بلیط');
+  });
+});

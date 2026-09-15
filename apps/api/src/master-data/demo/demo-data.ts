@@ -224,19 +224,16 @@ export function masterDataDemoRecords(): DemoRecord[] {
       countryId: id('country'),
     }));
     add(`aircraft-${n}`, 'aircraft-types', {
-      name: name(`هواپیمای نمونه ${n}`),
       englishName: `Demo Aircraft ${n}`,
-      manufacturer: 'Demo Manufacturer',
-      model: `DEMO-${n}`,
+      manufacturerModel: `Demo Manufacturer / DEMO-${n}`,
     });
     add(`cabin-${n}`, 'cabin-classes', {
-      name: name(n === 1 ? 'اکونومی' : 'بیزینس'),
       englishName: `Demo Cabin ${n}`,
       bookingCode: `DEMO${n}`,
       displayOrder: n,
     });
     add(`baggage-${n}`, 'baggage-rules', (id) => ({
-      name: name(`قاعده بار نمونه ${n}`),
+      name: name(`Demo Baggage ${n}`),
       airlineId: id(`airline-${n}`),
       cabinClassId: id(`cabin-${n}`),
       passengerType: 'ADT',

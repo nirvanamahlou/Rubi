@@ -18,6 +18,11 @@ import type {
 import { Prisma } from '@nora/database';
 import { DatabaseService } from '../../database/database.service';
 
+const brokerPurchaseServices = (snapshot: SalesReservationRequestV1) =>
+  snapshot.serviceSelections.filter(
+    (service) => service.kind === 'HOTEL' || service.kind === 'TRANSFER',
+  );
+
 @Injectable()
 export class FinanceDeliveryService {
   constructor(
@@ -141,19 +146,27 @@ export class FinanceDeliveryService {
     for (const purchase of intake.servicePurchases)
       if (!latest.has(purchase.serviceClientKey))
         latest.set(purchase.serviceClientKey, purchase);
-    const missingServiceTitles = snapshot.serviceSelections
+    const requiredServices = brokerPurchaseServices(snapshot);
+    const requiredKeys = new Set(
+      requiredServices.map((service) => service.clientKey),
+    );
+    const missingServiceTitles = requiredServices
       .filter((service) => !latest.has(service.clientKey))
       .map((service) => service.titleSnapshot);
     const purchases = [...latest.values()].map((row) =>
       this.presentPurchase(row),
     );
     const unpaidServiceTitles = purchases
-      .filter((purchase) => purchase.finance.status !== 'PAID')
+      .filter(
+        (purchase) =>
+          requiredKeys.has(purchase.serviceClientKey) &&
+          purchase.finance.status !== 'PAID',
+      )
       .map((purchase) => purchase.serviceTitle);
     return {
       complete:
         missingServiceTitles.length === 0 && unpaidServiceTitles.length === 0,
-      requiredServiceCount: snapshot.serviceSelections.length,
+      requiredServiceCount: requiredServices.length,
       missingServiceTitles,
       unpaidServiceTitles,
       purchases,
@@ -388,11 +401,19 @@ export class FinanceDeliveryService {
         for (const purchase of intake.servicePurchases)
           if (!latest.has(purchase.serviceClientKey))
             latest.set(purchase.serviceClientKey, purchase);
-        const missingServiceTitles = snapshot.serviceSelections
+        const requiredServices = brokerPurchaseServices(snapshot);
+        const requiredKeys = new Set(
+          requiredServices.map((service) => service.clientKey),
+        );
+        const missingServiceTitles = requiredServices
           .filter((service) => !latest.has(service.clientKey))
           .map((service) => service.titleSnapshot);
         const unpaidServiceTitles = [...latest.values()]
-          .filter((purchase) => purchase.financeRevisions[0]?.status !== 'PAID')
+          .filter(
+            (purchase) =>
+              requiredKeys.has(purchase.serviceClientKey) &&
+              purchase.financeRevisions[0]?.status !== 'PAID',
+          )
           .map((purchase) => purchase.serviceTitleSnapshot);
         if (missingServiceTitles.length || unpaidServiceTitles.length) {
           const details = [

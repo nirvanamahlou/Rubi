@@ -49,6 +49,7 @@ import {
     MasterHotelBaseRatePublicService,
   ],
   exports: [
+    MasterDataService,
     MasterOrganizationDirectory,
     MasterTravelDirectory,
     MasterHrDirectory,

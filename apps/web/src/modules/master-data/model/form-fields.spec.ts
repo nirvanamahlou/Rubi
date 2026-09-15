@@ -68,8 +68,8 @@ describe('payment-method form fields', () => {
       suppliers: ['displayName'],
       brokers: ['displayName'],
       airlines: ['organizationId', 'iataCode', 'icaoCode'],
-      'cabin-classes': ['bodyType', 'cabinType'],
-      'baggage-rules': ['validFrom', 'validTo'],
+      'cabin-classes': ['name', 'bodyType', 'cabinType'],
+      'baggage-rules': ['name', 'validFrom', 'validTo'],
       'bus-companies': ['supplierId'],
       'visa-services': [
         'supplierId',
@@ -148,5 +148,23 @@ describe('payment-method form fields', () => {
         ).toBeTruthy();
       }
     }
+  });
+
+  it('uses a required English-only title for cabin classes', () => {
+    const definition = getMasterDataDefinition('cabin-classes');
+    const fields = getMasterDataFormFields(definition);
+    const englishName = fields.find((field) => field.key === 'englishName');
+
+    expect(fields.map((field) => field.key)).not.toContain('name');
+    expect(englishName).toMatchObject({ required: true });
+    expect(
+      validateMasterDataDraft('cabin-classes', { bookingCode: 'Y' }).errors,
+    ).toHaveProperty('englishName');
+    expect(
+      validateMasterDataDraft('cabin-classes', {
+        englishName: 'Economy',
+        bookingCode: 'Y',
+      }).success,
+    ).toBe(true);
   });
 });

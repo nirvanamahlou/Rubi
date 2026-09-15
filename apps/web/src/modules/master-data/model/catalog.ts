@@ -809,32 +809,23 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
     description:
       'کاتالوگ سازنده، مدل و نوع بدنه هواپیما بدون وابستگی به ناوگان عملیاتی.',
     fields: [
-      nameField,
       {
         key: 'englishName',
         label: 'نام انگلیسی',
         type: 'text',
-        placeholder: 'Airbus A320',
+        placeholder: 'Airbus A320-200',
       },
       {
-        key: 'manufacturer',
-        label: 'سازنده',
+        key: 'manufacturerModel',
+        label: 'سازنده و مدل',
         type: 'text',
-        placeholder: 'Airbus',
-        required: true,
-      },
-      {
-        key: 'model',
-        label: 'مدل',
-        type: 'text',
-        placeholder: 'A320-200',
+        placeholder: 'Airbus / A320-200',
         required: true,
       },
     ],
     preview: {
-      name: 'ایرباس ۳۲۰',
-      manufacturer: 'Airbus',
-      model: 'A320-200',
+      englishName: 'Airbus A320-200',
+      manufacturerModel: 'Airbus / A320-200',
       bodyType: 'NARROW_BODY',
     },
   },
@@ -846,12 +837,12 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
     description:
       'کد رزرو و Cabin مرجع؛ قیمت و موجودی صندلی در Ticket Catalog/Reservations می‌ماند.',
     fields: [
-      nameField,
       {
         key: 'englishName',
         label: 'نام انگلیسی',
         type: 'text',
         placeholder: 'Economy',
+        required: true,
       },
       {
         key: 'bookingCode',
@@ -867,7 +858,11 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
         placeholder: '0',
       },
     ],
-    preview: { name: 'اکونومی', bookingCode: 'Y', cabinType: 'ECONOMY' },
+    preview: {
+      englishName: 'Economy',
+      bookingCode: 'Y',
+      cabinType: 'ECONOMY',
+    },
   },
   {
     key: 'baggage-rules',
@@ -877,7 +872,6 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
     description:
       'قاعده بار براساس ایرلاین، کلاس، نوع مسافر، مسیر، مقدار و تعداد قطعه.',
     fields: [
-      nameField,
       {
         key: 'airlineId',
         label: 'ایرلاین',
@@ -947,7 +941,7 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
       },
     ],
     preview: {
-      name: 'بار اکونومی',
+      name: 'Baggage Economy',
       passengerType: 'ADT',
       allowance: '20',
       unit: 'KG',

@@ -54,6 +54,28 @@ export interface MasterDataPersistWithLogoResult {
   warning?: string;
 }
 
+export type MasterDataNotificationChangeKind =
+  | 'created'
+  | 'updated'
+  | 'activated'
+  | 'deactivated'
+  | 'deleted'
+  | 'approved'
+  | 'rejected';
+
+export interface MasterDataNotification {
+  id: string;
+  action: string;
+  changeKind: MasterDataNotificationChangeKind;
+  resource: string;
+  entityId: string | null;
+  entityVersion: number | null;
+  recordLabel: string | null;
+  occurredAt: string;
+}
+
+export const MASTER_DATA_CHANGED_EVENT = 'nora:master-data-changed';
+
 const UNSAVED_SOURCE_ID = /^(?:draft|temp|preview)(?:-|$)/i;
 
 function assertPersistedSourceId(recordId: string) {
@@ -140,7 +162,11 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
       response.status,
     );
   }
-  return response.json() as Promise<T>;
+  const payload = (await response.json()) as T;
+  const method = (init?.method ?? 'GET').toUpperCase();
+  if (typeof window !== 'undefined' && method !== 'GET' && method !== 'HEAD')
+    window.dispatchEvent(new Event(MASTER_DATA_CHANGED_EVENT));
+  return payload;
 }
 
 async function documentsRequest<T>(
@@ -181,101 +207,33 @@ export const masterDataApi = {
     resource: MasterDataResource;
     recordId: string;
     title: string;
+    version: number;
   }) {
     assertPersistedSourceId(input.recordId);
     if (!['image/png', 'image/jpeg'].includes(input.file.type))
       throw new MasterDataApiError('لوگو باید PNG یا JPEG باشد.', 400);
-    const options =
-      await documentsRequest<DocumentOptionsResponseV1>('/options');
-    const documentType = options.data.documentTypes.find(
-      (item) => item.code === 'BRAND_ASSET_TEMPLATE',
-    );
-    const category =
-      options.data.categories.find((item) => item.code === 'BRAND_ASSETS') ??
-      options.data.categories[0];
-    const branch = options.data.branches[0];
-    const owner =
-      options.data.owners.find(
-        (item) => item.id === options.data.currentUserId,
-      ) ?? options.data.owners[0];
-    if (!documentType || !category || !branch || !owner)
-      throw new MasterDataApiError(
-        'پیش‌نیاز بارگذاری لوگو در اسناد کامل نیست.',
-        409,
-      );
-    const maxSize = Math.min(
-      options.data.uploadPolicy.maxFileSizeBytes,
-      documentType.maxFileSizeBytes,
-    );
-    if (
-      !options.data.uploadPolicy.allowedMimeTypes.includes(input.file.type) ||
-      !documentType.allowedMimeTypes.includes(input.file.type)
-    )
-      throw new MasterDataApiError(
-        'نوع فایل لوگو در سیاست اسناد مجاز نیست.',
-        400,
-      );
-    if (input.file.size > maxSize)
+    if (input.file.size < 1 || input.file.size > 5 * 1024 * 1024)
       throw new MasterDataApiError('حجم فایل لوگو بیشتر از حد مجاز است.', 413);
-
-    const idempotencyMarker = await fileIdempotencyMarker(
-      input.file,
-      'master-data-logo-v1',
-    );
-    const canonical = new URLSearchParams({
-      domain: 'BRAND',
-      archiveStatus: 'ACTIVE',
-      branchId: branch.id,
-      sourceModule: 'master-data',
-      sourceEntityType: input.resource,
-      sourceEntityId: input.recordId,
-      sortBy: 'updatedAt',
-      sortDirection: 'desc',
-      page: '1',
-      pageSize: '100',
-    });
-    const existing = await documentsRequest<DocumentListResponseV1>(
-      `?${canonical.toString()}`,
-    );
-    const duplicate = existing.data.find(
-      (item) => item.currentVersion.versionNote === idempotencyMarker,
-    );
-    if (duplicate)
-      return {
-        id: duplicate.id,
-        scanStatus: duplicate.currentVersion.scanStatus,
-        reused: true,
-      };
 
     const form = new FormData();
     form.set('file', input.file);
     form.set('title', input.title.trim() || `لوگوی ${input.resource}`);
-    form.set('documentTypeId', documentType.id);
-    form.set('categoryId', category.id);
-    form.set('branchId', branch.id);
-    form.set('ownerUserId', owner.id);
-    form.set('confidentiality', 'INTERNAL');
-    form.set('sourceModule', 'master-data');
-    form.set('sourceEntityType', input.resource);
-    form.set('sourceEntityId', input.recordId);
-    form.set(
-      'sourceDisplayLabel',
-      input.title.trim() || `لوگوی ${input.resource}`,
+    form.set('version', String(input.version));
+    return request<MasterDataPersistWithLogoResult>(
+      `/${input.resource}/${encodeURIComponent(input.recordId)}/logo`,
+      { method: 'POST', body: form },
     );
-    form.set('versionNote', idempotencyMarker);
-    const response = await documentsRequest<DocumentDetailResponseV1>(
-      '/upload',
-      {
-        method: 'POST',
-        body: form,
-        headers: { 'Idempotency-Key': idempotencyMarker },
-      },
+  },
+  removeLogo(input: {
+    resource: MasterDataResource;
+    recordId: string;
+    version: number;
+  }) {
+    assertPersistedSourceId(input.recordId);
+    return request<MasterDataPersistWithLogoResult>(
+      `/${input.resource}/${encodeURIComponent(input.recordId)}/logo`,
+      { method: 'DELETE', body: JSON.stringify({ version: input.version }) },
     );
-    return {
-      id: response.data.id,
-      scanStatus: response.data.currentVersion.scanStatus,
-      reused: false,
-    };
   },
   async uploadManifestTemplateFile(input: {
     file: File;
@@ -498,93 +456,32 @@ export const masterDataApi = {
     ).trim();
     if (input.logoChange.kind === 'remove') {
       if (!previousLogo) return base;
-      const detached = await masterDataApi.update(
-        input.resource,
-        base.data.id,
-        {
-          values: { logoFileReference: null },
-          version: base.data.version,
-        },
-      );
-      try {
-        await masterDataApi.archiveLogo(previousLogo);
-        return detached;
-      } catch (error) {
-        return {
-          ...detached,
-          warning:
-            error instanceof Error
-              ? `لوگو از رکورد جدا شد؛ بایگانی فایل نیازمند اقدام مجدد است: ${error.message}`
-              : 'لوگو از رکورد جدا شد؛ بایگانی فایل نیازمند اقدام مجدد است.',
-        };
-      }
+      return masterDataApi.removeLogo({
+        resource: input.resource,
+        recordId: base.data.id,
+        version: base.data.version,
+      });
     }
 
-    let uploaded: Awaited<ReturnType<typeof masterDataApi.uploadLogo>>;
     try {
-      uploaded = await masterDataApi.uploadLogo({
+      return await masterDataApi.uploadLogo({
         file: input.logoChange.file,
         resource: input.resource,
         recordId: base.data.id,
         title: input.title,
+        version: base.data.version,
       });
-    } catch (error) {
-      return {
-        ...base,
-        warning:
-          error instanceof Error
-            ? `رکورد ذخیره شد، اما بدون لوگو باقی ماند: ${error.message}`
-            : 'رکورد ذخیره شد، اما بدون لوگو باقی ماند و بارگذاری باید تکرار شود.',
-      };
-    }
-
-    try {
-      const attached = await masterDataApi.update(
-        input.resource,
-        base.data.id,
-        {
-          values: { logoFileReference: uploaded.id },
-          version: base.data.version,
-        },
-      );
-      if (previousLogo && previousLogo !== uploaded.id) {
-        try {
-          await masterDataApi.archiveLogo(previousLogo);
-        } catch (error) {
-          return {
-            ...attached,
-            warning:
-              error instanceof Error
-                ? `لوگوی جدید متصل شد؛ بایگانی لوگوی قبلی نیازمند اقدام مجدد است: ${error.message}`
-                : 'لوگوی جدید متصل شد؛ بایگانی لوگوی قبلی نیازمند اقدام مجدد است.',
-          };
-        }
-      }
-      return attached;
     } catch (error) {
       return {
         ...base,
         warning:
           error instanceof MasterDataApiError && error.status === 409
             ? 'رکورد ذخیره شد، اما اتصال لوگو به‌دلیل تغییر هم‌زمان انجام نشد؛ صفحه را تازه‌سازی و دوباره تلاش کنید.'
-            : `رکورد ذخیره شد، اما اتصال لوگو انجام نشد: ${error instanceof Error ? error.message : 'خطای نامشخص'}`,
+            : error instanceof Error
+              ? `رکورد ذخیره شد، اما بدون لوگو باقی ماند: ${error.message}`
+              : 'رکورد ذخیره شد، اما بدون لوگو باقی ماند و بارگذاری باید تکرار شود.',
       };
     }
-  },
-  async archiveLogo(documentId: string) {
-    const detail = await documentsRequest<DocumentDetailResponseV1>(
-      `/${encodeURIComponent(documentId)}`,
-    );
-    return documentsRequest<DocumentDetailResponseV1>(
-      `/${encodeURIComponent(documentId)}/archive`,
-      {
-        method: 'POST',
-        body: JSON.stringify({
-          reason: 'حذف یا جایگزینی لوگوی مرجع اطلاعات پایه',
-          version: detail.data.version,
-        }),
-      },
-    );
   },
   async archiveManifestTemplateFile(documentId: string) {
     const detail = await documentsRequest<DocumentDetailResponseV1>(
@@ -701,6 +598,12 @@ export const masterDataApi = {
       data: readonly Record<string, unknown>[];
       meta: { total: number };
     }>(`/audit/${resource}/${encodeURIComponent(entityId)}?page=${page}`);
+  },
+  notifications(limit = 25) {
+    return request<{
+      data: readonly MasterDataNotification[];
+      meta: { limit: number };
+    }>(`/audit/notifications?limit=${Math.min(60, Math.max(1, limit))}`);
   },
   unmaskOrganizationContact(id: string) {
     return request<{ data: MasterOrganizationContactUnmasked }>(

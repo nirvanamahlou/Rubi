@@ -62,6 +62,79 @@ function fixture(options?: {
 }
 
 describe('CurrencyRateService decisions', () => {
+  it('returns safe successful change notifications without exposing snapshots', async () => {
+    const occurredAt = new Date('2026-09-07T08:00:00.000Z');
+    const findMany = vi.fn().mockResolvedValue([
+      {
+        id: 'event-1',
+        action: 'master_data.update',
+        resource: 'hotels',
+        entityId: 'hotel-1',
+        entityVersion: 4,
+        occurredAt,
+        beforeSnapshot: { name: 'هتل پارس', isActive: true },
+        afterSnapshot: {
+          name: 'هتل پارس',
+          isActive: false,
+          phoneEncrypted: 'must-not-leak',
+        },
+      },
+      {
+        id: 'event-2',
+        action: 'master_data.currency_rate.approve',
+        resource: 'exchange-rates',
+        entityId: 'rate-1',
+        entityVersion: 2,
+        occurredAt,
+        beforeSnapshot: null,
+        afterSnapshot: { fromCurrencyCode: 'USD', toCurrencyCode: 'IRR' },
+      },
+    ]);
+    const service = new CurrencyRateService({
+      client: { masterDataAuditEvent: { findMany } },
+    } as unknown as DatabaseService);
+
+    await expect(service.notifications(500)).resolves.toEqual({
+      data: [
+        {
+          id: 'event-1',
+          action: 'master_data.update',
+          changeKind: 'deactivated',
+          resource: 'hotels',
+          entityId: 'hotel-1',
+          entityVersion: 4,
+          recordLabel: 'هتل پارس',
+          occurredAt: occurredAt.toISOString(),
+        },
+        {
+          id: 'event-2',
+          action: 'master_data.currency_rate.approve',
+          changeKind: 'approved',
+          resource: 'exchange-rates',
+          entityId: 'rate-1',
+          entityVersion: 2,
+          recordLabel: 'USD/IRR',
+          occurredAt: occurredAt.toISOString(),
+        },
+      ],
+      meta: { limit: 60 },
+    });
+    expect(findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          outcome: 'SUCCESS',
+          action: {
+            notIn: expect.arrayContaining([
+              'master_data.export.requested',
+              'master_data.hotel_import.preview',
+            ]),
+          },
+        },
+        take: 60,
+      }),
+    );
+  });
+
   it('filters history by both currency columns before counting and paginating', async () => {
     const model = {
       findMany: vi.fn().mockResolvedValue([]),
