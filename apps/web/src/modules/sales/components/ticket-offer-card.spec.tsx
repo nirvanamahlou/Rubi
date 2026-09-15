@@ -90,6 +90,39 @@ describe('readable sales ticket card', () => {
     expect(html).toContain('اکونومی');
     expect(html).not.toContain('بیزینس');
   });
+  it('requires a managed fare for standalone sales while tour cards remain selectable', () => {
+    const withoutFare = renderToStaticMarkup(
+      <TicketOfferCard
+        offer={offer}
+        selected={false}
+        requireStandaloneFare
+        onSelect={vi.fn()}
+      />,
+    );
+    expect(withoutFare).toContain('disabled=""');
+    expect(withoutFare).toContain('قیمت فروش تکی در مدیریت بلیط ثبت نشده');
+    const withFare = renderToStaticMarkup(
+      <TicketOfferCard
+        offer={{
+          ...offer,
+          standaloneSalePrice: {
+            revision: 1,
+            amount: '1200000',
+            currencyCode: 'IRR',
+          },
+        }}
+        selected={false}
+        requireStandaloneFare
+        onSelect={vi.fn()}
+      />,
+    );
+    expect(withFare).not.toContain('disabled=""');
+    expect(withFare).toContain('فروش تکی هر صندلی: 1200000 IRR');
+    const tourCard = renderToStaticMarkup(
+      <TicketOfferCard offer={offer} selected={false} onSelect={vi.fn()} />,
+    );
+    expect(tourCard).not.toContain('disabled=""');
+  });
   it('disables an offer whose remaining seats are below the passenger count', () => {
     const html = renderToStaticMarkup(
       <TicketOfferCard

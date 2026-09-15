@@ -119,7 +119,7 @@ export function FinanceInboxLiveWorkspace() {
   const [banks, setBanks] = useState<readonly FinanceBankOptionV1[]>([]);
   const [actionItem, setActionItem] = useState<FinanceInboxItemV1 | null>(null);
   const [actionKind, setActionKind] = useState<
-    'APPROVE' | 'CORRECTION_REQUIRED' | 'PAYMENT' | null
+    'APPROVE' | 'CORRECTION_REQUIRED' | 'PAYMENT' | 'TICKET_COST' | null
   >(null);
   const [actionBusy, setActionBusy] = useState(false);
   const [actionError, setActionError] = useState('');
@@ -130,6 +130,10 @@ export function FinanceInboxLiveWorkspace() {
   const [exchangeRate, setExchangeRate] = useState('');
   const [paidAt, setPaidAt] = useState(new Date().toISOString());
   const [paymentReference, setPaymentReference] = useState('');
+  const [ticketAdultCost, setTicketAdultCost] = useState('');
+  const [ticketChildCost, setTicketChildCost] = useState('');
+  const [ticketInvoice, setTicketInvoice] = useState('');
+  const [ticketCurrency, setTicketCurrency] = useState('IRR');
   const [accountDialog, setAccountDialog] = useState(false);
   const [accountTitle, setAccountTitle] = useState('');
   const [accountKind, setAccountKind] =
@@ -264,12 +268,47 @@ export function FinanceInboxLiveWorkspace() {
     setActionError('');
   }
 
+  function openTicketCost(item: FinanceInboxItemV1) {
+    setActionItem(item);
+    setActionKind('TICKET_COST');
+    setTicketAdultCost('');
+    setTicketChildCost('');
+    setTicketInvoice('');
+    setTicketCurrency('IRR');
+    setReason('');
+    setActionError('');
+  }
+
   async function submitAction() {
     if (!actionItem || !actionKind) return;
     setActionBusy(true);
     setActionError('');
     try {
-      if (actionKind === 'PAYMENT') {
+      if (actionKind === 'TICKET_COST') {
+        await financeInboxApi.recordTicketCost(actionItem.sourceReference, {
+          version: 1,
+          adultUnitCost: ticketAdultCost,
+          childUnitCost: ticketChildCost,
+          invoiceAmount: ticketInvoice,
+          currencyCode: ticketCurrency.toUpperCase().trim(),
+          reason: reason.trim(),
+        });
+      } else if (
+        actionKind === 'PAYMENT' &&
+        actionItem.source === 'PURCHASES'
+      ) {
+        await financeInboxApi.payTicket(actionItem.sourceReference, {
+          version: 1,
+          costRevisionId: actionItem.sourceContextReference,
+          accountId,
+          paymentMethodId,
+          paidAmount,
+          exchangeRateToIrr: exchangeRate,
+          transferAt: paidAt,
+          paymentReference: paymentReference.trim() || null,
+          reason: reason.trim(),
+        });
+      } else if (actionKind === 'PAYMENT') {
         await financeInboxApi.paySupplier(
           actionItem.sourceContextReference,
           actionItem.sourceReference,
@@ -590,6 +629,29 @@ export function FinanceInboxLiveWorkspace() {
                     </Button>
                   </div>
                 ) : null}
+                {selected.kind === 'PAYMENT_REQUEST' &&
+                selected.source === 'PURCHASES' ? (
+                  <div className="space-y-2 rounded-2xl border border-emerald-200 bg-emerald-50/50 p-3 dark:border-emerald-900 dark:bg-emerald-950/20">
+                    <p className="text-xs leading-5 text-muted-foreground">
+                      مالی قیمت خرید بزرگسال و کودک و مبلغ فاکتور را ثبت می‌کند؛
+                      پس از پرداخت کامل، این نرخ برای قیمت‌گذاری پکیج آزاد
+                      می‌شود.
+                    </p>
+                    <Button
+                      className="w-full"
+                      onClick={() =>
+                        selected.amount
+                          ? openSupplierPayment(selected)
+                          : openTicketCost(selected)
+                      }
+                    >
+                      <WalletCards className="size-4" />
+                      {selected.amount
+                        ? 'ثبت پرداخت خرید بلیت'
+                        : 'ثبت قیمت خرید بلیت'}
+                    </Button>
+                  </div>
+                ) : null}
               </div>
             </Card>
           ) : null}
@@ -611,7 +673,11 @@ export function FinanceInboxLiveWorkspace() {
               ? 'تأیید دریافت مسافر'
               : actionKind === 'CORRECTION_REQUIRED'
                 ? 'ارسال برای اصلاح'
-                : 'ثبت پرداخت کارگزار'}
+                : actionKind === 'TICKET_COST'
+                  ? 'ثبت قیمت خرید بلیت توسط مالی'
+                  : actionItem?.source === 'PURCHASES'
+                    ? 'ثبت پرداخت خرید بلیت'
+                    : 'ثبت پرداخت کارگزار'}
           </DialogTitle>
           <DialogDescription>
             {actionItem?.title} · {actionItem && money(actionItem)}
@@ -623,6 +689,40 @@ export function FinanceInboxLiveWorkspace() {
               void submitAction();
             }}
           >
+            {actionKind === 'TICKET_COST' ? (
+              <>
+                {(
+                  [
+                    ['نرخ خرید بزرگسال', ticketAdultCost, setTicketAdultCost],
+                    ['نرخ خرید کودک', ticketChildCost, setTicketChildCost],
+                    ['مبلغ کل فاکتور', ticketInvoice, setTicketInvoice],
+                  ] as const
+                ).map(([label, value, change]) => (
+                  <label key={label} className="grid gap-2">
+                    <span>{label}</span>
+                    <Input
+                      required
+                      dir="ltr"
+                      inputMode="decimal"
+                      value={value}
+                      onChange={(event) => change(event.target.value)}
+                    />
+                  </label>
+                ))}
+                <label className="grid gap-2">
+                  <span>کد ارز خرید</span>
+                  <Input
+                    required
+                    dir="ltr"
+                    maxLength={3}
+                    value={ticketCurrency}
+                    onChange={(event) =>
+                      setTicketCurrency(event.target.value.toUpperCase())
+                    }
+                  />
+                </label>
+              </>
+            ) : null}
             {actionKind === 'PAYMENT' ? (
               <>
                 <label className="grid gap-2">
@@ -724,10 +824,17 @@ export function FinanceInboxLiveWorkspace() {
               <span>
                 {actionKind === 'CORRECTION_REQUIRED'
                   ? 'دلیل اصلاح (الزامی)'
-                  : 'توضیح مالی (اختیاری)'}
+                  : actionKind === 'TICKET_COST' ||
+                      actionItem?.source === 'PURCHASES'
+                    ? 'توضیح ثبت مالی (الزامی)'
+                    : 'توضیح مالی (اختیاری)'}
               </span>
               <Textarea
-                required={actionKind === 'CORRECTION_REQUIRED'}
+                required={
+                  actionKind === 'CORRECTION_REQUIRED' ||
+                  actionKind === 'TICKET_COST' ||
+                  actionItem?.source === 'PURCHASES'
+                }
                 maxLength={500}
                 value={reason}
                 onChange={(event) => setReason(event.target.value)}
@@ -744,7 +851,13 @@ export function FinanceInboxLiveWorkspace() {
                 disabled={
                   actionBusy ||
                   (actionKind === 'PAYMENT' &&
-                    (!accountId || !paymentMethodId || !paidAmount))
+                    (!accountId || !paymentMethodId || !paidAmount)) ||
+                  (actionKind === 'TICKET_COST' &&
+                    (!ticketAdultCost ||
+                      !ticketChildCost ||
+                      !ticketInvoice ||
+                      !ticketCurrency ||
+                      !reason.trim()))
                 }
               >
                 {actionBusy ? 'در حال ثبت…' : 'ثبت عملیات'}

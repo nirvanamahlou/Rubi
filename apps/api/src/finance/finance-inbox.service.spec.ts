@@ -16,6 +16,9 @@ const actor = {
 const emptyTicketPurchases = () => ({
   listFinanceTicketPurchases: vi.fn().mockResolvedValue([]),
 });
+const emptyTicketCosts = () => ({
+  queueStates: vi.fn().mockResolvedValue(new Map()),
+});
 
 describe('FinanceInboxService', () => {
   it('combines persisted Sales, HR, Procurement and Reservations sources', async () => {
@@ -109,6 +112,7 @@ describe('FinanceInboxService', () => {
       {} as never,
       {} as never,
       procurement as never,
+      emptyTicketCosts() as never,
     ).list(actor);
     expect(result.items.map(({ source }) => source)).toEqual([
       'SALES',
@@ -153,6 +157,7 @@ describe('FinanceInboxService', () => {
       {} as never,
       {} as never,
       emptyTicketPurchases() as never,
+      emptyTicketCosts() as never,
     ).list(actor);
     expect(result.items).toEqual([]);
     expect(result.sources[0]).toMatchObject({
@@ -170,6 +175,7 @@ describe('FinanceInboxService', () => {
       {} as never,
       {} as never,
       emptyTicketPurchases() as never,
+      emptyTicketCosts() as never,
     );
     await expect(
       service.list({ ...actor, permissions: [] }),
@@ -195,6 +201,7 @@ describe('FinanceInboxService', () => {
       {} as never,
       {} as never,
       emptyTicketPurchases() as never,
+      emptyTicketCosts() as never,
     );
     await expect(
       service.decideReceipt(
@@ -230,6 +237,7 @@ describe('FinanceInboxService', () => {
       {} as never,
       {} as never,
       emptyTicketPurchases() as never,
+      emptyTicketCosts() as never,
     );
     await expect(
       service.decideReceipt(
@@ -261,6 +269,7 @@ describe('FinanceInboxService', () => {
       delivery as never,
       {} as never,
       emptyTicketPurchases() as never,
+      emptyTicketCosts() as never,
     );
     const input = {
       expectedVersion: 0,

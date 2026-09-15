@@ -69,7 +69,8 @@ import formStyles from './ticket-form.module.css';
 import { TicketDatePicker } from './ticket-date-picker';
 import { IssuedTicketsWorkspace } from './issued-tickets-workspace';
 import { TourWorkspace } from './tour-workspace';
-import { registerTicketPurchase } from '../api/purchases';
+import { PublishedOffers } from './published-offers';
+import { LiveTicketPrices } from './live-ticket-prices';
 
 const actor = 'کاربر جاری';
 const transportIcons = {
@@ -133,6 +134,8 @@ export function TicketWorkspace() {
           <TourWorkspace />
         </TabsContent>
         <TabsContent value="catalog">
+          <PublishedOffers />
+          <LiveTicketPrices />
           <TicketCatalogWorkspace />
         </TabsContent>
         <TabsContent value="issued">
@@ -216,7 +219,6 @@ function TicketCatalogWorkspace() {
     if (current && inputs.length !== 1)
       throw new Error('ویرایش باید روی همان بلیط انجام شود.');
     let updated = products;
-    const saved: Product[] = [];
     if (current) {
       const next = reviseProduct(
         current,
@@ -233,7 +235,6 @@ function TicketCatalogWorkspace() {
         },
       );
       updated = replacePreview(updated, next, current.version);
-      saved.push(next);
     } else {
       for (const input of inputs) {
         const next = createProduct(
@@ -244,10 +245,8 @@ function TicketCatalogWorkspace() {
           actor,
         );
         updated = replacePreview(updated, next);
-        saved.push(next);
       }
     }
-    await Promise.all(saved.map((product) => registerTicketPurchase(product)));
     setProducts(updated);
     setForm(null);
     setProblem('');
@@ -274,7 +273,6 @@ function TicketCatalogWorkspace() {
       );
       const now = new Date().toISOString();
       let updated = products;
-      const saved: Product[] = [];
       for (let occurrence = 0; occurrence < repeat.count; occurrence += 1) {
         const definition =
           occurrence === 0
@@ -288,11 +286,7 @@ function TicketCatalogWorkspace() {
           actor,
         );
         updated = replacePreview(updated, next);
-        saved.push(next);
       }
-      await Promise.all(
-        saved.map((product) => registerTicketPurchase(product)),
-      );
       setProducts(updated);
       setRepeat(undefined);
       setProblem('');

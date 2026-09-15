@@ -115,6 +115,7 @@ export function SalesTourPicker({
             checkOutManual: false,
           },
           servicePricing: {},
+          tourPriceSource: undefined,
         }),
       );
     } catch (reason) {

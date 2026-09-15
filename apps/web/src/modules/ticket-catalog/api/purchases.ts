@@ -11,18 +11,11 @@ import type { Product } from '../model/catalog';
 
 export async function registerTicketPurchase(
   product: Product,
-): Promise<TicketCatalogPurchaseV1 | null> {
-  const amount = product.definition.fare.purchase;
-  if (!amount || /^0(?:\.0+)?$/.test(amount)) return null;
+): Promise<TicketCatalogPurchaseV1> {
   const serviceDate =
     product.definition.serviceDate ||
     product.definition.segments[0]?.departureAt.slice(0, 10) ||
-    '';
-  if (!serviceDate)
-    throw new Error('برای ارسال قیمت خرید به مالی، تاریخ اولین بلیط لازم است.');
-  const currencyCode = product.definition.fare.currencyCode;
-  if (!currencyCode)
-    throw new Error('برای ارسال قیمت خرید به مالی، ارز خرید را انتخاب کنید.');
+    null;
   const baseUrl = getPublicApiBaseUrl();
   if (!baseUrl) throw new Error('نشانی API سامانه تنظیم نشده است.');
   const session = await refreshAuthenticatedSession(baseUrl);
@@ -34,8 +27,8 @@ export async function registerTicketPurchase(
     title: product.definition.title,
     serviceDate,
     supplierDisplaySnapshot: product.definition.display?.operator ?? null,
-    amount,
-    currencyCode,
+    amount: null,
+    currencyCode: null,
   };
   const response = await fetch(baseUrl + '/procurement/ticket-purchases', {
     method: 'POST',
@@ -54,7 +47,8 @@ export async function registerTicketPurchase(
       message?: string;
     } | null;
     throw new Error(
-      payload?.message || 'ثبت قیمت خرید بلیط در کارتابل مالی ناموفق بود.',
+      payload?.message ||
+        'ثبت درخواست قیمت خرید بلیط در کارتابل مالی ناموفق بود.',
     );
   }
   return response.json() as Promise<TicketCatalogPurchaseV1>;

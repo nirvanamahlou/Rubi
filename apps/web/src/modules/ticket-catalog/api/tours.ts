@@ -6,6 +6,8 @@ import type {
   TourDepartureInputV1,
   TicketOfferV1,
   TicketOfferCreateV1,
+  TicketOfferManagedPriceV1,
+  TicketStandaloneSalePriceUpdateV1,
 } from '@nora/contracts';
 import { getPublicApiBaseUrl } from '@/lib/environment';
 import { refreshAuthenticatedSession } from '@/lib/auth-session';
@@ -83,4 +85,18 @@ export const toursApi = {
   },
   publishOffer: (input: TicketOfferCreateV1, branch: string, key: string) =>
     request<{ data: { id: string } }>('/offers', post(input, branch, key)),
+  managedPrices: () =>
+    request<{ data: TicketOfferManagedPriceV1[] }>('/offers/managed-prices'),
+  updateStandaloneSalePrice: (
+    id: string,
+    input: TicketStandaloneSalePriceUpdateV1,
+    key: string,
+  ) =>
+    request<{
+      data: { revision: number; amount: string; currencyCode: string };
+    }>(`/offers/${encodeURIComponent(id)}/standalone-sale-price`, {
+      method: 'PATCH',
+      headers: { 'idempotency-key': key },
+      body: JSON.stringify(input),
+    }),
 };

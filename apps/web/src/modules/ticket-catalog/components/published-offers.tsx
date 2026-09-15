@@ -175,6 +175,39 @@ export function PublishedOffers() {
               }
             />
           </FormField>
+          <FormField label="قیمت فروش تکی هر صندلی" required>
+            <Input
+              required
+              inputMode="decimal"
+              value={input.standaloneSalePrice?.amount ?? ''}
+              onChange={(event) =>
+                setInput({
+                  ...input,
+                  standaloneSalePrice: {
+                    amount: event.target.value,
+                    currencyCode:
+                      input.standaloneSalePrice?.currencyCode ?? 'IRR',
+                  },
+                })
+              }
+            />
+          </FormField>
+          <FormField label="ارز قیمت فروش تکی" required>
+            <Input
+              required
+              maxLength={3}
+              value={input.standaloneSalePrice?.currencyCode ?? 'IRR'}
+              onChange={(event) =>
+                setInput({
+                  ...input,
+                  standaloneSalePrice: {
+                    amount: input.standaloneSalePrice?.amount ?? '',
+                    currencyCode: event.target.value.toUpperCase(),
+                  },
+                })
+              }
+            />
+          </FormField>
           <Button type="submit" loading={busy}>
             ذخیره بلیط قابل فروش
           </Button>

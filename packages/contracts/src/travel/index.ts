@@ -2,7 +2,30 @@ import type { SalesReservationRequestV1 } from '../sales';
 
 export const TRAVEL_RUNTIME_VERSION = 1 as const;
 
-/** Catalog owns published schedule and capacity; negotiated sale price belongs to Sales. */
+/** Ticket Catalog owns the standalone list fare; negotiated contract price belongs to Sales. */
+export interface TicketStandaloneSalePriceV1 {
+  revision: number;
+  amount: string;
+  currencyCode: string;
+}
+
+export interface TicketStandaloneSalePriceUpdateV1 {
+  expectedRevision: number;
+  amount: string;
+  currencyCode: string;
+  reason?: string;
+}
+
+export interface TicketOfferManagedPriceV1 {
+  id: string;
+  carrierName: string;
+  serviceNumber: string;
+  departureAt: string;
+  originId: string;
+  destinationId: string;
+  standaloneSalePrice: TicketStandaloneSalePriceV1 | null;
+}
+
 export interface TicketOfferV1 {
   id: string;
   version: number;
@@ -17,12 +40,20 @@ export interface TicketOfferV1 {
   totalCapacity: number;
   remainingCapacity: number;
   status: 'ACTIVE' | 'PAUSED';
+  standaloneSalePrice?: TicketStandaloneSalePriceV1 | null;
 }
 
 export type TicketOfferCreateV1 = Omit<
   TicketOfferV1,
-  'id' | 'version' | 'branchId' | 'remainingCapacity' | 'status'
->;
+  | 'id'
+  | 'version'
+  | 'branchId'
+  | 'remainingCapacity'
+  | 'status'
+  | 'standaloneSalePrice'
+> & {
+  standaloneSalePrice?: Omit<TicketStandaloneSalePriceV1, 'revision'> | null;
+};
 export interface TicketOfferSearchV1 {
   originId: string;
   destinationId: string;
@@ -36,15 +67,22 @@ export interface TicketCatalogPurchaseCreateV1 {
   version: 1;
   catalogProductReference: string;
   title: string;
-  serviceDate: string;
+  serviceDate?: string | null;
   supplierDisplaySnapshot: string | null;
-  amount: string;
-  currencyCode: string;
+  /** Legacy unconfirmed catalog estimate; new requests omit it for Finance pricing. */
+  amount?: string | null;
+  currencyCode?: string | null;
 }
 
 export interface TicketCatalogPurchaseV1 extends TicketCatalogPurchaseCreateV1 {
   id: string;
   branchId: string;
+  serviceDate: string | null;
+  amount: string | null;
+  currencyCode: string | null;
+  /** Real runtime offer linkage; null for legacy local catalog definitions. */
+  offerId: string | null;
+  offerVersion: number | null;
   requestVersion: number;
   status: 'PENDING' | 'PAID' | 'CANCELLED';
   createdByUserId: string;

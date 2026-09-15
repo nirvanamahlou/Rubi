@@ -32,6 +32,8 @@ import { ContractFlightEditor } from './contract-flight-editor';
 import { SearchableReference } from './searchable-reference';
 import { SalesInsurancePicker } from './sales-insurance-picker';
 import { SalesTourPicker } from './sales-tour-picker';
+import { TourPublishedPricePicker } from './tour-published-price-picker';
+import { standaloneTicketPricing } from '../model/sales-price-source';
 
 import { SalesPeopleSheet } from './sales-people-sheet';
 import type { SalesPeopleDraft } from '../model/sales-people-sheet';
@@ -78,7 +80,6 @@ const serviceOptions: readonly [SalesServiceKind, string][] = [
   ['OTHER', 'سایر'],
 ];
 const ReferenceSelect = SearchableReference;
-
 function HotelCountField({
   label,
   hint,
@@ -175,10 +176,24 @@ export function SalesContractForm() {
           patch[key as keyof SalesFormState] !==
             current[key as keyof SalesFormState],
       );
+      const sourceStale =
+        current.tourPriceSource &&
+        (changedRoute ||
+          (patch.passengerComposition !== undefined &&
+            patch.passengerComposition !== current.passengerComposition) ||
+          (patch.hotel !== undefined &&
+            ['hotelId', 'checkIn', 'checkOut', 'roomCount'].some(
+              (key) =>
+                patch.hotel?.[key as keyof SalesFormState['hotel']] !==
+                current.hotel[key as keyof SalesFormState['hotel']],
+            )));
       return withFirstPassengerCustomer(
         withSalesHotelDates(current, {
           ...current,
           ...patch,
+          ...(sourceStale
+            ? { tourPriceSource: undefined, servicePricing: {} }
+            : {}),
           ...(changedRoute
             ? {
                 outboundOffer: undefined,
@@ -405,6 +420,30 @@ export function SalesContractForm() {
     patchState({
       passengerComposition,
       hotel: { ...state.hotel, occupancy: nextCounts.total },
+      ...(!state.tour &&
+      !state.serviceKinds.includes('HOTEL') &&
+      !state.serviceKinds.includes('TOUR')
+        ? {
+            servicePricing: {
+              ...(state.outboundOffer
+                ? standaloneTicketPricing(
+                    state,
+                    state.outboundOffer,
+                    'OUTBOUND',
+                    nextCounts.seated,
+                  )
+                : state.servicePricing),
+              ...(state.returnOffer
+                ? standaloneTicketPricing(
+                    state,
+                    state.returnOffer,
+                    'RETURN',
+                    nextCounts.seated,
+                  )
+                : {}),
+            },
+          }
+        : {}),
       ...(!outboundAvailable && state.outboundOffer
         ? {
             outboundOffer: undefined,
@@ -467,6 +506,13 @@ export function SalesContractForm() {
         )
       );
     if (step === 3) {
+      if (
+        state.tour &&
+        (!state.tourPriceSource ||
+          (state.serviceKinds.includes('HOTEL') &&
+            state.tourPriceSource.hotelId !== state.hotel.hotelId))
+      )
+        return false;
       try {
         const payload = salesPayload({
           ...state,
@@ -505,6 +551,15 @@ export function SalesContractForm() {
     setBusy(true);
     setError('');
     try {
+      if (
+        state.tour &&
+        (!state.tourPriceSource ||
+          (state.serviceKinds.includes('HOTEL') &&
+            state.tourPriceSource.hotelId !== state.hotel.hotelId))
+      )
+        throw new Error(
+          'قیمت منتشرشدهٔ همین تور و هتل را در مدیریت قیمت انتخاب کنید.',
+        );
       const payload = salesPayload(state);
       if (!salesAccommodationsComplete(state))
         throw new Error('نوع اقامت هر مسافر هتل را مشخص کنید.');
@@ -912,12 +967,22 @@ export function SalesContractForm() {
                                 : {}),
                             }}
                             requiredSeats={passengerCounts.seated}
+                            requireStandaloneFare={
+                              !state.tour &&
+                              !state.serviceKinds.includes('HOTEL')
+                            }
                             selectedId={state.ticket.outboundOfferId}
                             onSelect={(offer) =>
                               patchState({
                                 outboundOffer: offer,
                                 returnOffer: undefined,
                                 contractFlights: {},
+                                servicePricing: standaloneTicketPricing(
+                                  state,
+                                  offer,
+                                  'OUTBOUND',
+                                  passengerCounts.seated,
+                                ),
                                 ticket: {
                                   ...state.ticket,
                                   outboundOfferId: offer.id,
@@ -991,6 +1056,10 @@ export function SalesContractForm() {
                                   : {}),
                               }}
                               requiredSeats={passengerCounts.seated}
+                              requireStandaloneFare={
+                                !state.tour &&
+                                !state.serviceKinds.includes('HOTEL')
+                              }
                               selectedId={state.ticket.returnOfferId}
                               onSelect={(offer) => {
                                 if (
@@ -1009,6 +1078,12 @@ export function SalesContractForm() {
                                 setError('');
                                 patchState({
                                   returnOffer: offer,
+                                  servicePricing: standaloneTicketPricing(
+                                    state,
+                                    offer,
+                                    'RETURN',
+                                    passengerCounts.seated,
+                                  ),
                                   contractFlights: Object.fromEntries(
                                     Object.entries(
                                       state.contractFlights ?? {},
@@ -1463,6 +1538,14 @@ export function SalesContractForm() {
                   .join(' و ')}{' '}
                 همراه خدمات است؛ هزینهٔ اضافه ندارد و در خروجی بلیط درج می‌شود.
               </p>
+            ) : null}
+            {state.tour ? (
+              <TourPublishedPricePicker
+                state={state}
+                onChange={(tourPriceSource, servicePricing) =>
+                  patchState({ tourPriceSource, servicePricing })
+                }
+              />
             ) : null}
             <SalesPricingPanel
               currencies={references.currencies}

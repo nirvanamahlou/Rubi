@@ -684,6 +684,40 @@ export function TourWorkspace() {
                         }
                       />
                     </FormField>
+                    <FormField label="قیمت فروش تکی هر صندلی">
+                      <Input
+                        inputMode="decimal"
+                        value={flight.draft.standaloneSalePrice?.amount ?? ''}
+                        onChange={(event) =>
+                          patchFlight({
+                            standaloneSalePrice: {
+                              amount: event.target.value,
+                              currencyCode:
+                                flight.draft.standaloneSalePrice
+                                  ?.currencyCode ?? 'IRR',
+                            },
+                          })
+                        }
+                      />
+                    </FormField>
+                    <FormField label="ارز فروش تکی">
+                      <Input
+                        maxLength={3}
+                        value={
+                          flight.draft.standaloneSalePrice?.currencyCode ??
+                          'IRR'
+                        }
+                        onChange={(event) =>
+                          patchFlight({
+                            standaloneSalePrice: {
+                              amount:
+                                flight.draft.standaloneSalePrice?.amount ?? '',
+                              currencyCode: event.target.value.toUpperCase(),
+                            },
+                          })
+                        }
+                      />
+                    </FormField>
                     <Choice
                       label="کلاس پرواز"
                       value={flight.draft.cabinClassCode}

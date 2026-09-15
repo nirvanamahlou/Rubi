@@ -50,6 +50,7 @@ export function TicketOfferCard({
   originLabel = 'مبدأ',
   destinationLabel = 'مقصد',
   requiredSeats = 1,
+  requireStandaloneFare = false,
 }: {
   offer: TicketOfferV1;
   selected: boolean;
@@ -57,15 +58,17 @@ export function TicketOfferCard({
   originLabel?: string;
   destinationLabel?: string;
   requiredSeats?: number;
+  requireStandaloneFare?: boolean;
 }) {
   const departure = ticketDisplayTime(offer.departureAt);
   const insufficient = offer.remainingCapacity < requiredSeats;
+  const missingFare = requireStandaloneFare && !offer.standaloneSalePrice;
   const arrival = ticketDisplayTime(offer.arrivalAt);
   return (
     <button
       type="button"
       aria-pressed={selected}
-      disabled={insufficient}
+      disabled={insufficient || missingFare}
       aria-label={`${offer.carrierName}، پرواز ${offer.serviceNumber}، ${originLabel} به ${destinationLabel}، ${departure.date} ساعت ${departure.time}${selected ? '، انتخاب‌شده' : ''}`}
       onClick={() => onSelect(offer)}
       className={`w-full disabled:cursor-not-allowed disabled:opacity-60 overflow-hidden rounded-2xl border text-start shadow-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${selected ? 'border-blue-600 bg-blue-600 text-white' : 'border-border bg-surface hover:border-primary/60 hover:shadow-md'}`}
@@ -152,6 +155,13 @@ export function TicketOfferCard({
               : 'اکونومی'}
         </span>
         <span className="flex flex-wrap gap-x-3 gap-y-1">
+          {requireStandaloneFare ? (
+            <strong className={missingFare ? 'text-rose-600' : ''}>
+              {offer.standaloneSalePrice
+                ? `فروش تکی هر صندلی: ${offer.standaloneSalePrice.amount} ${offer.standaloneSalePrice.currencyCode}`
+                : 'قیمت فروش تکی در مدیریت بلیط ثبت نشده'}
+            </strong>
+          ) : null}
           <span>
             ظرفیت کل:{' '}
             {new Intl.NumberFormat('fa-IR').format(offer.totalCapacity)} نفر

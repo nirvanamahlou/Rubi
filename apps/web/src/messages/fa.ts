@@ -117,11 +117,6 @@ export const navigationMessages = [
     description: 'قرارداد جدید و تخصیص مسافر به خدمات',
   },
   {
-    title: 'مدیریت قیمت',
-    href: '/pricing-management',
-    description: 'قیمت روزانه تورها و بلیت‌های ملکی و خروجی بنر',
-  },
-  {
     title: 'خرید و تأمین',
     href: '/purchases',
     description: 'خرید خدمات و تأمین‌کنندگان',

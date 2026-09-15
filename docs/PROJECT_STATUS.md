@@ -1,5 +1,10 @@
 # وضعیت پروژه
 
+## 2026-09-15 — TICKET-STANDALONE-SALE-PRICE-0915 — PC-A — READY_FOR_REVIEW
+
+PR #278 با حفظ همهٔ تعارض‌های اسناد و رابطه‌های افزایشی Prisma فقط در شاخهٔ مستقل `codex/pc-a-ticket-standalone-sale-price-0915` جمع شده؛ develop و localhost:3100 تغییر نکرده‌اند. نرخ فروش تکی بلیط واقعی با Decimal/ارز و revision مستقل از هزینهٔ خرید مالی و قیمت منتشرشدهٔ تور تعریف شده است. فروش بلیط مستقل نرخ هر صندلی را در کارت نشان می‌دهد و برای تعداد بزرگسال/کودک دارای صندلی snapshot می‌کند؛ فروش تور قیمت منتشرشدهٔ مدیریت قیمت برای هتل/بازه/اتاق را انتخاب و مرجع نسخه را همراه قرارداد ذخیره می‌کند. Migration افزایشی تاریخچهٔ نرخ فقط در شاخه است و روی دیتابیس مشترک اجرا نشده. PDF جدید بلیط در PR #291 با CI سبز است، ولی چون آن PR هنوز در develop ادغام نشده، خروجی localhost:3100 فعلاً همان نسخهٔ develop است. Prisma validate/generate، lint/typecheck/build API و Web، ۱۴۲۸ تست کامل API و تست‌های هدفمند قیمت و فرم بلیط موفق‌اند. Web کامل ۱۴۷۲ موفق و چهار مورد ناموفق داشت؛ مورد مرتبط با متن قدیمی فرم بلیط اصلاح و هدفمند سبز شد. سه مورد HR/Navigation در فایل‌های دست‌نخوردهٔ develop هستند. Migration اجرا و PR به develop ادغام نشده است.
+
+
 ## 2026-09-14 — RESERVATION-TICKET-PDF-PASSENGER-0914 — PC-A — READY_FOR_REVIEW
 
 نام مسافر در درخواست‌های تازه Sales داخل Snapshot نسخه‌دار Reservations حفظ می‌شود. برای قراردادهای قدیمی مانند `SC-2026-000003` که نام در Snapshot جا افتاده، پنجره بلیط و PDF نام را از پرونده اصلی مسافر می‌خوانند، بدون بازنویسی Snapshot یا سند تاریخی. موتور PDF مسیر Chrome یا Edge و فونت نازنین محلی را خودکار پیدا می‌کند و نبود فونت سفارشی مانع صدور نیست. ۴ تست API، ۱۸ تست Web، lint/typecheck/build API/Web و ساخت واقعی PDF با Chrome نصب‌شده موفق‌اند. جزئیات در [RESERVATION-TICKET-PDF-PASSENGER-0914](tasks/RESERVATION-TICKET-PDF-PASSENGER-0914.md) ثبت شده است.
@@ -128,6 +133,76 @@ lint، typecheck و build تولیدی ۴۶ route پاس شدند. جزئیات 
   Vitest با syntax همان snapshot collect نمی‌شوند و برای حفظ نسخه مرجع اصلاح نشدند.
 - Runtime وب این شاخه روی پورت 3000 و API موجود بدون restart روی پورت 4000 ارائه
   می‌شود. جزئیات در `docs/tasks/REPORTING-RESTORE-219-LATEST.md` ثبت شده است.
+
+## 2026-09-15 — PACKAGE-PRICING-001 Finance ticket bridge and tour publications (isolated 3200)
+
+The owner-approved `origin/develop` merge was committed on the PC-A task
+branch only; PR #278 still targets `develop` and is not merged. A real Ticket
+offer now creates an amount-free, FK-linked Procurement purchase request;
+Finance records immutable adult/child purchase-cost revisions, invoice and
+payment evidence directly. Only a fully PAID cost is exposed through Finance's
+public projection to Sales; a partial payment or a legacy catalog estimate is
+not treated as confirmed. `/sales/pricing` reads the same tour, Reservations'
+hotel purchase batch and Finance paid flight rates, saves versioned drafts by
+tour/batch and publishes 18 independent hotel/room prices in the synthetic
+three-hotel example after maker/checker and currency/capacity/source recheck.
+The known occupancy codes have final package sale and net profit after
+commission; family remains hotel-only until occupancy is defined. A new
+synthetic offer produced a NEW Finance request without amount, a full synthetic
+Finance payment released its cost, draft version 1→2 reopened, self-publication
+returned 403, and a second synthetic reviewer published version 1. Two
+additive migrations succeeded in a fresh 67-migration isolated PG rehearsal
+and on the separate 3200 preview DB. Web3200/API4200 responded 200;
+Web3100, shared data, `develop` and `main` remain untouched. Browser visual QA
+was unavailable due the Windows sandbox ACL helper; component/API tests and
+production builds are the available evidence. Cross-currency FX, Sales
+contract quote selection and unknown family occupancy remain follow-ups.
+
+Final isolated smoke after rebuilt Web3200/API4200: 200 login/health,
+67/67 migrations up to date, one saved publication with 18 room prices,
+the same offer ID on an idempotent retry, and the original Web3100 listener
+unchanged. API/Web lint, typecheck, focused tests and production builds pass.
+Scoped implementation commit `e9f91e6f` released the reserved PC-A migration,
+central-doc and shared-contract locks; PR #278 remains a draft review, unmerged.
+
+The older preview-only entry below records the earlier stage, not the current
+publication status.
+
+## 2026-09-15 — PACKAGE-PRICING-001 tour-cost Sales preview (not published)
+
+The /sales/pricing page is now a real Sales sidebar child and tour-cost
+workspace instead of the old mostly-empty tab layout. It reads existing tour
+departures through Ticket Catalog's public service and hotel broker purchase
+rates through Reservations' public projection, scoped to branch/date/hotel.
+Separate hotel/room stay-sale previews respond to fixed/percent increase or
+decrease; commission is a net-margin expense, not a sale uplift. The isolated
+Web3200/API4200/PostgreSQL demo has one synthetic five-night tour and three
+hotel rates; authenticated tour/cost endpoints returned 200. Web3100 and
+operational data were not changed. Publication/durable Sales drafts remain
+incomplete: the owner requires Ticket-definition purchase requests priced and
+paid by Finance, but current TicketPublishedOffer has no purchase fare and
+Finance inbox has no pre-sale Ticket source. Package price publication stays
+disabled instead of inventing a flight cost or net profit. Browser visual QA
+was unavailable because its sandbox helper failed; API/live route, component
+tests and builds are the available checks. See docs/tasks/PACKAGE-PRICING-001.md
+and ADR-PACKAGE-FLIGHT-FINANCE-COST-0915.
+
+## 2026-09-15 — PACKAGE-PRICING-001 — PC-A — ISOLATED WEB3200 PREVIEW
+
+- گزارش کاربر از نبود بخش مدیریت قیمت در UI درست بود: route /sales/pricing وجود داشت اما داشبورد Sales هیچ ورودی نمایانی به آن نداشت. CTA «مدیریت قیمت و پکیج‌ها» به سرصفحه قراردادها افزوده شد؛ ساختار ۱۷ آیتم منوی اصلی حفظ شد.
+- نسخه جدید Web3200 build شد: ۹ تست Sales/Pricing، lint و typecheck موفق؛ با session واقعی آزمایشی، داشبورد Sales و صفحه Pricing هر دو ۲۰۰ هستند و href دکمه در HTML زنده دیده می‌شود. بازبینی بصری در مرورگر همچنان با مالک محصول است.
+- Web3200 به API4200 و PostgreSQL آزمایشی مستقل متصل است؛ Web3100/API مشترک و داده عملیاتی دست‌نخورده‌اند.
+- تداخل route بازه نرخ هتل با wildcard اطلاعات پایه رفع شد. شهر تهران و سه هتل synthetic در Grid قابل دریافت‌اند؛ بازه پنج‌شبه با دو هتل منتخب ذخیره و از نسخه ۱ به ۲ ویرایش شد و نرخ اصلاح‌شده ۱۳۰ بازخوانی شد.
+- مسیر صفحه و login در Web3200 و health API4200 پاسخ ۲۰۰ می‌دهند. تأیید بصری مرورگر از داخل ابزار به علت reset مکرر آن ممکن نشد؛ بازبینی ظاهر و تصمیم انتقال به 3100 با مالک محصول است.
+
+## 2026-09-14 — PACKAGE-PRICING-001 — PC-A — IMPLEMENTED / PARTIAL UPSTREAM BLOCKED
+
+- زیر‌بخش `/sales/pricing` بدون آیتم مستقل منوی اصلی به Sales افزوده شد. Preview و قیمت‌های synthetic قبلی حذف شدند و UI هشت‌برگه از API واقعی، branch scope و permissionهای مستقل استفاده می‌کند.
+- قرارداد نسخه‌دار، ۱۳ مدل Package Pricing، Migration افزایشی، موتور Decimal، نسخه قیمت immutable، maker/checker، quote، render request واقعی با `AWAITING_RENDERER`، توقف فروش، قالب نسخه‌دار و Audit پیاده‌سازی شده‌اند.
+- Follow-up قیمت هتل تکمیل شد: در `/master-data/accommodation/hotel-rates` شهر و بازه اقامت انتخاب می‌شود، شب‌ها محاسبه و همه هتل‌های فعال همان شهر در Grid اکسل‌مانند با تیک حضور در تور، مبلغ پایه و ضرایب قابل ویرایش نمایش داده می‌شوند. هر Save یک نسخه immutable می‌سازد و بازه بعداً قابل بازکردن و اصلاح است.
+- Public Contract نسخه‌دار نرخ پایه هتل از Master Data به Package Pricing متصل شد؛ مبلغ و ضرایب snapshot می‌شوند و reference قدیمی یا خارج از شعبه fail-closed است. blocker هتل رفع شد، اما تولید Price Version ترکیبی همچنان تا producer نرخ/ظرفیت بلیت در Ticket Catalog fail-closed است؛ Renderer نیز در `AWAITING_RENDERER` می‌ماند.
+- جزئیات، endpointها، validation و handoff در [PACKAGE-PRICING-001](tasks/PACKAGE-PRICING-001.md) ثبت شده است.
+
 
 ## 2026-09-15 — RESERVATION-PURCHASE-LAYOUT-0915 — PC-A — IN REVIEW
 

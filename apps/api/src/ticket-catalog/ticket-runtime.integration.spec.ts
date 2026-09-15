@@ -8,6 +8,7 @@ import type {
 import { createDatabaseClient } from '@nora/database';
 import type { DatabaseService } from '../database/database.service';
 import { ReservationsPublicService } from '../reservations/reservations-public.service';
+import { ProcurementPublicService } from '../procurement/procurement-public.service';
 import {
   TicketPublicService,
   validateTicketOffer,
@@ -38,6 +39,19 @@ describe('published ticket validation', () => {
       expect(() => validateTicketOffer({ ...definition, ...change })).toThrow();
     }
     expect(validateTicketOffer(definition)).toEqual(definition);
+    expect(
+      validateTicketOffer({
+        ...definition,
+        standaloneSalePrice: { amount: '2500000', currencyCode: 'IRR' },
+      }).standaloneSalePrice,
+    ).toEqual({ amount: '2500000', currencyCode: 'IRR' });
+    for (const invalidPrice of ['0', '-100', '1.12345'])
+      expect(() =>
+        validateTicketOffer({
+          ...definition,
+          standaloneSalePrice: { amount: invalidPrice, currencyCode: 'IRR' },
+        }),
+      ).toThrow();
   });
 });
 
@@ -49,7 +63,10 @@ describe.skipIf(!process.env.TRAVEL_TEST_DATABASE_URL)(
         'postgresql://unused:unused@localhost/unused',
     );
     const database = { client } as DatabaseService;
-    const tickets = new TicketPublicService(database);
+    const tickets = new TicketPublicService(
+      database,
+      new ProcurementPublicService(database),
+    );
     const reservations = new ReservationsPublicService(database);
     const sales = new SalesRepository(database);
     const branchId = randomUUID();

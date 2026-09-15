@@ -29,6 +29,7 @@ import {
   validateRateBatch,
   type RoomKind,
 } from './hotel-rates.validation';
+import { HotelPurchaseRatesPublicService } from './hotel-purchase-rates.public';
 
 @Injectable()
 export class HotelRatesService {
@@ -222,6 +223,7 @@ export class HotelRatesController {
 @Module({
   imports: [IamModule, MasterDataModule],
   controllers: [HotelRatesController],
-  providers: [AuthGuard, HotelRatesService],
+  providers: [AuthGuard, HotelRatesService, HotelPurchaseRatesPublicService],
+  exports: [HotelPurchaseRatesPublicService],
 })
 export class HotelRatesModule {}
