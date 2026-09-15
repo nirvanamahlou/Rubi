@@ -1,5 +1,16 @@
 # Work Assignments
 
+## MASTER-012-AIRLINE-BAGGAGE-FORM — PC-B — READY_FOR_REVIEW
+
+- پیگیری مالک محصول در 2026-09-15: قواعد بار «عنوان فارسی» نمی‌خواهند. تکمیل همان واحد روی PR #285 و Branch موجود، با حفظ تمام تغییرات قبلی و محدوده Catalog/Form/Editor/Fixture/Test اطلاعات پایه، رزرو شد؛ Schema/Contract/API و ماژول دیگر دست‌نخورده می‌مانند.
+- تکمیل پیگیری: فیلد عنوان فارسی از Catalog قواعد بار حذف و `name` لازم برای Backend به‌صورت خودکار و انگلیسی از کدهای موجود ساخته شد؛ Fixture نمایشی و Demo Data هماهنگ شدند. ۳۰ تست مستقیم، typecheck و lint محدوده موفق‌اند.
+- تحویل Merge در 2026-09-15 با تأیید صریح مالک محصول: CI اولیه PR #285 فقط در گیت قالب‌بندی فایل‌های تغییرکرده شکست خورد؛ قالب‌بندی Prettier و تست منبعی حساس به شکست خط اصلاح شد. ۳۳ تست هدفمند، typecheck، lint و قالب‌بندی تغییرات اکنون موفق‌اند؛ منتظر اجرای دوباره CI و Review پیش از Merge.
+- درخواست مالک محصول: قواعد بار در خود فرم ایجاد/ویرایش ایرلاین ثبت و برای بزرگسال، کودک و نوزاد و هر کلاس پروازی جداگانه قابل تنظیم شود.
+- `COMPUTER_ID=PC-B`؛ شاخه مستقل `codex/pc-b-airline-baggage-form` از `origin/develop@b62054e3`.
+- محدوده رزروشده: رابط فرم و Workspace حمل‌ونقل اطلاعات پایه، تست‌های مستقیم آن و اسناد همین واحد. مدل `MasterBaggageRule` و FKهای ایرلاین/کلاس موجود حفظ می‌شوند؛ بدون Schema/Migration، قرارداد مشترک، API جدید، Dependency/Lockfile یا فایل متعلق به PC-A.
+- قواعد هر ایرلاین به‌صورت رکورد مستقل Backend ذخیره می‌شوند؛ فرم ایرلاین فقط مسیر مدیریت این رکوردهای وابسته است. قفل مرکزی دیگری نیاز نیست.
+- نتیجه: زیرناوبری قواعد بار حذف شد؛ فرم ایجاد ایرلاین پس از ذخیره در همان Dialog به ویرایش تبدیل و ویرایشگر قواعد بار را فعال می‌کند. قواعد بزرگسال/کودک/نوزاد برای کلاس عمومی یا کلاس مشخص و مسیر جداگانه، با ویرایش/غیرفعال‌سازی و نمایش فقط‌خواندنی در پروفایل عرضه شدند. ۲۴ تست هدفمند، typecheck، lint محدوده و build تولیدی Web با ۴۶ Route موفق‌اند؛ رزرو فایل‌های اجرایی برای Review آزاد است.
+
 ## PROFILE-PLACEHOLDER-AVATAR-001 — PC-B — VERIFIED / LOCAL_ACTIVATION
 
 - درخواست مالک محصول در 2026-09-14: عبارت‌های موقت منوی پروفایل به‌صورت کامل نمایش داده شوند و حروف مخفف «کارمند سامانه» یا «در حال دریافت اطلاعات» داخل آواتار نیاید. `COMPUTER_ID=PC-B`؛ شاخه `codex/pc-b-profile-placeholder-avatar` از `origin/develop@225be9bd`.
@@ -2942,3 +2953,10 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
   هدفمند پاس شدند. نسخهٔ یکپارچه روی Gateway3100/Web3110/API4191 با commit
   `f87ac084` فعال و health API/Web برابر ۲۰۰ است. تب مرورگر بدون نشست به login
   هدایت می‌شود؛ grant فردی و smoke داخل حساب پس از معرفی حساب‌های مجاز پیگیری می‌شود.
+## RESERVATION-MANIFEST-TICKET-CARDS-0914 - PC-A - READY_FOR_REVIEW
+
+- Product request 2026-09-14: after choosing a MANIFEST date range, show each matching outbound or return ticket as a Ticket Management style card. Show whether an active airline/destination template is available and generate only through that template.
+- Independent branch codex/pc-a-manifest-ticket-cards-0914 from origin/develop@b62054e3; COMPUTER_ID=PC-A.
+- Reserved scope: public Manifest list/export contracts, Reservations Manifest service/controller, public Master Data template lookup, controlled Documents referenced-file read, Manifest card UI and focused tests, plus this task status. No migration, seed, passenger data, dependency/lockfile, or localhost runtime changes.
+- Reservations consumes public Master Data and Documents services only. A template must be active, XLSX, destination-matched, and CLEAN. If a shared file changes on refreshed origin/develop, stop before resolving and report the overlap.
+- Implementation complete: the date-range search returns outbound and return ticket cards, resolves the active airline/destination template, disables unsupported cards with an explicit reason, and downloads only the selected ticket through its stored XLSX document. Contract-level export history remains idempotent and is separated by the selected flight departure. Eight focused API tests and one Web render test, scoped lint, Contracts/API/Web typecheck, and API/Web production builds passed. No migration, seed, dependency, passenger data, or localhost runtime change.
