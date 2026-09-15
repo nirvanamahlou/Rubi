@@ -2872,3 +2872,9 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
   تعارض با Schema و Backend جدید کنار گذاشته شد. lint محدوده، بررسی Syntax ماکاپ و build
   تولیدی ۴۶ مسیر موفق‌اند. Gateway3100، Web3110 و API4191 از checkout تجمیعی فعال و
   شناسهٔ runtime با commit کد `8843fe0b` منطبق است؛ رزرو source آزاد شد.
+- پیگیری 2026-09-15: اجرای مستقیم Next از checkout اصلی روی ۳۱۰۰، Gateway تجمیعی را
+  جایگزین کرده بود. پس از احراز PID و مسیر آن، launcher نسخهٔ تجمیعی را برگرداند و دو
+  PR جدید `develop` برای بازهٔ سن کودک هتل و آواتار پیش‌فرض پروفایل نیز بدون تعارض ادغام
+  شدند. ۱۵ تست هدفمند، lint محدوده، typecheck API/Web و build تولیدی API/Web با ۴۶
+  مسیر موفق‌اند. Gateway3100/Web3110/API4191 با commit کد `2433f5e2` و API health ۲۰۰
+  فعال‌اند؛ هیچ Migration، Seed، Grant یا تغییر داده انجام نشد.
