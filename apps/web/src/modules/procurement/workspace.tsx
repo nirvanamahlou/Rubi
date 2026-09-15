@@ -37,6 +37,7 @@ import {
 } from './presentation';
 import { sampleRequests, type ProcurementListRow } from './sample-requests';
 import { ProcurementSelect } from './procurement-select';
+import { MasterDataDateRangeFilter } from '@/modules/master-data/components/master-data-date-range-filter';
 import { cn } from '@/lib/utils';
 
 const groups = [
@@ -207,6 +208,8 @@ function WorkspaceState({
   const [group, setGroup] = useState(() => sectionIndex(initialSection));
   const [status, setStatus] = useState('');
   const [search, setSearch] = useState('');
+  const [createdFrom, setCreatedFrom] = useState('');
+  const [createdTo, setCreatedTo] = useState('');
   const [querySearch, setQuerySearch] = useState('');
   const [page, setPage] = useState(1);
   const [selectedId, setSelectedId] = useState<string | null>(initialRequestId);
@@ -270,6 +273,8 @@ function WorkspaceState({
       querySearch,
       status,
       queryQueue,
+      createdFrom,
+      createdTo,
     ],
     queryFn: () =>
       procurementApi.list(
@@ -278,6 +283,8 @@ function WorkspaceState({
           search: querySearch,
           status,
           queue: queryQueue,
+          createdFrom,
+          createdTo,
         }),
       ),
     enabled: group === 0,
@@ -293,6 +300,8 @@ function WorkspaceState({
     group === 0 &&
     page === 1 &&
     !status &&
+    !createdFrom &&
+    !createdTo &&
     !search &&
     !querySearch &&
     list.isSuccess &&
@@ -522,7 +531,7 @@ function WorkspaceState({
           <Card className="overflow-hidden border-blue-300/70 dark:border-blue-400/25">
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-gradient-to-l from-blue-400/15 to-transparent p-5 dark:from-blue-400/8">
               <h2 className="font-bold">پیگیری‌های من</h2>
-              <div className="flex flex-wrap items-end gap-3">
+              <div className="grid w-full items-end gap-3 sm:grid-cols-2 xl:w-auto xl:grid-cols-[minmax(150px,220px)_minmax(130px,170px)_minmax(300px,350px)] xl:[&>fieldset]:col-span-1">
                 <FormField id="proc-home-search" label="شماره یا عنوان">
                   <Input
                     id="proc-home-search"
@@ -548,6 +557,29 @@ function WorkspaceState({
                     ))}
                   </ProcurementSelect>
                 </FormField>
+                <MasterDataDateRangeFilter
+                  title="تاریخ ثبت پرونده"
+                  fromDate={createdFrom}
+                  toDate={createdTo}
+                  idPrefix="proc-home"
+                  onFromDateChange={(value) => {
+                    setCreatedFrom(value.slice(0, 10));
+                    if (createdTo && value && value > createdTo)
+                      setCreatedTo('');
+                    setPage(1);
+                  }}
+                  onToDateChange={(value) => {
+                    setCreatedTo(value.slice(0, 10));
+                    if (createdFrom && value && value < createdFrom)
+                      setCreatedFrom('');
+                    setPage(1);
+                  }}
+                  onReset={() => {
+                    setCreatedFrom('');
+                    setCreatedTo('');
+                    setPage(1);
+                  }}
+                />
               </div>
             </div>
             {list.isPending ? (

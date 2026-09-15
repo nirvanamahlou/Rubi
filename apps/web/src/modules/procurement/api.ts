@@ -151,9 +151,16 @@ export const procurementApi = {
     procurementRequest<ProcurementRequestV1>(
       `/requests/${encodeURIComponent(id)}`,
     ),
-  suppliers: (page: number, search: string) =>
+  suppliers: (
+    page: number,
+    search: string,
+    dates: { createdFrom: string; createdTo: string } = {
+      createdFrom: '',
+      createdTo: '',
+    },
+  ) =>
     procurementRequest<ProcurementListV1<Supplier>>(
-      `/suppliers?${new URLSearchParams({ page: String(page), search })}`,
+      `/suppliers?${new URLSearchParams({ page: String(page), search, ...dates })}`,
     ),
   records: (id: string, kind: string, page: number) =>
     procurementRequest<ProcurementListV1<Record<string, unknown>>>(

@@ -25,6 +25,7 @@ import {
 } from '@/components/ui/surfaces';
 import { masterDataApi } from '@/modules/master-data/api/client';
 import { MasterDataLiveForm } from '@/modules/master-data/components/master-data-live-form';
+import { MasterDataDateRangeFilter } from '@/modules/master-data/components/master-data-date-range-filter';
 import { getMasterDataDefinition } from '@/modules/master-data/model/catalog';
 import { cn } from '@/lib/utils';
 import { procurementApi, commandAttempt, type Bootstrap } from './api';
@@ -240,6 +241,8 @@ export function InternalSections({
   const [search, setSearch] = useState('');
   const [querySearch, setQuerySearch] = useState('');
   const [status, setStatus] = useState('');
+  const [createdFrom, setCreatedFrom] = useState('');
+  const [createdTo, setCreatedTo] = useState('');
   const [page, setPage] = useState(1);
   const [candidate, setCandidate] = useState('');
   const [supplierFormOpen, setSupplierFormOpen] = useState(false);
@@ -251,7 +254,16 @@ export function InternalSections({
     return () => clearTimeout(timer);
   }, [search]);
   const list = useQuery({
-    queryKey: ['procurement', 'section-list', group, page, querySearch, status],
+    queryKey: [
+      'procurement',
+      'section-list',
+      group,
+      page,
+      querySearch,
+      status,
+      createdFrom,
+      createdTo,
+    ],
     queryFn: () =>
       procurementApi.list(
         new URLSearchParams({
@@ -260,14 +272,24 @@ export function InternalSections({
           status,
           queue: group === 2 ? 'approvals' : '',
           section: sectionQuery[group] ?? '',
+          createdFrom,
+          createdTo,
         }),
       ),
     enabled: group !== 3,
     retry: false,
   });
   const suppliers = useQuery({
-    queryKey: ['procurement', 'suppliers', page, querySearch],
-    queryFn: () => procurementApi.suppliers(page, querySearch),
+    queryKey: [
+      'procurement',
+      'suppliers',
+      page,
+      querySearch,
+      createdFrom,
+      createdTo,
+    ],
+    queryFn: () =>
+      procurementApi.suppliers(page, querySearch, { createdFrom, createdTo }),
     enabled: group === 3,
     retry: false,
   });
@@ -277,6 +299,8 @@ export function InternalSections({
     !search &&
     !querySearch &&
     !status &&
+    !createdFrom &&
+    !createdTo &&
     list.isSuccess &&
     !list.data.items.length;
   const rows: ProcurementListRow[] = showSamples
@@ -289,7 +313,7 @@ export function InternalSections({
   const realRows = rows.filter((row) => !row.sample);
   const supplierRows = suppliers.data?.items.length
     ? suppliers.data.items
-    : page === 1 && !search && !querySearch
+    : page === 1 && !search && !querySearch && !createdFrom && !createdTo
       ? sampleSuppliers
       : [];
   const title = sections[group];
@@ -393,7 +417,14 @@ export function InternalSections({
                   صفحه
                 </span>
               </div>
-              <FilterBar className="rounded-none border-0 border-b border-border shadow-none">
+              <FilterBar
+                className={cn(
+                  'grid items-end gap-3 rounded-none border-0 border-b border-border shadow-none sm:grid-cols-2 xl:[&>fieldset]:col-span-1',
+                  group === 2 || group === 3
+                    ? 'xl:grid-cols-[minmax(0,1fr)_minmax(300px,360px)]'
+                    : 'xl:grid-cols-[minmax(0,1fr)_minmax(150px,190px)_minmax(300px,360px)]',
+                )}
+              >
                 <FormField
                   id="proc-section-search"
                   label={
@@ -433,6 +464,34 @@ export function InternalSections({
                     </ProcurementSelect>
                   </FormField>
                 )}
+                <MasterDataDateRangeFilter
+                  title={
+                    group === 3 ? 'تاریخ ثبت تأمین‌کننده' : 'تاریخ ثبت پرونده'
+                  }
+                  fromDate={createdFrom}
+                  toDate={createdTo}
+                  idPrefix={`proc-section-${group}`}
+                  onFromDateChange={(value) => {
+                    setCreatedFrom(value.slice(0, 10));
+                    if (createdTo && value && value > createdTo)
+                      setCreatedTo('');
+                    setPage(1);
+                    setCandidate('');
+                  }}
+                  onToDateChange={(value) => {
+                    setCreatedTo(value.slice(0, 10));
+                    if (createdFrom && value && value < createdFrom)
+                      setCreatedFrom('');
+                    setPage(1);
+                    setCandidate('');
+                  }}
+                  onReset={() => {
+                    setCreatedFrom('');
+                    setCreatedTo('');
+                    setPage(1);
+                    setCandidate('');
+                  }}
+                />
               </FilterBar>
               {group === 3 ? (
                 suppliers.isPending ? (

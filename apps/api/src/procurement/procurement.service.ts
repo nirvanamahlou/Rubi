@@ -255,11 +255,20 @@ export class ProcurementService {
     };
   }
   async list(query: Record<string, unknown>, actor: AuthenticatedActor) {
-    v.object(query, ['page', 'search', 'status', 'queue', 'section']);
+    v.object(query, [
+      'page',
+      'search',
+      'status',
+      'queue',
+      'section',
+      'createdFrom',
+      'createdTo',
+    ]);
     const page = v.integer(Number(query.page ?? 1), 'page', 100000);
     const search = v.text(query.search, 'search', 100, true);
     const status = v.text(query.status, 'status', 40, true);
     const section = v.text(query.section, 'section', 30, true);
+    const dates = v.dateRange(query.createdFrom, query.createdTo);
     requireRule(
       !section ||
         ['quotes', 'orders', 'receipts', 'invoices'].includes(section),
@@ -293,6 +302,10 @@ export class ProcurementService {
     if (operational) {
       const filters = [await this.sqlScope(actor), operational];
       if (status) filters.push(Prisma.sql`r.status = ${status}`);
+      if (dates.start)
+        filters.push(Prisma.sql`r."createdAt" >= ${dates.start}`);
+      if (dates.endExclusive)
+        filters.push(Prisma.sql`r."createdAt" < ${dates.endExclusive}`);
       if (search)
         filters.push(
           Prisma.sql`(r.title ILIKE ${`%${search.replace(/[\\%_]/g, '\\$&')}%`} OR r.number ILIKE ${`%${search.replace(/[\\%_]/g, '\\$&')}%`})`,
@@ -318,6 +331,13 @@ export class ProcurementService {
         ],
       });
     if (status) and.push({ status });
+    if (dates.start || dates.endExclusive)
+      and.push({
+        createdAt: {
+          ...(dates.start ? { gte: dates.start } : {}),
+          ...(dates.endExclusive ? { lt: dates.endExclusive } : {}),
+        },
+      });
     if (section === 'quotes')
       and.push({
         OR: [
@@ -413,10 +433,12 @@ export class ProcurementService {
   }
   async suppliers(query: Record<string, unknown>, actor: AuthenticatedActor) {
     await this.scope(actor);
-    v.object(query, ['page', 'search']);
+    v.object(query, ['page', 'search', 'createdFrom', 'createdTo']);
+    const dates = v.dateRange(query.createdFrom, query.createdTo);
     return this.master.suppliers(
       v.text(query.search, 'search', 100, true),
       v.integer(Number(query.page ?? 1), 'page', 100000),
+      dates,
     );
   }
   private async validateReferences(

@@ -31,9 +31,24 @@ export class MasterProcurementDirectory {
     )
       throw new BadRequestException('ارز باید در اطلاعات پایه فعال باشد.');
   }
-  async suppliers(search: string, page: number) {
+  async suppliers(
+    search: string,
+    page: number,
+    dates: { start: Date | null; endExclusive: Date | null } = {
+      start: null,
+      endExclusive: null,
+    },
+  ) {
     const rows = await this.database.client.masterSupplier.findMany({
       where: {
+        ...(dates.start || dates.endExclusive
+          ? {
+              createdAt: {
+                ...(dates.start ? { gte: dates.start } : {}),
+                ...(dates.endExclusive ? { lt: dates.endExclusive } : {}),
+              },
+            }
+          : {}),
         ...(search
           ? {
               OR: [
