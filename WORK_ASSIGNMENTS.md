@@ -1,13 +1,13 @@
 # Work Assignments
 
-## DASHBOARD-REPORTING-PC-AB-INTEGRATION — PC-C — LOCAL_COMPLETE / PUSH_AUTH_BLOCKED
+## DASHBOARD-REPORTING-PC-AB-INTEGRATION — PC-C — PR_OPEN / CI_PENDING
 
 - درخواست 2026-09-15: دریافت تغییرات یکپارچه‌شدهٔ PC-A/PC-B از `origin/develop` و حفظ نسخهٔ نهایی Dashboard/Reports در شاخهٔ اجرایی `codex/pc-c-dashboard-reporting-latest`، سپس انتشار و درخواست merge.
 - تغییرات محلی PC-C پیش از ادغام ثبت می‌شوند؛ دادهٔ نمونهٔ PostgreSQL، فایل‌های `.data` و خروجی تولیدشده وارد Git نمی‌شوند.
 - شاخه‌های مستقل و باز PC-A/PC-B بدون تأیید یا merge خودشان به‌عنوان کار تکمیل‌شده تلقی نمی‌شوند؛ ریسک تعارض Schema/Manifest/Docs و تست یکپارچه‌سازی بررسی می‌شود.
 - `origin/develop@ff15c7d3` با حفظ Dashboard/Reports در Worktree مستقل ادغام شد؛ تعارض‌های Docs، AppModule و Prisma additive حل شدند و نام بسته‌های Reports با تغییر `@rubi` به `@nora` هماهنگ شد.
 - Prisma validate، typecheck و build Database/Contracts/Config/API/Web، lint محدوده و ۲۶ تست API + ۶۶ تست Web موفق‌اند. Worktree اجرایی ۳۰۰۰ و دادهٔ نمونهٔ آن دست‌نخورده ماند؛ merge به develop تنها پس از PR/CI انجام می‌شود.
-- `git push` به `origin` با Git Credential Manager برای ورود تعاملی متوقف شد؛ اجرای بدون prompt خطای `could not read Username for https://github.com` داد. تا احراز هویت GitHub روی PC-C، Branch فقط محلی است و هیچ PR/merge به develop انجام نشده است.
+- پس از احراز هویت Git Credential Manager، Branch به `origin` پوش شد و PR شمارهٔ 289 برای `develop` باز شد. مرج پس از بررسی CI و قابلیت مرج انجام می‌شود.
 
 ## REPORTING-AUTHENTICATED-RUNTIME-REPAIR — PC-C — LOCAL_COMPLETE
 

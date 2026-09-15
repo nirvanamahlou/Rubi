@@ -6,7 +6,7 @@
 
 Prisma validate، typecheck و build بسته‌های مشترک/API/Web، lint محدودهٔ Dashboard/Reports و ۲۶ تست API + ۶۶ تست Web موفق‌اند. Branchهای جدیدتر PC-A Manifest و PC-B Procurement هنوز مستقل از develop هستند و ادغام خودکار آن‌ها در این واحد کار انجام نمی‌شود. انتشار نهایی از مسیر PR به develop و CI پیگیری می‌شود.
 
-Push به `origin` فعلاً به‌دلیل نبود نشست احراز هویت GitHub روی PC-C ممکن نشد (`could not read Username for https://github.com`). commit ادغام فقط محلی است؛ برای ادامه باید مالک وارد GitHub/Git Credential Manager شود، سپس همین Branch push و PR آن پس از CI merge گردد.
+احراز هویت Git روی PC-C برقرار شد و شاخه به `origin` پوش شد. PR شمارهٔ 289 برای ادغام در `develop` باز است؛ مرج نهایی تابع بررسی وضعیت CI و قابلیت مرج است.
 
 ## REPORTING-AUTHENTICATED-RUNTIME-REPAIR — 2026-09-15
 
