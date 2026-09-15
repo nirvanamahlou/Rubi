@@ -91,9 +91,21 @@ function ContractPdfLoader({
   return (
     <div className={styles.preview}>
       {!pdfUrl && !error && <p role="status">در حال ساخت PDF قرارداد…</p>}
+      <a
+        href={contractPdfPath(contractId)}
+        target="_blank"
+        rel="noreferrer"
+        className={styles.download}
+      >
+        باز کردن PDF قرارداد
+      </a>
       {error && (
         <div className={styles.error} role="alert">
-          <p>{error}</p>
+          <p>
+            {error === 'Failed to fetch'
+              ? 'دریافت PDF قرارداد انجام نشد؛ اتصال سرور را بررسی کنید یا PDF را مستقیم باز کنید.'
+              : error}
+          </p>
           <button type="button" onClick={onRetry}>
             تلاش دوباره
           </button>
