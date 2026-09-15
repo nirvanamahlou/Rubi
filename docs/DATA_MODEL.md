@@ -265,6 +265,16 @@ erDiagram
 
 ### Procurement
 
+- درخواست خرید، actor احرازشده را در `requesterUserId` برای scope و audit نگه
+  می‌دارد و کارمند انتخاب‌شده از دایرکتوری عمومی HR را در
+  `requesterEmployeeId` ثبت می‌کند. FK ترکیبی `(requesterEmployeeId, branchId)`
+  به `(HrEmployee.id, branchId)` مانع ارجاع بین‌شعبه‌ای است. رکوردهای قدیمی با
+  مقدار `NULL` سازگارند؛ واحد درخواست هنگام ایجاد/ارسال با واحد فعال کارمند
+  انتخاب‌شده تطبیق داده می‌شود. شعبه و محل تحویل از دایرکتوری عمومی Master Data
+  خوانده می‌شوند.
+- نقش `staff` فقط ثبت، ویرایش، ارسال و لغو درخواست خودش را دارد؛
+  `procurement_approver` و `procurement_buyer` برای تأیید و سفارش جدا هستند و
+  انتساب به افراد به‌صورت صریح انجام می‌شود.
 - Reservation از port عمومی Purchase Request را با contract/service/passenger/supplier و
   operation reference ایجاد می‌کند؛ Procurement مالک state و approval آن است.
 - Purchase Order Item می‌تواند به Contract Service Item متصل باشد؛ خرید عمومی اتصال قرارداد ندارد.

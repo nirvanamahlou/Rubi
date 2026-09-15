@@ -2908,3 +2908,32 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
   lint محدوده و build تولیدی ۴۶ route موفق‌اند. Web3100 با build
   `unified-Tez666Z13yqJ-047yCo9T`، API4191 health۲۰۰ و فایل خرید پاسخ۲۰۰ فعال‌اند؛
   قفل Central Navigation آزاد شد.
+
+## PROCUREMENT-LIVE-INTEGRATION-0915 — PC-B — IN_PROGRESS
+
+- درخواست مالک: کمبودهای نسخهٔ ۳۱۰۰ خرید و تأمین برطرف و جریان عملیاتی موجود
+  PROCUREMENT-001 در نسخهٔ یکپارچه فعال شود؛ کنترل‌های پاسخ مالی و تأیید آزمایشی حذف شوند.
+- مبنا: `codex/pc-b-procurement-under-human-capital@52f7d7d1`؛ شاخهٔ یکتا
+  `codex/pc-b-procurement-live-integration`. COMPUTER_ID=PC-B، مالک Procurement و
+  HR/Master Data/Documents طبق `docs/MODULE_OWNERSHIP.md`.
+- رزرو محدوده: فایل‌های اختصاصی Procurement در API/Web، public projectionهای
+  HR/IAM/Master Data، ثبت ماژول در AppModule، قرارداد additive Procurement،
+  permission catalog/seed، Prisma schema، چهار migration منتشرشدهٔ PROCUREMENT-001
+  و migration افزایشی اتصال درخواست‌کننده به کارمند HR،
+  route خرید و مستندات همین واحد. Migration Owner و قفل فایل‌های مرکزی این محدوده
+  نزد PC-B/PROCUREMENT-LIVE-INTEGRATION-0915 هستند؛ Dependency/Lockfile تغییر نمی‌کند.
+- Prisma deploy در پایگاه محلی، migration افزایشی و منتشرشدهٔ
+  `20260913163000_finance_inbox_actions` متعلق به PC-A را نیز به‌ترتیب پس از چهار
+  migration خرید اعمال می‌کند؛ فقط اجرای همان فایل بدون ویرایش Source در این واحد
+  ثبت است. Finance-008 در شاخهٔ منتشرشده کامل/آزموده شده و روی کپی دیتابیس فعلی
+  همراه چهار migration خرید تمرین شد؛ صفر رکورد `PAID` مشمول به‌روزرسانی تاریخی آن است.
+- Producer قرارداد Finance همچنان Procurement و consumer آن PC-A/Finance است؛
+  بدون inbox/ack مصوب، Finance `NOT_CONNECTED` می‌ماند. Reservations/PC-A نیز تا
+  adapter مصوب، ارجاع سفر را نمی‌پذیرد. قراردادهای additive قبلی حفظ و سازگاری مسیر
+  `/purchases` با نسخهٔ فعلی Web کنترل می‌شود. Migration مخرب، پرداخت، سفارش خارجی،
+  تغییر دادهٔ واقعی یا grant خودکار اختیارات تجاری در محدوده نیست.
+- پنج migration خرید (چهار مورد عملیاتی و FK کارمند HR) و migration منتشرشدهٔ
+  Finance روی کپی پایگاه و سپس پایگاه محلی با backup قبلی اعمال شدند؛ ۲۶ مجوز
+  افزایشی، دسترسی ثبت روی `staff` و نقش‌های مستقل `procurement_approver` و
+  `procurement_buyer` ثبت شده‌اند. دو نقش تجاری بدون انتساب فردی می‌مانند تا
+  مالک حساب‌های مجاز را مشخص کند؛ کارمندان HR موجود هنوز پیوند IAM ندارند.
