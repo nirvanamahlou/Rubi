@@ -1,7 +1,6 @@
 'use client';
 import { Suspense, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import Link from 'next/link';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type {
   ProcurementPermission,
@@ -20,17 +19,14 @@ import { procurementApi, commandAttempt, type Bootstrap } from './api';
 import { DraftForm, selectClass } from './draft-form';
 import { statusLabels } from './model';
 import { OperationForm } from './operation-form';
+import { InternalSections } from './internal-sections';
 import { ProcurementOwnerPicker } from './owner-picker';
 import { ProcurementExportPanel } from './export-panel';
 import {
   formatProcurementDate,
   formatProcurementRecordValue,
 } from './presentation';
-import {
-  sampleRequests,
-  sampleSuppliers,
-  type ProcurementListRow,
-} from './sample-requests';
+import { sampleRequests, type ProcurementListRow } from './sample-requests';
 import { ProcurementSelect } from './procurement-select';
 
 const groups = [
@@ -123,7 +119,7 @@ export function ProcurementWorkspace() {
   return (
     <section
       dir="rtl"
-      className="space-y-6 bg-[#f3f6fc] font-sans text-[#183968]"
+      className="space-y-6 bg-background font-sans text-foreground"
     >
       {bootstrap.isPending ? (
         <div role="status" aria-label="در حال دریافت دسترسی‌ها">
@@ -229,7 +225,7 @@ function WorkspaceState({
     }, 300);
     return () => clearTimeout(timer);
   }, [search]);
-  const queryQueue = group === 2 ? 'approvals' : group === 0 ? 'own' : '';
+  const queryQueue = 'own';
   const list = useQuery({
     queryKey: [
       'procurement',
@@ -248,13 +244,7 @@ function WorkspaceState({
           queue: queryQueue,
         }),
       ),
-    enabled: group !== 3,
-    retry: false,
-  });
-  const suppliers = useQuery({
-    queryKey: ['procurement', 'suppliers', page, querySearch],
-    queryFn: () => procurementApi.suppliers(page, querySearch),
-    enabled: group === 3,
+    enabled: group === 0,
     retry: false,
   });
   const detail = useQuery({
@@ -264,7 +254,7 @@ function WorkspaceState({
     retry: false,
   });
   const showSamples =
-    group !== 3 &&
+    group === 0 &&
     page === 1 &&
     !status &&
     !search &&
@@ -272,26 +262,17 @@ function WorkspaceState({
     list.isSuccess &&
     list.data.items.length === 0;
   const rows: ProcurementListRow[] = showSamples
-    ? sampleRequests.filter((item) =>
-        group === 0 || group === 1
-          ? item.section === undefined
-          : item.section === group,
-      )
+    ? sampleRequests.filter((item) => item.section === undefined)
     : (list.data?.items ?? []);
-  const relatedStart =
-    group === 1 || group === 2
-      ? 1
-      : group === 3 || group === 4
-        ? 3
-        : group === 5 || group === 6
-          ? 5
-          : null;
   function saved(request: ProcurementRequestV1) {
     setCreating(false);
     setEditing(false);
     openRequest(request.id);
     client.setQueryData(['procurement', 'request', request.id], request);
     void client.invalidateQueries({ queryKey: ['procurement', 'requests'] });
+    void client.invalidateQueries({
+      queryKey: ['procurement', 'section-list'],
+    });
     void client.invalidateQueries({
       queryKey: ['procurement', 'operation-options'],
     });
@@ -333,12 +314,29 @@ function WorkspaceState({
         </div>
       </div>
     );
+  if (group > 0)
+    return (
+      <InternalSections
+        key={group}
+        group={group as 1 | 2 | 3 | 4 | 5 | 6 | 7}
+        bootstrap={bootstrap}
+        selectedId={selectedId}
+        {...(detail.data ? { request: detail.data } : {})}
+        detailPending={detail.isPending}
+        detailError={detail.isError ? detail.error : null}
+        onRetryDetail={() => void detail.refetch()}
+        onOpen={openRequest}
+        onClose={closeRequest}
+        onCreate={() => setCreating(true)}
+        onSaved={saved}
+      />
+    );
   return (
-    <>
+    <div className="space-y-5">
       {selectedId ? (
         <div className="space-y-4">
           <Button variant="outline" onClick={closeRequest}>
-            بازگشت به فهرست
+            بازگشت به میزکار
           </Button>
           {detail.isPending ? (
             <Skeleton className="h-72" />
@@ -352,437 +350,180 @@ function WorkspaceState({
                 تلاش دوباره
               </Button>
             </Alert>
-          ) : (
-            detail.data && (
-              <RequestDetail
-                key={detail.data.id}
-                request={detail.data}
-                bootstrap={bootstrap}
-                onEdit={() => setEditing(true)}
-                onChanged={saved}
-                initialKind={
-                  group === 4
-                    ? 'quotations'
-                    : group === 5
-                      ? 'orders'
-                      : group === 6
-                        ? 'receipts'
-                        : group === 7
-                          ? 'invoices'
-                          : 'audit'
-                }
-              />
-            )
-          )}
+          ) : detail.data ? (
+            <RequestDetail
+              key={detail.data.id}
+              request={detail.data}
+              bootstrap={bootstrap}
+              onEdit={() => setEditing(true)}
+              onChanged={saved}
+              initialKind="audit"
+            />
+          ) : null}
         </div>
       ) : (
         <>
-          <div className="flex flex-wrap items-end justify-between gap-3 py-2">
+          <header className="flex flex-wrap items-end justify-between gap-3">
             <div>
-              <p className="mb-2 text-xs text-[#7789a6]">
-                روبی /{' '}
-                {group === 0 ? (
-                  'خرید و تأمین'
-                ) : (
-                  <button
-                    className="hover:text-[#1657b5] hover:underline"
-                    onClick={() => navigateGroup(0)}
-                  >
-                    خرید و تأمین
-                  </button>
-                )}
+              <p className="text-xs text-muted-foreground">
+                روبی / خرید و تأمین
               </p>
-              <h1 className="text-2xl font-black tracking-tight text-[#113975] sm:text-3xl">
-                {groups[group]}
+              <h1 className="mt-2 text-2xl font-black sm:text-3xl">
+                میزکار خرید
               </h1>
-              <p className="mt-2 text-sm text-[#7789a6]">
-                {group === 0
-                  ? 'درخواست، تأمین و تحویل را از یک مسیر پیگیری کنید.'
-                  : 'پرونده‌ها و عملیات این بخش را پیگیری کنید.'}
-              </p>
             </div>
-            {(group === 0 || group === 1) &&
-              can('procurement.request.create') && (
-                <Button
-                  className="bg-[#1973df] text-white hover:bg-[#1657b5]"
-                  onClick={() => setCreating(true)}
-                >
-                  درخواست خرید جدید
-                </Button>
-              )}
+            {can('procurement.request.create') && (
+              <Button onClick={() => setCreating(true)}>
+                درخواست خرید جدید
+              </Button>
+            )}
+          </header>
+          <div className="grid gap-3 sm:grid-cols-3">
+            {(
+              [
+                [
+                  'در انتظار بررسی',
+                  rows.filter(
+                    (row) =>
+                      row.status === 'SUBMITTED' || row.status === 'IN_REVIEW',
+                  ).length,
+                ],
+                [
+                  'در مسیر تأمین',
+                  rows.filter(
+                    (row) =>
+                      row.status === 'APPROVED' || row.status === 'SOURCING',
+                  ).length,
+                ],
+                [
+                  'نیازمند اصلاح',
+                  rows.filter((row) => row.status === 'CHANGES_REQUESTED')
+                    .length,
+                ],
+              ] as const
+            ).map(([label, count]) => (
+              <Card key={label} className="p-5">
+                <p className="text-sm text-muted-foreground">{label}</p>
+                <p className="mt-3 text-2xl font-black">
+                  {list.isPending ? '—' : count.toLocaleString('fa-IR')}
+                </p>
+              </Card>
+            ))}
           </div>
-          {group === 0 && (
-            <>
-              <div className="grid gap-3 sm:grid-cols-3">
-                {(
-                  [
-                    [
-                      'در انتظار بررسی',
-                      list.isPending
-                        ? null
-                        : rows.filter(
-                            (item) =>
-                              item.status === 'SUBMITTED' ||
-                              item.status === 'IN_REVIEW',
-                          ).length,
-                    ],
-                    [
-                      'در مسیر تأمین',
-                      list.isPending
-                        ? null
-                        : rows.filter(
-                            (item) =>
-                              item.status === 'APPROVED' ||
-                              item.status === 'SOURCING',
-                          ).length,
-                    ],
-                    [
-                      'نیازمند اصلاح',
-                      list.isPending
-                        ? null
-                        : rows.filter(
-                            (item) => item.status === 'CHANGES_REQUESTED',
-                          ).length,
-                    ],
-                  ] as const
-                ).map(([label, count]) => (
-                  <div
-                    key={label}
-                    className="rounded-[14px] border border-[#dfe8f4] bg-white p-5 shadow-sm"
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            {([1, 3, 5, 7] as const).map((index) => (
+              <button
+                key={sectionKeys[index]}
+                type="button"
+                onClick={() => navigateGroup(index)}
+                className="rounded-2xl border border-border bg-surface p-5 text-right shadow-sm transition-colors hover:border-primary/40 hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <span className="text-sm font-bold">{groups[index]}</span>
+                <span className="mt-5 block text-xs text-primary">
+                  ورود به بخش ←
+                </span>
+              </button>
+            ))}
+          </div>
+          <Card className="overflow-hidden">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border p-5">
+              <h2 className="font-bold">پیگیری‌های من</h2>
+              <div className="flex flex-wrap items-end gap-3">
+                <FormField id="proc-home-search" label="شماره یا عنوان">
+                  <Input
+                    id="proc-home-search"
+                    value={search}
+                    onChange={(event) => setSearch(event.target.value)}
+                  />
+                </FormField>
+                <FormField id="proc-home-status" label="وضعیت">
+                  <ProcurementSelect
+                    id="proc-home-status"
+                    className={selectClass}
+                    value={status}
+                    onChange={(event) => {
+                      setStatus(event.target.value);
+                      setPage(1);
+                    }}
                   >
-                    <p className="text-sm text-[#7789a6]">{label}</p>
-                    <p className="mt-4 text-2xl font-black text-[#113975]">
-                      {count === null ? '—' : count.toLocaleString('fa-IR')}
-                    </p>
-                    <p className="mt-2 text-xs text-[#7789a6]">
-                      {showSamples
-                        ? 'نمونهٔ آزمایشی، بدون ثبت در سامانه'
-                        : 'در صفحهٔ فعلی'}
-                    </p>
-                  </div>
-                ))}
+                    <option value="">همه وضعیت‌ها</option>
+                    {Object.entries(statusLabels).map(([value, label]) => (
+                      <option key={value} value={value}>
+                        {label}
+                      </option>
+                    ))}
+                  </ProcurementSelect>
+                </FormField>
               </div>
-              <div className="grid gap-3 md:grid-cols-2">
-                {(
-                  [
-                    [
-                      1,
-                      'درخواست و تأیید',
-                      'ثبت نیاز و تصمیم‌گیری درباره درخواست‌ها',
-                      'bg-[#eff5ff]',
-                    ],
-                    [
-                      3,
-                      'تأمین‌کنندگان و استعلام',
-                      'مرجع تأمین‌کنندگان و پیشنهادهای مرتبط',
-                      'bg-[#f6efff]',
-                    ],
-                    [
-                      5,
-                      'سفارش و تحویل',
-                      'سفارش، رسید، پذیرش و مغایرت',
-                      'bg-[#eafbf8]',
-                    ],
-                    [
-                      7,
-                      'فاکتور و مالی',
-                      'تطبیق فاکتور و پیگیری ارجاع مالی',
-                      'bg-[#fff6e9]',
-                    ],
-                  ] as const
-                ).map(([index, label, description, tint]) => (
+            </div>
+            {list.isPending ? (
+              <Skeleton className="m-5 h-52" />
+            ) : list.isError ? (
+              <div className="p-5">
+                <Alert
+                  tone="error"
+                  title="درخواست‌ها دریافت نشدند"
+                  description={errorText(list.error)}
+                />
+              </div>
+            ) : rows.length ? (
+              <div className="divide-y divide-border">
+                {rows.map((row) => (
                   <div
-                    key={label}
-                    className={`rounded-[14px] border border-[#dfe8f4] p-5 text-right shadow-sm ${tint}`}
+                    key={row.id}
+                    className="flex flex-wrap items-center justify-between gap-3 px-5 py-4"
                   >
-                    <button
-                      onClick={() => navigateGroup(index)}
-                      className="font-bold text-[#113975] hover:text-[#1657b5] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1973df]"
-                    >
-                      {label}
-                    </button>
-                    <p className="mt-2 text-sm text-[#7789a6]">{description}</p>
-                    <div className="mt-5 flex flex-wrap gap-3 border-t border-[#dfe8f4] pt-3 text-xs font-semibold text-[#1657b5]">
-                      <button
-                        onClick={() => navigateGroup(index)}
-                        className="hover:underline"
+                    <div className="min-w-0">
+                      <p className="truncate font-semibold">
+                        {row.draft.title || 'درخواست بدون عنوان'}
+                      </p>
+                      <p
+                        className="mt-1 text-xs text-muted-foreground"
+                        dir="ltr"
                       >
-                        ورود به بخش ←
-                      </button>
-                      {index !== 7 && (
-                        <button
-                          onClick={() => navigateGroup(index + 1)}
-                          className="hover:underline"
+                        {row.number}
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge>{statusLabels[row.status]}</Badge>
+                      {row.sample ? (
+                        <Badge>نمونه</Badge>
+                      ) : (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => openRequest(row.id)}
                         >
-                          {groups[index + 1]} ←
-                        </button>
+                          مشاهده
+                        </Button>
                       )}
                     </div>
                   </div>
                 ))}
               </div>
-            </>
-          )}
-          {relatedStart !== null && (
-            <div
-              className="flex flex-wrap gap-2 text-sm"
-              aria-label="بخش‌های مرتبط"
-            >
-              {[relatedStart, relatedStart + 1].map((index) => (
-                <button
-                  key={sectionKeys[index]}
-                  aria-current={group === index ? 'page' : undefined}
-                  onClick={() => navigateGroup(index)}
-                  className={`rounded-lg border border-[#dfe8f4] px-3 py-2 ${group === index ? 'bg-[#1657b5] text-white' : 'bg-white hover:bg-[#edf4ff]'}`}
-                >
-                  {groups[index]}
-                </button>
-              ))}
-            </div>
-          )}
-          {group >= 4 && group <= 7 && (
-            <Alert
-              title="نمایش براساس پرونده خرید"
-              description="پرونده را انتخاب کنید تا اسناد و عملیات مربوط به آن را ببینید."
-            />
-          )}
-          {group === 7 && bootstrap.finance === 'NOT_CONNECTED' && (
-            <Alert
-              tone="warning"
-              title="اتصال مالی فعال نیست"
-              description="ثبت و تطبیق فاکتور در خرید انجام می‌شود. تا پذیرش قرارداد توسط مالی، ایجاد تعهد یا ثبت مالی تأیید نمی‌شود."
-            />
-          )}
-          {group === 7 && bootstrap.finance === 'CONNECTED' && (
-            <Link
-              className="inline-flex rounded-lg border border-[#dfe8f4] bg-white px-4 py-2 text-sm font-semibold text-[#1657b5] hover:bg-[#edf4ff]"
-              href="/finance/requests"
-            >
-              مشاهدهٔ فاکتورهای ارجاع‌شده در کارتابل اصلی مالی ←
-            </Link>
-          )}
-          <Card className="grid gap-4 rounded-[14px] border-[#dfe8f4] bg-white p-4 sm:grid-cols-2">
-            <FormField
-              id="proc-search"
-              label={
-                group === 3 ? 'جست‌وجوی تأمین‌کننده' : 'جست‌وجوی شماره یا عنوان'
-              }
-            >
-              <Input
-                id="proc-search"
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
+            ) : (
+              <p className="px-5 py-10 text-center text-sm text-muted-foreground">
+                درخواستی پیدا نشد.
+              </p>
+            )}
+            {!showSamples && list.data && (
+              <Pager
+                page={page}
+                hasMore={list.data.hasMore}
+                setPage={setPage}
               />
-            </FormField>
-            {group !== 3 && (
-              <FormField id="proc-status" label="وضعیت درخواست">
-                <ProcurementSelect
-                  id="proc-status"
-                  className={selectClass}
-                  value={status}
-                  onChange={(event) => {
-                    setStatus(event.target.value);
-                    setPage(1);
-                  }}
-                >
-                  <option value="">همه وضعیت‌ها</option>
-                  {Object.entries(statusLabels).map(([value, label]) => (
-                    <option key={value} value={value}>
-                      {label}
-                    </option>
-                  ))}
-                </ProcurementSelect>
-              </FormField>
             )}
           </Card>
-          {group === 3 ? (
-            suppliers.isPending ? (
-              <Skeleton className="h-64" />
-            ) : suppliers.isError ? (
-              <Alert
-                tone="error"
-                title="تأمین‌کنندگان دریافت نشدند"
-                description={errorText(suppliers.error)}
-              >
-                <Button
-                  variant="outline"
-                  onClick={() => void suppliers.refetch()}
-                >
-                  تلاش دوباره
-                </Button>
-              </Alert>
-            ) : (
-              <>
-                <Alert
-                  title="اطلاعات مرجع تأمین‌کنندگان"
-                  description="نام، وضعیت فعالیت و وضعیت همکاری از اطلاعات پایه دریافت می‌شود. ویرایش اطلاعات مرجع در ماژول اطلاعات پایه انجام می‌شود."
-                />
-                <Link
-                  className="inline-flex rounded-lg border border-[#dfe8f4] bg-white px-4 py-2 text-sm font-semibold text-[#1657b5] hover:bg-[#edf4ff]"
-                  href="/master-data/organizations-suppliers"
-                >
-                  فرم ثبت و ویرایش تأمین‌کننده در اطلاعات پایه ←
-                </Link>
-                {!suppliers.data.items.length &&
-                (page !== 1 || !!search || !!querySearch) ? (
-                  <EmptyState
-                    title="تأمین‌کننده‌ای پیدا نشد"
-                    description="فیلتر جست‌وجو یا اطلاعات پایه را بررسی کنید."
-                  />
-                ) : (
-                  <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                    {(suppliers.data.items.length
-                      ? suppliers.data.items
-                      : sampleSuppliers
-                    ).map((supplier) => (
-                      <Card key={supplier.id} className="space-y-3 p-5">
-                        <h3 className="font-bold">{supplier.name}</h3>
-                        <p className="text-sm text-muted-foreground">
-                          {supplier.code}
-                        </p>
-                        <Badge>{supplier.isActive ? 'فعال' : 'غیرفعال'}</Badge>
-                        <p className="text-sm">
-                          وضعیت همکاری: {supplier.collaborationStatus}
-                        </p>
-                        {'sample' in supplier && supplier.sample && (
-                          <p className="text-xs text-[#7789a6]">
-                            نمونهٔ آزمایشی، فقط نمایش
-                          </p>
-                        )}
-                      </Card>
-                    ))}
-                  </div>
-                )}
-                <Pager
-                  page={page}
-                  hasMore={suppliers.data.hasMore}
-                  setPage={setPage}
-                />
-              </>
-            )
-          ) : list.isPending ? (
-            <Skeleton className="h-64" />
-          ) : list.isError ? (
-            <Alert
-              tone="error"
-              title="درخواست‌ها دریافت نشدند"
-              description={errorText(list.error)}
-            >
-              <Button variant="outline" onClick={() => void list.refetch()}>
-                تلاش دوباره
-              </Button>
-            </Alert>
-          ) : (
-            <>
-              {!rows.length ? (
-                <EmptyState
-                  title="درخواستی در این صف نیست"
-                  description="فیلترها را بررسی کنید؛ درخواست‌های مجاز شما اینجا نمایش داده می‌شوند."
-                />
-              ) : (
-                <div className="overflow-hidden rounded-[14px] border border-[#dfe8f4] bg-white shadow-sm">
-                  <div className="border-b border-[#dfe8f4] px-5 py-4">
-                    <h2 className="font-bold text-[#113975]">
-                      {group === 0 ? 'پیگیری‌های من' : 'پرونده‌های درخواست'}
-                    </h2>
-                    <p className="mt-1 text-xs text-[#7789a6]">
-                      پرونده‌های قابل مشاهده در صف و فیلتر انتخاب‌شده
-                    </p>
-                  </div>
-                  <div className="overflow-x-auto">
-                    <table className="w-full min-w-[760px] text-right text-sm">
-                      <thead className="bg-[#f4f8ff] text-xs text-[#536b91]">
-                        <tr>
-                          <th scope="col" className="px-5 py-3 font-semibold">
-                            شماره / عنوان
-                          </th>
-                          <th scope="col" className="px-5 py-3 font-semibold">
-                            مبلغ
-                          </th>
-                          <th scope="col" className="px-5 py-3 font-semibold">
-                            وضعیت
-                          </th>
-                          <th scope="col" className="px-5 py-3 font-semibold">
-                            اقدام بعدی
-                          </th>
-                          <th scope="col" className="px-5 py-3 font-semibold">
-                            عملیات
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-[#dfe8f4]">
-                        {rows.map((request) => (
-                          <tr key={request.id} className="hover:bg-[#f8fbff]">
-                            <td className="px-5 py-4">
-                              <span className="block font-bold text-[#1657b5]">
-                                {request.draft.title || 'پیش‌نویس بدون عنوان'}
-                              </span>
-                              <span
-                                className="mt-1 block text-xs text-[#7789a6]"
-                                dir="ltr"
-                              >
-                                {request.number}
-                              </span>
-                              {request.sample && (
-                                <span className="mt-1 block text-xs text-[#7789a6]">
-                                  نمونهٔ آزمایشی
-                                </span>
-                              )}
-                            </td>
-                            <td className="px-5 py-4" dir="ltr">
-                              {request.draft.estimatedAmount ?? 'نامشخص'}{' '}
-                              {request.draft.currencyCode ?? ''}
-                            </td>
-                            <td className="px-5 py-4">
-                              <Badge>{statusLabels[request.status]}</Badge>
-                            </td>
-                            <td className="px-5 py-4 text-[#536b91]">
-                              {nextAction[request.status]}
-                            </td>
-                            <td className="px-5 py-4">
-                              {request.sample ? (
-                                <span className="text-xs text-[#7789a6]">
-                                  فقط نمایش
-                                </span>
-                              ) : (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => openRequest(request.id)}
-                                >
-                                  مشاهده
-                                </Button>
-                              )}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
-              {!showSamples && (
-                <Pager
-                  page={page}
-                  hasMore={list.data.hasMore}
-                  setPage={setPage}
-                />
-              )}
-            </>
-          )}
+          <ProcurementExportPanel
+            bootstrap={bootstrap}
+            kind="REQUESTS"
+            query={{ status, search: querySearch, queue: queryQueue }}
+          />
         </>
       )}
-      {!selectedId && group !== 3 && (
-        <ProcurementExportPanel
-          bootstrap={bootstrap}
-          kind="REQUESTS"
-          query={{ status, search: querySearch, queue: queryQueue }}
-        />
-      )}
-    </>
+    </div>
   );
 }
-
 function RequestDetail({
   request,
   bootstrap,

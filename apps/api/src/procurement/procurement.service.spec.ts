@@ -1089,6 +1089,26 @@ describe.skipIf(process.env.PROCUREMENT_API_DATABASE_TEST !== '1')(
         'INVOICE',
         invoiceInput(context.order.id, context.item.id),
       );
+      for (const section of ['quotes', 'orders', 'receipts', 'invoices']) {
+        expect(
+          (await service.list({ section }, maker)).items.some(
+            (item) => item.id === row.id,
+          ),
+        ).toBe(true);
+        expect(
+          (
+            await service.list(
+              { section },
+              { ...maker, branchIds: [otherBranch] },
+            )
+          ).items.some((item) => item.id === row.id),
+        ).toBe(false);
+      }
+      await expect(
+        service.list({ section: 'unknown' }, maker),
+      ).rejects.toMatchObject({
+        code: 'VALIDATION_ERROR',
+      });
       const invoice = await invoiceFor(row);
       const paid = await paidFinanceFixture();
       const before = await financeState();

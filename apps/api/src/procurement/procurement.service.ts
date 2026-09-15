@@ -255,10 +255,17 @@ export class ProcurementService {
     };
   }
   async list(query: Record<string, unknown>, actor: AuthenticatedActor) {
-    v.object(query, ['page', 'search', 'status', 'queue']);
+    v.object(query, ['page', 'search', 'status', 'queue', 'section']);
     const page = v.integer(Number(query.page ?? 1), 'page', 100000);
     const search = v.text(query.search, 'search', 100, true);
     const status = v.text(query.status, 'status', 40, true);
+    const section = v.text(query.section, 'section', 30, true);
+    requireRule(
+      !section ||
+        ['quotes', 'orders', 'receipts', 'invoices'].includes(section),
+      'VALIDATION_ERROR',
+      'بخش خرید معتبر نیست.',
+    );
     requireRule(
       !status ||
         (PROCUREMENT_REQUEST_STATUSES as readonly string[]).includes(status),
@@ -311,6 +318,38 @@ export class ProcurementService {
         ],
       });
     if (status) and.push({ status });
+    if (section === 'quotes')
+      and.push({
+        OR: [
+          { status: { in: ['APPROVED', 'SOURCING'] } },
+          { procurementQuotationRequestidRows: { some: {} } },
+        ],
+      });
+    if (section === 'orders')
+      and.push({
+        OR: [
+          { status: 'SOURCING' },
+          { procurementOrderRequestidRows: { some: {} } },
+        ],
+      });
+    if (section === 'receipts')
+      and.push({
+        OR: [
+          { procurementOrderRequestidRows: { some: {} } },
+          { procurementReceiptRequestidRows: { some: {} } },
+          { procurementServiceAcceptanceRequestidRows: { some: {} } },
+          { procurementDiscrepancyRequestidRows: { some: {} } },
+          { procurementReturnRequestidRows: { some: {} } },
+        ],
+      });
+    if (section === 'invoices')
+      and.push({
+        OR: [
+          { procurementOrderRequestidRows: { some: {} } },
+          { procurementInvoiceRequestidRows: { some: {} } },
+          { procurementFinanceHandoffRequestidRows: { some: {} } },
+        ],
+      });
     if (queue === 'own')
       and.push({
         OR: [{ requesterUserId: actor.userId }, { ownerUserId: actor.userId }],
