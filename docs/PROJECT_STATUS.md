@@ -13,8 +13,10 @@
 Finance/Reservations و policy تأیید تا قرارداد بین‌مالک‌ها صریحاً غیرفعال‌اند.
 Typecheck و lint محدوده، ۴۸ تست قواعد دامنه، ۳۰ تست عملیاتی API روی پایگاه
 اختصاصی، ۹ تست فرم/API/مدل Web و build تولیدی API/Web با ۴۶ مسیر موفق‌اند.
-Gateway3100/Web3110/API4191 از commit `f87ac084` با build
-`unified-q2LvkIfqv1WuuAhl9umUx` فعال‌اند؛ runtime Web و health API هر دو ۲۰۰،
+آخرین `origin/develop@3086f86e` شامل کارت‌های Manifest و فرم قواعد بار ایرلاین
+در شاخهٔ تجمیعی جذب شد؛ ۵۶ تست API و ۵ تست Web مرتبط و typecheck/build دوباره
+موفق‌اند. Gateway3100/Web3110/API4191 از commit `fd0ad053` با build
+`unified-rcYrg8dX7I1Du86xpXOAm` فعال‌اند؛ runtime Web و health API هر دو ۲۰۰،
 مسیرهای خرید/میزکار/HR به صفحهٔ ورود معتبر ۳۰۷ می‌دهند و endpoint خرید بدون
 نشست ۴۰۱ می‌دهد. تب مرورگر فعلی صفحهٔ ورود است؛ نمایش داخل حساب تا ورود کاربر و
 انتساب نقش ثبت به حساب‌های کارکنان قابل بررسی نیست.

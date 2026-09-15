@@ -2951,7 +2951,9 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 - lint/typecheck API، Web، Database و Contracts و build تولیدی API/Web با ۴۶
   مسیر موفق‌اند؛ ۴۸ تست قواعد، ۳۰ تست عملیاتی روی پایگاه اختصاصی و ۹ تست Web
   هدفمند پاس شدند. نسخهٔ یکپارچه روی Gateway3100/Web3110/API4191 با commit
-  `f87ac084` فعال و health API/Web برابر ۲۰۰ است. تب مرورگر بدون نشست به login
+  `fd0ad053` پس از جذب `origin/develop@3086f86e` فعال و health API/Web برابر
+  ۲۰۰ است. تست‌های تغییرات تازهٔ Manifest/قواعد بار و build ۴۶مسیره نیز پاس شدند.
+  تب مرورگر بدون نشست به login
   هدایت می‌شود؛ grant فردی و smoke داخل حساب پس از معرفی حساب‌های مجاز پیگیری می‌شود.
 ## RESERVATION-MANIFEST-TICKET-CARDS-0914 - PC-A - READY_FOR_REVIEW
 
