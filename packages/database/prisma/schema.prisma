@@ -30,6 +30,7 @@ enum AuditOutcome {
 }
 
 model User {
+  procurementTicketPurchaseRequests ProcurementTicketPurchaseRequest[] @relation("ProcurementTicketPurchaseCreator")
   procurementReceiptAdjustments                    ProcurementReceiptAdjustment[]
   procurementExportJobs                            ProcurementExportJob[]
   procurementRequestRequesteruseridRows            ProcurementRequest[]              @relation("ProcurementRequestRequesteruserid")
@@ -195,6 +196,7 @@ model RolePermission {
 }
 
 model Branch {
+  procurementTicketPurchaseRequests ProcurementTicketPurchaseRequest[] @relation("ProcurementTicketPurchaseBranch")
   procurementExportJobs              ProcurementExportJob[]
   procurementRequestBranchidRows     ProcurementRequest[]        @relation("ProcurementRequestBranchid")
   procurementIdempotencyBranchidRows ProcurementIdempotency[]    @relation("ProcurementIdempotencyBranchid")
@@ -3728,6 +3730,8 @@ model ProcurementTicketPurchaseRequest {
   currencyCode            String   @db.VarChar(3)
   status                  String   @default("PENDING") @db.VarChar(20)
   createdByUserId         String   @db.Uuid
+  branch                  Branch   @relation("ProcurementTicketPurchaseBranch", fields: [branchId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  createdByUser           User     @relation("ProcurementTicketPurchaseCreator", fields: [createdByUserId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   createKey               String   @db.VarChar(160)
   fingerprint             String   @db.VarChar(64)
   createdAt               DateTime @default(now()) @db.Timestamptz(3)
