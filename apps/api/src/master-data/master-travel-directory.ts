@@ -87,6 +87,71 @@ export class MasterTravelDirectory {
     };
   }
 
+  /** Public operational lookup; callers receive only the approved template reference. */
+  async manifestTemplate(
+    carrierName: string,
+    destinationCityId: string,
+    travelDay: string,
+  ) {
+    const normalize = (value: unknown) =>
+      String(value ?? '')
+        .normalize('NFKC')
+        .replace(/[يى]/g, 'ی')
+        .replace(/ك/g, 'ک')
+        .replace(/[^A-Za-z0-9آ-ی]/g, '')
+        .toUpperCase();
+    const carrier = normalize(carrierName);
+    const rows = [];
+    let page = 1;
+    for (;;) {
+      const result = await this.master.list('manifest-templates', {
+        page,
+        pageSize: 100,
+        sortBy: 'updatedAt',
+        sortDirection: 'desc',
+        search: '',
+        status: 'active',
+      });
+      rows.push(...result.data);
+      if (rows.length >= result.meta.total) break;
+      page += 1;
+    }
+    const record = rows.find((row) => {
+      const attributes = row.attributes;
+      const validFrom = String(attributes.validFrom ?? '');
+      const validTo = String(attributes.validTo ?? '');
+      const airlineMatches = [
+        attributes.airlineName,
+        attributes.airlineCode,
+      ].some((value) => {
+        const candidate = normalize(value);
+        return (
+          candidate.length > 0 &&
+          (carrier === candidate ||
+            carrier.includes(candidate) ||
+            candidate.includes(carrier))
+        );
+      });
+      return (
+        String(attributes.publicationStatus).toUpperCase() === 'ACTIVE' &&
+        String(attributes.fileFormat).toUpperCase() === 'XLSX' &&
+        String(attributes.destinationCityId) === destinationCityId &&
+        typeof attributes.fileReferenceId === 'string' &&
+        attributes.fileReferenceId.length > 0 &&
+        airlineMatches &&
+        (!validFrom || validFrom <= travelDay) &&
+        (!validTo || validTo >= travelDay)
+      );
+    });
+    if (!record) return null;
+    return {
+      id: record.id,
+      name: record.name,
+      versionNumber: Number(record.attributes.versionNumber ?? 1),
+      fileReferenceId: String(record.attributes.fileReferenceId),
+    };
+  }
+
   async assertTourReferences(input: {
     originId: string;
     destinationId: string;

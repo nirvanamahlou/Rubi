@@ -33,7 +33,6 @@ const expected = {
   ],
   'aircraft-types': ['englishName', 'manufacturerModel'],
   'baggage-rules': [
-    'name',
     'airlineId',
     'cabinClassId',
     'passengerType',
@@ -225,6 +224,9 @@ describe('transport mockup form coverage', () => {
       validTo: '2027-01-01',
     };
     expect(validateMasterDataDraft('baggage-rules', valid).success).toBe(true);
+    expect(
+      validateMasterDataDraft('baggage-rules', { ...valid, name: '' }).success,
+    ).toBe(true);
     for (const [key, value] of [
       ['allowance', '1.123'],
       ['allowance', '-1'],

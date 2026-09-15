@@ -36,4 +36,47 @@ describe('public travel reference boundary', () => {
     } as unknown as MasterDataService);
     await expect(directory.assertTourReferences(input)).rejects.toThrow();
   });
+
+  it('matches only an active XLSX manifest template for the airline and destination', async () => {
+    const list = vi.fn().mockResolvedValue({
+      data: [
+        {
+          id: 'draft',
+          name: 'Draft',
+          attributes: {
+            airlineName: 'IRAN AIRTOUR',
+            destinationCityId: 'antalya',
+            publicationStatus: 'DRAFT',
+            fileFormat: 'XLSX',
+            fileReferenceId: 'draft-file',
+          },
+        },
+        {
+          id: 'active',
+          name: 'Sparta Antalya',
+          attributes: {
+            airlineName: 'ایران ایرتور',
+            destinationCityId: 'antalya',
+            publicationStatus: 'ACTIVE',
+            fileFormat: 'XLSX',
+            fileReferenceId: 'manifest-file',
+            versionNumber: 3,
+            validFrom: '2026-09-01',
+            validTo: '2026-09-30',
+          },
+        },
+      ],
+      meta: { page: 1, pageSize: 100, total: 2 },
+    });
+    const directory = new MasterTravelDirectory({ list } as never);
+
+    await expect(
+      directory.manifestTemplate('ایران ایر تور', 'antalya', '2026-09-20'),
+    ).resolves.toEqual({
+      id: 'active',
+      name: 'Sparta Antalya',
+      versionNumber: 3,
+      fileReferenceId: 'manifest-file',
+    });
+  });
 });

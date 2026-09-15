@@ -2,10 +2,21 @@
 
 ## RESERVATION-PURCHASE-LAYOUT-0915 — PC-A — READY_FOR_REVIEW
 
-- درخواست مالک در 2026-09-15: فرم خرید رزرواسیون فقط هزینه خرید هتل و ترانسفر از کارگزار را ثبت کند، هتل قیمت هر شب یا کل اقامت بپذیرد و کنترل‌های فرم روی هم نیفتند. قیمت خرید بلیط هنگام تعریف در Ticket Catalog به صف مالی از مسیر مستقل Procurement می‌رود؛ این بخش در PR #282 آماده و هنوز وارد develop نشده است.
+- درخواست مالک در 2026-09-15: فرم خرید رزرواسیون فقط هزینه خرید هتل و ترانسفر از کارگزار را ثبت کند، هتل قیمت هر شب یا کل اقامت بپذیرد و کنترل‌های فرم روی هم نیفتند. قیمت خرید بلیط هنگام تعریف در Ticket Catalog به صف مالی از مسیر مستقل Procurement می‌رود؛ این بخش با PR #282 وارد develop شده است.
 - Branch مستقل `codex/pc-a-reservation-purchase-layout-0915` از `origin/develop@b62054e3`؛ COMPUTER_ID=PC-A. محدوده رزرو: فرم خرید Web رزرواسیون، انتخاب خدمات واجد خرید، Gate خرید خدمات قرارداد در Finance و تست/اسناد همین واحد. بدون Schema/Migration/Seed، داده عملیاتی، Permission، Dependency/Lockfile یا تغییر Runtime مشترک.
-- مالک فعال همپوشان در آخرین `WORK_ASSIGNMENTS.md` و PRهای باز برای فایل‌های همین واحد پیدا نشد. PR #282 و شاخه‌های دیگر بدون reset/stash/overwrite/force-push باقی می‌مانند.
+- مالک فعال همپوشان در آخرین `WORK_ASSIGNMENTS.md` و PRهای باز برای فایل‌های همین واحد پیدا نشد. شاخه‌های دیگر بدون reset/stash/overwrite/force-push باقی می‌مانند.
 - نتیجه: فرم خرید کارگزار هتل/ترانسفر ردیف‌های مستقل دارد؛ هتل مبلغ هر شب یا جمع را به مبلغ نهایی تبدیل می‌کند؛ خرید بلیط از این API رد و Gate مالی این فرم فقط هتل/ترانسفر را مطالبه می‌کند. ۴ تست هدفمند Web و ۶ تست هدفمند API، lint/typecheck محدوده و build تولیدی API/Web (۴۶ مسیر) موفق‌اند. آخرین `origin/develop` همچنان `b62054e3` و فایل مشترک تازه‌ای از آن تغییر نکرده است. Runtime مشترک ۳۱۰۰ تغییر نکرد.
+
+## MASTER-012-AIRLINE-BAGGAGE-FORM — PC-B — READY_FOR_REVIEW
+
+- پیگیری مالک محصول در 2026-09-15: قواعد بار «عنوان فارسی» نمی‌خواهند. تکمیل همان واحد روی PR #285 و Branch موجود، با حفظ تمام تغییرات قبلی و محدوده Catalog/Form/Editor/Fixture/Test اطلاعات پایه، رزرو شد؛ Schema/Contract/API و ماژول دیگر دست‌نخورده می‌مانند.
+- تکمیل پیگیری: فیلد عنوان فارسی از Catalog قواعد بار حذف و `name` لازم برای Backend به‌صورت خودکار و انگلیسی از کدهای موجود ساخته شد؛ Fixture نمایشی و Demo Data هماهنگ شدند. ۳۰ تست مستقیم، typecheck و lint محدوده موفق‌اند.
+- تحویل Merge در 2026-09-15 با تأیید صریح مالک محصول: CI اولیه PR #285 فقط در گیت قالب‌بندی فایل‌های تغییرکرده شکست خورد؛ قالب‌بندی Prettier و تست منبعی حساس به شکست خط اصلاح شد. ۳۳ تست هدفمند، typecheck، lint و قالب‌بندی تغییرات اکنون موفق‌اند؛ منتظر اجرای دوباره CI و Review پیش از Merge.
+- درخواست مالک محصول: قواعد بار در خود فرم ایجاد/ویرایش ایرلاین ثبت و برای بزرگسال، کودک و نوزاد و هر کلاس پروازی جداگانه قابل تنظیم شود.
+- `COMPUTER_ID=PC-B`؛ شاخه مستقل `codex/pc-b-airline-baggage-form` از `origin/develop@b62054e3`.
+- محدوده رزروشده: رابط فرم و Workspace حمل‌ونقل اطلاعات پایه، تست‌های مستقیم آن و اسناد همین واحد. مدل `MasterBaggageRule` و FKهای ایرلاین/کلاس موجود حفظ می‌شوند؛ بدون Schema/Migration، قرارداد مشترک، API جدید، Dependency/Lockfile یا فایل متعلق به PC-A.
+- قواعد هر ایرلاین به‌صورت رکورد مستقل Backend ذخیره می‌شوند؛ فرم ایرلاین فقط مسیر مدیریت این رکوردهای وابسته است. قفل مرکزی دیگری نیاز نیست.
+- نتیجه: زیرناوبری قواعد بار حذف شد؛ فرم ایجاد ایرلاین پس از ذخیره در همان Dialog به ویرایش تبدیل و ویرایشگر قواعد بار را فعال می‌کند. قواعد بزرگسال/کودک/نوزاد برای کلاس عمومی یا کلاس مشخص و مسیر جداگانه، با ویرایش/غیرفعال‌سازی و نمایش فقط‌خواندنی در پروفایل عرضه شدند. ۲۴ تست هدفمند، typecheck، lint محدوده و build تولیدی Web با ۴۶ Route موفق‌اند؛ رزرو فایل‌های اجرایی برای Review آزاد است.
 
 ## PROFILE-PLACEHOLDER-AVATAR-001 — PC-B — VERIFIED / LOCAL_ACTIVATION
 
@@ -2848,3 +2859,18 @@ User authorizes latest combined local Web3100/API4190 activation. Branch codex/p
 Runtime correction: reserve infrastructure/scripts/start-unified-local.ps1 for a configurable API port, default 4191. The Fetch-standard restricted port 4190 failed browser access despite HTTP health. Rebuild the local Web configuration against API4191; preserve the same database, storage and authentication. No browser security override.
 
 LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runtime and launcher integration reservation released. No merge to develop/main. See docs/tasks/LOCAL-ALL-SECTIONS-3100-0913.md.
+
+## TICKET-REPEAT-PURCHASE-0914 — PC-A — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-14: رفع خطای تکرار بلیط‌های بدون ساعت، افزودن تاریخ اولین بلیط به فرم تعریف، و ارسال قیمت خرید ثبت‌شده به کارتابل مالی. COMPUTER_ID=PC-A.
+- Branch مستقل codex/pc-a-ticket-repeat-purchase-0914 از origin/develop@b62054e3؛ main/develop و Branchهای دیگر دست‌نخورده می‌مانند و خروجی فقط با PR جدا به develop تحویل می‌شود.
+- محدوده رزروشده: Ticket Catalog Web/model/tests، اتصال عمومی Procurement و Finance inbox، قرارداد افزایشی Travel، مدل و Migration افزایشی Procurement، و اسناد همین Work Item. Migration Owner = PC-A/TICKET-REPEAT-PURCHASE-0914 و Travel contract/Central Docs فقط برای همین تغییر رزرو است؛ Dependency/Lockfile و Permission تغییر نمی‌کند.
+- تحویل: فرم تعریف بلیط تاریخ اولین اجرا را مستقل از ساعت می‌گیرد؛ تکرار هفتگی/ماهانه بلیط قدیمی بدون ساعت نیز کار می‌کند. قیمت خرید مثبت با Decimal و ارز در Procurement ثبت و تا پیش از رسیدگی مالی قابل ویرایش است؛ Finance آن را از سرویس عمومی Procurement در کارتابل نشان می‌دهد. ۱۹ تست Web، ۸ تست API، lint، typecheck و build کامل API/Web و اعتبارسنجی Prisma موفق‌اند.
+
+## RESERVATION-MANIFEST-TICKET-CARDS-0914 - PC-A - READY_FOR_REVIEW
+
+- Product request 2026-09-14: after choosing a MANIFEST date range, show each matching outbound or return ticket as a Ticket Management style card. Show whether an active airline/destination template is available and generate only through that template.
+- Independent branch codex/pc-a-manifest-ticket-cards-0914 from origin/develop@b62054e3; COMPUTER_ID=PC-A.
+- Reserved scope: public Manifest list/export contracts, Reservations Manifest service/controller, public Master Data template lookup, controlled Documents referenced-file read, Manifest card UI and focused tests, plus this task status. No migration, seed, passenger data, dependency/lockfile, or localhost runtime changes.
+- Reservations consumes public Master Data and Documents services only. A template must be active, XLSX, destination-matched, and CLEAN. If a shared file changes on refreshed origin/develop, stop before resolving and report the overlap.
+- Implementation complete: the date-range search returns outbound and return ticket cards, resolves the active airline/destination template, disables unsupported cards with an explicit reason, and downloads only the selected ticket through its stored XLSX document. Contract-level export history remains idempotent and is separated by the selected flight departure. Eight focused API tests and one Web render test, scoped lint, Contracts/API/Web typecheck, and API/Web production builds passed. No migration, seed, dependency, passenger data, or localhost runtime change.
