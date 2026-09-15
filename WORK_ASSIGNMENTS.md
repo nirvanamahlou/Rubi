@@ -2965,12 +2965,13 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 - lint/typecheck API، Web، Database و Contracts و build تولیدی API/Web با ۴۶
   مسیر موفق‌اند؛ ۴۸ تست قواعد، ۳۰ تست عملیاتی روی پایگاه اختصاصی و ۹ تست Web
   هدفمند پاس شدند. نسخهٔ یکپارچه روی Gateway3100/Web3110/API4191 با commit
-  `ff56c883` پس از جذب `origin/develop@ff15c7d3` و اصلاح قالب‌بندی PR فعال و
-  health API/Web برابر ۲۰۰ است. تست‌های تغییرات تازهٔ Manifest/قواعد بار و build
+  `ff56c883` پس از جذب `origin/develop@ff15c7d3` و اصلاح قالب‌بندی PR فعال بودند و
+  health API/Web برابر ۲۰۰ بود. تست‌های تغییرات تازهٔ Manifest/قواعد بار و build
   ۴۶مسیره نیز پاس شدند.
   تب مرورگر بدون نشست به login
   هدایت می‌شود؛ grant فردی و smoke داخل حساب پس از معرفی حساب‌های مجاز پیگیری می‌شود.
 - پیگیری فونت مالک: صفحهٔ عملیاتی خرید فونت سراسری `font-sans` را صریحاً به ارث می‌برد. فایل public نمای قدیمی از مسیر `/fonts/vazirmatn-arabic-wght-normal.woff2` استفاده می‌کرد اما آن دارایی وجود نداشت و به Tahoma برمی‌گشت؛ فایل‌های فارسی و لاتین وزیرمتن از همان dependency موجود همراه مجوز OFL در public قرار گرفتند. بدون تغییر Dependency/Lockfile، API، Schema یا داده.
+  build Web با ۴۶ مسیر، lint/typecheck و Prettier موفق‌اند. Gateway3100/Web3110/API4191 از commit کد `a851e493` و build `unified-TsYKnysEo6ejcMcyC9wuF` فعال‌اند؛ API پس از تکمیل startup پاسخ health۲۰۰ داد. تب فعلی مرورگر بدون نشست است و خرید را به login هدایت می‌کند.
 
 ## TICKET-REPEAT-PURCHASE-0914 — PC-A — READY_FOR_REVIEW
 

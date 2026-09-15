@@ -2,7 +2,7 @@
 
 ## 2026-09-15 — هماهنگی فونت خرید و تأمین — PC-B
 
-نمای public قدیمی خرید فونت وزیرمتن را از مسیر فایل ناموجود بارگذاری می‌کرد و به Tahoma برمی‌گشت. دو فایل فارسی و لاتین همان بستهٔ فونت سراسری، همراه مجوز آن، در مسیر public اضافه شدند و بخش عملیاتی `/purchases` نیز کلاس فونت سراسری دارد. lint، typecheck، Prettier و build تولیدی Web با ۴۶ مسیر موفق‌اند. تغییری در API، پایگاه داده یا Dependency انجام نشد.
+نمای public قدیمی خرید فونت وزیرمتن را از مسیر فایل ناموجود بارگذاری می‌کرد و به Tahoma برمی‌گشت. دو فایل فارسی و لاتین همان بستهٔ فونت سراسری، همراه مجوز آن، در مسیر public اضافه شدند و بخش عملیاتی `/purchases` نیز کلاس فونت سراسری دارد. lint، typecheck، Prettier و build تولیدی Web با ۴۶ مسیر موفق‌اند. Gateway3100/Web3110/API4191 از commit کد `a851e493` و build `unified-TsYKnysEo6ejcMcyC9wuF` فعال‌اند؛ API health۲۰۰ است و مسیر خرید بدون نشست به login هدایت می‌شود. تغییری در API، پایگاه داده یا Dependency انجام نشد.
 
 ## 2026-09-15 — PROCUREMENT-LIVE-INTEGRATION-0915 — PC-B — ACTIVE
 
@@ -25,7 +25,7 @@ Typecheck و lint محدوده، ۴۸ تست قواعد دامنه، ۳۰ تست
 شدند. migration منتشرشدهٔ خرید بلیت و FK افزایشی شعبه/ثبت‌کننده ابتدا روی کپی
 داده و سپس با backup روی پایگاه محلی اجرا شدند. ۶۲ تست API و ۱۷ تست Web مرتبط،
 typecheck و build دوباره پاس شدند. Gateway3100/Web3110/API4191 از commit کد
-`ff56c883` با build `unified-olsoSZL_FaoPJEUpKljui` فعال‌اند؛ runtime Web و
+`ff56c883` با build `unified-olsoSZL_FaoPJEUpKljui` پیش از پیگیری فونت فعال بودند؛ runtime Web و
 health API هر دو ۲۰۰،
 مسیرهای خرید/میزکار/HR به صفحهٔ ورود معتبر ۳۰۷ می‌دهند و endpoint خرید بدون
 نشست ۴۰۱ می‌دهد. تب مرورگر فعلی صفحهٔ ورود است؛ نمایش داخل حساب تا ورود کاربر و
