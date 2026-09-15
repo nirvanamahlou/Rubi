@@ -166,8 +166,7 @@ export const dashboardKpis: readonly DashboardKpiDefinition[] = [
     technicalName: 'Net Profit',
     grain: 'شرکت، دوره مالی و ارز پایه',
     source: [journalBalance],
-    rule:
-      'خالص حساب‌های درآمد Posted منهای خالص حساب‌های هزینه Posted در همان شرکت، دوره مالی و ارز پایه',
+    rule: 'خالص حساب‌های درآمد Posted منهای خالص حساب‌های هزینه Posted در همان شرکت، دوره مالی و ارز پایه',
     exclusions:
       'سند draft، void یا reversed، دوره فاقد ثبت کامل هزینه و ارز فاقد تبدیل مصوب خارج‌اند.',
     dateBasis: 'policy-dependent',
@@ -175,7 +174,8 @@ export const dashboardKpis: readonly DashboardKpiDefinition[] = [
     permission: 'reports.dashboard.profit.read',
     openDecision: 'DEC-OPEN-004',
     role: 'outcome',
-    decision: 'پس از ثبت همه هزینه‌ها چه مقدار سود واقعی برای شرکت باقی مانده است؟',
+    decision:
+      'پس از ثبت همه هزینه‌ها چه مقدار سود واقعی برای شرکت باقی مانده است؟',
     comparison: 'ماه، دوره قبل و شرکت',
     reportCode: 'RPT-006',
   },
@@ -185,8 +185,7 @@ export const dashboardKpis: readonly DashboardKpiDefinition[] = [
     technicalName: 'Operating Expenses',
     grain: 'حساب هزینه، مرکز هزینه، دوره و ارز پایه',
     source: [journalBalance],
-    rule:
-      'جمع خالص بدهکار حساب‌های هزینه از اسناد Posted در بازه انتخابی، به تفکیک سرفصل و مرکز هزینه',
+    rule: 'جمع خالص بدهکار حساب‌های هزینه از اسناد Posted در بازه انتخابی، به تفکیک سرفصل و مرکز هزینه',
     exclusions:
       'سند draft، void یا reversed، انتقال بین حساب‌ها و مبلغ فاقد ارز پایه مصوب خارج‌اند.',
     dateBasis: 'effective',
@@ -203,8 +202,7 @@ export const dashboardKpis: readonly DashboardKpiDefinition[] = [
     technicalName: 'Paid Commissions',
     grain: 'ذی‌نفع، سند پرداخت کمیسیون و ارز',
     source: [journalBalance, payment],
-    rule:
-      'جمع مبالغ کمیسیون دارای پرداخت تأییدشده و ثبت Posted در حساب هزینه کمیسیون، به تفکیک کارشناس یا همکار',
+    rule: 'جمع مبالغ کمیسیون دارای پرداخت تأییدشده و ثبت Posted در حساب هزینه کمیسیون، به تفکیک کارشناس یا همکار',
     exclusions:
       'کمیسیون محاسبه‌شده اما پرداخت‌نشده، سند reversed و ذی‌نفع فاقد انتساب معتبر خارج‌اند.',
     dateBasis: 'paid',
@@ -287,8 +285,7 @@ export const dashboardKpis: readonly DashboardKpiDefinition[] = [
     technicalName: 'Finalized Sales Count',
     grain: 'یک قرارداد فروش نهایی‌شده',
     source: [salesContract],
-    rule:
-      'تعداد یکتای قراردادهایی که در بازه انتخابی به وضعیت نهایی فروش واجد محاسبه رسیده‌اند',
+    rule: 'تعداد یکتای قراردادهایی که در بازه انتخابی به وضعیت نهایی فروش واجد محاسبه رسیده‌اند',
     exclusions:
       'قرارداد draft، لغوشده، آزمایشی و transition تکراری یک قرارداد خارج‌اند.',
     dateBasis: 'effective',
@@ -305,15 +302,15 @@ export const dashboardKpis: readonly DashboardKpiDefinition[] = [
     technicalName: 'Average Sale Value',
     grain: 'قرارداد فروش نهایی‌شده و ارز',
     source: [salesContract],
-    rule:
-      'مجموع مبلغ فروش نهایی‌شده تقسیم بر تعداد یکتای فروش نهایی‌شده در همان ارز؛ در صورت صفر بودن مخرج نتیجه ناموجود است',
+    rule: 'مجموع مبلغ فروش نهایی‌شده تقسیم بر تعداد یکتای فروش نهایی‌شده در همان ارز؛ در صورت صفر بودن مخرج نتیجه ناموجود است',
     exclusions:
       'قرارداد لغوشده یا آزمایشی، فروش فاقد مبلغ معتبر و ادغام ارزهای بدون FX مصوب خارج‌اند.',
     dateBasis: 'effective',
     currency: 'required',
     permission: 'reports.dashboard.sales.read',
     role: 'diagnostic',
-    decision: 'ارزش متوسط معاملات چگونه تغییر کرده و کدام تیم فروش ارزش بالاتری ایجاد می‌کند؟',
+    decision:
+      'ارزش متوسط معاملات چگونه تغییر کرده و کدام تیم فروش ارزش بالاتری ایجاد می‌کند؟',
     comparison: 'کارشناس، کانال، ماه و دوره قبل',
     reportCode: 'RPT-001',
   },
@@ -323,8 +320,7 @@ export const dashboardKpis: readonly DashboardKpiDefinition[] = [
     technicalName: 'Granted Discount Amount',
     grain: 'جزء قیمت تخفیف، قرارداد و ارز',
     source: [salesContract, serviceItem],
-    rule:
-      'جمع قدرمطلق اجزای قیمت از نوع DISCOUNT برای فروش‌های نهایی‌شده در همان ارز',
+    rule: 'جمع قدرمطلق اجزای قیمت از نوع DISCOUNT برای فروش‌های نهایی‌شده در همان ارز',
     exclusions:
       'تخفیف پیش‌نویس، قرارداد لغوشده، کوپن مصرف‌نشده و ارز فاقد تبدیل مصوب خارج‌اند.',
     dateBasis: 'effective',
@@ -438,8 +434,7 @@ export const dashboardKpis: readonly DashboardKpiDefinition[] = [
     technicalName: 'Average Ticket Price',
     grain: 'بلیت نهایی‌شده و ارز',
     source: [travelFacts, ticket],
-    rule:
-      'مبلغ فروش اقلام بلیت نهایی‌شده تقسیم بر تعداد بلیت‌های همان بازه و ارز؛ در صورت صفر بودن تعداد نتیجه ناموجود است',
+    rule: 'مبلغ فروش اقلام بلیت نهایی‌شده تقسیم بر تعداد بلیت‌های همان بازه و ارز؛ در صورت صفر بودن تعداد نتیجه ناموجود است',
     exclusions:
       'بلیت void یا لغوشده، قلم غیرپرواز و ارز فاقد نرخ تبدیل مصوب خارج‌اند.',
     dateBasis: 'issued',
@@ -456,8 +451,7 @@ export const dashboardKpis: readonly DashboardKpiDefinition[] = [
     technicalName: 'Ticket Cancellation Rate',
     grain: 'بلیت واجد ارزیابی لغو',
     source: [travelFacts, ticket],
-    rule:
-      'تعداد بلیت‌های لغوشده در بازه تقسیم بر کل بلیت‌های صادرشده یا لغوشده همان cohort؛ در صورت صفر بودن مخرج نتیجه ناموجود است',
+    rule: 'تعداد بلیت‌های لغوشده در بازه تقسیم بر کل بلیت‌های صادرشده یا لغوشده همان cohort؛ در صورت صفر بودن مخرج نتیجه ناموجود است',
     exclusions:
       'رزرو بدون بلیت، درخواست لغو تکمیل‌نشده و رخداد تکراری لغو خارج‌اند.',
     dateBasis: 'effective',
@@ -474,8 +468,7 @@ export const dashboardKpis: readonly DashboardKpiDefinition[] = [
     technicalName: 'New Customers',
     grain: 'یک مشتری در تاریخ اولین خرید موفق',
     source: [salesContract, payment],
-    rule:
-      'تعداد یکتای مشتریانی که نخستین خرید پرداخت‌شده آن‌ها در بازه انتخابی ثبت شده است',
+    rule: 'تعداد یکتای مشتریانی که نخستین خرید پرداخت‌شده آن‌ها در بازه انتخابی ثبت شده است',
     exclusions:
       'ثبت‌نام بدون خرید، پرداخت ناموفق یا برگشت‌شده و مشتری تکراری خارج‌اند.',
     dateBasis: 'paid',
@@ -492,8 +485,7 @@ export const dashboardKpis: readonly DashboardKpiDefinition[] = [
     technicalName: 'Returning Customers',
     grain: 'یک مشتری دارای خرید پیشین و خرید موفق در بازه',
     source: [salesContract, payment],
-    rule:
-      'تعداد یکتای مشتریانی که پیش از شروع بازه حداقل یک خرید موفق و در بازه انتخابی نیز خرید موفق داشته‌اند',
+    rule: 'تعداد یکتای مشتریانی که پیش از شروع بازه حداقل یک خرید موفق و در بازه انتخابی نیز خرید موفق داشته‌اند',
     exclusions:
       'مشتری فقط با یک خرید، پرداخت ناموفق یا برگشت‌شده و قرارداد آزمایشی خارج‌اند.',
     dateBasis: 'paid',
@@ -510,15 +502,15 @@ export const dashboardKpis: readonly DashboardKpiDefinition[] = [
     technicalName: 'Customer Interest Coverage',
     grain: 'یک مشتری با حداقل یک سیگنال علاقه معتبر در بازه',
     source: [leadPipeline, salesContract, serviceItem],
-    rule:
-      'تعداد یکتای مشتریانی که در بازه انتخابی حداقل یک مقصد یا خدمت را در لید متصل به مشتری درخواست کرده‌اند یا خرید موفق همان مقصد یا خدمت را داشته‌اند',
+    rule: 'تعداد یکتای مشتریانی که در بازه انتخابی حداقل یک مقصد یا خدمت را در لید متصل به مشتری درخواست کرده‌اند یا خرید موفق همان مقصد یا خدمت را داشته‌اند',
     exclusions:
       'لید بدون customerId، متن آزاد طبقه‌بندی‌نشده، خرید ناموفق یا برگشت‌شده و مشتری ادغام‌شده خارج‌اند.',
     dateBasis: 'effective',
     currency: 'not-applicable',
     permission: 'reports.dashboard.customers.read',
     role: 'driver',
-    decision: 'برای چه سهمی از مشتریان می‌توان پیشنهاد مقصد یا خدمت مرتبط ساخت؟',
+    decision:
+      'برای چه سهمی از مشتریان می‌توان پیشنهاد مقصد یا خدمت مرتبط ساخت؟',
     comparison: 'نوع علاقه، مقصد، خدمت و دوره قبل',
     reportCode: 'RPT-025',
   },
@@ -528,8 +520,7 @@ export const dashboardKpis: readonly DashboardKpiDefinition[] = [
     technicalName: 'Customer Destination Demand',
     grain: 'یک سفارش یا رزرو معتبر و مقصد',
     source: [travelFacts],
-    rule:
-      'تعداد سفارش‌های یکتای معتبر دارای مقصد در بازه انتخابی؛ تعداد مسافر به‌عنوان اندازه تقاضای مکمل و جداگانه نمایش داده می‌شود',
+    rule: 'تعداد سفارش‌های یکتای معتبر دارای مقصد در بازه انتخابی؛ تعداد مسافر به‌عنوان اندازه تقاضای مکمل و جداگانه نمایش داده می‌شود',
     exclusions:
       'سفارش آزمایشی یا لغوشده، مقصد نامشخص و شمارش تکراری اقلام یک سفارش خارج‌اند.',
     dateBasis: 'effective',
@@ -546,8 +537,7 @@ export const dashboardKpis: readonly DashboardKpiDefinition[] = [
     technicalName: 'Customers Using Services',
     grain: 'یک مشتری و نوع خدمت در خرید موفق',
     source: [salesContract, serviceItem],
-    rule:
-      'تعداد یکتای مشتریان دارای حداقل یک قلم خدمت در خرید موفق، به تفکیک نوع خدمت در بازه انتخابی',
+    rule: 'تعداد یکتای مشتریان دارای حداقل یک قلم خدمت در خرید موفق، به تفکیک نوع خدمت در بازه انتخابی',
     exclusions:
       'خدمت پیش‌نویس یا لغوشده، خرید ناموفق یا برگشت‌شده و تکرار همان مشتری در یک نوع خدمت خارج‌اند.',
     dateBasis: 'effective',
@@ -564,8 +554,7 @@ export const dashboardKpis: readonly DashboardKpiDefinition[] = [
     technicalName: 'Customers by Acquisition Channel',
     grain: 'یک مشتری و روش آشنایی معتبر',
     source: [customerPortfolio],
-    rule:
-      'تعداد یکتای مشتریان فعال یا جدید دارای روش آشنایی ثبت‌شده، به تفکیک کانال جذب در بازه انتخابی',
+    rule: 'تعداد یکتای مشتریان فعال یا جدید دارای روش آشنایی ثبت‌شده، به تفکیک کانال جذب در بازه انتخابی',
     exclusions:
       'روش آشنایی نامشخص، مشتری ادغام‌شده یا غیرفعال خارج از بازه و انتساب‌های فاقد سیاست معتبر خارج‌اند.',
     dateBasis: 'created',
@@ -791,8 +780,7 @@ export const dashboardKpis: readonly DashboardKpiDefinition[] = [
     technicalName: 'Tour Reservations',
     grain: 'یک قرارداد نهایی و تور مرجع',
     source: [salesContract, serviceItem],
-    rule:
-      'تعداد یکتای قراردادهای نهایی دارای خدمت TOUR، به تفکیک referenceId یا عنوان snapshot تور در بازه انتخابی',
+    rule: 'تعداد یکتای قراردادهای نهایی دارای خدمت TOUR، به تفکیک referenceId یا عنوان snapshot تور در بازه انتخابی',
     exclusions:
       'خدمت تور لغوشده، قرارداد غیرنهایی و reference نامعتبر خارج‌اند.',
     dateBasis: 'effective',
@@ -809,8 +797,7 @@ export const dashboardKpis: readonly DashboardKpiDefinition[] = [
     technicalName: 'Tour Remaining Capacity',
     grain: 'یک حرکت تور و ظرفیت پیشنهادهای متصل',
     source: [serviceItem, ticketCapacity],
-    rule:
-      'حداقل ظرفیت باقی‌مانده قابل اتکای پیشنهادهای رفت و برگشت متصل به هر حرکت تور پس از کسر تخصیص‌های فعال',
+    rule: 'حداقل ظرفیت باقی‌مانده قابل اتکای پیشنهادهای رفت و برگشت متصل به هر حرکت تور پس از کسر تخصیص‌های فعال',
     exclusions:
       'حرکت غیرفعال، تخصیص released و تور فاقد ظرفیت عمومی معتبر خارج‌اند.',
     dateBasis: 'as-of',
@@ -827,10 +814,8 @@ export const dashboardKpis: readonly DashboardKpiDefinition[] = [
     technicalName: 'Tour Sell-through Rate',
     grain: 'یک حرکت تور و ظرفیت قابل فروش',
     source: [serviceItem, ticketCapacity],
-    rule:
-      'تخصیص فعال معتبر حرکت تور تقسیم بر ظرفیت کل قابل فروش همان حرکت؛ در صورت نامعتبر بودن ظرفیت نتیجه ناموجود است',
-    exclusions:
-      'تخصیص released، رزرو لغوشده و حرکت فاقد ظرفیت مصوب خارج‌اند.',
+    rule: 'تخصیص فعال معتبر حرکت تور تقسیم بر ظرفیت کل قابل فروش همان حرکت؛ در صورت نامعتبر بودن ظرفیت نتیجه ناموجود است',
+    exclusions: 'تخصیص released، رزرو لغوشده و حرکت فاقد ظرفیت مصوب خارج‌اند.',
     dateBasis: 'as-of',
     currency: 'not-applicable',
     permission: 'reports.dashboard.inventory.read',
@@ -845,10 +830,8 @@ export const dashboardKpis: readonly DashboardKpiDefinition[] = [
     technicalName: 'Hotel Reservations',
     grain: 'یک قرارداد نهایی و انتخاب هتل',
     source: [salesContract, serviceItem],
-    rule:
-      'تعداد یکتای قراردادهای نهایی دارای انتخاب HOTEL معتبر، به تفکیک هتل در بازه انتخابی',
-    exclusions:
-      'خدمت هتل لغوشده، انتخاب ناقص و قرارداد غیرنهایی خارج‌اند.',
+    rule: 'تعداد یکتای قراردادهای نهایی دارای انتخاب HOTEL معتبر، به تفکیک هتل در بازه انتخابی',
+    exclusions: 'خدمت هتل لغوشده، انتخاب ناقص و قرارداد غیرنهایی خارج‌اند.',
     dateBasis: 'effective',
     currency: 'not-applicable',
     permission: 'reports.dashboard.inventory.read',
@@ -863,10 +846,8 @@ export const dashboardKpis: readonly DashboardKpiDefinition[] = [
     technicalName: 'Average Length of Stay',
     grain: 'یک انتخاب هتل نهایی‌شده',
     source: [salesContract, serviceItem],
-    rule:
-      'مجموع تعداد شب بین check-in و check-out تقسیم بر تعداد انتخاب‌های معتبر هتل در بازه؛ در صورت صفر بودن مخرج نتیجه ناموجود است',
-    exclusions:
-      'تاریخ ناقص یا نامعتبر، رزرو لغوشده و اقامت صفرشب خارج‌اند.',
+    rule: 'مجموع تعداد شب بین check-in و check-out تقسیم بر تعداد انتخاب‌های معتبر هتل در بازه؛ در صورت صفر بودن مخرج نتیجه ناموجود است',
+    exclusions: 'تاریخ ناقص یا نامعتبر، رزرو لغوشده و اقامت صفرشب خارج‌اند.',
     dateBasis: 'effective',
     currency: 'not-applicable',
     permission: 'reports.dashboard.inventory.read',
@@ -961,8 +942,7 @@ export const dashboardKpis: readonly DashboardKpiDefinition[] = [
     technicalName: 'New Leads',
     grain: 'یک لید ایجادشده در بازه',
     source: [leadPipeline],
-    rule:
-      'تعداد لیدهای ایجادشده در بازه انتخابی که هنوز به خرید موفق منتسب نشده‌اند',
+    rule: 'تعداد لیدهای ایجادشده در بازه انتخابی که هنوز به خرید موفق منتسب نشده‌اند',
     exclusions: 'لید تکراری، حذف‌شده یا تبدیل‌شده به خرید موفق خارج است.',
     dateBasis: 'created',
     currency: 'not-applicable',
@@ -978,8 +958,7 @@ export const dashboardKpis: readonly DashboardKpiDefinition[] = [
     technicalName: 'Lead Growth Rate',
     grain: 'یک بازه و دوره پیشین هم‌طول',
     source: [leadPipeline],
-    rule:
-      '(تعداد لید جدید بازه جاری منهای تعداد لید جدید دوره قبل) تقسیم بر تعداد لید جدید دوره قبل؛ اگر مخرج صفر باشد نتیجه ناموجود است',
+    rule: '(تعداد لید جدید بازه جاری منهای تعداد لید جدید دوره قبل) تقسیم بر تعداد لید جدید دوره قبل؛ اگر مخرج صفر باشد نتیجه ناموجود است',
     exclusions: 'لید تکراری یا حذف‌شده و دوره‌های غیرهم‌طول خارج‌اند.',
     dateBasis: 'created',
     currency: 'not-applicable',
@@ -1160,8 +1139,7 @@ export const dashboardKpis: readonly DashboardKpiDefinition[] = [
     technicalName: 'Advertising Spend',
     grain: 'کمپین، کانال و ارز',
     source: [campaign],
-    rule:
-      'جمع هزینه ثبت‌شده و تأییدشده کمپین‌ها در بازه انتخابی، بدون تجمیع ارزهای فاقد نرخ تبدیل مصوب',
+    rule: 'جمع هزینه ثبت‌شده و تأییدشده کمپین‌ها در بازه انتخابی، بدون تجمیع ارزهای فاقد نرخ تبدیل مصوب',
     exclusions:
       'بودجه مصرف‌نشده، هزینه پیش‌نویس یا لغوشده و کمپین آزمایشی خارج‌اند.',
     dateBasis: 'effective',
@@ -2289,42 +2267,96 @@ export const dashboardPages: readonly DashboardPageDefinition[] = [
       'فعالیت CRM، فروش و لغو به تفکیک کارشناس؛ مقادیر فقط پس از انتشار Projection قابل ممیزی نمایش داده می‌شوند.',
     kpiIds: employeeCommercialKpis.map((kpi) => kpi.id),
     visualizations: [
-      visual('employee-leads-by-agent', 'لیدها به تفکیک کارشناس',
+      visual(
+        'employee-leads-by-agent',
+        'لیدها به تفکیک کارشناس',
         'تعداد لید یکتا، لید تبدیل‌شده و سهم از کل به تفکیک کارشناس، واحد و منشا.',
-        'bar', [employeeCommercialSource], 'reports.dashboard.crm.read', '/reports?view=catalog'),
-      visual('employee-calls-by-agent', 'تماس‌ها و تماس‌های موفق',
+        'bar',
+        [employeeCommercialSource],
+        'reports.dashboard.crm.read',
+        '/reports?view=catalog',
+      ),
+      visual(
+        'employee-calls-by-agent',
+        'تماس‌ها و تماس‌های موفق',
         'تعداد تماس ورودی/خروجی و موفق به تفکیک کارشناس؛ روند تماس‌ها در بازه انتخابی.',
-        'stacked-bar', [employeeCommercialSource], 'reports.dashboard.crm.read', '/reports?view=catalog'),
-      visual('employee-followups-by-agent', 'پیگیری‌ها و موارد معوق',
+        'stacked-bar',
+        [employeeCommercialSource],
+        'reports.dashboard.crm.read',
+        '/reports?view=catalog',
+      ),
+      visual(
+        'employee-followups-by-agent',
+        'پیگیری‌ها و موارد معوق',
         'پیگیری انجام‌شده و معوق به تفکیک کارشناس و نوع فعالیت.',
-        'bar', [employeeCommercialSource], 'reports.dashboard.crm.read', '/reports?view=catalog'),
-      visual('employee-sales-count-by-agent', 'تعداد فروش کارشناسان',
+        'bar',
+        [employeeCommercialSource],
+        'reports.dashboard.crm.read',
+        '/reports?view=catalog',
+      ),
+      visual(
+        'employee-sales-count-by-agent',
+        'تعداد فروش کارشناسان',
         'تعداد قراردادهای فروش نهایی به تفکیک کارشناس، خدمت و کانال.',
-        'bar', [employeeSalesSource, employeeCommercialSource], 'reports.dashboard.sales.read',
-        '/reports?report=sales_by_organization'),
-      visual('employee-sales-amount-by-agent', 'مبلغ فروش کارشناسان',
+        'bar',
+        [employeeSalesSource, employeeCommercialSource],
+        'reports.dashboard.sales.read',
+        '/reports?report=sales_by_organization',
+      ),
+      visual(
+        'employee-sales-amount-by-agent',
+        'مبلغ فروش کارشناسان',
         'مبلغ فروش نهایی و سهم هر کارشناس، جداگانه برای هر ارز.',
-        'bar', [employeeSalesSource, employeeCommercialSource], 'reports.dashboard.sales.read',
-        '/reports?report=sales_by_organization'),
-      visual('employee-conversion-by-agent', 'نرخ تبدیل لید به فروش',
+        'bar',
+        [employeeSalesSource, employeeCommercialSource],
+        'reports.dashboard.sales.read',
+        '/reports?report=sales_by_organization',
+      ),
+      visual(
+        'employee-conversion-by-agent',
+        'نرخ تبدیل لید به فروش',
         'نسبت لیدهای یکتای تبدیل‌شده به کل لیدهای واجد شرایط هر کارشناس.',
-        'bar', [employeeCommercialSource], 'reports.dashboard.crm.read', '/reports?view=catalog'),
-      visual('employee-average-sale-by-agent', 'میانگین مبلغ فروش',
+        'bar',
+        [employeeCommercialSource],
+        'reports.dashboard.crm.read',
+        '/reports?view=catalog',
+      ),
+      visual(
+        'employee-average-sale-by-agent',
+        'میانگین مبلغ فروش',
         'ارزش متوسط هر قرارداد فروش نهایی به تفکیک کارشناس و ارز.',
-        'bar', [employeeSalesSource, employeeCommercialSource], 'reports.dashboard.sales.read',
-        '/reports?report=sales_by_organization'),
-      visual('employee-contracts-by-agent', 'قراردادهای ثبت‌شده و نهایی',
+        'bar',
+        [employeeSalesSource, employeeCommercialSource],
+        'reports.dashboard.sales.read',
+        '/reports?report=sales_by_organization',
+      ),
+      visual(
+        'employee-contracts-by-agent',
+        'قراردادهای ثبت‌شده و نهایی',
         'تعداد قراردادهای یکتا به تفکیک وضعیت و کارشناس.',
-        'stacked-bar', [employeeSalesSource, employeeCommercialSource], 'reports.dashboard.sales.read',
-        '/reports?report=sales_by_organization'),
-      visual('employee-cancellations-by-agent', 'لغوها به تفکیک کارشناس و علت',
+        'stacked-bar',
+        [employeeSalesSource, employeeCommercialSource],
+        'reports.dashboard.sales.read',
+        '/reports?report=sales_by_organization',
+      ),
+      visual(
+        'employee-cancellations-by-agent',
+        'لغوها به تفکیک کارشناس و علت',
         'تعداد لغوهای نهایی به تفکیک کارشناس، خدمت و دلیل؛ برای بررسی علت، نه نسبت دادن تقصیر.',
-        'stacked-bar', [employeeCommercialSource], 'reports.dashboard.sales.read',
-        '/reports?report=cancellations_refunds'),
-      visual('employee-performance-ranking', 'مقایسه عملکرد کارشناسان',
+        'stacked-bar',
+        [employeeCommercialSource],
+        'reports.dashboard.sales.read',
+        '/reports?report=cancellations_refunds',
+      ),
+      visual(
+        'employee-performance-ranking',
+        'مقایسه عملکرد کارشناسان',
         'رتبه‌بندی جداگانه مبلغ و تعداد فروش، نرخ تبدیل و پیگیری؛ بدون جمع شاخص‌های ناهم‌واحد.',
-        'bar', [employeeSalesSource, employeeCommercialSource], 'reports.dashboard.sales.read',
-        '/reports?report=sales_by_organization'),
+        'bar',
+        [employeeSalesSource, employeeCommercialSource],
+        'reports.dashboard.sales.read',
+        '/reports?report=sales_by_organization',
+      ),
     ],
   },
   {
@@ -2395,7 +2427,10 @@ export const dashboardNavigation: readonly DashboardNavigationItem[] = [
       { pageId: 'marketing-growth' },
     ],
   },
-  { pageId: 'workforce-hr', children: [{ pageId: 'employee-commercial-performance' }] },
+  {
+    pageId: 'workforce-hr',
+    children: [{ pageId: 'employee-commercial-performance' }],
+  },
 ] as const;
 
 export const dashboardOpenDecisions = [

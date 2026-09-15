@@ -170,15 +170,13 @@ describe('Reporting navigation', () => {
         filterValues: { مسیر: 'تهران ← شیراز', وضعیت: 'ACTIVE' },
       }),
     ).not.toBe(configuredKey);
-    expect(
-      reportingOperationConfigurationHref('saved', 'all', state),
-    ).toBe(
+    expect(reportingOperationConfigurationHref('saved', 'all', state)).toBe(
       '/reports?view=saved&report=sales_by_service_route&from=2026-09-01&to=2026-09-10&company=NIYAYESH_SEIR_SAHAR&currency=USD&route=%D8%AA%D9%87%D8%B1%D8%A7%D9%86+%E2%86%90+%D8%B4%DB%8C%D8%B1%D8%A7%D8%B2',
     );
     for (const view of ['shared', 'recent'] as const) {
-      expect(
-        reportingOperationConfigurationHref(view, 'all', state),
-      ).toContain(`view=${view}&report=sales_by_service_route`);
+      expect(reportingOperationConfigurationHref(view, 'all', state)).toContain(
+        `view=${view}&report=sales_by_service_route`,
+      );
     }
   });
 

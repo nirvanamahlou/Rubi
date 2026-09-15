@@ -77,19 +77,27 @@ describe('dashboard registry', () => {
     const employeePage = dashboardPages.find(
       (page) => page.id === 'employee-commercial-performance',
     );
-    expect(employeePage?.kpiIds).toEqual(expect.arrayContaining([
-      'employee-lead-count', 'employee-call-count', 'employee-followup-count',
-      'employee-finalized-sales-count', 'employee-sales-amount',
-      'employee-lead-conversion', 'employee-average-sale',
-      'employee-contract-count', 'employee-cancellation-count',
-      'employee-sales-rank',
-    ]));
+    expect(employeePage?.kpiIds).toEqual(
+      expect.arrayContaining([
+        'employee-lead-count',
+        'employee-call-count',
+        'employee-followup-count',
+        'employee-finalized-sales-count',
+        'employee-sales-amount',
+        'employee-lead-conversion',
+        'employee-average-sale',
+        'employee-contract-count',
+        'employee-cancellation-count',
+        'employee-sales-rank',
+      ]),
+    );
     expect(employeePage?.visualizations).toHaveLength(10);
     expect(
       dashboardKpis.find((kpi) => kpi.id === 'employee-lead-conversion')?.rule,
     ).toContain('تعداد قرارداد به‌جای تعداد لید تبدیل‌شده استفاده نمی‌شود');
     expect(
-      dashboardKpis.find((kpi) => kpi.id === 'employee-average-sale')?.exclusions,
+      dashboardKpis.find((kpi) => kpi.id === 'employee-average-sale')
+        ?.exclusions,
     ).toContain('میانگین ارزهای متفاوت');
   });
 
@@ -119,9 +127,8 @@ describe('dashboard registry', () => {
         ?.exclusions,
     ).toContain('متن آزاد طبقه‌بندی‌نشده');
     expect(
-      dashboardKpis.find(
-        (kpi) => kpi.id === 'customers-by-acquisition-channel',
-      )?.source,
+      dashboardKpis.find((kpi) => kpi.id === 'customers-by-acquisition-channel')
+        ?.source,
     ).toContain('reporting_customer_portfolio_growth_facts_v1');
   });
 
@@ -172,9 +179,9 @@ describe('dashboard registry', () => {
       title: 'درآمد به تفکیک نوع خدمت',
       drilldown: '/reports?report=sales_by_service_route',
     });
-    expect(dashboardKpis.filter((kpi) => kpi.id === 'receivables')).toHaveLength(
-      1,
-    );
+    expect(
+      dashboardKpis.filter((kpi) => kpi.id === 'receivables'),
+    ).toHaveLength(1);
     expect(
       dashboardKpis.find((kpi) => kpi.id === 'net-profit')?.rule,
     ).toContain('حساب‌های درآمد Posted');
@@ -276,7 +283,10 @@ describe('dashboard registry', () => {
           { pageId: 'marketing-growth' },
         ],
       },
-      { pageId: 'workforce-hr', children: [{ pageId: 'employee-commercial-performance' }] },
+      {
+        pageId: 'workforce-hr',
+        children: [{ pageId: 'employee-commercial-performance' }],
+      },
     ]);
     const navigationIds = dashboardNavigation.flatMap((item) => [
       item.pageId,
@@ -433,9 +443,7 @@ describe('dashboard permission and data states', () => {
     expect(source).toContain(
       'این شاخص نشان می‌دهد «{definition.title}» در بازه و فیلترهای',
     );
-    expect(source).toContain(
-      'این شاخص برای پاسخ به این تصمیم استفاده می‌شود:',
-    );
+    expect(source).toContain('این شاخص برای پاسخ به این تصمیم استفاده می‌شود:');
     expect(source).not.toContain('تصمیم: </span>');
     const kpiCardSource = source.slice(
       source.indexOf('function KpiCard'),

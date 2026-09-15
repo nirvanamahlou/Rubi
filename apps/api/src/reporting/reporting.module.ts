@@ -11,7 +11,12 @@ import { ReportingExportService } from './reporting-export.service';
 @Module({
   imports: [IamModule, DocumentsModule],
   controllers: [ReportingController],
-  providers: [ReportingService, ReportingRepository, ReportingExportService, AuthGuard],
+  providers: [
+    ReportingService,
+    ReportingRepository,
+    ReportingExportService,
+    AuthGuard,
+  ],
   exports: [ReportingService],
 })
 export class ReportingModule {}

@@ -20,7 +20,11 @@ import type {
   ReportQueryV1,
   ReportingExportRequestV1,
 } from './reporting.contracts';
-import { ExportCreateDto, SaveReportDto, ShareSavedReportDto } from './reporting.dto';
+import {
+  ExportCreateDto,
+  SaveReportDto,
+  ShareSavedReportDto,
+} from './reporting.dto';
 import { ReportingService } from './reporting.service';
 import type { Response } from 'express';
 
@@ -40,7 +44,9 @@ export class ReportingController {
   }
 
   @Get('saved')
-  saved(@Req() request: AuthenticatedRequest) { return this.service.savedReports(request.actor); }
+  saved(@Req() request: AuthenticatedRequest) {
+    return this.service.savedReports(request.actor);
+  }
 
   @Get('workspace-counts')
   @Header('Cache-Control', 'private, no-store')
@@ -50,11 +56,16 @@ export class ReportingController {
 
   @Post('saved')
   @ApiBody({ type: SaveReportDto })
-  save(@Body() body: SaveReportDto, @Req() request: AuthenticatedRequest) { return this.service.saveReport(body, request.actor); }
+  save(@Body() body: SaveReportDto, @Req() request: AuthenticatedRequest) {
+    return this.service.saveReport(body, request.actor);
+  }
 
   @Get(':code/share-recipients')
   @Header('Cache-Control', 'private, no-store')
-  shareRecipients(@Param('code') code: string, @Req() request: AuthenticatedRequest) {
+  shareRecipients(
+    @Param('code') code: string,
+    @Req() request: AuthenticatedRequest,
+  ) {
     return this.service.sharingRecipients(code, request.actor);
   }
 
@@ -71,17 +82,27 @@ export class ReportingController {
     @Body() body: ShareSavedReportDto,
     @Req() request: AuthenticatedRequest,
   ) {
-    return this.service.shareSavedReport(id, body.recipientUserIds, request.actor);
+    return this.service.shareSavedReport(
+      id,
+      body.recipientUserIds,
+      request.actor,
+    );
   }
 
   @Delete('saved/:id')
-  removeSaved(@Param('id') id: string, @Req() request: AuthenticatedRequest) { return this.service.deleteSavedReport(id, request.actor); }
+  removeSaved(@Param('id') id: string, @Req() request: AuthenticatedRequest) {
+    return this.service.deleteSavedReport(id, request.actor);
+  }
 
   @Get('runs')
-  runs(@Req() request: AuthenticatedRequest) { return this.service.runs(request.actor); }
+  runs(@Req() request: AuthenticatedRequest) {
+    return this.service.runs(request.actor);
+  }
 
   @Get('exports')
-  exports(@Req() request: AuthenticatedRequest) { return this.service.exports(request.actor); }
+  exports(@Req() request: AuthenticatedRequest) {
+    return this.service.exports(request.actor);
+  }
 
   @Get('dashboard/projection')
   @Header('Cache-Control', 'private, no-store')
@@ -98,10 +119,17 @@ export class ReportingController {
   }
 
   @Get('exports/:id/download')
-  async download(@Param('id') id: string, @Req() request: AuthenticatedRequest, @Res() response: Response) {
+  async download(
+    @Param('id') id: string,
+    @Req() request: AuthenticatedRequest,
+    @Res() response: Response,
+  ) {
     const file = await this.service.downloadExport(id, request.actor);
     response.setHeader('Content-Type', file.contentType);
-    response.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${encodeURIComponent(file.fileName)}`);
+    response.setHeader(
+      'Content-Disposition',
+      `attachment; filename*=UTF-8''${encodeURIComponent(file.fileName)}`,
+    );
     response.setHeader('Content-Length', String(file.buffer.length));
     response.send(file.buffer);
   }
@@ -133,7 +161,11 @@ export class ReportingController {
 
   @Post(':code/exports')
   @ApiBody({ type: ExportCreateDto })
-  createExport(@Param('code') code: string, @Body() body: ExportCreateDto, @Req() request: AuthenticatedRequest) {
+  createExport(
+    @Param('code') code: string,
+    @Body() body: ExportCreateDto,
+    @Req() request: AuthenticatedRequest,
+  ) {
     return this.service.createExport(code, body, request.actor);
   }
 
@@ -145,5 +177,4 @@ export class ReportingController {
   ) {
     return this.service.export({ ...body, reportCode: code }, request.actor);
   }
-
 }

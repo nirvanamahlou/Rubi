@@ -109,5 +109,4 @@ describe('reporting safety policy', () => {
       ),
     ).toThrow(/حساس/);
   });
-
 });

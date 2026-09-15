@@ -391,7 +391,8 @@ export function ReportDateRangeFields({
   onToDateChange: (value: string) => void;
   toDate: string;
 }) {
-  const [calendarSystem, setCalendarSystem] = useState<CalendarSystem>('persian');
+  const [calendarSystem, setCalendarSystem] =
+    useState<CalendarSystem>('persian');
 
   return (
     <div>
@@ -585,8 +586,7 @@ export async function createAndDownloadReportExport({
   const created = await createExport(reportCode, { format, query });
   const artifactId =
     typeof created.id === 'string' && created.id.trim() ? created.id : '';
-  if (!artifactId)
-    throw new Error('شناسه فایل خروجی از سرور دریافت نشد.');
+  if (!artifactId) throw new Error('شناسه فایل خروجی از سرور دریافت نشد.');
   startDownload(reportingApi.exportDownloadUrl(artifactId));
   return artifactId;
 }
@@ -599,7 +599,7 @@ const reportCategoryIcons: Readonly<Record<string, LucideIcon>> = {
   'خرید و تأمین': ShoppingBag,
   'امور مشتریان و SLA': Headset,
   'آژانس‌ها و مشتریان سازمانی': Building2,
-  'مارکتینگ': Megaphone,
+  مارکتینگ: Megaphone,
   'منابع انسانی': UserRound,
   'اسناد و انطباق': FileText,
   'گزارش‌های مدیریتی تجمیعی': Layers3,
@@ -607,9 +607,7 @@ const reportCategoryIcons: Readonly<Record<string, LucideIcon>> = {
 
 export function ReportCategorySelectOption({ category }: { category: string }) {
   const CategoryIcon =
-    category === 'all'
-      ? Layers3
-      : (reportCategoryIcons[category] ?? FileText);
+    category === 'all' ? Layers3 : (reportCategoryIcons[category] ?? FileText);
   return (
     <span className="flex w-full items-center gap-2 text-right" dir="rtl">
       <CategoryIcon
@@ -625,17 +623,27 @@ export function ReportCategorySelectOption({ category }: { category: string }) {
 }
 
 const reportCategoryColors: Readonly<Record<string, string>> = {
-  'فروش و قراردادها': 'bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300',
-  'مالی و خزانه‌داری': 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300',
-  'رزرواسیون و عملیات سفر': 'bg-sky-50 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300',
-  'مدیریت بلیت‌ها': 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300',
-  'خرید و تأمین': 'bg-orange-50 text-orange-700 dark:bg-orange-950/40 dark:text-orange-300',
-  'امور مشتریان و SLA': 'bg-teal-50 text-teal-700 dark:bg-teal-950/40 dark:text-teal-300',
-  'آژانس‌ها و مشتریان سازمانی': 'bg-violet-50 text-violet-700 dark:bg-violet-950/40 dark:text-violet-300',
-  'مارکتینگ': 'bg-pink-50 text-pink-700 dark:bg-pink-950/40 dark:text-pink-300',
-  'منابع انسانی': 'bg-cyan-50 text-cyan-700 dark:bg-cyan-950/40 dark:text-cyan-300',
-  'اسناد و انطباق': 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300',
-  'گزارش‌های مدیریتی تجمیعی': 'bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300',
+  'فروش و قراردادها':
+    'bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300',
+  'مالی و خزانه‌داری':
+    'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300',
+  'رزرواسیون و عملیات سفر':
+    'bg-sky-50 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300',
+  'مدیریت بلیت‌ها':
+    'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300',
+  'خرید و تأمین':
+    'bg-orange-50 text-orange-700 dark:bg-orange-950/40 dark:text-orange-300',
+  'امور مشتریان و SLA':
+    'bg-teal-50 text-teal-700 dark:bg-teal-950/40 dark:text-teal-300',
+  'آژانس‌ها و مشتریان سازمانی':
+    'bg-violet-50 text-violet-700 dark:bg-violet-950/40 dark:text-violet-300',
+  مارکتینگ: 'bg-pink-50 text-pink-700 dark:bg-pink-950/40 dark:text-pink-300',
+  'منابع انسانی':
+    'bg-cyan-50 text-cyan-700 dark:bg-cyan-950/40 dark:text-cyan-300',
+  'اسناد و انطباق':
+    'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300',
+  'گزارش‌های مدیریتی تجمیعی':
+    'bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300',
 };
 
 const catalogFavoriteFilterState = {
@@ -652,14 +660,17 @@ type CatalogFavoriteSavedRecord = ReportingSavedReportRecord & {
   isSharedWithActor?: boolean;
 };
 
-export function catalogFavoriteIds(rows: readonly CatalogFavoriteSavedRecord[]) {
+export function catalogFavoriteIds(
+  rows: readonly CatalogFavoriteSavedRecord[],
+) {
   return Object.fromEntries(
     rows
-      .filter((row) =>
-        row.isFavorite === true &&
-        row.isSharedWithActor !== true &&
-        row.filterState?.catalogFavorite === true &&
-        reportCatalog.some((report) => report.code === row.reportCode),
+      .filter(
+        (row) =>
+          row.isFavorite === true &&
+          row.isSharedWithActor !== true &&
+          row.filterState?.catalogFavorite === true &&
+          reportCatalog.some((report) => report.code === row.reportCode),
       )
       .map((row) => [row.reportCode, row.id]),
   ) as Record<string, string>;
@@ -668,7 +679,9 @@ export function catalogFavoriteIds(rows: readonly CatalogFavoriteSavedRecord[]) 
 function catalogFavoriteErrorMessage(error: unknown) {
   if (error instanceof ReportingApiError && error.status >= 500)
     return 'ذخیره علاقه‌مندی‌ها در سرور در دسترس نیست؛ سرویس گزارش‌ها و پایگاه داده را بررسی کنید.';
-  return error instanceof Error ? error.message : 'تغییر علاقه‌مندی ناموفق بود.';
+  return error instanceof Error
+    ? error.message
+    : 'تغییر علاقه‌مندی ناموفق بود.';
 }
 
 function ReportCard({
@@ -698,8 +711,8 @@ function ReportCard({
       }
     >
       <div className="min-w-0">
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex min-w-0 flex-wrap items-center gap-1.5">
             <span
               aria-label={report.category}
               className={`grid size-10 shrink-0 place-items-center rounded-xl ${reportCategoryColors[report.category] ?? 'bg-primary/10 text-primary'}`}
@@ -722,27 +735,29 @@ function ReportCard({
             >
               {connected ? 'اتصال محدود قابل اجرا' : 'در انتظار منبع داده'}
             </Badge>
-            </div>
-            <button
-              aria-label={`${isFavorite ? 'حذف از' : 'افزودن به'} گزارش‌های مورد علاقه من: ${report.title}`}
-              aria-pressed={isFavorite}
-              className="grid size-9 shrink-0 place-items-center rounded-lg text-muted-foreground outline-none transition hover:bg-amber-50 hover:text-amber-600 focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 dark:hover:bg-amber-950/30"
-              disabled={favoriteBusy}
-              onClick={() => onToggleFavorite(report)}
-              title={isFavorite ? 'حذف از علاقه‌مندی‌ها' : 'افزودن به علاقه‌مندی‌ها'}
-              type="button"
-            >
-              <Star
-                aria-hidden="true"
-                className={`size-5 ${isFavorite ? 'fill-amber-400 text-amber-500' : ''}`}
-              />
-            </button>
           </div>
-          <h3 className="mt-2 text-sm font-bold">{report.title}</h3>
-          <p className="mt-2 line-clamp-3 text-xs leading-5 text-muted-foreground">
-            <span className="font-semibold text-foreground">خروجی: </span>
-            {report.description}
-          </p>
+          <button
+            aria-label={`${isFavorite ? 'حذف از' : 'افزودن به'} گزارش‌های مورد علاقه من: ${report.title}`}
+            aria-pressed={isFavorite}
+            className="grid size-9 shrink-0 place-items-center rounded-lg text-muted-foreground outline-none transition hover:bg-amber-50 hover:text-amber-600 focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 dark:hover:bg-amber-950/30"
+            disabled={favoriteBusy}
+            onClick={() => onToggleFavorite(report)}
+            title={
+              isFavorite ? 'حذف از علاقه‌مندی‌ها' : 'افزودن به علاقه‌مندی‌ها'
+            }
+            type="button"
+          >
+            <Star
+              aria-hidden="true"
+              className={`size-5 ${isFavorite ? 'fill-amber-400 text-amber-500' : ''}`}
+            />
+          </button>
+        </div>
+        <h3 className="mt-2 text-sm font-bold">{report.title}</h3>
+        <p className="mt-2 line-clamp-3 text-xs leading-5 text-muted-foreground">
+          <span className="font-semibold text-foreground">خروجی: </span>
+          {report.description}
+        </p>
       </div>
       <Button
         aria-haspopup="dialog"
@@ -930,8 +945,8 @@ export function ReportResultPanel({
   const hasRows = Boolean(result?.rows.length);
   const showDistinctContractKpi = Boolean(
     result &&
-      result.rowGrain !== 'ORDER_ITEM_CURRENCY' &&
-      result.contractCount !== result.total,
+    result.rowGrain !== 'ORDER_ITEM_CURRENCY' &&
+    result.contractCount !== result.total,
   );
   const incomplete = Boolean(
     result && (!result.sourceDataAsOfUtc || result.warnings.length),
@@ -1006,12 +1021,8 @@ export function ReportResultPanel({
       purchaseAmount: rows.some(
         (row) => typeof row.purchaseAmount === 'string',
       ),
-      grossProfit: rows.some(
-        (row) => typeof row.grossProfit === 'string',
-      ),
-      refundAmount: rows.some(
-        (row) => typeof row.refundAmount === 'string',
-      ),
+      grossProfit: rows.some((row) => typeof row.grossProfit === 'string'),
+      refundAmount: rows.some((row) => typeof row.refundAmount === 'string'),
       settlementBalance: rows.some(
         (row) => typeof row.settlementBalance === 'string',
       ),
@@ -1187,7 +1198,10 @@ export function ReportResultPanel({
                   }
                   value={chartType}
                 >
-                  <SelectTrigger className="min-w-44" id="report-result-chart-type">
+                  <SelectTrigger
+                    className="min-w-44"
+                    id="report-result-chart-type"
+                  >
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -1327,10 +1341,16 @@ export function ReportResultPanel({
                 <tbody>
                   {result.rows.map((row) => (
                     <tr className="border-t" key={row.grainId}>
-                      <td className="p-3 text-center font-mono text-xs" dir="ltr">
+                      <td
+                        className="p-3 text-center font-mono text-xs"
+                        dir="ltr"
+                      >
                         {row.branchId}
                       </td>
-                      <td className="p-3 text-center font-mono text-xs" dir="ltr">
+                      <td
+                        className="p-3 text-center font-mono text-xs"
+                        dir="ltr"
+                      >
                         {row.ownerUserId}
                       </td>
                       <td className="p-3 text-center" dir="ltr">
@@ -1385,7 +1405,8 @@ export function ReportResultPanel({
             >
               <div>
                 <h3 className="text-sm font-bold">
-                  {report.measures[0] ?? 'مبلغ'} به تفکیک {report.dimensions.slice(0, 2).join(' و ')}
+                  {report.measures[0] ?? 'مبلغ'} به تفکیک{' '}
+                  {report.dimensions.slice(0, 2).join(' و ')}
                 </h3>
                 <p className="mt-1 text-xs text-muted-foreground">
                   طول هر میله نسبت به بیشترین مبلغ همان ارز محاسبه شده است.
@@ -1427,7 +1448,8 @@ export function ReportResultPanel({
             >
               <div>
                 <h3 className="text-sm font-bold">
-                  {report.measures[0] ?? 'مبلغ'} به تفکیک {report.dimensions.slice(0, 2).join(' و ')}
+                  {report.measures[0] ?? 'مبلغ'} به تفکیک{' '}
+                  {report.dimensions.slice(0, 2).join(' و ')}
                 </h3>
                 <p className="mt-1 text-xs text-muted-foreground">
                   ارتفاع هر ستون نسبت به بیشترین مبلغ همان ارز محاسبه شده است.
@@ -1436,7 +1458,8 @@ export function ReportResultPanel({
               <div className="overflow-x-auto pb-2">
                 <div className="flex min-w-max items-end gap-4 border-b border-border px-3 pt-8">
                   {result.rows.map((row) => {
-                    const maximum = maxAmountByCurrency.get(row.currencyCode) ?? 0;
+                    const maximum =
+                      maxAmountByCurrency.get(row.currencyCode) ?? 0;
                     const height = maximum
                       ? Math.max(
                           6,
@@ -1444,8 +1467,14 @@ export function ReportResultPanel({
                         )
                       : 6;
                     return (
-                      <div className="w-24 shrink-0 text-center" key={row.grainId}>
-                        <span className="block truncate text-[11px] font-semibold" dir="ltr">
+                      <div
+                        className="w-24 shrink-0 text-center"
+                        key={row.grainId}
+                      >
+                        <span
+                          className="block truncate text-[11px] font-semibold"
+                          dir="ltr"
+                        >
                           {row.amount} {row.currencyCode}
                         </span>
                         <div className="mt-2 flex h-44 items-end justify-center">
@@ -1471,7 +1500,8 @@ export function ReportResultPanel({
             >
               <div>
                 <h3 className="text-sm font-bold">
-                  سهم {report.measures[0] ?? 'مبلغ'} به تفکیک {report.dimensions.slice(0, 2).join(' و ')}
+                  سهم {report.measures[0] ?? 'مبلغ'} به تفکیک{' '}
+                  {report.dimensions.slice(0, 2).join(' و ')}
                 </h3>
                 <p className="mt-1 text-xs text-muted-foreground">
                   سهم هر بخش در هر ارز به‌صورت مستقل محاسبه شده است.
@@ -1641,7 +1671,8 @@ export function ReportingWorkspace({
   const loadCatalogFavorites = useCallback(async () => {
     setFavoritesLoading(true);
     try {
-      const rows = await reportingApi.listWorkspace<CatalogFavoriteSavedRecord>('saved');
+      const rows =
+        await reportingApi.listWorkspace<CatalogFavoriteSavedRecord>('saved');
       setFavoriteIds(catalogFavoriteIds(rows));
       setFavoriteFeedback('');
     } catch (error) {
@@ -1719,8 +1750,7 @@ export function ReportingWorkspace({
       setFavoriteBusyCode(null);
     }
   };
-  const connectedReportSelected =
-    selected.availability === 'READY';
+  const connectedReportSelected = selected.availability === 'READY';
   const supportedConnectedFilterLabels = new Set(['شعبه', 'کارشناس', 'وضعیت']);
   const unsupportedConnectedFilters =
     selected.code === 'sales_by_organization' &&
@@ -1911,13 +1941,16 @@ export function ReportingWorkspace({
         ...(fromDate ? { fromDate } : {}),
         ...(toDate ? { toDate } : {}),
         legalEntity,
-        ...(selected.code === 'sales_by_organization' && reportFilterValues['شعبه']
+        ...(selected.code === 'sales_by_organization' &&
+        reportFilterValues['شعبه']
           ? { branchId: reportFilterValues['شعبه'] }
           : {}),
-        ...(selected.code === 'sales_by_organization' && reportFilterValues['کارشناس']
+        ...(selected.code === 'sales_by_organization' &&
+        reportFilterValues['کارشناس']
           ? { ownerUserId: reportFilterValues['کارشناس'] }
           : {}),
-        ...(selected.code === 'sales_by_organization' && reportFilterValues['وضعیت']
+        ...(selected.code === 'sales_by_organization' &&
+        reportFilterValues['وضعیت']
           ? { status: reportFilterValues['وضعیت'] }
           : {}),
         filterValues:
@@ -1979,164 +2012,197 @@ export function ReportingWorkspace({
         {workspaceViews.map(({ icon: Icon, id, label }) => {
           const count = workspaceCountForView(id, workspaceCounts);
           return (
-          <Button
-            asChild
-            aria-current={view === id ? 'page' : undefined}
-            className={
-              view === id ? `shrink-0 ${darkSurfaceContentClass}` : 'shrink-0'
-            }
-            key={id}
-            variant={view === id ? 'primary' : 'outline'}
-          >
-            <Link href={reportingViewHref(id)} scroll={false}>
-              <Icon aria-hidden="true" className="size-4" />
-              {label}
-              <span
-                className="rounded-md bg-current/10 px-1.5 text-xs tabular-nums"
-                aria-label={count === undefined ? `در حال دریافت تعداد ${label}` : `${count.toLocaleString('fa-IR')} مورد در ${label}`}
-                title={count === undefined ? 'در حال دریافت تعداد از سرور' : `تعداد به‌روز ${label}`}
-              >
-                {count === undefined ? '…' : count.toLocaleString('fa-IR')}
-              </span>
-            </Link>
-          </Button>
+            <Button
+              asChild
+              aria-current={view === id ? 'page' : undefined}
+              className={
+                view === id ? `shrink-0 ${darkSurfaceContentClass}` : 'shrink-0'
+              }
+              key={id}
+              variant={view === id ? 'primary' : 'outline'}
+            >
+              <Link href={reportingViewHref(id)} scroll={false}>
+                <Icon aria-hidden="true" className="size-4" />
+                {label}
+                <span
+                  className="rounded-md bg-current/10 px-1.5 text-xs tabular-nums"
+                  aria-label={
+                    count === undefined
+                      ? `در حال دریافت تعداد ${label}`
+                      : `${count.toLocaleString('fa-IR')} مورد در ${label}`
+                  }
+                  title={
+                    count === undefined
+                      ? 'در حال دریافت تعداد از سرور'
+                      : `تعداد به‌روز ${label}`
+                  }
+                >
+                  {count === undefined ? '…' : count.toLocaleString('fa-IR')}
+                </span>
+              </Link>
+            </Button>
           );
         })}
       </nav>
       {view === 'catalog' ? (
         <section>
-            <div className="space-y-4">
-              <Card className="p-4">
-                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[minmax(20rem,1fr)_repeat(2,minmax(13rem,auto))]">
-                  <label className="relative md:col-span-2 xl:col-span-1">
-                    <Search className="absolute end-3 top-3 size-4 text-muted-foreground" />
-                    <Input
-                      aria-label="جست‌وجوی گزارش"
-                      className="pe-10"
-                      onChange={(event) => setQuery(event.target.value)}
-                      placeholder="جست‌وجو در عنوان یا دسته گزارش"
-                      value={query}
-                    />
-                  </label>
-                  <Select onValueChange={setCategory} value={category}>
-                    <SelectTrigger aria-label="دسته گزارش">
-                      <Filter className="size-4" />
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="text-right" dir="rtl">
-                      <SelectItem className="text-right" value="all">
-                        <ReportCategorySelectOption category="all" />
-                      </SelectItem>
-                      {categories.map((item) => (
-                        <SelectItem className="text-right" key={item} value={item}>
-                          <ReportCategorySelectOption category={item} />
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Select
-                    onValueChange={(value) =>
-                      setAvailability(value as ReportAvailability | 'all')
-                    }
-                    value={availability}
-                  >
-                    <SelectTrigger
-                      aria-label="وضعیت اتصال گزارش"
-                      className="whitespace-nowrap [&>span]:whitespace-nowrap"
-                    >
-                      <ShieldCheck className="size-4" />
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">همه وضعیت‌های اتصال</SelectItem>
-                      <SelectItem value="READY">قابل اجرای محدود</SelectItem>
-                      <SelectItem value="PENDING_CONNECTION">
-                        در انتظار منبع داده
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="mt-3 text-xs text-muted-foreground">
-                  <span aria-live="polite">
-                    نمایش {visible.length.toLocaleString('fa-IR')} از{' '}
-                    {reportCatalog.length.toLocaleString('fa-IR')} گزارش
-                  </span>
-                </div>
-              </Card>
-              <section aria-labelledby="catalog-favorites-title" className="space-y-3">
-                <div className="flex flex-wrap items-center gap-2">
-                  <Star aria-hidden="true" className="size-5 fill-amber-400 text-amber-500" />
-                  <h2 id="catalog-favorites-title" className="text-lg font-bold">
-                    گزارش‌های مورد علاقه من
-                  </h2>
-                  <Badge className="tabular-nums">
-                    {favoriteReports.length.toLocaleString('fa-IR')}
-                  </Badge>
-                </div>
-                {favoriteFeedback ? (
-                  <p aria-live="polite" className="rounded-xl border border-border bg-surface px-3 py-2 text-xs" role="status">
-                    {favoriteFeedback}
-                  </p>
-                ) : null}
-                {favoritesLoading ? (
-                  <Skeleton className="h-24 w-full rounded-2xl" />
-                ) : favoriteReports.length ? (
-                  <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-                    {favoriteReports.map((report) => (
-                      <ReportCard
-                        favoriteBusy={favoriteBusyCode !== null}
-                        isFavorite
-                        key={report.code}
-                        onSelect={selectCatalogReport}
-                        onToggleFavorite={(item) => void toggleCatalogFavorite(item)}
-                        report={report}
-                        selected={selected.code === report.code}
-                      />
-                    ))}
-                  </div>
-                ) : (
-                  <Card className="border-dashed px-4 py-5 text-sm text-muted-foreground">
-                    {Object.keys(favoriteIds).length
-                      ? 'با جست‌وجو و فیلترهای فعلی، گزارشی از علاقه‌مندی‌ها نمایش داده نمی‌شود.'
-                      : 'برای دسترسی سریع به گزارش‌های مهم، ستارهٔ کارت هر گزارش را انتخاب کنید.'}
-                  </Card>
-                )}
-              </section>
-              <section aria-labelledby="catalog-reports-title" className="space-y-3">
-                <h2 id="catalog-reports-title" className="text-lg font-bold">
-                  گزارش‌های کاتالوگ
-                </h2>
-                {otherReports.length ? (
-                  <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-                    {otherReports.map((report) => (
-                      <ReportCard
-                        favoriteBusy={favoriteBusyCode !== null}
-                        isFavorite={false}
-                        key={report.code}
-                        onSelect={selectCatalogReport}
-                        onToggleFavorite={(item) => void toggleCatalogFavorite(item)}
-                        report={report}
-                        selected={selected.code === report.code}
-                      />
-                    ))}
-                  </div>
-                ) : visible.length ? (
-                  <p className="rounded-xl border border-dashed border-border p-4 text-sm text-muted-foreground">
-                    همهٔ گزارش‌های مطابق فیلتر در علاقه‌مندی‌ها هستند.
-                  </p>
-                ) : (
-                  <EmptyState
-                    action={
-                      <Button onClick={resetCatalogFilters} type="button" variant="outline">
-                        پاک‌کردن جست‌وجو و فیلترها
-                      </Button>
-                    }
-                    description="عبارت جست‌وجو یا فیلترهای دسته و اتصال را تغییر دهید."
-                    title="گزارشی پیدا نشد"
+          <div className="space-y-4">
+            <Card className="p-4">
+              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[minmax(20rem,1fr)_repeat(2,minmax(13rem,auto))]">
+                <label className="relative md:col-span-2 xl:col-span-1">
+                  <Search className="absolute end-3 top-3 size-4 text-muted-foreground" />
+                  <Input
+                    aria-label="جست‌وجوی گزارش"
+                    className="pe-10"
+                    onChange={(event) => setQuery(event.target.value)}
+                    placeholder="جست‌وجو در عنوان یا دسته گزارش"
+                    value={query}
                   />
-                )}
-              </section>
-            </div>
+                </label>
+                <Select onValueChange={setCategory} value={category}>
+                  <SelectTrigger aria-label="دسته گزارش">
+                    <Filter className="size-4" />
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="text-right" dir="rtl">
+                    <SelectItem className="text-right" value="all">
+                      <ReportCategorySelectOption category="all" />
+                    </SelectItem>
+                    {categories.map((item) => (
+                      <SelectItem
+                        className="text-right"
+                        key={item}
+                        value={item}
+                      >
+                        <ReportCategorySelectOption category={item} />
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select
+                  onValueChange={(value) =>
+                    setAvailability(value as ReportAvailability | 'all')
+                  }
+                  value={availability}
+                >
+                  <SelectTrigger
+                    aria-label="وضعیت اتصال گزارش"
+                    className="whitespace-nowrap [&>span]:whitespace-nowrap"
+                  >
+                    <ShieldCheck className="size-4" />
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">همه وضعیت‌های اتصال</SelectItem>
+                    <SelectItem value="READY">قابل اجرای محدود</SelectItem>
+                    <SelectItem value="PENDING_CONNECTION">
+                      در انتظار منبع داده
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="mt-3 text-xs text-muted-foreground">
+                <span aria-live="polite">
+                  نمایش {visible.length.toLocaleString('fa-IR')} از{' '}
+                  {reportCatalog.length.toLocaleString('fa-IR')} گزارش
+                </span>
+              </div>
+            </Card>
+            <section
+              aria-labelledby="catalog-favorites-title"
+              className="space-y-3"
+            >
+              <div className="flex flex-wrap items-center gap-2">
+                <Star
+                  aria-hidden="true"
+                  className="size-5 fill-amber-400 text-amber-500"
+                />
+                <h2 id="catalog-favorites-title" className="text-lg font-bold">
+                  گزارش‌های مورد علاقه من
+                </h2>
+                <Badge className="tabular-nums">
+                  {favoriteReports.length.toLocaleString('fa-IR')}
+                </Badge>
+              </div>
+              {favoriteFeedback ? (
+                <p
+                  aria-live="polite"
+                  className="rounded-xl border border-border bg-surface px-3 py-2 text-xs"
+                  role="status"
+                >
+                  {favoriteFeedback}
+                </p>
+              ) : null}
+              {favoritesLoading ? (
+                <Skeleton className="h-24 w-full rounded-2xl" />
+              ) : favoriteReports.length ? (
+                <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+                  {favoriteReports.map((report) => (
+                    <ReportCard
+                      favoriteBusy={favoriteBusyCode !== null}
+                      isFavorite
+                      key={report.code}
+                      onSelect={selectCatalogReport}
+                      onToggleFavorite={(item) =>
+                        void toggleCatalogFavorite(item)
+                      }
+                      report={report}
+                      selected={selected.code === report.code}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <Card className="border-dashed px-4 py-5 text-sm text-muted-foreground">
+                  {Object.keys(favoriteIds).length
+                    ? 'با جست‌وجو و فیلترهای فعلی، گزارشی از علاقه‌مندی‌ها نمایش داده نمی‌شود.'
+                    : 'برای دسترسی سریع به گزارش‌های مهم، ستارهٔ کارت هر گزارش را انتخاب کنید.'}
+                </Card>
+              )}
+            </section>
+            <section
+              aria-labelledby="catalog-reports-title"
+              className="space-y-3"
+            >
+              <h2 id="catalog-reports-title" className="text-lg font-bold">
+                گزارش‌های کاتالوگ
+              </h2>
+              {otherReports.length ? (
+                <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+                  {otherReports.map((report) => (
+                    <ReportCard
+                      favoriteBusy={favoriteBusyCode !== null}
+                      isFavorite={false}
+                      key={report.code}
+                      onSelect={selectCatalogReport}
+                      onToggleFavorite={(item) =>
+                        void toggleCatalogFavorite(item)
+                      }
+                      report={report}
+                      selected={selected.code === report.code}
+                    />
+                  ))}
+                </div>
+              ) : visible.length ? (
+                <p className="rounded-xl border border-dashed border-border p-4 text-sm text-muted-foreground">
+                  همهٔ گزارش‌های مطابق فیلتر در علاقه‌مندی‌ها هستند.
+                </p>
+              ) : (
+                <EmptyState
+                  action={
+                    <Button
+                      onClick={resetCatalogFilters}
+                      type="button"
+                      variant="outline"
+                    >
+                      پاک‌کردن جست‌وجو و فیلترها
+                    </Button>
+                  }
+                  description="عبارت جست‌وجو یا فیلترهای دسته و اتصال را تغییر دهید."
+                  title="گزارشی پیدا نشد"
+                />
+              )}
+            </section>
+          </div>
         </section>
       ) : (
         <Card
@@ -2154,370 +2220,372 @@ export function ReportingWorkspace({
         </Card>
       )}
       <Dialog onOpenChange={setConfigurationOpen} open={configurationOpen}>
-            <DialogContent
-              className="max-h-[calc(100vh-1rem)] max-w-6xl overflow-y-auto p-4 sm:p-6"
-              dir="rtl"
+        <DialogContent
+          className="max-h-[calc(100vh-1rem)] max-w-6xl overflow-y-auto p-4 sm:p-6"
+          dir="rtl"
+        >
+          <div>
+            <DialogTitle className="pe-10 text-xl font-black">
+              {selected.title}
+            </DialogTitle>
+            <DialogDescription className="mt-1 leading-7">
+              {selected.description}
+            </DialogDescription>
+            <div className="mt-4 flex flex-wrap items-center gap-2 border-t pt-4 text-xs">
+              <Badge
+                className={
+                  connectedReportSelected
+                    ? 'bg-emerald-500/10 text-emerald-700'
+                    : 'bg-amber-500/10 text-amber-700'
+                }
+              >
+                {connectedReportSelected
+                  ? 'اتصال محدود قابل اجرا'
+                  : 'در انتظار منبع داده'}
+              </Badge>
+              <span className="flex items-center gap-1.5 text-muted-foreground">
+                <Clock3 aria-hidden="true" className="size-3.5" />
+                تازگی منبع:{' '}
+                {connectedReportSelected ? 'نامشخص' : 'منبع منتشر نشده'}
+              </span>
+              {result ? (
+                <span className="text-muted-foreground">
+                  زمان دریافت نتیجه:{' '}
+                  <span dir="ltr">{result.generatedAtUtc}</span>
+                </span>
+              ) : null}
+            </div>
+            <section
+              aria-label="Filter Snapshot"
+              className="mt-4 rounded-2xl border border-primary/15 bg-primary/[0.035] p-4"
             >
-              <div>
-                <DialogTitle className="pe-10 text-xl font-black">
-                  {selected.title}
-                </DialogTitle>
-                <DialogDescription className="mt-1 leading-7">
-                  {selected.description}
-                </DialogDescription>
-                <div className="mt-4 flex flex-wrap items-center gap-2 border-t pt-4 text-xs">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <Clock3 aria-hidden="true" className="size-4 text-primary" />
+                  <div>
+                    <h2 className="font-bold">خلاصه فیلترها</h2>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      Filter Snapshot · تنظیمات جاری برای اجرای بعدی
+                    </p>
+                  </div>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
                   <Badge
                     className={
-                      connectedReportSelected
-                        ? 'bg-emerald-500/10 text-emerald-700'
-                        : 'bg-amber-500/10 text-amber-700'
+                      activeFilterCount
+                        ? 'bg-primary/10 text-primary'
+                        : 'bg-muted text-muted-foreground'
                     }
                   >
-                    {connectedReportSelected
-                      ? 'اتصال محدود قابل اجرا'
-                      : 'در انتظار منبع داده'}
+                    {activeFilterCount.toLocaleString('fa-IR')} فیلتر فعال
                   </Badge>
-                  <span className="flex items-center gap-1.5 text-muted-foreground">
-                    <Clock3 aria-hidden="true" className="size-3.5" />
-                    تازگی منبع:{' '}
-                    {connectedReportSelected ? 'نامشخص' : 'منبع منتشر نشده'}
-                  </span>
-                  {result ? (
-                    <span className="text-muted-foreground">
-                      زمان دریافت نتیجه:{' '}
-                      <span dir="ltr">{result.generatedAtUtc}</span>
-                    </span>
-                  ) : null}
-                </div>
-                <section
-                  aria-label="Filter Snapshot"
-                  className="mt-4 rounded-2xl border border-primary/15 bg-primary/[0.035] p-4"
-                >
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div className="flex items-center gap-2">
-                      <Clock3
-                        aria-hidden="true"
-                        className="size-4 text-primary"
-                      />
-                      <div>
-                        <h2 className="font-bold">خلاصه فیلترها</h2>
-                        <p className="mt-0.5 text-xs text-muted-foreground">
-                          Filter Snapshot · تنظیمات جاری برای اجرای بعدی
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Badge
-                        className={
-                          activeFilterCount
-                            ? 'bg-primary/10 text-primary'
-                            : 'bg-muted text-muted-foreground'
-                        }
-                      >
-                        {activeFilterCount.toLocaleString('fa-IR')} فیلتر فعال
-                      </Badge>
-                      <Button
-                        disabled={!activeFilterCount}
-                        onClick={clearAllReportFilters}
-                        size="sm"
-                        type="button"
-                        variant="ghost"
-                      >
-                        <RotateCcw aria-hidden="true" className="size-3.5" />
-                        پاک‌کردن همه
-                      </Button>
-                    </div>
-                  </div>
-                  <dl className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-                    <div className="rounded-xl border bg-surface px-3 py-2">
-                      <dt className="text-[11px] text-muted-foreground">
-                        گزارش
-                      </dt>
-                      <dd
-                        className="mt-1 truncate text-xs font-semibold"
-                        dir="ltr"
-                      >
-                        {selected.code}@v
-                        {result?.reportVersion ??
-                          (connectedReportSelected ? 2 : 1)}
-                      </dd>
-                    </div>
-                    {filterSnapshot.map((item) => (
-                      <div
-                        className={
-                          item.active
-                            ? 'rounded-xl border border-primary/30 bg-primary/5 px-3 py-2'
-                            : 'rounded-xl border bg-surface px-3 py-2'
-                        }
-                        key={item.label}
-                      >
-                        <dt className="text-[11px] text-muted-foreground">
-                          {item.label}
-                        </dt>
-                        <dd className="mt-1 flex min-w-0 items-center justify-between gap-2 text-xs font-semibold">
-                          <span className="truncate" title={item.value}>
-                            {item.value}
-                          </span>
-                          {item.active ? (
-                            <button
-                              aria-label={`حذف فیلتر ${item.label}`}
-                              className="flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground outline-none transition hover:bg-destructive/10 hover:text-destructive focus-visible:ring-2 focus-visible:ring-ring"
-                              onClick={() => clearReportFilter(item.label)}
-                              title={`حذف فیلتر ${item.label}`}
-                              type="button"
-                            >
-                              <X aria-hidden="true" className="size-3.5" />
-                            </button>
-                          ) : null}
-                        </dd>
-                      </div>
-                    ))}
-                  </dl>
-                  <p className="mt-3 text-xs leading-6 text-muted-foreground">
-                    موارد بالا انتخاب‌های فعلی کاربر هستند. در اجرای واقعی، فقط
-                    فیلترهای پشتیبانی‌شده به Producer ارسال می‌شوند و نسخه View،
-                    Scope و Snapshot تأییدشده در پاسخ سرور ثبت می‌شود.
-                    محدوده‌های غیرهویتی در URL و مقادیر هویتی فقط در نشست همین
-                    مرورگر نگه‌داری می‌شوند.
-                    {result ? (
-                      <span className="mt-1 block font-semibold text-emerald-700">
-                        Snapshot سرور در{' '}
-                        <span dir="ltr">
-                          {result.filterSnapshot.capturedAtUtc}
-                        </span>{' '}
-                        تأیید شد.
-                      </span>
-                    ) : null}
-                  </p>
-                </section>
-                <section
-                  aria-labelledby="report-workspace-filters"
-                  className="mt-5 border-t pt-4"
-                >
-                  <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-                    <h2 className="font-bold" id="report-workspace-filters">
-                      فیلترهای گزارش
-                    </h2>
-                    <span className="text-xs text-muted-foreground">
-                      «همه» یعنی این بُعد محدود نشده است.
-                    </span>
-                  </div>
-                  <div className="grid gap-3 lg:grid-cols-[minmax(0,2fr)_minmax(14rem,1fr)]">
-                    <ReportDateRangeFields
-                      error={dateRangeError}
-                      fromDate={fromDate}
-                      onFromDateChange={setFromDate}
-                      onToDateChange={setToDate}
-                      toDate={toDate}
-                    />
-                    <ReportSearchableSelect
-                      allLabel="همه شرکت‌ها"
-                      id="report-company"
-                      label="شرکت"
-                      onValueChange={setLegalEntity}
-                      options={legalEntityOptions}
-                      value={legalEntity}
-                    />
-                  </div>
-                  <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                    <ReportSearchableSelect
-                      allLabel="همه ارزها (بدون جمع)"
-                      id="report-currency"
-                      label="ارز"
-                      onValueChange={setCurrency}
-                      options={currencyOptions}
-                      value={currency}
-                    />
-                    {selected.filters
-                      .filter(
-                        (filter) =>
-                          !['بازه تاریخ', 'شرکت', 'ارز'].includes(filter),
-                      )
-                      .slice(0, 8)
-                      .map((filter, index) => (
-                        <ReportSearchableSelect
-                          allLabel={reportingAllFilterLabel(filter)}
-                          id={`report-filter-${selected.code}-${index}`}
-                          key={`${selected.code}-${filter}`}
-                          label={filter}
-                          onValueChange={(value) =>
-                            setReportFilterValues((current) => {
-                              const next = { ...current };
-                              if (value && value !== 'ALL')
-                                next[filter] = value;
-                              else delete next[filter];
-                              return next;
-                            })
-                          }
-                          options={optionsForReportFilter(filter)}
-                          value={reportFilterValues[filter] ?? 'ALL'}
-                        />
-                      ))}
-                  </div>
-                </section>
-                <div className="mt-5 grid gap-4 border-t pt-4 lg:grid-cols-[16rem_minmax(0,1fr)]">
-                  <aside
-                    aria-label="عملیات گزارش"
-                    className="h-fit space-y-3 rounded-2xl border bg-muted/20 p-3"
+                  <Button
+                    disabled={!activeFilterCount}
+                    onClick={clearAllReportFilters}
+                    size="sm"
+                    type="button"
+                    variant="ghost"
                   >
-                    <div>
-                      <h2 className="text-sm font-bold">عملیات گزارش</h2>
-                      <p className="mt-1 text-xs leading-5 text-muted-foreground">
-                        اجرا، ذخیره و خروجی در همین Workspace
-                      </p>
-                    </div>
-                    <Button
-                      className="w-full"
-                      disabled={
-                        running ||
-                        Boolean(dateRangeError) ||
-                        (connectedReportSelected && unsupportedConnectedFilters)
-                      }
-                      loading={running}
-                      onClick={() => {
-                        setResultPreviewVisible(true);
-                        void runReport();
-                      }}
-                      type="button"
-                    >
-                      <Play aria-hidden="true" className="size-4" />
-                      نمایش نتیجه
-                    </Button>
-                    <Button
-                      className="w-full"
-                      onClick={async () => {
-                        try {
-                          await reportingApi.saveReport({
-                            reportCode: selected.code,
-                            name: selected.title,
-                            sharingScope: 'PERSONAL',
-                            isFavorite: false,
-                            filterState: {
-                              fromDate,
-                              toDate,
-                              legalEntity,
-                              currency,
-                              filterValues: reportFilterValues,
-                            },
-                          });
-                          setSaveFeedback('گزارش با تنظیمات فعلی ذخیره شد.');
-                          await refreshWorkspaceCounts();
-                        } catch (error) { setSaveFeedback(error instanceof Error ? error.message : 'ذخیره گزارش ناموفق بود.'); }
-                      }}
-                      type="button"
-                      variant="outline"
-                    >
-                      <Save aria-hidden="true" className="size-4" />
-                      ذخیره گزارش
-                    </Button>
-                    <ReportSharingDialog
-                      className="w-full"
-                      filterState={{
-                        fromDate,
-                        toDate,
-                        legalEntity,
-                        currency,
-                        filterValues: reportFilterValues,
-                      }}
-                      onShared={async () => {
-                        setSaveFeedback('گزارش با تنظیمات فعلی ذخیره و برای دریافت‌کنندگان ارسال شد.');
-                        await refreshWorkspaceCounts();
-                      }}
-                      reportCode={selected.code}
-                      reportName={selected.title}
-                    />
-                    {saveFeedback ? <p className="rounded-lg bg-primary/5 p-2 text-xs leading-5" role="status">{saveFeedback}</p> : null}
-                    <div className="border-t pt-3">
-                      <label
-                        className="mb-1.5 block text-xs font-semibold"
-                        htmlFor="report-export-format"
-                      >
-                        نوع فایل خروجی
-                      </label>
-                      <Select
-                        onValueChange={(value) => {
-                          setExportFormat(value as ExportFormat);
-                          setExportState('idle');
-                          setExportFeedback('');
-                        }}
-                        value={exportFormat}
-                      >
-                        <SelectTrigger
-                          aria-label="نوع فایل خروجی"
-                          className="h-10 w-full"
-                          id="report-export-format"
-                        >
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="XLSX">Excel</SelectItem>
-                          <SelectItem value="PDF">PDF</SelectItem>
-                          <SelectItem value="CSV">CSV</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <Button
-                      className="w-full"
-                      disabled={exportState === 'generating'}
-                      loading={exportState === 'generating'}
-                      onClick={() => void downloadReportExport()}
-                      type="button"
-                      variant="outline"
-                    >
-                      <FileDown className="size-4" />
-                      {exportState === 'generating'
-                        ? 'در حال تولید فایل…'
-                        : exportState === 'error'
-                          ? 'تلاش مجدد برای خروجی'
-                          : 'خروجی گرفتن نتیجه'}
-                    </Button>
-                    {exportFeedback ? (
-                      <p
-                        className={
-                          exportState === 'error'
-                            ? 'rounded-lg bg-red-500/10 p-2 text-xs leading-5 text-red-800'
-                            : exportState === 'ready'
-                              ? 'rounded-lg bg-emerald-500/10 p-2 text-xs leading-5 text-emerald-800'
-                              : 'rounded-lg bg-primary/5 p-2 text-xs leading-5 text-muted-foreground'
-                        }
-                        role="status"
-                      >
-                        {exportFeedback}
-                      </p>
-                    ) : null}
-                    {connectedReportSelected && unsupportedConnectedFilters ? (
-                      <p className="mt-3 rounded-xl bg-amber-500/10 p-3 text-xs leading-6 text-amber-800">
-                        مالکیت شرکت یا یکی از ابعاد انتخاب‌شده هنوز در Public
-                        Projection فروش منتشر نشده است. برای جلوگیری از خروجی
-                        نادرست، آن فیلتر را روی «همه» بگذارید.
-                      </p>
-                    ) : null}
-                    <p className="mt-3 text-xs leading-6 text-muted-foreground">
-                      Pagination، مرتب‌سازی، سقف ۱۰۰ رکورد پیش‌نمایش، UTC و
-                      Scope مجاز فقط سمت سرور enforce می‌شوند.
-                    </p>
-                  </aside>
-                  <section aria-label="محل نمایش نمایه نتیجه">
-                    <ReportResultPanel
-                      chartType={resultChartType}
-                      connected={connectedReportSelected}
-                      error={runError}
-                      mode={resultMode}
-                      onChartTypeChange={setResultChartType}
-                      onModeChange={setResultMode}
-                      onPageChange={(page) => void runReport(page)}
-                      onRetry={() => void runReport()}
-                      onSortChange={(sort) => void runReport(1, sort)}
-                      report={selected}
-                      result={result}
-                      running={running}
-                      sort={resultSort}
-                      started={resultPreviewVisible}
-                    />
-                  </section>
+                    <RotateCcw aria-hidden="true" className="size-3.5" />
+                    پاک‌کردن همه
+                  </Button>
                 </div>
               </div>
-            </DialogContent>
+              <dl className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+                <div className="rounded-xl border bg-surface px-3 py-2">
+                  <dt className="text-[11px] text-muted-foreground">گزارش</dt>
+                  <dd className="mt-1 truncate text-xs font-semibold" dir="ltr">
+                    {selected.code}@v
+                    {result?.reportVersion ?? (connectedReportSelected ? 2 : 1)}
+                  </dd>
+                </div>
+                {filterSnapshot.map((item) => (
+                  <div
+                    className={
+                      item.active
+                        ? 'rounded-xl border border-primary/30 bg-primary/5 px-3 py-2'
+                        : 'rounded-xl border bg-surface px-3 py-2'
+                    }
+                    key={item.label}
+                  >
+                    <dt className="text-[11px] text-muted-foreground">
+                      {item.label}
+                    </dt>
+                    <dd className="mt-1 flex min-w-0 items-center justify-between gap-2 text-xs font-semibold">
+                      <span className="truncate" title={item.value}>
+                        {item.value}
+                      </span>
+                      {item.active ? (
+                        <button
+                          aria-label={`حذف فیلتر ${item.label}`}
+                          className="flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground outline-none transition hover:bg-destructive/10 hover:text-destructive focus-visible:ring-2 focus-visible:ring-ring"
+                          onClick={() => clearReportFilter(item.label)}
+                          title={`حذف فیلتر ${item.label}`}
+                          type="button"
+                        >
+                          <X aria-hidden="true" className="size-3.5" />
+                        </button>
+                      ) : null}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+              <p className="mt-3 text-xs leading-6 text-muted-foreground">
+                موارد بالا انتخاب‌های فعلی کاربر هستند. در اجرای واقعی، فقط
+                فیلترهای پشتیبانی‌شده به Producer ارسال می‌شوند و نسخه View،
+                Scope و Snapshot تأییدشده در پاسخ سرور ثبت می‌شود. محدوده‌های
+                غیرهویتی در URL و مقادیر هویتی فقط در نشست همین مرورگر نگه‌داری
+                می‌شوند.
+                {result ? (
+                  <span className="mt-1 block font-semibold text-emerald-700">
+                    Snapshot سرور در{' '}
+                    <span dir="ltr">{result.filterSnapshot.capturedAtUtc}</span>{' '}
+                    تأیید شد.
+                  </span>
+                ) : null}
+              </p>
+            </section>
+            <section
+              aria-labelledby="report-workspace-filters"
+              className="mt-5 border-t pt-4"
+            >
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                <h2 className="font-bold" id="report-workspace-filters">
+                  فیلترهای گزارش
+                </h2>
+                <span className="text-xs text-muted-foreground">
+                  «همه» یعنی این بُعد محدود نشده است.
+                </span>
+              </div>
+              <div className="grid gap-3 lg:grid-cols-[minmax(0,2fr)_minmax(14rem,1fr)]">
+                <ReportDateRangeFields
+                  error={dateRangeError}
+                  fromDate={fromDate}
+                  onFromDateChange={setFromDate}
+                  onToDateChange={setToDate}
+                  toDate={toDate}
+                />
+                <ReportSearchableSelect
+                  allLabel="همه شرکت‌ها"
+                  id="report-company"
+                  label="شرکت"
+                  onValueChange={setLegalEntity}
+                  options={legalEntityOptions}
+                  value={legalEntity}
+                />
+              </div>
+              <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                <ReportSearchableSelect
+                  allLabel="همه ارزها (بدون جمع)"
+                  id="report-currency"
+                  label="ارز"
+                  onValueChange={setCurrency}
+                  options={currencyOptions}
+                  value={currency}
+                />
+                {selected.filters
+                  .filter(
+                    (filter) => !['بازه تاریخ', 'شرکت', 'ارز'].includes(filter),
+                  )
+                  .slice(0, 8)
+                  .map((filter, index) => (
+                    <ReportSearchableSelect
+                      allLabel={reportingAllFilterLabel(filter)}
+                      id={`report-filter-${selected.code}-${index}`}
+                      key={`${selected.code}-${filter}`}
+                      label={filter}
+                      onValueChange={(value) =>
+                        setReportFilterValues((current) => {
+                          const next = { ...current };
+                          if (value && value !== 'ALL') next[filter] = value;
+                          else delete next[filter];
+                          return next;
+                        })
+                      }
+                      options={optionsForReportFilter(filter)}
+                      value={reportFilterValues[filter] ?? 'ALL'}
+                    />
+                  ))}
+              </div>
+            </section>
+            <div className="mt-5 grid gap-4 border-t pt-4 lg:grid-cols-[16rem_minmax(0,1fr)]">
+              <aside
+                aria-label="عملیات گزارش"
+                className="h-fit space-y-3 rounded-2xl border bg-muted/20 p-3"
+              >
+                <div>
+                  <h2 className="text-sm font-bold">عملیات گزارش</h2>
+                  <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                    اجرا، ذخیره و خروجی در همین Workspace
+                  </p>
+                </div>
+                <Button
+                  className="w-full"
+                  disabled={
+                    running ||
+                    Boolean(dateRangeError) ||
+                    (connectedReportSelected && unsupportedConnectedFilters)
+                  }
+                  loading={running}
+                  onClick={() => {
+                    setResultPreviewVisible(true);
+                    void runReport();
+                  }}
+                  type="button"
+                >
+                  <Play aria-hidden="true" className="size-4" />
+                  نمایش نتیجه
+                </Button>
+                <Button
+                  className="w-full"
+                  onClick={async () => {
+                    try {
+                      await reportingApi.saveReport({
+                        reportCode: selected.code,
+                        name: selected.title,
+                        sharingScope: 'PERSONAL',
+                        isFavorite: false,
+                        filterState: {
+                          fromDate,
+                          toDate,
+                          legalEntity,
+                          currency,
+                          filterValues: reportFilterValues,
+                        },
+                      });
+                      setSaveFeedback('گزارش با تنظیمات فعلی ذخیره شد.');
+                      await refreshWorkspaceCounts();
+                    } catch (error) {
+                      setSaveFeedback(
+                        error instanceof Error
+                          ? error.message
+                          : 'ذخیره گزارش ناموفق بود.',
+                      );
+                    }
+                  }}
+                  type="button"
+                  variant="outline"
+                >
+                  <Save aria-hidden="true" className="size-4" />
+                  ذخیره گزارش
+                </Button>
+                <ReportSharingDialog
+                  className="w-full"
+                  filterState={{
+                    fromDate,
+                    toDate,
+                    legalEntity,
+                    currency,
+                    filterValues: reportFilterValues,
+                  }}
+                  onShared={async () => {
+                    setSaveFeedback(
+                      'گزارش با تنظیمات فعلی ذخیره و برای دریافت‌کنندگان ارسال شد.',
+                    );
+                    await refreshWorkspaceCounts();
+                  }}
+                  reportCode={selected.code}
+                  reportName={selected.title}
+                />
+                {saveFeedback ? (
+                  <p
+                    className="rounded-lg bg-primary/5 p-2 text-xs leading-5"
+                    role="status"
+                  >
+                    {saveFeedback}
+                  </p>
+                ) : null}
+                <div className="border-t pt-3">
+                  <label
+                    className="mb-1.5 block text-xs font-semibold"
+                    htmlFor="report-export-format"
+                  >
+                    نوع فایل خروجی
+                  </label>
+                  <Select
+                    onValueChange={(value) => {
+                      setExportFormat(value as ExportFormat);
+                      setExportState('idle');
+                      setExportFeedback('');
+                    }}
+                    value={exportFormat}
+                  >
+                    <SelectTrigger
+                      aria-label="نوع فایل خروجی"
+                      className="h-10 w-full"
+                      id="report-export-format"
+                    >
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="XLSX">Excel</SelectItem>
+                      <SelectItem value="PDF">PDF</SelectItem>
+                      <SelectItem value="CSV">CSV</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button
+                  className="w-full"
+                  disabled={exportState === 'generating'}
+                  loading={exportState === 'generating'}
+                  onClick={() => void downloadReportExport()}
+                  type="button"
+                  variant="outline"
+                >
+                  <FileDown className="size-4" />
+                  {exportState === 'generating'
+                    ? 'در حال تولید فایل…'
+                    : exportState === 'error'
+                      ? 'تلاش مجدد برای خروجی'
+                      : 'خروجی گرفتن نتیجه'}
+                </Button>
+                {exportFeedback ? (
+                  <p
+                    className={
+                      exportState === 'error'
+                        ? 'rounded-lg bg-red-500/10 p-2 text-xs leading-5 text-red-800'
+                        : exportState === 'ready'
+                          ? 'rounded-lg bg-emerald-500/10 p-2 text-xs leading-5 text-emerald-800'
+                          : 'rounded-lg bg-primary/5 p-2 text-xs leading-5 text-muted-foreground'
+                    }
+                    role="status"
+                  >
+                    {exportFeedback}
+                  </p>
+                ) : null}
+                {connectedReportSelected && unsupportedConnectedFilters ? (
+                  <p className="mt-3 rounded-xl bg-amber-500/10 p-3 text-xs leading-6 text-amber-800">
+                    مالکیت شرکت یا یکی از ابعاد انتخاب‌شده هنوز در Public
+                    Projection فروش منتشر نشده است. برای جلوگیری از خروجی
+                    نادرست، آن فیلتر را روی «همه» بگذارید.
+                  </p>
+                ) : null}
+                <p className="mt-3 text-xs leading-6 text-muted-foreground">
+                  Pagination، مرتب‌سازی، سقف ۱۰۰ رکورد پیش‌نمایش، UTC و Scope
+                  مجاز فقط سمت سرور enforce می‌شوند.
+                </p>
+              </aside>
+              <section aria-label="محل نمایش نمایه نتیجه">
+                <ReportResultPanel
+                  chartType={resultChartType}
+                  connected={connectedReportSelected}
+                  error={runError}
+                  mode={resultMode}
+                  onChartTypeChange={setResultChartType}
+                  onModeChange={setResultMode}
+                  onPageChange={(page) => void runReport(page)}
+                  onRetry={() => void runReport()}
+                  onSortChange={(sort) => void runReport(1, sort)}
+                  report={selected}
+                  result={result}
+                  running={running}
+                  sort={resultSort}
+                  started={resultPreviewVisible}
+                />
+              </section>
+            </div>
+          </div>
+        </DialogContent>
       </Dialog>
     </main>
   );

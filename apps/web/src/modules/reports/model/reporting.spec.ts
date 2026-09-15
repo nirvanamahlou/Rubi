@@ -15,7 +15,10 @@ describe('reporting catalog', () => {
         .filter((report) => report.availability === 'READY')
         .map((report) => report.code),
     ).toHaveLength(12);
-    expect(reportCatalog.find((report) => report.code === 'due_checks')?.availability).toBe('PENDING_CONNECTION');
+    expect(
+      reportCatalog.find((report) => report.code === 'due_checks')
+        ?.availability,
+    ).toBe('PENDING_CONNECTION');
   });
 
   it('finds reports by Persian title but not by internal or display code', () => {
@@ -50,9 +53,15 @@ describe('reporting catalog', () => {
       filterReportCatalog({ availability: 'READY', priority: 'P0' }).map(
         (report) => report.code,
       ),
-    ).toEqual(reportPriorityGroups.find((group) => group.id === 'P0')?.reportCodes.filter(
-      (code) => reportCatalog.find((report) => report.code === code)?.availability === 'READY',
-    ));
+    ).toEqual(
+      reportPriorityGroups
+        .find((group) => group.id === 'P0')
+        ?.reportCodes.filter(
+          (code) =>
+            reportCatalog.find((report) => report.code === code)
+              ?.availability === 'READY',
+        ),
+    );
     expect(
       filterReportCatalog({
         availability: 'PENDING_CONNECTION',

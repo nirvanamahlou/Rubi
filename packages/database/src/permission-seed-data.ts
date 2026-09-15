@@ -268,11 +268,19 @@ export const PERMISSION_SEED_DATA = [
   ['reporting.sales.read', 'reporting', 'مشاهده گزارش‌های فروش و سفر'],
   ['reporting.procurement.read', 'reporting', 'مشاهده گزارش‌های خرید و تأمین'],
   ['reporting.finance.read', 'reporting', 'مشاهده گزارش‌های مالی'],
-  ['reporting.reservations.read', 'reporting', 'مشاهده گزارش‌های رزرواسیون و صدور'],
+  [
+    'reporting.reservations.read',
+    'reporting',
+    'مشاهده گزارش‌های رزرواسیون و صدور',
+  ],
   ['reporting.tickets.read', 'reporting', 'مشاهده گزارش‌های بلیت و مانیفست'],
   ['reporting.b2b.read', 'reporting', 'مشاهده گزارش‌های آژانس و مشتری سازمانی'],
   ['reporting.export', 'reporting', 'ایجاد و دانلود خروجی گزارش'],
-  ['reporting.share', 'reporting', 'اشتراک‌گذاری گزارش ذخیره‌شده با کاربران مجاز'],
+  [
+    'reporting.share',
+    'reporting',
+    'اشتراک‌گذاری گزارش ذخیره‌شده با کاربران مجاز',
+  ],
   ['reporting.manage', 'reporting', 'مدیریت گزارش‌های ذخیره‌شده تیمی'],
   ['reporting.audit.read', 'reporting', 'مشاهده سابقه اجرا و خروجی گزارش'],
   [

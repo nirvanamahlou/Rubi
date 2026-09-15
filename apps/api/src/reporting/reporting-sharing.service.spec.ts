@@ -6,11 +6,7 @@ import { ReportingService, type ReportingActor } from './reporting.service';
 const actor: ReportingActor = {
   userId: '11111111-1111-4111-8111-111111111111',
   branchIds: ['aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'],
-  permissions: [
-    'reporting.read',
-    'reporting.share',
-    'reporting.sales.read',
-  ],
+  permissions: ['reporting.read', 'reporting.share', 'reporting.sales.read'],
 };
 
 function repository(overrides: Record<string, unknown> = {}) {

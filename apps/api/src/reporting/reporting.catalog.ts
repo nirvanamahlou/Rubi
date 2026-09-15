@@ -19,8 +19,14 @@ function pending(
   approvedView: string,
 ): ReportingCatalogEntryV1 {
   return {
-    code, title, grain, permission, approvedView,
-    outputs: ['XLSX', 'PDF', 'CSV', 'API'], producerStatus: 'PENDING_CONNECTION', version: 1,
+    code,
+    title,
+    grain,
+    permission,
+    approvedView,
+    outputs: ['XLSX', 'PDF', 'CSV', 'API'],
+    producerStatus: 'PENDING_CONNECTION',
+    version: 1,
   };
 }
 

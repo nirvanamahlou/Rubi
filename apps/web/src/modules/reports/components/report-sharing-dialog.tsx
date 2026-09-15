@@ -12,10 +12,7 @@ import {
   DialogTitle,
 } from '@/components/ui/overlays';
 import { EmptyState, Skeleton } from '@/components/ui/surfaces';
-import {
-  reportingApi,
-  type ReportingShareRecipient,
-} from '../model/client';
+import { reportingApi, type ReportingShareRecipient } from '../model/client';
 
 interface ReportSharingDialogProps {
   reportCode: string;
@@ -35,7 +32,9 @@ export function ReportSharingDialog({
   className,
 }: ReportSharingDialogProps) {
   const [open, setOpen] = useState(false);
-  const [recipients, setRecipients] = useState<readonly ReportingShareRecipient[]>([]);
+  const [recipients, setRecipients] = useState<
+    readonly ReportingShareRecipient[]
+  >([]);
   const [selectedIds, setSelectedIds] = useState<readonly string[]>([]);
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
@@ -97,13 +96,17 @@ export function ReportSharingDialog({
         targetId = saved.id;
       }
       await reportingApi.shareSavedReport(targetId, selectedIds);
-      setFeedback(selectedIds.length
-        ? `گزارش برای ${selectedIds.length.toLocaleString('fa-IR')} کاربر ارسال شد.`
-        : 'دسترسی همه دریافت‌کنندگان این گزارش حذف شد.');
+      setFeedback(
+        selectedIds.length
+          ? `گزارش برای ${selectedIds.length.toLocaleString('fa-IR')} کاربر ارسال شد.`
+          : 'دسترسی همه دریافت‌کنندگان این گزارش حذف شد.',
+      );
       await onShared?.();
     } catch (caught) {
       setError(
-        caught instanceof Error ? caught.message : 'اشتراک‌گذاری گزارش ناموفق بود.',
+        caught instanceof Error
+          ? caught.message
+          : 'اشتراک‌گذاری گزارش ناموفق بود.',
       );
     } finally {
       setSubmitting(false);
@@ -130,7 +133,8 @@ export function ReportSharingDialog({
           <DialogTitle className="pe-10">اشتراک‌گذاری گزارش</DialogTitle>
           <DialogDescription>
             «{reportName}» فقط برای کاربران فعال و دارای دسترسی همین گزارش ارسال
-            می‌شود. گیرنده هنگام اجرا همچنان تابع سطح دسترسی و شعب مجاز خودش است.
+            می‌شود. گیرنده هنگام اجرا همچنان تابع سطح دسترسی و شعب مجاز خودش
+            است.
           </DialogDescription>
 
           {loading ? (
@@ -140,7 +144,10 @@ export function ReportSharingDialog({
               ))}
             </div>
           ) : error && !recipients.length ? (
-            <p className="mt-4 rounded-xl bg-red-500/10 p-3 text-sm text-red-800" role="alert">
+            <p
+              className="mt-4 rounded-xl bg-red-500/10 p-3 text-sm text-red-800"
+              role="alert"
+            >
               {error}
             </p>
           ) : (
@@ -183,8 +190,13 @@ export function ReportSharingDialog({
                           type="checkbox"
                         />
                         <span className="min-w-0">
-                          <strong className="block truncate text-sm">{recipient.displayName}</strong>
-                          <span className="block truncate text-xs text-muted-foreground" dir="ltr">
+                          <strong className="block truncate text-sm">
+                            {recipient.displayName}
+                          </strong>
+                          <span
+                            className="block truncate text-xs text-muted-foreground"
+                            dir="ltr"
+                          >
                             {recipient.username}
                           </span>
                         </span>
@@ -194,18 +206,26 @@ export function ReportSharingDialog({
                 )}
               </div>
               {error ? (
-                <p className="mt-3 rounded-xl bg-red-500/10 p-3 text-sm text-red-800" role="alert">
+                <p
+                  className="mt-3 rounded-xl bg-red-500/10 p-3 text-sm text-red-800"
+                  role="alert"
+                >
                   {error}
                 </p>
               ) : null}
               {feedback ? (
-                <p className="mt-3 rounded-xl bg-emerald-500/10 p-3 text-sm text-emerald-800" role="status">
+                <p
+                  className="mt-3 rounded-xl bg-emerald-500/10 p-3 text-sm text-emerald-800"
+                  role="status"
+                >
                   {feedback}
                 </p>
               ) : null}
               <div className="mt-4 flex flex-wrap items-center gap-2">
                 <Button
-                  disabled={(!selectedIds.length && !savedReportId) || submitting}
+                  disabled={
+                    (!selectedIds.length && !savedReportId) || submitting
+                  }
                   loading={submitting}
                   onClick={() => void submit()}
                   type="button"
@@ -213,7 +233,11 @@ export function ReportSharingDialog({
                   <Share2 aria-hidden="true" className="size-4" />
                   {selectedIds.length ? 'ارسال گزارش' : 'حذف همه اشتراک‌ها'}
                 </Button>
-                <Button onClick={() => setOpen(false)} type="button" variant="ghost">
+                <Button
+                  onClick={() => setOpen(false)}
+                  type="button"
+                  variant="ghost"
+                >
                   بستن
                 </Button>
               </div>

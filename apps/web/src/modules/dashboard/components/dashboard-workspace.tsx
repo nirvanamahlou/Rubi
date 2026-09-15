@@ -149,13 +149,28 @@ const navigationIcons: Record<string, LucideIcon> = {
   'workforce-hr': UserRoundCog,
 };
 
-function Metric({ compact = false, metric }: { compact?: boolean; metric?: { value: string; unit: string; detail: string } | undefined }) {
+function Metric({
+  compact = false,
+  metric,
+}: {
+  compact?: boolean;
+  metric?: { value: string; unit: string; detail: string } | undefined;
+}) {
   return (
-    <div className={cn('flex min-w-0 flex-wrap items-end gap-2', compact ? 'mt-2' : 'mt-4')}>
+    <div
+      className={cn(
+        'flex min-w-0 flex-wrap items-end gap-2',
+        compact ? 'mt-2' : 'mt-4',
+      )}
+    >
       <span
         className={cn(
           'font-black tracking-tight text-foreground',
-          metric?.value.includes('·') ? 'break-words text-base leading-6' : compact ? 'text-2xl' : 'text-3xl',
+          metric?.value.includes('·')
+            ? 'break-words text-base leading-6'
+            : compact
+              ? 'text-2xl'
+              : 'text-3xl',
         )}
         aria-label={metric ? metric.value : 'داده‌ای دریافت نشده'}
       >
@@ -189,7 +204,8 @@ function KpiCard({
       className={cn(
         'group relative min-h-40 min-w-0 overflow-hidden rounded-2xl border bg-surface p-4 text-start shadow-sm outline-none transition hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-lg focus-visible:ring-2 focus-visible:ring-ring',
         selected ? 'border-primary ring-2 ring-primary/15' : 'border-border',
-        featured && 'bg-gradient-to-bl from-blue-50/60 via-surface to-surface dark:from-blue-950/20',
+        featured &&
+          'bg-gradient-to-bl from-blue-50/60 via-surface to-surface dark:from-blue-950/20',
       )}
       onClick={onSelect}
       type="button"
@@ -220,7 +236,11 @@ function KpiCard({
         </span>
       </span>
       <Metric compact metric={metric} />
-      {metric?.detail ? <span className="mt-1 block text-[10px] leading-4 text-muted-foreground">{metric.detail}</span> : null}
+      {metric?.detail ? (
+        <span className="mt-1 block text-[10px] leading-4 text-muted-foreground">
+          {metric.detail}
+        </span>
+      ) : null}
     </button>
   );
 }
@@ -431,7 +451,10 @@ function EmptyVisualCanvas({ kind }: { kind: DashboardVisualKind }) {
       >
         <div className="grid grid-cols-4 gap-3 border-b border-border/80 bg-muted/45 px-4 py-2.5">
           {[0, 1, 2, 3].map((item) => (
-            <span className="h-2 rounded-full bg-muted-foreground/15" key={item} />
+            <span
+              className="h-2 rounded-full bg-muted-foreground/15"
+              key={item}
+            />
           ))}
         </div>
         <div className="space-y-3 px-4 py-4" aria-hidden="true">
@@ -471,7 +494,10 @@ function EmptyVisualCanvas({ kind }: { kind: DashboardVisualKind }) {
       <span className="absolute inset-y-4 right-9 border-r border-border/80" />
       <span className="absolute inset-x-4 bottom-9 border-t border-border/80" />
       {kind === 'bar' || kind === 'stacked-bar' ? (
-        <div aria-hidden="true" className="absolute inset-x-14 bottom-10 flex h-20 items-end justify-between gap-3 opacity-35">
+        <div
+          aria-hidden="true"
+          className="absolute inset-x-14 bottom-10 flex h-20 items-end justify-between gap-3 opacity-35"
+        >
           {[45, 70, 55, 82, 62, 38].map((height, item) => (
             <span
               className="w-full rounded-t-md bg-blue-200 dark:bg-blue-900"
@@ -502,7 +528,13 @@ function ProjectionSlot({
   decision?: string | undefined;
   drilldown: string;
   featured?: boolean;
-  data?: { labels: readonly string[]; values: readonly number[]; currencyCode?: string } | undefined;
+  data?:
+    | {
+        labels: readonly string[];
+        values: readonly number[];
+        currencyCode?: string;
+      }
+    | undefined;
 }) {
   const Icon = visualIcons[kind];
   return (
@@ -515,7 +547,7 @@ function ProjectionSlot({
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-start gap-3">
           <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-blue-50 text-blue-700 ring-1 ring-blue-100 dark:bg-blue-950/50 dark:text-blue-300 dark:ring-blue-900">
-          <Icon aria-hidden="true" className="size-5" />
+            <Icon aria-hidden="true" className="size-5" />
           </span>
           <div className="min-w-0">
             <h3 className="font-black text-foreground">{title}</h3>
@@ -529,18 +561,56 @@ function ProjectionSlot({
         </Badge>
       </div>
       <div className="relative mt-4">
-        {data?.currencyCode ? <span className="mb-2 block text-[11px] font-semibold text-muted-foreground">مبلغ فروش · <bdi dir="ltr">{data.currencyCode}</bdi></span> : null}
+        {data?.currencyCode ? (
+          <span className="mb-2 block text-[11px] font-semibold text-muted-foreground">
+            مبلغ فروش · <bdi dir="ltr">{data.currencyCode}</bdi>
+          </span>
+        ) : null}
         {data?.values.length ? (
           kind === 'table' || kind === 'queue' ? (
             <div className="overflow-hidden rounded-xl border border-border/80">
-              {data.labels.slice(0, 5).map((label, index) => <div className="flex items-center justify-between border-b border-border/70 px-3 py-2 text-xs last:border-0" key={label}><span>{label}</span><strong>{data.values[index]?.toLocaleString('fa-IR')}</strong></div>)}
+              {data.labels.slice(0, 5).map((label, index) => (
+                <div
+                  className="flex items-center justify-between border-b border-border/70 px-3 py-2 text-xs last:border-0"
+                  key={label}
+                >
+                  <span>{label}</span>
+                  <strong>{data.values[index]?.toLocaleString('fa-IR')}</strong>
+                </div>
+              ))}
             </div>
           ) : (
-            <div className="flex min-h-44 items-end gap-2 rounded-xl border border-border/80 bg-muted/[0.18] p-4" aria-label={`دادهٔ ${visualLabels[kind]}`}>
-              {data.values.map((value, index) => <div className="flex min-w-0 flex-1 flex-col items-center gap-2" key={`${data.labels[index]}-${value}`}><span className="text-[10px] font-bold">{data.labels[index]}</span><span className="w-full rounded-t bg-primary/75" style={{ height: `${Math.max(12, Math.round((value / Math.max(...data.values)) * 112))}px` }} /><span className="text-[10px]">{value.toLocaleString('fa-IR')}</span></div>)}
+            <div
+              className="flex min-h-44 items-end gap-2 rounded-xl border border-border/80 bg-muted/[0.18] p-4"
+              aria-label={`دادهٔ ${visualLabels[kind]}`}
+            >
+              {data.values.map((value, index) => (
+                <div
+                  className="flex min-w-0 flex-1 flex-col items-center gap-2"
+                  key={`${data.labels[index]}-${value}`}
+                >
+                  <span className="text-[10px] font-bold">
+                    {data.labels[index]}
+                  </span>
+                  <span
+                    className="w-full rounded-t bg-primary/75"
+                    style={{
+                      height: `${Math.max(12, Math.round((value / Math.max(...data.values)) * 112))}px`,
+                    }}
+                  />
+                  <span className="text-[10px]">
+                    {value.toLocaleString('fa-IR')}
+                  </span>
+                </div>
+              ))}
             </div>
           )
-        ) : <><EmptyVisualCanvas kind={kind} /><p className="sr-only">دادهٔ تأییدشده برای نمایش موجود نیست</p></>}
+        ) : (
+          <>
+            <EmptyVisualCanvas kind={kind} />
+            <p className="sr-only">دادهٔ تأییدشده برای نمایش موجود نیست</p>
+          </>
+        )}
       </div>
       <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-border/80 pt-3">
         <span className="text-[11px] text-muted-foreground">منبع:</span>
@@ -936,7 +1006,8 @@ export function DashboardWorkspace() {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState<ReadonlySet<string>>(
-    () => new Set(['commercial-performance', 'customer-growth', 'workforce-hr']),
+    () =>
+      new Set(['commercial-performance', 'customer-growth', 'workforce-hr']),
   );
   const legalEntity = useLegalEntityContext();
   const selection = legalEntity.context?.selection ?? null;
@@ -1114,7 +1185,7 @@ export function DashboardWorkspace() {
 
               <div className="grid gap-4 xl:grid-cols-2">
                 {activePage.visualizations.map((visualization, index) => (
-                    <ProjectionSlot
+                  <ProjectionSlot
                     featured={index === 0}
                     key={visualization.id}
                     kind={visualization.kind}
@@ -1122,8 +1193,8 @@ export function DashboardWorkspace() {
                     description={visualization.description}
                     source={visualization.source}
                     decision={visualization.openDecision}
-                      drilldown={visualization.drilldown}
-                      data={query.data?.visuals[visualization.id]}
+                    drilldown={visualization.drilldown}
+                    data={query.data?.visuals[visualization.id]}
                   />
                 ))}
               </div>

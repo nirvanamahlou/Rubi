@@ -20,8 +20,19 @@ export interface DashboardProjectionSnapshot {
   state: DashboardProjectionState;
   message: string;
   metadata: DashboardMetadata | null;
-  metrics: Readonly<Record<string, { value: string; unit: string; detail: string }>>;
-  visuals: Readonly<Record<string, { labels: readonly string[]; values: readonly number[]; currencyCode?: string }>>;
+  metrics: Readonly<
+    Record<string, { value: string; unit: string; detail: string }>
+  >;
+  visuals: Readonly<
+    Record<
+      string,
+      {
+        labels: readonly string[];
+        values: readonly number[];
+        currencyCode?: string;
+      }
+    >
+  >;
 }
 
 export interface DashboardProjectionClient {
@@ -38,18 +49,38 @@ export const dashboardProjectionClient: DashboardProjectionClient = {
   async load({ filters, legalEntity, kpiIds = [], visualIds = [], signal }) {
     if (signal.aborted) throw new DOMException('Request aborted', 'AbortError');
     const baseUrl = getPublicApiBaseUrl();
-    if (!baseUrl) return { state: 'blocked', message: 'نشانی API برای Dashboard پیکربندی نشده است.', metadata: null, metrics: {}, visuals: {} };
+    if (!baseUrl)
+      return {
+        state: 'blocked',
+        message: 'نشانی API برای Dashboard پیکربندی نشده است.',
+        metadata: null,
+        metrics: {},
+        visuals: {},
+      };
     const params = new URLSearchParams();
-    for (const [key, value] of Object.entries(filters)) if (value) params.set(key, value);
+    for (const [key, value] of Object.entries(filters))
+      if (value) params.set(key, value);
     if (legalEntity) params.set('legalEntity', legalEntity);
     params.set('kpiIds', kpiIds.join(','));
     params.set('visualIds', visualIds.join(','));
-    const load = async (retried = false): Promise<DashboardProjectionSnapshot> => {
-      const response = await fetch(`${baseUrl}/reports/dashboard/projection?${params}`, {
-        credentials: 'include', cache: 'no-store', signal,
-        headers: { accept: 'application/json' },
-      });
-      if (response.status === 401 && !retried && await refreshAuthenticatedSession(baseUrl)) return load(true);
+    const load = async (
+      retried = false,
+    ): Promise<DashboardProjectionSnapshot> => {
+      const response = await fetch(
+        `${baseUrl}/reports/dashboard/projection?${params}`,
+        {
+          credentials: 'include',
+          cache: 'no-store',
+          signal,
+          headers: { accept: 'application/json' },
+        },
+      );
+      if (
+        response.status === 401 &&
+        !retried &&
+        (await refreshAuthenticatedSession(baseUrl))
+      )
+        return load(true);
       if (!response.ok) throw new Error('دریافت دادهٔ Dashboard ناموفق بود.');
       return response.json() as Promise<DashboardProjectionSnapshot>;
     };

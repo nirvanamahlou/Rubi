@@ -8,16 +8,28 @@ describe('REPORTING_CATALOG_V1', () => {
     expect(new Set(REPORTING_CATALOG_V1.map((item) => item.code)).size).toBe(
       REPORTING_CATALOG_V1.length,
     );
-    expect(REPORTING_CATALOG_V1).toEqual(expect.arrayContaining([
-      expect.objectContaining({
-        code: 'sales_by_organization',
-        approvedView: 'sales.reporting.organization.v2',
-        version: 2,
-      }),
-      expect.objectContaining({ code: 'sales_by_service_route', approvedView: 'reporting.travel.facts.v1' }),
-      expect.objectContaining({ code: 'lead_to_order_conversion', approvedView: 'reporting.travel.facts.v1' }),
-      expect.objectContaining({ code: 'due_checks', approvedView: 'reporting_check_facts_v1', producerStatus: 'PENDING_CONNECTION' }),
-    ]));
+    expect(REPORTING_CATALOG_V1).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: 'sales_by_organization',
+          approvedView: 'sales.reporting.organization.v2',
+          version: 2,
+        }),
+        expect.objectContaining({
+          code: 'sales_by_service_route',
+          approvedView: 'reporting.travel.facts.v1',
+        }),
+        expect.objectContaining({
+          code: 'lead_to_order_conversion',
+          approvedView: 'reporting.travel.facts.v1',
+        }),
+        expect.objectContaining({
+          code: 'due_checks',
+          approvedView: 'reporting_check_facts_v1',
+          producerStatus: 'PENDING_CONNECTION',
+        }),
+      ]),
+    );
     expect(
       REPORTING_CATALOG_V1.filter(
         (item) => item.producerStatus === 'PENDING_CONNECTION',

@@ -116,7 +116,11 @@ export interface TravelReportResultV1 {
   reportVersion: 1;
   grain: 'ORDER_ITEM_CURRENCY';
   sourceProjection: 'reporting.travel.facts.v1';
-  columns: readonly { key: keyof TravelReportRowV1; label: string; kind: 'TEXT' | 'NUMBER' | 'MONEY' }[];
+  columns: readonly {
+    key: keyof TravelReportRowV1;
+    label: string;
+    kind: 'TEXT' | 'NUMBER' | 'MONEY';
+  }[];
   rows: readonly TravelReportRowV1[];
   total: number;
   page: number;
@@ -124,7 +128,14 @@ export interface TravelReportResultV1 {
   previewLimit: number;
   generatedAtUtc: string;
   sourceDataAsOfUtc: string | null;
-  totalsByCurrency: readonly { currencyCode: string; salesAmount: string; purchaseAmount: string; grossProfit: string; refundAmount: string; settlementBalance: string }[];
+  totalsByCurrency: readonly {
+    currencyCode: string;
+    salesAmount: string;
+    purchaseAmount: string;
+    grossProfit: string;
+    refundAmount: string;
+    settlementBalance: string;
+  }[];
   filterSnapshot: ReportFilterSnapshotV1;
   filterOptions: Readonly<Record<string, readonly string[]>>;
   reconciliation: { matchesApprovedProjection: true; sourceRowCount: number };
@@ -181,6 +192,17 @@ export interface DashboardProjectionV1 {
     reportVersion: 'reporting.dashboard.travel.v1';
     permissionSnapshot: string;
   } | null;
-  metrics: Readonly<Record<string, { value: string; unit: string; detail: string }>>;
-  visuals: Readonly<Record<string, { labels: readonly string[]; values: readonly number[]; currencyCode?: string }>>;
+  metrics: Readonly<
+    Record<string, { value: string; unit: string; detail: string }>
+  >;
+  visuals: Readonly<
+    Record<
+      string,
+      {
+        labels: readonly string[];
+        values: readonly number[];
+        currencyCode?: string;
+      }
+    >
+  >;
 }

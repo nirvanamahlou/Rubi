@@ -1,9 +1,4 @@
-import {
-  ArrowLeft,
-  BarChart3,
-  Download,
-  History,
-} from 'lucide-react';
+import { ArrowLeft, BarChart3, Download, History } from 'lucide-react';
 import Link from 'next/link';
 
 import { reportCatalog } from '../model/reporting';

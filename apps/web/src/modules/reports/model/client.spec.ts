@@ -87,7 +87,11 @@ describe('reporting public projection client', () => {
       generatedAtUtc: '2026-09-13T10:00:00.000Z',
       sourceDataAsOfUtc: '2026-09-13T09:55:00.000Z',
       totalsByCurrency: [{ currencyCode: 'IRR', salesAmount: '1250000' }],
-      filterSnapshot: { capturedAtUtc: '2026-09-13T10:00:00.000Z', branchIds: [], filters: {} },
+      filterSnapshot: {
+        capturedAtUtc: '2026-09-13T10:00:00.000Z',
+        branchIds: [],
+        filters: {},
+      },
       filterOptions: {},
       warnings: [],
     };
@@ -127,11 +131,17 @@ describe('reporting public projection client', () => {
       generatedAtUtc: '2026-09-14T10:00:00.000Z',
       sourceDataAsOfUtc: null,
       totalsByCurrency: [],
-      filterSnapshot: { capturedAtUtc: '2026-09-14T10:00:00.000Z', branchIds: [], filters: {} },
+      filterSnapshot: {
+        capturedAtUtc: '2026-09-14T10:00:00.000Z',
+        branchIds: [],
+        filters: {},
+      },
       filterOptions: {},
       warnings: [],
     };
-    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify(payload)));
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(new Response(JSON.stringify(payload)));
     vi.stubGlobal('fetch', fetchMock);
 
     await reportingApi.salesByOrganization({

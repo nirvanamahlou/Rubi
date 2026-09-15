@@ -121,7 +121,20 @@ interface TravelReportResult {
   grain: string;
   sourceProjection: string;
   columns?: readonly { key: string; label: string; kind: string }[];
-  rows: readonly { grainId: string; primaryDimension: string; secondaryDimension: string; currencyCode: string; orderCount: number; passengerCount: number; ticketCount: number; salesAmount: string; purchaseAmount: string; grossProfit: string; refundAmount: string; settlementBalance: string }[];
+  rows: readonly {
+    grainId: string;
+    primaryDimension: string;
+    secondaryDimension: string;
+    currencyCode: string;
+    orderCount: number;
+    passengerCount: number;
+    ticketCount: number;
+    salesAmount: string;
+    purchaseAmount: string;
+    grossProfit: string;
+    refundAmount: string;
+    settlementBalance: string;
+  }[];
   total: number;
   page: number;
   pageSize: number;
@@ -246,15 +259,16 @@ export const reportingApi = {
         }),
       },
     ).then((result) => {
-      if (
-        result.sourceProjection === 'sales.reporting.organization.v2'
-      ) {
+      if (result.sourceProjection === 'sales.reporting.organization.v2') {
         return result as SalesByOrganizationReportResult;
       }
       const travel = result as TravelReportResult;
       return {
-        reportCode: travel.reportCode, reportVersion: travel.reportVersion, grain: travel.grain,
-        rowGrain: 'ORDER_ITEM_CURRENCY', sourceProjection: travel.sourceProjection,
+        reportCode: travel.reportCode,
+        reportVersion: travel.reportVersion,
+        grain: travel.grain,
+        rowGrain: 'ORDER_ITEM_CURRENCY',
+        sourceProjection: travel.sourceProjection,
         rows: travel.rows.map((row) => ({
           grainId: row.grainId,
           branchId: row.primaryDimension,
@@ -269,18 +283,48 @@ export const reportingApi = {
           refundAmount: row.refundAmount,
           settlementBalance: row.settlementBalance,
         })),
-        total: travel.total, page: travel.page, pageSize: travel.pageSize, previewLimit: travel.previewLimit,
-        generatedAtUtc: travel.generatedAtUtc, sourceDataAsOfUtc: travel.sourceDataAsOfUtc,
-        totalsByCurrency: travel.totalsByCurrency.map((item) => ({ currencyCode: item.currencyCode, amount: item.salesAmount })),
+        total: travel.total,
+        page: travel.page,
+        pageSize: travel.pageSize,
+        previewLimit: travel.previewLimit,
+        generatedAtUtc: travel.generatedAtUtc,
+        sourceDataAsOfUtc: travel.sourceDataAsOfUtc,
+        totalsByCurrency: travel.totalsByCurrency.map((item) => ({
+          currencyCode: item.currencyCode,
+          amount: item.salesAmount,
+        })),
         contractCount: travel.total,
-        reconciliation: { matchesApprovedProjection: true as const, referenceTotalsByCurrency: travel.totalsByCurrency.map((item) => ({ currencyCode: item.currencyCode, amount: item.salesAmount })) },
+        reconciliation: {
+          matchesApprovedProjection: true as const,
+          referenceTotalsByCurrency: travel.totalsByCurrency.map((item) => ({
+            currencyCode: item.currencyCode,
+            amount: item.salesAmount,
+          })),
+        },
         filterSnapshot: travel.filterSnapshot,
         filterOptions: {
-          branchIds: travel.filterOptions.branch ?? [], ownerUserIds: travel.filterOptions.expert ?? [],
-          currencyCodes: travel.filterOptions.currency ?? [], statuses: travel.filterOptions.status ?? [],
+          branchIds: travel.filterOptions.branch ?? [],
+          ownerUserIds: travel.filterOptions.expert ?? [],
+          currencyCodes: travel.filterOptions.currency ?? [],
+          statuses: travel.filterOptions.status ?? [],
         },
-        capabilities: { filters: Object.keys(travel.filterOptions), sort: travel.columns?.map((column) => column.key) ?? ['salesAmount'], unsupportedFilters: [] }, warnings: travel.warnings,
-        summary: { todayContracts: 0, activeContracts: travel.total, unpaidContracts: 0, partiallySettledContracts: 0, settledContracts: 0, pendingFinancePayments: 0, pendingReservationActions: travel.rows.filter((row) => row.ticketCount === 0).length },
+        capabilities: {
+          filters: Object.keys(travel.filterOptions),
+          sort: travel.columns?.map((column) => column.key) ?? ['salesAmount'],
+          unsupportedFilters: [],
+        },
+        warnings: travel.warnings,
+        summary: {
+          todayContracts: 0,
+          activeContracts: travel.total,
+          unpaidContracts: 0,
+          partiallySettledContracts: 0,
+          settledContracts: 0,
+          pendingFinancePayments: 0,
+          pendingReservationActions: travel.rows.filter(
+            (row) => row.ticketCount === 0,
+          ).length,
+        },
       } satisfies SalesByOrganizationReportResult;
     });
   },
@@ -292,8 +336,17 @@ export const reportingApi = {
       method: 'GET',
     });
   },
-  saveReport(input: { reportCode: string; name: string; sharingScope: 'PERSONAL' | 'TEAM'; isFavorite: boolean; filterState: Record<string, unknown> }) {
-    return request<ReportingSavedReportRecord>('/saved', { method: 'POST', body: JSON.stringify(input) });
+  saveReport(input: {
+    reportCode: string;
+    name: string;
+    sharingScope: 'PERSONAL' | 'TEAM';
+    isFavorite: boolean;
+    filterState: Record<string, unknown>;
+  }) {
+    return request<ReportingSavedReportRecord>('/saved', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    });
   },
   sharingRecipients(reportCode: string) {
     return request<readonly ReportingShareRecipient[]>(
@@ -302,21 +355,42 @@ export const reportingApi = {
     );
   },
   savedReportShares(id: string) {
-    return request<{ savedReportId: string; recipientUserIds: readonly string[] }>(
-      `/saved/${encodeURIComponent(id)}/shares`,
-      { method: 'GET' },
-    );
+    return request<{
+      savedReportId: string;
+      recipientUserIds: readonly string[];
+    }>(`/saved/${encodeURIComponent(id)}/shares`, { method: 'GET' });
   },
   shareSavedReport(id: string, recipientUserIds: readonly string[]) {
-    return request<{ savedReportId: string; recipientUserIds: readonly string[] }>(
-      `/saved/${encodeURIComponent(id)}/shares`,
-      { method: 'POST', body: JSON.stringify({ recipientUserIds }) },
-    );
+    return request<{
+      savedReportId: string;
+      recipientUserIds: readonly string[];
+    }>(`/saved/${encodeURIComponent(id)}/shares`, {
+      method: 'POST',
+      body: JSON.stringify({ recipientUserIds }),
+    });
   },
-  deleteSaved(id: string) { return request<{ deleted: true }>(`/saved/${id}`, { method: 'DELETE' }); },
-  createExport(reportCode: string, input: { format: 'CSV' | 'XLSX' | 'PDF'; query: Record<string, unknown>; simulateFailure?: boolean }) {
-    return request<Record<string, unknown>>(`/${reportCode}/exports`, { method: 'POST', body: JSON.stringify(input) });
+  deleteSaved(id: string) {
+    return request<{ deleted: true }>(`/saved/${id}`, { method: 'DELETE' });
   },
-  retryExport(id: string) { return request<Record<string, unknown>>(`/exports/${id}/retry`, { method: 'POST' }); },
-  exportDownloadUrl(id: string) { return `${getPublicApiBaseUrl()}/reports/exports/${id}/download`; },
+  createExport(
+    reportCode: string,
+    input: {
+      format: 'CSV' | 'XLSX' | 'PDF';
+      query: Record<string, unknown>;
+      simulateFailure?: boolean;
+    },
+  ) {
+    return request<Record<string, unknown>>(`/${reportCode}/exports`, {
+      method: 'POST',
+      body: JSON.stringify(input),
+    });
+  },
+  retryExport(id: string) {
+    return request<Record<string, unknown>>(`/exports/${id}/retry`, {
+      method: 'POST',
+    });
+  },
+  exportDownloadUrl(id: string) {
+    return `${getPublicApiBaseUrl()}/reports/exports/${id}/download`;
+  },
 };

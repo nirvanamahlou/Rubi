@@ -103,18 +103,20 @@ const legalEntityCodesByLabel: Readonly<Record<string, string>> = {
   'قسطی رو': 'GHESATI_RO',
 };
 
-const reportingFilterLabelsByApiKey: Readonly<Record<string, string>> =
-  {
-    ...Object.fromEntries(
-      Object.entries(reportingFilterParamKeys).map(([label, key]) => [key, label]),
-    ),
-    agency: 'آژانس',
-    branchId: 'شعبه',
-    issueStatus: 'وضعیت صدور',
-    leadSource: 'منبع لید',
-    ownerUserId: 'کارشناس',
-    reservationStatus: 'وضعیت Refund',
-  };
+const reportingFilterLabelsByApiKey: Readonly<Record<string, string>> = {
+  ...Object.fromEntries(
+    Object.entries(reportingFilterParamKeys).map(([label, key]) => [
+      key,
+      label,
+    ]),
+  ),
+  agency: 'آژانس',
+  branchId: 'شعبه',
+  issueStatus: 'وضعیت صدور',
+  leadSource: 'منبع لید',
+  ownerUserId: 'کارشناس',
+  reservationStatus: 'وضعیت Refund',
+};
 
 function record(value: unknown): UnknownRecord | undefined {
   return value && typeof value === 'object' && !Array.isArray(value)
@@ -187,7 +189,8 @@ export function reportingConfigurationState(
       const normalized = Array.isArray(value)
         ? storedString(value[0])
         : storedString(value);
-      if (label && !isAllSelection(normalized)) filterValues[label] = normalized;
+      if (label && !isAllSelection(normalized))
+        filterValues[label] = normalized;
     }
     const exclusiveToDate = tehranIsoDate(snapshotFilters.toUtc);
     return {
