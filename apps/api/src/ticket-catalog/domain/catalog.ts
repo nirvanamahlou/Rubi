@@ -67,6 +67,8 @@ export interface ProductInput {
   title: string;
   transport: TransportType;
   journeyRole: JourneyRole;
+  /** Gregorian service day. Schedule timestamps remain optional. */
+  serviceDate?: string | undefined;
   tripGroupId?: string | undefined;
   display?: ProductDisplaySnapshot | undefined;
   segments: readonly Segment[];
@@ -363,6 +365,14 @@ export function validateProduct(
     ['one-way', 'outbound', 'return'].includes(input.journeyRole),
     'نوع مسیر بلیط نامعتبر است.',
   );
+  if (input.serviceDate)
+    ensure(
+      /^\d{4}-\d{2}-\d{2}$/.test(input.serviceDate) &&
+        new Date(input.serviceDate + 'T00:00:00.000Z')
+          .toISOString()
+          .startsWith(input.serviceDate),
+      'تاریخ اولین بلیط معتبر نیست.',
+    );
   ensure(
     input.segments.length > 0 && input.segments.length <= 8,
     'برنامه باید بین یک تا هشت قطعه داشته باشد.',

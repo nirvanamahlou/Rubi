@@ -1,5 +1,12 @@
 # Work Assignments
 
+## RESERVATION-PURCHASE-LAYOUT-0915 — PC-A — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-15: فرم خرید رزرواسیون فقط هزینه خرید هتل و ترانسفر از کارگزار را ثبت کند، هتل قیمت هر شب یا کل اقامت بپذیرد و کنترل‌های فرم روی هم نیفتند. قیمت خرید بلیط هنگام تعریف در Ticket Catalog به صف مالی از مسیر مستقل Procurement می‌رود؛ این بخش با PR #282 وارد develop شده است.
+- Branch مستقل `codex/pc-a-reservation-purchase-layout-0915` از `origin/develop@b62054e3`؛ COMPUTER_ID=PC-A. محدوده رزرو: فرم خرید Web رزرواسیون، انتخاب خدمات واجد خرید، Gate خرید خدمات قرارداد در Finance و تست/اسناد همین واحد. بدون Schema/Migration/Seed، داده عملیاتی، Permission، Dependency/Lockfile یا تغییر Runtime مشترک.
+- مالک فعال همپوشان در آخرین `WORK_ASSIGNMENTS.md` و PRهای باز برای فایل‌های همین واحد پیدا نشد. شاخه‌های دیگر بدون reset/stash/overwrite/force-push باقی می‌مانند.
+- نتیجه: فرم خرید کارگزار هتل/ترانسفر ردیف‌های مستقل دارد؛ هتل مبلغ هر شب یا جمع را به مبلغ نهایی تبدیل می‌کند؛ خرید بلیط از این API رد و Gate مالی این فرم فقط هتل/ترانسفر را مطالبه می‌کند. ۴ تست هدفمند Web و ۶ تست هدفمند API، lint/typecheck محدوده و build تولیدی API/Web (۴۶ مسیر) موفق‌اند. آخرین `origin/develop` همچنان `b62054e3` و فایل مشترک تازه‌ای از آن تغییر نکرده است. Runtime مشترک ۳۱۰۰ تغییر نکرد.
+
 ## MASTER-012-AIRLINE-BAGGAGE-FORM — PC-B — READY_FOR_REVIEW
 
 - پیگیری مالک محصول در 2026-09-15: قواعد بار «عنوان فارسی» نمی‌خواهند. تکمیل همان واحد روی PR #285 و Branch موجود، با حفظ تمام تغییرات قبلی و محدوده Catalog/Form/Editor/Fixture/Test اطلاعات پایه، رزرو شد؛ Schema/Contract/API و ماژول دیگر دست‌نخورده می‌مانند.
@@ -2948,6 +2955,13 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
   افزایشی، دسترسی ثبت روی `staff` و نقش‌های مستقل `procurement_approver` و
   `procurement_buyer` ثبت شده‌اند. دو نقش تجاری بدون انتساب فردی می‌مانند تا
   مالک حساب‌های مجاز را مشخص کند؛ کارمندان HR موجود هنوز پیوند IAM ندارند.
+- پس از انتشار `develop@ff15c7d3`، سرویس عمومی خرید بلیت PC-A در همان
+  `ProcurementModule` کنار workspace عملیاتی حفظ شد. migration منتشرشدهٔ
+  `20260914173000_procurement_ticket_purchase_requests` فقط اجرا و بدون ویرایش
+  Source جذب شد؛ migration افزایشی `20260915110000_procurement_ticket_purchase_fks`
+  رابطهٔ واقعی شعبه و IAM creator را می‌بندد. هر دو روی کپی DB و سپس پایگاه محلی
+  با backup تازه اعمال شدند. Finance فقط intake قیمت خرید بلیت را از public port
+  می‌خواند؛ gate فاکتور/سفارش خرید عمومی همچنان باقی است.
 - lint/typecheck API، Web، Database و Contracts و build تولیدی API/Web با ۴۶
   مسیر موفق‌اند؛ ۴۸ تست قواعد، ۳۰ تست عملیاتی روی پایگاه اختصاصی و ۹ تست Web
   هدفمند پاس شدند. نسخهٔ یکپارچه روی Gateway3100/Web3110/API4191 با commit
@@ -2956,6 +2970,13 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
   ۴۶مسیره نیز پاس شدند.
   تب مرورگر بدون نشست به login
   هدایت می‌شود؛ grant فردی و smoke داخل حساب پس از معرفی حساب‌های مجاز پیگیری می‌شود.
+
+## TICKET-REPEAT-PURCHASE-0914 — PC-A — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-14: رفع خطای تکرار بلیط‌های بدون ساعت، افزودن تاریخ اولین بلیط به فرم تعریف، و ارسال قیمت خرید ثبت‌شده به کارتابل مالی. COMPUTER_ID=PC-A.
+- Branch مستقل codex/pc-a-ticket-repeat-purchase-0914 از origin/develop@b62054e3؛ main/develop و Branchهای دیگر دست‌نخورده می‌مانند و خروجی فقط با PR جدا به develop تحویل می‌شود.
+- محدوده رزروشده: Ticket Catalog Web/model/tests، اتصال عمومی Procurement و Finance inbox، قرارداد افزایشی Travel، مدل و Migration افزایشی Procurement، و اسناد همین Work Item. Migration Owner = PC-A/TICKET-REPEAT-PURCHASE-0914 و Travel contract/Central Docs فقط برای همین تغییر رزرو است؛ Dependency/Lockfile و Permission تغییر نمی‌کند.
+- تحویل: فرم تعریف بلیط تاریخ اولین اجرا را مستقل از ساعت می‌گیرد؛ تکرار هفتگی/ماهانه بلیط قدیمی بدون ساعت نیز کار می‌کند. قیمت خرید مثبت با Decimal و ارز در Procurement ثبت و تا پیش از رسیدگی مالی قابل ویرایش است؛ Finance آن را از سرویس عمومی Procurement در کارتابل نشان می‌دهد. ۱۹ تست Web، ۸ تست API، lint، typecheck و build کامل API/Web و اعتبارسنجی Prisma موفق‌اند.
 
 ## RESERVATION-MANIFEST-TICKET-CARDS-0914 - PC-A - READY_FOR_REVIEW
 

@@ -1,5 +1,9 @@
 # مدل داده و ERD اولیه
 
+## TICKET-REPEAT-PURCHASE-0914
+
+Procurement owns `ProcurementTicketPurchaseRequest`: one current purchase request per branch and Ticket Catalog product reference. It stores a positive `Decimal(20,6)` amount, three-letter currency code, first service date, title and supplier snapshot, creator/idempotency audit, version and `PENDING/PAID/CANCELLED` status. A pending request may be revised in place with an incremented version; after Finance handles it the price is locked. Ticket Catalog and Finance use Procurement's public service and never query this table directly. Historical ticket definitions without `serviceDate` remain readable and are not backfilled.
+
 ## WORKBENCH-036 — داده‌های شخصی و ارتباط‌های بک‌اند
 
 - `workbench_note_folders` و `workbench_notes` در مالکیت Workbench و با کلید
