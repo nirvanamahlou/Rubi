@@ -699,6 +699,24 @@ export class ProcurementOperations {
         where: { id: requestId },
         data: { status: 'SOURCING' },
       });
+      await tx.procurementOutbox.create({
+        data: {
+          requestId,
+          eventType: 'procurement.supplier-order-intent.v1',
+          status: 'BLOCKED',
+          payload: json({
+            contract: 'procurement.supplier-order-intent.v1',
+            branchId: row.branchId,
+            requestId,
+            orderId: order.id,
+            orderVersion: order.version,
+            supplierId: order.supplierId,
+            currencyCode: order.currencyCode,
+            amount: order.totalAmount.toString(),
+            connection: 'SUPPLIER_ADAPTER_NOT_CONFIGURED',
+          }),
+        },
+      });
       return;
     }
     if (action === 'AMEND_ORDER') {

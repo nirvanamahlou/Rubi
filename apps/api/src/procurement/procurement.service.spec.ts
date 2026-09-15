@@ -22,6 +22,7 @@ import type {
 } from './domain/procurement.rules';
 import { ProcurementOperations } from './procurement.operations';
 import { ProcurementPolicyPort } from './procurement.ports';
+import { ProcurementPublicService } from './procurement-public.service';
 import {
   json,
   procurementBoundary,
@@ -826,6 +827,14 @@ describe.skipIf(process.env.PROCUREMENT_API_DATABASE_TEST !== '1')(
         422,
         'FINAL_APPROVAL_REQUIRED',
       );
+      expect(
+        await database.client.procurementOutbox.count({
+          where: {
+            requestId: row.id,
+            eventType: 'procurement.supplier-order-intent.v1',
+          },
+        }),
+      ).toBe(0);
       await rejected(
         () => command(row, 'DECIDE', { decision: 'APPROVED' }, checker2),
         403,
@@ -840,6 +849,37 @@ describe.skipIf(process.env.PROCUREMENT_API_DATABASE_TEST !== '1')(
           })
         ).status,
       ).toBe('ISSUED');
+      const intents = await database.client.procurementOutbox.findMany({
+        where: {
+          requestId: row.id,
+          eventType: 'procurement.supplier-order-intent.v1',
+        },
+      });
+      expect(intents).toHaveLength(1);
+      expect(intents[0]).toMatchObject({
+        status: 'BLOCKED',
+        payload: {
+          orderId: order.id,
+          orderVersion: 1,
+          supplierId: supplier,
+          connection: 'SUPPLIER_ADAPTER_NOT_CONFIGURED',
+        },
+      });
+      const publicEvents = new ProcurementPublicService(database);
+      expect(
+        await publicEvents.listPendingConnectionEvents(
+          [otherBranch],
+          'procurement.supplier-order-intent.v1',
+        ),
+      ).toEqual([]);
+      expect(
+        (
+          await publicEvents.listPendingConnectionEvents(
+            [branch],
+            'procurement.supplier-order-intent.v1',
+          )
+        ).some((event) => event.eventId === intents[0]?.eventId),
+      ).toBe(true);
     });
     it('blocks selecting an expired quotation', async () => {
       let row = await approvedRequest();
@@ -1118,6 +1158,24 @@ describe.skipIf(process.env.PROCUREMENT_API_DATABASE_TEST !== '1')(
           },
         ],
       });
+      const publicSources = new ProcurementPublicService(database);
+      expect(
+        await publicSources.listFinanceInvoiceSources([otherBranch]),
+      ).toEqual([]);
+      expect(await publicSources.listFinanceInvoiceSources([branch])).toEqual([
+        handoff.payload,
+      ]);
+      expect(
+        (
+          await publicSources.listPendingConnectionEvents(
+            [branch],
+            'procurement.workflow-event.v1',
+          )
+        ).some(
+          (event) =>
+            (event.payload as { requestId?: string }).requestId === row.id,
+        ),
+      ).toBe(true);
       expect(
         await database.client.procurementOutbox.count({
           where: { handoffId: handoff.id, status: 'BLOCKED' },

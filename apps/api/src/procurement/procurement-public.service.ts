@@ -9,6 +9,7 @@ import {
 import * as Joi from 'joi';
 import type {
   AuthenticatedActor,
+  ProcurementFinanceSourceV1,
   TicketCatalogPurchaseCreateV1,
   TicketCatalogPurchaseV1,
 } from '@nora/contracts';
@@ -119,6 +120,51 @@ export class ProcurementPublicService {
         orderBy: [{ serviceDate: 'asc' }, { createdAt: 'asc' }],
       });
     return rows.map((row) => this.toTicketPurchase(row));
+  }
+
+  /** Finance reads the immutable, already-matched invoice source via this boundary. */
+  async listFinanceInvoiceSources(
+    branchIds: readonly string[],
+  ): Promise<readonly ProcurementFinanceSourceV1[]> {
+    if (!branchIds.length) return [];
+    const rows = await this.database.client.procurementFinanceHandoff.findMany({
+      where: {
+        status: { in: ['NOT_CONNECTED', 'PENDING'] },
+        procurementFinanceHandoffRequestid: {
+          branchId: { in: [...branchIds] },
+        },
+      },
+      orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+      take: 500,
+      select: { payload: true },
+    });
+    return rows.map(
+      (row) => row.payload as unknown as ProcurementFinanceSourceV1,
+    );
+  }
+
+  /** Owner-scoped outbox projections for Tasks and Integrations adapters. */
+  async listPendingConnectionEvents(
+    branchIds: readonly string[],
+    contract:
+      'procurement.workflow-event.v1' | 'procurement.supplier-order-intent.v1',
+  ) {
+    if (!branchIds.length) return [];
+    const rows = await this.database.client.procurementOutbox.findMany({
+      where: {
+        eventType: contract,
+        status: 'BLOCKED',
+        procurementOutboxRequestid: { branchId: { in: [...branchIds] } },
+      },
+      orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+      take: 500,
+      select: { eventId: true, payload: true, createdAt: true },
+    });
+    return rows.map((row) => ({
+      eventId: row.eventId,
+      payload: row.payload,
+      createdAt: row.createdAt.toISOString(),
+    }));
   }
 
   private toTicketPurchase(row: {
