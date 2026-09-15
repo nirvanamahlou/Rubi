@@ -157,7 +157,7 @@ export function SalesWorkspace() {
             قراردادهای قابل‌دسترسی شما · مانده بر اساس پرداخت تأییدشده مالی
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button
             variant="outline"
             size="sm"
@@ -167,6 +167,13 @@ export function SalesWorkspace() {
           >
             <RefreshCw className="size-4" />
           </Button>
+          <Link
+            className={buttonVariants({ variant: 'outline', size: 'sm' })}
+            href="/sales/pricing"
+          >
+            <Banknote className="size-4" />
+            مدیریت قیمت و پکیج‌ها
+          </Link>
           <Link
             className={`${buttonVariants({ size: 'sm' })} !text-white`}
             href="/sales/contracts/new"

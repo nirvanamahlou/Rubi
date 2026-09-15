@@ -107,6 +107,8 @@ describe('sales dashboard loading', () => {
   it('renders compact dashboard navigation without showing failure during initial load', () => {
     const html = renderToStaticMarkup(<SalesWorkspace />);
     expect(html).toContain('داشبورد قراردادها');
+    expect(html).toContain('مدیریت قیمت و پکیج‌ها');
+    expect(html).toContain('href="/sales/pricing"');
     expect(html).toContain('/sales/contracts/new');
     expect(html).not.toContain('در دسترس نیست');
     expect(html).not.toContain('ناموفق');

@@ -50,6 +50,13 @@ end-to-end renderer کار handoff است.
 
 ### QA پیش‌نمایش مستقل 3200 در 2026-09-15
 
+پس از گزارش کاربر، ورودی نمایان «مدیریت قیمت و پکیج‌ها» در سرصفحه
+داشبورد قراردادها اضافه شد؛ route داخلی /sales/pricing و منوی اصلی ۱۷‌بخشی
+بدون تغییر باقی ماندند. تست رگرسیون Sales وجود متن و href را بررسی می‌کند.
+۹ تست Sales/Pricing، lint، Web typecheck و Production Build ۴۸ صفحه موفق بودند.
+Web3200 دوباره بالا آمد و با session واقعی آزمایشی، /sales و /sales/pricing
+پاسخ ۲۰۰ و href دکمه در HTML زنده داشتند.
+
 API آزمایشی روی 4200 و PostgreSQL synthetic مستقل از محیط مشترک فعال شد. تداخل
 route اختصاصی بازه هتل با route عمومی Master Data رفع شد. Login آزمایشی، گزینه
 شهر تهران و سه هتل، POST بازه پنج‌شبه با دو هتل منتخب، PATCH نسخه ۱ به ۲ و GET
