@@ -6,6 +6,7 @@
 - محدوده رزرو: نگاشت نام مسافر در Snapshot خروجی Sales، Renderer/Route PDF بلیط Reservations، تنظیم tracing دارایی همان Route، تست‌های هدفمند و اسناد Task. فایل‌های تاریخی RESERVATION-TICKET-PDF-0912 و RESERVATION-DIRECT-PDF-0910 آزاد شده‌اند؛ در آخرین `origin/develop` مالک فعال همپوشان پیدا نشد.
 - Renderer فقط Chrome/Edge نصب‌شده و فونت محلی خواندنی را کشف می‌کند؛ فونت اختیاری است و نبود آن صدور را متوقف نمی‌کند. هیچ Migration، Seed، داده عملیاتی، Permission، Dependency/Lockfile یا اجرای مشترک localhost در این شاخه انجام نمی‌شود.
 - نتیجه: نام در Snapshot درخواست‌های جدید حفظ می‌شود و قرارداد قدیمی دارای نام ناقص، نام را برای نمایش/PDF از پرونده اصلی مسافر می‌خواند. Chrome/Edge و فونت محلی بدون فرمان دستی کشف می‌شوند. ۴ تست API، ۱۸ تست Web، lint/typecheck/build API/Web و Smoke واقعی Chrome موفق‌اند؛ رزرو فایل‌ها برای Review آزاد است.
+
 ## RESERVATION-PURCHASE-LAYOUT-0915 — PC-A — READY_FOR_REVIEW
 
 - درخواست مالک در 2026-09-15: فرم خرید رزرواسیون فقط هزینه خرید هتل و ترانسفر از کارگزار را ثبت کند، هتل قیمت هر شب یا کل اقامت بپذیرد و کنترل‌های فرم روی هم نیفتند. قیمت خرید بلیط هنگام تعریف در Ticket Catalog به صف مالی از مسیر مستقل Procurement می‌رود؛ این بخش با PR #282 وارد develop شده است.
