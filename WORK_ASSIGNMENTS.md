@@ -2878,3 +2878,14 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
   شدند. ۱۵ تست هدفمند، lint محدوده، typecheck API/Web و build تولیدی API/Web با ۴۶
   مسیر موفق‌اند. Gateway3100/Web3110/API4191 با commit کد `2433f5e2` و API health ۲۰۰
   فعال‌اند؛ هیچ Migration، Seed، Grant یا تغییر داده انجام نشد.
+
+## PROCUREMENT-FRAME-3100-0915 — PC-B — ACTIVE
+
+- درخواست مالک و Screenshot606: پوستهٔ خرید در Web3100 باز می‌شود اما iframe داخلی با
+  «localhost refused to connect» متوقف است. شاخه `codex/pc-b-procurement-frame-3100`
+  از نسخهٔ تجمیعی فعلی ساخته شد.
+- قفل محدود فایل مرکزی `apps/web/next.config.ts` فقط برای هدر مسیر
+  `/procurement-optimized.html` نزد PC-B/PROCUREMENT-FRAME-3100-0915 رزرو است؛
+  `WORK_ASSIGNMENTS.md` و `docs/PROJECT_STATUS.md` فقط همین واحد را ثبت می‌کنند.
+  احراز هویت و DENY پیش‌فرض سایر مسیرها حفظ می‌شوند. بدون Migration، Dependency،
+  API، داده یا تغییر قرارداد مشترک.
