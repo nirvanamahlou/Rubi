@@ -33,8 +33,12 @@ describe('transportation workspace', () => {
     expect(tabs).not.toContain("resource: 'baggage-rules'");
     expect(source).not.toContain('const airlineViews');
     expect(source).not.toContain('بخش‌های داخلی فرم ایرلاین');
-    expect(source).not.toContain("resource: 'baggage-rules', label: 'قواعد بار'");
-    expect(source).toContain("resource === 'airlines' && formMode === 'create'");
+    expect(source).not.toContain(
+      "resource: 'baggage-rules', label: 'قواعد بار'",
+    );
+    expect(source).toContain(
+      "resource === 'airlines' && formMode === 'create'",
+    );
     expect(source).toContain('<MasterDataProfileDialog');
     expect(source).toContain('setProfileOpen(true)');
   });

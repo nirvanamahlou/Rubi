@@ -218,8 +218,7 @@ export function MasterDataTransportationWorkspace() {
   const [exporting, setExporting] = useState(false);
   const definition = getMasterDataDefinition(resource);
   const pageDefinition = definition;
-  const currentTab =
-    tabs.find((tab) => tab.resource === resource) ?? tabs[0];
+  const currentTab = tabs.find((tab) => tab.resource === resource) ?? tabs[0];
   const CurrentIcon = currentTab.icon;
 
   const { columnFilters, columnFilterControls, resetColumnFilters } =
