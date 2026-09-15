@@ -131,13 +131,11 @@ export function MasterDataAirlineBaggageEditor({
 
   async function save() {
     if (!airline) return;
-    const passenger = passengerTypes.find((type) => type.value === draft.passengerType)?.label;
-    const route = routeScopes.find((scope) => scope.value === draft.routeScope)?.label;
     const cabin = classes.find((item) => item.id === draft.cabinClassId);
     const values: Record<string, string> = {
       ...draft,
       airlineId: airline.id,
-      name: `بار ${airline.code} - ${passenger ?? ''} - ${cabin?.attributes.bookingCode ?? 'همه کلاس‌ها'} - ${route ?? ''}`,
+      name: `Baggage ${airline.code} / ${draft.passengerType ?? 'ADT'} / ${String(cabin?.attributes.bookingCode ?? 'ALL')} / ${draft.routeScope ?? 'ALL'}`,
     };
     const result = validateMasterDataDraft('baggage-rules', values);
     setFieldErrors(result.errors);

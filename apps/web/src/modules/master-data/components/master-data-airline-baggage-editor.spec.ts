@@ -28,5 +28,7 @@ describe('airline baggage editing', () => {
     expect(editor).toContain("masterDataApi.create('baggage-rules'");
     expect(editor).toContain("masterDataApi.update('baggage-rules'");
     expect(editor).toContain('<MasterDataPowerButton');
+    expect(editor).toContain('name: `Baggage ${airline.code}');
+    expect(editor).not.toContain('name: `بار');
   });
 });

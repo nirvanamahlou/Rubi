@@ -2,6 +2,7 @@
 
 ## MASTER-012-AIRLINE-BAGGAGE-FORM — PC-B — READY_FOR_REVIEW
 
+- پیگیری 2026-09-15: عنوان فارسی قواعد بار حذف و نام داخلی سازگار با Backend خودکار و انگلیسی شد؛ تست فرم و Fixture هم به‌روز شدند.
 - در فرم ایرلاین مدیریت مستقیم قواعد بار برای بزرگسال/کودک/نوزاد، کلاس پروازی و دامنه مسیر اضافه و زیرناوبری قواعد بار حذف شد. مدل و FKهای موجود، API و مصرف‌کنندگان بدون تغییر ماندند. ۲۴ تست هدفمند، lint، typecheck و build ۴۶مسیره Web موفق‌اند. جزئیات در `docs/tasks/MASTER-012-AIRLINE-BAGGAGE-FORM.md`.
 
 ## 2026-09-14 — PROFILE-PLACEHOLDER-AVATAR-001 — PC-B — VERIFIED

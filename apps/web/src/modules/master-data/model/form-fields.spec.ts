@@ -69,7 +69,7 @@ describe('payment-method form fields', () => {
       brokers: ['displayName'],
       airlines: ['organizationId', 'iataCode', 'icaoCode'],
       'cabin-classes': ['name', 'bodyType', 'cabinType'],
-      'baggage-rules': ['validFrom', 'validTo'],
+      'baggage-rules': ['name', 'validFrom', 'validTo'],
       'bus-companies': ['supplierId'],
       'visa-services': [
         'supplierId',

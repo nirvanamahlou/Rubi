@@ -233,7 +233,7 @@ export function masterDataDemoRecords(): DemoRecord[] {
       displayOrder: n,
     });
     add(`baggage-${n}`, 'baggage-rules', (id) => ({
-      name: name(`قاعده بار نمونه ${n}`),
+      name: name(`Demo Baggage ${n}`),
       airlineId: id(`airline-${n}`),
       cabinClassId: id(`cabin-${n}`),
       passengerType: 'ADT',

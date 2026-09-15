@@ -872,7 +872,6 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
     description:
       'قاعده بار براساس ایرلاین، کلاس، نوع مسافر، مسیر، مقدار و تعداد قطعه.',
     fields: [
-      nameField,
       {
         key: 'airlineId',
         label: 'ایرلاین',
@@ -942,7 +941,7 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
       },
     ],
     preview: {
-      name: 'بار اکونومی',
+      name: 'Baggage Economy',
       passengerType: 'ADT',
       allowance: '20',
       unit: 'KG',
