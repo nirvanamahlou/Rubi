@@ -1,5 +1,130 @@
 # وضعیت پروژه
 
+## 2026-09-15 — PC-C Dashboard/Reports + PC-A/PC-B develop integration
+
+شاخهٔ `codex/pc-c-dashboard-reporting-integration-0915` نسخهٔ ثبت‌شدهٔ Dashboard/Reports را با `origin/develop@ff15c7d3` ترکیب می‌کند. هر دو ماژول API Reporting و Procurement در AppModule حفظ شده‌اند، رابطه‌های Prisma افزایشی‌اند و ارجاع‌های Reporting به نام جدید `@nora/database` هماهنگ شده‌اند. دادهٔ نمونه و artifactهای محلی وارد Git نشده‌اند؛ Worktree اجرایی `dashboard-reporting-latest` و سرویس ۳۰۰۰ تغییر نکرده‌اند.
+
+Prisma validate، typecheck و build بسته‌های مشترک/API/Web، lint محدودهٔ Dashboard/Reports و ۲۶ تست API + ۶۶ تست Web موفق‌اند. Branchهای جدیدتر PC-A Manifest و PC-B Procurement هنوز مستقل از develop هستند و ادغام خودکار آن‌ها در این واحد کار انجام نمی‌شود. انتشار نهایی از مسیر PR به develop و CI پیگیری می‌شود.
+
+احراز هویت Git روی PC-C برقرار شد و شاخه به `origin` پوش شد. PR شمارهٔ 289 برای ادغام در `develop` باز است؛ مرج نهایی تابع بررسی وضعیت CI و قابلیت مرج است.
+
+## REPORTING-AUTHENTICATED-RUNTIME-REPAIR — 2026-09-15
+
+- ریشهٔ مشترک HTTP 500 در Dashboard/Reports/Favorites: جدول `b2b_organization_users` در دیتابیس محلی موجود نبود. Interceptor سراسری B2B تمام درخواست‌های دارای Actor را پیش از Controller با Prisma P2021 متوقف می‌کرد. Health عمومی و تست مستقیم Repository این مسیر را پوشش نمی‌دهند.
+- پس از بکاپ محلی، Migration افزایشی موجود `20260910100000_b2b_organization_users` اجرا و با Prisma به‌عنوان applied ثبت شد. هیچ قاعدهٔ احراز هویت یا مرز دسترسی B2B حذف نشد.
+- اعتبارسنجی روی API واقعی پورت ۴۰۰۰ با ورود حساب موقت: ۱۱ KPI و ۱۰ نمودار دارای منبع نمونه، ۱۲ گزارش متصل، ذخیرهٔ فیلتر، افزودن/خواندن/حذف علاقه‌مندی، شمارنده‌ها و دانلود فایل موفق‌اند. فایل XLSX باز و ساختار worksheet بررسی شد؛ CSV محتوای گزارش و Filter Snapshot دارد. PDF فعلی فقط خلاصهٔ محدود دارد.
+- حساب، نقش و خروجی‌های تست پاک شدند؛ دادهٔ نمونهٔ اصلی حفظ و در Git ثبت نشد. برای پذیرش Runtime، تست HTTP احرازشده لازم است؛ Health 200 به‌تنهایی کافی نیست.
+
+## REPORTING-CATEGORY-FILTER-RTL-ICON — 2026-09-15
+
+- گزینه‌های فیلتر دسته‌بندی در کاتالوگ گزارش‌ها اکنون متن راست‌چین و آیکون تک‌رنگ همان دسته را در سمت راست متن دارند؛ گزینهٔ «همه دسته‌ها» نیز آیکون عمومی تک‌رنگ دارد.
+- تغییر فقط در Frontend همین Worktree یکپارچه انجام شد. تست جدید، Web TypeScript و lint موفق‌اند؛ یک تست قدیمی مرتبط با نمایش کد `RPT-001` در کل مجموعهٔ کامپوننت همچنان با نسخهٔ فعلی کاتالوگ ناسازگار است.
+
+## DASHBOARD-REPORTING-DEMO-PROJECTION-REPAIR — 2026-09-15
+
+- علت خطای Dashboard: تاریخ ISO بازه پیش‌فرض دوباره با `T00:00...Z` ترکیب و
+  `RangeError` در API ایجاد می‌شد. تاریخ اصلاح و اعتبارسنجی بازه اضافه شد.
+- ۱۸۰ fact محلی بررسی شد: در ۳۱ روز اخیر ۵۵ fact IRR با فروش 873432000 و
+  ۶ fact USD با فروش 81968000؛ جمع این دو ارز نمایش داده نمی‌شود.
+- Projection حالا فقط شناسه‌های دارای محاسبهٔ مشخص سفر را پاسخ می‌دهد؛ نبود
+  Producer برای شاخص غیرسفری و گزارش چک/HR/دفتر/SLA به عدد فرضی تبدیل نمی‌شود.
+- API اصلاح‌شده روی ۴۰۰۰ و Web Worktree یکپارچه روی ۳۰۰۰ فعال‌اند. مشاهدهٔ UI
+  احرازشده در این نشست قابل انجام نبود و باید در نشست کاربر تأیید شود.
+
+## DASHBOARD-REPORTING-LATEST-009 — نسخه یکپارچه Dashboard و Reports
+
+آخرین نسخه Reports تا `9d8d985f` و Dashboard تا `af6de805` روی شاخه مستقل
+`codex/pc-c-dashboard-reporting-latest` ترکیب شدند. route `/dashboard` به Workspace
+نهایی متصل است و `/reports` آخرین کاتالوگ و فرم‌های گزارش را حفظ می‌کند. ۵۶ تست،
+lint، typecheck و build تولیدی ۴۶ route پاس شدند. جزئیات در
+[DASHBOARD-REPORTING-LATEST-009](tasks/DASHBOARD-REPORTING-LATEST-009.md) ثبت شده است.
+
+## REPORTING-REMOVE-SCHEDULING — حذف قابلیت زمان‌بندی گزارش
+
+- تب و صفحه «زمان‌بندی‌ها» و دکمه/فرم «زمان‌بندی گزارش» از Workspace گزارش‌ها حذف
+  شدند؛ navigation، شمارنده‌ها و client وب نیز دیگر این قابلیت را ارائه نمی‌کنند.
+- Endpointها، DTO، قرارداد، policy، service و queryهای repository اختصاصی
+  زمان‌بندی از API Reports حذف شدند. جدول و Migration تاریخی برای جلوگیری از حذف
+  داده دست‌نخورده باقی مانده‌اند و دیگر از مسیر عمومی Reports قابل دسترسی نیستند.
+- بدون تغییر Dependency/Lockfile، Seed، داده عملیاتی، IAM یا ماژول‌های دیگر.
+- ۳۶ تست Web و ۲۲ تست API، lint، TypeScript و build هر دو سمت موفق‌اند؛ Web و API
+  روی پورت‌های ۳۰۰۰ و ۴۰۰۰ پاسخ ۲۰۰ و مسیر حذف‌شده زمان‌بندی پاسخ ۴۰۴ می‌دهد.
+
+## REPORTING-REMOVE-FAVORITES-UI — ساده‌سازی کاتالوگ و گزارش‌های من
+
+- آیکن ستاره و رفتار Favorite موقت از تمام کارت‌های کاتالوگ حذف شد.
+- کنترل‌های «همه گزارش‌های من» و «محبوب‌ها» نیز از صفحه گزارش‌های من حذف شدند؛
+  جدول اصلی گزارش‌های ذخیره‌شده مستقیماً نمایش داده می‌شود.
+- API، Schema/Migration، Seed/Data و مجوزها تغییر نکردند. ۱۴ تست هدفمند، lint و
+  TypeScript وب موفق‌اند و Frontend همین Worktree روی `localhost:3000` فعال است.
+- جزئیات در [گزارش واحد کار](tasks/REPORTING-REMOVE-FAVORITES-UI.md) ثبت شده است.
+
+## REPORTING-OPERATIONS-STAY-IN-VIEW — حفظ نمای عملیاتی هنگام اجرا
+
+- دکمه اجرا در «گزارش‌های من»، «اشتراک‌گذاری‌شده با من»، «اجراها» و
+  «زمان‌بندی‌ها» اکنون فرم پیکربندی و Filter Snapshot همان ردیف را بدون تغییر
+  نمای فعال باز می‌کند؛ زیرنمای محبوب‌ها نیز حفظ می‌شود.
+- Dialog پیکربندی در سطح Workspace رندر می‌شود، بنابراین جدول همان بخش پشت فرم
+  باقی می‌ماند و بستن فرم کاربر را به کاتالوگ منتقل نمی‌کند. API، داده، مجوز و
+  Schema/Migration تغییر نکرد.
+- 15 تست هدفمند، TypeScript، lint محدوده و بررسی Git موفق‌اند. Build پس از Compile
+  و TypeScript روی prerender دو مسیر نامرتبط `/_global-error` و
+  `/pricing-management` با Invariant داخلی Next.js متوقف می‌شود. جزئیات در
+  [گزارش واحد کار](tasks/REPORTING-OPERATIONS-STAY-IN-VIEW.md) ثبت شده است.
+
+## REPORTING-CATALOG-MANAGEMENT-DECISIONS — بازبینی تصمیم‌محور کاتالوگ
+
+- مدل واقعی CRM دوباره بررسی و پنج گزارش مدیریتی برای تعهد سفرهای پیش‌رو، سررسید
+  پرداخت مشتریان، گلوگاه زمان چرخه رزرواسیون، حذف مالی از فهرست مسافران و رشد سبد
+  مشتری با کدهای `RPT-032` تا `RPT-036` به کاتالوگ اضافه شد.
+- عنوان کارت‌های مبهم به پرسش‌های روشن کسب‌وکاری تبدیل و گزارش دسته «اطلاعات پایه»
+  حذف شد. گزارش‌های جدید تا انتشار Projection/Endpoint مالک دامنه صادقانه «در انتظار
+  منبع داده» هستند؛ Schema/Migration/Seed، داده، API و مجوز تغییر نکرد.
+- آزمون هدفمند 10/10، TypeScript و lint محدوده موفق‌اند. دو Suite تاریخی Reports
+  همچنان مشکل Parser JSX دارند و Build پس از Compile/TypeScript روی prerender دو
+  مسیر نامرتبط `/_global-error` و `/pricing-management` با Invariant داخلی Next.js
+  متوقف می‌شود. جزئیات در
+  [گزارش واحد کار](tasks/REPORTING-CATALOG-MANAGEMENT-DECISIONS.md) ثبت شده است.
+
+## REPORTING-OPERATIONS-CONFIG-LAUNCH — بازیابی فرم و فیلتر از عملیات
+
+- Deep Link دکمه «اجرا» در گزارش‌های من، اشتراک‌گذاری‌شده، اجراها و زمان‌بندی‌ها
+  اکنون Workspace را با گزارش انتخاب‌شده و Filter Snapshot همان ردیف remount می‌کند؛
+  در نتیجه فرم پیکربندی به‌جای کاتالوگ خالی باز می‌شود.
+- تاریخ، شرکت، ارز و فیلترهای غیرهویتی از URL و فیلترهای هویت‌دار از Session Storage
+  بازیابی می‌شوند. هیچ API، Schema/Migration/Seed، داده یا مجوزی تغییر نکرد.
+- ۳۶ تست هدفمند Reports، lint محدوده، typecheck وب و build تولیدی ۴۶ مسیر Web
+  موفق شدند.
+- جزئیات فنی در
+  [گزارش واحد کار](tasks/REPORTING-OPERATIONS-CONFIG-LAUNCH.md) ثبت شده است.
+
+## REPORTING-CATALOG-FEATURE-COVERAGE — توسعه کاتالوگ بر مبنای مدل واقعی
+
+- ساختار Prisma و فیچرهای فعلی Sales، B2B، Ticket Catalog، Reservations، Finance،
+  Customer Affairs، Customers، Documents، HR، Workbench و Master Data بررسی شد.
+- ۱۳ گزارش کاربردی جدید با کدهای پایدار `RPT-020` تا `RPT-032`، عنوان پرسشی،
+  خروجی رسمی، Grain، Dimensions، Measures، فیلتر، Drill-down و Permission به
+  کاتالوگ اضافه شدند؛ تعداد کل گزارش‌ها اکنون ۳۲ است.
+- چون Public Projection و Endpoint اجرایی این ۱۳ گزارش هنوز توسط مالکان دامنه
+  ارائه نشده، وضعیت آن‌ها صادقانه «در انتظار منبع داده» است. Schema، Migration،
+  Seed، API، داده عملیاتی و مجوزها تغییر نکردند.
+- ۲۲ تست هدفمند Reports، lint فایل‌های تغییرکرده، typecheck وب، build قراردادها و
+  build تولیدی ۴۶ مسیر Web موفق شدند.
+- جزئیات نگاشت مدل‌ها و مسیر اجرایی‌کردن در
+  [گزارش واحد کار](tasks/REPORTING-CATALOG-FEATURE-COVERAGE.md) ثبت شده است.
+
+## REPORTING-RESTORE-219-LATEST — بازیابی نسخه نهایی Reports روی مبنای جدید
+
+- آخرین `origin/develop` در `40d8f1f4` دریافت شد و UI اختصاصی Reports فقط از
+  snapshot نهایی `219091bf` بازیابی شد؛ تغییرات بعدی Reports وارد نسخه فعال نشدند.
+- تمام تغییرات یکپارچه همکاران در مبنای develop حفظ شده‌اند. فایل‌های مشترک، API،
+  Prisma schema، migration، seed و داده محلی تغییر نکردند.
+- typecheck و production build وب موفق، lint محدوده Reports بدون خطا و ۱۰ تست سالم
+  مدل/client موفق‌اند. دو suite تاریخی مبتنی بر JSX به‌علت ناسازگاری parser فعلی
+  Vitest با syntax همان snapshot collect نمی‌شوند و برای حفظ نسخه مرجع اصلاح نشدند.
+- Runtime وب این شاخه روی پورت 3000 و API موجود بدون restart روی پورت 4000 ارائه
+  می‌شود. جزئیات در `docs/tasks/REPORTING-RESTORE-219-LATEST.md` ثبت شده است.
+
 ## 2026-09-15 — RESERVATION-PURCHASE-LAYOUT-0915 — PC-A — IN REVIEW
 
 فرم خرید رزرواسیون برای هتل و ترانسفر کارگزار چیدمان جدا و واکنش‌گرا دارد. قیمت هتل به انتخاب کاربر به‌صورت هر شب یا جمع کل وارد می‌شود؛ حالت هر شب با تعداد شب‌های آخرین فرم ارسال‌شده به کارگزار به جمع خرید تبدیل و همان مبلغ به مالی ارسال می‌شود. خرید بلیط در این فرم درخواست نمی‌شود و شرط تحویل مدارک مالی فقط خریدهای هتل/ترانسفر همین مسیر را بررسی می‌کند. قیمت خرید بلیط هنگام تعریف آن در مسیر مستقل Ticket Catalog/Procurement با PR #282 وارد develop شده. ۴ تست هدفمند Web، ۶ تست هدفمند API، lint/typecheck و build تولیدی هر دو برنامه با ۴۶ مسیر وب موفق‌اند. بدون Schema/Migration، داده عملیاتی، Permission یا Dependency؛ گزارش بررسی در [RESERVATION-PURCHASE-LAYOUT-0915](tasks/RESERVATION-PURCHASE-LAYOUT-0915.md).
@@ -2534,6 +2659,47 @@ Runtime3397f2b/hr005-1ba72d053599fc53/PID11368 preserves96b6d2d.46-route build p
 Source f03d34c removes the requested home360 subtitle without leaving an empty paragraph. Subsection descriptions unchanged. Scoped lint/typecheck passed; combined runtime build coordinated.
 
 Combined runtime1bf840b/PID8604/hr005-ef61a0178f542c46 built by Workbench owner. Browser confirms360heading present and requestedsubtitle absent. NoAPI/data change. PR209.
+
+## 2026-09-13 — Reporting preview / export column parity (PC-C)
+
+The Web Reporting adapter now preserves all existing Travel projection measures in the preview response: order, passenger and ticket counts plus sales, purchase, gross-profit, refund and settlement-balance amounts. The configuration form's result table renders every measure that is actually present in the response, alongside the existing dimensions and currency, so it is no longer limited to the prior five-column summary. Existing server-backed sort headers remain available for the supported fields; no client-side fabricated values, API, schema, migration, seed or operational data were added. Nineteen focused Reports tests, scoped lint and Web TypeScript validation passed.
+
+## 2026-09-14 — Unified Dashboard + Reports local runtime (PC-C)
+
+پورت `3000` به‌صورت قراردادی به Worktree یکپارچهٔ `codex/pc-c-dashboard-reporting-latest` با commit پایهٔ `879b84fb` اختصاص یافت تا تغییر یک ماژول نسخهٔ ماژول دیگر را روی LocalHost بازنویسی نکند. Launcher در `scripts/start-unified-local-runtime.ps1` شاخه و فایل‌های هر دو ماژول را بررسی می‌کند، در صورت اشغال بودن پورت متوقف می‌شود و فقط با `-Restart` و بررسی PID سرور قبلی را جایگزین می‌کند. دستور `pnpm dev:local-unified` ثبت شد؛ کش Next در صورت نیاز خارج از پروژه آرشیو می‌شود. تغییرات Dashboard/Reports و اصلاحات build/login در همین Worktree نگه‌داری شده‌اند؛ API، Schema، Migration، Seed و دادهٔ نمونه تغییر نکرده‌اند. بررسی parser اسکریپت، `tsc --noEmit` و تست مدل Dashboard موفق است و Web روی پورت 3000 فعال است.
+
+## 2026-09-14 — Auditable KPI definition drawer (PC-C)
+
+عمل «جزئیات تعریف شاخص» در Dashboard اکنون به‌جای Card پایین صفحه، یک Drawer سمت راست و قابل‌دسترسی باز می‌کند. پنل برای هر KPI شناسه و نام فنی، نقش، تعریف کسب‌وکار، فرمول/قاعده محاسبه، lineage منابع، Grain، مبنای زمانی، سیاست ارز، مبنای مقایسه، حذف‌ها و محدودیت‌ها، Permission و تصمیم باز را نمایش می‌دهد و در صورت وجود نگاشت کاتالوگ، کاربر را به فرم پیکربندی گزارش مرتبط می‌برد. هیچ مقدار KPI، منبع، فرمول یا مجوزی ساخته نشده و رجیستری موجود منبع حقیقت باقی مانده است. ۱۳۸۸ تست Web، lint، typecheck و build تولیدی ۴۶ مسیر موفق‌اند؛ صفحه Dashboard در مرورگر داخلی به‌درستی به login هدایت شد و بررسی تعاملی Drawer نیازمند نشست احرازشده کاربر است.
+
+پیگیری UI: متن تکراری «جزئیات تعریف شاخص» از انتهای همه کارت‌های KPI حذف شد؛ کارت‌ها فقط با کلیک، پنل تعریف را باز می‌کنند. تست هدفمند Dashboard، lint محدوده و Web typecheck موفق‌اند.
+
+پیگیری فیلتر تاریخ Dashboard: DatePicker مشترک اکنون به‌شکل افزایشی از `calendarSystem` کنترل‌شده پشتیبانی می‌کند. «از تاریخ» و «تا تاریخ» یک state تقویم دارند؛ انتخاب شمسی یا میلادی در هر ورودی، ورودی دیگر را بدون تغییر مقدار ISO/Gregorian همگام می‌سازد. ۱۳ تست DatePicker/Dashboard و lint محدوده موفق‌اند. typecheck سراسری در این Worktree فقط به خطای هم‌زمان `reportingClient` تعریف‌نشده در `reports/model/client.spec.ts` متوقف است؛ تغییر مربوطه خارج از این واحد کار حفظ شده است.
+
+## 2026-09-14 — All-column report sorting and local demo data (PC-C)
+
+تمام ستون‌های قابل‌نمایش جدول نتیجه Reports، شامل ابعاد، ارز، تعداد سفارش/مسافر/بلیت و مبالغ فروش، خرید، سود ناخالص، استرداد و مانده تسویه، اکنون فلش مرتب‌سازی سرستون دارند و Sort پیش از Pagination در API اجرا می‌شود. ماژول Backend گزارش با endpointهای Preview، Workspace و CSV/XLSX/PDF به Runtime نهایی افزوده شد. ۴۸ fact واقعی‌نمای قبلی از fixture ignored خارج از Worktree، به‌صورت idempotent فقط در PostgreSQL محلی وارد شدند؛ فایل داده، PII واقعی و Seed عمومی وارد Git نشده‌اند. Prisma validate/generate، API و Web typecheck و مجموعه کامل تست‌ها موفق‌اند؛ Web روی 3000 و API روی 4000 از Worktree canonical فعال‌اند.
+# وضعیت 2026-09-14 — اشتراک‌گذاری مستقیم گزارش‌ها
+
+- دکمه اشتراک‌گذاری به فرم پیکربندی و عملیات «گزارش‌های من» اضافه شد؛ انتخاب گیرنده
+  جست‌وجوپذیر و چندانتخابی است و بازخورد موفق/خطا دارد.
+- Backend فقط به مالک دارای `reporting.share` اجازه تغییر grant می‌دهد و گیرندگان را
+  بر اساس فعال‌بودن، مجوز گزارش و در صورت لزوم شعبه مشترک محدود می‌کند.
+- جدول و دو Migration افزایشی `reporting_saved_report_shares` و `reporting.share` روی
+  PostgreSQL محلی اجرا و در تاریخچه Prisma ثبت شدند؛ Migrationهای pending سایر تیم‌ها
+  اعمال نشدند.
+- API/Web TypeScript، Lint، Build و ۳۷ تست هدفمند Reports موفق‌اند. Runtime یکپارچه
+  Web روی 3000 و API روی 4000 فعال و health هر دو برابر 200 است.
+# وضعیت دیتای دموی Dashboard و Reports — 2026-09-15
+
+- Dashboard اکنون از Projection عمومی و نسخه‌دار `reporting.dashboard.travel.v1`
+  استفاده می‌کند و KPIها و نمودارهای هر صفحه را از `reporting.travel.facts.v1`
+  دریافت می‌کند.
+- برای ارائهٔ محلی، ۱۸۰ رخداد سفر واقعی‌نما با پیشوند
+  `LOCAL_DEMO_DASHBOARD_REPORTING_` در PostgreSQL ساخته شده‌اند. این داده‌ها در
+  Git/Seed عمومی ثبت نشده‌اند و فقط با `pnpm reporting:demo:clear` حذف می‌شوند.
+- فقط کارت‌های سفر دارای Projection معتبر در محیط دمو Preview و Export دارند.
+  گزارش‌های حوزه‌های دیگر تا انتشار Producer اختصاصی خود Pending باقی می‌مانند.
 
 ## 2026-09-12 — قالب XLSX منیفست و فرم ساده فرودگاه (PC-B)
 

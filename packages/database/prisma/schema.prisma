@@ -124,6 +124,13 @@ model User {
   customerAffairsCorrectiveActions  CustomerAffairsCorrectiveAction[]
   customerAffairsCommands           CustomerAffairsCommand[]
   customerAffairsAuditEvents        CustomerAffairsAuditEvent[]
+  reportingFacts                    ReportingTravelFact[]             @relation("ReportingFactOwner")
+  reportingSavedReports             ReportingSavedReport[]            @relation("ReportingSavedReportOwner")
+  reportingSharesReceived           ReportingSavedReportShare[]       @relation("ReportingSavedReportShareRecipient")
+  reportingSharesCreated            ReportingSavedReportShare[]       @relation("ReportingSavedReportShareCreator")
+  reportingRuns                     ReportingRun[]                    @relation("ReportingRunActor")
+  reportingSchedules                ReportingSchedule[]               @relation("ReportingScheduleOwner")
+  reportingExports                  ReportingExportArtifact[]         @relation("ReportingExportCreator")
 
   @@map("iam_users")
 }
@@ -207,9 +214,210 @@ model Branch {
   customerAffairsLeads       CustomerAffairsLead[]
   customerAffairsTickets     CustomerAffairsTicket[]
   customerAffairsAuditEvents CustomerAffairsAuditEvent[]
+  reportingFacts             ReportingTravelFact[]
   financeSettlementAccounts  FinanceSettlementAccount[]
 
   @@map("branches")
+}
+
+enum ReportingSharingScope {
+  PERSONAL
+  TEAM
+}
+
+enum ReportingRunStatus {
+  QUEUED
+  RUNNING
+  SUCCEEDED
+  FAILED
+}
+
+enum ReportingScheduleStatus {
+  ACTIVE
+  PAUSED
+}
+
+enum ReportingExportFormat {
+  CSV
+  XLSX
+  PDF
+}
+
+enum ReportingExportStatus {
+  QUEUED
+  GENERATING
+  READY
+  FAILED
+  EXPIRED
+}
+
+/// Reporting-owned, approved public projection. Every row is exactly one
+/// travel order item and currency. Passenger/segment counts are measures and
+/// never join targets, so monetary values cannot be multiplied by either.
+model ReportingTravelFact {
+  id                String   @id @default(uuid()) @db.Uuid
+  sourceItemId      String   @db.VarChar(120)
+  sourceVersion     Int
+  orderNumber       String   @db.VarChar(80)
+  occurredAt        DateTime @db.Timestamptz(3)
+  legalEntityCode   String   @db.VarChar(80)
+  legalEntityName   String   @db.VarChar(160)
+  branchId          String?  @db.Uuid
+  branchName        String   @db.VarChar(160)
+  ownerUserId       String?  @db.Uuid
+  ownerName         String   @db.VarChar(160)
+  siteCode          String   @db.VarChar(80)
+  salesChannel      String   @db.VarChar(40)
+  serviceType       String   @db.VarChar(40)
+  customerType      String   @db.VarChar(40)
+  customerName      String   @db.VarChar(160)
+  agencyName        String?  @db.VarChar(160)
+  leadSource        String?  @db.VarChar(120)
+  providerName      String?  @db.VarChar(160)
+  airlineName       String?  @db.VarChar(160)
+  originCity        String?  @db.VarChar(120)
+  destinationCity   String?  @db.VarChar(120)
+  routeLabel        String?  @db.VarChar(260)
+  orderStatus       String   @db.VarChar(40)
+  reservationStatus String   @db.VarChar(40)
+  issueStatus       String   @db.VarChar(40)
+  paymentStatus     String   @db.VarChar(40)
+  pnrCode           String?  @db.VarChar(40)
+  passengerCount    Int      @default(0)
+  segmentCount      Int      @default(0)
+  ticketCount       Int      @default(0)
+  currencyCode      String   @db.Char(3)
+  salesAmount       Decimal  @db.Decimal(24, 10)
+  purchaseAmount    Decimal  @db.Decimal(24, 10)
+  commissionAmount  Decimal  @default(0) @db.Decimal(24, 10)
+  refundAmount      Decimal  @default(0) @db.Decimal(24, 10)
+  settledAmount     Decimal  @default(0) @db.Decimal(24, 10)
+  dataAsOf          DateTime @db.Timestamptz(3)
+  createdAt         DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt         DateTime @updatedAt @db.Timestamptz(3)
+  branch            Branch?  @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  owner             User?    @relation("ReportingFactOwner", fields: [ownerUserId], references: [id], onDelete: SetNull)
+
+  @@unique([sourceItemId, currencyCode])
+  @@index([occurredAt, legalEntityCode, currencyCode])
+  @@index([branchId, ownerUserId, occurredAt])
+  @@index([salesChannel, serviceType, occurredAt])
+  @@index([providerName, agencyName, occurredAt])
+  @@map("reporting_travel_facts")
+}
+
+model ReportingSavedReport {
+  id           String                      @id @default(uuid()) @db.Uuid
+  reportCode   String                      @db.VarChar(100)
+  name         String                      @db.VarChar(200)
+  ownerUserId  String                      @db.Uuid
+  sharingScope ReportingSharingScope       @default(PERSONAL)
+  isFavorite   Boolean                     @default(false)
+  filterState  Json
+  version      Int                         @default(1)
+  createdAt    DateTime                    @default(now()) @db.Timestamptz(3)
+  updatedAt    DateTime                    @updatedAt @db.Timestamptz(3)
+  owner        User                        @relation("ReportingSavedReportOwner", fields: [ownerUserId], references: [id], onDelete: Cascade)
+  runs         ReportingRun[]
+  schedules    ReportingSchedule[]
+  shares       ReportingSavedReportShare[]
+
+  @@index([ownerUserId, updatedAt])
+  @@index([sharingScope, updatedAt])
+  @@map("reporting_saved_reports")
+}
+
+/// Explicit recipient grants for a saved report. A recipient always executes
+/// the stored filters under their own current permissions and branch scope.
+model ReportingSavedReportShare {
+  id              String               @id @default(uuid()) @db.Uuid
+  savedReportId   String               @db.Uuid
+  recipientUserId String               @db.Uuid
+  sharedByUserId  String               @db.Uuid
+  createdAt       DateTime             @default(now()) @db.Timestamptz(3)
+  updatedAt       DateTime             @updatedAt @db.Timestamptz(3)
+  savedReport     ReportingSavedReport @relation(fields: [savedReportId], references: [id], onDelete: Cascade)
+  recipient       User                 @relation("ReportingSavedReportShareRecipient", fields: [recipientUserId], references: [id], onDelete: Cascade)
+  sharedBy        User                 @relation("ReportingSavedReportShareCreator", fields: [sharedByUserId], references: [id], onDelete: Restrict)
+
+  @@unique([savedReportId, recipientUserId])
+  @@index([recipientUserId, updatedAt])
+  @@index([sharedByUserId, updatedAt])
+  @@map("reporting_saved_report_shares")
+}
+
+model ReportingRun {
+  id             String                    @id @default(uuid()) @db.Uuid
+  reportCode     String                    @db.VarChar(100)
+  savedReportId  String?                   @db.Uuid
+  actorUserId    String                    @db.Uuid
+  status         ReportingRunStatus        @default(QUEUED)
+  filterSnapshot Json
+  viewName       String                    @db.VarChar(160)
+  viewVersion    Int
+  recordCount    Int?
+  durationMs     Int?
+  errorCode      String?                   @db.VarChar(100)
+  errorMessage   String?                   @db.VarChar(500)
+  startedAt      DateTime?                 @db.Timestamptz(3)
+  finishedAt     DateTime?                 @db.Timestamptz(3)
+  createdAt      DateTime                  @default(now()) @db.Timestamptz(3)
+  savedReport    ReportingSavedReport?     @relation(fields: [savedReportId], references: [id], onDelete: SetNull)
+  actor          User                      @relation("ReportingRunActor", fields: [actorUserId], references: [id], onDelete: Restrict)
+  exports        ReportingExportArtifact[]
+
+  @@index([actorUserId, createdAt])
+  @@index([reportCode, status, createdAt])
+  @@map("reporting_runs")
+}
+
+model ReportingSchedule {
+  id             String                  @id @default(uuid()) @db.Uuid
+  savedReportId  String                  @db.Uuid
+  ownerUserId    String                  @db.Uuid
+  name           String                  @db.VarChar(200)
+  frequency      String                  @db.VarChar(20)
+  runAtLocalTime String                  @db.VarChar(5)
+  timezone       String                  @default("Asia/Tehran") @db.VarChar(80)
+  recipients     Json
+  format         ReportingExportFormat
+  status         ReportingScheduleStatus @default(ACTIVE)
+  nextRunAt      DateTime?               @db.Timestamptz(3)
+  lastRunStatus  ReportingRunStatus?
+  lastRunAt      DateTime?               @db.Timestamptz(3)
+  createdAt      DateTime                @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime                @updatedAt @db.Timestamptz(3)
+  savedReport    ReportingSavedReport    @relation(fields: [savedReportId], references: [id], onDelete: Cascade)
+  owner          User                    @relation("ReportingScheduleOwner", fields: [ownerUserId], references: [id], onDelete: Cascade)
+
+  @@index([ownerUserId, status, nextRunAt])
+  @@map("reporting_schedules")
+}
+
+model ReportingExportArtifact {
+  id             String                @id @default(uuid()) @db.Uuid
+  runId          String                @db.Uuid
+  creatorUserId  String                @db.Uuid
+  reportCode     String                @db.VarChar(100)
+  reportName     String                @db.VarChar(200)
+  format         ReportingExportFormat
+  status         ReportingExportStatus @default(QUEUED)
+  fileName       String                @db.VarChar(260)
+  contentType    String                @db.VarChar(120)
+  objectKey      String?               @db.VarChar(500)
+  sizeBytes      Int?
+  checksumSha256 String?               @db.Char(64)
+  filterSnapshot Json
+  errorMessage   String?               @db.VarChar(500)
+  expiresAt      DateTime?             @db.Timestamptz(3)
+  createdAt      DateTime              @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime              @updatedAt @db.Timestamptz(3)
+  run            ReportingRun          @relation(fields: [runId], references: [id], onDelete: Cascade)
+  creator        User                  @relation("ReportingExportCreator", fields: [creatorUserId], references: [id], onDelete: Restrict)
+
+  @@index([creatorUserId, createdAt])
+  @@index([status, expiresAt])
+  @@map("reporting_export_artifacts")
 }
 
 model UserBranch {

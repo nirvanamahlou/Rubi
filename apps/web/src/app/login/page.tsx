@@ -59,7 +59,8 @@ function CompanyLogos({ compact = false }: { compact?: boolean }) {
 export default function LoginPage() {
   return (
     <main
-      className="relative grid min-h-screen place-items-center bg-[url('/brand/login-airline-b2.png')] bg-cover bg-center px-4 py-10"
+      className="relative grid min-h-screen place-items-center bg-cover bg-center px-4 py-10"
+      style={{ backgroundImage: "url('/brand/login-airline-b2.png')" }}
       id="main-content"
     >
       <div

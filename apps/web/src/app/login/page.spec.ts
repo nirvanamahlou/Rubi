@@ -11,7 +11,9 @@ describe('login background', () => {
   );
 
   it('uses the selected B2 aviation background with a readable overlay', () => {
-    expect(source).toContain("bg-[url('/brand/login-airline-b2.png')]");
+    expect(source).toContain(
+      'backgroundImage: "url(\'/brand/login-airline-b2.png\')"',
+    );
     expect(source).toContain('bg-cover bg-center');
     expect(source).toContain('aria-hidden="true"');
     expect(source).toContain('backdrop-blur-sm');
