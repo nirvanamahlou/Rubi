@@ -1242,6 +1242,50 @@ export class DocumentsService {
     };
   }
 
+  /** Public module boundary for active, non-sensitive XLSX manifest templates. */
+  async readManifestTemplateReference(
+    id: string,
+    actor: AuthenticatedActor,
+  ): Promise<DocumentFileDelivery> {
+    const row = await this.repository.findDetail(id, actor.branchIds);
+    if (!row || !row.currentVersion)
+      throw new NotFoundException('فایل قالب MANIFEST پیدا نشد.');
+    const allowed =
+      row.documentType.code === 'MANIFEST' &&
+      row.archiveStatus === 'ACTIVE' &&
+      row.confidentiality !== 'CONFIDENTIAL' &&
+      row.confidentiality !== 'RESTRICTED' &&
+      row.currentVersion.scanStatus === 'CLEAN' &&
+      row.currentVersion.detectedMimeType ===
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+    await this.repository.appendAudit({
+      documentId: row.id,
+      versionId: row.currentVersion.id,
+      actorUserId: actor.userId,
+      actorBranchId: row.branchId,
+      action: 'documents.manifest_template.read',
+      outcome: allowed ? 'SUCCESS' : 'FAILURE',
+      reason: allowed
+        ? 'RESERVATION_MANIFEST_EXPORT'
+        : 'TEMPLATE_POLICY_DENIED',
+      ipSummary: '',
+      userAgentSummary: '',
+    });
+    if (!allowed)
+      throw new ConflictException(
+        'فایل قالب MANIFEST باید فعال، غیرمحرمانه، XLSX و اسکن‌شده باشد.',
+      );
+    return {
+      stream: await this.storage.openQuarantined(
+        row.currentVersion.storageObjectKey,
+        Number(row.currentVersion.sizeBytes),
+      ),
+      fileName: row.currentVersion.safeDownloadName,
+      mimeType: row.currentVersion.detectedMimeType,
+      sizeBytes: Number(row.currentVersion.sizeBytes),
+    };
+  }
+
   async preview(
     id: string,
     actor: AuthenticatedActor,

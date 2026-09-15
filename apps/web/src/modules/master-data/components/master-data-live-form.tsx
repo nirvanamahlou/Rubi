@@ -43,6 +43,7 @@ import { MasterDataLogoUpload } from './master-data-logo-upload';
 import { MasterDataMealServiceForm } from './master-data-meal-service-form';
 import { MasterDataManifestTemplateForm } from './master-data-manifest-template-form';
 import { MasterDataNumberInput } from './master-data-number-input';
+import { MasterDataAirlineBaggageEditor } from './master-data-airline-baggage-editor';
 import {
   MasterDataReferenceSelector,
   OrganizationRoleSelector,
@@ -409,6 +410,13 @@ function GenericMasterDataLiveForm({
                 </FormField>
               );
             })}
+            {definition.key === 'airlines' ? (
+              <MasterDataAirlineBaggageEditor
+                {...(record ? { airline: record } : {})}
+                disabled={saving}
+                readOnly={readonly}
+              />
+            ) : null}
             {errors.form ? (
               <Alert
                 description={errors.form}

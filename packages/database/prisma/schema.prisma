@@ -3688,6 +3688,28 @@ model TicketOfferCapacityAllocation {
   @@index([contractId, status])
 }
 
+model ProcurementTicketPurchaseRequest {
+  id                      String   @id @default(uuid()) @db.Uuid
+  version                 Int      @default(1)
+  branchId                String   @db.Uuid
+  catalogProductReference String   @db.VarChar(160)
+  title                   String   @db.VarChar(160)
+  serviceDate             DateTime @db.Date
+  supplierDisplaySnapshot String?  @db.VarChar(160)
+  amount                  Decimal  @db.Decimal(20, 6)
+  currencyCode            String   @db.VarChar(3)
+  status                  String   @default("PENDING") @db.VarChar(20)
+  createdByUserId         String   @db.Uuid
+  createKey               String   @db.VarChar(160)
+  fingerprint             String   @db.VarChar(64)
+  createdAt               DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt               DateTime @updatedAt @db.Timestamptz(3)
+
+  @@unique([createdByUserId, createKey])
+  @@unique([branchId, catalogProductReference])
+  @@index([branchId, status, serviceDate])
+}
+
 model ReservationIntake {
   salesOwnerUserId    String?                          @db.Uuid
   salesOwner          User?                            @relation("TravelSalesOwner", fields: [salesOwnerUserId], references: [id], onDelete: Restrict)

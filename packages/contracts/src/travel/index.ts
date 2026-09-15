@@ -32,6 +32,26 @@ export interface TicketOfferSearchV1 {
   page?: number;
 }
 
+export interface TicketCatalogPurchaseCreateV1 {
+  version: 1;
+  catalogProductReference: string;
+  title: string;
+  serviceDate: string;
+  supplierDisplaySnapshot: string | null;
+  amount: string;
+  currencyCode: string;
+}
+
+export interface TicketCatalogPurchaseV1 extends TicketCatalogPurchaseCreateV1 {
+  id: string;
+  branchId: string;
+  requestVersion: number;
+  status: 'PENDING' | 'PAID' | 'CANCELLED';
+  createdByUserId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface ReservationArrangementV1 {
   version: number;
   roomCount: number;
@@ -68,6 +88,37 @@ export interface ReservationIntakeV1 {
   receivedAt: string;
   snapshot: SalesReservationRequestV1;
   arrangement: ReservationArrangementV1 | null;
+}
+
+export interface ReservationManifestTicketTemplateV1 {
+  id: string;
+  name: string;
+  versionNumber: number;
+}
+
+export interface ReservationManifestTicketCardV1 {
+  offerId: string;
+  direction: 'OUTBOUND' | 'RETURN';
+  carrierName: string;
+  serviceNumber: string;
+  originName: string;
+  destinationName: string;
+  departureAt: string;
+  arrivalAt: string;
+  contractCount: number;
+  passengerCount: number;
+  template: ReservationManifestTicketTemplateV1 | null;
+  unavailableReason: string | null;
+}
+
+export interface ReservationManifestTicketListV1 {
+  data: readonly ReservationManifestTicketCardV1[];
+}
+
+export interface ReservationManifestTicketExportInputV1 {
+  fromDate: string;
+  toDate: string;
+  includePreviouslyExported?: boolean;
 }
 
 export interface ReservationServicePurchaseV1 {

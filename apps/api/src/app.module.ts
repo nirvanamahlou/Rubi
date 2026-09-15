@@ -17,6 +17,7 @@ import { MasterDataModule } from './master-data/master-data.module';
 import { MasterDataLogoModule } from './master-data/master-data-logo.module';
 import { MessagingModule } from './messaging/messaging.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { ProcurementModule } from './procurement/procurement.module';
 import { SalesModule } from './sales/sales.module';
 import { WorkbenchFeedbackModule } from './workbench-feedback/workbench-feedback.module';
 import { WorkbenchModule } from './workbench/workbench.module';
@@ -45,6 +46,7 @@ import { WorkbenchModule } from './workbench/workbench.module';
     LegalEntitiesModule,
     SalesModule,
     NotificationsModule,
+    ProcurementModule,
     HrModule,
     WorkbenchFeedbackModule,
     WorkbenchModule,

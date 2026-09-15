@@ -3,6 +3,20 @@
 ## 2026-09-14 — RESERVATION-TICKET-PDF-PASSENGER-0914 — PC-A — READY_FOR_REVIEW
 
 نام مسافر در درخواست‌های تازه Sales داخل Snapshot نسخه‌دار Reservations حفظ می‌شود. برای قراردادهای قدیمی مانند `SC-2026-000003` که نام در Snapshot جا افتاده، پنجره بلیط و PDF نام را از پرونده اصلی مسافر می‌خوانند، بدون بازنویسی Snapshot یا سند تاریخی. موتور PDF مسیر Chrome یا Edge و فونت نازنین محلی را خودکار پیدا می‌کند و نبود فونت سفارشی مانع صدور نیست. ۴ تست API، ۱۸ تست Web، lint/typecheck/build API/Web و ساخت واقعی PDF با Chrome نصب‌شده موفق‌اند. جزئیات در [RESERVATION-TICKET-PDF-PASSENGER-0914](tasks/RESERVATION-TICKET-PDF-PASSENGER-0914.md) ثبت شده است.
+## 2026-09-15 — RESERVATION-PURCHASE-LAYOUT-0915 — PC-A — IN REVIEW
+
+فرم خرید رزرواسیون برای هتل و ترانسفر کارگزار چیدمان جدا و واکنش‌گرا دارد. قیمت هتل به انتخاب کاربر به‌صورت هر شب یا جمع کل وارد می‌شود؛ حالت هر شب با تعداد شب‌های آخرین فرم ارسال‌شده به کارگزار به جمع خرید تبدیل و همان مبلغ به مالی ارسال می‌شود. خرید بلیط در این فرم درخواست نمی‌شود و شرط تحویل مدارک مالی فقط خریدهای هتل/ترانسفر همین مسیر را بررسی می‌کند. قیمت خرید بلیط هنگام تعریف آن در مسیر مستقل Ticket Catalog/Procurement با PR #282 وارد develop شده. ۴ تست هدفمند Web، ۶ تست هدفمند API، lint/typecheck و build تولیدی هر دو برنامه با ۴۶ مسیر وب موفق‌اند. بدون Schema/Migration، داده عملیاتی، Permission یا Dependency؛ گزارش بررسی در [RESERVATION-PURCHASE-LAYOUT-0915](tasks/RESERVATION-PURCHASE-LAYOUT-0915.md).
+
+## 2026-09-14 — TICKET-REPEAT-PURCHASE-0914 — آماده بازبینی
+
+فرم تعریف بلیط اکنون «تاریخ اولین بلیط» را مستقل از ساعت حرکت می‌گیرد. تکرار هفتگی یا ماهانه بر پایه همین تاریخ انجام می‌شود و بلیط قدیمی بدون ساعت دیگر با خطای «زمان حرکت بلیط مبدأ معتبر نیست» متوقف نمی‌شود. برای رفت‌وبرگشت، تاریخ اولین اجرای هر جهت جداگانه قابل انتخاب است.
+
+قیمت خرید مثبت تعریف بلیط با مبلغ Decimal، ارز، تأمین‌کننده و تاریخ خدمت در مالکیت Procurement ثبت می‌شود، تا پیش از رسیدگی مالی قابل اصلاح است و در کارتابل Finance نمایش داده می‌شود. Migration افزایشی است و داده قدیمی را تغییر نمی‌دهد. ۱۹ تست Web، ۸ تست API، lint، typecheck و build API/Web و اعتبارسنجی Prisma موفق‌اند. جزئیات در [TICKET-REPEAT-PURCHASE-0914](tasks/TICKET-REPEAT-PURCHASE-0914.md) ثبت شده است.
+
+## MASTER-012-AIRLINE-BAGGAGE-FORM — PC-B — READY_FOR_REVIEW
+
+- پیگیری 2026-09-15: عنوان فارسی قواعد بار حذف و نام داخلی سازگار با Backend خودکار و انگلیسی شد؛ تست فرم و Fixture هم به‌روز شدند.
+- در فرم ایرلاین مدیریت مستقیم قواعد بار برای بزرگسال/کودک/نوزاد، کلاس پروازی و دامنه مسیر اضافه و زیرناوبری قواعد بار حذف شد. مدل و FKهای موجود، API و مصرف‌کنندگان بدون تغییر ماندند. ۲۴ تست هدفمند، lint، typecheck و build ۴۶مسیره Web موفق‌اند. جزئیات در `docs/tasks/MASTER-012-AIRLINE-BAGGAGE-FORM.md`.
 
 ## 2026-09-14 — PROFILE-PLACEHOLDER-AVATAR-001 — PC-B — VERIFIED
 
@@ -2549,3 +2563,9 @@ Contracts/API/Web و build تولیدی API/Web موفق‌اند؛ هیچ Migra
 ## LOCAL-ALL-SECTIONS-3100-0913 — ACTIVE
 
 Combined develop, latest published Customer Affairs forms/reports, Workbench performance and Finance inbox are active at Web3100/API4191. Code/launcher commit 2fd10a9f, Web build LYH1PTQ_i1saQILyrG74V. 98 targeted tests, scoped lint, sequential API typecheck, full build and final HTTP smoke passed. Existing database and storage retained; no migration/seed/role assignment. Port4190 was replaced because Fetch restricts it. See tasks/LOCAL-ALL-SECTIONS-3100-0913.md.
+
+## 2026-09-14 — کارت بلیط و قالب مقصد در MANIFEST (PC-A)
+
+در بخش MANIFEST، جست‌وجوی بازه همهٔ بلیط‌های رفت و برگشت موجود در آخرین نسخهٔ قراردادهای رزواسیون را به شکل کارت نمایش می‌دهد. هر کارت ایرلاین، شماره پرواز، مسیر، زمان، تعداد قرارداد و مسافر و وضعیت قالب را دارد. قالب فعال XLSX با ایرلاین، مقصد و تاریخ اعتبار تطبیق داده می‌شود؛ کارت بدون قالب دلیل عدم امکان خروجی را نشان می‌دهد و غیرفعال است. خروجی کارت پشتیبانی‌شده فقط مسافران همان بلیط را در فایل مرجع ذخیره‌شده در Documents قرار می‌دهد و شرط تأیید مالی و انتخاب «فقط جدید/همه» حفظ شده است.
+
+Reservations از API عمومی Master Data برای تطبیق قالب و از مرز عمومی و auditشدهٔ Documents برای خواندن فایل CLEAN استفاده می‌کند. هشت تست هدفمند API و یک تست Web، lint محدوده، typecheck Contracts/API/Web و build تولیدی API/Web موفق‌اند. Migration، Seed، تغییر دادهٔ مسافر، dependency یا جابه‌جایی localhost انجام نشده است.
