@@ -2938,7 +2938,7 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
   HR/IAM/Master Data، ثبت ماژول در AppModule، قرارداد additive Procurement،
   permission catalog/seed، Prisma schema، چهار migration منتشرشدهٔ PROCUREMENT-001
   و migration افزایشی اتصال درخواست‌کننده به کارمند HR،
-  route خرید، فایل public ماکاپ قدیمی فقط برای گیت قالب‌بندی، تست مرکزی وضعیت routeها و مستندات همین واحد. Migration Owner و قفل فایل‌های مرکزی این محدوده
+  route خرید، فایل public ماکاپ قدیمی و دارایی‌های فونت وزیرمتن آن، تست مرکزی وضعیت routeها و مستندات همین واحد. Migration Owner و قفل فایل‌های مرکزی این محدوده
   نزد PC-B/PROCUREMENT-LIVE-INTEGRATION-0915 هستند؛ Dependency/Lockfile تغییر نمی‌کند.
 - Prisma deploy در پایگاه محلی، migration افزایشی و منتشرشدهٔ
   `20260913163000_finance_inbox_actions` متعلق به PC-A را نیز به‌ترتیب پس از چهار
@@ -2970,6 +2970,7 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
   ۴۶مسیره نیز پاس شدند.
   تب مرورگر بدون نشست به login
   هدایت می‌شود؛ grant فردی و smoke داخل حساب پس از معرفی حساب‌های مجاز پیگیری می‌شود.
+- پیگیری فونت مالک: صفحهٔ عملیاتی خرید فونت سراسری `font-sans` را صریحاً به ارث می‌برد. فایل public نمای قدیمی از مسیر `/fonts/vazirmatn-arabic-wght-normal.woff2` استفاده می‌کرد اما آن دارایی وجود نداشت و به Tahoma برمی‌گشت؛ فایل‌های فارسی و لاتین وزیرمتن از همان dependency موجود همراه مجوز OFL در public قرار گرفتند. بدون تغییر Dependency/Lockfile، API، Schema یا داده.
 
 ## TICKET-REPEAT-PURCHASE-0914 — PC-A — READY_FOR_REVIEW
 

@@ -126,7 +126,7 @@ export function ProcurementWorkspace() {
     retry: false,
   });
   return (
-    <section dir="rtl" className="space-y-6">
+    <section dir="rtl" className="space-y-6 font-sans">
       <PageHeader
         eyebrow="عملیات شرکت"
         title="خرید و تأمین"
