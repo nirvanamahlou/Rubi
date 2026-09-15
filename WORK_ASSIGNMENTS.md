@@ -6,6 +6,7 @@
 - شاخه مستقل `codex/pc-c-cash-position-0915` از نسخهٔ یکپارچهٔ Dashboard/Reports `9b44f6c1`؛ محدوده: metadata کاتالوگ Reporting در API/Web، ثبت تعریف شاخص‌های غیرمتصل Dashboard، تست و مستند امکان‌سنجی. Worktree اجرایی مشترک localhost:3000 دست‌نخورده می‌ماند.
 - جداول و قراردادهای مالک Finance/Reservations، Prisma/Migration، دادهٔ محلی، فایل‌های اجرایی داشبورد و مسیرهای دیگر خارج از محدوده‌اند. نتیجهٔ عددی تا انتشار Projection مالی مصوب و تکمیل جداول موجود در PostgreSQL بسته می‌ماند.
 - گزارش `RPT-037` در کاتالوگ API/Web به‌صورت pending ثبت شد؛ تعریف KPI، وابستگی‌های داده، محاسبه امن و فهرست فیچرهای لازم در `docs/tasks/REPORTING-CASH-POSITION-0915.md` قرار گرفت. تست‌های کاتالوگ API ۲/۲ و Web ۱۰/۱۰، lint دو فایل هر برنامه، TypeScript و build API/Web موفق‌اند. هیچ تغییر داده/دیپلوی یا جابه‌جایی worktree اجرایی انجام نشد.
+- فعال‌سازی localhost بنا بر درخواست بعدی مالک: commit `d73e9ffd` به‌صورت cherry-pick سازگار با تغییرات محلی دیگر وارد شاخهٔ اجرایی مشترک شد (`ba7eddc8`)؛ Web 3000 و API 4000 از همین Worktree بالا آمدند و هر دو پاسخ HTTP 200 دادند. producer مالی همچنان بسته است؛ داده‌های نمونه و فایل‌های تغییرمحلی دیگر حفظ شدند.
 
 ## REPORTING-FORM-ACTION-HISTORY-0915 — PC-C — READY_FOR_REVIEW
 
