@@ -2909,7 +2909,7 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
   `unified-Tez666Z13yqJ-047yCo9T`، API4191 health۲۰۰ و فایل خرید پاسخ۲۰۰ فعال‌اند؛
   قفل Central Navigation آزاد شد.
 
-## PROCUREMENT-LIVE-INTEGRATION-0915 — PC-B — IN_PROGRESS
+## PROCUREMENT-LIVE-INTEGRATION-0915 — PC-B — IMPLEMENTED / REVIEW
 
 - درخواست مالک: کمبودهای نسخهٔ ۳۱۰۰ خرید و تأمین برطرف و جریان عملیاتی موجود
   PROCUREMENT-001 در نسخهٔ یکپارچه فعال شود؛ کنترل‌های پاسخ مالی و تأیید آزمایشی حذف شوند.
@@ -2937,3 +2937,8 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
   افزایشی، دسترسی ثبت روی `staff` و نقش‌های مستقل `procurement_approver` و
   `procurement_buyer` ثبت شده‌اند. دو نقش تجاری بدون انتساب فردی می‌مانند تا
   مالک حساب‌های مجاز را مشخص کند؛ کارمندان HR موجود هنوز پیوند IAM ندارند.
+- lint/typecheck API، Web، Database و Contracts و build تولیدی API/Web با ۴۶
+  مسیر موفق‌اند؛ ۴۸ تست قواعد، ۳۰ تست عملیاتی روی پایگاه اختصاصی و ۹ تست Web
+  هدفمند پاس شدند. نسخهٔ یکپارچه روی Gateway3100/Web3110/API4191 با commit
+  `f87ac084` فعال و health API/Web برابر ۲۰۰ است. تب مرورگر بدون نشست به login
+  هدایت می‌شود؛ grant فردی و smoke داخل حساب پس از معرفی حساب‌های مجاز پیگیری می‌شود.

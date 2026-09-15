@@ -1,6 +1,6 @@
 # وضعیت پروژه
 
-## 2026-09-15 — PROCUREMENT-LIVE-INTEGRATION-0915 — PC-B — IMPLEMENTED / VERIFYING
+## 2026-09-15 — PROCUREMENT-LIVE-INTEGRATION-0915 — PC-B — ACTIVE
 
 نسخهٔ خرید `/purchases` از iframe نمایشی به workspace عملیاتی API منتقل شد و
 کنار میزکار، منابع انسانی و سایر مسیرهای نسخهٔ یکپارچه باقی می‌ماند. منوی خرید
@@ -11,8 +11,13 @@
 از مهاجرت و پس از پنج migration موجود است. ۲۶ مجوز خرید و نقش‌های مشخص تأیید و
 سفارش به‌صورت افزایشی ثبت شدند؛ این نقش‌ها هنوز به حسابی واگذار نشده‌اند. اتصال
 Finance/Reservations و policy تأیید تا قرارداد بین‌مالک‌ها صریحاً غیرفعال‌اند.
-Typecheck و تست‌های هدفمند API/Web/Contracts موفق‌اند؛ build و smoke runtime
-۳۱۰۰ در حال تکمیل است.
+Typecheck و lint محدوده، ۴۸ تست قواعد دامنه، ۳۰ تست عملیاتی API روی پایگاه
+اختصاصی، ۹ تست فرم/API/مدل Web و build تولیدی API/Web با ۴۶ مسیر موفق‌اند.
+Gateway3100/Web3110/API4191 از commit `f87ac084` با build
+`unified-q2LvkIfqv1WuuAhl9umUx` فعال‌اند؛ runtime Web و health API هر دو ۲۰۰،
+مسیرهای خرید/میزکار/HR به صفحهٔ ورود معتبر ۳۰۷ می‌دهند و endpoint خرید بدون
+نشست ۴۰۱ می‌دهد. تب مرورگر فعلی صفحهٔ ورود است؛ نمایش داخل حساب تا ورود کاربر و
+انتساب نقش ثبت به حساب‌های کارکنان قابل بررسی نیست.
 
 ## 2026-09-14 — PROFILE-PLACEHOLDER-AVATAR-001 — PC-B — VERIFIED
 
