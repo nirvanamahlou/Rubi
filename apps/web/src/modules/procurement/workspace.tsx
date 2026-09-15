@@ -380,8 +380,7 @@ function WorkspaceState({
                   >
                     خرید و تأمین
                   </button>
-                )}{' '}
-                / {groups[group]}
+                )}
               </p>
               <h1 className="text-2xl font-black tracking-tight text-[#113975] sm:text-3xl">
                 {groups[group]}
