@@ -47,7 +47,8 @@ export async function registerTicketPurchase(
       message?: string;
     } | null;
     throw new Error(
-      payload?.message || 'ثبت درخواست قیمت خرید بلیط در کارتابل مالی ناموفق بود.',
+      payload?.message ||
+        'ثبت درخواست قیمت خرید بلیط در کارتابل مالی ناموفق بود.',
     );
   }
   return response.json() as Promise<TicketCatalogPurchaseV1>;

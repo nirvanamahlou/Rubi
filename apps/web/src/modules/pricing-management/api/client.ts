@@ -109,13 +109,40 @@ export const packagePricingApi = {
       `/tour-costs/${encodeURIComponent(tourDepartureId)}`,
       activeSession,
     ),
-  tourDraft: (tourId: string, batchId: string, activeSession: LoginResponse): Promise<PackageTourDraftV1 | null> =>
-    request(`/tour-drafts?tourDepartureId=${encodeURIComponent(tourId)}&batchId=${encodeURIComponent(batchId)}`, activeSession),
-  saveTourDraft: (input: PackageTourDraftSaveV1, activeSession: LoginResponse): Promise<PackageTourDraftV1> =>
-    request('/tour-drafts', activeSession, { method: 'POST', body: JSON.stringify(input) }),
-  tourPublications: (tourId: string, batchId: string, activeSession: LoginResponse): Promise<readonly PackageTourPublicationV1[]> =>
-    request(`/tour-drafts/publications?tourDepartureId=${encodeURIComponent(tourId)}&batchId=${encodeURIComponent(batchId)}`, activeSession),
-  publishTourDraft: (draftId: string, input: PackageTourPublishV1, activeSession: LoginResponse): Promise<PackageTourPublicationV1> =>
-    request(`/tour-drafts/${encodeURIComponent(draftId)}/publish`, activeSession,
-      { method: 'POST', body: JSON.stringify(input) }),
+  tourDraft: (
+    tourId: string,
+    batchId: string,
+    activeSession: LoginResponse,
+  ): Promise<PackageTourDraftV1 | null> =>
+    request(
+      `/tour-drafts?tourDepartureId=${encodeURIComponent(tourId)}&batchId=${encodeURIComponent(batchId)}`,
+      activeSession,
+    ),
+  saveTourDraft: (
+    input: PackageTourDraftSaveV1,
+    activeSession: LoginResponse,
+  ): Promise<PackageTourDraftV1> =>
+    request('/tour-drafts', activeSession, {
+      method: 'POST',
+      body: JSON.stringify(input),
+    }),
+  tourPublications: (
+    tourId: string,
+    batchId: string,
+    activeSession: LoginResponse,
+  ): Promise<readonly PackageTourPublicationV1[]> =>
+    request(
+      `/tour-drafts/publications?tourDepartureId=${encodeURIComponent(tourId)}&batchId=${encodeURIComponent(batchId)}`,
+      activeSession,
+    ),
+  publishTourDraft: (
+    draftId: string,
+    input: PackageTourPublishV1,
+    activeSession: LoginResponse,
+  ): Promise<PackageTourPublicationV1> =>
+    request(
+      `/tour-drafts/${encodeURIComponent(draftId)}/publish`,
+      activeSession,
+      { method: 'POST', body: JSON.stringify(input) },
+    ),
 };

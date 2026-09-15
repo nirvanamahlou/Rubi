@@ -20,32 +20,33 @@ export class HotelPurchaseRatesPublicService {
     if (!hotelIds.length) return [];
     const start = new Date(`${startsOn}T00:00:00.000Z`);
     const end = new Date(`${endsOn}T00:00:00.000Z`);
-    const batches = await this.database.client.reservationHotelRateBatch.findMany({
-      where: {
-        branchId,
-        rows: { some: { hotelId: { in: [...hotelIds] } } },
-        OR: [
-          {
-            method: 'CHECK_IN',
-            checkIn: { lte: start },
-            checkOut: { gt: start },
-          },
-          {
-            method: 'STAY',
-            checkIn: { lte: start },
-            checkOut: { gte: end },
-          },
-        ],
-      },
-      include: {
-        rows: {
-          where: { hotelId: { in: [...hotelIds] } },
-          orderBy: [{ hotelName: 'asc' }, { brokerName: 'asc' }],
+    const batches =
+      await this.database.client.reservationHotelRateBatch.findMany({
+        where: {
+          branchId,
+          rows: { some: { hotelId: { in: [...hotelIds] } } },
+          OR: [
+            {
+              method: 'CHECK_IN',
+              checkIn: { lte: start },
+              checkOut: { gt: start },
+            },
+            {
+              method: 'STAY',
+              checkIn: { lte: start },
+              checkOut: { gte: end },
+            },
+          ],
         },
-      },
-      orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
-      take: 100,
-    });
+        include: {
+          rows: {
+            where: { hotelId: { in: [...hotelIds] } },
+            orderBy: [{ hotelName: 'asc' }, { brokerName: 'asc' }],
+          },
+        },
+        orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
+        take: 100,
+      });
     return batches.map((batch) => ({
       id: batch.id,
       version: 1,

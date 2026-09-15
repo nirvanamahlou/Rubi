@@ -177,13 +177,15 @@ export class PackagePricingService {
       tourDepartureId,
       actor.branchIds,
     );
-    const offerIds = [tour.outboundOfferId, tour.returnOfferId].filter((id): id is string => !!id);
+    const offerIds = [tour.outboundOfferId, tour.returnOfferId].filter(
+      (id): id is string => !!id,
+    );
     const [purchaseBatches, flightPurchaseCosts] = await Promise.all([
       this.hotelPurchases.forTour(
-      tour.branchId,
-      tour.package.hotelIds,
-      tour.startsOn,
-      tour.endsOn,
+        tour.branchId,
+        tour.package.hotelIds,
+        tour.startsOn,
+        tour.endsOn,
       ),
       this.flightCosts.paidCostsForOffers(offerIds, tour.branchId),
     ]);
@@ -197,9 +199,17 @@ export class PackagePricingService {
       nights,
       purchaseBatches,
       flightPurchaseCosts,
-      missingFlightOfferIds: offerIds.filter((id) =>
-        !flightPurchaseCosts.some((cost) => cost.offerId === id &&
-          cost.offerVersion === (id === tour.outboundOfferId ? tour.outbound.version : tour.returning?.version))),
+      missingFlightOfferIds: offerIds.filter(
+        (id) =>
+          !flightPurchaseCosts.some(
+            (cost) =>
+              cost.offerId === id &&
+              cost.offerVersion ===
+                (id === tour.outboundOfferId
+                  ? tour.outbound.version
+                  : tour.returning?.version),
+          ),
+      ),
       missingHotelIds: tour.package.hotelIds.filter(
         (hotelId) =>
           !purchaseBatches.some((batch) =>

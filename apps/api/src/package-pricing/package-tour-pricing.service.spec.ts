@@ -97,14 +97,12 @@ describe('PackageTourPricingService', () => {
     const database = {
       client: {
         packagePricingTourDraft: {
-          findFirst: vi
-            .fn()
-            .mockResolvedValue({
-              id: 'draft-1',
-              version: 1,
-              updatedByUserId: 'sales-user',
-              adjustments: [],
-            }),
+          findFirst: vi.fn().mockResolvedValue({
+            id: 'draft-1',
+            version: 1,
+            updatedByUserId: 'sales-user',
+            adjustments: [],
+          }),
         },
       },
     } as unknown as DatabaseService;

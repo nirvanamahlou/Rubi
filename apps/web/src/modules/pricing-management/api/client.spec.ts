@@ -24,11 +24,11 @@ afterEach(() => vi.unstubAllGlobals());
 
 describe('package pricing API client', () => {
   it('reads the tour and purchase grid only through pricing endpoints', async () => {
-    const fetch = vi.fn().mockImplementation(() =>
-      Promise.resolve(
-        new Response(JSON.stringify({ version: 1, data: [] })),
-      ),
-    );
+    const fetch = vi
+      .fn()
+      .mockImplementation(() =>
+        Promise.resolve(new Response(JSON.stringify({ version: 1, data: [] }))),
+      );
     vi.stubGlobal('fetch', fetch);
     await packagePricingApi.tours(activeSession);
     await packagePricingApi.tourCosts('tour-1', activeSession);
@@ -39,17 +39,15 @@ describe('package pricing API client', () => {
   });
 
   it('loads only the server-backed package endpoint with filters', async () => {
-    const fetch = vi
-      .fn()
-      .mockResolvedValue(
-        new Response(
-          JSON.stringify({
-            version: 1,
-            data: [],
-            meta: { page: 1, pageSize: 20, total: 0 },
-          }),
-        ),
-      );
+    const fetch = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          version: 1,
+          data: [],
+          meta: { page: 1, pageSize: 20, total: 0 },
+        }),
+      ),
+    );
     vi.stubGlobal('fetch', fetch);
     await packagePricingApi.list(
       { branchId: 'branch-1', search: 'IST', page: 1, pageSize: 20 },

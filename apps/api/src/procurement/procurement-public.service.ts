@@ -63,10 +63,11 @@ export class ProcurementPublicService {
     const serviceDate = value.serviceDate
       ? new Date(value.serviceDate + 'T00:00:00.000Z')
       : null;
-    if (serviceDate && (
-      Number.isNaN(serviceDate.getTime()) ||
-      serviceDate.toISOString().slice(0, 10) !== value.serviceDate
-    ))
+    if (
+      serviceDate &&
+      (Number.isNaN(serviceDate.getTime()) ||
+        serviceDate.toISOString().slice(0, 10) !== value.serviceDate)
+    )
       throw new BadRequestException('تاریخ اولین بلیط معتبر نیست.');
     const fingerprint = createHash('sha256')
       .update(JSON.stringify({ branchId, ...value }))
@@ -83,7 +84,9 @@ export class ProcurementPublicService {
         });
       if (existing?.fingerprint === fingerprint) return existing;
       if (existing?.offerId)
-        throw new ConflictException('درخواست بلیت تور از تعریف پرواز مدیریت می‌شود.');
+        throw new ConflictException(
+          'درخواست بلیت تور از تعریف پرواز مدیریت می‌شود.',
+        );
       if (existing && existing.status !== 'PENDING')
         throw new ConflictException(
           'قیمت خرید پس از رسیدگی مالی قابل ویرایش نیست.',
@@ -96,7 +99,9 @@ export class ProcurementPublicService {
             title: value.title,
             serviceDate,
             supplierDisplaySnapshot: value.supplierDisplaySnapshot,
-            amount: value.amount ? new Prisma.Decimal(value.amount) : existing.amount,
+            amount: value.amount
+              ? new Prisma.Decimal(value.amount)
+              : existing.amount,
             currencyCode: value.currencyCode ?? existing.currencyCode,
             createKey: key,
             fingerprint,
@@ -131,37 +136,47 @@ export class ProcurementPublicService {
     createdByUserId: string;
   }): Promise<TicketCatalogPurchaseV1> {
     const serviceDate = new Intl.DateTimeFormat('en-CA', {
-      timeZone: 'Asia/Tehran', year: 'numeric', month: '2-digit', day: '2-digit',
+      timeZone: 'Asia/Tehran',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
     }).format(input.departureAt);
     const reference = 'offer:' + input.id;
-    const row = await this.database.client.procurementTicketPurchaseRequest.upsert({
-      where: { offerId: input.id },
-      update: {},
-      create: {
-        branchId: input.branchId,
-        catalogProductReference: reference,
-        title: (input.carrierName + ' ' + input.serviceNumber).slice(0, 160),
-        serviceDate: new Date(serviceDate + 'T00:00:00.000Z'),
-        supplierDisplaySnapshot: input.carrierName,
-        amount: null,
-        currencyCode: null,
-        offerId: input.id,
-        offerVersion: input.version,
-        createdByUserId: input.createdByUserId,
-        createKey: reference,
-        fingerprint: createHash('sha256').update(reference).digest('hex'),
-      },
-    });
+    const row =
+      await this.database.client.procurementTicketPurchaseRequest.upsert({
+        where: { offerId: input.id },
+        update: {},
+        create: {
+          branchId: input.branchId,
+          catalogProductReference: reference,
+          title: (input.carrierName + ' ' + input.serviceNumber).slice(0, 160),
+          serviceDate: new Date(serviceDate + 'T00:00:00.000Z'),
+          supplierDisplaySnapshot: input.carrierName,
+          amount: null,
+          currencyCode: null,
+          offerId: input.id,
+          offerVersion: input.version,
+          createdByUserId: input.createdByUserId,
+          createKey: reference,
+          fingerprint: createHash('sha256').update(reference).digest('hex'),
+        },
+      });
     if (row.branchId !== input.branchId || row.offerVersion !== input.version)
       throw new ConflictException('مرجع درخواست خرید پرواز تغییر کرده است.');
     return this.toTicketPurchase(row);
   }
 
   async forFinance(requestId: string, branchIds: readonly string[]) {
-    const row = await this.database.client.procurementTicketPurchaseRequest.findFirst({
-      where: { id: requestId, branchId: { in: [...branchIds] }, status: 'PENDING' },
-    });
-    if (!row) throw new NotFoundException('درخواست خرید بلیت در شعب مجاز یافت نشد.');
+    const row =
+      await this.database.client.procurementTicketPurchaseRequest.findFirst({
+        where: {
+          id: requestId,
+          branchId: { in: [...branchIds] },
+          status: 'PENDING',
+        },
+      });
+    if (!row)
+      throw new NotFoundException('درخواست خرید بلیت در شعب مجاز یافت نشد.');
     return this.toTicketPurchase(row);
   }
 
@@ -172,10 +187,16 @@ export class ProcurementPublicService {
     branchId: string,
     expectedVersion: number,
   ) {
-    const changed = await transaction.procurementTicketPurchaseRequest.updateMany({
-      where: { id: requestId, branchId, version: expectedVersion, status: 'PENDING' },
-      data: { status: 'PAID', version: { increment: 1 } },
-    });
+    const changed =
+      await transaction.procurementTicketPurchaseRequest.updateMany({
+        where: {
+          id: requestId,
+          branchId,
+          version: expectedVersion,
+          status: 'PENDING',
+        },
+        data: { status: 'PAID', version: { increment: 1 } },
+      });
     if (changed.count !== 1)
       throw new ConflictException('نسخه درخواست خرید بلیت تغییر کرده است.');
   }

@@ -38,7 +38,12 @@ describe('package pricing rule engine', () => {
 
   it('deducts commission from net margin without inflating the sale price', () => {
     const result = calculatePackagePrice('100', 'USD', [
-      { sequence: 1, title: 'افزایش فروش', operation: 'ADD_PERCENT', value: '10' },
+      {
+        sequence: 1,
+        title: 'افزایش فروش',
+        operation: 'ADD_PERCENT',
+        value: '10',
+      },
       { sequence: 2, title: 'کمیسیون', operation: 'COMMISSION', value: '5' },
     ]);
     expect(result.finalAmount).toBe('110.0000');
@@ -51,9 +56,19 @@ describe('package pricing rule engine', () => {
     });
     expect(() =>
       calculatePackagePrice('100', 'USD', [
-        { sequence: 1, title: 'افزایش فروش', operation: 'ADD_PERCENT', value: '10' },
+        {
+          sequence: 1,
+          title: 'افزایش فروش',
+          operation: 'ADD_PERCENT',
+          value: '10',
+        },
         { sequence: 2, title: 'کمیسیون', operation: 'COMMISSION', value: '5' },
-        { sequence: 3, title: 'حداقل سود', operation: 'MINIMUM_PROFIT', value: '5' },
+        {
+          sequence: 3,
+          title: 'حداقل سود',
+          operation: 'MINIMUM_PROFIT',
+          value: '5',
+        },
       ]),
     ).toThrow('حداقل سود');
   });

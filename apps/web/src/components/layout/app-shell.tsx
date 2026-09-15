@@ -140,7 +140,9 @@ function Navigation({
           href as (typeof navigationItems)[number]['href'],
           pathname,
         ) &&
-        !(href === '/sales' && pathname.startsWith(salesPricingSubsection.href));
+        !(
+          href === '/sales' && pathname.startsWith(salesPricingSubsection.href)
+        );
     const Icon = sidebarIcons[href];
     const link = (
       <Link

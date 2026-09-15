@@ -79,7 +79,9 @@ export class FinanceInboxService {
         : [];
     const ticketItems =
       ticketResult.status === 'fulfilled' ? ticketResult.value : [];
-    const ticketStates = await this.ticketCosts.queueStates(ticketItems.map((item) => item.id));
+    const ticketStates = await this.ticketCosts.queueStates(
+      ticketItems.map((item) => item.id),
+    );
 
     const items: FinanceInboxItemV1[] = [
       ...salesItems.map((item): FinanceInboxItemV1 => ({
@@ -166,7 +168,9 @@ export class FinanceInboxService {
         source: 'PURCHASES',
         kind: 'PAYMENT_REQUEST',
         sourceReference: purchase.id,
-        sourceContextReference: ticketStates.get(purchase.id)?.costRevisionId ?? purchase.catalogProductReference,
+        sourceContextReference:
+          ticketStates.get(purchase.id)?.costRevisionId ??
+          purchase.catalogProductReference,
         contractReference: null,
         title: 'خرید بلیط ' + purchase.title,
         partyDisplaySnapshot: purchase.supplierDisplaySnapshot,
@@ -174,15 +178,21 @@ export class FinanceInboxService {
           ? 'قیمت خرید بلیط برای تاریخ ' + purchase.serviceDate
           : 'درخواست ثبت قیمت خرید بلیط توسط مالی',
         amount: ticketStates.has(purchase.id)
-          ? { amount: ticketStates.get(purchase.id)!.invoiceAmount,
-              currencyCode: ticketStates.get(purchase.id)!.currencyCode }
+          ? {
+              amount: ticketStates.get(purchase.id)!.invoiceAmount,
+              currencyCode: ticketStates.get(purchase.id)!.currencyCode,
+            }
           : null,
         settlement: ticketStates.has(purchase.id)
-          ? { paidAmount: ticketStates.get(purchase.id)!.paidAmount,
-              remainingAmount: ticketStates.get(purchase.id)!.remainingAmount }
+          ? {
+              paidAmount: ticketStates.get(purchase.id)!.paidAmount,
+              remainingAmount: ticketStates.get(purchase.id)!.remainingAmount,
+            }
           : null,
         status: ticketStates.get(purchase.id)?.status ?? 'NEW',
-        dueAt: purchase.serviceDate ? purchase.serviceDate + 'T00:00:00.000Z' : null,
+        dueAt: purchase.serviceDate
+          ? purchase.serviceDate + 'T00:00:00.000Z'
+          : null,
         createdAt: purchase.createdAt,
         requesterDisplaySnapshot: null,
         branchReference: purchase.branchId,

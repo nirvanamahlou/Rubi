@@ -25,7 +25,12 @@ describe.skipIf(!process.env.TRAVEL_TEST_DATABASE_URL)(
       assertTourReferences: vi.fn(async () => {}),
     } as unknown as MasterTravelDirectory;
     const procurement = new ProcurementPublicService(database);
-    const service = new TourPublicService(database, references, undefined, procurement);
+    const service = new TourPublicService(
+      database,
+      references,
+      undefined,
+      procurement,
+    );
     const tickets = new TicketPublicService(database, procurement);
     const branchId = randomUUID();
     const actor: AuthenticatedActor = {

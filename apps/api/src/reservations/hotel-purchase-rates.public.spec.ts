@@ -66,8 +66,9 @@ describe('Reservations hotel purchase public projection', () => {
       client: { reservationHotelRateBatch: { findMany } },
     } as unknown as DatabaseService;
     const service = new HotelPurchaseRatesPublicService(database);
-    expect(await service.forTour('branch-1', [], '2026-10-01', '2026-10-06'))
-      .toEqual([]);
+    expect(
+      await service.forTour('branch-1', [], '2026-10-01', '2026-10-06'),
+    ).toEqual([]);
     expect(findMany).not.toHaveBeenCalled();
   });
 });
