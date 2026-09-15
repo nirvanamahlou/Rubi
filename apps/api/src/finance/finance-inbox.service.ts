@@ -24,6 +24,7 @@ import { HrConnectionsService } from '../hr/hr-connections.service';
 import { DatabaseService } from '../database/database.service';
 import { ReservationsPublicService } from '../reservations/reservations-public.service';
 import { SalesService } from '../sales/sales.service';
+import { ProcurementPublicService } from '../procurement/procurement-public.service';
 import { FinanceDeliveryService } from './document-delivery/finance-delivery.module';
 
 const hrStatus: Record<HrConnectionStatus, FinanceRequestStatus> = {
@@ -44,6 +45,8 @@ export class FinanceInboxService {
     @Inject(FinanceDeliveryService)
     private readonly delivery: FinanceDeliveryService,
     @Inject(DatabaseService) private readonly database: DatabaseService,
+    @Inject(ProcurementPublicService)
+    private readonly procurement: ProcurementPublicService,
   ) {}
 
   async list(actor: AuthenticatedActor): Promise<FinanceInboxV1> {
@@ -53,11 +56,12 @@ export class FinanceInboxService {
         message: 'مجوز مشاهده کارتابل مالی وجود ندارد.',
       });
 
-    const [salesResult, hrResult, reservationsResult] =
+    const [salesResult, hrResult, reservationsResult, ticketResult] =
       await Promise.allSettled([
         this.sales.financeInbox(actor),
         this.hr.list({ target: 'finance', page: 1 }, actor),
         this.reservations.list(actor.branchIds),
+        this.procurement.listFinanceTicketPurchases(actor.branchIds),
       ]);
     const salesItems =
       salesResult.status === 'fulfilled' ? salesResult.value : [];
@@ -70,6 +74,8 @@ export class FinanceInboxService {
               .map((purchase) => ({ intake, purchase })),
           )
         : [];
+    const ticketItems =
+      ticketResult.status === 'fulfilled' ? ticketResult.value : [];
 
     const items: FinanceInboxItemV1[] = [
       ...salesItems.map((item): FinanceInboxItemV1 => ({
@@ -150,6 +156,30 @@ export class FinanceInboxService {
         sourceVersion: purchase.finance.version,
         origin: 'PERSISTED_SOURCE',
       })),
+      ...ticketItems.map((purchase): FinanceInboxItemV1 => ({
+        version: 1,
+        id: 'purchases:' + purchase.id,
+        source: 'PURCHASES',
+        kind: 'PAYMENT_REQUEST',
+        sourceReference: purchase.id,
+        sourceContextReference: purchase.catalogProductReference,
+        contractReference: null,
+        title: 'خرید بلیط ' + purchase.title,
+        partyDisplaySnapshot: purchase.supplierDisplaySnapshot,
+        description: 'قیمت خرید بلیط برای تاریخ ' + purchase.serviceDate,
+        amount: {
+          amount: purchase.amount,
+          currencyCode: purchase.currencyCode,
+        },
+        settlement: null,
+        status: 'READY_FOR_PAYMENT',
+        dueAt: purchase.serviceDate + 'T00:00:00.000Z',
+        createdAt: purchase.createdAt,
+        requesterDisplaySnapshot: null,
+        branchReference: purchase.branchId,
+        sourceVersion: purchase.requestVersion,
+        origin: 'PERSISTED_SOURCE',
+      })),
     ].sort((left, right) => {
       const due = (left.dueAt ?? '9999').localeCompare(right.dueAt ?? '9999');
       return due || right.createdAt.localeCompare(left.createdAt);
@@ -176,9 +206,13 @@ export class FinanceInboxService {
       ),
       {
         source: 'PURCHASES',
-        connection: 'NOT_CONNECTED',
-        itemCount: 0,
-        message: 'Producer استاندارد درخواست پرداخت خرید هنوز منتشر نشده است.',
+        connection:
+          ticketResult.status === 'fulfilled' ? 'CONNECTED' : 'UNAVAILABLE',
+        itemCount: ticketItems.length,
+        message:
+          ticketResult.status === 'fulfilled'
+            ? 'قیمت خرید بلیط‌های تعریف‌شده و منتظر رسیدگی مالی'
+            : 'منبع قیمت خرید بلیط در این لحظه پاسخ نداد.',
       },
     ];
     return {

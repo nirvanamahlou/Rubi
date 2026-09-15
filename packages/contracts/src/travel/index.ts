@@ -32,6 +32,26 @@ export interface TicketOfferSearchV1 {
   page?: number;
 }
 
+export interface TicketCatalogPurchaseCreateV1 {
+  version: 1;
+  catalogProductReference: string;
+  title: string;
+  serviceDate: string;
+  supplierDisplaySnapshot: string | null;
+  amount: string;
+  currencyCode: string;
+}
+
+export interface TicketCatalogPurchaseV1 extends TicketCatalogPurchaseCreateV1 {
+  id: string;
+  branchId: string;
+  requestVersion: number;
+  status: 'PENDING' | 'PAID' | 'CANCELLED';
+  createdByUserId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface ReservationArrangementV1 {
   version: number;
   roomCount: number;
