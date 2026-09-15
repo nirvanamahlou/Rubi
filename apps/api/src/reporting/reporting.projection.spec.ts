@@ -93,4 +93,16 @@ describe('travel reporting approved projection', () => {
       expect.objectContaining({ key: 'secondaryDimension', label: 'نوع خدمت' }),
     ]);
   });
+
+  it('includes every matching dataset row for export while preview remains paginated', () => {
+    const input = {
+      code: 'sales_by_service_route',
+      query: { filters: {}, page: 1, pageSize: 1, timezone: 'Asia/Tehran' as const },
+      facts: [fact(), fact({ id: 'fact-2', serviceType: 'HOTEL' })],
+      now: new Date('2026-09-12T08:00:00Z'),
+    };
+
+    expect(buildTravelReportResult(input).rows).toHaveLength(1);
+    expect(buildTravelReportResult({ ...input, includeAllRows: true }).rows).toHaveLength(2);
+  });
 });

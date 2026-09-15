@@ -620,7 +620,13 @@ export class ReportingService {
     const facts = await this.repository.facts(query, serverBranchScope);
     return {
       report,
-      result: buildTravelReportResult({ code, query, facts, now: new Date() }),
+      result: buildTravelReportResult({
+        code,
+        query,
+        facts,
+        now: new Date(),
+        includeAllRows: true,
+      }),
     };
   }
 

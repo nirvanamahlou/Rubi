@@ -78,6 +78,7 @@ export function buildTravelReportResult(input: {
   query: ReportQueryV1;
   facts: readonly ReportingFactRow[];
   now: Date;
+  includeAllRows?: boolean;
 }): TravelReportResultV1 {
   const dimensions = REPORT_DIMENSIONS[input.code];
   if (!dimensions)
@@ -236,7 +237,9 @@ export function buildTravelReportResult(input: {
       { key: 'refundAmount', label: 'استرداد', kind: 'MONEY' },
       { key: 'settlementBalance', label: 'مانده تسویه', kind: 'MONEY' },
     ],
-    rows: rows.slice(offset, offset + input.query.pageSize),
+    rows: input.includeAllRows
+      ? rows
+      : rows.slice(offset, offset + input.query.pageSize),
     total: rows.length,
     page: input.query.page,
     pageSize: input.query.pageSize,
