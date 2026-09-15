@@ -2860,6 +2860,123 @@ Runtime correction: reserve infrastructure/scripts/start-unified-local.ps1 for a
 
 LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runtime and launcher integration reservation released. No merge to develop/main. See docs/tasks/LOCAL-ALL-SECTIONS-3100-0913.md.
 
+## RUNTIME-STABLE-3100-0914 — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-14: نسخهٔ آخر میزکار روی پورت ۳۱۰۰ ثابت بماند و اجرای
+  checkoutهای قدیمی آن را جایگزین نکند. شاخه `codex/pc-b-runtime-stable-3100` از
+  `origin/develop@0c331314` ساخته شد.
+- محدوده رزروشده: `infrastructure/scripts/start-unified-local.ps1`، دروازه و تست runtime
+  محلی و اسناد وضعیت همین واحد. دروازهٔ ثابت پورت عمومی ۳۱۰۰ را نگه می‌دارد و Next
+  تولیدی روی پورت داخلی اجرا می‌شود؛ launcher فقط پردازش‌هایی را متوقف می‌کند که مسیر
+  دقیق آن‌ها در ریشه‌های صریحاً مجاز باشد.
+- بدون Schema/Migration/Seed، تغییر Dependency/Lockfile، API عمومی، داده یا دسترسی کاربر.
+  دیتابیس، storage و نشست‌های موجود حفظ می‌شوند. فایل‌های runtime پس از QA آزاد خواهند شد.
+- تکمیل شد: دروازهٔ ثابت ۳۱۰۰ درخواست‌های HTTP و upgrade را به Next داخلی ۳۱۱۰ عبور
+  می‌دهد و هنگام آماده‌نبودن Web پاسخ ۵۰۲ مشخص برمی‌گرداند. launcher مالکیت هر سه پورت
+  را پیش از توقف کنترل، نسخه و commit سرو‌شده را پیش از تحویل تطبیق و در خطا پردازش‌های
+  تازه را جمع می‌کند. دو تست gateway، parse اسکریپت، build کامل ۴۶ route و سه نمونهٔ
+  متوالی مالکیت/نسخه موفق بودند؛ API4191 سالم است. رزرو source آزاد و runtime محلی فعال است.
+
+## LOCAL-ALL-MODULES-3100-0914 — PC-B — COMPLETE / ACTIVE
+
+- درخواست مالک در 2026-09-14: خرید و تأمین، میزکار، منابع انسانی و سایر بخش‌ها از یک
+  نسخهٔ به‌روز روی Web3100 اجرا شوند. شاخه `codex/pc-b-all-modules-current-3100` از
+  runtime پایدار `7f9897e7` ساخته شد و آخرین شاخهٔ خرید `95eab193` را فقط برای اجرای
+  تجمیعی محلی دریافت می‌کند.
+- محدوده رزروشده: ادغام محلی Web خرید با پایهٔ فعلی `origin/develop@c823f012`، build و
+  راه‌اندازی Gateway3100/Web3110/API4191. داده، Schema/Migration، Seed، Permission و
+  Dependency/Lockfile تغییر نمی‌کنند؛ تغییرات موجود میزکار و منابع انسانی حفظ می‌شوند.
+- تکمیل شد: فقط سه فایل Web خرید از شاخهٔ جدید منتقل شدند و ادغام کامل شاخه به‌دلیل
+  تعارض با Schema و Backend جدید کنار گذاشته شد. lint محدوده، بررسی Syntax ماکاپ و build
+  تولیدی ۴۶ مسیر موفق‌اند. Gateway3100، Web3110 و API4191 از checkout تجمیعی فعال و
+  شناسهٔ runtime با commit کد `8843fe0b` منطبق است؛ رزرو source آزاد شد.
+- پیگیری 2026-09-15: اجرای مستقیم Next از checkout اصلی روی ۳۱۰۰، Gateway تجمیعی را
+  جایگزین کرده بود. پس از احراز PID و مسیر آن، launcher نسخهٔ تجمیعی را برگرداند و دو
+  PR جدید `develop` برای بازهٔ سن کودک هتل و آواتار پیش‌فرض پروفایل نیز بدون تعارض ادغام
+  شدند. ۱۵ تست هدفمند، lint محدوده، typecheck API/Web و build تولیدی API/Web با ۴۶
+  مسیر موفق‌اند. Gateway3100/Web3110/API4191 با commit کد `2433f5e2` و API health ۲۰۰
+  فعال‌اند؛ هیچ Migration، Seed، Grant یا تغییر داده انجام نشد.
+
+## PROCUREMENT-FRAME-3100-0915 — PC-B — COMPLETE / ACTIVE
+
+- درخواست مالک و Screenshot606: پوستهٔ خرید در Web3100 باز می‌شود اما iframe داخلی با
+  «localhost refused to connect» متوقف است. شاخه `codex/pc-b-procurement-frame-3100`
+  از نسخهٔ تجمیعی فعلی ساخته شد.
+- قفل محدود فایل مرکزی `apps/web/next.config.ts` فقط برای هدر مسیر
+  `/procurement-optimized.html` نزد PC-B/PROCUREMENT-FRAME-3100-0915 رزرو است؛
+  `WORK_ASSIGNMENTS.md` و `docs/PROJECT_STATUS.md` فقط همین واحد را ثبت می‌کنند.
+  احراز هویت و DENY پیش‌فرض سایر مسیرها حفظ می‌شوند. بدون Migration، Dependency،
+  API، داده یا تغییر قرارداد مشترک.
+- مسیر خرید اکنون فقط از origin خودش قابل frame شدن است. پاسخ واقعی سرور برای ماکاپ
+  دارای `SAMEORIGIN` و `frame-ancestors 'self'` است؛ Login همچنان `DENY` و
+  `frame-ancestors 'none'` می‌ماند. درخواست بدون cookie به Login هدایت می‌شود و درخواست
+  دارای cookie در مسیر فایل ماکاپ پاسخ ۲۰۰ می‌گیرد. build Web با ۴۶ route، lint فایل
+  تغییرکرده و API health موفق‌اند. Gateway3100/Web3110/API4191 روی build
+  `unified-6hqFsF7hJGMHGO-KmtfIL` فعال است؛ قفل فایل مرکزی آزاد شد.
+
+## PROCUREMENT-HUMAN-CAPITAL-NAV-0915 — PC-B — COMPLETE / ACTIVE
+
+- درخواست صریح مالک: خرید و تأمین زیر «سرمایه انسانی» در منوی اصلی باشد. شاخه
+  `codex/pc-b-procurement-under-human-capital` از نسخهٔ تجمیعی فعال ساخته شد.
+- قفل محدود Central Navigation برای `apps/web/src/lib/navigation.ts` و تست همان فایل
+  نزد PC-B/PROCUREMENT-HUMAN-CAPITAL-NAV-0915 رزرو است. مسیر `/purchases`، مالکیت
+  داده، Permission و منطق ماژول تغییر نمی‌کنند؛ فقط گروه ارائهٔ سایدبار عوض می‌شود.
+  بدون Migration، Dependency، API یا تغییر فایل سایر ماژول‌ها.
+- خرید از `finance` خارج و پس از منابع انسانی در `hr` قرار گرفت. ۱۵ تست ناوبری،
+  lint محدوده و build تولیدی ۴۶ route موفق‌اند. Web3100 با build
+  `unified-Tez666Z13yqJ-047yCo9T`، API4191 health۲۰۰ و فایل خرید پاسخ۲۰۰ فعال‌اند؛
+  قفل Central Navigation آزاد شد.
+
+## PROCUREMENT-LIVE-INTEGRATION-0915 — PC-B — IMPLEMENTED / REVIEW
+
+- درخواست مالک: کمبودهای نسخهٔ ۳۱۰۰ خرید و تأمین برطرف و جریان عملیاتی موجود
+  PROCUREMENT-001 در نسخهٔ یکپارچه فعال شود؛ کنترل‌های پاسخ مالی و تأیید آزمایشی حذف شوند.
+- مبنا: `codex/pc-b-procurement-under-human-capital@52f7d7d1`؛ شاخهٔ یکتا
+  `codex/pc-b-procurement-live-integration`. COMPUTER_ID=PC-B، مالک Procurement و
+  HR/Master Data/Documents طبق `docs/MODULE_OWNERSHIP.md`.
+- رزرو محدوده: فایل‌های اختصاصی Procurement در API/Web، public projectionهای
+  HR/IAM/Master Data، ثبت ماژول در AppModule، قرارداد additive Procurement،
+  permission catalog/seed، Prisma schema، چهار migration منتشرشدهٔ PROCUREMENT-001
+  و migration افزایشی اتصال درخواست‌کننده به کارمند HR،
+  route خرید، فایل public ماکاپ قدیمی و دارایی‌های فونت وزیرمتن آن، تست مرکزی وضعیت routeها و مستندات همین واحد. Migration Owner و قفل فایل‌های مرکزی این محدوده
+  نزد PC-B/PROCUREMENT-LIVE-INTEGRATION-0915 هستند؛ Dependency/Lockfile تغییر نمی‌کند.
+- Prisma deploy در پایگاه محلی، migration افزایشی و منتشرشدهٔ
+  `20260913163000_finance_inbox_actions` متعلق به PC-A را نیز به‌ترتیب پس از چهار
+  migration خرید اعمال می‌کند؛ فقط اجرای همان فایل بدون ویرایش Source در این واحد
+  ثبت است. Finance-008 در شاخهٔ منتشرشده کامل/آزموده شده و روی کپی دیتابیس فعلی
+  همراه چهار migration خرید تمرین شد؛ صفر رکورد `PAID` مشمول به‌روزرسانی تاریخی آن است.
+- Producer قرارداد Finance همچنان Procurement و consumer آن PC-A/Finance است؛
+  بدون inbox/ack مصوب، Finance `NOT_CONNECTED` می‌ماند. Reservations/PC-A نیز تا
+  adapter مصوب، ارجاع سفر را نمی‌پذیرد. قراردادهای additive قبلی حفظ و سازگاری مسیر
+  `/purchases` با نسخهٔ فعلی Web کنترل می‌شود. Migration مخرب، پرداخت، سفارش خارجی،
+  تغییر دادهٔ واقعی یا grant خودکار اختیارات تجاری در محدوده نیست.
+- پنج migration خرید (چهار مورد عملیاتی و FK کارمند HR) و migration منتشرشدهٔ
+  Finance روی کپی پایگاه و سپس پایگاه محلی با backup قبلی اعمال شدند؛ ۲۶ مجوز
+  افزایشی، دسترسی ثبت روی `staff` و نقش‌های مستقل `procurement_approver` و
+  `procurement_buyer` ثبت شده‌اند. دو نقش تجاری بدون انتساب فردی می‌مانند تا
+  مالک حساب‌های مجاز را مشخص کند؛ کارمندان HR موجود هنوز پیوند IAM ندارند.
+- پس از انتشار `develop@ff15c7d3`، سرویس عمومی خرید بلیت PC-A در همان
+  `ProcurementModule` کنار workspace عملیاتی حفظ شد. migration منتشرشدهٔ
+  `20260914173000_procurement_ticket_purchase_requests` فقط اجرا و بدون ویرایش
+  Source جذب شد؛ migration افزایشی `20260915110000_procurement_ticket_purchase_fks`
+  رابطهٔ واقعی شعبه و IAM creator را می‌بندد. هر دو روی کپی DB و سپس پایگاه محلی
+  با backup تازه اعمال شدند. Finance فقط intake قیمت خرید بلیت را از public port
+  می‌خواند؛ gate فاکتور/سفارش خرید عمومی همچنان باقی است.
+- lint/typecheck API، Web، Database و Contracts و build تولیدی API/Web با ۴۶
+  مسیر موفق‌اند؛ ۴۸ تست قواعد، ۳۰ تست عملیاتی روی پایگاه اختصاصی و ۹ تست Web
+  هدفمند پاس شدند. نسخهٔ یکپارچه روی Gateway3100/Web3110/API4191 با commit
+  `ff56c883` پس از جذب `origin/develop@ff15c7d3` و اصلاح قالب‌بندی PR فعال بودند و
+  health API/Web برابر ۲۰۰ بود. تست‌های تغییرات تازهٔ Manifest/قواعد بار و build
+  ۴۶مسیره نیز پاس شدند.
+  تب مرورگر بدون نشست به login
+  هدایت می‌شود؛ grant فردی و smoke داخل حساب پس از معرفی حساب‌های مجاز پیگیری می‌شود.
+- پیگیری فونت مالک: صفحهٔ عملیاتی خرید فونت سراسری `font-sans` را صریحاً به ارث می‌برد. فایل public نمای قدیمی از مسیر `/fonts/vazirmatn-arabic-wght-normal.woff2` استفاده می‌کرد اما آن دارایی وجود نداشت و به Tahoma برمی‌گشت؛ فایل‌های فارسی و لاتین وزیرمتن از همان dependency موجود همراه مجوز OFL در public قرار گرفتند. بدون تغییر Dependency/Lockfile، API، Schema یا داده.
+  build Web با ۴۶ مسیر، lint/typecheck و Prettier موفق‌اند. Gateway3100/Web3110/API4191 از commit کد `a851e493` و build `unified-TsYKnysEo6ejcMcyC9wuF` فعال‌اند؛ API پس از تکمیل startup پاسخ health۲۰۰ داد. تب فعلی مرورگر بدون نشست است و خرید را به login هدایت می‌کند.
+- پیگیری دسترسی ۴۰۳ مالک: دیتابیس عملیاتی launcher، `rubi_hr_current_20260908`، نقش `staff` را بدون عضو داشت و نشست اخیر `nirvana` فقط `administrator` و `nirvana_full_access` را داشت؛ هیچ‌یک مجوز Procurement نداشتند. نقش `staff` با پنج مجوز محدود به درخواست خود، به همان حساب فعال و دارای پنج شعبه به‌صورت افزایشی و همراه Audit محلی واگذار شد. نقش‌ها/شعب قبلی حفظ و نقش‌های تأییدکننده/سفارش‌دهنده همچنان صفر عضو دارند؛ grant سایر کارکنان تا تعیین حساب‌ها و پیوند IAM/HR انجام نمی‌شود. Authenticated browser smoke در تب بدون نشست قابل انجام نیست.
+- پیگیری طراحی مالک: چیدمان محتوای workspace عملیاتی خرید از فایل مرجع `procurement-optimized.html` به بنر، کارت‌های چهار مسیر، شمارنده‌های واقعی صفحهٔ صف و جدول پیگیری بازگردانده شد. منوی مستقل/گزارش نمایشی/دادهٔ ساختگی مرجع بازنگشتند. فقط فایل frontend خرید و مستندات همین واحد تغییر کردند؛ بدون API، Migration یا Dependency. typecheck، سه تست هدفمند و build ۴۶مسیره موفق‌اند؛ lint نیز موفق است.
+- اصلاح بعدی مالک: نوار همهٔ بخش‌ها و بنر راهنمای مسیر خرید حذف شدند. کارت‌های میزکار و پیوندهای محلی راه دسترسی به همان بخش‌ها را حفظ می‌کنند. پنج نمونهٔ خواندنی در صف خالی شخصی و درخواست‌ها فقط در browser ساخته می‌شوند و هیچ فرمان/ثبت/API ندارند؛ دادهٔ واقعی همیشه مقدم است. frontend خرید، fixture و مستندات همین Work Item تغییر کرده‌اند؛ Schema/API/Dependency و دادهٔ عملیاتی دست‌نخورده‌اند.
+- اصلاح نمای بعدی مالک: هشدار سیاست تأیید، متن معرفی نمونه و نوار نه صف کاری از frontend خرید حذف شدند. صف میزکار به‌صورت ثابت `own` و بخش تصمیم به‌صورت ثابت `approvals` است؛ محدودیت backend و فرم ارسال برقرارند. مالک PC-B، همان branch و محدودهٔ frontend/docs همین Work Item؛ بدون Migration/Dependency/API.
+
 ## TICKET-REPEAT-PURCHASE-0914 — PC-A — READY_FOR_REVIEW
 
 - درخواست مالک در 2026-09-14: رفع خطای تکرار بلیط‌های بدون ساعت، افزودن تاریخ اولین بلیط به فرم تعریف، و ارسال قیمت خرید ثبت‌شده به کارتابل مالی. COMPUTER_ID=PC-A.

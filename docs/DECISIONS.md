@@ -1,5 +1,22 @@
 # تصمیم‌های معماری
 
+## PROCUREMENT-LIVE-INTEGRATION-0915 — 2026-09-15
+
+در فرم خرید، دستور جدید مالک حذف دلیل خرید مشابه، علت نامشخص بودن مبلغ و معیار
+پذیرش را بر متن قدیمی PRD مقدم می‌کند؛ دلیل اضطرار و محل تحویل اختیاری‌اند.
+درخواست‌کننده از کارمندان فعال ذخیره‌شدهٔ HR انتخاب و با FK شعبه‌ای واقعی به
+درخواست خرید وصل می‌شود؛ IAM actor جداگانه برای مجوز و audit می‌ماند. شش کارمند
+محلی موجود هنوز `userId` مرتبط با IAM ندارند، پس الزام FK به کارمند واقعی بدون
+این تفکیک، فهرست درخواست‌کننده را خالی می‌کرد. ثبت برای نقش کارکنان و تأیید/سفارش
+برای نقش‌های مشخص مستقل تعریف شد؛ grant خودکار اختیار تجاری به مدیر فنی انجام
+نمی‌شود. تا امضای قرارداد producer/consumer با PC-A و استقرار adapter و policy
+مصوب، تحویل مالی، ارجاع رزرواسیون و صدور سفارش در gate صریح باقی می‌مانند.
+قرارداد منتشرشدهٔ بعدی PC-A برای قیمت خرید بلیت از `ProcurementPublicService`
+به Ticket Catalog و کارتابل Finance وصل شده است؛ این intake جدا از سفارش و فاکتور
+درخواست خرید عمومی است و gate آن‌ها را تغییر نمی‌دهد. migration منتشرشدهٔ این
+intake بدون ویرایش حفظ شد و migration افزایشی دیگری FK شعبه و IAM creator را
+اضافه کرد؛ هر دو ابتدا روی کپی داده و سپس پایگاه محلی تمرین/اعمال شدند.
+
 ## B2B-DOSSIER-REPORTS-001 — 2026-09-09
 
 The dossier Reports/Audit UI consumes normalized metadata from B2B audit events and public Master Organization/Documents owner projections. It does not read another module's tables, change the central Reporting module or create financial events. Existing branch and source/domain permissions apply to every page. Snapshots stay server-side; the projection exposes changed field labels, action, actor and time, never private contact values, notes, document contents or credential fields. Export contains the same authorized filtered projection. Per-source keyset pages share a fixed upper timestamp, including a deterministic cross-source tie key; Tehran calendar-day filters include both day boundaries.
