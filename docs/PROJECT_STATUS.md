@@ -1,5 +1,9 @@
 # وضعیت پروژه
 
+## 2026-09-14 — RESERVATION-TICKET-PDF-PASSENGER-0914 — PC-A — READY_FOR_REVIEW
+
+نام مسافر در درخواست‌های تازه Sales داخل Snapshot نسخه‌دار Reservations حفظ می‌شود. برای قراردادهای قدیمی مانند `SC-2026-000003` که نام در Snapshot جا افتاده، پنجره بلیط و PDF نام را از پرونده اصلی مسافر می‌خوانند، بدون بازنویسی Snapshot یا سند تاریخی. موتور PDF مسیر Chrome یا Edge و فونت نازنین محلی را خودکار پیدا می‌کند و نبود فونت سفارشی مانع صدور نیست. ۴ تست API، ۱۸ تست Web، lint/typecheck/build API/Web و ساخت واقعی PDF با Chrome نصب‌شده موفق‌اند. جزئیات در [RESERVATION-TICKET-PDF-PASSENGER-0914](tasks/RESERVATION-TICKET-PDF-PASSENGER-0914.md) ثبت شده است.
+
 ## 2026-09-15 — PC-C Dashboard/Reports + PC-A/PC-B develop integration
 
 شاخهٔ `codex/pc-c-dashboard-reporting-integration-0915` نسخهٔ ثبت‌شدهٔ Dashboard/Reports را با `origin/develop@ff15c7d3` ترکیب می‌کند. هر دو ماژول API Reporting و Procurement در AppModule حفظ شده‌اند، رابطه‌های Prisma افزایشی‌اند و ارجاع‌های Reporting به نام جدید `@nora/database` هماهنگ شده‌اند. دادهٔ نمونه و artifactهای محلی وارد Git نشده‌اند؛ Worktree اجرایی `dashboard-reporting-latest` و سرویس ۳۰۰۰ تغییر نکرده‌اند.

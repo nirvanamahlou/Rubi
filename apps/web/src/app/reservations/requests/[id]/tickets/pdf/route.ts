@@ -64,7 +64,28 @@ export async function GET(
     if (!branding) return fail('ابتدا سربرگ خروجی را ثبت کنید.', 400);
     if (intake.workflow.supplierStatus === 'CANCELLED')
       return fail('درخواست ابطال شده است.', 409);
-    const allTickets = reservationTickets(intake.snapshot);
+    let passengerNames: Record<string, string> = {};
+    if (
+      intake.snapshot.passengerAssignments?.some(
+        (passenger) => !passenger.displayNameSnapshot?.trim(),
+      )
+    ) {
+      const passengersResponse = await get(
+        `/reservations/requests/${id}/passengers`,
+      ).catch(() => null);
+      if (passengersResponse?.ok) {
+        const result = (await passengersResponse.json()) as {
+          data?: Array<{ id: string; displayName: string }>;
+        };
+        passengerNames = Object.fromEntries(
+          (result.data ?? []).map((passenger) => [
+            passenger.id,
+            passenger.displayName,
+          ]),
+        );
+      }
+    }
+    const allTickets = reservationTickets(intake.snapshot, passengerNames);
     const tickets = passengerId
       ? allTickets.filter((ticket) => ticket.passengerId === passengerId)
       : allTickets;
@@ -143,11 +164,15 @@ export async function GET(
       },
     });
   } catch (error) {
-    const busy = error instanceof Error && error.message === 'PDF_BUSY';
+    const code = error instanceof Error ? error.message : '';
+    const busy = code === 'PDF_BUSY';
+    const runtimeUnavailable = code === 'PDF_RUNTIME_UNAVAILABLE';
     return fail(
       busy
         ? 'خروجی دیگری در حال آماده‌سازی است؛ دوباره تلاش کنید.'
-        : 'PDF بلیط آماده نشد؛ اتصال و تنظیمات موتور PDF را بررسی کنید.',
+        : runtimeUnavailable
+          ? 'مرورگر Chrome یا Edge برای ساخت PDF پیدا نشد.'
+          : 'PDF بلیط آماده نشد؛ دوباره تلاش کنید.',
       busy ? 429 : 503,
     );
   }

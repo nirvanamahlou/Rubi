@@ -193,6 +193,18 @@ describe('Contract-only flights remain outside ticket inventory', () => {
     'reserves only real catalog selections (mixed=%s) and preserves metadata in the versioned reservation snapshot',
     async (mixed) => {
       const saved = row();
+      saved.passengers = [
+        {
+          id: 'passenger',
+          customerId: input.passengers[0]!.customerId,
+          displayNameSnapshot: input.passengers[0]!.displayNameSnapshot,
+          birthDate: new Date(input.passengers[0]!.birthDate),
+          ageCategory: 'ADT',
+          accommodationKind: null,
+          allocations: [{ service: saved.services[0]! }],
+          agreedPrices: [],
+        },
+      ] as unknown as SalesContractRow['passengers'];
       if (mixed) {
         saved.tripType = 'ROUND_TRIP';
         saved.services.push({
@@ -240,6 +252,12 @@ describe('Contract-only flights remain outside ticket inventory', () => {
         1,
       );
       expect(snapshot.selectedTicketOfferIds).toEqual(mixed ? ['catalog'] : []);
+      expect(snapshot.passengerAssignments).toEqual([
+        expect.objectContaining({
+          customerId: input.passengers[0]!.customerId,
+          displayNameSnapshot: 'Sample',
+        }),
+      ]);
       await expect(
         service.confirm(
           'contract',

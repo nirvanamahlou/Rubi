@@ -4,6 +4,7 @@ import type { FlightTicketSheetData } from '@/modules/sales/public/tickets';
 
 export function reservationTickets(
   snapshot: SalesReservationRequestV1,
+  passengerNames: Readonly<Record<string, string>> = {},
 ): (FlightTicketSheetData & { passengerId: string })[] {
   return (snapshot.passengerAssignments ?? [])
     .filter((p) => snapshot.passengerIds.includes(p.customerId))
@@ -47,7 +48,10 @@ export function reservationTickets(
         {
           passengerId: passenger.customerId,
           issued: true,
-          passengerName: passenger.displayNameSnapshot || 'نام مسافر ثبت نشده',
+          passengerName:
+            passenger.displayNameSnapshot?.trim() ||
+            passengerNames[passenger.customerId]?.trim() ||
+            'نام مسافر ثبت نشده',
           contractNumber: snapshot.contractNumber,
           offers,
           transferDirections: [
