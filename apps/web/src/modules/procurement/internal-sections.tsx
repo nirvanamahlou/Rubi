@@ -2,6 +2,15 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import {
+  BadgeCheck,
+  Building2,
+  ClipboardList,
+  MessagesSquare,
+  Package,
+  PackageCheck,
+  ReceiptText,
+} from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import type { ProcurementRequestV1 } from '@nora/contracts';
 import { Button } from '@/components/ui/button';
@@ -17,6 +26,7 @@ import {
 import { masterDataApi } from '@/modules/master-data/api/client';
 import { MasterDataLiveForm } from '@/modules/master-data/components/master-data-live-form';
 import { getMasterDataDefinition } from '@/modules/master-data/model/catalog';
+import { cn } from '@/lib/utils';
 import { procurementApi, commandAttempt, type Bootstrap } from './api';
 import { DraftForm, selectClass } from './draft-form';
 import { statusLabels } from './model';
@@ -59,6 +69,69 @@ const sections = {
 } as const;
 
 type SectionIndex = keyof typeof sections;
+const sectionIcons = {
+  1: ClipboardList,
+  2: BadgeCheck,
+  3: Building2,
+  4: MessagesSquare,
+  5: Package,
+  6: PackageCheck,
+  7: ReceiptText,
+} as const;
+const sectionTone: Record<
+  SectionIndex,
+  { border: string; glow: string; icon: string; row: string; chip: string }
+> = {
+  1: {
+    border: 'border-blue-300/70 dark:border-blue-400/25',
+    glow: 'from-blue-400/20 dark:from-blue-400/12',
+    icon: 'bg-blue-100 text-blue-700 dark:bg-blue-400/20 dark:text-blue-300',
+    row: 'hover:bg-blue-50/70 dark:hover:bg-blue-400/5',
+    chip: 'bg-blue-100 text-blue-700 dark:bg-blue-400/15 dark:text-blue-300',
+  },
+  2: {
+    border: 'border-violet-300/70 dark:border-violet-400/25',
+    glow: 'from-violet-400/20 dark:from-violet-400/12',
+    icon: 'bg-violet-100 text-violet-700 dark:bg-violet-400/20 dark:text-violet-300',
+    row: 'hover:bg-violet-50/70 dark:hover:bg-violet-400/5',
+    chip: 'bg-violet-100 text-violet-700 dark:bg-violet-400/15 dark:text-violet-300',
+  },
+  3: {
+    border: 'border-cyan-300/70 dark:border-cyan-400/25',
+    glow: 'from-cyan-400/20 dark:from-cyan-400/12',
+    icon: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-400/20 dark:text-cyan-300',
+    row: 'hover:bg-cyan-50/70 dark:hover:bg-cyan-400/5',
+    chip: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-400/15 dark:text-cyan-300',
+  },
+  4: {
+    border: 'border-amber-300/70 dark:border-amber-400/25',
+    glow: 'from-amber-400/20 dark:from-amber-400/12',
+    icon: 'bg-amber-100 text-amber-800 dark:bg-amber-400/20 dark:text-amber-300',
+    row: 'hover:bg-amber-50/70 dark:hover:bg-amber-400/5',
+    chip: 'bg-amber-100 text-amber-800 dark:bg-amber-400/15 dark:text-amber-300',
+  },
+  5: {
+    border: 'border-sky-300/70 dark:border-sky-400/25',
+    glow: 'from-sky-400/20 dark:from-sky-400/12',
+    icon: 'bg-sky-100 text-sky-700 dark:bg-sky-400/20 dark:text-sky-300',
+    row: 'hover:bg-sky-50/70 dark:hover:bg-sky-400/5',
+    chip: 'bg-sky-100 text-sky-700 dark:bg-sky-400/15 dark:text-sky-300',
+  },
+  6: {
+    border: 'border-emerald-300/70 dark:border-emerald-400/25',
+    glow: 'from-emerald-400/20 dark:from-emerald-400/12',
+    icon: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-400/20 dark:text-emerald-300',
+    row: 'hover:bg-emerald-50/70 dark:hover:bg-emerald-400/5',
+    chip: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-400/15 dark:text-emerald-300',
+  },
+  7: {
+    border: 'border-rose-300/70 dark:border-rose-400/25',
+    glow: 'from-rose-400/20 dark:from-rose-400/12',
+    icon: 'bg-rose-100 text-rose-700 dark:bg-rose-400/20 dark:text-rose-300',
+    row: 'hover:bg-rose-50/70 dark:hover:bg-rose-400/5',
+    chip: 'bg-rose-100 text-rose-700 dark:bg-rose-400/15 dark:text-rose-300',
+  },
+};
 const sectionQuery: Partial<Record<SectionIndex, string>> = {
   4: 'quotes',
   5: 'orders',
@@ -220,6 +293,8 @@ export function InternalSections({
       ? sampleSuppliers
       : [];
   const title = sections[group];
+  const tone = sectionTone[group];
+  const Icon = sectionIcons[group];
 
   async function persistSupplier(
     values: Record<string, string>,
@@ -294,9 +369,25 @@ export function InternalSections({
       ) : (
         <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(280px,340px)]">
           <section className="min-w-0 space-y-4" aria-label={title.list}>
-            <Card className="overflow-hidden">
-              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-5 py-4">
-                <h2 className="font-bold">{title.list}</h2>
+            <Card className={cn('overflow-hidden', tone.border)}>
+              <div
+                className={cn(
+                  'relative flex flex-wrap items-center justify-between gap-2 overflow-hidden border-b border-border/70 px-5 py-4',
+                  tone.glow,
+                  'bg-gradient-to-l to-transparent',
+                )}
+              >
+                <div className="flex items-center gap-3">
+                  <span
+                    className={cn(
+                      'grid size-10 place-items-center rounded-xl',
+                      tone.icon,
+                    )}
+                  >
+                    <Icon aria-hidden="true" className="size-5" />
+                  </span>
+                  <h2 className="font-bold">{title.list}</h2>
+                </div>
                 <span className="text-xs text-muted-foreground">
                   {group === 3 ? supplierRows.length : rows.length} مورد در این
                   صفحه
@@ -359,7 +450,11 @@ export function InternalSections({
                     {supplierRows.map((supplier) => (
                       <div
                         key={supplier.id}
-                        className="flex flex-wrap items-center justify-between gap-3 px-5 py-4"
+                        className={cn(
+                          'flex flex-wrap items-center justify-between gap-3 border-r-2 px-5 py-4 transition-colors',
+                          tone.border,
+                          tone.row,
+                        )}
                       >
                         <div>
                           <p className="font-semibold">{supplier.name}</p>
@@ -375,7 +470,7 @@ export function InternalSections({
                             {supplier.isActive ? 'فعال' : 'غیرفعال'}
                           </Badge>
                           {'sample' in supplier && supplier.sample ? (
-                            <Badge>نمونه</Badge>
+                            <Badge className={tone.chip}>نمونه</Badge>
                           ) : null}
                         </div>
                       </div>
@@ -401,7 +496,11 @@ export function InternalSections({
                   {rows.map((row) => (
                     <div
                       key={row.id}
-                      className="grid gap-3 px-5 py-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"
+                      className={cn(
+                        'grid gap-3 border-r-2 px-5 py-4 transition-colors sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center',
+                        tone.border,
+                        tone.row,
+                      )}
                     >
                       <div className="min-w-0">
                         <p className="truncate font-semibold">
@@ -417,7 +516,7 @@ export function InternalSections({
                       <div className="flex flex-wrap items-center gap-2">
                         <Badge>{statusLabels[row.status]}</Badge>
                         {row.sample ? (
-                          <Badge>نمونه</Badge>
+                          <Badge className={tone.chip}>نمونه</Badge>
                         ) : (
                           <Button
                             size="sm"
@@ -472,71 +571,95 @@ export function InternalSections({
           </section>
 
           <Card
-            className="space-y-4 p-5 xl:sticky xl:top-4"
+            className={cn(
+              'relative overflow-hidden p-5 xl:sticky xl:top-4',
+              tone.border,
+            )}
             aria-label={title.form}
           >
-            <div className="border-b border-border pb-3">
-              <h2 className="font-bold">{title.form}</h2>
-            </div>
-            {group === 1 ? (
-              <Button
-                className="w-full"
-                disabled={
-                  !bootstrap.permissions.includes('procurement.request.create')
-                }
-                onClick={onCreate}
-              >
-                ثبت درخواست جدید
-              </Button>
-            ) : group === 3 ? (
-              <Button
-                className="w-full"
-                onClick={() => setSupplierFormOpen(true)}
-              >
-                ثبت تأمین‌کننده
-              </Button>
-            ) : (
-              <>
-                <FormField id="proc-section-request" label="پرونده خرید">
-                  <ProcurementSelect
-                    id="proc-section-request"
-                    className={selectClass}
-                    value={candidate}
-                    onChange={(event) => setCandidate(event.target.value)}
+            <span
+              aria-hidden="true"
+              className={cn(
+                'pointer-events-none absolute inset-x-0 top-0 h-32 bg-gradient-to-b to-transparent',
+                tone.glow,
+              )}
+            />
+            <div className="relative space-y-4">
+              <div className="border-b border-border pb-3">
+                <div className="flex items-center gap-3">
+                  <span
+                    className={cn(
+                      'grid size-10 place-items-center rounded-xl',
+                      tone.icon,
+                    )}
                   >
-                    <option value="">انتخاب پرونده</option>
-                    {realRows.map((row) => (
-                      <option key={row.id} value={row.id}>
-                        {row.number} · {row.draft.title}
-                      </option>
-                    ))}
-                  </ProcurementSelect>
-                </FormField>
+                    <Icon aria-hidden="true" className="size-5" />
+                  </span>
+                  <h2 className="font-bold">{title.form}</h2>
+                </div>
+              </div>
+              {group === 1 ? (
                 <Button
                   className="w-full"
-                  disabled={!candidate}
-                  onClick={() => onOpen(candidate)}
+                  disabled={
+                    !bootstrap.permissions.includes(
+                      'procurement.request.create',
+                    )
+                  }
+                  onClick={onCreate}
                 >
-                  باز کردن فرم
+                  ثبت درخواست جدید
                 </Button>
-              </>
-            )}
-            <div className="border-t border-border pt-4">
-              <Badge>پیش‌نمایش فرم</Badge>
-              <fieldset disabled className="mt-3 space-y-3">
-                {previewFields[group].map(([label, value], index) => (
-                  <FormField
-                    key={label}
-                    id={`proc-preview-${group}-${index}`}
-                    label={label}
-                  >
-                    <Input
-                      id={`proc-preview-${group}-${index}`}
-                      defaultValue={value}
-                    />
+              ) : group === 3 ? (
+                <Button
+                  className="w-full"
+                  onClick={() => setSupplierFormOpen(true)}
+                >
+                  ثبت تأمین‌کننده
+                </Button>
+              ) : (
+                <>
+                  <FormField id="proc-section-request" label="پرونده خرید">
+                    <ProcurementSelect
+                      id="proc-section-request"
+                      className={selectClass}
+                      value={candidate}
+                      onChange={(event) => setCandidate(event.target.value)}
+                    >
+                      <option value="">انتخاب پرونده</option>
+                      {realRows.map((row) => (
+                        <option key={row.id} value={row.id}>
+                          {row.number} · {row.draft.title}
+                        </option>
+                      ))}
+                    </ProcurementSelect>
                   </FormField>
-                ))}
-              </fieldset>
+                  <Button
+                    className="w-full"
+                    disabled={!candidate}
+                    onClick={() => onOpen(candidate)}
+                  >
+                    باز کردن فرم
+                  </Button>
+                </>
+              )}
+              <div className="border-t border-border pt-4">
+                <Badge className={tone.chip}>پیش‌نمایش فرم</Badge>
+                <fieldset disabled className="mt-3 space-y-3">
+                  {previewFields[group].map(([label, value], index) => (
+                    <FormField
+                      key={label}
+                      id={`proc-preview-${group}-${index}`}
+                      label={label}
+                    >
+                      <Input
+                        id={`proc-preview-${group}-${index}`}
+                        defaultValue={value}
+                      />
+                    </FormField>
+                  ))}
+                </fieldset>
+              </div>
             </div>
           </Card>
         </div>
@@ -582,8 +705,20 @@ function SectionRequestForm({
     );
   return (
     <div className="space-y-4">
-      <Card className="flex flex-wrap items-center justify-between gap-3 p-5">
-        <div>
+      <Card
+        className={cn(
+          'relative flex flex-wrap items-center justify-between gap-3 overflow-hidden p-5',
+          sectionTone[group].border,
+        )}
+      >
+        <span
+          aria-hidden="true"
+          className={cn(
+            'pointer-events-none absolute inset-x-0 top-0 h-full bg-gradient-to-b to-transparent',
+            sectionTone[group].glow,
+          )}
+        />
+        <div className="relative">
           <p className="text-xs text-muted-foreground" dir="ltr">
             {request.number}
           </p>
@@ -591,7 +726,7 @@ function SectionRequestForm({
             {request.draft.title || 'درخواست بدون عنوان'}
           </h2>
         </div>
-        <Badge>{statusLabels[request.status]}</Badge>
+        <Badge className="relative">{statusLabels[request.status]}</Badge>
       </Card>
       {group === 2 ? (
         <ApprovalForm
@@ -607,7 +742,12 @@ function SectionRequestForm({
           onSaved={onSaved}
         />
       ) : (
-        <Card className="p-5 text-sm text-muted-foreground">
+        <Card
+          className={cn(
+            'p-5 text-sm text-muted-foreground',
+            sectionTone[group].border,
+          )}
+        >
           این درخواست در وضعیت {statusLabels[request.status]} است.
         </Card>
       )}
@@ -655,7 +795,7 @@ function ApprovalForm({
     }
   }
   return (
-    <Card className="space-y-4 p-5">
+    <Card className={cn('space-y-4 p-5', sectionTone[2].border)}>
       <h2 className="font-bold">فرم تصمیم خرید</h2>
       {!eligible ? (
         <p className="text-sm text-muted-foreground">
@@ -744,8 +884,13 @@ function SectionOperations({
         bootstrap={bootstrap}
         onChanged={onSaved}
       />
-      <Card className="overflow-hidden">
-        <h2 className="border-b border-border px-5 py-4 font-bold">
+      <Card className={cn('overflow-hidden', sectionTone[group].border)}>
+        <h2
+          className={cn(
+            'border-b border-border px-5 py-4 font-bold bg-gradient-to-l to-transparent',
+            sectionTone[group].glow,
+          )}
+        >
           سوابق {kinds.find(([value]) => value === kind)?.[1]}
         </h2>
         {records.isPending ? (

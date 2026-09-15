@@ -1,6 +1,15 @@
 'use client';
 import { Suspense, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
+import {
+  BadgeCheck,
+  Building2,
+  ClipboardList,
+  Clock3,
+  Package,
+  ReceiptText,
+  RotateCcw,
+} from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type {
   ProcurementPermission,
@@ -28,6 +37,7 @@ import {
 } from './presentation';
 import { sampleRequests, type ProcurementListRow } from './sample-requests';
 import { ProcurementSelect } from './procurement-select';
+import { cn } from '@/lib/utils';
 
 const groups = [
   'میزکار خرید',
@@ -39,6 +49,32 @@ const groups = [
   'دریافت، پذیرش و مغایرت',
   'فاکتورها و ارتباط مالی',
 ] as const;
+const areaTone = {
+  1: {
+    icon: ClipboardList,
+    border: 'border-blue-300/70 dark:border-blue-400/25',
+    glow: 'from-blue-400/20 dark:from-blue-400/12',
+    badge: 'bg-blue-100 text-blue-700 dark:bg-blue-400/20 dark:text-blue-300',
+  },
+  3: {
+    icon: Building2,
+    border: 'border-cyan-300/70 dark:border-cyan-400/25',
+    glow: 'from-cyan-400/20 dark:from-cyan-400/12',
+    badge: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-400/20 dark:text-cyan-300',
+  },
+  5: {
+    icon: Package,
+    border: 'border-sky-300/70 dark:border-sky-400/25',
+    glow: 'from-sky-400/20 dark:from-sky-400/12',
+    badge: 'bg-sky-100 text-sky-700 dark:bg-sky-400/20 dark:text-sky-300',
+  },
+  7: {
+    icon: ReceiptText,
+    border: 'border-rose-300/70 dark:border-rose-400/25',
+    glow: 'from-rose-400/20 dark:from-rose-400/12',
+    badge: 'bg-rose-100 text-rose-700 dark:bg-rose-400/20 dark:text-rose-300',
+  },
+} as const;
 const sectionKeys = [
   'home',
   'requests',
@@ -387,6 +423,10 @@ function WorkspaceState({
                     (row) =>
                       row.status === 'SUBMITTED' || row.status === 'IN_REVIEW',
                   ).length,
+                  Clock3,
+                  'border-blue-300/70 dark:border-blue-400/25',
+                  'from-blue-400/20 dark:from-blue-400/12',
+                  'bg-blue-100 text-blue-700 dark:bg-blue-400/20 dark:text-blue-300',
                 ],
                 [
                   'در مسیر تأمین',
@@ -394,39 +434,93 @@ function WorkspaceState({
                     (row) =>
                       row.status === 'APPROVED' || row.status === 'SOURCING',
                   ).length,
+                  BadgeCheck,
+                  'border-emerald-300/70 dark:border-emerald-400/25',
+                  'from-emerald-400/20 dark:from-emerald-400/12',
+                  'bg-emerald-100 text-emerald-700 dark:bg-emerald-400/20 dark:text-emerald-300',
                 ],
                 [
                   'نیازمند اصلاح',
                   rows.filter((row) => row.status === 'CHANGES_REQUESTED')
                     .length,
+                  RotateCcw,
+                  'border-amber-300/70 dark:border-amber-400/25',
+                  'from-amber-400/20 dark:from-amber-400/12',
+                  'bg-amber-100 text-amber-800 dark:bg-amber-400/20 dark:text-amber-300',
                 ],
               ] as const
-            ).map(([label, count]) => (
-              <Card key={label} className="p-5">
-                <p className="text-sm text-muted-foreground">{label}</p>
-                <p className="mt-3 text-2xl font-black">
+            ).map(([label, count, Icon, border, glow, badge]) => (
+              <Card
+                key={label}
+                className={cn('relative overflow-hidden p-5', border)}
+              >
+                <span
+                  aria-hidden="true"
+                  className={cn(
+                    'pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b to-transparent',
+                    glow,
+                  )}
+                />
+                <div className="relative flex items-center justify-between gap-3">
+                  <p className="text-sm font-semibold text-foreground">
+                    {label}
+                  </p>
+                  <span
+                    className={cn(
+                      'grid size-10 place-items-center rounded-xl',
+                      badge,
+                    )}
+                  >
+                    <Icon aria-hidden="true" className="size-5" />
+                  </span>
+                </div>
+                <p className="relative mt-3 text-2xl font-black">
                   {list.isPending ? '—' : count.toLocaleString('fa-IR')}
                 </p>
               </Card>
             ))}
           </div>
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            {([1, 3, 5, 7] as const).map((index) => (
-              <button
-                key={sectionKeys[index]}
-                type="button"
-                onClick={() => navigateGroup(index)}
-                className="rounded-2xl border border-border bg-surface p-5 text-right shadow-sm transition-colors hover:border-primary/40 hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              >
-                <span className="text-sm font-bold">{groups[index]}</span>
-                <span className="mt-5 block text-xs text-primary">
-                  ورود به بخش ←
-                </span>
-              </button>
-            ))}
+            {([1, 3, 5, 7] as const).map((index) => {
+              const tone = areaTone[index];
+              const Icon = tone.icon;
+              return (
+                <button
+                  key={sectionKeys[index]}
+                  type="button"
+                  onClick={() => navigateGroup(index)}
+                  className={cn(
+                    'group relative min-h-40 overflow-hidden rounded-2xl border bg-surface p-5 text-right shadow-sm transition duration-200 hover:-translate-y-1 hover:border-primary/40 hover:shadow-[var(--shadow-card)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                    tone.border,
+                  )}
+                >
+                  <span
+                    aria-hidden="true"
+                    className={cn(
+                      'pointer-events-none absolute inset-x-0 top-0 h-28 bg-gradient-to-b to-transparent',
+                      tone.glow,
+                    )}
+                  />
+                  <span className="relative flex items-center gap-3">
+                    <span
+                      className={cn(
+                        'grid size-12 place-items-center rounded-2xl transition-transform group-hover:scale-105',
+                        tone.badge,
+                      )}
+                    >
+                      <Icon aria-hidden="true" className="size-6" />
+                    </span>
+                    <span className="text-sm font-black">{groups[index]}</span>
+                  </span>
+                  <span className="relative mt-8 block border-t border-border/70 pt-3 text-xs font-semibold text-primary">
+                    ورود به بخش ←
+                  </span>
+                </button>
+              );
+            })}
           </div>
-          <Card className="overflow-hidden">
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border p-5">
+          <Card className="overflow-hidden border-blue-300/70 dark:border-blue-400/25">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-gradient-to-l from-blue-400/15 to-transparent p-5 dark:from-blue-400/8">
               <h2 className="font-bold">پیگیری‌های من</h2>
               <div className="flex flex-wrap items-end gap-3">
                 <FormField id="proc-home-search" label="شماره یا عنوان">
