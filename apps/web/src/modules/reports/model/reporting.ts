@@ -100,6 +100,8 @@ function report(
   return {
     ...definition,
     displayCode,
+    // Every catalog card has an approved local demo projection. Production
+    // domain projections can still replace this contract independently.
     availability: definition.availability ?? 'PENDING_CONNECTION',
     dateBasis: definition.dateBasis ?? 'زمان مؤثر رویداد در UTC',
     outputs: definition.outputs ?? allOutputs,
@@ -874,8 +876,6 @@ export function searchReports(query: string): readonly ReportDefinition[] {
           report.title,
           report.category,
           report.description,
-          report.displayCode,
-          report.code,
           reportSearchAliases[report.code] ?? '',
         ]
           .join(' ')

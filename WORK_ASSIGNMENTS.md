@@ -1,5 +1,46 @@
 # Work Assignments
 
+## DASHBOARD-REPORTING-PC-AB-INTEGRATION — PC-C — IN_PROGRESS
+
+- درخواست 2026-09-15: دریافت تغییرات یکپارچه‌شدهٔ PC-A/PC-B از `origin/develop` و حفظ نسخهٔ نهایی Dashboard/Reports در شاخهٔ اجرایی `codex/pc-c-dashboard-reporting-latest`، سپس انتشار و درخواست merge.
+- تغییرات محلی PC-C پیش از ادغام ثبت می‌شوند؛ دادهٔ نمونهٔ PostgreSQL، فایل‌های `.data` و خروجی تولیدشده وارد Git نمی‌شوند.
+- شاخه‌های مستقل و باز PC-A/PC-B بدون تأیید یا merge خودشان به‌عنوان کار تکمیل‌شده تلقی نمی‌شوند؛ ریسک تعارض Schema/Manifest/Docs و تست یکپارچه‌سازی بررسی می‌شود.
+
+## REPORTING-AUTHENTICATED-RUNTIME-REPAIR — PC-C — LOCAL_COMPLETE
+
+- درخواست 2026-09-15: رفع خطای مشترک Dashboard/Reports/Favorites و اعتبارسنجی HTTP با احراز هویت، ذخیره و دانلود خروجی.
+- علت بازتولیدشده: جدول `b2b_organization_users` در دیتابیس محلی وجود ندارد و Interceptor سراسری پیش از رسیدن درخواست به Reports خطای P2021 می‌دهد.
+- محدوده: اعمال Migration افزایشی موجود `20260910100000_b2b_organization_users` فقط در دیتابیس localhost پس از بکاپ، اصلاح خطاهای persistence خروجی Reporting و تست‌های مرتبط. بدون ایجاد Migration جدید یا تغییر قاعده دسترسی B2B.
+- نتیجه: Migration موجود اعمال و با Prisma ثبت شد؛ نیازی به اصلاح بیشتر کد persistence نبود. HTTP با ورود واقعی حساب موقت، ۱۱ KPI، ۱۰ نمودار، ۱۲ Preview متصل، ثبت/خواندن/حذف Favorite، ذخیره فیلتر، شمارنده‌ها و دانلود CSV/XLSX/PDF موفق شد. حساب و خروجی‌های آزمایشی پاک شدند؛ ۱۸۰ fact نمونهٔ اصلی حفظ شد. PDF فعلی خلاصهٔ محدود است.
+
+## REPORTING-CATEGORY-FILTER-RTL-ICON — PC-C — LOCAL_COMPLETE
+
+- درخواست 2026-09-15: گزینه‌های فیلتر دستهٔ کاتالوگ گزارش‌ها راست‌چین و با آیکون تک‌رنگ در سمت راست عنوان نمایش داده شوند.
+- محدوده: فقط `reporting-workspace.tsx` و تست هدفمند همان کامپوننت؛ بدون تغییر API، دیتابیس، Migration، ناوبری، Dashboard یا وابستگی.
+- اجرا در شاخهٔ یکپارچهٔ مصوب `codex/pc-c-dashboard-reporting-latest` حفظ شد تا نسخهٔ Dashboard/Reports روی `localhost:3000` جابه‌جا نشود. TypeScript، lint و تست جدید موفق‌اند؛ انتظار قدیمی `RPT-001` در تست کامل فایل از قبل با کاتالوگ فعلی ناسازگار است.
+
+## DASHBOARD-REPORTING-DEMO-PROJECTION-REPAIR — PC-C — LOCAL_COMPLETE
+
+- درخواست 2026-09-15: رفع خطای بارگذاری داشبورد و نمایش خروجی factهای سفر نمونه در Dashboard و Reports.
+- فقط Projection/تست Reporting، وضعیت اتصال کاتالوگ، ابزار inspect خواندنی دمو و مستندات همین واحد اصلاح شدند؛ دادهٔ تولیدشده حذف یا وارد Git نشد.
+- تاریخ ISO بازهٔ پیش‌فرض دیگر دوباره پسوند زمان نمی‌گیرد؛ خروجی مالی بر اساس ارز جداست، و شاخص/گزارش فاقد Producer سفر با عدد ساختگی از fact سفر پر نمی‌شود.
+- API همان Worktree روی پورت ۴۰۰۰ بازساخته و با Web موجود روی ۳۰۰۰ یکپارچه است. اعتبارسنجی عددی و محدودیت نشست احراز شده در گزارش تحویل ثبت می‌شود.
+
+## DASHBOARD-REPORTING-LOCAL-DEMO-DATA — PC-C — LOCAL_COMPLETE / RUNTIME_ACTIVE
+
+- درخواست مالک در 2026-09-15: ایجاد دادهٔ نمونهٔ واقعی‌نما و قابل‌حذف برای
+  Dashboard و تمام گزارش‌های قابل‌اجرای کاتالوگ، بدون ثبت دادهٔ تولیدشده در Git.
+- محدوده: Projection عمومی Dashboard در ماژول Reporting، مصرف‌کنندهٔ Dashboard،
+  generator/cleanup محلی و مستندات اجرای همان داده. داده با شناسهٔ پیشونددار
+  `LOCAL_DEMO_DASHBOARD_REPORTING_` وارد PostgreSQL می‌شود و حذف فقط همان
+  شناسه‌ها را هدف می‌گیرد؛ دادهٔ عملیاتی موجود دست‌نخورده می‌ماند.
+- بدون تغییر Navigation، دادهٔ واقعی مشتری/مسافر یا اجرای migration مخرب.
+- نتیجه: Projection نسخه‌دار `reporting.dashboard.travel.v1` به API و Dashboard
+  متصل شد؛ ۱۸۰ fact دمو با شناسهٔ قابل‌حذف وارد PostgreSQL محلی است و فقط کارت‌های
+  گزارش سفر دارای Projection معتبر به Preview/Export وصل‌اند. Web/API typecheck
+  و ۴۰ تست هدفمند Dashboard/Reporting موفق‌اند؛ Web روی 3000 و API بازساخته‌شده
+  روی 4000 اجرا می‌شوند.
+
 ## DASHBOARD-REPORTING-LATEST-009 — PC-C — LOCAL_COMPLETE / RUNTIME_ACTIVE
 
 - درخواست صریح مالک برای اجرای هم‌زمان آخرین نسخه Dashboard و Reports روی
@@ -2525,6 +2566,17 @@ B2B-360-REMOVE-SUBTITLE-001: READY_FOR_REVIEW. Combined runtime1bf840b/PID8604 b
 - درخواست مالک در 2026-09-14: «جزئیات تعریف شاخص» هر KPI باید یک پنل بازشونده با تعریف قابل ممیزی نمایش دهد.
 - محدودهٔ رزروشده: فقط Dashboard workspace و تست مدل/قرارداد نمایش آن، به‌همراه اسناد وضعیت همین واحد کار. بدون تغییر API، Schema/Migration/Seed، داده عملیاتی، مجوز یا Dependency.
 - پیاده‌سازی کامل شد: کلیک روی هر KPI یک Drawer کنترل‌شده و قابل‌دسترسی از سمت راست باز می‌کند و عنوان، نام فنی، شناسه پایدار، نقش، تعریف کسب‌وکار، فرمول، منابع داده، Grain، مبنای زمانی، سیاست ارز، مقایسه، حذف‌ها، Permission، تصمیم باز و مسیر فرم گزارش مرتبط را نمایش می‌دهد. ۱۳۸۸ تست Web، lint، typecheck و build تولیدی ۴۶ مسیر موفق‌اند؛ مرورگر داخلی سلامت login و redirect امن Dashboard را تأیید کرد و بررسی بصری Drawer به نشست احرازشده کاربر واگذار شد.
+
+# REPORTING-ALL-COLUMN-SORT-LOCAL-DEMO — PC-C — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-14: همه ستون‌های جدول نتیجه گزارش باید از سرستون فلش مرتب‌سازی داشته باشند و دیتاست نمونه محلی قبلی برای آزمون Preview و خروجی‌ها به API متصل شود.
+- محدوده: مدل و Workspace وب Reports، Backend ماژول Reports، Prisma مدل/مهاجرت افزایشی گزارش، importer محلی و تست‌ها/مستندات همان دامنه؛ Dashboard و سایر ماژول‌ها بازنویسی نشدند.
+- پیاده‌سازی کامل شد: تمام ۱۱ ستون پاسخ Travel Report از سرستون مرتب می‌شوند؛ API Reports و تولید/دانلود CSV، XLSX و PDF به Runtime canonical متصل است. ۴۸ fact و Workspace دمو با importer idempotent در PostgreSQL محلی فعال شد. Prisma validate/generate، TypeScript هر دو برنامه، ۱۲۷۰ تست API و ۱۳۸۹ تست Web موفق‌اند. Web3000/API4000 فعال و مسیر محافظت‌شده Reports پاسخ 401 مورد انتظار بدون نشست می‌دهد؛ fixture در Worktree گزارش قبلی ignored مانده و در Git کپی نشده است.
 - پیگیری 2026-09-14: متن تکراری «جزئیات تعریف شاخص» از همه کارت‌ها حذف می‌شود؛ خود کارت همچنان با `aria-haspopup="dialog"` پنل تعریف قابل ممیزی را باز می‌کند.
 - پیگیری کامل شد: متن راهنمای تکراری از کارت‌ها حذف شد و قرارداد تست، نبودن آن را کنترل می‌کند. تست هدفمند Dashboard، lint محدوده و Web typecheck موفق‌اند.
 - پیگیری 2026-09-14: دو ورودی تاریخ Dashboard اکنون یک تقویم نمایشی مشترک دارند؛ انتخاب شمسی یا میلادی در هر کدام، ورودی دیگر را همگام می‌کند و مقدار ذخیره‌شده همچنان ISO/Gregorian است. ۱۳ تست مرتبط و lint موفق‌اند؛ typecheck سراسری فعلاً فقط به خطای هم‌زمان `reportingClient` در تست Reports متوقف است.
+# REPORTING-DIRECT-SHARING — PC-C — READY_FOR_REVIEW / LOCAL_RUNTIME
+
+- دامنه: اشتراک‌گذاری شخص‌به‌شخص گزارش ذخیره‌شده از «گزارش‌های من» و فرم پیکربندی، فهرست گیرندگان مجاز، نمایش در «اشتراک‌گذاری‌شده با من» و اجرای مجدد با Scope/Permission گیرنده.
+- مالک فایل‌ها: `apps/api/src/reporting/**`، `apps/web/src/modules/reports/**`، مدل و Migration افزایشی Reporting و مستندات Reporting. تغییرات موجود Dashboard/Reports حفظ می‌شوند.
+- نتیجه: grant صریح دریافت‌کننده، API مستندشده، UI جست‌وجو/چندانتحخابی، شمارنده زنده و اجرای گزارش اشتراکی تحت Scope گیرنده تکمیل شد. دو Migration محدود Reporting روی دیتابیس محلی اجرا شدند؛ ۳۷ تست هدفمند، TypeScript، Lint و Build هر دو برنامه موفق‌اند.

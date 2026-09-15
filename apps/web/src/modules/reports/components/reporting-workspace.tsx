@@ -6,6 +6,7 @@ import {
   ArrowUp,
   ArrowUpDown,
   BarChart3,
+  Building2,
   Bookmark,
   Check,
   CalendarClock,
@@ -15,11 +16,21 @@ import {
   FileDown,
   FileText,
   Filter,
+  Headset,
   History,
+  Layers3,
+  Megaphone,
+  Plane,
   Play,
   RotateCcw,
   Save,
+  ShoppingBag,
+  Star,
+  Ticket,
+  TrendingUp,
+  UserRound,
   Users,
+  WalletCards,
   Search,
   ShieldCheck,
   Table2,
@@ -30,9 +41,11 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { ReportingOperationsView } from './reporting-operations-view';
+import { ReportSharingDialog } from './report-sharing-dialog';
 
 import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
+import type { CalendarSystem } from '@/components/ui/date-picker.utils';
 import {
   FormField,
   Input,
@@ -63,6 +76,7 @@ import {
   type SalesByOrganizationPreviewInput,
   type SalesByOrganizationReportResult,
   type ReportingWorkspaceCounts,
+  type ReportingSavedReportRecord,
 } from '../model/client';
 import {
   filterReportCatalog,
@@ -377,6 +391,8 @@ export function ReportDateRangeFields({
   onToDateChange: (value: string) => void;
   toDate: string;
 }) {
+  const [calendarSystem, setCalendarSystem] = useState<CalendarSystem>('persian');
+
   return (
     <div>
       <div className="grid gap-3 sm:grid-cols-2">
@@ -384,8 +400,10 @@ export function ReportDateRangeFields({
           <DatePicker
             aria-describedby={error ? 'report-date-range-error' : undefined}
             aria-invalid={Boolean(error)}
+            calendarSystem={calendarSystem}
             id="report-from-date"
             gregorianEnglish
+            onCalendarSystemChange={setCalendarSystem}
             onChange={onFromDateChange}
             placeholder="انتخاب تاریخ"
             value={fromDate}
@@ -395,8 +413,10 @@ export function ReportDateRangeFields({
           <DatePicker
             aria-describedby={error ? 'report-date-range-error' : undefined}
             aria-invalid={Boolean(error)}
+            calendarSystem={calendarSystem}
             id="report-to-date"
             gregorianEnglish
+            onCalendarSystemChange={setCalendarSystem}
             onChange={onToDateChange}
             placeholder="انتخاب تاریخ"
             value={toDate}
@@ -571,16 +591,103 @@ export async function createAndDownloadReportExport({
   return artifactId;
 }
 
+const reportCategoryIcons: Readonly<Record<string, LucideIcon>> = {
+  'فروش و قراردادها': TrendingUp,
+  'مالی و خزانه‌داری': WalletCards,
+  'رزرواسیون و عملیات سفر': Plane,
+  'مدیریت بلیت‌ها': Ticket,
+  'خرید و تأمین': ShoppingBag,
+  'امور مشتریان و SLA': Headset,
+  'آژانس‌ها و مشتریان سازمانی': Building2,
+  'مارکتینگ': Megaphone,
+  'منابع انسانی': UserRound,
+  'اسناد و انطباق': FileText,
+  'گزارش‌های مدیریتی تجمیعی': Layers3,
+};
+
+export function ReportCategorySelectOption({ category }: { category: string }) {
+  const CategoryIcon =
+    category === 'all'
+      ? Layers3
+      : (reportCategoryIcons[category] ?? FileText);
+  return (
+    <span className="flex w-full items-center gap-2 text-right" dir="rtl">
+      <CategoryIcon
+        aria-hidden="true"
+        className="size-4 shrink-0 text-foreground"
+        strokeWidth={1.75}
+      />
+      <span className="min-w-0 flex-1 text-right">
+        {category === 'all' ? 'همه دسته‌ها' : category}
+      </span>
+    </span>
+  );
+}
+
+const reportCategoryColors: Readonly<Record<string, string>> = {
+  'فروش و قراردادها': 'bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300',
+  'مالی و خزانه‌داری': 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300',
+  'رزرواسیون و عملیات سفر': 'bg-sky-50 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300',
+  'مدیریت بلیت‌ها': 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300',
+  'خرید و تأمین': 'bg-orange-50 text-orange-700 dark:bg-orange-950/40 dark:text-orange-300',
+  'امور مشتریان و SLA': 'bg-teal-50 text-teal-700 dark:bg-teal-950/40 dark:text-teal-300',
+  'آژانس‌ها و مشتریان سازمانی': 'bg-violet-50 text-violet-700 dark:bg-violet-950/40 dark:text-violet-300',
+  'مارکتینگ': 'bg-pink-50 text-pink-700 dark:bg-pink-950/40 dark:text-pink-300',
+  'منابع انسانی': 'bg-cyan-50 text-cyan-700 dark:bg-cyan-950/40 dark:text-cyan-300',
+  'اسناد و انطباق': 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300',
+  'گزارش‌های مدیریتی تجمیعی': 'bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300',
+};
+
+const catalogFavoriteFilterState = {
+  catalogFavorite: true,
+  fromDate: '',
+  toDate: '',
+  legalEntity: 'ALL',
+  currency: 'ALL',
+  filterValues: {},
+} as const;
+
+type CatalogFavoriteSavedRecord = ReportingSavedReportRecord & {
+  isFavorite?: boolean;
+  isSharedWithActor?: boolean;
+};
+
+export function catalogFavoriteIds(rows: readonly CatalogFavoriteSavedRecord[]) {
+  return Object.fromEntries(
+    rows
+      .filter((row) =>
+        row.isFavorite === true &&
+        row.isSharedWithActor !== true &&
+        row.filterState?.catalogFavorite === true &&
+        reportCatalog.some((report) => report.code === row.reportCode),
+      )
+      .map((row) => [row.reportCode, row.id]),
+  ) as Record<string, string>;
+}
+
+function catalogFavoriteErrorMessage(error: unknown) {
+  if (error instanceof ReportingApiError && error.status >= 500)
+    return 'ذخیره علاقه‌مندی‌ها در سرور در دسترس نیست؛ سرویس گزارش‌ها و پایگاه داده را بررسی کنید.';
+  return error instanceof Error ? error.message : 'تغییر علاقه‌مندی ناموفق بود.';
+}
+
 function ReportCard({
+  favoriteBusy,
+  isFavorite,
+  onToggleFavorite,
   onSelect,
   report,
   selected,
 }: {
+  favoriteBusy: boolean;
+  isFavorite: boolean;
+  onToggleFavorite: (report: ReportDefinition) => void;
   onSelect: (report: ReportDefinition) => void;
   report: ReportDefinition;
   selected: boolean;
 }) {
   const connected = report.availability === 'READY';
+  const CategoryIcon = reportCategoryIcons[report.category] ?? FileText;
 
   return (
     <Card
@@ -591,10 +698,15 @@ function ReportCard({
       }
     >
       <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-1.5">
-            <Badge className="font-mono font-semibold" dir="ltr">
-              {report.displayCode}
-            </Badge>
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+            <span
+              aria-label={report.category}
+              className={`grid size-10 shrink-0 place-items-center rounded-xl ${reportCategoryColors[report.category] ?? 'bg-primary/10 text-primary'}`}
+              title={report.category}
+            >
+              <CategoryIcon aria-hidden="true" className="size-5" />
+            </span>
             <Badge className="font-medium">{report.category}</Badge>
             <Badge
               className={
@@ -610,6 +722,21 @@ function ReportCard({
             >
               {connected ? 'اتصال محدود قابل اجرا' : 'در انتظار منبع داده'}
             </Badge>
+            </div>
+            <button
+              aria-label={`${isFavorite ? 'حذف از' : 'افزودن به'} گزارش‌های مورد علاقه من: ${report.title}`}
+              aria-pressed={isFavorite}
+              className="grid size-9 shrink-0 place-items-center rounded-lg text-muted-foreground outline-none transition hover:bg-amber-50 hover:text-amber-600 focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 dark:hover:bg-amber-950/30"
+              disabled={favoriteBusy}
+              onClick={() => onToggleFavorite(report)}
+              title={isFavorite ? 'حذف از علاقه‌مندی‌ها' : 'افزودن به علاقه‌مندی‌ها'}
+              type="button"
+            >
+              <Star
+                aria-hidden="true"
+                className={`size-5 ${isFavorite ? 'fill-amber-400 text-amber-500' : ''}`}
+              />
+            </button>
           </div>
           <h3 className="mt-2 text-sm font-bold">{report.title}</h3>
           <p className="mt-2 line-clamp-3 text-xs leading-5 text-muted-foreground">
@@ -660,11 +787,23 @@ const reportSortLabels: Record<ReportSort['column'], string> = {
   contractCount: 'تعداد قرارداد',
   currencyCode: 'ارز',
   ownerUserId: 'کارشناس',
+  passengerCount: 'تعداد مسافر',
+  ticketCount: 'تعداد بلیت',
+  purchaseAmount: 'مبلغ خرید',
+  grossProfit: 'سود ناخالص',
+  refundAmount: 'مبلغ استرداد',
+  settlementBalance: 'مانده تسویه',
 };
 
 const descendingFirstColumns = new Set<ReportSort['column']>([
   'amount',
   'contractCount',
+  'passengerCount',
+  'ticketCount',
+  'purchaseAmount',
+  'grossProfit',
+  'refundAmount',
+  'settlementBalance',
 ]);
 
 export function nextReportSort(
@@ -1136,34 +1275,52 @@ export function ReportResultPanel({
                       sort={sort}
                     />
                     {detailColumns.passengerCount ? (
-                      <th className="p-3 text-center font-semibold">
-                        تعداد مسافر
-                      </th>
+                      <ResultSortHeader
+                        column="passengerCount"
+                        label="تعداد مسافر"
+                        onSortChange={onSortChange}
+                        sort={sort}
+                      />
                     ) : null}
                     {detailColumns.ticketCount ? (
-                      <th className="p-3 text-center font-semibold">
-                        تعداد بلیت
-                      </th>
+                      <ResultSortHeader
+                        column="ticketCount"
+                        label="تعداد بلیت"
+                        onSortChange={onSortChange}
+                        sort={sort}
+                      />
                     ) : null}
                     {detailColumns.purchaseAmount ? (
-                      <th className="p-3 text-center font-semibold">
-                        مبلغ خرید
-                      </th>
+                      <ResultSortHeader
+                        column="purchaseAmount"
+                        label="مبلغ خرید"
+                        onSortChange={onSortChange}
+                        sort={sort}
+                      />
                     ) : null}
                     {detailColumns.grossProfit ? (
-                      <th className="p-3 text-center font-semibold">
-                        سود ناخالص
-                      </th>
+                      <ResultSortHeader
+                        column="grossProfit"
+                        label="سود ناخالص"
+                        onSortChange={onSortChange}
+                        sort={sort}
+                      />
                     ) : null}
                     {detailColumns.refundAmount ? (
-                      <th className="p-3 text-center font-semibold">
-                        مبلغ استرداد
-                      </th>
+                      <ResultSortHeader
+                        column="refundAmount"
+                        label="مبلغ استرداد"
+                        onSortChange={onSortChange}
+                        sort={sort}
+                      />
                     ) : null}
                     {detailColumns.settlementBalance ? (
-                      <th className="p-3 text-center font-semibold">
-                        مانده تسویه
-                      </th>
+                      <ResultSortHeader
+                        column="settlementBalance"
+                        label="مانده تسویه"
+                        onSortChange={onSortChange}
+                        sort={sort}
+                      />
                     ) : null}
                   </tr>
                 </thead>
@@ -1477,6 +1634,22 @@ export function ReportingWorkspace({
   const [saveFeedback, setSaveFeedback] = useState('');
   const [workspaceCounts, setWorkspaceCounts] =
     useState<ReportingWorkspaceCounts | null>(null);
+  const [favoriteIds, setFavoriteIds] = useState<Record<string, string>>({});
+  const [favoritesLoading, setFavoritesLoading] = useState(true);
+  const [favoriteBusyCode, setFavoriteBusyCode] = useState<string | null>(null);
+  const [favoriteFeedback, setFavoriteFeedback] = useState('');
+  const loadCatalogFavorites = useCallback(async () => {
+    setFavoritesLoading(true);
+    try {
+      const rows = await reportingApi.listWorkspace<CatalogFavoriteSavedRecord>('saved');
+      setFavoriteIds(catalogFavoriteIds(rows));
+      setFavoriteFeedback('');
+    } catch (error) {
+      setFavoriteFeedback(catalogFavoriteErrorMessage(error));
+    } finally {
+      setFavoritesLoading(false);
+    }
+  }, []);
   const refreshWorkspaceCounts = useCallback(async () => {
     try {
       setWorkspaceCounts(await reportingApi.workspaceCounts());
@@ -1490,6 +1663,13 @@ export function ReportingWorkspace({
     });
     return () => window.cancelAnimationFrame(frame);
   }, [refreshWorkspaceCounts]);
+  useEffect(() => {
+    if (view !== 'catalog') return;
+    const frame = window.requestAnimationFrame(() => {
+      void loadCatalogFavorites();
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [loadCatalogFavorites, view]);
   const visible = useMemo(() => {
     const filtered = filterReportCatalog({
       availability,
@@ -1505,6 +1685,40 @@ export function ReportingWorkspace({
   const categories = [
     ...new Set(reportCatalog.map((report) => report.category)),
   ];
+  const favoriteReports = visible.filter((report) => favoriteIds[report.code]);
+  const otherReports = visible.filter((report) => !favoriteIds[report.code]);
+  const toggleCatalogFavorite = async (report: ReportDefinition) => {
+    if (favoriteBusyCode) return;
+    setFavoriteBusyCode(report.code);
+    setFavoriteFeedback('');
+    try {
+      const existingId = favoriteIds[report.code];
+      if (existingId) {
+        await reportingApi.deleteSaved(existingId);
+        setFavoriteIds((current) => {
+          const next = { ...current };
+          delete next[report.code];
+          return next;
+        });
+        setFavoriteFeedback('گزارش از علاقه‌مندی‌ها حذف شد.');
+      } else {
+        const saved = await reportingApi.saveReport({
+          reportCode: report.code,
+          name: report.title,
+          sharingScope: 'PERSONAL',
+          isFavorite: true,
+          filterState: { ...catalogFavoriteFilterState },
+        });
+        setFavoriteIds((current) => ({ ...current, [report.code]: saved.id }));
+        setFavoriteFeedback('گزارش به علاقه‌مندی‌ها اضافه شد.');
+      }
+      await refreshWorkspaceCounts();
+    } catch (error) {
+      setFavoriteFeedback(catalogFavoriteErrorMessage(error));
+    } finally {
+      setFavoriteBusyCode(null);
+    }
+  };
   const connectedReportSelected =
     selected.availability === 'READY';
   const supportedConnectedFilterLabels = new Set(['شعبه', 'کارشناس', 'وضعیت']);
@@ -1621,6 +1835,24 @@ export function ReportingWorkspace({
     setQuery('');
     setCategory('all');
     setAvailability('all');
+  }
+
+  function selectCatalogReport(nextReport: ReportDefinition) {
+    setSelected(nextReport);
+    setPersistFilterState(true);
+    setResult(null);
+    setRunError(null);
+    setResultPreviewVisible(false);
+    setResultMode('table');
+    setResultChartType('horizontal-bar');
+    setResultSort(defaultReportSort);
+    setExportFormat('XLSX');
+    setFromDate('');
+    setToDate('');
+    setCurrency('ALL');
+    setLegalEntity('ALL');
+    setReportFilterValues({});
+    setConfigurationOpen(true);
   }
 
   function clearAllReportFilters() {
@@ -1782,7 +2014,7 @@ export function ReportingWorkspace({
                       aria-label="جست‌وجوی گزارش"
                       className="pe-10"
                       onChange={(event) => setQuery(event.target.value)}
-                      placeholder="جست‌وجو در عنوان، دسته یا کد گزارش"
+                      placeholder="جست‌وجو در عنوان یا دسته گزارش"
                       value={query}
                     />
                   </label>
@@ -1791,11 +2023,13 @@ export function ReportingWorkspace({
                       <Filter className="size-4" />
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">همه دسته‌ها</SelectItem>
+                    <SelectContent className="text-right" dir="rtl">
+                      <SelectItem className="text-right" value="all">
+                        <ReportCategorySelectOption category="all" />
+                      </SelectItem>
                       {categories.map((item) => (
-                        <SelectItem key={item} value={item}>
-                          {item}
+                        <SelectItem className="text-right" key={item} value={item}>
+                          <ReportCategorySelectOption category={item} />
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -1829,48 +2063,79 @@ export function ReportingWorkspace({
                   </span>
                 </div>
               </Card>
-              {visible.length ? (
-                <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-                  {visible.map((report) => (
-                    <ReportCard
-                      key={report.code}
-                      onSelect={(nextReport) => {
-                        setSelected(nextReport);
-                        setPersistFilterState(true);
-                        setResult(null);
-                        setRunError(null);
-                        setResultPreviewVisible(false);
-                        setResultMode('table');
-                        setResultChartType('horizontal-bar');
-                        setResultSort(defaultReportSort);
-                        setExportFormat('XLSX');
-                        setFromDate('');
-                        setToDate('');
-                        setCurrency('ALL');
-                        setLegalEntity('ALL');
-                        setReportFilterValues({});
-                        setConfigurationOpen(true);
-                      }}
-                      report={report}
-                      selected={selected.code === report.code}
-                    />
-                  ))}
+              <section aria-labelledby="catalog-favorites-title" className="space-y-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Star aria-hidden="true" className="size-5 fill-amber-400 text-amber-500" />
+                  <h2 id="catalog-favorites-title" className="text-lg font-bold">
+                    گزارش‌های مورد علاقه من
+                  </h2>
+                  <Badge className="tabular-nums">
+                    {favoriteReports.length.toLocaleString('fa-IR')}
+                  </Badge>
                 </div>
-              ) : (
-                <EmptyState
-                  action={
-                    <Button
-                      onClick={resetCatalogFilters}
-                      type="button"
-                      variant="outline"
-                    >
-                      پاک‌کردن جست‌وجو و فیلترها
-                    </Button>
-                  }
-                  description="عبارت جست‌وجو یا فیلترهای دسته و اتصال را تغییر دهید."
-                  title="گزارشی پیدا نشد"
-                />
-              )}
+                {favoriteFeedback ? (
+                  <p aria-live="polite" className="rounded-xl border border-border bg-surface px-3 py-2 text-xs" role="status">
+                    {favoriteFeedback}
+                  </p>
+                ) : null}
+                {favoritesLoading ? (
+                  <Skeleton className="h-24 w-full rounded-2xl" />
+                ) : favoriteReports.length ? (
+                  <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+                    {favoriteReports.map((report) => (
+                      <ReportCard
+                        favoriteBusy={favoriteBusyCode !== null}
+                        isFavorite
+                        key={report.code}
+                        onSelect={selectCatalogReport}
+                        onToggleFavorite={(item) => void toggleCatalogFavorite(item)}
+                        report={report}
+                        selected={selected.code === report.code}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <Card className="border-dashed px-4 py-5 text-sm text-muted-foreground">
+                    {Object.keys(favoriteIds).length
+                      ? 'با جست‌وجو و فیلترهای فعلی، گزارشی از علاقه‌مندی‌ها نمایش داده نمی‌شود.'
+                      : 'برای دسترسی سریع به گزارش‌های مهم، ستارهٔ کارت هر گزارش را انتخاب کنید.'}
+                  </Card>
+                )}
+              </section>
+              <section aria-labelledby="catalog-reports-title" className="space-y-3">
+                <h2 id="catalog-reports-title" className="text-lg font-bold">
+                  گزارش‌های کاتالوگ
+                </h2>
+                {otherReports.length ? (
+                  <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+                    {otherReports.map((report) => (
+                      <ReportCard
+                        favoriteBusy={favoriteBusyCode !== null}
+                        isFavorite={false}
+                        key={report.code}
+                        onSelect={selectCatalogReport}
+                        onToggleFavorite={(item) => void toggleCatalogFavorite(item)}
+                        report={report}
+                        selected={selected.code === report.code}
+                      />
+                    ))}
+                  </div>
+                ) : visible.length ? (
+                  <p className="rounded-xl border border-dashed border-border p-4 text-sm text-muted-foreground">
+                    همهٔ گزارش‌های مطابق فیلتر در علاقه‌مندی‌ها هستند.
+                  </p>
+                ) : (
+                  <EmptyState
+                    action={
+                      <Button onClick={resetCatalogFilters} type="button" variant="outline">
+                        پاک‌کردن جست‌وجو و فیلترها
+                      </Button>
+                    }
+                    description="عبارت جست‌وجو یا فیلترهای دسته و اتصال را تغییر دهید."
+                    title="گزارشی پیدا نشد"
+                  />
+                )}
+              </section>
             </div>
         </section>
       ) : (
@@ -2145,6 +2410,22 @@ export function ReportingWorkspace({
                       <Save aria-hidden="true" className="size-4" />
                       ذخیره گزارش
                     </Button>
+                    <ReportSharingDialog
+                      className="w-full"
+                      filterState={{
+                        fromDate,
+                        toDate,
+                        legalEntity,
+                        currency,
+                        filterValues: reportFilterValues,
+                      }}
+                      onShared={async () => {
+                        setSaveFeedback('گزارش با تنظیمات فعلی ذخیره و برای دریافت‌کنندگان ارسال شد.');
+                        await refreshWorkspaceCounts();
+                      }}
+                      reportCode={selected.code}
+                      reportName={selected.title}
+                    />
                     {saveFeedback ? <p className="rounded-lg bg-primary/5 p-2 text-xs leading-5" role="status">{saveFeedback}</p> : null}
                     <div className="border-t pt-3">
                       <label

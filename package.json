@@ -25,6 +25,9 @@
     "documents:demo:preview": "node apps/api/scripts/run-local-documents-demo.mjs --preview",
     "documents:demo:apply": "node apps/api/scripts/run-local-documents-demo.mjs --apply",
     "dev:local-unified": "pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/start-unified-local-runtime.ps1",
+    "reporting:demo:import": "pnpm --filter @rubi/database reporting:demo:import",
+    "reporting:demo:generate": "pnpm --filter @rubi/database reporting:demo:generate",
+    "reporting:demo:clear": "pnpm --filter @rubi/database reporting:demo:clear",
     "infra:config": "docker compose --env-file .env.example -f infrastructure/compose.dev.yaml config",
     "infra:up": "docker compose --env-file .env -f infrastructure/compose.dev.yaml up -d",
     "infra:down": "docker compose --env-file .env -f infrastructure/compose.dev.yaml down"

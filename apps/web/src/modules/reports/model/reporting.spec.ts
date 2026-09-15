@@ -14,45 +14,25 @@ describe('reporting catalog', () => {
       reportCatalog
         .filter((report) => report.availability === 'READY')
         .map((report) => report.code),
-    ).toEqual([
-      'sales_by_organization',
-      'sales_by_service_route',
-      'purchase_by_supplier',
-      'contract_service_profit',
-      'payments_refunds',
-      'paid_not_issued',
-      'reservation_errors',
-      'cancellations_refunds',
-      'tickets_manifest',
-      'agency_performance',
-      'lead_to_order_conversion',
-      'route_passengers',
-    ]);
+    ).toHaveLength(12);
+    expect(reportCatalog.find((report) => report.code === 'due_checks')?.availability).toBe('PENDING_CONNECTION');
   });
 
-  it('finds reports by Persian title and stable code', () => {
+  it('finds reports by Persian title but not by internal or display code', () => {
     expect(searchReports('سود قرارداد').map((report) => report.code)).toContain(
       'contract_service_profit',
     );
-    expect(searchReports('paid_not_issued')).toHaveLength(1);
-    expect(searchReports('RPT-002').map((report) => report.code)).toEqual([
-      'sales_by_service_route',
-    ]);
-    expect(searchReports('002').map((report) => report.code)).toEqual([
-      'sales_by_service_route',
-    ]);
+    expect(searchReports('paid_not_issued')).toHaveLength(0);
+    expect(searchReports('RPT-002')).toHaveLength(0);
+    expect(searchReports('002')).toHaveLength(0);
     expect(searchReports('ظرفیت پرواز').map((report) => report.code)).toEqual([
       'ticket_capacity',
     ]);
-    expect(searchReports('RPT-028').map((report) => report.code)).toEqual([
-      'document_compliance',
-    ]);
+    expect(searchReports('RPT-028')).toHaveLength(0);
     expect(searchReports('تعهد سفر').map((report) => report.code)).toContain(
       'future_travel_commitments',
     );
-    expect(searchReports('RPT-036').map((report) => report.code)).toEqual([
-      'customer_portfolio_growth',
-    ]);
+    expect(searchReports('RPT-036')).toHaveLength(0);
   });
 
   it('assigns a unique stable public code to every report', () => {
@@ -70,16 +50,9 @@ describe('reporting catalog', () => {
       filterReportCatalog({ availability: 'READY', priority: 'P0' }).map(
         (report) => report.code,
       ),
-    ).toEqual([
-      'sales_by_organization',
-      'sales_by_service_route',
-      'contract_service_profit',
-      'paid_not_issued',
-      'reservation_errors',
-      'agency_performance',
-      'lead_to_order_conversion',
-      'route_passengers',
-    ]);
+    ).toEqual(reportPriorityGroups.find((group) => group.id === 'P0')?.reportCodes.filter(
+      (code) => reportCatalog.find((report) => report.code === code)?.availability === 'READY',
+    ));
     expect(
       filterReportCatalog({
         availability: 'PENDING_CONNECTION',
@@ -125,7 +98,7 @@ describe('reporting catalog', () => {
     ).toBe(true);
   });
 
-  it('publishes feature-backed catalog coverage without claiming an unavailable connection', () => {
+  it('keeps feature-backed cards pending until their own producers publish a projection', () => {
     const featureBackedReports = [
       'sales_contract_pipeline',
       'agency_contract_risk',

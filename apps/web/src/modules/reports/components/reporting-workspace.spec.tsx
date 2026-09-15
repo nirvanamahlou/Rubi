@@ -6,6 +6,7 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   buildReportingFilterSnapshot,
   createAndDownloadReportExport,
+  ReportCategorySelectOption,
   ReportDateRangeFields,
   reportChartTypes,
   ReportResultPanel,
@@ -113,6 +114,16 @@ function renderResultPanel(
 }
 
 describe('ReportingWorkspace', () => {
+  it('right-aligns catalog categories with monochrome icons beside their labels', () => {
+    const html = renderToStaticMarkup(
+      <ReportCategorySelectOption category="فروش و قراردادها" />,
+    );
+    expect(html).toContain('dir="rtl"');
+    expect(html).toContain('text-right');
+    expect(html).toContain('text-foreground');
+    expect(html).toContain('فروش و قراردادها');
+    expect(html).toContain('<svg');
+  });
   it('maps authoritative workspace counts to every operational navigation item', () => {
     const counts = {
       myReports: 3,
@@ -343,7 +354,13 @@ describe('ReportingWorkspace', () => {
     expect(table).not.toContain('id="report-result-sort"');
     expect(table).toContain('مرتب‌سازی براساس مبلغ قرارداد');
     expect(table).toContain('aria-sort="descending"');
-    expect(table.match(/aria-sort=/g)).toHaveLength(5);
+    expect(table.match(/aria-sort=/g)).toHaveLength(11);
+    expect(table).toContain('مرتب‌سازی براساس تعداد مسافر');
+    expect(table).toContain('مرتب‌سازی براساس تعداد بلیت');
+    expect(table).toContain('مرتب‌سازی براساس مبلغ خرید');
+    expect(table).toContain('مرتب‌سازی براساس سود ناخالص');
+    expect(table).toContain('مرتب‌سازی براساس مبلغ استرداد');
+    expect(table).toContain('مرتب‌سازی براساس مانده تسویه');
     expect(table).not.toContain('نوع نمودار');
     expect(table).toContain('مبلغ قرارداد');
     expect(table).toContain('text-center');
@@ -409,6 +426,12 @@ describe('ReportingWorkspace', () => {
         direction: 'DESC',
       }),
     ).toEqual({ column: 'ownerUserId', direction: 'ASC' });
+    expect(
+      nextReportSort('grossProfit', {
+        column: 'ownerUserId',
+        direction: 'ASC',
+      }),
+    ).toEqual({ column: 'grossProfit', direction: 'DESC' });
   });
 
   it('hides the duplicate grouped-row KPI and rebalances the remaining cards', () => {

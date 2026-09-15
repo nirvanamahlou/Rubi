@@ -371,7 +371,7 @@ describe('dashboard URL filters', () => {
 });
 
 describe('dashboard permission and data states', () => {
-  it('denies data by default while no public projection exists', async () => {
+  it('keeps a blocked state when the API base URL is unavailable', async () => {
     await expect(
       dashboardProjectionClient.load({
         filters: defaultDashboardFilters,
@@ -382,6 +382,8 @@ describe('dashboard permission and data states', () => {
       state: 'blocked',
       message: expect.any(String),
       metadata: null,
+      metrics: {},
+      visuals: {},
     });
   });
 
@@ -397,7 +399,7 @@ describe('dashboard permission and data states', () => {
     ).rejects.toMatchObject({ name: 'AbortError' });
   });
 
-  it('keeps the UI explicit about every state and never embeds fake chart values', () => {
+  it('keeps the UI explicit about every state and renders only projection values', () => {
     const source = readFileSync(
       resolve(
         process.cwd().endsWith('apps\\web') ||

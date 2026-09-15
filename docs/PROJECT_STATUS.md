@@ -1,5 +1,28 @@
 # وضعیت پروژه
 
+## REPORTING-AUTHENTICATED-RUNTIME-REPAIR — 2026-09-15
+
+- ریشهٔ مشترک HTTP 500 در Dashboard/Reports/Favorites: جدول `b2b_organization_users` در دیتابیس محلی موجود نبود. Interceptor سراسری B2B تمام درخواست‌های دارای Actor را پیش از Controller با Prisma P2021 متوقف می‌کرد. Health عمومی و تست مستقیم Repository این مسیر را پوشش نمی‌دهند.
+- پس از بکاپ محلی، Migration افزایشی موجود `20260910100000_b2b_organization_users` اجرا و با Prisma به‌عنوان applied ثبت شد. هیچ قاعدهٔ احراز هویت یا مرز دسترسی B2B حذف نشد.
+- اعتبارسنجی روی API واقعی پورت ۴۰۰۰ با ورود حساب موقت: ۱۱ KPI و ۱۰ نمودار دارای منبع نمونه، ۱۲ گزارش متصل، ذخیرهٔ فیلتر، افزودن/خواندن/حذف علاقه‌مندی، شمارنده‌ها و دانلود فایل موفق‌اند. فایل XLSX باز و ساختار worksheet بررسی شد؛ CSV محتوای گزارش و Filter Snapshot دارد. PDF فعلی فقط خلاصهٔ محدود دارد.
+- حساب، نقش و خروجی‌های تست پاک شدند؛ دادهٔ نمونهٔ اصلی حفظ و در Git ثبت نشد. برای پذیرش Runtime، تست HTTP احرازشده لازم است؛ Health 200 به‌تنهایی کافی نیست.
+
+## REPORTING-CATEGORY-FILTER-RTL-ICON — 2026-09-15
+
+- گزینه‌های فیلتر دسته‌بندی در کاتالوگ گزارش‌ها اکنون متن راست‌چین و آیکون تک‌رنگ همان دسته را در سمت راست متن دارند؛ گزینهٔ «همه دسته‌ها» نیز آیکون عمومی تک‌رنگ دارد.
+- تغییر فقط در Frontend همین Worktree یکپارچه انجام شد. تست جدید، Web TypeScript و lint موفق‌اند؛ یک تست قدیمی مرتبط با نمایش کد `RPT-001` در کل مجموعهٔ کامپوننت همچنان با نسخهٔ فعلی کاتالوگ ناسازگار است.
+
+## DASHBOARD-REPORTING-DEMO-PROJECTION-REPAIR — 2026-09-15
+
+- علت خطای Dashboard: تاریخ ISO بازه پیش‌فرض دوباره با `T00:00...Z` ترکیب و
+  `RangeError` در API ایجاد می‌شد. تاریخ اصلاح و اعتبارسنجی بازه اضافه شد.
+- ۱۸۰ fact محلی بررسی شد: در ۳۱ روز اخیر ۵۵ fact IRR با فروش 873432000 و
+  ۶ fact USD با فروش 81968000؛ جمع این دو ارز نمایش داده نمی‌شود.
+- Projection حالا فقط شناسه‌های دارای محاسبهٔ مشخص سفر را پاسخ می‌دهد؛ نبود
+  Producer برای شاخص غیرسفری و گزارش چک/HR/دفتر/SLA به عدد فرضی تبدیل نمی‌شود.
+- API اصلاح‌شده روی ۴۰۰۰ و Web Worktree یکپارچه روی ۳۰۰۰ فعال‌اند. مشاهدهٔ UI
+  احرازشده در این نشست قابل انجام نبود و باید در نشست کاربر تأیید شود.
+
 ## DASHBOARD-REPORTING-LATEST-009 — نسخه یکپارچه Dashboard و Reports
 
 آخرین نسخه Reports تا `9d8d985f` و Dashboard تا `af6de805` روی شاخه مستقل
@@ -2378,3 +2401,28 @@ The Web Reporting adapter now preserves all existing Travel projection measures 
 پیگیری UI: متن تکراری «جزئیات تعریف شاخص» از انتهای همه کارت‌های KPI حذف شد؛ کارت‌ها فقط با کلیک، پنل تعریف را باز می‌کنند. تست هدفمند Dashboard، lint محدوده و Web typecheck موفق‌اند.
 
 پیگیری فیلتر تاریخ Dashboard: DatePicker مشترک اکنون به‌شکل افزایشی از `calendarSystem` کنترل‌شده پشتیبانی می‌کند. «از تاریخ» و «تا تاریخ» یک state تقویم دارند؛ انتخاب شمسی یا میلادی در هر ورودی، ورودی دیگر را بدون تغییر مقدار ISO/Gregorian همگام می‌سازد. ۱۳ تست DatePicker/Dashboard و lint محدوده موفق‌اند. typecheck سراسری در این Worktree فقط به خطای هم‌زمان `reportingClient` تعریف‌نشده در `reports/model/client.spec.ts` متوقف است؛ تغییر مربوطه خارج از این واحد کار حفظ شده است.
+
+## 2026-09-14 — All-column report sorting and local demo data (PC-C)
+
+تمام ستون‌های قابل‌نمایش جدول نتیجه Reports، شامل ابعاد، ارز، تعداد سفارش/مسافر/بلیت و مبالغ فروش، خرید، سود ناخالص، استرداد و مانده تسویه، اکنون فلش مرتب‌سازی سرستون دارند و Sort پیش از Pagination در API اجرا می‌شود. ماژول Backend گزارش با endpointهای Preview، Workspace و CSV/XLSX/PDF به Runtime نهایی افزوده شد. ۴۸ fact واقعی‌نمای قبلی از fixture ignored خارج از Worktree، به‌صورت idempotent فقط در PostgreSQL محلی وارد شدند؛ فایل داده، PII واقعی و Seed عمومی وارد Git نشده‌اند. Prisma validate/generate، API و Web typecheck و مجموعه کامل تست‌ها موفق‌اند؛ Web روی 3000 و API روی 4000 از Worktree canonical فعال‌اند.
+# وضعیت 2026-09-14 — اشتراک‌گذاری مستقیم گزارش‌ها
+
+- دکمه اشتراک‌گذاری به فرم پیکربندی و عملیات «گزارش‌های من» اضافه شد؛ انتخاب گیرنده
+  جست‌وجوپذیر و چندانتخابی است و بازخورد موفق/خطا دارد.
+- Backend فقط به مالک دارای `reporting.share` اجازه تغییر grant می‌دهد و گیرندگان را
+  بر اساس فعال‌بودن، مجوز گزارش و در صورت لزوم شعبه مشترک محدود می‌کند.
+- جدول و دو Migration افزایشی `reporting_saved_report_shares` و `reporting.share` روی
+  PostgreSQL محلی اجرا و در تاریخچه Prisma ثبت شدند؛ Migrationهای pending سایر تیم‌ها
+  اعمال نشدند.
+- API/Web TypeScript، Lint، Build و ۳۷ تست هدفمند Reports موفق‌اند. Runtime یکپارچه
+  Web روی 3000 و API روی 4000 فعال و health هر دو برابر 200 است.
+# وضعیت دیتای دموی Dashboard و Reports — 2026-09-15
+
+- Dashboard اکنون از Projection عمومی و نسخه‌دار `reporting.dashboard.travel.v1`
+  استفاده می‌کند و KPIها و نمودارهای هر صفحه را از `reporting.travel.facts.v1`
+  دریافت می‌کند.
+- برای ارائهٔ محلی، ۱۸۰ رخداد سفر واقعی‌نما با پیشوند
+  `LOCAL_DEMO_DASHBOARD_REPORTING_` در PostgreSQL ساخته شده‌اند. این داده‌ها در
+  Git/Seed عمومی ثبت نشده‌اند و فقط با `pnpm reporting:demo:clear` حذف می‌شوند.
+- فقط کارت‌های سفر دارای Projection معتبر در محیط دمو Preview و Export دارند.
+  گزارش‌های حوزه‌های دیگر تا انتشار Producer اختصاصی خود Pending باقی می‌مانند.

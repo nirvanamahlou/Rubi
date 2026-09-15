@@ -47,7 +47,7 @@ describe('reporting public projection client', () => {
       '"toUtc":"2026-09-10T20:30:00.000Z"',
     );
     expect(fetch.mock.calls[0]?.[1]?.body).toContain(
-      '"sort":{"column":"contractCount","direction":"ASC"}',
+      '"sort":{"column":"orderCount","direction":"ASC"}',
     );
   });
 
@@ -112,6 +112,38 @@ describe('reporting public projection client', () => {
     });
   });
 
+  it('maps every detailed table sort column to the approved travel projection', async () => {
+    const payload = {
+      reportCode: 'sales_by_service_route',
+      reportVersion: 1,
+      grain: 'ORDER_ITEM_CURRENCY',
+      sourceProjection: 'reporting.travel.facts.v1',
+      columns: [],
+      rows: [],
+      total: 0,
+      page: 1,
+      pageSize: 25,
+      previewLimit: 100,
+      generatedAtUtc: '2026-09-14T10:00:00.000Z',
+      sourceDataAsOfUtc: null,
+      totalsByCurrency: [],
+      filterSnapshot: { capturedAtUtc: '2026-09-14T10:00:00.000Z', branchIds: [], filters: {} },
+      filterOptions: {},
+      warnings: [],
+    };
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify(payload)));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await reportingApi.salesByOrganization({
+      reportCode: 'sales_by_service_route',
+      sort: { column: 'grossProfit', direction: 'ASC' },
+    });
+
+    expect(fetchMock.mock.calls[0]?.[1]?.body).toContain(
+      '"sort":{"column":"grossProfit","direction":"ASC"}',
+    );
+  });
+
   it('does not replace a network failure with zero-valued report data', async () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('offline')));
     await expect(reportingApi.salesByOrganization()).rejects.toMatchObject({
@@ -135,6 +167,46 @@ describe('reporting public projection client', () => {
     expect(fetch).toHaveBeenCalledWith(
       'http://localhost:4000/api/v1/reports/workspace-counts',
       expect.objectContaining({ method: 'GET', cache: 'no-store' }),
+    );
+  });
+
+  it('loads eligible recipients and persists explicit report shares', async () => {
+    const fetch = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify([
+            { id: 'user-2', displayName: 'کاربر دوم', username: 'user.two' },
+          ]),
+        ),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            savedReportId: 'report-1',
+            recipientUserIds: ['user-2'],
+          }),
+        ),
+      );
+    vi.stubGlobal('fetch', fetch);
+
+    await expect(
+      reportingApi.sharingRecipients('sales_by_service_route'),
+    ).resolves.toHaveLength(1);
+    await reportingApi.shareSavedReport('report-1', ['user-2']);
+
+    expect(fetch).toHaveBeenNthCalledWith(
+      1,
+      'http://localhost:4000/api/v1/reports/sales_by_service_route/share-recipients',
+      expect.objectContaining({ method: 'GET' }),
+    );
+    expect(fetch).toHaveBeenNthCalledWith(
+      2,
+      'http://localhost:4000/api/v1/reports/saved/report-1/shares',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ recipientUserIds: ['user-2'] }),
+      }),
     );
   });
 });

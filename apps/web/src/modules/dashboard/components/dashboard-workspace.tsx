@@ -12,7 +12,6 @@ import {
   ChevronsRight,
   CircleDollarSign,
   Clock3,
-  DatabaseZap,
   Filter,
   Info,
   LayoutDashboard,
@@ -150,20 +149,20 @@ const navigationIcons: Record<string, LucideIcon> = {
   'workforce-hr': UserRoundCog,
 };
 
-function EmptyMetric({ compact = false }: { compact?: boolean }) {
+function Metric({ compact = false, metric }: { compact?: boolean; metric?: { value: string; unit: string; detail: string } | undefined }) {
   return (
-    <div className={cn('flex items-end gap-2', compact ? 'mt-2' : 'mt-4')}>
+    <div className={cn('flex min-w-0 flex-wrap items-end gap-2', compact ? 'mt-2' : 'mt-4')}>
       <span
         className={cn(
           'font-black tracking-tight text-foreground',
-          compact ? 'text-2xl' : 'text-3xl',
+          metric?.value.includes('·') ? 'break-words text-base leading-6' : compact ? 'text-2xl' : 'text-3xl',
         )}
-        aria-label="داده‌ای دریافت نشده"
+        aria-label={metric ? metric.value : 'داده‌ای دریافت نشده'}
       >
-        —
+        {metric?.value ?? '—'}
       </span>
       <span className="pb-1 text-[11px] font-semibold text-muted-foreground">
-        بدون دادهٔ تأییدشده
+        {metric ? metric.unit : 'بدون دادهٔ تأییدشده'}
       </span>
     </div>
   );
@@ -174,11 +173,13 @@ function KpiCard({
   selected,
   onSelect,
   featured = false,
+  metric,
 }: {
   definition: DashboardKpiDefinition;
   selected: boolean;
   onSelect(): void;
   featured?: boolean;
+  metric?: { value: string; unit: string; detail: string } | undefined;
 }) {
   return (
     <button
@@ -218,7 +219,8 @@ function KpiCard({
           )}
         </span>
       </span>
-      <EmptyMetric compact />
+      <Metric compact metric={metric} />
+      {metric?.detail ? <span className="mt-1 block text-[10px] leading-4 text-muted-foreground">{metric.detail}</span> : null}
     </button>
   );
 }
@@ -491,6 +493,7 @@ function ProjectionSlot({
   decision,
   drilldown,
   featured = false,
+  data,
 }: {
   kind: DashboardVisualKind;
   title: string;
@@ -499,6 +502,7 @@ function ProjectionSlot({
   decision?: string | undefined;
   drilldown: string;
   featured?: boolean;
+  data?: { labels: readonly string[]; values: readonly number[]; currencyCode?: string } | undefined;
 }) {
   const Icon = visualIcons[kind];
   return (
@@ -525,18 +529,18 @@ function ProjectionSlot({
         </Badge>
       </div>
       <div className="relative mt-4">
-        <EmptyVisualCanvas kind={kind} />
-        <div className="pointer-events-none absolute inset-0 grid place-items-center p-4 text-center">
-          <div className="max-w-xs rounded-xl border border-border/80 bg-surface/95 px-4 py-3 shadow-sm backdrop-blur-sm">
-            <DatabaseZap
-              aria-hidden="true"
-              className="mx-auto size-5 text-blue-700 dark:text-blue-300"
-            />
-            <p className="mt-1.5 text-xs font-black text-foreground">
-              دادهٔ تأییدشده برای نمایش موجود نیست
-            </p>
-          </div>
-        </div>
+        {data?.currencyCode ? <span className="mb-2 block text-[11px] font-semibold text-muted-foreground">مبلغ فروش · <bdi dir="ltr">{data.currencyCode}</bdi></span> : null}
+        {data?.values.length ? (
+          kind === 'table' || kind === 'queue' ? (
+            <div className="overflow-hidden rounded-xl border border-border/80">
+              {data.labels.slice(0, 5).map((label, index) => <div className="flex items-center justify-between border-b border-border/70 px-3 py-2 text-xs last:border-0" key={label}><span>{label}</span><strong>{data.values[index]?.toLocaleString('fa-IR')}</strong></div>)}
+            </div>
+          ) : (
+            <div className="flex min-h-44 items-end gap-2 rounded-xl border border-border/80 bg-muted/[0.18] p-4" aria-label={`دادهٔ ${visualLabels[kind]}`}>
+              {data.values.map((value, index) => <div className="flex min-w-0 flex-1 flex-col items-center gap-2" key={`${data.labels[index]}-${value}`}><span className="text-[10px] font-bold">{data.labels[index]}</span><span className="w-full rounded-t bg-primary/75" style={{ height: `${Math.max(12, Math.round((value / Math.max(...data.values)) * 112))}px` }} /><span className="text-[10px]">{value.toLocaleString('fa-IR')}</span></div>)}
+            </div>
+          )
+        ) : <><EmptyVisualCanvas kind={kind} /><p className="sr-only">دادهٔ تأییدشده برای نمایش موجود نیست</p></>}
       </div>
       <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-border/80 pt-3">
         <span className="text-[11px] text-muted-foreground">منبع:</span>
@@ -936,12 +940,24 @@ export function DashboardWorkspace() {
   );
   const legalEntity = useLegalEntityContext();
   const selection = legalEntity.context?.selection ?? null;
+  const activePage =
+    dashboardPages.find((page) => page.id === filters.page) ??
+    dashboardPages[0]!;
+  const activePageKpis = dashboardKpis
+    .filter((kpi) => activePage.kpiIds.includes(kpi.id))
+    .map((kpi) =>
+      activePage.id === 'executive-overview' && kpi.id === 'collected'
+        ? { ...kpi, title: executiveSalesTitles[filters.range] }
+        : kpi,
+    );
   const query = useQuery({
     queryKey: ['dashboard-public-projection-v1', filters, selection],
     queryFn: ({ signal }) =>
       dashboardProjectionClient.load({
         filters,
         legalEntity: selection,
+        kpiIds: activePageKpis.map((item) => item.id),
+        visualIds: activePage.visualizations.map((item) => item.id),
         signal,
       }),
     enabled: !dateRangeError,
@@ -971,16 +987,6 @@ export function DashboardWorkspace() {
       return next;
     });
   };
-  const activePage =
-    dashboardPages.find((page) => page.id === filters.page) ??
-    dashboardPages[0]!;
-  const activePageKpis = dashboardKpis
-    .filter((kpi) => activePage.kpiIds.includes(kpi.id))
-    .map((kpi) =>
-      activePage.id === 'executive-overview' && kpi.id === 'collected'
-        ? { ...kpi, title: executiveSalesTitles[filters.range] }
-        : kpi,
-    );
   const selectedKpi =
     activePageKpis.find((item) => item.id === filters.widget) ?? null;
 
@@ -1089,6 +1095,7 @@ export function DashboardWorkspace() {
                       key={item.id}
                       definition={item}
                       featured
+                      metric={query.data?.metrics[item.id]}
                       selected={filters.widget === item.id}
                       onSelect={() =>
                         updateFilters({
@@ -1107,7 +1114,7 @@ export function DashboardWorkspace() {
 
               <div className="grid gap-4 xl:grid-cols-2">
                 {activePage.visualizations.map((visualization, index) => (
-                  <ProjectionSlot
+                    <ProjectionSlot
                     featured={index === 0}
                     key={visualization.id}
                     kind={visualization.kind}
@@ -1115,7 +1122,8 @@ export function DashboardWorkspace() {
                     description={visualization.description}
                     source={visualization.source}
                     decision={visualization.openDecision}
-                    drilldown={visualization.drilldown}
+                      drilldown={visualization.drilldown}
+                      data={query.data?.visuals[visualization.id]}
                   />
                 ))}
               </div>

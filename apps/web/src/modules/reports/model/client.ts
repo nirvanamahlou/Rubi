@@ -80,7 +80,17 @@ export interface SalesByOrganizationPreviewInput {
   pageSize?: number;
   sort?: {
     column:
-      'branchId' | 'ownerUserId' | 'currencyCode' | 'amount' | 'contractCount';
+      | 'branchId'
+      | 'ownerUserId'
+      | 'currencyCode'
+      | 'amount'
+      | 'contractCount'
+      | 'passengerCount'
+      | 'ticketCount'
+      | 'purchaseAmount'
+      | 'grossProfit'
+      | 'refundAmount'
+      | 'settlementBalance';
     direction: 'ASC' | 'DESC';
   };
 }
@@ -92,11 +102,25 @@ export interface ReportingWorkspaceCounts {
   exports: number;
 }
 
+export interface ReportingShareRecipient {
+  id: string;
+  displayName: string;
+  username: string;
+}
+
+export interface ReportingSavedReportRecord {
+  id: string;
+  reportCode: string;
+  name: string;
+  filterState: Record<string, unknown>;
+}
+
 interface TravelReportResult {
   reportCode: string;
   reportVersion: number;
   grain: string;
   sourceProjection: string;
+  columns?: readonly { key: string; label: string; kind: string }[];
   rows: readonly { grainId: string; primaryDimension: string; secondaryDimension: string; currencyCode: string; orderCount: number; passengerCount: number; ticketCount: number; salesAmount: string; purchaseAmount: string; grossProfit: string; refundAmount: string; settlementBalance: string }[];
   total: number;
   page: number;
@@ -180,14 +204,18 @@ async function request<T>(path: string, init: RequestInit, retried = false) {
 
 export const reportingApi = {
   salesByOrganization(input: SalesByOrganizationPreviewInput = {}) {
-    const genericReport = Boolean(
-      input.reportCode && input.reportCode !== 'sales_by_organization',
-    );
     const genericSortAliases: Record<string, string> = {
       amount: 'salesAmount',
       branchId: 'primaryDimension',
       contractCount: 'orderCount',
       ownerUserId: 'secondaryDimension',
+      passengerCount: 'passengerCount',
+      ticketCount: 'ticketCount',
+      purchaseAmount: 'purchaseAmount',
+      grossProfit: 'grossProfit',
+      refundAmount: 'refundAmount',
+      settlementBalance: 'settlementBalance',
+      currencyCode: 'currencyCode',
     };
     const filters = {
       ...reportDateRangeUtc(input.fromDate, input.toDate),
@@ -208,20 +236,17 @@ export const reportingApi = {
             : {}),
           page: input.page ?? 1,
           pageSize: input.pageSize ?? 25,
-          sort: genericReport
-            ? {
-                column:
-                  genericSortAliases[input.sort?.column ?? 'amount'] ??
-                  'salesAmount',
-                direction: input.sort?.direction ?? 'DESC',
-              }
-            : input.sort ?? { column: 'amount', direction: 'DESC' },
+          sort: {
+            column:
+              genericSortAliases[input.sort?.column ?? 'amount'] ??
+              'salesAmount',
+            direction: input.sort?.direction ?? 'DESC',
+          },
           timezone: 'Asia/Tehran',
         }),
       },
     ).then((result) => {
       if (
-        result.reportCode === 'sales_by_organization' ||
         result.sourceProjection === 'sales.reporting.organization.v2'
       ) {
         return result as SalesByOrganizationReportResult;
@@ -254,7 +279,7 @@ export const reportingApi = {
           branchIds: travel.filterOptions.branch ?? [], ownerUserIds: travel.filterOptions.expert ?? [],
           currencyCodes: travel.filterOptions.currency ?? [], statuses: travel.filterOptions.status ?? [],
         },
-        capabilities: { filters: Object.keys(travel.filterOptions), sort: ['salesAmount'], unsupportedFilters: [] }, warnings: travel.warnings,
+        capabilities: { filters: Object.keys(travel.filterOptions), sort: travel.columns?.map((column) => column.key) ?? ['salesAmount'], unsupportedFilters: [] }, warnings: travel.warnings,
         summary: { todayContracts: 0, activeContracts: travel.total, unpaidContracts: 0, partiallySettledContracts: 0, settledContracts: 0, pendingFinancePayments: 0, pendingReservationActions: travel.rows.filter((row) => row.ticketCount === 0).length },
       } satisfies SalesByOrganizationReportResult;
     });
@@ -268,7 +293,25 @@ export const reportingApi = {
     });
   },
   saveReport(input: { reportCode: string; name: string; sharingScope: 'PERSONAL' | 'TEAM'; isFavorite: boolean; filterState: Record<string, unknown> }) {
-    return request<Record<string, unknown>>('/saved', { method: 'POST', body: JSON.stringify(input) });
+    return request<ReportingSavedReportRecord>('/saved', { method: 'POST', body: JSON.stringify(input) });
+  },
+  sharingRecipients(reportCode: string) {
+    return request<readonly ReportingShareRecipient[]>(
+      `/${encodeURIComponent(reportCode)}/share-recipients`,
+      { method: 'GET' },
+    );
+  },
+  savedReportShares(id: string) {
+    return request<{ savedReportId: string; recipientUserIds: readonly string[] }>(
+      `/saved/${encodeURIComponent(id)}/shares`,
+      { method: 'GET' },
+    );
+  },
+  shareSavedReport(id: string, recipientUserIds: readonly string[]) {
+    return request<{ savedReportId: string; recipientUserIds: readonly string[] }>(
+      `/saved/${encodeURIComponent(id)}/shares`,
+      { method: 'POST', body: JSON.stringify({ recipientUserIds }) },
+    );
   },
   deleteSaved(id: string) { return request<{ deleted: true }>(`/saved/${id}`, { method: 'DELETE' }); },
   createExport(reportCode: string, input: { format: 'CSV' | 'XLSX' | 'PDF'; query: Record<string, unknown>; simulateFailure?: boolean }) {

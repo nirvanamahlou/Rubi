@@ -13,6 +13,7 @@ import {
   type SavedReportFilter,
 } from '../model/navigation';
 import { reportingApi } from '../model/client';
+import { ReportSharingDialog } from './report-sharing-dialog';
 
 type Row = Record<string, unknown> & { id: string };
 
@@ -76,6 +77,16 @@ export function ReportingOperationsView({ view, savedFilter, onMutation }: { vie
               );
             }}><Play className="size-4" /> {status === 'FAILED' ? 'تلاش مجدد' : 'اجرا'}</Link></Button>}
             {view === 'saved' ? <Button size="sm" variant="ghost" onClick={async () => { if (!window.confirm('این گزارش ذخیره‌شده حذف شود؟')) return; await reportingApi.deleteSaved(row.id); setFeedback('گزارش حذف شد.'); await load(); await onMutation?.(); }}><Trash2 className="size-4" /> حذف</Button> : null}
+            {view === 'saved' ? <ReportSharingDialog
+              reportCode={reportCode}
+              reportName={String(row.name ?? reportCode)}
+              savedReportId={row.id}
+              onShared={async () => {
+                setFeedback('دسترسی دریافت‌کنندگان گزارش به‌روزرسانی شد.');
+                await load();
+                await onMutation?.();
+              }}
+            /> : null}
           </div></td>
         </tr>;
       })}</tbody></table>
