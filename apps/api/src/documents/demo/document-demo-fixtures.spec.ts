@@ -76,14 +76,14 @@ describe('portable synthetic Documents demo fixtures', () => {
 
   it.each([
     [
-      'postgresql://localhost:55432/rubi?schema=public',
+      'postgresql://localhost:55432/nora?schema=public',
       'development',
       '.data/documents',
     ],
     [
-      'postgresql://127.0.0.1:55432/rubi_documents_demo_test_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+      'postgresql://127.0.0.1:55432/nora_documents_demo_test_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
       'test',
-      'C:\\temp\\rubi-documents-demo',
+      'C:\\temp\\nora-documents-demo',
     ],
   ])('allows only intended local targets', (url, environment, storageRoot) => {
     expect(() =>
@@ -93,21 +93,21 @@ describe('portable synthetic Documents demo fixtures', () => {
 
   it.each([
     [
-      'postgresql://remote.example:55432/rubi',
+      'postgresql://remote.example:55432/nora',
       'development',
       '.data/documents',
     ],
-    ['postgresql://127.0.0.1:5432/rubi', 'development', '.data/documents'],
-    ['postgresql://127.0.0.1:55432/rubi', 'production', '.data/documents'],
+    ['postgresql://127.0.0.1:5432/nora', 'development', '.data/documents'],
+    ['postgresql://127.0.0.1:55432/nora', 'production', '.data/documents'],
     [
-      'postgresql://127.0.0.1:55432/rubi?schema=other',
+      'postgresql://127.0.0.1:55432/nora?schema=other',
       'test',
       '.data/documents',
     ],
-    ['postgresql://127.0.0.1:55432/rubi', 'test', 'C:\\'],
-    ['postgresql://127.0.0.1:55432/rubi', 'test', 'C:/'],
-    ['postgresql://127.0.0.1:55432/rubi', 'test', '\\\\server\\share'],
-    ['postgresql://127.0.0.1:55432/rubi', 'test', '//server/share'],
+    ['postgresql://127.0.0.1:55432/nora', 'test', 'C:\\'],
+    ['postgresql://127.0.0.1:55432/nora', 'test', 'C:/'],
+    ['postgresql://127.0.0.1:55432/nora', 'test', '\\\\server\\share'],
+    ['postgresql://127.0.0.1:55432/nora', 'test', '//server/share'],
   ])('rejects unsafe database or storage targets', (url, environment, root) => {
     expect(() =>
       assertLocalDocumentsDemoTarget(url, environment, root),

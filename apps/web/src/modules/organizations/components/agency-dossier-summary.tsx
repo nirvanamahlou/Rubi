@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import type { B2bCooperationRole } from '@rubi/contracts';
+import type { B2bCooperationRole } from '@nora/contracts';
 import { masterDataApi } from '@/modules/master-data/api/client';
 import { agencyClient } from '../api/agency-client';
 import { useDossierBranch } from './use-dossier-branch';

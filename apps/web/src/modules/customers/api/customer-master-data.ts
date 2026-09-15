@@ -2,7 +2,7 @@ import type {
   CustomerDetail,
   MasterDataRecord,
   MasterDataResource,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 
 import { masterDataApi } from '@/modules/master-data/api/client';
 

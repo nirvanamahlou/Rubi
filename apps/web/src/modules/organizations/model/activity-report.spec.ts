@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { OrganizationActivityEvent } from '@rubi/contracts';
+import type { OrganizationActivityEvent } from '@nora/contracts';
 import { activityWorkbook, loadActivityReport } from './activity-report';
 import { createOrganizationXlsx } from './organization-xlsx';
 

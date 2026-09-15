@@ -4,7 +4,7 @@ import type {
   OrganizationActivityEvent,
   OrganizationActivityPage,
   OrganizationActivityQuery,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
 import {
@@ -107,7 +107,7 @@ export function OrganizationActivityPanel({
     try {
       const { downloadOrganizationXlsx } =
         await import('../model/organization-xlsx');
-      downloadOrganizationXlsx(`rubi-dossier-activity-${organizationId}.xlsx`, [
+      downloadOrganizationXlsx(`nora-dossier-activity-${organizationId}.xlsx`, [
         [
           'گزارش فعالیت پرونده',
           organizationId,
@@ -165,7 +165,7 @@ export function OrganizationActivityPanel({
       <div className="panel-body space-y-4">
         <div className="dossier-filter-grid">
           <label className="field">
-            <span>شعبه همکاری روبی</span>
+            <span>شعبه همکاری نورا</span>
             <select
               className="input"
               value={branchId}

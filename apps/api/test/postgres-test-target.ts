@@ -6,14 +6,14 @@ export function postgresTestTarget(env: NodeJS.ProcessEnv = process.env): {
   port: string;
   user: string;
 } {
-  const container = env.RUBI_TEST_POSTGRES_CONTAINER;
-  const port = env.RUBI_TEST_POSTGRES_PORT;
-  const user = env.RUBI_TEST_POSTGRES_USER;
+  const container = env.NORA_TEST_POSTGRES_CONTAINER;
+  const port = env.NORA_TEST_POSTGRES_PORT;
+  const user = env.NORA_TEST_POSTGRES_USER;
   if (!container && !port && !user)
-    return { container: 'rubi-postgres-1', port: '55432', user: 'rubi_local' };
+    return { container: 'nora-postgres-1', port: '55432', user: 'nora_local' };
   if (
     !container ||
-    !/^rubi-test-[a-z0-9][a-z0-9-]{0,60}$/.test(container) ||
+    !/^nora-test-[a-z0-9][a-z0-9-]{0,60}$/.test(container) ||
     !port ||
     !/^\d{4,5}$/.test(port) ||
     Number(port) < 1024 ||

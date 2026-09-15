@@ -4,7 +4,7 @@ import type {
   DocumentListItemV1,
   DocumentOptionsResponseV1,
   SalesContractDetail,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import { Button } from '@/components/ui/button';
 import { FormField, Input } from '@/components/ui/form-controls';
 import {

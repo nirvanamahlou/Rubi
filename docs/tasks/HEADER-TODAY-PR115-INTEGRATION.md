@@ -12,7 +12,7 @@ The owner explicitly approved the date-header PR and PR #115 merging to develop.
 
 ## Runtime safety
 
-The active dataset is `rubi_hr_current_20260908` on local PostgreSQL55432 and document storage is `C:/Users/admin/AppData/Local/Rubi/hr007-documents`. Do not substitute a stale copy. Backup/rehearsal precedes the ten existing pending additive migrations. No operational seed or permission sync is authorized by this integration.
+The active dataset is `nora_hr_current_20260908` on local PostgreSQL55432 and document storage is `C:/Users/admin/AppData/Local/Nora/hr007-documents`. Do not substitute a stale copy. Backup/rehearsal precedes the ten existing pending additive migrations. No operational seed or permission sync is authorized by this integration.
 
 Local migration history already differs from file checksums for Master Data foundation, advanced currency, hotel Excel import and HR durable workflows (beyond LF/CRLF). Do not rewrite history/checksums; validate the existing dataset via rehearsal and report this pre-existing drift separately.
 

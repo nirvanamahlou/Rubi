@@ -14,7 +14,7 @@ import {
   Matches,
   Min,
 } from 'class-validator';
-import { MASTER_ORGANIZATION_ROLE_CODES } from '@rubi/contracts';
+import { MASTER_ORGANIZATION_ROLE_CODES } from '@nora/contracts';
 
 export class MasterDataListQueryDto {
   @IsOptional() @IsString() @MaxLength(100) columnFilter1?: string;
@@ -167,6 +167,23 @@ export class MasterDataMutationDto {
   @IsInt()
   @Min(1)
   version?: number;
+}
+
+export class MasterDataLogoUploadDto {
+  @IsString()
+  @MaxLength(240)
+  title!: string;
+
+  @Transform(({ value }) => Number(value))
+  @IsInt()
+  @Min(1)
+  version!: number;
+}
+
+export class MasterDataLogoRemoveDto {
+  @IsInt()
+  @Min(1)
+  version!: number;
 }
 
 export class MasterOrganizationAddressDto {

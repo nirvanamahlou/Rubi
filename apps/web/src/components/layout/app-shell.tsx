@@ -451,7 +451,7 @@ function AppShellContent({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-screen bg-background">
       <aside
-        data-rubi-sidebar
+        data-nora-sidebar
         className={cn(
           'sticky top-0 hidden h-screen shrink-0 flex-col overflow-hidden bg-[linear-gradient(180deg,#123f8c_0%,#0e2f6e_55%,#092354_100%)] p-2.5 text-white shadow-2xl shadow-blue-950/20 transition-[width] duration-200 lg:flex',
           collapsed ? 'w-[68px]' : 'w-[290px]',
@@ -543,10 +543,15 @@ function AppShellContent({ children }: { children: ReactNode }) {
             <div className="min-w-0 flex-1">
               <SearchDialog />
             </div>
-            <div className="hidden shrink-0 whitespace-nowrap lg:flex">
-              <HeaderToday />
+            <div
+              className="ms-auto flex shrink-0 items-center gap-1"
+              data-header-utility-group
+            >
+              <div className="hidden shrink-0 whitespace-nowrap lg:flex">
+                <HeaderToday />
+              </div>
+              <HeaderActions />
             </div>
-            <HeaderActions />
           </div>
         </header>
         <div className="px-4 pt-3 sm:px-6 lg:px-7">

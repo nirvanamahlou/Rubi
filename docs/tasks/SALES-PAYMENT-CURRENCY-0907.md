@@ -5,7 +5,7 @@
 
 ## Change
 
-- Replaced that textbox with a required, button-only Rubi-themed dropdown. The label shows registered currency name and ISO code. It does not accept arbitrary typed values.
+- Replaced that textbox with a required, button-only Nora-themed dropdown. The label shows registered currency name and ISO code. It does not accept arbitrary typed values.
 - All active currency pages come from the public Master Data API. Missing lists do not synthesize IRR or another code. Inactive/malformed/duplicate codes are handled by existing Sales currency-option helpers.
 - Loading/error/empty states prevent payment submission and provide retry. The selected code is validated against the loaded active list before the existing versioned/idempotent payment call. Successful submission resets to a registered default.
 - Existing new-contract pricing/payment currency editors already select registered currencies; no unrelated changes to those editors, backend monetary rules, Finance confirmation, IAM, stored payments or other modules.

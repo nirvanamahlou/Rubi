@@ -5,7 +5,7 @@ import {
   voucherNumberKeys,
   voucherFlagKeys,
   type TravelWorkflowStateV1,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/form-controls';
 import {
@@ -199,14 +199,14 @@ function ReservationSettingsForm({
           </div>
         </div>
         <p>
-          مسافران انتخاب‌شده: {selected.length} · ADL{' '}
+          مسافران انتخاب‌شده: {selected.length} · بلیط ADL{' '}
           {selected.filter((p) => p.age === 'ADL').length} · CHD{' '}
           {selected.filter((p) => p.age === 'CHD').length} · INF{' '}
           {selected.filter((p) => p.age === 'INF').length}
         </p>
         <p className="text-sm">
-          نوع اتاق و ردهٔ سنی در نسخهٔ عملیاتی فرم ذخیره می‌شود؛ پروندهٔ اصلی
-          مسافر تغییر نمی‌کند.
+          ردهٔ بلیط از نوع ADL / CHD / INF جداست. برای هر CHD، ردهٔ هتل را
+          ۲ تا ۶ یا ۶ تا ۱۲ سال تعیین کنید؛ پروندهٔ اصلی و بلیط تغییر نمی‌کنند.
         </p>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -215,7 +215,8 @@ function ReservationSettingsForm({
                 <th>انتخاب</th>
                 <th>مسافر</th>
                 <th>نوع اتاق</th>
-                <th>رده سنی</th>
+                <th>رده بلیط</th>
+                <th>رده کودک هتل</th>
                 <th>جنسیت</th>
                 <th>تولد</th>
                 <th>شماره مدرک</th>
@@ -279,6 +280,37 @@ function ReservationSettingsForm({
                       <option>CHD</option>
                       <option>INF</option>
                     </select>
+                  </td>
+                  <td>
+                    {p.age === 'CHD' ? (
+                      <select
+                        aria-label={`رده کودک هتل مسافر ${i + 1}`}
+                        className="bg-surface"
+                        value={p.hotelChildAgeBand ?? ''}
+                        onChange={(e) =>
+                          update({
+                            ...draft,
+                            passengers: draft.passengers.map((v, j) =>
+                              j === i
+                                ? {
+                                    ...v,
+                                    hotelChildAgeBand: e.target.value as
+                                      | 'CHD_2_TO_6'
+                                      | 'CHD_6_TO_12'
+                                      | '',
+                                  }
+                                : v,
+                            ),
+                          })
+                        }
+                      >
+                        <option value="">انتخاب نشده</option>
+                        <option value="CHD_2_TO_6">کودک ۲ تا ۶ سال</option>
+                        <option value="CHD_6_TO_12">کودک ۶ تا ۱۲ سال</option>
+                      </select>
+                    ) : (
+                      <span>—</span>
+                    )}
                   </td>
                   <td>
                     <select

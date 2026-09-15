@@ -3,7 +3,7 @@ import type {
   BranchReference,
   IamPermissionCode,
   MasterDataRecord,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import { ArrowLeft, Check, FileText, Search } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import {

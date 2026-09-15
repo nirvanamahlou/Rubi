@@ -15,8 +15,8 @@ import {
   type HrConnectionList,
   type HrConnectionStatus,
   type HrConnectionTarget,
-} from '@rubi/contracts';
-import { Prisma } from '@rubi/database';
+} from '@nora/contracts';
+import { Prisma } from '@nora/database';
 import { DatabaseService } from '../database/database.service';
 import * as validate from './hr.validation';
 

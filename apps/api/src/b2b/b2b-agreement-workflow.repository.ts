@@ -6,8 +6,8 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { Prisma } from '@rubi/database';
-import type { B2bAgreementTermsV1, B2bCooperationRole } from '@rubi/contracts';
+import { Prisma } from '@nora/database';
+import type { B2bAgreementTermsV1, B2bCooperationRole } from '@nora/contracts';
 import { DatabaseService } from '../database/database.service';
 
 export const agreementCaseInclude = {

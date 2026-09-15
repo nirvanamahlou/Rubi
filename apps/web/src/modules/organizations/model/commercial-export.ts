@@ -3,7 +3,7 @@ import {
   type B2bAgreementCaseV1,
   type B2bAgencyAgreedRateV1,
   type B2bAgreedRateKind,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import { reviewLabels, serviceLabels } from './agreement-terms';
 import {
   inDossierDateRange,

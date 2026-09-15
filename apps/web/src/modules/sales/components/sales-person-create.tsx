@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import type { CustomerMutationRequest, CustomerSummary } from '@rubi/contracts';
+import type { CustomerMutationRequest, CustomerSummary } from '@nora/contracts';
 import { Button } from '@/components/ui/button';
 import { SalesDatePicker as DatePicker } from './sales-date-picker';
 import { FormField, Input } from '@/components/ui/form-controls';

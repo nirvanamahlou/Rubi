@@ -1,4 +1,4 @@
-import { Prisma } from '@rubi/database';
+import { Prisma } from '@nora/database';
 import { describe, expect, it } from 'vitest';
 
 import { buildTravelReportResult } from './reporting.projection';

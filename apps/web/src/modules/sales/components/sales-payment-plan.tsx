@@ -12,7 +12,7 @@ import type {
   MasterDataRecord,
   SalesPaymentInput,
   SalesPaymentMethod,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import { Button } from '@/components/ui/button';
 import { FormField, Input } from '@/components/ui/form-controls';
 import { MoneyInput, formatSalesMoney } from '@/components/ui/money-input';

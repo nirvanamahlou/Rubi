@@ -61,11 +61,24 @@ Ticket Catalog برنامه، fare و ظرفیت قابل فروش را تعری
 مسافر صادر نمی‌کند. Sales محصول بلیت را به passenger قرارداد تخصیص می‌دهد. Reservations
 Hold/consume و صدور واقعی، PNR، تغییر/استرداد و Manifest را مالک است.
 
+### Ticket Catalog در برابر Procurement و Finance
+
+Ticket Catalog تعریف و زمان‌بندی بلیط را نگه می‌دارد و هنگام ثبت تعریف دارای قیمت خرید، فرمان نسخه‌دار را به API عمومی Procurement می‌فرستد. Procurement مبلغ خرید، ارز، تأمین‌کننده و وضعیت رسیدگی را مالک است. Finance فقط projection عمومی Procurement را در کارتابل مصرف می‌کند و به جدول خرید Query مستقیم ندارد.
+
 ### Reservations در برابر Integrations
 
 Reservations مالک intent و state داخلی رزرو/صدور است. Integrations مالک protocol، credential،
 mapping و response خام redacted است. Adapter اجازه تغییر مستقیم جدول‌های Reservation را
 ندارد؛ نتیجه normalized را برمی‌گرداند و Reservations transition را اعمال می‌کند.
+
+### قالب Manifest در برابر Documents و Reservations
+
+Master Data مالک اتصال معنایی قالب به ایرلاین و مقصد، نسخه قالب و وضعیت انتشار است.
+Documents مالک فایل XLSX، اسکن، دسترسی، آرشیو و تاریخچه نسخه فایل است؛ Master Data فقط
+شناسه سند را از API عمومی Documents دریافت می‌کند و اجازه Query یا ذخیره مستقیم در جدول
+Documents را ندارد. Reservations برای ساخت Manifest مسافر فقط قالب فعال و فایل سالم را از
+قراردادهای عمومی مالکان مصرف می‌کند و مالک رکورد Manifest اجرایی، Snapshot مسافر و تاریخچه
+ارسال باقی می‌ماند.
 
 ### Reservations در برابر Procurement
 

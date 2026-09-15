@@ -4,7 +4,7 @@ import type {
   CreateGroupConversationInputV1,
   ForwardMessagingMessageInputV1,
   SendMessagingMessageInputV1,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 
 const UUID =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;

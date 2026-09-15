@@ -4,8 +4,8 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { resolve } from 'node:path';
 import { parseEnv } from 'node:util';
-import { createDatabaseClient, type DatabaseClient } from '@rubi/database';
-import type { AuthenticatedActor } from '@rubi/contracts';
+import { createDatabaseClient, type DatabaseClient } from '@nora/database';
+import type { AuthenticatedActor } from '@nora/contracts';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { DatabaseService } from '../src/database/database.service';
 import { MasterDataRepository } from '../src/master-data/master-data.repository';
@@ -14,8 +14,8 @@ import { MasterDataService } from '../src/master-data/master-data.service';
 import { postgresTestTarget } from './postgres-test-target';
 const postgresTarget = postgresTestTarget();
 
-const enabled = process.env.RUBI_RUN_TERMINAL_POSTGRES_TESTS === '1';
-const databaseName = `rubi_md_terminal_test_${randomUUID().replaceAll('-', '')}`;
+const enabled = process.env.NORA_RUN_TERMINAL_POSTGRES_TESTS === '1';
+const databaseName = `nora_md_terminal_test_${randomUUID().replaceAll('-', '')}`;
 const migrationName = '20260831110000_master_data_terminal_details';
 const userId = '11111111-1111-4111-8111-111111111111';
 const legacyCountryId = randomUUID();
@@ -66,7 +66,7 @@ function sql(database: string, input: string, timeout = 30000) {
 }
 describe.skipIf(!enabled)('terminal form on isolated PostgreSQL 18', () => {
   beforeAll(async () => {
-    const local = process.env.RUBI_TEST_POSTGRES_CONTAINER
+    const local = process.env.NORA_TEST_POSTGRES_CONTAINER
       ? process.env
       : parseEnv(readFileSync(resolve(process.cwd(), '.env'), 'utf8'));
     const url = new URL(local.DATABASE_URL!);
@@ -74,8 +74,8 @@ describe.skipIf(!enabled)('terminal form on isolated PostgreSQL 18', () => {
       !['localhost', '127.0.0.1'].includes(url.hostname) ||
       url.port !== postgresTarget.port
     )
-      throw new Error('Only local Rubi PostgreSQL is allowed.');
-    if (!/^rubi_md_terminal_test_[a-f0-9]{32}$/.test(databaseName))
+      throw new Error('Only local Nora PostgreSQL is allowed.');
+    if (!/^nora_md_terminal_test_[a-f0-9]{32}$/.test(databaseName))
       throw new Error('Invalid isolated database name');
     sql('postgres', `CREATE DATABASE "${databaseName}";`);
     created = true;
@@ -119,7 +119,7 @@ describe.skipIf(!enabled)('terminal form on isolated PostgreSQL 18', () => {
         [
           '--import',
           'tsx',
-          process.env.RUBI_TERMINAL_TEST_SEED ?? 'prisma/seed.ts',
+          process.env.NORA_TERMINAL_TEST_SEED ?? 'prisma/seed.ts',
         ],
         {
           cwd: packagePath,
@@ -160,7 +160,7 @@ describe.skipIf(!enabled)('terminal form on isolated PostgreSQL 18', () => {
     seed();
     seed();
     // Optional isolated generated client avoids replacing a live server's client.
-    const clientPath = process.env.RUBI_TERMINAL_TEST_CLIENT;
+    const clientPath = process.env.NORA_TERMINAL_TEST_CLIENT;
     if (clientPath) {
       const { PrismaClient } = (await import(clientPath)) as {
         PrismaClient: new (options: { adapter: unknown }) => DatabaseClient;
@@ -180,7 +180,7 @@ describe.skipIf(!enabled)('terminal form on isolated PostgreSQL 18', () => {
   }, 240000);
   afterAll(async () => {
     if (client) await client.$disconnect();
-    if (created && /^rubi_md_terminal_test_[a-f0-9]{32}$/.test(databaseName))
+    if (created && /^nora_md_terminal_test_[a-f0-9]{32}$/.test(databaseName))
       sql('postgres', `DROP DATABASE "${databaseName}";`);
   }, 30000);
   it('preserves existing terminals through migration and a second seed without inventing metadata', () => {

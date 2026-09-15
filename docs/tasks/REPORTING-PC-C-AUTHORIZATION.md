@@ -8,8 +8,8 @@
 
 ## محیط اعلام‌شده PC-C
 
-- Workspace: `F:/Projects/Rubi`
-- Reporting worktree: `F:/Projects/Rubi/.worktrees/reporting`
+- Workspace: `F:/Projects/Nora`
+- Reporting worktree: `F:/Projects/Nora/.worktrees/reporting`
 - Runtime: `localhost:3000`
 - Branch pattern: `codex/pc-c-reporting-<task>`
 
@@ -47,7 +47,7 @@ Dependency و Lockfile فقط پس از Handoff و رزرو مستقل مجاز 
 1. `git status --short --branch` پاک یا تغییرات موجود کاملاً متعلق به Reporting باشد.
 2. هر سه Commit با `git cat-file -t <sha>` محلی قابل resolve و ترتیب ancestry آن‌ها
    تأیید شود.
-3. `origin` همان Repository مشترک Rubi باشد و `git fetch --prune origin` موفق شود.
+3. `origin` همان Repository مشترک Nora باشد و `git fetch --prune origin` موفق شود.
 4. شاخه مستقل PC-C با Push معمولی منتشر شود؛ Rebase اجباری و Force Push ممنوع است.
 5. اگر Commitها محلی موجود نیستند، P0-04 متوقف و Branch/Commit کامل از PC-C گزارش شود؛
    بازسازی یا حدس محتوا ممنوع است.

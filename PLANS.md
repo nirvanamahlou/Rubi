@@ -1,4 +1,4 @@
-# برنامه اجرای Rubi
+# برنامه اجرای Nora
 
 ## DASHBOARD-REPORTING-LATEST-009 — runtime مشترک
 
@@ -77,7 +77,7 @@ foundation یا یکپارچگی مالی، `P1` الزامی برای نسخه 
       Dropdown جست‌وجویی پرونده‌های موجود؛ Scope شعبه/Domain/محرمانگی و resolve امن
       Relation در Backend، بدون Migration یا دسترسی مستقیم به ماژول دیگر.
 - [x] Follow-up تقویم اسناد: حذف Dropdown ماه/سال و جایگزینی با Gridهای ۱۲تایی
-      هم‌تم Rubi با حفظ شمسی/میلادی و مقدار ذخیره‌شده Gregorian ISO.
+      هم‌تم Nora با حفظ شمسی/میلادی و مقدار ذخیره‌شده Gregorian ISO.
 - [ ] `DOCUMENTS-003`: Adapter تولیدی S3/MinIO و Antivirus Worker عملیاتی با retry،
       monitoring و recovery؛ پس از تصمیم امنیت/عملیات و رزرو تازه Migration/Dependency.
 - [ ] `DOCUMENTS-004`: اشتراک امن، نسخه‌گذاری تکمیلی، Export، retention نهایی و اتصال
@@ -107,7 +107,7 @@ foundation یا یکپارچگی مالی، `P1` الزامی برای نسخه 
 
 ### مرحله 1 — Bootstrap و طراحی (`P0`)
 
-- [x] بررسی Repository و اتصال به `rubi`
+- [x] بررسی Repository و اتصال به `nora`
 - [x] PRD و محدوده محصول
 - [x] معماری، مرز ماژول‌ها و تصمیم‌های اولیه
 - [x] ERD و Data Dictionary اولیه
@@ -206,7 +206,7 @@ Baseline برنامه: `origin/develop` در Merge Commit
   اطلاعات پایه به‌جز نرخ ارز authoritative مسدودشده با `DEC-OPEN-004`.
 - اولین Migration Owner و Dependency/Lockfile Owner Sprint دوم پس از Merge این برنامه.
 - شروع کدنویسی Backend و Schema فقط پس از Merge و Handoff `IAM-002` مجاز است.
-- قرارداد عمومی IAM از `@rubi/contracts` مصرف می‌شود؛ دسترسی مستقیم به جدول یا Repository
+- قرارداد عمومی IAM از `@nora/contracts` مصرف می‌شود؛ دسترسی مستقیم به جدول یا Repository
   داخلی IAM ممنوع است.
 - Definition of Done شامل Migration deploy/status، Seed/fixture ایمن، CRUD و status action،
   permission/audit، contract/integration tests و اتصال UI است. قرارداد async export پایدار

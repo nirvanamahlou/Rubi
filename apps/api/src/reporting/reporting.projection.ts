@@ -1,5 +1,5 @@
 import { BadRequestException } from '@nestjs/common';
-import { Prisma } from '@rubi/database';
+import { Prisma } from '@nora/database';
 
 import type { ReportQueryV1, TravelReportResultV1, TravelReportRowV1 } from './reporting.contracts';
 import type { ReportingFactRow } from './reporting.repository';

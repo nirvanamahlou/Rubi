@@ -3,7 +3,7 @@ import {
   voucherNumberKeys,
   voucherFlagKeys,
   type VoucherSettingsV1,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 export function validateVoucherSettings(
   value: unknown,
   passengerIds: readonly string[],
@@ -70,7 +70,12 @@ export function validateVoucherSettings(
         typeof p.selected !== 'boolean' ||
         typeof p.roomType !== 'string' ||
         p.roomType.length > 100 ||
-        !['ADL', 'CHD', 'INF'].includes(p.age),
+        !['ADL', 'CHD', 'INF'].includes(p.age) ||
+        (p.age === 'CHD'
+          ? ![undefined, '', 'CHD_2_TO_6', 'CHD_6_TO_12'].includes(
+              p.hotelChildAgeBand,
+            )
+          : ![undefined, ''].includes(p.hotelChildAgeBand)),
     )
   )
     return fail();
@@ -107,6 +112,7 @@ export function validateVoucherSettings(
       selected: p.selected,
       roomType: p.roomType.trim(),
       age: p.age,
+      hotelChildAgeBand: p.hotelChildAgeBand ?? '',
       sex: p.sex ?? '',
       birthDate: p.birthDate ?? '',
       documentNumber: p.documentNumber?.trim() ?? '',

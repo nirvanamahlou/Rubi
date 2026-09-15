@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import type { MasterDataRecord, TourDepartureV1 } from '@rubi/contracts';
+import type { MasterDataRecord, TourDepartureV1 } from '@nora/contracts';
 import { Button } from '@/components/ui';
 import { toursApi } from '@/modules/ticket-catalog/api/tours';
 import { masterDataApi } from '@/modules/master-data/api/client';

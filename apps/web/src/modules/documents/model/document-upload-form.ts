@@ -1,7 +1,7 @@
 import type {
   BranchReference,
   DocumentOptionsResponseV1,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 
 export interface DocumentUploadValues {
   employeeId?: string;

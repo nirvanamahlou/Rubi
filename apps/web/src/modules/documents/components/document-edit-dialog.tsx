@@ -4,7 +4,7 @@ import type {
   DocumentDetailV1,
   DocumentOptionsResponseV1,
   DocumentUpdateInputV1,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import { FilePenLine } from 'lucide-react';
 import { useState } from 'react';
 

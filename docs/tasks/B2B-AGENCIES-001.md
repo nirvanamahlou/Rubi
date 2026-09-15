@@ -5,7 +5,7 @@ requires remaining product decisions, persistent workflows and producer contract
 Historical lock notes below describe earlier deliveries, not current ownership.
 Base: `origin/develop@30d67ec`.
 Branch: `codex/pc-b-agencies-organizations`.
-Worktree: `C:/Users/admin/Rubi-agencies-organizations`.
+Worktree: `C:/Users/admin/Nora-agencies-organizations`.
 Published: [Draft PR #113](https://github.com/nirvanamahlou/Rubi/pull/113) to
 `develop`. API commit: `889512c`; Web commit: `0ceaa12`; scoped reservation and
 handoff commit: `4d4b409`. Normal push succeeded; no merge was performed.
@@ -77,7 +77,7 @@ No schema/migration/seed source change, operational account grant, merge or
 deployment. Existing migrations and seed are exercised only on a new disposable
 PostgreSQL 18.1 container with private temporary storage and a random local port.
 The container is stopped after the suite; application databases and volumes are
-never used. The test is opt-in with `RUBI_RUN_B2B_POSTGRES_TESTS=1` and expects the
+never used. The test is opt-in with `NORA_RUN_B2B_POSTGRES_TESTS=1` and expects the
 existing local `postgres:18.1-alpine` image (`--pull=never`).
 
 ## Implemented in this slice
@@ -187,7 +187,7 @@ business records. Central/shared locks remain unchanged.
   mobile directory cards. Focus moves to the profile heading on section changes;
   controls retain keyboard focus rings and reduced-motion behavior.
 - Explicit differences from the prototype: global shell remains the shared
-  Rubi shell; the existing identity form handles new cooperation instead of the
+  Nora shell; the existing identity form handles new cooperation instead of the
   prototype's simulated approval wizard. Unsupported account-manager filters,
   combined-role aggregates, global KPIs, financial values, history, access,
   signatories, documents and reports have unavailable states. No sample people,
@@ -252,14 +252,14 @@ updates remain in this report under the owner's existing lock exception.
   repeat imports; global concurrency-safe deduplication/idempotency still belongs
   to the Master Data producer and is not claimed by this client.
 - **Actual local demo data:** eight synthetic organizations were inserted through
-  MasterDataService in `rubi_hr_current_20260908`: four agencies, three corporate
+  MasterDataService in `nora_hr_current_20260908`: four agencies, three corporate
   customers and one dual-role identity. No contacts, financial balances, IAM
   users/grants, approvals or existing record changes were created. A subsequent
   read-only preview returned `reused: 8, pending: 0`. The guarded local helper
   accepts only the confirmed development database on localhost:55432, attributes
   its writes to an offline fixture actor, and creates no IAM session or account.
   A private PostgreSQL custom-format backup was taken before insertion at
-  `C:/Users/admin/AppData/Local/Rubi/b2b-agencies-runtime/backups/b2b-before-demo-20260908.dump`
+  `C:/Users/admin/AppData/Local/Nora/b2b-agencies-runtime/backups/b2b-before-demo-20260908.dump`
   (702138 bytes); it is outside Git and must not be shared as a code artifact.
 
 Final follow-up checks:

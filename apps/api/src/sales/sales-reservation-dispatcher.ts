@@ -5,7 +5,7 @@ import {
   type OnModuleDestroy,
   type OnModuleInit,
 } from '@nestjs/common';
-import type { SalesReservationRequestV1 } from '@rubi/contracts';
+import type { SalesReservationRequestV1 } from '@nora/contracts';
 import { ReservationsPublicService } from '../reservations/reservations-public.service';
 import { SalesRepository } from './sales.repository';
 

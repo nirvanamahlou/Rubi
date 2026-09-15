@@ -2,7 +2,7 @@ import type {
   CustomerContact,
   CustomerDetail,
   CustomerMutationRequest,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 
 export function customerDraft(
   customer?: CustomerDetail,

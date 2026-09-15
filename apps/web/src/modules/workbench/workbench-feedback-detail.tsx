@@ -1,6 +1,6 @@
 'use client';
 
-import type { WorkbenchFeedbackDetailV1 } from '@rubi/contracts';
+import type { WorkbenchFeedbackDetailV1 } from '@nora/contracts';
 import { useEffect, useState } from 'react';
 import {
   Alert,

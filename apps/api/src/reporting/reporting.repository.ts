@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { Prisma } from '@rubi/database';
+import { Prisma } from '@nora/database';
 
 import { DatabaseService } from '../database/database.service';
 import type { ReportQueryV1 } from './reporting.contracts';

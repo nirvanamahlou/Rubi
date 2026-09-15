@@ -30,7 +30,7 @@
   ملکی، KPI، فیلتر، ویرایش Preview، انتخاب بنر و سه تم خروجی دارد.
 - ۲۳ تست هدفمند در پنج فایل موفق: قرارداد ناوبری، جمع‌شدن گروه‌ها، مدل قیمت روزانه،
   helper بنر و SSR workspace.
-- `pnpm --filter @rubi/web typecheck`، lint محدود فایل‌های متاثر و Production Build
+- `pnpm --filter @nora/web typecheck`، lint محدود فایل‌های متاثر و Production Build
   با ۴۲ مسیر موفق‌اند.
 - Browser روی Web3200 نمایش RTL/Responsive، وجود چهار ردیف و پیام موفقیت ساخت PNG را
   تأیید کرد؛ Console خطای مرتبط نداشت. مرورگر داخلی رویداد Download را در automation

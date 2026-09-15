@@ -12,7 +12,7 @@ import {
   type AuthenticatedActor,
   type ReservationHotelPurchaseInputV1,
   type SalesReservationRequestV1,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import { DatabaseService } from '../database/database.service';
 
 export function validateHotelPurchase(input: ReservationHotelPurchaseInputV1) {

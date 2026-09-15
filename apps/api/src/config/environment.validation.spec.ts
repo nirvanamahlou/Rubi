@@ -8,7 +8,7 @@ const totpKey = Buffer.alloc(32, 5).toString('base64');
 
 const validEnvironment = {
   NODE_ENV: 'test',
-  DATABASE_URL: 'postgresql://synthetic:synthetic@localhost:5432/rubi',
+  DATABASE_URL: 'postgresql://synthetic:synthetic@localhost:5432/nora',
   IAM_ACCESS_TOKEN_SECRET:
     'iam-secret-that-is-longer-than-thirty-two-characters',
   CUSTOMER_CONTACT_ENCRYPTION_KEY_BASE64: encryptionKey,
@@ -26,14 +26,14 @@ describe('API environment validation', () => {
       environmentValidationSchema.validate({
         ...validEnvironment,
         NODE_ENV: 'production',
-        DOCUMENTS_STORAGE_ROOT: '/srv/rubi/documents',
+        DOCUMENTS_STORAGE_ROOT: '/srv/nora/documents',
       }).error,
     ).toBeDefined();
     expect(
       environmentValidationSchema.validate({
         ...validEnvironment,
         NODE_ENV: 'production',
-        DOCUMENTS_STORAGE_ROOT: '/srv/rubi/documents',
+        DOCUMENTS_STORAGE_ROOT: '/srv/nora/documents',
         IAM_TOTP_ENCRYPTION_KEY_BASE64: totpKey,
       }).error,
     ).toBeUndefined();
@@ -41,7 +41,7 @@ describe('API environment validation', () => {
       environmentValidationSchema.validate({
         ...validEnvironment,
         NODE_ENV: 'production',
-        DOCUMENTS_STORAGE_ROOT: '/srv/rubi/documents',
+        DOCUMENTS_STORAGE_ROOT: '/srv/nora/documents',
         IAM_TOTP_ENCRYPTION_KEY_BASE64: encryptionKey,
       }).error,
     ).toBeDefined();

@@ -17,13 +17,13 @@ import {
   type LegalEntitySelection,
   type LegalEntitySummary,
   type LegalEntityUpdateRequest,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import {
   AuditOutcome,
   LegalEntityContextMode,
   LegalEntityDocumentIssueStatus,
-} from '@rubi/database';
-import type { Prisma } from '@rubi/database';
+} from '@nora/database';
+import type { Prisma } from '@nora/database';
 
 import { DatabaseService } from '../database/database.service';
 import {

@@ -5,8 +5,8 @@ import { createRequire } from 'node:module';
 import { resolve } from 'node:path';
 import { parseEnv } from 'node:util';
 import { ConflictException, ForbiddenException } from '@nestjs/common';
-import type { AuthenticatedActor } from '@rubi/contracts';
-import { createDatabaseClient, type DatabaseClient } from '@rubi/database';
+import type { AuthenticatedActor } from '@nora/contracts';
+import { createDatabaseClient, type DatabaseClient } from '@nora/database';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { DatabaseService } from '../src/database/database.service';
 import { MasterDataRepository } from '../src/master-data/master-data.repository';
@@ -16,8 +16,8 @@ import { MasterDataService } from '../src/master-data/master-data.service';
 import { postgresTestTarget } from './postgres-test-target';
 const postgresTarget = postgresTestTarget();
 
-const enabled = process.env.RUBI_RUN_TRAVEL_FORM_POSTGRES_TESTS === '1';
-const databaseName = `rubi_md_travel_form_test_${randomUUID().replaceAll('-', '')}`;
+const enabled = process.env.NORA_RUN_TRAVEL_FORM_POSTGRES_TESTS === '1';
+const databaseName = `nora_md_travel_form_test_${randomUUID().replaceAll('-', '')}`;
 const migrationName = '20260831100000_master_data_travel_reference_forms';
 const actorId = '11111111-1111-4111-8111-111111111111';
 const countryId = '44444444-4444-4444-8444-444444444444';
@@ -81,8 +81,8 @@ describe.skipIf(!enabled)(
         !['localhost', '127.0.0.1'].includes(configured.hostname) ||
         configured.port !== postgresTarget.port
       )
-        throw new Error('Only the local Rubi PostgreSQL port is allowed.');
-      if (!/^rubi_md_travel_form_test_[a-f0-9]{32}$/.test(databaseName))
+        throw new Error('Only the local Nora PostgreSQL port is allowed.');
+      if (!/^nora_md_travel_form_test_[a-f0-9]{32}$/.test(databaseName))
         throw new Error('Invalid test database name.');
       sql('postgres', `CREATE DATABASE "${databaseName}";`);
       created = true;
@@ -119,7 +119,7 @@ describe.skipIf(!enabled)(
       sql(databaseName, migrationStatements.join('\n'));
       configured.pathname = `/${databaseName}`;
       // Allow a freshly generated client in a temporary directory, without replacing the live client's build.
-      const modulePath = process.env.RUBI_TRAVEL_TEST_DATABASE_MODULE;
+      const modulePath = process.env.NORA_TRAVEL_TEST_DATABASE_MODULE;
       const factory = modulePath
         ? (
             createRequire(resolve(process.cwd(), 'package.json'))(
@@ -141,7 +141,7 @@ describe.skipIf(!enabled)(
       if (client) await client.$disconnect();
       if (
         created &&
-        /^rubi_md_travel_form_test_[a-f0-9]{32}$/.test(databaseName)
+        /^nora_md_travel_form_test_[a-f0-9]{32}$/.test(databaseName)
       )
         sql('postgres', `DROP DATABASE "${databaseName}" WITH (FORCE);`);
     }, 30000);

@@ -12,8 +12,8 @@ import {
   type AuthenticatedActor,
   type ReservationServicePurchaseInputV1,
   type SalesReservationRequestV1,
-} from '@rubi/contracts';
-import { Prisma } from '@rubi/database';
+} from '@nora/contracts';
+import { Prisma } from '@nora/database';
 import { DatabaseService } from '../database/database.service';
 import { MasterTravelDirectory } from '../master-data/master-travel-directory';
 
@@ -91,6 +91,10 @@ export class ReservationServicePurchaseService {
     if (!service)
       throw new BadRequestException(
         'خدمت انتخاب‌شده متعلق به این قرارداد نیست.',
+      );
+    if (service.kind !== 'HOTEL' && service.kind !== 'TRANSFER')
+      throw new BadRequestException(
+        'قیمت خرید بلیط هنگام تعریف بلیط در مدیریت بلیط ثبت و برای مالی ارسال می‌شود.',
       );
     if (
       service.pricing?.length &&

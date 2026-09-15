@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { TicketOfferV1 } from '@rubi/contracts';
+import type { TicketOfferV1 } from '@nora/contracts';
 import {
   emptySalesForm,
   salesDetailSteps,

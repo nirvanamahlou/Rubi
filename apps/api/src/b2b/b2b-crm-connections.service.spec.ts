@@ -4,7 +4,7 @@ import type {
   FinancePartyExposurePortV1,
   SalesContractDetail,
   SalesContractSummary,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import { describe, expect, it, vi } from 'vitest';
 
 import type { CustomerService } from '../customers/customer.service';

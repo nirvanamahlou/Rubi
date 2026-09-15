@@ -196,13 +196,7 @@ describe('ReportingWorkspace', () => {
     expect(html).toContain('اتصال محدود قابل اجرا');
     expect(html).not.toContain('آخرین به‌روزرسانی داده');
     expect(html).not.toContain('قابلیت فعلی');
-    expect(html).toContain('RPT-001');
-    expect(html.indexOf('RPT-001')).toBeLessThan(
-      html.indexOf('فروش و قراردادها'),
-    );
-    expect(html.indexOf('فروش و قراردادها')).toBeLessThan(
-      html.indexOf('اتصال محدود قابل اجرا'),
-    );
+    expect(html).not.toContain('RPT-001');
     expect(html).toContain('aria-label="وضعیت اتصال گزارش"');
     expect(html).not.toContain('aria-label="اولویت گزارش"');
     expect(html).not.toMatch(/>P[012]</);

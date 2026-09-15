@@ -1,5 +1,5 @@
 {
-  "name": "@rubi/database",
+  "name": "@nora/database",
   "version": "0.0.0",
   "private": true,
   "main": "dist/index.js",
@@ -30,8 +30,8 @@
     "pg": "8.23.0"
   },
   "devDependencies": {
-    "@rubi/eslint-config": "workspace:*",
-    "@rubi/typescript-config": "workspace:*",
+    "@nora/eslint-config": "workspace:*",
+    "@nora/typescript-config": "workspace:*",
     "@types/node": "26.2.0",
     "@types/pg": "8.23.1",
     "eslint": "9.39.5",

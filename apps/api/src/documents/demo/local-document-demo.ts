@@ -10,7 +10,7 @@ import {
   DocumentQuarantineStatus,
   DocumentScanStatus,
   type DatabaseClient,
-} from '@rubi/database';
+} from '@nora/database';
 
 import type { LocalAntivirusResult } from '../documents.antivirus';
 import { WindowsDefenderAntivirus } from '../documents.antivirus';
@@ -119,10 +119,10 @@ export function assertLocalDocumentsDemoTarget(
     !['postgres:', 'postgresql:'].includes(url.protocol) ||
     !['127.0.0.1', 'localhost'].includes(url.hostname) ||
     url.port !== '55432' ||
-    !/^\/(?:rubi|rubi_documents_demo_test_[a-f0-9]{32})$/.test(url.pathname)
+    !/^\/(?:nora|nora_documents_demo_test_[a-f0-9]{32})$/.test(url.pathname)
   ) {
     throw new Error(
-      'Only the explicitly named local Rubi database is allowed for Documents demo data.',
+      'Only the explicitly named local Nora database is allowed for Documents demo data.',
     );
   }
   const trimmedStorageRoot = storageRoot.trim();

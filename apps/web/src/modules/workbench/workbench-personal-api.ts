@@ -8,7 +8,8 @@ import type {
   WorkbenchNoteInputV1,
   WorkbenchNotesResponseV1,
   WorkbenchNoteV1,
-} from '@rubi/contracts';
+  WorkbenchPerformanceResponseV1,
+} from '@nora/contracts';
 import { refreshAuthenticatedSession } from '@/lib/auth-session';
 import { getPublicApiBaseUrl } from '@/lib/environment';
 
@@ -55,6 +56,10 @@ const json = (method: 'POST' | 'PATCH', value: unknown): RequestInit => ({
 });
 
 export const workbenchPersonalApi = {
+  performance: (days: string) =>
+    request<WorkbenchPerformanceResponseV1>(
+      `/performance?days=${encodeURIComponent(days)}`,
+    ),
   notes: () => request<WorkbenchNotesResponseV1>('/notes'),
   createNote: (input: WorkbenchNoteInputV1) =>
     request<{ data: WorkbenchNoteV1 }>('/notes', json('POST', input)),

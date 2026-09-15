@@ -9,7 +9,7 @@ if (
   !process.env.DOCUMENTS_STORAGE_ENCRYPTION_KEY_BASE64
 ) {
   loadEnvFile(
-    process.env.RUBI_API_ENV_FILE ?? new URL('../.env', import.meta.url),
+    process.env.NORA_API_ENV_FILE ?? new URL('../.env', import.meta.url),
   );
 }
 

@@ -45,7 +45,7 @@ if ($Build -or !(Test-Path -LiteralPath $manifestPath)) {
   Stop-OwnedListener $Port
   Push-Location $repoPath
   try {
-    & pnpm --filter @rubi/web build
+    & pnpm --filter @nora/web build
     if ($LASTEXITCODE -ne 0) { throw 'HR web build failed.' }
   } finally { Pop-Location }
   $fingerprint = Get-WebFingerprint
@@ -55,8 +55,8 @@ $manifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json
 if ($manifest.commit -ne $commit -or $manifest.version -ne ('hr005-' + (Get-WebFingerprint))) { throw 'The saved build does not match this checkout. Run with -Build.' }
 Stop-OwnedListener $Port
 $nodePath = (Get-Command node).Source
-$env:RUBI_HR_BUILD_ID = $manifest.version
-$env:RUBI_HR_COMMIT = $manifest.commit
+$env:NORA_HR_BUILD_ID = $manifest.version
+$env:NORA_HR_COMMIT = $manifest.commit
 $nextPath = Join-Path $webPath 'node_modules/next/dist/bin/next'
 $webProcess = Start-Process -FilePath $nodePath -ArgumentList @(('"' + $nextPath + '"'),'start','--port',"$Port",'--hostname','127.0.0.1') -WorkingDirectory $webPath -WindowStyle Hidden -PassThru -RedirectStandardOutput (Join-Path $runtimePath 'web.log') -RedirectStandardError (Join-Path $runtimePath 'web-error.log')
 if (!$SkipApi) {

@@ -34,6 +34,7 @@ export function emptyInput(transport: TransportType = 'flight'): ProductInput {
     title: '',
     transport,
     journeyRole: 'one-way',
+    serviceDate: '',
     segments: [
       {
         airlineId: '',
@@ -428,6 +429,8 @@ export function queryProducts(
       const segment = product.definition.segments[0]!;
       const lastSegment = product.definition.segments.at(-1)!;
       const display = product.definition.display;
+      const serviceDate =
+        product.definition.serviceDate || segment.departureAt.slice(0, 10);
       return (
         [
           product.definition.title,
@@ -450,12 +453,8 @@ export function queryProducts(
           segment.originCityId === query.originCityId) &&
         (query.destinationCityId === 'all' ||
           lastSegment.destinationCityId === query.destinationCityId) &&
-        (!query.from ||
-          (Boolean(segment.departureAt) &&
-            segment.departureAt.slice(0, 10) >= query.from)) &&
-        (!query.to ||
-          (Boolean(segment.departureAt) &&
-            segment.departureAt.slice(0, 10) <= query.to))
+        (!query.from || (Boolean(serviceDate) && serviceDate >= query.from)) &&
+        (!query.to || (Boolean(serviceDate) && serviceDate <= query.to))
       );
     })
     .sort((a, b) => {
@@ -464,7 +463,7 @@ export function queryProducts(
           ? p.definition.title
           : query.sort === 'updated'
             ? p.history.at(-1)!.at
-            : p.definition.segments[0]!.departureAt;
+            : p.definition.serviceDate || p.definition.segments[0]!.departureAt;
       const comparison =
         value(a).localeCompare(value(b), 'fa') || a.id.localeCompare(b.id);
       return query.direction === 'asc' ? comparison : -comparison;
@@ -545,6 +544,10 @@ function shiftIso(value: string, cadence: RepeatCadence, count: number) {
   }
   return date.toISOString();
 }
+function shiftDate(value: string, cadence: RepeatCadence, count: number) {
+  const shifted = shiftIso(value + 'T00:00:00.000Z', cadence, count);
+  return shifted.slice(0, 10);
+}
 export function moveDefinitionToDate(
   source: ProductInput,
   departureDate: string,
@@ -558,19 +561,23 @@ export function moveDefinitionToDate(
   )
     throw new Error('تاریخ اولین بلیط جدید معتبر نیست.');
   const firstDeparture = new Date(source.segments[0]?.departureAt ?? '');
-  if (Number.isNaN(firstDeparture.getTime()))
-    throw new Error('زمان حرکت بلیط مبدأ معتبر نیست.');
-  const sourceDay = Date.UTC(
-    firstDeparture.getUTCFullYear(),
-    firstDeparture.getUTCMonth(),
-    firstDeparture.getUTCDate(),
-  );
+  const sourceDate =
+    source.serviceDate ||
+    (Number.isNaN(firstDeparture.getTime())
+      ? ''
+      : firstDeparture.toISOString().slice(0, 10));
+  const sourceDay = sourceDate
+    ? Date.parse(sourceDate + 'T00:00:00.000Z')
+    : selectedDay.getTime();
   const delta = selectedDay.getTime() - sourceDay;
   const shift = (value: string) =>
-    new Date(Date.parse(value) + delta).toISOString();
+    value && Number.isFinite(Date.parse(value))
+      ? new Date(Date.parse(value) + delta).toISOString()
+      : value;
   const next = structuredClone(source);
   next.tripGroupId = undefined;
   next.journeyRole = 'one-way';
+  next.serviceDate = departureDate;
   next.segments = next.segments.map((segment) => ({
     ...segment,
     departureAt: shift(segment.departureAt),
@@ -593,15 +600,25 @@ export function repeatDefinition(
   const next = structuredClone(source);
   next.tripGroupId = undefined;
   next.journeyRole = 'one-way';
+  if (next.serviceDate)
+    next.serviceDate = shiftDate(next.serviceDate, cadence, occurrence);
   next.segments = next.segments.map((segment) => ({
     ...segment,
-    departureAt: shiftIso(segment.departureAt, cadence, occurrence),
-    arrivalAt: shiftIso(segment.arrivalAt, cadence, occurrence),
+    departureAt: segment.departureAt
+      ? shiftIso(segment.departureAt, cadence, occurrence)
+      : '',
+    arrivalAt: segment.arrivalAt
+      ? shiftIso(segment.arrivalAt, cadence, occurrence)
+      : '',
   }));
   next.fare = {
     ...next.fare,
-    validFrom: shiftIso(next.fare.validFrom, cadence, occurrence),
-    validTo: shiftIso(next.fare.validTo, cadence, occurrence),
+    validFrom: next.fare.validFrom
+      ? shiftIso(next.fare.validFrom, cadence, occurrence)
+      : '',
+    validTo: next.fare.validTo
+      ? shiftIso(next.fare.validTo, cadence, occurrence)
+      : '',
   };
   return next;
 }
@@ -610,7 +627,7 @@ export interface CatalogBrowserSnapshot {
   products: Product[];
   references: Reference[];
 }
-export const catalogStorageKey = 'rubi.ticket-catalog.browser.v1';
+export const catalogStorageKey = 'nora.ticket-catalog.browser.v1';
 export function parseCatalogSnapshot(
   raw: string | null,
 ): CatalogBrowserSnapshot | undefined {
@@ -644,4 +661,12 @@ export function displayTime(value: string, zone = 'Asia/Tehran') {
     timeStyle: 'short',
     timeZone: zone,
   }).format(new Date(value));
+}
+
+export function displayServiceDate(value?: string) {
+  if (!value) return 'بدون تاریخ';
+  return new Intl.DateTimeFormat('fa-IR', {
+    dateStyle: 'medium',
+    timeZone: 'UTC',
+  }).format(new Date(value + 'T00:00:00.000Z'));
 }

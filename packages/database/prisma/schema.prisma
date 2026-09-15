@@ -35,6 +35,8 @@ model User {
   reservationManifestExports        ReservationManifestExport[]
   reservationServicePurchases       ReservationServicePurchase[]
   financeSupplierPaymentRevisions   FinanceSupplierPaymentRevision[]
+  financeSettlementAccountsCreated  FinanceSettlementAccount[]        @relation("FinanceSettlementAccountCreator")
+  salesPaymentsFinanceReviewed      SalesContractPaymentEntry[]       @relation("SalesPaymentFinanceReviewer")
   ownedTravelIntakes                ReservationIntake[]               @relation("TravelSalesOwner")
   travelWorkflowRevisions           ReservationWorkflowRevision[]
   travelDeliveryRevisions           FinanceDeliveryRevision[]
@@ -213,6 +215,7 @@ model Branch {
   customerAffairsTickets     CustomerAffairsTicket[]
   customerAffairsAuditEvents CustomerAffairsAuditEvent[]
   reportingFacts             ReportingTravelFact[]
+  financeSettlementAccounts  FinanceSettlementAccount[]
 
   @@map("branches")
 }
@@ -940,6 +943,7 @@ model MasterCity {
   masterHotelImportSessions MasterHotelImportSession[]
   leaders                   MasterLeader[]
   organizationAddresses     MasterOrganizationAddress[]
+  manifestTemplates         MasterManifestTemplate[]
 
   @@unique([countryId, code])
   @@unique([id, countryId])
@@ -981,12 +985,12 @@ model MasterAirport {
   id                  String             @id @default(uuid()) @db.Uuid
   cityId              String             @db.Uuid
   iataCode            String             @unique @db.Char(3)
-  icaoCode            String             @unique @db.Char(4)
+  icaoCode            String?            @unique @db.Char(4)
   name                String             @db.VarChar(160)
   englishName         String             @db.VarChar(160)
-  ianaTimezone        String             @db.VarChar(80)
-  latitude            Decimal            @db.Decimal(9, 6)
-  longitude           Decimal            @db.Decimal(9, 6)
+  ianaTimezone        String?            @db.VarChar(80)
+  latitude            Decimal?           @db.Decimal(9, 6)
+  longitude           Decimal?           @db.Decimal(9, 6)
   displayOrder        Int                @default(0)
   isActive            Boolean            @default(true)
   version             Int                @default(1)
@@ -1094,6 +1098,7 @@ model MasterDraftExchangeRate {
 
 model MasterBank {
   financeSupplierPaymentRevisions FinanceSupplierPaymentRevision[]
+  financeSettlementAccounts       FinanceSettlementAccount[]
   id                              String                           @id @default(uuid()) @db.Uuid
   countryId                       String                           @db.Uuid
   code                            String                           @unique @db.VarChar(32)
@@ -1145,24 +1150,25 @@ model MasterBankBranch {
 }
 
 model MasterPaymentMethod {
-  b2bAgreementRevisions  B2bAgreementRevision[]
-  id                     String                       @id @default(uuid()) @db.Uuid
-  code                   String                       @unique @db.VarChar(32)
-  name                   String                       @db.VarChar(160)
-  englishName            String?                      @db.VarChar(160)
-  description            String?                      @db.VarChar(500)
-  channel                MasterPaymentMethodChannel
-  direction              MasterPaymentMethodDirection @default(BOTH)
-  requiresManualApproval Boolean                      @default(false)
-  displayOrder           Int                          @default(0)
-  isActive               Boolean                      @default(true)
-  version                Int                          @default(1)
-  createdByUserId        String                       @db.Uuid
-  updatedByUserId        String                       @db.Uuid
-  deactivatedByUserId    String?                      @db.Uuid
-  deactivatedAt          DateTime?                    @db.Timestamptz(3)
-  createdAt              DateTime                     @default(now()) @db.Timestamptz(3)
-  updatedAt              DateTime                     @updatedAt @db.Timestamptz(3)
+  b2bAgreementRevisions           B2bAgreementRevision[]
+  financeSupplierPaymentRevisions FinanceSupplierPaymentRevision[]
+  id                              String                           @id @default(uuid()) @db.Uuid
+  code                            String                           @unique @db.VarChar(32)
+  name                            String                           @db.VarChar(160)
+  englishName                     String?                          @db.VarChar(160)
+  description                     String?                          @db.VarChar(500)
+  channel                         MasterPaymentMethodChannel
+  direction                       MasterPaymentMethodDirection     @default(BOTH)
+  requiresManualApproval          Boolean                          @default(false)
+  displayOrder                    Int                              @default(0)
+  isActive                        Boolean                          @default(true)
+  version                         Int                              @default(1)
+  createdByUserId                 String                           @db.Uuid
+  updatedByUserId                 String                           @db.Uuid
+  deactivatedByUserId             String?                          @db.Uuid
+  deactivatedAt                   DateTime?                        @db.Timestamptz(3)
+  createdAt                       DateTime                         @default(now()) @db.Timestamptz(3)
+  updatedAt                       DateTime                         @updatedAt @db.Timestamptz(3)
 
   @@index([isActive, displayOrder, name])
   @@index([channel, direction, isActive])
@@ -1828,16 +1834,17 @@ model MasterBaggageRule {
 model MasterManifestTemplate {
   id                  String                       @id @default(uuid()) @db.Uuid
   airlineId           String                       @db.Uuid
+  destinationCityId   String?                      @db.Uuid
   code                String                       @unique @db.VarChar(32)
   name                String                       @db.VarChar(160)
   versionNumber       Int
-  fileFormat          MasterManifestFileFormat
+  fileFormat          MasterManifestFileFormat     @default(XLSX)
   fileReferenceId     String?                      @db.Uuid
   sheetName           String?                      @db.VarChar(120)
   headerRow           Int                          @default(1)
   dateFormat          String?                      @db.VarChar(40)
-  requiredColumns     String[]
-  columnOrder         String[]
+  requiredColumns     String[]                     @default([])
+  columnOrder         String[]                     @default([])
   validFrom           DateTime                     @db.Date
   validTo             DateTime?                    @db.Date
   publicationStatus   MasterManifestTemplateStatus @default(DRAFT)
@@ -1851,9 +1858,11 @@ model MasterManifestTemplate {
   createdAt           DateTime                     @default(now()) @db.Timestamptz(3)
   updatedAt           DateTime                     @updatedAt @db.Timestamptz(3)
   airline             MasterAirline                @relation(fields: [airlineId], references: [id], onDelete: Restrict)
+  destinationCity     MasterCity?                  @relation(fields: [destinationCityId], references: [id], onDelete: Restrict)
 
   @@unique([airlineId, versionNumber])
   @@index([airlineId, publicationStatus, validFrom, validTo])
+  @@index([destinationCityId, publicationStatus, isActive])
   @@map("master_manifest_templates")
 }
 
@@ -3742,13 +3751,18 @@ model SalesContractPaymentEntry {
   financePaymentReference String?            @map("finance_payment_reference") @db.VarChar(160)
   financeConfirmedByRef   String?            @map("finance_confirmed_by_ref") @db.VarChar(160)
   financeConfirmedAt      DateTime?          @map("finance_confirmed_at") @db.Timestamptz(3)
+  financeDecisionReason   String?            @map("finance_decision_reason") @db.VarChar(500)
+  financeReviewedByUserId String?            @map("finance_reviewed_by_user_id") @db.Uuid
+  financeReviewedAt       DateTime?          @map("finance_reviewed_at") @db.Timestamptz(3)
   createdAt               DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt               DateTime           @updatedAt @map("updated_at") @db.Timestamptz(3)
   contract                SalesContract      @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  financeReviewedBy       User?              @relation("SalesPaymentFinanceReviewer", fields: [financeReviewedByUserId], references: [id], onDelete: Restrict)
 
   @@unique([contractId, idempotencyKey])
   @@index([contractId, status, dueAt])
   @@index([financePaymentReference])
+  @@index([financeReviewedByUserId, financeReviewedAt])
   @@map("sales_contract_payment_entries")
 }
 
@@ -3882,6 +3896,28 @@ model TicketOfferCapacityAllocation {
   @@index([contractId, status])
 }
 
+model ProcurementTicketPurchaseRequest {
+  id                      String   @id @default(uuid()) @db.Uuid
+  version                 Int      @default(1)
+  branchId                String   @db.Uuid
+  catalogProductReference String   @db.VarChar(160)
+  title                   String   @db.VarChar(160)
+  serviceDate             DateTime @db.Date
+  supplierDisplaySnapshot String?  @db.VarChar(160)
+  amount                  Decimal  @db.Decimal(20, 6)
+  currencyCode            String   @db.VarChar(3)
+  status                  String   @default("PENDING") @db.VarChar(20)
+  createdByUserId         String   @db.Uuid
+  createKey               String   @db.VarChar(160)
+  fingerprint             String   @db.VarChar(64)
+  createdAt               DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt               DateTime @updatedAt @db.Timestamptz(3)
+
+  @@unique([createdByUserId, createKey])
+  @@unique([branchId, catalogProductReference])
+  @@index([branchId, status, serviceDate])
+}
+
 model ReservationIntake {
   salesOwnerUserId    String?                          @db.Uuid
   salesOwner          User?                            @relation("TravelSalesOwner", fields: [salesOwnerUserId], references: [id], onDelete: Restrict)
@@ -3958,8 +3994,32 @@ model ReservationHotelPurchase {
 }
 
 enum FinanceSupplierPaymentStatus {
+  PARTIALLY_PAID
   PAID
   REJECTED
+}
+
+model FinanceSettlementAccount {
+  id               String                           @id @default(uuid()) @db.Uuid
+  branchId         String                           @db.Uuid
+  title            String                           @db.VarChar(160)
+  kind             String                           @db.VarChar(24)
+  currencyCode     String                           @db.VarChar(3)
+  bankId           String?                          @db.Uuid
+  maskedIdentifier String?                          @db.VarChar(80)
+  isActive         Boolean                          @default(true)
+  version          Int                              @default(1)
+  createdByUserId  String                           @db.Uuid
+  createdAt        DateTime                         @default(now()) @db.Timestamptz(3)
+  updatedAt        DateTime                         @updatedAt @db.Timestamptz(3)
+  branch           Branch                           @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  bank             MasterBank?                      @relation(fields: [bankId], references: [id], onDelete: Restrict)
+  createdBy        User                             @relation("FinanceSettlementAccountCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  supplierPayments FinanceSupplierPaymentRevision[]
+
+  @@unique([branchId, title, currencyCode])
+  @@index([branchId, isActive, title])
+  @@index([bankId, isActive])
 }
 
 model ReservationServicePurchase {
@@ -3989,23 +4049,34 @@ model ReservationServicePurchase {
 }
 
 model FinanceSupplierPaymentRevision {
-  id               String                       @id @default(uuid()) @db.Uuid
-  purchaseId       String                       @db.Uuid
-  purchase         ReservationServicePurchase   @relation(fields: [purchaseId], references: [id], onDelete: Restrict)
-  version          Int
-  status           FinanceSupplierPaymentStatus
-  bankId           String?                      @db.Uuid
-  bank             MasterBank?                  @relation(fields: [bankId], references: [id], onDelete: Restrict)
-  transferAt       DateTime?                    @db.Timestamptz(3)
-  paymentReference String?                      @db.VarChar(160)
-  reason           String                       @db.VarChar(500)
-  actorUserId      String                       @db.Uuid
-  actor            User                         @relation(fields: [actorUserId], references: [id], onDelete: Restrict)
-  createdAt        DateTime                     @default(now()) @db.Timestamptz(3)
+  id                String                       @id @default(uuid()) @db.Uuid
+  purchaseId        String                       @db.Uuid
+  purchase          ReservationServicePurchase   @relation(fields: [purchaseId], references: [id], onDelete: Restrict)
+  version           Int
+  status            FinanceSupplierPaymentStatus
+  bankId            String?                      @db.Uuid
+  bank              MasterBank?                  @relation(fields: [bankId], references: [id], onDelete: Restrict)
+  accountId         String?                      @db.Uuid
+  account           FinanceSettlementAccount?    @relation(fields: [accountId], references: [id], onDelete: Restrict)
+  paymentMethodId   String?                      @db.Uuid
+  paymentMethod     MasterPaymentMethod?         @relation(fields: [paymentMethodId], references: [id], onDelete: Restrict)
+  paidAmount        Decimal?                     @db.Decimal(24, 4)
+  exchangeRateToIrr Decimal?                     @db.Decimal(24, 8)
+  rialEquivalent    Decimal?                     @db.Decimal(24, 4)
+  cumulativePaid    Decimal?                     @db.Decimal(24, 4)
+  remainingAmount   Decimal?                     @db.Decimal(24, 4)
+  transferAt        DateTime?                    @db.Timestamptz(3)
+  paymentReference  String?                      @db.VarChar(160)
+  reason            String                       @db.VarChar(500)
+  actorUserId       String                       @db.Uuid
+  actor             User                         @relation(fields: [actorUserId], references: [id], onDelete: Restrict)
+  createdAt         DateTime                     @default(now()) @db.Timestamptz(3)
 
   @@unique([purchaseId, version])
   @@index([status, createdAt])
   @@index([bankId, transferAt])
+  @@index([accountId, transferAt])
+  @@index([paymentMethodId, transferAt])
 }
 
 model ReservationArrangementRevision {
@@ -4219,6 +4290,7 @@ model CustomerAffairsTicket {
   referrals               CustomerAffairsReferral[]
   satisfactions           CustomerAffairsSatisfaction[]
   correctiveActions       CustomerAffairsCorrectiveAction[]
+  siteOrigin              CustomerAffairsSiteTicket?
 
   @@index([branchId, status, priority, updatedAt])
   @@index([customerOwnerUserId, status, nextActionAt])
@@ -4226,6 +4298,29 @@ model CustomerAffairsTicket {
   @@index([customerId, createdAt])
   @@index([firstResponseDueAt, resolutionDueAt])
   @@map("customer_affairs_tickets")
+}
+
+model CustomerAffairsSite {
+  id      String                      @id @db.Uuid
+  code    String                      @unique @db.VarChar(48)
+  domain  String                      @unique @db.VarChar(160)
+  tickets CustomerAffairsSiteTicket[]
+
+  @@map("customer_affairs_sites")
+}
+
+model CustomerAffairsSiteTicket {
+  id          String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  siteId      String                @map("site_id") @db.Uuid
+  ticketId    String                @unique @map("ticket_id") @db.Uuid
+  externalId  String                @map("external_id") @db.VarChar(160)
+  fingerprint String                @db.VarChar(64)
+  createdAt   DateTime              @default(now()) @map("created_at") @db.Timestamptz(3)
+  site        CustomerAffairsSite   @relation(fields: [siteId], references: [id], onDelete: Restrict)
+  ticket      CustomerAffairsTicket @relation(fields: [ticketId], references: [id], onDelete: Restrict)
+
+  @@unique([siteId, externalId])
+  @@map("customer_affairs_site_tickets")
 }
 
 model CustomerAffairsTimeline {

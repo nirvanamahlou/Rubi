@@ -84,7 +84,7 @@ describe('main-route module foundation', () => {
     ).toContain('CustomerAffairsWorkspace');
     expect(
       readFileSync(resolve(crmRoot, 'finance/page.tsx'), 'utf8'),
-    ).toContain('FinanceAccountingWorkspace');
+    ).toContain('AccountingNavigationWorkspace');
     expect(readFileSync(resolve(crmRoot, 'sales/page.tsx'), 'utf8')).toContain(
       'SalesWorkspace',
     );

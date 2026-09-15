@@ -2,7 +2,7 @@ import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import type {
   AuthenticatedActor,
   SalesTicketSelectionInput,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 
 import { CustomerService } from '../customers/customer.service';
 import { TicketPublicService } from '../ticket-catalog/ticket-public.service';

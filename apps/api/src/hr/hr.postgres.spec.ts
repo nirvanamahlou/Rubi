@@ -15,8 +15,8 @@ import {
   type HrEmployeeDto,
   type HrRecordDto,
   type IamPermissionCode,
-} from '@rubi/contracts';
-import { createDatabaseClient, type DatabaseClient } from '@rubi/database';
+} from '@nora/contracts';
+import { createDatabaseClient, type DatabaseClient } from '@nora/database';
 import { hash } from 'argon2';
 import request from 'supertest';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
@@ -39,7 +39,7 @@ import { MasterHrDirectory } from '../master-data/master-hr-directory';
 import { HrConnectionsService } from './hr-connections.service';
 import { HrConnectionsController } from './hr-connections.controller';
 
-const databaseName = `rubi_hr_test_${randomUUID().replaceAll('-', '')}`;
+const databaseName = `nora_hr_test_${randomUUID().replaceAll('-', '')}`;
 const branchA = randomUUID(),
   branchB = randomUUID();
 let client: DatabaseClient,
@@ -63,10 +63,10 @@ function sql(database: string, input: string) {
     [
       'exec',
       '-i',
-      'rubi-postgres-1',
+      'nora-postgres-1',
       'psql',
       '-U',
-      'rubi_local',
+      'nora_local',
       '-d',
       database,
       '-v',
@@ -107,7 +107,7 @@ async function actor(
   const login = await iam.login(username, password, {});
   return {
     actor: await iam.authenticate(login.accessToken),
-    cookie: `rubi_access=${login.accessToken}`,
+    cookie: `nora_access=${login.accessToken}`,
   };
 }
 const employeeInput = (name: string, extras: Record<string, unknown> = {}) => ({
@@ -121,13 +121,13 @@ const employeeInput = (name: string, extras: Record<string, unknown> = {}) => ({
   ...extras,
 });
 
-describe.skipIf(process.env.RUBI_RUN_HR_POSTGRES_TESTS !== '1')(
+describe.skipIf(process.env.NORA_RUN_HR_POSTGRES_TESTS !== '1')(
   'HR real authenticated PostgreSQL commands',
   () => {
     beforeAll(async () => {
       const env = parseEnv(
         readFileSync(
-          process.env.RUBI_HR_TEST_ENV_FILE ?? resolve(process.cwd(), '.env'),
+          process.env.NORA_HR_TEST_ENV_FILE ?? resolve(process.cwd(), '.env'),
           'utf8',
         ),
       );
@@ -135,7 +135,7 @@ describe.skipIf(process.env.RUBI_RUN_HR_POSTGRES_TESTS !== '1')(
       if (
         !['localhost', '127.0.0.1'].includes(url.hostname) ||
         url.port !== '55432' ||
-        !/^rubi_hr_test_[a-f0-9]{32}$/.test(databaseName)
+        !/^nora_hr_test_[a-f0-9]{32}$/.test(databaseName)
       )
         throw new Error(
           'Only a randomly named isolated local HR test database is permitted.',
@@ -166,8 +166,8 @@ describe.skipIf(process.env.RUBI_RUN_HR_POSTGRES_TESTS !== '1')(
         database,
         new JwtService({
           secret: randomBytes(48).toString('base64'),
-          signOptions: { issuer: 'rubi-api', audience: 'rubi-web' },
-          verifyOptions: { issuer: 'rubi-api', audience: 'rubi-web' },
+          signOptions: { issuer: 'nora-api', audience: 'nora-web' },
+          verifyOptions: { issuer: 'nora-api', audience: 'nora-web' },
         }),
         new MfaTotpService(new ConfigService(env)),
       );
@@ -247,7 +247,7 @@ describe.skipIf(process.env.RUBI_RUN_HR_POSTGRES_TESTS !== '1')(
     afterAll(async () => {
       if (app) await app.close();
       if (client) await client.$disconnect();
-      if (created && /^rubi_hr_test_[a-f0-9]{32}$/.test(databaseName))
+      if (created && /^nora_hr_test_[a-f0-9]{32}$/.test(databaseName))
         sql('postgres', `DROP DATABASE "${databaseName}" WITH (FORCE);`);
     }, 60000);
     it('rejects absent authentication through the real cookie guard', async () => {

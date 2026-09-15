@@ -22,7 +22,7 @@ Storage با Git جابه‌جا نمی‌شوند؛ Git مولد قطعی و ف
 
 ## اجرای PC-A و PC-B
 
-پیش‌نیازها: PostgreSQL محلی Rubi روی پورت `55432`، Migration و Seed معمول، یک مدیر فعال
+پیش‌نیازها: PostgreSQL محلی Nora روی پورت `55432`، Migration و Seed معمول، یک مدیر فعال
 با دسترسی شعبه، تنظیمات Storage و کلید محلی و Antivirus فعال.
 
 ```powershell
@@ -31,8 +31,8 @@ git switch develop
 git pull --ff-only origin develop
 pnpm install --frozen-lockfile
 pnpm db:generate
-pnpm --filter @rubi/database exec prisma migrate deploy --schema prisma/schema.prisma
-pnpm --filter @rubi/database db:seed
+pnpm --filter @nora/database exec prisma migrate deploy --schema prisma/schema.prisma
+pnpm --filter @nora/database db:seed
 pnpm documents:demo:preview
 pnpm documents:demo:apply
 ```
@@ -40,7 +40,7 @@ pnpm documents:demo:apply
 تنظیمات پیش‌فرض از `apps/api/.env` خوانده می‌شود. اگر فایل محیط جای دیگری است:
 
 ```powershell
-$env:RUBI_API_ENV_FILE = 'C:\path\to\private-api.env'
+$env:NORA_API_ENV_FILE = 'C:\path\to\private-api.env'
 pnpm documents:demo:preview
 pnpm documents:demo:apply
 ```

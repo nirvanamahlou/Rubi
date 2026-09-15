@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
-import type { MasterDataRecord, TicketOfferCreateV1 } from '@rubi/contracts';
+import type { MasterDataRecord, TicketOfferCreateV1 } from '@nora/contracts';
 import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
 import { FormField, Input } from '@/components/ui/form-controls';

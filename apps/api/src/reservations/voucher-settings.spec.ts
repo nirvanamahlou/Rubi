@@ -4,7 +4,7 @@ import {
   voucherNumberKeys,
   voucherFlagKeys,
   type VoucherSettingsV1,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import { validateVoucherSettings } from './voucher-settings';
 import {
   initialTravelWorkflow,
@@ -38,6 +38,19 @@ it('validates settings and rejects foreign passengers, invalid dates and unselec
   const fraction = settings();
   fraction.numbers.doubleRooms = 1.5;
   expect(() => validateVoucherSettings(fraction, ['p'])).toThrow();
+});
+
+it('keeps hotel child age bands in the reservation snapshot without changing ticket age', () => {
+  const value = settings();
+  value.passengers[0] = {
+    ...value.passengers[0]!,
+    age: 'CHD',
+    hotelChildAgeBand: 'CHD_2_TO_6',
+  };
+  expect(validateVoucherSettings(value, ['p']).passengers[0]).toMatchObject({
+    age: 'CHD',
+    hotelChildAgeBand: 'CHD_2_TO_6',
+  });
 });
 it('creates a new issued settings revision without rewriting the prior settings or bypassing issue gates', () => {
   const state = {

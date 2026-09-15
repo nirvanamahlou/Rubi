@@ -75,10 +75,10 @@ PostgreSQL constraint and preservation tests. No skill/tool source was modified.
 
 - API policy/service/repository tests cover complete payloads, partial updates, metadata forgery, permission checks, one-transaction audit and stale versions.
 - Form-model and server-rendered component tests cover every requested field, read-only metadata, clearable selectors, Persian digits, unknown values and popup view mode.
-- `RUBI_RUN_TERMINAL_POSTGRES_TESTS=1` enables the isolated PostgreSQL 18 suite in `apps/api/test/terminal-form.postgres.spec.ts`.
-- The PostgreSQL suite creates only a uniquely named `rubi_md_terminal_test_<uuid>` database, applies all migrations, seeds before and after the additive migration, checks preservation/constraints, exercises the real repository and removes its own test database.
-- Optional `RUBI_TERMINAL_TEST_CLIENT` selects a separately generated Prisma client, avoiding replacement of a running shared server's client.
-- Optional `RUBI_TERMINAL_TEST_SEED` selects an isolated copy of the unchanged seed. On this shared machine, the normal seed's 5-second transaction timeout expired; a temporary client factory restricted to `rubi_md_terminal_test_<uuid>` used a 60-second timeout. The application seed/client and operational configuration were not changed.
+- `NORA_RUN_TERMINAL_POSTGRES_TESTS=1` enables the isolated PostgreSQL 18 suite in `apps/api/test/terminal-form.postgres.spec.ts`.
+- The PostgreSQL suite creates only a uniquely named `nora_md_terminal_test_<uuid>` database, applies all migrations, seeds before and after the additive migration, checks preservation/constraints, exercises the real repository and removes its own test database.
+- Optional `NORA_TERMINAL_TEST_CLIENT` selects a separately generated Prisma client, avoiding replacement of a running shared server's client.
+- Optional `NORA_TERMINAL_TEST_SEED` selects an isolated copy of the unchanged seed. On this shared machine, the normal seed's 5-second transaction timeout expired; a temporary client factory restricted to `nora_md_terminal_test_<uuid>` used a 60-second timeout. The application seed/client and operational configuration were not changed.
 - Shared-server browser smoke and shared-database rollout are not claimed; build and data tests run separately.
 
 Final results: 41 new API and 28 new Web tests pass; all 15 PostgreSQL tests pass.

@@ -8,6 +8,28 @@ import { getMasterDataFormFields } from './form-fields';
 import { validateMasterDataDraft } from './validation';
 
 describe('payment-method form fields', () => {
+  it('keeps airport enrichment out of create while preserving it for later editing', () => {
+    const definition = getMasterDataDefinition('airports');
+    const createFields = getMasterDataFormFields(definition, 'create').map(
+      (field) => field.key,
+    );
+    const editFields = getMasterDataFormFields(definition, 'edit').map(
+      (field) => field.key,
+    );
+    for (const field of ['icaoCode', 'ianaTimezone', 'latitude', 'longitude']) {
+      expect(createFields).not.toContain(field);
+      expect(editFields).toContain(field);
+    }
+    expect(
+      validateMasterDataDraft('airports', {
+        name: 'فرودگاه کیش',
+        englishName: 'Kish Airport',
+        countryId: 'country-id',
+        cityId: 'city-id',
+        iataCode: 'KIH',
+      }).success,
+    ).toBe(true);
+  });
   it('omits channel only while creating without changing stored payment metadata', () => {
     const definition = getMasterDataDefinition('payment-methods');
     expect(
@@ -46,8 +68,8 @@ describe('payment-method form fields', () => {
       suppliers: ['displayName'],
       brokers: ['displayName'],
       airlines: ['organizationId', 'iataCode', 'icaoCode'],
-      'cabin-classes': ['bodyType', 'cabinType'],
-      'baggage-rules': ['validFrom', 'validTo'],
+      'cabin-classes': ['name', 'bodyType', 'cabinType'],
+      'baggage-rules': ['name', 'validFrom', 'validTo'],
       'bus-companies': ['supplierId'],
       'visa-services': [
         'supplierId',
@@ -126,5 +148,23 @@ describe('payment-method form fields', () => {
         ).toBeTruthy();
       }
     }
+  });
+
+  it('uses a required English-only title for cabin classes', () => {
+    const definition = getMasterDataDefinition('cabin-classes');
+    const fields = getMasterDataFormFields(definition);
+    const englishName = fields.find((field) => field.key === 'englishName');
+
+    expect(fields.map((field) => field.key)).not.toContain('name');
+    expect(englishName).toMatchObject({ required: true });
+    expect(
+      validateMasterDataDraft('cabin-classes', { bookingCode: 'Y' }).errors,
+    ).toHaveProperty('englishName');
+    expect(
+      validateMasterDataDraft('cabin-classes', {
+        englishName: 'Economy',
+        bookingCode: 'Y',
+      }).success,
+    ).toBe(true);
   });
 });

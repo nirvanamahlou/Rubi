@@ -1,6 +1,6 @@
-import type { LoginResponse } from '@rubi/contracts';
+import type { LoginResponse } from '@nora/contracts';
 
-const HEADER_SESSION_STORAGE_KEY = 'rubi:header-session:v1';
+const HEADER_SESSION_STORAGE_KEY = 'nora:header-session:v1';
 
 type LoginUser = LoginResponse['user'];
 type HeaderSessionStorage = Pick<Storage, 'getItem' | 'removeItem' | 'setItem'>;

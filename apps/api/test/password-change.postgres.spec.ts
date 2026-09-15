@@ -7,7 +7,7 @@ import {
   createDatabaseClient,
   SessionStatus,
   type DatabaseClient,
-} from '@rubi/database';
+} from '@nora/database';
 import { hash, verify } from 'argon2';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { DatabaseService } from '../src/database/database.service';
@@ -16,9 +16,9 @@ import type { MfaTotpService } from '../src/iam/mfa-totp';
 import { changeIamPassword } from '../src/iam/password-change';
 import { postgresTestTarget } from './postgres-test-target';
 
-const enabled = process.env.RUBI_RUN_PASSWORD_POSTGRES_TESTS === '1';
+const enabled = process.env.NORA_RUN_PASSWORD_POSTGRES_TESTS === '1';
 const target = postgresTestTarget();
-const databaseName = `rubi_password_test_${randomUUID().replaceAll('-', '')}`;
+const databaseName = `nora_password_test_${randomUUID().replaceAll('-', '')}`;
 let created = false;
 let client: DatabaseClient;
 const oldPassword = 'Old-Fixture-123!';
@@ -111,7 +111,7 @@ describe.skipIf(!enabled)(
       if (
         !['localhost', '127.0.0.1'].includes(configured.hostname) ||
         configured.port !== target.port ||
-        !/^rubi_password_test_[a-f0-9]{32}$/.test(databaseName)
+        !/^nora_password_test_[a-f0-9]{32}$/.test(databaseName)
       )
         throw new Error('Isolated local database required');
       sql('postgres', `CREATE DATABASE "${databaseName}";`);
@@ -136,7 +136,7 @@ describe.skipIf(!enabled)(
     }, 120000);
     afterAll(async () => {
       await client?.$disconnect();
-      if (created && /^rubi_password_test_[a-f0-9]{32}$/.test(databaseName))
+      if (created && /^nora_password_test_[a-f0-9]{32}$/.test(databaseName))
         sql('postgres', `DROP DATABASE "${databaseName}" WITH (FORCE);`);
     });
     it('changes only the current user, revokes every session, rejects old login and retains secret-free audit', async () => {

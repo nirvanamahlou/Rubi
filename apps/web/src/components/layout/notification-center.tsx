@@ -1,6 +1,6 @@
 'use client';
 
-import type { HrNotificationDto, NotificationItemV1 } from '@rubi/contracts';
+import type { HrNotificationDto, NotificationItemV1 } from '@nora/contracts';
 import {
   Bell,
   BellRing,
@@ -17,6 +17,12 @@ import { getPublicApiBaseUrl } from '@/lib/environment';
 import { cn } from '@/lib/utils';
 import { hrApi, HrApiError } from '@/modules/hr/hr-api';
 import { pendingHrBellNotifications } from '@/modules/hr/hr-bell-notifications';
+import {
+  MASTER_DATA_CHANGED_EVENT,
+  masterDataApi,
+  type MasterDataNotification,
+} from '@/modules/master-data/api/client';
+import { getMasterDataNotificationPresentation } from '@/modules/master-data/model/notifications';
 import {
   NOTIFICATIONS_CHANGED_EVENT,
   notificationsApi,
@@ -91,6 +97,31 @@ function formatNotificationTime(value: string) {
   }).format(new Date(value));
 }
 
+export function mergeMasterDataFeed(
+  current: readonly ChangeNotification[],
+  events: readonly MasterDataNotification[],
+) {
+  const currentById = new Map(current.map((item) => [item.id, item]));
+  const fromAudit = events.map((event): ChangeNotification => {
+    const id = `master-data:${event.id}`;
+    const existing = currentById.get(id);
+    const presentation = getMasterDataNotificationPresentation(event);
+    return {
+      id,
+      title: presentation.title,
+      description: `تغییر در ${presentation.sectionLabel} ثبت شد.`,
+      href: presentation.href,
+      occurredAt: event.occurredAt,
+      readAt: existing?.readAt ?? null,
+    };
+  });
+  const auditIds = new Set(fromAudit.map((item) => item.id));
+  return limitChangeNotifications([
+    ...fromAudit,
+    ...current.filter((item) => !auditIds.has(item.id)),
+  ]);
+}
+
 function serverNotification(item: NotificationItemV1): CenterNotification {
   return {
     key: `server:${item.id}`,
@@ -126,6 +157,7 @@ export function NotificationCenter() {
   const [serverUnreadCount, setServerUnreadCount] = useState(0);
   const [serverLoading, setServerLoading] = useState(true);
   const [serverError, setServerError] = useState<string | null>(null);
+  const [refreshingMasterData, setRefreshingMasterData] = useState(false);
   const apiBaseUrl = getPublicApiBaseUrl();
 
   const loadHr = useCallback(async () => {
@@ -176,16 +208,32 @@ export function NotificationCenter() {
     [localItems, serverUnreadCount, hrItems],
   );
 
+  const syncMasterDataFeed = useCallback(async (showProgress = false) => {
+    if (showProgress) setRefreshingMasterData(true);
+    try {
+      const response = await masterDataApi.notifications(60);
+      const next = writeStoredNotifications(
+        mergeMasterDataFeed(readStoredNotifications(), response.data),
+      );
+      setLocalItems(next);
+    } catch {
+      // The global center keeps local notifications available if Audit is
+      // temporarily unreachable or the current role cannot read Master Data.
+    } finally {
+      if (showProgress) setRefreshingMasterData(false);
+    }
+  }, []);
+
   useEffect(() => {
     const refresh = () => void loadHr();
     const initial = window.setTimeout(refresh, 0);
     const interval = window.setInterval(refresh, SERVER_POLL_INTERVAL_MS);
-    window.addEventListener('rubi:hr-server-change', refresh);
+    window.addEventListener('nora:hr-server-change', refresh);
     window.addEventListener('focus', refresh);
     return () => {
       window.clearTimeout(initial);
       window.clearInterval(interval);
-      window.removeEventListener('rubi:hr-server-change', refresh);
+      window.removeEventListener('nora:hr-server-change', refresh);
       window.removeEventListener('focus', refresh);
     };
   }, [loadHr]);
@@ -243,6 +291,19 @@ export function NotificationCenter() {
     };
   }, [apiBaseUrl]);
 
+  useEffect(() => {
+    if (!apiBaseUrl) return;
+    const refresh = () => void syncMasterDataFeed();
+    const initialLoad = window.setTimeout(refresh, 0);
+    const interval = window.setInterval(refresh, 30_000);
+    window.addEventListener(MASTER_DATA_CHANGED_EVENT, refresh);
+    return () => {
+      window.clearTimeout(initialLoad);
+      window.clearInterval(interval);
+      window.removeEventListener(MASTER_DATA_CHANGED_EVENT, refresh);
+    };
+  }, [apiBaseUrl, syncMasterDataFeed]);
+
   const updateLocalItems = (
     updater: (current: readonly ChangeNotification[]) => ChangeNotification[],
   ) => {
@@ -262,7 +323,7 @@ export function NotificationCenter() {
       );
       void hrApi
         .readNotification(notification.id)
-        .then(() => window.dispatchEvent(new Event('rubi:hr-server-change')))
+        .then(() => window.dispatchEvent(new Event('nora:hr-server-change')))
         .catch(() => loadHr());
       return;
     }
@@ -315,7 +376,14 @@ export function NotificationCenter() {
   const hasRead = notifications.some((notification) => notification.isRead);
 
   return (
-    <DropdownMenu dir="rtl" onOpenChange={(open) => open && void loadServer()}>
+    <DropdownMenu
+      dir="rtl"
+      onOpenChange={(open) => {
+        if (!open) return;
+        void loadServer();
+        void syncMasterDataFeed(true);
+      }}
+    >
       <DropdownMenuTrigger asChild>
         <Button
           aria-label={
@@ -349,17 +417,35 @@ export function NotificationCenter() {
                 : 'همه اعلان‌ها خوانده شده‌اند'}
             </p>
           </div>
-          {unreadCount ? (
+          <div className="flex items-center gap-1">
             <Button
-              onClick={markAllRead}
-              size="sm"
+              aria-label="تازه‌سازی اعلان‌های اطلاعات پایه"
+              disabled={refreshingMasterData}
+              onClick={() => {
+                void loadServer();
+                void syncMasterDataFeed(true);
+              }}
+              size="icon"
               type="button"
               variant="ghost"
             >
-              <CheckCheck aria-hidden="true" className="size-4" />
-              خواندن همه
+              <RefreshCw
+                aria-hidden="true"
+                className={cn('size-4', refreshingMasterData && 'animate-spin')}
+              />
             </Button>
-          ) : null}
+            {unreadCount ? (
+              <Button
+                onClick={markAllRead}
+                size="sm"
+                type="button"
+                variant="ghost"
+              >
+                <CheckCheck aria-hidden="true" className="size-4" />
+                خواندن همه
+              </Button>
+            ) : null}
+          </div>
         </div>
 
         {hrError ? (

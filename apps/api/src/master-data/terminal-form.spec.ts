@@ -3,7 +3,7 @@ import {
   ConflictException,
   ForbiddenException,
 } from '@nestjs/common';
-import type { AuthenticatedActor } from '@rubi/contracts';
+import type { AuthenticatedActor } from '@nora/contracts';
 import { describe, expect, it, vi } from 'vitest';
 import type { DatabaseService } from '../database/database.service';
 import {
@@ -44,13 +44,11 @@ const row = {
 };
 function setup() {
   const create = vi.fn(async (_resource, data) => ({ ...row, ...data }));
-  const update = vi
-    .fn()
-    .mockImplementation(async (_resource, _id, data) => ({
-      ...row,
-      ...data,
-      version: 3,
-    }));
+  const update = vi.fn().mockImplementation(async (_resource, _id, data) => ({
+    ...row,
+    ...data,
+    version: 3,
+  }));
   const repository = {
     create,
     update,

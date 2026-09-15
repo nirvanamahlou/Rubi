@@ -22,7 +22,7 @@ import { PermissionGuard } from './permission.guard';
 import type { AuthenticatedRequest } from './iam.types';
 
 @ApiTags('IAM / Users')
-@ApiCookieAuth('rubi_access')
+@ApiCookieAuth('nora_access')
 @UseGuards(AuthGuard, PermissionGuard)
 @Controller('iam/users')
 export class UsersController {

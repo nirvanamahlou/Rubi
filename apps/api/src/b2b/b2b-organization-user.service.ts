@@ -10,7 +10,7 @@ import {
   type B2bOrganizationUser,
   type B2bDossierSection,
   type B2bPortalSection,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import { IamService } from '../iam/iam.service';
 import { passwordPolicyErrors } from '../iam/password-policy';
 import type { RequestMetadata } from '../iam/iam.types';

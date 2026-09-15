@@ -90,7 +90,7 @@ function initialDraft(campaign?: CampaignPreview): CampaignDraft {
     endsAt: campaign?.endsAt ?? '',
     budgetAmount: campaign?.budgetAmount ?? '',
     currencyCode: campaign?.currencyCode ?? 'IRR',
-    utmSource: 'rubi-preview',
+    utmSource: 'nora-preview',
     utmMedium: 'campaign-workspace',
     utmCampaign: campaign?.utmCampaign ?? '',
     frequencyCap: campaign?.frequencyCap ?? 'حداکثر ۱ پیام در ۷ روز',

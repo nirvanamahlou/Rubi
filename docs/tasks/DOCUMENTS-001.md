@@ -16,7 +16,7 @@ Base: `origin/develop@1fd22efd836e16df5a62b73430444bd3f856f5e6`
 
 این سند رزرو ماژول‌محلی `DOCUMENTS-001` را ثبت می‌کند. در زمان شروع، Checkout اصلی
 تمیز ولی روی Task فعال `codex/pc-b-master-data-catalog-usability` بود؛ بنابراین کار در
-Worktree مستقل `C:/Users/admin/Rubi-documents-001` انجام شد و Checkout اصلی، داده محلی،
+Worktree مستقل `C:/Users/admin/Nora-documents-001` انجام شد و Checkout اصلی، داده محلی،
 شاخه‌ها و تغییرات Taskهای دیگر دست‌نخورده ماندند.
 
 قفل‌های فعلی طبق `WORK_ASSIGNMENTS.md`:

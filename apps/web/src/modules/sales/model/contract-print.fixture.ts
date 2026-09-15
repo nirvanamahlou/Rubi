@@ -1,4 +1,4 @@
-import type { SalesContractOutputV1 } from '@rubi/contracts';
+import type { SalesContractOutputV1 } from '@nora/contracts';
 export const printFixture: SalesContractOutputV1 = {
   version: 1,
   generatedAt: '2026-09-07T09:00:00Z',

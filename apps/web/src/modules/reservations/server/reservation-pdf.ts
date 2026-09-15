@@ -38,7 +38,7 @@ export async function renderReservationPdf(
         ') format("truetype");font-weight:normal}</style>',
     );
     if (Buffer.byteLength(html) > 10_000_000) throw new Error('PDF_TOO_LARGE');
-    directory = await mkdtemp(join(tmpdir(), 'rubi-reservation-pdf-'));
+    directory = await mkdtemp(join(tmpdir(), 'nora-reservation-pdf-'));
     const input = join(directory, 'contract.html');
     const result = join(directory, 'contract.pdf');
     await writeFile(input, html, { mode: 0o600 });

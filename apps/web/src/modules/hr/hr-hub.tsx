@@ -1,6 +1,6 @@
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
-import type { HrBootstrapDto } from '@rubi/contracts';
+import type { HrBootstrapDto } from '@nora/contracts';
 import { Card, PageHeader } from '@/components/ui/surfaces';
 import { cn } from '@/lib/utils';
 import { hrHubCards, type HrSectionId, type Tone } from './hr.model';

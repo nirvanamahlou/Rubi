@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { PERMISSIONS_KEY } from '../iam/iam.constants';
 import { MasterDataController } from './master-data.controller';
+import { MasterDataLogoController } from './master-data-logo.controller';
 
 describe('MasterDataController permission metadata', () => {
   it.each([
@@ -24,4 +25,18 @@ describe('MasterDataController permission metadata', () => {
       ),
     ).toEqual([permission]);
   });
+});
+
+describe('MasterDataLogoController permission metadata', () => {
+  it.each(['replace', 'remove'] as const)(
+    'requires master_data.update on %s',
+    (method) => {
+      expect(
+        Reflect.getMetadata(
+          PERMISSIONS_KEY,
+          MasterDataLogoController.prototype[method],
+        ),
+      ).toEqual(['master_data.update']);
+    },
+  );
 });

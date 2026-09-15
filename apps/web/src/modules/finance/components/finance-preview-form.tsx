@@ -9,7 +9,7 @@ import {
   WalletCards,
 } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
-import type { HrDirectoryEmployee } from '@rubi/contracts';
+import type { HrDirectoryEmployee } from '@nora/contracts';
 import { HrDirectoryPicker } from '@/modules/hr/hr-directory-picker';
 
 import { Button } from '@/components/ui/button';

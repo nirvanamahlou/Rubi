@@ -28,6 +28,28 @@ const coreModelSource = readFileSync(
   join(process.cwd(), 'src', 'modules', 'finance', 'model', 'finance-core.ts'),
   'utf8',
 );
+const liveInboxSource = readFileSync(
+  join(
+    process.cwd(),
+    'src',
+    'modules',
+    'finance',
+    'components',
+    'finance-inbox-live-workspace.tsx',
+  ),
+  'utf8',
+);
+const deliveryPanelSource = readFileSync(
+  join(
+    process.cwd(),
+    'src',
+    'modules',
+    'finance',
+    'components',
+    'finance-delivery-panel.tsx',
+  ),
+  'utf8',
+);
 const formSource = readFileSync(
   join(
     process.cwd(),
@@ -47,12 +69,66 @@ const inboxPageSource = readFileSync(
   join(process.cwd(), 'src', 'app', '(crm)', 'finance', 'requests', 'page.tsx'),
   'utf8',
 );
+const accountingNavigationSource = readFileSync(
+  join(
+    process.cwd(),
+    'src',
+    'modules',
+    'finance',
+    'components',
+    'accounting-navigation-workspace.tsx',
+  ),
+  'utf8',
+);
+const accountingRouteSource = readFileSync(
+  join(
+    process.cwd(),
+    'src',
+    'app',
+    '(crm)',
+    'finance',
+    'accounting',
+    '[...slug]',
+    'page.tsx',
+  ),
+  'utf8',
+);
 
 describe('finance workspace component contract', () => {
   it('routes the finance page to the dedicated workspace', () => {
-    expect(pageSource).toContain('FinanceAccountingWorkspace');
+    expect(pageSource).toContain('AccountingNavigationWorkspace');
     expect(inboxPageSource).toContain('FinanceRequestInboxWorkspace');
     expect(pageSource).not.toContain('ModuleOverview');
+  });
+
+  it('provides the requested collapsible accounting navigation with empty destinations', () => {
+    for (const label of [
+      'دفتر کل',
+      'اطلاعات پایه',
+      'حساب‌ها',
+      'اسناد',
+      'عملیات پایان سال',
+      'گزارش‌ها',
+      'دریافت و پرداخت',
+      'گزارش پرداخت و دریافت',
+      'ارتباط با سامانه مودیان مالیاتی',
+      'حسابداری مالیاتی',
+    ]) {
+      expect(accountingNavigationSource).toContain(label);
+    }
+    expect(accountingNavigationSource).toContain('بازکردن منوی حسابداری');
+    expect(accountingNavigationSource).toContain('جمع‌کردن منوی حسابداری');
+    expect(accountingNavigationSource).toContain(
+      'accountingNavigationGroups.map((group) => group.id)',
+    );
+    expect(accountingNavigationSource).toContain('group.items.length > 0');
+    expect(accountingNavigationSource).not.toContain('if (group.href)');
+    expect(accountingNavigationSource).toContain('در انتظار تعریف جزئیات');
+    expect(accountingNavigationSource).toContain('usePageBreadcrumbs');
+    expect(accountingNavigationSource).not.toMatch(
+      /fetch\(|financeInboxPreview/,
+    );
+    expect(accountingRouteSource).toContain('AccountingNavigationWorkspace');
   });
 
   it('separates accounting and the request inbox into independent pages', () => {
@@ -83,7 +159,34 @@ describe('finance workspace component contract', () => {
     expect(coreSource).not.toContain('label="Idempotency Key"');
     expect(coreSource).not.toContain('label="Version"');
     expect(coreSource).toContain('هیچ درخواست عملیاتی ثبت نمی‌شود');
+    expect(coreSource).toContain('<FinanceInboxLiveWorkspace />');
+    expect(coreSource).toContain('<FinanceDeliveryPanel />');
+    expect(componentSource).not.toContain('<FinanceDeliveryPanel />');
+    expect(coreSource).not.toContain('<InboxSpace />');
+    expect(liveInboxSource).toContain('صف درخواست‌های مالی');
+    expect(liveInboxSource).not.toContain('Live sources');
+    expect(liveInboxSource).not.toContain('عملیات مالی پس از فعال‌سازی');
+    expect(liveInboxSource).toContain('origin');
+    expect(liveInboxSource).toContain('تأیید دریافت');
+    expect(liveInboxSource).toContain('درخواست اصلاح');
+    expect(liveInboxSource).toContain('ثبت پرداخت کارگزار');
+    expect(liveInboxSource).toContain('حساب پرداخت‌کننده');
+    expect(liveInboxSource).toContain('نرخ روز ارز به ریال');
+    expect(liveInboxSource).toContain('مانده فعلی');
+    expect(liveInboxSource).not.toContain('financeInboxPreviewRequests');
     expect(coreSource).toContain('<FinanceWorkspace />');
+  });
+
+  it('presents supplier settlement and document delivery as two clear steps', () => {
+    expect(deliveryPanelSource).toContain('کنترل مالی قرارداد');
+    expect(deliveryPanelSource).toContain('۱. پرداخت خدمات به کارگزاران');
+    expect(deliveryPanelSource).toContain('۲. مجوز تحویل مدارک به فروش');
+    expect(deliveryPanelSource).toContain('وضعیت پرداخت هر خدمت این قرارداد');
+    expect(deliveryPanelSource).toContain('این مرحله هنوز فعال نیست');
+    expect(deliveryPanelSource).toContain('صدور مجوز تحویل مدارک');
+    expect(deliveryPanelSource).toContain('void load()');
+    expect(deliveryPanelSource).toContain('savePayment');
+    expect(deliveryPanelSource).toContain('updateDelivery');
   });
 
   it('covers dashboard, filters, internal navigation and all preview states', () => {

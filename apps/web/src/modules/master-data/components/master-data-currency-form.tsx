@@ -4,7 +4,7 @@ import type {
   MasterCurrencyRateRecord,
   MasterDataRecord,
   MasterDataStatus,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import { ArrowLeftRight, Coins, Save } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 

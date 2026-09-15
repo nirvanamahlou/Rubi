@@ -117,6 +117,26 @@ describe('Ticket catalog browser collection and query', () => {
         Date.parse(source.segments[0]!.departureAt),
     );
   });
+  it('anchors and repeats a ticket that has no departure time', () => {
+    const source = {
+      ...samples[0]!.definition,
+      serviceDate: '',
+      segments: samples[0]!.definition.segments.map((segment) => ({
+        ...segment,
+        departureAt: '',
+        arrivalAt: '',
+      })),
+      fare: {
+        ...samples[0]!.definition.fare,
+        validFrom: '',
+        validTo: '',
+      },
+    };
+    const moved = moveDefinitionToDate(source, '2026-09-22');
+    expect(moved.serviceDate).toBe('2026-09-22');
+    expect(moved.segments[0]!.departureAt).toBe('');
+    expect(repeatDefinition(moved, 'weekly', 1).serviceDate).toBe('2026-09-29');
+  });
   it('shifts all schedule and fare dates for weekly and monthly repeats', () => {
     const source = samples[0]!.definition;
     const weekly = repeatDefinition(source, 'weekly', 2);

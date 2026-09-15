@@ -1,5 +1,5 @@
-import type { SalesReservationRequestV1 } from '@rubi/contracts';
-import { salesContractFlights } from '@rubi/contracts';
+import type { SalesReservationRequestV1 } from '@nora/contracts';
+import { salesContractFlights } from '@nora/contracts';
 import type { FlightTicketSheetData } from '@/modules/sales/public/tickets';
 
 export function reservationTickets(

@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import type {
   ReservationArrangementUpdateV1,
   ReservationIntakeV1,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import { Button } from '@/components/ui/button';
 import { Input, Textarea } from '@/components/ui/form-controls';
 import { Alert, Badge, Card, PageHeader } from '@/components/ui/surfaces';

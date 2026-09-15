@@ -189,7 +189,7 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
     singularLabel: 'فرودگاه',
     group: 'جغرافیا',
     description:
-      'فرودگاه با کدهای رسمی، Timezone معتبر IANA و مختصات کنترل‌شده.',
+      'ثبت اولیه فرودگاه با نام، شهر و کد IATA؛ مشخصات تکمیلی در ویرایش قابل ثبت است.',
     fields: [
       nameField,
       {
@@ -225,28 +225,24 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
         label: 'کد ICAO',
         type: 'text',
         placeholder: 'OIII',
-        required: true,
       },
       {
         key: 'ianaTimezone',
         label: 'Timezone IANA',
         type: 'text',
         placeholder: 'Asia/Tehran',
-        required: true,
       },
       {
         key: 'latitude',
         label: 'عرض جغرافیایی',
         type: 'number',
         placeholder: '35.6892',
-        required: true,
       },
       {
         key: 'longitude',
         label: 'طول جغرافیایی',
         type: 'number',
         placeholder: '51.3134',
-        required: true,
       },
     ],
     preview: { iataCode: 'THR', icaoCode: 'OIII', ianaTimezone: 'Asia/Tehran' },
@@ -458,7 +454,7 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
         label: 'لوگوی بانک',
         type: 'text',
         placeholder: '',
-        hint: 'تصویر از طریق اسناد امن روبی بارگذاری می‌شود.',
+        hint: 'تصویر از طریق اسناد امن نورا بارگذاری می‌شود.',
       },
     ],
     preview: {
@@ -813,32 +809,23 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
     description:
       'کاتالوگ سازنده، مدل و نوع بدنه هواپیما بدون وابستگی به ناوگان عملیاتی.',
     fields: [
-      nameField,
       {
         key: 'englishName',
         label: 'نام انگلیسی',
         type: 'text',
-        placeholder: 'Airbus A320',
+        placeholder: 'Airbus A320-200',
       },
       {
-        key: 'manufacturer',
-        label: 'سازنده',
+        key: 'manufacturerModel',
+        label: 'سازنده و مدل',
         type: 'text',
-        placeholder: 'Airbus',
-        required: true,
-      },
-      {
-        key: 'model',
-        label: 'مدل',
-        type: 'text',
-        placeholder: 'A320-200',
+        placeholder: 'Airbus / A320-200',
         required: true,
       },
     ],
     preview: {
-      name: 'ایرباس ۳۲۰',
-      manufacturer: 'Airbus',
-      model: 'A320-200',
+      englishName: 'Airbus A320-200',
+      manufacturerModel: 'Airbus / A320-200',
       bodyType: 'NARROW_BODY',
     },
   },
@@ -850,12 +837,12 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
     description:
       'کد رزرو و Cabin مرجع؛ قیمت و موجودی صندلی در Ticket Catalog/Reservations می‌ماند.',
     fields: [
-      nameField,
       {
         key: 'englishName',
         label: 'نام انگلیسی',
         type: 'text',
         placeholder: 'Economy',
+        required: true,
       },
       {
         key: 'bookingCode',
@@ -871,7 +858,11 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
         placeholder: '0',
       },
     ],
-    preview: { name: 'اکونومی', bookingCode: 'Y', cabinType: 'ECONOMY' },
+    preview: {
+      englishName: 'Economy',
+      bookingCode: 'Y',
+      cabinType: 'ECONOMY',
+    },
   },
   {
     key: 'baggage-rules',
@@ -881,7 +872,6 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
     description:
       'قاعده بار براساس ایرلاین، کلاس، نوع مسافر، مسیر، مقدار و تعداد قطعه.',
     fields: [
-      nameField,
       {
         key: 'airlineId',
         label: 'ایرلاین',
@@ -951,7 +941,7 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
       },
     ],
     preview: {
-      name: 'بار اکونومی',
+      name: 'Baggage Economy',
       passengerType: 'ADT',
       allowance: '20',
       unit: 'KG',
@@ -963,12 +953,19 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
     singularLabel: 'قالب Manifest',
     group: 'حمل‌ونقل',
     description:
-      'تعریف نسخه و ساختار ستون‌ها؛ فایل واقعی فقط با Reference سرویس Documents متصل می‌شود.',
+      'فایل Excel ایرلاین برای مقصد انتخابی ذخیره و نسخه قالب به‌صورت خودکار ساخته می‌شود.',
     fields: [
       nameField,
       {
         key: 'airlineId',
         label: 'ایرلاین',
+        type: 'text',
+        placeholder: '',
+        required: true,
+      },
+      {
+        key: 'destinationCityId',
+        label: 'مقصد (شهر)',
         type: 'text',
         placeholder: '',
         required: true,

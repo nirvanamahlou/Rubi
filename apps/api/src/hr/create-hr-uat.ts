@@ -7,8 +7,8 @@ import { parseEnv } from 'node:util';
 
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-import { HR_PERMISSION_CODES, type AuthenticatedActor } from '@rubi/contracts';
-import { createDatabaseClient, UserStatus } from '@rubi/database';
+import { HR_PERMISSION_CODES, type AuthenticatedActor } from '@nora/contracts';
+import { createDatabaseClient, UserStatus } from '@nora/database';
 
 import type { DatabaseService } from '../database/database.service';
 import { IamService } from '../iam/iam.service';
@@ -25,7 +25,7 @@ async function main() {
     throw new Error('Local development only.');
   if (!process.argv.includes('--apply') && !process.argv.includes('--disable'))
     throw new Error('Explicit --apply or --disable is required.');
-  const output = resolve(tmpdir(), 'rubi-hr005-uat.json');
+  const output = resolve(tmpdir(), 'nora-hr005-uat.json');
   const client = createDatabaseClient(url.toString());
   try {
     const iam = new IamService(

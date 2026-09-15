@@ -1,4 +1,4 @@
-import type { HrBootstrapDto, HrRecordDto } from '@rubi/contracts';
+import type { HrBootstrapDto, HrRecordDto } from '@nora/contracts';
 import { hrCompanies } from './hr-live-data';
 
 export const recordValue = (record: HrRecordDto | undefined, label: string) =>

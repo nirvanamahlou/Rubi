@@ -1,4 +1,4 @@
-import type { MasterDataRecord } from '@rubi/contracts';
+import type { MasterDataRecord } from '@nora/contracts';
 
 export const mealServiceCodes = [
   'RO',

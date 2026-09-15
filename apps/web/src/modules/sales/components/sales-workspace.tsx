@@ -20,7 +20,7 @@ import type {
   SalesContractListQuery,
   SalesContractPage,
   SalesDashboard,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 
 import { Button, buttonVariants } from '@/components/ui/button';
 import {

@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import type { MasterDataRecord, SalesContractOutputV1 } from '@rubi/contracts';
+import type { MasterDataRecord, SalesContractOutputV1 } from '@nora/contracts';
 import { getPublicApiBaseUrl } from '@/lib/environment';
 import { legalEntityBrand } from '@/modules/legal-entities/model/context';
 import type { ContractPrintReferences } from '@/modules/sales/model/contract-print';

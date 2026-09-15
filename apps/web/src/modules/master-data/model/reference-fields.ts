@@ -1,4 +1,4 @@
-import type { MasterDataRecord, MasterDataResource } from '@rubi/contracts';
+import type { MasterDataRecord, MasterDataResource } from '@nora/contracts';
 
 import type { MasterDataResourceKey } from './catalog';
 
@@ -80,6 +80,7 @@ const configs: Partial<
   },
   'manifest-templates': {
     airlineId: { target: 'airlines', payload: 'id' },
+    destinationCityId: { target: 'cities', payload: 'id' },
   },
   'rail-companies': {
     organizationId: {

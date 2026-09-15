@@ -33,6 +33,80 @@ describe('MasterDataRepository code allocation', () => {
   });
 });
 
+describe('MasterDataRepository manifest persistence', () => {
+  it('allocates the next airline template version inside the create transaction', async () => {
+    const create = vi.fn().mockResolvedValue({
+      ...baseRow,
+      code: 'MANIFEST_TEST',
+      name: 'Antalya template',
+      versionNumber: 4,
+      airline: { id: 'airline-id', code: 'B9', name: 'ایران ایرتور' },
+      destinationCity: {
+        id: 'city-id',
+        name: 'آنتالیا',
+        country: { name: 'ترکیه' },
+      },
+    });
+    const aggregate = vi.fn().mockResolvedValue({
+      _max: { versionNumber: 3 },
+    });
+    const auditCreate = vi.fn().mockResolvedValue({ id: 'audit-id' });
+    const transaction = {
+      masterManifestTemplate: { aggregate, create },
+      masterDataAuditEvent: { create: auditCreate },
+    };
+    const database = {
+      client: {
+        $transaction: async <T>(
+          callback: (client: typeof transaction) => Promise<T>,
+        ) => callback(transaction),
+      },
+    } as unknown as DatabaseService;
+    const repository = new MasterDataRepository(database);
+
+    await repository.create(
+      'manifest-templates',
+      {
+        airlineId: 'airline-id',
+        destinationCityId: 'city-id',
+        code: 'MANIFEST_TEST',
+        name: 'Antalya template',
+      },
+      '11111111-1111-4111-8111-111111111111',
+      '33333333-3333-4333-8333-333333333333',
+    );
+
+    expect(aggregate).toHaveBeenCalledWith({
+      where: { airlineId: 'airline-id' },
+      _max: { versionNumber: true },
+    });
+    expect(create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ versionNumber: 4 }),
+      }),
+    );
+  });
+
+  it('projects the destination labels without leaking relation objects', () => {
+    const record = toMasterDataRecord('manifest-templates', {
+      ...baseRow,
+      code: 'MANIFEST_TEST',
+      name: 'Antalya template',
+      airline: { code: 'B9', name: 'ایران ایرتور' },
+      destinationCity: {
+        name: 'آنتالیا',
+        country: { name: 'ترکیه' },
+      },
+    });
+    expect(record.attributes).toMatchObject({
+      airlineName: 'ایران ایرتور',
+      destinationCityName: 'آنتالیا',
+      destinationCountryName: 'ترکیه',
+    });
+    expect(record.attributes).not.toHaveProperty('destinationCity');
+  });
+});
+
 describe('MasterDataRepository geography listing', () => {
   it('applies an inclusive UTC creation-date range before pagination', async () => {
     const findMany = vi.fn().mockResolvedValue([]);

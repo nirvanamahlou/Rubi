@@ -15,8 +15,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import styles from './hr-workspace.module.css';
 import type { HrSectionId } from './hr.model';
 
-const storageKey = 'rubi.hr.notifications.v1';
-const notificationEvent = 'rubi:hr-notifications';
+const storageKey = 'nora.hr.notifications.v1';
+const notificationEvent = 'nora:hr-notifications';
 const maximumNotifications = 50;
 
 export type HrNotificationAction = 'create' | 'edit' | 'delete' | 'update';

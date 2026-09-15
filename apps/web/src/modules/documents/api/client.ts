@@ -15,7 +15,7 @@ import type {
   DocumentOptionsResponseV1,
   DocumentDeleteInputV1,
   DocumentUpdateInputV1,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 
 import { getPublicApiBaseUrl } from '../../../lib/environment';
 import { refreshAuthenticatedSession } from '../../../lib/auth-session';
