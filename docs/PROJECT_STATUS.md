@@ -28,6 +28,8 @@ Final isolated smoke after rebuilt Web3200/API4200: 200 login/health,
 67/67 migrations up to date, one saved publication with 18 room prices,
 the same offer ID on an idempotent retry, and the original Web3100 listener
 unchanged. API/Web lint, typecheck, focused tests and production builds pass.
+Scoped implementation commit `e9f91e6f` released the reserved PC-A migration,
+central-doc and shared-contract locks; PR #278 remains a draft review, unmerged.
 
 The older preview-only entry below records the earlier stage, not the current
 publication status.
