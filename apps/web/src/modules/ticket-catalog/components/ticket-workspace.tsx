@@ -69,6 +69,8 @@ import formStyles from './ticket-form.module.css';
 import { TicketDatePicker } from './ticket-date-picker';
 import { IssuedTicketsWorkspace } from './issued-tickets-workspace';
 import { TourWorkspace } from './tour-workspace';
+import { PublishedOffers } from './published-offers';
+import { LiveTicketPrices } from './live-ticket-prices';
 
 const actor = 'کاربر جاری';
 const transportIcons = {
@@ -132,6 +134,8 @@ export function TicketWorkspace() {
           <TourWorkspace />
         </TabsContent>
         <TabsContent value="catalog">
+          <PublishedOffers />
+          <LiveTicketPrices />
           <TicketCatalogWorkspace />
         </TabsContent>
         <TabsContent value="issued">

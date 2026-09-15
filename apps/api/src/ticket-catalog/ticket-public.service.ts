@@ -14,6 +14,8 @@ import type {
   TicketOfferCreateV1,
   TicketOfferSearchV1,
   TicketOfferV1,
+  TicketStandaloneSalePriceUpdateV1,
+  TicketOfferManagedPriceV1,
 } from '@nora/contracts';
 import { DatabaseService } from '../database/database.service';
 import { ProcurementPublicService } from '../procurement/procurement-public.service';
@@ -28,12 +30,25 @@ const createSchema = Joi.object({
   serviceNumber: Joi.string().trim().max(80).required(),
   cabinClassCode: Joi.string().valid('ECONOMY', 'BUSINESS', 'FIRST').required(),
   totalCapacity: Joi.number().integer().min(0).max(100000).required(),
+  standaloneSalePrice: Joi.object({
+    amount: Joi.string()
+      .pattern(/^(?:0|[1-9]\d{0,15})(?:\.\d{1,4})?$/)
+      .required(),
+    currencyCode: Joi.string()
+      .pattern(/^[A-Z]{3}$/)
+      .required(),
+  }).allow(null),
 });
 
 export function validateTicketOffer(input: unknown): TicketOfferCreateV1 {
   const result = createSchema.validate(input, { convert: false });
   if (result.error) throw new BadRequestException('اطلاعات بلیت معتبر نیست.');
   const value = result.value as TicketOfferCreateV1;
+  if (
+    value.standaloneSalePrice &&
+    new Prisma.Decimal(value.standaloneSalePrice.amount).lte(0)
+  )
+    throw new BadRequestException('قیمت فروش تکی باید بیشتر از صفر باشد.');
   if (new Date(value.arrivalAt) <= new Date(value.departureAt))
     throw new BadRequestException('زمان رسیدن باید پس از حرکت باشد.');
   return value;
@@ -91,6 +106,7 @@ export class TicketPublicService {
           where: { status: 'ACTIVE' },
           select: { quantity: true },
         },
+        standaloneSalePrices: { orderBy: { revision: 'desc' }, take: 1 },
       },
       orderBy: [{ departureAt: 'asc' }, { id: 'asc' }],
       skip: ((query.page ?? 1) - 1) * 50,
@@ -117,6 +133,13 @@ export class TicketPublicService {
             0,
           ),
         status: row.status as TicketOfferV1['status'],
+        standaloneSalePrice: row.standaloneSalePrices[0]
+          ? {
+              revision: row.standaloneSalePrices[0].revision,
+              amount: row.standaloneSalePrices[0].amount.toString(),
+              currencyCode: row.standaloneSalePrices[0].currencyCode,
+            }
+          : null,
       })),
       hasMore: rows.length > 50,
     };
@@ -134,6 +157,7 @@ export class TicketPublicService {
     if (!key?.trim() || key.length > 160)
       throw new BadRequestException('کلید درخواست معتبر لازم است.');
     const value = validateTicketOffer(input);
+    const { standaloneSalePrice, ...offerFacts } = value;
     const fingerprint = createHash('sha256')
       .update(JSON.stringify({ branchId, ...value }))
       .digest('hex');
@@ -146,7 +170,7 @@ export class TicketPublicService {
       },
       update: {},
       create: {
-        ...value,
+        ...offerFacts,
         branchId,
         departureAt: new Date(value.departureAt),
         arrivalAt: new Date(value.arrivalAt),
@@ -160,23 +184,181 @@ export class TicketPublicService {
             version: 1,
           },
         },
+        ...(standaloneSalePrice
+          ? {
+              standaloneSalePrices: {
+                create: {
+                  revision: 1,
+                  amount: new Prisma.Decimal(standaloneSalePrice.amount),
+                  currencyCode: standaloneSalePrice.currencyCode,
+                  actorUserId: actor.userId,
+                  commandKey: key,
+                  fingerprint: createHash('sha256')
+                    .update(JSON.stringify(standaloneSalePrice))
+                    .digest('hex'),
+                },
+              },
+            }
+          : {}),
       },
     });
     // Legacy fingerprints depended on JSON field order. Compare stored offer facts
     // before rejecting a retried key so semantically identical requests remain safe.
-    const sameOffer = row.branchId === branchId &&
-      row.originId === value.originId && row.destinationId === value.destinationId &&
+    const sameOffer =
+      row.branchId === branchId &&
+      row.originId === value.originId &&
+      row.destinationId === value.destinationId &&
       row.departureAt.getTime() === new Date(value.departureAt).getTime() &&
       row.arrivalAt.getTime() === new Date(value.arrivalAt).getTime() &&
-      row.carrierName === value.carrierName && row.serviceNumber === value.serviceNumber &&
-      row.cabinClassCode === value.cabinClassCode && row.totalCapacity === value.totalCapacity;
-    if (row.fingerprint !== fingerprint && !sameOffer)
+      row.carrierName === value.carrierName &&
+      row.serviceNumber === value.serviceNumber &&
+      row.cabinClassCode === value.cabinClassCode &&
+      row.totalCapacity === value.totalCapacity;
+    // Compare the initial fare for replay; later legitimate revisions must not invalidate the publication key.
+    const initialFare =
+      await this.database.client.ticketOfferStandaloneSalePrice.findUnique({
+        where: { offerId_commandKey: { offerId: row.id, commandKey: key } },
+      });
+    const sameFare = standaloneSalePrice
+      ? !!initialFare &&
+        initialFare.amount.equals(
+          new Prisma.Decimal(standaloneSalePrice.amount),
+        ) &&
+        initialFare.currencyCode === standaloneSalePrice.currencyCode
+      : !initialFare;
+    if ((!sameFare || row.fingerprint !== fingerprint) && !sameOffer)
       throw new ConflictException(
         'کلید درخواست قبلاً با اطلاعات متفاوت استفاده شده است.',
+      );
+    if (!sameFare)
+      throw new ConflictException(
+        'کلید ثبت بلیط با قیمت فروش متفاوت استفاده شده است.',
       );
     // A failed public-producer call makes this command retriable with the same key.
     await this.purchases.ensureOfferPurchaseRequest(row);
     return { data: { id: row.id, version: row.version } };
+  }
+
+  async managedPrices(actor: AuthenticatedActor) {
+    this.require(actor, 'ticket_catalog.manage');
+    const rows = await this.database.client.ticketPublishedOffer.findMany({
+      where: { branchId: { in: actor.branchIds } },
+      include: {
+        standaloneSalePrices: { orderBy: { revision: 'desc' }, take: 1 },
+      },
+      orderBy: [{ departureAt: 'desc' }, { id: 'desc' }],
+      take: 100,
+    });
+    return {
+      data: rows.map((row): TicketOfferManagedPriceV1 => ({
+        id: row.id,
+        carrierName: row.carrierName,
+        serviceNumber: row.serviceNumber,
+        departureAt: row.departureAt.toISOString(),
+        originId: row.originId,
+        destinationId: row.destinationId,
+        standaloneSalePrice: row.standaloneSalePrices[0]
+          ? {
+              revision: row.standaloneSalePrices[0].revision,
+              amount: row.standaloneSalePrices[0].amount.toString(),
+              currencyCode: row.standaloneSalePrices[0].currencyCode,
+            }
+          : null,
+      })),
+    };
+  }
+
+  /** Appends a new list-price revision; published package prices remain independent. */
+  async updateStandaloneSalePrice(
+    offerId: string,
+    input: TicketStandaloneSalePriceUpdateV1,
+    actor: AuthenticatedActor,
+    key?: string,
+  ) {
+    this.require(actor, 'ticket_catalog.manage');
+    if (!key?.trim() || key.length > 160)
+      throw new BadRequestException('کلید درخواست معتبر لازم است.');
+    const validation = Joi.object({
+      expectedRevision: Joi.number().integer().min(0).required(),
+      amount: Joi.string()
+        .pattern(/^(?:0|[1-9]\d{0,15})(?:\.\d{1,4})?$/)
+        .required(),
+      currencyCode: Joi.string()
+        .pattern(/^[A-Z]{3}$/)
+        .required(),
+      reason: Joi.string().trim().max(500).allow('').optional(),
+    }).validate(input, { convert: false });
+    if (validation.error || new Prisma.Decimal(input.amount).lte(0))
+      throw new BadRequestException('قیمت فروش تکی یا ارز آن معتبر نیست.');
+    const fingerprint = createHash('sha256')
+      .update(JSON.stringify({ offerId, ...input }))
+      .digest('hex');
+    try {
+      return await this.database.client.$transaction(
+        async (transaction) => {
+          const offer = await transaction.ticketPublishedOffer.findFirst({
+            where: { id: offerId, branchId: { in: actor.branchIds } },
+            select: { id: true },
+          });
+          if (!offer)
+            throw new ForbiddenException('بلیط در شعبه مجاز یافت نشد.');
+          const previousCommand =
+            await transaction.ticketOfferStandaloneSalePrice.findUnique({
+              where: { offerId_commandKey: { offerId, commandKey: key } },
+            });
+          if (previousCommand) {
+            if (previousCommand.fingerprint !== fingerprint)
+              throw new ConflictException(
+                'کلید قبلاً با قیمت متفاوت استفاده شده است.',
+              );
+            return {
+              data: {
+                revision: previousCommand.revision,
+                amount: previousCommand.amount.toString(),
+                currencyCode: previousCommand.currencyCode,
+              },
+            };
+          }
+          const latest =
+            await transaction.ticketOfferStandaloneSalePrice.findFirst({
+              where: { offerId },
+              orderBy: { revision: 'desc' },
+            });
+          if ((latest?.revision ?? 0) !== input.expectedRevision)
+            throw new ConflictException(
+              'قیمت بلیط تغییر کرده است؛ دوباره بارگذاری کنید.',
+            );
+          const row = await transaction.ticketOfferStandaloneSalePrice.create({
+            data: {
+              offerId,
+              revision: input.expectedRevision + 1,
+              amount: new Prisma.Decimal(input.amount),
+              currencyCode: input.currencyCode,
+              actorUserId: actor.userId,
+              commandKey: key,
+              fingerprint,
+            },
+          });
+          return {
+            data: {
+              revision: row.revision,
+              amount: row.amount.toString(),
+              currencyCode: row.currencyCode,
+            },
+          };
+        },
+        { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
+      );
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        ['P2002', 'P2034'].includes(error.code)
+      )
+        throw new ConflictException(
+          'قیمت بلیط هم‌زمان تغییر کرده است؛ دوباره بارگذاری کنید.',
+        );
+      throw error;
+    }
   }
 
   /** Public module service; caller supplies the contract's authorized branch. This is revalidation, not a capacity hold. */

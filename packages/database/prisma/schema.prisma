@@ -40,6 +40,7 @@ model User {
   financeSupplierPaymentRevisions   FinanceSupplierPaymentRevision[]
   financeTicketCostRevisions        FinanceTicketPurchaseCostRevision[] @relation("FinanceTicketCostActor")
   financeTicketPaymentRevisions     FinanceTicketPurchasePaymentRevision[] @relation("FinanceTicketPaymentActor")
+  ticketStandaloneSalePricesCreated TicketOfferStandaloneSalePrice[] @relation("TicketStandaloneSalePriceActor")
   financeSettlementAccountsCreated  FinanceSettlementAccount[]        @relation("FinanceSettlementAccountCreator")
   salesPaymentsFinanceReviewed      SalesContractPaymentEntry[]       @relation("SalesPaymentFinanceReviewer")
   ownedTravelIntakes                ReservationIntake[]               @relation("TravelSalesOwner")
@@ -4033,11 +4034,29 @@ model TicketPublishedOffer {
   capacityAllocations    TicketOfferCapacityAllocation[]
   purchaseRequest        ProcurementTicketPurchaseRequest?
   financeTicketCosts     FinanceTicketPurchaseCostRevision[]
+  standaloneSalePrices   TicketOfferStandaloneSalePrice[]
 
   @@unique([createdByUserId, createKey])
   @@index([branchId, originId, destinationId, departureAt])
 }
 
+model TicketOfferStandaloneSalePrice {
+  id             String               @id @default(uuid()) @db.Uuid
+  offerId        String               @db.Uuid
+  revision       Int
+  amount         Decimal              @db.Decimal(20, 4)
+  currencyCode   String               @db.VarChar(3)
+  actorUserId    String               @db.Uuid
+  occurredAt     DateTime             @default(now()) @db.Timestamptz(3)
+  commandKey     String               @db.VarChar(160)
+  fingerprint    String               @db.VarChar(64)
+  offer          TicketPublishedOffer @relation(fields: [offerId], references: [id], onDelete: Restrict)
+  actor          User                  @relation("TicketStandaloneSalePriceActor", fields: [actorUserId], references: [id], onDelete: Restrict)
+
+  @@unique([offerId, revision])
+  @@unique([offerId, commandKey])
+  @@index([offerId, occurredAt])
+}
 model TicketOfferAudit {
   id          String               @id @default(uuid()) @db.Uuid
   offerId     String               @db.Uuid

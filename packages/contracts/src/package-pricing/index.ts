@@ -346,6 +346,25 @@ export interface PackageTourPublicationV1 {
   publishedAt: string;
 }
 
+/** One selectable published tour sale option; Sales snapshots the selected values. */
+export interface PackageTourSalesPriceChoiceV1 {
+  publicationId: string;
+  priceVersion: number;
+  tourVersion: number;
+  hotelRateId: string;
+  hotelId: string;
+  hotelName: string;
+  roomCode: string;
+  checkIn: string;
+  checkOut: string;
+  currencyCode: string;
+  adultFlightSale: string;
+  childFlightSale: string;
+  businessUplift: string;
+  hotelSale: string;
+  publishedAt: string;
+}
+
 export interface PackageTourPublishV1 {
   version: 1;
   expectedDraftVersion: number;

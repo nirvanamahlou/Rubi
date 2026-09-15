@@ -1,5 +1,10 @@
 # وضعیت پروژه
 
+## 2026-09-15 — TICKET-STANDALONE-SALE-PRICE-0915 — PC-A — READY_FOR_REVIEW
+
+PR #278 با حفظ همهٔ تعارض‌های اسناد و رابطه‌های افزایشی Prisma فقط در شاخهٔ مستقل `codex/pc-a-ticket-standalone-sale-price-0915` جمع شده؛ develop و localhost:3100 تغییر نکرده‌اند. نرخ فروش تکی بلیط واقعی با Decimal/ارز و revision مستقل از هزینهٔ خرید مالی و قیمت منتشرشدهٔ تور تعریف شده است. فروش بلیط مستقل نرخ هر صندلی را در کارت نشان می‌دهد و برای تعداد بزرگسال/کودک دارای صندلی snapshot می‌کند؛ فروش تور قیمت منتشرشدهٔ مدیریت قیمت برای هتل/بازه/اتاق را انتخاب و مرجع نسخه را همراه قرارداد ذخیره می‌کند. Migration افزایشی تاریخچهٔ نرخ فقط در شاخه است و روی دیتابیس مشترک اجرا نشده. PDF جدید بلیط در PR #291 با CI سبز است، ولی چون آن PR هنوز در develop ادغام نشده، خروجی localhost:3100 فعلاً همان نسخهٔ develop است. Prisma validate/generate، lint/typecheck/build API و Web، ۱۴۲۸ تست کامل API و تست‌های هدفمند قیمت و فرم بلیط موفق‌اند. Web کامل ۱۴۷۲ موفق و چهار مورد ناموفق داشت؛ مورد مرتبط با متن قدیمی فرم بلیط اصلاح و هدفمند سبز شد. سه مورد HR/Navigation در فایل‌های دست‌نخوردهٔ develop هستند. Migration اجرا و PR به develop ادغام نشده است.
+
+
 ## 2026-09-14 — RESERVATION-TICKET-PDF-PASSENGER-0914 — PC-A — READY_FOR_REVIEW
 
 نام مسافر در درخواست‌های تازه Sales داخل Snapshot نسخه‌دار Reservations حفظ می‌شود. برای قراردادهای قدیمی مانند `SC-2026-000003` که نام در Snapshot جا افتاده، پنجره بلیط و PDF نام را از پرونده اصلی مسافر می‌خوانند، بدون بازنویسی Snapshot یا سند تاریخی. موتور PDF مسیر Chrome یا Edge و فونت نازنین محلی را خودکار پیدا می‌کند و نبود فونت سفارشی مانع صدور نیست. ۴ تست API، ۱۸ تست Web، lint/typecheck/build API/Web و ساخت واقعی PDF با Chrome نصب‌شده موفق‌اند. جزئیات در [RESERVATION-TICKET-PDF-PASSENGER-0914](tasks/RESERVATION-TICKET-PDF-PASSENGER-0914.md) ثبت شده است.

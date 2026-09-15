@@ -25,6 +25,7 @@ import type {
   SalesTicketDirection,
   TicketOfferV1,
   TourDepartureV1,
+  PackageTourSalesPriceChoiceV1,
 } from '@nora/contracts';
 
 import {
@@ -87,6 +88,7 @@ export const salesSteps = [
 export interface SalesFormState {
   insuranceExtraToman?: Record<string, string>;
   tour?: TourDepartureV1 | undefined;
+  tourPriceSource?: PackageTourSalesPriceChoiceV1 | undefined;
   insurancePlan?: SalesInsuranceSelection | undefined;
   contractFlights?: Partial<Record<SalesTicketDirection, ContractFlightDraft>>;
   servicePricing?: Record<string, SalesServicePricingV1[]>;
@@ -678,10 +680,39 @@ export function salesPayload(
                     tourDepartureId: state.tour.id,
                     tourDepartureVersion: state.tour.version,
                     tourName: state.tour.package.name,
+                    ...(state.tourPriceSource
+                      ? {
+                          pricingPublicationId:
+                            state.tourPriceSource.publicationId,
+                          pricingVersion: state.tourPriceSource.priceVersion,
+                          pricingHotelRateId: state.tourPriceSource.hotelRateId,
+                          pricingRoomCode: state.tourPriceSource.roomCode,
+                          pricingCurrencyCode:
+                            state.tourPriceSource.currencyCode,
+                        }
+                      : {}),
                   }
                 : {}),
               ...(kind === 'FLIGHT'
                 ? { businessOutput: state.businessOutput === true }
+                : {}),
+              ...(kind === 'FLIGHT' &&
+              !state.tour &&
+              !state.serviceKinds.includes('HOTEL')
+                ? (() => {
+                    const fare = (
+                      direction === 'OUTBOUND'
+                        ? state.outboundOffer
+                        : state.returnOffer
+                    )?.standaloneSalePrice;
+                    return fare
+                      ? {
+                          standaloneFareRevision: fare.revision,
+                          standaloneFareUnitAmount: fare.amount,
+                          standaloneFareCurrencyCode: fare.currencyCode,
+                        }
+                      : {};
+                  })()
                 : {}),
               ...(kind === 'FLIGHT'
                 ? state.serviceDetails?.[`${kind}-${direction}`]

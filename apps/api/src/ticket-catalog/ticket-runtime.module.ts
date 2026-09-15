@@ -5,12 +5,19 @@ import {
   Headers,
   Inject,
   Module,
+  Patch,
+  Param,
+  ParseUUIDPipe,
   Post,
   Query,
   Req,
   UseGuards,
 } from '@nestjs/common';
-import type { TicketOfferCreateV1, TicketOfferSearchV1 } from '@nora/contracts';
+import type {
+  TicketOfferCreateV1,
+  TicketOfferSearchV1,
+  TicketStandaloneSalePriceUpdateV1,
+} from '@nora/contracts';
 import { IamModule } from '../iam/iam.module';
 import { AuthGuard } from '../iam/auth.guard';
 import type { AuthenticatedRequest } from '../iam/iam.types';
@@ -27,6 +34,9 @@ class TicketOffersController {
   constructor(
     @Inject(TicketPublicService) private readonly service: TicketPublicService,
   ) {}
+  @Get('managed-prices') managedPrices(@Req() req: AuthenticatedRequest) {
+    return this.service.managedPrices(req.actor);
+  }
   @Get() search(
     @Query() query: TicketOfferSearchV1,
     @Req() req: AuthenticatedRequest,
@@ -40,6 +50,19 @@ class TicketOffersController {
     @Headers('idempotency-key') key?: string,
   ) {
     return this.service.publish(input, req.actor, branchId, key);
+  }
+  @Patch(':id/standalone-sale-price') updateStandaloneSalePrice(
+    @Param('id', ParseUUIDPipe) offerId: string,
+    @Body() input: TicketStandaloneSalePriceUpdateV1,
+    @Req() req: AuthenticatedRequest,
+    @Headers('idempotency-key') key?: string,
+  ) {
+    return this.service.updateStandaloneSalePrice(
+      offerId,
+      input,
+      req.actor,
+      key,
+    );
   }
 }
 

@@ -272,6 +272,10 @@ erDiagram
 - قیمت فروش، تخفیف، currency و FX snapshot در contract version immutable می‌شوند.
 - amendment نسخه جدید می‌سازد و executionهای قبلی را بازنویسی نمی‌کند.
 
+### Ticket Catalog standalone sale price history
+
+`TicketOfferStandaloneSalePrice` افزایشی و نسخه‌دار است: هر ردیف به `TicketPublishedOffer` و Actor با FK محدودکننده وصل است، `revision` برای هر offer یکتا و مثبت، مبلغ `Decimal(20,4)` مثبت با کد ارز سه‌حرفی، زمان UTC و کلید درخواست یکتای همان offer دارد. انتشار بلیط می‌تواند نسخهٔ اول نرخ تکی را ایجاد کند؛ ویرایش فقط نسخهٔ بعد را با `expectedRevision` و idempotency ثبت می‌کند. جست‌وجوی فروش آخرین نسخه را نمایش می‌دهد. قیمت فروش تور در نسخه‌های منتشرشدهٔ `PackagePricingTourPublishedVersion` باقی می‌ماند و قرارداد Sales رقم توافق‌شده و مرجع نسخهٔ قیمت را به‌صورت snapshot حفظ می‌کند. Migration این جدول روی دیتابیس مشترک فقط از مسیر PR/CI اجرا می‌شود.
+
 ### Ticket Catalog and Capacity
 
 - Ticket Catalog مالک محصول/برنامه/fare و capacity است، ولی passenger document صادر نمی‌کند.
