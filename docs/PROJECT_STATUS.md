@@ -2585,3 +2585,10 @@ Screenshot606 نشان داد iframe خرید در پوستهٔ Web3100 به‌�
 هدرهای واقعی سرور و پاسخ ۲۰۰ فایل با cookie بررسی شدند؛ build تولیدی ۴۶ route، lint و
 API health موفق‌اند. نسخهٔ اصلاح‌شده با build `unified-6hqFsF7hJGMHGO-KmtfIL`
 روی Gateway3100/Web3110/API4191 فعال شد. هیچ داده، Schema، API یا Permission تغییر نکرد.
+
+## PROCUREMENT-HUMAN-CAPITAL-NAV-0915 — ACTIVE
+
+طبق درخواست مالک، «خرید و تأمین» در منوی اصلی از گروه «مالی» خارج و زیر «سرمایه انسانی»
+پس از «منابع انسانی» قرار گرفت. مسیر `/purchases` و مالکیت داده تغییر نکردند. ۱۵ تست
+هدفمند ناوبری، lint محدوده و build تولیدی ۴۶ route موفق‌اند. نسخهٔ تجمیعی با build
+`unified-Tez666Z13yqJ-047yCo9T` روی Web3100/API4191 فعال و سالم است.

@@ -2896,7 +2896,7 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
   تغییرکرده و API health موفق‌اند. Gateway3100/Web3110/API4191 روی build
   `unified-6hqFsF7hJGMHGO-KmtfIL` فعال است؛ قفل فایل مرکزی آزاد شد.
 
-## PROCUREMENT-HUMAN-CAPITAL-NAV-0915 — PC-B — ACTIVE
+## PROCUREMENT-HUMAN-CAPITAL-NAV-0915 — PC-B — COMPLETE / ACTIVE
 
 - درخواست صریح مالک: خرید و تأمین زیر «سرمایه انسانی» در منوی اصلی باشد. شاخه
   `codex/pc-b-procurement-under-human-capital` از نسخهٔ تجمیعی فعال ساخته شد.
@@ -2904,3 +2904,7 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
   نزد PC-B/PROCUREMENT-HUMAN-CAPITAL-NAV-0915 رزرو است. مسیر `/purchases`، مالکیت
   داده، Permission و منطق ماژول تغییر نمی‌کنند؛ فقط گروه ارائهٔ سایدبار عوض می‌شود.
   بدون Migration، Dependency، API یا تغییر فایل سایر ماژول‌ها.
+- خرید از `finance` خارج و پس از منابع انسانی در `hr` قرار گرفت. ۱۵ تست ناوبری،
+  lint محدوده و build تولیدی ۴۶ route موفق‌اند. Web3100 با build
+  `unified-Tez666Z13yqJ-047yCo9T`، API4191 health۲۰۰ و فایل خرید پاسخ۲۰۰ فعال‌اند؛
+  قفل Central Navigation آزاد شد.
