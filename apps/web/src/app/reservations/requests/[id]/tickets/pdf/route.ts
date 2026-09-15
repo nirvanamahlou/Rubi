@@ -18,6 +18,13 @@ const responseHeaders = {
   'X-Content-Type-Options': 'nosniff',
 };
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const carrierKey = (value: string) =>
+  value
+    .normalize('NFKC')
+    .toLocaleLowerCase()
+    .replaceAll('ي', 'ی')
+    .replaceAll('ك', 'ک')
+    .replace(/[^\p{L}\p{N}]/gu, '');
 const fail = (message: string, status: number) =>
   Response.json({ message }, { status, headers: responseHeaders });
 
@@ -179,15 +186,24 @@ export async function GET(
           .json()
           .catch(() => null)) as MasterDataListResponse | null;
         if (!Array.isArray(body?.data)) return;
-        const data = body.data;
-        const airline = data.find(
-          (item) =>
-            item.name.trim().toLocaleLowerCase() ===
-              carrierName.trim().toLocaleLowerCase() ||
-            String(item.attributes.englishName || '')
-              .trim()
-              .toLocaleLowerCase() === carrierName.trim().toLocaleLowerCase(),
-        );
+        const matchesCarrier = (item: MasterDataRecord) =>
+          [item.name, item.attributes.englishName, item.code].some(
+            (value) =>
+              typeof value === 'string' &&
+              carrierKey(value) === carrierKey(carrierName),
+          );
+        let airline = body.data.find(matchesCarrier);
+        if (!airline) {
+          const fallback = await get(
+            '/master-data/airlines?status=active&page=1&pageSize=100',
+          ).catch(() => null);
+          if (fallback?.ok) {
+            const result = (await fallback
+              .json()
+              .catch(() => null)) as MasterDataListResponse | null;
+            airline = result?.data.find(matchesCarrier);
+          }
+        }
         if (!airline) return;
         airlineLogos[carrierName] = {
           name: String(airline.attributes.englishName || airline.name),
@@ -248,6 +264,7 @@ export async function GET(
       {
         name: branding.name,
         logoDataUrl,
+        companyCode: branding.companyCode ?? '',
       },
       airlineLogos,
     );

@@ -1,4 +1,10 @@
 # Work Assignments
+## FINANCE-INBOX-TICKET-BRANDING-0915 — PC-A — READY_FOR_REVIEW
+
+- Branch `codex/pc-a-finance-inbox-brand-0915` from `origin/develop@f5c1a159`; COMPUTER_ID=PC-A.
+- Scope: verify the port-3200 financial requests inbox is already present in the integrated port-3100 source, and adjust branding only in the flight-ticket PDF. Reserved files: `apps/web/src/modules/reservations/server/ticket-pdf-html.ts`, `apps/web/src/app/reservations/requests/[id]/tickets/pdf/route.ts`, targeted ticket tests, this assignment and `docs/PROJECT_STATUS.md`.
+- No other section, server checkout, migration, production data, or shared navigation is modified.
+- Result: the integrated /finance/requests route and live inbox already match the port-3200 source; ticket PDF only now enlarges Niayesh's own logo and resolves registered airline logos despite spacing/name variants. Targeted 11 Web tests, affected lint, Web typecheck, affected build, and visual QA of a one-page A4 Chrome PDF passed. No migration.
 
 ## RESERVATION-TICKET-PDF-PASSENGER-0914 — PC-A — READY_FOR_REVIEW
 

@@ -181,6 +181,64 @@ describe('reservation ticket PDF', () => {
     ).toBe(true);
   });
 
+  it('uses an uploaded airline logo when the contract spelling differs from the directory name', async () => {
+    const logoId = '00000000-0000-4000-8000-000000000010';
+    const variant = structuredClone(intake);
+    const firstTicket = variant.snapshot.ticketSelections?.[0];
+    if (!firstTicket) throw new Error('Missing fixture flight');
+    firstTicket.carrierNameSnapshot = 'IRAN AIR TOUR';
+    const fetcher = vi.fn().mockImplementation((url: string) => {
+      if (url.endsWith('/workflow'))
+        return Promise.resolve(Response.json({ data: variant }));
+      if (url.includes('/master-data/airlines?')) {
+        const fallback = !new URL(url).searchParams.has('search');
+        return Promise.resolve(
+          Response.json({
+            data: fallback
+              ? [
+                  {
+                    id: logoId,
+                    resource: 'airlines',
+                    status: 'active',
+                    name: 'ایران ایرتور',
+                    code: 'B9',
+                    attributes: {
+                      englishName: 'Iran Airtour',
+                      logoFileReference: logoId,
+                    },
+                  },
+                ]
+              : [],
+            meta: { page: 1, pageSize: 100, total: fallback ? 1 : 0 },
+          }),
+        );
+      }
+      if (url.endsWith('/documents/' + logoId + '/preview'))
+        return Promise.resolve(
+          new Response(Buffer.from('safe'), {
+            headers: { 'content-type': 'image/png' },
+          }),
+        );
+      return Promise.resolve(
+        Response.json({
+          data: {
+            name: 'City',
+            code: 'AYT',
+            attributes: { englishName: 'CITY' },
+          },
+        }),
+      );
+    });
+    vi.stubGlobal('fetch', fetcher);
+    const response = await GET(request(), { params: Promise.resolve({ id }) });
+    expect(response.status).toBe(200);
+    const html = renderer.mock.calls[0]?.[0] as string;
+    expect(html).toContain('class="airline-logo"');
+    expect(html).toContain('class="logos niyayesh-logos"');
+    expect(
+      fetcher.mock.calls.some(([url]) => String(url).includes('pageSize=100')),
+    ).toBe(true);
+  });
   it('uses the canonical passenger name for a legacy snapshot without a name', async () => {
     const legacy = structuredClone(intake);
     delete legacy.snapshot.passengerAssignments?.[0]?.displayNameSnapshot;
