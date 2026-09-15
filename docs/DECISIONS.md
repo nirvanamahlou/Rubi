@@ -4,17 +4,25 @@
 
 The owner clarified that adult/child flight amounts entered in Sales are sale
 prices. When a ticket is defined, its purchase-price request goes to Finance;
-Finance enters the purchase amount and pays it. The current tour departure
-uses TicketPublishedOffer, which stores route/capacity but no purchase fare.
-The current Finance inbox only consumes Sales, HR and post-contract
-Reservations purchases; its Purchases source is explicitly NOT_CONNECTED.
-There is no existing public, paid/approved ticket-cost projection keyed to the
+Finance enters the purchase amount and pays it directly, with no separate
+Procurement approval for this pre-sale ticket request. This is a limited
+owner-approved exception to the older generic Procurement-first purchase flow;
+other contract/service procurement ownership remains unchanged. The latest
+develop has a ProcurementTicketPurchaseRequest envelope and Finance inbox
+projection, but Ticket Catalog currently sends the amount itself and the
+free-form catalogProductReference is not a tour offer FK. That behavior is
+not a confirmed Finance purchase price and must be changed before package
+publication. The current tour departure uses TicketPublishedOffer, which
+stores route/capacity but no purchase fare. Latest develop Finance inbox lists
+pending Purchases requests, but has no Finance price-entry/payment action for
+those requests yet.
+There is no existing public, Finance-paid ticket-cost projection keyed to the
 tour's offer IDs. Package Pricing must consume such a versioned Finance/Ticket
 public contract (branch, offer ID/version, adult/child amounts and currency,
-approval/payment state), never infer cost by route/name/date, read private
+payment state), never infer cost by route/name/date, read private
 tables or copy a manual purchase amount into Sales. A new pre-sale request
-flow must reconcile the travel architecture's Procurement approval and Finance
-settlement ownership before posting. Until that producer and its payment
+flow keeps the request envelope in its owning module while Finance owns cost
+entry and settlement. Until that producer and its payment
 policy exist, package publication and total net-profit claims fail closed;
 hotel-only sale previews remain explicitly non-published. No historical
 published snapshot is changed by this clarification.
