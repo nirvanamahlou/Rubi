@@ -1,5 +1,52 @@
 # تصمیم‌های معماری
 
+## ADR-PACKAGE-FLIGHT-FINANCE-COST-0915 — owner clarification / integration pending
+
+The owner clarified that adult/child flight amounts entered in Sales are sale
+prices. When a ticket is defined, its purchase-price request goes to Finance;
+Finance enters the purchase amount and pays it. The current tour departure
+uses TicketPublishedOffer, which stores route/capacity but no purchase fare.
+The current Finance inbox only consumes Sales, HR and post-contract
+Reservations purchases; its Purchases source is explicitly NOT_CONNECTED.
+There is no existing public, paid/approved ticket-cost projection keyed to the
+tour's offer IDs. Package Pricing must consume such a versioned Finance/Ticket
+public contract (branch, offer ID/version, adult/child amounts and currency,
+approval/payment state), never infer cost by route/name/date, read private
+tables or copy a manual purchase amount into Sales. A new pre-sale request
+flow must reconcile the travel architecture's Procurement approval and Finance
+settlement ownership before posting. Until that producer and its payment
+policy exist, package publication and total net-profit claims fail closed;
+hotel-only sale previews remain explicitly non-published. No historical
+published snapshot is changed by this clarification.
+
+## ADR-PACKAGE-PURCHASE-SOURCE-0915 — owner purchase-cost clarification
+
+The owner now requests package sale pricing to start from the actual hotel
+purchase-rate table for a defined tour/date range, rather than treating Master
+Data's hotel base-sale rate as purchase cost. This supersedes the
+PACKAGE-PRICING-001 prohibition on using Reservations purchase cost for this
+new tour-pricing flow, but does not relabel historical Master Data sale rates
+as purchase costs. The owner confirmed that the existing Ticket Catalog tour
+departure is the package anchor. In the current model, only Reservations'
+group rate register identifies broker purchase base per room/night, so it is
+the producer for this flow. Package Pricing receives a versioned,
+branch/date/hotel-scoped public projection, never queries Reservations tables
+directly. Costs from distinct alternative hotels are priced separately, not
+summed into one source base. Existing immutable published price snapshots
+are not rewritten. If the owner names a different purchase register, switch
+the producer before sale publication rather than silently mixing cost models.
+
+## ADR-PACKAGE-COMMISSION-NET-MARGIN-0915 — owner clarification
+
+For new Package Pricing calculations, commission is a selling expense deducted
+from realized margin, not an amount added to the published customer price.
+The version-1 breakdown adds optional commissionCost; older immutable price
+snapshots without that field remain readable as zero commission. Fixed/percent
+sale adjustments and existing fees retain their own behavior. This decision
+supersedes the prior generic COMMISSION-as-sale-uplift behavior for new versions;
+no historical published price, contract or operational purchase is rewritten.
+Package Pricing API produces the additive field and its Web client consumes it.
+
 ## B2B-DOSSIER-REPORTS-001 — 2026-09-09
 
 The dossier Reports/Audit UI consumes normalized metadata from B2B audit events and public Master Organization/Documents owner projections. It does not read another module's tables, change the central Reporting module or create financial events. Existing branch and source/domain permissions apply to every page. Snapshots stay server-side; the projection exposes changed field labels, action, actor and time, never private contact values, notes, document contents or credential fields. Export contains the same authorized filtered projection. Per-source keyset pages share a fixed upper timestamp, including a deterministic cross-source tie key; Tehran calendar-day filters include both day boundaries.

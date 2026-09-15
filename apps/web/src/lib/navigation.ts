@@ -129,6 +129,12 @@ export const groupedNavigationItems = navigationGroups.map((group) => ({
   ),
 }));
 
+/** A second-level Sales module, separate from the seventeen primary destinations. */
+export const salesPricingSubsection = {
+  href: '/sales/pricing',
+  title: 'مدیریت قیمت و پکیج‌ها',
+} as const;
+
 export const navigationAliases = {
   '/sales/pricing': {
     parentHref: '/sales',

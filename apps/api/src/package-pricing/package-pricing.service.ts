@@ -23,6 +23,8 @@ import { Prisma } from '@nora/database';
 import * as Joi from 'joi';
 
 import { DatabaseService } from '../database/database.service';
+import { HotelPurchaseRatesPublicService } from '../reservations/hotel-purchase-rates.public';
+import { TourPublicService } from '../ticket-catalog/tour-public.service';
 import { LegalEntitiesService } from '../legal-entities/legal-entities.service';
 import {
   calculatePackagePrice,
@@ -157,7 +159,44 @@ export class PackagePricingService {
     private readonly legalEntities: LegalEntitiesService,
     @Inject(PACKAGE_PRICING_SOURCE_PORT)
     private readonly sources: PackagePricingSourcePort,
+    @Inject(TourPublicService)
+    private readonly tours: TourPublicService,
+    @Inject(HotelPurchaseRatesPublicService)
+    private readonly hotelPurchases: HotelPurchaseRatesPublicService,
   ) {}
+
+  async pricingTourDepartures(actor: AuthenticatedActor) {
+    return this.tours.pricingDepartures(actor.branchIds);
+  }
+
+  async tourCostGrid(tourDepartureId: string, actor: AuthenticatedActor) {
+    const tour = await this.tours.pricingDeparture(
+      tourDepartureId,
+      actor.branchIds,
+    );
+    const purchaseBatches = await this.hotelPurchases.forTour(
+      tour.branchId,
+      tour.package.hotelIds,
+      tour.startsOn,
+      tour.endsOn,
+    );
+    const nights =
+      (Date.parse(`${tour.endsOn}T00:00:00.000Z`) -
+        Date.parse(`${tour.startsOn}T00:00:00.000Z`)) /
+      86_400_000;
+    return {
+      version: 1 as const,
+      tour,
+      nights,
+      purchaseBatches,
+      missingHotelIds: tour.package.hotelIds.filter(
+        (hotelId) =>
+          !purchaseBatches.some((batch) =>
+            batch.rows.some((row) => row.hotelId === hotelId),
+          ),
+      ),
+    };
+  }
 
   async list(query: PackageListQueryV1, actor: AuthenticatedActor) {
     const page = Number(query.page ?? 1);

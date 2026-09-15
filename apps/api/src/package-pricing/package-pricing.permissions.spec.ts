@@ -4,6 +4,8 @@ import { PackagePricingController } from './package-pricing.controller';
 
 describe('PackagePricingController permission metadata', () => {
   it.each([
+    ['pricingTours', ['package_pricing.read']],
+    ['tourCosts', ['package_pricing.cost.read']],
     ['list', ['package_pricing.read']],
     ['detail', ['package_pricing.read']],
     ['create', ['package_pricing.create']],

@@ -38,6 +38,23 @@ export class PackagePricingController {
     private readonly pricing: PackagePricingService,
   ) {}
 
+  @Get('tour-departures')
+  @Header('Cache-Control', 'private, no-store')
+  @RequirePermissions('package_pricing.read')
+  pricingTours(@Req() req: AuthenticatedRequest) {
+    return this.pricing.pricingTourDepartures(req.actor);
+  }
+
+  @Get('tour-costs/:id')
+  @Header('Cache-Control', 'private, no-store')
+  @RequirePermissions('package_pricing.cost.read')
+  tourCosts(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.pricing.tourCostGrid(id, req.actor);
+  }
+
   @Get('packages')
   @Header('Cache-Control', 'private, no-store')
   @RequirePermissions('package_pricing.read')

@@ -5,6 +5,8 @@ import { IamModule } from '../iam/iam.module';
 import { PermissionGuard } from '../iam/permission.guard';
 import { LegalEntitiesModule } from '../legal-entities/legal-entities.module';
 import { MasterDataModule } from '../master-data/master-data.module';
+import { HotelRatesModule } from '../reservations/hotel-rates.module';
+import { TicketRuntimeModule } from '../ticket-catalog/ticket-runtime.module';
 import { PackagePricingController } from './package-pricing.controller';
 import { PackagePricingService } from './package-pricing.service';
 import {
@@ -14,7 +16,13 @@ import {
 } from './package-pricing-source.port';
 
 @Module({
-  imports: [IamModule, LegalEntitiesModule, MasterDataModule],
+  imports: [
+    IamModule,
+    LegalEntitiesModule,
+    MasterDataModule,
+    HotelRatesModule,
+    TicketRuntimeModule,
+  ],
   controllers: [PackagePricingController],
   providers: [
     AuthGuard,

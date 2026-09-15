@@ -4,6 +4,8 @@ import type {
   LoginResponse,
   PackageListQueryV1,
   PackagePageV1,
+  PackageTourCostGridV1,
+  TourDepartureV1,
 } from '@nora/contracts';
 import { refreshAuthenticatedSession } from '@/lib/auth-session';
 import { getPublicApiBaseUrl } from '@/lib/environment';
@@ -91,4 +93,16 @@ export const packagePricingApi = {
     activeSession: LoginResponse,
   ): Promise<PackagePageV1> =>
     request(`/packages?${queryString(query)}`, activeSession),
+  tours: (
+    activeSession: LoginResponse,
+  ): Promise<{ version: 1; data: readonly TourDepartureV1[] }> =>
+    request('/tour-departures', activeSession),
+  tourCosts: (
+    tourDepartureId: string,
+    activeSession: LoginResponse,
+  ): Promise<PackageTourCostGridV1> =>
+    request(
+      `/tour-costs/${encodeURIComponent(tourDepartureId)}`,
+      activeSession,
+    ),
 };

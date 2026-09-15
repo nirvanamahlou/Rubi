@@ -239,6 +239,29 @@ export class TourPublicService {
     });
     return { version: 1 as const, data: rows.map(departureView) };
   }
+  /** Public pricing boundary; the consumer authorizes its own permission and branches. */
+  async pricingDepartures(branchIds: readonly string[]) {
+    if (!branchIds.length) return { version: 1 as const, data: [] };
+    const rows = await this.database.client.tourDeparture.findMany({
+      where: {
+        branchId: { in: [...branchIds] },
+        endsOn: { gte: new Date(new Date().toISOString().slice(0, 10)) },
+      },
+      include: included,
+      orderBy: [{ startsOn: 'asc' }, { id: 'asc' }],
+      take: 200,
+    });
+    return { version: 1 as const, data: rows.map(departureView) };
+  }
+
+  async pricingDeparture(id: string, branchIds: readonly string[]) {
+    const row = await this.database.client.tourDeparture.findFirst({
+      where: { id, branchId: { in: [...branchIds] } },
+      include: included,
+    });
+    if (!row) throw new NotFoundException('نوبت تور در شعبه مجاز پیدا نشد.');
+    return departureView(row);
+  }
   async createPackage(
     raw: unknown,
     actor: AuthenticatedActor,

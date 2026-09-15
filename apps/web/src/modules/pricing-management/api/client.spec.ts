@@ -23,6 +23,21 @@ vi.mock('@/lib/auth-session', () => ({
 afterEach(() => vi.unstubAllGlobals());
 
 describe('package pricing API client', () => {
+  it('reads the tour and purchase grid only through pricing endpoints', async () => {
+    const fetch = vi.fn().mockImplementation(() =>
+      Promise.resolve(
+        new Response(JSON.stringify({ version: 1, data: [] })),
+      ),
+    );
+    vi.stubGlobal('fetch', fetch);
+    await packagePricingApi.tours(activeSession);
+    await packagePricingApi.tourCosts('tour-1', activeSession);
+    expect(fetch.mock.calls.map(([url]) => url)).toEqual([
+      'http://localhost:4000/api/v1/sales/pricing/tour-departures',
+      'http://localhost:4000/api/v1/sales/pricing/tour-costs/tour-1',
+    ]);
+  });
+
   it('loads only the server-backed package endpoint with filters', async () => {
     const fetch = vi
       .fn()

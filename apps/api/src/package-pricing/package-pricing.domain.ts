@@ -69,6 +69,7 @@ export function calculatePackagePrice(
 
   let current = base;
   let fee = new Prisma.Decimal(0);
+  let commissionCost = new Prisma.Decimal(0);
   let tax = new Prisma.Decimal(0);
   let profit = new Prisma.Decimal(0);
   let minimumProfit: Prisma.Decimal | null = null;
@@ -103,12 +104,14 @@ export function calculatePackagePrice(
           );
         adjustment = current.div(value).sub(current);
         break;
-      case 'FEE':
-      case 'COMMISSION': {
+      case 'FEE': {
         adjustment = current.mul(value).div(100);
         fee = fee.add(adjustment);
         break;
       }
+      case 'COMMISSION':
+        commissionCost = commissionCost.add(current.mul(value).div(100));
+        break;
       case 'TAX':
         adjustment = current.mul(value).div(100);
         tax = tax.add(adjustment);
@@ -153,7 +156,7 @@ export function calculatePackagePrice(
     });
   }
 
-  const realizedProfit = current.sub(base);
+  const realizedProfit = current.sub(base).sub(commissionCost);
   if (
     (minimumProfit && realizedProfit.lt(minimumProfit)) ||
     (minimumSale && current.lt(minimumSale))
@@ -169,6 +172,7 @@ export function calculatePackagePrice(
     baseAmount: money(base).toFixed(4),
     adjustments: money(adjustment).toFixed(4),
     fee: money(fee).toFixed(4),
+    commissionCost: money(commissionCost).toFixed(4),
     tax: money(tax).toFixed(4),
     profit: money(profit).toFixed(4),
     finalAmount: money(current).toFixed(4),

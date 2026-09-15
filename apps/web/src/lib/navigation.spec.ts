@@ -6,6 +6,7 @@ import {
   getNavigationItem,
   isNavigationItemActive,
   navigationItems,
+  salesPricingSubsection,
 } from './navigation';
 
 const expectedRoutes = [
@@ -166,6 +167,10 @@ describe('CRM navigation', () => {
         (item) => (item.href as string) === '/sales/pricing',
       ),
     ).toBe(false);
+    expect(salesPricingSubsection).toEqual({
+      href: '/sales/pricing',
+      title: 'مدیریت قیمت و پکیج‌ها',
+    });
     expect(getNavigationItem('/sales/pricing')?.href).toBe('/sales');
     expect(getNavigationBreadcrumbs('/sales/pricing')).toEqual([
       { href: '/sales', title: 'قرارداد' },

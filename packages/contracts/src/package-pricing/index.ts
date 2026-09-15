@@ -1,3 +1,5 @@
+import type { TourDepartureV1 } from '../travel/tours';
+
 export const PACKAGE_PRICING_CONTRACT_VERSION = 1 as const;
 export const PACKAGE_PRICING_API_PREFIX = '/api/v1/sales/pricing' as const;
 
@@ -251,6 +253,38 @@ export interface PackagePageV1 {
   meta: { page: number; pageSize: number; total: number };
 }
 
+export interface PackageTourHotelPurchaseRowV1 {
+  id: string;
+  version: 1;
+  batchId: string;
+  hotelId: string;
+  hotelName: string;
+  brokerId: string;
+  brokerName: string;
+  basePerNight: string;
+  factors: Readonly<Record<string, string>>;
+}
+
+export interface PackageTourHotelPurchaseBatchV1 {
+  id: string;
+  version: 1;
+  branchId: string;
+  checkIn: string;
+  checkOut: string;
+  method: 'CHECK_IN' | 'STAY';
+  currencyCode: string;
+  observedAt: string;
+  rows: readonly PackageTourHotelPurchaseRowV1[];
+}
+
+export interface PackageTourCostGridV1 {
+  version: 1;
+  tour: TourDepartureV1;
+  nights: number;
+  purchaseBatches: readonly PackageTourHotelPurchaseBatchV1[];
+  missingHotelIds: readonly string[];
+}
+
 export interface PackageRuleBreakdownLineV1 {
   sequence: number;
   title: string;
@@ -265,6 +299,8 @@ export interface PackagePriceBreakdownV1 {
   baseAmount: string;
   adjustments: string;
   fee: string;
+  /** Selling expense: reduces net margin without changing finalAmount. Absent in v1 history. */
+  commissionCost?: string;
   tax: string;
   profit: string;
   finalAmount: string;

@@ -1,5 +1,24 @@
 # وضعیت پروژه
 
+## 2026-09-15 — PACKAGE-PRICING-001 tour-cost Sales preview (not published)
+
+The /sales/pricing page is now a real Sales sidebar child and tour-cost
+workspace instead of the old mostly-empty tab layout. It reads existing tour
+departures through Ticket Catalog's public service and hotel broker purchase
+rates through Reservations' public projection, scoped to branch/date/hotel.
+Separate hotel/room stay-sale previews respond to fixed/percent increase or
+decrease; commission is a net-margin expense, not a sale uplift. The isolated
+Web3200/API4200/PostgreSQL demo has one synthetic five-night tour and three
+hotel rates; authenticated tour/cost endpoints returned 200. Web3100 and
+operational data were not changed. Publication/durable Sales drafts remain
+incomplete: the owner requires Ticket-definition purchase requests priced and
+paid by Finance, but current TicketPublishedOffer has no purchase fare and
+Finance inbox has no pre-sale Ticket source. Package price publication stays
+disabled instead of inventing a flight cost or net profit. Browser visual QA
+was unavailable because its sandbox helper failed; API/live route, component
+tests and builds are the available checks. See docs/tasks/PACKAGE-PRICING-001.md
+and ADR-PACKAGE-FLIGHT-FINANCE-COST-0915.
+
 ## 2026-09-15 — PACKAGE-PRICING-001 — PC-A — ISOLATED WEB3200 PREVIEW
 
 - گزارش کاربر از نبود بخش مدیریت قیمت در UI درست بود: route /sales/pricing وجود داشت اما داشبورد Sales هیچ ورودی نمایانی به آن نداشت. CTA «مدیریت قیمت و پکیج‌ها» به سرصفحه قراردادها افزوده شد؛ ساختار ۱۷ آیتم منوی اصلی حفظ شد.
