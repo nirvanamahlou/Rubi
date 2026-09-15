@@ -4,7 +4,7 @@ import { REPORTING_CATALOG_V1 } from './reporting.catalog';
 
 describe('REPORTING_CATALOG_V1', () => {
   it('publishes the approved travel demo suite and keeps unreleased producers closed', () => {
-    expect(REPORTING_CATALOG_V1).toHaveLength(19);
+    expect(REPORTING_CATALOG_V1).toHaveLength(20);
     expect(new Set(REPORTING_CATALOG_V1.map((item) => item.code)).size).toBe(
       REPORTING_CATALOG_V1.length,
     );
@@ -28,6 +28,12 @@ describe('REPORTING_CATALOG_V1', () => {
           approvedView: 'reporting_check_facts_v1',
           producerStatus: 'PENDING_CONNECTION',
         }),
+        expect.objectContaining({
+          code: 'cash_position',
+          approvedView: 'reporting_cash_position_facts_v1',
+          producerStatus: 'PENDING_CONNECTION',
+          permission: 'reporting.finance.read',
+        }),
       ]),
     );
     expect(
@@ -45,6 +51,7 @@ describe('REPORTING_CATALOG_V1', () => {
         'contract_service_profit',
         'receivables_payables',
         'account_balances',
+        'cash_position',
         'payments_refunds',
       ].includes(item.code),
     );
