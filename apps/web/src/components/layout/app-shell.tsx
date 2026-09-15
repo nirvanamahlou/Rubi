@@ -113,9 +113,7 @@ function Navigation({
   const pathname = usePathname();
   const groupId = useId();
   const [closedGroups, setClosedGroups] = useState<string[]>(() =>
-    groupedNavigationItems
-      .filter((group) => group.id !== 'sales')
-      .map((group) => group.id),
+    groupedNavigationItems.map((group) => group.id),
   );
   const isGroupClosed = (id: string) => closedGroups.includes(id);
   function toggleGroup(id: string) {
