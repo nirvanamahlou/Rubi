@@ -196,6 +196,13 @@ export function OperationForm({
         {available.find((value) => value.action === action)?.label ??
           available[0]?.label}
       </h3>
+      <p className="text-xs text-muted-foreground">
+        شماره درخواست مرجع:{' '}
+        <span className="font-semibold text-foreground">{request.number}</span>
+        {kind === 'orders' || kind === 'receipts'
+          ? ' · شماره سفارش یا رسید هنگام ثبت در سرور ساخته می‌شود.'
+          : ''}
+      </p>
       {available.length > 1 && (
         <FormField id="proc-operation" label="نوع عملیات این بخش">
           <ProcurementSelect

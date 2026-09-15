@@ -393,6 +393,13 @@ export function DraftForm({
             <p className="mt-1 text-xs leading-6 text-muted-foreground sm:text-sm">
               پیش‌نویس قابل ذخیره است؛ کامل بودن فرم هنگام ارسال بررسی می‌شود.
             </p>
+            <p
+              className="mt-2 text-xs font-semibold text-primary"
+              aria-live="polite"
+            >
+              شماره درخواست:{' '}
+              {request?.number ?? 'پس از نخستین ثبت، خودکار تعیین می‌شود'}
+            </p>
           </div>
           <span className="rounded-full border border-primary/20 bg-surface/80 px-3 py-1 text-xs font-semibold text-primary">
             {request ? 'ویرایش پیش‌نویس' : 'ثبت پیش‌نویس'}

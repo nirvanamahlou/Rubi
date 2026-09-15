@@ -39,6 +39,9 @@ describe('Purchase draft accessibility and persisted input', () => {
     expect(html).toContain('کاربر جاری');
     expect(html).not.toContain('type="date"');
     expect(html).toContain('ذخیره پیش‌نویس');
+    expect(html).toContain(
+      'شماره درخواست: پس از نخستین ثبت، خودکار تعیین می‌شود',
+    );
   });
   it('retains exact decimal strings and emergency context when reopening a saved draft', () => {
     const draft = {
@@ -82,6 +85,7 @@ describe('Purchase draft accessibility and persisted input', () => {
       </QueryClientProvider>,
     );
     expect(html).toContain('9007199254740993.1234');
+    expect(html).toContain('شماره درخواست: PR-1');
     expect(html).toContain('اختلال در عملیات');
     expect(html).toContain('1.5000');
     expect(html).not.toContain('for="line-1-acceptanceCriteria"');
