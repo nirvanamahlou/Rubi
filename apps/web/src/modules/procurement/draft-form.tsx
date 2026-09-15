@@ -182,12 +182,15 @@ export function DraftForm({
   const savedChoice = (key: 'purchaseType' | 'category', label: string) => {
     const existing = [
       ...new Set(
-        (savedRequests.data?.items ?? [])
-          .filter(
-            (item) => !draft.branchId || item.draft.branchId === draft.branchId,
-          )
-          .map((item) => item.draft[key].trim())
-          .filter(Boolean),
+        [
+          request?.draft[key]?.trim() ?? '',
+          ...(savedRequests.data?.items ?? [])
+            .filter(
+              (item) =>
+                !draft.branchId || item.draft.branchId === draft.branchId,
+            )
+            .map((item) => item.draft[key].trim()),
+        ].filter(Boolean),
       ),
     ];
     const custom =
@@ -236,15 +239,19 @@ export function DraftForm({
     const fieldId = `${item.id}-${key}`;
     const existing = [
       ...new Set(
-        (savedRequests.data?.items ?? [])
-          .filter(
-            (request) =>
-              !draft.branchId || request.draft.branchId === draft.branchId,
-          )
-          .flatMap((request) =>
-            request.draft.items.map((line) => line[key].trim()),
-          )
-          .filter(Boolean),
+        [
+          request?.draft.items
+            .find((line) => line.id === item.id)
+            ?.[key].trim() ?? '',
+          ...(savedRequests.data?.items ?? [])
+            .filter(
+              (saved) =>
+                !draft.branchId || saved.draft.branchId === draft.branchId,
+            )
+            .flatMap((saved) =>
+              saved.draft.items.map((line) => line[key].trim()),
+            ),
+        ].filter(Boolean),
       ),
     ];
     const custom =

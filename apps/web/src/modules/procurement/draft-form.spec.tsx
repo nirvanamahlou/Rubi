@@ -149,4 +149,55 @@ describe('Purchase draft accessibility and persisted input', () => {
     expect(html).toContain('role="combobox"');
     expect(html).not.toContain('مقدار تازهٔ نوع خرید');
   });
+  it('shows the persisted choices before the saved-options query finishes', () => {
+    const draft = {
+      ...emptyDraft(),
+      branchId: 'branch-1',
+      purchaseType: 'خرید عمومی',
+      category: 'ملزومات اداری',
+      items: [
+        {
+          id: 'item-1',
+          kind: 'SERVICE' as const,
+          description: 'پشتیبانی آزمایشی',
+          specification: '',
+          quantity: '1',
+          unit: 'ساعت',
+          period: 'ماهانه',
+          acceptanceCriteria: '',
+        },
+      ],
+    };
+    const html = renderToStaticMarkup(
+      <QueryClientProvider client={new QueryClient()}>
+        <DraftForm
+          bootstrap={bootstrap}
+          request={{
+            id: 'draft',
+            number: 'PR-3',
+            version: 1,
+            requesterUserId: 'user',
+            requesterEmployeeId: null,
+            ownerUserId: null,
+            createdAt: '',
+            updatedAt: '',
+            status: 'DRAFT',
+            draft,
+          }}
+          onClose={() => undefined}
+          onSaved={() => undefined}
+        />
+      </QueryClientProvider>,
+    );
+    const trigger = (id: string) =>
+      html.match(
+        new RegExp(`<button[^>]*id="${id}"[^>]*>(.*?)</button>`, 's'),
+      )?.[1] ?? '';
+    expect(trigger('proc-purchaseType')).toContain('خرید عمومی');
+    expect(trigger('proc-category')).toContain('ملزومات اداری');
+    expect(trigger('item-1-unit')).toContain('ساعت');
+    expect(trigger('item-1-period')).toContain('ماهانه');
+    expect(html).not.toContain('مقدار تازهٔ نوع خرید');
+    expect(html).not.toContain('مقدار تازهٔ دسته خرید');
+  });
 });
