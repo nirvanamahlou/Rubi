@@ -70,6 +70,37 @@ export interface ReservationIntakeV1 {
   arrangement: ReservationArrangementV1 | null;
 }
 
+export interface ReservationManifestTicketTemplateV1 {
+  id: string;
+  name: string;
+  versionNumber: number;
+}
+
+export interface ReservationManifestTicketCardV1 {
+  offerId: string;
+  direction: 'OUTBOUND' | 'RETURN';
+  carrierName: string;
+  serviceNumber: string;
+  originName: string;
+  destinationName: string;
+  departureAt: string;
+  arrivalAt: string;
+  contractCount: number;
+  passengerCount: number;
+  template: ReservationManifestTicketTemplateV1 | null;
+  unavailableReason: string | null;
+}
+
+export interface ReservationManifestTicketListV1 {
+  data: readonly ReservationManifestTicketCardV1[];
+}
+
+export interface ReservationManifestTicketExportInputV1 {
+  fromDate: string;
+  toDate: string;
+  includePreviouslyExported?: boolean;
+}
+
 export interface ReservationServicePurchaseV1 {
   id: string;
   version: number;

@@ -8,8 +8,10 @@ import {
   Headers,
   Inject,
   Injectable,
+  Optional,
   Param,
   Post,
+  Query,
   Req,
   Res,
   StreamableFile,
@@ -22,12 +24,15 @@ import type {
   AuthenticatedActor,
   CustomerDetail,
   ReservationIntakeV1,
+  ReservationManifestTicketCardV1,
+  ReservationManifestTicketExportInputV1,
 } from '@nora/contracts';
 import type { Response } from 'express';
 import { DatabaseService } from '../database/database.service';
 import { AuthGuard } from '../iam/auth.guard';
 import type { AuthenticatedRequest } from '../iam/iam.types';
 import { CustomerService } from '../customers/customer.service';
+import { DocumentsService } from '../documents/documents.service';
 import { FinanceDeliveryService } from '../finance/document-delivery/finance-delivery.module';
 import { MasterTravelDirectory } from '../master-data/master-travel-directory';
 import { TravelWorkflowService } from './travel-workflow.service';
@@ -180,7 +185,106 @@ export class ReservationManifestService {
     @Inject(FinanceDeliveryService)
     private readonly delivery: FinanceDeliveryService,
     @Inject(DatabaseService) private readonly database: DatabaseService,
+    @Optional()
+    @Inject(DocumentsService)
+    private readonly documents?: DocumentsService,
   ) {}
+
+  private validateRange(input: { fromDate: string; toDate: string }) {
+    if (!validIsoDay(input.fromDate) || !validIsoDay(input.toDate))
+      throw new BadRequestException('بازه تاریخ معتبر نیست.');
+    if (input.fromDate > input.toDate)
+      throw new BadRequestException('تاریخ شروع باید قبل از تاریخ پایان باشد.');
+  }
+
+  private async latestIntakes(actor: AuthenticatedActor) {
+    const all = await this.database.client.reservationIntake.findMany({
+      where: { branchId: { in: actor.branchIds } },
+      orderBy: [{ contractVersion: 'desc' }, { receivedAt: 'desc' }],
+    });
+    const latest = new Map<string, (typeof all)[number]>();
+    for (const intake of all)
+      if (!latest.has(intake.contractId)) latest.set(intake.contractId, intake);
+    return [...latest.values()];
+  }
+
+  private async ticketGroups(
+    input: { fromDate: string; toDate: string },
+    actor: AuthenticatedActor,
+  ) {
+    this.validateRange(input);
+    const groups = new Map<
+      string,
+      {
+        ticket: NonNullable<
+          ReservationIntakeV1['snapshot']['ticketSelections']
+        >[number];
+        rows: Awaited<ReturnType<ReservationManifestService['latestIntakes']>>;
+      }
+    >();
+    for (const row of await this.latestIntakes(actor)) {
+      const snapshot =
+        row.snapshot as unknown as ReservationIntakeV1['snapshot'];
+      for (const ticket of snapshot.ticketSelections ?? []) {
+        const day = tehranDay(ticket.departureAt);
+        if (day < input.fromDate || day > input.toDate) continue;
+        const group = groups.get(ticket.offerId) ?? { ticket, rows: [] };
+        group.rows.push(row);
+        groups.set(ticket.offerId, group);
+      }
+    }
+    return [...groups.values()].sort((left, right) =>
+      left.ticket.departureAt.localeCompare(right.ticket.departureAt),
+    );
+  }
+
+  async listTickets(
+    input: { fromDate: string; toDate: string },
+    actor: AuthenticatedActor,
+  ): Promise<ReservationManifestTicketCardV1[]> {
+    if (!actor.permissions.includes('reservations.read'))
+      throw new ForbiddenException('مجوز مشاهده بلیط‌های MANIFEST وجود ندارد.');
+    const cards: ReservationManifestTicketCardV1[] = [];
+    for (const group of await this.ticketGroups(input, actor)) {
+      const ticket = group.ticket;
+      const [origin, destination, template] = await Promise.all([
+        this.directory.cityReference(ticket.originId),
+        this.directory.cityReference(ticket.destinationId),
+        this.directory.manifestTemplate(
+          ticket.carrierNameSnapshot,
+          ticket.destinationId,
+          tehranDay(ticket.departureAt),
+        ),
+      ]);
+      cards.push({
+        offerId: ticket.offerId,
+        direction: ticket.direction,
+        carrierName: ticket.carrierNameSnapshot,
+        serviceNumber: ticket.serviceNumberSnapshot,
+        originName: origin.englishName || origin.name,
+        destinationName: destination.englishName || destination.name,
+        departureAt: ticket.departureAt,
+        arrivalAt: ticket.arrivalAt,
+        contractCount: group.rows.length,
+        passengerCount: group.rows.reduce((sum, row) => {
+          const snapshot =
+            row.snapshot as unknown as ReservationIntakeV1['snapshot'];
+          return sum + snapshot.passengerIds.length;
+        }, 0),
+        template: template
+          ? {
+              id: template.id,
+              name: template.name,
+              versionNumber: template.versionNumber,
+            }
+          : null,
+        unavailableReason: template
+          ? null
+          : 'برای این ایرلاین و مقصد قالب فعال MANIFEST تعریف نشده است.',
+      });
+    }
+    return cards;
+  }
 
   private requirePermissions(actor: AuthenticatedActor) {
     for (const permission of [
@@ -197,9 +301,10 @@ export class ReservationManifestService {
     intake: Awaited<ReturnType<TravelWorkflowService['detail']>>,
     actor: AuthenticatedActor,
     traceId?: string,
+    offerId?: string,
   ) {
-    const flight = intake.snapshot.ticketSelections?.find(
-      (ticket) => ticket.direction === 'OUTBOUND',
+    const flight = intake.snapshot.ticketSelections?.find((ticket) =>
+      offerId ? ticket.offerId === offerId : ticket.direction === 'OUTBOUND',
     );
     if (!flight)
       throw new BadRequestException('پرواز رفت قرارداد ثبت نشده است.');
@@ -266,6 +371,144 @@ export class ReservationManifestService {
       });
     }
     return passengers;
+  }
+
+  async exportTicket(
+    offerId: string,
+    input: ReservationManifestTicketExportInputV1,
+    idempotencyKey: string | undefined,
+    actor: AuthenticatedActor,
+    traceId?: string,
+  ) {
+    this.requirePermissions(actor);
+    this.validateRange(input);
+    if (!idempotencyKey?.trim())
+      throw new BadRequestException('شناسه یکتای درخواست الزامی است.');
+    const group = (await this.ticketGroups(input, actor)).find(
+      (candidate) => candidate.ticket.offerId === offerId,
+    );
+    if (!group)
+      throw new BadRequestException('بلیط انتخاب‌شده در این بازه وجود ندارد.');
+    const ticket = group.ticket;
+    const template = await this.directory.manifestTemplate(
+      ticket.carrierNameSnapshot,
+      ticket.destinationId,
+      tehranDay(ticket.departureAt),
+    );
+    if (!template)
+      throw new BadRequestException(
+        'برای این ایرلاین و مقصد قالب فعال MANIFEST تعریف نشده است.',
+      );
+    if (!this.documents)
+      throw new BadRequestException('سرویس فایل قالب MANIFEST آماده نیست.');
+
+    const persistedKey = 'ticket:' + offerId + ':' + idempotencyKey.trim();
+    const existing =
+      await this.database.client.reservationManifestExport.findUnique({
+        where: {
+          actorUserId_idempotencyKey: {
+            actorUserId: actor.userId,
+            idempotencyKey: persistedKey,
+          },
+        },
+        include: { items: true },
+      });
+    if (
+      existing &&
+      (existing.fromDate.toISOString().slice(0, 10) !== input.fromDate ||
+        existing.toDate.toISOString().slice(0, 10) !== input.toDate ||
+        existing.includePreviouslyExported !==
+          Boolean(input.includePreviouslyExported))
+    )
+      throw new BadRequestException(
+        'این شناسه درخواست قبلاً برای تنظیمات دیگری استفاده شده است.',
+      );
+
+    let candidates = group.rows;
+    if (existing) {
+      const selectedIds = new Set(existing.items.map((item) => item.intakeId));
+      candidates = candidates.filter((row) => selectedIds.has(row.id));
+    } else if (!input.includePreviouslyExported && candidates.length) {
+      const previous =
+        await this.database.client.reservationManifestExportItem.findMany({
+          where: {
+            intakeId: { in: candidates.map((row) => row.id) },
+            outboundDepartureAt: new Date(ticket.departureAt),
+          },
+          select: { intakeId: true },
+          distinct: ['intakeId'],
+        });
+      const seen = new Set(previous.map((item) => item.intakeId));
+      candidates = candidates.filter((row) => !seen.has(row.id));
+    }
+
+    const selected = [];
+    let skippedFinanceCount = existing?.skippedFinanceCount ?? 0;
+    for (const row of candidates) {
+      if (!(await this.delivery.read(row.id)).approved) {
+        skippedFinanceCount += 1;
+        continue;
+      }
+      selected.push(row);
+    }
+    if (!selected.length)
+      throw new BadRequestException(
+        input.includePreviouslyExported
+          ? 'برای این بلیط قرارداد قابل خروجی با تأیید مالی وجود ندارد.'
+          : 'برای این بلیط قرارداد جدید قابل خروجی وجود ندارد.',
+      );
+
+    const rows: IranAirtourManifestRow[] = [];
+    for (const row of selected) {
+      const intake = await this.workflow.detail(row.id, actor.branchIds);
+      rows.push(...(await this.passengerRows(intake, actor, traceId, offerId)));
+    }
+    const delivery = await this.documents.readManifestTemplateReference(
+      template.fileReferenceId,
+      actor,
+    );
+    const chunks: Buffer[] = [];
+    for await (const chunk of delivery.stream)
+      chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+    const bytes = buildIranAirtourManifest(Buffer.concat(chunks), rows);
+
+    if (!existing) {
+      await this.database.client.reservationManifestExport.create({
+        data: {
+          actorUserId: actor.userId,
+          idempotencyKey: persistedKey,
+          fromDate: new Date(input.fromDate + 'T00:00:00.000Z'),
+          toDate: new Date(input.toDate + 'T00:00:00.000Z'),
+          includePreviouslyExported: Boolean(input.includePreviouslyExported),
+          contractCount: selected.length,
+          passengerCount: rows.length,
+          skippedFinanceCount,
+          items: {
+            create: selected.map((row) => ({
+              intakeId: row.id,
+              contractId: row.contractId,
+              contractVersion: row.contractVersion,
+              outboundDepartureAt: new Date(ticket.departureAt),
+            })),
+          },
+        },
+      });
+    }
+    return {
+      bytes,
+      contractCount: selected.length,
+      passengerCount: rows.length,
+      skippedFinanceCount,
+      fileName: (
+        ticket.carrierNameSnapshot +
+        '-' +
+        ticket.serviceNumberSnapshot +
+        '-' +
+        tehranDay(ticket.departureAt)
+      )
+        .replace(/[^A-Za-z0-9_-]/g, '_')
+        .replace(/_+/g, '_'),
+    };
   }
 
   private async isIranAirtourAntalya(
@@ -600,6 +843,46 @@ export class ReservationManifestBatchController {
     @Inject(ReservationManifestService)
     private readonly service: ReservationManifestService,
   ) {}
+
+  @Get('tickets')
+  @Header('Cache-Control', 'private, no-store')
+  async tickets(
+    @Query('fromDate') fromDate: string,
+    @Query('toDate') toDate: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return {
+      data: await this.service.listTickets({ fromDate, toDate }, req.actor),
+    };
+  }
+
+  @Post('tickets/:offerId.xlsx')
+  @Header('Cache-Control', 'private, no-store')
+  async exportTicket(
+    @Param('offerId') offerId: string,
+    @Body() input: ReservationManifestTicketExportInputV1,
+    @Headers('idempotency-key') idempotencyKey: string | undefined,
+    @Req() req: AuthenticatedRequest,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    const result = await this.service.exportTicket(
+      offerId,
+      input,
+      idempotencyKey,
+      req.actor,
+      req.headers['x-request-id'] as string | undefined,
+    );
+    response.setHeader('X-Nora-Manifest-Contracts', result.contractCount);
+    response.setHeader('X-Nora-Manifest-Passengers', result.passengerCount);
+    response.setHeader(
+      'X-Nora-Manifest-Skipped-Finance',
+      result.skippedFinanceCount,
+    );
+    return new StreamableFile(result.bytes, {
+      type: MANIFEST_XLSX_MIME,
+      disposition: 'attachment; filename="' + result.fileName + '.xlsx"',
+    });
+  }
 
   @Post('iran-airtour-antalya.xlsx')
   @Header('Cache-Control', 'private, no-store')
