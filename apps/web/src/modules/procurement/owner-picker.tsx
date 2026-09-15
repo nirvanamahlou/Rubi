@@ -6,6 +6,7 @@ import { selectClass } from './draft-form';
 import { Button } from '@/components/ui/button';
 import { FormField, Input } from '@/components/ui/form-controls';
 import { Alert } from '@/components/ui/surfaces';
+import { ProcurementSelect } from './procurement-select';
 export function ProcurementOwnerPicker({
   branchId,
   value,
@@ -44,7 +45,7 @@ export function ProcurementOwnerPicker({
         />
       </FormField>
       <FormField id="proc-owner" label="مسئول خرید">
-        <select
+        <ProcurementSelect
           id="proc-owner"
           className={selectClass}
           value={value}
@@ -69,7 +70,7 @@ export function ProcurementOwnerPicker({
               {item.label}
             </option>
           ))}
-        </select>
+        </ProcurementSelect>
       </FormField>
       {query.isError && (
         <Alert

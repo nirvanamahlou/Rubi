@@ -13,6 +13,7 @@ import { Alert, Card } from '@/components/ui/surfaces';
 import { procurementApi, commandAttempt, type Bootstrap } from './api';
 import { selectClass } from './draft-form';
 import { ProcurementDocumentPicker } from './document-picker';
+import { ProcurementSelect } from './procurement-select';
 
 type Operation = {
   action: string;
@@ -175,7 +176,7 @@ export function OperationForm({
   return (
     <Card className="space-y-4 p-5">
       <FormField id="proc-operation" label="عملیات جدید">
-        <select
+        <ProcurementSelect
           id="proc-operation"
           className={selectClass}
           value={action}
@@ -187,7 +188,7 @@ export function OperationForm({
               {value.label}
             </option>
           ))}
-        </select>
+        </ProcurementSelect>
       </FormField>
       {action && available.some((value) => value.action === action) && (
         <OperationFields
@@ -226,6 +227,9 @@ function OperationFields({
     acceptedDelta: '0',
     rejectedDelta: '0',
   });
+  const [customLocations, setCustomLocations] = useState<
+    Record<string, boolean>
+  >({});
   const [selectedOrder, setSelectedOrder] = useState<Row | null>(null);
   const [lines, setLines] = useState<Line[]>([]);
   const [singleSource, setSingleSource] = useState(false);
@@ -278,6 +282,49 @@ function OperationFields({
       )}
     </FormField>
   );
+  const location = (key: string, title: string) => {
+    const existing = [
+      ...new Set(
+        [
+          request.draft.deliveryLocation,
+          ...bootstrap.branches.map((branch) => branch.label),
+        ].filter(Boolean),
+      ),
+    ];
+    const custom =
+      customLocations[key] ||
+      Boolean(fields[key] && !existing.includes(fields[key] ?? ''));
+    return (
+      <FormField id={`operation-${key}`} label={title}>
+        <div className="space-y-2">
+          <ProcurementSelect
+            id={`operation-${key}`}
+            value={custom ? '__other_location__' : (fields[key] ?? '')}
+            onChange={(event) => {
+              const other = event.target.value === '__other_location__';
+              setCustomLocations((previous) => ({ ...previous, [key]: other }));
+              set(key, other ? '' : event.target.value);
+            }}
+          >
+            <option value="">انتخاب از محل‌های ثبت‌شده</option>
+            {existing.map((value) => (
+              <option key={value} value={value}>
+                {value}
+              </option>
+            ))}
+            <option value="__other_location__">محل دیگر</option>
+          </ProcurementSelect>
+          {(custom || existing.length === 0) && (
+            <Input
+              aria-label={`محل دیگر برای ${title}`}
+              value={fields[key] ?? ''}
+              onChange={(event) => set(key, event.target.value)}
+            />
+          )}
+        </div>
+      </FormField>
+    );
+  };
   const choose = (key: string, title: string, resource: string) => (
     <RecordSelect
       requestId={request.id}
@@ -426,20 +473,20 @@ function OperationFields({
             <>
               {choose('selectionId', 'انتخاب ثبت‌شده', 'selections')}
               {date('expectedAt', 'موعد تحویل')}
-              {input('deliveryLocation', 'محل تحویل')}
+              {location('deliveryLocation', 'محل تحویل')}
               {input('paymentTerms', 'شرایط پرداخت')}
             </>
           )}
           {action === 'RECEIVE' && (
             <>
               {date('receivedAt', 'تاریخ دریافت')}
-              {input('location', 'محل دریافت')}
+              {location('location', 'محل دریافت')}
             </>
           )}
           {action === 'ACCEPT_SERVICE' && (
             <>
               <FormField id="operation-service-item" label="ردیف خدمت">
-                <select
+                <ProcurementSelect
                   id="operation-service-item"
                   className={selectClass}
                   value={fields.itemId ?? ''}
@@ -451,7 +498,7 @@ function OperationFields({
                       {String(row.description ?? row.id)}
                     </option>
                   ))}
-                </select>
+                </ProcurementSelect>
               </FormField>
               {input('quantity', 'مقدار پذیرفته‌شده')}
               {date('acceptedAt', 'تاریخ پذیرش')}
@@ -467,7 +514,7 @@ function OperationFields({
           )}
           {commercial && (
             <FormField id="operation-currency" label="ارز">
-              <select
+              <ProcurementSelect
                 id="operation-currency"
                 className={selectClass}
                 value={fields.currencyCode ?? ''}
@@ -479,7 +526,7 @@ function OperationFields({
                     {currency.name} ({currency.code})
                   </option>
                 ))}
-              </select>
+              </ProcurementSelect>
             </FormField>
           )}
           {['MATCH_INVOICE', 'SUBMIT_FINANCE'].includes(action) &&
@@ -487,7 +534,7 @@ function OperationFields({
           {action === 'DISCREPANCY' && (
             <>
               <FormField id="operation-discrepancy-kind" label="نوع مغایرت">
-                <select
+                <ProcurementSelect
                   id="operation-discrepancy-kind"
                   className={selectClass}
                   value={fields.kind}
@@ -503,7 +550,7 @@ function OperationFields({
                       {title}
                     </option>
                   ))}
-                </select>
+                </ProcurementSelect>
               </FormField>
               {input('description', 'شرح مغایرت', true)}
             </>
@@ -512,7 +559,7 @@ function OperationFields({
             <>
               {choose('discrepancyId', 'مغایرت', 'discrepancies')}
               <FormField id="operation-resolution" label="نتیجه رسیدگی">
-                <select
+                <ProcurementSelect
                   id="operation-resolution"
                   className={selectClass}
                   value={fields.resolution}
@@ -521,7 +568,7 @@ function OperationFields({
                   <option value="REPLACE">جایگزینی</option>
                   <option value="RETURN">مرجوعی</option>
                   <option value="REJECT">رد</option>
-                </select>
+                </ProcurementSelect>
               </FormField>
             </>
           )}
@@ -538,7 +585,7 @@ function OperationFields({
                 id="operation-return-disposition"
                 label="مبدأ مقدار مرجوعی"
               >
-                <select
+                <ProcurementSelect
                   id="operation-return-disposition"
                   className={selectClass}
                   value={fields.disposition}
@@ -546,7 +593,7 @@ function OperationFields({
                 >
                   <option value="ACCEPTED">از مقدار پذیرفته‌شده</option>
                   <option value="REJECTED">از مقدار ردشده</option>
-                </select>
+                </ProcurementSelect>
               </FormField>
             </>
           )}
@@ -578,7 +625,7 @@ function OperationFields({
                 className="grid gap-3 rounded-xl border border-border p-4 sm:grid-cols-2 lg:grid-cols-4"
               >
                 <FormField id={`op-line-${index}`} label="ردیف مرجع">
-                  <select
+                  <ProcurementSelect
                     id={`op-line-${index}`}
                     className={selectClass}
                     value={line.itemId}
@@ -598,7 +645,7 @@ function OperationFields({
                         {String(row.description ?? row.id)}
                       </option>
                     ))}
-                  </select>
+                  </ProcurementSelect>
                 </FormField>
                 {(commercial
                   ? [
@@ -766,7 +813,7 @@ function RecordSelect({
   return (
     <div className="space-y-2">
       <FormField id={`operation-select-${resource}`} label={label}>
-        <select
+        <ProcurementSelect
           id={`operation-select-${resource}`}
           className={selectClass}
           value={value}
@@ -792,7 +839,7 @@ function RecordSelect({
               {recordLabel(row)}
             </option>
           ))}
-        </select>
+        </ProcurementSelect>
       </FormField>
       {resource === 'suppliers' && (
         <Input

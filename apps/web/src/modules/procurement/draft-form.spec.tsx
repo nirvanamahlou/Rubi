@@ -86,4 +86,67 @@ describe('Purchase draft accessibility and persisted input', () => {
     expect(html).toContain('1.5000');
     expect(html).not.toContain('for="line-1-acceptanceCriteria"');
   });
+  it('shows saved purchase classifications and measurement units as selected dropdown values', () => {
+    const client = new QueryClient();
+    client.setQueryData(['procurement', 'saved-request-field-options'], {
+      items: [
+        {
+          draft: {
+            branchId: 'branch-1',
+            purchaseType: 'خرید عمومی',
+            category: 'تجهیزات اداری',
+            items: [{ unit: 'عدد', period: 'ماهانه' }],
+          },
+        },
+      ],
+      page: 1,
+      pageSize: 50,
+      hasMore: false,
+    });
+    const draft = {
+      ...emptyDraft(),
+      branchId: 'branch-1',
+      purchaseType: 'خرید عمومی',
+      category: 'تجهیزات اداری',
+      items: [
+        {
+          id: 'item-1',
+          kind: 'SERVICE' as const,
+          description: 'پشتیبانی',
+          specification: '',
+          quantity: '1',
+          unit: 'عدد',
+          period: 'ماهانه',
+          acceptanceCriteria: '',
+        },
+      ],
+    };
+    const html = renderToStaticMarkup(
+      <QueryClientProvider client={client}>
+        <DraftForm
+          bootstrap={bootstrap}
+          request={{
+            id: 'draft',
+            number: 'PR-2',
+            version: 1,
+            requesterUserId: 'user',
+            requesterEmployeeId: null,
+            ownerUserId: null,
+            createdAt: '',
+            updatedAt: '',
+            status: 'DRAFT',
+            draft,
+          }}
+          onClose={() => undefined}
+          onSaved={() => undefined}
+        />
+      </QueryClientProvider>,
+    );
+    expect(html).toContain('خرید عمومی');
+    expect(html).toContain('تجهیزات اداری');
+    expect(html).toContain('عدد');
+    expect(html).toContain('ماهانه');
+    expect(html).toContain('role="combobox"');
+    expect(html).not.toContain('مقدار تازهٔ نوع خرید');
+  });
 });

@@ -19,6 +19,7 @@ import {
   type Bootstrap,
 } from './api';
 import { emptyDraft, reconcileDraft } from './model';
+import { ProcurementSelect } from './procurement-select';
 
 export const selectClass =
   'h-11 w-full rounded-xl border border-input bg-surface px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
@@ -106,6 +107,26 @@ export function DraftForm({
     enabled: Boolean(draft.branchId),
     retry: false,
   });
+  const savedRequests = useQuery({
+    queryKey: ['procurement', 'saved-request-field-options'],
+    queryFn: () =>
+      procurementApi.list(
+        new URLSearchParams({
+          page: '1',
+          queue: 'own',
+          search: '',
+          status: '',
+        }),
+      ),
+    retry: false,
+  });
+  const [customFields, setCustomFields] = useState({
+    purchaseType: false,
+    category: false,
+  });
+  const [customItemFields, setCustomItemFields] = useState<
+    Record<string, boolean>
+  >({});
   const resolvedRequesterLabel =
     requesters.data?.items.find((item) => item.id === requesterEmployeeId)
       ?.label ?? requesterLabel;
@@ -158,6 +179,118 @@ export function DraftForm({
       )}
     </FormField>
   );
+  const savedChoice = (key: 'purchaseType' | 'category', label: string) => {
+    const existing = [
+      ...new Set(
+        (savedRequests.data?.items ?? [])
+          .filter(
+            (item) => !draft.branchId || item.draft.branchId === draft.branchId,
+          )
+          .map((item) => item.draft[key].trim())
+          .filter(Boolean),
+      ),
+    ];
+    const custom =
+      customFields[key] ||
+      (draft[key] !== '' && !existing.includes(draft[key]));
+    return (
+      <FormField id={`proc-${key}`} label={label}>
+        <div className="space-y-2">
+          <ProcurementSelect
+            id={`proc-${key}`}
+            value={custom ? '__new__' : draft[key]}
+            onChange={(event) => {
+              const selected = event.target.value;
+              setCustomFields((previous) => ({
+                ...previous,
+                [key]: selected === '__new__',
+              }));
+              update(key, selected === '__new__' ? '' : selected);
+            }}
+          >
+            <option value="">انتخاب از موارد ثبت‌شده</option>
+            {existing.map((value) => (
+              <option key={value} value={value}>
+                {value}
+              </option>
+            ))}
+            <option value="__new__">ثبت مورد جدید</option>
+          </ProcurementSelect>
+          {(custom || existing.length === 0) && (
+            <Input
+              aria-label={`مقدار تازهٔ ${label}`}
+              value={draft[key]}
+              onChange={(event) => update(key, event.target.value)}
+              placeholder="مقدار تازه را وارد کنید"
+            />
+          )}
+        </div>
+      </FormField>
+    );
+  };
+  const savedItemChoice = (
+    item: ProcurementDraftV1['items'][number],
+    key: 'unit' | 'period',
+    label: string,
+  ) => {
+    const fieldId = `${item.id}-${key}`;
+    const existing = [
+      ...new Set(
+        (savedRequests.data?.items ?? [])
+          .filter(
+            (request) =>
+              !draft.branchId || request.draft.branchId === draft.branchId,
+          )
+          .flatMap((request) =>
+            request.draft.items.map((line) => line[key].trim()),
+          )
+          .filter(Boolean),
+      ),
+    ];
+    const custom =
+      customItemFields[fieldId] ||
+      (item[key] !== '' && !existing.includes(item[key]));
+    const change = (value: string) =>
+      update(
+        'items',
+        draft.items.map((line) =>
+          line.id === item.id ? { ...line, [key]: value } : line,
+        ),
+      );
+    return (
+      <FormField id={fieldId} label={label}>
+        <div className="space-y-2">
+          <ProcurementSelect
+            id={fieldId}
+            value={custom ? '__new__' : item[key]}
+            onChange={(event) => {
+              const isNew = event.target.value === '__new__';
+              setCustomItemFields((previous) => ({
+                ...previous,
+                [fieldId]: isNew,
+              }));
+              change(isNew ? '' : event.target.value);
+            }}
+          >
+            <option value="">انتخاب از موارد ثبت‌شده</option>
+            {existing.map((value) => (
+              <option key={value} value={value}>
+                {value}
+              </option>
+            ))}
+            <option value="__new__">ثبت مورد جدید</option>
+          </ProcurementSelect>
+          {(custom || existing.length === 0) && (
+            <Input
+              aria-label={`مقدار تازهٔ ${label}`}
+              value={item[key]}
+              onChange={(event) => change(event.target.value)}
+            />
+          )}
+        </div>
+      </FormField>
+    );
+  };
   async function save() {
     if (!baseRequest && !requesterEmployeeId) {
       setError('درخواست‌کننده را از فهرست کارکنان انتخاب کنید.');
@@ -280,7 +413,7 @@ export function DraftForm({
                         نسخه جدید: {describeDraftValue(latest.draft[key])}
                       </p>
                     </div>
-                    <select
+                    <ProcurementSelect
                       id={`conflict-${key}`}
                       className={selectClass}
                       value={choices[key] ?? ''}
@@ -294,7 +427,7 @@ export function DraftForm({
                       <option value="">انتخاب مقدار</option>
                       <option value="mine">حفظ ورودی من</option>
                       <option value="latest">حفظ نسخه جدید</option>
-                    </select>
+                    </ProcurementSelect>
                   </FormField>
                 ))}
                 <Button
@@ -344,7 +477,7 @@ export function DraftForm({
                       setRequesterPage(1);
                     }}
                   />
-                  <select
+                  <ProcurementSelect
                     id="proc-requester"
                     className={selectClass}
                     value={requesterEmployeeId}
@@ -371,7 +504,7 @@ export function DraftForm({
                         {item.label}
                       </option>
                     ))}
-                  </select>
+                  </ProcurementSelect>
                   {requesters.isError && (
                     <p className="text-sm text-destructive">
                       فهرست کارکنان دریافت نشد.
@@ -390,7 +523,7 @@ export function DraftForm({
               )}
             </FormField>
             <FormField id="proc-branch" label="شعبه">
-              <select
+              <ProcurementSelect
                 id="proc-branch"
                 className={selectClass}
                 value={draft.branchId}
@@ -410,7 +543,7 @@ export function DraftForm({
                     {branch.label}
                   </option>
                 ))}
-              </select>
+              </ProcurementSelect>
             </FormField>
             <FormField id="proc-unit" label="واحد سازمانی">
               <Input
@@ -419,8 +552,8 @@ export function DraftForm({
                 value={draft.unitId ?? 'واحدی برای درخواست‌کننده ثبت نشده'}
               />
             </FormField>
-            {text('purchaseType', 'نوع خرید')}
-            {text('category', 'دسته خرید')}
+            {savedChoice('purchaseType', 'نوع خرید')}
+            {savedChoice('category', 'دسته خرید')}
             <FormField id="proc-requiredAt" label="تاریخ نیاز">
               <DatePicker
                 id="proc-requiredAt"
@@ -431,7 +564,7 @@ export function DraftForm({
               />
             </FormField>
             <FormField id="proc-priority" label="اولویت">
-              <select
+              <ProcurementSelect
                 id="proc-priority"
                 className={selectClass}
                 value={draft.priority}
@@ -445,10 +578,10 @@ export function DraftForm({
                 <option value="LOW">کم</option>
                 <option value="NORMAL">عادی</option>
                 <option value="HIGH">زیاد</option>
-              </select>
+              </ProcurementSelect>
             </FormField>
             <FormField id="proc-deliveryLocation" label="محل تحویل">
-              <select
+              <ProcurementSelect
                 id="proc-deliveryLocation"
                 className={selectClass}
                 value={draft.deliveryLocation}
@@ -462,7 +595,7 @@ export function DraftForm({
                     {branch.label}
                   </option>
                 ))}
-              </select>
+              </ProcurementSelect>
             </FormField>
           </div>
           {text('needReason', 'شرح نیاز و توجیه خرید', true)}
@@ -491,7 +624,7 @@ export function DraftForm({
               />
             </FormField>
             <FormField id="proc-currency" label="ارز">
-              <select
+              <ProcurementSelect
                 id="proc-currency"
                 className={selectClass}
                 value={draft.currencyCode ?? ''}
@@ -505,7 +638,7 @@ export function DraftForm({
                     {currency.name} ({currency.code})
                   </option>
                 ))}
-              </select>
+              </ProcurementSelect>
             </FormField>
           </div>
         </fieldset>
@@ -535,7 +668,7 @@ export function DraftForm({
               </div>
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 <FormField id={`${item.id}-kind`} label="ماهیت">
-                  <select
+                  <ProcurementSelect
                     id={`${item.id}-kind`}
                     className={selectClass}
                     value={item.kind}
@@ -555,7 +688,7 @@ export function DraftForm({
                   >
                     <option value="GOODS">کالا</option>
                     <option value="SERVICE">خدمت</option>
-                  </select>
+                  </ProcurementSelect>
                 </FormField>
                 {(
                   [
@@ -565,30 +698,34 @@ export function DraftForm({
                     ['unit', 'واحد سنجش'],
                     ['period', 'دوره ارائه خدمت'],
                   ] as const
-                ).map(([key, label]) => (
-                  <FormField key={key} id={`${item.id}-${key}`} label={label}>
-                    <Input
-                      id={`${item.id}-${key}`}
-                      value={item[key]}
-                      onChange={(event) =>
-                        update(
-                          'items',
-                          draft.items.map((value) =>
-                            value.id === item.id
-                              ? {
-                                  ...value,
-                                  [key]:
-                                    key === 'quantity'
-                                      ? cleanSalesMoney(event.target.value)
-                                      : event.target.value,
-                                }
-                              : value,
-                          ),
-                        )
-                      }
-                    />
-                  </FormField>
-                ))}
+                ).map(([key, label]) =>
+                  key === 'unit' || key === 'period' ? (
+                    <div key={key}>{savedItemChoice(item, key, label)}</div>
+                  ) : (
+                    <FormField key={key} id={`${item.id}-${key}`} label={label}>
+                      <Input
+                        id={`${item.id}-${key}`}
+                        value={item[key]}
+                        onChange={(event) =>
+                          update(
+                            'items',
+                            draft.items.map((value) =>
+                              value.id === item.id
+                                ? {
+                                    ...value,
+                                    [key]:
+                                      key === 'quantity'
+                                        ? cleanSalesMoney(event.target.value)
+                                        : event.target.value,
+                                  }
+                                : value,
+                            ),
+                          )
+                        }
+                      />
+                    </FormField>
+                  ),
+                )}
               </div>
             </div>
           ))}
@@ -617,7 +754,7 @@ export function DraftForm({
         <fieldset disabled={busy} className="space-y-4">
           <legend className="mb-4 font-bold">اسناد و مرجع مبدأ</legend>
           <FormField id="proc-origin" label="منشأ درخواست">
-            <select
+            <ProcurementSelect
               id="proc-origin"
               className={selectClass}
               value={draft.origin.kind}
@@ -637,7 +774,7 @@ export function DraftForm({
             >
               <option value="GENERAL">خرید عمومی شرکت</option>
               <option value="SPECIALIZED">ارجاع از رزرواسیون</option>
-            </select>
+            </ProcurementSelect>
           </FormField>
           {draft.origin.kind === 'SPECIALIZED' && (
             <>

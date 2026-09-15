@@ -26,6 +26,7 @@ import {
   formatProcurementRecordValue,
 } from './presentation';
 import { sampleRequests, type ProcurementListRow } from './sample-requests';
+import { ProcurementSelect } from './procurement-select';
 
 const groups = [
   'میزکار خرید',
@@ -557,7 +558,7 @@ function WorkspaceState({
             </FormField>
             {group !== 3 && (
               <FormField id="proc-status" label="وضعیت درخواست">
-                <select
+                <ProcurementSelect
                   id="proc-status"
                   className={selectClass}
                   value={status}
@@ -572,7 +573,7 @@ function WorkspaceState({
                       {label}
                     </option>
                   ))}
-                </select>
+                </ProcurementSelect>
               </FormField>
             )}
           </Card>
