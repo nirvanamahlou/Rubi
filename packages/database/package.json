@@ -18,7 +18,10 @@
     "db:format": "prisma format --schema prisma/schema.prisma",
     "db:generate": "prisma generate --schema prisma/schema.prisma",
     "db:validate": "prisma validate --schema prisma/schema.prisma",
-    "db:seed": "prisma db seed"
+    "db:seed": "prisma db seed",
+    "reporting:demo:import": "tsx scripts/import-reporting-demo.ts",
+    "reporting:demo:generate": "node scripts/dashboard-reporting-local-demo.mjs",
+    "reporting:demo:clear": "node scripts/dashboard-reporting-local-demo.mjs --clear"
   },
   "dependencies": {
     "@prisma/adapter-pg": "7.9.1",

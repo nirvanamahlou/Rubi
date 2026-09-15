@@ -724,6 +724,7 @@ export class SalesService {
     const snapshot: SalesReservationRequestV1 = {
       passengerAssignments: presented.passengersDetail.map((passenger) => ({
         customerId: passenger.customerId,
+        displayNameSnapshot: passenger.displayNameSnapshot,
         ageCategory: passenger.ageCategory,
         serviceClientKeys: passenger.serviceClientKeys,
       })),

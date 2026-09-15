@@ -14,6 +14,7 @@ export type ReservationPdfTicket = Omit<FlightTicketSheetData, 'offers'> & {
 
 export function reservationTickets(
   snapshot: SalesReservationRequestV1,
+  passengerNames: Readonly<Record<string, string>> = {},
 ): ReservationPdfTicket[] {
   return (snapshot.passengerAssignments ?? [])
     .filter((p) => snapshot.passengerIds.includes(p.customerId))
@@ -60,7 +61,10 @@ export function reservationTickets(
           passengerId: passenger.customerId,
           ageCategory: passenger.ageCategory,
           issued: true,
-          passengerName: passenger.displayNameSnapshot || 'نام مسافر ثبت نشده',
+          passengerName:
+            passenger.displayNameSnapshot?.trim() ||
+            passengerNames[passenger.customerId]?.trim() ||
+            'نام مسافر ثبت نشده',
           contractNumber: snapshot.contractNumber,
           offers,
           transferDirections: [
