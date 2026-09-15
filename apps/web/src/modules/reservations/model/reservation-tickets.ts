@@ -2,9 +2,19 @@ import type { SalesReservationRequestV1 } from '@nora/contracts';
 import { salesContractFlights } from '@nora/contracts';
 import type { FlightTicketSheetData } from '@/modules/sales/public/tickets';
 
+export type ReservationPdfTicket = Omit<FlightTicketSheetData, 'offers'> & {
+  passengerId: string;
+  ageCategory: 'ADT' | 'CHD' | 'INF';
+  gender?: 'M' | 'F' | null;
+  offers: readonly (FlightTicketSheetData['offers'][number] & {
+    arrivalAt?: string;
+    direction: 'OUTBOUND' | 'RETURN';
+  })[];
+};
+
 export function reservationTickets(
   snapshot: SalesReservationRequestV1,
-): (FlightTicketSheetData & { passengerId: string })[] {
+): ReservationPdfTicket[] {
   return (snapshot.passengerAssignments ?? [])
     .filter((p) => snapshot.passengerIds.includes(p.customerId))
     .flatMap((passenger) => {
@@ -34,6 +44,8 @@ export function reservationTickets(
           originId: ticket.originId,
           destinationId: ticket.destinationId,
           departureAt: ticket.departureAt,
+          arrivalAt: ticket.arrivalAt,
+          direction: ticket.direction,
           carrierName: ticket.carrierNameSnapshot,
           serviceNumber: ticket.serviceNumberSnapshot,
           cabinClassCode: ticket.cabinClassCode,
@@ -46,6 +58,7 @@ export function reservationTickets(
       return [
         {
           passengerId: passenger.customerId,
+          ageCategory: passenger.ageCategory,
           issued: true,
           passengerName: passenger.displayNameSnapshot || 'نام مسافر ثبت نشده',
           contractNumber: snapshot.contractNumber,

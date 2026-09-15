@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import type {
+  MasterDataListResponse,
   MasterDataRecord,
   ReservationIntakeV1,
   TravelWorkflowStateV1,
@@ -71,6 +72,42 @@ export async function GET(
     if (!tickets.length)
       return fail('اطلاعات پرواز و تخصیص بلیط این مسافر موجود نیست.', 409);
 
+    // The passenger file is the current source of gender and spelling. A snapshot
+    // remains usable if that separate read is unavailable to this actor.
+    const passengerResponse = await get(
+      `/reservations/requests/${id}/passengers`,
+    ).catch(() => null);
+    if (passengerResponse?.ok) {
+      const body = (await passengerResponse.json().catch(() => null)) as {
+        data?: readonly {
+          id: string;
+          displayName?: string;
+          passportFirstName?: string | null;
+          passportLastName?: string | null;
+          gender?: 'M' | 'F' | null;
+        }[];
+      } | null;
+      if (Array.isArray(body?.data))
+        for (const ticket of tickets) {
+          const person = body.data.find(
+            (item) => item.id === ticket.passengerId,
+          );
+          if (!person) continue;
+          const passportName = [
+            person.passportFirstName,
+            person.passportLastName,
+          ]
+            .map((part) => part?.trim())
+            .filter(Boolean)
+            .join(' ');
+          if (passportName) ticket.passengerName = passportName;
+          else if (person.displayName?.trim())
+            ticket.passengerName = person.displayName.trim();
+          if (person.gender === 'M' || person.gender === 'F')
+            ticket.gender = person.gender;
+        }
+    }
+
     const cityIds = [
       ...new Set(
         tickets.flatMap(({ offers }) =>
@@ -81,7 +118,7 @@ export async function GET(
         ),
       ),
     ];
-    const cityNames: Record<string, string> = {};
+    const cityNames: Record<string, { name: string; code: string }> = {};
     await Promise.all(
       cityIds.map(async (cityId) => {
         const response = await get(
@@ -89,9 +126,64 @@ export async function GET(
         );
         if (!response.ok) return;
         const { data } = (await response.json()) as { data: MasterDataRecord };
-        cityNames[cityId] = String(
-          data.attributes.englishName || data.name || '—',
+        cityNames[cityId] = {
+          name: String(data.attributes.englishName || data.name || '—'),
+          code: /^[A-Z]{3}$/.test(data.code || '') ? data.code : '',
+        };
+      }),
+    );
+
+    const airlineLogos: Record<string, { name: string; logoDataUrl?: string }> =
+      {};
+    const carrierNames = [
+      ...new Set(
+        tickets.flatMap(({ offers }) =>
+          offers.map(({ carrierName }) => carrierName),
+        ),
+      ),
+    ];
+    await Promise.all(
+      carrierNames.map(async (carrierName) => {
+        const query = new URLSearchParams({
+          search: carrierName,
+          status: 'active',
+          page: '1',
+          pageSize: '25',
+        });
+        const response = await get(`/master-data/airlines?${query}`).catch(
+          () => null,
         );
+        if (!response?.ok) return;
+        const body = (await response
+          .json()
+          .catch(() => null)) as MasterDataListResponse | null;
+        if (!Array.isArray(body?.data)) return;
+        const data = body.data;
+        const airline = data.find(
+          (item) =>
+            item.name.trim().toLocaleLowerCase() ===
+              carrierName.trim().toLocaleLowerCase() ||
+            String(item.attributes.englishName || '')
+              .trim()
+              .toLocaleLowerCase() === carrierName.trim().toLocaleLowerCase(),
+        );
+        if (!airline) return;
+        airlineLogos[carrierName] = {
+          name: String(airline.attributes.englishName || airline.name),
+        };
+        const logoId = airline.attributes.logoFileReference;
+        if (typeof logoId !== 'string' || !uuid.test(logoId)) return;
+        const logo = await get(`/documents/${logoId}/preview`).catch(
+          () => null,
+        );
+        if (!logo?.ok) return;
+        const mime = logo.headers.get('content-type')?.split(';')[0];
+        if (!mime || !['image/png', 'image/jpeg', 'image/webp'].includes(mime))
+          return;
+        const bytes = Buffer.from(await logo.arrayBuffer());
+        if (!bytes.length || bytes.length > 5_000_000) return;
+        airlineLogos[carrierName].logoDataUrl =
+          `data:${mime};base64,${bytes.toString('base64')}`;
       }),
     );
 
@@ -117,7 +209,7 @@ export async function GET(
         branding.kind === 'OWN'
           ? (
               {
-                NIYAYESH_SEIR_SAHAR: 'niyayesh.png',
+                NIYAYESH_SEIR_SAHAR: 'niyayesh-seir-full.png',
                 JAHAN_BASTAN: 'jahan-bastan-horizontal.png',
               } as Record<string, string>
             )[branding.companyCode ?? '']
@@ -129,10 +221,15 @@ export async function GET(
           'base64',
         );
     }
-    const html = ticketPdfHtml(tickets, cityNames, {
-      name: branding.name,
-      logoDataUrl,
-    });
+    const html = ticketPdfHtml(
+      tickets,
+      cityNames,
+      {
+        name: branding.name,
+        logoDataUrl,
+      },
+      airlineLogos,
+    );
     const bytes = await renderTicketPdf(html);
     const name = intake.snapshot.contractNumber.replace(/[^A-Za-z0-9_-]/g, '_');
     return new Response(new Uint8Array(bytes), {
