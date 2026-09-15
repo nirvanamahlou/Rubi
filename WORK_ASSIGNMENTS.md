@@ -1,5 +1,12 @@
 # Work Assignments
 
+## RESERVATION-PURCHASE-LAYOUT-0915 — PC-A — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-15: فرم خرید رزرواسیون فقط هزینه خرید هتل و ترانسفر از کارگزار را ثبت کند، هتل قیمت هر شب یا کل اقامت بپذیرد و کنترل‌های فرم روی هم نیفتند. قیمت خرید بلیط هنگام تعریف در Ticket Catalog به صف مالی از مسیر مستقل Procurement می‌رود؛ این بخش با PR #282 وارد develop شده است.
+- Branch مستقل `codex/pc-a-reservation-purchase-layout-0915` از `origin/develop@b62054e3`؛ COMPUTER_ID=PC-A. محدوده رزرو: فرم خرید Web رزرواسیون، انتخاب خدمات واجد خرید، Gate خرید خدمات قرارداد در Finance و تست/اسناد همین واحد. بدون Schema/Migration/Seed، داده عملیاتی، Permission، Dependency/Lockfile یا تغییر Runtime مشترک.
+- مالک فعال همپوشان در آخرین `WORK_ASSIGNMENTS.md` و PRهای باز برای فایل‌های همین واحد پیدا نشد. شاخه‌های دیگر بدون reset/stash/overwrite/force-push باقی می‌مانند.
+- نتیجه: فرم خرید کارگزار هتل/ترانسفر ردیف‌های مستقل دارد؛ هتل مبلغ هر شب یا جمع را به مبلغ نهایی تبدیل می‌کند؛ خرید بلیط از این API رد و Gate مالی این فرم فقط هتل/ترانسفر را مطالبه می‌کند. ۴ تست هدفمند Web و ۶ تست هدفمند API، lint/typecheck محدوده و build تولیدی API/Web (۴۶ مسیر) موفق‌اند. آخرین `origin/develop` همچنان `b62054e3` و فایل مشترک تازه‌ای از آن تغییر نکرده است. Runtime مشترک ۳۱۰۰ تغییر نکرد.
+
 ## MASTER-012-AIRLINE-BAGGAGE-FORM — PC-B — READY_FOR_REVIEW
 
 - پیگیری مالک محصول در 2026-09-15: قواعد بار «عنوان فارسی» نمی‌خواهند. تکمیل همان واحد روی PR #285 و Branch موجود، با حفظ تمام تغییرات قبلی و محدوده Catalog/Form/Editor/Fixture/Test اطلاعات پایه، رزرو شد؛ Schema/Contract/API و ماژول دیگر دست‌نخورده می‌مانند.

@@ -123,8 +123,9 @@ export function Lookup({
       ? [value, ...options]
       : options;
   return (
-    <div style={{ display: 'grid', gap: 6, minWidth: 180 }}>
+    <div className="grid min-w-0 gap-2">
       <input
+        className="h-11 w-full min-w-0 rounded-xl border border-input bg-surface px-3 text-foreground"
         aria-label={`جست‌وجوی ${label}`}
         placeholder={`جست‌وجوی ${label}`}
         value={search}

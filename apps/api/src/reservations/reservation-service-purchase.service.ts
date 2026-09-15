@@ -92,6 +92,10 @@ export class ReservationServicePurchaseService {
       throw new BadRequestException(
         'خدمت انتخاب‌شده متعلق به این قرارداد نیست.',
       );
+    if (service.kind !== 'HOTEL' && service.kind !== 'TRANSFER')
+      throw new BadRequestException(
+        'قیمت خرید بلیط هنگام تعریف بلیط در مدیریت بلیط ثبت و برای مالی ارسال می‌شود.',
+      );
     if (
       service.pricing?.length &&
       !service.pricing.some(
