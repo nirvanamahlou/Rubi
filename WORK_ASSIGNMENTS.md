@@ -2895,3 +2895,12 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
   دارای cookie در مسیر فایل ماکاپ پاسخ ۲۰۰ می‌گیرد. build Web با ۴۶ route، lint فایل
   تغییرکرده و API health موفق‌اند. Gateway3100/Web3110/API4191 روی build
   `unified-6hqFsF7hJGMHGO-KmtfIL` فعال است؛ قفل فایل مرکزی آزاد شد.
+
+## PROCUREMENT-HUMAN-CAPITAL-NAV-0915 — PC-B — ACTIVE
+
+- درخواست صریح مالک: خرید و تأمین زیر «سرمایه انسانی» در منوی اصلی باشد. شاخه
+  `codex/pc-b-procurement-under-human-capital` از نسخهٔ تجمیعی فعال ساخته شد.
+- قفل محدود Central Navigation برای `apps/web/src/lib/navigation.ts` و تست همان فایل
+  نزد PC-B/PROCUREMENT-HUMAN-CAPITAL-NAV-0915 رزرو است. مسیر `/purchases`، مالکیت
+  داده، Permission و منطق ماژول تغییر نمی‌کنند؛ فقط گروه ارائهٔ سایدبار عوض می‌شود.
+  بدون Migration، Dependency، API یا تغییر فایل سایر ماژول‌ها.
