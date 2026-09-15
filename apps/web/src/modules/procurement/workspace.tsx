@@ -25,6 +25,7 @@ import {
   formatProcurementDate,
   formatProcurementRecordValue,
 } from './presentation';
+import { sampleRequests, type ProcurementListRow } from './sample-requests';
 
 const groups = [
   'میزکار خرید',
@@ -268,6 +269,26 @@ function WorkspaceState({
     enabled: !!selectedId,
     retry: false,
   });
+  const showSamples =
+    (group === 0 || group === 1) &&
+    page === 1 &&
+    !status &&
+    !search &&
+    !querySearch &&
+    (group !== 0 || queue === 'own') &&
+    list.isSuccess &&
+    list.data.items.length === 0;
+  const rows: ProcurementListRow[] = showSamples
+    ? sampleRequests
+    : (list.data?.items ?? []);
+  const relatedStart =
+    group === 1 || group === 2
+      ? 1
+      : group === 3 || group === 4
+        ? 3
+        : group === 5 || group === 6
+          ? 5
+          : null;
   function saved(request: ProcurementRequestV1) {
     setCreating(false);
     setEditing(false);
@@ -317,21 +338,6 @@ function WorkspaceState({
     );
   return (
     <>
-      <nav
-        aria-label="بخش‌های خرید و تأمین"
-        className="flex flex-wrap gap-2 border-b border-[#dfe8f4] pb-3"
-      >
-        {groups.map((label, index) => (
-          <button
-            key={label}
-            aria-current={group === index ? 'page' : undefined}
-            className={`min-h-10 rounded-lg border px-3 py-2 text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${group === index ? 'border-[#1657b5] bg-[#1657b5] text-white' : 'border-[#dfe8f4] bg-white text-[#183968] hover:bg-[#edf4ff]'}`}
-            onClick={() => navigateGroup(index)}
-          >
-            {label}
-          </button>
-        ))}
-      </nav>
       {bootstrap.policy === 'POLICY_NOT_CONFIGURED' && (
         <Alert
           tone="warning"
@@ -384,7 +390,18 @@ function WorkspaceState({
           <div className="flex flex-wrap items-end justify-between gap-3 py-2">
             <div>
               <p className="mb-2 text-xs text-[#7789a6]">
-                روبی / خرید و تأمین / {groups[group]}
+                روبی /{' '}
+                {group === 0 ? (
+                  'خرید و تأمین'
+                ) : (
+                  <button
+                    className="hover:text-[#1657b5] hover:underline"
+                    onClick={() => navigateGroup(0)}
+                  >
+                    خرید و تأمین
+                  </button>
+                )}{' '}
+                / {groups[group]}
               </p>
               <h1 className="text-2xl font-black tracking-tight text-[#113975] sm:text-3xl">
                 {groups[group]}
@@ -406,48 +423,36 @@ function WorkspaceState({
           </div>
           {group === 0 && (
             <>
-              <div className="flex flex-wrap items-center justify-between gap-4 rounded-[14px] border border-[#bfe8eb] bg-gradient-to-l from-[#e5fbf8] to-[#eaf4ff] p-5 sm:p-7">
-                <div>
-                  <h2 className="text-xl font-black text-[#113975]">
-                    خرید را از یک مسیر دنبال کنید
-                  </h2>
-                  <p className="mt-2 text-sm text-[#7789a6]">
-                    از درخواست تا سفارش، تحویل و ارجاع مالی، وضعیت هر پرونده در
-                    همین میزکار دیده می‌شود.
-                  </p>
-                </div>
-                <Button
-                  variant="outline"
-                  className="border-[#c8d9ee] bg-white"
-                  onClick={() => navigateGroup(1)}
-                >
-                  دیدن درخواست‌ها
-                </Button>
-              </div>
               <div className="grid gap-3 sm:grid-cols-3">
                 {(
                   [
                     [
                       'در انتظار بررسی',
-                      list.data?.items.filter(
-                        (item) =>
-                          item.status === 'SUBMITTED' ||
-                          item.status === 'IN_REVIEW',
-                      ).length ?? null,
+                      list.isPending
+                        ? null
+                        : rows.filter(
+                            (item) =>
+                              item.status === 'SUBMITTED' ||
+                              item.status === 'IN_REVIEW',
+                          ).length,
                     ],
                     [
                       'در مسیر تأمین',
-                      list.data?.items.filter(
-                        (item) =>
-                          item.status === 'APPROVED' ||
-                          item.status === 'SOURCING',
-                      ).length ?? null,
+                      list.isPending
+                        ? null
+                        : rows.filter(
+                            (item) =>
+                              item.status === 'APPROVED' ||
+                              item.status === 'SOURCING',
+                          ).length,
                     ],
                     [
                       'نیازمند اصلاح',
-                      list.data?.items.filter(
-                        (item) => item.status === 'CHANGES_REQUESTED',
-                      ).length ?? null,
+                      list.isPending
+                        ? null
+                        : rows.filter(
+                            (item) => item.status === 'CHANGES_REQUESTED',
+                          ).length,
                     ],
                   ] as const
                 ).map(([label, count]) => (
@@ -460,7 +465,9 @@ function WorkspaceState({
                       {count === null ? '—' : count.toLocaleString('fa-IR')}
                     </p>
                     <p className="mt-2 text-xs text-[#7789a6]">
-                      در صفحهٔ فعلی صف انتخاب‌شده
+                      {showSamples
+                        ? 'نمونهٔ آزمایشی، بدون ثبت در سامانه'
+                        : 'در صفحهٔ فعلی صف انتخاب‌شده'}
                     </p>
                   </div>
                 ))}
@@ -494,20 +501,54 @@ function WorkspaceState({
                     ],
                   ] as const
                 ).map(([index, label, description, tint]) => (
-                  <button
+                  <div
                     key={label}
-                    onClick={() => navigateGroup(index)}
-                    className={`rounded-[14px] border border-[#dfe8f4] p-5 text-right shadow-sm transition-colors hover:border-[#1973df] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1973df] ${tint}`}
+                    className={`rounded-[14px] border border-[#dfe8f4] p-5 text-right shadow-sm ${tint}`}
                   >
-                    <h3 className="font-bold text-[#113975]">{label}</h3>
+                    <button
+                      onClick={() => navigateGroup(index)}
+                      className="font-bold text-[#113975] hover:text-[#1657b5] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1973df]"
+                    >
+                      {label}
+                    </button>
                     <p className="mt-2 text-sm text-[#7789a6]">{description}</p>
-                    <span className="mt-5 block border-t border-[#dfe8f4] pt-3 text-xs font-semibold text-[#1657b5]">
-                      ورود به بخش ←
-                    </span>
-                  </button>
+                    <div className="mt-5 flex flex-wrap gap-3 border-t border-[#dfe8f4] pt-3 text-xs font-semibold text-[#1657b5]">
+                      <button
+                        onClick={() => navigateGroup(index)}
+                        className="hover:underline"
+                      >
+                        ورود به بخش ←
+                      </button>
+                      {index !== 7 && (
+                        <button
+                          onClick={() => navigateGroup(index + 1)}
+                          className="hover:underline"
+                        >
+                          {groups[index + 1]} ←
+                        </button>
+                      )}
+                    </div>
+                  </div>
                 ))}
               </div>
             </>
+          )}
+          {relatedStart !== null && (
+            <div
+              className="flex flex-wrap gap-2 text-sm"
+              aria-label="بخش‌های مرتبط"
+            >
+              {[relatedStart, relatedStart + 1].map((index) => (
+                <button
+                  key={sectionKeys[index]}
+                  aria-current={group === index ? 'page' : undefined}
+                  onClick={() => navigateGroup(index)}
+                  className={`rounded-lg border border-[#dfe8f4] px-3 py-2 ${group === index ? 'bg-[#1657b5] text-white' : 'bg-white hover:bg-[#edf4ff]'}`}
+                >
+                  {groups[index]}
+                </button>
+              ))}
+            </div>
           )}
           {group === 0 && (
             <div
@@ -640,7 +681,16 @@ function WorkspaceState({
             </Alert>
           ) : (
             <>
-              {!list.data.items.length ? (
+              {showSamples && (
+                <div
+                  role="note"
+                  className="rounded-lg border border-[#c8d9ee] bg-[#eaf4ff] px-4 py-3 text-sm text-[#183968]"
+                >
+                  این پرونده‌ها نمونهٔ آزمایشی برای بررسی ظاهر هستند؛ در سامانه
+                  ذخیره نشده‌اند و عملیات واقعی ندارند.
+                </div>
+              )}
+              {!rows.length ? (
                 <EmptyState
                   title="درخواستی در این صف نیست"
                   description="با تغییر صف یا فیلتر دوباره بررسی کنید؛ درخواست‌های مجاز شما اینجا نمایش داده می‌شوند."
@@ -677,7 +727,7 @@ function WorkspaceState({
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-[#dfe8f4]">
-                        {list.data.items.map((request) => (
+                        {rows.map((request) => (
                           <tr key={request.id} className="hover:bg-[#f8fbff]">
                             <td className="px-5 py-4">
                               <span className="block font-bold text-[#1657b5]">
@@ -689,6 +739,11 @@ function WorkspaceState({
                               >
                                 {request.number}
                               </span>
+                              {request.sample && (
+                                <span className="mt-1 block text-xs text-[#7789a6]">
+                                  نمونهٔ آزمایشی
+                                </span>
+                              )}
                             </td>
                             <td className="px-5 py-4" dir="ltr">
                               {request.draft.estimatedAmount ?? 'نامشخص'}{' '}
@@ -701,13 +756,19 @@ function WorkspaceState({
                               {nextAction[request.status]}
                             </td>
                             <td className="px-5 py-4">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => openRequest(request.id)}
-                              >
-                                مشاهده
-                              </Button>
+                              {request.sample ? (
+                                <span className="text-xs text-[#7789a6]">
+                                  فقط نمایش
+                                </span>
+                              ) : (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => openRequest(request.id)}
+                                >
+                                  مشاهده
+                                </Button>
+                              )}
                             </td>
                           </tr>
                         ))}
@@ -716,11 +777,13 @@ function WorkspaceState({
                   </div>
                 </div>
               )}
-              <Pager
-                page={page}
-                hasMore={list.data.hasMore}
-                setPage={setPage}
-              />
+              {!showSamples && (
+                <Pager
+                  page={page}
+                  hasMore={list.data.hasMore}
+                  setPage={setPage}
+                />
+              )}
             </>
           )}
         </>
