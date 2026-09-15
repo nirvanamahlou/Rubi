@@ -531,7 +531,7 @@ function WorkspaceState({
           <Card className="overflow-hidden border-blue-300/70 dark:border-blue-400/25">
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-gradient-to-l from-blue-400/15 to-transparent p-5 dark:from-blue-400/8">
               <h2 className="font-bold">پیگیری‌های من</h2>
-              <div className="grid w-full items-end gap-3 sm:grid-cols-2 xl:w-auto xl:grid-cols-[minmax(150px,220px)_minmax(130px,170px)_minmax(300px,350px)] xl:[&>fieldset]:col-span-1">
+              <div className="grid w-full items-end gap-3 sm:grid-cols-2 lg:w-auto lg:grid-cols-[minmax(150px,220px)_minmax(130px,170px)_minmax(280px,330px)] lg:[&>fieldset]:col-span-1">
                 <FormField id="proc-home-search" label="شماره یا عنوان">
                   <Input
                     id="proc-home-search"

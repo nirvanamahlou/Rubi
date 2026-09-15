@@ -419,10 +419,10 @@ export function InternalSections({
               </div>
               <FilterBar
                 className={cn(
-                  'grid items-end gap-3 rounded-none border-0 border-b border-border shadow-none sm:grid-cols-2 xl:[&>fieldset]:col-span-1',
+                  'grid items-end gap-3 rounded-none border-0 border-b border-border shadow-none sm:grid-cols-2 lg:[&>fieldset]:col-span-1',
                   group === 2 || group === 3
-                    ? 'xl:grid-cols-[minmax(0,1fr)_minmax(300px,360px)]'
-                    : 'xl:grid-cols-[minmax(0,1fr)_minmax(150px,190px)_minmax(300px,360px)]',
+                    ? 'lg:grid-cols-[minmax(0,1fr)_minmax(280px,330px)]'
+                    : 'lg:grid-cols-[minmax(0,1fr)_minmax(140px,170px)_minmax(280px,330px)]',
                 )}
               >
                 <FormField
