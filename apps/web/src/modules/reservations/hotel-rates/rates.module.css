@@ -13,40 +13,48 @@
   flex-wrap: wrap;
   gap: 16px;
 }
-.packCards {
+.branchFilter {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 12px;
+  gap: 6px;
+  min-width: 180px;
+  font-size: 13px;
 }
-.root .packCard {
-  display: grid;
-  gap: 8px;
-  min-height: 140px;
-  padding: 16px;
-  text-align: right;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  transition:
-    background 160ms ease,
-    border-color 160ms ease,
-    transform 160ms ease;
+.editor {
+  scroll-margin-top: 80px;
 }
-.root .packCard:hover {
-  background: var(--muted);
-  border-color: var(--primary);
-  transform: translateY(-2px);
+.root .packTable {
+  min-width: 980px;
+}
+.root .packTable td {
+  vertical-align: middle;
+  font-variant-numeric: tabular-nums;
+}
+.root .packTable td:first-child {
+  min-width: 140px;
+}
+.root .packTable td:nth-child(2),
+.root .packTable td:nth-child(3) {
+  min-width: 130px;
+}
+.root .packTable td:last-child {
+  min-width: 160px;
+}
+.root .metaTable {
+  min-width: 1220px;
+}
+.root .metaTable td {
+  vertical-align: top;
+  min-width: 135px;
+}
+.root .metaTable td:nth-child(4),
+.root .metaTable td:nth-child(5) {
+  min-width: 175px;
+}
+.draftRow {
+  background: color-mix(in srgb, var(--primary) 12%, var(--surface));
 }
 .root .activePack {
-  border-color: var(--primary);
-  box-shadow: inset 0 0 0 1px var(--primary);
-}
-.packCard strong {
-  font-size: 17px;
-}
-.packCard span,
-.packCard small {
-  font-variant-numeric: tabular-nums;
+  background: color-mix(in srgb, var(--primary) 7%, var(--surface));
 }
 .chip {
   display: inline-flex;
