@@ -6,6 +6,61 @@
 .root header {
   margin-bottom: 24px;
 }
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+.packCards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+}
+.root .packCard {
+  display: grid;
+  gap: 8px;
+  min-height: 140px;
+  padding: 16px;
+  text-align: right;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  transition:
+    background 160ms ease,
+    border-color 160ms ease,
+    transform 160ms ease;
+}
+.root .packCard:hover {
+  background: var(--muted);
+  border-color: var(--primary);
+  transform: translateY(-2px);
+}
+.root .activePack {
+  border-color: var(--primary);
+  box-shadow: inset 0 0 0 1px var(--primary);
+}
+.packCard strong {
+  font-size: 17px;
+}
+.packCard span,
+.packCard small {
+  font-variant-numeric: tabular-nums;
+}
+.chip {
+  display: inline-flex;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--muted);
+  color: var(--foreground);
+  font-size: 13px;
+}
+.searchField {
+  display: grid;
+  gap: 8px;
+  width: min(100%, 360px);
+}
 .root h1 {
   font-size: 24px;
   font-weight: 700;
@@ -96,6 +151,27 @@
 .root th {
   background: var(--muted);
 }
+.root .sheet th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+.root .sheet td:first-child {
+  min-width: 68px;
+}
+.root .sheet td:nth-child(2) {
+  min-width: 190px;
+}
+.root .sheet input[type='checkbox'] {
+  width: 19px;
+  height: 19px;
+  min-height: 19px;
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+.selectedRow {
+  background: color-mix(in srgb, var(--primary) 7%, var(--surface));
+}
 .root td:first-child,
 .root td:nth-child(2) {
   min-width: 180px;
@@ -111,6 +187,13 @@
 }
 .root .error {
   color: var(--destructive);
+}
+.root details {
+  margin-bottom: 20px;
+}
+.root summary {
+  cursor: pointer;
+  padding: 12px 4px;
 }
 @media (max-width: 600px) {
   .root section {

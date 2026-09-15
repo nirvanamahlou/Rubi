@@ -1,5 +1,23 @@
 # وضعیت پروژه
 
+## 2026-09-15 — HOTEL-RATE-PACKS-0915 — PC-A — ISOLATED 3200 IMPLEMENTED / REVIEW PENDING
+
+صفحهٔ `/reservations/hotel-rates` روی شاخهٔ مستقل
+`codex/pc-a-hotel-rate-packs-0915` به جریان شهر ← بازهٔ اقامت ← تیک هتل‌های
+فعال و قابل‌فروش همان شهر ← ویرایش کارگزار، پایه و ضرایب تبدیل شد. بسته‌های
+ثبت‌شده کارت جدا با شهر/تاریخ/تعداد شب/هتل/نسخه دارند و با بازکردن کارت، نسخهٔ
+جدید همان بسته ثبت می‌شود. Batch و ردیف قدیمی immutable می‌مانند. Migration
+افزایشی فقط روی PostgreSQL آزمایشی Web3200/API4200 اعمال شد؛ Web3100،
+دیتابیس عملیاتی، Sales/Package Pricing و `develop/main` تغییر نکردند. دسترس‌پذیری
+شبانهٔ واقعی منبع ندارد؛ تیک، تأیید اپراتور برای همان بازه است و API مرجع
+active/saleable/city را بازبینی می‌کند. جزئیات و QA در
+`docs/tasks/HOTEL-RATE-PACKS-0915.md`.
+Prisma schema معتبر و client تولید شد؛ ۱۹ تست API و ۴ تست Web، lint هدفمند و
+build تولیدی هر دو برنامه پاس شدند. بستهٔ synthetic تهران برای ۲۰۲۷-۰۲-۰۱ تا
+۲۰۲۷-۰۲-۰۶ ساخته/باز شد و نرخ ۱۰۰ به ۱۱۰ در نسخهٔ ۲ رسید. API4200/Web3200
+و login/detail دوباره پاسخ ۲۰۰ دارند. قفل‌های Migration و اسناد این کار آزادند؛
+انتقال به ۳۱۰۰ و ادغام به Review و تصمیم مالک محصول وابسته است.
+
 ## 2026-09-15 — PACKAGE-PRICING-001 Finance ticket bridge and tour publications (isolated 3200)
 
 The owner-approved `origin/develop` merge was committed on the PC-A task

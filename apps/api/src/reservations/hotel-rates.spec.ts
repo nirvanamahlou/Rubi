@@ -6,6 +6,7 @@ import type { MasterTravelDirectory } from '../master-data/master-travel-directo
 import { HotelRatesService } from './hotel-rates.module';
 import {
   validateRateBatch,
+  validateRatePack,
   roomPrices,
   roomKinds,
 } from './hotel-rates.validation';
@@ -48,6 +49,20 @@ describe('group hotel rate integrity', () => {
     expect(() => validateRateBatch({ ...data, currency: 'IRR' })).toThrow();
     expect(() =>
       validateRateBatch({ ...data, rows: [...data.rows, ...data.rows] }),
+    ).toThrow();
+  });
+  it('requires a city and only one selected rate for each hotel in a pack', () => {
+    const cityId = randomUUID();
+    const data = input();
+    expect(() => validateRatePack(data)).toThrow();
+    const valid = validateRatePack({ ...data, cityId });
+    expect(valid.cityId).toBe(cityId);
+    expect(() =>
+      validateRatePack({
+        ...data,
+        cityId,
+        rows: [data.rows[0], { ...data.rows[0], brokerId: randomUUID() }],
+      }),
     ).toThrow();
   });
   it('denies unauthorized branch before reference lookup or writes', async () => {

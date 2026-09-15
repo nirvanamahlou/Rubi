@@ -10,6 +10,9 @@ import {
   Inject,
   Injectable,
   Module,
+  Param,
+  ParseUUIDPipe,
+  Patch,
   Post,
   Query,
   Req,
@@ -30,6 +33,7 @@ import {
   type RoomKind,
 } from './hotel-rates.validation';
 import { HotelPurchaseRatesPublicService } from './hotel-purchase-rates.public';
+import { HotelRatePacksService } from './hotel-rate-packs.service';
 
 @Injectable()
 export class HotelRatesService {
@@ -175,9 +179,80 @@ export class HotelRatesService {
 export class HotelRatesController {
   constructor(
     @Inject(HotelRatesService) private readonly rates: HotelRatesService,
+    @Inject(HotelRatePacksService)
+    private readonly packs: HotelRatePacksService,
     @Inject(MasterTravelDirectory)
     private readonly directory: MasterTravelDirectory,
   ) {}
+  @Get('pack-options')
+  @Header('Cache-Control', 'private, no-store')
+  packOptions(
+    @Req() req: AuthenticatedRequest,
+    @Query('kind') kind: string,
+    @Query('search') search = '',
+    @Query('page') page = '1',
+    @Query('cityId') cityId?: string,
+  ) {
+    this.packs.require(req.actor);
+    if (
+      !['cities', 'hotels'].includes(kind) ||
+      search.length > 100 ||
+      !/^\d+$/.test(page) ||
+      Number(page) < 1 ||
+      Number(page) > 10000 ||
+      (cityId &&
+        !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+          cityId,
+        ))
+    )
+      throw new BadRequestException();
+    return this.directory.hotelRatePackChoices(
+      kind as 'cities' | 'hotels',
+      search,
+      Number(page),
+      cityId,
+    );
+  }
+
+  @Get('packs')
+  @Header('Cache-Control', 'private, no-store')
+  packsList(
+    @Req() req: AuthenticatedRequest,
+    @Query('branchId') branchId?: string,
+    @Query('page') page = '1',
+  ) {
+    return this.packs.list(req.actor, branchId, Number(page));
+  }
+
+  @Get('packs/:id')
+  @Header('Cache-Control', 'private, no-store')
+  packDetail(
+    @Req() req: AuthenticatedRequest,
+    @Param('id', new ParseUUIDPipe()) id: string,
+  ) {
+    return this.packs.detail(id, req.actor);
+  }
+
+  @Post('packs')
+  @Header('Cache-Control', 'private, no-store')
+  createPack(
+    @Req() req: AuthenticatedRequest,
+    @Body() body: unknown,
+    @Headers('idempotency-key') key?: string,
+  ) {
+    return this.packs.create(body, key, req.actor);
+  }
+
+  @Patch('packs/:id')
+  @Header('Cache-Control', 'private, no-store')
+  updatePack(
+    @Req() req: AuthenticatedRequest,
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() body: unknown,
+    @Headers('idempotency-key') key?: string,
+  ) {
+    return this.packs.update(id, body, key, req.actor);
+  }
   @Get('options')
   @Header('Cache-Control', 'private, no-store')
   options(
@@ -223,7 +298,12 @@ export class HotelRatesController {
 @Module({
   imports: [IamModule, MasterDataModule],
   controllers: [HotelRatesController],
-  providers: [AuthGuard, HotelRatesService, HotelPurchaseRatesPublicService],
+  providers: [
+    AuthGuard,
+    HotelRatesService,
+    HotelRatePacksService,
+    HotelPurchaseRatesPublicService,
+  ],
   exports: [HotelPurchaseRatesPublicService],
 })
 export class HotelRatesModule {}

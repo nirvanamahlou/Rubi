@@ -482,6 +482,21 @@ Migration هر update/delete نسخه `PUBLISHED` را رد می‌کند. Quote
 تا تغییر آینده مبلغ قبلی را عوض نکند. Render Request به Package/Departure/Price/Template Version
 و Branding Snapshot وصل و تا حضور Worker در `AWAITING_RENDERER` باقی می‌ماند.
 
+## Reservations group hotel purchase-rate packs (HOTEL-RATE-PACKS-0915)
+
+`reservation_hotel_rate_packs` یک هویت پایدار برای بستهٔ شهر/بازهٔ خرید هتل در هر
+شعبه است؛ `branchId` و `cityId` FK واقعی و `checkIn/checkOut` تاریخ‌های جاری آن
+هستند. `currentVersion` با optimistic compare-and-swap بالا می‌رود. هر ثبت یا
+ویرایش، یک `ReservationHotelRateBatch` تازه با `packId`, `cityId`, `version`
+و snapshot مستقل تاریخ/ارز/مبنا می‌سازد؛ ردیف‌های
+`ReservationHotelGroupRate` قبلی و FKهای Package Pricing به آن‌ها تغییر نمی‌کنند.
+بسته‌های قدیمی بدون `packId/cityId` همچنان در سابقه قابل‌خواندن‌اند. فقط هتل‌های
+تیک‌خورده در نسخه نرخ خرید دارند و مرجع فعال/قابل‌فروش/هم‌شهر هر ردیف از قرارداد
+عمومی Master Data بازبینی می‌شود. تیک حضور در بازه تأیید کاربر است؛ این جدول
+موجودی واقعی اتاق به تفکیک شب یا قیمت فروش پایه Master Data نیست. Projection
+عمومی Reservations فقط نسخهٔ جاری بسته را برای قیمت‌گذاری تازه عرضه می‌کند؛
+snapshot قیمت‌های منتشرشدهٔ قبلی دست‌نخورده می‌ماند.
+
 ## Master Data hotel base-rate periods
 
 `master_hotel_rate_periods` بازه جاری branch/city/check-in/check-out و شماره نسخه فعلی را

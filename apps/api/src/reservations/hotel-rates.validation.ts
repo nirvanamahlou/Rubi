@@ -24,6 +24,10 @@ export interface RateBatchInput {
     factors: Record<RoomKind, string>;
   }[];
 }
+export interface RatePackInput extends RateBatchInput {
+  cityId: string;
+  expectedVersion?: number;
+}
 const money = Joi.string()
   .pattern(/^\d{1,12}(\.\d{1,2})?$/)
   .required();
@@ -54,6 +58,10 @@ const schema = Joi.object({
       }),
     )
     .required(),
+});
+const packSchema = schema.keys({
+  cityId: Joi.string().uuid().required(),
+  expectedVersion: Joi.number().integer().positive().optional(),
 });
 export function validateRateBatch(raw: unknown): RateBatchInput {
   const { error, value } = schema.validate(raw, { convert: false });
@@ -88,6 +96,27 @@ export function validateRateBatch(raw: unknown): RateBatchInput {
         'قیمت پایه باید مثبت و مبلغ ریالی عدد صحیح باشد.',
       );
   }
+  return input;
+}
+export function validateRatePack(raw: unknown): RatePackInput {
+  const { error, value } = packSchema.validate(raw, { convert: false });
+  if (error)
+    throw new BadRequestException(
+      'شهر، بازه و نرخ هتل‌های انتخاب‌شده را کامل و معتبر وارد کنید.',
+    );
+  const input = value as RatePackInput;
+  validateRateBatch({
+    branchId: input.branchId,
+    checkIn: input.checkIn,
+    checkOut: input.checkOut,
+    currency: input.currency,
+    method: input.method,
+    rows: input.rows,
+  });
+  if (new Set(input.rows.map((row) => row.hotelId)).size !== input.rows.length)
+    throw new BadRequestException(
+      'برای هر هتل در این بازه فقط یک نرخ وارد کنید.',
+    );
   return input;
 }
 export function roomPrices(

@@ -37,6 +37,55 @@ export class MasterTravelDirectory {
     };
   }
 
+  /** Active city / saleable hotel choices for a Reservations-owned rate pack. */
+  async hotelRatePackChoices(
+    kind: 'cities' | 'hotels',
+    search: string,
+    page: number,
+    cityId?: string,
+  ) {
+    if (kind === 'hotels' && !cityId)
+      throw new BadRequestException('ابتدا شهر را انتخاب کنید.');
+    const result = await this.master.list(kind, {
+      page,
+      pageSize: 100,
+      sortBy: 'name',
+      sortDirection: 'asc',
+      search,
+      status: 'active',
+      ...(kind === 'hotels' && cityId ? { cityId, saleableOnly: true } : {}),
+    });
+    return {
+      data: result.data.map((row) => ({
+        id: row.id,
+        name: row.name,
+        englishName: String(row.attributes.englishName ?? ''),
+      })),
+      meta: result.meta,
+    };
+  }
+
+  /** Resolve every selected row through Master Data's public boundary. */
+  async hotelRatePackReference(
+    cityId: string,
+    hotelId: string,
+    brokerId: string,
+  ) {
+    const [{ data: hotel }, reference] = await Promise.all([
+      this.master.detail('hotels', hotelId),
+      this.hotelRateReference(hotelId, brokerId),
+    ]);
+    if (
+      hotel.status !== 'active' ||
+      hotel.attributes.cityId !== cityId ||
+      hotel.attributes.isSaleableReference !== true
+    )
+      throw new BadRequestException(
+        'هتل منتخب باید فعال، قابل فروش و متعلق به شهر این بازه باشد.',
+      );
+    return reference;
+  }
+
   async hotelRateReference(hotelId: string, brokerId: string) {
     const [{ data: hotel }, { data: broker }] = await Promise.all([
       this.master.detail('hotels', hotelId),
