@@ -2972,6 +2972,7 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
   هدایت می‌شود؛ grant فردی و smoke داخل حساب پس از معرفی حساب‌های مجاز پیگیری می‌شود.
 - پیگیری فونت مالک: صفحهٔ عملیاتی خرید فونت سراسری `font-sans` را صریحاً به ارث می‌برد. فایل public نمای قدیمی از مسیر `/fonts/vazirmatn-arabic-wght-normal.woff2` استفاده می‌کرد اما آن دارایی وجود نداشت و به Tahoma برمی‌گشت؛ فایل‌های فارسی و لاتین وزیرمتن از همان dependency موجود همراه مجوز OFL در public قرار گرفتند. بدون تغییر Dependency/Lockfile، API، Schema یا داده.
   build Web با ۴۶ مسیر، lint/typecheck و Prettier موفق‌اند. Gateway3100/Web3110/API4191 از commit کد `a851e493` و build `unified-TsYKnysEo6ejcMcyC9wuF` فعال‌اند؛ API پس از تکمیل startup پاسخ health۲۰۰ داد. تب فعلی مرورگر بدون نشست است و خرید را به login هدایت می‌کند.
+- پیگیری دسترسی ۴۰۳ مالک: دیتابیس عملیاتی launcher، `rubi_hr_current_20260908`، نقش `staff` را بدون عضو داشت و نشست اخیر `nirvana` فقط `administrator` و `nirvana_full_access` را داشت؛ هیچ‌یک مجوز Procurement نداشتند. نقش `staff` با پنج مجوز محدود به درخواست خود، به همان حساب فعال و دارای پنج شعبه به‌صورت افزایشی و همراه Audit محلی واگذار شد. نقش‌ها/شعب قبلی حفظ و نقش‌های تأییدکننده/سفارش‌دهنده همچنان صفر عضو دارند؛ grant سایر کارکنان تا تعیین حساب‌ها و پیوند IAM/HR انجام نمی‌شود. Authenticated browser smoke در تب بدون نشست قابل انجام نیست.
 
 ## TICKET-REPEAT-PURCHASE-0914 — PC-A — READY_FOR_REVIEW
 
