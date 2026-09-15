@@ -48,6 +48,15 @@ end-to-end renderer کار handoff است.
 
 ## Validation
 
+### QA پیش‌نمایش مستقل 3200 در 2026-09-15
+
+API آزمایشی روی 4200 و PostgreSQL synthetic مستقل از محیط مشترک فعال شد. تداخل
+route اختصاصی بازه هتل با route عمومی Master Data رفع شد. Login آزمایشی، گزینه
+شهر تهران و سه هتل، POST بازه پنج‌شبه با دو هتل منتخب، PATCH نسخه ۱ به ۲ و GET
+جزئیات/فهرست با نرخ اصلاح‌شده ۱۳۰ موفق‌اند. Web3200 login و صفحه نرخ هتل و
+API4200 health پاسخ ۲۰۰ می‌دهند. کنترل بصری مرورگر به علت reset ابزار انجام نشد.
+Web3100/API مشترک و داده عملیاتی تغییر نکردند؛ هیچ migration جدیدی ایجاد نشد.
+
 Prisma format/validate/generate موفق است. پس از follow-up همه ۶۴ Migration روی PostgreSQL 16
 خالی اعمال شدند؛ `migrate status` به‌روز بود، سه جدول نرخ هتل و دو trigger immutable
 جدید نصب شدند و seed دو بار پیاپی موفق بود. ۲۳ تست هدفمند follow-up و قرارداد بصری نیز

@@ -30,9 +30,9 @@ import {
     CurrencyRateController,
     MasterDataAuditController,
     HotelImportController,
+    MasterHotelBaseRatesController,
     MasterDataController,
     OrganizationAddressController,
-    MasterHotelBaseRatesController,
   ],
   providers: [
     AuthGuard,
