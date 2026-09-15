@@ -1,5 +1,12 @@
 # Work Assignments
 
+## TICKET-STANDALONE-SALE-PRICE-0915 — PC-A — IN_PROGRESS
+
+- درخواست مالک در 2026-09-15: قیمت فروش بلیط تکی در مدیریت بلیط جدا از قیمت خرید ثبت شود؛ فروش بلیط بدون هتل/تور از همان نرخ تکی و فروش تور از نرخ منتشرشدهٔ مدیریت قیمت/پکیج استفاده کند. مشکل خروجی PDF بلیط در localhost:3100 نیز بررسی شود.
+- COMPUTER_ID=PC-A؛ شاخه مستقل `codex/pc-a-ticket-standalone-sale-price-0915` از `origin/develop@f5c1a159`. مالک در 2026-09-15 ادغام و حل تعارض PR #278 را فقط در این شاخه تأیید کرد؛ develop، شاخه‌های دیگر و localhost:3100 تا بررسی CI و تأیید جدا برای merge دست‌نخورده می‌مانند.
+- محدوده رزرو: مدل نرخ فروش تکی بلیط و اتصال عمومی Ticket Catalog→Sales، نمایش/ثبت نرخ در مدیریت بلیط، انتخاب منبع قیمت در قرارداد فروش، تست، Migration افزایشی در صورت نیاز و اسناد همین واحد. `Migration Owner = PC-A/TICKET-STANDALONE-SALE-PRICE-0915` و Shared Travel/Sales Price Contract Owner برای همین واحد رزرو است؛ Dependency/Lockfile رزرو نمی‌شود. متن و دادهٔ PR #278 و develop در تعارض‌ها بررسی و حفظ می‌شود.
+- PR #291 خروجی لوگوی ایرلاین/سربرگ نیایش را جداگانه و با CI سبز دارد؛ تا تأیید merge به develop، اجرای ۳۱۰۰ همچنان فقط آخرین origin/develop را می‌گیرد. این واحد PDF را بدون تصرف فایل‌های PR #291 بررسی می‌کند.
+
 ## RESERVATION-TICKET-PDF-PASSENGER-0914 — PC-A — READY_FOR_REVIEW
 
 - درخواست مالک در 2026-09-14: رفع خطای دانلود PDF بلیط قرارداد SC-2026-000003 و حذف وضعیت «نام مسافر ثبت نشده» برای Snapshotهای جدید. Branch مستقل `codex/pc-a-ticket-pdf-passenger-0914` از `origin/develop@b62054e3`؛ COMPUTER_ID=PC-A.
