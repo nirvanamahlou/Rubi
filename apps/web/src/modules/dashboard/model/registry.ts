@@ -1,3 +1,9 @@
+import {
+  employeeCommercialKpis,
+  employeeCommercialSource,
+  employeeSalesSource,
+} from './employee-commercial-performance';
+
 export type DashboardDateBasis = 'created' | 'issued' | 'paid' | 'effective';
 export type DashboardVisualKind =
   'line' | 'bar' | 'stacked-bar' | 'funnel' | 'table' | 'queue';
@@ -70,6 +76,7 @@ const hrRecordExpiry = 'reporting_hr_record_expiry_facts_v1';
 const hotelRates = 'reporting_hotel_rate_comparison_facts_v1';
 
 export const dashboardKpis: readonly DashboardKpiDefinition[] = [
+  ...employeeCommercialKpis,
   {
     id: 'gross-sales',
     title: 'فروش ناخالص',
@@ -2275,6 +2282,52 @@ export const dashboardPages: readonly DashboardPageDefinition[] = [
     ],
   },
   {
+    id: 'employee-commercial-performance',
+    title: 'عملکرد کارکنان فروش',
+    technicalName: 'Employee Performance Analytics',
+    description:
+      'فعالیت CRM، فروش و لغو به تفکیک کارشناس؛ مقادیر فقط پس از انتشار Projection قابل ممیزی نمایش داده می‌شوند.',
+    kpiIds: employeeCommercialKpis.map((kpi) => kpi.id),
+    visualizations: [
+      visual('employee-leads-by-agent', 'لیدها به تفکیک کارشناس',
+        'تعداد لید یکتا، لید تبدیل‌شده و سهم از کل به تفکیک کارشناس، واحد و منشا.',
+        'bar', [employeeCommercialSource], 'reports.dashboard.crm.read', '/reports?view=catalog'),
+      visual('employee-calls-by-agent', 'تماس‌ها و تماس‌های موفق',
+        'تعداد تماس ورودی/خروجی و موفق به تفکیک کارشناس؛ روند تماس‌ها در بازه انتخابی.',
+        'stacked-bar', [employeeCommercialSource], 'reports.dashboard.crm.read', '/reports?view=catalog'),
+      visual('employee-followups-by-agent', 'پیگیری‌ها و موارد معوق',
+        'پیگیری انجام‌شده و معوق به تفکیک کارشناس و نوع فعالیت.',
+        'bar', [employeeCommercialSource], 'reports.dashboard.crm.read', '/reports?view=catalog'),
+      visual('employee-sales-count-by-agent', 'تعداد فروش کارشناسان',
+        'تعداد قراردادهای فروش نهایی به تفکیک کارشناس، خدمت و کانال.',
+        'bar', [employeeSalesSource, employeeCommercialSource], 'reports.dashboard.sales.read',
+        '/reports?report=sales_by_organization'),
+      visual('employee-sales-amount-by-agent', 'مبلغ فروش کارشناسان',
+        'مبلغ فروش نهایی و سهم هر کارشناس، جداگانه برای هر ارز.',
+        'bar', [employeeSalesSource, employeeCommercialSource], 'reports.dashboard.sales.read',
+        '/reports?report=sales_by_organization'),
+      visual('employee-conversion-by-agent', 'نرخ تبدیل لید به فروش',
+        'نسبت لیدهای یکتای تبدیل‌شده به کل لیدهای واجد شرایط هر کارشناس.',
+        'bar', [employeeCommercialSource], 'reports.dashboard.crm.read', '/reports?view=catalog'),
+      visual('employee-average-sale-by-agent', 'میانگین مبلغ فروش',
+        'ارزش متوسط هر قرارداد فروش نهایی به تفکیک کارشناس و ارز.',
+        'bar', [employeeSalesSource, employeeCommercialSource], 'reports.dashboard.sales.read',
+        '/reports?report=sales_by_organization'),
+      visual('employee-contracts-by-agent', 'قراردادهای ثبت‌شده و نهایی',
+        'تعداد قراردادهای یکتا به تفکیک وضعیت و کارشناس.',
+        'stacked-bar', [employeeSalesSource, employeeCommercialSource], 'reports.dashboard.sales.read',
+        '/reports?report=sales_by_organization'),
+      visual('employee-cancellations-by-agent', 'لغوها به تفکیک کارشناس و علت',
+        'تعداد لغوهای نهایی به تفکیک کارشناس، خدمت و دلیل؛ برای بررسی علت، نه نسبت دادن تقصیر.',
+        'stacked-bar', [employeeCommercialSource], 'reports.dashboard.sales.read',
+        '/reports?report=cancellations_refunds'),
+      visual('employee-performance-ranking', 'مقایسه عملکرد کارشناسان',
+        'رتبه‌بندی جداگانه مبلغ و تعداد فروش، نرخ تبدیل و پیگیری؛ بدون جمع شاخص‌های ناهم‌واحد.',
+        'bar', [employeeSalesSource, employeeCommercialSource], 'reports.dashboard.sales.read',
+        '/reports?report=sales_by_organization'),
+    ],
+  },
+  {
     id: 'tasks-automation',
     title: 'وظایف و اتوماسیون',
     technicalName: 'Tasks & Automation',
@@ -2342,7 +2395,7 @@ export const dashboardNavigation: readonly DashboardNavigationItem[] = [
       { pageId: 'marketing-growth' },
     ],
   },
-  { pageId: 'workforce-hr' },
+  { pageId: 'workforce-hr', children: [{ pageId: 'employee-commercial-performance' }] },
 ] as const;
 
 export const dashboardOpenDecisions = [

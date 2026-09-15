@@ -18,8 +18,8 @@ import {
 } from './registry';
 
 describe('dashboard registry', () => {
-  it('defines all 74 decision-oriented KPIs with auditable metadata', () => {
-    expect(dashboardKpis).toHaveLength(74);
+  it('defines all 84 decision-oriented KPIs with auditable metadata', () => {
+    expect(dashboardKpis).toHaveLength(84);
     expect(new Set(dashboardKpis.map((kpi) => kpi.id)).size).toBe(
       dashboardKpis.length,
     );
@@ -71,6 +71,26 @@ describe('dashboard registry', () => {
     expect(
       dashboardKpis.find((kpi) => kpi.id === 'returning-customers')?.rule,
     ).toContain('پیش از شروع بازه');
+  });
+
+  it('covers employee activity and sales without using sale count as converted lead count', () => {
+    const employeePage = dashboardPages.find(
+      (page) => page.id === 'employee-commercial-performance',
+    );
+    expect(employeePage?.kpiIds).toEqual(expect.arrayContaining([
+      'employee-lead-count', 'employee-call-count', 'employee-followup-count',
+      'employee-finalized-sales-count', 'employee-sales-amount',
+      'employee-lead-conversion', 'employee-average-sale',
+      'employee-contract-count', 'employee-cancellation-count',
+      'employee-sales-rank',
+    ]));
+    expect(employeePage?.visualizations).toHaveLength(10);
+    expect(
+      dashboardKpis.find((kpi) => kpi.id === 'employee-lead-conversion')?.rule,
+    ).toContain('تعداد قرارداد به‌جای تعداد لید تبدیل‌شده استفاده نمی‌شود');
+    expect(
+      dashboardKpis.find((kpi) => kpi.id === 'employee-average-sale')?.exclusions,
+    ).toContain('میانگین ارزهای متفاوت');
   });
 
   it('covers customer interests, destination, service and acquisition-channel analysis', () => {
@@ -233,8 +253,8 @@ describe('dashboard registry', () => {
     ).toContain('DISCOUNT');
   });
 
-  it('keeps fifteen decision-oriented pages with the requested sidebar hierarchy', () => {
-    expect(dashboardPages).toHaveLength(15);
+  it('keeps sixteen decision-oriented pages with the requested sidebar hierarchy', () => {
+    expect(dashboardPages).toHaveLength(16);
     expect(dashboardNavigation).toEqual([
       { pageId: 'executive-overview' },
       {
@@ -256,13 +276,13 @@ describe('dashboard registry', () => {
           { pageId: 'marketing-growth' },
         ],
       },
-      { pageId: 'workforce-hr' },
+      { pageId: 'workforce-hr', children: [{ pageId: 'employee-commercial-performance' }] },
     ]);
     const navigationIds = dashboardNavigation.flatMap((item) => [
       item.pageId,
       ...(item.children?.map((child) => child.pageId) ?? []),
     ]);
-    expect(navigationIds).toHaveLength(13);
+    expect(navigationIds).toHaveLength(14);
     expect(navigationIds).not.toContain('tasks-automation');
     expect(navigationIds).not.toContain('documents-reports-data-quality');
     expect(dashboardPages.map((page) => page.id)).toEqual(

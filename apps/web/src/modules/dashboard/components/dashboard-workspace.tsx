@@ -932,7 +932,7 @@ export function DashboardWorkspace() {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState<ReadonlySet<string>>(
-    () => new Set(['commercial-performance', 'customer-growth']),
+    () => new Set(['commercial-performance', 'customer-growth', 'workforce-hr']),
   );
   const legalEntity = useLegalEntityContext();
   const selection = legalEntity.context?.selection ?? null;
