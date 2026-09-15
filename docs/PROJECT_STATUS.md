@@ -1,5 +1,37 @@
 # وضعیت پروژه
 
+## 2026-09-15 — PACKAGE-PRICING-001 Finance ticket bridge and tour publications (isolated 3200)
+
+The owner-approved `origin/develop` merge was committed on the PC-A task
+branch only; PR #278 still targets `develop` and is not merged. A real Ticket
+offer now creates an amount-free, FK-linked Procurement purchase request;
+Finance records immutable adult/child purchase-cost revisions, invoice and
+payment evidence directly. Only a fully PAID cost is exposed through Finance's
+public projection to Sales; a partial payment or a legacy catalog estimate is
+not treated as confirmed. `/sales/pricing` reads the same tour, Reservations'
+hotel purchase batch and Finance paid flight rates, saves versioned drafts by
+tour/batch and publishes 18 independent hotel/room prices in the synthetic
+three-hotel example after maker/checker and currency/capacity/source recheck.
+The known occupancy codes have final package sale and net profit after
+commission; family remains hotel-only until occupancy is defined. A new
+synthetic offer produced a NEW Finance request without amount, a full synthetic
+Finance payment released its cost, draft version 1→2 reopened, self-publication
+returned 403, and a second synthetic reviewer published version 1. Two
+additive migrations succeeded in a fresh 67-migration isolated PG rehearsal
+and on the separate 3200 preview DB. Web3200/API4200 responded 200;
+Web3100, shared data, `develop` and `main` remain untouched. Browser visual QA
+was unavailable due the Windows sandbox ACL helper; component/API tests and
+production builds are the available evidence. Cross-currency FX, Sales
+contract quote selection and unknown family occupancy remain follow-ups.
+
+Final isolated smoke after rebuilt Web3200/API4200: 200 login/health,
+67/67 migrations up to date, one saved publication with 18 room prices,
+the same offer ID on an idempotent retry, and the original Web3100 listener
+unchanged. API/Web lint, typecheck, focused tests and production builds pass.
+
+The older preview-only entry below records the earlier stage, not the current
+publication status.
+
 ## 2026-09-15 — PACKAGE-PRICING-001 tour-cost Sales preview (not published)
 
 The /sales/pricing page is now a real Sales sidebar child and tour-cost

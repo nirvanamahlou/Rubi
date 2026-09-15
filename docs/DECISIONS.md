@@ -1,6 +1,6 @@
 # تصمیم‌های معماری
 
-## ADR-PACKAGE-FLIGHT-FINANCE-COST-0915 — owner clarification / integration pending
+## ADR-PACKAGE-FLIGHT-FINANCE-COST-0915 — owner clarification / isolated integration
 
 The owner clarified that adult/child flight amounts entered in Sales are sale
 prices. When a ticket is defined, its purchase-price request goes to Finance;
@@ -26,6 +26,25 @@ entry and settlement. Until that producer and its payment
 policy exist, package publication and total net-profit claims fail closed;
 hotel-only sale previews remain explicitly non-published. No historical
 published snapshot is changed by this clarification.
+
+Implementation on `codex/pc-a-package-pricing` after merging `origin/develop`
+into that task branch: publishing a real TicketPublishedOffer creates an
+amount-free Procurement envelope with a true offer FK/version. The older local
+Ticket product editor is a preview and does not create a duplicate financial
+request. Finance owns append-only adult/child unit purchase costs, invoice
+amount and payment evidence. Recorded partial payments keep the offer cost
+unavailable to Sales; only full settlement atomically marks the Procurement
+envelope PAID and exposes Finance's public paid-cost projection. A recorded
+payment is not an external bank transfer or accounting journal. Old free-form
+requests and catalog estimates remain readable but cannot qualify as a tour
+offer cost. Sales saves one editable draft per TourDeparture and HotelRate
+batch, then a different actor may publish immutable per-hotel/per-room prices
+after source, capacity, branch, version and currency recheck. Commission is
+subtracted from net profit without increasing customer sale. Business uplift
+applies per adult when this tour's offer cabin is BUSINESS. Known occupancy
+codes map to 1/2/3 adults or 2 adults plus 1/2 children; family occupancy is
+undefined in current data, so only its hotel-stay amount is published. Cross-
+currency publication remains fail-closed until an approved FX source exists.
 
 ## ADR-PACKAGE-PURCHASE-SOURCE-0915 — owner purchase-cost clarification
 

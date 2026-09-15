@@ -397,6 +397,41 @@ export interface FinanceInboxItemV1 {
   origin: 'PERSISTED_SOURCE';
 }
 
+/** Finance owns these confirmed purchase figures; a catalog estimate is never a cost. */
+export interface FinanceTicketCostCommandV1 {
+  version: 1;
+  adultUnitCost: string;
+  childUnitCost: string;
+  invoiceAmount: string;
+  currencyCode: string;
+  reason: string;
+}
+
+export interface FinanceTicketPaymentCommandV1 {
+  version: 1;
+  costRevisionId: string;
+  accountId: string;
+  paymentMethodId: string;
+  paidAmount: string;
+  exchangeRateToIrr: string;
+  transferAt: string;
+  paymentReference?: string | null;
+  reason: string;
+}
+
+export interface FinancePaidTicketCostV1 {
+  version: 1;
+  requestId: string;
+  offerId: string;
+  offerVersion: number;
+  costRevisionId: string;
+  adultUnitCost: string;
+  childUnitCost: string;
+  invoiceAmount: string;
+  currencyCode: string;
+  paidAt: string;
+}
+
 export type FinanceSettlementAccountKind = 'BANK' | 'CASH' | 'POS' | 'GATEWAY';
 
 export interface FinanceSettlementAccountV1 {

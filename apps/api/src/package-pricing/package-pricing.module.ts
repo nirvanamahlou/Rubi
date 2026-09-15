@@ -7,8 +7,11 @@ import { LegalEntitiesModule } from '../legal-entities/legal-entities.module';
 import { MasterDataModule } from '../master-data/master-data.module';
 import { HotelRatesModule } from '../reservations/hotel-rates.module';
 import { TicketRuntimeModule } from '../ticket-catalog/ticket-runtime.module';
+import { FinanceTicketCostModule } from '../finance/finance-ticket-cost.module';
 import { PackagePricingController } from './package-pricing.controller';
 import { PackagePricingService } from './package-pricing.service';
+import { PackageTourPricingController } from './package-tour-pricing.controller';
+import { PackageTourPricingService } from './package-tour-pricing.service';
 import {
   FailClosedPackagePricingSourceAdapter,
   PACKAGE_PRICING_SOURCE_PORT,
@@ -22,12 +25,14 @@ import {
     MasterDataModule,
     HotelRatesModule,
     TicketRuntimeModule,
+    FinanceTicketCostModule,
   ],
-  controllers: [PackagePricingController],
+  controllers: [PackagePricingController, PackageTourPricingController],
   providers: [
     AuthGuard,
     PermissionGuard,
     PackagePricingService,
+    PackageTourPricingService,
     FailClosedPackagePricingSourceAdapter,
     VersionedPackagePricingSourceAdapter,
     {

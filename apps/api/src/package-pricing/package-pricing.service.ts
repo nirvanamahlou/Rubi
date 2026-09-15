@@ -25,6 +25,7 @@ import * as Joi from 'joi';
 import { DatabaseService } from '../database/database.service';
 import { HotelPurchaseRatesPublicService } from '../reservations/hotel-purchase-rates.public';
 import { TourPublicService } from '../ticket-catalog/tour-public.service';
+import { FinanceTicketCostService } from '../finance/ticket-cost/finance-ticket-cost.service';
 import { LegalEntitiesService } from '../legal-entities/legal-entities.service';
 import {
   calculatePackagePrice,
@@ -163,6 +164,8 @@ export class PackagePricingService {
     private readonly tours: TourPublicService,
     @Inject(HotelPurchaseRatesPublicService)
     private readonly hotelPurchases: HotelPurchaseRatesPublicService,
+    @Inject(FinanceTicketCostService)
+    private readonly flightCosts: FinanceTicketCostService,
   ) {}
 
   async pricingTourDepartures(actor: AuthenticatedActor) {
@@ -174,12 +177,16 @@ export class PackagePricingService {
       tourDepartureId,
       actor.branchIds,
     );
-    const purchaseBatches = await this.hotelPurchases.forTour(
+    const offerIds = [tour.outboundOfferId, tour.returnOfferId].filter((id): id is string => !!id);
+    const [purchaseBatches, flightPurchaseCosts] = await Promise.all([
+      this.hotelPurchases.forTour(
       tour.branchId,
       tour.package.hotelIds,
       tour.startsOn,
       tour.endsOn,
-    );
+      ),
+      this.flightCosts.paidCostsForOffers(offerIds, tour.branchId),
+    ]);
     const nights =
       (Date.parse(`${tour.endsOn}T00:00:00.000Z`) -
         Date.parse(`${tour.startsOn}T00:00:00.000Z`)) /
@@ -189,6 +196,10 @@ export class PackagePricingService {
       tour,
       nights,
       purchaseBatches,
+      flightPurchaseCosts,
+      missingFlightOfferIds: offerIds.filter((id) =>
+        !flightPurchaseCosts.some((cost) => cost.offerId === id &&
+          cost.offerVersion === (id === tour.outboundOfferId ? tour.outbound.version : tour.returning?.version))),
       missingHotelIds: tour.package.hotelIds.filter(
         (hotelId) =>
           !purchaseBatches.some((batch) =>

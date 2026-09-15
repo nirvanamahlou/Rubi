@@ -1,5 +1,30 @@
 # مدل داده و ERD اولیه
 
+## PACKAGE-PRICING-001 — نرخ خرید بلیت مالی و قیمت منتشرشده تور (2026-09-15)
+
+`ProcurementTicketPurchaseRequest` برای درخواست‌های تازه می‌تواند بدون مبلغ/ارز
+ثبت شود و برای آفر واقعی، `offerId` یکتا با FK به `TicketPublishedOffer` و
+`offerVersion` دارد. مبلغ legacy کاتالوگ estimate است، نه خرید تأییدشده مالی.
+`FinanceTicketPurchaseCostRevision` قیمت خرید واحد بزرگسال/کودک، فاکتور، ارز،
+دلیل، actor و version را با FK درخواست/آفر/شعبه به‌صورت append-only ثبت می‌کند.
+`FinanceTicketPurchasePaymentRevision` مبلغ این پرداخت، جمع پرداخت، مانده،
+حساب، روش، نرخ به IRR، معادل ریال، زمان UTC، پیگیری و actor را immutable نگه
+می‌دارد. فقط آخرین revision با مانده صفر و status PAID به قرارداد عمومی فروش
+می‌رسد؛ یک estimate یا پرداخت جزئی به‌جای cost منتشر نمی‌شود.
+
+`PackagePricingTourDraft` با FK نوبت تور، batch خرید Reservations و شعبه، یک
+پیش‌نویس فعلی برای هر `(tourDepartureId,batchId)` و version optimistic دارد.
+مبالغ فروش پرواز، افزایش بیزینس و درصد کمیسیون Decimal+currency هستند.
+`PackagePricingTourAdjustment` با FK به ردیف نرخ خرید هتل، تغییر درصدی/ثابت
+هر گزینه را جدا ذخیره می‌کند. `PackagePricingTourPublishedVersion` append-only
+با FK پیش‌نویس، نرخ خرید مالی رفت/برگشت، ناشر و fingerprint منبع است؛
+`PackagePricingTourPublishedRoomPrice` با FK نسخه و ردیف هتل، مبلغ خرید/فروش
+اقامت و برای ترکیب‌های occupancy معلوم مبلغ خرید/فروش نهایی، کمیسیون و سود
+خالص Decimal را به ارز نسخه ذخیره می‌کند. نسخه و ردیف‌های منتشرشده UPDATE/DELETE
+نمی‌شوند؛ ویرایش پیش‌نویس فقط برای انتشار نسخهٔ تازه است. Family تا تعریف
+تعداد مسافر، packageSale/netProfit ندارد. مصرف جدول‌های دیگر فقط از سرویس عمومی
+مالک آن‌ها است؛ FKهای پایگاه برای یکپارچگی مرجع‌اند.
+
 ## TICKET-REPEAT-PURCHASE-0914
 
 Procurement owns `ProcurementTicketPurchaseRequest`: one current purchase request per branch and Ticket Catalog product reference. It stores a positive `Decimal(20,6)` amount, three-letter currency code, first service date, title and supplier snapshot, creator/idempotency audit, version and `PENDING/PAID/CANCELLED` status. A pending request may be revised in place with an incremented version; after Finance handles it the price is locked. Ticket Catalog and Finance use Procurement's public service and never query this table directly. Historical ticket definitions without `serviceDate` remain readable and are not backfilled.

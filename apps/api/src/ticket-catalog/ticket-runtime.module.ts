@@ -19,6 +19,7 @@ import { MasterDataModule } from '../master-data/master-data.module';
 import { TourPublicService } from './tour-public.service';
 import { TourController } from './tour.controller';
 import { DocumentsModule } from '../documents/documents.module';
+import { ProcurementModule } from '../procurement/procurement.module';
 
 @Controller('ticket-catalog/offers')
 @UseGuards(AuthGuard)
@@ -43,7 +44,7 @@ class TicketOffersController {
 }
 
 @Module({
-  imports: [IamModule, MasterDataModule, DocumentsModule],
+  imports: [IamModule, MasterDataModule, DocumentsModule, ProcurementModule],
   controllers: [TicketOffersController, TourController],
   providers: [AuthGuard, TicketPublicService, TourPublicService],
   exports: [TicketPublicService, TourPublicService],

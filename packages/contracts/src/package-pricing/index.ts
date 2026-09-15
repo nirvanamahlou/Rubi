@@ -1,4 +1,5 @@
 import type { TourDepartureV1 } from '../travel/tours';
+import type { FinancePaidTicketCostV1 } from '../finance';
 
 export const PACKAGE_PRICING_CONTRACT_VERSION = 1 as const;
 export const PACKAGE_PRICING_API_PREFIX = '/api/v1/sales/pricing' as const;
@@ -283,6 +284,72 @@ export interface PackageTourCostGridV1 {
   nights: number;
   purchaseBatches: readonly PackageTourHotelPurchaseBatchV1[];
   missingHotelIds: readonly string[];
+  /** Fully settled Finance rates for the actual outbound/return offers, never catalog estimates. */
+  flightPurchaseCosts: readonly FinancePaidTicketCostV1[];
+  missingFlightOfferIds: readonly string[];
+}
+
+export interface PackageTourDraftAdjustmentV1 {
+  hotelRateId: string;
+  direction: 'increase' | 'decrease';
+  mode: 'percent' | 'fixed';
+  value: string;
+}
+
+export interface PackageTourDraftSaveV1 {
+  version: 1;
+  expectedVersion: number;
+  tourDepartureId: string;
+  batchId: string;
+  currencyCode: string;
+  adultFlightSale: string;
+  childFlightSale: string;
+  businessUplift: string;
+  commissionPercent: string;
+  adjustments: readonly PackageTourDraftAdjustmentV1[];
+}
+
+export interface PackageTourDraftV1 extends PackageTourDraftSaveV1 {
+  id: string;
+  draftVersion: number;
+  lastEditorUserId: string;
+  updatedAt: string;
+}
+
+export interface PackageTourPublishedRoomPriceV1 {
+  hotelRateId: string;
+  roomCode: string;
+  hotelPurchase: string;
+  hotelSale: string;
+  packagePurchase: string | null;
+  packageSale: string | null;
+  commissionAmount: string | null;
+  netProfit: string | null;
+  currencyCode: string;
+}
+
+export interface PackageTourPublicationV1 {
+  version: 1;
+  id: string;
+  draftId: string;
+  priceVersion: number;
+  draftVersion: number;
+  tourVersion: number;
+  currencyCode: string;
+  adultFlightSale: string;
+  childFlightSale: string;
+  businessUplift: string;
+  commissionPercent: string;
+  outboundCostRevisionId: string;
+  returnCostRevisionId: string | null;
+  roomPrices: readonly PackageTourPublishedRoomPriceV1[];
+  publishedAt: string;
+}
+
+export interface PackageTourPublishV1 {
+  version: 1;
+  expectedDraftVersion: number;
+  reason: string;
 }
 
 export interface PackageRuleBreakdownLineV1 {

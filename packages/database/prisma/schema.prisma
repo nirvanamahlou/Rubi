@@ -30,11 +30,16 @@ enum AuditOutcome {
 }
 
 model User {
+  tourPricingDraftsCreated          PackagePricingTourDraft[]       @relation("TourPricingDraftCreator")
+  tourPricingDraftsUpdated          PackagePricingTourDraft[]       @relation("TourPricingDraftUpdater")
+  tourPricingVersionsPublished      PackagePricingTourPublishedVersion[] @relation("TourPricingPublisher")
   b2bOrganizationUser               B2bOrganizationUser?
   hotelRateBatches                  ReservationHotelRateBatch[]
   reservationManifestExports        ReservationManifestExport[]
   reservationServicePurchases       ReservationServicePurchase[]
   financeSupplierPaymentRevisions   FinanceSupplierPaymentRevision[]
+  financeTicketCostRevisions        FinanceTicketPurchaseCostRevision[] @relation("FinanceTicketCostActor")
+  financeTicketPaymentRevisions     FinanceTicketPurchasePaymentRevision[] @relation("FinanceTicketPaymentActor")
   financeSettlementAccountsCreated  FinanceSettlementAccount[]        @relation("FinanceSettlementAccountCreator")
   salesPaymentsFinanceReviewed      SalesContractPaymentEntry[]       @relation("SalesPaymentFinanceReviewer")
   ownedTravelIntakes                ReservationIntake[]               @relation("TravelSalesOwner")
@@ -183,6 +188,8 @@ model RolePermission {
 }
 
 model Branch {
+  tourPricingDrafts           PackagePricingTourDraft[]
+  financeTicketCostRevisions FinanceTicketPurchaseCostRevision[]
   hotelRateBatches           ReservationHotelRateBatch[]
   b2bOrganizationUsers       B2bOrganizationUser[]
   id                         String                      @id @default(uuid()) @db.Uuid
@@ -947,6 +954,7 @@ model MasterBankBranch {
 }
 
 model MasterPaymentMethod {
+  financeTicketPaymentRevisions FinanceTicketPurchasePaymentRevision[]
   b2bAgreementRevisions           B2bAgreementRevision[]
   financeSupplierPaymentRevisions FinanceSupplierPaymentRevision[]
   id                              String                           @id @default(uuid()) @db.Uuid
@@ -3771,6 +3779,7 @@ model TourPackage {
 }
 
 model TourDeparture {
+  pricingDrafts   PackagePricingTourDraft[]
   id              String                @id @default(uuid()) @db.Uuid
   version         Int                   @default(1)
   branchId        String                @db.Uuid
@@ -3814,6 +3823,8 @@ model TicketPublishedOffer {
   createdAt              DateTime                        @default(now()) @db.Timestamptz(3)
   audit                  TicketOfferAudit[]
   capacityAllocations    TicketOfferCapacityAllocation[]
+  purchaseRequest        ProcurementTicketPurchaseRequest?
+  financeTicketCosts     FinanceTicketPurchaseCostRevision[]
 
   @@unique([createdByUserId, createKey])
   @@index([branchId, originId, destinationId, departureAt])
@@ -3853,10 +3864,14 @@ model ProcurementTicketPurchaseRequest {
   branchId                String   @db.Uuid
   catalogProductReference String   @db.VarChar(160)
   title                   String   @db.VarChar(160)
-  serviceDate             DateTime @db.Date
+  serviceDate             DateTime? @db.Date
   supplierDisplaySnapshot String?  @db.VarChar(160)
-  amount                  Decimal  @db.Decimal(20, 6)
-  currencyCode            String   @db.VarChar(3)
+  amount                  Decimal? @db.Decimal(20, 6)
+  currencyCode            String?  @db.VarChar(3)
+  offerId                 String?  @unique @db.Uuid
+  offerVersion            Int?
+  offer                   TicketPublishedOffer? @relation(fields: [offerId], references: [id], onDelete: Restrict)
+  financeCosts            FinanceTicketPurchaseCostRevision[]
   status                  String   @default("PENDING") @db.VarChar(20)
   createdByUserId         String   @db.Uuid
   createKey               String   @db.VarChar(160)
@@ -3867,6 +3882,60 @@ model ProcurementTicketPurchaseRequest {
   @@unique([createdByUserId, createKey])
   @@unique([branchId, catalogProductReference])
   @@index([branchId, status, serviceDate])
+}
+
+/** Finance-owned immutable rates; legacy catalog estimates never count as confirmed costs. */
+model FinanceTicketPurchaseCostRevision {
+  outboundTourPublications PackagePricingTourPublishedVersion[] @relation("TourPricingOutboundCost")
+  returnTourPublications   PackagePricingTourPublishedVersion[] @relation("TourPricingReturnCost")
+  id              String                              @id @default(uuid()) @db.Uuid
+  requestId       String                              @db.Uuid
+  branchId        String                              @db.Uuid
+  offerId         String?                             @db.Uuid
+  offerVersion    Int?
+  version         Int
+  adultUnitCost   Decimal                             @db.Decimal(24, 4)
+  childUnitCost   Decimal                             @db.Decimal(24, 4)
+  invoiceAmount   Decimal                             @db.Decimal(24, 4)
+  currencyCode    String                              @db.VarChar(3)
+  reason          String                              @db.VarChar(500)
+  actorUserId     String                              @db.Uuid
+  createdAt       DateTime                            @default(now()) @db.Timestamptz(3)
+  request         ProcurementTicketPurchaseRequest    @relation(fields: [requestId], references: [id], onDelete: Restrict)
+  branch          Branch                              @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  offer           TicketPublishedOffer?               @relation(fields: [offerId], references: [id], onDelete: Restrict)
+  actor           User                                @relation("FinanceTicketCostActor", fields: [actorUserId], references: [id], onDelete: Restrict)
+  payments        FinanceTicketPurchasePaymentRevision[]
+
+  @@unique([requestId, version])
+  @@index([branchId, offerId, version])
+}
+
+/** Finance-owned append-only payment evidence; only full settlement releases cost to Sales. */
+model FinanceTicketPurchasePaymentRevision {
+  id                String                            @id @default(uuid()) @db.Uuid
+  costRevisionId    String                            @db.Uuid
+  version           Int
+  status            FinanceSupplierPaymentStatus
+  accountId         String                            @db.Uuid
+  paymentMethodId   String                            @db.Uuid
+  paidAmount        Decimal                           @db.Decimal(24, 4)
+  cumulativePaid    Decimal                           @db.Decimal(24, 4)
+  remainingAmount   Decimal                           @db.Decimal(24, 4)
+  exchangeRateToIrr Decimal                           @db.Decimal(24, 8)
+  rialEquivalent    Decimal                           @db.Decimal(24, 4)
+  transferAt        DateTime                          @db.Timestamptz(3)
+  paymentReference  String?                           @db.VarChar(160)
+  reason            String                            @db.VarChar(500)
+  actorUserId       String                            @db.Uuid
+  createdAt         DateTime                          @default(now()) @db.Timestamptz(3)
+  cost              FinanceTicketPurchaseCostRevision @relation(fields: [costRevisionId], references: [id], onDelete: Restrict)
+  account           FinanceSettlementAccount          @relation(fields: [accountId], references: [id], onDelete: Restrict)
+  paymentMethod     MasterPaymentMethod               @relation(fields: [paymentMethodId], references: [id], onDelete: Restrict)
+  actor             User                              @relation("FinanceTicketPaymentActor", fields: [actorUserId], references: [id], onDelete: Restrict)
+
+  @@unique([costRevisionId, version])
+  @@index([status, createdAt])
 }
 
 model ReservationIntake {
@@ -3967,6 +4036,7 @@ model FinanceSettlementAccount {
   bank             MasterBank?                      @relation(fields: [bankId], references: [id], onDelete: Restrict)
   createdBy        User                             @relation("FinanceSettlementAccountCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
   supplierPayments FinanceSupplierPaymentRevision[]
+  ticketPayments   FinanceTicketPurchasePaymentRevision[]
 
   @@unique([branchId, title, currencyCode])
   @@index([branchId, isActive, title])
@@ -4410,6 +4480,7 @@ model FinanceDeliveryRevision {
 }
 
 model ReservationHotelRateBatch {
+  pricingDrafts PackagePricingTourDraft[]
   id          String                      @id @default(uuid()) @db.Uuid
   branchId    String                      @db.Uuid
   actorId     String                      @db.Uuid
@@ -4430,6 +4501,8 @@ model ReservationHotelRateBatch {
 }
 
 model ReservationHotelGroupRate {
+  pricingAdjustments PackagePricingTourAdjustment[]
+  publishedRoomPrices PackagePricingTourPublishedRoomPrice[]
   id         String                    @id @default(uuid()) @db.Uuid
   batchId    String                    @db.Uuid
   hotelId    String                    @db.Uuid
@@ -4445,6 +4518,92 @@ model ReservationHotelGroupRate {
   @@unique([batchId, hotelId, brokerId])
   @@index([hotelId, batchId])
   @@map("reservation_hotel_group_rates")
+}
+
+/** Sales-owned, editable per-tour and per-hotel source batch. */
+model PackagePricingTourDraft {
+  id                 String                              @id @default(uuid()) @db.Uuid
+  tourDepartureId    String                              @db.Uuid
+  batchId            String                              @db.Uuid
+  branchId           String                              @db.Uuid
+  version            Int                                 @default(1)
+  currencyCode       String                              @db.VarChar(3)
+  adultFlightSale    Decimal                             @db.Decimal(24, 4)
+  childFlightSale    Decimal                             @db.Decimal(24, 4)
+  businessUplift     Decimal                             @db.Decimal(24, 4)
+  commissionPercent  Decimal                             @db.Decimal(10, 4)
+  createdByUserId    String                              @db.Uuid
+  updatedByUserId    String                              @db.Uuid
+  createdAt          DateTime                            @default(now()) @db.Timestamptz(3)
+  updatedAt          DateTime                            @updatedAt @db.Timestamptz(3)
+  tour               TourDeparture                       @relation(fields: [tourDepartureId], references: [id], onDelete: Restrict)
+  batch              ReservationHotelRateBatch          @relation(fields: [batchId], references: [id], onDelete: Restrict)
+  branch             Branch                              @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  creator            User                                @relation("TourPricingDraftCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  updater            User                                @relation("TourPricingDraftUpdater", fields: [updatedByUserId], references: [id], onDelete: Restrict)
+  adjustments        PackagePricingTourAdjustment[]
+  publications       PackagePricingTourPublishedVersion[]
+
+  @@unique([tourDepartureId, batchId])
+  @@index([branchId, updatedAt])
+}
+
+model PackagePricingTourAdjustment {
+  id          String                    @id @default(uuid()) @db.Uuid
+  draftId     String                    @db.Uuid
+  hotelRateId String                    @db.Uuid
+  direction   String                    @db.VarChar(12)
+  mode        String                    @db.VarChar(12)
+  value       Decimal                   @db.Decimal(24, 4)
+  draft       PackagePricingTourDraft   @relation(fields: [draftId], references: [id], onDelete: Restrict)
+  hotelRate   ReservationHotelGroupRate @relation(fields: [hotelRateId], references: [id], onDelete: Restrict)
+
+  @@unique([draftId, hotelRateId])
+}
+
+/** Immutable publication. Hotel alternatives are separate, never summed together. */
+model PackagePricingTourPublishedVersion {
+  id                         String                                @id @default(uuid()) @db.Uuid
+  draftId                    String                                @db.Uuid
+  version                    Int
+  draftVersion               Int
+  tourVersion                Int
+  sourceFingerprint          String                                @db.VarChar(64)
+  reason                     String                                @db.VarChar(500)
+  outboundCostRevisionId     String                                @db.Uuid
+  returnCostRevisionId       String?                               @db.Uuid
+  adultFlightSale            Decimal                               @db.Decimal(24, 4)
+  childFlightSale            Decimal                               @db.Decimal(24, 4)
+  businessUplift             Decimal                               @db.Decimal(24, 4)
+  commissionPercent          Decimal                               @db.Decimal(10, 4)
+  currencyCode               String                                @db.VarChar(3)
+  publishedByUserId          String                                @db.Uuid
+  publishedAt                DateTime                              @default(now()) @db.Timestamptz(3)
+  draft                      PackagePricingTourDraft              @relation(fields: [draftId], references: [id], onDelete: Restrict)
+  outboundCost               FinanceTicketPurchaseCostRevision    @relation("TourPricingOutboundCost", fields: [outboundCostRevisionId], references: [id], onDelete: Restrict)
+  returnCost                 FinanceTicketPurchaseCostRevision?   @relation("TourPricingReturnCost", fields: [returnCostRevisionId], references: [id], onDelete: Restrict)
+  publisher                  User                                  @relation("TourPricingPublisher", fields: [publishedByUserId], references: [id], onDelete: Restrict)
+  roomPrices                 PackagePricingTourPublishedRoomPrice[]
+
+  @@unique([draftId, version])
+}
+
+model PackagePricingTourPublishedRoomPrice {
+  id                 String                             @id @default(uuid()) @db.Uuid
+  publicationId      String                             @db.Uuid
+  hotelRateId        String                             @db.Uuid
+  roomCode           String                             @db.VarChar(32)
+  hotelPurchase      Decimal                            @db.Decimal(24, 4)
+  hotelSale          Decimal                            @db.Decimal(24, 4)
+  packagePurchase    Decimal?                           @db.Decimal(24, 4)
+  packageSale        Decimal?                           @db.Decimal(24, 4)
+  commissionAmount   Decimal?                           @db.Decimal(24, 4)
+  netProfit          Decimal?                           @db.Decimal(24, 4)
+  currencyCode       String                             @db.VarChar(3)
+  publication        PackagePricingTourPublishedVersion @relation(fields: [publicationId], references: [id], onDelete: Restrict)
+  hotelRate          ReservationHotelGroupRate          @relation(fields: [hotelRateId], references: [id], onDelete: Restrict)
+
+  @@unique([publicationId, hotelRateId, roomCode])
 }
 
 // Customer Affairs owns request, lead, support and referral persistence. Cross-module

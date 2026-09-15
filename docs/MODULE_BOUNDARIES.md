@@ -104,6 +104,18 @@ Purchase Order/Invoice و payable source است. سود از sale snapshot من�
 
 ### Sales/Reservations/Procurement در برابر Finance
 
+Pre-sale tour Ticket purchase exception (owner decision 2026-09-15): Ticket
+Catalog creates a request envelope for each real published offer, but does
+not set its confirmed purchase amount. Finance enters versioned adult/child
+purchase rates and invoice total, records direct settlement and publishes
+only paid cost through its public offer-ID/branch/version boundary. The
+Procurement request envelope is not an independent approval gate for this
+specific pre-sale ticket path; ordinary post-contract purchases remain under
+their existing Procurement/Finance responsibilities. Package Pricing may
+consume this Finance boundary but may not match a free-form ticket product
+reference to a tour offer by text, route or date, or treat an unpaid cost as
+final margin. See ADR-PACKAGE-FLIGHT-FINANCE-COST-0915.
+
 فروش/خرید سند تجاری و رزرواسیون سند عملیاتی را ایجاد می‌کنند؛ Finance invoice/payment/
 journal و `financial_release` را مالک است. هیچ ماژولی journal line را مستقیم درج نمی‌کند.
 صدور سند با تحویل آن یکی نیست؛ Sales فقط پس از release مالی اجازه مشاهده/ارسال فایل را دارد.

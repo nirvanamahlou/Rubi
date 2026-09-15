@@ -20,6 +20,7 @@ import { DatabaseService } from '../database/database.service';
 import { MasterTravelDirectory } from '../master-data/master-travel-directory';
 import { validateTourDeparture, validateTourPackage } from './tour-policy';
 import { DocumentsService } from '../documents/documents.service';
+import { ProcurementPublicService } from '../procurement/procurement-public.service';
 
 const included = {
   package: true,
@@ -106,6 +107,8 @@ export class TourPublicService {
     @Inject(MasterTravelDirectory)
     private readonly references: MasterTravelDirectory,
     @Inject(DocumentsService) private readonly documents?: DocumentsService,
+    @Inject(ProcurementPublicService)
+    private readonly purchases?: ProcurementPublicService,
   ) {}
 
   private authorize(
@@ -438,6 +441,12 @@ export class TourPublicService {
       throw new ConflictException(
         'شناسه درخواست با اطلاعات متفاوت تکرار شده است.',
       );
+    // Existing offers (created before this bridge) acquire typed Finance requests on tour creation.
+    if (!this.purchases)
+      throw new ConflictException('مرز عمومی درخواست خرید بلیت متصل نیست.');
+    await this.purchases.ensureOfferPurchaseRequest(row.outboundOffer);
+    if (row.returnOffer)
+      await this.purchases.ensureOfferPurchaseRequest(row.returnOffer);
     return { data: departureView(row) };
   }
 }

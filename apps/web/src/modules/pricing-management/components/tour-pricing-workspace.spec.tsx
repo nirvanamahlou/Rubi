@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { TourPricingWorkspace } from './tour-pricing-workspace';
 
 describe('tour package pricing workspace', () => {
-  it('shows the purchase-to-sale workflow under Sales without fake publication', () => {
+  it('shows real draft and publication actions under Sales, disabled until a tour is selected', () => {
     const html = renderToStaticMarkup(<TourPricingWorkspace />);
     expect(html).toContain('فروش و ارتباط با مشتری · ماژول مدیریت قیمت');
     expect(html).toContain('نوبت تور');
@@ -12,8 +12,9 @@ describe('tour package pricing workspace', () => {
     expect(html).toContain('پرواز کودک');
     expect(html).toContain('افزایش نرخ بیزینس');
     expect(html).toContain('کمیسیون');
-    expect(html).toContain('انتشار پس از دریافت نرخ خرید تأییدشده از مالی');
+    expect(html).toContain('ذخیره پیش‌نویس این بازه');
+    expect(html).toContain('انتشار نسخهٔ قیمت پکیج');
     expect(html).toContain('disabled');
-    expect(html).not.toContain('با موفقیت منتشر شد');
+    expect(html).not.toContain('این پیش‌نویس را شما ویرایش کرده‌اید');
   });
 });
