@@ -145,8 +145,8 @@ describe('Purchase draft accessibility and persisted input', () => {
     expect(html).toContain('خرید عمومی');
     expect(html).toContain('تجهیزات اداری');
     expect(html).toContain('عدد');
-    expect(html).toContain('ماهانه');
     expect(html).toContain('role="combobox"');
+    expect(html).not.toContain('دوره ارائه خدمت');
     expect(html).not.toContain('مقدار تازهٔ نوع خرید');
   });
   it('shows the persisted choices before the saved-options query finishes', () => {
@@ -196,7 +196,9 @@ describe('Purchase draft accessibility and persisted input', () => {
     expect(trigger('proc-purchaseType')).toContain('خرید عمومی');
     expect(trigger('proc-category')).toContain('ملزومات اداری');
     expect(trigger('item-1-unit')).toContain('ساعت');
-    expect(trigger('item-1-period')).toContain('ماهانه');
+    expect(trigger('item-1-period')).toBe('');
+    expect(html).toContain('اقلام و خدمات');
+    expect(html).not.toContain('دوره ارائه خدمت');
     expect(html).not.toContain('مقدار تازهٔ نوع خرید');
     expect(html).not.toContain('مقدار تازهٔ دسته خرید');
   });

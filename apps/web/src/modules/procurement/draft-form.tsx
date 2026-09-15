@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { ClipboardList, FileText, Package, ShoppingBag } from 'lucide-react';
 import type {
   DocumentListItemV1,
   ProcurementDraftV1,
@@ -233,7 +234,7 @@ export function DraftForm({
   };
   const savedItemChoice = (
     item: ProcurementDraftV1['items'][number],
-    key: 'unit' | 'period',
+    key: 'unit',
     label: string,
   ) => {
     const fieldId = `${item.id}-${key}`;
@@ -369,7 +370,7 @@ export function DraftForm({
     }
   }
   return (
-    <Card className="p-5 sm:p-7">
+    <Card className="overflow-hidden p-5 sm:p-7">
       <form
         onSubmit={(event) => {
           event.preventDefault();
@@ -377,14 +378,25 @@ export function DraftForm({
         }}
         className="space-y-7"
       >
-        <div>
-          <h2 ref={heading} tabIndex={-1} className="text-xl font-bold">
-            {request ? `ویرایش ${request.number}` : 'درخواست خرید جدید'}
-          </h2>
-          <p className="mt-2 text-sm text-muted-foreground">
-            پیش‌نویس ناقص قابل ذخیره است. اطلاعات مورد نیاز هنگام ارسال کنترل
-            می‌شود.
-          </p>
+        <div className="-mx-5 -mt-5 flex flex-wrap items-center gap-4 border-b border-primary/15 bg-gradient-to-l from-primary/10 via-primary/5 to-surface px-5 py-5 sm:-mx-7 sm:-mt-7 sm:px-7 sm:py-6">
+          <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10 text-primary shadow-sm">
+            <ShoppingBag aria-hidden="true" className="size-6" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <h2
+              ref={heading}
+              tabIndex={-1}
+              className="break-words text-xl font-extrabold tracking-tight text-foreground sm:text-2xl"
+            >
+              {request ? `ویرایش ${request.number}` : 'درخواست خرید جدید'}
+            </h2>
+            <p className="mt-1 text-xs leading-6 text-muted-foreground sm:text-sm">
+              پیش‌نویس قابل ذخیره است؛ کامل بودن فرم هنگام ارسال بررسی می‌شود.
+            </p>
+          </div>
+          <span className="rounded-full border border-primary/20 bg-surface/80 px-3 py-1 text-xs font-semibold text-primary">
+            {request ? 'ویرایش پیش‌نویس' : 'ثبت پیش‌نویس'}
+          </span>
         </div>
         {error && (
           <Alert tone="error" title="ذخیره انجام نشد" description={error} />
@@ -462,8 +474,18 @@ export function DraftForm({
             )}
           </div>
         )}
-        <fieldset disabled={busy} className="space-y-6">
-          <legend className="mb-4 font-bold">اطلاعات درخواست</legend>
+        <fieldset
+          disabled={busy}
+          className="min-w-0 space-y-6 rounded-2xl border border-primary/15 bg-gradient-to-b from-primary/5 via-surface to-surface p-4 sm:p-6"
+        >
+          <legend className="mb-5 w-full border-b border-primary/15 pb-4 text-base font-bold text-foreground">
+            <span className="flex items-center gap-3">
+              <span className="flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                <ClipboardList aria-hidden="true" className="size-5" />
+              </span>
+              اطلاعات درخواست
+            </span>
+          </legend>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {text('title', 'عنوان درخواست')}
             <FormField id="proc-requester" label="درخواست‌کننده">
@@ -649,17 +671,35 @@ export function DraftForm({
             </FormField>
           </div>
         </fieldset>
-        <fieldset disabled={busy} className="space-y-4">
-          <legend className="mb-4 font-bold">اقلام و خدمات</legend>
+        <fieldset
+          disabled={busy}
+          className="min-w-0 space-y-4 rounded-2xl border border-violet-200/70 bg-gradient-to-b from-violet-500/5 via-surface to-surface p-4 dark:border-violet-400/25 sm:p-6"
+        >
+          <legend className="mb-5 w-full border-b border-violet-200/70 pb-4 text-base font-bold text-foreground dark:border-violet-400/25">
+            <span className="flex items-center gap-3">
+              <span className="flex size-10 items-center justify-center rounded-xl bg-violet-500/10 text-violet-700 dark:text-violet-300">
+                <Package aria-hidden="true" className="size-5" />
+              </span>
+              اقلام و خدمات
+              <span className="ms-auto text-xs font-medium text-muted-foreground">
+                {draft.items.length.toLocaleString('fa-IR')} ردیف
+              </span>
+            </span>
+          </legend>
           {draft.items.map((item, index) => (
             <div
               key={item.id}
-              className="space-y-4 rounded-xl border border-border bg-muted/20 p-4"
+              className="space-y-4 rounded-xl border border-violet-200/70 bg-violet-500/[0.03] p-4 dark:border-violet-400/25"
             >
-              <div className="flex items-center justify-between">
-                <h3 className="font-semibold">
-                  ردیف {(index + 1).toLocaleString('fa-IR')}
-                </h3>
+              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-violet-200/70 pb-3 dark:border-violet-400/25">
+                <div className="flex items-center gap-2">
+                  <h3 className="font-bold text-foreground">
+                    ردیف {(index + 1).toLocaleString('fa-IR')}
+                  </h3>
+                  <span className="rounded-full bg-violet-500/10 px-2.5 py-1 text-xs font-semibold text-violet-700 dark:text-violet-300">
+                    {item.kind === 'GOODS' ? 'کالا' : 'خدمت'}
+                  </span>
+                </div>
                 <Button
                   type="button"
                   variant="ghost"
@@ -703,10 +743,9 @@ export function DraftForm({
                     ['specification', 'مشخصات فنی'],
                     ['quantity', 'مقدار'],
                     ['unit', 'واحد سنجش'],
-                    ['period', 'دوره ارائه خدمت'],
                   ] as const
                 ).map(([key, label]) =>
-                  key === 'unit' || key === 'period' ? (
+                  key === 'unit' ? (
                     <div key={key}>{savedItemChoice(item, key, label)}</div>
                   ) : (
                     <FormField key={key} id={`${item.id}-${key}`} label={label}>
@@ -758,8 +797,18 @@ export function DraftForm({
             افزودن کالا یا خدمت
           </Button>
         </fieldset>
-        <fieldset disabled={busy} className="space-y-4">
-          <legend className="mb-4 font-bold">اسناد و مرجع مبدأ</legend>
+        <fieldset
+          disabled={busy}
+          className="min-w-0 space-y-4 rounded-2xl border border-teal-200/70 bg-gradient-to-b from-teal-500/5 via-surface to-surface p-4 dark:border-teal-400/25 sm:p-6"
+        >
+          <legend className="mb-5 w-full border-b border-teal-200/70 pb-4 text-base font-bold text-foreground dark:border-teal-400/25">
+            <span className="flex items-center gap-3">
+              <span className="flex size-10 items-center justify-center rounded-xl bg-teal-500/10 text-teal-700 dark:text-teal-300">
+                <FileText aria-hidden="true" className="size-5" />
+              </span>
+              اسناد و مرجع مبدأ
+            </span>
+          </legend>
           <FormField id="proc-origin" label="منشأ درخواست">
             <ProcurementSelect
               id="proc-origin"
