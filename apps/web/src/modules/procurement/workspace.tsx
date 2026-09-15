@@ -1,5 +1,12 @@
 'use client';
-import { Suspense, useEffect, useRef, useState } from 'react';
+import {
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { useSearchParams } from 'next/navigation';
 import {
   BadgeCheck,
@@ -39,6 +46,10 @@ import { sampleRequests, type ProcurementListRow } from './sample-requests';
 import { ProcurementSelect } from './procurement-select';
 import { MasterDataDateRangeFilter } from '@/modules/master-data/components/master-data-date-range-filter';
 import { cn } from '@/lib/utils';
+import {
+  usePageBreadcrumbs,
+  type PageBreadcrumb,
+} from '@/components/layout/page-breadcrumbs';
 
 const groups = [
   'میزکار خرید',
@@ -229,34 +240,40 @@ function WorkspaceState({
     window.addEventListener('popstate', restoreAddress);
     return () => window.removeEventListener('popstate', restoreAddress);
   }, []);
-  function updateAddress(section: number, requestId: string | null) {
-    const url = new URL(window.location.href);
-    url.searchParams.set('section', sectionKeys[section] ?? 'home');
-    if (requestId) url.searchParams.set('request', requestId);
-    else url.searchParams.delete('request');
-    const next = `${url.pathname}${url.search}${url.hash}`;
-    if (
-      next !==
-      `${window.location.pathname}${window.location.search}${window.location.hash}`
-    )
-      window.history.pushState(window.history.state, '', next);
-  }
-  function navigateGroup(index: number) {
-    setGroup(index);
-    setPage(1);
-    setSelectedId(null);
-    setCreating(false);
-    setEditing(false);
-    updateAddress(index, null);
-  }
+  const updateAddress = useCallback(
+    (section: number, requestId: string | null) => {
+      const url = new URL(window.location.href);
+      url.searchParams.set('section', sectionKeys[section] ?? 'home');
+      if (requestId) url.searchParams.set('request', requestId);
+      else url.searchParams.delete('request');
+      const next = `${url.pathname}${url.search}${url.hash}`;
+      if (
+        next !==
+        `${window.location.pathname}${window.location.search}${window.location.hash}`
+      )
+        window.history.pushState(window.history.state, '', next);
+    },
+    [],
+  );
+  const navigateGroup = useCallback(
+    (index: number) => {
+      setGroup(index);
+      setPage(1);
+      setSelectedId(null);
+      setCreating(false);
+      setEditing(false);
+      updateAddress(index, null);
+    },
+    [updateAddress],
+  );
   function openRequest(id: string) {
     setSelectedId(id);
     updateAddress(group, id);
   }
-  function closeRequest() {
+  const closeRequest = useCallback(() => {
     setSelectedId(null);
     updateAddress(group, null);
-  }
+  }, [group, updateAddress]);
   useEffect(() => {
     const timer = setTimeout(() => {
       setQuerySearch(search);
@@ -296,6 +313,31 @@ function WorkspaceState({
     enabled: !!selectedId,
     retry: false,
   });
+  const detailNumber = detail.data?.number ?? null;
+  const breadcrumbs = useMemo<readonly PageBreadcrumb[]>(() => {
+    const items: PageBreadcrumb[] = [
+      {
+        key: 'purchases',
+        title: 'خرید و تأمین',
+        ...(group > 0 || selectedId
+          ? { onSelect: () => navigateGroup(0) }
+          : {}),
+      },
+    ];
+    if (group > 0)
+      items.push({
+        key: sectionKeys[group] ?? 'home',
+        title: groups[group] ?? groups[0],
+        ...(selectedId ? { onSelect: closeRequest } : {}),
+      });
+    if (selectedId && detailNumber)
+      items.push({
+        key: `request-${selectedId}`,
+        title: detailNumber,
+      });
+    return items;
+  }, [group, selectedId, detailNumber, navigateGroup, closeRequest]);
+  usePageBreadcrumbs('/purchases', breadcrumbs);
   const showSamples =
     group === 0 &&
     page === 1 &&
@@ -410,12 +452,7 @@ function WorkspaceState({
         <>
           <header className="flex flex-wrap items-end justify-between gap-3">
             <div>
-              <p className="text-xs text-muted-foreground">
-                روبی / خرید و تأمین
-              </p>
-              <h1 className="mt-2 text-2xl font-black sm:text-3xl">
-                میزکار خرید
-              </h1>
+              <h1 className="text-2xl font-black sm:text-3xl">میزکار خرید</h1>
             </div>
             {can('procurement.request.create') && (
               <Button onClick={() => setCreating(true)}>

@@ -338,12 +338,6 @@ export function InternalSections({
 
   return (
     <div className="space-y-5" data-procurement-section={group}>
-      <Link
-        href="/purchases"
-        className="inline-block text-xs text-muted-foreground hover:text-primary"
-      >
-        روبی / خرید و تأمین
-      </Link>
       <PageHeader
         title={title.title}
         actions={
