@@ -2551,3 +2551,9 @@ Contracts/API/Web و build تولیدی API/Web موفق‌اند؛ هیچ Migra
 ## LOCAL-ALL-SECTIONS-3100-0913 — ACTIVE
 
 Combined develop, latest published Customer Affairs forms/reports, Workbench performance and Finance inbox are active at Web3100/API4191. Code/launcher commit 2fd10a9f, Web build LYH1PTQ_i1saQILyrG74V. 98 targeted tests, scoped lint, sequential API typecheck, full build and final HTTP smoke passed. Existing database and storage retained; no migration/seed/role assignment. Port4190 was replaced because Fetch restricts it. See tasks/LOCAL-ALL-SECTIONS-3100-0913.md.
+
+## 2026-09-14 — کارت بلیط و قالب مقصد در MANIFEST (PC-A)
+
+در بخش MANIFEST، جست‌وجوی بازه همهٔ بلیط‌های رفت و برگشت موجود در آخرین نسخهٔ قراردادهای رزواسیون را به شکل کارت نمایش می‌دهد. هر کارت ایرلاین، شماره پرواز، مسیر، زمان، تعداد قرارداد و مسافر و وضعیت قالب را دارد. قالب فعال XLSX با ایرلاین، مقصد و تاریخ اعتبار تطبیق داده می‌شود؛ کارت بدون قالب دلیل عدم امکان خروجی را نشان می‌دهد و غیرفعال است. خروجی کارت پشتیبانی‌شده فقط مسافران همان بلیط را در فایل مرجع ذخیره‌شده در Documents قرار می‌دهد و شرط تأیید مالی و انتخاب «فقط جدید/همه» حفظ شده است.
+
+Reservations از API عمومی Master Data برای تطبیق قالب و از مرز عمومی و auditشدهٔ Documents برای خواندن فایل CLEAN استفاده می‌کند. هشت تست هدفمند API و یک تست Web، lint محدوده، typecheck Contracts/API/Web و build تولیدی API/Web موفق‌اند. Migration، Seed، تغییر دادهٔ مسافر، dependency یا جابه‌جایی localhost انجام نشده است.
