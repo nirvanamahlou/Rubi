@@ -15,6 +15,7 @@ const actor = {
 
 const emptyTicketPurchases = () => ({
   listFinanceTicketPurchases: vi.fn().mockResolvedValue([]),
+  listFinanceInvoiceSources: vi.fn().mockResolvedValue([]),
 });
 
 describe('FinanceInboxService', () => {
@@ -101,6 +102,25 @@ describe('FinanceInboxService', () => {
           createdAt: '2026-09-12T11:00:00.000Z',
         },
       ]),
+      listFinanceInvoiceSources: vi.fn().mockResolvedValue([
+        {
+          contract: 'procurement.finance-source.v1',
+          sourceId: 'invoice-1',
+          sourceVersion: 2,
+          orderId: 'order-1',
+          orderVersion: 3,
+          supplier: {
+            id: 'supplier-1',
+            version: 1,
+            label: 'تأمین‌کننده آزمایشی',
+          },
+          amount: '35000000',
+          currencyCode: 'IRR',
+          branchId: 'branch-a',
+          dueAt: '2026-09-16T00:00:00.000Z',
+          handoffCreatedAt: '2026-09-12T12:00:00.000Z',
+        },
+      ]),
     };
     const result = await new FinanceInboxService(
       sales,
@@ -114,6 +134,7 @@ describe('FinanceInboxService', () => {
       'SALES',
       'HR',
       'PURCHASES',
+      'PURCHASES',
       'RESERVATIONS',
     ]);
     expect(
@@ -123,13 +144,27 @@ describe('FinanceInboxService', () => {
       { source: 'SALES', connection: 'CONNECTED', itemCount: 1 },
       { source: 'HR', connection: 'CONNECTED', itemCount: 1 },
       { source: 'RESERVATIONS', connection: 'CONNECTED', itemCount: 1 },
-      { source: 'PURCHASES', connection: 'CONNECTED', itemCount: 1 },
+      { source: 'PURCHASES', connection: 'CONNECTED', itemCount: 2 },
     ]);
     expect(hr.list).toHaveBeenCalledWith({ target: 'finance', page: 1 }, actor);
     expect(reservations.list).toHaveBeenCalledWith(['branch-a']);
     expect(procurement.listFinanceTicketPurchases).toHaveBeenCalledWith([
       'branch-a',
     ]);
+    expect(procurement.listFinanceInvoiceSources).toHaveBeenCalledWith([
+      'branch-a',
+    ]);
+    expect(
+      result.items.find(
+        ({ sourceReference }) => sourceReference === 'invoice-1',
+      ),
+    ).toMatchObject({
+      source: 'PURCHASES',
+      status: 'UNDER_REVIEW',
+      origin: 'PERSISTED_SOURCE',
+      amount: { amount: '35000000', currencyCode: 'IRR' },
+      branchReference: 'branch-a',
+    });
     expect(result.items[0]).toMatchObject({
       sourceContextReference: 'contract-1',
       settlement: null,

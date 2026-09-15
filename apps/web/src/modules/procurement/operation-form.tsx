@@ -119,6 +119,17 @@ const operations: Operation[] = [
     groups: ['invoices', 'handoffs'],
   },
 ];
+const primaryAction: Record<string, string> = {
+  quotations: 'QUOTE',
+  orders: 'ORDER',
+  receipts: 'RECEIVE',
+  adjustments: 'ADJUST_RECEIPT',
+  acceptances: 'ACCEPT_SERVICE',
+  discrepancies: 'DISCREPANCY',
+  returns: 'RETURN',
+  invoices: 'INVOICE',
+  handoffs: 'SUBMIT_FINANCE',
+};
 type Row = Record<string, unknown>;
 const flatten = (row: Row): Row => ({
   ...(typeof row.data === 'object' && row.data !== null ? row.data : {}),
@@ -171,25 +182,36 @@ export function OperationForm({
       (value.action !== 'ADJUST_RECEIPT' ||
         bootstrap.permissions.includes('procurement.receipt.manage')),
   );
-  const [action, setAction] = useState('');
+  const [action, setAction] = useState(
+    () =>
+      available.find((value) => value.action === primaryAction[kind])?.action ??
+      available[0]?.action ??
+      '',
+  );
   if (!available.length) return null;
   return (
     <Card className="space-y-4 p-5">
-      <FormField id="proc-operation" label="عملیات جدید">
-        <ProcurementSelect
-          id="proc-operation"
-          className={selectClass}
-          value={action}
-          onChange={(event) => setAction(event.target.value)}
-        >
-          <option value="">انتخاب عملیات</option>
-          {available.map((value) => (
-            <option key={value.action} value={value.action}>
-              {value.label}
-            </option>
-          ))}
-        </ProcurementSelect>
-      </FormField>
+      <h3 className="font-bold text-[#113975]">
+        فرم{' '}
+        {available.find((value) => value.action === action)?.label ??
+          available[0]?.label}
+      </h3>
+      {available.length > 1 && (
+        <FormField id="proc-operation" label="نوع عملیات این بخش">
+          <ProcurementSelect
+            id="proc-operation"
+            className={selectClass}
+            value={action}
+            onChange={(event) => setAction(event.target.value)}
+          >
+            {available.map((value) => (
+              <option key={value.action} value={value.action}>
+                {value.label}
+              </option>
+            ))}
+          </ProcurementSelect>
+        </FormField>
+      )}
       {action && available.some((value) => value.action === action) && (
         <OperationFields
           key={action}

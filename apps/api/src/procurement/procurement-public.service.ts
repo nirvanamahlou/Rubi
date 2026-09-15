@@ -125,7 +125,9 @@ export class ProcurementPublicService {
   /** Finance reads the immutable, already-matched invoice source via this boundary. */
   async listFinanceInvoiceSources(
     branchIds: readonly string[],
-  ): Promise<readonly ProcurementFinanceSourceV1[]> {
+  ): Promise<
+    readonly (ProcurementFinanceSourceV1 & { handoffCreatedAt: string })[]
+  > {
     if (!branchIds.length) return [];
     const rows = await this.database.client.procurementFinanceHandoff.findMany({
       where: {
@@ -136,11 +138,12 @@ export class ProcurementPublicService {
       },
       orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
       take: 500,
-      select: { payload: true },
+      select: { payload: true, createdAt: true },
     });
-    return rows.map(
-      (row) => row.payload as unknown as ProcurementFinanceSourceV1,
-    );
+    return rows.map((row) => ({
+      ...(row.payload as unknown as ProcurementFinanceSourceV1),
+      handoffCreatedAt: row.createdAt.toISOString(),
+    }));
   }
 
   /** Owner-scoped outbox projections for Tasks and Integrations adapters. */

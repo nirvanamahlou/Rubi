@@ -56,13 +56,19 @@ export class FinanceInboxService {
         message: 'مجوز مشاهده کارتابل مالی وجود ندارد.',
       });
 
-    const [salesResult, hrResult, reservationsResult, ticketResult] =
-      await Promise.allSettled([
-        this.sales.financeInbox(actor),
-        this.hr.list({ target: 'finance', page: 1 }, actor),
-        this.reservations.list(actor.branchIds),
-        this.procurement.listFinanceTicketPurchases(actor.branchIds),
-      ]);
+    const [
+      salesResult,
+      hrResult,
+      reservationsResult,
+      ticketResult,
+      invoiceResult,
+    ] = await Promise.allSettled([
+      this.sales.financeInbox(actor),
+      this.hr.list({ target: 'finance', page: 1 }, actor),
+      this.reservations.list(actor.branchIds),
+      this.procurement.listFinanceTicketPurchases(actor.branchIds),
+      this.procurement.listFinanceInvoiceSources(actor.branchIds),
+    ]);
     const salesItems =
       salesResult.status === 'fulfilled' ? salesResult.value : [];
     const hrItems = hrResult.status === 'fulfilled' ? hrResult.value.items : [];
@@ -76,6 +82,8 @@ export class FinanceInboxService {
         : [];
     const ticketItems =
       ticketResult.status === 'fulfilled' ? ticketResult.value : [];
+    const invoiceItems =
+      invoiceResult.status === 'fulfilled' ? invoiceResult.value : [];
 
     const items: FinanceInboxItemV1[] = [
       ...salesItems.map((item): FinanceInboxItemV1 => ({
@@ -180,6 +188,30 @@ export class FinanceInboxService {
         sourceVersion: purchase.requestVersion,
         origin: 'PERSISTED_SOURCE',
       })),
+      ...invoiceItems.map((invoice): FinanceInboxItemV1 => ({
+        version: 1,
+        id: `purchases:invoice:${invoice.sourceId}:${invoice.sourceVersion}`,
+        source: 'PURCHASES',
+        kind: 'PAYMENT_REQUEST',
+        sourceReference: invoice.sourceId,
+        sourceContextReference: invoice.orderId,
+        contractReference: null,
+        title: `فاکتور خرید ${invoice.sourceId}`,
+        partyDisplaySnapshot: invoice.supplier.label,
+        description: `فاکتور تطبیق‌شدهٔ سفارش خرید نسخه ${invoice.orderVersion}`,
+        amount: {
+          amount: invoice.amount,
+          currencyCode: invoice.currencyCode,
+        },
+        settlement: null,
+        status: 'UNDER_REVIEW',
+        dueAt: invoice.dueAt,
+        createdAt: invoice.handoffCreatedAt,
+        requesterDisplaySnapshot: null,
+        branchReference: invoice.branchId,
+        sourceVersion: invoice.sourceVersion,
+        origin: 'PERSISTED_SOURCE',
+      })),
     ].sort((left, right) => {
       const due = (left.dueAt ?? '9999').localeCompare(right.dueAt ?? '9999');
       return due || right.createdAt.localeCompare(left.createdAt);
@@ -207,12 +239,16 @@ export class FinanceInboxService {
       {
         source: 'PURCHASES',
         connection:
-          ticketResult.status === 'fulfilled' ? 'CONNECTED' : 'UNAVAILABLE',
-        itemCount: ticketItems.length,
+          ticketResult.status === 'fulfilled' &&
+          invoiceResult.status === 'fulfilled'
+            ? 'CONNECTED'
+            : 'UNAVAILABLE',
+        itemCount: ticketItems.length + invoiceItems.length,
         message:
-          ticketResult.status === 'fulfilled'
-            ? 'قیمت خرید بلیط‌های تعریف‌شده و منتظر رسیدگی مالی'
-            : 'منبع قیمت خرید بلیط در این لحظه پاسخ نداد.',
+          ticketResult.status === 'fulfilled' &&
+          invoiceResult.status === 'fulfilled'
+            ? 'قیمت خرید بلیط و فاکتورهای عمومی تطبیق‌شدهٔ منتظر بررسی مالی'
+            : 'یکی از منابع خرید در این لحظه پاسخ نداد.',
       },
     ];
     return {

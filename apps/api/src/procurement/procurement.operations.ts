@@ -1405,8 +1405,8 @@ export class ProcurementOperations {
             invoiceId,
             invoiceVersion: invoice.version,
             sourceKey,
-            status: 'NOT_CONNECTED',
-            lastErrorCode: 'FINANCE_NOT_CONNECTED',
+            status: 'PENDING',
+            lastErrorCode: null,
             payload: json(payload),
           },
         });
@@ -1415,7 +1415,7 @@ export class ProcurementOperations {
             requestId,
             handoffId: handoff.id,
             eventType: 'procurement.finance-source.v1',
-            status: 'BLOCKED',
+            status: 'PENDING',
             payload: handoff.payload as Prisma.InputJsonValue,
           },
         });

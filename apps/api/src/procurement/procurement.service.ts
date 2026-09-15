@@ -249,7 +249,7 @@ export class ProcurementService {
       })),
       requester,
       policy: 'POLICY_NOT_CONFIGURED' as const,
-      finance: 'NOT_CONNECTED' as const,
+      finance: 'CONNECTED' as const,
       documents: 'AVAILABLE' as const,
       travel: 'NOT_CONNECTED' as const,
     };

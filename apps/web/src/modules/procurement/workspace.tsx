@@ -1,6 +1,7 @@
 'use client';
 import { Suspense, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type {
   ProcurementPermission,
@@ -25,7 +26,11 @@ import {
   formatProcurementDate,
   formatProcurementRecordValue,
 } from './presentation';
-import { sampleRequests, type ProcurementListRow } from './sample-requests';
+import {
+  sampleRequests,
+  sampleSuppliers,
+  type ProcurementListRow,
+} from './sample-requests';
 import { ProcurementSelect } from './procurement-select';
 
 const groups = [
@@ -259,7 +264,7 @@ function WorkspaceState({
     retry: false,
   });
   const showSamples =
-    (group === 0 || group === 1) &&
+    group !== 3 &&
     page === 1 &&
     !status &&
     !search &&
@@ -267,7 +272,11 @@ function WorkspaceState({
     list.isSuccess &&
     list.data.items.length === 0;
   const rows: ProcurementListRow[] = showSamples
-    ? sampleRequests
+    ? sampleRequests.filter((item) =>
+        group === 0 || group === 1
+          ? item.section === undefined
+          : item.section === group,
+      )
     : (list.data?.items ?? []);
   const relatedStart =
     group === 1 || group === 2
@@ -392,14 +401,15 @@ function WorkspaceState({
                   : 'پرونده‌ها و عملیات این بخش را پیگیری کنید.'}
               </p>
             </div>
-            {can('procurement.request.create') && (
-              <Button
-                className="bg-[#1973df] text-white hover:bg-[#1657b5]"
-                onClick={() => setCreating(true)}
-              >
-                درخواست خرید جدید
-              </Button>
-            )}
+            {(group === 0 || group === 1) &&
+              can('procurement.request.create') && (
+                <Button
+                  className="bg-[#1973df] text-white hover:bg-[#1657b5]"
+                  onClick={() => setCreating(true)}
+                >
+                  درخواست خرید جدید
+                </Button>
+              )}
           </div>
           {group === 0 && (
             <>
@@ -543,6 +553,14 @@ function WorkspaceState({
               description="ثبت و تطبیق فاکتور در خرید انجام می‌شود. تا پذیرش قرارداد توسط مالی، ایجاد تعهد یا ثبت مالی تأیید نمی‌شود."
             />
           )}
+          {group === 7 && bootstrap.finance === 'CONNECTED' && (
+            <Link
+              className="inline-flex rounded-lg border border-[#dfe8f4] bg-white px-4 py-2 text-sm font-semibold text-[#1657b5] hover:bg-[#edf4ff]"
+              href="/finance/requests"
+            >
+              مشاهدهٔ فاکتورهای ارجاع‌شده در کارتابل اصلی مالی ←
+            </Link>
+          )}
           <Card className="grid gap-4 rounded-[14px] border-[#dfe8f4] bg-white p-4 sm:grid-cols-2">
             <FormField
               id="proc-search"
@@ -599,14 +617,24 @@ function WorkspaceState({
                   title="اطلاعات مرجع تأمین‌کنندگان"
                   description="نام، وضعیت فعالیت و وضعیت همکاری از اطلاعات پایه دریافت می‌شود. ویرایش اطلاعات مرجع در ماژول اطلاعات پایه انجام می‌شود."
                 />
-                {!suppliers.data.items.length ? (
+                <Link
+                  className="inline-flex rounded-lg border border-[#dfe8f4] bg-white px-4 py-2 text-sm font-semibold text-[#1657b5] hover:bg-[#edf4ff]"
+                  href="/master-data/organizations-suppliers"
+                >
+                  فرم ثبت و ویرایش تأمین‌کننده در اطلاعات پایه ←
+                </Link>
+                {!suppliers.data.items.length &&
+                (page !== 1 || !!search || !!querySearch) ? (
                   <EmptyState
                     title="تأمین‌کننده‌ای پیدا نشد"
                     description="فیلتر جست‌وجو یا اطلاعات پایه را بررسی کنید."
                   />
                 ) : (
                   <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                    {suppliers.data.items.map((supplier) => (
+                    {(suppliers.data.items.length
+                      ? suppliers.data.items
+                      : sampleSuppliers
+                    ).map((supplier) => (
                       <Card key={supplier.id} className="space-y-3 p-5">
                         <h3 className="font-bold">{supplier.name}</h3>
                         <p className="text-sm text-muted-foreground">
@@ -616,6 +644,11 @@ function WorkspaceState({
                         <p className="text-sm">
                           وضعیت همکاری: {supplier.collaborationStatus}
                         </p>
+                        {'sample' in supplier && supplier.sample && (
+                          <p className="text-xs text-[#7789a6]">
+                            نمونهٔ آزمایشی، فقط نمایش
+                          </p>
+                        )}
                       </Card>
                     ))}
                   </div>

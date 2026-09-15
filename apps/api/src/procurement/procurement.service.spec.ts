@@ -1135,8 +1135,8 @@ describe.skipIf(process.env.PROCUREMENT_API_DATABASE_TEST !== '1')(
           where: { requestId: row.id },
         });
       expect(handoff).toMatchObject({
-        status: 'NOT_CONNECTED',
-        lastErrorCode: 'FINANCE_NOT_CONNECTED',
+        status: 'PENDING',
+        lastErrorCode: null,
         acceptedSourceId: null,
       });
       expect(handoff.payload).toMatchObject({
@@ -1163,7 +1163,10 @@ describe.skipIf(process.env.PROCUREMENT_API_DATABASE_TEST !== '1')(
         await publicSources.listFinanceInvoiceSources([otherBranch]),
       ).toEqual([]);
       expect(await publicSources.listFinanceInvoiceSources([branch])).toEqual([
-        handoff.payload,
+        {
+          ...(handoff.payload as object),
+          handoffCreatedAt: handoff.createdAt.toISOString(),
+        },
       ]);
       expect(
         (
@@ -1178,7 +1181,7 @@ describe.skipIf(process.env.PROCUREMENT_API_DATABASE_TEST !== '1')(
       ).toBe(true);
       expect(
         await database.client.procurementOutbox.count({
-          where: { handoffId: handoff.id, status: 'BLOCKED' },
+          where: { handoffId: handoff.id, status: 'PENDING' },
         }),
       ).toBe(1);
       const receipt =
