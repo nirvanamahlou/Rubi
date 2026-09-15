@@ -6,6 +6,8 @@
 
 Prisma validate، typecheck و build بسته‌های مشترک/API/Web، lint محدودهٔ Dashboard/Reports و ۲۶ تست API + ۶۶ تست Web موفق‌اند. Branchهای جدیدتر PC-A Manifest و PC-B Procurement هنوز مستقل از develop هستند و ادغام خودکار آن‌ها در این واحد کار انجام نمی‌شود. انتشار نهایی از مسیر PR به develop و CI پیگیری می‌شود.
 
+Push به `origin` فعلاً به‌دلیل نبود نشست احراز هویت GitHub روی PC-C ممکن نشد (`could not read Username for https://github.com`). commit ادغام فقط محلی است؛ برای ادامه باید مالک وارد GitHub/Git Credential Manager شود، سپس همین Branch push و PR آن پس از CI merge گردد.
+
 ## REPORTING-AUTHENTICATED-RUNTIME-REPAIR — 2026-09-15
 
 - ریشهٔ مشترک HTTP 500 در Dashboard/Reports/Favorites: جدول `b2b_organization_users` در دیتابیس محلی موجود نبود. Interceptor سراسری B2B تمام درخواست‌های دارای Actor را پیش از Controller با Prisma P2021 متوقف می‌کرد. Health عمومی و تست مستقیم Repository این مسیر را پوشش نمی‌دهند.
