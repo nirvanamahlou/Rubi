@@ -2575,3 +2575,13 @@ Gateway را جایگزین کرده بود و نسخهٔ همه‌بخش‌ها
 هدفمند موفق‌اند. runtime فعلی commit کد `2433f5e2` و build
 `unified-2A6Q1Ne_sNsur80Si1RHj` را گزارش می‌کند؛ API4191 health۲۰۰ و Web3100 شامل
 خرید، میزکار، منابع انسانی و سایر ۴۶ مسیر است. داده و نشست محلی دست‌نخورده‌اند.
+
+## PROCUREMENT-FRAME-3100-0915 — ACTIVE
+
+Screenshot606 نشان داد iframe خرید در پوستهٔ Web3100 به‌دلیل سیاست عمومی
+`X-Frame-Options: DENY` و `frame-ancestors 'none'` نمایش داده نمی‌شود. فقط برای
+`/procurement-optimized.html` هدر `SAMEORIGIN` و `frame-ancestors 'self'` اعمال شد؛
+صفحهٔ ورود و سایر مسیرها همان DENY را دارند و فایل خرید همچنان به cookie ورود نیاز دارد.
+هدرهای واقعی سرور و پاسخ ۲۰۰ فایل با cookie بررسی شدند؛ build تولیدی ۴۶ route، lint و
+API health موفق‌اند. نسخهٔ اصلاح‌شده با build `unified-6hqFsF7hJGMHGO-KmtfIL`
+روی Gateway3100/Web3110/API4191 فعال شد. هیچ داده، Schema، API یا Permission تغییر نکرد.

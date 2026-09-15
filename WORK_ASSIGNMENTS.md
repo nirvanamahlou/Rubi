@@ -2879,7 +2879,7 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
   مسیر موفق‌اند. Gateway3100/Web3110/API4191 با commit کد `2433f5e2` و API health ۲۰۰
   فعال‌اند؛ هیچ Migration، Seed، Grant یا تغییر داده انجام نشد.
 
-## PROCUREMENT-FRAME-3100-0915 — PC-B — ACTIVE
+## PROCUREMENT-FRAME-3100-0915 — PC-B — COMPLETE / ACTIVE
 
 - درخواست مالک و Screenshot606: پوستهٔ خرید در Web3100 باز می‌شود اما iframe داخلی با
   «localhost refused to connect» متوقف است. شاخه `codex/pc-b-procurement-frame-3100`
@@ -2889,3 +2889,9 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
   `WORK_ASSIGNMENTS.md` و `docs/PROJECT_STATUS.md` فقط همین واحد را ثبت می‌کنند.
   احراز هویت و DENY پیش‌فرض سایر مسیرها حفظ می‌شوند. بدون Migration، Dependency،
   API، داده یا تغییر قرارداد مشترک.
+- مسیر خرید اکنون فقط از origin خودش قابل frame شدن است. پاسخ واقعی سرور برای ماکاپ
+  دارای `SAMEORIGIN` و `frame-ancestors 'self'` است؛ Login همچنان `DENY` و
+  `frame-ancestors 'none'` می‌ماند. درخواست بدون cookie به Login هدایت می‌شود و درخواست
+  دارای cookie در مسیر فایل ماکاپ پاسخ ۲۰۰ می‌گیرد. build Web با ۴۶ route، lint فایل
+  تغییرکرده و API health موفق‌اند. Gateway3100/Web3110/API4191 روی build
+  `unified-6hqFsF7hJGMHGO-KmtfIL` فعال است؛ قفل فایل مرکزی آزاد شد.
