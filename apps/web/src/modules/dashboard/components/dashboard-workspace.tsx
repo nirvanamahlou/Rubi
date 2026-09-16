@@ -126,14 +126,14 @@ const dimensionFilters: readonly {
   label: string;
   allLabel: string;
 }[] = [
-  { key: 'salesChannel', label: 'سایت / کانال فروش', allLabel: 'همه کانال‌های فروش' },
+  { key: 'salesChannel', label: 'کانال فروش', allLabel: 'همه کانال‌های فروش' },
   { key: 'branch', label: 'شعبه', allLabel: 'همه شعبه‌ها' },
-  { key: 'agent', label: 'کارشناس', allLabel: 'همه کارشناسان' },
-  { key: 'service', label: 'نوع خدمت', allLabel: 'همه انواع خدمت' },
-  { key: 'agency', label: 'آژانس', allLabel: 'همه آژانس‌ها' },
-  { key: 'provider', label: 'تأمین‌کننده', allLabel: 'همه تأمین‌کنندگان' },
-  { key: 'currency', label: 'ارز', allLabel: 'همه ارزها (بدون جمع)' },
-  { key: 'status', label: 'وضعیت', allLabel: 'همه وضعیت‌ها' },
+  { key: 'agent', label: 'کارشناس مسئول', allLabel: 'همه کارشناسان' },
+  { key: 'service', label: 'خدمت سفر', allLabel: 'همه خدمات سفر' },
+  { key: 'agency', label: 'آژانس همکار', allLabel: 'همه آژانس‌های همکار' },
+  { key: 'provider', label: 'تأمین‌کننده خدمت', allLabel: 'همه تأمین‌کنندگان' },
+  { key: 'currency', label: 'واحد پول', allLabel: 'همه ارزها (بدون جمع)' },
+  { key: 'status', label: 'وضعیت رکورد', allLabel: 'همه وضعیت‌ها' },
 ];
 
 type DashboardFilterKey = keyof DashboardFilterOptions;
@@ -168,13 +168,143 @@ const dashboardPageFilterKeys: Readonly<Record<string, readonly DashboardFilterK
   'support-service-quality': ['branch', 'agent', 'service', 'status'],
   'partners-b2b': ['agency', 'branch', 'salesChannel', 'service', 'provider', 'currency'],
   'marketing-growth': ['salesChannel', 'branch', 'service', 'agency', 'status'],
-  'workforce-hr': ['branch', 'agent', 'service', 'status'],
-  'hr-record-quality': ['branch', 'agent', 'service', 'status'],
+  'workforce-hr': ['branch', 'agent', 'status'],
+  'hr-record-quality': ['branch', 'agent', 'status'],
   'employee-commercial-performance': ['branch', 'agent', 'service', 'salesChannel'],
   'employee-crm-activity': ['branch', 'agent', 'salesChannel', 'status'],
   'employee-sales-quality': ['branch', 'agent', 'service', 'salesChannel', 'status'],
   'tasks-automation': ['branch', 'agent', 'status'],
   'documents-reports-data-quality': ['branch', 'status'],
+};
+
+const statusFilterCopyByPage: Readonly<
+  Partial<Record<string, { label: string; allLabel: string }>>
+> = {
+  'executive-overview': {
+    label: 'وضعیت عملیات',
+    allLabel: 'همه وضعیت‌های عملیاتی',
+  },
+  'executive-growth-risk': {
+    label: 'وضعیت مورد بررسی',
+    allLabel: 'همه وضعیت‌های مورد بررسی',
+  },
+  'commercial-performance': {
+    label: 'وضعیت فروش',
+    allLabel: 'همه وضعیت‌های فروش',
+  },
+  'revenue-collections': {
+    label: 'وضعیت پرداخت',
+    allLabel: 'همه وضعیت‌های پرداخت',
+  },
+  'travel-operations': {
+    label: 'وضعیت رزرو و صدور',
+    allLabel: 'همه وضعیت‌های رزرو و صدور',
+  },
+  'flight-route-analysis': {
+    label: 'وضعیت بلیت و رزرو',
+    allLabel: 'همه وضعیت‌های بلیت و رزرو',
+  },
+  'procurement-suppliers': {
+    label: 'وضعیت خرید',
+    allLabel: 'همه وضعیت‌های خرید',
+  },
+  'finance-treasury': {
+    label: 'وضعیت مالی',
+    allLabel: 'همه وضعیت‌های مالی',
+  },
+  'finance-profitability-costs': {
+    label: 'وضعیت مالی',
+    allLabel: 'همه وضعیت‌های مالی',
+  },
+  'finance-obligations-risk': {
+    label: 'وضعیت تعهد مالی',
+    allLabel: 'همه وضعیت‌های تعهد مالی',
+  },
+  'customer-growth': {
+    label: 'وضعیت ارتباط با مشتری',
+    allLabel: 'همه وضعیت‌های ارتباط با مشتری',
+  },
+  'customer-crm': {
+    label: 'وضعیت لید و مشتری',
+    allLabel: 'همه وضعیت‌های لید و مشتری',
+  },
+  'support-service-quality': {
+    label: 'وضعیت درخواست پشتیبانی',
+    allLabel: 'همه وضعیت‌های درخواست پشتیبانی',
+  },
+  'marketing-growth': {
+    label: 'وضعیت کمپین',
+    allLabel: 'همه وضعیت‌های کمپین',
+  },
+  'workforce-hr': {
+    label: 'وضعیت پرسنلی',
+    allLabel: 'همه وضعیت‌های پرسنلی',
+  },
+  'hr-record-quality': {
+    label: 'وضعیت سوابق پرسنلی',
+    allLabel: 'همه وضعیت‌های سوابق پرسنلی',
+  },
+  'employee-crm-activity': {
+    label: 'وضعیت فعالیت CRM',
+    allLabel: 'همه وضعیت‌های فعالیت CRM',
+  },
+  'employee-sales-quality': {
+    label: 'وضعیت فروش',
+    allLabel: 'همه وضعیت‌های فروش',
+  },
+  'tasks-automation': {
+    label: 'وضعیت اجرا',
+    allLabel: 'همه وضعیت‌های اجرا',
+  },
+  'documents-reports-data-quality': {
+    label: 'وضعیت کیفیت داده',
+    allLabel: 'همه وضعیت‌های کیفیت داده',
+  },
+};
+
+const semanticFilterCopyByPage: Readonly<
+  Partial<
+    Record<
+      string,
+      Partial<Record<DashboardFilterKey, { label: string; allLabel: string }>>
+    >
+  >
+> = {
+  'customer-growth': {
+    salesChannel: { label: 'کانال جذب', allLabel: 'همه کانال‌های جذب' },
+  },
+  'customer-behavior-analysis': {
+    salesChannel: { label: 'کانال جذب', allLabel: 'همه کانال‌های جذب' },
+  },
+  'customer-crm': {
+    salesChannel: { label: 'کانال جذب', allLabel: 'همه کانال‌های جذب' },
+    agent: { label: 'کارشناس CRM', allLabel: 'همه کارشناسان CRM' },
+  },
+  'support-service-quality': {
+    agent: {
+      label: 'کارشناس پشتیبانی',
+      allLabel: 'همه کارشناسان پشتیبانی',
+    },
+  },
+  'marketing-growth': {
+    salesChannel: { label: 'کانال جذب', allLabel: 'همه کانال‌های جذب' },
+  },
+  'workforce-hr': {
+    agent: { label: 'کارمند', allLabel: 'همه کارکنان' },
+  },
+  'hr-record-quality': {
+    agent: { label: 'کارمند', allLabel: 'همه کارکنان' },
+  },
+  'employee-commercial-performance': {
+    agent: { label: 'کارشناس فروش', allLabel: 'همه کارشناسان فروش' },
+  },
+  'employee-crm-activity': {
+    agent: { label: 'کارشناس CRM', allLabel: 'همه کارشناسان CRM' },
+    salesChannel: { label: 'کانال جذب', allLabel: 'همه کانال‌های جذب' },
+  },
+  'employee-sales-quality': {
+    agent: { label: 'کارشناس فروش', allLabel: 'همه کارشناسان فروش' },
+  },
 };
 
 const filterLabelByKey = new Map(
@@ -186,6 +316,19 @@ const filterAllLabelByKey = new Map(
 const dashboardFilterKeySet = new Set<DashboardFilterKey>(
   dimensionFilters.map((filter) => filter.key),
 );
+
+function filterCopyForPage(pageId: string, key: DashboardFilterKey) {
+  const semanticCopy = semanticFilterCopyByPage[pageId]?.[key];
+  if (semanticCopy) return semanticCopy;
+  if (key === 'status') {
+    const copy = statusFilterCopyByPage[pageId];
+    if (copy) return copy;
+  }
+  return {
+    label: filterLabelByKey.get(key) ?? key,
+    allLabel: filterAllLabelByKey.get(key) ?? `همه ${key}`,
+  };
+}
 
 const visualIcons: Record<DashboardVisualKind, typeof BarChart3> = {
   line: LineChart,
@@ -1972,6 +2115,10 @@ function DashboardSidebar({
 }) {
   const [dateCalendarSystem, setDateCalendarSystem] =
     useState<CalendarSystem>('persian');
+  const activePage = dashboardPageById.get(activePageId);
+  const activeFiltersTitle = activePage
+    ? `فیلترهای ${activePage.title}`
+    : 'فیلترهای این صفحه';
 
   return (
     <Card
@@ -1988,9 +2135,9 @@ function DashboardSidebar({
         )}
       >
         <div className={cn('min-w-0', collapsed && 'sr-only')}>
-          <p className="text-xs font-bold text-primary">فضای کار</p>
+          <p className="text-xs font-bold text-primary">ناوبری</p>
           <h2 id="dashboard-pages-title" className="font-black">
-            داشبوردها
+            صفحه‌های داشبورد
           </h2>
         </div>
         <Button
@@ -2020,21 +2167,21 @@ function DashboardSidebar({
       {collapsed ? (
         <div className="space-y-2 border-b border-border p-2">
           <Button
-            aria-label="نمایش فضای کار داشبوردها"
+            aria-label="نمایش صفحه‌های داشبورد"
             className="size-10 w-full p-0"
             onClick={() => onPanelChange('workspace')}
             size="icon"
-            title="فضای کار داشبوردها"
+            title="صفحه‌های داشبورد"
             variant="ghost"
           >
             <LayoutDashboard aria-hidden="true" className="size-4" />
           </Button>
           <Button
-            aria-label="نمایش فیلترهای داشبورد"
+            aria-label="نمایش فیلترهای این صفحه"
             className="size-10 w-full p-0"
             onClick={() => onPanelChange('filters')}
             size="icon"
-            title="فیلترهای داشبورد"
+            title="فیلترهای این صفحه"
             variant="ghost"
           >
             <Filter aria-hidden="true" className="size-4" />
@@ -2054,7 +2201,7 @@ function DashboardSidebar({
             role="tab"
             type="button"
           >
-            فضای کار داشبوردها
+            صفحه‌های داشبورد
           </button>
           <button
             aria-selected={activePanel === 'filters'}
@@ -2068,7 +2215,7 @@ function DashboardSidebar({
             role="tab"
             type="button"
           >
-            فیلترهای داشبورد
+            فیلترهای این صفحه
           </button>
         </div>
       )}
@@ -2163,7 +2310,7 @@ function DashboardSidebar({
 
       {activePanel === 'filters' ? (
       <section
-        aria-label={collapsed ? 'فیلترهای داشبورد' : undefined}
+        aria-label={collapsed ? activeFiltersTitle : undefined}
         aria-labelledby={
           collapsed ? undefined : 'dashboard-sidebar-filters-title'
         }
@@ -2175,7 +2322,7 @@ function DashboardSidebar({
         {collapsed ? (
           <>
             <Button
-              aria-label="پاک‌کردن فیلترهای داشبورد"
+              aria-label={`پاک‌کردن ${activeFiltersTitle}`}
               className="size-10 w-full p-0"
               onClick={onFiltersReset}
               size="icon"
@@ -2207,7 +2354,7 @@ function DashboardSidebar({
                 id="dashboard-sidebar-filters-title"
                 className="min-w-0 flex-1 text-sm font-black"
               >
-                فیلترهای داشبورد
+                {activeFiltersTitle}
               </h3>
             </div>
 
@@ -2295,18 +2442,21 @@ function DashboardSidebar({
               </FormField>
 
                 <div className="space-y-3 rounded-xl bg-muted/30 p-3">
-                  {(dashboardPageFilterKeys[activePageId] ?? []).map((key) => (
-                    <DimensionFilter
-                      allLabel={filterAllLabelByKey.get(key) ?? `همه ${key}`}
-                      id={`dashboard-filter-${key}`}
-                      key={key}
-                      label={filterLabelByKey.get(key) ?? key}
-                      loading={isFetching}
-                      onChange={(value) => onFiltersChange({ [key]: value })}
-                      options={filterOptions?.[key] ?? []}
-                      value={filters[key]}
-                    />
-                  ))}
+                  {(dashboardPageFilterKeys[activePageId] ?? []).map((key) => {
+                    const copy = filterCopyForPage(activePageId, key);
+                    return (
+                      <DimensionFilter
+                        allLabel={copy.allLabel}
+                        id={`dashboard-filter-${key}`}
+                        key={key}
+                        label={copy.label}
+                        loading={isFetching}
+                        onChange={(value) => onFiltersChange({ [key]: value })}
+                        options={filterOptions?.[key] ?? []}
+                        value={filters[key]}
+                      />
+                    );
+                  })}
                   {!(dashboardPageFilterKeys[activePageId] ?? []).length ? (
                     <p className="text-[11px] leading-5 text-muted-foreground">
                       <Info aria-hidden="true" className="me-1 inline size-3.5" />
