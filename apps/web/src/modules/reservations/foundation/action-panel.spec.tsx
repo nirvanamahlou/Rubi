@@ -74,7 +74,7 @@ describe('selected contract actions', () => {
     const html = renderToStaticMarkup(
       <ContractActionContent action="مشاهده" request={request} />,
     );
-    expect(html).toContain('در حال ساخت PDF قرارداد');
+    expect(html).toContain('در حال ساخت خروجی قرارداد');
     expect(html).not.toContain('Test branch');
   });
   it('loads the full recorded data for general details', () => {
