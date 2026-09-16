@@ -5,6 +5,7 @@ import {
   dashboard,
   defaultQuery,
   queryRows,
+  reservationWindowQuery,
   sections,
   type RequestView,
   type ViewAccess,
@@ -150,6 +151,48 @@ describe('reservations workspace access and states', () => {
     ).toBe(0);
     expect(queryRows(rows, { ...defaultQuery, page: Infinity }).page).toBe(1);
     expect(queryRows(rows, { ...defaultQuery, page: 900 }).page).toBe(1);
+  });
+  it('places contract operations below the scrollable inbox table', () => {
+    const html = renderToStaticMarkup(
+      <ReservationOperationsWorkspace
+        state="SUCCESS"
+        rows={[row()]}
+        access={access}
+        now={now}
+        initialSection="inbox"
+      />,
+    );
+    expect(html.indexOf('جدول درخواست‌های رزرواسیون')).toBeGreaterThan(-1);
+    expect(html.indexOf('عملیات قرارداد انتخاب‌شده')).toBeGreaterThan(
+      html.indexOf('جدول درخواست‌های رزرواسیون'),
+    );
+    expect(html).not.toContain('صفحه ۱ از');
+  });
+  it('limits an unfiltered inbox to the previous three calendar months', () => {
+    const rows = [
+      { ...row('recent'), createdAt: '2026-06-08T09:00:00.000Z' },
+      { ...row('old'), createdAt: '2026-06-07T09:00:00.000Z' },
+    ];
+    const defaultWindow = queryRows(
+      rows,
+      reservationWindowQuery(defaultQuery, now),
+    );
+    expect(defaultWindow.total).toBe(1);
+    expect(defaultWindow.rows[0]?.id).toBe('recent');
+
+    const explicitRange = queryRows(
+      rows,
+      reservationWindowQuery(
+        {
+          ...defaultQuery,
+          fromDate: '2026-06-01',
+          toDate: '2026-06-07',
+        },
+        now,
+      ),
+    );
+    expect(explicitRange.total).toBe(1);
+    expect(explicitRange.rows[0]?.id).toBe('old');
   });
   it('counts daily unique documents once and excludes completed items from SLA', () => {
     const rows = [row('a'), { ...row('b'), status: 'COMPLETED' as const }];
