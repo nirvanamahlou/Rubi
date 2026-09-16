@@ -106,6 +106,20 @@ export const defaultQuery: Query = {
   fromDate: '',
   toDate: '',
 };
+/**
+ * The inbox has a bounded default window, while an explicit calendar range
+ * always remains the user's source of truth.
+ */
+export function reservationWindowQuery(query: Query, now: string): Query {
+  if (query.fromDate || query.toDate) return query;
+  const today = reservationDay(now);
+  if (!today) return query;
+  return {
+    ...query,
+    dateBasis: 'createdAt',
+    fromDate: subtractCalendarMonths(today, 3),
+  };
+}
 export const serviceLabels: Record<RequestView['services'][number], string> = {
   FLIGHT: 'هواپیما',
   TRAIN: 'قطار',
@@ -313,6 +327,18 @@ export function validateDateRange(from: string, to: string): string | null {
   if (from && to && from > to)
     return 'تاریخ شروع باید قبل از تاریخ پایان یا برابر آن باشد.';
   return null;
+}
+function subtractCalendarMonths(day: string, months: number): string {
+  const [year = 0, month = 0, date = 0] = day.split('-').map(Number);
+  const monthIndex = month - 1 - months;
+  const targetYear = year + Math.floor(monthIndex / 12);
+  const targetMonth = ((monthIndex % 12) + 12) % 12;
+  const lastDay = new Date(
+    Date.UTC(targetYear, targetMonth + 1, 0),
+  ).getUTCDate();
+  return `${targetYear}-${String(targetMonth + 1).padStart(2, '0')}-${String(
+    Math.min(date, lastDay),
+  ).padStart(2, '0')}`;
 }
 function matchesDateRange(row: RequestView, query: Query): boolean {
   if (!query.fromDate && !query.toDate) return true;

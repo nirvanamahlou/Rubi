@@ -22,6 +22,7 @@ import {
   dashboard,
   defaultQuery,
   messages,
+  reservationWindowQuery,
   queryRows,
   sections,
   serviceLabels,
@@ -175,21 +176,22 @@ export function ReservationOperationsWorkspace({
   const visibleRows = names.rows;
   const [exporting, setExporting] = useState(false);
   const [exportError, setExportError] = useState('');
-  const result = queryRows(visibleRows, query);
+  const effectiveQuery = reservationWindowQuery(query, now);
+  const result = queryRows(visibleRows, effectiveQuery);
   const metrics = dashboard(visibleRows, now);
-  const selected = visibleRows.find((r) => r.id === selectedId);
+  const selected = result.filteredRows.find((r) => r.id === selectedId);
   const available = effectiveState === 'SUCCESS';
   const message = messages[effectiveState];
   const visibleOperations = operations.filter(
     (op) =>
       op.section === section &&
-      visibleRows.some((row) => row.id === op.requestId) &&
+      result.filteredRows.some((row) => row.id === op.requestId) &&
       (!selected || op.requestId === selected.id),
   );
   const visibleTimeline = access.permissions.includes('reservations.audit.read')
     ? timeline.filter(
         (event) =>
-          visibleRows.some((row) => row.id === event.requestId) &&
+          result.filteredRows.some((row) => row.id === event.requestId) &&
           (!selected || event.requestId === selected.id),
       )
     : [];
@@ -203,10 +205,6 @@ export function ReservationOperationsWorkspace({
       aria-label="رزرواسیون و عملیات سفر"
     >
       <div className={styles.operationLayout}>
-        <ContractActionPanel
-          key={selected?.id ?? 'unselected'}
-          request={selected}
-        />
         <div className={styles.operationMain}>
           <header className={styles.header}>
             <div>
@@ -607,10 +605,12 @@ export function ReservationOperationsWorkspace({
               </div>
               <p id="reservation-date-help" className={styles.filterHelp}>
                 {result.dateError ??
-                  'بازه شامل تمام روز شروع و پایان است؛ ساعت‌ها بر مبنای تهران محاسبه می‌شوند.'}
+                  (query.fromDate || query.toDate
+                    ? 'بازه شامل تمام روز شروع و پایان است؛ ساعت‌ها بر مبنای تهران محاسبه می‌شوند.'
+                    : 'نمایش پیش‌فرض: قراردادهای سه ماه اخیر. برای دیدن تاریخ‌های قدیمی، بازهٔ تاریخ را انتخاب کنید.')}
               </p>
               {result.dateError && <p role="alert">{result.dateError}</p>}
-              {result.rows.length === 0 ? (
+              {result.filteredRows.length === 0 ? (
                 <p className={styles.empty}>
                   {available
                     ? 'درخواستی مطابق فیلترها پیدا نشد.'
@@ -634,7 +634,7 @@ export function ReservationOperationsWorkspace({
                       </tr>
                     </thead>
                     <tbody>
-                      {result.rows.map((row) => (
+                      {result.filteredRows.map((row) => (
                         <tr
                           key={row.id}
                           data-tone={statusTones[row.status]}
@@ -687,30 +687,6 @@ export function ReservationOperationsWorkspace({
                   </table>
                 </div>
               )}
-              <div className={styles.pagination}>
-                <button
-                  type="button"
-                  disabled={result.page <= 1}
-                  onClick={() =>
-                    setQuery((q) => ({ ...q, page: result.page - 1 }))
-                  }
-                >
-                  قبلی
-                </button>
-                <span>
-                  صفحه {result.page.toLocaleString('fa-IR')} از{' '}
-                  {result.pages.toLocaleString('fa-IR')}
-                </span>
-                <button
-                  type="button"
-                  disabled={result.page >= result.pages}
-                  onClick={() =>
-                    setQuery((q) => ({ ...q, page: result.page + 1 }))
-                  }
-                >
-                  بعدی
-                </button>
-              </div>
             </section>
           )}
           {section !== 'dashboard' &&
@@ -805,6 +781,10 @@ export function ReservationOperationsWorkspace({
             </section>
           )}
         </div>
+        <ContractActionPanel
+          key={selected?.id ?? 'unselected'}
+          request={selected}
+        />
       </div>
     </main>
   );
