@@ -654,6 +654,9 @@ describe('dashboard permission and data states', () => {
       expect(source).toContain(title);
     expect(source).toContain('items-baseline');
     expect(source).toContain('dashboard-sidebar-filters-title');
+    expect(source).toContain("activePanel === 'workspace'");
+    expect(source).toContain('lg:sticky lg:top-20');
+    expect(source).toContain('lg:overflow-y-auto');
     expect(source).toContain('صفحه‌های داشبورد');
     expect(source).toContain('فیلترهای این صفحه');
     expect(source).toContain('فیلترهای ${activePage.title}');

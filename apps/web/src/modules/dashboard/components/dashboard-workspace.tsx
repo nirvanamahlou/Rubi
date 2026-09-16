@@ -2139,6 +2139,9 @@ function DashboardSidebar({
       data-dashboard-sidebar
       className={cn(
         'self-start overflow-hidden transition-[width] duration-200',
+        activePanel === 'workspace'
+          ? 'lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto'
+          : undefined,
         collapsed ? 'lg:w-[4.5rem]' : 'lg:w-full',
       )}
     >
