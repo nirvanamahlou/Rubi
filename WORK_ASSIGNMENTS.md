@@ -9,6 +9,13 @@
 
 # Work Assignments
 
+## DASHBOARD-PAGE-ICON-MAPPING-0916 — PC-C — LOCAL_COMPLETE
+
+- درخواست مالک: هر زیرصفحهٔ Dashboard در سربرگ خود آیکون مرتبط با موضوع همان صفحه داشته باشد، نه آیکون fallback نمای مدیریتی.
+- محدودهٔ رزروشده: فقط نگاشت آیکون، تست Dashboard Web و اسناد وضعیت در Worktree `codex/pc-c-dashboard-reporting-latest`. API، Reports، دیتابیس، Migration، دادهٔ عملیاتی، وابستگی و Lockfile تغییر نمی‌کنند.
+- قرارداد: شناسه و متن صفحه‌ها ثابت می‌مانند؛ فقط Icon component سربرگ و fallback آن تعیین می‌شود.
+- نتیجه: برای همهٔ صفحه‌های اصلی و زیرصفحه‌ها نگاشت آیکون اختصاصی اضافه شد؛ از جمله Gauge برای رشد/ریسک، Banknote برای وصول، Plane/Ticket برای سفر و بلیت، Hotel برای تور و هتل، CircleDollarSign/ShieldAlert برای تحلیل مالی، UserCheck/PhoneCall/Megaphone برای مشتری و رشد، و ChartNoAxesCombined برای عملکرد فروش کارکنان.
+
 ## DASHBOARD-PAGE-HEADER-CENTERED-0916 — PC-C — LOCAL_COMPLETE
 
 - درخواست مالک: عنوان فارسی، نام انگلیسی و توضیح هر صفحه Dashboard به‌صورت وسط‌چین و هماهنگ با تم/پالت Dashboard نمایش داده شود.

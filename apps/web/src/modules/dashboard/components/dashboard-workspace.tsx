@@ -688,10 +688,32 @@ function dashboardVisualIsWide(
 
 const navigationIcons: Record<string, LucideIcon> = {
   'executive-overview': LayoutDashboard,
+  'executive-growth-risk': Gauge,
   'commercial-performance': BriefcaseBusiness,
+  'sales-profitability-analysis': CircleDollarSign,
+  'sales-segment-analysis': BarChart3,
+  'revenue-collections': Banknote,
+  'travel-operations': Plane,
+  'flight-route-analysis': Ticket,
+  'inventory-products': Building2,
+  'tour-hotel-performance': Hotel,
+  'procurement-suppliers': BriefcaseBusiness,
   'finance-treasury': WalletCards,
+  'finance-profitability-costs': CircleDollarSign,
+  'finance-obligations-risk': ShieldAlert,
   'customer-growth': UsersRound,
+  'customer-behavior-analysis': UsersRound,
+  'customer-crm': UserCheck,
+  'support-service-quality': PhoneCall,
+  'partners-b2b': Building2,
+  'marketing-growth': Megaphone,
   'workforce-hr': UserRoundCog,
+  'hr-record-quality': CalendarCheck,
+  'employee-commercial-performance': ChartNoAxesCombined,
+  'employee-crm-activity': PhoneCall,
+  'employee-sales-quality': BadgeDollarSign,
+  'tasks-automation': CircleCheckBig,
+  'documents-reports-data-quality': ShieldAlert,
 };
 
 function Metric({
