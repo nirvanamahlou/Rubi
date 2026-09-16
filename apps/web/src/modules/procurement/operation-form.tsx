@@ -188,7 +188,16 @@ export function OperationForm({
       available[0]?.action ??
       '',
   );
-  if (!available.length) return null;
+  if (!available.length)
+    return (
+      <Card className="space-y-2 border-dashed p-5">
+        <h3 className="font-bold text-[#113975]">ثبت و ویرایش این مرحله</h3>
+        <p className="text-sm text-muted-foreground">
+          برای ثبت یا اصلاح سوابق این مرحله، نقش «کارشناس تأمین و سفارش» لازم
+          است. اطلاعات ثبت‌شده همچنان در همین پرونده قابل مشاهده‌اند.
+        </p>
+      </Card>
+    );
   return (
     <Card className="space-y-4 p-5">
       <h3 className="font-bold text-[#113975]">
@@ -202,6 +211,10 @@ export function OperationForm({
         {kind === 'orders' || kind === 'receipts'
           ? ' · شماره سفارش یا رسید هنگام ثبت در سرور ساخته می‌شود.'
           : ''}
+      </p>
+      <p className="text-xs leading-5 text-muted-foreground">
+        ویرایش سوابق عملیاتی به‌صورت نسخه یا اصلاح جبرانی ثبت می‌شود تا سابقهٔ
+        پرونده حفظ شود.
       </p>
       {available.length > 1 && (
         <FormField id="proc-operation" label="نوع عملیات این بخش">

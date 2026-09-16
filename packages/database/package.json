@@ -21,7 +21,9 @@
     "db:seed": "prisma db seed",
     "reporting:demo:import": "tsx scripts/import-reporting-demo.ts",
     "reporting:demo:generate": "node scripts/dashboard-reporting-local-demo.mjs",
-    "reporting:demo:clear": "node scripts/dashboard-reporting-local-demo.mjs --clear"
+    "reporting:demo:clear": "node scripts/dashboard-reporting-local-demo.mjs --clear",
+    "procurement:demo:apply": "node scripts/procurement-local-demo.mjs --apply",
+    "procurement:demo:inspect": "node scripts/procurement-local-demo.mjs --inspect"
   },
   "dependencies": {
     "@prisma/adapter-pg": "7.9.1",
