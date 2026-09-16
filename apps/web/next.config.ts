@@ -8,6 +8,7 @@ const nextConfig: NextConfig = {
       './src/modules/reservations/components/reservation-form-sheet.module.css',
       './public/brand/*.png',
     ],
+    '/reservations/requests/*/tickets/pdf': ['./public/brand/*.png'],
   },
   async headers() {
     return [

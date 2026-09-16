@@ -60,7 +60,9 @@ it('uses saved voucher settings, selected passengers and service flags without r
   expect(output.passengers.map((p) => p.id)).toEqual(['a']);
   expect(output.leader).toBe('-');
   expect(intake.snapshot.hotelSelection?.hotelNameSnapshot).toBe('OLD HOTEL');
+  delete (settings.text as unknown as Record<string, string>).contractPartyName;
   const copy = defaultVoucherSettings(intake, {});
+  expect(copy.text.contractPartyName).toBe('');
   copy.text.hotel = 'NEXT VERSION';
   expect(settings.text.hotel).toBe('SAVED HOTEL');
 });

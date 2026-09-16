@@ -18,6 +18,7 @@ import { MasterDataModule } from './master-data/master-data.module';
 import { MasterDataLogoModule } from './master-data/master-data-logo.module';
 import { MessagingModule } from './messaging/messaging.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { ReportingModule } from './reporting/reporting.module';
 import { ProcurementModule } from './procurement/procurement.module';
 import { SalesModule } from './sales/sales.module';
 import { SettingsModule } from './settings/settings.module';
@@ -56,6 +57,7 @@ import { WorkbenchModule } from './workbench/workbench.module';
     HrModule,
     WorkbenchFeedbackModule,
     WorkbenchModule,
+    ReportingModule,
   ],
   controllers: [HealthController],
   providers: [HealthService],

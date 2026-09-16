@@ -9,8 +9,7 @@ export function defaultVoucherSettings(
   intake: ReservationFormIntake,
   refs: ReservationFormReferences,
 ): VoucherSettingsV1 {
-  if (intake.workflow.voucherSettings)
-    return structuredClone(intake.workflow.voucherSettings);
+  const saved = intake.workflow.voucherSettings;
   const d = reservationFormData(intake, refs),
     h = intake.snapshot.hotelSelection;
   const text = Object.fromEntries(
@@ -40,7 +39,7 @@ export function defaultVoucherSettings(
         : '';
       text[`${prefix}Time`] = f.time;
     }
-  return {
+  const defaults: VoucherSettingsV1 = {
     text,
     numbers: {
       singleRooms: Number(d.single) || 0,
@@ -69,11 +68,35 @@ export function defaultVoucherSettings(
       hotelChildAgeBand: '',
     })),
   };
+  if (!saved) return defaults;
+  return {
+    text: {
+      ...(Object.fromEntries(
+        voucherTextKeys.map((key) => [key, saved.text?.[key] ?? text[key]]),
+      ) as VoucherSettingsV1['text']),
+      contractPartyName:
+        saved.text.contractPartyName ?? text.contractPartyName ?? '',
+    },
+    numbers: Object.fromEntries(
+      (Object.keys(defaults.numbers) as (keyof typeof defaults.numbers)[]).map(
+        (key) => [key, saved.numbers?.[key] ?? defaults.numbers[key]],
+      ),
+    ) as VoucherSettingsV1['numbers'],
+    flags: Object.fromEntries(
+      (Object.keys(defaults.flags) as (keyof typeof defaults.flags)[]).map(
+        (key) => [key, saved.flags?.[key] ?? defaults.flags[key]],
+      ),
+    ) as VoucherSettingsV1['flags'],
+    passengers: defaults.passengers.map((passenger) => ({
+      ...passenger,
+      ...saved.passengers?.find((item) => item.id === passenger.id),
+    })),
+  };
 }
-export const voucherTextLabels: Record<
-  (typeof voucherTextKeys)[number],
-  string
-> = {
+export type VoucherTextFieldKey =
+  (typeof voucherTextKeys)[number] | 'contractPartyName';
+export const voucherTextLabels: Record<VoucherTextFieldKey, string> = {
+  contractPartyName: 'نام طرف قرارداد',
   country: 'کشور',
   city: 'شهر',
   hotel: 'نام هتل (انگلیسی)',

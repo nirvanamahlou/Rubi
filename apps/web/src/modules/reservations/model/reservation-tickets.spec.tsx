@@ -110,6 +110,20 @@ describe('saved reservation passenger tickets', () => {
       false,
     ]);
   });
+  it('projects a canonical name for an old snapshot without rewriting it', () => {
+    const legacy: SalesReservationRequestV1 = JSON.parse(
+      JSON.stringify(ticketSnapshot),
+    );
+    delete legacy.passengerAssignments?.[0]?.displayNameSnapshot;
+    const before = JSON.stringify(legacy);
+    expect(
+      reservationTickets(legacy, { p1: 'Canonical Passenger' })[0],
+    ).toMatchObject({
+      passengerId: 'p1',
+      passengerName: 'Canonical Passenger',
+    });
+    expect(JSON.stringify(legacy)).toBe(before);
+  });
   it.each([
     { passengerAssignments: undefined },
     { ticketSelections: undefined },
