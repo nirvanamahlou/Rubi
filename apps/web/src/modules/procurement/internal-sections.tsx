@@ -16,6 +16,7 @@ import type { ProcurementRequestV1 } from '@nora/contracts';
 import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
 import { FormField, Input, Textarea } from '@/components/ui/form-controls';
+import { cleanSalesMoney } from '@/components/ui/money-input';
 import {
   Alert,
   Badge,
@@ -723,6 +724,12 @@ export function InternalSections({
                   request={openedSample}
                   branches={bootstrap.branches}
                 />
+              ) : group === 7 && openedSample ? (
+                <SampleInvoiceForm
+                  key={openedSample.id}
+                  request={openedSample}
+                  currencies={bootstrap.currencies}
+                />
               ) : (
                 <div className="border-t border-border pt-4">
                   <Badge className={tone.chip}>پیش‌نمایش فرم</Badge>
@@ -870,6 +877,199 @@ function SampleOrderForm({
       <Button className="w-full" type="submit">
         ذخیره پیش‌نویس سفارش
       </Button>
+    </form>
+  );
+}
+
+type SampleInvoiceStage =
+  'EDITING' | 'REGISTERED' | 'MATCHED' | 'WAITING_FINANCE';
+
+const sampleInvoiceStageLabel: Record<SampleInvoiceStage, string> = {
+  EDITING: 'در حال تکمیل',
+  REGISTERED: 'ثبت‌شده',
+  MATCHED: 'تطبیق‌شده',
+  WAITING_FINANCE: 'ارجاع‌شده به مالی',
+};
+
+export function SampleInvoiceForm({
+  request,
+  currencies,
+}: {
+  request: ProcurementListRow;
+  currencies: Bootstrap['currencies'];
+}) {
+  const storageKey = `procurement:sample-invoice:${request.id}`;
+  const [draft, setDraft] = useState(() => {
+    const defaults = {
+      invoiceNumber: `INV-${request.number.replace('PR-', '')}`,
+      orderReference: `PO-${request.number.replace('PR-', '')}`,
+      issuedAt: '',
+      dueAt: '',
+      amount: request.draft.estimatedAmount ?? '',
+      currencyCode: request.draft.currencyCode ?? currencies[0]?.code ?? 'IRR',
+      stage: 'EDITING' as SampleInvoiceStage,
+    };
+    if (typeof window === 'undefined') return defaults;
+    const persisted = window.sessionStorage.getItem(storageKey);
+    if (!persisted) return defaults;
+    try {
+      return { ...defaults, ...(JSON.parse(persisted) as typeof defaults) };
+    } catch {
+      window.sessionStorage.removeItem(storageKey);
+      return defaults;
+    }
+  });
+
+  const persist = (next: typeof draft) => {
+    setDraft(next);
+    window.sessionStorage.setItem(storageKey, JSON.stringify(next));
+  };
+  const update = (key: keyof typeof draft, value: string) =>
+    setDraft((current) => ({
+      ...current,
+      [key]: value,
+      stage: current.stage === 'EDITING' ? current.stage : 'EDITING',
+    }));
+  const ready =
+    Boolean(draft.invoiceNumber.trim()) &&
+    Boolean(draft.orderReference.trim()) &&
+    Boolean(draft.issuedAt) &&
+    Boolean(draft.amount) &&
+    Boolean(draft.currencyCode);
+
+  return (
+    <form
+      className="space-y-4 border-t border-border pt-4"
+      onSubmit={(event) => {
+        event.preventDefault();
+        if (!ready) return;
+        persist({ ...draft, stage: 'REGISTERED' });
+      }}
+    >
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <div>
+          <p className="text-xs text-muted-foreground" dir="ltr">
+            {request.number}
+          </p>
+          <p className="mt-1 font-bold">{request.draft.title}</p>
+        </div>
+        <Badge>{sampleInvoiceStageLabel[draft.stage]}</Badge>
+      </div>
+      {draft.stage === 'WAITING_FINANCE' ? (
+        <Alert
+          title="فاکتور برای بررسی مالی آماده شد."
+          description="این پروندهٔ خواندنی در نشست جاری نگه‌داری شده است؛ پرونده‌های واقعی از قرارداد خرید به کارتابل مالی اصلی تحویل می‌شوند."
+        >
+          <Link
+            className="mt-3 inline-flex text-sm font-semibold text-primary hover:underline"
+            href="/finance/requests"
+          >
+            مشاهده کارتابل مالی ←
+          </Link>
+        </Alert>
+      ) : null}
+      <fieldset
+        disabled={draft.stage === 'WAITING_FINANCE'}
+        className="space-y-3"
+      >
+        <FormField id="sample-invoice-number" label="شماره فاکتور">
+          <Input
+            id="sample-invoice-number"
+            dir="ltr"
+            value={draft.invoiceNumber}
+            onChange={(event) => update('invoiceNumber', event.target.value)}
+          />
+        </FormField>
+        <FormField id="sample-invoice-order" label="سفارش خرید">
+          <ProcurementSelect
+            id="sample-invoice-order"
+            className={selectClass}
+            value={draft.orderReference}
+            onChange={(event) => update('orderReference', event.target.value)}
+          >
+            <option value={draft.orderReference}>{draft.orderReference}</option>
+          </ProcurementSelect>
+        </FormField>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <FormField id="sample-invoice-issued" label="تاریخ فاکتور">
+            <DatePicker
+              id="sample-invoice-issued"
+              value={draft.issuedAt}
+              onChange={(value) => update('issuedAt', value.slice(0, 10))}
+            />
+          </FormField>
+          <FormField id="sample-invoice-due" label="تاریخ سررسید">
+            <DatePicker
+              id="sample-invoice-due"
+              value={draft.dueAt}
+              onChange={(value) => update('dueAt', value.slice(0, 10))}
+            />
+          </FormField>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <FormField id="sample-invoice-amount" label="مبلغ فاکتور">
+            <Input
+              id="sample-invoice-amount"
+              dir="ltr"
+              inputMode="decimal"
+              value={draft.amount}
+              onChange={(event) =>
+                update('amount', cleanSalesMoney(event.target.value))
+              }
+            />
+          </FormField>
+          <FormField id="sample-invoice-currency" label="ارز">
+            <ProcurementSelect
+              id="sample-invoice-currency"
+              className={selectClass}
+              value={draft.currencyCode}
+              onChange={(event) => update('currencyCode', event.target.value)}
+            >
+              {currencies.length ? (
+                currencies.map((currency) => (
+                  <option key={currency.id} value={currency.code}>
+                    {currency.name} ({currency.code})
+                  </option>
+                ))
+              ) : (
+                <option value="IRR">ریال ایران (IRR)</option>
+              )}
+            </ProcurementSelect>
+          </FormField>
+        </div>
+      </fieldset>
+      <div className="grid gap-2 sm:grid-cols-2">
+        {draft.stage === 'EDITING' ? (
+          <Button type="submit" disabled={!ready}>
+            ثبت فاکتور
+          </Button>
+        ) : null}
+        {draft.stage === 'REGISTERED' ? (
+          <Button
+            type="button"
+            onClick={() => persist({ ...draft, stage: 'MATCHED' })}
+          >
+            تطبیق فاکتور و تحویل
+          </Button>
+        ) : null}
+        {draft.stage === 'MATCHED' ? (
+          <Button
+            type="button"
+            onClick={() => persist({ ...draft, stage: 'WAITING_FINANCE' })}
+          >
+            ارجاع فاکتور به مالی
+          </Button>
+        ) : null}
+        {draft.stage !== 'EDITING' && draft.stage !== 'WAITING_FINANCE' ? (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setDraft({ ...draft, stage: 'EDITING' })}
+          >
+            ویرایش اطلاعات
+          </Button>
+        ) : null}
+      </div>
     </form>
   );
 }

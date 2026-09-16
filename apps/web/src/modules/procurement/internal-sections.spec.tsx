@@ -2,7 +2,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import type { Bootstrap } from './api';
-import { InternalSections } from './internal-sections';
+import { InternalSections, SampleInvoiceForm } from './internal-sections';
+import { sampleRequests } from './sample-requests';
 
 const bootstrap: Bootstrap = {
   permissions: [],
@@ -38,5 +39,22 @@ describe('Purchase section date filters', () => {
       expect(html).toContain(`proc-section-${group}-to-date`);
       expect(html).toContain('شمسی / میلادی');
     }
-  }, 20_000);
+  }, 40_000);
+
+  it('renders an actionable invoice form for readable invoice rows', () => {
+    const request = sampleRequests.find((item) => item.section === 7);
+    expect(request).toBeDefined();
+    const html = renderToStaticMarkup(
+      <SampleInvoiceForm
+        request={request!}
+        currencies={[{ id: 'irr', code: 'IRR', name: 'ریال ایران' }]}
+      />,
+    );
+
+    expect(html).toContain('sample-invoice-number');
+    expect(html).toContain('sample-invoice-order');
+    expect(html).toContain('sample-invoice-issued');
+    expect(html).toContain('sample-invoice-amount');
+    expect(html).toContain('ثبت فاکتور');
+  });
 });
