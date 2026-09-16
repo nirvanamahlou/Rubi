@@ -43,7 +43,18 @@ describe('dashboard registry', () => {
     const executive = dashboardPages.find(
       (page) => page.id === 'executive-overview',
     );
-    expect(executive?.kpiIds).toEqual(
+    const executiveDetail = dashboardPages.find(
+      (page) => page.id === 'executive-growth-risk',
+    );
+    const executiveKpis = [
+      ...(executive?.kpiIds ?? []),
+      ...(executiveDetail?.kpiIds ?? []),
+    ];
+    const executiveVisuals = [
+      ...(executive?.visualizations ?? []),
+      ...(executiveDetail?.visualizations ?? []),
+    ];
+    expect(executiveKpis).toEqual(
       expect.arrayContaining([
         'collected',
         'net-sales',
@@ -55,7 +66,7 @@ describe('dashboard registry', () => {
         'cancelled-reservations',
       ]),
     );
-    expect(executive?.visualizations.map((item) => item.id)).toEqual(
+    expect(executiveVisuals.map((item) => item.id)).toEqual(
       expect.arrayContaining([
         'executive-trend',
         'executive-sales-by-service',
@@ -74,10 +85,14 @@ describe('dashboard registry', () => {
   });
 
   it('covers employee activity and sales without using sale count as converted lead count', () => {
-    const employeePage = dashboardPages.find(
-      (page) => page.id === 'employee-commercial-performance',
+    const employeePages = dashboardPages.filter((page) =>
+      [
+        'employee-commercial-performance',
+        'employee-crm-activity',
+        'employee-sales-quality',
+      ].includes(page.id),
     );
-    expect(employeePage?.kpiIds).toEqual(
+    expect(employeePages.flatMap((page) => page.kpiIds)).toEqual(
       expect.arrayContaining([
         'employee-lead-count',
         'employee-call-count',
@@ -91,7 +106,13 @@ describe('dashboard registry', () => {
         'employee-sales-rank',
       ]),
     );
-    expect(employeePage?.visualizations).toHaveLength(10);
+    expect(
+      new Set(
+        employeePages.flatMap((page) =>
+          page.visualizations.map((visual) => visual.id),
+        ),
+      ).size,
+    ).toBe(10);
     expect(
       dashboardKpis.find((kpi) => kpi.id === 'employee-lead-conversion')?.rule,
     ).toContain('تعداد قرارداد به‌جای تعداد لید تبدیل‌شده استفاده نمی‌شود');
@@ -103,7 +124,7 @@ describe('dashboard registry', () => {
 
   it('covers customer interests, destination, service and acquisition-channel analysis', () => {
     const customerGrowth = dashboardPages.find(
-      (page) => page.id === 'customer-growth',
+      (page) => page.id === 'customer-behavior-analysis',
     );
     expect(customerGrowth?.kpiIds).toEqual(
       expect.arrayContaining([
@@ -139,6 +160,12 @@ describe('dashboard registry', () => {
     const finance = dashboardPages.find(
       (page) => page.id === 'finance-treasury',
     );
+    const financeProfitability = dashboardPages.find(
+      (page) => page.id === 'finance-profitability-costs',
+    );
+    const financeObligations = dashboardPages.find(
+      (page) => page.id === 'finance-obligations-risk',
+    );
     const revenue = dashboardPages.find(
       (page) => page.id === 'revenue-collections',
     );
@@ -146,7 +173,17 @@ describe('dashboard registry', () => {
       (page) => page.id === 'marketing-growth',
     );
 
-    expect(finance?.kpiIds).toEqual(
+    const financeKpis = [
+      ...(finance?.kpiIds ?? []),
+      ...(financeProfitability?.kpiIds ?? []),
+      ...(financeObligations?.kpiIds ?? []),
+    ];
+    const financeVisuals = [
+      ...(finance?.visualizations ?? []),
+      ...(financeProfitability?.visualizations ?? []),
+      ...(financeObligations?.visualizations ?? []),
+    ];
+    expect(financeKpis).toEqual(
       expect.arrayContaining([
         'gross-profit',
         'net-profit',
@@ -155,7 +192,7 @@ describe('dashboard registry', () => {
         'receivables',
       ]),
     );
-    expect(finance?.visualizations.map((item) => item.id)).toEqual(
+    expect(financeVisuals.map((item) => item.id)).toEqual(
       expect.arrayContaining([
         'finance-profit-trend',
         'gross-profit-by-service',
@@ -188,17 +225,33 @@ describe('dashboard registry', () => {
   });
 
   it('covers sales and travel-service analysis without duplicating time-grain charts', () => {
-    const commercial = dashboardPages.find(
-      (page) => page.id === 'commercial-performance',
+    const commercialPages = dashboardPages.filter((page) =>
+      [
+        'commercial-performance',
+        'sales-profitability-analysis',
+        'sales-segment-analysis',
+      ].includes(page.id),
     );
-    const travel = dashboardPages.find(
-      (page) => page.id === 'travel-operations',
+    const travelPages = dashboardPages.filter((page) =>
+      ['travel-operations', 'flight-route-analysis'].includes(page.id),
     );
-    const inventory = dashboardPages.find(
-      (page) => page.id === 'inventory-products',
+    const inventoryPages = dashboardPages.filter((page) =>
+      ['inventory-products', 'tour-hotel-performance'].includes(page.id),
+    );
+    const commercialKpis = commercialPages.flatMap((page) => page.kpiIds);
+    const commercialVisualIds = commercialPages.flatMap((page) =>
+      page.visualizations.map((item) => item.id),
+    );
+    const travelKpis = travelPages.flatMap((page) => page.kpiIds);
+    const travelVisualIds = travelPages.flatMap((page) =>
+      page.visualizations.map((item) => item.id),
+    );
+    const inventoryKpis = inventoryPages.flatMap((page) => page.kpiIds);
+    const inventoryVisualIds = inventoryPages.flatMap((page) =>
+      page.visualizations.map((item) => item.id),
     );
 
-    expect(commercial?.kpiIds).toEqual(
+    expect(commercialKpis).toEqual(
       expect.arrayContaining([
         'gross-sales',
         'finalized-sales-count',
@@ -207,7 +260,7 @@ describe('dashboard registry', () => {
         'gross-profit',
       ]),
     );
-    expect(commercial?.visualizations.map((item) => item.id)).toEqual(
+    expect(commercialVisualIds).toEqual(
       expect.arrayContaining([
         'finalized-sales-trend',
         'sales-weekday-pattern',
@@ -220,13 +273,18 @@ describe('dashboard registry', () => {
         'sales-channel-trend',
       ]),
     );
-    expect(travel?.kpiIds).toEqual(
+    expect(
+      commercialPages
+        .flatMap((page) => page.visualizations)
+        .find((item) => item.id === 'service-sales-portfolio')?.kind,
+    ).toBe('donut');
+    expect(travelKpis).toEqual(
       expect.arrayContaining([
         'average-ticket-price',
         'ticket-cancellation-rate',
       ]),
     );
-    expect(travel?.visualizations.map((item) => item.id)).toEqual(
+    expect(travelVisualIds).toEqual(
       expect.arrayContaining([
         'airline-sales-performance',
         'route-sales-performance',
@@ -234,7 +292,7 @@ describe('dashboard registry', () => {
         'ticket-cancellation-analysis',
       ]),
     );
-    expect(inventory?.kpiIds).toEqual(
+    expect(inventoryKpis).toEqual(
       expect.arrayContaining([
         'tour-reservations',
         'tour-remaining-capacity',
@@ -243,7 +301,7 @@ describe('dashboard registry', () => {
         'average-stay-length',
       ]),
     );
-    expect(inventory?.visualizations.map((item) => item.id)).toEqual(
+    expect(inventoryVisualIds).toEqual(
       expect.arrayContaining([
         'tour-sales-ranking',
         'tour-capacity-performance',
@@ -260,23 +318,51 @@ describe('dashboard registry', () => {
     ).toContain('DISCOUNT');
   });
 
-  it('keeps sixteen decision-oriented pages with the requested sidebar hierarchy', () => {
-    expect(dashboardPages).toHaveLength(16);
+  it('uses donut only for explicit low-cardinality share visuals', () => {
+    const visuals = dashboardPages.flatMap((page) => page.visualizations);
+    expect(
+      visuals.find((item) => item.id === 'collection-status')?.kind,
+    ).toBe('donut');
+    expect(
+      visuals.find((item) => item.id === 'customer-service-distribution')
+        ?.kind,
+    ).toBe('donut');
+    expect(
+      visuals.find((item) => item.id === 'sales-destination-ranking')?.kind,
+    ).toBe('bar');
+  });
+
+  it('keeps summary pages focused and moves related analysis into sidebar subpages', () => {
+    expect(dashboardPages).toHaveLength(27);
     expect(dashboardNavigation).toEqual([
-      { pageId: 'executive-overview' },
+      {
+        pageId: 'executive-overview',
+        children: [{ pageId: 'executive-growth-risk' }],
+      },
       {
         pageId: 'commercial-performance',
         children: [
+          { pageId: 'sales-profitability-analysis' },
+          { pageId: 'sales-segment-analysis' },
           { pageId: 'revenue-collections' },
           { pageId: 'travel-operations' },
+          { pageId: 'flight-route-analysis' },
           { pageId: 'inventory-products' },
+          { pageId: 'tour-hotel-performance' },
           { pageId: 'procurement-suppliers' },
         ],
       },
-      { pageId: 'finance-treasury' },
+      {
+        pageId: 'finance-treasury',
+        children: [
+          { pageId: 'finance-profitability-costs' },
+          { pageId: 'finance-obligations-risk' },
+        ],
+      },
       {
         pageId: 'customer-growth',
         children: [
+          { pageId: 'customer-behavior-analysis' },
           { pageId: 'customer-crm' },
           { pageId: 'support-service-quality' },
           { pageId: 'partners-b2b' },
@@ -285,14 +371,19 @@ describe('dashboard registry', () => {
       },
       {
         pageId: 'workforce-hr',
-        children: [{ pageId: 'employee-commercial-performance' }],
+        children: [
+          { pageId: 'hr-record-quality' },
+          { pageId: 'employee-commercial-performance' },
+          { pageId: 'employee-crm-activity' },
+          { pageId: 'employee-sales-quality' },
+        ],
       },
     ]);
     const navigationIds = dashboardNavigation.flatMap((item) => [
       item.pageId,
       ...(item.children?.map((child) => child.pageId) ?? []),
     ]);
-    expect(navigationIds).toHaveLength(14);
+    expect(navigationIds).toHaveLength(25);
     expect(navigationIds).not.toContain('tasks-automation');
     expect(navigationIds).not.toContain('documents-reports-data-quality');
     expect(dashboardPages.map((page) => page.id)).toEqual(
@@ -301,10 +392,22 @@ describe('dashboard registry', () => {
         'documents-reports-data-quality',
       ]),
     );
+    for (const pageId of [
+      'executive-overview',
+      'commercial-performance',
+      'finance-treasury',
+      'customer-growth',
+      'workforce-hr',
+    ]) {
+      const page = dashboardPages.find((item) => item.id === pageId)!;
+      expect(page.kpiIds.length).toBeLessThanOrEqual(6);
+      expect(page.visualizations.length).toBeLessThanOrEqual(4);
+    }
     for (const pageId of navigationIds) {
-      const page = dashboardPages.find((item) => item.id === pageId);
-      expect(page?.kpiIds.length).toBeGreaterThanOrEqual(4);
-      expect(page?.visualizations.length).toBeGreaterThanOrEqual(3);
+      const page = dashboardPages.find((item) => item.id === pageId)!;
+      expect(page.kpiIds.length).toBeLessThanOrEqual(6);
+      expect(page.visualizations.length).toBeLessThanOrEqual(5);
+      expect(page.visualizations.length).toBeGreaterThan(0);
     }
     for (const page of dashboardPages) {
       expect(page.technicalName).not.toBe('');
@@ -429,11 +532,32 @@ describe('dashboard permission and data states', () => {
       'Blocked',
     ])
       expect(source).toContain(state);
-    expect(source).toContain('بدون دادهٔ تأییدشده');
+    expect(source).toContain('داده‌ای دریافت نشده');
     expect(source).not.toMatch(/\b(value|amount|count):\s*\d+/);
     expect(source).not.toContain('Math.random');
     expect(source).toContain('min-w-0');
     expect(source).toContain('DashboardSidebar');
+    expect(source).toContain('data-dashboard-sidebar');
+    expect(source).toContain('data-dashboard-kpi');
+    expect(source).toContain('data-dashboard-visual');
+    expect(source).toContain('OperationalDataTable');
+    expect(source).toContain('EmployeePerformanceBars');
+    expect(source).toContain('MiniTrend');
+    expect(source).toContain('GrowthIndicator');
+    expect(source).toContain('نسبت به دوره قبل');
+    expect(source).toContain('برای روند، یک ارز انتخاب کنید');
+    expect(source).toContain('data-dashboard-employee-visual');
+    expect(source).toContain('مقیاس نوار: بیشترین مقدار');
+    expect(source).toContain("visualId.startsWith('employee-')");
+    expect(source).not.toContain('شاخص‌های کلیدی');
+    expect(source).not.toContain('تحلیل‌های تصمیم‌ساز');
+    expect(source).toContain('kpiGridColumns(activePageKpis.length)');
+    expect(source).toContain('xl:grid-cols-3 2xl:grid-cols-6');
+    expect(source).toContain('dashboardVisualIsWide(');
+    expect(source).toContain("kind === 'line'");
+    expect(source).toContain("kind === 'table'");
+    expect(source).toContain("kind === 'queue'");
+    expect(source).not.toContain('grid-flow-row-dense');
     expect(source).toContain('kpiRoleLabels');
     expect(source).toContain('aria-haspopup="dialog"');
     expect(source).not.toContain('جزئیات تعریف شاخص');
@@ -471,8 +595,23 @@ describe('dashboard permission and data states', () => {
     expect(source).toContain('رفتن به فرم پیکربندی گزارش مرتبط');
     expect(source).toContain('visualLabels');
     expect(source).toContain('EmptyVisualCanvas');
+    expect(source).toContain('dashboardVisualKindForData');
+    expect(source).toContain('<polyline');
+    expect(source).toContain('conic-gradient');
+    expect(source).toContain('میانگین روند');
+    expect(source).toContain('rankedRows');
+    expect(source).toContain('جمع نمایش‌داده‌شده');
+    expect(source).toContain('values.length > 6');
+    expect(source).toContain('خلاصه متنی و جدول داده');
+    expect(source).toContain('<table');
+    expect(source).toContain('role="img"');
+    expect(source).toContain('focus-visible:ring-offset-2');
+    expect(source).not.toContain('منبع داده');
+    expect(source).not.toContain('تازگی داده');
+    expect(source).not.toContain('پوشش داده');
+    expect(source).not.toContain('آخرین Refresh');
     expect(source).toContain('دادهٔ تأییدشده برای نمایش موجود نیست');
-    expect(source).toContain('KPI و تحلیل‌های عملیاتی');
+    expect(source).not.toContain('KPI و تحلیل‌های عملیاتی');
     for (const title of [
       'فروش امروز',
       'فروش این هفته',

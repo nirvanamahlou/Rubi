@@ -66,6 +66,12 @@ const DIMENSION_LABELS: Readonly<Record<DimensionKey, string>> = {
   ownerName: 'کارشناس',
 };
 
+const pendingReservationStatuses = new Set([
+  'QUEUED',
+  'NEEDS_REVIEW',
+  'PARTIALLY_FULFILLED',
+]);
+
 function amount(value: Prisma.Decimal | string) {
   return new Prisma.Decimal(value);
 }
@@ -85,7 +91,10 @@ export function buildTravelReportResult(input: {
     throw new BadRequestException('این گزارش به Projection سفر متصل نشده است.');
   const groups = new Map<
     string,
-    TravelReportRowV1 & { orderIds: Set<string> }
+    TravelReportRowV1 & {
+      orderIds: Set<string>;
+      pendingReservationOrderIds: Set<string>;
+    }
   >();
   for (const fact of input.facts) {
     const primaryDimension = text(fact[dimensions[0]]);
@@ -104,10 +113,16 @@ export function buildTravelReportResult(input: {
       grossProfit: '0',
       refundAmount: '0',
       settlementBalance: '0',
+      pendingReservationActions: 0,
       orderIds: new Set<string>(),
+      pendingReservationOrderIds: new Set<string>(),
     };
     current.orderIds.add(fact.orderNumber);
+    if (pendingReservationStatuses.has(fact.reservationStatus))
+      current.pendingReservationOrderIds.add(fact.orderNumber);
     current.orderCount = current.orderIds.size;
+    current.pendingReservationActions =
+      current.pendingReservationOrderIds.size;
     current.passengerCount += fact.passengerCount;
     current.ticketCount += fact.ticketCount;
     current.salesAmount = amount(current.salesAmount)
@@ -143,6 +158,7 @@ export function buildTravelReportResult(input: {
     'grossProfit',
     'refundAmount',
     'settlementBalance',
+    'pendingReservationActions',
   ]);
   const sort = input.query.sort ?? {
     column: 'salesAmount',
@@ -163,6 +179,7 @@ export function buildTravelReportResult(input: {
     grossProfit: group.grossProfit,
     refundAmount: group.refundAmount,
     settlementBalance: group.settlementBalance,
+    pendingReservationActions: group.pendingReservationActions,
   }));
   rows.sort((left, right) => {
     const l = left[sort.column as keyof TravelReportRowV1];
@@ -236,6 +253,11 @@ export function buildTravelReportResult(input: {
       { key: 'grossProfit', label: 'سود ناخالص', kind: 'MONEY' },
       { key: 'refundAmount', label: 'استرداد', kind: 'MONEY' },
       { key: 'settlementBalance', label: 'مانده تسویه', kind: 'MONEY' },
+      {
+        key: 'pendingReservationActions',
+        label: 'اقدام رزرو در انتظار',
+        kind: 'NUMBER',
+      },
     ],
     rows: input.includeAllRows
       ? rows

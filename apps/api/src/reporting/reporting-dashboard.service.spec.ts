@@ -33,6 +33,40 @@ const demoFact = {
 };
 
 describe('dashboard travel projection date boundaries', () => {
+  it('publishes dimension filter options from the scoped fact source', async () => {
+    const facts = vi.fn().mockResolvedValue([demoFact]);
+    const dashboardFilterOptions = vi.fn().mockResolvedValue({
+      salesChannel: ['وب‌سایت اول'],
+      branch: ['شعبه مرکزی'],
+      agent: ['کارشناس نمونه'],
+      service: ['FLIGHT'],
+      agency: [],
+      provider: ['ایران‌ایر'],
+      currency: ['IRR'],
+      status: ['CONFIRMED'],
+    });
+    const service = new ReportingService({
+      facts,
+      dashboardFilterOptions,
+    } as unknown as ReportingRepository);
+
+    const result = await service.dashboardProjection(
+      { range: 'month', service: 'FLIGHT', kpiIds: 'gross-sales' },
+      actor,
+    );
+
+    expect(result.filterOptions?.service).toEqual(['FLIGHT']);
+    expect(dashboardFilterOptions).toHaveBeenCalledWith(
+      expect.objectContaining({
+        filters: expect.objectContaining({ fromUtc: expect.any(String) }),
+        page: 1,
+        pageSize: 1000,
+        timezone: 'Asia/Tehran',
+      }),
+      [],
+    );
+  });
+
   it('keeps the default rolling range as an ISO instant and reads demo rows', async () => {
     const facts = vi.fn().mockResolvedValue([demoFact]);
     const service = new ReportingService({
@@ -44,6 +78,9 @@ describe('dashboard travel projection date boundaries', () => {
     );
     expect(result.state).toBe('ready');
     expect(result.metrics['gross-sales']?.value).toBeTruthy();
+    expect(result.metrics['gross-sales']?.comparison?.direction).toBe('flat');
+    expect(result.metrics['gross-sales']?.trend?.values).toHaveLength(8);
+    expect(facts).toHaveBeenCalledTimes(2);
     const fromUtc = (
       facts.mock.calls[0]?.[0] as { filters: { fromUtc: string } }
     ).filters.fromUtc;
@@ -51,6 +88,45 @@ describe('dashboard travel projection date boundaries', () => {
     expect(Date.now() - new Date(fromUtc).getTime()).toBeGreaterThan(
       30 * 86_400_000,
     );
+  });
+
+  it('computes KPI and chart growth from the immediately preceding equal-length period', async () => {
+    const facts = vi
+      .fn()
+      .mockResolvedValueOnce([demoFact])
+      .mockResolvedValueOnce([
+        {
+          ...demoFact,
+          id: 'demo-previous',
+          occurredAt: new Date('2026-08-15T06:00:00.000Z'),
+          salesAmount: new Prisma.Decimal(6_000_000),
+          settledAmount: new Prisma.Decimal(6_000_000),
+        },
+      ]);
+    const service = new ReportingService({
+      facts,
+    } as unknown as ReportingRepository);
+
+    const result = await service.dashboardProjection(
+      {
+        range: 'month',
+        currency: 'IRR',
+        kpiIds: 'gross-sales',
+        visualIds: 'executive-sales-by-service',
+      },
+      actor,
+    );
+
+    expect(result.metrics['gross-sales']?.comparison).toMatchObject({
+      label: 'دوره قبل هم‌طول',
+      previousValue: 6_000_000,
+      deltaPercent: 100,
+      direction: 'up',
+    });
+    expect(
+      result.visuals['executive-sales-by-service']?.comparison,
+    ).toMatchObject({ deltaPercent: 100, direction: 'up' });
+    expect(result.visuals['executive-sales-by-service']?.trend?.values).toHaveLength(8);
   });
 
   it('rejects malformed or reversed custom boundaries before accessing facts', async () => {

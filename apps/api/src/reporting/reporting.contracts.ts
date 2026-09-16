@@ -109,6 +109,7 @@ export interface TravelReportRowV1 {
   grossProfit: string;
   refundAmount: string;
   settlementBalance: string;
+  pendingReservationActions: number;
 }
 
 export interface TravelReportResultV1 {
@@ -192,8 +193,27 @@ export interface DashboardProjectionV1 {
     reportVersion: 'reporting.dashboard.travel.v1';
     permissionSnapshot: string;
   } | null;
+  filterOptions?: {
+    salesChannel: readonly string[];
+    branch: readonly string[];
+    agent: readonly string[];
+    service: readonly string[];
+    agency: readonly string[];
+    provider: readonly string[];
+    currency: readonly string[];
+    status: readonly string[];
+  };
   metrics: Readonly<
-    Record<string, { value: string; unit: string; detail: string }>
+    Record<
+      string,
+      {
+        value: string;
+        unit: string;
+        detail: string;
+        comparison?: DashboardComparisonV1;
+        trend?: DashboardTrendV1;
+      }
+    >
   >;
   visuals: Readonly<
     Record<
@@ -202,7 +222,21 @@ export interface DashboardProjectionV1 {
         labels: readonly string[];
         values: readonly number[];
         currencyCode?: string;
+        comparison?: DashboardComparisonV1;
+        trend?: DashboardTrendV1;
       }
     >
   >;
+}
+
+export interface DashboardComparisonV1 {
+  label: 'دوره قبل هم‌طول';
+  previousValue: number;
+  deltaPercent: number | null;
+  direction: 'up' | 'down' | 'flat';
+}
+
+export interface DashboardTrendV1 {
+  labels: readonly string[];
+  values: readonly number[];
 }

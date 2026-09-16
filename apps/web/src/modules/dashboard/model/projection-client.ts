@@ -16,13 +16,43 @@ export interface DashboardMetadata {
   permissionSnapshot: string;
 }
 
+export interface DashboardComparisonSnapshot {
+  label: string;
+  previousValue: number;
+  deltaPercent: number | null;
+  direction: 'up' | 'down' | 'flat';
+}
+
+export interface DashboardTrendSnapshot {
+  labels: readonly string[];
+  values: readonly number[];
+}
+
+export interface DashboardMetricSnapshot {
+  value: string;
+  unit: string;
+  detail: string;
+  comparison?: DashboardComparisonSnapshot;
+  trend?: DashboardTrendSnapshot;
+}
+
+export interface DashboardFilterOptions {
+  salesChannel: readonly string[];
+  branch: readonly string[];
+  agent: readonly string[];
+  service: readonly string[];
+  agency: readonly string[];
+  provider: readonly string[];
+  currency: readonly string[];
+  status: readonly string[];
+}
+
 export interface DashboardProjectionSnapshot {
   state: DashboardProjectionState;
   message: string;
   metadata: DashboardMetadata | null;
-  metrics: Readonly<
-    Record<string, { value: string; unit: string; detail: string }>
-  >;
+  filterOptions?: DashboardFilterOptions;
+  metrics: Readonly<Record<string, DashboardMetricSnapshot>>;
   visuals: Readonly<
     Record<
       string,
@@ -30,6 +60,8 @@ export interface DashboardProjectionSnapshot {
         labels: readonly string[];
         values: readonly number[];
         currencyCode?: string;
+        comparison?: DashboardComparisonSnapshot;
+        trend?: DashboardTrendSnapshot;
       }
     >
   >;

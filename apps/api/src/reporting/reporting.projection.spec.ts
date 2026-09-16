@@ -94,6 +94,29 @@ describe('travel reporting approved projection', () => {
     ]);
   });
 
+  it('marks grouped rows with pending reservation actions without duplicating an order', () => {
+    const result = buildTravelReportResult({
+      code: 'contract_service_profit',
+      query: { filters: {}, page: 1, pageSize: 20, timezone: 'Asia/Tehran' },
+      facts: [
+        fact({ reservationStatus: 'QUEUED' }),
+        fact({
+          id: 'fact-2',
+          reservationStatus: 'PARTIALLY_FULFILLED',
+          salesAmount: new Prisma.Decimal(3_000_000),
+        }),
+      ],
+      now: new Date('2026-09-12T08:00:00Z'),
+    });
+
+    expect(result.rows[0]?.pendingReservationActions).toBe(1);
+    expect(result.columns).toContainEqual({
+      key: 'pendingReservationActions',
+      label: 'اقدام رزرو در انتظار',
+      kind: 'NUMBER',
+    });
+  });
+
   it('includes every matching dataset row for export while preview remains paginated', () => {
     const input = {
       code: 'sales_by_service_route',

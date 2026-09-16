@@ -49,9 +49,7 @@ describe('catalog report favorites', () => {
     expect(html.indexOf('همه وضعیت‌های اتصال')).toBeLessThan(
       html.indexOf('گزارش‌های مورد علاقه من'),
     );
-    expect(html.indexOf('گزارش‌های مورد علاقه من')).toBeLessThan(
-      html.indexOf('گزارش‌های کاتالوگ'),
-    );
+    expect(html).not.toContain('گزارش‌های کاتالوگ');
     expect(html.match(/aria-pressed="false"/g)).toHaveLength(
       reportCatalog.length,
     );

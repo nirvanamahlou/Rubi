@@ -81,14 +81,12 @@ function groupedDecimal(value: string) {
 function exportFilterEntries(result: TravelReportResultV1): [string, string][] {
   const snapshot = result.filterSnapshot;
   const entries: [string, string][] = [];
-  if (snapshot.legalEntityId)
-    entries.push(['شرکت', snapshot.legalEntityId]);
+  if (snapshot.legalEntityId) entries.push(['شرکت', snapshot.legalEntityId]);
   if (snapshot.branchIds.length)
     entries.push(['محدوده شعب', snapshot.branchIds.join('، ')]);
   for (const [key, value] of Object.entries(snapshot.filters)) {
     const text = Array.isArray(value) ? value.join('، ') : String(value);
-    if (text)
-      entries.push([exportFilterLabels[key] ?? key, text]);
+    if (text) entries.push([exportFilterLabels[key] ?? key, text]);
   }
   return entries.length ? entries : [['فیلترها', 'بدون فیلتر انتخابی']];
 }
@@ -102,13 +100,13 @@ function datasetCell(
   const text = String(value ?? '');
   if (column.kind === 'TEXT' || /(?:id|code)$/i.test(column.key))
     return { value: text };
-  if (!/^-?(?:0|[1-9]\d*)(?:\.\d+)?$/.test(text))
-    return { value: text };
-  const significantDigits = text.replace(/[^\d]/g, '').replace(/^0+/, '').length;
+  if (!/^-?(?:0|[1-9]\d*)(?:\.\d+)?$/.test(text)) return { value: text };
+  const significantDigits = text
+    .replace(/[^\d]/g, '')
+    .replace(/^0+/, '').length;
   // Excel retains at most 15 significant digits. Preserve longer amounts as
   // grouped text instead of silently changing their financial value.
-  if (significantDigits > 15)
-    return { value: groupedDecimal(text) };
+  if (significantDigits > 15) return { value: groupedDecimal(text) };
   return { value: text, style: 4, numeric: true };
 }
 
@@ -118,8 +116,10 @@ function xlsx(result: TravelReportResultV1, reportName: string) {
     ['نام گزارش', reportName, 'زمان تولید UTC', result.generatedAtUtc].map(
       (value) => ({ value, style: 1 }),
     ),
+    [],
     filters.map(([label]) => ({ value: label, style: 2 })),
     filters.map(([, value]) => ({ value, style: 3 })),
+    [],
     result.columns.map((column) => ({ value: column.label, style: 2 })),
     ...result.rows.map((row) =>
       result.columns.map((column) => datasetCell(column, row[column.key])),
@@ -128,19 +128,23 @@ function xlsx(result: TravelReportResultV1, reportName: string) {
   const columnCount = Math.max(4, filters.length, result.columns.length);
   const columnWidths = Array.from({ length: columnCount }, (_, index) => {
     const longest = Math.max(
-      ...rows.slice(0, 4).map((row) => row[index]?.value.length ?? 0),
+      ...rows.slice(0, 6).map((row) => row[index]?.value.length ?? 0),
     );
     const width = Math.min(42, Math.max(18, Math.ceil(longest * 0.9) + 3));
     return `<col min="${index + 1}" max="${index + 1}" width="${width}" customWidth="1"/>`;
   }).join('');
   const filterRowHeight = Math.min(
     120,
-    Math.max(22, Math.ceil(Math.max(...filters.map(([, value]) => value.length)) / 42) * 17),
+    Math.max(
+      22,
+      Math.ceil(Math.max(...filters.map(([, value]) => value.length)) / 42) *
+        17,
+    ),
   );
   const sheetRows = rows
     .map(
       (row, rowIndex) =>
-        `<row r="${rowIndex + 1}"${rowIndex === 2 ? ` ht="${filterRowHeight}" customHeight="1"` : ''}>${row
+        `<row r="${rowIndex + 1}"${rowIndex === 3 ? ` ht="${filterRowHeight}" customHeight="1"` : ''}>${row
           .map((cell, columnIndex) => {
             const address = `${excelColumn(columnIndex)}${rowIndex + 1}`;
             const style = cell.style === undefined ? '' : ` s="${cell.style}"`;
@@ -168,13 +172,13 @@ function xlsx(result: TravelReportResultV1, reportName: string) {
       '<?xml version="1.0"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><numFmts count="1"><numFmt numFmtId="164" formatCode="#,##0.##########"/></numFmts><fonts count="3"><font><sz val="11"/><name val="Arial"/></font><font><b/><sz val="11"/><color rgb="FFFFFFFF"/><name val="Arial"/></font><font><b/><sz val="12"/><color rgb="FF17396D"/><name val="Arial"/></font></fonts><fills count="4"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FF17396D"/><bgColor indexed="64"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFEAF2FB"/><bgColor indexed="64"/></patternFill></fill></fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="5"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/><xf numFmtId="0" fontId="2" fillId="0" borderId="0" applyFont="1"/><xf numFmtId="0" fontId="1" fillId="2" borderId="0" applyFont="1" applyFill="1"/><xf numFmtId="0" fontId="0" fillId="3" borderId="0" applyFill="1" applyAlignment="1"><alignment wrapText="1" vertical="center"/></xf><xf numFmtId="164" fontId="0" fillId="0" borderId="0" applyNumberFormat="1"/></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles><tableStyles count="0" defaultTableStyle="TableStyleMedium2" defaultPivotStyle="PivotStyleLight16"/></styleSheet>',
     ),
     'xl/worksheets/sheet1.xml': strToU8(
-      `<?xml version="1.0" encoding="UTF-8"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheetViews><sheetView rightToLeft="1" workbookViewId="0"><pane ySplit="4" topLeftCell="A5" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><cols>${columnWidths}</cols><sheetData>${sheetRows}</sheetData><tableParts count="1"><tablePart r:id="rId1"/></tableParts></worksheet>`,
+      `<?xml version="1.0" encoding="UTF-8"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheetViews><sheetView rightToLeft="1" workbookViewId="0"><pane ySplit="6" topLeftCell="A7" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><cols>${columnWidths}</cols><sheetData>${sheetRows}</sheetData><tableParts count="1"><tablePart r:id="rId1"/></tableParts></worksheet>`,
     ),
     'xl/worksheets/_rels/sheet1.xml.rels': strToU8(
       '<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/table" Target="../tables/table1.xml"/></Relationships>',
     ),
     'xl/tables/table1.xml': strToU8(
-      `<?xml version="1.0" encoding="UTF-8"?><table xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" id="1" name="ReportData" displayName="ReportData" ref="A4:${excelColumn(result.columns.length - 1)}${rows.length}" totalsRowShown="0"><autoFilter ref="A4:${excelColumn(result.columns.length - 1)}${rows.length}"/><tableColumns count="${result.columns.length}">${result.columns.map((column, index) => `<tableColumn id="${index + 1}" name="${escapeXml(column.label)}"/>`).join('')}</tableColumns><tableStyleInfo name="TableStyleMedium2" showFirstColumn="0" showLastColumn="0" showRowStripes="1" showColumnStripes="0"/></table>`,
+      `<?xml version="1.0" encoding="UTF-8"?><table xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" id="1" name="ReportData" displayName="ReportData" ref="A6:${excelColumn(result.columns.length - 1)}${rows.length}" totalsRowShown="0"><autoFilter ref="A6:${excelColumn(result.columns.length - 1)}${rows.length}"/><tableColumns count="${result.columns.length}">${result.columns.map((column, index) => `<tableColumn id="${index + 1}" name="${escapeXml(column.label)}"/>`).join('')}</tableColumns><tableStyleInfo name="TableStyleMedium2" showFirstColumn="0" showLastColumn="0" showRowStripes="1" showColumnStripes="0"/></table>`,
     ),
   };
   return Buffer.from(zipSync(files, { level: 6 }));

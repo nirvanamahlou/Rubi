@@ -22,6 +22,7 @@ export interface SalesByOrganizationReportResult {
     grossProfit?: string;
     refundAmount?: string;
     settlementBalance?: string;
+    pendingReservationActions?: number;
   }[];
   total: number;
   page: number;
@@ -91,7 +92,8 @@ export interface SalesByOrganizationPreviewInput {
       | 'purchaseAmount'
       | 'grossProfit'
       | 'refundAmount'
-      | 'settlementBalance';
+      | 'settlementBalance'
+      | 'pendingReservationActions';
     direction: 'ASC' | 'DESC';
   };
 }
@@ -135,6 +137,7 @@ interface TravelReportResult {
     grossProfit: string;
     refundAmount: string;
     settlementBalance: string;
+    pendingReservationActions: number;
   }[];
   total: number;
   page: number;
@@ -229,6 +232,7 @@ export const reportingApi = {
       grossProfit: 'grossProfit',
       refundAmount: 'refundAmount',
       settlementBalance: 'settlementBalance',
+      pendingReservationActions: 'pendingReservationActions',
       currencyCode: 'currencyCode',
     };
     const filters = {
@@ -283,6 +287,7 @@ export const reportingApi = {
           grossProfit: row.grossProfit,
           refundAmount: row.refundAmount,
           settlementBalance: row.settlementBalance,
+          pendingReservationActions: row.pendingReservationActions,
         })),
         total: travel.total,
         page: travel.page,

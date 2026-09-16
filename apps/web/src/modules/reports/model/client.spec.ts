@@ -102,6 +102,7 @@ describe('reporting public projection client', () => {
           grossProfit: '350000',
           refundAmount: '50000',
           settlementBalance: '125000',
+          pendingReservationActions: 1,
         },
       ],
       total: 1,
@@ -137,6 +138,7 @@ describe('reporting public projection client', () => {
       grossProfit: '350000',
       refundAmount: '50000',
       settlementBalance: '125000',
+      pendingReservationActions: 1,
     });
   });
 

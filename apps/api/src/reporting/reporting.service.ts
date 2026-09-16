@@ -16,7 +16,11 @@ import type {
   DashboardProjectionV1,
 } from './reporting.contracts';
 import { buildTravelReportResult } from './reporting.projection';
-import { ReportingRepository } from './reporting.repository';
+import {
+  ReportingRepository,
+  type DashboardFilterOptions,
+  type ReportingFactRow,
+} from './reporting.repository';
 import {
   MAX_PREVIEW_PAGE_SIZE,
   validateExportRequest,
@@ -28,6 +32,34 @@ export interface ReportingActor {
   permissions: readonly string[];
   branchIds: readonly string[];
 }
+
+const dashboardFilterOptionsFromRows = (
+  rows: readonly ReportingFactRow[],
+): DashboardFilterOptions => {
+  const options = (pick: (row: ReportingFactRow) => string | null) =>
+    Object.freeze(
+      [
+        ...new Set(
+          rows
+            .map(pick)
+            .filter(
+              (value): value is string =>
+                typeof value === 'string' && value.length > 0,
+            ),
+        ),
+      ].sort((a, b) => a.localeCompare(b, 'fa')),
+    );
+  return {
+    salesChannel: options((row) => row.salesChannel),
+    branch: options((row) => row.branchName),
+    agent: options((row) => row.ownerName),
+    service: options((row) => row.serviceType),
+    agency: options((row) => row.agencyName),
+    provider: options((row) => row.providerName),
+    currency: options((row) => row.currencyCode),
+    status: options((row) => row.orderStatus),
+  };
+};
 
 const UNRELEASED_REPORT_CODES = new Set([
   'sales_contract_pipeline',
@@ -293,6 +325,23 @@ export class ReportingService {
         : input.legalEntity === 'ALL' || !input.legalEntity
           ? undefined
           : input.legalEntity;
+    const scopedFilterOptions =
+      typeof this.repository.dashboardFilterOptions === 'function'
+        ? await this.repository.dashboardFilterOptions(
+            {
+              filters: Object.fromEntries(
+                Object.entries(filters).filter(([key]) =>
+                  ['fromUtc', 'toUtc'].includes(key),
+                ),
+              ),
+              ...(legalEntityId ? { legalEntityId } : {}),
+              page: 1,
+              pageSize: 1000,
+              timezone: 'Asia/Tehran',
+            },
+            serverBranchScope,
+          )
+        : null;
     const facts = await this.repository.facts(
       {
         filters,
@@ -308,13 +357,82 @@ export class ReportingService {
         state: 'empty',
         message: 'برای فیلتر انتخاب‌شده دادهٔ تأییدشده‌ای وجود ندارد.',
         metadata: null,
+        filterOptions:
+          scopedFilterOptions ?? dashboardFilterOptionsFromRows(facts),
         metrics: {},
         visuals: {},
       };
+    const periodStart = filters.fromUtc
+      ? new Date(filters.fromUtc)
+      : undefined;
+    const periodEnd = filters.toUtc ? new Date(filters.toUtc) : now;
+    const periodDuration = periodStart
+      ? periodEnd.getTime() - periodStart.getTime()
+      : 0;
+    const previousFacts =
+      periodStart && periodDuration > 0
+        ? await this.repository.facts(
+            {
+              filters: {
+                ...filters,
+                fromUtc: new Date(
+                  periodStart.getTime() - periodDuration,
+                ).toISOString(),
+                toUtc: periodStart.toISOString(),
+              },
+              ...(legalEntityId ? { legalEntityId } : {}),
+              page: 1,
+              pageSize: 1000,
+              timezone: 'Asia/Tehran',
+            },
+            serverBranchScope,
+          )
+        : null;
     const sum = (
       rows: typeof facts,
       pick: (fact: (typeof facts)[number]) => number,
     ) => rows.reduce((total, fact) => total + pick(fact), 0);
+    const comparisonFor = (currentValue: number, previousValue: number) => ({
+      label: 'دوره قبل هم‌طول' as const,
+      previousValue: Math.round(previousValue),
+      deltaPercent:
+        previousValue === 0
+          ? null
+          : Math.round(
+              ((currentValue - previousValue) / Math.abs(previousValue)) *
+                1000,
+            ) / 10,
+      direction: (currentValue > previousValue
+        ? 'up'
+        : currentValue < previousValue
+          ? 'down'
+          : 'flat') as 'up' | 'down' | 'flat',
+    });
+    const trendFor = (
+      rows: typeof facts,
+      measure: (bucket: typeof facts) => number,
+    ) => {
+      if (!periodStart || periodDuration <= 0)
+        throw new Error('بازه زمانی معتبر برای محاسبه روند وجود ندارد.');
+      const bucketCount = input.range === 'year' ? 12 : 8;
+      const buckets = Array.from({ length: bucketCount }, () => [] as typeof facts);
+      for (const fact of rows) {
+        const offset = fact.occurredAt.getTime() - periodStart.getTime();
+        const index = Math.min(
+          bucketCount - 1,
+          Math.max(0, Math.floor((offset / periodDuration) * bucketCount)),
+        );
+        buckets[index]!.push(fact);
+      }
+      return {
+        labels: buckets.map((_, index) =>
+          new Date(
+            periodStart.getTime() + (index * periodDuration) / bucketCount,
+          ).toISOString(),
+        ),
+        values: buckets.map((bucket) => Math.round(measure(bucket))),
+      };
+    };
     const metricIds = (input.kpiIds ?? '').split(',').filter(Boolean);
     const countMetrics: Record<string, (rows: typeof facts) => number> = {
       'cancelled-reservations': (rows) =>
@@ -373,7 +491,21 @@ export class ReportingService {
     const metrics = Object.fromEntries(
       metricIds.flatMap((id) => {
         const amount = amountMetrics[id];
-        if (amount)
+        if (amount) {
+          const comparisonCurrency =
+            currencies.length === 1 ? currencies[0] : undefined;
+          const currentRows = comparisonCurrency
+            ? facts.filter(
+                (fact) => fact.currencyCode === comparisonCurrency,
+              )
+            : [];
+          const previousRows = comparisonCurrency
+            ? (previousFacts ?? []).filter(
+                (fact) => fact.currencyCode === comparisonCurrency,
+              )
+            : [];
+          const currentAmount = comparisonCurrency ? amount(currentRows) : 0;
+          const previousAmount = comparisonCurrency ? amount(previousRows) : 0;
           return [
             [
               id,
@@ -386,9 +518,19 @@ export class ReportingService {
                   .join(' · '),
                 unit: 'ارزها مستقل',
                 detail: `${facts.length.toLocaleString('fa-IR')} قلم سفر دمو، بدون تبدیل ارز یا تکثیر مبلغ`,
+                ...(comparisonCurrency && previousFacts
+                  ? {
+                      comparison: comparisonFor(
+                        currentAmount,
+                        previousAmount,
+                      ),
+                      trend: trendFor(currentRows, amount),
+                    }
+                  : {}),
               },
             ],
           ];
+        }
         const count = countMetrics[id];
         if (count)
           return [
@@ -398,6 +540,15 @@ export class ReportingService {
                 value: count(facts).toLocaleString('fa-IR'),
                 unit: id.endsWith('rate') ? 'درصد' : 'قلم سفر',
                 detail: 'فقط دادهٔ سفر موجود در Projection دمو',
+                ...(previousFacts
+                  ? {
+                      comparison: comparisonFor(
+                        count(facts),
+                        count(previousFacts),
+                      ),
+                      trend: trendFor(facts, count),
+                    }
+                  : {}),
               },
             ],
           ];
@@ -432,6 +583,11 @@ export class ReportingService {
     const visualFacts = facts.filter(
       (fact) => fact.currencyCode === visualCurrency,
     );
+    const previousVisualFacts = (previousFacts ?? []).filter(
+      (fact) => fact.currencyCode === visualCurrency,
+    );
+    const visualAmount = (rows: typeof facts) =>
+      sum(rows, (fact) => Number(fact.salesAmount));
     const visuals = Object.fromEntries(
       visualIds.flatMap((id) => {
         const field = visualFields[id];
@@ -444,6 +600,15 @@ export class ReportingService {
               labels: entries.map(([label]) => label),
               values: entries.map(([, value]) => Math.round(value)),
               currencyCode: visualCurrency,
+              ...(previousFacts
+                ? {
+                    comparison: comparisonFor(
+                      visualAmount(visualFacts),
+                      visualAmount(previousVisualFacts),
+                    ),
+                    trend: trendFor(visualFacts, visualAmount),
+                  }
+                : {}),
             },
           ],
         ];
@@ -458,6 +623,8 @@ export class ReportingService {
     return {
       state: 'ready',
       message: 'فقط شاخص‌های دارای منبع fact سفر در دمو محاسبه شده‌اند.',
+      filterOptions:
+        scopedFilterOptions ?? dashboardFilterOptionsFromRows(facts),
       metrics,
       visuals,
       metadata: {

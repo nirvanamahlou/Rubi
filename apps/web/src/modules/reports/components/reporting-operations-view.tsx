@@ -16,6 +16,7 @@ import { reportingApi } from '../model/client';
 import { ReportSharingDialog } from './report-sharing-dialog';
 
 type Row = Record<string, unknown> & { id: string };
+export const REPORTING_OPERATIONS_LIMIT = 30;
 
 const faDate = (value: unknown) =>
   value
@@ -88,7 +89,7 @@ export function ReportingOperationsView({
     const frame = window.requestAnimationFrame(() => void load());
     return () => window.cancelAnimationFrame(frame);
   }, [load, mutationRevision]);
-  const visible = rows.filter((row) => {
+  const visible = rows.slice(0, REPORTING_OPERATIONS_LIMIT).filter((row) => {
     if (view === 'shared') return row.isSharedWithActor === true;
     if (view === 'saved' && row.isSharedWithActor === true) return false;
     if (view === 'saved' && savedFilter === 'favorites')
@@ -230,7 +231,11 @@ export function ReportingOperationsView({
                     <td className="p-3">
                       <div className="flex flex-wrap gap-2">
                         {view === 'downloads' && status === 'READY' ? (
-                          <Button asChild size="sm">
+                          <Button
+                            asChild
+                            className="!text-white [&_svg]:!text-white"
+                            size="sm"
+                          >
                             <a href={reportingApi.exportDownloadUrl(row.id)}>
                               <Download className="size-4" /> دانلود
                             </a>
