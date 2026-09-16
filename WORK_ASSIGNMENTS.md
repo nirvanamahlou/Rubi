@@ -9,6 +9,12 @@
 
 # Work Assignments
 
+## DASHBOARD-VISUAL-CHROME-CLEANUP-0916 — PC-C — LOCAL_COMPLETE
+
+- درخواست مالک: مقایسهٔ «نسبت به دوره قبل»، بلوک «روند بازهٔ انتخاب‌شده» و متن/جزئیات «منبع» فقط از نمودارهای Dashboard حذف شوند؛ همان اطلاعات در KPI Cardها باقی بمانند.
+- محدوده: `ProjectionSlot` و تست هدفمند Dashboard در Worktree `codex/pc-c-dashboard-reporting-latest`؛ API، داده، قرارداد، Migration و Reports تغییر نمی‌کنند.
+- نتیجه: header و footer نمودارها دیگر comparison، sparkline یا source ندارند؛ KPI Cardها همچنان GrowthIndicator و MiniTrend چندارزی را نمایش می‌دهند. تست Dashboard (۱۶)، lint و TypeScript Web موفق‌اند.
+
 ## DASHBOARD-KPI-MULTI-CURRENCY-TRENDS-0916 — PC-C — LOCAL_COMPLETE
 
 - درخواست مالک: مقدار KPIهای پولی در کارت مرکزچین و با نماد ارز نمایش داده شود و نمودار کوچک زیر کارت، بدون الزام فیلتر ارز، روند مستقل همهٔ ارزهای موجود را با legend قابل‌دسترسی نشان دهد.

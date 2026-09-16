@@ -578,6 +578,14 @@ describe('dashboard permission and data states', () => {
     expect(kpiCardSource).not.toContain('definition.dateBasis');
     expect(kpiCardSource).not.toContain('definition.reportCode');
     expect(kpiCardSource).not.toContain('ارز/FX الزامی');
+    const projectionSlotSource = source.slice(
+      source.indexOf('function ProjectionSlot'),
+      source.indexOf('function DashboardSidebar'),
+    );
+    expect(projectionSlotSource).not.toContain('data?.comparison');
+    expect(projectionSlotSource).not.toContain('data?.trend');
+    expect(projectionSlotSource).not.toContain('روند بازهٔ انتخاب‌شده');
+    expect(projectionSlotSource).not.toContain('منبع:');
     const kpiDefinitionPanelSource = source.slice(
       source.indexOf('function KpiDefinitionPanel'),
       source.indexOf('function DimensionFilter'),

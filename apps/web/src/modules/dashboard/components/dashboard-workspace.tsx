@@ -1616,7 +1616,6 @@ function ProjectionSlot({
   kind,
   title,
   description,
-  source,
   decision,
   drilldown,
   wide = false,
@@ -1626,7 +1625,6 @@ function ProjectionSlot({
   kind: DashboardVisualKind;
   title: string;
   description: string;
-  source: readonly string[];
   decision?: string | undefined;
   drilldown: string;
   wide?: boolean;
@@ -1675,9 +1673,6 @@ function ProjectionSlot({
           <Badge className="bg-blue-50 text-[10px] text-blue-700 dark:bg-blue-950/50 dark:text-blue-200">
             {visualLabel}
           </Badge>
-          {data?.comparison ? (
-            <GrowthIndicator comparison={data.comparison} />
-          ) : null}
         </div>
       </div>
       <div className="relative flex-1 p-3.5">
@@ -1721,24 +1716,8 @@ function ProjectionSlot({
             )}
           </>
         ) : null}
-        {data?.trend && resolvedKind !== 'line' ? (
-          <div className="mb-3 flex items-center justify-between rounded-xl border border-border/70 bg-muted/20 px-3 py-2">
-            <span className="text-[11px] font-bold text-muted-foreground">
-              روند بازهٔ انتخاب‌شده
-            </span>
-            <MiniTrend title={title} trend={data.trend} />
-          </div>
-        ) : null}
       </div>
       <div className="flex flex-wrap items-center gap-2 border-t border-border/80 bg-muted/20 px-4 py-3">
-        <span className="text-[11px] text-muted-foreground">منبع:</span>
-        <span
-          className="min-w-0 truncate font-mono text-[10px] text-muted-foreground"
-          dir="ltr"
-          title={source.join(' + ')}
-        >
-          {source.join(' + ')}
-        </span>
         {decision ? (
           <Badge className="bg-amber-100 text-[10px] text-amber-800 dark:bg-amber-950 dark:text-amber-200">
             {decision}
@@ -2355,7 +2334,6 @@ export function DashboardWorkspace() {
                         kind={visualization.kind}
                         title={visualization.title}
                         description={visualization.description}
-                        source={visualization.source}
                         decision={visualization.openDecision}
                         drilldown={visualization.drilldown}
                         data={query.data?.visuals[visualization.id]}
