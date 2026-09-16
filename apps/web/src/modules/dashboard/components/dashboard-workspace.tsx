@@ -716,6 +716,63 @@ const navigationIcons: Record<string, LucideIcon> = {
   'documents-reports-data-quality': ShieldAlert,
 };
 
+const dashboardHeaderThemeByPageId: Record<string, string> = {
+  'executive-overview':
+    'from-cyan-50 via-surface to-blue-50 dark:from-cyan-950/20 dark:via-surface dark:to-blue-950/25',
+  'executive-growth-risk':
+    'from-sky-50 via-surface to-indigo-50 dark:from-sky-950/20 dark:via-surface dark:to-indigo-950/25',
+  'commercial-performance':
+    'from-blue-50 via-surface to-indigo-50 dark:from-blue-950/20 dark:via-surface dark:to-indigo-950/25',
+  'sales-profitability-analysis':
+    'from-violet-50 via-surface to-blue-50 dark:from-violet-950/20 dark:via-surface dark:to-blue-950/25',
+  'sales-segment-analysis':
+    'from-indigo-50 via-surface to-sky-50 dark:from-indigo-950/20 dark:via-surface dark:to-sky-950/25',
+  'revenue-collections':
+    'from-emerald-50 via-surface to-cyan-50 dark:from-emerald-950/20 dark:via-surface dark:to-cyan-950/25',
+  'travel-operations':
+    'from-cyan-50 via-surface to-sky-50 dark:from-cyan-950/20 dark:via-surface dark:to-sky-950/25',
+  'flight-route-analysis':
+    'from-sky-50 via-surface to-blue-50 dark:from-sky-950/20 dark:via-surface dark:to-blue-950/25',
+  'inventory-products':
+    'from-teal-50 via-surface to-cyan-50 dark:from-teal-950/20 dark:via-surface dark:to-cyan-950/25',
+  'tour-hotel-performance':
+    'from-amber-50 via-surface to-orange-50 dark:from-amber-950/20 dark:via-surface dark:to-orange-950/25',
+  'procurement-suppliers':
+    'from-orange-50 via-surface to-amber-50 dark:from-orange-950/20 dark:via-surface dark:to-amber-950/25',
+  'finance-treasury':
+    'from-emerald-50 via-surface to-teal-50 dark:from-emerald-950/20 dark:via-surface dark:to-teal-950/25',
+  'finance-profitability-costs':
+    'from-lime-50 via-surface to-emerald-50 dark:from-lime-950/20 dark:via-surface dark:to-emerald-950/25',
+  'finance-obligations-risk':
+    'from-rose-50 via-surface to-amber-50 dark:from-rose-950/20 dark:via-surface dark:to-amber-950/25',
+  'customer-growth':
+    'from-violet-50 via-surface to-fuchsia-50 dark:from-violet-950/20 dark:via-surface dark:to-fuchsia-950/25',
+  'customer-behavior-analysis':
+    'from-fuchsia-50 via-surface to-violet-50 dark:from-fuchsia-950/20 dark:via-surface dark:to-violet-950/25',
+  'customer-crm':
+    'from-indigo-50 via-surface to-violet-50 dark:from-indigo-950/20 dark:via-surface dark:to-violet-950/25',
+  'support-service-quality':
+    'from-cyan-50 via-surface to-violet-50 dark:from-cyan-950/20 dark:via-surface dark:to-violet-950/25',
+  'partners-b2b':
+    'from-blue-50 via-surface to-slate-50 dark:from-blue-950/20 dark:via-surface dark:to-slate-950/25',
+  'marketing-growth':
+    'from-pink-50 via-surface to-orange-50 dark:from-pink-950/20 dark:via-surface dark:to-orange-950/25',
+  'workforce-hr':
+    'from-amber-50 via-surface to-yellow-50 dark:from-amber-950/20 dark:via-surface dark:to-yellow-950/25',
+  'hr-record-quality':
+    'from-yellow-50 via-surface to-emerald-50 dark:from-yellow-950/20 dark:via-surface dark:to-emerald-950/25',
+  'employee-commercial-performance':
+    'from-orange-50 via-surface to-rose-50 dark:from-orange-950/20 dark:via-surface dark:to-rose-950/25',
+  'employee-crm-activity':
+    'from-sky-50 via-surface to-violet-50 dark:from-sky-950/20 dark:via-surface dark:to-violet-950/25',
+  'employee-sales-quality':
+    'from-emerald-50 via-surface to-blue-50 dark:from-emerald-950/20 dark:via-surface dark:to-blue-950/25',
+  'tasks-automation':
+    'from-slate-50 via-surface to-cyan-50 dark:from-slate-900/50 dark:via-surface dark:to-cyan-950/25',
+  'documents-reports-data-quality':
+    'from-slate-50 via-surface to-indigo-50 dark:from-slate-900/50 dark:via-surface dark:to-indigo-950/25',
+};
+
 function Metric({
   compact = false,
   currency = false,
@@ -2609,6 +2666,9 @@ export function DashboardWorkspace() {
     dashboardPages.find((page) => page.id === filters.page) ??
     dashboardPages[0]!;
   const ActivePageIcon = navigationIcons[activePage.id] ?? LayoutDashboard;
+  const activePageHeaderTheme =
+    dashboardHeaderThemeByPageId[activePage.id] ??
+    dashboardHeaderThemeByPageId['executive-overview'];
   const activePageKpis = dashboardKpis
     .filter((kpi) => activePage.kpiIds.includes(kpi.id))
     .map((kpi) =>
@@ -2748,9 +2808,13 @@ export function DashboardWorkspace() {
         <div className="min-w-0 space-y-5">
           <section aria-labelledby="active-dashboard-page-title">
             <div className="space-y-4">
-              <header className="relative isolate overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-bl from-cyan-50 via-surface to-blue-50 p-4 shadow-sm dark:from-cyan-950/20 dark:via-surface dark:to-blue-950/25 sm:p-5">
-                <span aria-hidden="true" className="absolute -end-14 -top-14 size-40 rounded-full bg-primary/10 blur-3xl" />
-                <span aria-hidden="true" className="absolute -start-16 bottom-0 size-32 rounded-full bg-cyan-400/10 blur-3xl" />
+              <header className={cn('relative isolate overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-bl p-4 shadow-sm sm:p-5', activePageHeaderTheme)}>
+                <span aria-hidden="true" className="pointer-events-none absolute -end-14 -top-14 size-40 rounded-full bg-primary/10 blur-3xl" />
+                <span aria-hidden="true" className="pointer-events-none absolute -start-16 bottom-0 size-32 rounded-full bg-cyan-400/10 blur-3xl" />
+                <span aria-hidden="true" className="pointer-events-none absolute -bottom-10 -end-2 text-primary/[0.055] dark:text-primary/[0.12]">
+                  <ActivePageIcon className="size-44 stroke-[1.15] sm:size-52" />
+                </span>
+                <span aria-hidden="true" className="pointer-events-none absolute inset-x-10 bottom-0 h-px bg-gradient-to-l from-transparent via-primary/25 to-transparent" />
                 <div className="relative mx-auto flex max-w-3xl flex-col items-center text-center">
                   <span className="mb-2 grid size-10 place-items-center rounded-xl bg-primary/10 text-primary ring-1 ring-primary/15 shadow-sm">
                     <ActivePageIcon aria-hidden="true" className="size-5" />

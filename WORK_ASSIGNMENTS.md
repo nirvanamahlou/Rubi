@@ -9,6 +9,13 @@
 
 # Work Assignments
 
+## DASHBOARD-PAGE-HEADER-MINIMAL-BACKGROUNDS-0916 — PC-C — LOCAL_COMPLETE
+
+- درخواست مالک: فضای سربرگ هر صفحهٔ Dashboard، پس‌زمینه‌ای مینیمال و متناسب با عنوان صفحه داشته باشد، بدون asset تصویری سنگین یا افت performance.
+- محدودهٔ رزروشده: فقط سربرگ Dashboard، تست Dashboard Web و اسناد وضعیت در Worktree `codex/pc-c-dashboard-reporting-latest`. API، داده/محاسبه، Reports، دیتابیس، Migration، وابستگی، Lockfile و asset باینری تغییر نمی‌کنند.
+- قرارداد: پس‌زمینه با CSS gradient و Lucide SVGهای موجود ساخته می‌شود؛ هیچ تصویر دانلودی، درخواست شبکه یا dependency تازه اضافه نمی‌شود.
+- نتیجه: برای همهٔ صفحه‌های اصلی و زیرصفحه‌ها theme رنگی متناسب با دامنه افزوده شد و آیکون اختصاصی صفحه به صورت watermark SVG بسیار کم‌رنگ قرار گرفت. رندر کاملاً local/CSS/SVG است و asset جدید، request شبکه و dependency اضافه ندارد.
+
 ## DASHBOARD-DONUT-LABEL-LEGIBILITY-0916 — PC-C — LOCAL_COMPLETE
 
 - درخواست مالک: متن Donutهای Dashboard که در خروجی فعلی سخت دیده می‌شود، خوانا و بدون هم‌پوشانی شود.

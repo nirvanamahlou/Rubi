@@ -3184,6 +3184,14 @@ breadcrumb پوستهٔ اصلی از hook موجود `usePageBreadcrumbs` بر�
   typography بزرگ‌تر نمایش می‌یابند. این تغییر فقط رندر Web است و به Projection،
   API یا Reports دست نمی‌زند.
 
+## Dashboard page header minimal backgrounds — 2026-09-16
+
+- سربرگ هر صفحهٔ Dashboard اکنون theme مینیمال مختص دامنه دارد: فروش آبی/ایندیگو،
+  مالی زمردی، سفر فیروزه‌ای، مشتری بنفش، منابع انسانی کهربایی و موارد مشابه. آیکون
+  اختصاصی همان صفحه به‌صورت watermark کم‌رنگ و non-interactive در پس‌زمینه است.
+- این طراحی صرفاً از CSS gradient و Lucide SVGهای موجود در bundle استفاده می‌کند؛
+  هیچ فایل تصویر، درخواست شبکه، dependency یا تغییر API/Projection/Reports ندارد.
+
 ## Standalone supplier address and phone — 2026-09-16
 
 - فرم ایجاد تأمین‌کننده مستقل اکنون «نشانی» و «شماره تماس اصلی» دارد. کد داخلی

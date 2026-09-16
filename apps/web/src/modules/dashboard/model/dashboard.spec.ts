@@ -662,13 +662,17 @@ describe('dashboard permission and data states', () => {
     expect(source).toContain('items-baseline');
     expect(source).toContain('dashboard-sidebar-filters-title');
     expect(source).toContain('ActivePageIcon');
+    expect(source).toContain('dashboardHeaderThemeByPageId');
+    expect(source).toContain('activePageHeaderTheme');
+    expect(source).toContain('pointer-events-none absolute -bottom-10 -end-2');
+    expect(source).toContain('size-44 stroke-[1.15] sm:size-52');
     expect(source).toContain("'tour-hotel-performance': Hotel");
     expect(source).toContain("'flight-route-analysis': Ticket");
     expect(source).toContain("'finance-obligations-risk': ShieldAlert");
     expect(source).toContain("'marketing-growth': Megaphone");
     expect(source).toContain("'employee-crm-activity': PhoneCall");
     expect(source).toContain('items-center text-center');
-    expect(source).toContain('bg-gradient-to-bl from-cyan-50 via-surface to-blue-50');
+    expect(source).toContain("'from-cyan-50 via-surface to-blue-50");
     expect(source).toContain('max-w-2xl text-sm leading-6 text-muted-foreground');
     expect(source).toContain('lg:sticky lg:top-20');
     expect(source).toContain('lg:overflow-y-auto');
