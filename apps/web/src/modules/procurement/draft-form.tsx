@@ -85,7 +85,10 @@ export function DraftForm({
       ? structuredClone(request.draft)
       : emptyDraft(
           bootstrap.requester?.unitId,
-          bootstrap.requester?.branchId ?? bootstrap.branches[0]?.id ?? '',
+          bootstrap.requester?.branchId ??
+            bootstrap.defaultBranchId ??
+            bootstrap.branches[0]?.id ??
+            '',
         ),
   );
   const [requesterEmployeeId, setRequesterEmployeeId] = useState(
@@ -1022,6 +1025,7 @@ export function DraftForm({
                       emptyDraft(
                         bootstrap.requester?.unitId,
                         bootstrap.requester?.branchId ??
+                          bootstrap.defaultBranchId ??
                           bootstrap.branches[0]?.id ??
                           '',
                       ),

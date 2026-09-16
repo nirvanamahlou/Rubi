@@ -61,6 +61,7 @@ export async function procurementRequest<T>(
   return response.json() as Promise<T>;
 }
 export type Bootstrap = ProcurementBootstrapV1 & {
+  defaultBranchId?: string | null;
   requester: {
     id: string;
     userId: string;

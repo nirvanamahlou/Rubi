@@ -241,10 +241,12 @@ export class ProcurementService {
       )
     )
       throw new ForbiddenException('دسترسی خرید وجود ندارد.');
-    const [currencies, branches, requester] = await Promise.all([
+    const [currencies, branches, requester, preferredBranchId] =
+      await Promise.all([
       this.master.currencies(),
       this.master.branches(actor.branchIds),
       this.hr.self(actor),
+      this.hr.preferredBranch(actor),
     ]);
     return {
       permissions: PROCUREMENT_PERMISSION_CODES.filter((code) =>
@@ -256,6 +258,7 @@ export class ProcurementService {
         label: branch.name,
       })),
       requester,
+      defaultBranchId: requester?.branchId ?? preferredBranchId,
       policy: 'POLICY_NOT_CONFIGURED' as const,
       finance: 'CONNECTED' as const,
       documents: 'AVAILABLE' as const,

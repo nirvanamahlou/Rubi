@@ -8,6 +8,7 @@ import { emptyDraft } from './model';
 const bootstrap: Bootstrap = {
   permissions: ['procurement.request.create'],
   branches: [{ id: 'branch-1', label: 'شعبه مرکزی' }],
+  defaultBranchId: 'branch-1',
   currencies: [],
   requester: {
     id: 'employee',

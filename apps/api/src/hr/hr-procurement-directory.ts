@@ -11,6 +11,21 @@ export class HrProcurementDirectory {
   async self(actor: AuthenticatedActor, branchId?: string) {
     return this.activeEmployee(actor, actor.userId, branchId);
   }
+  /** Prefer an authorized branch that has an active HR directory. */
+  async preferredBranch(actor: AuthenticatedActor) {
+    const rows = await this.database.client.hrEmployee.findMany({
+      where: {
+        branchId: { in: actor.branchIds },
+        status: 'فعال',
+        deletedAt: null,
+      },
+      select: { branchId: true },
+      distinct: ['branchId'],
+      take: 100,
+    });
+    const populated = new Set(rows.map((row) => row.branchId));
+    return actor.branchIds.find((branchId) => populated.has(branchId)) ?? null;
+  }
   /** Called only after Procurement has authorized the request aggregate. */
   async requester(actor: AuthenticatedActor, userId: string, branchId: string) {
     if (
