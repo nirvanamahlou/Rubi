@@ -542,6 +542,9 @@ describe('dashboard permission and data states', () => {
     expect(source).toContain('EmployeePerformanceBars');
     expect(source).toContain('MiniTrend');
     expect(source).toContain('GrowthIndicator');
+    expect(source).toContain('comparison?: DashboardComparisonSnapshot | undefined;');
+    expect(source).toContain('!hasComparison || unavailable');
+    expect(source).not.toContain('comparisonUnavailableForPeriod');
     expect(source).toContain('currencyMetricParts');
     expect(source).toContain('grid-cols-[auto_minmax(0,1fr)_auto]');
     expect(source).not.toContain('KpiComparisonBadges');

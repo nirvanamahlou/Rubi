@@ -532,13 +532,6 @@ const navigationIcons: Record<string, LucideIcon> = {
   'workforce-hr': UserRoundCog,
 };
 
-const comparisonUnavailableForPeriod: DashboardComparisonSnapshot = {
-  label: 'دوره قبل هم‌طول',
-  previousValue: 0,
-  deltaPercent: null,
-  direction: 'flat',
-};
-
 function Metric({
   compact = false,
   currency = false,
@@ -553,9 +546,6 @@ function Metric({
   const currencyValues = currency && metric
     ? metric.value.split(' · ')
     : null;
-  const fallbackComparison = metric?.trend
-    ? comparisonUnavailableForPeriod
-    : undefined;
   const comparisonFor = (index: number) => {
     const currencyCode =
       metric?.trend?.series?.[index]?.currencyCode ??
@@ -566,9 +556,9 @@ function Metric({
         ) ?? metric?.comparison)
       : metric?.comparison;
     return {
-      comparison: actualComparison ?? fallbackComparison,
+      comparison: actualComparison,
       currencyCode,
-      comparisonUnavailable: !actualComparison && Boolean(fallbackComparison),
+      comparisonUnavailable: !actualComparison,
     };
   };
 
@@ -593,7 +583,7 @@ function Metric({
                 key={value}
               >
                 <span className="justify-self-start">
-                  {comparison ? (
+                  {metric ? (
                     <GrowthIndicator
                       comparison={comparison}
                       unavailable={comparisonUnavailable}
@@ -626,13 +616,11 @@ function Metric({
           dir="rtl"
         >
           <span className="justify-self-start">
-            {metric?.comparison ? (
-              <GrowthIndicator comparison={metric.comparison} role={role} />
-            ) : fallbackComparison ? (
+            {metric ? (
               <GrowthIndicator
-                comparison={fallbackComparison}
+                comparison={metric.comparison}
                 role={role}
-                unavailable
+                unavailable={!metric.comparison}
               />
             ) : null}
           </span>
@@ -823,28 +811,30 @@ function GrowthIndicator({
   role = 'diagnostic',
   unavailable = false,
 }: {
-  comparison: DashboardComparisonSnapshot;
+  comparison?: DashboardComparisonSnapshot | undefined;
   currencyCode?: string | undefined;
   role?: DashboardKpiRole;
   unavailable?: boolean;
 }) {
+  const hasComparison = Boolean(comparison);
+  const direction = comparison?.direction ?? 'flat';
   const favorable =
-    role === 'diagnostic' || comparison.direction === 'flat'
+    role === 'diagnostic' || direction === 'flat'
       ? null
       : role === 'guardrail'
-        ? comparison.direction === 'down'
-        : comparison.direction === 'up';
+        ? direction === 'down'
+        : direction === 'up';
   const Icon =
-    comparison.direction === 'up'
+    direction === 'up'
       ? ArrowUpRight
-      : comparison.direction === 'down'
+      : direction === 'down'
         ? ArrowDownRight
         : Minus;
   const value =
-    comparison.deltaPercent === null
+    comparison?.deltaPercent === null || !hasComparison
       ? '—'
-      : `${comparison.direction === 'up' ? '+' : comparison.direction === 'down' ? '−' : ''}${Math.abs(
-          comparison.deltaPercent,
+      : `${direction === 'up' ? '+' : direction === 'down' ? '−' : ''}${Math.abs(
+          comparison!.deltaPercent,
         ).toLocaleString('fa-IR', { maximumFractionDigits: 1 })}٪`;
 
   return (
@@ -858,7 +848,13 @@ function GrowthIndicator({
         favorable === null &&
           'bg-blue-50 text-blue-700 dark:bg-blue-950/45 dark:text-blue-200',
       )}
-      title={`${currencyCode ? `${currencyNames[currencyCode] ?? currencyCode} · ` : ''}${comparison.label} · ${unavailable ? 'دادهٔ دورهٔ قبل برای محاسبه درصد در دسترس نیست' : `مقدار قبلی ${comparison.previousValue.toLocaleString('fa-IR')}`}`}
+      title={`${currencyCode ? `${currencyNames[currencyCode] ?? currencyCode} · ` : ''}${comparison?.label ?? 'دوره قبل هم‌طول'} · ${
+        !hasComparison || unavailable
+          ? 'دادهٔ دورهٔ قبل برای محاسبه درصد در دسترس نیست'
+          : comparison!.deltaPercent === null
+            ? 'مبنای دورهٔ قبل صفر است؛ درصد تغییر قابل محاسبه نیست'
+            : `مقدار قبلی ${comparison!.previousValue.toLocaleString('fa-IR')}`
+      }`}
     >
       <Icon aria-hidden="true" className="size-3.5" />
       <span>{value}</span>
