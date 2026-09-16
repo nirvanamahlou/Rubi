@@ -7,22 +7,29 @@ import { validateMasterDataDraft } from './validation';
 
 describe('supplier and broker form coverage', () => {
   it.each(['suppliers', 'brokers'] as const)(
-    'offers persisted English, contact and service fields for %s',
+    'offers the intended identity, contact and service fields for %s',
     (resource) => {
       const fields = getMasterDataDefinition(resource).fields.map(
         (field) => field.key,
       );
       expect(fields).toEqual(
         expect.arrayContaining([
-          'englishName',
           'primaryContactId',
           'serviceCodes',
           'organizationId',
-          'countryId',
-          'cityId',
           'collaborationStatus',
         ]),
       );
+      if (resource === 'suppliers') {
+        expect(fields).toContain('name');
+        expect(fields).not.toEqual(
+          expect.arrayContaining(['englishName', 'countryId', 'cityId']),
+        );
+      } else {
+        expect(fields).toEqual(
+          expect.arrayContaining(['englishName', 'countryId', 'cityId']),
+        );
+      }
       expect(fields).not.toEqual(
         expect.arrayContaining(['purchaseLimit', 'contractStatus']),
       );
@@ -68,6 +75,10 @@ describe('supplier and broker form coverage', () => {
     expect(source).toContain('masterDataApi.persistWithLogo');
     expect(source).toContain('existing: referenceForm.record');
     expect(source).toContain('lockedFields');
+    expect(source).toContain("isPrimary: 'true'");
+    expect(source).toContain(
+      "getMasterDataDefinition('organization-contacts')",
+    );
   });
   it('renders English name, person type and masked primary contact in the popup/list', () => {
     const source = readFileSync(

@@ -278,7 +278,10 @@ function GenericMasterDataLiveForm({
                     : {})}
                   {...(canManage
                     ? {
-                        onManage: (related?: MasterDataRecord) =>
+                        onManage: (
+                          related?: MasterDataRecord,
+                          searchQuery?: string,
+                        ) =>
                           setReferenceForm({
                             field: field.key,
                             definition: getMasterDataDefinition(
@@ -289,7 +292,12 @@ function GenericMasterDataLiveForm({
                               reference.target === 'organizations'
                                 ? related
                                   ? {}
-                                  : { roleCodes: reference.requiredRole ?? '' }
+                                  : {
+                                      roleCodes: reference.requiredRole ?? '',
+                                      ...(searchQuery
+                                        ? { legalName: searchQuery }
+                                        : {}),
+                                    }
                                 : reference.target === 'organization-contacts'
                                   ? {
                                       organizationId:
@@ -304,6 +312,11 @@ function GenericMasterDataLiveForm({
                           }),
                       }
                     : {})}
+                  createOnlyWhenEmpty={
+                    definition.key === 'suppliers' &&
+                    mode === 'create' &&
+                    field.key === 'organizationId'
+                  }
                   id={controlId}
                   label={field.label}
                   onChange={updateValue}
@@ -487,7 +500,24 @@ function GenericMasterDataLiveForm({
                 : {}),
             }));
             setReferenceRevision((revision) => revision + 1);
-            setReferenceForm(null);
+            if (
+              definition.key === 'suppliers' &&
+              mode === 'create' &&
+              field === 'organizationId' &&
+              !referenceForm.record
+            ) {
+              setReferenceForm({
+                field: 'primaryContactId',
+                definition: getMasterDataDefinition('organization-contacts'),
+                defaults: {
+                  organizationId: selectedValue,
+                  preferredChannel: 'PHONE',
+                  isPrimary: 'true',
+                },
+              });
+            } else {
+              setReferenceForm(null);
+            }
           }}
         />
       ) : null}

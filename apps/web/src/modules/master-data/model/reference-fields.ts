@@ -148,13 +148,6 @@ const configs: Partial<
       requiredRole: 'SUPPLIER',
       optional: true,
     },
-    countryId: { target: 'countries', payload: 'id', optional: true },
-    cityId: {
-      target: 'cities',
-      payload: 'id',
-      optional: true,
-      scopeField: 'countryId',
-    },
     primaryContactId: {
       target: 'organization-contacts',
       payload: 'id',

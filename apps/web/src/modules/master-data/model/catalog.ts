@@ -1606,29 +1606,11 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
         hint: 'در صورت انتخاب سازمان، نام سازمان به‌عنوان مقدار پیشنهادی استفاده می‌شود.',
       },
       {
-        key: 'englishName',
-        label: 'نام انگلیسی تأمین‌کننده',
-        type: 'text',
-        placeholder: '',
-      },
-      {
         key: 'organizationId',
         label: 'سازمان تأمین‌کننده',
         type: 'text',
         placeholder: '',
-        hint: 'اختیاری؛ می‌توانید تأمین‌کننده مستقل ثبت کنید.',
-      },
-      {
-        key: 'countryId',
-        label: 'کشور',
-        type: 'text',
-        placeholder: '',
-      },
-      {
-        key: 'cityId',
-        label: 'شهر',
-        type: 'text',
-        placeholder: '',
+        hint: 'ابتدا سازمان موجود را جست‌وجو کنید؛ ثبت سازمان جدید فقط وقتی نمایش داده می‌شود که نتیجه‌ای پیدا نشود.',
       },
       {
         key: 'externalProviderReference',
