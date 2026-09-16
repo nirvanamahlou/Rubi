@@ -156,7 +156,6 @@ function Navigation({
               ? 'bg-cyan-300/20 text-white ring-1 ring-inset ring-cyan-100/30 shadow-md shadow-blue-950/20'
               : 'text-blue-50/75 hover:bg-white/10 hover:text-white',
           compact && 'justify-center px-0',
-          secondary && !compact && 'ms-4 border-s border-current/20 ps-4',
         )}
         href={href}
         title={!compact ? title : undefined}
