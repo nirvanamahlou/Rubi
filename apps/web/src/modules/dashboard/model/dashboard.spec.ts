@@ -545,7 +545,9 @@ describe('dashboard permission and data states', () => {
     expect(source).toContain('MiniTrend');
     expect(source).toContain('GrowthIndicator');
     expect(source).toContain('نسبت به دوره قبل');
-    expect(source).toContain('برای روند، یک ارز انتخاب کنید');
+    expect(source).toContain('هر ارز مستقل و بدون تبدیل نمایش داده می‌شود');
+    expect(source).toContain('currencySymbols');
+    expect(source).toContain('راهنمای روند ارزها');
     expect(source).toContain('data-dashboard-employee-visual');
     expect(source).toContain('مقیاس نوار: بیشترین مقدار');
     expect(source).toContain("visualId.startsWith('employee-')");

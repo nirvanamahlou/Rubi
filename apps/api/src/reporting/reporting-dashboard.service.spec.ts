@@ -80,6 +80,9 @@ describe('dashboard travel projection date boundaries', () => {
     expect(result.metrics['gross-sales']?.value).toBeTruthy();
     expect(result.metrics['gross-sales']?.comparison?.direction).toBe('flat');
     expect(result.metrics['gross-sales']?.trend?.values).toHaveLength(8);
+    expect(result.metrics['gross-sales']?.trend?.series).toEqual([
+      expect.objectContaining({ currencyCode: 'IRR' }),
+    ]);
     expect(facts).toHaveBeenCalledTimes(2);
     const fromUtc = (
       facts.mock.calls[0]?.[0] as { filters: { fromUtc: string } }
@@ -167,8 +170,14 @@ describe('dashboard travel projection date boundaries', () => {
       },
       actor,
     );
-    expect(result.metrics['gross-sales']?.value).toContain('IRR');
-    expect(result.metrics['gross-sales']?.value).toContain('USD');
+    expect(result.metrics['gross-sales']?.value).toContain('﷼');
+    expect(result.metrics['gross-sales']?.value).toContain('$');
+    expect(result.metrics['gross-sales']?.trend?.series).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ currencyCode: 'IRR' }),
+        expect.objectContaining({ currencyCode: 'USD' }),
+      ]),
+    );
     expect(result.metrics).not.toHaveProperty('account-balance');
     expect(result.visuals['executive-sales-by-service']?.values).toEqual([
       12_000_000,

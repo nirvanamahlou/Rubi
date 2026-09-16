@@ -26,6 +26,12 @@ export interface DashboardComparisonSnapshot {
 export interface DashboardTrendSnapshot {
   labels: readonly string[];
   values: readonly number[];
+  series?: readonly DashboardTrendSeriesSnapshot[];
+}
+
+export interface DashboardTrendSeriesSnapshot {
+  currencyCode: string;
+  values: readonly number[];
 }
 
 export interface DashboardMetricSnapshot {

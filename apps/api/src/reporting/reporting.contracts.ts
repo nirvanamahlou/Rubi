@@ -239,4 +239,10 @@ export interface DashboardComparisonV1 {
 export interface DashboardTrendV1 {
   labels: readonly string[];
   values: readonly number[];
+  series?: readonly DashboardTrendSeriesV1[];
+}
+
+export interface DashboardTrendSeriesV1 {
+  currencyCode: string;
+  values: readonly number[];
 }

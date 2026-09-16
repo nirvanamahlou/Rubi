@@ -9,6 +9,13 @@
 
 # Work Assignments
 
+## DASHBOARD-KPI-MULTI-CURRENCY-TRENDS-0916 — PC-C — LOCAL_COMPLETE
+
+- درخواست مالک: مقدار KPIهای پولی در کارت مرکزچین و با نماد ارز نمایش داده شود و نمودار کوچک زیر کارت، بدون الزام فیلتر ارز، روند مستقل همهٔ ارزهای موجود را با legend قابل‌دسترسی نشان دهد.
+- محدودهٔ رزروشده: قرارداد Projection عمومی Dashboard در Reporting API، client/typeهای Dashboard، کامپوننت KPI و تست‌های هدفمند آن‌ها در Worktree `codex/pc-c-dashboard-reporting-latest`.
+- قرارداد: هر سری مبلغ در همان `currencyCode` باقی می‌ماند؛ FX، جمع‌زدن ارزها و دادهٔ ساختگی ممنوع است. خطوط sparkline برای خوانایی در مقیاس نسبی مستقل هر ارز رسم می‌شوند و legend نماد ارز را مشخص می‌کند.
+- نتیجه: خروجی مبلغ کارت‌ها مرکزچین شد؛ `USD` و `IRR/IRI` به‌ترتیب با `$` و `﷼` نمایش می‌یابند. Projection برای هر KPI پولی سری‌های trend همهٔ ارزهای موجود را برمی‌گرداند و کارت با خطوط رنگی و legend قابل‌دسترسی آن‌ها را نشان می‌دهد. تست هدفمند API (۵)، Dashboard Web (۱۶)، lint و TypeScript API/Web موفق‌اند.
+
 ## DASHBOARD-BI-VISUAL-SYSTEM-0916 — PC-C — LOCAL_COMPLETE / RUNTIME_ACTIVE
 
 - درخواست مالک 2026-09-16: KPI Card، Line/Bar، نمودار ترکیبی، Donut و جدول‌های Dashboard با الگوی متراکم و خوانای تصاویر مرجع BI بازطراحی شوند، بدون جایگزینی دادهٔ واقعی با دادهٔ نمایشی.

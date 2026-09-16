@@ -539,13 +539,13 @@ function Metric({
   return (
     <div
       className={cn(
-        'flex min-w-0 gap-2',
-        currencyValues ? 'flex-col items-start' : 'flex-wrap items-end',
+        'flex w-full min-w-0 justify-center gap-2 text-center',
+        currencyValues ? 'flex-col items-center' : 'flex-wrap items-end',
         compact ? 'mt-2' : 'mt-4',
       )}
     >
       {currencyValues ? (
-        <span className="flex min-w-0 flex-col items-start gap-1 font-black tabular-nums tracking-tight text-foreground">
+        <span className="flex min-w-0 flex-col items-center gap-1 font-black tabular-nums tracking-tight text-foreground">
           {currencyValues.map((value) => (
             <bdi dir="ltr" className="max-w-full break-words text-lg leading-6" key={value}>
               {value}
@@ -567,6 +567,40 @@ function Metric({
   );
 }
 
+const currencySymbols: Readonly<Record<string, string>> = {
+  USD: '$',
+  EUR: '€',
+  GBP: '£',
+  AED: 'د.إ',
+  TRY: '₺',
+  IRR: '﷼',
+  IRI: '﷼',
+};
+
+const currencyNames: Readonly<Record<string, string>> = {
+  USD: 'دلار آمریکا',
+  EUR: 'یورو',
+  GBP: 'پوند بریتانیا',
+  AED: 'درهم امارات',
+  TRY: 'لیر ترکیه',
+  IRR: 'ریال ایران',
+  IRI: 'ریال ایران',
+};
+
+const trendPalette = [
+  'text-blue-600 dark:text-blue-400',
+  'text-violet-600 dark:text-violet-400',
+  'text-emerald-600 dark:text-emerald-400',
+  'text-amber-600 dark:text-amber-400',
+] as const;
+
+const trendDotPalette = [
+  'bg-blue-600 dark:bg-blue-400',
+  'bg-violet-600 dark:bg-violet-400',
+  'bg-emerald-600 dark:bg-emerald-400',
+  'bg-amber-600 dark:bg-amber-400',
+] as const;
+
 function MiniTrend({
   title,
   trend,
@@ -574,49 +608,79 @@ function MiniTrend({
   title: string;
   trend: DashboardTrendSnapshot;
 }) {
-  const minimum = Math.min(...trend.values, 0);
-  const maximum = Math.max(...trend.values, 1);
-  const span = Math.max(maximum - minimum, 1);
-  const points = trend.values.map((value, index) => ({
-    x:
-      trend.values.length > 1
-        ? 3 + (index * 90) / (trend.values.length - 1)
-        : 48,
-    y: 29 - ((value - minimum) / span) * 24,
+  const series =
+    trend.series?.length
+      ? trend.series
+      : [{ currencyCode: '', values: trend.values }];
+  const pointsFor = (values: readonly number[]) => {
+    const minimum = Math.min(...values);
+    const maximum = Math.max(...values);
+    const span = Math.max(maximum - minimum, 1);
+    return values.map((value, index) => ({
+      x: values.length > 1 ? 3 + (index * 90) / (values.length - 1) : 48,
+      y: 29 - ((value - minimum) / span) * 24,
+    }));
+  };
+  const renderedSeries = series.map((item) => ({
+    ...item,
+    points: pointsFor(item.values),
   }));
-  const summary = trend.values
-    .map(
-      (value, index) =>
-        `${trend.labels[index] ?? index + 1}: ${value.toLocaleString('fa-IR')}`,
+  const summary = renderedSeries
+    .map(({ currencyCode, values }) =>
+      values
+        .map(
+          (value, index) =>
+            `${currencyCode ? `${currencySymbols[currencyCode] ?? currencyCode} ` : ''}${trend.labels[index] ?? index + 1}: ${value.toLocaleString('fa-IR')}`,
+        )
+        .join('، '),
     )
-    .join('، ');
+    .join('؛ ');
 
   return (
-    <svg
-      aria-label={`روند ${title}. ${summary}`}
-      className="h-9 w-24 shrink-0 overflow-visible text-primary"
-      role="img"
-      viewBox="0 0 96 34"
-    >
-      <polyline
-        fill="none"
-        points={points.map(({ x, y }) => `${x},${y}`).join(' ')}
-        stroke="currentColor"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth="2.5"
-      />
-      {points.map(({ x, y }, index) => (
-        <circle
-          aria-hidden="true"
-          cx={x}
-          cy={y}
-          fill="currentColor"
-          key={`${x}-${y}-${index}`}
-          r="1.8"
-        />
-      ))}
-    </svg>
+    <span className="flex min-w-0 flex-1 flex-col gap-1.5">
+      <svg
+        aria-label={`روند ${title}. هر خط در مقیاس مستقل همان ارز نمایش داده می‌شود. ${summary}`}
+        className="h-9 w-full overflow-visible"
+        role="img"
+        viewBox="0 0 96 34"
+      >
+        {renderedSeries.map(({ currencyCode, points }, seriesIndex) => (
+          <g
+            className={trendPalette[seriesIndex % trendPalette.length]}
+            key={currencyCode || 'default'}
+          >
+            <polyline
+              fill="none"
+              points={points.map(({ x, y }) => `${x},${y}`).join(' ')}
+              stroke="currentColor"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2.25"
+            />
+            {points.map(({ x, y }, index) => (
+              <circle
+                aria-hidden="true"
+                cx={x}
+                cy={y}
+                fill="currentColor"
+                key={`${currencyCode}-${x}-${y}-${index}`}
+                r="1.5"
+              />
+            ))}
+          </g>
+        ))}
+      </svg>
+      {renderedSeries.length > 1 ? (
+        <span aria-label="راهنمای روند ارزها" className="flex flex-wrap justify-center gap-x-2 gap-y-1 text-[10px] font-bold text-muted-foreground">
+          {renderedSeries.map(({ currencyCode }, index) => (
+            <span className="inline-flex items-center gap-1" key={currencyCode} title={currencyNames[currencyCode] ?? currencyCode}>
+              <i aria-hidden="true" className={cn('size-1.5 rounded-full', trendDotPalette[index % trendDotPalette.length])} />
+              <bdi dir="ltr">{currencySymbols[currencyCode] ?? currencyCode}</bdi>
+            </span>
+          ))}
+        </span>
+      ) : null}
+    </span>
   );
 }
 
@@ -714,11 +778,11 @@ function KpiCard({
           {definition.title}
         </span>
       </span>
-      <span className="relative block">
+      <span className="relative block text-center">
         <Metric compact currency={definition.currency === 'required'} metric={metric} />
       </span>
       {metric ? (
-        <span className="relative mt-2 flex min-h-9 items-end justify-between gap-2 border-t border-border/60 pt-2">
+        <span className="relative mt-2 flex min-h-11 flex-col gap-2 border-t border-border/60 pt-2">
           {metric.comparison ? (
             <GrowthIndicator
               comparison={metric.comparison}
@@ -726,8 +790,8 @@ function KpiCard({
             />
           ) : (
             <span className="text-[10px] font-semibold text-muted-foreground">
-              {definition.currency === 'required'
-                ? 'برای روند، یک ارز انتخاب کنید'
+              {metric.trend
+                ? 'هر ارز مستقل و بدون تبدیل نمایش داده می‌شود'
                 : 'دادهٔ دورهٔ قبل موجود نیست'}
             </span>
           )}

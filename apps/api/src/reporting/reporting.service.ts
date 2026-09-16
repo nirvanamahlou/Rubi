@@ -433,6 +433,34 @@ export class ReportingService {
         values: buckets.map((bucket) => Math.round(measure(bucket))),
       };
     };
+    const currencySymbol = (code: string) =>
+      ({
+        USD: '$',
+        EUR: '€',
+        GBP: '£',
+        AED: 'د.إ',
+        TRY: '₺',
+        IRR: '﷼',
+        IRI: '﷼',
+      })[code] ?? code;
+    const currencyTrendFor = (
+      rows: typeof facts,
+      measure: (bucket: typeof facts) => number,
+    ) => {
+      const series = currencies.map((currencyCode) => ({
+        currencyCode,
+        values: trendFor(
+          rows.filter((fact) => fact.currencyCode === currencyCode),
+          measure,
+        ).values,
+      }));
+      const first = series[0];
+      return {
+        labels: trendFor(rows, measure).labels,
+        values: first?.values ?? [],
+        series,
+      };
+    };
     const metricIds = (input.kpiIds ?? '').split(',').filter(Boolean);
     const countMetrics: Record<string, (rows: typeof facts) => number> = {
       'cancelled-reservations': (rows) =>
@@ -506,6 +534,10 @@ export class ReportingService {
             : [];
           const currentAmount = comparisonCurrency ? amount(currentRows) : 0;
           const previousAmount = comparisonCurrency ? amount(previousRows) : 0;
+          const trend =
+            periodStart && periodDuration > 0
+              ? currencyTrendFor(facts, amount)
+              : undefined;
           return [
             [
               id,
@@ -513,7 +545,7 @@ export class ReportingService {
                 value: currencies
                   .map(
                     (code) =>
-                      `${Math.round(amount(facts.filter((fact) => fact.currencyCode === code))).toLocaleString('fa-IR')} ${code}`,
+                      `${currencySymbol(code)}${Math.round(amount(facts.filter((fact) => fact.currencyCode === code))).toLocaleString('fa-IR')}`,
                   )
                   .join(' · '),
                 unit: 'ارزها مستقل',
@@ -524,9 +556,9 @@ export class ReportingService {
                         currentAmount,
                         previousAmount,
                       ),
-                      trend: trendFor(currentRows, amount),
                     }
                   : {}),
+                ...(trend ? { trend } : {}),
               },
             ],
           ];
