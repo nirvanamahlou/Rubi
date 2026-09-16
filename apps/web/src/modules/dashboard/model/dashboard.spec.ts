@@ -544,9 +544,9 @@ describe('dashboard permission and data states', () => {
     expect(source).toContain('EmployeePerformanceBars');
     expect(source).toContain('MiniTrend');
     expect(source).toContain('GrowthIndicator');
-    expect(source).toContain('KpiComparisonBadges');
-    expect(source).toContain('comparisonSeries={metric.comparisonSeries}');
-    expect(source).toContain('justify-between');
+    expect(source).toContain('currencyMetricParts');
+    expect(source).toContain('grid-cols-[auto_minmax(0,1fr)_auto]');
+    expect(source).not.toContain('KpiComparisonBadges');
     expect(source).toContain('linearGradient');
     expect(source).toContain('stopOpacity="0.32"');
     expect(source).toContain('h-14 w-full overflow-visible');

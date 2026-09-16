@@ -84,7 +84,6 @@ import { reportCatalog } from '@/modules/reports/model/reporting';
 import {
   dashboardProjectionClient,
   type DashboardComparisonSnapshot,
-  type DashboardCurrencyComparisonSnapshot,
   type DashboardFilterOptions,
   type DashboardMetricSnapshot,
   type DashboardTrendSnapshot,
@@ -540,39 +539,94 @@ function Metric({
   compact = false,
   currency = false,
   metric,
+  role = 'diagnostic',
 }: {
   compact?: boolean;
   currency?: boolean;
   metric?: DashboardMetricSnapshot | undefined;
+  role?: DashboardKpiRole;
 }) {
-  const currencyValues = currency && metric?.value.includes(' · ')
+  const currencyValues = currency && metric
     ? metric.value.split(' · ')
     : null;
+  const comparisonFor = (index: number) => {
+    const currencyCode =
+      metric?.trend?.series?.[index]?.currencyCode ??
+      metric?.comparisonSeries?.[index]?.currencyCode;
+    const comparison = currencyCode
+      ? metric?.comparisonSeries?.find(
+          (entry) => entry.currencyCode === currencyCode,
+        )
+      : metric?.comparison;
+    return { comparison, currencyCode };
+  };
+
   return (
     <div
       className={cn(
-        'flex w-full min-w-0 justify-center gap-2 text-center',
+        'flex w-full min-w-0 justify-center text-center',
         currencyValues ? 'flex-col items-center' : 'flex-wrap items-end',
         compact ? 'mt-2' : 'mt-4',
       )}
     >
       {currencyValues ? (
-        <span className="flex min-w-0 flex-col items-center gap-1 font-black tabular-nums tracking-tight text-foreground">
-          {currencyValues.map((value) => (
-            <bdi dir="ltr" className="max-w-full break-words text-lg leading-6" key={value}>
-              {value}
-            </bdi>
-          ))}
+        <span className="flex w-full min-w-0 flex-col gap-1 font-black tabular-nums tracking-tight text-foreground">
+          {currencyValues.map((value, index) => {
+            const { amount, symbol } = currencyMetricParts(value);
+            const { comparison, currencyCode } = comparisonFor(index);
+            return (
+              <span
+                className="grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-1"
+                dir="rtl"
+                key={value}
+              >
+                <span className="justify-self-start">
+                  {comparison ? (
+                    <GrowthIndicator
+                      comparison={comparison}
+                      currencyCode={currencyCode}
+                      role={role}
+                    />
+                  ) : null}
+                </span>
+                <bdi
+                  aria-label={value}
+                  className="min-w-0 break-words text-center text-lg leading-6"
+                  dir="ltr"
+                >
+                  {amount}
+                </bdi>
+                <bdi
+                  aria-hidden="true"
+                  className="justify-self-end text-lg leading-6"
+                  dir="ltr"
+                >
+                  {symbol}
+                </bdi>
+              </span>
+            );
+          })}
         </span>
       ) : (
         <span
-          className={cn(
-            'font-black tracking-tight text-foreground',
-            compact ? 'text-xl' : 'text-2xl',
-          )}
-          aria-label={metric ? metric.value : 'داده‌ای دریافت نشده'}
+          className="grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-1"
+          dir="rtl"
         >
-          {metric?.value ?? '—'}
+          <span className="justify-self-start">
+            {metric?.comparison ? (
+              <GrowthIndicator comparison={metric.comparison} role={role} />
+            ) : null}
+          </span>
+          <span
+            aria-label={metric ? metric.value : 'داده‌ای دریافت نشده'}
+            className={cn(
+              'min-w-0 text-center font-black tracking-tight text-foreground',
+              compact ? 'text-xl' : 'text-2xl',
+            )}
+          >
+            {metric?.value ?? '—'}
+          </span>
+          <span aria-hidden="true" />
         </span>
       )}
     </div>
@@ -598,6 +652,16 @@ const currencyNames: Readonly<Record<string, string>> = {
   IRR: 'ریال ایران',
   IRI: 'ریال ایران',
 };
+
+function currencyMetricParts(value: string) {
+  const symbol = [...new Set(Object.values(currencySymbols))]
+    .sort((left, right) => right.length - left.length)
+    .find((candidate) => value.startsWith(candidate));
+  return {
+    amount: symbol ? value.slice(symbol.length) : value,
+    symbol: symbol ?? '',
+  };
+}
 
 const trendSeriesPalette = [
   { color: '#2563eb', dotClassName: 'bg-blue-600 dark:bg-blue-400' },
@@ -776,45 +840,7 @@ function GrowthIndicator({
       title={`${currencyCode ? `${currencyNames[currencyCode] ?? currencyCode} · ` : ''}${comparison.label} · مقدار قبلی ${comparison.previousValue.toLocaleString('fa-IR')}`}
     >
       <Icon aria-hidden="true" className="size-3.5" />
-      {currencyCode ? (
-        <bdi dir="ltr" className="font-black">
-          {currencySymbols[currencyCode] ?? currencyCode}
-        </bdi>
-      ) : null}
       <span>{value}</span>
-    </span>
-  );
-}
-
-function KpiComparisonBadges({
-  comparison,
-  comparisonSeries,
-  role,
-}: {
-  comparison?: DashboardComparisonSnapshot | undefined;
-  comparisonSeries?: readonly DashboardCurrencyComparisonSnapshot[] | undefined;
-  role: DashboardKpiRole;
-}) {
-  const entries = comparisonSeries?.length
-    ? comparisonSeries
-    : comparison
-      ? [{ ...comparison, currencyCode: '' }]
-      : [];
-  if (!entries.length) return null;
-
-  return (
-    <span
-      aria-label="مقایسه با دوره قبل"
-      className="flex max-w-[58%] flex-wrap justify-end gap-1"
-    >
-      {entries.map(({ currencyCode, ...entry }) => (
-        <GrowthIndicator
-          comparison={entry}
-          currencyCode={currencyCode || undefined}
-          key={currencyCode || 'default'}
-          role={role}
-        />
-      ))}
     </span>
   );
 }
@@ -851,7 +877,7 @@ function KpiCard({
     >
       <span aria-hidden="true" className="absolute inset-x-5 top-0 h-0.5 rounded-b-full bg-primary/70" />
       <span aria-hidden="true" className="absolute -start-8 -top-10 size-28 rounded-full bg-primary/[0.045] blur-2xl transition group-hover:bg-primary/[0.08]" />
-      <span className="relative flex min-w-0 items-center justify-between gap-2.5">
+      <span className="relative flex min-w-0 items-center gap-2.5">
         <span className="flex min-w-0 items-center gap-2.5">
           <span
             aria-label={visual.label}
@@ -871,16 +897,14 @@ function KpiCard({
             {definition.title}
           </span>
         </span>
-        {metric ? (
-          <KpiComparisonBadges
-            comparison={metric.comparison}
-            comparisonSeries={metric.comparisonSeries}
-            role={definition.role}
-          />
-        ) : null}
       </span>
       <span className="relative block text-center">
-        <Metric compact currency={definition.currency === 'required'} metric={metric} />
+        <Metric
+          compact
+          currency={definition.currency === 'required'}
+          metric={metric}
+          role={definition.role}
+        />
       </span>
       {metric ? (
         <span className="relative mt-3 flex min-h-14 flex-col border-t border-border/60 pt-2">
