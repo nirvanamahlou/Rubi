@@ -9,8 +9,8 @@
 
 ## محیط مقصد
 
-- Workspace: `F:/Projects/Rubi`
-- Worktree: `F:/Projects/Rubi/.worktrees/dashboards-001`
+- Workspace: `F:/Projects/Nora`
+- Worktree: `F:/Projects/Nora/.worktrees/dashboards-001`
 - Runtime: `http://localhost:3000/dashboard`
 - Branch pattern: `codex/pc-c-dashboards-<task>`
 

@@ -1,4 +1,4 @@
-import type { MasterDataRecord, MasterDataResource } from '@rubi/contracts';
+import type { MasterDataRecord, MasterDataResource } from '@nora/contracts';
 
 import type { MasterDataResourceKey } from './catalog';
 
@@ -142,25 +142,6 @@ const configs: Partial<
     },
   },
   suppliers: {
-    organizationId: {
-      target: 'organizations',
-      payload: 'id',
-      requiredRole: 'SUPPLIER',
-      optional: true,
-    },
-    countryId: { target: 'countries', payload: 'id', optional: true },
-    cityId: {
-      target: 'cities',
-      payload: 'id',
-      optional: true,
-      scopeField: 'countryId',
-    },
-    primaryContactId: {
-      target: 'organization-contacts',
-      payload: 'id',
-      optional: true,
-      scopeField: 'organizationId',
-    },
     serviceCodes: {
       target: 'travel-services',
       payload: 'code',

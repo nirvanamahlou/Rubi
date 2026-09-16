@@ -16,7 +16,7 @@ vi.mock('@/components/ui/overlays', () => ({
   ),
   DialogTrigger: ({ children }: { children: ReactNode }) => <>{children}</>,
 }));
-import type { MasterDataRecord } from '@rubi/contracts';
+import type { MasterDataRecord } from '@nora/contracts';
 import {
   ContractPaymentCurrencySelect,
   ContractPayments,

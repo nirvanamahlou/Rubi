@@ -59,19 +59,19 @@ describe('IAM login and refresh HTTP contract', () => {
   it('validates login and writes only HttpOnly cookies', async () => {
     const response = await request(app.getHttpServer())
       .post('/iam/auth/login')
-      .send({ username: 'ramtin', password: 'Rubi-Strong-2026!' })
+      .send({ username: 'ramtin', password: 'Nora-Strong-2026!' })
       .expect(200);
     expect(response.body).toEqual({ user: { id: 'u1' } });
     const cookies = response.headers['set-cookie'] as unknown as string[];
-    expect(cookies.join(';')).toContain('rubi_access=access.jwt');
-    expect(cookies.join(';')).toContain('rubi_refresh=session.secret');
+    expect(cookies.join(';')).toContain('nora_access=access.jwt');
+    expect(cookies.join(';')).toContain('nora_refresh=session.secret');
     expect(cookies.every((cookie) => cookie.includes('HttpOnly'))).toBe(true);
   });
 
   it('passes the opaque refresh cookie to rotation service', async () => {
     await request(app.getHttpServer())
       .post('/iam/auth/refresh')
-      .set('Cookie', 'rubi_refresh=session.secret')
+      .set('Cookie', 'nora_refresh=session.secret')
       .expect(200);
     expect(service.refresh).toHaveBeenCalledWith(
       'session.secret',
@@ -90,7 +90,7 @@ describe('IAM login and refresh HTTP contract', () => {
   it('requires authentication for password changes', async () => {
     await request(app.getHttpServer())
       .post('/iam/auth/change-password')
-      .set('X-Rubi-Password-Change', '1')
+      .set('X-Nora-Password-Change', '1')
       .send({
         currentPassword: 'Old-Fixture-123!',
         newPassword: 'New-Fixture-456!',
@@ -105,7 +105,7 @@ describe('IAM login and refresh HTTP contract', () => {
       .expect(401);
     const response = await request(app.getHttpServer())
       .get('/iam/auth/password-change/status')
-      .set('Cookie', 'rubi_access=fixture')
+      .set('Cookie', 'nora_access=fixture')
       .expect(200);
     expect(response.body).toEqual({ available: true });
     expect(response.headers['cache-control']).toBe('no-store');
@@ -115,7 +115,7 @@ describe('IAM login and refresh HTTP contract', () => {
   it('rejects requests without the CSRF header and caller-supplied identities', async () => {
     await request(app.getHttpServer())
       .post('/iam/auth/change-password')
-      .set('Cookie', 'rubi_access=fixture')
+      .set('Cookie', 'nora_access=fixture')
       .send({
         currentPassword: 'Old-Fixture-123!',
         newPassword: 'New-Fixture-456!',
@@ -123,8 +123,8 @@ describe('IAM login and refresh HTTP contract', () => {
       .expect(403);
     await request(app.getHttpServer())
       .post('/iam/auth/change-password')
-      .set('Cookie', 'rubi_access=fixture')
-      .set('X-Rubi-Password-Change', '1')
+      .set('Cookie', 'nora_access=fixture')
+      .set('X-Nora-Password-Change', '1')
       .send({
         currentPassword: 'Old-Fixture-123!',
         newPassword: 'New-Fixture-456!',
@@ -137,8 +137,8 @@ describe('IAM login and refresh HTTP contract', () => {
   it('uses the authenticated actor and clears both cookies only after successful change', async () => {
     const response = await request(app.getHttpServer())
       .post('/iam/auth/change-password')
-      .set('Cookie', 'rubi_access=fixture')
-      .set('X-Rubi-Password-Change', '1')
+      .set('Cookie', 'nora_access=fixture')
+      .set('X-Nora-Password-Change', '1')
       .send({
         currentPassword: 'Old-Fixture-123!',
         newPassword: 'New-Fixture-456!',

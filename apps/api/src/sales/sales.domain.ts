@@ -1,10 +1,10 @@
-import { validateInsuranceExtras } from '@rubi/contracts';
+import { validateInsuranceExtras } from '@nora/contracts';
 import { createHash } from 'node:crypto';
-import { salesAccommodationValid, salesContractFlights } from '@rubi/contracts';
+import { salesAccommodationValid, salesContractFlights } from '@nora/contracts';
 import {
   servicePriceComponents,
   validatePassengerPackagePrices,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 
 import type {
   SalesBalance,
@@ -13,7 +13,7 @@ import type {
   SalesPaymentInput,
   SalesPaymentStatus,
   SalesPriceComponentInput,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 
 export class SalesDomainError extends Error {
   constructor(

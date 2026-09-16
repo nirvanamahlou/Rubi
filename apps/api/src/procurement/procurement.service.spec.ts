@@ -7,7 +7,7 @@ import {
   type AuthenticatedActor,
   type ProcurementDraftV1,
   type ProcurementRequestV1,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import { DatabaseService } from '../database/database.service';
 import type { DocumentsService } from '../documents/documents.service';
 import type { HrProcurementDirectory } from '../hr/hr-procurement-directory';
@@ -22,6 +22,7 @@ import type {
 } from './domain/procurement.rules';
 import { ProcurementOperations } from './procurement.operations';
 import { ProcurementPolicyPort } from './procurement.ports';
+import { ProcurementPublicService } from './procurement-public.service';
 import {
   json,
   procurementBoundary,
@@ -522,7 +523,7 @@ describe.skipIf(process.env.PROCUREMENT_API_DATABASE_TEST !== '1')(
       } as unknown as LegalEntitiesService;
       const port = {
         resolve: async () => approvedPolicy,
-      } as ProcurementPolicyPort;
+      } as unknown as ProcurementPolicyPort;
       const operations = new ProcurementOperations(
         master,
         iam,
@@ -539,6 +540,7 @@ describe.skipIf(process.env.PROCUREMENT_API_DATABASE_TEST !== '1')(
         port,
         operations,
         new NotificationsService(new NotificationsRepository(database)),
+        { syncProcurementWithinTransaction: async () => null } as never,
       );
     }, 30000);
     afterAll(async () => {
@@ -826,6 +828,14 @@ describe.skipIf(process.env.PROCUREMENT_API_DATABASE_TEST !== '1')(
         422,
         'FINAL_APPROVAL_REQUIRED',
       );
+      expect(
+        await database.client.procurementOutbox.count({
+          where: {
+            requestId: row.id,
+            eventType: 'procurement.supplier-order-intent.v1',
+          },
+        }),
+      ).toBe(0);
       await rejected(
         () => command(row, 'DECIDE', { decision: 'APPROVED' }, checker2),
         403,
@@ -840,6 +850,37 @@ describe.skipIf(process.env.PROCUREMENT_API_DATABASE_TEST !== '1')(
           })
         ).status,
       ).toBe('ISSUED');
+      const intents = await database.client.procurementOutbox.findMany({
+        where: {
+          requestId: row.id,
+          eventType: 'procurement.supplier-order-intent.v1',
+        },
+      });
+      expect(intents).toHaveLength(1);
+      expect(intents[0]).toMatchObject({
+        status: 'PENDING',
+        payload: {
+          orderId: order.id,
+          orderVersion: 1,
+          supplierId: supplier,
+          connection: 'SUPPLIER_DELIVERY_QUEUED',
+        },
+      });
+      const publicEvents = new ProcurementPublicService(database);
+      expect(
+        await publicEvents.listPendingConnectionEvents(
+          [otherBranch],
+          'procurement.supplier-order-intent.v1',
+        ),
+      ).toEqual([]);
+      expect(
+        (
+          await publicEvents.listPendingConnectionEvents(
+            [branch],
+            'procurement.supplier-order-intent.v1',
+          )
+        ).some((event) => event.eventId === intents[0]?.eventId),
+      ).toBe(true);
     });
     it('blocks selecting an expired quotation', async () => {
       let row = await approvedRequest();
@@ -1037,7 +1078,7 @@ describe.skipIf(process.env.PROCUREMENT_API_DATABASE_TEST !== '1')(
       ).toBe(1);
       expect(await service.detail(row.id, maker)).toEqual(row);
     });
-    it('Finance retries create one blocked source/outbox, and returns never change Finance-owned payment data', async () => {
+    it('Finance retries create one source/outbox, and returns create a correction without changing Finance-owned payment data', async () => {
       const context = await orderedRequest();
       let row = await command(
         context.row,
@@ -1049,6 +1090,26 @@ describe.skipIf(process.env.PROCUREMENT_API_DATABASE_TEST !== '1')(
         'INVOICE',
         invoiceInput(context.order.id, context.item.id),
       );
+      for (const section of ['quotes', 'orders', 'receipts', 'invoices']) {
+        expect(
+          (await service.list({ section }, maker)).items.some(
+            (item) => item.id === row.id,
+          ),
+        ).toBe(true);
+        expect(
+          (
+            await service.list(
+              { section },
+              { ...maker, branchIds: [otherBranch] },
+            )
+          ).items.some((item) => item.id === row.id),
+        ).toBe(false);
+      }
+      await expect(
+        service.list({ section: 'unknown' }, maker),
+      ).rejects.toMatchObject({
+        code: 'VALIDATION_ERROR',
+      });
       const invoice = await invoiceFor(row);
       const paid = await paidFinanceFixture();
       const before = await financeState();
@@ -1095,8 +1156,8 @@ describe.skipIf(process.env.PROCUREMENT_API_DATABASE_TEST !== '1')(
           where: { requestId: row.id },
         });
       expect(handoff).toMatchObject({
-        status: 'NOT_CONNECTED',
-        lastErrorCode: 'FINANCE_NOT_CONNECTED',
+        status: 'PENDING',
+        lastErrorCode: null,
         acceptedSourceId: null,
       });
       expect(handoff.payload).toMatchObject({
@@ -1118,9 +1179,30 @@ describe.skipIf(process.env.PROCUREMENT_API_DATABASE_TEST !== '1')(
           },
         ],
       });
+      const publicSources = new ProcurementPublicService(database);
+      expect(
+        await publicSources.listFinanceInvoiceSources([otherBranch]),
+      ).toEqual([]);
+      expect(await publicSources.listFinanceInvoiceSources([branch])).toEqual([
+        {
+          ...(handoff.payload as object),
+          handoffCreatedAt: handoff.createdAt.toISOString(),
+        },
+      ]);
+      expect(
+        (
+          await publicSources.listPendingConnectionEvents(
+            [branch],
+            'procurement.workflow-event.v1',
+          )
+        ).some(
+          (event) =>
+            (event.payload as { requestId?: string }).requestId === row.id,
+        ),
+      ).toBe(false);
       expect(
         await database.client.procurementOutbox.count({
-          where: { handoffId: handoff.id, status: 'BLOCKED' },
+          where: { handoffId: handoff.id, status: 'PENDING' },
         }),
       ).toBe(1);
       const receipt =
@@ -1149,7 +1231,7 @@ describe.skipIf(process.env.PROCUREMENT_API_DATABASE_TEST !== '1')(
         { where: { requestId: row.id } },
       );
       expect(returned.data).toMatchObject({
-        financeCorrectionStatus: 'NOT_CONNECTED',
+        financeCorrectionStatus: 'PENDING',
       });
       expect(
         await database.client.procurementDiscrepancy.count({
@@ -1410,7 +1492,7 @@ describe.skipIf(process.env.PROCUREMENT_API_DATABASE_TEST !== '1')(
       await orderedRequest('GOODS', true, 'USD');
       const report = await service.report({ dimension: 'currency' }, own);
       expect(report.basis).toBe('CURRENT_ORDER_VERSION_BY_CURRENCY');
-      expect(report.finance).toBe('NOT_CONNECTED');
+      expect(report.finance).toBe('CONNECTED');
       expect(
         Number(
           report.groups.items.find(

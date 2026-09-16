@@ -1,5 +1,5 @@
 import { ConflictException, ForbiddenException } from '@nestjs/common';
-import type { AuthenticatedActor } from '@rubi/contracts';
+import type { AuthenticatedActor } from '@nora/contracts';
 import { describe, expect, it, vi } from 'vitest';
 
 import type { MasterDataRepository } from './master-data.repository';
@@ -174,6 +174,44 @@ describe('MasterDataService', () => {
       actor.userId,
       actor.branchIds[0],
     );
+  });
+
+  it('requires an English cabin title and mirrors it to the internal name', async () => {
+    const repository = {
+      codeExists: vi.fn().mockResolvedValue(false),
+      fieldExists: vi.fn().mockResolvedValue(false),
+      create: vi
+        .fn()
+        .mockImplementation(
+          async (_resource: string, data: Record<string, unknown>) => ({
+            ...row,
+            ...data,
+          }),
+        ),
+    } as unknown as MasterDataRepository;
+    const service = new MasterDataService(repository);
+
+    await service.create(
+      'cabin-classes',
+      { englishName: '  Economy  ', bookingCode: 'y' },
+      actor,
+    );
+
+    expect(repository.create).toHaveBeenCalledWith(
+      'cabin-classes',
+      expect.objectContaining({
+        englishName: 'Economy',
+        name: 'Economy',
+        bookingCode: 'Y',
+        displayOrder: 0,
+      }),
+      actor.userId,
+      actor.branchIds[0],
+    );
+
+    await expect(
+      service.create('cabin-classes', { bookingCode: 'Y' }, actor),
+    ).rejects.toMatchObject({ status: 400 });
   });
 
   it('rejects a non-positive baggage allowance before persistence', async () => {

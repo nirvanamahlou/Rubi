@@ -1,7 +1,7 @@
 'use client';
 import { useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import type { ProcurementRequestV1 } from '@rubi/contracts';
+import type { ProcurementRequestV1 } from '@nora/contracts';
 import { documentsApi } from '@/modules/documents/api/client';
 import { Button } from '@/components/ui/button';
 import { FormField } from '@/components/ui/form-controls';
@@ -13,6 +13,7 @@ import {
   type ProcurementExportJob,
 } from './api';
 import { selectClass } from './draft-form';
+import { ProcurementSelect } from './procurement-select';
 import { exportScanSnapshotText, formatProcurementDate } from './presentation';
 
 const labels = {
@@ -183,7 +184,7 @@ function ExportContent({
           >
             <legend className="sr-only">درخواست خروجی</legend>
             <FormField id="proc-export-branch" label="شعبه خروجی">
-              <select
+              <ProcurementSelect
                 id="proc-export-branch"
                 className={selectClass}
                 value={branchId}
@@ -199,10 +200,10 @@ function ExportContent({
                     {branch.label}
                   </option>
                 ))}
-              </select>
+              </ProcurementSelect>
             </FormField>
             <FormField id="proc-export-format" label="قالب">
-              <select
+              <ProcurementSelect
                 id="proc-export-format"
                 className={selectClass}
                 value={format}
@@ -214,10 +215,10 @@ function ExportContent({
               >
                 <option value="XLSX">Excel</option>
                 <option value="PDF">PDF</option>
-              </select>
+              </ProcurementSelect>
             </FormField>
             <FormField id="proc-export-type" label="نوع سند خرید">
-              <select
+              <ProcurementSelect
                 id="proc-export-type"
                 className={selectClass}
                 value={documentTypeId}
@@ -232,10 +233,10 @@ function ExportContent({
                     {type.name}
                   </option>
                 ))}
-              </select>
+              </ProcurementSelect>
             </FormField>
             <FormField id="proc-export-category" label="دسته سند">
-              <select
+              <ProcurementSelect
                 id="proc-export-category"
                 className={selectClass}
                 value={categoryId}
@@ -250,12 +251,12 @@ function ExportContent({
                     {category.name}
                   </option>
                 ))}
-              </select>
+              </ProcurementSelect>
             </FormField>
             {kind === 'ORDER' && (
               <div className="space-y-2">
                 <FormField id="proc-export-order" label="سفارش">
-                  <select
+                  <ProcurementSelect
                     id="proc-export-order"
                     className={selectClass}
                     value={orderId}
@@ -271,7 +272,7 @@ function ExportContent({
                         {String(row.version)}
                       </option>
                     ))}
-                  </select>
+                  </ProcurementSelect>
                 </FormField>
                 {orders.isError && (
                   <Alert

@@ -5,13 +5,13 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { isMasterTransportFormResource } from '@rubi/contracts';
+import { isMasterTransportFormResource } from '@nora/contracts';
 import type {
   MasterDataListQuery,
   MasterDataRecord,
   MasterDataResource,
-} from '@rubi/contracts';
-import { AuditOutcome } from '@rubi/database';
+} from '@nora/contracts';
+import { AuditOutcome } from '@nora/database';
 
 import { DatabaseService } from '../database/database.service';
 import {
@@ -76,7 +76,9 @@ const protectedContactFields = new Set([
 function auditSnapshot(resource: MasterDataResource, value: unknown) {
   const snapshot = json(value);
   if (
-    (resource !== 'organization-contacts' && resource !== 'leaders') ||
+    (resource !== 'organization-contacts' &&
+      resource !== 'leaders' &&
+      resource !== 'suppliers') ||
     typeof snapshot !== 'object' ||
     Array.isArray(snapshot)
   )
@@ -645,9 +647,12 @@ export function toMasterDataRecord(
     attributes.primaryContactName = primaryContact?.isActive
       ? String(primaryContact.fullName ?? '')
       : null;
-    attributes.primaryPhoneMasked = primaryContact?.isActive
-      ? (primaryContact.phoneMasked as string | null)
-      : null;
+    attributes.primaryPhoneMasked =
+      resource === 'suppliers'
+        ? (row.primaryPhoneMasked as string | null)
+        : primaryContact?.isActive
+          ? (primaryContact.phoneMasked as string | null)
+          : null;
     attributes.primaryEmailMasked = primaryContact?.isActive
       ? (primaryContact.emailMasked as string | null)
       : null;

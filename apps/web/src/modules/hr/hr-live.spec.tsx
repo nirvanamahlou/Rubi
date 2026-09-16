@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { HrBootstrapDto, HrRecordDto } from '@rubi/contracts';
+import type { HrBootstrapDto, HrRecordDto } from '@nora/contracts';
 import { hrApi, HrApiError } from './hr-api';
 import { HrWorkspace } from './hr-workspace';
 import { recordsDataset } from './hr-live-data';

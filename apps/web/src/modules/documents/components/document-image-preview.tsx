@@ -1,6 +1,6 @@
 'use client';
 
-import type { DocumentDetailV1 } from '@rubi/contracts';
+import type { DocumentDetailV1 } from '@nora/contracts';
 import {
   Eye,
   FileSearch,

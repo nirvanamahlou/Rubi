@@ -52,7 +52,7 @@ for (const event of ['push', 'pull_request']) {
 
 const group = workflow.match(/^  group: (.+)$/m)?.[1];
 const expectedGroup =
-  'rubi-ci-${{ github.event_name }}-${{ github.event.pull_request.head.ref || github.ref_name }}';
+  'nora-ci-${{ github.event_name }}-${{ github.event.pull_request.head.ref || github.ref_name }}';
 
 function concurrencyKey(event, ref, head = '') {
   assert.equal(group, expectedGroup);
@@ -103,7 +103,7 @@ test('hosted isolation, read-only credentials and all original gates remain enab
     assert.ok(workflow.includes(command), `Missing gate: ${command}`);
   }
   assert.equal(
-    (workflow.match(/pnpm --filter @rubi\/database db:seed/g) ?? []).length,
+    (workflow.match(/pnpm --filter @nora\/database db:seed/g) ?? []).length,
     2,
   );
 });

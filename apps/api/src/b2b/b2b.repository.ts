@@ -8,8 +8,8 @@ import type {
   AgencyOperationalStatus,
   B2bAgreementStatus,
   B2bAgreedRateKind,
-} from '@rubi/contracts';
-import { Prisma } from '@rubi/database';
+} from '@nora/contracts';
+import { Prisma } from '@nora/database';
 
 import { DatabaseService } from '../database/database.service';
 

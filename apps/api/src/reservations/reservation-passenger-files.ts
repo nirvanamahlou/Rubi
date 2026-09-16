@@ -20,7 +20,7 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import Joi from 'joi';
-import type { AuthenticatedActor, CustomerDetail } from '@rubi/contracts';
+import type { AuthenticatedActor, CustomerDetail } from '@nora/contracts';
 import { AuthGuard } from '../iam/auth.guard';
 import { PermissionGuard } from '../iam/permission.guard';
 import { RequirePermissions } from '../iam/iam.decorators';

@@ -2,8 +2,8 @@
 import Image from 'next/image';
 import { DatePicker } from '@/components/ui/date-picker';
 import { useEffect, useRef, useState } from 'react';
-import type { HrEmployeeDto, HrRecordDto } from '@rubi/contracts';
-import { getHrResource } from '@rubi/contracts';
+import type { HrEmployeeDto, HrRecordDto } from '@nora/contracts';
+import { getHrResource } from '@nora/contracts';
 import { employeeGroups, resolveHrGroup, type HrSource } from './hr-navigation';
 import { employeeProfileSources } from './employee-profile-data';
 import { recordsDataset } from './hr-live-data';

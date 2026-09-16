@@ -5,7 +5,7 @@ import type {
   CustomerDetail,
   CustomerListQuery,
   CustomerSummary,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import {
   AuditOutcome,
   CustomerDuplicateReviewStatus,
@@ -17,7 +17,7 @@ import {
   type CustomerKind,
   type CustomerRelationshipType,
   type Prisma,
-} from '@rubi/database';
+} from '@nora/database';
 
 import { DatabaseService } from '../database/database.service';
 import {
@@ -439,8 +439,9 @@ export class CustomerRepository {
     actorUserId: string,
     actorBranchId: string,
     traceId?: string,
+    existingTransaction?: Prisma.TransactionClient,
   ) {
-    return this.database.client.$transaction(async (transaction) => {
+    const work = async (transaction: Prisma.TransactionClient) => {
       const row = await transaction.customer.create({
         data: {
           ...data,
@@ -473,7 +474,10 @@ export class CustomerRepository {
         },
       });
       return row as unknown as CustomerRow;
-    });
+    };
+    return existingTransaction
+      ? work(existingTransaction)
+      : this.database.client.$transaction(work);
   }
 
   async update(

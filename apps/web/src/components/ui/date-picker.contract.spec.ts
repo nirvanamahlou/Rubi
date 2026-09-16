@@ -22,6 +22,11 @@ function productionTsx(directory: string): string {
 
 describe('shared date picker contract', () => {
   it('uses the blue theme and exposes grid month and year selection', () => {
+    expect(pickerSource).toContain('calendarSystem?: CalendarSystem');
+    expect(pickerSource).toContain('onCalendarSystemChange?:');
+    expect(pickerSource).toContain(
+      'controlledCalendarSystem ?? internalCalendarSystem',
+    );
     expect(pickerSource).toContain("['persian', 'gregorian']");
     expect(pickerSource).toContain("'شمسی'");
     expect(pickerSource).toContain("'میلادی'");

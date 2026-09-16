@@ -5,7 +5,7 @@ import type {
   BranchReference,
   DocumentCaseOptionV1,
   DocumentOptionsResponseV1,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import { useMemo, useState } from 'react';
 
 import {
@@ -16,7 +16,7 @@ import {
 } from '../model/document-upload-form';
 import { DocumentCasePicker } from './document-case-picker';
 import { HrDirectoryPicker } from '@/modules/hr/hr-directory-picker';
-import { hrDirectoryLabel, type HrDirectoryEmployee } from '@rubi/contracts';
+import { hrDirectoryLabel, type HrDirectoryEmployee } from '@nora/contracts';
 
 import {
   Alert,

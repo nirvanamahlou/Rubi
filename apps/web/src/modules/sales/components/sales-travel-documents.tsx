@@ -3,7 +3,7 @@ import { useState } from 'react';
 import type {
   ReservationIntakeV1,
   TravelWorkflowStateV1,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,

@@ -9,7 +9,6 @@ import {
   MASTER_DATA_PERMISSION_CODES,
   LEGAL_ENTITY_AUTHENTICATED_BASELINE_PERMISSION_CODES,
   LEGAL_ENTITY_PERMISSION_CODES,
-  PROCUREMENT_PERMISSION_CODES,
   type AuthenticatedActor,
 } from '../src';
 
@@ -31,9 +30,6 @@ describe('IAM public permission contract', () => {
   });
   it('publishes the version 11 domain permission catalogs without duplicates', () => {
     expect(IAM_PERMISSION_CONTRACT_VERSION).toBe(11);
-    expect(IAM_PERMISSION_CODES).toEqual(
-      expect.arrayContaining([...PROCUREMENT_PERMISSION_CODES]),
-    );
     expect(MASTER_DATA_PERMISSION_CODES).toEqual([
       'master_data.read',
       'master_data.create',

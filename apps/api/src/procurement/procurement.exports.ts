@@ -7,8 +7,8 @@ import {
   type OnModuleDestroy,
   type OnModuleInit,
 } from '@nestjs/common';
-import type { AuthenticatedActor } from '@rubi/contracts';
-import { Prisma } from '@rubi/database';
+import type { AuthenticatedActor } from '@nora/contracts';
+import { Prisma } from '@nora/database';
 import { DatabaseService } from '../database/database.service';
 import { DocumentsService } from '../documents/documents.service';
 import { IamProcurementDirectory } from '../iam/iam-procurement-directory';

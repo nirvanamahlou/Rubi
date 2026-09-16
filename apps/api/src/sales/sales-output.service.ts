@@ -8,7 +8,7 @@ import {
 import type {
   AuthenticatedActor,
   SalesContractOutputV1,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import { CustomerService } from '../customers/customer.service';
 import { IamService } from '../iam/iam.service';
 import { LegalEntitiesService } from '../legal-entities/legal-entities.service';

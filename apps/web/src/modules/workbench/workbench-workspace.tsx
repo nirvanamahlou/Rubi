@@ -3,9 +3,10 @@ import { WorkbenchFeedback } from './workbench-feedback';
 import { WorkbenchFeedbackDetail } from './workbench-feedback-detail';
 import { WorkbenchSelect } from './workbench-select';
 
-import type { NotificationItemV1, WorkbenchActivityV1 } from '@rubi/contracts';
+import type { NotificationItemV1, WorkbenchActivityV1 } from '@nora/contracts';
 import {
   Activity,
+  ChartNoAxesCombined,
   ArrowUpLeft,
   Bell,
   CalendarDays,
@@ -25,7 +26,6 @@ import {
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { HeaderToday } from '@/components/layout/header-today';
 import {
   Alert,
   Badge,
@@ -58,6 +58,7 @@ import {
 } from './model';
 import { WorkbenchFiles } from './workbench-files';
 import { WorkbenchCalendar } from './workbench-calendar';
+import { WorkbenchPerformance } from './workbench-performance';
 import { WorkbenchNotes } from './workbench-notes';
 import { WorkbenchFavorites } from './workbench-favorites';
 import { MessageComposer } from './message-composer';
@@ -76,6 +77,7 @@ const tabIcons = [
   FileText,
   Star,
   Activity,
+  ChartNoAxesCombined,
   StickyNote,
   CalendarDays,
   Settings2,
@@ -170,7 +172,7 @@ export function WorkbenchWorkspace() {
     <div className="space-y-6" data-workbench-native>
       <PageHeader
         title="میزکار من"
-        description="کارهای روزانه، فایل‌ها و ارتباط شما با بخش‌های روبی."
+        description="کارهای روزانه، فایل‌ها و ارتباط شما با بخش‌های نورا."
         actions={
           <div className="flex flex-wrap gap-2">
             <Button
@@ -262,12 +264,6 @@ export function WorkbenchWorkspace() {
                   </p>
                 </div>
               </div>
-              <div className="space-y-2">
-                <HeaderToday />
-                <p className="text-xs text-muted-foreground">
-                  {home.user.branches.length.toLocaleString('fa-IR')} شعبه مجاز
-                </p>
-              </div>
             </Card>
             <Tabs
               dir="rtl"
@@ -277,7 +273,7 @@ export function WorkbenchWorkspace() {
             >
               <TabsList
                 aria-label="بخش‌های میزکار"
-                className="grid h-auto w-full grid-cols-2 gap-1 rounded-2xl p-2 sm:grid-cols-3 xl:grid-cols-9"
+                className="grid h-auto w-full grid-cols-2 gap-1 rounded-2xl p-2 sm:grid-cols-5 xl:grid-cols-10"
               >
                 {workbenchTabs.map(([id, label], index) => {
                   const Icon = tabIcons[index]!;
@@ -521,6 +517,9 @@ export function WorkbenchWorkspace() {
                     ? { branchId: home.user.branches[0].id }
                     : {})}
                 />
+              </TabsContent>
+              <TabsContent value="performance">
+                <WorkbenchPerformance />
               </TabsContent>
               <TabsContent value="account">
                 <Card className="overflow-hidden lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)]">

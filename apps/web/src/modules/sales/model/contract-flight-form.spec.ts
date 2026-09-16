@@ -4,7 +4,7 @@ import { createElement } from 'react';
 import {
   contractFlightMetadata,
   salesContractOnlyFlights,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import {
   emptySalesForm,
   patchContractFlight,

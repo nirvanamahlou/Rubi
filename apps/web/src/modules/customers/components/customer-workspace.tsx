@@ -18,7 +18,7 @@ import type {
   DocumentOptionsResponseV1,
   DuplicateCandidate,
   MasterDataRecord,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import {
   AlertTriangle,
   Ban,

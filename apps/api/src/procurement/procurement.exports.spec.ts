@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import { randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import type { AuthenticatedActor } from '@rubi/contracts';
+import type { AuthenticatedActor } from '@nora/contracts';
 import { DatabaseService } from '../database/database.service';
 import type { DocumentsService } from '../documents/documents.service';
 import type { IamProcurementDirectory } from '../iam/iam-procurement-directory';

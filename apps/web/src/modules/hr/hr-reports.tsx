@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import type { HrRecordDto } from '@rubi/contracts';
+import type { HrRecordDto } from '@nora/contracts';
 import { allHrRecords, type HrStore } from './hr-store';
 import { hrGroups } from './hr-navigation';
 import { recordsDataset } from './hr-live-data';

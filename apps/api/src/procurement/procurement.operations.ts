@@ -6,8 +6,8 @@ import type {
   ProcurementFinanceSourceV1,
   ProcurementReferenceV1,
   ProcurementDocumentReferenceV1,
-} from '@rubi/contracts';
-import { Prisma } from '@rubi/database';
+} from '@nora/contracts';
+import { Prisma } from '@nora/database';
 import { DocumentsService } from '../documents/documents.service';
 import { IamProcurementDirectory } from '../iam/iam-procurement-directory';
 import { LegalEntitiesService } from '../legal-entities/legal-entities.service';
@@ -278,7 +278,7 @@ export class ProcurementOperations {
         tx.procurementInvoice.count({
           where: {
             requestId,
-            status: { notIn: ['WAITING_FINANCE', 'ACCEPTED'] },
+            status: { notIn: ['WAITING_FINANCE', 'ACCEPTED', 'PAID'] },
           },
         }),
       ]);
@@ -311,7 +311,7 @@ export class ProcurementOperations {
                     AND COALESCE(rt.data->>'disposition', 'ACCEPTED') = 'ACCEPTED'), 0)
               ) > COALESCE((SELECT SUM(ii.quantity) FROM procurement_invoice_item ii
                 JOIN procurement_invoice i ON i.id = ii."invoiceId"
-                WHERE ii."orderItemId" = oi.id AND i.status IN ('WAITING_FINANCE', 'ACCEPTED')), 0)
+                WHERE ii."orderItemId" = oi.id AND i.status IN ('WAITING_FINANCE', 'ACCEPTED', 'PAID')), 0)
           ) AS exists,
           EXISTS (
             SELECT 1 FROM procurement_receipt_item ri
@@ -699,6 +699,24 @@ export class ProcurementOperations {
         where: { id: requestId },
         data: { status: 'SOURCING' },
       });
+      await tx.procurementOutbox.create({
+        data: {
+          requestId,
+          eventType: 'procurement.supplier-order-intent.v1',
+          status: 'PENDING',
+          payload: json({
+            contract: 'procurement.supplier-order-intent.v1',
+            branchId: row.branchId,
+            requestId,
+            orderId: order.id,
+            orderVersion: order.version,
+            supplierId: order.supplierId,
+            currencyCode: order.currencyCode,
+            amount: order.totalAmount.toString(),
+            connection: 'SUPPLIER_DELIVERY_QUEUED',
+          }),
+        },
+      });
       return;
     }
     if (action === 'AMEND_ORDER') {
@@ -1076,7 +1094,7 @@ export class ProcurementOperations {
         actor,
         true,
       );
-      await tx.procurementReturn.create({
+      const createdReturn = await tx.procurementReturn.create({
         data: {
           requestId,
           orderId: item.orderId,
@@ -1089,10 +1107,34 @@ export class ProcurementOperations {
             disposition,
             documents,
             financeCorrectionStatus:
-              disposition === 'ACCEPTED' ? 'NOT_CONNECTED' : 'NOT_APPLICABLE',
+              disposition === 'ACCEPTED' ? 'PENDING' : 'NOT_APPLICABLE',
           }),
         },
       });
+      if (disposition === 'ACCEPTED') {
+        const eventId = randomUUID();
+        await tx.procurementOutbox.create({
+          data: {
+            requestId,
+            eventId,
+            eventType: 'procurement.finance-correction.v1',
+            status: 'PENDING',
+            payload: json({
+              contract: 'procurement.finance-correction.v1',
+              eventId,
+              sourceVersion: 1,
+              returnId: createdReturn.id,
+              requestId,
+              orderId: item.orderId,
+              receiptItemId: item.id,
+              branchId: row.branchId,
+              quantity,
+              reason: createdReturn.reason,
+              returnedAt: createdReturn.returnedAt.toISOString(),
+            }),
+          },
+        });
+      }
       await tx.procurementDiscrepancy.create({
         data: {
           requestId,
@@ -1189,7 +1231,7 @@ export class ProcurementOperations {
         COALESCE((SELECT SUM(i."acceptedQuantity") FROM procurement_receipt_item i WHERE i."orderItemId" = ${orderItem.id}::uuid),0)
           + COALESCE((SELECT SUM(a."acceptedDelta") FROM procurement_receipt_adjustment a JOIN procurement_receipt_item i ON i.id=a."receiptItemId" WHERE i."orderItemId" = ${orderItem.id}::uuid),0)
           - COALESCE((SELECT SUM(rt.quantity) FROM procurement_return rt JOIN procurement_receipt_item i ON i.id=rt."receiptItemId" WHERE i."orderItemId" = ${orderItem.id}::uuid AND COALESCE(rt.data->>'disposition','ACCEPTED')='ACCEPTED'),0) AS accepted,
-        COALESCE((SELECT SUM(i.quantity) FROM procurement_invoice_item i JOIN procurement_invoice n ON n.id=i."invoiceId" WHERE i."orderItemId" = ${orderItem.id}::uuid AND n.status IN ('MATCHED','WAITING_FINANCE','ACCEPTED')),0) AS invoiced`);
+        COALESCE((SELECT SUM(i.quantity) FROM procurement_invoice_item i JOIN procurement_invoice n ON n.id=i."invoiceId" WHERE i."orderItemId" = ${orderItem.id}::uuid AND n.status IN ('MATCHED','WAITING_FINANCE','ACCEPTED','PAID')),0) AS invoiced`);
       const total = totals[0]!;
       requireRule(
         signed(total.received.toString()) + signed(receivedDelta) <=
@@ -1387,8 +1429,8 @@ export class ProcurementOperations {
             invoiceId,
             invoiceVersion: invoice.version,
             sourceKey,
-            status: 'NOT_CONNECTED',
-            lastErrorCode: 'FINANCE_NOT_CONNECTED',
+            status: 'PENDING',
+            lastErrorCode: null,
             payload: json(payload),
           },
         });
@@ -1397,7 +1439,7 @@ export class ProcurementOperations {
             requestId,
             handoffId: handoff.id,
             eventType: 'procurement.finance-source.v1',
-            status: 'BLOCKED',
+            status: 'PENDING',
             payload: handoff.payload as Prisma.InputJsonValue,
           },
         });
@@ -1453,7 +1495,7 @@ export class ProcurementOperations {
         _sum: { quantity: true },
       }),
       tx.$queryRaw<{ orderItemId: string; quantity: Prisma.Decimal }[]>(
-        Prisma.sql`SELECT i."orderItemId", SUM(i.quantity) AS quantity FROM procurement_invoice_item i JOIN procurement_invoice n ON n.id = i."invoiceId" WHERE n."orderId" = ${invoice.orderId}::uuid AND n.id <> ${invoiceId}::uuid AND n.status IN ('MATCHED','WAITING_FINANCE','ACCEPTED') GROUP BY i."orderItemId"`,
+        Prisma.sql`SELECT i."orderItemId", SUM(i.quantity) AS quantity FROM procurement_invoice_item i JOIN procurement_invoice n ON n.id = i."invoiceId" WHERE n."orderId" = ${invoice.orderId}::uuid AND n.id <> ${invoiceId}::uuid AND n.status IN ('MATCHED','WAITING_FINANCE','ACCEPTED','PAID') GROUP BY i."orderItemId"`,
       ),
       tx.$queryRaw<{ orderItemId: string; quantity: Prisma.Decimal }[]>(
         Prisma.sql`SELECT i."orderItemId", SUM(r.quantity) AS quantity FROM procurement_return r JOIN procurement_receipt_item i ON i.id = r."receiptItemId" WHERE r."orderId" = ${invoice.orderId}::uuid AND COALESCE(r.data->>'disposition','ACCEPTED') = 'ACCEPTED' GROUP BY i."orderItemId"`,

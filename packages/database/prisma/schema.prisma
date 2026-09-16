@@ -30,113 +30,126 @@ enum AuditOutcome {
 }
 
 model User {
-  procurementReceiptAdjustments                    ProcurementReceiptAdjustment[]
-  procurementExportJobs                            ProcurementExportJob[]
-  procurementRequestRequesteruseridRows            ProcurementRequest[]              @relation("ProcurementRequestRequesteruserid")
-  procurementRequestOwneruseridRows                ProcurementRequest[]              @relation("ProcurementRequestOwneruserid")
-  procurementRequestVersionCreatedbyuseridRows     ProcurementRequestVersion[]       @relation("ProcurementRequestVersionCreatedbyuserid")
-  procurementApprovalStepApproveruseridRows        ProcurementApprovalStep[]         @relation("ProcurementApprovalStepApproveruserid")
-  procurementApprovalDecisionActoruseridRows       ProcurementApprovalDecision[]     @relation("ProcurementApprovalDecisionActoruserid")
-  procurementSelectionSelectedbyuseridRows         ProcurementSelection[]            @relation("ProcurementSelectionSelectedbyuserid")
-  procurementOrderVersionCreatedbyuseridRows       ProcurementOrderVersion[]         @relation("ProcurementOrderVersionCreatedbyuserid")
-  procurementReceiptReceivedbyuseridRows           ProcurementReceipt[]              @relation("ProcurementReceiptReceivedbyuserid")
-  procurementServiceAcceptanceAcceptedbyuseridRows ProcurementServiceAcceptance[]    @relation("ProcurementServiceAcceptanceAcceptedbyuserid")
-  procurementReturnReturnedbyuseridRows            ProcurementReturn[]               @relation("ProcurementReturnReturnedbyuserid")
-  procurementInvoiceMatchMatchedbyuseridRows       ProcurementInvoiceMatch[]         @relation("ProcurementInvoiceMatchMatchedbyuserid")
-  procurementIdempotencyActoruseridRows            ProcurementIdempotency[]          @relation("ProcurementIdempotencyActoruserid")
-  procurementAuditActoruseridRows                  ProcurementAudit[]                @relation("ProcurementAuditActoruserid")
   b2bOrganizationUser                              B2bOrganizationUser?
   hotelRateBatches                                 ReservationHotelRateBatch[]
   reservationManifestExports                       ReservationManifestExport[]
   reservationServicePurchases                      ReservationServicePurchase[]
   financeSupplierPaymentRevisions                  FinanceSupplierPaymentRevision[]
-  ownedTravelIntakes                               ReservationIntake[]               @relation("TravelSalesOwner")
+  financeSettlementAccountsCreated                 FinanceSettlementAccount[]          @relation("FinanceSettlementAccountCreator")
+  salesPaymentsFinanceReviewed                     SalesContractPaymentEntry[]         @relation("SalesPaymentFinanceReviewer")
+  ownedTravelIntakes                               ReservationIntake[]                 @relation("TravelSalesOwner")
   travelWorkflowRevisions                          ReservationWorkflowRevision[]
   travelDeliveryRevisions                          FinanceDeliveryRevision[]
-  id                                               String                            @id @default(uuid()) @db.Uuid
-  username                                         String                            @unique @db.VarChar(80)
-  email                                            String?                           @unique @db.VarChar(320)
-  displayName                                      String                            @db.VarChar(160)
-  passwordHash                                     String                            @db.VarChar(255)
-  status                                           UserStatus                        @default(ACTIVE)
-  failedLoginAttempts                              Int                               @default(0)
-  lockedUntil                                      DateTime?                         @db.Timestamptz(3)
-  passwordChangedAt                                DateTime                          @default(now()) @db.Timestamptz(3)
-  lastLoginAt                                      DateTime?                         @db.Timestamptz(3)
-  mfaTotpSecretCiphertext                          String?                           @map("mfa_totp_secret_ciphertext") @db.VarChar(800)
-  mfaTotpPendingSecretCiphertext                   String?                           @map("mfa_totp_pending_secret_ciphertext") @db.VarChar(800)
-  mfaTotpPendingExpiresAt                          DateTime?                         @map("mfa_totp_pending_expires_at") @db.Timestamptz(3)
-  mfaTotpEnabledAt                                 DateTime?                         @map("mfa_totp_enabled_at") @db.Timestamptz(3)
-  mfaFailedAttempts                                Int                               @default(0) @map("mfa_failed_attempts")
-  mfaLockedUntil                                   DateTime?                         @map("mfa_locked_until") @db.Timestamptz(3)
-  mfaLastUsedStep                                  BigInt?                           @map("mfa_last_used_step") @db.BigInt
-  createdAt                                        DateTime                          @default(now()) @db.Timestamptz(3)
-  updatedAt                                        DateTime                          @updatedAt @db.Timestamptz(3)
+  procurementTicketPurchaseRequests                ProcurementTicketPurchaseRequest[]  @relation("ProcurementTicketPurchaseCreator")
+  procurementReceiptAdjustments                    ProcurementReceiptAdjustment[]
+  procurementExportJobs                            ProcurementExportJob[]
+  procurementRequestRequesteruseridRows            ProcurementRequest[]                @relation("ProcurementRequestRequesteruserid")
+  procurementRequestOwneruseridRows                ProcurementRequest[]                @relation("ProcurementRequestOwneruserid")
+  procurementRequestVersionCreatedbyuseridRows     ProcurementRequestVersion[]         @relation("ProcurementRequestVersionCreatedbyuserid")
+  procurementApprovalStepApproveruseridRows        ProcurementApprovalStep[]           @relation("ProcurementApprovalStepApproveruserid")
+  procurementApprovalDecisionActoruseridRows       ProcurementApprovalDecision[]       @relation("ProcurementApprovalDecisionActoruserid")
+  procurementSelectionSelectedbyuseridRows         ProcurementSelection[]              @relation("ProcurementSelectionSelectedbyuserid")
+  procurementOrderVersionCreatedbyuseridRows       ProcurementOrderVersion[]           @relation("ProcurementOrderVersionCreatedbyuserid")
+  procurementReceiptReceivedbyuseridRows           ProcurementReceipt[]                @relation("ProcurementReceiptReceivedbyuserid")
+  procurementServiceAcceptanceAcceptedbyuseridRows ProcurementServiceAcceptance[]      @relation("ProcurementServiceAcceptanceAcceptedbyuserid")
+  procurementReturnReturnedbyuseridRows            ProcurementReturn[]                 @relation("ProcurementReturnReturnedbyuserid")
+  procurementInvoiceMatchMatchedbyuseridRows       ProcurementInvoiceMatch[]           @relation("ProcurementInvoiceMatchMatchedbyuserid")
+  procurementIdempotencyActoruseridRows            ProcurementIdempotency[]            @relation("ProcurementIdempotencyActoruserid")
+  procurementAuditActoruseridRows                  ProcurementAudit[]                  @relation("ProcurementAuditActoruserid")
+  financeProcurementInvoiceRevisions               FinanceProcurementInvoiceRevision[]
+  procurementApprovalPoliciesCreated               SettingsProcurementApprovalPolicy[] @relation("ProcurementApprovalPolicyCreator")
+  automationTasksAssigned                          AutomationTask[]                    @relation("AutomationTaskAssignee")
+  id                                               String                              @id @default(uuid()) @db.Uuid
+  username                                         String                              @unique @db.VarChar(80)
+  email                                            String?                             @unique @db.VarChar(320)
+  displayName                                      String                              @db.VarChar(160)
+  passwordHash                                     String                              @db.VarChar(255)
+  status                                           UserStatus                          @default(ACTIVE)
+  failedLoginAttempts                              Int                                 @default(0)
+  lockedUntil                                      DateTime?                           @db.Timestamptz(3)
+  passwordChangedAt                                DateTime                            @default(now()) @db.Timestamptz(3)
+  lastLoginAt                                      DateTime?                           @db.Timestamptz(3)
+  mfaTotpSecretCiphertext                          String?                             @map("mfa_totp_secret_ciphertext") @db.VarChar(800)
+  mfaTotpPendingSecretCiphertext                   String?                             @map("mfa_totp_pending_secret_ciphertext") @db.VarChar(800)
+  mfaTotpPendingExpiresAt                          DateTime?                           @map("mfa_totp_pending_expires_at") @db.Timestamptz(3)
+  mfaTotpEnabledAt                                 DateTime?                           @map("mfa_totp_enabled_at") @db.Timestamptz(3)
+  mfaFailedAttempts                                Int                                 @default(0) @map("mfa_failed_attempts")
+  mfaLockedUntil                                   DateTime?                           @map("mfa_locked_until") @db.Timestamptz(3)
+  mfaLastUsedStep                                  BigInt?                             @map("mfa_last_used_step") @db.BigInt
+  createdAt                                        DateTime                            @default(now()) @db.Timestamptz(3)
+  updatedAt                                        DateTime                            @updatedAt @db.Timestamptz(3)
   roles                                            UserRole[]
   branches                                         UserBranch[]
   sessions                                         Session[]
-  auditEvents                                      AuditEvent[]                      @relation("AuditActor")
-  customersCreated                                 Customer[]                        @relation("CustomerCreatedBy")
-  customersUpdated                                 Customer[]                        @relation("CustomerUpdatedBy")
-  customersDeactivated                             Customer[]                        @relation("CustomerDeactivatedBy")
-  customerContactsCreated                          CustomerContact[]                 @relation("CustomerContactCreatedBy")
-  customerAddressesCreated                         CustomerAddress[]                 @relation("CustomerAddressCreatedBy")
-  customerConsentsRecorded                         CustomerConsent[]                 @relation("CustomerConsentRecordedBy")
-  customerRelationshipsCreated                     CustomerRelationship[]            @relation("CustomerRelationshipCreatedBy")
-  customerStatusChanges                            CustomerStatusHistory[]           @relation("CustomerStatusChangedBy")
-  customerDuplicateCandidates                      CustomerDuplicateCandidate[]      @relation("CustomerDuplicateCreatedBy")
-  customerDuplicateReviews                         CustomerDuplicateCandidate[]      @relation("CustomerDuplicateReviewedBy")
-  customerAuditEvents                              CustomerAuditEvent[]              @relation("CustomerAuditActor")
+  auditEvents                                      AuditEvent[]                        @relation("AuditActor")
+  customersCreated                                 Customer[]                          @relation("CustomerCreatedBy")
+  customersUpdated                                 Customer[]                          @relation("CustomerUpdatedBy")
+  customersDeactivated                             Customer[]                          @relation("CustomerDeactivatedBy")
+  customerContactsCreated                          CustomerContact[]                   @relation("CustomerContactCreatedBy")
+  customerAddressesCreated                         CustomerAddress[]                   @relation("CustomerAddressCreatedBy")
+  customerConsentsRecorded                         CustomerConsent[]                   @relation("CustomerConsentRecordedBy")
+  customerRelationshipsCreated                     CustomerRelationship[]              @relation("CustomerRelationshipCreatedBy")
+  customerStatusChanges                            CustomerStatusHistory[]             @relation("CustomerStatusChangedBy")
+  customerDuplicateCandidates                      CustomerDuplicateCandidate[]        @relation("CustomerDuplicateCreatedBy")
+  customerDuplicateReviews                         CustomerDuplicateCandidate[]        @relation("CustomerDuplicateReviewedBy")
+  customerAuditEvents                              CustomerAuditEvent[]                @relation("CustomerAuditActor")
   legalEntityContext                               UserLegalEntityContext?
-  legalEntitiesUpdated                             LegalEntity[]                     @relation("LegalEntityUpdatedBy")
-  legalEntityBrandingVersions                      LegalEntityBrandingVersion[]      @relation("LegalEntityBrandingVersionCreatedBy")
-  legalEntityAuditEvents                           LegalEntityAuditEvent[]           @relation("LegalEntityAuditActor")
-  legalEntityDocumentIssues                        LegalEntityDocumentIssue[]        @relation("LegalEntityDocumentIssueActor")
-  documentsOwned                                   Document[]                        @relation("DocumentOwner")
-  documentsCreated                                 Document[]                        @relation("DocumentCreatedBy")
-  documentsUpdated                                 Document[]                        @relation("DocumentUpdatedBy")
-  documentVersionsCreated                          DocumentVersion[]                 @relation("DocumentVersionCreatedBy")
-  documentAuditEvents                              DocumentAuditEvent[]              @relation("DocumentAuditActor")
-  documentQuarantinesReviewed                      DocumentQuarantine[]              @relation("DocumentQuarantineReviewer")
-  documentAccessGrants                             DocumentAccessGrant[]             @relation("DocumentAccessGrantActor")
-  notificationsReceived                            Notification[]                    @relation("NotificationRecipient")
-  notificationsActed                               Notification[]                    @relation("NotificationActor")
-  messagingConversationsCreated                    MessagingConversation[]           @relation("MessagingConversationCreator")
+  legalEntitiesUpdated                             LegalEntity[]                       @relation("LegalEntityUpdatedBy")
+  legalEntityBrandingVersions                      LegalEntityBrandingVersion[]        @relation("LegalEntityBrandingVersionCreatedBy")
+  legalEntityAuditEvents                           LegalEntityAuditEvent[]             @relation("LegalEntityAuditActor")
+  legalEntityDocumentIssues                        LegalEntityDocumentIssue[]          @relation("LegalEntityDocumentIssueActor")
+  documentsOwned                                   Document[]                          @relation("DocumentOwner")
+  documentsCreated                                 Document[]                          @relation("DocumentCreatedBy")
+  documentsUpdated                                 Document[]                          @relation("DocumentUpdatedBy")
+  documentVersionsCreated                          DocumentVersion[]                   @relation("DocumentVersionCreatedBy")
+  documentAuditEvents                              DocumentAuditEvent[]                @relation("DocumentAuditActor")
+  documentQuarantinesReviewed                      DocumentQuarantine[]                @relation("DocumentQuarantineReviewer")
+  documentAccessGrants                             DocumentAccessGrant[]               @relation("DocumentAccessGrantActor")
+  notificationsReceived                            Notification[]                      @relation("NotificationRecipient")
+  notificationsActed                               Notification[]                      @relation("NotificationActor")
+  messagingConversationsCreated                    MessagingConversation[]             @relation("MessagingConversationCreator")
   messagingMemberships                             MessagingMember[]
-  messagingMessagesSent                            MessagingMessage[]                @relation("MessagingMessageSender")
-  workbenchFeedbackSubmitted                       WorkbenchFeedback[]               @relation("WorkbenchFeedbackSubmitter")
+  messagingMessagesSent                            MessagingMessage[]                  @relation("MessagingMessageSender")
+  workbenchFeedbackSubmitted                       WorkbenchFeedback[]                 @relation("WorkbenchFeedbackSubmitter")
   workbenchNotes                                   WorkbenchNote[]
   workbenchNoteFolders                             WorkbenchNoteFolder[]
   workbenchCalendarEvents                          WorkbenchCalendarEvent[]
   documentFavorites                                DocumentFavorite[]
   profile                                          IamUserProfile?
-  agencyProfilesManaged                            AgencyOperationalProfile[]        @relation("AgencyAccountManager")
-  b2bAuditEvents                                   B2bAuditEvent[]                   @relation("B2bAuditActor")
-  b2bRevisionsCreated                              B2bAgreementRevision[]            @relation("B2bRevisionCreator")
-  b2bRevisionsSubmitted                            B2bAgreementRevision[]            @relation("B2bRevisionSubmitter")
-  b2bRevisionsReviewed                             B2bAgreementRevision[]            @relation("B2bRevisionReviewer")
+  agencyProfilesManaged                            AgencyOperationalProfile[]          @relation("AgencyAccountManager")
+  b2bAuditEvents                                   B2bAuditEvent[]                     @relation("B2bAuditActor")
+  b2bRevisionsCreated                              B2bAgreementRevision[]              @relation("B2bRevisionCreator")
+  b2bRevisionsSubmitted                            B2bAgreementRevision[]              @relation("B2bRevisionSubmitter")
+  b2bRevisionsReviewed                             B2bAgreementRevision[]              @relation("B2bRevisionReviewer")
   b2bCommands                                      B2bAgreementCommand[]
   hrEmployee                                       HrEmployee?
   hrAuditEvents                                    HrAuditEvent[]
   hrCommands                                       HrCommand[]
   hrNotificationReads                              HrNotificationRead[]
   hrNotifications                                  HrNotification[]
-  customerAffairsLeadsAssigned                     CustomerAffairsLead[]             @relation("CustomerAffairsLeadAssignee")
-  customerAffairsLeadsCreated                      CustomerAffairsLead[]             @relation("CustomerAffairsLeadCreator")
-  customerAffairsLeadsUpdated                      CustomerAffairsLead[]             @relation("CustomerAffairsLeadUpdater")
-  customerAffairsTicketsOwned                      CustomerAffairsTicket[]           @relation("CustomerAffairsTicketOwner")
-  customerAffairsTicketsExecuted                   CustomerAffairsTicket[]           @relation("CustomerAffairsTicketExecutor")
-  customerAffairsTicketsCreated                    CustomerAffairsTicket[]           @relation("CustomerAffairsTicketCreator")
-  customerAffairsTicketsUpdated                    CustomerAffairsTicket[]           @relation("CustomerAffairsTicketUpdater")
+  customerAffairsLeadsAssigned                     CustomerAffairsLead[]               @relation("CustomerAffairsLeadAssignee")
+  customerAffairsLeadsCreated                      CustomerAffairsLead[]               @relation("CustomerAffairsLeadCreator")
+  customerAffairsLeadsUpdated                      CustomerAffairsLead[]               @relation("CustomerAffairsLeadUpdater")
+  customerAffairsTicketsOwned                      CustomerAffairsTicket[]             @relation("CustomerAffairsTicketOwner")
+  customerAffairsTicketsExecuted                   CustomerAffairsTicket[]             @relation("CustomerAffairsTicketExecutor")
+  customerAffairsTicketsCreated                    CustomerAffairsTicket[]             @relation("CustomerAffairsTicketCreator")
+  customerAffairsTicketsUpdated                    CustomerAffairsTicket[]             @relation("CustomerAffairsTicketUpdater")
   customerAffairsTimelineEntries                   CustomerAffairsTimeline[]
-  customerAffairsHandoffsCreated                   CustomerAffairsHandoff[]          @relation("CustomerAffairsHandoffCreator")
-  customerAffairsHandoffsResponded                 CustomerAffairsHandoff[]          @relation("CustomerAffairsHandoffResponder")
-  customerAffairsReferralsAssigned                 CustomerAffairsReferral[]         @relation("CustomerAffairsReferralAssignee")
-  customerAffairsReferralsCreated                  CustomerAffairsReferral[]         @relation("CustomerAffairsReferralCreator")
-  customerAffairsReferralsResponded                CustomerAffairsReferral[]         @relation("CustomerAffairsReferralResponder")
+  customerAffairsHandoffsCreated                   CustomerAffairsHandoff[]            @relation("CustomerAffairsHandoffCreator")
+  customerAffairsHandoffsResponded                 CustomerAffairsHandoff[]            @relation("CustomerAffairsHandoffResponder")
+  customerAffairsReferralsAssigned                 CustomerAffairsReferral[]           @relation("CustomerAffairsReferralAssignee")
+  customerAffairsReferralsCreated                  CustomerAffairsReferral[]           @relation("CustomerAffairsReferralCreator")
+  customerAffairsReferralsResponded                CustomerAffairsReferral[]           @relation("CustomerAffairsReferralResponder")
   customerAffairsCorrectiveActions                 CustomerAffairsCorrectiveAction[]
   customerAffairsCommands                          CustomerAffairsCommand[]
   customerAffairsAuditEvents                       CustomerAffairsAuditEvent[]
+  reportingFacts                                   ReportingTravelFact[]               @relation("ReportingFactOwner")
+  reportingSavedReports                            ReportingSavedReport[]              @relation("ReportingSavedReportOwner")
+  reportingSharesReceived                          ReportingSavedReportShare[]         @relation("ReportingSavedReportShareRecipient")
+  reportingSharesCreated                           ReportingSavedReportShare[]         @relation("ReportingSavedReportShareCreator")
+  reportingRuns                                    ReportingRun[]                      @relation("ReportingRunActor")
+  reportingSchedules                               ReportingSchedule[]                 @relation("ReportingScheduleOwner")
+  reportingExports                                 ReportingExportArtifact[]           @relation("ReportingExportCreator")
 
   @@map("iam_users")
 }
@@ -193,38 +206,244 @@ model RolePermission {
 }
 
 model Branch {
-  procurementExportJobs              ProcurementExportJob[]
-  procurementRequestBranchidRows     ProcurementRequest[]        @relation("ProcurementRequestBranchid")
-  procurementIdempotencyBranchidRows ProcurementIdempotency[]    @relation("ProcurementIdempotencyBranchid")
-  hotelRateBatches                   ReservationHotelRateBatch[]
-  b2bOrganizationUsers               B2bOrganizationUser[]
-  id                                 String                      @id @default(uuid()) @db.Uuid
-  code                               String                      @unique @db.VarChar(40)
-  name                               String                      @db.VarChar(160)
-  isActive                           Boolean                     @default(true)
-  createdAt                          DateTime                    @default(now()) @db.Timestamptz(3)
-  updatedAt                          DateTime                    @updatedAt @db.Timestamptz(3)
-  users                              UserBranch[]
-  ownedCustomers                     Customer[]                  @relation("CustomerOwnerBranch")
-  customerStatusHistory              CustomerStatusHistory[]
-  customerAuditEvents                CustomerAuditEvent[]
-  documents                          Document[]
-  documentAuditEvents                DocumentAuditEvent[]
-  agencyProfiles                     AgencyOperationalProfile[]
-  b2bAuditEvents                     B2bAuditEvent[]
-  b2bSignatories                     B2bOrganizationSignatory[]
-  hrEmployees                        HrEmployee[]
-  hrRecords                          HrRecord[]
-  hrAuditEvents                      HrAuditEvent[]
-  hrNotifications                    HrNotification[]
-  messagingConversations             MessagingConversation[]
-  workbenchFeedback                  WorkbenchFeedback[]
-  workbenchCalendarEvents            WorkbenchCalendarEvent[]
-  customerAffairsLeads               CustomerAffairsLead[]
-  customerAffairsTickets             CustomerAffairsTicket[]
-  customerAffairsAuditEvents         CustomerAffairsAuditEvent[]
+  hotelRateBatches                    ReservationHotelRateBatch[]
+  b2bOrganizationUsers                B2bOrganizationUser[]
+  procurementTicketPurchaseRequests   ProcurementTicketPurchaseRequest[]  @relation("ProcurementTicketPurchaseBranch")
+  procurementExportJobs               ProcurementExportJob[]
+  procurementRequestBranchidRows      ProcurementRequest[]                @relation("ProcurementRequestBranchid")
+  procurementIdempotencyBranchidRows  ProcurementIdempotency[]            @relation("ProcurementIdempotencyBranchid")
+  id                                  String                              @id @default(uuid()) @db.Uuid
+  code                                String                              @unique @db.VarChar(40)
+  name                                String                              @db.VarChar(160)
+  isActive                            Boolean                             @default(true)
+  createdAt                           DateTime                            @default(now()) @db.Timestamptz(3)
+  updatedAt                           DateTime                            @updatedAt @db.Timestamptz(3)
+  users                               UserBranch[]
+  ownedCustomers                      Customer[]                          @relation("CustomerOwnerBranch")
+  customerStatusHistory               CustomerStatusHistory[]
+  customerAuditEvents                 CustomerAuditEvent[]
+  documents                           Document[]
+  documentAuditEvents                 DocumentAuditEvent[]
+  agencyProfiles                      AgencyOperationalProfile[]
+  b2bAuditEvents                      B2bAuditEvent[]
+  b2bSignatories                      B2bOrganizationSignatory[]
+  hrEmployees                         HrEmployee[]
+  hrRecords                           HrRecord[]
+  hrAuditEvents                       HrAuditEvent[]
+  hrNotifications                     HrNotification[]
+  messagingConversations              MessagingConversation[]
+  workbenchFeedback                   WorkbenchFeedback[]
+  workbenchCalendarEvents             WorkbenchCalendarEvent[]
+  customerAffairsLeads                CustomerAffairsLead[]
+  customerAffairsTickets              CustomerAffairsTicket[]
+  customerAffairsAuditEvents          CustomerAffairsAuditEvent[]
+  reportingFacts                      ReportingTravelFact[]
+  financeSettlementAccounts           FinanceSettlementAccount[]
+  financeProcurementInvoiceRevisions  FinanceProcurementInvoiceRevision[]
+  settingsProcurementApprovalPolicies SettingsProcurementApprovalPolicy[]
+  automationTasks                     AutomationTask[]
 
   @@map("branches")
+}
+
+enum ReportingSharingScope {
+  PERSONAL
+  TEAM
+}
+
+enum ReportingRunStatus {
+  QUEUED
+  RUNNING
+  SUCCEEDED
+  FAILED
+}
+
+enum ReportingScheduleStatus {
+  ACTIVE
+  PAUSED
+}
+
+enum ReportingExportFormat {
+  CSV
+  XLSX
+  PDF
+}
+
+enum ReportingExportStatus {
+  QUEUED
+  GENERATING
+  READY
+  FAILED
+  EXPIRED
+}
+
+/// Reporting-owned, approved public projection. Every row is exactly one
+/// travel order item and currency. Passenger/segment counts are measures and
+/// never join targets, so monetary values cannot be multiplied by either.
+model ReportingTravelFact {
+  id                String   @id @default(uuid()) @db.Uuid
+  sourceItemId      String   @db.VarChar(120)
+  sourceVersion     Int
+  orderNumber       String   @db.VarChar(80)
+  occurredAt        DateTime @db.Timestamptz(3)
+  legalEntityCode   String   @db.VarChar(80)
+  legalEntityName   String   @db.VarChar(160)
+  branchId          String?  @db.Uuid
+  branchName        String   @db.VarChar(160)
+  ownerUserId       String?  @db.Uuid
+  ownerName         String   @db.VarChar(160)
+  siteCode          String   @db.VarChar(80)
+  salesChannel      String   @db.VarChar(40)
+  serviceType       String   @db.VarChar(40)
+  customerType      String   @db.VarChar(40)
+  customerName      String   @db.VarChar(160)
+  agencyName        String?  @db.VarChar(160)
+  leadSource        String?  @db.VarChar(120)
+  providerName      String?  @db.VarChar(160)
+  airlineName       String?  @db.VarChar(160)
+  originCity        String?  @db.VarChar(120)
+  destinationCity   String?  @db.VarChar(120)
+  routeLabel        String?  @db.VarChar(260)
+  orderStatus       String   @db.VarChar(40)
+  reservationStatus String   @db.VarChar(40)
+  issueStatus       String   @db.VarChar(40)
+  paymentStatus     String   @db.VarChar(40)
+  pnrCode           String?  @db.VarChar(40)
+  passengerCount    Int      @default(0)
+  segmentCount      Int      @default(0)
+  ticketCount       Int      @default(0)
+  currencyCode      String   @db.Char(3)
+  salesAmount       Decimal  @db.Decimal(24, 10)
+  purchaseAmount    Decimal  @db.Decimal(24, 10)
+  commissionAmount  Decimal  @default(0) @db.Decimal(24, 10)
+  refundAmount      Decimal  @default(0) @db.Decimal(24, 10)
+  settledAmount     Decimal  @default(0) @db.Decimal(24, 10)
+  dataAsOf          DateTime @db.Timestamptz(3)
+  createdAt         DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt         DateTime @updatedAt @db.Timestamptz(3)
+  branch            Branch?  @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  owner             User?    @relation("ReportingFactOwner", fields: [ownerUserId], references: [id], onDelete: SetNull)
+
+  @@unique([sourceItemId, currencyCode])
+  @@index([occurredAt, legalEntityCode, currencyCode])
+  @@index([branchId, ownerUserId, occurredAt])
+  @@index([salesChannel, serviceType, occurredAt])
+  @@index([providerName, agencyName, occurredAt])
+  @@map("reporting_travel_facts")
+}
+
+model ReportingSavedReport {
+  id           String                      @id @default(uuid()) @db.Uuid
+  reportCode   String                      @db.VarChar(100)
+  name         String                      @db.VarChar(200)
+  ownerUserId  String                      @db.Uuid
+  sharingScope ReportingSharingScope       @default(PERSONAL)
+  isFavorite   Boolean                     @default(false)
+  filterState  Json
+  version      Int                         @default(1)
+  createdAt    DateTime                    @default(now()) @db.Timestamptz(3)
+  updatedAt    DateTime                    @updatedAt @db.Timestamptz(3)
+  owner        User                        @relation("ReportingSavedReportOwner", fields: [ownerUserId], references: [id], onDelete: Cascade)
+  runs         ReportingRun[]
+  schedules    ReportingSchedule[]
+  shares       ReportingSavedReportShare[]
+
+  @@index([ownerUserId, updatedAt])
+  @@index([sharingScope, updatedAt])
+  @@map("reporting_saved_reports")
+}
+
+/// Explicit recipient grants for a saved report. A recipient always executes
+/// the stored filters under their own current permissions and branch scope.
+model ReportingSavedReportShare {
+  id              String               @id @default(uuid()) @db.Uuid
+  savedReportId   String               @db.Uuid
+  recipientUserId String               @db.Uuid
+  sharedByUserId  String               @db.Uuid
+  createdAt       DateTime             @default(now()) @db.Timestamptz(3)
+  updatedAt       DateTime             @updatedAt @db.Timestamptz(3)
+  savedReport     ReportingSavedReport @relation(fields: [savedReportId], references: [id], onDelete: Cascade)
+  recipient       User                 @relation("ReportingSavedReportShareRecipient", fields: [recipientUserId], references: [id], onDelete: Cascade)
+  sharedBy        User                 @relation("ReportingSavedReportShareCreator", fields: [sharedByUserId], references: [id], onDelete: Restrict)
+
+  @@unique([savedReportId, recipientUserId])
+  @@index([recipientUserId, updatedAt])
+  @@index([sharedByUserId, updatedAt])
+  @@map("reporting_saved_report_shares")
+}
+
+model ReportingRun {
+  id             String                    @id @default(uuid()) @db.Uuid
+  reportCode     String                    @db.VarChar(100)
+  savedReportId  String?                   @db.Uuid
+  actorUserId    String                    @db.Uuid
+  status         ReportingRunStatus        @default(QUEUED)
+  filterSnapshot Json
+  viewName       String                    @db.VarChar(160)
+  viewVersion    Int
+  recordCount    Int?
+  durationMs     Int?
+  errorCode      String?                   @db.VarChar(100)
+  errorMessage   String?                   @db.VarChar(500)
+  startedAt      DateTime?                 @db.Timestamptz(3)
+  finishedAt     DateTime?                 @db.Timestamptz(3)
+  createdAt      DateTime                  @default(now()) @db.Timestamptz(3)
+  savedReport    ReportingSavedReport?     @relation(fields: [savedReportId], references: [id], onDelete: SetNull)
+  actor          User                      @relation("ReportingRunActor", fields: [actorUserId], references: [id], onDelete: Restrict)
+  exports        ReportingExportArtifact[]
+
+  @@index([actorUserId, createdAt])
+  @@index([reportCode, status, createdAt])
+  @@map("reporting_runs")
+}
+
+model ReportingSchedule {
+  id             String                  @id @default(uuid()) @db.Uuid
+  savedReportId  String                  @db.Uuid
+  ownerUserId    String                  @db.Uuid
+  name           String                  @db.VarChar(200)
+  frequency      String                  @db.VarChar(20)
+  runAtLocalTime String                  @db.VarChar(5)
+  timezone       String                  @default("Asia/Tehran") @db.VarChar(80)
+  recipients     Json
+  format         ReportingExportFormat
+  status         ReportingScheduleStatus @default(ACTIVE)
+  nextRunAt      DateTime?               @db.Timestamptz(3)
+  lastRunStatus  ReportingRunStatus?
+  lastRunAt      DateTime?               @db.Timestamptz(3)
+  createdAt      DateTime                @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime                @updatedAt @db.Timestamptz(3)
+  savedReport    ReportingSavedReport    @relation(fields: [savedReportId], references: [id], onDelete: Cascade)
+  owner          User                    @relation("ReportingScheduleOwner", fields: [ownerUserId], references: [id], onDelete: Cascade)
+
+  @@index([ownerUserId, status, nextRunAt])
+  @@map("reporting_schedules")
+}
+
+model ReportingExportArtifact {
+  id             String                @id @default(uuid()) @db.Uuid
+  runId          String                @db.Uuid
+  creatorUserId  String                @db.Uuid
+  reportCode     String                @db.VarChar(100)
+  reportName     String                @db.VarChar(200)
+  format         ReportingExportFormat
+  status         ReportingExportStatus @default(QUEUED)
+  fileName       String                @db.VarChar(260)
+  contentType    String                @db.VarChar(120)
+  objectKey      String?               @db.VarChar(500)
+  sizeBytes      Int?
+  checksumSha256 String?               @db.Char(64)
+  filterSnapshot Json
+  errorMessage   String?               @db.VarChar(500)
+  expiresAt      DateTime?             @db.Timestamptz(3)
+  createdAt      DateTime              @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime              @updatedAt @db.Timestamptz(3)
+  run            ReportingRun          @relation(fields: [runId], references: [id], onDelete: Cascade)
+  creator        User                  @relation("ReportingExportCreator", fields: [creatorUserId], references: [id], onDelete: Restrict)
+
+  @@index([creatorUserId, createdAt])
+  @@index([status, expiresAt])
+  @@map("reporting_export_artifacts")
 }
 
 model UserBranch {
@@ -909,6 +1128,7 @@ model MasterDraftExchangeRate {
 
 model MasterBank {
   financeSupplierPaymentRevisions FinanceSupplierPaymentRevision[]
+  financeSettlementAccounts       FinanceSettlementAccount[]
   id                              String                           @id @default(uuid()) @db.Uuid
   countryId                       String                           @db.Uuid
   code                            String                           @unique @db.VarChar(32)
@@ -960,24 +1180,26 @@ model MasterBankBranch {
 }
 
 model MasterPaymentMethod {
-  b2bAgreementRevisions  B2bAgreementRevision[]
-  id                     String                       @id @default(uuid()) @db.Uuid
-  code                   String                       @unique @db.VarChar(32)
-  name                   String                       @db.VarChar(160)
-  englishName            String?                      @db.VarChar(160)
-  description            String?                      @db.VarChar(500)
-  channel                MasterPaymentMethodChannel
-  direction              MasterPaymentMethodDirection @default(BOTH)
-  requiresManualApproval Boolean                      @default(false)
-  displayOrder           Int                          @default(0)
-  isActive               Boolean                      @default(true)
-  version                Int                          @default(1)
-  createdByUserId        String                       @db.Uuid
-  updatedByUserId        String                       @db.Uuid
-  deactivatedByUserId    String?                      @db.Uuid
-  deactivatedAt          DateTime?                    @db.Timestamptz(3)
-  createdAt              DateTime                     @default(now()) @db.Timestamptz(3)
-  updatedAt              DateTime                     @updatedAt @db.Timestamptz(3)
+  b2bAgreementRevisions              B2bAgreementRevision[]
+  financeSupplierPaymentRevisions    FinanceSupplierPaymentRevision[]
+  financeProcurementInvoiceRevisions FinanceProcurementInvoiceRevision[]
+  id                                 String                              @id @default(uuid()) @db.Uuid
+  code                               String                              @unique @db.VarChar(32)
+  name                               String                              @db.VarChar(160)
+  englishName                        String?                             @db.VarChar(160)
+  description                        String?                             @db.VarChar(500)
+  channel                            MasterPaymentMethodChannel
+  direction                          MasterPaymentMethodDirection        @default(BOTH)
+  requiresManualApproval             Boolean                             @default(false)
+  displayOrder                       Int                                 @default(0)
+  isActive                           Boolean                             @default(true)
+  version                            Int                                 @default(1)
+  createdByUserId                    String                              @db.Uuid
+  updatedByUserId                    String                              @db.Uuid
+  deactivatedByUserId                String?                             @db.Uuid
+  deactivatedAt                      DateTime?                           @db.Timestamptz(3)
+  createdAt                          DateTime                            @default(now()) @db.Timestamptz(3)
+  updatedAt                          DateTime                            @updatedAt @db.Timestamptz(3)
 
   @@index([isActive, displayOrder, name])
   @@index([channel, direction, isActive])
@@ -1322,6 +1544,13 @@ model MasterSupplier {
   code                               String                     @unique @db.VarChar(32)
   name                               String?                    @db.VarChar(160)
   englishName                        String?                    @db.VarChar(160)
+  address                            String?                    @db.VarChar(500)
+  primaryPhoneEncrypted              String?                    @db.Text
+  primaryPhoneEncryptionIv           String?                    @db.VarChar(24)
+  primaryPhoneEncryptionAuthTag      String?                    @db.VarChar(24)
+  primaryPhoneEncryptionKeyVersion   Int?
+  primaryPhoneMasked                 String?                    @db.VarChar(80)
+  primaryPhoneFingerprint            String?                    @db.Char(64)
   logoFileReference                  String?                    @db.Uuid
   displayOrder                       Int                        @default(0)
   primaryContactId                   String?                    @db.Uuid
@@ -3097,35 +3326,37 @@ model DocumentProcessingJob {
 
 // HR-005: additive HR boundary; immutable event/ledger rows, soft-deleted aggregates.
 model HrEmployee {
-  organizationBranchId String?          @map("organization_branch_id") @db.Uuid
-  organizationBranch   HrRecord?        @relation("HrEmployeeOrganizationBranch", fields: [organizationBranchId, branchId], references: [id, branchId], onDelete: Restrict)
-  photoDocumentId      String?          @map("photo_document_id") @db.Uuid
-  photoDocument        Document?        @relation(fields: [photoDocumentId], references: [id], onDelete: Restrict)
-  id                   String           @id @default(uuid()) @db.Uuid
-  personnelCode        String           @unique @map("personnel_code") @db.VarChar(50)
-  branchId             String           @map("branch_id") @db.Uuid
-  userId               String?          @unique @map("user_id") @db.Uuid
-  managerId            String?          @map("manager_id") @db.Uuid
-  name                 String           @db.VarChar(160)
-  kind                 String           @db.VarChar(80)
-  unit                 String           @db.VarChar(160)
-  position             String           @db.VarChar(160)
-  grade                String           @db.VarChar(40)
-  startedAt            DateTime         @map("started_at") @db.Date
-  status               String           @default("فعال") @db.VarChar(80)
-  version              Int              @default(1)
-  deletedAt            DateTime?        @map("deleted_at") @db.Timestamptz(3)
-  createdAt            DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt            DateTime         @updatedAt @map("updated_at") @db.Timestamptz(3)
-  branch               Branch           @relation(fields: [branchId], references: [id], onDelete: Restrict)
-  user                 User?            @relation(fields: [userId], references: [id], onDelete: Restrict)
-  manager              HrEmployee?      @relation("HrManager", fields: [managerId], references: [id], onDelete: Restrict)
-  reports              HrEmployee[]     @relation("HrManager")
+  procurementRequests  ProcurementRequest[] @relation("ProcurementRequestRequesterEmployee")
+  organizationBranchId String?              @map("organization_branch_id") @db.Uuid
+  organizationBranch   HrRecord?            @relation("HrEmployeeOrganizationBranch", fields: [organizationBranchId, branchId], references: [id, branchId], onDelete: Restrict)
+  photoDocumentId      String?              @map("photo_document_id") @db.Uuid
+  photoDocument        Document?            @relation(fields: [photoDocumentId], references: [id], onDelete: Restrict)
+  id                   String               @id @default(uuid()) @db.Uuid
+  personnelCode        String               @unique @map("personnel_code") @db.VarChar(50)
+  branchId             String               @map("branch_id") @db.Uuid
+  userId               String?              @unique @map("user_id") @db.Uuid
+  managerId            String?              @map("manager_id") @db.Uuid
+  name                 String               @db.VarChar(160)
+  kind                 String               @db.VarChar(80)
+  unit                 String               @db.VarChar(160)
+  position             String               @db.VarChar(160)
+  grade                String               @db.VarChar(40)
+  startedAt            DateTime             @map("started_at") @db.Date
+  status               String               @default("فعال") @db.VarChar(80)
+  version              Int                  @default(1)
+  deletedAt            DateTime?            @map("deleted_at") @db.Timestamptz(3)
+  createdAt            DateTime             @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt            DateTime             @updatedAt @map("updated_at") @db.Timestamptz(3)
+  branch               Branch               @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  user                 User?                @relation(fields: [userId], references: [id], onDelete: Restrict)
+  manager              HrEmployee?          @relation("HrManager", fields: [managerId], references: [id], onDelete: Restrict)
+  reports              HrEmployee[]         @relation("HrManager")
   records              HrRecord[]
   auditEvents          HrAuditEvent[]
   leaveEntries         HrLeaveEntry[]
   notifications        HrNotification[]
 
+  @@unique([id, branchId])
   @@index([branchId, deletedAt, name])
   @@index([managerId])
   @@index([organizationBranchId, branchId])
@@ -3564,13 +3795,18 @@ model SalesContractPaymentEntry {
   financePaymentReference String?            @map("finance_payment_reference") @db.VarChar(160)
   financeConfirmedByRef   String?            @map("finance_confirmed_by_ref") @db.VarChar(160)
   financeConfirmedAt      DateTime?          @map("finance_confirmed_at") @db.Timestamptz(3)
+  financeDecisionReason   String?            @map("finance_decision_reason") @db.VarChar(500)
+  financeReviewedByUserId String?            @map("finance_reviewed_by_user_id") @db.Uuid
+  financeReviewedAt       DateTime?          @map("finance_reviewed_at") @db.Timestamptz(3)
   createdAt               DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt               DateTime           @updatedAt @map("updated_at") @db.Timestamptz(3)
   contract                SalesContract      @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  financeReviewedBy       User?              @relation("SalesPaymentFinanceReviewer", fields: [financeReviewedByUserId], references: [id], onDelete: Restrict)
 
   @@unique([contractId, idempotencyKey])
   @@index([contractId, status, dueAt])
   @@index([financePaymentReference])
+  @@index([financeReviewedByUserId, financeReviewedAt])
   @@map("sales_contract_payment_entries")
 }
 
@@ -3704,6 +3940,30 @@ model TicketOfferCapacityAllocation {
   @@index([contractId, status])
 }
 
+model ProcurementTicketPurchaseRequest {
+  id                      String   @id @default(uuid()) @db.Uuid
+  version                 Int      @default(1)
+  branchId                String   @db.Uuid
+  catalogProductReference String   @db.VarChar(160)
+  title                   String   @db.VarChar(160)
+  serviceDate             DateTime @db.Date
+  supplierDisplaySnapshot String?  @db.VarChar(160)
+  amount                  Decimal  @db.Decimal(20, 6)
+  currencyCode            String   @db.VarChar(3)
+  status                  String   @default("PENDING") @db.VarChar(20)
+  createdByUserId         String   @db.Uuid
+  branch                  Branch   @relation("ProcurementTicketPurchaseBranch", fields: [branchId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  createdByUser           User     @relation("ProcurementTicketPurchaseCreator", fields: [createdByUserId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  createKey               String   @db.VarChar(160)
+  fingerprint             String   @db.VarChar(64)
+  createdAt               DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt               DateTime @updatedAt @db.Timestamptz(3)
+
+  @@unique([createdByUserId, createKey])
+  @@unique([branchId, catalogProductReference])
+  @@index([branchId, status, serviceDate])
+}
+
 model ReservationIntake {
   salesOwnerUserId    String?                          @db.Uuid
   salesOwner          User?                            @relation("TravelSalesOwner", fields: [salesOwnerUserId], references: [id], onDelete: Restrict)
@@ -3780,8 +4040,64 @@ model ReservationHotelPurchase {
 }
 
 enum FinanceSupplierPaymentStatus {
+  PARTIALLY_PAID
   PAID
   REJECTED
+}
+
+model FinanceSettlementAccount {
+  id                         String                              @id @default(uuid()) @db.Uuid
+  branchId                   String                              @db.Uuid
+  title                      String                              @db.VarChar(160)
+  kind                       String                              @db.VarChar(24)
+  currencyCode               String                              @db.VarChar(3)
+  bankId                     String?                             @db.Uuid
+  maskedIdentifier           String?                             @db.VarChar(80)
+  isActive                   Boolean                             @default(true)
+  version                    Int                                 @default(1)
+  createdByUserId            String                              @db.Uuid
+  createdAt                  DateTime                            @default(now()) @db.Timestamptz(3)
+  updatedAt                  DateTime                            @updatedAt @db.Timestamptz(3)
+  branch                     Branch                              @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  bank                       MasterBank?                         @relation(fields: [bankId], references: [id], onDelete: Restrict)
+  createdBy                  User                                @relation("FinanceSettlementAccountCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  supplierPayments           FinanceSupplierPaymentRevision[]
+  procurementInvoicePayments FinanceProcurementInvoiceRevision[]
+
+  @@unique([branchId, title, currencyCode])
+  @@index([branchId, isActive, title])
+  @@index([bankId, isActive])
+}
+
+model FinanceProcurementInvoiceRevision {
+  id                String                    @id @default(uuid()) @db.Uuid
+  sourceId          String                    @db.Uuid
+  sourceVersion     Int
+  branchId          String                    @db.Uuid
+  version           Int
+  status            String                    @db.VarChar(40)
+  accountId         String?                   @db.Uuid
+  paymentMethodId   String?                   @db.Uuid
+  paidAmount        Decimal?                  @db.Decimal(24, 4)
+  exchangeRateToIrr Decimal?                  @db.Decimal(24, 8)
+  rialEquivalent    Decimal?                  @db.Decimal(24, 4)
+  cumulativePaid    Decimal                   @default(0) @db.Decimal(24, 4)
+  remainingAmount   Decimal                   @db.Decimal(24, 4)
+  transferAt        DateTime?                 @db.Timestamptz(3)
+  paymentReference  String?                   @db.VarChar(160)
+  reason            String                    @default("") @db.VarChar(500)
+  actorUserId       String                    @db.Uuid
+  createdAt         DateTime                  @default(now()) @db.Timestamptz(3)
+  branch            Branch                    @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  account           FinanceSettlementAccount? @relation(fields: [accountId], references: [id], onDelete: Restrict)
+  paymentMethod     MasterPaymentMethod?      @relation(fields: [paymentMethodId], references: [id], onDelete: Restrict)
+  actor             User                      @relation(fields: [actorUserId], references: [id], onDelete: Restrict)
+
+  @@unique([sourceId, version])
+  @@index([branchId, status, createdAt])
+  @@index([accountId, transferAt])
+  @@index([paymentMethodId, transferAt])
+  @@map("finance_procurement_invoice_revisions")
 }
 
 model ReservationServicePurchase {
@@ -3811,23 +4127,34 @@ model ReservationServicePurchase {
 }
 
 model FinanceSupplierPaymentRevision {
-  id               String                       @id @default(uuid()) @db.Uuid
-  purchaseId       String                       @db.Uuid
-  purchase         ReservationServicePurchase   @relation(fields: [purchaseId], references: [id], onDelete: Restrict)
-  version          Int
-  status           FinanceSupplierPaymentStatus
-  bankId           String?                      @db.Uuid
-  bank             MasterBank?                  @relation(fields: [bankId], references: [id], onDelete: Restrict)
-  transferAt       DateTime?                    @db.Timestamptz(3)
-  paymentReference String?                      @db.VarChar(160)
-  reason           String                       @db.VarChar(500)
-  actorUserId      String                       @db.Uuid
-  actor            User                         @relation(fields: [actorUserId], references: [id], onDelete: Restrict)
-  createdAt        DateTime                     @default(now()) @db.Timestamptz(3)
+  id                String                       @id @default(uuid()) @db.Uuid
+  purchaseId        String                       @db.Uuid
+  purchase          ReservationServicePurchase   @relation(fields: [purchaseId], references: [id], onDelete: Restrict)
+  version           Int
+  status            FinanceSupplierPaymentStatus
+  bankId            String?                      @db.Uuid
+  bank              MasterBank?                  @relation(fields: [bankId], references: [id], onDelete: Restrict)
+  accountId         String?                      @db.Uuid
+  account           FinanceSettlementAccount?    @relation(fields: [accountId], references: [id], onDelete: Restrict)
+  paymentMethodId   String?                      @db.Uuid
+  paymentMethod     MasterPaymentMethod?         @relation(fields: [paymentMethodId], references: [id], onDelete: Restrict)
+  paidAmount        Decimal?                     @db.Decimal(24, 4)
+  exchangeRateToIrr Decimal?                     @db.Decimal(24, 8)
+  rialEquivalent    Decimal?                     @db.Decimal(24, 4)
+  cumulativePaid    Decimal?                     @db.Decimal(24, 4)
+  remainingAmount   Decimal?                     @db.Decimal(24, 4)
+  transferAt        DateTime?                    @db.Timestamptz(3)
+  paymentReference  String?                      @db.VarChar(160)
+  reason            String                       @db.VarChar(500)
+  actorUserId       String                       @db.Uuid
+  actor             User                         @relation(fields: [actorUserId], references: [id], onDelete: Restrict)
+  createdAt         DateTime                     @default(now()) @db.Timestamptz(3)
 
   @@unique([purchaseId, version])
   @@index([status, createdAt])
   @@index([bankId, transferAt])
+  @@index([accountId, transferAt])
+  @@index([paymentMethodId, transferAt])
 }
 
 model ReservationArrangementRevision {
@@ -4041,6 +4368,7 @@ model CustomerAffairsTicket {
   referrals               CustomerAffairsReferral[]
   satisfactions           CustomerAffairsSatisfaction[]
   correctiveActions       CustomerAffairsCorrectiveAction[]
+  siteOrigin              CustomerAffairsSiteTicket?
 
   @@index([branchId, status, priority, updatedAt])
   @@index([customerOwnerUserId, status, nextActionAt])
@@ -4048,6 +4376,29 @@ model CustomerAffairsTicket {
   @@index([customerId, createdAt])
   @@index([firstResponseDueAt, resolutionDueAt])
   @@map("customer_affairs_tickets")
+}
+
+model CustomerAffairsSite {
+  id      String                      @id @db.Uuid
+  code    String                      @unique @db.VarChar(48)
+  domain  String                      @unique @db.VarChar(160)
+  tickets CustomerAffairsSiteTicket[]
+
+  @@map("customer_affairs_sites")
+}
+
+model CustomerAffairsSiteTicket {
+  id          String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  siteId      String                @map("site_id") @db.Uuid
+  ticketId    String                @unique @map("ticket_id") @db.Uuid
+  externalId  String                @map("external_id") @db.VarChar(160)
+  fingerprint String                @db.VarChar(64)
+  createdAt   DateTime              @default(now()) @map("created_at") @db.Timestamptz(3)
+  site        CustomerAffairsSite   @relation(fields: [siteId], references: [id], onDelete: Restrict)
+  ticket      CustomerAffairsTicket @relation(fields: [ticketId], references: [id], onDelete: Restrict)
+
+  @@unique([siteId, externalId])
+  @@map("customer_affairs_site_tickets")
 }
 
 model CustomerAffairsTimeline {
@@ -4214,6 +4565,7 @@ model ProcurementRequest {
   number                                    String                         @unique @db.VarChar(60)
   branchId                                  String                         @db.Uuid
   requesterUserId                           String                         @db.Uuid
+  requesterEmployeeId                       String?                        @db.Uuid
   unitId                                    String?                        @db.VarChar(160)
   ownerUserId                               String?                        @db.Uuid
   status                                    String                         @default("DRAFT") @db.VarChar(40)
@@ -4230,6 +4582,7 @@ model ProcurementRequest {
   updatedAt                                 DateTime                       @updatedAt @db.Timestamptz(3)
   procurementRequestBranchid                Branch                         @relation("ProcurementRequestBranchid", fields: [branchId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   procurementRequestRequesteruserid         User                           @relation("ProcurementRequestRequesteruserid", fields: [requesterUserId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  requesterEmployee                         HrEmployee?                    @relation("ProcurementRequestRequesterEmployee", fields: [requesterEmployeeId, branchId], references: [id, branchId], onDelete: Restrict, onUpdate: Restrict)
   procurementRequestOwneruserid             User?                          @relation("ProcurementRequestOwneruserid", fields: [ownerUserId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   procurementRequestCurrencycode            MasterCurrency?                @relation("ProcurementRequestCurrencycode", fields: [currencyCode], references: [code], onDelete: Restrict, onUpdate: Restrict)
   procurementRequestItemRequestidRows       ProcurementRequestItem[]       @relation("ProcurementRequestItemRequestid")
@@ -4251,6 +4604,7 @@ model ProcurementRequest {
   @@index([branchId, createdAt, id])
   @@index([branchId, unitId, createdAt, id])
   @@index([requesterUserId])
+  @@index([requesterEmployeeId, branchId])
   @@index([ownerUserId])
   @@index([currencyCode])
   @@index([branchId, status, createdAt, id])
@@ -4785,7 +5139,6 @@ model ProcurementIdempotency {
   @@map("procurement_idempotency")
 }
 
-/// Signed append-only compensation; accumulated quantity validity is transactional.
 model ProcurementReceiptAdjustment {
   id             String                 @id @default(uuid()) @db.Uuid
   requestId      String                 @db.Uuid
@@ -4811,7 +5164,6 @@ model ProcurementReceiptAdjustment {
   @@map("procurement_receipt_adjustment")
 }
 
-/// Bounded asynchronous archive/export queue, scoped to the requesting actor.
 model ProcurementExportJob {
   id             String              @id @default(uuid()) @db.Uuid
   actorUserId    String              @db.Uuid
@@ -4860,4 +5212,70 @@ model ProcurementAudit {
   @@index([actorUserId])
   @@index([requestId, createdAt, id])
   @@map("procurement_audit")
+}
+
+model SettingsProcurementApprovalPolicy {
+  id                   String   @id @default(uuid()) @db.Uuid
+  branchId             String   @db.Uuid
+  unitId               String   @db.VarChar(160)
+  category             String   @db.VarChar(160)
+  currencyCode         String   @db.Char(3)
+  maximumAmount        Decimal  @db.Decimal(24, 4)
+  allowUnknownEstimate Boolean  @default(false)
+  emergencyAllowed     Boolean  @default(false)
+  minimumQuotations    Int      @default(1)
+  singleSourceAllowed  Boolean  @default(false)
+  steps                Json
+  version              Int      @default(1)
+  isActive             Boolean  @default(true)
+  approvedAt           DateTime @default(now()) @db.Timestamptz(3)
+  createdByUserId      String   @db.Uuid
+  createdAt            DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt            DateTime @updatedAt @db.Timestamptz(3)
+  branch               Branch   @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  createdBy            User     @relation("ProcurementApprovalPolicyCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
+
+  @@unique([branchId, unitId, category, currencyCode, version])
+  @@index([branchId, unitId, category, currencyCode, isActive])
+  @@map("settings_procurement_approval_policies")
+}
+
+model AutomationTask {
+  id              String    @id @default(uuid()) @db.Uuid
+  sourceModule    String    @db.VarChar(80)
+  sourceEventId   String    @db.Uuid
+  sourceReference String    @db.VarChar(160)
+  branchId        String    @db.Uuid
+  assigneeUserId  String    @db.Uuid
+  kind            String    @db.VarChar(80)
+  title           String    @db.VarChar(300)
+  status          String    @default("OPEN") @db.VarChar(32)
+  dueAt           DateTime? @db.Timestamptz(3)
+  payload         Json      @default("{}")
+  completedAt     DateTime? @db.Timestamptz(3)
+  createdAt       DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt       DateTime  @updatedAt @db.Timestamptz(3)
+  branch          Branch    @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  assignee        User      @relation("AutomationTaskAssignee", fields: [assigneeUserId], references: [id], onDelete: Restrict)
+
+  @@unique([sourceModule, sourceEventId, assigneeUserId])
+  @@index([assigneeUserId, status, dueAt])
+  @@index([sourceModule, sourceReference, status])
+  @@map("automation_tasks")
+}
+
+model IntegrationSupplierMessage {
+  id                String    @id @default(uuid()) @db.Uuid
+  externalMessageId String    @unique @db.VarChar(160)
+  eventType         String    @db.VarChar(120)
+  orderReference    String    @db.VarChar(160)
+  status            String    @default("RECEIVED") @db.VarChar(40)
+  payload           Json
+  receivedAt        DateTime  @default(now()) @db.Timestamptz(3)
+  processedAt       DateTime? @db.Timestamptz(3)
+  lastErrorCode     String?   @db.VarChar(100)
+
+  @@index([status, receivedAt])
+  @@index([orderReference, receivedAt])
+  @@map("integration_supplier_messages")
 }

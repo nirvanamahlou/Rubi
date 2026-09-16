@@ -5,7 +5,7 @@ import {
   voucherNumberKeys,
   voucherFlagKeys,
   type TravelWorkflowStateV1,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/form-controls';
 import {
@@ -17,33 +17,55 @@ import {
   voucherTextLabels,
   voucherNumberLabels,
   voucherFlagLabels,
+  type VoucherTextFieldKey,
 } from '../model/voucher-settings';
 import { travelRequest } from './travel-workflow-form';
 import { useReservationFormReferences } from './reservation-form-sheet';
 import { DatePicker } from '@/components/ui/date-picker';
 import { ReservationFiles } from '../passenger-files/files';
 import { TravelDocument } from './travel-document';
+
+export type ReservationSettingsSection =
+  'ALL' | 'PARTY' | 'FLIGHT' | 'HOTEL' | 'OTHER' | 'PASSENGERS';
+
+const sectionLabels: Record<ReservationSettingsSection, string> = {
+  ALL: 'تنظیمات کامل فرم رزواسیون',
+  PARTY: 'ویرایش طرف قرارداد',
+  FLIGHT: 'ویرایش اطلاعات پرواز',
+  HOTEL: 'ویرایش اطلاعات هتل',
+  OTHER: 'ویرایش سایر خدمات',
+  PASSENGERS: 'ویرایش مسافران فرم رزواسیون',
+};
+
 function ReservationSettingsForm({
   intake,
   refs,
   onSaved,
   onDirty,
+  section = 'ALL',
+  partyName,
 }: {
   intake: ReservationFormIntake;
   refs: ReservationFormReferences;
   onSaved: (state: TravelWorkflowStateV1) => void;
   onDirty: () => void;
+  section?: ReservationSettingsSection;
+  partyName?: string;
 }) {
   const [draft, setDraft] = useState(() => {
     const source = structuredClone(intake);
     delete source.workflow.voucherSettings;
     if (source.workflow.supplierFormSettings)
       source.workflow.voucherSettings = source.workflow.supplierFormSettings;
-    return defaultVoucherSettings(source, refs);
+    const settings = defaultVoucherSettings(source, refs);
+    if (!settings.text.contractPartyName && partyName)
+      settings.text.contractPartyName = partyName;
+    return settings;
   });
   const [applyToContractAndVoucher, setApplyToContractAndVoucher] =
     useState(false);
   const [error, setError] = useState(''),
+    [message, setMessage] = useState(''),
     [busy, setBusy] = useState(false);
   const [history, setHistory] = useState<
     { version: number; state: TravelWorkflowStateV1; createdAt: string }[]
@@ -67,8 +89,21 @@ function ReservationSettingsForm({
   }, [intake.id, intake.workflow.version]);
   async function save() {
     if (busy) return;
+    const childWithoutHotelBand = draft.passengers.some(
+      (passenger) =>
+        passenger.selected &&
+        passenger.age === 'CHD' &&
+        !passenger.hotelChildAgeBand,
+    );
+    if (childWithoutHotelBand) {
+      setError(
+        'برای همهٔ مسافران کودک، ردهٔ هتل ۲ تا ۶ یا ۶ تا ۱۲ سال را انتخاب کنید.',
+      );
+      return;
+    }
     setBusy(true);
     setError('');
+    setMessage('');
     try {
       const r = await travelRequest<{ data: TravelWorkflowStateV1 }>(
         `reservations/requests/${intake.id}/workflow`,
@@ -78,12 +113,13 @@ function ReservationSettingsForm({
           expectedContractVersion: intake.contractEditVersion,
           expectedVersion: intake.workflow.version,
           note: applyToContractAndVoucher
-            ? 'ویرایش فرم رزواسیون و اعمال در قرارداد و واچر'
-            : 'ویرایش فرم رزواسیون و مبنای خرید',
+            ? sectionLabels[section] + ' و اعمال در قرارداد و واچر'
+            : sectionLabels[section] + ' در فرم رزواسیون و مبنای خرید',
           voucherSettings: draft,
         },
       );
       onSaved(r.data);
+      setMessage('نسخهٔ جدید با موفقیت ثبت شد.');
       window.dispatchEvent(new Event('reservation-workflow-changed'));
     } catch (e) {
       setError(e instanceof Error ? e.message : 'ذخیره انجام نشد.');
@@ -97,24 +133,64 @@ function ReservationSettingsForm({
   };
   const selected = draft.passengers.filter((p) => p.selected);
   const primaryTextKeys = ['checkIn', 'checkOut', 'roomType'] as const;
-  const secondaryTextKeys = voucherTextKeys.filter(
-    (key) => !primaryTextKeys.includes(key as (typeof primaryTextKeys)[number]),
-  );
-  const textField = (key: (typeof voucherTextKeys)[number]) => (
+  const textKeysBySection: Record<
+    ReservationSettingsSection,
+    readonly VoucherTextFieldKey[]
+  > = {
+    ALL: voucherTextKeys.filter(
+      (key) =>
+        !primaryTextKeys.includes(key as (typeof primaryTextKeys)[number]),
+    ),
+    PARTY: ['contractPartyName'],
+    FLIGHT: [
+      'arrivalAirline',
+      'arrivalFlight',
+      'arrivalDate',
+      'arrivalTime',
+      'departureAirline',
+      'departureFlight',
+      'departureDate',
+      'departureTime',
+    ],
+    HOTEL: [
+      'country',
+      'city',
+      'hotel',
+      'stars',
+      'meal',
+      'website',
+      'stayNotes',
+    ],
+    OTHER: [
+      'broker',
+      'leaderLanguage',
+      'leaderName',
+      'leaderPhone',
+      'transferBoard',
+      'transferPhone',
+      'transferKind',
+      'excursionDescription',
+      'extraServices',
+      'remarks',
+    ],
+    PASSENGERS: [],
+  };
+  const sectionTextKeys = textKeysBySection[section];
+  const textField = (key: VoucherTextFieldKey) => (
     <label key={key}>
       {voucherTextLabels[key]}
       {['checkIn', 'checkOut', 'arrivalDate', 'departureDate'].includes(key) ? (
         <DatePicker
           defaultCalendarSystem="gregorian"
           gregorianEnglish
-          value={draft.text[key]}
+          value={draft.text[key] ?? ''}
           onChange={(value) =>
             update({ ...draft, text: { ...draft.text, [key]: value } })
           }
         />
       ) : (
         <Input
-          value={draft.text[key]}
+          value={draft.text[key] ?? ''}
           maxLength={
             [
               'stayNotes',
@@ -141,12 +217,12 @@ function ReservationSettingsForm({
   );
   return (
     <section className="grid gap-4 rounded-xl border border-border p-4">
-      <h3 className="font-bold">تنظیمات فرم رزواسیون</h3>
+      <h3 className="font-bold">{sectionLabels[section]}</h3>
       <p className="text-sm">
-        تاریخ هتل، تعداد و نوع اتاق و ردهٔ سنی مسافران را اصلاح کنید. هر ذخیره
-        یک نسخهٔ مستقل در سابقهٔ فرم رزواسیون می‌سازد.
+        اطلاعات همین بخش را اصلاح کنید. هر ذخیره یک نسخهٔ مستقل در سابقهٔ فرم
+        رزواسیون می‌سازد؛ ردهٔ کودک هتل در فرم ارسالی کارگزار چاپ می‌شود.
       </p>
-      <p>
+      <p className={section === 'ALL' || section === 'HOTEL' ? '' : 'hidden'}>
         تعداد اتاق:{' '}
         {draft.numbers.singleRooms +
           draft.numbers.doubleRooms +
@@ -167,185 +243,245 @@ function ReservationSettingsForm({
         disabled={busy || intake.workflow.supplierStatus === 'CANCELLED'}
         className="grid gap-4"
       >
-        <div className="grid gap-3 rounded-xl border border-border p-3">
-          <h4 className="font-bold">تاریخ هتل و نوع اتاق</h4>
-          <div className="grid gap-3 sm:grid-cols-3">
-            {primaryTextKeys.map(textField)}
+        <div
+          className={
+            section === 'ALL' || section === 'HOTEL' ? 'grid gap-4' : 'hidden'
+          }
+        >
+          <div className="grid gap-3 rounded-xl border border-border p-3">
+            <h4 className="font-bold">تاریخ هتل و نوع اتاق</h4>
+            <div className="grid gap-3 sm:grid-cols-3">
+              {primaryTextKeys.map(textField)}
+            </div>
           </div>
-        </div>
-        <div className="grid gap-3 rounded-xl border border-border p-3">
-          <h4 className="font-bold">تعداد اتاق‌ها</h4>
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-            {voucherNumberKeys.map((key) => (
-              <label key={key}>
-                {voucherNumberLabels[key]}
-                <Input
-                  type="number"
-                  min={0}
-                  max={1000}
-                  value={draft.numbers[key]}
-                  onChange={(event) =>
-                    update({
-                      ...draft,
-                      numbers: {
-                        ...draft.numbers,
-                        [key]: Number(event.target.value),
-                      },
-                    })
-                  }
-                />
-              </label>
-            ))}
-          </div>
-        </div>
-        <p>
-          مسافران انتخاب‌شده: {selected.length} · ADL{' '}
-          {selected.filter((p) => p.age === 'ADL').length} · CHD{' '}
-          {selected.filter((p) => p.age === 'CHD').length} · INF{' '}
-          {selected.filter((p) => p.age === 'INF').length}
-        </p>
-        <p className="text-sm">
-          نوع اتاق و ردهٔ سنی در نسخهٔ عملیاتی فرم ذخیره می‌شود؛ پروندهٔ اصلی
-          مسافر تغییر نمی‌کند.
-        </p>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr>
-                <th>انتخاب</th>
-                <th>مسافر</th>
-                <th>نوع اتاق</th>
-                <th>رده سنی</th>
-                <th>جنسیت</th>
-                <th>تولد</th>
-                <th>شماره مدرک</th>
-              </tr>
-            </thead>
-            <tbody>
-              {draft.passengers.map((p, i) => (
-                <tr key={p.id}>
-                  <td>
-                    <input
-                      aria-label={`انتخاب مسافر ${i + 1}`}
-                      type="checkbox"
-                      checked={p.selected}
-                      onChange={(e) =>
-                        update({
-                          ...draft,
-                          passengers: draft.passengers.map((v, j) =>
-                            j === i ? { ...v, selected: e.target.checked } : v,
-                          ),
-                        })
-                      }
-                    />
-                  </td>
-                  <td>
-                    {intake.snapshot.passengerAssignments?.find(
-                      (a) => a.customerId === p.id,
-                    )?.displayNameSnapshot ?? 'نام دریافت نشده'}
-                  </td>
-                  <td>
-                    <Input
-                      aria-label={`نوع اتاق مسافر ${i + 1}`}
-                      value={p.roomType}
-                      maxLength={100}
-                      onChange={(e) =>
-                        update({
-                          ...draft,
-                          passengers: draft.passengers.map((v, j) =>
-                            j === i ? { ...v, roomType: e.target.value } : v,
-                          ),
-                        })
-                      }
-                    />
-                  </td>
-                  <td>
-                    <select
-                      aria-label={`رده سنی مسافر ${i + 1}`}
-                      className="bg-surface"
-                      value={p.age}
-                      onChange={(e) =>
-                        update({
-                          ...draft,
-                          passengers: draft.passengers.map((v, j) =>
-                            j === i
-                              ? { ...v, age: e.target.value as typeof p.age }
-                              : v,
-                          ),
-                        })
-                      }
-                    >
-                      <option>ADL</option>
-                      <option>CHD</option>
-                      <option>INF</option>
-                    </select>
-                  </td>
-                  <td>
-                    <select
-                      className="bg-surface"
-                      aria-label={`جنسیت مسافر ${i + 1}`}
-                      value={p.sex ?? ''}
-                      onChange={(e) =>
-                        update({
-                          ...draft,
-                          passengers: draft.passengers.map((v, j) =>
-                            j === i
-                              ? {
-                                  ...v,
-                                  sex: e.target.value as 'MALE' | 'FEMALE' | '',
-                                }
-                              : v,
-                          ),
-                        })
-                      }
-                    >
-                      <option value="">نامشخص</option>
-                      <option value="MALE">مرد</option>
-                      <option value="FEMALE">زن</option>
-                    </select>
-                  </td>
-                  <td>
-                    <DatePicker
-                      defaultCalendarSystem="gregorian"
-                      gregorianEnglish
-                      value={p.birthDate ?? ''}
-                      onChange={(value) =>
-                        update({
-                          ...draft,
-                          passengers: draft.passengers.map((v, j) =>
-                            j === i ? { ...v, birthDate: value } : v,
-                          ),
-                        })
-                      }
-                    />
-                  </td>
-                  <td>
-                    <Input
-                      aria-label={`شماره مدرک مسافر ${i + 1}`}
-                      maxLength={100}
-                      value={p.documentNumber ?? ''}
-                      onChange={(e) =>
-                        update({
-                          ...draft,
-                          passengers: draft.passengers.map((v, j) =>
-                            j === i
-                              ? { ...v, documentNumber: e.target.value }
-                              : v,
-                          ),
-                        })
-                      }
-                    />
-                  </td>
-                </tr>
+          <div className="grid gap-3 rounded-xl border border-border p-3">
+            <h4 className="font-bold">تعداد اتاق‌ها</h4>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+              {voucherNumberKeys.map((key) => (
+                <label key={key}>
+                  {voucherNumberLabels[key]}
+                  <Input
+                    type="number"
+                    min={0}
+                    max={1000}
+                    value={draft.numbers[key]}
+                    onChange={(event) =>
+                      update({
+                        ...draft,
+                        numbers: {
+                          ...draft.numbers,
+                          [key]: Number(event.target.value),
+                        },
+                      })
+                    }
+                  />
+                </label>
               ))}
-            </tbody>
-          </table>
+            </div>
+          </div>
         </div>
-        <details className="rounded-xl border border-border p-3">
+        <div
+          className={
+            section === 'ALL' || section === 'PASSENGERS'
+              ? 'grid gap-4'
+              : 'hidden'
+          }
+        >
+          <p>
+            مسافران انتخاب‌شده: {selected.length} · بلیط ADL{' '}
+            {selected.filter((p) => p.age === 'ADL').length} · CHD{' '}
+            {selected.filter((p) => p.age === 'CHD').length} · INF{' '}
+            {selected.filter((p) => p.age === 'INF').length}
+          </p>
+          <p className="text-sm">
+            ردهٔ بلیط از نوع ADL / CHD / INF جداست. برای هر CHD، ردهٔ هتل را ۲
+            تا ۶ یا ۶ تا ۱۲ سال تعیین کنید؛ پروندهٔ اصلی و بلیط تغییر نمی‌کنند.
+          </p>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr>
+                  <th>انتخاب</th>
+                  <th>مسافر</th>
+                  <th>نوع اتاق</th>
+                  <th>رده بلیط</th>
+                  <th>رده کودک هتل</th>
+                  <th>جنسیت</th>
+                  <th>تولد</th>
+                  <th>شماره مدرک</th>
+                </tr>
+              </thead>
+              <tbody>
+                {draft.passengers.map((p, i) => (
+                  <tr key={p.id}>
+                    <td>
+                      <input
+                        aria-label={`انتخاب مسافر ${i + 1}`}
+                        type="checkbox"
+                        checked={p.selected}
+                        onChange={(e) =>
+                          update({
+                            ...draft,
+                            passengers: draft.passengers.map((v, j) =>
+                              j === i
+                                ? { ...v, selected: e.target.checked }
+                                : v,
+                            ),
+                          })
+                        }
+                      />
+                    </td>
+                    <td>
+                      {intake.snapshot.passengerAssignments?.find(
+                        (a) => a.customerId === p.id,
+                      )?.displayNameSnapshot ?? 'نام دریافت نشده'}
+                    </td>
+                    <td>
+                      <Input
+                        aria-label={`نوع اتاق مسافر ${i + 1}`}
+                        value={p.roomType}
+                        maxLength={100}
+                        onChange={(e) =>
+                          update({
+                            ...draft,
+                            passengers: draft.passengers.map((v, j) =>
+                              j === i ? { ...v, roomType: e.target.value } : v,
+                            ),
+                          })
+                        }
+                      />
+                    </td>
+                    <td>
+                      <select
+                        aria-label={`رده سنی مسافر ${i + 1}`}
+                        className="bg-surface"
+                        value={p.age}
+                        onChange={(e) =>
+                          update({
+                            ...draft,
+                            passengers: draft.passengers.map((v, j) =>
+                              j === i
+                                ? { ...v, age: e.target.value as typeof p.age }
+                                : v,
+                            ),
+                          })
+                        }
+                      >
+                        <option>ADL</option>
+                        <option>CHD</option>
+                        <option>INF</option>
+                      </select>
+                    </td>
+                    <td>
+                      {p.age === 'CHD' ? (
+                        <select
+                          aria-label={`رده کودک هتل مسافر ${i + 1}`}
+                          className="bg-surface"
+                          value={p.hotelChildAgeBand ?? ''}
+                          onChange={(e) =>
+                            update({
+                              ...draft,
+                              passengers: draft.passengers.map((v, j) =>
+                                j === i
+                                  ? {
+                                      ...v,
+                                      hotelChildAgeBand: e.target.value as
+                                        'CHD_2_TO_6' | 'CHD_6_TO_12' | '',
+                                    }
+                                  : v,
+                              ),
+                            })
+                          }
+                        >
+                          <option value="">انتخاب نشده</option>
+                          <option value="CHD_2_TO_6">کودک ۲ تا ۶ سال</option>
+                          <option value="CHD_6_TO_12">کودک ۶ تا ۱۲ سال</option>
+                        </select>
+                      ) : (
+                        <span>—</span>
+                      )}
+                    </td>
+                    <td>
+                      <select
+                        className="bg-surface"
+                        aria-label={`جنسیت مسافر ${i + 1}`}
+                        value={p.sex ?? ''}
+                        onChange={(e) =>
+                          update({
+                            ...draft,
+                            passengers: draft.passengers.map((v, j) =>
+                              j === i
+                                ? {
+                                    ...v,
+                                    sex: e.target.value as
+                                      'MALE' | 'FEMALE' | '',
+                                  }
+                                : v,
+                            ),
+                          })
+                        }
+                      >
+                        <option value="">نامشخص</option>
+                        <option value="MALE">مرد</option>
+                        <option value="FEMALE">زن</option>
+                      </select>
+                    </td>
+                    <td>
+                      <DatePicker
+                        defaultCalendarSystem="gregorian"
+                        gregorianEnglish
+                        value={p.birthDate ?? ''}
+                        onChange={(value) =>
+                          update({
+                            ...draft,
+                            passengers: draft.passengers.map((v, j) =>
+                              j === i ? { ...v, birthDate: value } : v,
+                            ),
+                          })
+                        }
+                      />
+                    </td>
+                    <td>
+                      <Input
+                        aria-label={`شماره مدرک مسافر ${i + 1}`}
+                        maxLength={100}
+                        value={p.documentNumber ?? ''}
+                        onChange={(e) =>
+                          update({
+                            ...draft,
+                            passengers: draft.passengers.map((v, j) =>
+                              j === i
+                                ? { ...v, documentNumber: e.target.value }
+                                : v,
+                            ),
+                          })
+                        }
+                      />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <details
+          open={section !== 'ALL'}
+          className={
+            sectionTextKeys.length
+              ? 'rounded-xl border border-border p-3'
+              : 'hidden'
+          }
+        >
           <summary className="cursor-pointer font-bold">
-            سایر اطلاعات فرم رزواسیون
+            {sectionLabels[section]}
           </summary>
-          <div className="mt-3 flex flex-wrap gap-4">
+          <div
+            className={
+              section === 'ALL' || section === 'OTHER'
+                ? 'mt-3 flex flex-wrap gap-4'
+                : 'hidden'
+            }
+          >
             {voucherFlagKeys
               .filter((key) => key !== 'withLetterhead')
               .map((key) => (
@@ -368,7 +504,7 @@ function ReservationSettingsForm({
               ))}
           </div>
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
-            {secondaryTextKeys.map(textField)}
+            {sectionTextKeys.map(textField)}
           </div>
         </details>
         <label className="rounded-xl border border-primary/30 bg-primary/5 p-3">
@@ -388,16 +524,20 @@ function ReservationSettingsForm({
           {busy ? 'در حال ذخیره…' : 'ثبت نسخهٔ جدید فرم رزواسیون'}
         </Button>
       </fieldset>
+      {message && <p role="status">{message}</p>}
       {error && (
         <p role="alert" className="text-destructive">
           {error}
         </p>
       )}
-      <details onToggle={(event) => setShowFiles(event.currentTarget.open)}>
+      <details
+        className={section === 'ALL' ? '' : 'hidden'}
+        onToggle={(event) => setShowFiles(event.currentTarget.open)}
+      >
         <summary>پیوست فرم رزواسیون و واچر</summary>
         {showFiles && <ReservationFiles id={intake.id} />}
       </details>
-      <details>
+      <details className={section === 'ALL' ? '' : 'hidden'}>
         <summary>سابقهٔ فرم رزواسیون (۱۰۰ نسخهٔ اخیر)</summary>
         <div className="grid gap-2">
           {history
@@ -424,7 +564,7 @@ function ReservationSettingsForm({
             ))}
         </div>
       </details>
-      {past && (
+      {past && section === 'ALL' && (
         <div>
           <Button variant="outline" onClick={() => setPast(undefined)}>
             بستن نسخهٔ قبلی
@@ -440,6 +580,8 @@ export function ReservationSettings(props: {
   intake: ReservationFormIntake;
   onSaved: (state: TravelWorkflowStateV1) => void;
   onDirty: () => void;
+  section?: ReservationSettingsSection;
+  partyName?: string;
 }) {
   const refs = useReservationFormReferences(props.intake, true);
   return refs.ready ? (

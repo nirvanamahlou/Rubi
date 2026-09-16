@@ -16,14 +16,14 @@ Owner request: repair contract and dossier date controls, expand agreement types
 - API/Web lint and typecheck, Contracts/Database/API builds passed.
 - 109 Web tests (Organizations, date/calendar contracts and reference-field model), 24 workflow/document tests and 18 PostgreSQL integration tests passed. The final wizard payment requirement has seven passing focused tests.
 - Browser QA uses actual React/Radix components with isolated API fixtures: Persian contract start 1405/6/20 stores 2026-09-11; Gregorian end selection, guarantee expiry and long-form calendar placement work. Standalone date input stores the same ISO date. Payment and rate reference options close after selection. No staff login/session was fabricated for this QA.
-- Real local public-service smoke uploaded two synthetic PNG documents, both CLEAN, and saved a DRAFT HOTEL_SERVICES agreement with the Master Data payment FK and both contract/guarantee version references. No approval/activation was performed. Private report: `C:/Users/admin/Rubi-backups/b2b-contract-forms/smoke.json`.
+- Real local public-service smoke uploaded two synthetic PNG documents, both CLEAN, and saved a DRAFT HOTEL_SERVICES agreement with the Master Data payment FK and both contract/guarantee version references. No approval/activation was performed. Private report: `C:/Users/admin/Nora-backups/b2b-contract-forms/smoke.json`.
 - Reload through public services confirms the payment and both document references persist. Documents VALID/EXPIRED filters correctly include/exclude the uploaded future-dated proofs. Existing date validity/filter mapping and invalid-date validation also pass the targeted tests. This change repairs existing date controls; it does not add a new date-range query API to tables without one.
 
 ## Migration and local handoff
 
 - Additive migration `20260910110000_b2b_contract_payment_reference`; SHA256 `824ee5a6163c40ab2c58174ec0db9fb281083d6c9b966fb7650172dfcca583ff`.
-- Rehearsed on a full restored PostgreSQL 18 database. Applied to `rubi_hr_current_20260908` on 2026-09-09 19:06 UTC after backup. Existing data in 129 tables and prior migration history were preserved; the new nullable fields remain null on legacy revisions.
-- Backup: `C:/Users/admin/Rubi-backups/b2b-contract-forms/cutover-1788980805197.dump`. Private rehearsal/application reports remain outside Git.
+- Rehearsed on a full restored PostgreSQL 18 database. Applied to `nora_hr_current_20260908` on 2026-09-09 19:06 UTC after backup. Existing data in 129 tables and prior migration history were preserved; the new nullable fields remain null on legacy revisions.
+- Backup: `C:/Users/admin/Nora-backups/b2b-contract-forms/cutover-1788980805197.dump`. Private rehearsal/application reports remain outside Git.
 - Branch `codex/pc-b-b2b-contract-forms`, based on 2bdde76 and the prior PR143 stack. API4191 is intentional because Fetch disallows port4190. Existing DB and Documents storage stay in place. Production Web3100 build/cutover and remote checks are recorded below when complete. No merge.
 
 ## Completed runtime and review

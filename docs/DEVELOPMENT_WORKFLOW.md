@@ -4,7 +4,7 @@
 
 PC-A، PC-B، PC-C و PC-D روی یک Repository و بدون تکیه بر حافظه گفتگو کار می‌کنند. Git history،
 اسناد وضعیت و migrations تنها مرجع هماهنگی هستند. `origin` باید Repository مشترک
-`Rubi` باقی بماند و هیچ Agentی مجاز به حذف یا جایگزینی Remote موجود نیست.
+`Nora` باقی بماند و هیچ Agentی مجاز به حذف یا جایگزینی Remote موجود نیست.
 
 همه کامپیوترها Full-Stack هستند. هرکدام مدل داده، Backend، Frontend و Test ماژول‌های
 تحت مالکیت خود را توسعه می‌دهد؛ تقسیم قبلی «PC-A فقط Backend / PC-B فقط Frontend»

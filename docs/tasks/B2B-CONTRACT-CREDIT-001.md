@@ -1,12 +1,12 @@
 # B2B-CONTRACT-CREDIT-001 — contract and credit workflow
 
-PC-B / `codex/pc-b-b2b-contract-credit` / `C:/Users/admin/Rubi-b2b-form-runtime`.
+PC-B / `codex/pc-b-b2b-contract-credit` / `C:/Users/admin/Nora-b2b-form-runtime`.
 
 The owner reported Screenshot527: the third step of the cooperation modal contained a disabled draft checkbox and unavailable-workflow notices. The replacement edits and persists contract terms for both agency and corporate roles, using the existing Master Data identity and existing B2B profile/agreement/credit aggregates.
 
 ## Delivered behavior
 
-- Four-step RTL popup, shared Rubi Vazirmatn font, contract title/type/dates, currencies, services, payment method, settlement period/days/monthly cutoff, SLA, cancellation/refund terms, notes and reason.
+- Four-step RTL popup, shared Nora Vazirmatn font, contract title/type/dates, currencies, services, payment method, settlement period/days/monthly cutoff, SLA, cancellation/refund terms, notes and reason.
 - Dynamic per-currency Decimal limits, hard/soft control, due days, overdue behavior and bounded policy validity. No FX conversion or floating-point money conversion.
 - Guarantee type/reference/amount/currency/issuer/dates/status and pinned Documents version. A deposit requirement is contractual metadata; actual deposits and receipts remain Finance-owned.
 - Draft creation/edit, submit, independent approve/reject and a new revision after rejection/approval. Submitted content and history are immutable; an amendment does not overwrite the active revision. Future-dated amendments can be submitted but are approved on or after their start, keeping the prior active revision intact until then.
@@ -25,7 +25,7 @@ Draft writers need `b2b.agreement.read`, `b2b.credit.read`, `b2b.agreement.manag
 
 The targeted disposable PostgreSQL suite passes all 12 tests, including exact large decimal values, simultaneous duplicate commands, concurrent edits/approvals, creator/editor self-review denial, immutable SQL history/children, rejected amendments preserving active terms, branch isolation, FK failures and audit-failure rollback. DTO/HTTP tests exercise nested validation and the separate review permission. Browser QA uses the actual React components against isolated mock ports for create/edit/two currencies/guarantee/review UI; it changes no operational business data.
 
-A private custom-format database backup was restored to a disposable PostgreSQL container and this exact migration rehearsed successfully. Existing Master Data, Documents, IAM grants and six HR employee rows remain unchanged. The runtime preflight finds only this one pending migration. Private backup/evidence: `C:/Users/admin/Rubi-backups/b2b-contract-credit/`; none of those files belong in Git.
+A private custom-format database backup was restored to a disposable PostgreSQL container and this exact migration rehearsed successfully. Existing Master Data, Documents, IAM grants and six HR employee rows remain unchanged. The runtime preflight finds only this one pending migration. Private backup/evidence: `C:/Users/admin/Nora-backups/b2b-contract-credit/`; none of those files belong in Git.
 
 Runtime activation and final build/test evidence are recorded in the follow-up status entry. The current operational database has no role with B2B permissions. Assigning actual writer/reviewer access requires the owner's explicit account selection/approval; the implementation does not silently grant it.
 
@@ -35,7 +35,7 @@ Validation before runtime handoff: API full suite 1,037 passed / 116 opt-in skip
 
 Runtime coordination completed: Documents' owner explicitly transferred Web3100 PID16692 after PR131 merged into develop e07c0c6. That develop revision, including contrast a11865d and HR PR125/127, was merged normally into this branch. Only the transferred Web and this task's own API listeners were replaced. Documents' frontend remains byte-identical to e07c0c6; its five contrast component tests pass. The owner's pre-handoff browser evidence was white `rgb(255, 255, 255)` text on blue `rgb(21, 87, 184)` for all nine CTA links; a fresh authenticated check after this cutover is pending re-login and is not claimed as completed.
 
-Migration applied at 2026-09-08T22:40:47Z to `rubi_hr_current_20260908`, after the exact-SQL restore rehearsal and a fresh pre-cutover backup. Before/after counts match: 12 organizations, 25 roles, 2 contacts, 18 documents and versions, 5 IAM users, 9 IAM roles, 177 role permission grants and 6 HR employees. Existing B2B aggregate counts remain zero. Private evidence is `C:/Users/admin/Rubi-backups/b2b-contract-credit/applied.json`; the fresh backup SHA256 is `a8bb016b125882b292d81a625fc7ff5c5f6b9b0acd4d294cc325d58cb46cb2ba`. No seed, business form submission or actual IAM grant was performed.
+Migration applied at 2026-09-08T22:40:47Z to `nora_hr_current_20260908`, after the exact-SQL restore rehearsal and a fresh pre-cutover backup. Before/after counts match: 12 organizations, 25 roles, 2 contacts, 18 documents and versions, 5 IAM users, 9 IAM roles, 177 role permission grants and 6 HR employees. Existing B2B aggregate counts remain zero. Private evidence is `C:/Users/admin/Nora-backups/b2b-contract-credit/applied.json`; the fresh backup SHA256 is `a8bb016b125882b292d81a625fc7ff5c5f6b9b0acd4d294cc325d58cb46cb2ba`. No seed, business form submission or actual IAM grant was performed.
 
 Final Web3100 PID7740 serves `a8c986d0efc2e609de0a0fa220dfb1ec1e3a0448`, fingerprint `hr005-54d77a794617c989`; API4190 PID17316 serves the same application source (its subsequent commit only fixes a test dependency). Both health/runtime endpoints respond successfully. A first build inherited an API URL missing `/api/v1`; the browser caught the failed directory load, and Web was rebuilt explicitly with `NEXT_PUBLIC_API_BASE_URL=http://localhost:4190/api/v1`. The final served bundle contains the correct URL. Restart with that explicit build-time value and the existing private API env/database/storage configuration. Documentation-only commits after a8c986d do not change the running application source.
 

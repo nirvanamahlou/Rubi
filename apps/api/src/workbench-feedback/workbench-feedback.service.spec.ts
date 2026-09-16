@@ -1,5 +1,5 @@
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
-import type { AuthenticatedActor } from '@rubi/contracts';
+import type { AuthenticatedActor } from '@nora/contracts';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { WorkbenchFeedbackService } from './workbench-feedback.service';

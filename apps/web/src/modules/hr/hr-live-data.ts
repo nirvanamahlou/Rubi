@@ -2,7 +2,7 @@ import {
   getHrResource,
   type HrRecordDto,
   type HrBootstrapDto,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import type { HrPreviewDataset } from './hr-preview-data';
 import { retiredHrColumns } from './hr-form-model';
 

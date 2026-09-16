@@ -20,7 +20,7 @@ import { CreateWorkbenchFeedbackDto } from './workbench-feedback.dto';
 import { WorkbenchFeedbackService } from './workbench-feedback.service';
 
 @ApiTags('Workbench feedback')
-@ApiCookieAuth('rubi_access')
+@ApiCookieAuth('nora_access')
 @UseGuards(AuthGuard)
 @Controller('workbench/feedback')
 export class WorkbenchFeedbackController {

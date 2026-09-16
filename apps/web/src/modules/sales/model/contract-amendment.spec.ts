@@ -4,7 +4,7 @@ import {
   voucherNumberKeys,
   voucherFlagKeys,
   type VoucherSettingsV1,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import { contractPrintHtml } from './contract-print';
 import { printFixture, printReferences } from './contract-print.fixture';
 it('renders the recorded operational hotel amendment while preserving commercial totals and base data', () => {
@@ -15,6 +15,7 @@ it('renders the recorded operational hotel amendment while preserving commercial
     passengers: [],
   } as unknown as VoucherSettingsV1;
   Object.assign(settings.text, {
+    contractPartyName: 'AMENDED CONTRACT PARTY',
     hotel: 'AMENDED HOTEL',
     roomType: 'SGL AMENDMENT',
     meal: 'UALL AMENDMENT',
@@ -28,7 +29,8 @@ it('renders the recorded operational hotel amendment while preserving commercial
       id: output.contract.passengersDetail[0]!.customerId,
       selected: true,
       roomType: 'SGL AMENDMENT',
-      age: 'INF',
+      age: 'CHD',
+      hotelChildAgeBand: 'CHD_2_TO_6',
     },
   ];
   const original = structuredClone(output.contract.hotelSelection);
@@ -36,10 +38,11 @@ it('renders the recorded operational hotel amendment while preserving commercial
     reservationFormAmendment: JSON.stringify({ version: 1, settings }),
   };
   const html = contractPrintHtml(output, printReferences);
+  expect(html).toContain('AMENDED CONTRACT PARTY');
   expect(html).toContain('AMENDED HOTEL');
   expect(html).toContain('SGL AMENDMENT');
   expect(html).toContain('UALL AMENDMENT');
-  expect(html).toContain('نوزاد');
+  expect(html).toContain('کودک · ۲ تا ۶ سال');
   expect(html).toContain(
     'مبالغ و تعهدات مالی قرارداد با این اصلاح تغییر نکرده‌اند.',
   );

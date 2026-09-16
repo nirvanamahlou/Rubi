@@ -1,4 +1,4 @@
-import { Prisma } from '@rubi/database';
+import { Prisma } from '@nora/database';
 import type { ProcurementTx } from './procurement.service';
 
 /** r is always the scoped Procurement request; no foreign-module tables are read. */
@@ -36,7 +36,7 @@ export async function procurementReport(
         : dimension === 'supplier'
           ? Prisma.sql`o."supplierId"::text`
           : Prisma.sql`o."currencyCode"`;
-  const [counts, groups, performance] = await Promise.all([
+  const [counts, groups, performance, financeStatuses] = await Promise.all([
     tx.$queryRaw<{ status: string; count: number }[]>(
       Prisma.sql`SELECT r.status, COUNT(*)::int AS count FROM procurement_request r WHERE ${scope} GROUP BY r.status ORDER BY r.status LIMIT 30`,
     ),
@@ -80,6 +80,14 @@ export async function procurementReport(
           JOIN LATERAL (SELECT MAX(d."createdAt") AS decided_at FROM procurement_approval_step s JOIN procurement_approval_decision d ON d."stepId" = s.id WHERE s."snapshotId" = a.id) decision ON true
           WHERE NOT EXISTS (SELECT 1 FROM procurement_approval_step s WHERE s."snapshotId" = a.id AND s.status <> 'APPROVED')) AS "approvalSeconds"
       FROM delivery`),
+    tx.$queryRaw<{ status: string; count: number; amount: string }[]>(
+      Prisma.sql`SELECT h.status, COUNT(*)::int AS count, COALESCE(SUM(i."totalAmount"), 0)::text AS amount
+        FROM procurement_finance_handoff h
+        JOIN procurement_request r ON r.id = h."requestId"
+        JOIN procurement_invoice i ON i.id = h."invoiceId"
+        WHERE ${scope}
+        GROUP BY h.status ORDER BY h.status`,
+    ),
   ]);
   return {
     generatedAt: new Date().toISOString(),
@@ -93,6 +101,7 @@ export async function procurementReport(
       hasMore: groups.length > 50,
     },
     basis: 'CURRENT_ORDER_VERSION_BY_CURRENCY',
-    finance: 'NOT_CONNECTED' as const,
+    finance: 'CONNECTED' as const,
+    financeStatuses,
   };
 }

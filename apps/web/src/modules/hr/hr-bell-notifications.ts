@@ -1,4 +1,4 @@
-import type { HrNotificationDto } from '@rubi/contracts';
+import type { HrNotificationDto } from '@nora/contracts';
 
 /** Pending HR notices share the global bell; read history remains in HR's audit. */
 export function pendingHrBellNotifications(

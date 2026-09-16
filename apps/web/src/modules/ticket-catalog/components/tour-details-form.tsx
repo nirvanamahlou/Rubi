@@ -5,7 +5,7 @@ import type {
   DocumentOptionsResponseV1,
   MasterDataRecord,
   TourPackageInputV1,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import {
   Button,
   FormField,

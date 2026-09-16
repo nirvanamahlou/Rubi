@@ -92,9 +92,9 @@ export const navigationMessages = [
     description: 'پرونده و تعاملات مشتریان',
   },
   {
-    title: 'امور مشتریان، سرنخ‌ها و پشتیبانی',
+    title: 'امور مشتریان و پشتیبانی',
     href: '/customer-affairs',
-    description: 'سرنخ‌ها، درخواست‌های قبل از فروش و پشتیبانی پس از سفر',
+    description: 'درخواست‌های مشتریان و پشتیبانی پس از سفر',
   },
   {
     title: 'رزرواسیون و عملیات سفر',

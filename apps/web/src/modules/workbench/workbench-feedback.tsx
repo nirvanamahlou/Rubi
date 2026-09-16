@@ -1,7 +1,7 @@
 'use client';
 import { useRef, useState } from 'react';
 import { MessageSquareText, Paperclip, Send, X } from 'lucide-react';
-import type { WorkbenchFeedbackDepartment } from '@rubi/contracts';
+import type { WorkbenchFeedbackDepartment } from '@nora/contracts';
 import {
   Alert,
   Button,

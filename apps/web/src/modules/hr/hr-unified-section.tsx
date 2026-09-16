@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { Plus, RefreshCw } from 'lucide-react';
-import { getHrResource, type HrRecordDto } from '@rubi/contracts';
+import { getHrResource, type HrRecordDto } from '@nora/contracts';
 import type { HrSectionId } from './hr.model';
 import { screenMeta, sectionTabs } from './hr.model';
 import {
@@ -414,7 +414,7 @@ export function HrUnifiedSection({
           <HrButton
             onClick={() => {
               window.localStorage.setItem(
-                `rubi.hr.filters.${source.section}.${source.tab}`,
+                `nora.hr.filters.${source.section}.${source.tab}`,
                 JSON.stringify({
                   status,
                   branchId,
@@ -432,7 +432,7 @@ export function HrUnifiedSection({
             onClick={() => {
               const saved = parseSavedHrFilter(
                 window.localStorage.getItem(
-                  `rubi.hr.filters.${source.section}.${source.tab}`,
+                  `nora.hr.filters.${source.section}.${source.tab}`,
                 ),
                 companies.map((item) => item.id),
               );

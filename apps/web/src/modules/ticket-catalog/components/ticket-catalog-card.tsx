@@ -18,6 +18,7 @@ import {
   type Reference,
 } from '../model/catalog';
 import {
+  displayServiceDate,
   displayTime,
   journeyLabels,
   statusLabels,
@@ -150,7 +151,9 @@ export function TicketCatalogCard({
           <div className="rounded-lg bg-muted/45 p-2">
             <p className="text-xs text-muted-foreground">حرکت</p>
             <p className="mt-1 text-sm font-bold">
-              {displayTime(segment.departureAt, segment.departureZone)}
+              {segment.departureAt
+                ? displayTime(segment.departureAt, segment.departureZone)
+                : displayServiceDate(product.definition.serviceDate)}
             </p>
           </div>
           <div className="rounded-lg bg-muted/45 p-2">

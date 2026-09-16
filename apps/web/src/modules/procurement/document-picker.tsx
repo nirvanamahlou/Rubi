@@ -1,9 +1,11 @@
 'use client';
-import { useState } from 'react';
+import { FileUp } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import type {
   DocumentListItemV1,
+  DocumentOptionsResponseV1,
   ProcurementDocumentReferenceV1,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import { documentsApi } from '@/modules/documents/api/client';
 import { Input } from '@/components/ui/form-controls';
 import { Alert } from '@/components/ui/surfaces';
@@ -14,11 +16,13 @@ export function ProcurementDocumentPicker({
   value,
   onChange,
   available,
+  invoiceUpload,
 }: {
   branchId: string;
   value: ProcurementDocumentReferenceV1[];
   onChange: (value: ProcurementDocumentReferenceV1[]) => void;
   available: boolean;
+  invoiceUpload?: { requestId: string; requestNumber: string };
 }) {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
@@ -27,6 +31,33 @@ export function ProcurementDocumentPicker({
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  const [invoiceOptions, setInvoiceOptions] = useState<
+    DocumentOptionsResponseV1['data'] | null
+  >(null);
+  const [invoiceUploadError, setInvoiceUploadError] = useState('');
+  const [invoiceUploadSuccess, setInvoiceUploadSuccess] = useState('');
+  const fileInput = useRef<HTMLInputElement>(null);
+  const invoiceRequestId = invoiceUpload?.requestId;
+  useEffect(() => {
+    if (!invoiceRequestId || !available) return;
+    let current = true;
+    void documentsApi
+      .options()
+      .then((result) => {
+        if (current) setInvoiceOptions(result.data);
+      })
+      .catch((caught: unknown) => {
+        if (!current) return;
+        setInvoiceUploadError(
+          caught instanceof Error
+            ? caught.message
+            : 'تنظیمات اسناد دریافت نشد.',
+        );
+      });
+    return () => {
+      current = false;
+    };
+  }, [available, invoiceRequestId]);
   async function load(targetPage: number) {
     setBusy(true);
     setError('');
@@ -51,11 +82,120 @@ export function ProcurementDocumentPicker({
       setBusy(false);
     }
   }
+  async function uploadInvoice(file: File) {
+    if (!invoiceUpload || !invoiceOptions) return;
+    const documentType = invoiceOptions.documentTypes.find(
+      (type) => type.domain === 'PROCUREMENT',
+    );
+    const category = invoiceOptions.categories[0];
+    const owner =
+      invoiceOptions.owners.find(
+        (candidate) => candidate.id === invoiceOptions.currentUserId,
+      ) ?? invoiceOptions.owners[0];
+    if (!documentType || !category || !owner) {
+      setInvoiceUploadError(
+        'تنظیمات نوع سند خرید، دسته‌بندی یا مالک برای بارگذاری فاکتور کامل نیست.',
+      );
+      return;
+    }
+    setBusy(true);
+    setInvoiceUploadError('');
+    setInvoiceUploadSuccess('');
+    try {
+      const form = new FormData();
+      form.set('file', file);
+      form.set(
+        'title',
+        `فاکتور ${invoiceUpload.requestNumber} · ${file.name}`.slice(0, 240),
+      );
+      form.set('description', 'فایل فاکتور بارگذاری‌شده از خرید و تأمین');
+      form.set('documentTypeId', documentType.id);
+      form.set('categoryId', category.id);
+      form.set('branchId', branchId);
+      form.set('ownerUserId', owner.id);
+      form.set('sourceModule', 'PROCUREMENT');
+      form.set('sourceEntityType', 'ProcurementRequest');
+      form.set('sourceEntityId', invoiceUpload.requestId);
+      form.set(
+        'sourceDisplayLabel',
+        `${invoiceUpload.requestNumber} · فاکتور خرید`,
+      );
+      form.set('confidentiality', documentType.defaultConfidentiality);
+      form.set('versionNote', 'بارگذاری از فرم فاکتور خرید');
+      const result = await documentsApi.upload(form);
+      const reference = {
+        id: result.data.id,
+        versionId: result.data.currentVersion.id,
+      };
+      onChange([
+        ...value.filter((item) => item.id !== reference.id),
+        reference,
+      ]);
+      setInvoiceUploadSuccess(
+        'فایل در اسناد و فایل‌ها ذخیره و به فاکتور پیوست شد.',
+      );
+      if (fileInput.current) fileInput.current.value = '';
+    } catch (caught) {
+      setInvoiceUploadError(
+        caught instanceof Error
+          ? caught.message
+          : 'بارگذاری فاکتور ناموفق بود.',
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
   return (
     <div className="space-y-3">
       <h3 className="text-sm font-semibold">مدارک این عملیات</h3>
       {available ? (
         <>
+          {invoiceUpload && (
+            <section className="rounded-xl border border-primary/20 bg-primary/5 p-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h4 className="font-semibold">بارگذاری فایل فاکتور</h4>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    فایل در بخش «اسناد و فایل‌ها» با مرجع همین درخواست ذخیره و
+                    به فاکتور پیوست می‌شود.
+                  </p>
+                </div>
+                <input
+                  ref={fileInput}
+                  accept={invoiceOptions?.uploadPolicy.allowedMimeTypes.join(
+                    ',',
+                  )}
+                  aria-label="انتخاب فایل فاکتور"
+                  className="sr-only"
+                  disabled={busy || !invoiceOptions}
+                  onChange={(event) => {
+                    const file = event.target.files?.[0];
+                    if (file) void uploadInvoice(file);
+                  }}
+                  type="file"
+                />
+                <Button
+                  type="button"
+                  disabled={busy || !invoiceOptions}
+                  loading={busy}
+                  onClick={() => fileInput.current?.click()}
+                >
+                  <FileUp aria-hidden="true" className="size-4" />
+                  بارگذاری فاکتور
+                </Button>
+              </div>
+              {invoiceUploadError && (
+                <p role="alert" className="mt-3 text-sm text-destructive">
+                  {invoiceUploadError}
+                </p>
+              )}
+              {invoiceUploadSuccess && (
+                <p role="status" className="mt-3 text-sm text-emerald-700">
+                  {invoiceUploadSuccess}
+                </p>
+              )}
+            </section>
+          )}
           <p className="text-xs text-muted-foreground">
             نسخه سالم اسناد خرید مربوط به همین شعبه را انتخاب کنید. اصل فایل در
             آرشیو اسناد باقی می‌ماند.

@@ -3,7 +3,7 @@ import {
   type HrBootstrapDto,
   type HrRecordCreate,
   type HrWorkflowData,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import { hrCompanies } from './hr-live-data';
 import { persianDateToIso } from './contextual-hr-form';
 

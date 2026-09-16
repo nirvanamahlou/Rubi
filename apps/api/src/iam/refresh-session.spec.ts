@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 
 import { ConflictException } from '@nestjs/common';
 import type { JwtService } from '@nestjs/jwt';
-import { SessionStatus, UserStatus } from '@rubi/database';
+import { SessionStatus, UserStatus } from '@nora/database';
 import type { DatabaseService } from '../database/database.service';
 import { describe, expect, it, vi } from 'vitest';
 

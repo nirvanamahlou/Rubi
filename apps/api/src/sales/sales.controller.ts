@@ -24,7 +24,7 @@ import type {
   SalesContractListQuery,
   SalesContractUpdateRequest,
   SalesPaymentCreateRequest,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 
 import { AuthGuard } from '../iam/auth.guard';
 import type { AuthenticatedRequest } from '../iam/iam.types';
@@ -33,7 +33,7 @@ import { SalesOutputService } from './sales-output.service';
 import { SALES_XLSX_MIME } from './sales.xlsx';
 
 @ApiTags('Sales')
-@ApiCookieAuth('rubi_access')
+@ApiCookieAuth('nora_access')
 @UseGuards(AuthGuard)
 @Controller('sales')
 export class SalesController {

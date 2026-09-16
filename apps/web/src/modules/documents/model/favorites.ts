@@ -1,7 +1,7 @@
 /** Read-only compatibility with the existing Documents favorites. No new storage. */
-export const DOCUMENT_FAVORITES_CHANGED = 'rubi:documents:favorites-changed';
+export const DOCUMENT_FAVORITES_CHANGED = 'nora:documents:favorites-changed';
 export const documentFavoritesKey = (userId: string) =>
-  `rubi.documents.favorites.${userId}`;
+  `nora.documents.favorites.${userId}`;
 export function parseDocumentFavorites(stored: string | null): Set<string> {
   if (!stored) return new Set();
   const values: unknown = JSON.parse(stored);

@@ -8,7 +8,7 @@ import type {
   AuthenticatedActor,
   OrganizationActivityPage,
   OrganizationActivityQuery,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import { activityWindow } from '../common/organization-activity';
 import { MasterOrganizationDirectory } from '../master-data/master-organization-directory';
 import { DocumentsService } from '../documents/documents.service';

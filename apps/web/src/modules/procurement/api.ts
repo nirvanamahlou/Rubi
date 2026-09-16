@@ -3,7 +3,7 @@ import type {
   ProcurementDraftV1,
   ProcurementListV1,
   ProcurementRequestV1,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import { getPublicApiBaseUrl } from '@/lib/environment';
 import { refreshAuthenticatedSession } from '@/lib/auth-session';
 
@@ -61,7 +61,14 @@ export async function procurementRequest<T>(
   return response.json() as Promise<T>;
 }
 export type Bootstrap = ProcurementBootstrapV1 & {
-  requester: { label: string; unitId: string | null } | null;
+  defaultBranchId?: string | null;
+  requester: {
+    id: string;
+    userId: string;
+    branchId: string;
+    label: string;
+    unitId: string | null;
+  } | null;
 };
 export type Supplier = {
   id: string;
@@ -131,6 +138,16 @@ export const procurementApi = {
     procurementRequest<ProcurementListV1<{ id: string; label: string }>>(
       `/owners?${new URLSearchParams({ branchId, search, page: String(page) })}`,
     ),
+  requesters: (branchId: string, search: string, page: number, unitId = '') =>
+    procurementRequest<
+      ProcurementListV1<{ id: string; label: string; unitId: string | null }>
+    >(
+      `/requesters?${new URLSearchParams({ branchId, search, page: String(page), unitId })}`,
+    ),
+  units: (branchId: string) =>
+    procurementRequest<{ items: { id: string; label: string }[] }>(
+      `/units?${new URLSearchParams({ branchId })}`,
+    ),
   bootstrap: () => procurementRequest<Bootstrap>('/bootstrap'),
   list: (query: URLSearchParams) =>
     procurementRequest<ProcurementListV1<ProcurementRequestV1>>(
@@ -140,9 +157,16 @@ export const procurementApi = {
     procurementRequest<ProcurementRequestV1>(
       `/requests/${encodeURIComponent(id)}`,
     ),
-  suppliers: (page: number, search: string) =>
+  suppliers: (
+    page: number,
+    search: string,
+    dates: { createdFrom: string; createdTo: string } = {
+      createdFrom: '',
+      createdTo: '',
+    },
+  ) =>
     procurementRequest<ProcurementListV1<Supplier>>(
-      `/suppliers?${new URLSearchParams({ page: String(page), search })}`,
+      `/suppliers?${new URLSearchParams({ page: String(page), search, ...dates })}`,
     ),
   records: (id: string, kind: string, page: number) =>
     procurementRequest<ProcurementListV1<Record<string, unknown>>>(
@@ -152,6 +176,7 @@ export const procurementApi = {
     draft: ProcurementDraftV1,
     key: string,
     request?: ProcurementRequestV1,
+    requesterEmployeeId?: string,
   ) =>
     procurementRequest<ProcurementRequestV1>(
       request ? `/requests/${encodeURIComponent(request.id)}` : '/requests',
@@ -159,8 +184,19 @@ export const procurementApi = {
         method: request ? 'PATCH' : 'POST',
         headers: { 'Content-Type': 'application/json', 'Idempotency-Key': key },
         body: JSON.stringify(
-          request ? { expectedVersion: request.version, draft } : draft,
+          request
+            ? { expectedVersion: request.version, draft }
+            : { draft, requesterEmployeeId },
         ),
+      },
+    ),
+  remove: (request: ProcurementRequestV1) =>
+    procurementRequest<{ id: string; number: string; deleted: true }>(
+      `/requests/${encodeURIComponent(request.id)}`,
+      {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ expectedVersion: request.version }),
       },
     ),
   command: (

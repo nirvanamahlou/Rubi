@@ -1,5 +1,5 @@
 /** Pure domain rules; no database, transport, owner repository or mutable globals. */
-import type { ProcurementDraftV1 } from '@rubi/contracts';
+import type { ProcurementDraftV1 } from '@nora/contracts';
 
 export class ProcurementRuleError extends Error {
   constructor(
@@ -104,7 +104,6 @@ export function validateSubmission(draft: ProcurementDraftV1): void {
     'category',
     'needReason',
     'requiredAt',
-    'deliveryLocation',
   ] as const)
     requireRule(
       draft[field]?.trim(),
@@ -113,25 +112,13 @@ export function validateSubmission(draft: ProcurementDraftV1): void {
       field,
     );
   requireRule(
-    !draft.urgent || draft.urgencyReason.trim(),
-    'VALIDATION_ERROR',
-    'دلیل فوریت را وارد کنید.',
-    'urgencyReason',
-  );
-  requireRule(
     draft.currencyCode,
     'VALIDATION_ERROR',
     'ارز را انتخاب کنید.',
     'currencyCode',
   );
-  if (draft.estimatedAmount === null)
-    requireRule(
-      draft.unknownEstimateReason.trim(),
-      'VALIDATION_ERROR',
-      'علت نامشخص‌بودن مبلغ را وارد کنید.',
-      'unknownEstimateReason',
-    );
-  else decimal(draft.estimatedAmount, 'estimatedAmount');
+  if (draft.estimatedAmount !== null)
+    decimal(draft.estimatedAmount, 'estimatedAmount');
   requireRule(
     draft.items.length > 0,
     'VALIDATION_ERROR',
@@ -149,12 +136,6 @@ export function validateSubmission(draft: ProcurementDraftV1): void {
       decimal(item.quantity, 'quantity') > 0n,
       'VALIDATION_ERROR',
       'مقدار قلم باید مثبت باشد.',
-      'items',
-    );
-    requireRule(
-      item.kind !== 'SERVICE' || item.acceptanceCriteria.trim(),
-      'VALIDATION_ERROR',
-      'معیار پذیرش خدمت لازم است.',
       'items',
     );
   }

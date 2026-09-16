@@ -20,9 +20,11 @@ describe('authenticated user menu integration', () => {
     'utf8',
   );
 
-  it('shows a responsive avatar, authenticated name, loading text and safe fallback', () => {
-    expect(menuSource).toContain('در حال دریافت کاربر');
+  it('shows full placeholder labels without rendering their initials', () => {
+    expect(menuSource).toContain('در حال دریافت اطلاعات');
     expect(menuSource).toContain('PROFILE_USER_FALLBACK');
+    expect(menuSource).toContain("identity.status === 'ready'");
+    expect(menuSource).toContain('data-user-avatar-placeholder');
     expect(menuSource).toContain('refreshAuthenticatedSession(api)');
     expect(menuSource).toContain('rememberHeaderSession(');
     expect(menuSource).toContain('response.user');

@@ -22,7 +22,7 @@ import {
 import type {
   LegalEntityDetail,
   LegalEntityUpdateRequest,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 
 import { Button } from '@/components/ui/button';
 import { FormField, Input, Textarea } from '@/components/ui/form-controls';

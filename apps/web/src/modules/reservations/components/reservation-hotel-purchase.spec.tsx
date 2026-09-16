@@ -4,8 +4,12 @@ import type {
   ReservationIntakeV1,
   TravelWorkflowStateV1,
   VoucherSettingsV1,
-} from '@rubi/contracts';
-import { SupplierFormPurchaseContext } from './reservation-hotel-purchase';
+} from '@nora/contracts';
+import {
+  hotelPurchaseTotal,
+  reservationPurchaseServices,
+  SupplierFormPurchaseContext,
+} from './reservation-hotel-purchase';
 
 const request = (workflow?: TravelWorkflowStateV1) =>
   ({
@@ -61,4 +65,27 @@ it('does not present an unsent draft as purchase context', () => {
     'هنوز نسخه‌ای از فرم رزواسیون برای کارگزار ارسال نشده',
   );
   expect(html).not.toContain('مبنای قیمت خرید:');
+});
+
+it('converts a nightly hotel rate into the payable total using the sent stay dates', () => {
+  expect(
+    hotelPurchaseTotal('125.50', 'NIGHT', '2026-10-01', '2026-10-05'),
+  ).toBe('502');
+  expect(
+    hotelPurchaseTotal('125.50', 'TOTAL', '2026-10-01', '2026-10-05'),
+  ).toBe('125.5');
+  expect(() =>
+    hotelPurchaseTotal('125', 'NIGHT', '2026-10-05', '2026-10-01'),
+  ).toThrow();
+});
+
+it('keeps ticket purchases out of the Reservations broker form', () => {
+  const services = [
+    { clientKey: 'flight', kind: 'FLIGHT', titleSnapshot: 'Flight' },
+    { clientKey: 'hotel', kind: 'HOTEL', titleSnapshot: 'Hotel' },
+    { clientKey: 'transfer', kind: 'TRANSFER', titleSnapshot: 'Transfer' },
+  ] as unknown as ReservationIntakeV1['snapshot']['serviceSelections'];
+  expect(
+    reservationPurchaseServices(services).map((service) => service.clientKey),
+  ).toEqual(['hotel', 'transfer']);
 });

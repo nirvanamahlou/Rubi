@@ -1,6 +1,6 @@
 import { Readable } from 'node:stream';
 
-import type { AuthenticatedActor } from '@rubi/contracts';
+import type { AuthenticatedActor } from '@nora/contracts';
 import {
   BadRequestException,
   ConflictException,
@@ -215,6 +215,123 @@ describe('DocumentsService security and persistence flow', () => {
       currentUserId: actor.userId,
       branches: [{ id: branchId, code: 'TEH', name: 'شعبه تهران' }],
     });
+  });
+
+  it('uploads a Master Data logo without granting general Documents access to the editor', async () => {
+    const masterDataEditor: AuthenticatedActor = {
+      ...actor,
+      permissions: ['master_data.update'],
+    };
+    repository.options.mockResolvedValue({
+      documentTypes: [
+        {
+          id: '55555555-5555-4555-8555-555555555555',
+          code: 'BRAND_ASSET_TEMPLATE',
+          name: 'دارایی برند',
+          domain: 'BRAND',
+          defaultConfidentiality: 'INTERNAL',
+          allowedMimeTypes: ['image/png', 'image/jpeg'],
+          maxFileSizeBytes: 5_242_880n,
+          requiresExpiry: false,
+        },
+      ],
+      categories: [
+        {
+          id: '66666666-6666-4666-8666-666666666666',
+          code: 'BRAND_ASSETS',
+          name: 'دارایی‌های برند',
+        },
+      ],
+      owners: [{ id: actor.userId, displayName: 'ویرایشگر اطلاعات پایه' }],
+      branches: [{ id: branchId, code: 'TEH', name: 'شعبه تهران' }],
+    });
+    repository.list.mockResolvedValue({ rows: [], total: 0 });
+    const upload = vi.spyOn(service, 'upload').mockResolvedValue({
+      data: {
+        id: '44444444-4444-4444-8444-444444444444',
+        currentVersion: { scanStatus: 'PENDING_SCAN' },
+      },
+    } as never);
+    const file = {
+      buffer: Buffer.from([0x89, 0x50, 0x4e, 0x47]),
+      mimetype: 'image/png',
+      originalname: 'airline.png',
+      size: 4,
+    };
+
+    const result = await service.uploadMasterDataLogo(
+      {
+        resource: 'airlines',
+        recordId: '77777777-7777-4777-8777-777777777777',
+        title: 'لوگوی ایرلاین',
+      },
+      file,
+      masterDataEditor,
+      {},
+    );
+
+    expect(repository.options).toHaveBeenCalledWith([branchId], ['BRAND']);
+    expect(upload).toHaveBeenCalledWith(
+      expect.objectContaining({
+        sourceModule: 'master-data',
+        sourceEntityType: 'airlines',
+        sourceEntityId: '77777777-7777-4777-8777-777777777777',
+      }),
+      file,
+      expect.objectContaining({
+        permissions: expect.arrayContaining([
+          'master_data.update',
+          'documents.brand.read',
+        ]),
+      }),
+      {},
+    );
+    expect(masterDataEditor.permissions).toEqual(['master_data.update']);
+    expect(result).toMatchObject({
+      id: '44444444-4444-4444-8444-444444444444',
+      reused: false,
+      scanStatus: 'PENDING_SCAN',
+    });
+  });
+
+  it('archives a brand asset only when its primary relation matches the Master Data row', async () => {
+    const logoRow = row({ domain: 'BRAND' });
+    repository.findDetail.mockResolvedValue({
+      ...logoRow,
+      relations: [
+        {
+          ...logoRow.relations[0],
+          sourceModule: 'master-data',
+          sourceEntityType: 'airlines',
+          sourceEntityId: '77777777-7777-4777-8777-777777777777',
+        },
+      ],
+    });
+    const archive = vi
+      .spyOn(service, 'archive')
+      .mockResolvedValue({ data: { id: logoRow.id } } as never);
+
+    await service.archiveMasterDataLogo(
+      {
+        documentId: logoRow.id,
+        resource: 'airlines',
+        recordId: '77777777-7777-4777-8777-777777777777',
+      },
+      { ...actor, permissions: ['master_data.update'] },
+      {},
+    );
+
+    expect(archive).toHaveBeenCalledWith(
+      logoRow.id,
+      expect.objectContaining({ version: logoRow.version }),
+      expect.objectContaining({
+        permissions: expect.arrayContaining([
+          'documents.brand.read',
+          'documents.delete',
+        ]),
+      }),
+      {},
+    );
   });
 
   it('applies branch/domain scope server-side and masks sensitive list metadata', async () => {

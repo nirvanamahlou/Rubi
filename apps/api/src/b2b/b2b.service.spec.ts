@@ -1,8 +1,8 @@
 import type {
   AuthenticatedActor,
   FinancePartyExposurePortV1,
-} from '@rubi/contracts';
-import { Prisma } from '@rubi/database';
+} from '@nora/contracts';
+import { Prisma } from '@nora/database';
 import { describe, expect, it, vi } from 'vitest';
 
 import type { MasterOrganizationDirectory } from '../master-data/master-organization-directory';

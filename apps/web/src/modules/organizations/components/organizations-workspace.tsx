@@ -6,7 +6,7 @@ import type {
   MasterDataStatus,
   MasterDataSortField,
   BranchReference,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import {
   Building2,
   ChevronLeft,

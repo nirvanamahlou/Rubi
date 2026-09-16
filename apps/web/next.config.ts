@@ -8,6 +8,7 @@ const nextConfig: NextConfig = {
       './src/modules/reservations/components/reservation-form-sheet.module.css',
       './public/brand/*.png',
     ],
+    '/reservations/requests/*/tickets/pdf': ['./public/brand/*.png'],
   },
   async headers() {
     return [
@@ -15,13 +16,24 @@ const nextConfig: NextConfig = {
         source: '/:path*',
         headers: [
           { key: 'X-Content-Type-Options', value: 'nosniff' },
-          { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
+          { key: 'X-Frame-Options', value: 'DENY' },
           { key: 'Referrer-Policy', value: 'no-referrer' },
           {
             key: 'Permissions-Policy',
             value: 'camera=(), microphone=(), geolocation=(), payment=()',
           },
           { key: 'Cross-Origin-Opener-Policy', value: 'same-origin' },
+          {
+            key: 'Content-Security-Policy',
+            value:
+              "object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'",
+          },
+        ],
+      },
+      {
+        source: '/procurement-optimized.html',
+        headers: [
+          { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
           {
             key: 'Content-Security-Policy',
             value:

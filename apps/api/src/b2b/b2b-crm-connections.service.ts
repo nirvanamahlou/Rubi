@@ -16,7 +16,7 @@ import type {
   IamPermissionCode,
   SalesContractDetail,
   SalesContractSummary,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 
 import { CustomerService } from '../customers/customer.service';
 import { MasterOrganizationDirectory } from '../master-data/master-organization-directory';

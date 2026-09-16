@@ -1,4 +1,4 @@
-import { SessionStatus } from '@rubi/database';
+import { SessionStatus } from '@nora/database';
 
 import { CONCURRENT_REFRESH_GRACE_MS } from './iam.constants';
 

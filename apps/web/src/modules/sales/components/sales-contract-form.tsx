@@ -1,5 +1,5 @@
 'use client';
-import { moneyDecimal, moneyUnits, passengerOverSixty } from '@rubi/contracts';
+import { moneyDecimal, moneyUnits, passengerOverSixty } from '@nora/contracts';
 import { PassengerCountField } from './passenger-count-field';
 import { ContractOutputButton } from './contract-output';
 
@@ -13,12 +13,12 @@ import type {
   MasterDataResource,
   SalesServiceKind,
   SalesAccommodationKind,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 
-import { hotelNights } from '@rubi/contracts';
+import { hotelNights } from '@nora/contracts';
 import { SalesPricingPanel, SalesPricingSummary } from './sales-pricing-panel';
 import { validateSalesCurrencySelection } from './sales-currency-select';
-import { validatePassengerPackagePrices } from '@rubi/contracts';
+import { validatePassengerPackagePrices } from '@nora/contracts';
 import { PassengerPackagePrices } from './passenger-package-prices';
 import { SalesPaymentPlan } from './sales-payment-plan';
 import { Button, buttonVariants } from '@/components/ui/button';
@@ -199,7 +199,7 @@ export function SalesContractForm() {
 
   useEffect(() => {
     const saved = globalThis.localStorage?.getItem(
-      'rubi.sales.contract.draft.v1',
+      'nora.sales.contract.draft.v1',
     );
     const restoreTimer = saved
       ? globalThis.setTimeout(() => {
@@ -223,7 +223,7 @@ export function SalesContractForm() {
               servicePricing: restored.servicePricing ?? {},
             } as SalesFormState);
           } catch {
-            globalThis.localStorage.removeItem('rubi.sales.contract.draft.v1');
+            globalThis.localStorage.removeItem('nora.sales.contract.draft.v1');
           }
         }, 0)
       : undefined;
@@ -286,7 +286,7 @@ export function SalesContractForm() {
   }, []);
   useEffect(() => {
     globalThis.localStorage?.setItem(
-      'rubi.sales.contract.draft.v1',
+      'nora.sales.contract.draft.v1',
       JSON.stringify(state),
     );
   }, [state]);
@@ -520,7 +520,7 @@ export function SalesContractForm() {
       const response = await salesApi.create(payload, submission.current.key);
       if (response.data.status !== 'SENT_TO_RESERVATIONS')
         await salesApi.confirm(response.data.id, response.data.version);
-      globalThis.localStorage?.removeItem('rubi.sales.contract.draft.v1');
+      globalThis.localStorage?.removeItem('nora.sales.contract.draft.v1');
       setSavedNumber(response.data.contractNumber);
       setSavedId(response.data.id);
     } catch (reason) {

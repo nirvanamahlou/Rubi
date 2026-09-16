@@ -79,7 +79,7 @@ export async function submitPasswordChange(
         headers: {
           'Content-Type': 'application/json',
           accept: 'application/json',
-          'X-Rubi-Password-Change': '1',
+          'X-Nora-Password-Change': '1',
         },
         body: JSON.stringify({ currentPassword, newPassword }),
       },

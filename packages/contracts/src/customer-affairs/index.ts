@@ -139,6 +139,7 @@ export interface CustomerAffairsTicketInput {
 }
 
 export interface CustomerAffairsTicketView extends CustomerAffairsTicketInput {
+  sourceSite?: { code: string; domain: string; externalId: string } | null;
   id: string;
   trackingNumber: string;
   branchId: string;
@@ -148,6 +149,8 @@ export interface CustomerAffairsTicketView extends CustomerAffairsTicketInput {
   resolutionDueAt: string;
   firstRespondedAt: string | null;
   resolvedAt: string | null;
+  pausedAt?: string | null;
+  pausedMinutes?: number;
   firstResponseBreachedAt: string | null;
   resolutionBreachedAt: string | null;
   escalationLevel: number | null;

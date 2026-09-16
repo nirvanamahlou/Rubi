@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { getPublicApiBaseUrl } from '@/lib/environment';
-import type { MasterDataRecord } from '@rubi/contracts';
+import type { MasterDataRecord } from '@nora/contracts';
 import type {
   ReservationFormIntake,
   ReservationFormReferences,

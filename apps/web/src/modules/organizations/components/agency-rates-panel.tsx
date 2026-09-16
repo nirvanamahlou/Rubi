@@ -5,7 +5,7 @@ import type {
   B2bAgencyProfileDetailsV1,
   B2bAgreedRateKind,
   CreateB2bAgencyAgreedRateRequestV1,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import { Pencil, Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input, Textarea } from '@/components/ui/form-controls';
@@ -160,7 +160,7 @@ export function AgencyRatesPanel({
       <div className="panel-body space-y-4">
         <div className="dossier-filter-grid">
           <label className="field">
-            شعبه روبی
+            شعبه نورا
             <select
               className="input"
               value={branchId}

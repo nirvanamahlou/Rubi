@@ -2,7 +2,7 @@
 
 PC-B; branch codex/pc-b-workbench-note-form. User explicitly asks for new-note capability and its form. Native form UI is implemented; durable creation is not complete.
 
-The main Workbench header and Notes tab open the same shared modal. It provides a required title (200 characters), required plain-text body (10,000 characters), counts, cancel, and explicit discard confirmation when text exists. Modal labels, focus handling, escape behavior and theme use the existing Rubi components. Background notification refresh is deferred while the editor is open so it cannot erase entered text.
+The main Workbench header and Notes tab open the same shared modal. It provides a required title (200 characters), required plain-text body (10,000 characters), counts, cancel, and explicit discard confirmation when text exists. Modal labels, focus handling, escape behavior and theme use the existing Nora components. Background notification refresh is deferred while the editor is open so it cannot erase entered text.
 
 The save control is disabled with a visible explanation before text entry. The form never creates a note record, sends private text, logs it, or writes browser storage. Closing with confirmation clears the transient form fields. A page reload discards them, as stated in the form. No fake successful save is presented.
 

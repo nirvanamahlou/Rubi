@@ -18,7 +18,7 @@ import {
   B2B_SIGNATORY_DOCUMENT_TYPES,
   type B2bSignatoryDocumentType,
   type B2bSignatoryInputV1,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 export class SaveB2bSignatoryDto implements B2bSignatoryInputV1 {
   @IsUUID() branchId!: string;
   @IsUUID() contactId!: string;

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { CustomerDetail, CustomerMutationRequest } from '@rubi/contracts';
+import type { CustomerDetail, CustomerMutationRequest } from '@nora/contracts';
 import { emptySalesForm, type SalesFormState } from './sales-form';
 import { CustomersApiError } from '@/modules/customers/public/entry';
 import {

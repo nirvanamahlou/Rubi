@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service';
-import type { AuthenticatedActor } from '@rubi/contracts';
+import type { AuthenticatedActor } from '@nora/contracts';
 import { authenticatedPermissionCodes } from './authenticated-permissions';
 
 /** Owner-only identity/authority check. Never exposes roles, contact PII or credentials. */

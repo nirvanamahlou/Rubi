@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Header,
   Headers,
@@ -71,6 +72,22 @@ export class ProcurementController {
   ) {
     return procurementBoundary(() => this.service.owners(query, req.actor));
   }
+  @Get('requesters')
+  @Header('Cache-Control', 'private, no-store')
+  requesters(
+    @Query() query: Record<string, unknown>,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return procurementBoundary(() => this.service.requesters(query, req.actor));
+  }
+  @Get('units')
+  @Header('Cache-Control', 'private, no-store')
+  units(
+    @Query() query: Record<string, unknown>,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return procurementBoundary(() => this.service.units(query, req.actor));
+  }
   @Get('requests')
   @Header('Cache-Control', 'private, no-store')
   list(
@@ -121,6 +138,14 @@ export class ProcurementController {
     return procurementBoundary(() =>
       this.service.update(id, body, key, req.actor),
     );
+  }
+  @Delete('requests/:id')
+  remove(
+    @Param('id') id: string,
+    @Body() body: unknown,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return procurementBoundary(() => this.service.remove(id, body, req.actor));
   }
   @Post('requests/:id/commands')
   command(

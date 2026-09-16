@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { LayoutGrid, RefreshCw } from 'lucide-react';
-import { type HrRecordDto } from '@rubi/contracts';
+import { type HrRecordDto } from '@nora/contracts';
 import { hrHubCards, normalizeSection, type HrSectionId } from './hr.model';
 import { canonicalHrLocation, type HrSource } from './hr-navigation';
 import { useHrStore } from './hr-store';
@@ -108,7 +108,7 @@ export function HrLiveWorkspace({
       : (hrHubCards.find((item) => item.id === section)?.title ??
         'منابع انسانی');
   useEffect(() => {
-    const event = new CustomEvent('rubi:hr-location', {
+    const event = new CustomEvent('nora:hr-location', {
       detail: { section, tab, title: headerTitle },
     });
     window.dispatchEvent(event);

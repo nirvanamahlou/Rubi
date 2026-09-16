@@ -4,7 +4,7 @@ export interface DossierHistory {
   tab: string;
   creditTab: string;
 }
-const key = 'rubiOrganizationDossier';
+const key = 'noraOrganizationDossier';
 export function readDossierHistory(state: unknown): DossierHistory | null {
   if (!state || typeof state !== 'object') return null;
   const value = (state as Record<string, unknown>)[key];

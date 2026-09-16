@@ -13,8 +13,8 @@ import {
   type ProcurementDraftV1,
   type ProcurementPermission,
   type ProcurementRequestV1,
-} from '@rubi/contracts';
-import { Prisma } from '@rubi/database';
+} from '@nora/contracts';
+import { Prisma } from '@nora/database';
 import { DatabaseService } from '../database/database.service';
 import { DocumentsService } from '../documents/documents.service';
 import { HrProcurementDirectory } from '../hr/hr-procurement-directory';
@@ -35,6 +35,7 @@ import {
 } from './procurement.operations';
 import { operationalQueue, procurementReport } from './procurement.reporting';
 import { NotificationsService } from '../notifications/notifications.service';
+import { AutomationTasksService } from '../tasks/automation-tasks.service';
 
 export type ProcurementTx = Prisma.TransactionClient;
 export type ProcurementRow = Prisma.ProcurementRequestGetPayload<null>;
@@ -62,6 +63,7 @@ export function requestDto(row: ProcurementRow): ProcurementRequestV1 {
     version: row.version,
     status: row.status as ProcurementRequestV1['status'],
     requesterUserId: row.requesterUserId,
+    requesterEmployeeId: row.requesterEmployeeId,
     ownerUserId: row.ownerUserId,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
@@ -134,6 +136,8 @@ export class ProcurementService {
     private readonly operations: ProcurementOperations,
     @Inject(NotificationsService)
     private readonly notifications: NotificationsService,
+    @Inject(AutomationTasksService)
+    private readonly tasks: AutomationTasksService,
   ) {}
   private require(
     actor: AuthenticatedActor,
@@ -213,6 +217,26 @@ export class ProcurementService {
       v.integer(Number(query.page ?? 1), 'page', 100000),
     );
   }
+  async requesters(query: Record<string, unknown>, actor: AuthenticatedActor) {
+    this.require(actor, 'procurement.request.create');
+    v.object(query, ['branchId', 'search', 'page', 'unitId']);
+    const branchId = v.uuid(query.branchId);
+    this.branch(actor, branchId);
+    return this.hr.candidates(
+      actor,
+      branchId,
+      v.text(query.search, 'search', 100, true),
+      v.integer(Number(query.page ?? 1), 'page', 100000),
+      v.text(query.unitId, 'unitId', 160, true) || undefined,
+    );
+  }
+  async units(query: Record<string, unknown>, actor: AuthenticatedActor) {
+    this.require(actor, 'procurement.request.create');
+    v.object(query, ['branchId']);
+    const branchId = v.uuid(query.branchId);
+    this.branch(actor, branchId);
+    return { items: await this.hr.units(actor, branchId) };
+  }
   async bootstrap(actor: AuthenticatedActor) {
     if (
       !actor.permissions.some((code) =>
@@ -220,11 +244,13 @@ export class ProcurementService {
       )
     )
       throw new ForbiddenException('دسترسی خرید وجود ندارد.');
-    const [currencies, branches, requester] = await Promise.all([
-      this.master.currencies(),
-      this.master.branches(actor.branchIds),
-      this.hr.self(actor),
-    ]);
+    const [currencies, branches, requester, preferredBranchId] =
+      await Promise.all([
+        this.master.currencies(),
+        this.master.branches(actor.branchIds),
+        this.hr.self(actor),
+        this.hr.preferredBranch(actor),
+      ]);
     return {
       permissions: PROCUREMENT_PERMISSION_CODES.filter((code) =>
         actor.permissions.includes(code),
@@ -235,17 +261,34 @@ export class ProcurementService {
         label: branch.name,
       })),
       requester,
+      defaultBranchId: requester?.branchId ?? preferredBranchId,
       policy: 'POLICY_NOT_CONFIGURED' as const,
-      finance: 'NOT_CONNECTED' as const,
+      finance: 'CONNECTED' as const,
       documents: 'AVAILABLE' as const,
       travel: 'NOT_CONNECTED' as const,
     };
   }
   async list(query: Record<string, unknown>, actor: AuthenticatedActor) {
-    v.object(query, ['page', 'search', 'status', 'queue']);
+    v.object(query, [
+      'page',
+      'search',
+      'status',
+      'queue',
+      'section',
+      'createdFrom',
+      'createdTo',
+    ]);
     const page = v.integer(Number(query.page ?? 1), 'page', 100000);
     const search = v.text(query.search, 'search', 100, true);
     const status = v.text(query.status, 'status', 40, true);
+    const section = v.text(query.section, 'section', 30, true);
+    const dates = v.dateRange(query.createdFrom, query.createdTo);
+    requireRule(
+      !section ||
+        ['quotes', 'orders', 'receipts', 'invoices'].includes(section),
+      'VALIDATION_ERROR',
+      'بخش خرید معتبر نیست.',
+    );
     requireRule(
       !status ||
         (PROCUREMENT_REQUEST_STATUSES as readonly string[]).includes(status),
@@ -273,6 +316,10 @@ export class ProcurementService {
     if (operational) {
       const filters = [await this.sqlScope(actor), operational];
       if (status) filters.push(Prisma.sql`r.status = ${status}`);
+      if (dates.start)
+        filters.push(Prisma.sql`r."createdAt" >= ${dates.start}`);
+      if (dates.endExclusive)
+        filters.push(Prisma.sql`r."createdAt" < ${dates.endExclusive}`);
       if (search)
         filters.push(
           Prisma.sql`(r.title ILIKE ${`%${search.replace(/[\\%_]/g, '\\$&')}%`} OR r.number ILIKE ${`%${search.replace(/[\\%_]/g, '\\$&')}%`})`,
@@ -298,6 +345,45 @@ export class ProcurementService {
         ],
       });
     if (status) and.push({ status });
+    if (dates.start || dates.endExclusive)
+      and.push({
+        createdAt: {
+          ...(dates.start ? { gte: dates.start } : {}),
+          ...(dates.endExclusive ? { lt: dates.endExclusive } : {}),
+        },
+      });
+    if (section === 'quotes')
+      and.push({
+        OR: [
+          { status: { in: ['APPROVED', 'SOURCING'] } },
+          { procurementQuotationRequestidRows: { some: {} } },
+        ],
+      });
+    if (section === 'orders')
+      and.push({
+        OR: [
+          { status: 'SOURCING' },
+          { procurementOrderRequestidRows: { some: {} } },
+        ],
+      });
+    if (section === 'receipts')
+      and.push({
+        OR: [
+          { procurementOrderRequestidRows: { some: {} } },
+          { procurementReceiptRequestidRows: { some: {} } },
+          { procurementServiceAcceptanceRequestidRows: { some: {} } },
+          { procurementDiscrepancyRequestidRows: { some: {} } },
+          { procurementReturnRequestidRows: { some: {} } },
+        ],
+      });
+    if (section === 'invoices')
+      and.push({
+        OR: [
+          { procurementOrderRequestidRows: { some: {} } },
+          { procurementInvoiceRequestidRows: { some: {} } },
+          { procurementFinanceHandoffRequestidRows: { some: {} } },
+        ],
+      });
     if (queue === 'own')
       and.push({
         OR: [{ requesterUserId: actor.userId }, { ownerUserId: actor.userId }],
@@ -361,10 +447,12 @@ export class ProcurementService {
   }
   async suppliers(query: Record<string, unknown>, actor: AuthenticatedActor) {
     await this.scope(actor);
-    v.object(query, ['page', 'search']);
+    v.object(query, ['page', 'search', 'createdFrom', 'createdTo']);
+    const dates = v.dateRange(query.createdFrom, query.createdTo);
     return this.master.suppliers(
       v.text(query.search, 'search', 100, true),
       v.integer(Number(query.page ?? 1), 'page', 100000),
+      dates,
     );
   }
   private async validateReferences(
@@ -372,14 +460,22 @@ export class ProcurementService {
     actor: AuthenticatedActor,
     clean = false,
     requesterUserId = actor.userId,
+    requesterEmployeeId: string | null = null,
   ) {
     this.branch(actor, draft.branchId);
     if (draft.currencyCode)
       await this.master.assertCurrency(draft.currencyCode);
-    const self =
-      requesterUserId === actor.userId
+    const self = requesterEmployeeId
+      ? await this.hr.employee(actor, requesterEmployeeId, draft.branchId)
+      : requesterUserId === actor.userId
         ? await this.hr.self(actor, draft.branchId)
         : await this.hr.requester(actor, requesterUserId, draft.branchId);
+    if (requesterEmployeeId || requesterUserId !== actor.userId)
+      requireRule(
+        self,
+        'INVALID_REFERENCE',
+        'درخواست‌کننده باید کارمند فعال شعبه باشد.',
+      );
     requireRule(
       !draft.unitId || self?.unitId === draft.unitId,
       'FORBIDDEN',
@@ -545,14 +641,27 @@ export class ProcurementService {
   }
   async create(body: unknown, key: unknown, actor: AuthenticatedActor) {
     this.require(actor, 'procurement.request.create');
-    const draft = v.draft(body);
-    await this.validateReferences(draft, actor);
+    const input =
+      body && typeof body === 'object' && 'draft' in body
+        ? v.object(body, ['draft', 'requesterEmployeeId'])
+        : null;
+    const draft = v.draft(input ? input.draft : body);
+    const requesterEmployeeId = input?.requesterEmployeeId
+      ? v.uuid(input.requesterEmployeeId)
+      : null;
+    await this.validateReferences(
+      draft,
+      actor,
+      false,
+      actor.userId,
+      requesterEmployeeId,
+    );
     return this.idempotent(
       actor,
       draft.branchId,
       'CREATE',
       key,
-      draft,
+      { draft, requesterEmployeeId },
       async (tx) => {
         const id = randomUUID();
         const row = await tx.procurementRequest.create({
@@ -561,6 +670,7 @@ export class ProcurementService {
             number: `PR-${id}`,
             branchId: draft.branchId,
             requesterUserId: actor.userId,
+            requesterEmployeeId,
             ...this.columns(draft),
           },
         });
@@ -606,6 +716,7 @@ export class ProcurementService {
       actor,
       false,
       existing.requesterUserId,
+      existing.requesterEmployeeId,
     );
     return this.idempotent(
       actor,
@@ -651,6 +762,112 @@ export class ProcurementService {
       },
     );
   }
+  /**
+   * Permanently removes a Procurement request and its Procurement-owned
+   * children. A finance handoff that Finance has already accepted is an
+   * immutable cross-module commitment and must be corrected from Finance.
+   */
+  async remove(id: string, body: unknown, actor: AuthenticatedActor) {
+    this.require(actor, 'procurement.request.cancel');
+    const input = v.object(body, ['expectedVersion']);
+    const expectedVersion = v.integer(input.expectedVersion);
+    const existing = await this.detail(id, actor);
+    requireRule(
+      existing.requesterUserId === actor.userId ||
+        actor.permissions.includes('procurement.assign'),
+      'FORBIDDEN',
+      'حذف این درخواست مجاز نیست.',
+    );
+    return this.database.client.$transaction(async (tx) => {
+      const before = await this.claim(tx, id, expectedVersion);
+      const acceptedHandoff = await tx.procurementFinanceHandoff.count({
+        where: {
+          requestId: id,
+          OR: [
+            { acceptedSourceId: { not: null } },
+            { status: { in: ['ACCEPTED', 'PAID'] } },
+          ],
+        },
+      });
+      requireRule(
+        acceptedHandoff === 0,
+        'INVALID_STATE',
+        'این پرونده به مالی تحویل شده است؛ برای حفظ سابقه مالی قابل حذف دائمی نیست.',
+      );
+      await this.purgeRequest(tx, id);
+      await this.tasks.syncProcurementWithinTransaction(tx, {
+        eventId: randomUUID(),
+        requestId: id,
+        requestNumber: before.number,
+        branchId: before.branchId,
+        status: 'CANCELLED',
+        ownerUserId: before.ownerUserId,
+        approverUserId: null,
+        action: 'DELETE_PERMANENT',
+      });
+      return { id, number: before.number, deleted: true as const };
+    });
+  }
+  private async purgeRequest(tx: ProcurementTx, requestId: string) {
+    const [orders, snapshots] = await Promise.all([
+      tx.procurementOrder.findMany({
+        where: { requestId },
+        select: { id: true },
+      }),
+      tx.procurementApprovalSnapshot.findMany({
+        where: { requestId },
+        select: { id: true },
+      }),
+    ]);
+    const orderIds = orders.map((row) => row.id);
+    const snapshotIds = snapshots.map((row) => row.id);
+    const steps = snapshotIds.length
+      ? await tx.procurementApprovalStep.findMany({
+          where: { snapshotId: { in: snapshotIds } },
+          select: { id: true },
+        })
+      : [];
+
+    await tx.procurementOutbox.deleteMany({ where: { requestId } });
+    await tx.procurementFinanceHandoff.deleteMany({ where: { requestId } });
+    await tx.procurementInvoiceMatch.deleteMany({
+      where: { orderId: { in: orderIds } },
+    });
+    await tx.procurementInvoiceItem.deleteMany({
+      where: { orderId: { in: orderIds } },
+    });
+    await tx.procurementInvoice.deleteMany({ where: { requestId } });
+    await tx.procurementReturn.deleteMany({ where: { requestId } });
+    await tx.procurementDiscrepancy.deleteMany({ where: { requestId } });
+    await tx.procurementServiceAcceptance.deleteMany({ where: { requestId } });
+    await tx.procurementReceiptAdjustment.deleteMany({ where: { requestId } });
+    await tx.procurementReceiptItem.deleteMany({
+      where: { orderId: { in: orderIds } },
+    });
+    await tx.procurementReceipt.deleteMany({ where: { requestId } });
+    await tx.procurementOrderItem.deleteMany({ where: { requestId } });
+    await tx.procurementOrderVersion.deleteMany({
+      where: { orderId: { in: orderIds } },
+    });
+    await tx.procurementOrder.deleteMany({ where: { requestId } });
+    await tx.procurementSelection.deleteMany({ where: { requestId } });
+    await tx.procurementQuotationItem.deleteMany({ where: { requestId } });
+    await tx.procurementQuotation.deleteMany({ where: { requestId } });
+    if (steps.length)
+      await tx.procurementApprovalDecision.deleteMany({
+        where: { stepId: { in: steps.map((step) => step.id) } },
+      });
+    if (snapshotIds.length)
+      await tx.procurementApprovalStep.deleteMany({
+        where: { snapshotId: { in: snapshotIds } },
+      });
+    await tx.procurementApprovalSnapshot.deleteMany({ where: { requestId } });
+    await tx.procurementExportJob.deleteMany({ where: { requestId } });
+    await tx.procurementAudit.deleteMany({ where: { requestId } });
+    await tx.procurementRequestVersion.deleteMany({ where: { requestId } });
+    await tx.procurementRequestItem.deleteMany({ where: { requestId } });
+    await tx.procurementRequest.delete({ where: { id: requestId } });
+  }
   private async claim(tx: ProcurementTx, id: string, version: number) {
     const before = await tx.procurementRequest.findUniqueOrThrow({
       where: { id },
@@ -684,11 +901,12 @@ export class ProcurementService {
         after: { version: row.version, status: row.status },
       },
     });
-    await tx.procurementOutbox.create({
+    const event = await tx.procurementOutbox.create({
       data: {
         requestId: row.id,
         eventType: 'procurement.workflow-event.v1',
-        status: 'BLOCKED',
+        status: 'DELIVERED',
+        deliveredAt: new Date(),
         payload: {
           contract: 'procurement.workflow-event.v1',
           requestId: row.id,
@@ -697,21 +915,31 @@ export class ProcurementService {
           action,
           status: row.status,
           ownerUserId: row.ownerUserId,
-          connection: 'TASKS_NOT_CONNECTED',
+          connection: 'TASKS_CONNECTED',
         },
       },
     });
+    const pending =
+      row.status === 'IN_REVIEW'
+        ? await tx.procurementApprovalStep.findFirst({
+            where: {
+              status: 'PENDING',
+              procurementApprovalStepSnapshotid: { requestId: row.id },
+            },
+            orderBy: [{ createdAt: 'desc' }, { position: 'asc' }],
+          })
+        : null;
+    await this.tasks.syncProcurementWithinTransaction(tx, {
+      eventId: event.eventId,
+      requestId: row.id,
+      requestNumber: row.number,
+      branchId: row.branchId,
+      status: row.status,
+      ownerUserId: row.ownerUserId,
+      approverUserId: pending?.approverUserId ?? null,
+      action,
+    });
     if (action !== 'CREATE' && action !== 'UPDATE') {
-      const pending =
-        row.status === 'IN_REVIEW'
-          ? await tx.procurementApprovalStep.findFirst({
-              where: {
-                status: 'PENDING',
-                procurementApprovalStepSnapshotid: { requestId: row.id },
-              },
-              orderBy: [{ createdAt: 'desc' }, { position: 'asc' }],
-            })
-          : null;
       await this.notifications.createWithinTransaction(tx, {
         recipientUserIds: [
           ...new Set(
@@ -796,6 +1024,7 @@ export class ProcurementService {
             actor,
             true,
             before.requesterUserId,
+            before.requesterEmployeeId,
           );
           requireRule(
             draft.origin.kind === 'GENERAL',

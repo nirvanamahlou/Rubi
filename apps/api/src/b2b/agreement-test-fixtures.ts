@@ -1,4 +1,4 @@
-import type { B2bAgreementTermsV1 } from '@rubi/contracts';
+import type { B2bAgreementTermsV1 } from '@nora/contracts';
 /** Synthetic terms for isolated tests only. */
 export function agreementTestTerms(): B2bAgreementTermsV1 {
   return {

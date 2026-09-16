@@ -22,7 +22,24 @@ function moduleSources(directory: string): string {
 }
 
 describe('customer affairs workspace contract', () => {
+  it('uses modal forms for all seven editing surfaces', () => {
+    expect(workspaceSource.match(/<CustomerAffairsFormDialog\b/g)).toHaveLength(
+      7,
+    );
+    const dialog = readFileSync(
+      join(moduleRoot, 'components', 'customer-affairs-form-dialog.tsx'),
+      'utf8',
+    );
+    expect(dialog).toContain('DialogTitle');
+    expect(dialog).toContain('DialogDescription');
+    expect(dialog).toContain('onCloseAutoFocus');
+    expect(dialog).toContain('onInteractOutside');
+    expect(dialog).toContain('disabled={busy}');
+    expect(dialog).toContain('overflow-y-auto');
+  });
+
   it('renders the required operational surfaces', () => {
+    const source = moduleSources(moduleRoot);
     for (const marker of [
       'پیش‌فروش',
       'پشتیبانی',
@@ -33,18 +50,18 @@ describe('customer affairs workspace contract', () => {
       "state === 'forbidden'",
       'SLA',
       'تعداد مسافر',
-      'ثبت پایدار',
+      'ثبت درخواست',
       'ارسال به فروش',
       'بازگشایی',
     ]) {
-      expect(moduleSources(moduleRoot)).toContain(marker);
+      expect(source).toContain(marker);
     }
   });
 
   it('uses the public API contract and stays detached from persistence', () => {
     const source = moduleSources(moduleRoot);
     expect(source).not.toMatch(
-      /@rubi\/database|PrismaClient|modules\/customers|modules\/master-data|iam\//,
+      /@nora\/database|PrismaClient|modules\/customers|modules\/master-data|iam\//,
     );
     expect(source).toContain('/customer-affairs');
     expect(source).toContain("credentials: 'include'");

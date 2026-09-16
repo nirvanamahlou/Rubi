@@ -1,7 +1,7 @@
 import { ValidationPipe } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import type { INestApplication } from '@nestjs/common';
-import type { AuthenticatedActor } from '@rubi/contracts';
+import type { AuthenticatedActor } from '@nora/contracts';
 import request from 'supertest';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AuthGuard } from '../iam/auth.guard';
@@ -66,7 +66,7 @@ describe('Customers HTTP integration', () => {
   it('serves the versioned list route with actor context', async () => {
     const response = await request(app.getHttpServer())
       .get('/api/v1/customers')
-      .set('Cookie', 'rubi_access=test')
+      .set('Cookie', 'nora_access=test')
       .expect(200)
       .expect({ data: [], meta: { page: 1, pageSize: 25, total: 0 } });
     expect(response.headers['cache-control']).toBe('private, no-store');
@@ -88,7 +88,7 @@ describe('Customers HTTP integration', () => {
         sortBy: 'createdAt',
         sortDirection: 'asc',
       })
-      .set('Cookie', 'rubi_access=test')
+      .set('Cookie', 'nora_access=test')
       .expect(200);
     expect(service.list).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -107,7 +107,7 @@ describe('Customers HTTP integration', () => {
     for (const route of ['status-history', 'activity', 'audit']) {
       const response = await request(app.getHttpServer())
         .get(`/api/v1/customers/${customerId}/${route}`)
-        .set('Cookie', 'rubi_access=test')
+        .set('Cookie', 'nora_access=test')
         .expect(200)
         .expect({ data: [] });
       expect(response.headers['cache-control']).toBe('private, no-store');
@@ -120,7 +120,7 @@ describe('Customers HTTP integration', () => {
   it('rejects a non-allowlisted status reason at the HTTP boundary', async () => {
     await request(app.getHttpServer())
       .patch('/api/v1/customers/44444444-4444-4444-8444-444444444444/status')
-      .set('Cookie', 'rubi_access=test')
+      .set('Cookie', 'nora_access=test')
       .send({ status: 'inactive', version: 1, reason: 'free-text' })
       .expect(400);
     expect(service.status).not.toHaveBeenCalled();
@@ -129,7 +129,7 @@ describe('Customers HTTP integration', () => {
   it('forwards an explicit sensitive-read reason without logging contact data', async () => {
     await request(app.getHttpServer())
       .get('/api/v1/customers/44444444-4444-4444-8444-444444444444')
-      .set('Cookie', 'rubi_access=test')
+      .set('Cookie', 'nora_access=test')
       .set('x-sensitive-read-reason', 'customer-verification')
       .expect(200);
     expect(service.detail).toHaveBeenCalledWith(
@@ -143,7 +143,7 @@ describe('Customers HTTP integration', () => {
   it('rejects invalid mutation payloads before application service', async () => {
     await request(app.getHttpServer())
       .post('/api/v1/customers')
-      .set('Cookie', 'rubi_access=test')
+      .set('Cookie', 'nora_access=test')
       .send({ kind: 'person', displayName: '', roles: [] })
       .expect(400);
     expect(service.create).not.toHaveBeenCalled();
@@ -152,7 +152,7 @@ describe('Customers HTTP integration', () => {
   it('normalizes Persian national ID digits at the HTTP boundary', async () => {
     await request(app.getHttpServer())
       .post('/api/v1/customers')
-      .set('Cookie', 'rubi_access=test')
+      .set('Cookie', 'nora_access=test')
       .send({
         kind: 'person',
         firstName: 'مشتری',
@@ -174,7 +174,7 @@ describe('Customers HTTP integration', () => {
   it('trims and forwards the actual consent reason', async () => {
     await request(app.getHttpServer())
       .post('/api/v1/customers/44444444-4444-4444-8444-444444444444/consents')
-      .set('Cookie', 'rubi_access=test')
+      .set('Cookie', 'nora_access=test')
       .send({
         purpose: 'marketing',
         channel: 'all',
@@ -199,7 +199,7 @@ describe('Customers HTTP integration', () => {
     async (reason) => {
       await request(app.getHttpServer())
         .post('/api/v1/customers/44444444-4444-4444-8444-444444444444/consents')
-        .set('Cookie', 'rubi_access=test')
+        .set('Cookie', 'nora_access=test')
         .send({
           purpose: 'marketing',
           channel: 'all',

@@ -1,6 +1,6 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
-import type { SalesPaymentInput } from '@rubi/contracts';
+import type { SalesPaymentInput } from '@nora/contracts';
 import { SalesPaymentPlan, withPaymentMethod } from './sales-payment-plan';
 const currencies = [{ code: 'IRR', name: 'ریال', status: 'active' as const }];
 const cash: SalesPaymentInput = {

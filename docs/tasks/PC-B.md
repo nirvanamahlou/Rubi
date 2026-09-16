@@ -79,22 +79,22 @@ TanStack Table و Recharts عمداً اضافه نشدند؛ در این مرح
 
 ```powershell
 $env:NEXT_PUBLIC_API_BASE_URL='http://localhost:4000/api/v1'
-pnpm --filter @rubi/web dev
+pnpm --filter @nora/web dev
 ```
 
 در این Smoke Test پورت ۳۰۰۰ توسط Docker/WSL اشغال بود و Web روی پورت ۳۱۰۰ اجرا شد:
 
 ```powershell
 $env:NEXT_PUBLIC_API_BASE_URL='http://localhost:4000/api/v1'
-pnpm --filter @rubi/web exec next dev --port 3100
+pnpm --filter @nora/web exec next dev --port 3100
 ```
 
 برای API محلی، ابتدا packageهای مشترک و سپس API اجرا شوند:
 
 ```powershell
-pnpm --filter @rubi/config build
-pnpm --filter @rubi/contracts build
-pnpm --filter @rubi/api dev
+pnpm --filter @nora/config build
+pnpm --filter @nora/contracts build
+pnpm --filter @nora/api dev
 ```
 
 آدرس‌های Smoke Test:

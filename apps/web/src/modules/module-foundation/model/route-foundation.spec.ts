@@ -33,7 +33,6 @@ const foundationRoutes = [
   'marketing',
   'human-resources',
   'documents',
-  'reports',
   'integrations',
   'system',
 ] as const;
@@ -91,6 +90,9 @@ describe('main-route module foundation', () => {
     expect(readFileSync(resolve(crmRoot, 'sales/page.tsx'), 'utf8')).toContain(
       'SalesWorkspace',
     );
+    expect(
+      readFileSync(resolve(crmRoot, 'reports/page.tsx'), 'utf8'),
+    ).toContain('ReportingWorkspace');
     expect(
       readFileSync(resolve(crmRoot, 'organizations/page.tsx'), 'utf8'),
     ).toContain('OrganizationsWorkspace');

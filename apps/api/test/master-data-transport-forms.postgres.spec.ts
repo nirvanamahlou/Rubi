@@ -7,8 +7,8 @@ import {
   MASTER_TRANSPORT_FORM_RESOURCES,
   type AuthenticatedActor,
   type MasterDataRecord,
-} from '@rubi/contracts';
-import { createDatabaseClient, type DatabaseClient } from '@rubi/database';
+} from '@nora/contracts';
+import { createDatabaseClient, type DatabaseClient } from '@nora/database';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { DatabaseService } from '../src/database/database.service';
 import { MasterDataRepository } from '../src/master-data/master-data.repository';
@@ -17,8 +17,8 @@ import { MasterDataService } from '../src/master-data/master-data.service';
 import { postgresTestTarget } from './postgres-test-target';
 const postgresTarget = postgresTestTarget();
 
-const enabled = process.env.RUBI_RUN_TRANSPORT_POSTGRES_TESTS === '1';
-const databaseName = `rubi_md_transport_test_${randomUUID().replaceAll('-', '')}`;
+const enabled = process.env.NORA_RUN_TRANSPORT_POSTGRES_TESTS === '1';
+const databaseName = `nora_md_transport_test_${randomUUID().replaceAll('-', '')}`;
 const userId = '11111111-1111-4111-8111-111111111111';
 const actor: AuthenticatedActor = {
   userId,
@@ -64,11 +64,11 @@ function sql(database: string, input: string) {
 
 describe.skipIf(!enabled)('transport forms on isolated PostgreSQL 18', () => {
   beforeAll(async () => {
-    const local = process.env.RUBI_TEST_POSTGRES_CONTAINER
+    const local = process.env.NORA_TEST_POSTGRES_CONTAINER
       ? process.env
       : parseEnv(
           readFileSync(
-            process.env.RUBI_TRANSPORT_TEST_ENV_FILE ??
+            process.env.NORA_TRANSPORT_TEST_ENV_FILE ??
               resolve(process.cwd(), '.env'),
             'utf8',
           ),
@@ -78,8 +78,8 @@ describe.skipIf(!enabled)('transport forms on isolated PostgreSQL 18', () => {
       !['localhost', '127.0.0.1'].includes(url.hostname) ||
       url.port !== postgresTarget.port
     )
-      throw new Error('Only local Rubi PostgreSQL is allowed.');
-    if (!/^rubi_md_transport_test_[a-f0-9]{32}$/.test(databaseName))
+      throw new Error('Only local Nora PostgreSQL is allowed.');
+    if (!/^nora_md_transport_test_[a-f0-9]{32}$/.test(databaseName))
       throw new Error('Invalid isolated DB name');
     sql('postgres', `CREATE DATABASE "${databaseName}";`);
     created = true;
@@ -160,10 +160,8 @@ describe.skipIf(!enabled)('transport forms on isolated PostgreSQL 18', () => {
         countryId: country.id,
       },
       'aircraft-types': {
-        name: 'Test aircraft',
-        englishName: 'Test aircraft',
-        manufacturer: 'Test',
-        model: 'Aircraft',
+        englishName: 'Test Aircraft A1',
+        manufacturerModel: 'Test Manufacturer / Aircraft A1',
       },
       'rail-companies': {
         name: 'Test rail',
@@ -221,7 +219,7 @@ describe.skipIf(!enabled)('transport forms on isolated PostgreSQL 18', () => {
 
   afterAll(async () => {
     if (client) await client.$disconnect();
-    if (created && /^rubi_md_transport_test_[a-f0-9]{32}$/.test(databaseName))
+    if (created && /^nora_md_transport_test_[a-f0-9]{32}$/.test(databaseName))
       sql('postgres', `DROP DATABASE "${databaseName}" WITH (FORCE);`);
   }, 30000);
 

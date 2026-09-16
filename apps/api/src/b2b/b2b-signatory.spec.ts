@@ -2,7 +2,7 @@ import 'reflect-metadata';
 import { plainToInstance } from 'class-transformer';
 import { validateSync } from 'class-validator';
 import { describe, expect, it, vi } from 'vitest';
-import { b2bSignatoryIssue, type AuthenticatedActor } from '@rubi/contracts';
+import { b2bSignatoryIssue, type AuthenticatedActor } from '@nora/contracts';
 import { SaveB2bSignatoryDto } from './b2b-signatory.dto';
 import { B2bSignatoryService } from './b2b-signatory.service';
 import type { B2bSignatoryRepository } from './b2b-signatory.repository';

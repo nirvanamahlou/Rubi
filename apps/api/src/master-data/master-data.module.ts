@@ -44,6 +44,7 @@ import { OrganizationAddressController } from './organization-address.controller
   ],
   exports: [
     MasterProcurementDirectory,
+    MasterDataService,
     MasterOrganizationDirectory,
     MasterTravelDirectory,
     MasterHrDirectory,

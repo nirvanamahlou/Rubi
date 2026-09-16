@@ -1,10 +1,13 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { ClipboardList, FileText, Package, ShoppingBag } from 'lucide-react';
 import type {
   DocumentListItemV1,
   ProcurementDraftV1,
+  ProcurementListV1,
   ProcurementRequestV1,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import { Button } from '@/components/ui/button';
 import { FormField, Input, Textarea } from '@/components/ui/form-controls';
 import { DatePicker } from '@/components/ui/date-picker';
@@ -18,6 +21,7 @@ import {
   type Bootstrap,
 } from './api';
 import { emptyDraft, reconcileDraft } from './model';
+import { ProcurementSelect } from './procurement-select';
 
 export const selectClass =
   'h-11 w-full rounded-xl border border-input bg-surface px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
@@ -41,6 +45,27 @@ const draftLabels: Record<keyof ProcurementDraftV1, string> = {
   items: 'اقلام',
   origin: 'مرجع مبدأ',
 };
+export const savedRequestFieldOptionsKey = [
+  'procurement',
+  'saved-request-field-options',
+] as const;
+export function rememberSavedRequestFieldOptions(
+  client: ReturnType<typeof useQueryClient>,
+  request: ProcurementRequestV1,
+) {
+  client.setQueryData<ProcurementListV1<ProcurementRequestV1>>(
+    savedRequestFieldOptionsKey,
+    (current) => ({
+      items: [
+        request,
+        ...(current?.items ?? []).filter((item) => item.id !== request.id),
+      ],
+      page: current?.page ?? 1,
+      pageSize: Math.max(current?.pageSize ?? 0, 1),
+      hasMore: current?.hasMore ?? false,
+    }),
+  );
+}
 function describeDraftValue(
   value: ProcurementDraftV1[keyof ProcurementDraftV1],
 ): string {
@@ -73,6 +98,7 @@ export function DraftForm({
   onSaved: (value: ProcurementRequestV1) => void;
   onClose: () => void;
 }) {
+  const queryClient = useQueryClient();
   const heading = useRef<HTMLHeadingElement>(null);
   useEffect(() => {
     heading.current?.focus();
@@ -80,8 +106,72 @@ export function DraftForm({
   const [draft, setDraft] = useState<ProcurementDraftV1>(() =>
     request
       ? structuredClone(request.draft)
-      : emptyDraft(bootstrap.requester?.unitId),
+      : emptyDraft(
+          bootstrap.requester?.unitId,
+          bootstrap.requester?.branchId ??
+            bootstrap.defaultBranchId ??
+            bootstrap.branches[0]?.id ??
+            '',
+        ),
   );
+  const [requesterEmployeeId, setRequesterEmployeeId] = useState(
+    request?.requesterEmployeeId ?? bootstrap.requester?.id ?? '',
+  );
+  const [requesterLabel, setRequesterLabel] = useState(
+    request
+      ? (request.requesterEmployeeId ?? request.requesterUserId)
+      : (bootstrap.requester?.label ?? ''),
+  );
+  const [requesterSearch, setRequesterSearch] = useState('');
+  const [requesterPage, setRequesterPage] = useState(1);
+  const requesters = useQuery({
+    queryKey: [
+      'procurement',
+      'requesters',
+      draft.branchId,
+      draft.unitId,
+      requesterSearch,
+      requesterPage,
+    ],
+    queryFn: () =>
+      procurementApi.requesters(
+        draft.branchId,
+        requesterSearch,
+        requesterPage,
+        draft.unitId ?? '',
+      ),
+    enabled: Boolean(draft.branchId),
+    retry: false,
+  });
+  const units = useQuery({
+    queryKey: ['procurement', 'units', draft.branchId],
+    queryFn: () => procurementApi.units(draft.branchId),
+    enabled: Boolean(draft.branchId),
+    retry: false,
+  });
+  const savedRequests = useQuery({
+    queryKey: savedRequestFieldOptionsKey,
+    queryFn: () =>
+      procurementApi.list(
+        new URLSearchParams({
+          page: '1',
+          queue: 'own',
+          search: '',
+          status: '',
+        }),
+      ),
+    retry: false,
+  });
+  const [customFields, setCustomFields] = useState({
+    purchaseType: false,
+    category: false,
+  });
+  const [customItemFields, setCustomItemFields] = useState<
+    Record<string, boolean>
+  >({});
+  const resolvedRequesterLabel =
+    requesters.data?.items.find((item) => item.id === requesterEmployeeId)
+      ?.label ?? requesterLabel;
   const [busy, setBusy] = useState(false);
   const [baseRequest, setBaseRequest] = useState(request);
   const [conflict, setConflict] = useState(false);
@@ -131,18 +221,157 @@ export function DraftForm({
       )}
     </FormField>
   );
+  const savedChoice = (key: 'purchaseType' | 'category', label: string) => {
+    const existing = [
+      ...new Set(
+        [
+          request?.draft[key]?.trim() ?? '',
+          ...(savedRequests.data?.items ?? [])
+            .filter(
+              (item) =>
+                !draft.branchId || item.draft.branchId === draft.branchId,
+            )
+            .map((item) => item.draft[key].trim()),
+        ].filter(Boolean),
+      ),
+    ];
+    const custom =
+      customFields[key] ||
+      (draft[key] !== '' && !existing.includes(draft[key]));
+    return (
+      <FormField id={`proc-${key}`} label={label}>
+        <div className="space-y-2">
+          <ProcurementSelect
+            id={`proc-${key}`}
+            value={custom ? '__new__' : draft[key]}
+            onChange={(event) => {
+              const selected = event.target.value;
+              setCustomFields((previous) => ({
+                ...previous,
+                [key]: selected === '__new__',
+              }));
+              update(key, selected === '__new__' ? '' : selected);
+            }}
+          >
+            <option value="">انتخاب از موارد ثبت‌شده</option>
+            {existing.map((value) => (
+              <option key={value} value={value}>
+                {value}
+              </option>
+            ))}
+            <option value="__new__">ثبت مورد جدید</option>
+          </ProcurementSelect>
+          {(custom || existing.length === 0) && (
+            <div className="space-y-1.5">
+              <Input
+                aria-label={`مقدار تازهٔ ${label}`}
+                value={draft[key]}
+                onChange={(event) => update(key, event.target.value)}
+                placeholder="مقدار تازه را وارد کنید"
+              />
+              <p className="text-xs leading-5 text-muted-foreground">
+                با ذخیرهٔ پیش‌نویس، این مورد به فهرست انتخاب‌ها اضافه می‌شود.
+              </p>
+            </div>
+          )}
+        </div>
+      </FormField>
+    );
+  };
+  const savedItemChoice = (
+    item: ProcurementDraftV1['items'][number],
+    key: 'unit',
+    label: string,
+  ) => {
+    const fieldId = `${item.id}-${key}`;
+    const existing = [
+      ...new Set(
+        [
+          request?.draft.items
+            .find((line) => line.id === item.id)
+            ?.[key].trim() ?? '',
+          ...(savedRequests.data?.items ?? [])
+            .filter(
+              (saved) =>
+                !draft.branchId || saved.draft.branchId === draft.branchId,
+            )
+            .flatMap((saved) =>
+              saved.draft.items.map((line) => line[key].trim()),
+            ),
+        ].filter(Boolean),
+      ),
+    ];
+    const custom =
+      customItemFields[fieldId] ||
+      (item[key] !== '' && !existing.includes(item[key]));
+    const change = (value: string) =>
+      update(
+        'items',
+        draft.items.map((line) =>
+          line.id === item.id ? { ...line, [key]: value } : line,
+        ),
+      );
+    return (
+      <FormField id={fieldId} label={label}>
+        <div className="space-y-2">
+          <ProcurementSelect
+            id={fieldId}
+            value={custom ? '__new__' : item[key]}
+            onChange={(event) => {
+              const isNew = event.target.value === '__new__';
+              setCustomItemFields((previous) => ({
+                ...previous,
+                [fieldId]: isNew,
+              }));
+              change(isNew ? '' : event.target.value);
+            }}
+          >
+            <option value="">انتخاب از موارد ثبت‌شده</option>
+            {existing.map((value) => (
+              <option key={value} value={value}>
+                {value}
+              </option>
+            ))}
+            <option value="__new__">ثبت مورد جدید</option>
+          </ProcurementSelect>
+          {(custom || existing.length === 0) && (
+            <div className="space-y-1.5">
+              <Input
+                aria-label={`مقدار تازهٔ ${label}`}
+                value={item[key]}
+                onChange={(event) => change(event.target.value)}
+              />
+              <p className="text-xs leading-5 text-muted-foreground">
+                با ذخیرهٔ پیش‌نویس، این مورد به فهرست انتخاب‌ها اضافه می‌شود.
+              </p>
+            </div>
+          )}
+        </div>
+      </FormField>
+    );
+  };
   async function save() {
+    if (!baseRequest && !requesterEmployeeId) {
+      setError('درخواست‌کننده را از فهرست کارکنان انتخاب کنید.');
+      return;
+    }
     setBusy(true);
     setError('');
     identity.current = retryIdentity(identity.current, {
       draft,
+      requesterEmployeeId,
       id: baseRequest?.id,
       version: baseRequest?.version,
     });
     try {
-      onSaved(
-        await procurementApi.save(draft, identity.current.key, baseRequest),
+      const saved = await procurementApi.save(
+        draft,
+        identity.current.key,
+        baseRequest,
+        requesterEmployeeId,
       );
+      rememberSavedRequestFieldOptions(queryClient, saved);
+      onSaved(saved);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'ذخیره انجام نشد.');
       setConflict(
@@ -192,7 +421,7 @@ export function DraftForm({
     }
   }
   return (
-    <Card className="p-5 sm:p-7">
+    <Card className="overflow-hidden p-5 sm:p-7">
       <form
         onSubmit={(event) => {
           event.preventDefault();
@@ -200,14 +429,32 @@ export function DraftForm({
         }}
         className="space-y-7"
       >
-        <div>
-          <h2 ref={heading} tabIndex={-1} className="text-xl font-bold">
-            {request ? `ویرایش ${request.number}` : 'درخواست خرید جدید'}
-          </h2>
-          <p className="mt-2 text-sm text-muted-foreground">
-            پیش‌نویس ناقص قابل ذخیره است. اطلاعات مورد نیاز هنگام ارسال کنترل
-            می‌شود.
-          </p>
+        <div className="-mx-5 -mt-5 flex flex-wrap items-center gap-4 border-b border-primary/15 bg-gradient-to-l from-primary/10 via-primary/5 to-surface px-5 py-5 sm:-mx-7 sm:-mt-7 sm:px-7 sm:py-6">
+          <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10 text-primary shadow-sm">
+            <ShoppingBag aria-hidden="true" className="size-6" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <h2
+              ref={heading}
+              tabIndex={-1}
+              className="break-words text-xl font-extrabold tracking-tight text-foreground sm:text-2xl"
+            >
+              {request ? `ویرایش ${request.number}` : 'درخواست خرید جدید'}
+            </h2>
+            <p className="mt-1 text-xs leading-6 text-muted-foreground sm:text-sm">
+              پیش‌نویس قابل ذخیره است؛ کامل بودن فرم هنگام ارسال بررسی می‌شود.
+            </p>
+            <p
+              className="mt-2 text-xs font-semibold text-primary"
+              aria-live="polite"
+            >
+              شماره درخواست:{' '}
+              {request?.number ?? 'پس از نخستین ثبت، خودکار تعیین می‌شود'}
+            </p>
+          </div>
+          <span className="rounded-full border border-primary/20 bg-surface/80 px-3 py-1 text-xs font-semibold text-primary">
+            {request ? 'ویرایش پیش‌نویس' : 'ثبت پیش‌نویس'}
+          </span>
         </div>
         {error && (
           <Alert tone="error" title="ذخیره انجام نشد" description={error} />
@@ -243,7 +490,7 @@ export function DraftForm({
                         نسخه جدید: {describeDraftValue(latest.draft[key])}
                       </p>
                     </div>
-                    <select
+                    <ProcurementSelect
                       id={`conflict-${key}`}
                       className={selectClass}
                       value={choices[key] ?? ''}
@@ -257,7 +504,7 @@ export function DraftForm({
                       <option value="">انتخاب مقدار</option>
                       <option value="mine">حفظ ورودی من</option>
                       <option value="latest">حفظ نسخه جدید</option>
-                    </select>
+                    </ProcurementSelect>
                   </FormField>
                 ))}
                 <Button
@@ -285,23 +532,97 @@ export function DraftForm({
             )}
           </div>
         )}
-        <fieldset disabled={busy} className="space-y-6">
-          <legend className="mb-4 font-bold">اطلاعات درخواست</legend>
+        <fieldset
+          disabled={busy}
+          className="min-w-0 space-y-6 rounded-2xl border border-primary/15 bg-gradient-to-b from-primary/5 via-surface to-surface p-4 sm:p-6"
+        >
+          <legend className="mb-5 w-full border-b border-primary/15 pb-4 text-base font-bold text-foreground">
+            <span className="flex items-center gap-3">
+              <span className="flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                <ClipboardList aria-hidden="true" className="size-5" />
+              </span>
+              اطلاعات درخواست
+            </span>
+          </legend>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {text('title', 'عنوان درخواست')}
             <FormField id="proc-requester" label="درخواست‌کننده">
-              <Input
-                id="proc-requester"
-                readOnly
-                value={bootstrap.requester?.label ?? 'هویت نشست جاری'}
-              />
+              {request ? (
+                <Input
+                  id="proc-requester"
+                  readOnly
+                  value={resolvedRequesterLabel}
+                />
+              ) : (
+                <div className="space-y-2">
+                  <Input
+                    aria-label="جست‌وجوی درخواست‌کننده در منابع انسانی"
+                    placeholder="جست‌وجوی کارمند"
+                    value={requesterSearch}
+                    onChange={(event) => {
+                      setRequesterSearch(event.target.value);
+                      setRequesterPage(1);
+                    }}
+                  />
+                  <ProcurementSelect
+                    id="proc-requester"
+                    className={selectClass}
+                    value={requesterEmployeeId}
+                    onChange={(event) => {
+                      const candidate = requesters.data?.items.find(
+                        (item) => item.id === event.target.value,
+                      );
+                      setRequesterEmployeeId(event.target.value);
+                      setRequesterLabel(candidate?.label ?? '');
+                      update('unitId', candidate?.unitId ?? null);
+                    }}
+                  >
+                    <option value="">انتخاب از کارکنان فعال</option>
+                    {requesterEmployeeId &&
+                      !requesters.data?.items.some(
+                        (item) => item.id === requesterEmployeeId,
+                      ) && (
+                        <option value={requesterEmployeeId}>
+                          {resolvedRequesterLabel || 'درخواست‌کننده انتخاب‌شده'}
+                        </option>
+                      )}
+                    {requesters.data?.items.map((item) => (
+                      <option key={item.id} value={item.id}>
+                        {item.label}
+                      </option>
+                    ))}
+                  </ProcurementSelect>
+                  {requesters.isError && (
+                    <p className="text-sm text-destructive">
+                      فهرست کارکنان دریافت نشد.
+                    </p>
+                  )}
+                  {requesters.data?.hasMore && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setRequesterPage((page) => page + 1)}
+                    >
+                      کارکنان بعدی
+                    </Button>
+                  )}
+                </div>
+              )}
             </FormField>
             <FormField id="proc-branch" label="شعبه">
-              <select
+              <ProcurementSelect
                 id="proc-branch"
                 className={selectClass}
                 value={draft.branchId}
-                onChange={(event) => update('branchId', event.target.value)}
+                onChange={(event) => {
+                  update('branchId', event.target.value);
+                  if (!request) {
+                    setRequesterEmployeeId('');
+                    setRequesterLabel('');
+                    update('unitId', null);
+                    setRequesterPage(1);
+                  }
+                }}
               >
                 <option value="">انتخاب شعبه</option>
                 {bootstrap.branches.map((branch) => (
@@ -309,17 +630,45 @@ export function DraftForm({
                     {branch.label}
                   </option>
                 ))}
-              </select>
+              </ProcurementSelect>
             </FormField>
             <FormField id="proc-unit" label="واحد سازمانی">
-              <Input
+              <ProcurementSelect
                 id="proc-unit"
-                readOnly
-                value={draft.unitId ?? 'واحدی برای حساب جاری ثبت نشده'}
-              />
+                className={selectClass}
+                value={draft.unitId ?? ''}
+                onChange={(event) => {
+                  const nextUnit = event.target.value || null;
+                  const requester = requesters.data?.items.find(
+                    (item) => item.id === requesterEmployeeId,
+                  );
+                  update('unitId', nextUnit);
+                  if (requester?.unitId && requester.unitId !== nextUnit) {
+                    setRequesterEmployeeId('');
+                    setRequesterLabel('');
+                  }
+                  setRequesterPage(1);
+                }}
+              >
+                <option value="">انتخاب واحد از منابع انسانی</option>
+                {draft.unitId &&
+                  !units.data?.items.some(
+                    (unit) => unit.id === draft.unitId,
+                  ) && <option value={draft.unitId}>{draft.unitId}</option>}
+                {units.data?.items.map((unit) => (
+                  <option key={unit.id} value={unit.id}>
+                    {unit.label}
+                  </option>
+                ))}
+              </ProcurementSelect>
+              {units.isError && (
+                <p className="text-sm text-destructive">
+                  فهرست واحدهای منابع انسانی دریافت نشد.
+                </p>
+              )}
             </FormField>
-            {text('purchaseType', 'نوع خرید')}
-            {text('category', 'دسته خرید')}
+            {savedChoice('purchaseType', 'نوع خرید')}
+            {savedChoice('category', 'دسته خرید')}
             <FormField id="proc-requiredAt" label="تاریخ نیاز">
               <DatePicker
                 id="proc-requiredAt"
@@ -329,24 +678,23 @@ export function DraftForm({
                 }
               />
             </FormField>
-            <FormField id="proc-priority" label="اولویت">
-              <select
-                id="proc-priority"
+            <FormField id="proc-deliveryLocation" label="محل تحویل">
+              <ProcurementSelect
+                id="proc-deliveryLocation"
                 className={selectClass}
-                value={draft.priority}
+                value={draft.deliveryLocation}
                 onChange={(event) =>
-                  update(
-                    'priority',
-                    event.target.value as ProcurementDraftV1['priority'],
-                  )
+                  update('deliveryLocation', event.target.value)
                 }
               >
-                <option value="LOW">کم</option>
-                <option value="NORMAL">عادی</option>
-                <option value="HIGH">زیاد</option>
-              </select>
+                <option value="">انتخاب محل تحویل (اختیاری)</option>
+                {bootstrap.branches.map((branch) => (
+                  <option key={branch.id} value={branch.label}>
+                    {branch.label}
+                  </option>
+                ))}
+              </ProcurementSelect>
             </FormField>
-            {text('deliveryLocation', 'محل تحویل')}
           </div>
           {text('needReason', 'شرح نیاز و توجیه خرید', true)}
           <label className="flex min-h-11 items-center gap-3 text-sm font-semibold">
@@ -374,7 +722,7 @@ export function DraftForm({
               />
             </FormField>
             <FormField id="proc-currency" label="ارز">
-              <select
+              <ProcurementSelect
                 id="proc-currency"
                 className={selectClass}
                 value={draft.currencyCode ?? ''}
@@ -388,23 +736,39 @@ export function DraftForm({
                     {currency.name} ({currency.code})
                   </option>
                 ))}
-              </select>
+              </ProcurementSelect>
             </FormField>
           </div>
-          {!draft.estimatedAmount &&
-            text('unknownEstimateReason', 'علت نامشخص بودن برآورد')}
         </fieldset>
-        <fieldset disabled={busy} className="space-y-4">
-          <legend className="mb-4 font-bold">اقلام و خدمات</legend>
+        <fieldset
+          disabled={busy}
+          className="min-w-0 space-y-4 rounded-2xl border border-violet-200/70 bg-gradient-to-b from-violet-500/5 via-surface to-surface p-4 dark:border-violet-400/25 sm:p-6"
+        >
+          <legend className="mb-5 w-full border-b border-violet-200/70 pb-4 text-base font-bold text-foreground dark:border-violet-400/25">
+            <span className="flex items-center gap-3">
+              <span className="flex size-10 items-center justify-center rounded-xl bg-violet-500/10 text-violet-700 dark:text-violet-300">
+                <Package aria-hidden="true" className="size-5" />
+              </span>
+              اقلام و خدمات
+              <span className="ms-auto text-xs font-medium text-muted-foreground">
+                {draft.items.length.toLocaleString('fa-IR')} ردیف
+              </span>
+            </span>
+          </legend>
           {draft.items.map((item, index) => (
             <div
               key={item.id}
-              className="space-y-4 rounded-xl border border-border bg-muted/20 p-4"
+              className="space-y-4 rounded-xl border border-violet-200/70 bg-violet-500/[0.03] p-4 dark:border-violet-400/25"
             >
-              <div className="flex items-center justify-between">
-                <h3 className="font-semibold">
-                  ردیف {(index + 1).toLocaleString('fa-IR')}
-                </h3>
+              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-violet-200/70 pb-3 dark:border-violet-400/25">
+                <div className="flex items-center gap-2">
+                  <h3 className="font-bold text-foreground">
+                    ردیف {(index + 1).toLocaleString('fa-IR')}
+                  </h3>
+                  <span className="rounded-full bg-violet-500/10 px-2.5 py-1 text-xs font-semibold text-violet-700 dark:text-violet-300">
+                    {item.kind === 'GOODS' ? 'کالا' : 'خدمت'}
+                  </span>
+                </div>
                 <Button
                   type="button"
                   variant="ghost"
@@ -420,7 +784,7 @@ export function DraftForm({
               </div>
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 <FormField id={`${item.id}-kind`} label="ماهیت">
-                  <select
+                  <ProcurementSelect
                     id={`${item.id}-kind`}
                     className={selectClass}
                     value={item.kind}
@@ -440,7 +804,7 @@ export function DraftForm({
                   >
                     <option value="GOODS">کالا</option>
                     <option value="SERVICE">خدمت</option>
-                  </select>
+                  </ProcurementSelect>
                 </FormField>
                 {(
                   [
@@ -448,33 +812,35 @@ export function DraftForm({
                     ['specification', 'مشخصات فنی'],
                     ['quantity', 'مقدار'],
                     ['unit', 'واحد سنجش'],
-                    ['acceptanceCriteria', 'معیار پذیرش'],
-                    ['period', 'دوره ارائه خدمت'],
                   ] as const
-                ).map(([key, label]) => (
-                  <FormField key={key} id={`${item.id}-${key}`} label={label}>
-                    <Input
-                      id={`${item.id}-${key}`}
-                      value={item[key]}
-                      onChange={(event) =>
-                        update(
-                          'items',
-                          draft.items.map((value) =>
-                            value.id === item.id
-                              ? {
-                                  ...value,
-                                  [key]:
-                                    key === 'quantity'
-                                      ? cleanSalesMoney(event.target.value)
-                                      : event.target.value,
-                                }
-                              : value,
-                          ),
-                        )
-                      }
-                    />
-                  </FormField>
-                ))}
+                ).map(([key, label]) =>
+                  key === 'unit' ? (
+                    <div key={key}>{savedItemChoice(item, key, label)}</div>
+                  ) : (
+                    <FormField key={key} id={`${item.id}-${key}`} label={label}>
+                      <Input
+                        id={`${item.id}-${key}`}
+                        value={item[key]}
+                        onChange={(event) =>
+                          update(
+                            'items',
+                            draft.items.map((value) =>
+                              value.id === item.id
+                                ? {
+                                    ...value,
+                                    [key]:
+                                      key === 'quantity'
+                                        ? cleanSalesMoney(event.target.value)
+                                        : event.target.value,
+                                  }
+                                : value,
+                            ),
+                          )
+                        }
+                      />
+                    </FormField>
+                  ),
+                )}
               </div>
             </div>
           ))}
@@ -500,69 +866,18 @@ export function DraftForm({
             افزودن کالا یا خدمت
           </Button>
         </fieldset>
-        <fieldset disabled={busy} className="space-y-4">
-          <legend className="mb-4 font-bold">اسناد و مرجع مبدأ</legend>
-          <FormField id="proc-origin" label="منشأ درخواست">
-            <select
-              id="proc-origin"
-              className={selectClass}
-              value={draft.origin.kind}
-              onChange={(event) =>
-                update(
-                  'origin',
-                  event.target.value === 'GENERAL'
-                    ? { kind: 'GENERAL' }
-                    : {
-                        kind: 'SPECIALIZED',
-                        module: 'RESERVATIONS',
-                        operationId: '',
-                        version: 1,
-                      },
-                )
-              }
-            >
-              <option value="GENERAL">خرید عمومی شرکت</option>
-              <option value="SPECIALIZED">ارجاع از رزرواسیون</option>
-            </select>
-          </FormField>
-          {draft.origin.kind === 'SPECIALIZED' && (
-            <>
-              <Alert
-                title="مرجع عملیات تخصصی"
-                description="عملیات سفر در رزرواسیون باقی می‌ماند. اعتبار مرجع و نسخه هنگام ارسال در سرور کنترل می‌شود."
-              />
-              <div className="grid gap-4 sm:grid-cols-2">
-                <FormField id="proc-origin-id" label="شناسه عملیات">
-                  <Input
-                    id="proc-origin-id"
-                    value={draft.origin.operationId}
-                    onChange={(event) => {
-                      if (draft.origin.kind === 'SPECIALIZED')
-                        update('origin', {
-                          ...draft.origin,
-                          operationId: event.target.value,
-                        });
-                    }}
-                  />
-                </FormField>
-                <FormField id="proc-origin-version" label="نسخه مرجع">
-                  <Input
-                    id="proc-origin-version"
-                    type="number"
-                    min={1}
-                    value={draft.origin.version}
-                    onChange={(event) => {
-                      if (draft.origin.kind === 'SPECIALIZED')
-                        update('origin', {
-                          ...draft.origin,
-                          version: Number(event.target.value),
-                        });
-                    }}
-                  />
-                </FormField>
-              </div>
-            </>
-          )}
+        <fieldset
+          disabled={busy}
+          className="min-w-0 space-y-4 rounded-2xl border border-teal-200/70 bg-gradient-to-b from-teal-500/5 via-surface to-surface p-4 dark:border-teal-400/25 sm:p-6"
+        >
+          <legend className="mb-5 w-full border-b border-teal-200/70 pb-4 text-base font-bold text-foreground dark:border-teal-400/25">
+            <span className="flex items-center gap-3">
+              <span className="flex size-10 items-center justify-center rounded-xl bg-teal-500/10 text-teal-700 dark:text-teal-300">
+                <FileText aria-hidden="true" className="size-5" />
+              </span>
+              پیوست‌ها و یادداشت‌ها
+            </span>
+          </legend>
           {bootstrap.documents === 'AVAILABLE' ? (
             <>
               <div className="flex gap-2">
@@ -678,7 +993,14 @@ export function DraftForm({
               if (
                 JSON.stringify(draft) ===
                   JSON.stringify(
-                    request?.draft ?? emptyDraft(bootstrap.requester?.unitId),
+                    request?.draft ??
+                      emptyDraft(
+                        bootstrap.requester?.unitId,
+                        bootstrap.requester?.branchId ??
+                          bootstrap.defaultBranchId ??
+                          bootstrap.branches[0]?.id ??
+                          '',
+                      ),
                   ) ||
                 window.confirm('تغییرات ذخیره‌نشده کنار گذاشته شود؟')
               )

@@ -3,7 +3,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import type {
   ReservationIntakeV1,
   TravelWorkflowStateV1,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import { TravelDocument } from './travel-document';
 const intake = {
   snapshot: {

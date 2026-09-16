@@ -5,7 +5,7 @@ import type {
   DocumentOptionsResponseV1,
   DocumentPersonalViewCode,
   LoginResponse,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import {
   ChevronLeft,
   ChevronRight,

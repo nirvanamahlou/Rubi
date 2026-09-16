@@ -1,4 +1,4 @@
-import type { ProcurementDraftV1 } from '@rubi/contracts';
+import type { ProcurementDraftV1 } from '@nora/contracts';
 import { decimal, requireRule } from './domain/procurement.rules';
 
 export function object(
@@ -93,6 +93,31 @@ export function date(value: unknown, field: string): string {
     field,
   );
   return canonical;
+}
+export function dateRange(from: unknown, to: unknown) {
+  const parse = (value: unknown, field: string): Date | null => {
+    if (value === undefined || value === null || value === '') return null;
+    const day = text(value, field, 10);
+    const parsed = new Date(`${day}T00:00:00.000Z`);
+    requireRule(
+      /^\d{4}-\d{2}-\d{2}$/.test(day) &&
+        Number.isFinite(parsed.getTime()) &&
+        parsed.toISOString().slice(0, 10) === day,
+      'VALIDATION_ERROR',
+      'تاریخ فیلتر معتبر نیست.',
+      field,
+    );
+    return parsed;
+  };
+  const start = parse(from, 'createdFrom');
+  const end = parse(to, 'createdTo');
+  requireRule(
+    !start || !end || start <= end,
+    'VALIDATION_ERROR',
+    'تاریخ شروع از تاریخ پایان جلوتر است.',
+  );
+  const endExclusive = end ? new Date(end.getTime() + 86_400_000) : null;
+  return { start, endExclusive };
 }
 export function array(value: unknown, field: string, max = 100): unknown[] {
   requireRule(

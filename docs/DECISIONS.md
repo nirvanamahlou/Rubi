@@ -1,37 +1,43 @@
 # تصمیم‌های معماری
 
-## PROCUREMENT-001 — مالکیت منشأ تجاری و کنترل‌های نسخه — 2026-09-13
+## PROCUREMENT-BACKEND-CONNECTIONS-0915 — 2026-09-15
 
-درخواست صریح مالک محصول در PROCUREMENT-001 ابهام عبارت‌های قدیمی درباره مالکیت
-Payable را حل می‌کند: Procurement مالک فاکتور تجاری و منشأ نسخه‌دار آن است؛ Finance
-تنها مالک بدهی، پرداخت، مانده و دفتر حسابداری است. قرارداد
-`procurement.finance-source.v1` پیشنهاد مصرف‌کننده است و تا پذیرش قرارداد توسط
-PC-A وضعیت `NOT_CONNECTED` دارد. ثبت Outbox یا ارجاع محلی هرگز معادل پذیرش مالی
-یا پرداخت نیست. خرید عمومی به رزرو سفر وابسته نیست؛ ارجاع تخصصی بدون قرارداد
-نسخه‌دار Reservations متوقف می‌ماند و خرید سفر تاریخی دوباره بدهی نمی‌سازد.
+مالک محصول اتصال‌های ناقص خرید را فقط در Backend خواسته است. Settings/PC-A مالک
+چرخهٔ تأیید می‌ماند: Procurement فقط artifact سیاست نسخه‌دارِ مصوب را از مسیر
+`SETTINGS_PROCUREMENT_APPROVAL_POLICIES_FILE` می‌خواند و برای هر شعبه/واحد/دسته/ارز
+دقیقاً یک سیاست معتبر لازم دارد؛ نبودن، خرابی یا ابهام، ارسال را مسدود می‌کند.
+شناسه/سقف تأییدکننده هنوز از مالک دریافت نشده و هیچ grant خودکاری انجام نمی‌شود.
 
-سیاست تجاری مصوب در مبنای این شاخه موجود نیست. Draft ناقص مجاز است؛ Submit با
-`POLICY_NOT_CONFIGURED` بسته می‌ماند. هیچ سقف، تعداد استعلام، نقش تجاری یا تأییدکننده
-پیش‌فرض ساخته نمی‌شود. Snapshot تأیید سفارش به نسخه درخواست، نسخه سفارش،
-تأمین‌کننده، ارز و مبلغ متصل است. تغییر درخواست، تأییدهای معلق قبلی را کنار می‌گذارد؛
-اصلاح تعهد دوباره تأیید می‌خواهد. سیاست و تصمیم تاریخی بازنویسی نمی‌شوند.
+Procurement/PC-B producer `procurement.finance-source.v1` را از فاکتور تطبیق‌شده
+و handoff ذخیره‌شده از public service، با محدوده شعبه، برای Finance/PC-A قابل
+خواندن می‌کند. Finance باید consumer/ack نسخه‌دار و تطبیق با پرداخت خود را پس از
+هماهنگی قرارداد اضافه کند؛ فقط ایجاد projection، status پرداخت یا journal را
+تغییر نمی‌دهد. مسیر Reservations/PC-A نیز باید operation/contract/service/supplier
+reference مصوب را منتشر کند؛ تا آن زمان specialized submission gate می‌ماند.
 
-رسید اصلی immutable است؛ اصلاح مقدار در رکورد جبرانی signed و مرجوعی در رکورد
-جداگانه ثبت می‌شود. پذیرش تجمعی نمی‌تواند پایین‌تر از مقدار فاکتور تطبیق‌شده شود
-مگر از مسیر اصلاح تجاری/مالی مصوب که فعلاً متصل نیست. پذیرش با تعدیل قیمت و
-پیش‌پرداخت بدون Policy مصوب متوقف‌اند. مرجوعی هیچ رکورد پرداخت را حذف نمی‌کند.
+پس از صدور داخلی و تأیید نهایی سفارش، outbox intent نسخه‌دار
+`procurement.supplier-order-intent.v1` با شناسه/نسخه سفارش، شعبه، تأمین‌کننده و
+مبلغ ثبت می‌شود. وضعیت آن `BLOCKED` است تا Integrations/PC-A API و callback
+احراز‌شده و idempotent را فراهم کند؛ هیچ سفارش بیرونی صادر نمی‌شود. رخدادهای
+پیگیری خرید نیز در outbox هستند و تا ایجاد public Tasks consumer/PC-B تحویل
+نمی‌شوند. این مرزها اجازه جعل پاسخ تأمین‌کننده یا پرداخت را نمی‌دهند.
 
-اعلان داخلی از Public Service ماژول Notifications و در تراکنش تجاری ایجاد می‌شود.
-رویداد وظیفه در Outbox نگه داشته می‌شود؛ اتصال Tasks تا قرارداد مصرف‌کننده مصوب
-`TASKS_NOT_CONNECTED` است. پیام یا اعلان جایگزین Decision پرونده نیست.
+## PROCUREMENT-LIVE-INTEGRATION-0915 — 2026-09-15
 
-خروجی بزرگ از صف پایدار `ProcurementExportJob` با lease، بازیابی پس از وقفه و
-بازبینی نشست و مجوز جاری عبور می‌کند. فایل با مرجع همان Job در Documents ساخته
-و نسخه آن ثبت می‌شود. دانلود و اسکن در مالکیت Documents می‌ماند. PDF به شرکت
-مشخص و Branding Snapshot نیاز دارد؛ زمینه `ALL` مجاز نیست. مرورگر headless فقط
-از مسیر پیکربندی اپراتور اجرا می‌شود و نبود آن `PDF_RENDERER_UNAVAILABLE` است.
-تولید فایل به معنی ارسال خارجی نیست. ارزهای متفاوت در گزارش جمع نمی‌شوند.
-
+در فرم خرید، دستور جدید مالک حذف دلیل خرید مشابه، علت نامشخص بودن مبلغ و معیار
+پذیرش را بر متن قدیمی PRD مقدم می‌کند؛ دلیل اضطرار و محل تحویل اختیاری‌اند.
+درخواست‌کننده از کارمندان فعال ذخیره‌شدهٔ HR انتخاب و با FK شعبه‌ای واقعی به
+درخواست خرید وصل می‌شود؛ IAM actor جداگانه برای مجوز و audit می‌ماند. شش کارمند
+محلی موجود هنوز `userId` مرتبط با IAM ندارند، پس الزام FK به کارمند واقعی بدون
+این تفکیک، فهرست درخواست‌کننده را خالی می‌کرد. ثبت برای نقش کارکنان و تأیید/سفارش
+برای نقش‌های مشخص مستقل تعریف شد؛ grant خودکار اختیار تجاری به مدیر فنی انجام
+نمی‌شود. تا امضای قرارداد producer/consumer با PC-A و استقرار adapter و policy
+مصوب، تحویل مالی، ارجاع رزرواسیون و صدور سفارش در gate صریح باقی می‌مانند.
+قرارداد منتشرشدهٔ بعدی PC-A برای قیمت خرید بلیت از `ProcurementPublicService`
+به Ticket Catalog و کارتابل Finance وصل شده است؛ این intake جدا از سفارش و فاکتور
+درخواست خرید عمومی است و gate آن‌ها را تغییر نمی‌دهد. migration منتشرشدهٔ این
+intake بدون ویرایش حفظ شد و migration افزایشی دیگری FK شعبه و IAM creator را
+اضافه کرد؛ هر دو ابتدا روی کپی داده و سپس پایگاه محلی تمرین/اعمال شدند.
 
 ## B2B-DOSSIER-REPORTS-001 — 2026-09-09
 
@@ -49,7 +55,7 @@ Master Data owns payment-method identity; B2B consumes its public directory and 
 
 ## B2B-ORGANIZATION-USERS-001 — 2026-09-09
 
-The owner explicitly limits per-user selection to the same agency's 360 dossier. Provide six view permissions and a standalone agency portal; do not grant global Rubi roles, administrative mutations, independent contract/credit approval, or access to other agencies. B2B stores membership and consumes exported IAM provisioning methods. A global B2B interceptor restricts any linked account, including inactive memberships and accounts subsequently granted global IAM roles, to its portal and own authentication/session endpoints. Each portal projection rechecks active membership, organization and selected section and derives organization/branch from the server. Existing staff accounts are never converted. Failed membership creation disables the new IAM account; B2B membership/audit are atomic, while IAM and B2B provisioning are separate public-service operations. Finance remains explicitly unavailable until its owner projection is connected; no fabricated balances. Role labels do not confer IAM privileges.
+The owner explicitly limits per-user selection to the same agency's 360 dossier. Provide six view permissions and a standalone agency portal; do not grant global Nora roles, administrative mutations, independent contract/credit approval, or access to other agencies. B2B stores membership and consumes exported IAM provisioning methods. A global B2B interceptor restricts any linked account, including inactive memberships and accounts subsequently granted global IAM roles, to its portal and own authentication/session endpoints. Each portal projection rechecks active membership, organization and selected section and derives organization/branch from the server. Existing staff accounts are never converted. Failed membership creation disables the new IAM account; B2B membership/audit are atomic, while IAM and B2B provisioning are separate public-service operations. Finance remains explicitly unavailable until its owner projection is connected; no fabricated balances. Role labels do not confer IAM privileges.
 
 ## B2B-UNIFIED-PROFILE-001 — 2026-09-09
 

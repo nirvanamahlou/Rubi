@@ -55,7 +55,7 @@ idempotency ایجاد می‌کند. constraint پایگاه‌داده شکل 
   `C:\Users\admin\Rubi-backups\workbench-messaging\runtime-before-20260912-045148.dump`
   با SHA-256 برابر
   `DD02A6EBA2AD5322C4B31369774EF7C21425A187141B18B675DFCF674F5D6FF5`.
-- Migration روی `rubi_hr_current_20260908` اعمال شد؛ شمارش ۳۸ User، پنج Branch،
+- Migration روی `nora_hr_current_20260908` اعمال شد؛ شمارش ۳۸ User، پنج Branch،
   ۴۴ Document و صفر Feedback تغییری نکرد و جدول‌های Messaging بدون داده ساختگی
   ایجاد شدند.
 - Runtime ترکیبی `05768d7` با build

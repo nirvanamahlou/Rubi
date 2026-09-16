@@ -29,7 +29,7 @@ import type {
   DocumentOptionsResponseV1,
   DocumentSortCode,
   DocumentVersionV1,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 
 import type {
   DocumentAccessGrantDto,
@@ -64,6 +64,40 @@ export interface DocumentRequestMetadata {
   userAgent?: string;
   sensitiveReason?: string;
   accessGrantToken?: string;
+}
+
+export interface MasterDataLogoDocumentResult {
+  id: string;
+  reused: boolean;
+  scanStatus: DocumentVersionV1['scanStatus'];
+}
+
+const MASTER_DATA_LOGO_MAX_BYTES = 5 * 1024 * 1024;
+
+function masterDataLogoMarker(file: UploadedDocumentFile): string {
+  const bytes = createHash('sha256')
+    .update(file.buffer)
+    .digest()
+    .subarray(0, 16);
+  bytes[6] = (bytes[6]! & 0x0f) | 0x50;
+  bytes[8] = (bytes[8]! & 0x3f) | 0x80;
+  const token = bytes.toString('hex');
+  return `master-data-logo-v1:${token.slice(0, 8)}-${token.slice(8, 12)}-${token.slice(12, 16)}-${token.slice(16, 20)}-${token.slice(20)}`;
+}
+
+function masterDataLogoActor(
+  actor: AuthenticatedActor,
+  ...permissions: AuthenticatedActor['permissions'][number][]
+): AuthenticatedActor {
+  const grants: AuthenticatedActor['permissions'] = [
+    ...actor.permissions,
+    'documents.brand.read',
+    ...permissions,
+  ];
+  return {
+    ...actor,
+    permissions: [...new Set(grants)],
+  };
 }
 
 const validSortFields = new Set<DocumentSortCode>([
@@ -302,6 +336,131 @@ export class DocumentsService {
       throw new ForbiddenException('سند در محدوده دسترسی شما نیست.');
     await this.repository.setFavorite(actor.userId, id, favorite);
     return { data: { documentId: id, favorite } };
+  }
+
+  /**
+   * Narrow owner boundary for Master Data brand images. It deliberately does
+   * not grant access to the Documents catalogue; callers can only create an
+   * image attached to the exact persisted Master Data source they provide.
+   */
+  async uploadMasterDataLogo(
+    input: {
+      branchId?: string;
+      resource: string;
+      recordId: string;
+      title: string;
+    },
+    file: UploadedDocumentFile | undefined,
+    actor: AuthenticatedActor,
+    metadata: DocumentRequestMetadata,
+  ): Promise<MasterDataLogoDocumentResult> {
+    this.assertPermission(actor.permissions, 'master_data.update');
+    if (!file) throw new BadRequestException('انتخاب فایل لوگو الزامی است.');
+    if (!['image/png', 'image/jpeg'].includes(file.mimetype))
+      throw new UnsupportedMediaTypeException('لوگو باید PNG یا JPEG باشد.');
+    if (file.size < 1 || file.size > MASTER_DATA_LOGO_MAX_BYTES)
+      throw new BadRequestException('حجم لوگو باید حداکثر ۵ مگابایت باشد.');
+
+    const values = await this.repository.options(actor.branchIds, ['BRAND']);
+    const branch = input.branchId
+      ? values.branches.find((item) => item.id === input.branchId)
+      : values.branches[0];
+    const owner = values.owners.find((item) => item.id === actor.userId);
+    const documentType = values.documentTypes.find(
+      (item) => item.code === 'BRAND_ASSET_TEMPLATE',
+    );
+    const category = values.categories.find(
+      (item) => item.code === 'BRAND_ASSETS',
+    );
+    if (!branch)
+      throw new ForbiddenException('شعبه مجاز برای بارگذاری لوگو مشخص نیست.');
+    if (!owner || !documentType || !category)
+      throw new ConflictException(
+        'پیش‌نیاز بارگذاری لوگو در آرشیو اسناد کامل نیست.',
+      );
+
+    const versionNote = masterDataLogoMarker(file);
+    const duplicate = (
+      await this.repository.list(
+        {
+          domain: 'BRAND',
+          archiveStatus: 'ACTIVE',
+          branchId: branch.id,
+          sourceModule: 'master-data',
+          sourceEntityType: input.resource,
+          sourceEntityId: input.recordId,
+          sortBy: 'updatedAt',
+          sortDirection: 'desc',
+          page: 1,
+          pageSize: 100,
+        },
+        actor.branchIds,
+        ['BRAND'],
+        actor.userId,
+      )
+    ).rows.find((item) => item.currentVersion?.versionNote === versionNote);
+    if (duplicate?.currentVersion)
+      return {
+        id: duplicate.id,
+        reused: true,
+        scanStatus: duplicate.currentVersion.scanStatus,
+      };
+
+    const uploaded = await this.upload(
+      {
+        title: input.title.trim() || `لوگوی ${input.resource}`,
+        documentTypeId: documentType.id,
+        categoryId: category.id,
+        branchId: branch.id,
+        ownerUserId: owner.id,
+        confidentiality: 'INTERNAL',
+        sourceModule: 'master-data',
+        sourceEntityType: input.resource,
+        sourceEntityId: input.recordId,
+        sourceDisplayLabel: input.title.trim() || `لوگوی ${input.resource}`,
+        versionNote,
+      },
+      file,
+      masterDataLogoActor(actor),
+      metadata,
+    );
+    return {
+      id: uploaded.data.id,
+      reused: false,
+      scanStatus: uploaded.data.currentVersion.scanStatus,
+    };
+  }
+
+  /** Archives only the BRAND document related to the supplied Master Data row. */
+  async archiveMasterDataLogo(
+    input: { documentId: string; resource: string; recordId: string },
+    actor: AuthenticatedActor,
+    metadata: DocumentRequestMetadata,
+  ): Promise<void> {
+    this.assertPermission(actor.permissions, 'master_data.update');
+    const row = await this.repository.findDetail(
+      input.documentId,
+      actor.branchIds,
+    );
+    if (!row || row.archiveStatus !== 'ACTIVE') return;
+    const ownsReference = row.relations.some(
+      (relation) =>
+        relation.relationType === 'PRIMARY_CASE' &&
+        relation.sourceModule === 'master-data' &&
+        relation.sourceEntityType === input.resource &&
+        relation.sourceEntityId === input.recordId,
+    );
+    if (row.documentType.domain !== 'BRAND' || !ownsReference)
+      throw new ForbiddenException('لوگوی انتخاب‌شده متعلق به این رکورد نیست.');
+    await this.archive(
+      row.id,
+      {
+        reason: 'حذف یا جایگزینی لوگوی مرجع اطلاعات پایه',
+        version: row.version,
+      },
+      masterDataLogoActor(actor, 'documents.delete'),
+      metadata,
+    );
   }
 
   /** Public reference-only lookup; file contents and metadata stay inside Documents. */
@@ -1072,6 +1231,50 @@ export class DocumentsService {
       }
       throw new ForbiddenException('دانلود این سند مجاز نیست.');
     }
+    return {
+      stream: await this.storage.openQuarantined(
+        row.currentVersion.storageObjectKey,
+        Number(row.currentVersion.sizeBytes),
+      ),
+      fileName: row.currentVersion.safeDownloadName,
+      mimeType: row.currentVersion.detectedMimeType,
+      sizeBytes: Number(row.currentVersion.sizeBytes),
+    };
+  }
+
+  /** Public module boundary for active, non-sensitive XLSX manifest templates. */
+  async readManifestTemplateReference(
+    id: string,
+    actor: AuthenticatedActor,
+  ): Promise<DocumentFileDelivery> {
+    const row = await this.repository.findDetail(id, actor.branchIds);
+    if (!row || !row.currentVersion)
+      throw new NotFoundException('فایل قالب MANIFEST پیدا نشد.');
+    const allowed =
+      row.documentType.code === 'MANIFEST' &&
+      row.archiveStatus === 'ACTIVE' &&
+      row.confidentiality !== 'CONFIDENTIAL' &&
+      row.confidentiality !== 'RESTRICTED' &&
+      row.currentVersion.scanStatus === 'CLEAN' &&
+      row.currentVersion.detectedMimeType ===
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+    await this.repository.appendAudit({
+      documentId: row.id,
+      versionId: row.currentVersion.id,
+      actorUserId: actor.userId,
+      actorBranchId: row.branchId,
+      action: 'documents.manifest_template.read',
+      outcome: allowed ? 'SUCCESS' : 'FAILURE',
+      reason: allowed
+        ? 'RESERVATION_MANIFEST_EXPORT'
+        : 'TEMPLATE_POLICY_DENIED',
+      ipSummary: '',
+      userAgentSummary: '',
+    });
+    if (!allowed)
+      throw new ConflictException(
+        'فایل قالب MANIFEST باید فعال، غیرمحرمانه، XLSX و اسکن‌شده باشد.',
+      );
     return {
       stream: await this.storage.openQuarantined(
         row.currentVersion.storageObjectKey,

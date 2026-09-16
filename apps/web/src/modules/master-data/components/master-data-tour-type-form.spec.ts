@@ -1,6 +1,6 @@
 import { createElement, type ReactNode } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import type { MasterDataRecord } from '@rubi/contracts';
+import type { MasterDataRecord } from '@nora/contracts';
 import { describe, expect, it, vi } from 'vitest';
 
 // Render the real form controls without the portal, which mounts only in a browser.

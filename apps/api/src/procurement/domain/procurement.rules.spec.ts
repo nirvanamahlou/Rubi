@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { ProcurementDraftV1 } from '@rubi/contracts';
+import type { ProcurementDraftV1 } from '@nora/contracts';
 import {
   assertReceipt,
   decimal,
@@ -173,7 +173,6 @@ describe('Submission and policy fail closed', () => {
     'category',
     'needReason',
     'requiredAt',
-    'deliveryLocation',
   ] as const)('requires %s before submission', (field) => {
     failsWith(
       () => validateSubmission(draft({ [field]: ' ' })),
@@ -181,30 +180,17 @@ describe('Submission and policy fail closed', () => {
       field,
     );
   });
-  it('requires an urgency reason, unknown-estimate reason and service acceptance criteria', () => {
-    failsWith(
-      () => validateSubmission(draft({ urgent: true })),
-      'VALIDATION_ERROR',
-      'urgencyReason',
-    );
-    failsWith(
-      () => validateSubmission(draft({ estimatedAmount: null })),
-      'VALIDATION_ERROR',
-      'unknownEstimateReason',
-    );
-    failsWith(
-      () =>
-        validateSubmission(
-          draft({ items: [{ ...draft().items[0]!, kind: 'SERVICE' }] }),
-        ),
-      'VALIDATION_ERROR',
-      'items',
-    );
+  it('allows optional urgency detail, unknown amount detail, delivery location and acceptance criteria', () => {
     expect(() =>
       validateSubmission(
         draft({
+          urgent: true,
           estimatedAmount: null,
-          unknownEstimateReason: 'Market quote pending',
+          unknownEstimateReason: '',
+          deliveryLocation: '',
+          items: [
+            { ...draft().items[0]!, kind: 'SERVICE', acceptanceCriteria: '' },
+          ],
         }),
       ),
     ).not.toThrow();

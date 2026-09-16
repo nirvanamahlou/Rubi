@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import Joi from 'joi';
 import { buildSalesXlsx, SALES_EXPORT_LIMIT } from './sales.xlsx';
-import { validatePassengerPackagePrices } from '@rubi/contracts';
+import { validatePassengerPackagePrices } from '@nora/contracts';
 
 import {
   BadRequestException,
@@ -24,8 +24,8 @@ import type {
   SalesPaymentCreateRequest,
   SalesReservationRequestV1,
   SalesFinanceInboxPaymentV1,
-} from '@rubi/contracts';
-import type { Prisma } from '@rubi/database';
+} from '@nora/contracts';
+import type { Prisma } from '@nora/database';
 
 import {
   SALES_TICKET_AVAILABILITY_PORT,
@@ -123,6 +123,7 @@ export function presentSalesContract(
     createdByName: paymentCreatorNames.get(item.createdByUserId) ?? null,
     createdAt: item.createdAt.toISOString(),
     financeConfirmedAt: date(item.financeConfirmedAt),
+    financeDecisionReason: item.financeDecisionReason,
   }));
   return {
     id: row.id,
@@ -723,6 +724,7 @@ export class SalesService {
     const snapshot: SalesReservationRequestV1 = {
       passengerAssignments: presented.passengersDetail.map((passenger) => ({
         customerId: passenger.customerId,
+        displayNameSnapshot: passenger.displayNameSnapshot,
         ageCategory: passenger.ageCategory,
         serviceClientKeys: passenger.serviceClientKeys,
       })),
@@ -919,6 +921,8 @@ export class SalesService {
     paymentId: string;
     financePaymentReference: string;
     confirmedAt: string;
+    reviewedByUserId?: string;
+    reason?: string;
   }) {
     return this.repository.applyFinanceConfirmation({
       contractId: event.contractId,
@@ -926,6 +930,27 @@ export class SalesService {
       financePaymentReference: event.financePaymentReference,
       financeConfirmationId: event.eventId,
       confirmedAt: event.confirmedAt,
+      ...(event.reviewedByUserId
+        ? { reviewedByUserId: event.reviewedByUserId }
+        : {}),
+      ...(event.reason !== undefined ? { reason: event.reason } : {}),
+    });
+  }
+
+  applyFinancePaymentCorrection(event: {
+    contractId: string;
+    paymentId: string;
+    reason: string;
+    reviewedByUserId: string;
+    branchId: string;
+  }) {
+    return this.repository.applyFinanceCorrection({
+      contractId: event.contractId,
+      paymentId: event.paymentId,
+      reason: event.reason,
+      reviewedByUserId: event.reviewedByUserId,
+      reviewedAt: new Date().toISOString(),
+      branchId: event.branchId,
     });
   }
 }

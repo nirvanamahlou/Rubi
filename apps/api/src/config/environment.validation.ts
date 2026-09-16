@@ -72,4 +72,11 @@ export const environmentValidationSchema = Joi.object({
       Joi.ref('MASTER_DATA_IMPORT_TOKEN_KEY_BASE64'),
     )
     .required(),
-});
+  PROCUREMENT_SUPPLIER_ADAPTER_URL: Joi.string()
+    .uri({ scheme: ['https', 'http'] })
+    .optional(),
+  PROCUREMENT_SUPPLIER_ADAPTER_SECRET: Joi.string().min(32).optional(),
+}).and(
+  'PROCUREMENT_SUPPLIER_ADAPTER_URL',
+  'PROCUREMENT_SUPPLIER_ADAPTER_SECRET',
+);

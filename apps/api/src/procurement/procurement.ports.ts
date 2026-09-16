@@ -1,12 +1,18 @@
-import { Injectable } from '@nestjs/common';
-import type { ProcurementDraftV1 } from '@rubi/contracts';
+import { Inject, Injectable } from '@nestjs/common';
+import type { ProcurementDraftV1 } from '@nora/contracts';
+import { SettingsProcurementPolicyService } from '../settings/settings-procurement-policy.service';
 import type { ApprovalPolicy } from './domain/procurement.rules';
 
-/** Settings owns policy lifecycle. Replace only with an approved versioned owner adapter. */
+/** Settings owns approval and publishes a versioned artifact; no artifact means no submission. */
 @Injectable()
 export class ProcurementPolicyPort {
-  resolve(_draft: ProcurementDraftV1): Promise<ApprovalPolicy | null> {
-    void _draft;
-    return Promise.resolve(null);
+  constructor(
+    @Inject(SettingsProcurementPolicyService)
+    private readonly settings?: SettingsProcurementPolicyService,
+  ) {}
+
+  async resolve(draft: ProcurementDraftV1): Promise<ApprovalPolicy | null> {
+    const policy = await this.settings?.resolve(draft);
+    return policy ? { ...policy, source: 'SETTINGS' } : null;
   }
 }

@@ -1,6 +1,6 @@
-import type { IamMfaStatusV1, LoginResponse } from '@rubi/contracts';
+import type { IamMfaStatusV1, LoginResponse } from '@nora/contracts';
 
-export const PROFILE_USER_FALLBACK = 'کاربر سامانه';
+export const PROFILE_USER_FALLBACK = 'کارمند سامانه';
 
 export type AuthenticatedProfileUser = LoginResponse['user'];
 

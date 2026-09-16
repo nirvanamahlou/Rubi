@@ -1,6 +1,6 @@
 'use client';
 
-import type { CustomerDetail } from '@rubi/contracts';
+import type { CustomerDetail } from '@nora/contracts';
 import {
   ArrowRight,
   Ban,

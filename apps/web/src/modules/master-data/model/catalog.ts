@@ -454,7 +454,7 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
         label: 'لوگوی بانک',
         type: 'text',
         placeholder: '',
-        hint: 'تصویر از طریق اسناد امن روبی بارگذاری می‌شود.',
+        hint: 'تصویر از طریق اسناد امن نورا بارگذاری می‌شود.',
       },
     ],
     preview: {
@@ -809,32 +809,23 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
     description:
       'کاتالوگ سازنده، مدل و نوع بدنه هواپیما بدون وابستگی به ناوگان عملیاتی.',
     fields: [
-      nameField,
       {
         key: 'englishName',
         label: 'نام انگلیسی',
         type: 'text',
-        placeholder: 'Airbus A320',
+        placeholder: 'Airbus A320-200',
       },
       {
-        key: 'manufacturer',
-        label: 'سازنده',
+        key: 'manufacturerModel',
+        label: 'سازنده و مدل',
         type: 'text',
-        placeholder: 'Airbus',
-        required: true,
-      },
-      {
-        key: 'model',
-        label: 'مدل',
-        type: 'text',
-        placeholder: 'A320-200',
+        placeholder: 'Airbus / A320-200',
         required: true,
       },
     ],
     preview: {
-      name: 'ایرباس ۳۲۰',
-      manufacturer: 'Airbus',
-      model: 'A320-200',
+      englishName: 'Airbus A320-200',
+      manufacturerModel: 'Airbus / A320-200',
       bodyType: 'NARROW_BODY',
     },
   },
@@ -846,12 +837,12 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
     description:
       'کد رزرو و Cabin مرجع؛ قیمت و موجودی صندلی در Ticket Catalog/Reservations می‌ماند.',
     fields: [
-      nameField,
       {
         key: 'englishName',
         label: 'نام انگلیسی',
         type: 'text',
         placeholder: 'Economy',
+        required: true,
       },
       {
         key: 'bookingCode',
@@ -867,7 +858,11 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
         placeholder: '0',
       },
     ],
-    preview: { name: 'اکونومی', bookingCode: 'Y', cabinType: 'ECONOMY' },
+    preview: {
+      englishName: 'Economy',
+      bookingCode: 'Y',
+      cabinType: 'ECONOMY',
+    },
   },
   {
     key: 'baggage-rules',
@@ -877,7 +872,6 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
     description:
       'قاعده بار براساس ایرلاین، کلاس، نوع مسافر، مسیر، مقدار و تعداد قطعه.',
     fields: [
-      nameField,
       {
         key: 'airlineId',
         label: 'ایرلاین',
@@ -947,7 +941,7 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
       },
     ],
     preview: {
-      name: 'بار اکونومی',
+      name: 'Baggage Economy',
       passengerType: 'ADT',
       allowance: '20',
       unit: 'KG',
@@ -1602,46 +1596,28 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
     singularLabel: 'تأمین‌کننده',
     group: 'سازمان‌ها',
     description:
-      'پروفایل مرجع تأمین‌کننده متصل به Organization یکتا؛ قرارداد و بدهی در ماژول مالک باقی می‌ماند.',
+      'پروفایل مستقل تأمین‌کننده برای استفاده در استعلام، سفارش و فاکتور خرید.',
     fields: [
       {
         key: 'name',
         label: 'نام تأمین‌کننده',
         type: 'text',
         placeholder: '',
-        hint: 'در صورت انتخاب سازمان، نام سازمان به‌عنوان مقدار پیشنهادی استفاده می‌شود.',
+        required: true,
+        hint: 'تأمین‌کننده به‌صورت مستقل در خرید و تأمین ثبت می‌شود.',
       },
       {
-        key: 'englishName',
-        label: 'نام انگلیسی تأمین‌کننده',
+        key: 'address',
+        label: 'نشانی',
         type: 'text',
-        placeholder: '',
+        placeholder: 'نشانی کامل تأمین‌کننده',
       },
       {
-        key: 'organizationId',
-        label: 'سازمان تأمین‌کننده',
+        key: 'primaryPhone',
+        label: 'شماره تماس اصلی',
         type: 'text',
-        placeholder: '',
-        hint: 'اختیاری؛ می‌توانید تأمین‌کننده مستقل ثبت کنید.',
-      },
-      {
-        key: 'countryId',
-        label: 'کشور',
-        type: 'text',
-        placeholder: '',
-      },
-      {
-        key: 'cityId',
-        label: 'شهر',
-        type: 'text',
-        placeholder: '',
-      },
-      {
-        key: 'externalProviderReference',
-        label: 'شناسه عمومی Provider/API',
-        type: 'text',
-        placeholder: 'PROVIDER-REF',
-        hint: 'Credential یا Secret در این فیلد ذخیره نمی‌شود.',
+        placeholder: '+98912...',
+        hint: 'شماره تماس رمزنگاری می‌شود و در فهرست فقط مقدار ماسک‌شده نمایش داده می‌شود.',
       },
       {
         key: 'collaborationStatus',
@@ -1664,13 +1640,6 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
         hint: 'یک یا چند خدمت از کاتالوگ انتخاب کنید.',
       },
       {
-        key: 'primaryContactId',
-        label: 'تماس اصلی',
-        type: 'text',
-        placeholder: '',
-        hint: 'از مخاطبان سازمان انتخاب کنید؛ تلفن و ایمیل فقط ماسک‌شده نمایش داده می‌شوند.',
-      },
-      {
         key: 'logoFileReference',
         label: 'لوگوی تأمین‌کننده',
         type: 'text',
@@ -1678,7 +1647,7 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
       },
     ],
     preview: {
-      organizationId: 'org_supplier',
+      name: 'تأمین‌کننده نمونه',
       collaborationStatus: 'UNDER_REVIEW',
     },
   },
@@ -1773,14 +1742,8 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
         hint: 'هنگام ذخیره به‌صورت خودکار تولید می‌شود.',
       },
       nameField,
-      {
-        key: 'englishName',
-        label: 'عنوان انگلیسی',
-        type: 'text',
-        placeholder: 'Hotel',
-      },
     ],
-    preview: { code: 'AUTO', name: 'هتل', englishName: 'Hotel' },
+    preview: { code: 'AUTO', name: 'هتل' },
   },
   {
     key: 'organization-contacts',

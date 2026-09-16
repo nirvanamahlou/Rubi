@@ -1,4 +1,4 @@
-import type { DocumentListQueryV1 } from '@rubi/contracts';
+import type { DocumentListQueryV1 } from '@nora/contracts';
 
 export type ArchiveToolKey = 'categories' | 'owners' | 'retention' | 'recovery';
 

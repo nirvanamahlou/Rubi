@@ -11,9 +11,11 @@ import {
 import { useEffect, useState } from 'react';
 import type {
   ReservationServicePurchaseV1,
+  FinancePaymentMethodOptionV1,
+  FinanceSettlementAccountV1,
   SupplierPurchaseGateV1,
   TravelDeliveryAuthorizationV1,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
 import {
@@ -32,7 +34,7 @@ import {
 } from '@/components/ui/overlays';
 import { formatSalesMoney } from '@/components/ui/money-input';
 import { Badge, EmptyState } from '@/components/ui/surfaces';
-import { masterDataApi } from '@/modules/master-data/api/client';
+import { financeInboxApi } from '../api/finance-inbox-api';
 import { travelRequest } from '@/modules/reservations/components/travel-workflow-form';
 
 type Row = {
@@ -41,11 +43,14 @@ type Row = {
   delivery: TravelDeliveryAuthorizationV1;
   supplierPurchases: SupplierPurchaseGateV1;
 };
-type Bank = { id: string; name: string };
-
 export function FinanceDeliveryPanel() {
   const [rows, setRows] = useState<Row[]>([]);
-  const [banks, setBanks] = useState<Bank[]>([]);
+  const [accounts, setAccounts] = useState<
+    readonly FinanceSettlementAccountV1[]
+  >([]);
+  const [methods, setMethods] = useState<
+    readonly FinancePaymentMethodOptionV1[]
+  >([]);
   const [search, setSearch] = useState('');
   const [reason, setReason] = useState('');
   const [busy, setBusy] = useState(false);
@@ -58,32 +63,24 @@ export function FinanceDeliveryPanel() {
   const [decisionError, setDecisionError] = useState('');
   const [notice, setNotice] = useState('');
   const [loaded, setLoaded] = useState(false);
-  const [bankId, setBankId] = useState('');
+  const [accountId, setAccountId] = useState('');
+  const [paymentMethodId, setPaymentMethodId] = useState('');
+  const [paidAmount, setPaidAmount] = useState('');
+  const [exchangeRate, setExchangeRate] = useState('');
   const [transferAt, setTransferAt] = useState('');
   const [reference, setReference] = useState('');
 
   useEffect(() => {
     let live = true;
-    void masterDataApi
-      .list('banks', {
-        search: '',
-        status: 'active',
-        sortBy: 'name',
-        sortDirection: 'asc',
-        page: 1,
-        pageSize: 100,
-      })
-      .then((response) => {
-        if (live)
-          setBanks(
-            response.data.map((record) => ({
-              id: record.id,
-              name: record.name,
-            })),
-          );
+    void Promise.all([financeInboxApi.accounts(), financeInboxApi.methods()])
+      .then(([accountRows, methodRows]) => {
+        if (live) {
+          setAccounts(accountRows);
+          setMethods(methodRows);
+        }
       })
       .catch(() => {
-        if (live) setError('فهرست بانک‌ها دریافت نشد.');
+        if (live) setError('فهرست حساب‌ها و روش‌های پرداخت دریافت نشد.');
       });
     return () => {
       live = false;
@@ -107,10 +104,8 @@ export function FinanceDeliveryPanel() {
   }
   async function savePayment() {
     if (!payment || busy) return;
-    if (!bankId || !transferAt || !reference.trim() || !reason.trim()) {
-      setDecisionError(
-        'بانک، تاریخ انتقال، شماره پیگیری و توضیح پرداخت الزامی است.',
-      );
+    if (!accountId || !paymentMethodId || !paidAmount || !transferAt) {
+      setDecisionError('حساب، روش، مبلغ و تاریخ پرداخت الزامی است.');
       return;
     }
     setBusy(true);
@@ -121,10 +116,13 @@ export function FinanceDeliveryPanel() {
         {
           expectedVersion: payment.purchase.finance.version,
           status: 'PAID',
-          bankId,
-          transferAt: new Date(transferAt).toISOString(),
-          paymentReference: reference.trim(),
-          reason: reason.trim(),
+          accountId,
+          paymentMethodId,
+          paidAmount,
+          exchangeRateToIrr: exchangeRate,
+          transferAt,
+          paymentReference: reference.trim() || null,
+          reason,
         },
       );
       setNotice(
@@ -132,7 +130,10 @@ export function FinanceDeliveryPanel() {
       );
       setPayment(null);
       setReason('');
-      setBankId('');
+      setAccountId('');
+      setPaymentMethodId('');
+      setPaidAmount('');
+      setExchangeRate('');
       setTransferAt('');
       setReference('');
       await load();
@@ -375,6 +376,19 @@ export function FinanceDeliveryPanel() {
                           size="sm"
                           onClick={() => {
                             setPayment({ row, purchase });
+                            setAccountId(
+                              accounts.find(
+                                (account) =>
+                                  account.currencyCode ===
+                                  purchase.currencyCode,
+                              )?.id ?? '',
+                            );
+                            setPaymentMethodId(methods[0]?.id ?? '');
+                            setPaidAmount(purchase.finance.remainingAmount);
+                            setExchangeRate(
+                              purchase.currencyCode === 'IRR' ? '1' : '',
+                            );
+                            setTransferAt(new Date().toISOString());
                             setReason('');
                             setDecisionError('');
                           }}
@@ -498,20 +512,69 @@ export function FinanceDeliveryPanel() {
             }}
           >
             <label className="grid gap-2">
-              <span>بانک پرداخت‌کننده</span>
-              <Select value={bankId} onValueChange={setBankId}>
+              <span>حساب پرداخت‌کننده</span>
+              <Select value={accountId} onValueChange={setAccountId}>
                 <SelectTrigger>
-                  <SelectValue placeholder="انتخاب بانک" />
+                  <SelectValue placeholder="انتخاب حساب مبدأ" />
                 </SelectTrigger>
                 <SelectContent>
-                  {banks.map((bank) => (
-                    <SelectItem key={bank.id} value={bank.id}>
-                      {bank.name}
+                  {accounts
+                    .filter(
+                      (account) =>
+                        account.currencyCode === payment?.purchase.currencyCode,
+                    )
+                    .map((account) => (
+                      <SelectItem key={account.id} value={account.id}>
+                        {account.title} · {account.currencyCode}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            </label>
+            <label className="grid gap-2">
+              <span>روش پرداخت</span>
+              <Select
+                value={paymentMethodId}
+                onValueChange={setPaymentMethodId}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="حواله، چک، نقد، پوز یا…" />
+                </SelectTrigger>
+                <SelectContent>
+                  {methods.map((method) => (
+                    <SelectItem key={method.id} value={method.id}>
+                      {method.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </label>
+            <label className="grid gap-2">
+              <span>مبلغ این پرداخت</span>
+              <Input
+                required
+                dir="ltr"
+                inputMode="decimal"
+                value={paidAmount}
+                onChange={(event) => setPaidAmount(event.target.value)}
+              />
+              <small className="text-muted-foreground">
+                مانده: {payment?.purchase.finance.remainingAmount}{' '}
+                {payment?.purchase.currencyCode}
+              </small>
+            </label>
+            {payment?.purchase.currencyCode !== 'IRR' ? (
+              <label className="grid gap-2">
+                <span>نرخ روز ارز به ریال</span>
+                <Input
+                  required
+                  dir="ltr"
+                  inputMode="decimal"
+                  value={exchangeRate}
+                  onChange={(event) => setExchangeRate(event.target.value)}
+                />
+              </label>
+            ) : null}
             <label className="grid gap-2">
               <span>تاریخ و ساعت انتقال</span>
               <DatePicker
@@ -521,7 +584,7 @@ export function FinanceDeliveryPanel() {
               />
             </label>
             <label className="grid gap-2">
-              <span>شماره پیگیری</span>
+              <span>شماره پیگیری (اختیاری)</span>
               <Input
                 dir="ltr"
                 value={reference}
@@ -530,7 +593,7 @@ export function FinanceDeliveryPanel() {
               />
             </label>
             <label className="grid gap-2">
-              <span>توضیح پرداخت</span>
+              <span>توضیح پرداخت (اختیاری)</span>
               <Input
                 value={reason}
                 maxLength={500}

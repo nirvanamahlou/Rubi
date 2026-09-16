@@ -66,9 +66,7 @@ describe('master data catalog', () => {
     ]);
     for (const resource of masterDataResourceKeys) {
       const definition = getMasterDataDefinition(resource);
-      if (resource === 'suppliers')
-        expect(definition.fields.some((field) => field.required)).toBe(false);
-      else expect(definition.fields.some((field) => field.required)).toBe(true);
+      expect(definition.fields.some((field) => field.required)).toBe(true);
       expect(definition.fields.some((field) => field.key === 'code')).toBe(
         explicitCodeResources.has(resource),
       );

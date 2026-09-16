@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import type { IamPermissionCode } from '@rubi/contracts';
+import type { IamPermissionCode } from '@nora/contracts';
 import { Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {

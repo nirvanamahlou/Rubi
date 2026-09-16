@@ -1,6 +1,14 @@
 'use client';
 
-import type { FinanceInboxV1 } from '@rubi/contracts';
+import type {
+  FinanceBankOptionV1,
+  FinanceInboxV1,
+  FinancePaymentMethodOptionV1,
+  FinanceReceiptDecisionCommandV1,
+  FinanceSettlementAccountCreateV1,
+  FinanceSettlementAccountV1,
+  FinanceSupplierPaymentCommandV1,
+} from '@nora/contracts';
 
 import { refreshAuthenticatedSession } from '@/lib/auth-session';
 import { getPublicApiBaseUrl } from '@/lib/environment';
@@ -14,14 +22,23 @@ export class FinanceInboxApiError extends Error {
   }
 }
 
-async function request(retried = false): Promise<FinanceInboxV1> {
+async function apiRequest<T>(
+  path: string,
+  init: RequestInit = {},
+  retried = false,
+): Promise<T> {
   const baseUrl = getPublicApiBaseUrl();
   if (!baseUrl)
     throw new FinanceInboxApiError('نشانی API کارتابل مالی تنظیم نشده است.', 0);
-  const response = await fetch(`${baseUrl}/finance/inbox`, {
+  const response = await fetch(`${baseUrl}${path}`, {
+    ...init,
     credentials: 'include',
     cache: 'no-store',
-    headers: { accept: 'application/json' },
+    headers: {
+      accept: 'application/json',
+      ...(init.body ? { 'content-type': 'application/json' } : {}),
+      ...init.headers,
+    },
   }).catch(() => {
     throw new FinanceInboxApiError(
       'ارتباط با سرور برقرار نشد؛ دوباره تلاش کنید.',
@@ -33,7 +50,7 @@ async function request(retried = false): Promise<FinanceInboxV1> {
     !retried &&
     (await refreshAuthenticatedSession(baseUrl))
   )
-    return request(true);
+    return apiRequest(path, init, true);
   if (!response.ok) {
     const payload = (await response.json().catch(() => null)) as {
       message?: string;
@@ -43,14 +60,57 @@ async function request(retried = false): Promise<FinanceInboxV1> {
       response.status === 401
         ? 'نشست ورود پایان یافته است؛ دوباره وارد شوید.'
         : response.status === 403
-          ? 'برای مشاهده کارتابل مالی مجوز ندارید.'
+          ? path === '/finance/inbox'
+            ? 'برای مشاهده کارتابل مالی مجوز ندارید.'
+            : 'برای انجام این عملیات مالی مجوز ندارید.'
           : (payload?.error?.message ??
             payload?.message ??
-            'دریافت کارتابل مالی ناموفق بود.'),
+            'عملیات کارتابل مالی ناموفق بود.'),
       response.status,
     );
   }
-  return response.json() as Promise<FinanceInboxV1>;
+  return response.json() as Promise<T>;
 }
 
-export const financeInboxApi = { list: () => request() };
+export const financeInboxApi = {
+  list: () => apiRequest<FinanceInboxV1>('/finance/inbox'),
+  accounts: async () =>
+    (
+      await apiRequest<{ data: readonly FinanceSettlementAccountV1[] }>(
+        '/finance/settlement-accounts',
+      )
+    ).data,
+  methods: async () =>
+    (
+      await apiRequest<{ data: readonly FinancePaymentMethodOptionV1[] }>(
+        '/finance/payment-methods',
+      )
+    ).data,
+  banks: async () =>
+    (
+      await apiRequest<{ data: readonly FinanceBankOptionV1[] }>(
+        '/finance/account-banks',
+      )
+    ).data,
+  createAccount: async (input: FinanceSettlementAccountCreateV1) =>
+    (
+      await apiRequest<{ data: FinanceSettlementAccountV1 }>(
+        '/finance/settlement-accounts',
+        { method: 'POST', body: JSON.stringify(input) },
+      )
+    ).data,
+  decideReceipt: (paymentId: string, input: FinanceReceiptDecisionCommandV1) =>
+    apiRequest<{ data: { status: string } }>(
+      `/finance/inbox/sales/${encodeURIComponent(paymentId)}/decision`,
+      { method: 'POST', body: JSON.stringify(input) },
+    ),
+  paySupplier: (
+    intakeId: string,
+    purchaseId: string,
+    input: FinanceSupplierPaymentCommandV1,
+  ) =>
+    apiRequest<{ data: unknown }>(
+      `/finance/inbox/reservations/${encodeURIComponent(intakeId)}/purchases/${encodeURIComponent(purchaseId)}/payments`,
+      { method: 'POST', body: JSON.stringify(input) },
+    ),
+};

@@ -32,6 +32,26 @@ export interface TicketOfferSearchV1 {
   page?: number;
 }
 
+export interface TicketCatalogPurchaseCreateV1 {
+  version: 1;
+  catalogProductReference: string;
+  title: string;
+  serviceDate: string;
+  supplierDisplaySnapshot: string | null;
+  amount: string;
+  currencyCode: string;
+}
+
+export interface TicketCatalogPurchaseV1 extends TicketCatalogPurchaseCreateV1 {
+  id: string;
+  branchId: string;
+  requestVersion: number;
+  status: 'PENDING' | 'PAID' | 'CANCELLED';
+  createdByUserId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface ReservationArrangementV1 {
   version: number;
   roomCount: number;
@@ -70,6 +90,37 @@ export interface ReservationIntakeV1 {
   arrangement: ReservationArrangementV1 | null;
 }
 
+export interface ReservationManifestTicketTemplateV1 {
+  id: string;
+  name: string;
+  versionNumber: number;
+}
+
+export interface ReservationManifestTicketCardV1 {
+  offerId: string;
+  direction: 'OUTBOUND' | 'RETURN';
+  carrierName: string;
+  serviceNumber: string;
+  originName: string;
+  destinationName: string;
+  departureAt: string;
+  arrivalAt: string;
+  contractCount: number;
+  passengerCount: number;
+  template: ReservationManifestTicketTemplateV1 | null;
+  unavailableReason: string | null;
+}
+
+export interface ReservationManifestTicketListV1 {
+  data: readonly ReservationManifestTicketCardV1[];
+}
+
+export interface ReservationManifestTicketExportInputV1 {
+  fromDate: string;
+  toDate: string;
+  includePreviouslyExported?: boolean;
+}
+
 export interface ReservationServicePurchaseV1 {
   id: string;
   version: number;
@@ -84,8 +135,16 @@ export interface ReservationServicePurchaseV1 {
   createdAt: string;
   finance: {
     version: number;
-    status: 'PENDING' | 'PAID' | 'REJECTED';
+    status: 'PENDING' | 'PARTIALLY_PAID' | 'PAID' | 'REJECTED';
     bankId: string | null;
+    accountId: string | null;
+    accountTitle: string | null;
+    paymentMethodId: string | null;
+    paymentMethodName: string | null;
+    paidAmount: string;
+    remainingAmount: string;
+    exchangeRateToIrr: string | null;
+    rialEquivalent: string | null;
     transferAt: string | null;
     paymentReference: string | null;
     reason: string;
@@ -107,6 +166,10 @@ export interface FinanceSupplierPaymentCommandV1 {
   expectedVersion: number;
   status: 'PAID' | 'REJECTED';
   bankId?: string | null;
+  accountId?: string | null;
+  paymentMethodId?: string | null;
+  paidAmount?: string | null;
+  exchangeRateToIrr?: string | null;
   transferAt?: string | null;
   paymentReference?: string | null;
   reason: string;
@@ -170,6 +233,7 @@ export interface TravelWorkflowCommandV1 {
     | 'REQUEST_SUPPLIER'
     | 'CONFIRM_SUPPLIER'
     | 'CANCEL'
+    | 'REOPEN'
     | 'INSURANCE'
     | 'ISSUE_VOUCHER'
     | 'ARRANGEMENT'
@@ -240,7 +304,9 @@ export const voucherFlagKeys = [
   'specialRoom',
 ] as const;
 export interface VoucherSettingsV1 {
-  text: Record<(typeof voucherTextKeys)[number], string>;
+  text: Record<(typeof voucherTextKeys)[number], string> & {
+    contractPartyName?: string;
+  };
   numbers: Record<(typeof voucherNumberKeys)[number], number>;
   flags: Record<(typeof voucherFlagKeys)[number], boolean>;
   passengers: {
@@ -248,6 +314,8 @@ export interface VoucherSettingsV1 {
     selected: boolean;
     roomType: string;
     age: 'ADL' | 'CHD' | 'INF';
+    /** Hotel-only split for a child. Ticket age remains CHD. */
+    hotelChildAgeBand?: 'CHD_2_TO_6' | 'CHD_6_TO_12' | '';
     sex?: 'MALE' | 'FEMALE' | '';
     birthDate?: string;
     documentNumber?: string;

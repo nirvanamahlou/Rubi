@@ -1,6 +1,9 @@
 import { BadRequestException } from '@nestjs/common';
-import { describe, expect, it } from 'vitest';
-import { validateServicePurchase } from './reservation-service-purchase.service';
+import { describe, expect, it, vi } from 'vitest';
+import {
+  ReservationServicePurchaseService,
+  validateServicePurchase,
+} from './reservation-service-purchase.service';
 
 const valid = {
   version: 1 as const,
@@ -24,4 +27,46 @@ describe('service purchase validation', () => {
       validateServicePurchase({ ...valid, currencyCode: 'irr' }),
     ).toThrow(BadRequestException);
   });
+});
+
+it('rejects a ticket purchase from the Reservations broker route', async () => {
+  const database = {
+    client: {
+      reservationIntake: {
+        findUnique: vi.fn().mockResolvedValue({
+          branchId: 'branch-1',
+          snapshot: {
+            serviceSelections: [
+              {
+                clientKey: 'flight-1',
+                kind: 'FLIGHT',
+                titleSnapshot: 'Flight',
+              },
+            ],
+          },
+        }),
+      },
+    },
+  };
+  const directory = { brokerReference: vi.fn() };
+  const service = new ReservationServicePurchaseService(
+    database as never,
+    directory as never,
+  );
+  await expect(
+    service.record(
+      '11111111-1111-4111-8111-111111111111',
+      {
+        ...valid,
+        serviceClientKey: 'flight-1',
+      },
+      {
+        userId: 'user-1',
+        branchIds: ['branch-1'],
+        permissions: ['reservations.read', 'reservations.hotel_purchase.write'],
+      } as never,
+      'ticket-purchase',
+    ),
+  ).rejects.toBeInstanceOf(BadRequestException);
+  expect(directory.brokerReference).not.toHaveBeenCalled();
 });
