@@ -548,6 +548,12 @@ describe('dashboard permission and data states', () => {
     expect(source).toContain('currencyMetricParts');
     expect(source).toContain('compactCurrencyAmount');
     expect(source).toContain('compactCurrencyTypography');
+    expect(source).toContain('compactChartValue');
+    expect(source).toContain('formatDashboardNumber');
+    expect(source).toContain('latinizeDashboardNumericText');
+    expect(source).toContain("Intl.NumberFormat('en-US'");
+    expect(source).toContain(".replaceAll('میلیون', 'M')");
+    expect(source).not.toContain("toLocaleString('fa-IR')");
     expect(source).toContain('whitespace-nowrap');
     expect(source).toContain('[container-type:inline-size]');
     expect(source).toContain('cqw');

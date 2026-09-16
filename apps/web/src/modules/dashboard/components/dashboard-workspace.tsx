@@ -605,10 +605,29 @@ function comparisonRankColor(rank: number, count: number) {
 }
 
 function compactChartValue(value: number) {
-  return Intl.NumberFormat('fa-IR', {
+  return Intl.NumberFormat('en-US', {
     notation: Math.abs(value) >= 10_000 ? 'compact' : 'standard',
     maximumFractionDigits: 1,
   }).format(value);
+}
+
+function formatDashboardNumber(
+  value: number,
+  options?: Intl.NumberFormatOptions,
+) {
+  return value.toLocaleString('en-US', options);
+}
+
+function latinizeDashboardNumericText(value: string) {
+  return value
+    .replace(/[۰-۹]/g, (digit) => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(digit)))
+    .replace(/[٠-٩]/g, (digit) => String('٠١٢٣٤٥٦٧٨٩'.indexOf(digit)))
+    .replaceAll('٬', ',')
+    .replaceAll('٫', '.')
+    .replaceAll('٪', '%')
+    .replaceAll('میلیارد', 'B')
+    .replaceAll('میلیون', 'M')
+    .replaceAll('هزار', 'K');
 }
 
 export function dashboardVisualKindForData(
@@ -736,13 +755,13 @@ function Metric({
                   />
                 ) : null}
                 <bdi
-                  aria-label={`مقدار دقیق: ${value}`}
+                  aria-label={`مقدار دقیق: ${latinizeDashboardNumericText(value)}`}
                   className={cn(
                     'inline-flex shrink-0 items-baseline gap-1.5 whitespace-nowrap text-center',
                     compactAmountTypography,
                   )}
                   dir="ltr"
-                  title={value}
+                  title={latinizeDashboardNumericText(value)}
                 >
                   <span aria-hidden="true">{symbol}</span>
                   <span>{compactAmount}</span>
@@ -766,13 +785,17 @@ function Metric({
             ) : null}
           </span>
           <span
-            aria-label={metric ? metric.value : 'داده‌ای دریافت نشده'}
+            aria-label={
+              metric
+                ? latinizeDashboardNumericText(metric.value)
+                : 'داده‌ای دریافت نشده'
+            }
             className={cn(
               'min-w-0 text-center font-black tracking-tight text-foreground',
               compact ? 'text-xl' : 'text-2xl',
             )}
           >
-            {metric?.value ?? '—'}
+            {metric ? latinizeDashboardNumericText(metric.value) : '—'}
           </span>
           <span aria-hidden="true" />
         </span>
@@ -820,28 +843,19 @@ function compactCurrencyAmount(amount: string, symbol: string) {
   if (!Number.isFinite(numericAmount)) return amount;
 
   const absolute = Math.abs(numericAmount);
-  const isIranianRial = symbol === '﷼';
-  const units: ReadonlyArray<readonly [number, string]> = isIranianRial
-    ? [
-        [1_000_000_000, 'میلیارد'],
-        [1_000_000, 'میلیون'],
-        [1_000, 'هزار'],
-      ]
-    : [
-        [1_000_000_000, 'B'],
-        [1_000_000, 'M'],
-        [1_000, 'K'],
-      ];
+  const units: ReadonlyArray<readonly [number, string]> = [
+    [1_000_000_000, 'B'],
+    [1_000_000, 'M'],
+    [1_000, 'K'],
+  ];
   const match = units.find(([threshold]) => absolute >= threshold);
   if (!match)
-    return numericAmount.toLocaleString('fa-IR', {
-      maximumFractionDigits: 0,
-    });
+    return formatDashboardNumber(numericAmount, { maximumFractionDigits: 0 });
 
   const [threshold, suffix] = match;
-  return `${(numericAmount / threshold).toLocaleString('fa-IR', {
+  return `${formatDashboardNumber(numericAmount / threshold, {
     maximumFractionDigits: 1,
-  })}${isIranianRial ? ` ${suffix}` : suffix}`;
+  })}${suffix}`;
 }
 
 function compactCurrencyTypography(value: string) {
@@ -892,7 +906,7 @@ function MiniTrend({
       values
         .map(
           (value, index) =>
-            `${currencyCode ? `${currencySymbols[currencyCode] ?? currencyCode} ` : ''}${trend.labels[index] ?? index + 1}: ${value.toLocaleString('fa-IR')}`,
+            `${currencyCode ? `${currencySymbols[currencyCode] ?? currencyCode} ` : ''}${trend.labels[index] ?? index + 1}: ${formatDashboardNumber(value)}`,
         )
         .join('، '),
     )
@@ -1018,7 +1032,7 @@ function GrowthIndicator({
       ? '—'
       : `${direction === 'up' ? '+' : direction === 'down' ? '−' : ''}${Math.abs(
           comparison!.deltaPercent,
-        ).toLocaleString('fa-IR', { maximumFractionDigits: 1 })}٪`;
+        ).toLocaleString('en-US', { maximumFractionDigits: 1 })}%`;
 
   return (
     <span
@@ -1036,7 +1050,7 @@ function GrowthIndicator({
           ? 'دادهٔ دورهٔ قبل برای محاسبه درصد در دسترس نیست'
           : comparison!.deltaPercent === null
             ? 'مبنای دورهٔ قبل صفر است؛ درصد تغییر قابل محاسبه نیست'
-            : `مقدار قبلی ${comparison!.previousValue.toLocaleString('fa-IR')}`
+            : `مقدار قبلی ${formatDashboardNumber(comparison!.previousValue)}`
       }`}
     >
       <Icon aria-hidden="true" className="size-3.5" />
@@ -1214,7 +1228,7 @@ function KpiDefinitionPanel({
                 <div className="mt-2 flex flex-wrap gap-2">
                   {metric.value.split(' · ').map((value) => (
                     <Badge dir="ltr" key={value} title="مقدار دقیق بدون فشرده‌سازی">
-                      {value}
+                      {latinizeDashboardNumericText(value)}
                     </Badge>
                   ))}
                 </div>
@@ -1559,7 +1573,7 @@ function VisualDataSummary({
                   {labels[index] ?? `دسته ${index + 1}`}
                 </th>
                 <td className="px-3 py-2 text-end font-bold tabular-nums">
-                  {value.toLocaleString('fa-IR')}
+                  {formatDashboardNumber(value)}
                 </td>
               </tr>
             ))}
@@ -1602,7 +1616,7 @@ function OperationalDataTable({
               key={`${label}-${index}`}
             >
               <td className="px-3 py-2.5 text-center font-semibold text-muted-foreground">
-                {(index + 1).toLocaleString('fa-IR')}
+                {formatDashboardNumber(index + 1)}
                 <span
                   aria-hidden="true"
                   className={cn(
@@ -1615,7 +1629,7 @@ function OperationalDataTable({
                 {label}
               </th>
               <td className="px-3 py-2.5 text-end font-black tabular-nums">
-                {values[index]?.toLocaleString('fa-IR')}
+                {formatDashboardNumber(values[index] ?? 0)}
               </td>
               <td className="px-3 py-2.5">
                 <span className="block h-2 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
@@ -1640,7 +1654,7 @@ function OperationalDataTable({
           <tr>
             <td className="px-3 py-2.5" />
             <th className="px-3 py-2.5 text-start" scope="row">جمع نمایش‌داده‌شده</th>
-            <td className="px-3 py-2.5 text-end tabular-nums">{total.toLocaleString('fa-IR')}</td>
+            <td className="px-3 py-2.5 text-end tabular-nums">{formatDashboardNumber(total)}</td>
             <td className="px-3 py-2.5" />
           </tr>
         </tfoot>
@@ -1662,7 +1676,7 @@ function EmployeePerformanceBars({
   const accessibleSummary = values
     .map(
       (value, index) =>
-        `${labels[index] ?? `کارشناس ${index + 1}`}: ${value.toLocaleString('fa-IR')}`,
+        `${labels[index] ?? `کارشناس ${index + 1}`}: ${formatDashboardNumber(value)}`,
     )
     .join('، ');
 
@@ -1700,7 +1714,7 @@ function EmployeePerformanceBars({
                 </span>
               </span>
               <strong className="min-w-12 text-end text-xs tabular-nums text-foreground">
-                {value.toLocaleString('fa-IR')}
+                {formatDashboardNumber(value)}
               </strong>
             </div>
           );
@@ -1729,7 +1743,7 @@ function DashboardChart({
   const accessibleSummary = values
     .map(
       (value, index) =>
-        `${labels[index] ?? `دسته ${index + 1}`}: ${value.toLocaleString('fa-IR')}`,
+        `${labels[index] ?? `دسته ${index + 1}`}: ${formatDashboardNumber(value)}`,
     )
     .join('، ');
 
@@ -1770,7 +1784,7 @@ function DashboardChart({
           />
           {points.map(({ x, y }, index) => (
             <circle key={`${x}-${y}`} cx={x} cy={y} fill="currentColor" className="text-primary" r="5">
-              <title>{`${labels[index]}: ${values[index]?.toLocaleString('fa-IR')}`}</title>
+              <title>{`${labels[index]}: ${formatDashboardNumber(values[index] ?? 0)}`}</title>
             </circle>
           ))}
         </svg>
@@ -1825,7 +1839,7 @@ function DashboardChart({
             return (
               <g key={`${visibleLabels[index]}-${index}`}>
                 <rect fill={index === 0 ? '#1e3a8a' : '#93a4c7'} height={height} rx="4" width={width} x={x} y={154 - height}>
-                  <title>{`${visibleLabels[index]}: ${value.toLocaleString('fa-IR')}`}</title>
+                  <title>{`${visibleLabels[index]}: ${formatDashboardNumber(value)}`}</title>
                 </rect>
                 <text className="fill-muted-foreground text-[9px]" textAnchor="middle" x={x + width / 2} y="176">
                   {(visibleLabels[index] ?? '').slice(0, 10)}
@@ -1843,7 +1857,7 @@ function DashboardChart({
           />
           {linePoints.map(({ x, y }, index) => (
             <circle cx={x} cy={y} fill="#fff" key={`${x}-${y}`} r="4" stroke="#d97706" strokeWidth="2">
-              <title>{`میانگین روند: ${rollingAverage[index]?.toLocaleString('fa-IR', { maximumFractionDigits: 1 })}`}</title>
+              <title>{`میانگین روند: ${formatDashboardNumber(rollingAverage[index] ?? 0, { maximumFractionDigits: 1 })}`}</title>
             </circle>
           ))}
         </svg>
@@ -1898,9 +1912,9 @@ function DashboardChart({
                   }}
                 />
                 <span className="min-w-0 flex-1 truncate font-semibold">{labels[index]}</span>
-                <span className="font-black tabular-nums">{Math.round((value / total) * 100).toLocaleString('fa-IR')}٪</span>
+                <span className="font-black tabular-nums">{formatDashboardNumber(Math.round((value / total) * 100))}%</span>
               </span>
-              <span className="mt-1 block ps-5 text-[10px] font-semibold tabular-nums text-muted-foreground">{value.toLocaleString('fa-IR')}</span>
+              <span className="mt-1 block ps-5 text-[10px] font-semibold tabular-nums text-muted-foreground">{formatDashboardNumber(value)}</span>
             </li>
           ))}
         </ul>
@@ -1920,7 +1934,7 @@ function DashboardChart({
             style={{ width: `${Math.max(36, (value / maximum) * 100)}%` }}
           >
             <span className="truncate">{labels[index]}</span>
-            <span>{value.toLocaleString('fa-IR')}</span>
+            <span>{formatDashboardNumber(value)}</span>
           </div>
         ))}
         <figcaption className="sr-only">{accessibleSummary}</figcaption>
