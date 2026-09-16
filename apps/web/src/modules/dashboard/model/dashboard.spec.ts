@@ -546,7 +546,8 @@ describe('dashboard permission and data states', () => {
     expect(source).toContain('!hasComparison || unavailable');
     expect(source).not.toContain('comparisonUnavailableForPeriod');
     expect(source).toContain('currencyMetricParts');
-    expect(source).toContain('grid-cols-[auto_minmax(0,1fr)_auto]');
+    expect(source).toContain('compactCurrencyAmount');
+    expect(source).toContain('whitespace-nowrap');
     expect(source).not.toContain('KpiComparisonBadges');
     expect(source).toContain('linearGradient');
     expect(source).toContain('stopOpacity="0.32"');
@@ -602,7 +603,8 @@ describe('dashboard permission and data states', () => {
     expect(kpiDefinitionPanelSource).not.toContain('مبنای مقایسه');
     expect(kpiDefinitionPanelSource).not.toContain('definition.grain');
     expect(kpiDefinitionPanelSource).not.toContain('definition.dateBasis');
-    expect(kpiDefinitionPanelSource).not.toContain('definition.currency');
+    expect(kpiDefinitionPanelSource).toContain('مقدار دقیق در بازهٔ انتخابی');
+    expect(kpiDefinitionPanelSource).toContain("metric.value.split(' · ')");
     expect(kpiDefinitionPanelSource).not.toContain('definition.comparison');
     expect(source).toContain('فرمول و قاعده محاسبه');
     expect(source).toContain('فیچرها و منابع داده');
@@ -643,6 +645,8 @@ describe('dashboard permission and data states', () => {
       expect(source).toContain(title);
     expect(source).toContain('items-baseline');
     expect(source).toContain('dashboard-sidebar-filters-title');
+    expect(source).toContain('فضای کار داشبوردها');
+    expect(source).toContain("activePanel === 'filters'");
     expect(source).toContain('پاک‌کردن فیلترهای داشبورد');
     expect(source).toContain('page: activePage.id');
     expect(source.match(/id="dashboard-range"/g)).toHaveLength(2);

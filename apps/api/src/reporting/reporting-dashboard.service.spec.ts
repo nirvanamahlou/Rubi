@@ -2,6 +2,7 @@ import { Prisma } from '@nora/database';
 import { describe, expect, it, vi } from 'vitest';
 
 import { ReportingService } from './reporting.service';
+import { dashboardPersianDateParts } from './reporting-dashboard-calendar';
 import type { ReportingRepository } from './reporting.repository';
 
 const actor = {
@@ -67,7 +68,7 @@ describe('dashboard travel projection date boundaries', () => {
     );
   });
 
-  it('keeps the default rolling range as an ISO instant and reads demo rows', async () => {
+  it('uses the current Persian calendar month in Tehran and reads demo rows', async () => {
     const facts = vi.fn().mockResolvedValue([demoFact]);
     const service = new ReportingService({
       facts,
@@ -88,9 +89,7 @@ describe('dashboard travel projection date boundaries', () => {
       facts.mock.calls[0]?.[0] as { filters: { fromUtc: string } }
     ).filters.fromUtc;
     expect(new Date(fromUtc).toISOString()).toBe(fromUtc);
-    expect(Date.now() - new Date(fromUtc).getTime()).toBeGreaterThan(
-      30 * 86_400_000,
-    );
+    expect(dashboardPersianDateParts(new Date(fromUtc)).day).toBe(1);
   });
 
   it('computes KPI and chart growth from the immediately preceding equal-length period', async () => {

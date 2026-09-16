@@ -574,37 +574,31 @@ function Metric({
         <span className="flex w-full min-w-0 flex-col gap-1 font-black tabular-nums tracking-tight text-foreground">
           {currencyValues.map((value, index) => {
             const { amount, symbol } = currencyMetricParts(value);
+            const compactAmount = compactCurrencyAmount(amount, symbol);
             const { comparison, comparisonUnavailable, currencyCode } =
               comparisonFor(index);
             return (
               <span
-                className="grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-1"
+                className="flex w-full items-center justify-center gap-2"
                 dir="rtl"
                 key={value}
               >
-                <span className="justify-self-start">
-                  {metric ? (
-                    <GrowthIndicator
-                      comparison={comparison}
-                      unavailable={comparisonUnavailable}
-                      currencyCode={currencyCode}
-                      role={role}
-                    />
-                  ) : null}
-                </span>
+                {metric ? (
+                  <GrowthIndicator
+                    comparison={comparison}
+                    unavailable={comparisonUnavailable}
+                    currencyCode={currencyCode}
+                    role={role}
+                  />
+                ) : null}
                 <bdi
-                  aria-label={value}
-                  className="min-w-0 break-words text-center text-lg leading-6"
+                  aria-label={`مقدار دقیق: ${value}`}
+                  className="inline-flex shrink-0 items-baseline gap-1.5 whitespace-nowrap text-center text-lg leading-6"
                   dir="ltr"
+                  title={value}
                 >
-                  {amount}
-                </bdi>
-                <bdi
-                  aria-hidden="true"
-                  className="justify-self-end text-lg leading-6"
-                  dir="ltr"
-                >
-                  {symbol}
+                  <span aria-hidden="true">{symbol}</span>
+                  <span>{compactAmount}</span>
                 </bdi>
               </span>
             );
@@ -668,6 +662,39 @@ function currencyMetricParts(value: string) {
     amount: symbol ? value.slice(symbol.length) : value,
     symbol: symbol ?? '',
   };
+}
+
+function compactCurrencyAmount(amount: string, symbol: string) {
+  const latinDigits = amount
+    .replace(/[۰-۹]/g, (digit) => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(digit)))
+    .replace(/[٠-٩]/g, (digit) => String('٠١٢٣٤٥٦٧٨٩'.indexOf(digit)))
+    .replace(/[^0-9.-]/g, '');
+  const numericAmount = Number(latinDigits);
+  if (!Number.isFinite(numericAmount)) return amount;
+
+  const absolute = Math.abs(numericAmount);
+  const isIranianRial = symbol === '﷼';
+  const units: ReadonlyArray<readonly [number, string]> = isIranianRial
+    ? [
+        [1_000_000_000, 'میلیارد'],
+        [1_000_000, 'میلیون'],
+        [1_000, 'هزار'],
+      ]
+    : [
+        [1_000_000_000, 'B'],
+        [1_000_000, 'M'],
+        [1_000, 'K'],
+      ];
+  const match = units.find(([threshold]) => absolute >= threshold);
+  if (!match)
+    return numericAmount.toLocaleString('fa-IR', {
+      maximumFractionDigits: 0,
+    });
+
+  const [threshold, suffix] = match;
+  return `${(numericAmount / threshold).toLocaleString('fa-IR', {
+    maximumFractionDigits: 1,
+  })}${isIranianRial ? ` ${suffix}` : suffix}`;
 }
 
 const trendSeriesPalette = [
@@ -936,9 +963,11 @@ function KpiCard({
 
 function KpiDefinitionPanel({
   definition,
+  metric,
   onClose,
 }: {
   definition: DashboardKpiDefinition;
+  metric?: DashboardMetricSnapshot | undefined;
   onClose(): void;
 }) {
   const report = reportCatalog.find(
@@ -1017,6 +1046,24 @@ function KpiDefinitionPanel({
                 </span>
               </p>
             </section>
+
+            {definition.currency === 'required' && metric ? (
+              <section aria-labelledby="kpi-exact-value-title">
+                <h3
+                  className="text-sm font-black text-foreground"
+                  id="kpi-exact-value-title"
+                >
+                  مقدار دقیق در بازهٔ انتخابی
+                </h3>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {metric.value.split(' · ').map((value) => (
+                    <Badge dir="ltr" key={value} title="مقدار دقیق بدون فشرده‌سازی">
+                      {value}
+                    </Badge>
+                  ))}
+                </div>
+              </section>
+            ) : null}
 
             <section
               aria-labelledby="kpi-calculation-title"
@@ -1879,16 +1926,15 @@ function ProjectionSlot({
 
 function DashboardSidebar({
   activePageId,
+  activePanel,
   collapsed,
   expandedGroups,
   filterOptions,
   filters,
-  filtersOpen,
   isFetching,
   dateRangeError,
   onCollapseToggle,
-  onFiltersRequest,
-  onFiltersToggle,
+  onPanelChange,
   onFiltersChange,
   onFiltersReset,
   onGroupToggle,
@@ -1896,16 +1942,15 @@ function DashboardSidebar({
   onRefresh,
 }: {
   activePageId: string;
+  activePanel: 'workspace' | 'filters';
   collapsed: boolean;
   expandedGroups: ReadonlySet<string>;
   filterOptions: DashboardFilterOptions | undefined;
   filters: DashboardFilters;
-  filtersOpen: boolean;
   isFetching: boolean;
   dateRangeError: string;
   onCollapseToggle(): void;
-  onFiltersRequest(): void;
-  onFiltersToggle(): void;
+  onPanelChange(panel: 'workspace' | 'filters'): void;
   onFiltersChange(patch: Partial<DashboardFilters>): void;
   onFiltersReset(): void;
   onGroupToggle(pageId: string): void;
@@ -1959,6 +2004,63 @@ function DashboardSidebar({
         </Button>
       </div>
 
+      {collapsed ? (
+        <div className="space-y-2 border-b border-border p-2">
+          <Button
+            aria-label="نمایش فضای کار داشبوردها"
+            className="size-10 w-full p-0"
+            onClick={() => onPanelChange('workspace')}
+            size="icon"
+            title="فضای کار داشبوردها"
+            variant="ghost"
+          >
+            <LayoutDashboard aria-hidden="true" className="size-4" />
+          </Button>
+          <Button
+            aria-label="نمایش فیلترهای داشبورد"
+            className="size-10 w-full p-0"
+            onClick={() => onPanelChange('filters')}
+            size="icon"
+            title="فیلترهای داشبورد"
+            variant="ghost"
+          >
+            <Filter aria-hidden="true" className="size-4" />
+          </Button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 gap-1 border-b border-border p-2" role="tablist">
+          <button
+            aria-selected={activePanel === 'workspace'}
+            className={cn(
+              'min-h-10 rounded-xl px-2 text-xs font-black outline-none transition focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+              activePanel === 'workspace'
+                ? 'bg-primary text-primary-foreground shadow-sm'
+                : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+            )}
+            onClick={() => onPanelChange('workspace')}
+            role="tab"
+            type="button"
+          >
+            فضای کار داشبوردها
+          </button>
+          <button
+            aria-selected={activePanel === 'filters'}
+            className={cn(
+              'min-h-10 rounded-xl px-2 text-xs font-black outline-none transition focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+              activePanel === 'filters'
+                ? 'bg-primary text-primary-foreground shadow-sm'
+                : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+            )}
+            onClick={() => onPanelChange('filters')}
+            role="tab"
+            type="button"
+          >
+            فیلترهای داشبورد
+          </button>
+        </div>
+      )}
+
+      {activePanel === 'workspace' ? (
       <nav aria-labelledby="dashboard-pages-title" className="space-y-1 p-2">
         {dashboardNavigation.map((item) => {
           const page = dashboardPageById.get(item.pageId);
@@ -2044,7 +2146,9 @@ function DashboardSidebar({
           );
         })}
       </nav>
+      ) : null}
 
+      {activePanel === 'filters' ? (
       <section
         aria-label={collapsed ? 'فیلترهای داشبورد' : undefined}
         aria-labelledby={
@@ -2057,16 +2161,6 @@ function DashboardSidebar({
       >
         {collapsed ? (
           <>
-            <Button
-              aria-label="نمایش فیلترهای داشبورد"
-              className="size-10 w-full p-0"
-              onClick={onFiltersRequest}
-              size="icon"
-              title="فیلترهای داشبورد"
-              variant="ghost"
-            >
-              <Filter aria-hidden="true" className="size-4" />
-            </Button>
             <Button
               aria-label="پاک‌کردن فیلترهای داشبورد"
               className="size-10 w-full p-0"
@@ -2187,26 +2281,6 @@ function DashboardSidebar({
                 </Select>
               </FormField>
 
-              <Button
-                aria-expanded={filtersOpen}
-                className="w-full justify-between"
-                onClick={onFiltersToggle}
-                variant="outline"
-              >
-                <span className="flex items-center gap-2">
-                  <Filter aria-hidden="true" className="size-4" />
-                  فیلترهای بیشتر
-                </span>
-                <ChevronDown
-                  aria-hidden="true"
-                  className={cn(
-                    'size-4 transition-transform',
-                    filtersOpen && 'rotate-180',
-                  )}
-                />
-              </Button>
-
-              {filtersOpen ? (
                 <div className="space-y-3 rounded-xl bg-muted/30 p-3">
                   {(dashboardPageFilterKeys[activePageId] ?? []).map((key) => (
                     <DimensionFilter
@@ -2227,7 +2301,6 @@ function DashboardSidebar({
                     </p>
                   ) : null}
                 </div>
-              ) : null}
 
               <div className="grid grid-cols-2 gap-2 border-t border-border pt-3">
                 <Button onClick={onFiltersReset} size="sm" variant="outline">
@@ -2249,6 +2322,7 @@ function DashboardSidebar({
           </>
         )}
       </section>
+      ) : null}
     </Card>
   );
 }
@@ -2265,8 +2339,10 @@ export function DashboardWorkspace() {
     [searchParams],
   );
   const dateRangeError = dashboardDateRangeError(filters.from, filters.to);
-  const [filtersOpen, setFiltersOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarPanel, setSidebarPanel] = useState<'workspace' | 'filters'>(
+    'workspace',
+  );
   const [expandedGroups, setExpandedGroups] = useState<ReadonlySet<string>>(
     () =>
       new Set(['commercial-performance', 'customer-growth', 'workforce-hr']),
@@ -2393,19 +2469,18 @@ export function DashboardWorkspace() {
       >
         <DashboardSidebar
           activePageId={activePage.id}
+          activePanel={sidebarPanel}
           collapsed={sidebarCollapsed}
           dateRangeError={dateRangeError}
           expandedGroups={expandedGroups}
           filterOptions={query.data?.filterOptions}
           filters={filters}
-          filtersOpen={filtersOpen}
           isFetching={query.isFetching}
           onCollapseToggle={() => setSidebarCollapsed((value) => !value)}
-          onFiltersRequest={() => {
+          onPanelChange={(panel) => {
+            setSidebarPanel(panel);
             setSidebarCollapsed(false);
-            setFiltersOpen(true);
           }}
-          onFiltersToggle={() => setFiltersOpen((value) => !value)}
           onFiltersChange={updateFilters}
           onFiltersReset={resetFilters}
           onGroupToggle={toggleNavigationGroup}
@@ -2493,12 +2568,13 @@ export function DashboardWorkspace() {
           {selectedKpi ? (
             <KpiDefinitionPanel
               definition={selectedKpi}
+              metric={query.data?.metrics[selectedKpi.id]}
               onClose={() => updateFilters({ widget: null })}
             />
           ) : null}
 
         </div>
-      </section>
+          </section>
     </div>
   );
 }

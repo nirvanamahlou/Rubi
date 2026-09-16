@@ -8,6 +8,7 @@ import {
   Optional,
 } from '@nestjs/common';
 import { ReportingExportService } from './reporting-export.service';
+import { dashboardCalendarRangeStart } from './reporting-dashboard-calendar';
 import { REPORTING_CATALOG_V1 } from './reporting.catalog';
 import type {
   ReportQueryV1,
@@ -272,18 +273,17 @@ export class ReportingService {
     if (!this.repository)
       throw new ConflictException('Persistence داشبورد در دسترس نیست.');
     const now = new Date();
-    const rangeDays: Record<string, number> = {
-      today: 1,
-      week: 7,
-      month: 31,
-      quarter: 92,
-      year: 366,
-    };
     const from =
       input.from ||
       (input.range && input.range !== 'custom'
-        ? new Date(
-            now.getTime() - (rangeDays[input.range] ?? 31) * 86_400_000,
+        ? dashboardCalendarRangeStart(
+            now,
+            input.range as
+              | 'today'
+              | 'week'
+              | 'month'
+              | 'quarter'
+              | 'year',
           ).toISOString()
         : undefined);
     const filters: Record<string, string> = {};
