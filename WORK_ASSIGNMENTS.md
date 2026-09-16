@@ -1,3 +1,12 @@
+## RESERVATION-TABLE-WINDOW-LAYOUT-0916 — PC-A — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-16: پنل عملیات قرارداد در رزواسیون زیر جدول قرار گیرد؛ جدول قراردادها با حدود ۶ تا ۷ ردیف قابل‌مشاهده اسکرول داخلی داشته باشد؛ در حالت بدون فیلتر تاریخ فقط قراردادهای سه ماه اخیر نمایش داده شوند و با تعیین بازه تاریخ، محدودیت پیش‌فرض برداشته شود.
+- Branch مستقل `codex/pc-a-reservation-table-window-layout-0916` از `origin/develop@10851d1a`؛ `COMPUTER_ID=PC-A`.
+- محدوده رزرو: `apps/web/src/modules/reservations/foundation/workspace.tsx`، CSS و تست‌های محلی همان workspace و اسناد این واحد. بدون Migration، داده عملیاتی، Permission، API عمومی، Dependency/Lockfile یا Runtime مشترک.
+- بررسی مالکیت: فایل هدف در آخرین تخصیص‌های فعال رزرو نشده است؛ تغییرهای رزواسیونِ در Review در فایل‌های دیگر حفظ می‌شوند.
+- نتیجه: پنل عملیات قرارداد از ستون کناری به زیر جدول منتقل شد و دکمه‌ها در نمایش دسکتاپ چهارستونه‌اند. جدول همهٔ قراردادهای بازه را بدون صفحه‌بندی جداگانه نگه می‌دارد و در ارتفاع نزدیک هفت ردیف اسکرول داخلی دارد. بدون بازهٔ تاریخ، تنها قراردادهای سه ماه تقویمی اخیر بر مبنای تاریخ قرارداد نمایش دارند؛ هر بازهٔ صریح انتخاب‌شده، آن محدودیت را جایگزین می‌کند.
+- اعتبارسنجی: ۲۱ تست هدفمند Web، lint و typecheck Web و build تولیدی Web موفق‌اند. Migration، دادهٔ عملیاتی، Permission، Dependency/Lockfile و Runtime مشترک تغییر نکردند.
+
 # Work Assignments
 
 ## DASHBOARD-BI-VISUAL-SYSTEM-0916 — PC-C — LOCAL_COMPLETE / RUNTIME_ACTIVE
@@ -58,6 +67,28 @@
 - قرارداد افزایشی و سازگار: تنها درخواست Preview صریح فرم ثبت اجرا می‌شود؛ Preview صفحه‌بندی/مرتب‌سازی و مصرف‌کننده‌های قبلی بدون ثبت اضافی می‌مانند. ذخیرهٔ صریح فرم opt-in است؛ ذخیرهٔ علاقه‌مندی یا اشتراک‌گذاری خودکار رخداد «ذخیره گزارش» نمی‌سازد. خروجی از مسیر موجود ثبت می‌شود. نوع اقدام در metadata ساخت‌یافتهٔ Filter Snapshot اجرا و پاسخ `runs` آشکار می‌شود.
 - `reporting_runs`، IAM actor، scope و Projection فعلی حفظ می‌شوند؛ Prisma/Migration/Seed، Dependency/Lockfile، فایل‌های Dashboard و Worktree اجرایی ۳۰۰۰ تغییر نمی‌کنند. هیچ دادهٔ نمونه‌ای وارد Git نمی‌شود.
 - هر اقدام صریح از فرم با `actionType` مستقل، زمان سمت سرور، کاربر و وضعیت در تب «اجراها» آشکار می‌شود. ذخیرهٔ فرم و رخداد اجرا در یک transaction ثبت می‌شوند؛ خطای Preview و Export نیز به وضعیت ناموفق همان اجرا تبدیل می‌شود. ۳۲ تست Reporting API و ۵۳ تست Reports Web، typecheck، lint و build هر دو برنامه موفق‌اند؛ PR و CI مرحلهٔ بعد است.
+## RESERVATION-SECTION-EDIT-AGE-BANDS-0916 — PC-A — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-16: تب‌های ویرایش قرارداد در رزواسیون برای طرف قرارداد، پرواز، هتل، سایر خدمات و مسافران واقعاً قابل ویرایش و ذخیره باشند؛ ردهٔ کودک هتل نیز در فرم ارسالی به کارگزار به‌صورت ۲ تا ۶ و ۶ تا ۱۲ سال نمایش داده شود.
+- Branch مستقل `codex/pc-a-reservation-section-edit-age-bands-0916` از `origin/develop@4551bca4`؛ `COMPUTER_ID=PC-A`.
+- محدوده رزرو: ویرایشگر قرارداد رزواسیون، تنظیمات/پروجکشن فرم کارگزار و PDF رزواسیون، قرارداد Travel در صورت نیاز، تست‌های هدفمند و اسناد همین واحد. بدون Migration، Seed، دادهٔ عملیاتی، تغییر Permission یا Runtime مشترک تا زمان ادغام تأییدشده.
+- مالک فعال هم‌پوشان برای فایل‌های هدف در آخرین `origin/develop` پیدا نشد؛ تغییرات شاخه‌ها و worktreeهای دیگر حفظ می‌شوند.
+- نتیجه: تب‌های طرف قرارداد، پرواز، هتل، سایر و مسافران به فرم ویرایش نسخه‌دار وصل شدند؛ هتل شامل تاریخ، مشخصات، نوع و تعداد اتاق است و کودک انتخاب‌شده بدون تعیین بازهٔ ۲ تا ۶ یا ۶ تا ۱۲ سال ذخیره نمی‌شود. همان بازه در PDF فرم ارسالی کارگزار و جدول مسافران قرارداد چاپ می‌شود. مشاهدهٔ قرارداد در رزواسیون از همان خروجی HTML موفق فروش استفاده می‌کند و چاپ/ذخیره PDF داخل پنجره ممکن است؛ مسیر PDF مستقیم نیز حفظ شد. داده‌های قدیمی بدون فیلد اختیاری طرف قرارداد همچنان معتبرند.
+- اعتبارسنجی: typecheck بسته‌های Contracts/API/Web، lint فایل‌های متاثر، ۶ تست API و ۱۸ تست Web قابلیت اصلی، ۱۶ تست هدفمند خروجی قرارداد و build تولیدی API/Web موفق‌اند. Migration، Seed و تغییر Runtime مشترک انجام نشد.
+
+## FINANCE-INBOX-TICKET-BRANDING-0915 — PC-A — READY_FOR_REVIEW
+
+- Branch `codex/pc-a-finance-inbox-brand-0915` from `origin/develop@f5c1a159`; COMPUTER_ID=PC-A.
+- Scope: verify the port-3200 financial requests inbox is already present in the integrated port-3100 source, and adjust branding only in the flight-ticket PDF. Reserved files: `apps/web/src/modules/reservations/server/ticket-pdf-html.ts`, `apps/web/src/app/reservations/requests/[id]/tickets/pdf/route.ts`, targeted ticket tests, this assignment and `docs/PROJECT_STATUS.md`.
+- No other section, server checkout, migration, production data, or shared navigation is modified.
+- Result: the integrated /finance/requests route and live inbox already match the port-3200 source; ticket PDF only now enlarges Niayesh's own logo and resolves registered airline logos despite spacing/name variants. Targeted 11 Web tests, affected lint, Web typecheck, affected build, and visual QA of a one-page A4 Chrome PDF passed. No migration.
+
+## RESERVATION-TICKET-PDF-PASSENGER-0914 — PC-A — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-14: رفع خطای دانلود PDF بلیط قرارداد SC-2026-000003 و حذف وضعیت «نام مسافر ثبت نشده» برای Snapshotهای جدید. Branch مستقل `codex/pc-a-ticket-pdf-passenger-0914` از `origin/develop@b62054e3`؛ COMPUTER_ID=PC-A.
+- محدوده رزرو: نگاشت نام مسافر در Snapshot خروجی Sales، Renderer/Route PDF بلیط Reservations، تنظیم tracing دارایی همان Route، تست‌های هدفمند و اسناد Task. فایل‌های تاریخی RESERVATION-TICKET-PDF-0912 و RESERVATION-DIRECT-PDF-0910 آزاد شده‌اند؛ در آخرین `origin/develop` مالک فعال همپوشان پیدا نشد.
+- Renderer فقط Chrome/Edge نصب‌شده و فونت محلی خواندنی را کشف می‌کند؛ فونت اختیاری است و نبود آن صدور را متوقف نمی‌کند. هیچ Migration، Seed، داده عملیاتی، Permission، Dependency/Lockfile یا اجرای مشترک localhost در این شاخه انجام نمی‌شود.
+- نتیجه: نام در Snapshot درخواست‌های جدید حفظ می‌شود و قرارداد قدیمی دارای نام ناقص، نام را برای نمایش/PDF از پرونده اصلی مسافر می‌خواند. Chrome/Edge و فونت محلی بدون فرمان دستی کشف می‌شوند. ۴ تست API، ۱۸ تست Web، lint/typecheck/build API/Web و Smoke واقعی Chrome موفق‌اند؛ رزرو فایل‌ها برای Review آزاد است.
 
 ## DASHBOARD-REPORTING-PC-AB-INTEGRATION — PC-C — PR_OPEN / CI_PENDING
 
@@ -3108,3 +3139,12 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 - Reserved scope: public Manifest list/export contracts, Reservations Manifest service/controller, public Master Data template lookup, controlled Documents referenced-file read, Manifest card UI and focused tests, plus this task status. No migration, seed, passenger data, dependency/lockfile, or localhost runtime changes.
 - Reservations consumes public Master Data and Documents services only. A template must be active, XLSX, destination-matched, and CLEAN. If a shared file changes on refreshed origin/develop, stop before resolving and report the overlap.
 - Implementation complete: the date-range search returns outbound and return ticket cards, resolves the active airline/destination template, disables unsupported cards with an explicit reason, and downloads only the selected ticket through its stored XLSX document. Contract-level export history remains idempotent and is separated by the selected flight departure. Eight focused API tests and one Web render test, scoped lint, Contracts/API/Web typecheck, and API/Web production builds passed. No migration, seed, dependency, passenger data, or localhost runtime change.
+
+## FLIGHT-TICKET-THEME-0915 — PC-A — IN_PROGRESS
+
+- درخواست 2026-09-15: خروجی PDF بلیط با چیدمان نمونه، لوگوی واقعی ایرلاین و نیایش، عنوان MR/MRS/CHD/INF بر پایه سن و جنسیت، مسیر پویا و هشدار دو زبانه سه ساعت پیش از پرواز.
+- Branch مستقل `codex/pc-a-flight-ticket-theme-0915` از `origin/develop@ff15c7d3`؛ COMPUTER_ID=PC-A. محدوده رزرو: مدل نمایش بلیط رزرواسیون، مسیر PDF بلیط، HTML/PDF قالب و تست‌های هدفمند، به‌همراه اسناد همین Task. بدون Migration، Seed، داده مسافر، IAM grant، lockfile یا تغییر localhost.
+- PR #283 در Review است و با route/model PDF اشتراک فایل دارد. تغییرات این واحد جدا تحویل می‌شوند؛ هنگام ادغام بعدی باید اختلاف آن PR بررسی و هر دو رفتار حفظ شوند. لوگو از قرارداد عمومی Master Data/Documents خوانده می‌شود؛ مقدار ساختگی برای QR، بار مجاز یا شماره بلیط تولید نمی‌شود.
+- پیاده‌سازی تکمیل شد: قالب A4 با لوگوی نیایش و لوگوی ایرلاین ثبت‌شده، مسیر و زمان پویا، عنوان مسافر از رده سن/جنسیت، نام لاتین گذرنامه و هشدار دو زبانه ساخته می‌شود. برای ایرلاین بدون لوگو، نام ثبت‌شده نمایش دارد. ۱۵ تست هدفمند، lint و typecheck Web موفق‌اند؛ یک PDF مصنوعی رفت/برگشت در یک صفحه A4 رندر شد. بدون داده واقعی، Migration، Seed، تغییر localhost یا ادغام PR #283. وضعیت: READY_FOR_REVIEW؛ قفل‌های فایل آزادند.
+- build تولیدی Web نیز با ۴۶ route موفق شد؛ خروجی نمونهٔ PDF با Chrome/Poppler یک صفحه A4 دارد. تغییر عمومی API/Database و جابه‌جایی localhost انجام نشد.
+- پیگیری 2026-09-15: سایهٔ روشن شهر پشت نام/کد مبدأ و مقصد برای هر مسیر پویا اضافه شد؛ ۸ تست قالب، lint و نمونه واقعی PDF/PNG موفق‌اند.

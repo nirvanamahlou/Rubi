@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { loadContractPrint } from '@/modules/sales/components/contract-output';
 import styles from './contract-pdf-preview.module.css';
 
 export const contractPdfPath = (contractId: string) =>
@@ -21,7 +22,7 @@ export function ContractPdfPreview({
       </p>
     );
   return (
-    <ContractPdfLoader
+    <ContractPrintLoader
       key={`${contractId}:${attempt}`}
       contractId={contractId}
       contractNumber={contractNumber}
@@ -30,7 +31,7 @@ export function ContractPdfPreview({
   );
 }
 
-function ContractPdfLoader({
+function ContractPrintLoader({
   contractId,
   contractNumber,
   onRetry,
@@ -39,71 +40,56 @@ function ContractPdfLoader({
   contractNumber: string;
   onRetry: () => void;
 }) {
-  const [pdfUrl, setPdfUrl] = useState('');
+  const frame = useRef<HTMLIFrameElement>(null);
+  const [html, setHtml] = useState('');
+  const [ready, setReady] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    const controller = new AbortController();
     let active = true;
-    let objectUrl = '';
-    void fetch(contractPdfPath(contractId), {
-      credentials: 'include',
-      cache: 'no-store',
-      signal: controller.signal,
-    })
-      .then(async (response) => {
-        if (
-          !response.ok ||
-          !response.headers.get('content-type')?.includes('application/pdf')
-        ) {
-          const body = (await response.json().catch(() => null)) as {
-            message?: string;
-          } | null;
-          throw new Error(
-            body?.message ??
-              'دریافت PDF قرارداد انجام نشد؛ دسترسی و اتصال را بررسی کنید.',
-          );
+    void loadContractPrint(contractId)
+      .then((result) => {
+        if (active) {
+          setReady(false);
+          setHtml(result.html);
         }
-        return response.blob();
-      })
-      .then((blob) => {
-        objectUrl = URL.createObjectURL(blob);
-        if (active) setPdfUrl(objectUrl);
       })
       .catch((reason: unknown) => {
-        if (
-          active &&
-          !(reason instanceof DOMException && reason.name === 'AbortError')
-        )
+        if (active)
           setError(
             reason instanceof Error
               ? reason.message
-              : 'دریافت PDF قرارداد انجام نشد.',
+              : 'دریافت خروجی قرارداد انجام نشد.',
           );
       });
     return () => {
       active = false;
-      controller.abort();
-      if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
   }, [contractId]);
 
+  const print = () => {
+    const win = frame.current?.contentWindow;
+    if (!win) return;
+    win.focus();
+    win.print();
+  };
+
   return (
     <div className={styles.preview}>
-      {!pdfUrl && !error && <p role="status">در حال ساخت PDF قرارداد…</p>}
+      {!html && !error && <p role="status">در حال ساخت خروجی قرارداد…</p>}
       <a
         href={contractPdfPath(contractId)}
         target="_blank"
         rel="noreferrer"
         className={styles.download}
       >
-        باز کردن PDF قرارداد
+        باز کردن PDF مستقیم
       </a>
       {error && (
         <div className={styles.error} role="alert">
           <p>
             {error === 'Failed to fetch'
-              ? 'دریافت PDF قرارداد انجام نشد؛ اتصال سرور را بررسی کنید یا PDF را مستقیم باز کنید.'
+              ? 'دریافت خروجی قرارداد انجام نشد؛ اتصال سرور را بررسی کنید.'
               : error}
           </p>
           <button type="button" onClick={onRetry}>
@@ -111,20 +97,24 @@ function ContractPdfLoader({
           </button>
         </div>
       )}
-      {pdfUrl && (
+      {html && (
         <>
           <iframe
-            title={`PDF قرارداد ${contractNumber}`}
-            src={pdfUrl}
+            ref={frame}
+            title={`قرارداد ${contractNumber}`}
+            srcDoc={html}
+            sandbox="allow-same-origin allow-modals"
+            onLoad={() => setReady(true)}
             className={styles.frame}
           />
-          <a
-            href={pdfUrl}
-            download={`contract-${contractNumber}.pdf`}
+          <button
+            type="button"
+            disabled={!ready}
+            onClick={print}
             className={styles.download}
           >
-            دانلود PDF قرارداد
-          </a>
+            چاپ / ذخیره PDF
+          </button>
         </>
       )}
     </div>

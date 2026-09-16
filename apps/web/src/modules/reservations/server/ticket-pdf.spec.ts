@@ -118,6 +118,157 @@ describe('reservation ticket PDF', () => {
     });
   });
 
+  it('uses the passenger passport spelling and the matching airline logo through public APIs', async () => {
+    const logoId = '00000000-0000-4000-8000-000000000010';
+    const fetcher = vi.fn().mockImplementation((url: string) => {
+      if (url.endsWith(`/reservations/requests/${id}/workflow`))
+        return Promise.resolve(Response.json({ data: intake }));
+      if (url.endsWith(`/reservations/requests/${id}/passengers`))
+        return Promise.resolve(
+          Response.json({
+            data: [
+              {
+                id: passengerId,
+                passportFirstName: 'ALI',
+                passportLastName: 'HOSSEINI',
+                gender: 'M',
+              },
+            ],
+          }),
+        );
+      if (url.includes('/master-data/airlines?'))
+        return Promise.resolve(
+          Response.json({
+            data: [
+              {
+                id: logoId,
+                resource: 'airlines',
+                status: 'active',
+                name: 'TEST AIR',
+                code: 'TEST',
+                attributes: { logoFileReference: logoId },
+              },
+            ],
+            meta: { page: 1, pageSize: 25, total: 1 },
+          }),
+        );
+      if (url.endsWith(`/documents/${logoId}/preview`))
+        return Promise.resolve(
+          new Response(Buffer.from('safe'), {
+            headers: { 'content-type': 'image/png' },
+          }),
+        );
+      return Promise.resolve(
+        Response.json({
+          data: {
+            name: 'City',
+            code: 'AYT',
+            attributes: { englishName: 'ANTALYA' },
+          },
+        }),
+      );
+    });
+    vi.stubGlobal('fetch', fetcher);
+    const response = await GET(request(), { params: Promise.resolve({ id }) });
+    expect(response.status).toBe(200);
+    const html = renderer.mock.calls[0]?.[0] as string;
+    expect(html).toContain('MR ALI HOSSEINI');
+    expect(html).toContain('class="airline-logo"');
+    expect(
+      fetcher.mock.calls.some(([url]) =>
+        String(url).endsWith(`/documents/${logoId}/preview`),
+      ),
+    ).toBe(true);
+  });
+
+  it('uses an uploaded airline logo when the contract spelling differs from the directory name', async () => {
+    const logoId = '00000000-0000-4000-8000-000000000010';
+    const variant = structuredClone(intake);
+    const firstTicket = variant.snapshot.ticketSelections?.[0];
+    if (!firstTicket) throw new Error('Missing fixture flight');
+    firstTicket.carrierNameSnapshot = 'IRAN AIR TOUR';
+    const fetcher = vi.fn().mockImplementation((url: string) => {
+      if (url.endsWith('/workflow'))
+        return Promise.resolve(Response.json({ data: variant }));
+      if (url.includes('/master-data/airlines?')) {
+        const fallback = !new URL(url).searchParams.has('search');
+        return Promise.resolve(
+          Response.json({
+            data: fallback
+              ? [
+                  {
+                    id: logoId,
+                    resource: 'airlines',
+                    status: 'active',
+                    name: 'ایران ایرتور',
+                    code: 'B9',
+                    attributes: {
+                      englishName: 'Iran Airtour',
+                      logoFileReference: logoId,
+                    },
+                  },
+                ]
+              : [],
+            meta: { page: 1, pageSize: 100, total: fallback ? 1 : 0 },
+          }),
+        );
+      }
+      if (url.endsWith('/documents/' + logoId + '/preview'))
+        return Promise.resolve(
+          new Response(Buffer.from('safe'), {
+            headers: { 'content-type': 'image/png' },
+          }),
+        );
+      return Promise.resolve(
+        Response.json({
+          data: {
+            name: 'City',
+            code: 'AYT',
+            attributes: { englishName: 'CITY' },
+          },
+        }),
+      );
+    });
+    vi.stubGlobal('fetch', fetcher);
+    const response = await GET(request(), { params: Promise.resolve({ id }) });
+    expect(response.status).toBe(200);
+    const html = renderer.mock.calls[0]?.[0] as string;
+    expect(html).toContain('class="airline-logo"');
+    expect(html).toContain('class="logos niyayesh-logos"');
+    expect(
+      fetcher.mock.calls.some(([url]) => String(url).includes('pageSize=100')),
+    ).toBe(true);
+  });
+  it('uses the canonical passenger name for a legacy snapshot without a name', async () => {
+    const legacy = structuredClone(intake);
+    delete legacy.snapshot.passengerAssignments?.[0]?.displayNameSnapshot;
+    const fetcher = vi
+      .fn()
+      .mockResolvedValueOnce(Response.json({ data: legacy }))
+      .mockResolvedValueOnce(
+        Response.json({
+          data: [{ id: passengerId, displayName: 'Legacy Passenger' }],
+          canEdit: true,
+        }),
+      )
+      .mockImplementation(() =>
+        Promise.resolve(
+          Response.json({
+            data: { name: 'City', attributes: { englishName: 'CITY' } },
+          }),
+        ),
+      );
+    vi.stubGlobal('fetch', fetcher);
+    const response = await GET(request(`?passengerId=${passengerId}`), {
+      params: Promise.resolve({ id }),
+    });
+    expect(response.status).toBe(200);
+    expect(fetcher.mock.calls[1]?.[0]).toBe(
+      `http://api.test/api/v1/reservations/requests/${id}/passengers`,
+    );
+    expect(renderer.mock.calls[0]?.[0]).toContain('Legacy Passenger');
+  });
+
   it('stops before rendering when workflow access is forbidden', async () => {
     vi.stubGlobal(
       'fetch',
@@ -146,6 +297,50 @@ describe('reservation ticket PDF', () => {
     expect(html).toContain('ISSUED');
     expect(html).not.toContain('DRAFT');
     expect(html).not.toContain('NOTICE');
+  });
+
+  it('renders the selected carrier mark, both routes and age/sex titles without invented baggage', () => {
+    const logo = 'data:image/png;base64,c2FmZQ==';
+    const tickets = reservationTickets({
+      ...intake.snapshot,
+      passengerIds: [passengerId, '00000000-0000-4000-8000-000000000006'],
+      passengerAssignments: [
+        {
+          customerId: passengerId,
+          displayNameSnapshot: 'ALI',
+          ageCategory: 'ADT',
+          serviceClientKeys: ['flight'],
+        },
+        {
+          customerId: '00000000-0000-4000-8000-000000000006',
+          displayNameSnapshot: 'LILY',
+          ageCategory: 'CHD',
+          serviceClientKeys: ['flight'],
+        },
+      ],
+    } as ReservationIntakeV1['snapshot']);
+    tickets[0]!.gender = 'M';
+    const html = ticketPdfHtml(
+      tickets,
+      {
+        [cityOne]: { name: 'TEHRAN', code: 'IKA' },
+        [cityTwo]: { name: 'ANTALYA', code: 'AYT' },
+      },
+      { name: 'Niyayesh', logoDataUrl: logo },
+      {
+        'TEST AIR': { name: 'Test Air', logoDataUrl: logo },
+      },
+    );
+    expect(html).toContain('MR ALI');
+    expect(html).toContain('CHD LILY');
+    expect(html).toContain('IKA');
+    expect(html).toContain('AYT');
+    expect(html).toContain(
+      'PRESENCE 03:00 BEFORE FLIGHT TIME AT THE AIRPORT IS MANDATORY',
+    );
+    expect(html).toContain('حضور در فرودگاه ۳ ساعت قبل از پرواز الزامی است.');
+    expect(html).toContain('class="airline-logo"');
+    expect(html).not.toContain('>20<');
   });
 
   it('uses the finance-gated Sales endpoint for a Sales download', async () => {
@@ -182,6 +377,26 @@ describe('reservation ticket PDF', () => {
     );
     expect(response.status).toBe(403);
     expect(renderer).not.toHaveBeenCalled();
+  });
+
+  it('returns a clear runtime message when no local PDF browser is available', async () => {
+    renderer.mockRejectedValueOnce(new Error('PDF_RUNTIME_UNAVAILABLE'));
+    const fetcher = vi
+      .fn()
+      .mockResolvedValueOnce(Response.json({ data: intake }))
+      .mockImplementation(() =>
+        Promise.resolve(
+          Response.json({
+            data: { name: 'City', attributes: { englishName: 'CITY' } },
+          }),
+        ),
+      );
+    vi.stubGlobal('fetch', fetcher);
+    const response = await GET(request(), { params: Promise.resolve({ id }) });
+    expect(response.status).toBe(503);
+    await expect(response.json()).resolves.toMatchObject({
+      message: 'مرورگر Chrome یا Edge برای ساخت PDF پیدا نشد.',
+    });
   });
 
   it('rejects unknown passenger and malformed identifiers', async () => {
