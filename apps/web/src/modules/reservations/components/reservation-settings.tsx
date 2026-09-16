@@ -7,7 +7,14 @@ import {
   type TravelWorkflowStateV1,
 } from '@nora/contracts';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/form-controls';
+import {
+  Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/form-controls';
 import {
   type ReservationFormIntake,
   type ReservationFormReferences,
@@ -24,6 +31,7 @@ import { useReservationFormReferences } from './reservation-form-sheet';
 import { DatePicker } from '@/components/ui/date-picker';
 import { ReservationFiles } from '../passenger-files/files';
 import { TravelDocument } from './travel-document';
+import styles from './reservation-settings.module.css';
 
 export type ReservationSettingsSection =
   'ALL' | 'PARTY' | 'FLIGHT' | 'HOTEL' | 'OTHER' | 'PASSENGERS';
@@ -36,6 +44,42 @@ const sectionLabels: Record<ReservationSettingsSection, string> = {
   OTHER: 'ویرایش سایر خدمات',
   PASSENGERS: 'ویرایش مسافران فرم رزواسیون',
 };
+
+const emptySelectValue = '__UNSELECTED__';
+
+type ReservationSelectOption = { value: string; label: string };
+
+function ReservationSelect({
+  ariaLabel,
+  value,
+  options,
+  onValueChange,
+}: {
+  ariaLabel: string;
+  value?: string;
+  options: readonly ReservationSelectOption[];
+  onValueChange: (value: string) => void;
+}) {
+  return (
+    <Select
+      value={value || emptySelectValue}
+      onValueChange={(next) =>
+        onValueChange(next === emptySelectValue ? '' : next)
+      }
+    >
+      <SelectTrigger aria-label={ariaLabel} className={styles.selectTrigger}>
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        {options.map((option) => (
+          <SelectItem key={option.value} value={option.value}>
+            {option.label}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+}
 
 function ReservationSettingsForm({
   intake,
@@ -216,13 +260,20 @@ function ReservationSettingsForm({
     </label>
   );
   return (
-    <section className="grid gap-4 rounded-xl border border-border p-4">
-      <h3 className="font-bold">{sectionLabels[section]}</h3>
-      <p className="text-sm">
-        اطلاعات همین بخش را اصلاح کنید. هر ذخیره یک نسخهٔ مستقل در سابقهٔ فرم
-        رزواسیون می‌سازد؛ ردهٔ کودک هتل در فرم ارسالی کارگزار چاپ می‌شود.
-      </p>
-      <p className={section === 'ALL' || section === 'HOTEL' ? '' : 'hidden'}>
+    <section className={styles.form}>
+      <header className={styles.formHeader}>
+        <span>ویرایش نسخهٔ رزواسیون</span>
+        <h3>{sectionLabels[section]}</h3>
+        <p>
+          اطلاعات همین بخش را اصلاح کنید. هر ذخیره یک نسخهٔ مستقل در سابقهٔ فرم
+          رزواسیون می‌سازد؛ ردهٔ کودک هتل در فرم ارسالی کارگزار چاپ می‌شود.
+        </p>
+      </header>
+      <p
+        className={`${styles.hotelSummary} ${
+          section === 'ALL' || section === 'HOTEL' ? '' : 'hidden'
+        }`}
+      >
         تعداد اتاق:{' '}
         {draft.numbers.singleRooms +
           draft.numbers.doubleRooms +
@@ -248,14 +299,14 @@ function ReservationSettingsForm({
             section === 'ALL' || section === 'HOTEL' ? 'grid gap-4' : 'hidden'
           }
         >
-          <div className="grid gap-3 rounded-xl border border-border p-3">
-            <h4 className="font-bold">تاریخ هتل و نوع اتاق</h4>
+          <div className={styles.sectionCard}>
+            <h4>تاریخ هتل و نوع اتاق</h4>
             <div className="grid gap-3 sm:grid-cols-3">
               {primaryTextKeys.map(textField)}
             </div>
           </div>
-          <div className="grid gap-3 rounded-xl border border-border p-3">
-            <h4 className="font-bold">تعداد اتاق‌ها</h4>
+          <div className={styles.sectionCard}>
+            <h4>تعداد اتاق‌ها</h4>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
               {voucherNumberKeys.map((key) => (
                 <label key={key}>
@@ -287,18 +338,18 @@ function ReservationSettingsForm({
               : 'hidden'
           }
         >
-          <p>
+          <p className={styles.passengerSummary}>
             مسافران انتخاب‌شده: {selected.length} · بلیط ADL{' '}
             {selected.filter((p) => p.age === 'ADL').length} · CHD{' '}
             {selected.filter((p) => p.age === 'CHD').length} · INF{' '}
             {selected.filter((p) => p.age === 'INF').length}
           </p>
-          <p className="text-sm">
+          <p className={styles.passengerHint}>
             ردهٔ بلیط از نوع ADL / CHD / INF جداست. برای هر CHD، ردهٔ هتل را ۲
             تا ۶ یا ۶ تا ۱۲ سال تعیین کنید؛ پروندهٔ اصلی و بلیط تغییر نمی‌کنند.
           </p>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+          <div className={styles.tableWrap}>
+            <table className={styles.passengerTable}>
               <thead>
                 <tr>
                   <th>انتخاب</th>
@@ -352,79 +403,85 @@ function ReservationSettingsForm({
                       />
                     </td>
                     <td>
-                      <select
-                        aria-label={`رده سنی مسافر ${i + 1}`}
-                        className="bg-surface"
+                      <ReservationSelect
+                        ariaLabel={`رده سنی مسافر ${i + 1}`}
                         value={p.age}
-                        onChange={(e) =>
+                        options={[
+                          { value: 'ADL', label: 'بزرگسال (ADL)' },
+                          { value: 'CHD', label: 'کودک (CHD)' },
+                          { value: 'INF', label: 'نوزاد (INF)' },
+                        ]}
+                        onValueChange={(age) =>
                           update({
                             ...draft,
                             passengers: draft.passengers.map((v, j) =>
-                              j === i
-                                ? { ...v, age: e.target.value as typeof p.age }
-                                : v,
+                              j === i ? { ...v, age: age as typeof p.age } : v,
                             ),
                           })
                         }
-                      >
-                        <option>ADL</option>
-                        <option>CHD</option>
-                        <option>INF</option>
-                      </select>
+                      />
                     </td>
                     <td>
                       {p.age === 'CHD' ? (
-                        <select
-                          aria-label={`رده کودک هتل مسافر ${i + 1}`}
-                          className="bg-surface"
+                        <ReservationSelect
+                          ariaLabel={`رده کودک هتل مسافر ${i + 1}`}
                           value={p.hotelChildAgeBand ?? ''}
-                          onChange={(e) =>
+                          options={[
+                            {
+                              value: emptySelectValue,
+                              label: 'انتخاب ردهٔ هتل',
+                            },
+                            {
+                              value: 'CHD_2_TO_6',
+                              label: 'کودک ۲ تا ۶ سال',
+                            },
+                            {
+                              value: 'CHD_6_TO_12',
+                              label: 'کودک ۶ تا ۱۲ سال',
+                            },
+                          ]}
+                          onValueChange={(hotelChildAgeBand) =>
                             update({
                               ...draft,
                               passengers: draft.passengers.map((v, j) =>
                                 j === i
                                   ? {
                                       ...v,
-                                      hotelChildAgeBand: e.target.value as
+                                      hotelChildAgeBand: hotelChildAgeBand as
                                         'CHD_2_TO_6' | 'CHD_6_TO_12' | '',
                                     }
                                   : v,
                               ),
                             })
                           }
-                        >
-                          <option value="">انتخاب نشده</option>
-                          <option value="CHD_2_TO_6">کودک ۲ تا ۶ سال</option>
-                          <option value="CHD_6_TO_12">کودک ۶ تا ۱۲ سال</option>
-                        </select>
+                        />
                       ) : (
                         <span>—</span>
                       )}
                     </td>
                     <td>
-                      <select
-                        className="bg-surface"
-                        aria-label={`جنسیت مسافر ${i + 1}`}
+                      <ReservationSelect
+                        ariaLabel={`جنسیت مسافر ${i + 1}`}
                         value={p.sex ?? ''}
-                        onChange={(e) =>
+                        options={[
+                          { value: emptySelectValue, label: 'نامشخص' },
+                          { value: 'MALE', label: 'مرد' },
+                          { value: 'FEMALE', label: 'زن' },
+                        ]}
+                        onValueChange={(sex) =>
                           update({
                             ...draft,
                             passengers: draft.passengers.map((v, j) =>
                               j === i
                                 ? {
                                     ...v,
-                                    sex: e.target.value as
-                                      'MALE' | 'FEMALE' | '',
+                                    sex: sex as 'MALE' | 'FEMALE' | '',
                                   }
                                 : v,
                             ),
                           })
                         }
-                      >
-                        <option value="">نامشخص</option>
-                        <option value="MALE">مرد</option>
-                        <option value="FEMALE">زن</option>
-                      </select>
+                      />
                     </td>
                     <td>
                       <DatePicker

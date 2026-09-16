@@ -206,29 +206,45 @@ export function ReservationContractEditor({
   return (
     <div className={styles.editor} dir="rtl">
       <header className={styles.header}>
-        <span>اصلاح قرارداد</span>
-        <strong>{contractNumber}</strong>
-        <small>نسخه عملیاتی {intake?.workflow.version ?? '—'}</small>
+        <div className={styles.headerCopy}>
+          <span className={styles.eyebrow}>فرم اصلاح رزواسیون</span>
+          <div className={styles.titleLine}>
+            <h2>اصلاح قرارداد</h2>
+            <strong>{contractNumber}</strong>
+          </div>
+        </div>
+        <span className={styles.versionBadge}>
+          نسخهٔ عملیاتی {intake?.workflow.version ?? '—'}
+        </span>
       </header>
       <nav
         className={styles.tabs}
         aria-label="بخش‌های اصلاح قرارداد"
         role="tablist"
       >
-        {sections.map((section) => (
+        {sections.map((section, index) => (
           <button
             key={section}
             type="button"
             role="tab"
             aria-selected={active === section}
-            className={active === section ? styles.activeTab : undefined}
+            className={`${styles.tab} ${
+              active === section ? styles.activeTab : ''
+            }`}
             onClick={() => setActive(section)}
           >
-            {section}
+            <span className={styles.tabNumber}>
+              {String(index + 1).padStart(2, '0')}
+            </span>
+            <span>{section}</span>
           </button>
         ))}
       </nav>
-      <section className={styles.content} role="tabpanel">
+      <section className={styles.content} role="tabpanel" aria-label={active}>
+        <div className={styles.contentHeading}>
+          <span>بخش فعال</span>
+          <strong>{active}</strong>
+        </div>
         {error && (
           <p role="alert" className="text-destructive">
             {error}
