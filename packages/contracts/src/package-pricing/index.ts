@@ -303,8 +303,11 @@ export interface PackageTourDraftSaveV1 {
   batchId: string;
   currencyCode: string;
   adultFlightSale: string;
+  adultFlightSaleCurrencyCode?: string;
   childFlightSale: string;
+  childFlightSaleCurrencyCode?: string;
   businessUplift: string;
+  businessUpliftCurrencyCode?: string;
   commissionPercent: string;
   adjustments: readonly PackageTourDraftAdjustmentV1[];
 }
@@ -337,8 +340,11 @@ export interface PackageTourPublicationV1 {
   tourVersion: number;
   currencyCode: string;
   adultFlightSale: string;
+  adultFlightSaleCurrencyCode?: string;
   childFlightSale: string;
+  childFlightSaleCurrencyCode?: string;
   businessUplift: string;
+  businessUpliftCurrencyCode?: string;
   commissionPercent: string;
   outboundCostRevisionId: string;
   returnCostRevisionId: string | null;

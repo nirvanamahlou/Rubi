@@ -4557,8 +4557,11 @@ model PackagePricingTourDraft {
   version            Int                                 @default(1)
   currencyCode       String                              @db.VarChar(3)
   adultFlightSale    Decimal                             @db.Decimal(24, 4)
+  adultFlightSaleCurrencyCode String                       @default("IRR") @db.VarChar(3)
   childFlightSale    Decimal                             @db.Decimal(24, 4)
+  childFlightSaleCurrencyCode String                       @default("IRR") @db.VarChar(3)
   businessUplift     Decimal                             @db.Decimal(24, 4)
+  businessUpliftCurrencyCode String                       @default("IRR") @db.VarChar(3)
   commissionPercent  Decimal                             @db.Decimal(10, 4)
   createdByUserId    String                              @db.Uuid
   updatedByUserId    String                              @db.Uuid
@@ -4601,8 +4604,11 @@ model PackagePricingTourPublishedVersion {
   outboundCostRevisionId     String                                @db.Uuid
   returnCostRevisionId       String?                               @db.Uuid
   adultFlightSale            Decimal                               @db.Decimal(24, 4)
+  adultFlightSaleCurrencyCode String                               @default("IRR") @db.VarChar(3)
   childFlightSale            Decimal                               @db.Decimal(24, 4)
+  childFlightSaleCurrencyCode String                               @default("IRR") @db.VarChar(3)
   businessUplift             Decimal                               @db.Decimal(24, 4)
+  businessUpliftCurrencyCode String                               @default("IRR") @db.VarChar(3)
   commissionPercent          Decimal                               @db.Decimal(10, 4)
   currencyCode               String                                @db.VarChar(3)
   publishedByUserId          String                                @db.Uuid
