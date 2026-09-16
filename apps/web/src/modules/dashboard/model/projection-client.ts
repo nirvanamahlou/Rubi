@@ -23,6 +23,11 @@ export interface DashboardComparisonSnapshot {
   direction: 'up' | 'down' | 'flat';
 }
 
+export interface DashboardCurrencyComparisonSnapshot
+  extends DashboardComparisonSnapshot {
+  currencyCode: string;
+}
+
 export interface DashboardTrendSnapshot {
   labels: readonly string[];
   values: readonly number[];
@@ -39,6 +44,7 @@ export interface DashboardMetricSnapshot {
   unit: string;
   detail: string;
   comparison?: DashboardComparisonSnapshot;
+  comparisonSeries?: readonly DashboardCurrencyComparisonSnapshot[];
   trend?: DashboardTrendSnapshot;
 }
 

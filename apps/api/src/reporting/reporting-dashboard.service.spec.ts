@@ -178,6 +178,12 @@ describe('dashboard travel projection date boundaries', () => {
         expect.objectContaining({ currencyCode: 'USD' }),
       ]),
     );
+    expect(result.metrics['gross-sales']?.comparisonSeries).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ currencyCode: 'IRR', direction: 'flat' }),
+        expect.objectContaining({ currencyCode: 'USD', direction: 'flat' }),
+      ]),
+    );
     expect(result.metrics).not.toHaveProperty('account-balance');
     expect(result.visuals['executive-sales-by-service']?.values).toEqual([
       12_000_000,

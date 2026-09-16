@@ -520,20 +520,25 @@ export class ReportingService {
       metricIds.flatMap((id) => {
         const amount = amountMetrics[id];
         if (amount) {
-          const comparisonCurrency =
-            currencies.length === 1 ? currencies[0] : undefined;
-          const currentRows = comparisonCurrency
-            ? facts.filter(
-                (fact) => fact.currencyCode === comparisonCurrency,
-              )
+          const comparisonSeries = previousFacts
+            ? currencies.map((currencyCode) => ({
+                currencyCode,
+                ...comparisonFor(
+                  amount(
+                    facts.filter(
+                      (fact) => fact.currencyCode === currencyCode,
+                    ),
+                  ),
+                  amount(
+                    previousFacts.filter(
+                      (fact) => fact.currencyCode === currencyCode,
+                    ),
+                  ),
+                ),
+              }))
             : [];
-          const previousRows = comparisonCurrency
-            ? (previousFacts ?? []).filter(
-                (fact) => fact.currencyCode === comparisonCurrency,
-              )
-            : [];
-          const currentAmount = comparisonCurrency ? amount(currentRows) : 0;
-          const previousAmount = comparisonCurrency ? amount(previousRows) : 0;
+          const comparison =
+            comparisonSeries.length === 1 ? comparisonSeries[0] : undefined;
           const trend =
             periodStart && periodDuration > 0
               ? currencyTrendFor(facts, amount)
@@ -550,14 +555,8 @@ export class ReportingService {
                   .join(' · '),
                 unit: 'ارزها مستقل',
                 detail: `${facts.length.toLocaleString('fa-IR')} قلم سفر دمو، بدون تبدیل ارز یا تکثیر مبلغ`,
-                ...(comparisonCurrency && previousFacts
-                  ? {
-                      comparison: comparisonFor(
-                        currentAmount,
-                        previousAmount,
-                      ),
-                    }
-                  : {}),
+                ...(comparison ? { comparison } : {}),
+                ...(comparisonSeries.length ? { comparisonSeries } : {}),
                 ...(trend ? { trend } : {}),
               },
             ],

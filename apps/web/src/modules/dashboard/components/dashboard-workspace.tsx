@@ -84,6 +84,7 @@ import { reportCatalog } from '@/modules/reports/model/reporting';
 import {
   dashboardProjectionClient,
   type DashboardComparisonSnapshot,
+  type DashboardCurrencyComparisonSnapshot,
   type DashboardFilterOptions,
   type DashboardMetricSnapshot,
   type DashboardTrendSnapshot,
@@ -444,14 +445,25 @@ function kpiVisualFor(definition: DashboardKpiDefinition): KpiVisual {
   );
 }
 
-const chartPalette = [
+const comparisonRankPalette = [
+  '#172554',
   '#1e3a8a',
-  '#2563eb',
-  '#0f766e',
-  '#7c3aed',
-  '#d97706',
-  '#e11d48',
+  '#1d4ed8',
+  '#3b82f6',
+  '#93c5fd',
+  '#dbeafe',
 ] as const;
+
+function comparisonRankColor(rank: number, count: number) {
+  const paletteIndex =
+    count <= 1
+      ? 0
+      : Math.round(
+          (Math.min(rank, count - 1) / (count - 1)) *
+            (comparisonRankPalette.length - 1),
+        );
+  return comparisonRankPalette[paletteIndex] ?? comparisonRankPalette[0]!;
+}
 
 function compactChartValue(value: number) {
   return Intl.NumberFormat('fa-IR', {
@@ -724,9 +736,11 @@ function MiniTrend({
 
 function GrowthIndicator({
   comparison,
+  currencyCode,
   role = 'diagnostic',
 }: {
   comparison: DashboardComparisonSnapshot;
+  currencyCode?: string | undefined;
   role?: DashboardKpiRole;
 }) {
   const favorable =
@@ -759,10 +773,48 @@ function GrowthIndicator({
         favorable === null &&
           'bg-blue-50 text-blue-700 dark:bg-blue-950/45 dark:text-blue-200',
       )}
-      title={`${comparison.label} · مقدار قبلی ${comparison.previousValue.toLocaleString('fa-IR')}`}
+      title={`${currencyCode ? `${currencyNames[currencyCode] ?? currencyCode} · ` : ''}${comparison.label} · مقدار قبلی ${comparison.previousValue.toLocaleString('fa-IR')}`}
     >
       <Icon aria-hidden="true" className="size-3.5" />
+      {currencyCode ? (
+        <bdi dir="ltr" className="font-black">
+          {currencySymbols[currencyCode] ?? currencyCode}
+        </bdi>
+      ) : null}
       <span>{value}</span>
+    </span>
+  );
+}
+
+function KpiComparisonBadges({
+  comparison,
+  comparisonSeries,
+  role,
+}: {
+  comparison?: DashboardComparisonSnapshot | undefined;
+  comparisonSeries?: readonly DashboardCurrencyComparisonSnapshot[] | undefined;
+  role: DashboardKpiRole;
+}) {
+  const entries = comparisonSeries?.length
+    ? comparisonSeries
+    : comparison
+      ? [{ ...comparison, currencyCode: '' }]
+      : [];
+  if (!entries.length) return null;
+
+  return (
+    <span
+      aria-label="مقایسه با دوره قبل"
+      className="flex max-w-[58%] flex-wrap justify-end gap-1"
+    >
+      {entries.map(({ currencyCode, ...entry }) => (
+        <GrowthIndicator
+          comparison={entry}
+          currencyCode={currencyCode || undefined}
+          key={currencyCode || 'default'}
+          role={role}
+        />
+      ))}
     </span>
   );
 }
@@ -819,8 +871,12 @@ function KpiCard({
             {definition.title}
           </span>
         </span>
-        {metric?.comparison ? (
-          <GrowthIndicator comparison={metric.comparison} role={definition.role} />
+        {metric ? (
+          <KpiComparisonBadges
+            comparison={metric.comparison}
+            comparisonSeries={metric.comparisonSeries}
+            role={definition.role}
+          />
         ) : null}
       </span>
       <span className="relative block text-center">
@@ -1553,13 +1609,22 @@ function DashboardChart({
   }
 
   if (resolvedKind === 'donut') {
+    const colorByIndex = new Map(
+      values
+        .map((value, index) => ({ index, value }))
+        .sort((left, right) => right.value - left.value)
+        .map(({ index }, rank, rankedValues) => [
+          index,
+          comparisonRankColor(rank, rankedValues.length),
+        ]),
+    );
     const segments = values.map((value, index) => {
       const start =
         (values.slice(0, index).reduce((sum, item) => sum + item, 0) /
           total) *
         100;
       const end = start + (value / total) * 100;
-      return `${chartPalette[index % chartPalette.length]} ${start}% ${end}%`;
+      return `${colorByIndex.get(index) ?? comparisonRankColor(index, values.length)} ${start}% ${end}%`;
     });
     return (
       <figure
@@ -1580,7 +1645,14 @@ function DashboardChart({
           {values.map((value, index) => (
             <li className="rounded-lg border border-border/70 bg-surface px-2.5 py-2 text-xs" key={`${labels[index]}-${index}`}>
               <span className="flex items-center gap-2">
-                <span className="size-3 shrink-0 rounded-sm" style={{ backgroundColor: chartPalette[index % chartPalette.length] }} />
+                <span
+                  className="size-3 shrink-0 rounded-sm"
+                  style={{
+                    backgroundColor:
+                      colorByIndex.get(index) ??
+                      comparisonRankColor(index, values.length),
+                  }}
+                />
                 <span className="min-w-0 flex-1 truncate font-semibold">{labels[index]}</span>
                 <span className="font-black tabular-nums">{Math.round((value / total) * 100).toLocaleString('fa-IR')}٪</span>
               </span>
@@ -1628,9 +1700,9 @@ function DashboardChart({
             <span className="truncate text-[11px] font-bold" title={label}>{label}</span>
             <span className="relative block h-5 overflow-hidden rounded-md bg-slate-200/80 dark:bg-slate-700/80">
               <span
-                className="absolute inset-y-0 start-0 rounded-md bg-gradient-to-l from-indigo-500 to-blue-800"
+                className="absolute inset-y-0 start-0 rounded-md"
                 style={{
-                  opacity: Math.max(0.45, 1 - rank * 0.06),
+                  background: `linear-gradient(to left, ${comparisonRankColor(rank, rankedRows.length)}, ${comparisonRankColor(Math.min(rank + 1, rankedRows.length - 1), rankedRows.length)})`,
                   width: `${Math.max(2, (value / maximum) * 100)}%`,
                 }}
               />

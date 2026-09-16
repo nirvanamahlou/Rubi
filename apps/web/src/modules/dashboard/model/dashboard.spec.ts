@@ -544,6 +544,8 @@ describe('dashboard permission and data states', () => {
     expect(source).toContain('EmployeePerformanceBars');
     expect(source).toContain('MiniTrend');
     expect(source).toContain('GrowthIndicator');
+    expect(source).toContain('KpiComparisonBadges');
+    expect(source).toContain('comparisonSeries={metric.comparisonSeries}');
     expect(source).toContain('justify-between');
     expect(source).toContain('linearGradient');
     expect(source).toContain('stopOpacity="0.32"');
@@ -611,6 +613,8 @@ describe('dashboard permission and data states', () => {
     expect(source).toContain('dashboardVisualKindForData');
     expect(source).toContain('<polyline');
     expect(source).toContain('conic-gradient');
+    expect(source).toContain('comparisonRankPalette');
+    expect(source).toContain('comparisonRankColor');
     expect(source).toContain('میانگین روند');
     expect(source).toContain('rankedRows');
     expect(source).toContain('جمع نمایش‌داده‌شده');

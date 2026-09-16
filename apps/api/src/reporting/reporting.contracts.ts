@@ -211,6 +211,7 @@ export interface DashboardProjectionV1 {
         unit: string;
         detail: string;
         comparison?: DashboardComparisonV1;
+        comparisonSeries?: readonly DashboardCurrencyComparisonV1[];
         trend?: DashboardTrendV1;
       }
     >
@@ -234,6 +235,12 @@ export interface DashboardComparisonV1 {
   previousValue: number;
   deltaPercent: number | null;
   direction: 'up' | 'down' | 'flat';
+}
+
+/** Per-currency comparison for monetary KPIs. Each entry keeps its own
+ * denominator and deliberately never represents an FX-converted total. */
+export interface DashboardCurrencyComparisonV1 extends DashboardComparisonV1 {
+  currencyCode: string;
 }
 
 export interface DashboardTrendV1 {
