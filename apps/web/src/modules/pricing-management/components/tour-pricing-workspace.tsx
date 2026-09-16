@@ -15,7 +15,7 @@ import {
   Plane,
   RefreshCw,
 } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/form-controls';
 import {
@@ -54,6 +54,7 @@ const currencyOptions = ['IRR', 'USD', 'EUR', 'AED', 'TRY'] as const;
 export function TourPricingWorkspace() {
   const [session, setSession] = useState<LoginResponse | null>(null);
   const [tours, setTours] = useState<readonly TourDepartureV1[]>([]);
+  const [tourPackageId, setTourPackageId] = useState('');
   const [tourId, setTourId] = useState('');
   const [grid, setGrid] = useState<PackageTourCostGridV1 | null>(null);
   const [batchId, setBatchId] = useState('');
@@ -151,7 +152,12 @@ export function TourPricingWorkspace() {
     }
   }
 
-  async function selectTour(id: string) {
+  function selectTourPackage(id: string) {
+    setTourPackageId(id);
+    void selectDeparture('');
+  }
+
+  async function selectDeparture(id: string) {
     setTourId(id);
     setGrid(null);
     setBatchId('');
@@ -179,6 +185,17 @@ export function TourPricingWorkspace() {
       setLoadingCosts(false);
     }
   }
+
+  const tourPackages = useMemo(
+    () =>
+      Array.from(
+        new Map(tours.map((item) => [item.package.id, item.package])).values(),
+      ),
+    [tours],
+  );
+  const departuresForPackage = tours.filter(
+    (item) => item.package.id === tourPackageId,
+  );
 
   const batch: PackageTourHotelPurchaseBatchV1 | undefined =
     grid?.purchaseBatches.find((item) => item.id === batchId);
@@ -307,11 +324,12 @@ export function TourPricingWorkspace() {
         description="قیمت خرید هتل‌های همان نوبت تور را ببینید، قیمت فروش هر گزینه هتل و پرواز را تنظیم کنید و نسخه قیمت را برای انتشار آماده کنید."
       />
       {notice ? <Alert title="وضعیت قیمت‌گذاری" description={notice} /> : null}
-      <div className="grid gap-3 md:grid-cols-3">
+      <div className="grid gap-3 md:grid-cols-4">
         {[
-          ['۱', 'نوبت تور', 'هتل‌ها، تاریخ سفر و ظرفیت از تعریف بلیت'],
-          ['۲', 'جدول خرید هتل', 'نرخ هر اتاق/شب و کارگزار از رزرواسیون'],
-          ['۳', 'قیمت فروش و انتشار', 'افزایش/کاهش، پرواز، بیزینس و کمیسیون'],
+          ['۱', 'تور', 'ابتدا تور موردنظر را انتخاب کنید'],
+          ['۲', 'نوبت تور', 'تاریخ سفر و ظرفیت از تعریف بلیت'],
+          ['۳', 'جدول خرید هتل', 'نرخ هر اتاق/شب و کارگزار از رزرواسیون'],
+          ['۴', 'قیمت فروش و انتشار', 'افزایش/کاهش، پرواز، بیزینس و کمیسیون'],
         ].map(([number, title, description]) => (
           <Card className="flex items-start gap-3 p-4" key={number}>
             <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary/10 text-sm font-black text-primary">
@@ -330,9 +348,10 @@ export function TourPricingWorkspace() {
       <Card className="grid gap-4 p-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h2 className="text-lg font-black">۱ · نوبت تور</h2>
+            <h2 className="text-lg font-black">۱ · انتخاب تور و نوبت</h2>
             <p className="text-sm text-muted-foreground">
-              فقط نوبت‌های تور شعبه‌های مجاز شما نمایش داده می‌شوند.
+              ابتدا تور را انتخاب کنید؛ سپس فقط نوبت‌های همان تور نمایش داده
+              می‌شوند.
             </p>
           </div>
           <Button
@@ -358,22 +377,46 @@ export function TourPricingWorkspace() {
           />
         ) : null}
         {!loadingTours && !error && tours.length > 0 ? (
-          <label className="grid max-w-2xl gap-2 text-sm font-bold">
-            نوبت تور
-            <select
-              className="h-11 rounded-xl border border-input bg-surface px-3 text-sm"
-              onChange={(event) => void selectTour(event.target.value)}
-              value={tourId}
-            >
-              <option value="">انتخاب نوبت تور</option>
-              {tours.map((tour) => (
-                <option key={tour.id} value={tour.id}>
-                  {tour.package.name} · {tour.startsOn} تا {tour.endsOn} · ظرفیت{' '}
-                  {tour.remainingCapacity}
+          <div className="grid max-w-4xl gap-3 sm:grid-cols-2">
+            <label className="grid gap-2 text-sm font-bold">
+              تور
+              <select
+                aria-label="انتخاب تور برای قیمت‌گذاری"
+                className="h-11 rounded-xl border border-input bg-surface px-3 text-sm"
+                onChange={(event) => selectTourPackage(event.target.value)}
+                value={tourPackageId}
+              >
+                <option value="">انتخاب تور</option>
+                {tourPackages.map((tourPackage) => (
+                  <option key={tourPackage.id} value={tourPackage.id}>
+                    {tourPackage.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="grid gap-2 text-sm font-bold">
+              نوبت تور
+              <select
+                aria-label="انتخاب نوبت تور برای قیمت‌گذاری"
+                className="h-11 rounded-xl border border-input bg-surface px-3 text-sm"
+                disabled={!tourPackageId}
+                onChange={(event) => void selectDeparture(event.target.value)}
+                value={tourId}
+              >
+                <option value="">
+                  {tourPackageId
+                    ? 'انتخاب نوبت تور'
+                    : 'ابتدا تور را انتخاب کنید'}
                 </option>
-              ))}
-            </select>
-          </label>
+                {departuresForPackage.map((tour) => (
+                  <option key={tour.id} value={tour.id}>
+                    {tour.startsOn} تا {tour.endsOn} · ظرفیت{' '}
+                    {tour.remainingCapacity}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
         ) : null}
         {grid ? (
           <div className="flex flex-wrap gap-2">
@@ -388,7 +431,7 @@ export function TourPricingWorkspace() {
       <Card className="grid gap-4 p-5">
         <div className="flex items-center gap-2">
           <Hotel className="size-5 text-primary" />
-          <h2 className="text-lg font-black">۲ · قیمت خرید هتل‌های تور</h2>
+          <h2 className="text-lg font-black">۳ · قیمت خرید هتل‌های تور</h2>
         </div>
         {!tourId ? (
           <p className="text-sm text-muted-foreground">
@@ -583,7 +626,7 @@ export function TourPricingWorkspace() {
         <div className="flex items-center gap-2">
           <Banknote className="size-5 text-primary" />
           <h2 className="text-lg font-black">
-            ۳ · پرواز، بیزینس، کمیسیون و انتشار
+            ۴ · پرواز، بیزینس، کمیسیون و انتشار
           </h2>
         </div>
         {grid ? (
