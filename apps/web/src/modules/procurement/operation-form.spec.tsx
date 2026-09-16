@@ -42,7 +42,7 @@ const bootstrap = (permissions: Bootstrap['permissions']): Bootstrap => ({
   requester: null,
   policy: 'CONFIGURED',
   finance: 'CONNECTED',
-  documents: 'CONNECTED',
+  documents: 'AVAILABLE',
   travel: 'NOT_CONNECTED',
 });
 

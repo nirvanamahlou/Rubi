@@ -40,7 +40,16 @@ if (!['127.0.0.1', 'localhost', '::1'].includes(target.hostname)) {
 
 const client = new Client({ connectionString: process.env.DATABASE_URL });
 const text = (value) => String(value ?? '');
-const draftFor = ({ branchId, title, category, amount, kind, quantity, unit, requiredAt }) => ({
+const draftFor = ({
+  branchId,
+  title,
+  category,
+  amount,
+  kind,
+  quantity,
+  unit,
+  requiredAt,
+}) => ({
   branchId,
   title,
   category,
@@ -61,7 +70,8 @@ const draftFor = ({ branchId, title, category, amount, kind, quantity, unit, req
       description: title,
       quantity,
       unit,
-      acceptanceCriteria: kind === 'SERVICE' ? 'تأیید نتیجه توسط واحد درخواست‌کننده' : '',
+      acceptanceCriteria:
+        kind === 'SERVICE' ? 'تأیید نتیجه توسط واحد درخواست‌کننده' : '',
     },
   ],
 });
@@ -171,41 +181,107 @@ async function clearData() {
       [snapshotIds],
     );
   }
-  await client.query('DELETE FROM procurement_outbox WHERE "requestId" = ANY($1::uuid[])', [ids]);
-  await client.query('DELETE FROM procurement_finance_handoff WHERE "requestId" = ANY($1::uuid[])', [ids]);
+  await client.query(
+    'DELETE FROM procurement_outbox WHERE "requestId" = ANY($1::uuid[])',
+    [ids],
+  );
+  await client.query(
+    'DELETE FROM procurement_finance_handoff WHERE "requestId" = ANY($1::uuid[])',
+    [ids],
+  );
   if (invoiceIds.length) {
-    await client.query('DELETE FROM procurement_invoice_match WHERE "invoiceId" = ANY($1::uuid[])', [invoiceIds]);
-    await client.query('DELETE FROM procurement_invoice_item WHERE "invoiceId" = ANY($1::uuid[])', [invoiceIds]);
-    await client.query('DELETE FROM procurement_invoice WHERE id = ANY($1::uuid[])', [invoiceIds]);
+    await client.query(
+      'DELETE FROM procurement_invoice_match WHERE "invoiceId" = ANY($1::uuid[])',
+      [invoiceIds],
+    );
+    await client.query(
+      'DELETE FROM procurement_invoice_item WHERE "invoiceId" = ANY($1::uuid[])',
+      [invoiceIds],
+    );
+    await client.query(
+      'DELETE FROM procurement_invoice WHERE id = ANY($1::uuid[])',
+      [invoiceIds],
+    );
   }
   if (receiptItemIds.length)
-    await client.query('DELETE FROM procurement_return WHERE "receiptItemId" = ANY($1::uuid[])', [receiptItemIds]);
-  await client.query('DELETE FROM procurement_discrepancy WHERE "requestId" = ANY($1::uuid[])', [ids]);
-  await client.query('DELETE FROM procurement_service_acceptance WHERE "requestId" = ANY($1::uuid[])', [ids]);
-  await client.query('DELETE FROM procurement_receipt_adjustment WHERE "requestId" = ANY($1::uuid[])', [ids]);
+    await client.query(
+      'DELETE FROM procurement_return WHERE "receiptItemId" = ANY($1::uuid[])',
+      [receiptItemIds],
+    );
+  await client.query(
+    'DELETE FROM procurement_discrepancy WHERE "requestId" = ANY($1::uuid[])',
+    [ids],
+  );
+  await client.query(
+    'DELETE FROM procurement_service_acceptance WHERE "requestId" = ANY($1::uuid[])',
+    [ids],
+  );
+  await client.query(
+    'DELETE FROM procurement_receipt_adjustment WHERE "requestId" = ANY($1::uuid[])',
+    [ids],
+  );
   if (receiptIds.length)
-    await client.query('DELETE FROM procurement_receipt_item WHERE "receiptId" = ANY($1::uuid[])', [receiptIds]);
+    await client.query(
+      'DELETE FROM procurement_receipt_item WHERE "receiptId" = ANY($1::uuid[])',
+      [receiptIds],
+    );
   if (orderIds.length) {
-    await client.query('DELETE FROM procurement_receipt WHERE "orderId" = ANY($1::uuid[])', [orderIds]);
-    await client.query('DELETE FROM procurement_order_item WHERE "orderId" = ANY($1::uuid[])', [orderIds]);
-    await client.query('DELETE FROM procurement_order_version WHERE "orderId" = ANY($1::uuid[])', [orderIds]);
-    await client.query('DELETE FROM procurement_order WHERE id = ANY($1::uuid[])', [orderIds]);
+    await client.query(
+      'DELETE FROM procurement_receipt WHERE "orderId" = ANY($1::uuid[])',
+      [orderIds],
+    );
+    await client.query(
+      'DELETE FROM procurement_order_item WHERE "orderId" = ANY($1::uuid[])',
+      [orderIds],
+    );
+    await client.query(
+      'DELETE FROM procurement_order_version WHERE "orderId" = ANY($1::uuid[])',
+      [orderIds],
+    );
+    await client.query(
+      'DELETE FROM procurement_order WHERE id = ANY($1::uuid[])',
+      [orderIds],
+    );
   }
   const quotations = await client.query(
     'SELECT id FROM procurement_quotation WHERE "requestId" = ANY($1::uuid[])',
     [ids],
   );
   const quotationIds = quotations.rows.map((row) => row.id);
-  await client.query('DELETE FROM procurement_selection WHERE "requestId" = ANY($1::uuid[])', [ids]);
+  await client.query(
+    'DELETE FROM procurement_selection WHERE "requestId" = ANY($1::uuid[])',
+    [ids],
+  );
   if (quotationIds.length)
-    await client.query('DELETE FROM procurement_quotation_item WHERE "quotationId" = ANY($1::uuid[])', [quotationIds]);
-  await client.query('DELETE FROM procurement_quotation WHERE "requestId" = ANY($1::uuid[])', [ids]);
+    await client.query(
+      'DELETE FROM procurement_quotation_item WHERE "quotationId" = ANY($1::uuid[])',
+      [quotationIds],
+    );
+  await client.query(
+    'DELETE FROM procurement_quotation WHERE "requestId" = ANY($1::uuid[])',
+    [ids],
+  );
   if (snapshotIds.length)
-    await client.query('DELETE FROM procurement_approval_snapshot WHERE id = ANY($1::uuid[])', [snapshotIds]);
-  await client.query('DELETE FROM procurement_audit WHERE "requestId" = ANY($1::uuid[])', [ids]);
-  await client.query('DELETE FROM procurement_request_version WHERE "requestId" = ANY($1::uuid[])', [ids]);
-  await client.query('DELETE FROM procurement_request_item WHERE "requestId" = ANY($1::uuid[])', [ids]);
-  await client.query('DELETE FROM procurement_request WHERE id = ANY($1::uuid[])', [ids]);
+    await client.query(
+      'DELETE FROM procurement_approval_snapshot WHERE id = ANY($1::uuid[])',
+      [snapshotIds],
+    );
+  await client.query(
+    'DELETE FROM procurement_audit WHERE "requestId" = ANY($1::uuid[])',
+    [ids],
+  );
+  await client.query(
+    'DELETE FROM procurement_request_version WHERE "requestId" = ANY($1::uuid[])',
+    [ids],
+  );
+  await client.query(
+    'DELETE FROM procurement_request_item WHERE "requestId" = ANY($1::uuid[])',
+    [ids],
+  );
+  await client.query(
+    'DELETE FROM procurement_request WHERE id = ANY($1::uuid[])',
+    [ids],
+  );
   return ids.length;
 }
 
@@ -228,7 +304,9 @@ async function addScenario(index, scenario, seed) {
   const requestItemId = randomUUID();
   const versionId = randomUUID();
   const quotedAt = new Date(Date.now() - (12 + index) * 86_400_000);
-  const requiredAt = new Date(Date.now() + (7 + index) * 86_400_000).toISOString();
+  const requiredAt = new Date(
+    Date.now() + (7 + index) * 86_400_000,
+  ).toISOString();
   const draft = draftFor({ ...scenario, branchId: seed.branchId, requiredAt });
   draft.items[0].id = requestItemId;
   const requestNumber = `PR-1405-${String(901 + index).padStart(3, '0')}`;
@@ -236,12 +314,31 @@ async function addScenario(index, scenario, seed) {
   await client.query(
     `INSERT INTO procurement_request (id, "branchId", "requesterUserId", "ownerUserId", number, status, version, title, category, priority, urgent, "requiredAt", "estimatedAmount", "currencyCode", data, "updatedAt")
      VALUES ($1,$2,$3,$3,$4,'SOURCING',1,$5,$6,'NORMAL',FALSE,$7,$8,'IRR',$9::jsonb,NOW())`,
-    [requestId, seed.branchId, seed.userId, requestNumber, scenario.title, scenario.category, requiredAt, total, JSON.stringify(draft)],
+    [
+      requestId,
+      seed.branchId,
+      seed.userId,
+      requestNumber,
+      scenario.title,
+      scenario.category,
+      requiredAt,
+      total,
+      JSON.stringify(draft),
+    ],
   );
   await client.query(
     `INSERT INTO procurement_request_item (id, "requestId", kind, description, quantity, unit, "acceptanceCriteria", data, "updatedAt")
      VALUES ($1,$2,$3,$4,$5,$6,$7,$8::jsonb,NOW())`,
-    [requestItemId, requestId, scenario.kind, scenario.title, scenario.quantity, scenario.unit, draft.items[0].acceptanceCriteria || null, JSON.stringify(draft.items[0])],
+    [
+      requestItemId,
+      requestId,
+      scenario.kind,
+      scenario.title,
+      scenario.quantity,
+      scenario.unit,
+      draft.items[0].acceptanceCriteria || null,
+      JSON.stringify(draft.items[0]),
+    ],
   );
   await client.query(
     `INSERT INTO procurement_request_version (id, "requestId", version, payload, "createdByUserId")
@@ -252,18 +349,52 @@ async function addScenario(index, scenario, seed) {
   await client.query(
     `INSERT INTO procurement_quotation (id, "requestId", "supplierId", reference, "currencyCode", "totalAmount", "validUntil", status, data, "updatedAt")
      VALUES ($1,$2,$3,$4,'IRR',$5,$6,'VALID',$7::jsonb,NOW())`,
-    [quotationId, requestId, seed.supplierId, `QT-1405-${String(index + 1).padStart(3, '0')}`, total, new Date(Date.now() + 30 * 86_400_000), JSON.stringify({ quotedAt: quotedAt.toISOString(), deliveryAt: requiredAt, paymentTerms: 'تسویه پس از تأیید تحویل', warranty: '۱۲ ماه', qualityNote: 'ارزیابی فنی انجام شد.' })],
+    [
+      quotationId,
+      requestId,
+      seed.supplierId,
+      `QT-1405-${String(index + 1).padStart(3, '0')}`,
+      total,
+      new Date(Date.now() + 30 * 86_400_000),
+      JSON.stringify({
+        quotedAt: quotedAt.toISOString(),
+        deliveryAt: requiredAt,
+        paymentTerms: 'تسویه پس از تأیید تحویل',
+        warranty: '۱۲ ماه',
+        qualityNote: 'ارزیابی فنی انجام شد.',
+      }),
+    ],
   );
   await client.query(
     `INSERT INTO procurement_quotation_item (id, "requestId", "quotationId", "requestItemId", quantity, "unitPrice", "taxAmount", "discountAmount", "extraCostAmount", "totalAmount")
      VALUES ($1,$2,$3,$4,$5,$6,0,0,0,$7)`,
-    [randomUUID(), requestId, quotationId, requestItemId, scenario.quantity, scenario.unitPrice, total],
+    [
+      randomUUID(),
+      requestId,
+      quotationId,
+      requestItemId,
+      scenario.quantity,
+      scenario.unitPrice,
+      total,
+    ],
   );
   const selectionId = randomUUID();
   await client.query(
     `INSERT INTO procurement_selection (id, "requestId", "quotationId", "requestVersionId", "selectedByUserId", reason, payload)
      VALUES ($1,$2,$3,$4,$5,'بهترین پیشنهاد واجد شرایط',$6::jsonb)`,
-    [selectionId, requestId, quotationId, versionId, seed.userId, JSON.stringify({ supplierId: seed.supplierId, quotationId, totalAmount: total, currencyCode: 'IRR' })],
+    [
+      selectionId,
+      requestId,
+      quotationId,
+      versionId,
+      seed.userId,
+      JSON.stringify({
+        supplierId: seed.supplierId,
+        quotationId,
+        totalAmount: total,
+        currencyCode: 'IRR',
+      }),
+    ],
   );
   const orderId = randomUUID();
   const orderVersionId = randomUUID();
@@ -272,60 +403,159 @@ async function addScenario(index, scenario, seed) {
   await client.query(
     `INSERT INTO procurement_order (id, "requestId", number, "supplierId", "selectionId", status, version, "currencyCode", "totalAmount", "expectedAt", data, "updatedAt")
      VALUES ($1,$2,$3,$4,$5,'ISSUED',1,'IRR',$6,$7,$8::jsonb,NOW())`,
-    [orderId, requestId, orderNumber, seed.supplierId, selectionId, total, requiredAt, JSON.stringify({ deliveryLocation: 'انبار شعبه مرکزی', paymentTerms: 'تسویه پس از تأیید تحویل', supplier: { id: seed.supplierId, label: 'تأمین تجهیزات پارس' } })],
+    [
+      orderId,
+      requestId,
+      orderNumber,
+      seed.supplierId,
+      selectionId,
+      total,
+      requiredAt,
+      JSON.stringify({
+        deliveryLocation: 'انبار شعبه مرکزی',
+        paymentTerms: 'تسویه پس از تأیید تحویل',
+        supplier: { id: seed.supplierId, label: 'تأمین تجهیزات پارس' },
+      }),
+    ],
   );
   await client.query(
     `INSERT INTO procurement_order_version (id, "orderId", version, payload, "createdByUserId")
      VALUES ($1,$2,1,$3::jsonb,$4)`,
-    [orderVersionId, orderId, JSON.stringify({ number: orderNumber, lines: [{ id: orderItemId, requestItemId, quantity: scenario.quantity, unitPrice: scenario.unitPrice }] }), seed.userId],
+    [
+      orderVersionId,
+      orderId,
+      JSON.stringify({
+        number: orderNumber,
+        lines: [
+          {
+            id: orderItemId,
+            requestItemId,
+            quantity: scenario.quantity,
+            unitPrice: scenario.unitPrice,
+          },
+        ],
+      }),
+      seed.userId,
+    ],
   );
   await client.query(
     `INSERT INTO procurement_order_item (id, "requestId", "orderId", "orderVersionId", "requestItemId", quantity, "unitPrice", "taxAmount", "discountAmount", "extraCostAmount", "totalAmount", data)
      VALUES ($1,$2,$3,$4,$5,$6,$7,0,0,0,$8,$9::jsonb)`,
-    [orderItemId, requestId, orderId, orderVersionId, requestItemId, scenario.quantity, scenario.unitPrice, total, JSON.stringify(draft.items[0])],
+    [
+      orderItemId,
+      requestId,
+      orderId,
+      orderVersionId,
+      requestItemId,
+      scenario.quantity,
+      scenario.unitPrice,
+      total,
+      JSON.stringify(draft.items[0]),
+    ],
   );
 
   let receiptItemId = null;
   if (scenario.kind === 'GOODS') {
     const receiptId = randomUUID();
     receiptItemId = randomUUID();
-    const accepted = scenario.returned ? Number(scenario.quantity) - 1 : Number(scenario.quantity);
+    const accepted = scenario.returned
+      ? Number(scenario.quantity) - 1
+      : Number(scenario.quantity);
     await client.query(
       `INSERT INTO procurement_receipt (id, "requestId", "orderId", "orderVersionId", number, "receivedAt", "receivedByUserId", data)
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8::jsonb)`,
-      [receiptId, requestId, orderId, orderVersionId, `GR-1405-${String(index + 1).padStart(3, '0')}`, new Date(Date.now() - (4 + index) * 86_400_000), seed.userId, JSON.stringify({ location: 'انبار شعبه مرکزی', documents: [] })],
+      [
+        receiptId,
+        requestId,
+        orderId,
+        orderVersionId,
+        `GR-1405-${String(index + 1).padStart(3, '0')}`,
+        new Date(Date.now() - (4 + index) * 86_400_000),
+        seed.userId,
+        JSON.stringify({ location: 'انبار شعبه مرکزی', documents: [] }),
+      ],
     );
     await client.query(
       `INSERT INTO procurement_receipt_item (id, "receiptId", "orderId", "orderVersionId", "orderItemId", quantity, "acceptedQuantity", "rejectedQuantity")
        VALUES ($1,$2,$3,$4,$5,$6,$7,0)`,
-      [receiptItemId, receiptId, orderId, orderVersionId, orderItemId, scenario.quantity, accepted],
+      [
+        receiptItemId,
+        receiptId,
+        orderId,
+        orderVersionId,
+        orderItemId,
+        scenario.quantity,
+        accepted,
+      ],
     );
     if (scenario.adjustment) {
       await client.query(
         `INSERT INTO procurement_receipt_adjustment (id, "requestId", "orderId", "orderVersionId", "receiptItemId", "receivedDelta", "acceptedDelta", "rejectedDelta", reason, "actorUserId", data)
          VALUES ($1,$2,$3,$4,$5,0,1,0,'اصلاح پذیرش پس از کنترل مجدد',$6,$7::jsonb)`,
-        [randomUUID(), requestId, orderId, orderVersionId, receiptItemId, seed.userId, JSON.stringify({ source: 'LOCAL_PROCUREMENT_LIFECYCLE' })],
+        [
+          randomUUID(),
+          requestId,
+          orderId,
+          orderVersionId,
+          receiptItemId,
+          seed.userId,
+          JSON.stringify({ source: 'LOCAL_PROCUREMENT_LIFECYCLE' }),
+        ],
       );
     }
     if (scenario.discrepancy) {
       await client.query(
         `INSERT INTO procurement_discrepancy (id, "requestId", "orderId", "receiptId", kind, status, version, description, resolution, data, "updatedAt")
          VALUES ($1,$2,$3,$4,'DAMAGE','RESOLVED',2,'یک قلم در کنترل اولیه آسیب‌دیده بود.','REPLACE',$5::jsonb,NOW())`,
-        [randomUUID(), requestId, orderId, receiptId, JSON.stringify({ resolutionReason: 'تعویض توسط تأمین‌کننده ثبت شد.', resolvedBy: seed.userId })],
+        [
+          randomUUID(),
+          requestId,
+          orderId,
+          receiptId,
+          JSON.stringify({
+            resolutionReason: 'تعویض توسط تأمین‌کننده ثبت شد.',
+            resolvedBy: seed.userId,
+          }),
+        ],
       );
     }
     if (scenario.returned) {
       await client.query(
         `INSERT INTO procurement_return (id, "requestId", "orderId", "receiptItemId", quantity, reason, "returnedByUserId", "returnedAt", data)
          VALUES ($1,$2,$3,$4,1,'بازگشت قلم ناسازگار با مشخصات',$5,$6,$7::jsonb)`,
-        [randomUUID(), requestId, orderId, receiptItemId, seed.userId, new Date(Date.now() - 2 * 86_400_000), JSON.stringify({ disposition: 'ACCEPTED', financeCorrectionStatus: 'NOT_APPLICABLE' })],
+        [
+          randomUUID(),
+          requestId,
+          orderId,
+          receiptItemId,
+          seed.userId,
+          new Date(Date.now() - 2 * 86_400_000),
+          JSON.stringify({
+            disposition: 'ACCEPTED',
+            financeCorrectionStatus: 'NOT_APPLICABLE',
+          }),
+        ],
       );
     }
   } else {
     await client.query(
       `INSERT INTO procurement_service_acceptance (id, "requestId", "orderId", "orderVersionId", "orderItemId", "acceptedByUserId", "acceptedAt", quantity, "criteriaSnapshot", data)
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9::jsonb,$10::jsonb)`,
-      [randomUUID(), requestId, orderId, orderVersionId, orderItemId, seed.userId, new Date(Date.now() - (3 + index) * 86_400_000), scenario.quantity, JSON.stringify({ criteria: draft.items[0].acceptanceCriteria, evidence: 'خروجی خدمت بررسی و تأیید شد.' }), JSON.stringify({ documents: [] })],
+      [
+        randomUUID(),
+        requestId,
+        orderId,
+        orderVersionId,
+        orderItemId,
+        seed.userId,
+        new Date(Date.now() - (3 + index) * 86_400_000),
+        scenario.quantity,
+        JSON.stringify({
+          criteria: draft.items[0].acceptanceCriteria,
+          evidence: 'خروجی خدمت بررسی و تأیید شد.',
+        }),
+        JSON.stringify({ documents: [] }),
+      ],
     );
   }
 
@@ -334,33 +564,128 @@ async function addScenario(index, scenario, seed) {
     await client.query(
       `INSERT INTO procurement_invoice (id, "requestId", "orderId", "orderVersionId", "supplierId", number, "normalizedNumber", status, version, "currencyCode", "totalAmount", "issuedAt", "dueAt", "issuerLegalEntityId", data, "updatedAt")
        VALUES ($1,$2,$3,$4,$5,$6,$7,'WAITING_FINANCE',1,'IRR',$8,$9,$10,$11,$12::jsonb,NOW())`,
-      [invoiceId, requestId, orderId, orderVersionId, seed.supplierId, `INV-1405-${String(index + 1).padStart(3, '0')}`, `inv-1405-${String(index + 1).padStart(3, '0')}`, total, new Date(Date.now() - 86_400_000), new Date(Date.now() + 20 * 86_400_000), seed.legalEntityId, JSON.stringify({ documents: [], source: 'LOCAL_PROCUREMENT_LIFECYCLE' })],
+      [
+        invoiceId,
+        requestId,
+        orderId,
+        orderVersionId,
+        seed.supplierId,
+        `INV-1405-${String(index + 1).padStart(3, '0')}`,
+        `inv-1405-${String(index + 1).padStart(3, '0')}`,
+        total,
+        new Date(Date.now() - 86_400_000),
+        new Date(Date.now() + 20 * 86_400_000),
+        seed.legalEntityId,
+        JSON.stringify({
+          documents: [],
+          source: 'LOCAL_PROCUREMENT_LIFECYCLE',
+        }),
+      ],
     );
     await client.query(
       `INSERT INTO procurement_invoice_item (id, "invoiceId", "orderId", "orderVersionId", "orderItemId", quantity, "unitPrice", "taxAmount", "discountAmount", "extraCostAmount", "totalAmount")
        VALUES ($1,$2,$3,$4,$5,$6,$7,0,0,0,$8)`,
-      [randomUUID(), invoiceId, orderId, orderVersionId, orderItemId, scenario.quantity, scenario.unitPrice, total],
+      [
+        randomUUID(),
+        invoiceId,
+        orderId,
+        orderVersionId,
+        orderItemId,
+        scenario.quantity,
+        scenario.unitPrice,
+        total,
+      ],
     );
     await client.query(
       `INSERT INTO procurement_invoice_match (id, "invoiceId", "invoiceVersion", "orderId", "orderVersionId", status, "matchedByUserId", payload)
        VALUES ($1,$2,1,$3,$4,'MATCHED',$5,$6::jsonb)`,
-      [randomUUID(), invoiceId, orderId, orderVersionId, seed.userId, JSON.stringify({ matched: true, amount: total, currencyCode: 'IRR' })],
+      [
+        randomUUID(),
+        invoiceId,
+        orderId,
+        orderVersionId,
+        seed.userId,
+        JSON.stringify({ matched: true, amount: total, currencyCode: 'IRR' }),
+      ],
     );
     await client.query(
       `INSERT INTO procurement_finance_handoff (id, "requestId", "invoiceId", "invoiceVersion", "sourceKey", status, version, payload, "updatedAt")
        VALUES ($1,$2,$3,1,$4,'PENDING',1,$5::jsonb,NOW())`,
-      [randomUUID(), requestId, invoiceId, `procurement:local:invoice:${requestNumber}`, JSON.stringify({ contract: 'procurement.finance-source.v1', requestNumber, invoiceNumber: `INV-1405-${String(index + 1).padStart(3, '0')}`, totalAmount: total, currencyCode: 'IRR' })],
+      [
+        randomUUID(),
+        requestId,
+        invoiceId,
+        `procurement:local:invoice:${requestNumber}`,
+        JSON.stringify({
+          contract: 'procurement.finance-source.v1',
+          requestNumber,
+          invoiceNumber: `INV-1405-${String(index + 1).padStart(3, '0')}`,
+          totalAmount: total,
+          currencyCode: 'IRR',
+        }),
+      ],
     );
   }
 }
 
 const scenarios = [
-  { title: 'تجهیزات شبکه شعبه غرب', category: 'تجهیزات فناوری', kind: 'GOODS', quantity: '12', unit: 'عدد', unitPrice: 18500000, invoice: true, discrepancy: true, returned: true },
-  { title: 'پشتیبانی سامانه منابع انسانی', category: 'خدمات فناوری', kind: 'SERVICE', quantity: '1', unit: 'ماه', unitPrice: 96000000, invoice: true },
-  { title: 'رایانه قابل‌حمل واحد فروش', category: 'تجهیزات اداری', kind: 'GOODS', quantity: '6', unit: 'دستگاه', unitPrice: 720000000, invoice: true, adjustment: true },
-  { title: 'تجهیزات کنترل دسترسی ساختمان مرکزی', category: 'ایمنی و امنیت', kind: 'GOODS', quantity: '18', unit: 'عدد', unitPrice: 28600000, invoice: false },
-  { title: 'ملزومات بسته‌بندی اسناد', category: 'ملزومات اداری', kind: 'GOODS', quantity: '40', unit: 'بسته', unitPrice: 4300000, invoice: true },
-  { title: 'بازرسی و سرویس دوره‌ای سرمایش', category: 'خدمات نگهداری', kind: 'SERVICE', quantity: '1', unit: 'خدمت', unitPrice: 148000000, invoice: true },
+  {
+    title: 'تجهیزات شبکه شعبه غرب',
+    category: 'تجهیزات فناوری',
+    kind: 'GOODS',
+    quantity: '12',
+    unit: 'عدد',
+    unitPrice: 18500000,
+    invoice: true,
+    discrepancy: true,
+    returned: true,
+  },
+  {
+    title: 'پشتیبانی سامانه منابع انسانی',
+    category: 'خدمات فناوری',
+    kind: 'SERVICE',
+    quantity: '1',
+    unit: 'ماه',
+    unitPrice: 96000000,
+    invoice: true,
+  },
+  {
+    title: 'رایانه قابل‌حمل واحد فروش',
+    category: 'تجهیزات اداری',
+    kind: 'GOODS',
+    quantity: '6',
+    unit: 'دستگاه',
+    unitPrice: 720000000,
+    invoice: true,
+    adjustment: true,
+  },
+  {
+    title: 'تجهیزات کنترل دسترسی ساختمان مرکزی',
+    category: 'ایمنی و امنیت',
+    kind: 'GOODS',
+    quantity: '18',
+    unit: 'عدد',
+    unitPrice: 28600000,
+    invoice: false,
+  },
+  {
+    title: 'ملزومات بسته‌بندی اسناد',
+    category: 'ملزومات اداری',
+    kind: 'GOODS',
+    quantity: '40',
+    unit: 'بسته',
+    unitPrice: 4300000,
+    invoice: true,
+  },
+  {
+    title: 'بازرسی و سرویس دوره‌ای سرمایش',
+    category: 'خدمات نگهداری',
+    kind: 'SERVICE',
+    quantity: '1',
+    unit: 'خدمت',
+    unitPrice: 148000000,
+    invoice: true,
+  },
 ];
 const localRequestNumbers = scenarios.map(
   (_, index) => `PR-1405-${String(901 + index).padStart(3, '0')}`,
@@ -406,9 +731,12 @@ try {
     } else {
       const actor = await context();
       const seed = { ...actor, ...(await ensureMasterData(actor)) };
-      for (const [index, scenario] of scenarios.entries()) await addScenario(index, scenario, seed);
+      for (const [index, scenario] of scenarios.entries())
+        await addScenario(index, scenario, seed);
       await client.query('COMMIT');
-      console.log(`Created ${scenarios.length} local Procurement lifecycle requests with linked operational records.`);
+      console.log(
+        `Created ${scenarios.length} local Procurement lifecycle requests with linked operational records.`,
+      );
     }
   }
 } catch (error) {
