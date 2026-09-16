@@ -82,6 +82,10 @@ export function TourPricingWorkspace() {
   const [businessIncrease, setBusinessIncrease] = useState('');
   const [businessCurrency, setBusinessCurrency] = useState('IRR');
   const [commission, setCommission] = useState('');
+  const [commissionMode, setCommissionMode] = useState<'percent' | 'fixed'>(
+    'percent',
+  );
+  const [commissionCurrency, setCommissionCurrency] = useState('IRR');
   const [familyAdults, setFamilyAdults] = useState('2');
   const [familyChildren, setFamilyChildren] = useState('0');
   const [draft, setDraft] = useState<PackageTourDraftV1 | null>(null);
@@ -139,7 +143,14 @@ export function TourPricingWorkspace() {
     setChildFlightCurrency(value?.childFlightSaleCurrencyCode ?? 'IRR');
     setBusinessIncrease(value?.businessUplift ?? '');
     setBusinessCurrency(value?.businessUpliftCurrencyCode ?? 'IRR');
-    setCommission(value?.commissionPercent ?? '');
+    const savedCommissionMode = value?.commissionMode ?? 'percent';
+    setCommissionMode(savedCommissionMode);
+    setCommission(
+      savedCommissionMode === 'fixed'
+        ? (value?.commissionAmount ?? '')
+        : (value?.commissionPercent ?? ''),
+    );
+    setCommissionCurrency(value?.commissionCurrencyCode ?? 'IRR');
     setFamilyAdults(String(value?.familyAdults ?? 2));
     setFamilyChildren(String(value?.familyChildren ?? 0));
   }
@@ -255,7 +266,13 @@ export function TourPricingWorkspace() {
         businessCabin:
           grid.tour.outbound.cabinClassCode === 'BUSINESS' ||
           grid.tour.returning?.cabinClassCode === 'BUSINESS',
-        commissionPercent: commission || '0',
+        commissionPercent:
+          commissionMode === 'percent' ? commission || '0' : '0',
+        commissionMode,
+        commissionAmount: {
+          amount: commissionMode === 'fixed' ? commission || '0' : '0',
+          currencyCode: commissionCurrency,
+        },
         flightCosts: grid.missingFlightOfferIds.length
           ? undefined
           : grid.flightPurchaseCosts,
@@ -280,7 +297,14 @@ export function TourPricingWorkspace() {
     childFlightCurrency !== draft.childFlightSaleCurrencyCode ||
     businessIncrease !== draft.businessUplift ||
     businessCurrency !== draft.businessUpliftCurrencyCode ||
-    commission !== draft.commissionPercent ||
+    commissionMode !== (draft.commissionMode ?? 'percent') ||
+    commission !==
+      (commissionMode === 'fixed'
+        ? (draft.commissionAmount ?? '0')
+        : draft.commissionPercent) ||
+    (commissionMode === 'fixed' &&
+      commissionCurrency !==
+        (draft.commissionCurrencyCode ?? draft.currencyCode)) ||
     JSON.stringify(
       Object.entries(adjustments).sort(([a], [b]) => a.localeCompare(b)),
     ) !==
@@ -315,7 +339,12 @@ export function TourPricingWorkspace() {
           childFlightSaleCurrencyCode: childFlightCurrency,
           businessUplift: businessIncrease || '0',
           businessUpliftCurrencyCode: businessCurrency,
-          commissionPercent: commission || '0',
+          commissionPercent:
+            commissionMode === 'percent' ? commission || '0' : '0',
+          commissionMode,
+          commissionAmount:
+            commissionMode === 'fixed' ? commission || '0' : '0',
+          commissionCurrencyCode: commissionCurrency,
           familyAdults: Number(familyAdults),
           familyChildren: Number(familyChildren),
           adjustments: batch.rows
@@ -792,19 +821,57 @@ export function TourPricingWorkspace() {
               </select>
             </div>
           </label>
-          <label className="grid gap-2 text-sm font-bold">
-            کمیسیون (٪)
-            <Input
-              inputMode="decimal"
-              onChange={(event) => setCommission(event.target.value)}
-              placeholder="0"
-              value={commission}
-            />
-          </label>
+          <div className="grid gap-2 text-sm font-bold">
+            <span>کمیسیون</span>
+            <div className="flex gap-2">
+              <select
+                aria-label="نوع کمیسیون"
+                className="h-11 rounded-xl border border-input bg-surface px-3"
+                value={commissionMode}
+                onChange={(event) => {
+                  setCommissionMode(event.target.value as 'percent' | 'fixed');
+                  setCommission('');
+                }}
+              >
+                <option value="percent">درصدی</option>
+                <option value="fixed">مبلغ ثابت</option>
+              </select>
+              <Input
+                aria-label={
+                  commissionMode === 'percent'
+                    ? 'درصد کمیسیون'
+                    : 'مبلغ ثابت کمیسیون'
+                }
+                className="min-w-0 flex-1"
+                inputMode="decimal"
+                onChange={(event) => setCommission(event.target.value)}
+                placeholder="0"
+                value={commission}
+              />
+              {commissionMode === 'fixed' ? (
+                <select
+                  aria-label="ارز مبلغ ثابت کمیسیون"
+                  className="h-11 rounded-xl border border-input bg-surface px-3"
+                  value={commissionCurrency}
+                  onChange={(event) =>
+                    setCommissionCurrency(event.target.value)
+                  }
+                >
+                  {currencyOptions.map((code) => (
+                    <option key={code}>{code}</option>
+                  ))}
+                </select>
+              ) : (
+                <span className="flex h-11 items-center rounded-xl border border-input px-3">
+                  ٪
+                </span>
+              )}
+            </div>
+          </div>
         </div>
         <Alert
           title="مبنای انتشار قیمت پکیج"
-          description="قیمت پرواز، مجموع رفت‌وبرگشت برای هر مسافر است. پکیج به ازای کل مسافران هر اتاق محاسبه می‌شود؛ ارزهای متفاوت به شکل مبلغ + مبلغ نمایش داده می‌شوند. کمیسیون از سود هر ارز کم می‌شود و قیمت فروش را تغییر نمی‌دهد. نرخ خرید پرداخت‌شده مالی مبنای سود است. انتشار نسخه ذخیره‌شده با تأییدکننده مجاز انجام می‌شود."
+          description="قیمت پرواز، مجموع رفت‌وبرگشت برای هر مسافر است. پکیج به ازای کل مسافران هر اتاق محاسبه می‌شود؛ ارزهای متفاوت به شکل مبلغ + مبلغ نمایش داده می‌شوند. کمیسیون درصدی از سود هر ارز و کمیسیون ثابت از سود ارز انتخاب‌شده کم می‌شود و قیمت فروش را تغییر نمی‌دهد. نرخ خرید پرداخت‌شده مالی مبنای سود است. انتشار نسخه ذخیره‌شده با تأییدکننده مجاز انجام می‌شود."
         />
         <div className="grid gap-3 sm:grid-cols-2">
           <label>
@@ -910,7 +977,13 @@ export function TourPricingWorkspace() {
                   {publication.businessUpliftCurrencyCode}
                 </Badge>
                 <Badge>
-                  کمیسیون هزینهٔ سود {publication.commissionPercent}٪
+                  کمیسیون هزینهٔ سود{' '}
+                  {(publication.commissionMode ?? 'percent') === 'fixed'
+                    ? (publication.commissionAmount ?? '0') +
+                      ' ' +
+                      (publication.commissionCurrencyCode ??
+                        publication.currencyCode)
+                    : publication.commissionPercent + '٪'}
                 </Badge>
               </div>
               <div className="overflow-x-auto rounded-xl border border-border">

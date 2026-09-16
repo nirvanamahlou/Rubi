@@ -92,6 +92,7 @@ sale adjustments and existing fees retain their own behavior. This decision
 supersedes the prior generic COMMISSION-as-sale-uplift behavior for new versions;
 no historical published price, contract or operational purchase is rewritten.
 Package Pricing API produces the additive field and its Web client consumes it.
+Commission input may be percent or a fixed amount with an explicit currency. Fixed commission is deducted once from the matching currency bucket for each independently priced room package; it never changes sale and no FX conversion is inferred. Historical drafts/publications default to percent.
 
 ## B2B-DOSSIER-REPORTS-001 — 2026-09-09
 

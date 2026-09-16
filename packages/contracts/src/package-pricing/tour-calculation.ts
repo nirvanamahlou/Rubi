@@ -23,6 +23,8 @@ export interface TourRoomCalculationInput {
   businessUplift: { amount: string; currencyCode: string };
   businessCabin: boolean;
   commissionPercent: string;
+  commissionMode?: 'percent' | 'fixed';
+  commissionAmount?: { amount: string; currencyCode: string };
   flightCosts?:
     | readonly {
         adultUnitCost: string;
@@ -92,8 +94,25 @@ export function calculateTourRoom(input: TourRoomCalculationInput) {
       ? purchase - delta
       : purchase + delta;
   if (hotelSale < 0n) throw new Error('کاهش قیمت از خرید اقامت بیشتر است.');
-  const commissionPercent = units(input.commissionPercent, 2);
+  const commissionMode = input.commissionMode ?? 'percent';
+  if (!['percent', 'fixed'].includes(commissionMode))
+    throw new Error('نوع کمیسیون معتبر نیست.');
+  const commissionPercent =
+    commissionMode === 'percent' ? units(input.commissionPercent, 2) : 0n;
   if (commissionPercent > 10000n) throw new Error('کمیسیون بیش از ۱۰۰ نیست.');
+  const fixedCommission =
+    commissionMode === 'fixed'
+      ? {
+          currencyCode:
+            input.commissionAmount?.currencyCode ?? input.hotelCurrency,
+          value: units(
+            input.commissionAmount?.amount ?? '0',
+            scale(input.commissionAmount?.currencyCode ?? input.hotelCurrency),
+          ),
+        }
+      : null;
+  if (fixedCommission && !/^[A-Z]{3}$/.test(fixedCommission.currencyCode))
+    throw new Error('ارز کمیسیون معتبر نیست.');
   const buckets = new Map<string, { purchase: bigint; sale: bigint }>();
   const add = (currency: string, field: 'purchase' | 'sale', value: bigint) => {
     if (!/^[A-Z]{3}$/.test(currency)) throw new Error('ارز معتبر نیست.');
@@ -120,10 +139,17 @@ export function calculateTourRoom(input: TourRoomCalculationInput) {
         BigInt(input.children);
     if (value) add(cost.currencyCode, 'purchase', value);
   }
+  if (fixedCommission)
+    add(fixedCommission.currencyCode, 'sale', 0n);
   const currencyAmounts: TourRoomCurrencyAmount[] = [...buckets]
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([currencyCode, bucket]) => {
-      const commission = rounded(bucket.sale * commissionPercent, 10000n);
+      const commission =
+        commissionMode === 'fixed'
+          ? currencyCode === fixedCommission?.currencyCode
+            ? fixedCommission.value
+            : 0n
+          : rounded(bucket.sale * commissionPercent, 10000n);
       const p = scale(currencyCode);
       return {
         currencyCode,

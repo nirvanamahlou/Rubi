@@ -12,6 +12,8 @@ PC-A; branch `codex/pc-a-tour-hotel-pricing-flow-0916`, base `72cfdadf`.
    Display purchase for actual stay nights, adjusted hotel sale and complete
    room package with adult/child flights. A fixed adjustment uses that hotel's
    currency. Different currencies display as separate amounts joined with +.
+   Commission can be percent or a fixed amount with its own currency and is
+   deducted from profit only.
 4. Save the editable draft and publish a version with the existing authorized
    second reviewer and settled Finance flight costs. Family occupancy is stored.
    Each hotel remains an independent alternative. Exports are deferred.

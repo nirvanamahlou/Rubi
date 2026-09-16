@@ -1,5 +1,6 @@
 # وضعیت پروژه
 
+- 2026-09-16 Package Pricing commission follow-up: drafts/publications now support percent or fixed commission with an explicit currency. Fixed commission is deducted once from the matching currency profit bucket and never changes sale; historical rows default to percent. Additive migration was applied only to isolated `rubi_pricing_flow_0916`. Tour demo 1 published version 3 with fixed EUR 15 while tour demo 2 remains percent.
 ## 2026-09-16 — TOUR-HOTEL-PRICING-FLOW-0916 — MERGED WITH DEVELOP / VERIFIED LOCALLY
 
 فرایند تور/نوبت بلیت ← بسته نرخ خرید هتل متصل به همان نوبت ← جدول خرید کل
@@ -2820,6 +2821,7 @@ The Web Reporting adapter now preserves all existing Travel projection measures 
 تمام ستون‌های قابل‌نمایش جدول نتیجه Reports، شامل ابعاد، ارز، تعداد سفارش/مسافر/بلیت و مبالغ فروش، خرید، سود ناخالص، استرداد و مانده تسویه، اکنون فلش مرتب‌سازی سرستون دارند و Sort پیش از Pagination در API اجرا می‌شود. ماژول Backend گزارش با endpointهای Preview، Workspace و CSV/XLSX/PDF به Runtime نهایی افزوده شد. ۴۸ fact واقعی‌نمای قبلی از fixture ignored خارج از Worktree، به‌صورت idempotent فقط در PostgreSQL محلی وارد شدند؛ فایل داده، PII واقعی و Seed عمومی وارد Git نشده‌اند. Prisma validate/generate، API و Web typecheck و مجموعه کامل تست‌ها موفق‌اند؛ Web روی 3000 و API روی 4000 از Worktree canonical فعال‌اند.
 # وضعیت 2026-09-14 — اشتراک‌گذاری مستقیم گزارش‌ها
 
+- 2026-09-16 Package Pricing commission follow-up: drafts/publications now support percent or fixed commission with an explicit currency. Fixed commission is deducted once from the matching currency profit bucket and never changes sale; historical rows default to percent. Additive migration was applied only to isolated `rubi_pricing_flow_0916`. Tour demo 1 published version 3 with fixed EUR 15 while tour demo 2 remains percent.
 - دکمه اشتراک‌گذاری به فرم پیکربندی و عملیات «گزارش‌های من» اضافه شد؛ انتخاب گیرنده
   جست‌وجوپذیر و چندانتخابی است و بازخورد موفق/خطا دارد.
 - Backend فقط به مالک دارای `reporting.share` اجازه تغییر grant می‌دهد و گیرندگان را
@@ -2831,6 +2833,7 @@ The Web Reporting adapter now preserves all existing Travel projection measures 
   Web روی 3000 و API روی 4000 فعال و health هر دو برابر 200 است.
 # وضعیت دیتای دموی Dashboard و Reports — 2026-09-15
 
+- 2026-09-16 Package Pricing commission follow-up: drafts/publications now support percent or fixed commission with an explicit currency. Fixed commission is deducted once from the matching currency profit bucket and never changes sale; historical rows default to percent. Additive migration was applied only to isolated `rubi_pricing_flow_0916`. Tour demo 1 published version 3 with fixed EUR 15 while tour demo 2 remains percent.
 - Dashboard اکنون از Projection عمومی و نسخه‌دار `reporting.dashboard.travel.v1`
   استفاده می‌کند و KPIها و نمودارهای هر صفحه را از `reporting.travel.facts.v1`
   دریافت می‌کند.

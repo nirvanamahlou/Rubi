@@ -12,6 +12,9 @@ describe('tour package pricing workspace', () => {
     expect(html).toContain('پرواز کودک');
     expect(html).toContain('افزایش نرخ بیزینس');
     expect(html).toContain('کمیسیون');
+    expect(html).toContain('درصدی');
+    expect(html).toContain('مبلغ ثابت');
+    expect(html).toContain('نوع کمیسیون');
     expect(html).toContain('ذخیره پیش‌نویس این بازه');
     expect(html).toContain('انتشار نسخهٔ قیمت پکیج');
     expect(html).toContain('disabled');

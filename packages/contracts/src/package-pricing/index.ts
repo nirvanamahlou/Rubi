@@ -314,6 +314,9 @@ export interface PackageTourDraftSaveV1 {
   businessUplift: string;
   businessUpliftCurrencyCode?: string;
   commissionPercent: string;
+  commissionMode?: 'percent' | 'fixed';
+  commissionAmount?: string;
+  commissionCurrencyCode?: string;
   adjustments: readonly PackageTourDraftAdjustmentV1[];
 }
 
@@ -354,6 +357,9 @@ export interface PackageTourPublicationV1 {
   businessUplift: string;
   businessUpliftCurrencyCode?: string;
   commissionPercent: string;
+  commissionMode?: 'percent' | 'fixed';
+  commissionAmount?: string;
+  commissionCurrencyCode?: string;
   outboundCostRevisionId: string;
   returnCostRevisionId: string | null;
   roomPrices: readonly PackageTourPublishedRoomPriceV1[];

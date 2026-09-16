@@ -31,7 +31,7 @@ retain the hotel row currency. No historical price is rewritten or FX inferred.
 
 `PackagePricingTourDraft` با FK نوبت تور، batch خرید Reservations و شعبه، یک
 پیش‌نویس فعلی برای هر `(tourDepartureId,batchId)` و version optimistic دارد.
-مبالغ فروش پرواز، افزایش بیزینس و درصد کمیسیون Decimal+currency هستند.
+مبالغ فروش پرواز و افزایش بیزینس Decimal+currency هستند. کمیسیون با mode صریح percent/fixed ذخیره می‌شود؛ حالت درصدی درصد Decimal و حالت ثابت مبلغ Decimal و ارز مستقل دارد.
 `PackagePricingTourAdjustment` با FK به ردیف نرخ خرید هتل، تغییر درصدی/ثابت
 هر گزینه را جدا ذخیره می‌کند. `PackagePricingTourPublishedVersion` append-only
 با FK پیش‌نویس، نرخ خرید مالی رفت/برگشت، ناشر و fingerprint منبع است؛

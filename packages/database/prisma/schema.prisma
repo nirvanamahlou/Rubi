@@ -30,115 +30,115 @@ enum AuditOutcome {
 }
 
 model User {
-  tourPricingDraftsCreated          PackagePricingTourDraft[]       @relation("TourPricingDraftCreator")
-  tourPricingDraftsUpdated          PackagePricingTourDraft[]       @relation("TourPricingDraftUpdater")
-  tourPricingVersionsPublished      PackagePricingTourPublishedVersion[] @relation("TourPricingPublisher")
+  tourPricingDraftsCreated          PackagePricingTourDraft[]              @relation("TourPricingDraftCreator")
+  tourPricingDraftsUpdated          PackagePricingTourDraft[]              @relation("TourPricingDraftUpdater")
+  tourPricingVersionsPublished      PackagePricingTourPublishedVersion[]   @relation("TourPricingPublisher")
   b2bOrganizationUser               B2bOrganizationUser?
   hotelRateBatches                  ReservationHotelRateBatch[]
   reservationManifestExports        ReservationManifestExport[]
   reservationServicePurchases       ReservationServicePurchase[]
   financeSupplierPaymentRevisions   FinanceSupplierPaymentRevision[]
-  financeTicketCostRevisions        FinanceTicketPurchaseCostRevision[] @relation("FinanceTicketCostActor")
+  financeTicketCostRevisions        FinanceTicketPurchaseCostRevision[]    @relation("FinanceTicketCostActor")
   financeTicketPaymentRevisions     FinanceTicketPurchasePaymentRevision[] @relation("FinanceTicketPaymentActor")
-  financeSettlementAccountsCreated  FinanceSettlementAccount[]        @relation("FinanceSettlementAccountCreator")
-  salesPaymentsFinanceReviewed      SalesContractPaymentEntry[]       @relation("SalesPaymentFinanceReviewer")
-  ownedTravelIntakes                ReservationIntake[]               @relation("TravelSalesOwner")
+  financeSettlementAccountsCreated  FinanceSettlementAccount[]             @relation("FinanceSettlementAccountCreator")
+  salesPaymentsFinanceReviewed      SalesContractPaymentEntry[]            @relation("SalesPaymentFinanceReviewer")
+  ownedTravelIntakes                ReservationIntake[]                    @relation("TravelSalesOwner")
   travelWorkflowRevisions           ReservationWorkflowRevision[]
   travelDeliveryRevisions           FinanceDeliveryRevision[]
-  id                                String                            @id @default(uuid()) @db.Uuid
-  username                          String                            @unique @db.VarChar(80)
-  email                             String?                           @unique @db.VarChar(320)
-  displayName                       String                            @db.VarChar(160)
-  passwordHash                      String                            @db.VarChar(255)
-  status                            UserStatus                        @default(ACTIVE)
-  failedLoginAttempts               Int                               @default(0)
-  lockedUntil                       DateTime?                         @db.Timestamptz(3)
-  passwordChangedAt                 DateTime                          @default(now()) @db.Timestamptz(3)
-  lastLoginAt                       DateTime?                         @db.Timestamptz(3)
-  mfaTotpSecretCiphertext           String?                           @map("mfa_totp_secret_ciphertext") @db.VarChar(800)
-  mfaTotpPendingSecretCiphertext    String?                           @map("mfa_totp_pending_secret_ciphertext") @db.VarChar(800)
-  mfaTotpPendingExpiresAt           DateTime?                         @map("mfa_totp_pending_expires_at") @db.Timestamptz(3)
-  mfaTotpEnabledAt                  DateTime?                         @map("mfa_totp_enabled_at") @db.Timestamptz(3)
-  mfaFailedAttempts                 Int                               @default(0) @map("mfa_failed_attempts")
-  mfaLockedUntil                    DateTime?                         @map("mfa_locked_until") @db.Timestamptz(3)
-  mfaLastUsedStep                   BigInt?                           @map("mfa_last_used_step") @db.BigInt
-  createdAt                         DateTime                          @default(now()) @db.Timestamptz(3)
-  updatedAt                         DateTime                          @updatedAt @db.Timestamptz(3)
+  id                                String                                 @id @default(uuid()) @db.Uuid
+  username                          String                                 @unique @db.VarChar(80)
+  email                             String?                                @unique @db.VarChar(320)
+  displayName                       String                                 @db.VarChar(160)
+  passwordHash                      String                                 @db.VarChar(255)
+  status                            UserStatus                             @default(ACTIVE)
+  failedLoginAttempts               Int                                    @default(0)
+  lockedUntil                       DateTime?                              @db.Timestamptz(3)
+  passwordChangedAt                 DateTime                               @default(now()) @db.Timestamptz(3)
+  lastLoginAt                       DateTime?                              @db.Timestamptz(3)
+  mfaTotpSecretCiphertext           String?                                @map("mfa_totp_secret_ciphertext") @db.VarChar(800)
+  mfaTotpPendingSecretCiphertext    String?                                @map("mfa_totp_pending_secret_ciphertext") @db.VarChar(800)
+  mfaTotpPendingExpiresAt           DateTime?                              @map("mfa_totp_pending_expires_at") @db.Timestamptz(3)
+  mfaTotpEnabledAt                  DateTime?                              @map("mfa_totp_enabled_at") @db.Timestamptz(3)
+  mfaFailedAttempts                 Int                                    @default(0) @map("mfa_failed_attempts")
+  mfaLockedUntil                    DateTime?                              @map("mfa_locked_until") @db.Timestamptz(3)
+  mfaLastUsedStep                   BigInt?                                @map("mfa_last_used_step") @db.BigInt
+  createdAt                         DateTime                               @default(now()) @db.Timestamptz(3)
+  updatedAt                         DateTime                               @updatedAt @db.Timestamptz(3)
   roles                             UserRole[]
   branches                          UserBranch[]
   sessions                          Session[]
-  auditEvents                       AuditEvent[]                      @relation("AuditActor")
-  customersCreated                  Customer[]                        @relation("CustomerCreatedBy")
-  customersUpdated                  Customer[]                        @relation("CustomerUpdatedBy")
-  customersDeactivated              Customer[]                        @relation("CustomerDeactivatedBy")
-  customerContactsCreated           CustomerContact[]                 @relation("CustomerContactCreatedBy")
-  customerAddressesCreated          CustomerAddress[]                 @relation("CustomerAddressCreatedBy")
-  customerConsentsRecorded          CustomerConsent[]                 @relation("CustomerConsentRecordedBy")
-  customerRelationshipsCreated      CustomerRelationship[]            @relation("CustomerRelationshipCreatedBy")
-  customerStatusChanges             CustomerStatusHistory[]           @relation("CustomerStatusChangedBy")
-  customerDuplicateCandidates       CustomerDuplicateCandidate[]      @relation("CustomerDuplicateCreatedBy")
-  customerDuplicateReviews          CustomerDuplicateCandidate[]      @relation("CustomerDuplicateReviewedBy")
-  customerAuditEvents               CustomerAuditEvent[]              @relation("CustomerAuditActor")
+  auditEvents                       AuditEvent[]                           @relation("AuditActor")
+  customersCreated                  Customer[]                             @relation("CustomerCreatedBy")
+  customersUpdated                  Customer[]                             @relation("CustomerUpdatedBy")
+  customersDeactivated              Customer[]                             @relation("CustomerDeactivatedBy")
+  customerContactsCreated           CustomerContact[]                      @relation("CustomerContactCreatedBy")
+  customerAddressesCreated          CustomerAddress[]                      @relation("CustomerAddressCreatedBy")
+  customerConsentsRecorded          CustomerConsent[]                      @relation("CustomerConsentRecordedBy")
+  customerRelationshipsCreated      CustomerRelationship[]                 @relation("CustomerRelationshipCreatedBy")
+  customerStatusChanges             CustomerStatusHistory[]                @relation("CustomerStatusChangedBy")
+  customerDuplicateCandidates       CustomerDuplicateCandidate[]           @relation("CustomerDuplicateCreatedBy")
+  customerDuplicateReviews          CustomerDuplicateCandidate[]           @relation("CustomerDuplicateReviewedBy")
+  customerAuditEvents               CustomerAuditEvent[]                   @relation("CustomerAuditActor")
   legalEntityContext                UserLegalEntityContext?
-  legalEntitiesUpdated              LegalEntity[]                     @relation("LegalEntityUpdatedBy")
-  legalEntityBrandingVersions       LegalEntityBrandingVersion[]      @relation("LegalEntityBrandingVersionCreatedBy")
-  legalEntityAuditEvents            LegalEntityAuditEvent[]           @relation("LegalEntityAuditActor")
-  legalEntityDocumentIssues         LegalEntityDocumentIssue[]        @relation("LegalEntityDocumentIssueActor")
-  documentsOwned                    Document[]                        @relation("DocumentOwner")
-  documentsCreated                  Document[]                        @relation("DocumentCreatedBy")
-  documentsUpdated                  Document[]                        @relation("DocumentUpdatedBy")
-  documentVersionsCreated           DocumentVersion[]                 @relation("DocumentVersionCreatedBy")
-  documentAuditEvents               DocumentAuditEvent[]              @relation("DocumentAuditActor")
-  documentQuarantinesReviewed       DocumentQuarantine[]              @relation("DocumentQuarantineReviewer")
-  documentAccessGrants              DocumentAccessGrant[]             @relation("DocumentAccessGrantActor")
-  notificationsReceived             Notification[]                    @relation("NotificationRecipient")
-  notificationsActed                Notification[]                    @relation("NotificationActor")
-  messagingConversationsCreated     MessagingConversation[]           @relation("MessagingConversationCreator")
+  legalEntitiesUpdated              LegalEntity[]                          @relation("LegalEntityUpdatedBy")
+  legalEntityBrandingVersions       LegalEntityBrandingVersion[]           @relation("LegalEntityBrandingVersionCreatedBy")
+  legalEntityAuditEvents            LegalEntityAuditEvent[]                @relation("LegalEntityAuditActor")
+  legalEntityDocumentIssues         LegalEntityDocumentIssue[]             @relation("LegalEntityDocumentIssueActor")
+  documentsOwned                    Document[]                             @relation("DocumentOwner")
+  documentsCreated                  Document[]                             @relation("DocumentCreatedBy")
+  documentsUpdated                  Document[]                             @relation("DocumentUpdatedBy")
+  documentVersionsCreated           DocumentVersion[]                      @relation("DocumentVersionCreatedBy")
+  documentAuditEvents               DocumentAuditEvent[]                   @relation("DocumentAuditActor")
+  documentQuarantinesReviewed       DocumentQuarantine[]                   @relation("DocumentQuarantineReviewer")
+  documentAccessGrants              DocumentAccessGrant[]                  @relation("DocumentAccessGrantActor")
+  notificationsReceived             Notification[]                         @relation("NotificationRecipient")
+  notificationsActed                Notification[]                         @relation("NotificationActor")
+  messagingConversationsCreated     MessagingConversation[]                @relation("MessagingConversationCreator")
   messagingMemberships              MessagingMember[]
-  messagingMessagesSent             MessagingMessage[]                @relation("MessagingMessageSender")
-  workbenchFeedbackSubmitted        WorkbenchFeedback[]               @relation("WorkbenchFeedbackSubmitter")
+  messagingMessagesSent             MessagingMessage[]                     @relation("MessagingMessageSender")
+  workbenchFeedbackSubmitted        WorkbenchFeedback[]                    @relation("WorkbenchFeedbackSubmitter")
   workbenchNotes                    WorkbenchNote[]
   workbenchNoteFolders              WorkbenchNoteFolder[]
   workbenchCalendarEvents           WorkbenchCalendarEvent[]
   documentFavorites                 DocumentFavorite[]
   profile                           IamUserProfile?
-  agencyProfilesManaged             AgencyOperationalProfile[]        @relation("AgencyAccountManager")
-  b2bAuditEvents                    B2bAuditEvent[]                   @relation("B2bAuditActor")
-  b2bRevisionsCreated               B2bAgreementRevision[]            @relation("B2bRevisionCreator")
-  b2bRevisionsSubmitted             B2bAgreementRevision[]            @relation("B2bRevisionSubmitter")
-  b2bRevisionsReviewed              B2bAgreementRevision[]            @relation("B2bRevisionReviewer")
+  agencyProfilesManaged             AgencyOperationalProfile[]             @relation("AgencyAccountManager")
+  b2bAuditEvents                    B2bAuditEvent[]                        @relation("B2bAuditActor")
+  b2bRevisionsCreated               B2bAgreementRevision[]                 @relation("B2bRevisionCreator")
+  b2bRevisionsSubmitted             B2bAgreementRevision[]                 @relation("B2bRevisionSubmitter")
+  b2bRevisionsReviewed              B2bAgreementRevision[]                 @relation("B2bRevisionReviewer")
   b2bCommands                       B2bAgreementCommand[]
   hrEmployee                        HrEmployee?
   hrAuditEvents                     HrAuditEvent[]
   hrCommands                        HrCommand[]
   hrNotificationReads               HrNotificationRead[]
   hrNotifications                   HrNotification[]
-  customerAffairsLeadsAssigned      CustomerAffairsLead[]             @relation("CustomerAffairsLeadAssignee")
-  customerAffairsLeadsCreated       CustomerAffairsLead[]             @relation("CustomerAffairsLeadCreator")
-  customerAffairsLeadsUpdated       CustomerAffairsLead[]             @relation("CustomerAffairsLeadUpdater")
-  customerAffairsTicketsOwned       CustomerAffairsTicket[]           @relation("CustomerAffairsTicketOwner")
-  customerAffairsTicketsExecuted    CustomerAffairsTicket[]           @relation("CustomerAffairsTicketExecutor")
-  customerAffairsTicketsCreated     CustomerAffairsTicket[]           @relation("CustomerAffairsTicketCreator")
-  customerAffairsTicketsUpdated     CustomerAffairsTicket[]           @relation("CustomerAffairsTicketUpdater")
+  customerAffairsLeadsAssigned      CustomerAffairsLead[]                  @relation("CustomerAffairsLeadAssignee")
+  customerAffairsLeadsCreated       CustomerAffairsLead[]                  @relation("CustomerAffairsLeadCreator")
+  customerAffairsLeadsUpdated       CustomerAffairsLead[]                  @relation("CustomerAffairsLeadUpdater")
+  customerAffairsTicketsOwned       CustomerAffairsTicket[]                @relation("CustomerAffairsTicketOwner")
+  customerAffairsTicketsExecuted    CustomerAffairsTicket[]                @relation("CustomerAffairsTicketExecutor")
+  customerAffairsTicketsCreated     CustomerAffairsTicket[]                @relation("CustomerAffairsTicketCreator")
+  customerAffairsTicketsUpdated     CustomerAffairsTicket[]                @relation("CustomerAffairsTicketUpdater")
   customerAffairsTimelineEntries    CustomerAffairsTimeline[]
-  customerAffairsHandoffsCreated    CustomerAffairsHandoff[]          @relation("CustomerAffairsHandoffCreator")
-  customerAffairsHandoffsResponded  CustomerAffairsHandoff[]          @relation("CustomerAffairsHandoffResponder")
-  customerAffairsReferralsAssigned  CustomerAffairsReferral[]         @relation("CustomerAffairsReferralAssignee")
-  customerAffairsReferralsCreated   CustomerAffairsReferral[]         @relation("CustomerAffairsReferralCreator")
-  customerAffairsReferralsResponded CustomerAffairsReferral[]         @relation("CustomerAffairsReferralResponder")
+  customerAffairsHandoffsCreated    CustomerAffairsHandoff[]               @relation("CustomerAffairsHandoffCreator")
+  customerAffairsHandoffsResponded  CustomerAffairsHandoff[]               @relation("CustomerAffairsHandoffResponder")
+  customerAffairsReferralsAssigned  CustomerAffairsReferral[]              @relation("CustomerAffairsReferralAssignee")
+  customerAffairsReferralsCreated   CustomerAffairsReferral[]              @relation("CustomerAffairsReferralCreator")
+  customerAffairsReferralsResponded CustomerAffairsReferral[]              @relation("CustomerAffairsReferralResponder")
   customerAffairsCorrectiveActions  CustomerAffairsCorrectiveAction[]
   customerAffairsCommands           CustomerAffairsCommand[]
   customerAffairsAuditEvents        CustomerAffairsAuditEvent[]
-  masterHotelRatePeriodsCreated     MasterHotelRatePeriod[]           @relation("MasterHotelRatePeriodCreatedBy")
-  masterHotelRatePeriodsUpdated     MasterHotelRatePeriod[]           @relation("MasterHotelRatePeriodUpdatedBy")
-  masterHotelRateVersionsCreated    MasterHotelRatePeriodVersion[]    @relation("MasterHotelRateVersionCreatedBy")
-  reportingFacts                    ReportingTravelFact[]             @relation("ReportingFactOwner")
-  reportingSavedReports             ReportingSavedReport[]            @relation("ReportingSavedReportOwner")
-  reportingSharesReceived           ReportingSavedReportShare[]       @relation("ReportingSavedReportShareRecipient")
-  reportingSharesCreated            ReportingSavedReportShare[]       @relation("ReportingSavedReportShareCreator")
-  reportingRuns                     ReportingRun[]                    @relation("ReportingRunActor")
-  reportingSchedules                ReportingSchedule[]               @relation("ReportingScheduleOwner")
-  reportingExports                  ReportingExportArtifact[]         @relation("ReportingExportCreator")
+  masterHotelRatePeriodsCreated     MasterHotelRatePeriod[]                @relation("MasterHotelRatePeriodCreatedBy")
+  masterHotelRatePeriodsUpdated     MasterHotelRatePeriod[]                @relation("MasterHotelRatePeriodUpdatedBy")
+  masterHotelRateVersionsCreated    MasterHotelRatePeriodVersion[]         @relation("MasterHotelRateVersionCreatedBy")
+  reportingFacts                    ReportingTravelFact[]                  @relation("ReportingFactOwner")
+  reportingSavedReports             ReportingSavedReport[]                 @relation("ReportingSavedReportOwner")
+  reportingSharesReceived           ReportingSavedReportShare[]            @relation("ReportingSavedReportShareRecipient")
+  reportingSharesCreated            ReportingSavedReportShare[]            @relation("ReportingSavedReportShareCreator")
+  reportingRuns                     ReportingRun[]                         @relation("ReportingRunActor")
+  reportingSchedules                ReportingSchedule[]                    @relation("ReportingScheduleOwner")
+  reportingExports                  ReportingExportArtifact[]              @relation("ReportingExportCreator")
 
   @@map("iam_users")
 }
@@ -195,19 +195,19 @@ model RolePermission {
 }
 
 model Branch {
-  tourPricingDrafts           PackagePricingTourDraft[]
+  tourPricingDrafts          PackagePricingTourDraft[]
   financeTicketCostRevisions FinanceTicketPurchaseCostRevision[]
   hotelRateBatches           ReservationHotelRateBatch[]
   hotelRatePacks             ReservationHotelRatePack[]
   b2bOrganizationUsers       B2bOrganizationUser[]
-  id                         String                      @id @default(uuid()) @db.Uuid
-  code                       String                      @unique @db.VarChar(40)
-  name                       String                      @db.VarChar(160)
-  isActive                   Boolean                     @default(true)
-  createdAt                  DateTime                    @default(now()) @db.Timestamptz(3)
-  updatedAt                  DateTime                    @updatedAt @db.Timestamptz(3)
+  id                         String                              @id @default(uuid()) @db.Uuid
+  code                       String                              @unique @db.VarChar(40)
+  name                       String                              @db.VarChar(160)
+  isActive                   Boolean                             @default(true)
+  createdAt                  DateTime                            @default(now()) @db.Timestamptz(3)
+  updatedAt                  DateTime                            @updatedAt @db.Timestamptz(3)
   users                      UserBranch[]
-  ownedCustomers             Customer[]                  @relation("CustomerOwnerBranch")
+  ownedCustomers             Customer[]                          @relation("CustomerOwnerBranch")
   customerStatusHistory      CustomerStatusHistory[]
   customerAuditEvents        CustomerAuditEvent[]
   documents                  Document[]
@@ -928,36 +928,36 @@ model MasterCountry {
 }
 
 model MasterCity {
-  id                        String                      @id @default(uuid()) @db.Uuid
-  countryId                 String                      @db.Uuid
-  regionId                  String?                     @db.Uuid
-  code                      String                      @db.VarChar(32)
-  name                      String                      @db.VarChar(160)
-  englishName               String                      @db.VarChar(160)
-  displayOrder              Int                         @default(0)
-  isActive                  Boolean                     @default(true)
-  version                   Int                         @default(1)
-  createdByUserId           String                      @db.Uuid
-  updatedByUserId           String                      @db.Uuid
-  deactivatedByUserId       String?                     @db.Uuid
-  deactivatedAt             DateTime?                   @db.Timestamptz(3)
-  createdAt                 DateTime                    @default(now()) @db.Timestamptz(3)
-  updatedAt                 DateTime                    @updatedAt @db.Timestamptz(3)
-  country                   MasterCountry               @relation(fields: [countryId], references: [id], onDelete: Restrict)
-  region                    MasterRegion?               @relation(fields: [regionId, countryId], references: [id, countryId], onDelete: Restrict)
-  hotels                    MasterHotel[]
-  airports                  MasterAirport[]
-  bankBranches              MasterBankBranch[]
-  suppliers                 MasterSupplier[]
-  brokers                   MasterBroker[]
-  compositeHotels           MasterCompositeHotel[]
-  customerAddresses         CustomerAddress[]
-  masterHotelImportSessions MasterHotelImportSession[]
-  leaders                   MasterLeader[]
-  organizationAddresses     MasterOrganizationAddress[]
-  manifestTemplates         MasterManifestTemplate[]
-  hotelBaseRatePeriods      MasterHotelRatePeriod[]
-  reservationHotelRatePacks ReservationHotelRatePack[]
+  id                          String                      @id @default(uuid()) @db.Uuid
+  countryId                   String                      @db.Uuid
+  regionId                    String?                     @db.Uuid
+  code                        String                      @db.VarChar(32)
+  name                        String                      @db.VarChar(160)
+  englishName                 String                      @db.VarChar(160)
+  displayOrder                Int                         @default(0)
+  isActive                    Boolean                     @default(true)
+  version                     Int                         @default(1)
+  createdByUserId             String                      @db.Uuid
+  updatedByUserId             String                      @db.Uuid
+  deactivatedByUserId         String?                     @db.Uuid
+  deactivatedAt               DateTime?                   @db.Timestamptz(3)
+  createdAt                   DateTime                    @default(now()) @db.Timestamptz(3)
+  updatedAt                   DateTime                    @updatedAt @db.Timestamptz(3)
+  country                     MasterCountry               @relation(fields: [countryId], references: [id], onDelete: Restrict)
+  region                      MasterRegion?               @relation(fields: [regionId, countryId], references: [id, countryId], onDelete: Restrict)
+  hotels                      MasterHotel[]
+  airports                    MasterAirport[]
+  bankBranches                MasterBankBranch[]
+  suppliers                   MasterSupplier[]
+  brokers                     MasterBroker[]
+  compositeHotels             MasterCompositeHotel[]
+  customerAddresses           CustomerAddress[]
+  masterHotelImportSessions   MasterHotelImportSession[]
+  leaders                     MasterLeader[]
+  organizationAddresses       MasterOrganizationAddress[]
+  manifestTemplates           MasterManifestTemplate[]
+  hotelBaseRatePeriods        MasterHotelRatePeriod[]
+  reservationHotelRatePacks   ReservationHotelRatePack[]
   reservationHotelRateBatches ReservationHotelRateBatch[]
 
   @@unique([countryId, code])
@@ -1165,26 +1165,26 @@ model MasterBankBranch {
 }
 
 model MasterPaymentMethod {
-  financeTicketPaymentRevisions FinanceTicketPurchasePaymentRevision[]
+  financeTicketPaymentRevisions   FinanceTicketPurchasePaymentRevision[]
   b2bAgreementRevisions           B2bAgreementRevision[]
   financeSupplierPaymentRevisions FinanceSupplierPaymentRevision[]
-  id                              String                           @id @default(uuid()) @db.Uuid
-  code                            String                           @unique @db.VarChar(32)
-  name                            String                           @db.VarChar(160)
-  englishName                     String?                          @db.VarChar(160)
-  description                     String?                          @db.VarChar(500)
+  id                              String                                 @id @default(uuid()) @db.Uuid
+  code                            String                                 @unique @db.VarChar(32)
+  name                            String                                 @db.VarChar(160)
+  englishName                     String?                                @db.VarChar(160)
+  description                     String?                                @db.VarChar(500)
   channel                         MasterPaymentMethodChannel
-  direction                       MasterPaymentMethodDirection     @default(BOTH)
-  requiresManualApproval          Boolean                          @default(false)
-  displayOrder                    Int                              @default(0)
-  isActive                        Boolean                          @default(true)
-  version                         Int                              @default(1)
-  createdByUserId                 String                           @db.Uuid
-  updatedByUserId                 String                           @db.Uuid
-  deactivatedByUserId             String?                          @db.Uuid
-  deactivatedAt                   DateTime?                        @db.Timestamptz(3)
-  createdAt                       DateTime                         @default(now()) @db.Timestamptz(3)
-  updatedAt                       DateTime                         @updatedAt @db.Timestamptz(3)
+  direction                       MasterPaymentMethodDirection           @default(BOTH)
+  requiresManualApproval          Boolean                                @default(false)
+  displayOrder                    Int                                    @default(0)
+  isActive                        Boolean                                @default(true)
+  version                         Int                                    @default(1)
+  createdByUserId                 String                                 @db.Uuid
+  updatedByUserId                 String                                 @db.Uuid
+  deactivatedByUserId             String?                                @db.Uuid
+  deactivatedAt                   DateTime?                              @db.Timestamptz(3)
+  createdAt                       DateTime                               @default(now()) @db.Timestamptz(3)
+  updatedAt                       DateTime                               @updatedAt @db.Timestamptz(3)
 
   @@index([isActive, displayOrder, name])
   @@index([channel, direction, isActive])
@@ -3990,25 +3990,25 @@ model TourPackage {
 }
 
 model TourDeparture {
-  hotelRatePacks ReservationHotelRatePack[]
+  hotelRatePacks   ReservationHotelRatePack[]
   hotelRateBatches ReservationHotelRateBatch[]
-  pricingDrafts   PackagePricingTourDraft[]
-  id              String                @id @default(uuid()) @db.Uuid
-  version         Int                   @default(1)
-  branchId        String                @db.Uuid
-  packageId       String                @db.Uuid
-  packageVersion  Int
-  startsOn        DateTime              @db.Date
-  endsOn          DateTime              @db.Date
-  outboundOfferId String                @db.Uuid
-  returnOfferId   String?               @db.Uuid
-  createdByUserId String                @db.Uuid
-  createKey       String                @db.VarChar(160)
-  fingerprint     String                @db.VarChar(64)
-  createdAt       DateTime              @default(now()) @db.Timestamptz(3)
-  package         TourPackage           @relation(fields: [packageId], references: [id], onDelete: Restrict)
-  outboundOffer   TicketPublishedOffer  @relation("TourOutbound", fields: [outboundOfferId], references: [id], onDelete: Restrict)
-  returnOffer     TicketPublishedOffer? @relation("TourReturn", fields: [returnOfferId], references: [id], onDelete: Restrict)
+  pricingDrafts    PackagePricingTourDraft[]
+  id               String                      @id @default(uuid()) @db.Uuid
+  version          Int                         @default(1)
+  branchId         String                      @db.Uuid
+  packageId        String                      @db.Uuid
+  packageVersion   Int
+  startsOn         DateTime                    @db.Date
+  endsOn           DateTime                    @db.Date
+  outboundOfferId  String                      @db.Uuid
+  returnOfferId    String?                     @db.Uuid
+  createdByUserId  String                      @db.Uuid
+  createKey        String                      @db.VarChar(160)
+  fingerprint      String                      @db.VarChar(64)
+  createdAt        DateTime                    @default(now()) @db.Timestamptz(3)
+  package          TourPackage                 @relation(fields: [packageId], references: [id], onDelete: Restrict)
+  outboundOffer    TicketPublishedOffer        @relation("TourOutbound", fields: [outboundOfferId], references: [id], onDelete: Restrict)
+  returnOffer      TicketPublishedOffer?       @relation("TourReturn", fields: [returnOfferId], references: [id], onDelete: Restrict)
 
   @@unique([createdByUserId, createKey])
   @@index([branchId, startsOn])
@@ -4016,24 +4016,24 @@ model TourDeparture {
 }
 
 model TicketPublishedOffer {
-  tourOutboundDepartures TourDeparture[]                 @relation("TourOutbound")
-  tourReturnDepartures   TourDeparture[]                 @relation("TourReturn")
-  id                     String                          @id @default(uuid()) @db.Uuid
-  version                Int                             @default(1)
-  branchId               String                          @db.Uuid
-  originId               String                          @db.Uuid
-  destinationId          String                          @db.Uuid
-  departureAt            DateTime                        @db.Timestamptz(3)
-  arrivalAt              DateTime                        @db.Timestamptz(3)
-  carrierName            String                          @db.VarChar(160)
-  serviceNumber          String                          @db.VarChar(80)
-  cabinClassCode         String                          @db.VarChar(20)
+  tourOutboundDepartures TourDeparture[]                     @relation("TourOutbound")
+  tourReturnDepartures   TourDeparture[]                     @relation("TourReturn")
+  id                     String                              @id @default(uuid()) @db.Uuid
+  version                Int                                 @default(1)
+  branchId               String                              @db.Uuid
+  originId               String                              @db.Uuid
+  destinationId          String                              @db.Uuid
+  departureAt            DateTime                            @db.Timestamptz(3)
+  arrivalAt              DateTime                            @db.Timestamptz(3)
+  carrierName            String                              @db.VarChar(160)
+  serviceNumber          String                              @db.VarChar(80)
+  cabinClassCode         String                              @db.VarChar(20)
   totalCapacity          Int
-  status                 String                          @default("ACTIVE") @db.VarChar(20)
-  createdByUserId        String                          @db.Uuid
-  createKey              String                          @db.VarChar(160)
-  fingerprint            String                          @db.VarChar(64)
-  createdAt              DateTime                        @default(now()) @db.Timestamptz(3)
+  status                 String                              @default("ACTIVE") @db.VarChar(20)
+  createdByUserId        String                              @db.Uuid
+  createKey              String                              @db.VarChar(160)
+  fingerprint            String                              @db.VarChar(64)
+  createdAt              DateTime                            @default(now()) @db.Timestamptz(3)
   audit                  TicketOfferAudit[]
   capacityAllocations    TicketOfferCapacityAllocation[]
   purchaseRequest        ProcurementTicketPurchaseRequest?
@@ -4072,59 +4072,63 @@ model TicketOfferCapacityAllocation {
 }
 
 model ProcurementTicketPurchaseRequest {
-  id                      String   @id @default(uuid()) @db.Uuid
-  version                 Int      @default(1)
-  branchId                String   @db.Uuid
-  catalogProductReference String   @db.VarChar(160)
-  title                   String   @db.VarChar(160)
-  serviceDate             DateTime? @db.Date
-  supplierDisplaySnapshot String?  @db.VarChar(160)
-  amount                  Decimal? @db.Decimal(20, 6)
-  currencyCode            String?  @db.VarChar(3)
-  offerId                 String?  @unique @db.Uuid
+  id                      String                              @id @default(uuid()) @db.Uuid
+  version                 Int                                 @default(1)
+  branchId                String                              @db.Uuid
+  catalogProductReference String                              @db.VarChar(160)
+  title                   String                              @db.VarChar(160)
+  serviceDate             DateTime?                           @db.Date
+  supplierDisplaySnapshot String?                             @db.VarChar(160)
+  amount                  Decimal?                            @db.Decimal(20, 6)
+  currencyCode            String?                             @db.VarChar(3)
+  offerId                 String?                             @unique @db.Uuid
   offerVersion            Int?
-  offer                   TicketPublishedOffer? @relation(fields: [offerId], references: [id], onDelete: Restrict)
+  offer                   TicketPublishedOffer?               @relation(fields: [offerId], references: [id], onDelete: Restrict)
   financeCosts            FinanceTicketPurchaseCostRevision[]
-  status                  String   @default("PENDING") @db.VarChar(20)
-  createdByUserId         String   @db.Uuid
-  createKey               String   @db.VarChar(160)
-  fingerprint             String   @db.VarChar(64)
-  createdAt               DateTime @default(now()) @db.Timestamptz(3)
-  updatedAt               DateTime @updatedAt @db.Timestamptz(3)
+  status                  String                              @default("PENDING") @db.VarChar(20)
+  createdByUserId         String                              @db.Uuid
+  createKey               String                              @db.VarChar(160)
+  fingerprint             String                              @db.VarChar(64)
+  createdAt               DateTime                            @default(now()) @db.Timestamptz(3)
+  updatedAt               DateTime                            @updatedAt @db.Timestamptz(3)
 
   @@unique([createdByUserId, createKey])
   @@unique([branchId, catalogProductReference])
   @@index([branchId, status, serviceDate])
 }
 
-/** Finance-owned immutable rates; legacy catalog estimates never count as confirmed costs. */
+/**
+ * Finance-owned immutable rates; legacy catalog estimates never count as confirmed costs.
+ */
 model FinanceTicketPurchaseCostRevision {
-  outboundTourPublications PackagePricingTourPublishedVersion[] @relation("TourPricingOutboundCost")
-  returnTourPublications   PackagePricingTourPublishedVersion[] @relation("TourPricingReturnCost")
-  id              String                              @id @default(uuid()) @db.Uuid
-  requestId       String                              @db.Uuid
-  branchId        String                              @db.Uuid
-  offerId         String?                             @db.Uuid
-  offerVersion    Int?
-  version         Int
-  adultUnitCost   Decimal                             @db.Decimal(24, 4)
-  childUnitCost   Decimal                             @db.Decimal(24, 4)
-  invoiceAmount   Decimal                             @db.Decimal(24, 4)
-  currencyCode    String                              @db.VarChar(3)
-  reason          String                              @db.VarChar(500)
-  actorUserId     String                              @db.Uuid
-  createdAt       DateTime                            @default(now()) @db.Timestamptz(3)
-  request         ProcurementTicketPurchaseRequest    @relation(fields: [requestId], references: [id], onDelete: Restrict)
-  branch          Branch                              @relation(fields: [branchId], references: [id], onDelete: Restrict)
-  offer           TicketPublishedOffer?               @relation(fields: [offerId], references: [id], onDelete: Restrict)
-  actor           User                                @relation("FinanceTicketCostActor", fields: [actorUserId], references: [id], onDelete: Restrict)
-  payments        FinanceTicketPurchasePaymentRevision[]
+  outboundTourPublications PackagePricingTourPublishedVersion[]   @relation("TourPricingOutboundCost")
+  returnTourPublications   PackagePricingTourPublishedVersion[]   @relation("TourPricingReturnCost")
+  id                       String                                 @id @default(uuid()) @db.Uuid
+  requestId                String                                 @db.Uuid
+  branchId                 String                                 @db.Uuid
+  offerId                  String?                                @db.Uuid
+  offerVersion             Int?
+  version                  Int
+  adultUnitCost            Decimal                                @db.Decimal(24, 4)
+  childUnitCost            Decimal                                @db.Decimal(24, 4)
+  invoiceAmount            Decimal                                @db.Decimal(24, 4)
+  currencyCode             String                                 @db.VarChar(3)
+  reason                   String                                 @db.VarChar(500)
+  actorUserId              String                                 @db.Uuid
+  createdAt                DateTime                               @default(now()) @db.Timestamptz(3)
+  request                  ProcurementTicketPurchaseRequest       @relation(fields: [requestId], references: [id], onDelete: Restrict)
+  branch                   Branch                                 @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  offer                    TicketPublishedOffer?                  @relation(fields: [offerId], references: [id], onDelete: Restrict)
+  actor                    User                                   @relation("FinanceTicketCostActor", fields: [actorUserId], references: [id], onDelete: Restrict)
+  payments                 FinanceTicketPurchasePaymentRevision[]
 
   @@unique([requestId, version])
   @@index([branchId, offerId, version])
 }
 
-/** Finance-owned append-only payment evidence; only full settlement releases cost to Sales. */
+/**
+ * Finance-owned append-only payment evidence; only full settlement releases cost to Sales.
+ */
 model FinanceTicketPurchasePaymentRevision {
   id                String                            @id @default(uuid()) @db.Uuid
   costRevisionId    String                            @db.Uuid
@@ -4233,21 +4237,21 @@ enum FinanceSupplierPaymentStatus {
 }
 
 model FinanceSettlementAccount {
-  id               String                           @id @default(uuid()) @db.Uuid
-  branchId         String                           @db.Uuid
-  title            String                           @db.VarChar(160)
-  kind             String                           @db.VarChar(24)
-  currencyCode     String                           @db.VarChar(3)
-  bankId           String?                          @db.Uuid
-  maskedIdentifier String?                          @db.VarChar(80)
-  isActive         Boolean                          @default(true)
-  version          Int                              @default(1)
-  createdByUserId  String                           @db.Uuid
-  createdAt        DateTime                         @default(now()) @db.Timestamptz(3)
-  updatedAt        DateTime                         @updatedAt @db.Timestamptz(3)
-  branch           Branch                           @relation(fields: [branchId], references: [id], onDelete: Restrict)
-  bank             MasterBank?                      @relation(fields: [bankId], references: [id], onDelete: Restrict)
-  createdBy        User                             @relation("FinanceSettlementAccountCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  id               String                                 @id @default(uuid()) @db.Uuid
+  branchId         String                                 @db.Uuid
+  title            String                                 @db.VarChar(160)
+  kind             String                                 @db.VarChar(24)
+  currencyCode     String                                 @db.VarChar(3)
+  bankId           String?                                @db.Uuid
+  maskedIdentifier String?                                @db.VarChar(80)
+  isActive         Boolean                                @default(true)
+  version          Int                                    @default(1)
+  createdByUserId  String                                 @db.Uuid
+  createdAt        DateTime                               @default(now()) @db.Timestamptz(3)
+  updatedAt        DateTime                               @updatedAt @db.Timestamptz(3)
+  branch           Branch                                 @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  bank             MasterBank?                            @relation(fields: [bankId], references: [id], onDelete: Restrict)
+  createdBy        User                                   @relation("FinanceSettlementAccountCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
   supplierPayments FinanceSupplierPaymentRevision[]
   ticketPayments   FinanceTicketPurchasePaymentRevision[]
 
@@ -4693,48 +4697,48 @@ model FinanceDeliveryRevision {
 }
 
 model ReservationHotelRatePack {
-  tourDepartureId String? @db.Uuid
-  tourDeparture TourDeparture? @relation(fields: [tourDepartureId], references: [id], onDelete: Restrict)
-  id             String                      @id @default(uuid()) @db.Uuid
-  branchId       String                      @db.Uuid
-  cityId         String                      @db.Uuid
-  checkIn        DateTime                    @db.Date
-  checkOut       DateTime                    @db.Date
-  currency       String                      @db.VarChar(3)
-  method         String                      @db.VarChar(16)
-  currentVersion Int                         @default(1)
-  createdAt      DateTime                    @default(now()) @db.Timestamptz(3)
-  updatedAt      DateTime                    @updatedAt @db.Timestamptz(3)
-  branch         Branch                      @relation(fields: [branchId], references: [id], onDelete: Restrict)
-  city           MasterCity                  @relation(fields: [cityId], references: [id], onDelete: Restrict)
-  versions       ReservationHotelRateBatch[]
+  tourDepartureId String?                     @db.Uuid
+  tourDeparture   TourDeparture?              @relation(fields: [tourDepartureId], references: [id], onDelete: Restrict)
+  id              String                      @id @default(uuid()) @db.Uuid
+  branchId        String                      @db.Uuid
+  cityId          String                      @db.Uuid
+  checkIn         DateTime                    @db.Date
+  checkOut        DateTime                    @db.Date
+  currency        String                      @db.VarChar(3)
+  method          String                      @db.VarChar(16)
+  currentVersion  Int                         @default(1)
+  createdAt       DateTime                    @default(now()) @db.Timestamptz(3)
+  updatedAt       DateTime                    @updatedAt @db.Timestamptz(3)
+  branch          Branch                      @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  city            MasterCity                  @relation(fields: [cityId], references: [id], onDelete: Restrict)
+  versions        ReservationHotelRateBatch[]
 
   @@index([branchId, cityId, checkIn, checkOut])
   @@map("reservation_hotel_rate_packs")
 }
 
 model ReservationHotelRateBatch {
-  tourDepartureId String? @db.Uuid
-  tourDeparture TourDeparture? @relation(fields: [tourDepartureId], references: [id], onDelete: Restrict)
-  pricingDrafts PackagePricingTourDraft[]
-  id          String                      @id @default(uuid()) @db.Uuid
-  branchId    String                      @db.Uuid
-  packId      String?                     @db.Uuid
-  cityId      String?                     @db.Uuid
-  version     Int                         @default(1)
-  actorId     String                      @db.Uuid
-  requestKey  String                      @db.Uuid
-  fingerprint String                      @db.VarChar(64)
-  checkIn     DateTime                    @db.Date
-  checkOut    DateTime                    @db.Date
-  currency    String                      @db.VarChar(3)
-  method      String                      @db.VarChar(16)
-  createdAt   DateTime                    @default(now()) @db.Timestamptz(3)
-  branch      Branch                      @relation(fields: [branchId], references: [id], onDelete: Restrict)
-  pack        ReservationHotelRatePack?   @relation(fields: [packId], references: [id], onDelete: Restrict)
-  city        MasterCity?                 @relation(fields: [cityId], references: [id], onDelete: Restrict)
-  actor       User                        @relation(fields: [actorId], references: [id], onDelete: Restrict)
-  rows        ReservationHotelGroupRate[]
+  tourDepartureId String?                     @db.Uuid
+  tourDeparture   TourDeparture?              @relation(fields: [tourDepartureId], references: [id], onDelete: Restrict)
+  pricingDrafts   PackagePricingTourDraft[]
+  id              String                      @id @default(uuid()) @db.Uuid
+  branchId        String                      @db.Uuid
+  packId          String?                     @db.Uuid
+  cityId          String?                     @db.Uuid
+  version         Int                         @default(1)
+  actorId         String                      @db.Uuid
+  requestKey      String                      @db.Uuid
+  fingerprint     String                      @db.VarChar(64)
+  checkIn         DateTime                    @db.Date
+  checkOut        DateTime                    @db.Date
+  currency        String                      @db.VarChar(3)
+  method          String                      @db.VarChar(16)
+  createdAt       DateTime                    @default(now()) @db.Timestamptz(3)
+  branch          Branch                      @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  pack            ReservationHotelRatePack?   @relation(fields: [packId], references: [id], onDelete: Restrict)
+  city            MasterCity?                 @relation(fields: [cityId], references: [id], onDelete: Restrict)
+  actor           User                        @relation(fields: [actorId], references: [id], onDelete: Restrict)
+  rows            ReservationHotelGroupRate[]
 
   @@unique([actorId, requestKey])
   @@unique([packId, version])
@@ -4743,54 +4747,59 @@ model ReservationHotelRateBatch {
 }
 
 model ReservationHotelGroupRate {
-  pricingAdjustments PackagePricingTourAdjustment[]
+  pricingAdjustments  PackagePricingTourAdjustment[]
   publishedRoomPrices PackagePricingTourPublishedRoomPrice[]
-  id         String                    @id @default(uuid()) @db.Uuid
-  batchId    String                    @db.Uuid
-  hotelId    String                    @db.Uuid
-  brokerId   String                    @db.Uuid
-  hotelName  String                    @db.VarChar(300)
-  brokerName String                    @db.VarChar(300)
-  base       Decimal                   @db.Decimal(18, 2)
-  currency   String                    @db.VarChar(3)
-  factors    Json
-  batch      ReservationHotelRateBatch @relation(fields: [batchId], references: [id], onDelete: Restrict)
-  hotel      MasterHotel               @relation(fields: [hotelId], references: [id], onDelete: Restrict)
-  broker     MasterOrganization        @relation(fields: [brokerId], references: [id], onDelete: Restrict)
+  id                  String                                 @id @default(uuid()) @db.Uuid
+  batchId             String                                 @db.Uuid
+  hotelId             String                                 @db.Uuid
+  brokerId            String                                 @db.Uuid
+  hotelName           String                                 @db.VarChar(300)
+  brokerName          String                                 @db.VarChar(300)
+  base                Decimal                                @db.Decimal(18, 2)
+  currency            String                                 @db.VarChar(3)
+  factors             Json
+  batch               ReservationHotelRateBatch              @relation(fields: [batchId], references: [id], onDelete: Restrict)
+  hotel               MasterHotel                            @relation(fields: [hotelId], references: [id], onDelete: Restrict)
+  broker              MasterOrganization                     @relation(fields: [brokerId], references: [id], onDelete: Restrict)
 
   @@unique([batchId, hotelId, brokerId])
   @@index([hotelId, batchId])
   @@map("reservation_hotel_group_rates")
 }
 
-/** Sales-owned, editable per-tour and per-hotel source batch. */
+/**
+ * Sales-owned, editable per-tour and per-hotel source batch.
+ */
 model PackagePricingTourDraft {
-  familyAdults Int?
-  familyChildren Int?
-  id                 String                              @id @default(uuid()) @db.Uuid
-  tourDepartureId    String                              @db.Uuid
-  batchId            String                              @db.Uuid
-  branchId           String                              @db.Uuid
-  version            Int                                 @default(1)
-  currencyCode       String                              @db.VarChar(3)
-  adultFlightSale    Decimal                             @db.Decimal(24, 4)
-  adultFlightSaleCurrencyCode String                       @default("IRR") @db.VarChar(3)
-  childFlightSale    Decimal                             @db.Decimal(24, 4)
-  childFlightSaleCurrencyCode String                       @default("IRR") @db.VarChar(3)
-  businessUplift     Decimal                             @db.Decimal(24, 4)
-  businessUpliftCurrencyCode String                       @default("IRR") @db.VarChar(3)
-  commissionPercent  Decimal                             @db.Decimal(10, 4)
-  createdByUserId    String                              @db.Uuid
-  updatedByUserId    String                              @db.Uuid
-  createdAt          DateTime                            @default(now()) @db.Timestamptz(3)
-  updatedAt          DateTime                            @updatedAt @db.Timestamptz(3)
-  tour               TourDeparture                       @relation(fields: [tourDepartureId], references: [id], onDelete: Restrict)
-  batch              ReservationHotelRateBatch          @relation(fields: [batchId], references: [id], onDelete: Restrict)
-  branch             Branch                              @relation(fields: [branchId], references: [id], onDelete: Restrict)
-  creator            User                                @relation("TourPricingDraftCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
-  updater            User                                @relation("TourPricingDraftUpdater", fields: [updatedByUserId], references: [id], onDelete: Restrict)
-  adjustments        PackagePricingTourAdjustment[]
-  publications       PackagePricingTourPublishedVersion[]
+  familyAdults                Int?
+  familyChildren              Int?
+  id                          String                               @id @default(uuid()) @db.Uuid
+  tourDepartureId             String                               @db.Uuid
+  batchId                     String                               @db.Uuid
+  branchId                    String                               @db.Uuid
+  version                     Int                                  @default(1)
+  currencyCode                String                               @db.VarChar(3)
+  adultFlightSale             Decimal                              @db.Decimal(24, 4)
+  adultFlightSaleCurrencyCode String                               @default("IRR") @db.VarChar(3)
+  childFlightSale             Decimal                              @db.Decimal(24, 4)
+  childFlightSaleCurrencyCode String                               @default("IRR") @db.VarChar(3)
+  businessUplift              Decimal                              @db.Decimal(24, 4)
+  businessUpliftCurrencyCode  String                               @default("IRR") @db.VarChar(3)
+  commissionPercent           Decimal                              @db.Decimal(10, 4)
+  commissionMode              String                               @default("percent") @db.VarChar(12)
+  commissionAmount            Decimal                              @default(0) @db.Decimal(24, 4)
+  commissionCurrencyCode      String                               @default("IRR") @db.VarChar(3)
+  createdByUserId             String                               @db.Uuid
+  updatedByUserId             String                               @db.Uuid
+  createdAt                   DateTime                             @default(now()) @db.Timestamptz(3)
+  updatedAt                   DateTime                             @updatedAt @db.Timestamptz(3)
+  tour                        TourDeparture                        @relation(fields: [tourDepartureId], references: [id], onDelete: Restrict)
+  batch                       ReservationHotelRateBatch            @relation(fields: [batchId], references: [id], onDelete: Restrict)
+  branch                      Branch                               @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  creator                     User                                 @relation("TourPricingDraftCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  updater                     User                                 @relation("TourPricingDraftUpdater", fields: [updatedByUserId], references: [id], onDelete: Restrict)
+  adjustments                 PackagePricingTourAdjustment[]
+  publications                PackagePricingTourPublishedVersion[]
 
   @@unique([tourDepartureId, batchId])
   @@index([branchId, updatedAt])
@@ -4809,53 +4818,58 @@ model PackagePricingTourAdjustment {
   @@unique([draftId, hotelRateId])
 }
 
-/** Immutable publication. Hotel alternatives are separate, never summed together. */
+/**
+ * Immutable publication. Hotel alternatives are separate, never summed together.
+ */
 model PackagePricingTourPublishedVersion {
-  familyAdults Int?
-  familyChildren Int?
-  id                         String                                @id @default(uuid()) @db.Uuid
-  draftId                    String                                @db.Uuid
-  version                    Int
-  draftVersion               Int
-  tourVersion                Int
-  sourceFingerprint          String                                @db.VarChar(64)
-  reason                     String                                @db.VarChar(500)
-  outboundCostRevisionId     String                                @db.Uuid
-  returnCostRevisionId       String?                               @db.Uuid
-  adultFlightSale            Decimal                               @db.Decimal(24, 4)
-  adultFlightSaleCurrencyCode String                               @default("IRR") @db.VarChar(3)
-  childFlightSale            Decimal                               @db.Decimal(24, 4)
-  childFlightSaleCurrencyCode String                               @default("IRR") @db.VarChar(3)
-  businessUplift             Decimal                               @db.Decimal(24, 4)
-  businessUpliftCurrencyCode String                               @default("IRR") @db.VarChar(3)
-  commissionPercent          Decimal                               @db.Decimal(10, 4)
-  currencyCode               String                                @db.VarChar(3)
-  publishedByUserId          String                                @db.Uuid
-  publishedAt                DateTime                              @default(now()) @db.Timestamptz(3)
-  draft                      PackagePricingTourDraft              @relation(fields: [draftId], references: [id], onDelete: Restrict)
-  outboundCost               FinanceTicketPurchaseCostRevision    @relation("TourPricingOutboundCost", fields: [outboundCostRevisionId], references: [id], onDelete: Restrict)
-  returnCost                 FinanceTicketPurchaseCostRevision?   @relation("TourPricingReturnCost", fields: [returnCostRevisionId], references: [id], onDelete: Restrict)
-  publisher                  User                                  @relation("TourPricingPublisher", fields: [publishedByUserId], references: [id], onDelete: Restrict)
-  roomPrices                 PackagePricingTourPublishedRoomPrice[]
+  familyAdults                Int?
+  familyChildren              Int?
+  id                          String                                 @id @default(uuid()) @db.Uuid
+  draftId                     String                                 @db.Uuid
+  version                     Int
+  draftVersion                Int
+  tourVersion                 Int
+  sourceFingerprint           String                                 @db.VarChar(64)
+  reason                      String                                 @db.VarChar(500)
+  outboundCostRevisionId      String                                 @db.Uuid
+  returnCostRevisionId        String?                                @db.Uuid
+  adultFlightSale             Decimal                                @db.Decimal(24, 4)
+  adultFlightSaleCurrencyCode String                                 @default("IRR") @db.VarChar(3)
+  childFlightSale             Decimal                                @db.Decimal(24, 4)
+  childFlightSaleCurrencyCode String                                 @default("IRR") @db.VarChar(3)
+  businessUplift              Decimal                                @db.Decimal(24, 4)
+  businessUpliftCurrencyCode  String                                 @default("IRR") @db.VarChar(3)
+  commissionPercent           Decimal                                @db.Decimal(10, 4)
+  commissionMode              String                                 @default("percent") @db.VarChar(12)
+  commissionAmount            Decimal                                @default(0) @db.Decimal(24, 4)
+  commissionCurrencyCode      String                                 @default("IRR") @db.VarChar(3)
+  currencyCode                String                                 @db.VarChar(3)
+  publishedByUserId           String                                 @db.Uuid
+  publishedAt                 DateTime                               @default(now()) @db.Timestamptz(3)
+  draft                       PackagePricingTourDraft                @relation(fields: [draftId], references: [id], onDelete: Restrict)
+  outboundCost                FinanceTicketPurchaseCostRevision      @relation("TourPricingOutboundCost", fields: [outboundCostRevisionId], references: [id], onDelete: Restrict)
+  returnCost                  FinanceTicketPurchaseCostRevision?     @relation("TourPricingReturnCost", fields: [returnCostRevisionId], references: [id], onDelete: Restrict)
+  publisher                   User                                   @relation("TourPricingPublisher", fields: [publishedByUserId], references: [id], onDelete: Restrict)
+  roomPrices                  PackagePricingTourPublishedRoomPrice[]
 
   @@unique([draftId, version])
 }
 
 model PackagePricingTourPublishedRoomPrice {
-  currencyAmounts Json?
-  id                 String                             @id @default(uuid()) @db.Uuid
-  publicationId      String                             @db.Uuid
-  hotelRateId        String                             @db.Uuid
-  roomCode           String                             @db.VarChar(32)
-  hotelPurchase      Decimal                            @db.Decimal(24, 4)
-  hotelSale          Decimal                            @db.Decimal(24, 4)
-  packagePurchase    Decimal?                           @db.Decimal(24, 4)
-  packageSale        Decimal?                           @db.Decimal(24, 4)
-  commissionAmount   Decimal?                           @db.Decimal(24, 4)
-  netProfit          Decimal?                           @db.Decimal(24, 4)
-  currencyCode       String                             @db.VarChar(3)
-  publication        PackagePricingTourPublishedVersion @relation(fields: [publicationId], references: [id], onDelete: Restrict)
-  hotelRate          ReservationHotelGroupRate          @relation(fields: [hotelRateId], references: [id], onDelete: Restrict)
+  currencyAmounts  Json?
+  id               String                             @id @default(uuid()) @db.Uuid
+  publicationId    String                             @db.Uuid
+  hotelRateId      String                             @db.Uuid
+  roomCode         String                             @db.VarChar(32)
+  hotelPurchase    Decimal                            @db.Decimal(24, 4)
+  hotelSale        Decimal                            @db.Decimal(24, 4)
+  packagePurchase  Decimal?                           @db.Decimal(24, 4)
+  packageSale      Decimal?                           @db.Decimal(24, 4)
+  commissionAmount Decimal?                           @db.Decimal(24, 4)
+  netProfit        Decimal?                           @db.Decimal(24, 4)
+  currencyCode     String                             @db.VarChar(3)
+  publication      PackagePricingTourPublishedVersion @relation(fields: [publicationId], references: [id], onDelete: Restrict)
+  hotelRate        ReservationHotelGroupRate          @relation(fields: [hotelRateId], references: [id], onDelete: Restrict)
 
   @@unique([publicationId, hotelRateId, roomCode])
 }

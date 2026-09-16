@@ -82,6 +82,9 @@ export class PackageTourPricingService {
       input.childFlightSaleCurrencyCode ?? input.currencyCode;
     const businessCurrency =
       input.businessUpliftCurrencyCode ?? input.currencyCode;
+    const commissionMode = input.commissionMode ?? 'percent';
+    const commissionCurrency =
+      input.commissionCurrencyCode ?? input.currencyCode;
     if (
       input?.version !== 1 ||
       !Number.isSafeInteger(input.expectedVersion) ||
@@ -89,7 +92,9 @@ export class PackageTourPricingService {
       !/^[A-Z]{3}$/.test(input.currencyCode ?? '') ||
       !/^[A-Z]{3}$/.test(adultCurrency) ||
       !/^[A-Z]{3}$/.test(childCurrency) ||
-      !/^[A-Z]{3}$/.test(businessCurrency)
+      !/^[A-Z]{3}$/.test(businessCurrency) ||
+      !['percent', 'fixed'].includes(commissionMode) ||
+      !/^[A-Z]{3}$/.test(commissionCurrency)
     )
       throw new BadRequestException('پیش‌نویس قیمت معتبر نیست.');
     const grid = await this.pricing.tourCostGrid(input.tourDepartureId, actor);
@@ -121,9 +126,13 @@ export class PackageTourPricingService {
           input.familyChildren > 20))
     )
       throw new BadRequestException('ترکیب مسافر اتاق خانوادگی معتبر نیست.');
-    const commission = amount(input.commissionPercent, 2);
-    if (commission.gt(100))
+    const commissionPercent = amount(input.commissionPercent, 2);
+    if (commissionMode === 'percent' && commissionPercent.gt(100))
       throw new BadRequestException('کمیسیون نمی‌تواند بیش از ۱۰۰ درصد باشد.');
+    const commissionAmount = amount(
+      input.commissionAmount ?? '0',
+      commissionCurrency === 'IRR' ? 0 : 2,
+    );
     if (!Array.isArray(input.adjustments) || input.adjustments.length > 500)
       throw new BadRequestException('ردیف‌های تغییر قیمت معتبر نیستند.');
     const rowIds = new Set(batch.rows.map((row) => row.id));
@@ -184,7 +193,10 @@ export class PackageTourPricingService {
               childFlightSaleCurrencyCode: childCurrency,
               businessUplift: business,
               businessUpliftCurrencyCode: businessCurrency,
-              commissionPercent: commission,
+              commissionPercent,
+              commissionMode,
+              commissionAmount,
+              commissionCurrencyCode: commissionCurrency,
               familyAdults: input.familyAdults ?? null,
               familyChildren: input.familyChildren ?? null,
               updatedByUserId: actor.userId,
@@ -204,7 +216,10 @@ export class PackageTourPricingService {
               childFlightSaleCurrencyCode: childCurrency,
               businessUplift: business,
               businessUpliftCurrencyCode: businessCurrency,
-              commissionPercent: commission,
+              commissionPercent,
+              commissionMode,
+              commissionAmount,
+              commissionCurrencyCode: commissionCurrency,
               familyAdults: input.familyAdults ?? null,
               familyChildren: input.familyChildren ?? null,
               createdByUserId: actor.userId,
@@ -346,6 +361,14 @@ export class PackageTourPricingService {
             },
             businessCabin,
             commissionPercent: draft.commissionPercent.toString(),
+            commissionMode: (draft.commissionMode ?? 'percent') as
+              | 'percent'
+              | 'fixed',
+            commissionAmount: {
+              amount: draft.commissionAmount?.toString() ?? '0',
+              currencyCode:
+                draft.commissionCurrencyCode ?? draft.currencyCode,
+            },
             flightCosts: [outbound, ...(returning ? [returning] : [])],
           });
           const single =
@@ -416,6 +439,10 @@ export class PackageTourPricingService {
           businessUplift: draft.businessUplift,
           businessUpliftCurrencyCode: draft.businessUpliftCurrencyCode,
           commissionPercent: draft.commissionPercent,
+          commissionMode: draft.commissionMode ?? 'percent',
+          commissionAmount: draft.commissionAmount ?? new Prisma.Decimal(0),
+          commissionCurrencyCode:
+            draft.commissionCurrencyCode ?? draft.currencyCode,
           familyAdults: draft.familyAdults,
           familyChildren: draft.familyChildren,
           currencyCode: draft.currencyCode,
@@ -478,6 +505,11 @@ export class PackageTourPricingService {
       businessUplift: row.businessUplift.toString(),
       businessUpliftCurrencyCode: row.businessUpliftCurrencyCode,
       commissionPercent: row.commissionPercent.toString(),
+      commissionMode: (row.commissionMode ?? 'percent') as
+        | 'percent'
+        | 'fixed',
+      commissionAmount: row.commissionAmount?.toString() ?? '0',
+      commissionCurrencyCode: row.commissionCurrencyCode ?? row.currencyCode,
       ...(row.familyAdults != null ? { familyAdults: row.familyAdults } : {}),
       ...(row.familyChildren != null
         ? { familyChildren: row.familyChildren }
@@ -514,6 +546,11 @@ export class PackageTourPricingService {
       businessUplift: row.businessUplift.toString(),
       businessUpliftCurrencyCode: row.businessUpliftCurrencyCode,
       commissionPercent: row.commissionPercent.toString(),
+      commissionMode: (row.commissionMode ?? 'percent') as
+        | 'percent'
+        | 'fixed',
+      commissionAmount: row.commissionAmount?.toString() ?? '0',
+      commissionCurrencyCode: row.commissionCurrencyCode ?? row.currencyCode,
       ...(row.familyAdults != null ? { familyAdults: row.familyAdults } : {}),
       ...(row.familyChildren != null
         ? { familyChildren: row.familyChildren }

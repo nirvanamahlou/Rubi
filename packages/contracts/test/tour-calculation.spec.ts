@@ -78,6 +78,19 @@ describe('tour package exact multi-currency pricing', () => {
       },
     ]);
   });
+  it('deducts one fixed commission only from the selected currency profit', () => {
+    const result = calculateTourRoom({
+      ...input(),
+      commissionMode: 'fixed',
+      commissionAmount: { amount: '7', currencyCode: 'EUR' },
+    });
+    expect(
+      result.currencyAmounts.find((item) => item.currencyCode === 'EUR'),
+    ).toMatchObject({ commission: '7.00', profit: '53.00' });
+    expect(
+      result.currencyAmounts.find((item) => item.currencyCode === 'IRR'),
+    ).toMatchObject({ commission: '0', profit: '4000000' });
+  });
   it('rejects a discount greater than the stay cost and fractional rials', () => {
     expect(() =>
       calculateTourRoom({
