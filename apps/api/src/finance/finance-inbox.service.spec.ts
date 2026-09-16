@@ -16,6 +16,7 @@ const actor = {
 const emptyTicketPurchases = () => ({
   listFinanceTicketPurchases: vi.fn().mockResolvedValue([]),
   listFinanceInvoiceSources: vi.fn().mockResolvedValue([]),
+  listFinanceCorrections: vi.fn().mockResolvedValue([]),
 });
 
 describe('FinanceInboxService', () => {
@@ -121,13 +122,20 @@ describe('FinanceInboxService', () => {
           handoffCreatedAt: '2026-09-12T12:00:00.000Z',
         },
       ]),
+      listFinanceCorrections: vi.fn().mockResolvedValue([]),
     };
     const result = await new FinanceInboxService(
       sales,
       hr,
       reservations,
       {} as never,
-      {} as never,
+      {
+        client: {
+          financeProcurementInvoiceRevision: {
+            findMany: vi.fn().mockResolvedValue([]),
+          },
+        },
+      } as never,
       procurement as never,
     ).list(actor);
     expect(result.items.map(({ source }) => source)).toEqual([
@@ -313,6 +321,63 @@ describe('FinanceInboxService', () => {
       'purchase-1',
       input,
       'finance-user',
+      ['branch-a'],
+    );
+  });
+
+  it('projects accepted Procurement returns and sends the Finance decision back through the public contract', async () => {
+    const procurement = {
+      listFinanceTicketPurchases: vi.fn().mockResolvedValue([]),
+      listFinanceInvoiceSources: vi.fn().mockResolvedValue([]),
+      listFinanceCorrections: vi.fn().mockResolvedValue([
+        {
+          contract: 'procurement.finance-correction.v1',
+          eventId: '3d91b012-767b-4f75-99e1-a302993a4fe1',
+          sourceVersion: 1,
+          returnId: '9be58f20-83b4-466d-816b-a665bfbfa580',
+          requestId: '825120cd-4850-44b8-af2a-8a19d872807b',
+          orderId: '42ae689c-0f6b-49bd-b48d-7aeab48219d0',
+          receiptItemId: '6f9dfc35-419f-43e9-9788-20643fbf7fc5',
+          branchId: 'branch-a',
+          quantity: '2',
+          reason: 'کالای پذیرفته‌شده مرجوع شد',
+          returnedAt: '2026-09-16T08:00:00.000Z',
+        },
+      ]),
+      applyFinanceCorrectionResult: vi.fn().mockResolvedValue('applied'),
+    };
+    const service = new FinanceInboxService(
+      { financeInbox: vi.fn().mockResolvedValue([]) } as never,
+      { list: vi.fn().mockResolvedValue({ items: [] }) } as never,
+      { list: vi.fn().mockResolvedValue([]) } as never,
+      {} as never,
+      {} as never,
+      procurement as never,
+    );
+
+    const inbox = await service.list(actor);
+    expect(inbox.items).toEqual([
+      expect.objectContaining({
+        source: 'PURCHASES',
+        kind: 'RETURN_CORRECTION',
+        sourceReference: '3d91b012-767b-4f75-99e1-a302993a4fe1',
+        status: 'UNDER_REVIEW',
+      }),
+    ]);
+
+    await expect(
+      service.decideProcurementCorrection(
+        '3d91b012-767b-4f75-99e1-a302993a4fe1',
+        { version: 1, expectedVersion: 1, action: 'APPROVE' },
+        actor,
+      ),
+    ).resolves.toEqual({ status: 'APPROVED' });
+    expect(procurement.applyFinanceCorrectionResult).toHaveBeenCalledWith(
+      expect.objectContaining({
+        contract: 'finance.procurement-correction-result.v1',
+        status: 'APPROVED',
+        actorUserId: 'finance-user',
+      }),
       ['branch-a'],
     );
   });

@@ -135,3 +135,83 @@ export type ProcurementFinanceSourceV1 = {
     amount: string;
   }[];
 };
+
+export type ProcurementApprovalPolicyStepV1 = {
+  userId: string;
+  maximumAmount: string;
+  permission: 'procurement.approve';
+};
+
+export type ProcurementApprovalPolicyV1 = {
+  contract: 'settings.procurement-approval-policy.v1';
+  id: string;
+  version: number;
+  branchId: string;
+  unitId: string;
+  category: string;
+  currencyCode: string;
+  maximumAmount: string;
+  allowUnknownEstimate: boolean;
+  emergencyAllowed: boolean;
+  minimumQuotations: number;
+  singleSourceAllowed: boolean;
+  steps: ProcurementApprovalPolicyStepV1[];
+  approvedAt: string;
+  isActive: boolean;
+};
+
+export type ProcurementApprovalPolicyCreateV1 = Omit<
+  ProcurementApprovalPolicyV1,
+  'contract' | 'id' | 'version' | 'approvedAt' | 'isActive'
+> & { version: 1 };
+
+export type ProcurementFinanceResultV1 = {
+  contract: 'finance.procurement-result.v1';
+  sourceId: string;
+  sourceVersion: number;
+  financeReference: string;
+  status: 'APPROVED' | 'CORRECTION_REQUIRED' | 'PARTIALLY_PAID' | 'PAID';
+  financeVersion: number;
+  cumulativePaid: string;
+  remainingAmount: string;
+  reason: string;
+  occurredAt: string;
+};
+
+export type ProcurementFinanceCorrectionSourceV1 = {
+  contract: 'procurement.finance-correction.v1';
+  eventId: string;
+  sourceVersion: 1;
+  returnId: string;
+  requestId: string;
+  orderId: string;
+  receiptItemId: string;
+  branchId: string;
+  quantity: string;
+  reason: string;
+  returnedAt: string;
+};
+
+export type ProcurementFinanceCorrectionResultV1 = {
+  contract: 'finance.procurement-correction-result.v1';
+  eventId: string;
+  sourceVersion: number;
+  financeReference: string;
+  status: 'APPROVED' | 'CORRECTION_REQUIRED';
+  reason: string;
+  actorUserId: string;
+  occurredAt: string;
+};
+
+export type ProcurementSupplierInboundEventV1 = {
+  contract: 'procurement.supplier-inbound.v1';
+  externalMessageId: string;
+  eventType:
+    | 'ORDER_ACKNOWLEDGED'
+    | 'ORDER_REJECTED'
+    | 'SHIPMENT_NOTICE'
+    | 'INVOICE_AVAILABLE';
+  orderReference: string;
+  occurredAt: string;
+  payload: Record<string, unknown>;
+};

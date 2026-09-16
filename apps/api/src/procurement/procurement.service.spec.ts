@@ -523,7 +523,7 @@ describe.skipIf(process.env.PROCUREMENT_API_DATABASE_TEST !== '1')(
       } as unknown as LegalEntitiesService;
       const port = {
         resolve: async () => approvedPolicy,
-      } as ProcurementPolicyPort;
+      } as unknown as ProcurementPolicyPort;
       const operations = new ProcurementOperations(
         master,
         iam,
@@ -540,6 +540,7 @@ describe.skipIf(process.env.PROCUREMENT_API_DATABASE_TEST !== '1')(
         port,
         operations,
         new NotificationsService(new NotificationsRepository(database)),
+        { syncProcurementWithinTransaction: async () => null } as never,
       );
     }, 30000);
     afterAll(async () => {
@@ -857,12 +858,12 @@ describe.skipIf(process.env.PROCUREMENT_API_DATABASE_TEST !== '1')(
       });
       expect(intents).toHaveLength(1);
       expect(intents[0]).toMatchObject({
-        status: 'BLOCKED',
+        status: 'PENDING',
         payload: {
           orderId: order.id,
           orderVersion: 1,
           supplierId: supplier,
-          connection: 'SUPPLIER_ADAPTER_NOT_CONFIGURED',
+          connection: 'SUPPLIER_DELIVERY_QUEUED',
         },
       });
       const publicEvents = new ProcurementPublicService(database);
@@ -1077,7 +1078,7 @@ describe.skipIf(process.env.PROCUREMENT_API_DATABASE_TEST !== '1')(
       ).toBe(1);
       expect(await service.detail(row.id, maker)).toEqual(row);
     });
-    it('Finance retries create one blocked source/outbox, and returns never change Finance-owned payment data', async () => {
+    it('Finance retries create one source/outbox, and returns create a correction without changing Finance-owned payment data', async () => {
       const context = await orderedRequest();
       let row = await command(
         context.row,
@@ -1198,7 +1199,7 @@ describe.skipIf(process.env.PROCUREMENT_API_DATABASE_TEST !== '1')(
           (event) =>
             (event.payload as { requestId?: string }).requestId === row.id,
         ),
-      ).toBe(true);
+      ).toBe(false);
       expect(
         await database.client.procurementOutbox.count({
           where: { handoffId: handoff.id, status: 'PENDING' },
@@ -1230,7 +1231,7 @@ describe.skipIf(process.env.PROCUREMENT_API_DATABASE_TEST !== '1')(
         { where: { requestId: row.id } },
       );
       expect(returned.data).toMatchObject({
-        financeCorrectionStatus: 'NOT_CONNECTED',
+        financeCorrectionStatus: 'PENDING',
       });
       expect(
         await database.client.procurementDiscrepancy.count({
@@ -1491,7 +1492,7 @@ describe.skipIf(process.env.PROCUREMENT_API_DATABASE_TEST !== '1')(
       await orderedRequest('GOODS', true, 'USD');
       const report = await service.report({ dimension: 'currency' }, own);
       expect(report.basis).toBe('CURRENT_ORDER_VERSION_BY_CURRENCY');
-      expect(report.finance).toBe('NOT_CONNECTED');
+      expect(report.finance).toBe('CONNECTED');
       expect(
         Number(
           report.groups.items.find(

@@ -10,6 +10,10 @@ import * as Joi from 'joi';
 import type {
   AuthenticatedActor,
   ProcurementFinanceSourceV1,
+  ProcurementFinanceCorrectionResultV1,
+  ProcurementFinanceCorrectionSourceV1,
+  ProcurementFinanceResultV1,
+  ProcurementSupplierInboundEventV1,
   TicketCatalogPurchaseCreateV1,
   TicketCatalogPurchaseV1,
 } from '@nora/contracts';
@@ -131,7 +135,9 @@ export class ProcurementPublicService {
     if (!branchIds.length) return [];
     const rows = await this.database.client.procurementFinanceHandoff.findMany({
       where: {
-        status: { in: ['NOT_CONNECTED', 'PENDING'] },
+        status: {
+          in: ['NOT_CONNECTED', 'PENDING', 'ACCEPTED', 'PARTIALLY_PAID'],
+        },
         procurementFinanceHandoffRequestid: {
           branchId: { in: [...branchIds] },
         },
@@ -146,6 +152,160 @@ export class ProcurementPublicService {
     }));
   }
 
+  async financeInvoiceSource(sourceId: string, branchIds: readonly string[]) {
+    const row = await this.database.client.procurementFinanceHandoff.findFirst({
+      where: {
+        invoiceId: sourceId,
+        procurementFinanceHandoffRequestid: {
+          branchId: { in: [...branchIds] },
+        },
+      },
+      orderBy: [{ invoiceVersion: 'desc' }, { createdAt: 'desc' }],
+      select: { payload: true, createdAt: true, status: true, version: true },
+    });
+    return row
+      ? {
+          ...(row.payload as unknown as ProcurementFinanceSourceV1),
+          handoffCreatedAt: row.createdAt.toISOString(),
+          handoffStatus: row.status,
+          handoffVersion: row.version,
+        }
+      : null;
+  }
+
+  /** Finance reads accepted-return corrections without accessing Procurement tables. */
+  async listFinanceCorrections(
+    branchIds: readonly string[],
+  ): Promise<readonly ProcurementFinanceCorrectionSourceV1[]> {
+    if (!branchIds.length) return [];
+    const rows = await this.database.client.procurementOutbox.findMany({
+      where: {
+        eventType: 'procurement.finance-correction.v1',
+        status: { in: ['PENDING', 'RETRY'] },
+        procurementOutboxRequestid: { branchId: { in: [...branchIds] } },
+      },
+      orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+      take: 500,
+      select: { payload: true },
+    });
+    return rows.map(
+      (row) => row.payload as unknown as ProcurementFinanceCorrectionSourceV1,
+    );
+  }
+
+  /** Finance returns its decision through the public contract; Procurement remains owner. */
+  async applyFinanceCorrectionResult(
+    result: ProcurementFinanceCorrectionResultV1,
+    branchIds: readonly string[],
+  ) {
+    return this.database.client.$transaction(async (tx) => {
+      const event = await tx.procurementOutbox.findFirst({
+        where: {
+          eventId: result.eventId,
+          eventType: 'procurement.finance-correction.v1',
+          procurementOutboxRequestid: { branchId: { in: [...branchIds] } },
+        },
+      });
+      if (!event) return 'not-found' as const;
+      if (!['PENDING', 'RETRY'].includes(event.status))
+        return 'conflict' as const;
+      const source =
+        event.payload as unknown as ProcurementFinanceCorrectionSourceV1;
+      if (source.sourceVersion !== result.sourceVersion)
+        return 'conflict' as const;
+      const returned = await tx.procurementReturn.findUnique({
+        where: { id: source.returnId },
+      });
+      if (!returned) return 'not-found' as const;
+      await tx.procurementReturn.update({
+        where: { id: returned.id },
+        data: {
+          data: {
+            ...(returned.data as Prisma.JsonObject),
+            financeCorrectionStatus: result.status,
+            financeCorrection: result,
+          },
+        },
+      });
+      await tx.procurementOutbox.update({
+        where: { id: event.id },
+        data: {
+          status: 'DELIVERED',
+          deliveredAt: new Date(result.occurredAt),
+          payload: {
+            ...(event.payload as Prisma.JsonObject),
+            financeResult: result,
+          },
+        },
+      });
+      return 'applied' as const;
+    });
+  }
+
+  async applyFinanceResult(
+    result: ProcurementFinanceResultV1,
+    transaction?: Prisma.TransactionClient,
+  ) {
+    const work = async (tx: Prisma.TransactionClient) => {
+      const handoff = await tx.procurementFinanceHandoff.findFirst({
+        where: {
+          invoiceId: result.sourceId,
+          invoiceVersion: result.sourceVersion,
+        },
+      });
+      if (!handoff) return 'not-found' as const;
+      const allowed: Record<string, readonly string[]> = {
+        PENDING: ['APPROVED', 'CORRECTION_REQUIRED'],
+        NOT_CONNECTED: ['APPROVED', 'CORRECTION_REQUIRED'],
+        ACCEPTED: ['PARTIALLY_PAID', 'PAID'],
+        PARTIALLY_PAID: ['PARTIALLY_PAID', 'PAID'],
+      };
+      if (!(allowed[handoff.status] ?? []).includes(result.status))
+        return 'conflict' as const;
+      await tx.procurementFinanceHandoff.update({
+        where: { id: handoff.id },
+        data: {
+          status: result.status === 'APPROVED' ? 'ACCEPTED' : result.status,
+          version: { increment: 1 },
+          acceptedSourceId: result.financeReference,
+          lastErrorCode:
+            result.status === 'CORRECTION_REQUIRED'
+              ? 'FINANCE_CORRECTION_REQUIRED'
+              : null,
+        },
+      });
+      await tx.procurementInvoice.update({
+        where: { id: handoff.invoiceId },
+        data: {
+          status:
+            result.status === 'APPROVED' || result.status === 'PARTIALLY_PAID'
+              ? 'ACCEPTED'
+              : result.status,
+          data: {
+            ...((
+              await tx.procurementInvoice.findUniqueOrThrow({
+                where: { id: handoff.invoiceId },
+                select: { data: true },
+              })
+            ).data as Prisma.JsonObject),
+            finance: result,
+          },
+        },
+      });
+      await tx.procurementOutbox.updateMany({
+        where: {
+          handoffId: handoff.id,
+          status: { in: ['PENDING', 'PROCESSING'] },
+        },
+        data: { status: 'DELIVERED', deliveredAt: new Date() },
+      });
+      return 'applied' as const;
+    };
+    return transaction
+      ? work(transaction)
+      : this.database.client.$transaction((tx) => work(tx));
+  }
+
   /** Owner-scoped outbox projections for Tasks and Integrations adapters. */
   async listPendingConnectionEvents(
     branchIds: readonly string[],
@@ -156,7 +316,8 @@ export class ProcurementPublicService {
     const rows = await this.database.client.procurementOutbox.findMany({
       where: {
         eventType: contract,
-        status: 'BLOCKED',
+        status: { in: ['PENDING', 'RETRY'] },
+        availableAt: { lte: new Date() },
         procurementOutboxRequestid: { branchId: { in: [...branchIds] } },
       },
       orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
@@ -168,6 +329,99 @@ export class ProcurementPublicService {
       payload: row.payload,
       createdAt: row.createdAt.toISOString(),
     }));
+  }
+
+  async claimConnectionEvents(
+    branchIds: readonly string[],
+    contract: 'procurement.supplier-order-intent.v1',
+    limit = 25,
+  ) {
+    if (!branchIds.length) return [];
+    return this.database.client.$transaction(async (tx) => {
+      const candidates = await tx.procurementOutbox.findMany({
+        where: {
+          eventType: contract,
+          status: { in: ['PENDING', 'RETRY'] },
+          availableAt: { lte: new Date() },
+          procurementOutboxRequestid: { branchId: { in: [...branchIds] } },
+        },
+        orderBy: [{ availableAt: 'asc' }, { createdAt: 'asc' }],
+        take: Math.max(1, Math.min(limit, 100)),
+      });
+      const claimed = [];
+      for (const event of candidates) {
+        const update = await tx.procurementOutbox.updateMany({
+          where: {
+            id: event.id,
+            status: { in: ['PENDING', 'RETRY'] },
+            availableAt: { lte: new Date() },
+          },
+          data: { status: 'PROCESSING', attempts: { increment: 1 } },
+        });
+        if (update.count === 1)
+          claimed.push({
+            eventId: event.eventId,
+            payload: event.payload,
+            attempts: event.attempts + 1,
+          });
+      }
+      return claimed;
+    });
+  }
+
+  async settleConnectionEvent(
+    eventId: string,
+    result: { delivered: boolean; errorCode?: string },
+  ) {
+    const event = await this.database.client.procurementOutbox.findUnique({
+      where: { eventId },
+    });
+    if (!event || event.eventType !== 'procurement.supplier-order-intent.v1')
+      return 'not-found' as const;
+    if (event.status !== 'PROCESSING') return 'conflict' as const;
+    const terminal = !result.delivered && event.attempts >= 8;
+    await this.database.client.procurementOutbox.update({
+      where: { id: event.id },
+      data: result.delivered
+        ? { status: 'DELIVERED', deliveredAt: new Date() }
+        : {
+            status: terminal ? 'FAILED' : 'RETRY',
+            availableAt: new Date(
+              Date.now() + Math.min(60, 2 ** event.attempts) * 60_000,
+            ),
+            payload: {
+              ...(event.payload as Prisma.JsonObject),
+              lastErrorCode: result.errorCode ?? 'SUPPLIER_DELIVERY_FAILED',
+            },
+          },
+    });
+    return result.delivered ? ('delivered' as const) : ('retry' as const);
+  }
+
+  async applySupplierInboundEvent(event: ProcurementSupplierInboundEventV1) {
+    const order = await this.database.client.procurementOrder.findUnique({
+      where: { id: event.orderReference },
+    });
+    if (!order) return 'not-found' as const;
+    const data = order.data as Prisma.JsonObject;
+    const status =
+      event.eventType === 'ORDER_REJECTED' ? 'SUPPLIER_REJECTED' : order.status;
+    await this.database.client.procurementOrder.update({
+      where: { id: order.id },
+      data: {
+        status,
+        data: {
+          ...data,
+          supplierConnection: {
+            eventType: event.eventType,
+            externalMessageId: event.externalMessageId,
+            occurredAt: event.occurredAt,
+            payload: event.payload,
+          },
+        } as Prisma.InputJsonValue,
+      },
+    });
+    return 'applied' as const;
   }
 
   private toTicketPurchase(row: {

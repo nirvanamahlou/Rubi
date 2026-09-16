@@ -51,7 +51,10 @@ model User {
   reservationManifestExports                       ReservationManifestExport[]
   reservationServicePurchases                      ReservationServicePurchase[]
   financeSupplierPaymentRevisions                  FinanceSupplierPaymentRevision[]
+  financeProcurementInvoiceRevisions               FinanceProcurementInvoiceRevision[]
   financeSettlementAccountsCreated                 FinanceSettlementAccount[]         @relation("FinanceSettlementAccountCreator")
+  procurementApprovalPoliciesCreated               SettingsProcurementApprovalPolicy[] @relation("ProcurementApprovalPolicyCreator")
+  automationTasksAssigned                          AutomationTask[]                    @relation("AutomationTaskAssignee")
   salesPaymentsFinanceReviewed                     SalesContractPaymentEntry[]        @relation("SalesPaymentFinanceReviewer")
   ownedTravelIntakes                               ReservationIntake[]                @relation("TravelSalesOwner")
   travelWorkflowRevisions                          ReservationWorkflowRevision[]
@@ -228,6 +231,9 @@ model Branch {
   customerAffairsTickets             CustomerAffairsTicket[]
   customerAffairsAuditEvents         CustomerAffairsAuditEvent[]
   financeSettlementAccounts          FinanceSettlementAccount[]
+  financeProcurementInvoiceRevisions FinanceProcurementInvoiceRevision[]
+  procurementApprovalPolicies        SettingsProcurementApprovalPolicy[]
+  automationTasks                    AutomationTask[]
 
   @@map("branches")
 }
@@ -968,6 +974,7 @@ model MasterBankBranch {
 model MasterPaymentMethod {
   b2bAgreementRevisions           B2bAgreementRevision[]
   financeSupplierPaymentRevisions FinanceSupplierPaymentRevision[]
+  financeProcurementInvoiceRevisions FinanceProcurementInvoiceRevision[]
   id                              String                           @id @default(uuid()) @db.Uuid
   code                            String                           @unique @db.VarChar(32)
   name                            String                           @db.VarChar(160)
@@ -3847,10 +3854,42 @@ model FinanceSettlementAccount {
   bank             MasterBank?                      @relation(fields: [bankId], references: [id], onDelete: Restrict)
   createdBy        User                             @relation("FinanceSettlementAccountCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
   supplierPayments FinanceSupplierPaymentRevision[]
+  procurementInvoicePayments FinanceProcurementInvoiceRevision[]
 
   @@unique([branchId, title, currencyCode])
   @@index([branchId, isActive, title])
   @@index([bankId, isActive])
+}
+
+model FinanceProcurementInvoiceRevision {
+  id                String                    @id @default(uuid()) @db.Uuid
+  sourceId          String                    @db.Uuid
+  sourceVersion     Int
+  branchId          String                    @db.Uuid
+  version           Int
+  status            String                    @db.VarChar(40)
+  accountId         String?                   @db.Uuid
+  paymentMethodId   String?                   @db.Uuid
+  paidAmount        Decimal?                  @db.Decimal(24, 4)
+  exchangeRateToIrr Decimal?                  @db.Decimal(24, 8)
+  rialEquivalent    Decimal?                  @db.Decimal(24, 4)
+  cumulativePaid    Decimal                   @default(0) @db.Decimal(24, 4)
+  remainingAmount   Decimal                   @db.Decimal(24, 4)
+  transferAt        DateTime?                 @db.Timestamptz(3)
+  paymentReference  String?                   @db.VarChar(160)
+  reason            String                    @default("") @db.VarChar(500)
+  actorUserId       String                    @db.Uuid
+  createdAt         DateTime                  @default(now()) @db.Timestamptz(3)
+  branch            Branch                    @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  account           FinanceSettlementAccount? @relation(fields: [accountId], references: [id], onDelete: Restrict)
+  paymentMethod     MasterPaymentMethod?      @relation(fields: [paymentMethodId], references: [id], onDelete: Restrict)
+  actor             User                      @relation(fields: [actorUserId], references: [id], onDelete: Restrict)
+
+  @@unique([sourceId, version])
+  @@index([branchId, status, createdAt])
+  @@index([accountId, transferAt])
+  @@index([paymentMethodId, transferAt])
+  @@map("finance_procurement_invoice_revisions")
 }
 
 model ReservationServicePurchase {
@@ -4965,4 +5004,70 @@ model ProcurementAudit {
   @@index([actorUserId])
   @@index([requestId, createdAt, id])
   @@map("procurement_audit")
+}
+
+model SettingsProcurementApprovalPolicy {
+  id                   String   @id @default(uuid()) @db.Uuid
+  branchId             String   @db.Uuid
+  unitId               String   @db.VarChar(160)
+  category             String   @db.VarChar(160)
+  currencyCode         String   @db.Char(3)
+  maximumAmount        Decimal  @db.Decimal(24, 4)
+  allowUnknownEstimate Boolean  @default(false)
+  emergencyAllowed     Boolean  @default(false)
+  minimumQuotations    Int      @default(1)
+  singleSourceAllowed  Boolean  @default(false)
+  steps                Json
+  version              Int      @default(1)
+  isActive             Boolean  @default(true)
+  approvedAt           DateTime @default(now()) @db.Timestamptz(3)
+  createdByUserId      String   @db.Uuid
+  createdAt            DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt            DateTime @updatedAt @db.Timestamptz(3)
+  branch               Branch   @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  createdBy            User     @relation("ProcurementApprovalPolicyCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
+
+  @@unique([branchId, unitId, category, currencyCode, version])
+  @@index([branchId, unitId, category, currencyCode, isActive])
+  @@map("settings_procurement_approval_policies")
+}
+
+model AutomationTask {
+  id              String    @id @default(uuid()) @db.Uuid
+  sourceModule    String    @db.VarChar(80)
+  sourceEventId   String    @db.Uuid
+  sourceReference String    @db.VarChar(160)
+  branchId        String    @db.Uuid
+  assigneeUserId  String    @db.Uuid
+  kind            String    @db.VarChar(80)
+  title           String    @db.VarChar(300)
+  status          String    @default("OPEN") @db.VarChar(32)
+  dueAt           DateTime? @db.Timestamptz(3)
+  payload         Json      @default("{}")
+  completedAt     DateTime? @db.Timestamptz(3)
+  createdAt       DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt       DateTime  @updatedAt @db.Timestamptz(3)
+  branch          Branch    @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  assignee        User      @relation("AutomationTaskAssignee", fields: [assigneeUserId], references: [id], onDelete: Restrict)
+
+  @@unique([sourceModule, sourceEventId, assigneeUserId])
+  @@index([assigneeUserId, status, dueAt])
+  @@index([sourceModule, sourceReference, status])
+  @@map("automation_tasks")
+}
+
+model IntegrationSupplierMessage {
+  id                String    @id @default(uuid()) @db.Uuid
+  externalMessageId String    @unique @db.VarChar(160)
+  eventType         String    @db.VarChar(120)
+  orderReference    String    @db.VarChar(160)
+  status            String    @default("RECEIVED") @db.VarChar(40)
+  payload           Json
+  receivedAt        DateTime  @default(now()) @db.Timestamptz(3)
+  processedAt       DateTime? @db.Timestamptz(3)
+  lastErrorCode     String?   @db.VarChar(100)
+
+  @@index([status, receivedAt])
+  @@index([orderReference, receivedAt])
+  @@map("integration_supplier_messages")
 }

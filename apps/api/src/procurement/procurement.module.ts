@@ -17,6 +17,8 @@ import type { AuthenticatedRequest } from '../iam/iam.types';
 import { LegalEntitiesModule } from '../legal-entities/legal-entities.module';
 import { MasterDataModule } from '../master-data/master-data.module';
 import { NotificationsModule } from '../notifications/notifications.module';
+import { SettingsModule } from '../settings/settings.module';
+import { TasksModule } from '../tasks/tasks.module';
 import { ProcurementController } from './procurement.controller';
 import { ProcurementExports } from './procurement.exports';
 import { ProcurementOperations } from './procurement.operations';
@@ -51,6 +53,8 @@ class ProcurementTicketPurchasesController {
     DocumentsModule,
     LegalEntitiesModule,
     NotificationsModule,
+    SettingsModule,
+    TasksModule,
   ],
   controllers: [ProcurementController, ProcurementTicketPurchasesController],
   providers: [

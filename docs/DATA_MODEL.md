@@ -1,5 +1,26 @@
 # مدل داده و ERD اولیه
 
+## PROCUREMENT-BACKEND-CONNECTIONS-0916
+
+- `settings_procurement_approval_policies` artifact مصوب و نسخه‌دار سیاست خرید را با
+  scope شعبه، واحد، دسته و ارز نگه می‌دارد. هر نسخه مراحل تأیید، سقف‌ها و قواعد
+  استعلام/فوریت را snapshot می‌کند؛ Procurement فقط از سرویس عمومی Settings می‌خواند.
+- `automation_tasks` projection پایدار رخداد workflow است. کلید یکتای
+  source-module/event/assignee ایجاد دوباره را مهار می‌کند و وضعیت بسته‌شدن پرونده،
+  کار باز قبلی را در همان تراکنش تکمیل یا لغو می‌کند.
+- `finance_procurement_invoice_revisions` تصمیم و پرداخت‌های append-only فاکتور خرید
+  را با مبلغ و نرخ Decimal، حساب تسویه، روش پرداخت، Actor و نسخه نگه می‌دارد. Finance
+  مالک این جدول است؛ Procurement فقط contract نتیجه را دریافت و handoff خود را به‌روز
+  می‌کند. `finance_settlement_accounts` نیز چون مدل قبلی migration منتشرشده نداشت، در
+  migration همین واحد کار به‌صورت سازگار با پایگاه‌های قبلاً sync‌شده ایجاد می‌شود.
+- اصلاح مالی مرجوعی در outbox مالک Procurement با contract
+  `procurement.finance-correction.v1` ثبت می‌شود؛ تصمیم Finance در payload و دادهٔ همان
+  مرجوعی audit می‌شود و دسترسی مستقیم میان جدول‌های دو ماژول وجود ندارد.
+- `integration_supplier_messages` inbox پیام‌های امضاشدهٔ تأمین‌کننده را با شناسه
+  بیرونی یکتا نگه می‌دارد. intent خروجی در `procurement_outbox` باقی می‌ماند و adapter
+  با retry/idempotency آن را تحویل می‌دهد. Secret و payload حساس در این جدول ذخیره
+  نمی‌شوند.
+
 ## TICKET-REPEAT-PURCHASE-0914
 
 Procurement owns `ProcurementTicketPurchaseRequest`: one current purchase request per branch and Ticket Catalog product reference. It stores a positive `Decimal(20,6)` amount, three-letter currency code, first service date, title and supplier snapshot, creator/idempotency audit, version and `PENDING/PAID/CANCELLED` status. A pending request may be revised in place with an incremented version; after Finance handles it the price is locked. Ticket Catalog and Finance use Procurement's public service and never query this table directly. Branch and creator have additive real FKs; the catalog product reference remains the producer's versioned public identifier. Historical ticket definitions without `serviceDate` remain readable and are not backfilled.

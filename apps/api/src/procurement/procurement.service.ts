@@ -35,6 +35,7 @@ import {
 } from './procurement.operations';
 import { operationalQueue, procurementReport } from './procurement.reporting';
 import { NotificationsService } from '../notifications/notifications.service';
+import { AutomationTasksService } from '../tasks/automation-tasks.service';
 
 export type ProcurementTx = Prisma.TransactionClient;
 export type ProcurementRow = Prisma.ProcurementRequestGetPayload<null>;
@@ -135,6 +136,8 @@ export class ProcurementService {
     private readonly operations: ProcurementOperations,
     @Inject(NotificationsService)
     private readonly notifications: NotificationsService,
+    @Inject(AutomationTasksService)
+    private readonly tasks: AutomationTasksService,
   ) {}
   private require(
     actor: AuthenticatedActor,
@@ -243,11 +246,11 @@ export class ProcurementService {
       throw new ForbiddenException('دسترسی خرید وجود ندارد.');
     const [currencies, branches, requester, preferredBranchId] =
       await Promise.all([
-      this.master.currencies(),
-      this.master.branches(actor.branchIds),
-      this.hr.self(actor),
-      this.hr.preferredBranch(actor),
-    ]);
+        this.master.currencies(),
+        this.master.branches(actor.branchIds),
+        this.hr.self(actor),
+        this.hr.preferredBranch(actor),
+      ]);
     return {
       permissions: PROCUREMENT_PERMISSION_CODES.filter((code) =>
         actor.permissions.includes(code),
@@ -792,11 +795,12 @@ export class ProcurementService {
         after: { version: row.version, status: row.status },
       },
     });
-    await tx.procurementOutbox.create({
+    const event = await tx.procurementOutbox.create({
       data: {
         requestId: row.id,
         eventType: 'procurement.workflow-event.v1',
-        status: 'BLOCKED',
+        status: 'DELIVERED',
+        deliveredAt: new Date(),
         payload: {
           contract: 'procurement.workflow-event.v1',
           requestId: row.id,
@@ -805,21 +809,31 @@ export class ProcurementService {
           action,
           status: row.status,
           ownerUserId: row.ownerUserId,
-          connection: 'TASKS_NOT_CONNECTED',
+          connection: 'TASKS_CONNECTED',
         },
       },
     });
+    const pending =
+      row.status === 'IN_REVIEW'
+        ? await tx.procurementApprovalStep.findFirst({
+            where: {
+              status: 'PENDING',
+              procurementApprovalStepSnapshotid: { requestId: row.id },
+            },
+            orderBy: [{ createdAt: 'desc' }, { position: 'asc' }],
+          })
+        : null;
+    await this.tasks.syncProcurementWithinTransaction(tx, {
+      eventId: event.eventId,
+      requestId: row.id,
+      requestNumber: row.number,
+      branchId: row.branchId,
+      status: row.status,
+      ownerUserId: row.ownerUserId,
+      approverUserId: pending?.approverUserId ?? null,
+      action,
+    });
     if (action !== 'CREATE' && action !== 'UPDATE') {
-      const pending =
-        row.status === 'IN_REVIEW'
-          ? await tx.procurementApprovalStep.findFirst({
-              where: {
-                status: 'PENDING',
-                procurementApprovalStepSnapshotid: { requestId: row.id },
-              },
-              orderBy: [{ createdAt: 'desc' }, { position: 'asc' }],
-            })
-          : null;
       await this.notifications.createWithinTransaction(tx, {
         recipientUserIds: [
           ...new Set(

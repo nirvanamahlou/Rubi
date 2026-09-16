@@ -1,20 +1,8 @@
 import { randomUUID } from 'node:crypto';
-import { mkdtemp, rm, writeFile } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
-import { afterEach, expect, it } from 'vitest';
+import { expect, it, vi } from 'vitest';
 import type { ProcurementDraftV1 } from '@nora/contracts';
+import type { SettingsProcurementPolicyService } from '../settings/settings-procurement-policy.service';
 import { ProcurementPolicyPort } from './procurement.ports';
-
-const previous = process.env.SETTINGS_PROCUREMENT_APPROVAL_POLICIES_FILE;
-let directory: string | null = null;
-afterEach(async () => {
-  if (previous === undefined)
-    delete process.env.SETTINGS_PROCUREMENT_APPROVAL_POLICIES_FILE;
-  else process.env.SETTINGS_PROCUREMENT_APPROVAL_POLICIES_FILE = previous;
-  if (directory) await rm(directory, { recursive: true, force: true });
-  directory = null;
-});
 
 const branchId = randomUUID();
 const draft = {
@@ -24,19 +12,19 @@ const draft = {
   currencyCode: 'IRR',
 } as ProcurementDraftV1;
 
-it('fails closed without a Settings-owned approved policy artifact', async () => {
-  delete process.env.SETTINGS_PROCUREMENT_APPROVAL_POLICIES_FILE;
+it('fails closed without a Settings policy service or active policy', async () => {
   expect(await new ProcurementPolicyPort().resolve(draft)).toBeNull();
+  const settings = {
+    resolve: vi.fn().mockResolvedValue(null),
+  } as unknown as SettingsProcurementPolicyService;
+  expect(await new ProcurementPolicyPort(settings).resolve(draft)).toBeNull();
 });
 
-it('selects one exact approved policy and rejects ambiguous or unapproved artifacts', async () => {
-  directory = await mkdtemp(join(tmpdir(), 'procurement-policy-'));
-  const path = join(directory, 'approved.json');
-  process.env.SETTINGS_PROCUREMENT_APPROVAL_POLICIES_FILE = path;
+it('returns the exact versioned Settings policy as a domain policy', async () => {
   const policy = {
+    contract: 'settings.procurement-approval-policy.v1' as const,
     id: randomUUID(),
-    version: 1,
-    source: 'SETTINGS',
+    version: 2,
     approvedAt: new Date().toISOString(),
     branchId,
     unitId: 'unit-a',
@@ -51,20 +39,16 @@ it('selects one exact approved policy and rejects ambiguous or unapproved artifa
       {
         userId: randomUUID(),
         maximumAmount: '1000',
-        permission: 'procurement.approve',
+        permission: 'procurement.approve' as const,
       },
     ],
+    isActive: true,
   };
-  await writeFile(path, JSON.stringify([policy]));
-  expect(await new ProcurementPolicyPort().resolve(draft)).toEqual(policy);
-  expect(
-    await new ProcurementPolicyPort().resolve({ ...draft, category: 'HOTEL' }),
-  ).toBeNull();
-  await writeFile(
-    path,
-    JSON.stringify([policy, { ...policy, id: randomUUID() }]),
-  );
-  expect(await new ProcurementPolicyPort().resolve(draft)).toBeNull();
-  await writeFile(path, JSON.stringify([{ ...policy, source: 'LOCAL' }]));
-  expect(await new ProcurementPolicyPort().resolve(draft)).toBeNull();
+  const settings = {
+    resolve: vi.fn().mockResolvedValue(policy),
+  } as unknown as SettingsProcurementPolicyService;
+  await expect(
+    new ProcurementPolicyPort(settings).resolve(draft),
+  ).resolves.toEqual({ ...policy, source: 'SETTINGS' });
+  expect(settings.resolve).toHaveBeenCalledWith(draft);
 });
