@@ -2934,6 +2934,9 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 - اصلاح تکمیلی ۱۴۰۵/۰۶/۲۵: ذخیره و بازیابی فوری گزینه‌های «ثبت مورد جدید» در
   فرم درخواست خرید، متن راهنمای ذخیره، تست هدفمند Web و استقرار نسخهٔ اصلاح‌شده
   روی ۳۱۰۰ در همین واحد رزرو شد؛ Schema، Migration و قرارداد API تغییر نمی‌کند.
+- اصلاح تکمیلی فرم: کنترل‌های منشأ درخواست از UI حذف و بخش مستقل پیوست‌ها و
+  یادداشت‌ها حفظ می‌شود؛ قرارداد داخلی origin برای سازگاری درخواست‌های موجود بدون
+  تغییر باقی می‌ماند.
 - مبنا: `codex/pc-b-procurement-under-human-capital@52f7d7d1`؛ شاخهٔ یکتا
   `codex/pc-b-procurement-live-integration`. COMPUTER_ID=PC-B، مالک Procurement و
   HR/Master Data/Documents طبق `docs/MODULE_OWNERSHIP.md`.

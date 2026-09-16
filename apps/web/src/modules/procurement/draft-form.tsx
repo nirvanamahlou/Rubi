@@ -875,70 +875,9 @@ export function DraftForm({
               <span className="flex size-10 items-center justify-center rounded-xl bg-teal-500/10 text-teal-700 dark:text-teal-300">
                 <FileText aria-hidden="true" className="size-5" />
               </span>
-              منشأ درخواست و پیوست‌ها
+              پیوست‌ها و یادداشت‌ها
             </span>
           </legend>
-          <FormField id="proc-origin" label="نوع منشأ درخواست">
-            <ProcurementSelect
-              id="proc-origin"
-              className={selectClass}
-              value={draft.origin.kind}
-              onChange={(event) =>
-                update(
-                  'origin',
-                  event.target.value === 'GENERAL'
-                    ? { kind: 'GENERAL' }
-                    : {
-                        kind: 'SPECIALIZED',
-                        module: 'RESERVATIONS',
-                        operationId: '',
-                        version: 1,
-                      },
-                )
-              }
-            >
-              <option value="GENERAL">خرید عمومی شرکت</option>
-              <option value="SPECIALIZED">ارجاع از رزرواسیون</option>
-            </ProcurementSelect>
-          </FormField>
-          {draft.origin.kind === 'SPECIALIZED' && (
-            <>
-              <Alert
-                title="مرجع عملیات تخصصی"
-                description="عملیات سفر در رزرواسیون باقی می‌ماند. اعتبار مرجع و نسخه هنگام ارسال در سرور کنترل می‌شود."
-              />
-              <div className="grid gap-4 sm:grid-cols-2">
-                <FormField id="proc-origin-id" label="شناسه پرونده رزرواسیون">
-                  <Input
-                    id="proc-origin-id"
-                    value={draft.origin.operationId}
-                    onChange={(event) => {
-                      if (draft.origin.kind === 'SPECIALIZED')
-                        update('origin', {
-                          ...draft.origin,
-                          operationId: event.target.value,
-                        });
-                    }}
-                  />
-                </FormField>
-                <FormField id="proc-origin-version" label="نسخه پرونده مرجع">
-                  <Input
-                    id="proc-origin-version"
-                    type="number"
-                    min={1}
-                    value={draft.origin.version}
-                    onChange={(event) => {
-                      if (draft.origin.kind === 'SPECIALIZED')
-                        update('origin', {
-                          ...draft.origin,
-                          version: Number(event.target.value),
-                        });
-                    }}
-                  />
-                </FormField>
-              </div>
-            </>
-          )}
           {bootstrap.documents === 'AVAILABLE' ? (
             <>
               <div className="flex gap-2">
