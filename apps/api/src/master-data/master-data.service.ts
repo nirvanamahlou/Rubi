@@ -1611,12 +1611,14 @@ export class MasterDataService {
       if (data.organizationId === '') data.organizationId = null;
       if (resource === 'suppliers' && !partial) {
         const hasName = String(data.name ?? '').trim().length > 0;
-        const hasOrganization = typeof data.organizationId === 'string';
-        if (!hasName && !hasOrganization)
-          throw new BadRequestException(
-            'نام تأمین‌کننده یا سازمان تأمین‌کننده الزامی است.',
-          );
+        if (!hasName)
+          throw new BadRequestException('نام تأمین‌کننده الزامی است.');
         data.name = hasName ? String(data.name).trim() : null;
+        // New suppliers are owned by the supplier catalog itself. Legacy links
+        // remain readable, but creating a supplier must not create an
+        // Organization/contact dependency.
+        data.organizationId = null;
+        data.primaryContactId = null;
       }
       if (!partial && !Object.hasOwn(data, 'collaborationStatus'))
         data.collaborationStatus = 'ACTIVE';

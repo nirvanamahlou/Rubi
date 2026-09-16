@@ -142,18 +142,6 @@ const configs: Partial<
     },
   },
   suppliers: {
-    organizationId: {
-      target: 'organizations',
-      payload: 'id',
-      requiredRole: 'SUPPLIER',
-      optional: true,
-    },
-    primaryContactId: {
-      target: 'organization-contacts',
-      payload: 'id',
-      optional: true,
-      scopeField: 'organizationId',
-    },
     serviceCodes: {
       target: 'travel-services',
       payload: 'code',

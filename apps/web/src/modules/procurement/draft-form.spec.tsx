@@ -12,6 +12,7 @@ const bootstrap: Bootstrap = {
   requester: {
     id: 'employee',
     userId: 'user',
+    branchId: 'branch-1',
     label: 'کاربر جاری',
     unitId: null,
   },
@@ -37,6 +38,7 @@ describe('Purchase draft accessibility and persisted input', () => {
     expect(html).toContain('انتخاب محل تحویل (اختیاری)');
     expect(html).toContain('سرویس اسناد در دسترس نیست');
     expect(html).toContain('کاربر جاری');
+    expect(html).toContain('شعبه مرکزی');
     expect(html).toContain('انتخاب واحد از منابع انسانی');
     expect(html).not.toContain('id="proc-priority"');
     expect(html).toContain('منشأ درخواست و پیوست‌ها');
@@ -45,6 +47,38 @@ describe('Purchase draft accessibility and persisted input', () => {
     expect(html).toContain(
       'شماره درخواست: پس از نخستین ثبت، خودکار تعیین می‌شود',
     );
+  });
+  it('loads HR employees and units immediately from the requester branch', () => {
+    const client = new QueryClient();
+    const hrBootstrap: Bootstrap = {
+      ...bootstrap,
+      requester: { ...bootstrap.requester!, unitId: 'فناوری' },
+    };
+    client.setQueryData(
+      ['procurement', 'requesters', 'branch-1', 'فناوری', '', 1],
+      {
+        items: [
+          { id: 'employee', label: 'کارمند منابع انسانی', unitId: 'فناوری' },
+        ],
+        page: 1,
+        pageSize: 50,
+        hasMore: false,
+      },
+    );
+    client.setQueryData(['procurement', 'units', 'branch-1'], {
+      items: [{ id: 'فناوری', label: 'فناوری' }],
+    });
+    const html = renderToStaticMarkup(
+      <QueryClientProvider client={client}>
+        <DraftForm
+          bootstrap={hrBootstrap}
+          onClose={() => undefined}
+          onSaved={() => undefined}
+        />
+      </QueryClientProvider>,
+    );
+    expect(html).toContain('کارمند منابع انسانی');
+    expect(html).toContain('فناوری');
   });
   it('retains exact decimal strings and emergency context when reopening a saved draft', () => {
     const draft = {

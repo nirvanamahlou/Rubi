@@ -64,6 +64,7 @@ export type Bootstrap = ProcurementBootstrapV1 & {
   requester: {
     id: string;
     userId: string;
+    branchId: string;
     label: string;
     unitId: string | null;
   } | null;

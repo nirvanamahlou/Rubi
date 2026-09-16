@@ -83,7 +83,10 @@ export function DraftForm({
   const [draft, setDraft] = useState<ProcurementDraftV1>(() =>
     request
       ? structuredClone(request.draft)
-      : emptyDraft(bootstrap.requester?.unitId),
+      : emptyDraft(
+          bootstrap.requester?.unitId,
+          bootstrap.requester?.branchId ?? bootstrap.branches[0]?.id ?? '',
+        ),
   );
   const [requesterEmployeeId, setRequesterEmployeeId] = useState(
     request?.requesterEmployeeId ?? bootstrap.requester?.id ?? '',
@@ -1015,7 +1018,13 @@ export function DraftForm({
               if (
                 JSON.stringify(draft) ===
                   JSON.stringify(
-                    request?.draft ?? emptyDraft(bootstrap.requester?.unitId),
+                    request?.draft ??
+                      emptyDraft(
+                        bootstrap.requester?.unitId,
+                        bootstrap.requester?.branchId ??
+                          bootstrap.branches[0]?.id ??
+                          '',
+                      ),
                   ) ||
                 window.confirm('تغییرات ذخیره‌نشده کنار گذاشته شود؟')
               )

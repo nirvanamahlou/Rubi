@@ -14,32 +14,46 @@ describe('supplier and broker form coverage', () => {
       );
       expect(fields).toEqual(
         expect.arrayContaining([
-          'primaryContactId',
           'serviceCodes',
-          'organizationId',
           'collaborationStatus',
         ]),
       );
       if (resource === 'suppliers') {
         expect(fields).toContain('name');
         expect(fields).not.toEqual(
-          expect.arrayContaining(['englishName', 'countryId', 'cityId']),
+          expect.arrayContaining([
+            'englishName',
+            'countryId',
+            'cityId',
+            'organizationId',
+            'primaryContactId',
+          ]),
         );
       } else {
         expect(fields).toEqual(
-          expect.arrayContaining(['englishName', 'countryId', 'cityId']),
+          expect.arrayContaining([
+            'englishName',
+            'countryId',
+            'cityId',
+            'organizationId',
+            'primaryContactId',
+          ]),
         );
+        expect(
+          getReferenceFieldConfig(resource, 'primaryContactId'),
+        ).toMatchObject({
+          target: 'organization-contacts',
+          scopeField: 'organizationId',
+          optional: true,
+        });
       }
       expect(fields).not.toEqual(
         expect.arrayContaining(['purchaseLimit', 'contractStatus']),
       );
-      expect(
-        getReferenceFieldConfig(resource, 'primaryContactId'),
-      ).toMatchObject({
-        target: 'organization-contacts',
-        scopeField: 'organizationId',
-        optional: true,
-      });
+      if (resource === 'suppliers')
+        expect(
+          getReferenceFieldConfig(resource, 'primaryContactId'),
+        ).toBeUndefined();
       expect(getReferenceFieldConfig(resource, 'serviceCodes')).toMatchObject({
         target: 'travel-services',
         multiple: true,

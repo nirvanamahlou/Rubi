@@ -1596,21 +1596,15 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
     singularLabel: 'تأمین‌کننده',
     group: 'سازمان‌ها',
     description:
-      'پروفایل مرجع تأمین‌کننده متصل به Organization یکتا؛ قرارداد و بدهی در ماژول مالک باقی می‌ماند.',
+      'پروفایل مستقل تأمین‌کننده برای استفاده در استعلام، سفارش و فاکتور خرید.',
     fields: [
       {
         key: 'name',
         label: 'نام تأمین‌کننده',
         type: 'text',
         placeholder: '',
-        hint: 'در صورت انتخاب سازمان، نام سازمان به‌عنوان مقدار پیشنهادی استفاده می‌شود.',
-      },
-      {
-        key: 'organizationId',
-        label: 'سازمان تأمین‌کننده',
-        type: 'text',
-        placeholder: '',
-        hint: 'ابتدا سازمان موجود را جست‌وجو کنید؛ ثبت سازمان جدید فقط وقتی نمایش داده می‌شود که نتیجه‌ای پیدا نشود.',
+        required: true,
+        hint: 'تأمین‌کننده به‌صورت مستقل در خرید و تأمین ثبت می‌شود.',
       },
       {
         key: 'externalProviderReference',
@@ -1640,13 +1634,6 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
         hint: 'یک یا چند خدمت از کاتالوگ انتخاب کنید.',
       },
       {
-        key: 'primaryContactId',
-        label: 'تماس اصلی',
-        type: 'text',
-        placeholder: '',
-        hint: 'از مخاطبان سازمان انتخاب کنید؛ تلفن و ایمیل فقط ماسک‌شده نمایش داده می‌شوند.',
-      },
-      {
         key: 'logoFileReference',
         label: 'لوگوی تأمین‌کننده',
         type: 'text',
@@ -1654,7 +1641,7 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
       },
     ],
     preview: {
-      organizationId: 'org_supplier',
+      name: 'تأمین‌کننده نمونه',
       collaborationStatus: 'UNDER_REVIEW',
     },
   },

@@ -64,11 +64,13 @@ describe('real partner form fields', () => {
       }
       expect(html).toContain('خدمات قابل ارائه');
       expect(html).toContain('aria-multiselectable="true"');
-      expect(html).toContain('تماس اصلی');
-      expect(html).toContain('ابتدا سازمان را انتخاب کنید.');
       if (resource === 'suppliers') {
-        expect(html).not.toContain('>ثبت سازمان جدید</button>');
+        expect(html).not.toContain('سازمان تأمین‌کننده');
+        expect(html).not.toContain('تماس اصلی');
+        expect(html).not.toContain('ثبت سازمان جدید');
       } else {
+        expect(html).toContain('تماس اصلی');
+        expect(html).toContain('ابتدا سازمان را انتخاب کنید.');
         expect(html).toContain('>ثبت سازمان جدید</button>');
       }
       expect(html).toContain('افزودن خدمت');
@@ -81,11 +83,12 @@ describe('real partner form fields', () => {
       const html = render(resource, 'edit');
       if (resource === 'suppliers') {
         expect(html).not.toContain('value="Test Partner"');
+        expect(html).not.toContain('افزودن مخاطب');
       } else {
         expect(html).toContain('value="Test Partner"');
+        expect(html).toContain('افزودن مخاطب');
+        expect(html).not.toContain('ابتدا سازمان را انتخاب کنید.');
       }
-      expect(html).toContain('افزودن مخاطب');
-      expect(html).not.toContain('ابتدا سازمان را انتخاب کنید.');
       expect(html).toContain('پاک‌کردن خدمات قابل ارائه');
       expect(html).not.toContain('type="tel"');
       expect(html).not.toContain('purchaseLimit');

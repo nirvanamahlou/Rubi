@@ -63,13 +63,13 @@ function setup(
 
 describe('partner profile form persistence', () => {
   it.each(['suppliers', 'brokers'])(
-    'persists English name, same-organization contact and service relations for %s',
+    'persists standalone suppliers and organization-backed brokers for %s',
     async (resource) => {
       const { service, create } = setup();
       await service.create(
         resource,
         {
-          ...(resource === 'brokers' ? { name: 'آزمون' } : {}),
+          name: 'آزمون',
           organizationId: orgId,
           englishName: ' Test Partner ',
           primaryContactId: contactId,
@@ -81,7 +81,9 @@ describe('partner profile form persistence', () => {
         resource,
         expect.objectContaining({
           englishName: 'Test Partner',
-          primaryContactId: contactId,
+          ...(resource === 'suppliers'
+            ? { organizationId: null, primaryContactId: null }
+            : { organizationId: orgId, primaryContactId: contactId }),
           services: {
             create: [{ serviceId: contactId, assignedByUserId: actor.userId }],
           },
@@ -91,7 +93,7 @@ describe('partner profile form persistence', () => {
       );
     },
   );
-  it.each(['suppliers', 'brokers'])(
+  it.each(['brokers'])(
     'rejects another organization contact for %s',
     async (resource) => {
       const { service, create } = setup({

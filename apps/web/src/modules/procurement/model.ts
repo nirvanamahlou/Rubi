@@ -13,10 +13,13 @@ export const statusLabels: Record<ProcurementRequestStatus, string> = {
   SOURCING: 'در حال تأمین',
   CLOSED: 'بسته‌شده',
 };
-export function emptyDraft(unitId: string | null = null): ProcurementDraftV1 {
+export function emptyDraft(
+  unitId: string | null = null,
+  branchId = '',
+): ProcurementDraftV1 {
   return {
     title: '',
-    branchId: '',
+    branchId,
     unitId,
     purchaseType: '',
     category: '',
