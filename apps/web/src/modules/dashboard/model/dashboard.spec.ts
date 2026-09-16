@@ -544,8 +544,11 @@ describe('dashboard permission and data states', () => {
     expect(source).toContain('EmployeePerformanceBars');
     expect(source).toContain('MiniTrend');
     expect(source).toContain('GrowthIndicator');
-    expect(source).toContain('نسبت به دوره قبل');
-    expect(source).toContain('هر ارز مستقل و بدون تبدیل نمایش داده می‌شود');
+    expect(source).toContain('justify-between');
+    expect(source).toContain('linearGradient');
+    expect(source).toContain('stopOpacity="0.32"');
+    expect(source).toContain('h-14 w-full overflow-visible');
+    expect(source).not.toContain('هر ارز مستقل و بدون تبدیل نمایش داده می‌شود');
     expect(source).toContain('currencySymbols');
     expect(source).toContain('راهنمای روند ارزها');
     expect(source).toContain('data-dashboard-employee-visual');

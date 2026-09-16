@@ -587,18 +587,11 @@ const currencyNames: Readonly<Record<string, string>> = {
   IRI: 'ریال ایران',
 };
 
-const trendPalette = [
-  'text-blue-600 dark:text-blue-400',
-  'text-violet-600 dark:text-violet-400',
-  'text-emerald-600 dark:text-emerald-400',
-  'text-amber-600 dark:text-amber-400',
-] as const;
-
-const trendDotPalette = [
-  'bg-blue-600 dark:bg-blue-400',
-  'bg-violet-600 dark:bg-violet-400',
-  'bg-emerald-600 dark:bg-emerald-400',
-  'bg-amber-600 dark:bg-amber-400',
+const trendSeriesPalette = [
+  { color: '#2563eb', dotClassName: 'bg-blue-600 dark:bg-blue-400' },
+  { color: '#7c3aed', dotClassName: 'bg-violet-600 dark:bg-violet-400' },
+  { color: '#059669', dotClassName: 'bg-emerald-600 dark:bg-emerald-400' },
+  { color: '#d97706', dotClassName: 'bg-amber-600 dark:bg-amber-400' },
 ] as const;
 
 function MiniTrend({
@@ -608,6 +601,9 @@ function MiniTrend({
   title: string;
   trend: DashboardTrendSnapshot;
 }) {
+  const gradientPrefix = useId().replace(/:/g, '');
+  const paletteFor = (index: number) =>
+    trendSeriesPalette[index % trendSeriesPalette.length] ?? trendSeriesPalette[0]!;
   const series =
     trend.series?.length
       ? trend.series
@@ -617,8 +613,8 @@ function MiniTrend({
     const maximum = Math.max(...values);
     const span = Math.max(maximum - minimum, 1);
     return values.map((value, index) => ({
-      x: values.length > 1 ? 3 + (index * 90) / (values.length - 1) : 48,
-      y: 29 - ((value - minimum) / span) * 24,
+      x: values.length > 1 ? 4 + (index * 152) / (values.length - 1) : 80,
+      y: 50 - ((value - minimum) / span) * 40,
     }));
   };
   const renderedSeries = series.map((item) => ({
@@ -637,44 +633,86 @@ function MiniTrend({
     .join('؛ ');
 
   return (
-    <span className="flex min-w-0 flex-1 flex-col gap-1.5">
+    <span className="flex min-w-0 flex-1 flex-col gap-2">
       <svg
         aria-label={`روند ${title}. هر خط در مقیاس مستقل همان ارز نمایش داده می‌شود. ${summary}`}
-        className="h-9 w-full overflow-visible"
+        className="h-14 w-full overflow-visible"
         role="img"
-        viewBox="0 0 96 34"
+        viewBox="0 0 160 58"
       >
-        {renderedSeries.map(({ currencyCode, points }, seriesIndex) => (
-          <g
-            className={trendPalette[seriesIndex % trendPalette.length]}
-            key={currencyCode || 'default'}
-          >
-            <polyline
-              fill="none"
-              points={points.map(({ x, y }) => `${x},${y}`).join(' ')}
-              stroke="currentColor"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2.25"
-            />
-            {points.map(({ x, y }, index) => (
-              <circle
+        <defs>
+          {renderedSeries.map(({ currencyCode }, seriesIndex) => {
+            const { color } = paletteFor(seriesIndex);
+            return (
+              <linearGradient
+                id={`${gradientPrefix}-trend-${seriesIndex}`}
+                key={currencyCode || `default-${seriesIndex}`}
+                x1="0"
+                x2="0"
+                y1="0"
+                y2="1"
+              >
+                <stop offset="0%" stopColor={color} stopOpacity="0.32" />
+                <stop offset="100%" stopColor={color} stopOpacity="0.015" />
+              </linearGradient>
+            );
+          })}
+        </defs>
+        {renderedSeries.map(({ currencyCode, points }, seriesIndex) => {
+          const { color } = paletteFor(seriesIndex);
+          const linePoints = points.map(({ x, y }) => `${x},${y}`).join(' ');
+          const areaPoints = [
+            linePoints,
+            `${points.at(-1)?.x ?? 80},54`,
+            `${points[0]?.x ?? 80},54`,
+          ].join(' ');
+          return (
+            <g key={currencyCode || `default-${seriesIndex}`}>
+              <polygon
                 aria-hidden="true"
-                cx={x}
-                cy={y}
-                fill="currentColor"
-                key={`${currencyCode}-${x}-${y}-${index}`}
-                r="1.5"
+                fill={`url(#${gradientPrefix}-trend-${seriesIndex})`}
+                points={areaPoints}
               />
-            ))}
-          </g>
-        ))}
+              <polyline
+                fill="none"
+                points={linePoints}
+                stroke={color}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2.5"
+              />
+              {points.map(({ x, y }, index) => (
+                <circle
+                  aria-hidden="true"
+                  cx={x}
+                  cy={y}
+                  fill={color}
+                  key={`${currencyCode}-${x}-${y}-${index}`}
+                  r="1.8"
+                />
+              ))}
+            </g>
+          );
+        })}
       </svg>
-      {renderedSeries.length > 1 ? (
-        <span aria-label="راهنمای روند ارزها" className="flex flex-wrap justify-center gap-x-2 gap-y-1 text-[10px] font-bold text-muted-foreground">
+      {renderedSeries.some(({ currencyCode }) => currencyCode) ? (
+        <span
+          aria-label="راهنمای روند ارزها"
+          className="flex flex-wrap justify-center gap-x-2 gap-y-1 text-[10px] font-bold text-muted-foreground"
+        >
           {renderedSeries.map(({ currencyCode }, index) => (
-            <span className="inline-flex items-center gap-1" key={currencyCode} title={currencyNames[currencyCode] ?? currencyCode}>
-              <i aria-hidden="true" className={cn('size-1.5 rounded-full', trendDotPalette[index % trendDotPalette.length])} />
+            <span
+              className="inline-flex items-center gap-1"
+              key={currencyCode}
+              title={currencyNames[currencyCode] ?? currencyCode}
+            >
+              <i
+                aria-hidden="true"
+                className={cn(
+                  'size-1.5 rounded-full',
+                  paletteFor(index).dotClassName,
+                )}
+              />
               <bdi dir="ltr">{currencySymbols[currencyCode] ?? currencyCode}</bdi>
             </span>
           ))}
@@ -705,15 +743,15 @@ function GrowthIndicator({
         : Minus;
   const value =
     comparison.deltaPercent === null
-      ? 'مبنای قبلی صفر'
-      : `${Math.abs(comparison.deltaPercent).toLocaleString('fa-IR', {
-          maximumFractionDigits: 1,
-        })}٪`;
+      ? '—'
+      : `${comparison.direction === 'up' ? '+' : comparison.direction === 'down' ? '−' : ''}${Math.abs(
+          comparison.deltaPercent,
+        ).toLocaleString('fa-IR', { maximumFractionDigits: 1 })}٪`;
 
   return (
     <span
       className={cn(
-        'inline-flex min-h-7 items-center gap-1 rounded-full px-2 py-1 text-[10px] font-black',
+        'inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-1 text-[10px] font-black tabular-nums',
         favorable === true &&
           'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/45 dark:text-emerald-200',
         favorable === false &&
@@ -725,7 +763,6 @@ function GrowthIndicator({
     >
       <Icon aria-hidden="true" className="size-3.5" />
       <span>{value}</span>
-      <span className="font-semibold opacity-80">نسبت به دوره قبل</span>
     </span>
   );
 }
@@ -752,7 +789,7 @@ function KpiCard({
       aria-expanded={selected}
       aria-haspopup="dialog"
       className={cn(
-        'group relative min-h-32 min-w-0 overflow-hidden rounded-2xl border bg-surface p-3 text-start shadow-sm outline-none transition duration-200 hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-lg focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+        'group relative min-h-44 min-w-0 overflow-hidden rounded-2xl border bg-surface p-3 text-start shadow-sm outline-none transition duration-200 hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-lg focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background',
         selected ? 'border-primary ring-2 ring-primary/15' : 'border-border',
         featured &&
           'bg-gradient-to-bl from-blue-50/60 via-surface to-surface dark:from-blue-950/20',
@@ -762,39 +799,35 @@ function KpiCard({
     >
       <span aria-hidden="true" className="absolute inset-x-5 top-0 h-0.5 rounded-b-full bg-primary/70" />
       <span aria-hidden="true" className="absolute -start-8 -top-10 size-28 rounded-full bg-primary/[0.045] blur-2xl transition group-hover:bg-primary/[0.08]" />
-      <span className="relative flex min-w-0 items-center gap-2.5">
-        <span
-          aria-label={visual.label}
-          className={cn(
-            'grid size-9 shrink-0 place-items-center rounded-xl shadow-sm ring-1',
-            visual.className,
-          )}
-          title={visual.label}
-          role="img"
-        >
-          <Icon aria-hidden="true" className="size-[18px]" />
+      <span className="relative flex min-w-0 items-center justify-between gap-2.5">
+        <span className="flex min-w-0 items-center gap-2.5">
+          <span
+            aria-label={visual.label}
+            className={cn(
+              'grid size-9 shrink-0 place-items-center rounded-xl shadow-sm ring-1',
+              visual.className,
+            )}
+            title={visual.label}
+            role="img"
+          >
+            <Icon aria-hidden="true" className="size-[18px]" />
+          </span>
+          <span
+            className="min-w-0 truncate text-sm font-black text-foreground"
+            title={definition.title}
+          >
+            {definition.title}
+          </span>
         </span>
-        <span className="min-w-0 truncate text-sm font-black text-foreground" title={definition.title}>
-          {definition.title}
-        </span>
+        {metric?.comparison ? (
+          <GrowthIndicator comparison={metric.comparison} role={definition.role} />
+        ) : null}
       </span>
       <span className="relative block text-center">
         <Metric compact currency={definition.currency === 'required'} metric={metric} />
       </span>
       {metric ? (
-        <span className="relative mt-2 flex min-h-11 flex-col gap-2 border-t border-border/60 pt-2">
-          {metric.comparison ? (
-            <GrowthIndicator
-              comparison={metric.comparison}
-              role={definition.role}
-            />
-          ) : (
-            <span className="text-[10px] font-semibold text-muted-foreground">
-              {metric.trend
-                ? 'هر ارز مستقل و بدون تبدیل نمایش داده می‌شود'
-                : 'دادهٔ دورهٔ قبل موجود نیست'}
-            </span>
-          )}
+        <span className="relative mt-3 flex min-h-14 flex-col border-t border-border/60 pt-2">
           {metric.trend ? (
             <MiniTrend title={definition.title} trend={metric.trend} />
           ) : null}
