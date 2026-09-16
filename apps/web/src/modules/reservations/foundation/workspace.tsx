@@ -179,7 +179,9 @@ export function ReservationOperationsWorkspace({
   const effectiveQuery = reservationWindowQuery(query, now);
   const result = queryRows(visibleRows, effectiveQuery);
   const metrics = dashboard(visibleRows, now);
-  const selected = result.filteredRows.find((r) => r.id === selectedId);
+  const selected =
+    result.filteredRows.find((r) => r.id === selectedId) ??
+    result.filteredRows[0];
   const available = effectiveState === 'SUCCESS';
   const message = messages[effectiveState];
   const visibleOperations = operations.filter(
@@ -638,8 +640,8 @@ export function ReservationOperationsWorkspace({
                         <tr
                           key={row.id}
                           data-tone={statusTones[row.status]}
-                          data-selected={selectedId === row.id}
-                          aria-selected={selectedId === row.id}
+                          data-selected={selected?.id === row.id}
+                          aria-selected={selected?.id === row.id}
                           tabIndex={0}
                           onClick={() => setSelectedId(row.id)}
                           onKeyDown={(event) => {
@@ -657,7 +659,7 @@ export function ReservationOperationsWorkspace({
                               {index === 0 ? (
                                 <button
                                   type="button"
-                                  aria-pressed={selectedId === row.id}
+                                  aria-pressed={selected?.id === row.id}
                                   title={
                                     row.customerName !== '—'
                                       ? row.customerName
