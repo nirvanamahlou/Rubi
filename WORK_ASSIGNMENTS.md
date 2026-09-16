@@ -9,6 +9,13 @@
 
 # Work Assignments
 
+## DASHBOARD-DONUT-LABEL-LEGIBILITY-0916 — PC-C — LOCAL_COMPLETE
+
+- درخواست مالک: متن Donutهای Dashboard که در خروجی فعلی سخت دیده می‌شود، خوانا و بدون هم‌پوشانی شود.
+- محدودهٔ رزروشده: فقط layout/typography برچسب Donut، تست Dashboard Web و اسناد وضعیت در Worktree `codex/pc-c-dashboard-reporting-latest`. API، داده/محاسبه، Reports، دیتابیس، Migration، وابستگی و Lockfile تغییر نمی‌کنند.
+- قرارداد: نام دسته، مقدار و درصد واقعی هر بخش حفظ می‌شود؛ اصلاح فقط نمایش و فاصله‌گذاری است.
+- نتیجه: بوم donut به نسبت ۴۴۰×۳۲۰ و حلقه به قطر واکنش‌گرای ۱۶۰/۱۹۲px تنظیم شد. فاصلهٔ برچسب تا حلقه و طول line guide افزایش یافت؛ نام دسته و مقدار/درصد روی دو خط با فونت پرکنتراست ۱۴/۱۵ واحد SVG نمایش می‌یابند.
+
 ## DASHBOARD-DONUT-READABILITY-0916 — PC-C — LOCAL_COMPLETE
 
 - درخواست مالک: عرض Donut Chartها کاهش یابد و متن نام دسته و مقدار/درصد آن‌ها خواناتر شود.

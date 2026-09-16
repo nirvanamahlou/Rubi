@@ -1906,7 +1906,8 @@ function DashboardChart({
       const end = start + (value / total) * 100;
       return `${colorByIndex.get(index) ?? comparisonRankColor(index, values.length)} ${start}% ${end}%`;
     });
-    const donutCenter = 200;
+    const donutCenter = 220;
+    const donutRadius = 104;
     const externalLabels = values.map((value, index) => {
       const start =
         (values.slice(0, index).reduce((sum, item) => sum + item, 0) /
@@ -1916,12 +1917,12 @@ function DashboardChart({
       const radians = (((start + end) / 2 - 90) * Math.PI) / 180;
       const cosine = Math.cos(radians);
       const sine = Math.sin(radians);
-      const ringEdgeX = donutCenter + cosine * 106;
-      const ringEdgeY = donutCenter + sine * 106;
-      const lineEndX = donutCenter + cosine * 124;
-      const lineEndY = donutCenter + sine * 124;
+      const ringEdgeX = donutCenter + cosine * donutRadius;
+      const ringEdgeY = donutCenter + sine * donutRadius;
+      const lineEndX = donutCenter + cosine * (donutRadius + 28);
+      const lineEndY = donutCenter + sine * (donutRadius + 28);
       const onRight = cosine >= 0;
-      const labelX = lineEndX + (onRight ? 20 : -20);
+      const labelX = lineEndX + (onRight ? 22 : -22);
       return {
         color:
           colorByIndex.get(index) ?? comparisonRankColor(index, values.length),
@@ -1941,9 +1942,9 @@ function DashboardChart({
         className="rounded-xl border border-border/80 bg-muted/[0.12] p-3 sm:p-4"
         role="img"
       >
-        <div aria-hidden="true" className="relative mx-auto h-60 w-full max-w-[19rem] sm:h-64">
+        <div aria-hidden="true" className="relative mx-auto h-64 w-full max-w-[26rem] sm:h-72">
           <div
-            className="absolute left-1/2 top-1/2 size-36 -translate-x-1/2 -translate-y-1/2 rounded-full shadow-sm ring-1 ring-slate-200/80 dark:ring-slate-700/80 sm:size-40"
+            className="absolute left-1/2 top-1/2 size-40 -translate-x-1/2 -translate-y-1/2 rounded-full shadow-sm ring-1 ring-slate-200/80 dark:ring-slate-700/80 sm:size-48"
             style={{ background: `conic-gradient(${segments.join(', ')})` }}
           >
             <span className="absolute inset-[24%] grid place-items-center rounded-full bg-surface text-center text-foreground shadow-sm ring-1 ring-border/70">
@@ -1957,12 +1958,12 @@ function DashboardChart({
               </span>
             </span>
           </div>
-          <svg className="absolute inset-0 size-full overflow-visible" viewBox="0 0 400 400">
+          <svg className="absolute inset-0 size-full overflow-visible" viewBox="0 0 440 320">
             {externalLabels.map((item, index) => {
               const percent = formatDashboardNumber((item.value / total) * 100, {
                 maximumFractionDigits: 1,
               });
-              const textY = item.lineEndY - 5;
+              const textY = item.lineEndY - 8;
               return (
                 <g key={`${item.label}-${index}`}>
                   <polyline
@@ -1970,22 +1971,23 @@ function DashboardChart({
                     points={`${item.ringEdgeX},${item.ringEdgeY} ${item.lineEndX},${item.lineEndY} ${item.labelX},${item.lineEndY}`}
                     stroke={item.color}
                     strokeLinecap="round"
-                    strokeOpacity="0.6"
-                    strokeWidth="1.25"
+                    strokeOpacity="0.85"
+                    strokeWidth="1.5"
                   />
                   <text
-                    className="fill-muted-foreground text-[16px] font-semibold"
-                    direction="rtl"
+                    className="fill-foreground font-bold"
+                    fontSize="14"
                     textAnchor={item.textAnchor}
                     x={item.labelX}
                     y={textY}
                   >
-                    <tspan x={item.labelX}>{item.label.slice(0, 18)}</tspan>
+                    <tspan direction="rtl" x={item.labelX}>{item.label.slice(0, 18)}</tspan>
                     <tspan
                       className="fill-foreground font-black"
                       direction="ltr"
+                      fontSize="15"
                       x={item.labelX}
-                      dy="14"
+                      dy="18"
                     >
                       {`${compactChartValue(item.value)} (${percent}%)`}
                     </tspan>
