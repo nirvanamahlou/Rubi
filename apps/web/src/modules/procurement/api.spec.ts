@@ -144,4 +144,41 @@ describe('Procurement failure and retry contract', () => {
       procurementApi.list(new URLSearchParams()),
     ).rejects.toMatchObject({ status: 403 });
   });
+  it('sends the current version when permanently deleting a request', async () => {
+    process.env.NEXT_PUBLIC_API_BASE_URL = 'http://localhost:4000/api/v1';
+    const request = {
+      id: 'request-delete',
+      number: 'PR-1405-901',
+      version: 7,
+      status: 'DRAFT' as const,
+      requesterUserId: 'user',
+      ownerUserId: null,
+      createdAt: '',
+      updatedAt: '',
+      draft: emptyDraft(),
+    };
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          id: request.id,
+          number: request.number,
+          deleted: true,
+        }),
+        {
+          status: 200,
+        },
+      ),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+    await expect(procurementApi.remove(request)).resolves.toMatchObject({
+      deleted: true,
+    });
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining(`/procurement/requests/${request.id}`),
+      expect.objectContaining({
+        method: 'DELETE',
+        body: JSON.stringify({ expectedVersion: request.version }),
+      }),
+    );
+  });
 });

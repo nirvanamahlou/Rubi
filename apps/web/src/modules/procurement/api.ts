@@ -190,6 +190,15 @@ export const procurementApi = {
         ),
       },
     ),
+  remove: (request: ProcurementRequestV1) =>
+    procurementRequest<{ id: string; number: string; deleted: true }>(
+      `/requests/${encodeURIComponent(request.id)}`,
+      {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ expectedVersion: request.version }),
+      },
+    ),
   command: (
     request: ProcurementRequestV1,
     body: Record<string, unknown>,
