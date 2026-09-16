@@ -223,6 +223,17 @@ export function contractPrintHtml(
             amendedPassenger.age
           ]
         : p.ageCategory;
+      const hotelChildAgeBand =
+        amendedPassenger?.selected && amendedPassenger.age === 'CHD'
+          ? amendedPassenger.hotelChildAgeBand === 'CHD_2_TO_6'
+            ? '۲ تا ۶ سال'
+            : amendedPassenger.hotelChildAgeBand === 'CHD_6_TO_12'
+              ? '۶ تا ۱۲ سال'
+              : undefined
+          : undefined;
+      const ageLabel = `${
+        { ADT: 'بزرگسال', CHD: 'کودک', INF: 'نوزاد' }[ageCategory]
+      }${hotelChildAgeBand ? ` · ${hotelChildAgeBand}` : ''}`;
       const allocated = c.servicesDetail.filter((s) =>
         p.serviceClientKeys.includes(s.clientKey),
       );
@@ -237,7 +248,7 @@ export function contractPrintHtml(
               '</bdi></div>',
           )
           .join('');
-      return `<tr><td>${i + 1}</td><td>${e(p.displayNameSnapshot)}</td><td>${{ ADT: 'بزرگسال', CHD: 'کودک', INF: 'نوزاد' }[ageCategory]}</td><td>${allocated.some((s) => s.kind === 'VISA') ? 'دارد' : '—'}</td><td class="contract-total">${p.agreedPrices?.length ? renderPrices(false) : 'ثبت نشده'}</td><td>${renderPrices(true)}</td>${agency ? '<td>ثبت نشده</td>' : ''}<td>—</td></tr>`;
+      return `<tr><td>${i + 1}</td><td>${e(p.displayNameSnapshot)}</td><td>${ageLabel}</td><td>${allocated.some((s) => s.kind === 'VISA') ? 'دارد' : '—'}</td><td class="contract-total">${p.agreedPrices?.length ? renderPrices(false) : 'ثبت نشده'}</td><td>${renderPrices(true)}</td>${agency ? '<td>ثبت نشده</td>' : ''}<td>—</td></tr>`;
     })
     .join('');
   const flights = salesContractFlights(c.servicesDetail, c.ticketSelections)
