@@ -1,5 +1,8 @@
 .panel {
-  position: static;
+  display: grid;
+  grid-template-columns: minmax(160px, 0.8fr) repeat(3, minmax(0, 1fr));
+  align-items: start;
+  gap: 8px;
   width: 100%;
   max-height: none;
   overflow: visible;
@@ -7,13 +10,14 @@
   border: 1px solid var(--border);
   border-top: 4px solid var(--primary);
   border-radius: 10px;
-  padding: 12px;
+  padding: 8px;
   min-width: 0;
 }
 .selection {
   display: grid;
-  gap: 7px;
-  padding: 12px;
+  gap: 4px;
+  min-height: 100%;
+  padding: 9px;
   background: var(--secondary);
   border-radius: 8px;
   color: var(--foreground);
@@ -21,26 +25,30 @@
   overflow-wrap: anywhere;
 }
 .selection strong {
-  font-size: 17px;
+  font-size: 15px;
 }
 .group {
-  margin-top: 16px;
+  min-width: 0;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--secondary) 52%, var(--surface));
 }
 .group h2 {
-  font-size: 13px !important;
+  font-size: 12px !important;
   color: var(--muted-foreground);
-  margin-bottom: 8px !important;
+  margin: 0 0 6px !important;
 }
 .buttons {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 6px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px;
 }
 .panel .action {
-  min-height: 40px;
-  padding: 7px 4px;
+  min-height: 31px;
+  padding: 4px;
   border-radius: 6px;
-  font-size: 13px;
+  font-size: 12px;
 }
 .action:disabled {
   opacity: 0.48;
@@ -78,14 +86,17 @@
   gap: 12px;
 }
 @media (max-width: 760px) {
+  .panel {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
   .buttons {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-  .group {
-    margin-top: 12px;
-  }
 }
 @media (max-width: 460px) {
+  .panel {
+    grid-template-columns: 1fr;
+  }
   .buttons,
   .details {
     grid-template-columns: repeat(2, minmax(0, 1fr));

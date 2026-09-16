@@ -168,6 +168,21 @@ describe('reservations workspace access and states', () => {
     );
     expect(html).not.toContain('صفحه ۱ از');
   });
+  it('selects the first visible contract for all operations by default', () => {
+    const html = renderToStaticMarkup(
+      <ReservationOperationsWorkspace
+        state="SUCCESS"
+        rows={[row('first'), row('second')]}
+        access={access}
+        now={now}
+        initialSection="inbox"
+      />,
+    );
+    expect(html).toContain('قرارداد انتخاب‌شده');
+    expect(html).toContain('TEST-first');
+    expect(html).toContain('aria-selected="true"');
+    expect(html).not.toContain('قراردادی انتخاب نشده');
+  });
   it('limits an unfiltered inbox to the previous three calendar months', () => {
     const rows = [
       { ...row('recent'), createdAt: '2026-06-08T09:00:00.000Z' },
