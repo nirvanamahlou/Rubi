@@ -388,7 +388,7 @@
 .operationLayout {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 12px;
 }
 .operationMain {
   min-width: 0;
@@ -491,13 +491,13 @@
 
 .tableScroll {
   overflow: auto;
-  max-height: 440px;
+  max-height: 376px;
   border: 1px solid var(--border);
   border-radius: 10px;
   margin-top: 12px;
 }
 .requestTable tbody tr {
-  height: 54px;
+  height: 48px;
 }
 .requestTable {
   border-collapse: separate;
