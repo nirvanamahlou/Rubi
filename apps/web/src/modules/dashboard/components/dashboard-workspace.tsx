@@ -1906,40 +1906,95 @@ function DashboardChart({
       const end = start + (value / total) * 100;
       return `${colorByIndex.get(index) ?? comparisonRankColor(index, values.length)} ${start}% ${end}%`;
     });
+    const donutCenter = 200;
+    const externalLabels = values.map((value, index) => {
+      const start =
+        (values.slice(0, index).reduce((sum, item) => sum + item, 0) /
+          total) *
+        360;
+      const end = start + (value / total) * 360;
+      const radians = (((start + end) / 2 - 90) * Math.PI) / 180;
+      const cosine = Math.cos(radians);
+      const sine = Math.sin(radians);
+      const ringEdgeX = donutCenter + cosine * 106;
+      const ringEdgeY = donutCenter + sine * 106;
+      const lineEndX = donutCenter + cosine * 124;
+      const lineEndY = donutCenter + sine * 124;
+      const onRight = cosine >= 0;
+      const labelX = lineEndX + (onRight ? 20 : -20);
+      return {
+        color:
+          colorByIndex.get(index) ?? comparisonRankColor(index, values.length),
+        label: labels[index] ?? `دسته ${index + 1}`,
+        lineEndX,
+        lineEndY,
+        labelX,
+        ringEdgeX,
+        ringEdgeY,
+        textAnchor: onRight ? ('start' as const) : ('end' as const),
+        value,
+      };
+    });
     return (
       <figure
         aria-label={`${visualLabels[resolvedKind]} ${title}. ${accessibleSummary}`}
-        className="grid min-h-52 gap-4 rounded-xl border border-border/80 bg-muted/[0.12] p-4 sm:grid-cols-[11rem_minmax(0,1fr)] sm:items-center"
+        className="rounded-xl border border-border/80 bg-muted/[0.12] p-3 sm:p-4"
         role="img"
       >
-        <div
-          aria-hidden="true"
-          className="mx-auto grid size-40 place-items-center rounded-full shadow-sm"
-          style={{ background: `conic-gradient(${segments.join(', ')})` }}
-        >
-          <span className="grid size-24 place-items-center rounded-full bg-surface text-center text-foreground shadow-sm ring-1 ring-border/70">
-            <span><b className="block text-lg font-black tabular-nums">{compactChartValue(total)}</b><small className="mt-0.5 block text-[10px] font-bold text-muted-foreground">مجموع</small></span>
-          </span>
-        </div>
-        <ul aria-hidden="true" className="grid gap-2 sm:grid-cols-2">
-          {values.map((value, index) => (
-            <li className="rounded-lg border border-border/70 bg-surface px-2.5 py-2 text-xs" key={`${labels[index]}-${index}`}>
-              <span className="flex items-center gap-2">
-                <span
-                  className="size-3 shrink-0 rounded-sm"
-                  style={{
-                    backgroundColor:
-                      colorByIndex.get(index) ??
-                      comparisonRankColor(index, values.length),
-                  }}
-                />
-                <span className="min-w-0 flex-1 truncate font-semibold">{labels[index]}</span>
-                <span className="font-black tabular-nums">{formatDashboardNumber(Math.round((value / total) * 100))}%</span>
+        <div aria-hidden="true" className="relative mx-auto h-72 w-full max-w-[22rem] sm:h-80">
+          <div
+            className="absolute left-1/2 top-1/2 size-44 -translate-x-1/2 -translate-y-1/2 rounded-full shadow-sm ring-1 ring-slate-200/80 dark:ring-slate-700/80 sm:size-48"
+            style={{ background: `conic-gradient(${segments.join(', ')})` }}
+          >
+            <span className="absolute inset-[24%] grid place-items-center rounded-full bg-surface text-center text-foreground shadow-sm ring-1 ring-border/70">
+              <span>
+                <b className="block text-xl font-black tabular-nums sm:text-2xl">
+                  {compactChartValue(total)}
+                </b>
+                <small className="mt-1 block text-[10px] font-bold text-muted-foreground">
+                  مجموع
+                </small>
               </span>
-              <span className="mt-1 block ps-5 text-[10px] font-semibold tabular-nums text-muted-foreground">{formatDashboardNumber(value)}</span>
-            </li>
-          ))}
-        </ul>
+            </span>
+          </div>
+          <svg className="absolute inset-0 size-full overflow-visible" viewBox="0 0 400 400">
+            {externalLabels.map((item, index) => {
+              const percent = formatDashboardNumber((item.value / total) * 100, {
+                maximumFractionDigits: 1,
+              });
+              const textY = item.lineEndY - 5;
+              return (
+                <g key={`${item.label}-${index}`}>
+                  <polyline
+                    fill="none"
+                    points={`${item.ringEdgeX},${item.ringEdgeY} ${item.lineEndX},${item.lineEndY} ${item.labelX},${item.lineEndY}`}
+                    stroke={item.color}
+                    strokeLinecap="round"
+                    strokeOpacity="0.6"
+                    strokeWidth="1.25"
+                  />
+                  <text
+                    className="fill-muted-foreground text-[10px] font-semibold"
+                    direction="rtl"
+                    textAnchor={item.textAnchor}
+                    x={item.labelX}
+                    y={textY}
+                  >
+                    <tspan x={item.labelX}>{item.label.slice(0, 18)}</tspan>
+                    <tspan
+                      className="fill-foreground font-black"
+                      direction="ltr"
+                      x={item.labelX}
+                      dy="14"
+                    >
+                      {`${compactChartValue(item.value)} (${percent}%)`}
+                    </tspan>
+                  </text>
+                </g>
+              );
+            })}
+          </svg>
+        </div>
         <figcaption className="sr-only">{accessibleSummary}</figcaption>
       </figure>
     );

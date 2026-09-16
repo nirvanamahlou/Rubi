@@ -625,6 +625,10 @@ describe('dashboard permission and data states', () => {
     expect(source).toContain('dashboardVisualKindForData');
     expect(source).toContain('<polyline');
     expect(source).toContain('conic-gradient');
+    expect(source).toContain('externalLabels');
+    expect(source).toContain('ringEdgeX');
+    expect(source).toContain('lineEndY');
+    expect(source).toContain('compactChartValue(item.value)');
     expect(source).toContain('comparisonRankPalette');
     expect(source).toContain('comparisonRankColor');
     expect(source).toContain("'#93c5fd'");
