@@ -19,7 +19,6 @@ import {
   ChevronsRight,
   CircleCheckBig,
   CircleDollarSign,
-  Clock3,
   Filter,
   Gauge,
   Hotel,
@@ -36,7 +35,6 @@ import {
   RefreshCw,
   RotateCcw,
   Search,
-  ShieldCheck,
   ShieldAlert,
   Ticket,
   UserRoundCog,
@@ -99,7 +97,6 @@ import {
 import {
   dashboardKpis,
   dashboardNavigation,
-  dashboardOpenDecisions,
   dashboardPages,
   type DashboardKpiDefinition,
   type DashboardKpiRole,
@@ -448,9 +445,9 @@ const comparisonRankPalette = [
   '#172554',
   '#1e3a8a',
   '#1d4ed8',
-  '#3b82f6',
+  '#2563eb',
+  '#60a5fa',
   '#93c5fd',
-  '#dbeafe',
 ] as const;
 
 function comparisonRankColor(rank: number, count: number) {
@@ -535,6 +532,13 @@ const navigationIcons: Record<string, LucideIcon> = {
   'workforce-hr': UserRoundCog,
 };
 
+const comparisonUnavailableForPeriod: DashboardComparisonSnapshot = {
+  label: 'دوره قبل هم‌طول',
+  previousValue: 0,
+  deltaPercent: null,
+  direction: 'flat',
+};
+
 function Metric({
   compact = false,
   currency = false,
@@ -549,16 +553,23 @@ function Metric({
   const currencyValues = currency && metric
     ? metric.value.split(' · ')
     : null;
+  const fallbackComparison = metric?.trend
+    ? comparisonUnavailableForPeriod
+    : undefined;
   const comparisonFor = (index: number) => {
     const currencyCode =
       metric?.trend?.series?.[index]?.currencyCode ??
       metric?.comparisonSeries?.[index]?.currencyCode;
-    const comparison = currencyCode
-      ? metric?.comparisonSeries?.find(
+    const actualComparison = currencyCode
+      ? (metric?.comparisonSeries?.find(
           (entry) => entry.currencyCode === currencyCode,
-        )
+        ) ?? metric?.comparison)
       : metric?.comparison;
-    return { comparison, currencyCode };
+    return {
+      comparison: actualComparison ?? fallbackComparison,
+      currencyCode,
+      comparisonUnavailable: !actualComparison && Boolean(fallbackComparison),
+    };
   };
 
   return (
@@ -573,7 +584,8 @@ function Metric({
         <span className="flex w-full min-w-0 flex-col gap-1 font-black tabular-nums tracking-tight text-foreground">
           {currencyValues.map((value, index) => {
             const { amount, symbol } = currencyMetricParts(value);
-            const { comparison, currencyCode } = comparisonFor(index);
+            const { comparison, comparisonUnavailable, currencyCode } =
+              comparisonFor(index);
             return (
               <span
                 className="grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-1"
@@ -584,6 +596,7 @@ function Metric({
                   {comparison ? (
                     <GrowthIndicator
                       comparison={comparison}
+                      unavailable={comparisonUnavailable}
                       currencyCode={currencyCode}
                       role={role}
                     />
@@ -615,6 +628,12 @@ function Metric({
           <span className="justify-self-start">
             {metric?.comparison ? (
               <GrowthIndicator comparison={metric.comparison} role={role} />
+            ) : fallbackComparison ? (
+              <GrowthIndicator
+                comparison={fallbackComparison}
+                role={role}
+                unavailable
+              />
             ) : null}
           </span>
           <span
@@ -802,10 +821,12 @@ function GrowthIndicator({
   comparison,
   currencyCode,
   role = 'diagnostic',
+  unavailable = false,
 }: {
   comparison: DashboardComparisonSnapshot;
   currencyCode?: string | undefined;
   role?: DashboardKpiRole;
+  unavailable?: boolean;
 }) {
   const favorable =
     role === 'diagnostic' || comparison.direction === 'flat'
@@ -837,7 +858,7 @@ function GrowthIndicator({
         favorable === null &&
           'bg-blue-50 text-blue-700 dark:bg-blue-950/45 dark:text-blue-200',
       )}
-      title={`${currencyCode ? `${currencyNames[currencyCode] ?? currencyCode} · ` : ''}${comparison.label} · مقدار قبلی ${comparison.previousValue.toLocaleString('fa-IR')}`}
+      title={`${currencyCode ? `${currencyNames[currencyCode] ?? currencyCode} · ` : ''}${comparison.label} · ${unavailable ? 'دادهٔ دورهٔ قبل برای محاسبه درصد در دسترس نیست' : `مقدار قبلی ${comparison.previousValue.toLocaleString('fa-IR')}`}`}
     >
       <Icon aria-hidden="true" className="size-3.5" />
       <span>{value}</span>
@@ -2480,63 +2501,6 @@ export function DashboardWorkspace() {
             />
           ) : null}
 
-          <section className="grid items-start gap-4 xl:grid-cols-[1.25fr_1fr]">
-            <Card className="p-4">
-              <div className="flex items-center gap-2">
-                <ShieldCheck
-                  aria-hidden="true"
-                  className="size-5 text-primary"
-                />
-                <h2 className="font-black">قرارداد state و دسترسی</h2>
-              </div>
-              <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                {[
-                  ['Loading', 'Skeleton؛ بدون flash داده قبلی'],
-                  ['Empty', 'پاسخ معتبر با صفر رکورد'],
-                  ['Error + Retry', 'خطای دریافت؛ بدون fallback حدسی'],
-                  ['Forbidden', 'deny-by-default براساس permission snapshot'],
-                  ['Stale Data', 'هشدار dataAsOf و امکان refresh'],
-                  ['Blocked', 'نبود Public Projection نسخه‌دار'],
-                ].map(([title, text]) => (
-                  <div
-                    key={title}
-                    className="rounded-xl border border-border p-3"
-                  >
-                    <p className="text-xs font-black" dir="ltr">
-                      {title}
-                    </p>
-                    <p className="mt-1 text-[11px] leading-5 text-muted-foreground">
-                      {text}
-                    </p>
-                  </div>
-                ))}
-              </div>
-              <p className="mt-3 text-xs leading-6 text-muted-foreground">
-                نقش‌های مدیر، مدیر شعبه و مدیر گزارش‌گیر فقط پس از پاسخ Backend
-                و scope شرکت/شعبه داده می‌بینند؛ نام نقش در UI مجوز ایجاد
-                نمی‌کند.
-              </p>
-            </Card>
-            <Card className="p-4">
-              <div className="flex items-center gap-2">
-                <Clock3 aria-hidden="true" className="size-5 text-amber-600" />
-                <h2 className="font-black">تصمیم‌های باز و metadata</h2>
-              </div>
-              <ul className="mt-3 space-y-2 text-xs leading-6 text-muted-foreground">
-                {dashboardOpenDecisions.map(([id, title]) => (
-                  <li key={id} className="flex gap-2">
-                    <span
-                      className="shrink-0 font-mono font-bold text-amber-700 dark:text-amber-300"
-                      dir="ltr"
-                    >
-                      {id}
-                    </span>
-                    <span>{title}</span>
-                  </li>
-                ))}
-              </ul>
-            </Card>
-          </section>
         </div>
       </section>
     </div>

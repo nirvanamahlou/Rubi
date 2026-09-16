@@ -524,14 +524,12 @@ describe('dashboard permission and data states', () => {
       'utf8',
     );
     for (const state of [
-      'Loading',
-      'Empty',
-      'Error + Retry',
-      'Forbidden',
-      'Stale Data',
-      'Blocked',
-    ])
-      expect(source).toContain(state);
+      'query.isPending',
+      'query.isError',
+      "state === 'forbidden'",
+      "state === 'empty'",
+      "state === 'stale'",
+    ]) expect(source).toContain(state);
     expect(source).toContain('داده‌ای دریافت نشده');
     expect(source).not.toMatch(/\b(value|amount|count):\s*\d+/);
     expect(source).not.toContain('Math.random');
@@ -615,6 +613,9 @@ describe('dashboard permission and data states', () => {
     expect(source).toContain('conic-gradient');
     expect(source).toContain('comparisonRankPalette');
     expect(source).toContain('comparisonRankColor');
+    expect(source).toContain("'#93c5fd'");
+    expect(source).not.toContain('قرارداد state و دسترسی');
+    expect(source).not.toContain('تصمیم‌های باز و metadata');
     expect(source).toContain('میانگین روند');
     expect(source).toContain('rankedRows');
     expect(source).toContain('جمع نمایش‌داده‌شده');
