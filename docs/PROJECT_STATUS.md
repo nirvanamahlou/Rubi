@@ -1,3 +1,7 @@
+## 2026-09-16 — SYSTEM-MANAGEMENT-001 — PC-B — READY_FOR_REVIEW
+
+مرکز `/system` از `origin/develop@66f9b9de` به داشبورد عملیاتی و RTL مدیریت سامانه تبدیل شد. این صفحه از endpointهای عمومی IAM، Legal Entity، Audit و Health فقط شاخص‌های دارای مجوز را می‌خواند و همهٔ ۱۷ حوزهٔ خواسته‌شده را با جست‌وجو، فیلتر داخلی، مسیر مالک و حالت‌های Loading/Unauthorized/Forbidden/Unavailable نمایش می‌دهد. نشست مدیر، Jobهای ناموفق، Redis، Storage، Feature Flag، Backup و تنظیمات versioned تا انتشار public contract مالک صریحاً «نیازمند قرارداد» یا «کنترل‌شده» هستند؛ داده یا موفقیت ساختگی نمایش داده نمی‌شود. هیچ منوی اصلی، Migration، مدل، API، permission، داده عملیاتی یا lockfile تغییر نکرد. ۷ تست هدفمند، lint، typecheck و build تولیدی Web موفق‌اند. Branch: `codex/pc-b-system-management`.
+
 ## 2026-09-16 — PROCUREMENT-INVOICE-ATTACHMENTS-0916 — READY_FOR_REVIEW
 
 فرم فاکتور خرید اکنون دکمهٔ بارگذاری مستقیم دارد. فایل با نوع سند Procurement، مرجع درخواست خرید و شناسهٔ آرشیو خودکار در Documents ذخیره می‌شود و نسخهٔ سالم آن به فاکتور در حال ثبت پیوست می‌گردد؛ سپس در «اسناد و فایل‌ها» نیز قابل مشاهده است. تست فرم و lint موفق‌اند. Branch: `codex/pc-b-procurement-invoice-attachments-0916`.

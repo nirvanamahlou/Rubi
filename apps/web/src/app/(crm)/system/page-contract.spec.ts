@@ -6,20 +6,30 @@ const systemPageSource = readFileSync(
   new URL('./page.tsx', import.meta.url),
   'utf8',
 );
+const workspaceSource = readFileSync(
+  new URL(
+    '../../../modules/system-management/components/system-management-workspace.tsx',
+    import.meta.url,
+  ),
+  'utf8',
+);
 
 describe('system management access', () => {
-  it('links to the existing IAM user-management interface', () => {
-    expect(systemPageSource).toContain('href="/users"');
-    expect(systemPageSource).toContain('ورود به مدیریت کاربران');
+  it('uses the dedicated management center rather than a placeholder workspace', () => {
+    expect(systemPageSource).toContain('SystemManagementWorkspace');
+    expect(systemPageSource).not.toContain('ModuleFoundationWorkspace');
   });
 
-  it('links to legal entity management', () => {
-    expect(systemPageSource).toContain('href="/system/legal-entities"');
-    expect(systemPageSource).toContain('مدیریت شرکت‌های صادرکننده');
+  it('retains real owner links for IAM and Legal Entity', () => {
+    expect(workspaceSource).toContain("href: '/users'");
+    expect(workspaceSource).toContain("href: '/system/legal-entities'");
+    expect(workspaceSource).toContain('Legal Entity');
   });
 
-  it('links to system settings', () => {
-    expect(systemPageSource).toContain('href="/settings"');
-    expect(systemPageSource).toContain('ورود به تنظیمات سامانه');
+  it('does not add a navigation item or bypass owner APIs', () => {
+    expect(workspaceSource).toContain(
+      'هر عملیات حساس در API ماژول مالک دوباره مجوزسنجی می‌شود',
+    );
+    expect(workspaceSource).toContain('managementAreas');
   });
 });

@@ -1,3 +1,10 @@
+## SYSTEM-MANAGEMENT-001 — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-16: تکمیل مرکز مدیریت سامانه در مسیر موجود `/system` بدون افزودن آیتم تازه به منوی اصلی. `COMPUTER_ID=PC-B`؛ شاخهٔ مستقل `codex/pc-b-system-management` از `origin/develop@66f9b9de`.
+- محدودهٔ رزروشده: صفحه و تست‌های `/system`، ماژول نمایشی اختصاصی مدیریت سیستم و مستندات همین واحد. مرکز فقط API و مسیرهای عمومی موجود IAM، Legal Entity، Settings، Documents و Integrations را به‌هم پیوند می‌دهد؛ مالکیت داده یا قرارداد هیچ‌کدام جابه‌جا نمی‌شود.
+- مرز قطعی: بدون Prisma schema/Migration/Seed، Dependency/Lockfile، تغییر فایل‌های مالک IAM، Legal Entity، Documents یا Integrations، Grant واقعی یا دسترسی مستقیم به جدول ماژول دیگر. عملیات فاقد API مالک، شفاف و read-only یا «نیازمند اتصال مالک» نمایش داده می‌شوند و موفقیت ساختگی ندارند.
+- نتیجه: `/system` اکنون وضعیت واقعی مجازِ کاربران، نقش/مجوز، شعب، شرکت‌ها، Audit و health API را از endpointهای عمومی مالک می‌خواند و هر ۱۷ حوزهٔ موردنیاز را با وضعیت اتصال روشن نشان می‌دهد. جست‌وجو و فیلتر داخلی، Loading/Unauthorized/Forbidden/Unavailable، لینک‌های عملی به IAM/Legal Entity/Documents/Integrations و کنترل keyboard در UI اضافه شدند. ۷ تست هدفمند، lint، typecheck و production build Web موفق‌اند؛ Migration، permission، lockfile، داده عملیاتی و API ماژول‌های مالک تغییر نکردند.
+
 ## PROCUREMENT-INVOICE-ATTACHMENTS-0916 — PC-B — READY_FOR_REVIEW
 
 - درخواست مالک در 2026-09-16: در فرم فاکتور خرید امکان بارگذاری مستقیم فایل فاکتور اضافه شود؛ فایل در ماژول اسناد با دامنهٔ Procurement آرشیو و به فاکتور متصل بماند. `COMPUTER_ID=PC-B`؛ شاخهٔ مستقل `codex/pc-b-procurement-invoice-attachments-0916` از `origin/develop@c441d33a`.
