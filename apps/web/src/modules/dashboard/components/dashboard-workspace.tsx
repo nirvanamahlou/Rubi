@@ -703,9 +703,11 @@ function compactCurrencyAmount(amount: string, symbol: string) {
 
 function compactCurrencyTypography(value: string) {
   const visibleLength = [...value.replace(/\s/g, '')].length;
-  if (visibleLength >= 13) return 'text-xs leading-5';
-  if (visibleLength >= 10) return 'text-sm leading-5';
-  return 'text-lg leading-6';
+  if (visibleLength >= 13)
+    return 'text-[clamp(0.75rem,5cqw,0.875rem)] leading-5';
+  if (visibleLength >= 10)
+    return 'text-[clamp(0.875rem,6cqw,1rem)] leading-5';
+  return 'text-[clamp(1rem,7cqw,1.125rem)] leading-6';
 }
 
 const trendSeriesPalette = [
@@ -922,7 +924,7 @@ function KpiCard({
       aria-expanded={selected}
       aria-haspopup="dialog"
       className={cn(
-        'group relative min-h-44 min-w-0 overflow-hidden rounded-2xl border bg-surface p-3 text-start shadow-sm outline-none transition duration-200 hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-lg focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+        'group relative min-h-44 min-w-0 overflow-hidden rounded-2xl border bg-surface p-3 text-start shadow-sm outline-none [container-type:inline-size] transition duration-200 hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-lg focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background',
         selected ? 'border-primary ring-2 ring-primary/15' : 'border-border',
         featured &&
           'bg-gradient-to-bl from-blue-50/60 via-surface to-surface dark:from-blue-950/20',

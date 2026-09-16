@@ -549,6 +549,8 @@ describe('dashboard permission and data states', () => {
     expect(source).toContain('compactCurrencyAmount');
     expect(source).toContain('compactCurrencyTypography');
     expect(source).toContain('whitespace-nowrap');
+    expect(source).toContain('[container-type:inline-size]');
+    expect(source).toContain('cqw');
     expect(source).not.toContain('KpiComparisonBadges');
     expect(source).toContain('linearGradient');
     expect(source).toContain('stopOpacity="0.32"');
