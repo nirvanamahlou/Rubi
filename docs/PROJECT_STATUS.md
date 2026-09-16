@@ -1,5 +1,7 @@
 ## 2026-09-16 — SYSTEM-MANAGEMENT-001 — PC-B — READY_FOR_REVIEW
 
+مالک پروژه در 2026-09-16 مجوز صریح توسعهٔ Backendهای باقی‌ماندهٔ مدیریت سامانه را به `PC-B` داد. این اختیار در چهار Work Item مستقل Settings API، IAM Sessions، Operations Health و Governance اعمال می‌شود و شامل ایجاد قراردادهای عمومی و تغییرات additive لازم پس از رزرو دقیق فایل‌هاست. هر حوزه Branch/PR مستقل دارد؛ Migration فقط با `Migration Owner` اختصاصی و نبود lock هم‌پوشان مجاز است. ممنوعیت دسترسی مستقیم میان جدول‌های مالک‌ها، افشای داده حساس، Grant گسترده و اجرای عملیات مخرب یا Backup/Restore واقعی بدون کنترل همچنان برقرار است. PR #304 در محدودهٔ فعلی UI-only باقی می‌ماند.
+
 مرکز `/system` از `origin/develop@66f9b9de` به داشبورد عملیاتی و RTL مدیریت سامانه تبدیل شد. این صفحه از endpointهای عمومی IAM، Legal Entity، Audit و Health فقط شاخص‌های دارای مجوز را می‌خواند و همهٔ ۱۷ حوزهٔ خواسته‌شده را با جست‌وجو، فیلتر داخلی، مسیر مالک و حالت‌های Loading/Unauthorized/Forbidden/Unavailable نمایش می‌دهد. نشست مدیر، Jobهای ناموفق، Redis، Storage، Feature Flag، Backup و تنظیمات versioned تا انتشار public contract مالک صریحاً «نیازمند قرارداد» یا «کنترل‌شده» هستند؛ داده یا موفقیت ساختگی نمایش داده نمی‌شود. هیچ منوی اصلی، Migration، مدل، API، permission، داده عملیاتی یا lockfile تغییر نکرد. ۷ تست هدفمند، lint، typecheck و build تولیدی Web موفق‌اند. Branch: `codex/pc-b-system-management`.
 
 ## 2026-09-16 — PROCUREMENT-INVOICE-ATTACHMENTS-0916 — READY_FOR_REVIEW
