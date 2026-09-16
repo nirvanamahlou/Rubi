@@ -15,6 +15,7 @@ it('renders the recorded operational hotel amendment while preserving commercial
     passengers: [],
   } as unknown as VoucherSettingsV1;
   Object.assign(settings.text, {
+    contractPartyName: 'AMENDED CONTRACT PARTY',
     hotel: 'AMENDED HOTEL',
     roomType: 'SGL AMENDMENT',
     meal: 'UALL AMENDMENT',
@@ -36,6 +37,7 @@ it('renders the recorded operational hotel amendment while preserving commercial
     reservationFormAmendment: JSON.stringify({ version: 1, settings }),
   };
   const html = contractPrintHtml(output, printReferences);
+  expect(html).toContain('AMENDED CONTRACT PARTY');
   expect(html).toContain('AMENDED HOTEL');
   expect(html).toContain('SGL AMENDMENT');
   expect(html).toContain('UALL AMENDMENT');

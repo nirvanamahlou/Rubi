@@ -10,7 +10,6 @@ import type {
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/form-controls';
 import { salesApi } from '@/modules/sales/api/client';
-import { ReservationPassengers } from '../passenger-files/passengers';
 import { ReservationSettings } from './reservation-settings';
 import { travelRequest } from './travel-workflow-form';
 import styles from './reservation-contract-editor.module.css';
@@ -38,27 +37,8 @@ const sections = [
 ] as const;
 type Section = (typeof sections)[number];
 
-const value = (input: string | number | null | undefined) =>
-  input === null || input === undefined || input === '' ? 'ثبت نشده' : input;
 const dateTime = (input: string | null | undefined) =>
   input ? new Date(input).toLocaleString('fa-IR') : 'ثبت نشده';
-
-function DefinitionList({
-  rows,
-}: {
-  rows: ReadonlyArray<readonly [string, string | number | null | undefined]>;
-}) {
-  return (
-    <dl className={styles.definitionList}>
-      {rows.map(([label, content]) => (
-        <div key={label}>
-          <dt>{label}</dt>
-          <dd>{value(content)}</dd>
-        </div>
-      ))}
-    </dl>
-  );
-}
 
 function WorkflowCommand({
   id,
@@ -199,14 +179,29 @@ export function ReservationContractEditor({
     };
   }, [contractId, requestId]);
 
-  const snapshot = intake?.snapshot;
-  const flights =
-    contract?.ticketSelections ?? snapshot?.ticketSelections ?? [];
-  const hotel = contract?.hotelSelection ?? snapshot?.hotelSelection;
-  const services =
-    contract?.servicesDetail ?? snapshot?.serviceSelections ?? [];
+  const editSection =
+    active === 'طرف قرارداد'
+      ? 'PARTY'
+      : active === 'پرواز'
+        ? 'FLIGHT'
+        : active === 'هتل'
+          ? 'HOTEL'
+          : active === 'سایر'
+            ? 'OTHER'
+            : active === 'مسافران'
+              ? 'PASSENGERS'
+              : undefined;
   const updateWorkflow = (workflow: TravelWorkflowStateV1) =>
-    setIntake((current) => (current ? { ...current, workflow } : current));
+    setIntake((current) =>
+      current
+        ? {
+            ...current,
+            contractEditVersion:
+              workflow.appliedContractVersion ?? current.contractEditVersion,
+            workflow,
+          }
+        : current,
+    );
 
   return (
     <div className={styles.editor} dir="rtl">
@@ -239,96 +234,20 @@ export function ReservationContractEditor({
             {error}
           </p>
         )}
-        {active === 'طرف قرارداد' && (
-          <DefinitionList
-            rows={[
-              ['نام طرف قرارداد', contract?.customerNameSnapshot],
-              ['شناسه مشتری', contract?.customerId ?? snapshot?.customerId],
-              ['شناسه پرداخت‌کننده', contract?.payerCustomerId],
-              ['شماره قرارداد', contractNumber],
-              ['وضعیت قرارداد', contract?.status],
-            ]}
-          />
-        )}
-        {active === 'پرواز' &&
-          (flights.length ? (
-            <div className={styles.tableWrap}>
-              <table>
-                <thead>
-                  <tr>
-                    <th>مسیر</th>
-                    <th>شرکت هواپیمایی</th>
-                    <th>شماره پرواز</th>
-                    <th>حرکت</th>
-                    <th>ورود</th>
-                    <th>کلاس</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {flights.map((flight) => (
-                    <tr key={`${flight.serviceClientKey}-${flight.direction}`}>
-                      <td>
-                        {flight.direction === 'OUTBOUND' ? 'رفت' : 'برگشت'}
-                      </td>
-                      <td>{flight.carrierNameSnapshot}</td>
-                      <td>{flight.serviceNumberSnapshot}</td>
-                      <td>{dateTime(flight.departureAt)}</td>
-                      <td>{dateTime(flight.arrivalAt)}</td>
-                      <td>{flight.cabinClassCode}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <p className={styles.notice}>پروازی در قرارداد ثبت نشده است.</p>
-          ))}
-        {active === 'هتل' &&
-          (hotel ? (
-            <DefinitionList
-              rows={[
-                ['نام هتل', hotel.hotelNameSnapshot],
-                ['تاریخ ورود', hotel.checkInDate],
-                ['تاریخ خروج', hotel.checkOutDate],
-                ['تعداد اتاق', hotel.roomCount],
-                ['سینگل', hotel.singleRoomCount],
-                ['دبل', hotel.doubleRoomCount],
-                ['تخت اضافه', hotel.extraBedCount],
-                ['نوع اتاق', hotel.roomTypeId],
-                ['سرویس هتل', hotel.mealServiceId],
-                ['تعداد نفر', hotel.occupancy],
-              ]}
+        {editSection &&
+          (intake ? (
+            <ReservationSettings
+              intake={intake}
+              section={editSection}
+              {...(contract?.customerNameSnapshot
+                ? { partyName: contract.customerNameSnapshot }
+                : {})}
+              onSaved={updateWorkflow}
+              onDirty={() => undefined}
             />
           ) : (
-            <p className={styles.notice}>هتلی در قرارداد ثبت نشده است.</p>
+            <p role="status">در حال دریافت اطلاعات قابل ویرایش…</p>
           ))}
-        {active === 'سایر' && (
-          <div className={styles.cards}>
-            {services
-              .filter((service) => !['FLIGHT', 'HOTEL'].includes(service.kind))
-              .map((service) => (
-                <article key={service.clientKey}>
-                  <strong>{service.titleSnapshot}</strong>
-                  <span>{service.kind}</span>
-                  <small>{service.status ?? 'ثبت‌شده'}</small>
-                </article>
-              ))}
-            {!services.some(
-              (service) => !['FLIGHT', 'HOTEL'].includes(service.kind),
-            ) && (
-              <p className={styles.notice}>
-                خدمت دیگری در قرارداد ثبت نشده است.
-              </p>
-            )}
-            {contract?.pricingNotes && (
-              <article>
-                <strong>یادداشت قیمت‌گذاری</strong>
-                <span>{contract.pricingNotes}</span>
-              </article>
-            )}
-          </div>
-        )}
-        {active === 'مسافران' && <ReservationPassengers id={requestId} />}
         {active === 'سوابق' && (
           <div className={styles.history}>
             {history.map((item) => (

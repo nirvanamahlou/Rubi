@@ -17,6 +17,12 @@ export function validateVoucherSettings(
   const v = value as VoucherSettingsV1;
   if (!v.text || !v.numbers || !v.flags || !Array.isArray(v.passengers))
     return fail();
+  if (
+    v.text.contractPartyName !== undefined &&
+    (typeof v.text.contractPartyName !== 'string' ||
+      v.text.contractPartyName.length > 200)
+  )
+    return fail();
   for (const key of voucherTextKeys)
     if (
       typeof v.text[key] !== 'string' ||
@@ -72,9 +78,11 @@ export function validateVoucherSettings(
         p.roomType.length > 100 ||
         !['ADL', 'CHD', 'INF'].includes(p.age) ||
         (p.age === 'CHD'
-          ? ![undefined, '', 'CHD_2_TO_6', 'CHD_6_TO_12'].includes(
-              p.hotelChildAgeBand,
-            )
+          ? p.selected
+            ? !['CHD_2_TO_6', 'CHD_6_TO_12'].includes(p.hotelChildAgeBand ?? '')
+            : ![undefined, '', 'CHD_2_TO_6', 'CHD_6_TO_12'].includes(
+                p.hotelChildAgeBand,
+              )
           : ![undefined, ''].includes(p.hotelChildAgeBand)),
     )
   )
@@ -98,9 +106,14 @@ export function validateVoucherSettings(
       return fail();
   }
   return {
-    text: Object.fromEntries(
-      voucherTextKeys.map((k) => [k, v.text[k].trim()]),
-    ) as VoucherSettingsV1['text'],
+    text: {
+      ...(Object.fromEntries(
+        voucherTextKeys.map((k) => [k, v.text[k].trim()]),
+      ) as VoucherSettingsV1['text']),
+      ...(v.text.contractPartyName !== undefined
+        ? { contractPartyName: v.text.contractPartyName.trim() }
+        : {}),
+    },
     numbers: Object.fromEntries(
       voucherNumberKeys.map((k) => [k, v.numbers[k]]),
     ) as VoucherSettingsV1['numbers'],
