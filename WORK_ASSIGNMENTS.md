@@ -1,3 +1,8 @@
+## PROCUREMENT-INVOICE-ATTACHMENTS-0916 — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-16: در فرم فاکتور خرید امکان بارگذاری مستقیم فایل فاکتور اضافه شود؛ فایل در ماژول اسناد با دامنهٔ Procurement آرشیو و به فاکتور متصل بماند. `COMPUTER_ID=PC-B`؛ شاخهٔ مستقل `codex/pc-b-procurement-invoice-attachments-0916` از `origin/develop@c441d33a`.
+- محدودهٔ رزروشده: کامپوننت فرم/انتخاب سند Procurement، تست‌های هدفمند Web و اسناد همین واحد. از API عمومی Documents استفاده می‌شود؛ تغییر Schema، Migration، Dependency/Lockfile، Permission یا دسترسی مستقیم به جدول Documents خارج از محدوده است.
+
 ## PROCUREMENT-RECORD-ACTIONS-0916 — PC-B — READY_FOR_REVIEW
 
 - درخواست مالک در 2026-09-16: برای همهٔ ردیف‌های قابل نمایش خرید و تأمین، کنترل‌های آیکونی ویرایش و حذف دائمیِ عملیاتی افزوده شود. `COMPUTER_ID=PC-B`؛ شاخهٔ مستقل `codex/pc-b-procurement-record-actions-0916` از `origin/develop@f7f52490`.
