@@ -1,4 +1,5 @@
 import { HR_PERMISSION_CODES } from '../hr';
+import { PROCUREMENT_PERMISSION_CODES } from '../procurement';
 import { CUSTOMER_AFFAIRS_PERMISSIONS } from '../customer-affairs';
 import { PACKAGE_PRICING_PERMISSION_CODES } from '../package-pricing';
 
@@ -114,6 +115,7 @@ export const IAM_SALES_PERMISSION_CODES = [
 ] as const;
 
 export const IAM_PERMISSION_CODES = [
+  ...PROCUREMENT_PERMISSION_CODES,
   ...IAM_CORE_PERMISSION_CODES,
   ...MASTER_DATA_PERMISSION_CODES,
   ...CUSTOMER_PERMISSION_CODES,

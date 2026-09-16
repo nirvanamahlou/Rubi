@@ -10,6 +10,9 @@ import {
 import type {
   AuthenticatedActor,
   FinanceInboxItemV1,
+  FinanceProcurementInvoiceDecisionCommandV1,
+  FinanceProcurementInvoicePaymentCommandV1,
+  FinanceProcurementCorrectionDecisionCommandV1,
   FinanceInboxSourceStateV1,
   FinanceInboxV1,
   FinanceRequestStatus,
@@ -27,6 +30,7 @@ import { SalesService } from '../sales/sales.service';
 import { ProcurementPublicService } from '../procurement/procurement-public.service';
 import { FinanceDeliveryService } from './document-delivery/finance-delivery.module';
 import { FinanceTicketCostService } from './ticket-cost/finance-ticket-cost.service';
+import { DecimalValue } from './finance.money';
 
 const hrStatus: Record<HrConnectionStatus, FinanceRequestStatus> = {
   SUBMITTED: 'NEW',
@@ -59,13 +63,21 @@ export class FinanceInboxService {
         message: 'مجوز مشاهده کارتابل مالی وجود ندارد.',
       });
 
-    const [salesResult, hrResult, reservationsResult, ticketResult] =
-      await Promise.allSettled([
-        this.sales.financeInbox(actor),
-        this.hr.list({ target: 'finance', page: 1 }, actor),
-        this.reservations.list(actor.branchIds),
-        this.procurement.listFinanceTicketPurchases(actor.branchIds),
-      ]);
+    const [
+      salesResult,
+      hrResult,
+      reservationsResult,
+      ticketResult,
+      invoiceResult,
+      correctionResult,
+    ] = await Promise.allSettled([
+      this.sales.financeInbox(actor),
+      this.hr.list({ target: 'finance', page: 1 }, actor),
+      this.reservations.list(actor.branchIds),
+      this.procurement.listFinanceTicketPurchases(actor.branchIds),
+      this.procurement.listFinanceInvoiceSources(actor.branchIds),
+      this.procurement.listFinanceCorrections(actor.branchIds),
+    ]);
     const salesItems =
       salesResult.status === 'fulfilled' ? salesResult.value : [];
     const hrItems = hrResult.status === 'fulfilled' ? hrResult.value.items : [];
@@ -80,6 +92,22 @@ export class FinanceInboxService {
     const ticketItems =
       ticketResult.status === 'fulfilled' ? ticketResult.value : [];
     const ticketStates = await this.ticketCosts.queueStates(ticketItems.map((item) => item.id));
+    const invoiceItems =
+      invoiceResult.status === 'fulfilled' ? invoiceResult.value : [];
+    const correctionItems =
+      correctionResult.status === 'fulfilled' ? correctionResult.value : [];
+    const financeRows = invoiceItems.length
+      ? await this.database.client.financeProcurementInvoiceRevision.findMany({
+          where: {
+            sourceId: { in: invoiceItems.map((item) => item.sourceId) },
+          },
+          orderBy: [{ sourceId: 'asc' }, { version: 'desc' }],
+          distinct: ['sourceId'],
+        })
+      : [];
+    const financeBySource = new Map(
+      financeRows.map((row) => [row.sourceId, row] as const),
+    );
 
     const items: FinanceInboxItemV1[] = [
       ...salesItems.map((item): FinanceInboxItemV1 => ({
@@ -189,6 +217,68 @@ export class FinanceInboxService {
         sourceVersion: purchase.requestVersion,
         origin: 'PERSISTED_SOURCE',
       })),
+      ...invoiceItems.map((invoice): FinanceInboxItemV1 => {
+        const finance = financeBySource.get(invoice.sourceId);
+        const status: FinanceRequestStatus = finance
+          ? finance.status === 'APPROVED'
+            ? 'READY_FOR_PAYMENT'
+            : finance.status === 'CORRECTION_REQUIRED'
+              ? 'CORRECTION_REQUIRED'
+              : finance.status === 'PAID'
+                ? 'PAID'
+                : 'PAYING'
+          : 'UNDER_REVIEW';
+        return {
+          version: 1,
+          id: `purchases:invoice:${invoice.sourceId}:${invoice.sourceVersion}`,
+          source: 'PURCHASES',
+          kind: 'PAYMENT_REQUEST',
+          sourceReference: invoice.sourceId,
+          sourceContextReference: invoice.orderId,
+          contractReference: null,
+          title: `فاکتور خرید ${invoice.sourceId}`,
+          partyDisplaySnapshot: invoice.supplier.label,
+          description: `فاکتور تطبیق‌شدهٔ سفارش خرید نسخه ${invoice.orderVersion}`,
+          amount: {
+            amount: invoice.amount,
+            currencyCode: invoice.currencyCode,
+          },
+          settlement: finance
+            ? {
+                paidAmount: finance.cumulativePaid.toString(),
+                remainingAmount: finance.remainingAmount.toString(),
+              }
+            : null,
+          status,
+          dueAt: invoice.dueAt,
+          createdAt: invoice.handoffCreatedAt,
+          requesterDisplaySnapshot: null,
+          branchReference: invoice.branchId,
+          sourceVersion: invoice.sourceVersion,
+          origin: 'PERSISTED_SOURCE',
+        };
+      }),
+      ...correctionItems.map((correction): FinanceInboxItemV1 => ({
+        version: 1,
+        id: `purchases:return:${correction.eventId}`,
+        source: 'PURCHASES',
+        kind: 'RETURN_CORRECTION',
+        sourceReference: correction.eventId,
+        sourceContextReference: correction.returnId,
+        contractReference: null,
+        title: 'اصلاح مالی مرجوعی خرید',
+        partyDisplaySnapshot: null,
+        description: correction.reason,
+        amount: null,
+        settlement: null,
+        status: 'UNDER_REVIEW',
+        dueAt: null,
+        createdAt: correction.returnedAt,
+        requesterDisplaySnapshot: null,
+        branchReference: correction.branchId,
+        sourceVersion: correction.sourceVersion,
+        origin: 'PERSISTED_SOURCE',
+      })),
     ].sort((left, right) => {
       const due = (left.dueAt ?? '9999').localeCompare(right.dueAt ?? '9999');
       return due || right.createdAt.localeCompare(left.createdAt);
@@ -216,12 +306,19 @@ export class FinanceInboxService {
       {
         source: 'PURCHASES',
         connection:
-          ticketResult.status === 'fulfilled' ? 'CONNECTED' : 'UNAVAILABLE',
-        itemCount: ticketItems.length,
+          ticketResult.status === 'fulfilled' &&
+          invoiceResult.status === 'fulfilled' &&
+          correctionResult.status === 'fulfilled'
+            ? 'CONNECTED'
+            : 'UNAVAILABLE',
+        itemCount:
+          ticketItems.length + invoiceItems.length + correctionItems.length,
         message:
-          ticketResult.status === 'fulfilled'
-            ? 'قیمت خرید بلیط‌های تعریف‌شده و منتظر رسیدگی مالی'
-            : 'منبع قیمت خرید بلیط در این لحظه پاسخ نداد.',
+          ticketResult.status === 'fulfilled' &&
+          invoiceResult.status === 'fulfilled' &&
+          correctionResult.status === 'fulfilled'
+            ? 'قیمت خرید بلیط، فاکتورهای تطبیق‌شده و اصلاحات مالی مرجوعی خرید'
+            : 'یکی از منابع خرید در این لحظه پاسخ نداد.',
       },
     ];
     return {
@@ -386,6 +483,262 @@ export class FinanceInboxService {
       actor.userId,
       actor.branchIds,
     );
+  }
+
+  async decideProcurementInvoice(
+    sourceId: string,
+    input: FinanceProcurementInvoiceDecisionCommandV1,
+    actor: AuthenticatedActor,
+  ) {
+    const reason = input?.reason?.trim() ?? '';
+    if (
+      input?.version !== 1 ||
+      !Number.isSafeInteger(input.expectedVersion) ||
+      input.expectedVersion < 0 ||
+      !['APPROVE', 'CORRECTION_REQUIRED'].includes(input.action) ||
+      reason.length > 500 ||
+      (input.action === 'CORRECTION_REQUIRED' && !reason)
+    )
+      throw new BadRequestException('تصمیم فاکتور خرید معتبر نیست.');
+    const source = await this.procurement.financeInvoiceSource(
+      sourceId,
+      actor.branchIds,
+    );
+    if (!source)
+      throw new NotFoundException('فاکتور خرید در کارتابل مالی یافت نشد.');
+    try {
+      return await this.database.client.$transaction(async (tx) => {
+        const current = await tx.financeProcurementInvoiceRevision.findFirst({
+          where: { sourceId },
+          orderBy: { version: 'desc' },
+        });
+        if ((current?.version ?? 0) !== input.expectedVersion)
+          throw new ConflictException('وضعیت مالی هم‌زمان تغییر کرده است.');
+        if (current)
+          throw new ConflictException('فاکتور خرید قبلاً بررسی شده است.');
+        const status =
+          input.action === 'APPROVE' ? 'APPROVED' : 'CORRECTION_REQUIRED';
+        const row = await tx.financeProcurementInvoiceRevision.create({
+          data: {
+            sourceId,
+            sourceVersion: source.sourceVersion,
+            branchId: source.branchId,
+            version: 1,
+            status,
+            cumulativePaid: 0,
+            remainingAmount: source.amount,
+            reason,
+            actorUserId: actor.userId,
+          },
+        });
+        const applied = await this.procurement.applyFinanceResult(
+          {
+            contract: 'finance.procurement-result.v1',
+            sourceId,
+            sourceVersion: source.sourceVersion,
+            financeReference: row.id,
+            status,
+            financeVersion: row.version,
+            cumulativePaid: '0',
+            remainingAmount: row.remainingAmount.toString(),
+            reason,
+            occurredAt: row.createdAt.toISOString(),
+          },
+          tx,
+        );
+        if (applied !== 'applied')
+          throw new ConflictException('وضعیت منبع خرید قابل تغییر نیست.');
+        return {
+          status,
+          version: row.version,
+          remainingAmount: row.remainingAmount.toString(),
+        };
+      });
+    } catch (error) {
+      if (
+        error &&
+        typeof error === 'object' &&
+        ['P2002', 'P2034'].includes(String((error as { code?: string }).code))
+      )
+        throw new ConflictException('وضعیت مالی هم‌زمان تغییر کرده است.');
+      throw error;
+    }
+  }
+
+  async payProcurementInvoice(
+    sourceId: string,
+    input: FinanceProcurementInvoicePaymentCommandV1,
+    actor: AuthenticatedActor,
+  ) {
+    const transferAt = new Date(input?.transferAt ?? '');
+    const reason = input?.reason?.trim() ?? '';
+    let paidAmount: DecimalValue;
+    let exchangeRate: DecimalValue;
+    try {
+      paidAmount = DecimalValue.parse(input?.paidAmount ?? '');
+      exchangeRate = DecimalValue.parse(input?.exchangeRateToIrr || '1');
+    } catch {
+      throw new BadRequestException('مبلغ یا نرخ ارز معتبر نیست.');
+    }
+    if (
+      input?.version !== 1 ||
+      !Number.isSafeInteger(input.expectedVersion) ||
+      input.expectedVersion < 1 ||
+      !input.accountId ||
+      !input.paymentMethodId ||
+      paidAmount.compare(DecimalValue.zero()) <= 0 ||
+      exchangeRate.compare(DecimalValue.zero()) <= 0 ||
+      Number.isNaN(transferAt.getTime()) ||
+      reason.length > 500 ||
+      (input.paymentReference?.trim().length ?? 0) > 160
+    )
+      throw new BadRequestException('اطلاعات پرداخت فاکتور خرید معتبر نیست.');
+    const source = await this.procurement.financeInvoiceSource(
+      sourceId,
+      actor.branchIds,
+    );
+    if (!source)
+      throw new NotFoundException('فاکتور خرید در کارتابل مالی یافت نشد.');
+    if (source.currencyCode !== 'IRR' && !input.exchangeRateToIrr)
+      throw new BadRequestException('نرخ روز ارز برای پرداخت ارزی الزامی است.');
+    try {
+      return await this.database.client.$transaction(async (tx) => {
+        const current = await tx.financeProcurementInvoiceRevision.findFirst({
+          where: { sourceId },
+          orderBy: { version: 'desc' },
+        });
+        if (
+          !current ||
+          !['APPROVED', 'PARTIALLY_PAID'].includes(current.status)
+        )
+          throw new ConflictException(
+            'فاکتور خرید هنوز برای پرداخت تأیید نشده است.',
+          );
+        if (current.version !== input.expectedVersion)
+          throw new ConflictException('وضعیت پرداخت هم‌زمان تغییر کرده است.');
+        const account = await tx.financeSettlementAccount.findFirst({
+          where: {
+            id: input.accountId,
+            branchId: source.branchId,
+            currencyCode: source.currencyCode,
+            isActive: true,
+          },
+        });
+        if (!account)
+          throw new BadRequestException(
+            'حساب فعال هم‌ارز برای پرداخت معتبر نیست.',
+          );
+        const method = await tx.masterPaymentMethod.findFirst({
+          where: {
+            id: input.paymentMethodId,
+            isActive: true,
+            direction: { in: ['PAYMENT', 'BOTH'] },
+          },
+        });
+        if (!method)
+          throw new BadRequestException('روش پرداخت انتخاب‌شده معتبر نیست.');
+        const currentRemaining = DecimalValue.parse(
+          current.remainingAmount.toString(),
+        );
+        if (paidAmount.compare(currentRemaining) > 0)
+          throw new BadRequestException(
+            'مبلغ پرداخت از مانده فاکتور بیشتر است.',
+          );
+        const cumulativePaid = DecimalValue.parse(
+          current.cumulativePaid.toString(),
+        ).add(paidAmount);
+        const remainingAmount = currentRemaining.subtract(paidAmount);
+        const status = remainingAmount.isZero ? 'PAID' : 'PARTIALLY_PAID';
+        const row = await tx.financeProcurementInvoiceRevision.create({
+          data: {
+            sourceId,
+            sourceVersion: source.sourceVersion,
+            branchId: source.branchId,
+            version: current.version + 1,
+            status,
+            accountId: account.id,
+            paymentMethodId: method.id,
+            paidAmount: paidAmount.toString(),
+            exchangeRateToIrr: exchangeRate.toString(),
+            rialEquivalent: paidAmount.multiply(exchangeRate).toString(),
+            cumulativePaid: cumulativePaid.toString(),
+            remainingAmount: remainingAmount.toString(),
+            transferAt,
+            paymentReference: input.paymentReference?.trim() || null,
+            reason,
+            actorUserId: actor.userId,
+          },
+        });
+        const applied = await this.procurement.applyFinanceResult(
+          {
+            contract: 'finance.procurement-result.v1',
+            sourceId,
+            sourceVersion: source.sourceVersion,
+            financeReference: row.id,
+            status,
+            financeVersion: row.version,
+            cumulativePaid: cumulativePaid.toString(),
+            remainingAmount: remainingAmount.toString(),
+            reason,
+            occurredAt: row.createdAt.toISOString(),
+          },
+          tx,
+        );
+        if (applied !== 'applied')
+          throw new ConflictException('وضعیت منبع خرید قابل تغییر نیست.');
+        return {
+          status,
+          version: row.version,
+          paidAmount: cumulativePaid.toString(),
+          remainingAmount: remainingAmount.toString(),
+        };
+      });
+    } catch (error) {
+      if (
+        error &&
+        typeof error === 'object' &&
+        ['P2002', 'P2034'].includes(String((error as { code?: string }).code))
+      )
+        throw new ConflictException('وضعیت پرداخت هم‌زمان تغییر کرده است.');
+      throw error;
+    }
+  }
+
+  async decideProcurementCorrection(
+    eventId: string,
+    input: FinanceProcurementCorrectionDecisionCommandV1,
+    actor: AuthenticatedActor,
+  ) {
+    const reason = input?.reason?.trim() ?? '';
+    if (
+      input?.version !== 1 ||
+      !Number.isSafeInteger(input.expectedVersion) ||
+      input.expectedVersion < 1 ||
+      !['APPROVE', 'CORRECTION_REQUIRED'].includes(input.action) ||
+      reason.length > 500 ||
+      (input.action === 'CORRECTION_REQUIRED' && !reason)
+    )
+      throw new BadRequestException('تصمیم اصلاح مالی مرجوعی معتبر نیست.');
+    const status =
+      input.action === 'APPROVE' ? 'APPROVED' : 'CORRECTION_REQUIRED';
+    const result = await this.procurement.applyFinanceCorrectionResult(
+      {
+        contract: 'finance.procurement-correction-result.v1',
+        eventId,
+        sourceVersion: input.expectedVersion,
+        financeReference: randomUUID(),
+        status,
+        reason,
+        actorUserId: actor.userId,
+        occurredAt: new Date().toISOString(),
+      },
+      actor.branchIds,
+    );
+    if (result === 'not-found')
+      throw new NotFoundException('اصلاح مالی مرجوعی در کارتابل یافت نشد.');
+    if (result === 'conflict')
+      throw new ConflictException('اصلاح مالی مرجوعی قبلاً بررسی شده است.');
+    return { status };
   }
 
   private sourceState(

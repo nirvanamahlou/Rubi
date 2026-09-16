@@ -2,6 +2,10 @@ import { createCipheriv, createHmac, randomBytes } from 'node:crypto';
 
 import { createDatabaseClient } from '../src/client';
 import { PERMISSION_SEED_DATA } from '../src/permission-seed-data';
+import {
+  PROCUREMENT_ROLE_SPECS,
+  PROCUREMENT_STAFF_PERMISSION_CODES,
+} from '../src/procurement-role-seed-data';
 
 function requiredContactKey(name: string): Buffer {
   const encoded = process.env[name];
@@ -80,6 +84,32 @@ async function seed(): Promise<void> {
           },
           update: { isActive: true, name: 'کاربر عادی' },
         });
+        for (const spec of PROCUREMENT_ROLE_SPECS) {
+          const role = await transaction.role.upsert({
+            where: { code: spec.code },
+            create: {
+              code: spec.code,
+              name: spec.name,
+              description: 'دسترسی مشخص عملیاتی خرید در شعب مجاز',
+              isSystem: true,
+            },
+            update: { name: spec.name, isActive: true },
+          });
+          for (const permission of seededPermissions.filter(({ code }) =>
+            spec.permissions.includes(code as never),
+          )) {
+            await transaction.rolePermission.upsert({
+              where: {
+                roleId_permissionId: {
+                  roleId: role.id,
+                  permissionId: permission.id,
+                },
+              },
+              create: { roleId: role.id, permissionId: permission.id },
+              update: {},
+            });
+          }
+        }
         const documentRoleSpecs = [
           {
             code: 'archive_staff',
@@ -246,21 +276,23 @@ async function seed(): Promise<void> {
           },
         ] as const;
         await Promise.all(
-          seededPermissions.map((permission) =>
-            transaction.rolePermission.upsert({
-              where: {
-                roleId_permissionId: {
+          seededPermissions
+            .filter((permission) => !permission.code.startsWith('procurement.'))
+            .map((permission) =>
+              transaction.rolePermission.upsert({
+                where: {
+                  roleId_permissionId: {
+                    roleId: administrator.id,
+                    permissionId: permission.id,
+                  },
+                },
+                create: {
                   roleId: administrator.id,
                   permissionId: permission.id,
                 },
-              },
-              create: {
-                roleId: administrator.id,
-                permissionId: permission.id,
-              },
-              update: {},
-            }),
-          ),
+                update: {},
+              }),
+            ),
         );
         for (const spec of documentRoleSpecs) {
           const role = await transaction.role.upsert({
@@ -291,6 +323,7 @@ async function seed(): Promise<void> {
         const staffPermissionCodes = new Set([
           'legal-entity.read',
           'legal-entity.switch',
+          ...PROCUREMENT_STAFF_PERMISSION_CODES,
         ]);
         await Promise.all(
           seededPermissions

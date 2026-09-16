@@ -78,7 +78,7 @@ describe('payment-method form fields', () => {
         'passportIdentifier',
       ],
       'exchange-rates': ['observedAt', 'validFrom', 'validTo'],
-      'travel-services': ['code'],
+      'travel-services': ['code', 'englishName'],
     };
     for (const [resource, hidden] of Object.entries(omitted)) {
       const visible = getMasterDataFormFields(

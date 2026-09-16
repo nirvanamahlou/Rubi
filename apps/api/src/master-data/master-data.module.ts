@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { MasterHrDirectory } from './master-hr-directory';
+import { MasterProcurementDirectory } from './master-procurement-directory';
 
 import { AuthGuard } from '../iam/auth.guard';
 import { IamModule } from '../iam/iam.module';
@@ -35,6 +36,7 @@ import {
     OrganizationAddressController,
   ],
   providers: [
+    MasterProcurementDirectory,
     AuthGuard,
     PermissionGuard,
     MasterDataRepository,
@@ -49,6 +51,7 @@ import {
     MasterHotelBaseRatePublicService,
   ],
   exports: [
+    MasterProcurementDirectory,
     MasterDataService,
     MasterOrganizationDirectory,
     MasterTravelDirectory,

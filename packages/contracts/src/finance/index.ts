@@ -374,7 +374,11 @@ export interface FinanceInboxItemV1 {
   version: 1;
   id: string;
   source: FinanceInboxSource;
-  kind: 'RECEIPT_VERIFICATION' | 'PAYMENT_REQUEST' | 'HR_REFERRAL';
+  kind:
+    | 'RECEIPT_VERIFICATION'
+    | 'PAYMENT_REQUEST'
+    | 'HR_REFERRAL'
+    | 'RETURN_CORRECTION';
   sourceReference: string;
   /** Stable reference needed by the owning module to apply an inbox action. */
   sourceContextReference: string;
@@ -478,6 +482,32 @@ export interface FinanceBankOptionV1 {
 export interface FinanceReceiptDecisionCommandV1 {
   version: 1;
   contractId: string;
+  action: 'APPROVE' | 'CORRECTION_REQUIRED';
+  reason?: string | null;
+}
+
+export interface FinanceProcurementInvoiceDecisionCommandV1 {
+  version: 1;
+  expectedVersion: number;
+  action: 'APPROVE' | 'CORRECTION_REQUIRED';
+  reason?: string | null;
+}
+
+export interface FinanceProcurementInvoicePaymentCommandV1 {
+  version: 1;
+  expectedVersion: number;
+  accountId: string;
+  paymentMethodId: string;
+  paidAmount: string;
+  exchangeRateToIrr?: string | null;
+  transferAt: string;
+  paymentReference?: string | null;
+  reason?: string | null;
+}
+
+export interface FinanceProcurementCorrectionDecisionCommandV1 {
+  version: 1;
+  expectedVersion: number;
   action: 'APPROVE' | 'CORRECTION_REQUIRED';
   reason?: string | null;
 }
