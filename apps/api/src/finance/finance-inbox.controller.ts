@@ -12,6 +12,9 @@ import {
 } from '@nestjs/common';
 import type {
   FinanceReceiptDecisionCommandV1,
+  FinanceProcurementInvoiceDecisionCommandV1,
+  FinanceProcurementInvoicePaymentCommandV1,
+  FinanceProcurementCorrectionDecisionCommandV1,
   FinanceSettlementAccountCreateV1,
   FinanceSupplierPaymentCommandV1,
 } from '@nora/contracts';
@@ -90,6 +93,54 @@ export class FinanceInboxController {
       data: await this.inbox.supplierPayment(
         intakeId,
         purchaseId,
+        input,
+        request.actor,
+      ),
+    };
+  }
+
+  @Post('inbox/purchases/invoices/:invoiceId/decision')
+  @RequirePermissions('finance.receipt.approve')
+  async procurementInvoiceDecision(
+    @Param('invoiceId', ParseUUIDPipe) invoiceId: string,
+    @Body() input: FinanceProcurementInvoiceDecisionCommandV1,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return {
+      data: await this.inbox.decideProcurementInvoice(
+        invoiceId,
+        input,
+        request.actor,
+      ),
+    };
+  }
+
+  @Post('inbox/purchases/invoices/:invoiceId/payments')
+  @RequirePermissions('finance.payment.create')
+  async procurementInvoicePayment(
+    @Param('invoiceId', ParseUUIDPipe) invoiceId: string,
+    @Body() input: FinanceProcurementInvoicePaymentCommandV1,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return {
+      data: await this.inbox.payProcurementInvoice(
+        invoiceId,
+        input,
+        request.actor,
+      ),
+    };
+  }
+
+  @Post('inbox/purchases/corrections/:eventId/decision')
+  @RequirePermissions('finance.receipt.approve')
+  async procurementCorrectionDecision(
+    @Param('eventId', ParseUUIDPipe) eventId: string,
+    @Body() input: FinanceProcurementCorrectionDecisionCommandV1,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return {
+      data: await this.inbox.decideProcurementCorrection(
+        eventId,
         input,
         request.actor,
       ),

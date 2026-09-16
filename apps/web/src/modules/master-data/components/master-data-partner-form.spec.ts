@@ -51,15 +51,28 @@ function render(
 
 describe('real partner form fields', () => {
   it.each(['suppliers', 'brokers'] as const)(
-    'renders English name, multi-service selection and scoped contact for %s',
+    'renders partner identity, multi-service selection and scoped contact for %s',
     (resource) => {
       const html = render(resource);
-      expect(html).toContain(`id="live-${resource}-englishName"`);
+      if (resource === 'suppliers') {
+        expect(html).toContain('id="live-suppliers-name"');
+        expect(html).not.toContain('id="live-suppliers-englishName"');
+        expect(html).not.toContain('id="live-suppliers-countryId"');
+        expect(html).not.toContain('id="live-suppliers-cityId"');
+      } else {
+        expect(html).toContain('id="live-brokers-englishName"');
+      }
       expect(html).toContain('خدمات قابل ارائه');
       expect(html).toContain('aria-multiselectable="true"');
-      expect(html).toContain('تماس اصلی');
-      expect(html).toContain('ابتدا سازمان را انتخاب کنید.');
-      expect(html).toContain('افزودن سازمان');
+      if (resource === 'suppliers') {
+        expect(html).not.toContain('سازمان تأمین‌کننده');
+        expect(html).not.toContain('تماس اصلی');
+        expect(html).not.toContain('ثبت سازمان جدید');
+      } else {
+        expect(html).toContain('تماس اصلی');
+        expect(html).toContain('ابتدا سازمان را انتخاب کنید.');
+        expect(html).toContain('>ثبت سازمان جدید</button>');
+      }
       expect(html).toContain('افزودن خدمت');
       expect(html.match(/<form\b/g)).toHaveLength(1);
     },
@@ -68,9 +81,14 @@ describe('real partner form fields', () => {
     'keeps saved English name and enables contact popup only after organization selection for %s',
     (resource) => {
       const html = render(resource, 'edit');
-      expect(html).toContain('value="Test Partner"');
-      expect(html).toContain('افزودن مخاطب');
-      expect(html).not.toContain('ابتدا سازمان را انتخاب کنید.');
+      if (resource === 'suppliers') {
+        expect(html).not.toContain('value="Test Partner"');
+        expect(html).not.toContain('افزودن مخاطب');
+      } else {
+        expect(html).toContain('value="Test Partner"');
+        expect(html).toContain('افزودن مخاطب');
+        expect(html).not.toContain('ابتدا سازمان را انتخاب کنید.');
+      }
       expect(html).toContain('پاک‌کردن خدمات قابل ارائه');
       expect(html).not.toContain('type="tel"');
       expect(html).not.toContain('purchaseLimit');

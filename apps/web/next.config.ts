@@ -30,6 +30,17 @@ const nextConfig: NextConfig = {
           },
         ],
       },
+      {
+        source: '/procurement-optimized.html',
+        headers: [
+          { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
+          {
+            key: 'Content-Security-Policy',
+            value:
+              "object-src 'none'; base-uri 'self'; frame-ancestors 'self'; form-action 'self'",
+          },
+        ],
+      },
     ];
   },
 };

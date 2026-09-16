@@ -25,6 +25,15 @@ describe('finance foundation boundary', () => {
     expect(source).toContain(
       "@Post('inbox/reservations/:intakeId/purchases/:purchaseId/payments')",
     );
+    expect(source).toContain(
+      "@Post('inbox/purchases/invoices/:invoiceId/decision')",
+    );
+    expect(source).toContain(
+      "@Post('inbox/purchases/invoices/:invoiceId/payments')",
+    );
+    expect(source).toContain(
+      "@Post('inbox/purchases/corrections/:eventId/decision')",
+    );
     expect(source).toContain("@RequirePermissions('finance.receipt.approve')");
     expect(source).toContain("@RequirePermissions('finance.payment.create')");
     expect(source).not.toMatch(/@Patch|@Put|@Delete/);

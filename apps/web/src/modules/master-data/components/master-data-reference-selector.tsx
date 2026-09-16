@@ -30,6 +30,7 @@ export function MasterDataReferenceSelector({
   scopeValue,
   refreshKey = 0,
   onManage,
+  createOnlyWhenEmpty = false,
   closeOnSelect = false,
 }: {
   config: ReferenceFieldConfig;
@@ -41,7 +42,8 @@ export function MasterDataReferenceSelector({
   value: string;
   scopeValue?: string;
   refreshKey?: number;
-  onManage?: (record?: MasterDataRecord) => void;
+  onManage?: (record?: MasterDataRecord, query?: string) => void;
+  createOnlyWhenEmpty?: boolean;
   closeOnSelect?: boolean;
 }) {
   const [expanded, setExpanded] = useState(true);
@@ -152,6 +154,8 @@ export function MasterDataReferenceSelector({
       ),
     [config, options, selectedValues],
   );
+  const canCreateReference =
+    Boolean(onManage) && (!createOnlyWhenEmpty || state === 'empty');
 
   function choose(optionValue: string) {
     if (!config.multiple) {
@@ -195,20 +199,22 @@ export function MasterDataReferenceSelector({
 
   return (
     <div className="space-y-2">
-      {onManage ? (
+      {onManage && (canCreateReference || (!config.multiple && selected)) ? (
         <div className="flex flex-wrap items-center justify-end gap-2">
-          <Button
-            onClick={() => onManage()}
-            size="sm"
-            type="button"
-            variant="outline"
-          >
-            {config.target === 'organizations'
-              ? 'افزودن سازمان'
-              : config.target === 'organization-contacts'
-                ? 'افزودن مخاطب'
-                : 'افزودن خدمت'}
-          </Button>
+          {canCreateReference ? (
+            <Button
+              onClick={() => onManage(undefined, query.trim())}
+              size="sm"
+              type="button"
+              variant="outline"
+            >
+              {config.target === 'organizations'
+                ? 'ثبت سازمان جدید'
+                : config.target === 'organization-contacts'
+                  ? 'افزودن مخاطب'
+                  : 'افزودن خدمت'}
+            </Button>
+          ) : null}
           {!config.multiple && selected ? (
             <Button
               onClick={() => onManage(selected)}
