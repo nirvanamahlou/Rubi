@@ -14,6 +14,7 @@ import {
 import { useQuery } from '@tanstack/react-query';
 import type { ProcurementRequestV1 } from '@nora/contracts';
 import { Button } from '@/components/ui/button';
+import { DatePicker } from '@/components/ui/date-picker';
 import { FormField, Input, Textarea } from '@/components/ui/form-controls';
 import {
   Alert,
@@ -245,6 +246,7 @@ export function InternalSections({
   const [createdTo, setCreatedTo] = useState('');
   const [page, setPage] = useState(1);
   const [candidate, setCandidate] = useState('');
+  const [openedSampleId, setOpenedSampleId] = useState('');
   const [supplierFormOpen, setSupplierFormOpen] = useState(false);
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -310,7 +312,9 @@ export function InternalSections({
           : item.section === group,
       )
     : (list.data?.items ?? []);
-  const realRows = rows.filter((row) => !row.sample);
+  const openedSample = rows.find(
+    (row) => row.sample && row.id === openedSampleId,
+  );
   const supplierRows = suppliers.data?.items.length
     ? suppliers.data.items
     : page === 1 && !search && !querySearch && !createdFrom && !createdTo
@@ -433,6 +437,7 @@ export function InternalSections({
                     onChange={(event) => {
                       setSearch(event.target.value);
                       setCandidate('');
+                      setOpenedSampleId('');
                     }}
                     placeholder="جست‌وجو"
                   />
@@ -447,6 +452,7 @@ export function InternalSections({
                         setStatus(event.target.value);
                         setPage(1);
                         setCandidate('');
+                        setOpenedSampleId('');
                       }}
                     >
                       <option value="">همه وضعیت‌ها</option>
@@ -471,6 +477,7 @@ export function InternalSections({
                       setCreatedTo('');
                     setPage(1);
                     setCandidate('');
+                    setOpenedSampleId('');
                   }}
                   onToDateChange={(value) => {
                     setCreatedTo(value.slice(0, 10));
@@ -478,12 +485,14 @@ export function InternalSections({
                       setCreatedFrom('');
                     setPage(1);
                     setCandidate('');
+                    setOpenedSampleId('');
                   }}
                   onReset={() => {
                     setCreatedFrom('');
                     setCreatedTo('');
                     setPage(1);
                     setCandidate('');
+                    setOpenedSampleId('');
                   }}
                 />
               </FilterBar>
@@ -570,15 +579,21 @@ export function InternalSections({
                         <Badge>{statusLabels[row.status]}</Badge>
                         {row.sample ? (
                           <Badge className={tone.chip}>نمونه</Badge>
-                        ) : (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => onOpen(row.id)}
-                          >
-                            باز کردن فرم
-                          </Button>
-                        )}
+                        ) : null}
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            if (row.sample) {
+                              setCandidate(row.id);
+                              setOpenedSampleId(row.id);
+                            } else {
+                              onOpen(row.id);
+                            }
+                          }}
+                        >
+                          باز کردن فرم
+                        </Button>
                       </div>
                     </div>
                   ))}
@@ -598,6 +613,7 @@ export function InternalSections({
                     onClick={() => {
                       setPage(page - 1);
                       setCandidate('');
+                      setOpenedSampleId('');
                     }}
                   >
                     قبلی
@@ -614,6 +630,7 @@ export function InternalSections({
                     onClick={() => {
                       setPage(page + 1);
                       setCandidate('');
+                      setOpenedSampleId('');
                     }}
                   >
                     بعدی
@@ -680,7 +697,7 @@ export function InternalSections({
                       onChange={(event) => setCandidate(event.target.value)}
                     >
                       <option value="">انتخاب پرونده</option>
-                      {realRows.map((row) => (
+                      {rows.map((row) => (
                         <option key={row.id} value={row.id}>
                           {row.number} · {row.draft.title}
                         </option>
@@ -690,29 +707,41 @@ export function InternalSections({
                   <Button
                     className="w-full"
                     disabled={!candidate}
-                    onClick={() => onOpen(candidate)}
+                    onClick={() => {
+                      const row = rows.find((item) => item.id === candidate);
+                      if (row?.sample) setOpenedSampleId(row.id);
+                      else onOpen(candidate);
+                    }}
                   >
                     باز کردن فرم
                   </Button>
                 </>
               )}
-              <div className="border-t border-border pt-4">
-                <Badge className={tone.chip}>پیش‌نمایش فرم</Badge>
-                <fieldset disabled className="mt-3 space-y-3">
-                  {previewFields[group].map(([label, value], index) => (
-                    <FormField
-                      key={label}
-                      id={`proc-preview-${group}-${index}`}
-                      label={label}
-                    >
-                      <Input
+              {group === 5 && openedSample ? (
+                <SampleOrderForm
+                  key={openedSample.id}
+                  request={openedSample}
+                  branches={bootstrap.branches}
+                />
+              ) : (
+                <div className="border-t border-border pt-4">
+                  <Badge className={tone.chip}>پیش‌نمایش فرم</Badge>
+                  <fieldset disabled className="mt-3 space-y-3">
+                    {previewFields[group].map(([label, value], index) => (
+                      <FormField
+                        key={label}
                         id={`proc-preview-${group}-${index}`}
-                        defaultValue={value}
-                      />
-                    </FormField>
-                  ))}
-                </fieldset>
-              </div>
+                        label={label}
+                      >
+                        <Input
+                          id={`proc-preview-${group}-${index}`}
+                          defaultValue={value}
+                        />
+                      </FormField>
+                    ))}
+                  </fieldset>
+                </div>
+              )}
             </div>
           </Card>
         </div>
@@ -727,6 +756,121 @@ export function InternalSections({
         />
       )}
     </div>
+  );
+}
+
+function SampleOrderForm({
+  request,
+  branches,
+}: {
+  request: ProcurementListRow;
+  branches: Bootstrap['branches'];
+}) {
+  const storageKey = `procurement:sample-order:${request.id}`;
+  const [draft, setDraft] = useState(() => {
+    const defaults = {
+      selectionId: `QT-${request.number.replace('PR-', '')}`,
+      expectedAt: '',
+      deliveryLocation: branches[0]?.label ?? 'شعبه مرکزی',
+      paymentTerms: '',
+    };
+    if (typeof window === 'undefined') return defaults;
+    const persisted = window.sessionStorage.getItem(storageKey);
+    if (!persisted) return defaults;
+    try {
+      return { ...defaults, ...(JSON.parse(persisted) as typeof defaults) };
+    } catch {
+      window.sessionStorage.removeItem(storageKey);
+      return defaults;
+    }
+  });
+  const [saved, setSaved] = useState(false);
+
+  return (
+    <form
+      className="space-y-4 border-t border-border pt-4"
+      onSubmit={(event) => {
+        event.preventDefault();
+        window.sessionStorage.setItem(storageKey, JSON.stringify(draft));
+        setSaved(true);
+      }}
+    >
+      <div>
+        <p className="text-xs text-muted-foreground" dir="ltr">
+          {request.number}
+        </p>
+        <p className="mt-1 font-bold">{request.draft.title}</p>
+      </div>
+      {saved ? <Alert title="پیش‌نویس سفارش در نشست جاری ذخیره شد." /> : null}
+      <FormField id="sample-order-selection" label="پیشنهاد منتخب">
+        <ProcurementSelect
+          id="sample-order-selection"
+          className={selectClass}
+          value={draft.selectionId}
+          onChange={(event) => {
+            setDraft((current) => ({
+              ...current,
+              selectionId: event.target.value,
+            }));
+            setSaved(false);
+          }}
+        >
+          <option value={draft.selectionId}>{draft.selectionId}</option>
+        </ProcurementSelect>
+      </FormField>
+      <FormField id="sample-order-expected" label="موعد تحویل">
+        <DatePicker
+          id="sample-order-expected"
+          value={draft.expectedAt}
+          onChange={(value) => {
+            setDraft((current) => ({
+              ...current,
+              expectedAt: value.slice(0, 10),
+            }));
+            setSaved(false);
+          }}
+        />
+      </FormField>
+      <FormField id="sample-order-location" label="محل تحویل">
+        <ProcurementSelect
+          id="sample-order-location"
+          className={selectClass}
+          value={draft.deliveryLocation}
+          onChange={(event) => {
+            setDraft((current) => ({
+              ...current,
+              deliveryLocation: event.target.value,
+            }));
+            setSaved(false);
+          }}
+        >
+          {[
+            ...new Set(['شعبه مرکزی', ...branches.map((item) => item.label)]),
+          ].map((branch) => (
+            <option key={branch} value={branch}>
+              {branch}
+            </option>
+          ))}
+        </ProcurementSelect>
+      </FormField>
+      <FormField id="sample-order-terms" label="شرایط پرداخت">
+        <Input
+          id="sample-order-terms"
+          value={draft.paymentTerms}
+          onChange={(event) => {
+            setDraft((current) => ({
+              ...current,
+              paymentTerms: event.target.value,
+            }));
+            setSaved(false);
+          }}
+          placeholder="مثلاً ۳۰ درصد پیش‌پرداخت و تسویه پس از تحویل"
+        />
+      </FormField>
+      <Button className="w-full" type="submit">
+        ذخیره پیش‌نویس سفارش
+      </Button>
+    </form>
   );
 }
 
