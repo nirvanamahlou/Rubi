@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Header,
   Headers,
@@ -137,6 +138,14 @@ export class ProcurementController {
     return procurementBoundary(() =>
       this.service.update(id, body, key, req.actor),
     );
+  }
+  @Delete('requests/:id')
+  remove(
+    @Param('id') id: string,
+    @Body() body: unknown,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return procurementBoundary(() => this.service.remove(id, body, req.actor));
   }
   @Post('requests/:id/commands')
   command(

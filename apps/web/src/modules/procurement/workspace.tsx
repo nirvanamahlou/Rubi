@@ -44,6 +44,7 @@ import {
 } from './presentation';
 import { sampleRequests, type ProcurementListRow } from './sample-requests';
 import { ProcurementSelect } from './procurement-select';
+import { ProcurementRecordActions } from './record-actions';
 import { MasterDataDateRangeFilter } from '@/modules/master-data/components/master-data-date-range-filter';
 import { cn } from '@/lib/utils';
 import {
@@ -364,6 +365,25 @@ function WorkspaceState({
       queryKey: ['procurement', 'operation-options'],
     });
   }
+  async function removeRequest(request: ProcurementRequestV1) {
+    await procurementApi.remove(request);
+    if (selectedId === request.id) closeRequest();
+    setEditing(false);
+    await Promise.all([
+      client.invalidateQueries({ queryKey: ['procurement', 'requests'] }),
+      client.invalidateQueries({ queryKey: ['procurement', 'section-list'] }),
+      client.invalidateQueries({
+        queryKey: ['procurement', 'request', request.id],
+      }),
+      client.invalidateQueries({
+        queryKey: ['procurement', 'operation-options'],
+      }),
+    ]);
+  }
+  async function deleteListRequest(row: ProcurementListRow) {
+    const result = await procurementApi.get(row.id);
+    await removeRequest(result);
+  }
   if (creating || (editing && detail.data))
     return (
       <div
@@ -416,6 +436,7 @@ function WorkspaceState({
         onClose={closeRequest}
         onCreate={() => setCreating(true)}
         onSaved={saved}
+        onDelete={removeRequest}
       />
     );
   return (
@@ -649,17 +670,27 @@ function WorkspaceState({
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
                       <Badge>{statusLabels[row.status]}</Badge>
-                      {row.sample ? (
-                        <Badge>نمونه</Badge>
-                      ) : (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => openRequest(row.id)}
-                        >
-                          مشاهده
-                        </Button>
-                      )}
+                      {row.sample ? <Badge>نمونه</Badge> : null}
+                      <ProcurementRecordActions
+                        label={row.draft.title || row.number}
+                        onEdit={() => {
+                          if (!row.sample) openRequest(row.id);
+                        }}
+                        onDelete={async () => {
+                          if (row.sample) {
+                            throw new Error(
+                              'رکورد نمونه در این فهرست قابل حذف نیست.',
+                            );
+                          }
+                          await deleteListRequest(row);
+                        }}
+                        deleteDisabled={
+                          row.sample ||
+                          !bootstrap.permissions.includes(
+                            'procurement.request.cancel',
+                          )
+                        }
+                      />
                     </div>
                   </div>
                 ))}
