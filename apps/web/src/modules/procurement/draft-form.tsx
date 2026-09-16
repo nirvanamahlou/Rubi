@@ -100,11 +100,23 @@ export function DraftForm({
       'procurement',
       'requesters',
       draft.branchId,
+      draft.unitId,
       requesterSearch,
       requesterPage,
     ],
     queryFn: () =>
-      procurementApi.requesters(draft.branchId, requesterSearch, requesterPage),
+      procurementApi.requesters(
+        draft.branchId,
+        requesterSearch,
+        requesterPage,
+        draft.unitId ?? '',
+      ),
+    enabled: Boolean(draft.branchId),
+    retry: false,
+  });
+  const units = useQuery({
+    queryKey: ['procurement', 'units', draft.branchId],
+    queryFn: () => procurementApi.units(draft.branchId),
     enabled: Boolean(draft.branchId),
     retry: false,
   });
@@ -582,11 +594,39 @@ export function DraftForm({
               </ProcurementSelect>
             </FormField>
             <FormField id="proc-unit" label="واحد سازمانی">
-              <Input
+              <ProcurementSelect
                 id="proc-unit"
-                readOnly
-                value={draft.unitId ?? 'واحدی برای درخواست‌کننده ثبت نشده'}
-              />
+                className={selectClass}
+                value={draft.unitId ?? ''}
+                onChange={(event) => {
+                  const nextUnit = event.target.value || null;
+                  const requester = requesters.data?.items.find(
+                    (item) => item.id === requesterEmployeeId,
+                  );
+                  update('unitId', nextUnit);
+                  if (requester?.unitId && requester.unitId !== nextUnit) {
+                    setRequesterEmployeeId('');
+                    setRequesterLabel('');
+                  }
+                  setRequesterPage(1);
+                }}
+              >
+                <option value="">انتخاب واحد از منابع انسانی</option>
+                {draft.unitId &&
+                  !units.data?.items.some(
+                    (unit) => unit.id === draft.unitId,
+                  ) && <option value={draft.unitId}>{draft.unitId}</option>}
+                {units.data?.items.map((unit) => (
+                  <option key={unit.id} value={unit.id}>
+                    {unit.label}
+                  </option>
+                ))}
+              </ProcurementSelect>
+              {units.isError && (
+                <p className="text-sm text-destructive">
+                  فهرست واحدهای منابع انسانی دریافت نشد.
+                </p>
+              )}
             </FormField>
             {savedChoice('purchaseType', 'نوع خرید')}
             {savedChoice('category', 'دسته خرید')}
@@ -598,23 +638,6 @@ export function DraftForm({
                   update('requiredAt', value ? `${value}T00:00:00.000Z` : null)
                 }
               />
-            </FormField>
-            <FormField id="proc-priority" label="اولویت">
-              <ProcurementSelect
-                id="proc-priority"
-                className={selectClass}
-                value={draft.priority}
-                onChange={(event) =>
-                  update(
-                    'priority',
-                    event.target.value as ProcurementDraftV1['priority'],
-                  )
-                }
-              >
-                <option value="LOW">کم</option>
-                <option value="NORMAL">عادی</option>
-                <option value="HIGH">زیاد</option>
-              </ProcurementSelect>
             </FormField>
             <FormField id="proc-deliveryLocation" label="محل تحویل">
               <ProcurementSelect
@@ -813,10 +836,10 @@ export function DraftForm({
               <span className="flex size-10 items-center justify-center rounded-xl bg-teal-500/10 text-teal-700 dark:text-teal-300">
                 <FileText aria-hidden="true" className="size-5" />
               </span>
-              اسناد و مرجع مبدأ
+              منشأ درخواست و پیوست‌ها
             </span>
           </legend>
-          <FormField id="proc-origin" label="منشأ درخواست">
+          <FormField id="proc-origin" label="نوع منشأ درخواست">
             <ProcurementSelect
               id="proc-origin"
               className={selectClass}
@@ -846,7 +869,7 @@ export function DraftForm({
                 description="عملیات سفر در رزرواسیون باقی می‌ماند. اعتبار مرجع و نسخه هنگام ارسال در سرور کنترل می‌شود."
               />
               <div className="grid gap-4 sm:grid-cols-2">
-                <FormField id="proc-origin-id" label="شناسه عملیات">
+                <FormField id="proc-origin-id" label="شناسه پرونده رزرواسیون">
                   <Input
                     id="proc-origin-id"
                     value={draft.origin.operationId}
@@ -859,7 +882,7 @@ export function DraftForm({
                     }}
                   />
                 </FormField>
-                <FormField id="proc-origin-version" label="نسخه مرجع">
+                <FormField id="proc-origin-version" label="نسخه پرونده مرجع">
                   <Input
                     id="proc-origin-version"
                     type="number"

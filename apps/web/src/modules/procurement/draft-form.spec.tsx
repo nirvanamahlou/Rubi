@@ -37,6 +37,9 @@ describe('Purchase draft accessibility and persisted input', () => {
     expect(html).toContain('انتخاب محل تحویل (اختیاری)');
     expect(html).toContain('سرویس اسناد در دسترس نیست');
     expect(html).toContain('کاربر جاری');
+    expect(html).toContain('انتخاب واحد از منابع انسانی');
+    expect(html).not.toContain('id="proc-priority"');
+    expect(html).toContain('منشأ درخواست و پیوست‌ها');
     expect(html).not.toContain('type="date"');
     expect(html).toContain('ذخیره پیش‌نویس');
     expect(html).toContain(

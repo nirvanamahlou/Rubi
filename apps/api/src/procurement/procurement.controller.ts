@@ -79,6 +79,14 @@ export class ProcurementController {
   ) {
     return procurementBoundary(() => this.service.requesters(query, req.actor));
   }
+  @Get('units')
+  @Header('Cache-Control', 'private, no-store')
+  units(
+    @Query() query: Record<string, unknown>,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return procurementBoundary(() => this.service.units(query, req.actor));
+  }
   @Get('requests')
   @Header('Cache-Control', 'private, no-store')
   list(

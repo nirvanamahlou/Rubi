@@ -136,11 +136,15 @@ export const procurementApi = {
     procurementRequest<ProcurementListV1<{ id: string; label: string }>>(
       `/owners?${new URLSearchParams({ branchId, search, page: String(page) })}`,
     ),
-  requesters: (branchId: string, search: string, page: number) =>
+  requesters: (branchId: string, search: string, page: number, unitId = '') =>
     procurementRequest<
       ProcurementListV1<{ id: string; label: string; unitId: string | null }>
     >(
-      `/requesters?${new URLSearchParams({ branchId, search, page: String(page) })}`,
+      `/requesters?${new URLSearchParams({ branchId, search, page: String(page), unitId })}`,
+    ),
+  units: (branchId: string) =>
+    procurementRequest<{ items: { id: string; label: string }[] }>(
+      `/units?${new URLSearchParams({ branchId })}`,
     ),
   bootstrap: () => procurementRequest<Bootstrap>('/bootstrap'),
   list: (query: URLSearchParams) =>

@@ -59,6 +59,7 @@ export class HrProcurementDirectory {
     branchId: string,
     search: string,
     page: number,
+    unit?: string,
   ) {
     if (!actor.branchIds.includes(branchId))
       return { items: [], page, pageSize: 50, hasMore: false };
@@ -67,6 +68,7 @@ export class HrProcurementDirectory {
         branchId,
         status: 'فعال',
         deletedAt: null,
+        ...(unit ? { unit } : {}),
         ...(search
           ? { name: { contains: search, mode: 'insensitive' as const } }
           : {}),
@@ -86,6 +88,41 @@ export class HrProcurementDirectory {
       pageSize: 50,
       hasMore: rows.length > 50,
     };
+  }
+  /** Active organization-unit choices owned by HR, without exposing personnel data. */
+  async units(actor: AuthenticatedActor, branchId: string) {
+    if (!actor.branchIds.includes(branchId)) return [];
+    const [catalogRows, employeeRows] = await Promise.all([
+      this.database.client.hrRecord.findMany({
+        where: {
+          branchId,
+          section: 'organization',
+          tab: 'units',
+          status: 'فعال',
+          deletedAt: null,
+        },
+        select: { values: true },
+        orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+      }),
+      this.database.client.hrEmployee.findMany({
+        where: { branchId, status: 'فعال', deletedAt: null },
+        select: { unit: true },
+        distinct: ['unit'],
+        orderBy: { unit: 'asc' },
+      }),
+    ]);
+    const labels = new Set(
+      catalogRows.flatMap(({ values }) => {
+        if (!Array.isArray(values)) return [];
+        const label = values[0];
+        return typeof label === 'string' && label.trim() ? [label.trim()] : [];
+      }),
+    );
+    for (const { unit } of employeeRows)
+      if (unit.trim()) labels.add(unit.trim());
+    return [...labels]
+      .sort((left, right) => left.localeCompare(right, 'fa'))
+      .map((label) => ({ id: label, label }));
   }
   private async activeEmployee(
     actor: AuthenticatedActor,

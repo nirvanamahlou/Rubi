@@ -216,7 +216,7 @@ export class ProcurementService {
   }
   async requesters(query: Record<string, unknown>, actor: AuthenticatedActor) {
     this.require(actor, 'procurement.request.create');
-    v.object(query, ['branchId', 'search', 'page']);
+    v.object(query, ['branchId', 'search', 'page', 'unitId']);
     const branchId = v.uuid(query.branchId);
     this.branch(actor, branchId);
     return this.hr.candidates(
@@ -224,7 +224,15 @@ export class ProcurementService {
       branchId,
       v.text(query.search, 'search', 100, true),
       v.integer(Number(query.page ?? 1), 'page', 100000),
+      v.text(query.unitId, 'unitId', 160, true) || undefined,
     );
+  }
+  async units(query: Record<string, unknown>, actor: AuthenticatedActor) {
+    this.require(actor, 'procurement.request.create');
+    v.object(query, ['branchId']);
+    const branchId = v.uuid(query.branchId);
+    this.branch(actor, branchId);
+    return { items: await this.hr.units(actor, branchId) };
   }
   async bootstrap(actor: AuthenticatedActor) {
     if (
