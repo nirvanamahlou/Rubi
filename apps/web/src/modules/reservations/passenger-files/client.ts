@@ -24,6 +24,7 @@ export interface PassengerName {
 export interface PassengersResponse {
   data: PassengerName[];
   canEdit: boolean;
+  canEditIdentity: boolean;
 }
 export class PassengerFilesError extends Error {
   constructor(
