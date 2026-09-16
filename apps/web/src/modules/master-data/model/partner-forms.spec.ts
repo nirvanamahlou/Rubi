@@ -13,13 +13,14 @@ describe('supplier and broker form coverage', () => {
         (field) => field.key,
       );
       expect(fields).toEqual(
-        expect.arrayContaining([
-          'serviceCodes',
-          'collaborationStatus',
-        ]),
+        expect.arrayContaining(['serviceCodes', 'collaborationStatus']),
       );
       if (resource === 'suppliers') {
         expect(fields).toContain('name');
+        expect(fields).toEqual(
+          expect.arrayContaining(['address', 'primaryPhone']),
+        );
+        expect(fields).not.toContain('externalProviderReference');
         expect(fields).not.toEqual(
           expect.arrayContaining([
             'englishName',

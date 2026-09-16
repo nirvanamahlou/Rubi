@@ -224,6 +224,12 @@ function GenericMasterDataLiveForm({
             className="mt-6 space-y-5"
             onSubmit={(event) => void submit(event)}
           >
+            {definition.key === 'suppliers' && mode === 'create' ? (
+              <Alert
+                title="شناسه تأمین‌کننده خودکار است"
+                description="پس از ذخیره، سامانه یک شناسه یکتا برای تأمین‌کننده ایجاد می‌کند."
+              />
+            ) : null}
             {isMasterTransportFormResource(definition.key) ? (
               <MasterDataTransportMetadata
                 resource={definition.key}

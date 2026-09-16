@@ -228,5 +228,17 @@ describe('partner profile form persistence', () => {
         primaryContact: { ...source.primaryContact, isActive: false },
       }).attributes.primaryPhoneMasked,
     ).toBeNull();
+
+    const standalone = toMasterDataRecord('suppliers', {
+      ...source,
+      name: 'Standalone supplier',
+      organization: null,
+      primaryContact: null,
+      primaryPhoneEncrypted: 'supplier-private-phone',
+      primaryPhoneFingerprint: 'supplier-private-fingerprint',
+      primaryPhoneMasked: '+98••••5678',
+    });
+    expect(standalone.attributes.primaryPhoneMasked).toBe('+98••••5678');
+    expect(JSON.stringify(standalone)).not.toContain('supplier-private');
   });
 });

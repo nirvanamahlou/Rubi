@@ -1607,11 +1607,17 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
         hint: 'تأمین‌کننده به‌صورت مستقل در خرید و تأمین ثبت می‌شود.',
       },
       {
-        key: 'externalProviderReference',
-        label: 'شناسه عمومی Provider/API',
+        key: 'address',
+        label: 'نشانی',
         type: 'text',
-        placeholder: 'PROVIDER-REF',
-        hint: 'Credential یا Secret در این فیلد ذخیره نمی‌شود.',
+        placeholder: 'نشانی کامل تأمین‌کننده',
+      },
+      {
+        key: 'primaryPhone',
+        label: 'شماره تماس اصلی',
+        type: 'text',
+        placeholder: '+98912...',
+        hint: 'شماره تماس رمزنگاری می‌شود و در فهرست فقط مقدار ماسک‌شده نمایش داده می‌شود.',
       },
       {
         key: 'collaborationStatus',

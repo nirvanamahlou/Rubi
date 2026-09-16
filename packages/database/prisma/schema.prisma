@@ -1329,6 +1329,13 @@ model MasterSupplier {
   code                               String                     @unique @db.VarChar(32)
   name                               String?                    @db.VarChar(160)
   englishName                        String?                    @db.VarChar(160)
+  address                            String?                    @db.VarChar(500)
+  primaryPhoneEncrypted              String?                    @db.Text
+  primaryPhoneEncryptionIv           String?                    @db.VarChar(24)
+  primaryPhoneEncryptionAuthTag      String?                    @db.VarChar(24)
+  primaryPhoneEncryptionKeyVersion   Int?
+  primaryPhoneMasked                 String?                    @db.VarChar(80)
+  primaryPhoneFingerprint            String?                    @db.Char(64)
   logoFileReference                  String?                    @db.Uuid
   displayOrder                       Int                        @default(0)
   primaryContactId                   String?                    @db.Uuid

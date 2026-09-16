@@ -22,6 +22,67 @@ const organization = {
 };
 
 describe('MasterDataService supplier contacts', () => {
+  it('stores a standalone supplier address and only protected phone fields', async () => {
+    const create = vi
+      .fn()
+      .mockImplementation(
+        async (
+          _resource: string,
+          data: Record<string, unknown>,
+          _userId: string,
+          _branchId: string,
+        ) => {
+          void _resource;
+          void _userId;
+          void _branchId;
+          return {
+            id: '55555555-5555-4555-8555-555555555555',
+            code: 'SUP_AUTO',
+            name: 'تأمین‌کننده مستقل',
+            isActive: true,
+            version: 1,
+            createdAt: new Date('2026-09-16T00:00:00.000Z'),
+            updatedAt: new Date('2026-09-16T00:00:00.000Z'),
+            ...data,
+          };
+        },
+      );
+    const repository = {
+      codeExists: vi.fn().mockResolvedValue(false),
+      create,
+    } as unknown as MasterDataRepository;
+    const contactCrypto = {
+      protect: vi.fn().mockReturnValue({
+        encrypted: 'supplier-phone-ciphertext',
+        encryptionIv: 'supplier-phone-iv',
+        encryptionAuthTag: 'supplier-phone-tag',
+        encryptionKeyVersion: 1,
+        masked: '+98••••4567',
+        fingerprint: 'b'.repeat(64),
+      }),
+    } as unknown as MasterDataContactCrypto;
+    const service = new MasterDataService(repository, contactCrypto);
+
+    await service.create(
+      'suppliers',
+      {
+        name: 'تأمین‌کننده مستقل',
+        address: 'تهران، خیابان نمونه',
+        primaryPhone: '+989121234567',
+      },
+      actor,
+    );
+
+    const persisted = create.mock.calls[0]?.[1] as Record<string, unknown>;
+    expect(persisted).toMatchObject({
+      address: 'تهران، خیابان نمونه',
+      primaryPhoneEncrypted: 'supplier-phone-ciphertext',
+      primaryPhoneMasked: '+98••••4567',
+    });
+    expect(persisted).not.toHaveProperty('primaryPhone');
+    expect(persisted.code).toMatch(/^SUPPLIER_/);
+  });
+
   it('sends only protected contact values to persistence', async () => {
     const create = vi
       .fn()

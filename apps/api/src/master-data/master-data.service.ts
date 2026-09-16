@@ -499,6 +499,8 @@ const allowedFields: Record<MasterDataResource, readonly string[]> = {
   suppliers: [
     'name',
     'englishName',
+    'address',
+    'primaryPhone',
     'primaryContactId',
     'organizationId',
     'countryId',
@@ -1619,6 +1621,37 @@ export class MasterDataService {
         // Organization/contact dependency.
         data.organizationId = null;
         data.primaryContactId = null;
+      }
+      if (resource === 'suppliers' && Object.hasOwn(data, 'address')) {
+        const address = String(data.address ?? '').trim();
+        if (address.length > 500)
+          throw new BadRequestException('نشانی حداکثر ۵۰۰ نویسه است.');
+        data.address = address || null;
+      }
+      if (resource === 'suppliers' && Object.hasOwn(data, 'primaryPhone')) {
+        const phone = String(data.primaryPhone ?? '').trim();
+        delete data.primaryPhone;
+        if (phone) {
+          const protectedPhone = this.contactCrypto.protect('phone', phone);
+          Object.assign(data, {
+            primaryPhoneEncrypted: protectedPhone.encrypted,
+            primaryPhoneEncryptionIv: protectedPhone.encryptionIv,
+            primaryPhoneEncryptionAuthTag: protectedPhone.encryptionAuthTag,
+            primaryPhoneEncryptionKeyVersion:
+              protectedPhone.encryptionKeyVersion,
+            primaryPhoneMasked: protectedPhone.masked,
+            primaryPhoneFingerprint: protectedPhone.fingerprint,
+          });
+        } else if (!partial) {
+          Object.assign(data, {
+            primaryPhoneEncrypted: null,
+            primaryPhoneEncryptionIv: null,
+            primaryPhoneEncryptionAuthTag: null,
+            primaryPhoneEncryptionKeyVersion: null,
+            primaryPhoneMasked: null,
+            primaryPhoneFingerprint: null,
+          });
+        }
       }
       if (!partial && !Object.hasOwn(data, 'collaborationStatus'))
         data.collaborationStatus = 'ACTIVE';
