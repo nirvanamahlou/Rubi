@@ -1941,17 +1941,17 @@ function DashboardChart({
         className="rounded-xl border border-border/80 bg-muted/[0.12] p-3 sm:p-4"
         role="img"
       >
-        <div aria-hidden="true" className="relative mx-auto h-72 w-full max-w-[22rem] sm:h-80">
+        <div aria-hidden="true" className="relative mx-auto h-60 w-full max-w-[19rem] sm:h-64">
           <div
-            className="absolute left-1/2 top-1/2 size-44 -translate-x-1/2 -translate-y-1/2 rounded-full shadow-sm ring-1 ring-slate-200/80 dark:ring-slate-700/80 sm:size-48"
+            className="absolute left-1/2 top-1/2 size-36 -translate-x-1/2 -translate-y-1/2 rounded-full shadow-sm ring-1 ring-slate-200/80 dark:ring-slate-700/80 sm:size-40"
             style={{ background: `conic-gradient(${segments.join(', ')})` }}
           >
             <span className="absolute inset-[24%] grid place-items-center rounded-full bg-surface text-center text-foreground shadow-sm ring-1 ring-border/70">
               <span>
-                <b className="block text-xl font-black tabular-nums sm:text-2xl">
+                <b className="block text-lg font-black tabular-nums sm:text-xl">
                   {compactChartValue(total)}
                 </b>
-                <small className="mt-1 block text-[10px] font-bold text-muted-foreground">
+                <small className="mt-1 block text-xs font-bold text-muted-foreground">
                   مجموع
                 </small>
               </span>
@@ -1974,7 +1974,7 @@ function DashboardChart({
                     strokeWidth="1.25"
                   />
                   <text
-                    className="fill-muted-foreground text-[10px] font-semibold"
+                    className="fill-muted-foreground text-[16px] font-semibold"
                     direction="rtl"
                     textAnchor={item.textAnchor}
                     x={item.labelX}

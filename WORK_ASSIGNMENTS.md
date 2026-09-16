@@ -9,6 +9,13 @@
 
 # Work Assignments
 
+## DASHBOARD-DONUT-READABILITY-0916 — PC-C — LOCAL_COMPLETE
+
+- درخواست مالک: عرض Donut Chartها کاهش یابد و متن نام دسته و مقدار/درصد آن‌ها خواناتر شود.
+- محدودهٔ رزروشده: فقط geometry و typography رندر Donut Dashboard، تست Dashboard Web و اسناد وضعیت در Worktree `codex/pc-c-dashboard-reporting-latest`. API، داده/محاسبه، Reports، دیتابیس، Migration، وابستگی و Lockfile تغییر نمی‌کنند.
+- قرارداد: برچسب بیرونی و مجموع واقعی حفظ می‌شوند؛ فقط اندازه‌ها برای حذف فضای افقی اضافه و افزایش خوانایی تغییر می‌کنند.
+- نتیجه: قاب Donut به حداکثر ۱۹rem و ارتفاع ۶۰/۶۴ محدود شد، قطر حلقه کاهش یافت و typograpy برچسب بیرونی به ۱۶px در viewport SVG رسید. برچسب‌ها و مقدار/درصد خارجی در صفحهٔ نهایی خواناترند و مجموع مرکزی با اندازهٔ امن در حلقه می‌ماند.
+
 ## DASHBOARD-DONUT-REFERENCE-LAYOUT-0916 — PC-C — LOCAL_COMPLETE
 
 - درخواست مالک: همهٔ Donut Chartهای Dashboard با چیدمان حلقهٔ بزرگ، برچسب بیرونی و خط راهنمای نمونهٔ مرجع طراحی شوند، به‌ویژه نمودار سهم خدمات از فروش.

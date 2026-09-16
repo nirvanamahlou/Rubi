@@ -629,6 +629,8 @@ describe('dashboard permission and data states', () => {
     expect(source).toContain('ringEdgeX');
     expect(source).toContain('lineEndY');
     expect(source).toContain('compactChartValue(item.value)');
+    expect(source).toContain('max-w-[19rem]');
+    expect(source).toContain('text-[16px]');
     expect(source).toContain('comparisonRankPalette');
     expect(source).toContain('comparisonRankColor');
     expect(source).toContain("'#93c5fd'");
