@@ -10,6 +10,17 @@ export type ReservationFormIntake = ReservationIntakeV1 & {
 export type ReservationFormReferences = Record<string, MasterDataRecord>;
 const text = (value: unknown) =>
   typeof value === 'string' && value.trim() ? value.trim() : '-';
+
+export function reservationPassengerAgeLabel(
+  age: string,
+  hotelChildAgeBand?: string,
+) {
+  if (age !== 'CHD') return age;
+  if (hotelChildAgeBand === 'CHD_2_TO_6') return 'CHD (2-6)';
+  if (hotelChildAgeBand === 'CHD_6_TO_12') return 'CHD (6-12)';
+  return 'CHD';
+}
+
 export function reservationFormDate(value?: string, timeZone = 'UTC') {
   if (!value || !Number.isFinite(Date.parse(value))) return '-';
   return new Intl.DateTimeFormat('en-GB', {
