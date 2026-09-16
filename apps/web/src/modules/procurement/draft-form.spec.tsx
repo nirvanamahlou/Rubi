@@ -1,7 +1,11 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { describe, expect, it } from 'vitest';
-import { DraftForm } from './draft-form';
+import {
+  DraftForm,
+  rememberSavedRequestFieldOptions,
+  savedRequestFieldOptionsKey,
+} from './draft-form';
 import type { Bootstrap } from './api';
 import { emptyDraft } from './model';
 
@@ -23,6 +27,59 @@ const bootstrap: Bootstrap = {
   travel: 'NOT_CONNECTED',
 };
 describe('Purchase draft accessibility and persisted input', () => {
+  it('adds a newly saved custom choice to the reusable options immediately', () => {
+    const client = new QueryClient();
+    client.setQueryData(savedRequestFieldOptionsKey, {
+      items: [],
+      page: 1,
+      pageSize: 50,
+      hasMore: false,
+    });
+    const saved = {
+      id: 'saved-request',
+      number: 'PR-1405-200',
+      version: 1,
+      requesterUserId: 'user',
+      requesterEmployeeId: 'employee',
+      ownerUserId: null,
+      createdAt: '',
+      updatedAt: '',
+      status: 'DRAFT' as const,
+      draft: {
+        ...emptyDraft(),
+        branchId: 'branch-1',
+        purchaseType: 'خرید نمایشگاهی',
+        category: 'تجهیزات غرفه',
+        items: [
+          {
+            id: 'line-1',
+            kind: 'GOODS' as const,
+            description: 'استند',
+            specification: '',
+            quantity: '1',
+            unit: 'ست',
+            period: '',
+            acceptanceCriteria: '',
+          },
+        ],
+      },
+    };
+
+    rememberSavedRequestFieldOptions(client, saved);
+
+    expect(client.getQueryData(savedRequestFieldOptionsKey)).toMatchObject({
+      items: [
+        {
+          id: 'saved-request',
+          draft: {
+            purchaseType: 'خرید نمایشگاهی',
+            category: 'تجهیزات غرفه',
+            items: [{ unit: 'ست' }],
+          },
+        },
+      ],
+    });
+  });
   it('renders an incomplete draft with optional delivery location and explicit unavailable documents', () => {
     const html = renderToStaticMarkup(
       <QueryClientProvider client={new QueryClient()}>

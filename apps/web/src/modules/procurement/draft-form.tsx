@@ -1,10 +1,11 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ClipboardList, FileText, Package, ShoppingBag } from 'lucide-react';
 import type {
   DocumentListItemV1,
   ProcurementDraftV1,
+  ProcurementListV1,
   ProcurementRequestV1,
 } from '@nora/contracts';
 import { Button } from '@/components/ui/button';
@@ -44,6 +45,27 @@ const draftLabels: Record<keyof ProcurementDraftV1, string> = {
   items: 'اقلام',
   origin: 'مرجع مبدأ',
 };
+export const savedRequestFieldOptionsKey = [
+  'procurement',
+  'saved-request-field-options',
+] as const;
+export function rememberSavedRequestFieldOptions(
+  client: ReturnType<typeof useQueryClient>,
+  request: ProcurementRequestV1,
+) {
+  client.setQueryData<ProcurementListV1<ProcurementRequestV1>>(
+    savedRequestFieldOptionsKey,
+    (current) => ({
+      items: [
+        request,
+        ...(current?.items ?? []).filter((item) => item.id !== request.id),
+      ],
+      page: current?.page ?? 1,
+      pageSize: Math.max(current?.pageSize ?? 0, 1),
+      hasMore: current?.hasMore ?? false,
+    }),
+  );
+}
 function describeDraftValue(
   value: ProcurementDraftV1[keyof ProcurementDraftV1],
 ): string {
@@ -76,6 +98,7 @@ export function DraftForm({
   onSaved: (value: ProcurementRequestV1) => void;
   onClose: () => void;
 }) {
+  const queryClient = useQueryClient();
   const heading = useRef<HTMLHeadingElement>(null);
   useEffect(() => {
     heading.current?.focus();
@@ -127,7 +150,7 @@ export function DraftForm({
     retry: false,
   });
   const savedRequests = useQuery({
-    queryKey: ['procurement', 'saved-request-field-options'],
+    queryKey: savedRequestFieldOptionsKey,
     queryFn: () =>
       procurementApi.list(
         new URLSearchParams({
@@ -239,12 +262,17 @@ export function DraftForm({
             <option value="__new__">ثبت مورد جدید</option>
           </ProcurementSelect>
           {(custom || existing.length === 0) && (
-            <Input
-              aria-label={`مقدار تازهٔ ${label}`}
-              value={draft[key]}
-              onChange={(event) => update(key, event.target.value)}
-              placeholder="مقدار تازه را وارد کنید"
-            />
+            <div className="space-y-1.5">
+              <Input
+                aria-label={`مقدار تازهٔ ${label}`}
+                value={draft[key]}
+                onChange={(event) => update(key, event.target.value)}
+                placeholder="مقدار تازه را وارد کنید"
+              />
+              <p className="text-xs leading-5 text-muted-foreground">
+                با ذخیرهٔ پیش‌نویس، این مورد به فهرست انتخاب‌ها اضافه می‌شود.
+              </p>
+            </div>
           )}
         </div>
       </FormField>
@@ -307,11 +335,16 @@ export function DraftForm({
             <option value="__new__">ثبت مورد جدید</option>
           </ProcurementSelect>
           {(custom || existing.length === 0) && (
-            <Input
-              aria-label={`مقدار تازهٔ ${label}`}
-              value={item[key]}
-              onChange={(event) => change(event.target.value)}
-            />
+            <div className="space-y-1.5">
+              <Input
+                aria-label={`مقدار تازهٔ ${label}`}
+                value={item[key]}
+                onChange={(event) => change(event.target.value)}
+              />
+              <p className="text-xs leading-5 text-muted-foreground">
+                با ذخیرهٔ پیش‌نویس، این مورد به فهرست انتخاب‌ها اضافه می‌شود.
+              </p>
+            </div>
           )}
         </div>
       </FormField>
@@ -331,14 +364,14 @@ export function DraftForm({
       version: baseRequest?.version,
     });
     try {
-      onSaved(
-        await procurementApi.save(
-          draft,
-          identity.current.key,
-          baseRequest,
-          requesterEmployeeId,
-        ),
+      const saved = await procurementApi.save(
+        draft,
+        identity.current.key,
+        baseRequest,
+        requesterEmployeeId,
       );
+      rememberSavedRequestFieldOptions(queryClient, saved);
+      onSaved(saved);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'ذخیره انجام نشد.');
       setConflict(
