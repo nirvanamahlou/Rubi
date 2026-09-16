@@ -26,6 +26,7 @@ export interface RateBatchInput {
   }[];
 }
 export interface RatePackInput extends RateBatchInput {
+  tourDepartureId?: string;
   cityId: string;
   expectedVersion?: number;
 }
@@ -64,6 +65,7 @@ const schema = Joi.object({
     .required(),
 });
 const packSchema = schema.keys({
+  tourDepartureId: Joi.string().uuid().optional(),
   cityId: Joi.string().uuid().required(),
   expectedVersion: Joi.number().integer().positive().optional(),
 });
@@ -123,7 +125,14 @@ export function validateRatePack(raw: unknown): RatePackInput {
       currency: row.currency ?? parsed.currency,
     })),
   };
-  validateRateBatch(input);
+  validateRateBatch({
+    branchId: input.branchId,
+    checkIn: input.checkIn,
+    checkOut: input.checkOut,
+    currency: input.currency,
+    method: input.method,
+    rows: input.rows,
+  });
   if (new Set(input.rows.map((row) => row.hotelId)).size !== input.rows.length)
     throw new BadRequestException(
       'برای هر هتل در این بازه فقط یک نرخ وارد کنید.',

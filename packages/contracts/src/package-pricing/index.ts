@@ -269,6 +269,7 @@ export interface PackageTourHotelPurchaseRowV1 {
 }
 
 export interface PackageTourHotelPurchaseBatchV1 {
+  tourDepartureId?: string | null;
   id: string;
   version: 1;
   branchId: string;
@@ -299,6 +300,8 @@ export interface PackageTourDraftAdjustmentV1 {
 }
 
 export interface PackageTourDraftSaveV1 {
+  familyAdults?: number;
+  familyChildren?: number;
   version: 1;
   expectedVersion: number;
   tourDepartureId: string;
@@ -322,6 +325,7 @@ export interface PackageTourDraftV1 extends PackageTourDraftSaveV1 {
 }
 
 export interface PackageTourPublishedRoomPriceV1 {
+  currencyAmounts?: readonly TourRoomCurrencyAmount[];
   hotelRateId: string;
   roomCode: string;
   hotelPurchase: string;
@@ -334,6 +338,8 @@ export interface PackageTourPublishedRoomPriceV1 {
 }
 
 export interface PackageTourPublicationV1 {
+  familyAdults?: number;
+  familyChildren?: number;
   version: 1;
   id: string;
   draftId: string;
@@ -397,3 +403,9 @@ export const packagePricingEndpoints = {
   templates: PACKAGE_PRICING_API_PREFIX + '/banner-templates',
   renders: PACKAGE_PRICING_API_PREFIX + '/render-requests',
 } as const;
+import type { TourRoomCurrencyAmount } from './tour-calculation';
+export { calculateTourRoom, tourRoomOccupancy } from './tour-calculation';
+export type {
+  TourRoomCurrencyAmount,
+  TourRoomCalculationInput,
+} from './tour-calculation';

@@ -3,6 +3,25 @@ import type { DatabaseService } from '../database/database.service';
 import { HotelPurchaseRatesPublicService } from './hotel-purchase-rates.public';
 
 describe('Reservations hotel purchase public projection', () => {
+  it('uses the exact departure even when its hotel choices were entered in the rate pack', async () => {
+    const findMany = vi.fn().mockResolvedValue([]);
+    const service = new HotelPurchaseRatesPublicService({
+      client: { reservationHotelRateBatch: { findMany } },
+    } as unknown as DatabaseService);
+    await service.forTour(
+      'branch-1',
+      [],
+      '2026-10-01',
+      '2026-10-06',
+      'departure-1',
+    );
+    const query = findMany.mock.calls[0]![0];
+    expect(query.where).toEqual({
+      branchId: 'branch-1',
+      tourDepartureId: 'departure-1',
+    });
+    expect(query.include.rows.where).toBeUndefined();
+  });
   it('limits rates to the requested branch, tour hotels and stay window', async () => {
     const findMany = vi.fn().mockResolvedValue([
       {

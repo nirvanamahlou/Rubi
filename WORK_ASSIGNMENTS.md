@@ -1,5 +1,12 @@
 # Work Assignments
 
+## TOUR-HOTEL-PRICING-FLOW-0916 — PC-A — LOCAL IMPLEMENTED / ACCOUNT ACCESS PENDING
+
+- Branch `codex/pc-a-tour-hotel-pricing-flow-0916`, based on the owner's local preview `72cfdadf`. Select Ticket Catalog tour/departure, record linked hotel purchase rates, price each hotel/room for the stay plus flights. Excel/banner outputs are deferred by the owner.
+- Reserve Reservations hotel-rate API/Web, Ticket Catalog public departure usage, Package Pricing API/Web/math/tests, additive Prisma migration/FKs, shared pricing contracts and bounded task/status/data/decision docs. Migration and central contract/docs owner: PC-A/TOUR-HOTEL-PRICING-FLOW-0916. No dependency lock. Preserve preview; no main/develop merge or port-3100 rollout.
+- Ticket Catalog exports branch-scoped departures; Reservations persists the departure FK on immutable rate batches; Sales consumes that departure's current batches through the public projection. Legacy packs remain readable and may be explicitly linked by revision. Matching dates do not assign historical packs to a tour.
+- Result: explicit linkage, exact stay-night pricing, fixed/percent adjustments and multicurrency room-package preview/publications are implemented. Four shared-money tests, 25 API tests, seven Web tests, typechecks, scoped lint and builds pass. Preview uses the isolated copied DB; hotel HTTP smoke is 200. No active departure is accessible to local-admin and package pricing remains 403 until authorized IAM access is assigned. Locks release with scoped local commit; origin is public so no public push is performed.
+
 ## HOTEL-RATE-PACKS-0915 — PC-A — IMPLEMENTED ON ISOLATED 3200 / REVIEW PENDING
 
 - 2026-09-16 follow-up requested by product owner: each selected hotel row in

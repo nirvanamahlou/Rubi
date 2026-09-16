@@ -1,5 +1,22 @@
 # مدل داده و ERD اولیه
 
+## TOUR-HOTEL-PRICING-FLOW-0916 — نوبت و مبالغ چندارزی
+
+Reservations rate packs and immutable batches have nullable restrictive
+`tourDepartureId` FKs to Ticket Catalog's `TourDeparture`. New UI packs require
+an explicit departure; legacy packs remain unassigned until the operator saves
+a linked revision. The producer checks branch, destination city and stay dates
+through `TourPublicService`. Sales queries only the exact departure's current
+batches, including the hotels selected in those batches.
+
+Drafts and published versions snapshot optional `familyAdults` and
+`familyChildren`. Published room rows add nullable `currencyAmounts` JSON:
+one object per currency with exact decimal-string purchase, sale, commission
+and profit. Scalar legacy package totals are populated only for a single
+currency; mixed currencies have no fabricated scalar sum. Hotel purchase/sale
+retain the hotel row currency. No historical price is rewritten or FX inferred.
+
+
 ## PACKAGE-PRICING-001 — نرخ خرید بلیت مالی و قیمت منتشرشده تور (2026-09-15)
 
 `ProcurementTicketPurchaseRequest` برای درخواست‌های تازه می‌تواند بدون مبلغ/ارز

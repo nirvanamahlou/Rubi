@@ -34,6 +34,8 @@ import {
 } from './hotel-rates.validation';
 import { HotelPurchaseRatesPublicService } from './hotel-purchase-rates.public';
 import { HotelRatePacksService } from './hotel-rate-packs.service';
+import { TicketRuntimeModule } from '../ticket-catalog/ticket-runtime.module';
+import { TourPublicService } from '../ticket-catalog/tour-public.service';
 
 @Injectable()
 export class HotelRatesService {
@@ -166,7 +168,7 @@ export class HotelRatesService {
         prices: roomPrices(
           r.base.toString(),
           r.factors as Record<RoomKind, string>,
-          r.batch.currency,
+          r.currency,
         ),
       })),
       total,
@@ -184,6 +186,14 @@ export class HotelRatesController {
     @Inject(MasterTravelDirectory)
     private readonly directory: MasterTravelDirectory,
   ) {}
+  @Get('tour-departures')
+  @Header('Cache-Control', 'private, no-store')
+  tourDepartures(@Req() req: AuthenticatedRequest) {
+    this.packs.require(req.actor);
+    return this.tours.pricingDepartures(req.actor.branchIds);
+  }
+
+  @Inject(TourPublicService) private readonly tours!: TourPublicService;
   @Get('pack-options')
   @Header('Cache-Control', 'private, no-store')
   packOptions(
@@ -296,7 +306,7 @@ export class HotelRatesController {
   }
 }
 @Module({
-  imports: [IamModule, MasterDataModule],
+  imports: [IamModule, MasterDataModule, TicketRuntimeModule],
   controllers: [HotelRatesController],
   providers: [
     AuthGuard,

@@ -10,6 +10,7 @@ import {
 import type { AuthenticatedActor } from '@nora/contracts';
 import { DatabaseService } from '../database/database.service';
 import { MasterTravelDirectory } from '../master-data/master-travel-directory';
+import { TourPublicService } from '../ticket-catalog/tour-public.service';
 import {
   roomPrices,
   validateRatePack,
@@ -37,6 +38,7 @@ export class HotelRatePacksService {
     @Inject(DatabaseService) private readonly db: DatabaseService,
     @Inject(MasterTravelDirectory)
     private readonly directory: MasterTravelDirectory,
+    @Inject(TourPublicService) private readonly tours?: TourPublicService,
   ) {}
 
   require(actor: AuthenticatedActor, write = false) {
@@ -49,6 +51,22 @@ export class HotelRatePacksService {
   }
 
   private async references(input: RatePackInput) {
+    if (input.tourDepartureId) {
+      if (!this.tours)
+        throw new BadRequestException('سرویس نوبت تور در دسترس نیست.');
+      const tour = await this.tours.pricingDeparture(input.tourDepartureId, [
+        input.branchId,
+      ]);
+      if (
+        input.cityId !== tour.package.destinationId ||
+        input.checkIn < tour.startsOn ||
+        input.checkOut > tour.endsOn
+      ) {
+        throw new BadRequestException(
+          'شهر و بازه اقامت باید در مقصد و تاریخ نوبت انتخاب‌شده باشد.',
+        );
+      }
+    }
     await this.directory.cityReference(input.cityId);
     return Promise.all(
       input.rows.map(async (row) => ({
@@ -111,6 +129,7 @@ export class HotelRatePacksService {
           data: {
             id,
             branchId: input.branchId,
+            tourDepartureId: input.tourDepartureId ?? null,
             cityId: input.cityId,
             checkIn: new Date(input.checkIn),
             checkOut: new Date(input.checkOut),
@@ -125,6 +144,7 @@ export class HotelRatePacksService {
             requestKey: key,
             fingerprint: hash,
             packId: id,
+            tourDepartureId: input.tourDepartureId ?? null,
             cityId: input.cityId,
             version: 1,
             checkIn: new Date(input.checkIn),
@@ -181,6 +201,10 @@ export class HotelRatePacksService {
     });
     if (!pack) throw new NotFoundException('بستهٔ نرخ پیدا نشد.');
     if (pack.branchId !== input.branchId) throw new ForbiddenException();
+    if (pack.tourDepartureId && pack.tourDepartureId !== input.tourDepartureId)
+      throw new BadRequestException(
+        'نوبت تور بسته ثبت‌شده قابل تغییر نیست؛ بسته جدید بسازید.',
+      );
     if (pack.currentVersion !== expectedVersion)
       throw new ConflictException(
         'این بسته هم‌زمان تغییر کرده است؛ نسخهٔ تازه را باز کنید.',
@@ -192,6 +216,7 @@ export class HotelRatePacksService {
           where: { id, currentVersion: expectedVersion },
           data: {
             cityId: input.cityId,
+            tourDepartureId: input.tourDepartureId ?? null,
             checkIn: new Date(input.checkIn),
             checkOut: new Date(input.checkOut),
             currency: input.currency,
@@ -213,6 +238,7 @@ export class HotelRatePacksService {
             packId: id,
             cityId: input.cityId,
             version,
+            tourDepartureId: input.tourDepartureId ?? null,
             checkIn: new Date(input.checkIn),
             checkOut: new Date(input.checkOut),
             currency: input.currency,
@@ -278,6 +304,7 @@ export class HotelRatePacksService {
     return {
       data: packs.map((pack) => ({
         id: pack.id,
+        tourDepartureId: pack.tourDepartureId,
         branchId: pack.branchId,
         cityId: pack.cityId,
         cityName: pack.city.name,
@@ -314,6 +341,7 @@ export class HotelRatePacksService {
     return {
       id: pack.id,
       branchId: pack.branchId,
+      tourDepartureId: batch.tourDepartureId,
       cityId: batch.cityId,
       cityName: pack.city.name,
       checkIn: dateOnly(batch.checkIn),

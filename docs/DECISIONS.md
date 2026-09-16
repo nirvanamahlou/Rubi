@@ -1,5 +1,24 @@
 # تصمیم‌های معماری
 
+## TOUR-HOTEL-PRICING-FLOW-0916 — owner-approved workflow
+
+The owner requires Ticket Catalog tour -> outbound/return departure -> hotel
+purchase-rate pack for that departure -> Sales tour/departure pricing. This
+supersedes loose hotel/date matching for new Sales pricing. Selected hotels in
+the linked rate pack are the pricing alternatives; unselected hotels do not
+block publication. Hotel cost is nightly base times room factor, rounded per
+night, times the explicit stay nights; a fixed or percentage change applies once
+to that stay. Adult/child flight sale is the combined round-trip amount per
+traveler; existing room occupancy determines the full-room package amount.
+
+The owner explicitly chose multiple currencies (e.g. EUR + IRR), not implicit
+FX conversion. Sum only like currencies; commission is a percentage expense
+in each sale currency and never increases customer sale amounts. Finance's
+settled purchase costs and the existing independent publication reviewer remain
+required for publication. Family occupancy is entered explicitly and snapshotted.
+Excel and banner generation are deferred by the owner.
+
+
 ## ADR-PACKAGE-FLIGHT-FINANCE-COST-0915 — owner clarification / isolated integration
 
 The owner clarified that adult/child flight amounts entered in Sales are sale

@@ -29,6 +29,20 @@ import {
 } from '@/components/ui/surfaces';
 import { packagePricingApi } from '../api/client';
 import { previewHotelRoomSale } from './tour-price-math';
+import {
+  calculateTourRoom,
+  tourRoomOccupancy,
+  type TourRoomCurrencyAmount,
+} from '@nora/contracts';
+
+const displayAmounts = (
+  amounts: readonly TourRoomCurrencyAmount[],
+  field: 'sale' | 'profit',
+) =>
+  amounts
+    .filter((item) => item[field] !== null && Number(item[field]) !== 0)
+    .map((item) => `${item[field]} ${item.currencyCode}`)
+    .join(' + ') || '۰';
 
 const roomColumns = [
   ['double', 'دوتخته'],
@@ -68,6 +82,8 @@ export function TourPricingWorkspace() {
   const [businessIncrease, setBusinessIncrease] = useState('');
   const [businessCurrency, setBusinessCurrency] = useState('IRR');
   const [commission, setCommission] = useState('');
+  const [familyAdults, setFamilyAdults] = useState('2');
+  const [familyChildren, setFamilyChildren] = useState('0');
   const [draft, setDraft] = useState<PackageTourDraftV1 | null>(null);
   const [publications, setPublications] = useState<
     readonly PackageTourPublicationV1[]
@@ -124,6 +140,8 @@ export function TourPricingWorkspace() {
     setBusinessIncrease(value?.businessUplift ?? '');
     setBusinessCurrency(value?.businessUpliftCurrencyCode ?? 'IRR');
     setCommission(value?.commissionPercent ?? '');
+    setFamilyAdults(String(value?.familyAdults ?? 2));
+    setFamilyChildren(String(value?.familyChildren ?? 0));
   }
 
   async function loadDraft(tourDepartureId: string, purchaseBatchId: string) {
@@ -158,6 +176,7 @@ export function TourPricingWorkspace() {
   }
 
   async function selectDeparture(id: string) {
+    applyDraft(null);
     setTourId(id);
     setGrid(null);
     setBatchId('');
@@ -199,27 +218,62 @@ export function TourPricingWorkspace() {
 
   const batch: PackageTourHotelPurchaseBatchV1 | undefined =
     grid?.purchaseBatches.find((item) => item.id === batchId);
-  const missingForBatch =
-    grid?.tour.package.hotelIds.filter(
-      (hotelId) => !batch?.rows.some((row) => row.hotelId === hotelId),
-    ) ?? [];
+  const stayNights = batch
+    ? (Date.parse(batch.checkOut) - Date.parse(batch.checkIn)) / 86400000
+    : 0;
+  function roomPreview(
+    row: PackageTourHotelPurchaseBatchV1['rows'][number],
+    roomCode: string,
+  ) {
+    if (!batch || !grid) return null;
+    const passengers = tourRoomOccupancy(
+      roomCode,
+      Number(familyAdults),
+      Number(familyChildren),
+    );
+    if (!passengers) return null;
+    try {
+      return calculateTourRoom({
+        basePerNight: row.basePerNight,
+        factor: row.factors[roomCode] ?? '',
+        nights: stayNights,
+        hotelCurrency: row.currencyCode ?? batch.currencyCode,
+        adjustment: adjustments[row.id] ?? defaultAdjustment(),
+        ...passengers,
+        adultFlight: {
+          amount: adultFlight || '0',
+          currencyCode: adultFlightCurrency,
+        },
+        childFlight: {
+          amount: childFlight || '0',
+          currencyCode: childFlightCurrency,
+        },
+        businessUplift: {
+          amount: businessIncrease || '0',
+          currencyCode: businessCurrency,
+        },
+        businessCabin:
+          grid.tour.outbound.cabinClassCode === 'BUSINESS' ||
+          grid.tour.returning?.cabinClassCode === 'BUSINESS',
+        commissionPercent: commission || '0',
+        flightCosts: grid.missingFlightOfferIds.length
+          ? undefined
+          : grid.flightPurchaseCosts,
+      });
+    } catch {
+      return null;
+    }
+  }
   const invalidSale =
     batch?.rows.some((row) =>
-      roomColumns.some(
-        ([key]) =>
-          !previewHotelRoomSale(
-            row.basePerNight,
-            row.factors[key] ?? '',
-            grid?.nights ?? 0,
-            batch.currencyCode,
-            adjustments[row.id] ?? defaultAdjustment(),
-          ),
-      ),
+      roomColumns.some(([key]) => !roomPreview(row, key)),
     ) ?? false;
   const publication =
     publications.find((item) => item.id === publicationId) ?? publications[0];
   const unsaved =
     !draft ||
+    Number(familyAdults) !== draft.familyAdults ||
+    Number(familyChildren) !== draft.familyChildren ||
     adultFlight !== draft.adultFlightSale ||
     adultFlightCurrency !== draft.adultFlightSaleCurrencyCode ||
     childFlight !== draft.childFlightSale ||
@@ -262,6 +316,8 @@ export function TourPricingWorkspace() {
           businessUplift: businessIncrease || '0',
           businessUpliftCurrencyCode: businessCurrency,
           commissionPercent: commission || '0',
+          familyAdults: Number(familyAdults),
+          familyChildren: Number(familyChildren),
           adjustments: batch.rows
             .filter((row) => adjustments[row.id])
             .map((row) => {
@@ -276,7 +332,7 @@ export function TourPricingWorkspace() {
         },
         session,
       );
-      setDraft(saved);
+      applyDraft(saved);
       setNotice(
         'پیش‌نویس این بازه ذخیره شد؛ هر زمان می‌توانید دوباره ویرایش کنید.',
       );
@@ -475,15 +531,10 @@ export function TourPricingWorkspace() {
                 ))}
               </select>
             </label>
-            {missingForBatch.length > 0 ? (
-              <Alert
-                title="نرخ خرید برخی هتل‌های تور در این ثبت موجود نیست"
-                description={
-                  missingForBatch.length +
-                  ' هتل بدون نرخ خرید است؛ برای آن گزینه قیمت منتشر نمی‌شود.'
-                }
-              />
-            ) : null}
+            <Badge>
+              {stayNights} شب اقامت · {batch?.rows.length ?? 0} هتل منتخب این
+              نوبت
+            </Badge>
             <div className="overflow-x-auto rounded-xl border border-border">
               <table className="min-w-[1120px] w-full text-sm">
                 <thead className="sticky top-0 bg-muted/80 text-xs text-muted-foreground">
@@ -496,7 +547,7 @@ export function TourPricingWorkspace() {
                       <th className="p-3 text-right" key={key}>
                         {title}
                         <span className="block font-normal">
-                          خرید ← فروش / کل اقامت
+                          خرید اقامت ← فروش اقامت ← پکیج کامل
                         </span>
                       </th>
                     ))}
@@ -516,14 +567,15 @@ export function TourPricingWorkspace() {
                           </span>
                         </td>
                         <td className="p-3 font-bold">
-                          {row.basePerNight} {batch.currencyCode}
+                          {row.basePerNight}{' '}
+                          {row.currencyCode ?? batch.currencyCode}
                         </td>
                         {roomColumns.map(([key]) => {
                           const preview = previewHotelRoomSale(
                             row.basePerNight,
                             row.factors[key] ?? '',
-                            grid.nights,
-                            batch.currencyCode,
+                            stayNights,
+                            row.currencyCode ?? batch.currencyCode,
                             adjustment,
                           );
                           return (
@@ -535,7 +587,16 @@ export function TourPricingWorkspace() {
                                 {preview?.purchase ?? '—'}
                               </span>
                               <strong className="block text-primary">
-                                {preview?.sale ?? '—'}
+                                {preview?.sale ?? '—'}{' '}
+                                {row.currencyCode ?? batch.currencyCode}
+                              </strong>
+                              <strong className="mt-2 block rounded-lg bg-primary/10 p-2 text-primary">
+                                {roomPreview(row, key)
+                                  ? displayAmounts(
+                                      roomPreview(row, key)!.currencyAmounts,
+                                      'sale',
+                                    )
+                                  : '—'}
                               </strong>
                             </td>
                           );
@@ -577,7 +638,7 @@ export function TourPricingWorkspace() {
                             >
                               <option value="percent">٪</option>
                               <option value="fixed">
-                                {batch.currencyCode}
+                                {row.currencyCode ?? batch.currencyCode}
                               </option>
                             </select>
                             <Input
@@ -605,7 +666,7 @@ export function TourPricingWorkspace() {
             </div>
             <p className="text-xs text-muted-foreground">
               قیمت خرید و ضرایب فقط‌خواندنی‌اند؛ پیش‌نمایش فروش هر اتاق برای کل{' '}
-              {grid.nights} شب، با گردکردن نرخ هر شب و یک تغییر روی کل اقامت
+              {stayNights} شب، با گردکردن نرخ هر شب و یک تغییر روی کل اقامت
               محاسبه می‌شود. گزینه‌های هتل مستقل‌اند و هزینه آن‌ها با هم جمع
               نمی‌شود.
             </p>
@@ -743,8 +804,30 @@ export function TourPricingWorkspace() {
         </div>
         <Alert
           title="مبنای انتشار قیمت پکیج"
-          description="قیمت‌های پرواز این صفحه قیمت فروش‌اند. فقط نرخ خرید پرداخت‌شدهٔ همان پرواز در مالی مبنای سود است؛ ارز خرید هتل و پرواز باید یکسان باشد. کمیسیون از سود کسر می‌شود و قیمت فروش را تغییر نمی‌دهد. ابتدا پیش‌نویس را ذخیره کنید؛ انتشار با کاربر دیگری که مجوز انتشار دارد انجام می‌شود."
+          description="قیمت پرواز، مجموع رفت‌وبرگشت برای هر مسافر است. پکیج به ازای کل مسافران هر اتاق محاسبه می‌شود؛ ارزهای متفاوت به شکل مبلغ + مبلغ نمایش داده می‌شوند. کمیسیون از سود هر ارز کم می‌شود و قیمت فروش را تغییر نمی‌دهد. نرخ خرید پرداخت‌شده مالی مبنای سود است. انتشار نسخه ذخیره‌شده با تأییدکننده مجاز انجام می‌شود."
         />
+        <div className="grid gap-3 sm:grid-cols-2">
+          <label>
+            بزرگسال اتاق خانوادگی
+            <Input
+              type="number"
+              min="1"
+              max="20"
+              value={familyAdults}
+              onChange={(event) => setFamilyAdults(event.target.value)}
+            />
+          </label>
+          <label>
+            کودک اتاق خانوادگی
+            <Input
+              type="number"
+              min="0"
+              max="20"
+              value={familyChildren}
+              onChange={(event) => setFamilyChildren(event.target.value)}
+            />
+          </label>
+        </div>
         <div className="flex flex-wrap gap-2">
           <Button
             disabled={!batch || !grid || invalidSale || saving}
@@ -766,7 +849,7 @@ export function TourPricingWorkspace() {
               !publishReason.trim() ||
               draft.lastEditorUserId === session?.user.id ||
               !!grid?.missingFlightOfferIds.length ||
-              missingForBatch.length > 0 ||
+              invalidSale ||
               !grid?.tour.remainingCapacity
             }
             onClick={() => void publishDraft()}
@@ -862,17 +945,27 @@ export function TourPricingWorkspace() {
                               {price ? (
                                 <>
                                   <strong className="block">
-                                    {price.packageSale ?? price.hotelSale}{' '}
-                                    {price.currencyCode}
+                                    {price.currencyAmounts
+                                      ? displayAmounts(
+                                          price.currencyAmounts,
+                                          'sale',
+                                        )
+                                      : `${price.packageSale ?? price.hotelSale} ${price.currencyCode}`}
                                   </strong>
                                   <span className="block text-xs text-muted-foreground">
-                                    {price.packageSale
+                                    {price.currencyAmounts || price.packageSale
                                       ? 'پکیج کامل'
                                       : 'فقط اقامت؛ ترکیب خانواده نامعلوم'}
                                   </span>
-                                  {price.netProfit ? (
+                                  {price.currencyAmounts || price.netProfit ? (
                                     <span className="block text-xs text-muted-foreground">
-                                      سود خالص پس از کمیسیون: {price.netProfit}
+                                      سود پس از کمیسیون:{' '}
+                                      {price.currencyAmounts
+                                        ? displayAmounts(
+                                            price.currencyAmounts,
+                                            'profit',
+                                          )
+                                        : price.netProfit}
                                     </span>
                                   ) : null}
                                 </>
@@ -891,9 +984,9 @@ export function TourPricingWorkspace() {
                 قیمت پکیج برای اتاق یک‌تخته، دوتخته، سه‌تخته و گزینه‌های کودک با
                 تعداد مسافران متناظر محاسبه شده است. افزایش بیزینس برای هر
                 بزرگسال فقط در نوبت پرواز بیزینس اعمال می‌شود. ترکیب مسافر اتاق
-                خانوادگی مشخص نیست، پس آن ستون فقط قیمت اقامت را نشان می‌دهد.
-                کمیسیون از سود کسر شده و قیمت فروش را تغییر نمی‌دهد؛ هتل‌ها با
-                هم جمع نمی‌شوند.
+                خانوادگی از تعداد بزرگسال و کودک ذخیره‌شده در نسخه قیمت استفاده
+                می‌کند. کمیسیون از سود کسر شده و قیمت فروش را تغییر نمی‌دهد؛
+                هتل‌ها با هم جمع نمی‌شوند.
               </p>
             </>
           ) : null}

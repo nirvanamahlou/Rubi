@@ -16,32 +16,41 @@ export class HotelPurchaseRatesPublicService {
     hotelIds: readonly string[],
     startsOn: string,
     endsOn: string,
+    tourDepartureId?: string,
   ): Promise<readonly PackageTourHotelPurchaseBatchV1[]> {
-    if (!hotelIds.length) return [];
+    if (!hotelIds.length && !tourDepartureId) return [];
     const start = new Date(`${startsOn}T00:00:00.000Z`);
     const end = new Date(`${endsOn}T00:00:00.000Z`);
     const batches =
       await this.database.client.reservationHotelRateBatch.findMany({
         where: {
           branchId,
-          rows: { some: { hotelId: { in: [...hotelIds] } } },
-          OR: [
-            {
-              method: 'CHECK_IN',
-              checkIn: { lte: start },
-              checkOut: { gt: start },
-            },
-            {
-              method: 'STAY',
-              checkIn: { lte: start },
-              checkOut: { gte: end },
-            },
-          ],
+          ...(tourDepartureId
+            ? { tourDepartureId }
+            : { rows: { some: { hotelId: { in: [...hotelIds] } } } }),
+          ...(tourDepartureId
+            ? {}
+            : {
+                OR: [
+                  {
+                    method: 'CHECK_IN',
+                    checkIn: { lte: start },
+                    checkOut: { gt: start },
+                  },
+                  {
+                    method: 'STAY',
+                    checkIn: { lte: start },
+                    checkOut: { gte: end },
+                  },
+                ],
+              }),
         },
         include: {
           pack: { select: { currentVersion: true } },
           rows: {
-            where: { hotelId: { in: [...hotelIds] } },
+            ...(tourDepartureId
+              ? {}
+              : { where: { hotelId: { in: [...hotelIds] } } }),
             orderBy: [{ hotelName: 'asc' }, { brokerName: 'asc' }],
           },
         },
@@ -57,6 +66,7 @@ export class HotelPurchaseRatesPublicService {
         id: batch.id,
         version: 1,
         branchId: batch.branchId,
+        tourDepartureId: batch.tourDepartureId,
         checkIn: dateOnly(batch.checkIn),
         checkOut: dateOnly(batch.checkOut),
         method: batch.method as 'CHECK_IN' | 'STAY',

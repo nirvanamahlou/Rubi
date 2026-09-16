@@ -3782,6 +3782,8 @@ model TourPackage {
 }
 
 model TourDeparture {
+  hotelRatePacks ReservationHotelRatePack[]
+  hotelRateBatches ReservationHotelRateBatch[]
   pricingDrafts   PackagePricingTourDraft[]
   id              String                @id @default(uuid()) @db.Uuid
   version         Int                   @default(1)
@@ -4483,6 +4485,8 @@ model FinanceDeliveryRevision {
 }
 
 model ReservationHotelRatePack {
+  tourDepartureId String? @db.Uuid
+  tourDeparture TourDeparture? @relation(fields: [tourDepartureId], references: [id], onDelete: Restrict)
   id             String                      @id @default(uuid()) @db.Uuid
   branchId       String                      @db.Uuid
   cityId         String                      @db.Uuid
@@ -4502,6 +4506,8 @@ model ReservationHotelRatePack {
 }
 
 model ReservationHotelRateBatch {
+  tourDepartureId String? @db.Uuid
+  tourDeparture TourDeparture? @relation(fields: [tourDepartureId], references: [id], onDelete: Restrict)
   pricingDrafts PackagePricingTourDraft[]
   id          String                      @id @default(uuid()) @db.Uuid
   branchId    String                      @db.Uuid
@@ -4551,6 +4557,8 @@ model ReservationHotelGroupRate {
 
 /** Sales-owned, editable per-tour and per-hotel source batch. */
 model PackagePricingTourDraft {
+  familyAdults Int?
+  familyChildren Int?
   id                 String                              @id @default(uuid()) @db.Uuid
   tourDepartureId    String                              @db.Uuid
   batchId            String                              @db.Uuid
@@ -4595,6 +4603,8 @@ model PackagePricingTourAdjustment {
 
 /** Immutable publication. Hotel alternatives are separate, never summed together. */
 model PackagePricingTourPublishedVersion {
+  familyAdults Int?
+  familyChildren Int?
   id                         String                                @id @default(uuid()) @db.Uuid
   draftId                    String                                @db.Uuid
   version                    Int
@@ -4624,6 +4634,7 @@ model PackagePricingTourPublishedVersion {
 }
 
 model PackagePricingTourPublishedRoomPrice {
+  currencyAmounts Json?
   id                 String                             @id @default(uuid()) @db.Uuid
   publicationId      String                             @db.Uuid
   hotelRateId        String                             @db.Uuid

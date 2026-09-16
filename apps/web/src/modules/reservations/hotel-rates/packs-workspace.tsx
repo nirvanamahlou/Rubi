@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import type { LoginResponse } from '@nora/contracts';
+import Link from 'next/link';
+import type { LoginResponse, TourDepartureV1 } from '@nora/contracts';
 import { getPublicApiBaseUrl } from '@/lib/environment';
 import { refreshAuthenticatedSession } from '@/lib/auth-session';
 import { DatePicker } from '@/components/ui/date-picker';
@@ -21,6 +22,8 @@ type GridRow = {
   inCityList: boolean;
 };
 type PackSummary = {
+  tourLabel?: string;
+  tourDepartureId?: string | null;
   id: string;
   branchId: string;
   cityId: string;
@@ -85,6 +88,7 @@ export function HotelRatePackTable({
     <table aria-label="جدول بسته‌های نرخ هتل" className={styles.packTable}>
       <thead>
         <tr>
+          <th scope="col">تور و نوبت</th>
           <th scope="col">شهر</th>
           <th scope="col">ورود</th>
           <th scope="col">خروج</th>
@@ -98,6 +102,7 @@ export function HotelRatePackTable({
       <tbody>
         {draft && (
           <tr className={styles.draftRow}>
+            <td>بستهٔ جدید</td>
             <td>{draft.cityName}</td>
             <td dir="ltr">{draft.checkIn || '—'}</td>
             <td dir="ltr">{draft.checkOut || '—'}</td>
@@ -119,8 +124,12 @@ export function HotelRatePackTable({
             key={pack.id}
             className={activeId === pack.id ? styles.activePack : ''}
           >
+            <td>{pack.tourLabel ?? '—'}</td>
             <td>
               <strong>{pack.cityName}</strong>
+              <small>
+                {pack.tourDepartureId ? '' : ' · نیازمند اتصال به نوبت تور'}
+              </small>
             </td>
             <td dir="ltr">{pack.checkIn}</td>
             <td dir="ltr">{pack.checkOut}</td>
@@ -143,7 +152,7 @@ export function HotelRatePackTable({
         ))}
         {!packs.length && !draft && (
           <tr>
-            <td colSpan={8}>
+            <td colSpan={9}>
               هنوز بسته‌ای ثبت نشده است؛ «بستهٔ جدید» را بزنید.
             </td>
           </tr>
@@ -154,8 +163,29 @@ export function HotelRatePackTable({
 }
 
 export function HotelRatePacksWorkspace() {
+  const [departures, setDepartures] = useState<readonly TourDepartureV1[]>([]);
+  const [tourPackageId, setTourPackageId] = useState('');
+  const [tourDepartureId, setTourDepartureId] = useState('');
   const [session, setSession] = useState<LoginResponse | null>(null);
   const [ready, setReady] = useState(false);
+  const [error, setError] = useState('');
+  useEffect(() => {
+    if (!session) return;
+    let active = true;
+    rateRequest<{ data: TourDepartureV1[] }>('/tour-departures')
+      .then((result) => {
+        if (active) setDepartures(result.data);
+      })
+      .catch((cause) => {
+        if (active)
+          setError(
+            cause instanceof Error ? cause.message : 'دریافت تورها ناموفق بود.',
+          );
+      });
+    return () => {
+      active = false;
+    };
+  }, [session]);
   const [branch, setBranch] = useState('');
   const [cities, setCities] = useState<HotelOption[]>([]);
   const [citySearch, setCitySearch] = useState('');
@@ -180,7 +210,6 @@ export function HotelRatePacksWorkspace() {
   const [revision, setRevision] = useState(0);
   const [busy, setBusy] = useState(false);
   const [opening, setOpening] = useState(false);
-  const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const pending = useRef<{ route: string; body: string; key: string } | null>(
     null,
@@ -317,7 +346,7 @@ export function HotelRatePacksWorkspace() {
     return () => {
       active = false;
     };
-  }, [session, cityId, currency]);
+  }, [session, cityId, currency, tourDepartureId]);
 
   const nights = dayCount(checkIn, checkOut);
   const selected = rows.filter((row) => row.selected);
@@ -335,6 +364,8 @@ export function HotelRatePacksWorkspace() {
     false;
 
   function newPack() {
+    setTourPackageId('');
+    setTourDepartureId('');
     setEditing(null);
     setEditorMode('new');
     setCityId('');
@@ -347,7 +378,7 @@ export function HotelRatePacksWorkspace() {
     setMethod('CHECK_IN');
     setError('');
     setMessage(
-      'پیش‌نویس بستهٔ جدید باز شد؛ شهر و بازه را در جدول زیر مشخص کنید.',
+      'ابتدا تور و نوبت بلیت را انتخاب کنید، سپس بازه اقامت و نرخ هتل‌ها را وارد کنید.',
     );
     pending.current = null;
   }
@@ -377,6 +408,30 @@ export function HotelRatePacksWorkspace() {
     setHotelSearch('');
     pending.current = null;
   }
+  function chooseDeparture(id: string) {
+    const tour = departures.find((item) => item.id === id);
+    setTourDepartureId(id);
+    setRows([]);
+    setCityId(tour?.package.destinationId ?? '');
+    setCheckIn(tour?.startsOn ?? '');
+    setCheckOut(tour?.endsOn ?? '');
+    if (tour) {
+      setBranch(tour.branchId);
+      setCityId(tour.package.destinationId);
+      setCities((old) =>
+        old.some((city) => city.id === tour.package.destinationId)
+          ? old
+          : [
+              ...old,
+              {
+                id: tour.package.destinationId,
+                name: `مقصد ${tour.package.name}`,
+              },
+            ],
+      );
+    }
+    pending.current = null;
+  }
   async function openPack(id: string) {
     setOpening(true);
     setError('');
@@ -387,6 +442,11 @@ export function HotelRatePacksWorkspace() {
       setEditing({ id: item.id, version: item.version });
       setEditorMode('edit');
       setBranch(item.branchId);
+      setTourDepartureId(item.tourDepartureId ?? '');
+      setTourPackageId(
+        departures.find((tour) => tour.id === item.tourDepartureId)?.package
+          .id ?? '',
+      );
       setCityId(item.cityId);
       setCitySearch('');
       setCities((old) =>
@@ -424,6 +484,7 @@ export function HotelRatePacksWorkspace() {
     setMessage('');
     if (
       !branch ||
+      !tourDepartureId ||
       !cityId ||
       nights <= 0 ||
       !selected.length ||
@@ -431,13 +492,14 @@ export function HotelRatePacksWorkspace() {
       selected.some((row) => !row.broker || !row.base || !row.inCityList)
     ) {
       setError(
-        'شهر و بازهٔ معتبر را مشخص کنید و برای هر هتل منتخب، کارگزار و قیمت را وارد کنید.',
+        'تور و نوبت بلیت، شهر و بازهٔ معتبر را مشخص کنید و برای هر هتل منتخب، کارگزار و قیمت را وارد کنید.',
       );
       return;
     }
     const route = editing ? `/packs/${editing.id}` : '/packs';
     const body = JSON.stringify({
       branchId: branch,
+      tourDepartureId,
       cityId,
       checkIn,
       checkOut,
@@ -494,8 +556,8 @@ export function HotelRatePacksWorkspace() {
           <p>رزرواسیون / نرخ خرید هتل</p>
           <h1>مدیریت گروهی نرخ‌های هتل‌ها</h1>
           <p>
-            هر شهر و بازهٔ اقامت یک بستهٔ مستقل دارد؛ نرخ‌ها را بعداً از همان
-            بسته اصلاح کنید.
+            تور و نوبت بلیت را انتخاب کنید؛ نرخ خرید هتل‌های بازه اقامت را ثبت و
+            بعداً از همان بسته اصلاح کنید.
           </p>
         </div>
         <button type="button" onClick={() => newPack()} disabled={!canWrite}>
@@ -521,7 +583,17 @@ export function HotelRatePacksWorkspace() {
         </div>
         <div className={styles.scroll}>
           <HotelRatePackTable
-            packs={packs}
+            packs={packs.map((pack) => {
+              const tour = departures.find(
+                (item) => item.id === pack.tourDepartureId,
+              );
+              return {
+                ...pack,
+                tourLabel: tour
+                  ? `${tour.package.name} · ${tour.startsOn} · ${tour.outbound.serviceNumber}`
+                  : 'بدون نوبت فعال',
+              };
+            })}
             draft={
               editorMode === 'new'
                 ? {
@@ -577,7 +649,68 @@ export function HotelRatePacksWorkspace() {
           <form onSubmit={(event) => void save(event)}>
             <fieldset disabled={busy || !canWrite}>
               <section>
-                <h2>۱ · جدول شهر و بازهٔ بسته</h2>
+                <h2>۱ · انتخاب تور و نوبت بلیت</h2>
+                {!departures.some((tour) => tour.branchId === branch) && (
+                  <p role="status">
+                    برای این شعبه نوبت تور فعالی وجود ندارد. ابتدا در{' '}
+                    <Link href="/ticket-management">مدیریت بلیت</Link> تور و نوبتِ
+                    متصل به بلیت رفت‌وبرگشت را ثبت کنید، سپس این صفحه را
+                    تازه‌سازی کنید.
+                  </p>
+                )}
+                <div className={styles.toolbar}>
+                  <label>
+                    تور
+                    <Choice
+                      label="تور نرخ خرید هتل"
+                      value={tourPackageId}
+                      onChange={(id) => {
+                        setTourPackageId(id);
+                        chooseDeparture('');
+                      }}
+                      options={[
+                        ...Array.from(
+                          new Map(
+                            departures
+                              .filter((tour) => tour.branchId === branch)
+                              .map((tour) => [
+                                tour.package.id,
+                                {
+                                  id: tour.package.id,
+                                  name: tour.package.name,
+                                },
+                              ]),
+                          ).values(),
+                        ),
+                      ]}
+                    />
+                  </label>
+                  <label>
+                    نوبت و بلیت رفت‌وبرگشت
+                    <Choice
+                      label="نوبت تور نرخ خرید هتل"
+                      value={tourDepartureId}
+                      onChange={chooseDeparture}
+                      options={[
+                        ...departures
+                          .filter((tour) => tour.package.id === tourPackageId)
+                          .map((tour) => ({
+                            id: tour.id,
+                            name: `${tour.startsOn} تا ${tour.endsOn} · ${tour.outbound.serviceNumber} / ${tour.returning?.serviceNumber ?? 'بدون برگشت'}`,
+                          })),
+                      ]}
+                    />
+                  </label>
+                </div>
+                {tourDepartureId && (
+                  <p>
+                    بازه اقامت از تاریخ نوبت پر شده است؛ هتل‌های منتخب این بسته
+                    به همین نوبت و بلیت‌ها متصل می‌شوند.
+                  </p>
+                )}
+              </section>
+              <section>
+                <h2>۲ · جدول شهر و بازهٔ اقامت</h2>
                 <p>
                   شهر را انتخاب کنید، سپس ورود و خروج را در همان ردیف تعیین
                   کنید.
