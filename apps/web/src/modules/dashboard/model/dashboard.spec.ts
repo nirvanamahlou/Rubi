@@ -654,6 +654,10 @@ describe('dashboard permission and data states', () => {
       expect(source).toContain(title);
     expect(source).toContain('items-baseline');
     expect(source).toContain('dashboard-sidebar-filters-title');
+    expect(source).toContain('ActivePageIcon');
+    expect(source).toContain('items-center text-center');
+    expect(source).toContain('bg-gradient-to-bl from-cyan-50 via-surface to-blue-50');
+    expect(source).toContain('max-w-2xl text-sm leading-6 text-muted-foreground');
     expect(source).toContain('lg:sticky lg:top-20');
     expect(source).toContain('lg:overflow-y-auto');
     expect(source).toContain('صفحه‌های داشبورد');

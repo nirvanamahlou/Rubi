@@ -2529,6 +2529,7 @@ export function DashboardWorkspace() {
   const activePage =
     dashboardPages.find((page) => page.id === filters.page) ??
     dashboardPages[0]!;
+  const ActivePageIcon = navigationIcons[activePage.id] ?? LayoutDashboard;
   const activePageKpis = dashboardKpis
     .filter((kpi) => activePage.kpiIds.includes(kpi.id))
     .map((kpi) =>
@@ -2668,24 +2669,25 @@ export function DashboardWorkspace() {
         <div className="min-w-0 space-y-5">
           <section aria-labelledby="active-dashboard-page-title">
             <div className="space-y-4">
-              <header className="overflow-hidden rounded-2xl border border-border bg-surface p-4 shadow-sm sm:p-5">
-                <div className="sm:flex sm:items-end sm:justify-between sm:gap-4">
-                  <div>
-                    <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
-                      <h2
-                        id="active-dashboard-page-title"
-                        className="text-2xl font-black tracking-tight"
-                      >
-                        {activePage.title}
-                      </h2>
-                      <span className="text-xs font-bold text-primary" dir="ltr">
-                        {activePage.technicalName}
-                      </span>
-                    </div>
-                    <p className="mt-1.5 text-sm text-muted-foreground">
-                      {activePage.description}
-                    </p>
-                  </div>
+              <header className="relative isolate overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-bl from-cyan-50 via-surface to-blue-50 p-4 shadow-sm dark:from-cyan-950/20 dark:via-surface dark:to-blue-950/25 sm:p-5">
+                <span aria-hidden="true" className="absolute -end-14 -top-14 size-40 rounded-full bg-primary/10 blur-3xl" />
+                <span aria-hidden="true" className="absolute -start-16 bottom-0 size-32 rounded-full bg-cyan-400/10 blur-3xl" />
+                <div className="relative mx-auto flex max-w-3xl flex-col items-center text-center">
+                  <span className="mb-2 grid size-10 place-items-center rounded-xl bg-primary/10 text-primary ring-1 ring-primary/15 shadow-sm">
+                    <ActivePageIcon aria-hidden="true" className="size-5" />
+                  </span>
+                  <h2
+                    id="active-dashboard-page-title"
+                    className="text-2xl font-black tracking-tight text-foreground sm:text-3xl"
+                  >
+                    {activePage.title}
+                  </h2>
+                  <p className="mt-1 text-xs font-bold tracking-wide text-primary" dir="ltr">
+                    {activePage.technicalName}
+                  </p>
+                  <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+                    {activePage.description}
+                  </p>
                 </div>
               </header>
 

@@ -9,6 +9,13 @@
 
 # Work Assignments
 
+## DASHBOARD-PAGE-HEADER-CENTERED-0916 — PC-C — LOCAL_COMPLETE
+
+- درخواست مالک: عنوان فارسی، نام انگلیسی و توضیح هر صفحه Dashboard به‌صورت وسط‌چین و هماهنگ با تم/پالت Dashboard نمایش داده شود.
+- محدودهٔ رزروشده: فقط سربرگ صفحه، تست Dashboard Web و اسناد وضعیت در Worktree `codex/pc-c-dashboard-reporting-latest`. API، Reports، دیتابیس، Migration، دادهٔ عملیاتی، وابستگی و Lockfile تغییر نمی‌کنند.
+- قرارداد: متن و هویت صفحه از Registry فعلی می‌آید؛ سربرگ فشرده، دسترس‌پذیر و بدون فضای خالی تزئینی خواهد بود.
+- نتیجه: سربرگ هر صفحه با آیکون متناسب، عنوان فارسی، نام انگلیسی و توضیح Registry به‌صورت مرکزچین نمایش می‌یابد. زمینهٔ گرادیانی آبی/فیروزه‌ای ملایم و glow کم‌رنگ با Light/Dark theme سازگارند و فاصله‌ها برای جلوگیری از فضای خالی اضافی محدود شده‌اند.
+
 ## DASHBOARD-FILTERS-STICKY-0916 — PC-C — LOCAL_COMPLETE
 
 - درخواست مالک: پنل «فیلترهای این صفحه» در Sidebar راست هنگام اسکرول Dashboard پنهان نشود.
