@@ -628,6 +628,9 @@ describe('dashboard permission and data states', () => {
     expect(source).toContain('externalLabels');
     expect(source).toContain('ringEdgeX');
     expect(source).toContain('lineEndY');
+    expect(source).toContain('connectorEndX');
+    expect(source).toContain('labelY');
+    expect(source).toContain('textAnchor="middle"');
     expect(source).toContain('compactChartValue(item.value)');
     expect(source).toContain('max-w-[26rem]');
     expect(source).toContain('const donutRadius = 104');
@@ -664,6 +667,10 @@ describe('dashboard permission and data states', () => {
     expect(source).toContain('ActivePageIcon');
     expect(source).toContain('dashboardHeaderThemeByPageId');
     expect(source).toContain('activePageHeaderTheme');
+    expect(source).toContain('dashboardHeaderArtworkByPageId');
+    expect(source).toContain('activePageHeaderArtwork');
+    expect(source).toContain("'/images/dashboard-headers/executive-overview.png'");
+    expect(source).toContain('quality={45}');
     expect(source).toContain('pointer-events-none absolute -bottom-10 -end-2');
     expect(source).toContain('size-44 stroke-[1.15] sm:size-52');
     expect(source).toContain("'tour-hotel-performance': Hotel");

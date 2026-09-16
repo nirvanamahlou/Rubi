@@ -45,6 +45,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 
@@ -771,6 +772,53 @@ const dashboardHeaderThemeByPageId: Record<string, string> = {
     'from-slate-50 via-surface to-cyan-50 dark:from-slate-900/50 dark:via-surface dark:to-cyan-950/25',
   'documents-reports-data-quality':
     'from-slate-50 via-surface to-indigo-50 dark:from-slate-900/50 dark:via-surface dark:to-indigo-950/25',
+};
+
+const dashboardHeaderArtworkByPageId: Record<string, string> = {
+  'executive-overview': '/images/dashboard-headers/executive-overview.png',
+  'executive-growth-risk': '/images/dashboard-headers/executive-overview.png',
+  'commercial-performance':
+    '/images/dashboard-headers/commercial-performance.png',
+  'sales-profitability-analysis':
+    '/images/dashboard-headers/commercial-performance.png',
+  'sales-segment-analysis':
+    '/images/dashboard-headers/commercial-performance.png',
+  'revenue-collections':
+    '/images/dashboard-headers/commercial-performance.png',
+  'travel-operations':
+    '/images/dashboard-headers/commercial-performance.png',
+  'flight-route-analysis':
+    '/images/dashboard-headers/commercial-performance.png',
+  'inventory-products':
+    '/images/dashboard-headers/commercial-performance.png',
+  'tour-hotel-performance':
+    '/images/dashboard-headers/commercial-performance.png',
+  'procurement-suppliers':
+    '/images/dashboard-headers/commercial-performance.png',
+  'finance-treasury': '/images/dashboard-headers/finance-treasury.png',
+  'finance-profitability-costs':
+    '/images/dashboard-headers/finance-treasury.png',
+  'finance-obligations-risk':
+    '/images/dashboard-headers/finance-treasury.png',
+  'customer-growth': '/images/dashboard-headers/customer-growth.png',
+  'customer-behavior-analysis':
+    '/images/dashboard-headers/customer-growth.png',
+  'customer-crm': '/images/dashboard-headers/customer-growth.png',
+  'support-service-quality':
+    '/images/dashboard-headers/customer-growth.png',
+  'partners-b2b': '/images/dashboard-headers/customer-growth.png',
+  'marketing-growth': '/images/dashboard-headers/customer-growth.png',
+  'workforce-hr': '/images/dashboard-headers/workforce-hr.png',
+  'hr-record-quality': '/images/dashboard-headers/workforce-hr.png',
+  'employee-commercial-performance':
+    '/images/dashboard-headers/workforce-hr.png',
+  'employee-crm-activity':
+    '/images/dashboard-headers/workforce-hr.png',
+  'employee-sales-quality':
+    '/images/dashboard-headers/workforce-hr.png',
+  'tasks-automation': '/images/dashboard-headers/executive-overview.png',
+  'documents-reports-data-quality':
+    '/images/dashboard-headers/executive-overview.png',
 };
 
 function Metric({
@@ -1979,17 +2027,20 @@ function DashboardChart({
       const lineEndX = donutCenter + cosine * (donutRadius + 28);
       const lineEndY = donutCenter + sine * (donutRadius + 28);
       const onRight = cosine >= 0;
-      const labelX = lineEndX + (onRight ? 22 : -22);
+      const labelX = onRight ? 380 : 60;
+      const labelY = Math.min(276, Math.max(42, lineEndY));
+      const connectorEndX = onRight ? 332 : 108;
       return {
         color:
           colorByIndex.get(index) ?? comparisonRankColor(index, values.length),
         label: labels[index] ?? `دسته ${index + 1}`,
+        connectorEndX,
         lineEndX,
         lineEndY,
         labelX,
+        labelY,
         ringEdgeX,
         ringEdgeY,
-        textAnchor: onRight ? ('start' as const) : ('end' as const),
         value,
       };
     });
@@ -2020,12 +2071,12 @@ function DashboardChart({
               const percent = formatDashboardNumber((item.value / total) * 100, {
                 maximumFractionDigits: 1,
               });
-              const textY = item.lineEndY - 8;
+              const textY = item.labelY - 9;
               return (
                 <g key={`${item.label}-${index}`}>
                   <polyline
                     fill="none"
-                    points={`${item.ringEdgeX},${item.ringEdgeY} ${item.lineEndX},${item.lineEndY} ${item.labelX},${item.lineEndY}`}
+                    points={`${item.ringEdgeX},${item.ringEdgeY} ${item.lineEndX},${item.lineEndY} ${item.connectorEndX},${item.labelY}`}
                     stroke={item.color}
                     strokeLinecap="round"
                     strokeOpacity="0.85"
@@ -2034,11 +2085,11 @@ function DashboardChart({
                   <text
                     className="fill-foreground font-bold"
                     fontSize="14"
-                    textAnchor={item.textAnchor}
+                    textAnchor="middle"
                     x={item.labelX}
                     y={textY}
                   >
-                    <tspan direction="rtl" x={item.labelX}>{item.label.slice(0, 18)}</tspan>
+                    <tspan x={item.labelX}>{item.label.slice(0, 18)}</tspan>
                     <tspan
                       className="fill-foreground font-black"
                       direction="ltr"
@@ -2669,6 +2720,10 @@ export function DashboardWorkspace() {
   const activePageHeaderTheme =
     dashboardHeaderThemeByPageId[activePage.id] ??
     dashboardHeaderThemeByPageId['executive-overview'];
+  const activePageHeaderArtwork =
+    dashboardHeaderArtworkByPageId[activePage.id] ??
+    dashboardHeaderArtworkByPageId['executive-overview'] ??
+    '/images/dashboard-headers/executive-overview.png';
   const activePageKpis = dashboardKpis
     .filter((kpi) => activePage.kpiIds.includes(kpi.id))
     .map((kpi) =>
@@ -2809,6 +2864,16 @@ export function DashboardWorkspace() {
           <section aria-labelledby="active-dashboard-page-title">
             <div className="space-y-4">
               <header className={cn('relative isolate overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-bl p-4 shadow-sm sm:p-5', activePageHeaderTheme)}>
+                <Image
+                  alt=""
+                  aria-hidden="true"
+                  className="pointer-events-none object-cover object-right opacity-75 dark:opacity-25"
+                  fill
+                  quality={45}
+                  sizes="(min-width: 1024px) 72vw, 100vw"
+                  src={activePageHeaderArtwork}
+                />
+                <span aria-hidden="true" className="pointer-events-none absolute inset-0 bg-gradient-to-l from-surface/90 via-surface/65 to-surface/10 dark:from-surface/95 dark:via-surface/75 dark:to-surface/35" />
                 <span aria-hidden="true" className="pointer-events-none absolute -end-14 -top-14 size-40 rounded-full bg-primary/10 blur-3xl" />
                 <span aria-hidden="true" className="pointer-events-none absolute -start-16 bottom-0 size-32 rounded-full bg-cyan-400/10 blur-3xl" />
                 <span aria-hidden="true" className="pointer-events-none absolute -bottom-10 -end-2 text-primary/[0.055] dark:text-primary/[0.12]">
