@@ -24,6 +24,6 @@ import { LocalDocumentStorage } from './documents.storage';
     LocalDocumentStorage,
     WindowsDefenderAntivirus,
   ],
-  exports: [DocumentsService],
+  exports: [DocumentsService, LocalDocumentStorage],
 })
 export class DocumentsModule {}

@@ -311,7 +311,9 @@ export const voucherFlagKeys = [
   'specialRoom',
 ] as const;
 export interface VoucherSettingsV1 {
-  text: Record<(typeof voucherTextKeys)[number], string>;
+  text: Record<(typeof voucherTextKeys)[number], string> & {
+    contractPartyName?: string;
+  };
   numbers: Record<(typeof voucherNumberKeys)[number], number>;
   flags: Record<(typeof voucherFlagKeys)[number], boolean>;
   passengers: {

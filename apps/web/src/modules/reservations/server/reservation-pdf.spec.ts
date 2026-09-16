@@ -11,6 +11,7 @@ vi.mock('node:fs/promises', () => ({
 }));
 import { GET } from '@/app/reservations/requests/[id]/pdf/route';
 import { reservationPdfHtml } from './reservation-pdf-html';
+import { defaultVoucherSettings } from '../model/voucher-settings';
 import type { ReservationFormIntake } from '../model/reservation-form';
 const id = '00000000-0000-4000-8000-000000000001';
 const intake = {
@@ -93,6 +94,46 @@ describe('reservation PDF route', () => {
         .status,
     ).toBe(400);
     expect(fetcher).not.toHaveBeenCalled();
+  });
+  it('prints the 2-6 and 6-12 hotel child bands selected for the supplier form', () => {
+    const childIntake = {
+      ...intake,
+      snapshot: {
+        ...intake.snapshot,
+        passengerIds: ['child-younger', 'child-older'],
+        passengerAssignments: [
+          {
+            customerId: 'child-younger',
+            displayNameSnapshot: 'YOUNGER CHILD',
+            ageCategory: 'CHD',
+          },
+          {
+            customerId: 'child-older',
+            displayNameSnapshot: 'OLDER CHILD',
+            ageCategory: 'CHD',
+          },
+        ],
+      },
+      workflow: {
+        ...intake.workflow,
+        roomOrder: ['child-younger', 'child-older'],
+      },
+    } as unknown as ReservationFormIntake;
+    const settings = defaultVoucherSettings(childIntake, {});
+    settings.passengers[0]!.hotelChildAgeBand = 'CHD_2_TO_6';
+    settings.passengers[1]!.hotelChildAgeBand = 'CHD_6_TO_12';
+    childIntake.workflow.supplierFormSettings = settings;
+
+    const html = reservationPdfHtml(
+      childIntake,
+      {},
+      'data:image/png;base64,c2FmZQ==',
+      '',
+    );
+    expect(html).toContain('CHD 2-6');
+    expect(html).toContain('CHD 6-12');
+    expect(html).toContain('YOUNGER CHILD');
+    expect(html).toContain('OLDER CHILD');
   });
   it('escapes saved text and refuses external logos in the isolated HTML', () => {
     const html = reservationPdfHtml(

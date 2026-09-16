@@ -1,11 +1,11 @@
 # Work Assignments
 
-## TOUR-HOTEL-PRICING-FLOW-0916 — PC-A — LOCAL IMPLEMENTED / ACCOUNT ACCESS PENDING
+## TOUR-HOTEL-PRICING-FLOW-0916 — PC-A — MERGED WITH DEVELOP / VERIFIED LOCALLY
 
 - Branch `codex/pc-a-tour-hotel-pricing-flow-0916`, based on the owner's local preview `72cfdadf`. Select Ticket Catalog tour/departure, record linked hotel purchase rates, price each hotel/room for the stay plus flights. Excel/banner outputs are deferred by the owner.
-- Reserve Reservations hotel-rate API/Web, Ticket Catalog public departure usage, Package Pricing API/Web/math/tests, additive Prisma migration/FKs, shared pricing contracts and bounded task/status/data/decision docs. Migration and central contract/docs owner: PC-A/TOUR-HOTEL-PRICING-FLOW-0916. No dependency lock. Preserve preview; no main/develop merge or port-3100 rollout.
+- Reserve Reservations hotel-rate API/Web, Ticket Catalog public departure usage, Package Pricing API/Web/math/tests, additive Prisma migration/FKs, shared pricing contracts and bounded task/status/data/decision docs. Migration and central contract/docs owner: PC-A/TOUR-HOTEL-PRICING-FLOW-0916. No dependency lock. The initial preview-only restriction was superseded on 2026-09-16 by the owner's explicit request to combine this work with the primary development line; `origin/develop@10851d1a` is merged into this task branch without changing port 3100.
 - Ticket Catalog exports branch-scoped departures; Reservations persists the departure FK on immutable rate batches; Sales consumes that departure's current batches through the public projection. Legacy packs remain readable and may be explicitly linked by revision. Matching dates do not assign historical packs to a tour.
-- Result: explicit linkage, exact stay-night pricing, fixed/percent adjustments and multicurrency room-package preview/publications are implemented. Four shared-money tests, 25 API tests, seven Web tests, typechecks, scoped lint and builds pass. Preview uses the isolated copied DB; hotel HTTP smoke is 200. No active departure is accessible to local-admin and package pricing remains 403 until authorized IAM access is assigned. Locks release with scoped local commit; origin is public so no public push is performed.
+- Result: explicit linkage, exact stay-night pricing, fixed/percent adjustments and multicurrency room-package preview/publications are implemented. The integration retained both Package Pricing and Reporting modules/Prisma relations and both documentation histories. Prisma validate/generate, Contracts/Database/API/Web typechecks, full API tests (1436 passed, 135 skipped), full Web tests (1477 passed), full API/Web lint and production builds pass. Two local demo tours completed Ticket → Finance payment → two-currency hotel grid → maker/checker publication and edit/republication on isolated `rubi_pricing_flow_0916`; the operational database is untouched. Locks release with the merge commit; origin is public so no public push is performed.
 
 ## HOTEL-RATE-PACKS-0915 — PC-A — IMPLEMENTED ON ISOLATED 3200 / REVIEW PENDING
 
@@ -54,6 +54,143 @@
 - بررسی قفل در آخرین `origin/develop` و PRهای باز: Migration و Central Docs در `PROCUREMENT-001` صریحاً آزاد شده‌اند؛ Migration `FINANCE-008` با PR #270 در develop ادغام شده است. شاخه قدیمی `codex/pc-a-pricing-management` در develop حضور دارد و رزرو فعالی ندارد؛ UI نمونه‌ای آن با قابلیت عملیاتی این Task جایگزین/همگرا می‌شود.
 - نتیجه: قرارداد/API/UI/۱۳ مدل و Migration افزایشی، permissions، Decimal engine، immutable publication، maker/checker، quote/template/render/audit و حالت‌های fail-closed تکمیل و validate شدند. producer نرخ پایه هتل اکنون متصل است؛ تولید/انتشار پکیج دارای جزء بلیت تا Public Contract نرخ/ظرفیت Ticket Catalog مسدود است و Renderer نیز هنوز متصل نیست. `Migration Owner`، قراردادهای مشترک و `Central Docs Owner` پس از commit این Task `RELEASED` هستند؛ Dependency/Lockfile هرگز رزرو نشد.
 - Draft PR مستقل به `develop`: `#278`؛ merge نشده است.
+## RESERVATION-SECTION-EDIT-AGE-BANDS-0916 — PC-A — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-16: تب‌های ویرایش قرارداد در رزواسیون برای طرف قرارداد، پرواز، هتل، سایر خدمات و مسافران واقعاً قابل ویرایش و ذخیره باشند؛ ردهٔ کودک هتل نیز در فرم ارسالی به کارگزار به‌صورت ۲ تا ۶ و ۶ تا ۱۲ سال نمایش داده شود.
+- Branch مستقل `codex/pc-a-reservation-section-edit-age-bands-0916` از `origin/develop@4551bca4`؛ `COMPUTER_ID=PC-A`.
+- محدوده رزرو: ویرایشگر قرارداد رزواسیون، تنظیمات/پروجکشن فرم کارگزار و PDF رزواسیون، قرارداد Travel در صورت نیاز، تست‌های هدفمند و اسناد همین واحد. بدون Migration، Seed، دادهٔ عملیاتی، تغییر Permission یا Runtime مشترک تا زمان ادغام تأییدشده.
+- مالک فعال هم‌پوشان برای فایل‌های هدف در آخرین `origin/develop` پیدا نشد؛ تغییرات شاخه‌ها و worktreeهای دیگر حفظ می‌شوند.
+- نتیجه: تب‌های طرف قرارداد، پرواز، هتل، سایر و مسافران به فرم ویرایش نسخه‌دار وصل شدند؛ هتل شامل تاریخ، مشخصات، نوع و تعداد اتاق است و کودک انتخاب‌شده بدون تعیین بازهٔ ۲ تا ۶ یا ۶ تا ۱۲ سال ذخیره نمی‌شود. همان بازه در PDF فرم ارسالی کارگزار و جدول مسافران قرارداد چاپ می‌شود. مشاهدهٔ قرارداد در رزواسیون از همان خروجی HTML موفق فروش استفاده می‌کند و چاپ/ذخیره PDF داخل پنجره ممکن است؛ مسیر PDF مستقیم نیز حفظ شد. داده‌های قدیمی بدون فیلد اختیاری طرف قرارداد همچنان معتبرند.
+- اعتبارسنجی: typecheck بسته‌های Contracts/API/Web، lint فایل‌های متاثر، ۶ تست API و ۱۸ تست Web قابلیت اصلی، ۱۶ تست هدفمند خروجی قرارداد و build تولیدی API/Web موفق‌اند. Migration، Seed و تغییر Runtime مشترک انجام نشد.
+
+## FINANCE-INBOX-TICKET-BRANDING-0915 — PC-A — READY_FOR_REVIEW
+
+- Branch `codex/pc-a-finance-inbox-brand-0915` from `origin/develop@f5c1a159`; COMPUTER_ID=PC-A.
+- Scope: verify the port-3200 financial requests inbox is already present in the integrated port-3100 source, and adjust branding only in the flight-ticket PDF. Reserved files: `apps/web/src/modules/reservations/server/ticket-pdf-html.ts`, `apps/web/src/app/reservations/requests/[id]/tickets/pdf/route.ts`, targeted ticket tests, this assignment and `docs/PROJECT_STATUS.md`.
+- No other section, server checkout, migration, production data, or shared navigation is modified.
+- Result: the integrated /finance/requests route and live inbox already match the port-3200 source; ticket PDF only now enlarges Niayesh's own logo and resolves registered airline logos despite spacing/name variants. Targeted 11 Web tests, affected lint, Web typecheck, affected build, and visual QA of a one-page A4 Chrome PDF passed. No migration.
+
+## RESERVATION-TICKET-PDF-PASSENGER-0914 — PC-A — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-14: رفع خطای دانلود PDF بلیط قرارداد SC-2026-000003 و حذف وضعیت «نام مسافر ثبت نشده» برای Snapshotهای جدید. Branch مستقل `codex/pc-a-ticket-pdf-passenger-0914` از `origin/develop@b62054e3`؛ COMPUTER_ID=PC-A.
+- محدوده رزرو: نگاشت نام مسافر در Snapshot خروجی Sales، Renderer/Route PDF بلیط Reservations، تنظیم tracing دارایی همان Route، تست‌های هدفمند و اسناد Task. فایل‌های تاریخی RESERVATION-TICKET-PDF-0912 و RESERVATION-DIRECT-PDF-0910 آزاد شده‌اند؛ در آخرین `origin/develop` مالک فعال همپوشان پیدا نشد.
+- Renderer فقط Chrome/Edge نصب‌شده و فونت محلی خواندنی را کشف می‌کند؛ فونت اختیاری است و نبود آن صدور را متوقف نمی‌کند. هیچ Migration، Seed، داده عملیاتی، Permission، Dependency/Lockfile یا اجرای مشترک localhost در این شاخه انجام نمی‌شود.
+- نتیجه: نام در Snapshot درخواست‌های جدید حفظ می‌شود و قرارداد قدیمی دارای نام ناقص، نام را برای نمایش/PDF از پرونده اصلی مسافر می‌خواند. Chrome/Edge و فونت محلی بدون فرمان دستی کشف می‌شوند. ۴ تست API، ۱۸ تست Web، lint/typecheck/build API/Web و Smoke واقعی Chrome موفق‌اند؛ رزرو فایل‌ها برای Review آزاد است.
+
+## DASHBOARD-REPORTING-PC-AB-INTEGRATION — PC-C — PR_OPEN / CI_PENDING
+
+- درخواست 2026-09-15: دریافت تغییرات یکپارچه‌شدهٔ PC-A/PC-B از `origin/develop` و حفظ نسخهٔ نهایی Dashboard/Reports در شاخهٔ اجرایی `codex/pc-c-dashboard-reporting-latest`، سپس انتشار و درخواست merge.
+- تغییرات محلی PC-C پیش از ادغام ثبت می‌شوند؛ دادهٔ نمونهٔ PostgreSQL، فایل‌های `.data` و خروجی تولیدشده وارد Git نمی‌شوند.
+- شاخه‌های مستقل و باز PC-A/PC-B بدون تأیید یا merge خودشان به‌عنوان کار تکمیل‌شده تلقی نمی‌شوند؛ ریسک تعارض Schema/Manifest/Docs و تست یکپارچه‌سازی بررسی می‌شود.
+- `origin/develop@ff15c7d3` با حفظ Dashboard/Reports در Worktree مستقل ادغام شد؛ تعارض‌های Docs، AppModule و Prisma additive حل شدند و نام بسته‌های Reports با تغییر `@rubi` به `@nora` هماهنگ شد.
+- Prisma validate، typecheck و build Database/Contracts/Config/API/Web، lint محدوده و ۲۶ تست API + ۶۶ تست Web موفق‌اند. Worktree اجرایی ۳۰۰۰ و دادهٔ نمونهٔ آن دست‌نخورده ماند؛ merge به develop تنها پس از PR/CI انجام می‌شود.
+- پس از احراز هویت Git Credential Manager، Branch به `origin` پوش شد و PR شمارهٔ 289 برای `develop` باز شد. مرج پس از بررسی CI و قابلیت مرج انجام می‌شود.
+
+## REPORTING-AUTHENTICATED-RUNTIME-REPAIR — PC-C — LOCAL_COMPLETE
+
+- درخواست 2026-09-15: رفع خطای مشترک Dashboard/Reports/Favorites و اعتبارسنجی HTTP با احراز هویت، ذخیره و دانلود خروجی.
+- علت بازتولیدشده: جدول `b2b_organization_users` در دیتابیس محلی وجود ندارد و Interceptor سراسری پیش از رسیدن درخواست به Reports خطای P2021 می‌دهد.
+- محدوده: اعمال Migration افزایشی موجود `20260910100000_b2b_organization_users` فقط در دیتابیس localhost پس از بکاپ، اصلاح خطاهای persistence خروجی Reporting و تست‌های مرتبط. بدون ایجاد Migration جدید یا تغییر قاعده دسترسی B2B.
+- نتیجه: Migration موجود اعمال و با Prisma ثبت شد؛ نیازی به اصلاح بیشتر کد persistence نبود. HTTP با ورود واقعی حساب موقت، ۱۱ KPI، ۱۰ نمودار، ۱۲ Preview متصل، ثبت/خواندن/حذف Favorite، ذخیره فیلتر، شمارنده‌ها و دانلود CSV/XLSX/PDF موفق شد. حساب و خروجی‌های آزمایشی پاک شدند؛ ۱۸۰ fact نمونهٔ اصلی حفظ شد. PDF فعلی خلاصهٔ محدود است.
+
+## REPORTING-CATEGORY-FILTER-RTL-ICON — PC-C — LOCAL_COMPLETE
+
+- درخواست 2026-09-15: گزینه‌های فیلتر دستهٔ کاتالوگ گزارش‌ها راست‌چین و با آیکون تک‌رنگ در سمت راست عنوان نمایش داده شوند.
+- محدوده: فقط `reporting-workspace.tsx` و تست هدفمند همان کامپوننت؛ بدون تغییر API، دیتابیس، Migration، ناوبری، Dashboard یا وابستگی.
+- اجرا در شاخهٔ یکپارچهٔ مصوب `codex/pc-c-dashboard-reporting-latest` حفظ شد تا نسخهٔ Dashboard/Reports روی `localhost:3000` جابه‌جا نشود. TypeScript، lint و تست جدید موفق‌اند؛ انتظار قدیمی `RPT-001` در تست کامل فایل از قبل با کاتالوگ فعلی ناسازگار است.
+
+## DASHBOARD-REPORTING-DEMO-PROJECTION-REPAIR — PC-C — LOCAL_COMPLETE
+
+- درخواست 2026-09-15: رفع خطای بارگذاری داشبورد و نمایش خروجی factهای سفر نمونه در Dashboard و Reports.
+- فقط Projection/تست Reporting، وضعیت اتصال کاتالوگ، ابزار inspect خواندنی دمو و مستندات همین واحد اصلاح شدند؛ دادهٔ تولیدشده حذف یا وارد Git نشد.
+- تاریخ ISO بازهٔ پیش‌فرض دیگر دوباره پسوند زمان نمی‌گیرد؛ خروجی مالی بر اساس ارز جداست، و شاخص/گزارش فاقد Producer سفر با عدد ساختگی از fact سفر پر نمی‌شود.
+- API همان Worktree روی پورت ۴۰۰۰ بازساخته و با Web موجود روی ۳۰۰۰ یکپارچه است. اعتبارسنجی عددی و محدودیت نشست احراز شده در گزارش تحویل ثبت می‌شود.
+
+## DASHBOARD-REPORTING-LOCAL-DEMO-DATA — PC-C — LOCAL_COMPLETE / RUNTIME_ACTIVE
+
+- درخواست مالک در 2026-09-15: ایجاد دادهٔ نمونهٔ واقعی‌نما و قابل‌حذف برای
+  Dashboard و تمام گزارش‌های قابل‌اجرای کاتالوگ، بدون ثبت دادهٔ تولیدشده در Git.
+- محدوده: Projection عمومی Dashboard در ماژول Reporting، مصرف‌کنندهٔ Dashboard،
+  generator/cleanup محلی و مستندات اجرای همان داده. داده با شناسهٔ پیشونددار
+  `LOCAL_DEMO_DASHBOARD_REPORTING_` وارد PostgreSQL می‌شود و حذف فقط همان
+  شناسه‌ها را هدف می‌گیرد؛ دادهٔ عملیاتی موجود دست‌نخورده می‌ماند.
+- بدون تغییر Navigation، دادهٔ واقعی مشتری/مسافر یا اجرای migration مخرب.
+- نتیجه: Projection نسخه‌دار `reporting.dashboard.travel.v1` به API و Dashboard
+  متصل شد؛ ۱۸۰ fact دمو با شناسهٔ قابل‌حذف وارد PostgreSQL محلی است و فقط کارت‌های
+  گزارش سفر دارای Projection معتبر به Preview/Export وصل‌اند. Web/API typecheck
+  و ۴۰ تست هدفمند Dashboard/Reporting موفق‌اند؛ Web روی 3000 و API بازساخته‌شده
+  روی 4000 اجرا می‌شوند.
+
+## DASHBOARD-REPORTING-LATEST-009 — PC-C — LOCAL_COMPLETE / RUNTIME_ACTIVE
+
+- درخواست صریح مالک برای اجرای هم‌زمان آخرین نسخه Dashboard و Reports روی
+  `localhost:3000`.
+- شاخه یکپارچه از `codex/pc-c-reporting-remove-scheduling-ui@9d8d985f` ساخته می‌شود
+  و فقط commitهای مستقل Dashboard از `c4dc3c26` تا `af6de805` روی آن اعمال می‌شوند.
+- محدوده رزروشده: `apps/web/src/modules/dashboard/**`، اسناد وضعیت این Task و
+  یکپارچه‌سازی runtime؛ ماژول Reports مبناست و API، Prisma/Migration و dependency
+  تغییر نمی‌کنند.
+- نتیجه: Reports تا `9d8d985f` و Dashboard تا `af6de805` در یک شاخه قرار گرفتند؛
+  route `/dashboard` نیز از Shell اولیه به Workspace نهایی متصل شد. ۵۶ تست، lint،
+  typecheck و build تولیدی ۴۶ route پاس‌اند و runtime مشترک روی پورت ۳۰۰۰ فعال است.
+
+## REPORTING-REMOVE-SCHEDULING — PC-C — READY_FOR_REVIEW / LOCAL_RUNTIME
+
+- درخواست مالک در 2026-09-13: سکشن «زمان‌بندی‌ها» و قابلیت «زمان‌بندی گزارش» از
+  فرم پیکربندی تمام گزارش‌ها، Frontend و Backend حذف شوند.
+- محدوده رزرو: `apps/web/src/modules/reports/**`، `apps/api/src/reporting/**`،
+  تست‌های هدفمند Reports و مستندات همین واحد کار. جدول تاریخی
+  `reporting_schedules` و Migrationهای اعمال‌شده برای جلوگیری از حذف داده دست‌نخورده
+  می‌مانند؛ Endpoint، DTO، Service و Repository اختصاصی زمان‌بندی از API عمومی حذف
+  می‌شوند.
+- Branchهای اجرایی: `codex/pc-c-reporting-remove-scheduling-ui` برای Web و
+  `codex/pc-c-reporting-remove-scheduling-api` برای API موجود در Worktree اجرای
+  Reporting. بدون تغییر Dependency/Lockfile، Seed، مجوز IAM یا ماژول‌های دیگر.
+- نتیجه: ۳۶ تست هدفمند Web و ۲۲ تست هدفمند API، lint و TypeScript هر دو بخش و
+  build تولیدی Web/API موفق‌اند. Smoke محلی Web و health API پاسخ ۲۰۰ و Endpoint
+  حذف‌شده زمان‌بندی پاسخ ۴۰۴ داد؛ Runtime جدید روی پورت‌های ۳۰۰۰ و ۴۰۰۰ فعال است.
+
+## REPORTING-REMOVE-FAVORITES-UI — PC-C — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-13: آیکن ستاره از تمام کارت‌های کاتالوگ حذف شود و
+  کنترل‌های «همه گزارش‌های من / محبوب‌ها» نیز در نمای گزارش‌های من نمایش داده نشوند.
+- محدوده رزرو: فقط کامپوننت Workspace ماژول Reports و تست هدفمند همان نمایش،
+  به‌همراه سند وضعیت این واحد کار. بدون API، Schema/Migration، Seed/Data، قرارداد،
+  Dependency/Lockfile یا تغییر Runtime/API همکاران.
+- نتیجه: کنترل ستاره از همه کارت‌های کاتالوگ و نوار «همه گزارش‌های من / محبوب‌ها»
+  از نمای گزارش‌های من حذف شد. گزارش تازه ذخیره‌شده دیگر Favorite نمی‌شود. ۱۴ تست
+  هدفمند، lint و TypeScript وب موفق‌اند و نسخه همین Worktree روی پورت ۳۰۰۰ فعال است؛
+  قفل فایل‌های پیاده‌سازی آزاد شد.
+
+## REPORTING-OPERATIONS-STAY-IN-VIEW — PC-C — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-13: اجرای گزارش از «گزارش‌های من»،
+  «اشتراک‌گذاری‌شده با من»، «اجراها» و «زمان‌بندی‌ها» باید فرم پیکربندی را در همان
+  نمای فعال باز کند و کاربر را به کاتالوگ منتقل نکند.
+- محدوده رزرو: Navigation و Workspace/Operations View ماژول Reports و تست‌های
+  هدفمند همان رفتار، به‌همراه سند Task و مدخل‌های وضعیت. بدون API، Schema/Migration،
+  Seed/Data، قرارداد، Dependency/Lockfile یا تصرف Runtime همکاران.
+- نتیجه: آدرس اجرای هر ردیف همان View و Filter Snapshot را حفظ می‌کند و Dialog
+  پیکربندی در سطح مشترک Workspace باز می‌شود. 15 تست هدفمند، TypeScript، lint و
+  بررسی Git موفق‌اند؛ قفل فایل‌های این واحد آزاد شد.
+
+## REPORTING-CATALOG-MANAGEMENT-DECISIONS — PC-C — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-13: بازبینی دوباره مدل واقعی CRM، افزودن گزارش‌های
+  اثرگذار بر تصمیم‌گیری مدیریتی، شفاف‌سازی عنوان تمام کارت‌های کاتالوگ و حذف
+  گزارش «اطلاعات پایه».
+- محدوده رزرو: `apps/web/src/modules/reports/model/reporting.ts` و تست همان مدل،
+  به‌همراه `docs/tasks/REPORTING-CATALOG-MANAGEMENT-DECISIONS.md` و مدخل‌های
+  Reporting در اسناد وضعیت/تخصیص. بدون API، Schema/Migration/Seed، داده عملیاتی،
+  مجوز، قرارداد مشترک، Dependency/Lockfile یا تصرف Runtime همکاران.
+- گزارش‌های فاقد Public Projection و Endpoint تأییدشده فقط با وضعیت صادقانه
+  «در انتظار منبع داده» وارد کاتالوگ می‌شوند؛ هیچ عدد یا داده نمونه‌ای وارد Git
+  نخواهد شد.
+- نتیجه: گزارش «اطلاعات پایه» حذف و پنج گزارش تصمیم‌محور با کدهای `RPT-032` تا
+  `RPT-036` اضافه شد؛ عنوان‌های مبهم بازنویسی شدند. آزمون هدفمند 10/10، TypeScript
+  و lint محدوده موفق‌اند. محدودیت دو Suite تاریخی JSX و prerender دو مسیر نامرتبط
+  در سند Task ثبت شده است. قفل فایل‌های پیاده‌سازی آزاد شد.
+
 ## RESERVATION-PURCHASE-LAYOUT-0915 — PC-A — READY_FOR_REVIEW
 
 - درخواست مالک در 2026-09-15: فرم خرید رزرواسیون فقط هزینه خرید هتل و ترانسفر از کارگزار را ثبت کند، هتل قیمت هر شب یا کل اقامت بپذیرد و کنترل‌های فرم روی هم نیفتند. قیمت خرید بلیط هنگام تعریف در Ticket Catalog به صف مالی از مسیر مستقل Procurement می‌رود؛ این بخش با PR #282 وارد develop شده است.
@@ -805,6 +942,17 @@ Source9b1c33c includes scoped corporate-profile boundary copy.111 tests, scoped 
   خارج از Scope باید پیش از اجرا با هر دو مالک ثبت شود. Merge، Force Push و تغییر
   مستقیم `main`/`develop` مجاز نیست. مرجع کامل:
   `docs/tasks/REPORTING-PC-C-AUTHORIZATION.md`.
+
+## REPORTING-RESTORE-219-LATEST — PC-C — READY_FOR_REVIEW / LOCAL_RUNTIME
+
+- شاخه `codex/pc-c-reporting-219-latest` از آخرین `origin/develop` ساخته شد تا
+  تغییرات یکپارچه همکاران حفظ شود و فقط UI ماژول Reports به snapshot نهایی
+  `219091bf962ed5ce5a8dfff9ba949e13b0e0b1fd` بازگردد.
+- محدوده این واحد فقط `apps/web/src/modules/reports/**`،
+  `apps/web/src/app/(crm)/reports/page.tsx` و مستندات همین task است. فایل‌های مشترک،
+  schema، migration، seed، dependency و تاریخچه شاخه‌های همکاران تغییر نمی‌کنند.
+- اعتبارسنجی شامل typecheck، تست‌های قابل‌اجرای Reports، production build و smoke
+  محلی روی پورت 3000 است. API موجود روی پورت 4000 دست‌نخورده می‌ماند.
 
 ## SALES-PRICE-MANAGEMENT-0912 — PC-A — READY_FOR_REVIEW / UI_PREVIEW
 
@@ -2884,6 +3032,56 @@ B2B-360-REMOVE-SUBTITLE-001: READY_FOR_REVIEW. Combined runtime1bf840b/PID8604 b
 - محدوده رزروشده: Organizations Web wizard/editor/model/tests، اعتبارسنجی افزایشی B2B contract/API DTO و اسناد وضعیت همین واحد کار. فایل انتخاب‌شده سازمان جدید پس از ایجاد شناسه پایدار سازمان و پیش از ذخیره پیش‌نویس، فقط از API عمومی Documents بارگذاری و به قرارداد یا تضمین متصل می‌شود. بدون Schema/Migration/Seed، IAM grant، Dependency/Lockfile یا دسترسی مستقیم به جدول ماژول دیگر.
 - پیاده‌سازی و QA کامل شد: کنترل‌های فایل قرارداد و تضمین برای سازمان جدید پس از انتخاب شعبه نمایش داده می‌شوند؛ گزینه‌های نوع/دسته سند از Documents بارگذاری می‌شوند و دلیل ثبت/اصلاح اختیاری است. ۱۲۸ تست Organizations، ۱۲۱ تست B2B API، ۶۷ تست Contracts، lint محدوده، TypeScript و build Web/API موفق بودند. بررسی Web3100 بدون خطای کنسول و بدون ذخیره داده آزمایشی انجام شد. برای دریافت PC-A، نتیجه از طریق PR همین شاخه در `origin/develop` منتشر می‌شود.
 
+# REPORTING-CATALOG-FEATURE-COVERAGE — PC-C — READY_FOR_REVIEW
+
+- مبنا: `origin/develop@40d8f1f4` به‌همراه بازگردانی محلی Workspace گزارش‌ها در `75726407`.
+- محدوده رزروشده: فقط مدل کاتالوگ و تست‌های ماژول Reports در Web و مستندات وضعیت همین واحد کار.
+- هدف: استخراج گزارش‌های قابل ارائه از مدل واقعی Prisma و فیچرهای موجود سفر، فروش، B2B، مشتریان، اسناد، منابع انسانی و میزکار؛ افزودن کارت‌های استاندارد با کد پایدار، Grain، فیلتر، سنجه، Drill-down و وضعیت اتصال صادقانه.
+- بدون تغییر Schema/Migration/Seed، داده عملیاتی، قرارداد مشترک، API، مجوز یا Dependency. گزارش فاقد Approved Projection اجرایی با وضعیت «در انتظار منبع داده» منتشر می‌شود.
+- پیاده‌سازی کامل شد: ۱۳ کارت جدید با کدهای `RPT-020` تا `RPT-032` اضافه شدند. ۲۲ تست هدفمند Reports، lint محدوده، typecheck وب، build قراردادها و build تولیدی ۴۶ مسیر Web موفق‌اند. Scope پیاده‌سازی آزاد شد؛ فعال‌سازی Runtime و Commit نهایی در ادامه همین تحویل انجام می‌شود.
+
+# REPORTING-OPERATIONS-CONFIG-LAUNCH — PC-C — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-13: دکمه اجرای «گزارش‌های من»، «اشتراک‌گذاری‌شده با من»، «اجراها» و «زمان‌بندی‌ها» باید فرم پیکربندی همان گزارش را با Filter Snapshot ذخیره‌شده باز کند.
+- محدوده رزروشده: Route صفحه Reports، مدل navigation، Operations view و تست‌های هدفمند Reports؛ به‌علاوه اسناد وضعیت همین واحد کار.
+- علت فنی تأییدشده: لینک عملیات URL صحیح را تولید می‌کند، اما `ReportingWorkspace` بین تغییر Query remount نمی‌شود و state اولیه `useState` دوباره اعمال نمی‌گردد؛ بنابراین کاتالوگ بدون بازشدن فرم دیده می‌شود.
+- راهکار: کلید پایدار Workspace از View و تنظیمات canonical ساخته می‌شود تا deep-link عملیاتی در تغییر Route یک نمونه تازه با گزارش و فیلترهای بازیابی‌شده بسازد. بدون تغییر API، Schema/Migration/Seed، داده، مجوز یا Dependency.
+- پیاده‌سازی کامل شد: Deep Link هر چهار نمای عملیاتی اکنون فرم همان گزارش را با snapshot قبلی باز می‌کند. ۳۶ تست هدفمند Reports، lint محدوده، typecheck وب و build تولیدی ۴۶ مسیر موفق‌اند؛ Runtime نهایی در ادامه همین تحویل کنترل می‌شود. Scope منبع آزاد شد.
+
+# REPORTING-PREVIEW-EXPORT-COLUMN-PARITY — PC-C — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-13: جدول «نمایش نتیجه» در فرم پیکربندی باید همه ستون‌هایی را نمایش دهد که پاسخ گزارش برای خروجی ارائه می‌کند، نه فقط پنج ستون خلاصه.
+- محدوده رزروشده: فقط adapter پاسخ Reports، پنل نتیجه و تست‌های هدفمند Web و مستندات وضعیت همین واحد کار. هیچ تغییر API، Schema/Migration/Seed، داده عملیاتی، مجوز یا Dependency انجام نمی‌شود.
+- راهکار: فیلدهای موجود Travel projection (سفارش، مسافر، بلیت، فروش، خرید، سود ناخالص، استرداد و مانده تسویه) هنگام normalizing حفظ و در جدول Preview، فقط در صورت موجودبودن در پاسخ، نمایش داده می‌شوند. ستون‌های قابل مرتب‌سازی فعلی بدون تغییر می‌مانند.
+- پیاده‌سازی کامل شد: adapter اکنون تمام سنجه‌های موجود در پاسخ Travel را حفظ می‌کند و جدول Preview ستون‌های متناظر را بدون نمایش فیلد ساختگی نشان می‌دهد. ۱۹ تست هدفمند Reports، lint محدوده و Web typecheck موفق‌اند؛ بدون تغییر API، Schema/Migration/Seed یا داده عملیاتی.
+
+# LOCAL-UNIFIED-RUNTIME — PC-C — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-14: تغییرات Dashboard و Reports باید روی یک نسخهٔ نهایی مشترک در `localhost:3000` نمایش داده شوند و اجرای یک Worktree قدیمی باعث بازگشت ماژول دیگر نشود.
+- محدودهٔ رزروشده: اسکریپت اجرای LocalHost، قرارداد package manager و مستندات وضعیت؛ بدون تغییر API، Schema/Migration/Seed یا دادهٔ نمونه.
+- پیاده‌سازی کامل شد: شاخهٔ canonical `codex/pc-c-dashboard-reporting-latest` (commit پایه `879b84fb`) مالک پورت 3000 است. `pnpm dev:local-unified` از همین Worktree اجرا می‌شود، شاخه/فایل‌های Dashboard و Reports را guard می‌کند، پورت اشغال را بدون `-Restart` نمی‌پذیرد و گزینهٔ پاک‌سازی کش را خارج از repository انجام می‌دهد. وضعیت Web و راهنمای handoff در `docs/tasks/LOCAL-UNIFIED-RUNTIME.md` ثبت شده است.
+
+# DASHBOARD-KPI-AUDIT-DRAWER — PC-C — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-14: «جزئیات تعریف شاخص» هر KPI باید یک پنل بازشونده با تعریف قابل ممیزی نمایش دهد.
+- محدودهٔ رزروشده: فقط Dashboard workspace و تست مدل/قرارداد نمایش آن، به‌همراه اسناد وضعیت همین واحد کار. بدون تغییر API، Schema/Migration/Seed، داده عملیاتی، مجوز یا Dependency.
+- پیاده‌سازی کامل شد: کلیک روی هر KPI یک Drawer کنترل‌شده و قابل‌دسترسی از سمت راست باز می‌کند و عنوان، نام فنی، شناسه پایدار، نقش، تعریف کسب‌وکار، فرمول، منابع داده، Grain، مبنای زمانی، سیاست ارز، مقایسه، حذف‌ها، Permission، تصمیم باز و مسیر فرم گزارش مرتبط را نمایش می‌دهد. ۱۳۸۸ تست Web، lint، typecheck و build تولیدی ۴۶ مسیر موفق‌اند؛ مرورگر داخلی سلامت login و redirect امن Dashboard را تأیید کرد و بررسی بصری Drawer به نشست احرازشده کاربر واگذار شد.
+
+# REPORTING-ALL-COLUMN-SORT-LOCAL-DEMO — PC-C — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-14: همه ستون‌های جدول نتیجه گزارش باید از سرستون فلش مرتب‌سازی داشته باشند و دیتاست نمونه محلی قبلی برای آزمون Preview و خروجی‌ها به API متصل شود.
+- محدوده: مدل و Workspace وب Reports، Backend ماژول Reports، Prisma مدل/مهاجرت افزایشی گزارش، importer محلی و تست‌ها/مستندات همان دامنه؛ Dashboard و سایر ماژول‌ها بازنویسی نشدند.
+- پیاده‌سازی کامل شد: تمام ۱۱ ستون پاسخ Travel Report از سرستون مرتب می‌شوند؛ API Reports و تولید/دانلود CSV، XLSX و PDF به Runtime canonical متصل است. ۴۸ fact و Workspace دمو با importer idempotent در PostgreSQL محلی فعال شد. Prisma validate/generate، TypeScript هر دو برنامه، ۱۲۷۰ تست API و ۱۳۸۹ تست Web موفق‌اند. Web3000/API4000 فعال و مسیر محافظت‌شده Reports پاسخ 401 مورد انتظار بدون نشست می‌دهد؛ fixture در Worktree گزارش قبلی ignored مانده و در Git کپی نشده است.
+- پیگیری 2026-09-14: متن تکراری «جزئیات تعریف شاخص» از همه کارت‌ها حذف می‌شود؛ خود کارت همچنان با `aria-haspopup="dialog"` پنل تعریف قابل ممیزی را باز می‌کند.
+- پیگیری کامل شد: متن راهنمای تکراری از کارت‌ها حذف شد و قرارداد تست، نبودن آن را کنترل می‌کند. تست هدفمند Dashboard، lint محدوده و Web typecheck موفق‌اند.
+- پیگیری 2026-09-14: دو ورودی تاریخ Dashboard اکنون یک تقویم نمایشی مشترک دارند؛ انتخاب شمسی یا میلادی در هر کدام، ورودی دیگر را همگام می‌کند و مقدار ذخیره‌شده همچنان ISO/Gregorian است. ۱۳ تست مرتبط و lint موفق‌اند؛ typecheck سراسری فعلاً فقط به خطای هم‌زمان `reportingClient` در تست Reports متوقف است.
+
+# REPORTING-DIRECT-SHARING — PC-C — READY_FOR_REVIEW / LOCAL_RUNTIME
+
+- دامنه: اشتراک‌گذاری شخص‌به‌شخص گزارش ذخیره‌شده از «گزارش‌های من» و فرم پیکربندی، فهرست گیرندگان مجاز، نمایش در «اشتراک‌گذاری‌شده با من» و اجرای مجدد با Scope/Permission گیرنده.
+- مالک فایل‌ها: `apps/api/src/reporting/**`، `apps/web/src/modules/reports/**`، مدل و Migration افزایشی Reporting و مستندات Reporting. تغییرات موجود Dashboard/Reports حفظ می‌شوند.
+- نتیجه: grant صریح دریافت‌کننده، API مستندشده، UI جست‌وجو/چندانتحخابی، شمارنده زنده و اجرای گزارش اشتراکی تحت Scope گیرنده تکمیل شد. دو Migration محدود Reporting روی دیتابیس محلی اجرا شدند؛ ۳۷ تست هدفمند، TypeScript، Lint و Build هر دو برنامه موفق‌اند.
+
 ## MASTER-DATA-MANIFEST-AIRPORT-001 — PC-B — READY_FOR_REVIEW
 
 - درخواست مالک در 2026-09-12: قالب Manifest با بارگذاری مستقیم فایل XLSX و فقط انتخاب ایرلاین و مقصد ساخته و ذخیره شود؛ همچنین فیلدهای ICAO، Timezone IANA، طول و عرض جغرافیایی از فرم ایجاد فرودگاه حذف شوند. شاخه `codex/pc-b-manifest-template-airport` از `origin/develop@d1f5c9d9` ساخته شد.
@@ -2928,3 +3126,12 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 - Reserved scope: public Manifest list/export contracts, Reservations Manifest service/controller, public Master Data template lookup, controlled Documents referenced-file read, Manifest card UI and focused tests, plus this task status. No migration, seed, passenger data, dependency/lockfile, or localhost runtime changes.
 - Reservations consumes public Master Data and Documents services only. A template must be active, XLSX, destination-matched, and CLEAN. If a shared file changes on refreshed origin/develop, stop before resolving and report the overlap.
 - Implementation complete: the date-range search returns outbound and return ticket cards, resolves the active airline/destination template, disables unsupported cards with an explicit reason, and downloads only the selected ticket through its stored XLSX document. Contract-level export history remains idempotent and is separated by the selected flight departure. Eight focused API tests and one Web render test, scoped lint, Contracts/API/Web typecheck, and API/Web production builds passed. No migration, seed, dependency, passenger data, or localhost runtime change.
+
+## FLIGHT-TICKET-THEME-0915 — PC-A — IN_PROGRESS
+
+- درخواست 2026-09-15: خروجی PDF بلیط با چیدمان نمونه، لوگوی واقعی ایرلاین و نیایش، عنوان MR/MRS/CHD/INF بر پایه سن و جنسیت، مسیر پویا و هشدار دو زبانه سه ساعت پیش از پرواز.
+- Branch مستقل `codex/pc-a-flight-ticket-theme-0915` از `origin/develop@ff15c7d3`؛ COMPUTER_ID=PC-A. محدوده رزرو: مدل نمایش بلیط رزرواسیون، مسیر PDF بلیط، HTML/PDF قالب و تست‌های هدفمند، به‌همراه اسناد همین Task. بدون Migration، Seed، داده مسافر، IAM grant، lockfile یا تغییر localhost.
+- PR #283 در Review است و با route/model PDF اشتراک فایل دارد. تغییرات این واحد جدا تحویل می‌شوند؛ هنگام ادغام بعدی باید اختلاف آن PR بررسی و هر دو رفتار حفظ شوند. لوگو از قرارداد عمومی Master Data/Documents خوانده می‌شود؛ مقدار ساختگی برای QR، بار مجاز یا شماره بلیط تولید نمی‌شود.
+- پیاده‌سازی تکمیل شد: قالب A4 با لوگوی نیایش و لوگوی ایرلاین ثبت‌شده، مسیر و زمان پویا، عنوان مسافر از رده سن/جنسیت، نام لاتین گذرنامه و هشدار دو زبانه ساخته می‌شود. برای ایرلاین بدون لوگو، نام ثبت‌شده نمایش دارد. ۱۵ تست هدفمند، lint و typecheck Web موفق‌اند؛ یک PDF مصنوعی رفت/برگشت در یک صفحه A4 رندر شد. بدون داده واقعی، Migration، Seed، تغییر localhost یا ادغام PR #283. وضعیت: READY_FOR_REVIEW؛ قفل‌های فایل آزادند.
+- build تولیدی Web نیز با ۴۶ route موفق شد؛ خروجی نمونهٔ PDF با Chrome/Poppler یک صفحه A4 دارد. تغییر عمومی API/Database و جابه‌جایی localhost انجام نشد.
+- پیگیری 2026-09-15: سایهٔ روشن شهر پشت نام/کد مبدأ و مقصد برای هر مسیر پویا اضافه شد؛ ۸ تست قالب، lint و نمونه واقعی PDF/PNG موفق‌اند.

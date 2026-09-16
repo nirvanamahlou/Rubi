@@ -133,7 +133,7 @@ describe('Rendered ticket UI', () => {
     expect(html).not.toContain('شروع اعتبار نرخ');
     expect(html).not.toContain('پایان اعتبار نرخ');
     expect(html).not.toContain('id="ticket-sale"');
-    expect(html).toContain('قیمت فروش هنگام فروش تعیین می‌شود');
+    expect(html).toContain('قیمت فروش در ماژول فروش تعیین می‌شود');
     expect(html).toContain('کشور مبدأ');
     expect(html).toContain('شهر مقصد');
     expect(html).toContain('انتخاب و جست‌وجوی ایرلاین');
