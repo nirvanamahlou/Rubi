@@ -21,6 +21,7 @@ const input = () => ({
       hotelId: randomUUID(),
       brokerId: randomUUID(),
       base: '10.05',
+      currency: 'EUR',
       factors: Object.fromEntries(roomKinds.map((k) => [k, '1.5'])),
     },
   ],
@@ -46,7 +47,8 @@ describe('group hotel rate integrity', () => {
   });
   it('rejects fractional rials and duplicate hotel/broker rows', () => {
     const data = input();
-    expect(() => validateRateBatch({ ...data, currency: 'IRR' })).toThrow();
+    data.rows[0]!.currency = 'IRR';
+    expect(() => validateRateBatch(data)).toThrow();
     expect(() =>
       validateRateBatch({ ...data, rows: [...data.rows, ...data.rows] }),
     ).toThrow();

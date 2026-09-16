@@ -2,6 +2,19 @@
 
 ## HOTEL-RATE-PACKS-0915 — PC-A — IMPLEMENTED ON ISOLATED 3200 / REVIEW PENDING
 
+- 2026-09-16 follow-up requested by product owner: each selected hotel row in
+  the group purchase-rate table must choose and persist its own currency.
+  Reserved scope is the Reservations rate-row schema/additive migration,
+  validation, pack/public projection, focused tests, workspace table and
+  bounded task/status documentation. Migration and Central Docs owner are
+  PC-A/HOTEL-RATE-PACKS-0915 for this additive slice; no dependency, IAM,
+  Sales, Package Pricing source, Web3100 or operational-data change is in scope.
+  Result: the row `currency` field is populated from historical batch currency,
+  new table rows select EUR/USD/IRR independently, and older clients fall back
+  to their batch currency. Prisma generation, API/Web typechecks and production
+  builds passed; API4200 health and Web3200 login redirect respond. Locks are
+  RELEASED after the scoped commit; browser visual QA remains with the owner.
+
 - 2026-09-15 UX follow-up reservation on the same PC-A task branch/PR #293: owner reports `+ بستهٔ جدید` appears ineffective and requires all hotel-rate management to be tabular. Scope only `apps/web/src/modules/reservations/hotel-rates/packs-workspace.tsx`, its module CSS, focused Web tests and bounded status/task docs. Replace pack cards with a table, expose a visible unsaved draft/edit mode and focus the first city input when creating, and present range metadata as a table above the existing editable hotel-rate sheet. No API, shared contract, Schema/Migration, permission, dependency, Sales/Package Pricing source, Web3100 or shared data change. Central-doc bounded entries reserved to PC-A/HOTEL-RATE-PACKS-0915-UX until scoped commit; all other shared locks remain RELEASED.
 - UX result: `+ بستهٔ جدید` now switches from list to a visible unsaved draft row and opens/focuses the editor; reopening a saved row switches to edit mode. Pack list, branch/city/stay metadata and selectable hotel rates are tables, with responsive horizontal scroll. Six focused Web tests including draft/table markup, Web typecheck, scoped lint and 48-route production build passed. Web3200/API4200 responded 200; Web3100 unchanged. The Central-doc reservation for this bounded UI follow-up is `RELEASED` after scoped commit; PR #293 remains draft, no merge or transfer. Actual click inside the logged-in Codex browser remains product-owner visual QA because Computer Use forbids automating the Codex app/auth UI.
 

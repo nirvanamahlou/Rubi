@@ -1,5 +1,17 @@
 # وضعیت پروژه
 
+## 2026-09-16 — HOTEL-RATE-PACKS-0915 — PC-A — PER-HOTEL CURRENCY READY FOR REVIEW
+
+در جدول نرخ خرید گروهی هتل، هر ردیف هتل اکنون ستون و انتخاب‌گر ارز مستقل
+`EUR`، `USD` یا `IRR` دارد؛ مبلغ پایه و محاسبهٔ تمام رده‌های اتاق با ارز همان
+ردیف نمایش و ذخیره می‌شود. Migration افزایشی `currency` را به ردیف‌های نرخ
+افزود و نرخ‌های تاریخی را از ارز بستهٔ خود مقداردهی کرد؛ درخواست‌های کلاینت
+قدیمی نیز به‌صورت سازگار همان ارز پیش‌فرض بسته را برای هر ردیف دریافت می‌کنند.
+Prisma generate، typecheck API/Web، build تولیدی API/Web و health API4200
+موفق‌اند؛ Web3200 و API4200 با نسخهٔ تازه اجرا شده‌اند. کنترل دیداریِ مرورگر
+به‌دلیل خطای sandbox ابزار در دست مالک محصول است. Web3100، Sales و Package
+Pricing تغییر داده نشدند.
+
 ## 2026-09-15 — HOTEL-RATE-PACKS-0915 — PC-A — ISOLATED 3200 IMPLEMENTED / REVIEW PENDING
 
 صفحهٔ `/reservations/hotel-rates` روی شاخهٔ مستقل

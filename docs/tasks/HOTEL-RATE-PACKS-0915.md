@@ -13,9 +13,11 @@ scope.
    boundary. There is no dated room-inventory producer here; checking a hotel
    is the operator's availability confirmation for this pack, not a provider
    guarantee.
-2. Define check-in/check-out and currency/method; positive nights appear.
-3. Tick hotels, enter a broker, nightly base purchase cost and six room
-   factors directly in the grid. Unticked hotels are not rate rows.
+2. Define check-in/check-out, a default currency for new rows and method;
+   positive nights appear.
+3. Tick hotels, enter a broker, select the currency independently for each
+   hotel, and enter nightly base purchase cost and six room factors directly
+   in the grid. Unticked hotels are not rate rows.
 4. Save a new pack (`POST /reservations/hotel-rates/packs`) or reopen a pack
    (`GET /packs/:id`) and save a revision (`PATCH /packs/:id`) with
    `expectedVersion` and idempotency key. Table rows (`GET /packs`) separate city
@@ -28,6 +30,13 @@ in the pack table, opens the edit sheet and focuses city search. Existing
 packs are table rows rather than cards; branch/city/check-in/check-out/nights/
 currency/method are a single metadata table row above the hotel-rate sheet.
 The editor can be closed without saving; saved rows reopen in edit mode.
+
+2026-09-16 follow-up: `reservation_hotel_group_rates.currency` is an additive
+required row field. The migration backfills it from the historical batch
+currency before enforcing non-nullness. The public purchase-rate projection
+includes the row currency; legacy callers which omit it are normalized to the
+batch currency, while the group-rate table persists the independently selected
+currency for every hotel row.
 
 `reservation_hotel_rate_packs` owns stable branch/city/range identity;
 `reservation_hotel_rate_batches` has additive nullable pack/city FKs and

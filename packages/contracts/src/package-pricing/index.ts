@@ -263,6 +263,8 @@ export interface PackageTourHotelPurchaseRowV1 {
   brokerId: string;
   brokerName: string;
   basePerNight: string;
+  /** Row currency; omitted only for legacy batches that used batch currency. */
+  currencyCode?: string;
   factors: Readonly<Record<string, string>>;
 }
 

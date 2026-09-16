@@ -18,6 +18,7 @@ const input = () => ({
       hotelId: randomUUID(),
       brokerId: randomUUID(),
       base: '125.00',
+      currency: 'EUR',
       factors: Object.fromEntries(roomKinds.map((kind) => [kind, '1'])),
     },
   ],
@@ -57,13 +58,11 @@ describe('versioned Reservations hotel rate packs', () => {
       hotelRatePackReference: vi.fn(),
     };
     const findUnique = vi.fn().mockResolvedValue(null);
-    const findFirst = vi
-      .fn()
-      .mockResolvedValue({
-        id: packId,
-        branchId: data.branchId,
-        currentVersion: 2,
-      });
+    const findFirst = vi.fn().mockResolvedValue({
+      id: packId,
+      branchId: data.branchId,
+      currentVersion: 2,
+    });
     const transaction = vi.fn();
     const service = new HotelRatePacksService(
       {

@@ -71,6 +71,7 @@ export class HotelPurchaseRatesPublicService {
           brokerId: row.brokerId,
           brokerName: row.brokerName,
           basePerNight: row.base.toString(),
+          currencyCode: row.currency,
           factors: row.factors as Record<string, string>,
         })),
       }));

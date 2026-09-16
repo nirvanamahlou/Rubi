@@ -329,11 +329,12 @@ export class HotelRatePacksService {
         brokerId: row.brokerId,
         brokerName: row.brokerName,
         base: row.base.toString(),
+        currency: row.currency,
         factors: row.factors as Record<RoomKind, string>,
         prices: roomPrices(
           row.base.toString(),
           row.factors as Record<RoomKind, string>,
-          batch.currency,
+          row.currency,
         ),
       })),
     };

@@ -21,6 +21,7 @@ export interface RateBatchInput {
     hotelId: string;
     brokerId: string;
     base: string;
+    currency: 'EUR' | 'USD' | 'IRR';
     factors: Record<RoomKind, string>;
   }[];
 }
@@ -52,6 +53,9 @@ const schema = Joi.object({
         hotelId: Joi.string().uuid().required(),
         brokerId: Joi.string().uuid().required(),
         base: money,
+        // Older clients only supplied the batch currency. Keep those requests
+        // valid, then copy the batch currency onto the individual rate row.
+        currency: Joi.string().valid('EUR', 'USD', 'IRR').optional(),
         factors: Joi.object(
           Object.fromEntries(roomKinds.map((k) => [k, factor])),
         ).required(),
@@ -69,7 +73,14 @@ export function validateRateBatch(raw: unknown): RateBatchInput {
     throw new BadRequestException(
       'هتل، کارگزار، تاریخ و نرخ تمام ردیف‌ها را کامل و معتبر وارد کنید.',
     );
-  const input = value as RateBatchInput;
+  const parsed = value as RateBatchInput;
+  const input: RateBatchInput = {
+    ...parsed,
+    rows: parsed.rows.map((row) => ({
+      ...row,
+      currency: row.currency ?? parsed.currency,
+    })),
+  };
   for (const date of [input.checkIn, input.checkOut]) {
     const stamp = new Date(date);
     if (
@@ -90,7 +101,7 @@ export function validateRateBatch(raw: unknown): RateBatchInput {
     seen.add(key);
     if (
       new Prisma.Decimal(row.base).lte(0) ||
-      (input.currency === 'IRR' && !new Prisma.Decimal(row.base).isInteger())
+      (row.currency === 'IRR' && !new Prisma.Decimal(row.base).isInteger())
     )
       throw new BadRequestException(
         'قیمت پایه باید مثبت و مبلغ ریالی عدد صحیح باشد.',
@@ -104,15 +115,15 @@ export function validateRatePack(raw: unknown): RatePackInput {
     throw new BadRequestException(
       'شهر، بازه و نرخ هتل‌های انتخاب‌شده را کامل و معتبر وارد کنید.',
     );
-  const input = value as RatePackInput;
-  validateRateBatch({
-    branchId: input.branchId,
-    checkIn: input.checkIn,
-    checkOut: input.checkOut,
-    currency: input.currency,
-    method: input.method,
-    rows: input.rows,
-  });
+  const parsed = value as RatePackInput;
+  const input: RatePackInput = {
+    ...parsed,
+    rows: parsed.rows.map((row) => ({
+      ...row,
+      currency: row.currency ?? parsed.currency,
+    })),
+  };
+  validateRateBatch(input);
   if (new Set(input.rows.map((row) => row.hotelId)).size !== input.rows.length)
     throw new BadRequestException(
       'برای هر هتل در این بازه فقط یک نرخ وارد کنید.',

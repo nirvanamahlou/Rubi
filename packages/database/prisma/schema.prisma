@@ -4538,6 +4538,7 @@ model ReservationHotelGroupRate {
   hotelName  String                    @db.VarChar(300)
   brokerName String                    @db.VarChar(300)
   base       Decimal                   @db.Decimal(18, 2)
+  currency   String                    @db.VarChar(3)
   factors    Json
   batch      ReservationHotelRateBatch @relation(fields: [batchId], references: [id], onDelete: Restrict)
   hotel      MasterHotel               @relation(fields: [hotelId], references: [id], onDelete: Restrict)

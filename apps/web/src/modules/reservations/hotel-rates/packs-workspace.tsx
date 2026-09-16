@@ -16,6 +16,7 @@ type GridRow = {
   selected: boolean;
   broker: Option | null;
   base: string;
+  currency: string;
   factors: Factors;
   inCityList: boolean;
 };
@@ -40,14 +41,16 @@ type PackDetail = Omit<PackSummary, 'hotelCount' | 'updatedAt'> & {
     brokerId: string;
     brokerName: string;
     base: string;
+    currency: string;
     factors: Factors;
   }[];
 };
-const blankRow = (hotel: HotelOption): GridRow => ({
+const blankRow = (hotel: HotelOption, currency: string): GridRow => ({
   hotel,
   selected: false,
   broker: null,
   base: '',
+  currency,
   factors: { ...initialFactors },
   inCityList: true,
 });
@@ -281,7 +284,7 @@ export function HotelRatePacksWorkspace() {
       setRows((old) => {
         const saved = new Map(old.map((row) => [row.hotel.id, row]));
         const available = hotels.map((hotel) => ({
-          ...(saved.get(hotel.id) ?? blankRow(hotel)),
+          ...(saved.get(hotel.id) ?? blankRow(hotel, currency)),
           hotel,
           inCityList: true,
         }));
@@ -314,7 +317,7 @@ export function HotelRatePacksWorkspace() {
     return () => {
       active = false;
     };
-  }, [session, cityId]);
+  }, [session, cityId, currency]);
 
   const nights = dayCount(checkIn, checkOut);
   const selected = rows.filter((row) => row.selected);
@@ -401,6 +404,7 @@ export function HotelRatePacksWorkspace() {
           selected: true,
           broker: { id: row.brokerId, name: row.brokerName },
           base: row.base,
+          currency: row.currency ?? item.currency,
           factors: row.factors,
           inCityList: true,
         })),
@@ -444,6 +448,7 @@ export function HotelRatePacksWorkspace() {
         hotelId: row.hotel.id,
         brokerId: row.broker!.id,
         base: row.base,
+        currency: row.currency,
         factors: row.factors,
       })),
     });
@@ -587,7 +592,7 @@ export function HotelRatePacksWorkspace() {
                         <th scope="col">ورود</th>
                         <th scope="col">خروج</th>
                         <th scope="col">شب</th>
-                        <th scope="col">ارز نرخ</th>
+                        <th scope="col">ارز پیش‌فرض ردیف جدید</th>
                         <th scope="col">مبنای نرخ</th>
                       </tr>
                     </thead>
@@ -650,7 +655,7 @@ export function HotelRatePacksWorkspace() {
                         </td>
                         <td>
                           <Choice
-                            label="ارز نرخ"
+                            label="ارز پیش‌فرض ردیف جدید"
                             value={currency}
                             onChange={setCurrency}
                             options={[
@@ -715,6 +720,7 @@ export function HotelRatePacksWorkspace() {
                             <th>انتخاب</th>
                             <th>هتل شهر</th>
                             <th>کارگزار</th>
+                            <th>ارز</th>
                             <th>قیمت پایه / شب</th>
                             {labels.map((label) => (
                               <th key={label}>{label}</th>
@@ -773,12 +779,36 @@ export function HotelRatePacksWorkspace() {
                               </td>
                               <td>
                                 {row.selected ? (
+                                  <Choice
+                                    label={`ارز نرخ ${row.hotel.name}`}
+                                    value={row.currency}
+                                    onChange={(value) =>
+                                      changeRow(row.hotel.id, {
+                                        currency: value,
+                                      })
+                                    }
+                                    options={[
+                                      { id: 'EUR', name: 'یورو · EUR' },
+                                      { id: 'USD', name: 'دلار · USD' },
+                                      { id: 'IRR', name: 'ریال · IRR' },
+                                    ]}
+                                  />
+                                ) : (
+                                  '—'
+                                )}
+                              </td>
+                              <td>
+                                {row.selected ? (
                                   <>
                                     <input
                                       aria-label={`قیمت پایه ${row.hotel.name}`}
                                       type="number"
-                                      min={currency === 'IRR' ? '1' : '0.01'}
-                                      step={currency === 'IRR' ? '1' : '0.01'}
+                                      min={
+                                        row.currency === 'IRR' ? '1' : '0.01'
+                                      }
+                                      step={
+                                        row.currency === 'IRR' ? '1' : '0.01'
+                                      }
                                       max="999999999999"
                                       required
                                       value={row.base}
@@ -788,7 +818,7 @@ export function HotelRatePacksWorkspace() {
                                         })
                                       }
                                     />
-                                    <small>{currency}</small>
+                                    <small>{row.currency}</small>
                                   </>
                                 ) : (
                                   '—'
@@ -819,7 +849,7 @@ export function HotelRatePacksWorkspace() {
                                         {price(
                                           row.base,
                                           row.factors[kind],
-                                          currency,
+                                          row.currency,
                                         )}
                                       </output>
                                     </>
