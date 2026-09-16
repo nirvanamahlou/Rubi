@@ -2941,6 +2941,8 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
   شناسه، فرم و تست‌های Master Data/Procurement و Migration افزایشی همین مدل در
   محدوده PC-B رزرو شد. Migration Owner این Slice نزد PC-B است و Dependency/Lockfile
   تغییر نمی‌کند.
+- اصلاح فرم تو در توی خدمت مرجع: ورودی نام انگلیسی از Create UI حذف و نام فارسی
+  تنها ورودی نام باقی می‌ماند؛ Backend و داده‌های تاریخی تغییر نمی‌کنند.
 - مبنا: `codex/pc-b-procurement-under-human-capital@52f7d7d1`؛ شاخهٔ یکتا
   `codex/pc-b-procurement-live-integration`. COMPUTER_ID=PC-B، مالک Procurement و
   HR/Master Data/Documents طبق `docs/MODULE_OWNERSHIP.md`.

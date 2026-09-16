@@ -1742,14 +1742,8 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
         hint: 'هنگام ذخیره به‌صورت خودکار تولید می‌شود.',
       },
       nameField,
-      {
-        key: 'englishName',
-        label: 'عنوان انگلیسی',
-        type: 'text',
-        placeholder: 'Hotel',
-      },
     ],
-    preview: { code: 'AUTO', name: 'هتل', englishName: 'Hotel' },
+    preview: { code: 'AUTO', name: 'هتل' },
   },
   {
     key: 'organization-contacts',
