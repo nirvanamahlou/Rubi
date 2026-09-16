@@ -547,6 +547,7 @@ describe('dashboard permission and data states', () => {
     expect(source).not.toContain('comparisonUnavailableForPeriod');
     expect(source).toContain('currencyMetricParts');
     expect(source).toContain('compactCurrencyAmount');
+    expect(source).toContain('compactCurrencyTypography');
     expect(source).toContain('whitespace-nowrap');
     expect(source).not.toContain('KpiComparisonBadges');
     expect(source).toContain('linearGradient');

@@ -575,6 +575,7 @@ function Metric({
           {currencyValues.map((value, index) => {
             const { amount, symbol } = currencyMetricParts(value);
             const compactAmount = compactCurrencyAmount(amount, symbol);
+            const compactAmountTypography = compactCurrencyTypography(compactAmount);
             const { comparison, comparisonUnavailable, currencyCode } =
               comparisonFor(index);
             return (
@@ -593,7 +594,10 @@ function Metric({
                 ) : null}
                 <bdi
                   aria-label={`مقدار دقیق: ${value}`}
-                  className="inline-flex shrink-0 items-baseline gap-1.5 whitespace-nowrap text-center text-lg leading-6"
+                  className={cn(
+                    'inline-flex shrink-0 items-baseline gap-1.5 whitespace-nowrap text-center',
+                    compactAmountTypography,
+                  )}
                   dir="ltr"
                   title={value}
                 >
@@ -695,6 +699,13 @@ function compactCurrencyAmount(amount: string, symbol: string) {
   return `${(numericAmount / threshold).toLocaleString('fa-IR', {
     maximumFractionDigits: 1,
   })}${isIranianRial ? ` ${suffix}` : suffix}`;
+}
+
+function compactCurrencyTypography(value: string) {
+  const visibleLength = [...value.replace(/\s/g, '')].length;
+  if (visibleLength >= 13) return 'text-xs leading-5';
+  if (visibleLength >= 10) return 'text-sm leading-5';
+  return 'text-lg leading-6';
 }
 
 const trendSeriesPalette = [
