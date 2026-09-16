@@ -780,6 +780,14 @@ function OperationFields({
             value={documents}
             onChange={setDocuments}
             available={bootstrap.documents === 'AVAILABLE'}
+            {...(action === 'INVOICE'
+              ? {
+                  invoiceUpload: {
+                    requestId: request.id,
+                    requestNumber: request.number,
+                  },
+                }
+              : {})}
           />
         )}
         {action === 'SUBMIT_FINANCE' &&

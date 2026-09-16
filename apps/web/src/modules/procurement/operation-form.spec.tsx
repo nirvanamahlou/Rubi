@@ -80,4 +80,20 @@ describe('Procurement lifecycle operation forms', () => {
     expect(html).toContain('ثبت و ویرایش این مرحله');
     expect(html).toContain('کارشناس تأمین و سفارش');
   });
+
+  it('offers direct invoice upload through the Documents archive', () => {
+    const html = renderToStaticMarkup(
+      <QueryClientProvider client={new QueryClient()}>
+        <OperationForm
+          request={request}
+          kind="invoices"
+          bootstrap={bootstrap(['procurement.invoice.manage'])}
+          onChanged={() => undefined}
+        />
+      </QueryClientProvider>,
+    );
+
+    expect(html).toContain('بارگذاری فایل فاکتور');
+    expect(html).toContain('اسناد و فایل‌ها');
+  });
 });
