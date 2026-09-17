@@ -37,13 +37,13 @@ describe('Customer entry spreadsheet', () => {
       render([{ ...row, readOnly: true, editableFields: ['birthDate'] }]).match(
         /disabled=""/g,
       ),
-    ).toHaveLength(12);
+    ).toHaveLength(13);
     expect(
       render(
         [{ ...row, readOnly: true, editableFields: ['birthDate'] }],
         true,
       ).match(/disabled=""/g),
-    ).toHaveLength(13);
+    ).toHaveLength(14);
   });
   it('renders a real labelled table with independent stable rows and essential columns', () => {
     const html = render([
@@ -69,11 +69,19 @@ describe('Customer entry spreadsheet', () => {
     expect(html).toContain('type="email"');
     expect(html).toContain('type="tel"');
   });
+  it('uses a binary gender choice and shows an ISO3 guide on every country column', () => {
+    const html = render([row]);
+    expect(html).toContain('role="radiogroup"');
+    expect(html.match(/role="radio"/g)).toHaveLength(2);
+    expect(html).toContain('>مرد</button>');
+    expect(html).toContain('>زن</button>');
+    expect(html.match(/aria-label="راهنمای کد ISO3 برای/g)).toHaveLength(3);
+  });
   it('renders reuse rows without editable copies and blocks editing during save', () => {
     expect(
       render([{ ...row, readOnly: true }]).match(/disabled=""/g),
-    ).toHaveLength(13);
-    expect(render([row], true).match(/disabled=""/g)).toHaveLength(13);
+    ).toHaveLength(14);
+    expect(render([row], true).match(/disabled=""/g)).toHaveLength(14);
   });
   it('rejects whitespace names before starting a batch', () => {
     expect(

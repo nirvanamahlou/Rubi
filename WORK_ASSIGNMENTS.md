@@ -1,3 +1,9 @@
+## CONTRACT-PASSENGER-CONTROLS-0917 — PC-A — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-17: در جدول ورود اطلاعات مسافران قرارداد، جنسیت از ورودی آزاد M/F به انتخاب دوگزینه‌ای تبدیل شود و کنار هر ستون کشور نیازمند ISO3 یک راهنمای کوچک بازشونده شامل نام کشور و کد سه‌حرفی نمایش داده شود. COMPUTER_ID=PC-A؛ شاخه مستقل codex/pc-a-contract-passenger-controls-0917 از نسخه ترکیبی محلی d00cc1d4.
+- محدوده رزرو: apps/web/src/modules/customers/components/customer-entry-sheet.tsx، داده/کامپوننت راهنمای ISO3 در همان ماژول، تست‌های هدفمند Web و اسناد همین واحد. قرارداد API، Schema/Migration، Seed/Data، Permission و Dependency/Lockfile تغییر نمی‌کنند؛ مقادیر ذخیره‌شده جنسیت همچنان M یا F و کد کشور همچنان ISO3 uppercase باقی می‌ماند.
+- نتیجه: فیلد جنسیت هر ردیف به انتخاب دوگزینه‌ای مرد/زن با مقادیر قراردادی M/F تبدیل شد. کنار هر سه ستون ملیت، کشور صادرکننده پاسپورت و کشور محل تولد، دکمه راهنمای ISO3 با فهرست اسکرول‌دار کشورهای پرکاربرد قرار گرفت. ۱۱ تست هدفمند، lint، typecheck و build تولیدی Web موفق‌اند؛ Web3100/Web3200 و API4200 سالم‌اند.
+
 ## PROCUREMENT-INVOICE-ATTACHMENTS-0916 — PC-B — READY_FOR_REVIEW
 
 - درخواست مالک در 2026-09-16: در فرم فاکتور خرید امکان بارگذاری مستقیم فایل فاکتور اضافه شود؛ فایل در ماژول اسناد با دامنهٔ Procurement آرشیو و به فاکتور متصل بماند. `COMPUTER_ID=PC-B`؛ شاخهٔ مستقل `codex/pc-b-procurement-invoice-attachments-0916` از `origin/develop@c441d33a`.
