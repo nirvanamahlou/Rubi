@@ -13,6 +13,7 @@ import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
 import type {
   SystemNumberingSchemeWriteV1,
   SystemNumberIssueInputV1,
+  SystemJobRetryInputV1,
   SystemSessionRevokeInputV1,
   SystemUserSessionsRevokeInputV1,
   SystemSettingWriteV1,
@@ -117,6 +118,21 @@ export class SystemManagementController {
   ) {
     return this.system.revokeUserSessions(
       userId,
+      input,
+      request.actor,
+      this.metadata(request),
+    );
+  }
+
+  @Post('jobs/reporting-exports/:id/retry')
+  @RequirePermissions('system.jobs.retry')
+  retryReportingExport(
+    @Param('id') id: string,
+    @Body() input: SystemJobRetryInputV1,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.system.retryReportingExport(
+      id,
       input,
       request.actor,
       this.metadata(request),
