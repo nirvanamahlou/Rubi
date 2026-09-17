@@ -192,4 +192,50 @@ describe('dashboard travel projection date boundaries', () => {
       12_000_000,
     ]);
   });
+
+  it('publishes trend, action queue, decision funnel and team comparison from the approved fact projection', async () => {
+    const facts = vi.fn().mockResolvedValue([
+      { ...demoFact, ownerName: 'کارشناس دمو آریا' },
+      {
+        ...demoFact,
+        id: 'demo-pending-payment',
+        ownerName: 'کارشناس دمو پارسا',
+        paymentStatus: 'PENDING',
+        issueStatus: 'PENDING',
+      },
+      {
+        ...demoFact,
+        id: 'demo-pending-reservation',
+        ownerName: 'کارشناس دمو سارا',
+        reservationStatus: 'PENDING',
+      },
+    ]);
+    const service = new ReportingService({
+      facts,
+    } as unknown as ReportingRepository);
+
+    const result = await service.dashboardProjection(
+      {
+        range: 'month',
+        currency: 'IRR',
+        visualIds:
+          'finalized-sales-trend,crm-followup-queue,commercial-pipeline,employee-performance-ranking',
+      },
+      actor,
+    );
+
+    expect(
+      result.visuals['finalized-sales-trend']?.values.length,
+    ).toBeGreaterThan(0);
+    expect(result.visuals['crm-followup-queue']).toMatchObject({
+      labels: expect.arrayContaining(['پرداخت در انتظار', 'رزرو در انتظار']),
+    });
+    expect(result.visuals['commercial-pipeline']).toMatchObject({
+      labels: ['رزرو ثبت‌شده', 'رزرو تأییدشده', 'پرداخت‌شده', 'صدور نهایی'],
+      values: [3, 2, 2, 2],
+    });
+    expect(result.visuals['employee-performance-ranking']).toMatchObject({
+      labels: expect.arrayContaining(['کارشناس دمو آریا', 'کارشناس دمو پارسا']),
+    });
+  });
 });

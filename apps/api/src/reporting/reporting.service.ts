@@ -620,7 +620,31 @@ export class ReportingService {
       'airline-sales-performance': 'airlineName',
       'agency-sales': 'agencyName',
       'supplier-spend': 'providerName',
+      'employee-leads-by-agent': 'ownerName',
+      'employee-calls-by-agent': 'ownerName',
+      'employee-followups-by-agent': 'ownerName',
+      'employee-sales-count-by-agent': 'ownerName',
+      'employee-sales-amount-by-agent': 'ownerName',
+      'employee-conversion-by-agent': 'ownerName',
+      'employee-average-sale-by-agent': 'ownerName',
+      'employee-contracts-by-agent': 'ownerName',
+      'employee-cancellations-by-agent': 'ownerName',
+      'employee-performance-ranking': 'ownerName',
     };
+    const trendVisualIds = new Set([
+      'finalized-sales-trend',
+      'executive-lead-acquisition',
+      'customer-acquisition-channel-trend',
+    ]);
+    const funnelVisualIds = new Set([
+      'commercial-pipeline',
+      'crm-funnel',
+      'executive-lead-conversion',
+    ]);
+    const queueVisualIds = new Set([
+      'crm-followup-queue',
+      'executive-exceptions',
+    ]);
     // Charts represent one currency only. An unselected currency uses IRR in
     // the local fixture; unlike KPIs, numeric marks cannot combine IRR and USD.
     const visualCurrency =
@@ -634,30 +658,113 @@ export class ReportingService {
     const visualAmount = (rows: typeof facts) =>
       sum(rows, (fact) => Number(fact.salesAmount));
     const visuals = Object.fromEntries(
-      visualIds.flatMap((id) => {
-        const field = visualFields[id];
-        if (!field) return [];
-        const entries = by(field, visualFacts);
-        return [
-          [
-            id,
-            {
-              labels: entries.map(([label]) => label),
-              values: entries.map(([, value]) => Math.round(value)),
-              currencyCode: visualCurrency,
-              ...(previousFacts
-                ? {
-                    comparison: comparisonFor(
-                      visualAmount(visualFacts),
-                      visualAmount(previousVisualFacts),
-                    ),
-                    trend: trendFor(visualFacts, visualAmount),
-                  }
-                : {}),
-            },
-          ],
-        ];
-      }),
+      visualIds.flatMap<[string, DashboardProjectionV1['visuals'][string]]>(
+        (id) => {
+          if (trendVisualIds.has(id)) {
+            const trend = trendFor(visualFacts, visualAmount);
+            return [
+              [
+                id,
+                {
+                  labels: trend.labels,
+                  values: trend.values,
+                  currencyCode: visualCurrency,
+                },
+              ],
+            ];
+          }
+          if (funnelVisualIds.has(id)) {
+            const stages = [
+              ['رزرو ثبت‌شده', visualFacts.length],
+              [
+                'رزرو تأییدشده',
+                visualFacts.filter(
+                  (fact) => fact.reservationStatus === 'CONFIRMED',
+                ).length,
+              ],
+              [
+                'پرداخت‌شده',
+                visualFacts.filter((fact) => fact.paymentStatus === 'SETTLED')
+                  .length,
+              ],
+              [
+                'صدور نهایی',
+                visualFacts.filter(
+                  (fact) =>
+                    fact.paymentStatus === 'SETTLED' &&
+                    fact.issueStatus === 'ISSUED',
+                ).length,
+              ],
+            ] as const;
+            return [
+              [
+                id,
+                {
+                  labels: stages.map(([label]) => label),
+                  values: stages.map(([, value]) => value),
+                },
+              ],
+            ];
+          }
+          if (queueVisualIds.has(id)) {
+            const queue = [
+              [
+                'رزرو در انتظار',
+                visualFacts.filter(
+                  (fact) => fact.reservationStatus === 'PENDING',
+                ).length,
+              ],
+              [
+                'پرداخت در انتظار',
+                visualFacts.filter((fact) => fact.paymentStatus === 'PENDING')
+                  .length,
+              ],
+              [
+                'صدور در انتظار',
+                visualFacts.filter((fact) => fact.issueStatus === 'PENDING')
+                  .length,
+              ],
+              [
+                'رزرو لغوشده',
+                visualFacts.filter(
+                  (fact) => fact.reservationStatus === 'CANCELLED',
+                ).length,
+              ],
+            ] as const;
+            return [
+              [
+                id,
+                {
+                  labels: queue.map(([label]) => label),
+                  values: queue.map(([, value]) => value),
+                },
+              ],
+            ];
+          }
+          const field = visualFields[id];
+          if (!field) return [];
+          const entries = by(field, visualFacts);
+          return [
+            [
+              id,
+              {
+                labels: entries.map(([label]) => label),
+                values: entries.map(([, value]) => Math.round(value)),
+                currencyCode: visualCurrency,
+                ...(previousFacts
+                  ? {
+                      comparison: comparisonFor(
+                        visualAmount(visualFacts),
+                        visualAmount(previousVisualFacts),
+                      ),
+                      trend: trendFor(visualFacts, visualAmount),
+                    }
+                  : {}),
+              },
+            ],
+          ];
+        },
+      ),
     );
     const dataAsOf = facts
       .reduce(

@@ -9,6 +9,13 @@
 
 # Work Assignments
 
+## DASHBOARD-REPORTING-DEMO-CHART-COVERAGE-0917 — PC-C — LOCAL_COMPLETE / RUNTIME_ACTIVE
+
+- درخواست مالک: دادهٔ محلی و قابل‌حذف برای مشاهدهٔ روند، صف اقدام، قیف تصمیم و مقایسهٔ عملکرد تیم در Dashboard تولید شود.
+- محدودهٔ رزرو: `apps/api/src/reporting/reporting.service.ts`، تست هدفمند Reporting، generator محلی `packages/database/scripts/dashboard-reporting-local-demo.mjs`، scriptهای همان package و اسناد وضعیت. بدون Migration، تغییر Schema، دادهٔ عملیاتی، Permission یا Dependency/Lockfile.
+- دادهٔ تولیدی فقط با پیشوند `LOCAL_DEMO_DASHBOARD_REPORTING_` در همان جدول fact دمو وارد می‌شود. پاک‌سازی تنها همان پیشوند را حذف می‌کند و gate محلی `reporting:demo:verify-clean` پیش از Deploy باید صفر بودن آن را تأیید کند.
+- نتیجه: ۱۸۰ fact مصنوعی محلی برای بازه‌های جاری دوباره‌سازی شد. `finalized-sales-trend` روند تقویمی، `crm-followup-queue` صف اقدام، `commercial-pipeline` قیف تصمیم و `employee-performance-ranking` مقایسهٔ کارشناسان را از همان Projection نسخه‌دار می‌گیرند. دادهٔ دمو اکنون عمداً برای مشاهده روی localhost باقی است؛ پیش از Deploy باید به‌ترتیب `pnpm reporting:demo:clear` و `pnpm reporting:demo:verify-clean` اجرا شوند. Migration، Schema، Permission، دادهٔ عملیاتی، Dependency و Lockfile تغییر نکرده‌اند.
+
 ## DASHBOARD-NAVIGATION-COLLAPSED-DEFAULT-0917 — PC-C — LOCAL_COMPLETE
 
 - درخواست مالک: هنگام ورود به Dashboard، همه زیرصفحه‌ها بسته باشند و در ناوبری فقط صفحه‌های اصلی دیده شوند.
@@ -263,6 +270,7 @@
 - قرارداد افزایشی و سازگار: تنها درخواست Preview صریح فرم ثبت اجرا می‌شود؛ Preview صفحه‌بندی/مرتب‌سازی و مصرف‌کننده‌های قبلی بدون ثبت اضافی می‌مانند. ذخیرهٔ صریح فرم opt-in است؛ ذخیرهٔ علاقه‌مندی یا اشتراک‌گذاری خودکار رخداد «ذخیره گزارش» نمی‌سازد. خروجی از مسیر موجود ثبت می‌شود. نوع اقدام در metadata ساخت‌یافتهٔ Filter Snapshot اجرا و پاسخ `runs` آشکار می‌شود.
 - `reporting_runs`، IAM actor، scope و Projection فعلی حفظ می‌شوند؛ Prisma/Migration/Seed، Dependency/Lockfile، فایل‌های Dashboard و Worktree اجرایی ۳۰۰۰ تغییر نمی‌کنند. هیچ دادهٔ نمونه‌ای وارد Git نمی‌شود.
 - هر اقدام صریح از فرم با `actionType` مستقل، زمان سمت سرور، کاربر و وضعیت در تب «اجراها» آشکار می‌شود. ذخیرهٔ فرم و رخداد اجرا در یک transaction ثبت می‌شوند؛ خطای Preview و Export نیز به وضعیت ناموفق همان اجرا تبدیل می‌شود. ۳۲ تست Reporting API و ۵۳ تست Reports Web، typecheck، lint و build هر دو برنامه موفق‌اند؛ PR و CI مرحلهٔ بعد است.
+
 ## RESERVATION-SECTION-EDIT-AGE-BANDS-0916 — PC-A — READY_FOR_REVIEW
 
 - درخواست مالک در 2026-09-16: تب‌های ویرایش قرارداد در رزواسیون برای طرف قرارداد، پرواز، هتل، سایر خدمات و مسافران واقعاً قابل ویرایش و ذخیره باشند؛ ردهٔ کودک هتل نیز در فرم ارسالی به کارگزار به‌صورت ۲ تا ۶ و ۶ تا ۱۲ سال نمایش داده شود.

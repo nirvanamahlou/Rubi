@@ -22,6 +22,7 @@
     "reporting:demo:import": "tsx scripts/import-reporting-demo.ts",
     "reporting:demo:generate": "node scripts/dashboard-reporting-local-demo.mjs",
     "reporting:demo:clear": "node scripts/dashboard-reporting-local-demo.mjs --clear",
+    "reporting:demo:verify-clean": "node scripts/dashboard-reporting-local-demo.mjs --verify-clean",
     "procurement:demo:apply": "node scripts/procurement-local-demo.mjs --apply",
     "procurement:demo:inspect": "node scripts/procurement-local-demo.mjs --inspect"
   },
