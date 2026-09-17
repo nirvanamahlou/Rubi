@@ -570,6 +570,10 @@ describe('dashboard permission and data states', () => {
     expect(source).not.toContain('شاخص‌های کلیدی');
     expect(source).not.toContain('تحلیل‌های تصمیم‌ساز');
     expect(source).toContain('kpiGridColumns(activePageKpis.length)');
+    expect(source).toContain('hover:bg-primary hover:text-primary-foreground');
+    expect(source).toContain(
+      'data-[highlighted]:bg-primary data-[highlighted]:text-primary-foreground',
+    );
     expect(source).toContain('xl:grid-cols-3 2xl:grid-cols-6');
     expect(source).toContain('dashboardVisualIsWide(');
     expect(source).toContain("kind === 'line'");

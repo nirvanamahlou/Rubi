@@ -1674,7 +1674,7 @@ function DimensionFilter({
                 return (
                   <button
                     aria-selected={selected}
-                    className="flex min-h-9 w-full items-center justify-between rounded-lg px-3 py-2 text-start text-sm outline-none hover:bg-muted focus-visible:bg-muted focus-visible:ring-2 focus-visible:ring-primary/40"
+                    className="group flex min-h-9 w-full items-center justify-between rounded-lg px-3 py-2 text-start text-sm outline-none hover:bg-primary hover:text-primary-foreground focus-visible:bg-primary focus-visible:text-primary-foreground focus-visible:ring-2 focus-visible:ring-primary/40"
                     key={optionValue ?? 'all'}
                     onClick={() => {
                       onChange(optionValue);
@@ -1688,7 +1688,10 @@ function DimensionFilter({
                       {option}
                     </span>
                     {selected ? (
-                      <Check aria-hidden="true" className="size-4 text-primary" />
+                      <Check
+                        aria-hidden="true"
+                        className="size-4 text-primary group-hover:text-primary-foreground group-focus-visible:text-primary-foreground"
+                      />
                     ) : null}
                   </button>
                 );
@@ -2764,7 +2767,11 @@ function DashboardSidebar({
                   </SelectTrigger>
                   <SelectContent>
                     {rangeOptions.map(([value, label]) => (
-                      <SelectItem key={value} value={value}>
+                      <SelectItem
+                        className="data-[highlighted]:bg-primary data-[highlighted]:text-primary-foreground"
+                        key={value}
+                        value={value}
+                      >
                         {label}
                       </SelectItem>
                     ))}

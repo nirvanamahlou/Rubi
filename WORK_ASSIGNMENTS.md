@@ -9,6 +9,11 @@
 
 # Work Assignments
 
+## DASHBOARD-FILTER-HOVER-CONTRAST-0917 — PC-C — LOCAL_COMPLETE
+
+- درخواست مالک: در گزینه‌های فیلتر Dashboard، متن در حالت hover روی پس‌زمینهٔ آبی سفید باشد.
+- نتیجه: گزینه‌های فیلتر جست‌وجوپذیر و انتخاب بازهٔ زمانی در Dashboard، در hover و focus-visible از `bg-primary` و `text-primary-foreground` استفاده می‌کنند؛ رنگ تیک انتخاب‌شده نیز در همان حالت سفید است. API، Reports، داده و Migration تغییری ندارند.
+
 ## DASHBOARD-KPI-CALCULATION-FEATURES-0917 — PC-C — LOCAL_COMPLETE
 
 - درخواست مالک: میان «فرمول و قاعده محاسبه» و «حذف‌ها و محدودیت‌های محاسبه»، برای هر فیچر واقعاً استفاده‌شده در فرمول KPI، نام فنی و توضیح کوتاهِ آن به شکل بولت نمایش داده شود.
