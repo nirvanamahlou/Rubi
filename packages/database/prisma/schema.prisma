@@ -5279,3 +5279,262 @@ model IntegrationSupplierMessage {
   @@index([orderReference, receivedAt])
   @@map("integration_supplier_messages")
 }
+
+enum SystemScope {
+  GLOBAL
+  LEGAL_ENTITY
+  BRANCH
+  USER
+}
+
+enum SystemValueType {
+  STRING
+  NUMBER
+  BOOLEAN
+  JSON
+}
+
+enum SystemRecordStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+}
+
+enum SystemBackupStatus {
+  REQUESTED
+  RUNNING
+  SUCCEEDED
+  FAILED
+  CANCELLED
+}
+
+enum SystemAdminOperationStatus {
+  REQUESTED
+  APPROVED
+  REJECTED
+  EXECUTING
+  SUCCEEDED
+  FAILED
+  CANCELLED
+}
+
+model SystemSetting {
+  id            String                 @id @default(uuid()) @db.Uuid
+  namespace     String                 @db.VarChar(80)
+  key           String                 @db.VarChar(120)
+  valueType     SystemValueType
+  scope         SystemScope
+  scopeId       String?                @db.Uuid
+  scopeKey      String                 @db.VarChar(80)
+  activeVersion Int                    @default(1)
+  status        SystemRecordStatus     @default(ACTIVE)
+  createdAt     DateTime               @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime               @updatedAt @db.Timestamptz(3)
+  versions      SystemSettingVersion[]
+
+  @@unique([namespace, key, scopeKey])
+  @@index([namespace, key, status])
+  @@map("system_settings")
+}
+
+model SystemSettingVersion {
+  id              String        @id @default(uuid()) @db.Uuid
+  settingId       String        @db.Uuid
+  version         Int
+  value           Json
+  reason          String        @db.Text
+  createdByUserId String        @db.Uuid
+  createdAt       DateTime      @default(now()) @db.Timestamptz(3)
+  setting         SystemSetting @relation(fields: [settingId], references: [id], onDelete: Restrict)
+
+  @@unique([settingId, version])
+  @@index([createdByUserId, createdAt])
+  @@map("system_setting_versions")
+}
+
+model SystemNumberingScheme {
+  id                 String                    @id @default(uuid()) @db.Uuid
+  code               String                    @db.VarChar(80)
+  scope              SystemScope
+  scopeId            String?                   @db.Uuid
+  scopeKey           String                    @db.VarChar(80)
+  prefix             String                    @db.VarChar(40)
+  calendar           String                    @default("JALALI") @db.VarChar(20)
+  includeFiscalYear  Boolean                   @default(true)
+  includeLegalEntity Boolean                   @default(false)
+  includeBranch      Boolean                   @default(false)
+  padding            Int                       @default(6)
+  resetPolicy        String                    @default("YEARLY") @db.VarChar(20)
+  version            Int                       @default(1)
+  isActive           Boolean                   @default(true)
+  reason             String                    @db.Text
+  createdByUserId    String                    @db.Uuid
+  createdAt          DateTime                  @default(now()) @db.Timestamptz(3)
+  updatedAt          DateTime                  @updatedAt @db.Timestamptz(3)
+  sequences          SystemNumberingSequence[]
+  issuedNumbers      SystemIssuedNumber[]
+
+  @@unique([code, scopeKey])
+  @@index([isActive, code])
+  @@map("system_numbering_schemes")
+}
+
+model SystemNumberingSequence {
+  id        String                @id @default(uuid()) @db.Uuid
+  schemeId  String                @db.Uuid
+  periodKey String                @db.VarChar(20)
+  lastValue BigInt                @default(0) @db.BigInt
+  version   Int                   @default(1)
+  updatedAt DateTime              @updatedAt @db.Timestamptz(3)
+  scheme    SystemNumberingScheme @relation(fields: [schemeId], references: [id], onDelete: Restrict)
+
+  @@unique([schemeId, periodKey])
+  @@map("system_numbering_sequences")
+}
+
+model SystemIssuedNumber {
+  id             String                @id @default(uuid()) @db.Uuid
+  schemeId       String                @db.Uuid
+  idempotencyKey String                @db.VarChar(160)
+  issuedValue    String                @unique @db.VarChar(160)
+  sequenceValue  BigInt                @db.BigInt
+  periodKey      String                @db.VarChar(20)
+  actorUserId    String                @db.Uuid
+  issuedAt       DateTime              @default(now()) @db.Timestamptz(3)
+  scheme         SystemNumberingScheme @relation(fields: [schemeId], references: [id], onDelete: Restrict)
+
+  @@unique([schemeId, idempotencyKey])
+  @@index([actorUserId, issuedAt])
+  @@map("system_issued_numbers")
+}
+
+model SystemNotificationChannel {
+  id              String   @id @default(uuid()) @db.Uuid
+  channel         String   @unique @db.VarChar(40)
+  enabled         Boolean  @default(false)
+  templateRef     String?  @db.VarChar(160)
+  quietHoursStart String?  @db.VarChar(5)
+  quietHoursEnd   String?  @db.VarChar(5)
+  retryPolicy     Json     @default("{}")
+  providerStatus  String   @default("NOT_CONFIGURED") @db.VarChar(40)
+  version         Int      @default(1)
+  reason          String   @db.Text
+  updatedByUserId String   @db.Uuid
+  createdAt       DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt       DateTime @updatedAt @db.Timestamptz(3)
+
+  @@map("system_notification_channels")
+}
+
+model SystemMessageTemplate {
+  id               String             @id @default(uuid()) @db.Uuid
+  key              String             @db.VarChar(120)
+  kind             String             @db.VarChar(30)
+  language         String             @db.VarChar(12)
+  version          Int
+  status           SystemRecordStatus @default(DRAFT)
+  subject          String?            @db.VarChar(300)
+  body             String             @db.Text
+  allowedVariables Json               @default("[]")
+  reason           String             @db.Text
+  createdByUserId  String             @db.Uuid
+  publishedAt      DateTime?          @db.Timestamptz(3)
+  createdAt        DateTime           @default(now()) @db.Timestamptz(3)
+
+  @@unique([key, language, version])
+  @@index([key, language, status])
+  @@map("system_message_templates")
+}
+
+model SystemFeatureFlag {
+  id              String      @id @default(uuid()) @db.Uuid
+  key             String      @db.VarChar(120)
+  title           String      @db.VarChar(160)
+  description     String?     @db.VarChar(500)
+  scope           SystemScope
+  scopeId         String?     @db.Uuid
+  scopeKey        String      @db.VarChar(80)
+  enabled         Boolean     @default(false)
+  rolloutPercent  Int?
+  startsAt        DateTime?   @db.Timestamptz(3)
+  endsAt          DateTime?   @db.Timestamptz(3)
+  version         Int         @default(1)
+  reason          String      @db.Text
+  updatedByUserId String      @db.Uuid
+  createdAt       DateTime    @default(now()) @db.Timestamptz(3)
+  updatedAt       DateTime    @updatedAt @db.Timestamptz(3)
+
+  @@unique([key, scopeKey])
+  @@index([enabled, startsAt, endsAt])
+  @@map("system_feature_flags")
+}
+
+model SystemBackupRequest {
+  id                String             @id @default(uuid()) @db.Uuid
+  type              String             @db.VarChar(30)
+  status            SystemBackupStatus @default(REQUESTED)
+  requestedByUserId String             @db.Uuid
+  reason            String             @db.Text
+  retentionUntil    DateTime?          @db.Timestamptz(3)
+  sanitizedResult   String?            @db.Text
+  sanitizedError    String?            @db.Text
+  requestedAt       DateTime           @default(now()) @db.Timestamptz(3)
+  updatedAt         DateTime           @updatedAt @db.Timestamptz(3)
+
+  @@index([status, requestedAt])
+  @@index([requestedByUserId, requestedAt])
+  @@map("system_backup_requests")
+}
+
+model SystemAdminOperation {
+  id                String                     @id @default(uuid()) @db.Uuid
+  kind              String                     @db.VarChar(80)
+  status            SystemAdminOperationStatus @default(REQUESTED)
+  idempotencyKey    String                     @unique @db.VarChar(160)
+  payload           Json                       @default("{}")
+  reason            String                     @db.Text
+  requestedByUserId String                     @db.Uuid
+  approvedByUserId  String?                    @db.Uuid
+  errorCode         String?                    @db.VarChar(80)
+  requestedAt       DateTime                   @default(now()) @db.Timestamptz(3)
+  approvedAt        DateTime?                  @db.Timestamptz(3)
+  executedAt        DateTime?                  @db.Timestamptz(3)
+  updatedAt         DateTime                   @updatedAt @db.Timestamptz(3)
+
+  @@index([status, requestedAt])
+  @@index([requestedByUserId, requestedAt])
+  @@map("system_admin_operations")
+}
+
+model SystemHealthSnapshot {
+  id         String   @id @default(uuid()) @db.Uuid
+  component  String   @db.VarChar(40)
+  status     String   @db.VarChar(30)
+  latencyMs  Int?
+  detail     String   @db.VarChar(500)
+  metrics    Json     @default("{}")
+  capturedAt DateTime @default(now()) @db.Timestamptz(3)
+
+  @@index([component, capturedAt])
+  @@map("system_health_snapshots")
+}
+
+model SystemAuditEvent {
+  id              String   @id @default(uuid()) @db.Uuid
+  actorUserId     String   @db.Uuid
+  action          String   @db.VarChar(120)
+  entityType      String   @db.VarChar(80)
+  entityId        String   @db.VarChar(160)
+  outcome         String   @db.VarChar(20)
+  reason          String   @db.Text
+  before          Json?
+  after           Json?
+  requestId       String?  @db.VarChar(120)
+  ipAddressMasked String?  @db.VarChar(80)
+  createdAt       DateTime @default(now()) @db.Timestamptz(3)
+
+  @@index([createdAt, id])
+  @@index([actorUserId, createdAt])
+  @@index([entityType, entityId, createdAt])
+  @@map("system_audit_events")
+}

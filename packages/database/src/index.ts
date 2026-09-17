@@ -44,4 +44,9 @@ export {
   SalesSettlementStatus,
   SalesTicketDirection,
   SalesTripType,
+  SystemAdminOperationStatus,
+  SystemBackupStatus,
+  SystemRecordStatus,
+  SystemScope,
+  SystemValueType,
 } from './generated/prisma/enums';
