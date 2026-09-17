@@ -9,6 +9,11 @@
 
 # Work Assignments
 
+## SYSTEM-MANAGEMENT-BACKEND-0917 — PC-B — MERGED
+
+- دریافت‌شده از `origin/codex/pc-b-system-management-backend`: قراردادهای نسخه‌دار و APIهای مدیریت امن تنظیمات، شماره‌گذاری، نشست‌ها، اعلان‌ها، قالب‌ها، feature flagها، سلامت سامانه و پشتیبان‌گیری افزوده شد.
+- مدل داده، Migration و seed مجوزهای مدیریت سیستم همراه با اتصال ماژول به API و IAM ادغام شده‌اند. تغییرهای Dashboard، Reporting و رزرو در این worktree حفظ شده‌اند.
+
 ## RESERVATION-PANEL-COMPACT-GRID-0917 — PC-A — MERGED
 
 - دریافت‌شده از `origin/codex/pc-a-reservation-panel-compact-grid-0917`: پنل عملیات قراردادهای رزرو فشرده شد؛ گروه عملیات در دسکتاپ به‌صورت شبکه‌ای، در نمایش کوچک به‌شکل واکنش‌گرا و با حفظ دسترس‌پذیری نمایش داده می‌شود.
