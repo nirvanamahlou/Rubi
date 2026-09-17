@@ -6,7 +6,13 @@ import {
 
 export type DashboardDateBasis = 'created' | 'issued' | 'paid' | 'effective';
 export type DashboardVisualKind =
-  'line' | 'bar' | 'stacked-bar' | 'funnel' | 'table' | 'queue';
+  | 'line'
+  | 'bar'
+  | 'donut'
+  | 'stacked-bar'
+  | 'funnel'
+  | 'table'
+  | 'queue';
 export type DashboardKpiRole =
   'outcome' | 'driver' | 'guardrail' | 'diagnostic';
 
@@ -1318,7 +1324,7 @@ const visual = (
   openDecision,
 });
 
-export const dashboardPages: readonly DashboardPageDefinition[] = [
+const dashboardPageCatalog: readonly DashboardPageDefinition[] = [
   {
     id: 'executive-overview',
     title: 'نمای مدیریتی',
@@ -1516,7 +1522,7 @@ export const dashboardPages: readonly DashboardPageDefinition[] = [
         'service-sales-portfolio',
         'سهم و رتبه خدمات از فروش',
         'مبلغ، تعداد و درصد سهم هر خدمت از کل فروش همان ارز، همراه با رتبه‌بندی سه خدمت برتر.',
-        'bar',
+        'donut',
         [travelFacts],
         'reports.dashboard.sales.read',
         '/reports?report=sales_by_service_route',
@@ -1577,7 +1583,7 @@ export const dashboardPages: readonly DashboardPageDefinition[] = [
         'collection-status',
         'وضعیت تسویه قراردادها',
         'ترکیب مانده پرداخت‌نشده، نیمه‌تسویه و تسویه‌شده در grain قرارداد و ارز.',
-        'stacked-bar',
+        'donut',
         [salesContract, payment],
         'reports.dashboard.finance.read',
         '/reports?report=sales_by_organization',
@@ -1997,7 +2003,7 @@ export const dashboardPages: readonly DashboardPageDefinition[] = [
         'customer-service-distribution',
         'مشتریان بر اساس نوع خدمت',
         'ترکیب مشتریان استفاده‌کننده از بلیت، تور، هتل، ویزا و بیمه همراه با تعداد سفارش؛ مبلغ فروش فقط در ارزهای مستقل مقایسه می‌شود.',
-        'stacked-bar',
+        'donut',
         [salesContract, serviceItem, travelFacts],
         'reports.dashboard.customer-growth.read',
         '/reports?report=sales_by_service_route',
@@ -2406,21 +2412,418 @@ export const dashboardPages: readonly DashboardPageDefinition[] = [
   },
 ] as const;
 
+const dashboardPageLayouts: Readonly<
+  Record<
+    string,
+    { kpiIds: readonly string[]; visualIds: readonly string[] }
+  >
+> = {
+  'executive-overview': {
+    kpiIds: [
+      'net-sales',
+      'collected',
+      'new-customers',
+      'new-leads',
+      'gross-profit',
+      'account-balance',
+    ],
+    visualIds: [
+      'executive-trend',
+      'executive-sales-by-service',
+      'executive-customer-retention',
+      'executive-exceptions',
+    ],
+  },
+  'commercial-performance': {
+    kpiIds: [
+      'gross-sales',
+      'net-sales',
+      'finalized-sales-count',
+      'gross-profit',
+      'new-orders',
+    ],
+    visualIds: [
+      'finalized-sales-trend',
+      'sales-channel',
+      'service-type',
+      'commercial-pipeline',
+    ],
+  },
+  'travel-operations': {
+    kpiIds: [
+      'awaiting-issue',
+      'paid-not-issued',
+      'issue-success-rate',
+      'reservation-failure-rate',
+      'delivery-blockers',
+    ],
+    visualIds: ['issue-funnel', 'issue-alerts', 'provider-failure-rate'],
+  },
+  'inventory-products': {
+    kpiIds: [
+      'active-offers',
+      'sell-through-rate',
+      'remaining-capacity',
+      'low-capacity-offers',
+    ],
+    visualIds: [
+      'inventory-capacity',
+      'inventory-departure-curve',
+      'inventory-action-queue',
+    ],
+  },
+  'finance-treasury': {
+    kpiIds: [
+      'collected',
+      'net-profit',
+      'receivables',
+      'account-balance',
+      'due-checks',
+    ],
+    visualIds: [
+      'treasury-flow',
+      'finance-profit-trend',
+      'counterparty-exposure',
+      'due-checks-queue',
+    ],
+  },
+  'customer-growth': {
+    kpiIds: [
+      'new-orders',
+      'lead-volume',
+      'lead-conversion-rate',
+      'open-tickets',
+      'low-satisfaction',
+    ],
+    visualIds: [
+      'customer-growth-overview',
+      'customer-source-quality',
+      'customer-trust-guardrails',
+    ],
+  },
+  'workforce-hr': {
+    kpiIds: [
+      'employee-workdays',
+      'employee-leave',
+      'employee-overtime',
+      'employee-performance',
+    ],
+    visualIds: ['workforce-capacity', 'workforce-performance'],
+  },
+  'employee-commercial-performance': {
+    kpiIds: [
+      'employee-finalized-sales-count',
+      'employee-sales-amount',
+      'employee-lead-conversion',
+      'employee-sales-rank',
+    ],
+    visualIds: [
+      'employee-sales-count-by-agent',
+      'employee-sales-amount-by-agent',
+      'employee-conversion-by-agent',
+      'employee-performance-ranking',
+    ],
+  },
+};
+
+function catalogPage(pageId: string): DashboardPageDefinition {
+  const page = dashboardPageCatalog.find((item) => item.id === pageId);
+  if (!page) throw new Error(`Dashboard page not found: ${pageId}`);
+  return page;
+}
+
+function catalogVisuals(
+  pageId: string,
+  visualIds: readonly string[],
+): readonly DashboardVisualDefinition[] {
+  const page = catalogPage(pageId);
+  return visualIds.map((visualId) => {
+    const item = page.visualizations.find((visual) => visual.id === visualId);
+    if (!item)
+      throw new Error(`Dashboard visual not found: ${pageId}/${visualId}`);
+    return item;
+  });
+}
+
+function detailPage(input: {
+  id: string;
+  title: string;
+  technicalName: string;
+  description: string;
+  sourcePageId: string;
+  kpiIds: readonly string[];
+  visualIds: readonly string[];
+}): DashboardPageDefinition {
+  return {
+    id: input.id,
+    title: input.title,
+    technicalName: input.technicalName,
+    description: input.description,
+    kpiIds: input.kpiIds,
+    visualizations: catalogVisuals(input.sourcePageId, input.visualIds),
+  };
+}
+
+const dashboardDetailPages: readonly DashboardPageDefinition[] = [
+  detailPage({
+    id: 'executive-growth-risk',
+    title: 'رشد و ریسک مدیریتی',
+    technicalName: 'Executive Growth & Risk',
+    description:
+      'رشد لید و مشتری، تبدیل، لغو رزرو و ریسک مانده‌های تجاری برای بررسی مدیریتی عمیق‌تر.',
+    sourcePageId: 'executive-overview',
+    kpiIds: [
+      'returning-customers',
+      'lead-growth-rate',
+      'lead-conversion-rate',
+      'cancelled-reservations',
+      'receivables',
+      'provider-payables',
+    ],
+    visualIds: [
+      'executive-lead-acquisition',
+      'executive-lead-conversion',
+      'executive-reservation-cancellations',
+      'executive-cash-exposure',
+    ],
+  }),
+  detailPage({
+    id: 'sales-profitability-analysis',
+    title: 'سودآوری و تخفیف فروش',
+    technicalName: 'Sales Profitability & Discounts',
+    description:
+      'میانگین ارزش فروش، سود و اثر تخفیف‌ها با حفظ تفکیک ارز و خدمت.',
+    sourcePageId: 'commercial-performance',
+    kpiIds: [
+      'average-sale-value',
+      'discount-amount',
+      'gross-profit',
+      'net-sales',
+    ],
+    visualIds: [
+      'average-sale-trend',
+      'discount-analysis',
+      'discount-trend',
+      'service-sales-portfolio',
+      'agent-ranking',
+    ],
+  }),
+  detailPage({
+    id: 'sales-segment-analysis',
+    title: 'کانال، مقصد و الگوی فروش',
+    technicalName: 'Sales Segments & Patterns',
+    description:
+      'تحلیل فروش براساس کانال، زمان و جغرافیا برای شناسایی الگوهای تجاری.',
+    sourcePageId: 'commercial-performance',
+    kpiIds: [
+      'finalized-sales-count',
+      'new-orders',
+      'pipeline-age',
+      'cancelled-orders',
+    ],
+    visualIds: [
+      'sales-weekday-pattern',
+      'sales-destination-ranking',
+      'sales-country-ranking',
+      'sales-channel-trend',
+    ],
+  }),
+  detailPage({
+    id: 'flight-route-analysis',
+    title: 'ایرلاین، مسیر و بلیت',
+    technicalName: 'Airline, Route & Ticket Analytics',
+    description:
+      'فروش ایرلاین و مسیر، متوسط قیمت و نرخ لغو بلیت در بازه انتخابی.',
+    sourcePageId: 'travel-operations',
+    kpiIds: [
+      'issued-documents',
+      'average-ticket-price',
+      'ticket-cancellation-rate',
+      'cancelled-reservations',
+    ],
+    visualIds: [
+      'airline-sales-performance',
+      'route-sales-performance',
+      'average-ticket-price-trend',
+      'ticket-cancellation-analysis',
+    ],
+  }),
+  detailPage({
+    id: 'tour-hotel-performance',
+    title: 'عملکرد تور و هتل',
+    technicalName: 'Tour & Hotel Performance',
+    description:
+      'رزرو، ظرفیت، فروش و الگوی اقامت محصولات تور و هتل.',
+    sourcePageId: 'inventory-products',
+    kpiIds: [
+      'tour-reservations',
+      'tour-remaining-capacity',
+      'tour-sell-through-rate',
+      'hotel-reservations',
+      'average-stay-length',
+    ],
+    visualIds: [
+      'tour-sales-ranking',
+      'tour-capacity-performance',
+      'hotel-sales-ranking',
+      'popular-hotel-cities',
+      'average-stay-analysis',
+    ],
+  }),
+  detailPage({
+    id: 'finance-profitability-costs',
+    title: 'سودآوری و هزینه‌ها',
+    technicalName: 'Finance Profitability & Costs',
+    description:
+      'سود ناخالص و خالص، هزینه‌های عملیاتی و کمیسیون‌های پرداخت‌شده.',
+    sourcePageId: 'finance-treasury',
+    kpiIds: [
+      'gross-profit',
+      'net-profit',
+      'operating-expenses',
+      'paid-commissions',
+    ],
+    visualIds: [
+      'gross-profit-by-service',
+      'expense-structure',
+      'expense-trend',
+      'paid-commission-by-recipient',
+      'paid-commission-trend',
+    ],
+  }),
+  detailPage({
+    id: 'finance-obligations-risk',
+    title: 'مطالبات، بدهی و تعهدات',
+    technicalName: 'Receivables, Payables & Risk',
+    description:
+      'استرداد، مطالبات سررسیدشده، بدهی مشتری و تعهدات تأمین‌کنندگان.',
+    sourcePageId: 'finance-treasury',
+    kpiIds: [
+      'refunded',
+      'receivables',
+      'overdue-balance',
+      'provider-payables',
+      'due-checks',
+    ],
+    visualIds: [
+      'due-checks-queue',
+      'counterparty-exposure',
+      'customer-debt-aging',
+    ],
+  }),
+  detailPage({
+    id: 'customer-behavior-analysis',
+    title: 'رفتار و ترجیحات مشتری',
+    technicalName: 'Customer Behavior & Preferences',
+    description:
+      'علایق، مقصد، نوع خدمت و کانال جذب مشتریان در نماهای مقایسه‌ای.',
+    sourcePageId: 'customer-growth',
+    kpiIds: [
+      'customer-interest-coverage',
+      'customer-destination-demand',
+      'customer-service-usage',
+      'customers-by-acquisition-channel',
+      'consent-coverage',
+    ],
+    visualIds: [
+      'customer-interest-distribution',
+      'customer-destination-distribution',
+      'customer-service-distribution',
+      'customer-acquisition-channel-mix',
+      'customer-acquisition-channel-trend',
+    ],
+  }),
+  detailPage({
+    id: 'hr-record-quality',
+    title: 'کیفیت سوابق پرسنلی',
+    technicalName: 'HR Records Quality',
+    description:
+      'سوابق ناقص، منقضی یا نزدیک انقضا برای پیگیری عملیاتی منابع انسانی.',
+    sourcePageId: 'workforce-hr',
+    kpiIds: ['expiring-hr-records', 'incomplete-hr-records'],
+    visualIds: ['workforce-compliance-queue'],
+  }),
+  detailPage({
+    id: 'employee-crm-activity',
+    title: 'فعالیت CRM کارکنان',
+    technicalName: 'Employee CRM Activity',
+    description:
+      'لید، تماس و پیگیری کارشناسان برای ارزیابی فعالیت‌های پیش از فروش.',
+    sourcePageId: 'employee-commercial-performance',
+    kpiIds: [
+      'employee-lead-count',
+      'employee-call-count',
+      'employee-followup-count',
+    ],
+    visualIds: [
+      'employee-leads-by-agent',
+      'employee-calls-by-agent',
+      'employee-followups-by-agent',
+    ],
+  }),
+  detailPage({
+    id: 'employee-sales-quality',
+    title: 'کیفیت فروش کارکنان',
+    technicalName: 'Employee Sales Quality',
+    description:
+      'ارزش متوسط، قراردادها و لغوهای مرتبط با کارشناسان بدون نسبت‌دادن علت حدسی.',
+    sourcePageId: 'employee-commercial-performance',
+    kpiIds: [
+      'employee-average-sale',
+      'employee-contract-count',
+      'employee-cancellation-count',
+    ],
+    visualIds: [
+      'employee-average-sale-by-agent',
+      'employee-contracts-by-agent',
+      'employee-cancellations-by-agent',
+    ],
+  }),
+];
+
+export const dashboardPages: readonly DashboardPageDefinition[] = [
+  ...dashboardPageCatalog.map((page) => {
+    const layout = dashboardPageLayouts[page.id];
+    return layout
+      ? {
+          ...page,
+          kpiIds: layout.kpiIds,
+          visualizations: catalogVisuals(page.id, layout.visualIds),
+        }
+      : page;
+  }),
+  ...dashboardDetailPages,
+];
+
 export const dashboardNavigation: readonly DashboardNavigationItem[] = [
-  { pageId: 'executive-overview' },
+  {
+    pageId: 'executive-overview',
+    children: [{ pageId: 'executive-growth-risk' }],
+  },
   {
     pageId: 'commercial-performance',
     children: [
+      { pageId: 'sales-profitability-analysis' },
+      { pageId: 'sales-segment-analysis' },
       { pageId: 'revenue-collections' },
       { pageId: 'travel-operations' },
+      { pageId: 'flight-route-analysis' },
       { pageId: 'inventory-products' },
+      { pageId: 'tour-hotel-performance' },
       { pageId: 'procurement-suppliers' },
     ],
   },
-  { pageId: 'finance-treasury' },
+  {
+    pageId: 'finance-treasury',
+    children: [
+      { pageId: 'finance-profitability-costs' },
+      { pageId: 'finance-obligations-risk' },
+    ],
+  },
   {
     pageId: 'customer-growth',
     children: [
+      { pageId: 'customer-behavior-analysis' },
       { pageId: 'customer-crm' },
       { pageId: 'support-service-quality' },
       { pageId: 'partners-b2b' },
@@ -2429,7 +2832,12 @@ export const dashboardNavigation: readonly DashboardNavigationItem[] = [
   },
   {
     pageId: 'workforce-hr',
-    children: [{ pageId: 'employee-commercial-performance' }],
+    children: [
+      { pageId: 'hr-record-quality' },
+      { pageId: 'employee-commercial-performance' },
+      { pageId: 'employee-crm-activity' },
+      { pageId: 'employee-sales-quality' },
+    ],
   },
 ] as const;
 

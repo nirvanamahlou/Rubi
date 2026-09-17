@@ -28,6 +28,7 @@
     "reporting:demo:import": "pnpm --filter @nora/database reporting:demo:import",
     "reporting:demo:generate": "pnpm --filter @nora/database reporting:demo:generate",
     "reporting:demo:clear": "pnpm --filter @nora/database reporting:demo:clear",
+    "reporting:demo:verify-clean": "pnpm --filter @nora/database reporting:demo:verify-clean",
     "infra:config": "docker compose --env-file .env.example -f infrastructure/compose.dev.yaml config",
     "infra:up": "docker compose --env-file .env -f infrastructure/compose.dev.yaml up -d",
     "infra:down": "docker compose --env-file .env -f infrastructure/compose.dev.yaml down"

@@ -2,6 +2,7 @@ import { Prisma } from '@nora/database';
 import { describe, expect, it, vi } from 'vitest';
 
 import { ReportingService } from './reporting.service';
+import { dashboardPersianDateParts } from './reporting-dashboard-calendar';
 import type { ReportingRepository } from './reporting.repository';
 
 const actor = {
@@ -33,7 +34,41 @@ const demoFact = {
 };
 
 describe('dashboard travel projection date boundaries', () => {
-  it('keeps the default rolling range as an ISO instant and reads demo rows', async () => {
+  it('publishes dimension filter options from the scoped fact source', async () => {
+    const facts = vi.fn().mockResolvedValue([demoFact]);
+    const dashboardFilterOptions = vi.fn().mockResolvedValue({
+      salesChannel: ['وب‌سایت اول'],
+      branch: ['شعبه مرکزی'],
+      agent: ['کارشناس نمونه'],
+      service: ['FLIGHT'],
+      agency: [],
+      provider: ['ایران‌ایر'],
+      currency: ['IRR'],
+      status: ['CONFIRMED'],
+    });
+    const service = new ReportingService({
+      facts,
+      dashboardFilterOptions,
+    } as unknown as ReportingRepository);
+
+    const result = await service.dashboardProjection(
+      { range: 'month', service: 'FLIGHT', kpiIds: 'gross-sales' },
+      actor,
+    );
+
+    expect(result.filterOptions?.service).toEqual(['FLIGHT']);
+    expect(dashboardFilterOptions).toHaveBeenCalledWith(
+      expect.objectContaining({
+        filters: expect.objectContaining({ fromUtc: expect.any(String) }),
+        page: 1,
+        pageSize: 1000,
+        timezone: 'Asia/Tehran',
+      }),
+      [],
+    );
+  });
+
+  it('uses the current Persian calendar month in Tehran and reads demo rows', async () => {
     const facts = vi.fn().mockResolvedValue([demoFact]);
     const service = new ReportingService({
       facts,
@@ -44,13 +79,60 @@ describe('dashboard travel projection date boundaries', () => {
     );
     expect(result.state).toBe('ready');
     expect(result.metrics['gross-sales']?.value).toBeTruthy();
+    expect(result.metrics['gross-sales']?.comparison?.direction).toBe('flat');
+    expect(result.metrics['gross-sales']?.trend?.values.length).toBeGreaterThan(
+      0,
+    );
+    expect(result.metrics['gross-sales']?.trend?.series).toEqual([
+      expect.objectContaining({ currencyCode: 'IRR' }),
+    ]);
+    expect(facts).toHaveBeenCalledTimes(2);
     const fromUtc = (
       facts.mock.calls[0]?.[0] as { filters: { fromUtc: string } }
     ).filters.fromUtc;
     expect(new Date(fromUtc).toISOString()).toBe(fromUtc);
-    expect(Date.now() - new Date(fromUtc).getTime()).toBeGreaterThan(
-      30 * 86_400_000,
+    expect(dashboardPersianDateParts(new Date(fromUtc)).day).toBe(1);
+  });
+
+  it('computes KPI and chart growth from the immediately preceding equal-length period', async () => {
+    const facts = vi
+      .fn()
+      .mockResolvedValueOnce([demoFact])
+      .mockResolvedValueOnce([
+        {
+          ...demoFact,
+          id: 'demo-previous',
+          occurredAt: new Date('2026-08-15T06:00:00.000Z'),
+          salesAmount: new Prisma.Decimal(6_000_000),
+          settledAmount: new Prisma.Decimal(6_000_000),
+        },
+      ]);
+    const service = new ReportingService({
+      facts,
+    } as unknown as ReportingRepository);
+
+    const result = await service.dashboardProjection(
+      {
+        range: 'month',
+        currency: 'IRR',
+        kpiIds: 'gross-sales',
+        visualIds: 'executive-sales-by-service',
+      },
+      actor,
     );
+
+    expect(result.metrics['gross-sales']?.comparison).toMatchObject({
+      label: 'دوره قبل هم‌طول',
+      previousValue: 6_000_000,
+      deltaPercent: 100,
+      direction: 'up',
+    });
+    expect(
+      result.visuals['executive-sales-by-service']?.comparison,
+    ).toMatchObject({ deltaPercent: 100, direction: 'up' });
+    expect(
+      result.visuals['executive-sales-by-service']?.trend?.values.length,
+    ).toBeGreaterThan(0);
   });
 
   it('rejects malformed or reversed custom boundaries before accessing facts', async () => {
@@ -91,11 +173,69 @@ describe('dashboard travel projection date boundaries', () => {
       },
       actor,
     );
-    expect(result.metrics['gross-sales']?.value).toContain('IRR');
-    expect(result.metrics['gross-sales']?.value).toContain('USD');
+    expect(result.metrics['gross-sales']?.value).toContain('﷼');
+    expect(result.metrics['gross-sales']?.value).toContain('$');
+    expect(result.metrics['gross-sales']?.trend?.series).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ currencyCode: 'IRR' }),
+        expect.objectContaining({ currencyCode: 'USD' }),
+      ]),
+    );
+    expect(result.metrics['gross-sales']?.comparisonSeries).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ currencyCode: 'IRR', direction: 'flat' }),
+        expect.objectContaining({ currencyCode: 'USD', direction: 'flat' }),
+      ]),
+    );
     expect(result.metrics).not.toHaveProperty('account-balance');
     expect(result.visuals['executive-sales-by-service']?.values).toEqual([
       12_000_000,
     ]);
+  });
+
+  it('publishes trend, action queue, decision funnel and team comparison from the approved fact projection', async () => {
+    const facts = vi.fn().mockResolvedValue([
+      { ...demoFact, ownerName: 'کارشناس دمو آریا' },
+      {
+        ...demoFact,
+        id: 'demo-pending-payment',
+        ownerName: 'کارشناس دمو پارسا',
+        paymentStatus: 'PENDING',
+        issueStatus: 'PENDING',
+      },
+      {
+        ...demoFact,
+        id: 'demo-pending-reservation',
+        ownerName: 'کارشناس دمو سارا',
+        reservationStatus: 'PENDING',
+      },
+    ]);
+    const service = new ReportingService({
+      facts,
+    } as unknown as ReportingRepository);
+
+    const result = await service.dashboardProjection(
+      {
+        range: 'month',
+        currency: 'IRR',
+        visualIds:
+          'finalized-sales-trend,crm-followup-queue,commercial-pipeline,employee-performance-ranking',
+      },
+      actor,
+    );
+
+    expect(
+      result.visuals['finalized-sales-trend']?.values.length,
+    ).toBeGreaterThan(0);
+    expect(result.visuals['crm-followup-queue']).toMatchObject({
+      labels: expect.arrayContaining(['پرداخت در انتظار', 'رزرو در انتظار']),
+    });
+    expect(result.visuals['commercial-pipeline']).toMatchObject({
+      labels: ['رزرو ثبت‌شده', 'رزرو تأییدشده', 'پرداخت‌شده', 'صدور نهایی'],
+      values: [3, 2, 2, 2],
+    });
+    expect(result.visuals['employee-performance-ranking']).toMatchObject({
+      labels: expect.arrayContaining(['کارشناس دمو آریا', 'کارشناس دمو پارسا']),
+    });
   });
 });

@@ -12,6 +12,7 @@ import {
   ReportResultPanel,
   ReportingWorkspace,
   nextReportSort,
+  reportResultPageSize,
   reportingAllFilterLabel,
   reportingDateRangeError,
   reportingLegalEntityLabel,
@@ -44,11 +45,12 @@ const reportResult: SalesByOrganizationReportResult = {
       grossProfit: '350000',
       refundAmount: '50000',
       settlementBalance: '125000',
+      pendingReservationActions: 1,
     },
   ],
   total: 1,
   page: 1,
-  pageSize: 25,
+  pageSize: 5,
   previewLimit: 100,
   generatedAtUtc: '2026-09-12T08:00:00.000Z',
   sourceDataAsOfUtc: '2026-09-12T07:55:00.000Z',
@@ -222,6 +224,39 @@ describe('ReportingWorkspace', () => {
     expect(html).not.toContain('خانه گزارش‌ها');
   });
 
+  it('can render only a report configuration without its reports-page shell', () => {
+    const html = renderToStaticMarkup(
+      <ReportingWorkspace
+        configurationOnly
+        initialFilterState={{
+          reportCode: 'sales_by_organization',
+          fromDate: '',
+          toDate: '',
+          legalEntity: 'ALL',
+          currency: 'ALL',
+          filterValues: {},
+        }}
+      />,
+    );
+    const source = readFileSync(
+      join(
+        process.cwd(),
+        'src',
+        'modules',
+        'reports',
+        'components',
+        'reporting-workspace.tsx',
+      ),
+      'utf8',
+    );
+
+    expect(html).not.toContain('گزارش‌ها و خروجی‌های مدیریتی');
+    expect(source).toContain('configurationOnly = false');
+    expect(source).toContain('!configurationOnly ?');
+    expect(source).toContain('onConfigurationOpenChange?.(open)');
+    expect(source).toContain('configurationOnly ||');
+  });
+
   it('shows the selected company name in the filter summary', () => {
     expect(reportingLegalEntityLabel('ALL')).toBe('همه شرکت‌ها');
     expect(reportingLegalEntityLabel('NIYAYESH_SEIR_SAHAR')).toBe(
@@ -340,15 +375,15 @@ describe('ReportingWorkspace', () => {
     ).toContain('داده ناقص');
   });
 
-  it('renders KPI, table, chart, freshness, sorting and pagination for a successful result', () => {
+  it('renders table, chart, freshness, sorting and pagination for a successful result', () => {
     const table = renderResultPanel({ started: true, result: reportResult });
-    expect(table).toContain('تعداد نتایج');
-    expect(table).toContain('قراردادهای یکتا');
+    expect(table).not.toContain('در کل محدوده فیلترشده');
+    expect(table).not.toContain('بدون تکثیر Passenger یا Segment');
     expect(table).toContain('آخرین دریافت');
     expect(table).not.toContain('id="report-result-sort"');
     expect(table).toContain('مرتب‌سازی براساس مبلغ قرارداد');
     expect(table).toContain('aria-sort="descending"');
-    expect(table.match(/aria-sort=/g)).toHaveLength(11);
+    expect(table.match(/aria-sort=/g)).toHaveLength(12);
     expect(table).toContain('مرتب‌سازی براساس تعداد مسافر');
     expect(table).toContain('مرتب‌سازی براساس تعداد بلیت');
     expect(table).toContain('مرتب‌سازی براساس مبلغ خرید');
@@ -364,9 +399,12 @@ describe('ReportingWorkspace', () => {
     expect(table).toContain('سود ناخالص');
     expect(table).toContain('مبلغ استرداد');
     expect(table).toContain('مانده تسویه');
+    expect(table).toContain('اقدام رزرو در انتظار');
+    expect(table).toContain('۱ مورد');
     expect(table).toContain('900000');
     expect(table).toContain('350000');
     expect(table).toContain('صفحه');
+    expect(table).toContain('۵ رکورد در هر صفحه');
     expect(table).toContain('تطبیق مبلغ با نمای مرجع: تأییدشده');
 
     const chart = renderResultPanel({
@@ -379,6 +417,11 @@ describe('ReportingWorkspace', () => {
     expect(chart).toContain('نمودار میله‌ای افقی');
     expect(chart).toContain('نوع نمودار');
     expect(chart).toContain('id="report-result-sort"');
+    expect(chart).toContain('max-h-[32rem]');
+    expect(chart).toContain('overflow-y-auto');
+    expect(chart).toContain('نمودار قابل اسکرول است');
+    expect(chart).not.toContain('۵ رکورد در هر صفحه');
+    expect(chart).not.toContain('>قبلی</button>');
 
     const columnChart = renderResultPanel({
       chartType: 'column',
@@ -388,6 +431,7 @@ describe('ReportingWorkspace', () => {
     });
     expect(columnChart).toContain('نمودار ستونی');
     expect(columnChart).toContain('ارتفاع هر ستون');
+    expect(columnChart).toContain('overflow-auto');
     const pieChart = renderResultPanel({
       chartType: 'pie',
       mode: 'chart',
@@ -397,6 +441,11 @@ describe('ReportingWorkspace', () => {
     expect(pieChart).toContain('نمودار دایره‌ای');
     expect(pieChart).toContain('سهم هر بخش در هر ارز به‌صورت مستقل');
     expect(pieChart).toContain('conic-gradient');
+    expect(pieChart).toContain('overflow-auto');
+    expect(pieChart).toContain('راهنمای رنگ‌های نمودار');
+    expect(pieChart).toContain('mt-4 border-t border-border pt-4');
+    expect(pieChart).toContain('flex flex-col items-center text-center');
+    expect(pieChart).not.toContain('sm:grid-cols-[12rem_1fr]');
     expect(reportChartTypes(reportCatalog[0]!)).toEqual([
       'horizontal-bar',
       'column',
@@ -428,7 +477,7 @@ describe('ReportingWorkspace', () => {
     ).toEqual({ column: 'grossProfit', direction: 'DESC' });
   });
 
-  it('hides the duplicate grouped-row KPI and rebalances the remaining cards', () => {
+  it('removes result summary cards and highlights pending reservation actions in the table', () => {
     const groupedResult = {
       ...reportResult,
       contractCount: reportResult.total,
@@ -439,12 +488,16 @@ describe('ReportingWorkspace', () => {
       result: groupedResult,
     });
 
-    expect(html).not.toContain('گروه‌های نتیجه');
-    expect(html).not.toContain('قراردادهای یکتا');
-    expect(html).toContain('lg:grid-cols-3');
-    expect(html).toContain('تعداد نتایج');
-    expect(html).toContain('ارزهای دارای فروش');
+    expect(html).not.toContain('در کل محدوده فیلترشده');
+    expect(html).not.toContain('جمع مستقل در هر ارز');
+    expect(html).not.toContain('نیازمند پیگیری عملیاتی');
     expect(html).toContain('اقدام رزرو در انتظار');
+    expect(html).toContain('۱ مورد');
+  });
+
+  it('uses five rows only for table pages and the full preview cap for charts', () => {
+    expect(reportResultPageSize('table')).toBe(5);
+    expect(reportResultPageSize('chart')).toBe(100);
   });
 
   it('maps authorization failures separately from connection failures', () => {

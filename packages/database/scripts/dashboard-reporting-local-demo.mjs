@@ -26,18 +26,37 @@ const customers = [
   'خانم رضایی',
   'آقای احمدی',
 ];
+const demoAgents = [
+  'کارشناس دمو آریا',
+  'کارشناس دمو پارسا',
+  'کارشناس دمو سارا',
+  'کارشناس دمو نیلوفر',
+];
 const amount = (index, base) =>
   String(base + ((index * 1_731_000) % (base * 2)));
 
 const client = new Client({ connectionString: process.env.DATABASE_URL });
 await client.connect();
 try {
-  if (process.argv.includes('--inspect')) {
+  if (
+    process.argv.includes('--inspect') ||
+    process.argv.includes('--verify-clean')
+  ) {
     const result = await client.query(
       'SELECT "legalEntityCode", "currencyCode", COUNT(*)::int AS "factCount", COUNT(*) FILTER (WHERE "occurredAt" >= NOW() - INTERVAL \'31 days\')::int AS "monthFacts", SUM("salesAmount") FILTER (WHERE "occurredAt" >= NOW() - INTERVAL \'31 days\')::text AS "monthSales", MIN("occurredAt") AS "firstAt", MAX("occurredAt") AS "lastAt" FROM reporting_travel_facts WHERE "sourceItemId" LIKE $1 GROUP BY "legalEntityCode", "currencyCode" ORDER BY "legalEntityCode", "currencyCode"',
       [`${PREFIX}%`],
     );
-    console.log(JSON.stringify(result.rows));
+    if (process.argv.includes('--verify-clean')) {
+      const remaining = result.rows.reduce(
+        (total, row) => total + Number(row.factCount),
+        0,
+      );
+      if (remaining > 0)
+        throw new Error(
+          `${remaining} دادهٔ دمو هنوز در گزارش‌ها وجود دارد. پیش از Deploy، reporting:demo:clear را اجرا کنید.`,
+        );
+      console.log('No local dashboard/reporting demo facts remain.');
+    } else console.log(JSON.stringify(result.rows));
   } else {
     await client.query('BEGIN');
     if (process.argv.includes('--clear')) {
@@ -67,6 +86,7 @@ try {
       const now = Date.now();
       for (let index = 0; index < 180; index += 1) {
         const route = routes[index % routes.length];
+        const demoAgent = demoAgents[index % demoAgents.length];
         const serviceType = serviceTypes[index % serviceTypes.length];
         const sales = amount(index, 8_000_000);
         const purchase = amount(index, 4_600_000);
@@ -85,7 +105,7 @@ try {
             branch.rows[0].id,
             branch.rows[0].name,
             owner.rows[0].id,
-            owner.rows[0].displayName,
+            demoAgent,
             `SITE-${(index % 2) + 1}`,
             channels[index % channels.length],
             serviceType,
@@ -125,7 +145,7 @@ try {
       }
       await client.query('COMMIT');
       console.log(
-        'Generated 180 local dashboard/reporting demo facts. Run reporting:demo:clear before deployment.',
+        'Generated 180 synthetic local dashboard/reporting demo facts, including trend, action-queue, decision-funnel and team-comparison coverage. Run reporting:demo:clear then reporting:demo:verify-clean before deployment.',
       );
     }
   }

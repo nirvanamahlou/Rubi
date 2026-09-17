@@ -42,6 +42,17 @@ export interface ReportingFactRow {
   dataAsOf: Date;
 }
 
+export interface DashboardFilterOptions {
+  salesChannel: readonly string[];
+  branch: readonly string[];
+  agent: readonly string[];
+  service: readonly string[];
+  agency: readonly string[];
+  provider: readonly string[];
+  currency: readonly string[];
+  status: readonly string[];
+}
+
 type RecordRow = Record<string, unknown>;
 
 function json(value: unknown): Prisma.InputJsonValue {
@@ -109,6 +120,38 @@ export class ReportingRepository {
     return rows;
   }
 
+  /**
+   * Return distinct dimension values from the same scoped fact grain used by
+   * the dashboard. Dimension predicates are intentionally omitted so a
+   * selected value never hides the other choices in the filter control.
+   */
+  async dashboardFilterOptions(
+    input: ReportQueryV1,
+    serverBranchIds: readonly string[],
+  ): Promise<DashboardFilterOptions> {
+    const rows = await this.facts(input, serverBranchIds);
+    const options = (pick: (row: ReportingFactRow) => string | null) =>
+      Object.freeze(
+        [
+          ...new Set(
+            rows
+              .map(pick)
+              .filter((value): value is string => typeof value === 'string' && value.length > 0),
+          ),
+        ].sort((a, b) => a.localeCompare(b, 'fa')),
+      );
+    return {
+      salesChannel: options((row) => row.salesChannel),
+      branch: options((row) => row.branchName),
+      agent: options((row) => row.ownerName),
+      service: options((row) => row.serviceType),
+      agency: options((row) => row.agencyName),
+      provider: options((row) => row.providerName),
+      currency: options((row) => row.currencyCode),
+      status: options((row) => row.orderStatus),
+    };
+  }
+
   listSaved(actorUserId: string) {
     return this.database.client.$queryRaw<RecordRow[]>(Prisma.sql`
       SELECT r.*, u."displayName" AS "ownerName",
@@ -162,13 +205,32 @@ export class ReportingRepository {
       sharingScope: string;
       isFavorite?: boolean;
       filterState: unknown;
+      runMetadata?: { viewName: string; viewVersion: number };
     },
   ) {
-    const rows = await this.database.client.$queryRaw<RecordRow[]>(Prisma.sql`
-      INSERT INTO "reporting_saved_reports" ("reportCode", name, "ownerUserId", "sharingScope", "isFavorite", "filterState", "updatedAt")
-      VALUES (${input.reportCode}, ${input.name}, ${actorUserId}::uuid, ${input.sharingScope}::"ReportingSharingScope", ${input.isFavorite ?? false}, ${JSON.stringify(json(input.filterState))}::jsonb, NOW()) RETURNING *
-    `);
-    return rows[0];
+    if (!input.runMetadata) {
+      const rows = await this.database.client.$queryRaw<RecordRow[]>(Prisma.sql`
+        INSERT INTO "reporting_saved_reports" ("reportCode", name, "ownerUserId", "sharingScope", "isFavorite", "filterState", "updatedAt")
+        VALUES (${input.reportCode}, ${input.name}, ${actorUserId}::uuid, ${input.sharingScope}::"ReportingSharingScope", ${input.isFavorite ?? false}, ${JSON.stringify(json(input.filterState))}::jsonb, NOW()) RETURNING *
+      `);
+      return rows[0];
+    }
+    return this.database.client.$transaction(async (transaction) => {
+      const rows = await transaction.$queryRaw<RecordRow[]>(Prisma.sql`
+        INSERT INTO "reporting_saved_reports" ("reportCode", name, "ownerUserId", "sharingScope", "isFavorite", "filterState", "updatedAt")
+        VALUES (${input.reportCode}, ${input.name}, ${actorUserId}::uuid, ${input.sharingScope}::"ReportingSharingScope", ${input.isFavorite ?? false}, ${JSON.stringify(json(input.filterState))}::jsonb, NOW()) RETURNING *
+      `);
+      const saved = rows[0]!;
+      if (input.runMetadata) {
+        await transaction.$executeRaw(Prisma.sql`
+          INSERT INTO "reporting_runs" ("reportCode", "savedReportId", "actorUserId", status, "filterSnapshot", "viewName", "viewVersion", "startedAt", "finishedAt")
+          VALUES (${input.reportCode}, ${String(saved.id)}::uuid, ${actorUserId}::uuid, 'SUCCEEDED',
+            ${json({ ...(input.filterState as Record<string, unknown>), actionType: 'SAVE' })},
+            ${input.runMetadata.viewName}, ${input.runMetadata.viewVersion}, NOW(), NOW())
+        `);
+      }
+      return saved;
+    });
   }
 
   async savedReportById(id: string) {
@@ -256,10 +318,11 @@ export class ReportingRepository {
 
   listRuns(actorUserId: string) {
     return this.database.client.$queryRaw<RecordRow[]>(Prisma.sql`
-      SELECT x.*, u."displayName" AS "actorName", r.name AS "savedReportName"
+      SELECT x.*, x."filterSnapshot" ->> 'actionType' AS "actionType",
+        u."displayName" AS "actorName", r.name AS "savedReportName"
       FROM "reporting_runs" x JOIN "iam_users" u ON u.id = x."actorUserId"
       LEFT JOIN "reporting_saved_reports" r ON r.id = x."savedReportId"
-      WHERE x."actorUserId" = ${actorUserId}::uuid ORDER BY x."createdAt" DESC LIMIT 100
+      WHERE x."actorUserId" = ${actorUserId}::uuid ORDER BY x."createdAt" DESC LIMIT 30
     `);
   }
 
@@ -276,7 +339,7 @@ export class ReportingRepository {
     const rows = await this.database.client.$queryRaw<RecordRow[]>(Prisma.sql`
       INSERT INTO "reporting_runs" ("reportCode", "savedReportId", "actorUserId", status, "filterSnapshot", "viewName", "viewVersion", "errorMessage", "startedAt", "finishedAt")
       VALUES (${input.reportCode}, ${input.savedReportId ?? null}::uuid, ${input.actorUserId}::uuid,
-        ${input.status ?? 'RUNNING'}::"ReportingRunStatus", ${json(input.filterSnapshot)}, ${input.viewName}, ${input.viewVersion}, ${input.errorMessage ?? null}, NOW(), ${input.status === 'FAILED' ? new Date() : null}) RETURNING *
+        ${input.status ?? 'RUNNING'}::"ReportingRunStatus", ${json(input.filterSnapshot)}, ${input.viewName}, ${input.viewVersion}, ${input.errorMessage ?? null}, NOW(), ${input.status === 'FAILED' || input.status === 'SUCCEEDED' ? new Date() : null}) RETURNING *
     `);
     return rows[0]!;
   }
@@ -287,11 +350,19 @@ export class ReportingRepository {
     `);
   }
 
+  failRun(id: string, message: string, durationMs: number) {
+    return this.database.client.$executeRaw(Prisma.sql`
+      UPDATE "reporting_runs" SET status='FAILED', "errorCode"='REPORT_ACTION_FAILED',
+        "errorMessage"=${message.slice(0, 500)}, "durationMs"=${durationMs}, "finishedAt"=NOW()
+      WHERE id=${id}::uuid
+    `);
+  }
+
   listExports(actorUserId: string) {
     return this.database.client.$queryRaw<RecordRow[]>(Prisma.sql`
       SELECT e.*, u."displayName" AS "creatorName" FROM "reporting_export_artifacts" e
       JOIN "iam_users" u ON u.id=e."creatorUserId" WHERE e."creatorUserId"=${actorUserId}::uuid
-      ORDER BY e."createdAt" DESC LIMIT 100
+      ORDER BY e."createdAt" DESC LIMIT 30
     `);
   }
 

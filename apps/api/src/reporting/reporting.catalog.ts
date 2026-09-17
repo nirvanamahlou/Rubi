@@ -101,6 +101,13 @@ export const REPORTING_CATALOG_V1: readonly ReportingCatalogEntryV1[] = [
     'reporting.finance.read',
     'reporting_check_facts_v1',
   ),
+  pending(
+    'cash_position',
+    'با وضعیت فعلی پرونده‌ها و تعهدات، شرکت نیاز به تزریق نقدینگی دارد یا امکان برداشت وجه وجود دارد؟',
+    'JOURNAL',
+    'reporting.finance.read',
+    'reporting_cash_position_facts_v1',
+  ),
   readyPublicProjection(
     'payments_refunds',
     'چه میزان دریافت، پرداخت و استرداد انجام شده است؟',
