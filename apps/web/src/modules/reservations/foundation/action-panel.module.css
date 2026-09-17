@@ -1,8 +1,6 @@
 .panel {
   display: grid;
-  grid-template-columns: minmax(160px, 0.8fr) repeat(3, minmax(0, 1fr));
-  align-items: start;
-  gap: 8px;
+  gap: 6px;
   width: 100%;
   max-height: none;
   overflow: visible;
@@ -10,14 +8,15 @@
   border: 1px solid var(--border);
   border-top: 4px solid var(--primary);
   border-radius: 10px;
-  padding: 8px;
+  padding: 6px;
   min-width: 0;
 }
 .selection {
-  display: grid;
-  gap: 4px;
-  min-height: 100%;
-  padding: 9px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 6px 10px;
   background: var(--secondary);
   border-radius: 8px;
   color: var(--foreground);
@@ -27,9 +26,15 @@
 .selection strong {
   font-size: 15px;
 }
+.groups {
+  display: grid;
+  grid-template-columns: minmax(440px, 2fr) minmax(210px, 1fr) minmax(120px, 0.55fr);
+  align-items: start;
+  gap: 6px;
+}
 .group {
   min-width: 0;
-  padding: 8px;
+  padding: 6px;
   border: 1px solid var(--border);
   border-radius: 8px;
   background: color-mix(in srgb, var(--secondary) 52%, var(--surface));
@@ -37,16 +42,25 @@
 .group h2 {
   font-size: 12px !important;
   color: var(--muted-foreground);
-  margin: 0 0 6px !important;
+  margin: 0 0 4px !important;
 }
 .buttons {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 4px;
 }
+.group0 .buttons {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.group1 .buttons {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.group2 .buttons {
+  grid-template-columns: 1fr;
+}
 .panel .action {
-  min-height: 31px;
-  padding: 4px;
+  min-height: 29px;
+  padding: 3px 4px;
   border-radius: 6px;
   font-size: 12px;
 }
@@ -86,16 +100,28 @@
   gap: 12px;
 }
 @media (max-width: 760px) {
-  .panel {
+  .groups {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+  .group0 {
+    grid-column: 1 / -1;
+  }
+  .group0 .buttons,
   .buttons {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 @media (max-width: 460px) {
-  .panel {
+  .groups {
     grid-template-columns: 1fr;
+  }
+  .group0 {
+    grid-column: auto;
+  }
+  .selection {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 2px;
   }
   .buttons,
   .details {
