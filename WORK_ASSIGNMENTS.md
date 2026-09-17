@@ -44,6 +44,13 @@
 
 # Work Assignments
 
+## DASHBOARD-TREND-COMPARISON-VISUAL-0917 — PC-C — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-17: نمودارهای روند Dashboard از نظر خروجی با مرجع ارسالی هم‌راستا شوند؛ سری بازهٔ انتخاب‌شده با خط سرمه‌ای و نقطه‌ها، سری دورهٔ قبلِ هم‌طول با خط خاکستریِ خط‌چین، محور مقدار، خطوط راهنمای نقطه‌چین و برچسب‌های زمانی خوانا نمایش یابند.
+- `COMPUTER_ID=PC-C`؛ شاخهٔ کاری `codex/pc-c-dashboard-reporting-latest` پس از دریافت `origin/develop@acc35d18`. محدودهٔ رزروشده: Projection نسخه‌دار Dashboard در `apps/api/src/reporting/**`، مصرف‌کننده و تست‌های Dashboard در `apps/web/src/modules/dashboard/**` و اسناد وضعیت همین واحد.
+- بدون Migration، Schema، دادهٔ عملیاتی/دمو، Permission، Dependency یا Lockfile. سری مقایسه فقط از factهای Projection تأییدشده و بازهٔ قبل هم‌طول تولید می‌شود؛ مقدار فرضی یا تبدیل ارز افزوده نخواهد شد.
+- نتیجه: Projection برای نمودارهای روندِ پشتیبانی‌شده، `comparisonValues` هم‌دانه و هم‌طول را از بازهٔ قبل منتشر می‌کند. نمودار خطی اکنون سری جاری سرمه‌ای با نقطه، سری قبل خاکستری خط‌چین، محور عددی انگلیسی، شبکهٔ نقطه‌چین، برچسب زمان متراکم و خلاصهٔ دسترس‌پذیر دارد. ۶ تست Reporting و ۱۶ تست Dashboard، lint/typecheck API/Web و build تولیدی API/Web موفق‌اند؛ runtime تازه روی `localhost:3000` و API روی ۴۰۰۰ پاسخ ۲۰۰ می‌دهند.
+
 ## TOUR-HOTEL-PRICING-FLOW-0916 — PC-A — MERGED WITH DEVELOP / VERIFIED LOCALLY
 
 - 2026-09-16 commission follow-up: product owner clarified that commission may be percent or a fixed amount with its own currency. PC-A reserves the additive Package Pricing contract/schema/migration, API arithmetic/persistence, Sales UI/tests and bounded pricing docs on the existing task branch. Historical rows default to percent; fixed commission remains a profit expense and never changes sale price. Migration and shared-contract locks are held only for this follow-up; dependency/lockfile remains unassigned.

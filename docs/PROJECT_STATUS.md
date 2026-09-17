@@ -1,3 +1,17 @@
+## 2026-09-17 — DASHBOARD-TREND-COMPARISON-VISUAL-0917 — READY_FOR_REVIEW
+
+نمودارهای روندِ Dashboard به خروجی مرجع نزدیک شدند: خط بازهٔ انتخاب‌شده با رنگ
+سرمه‌ای و markerهای واضح، خط بازهٔ قبل هم‌طول با خاکستری خط‌چین، خطوط راهنمای
+نقطه‌چین، محور ارزش انگلیسی و برچسب‌های زمانی فشرده در یک نمودار سفید و خوانا
+نمایش می‌یابند. مقایسه از `comparisonValues` نسخه‌دارِ Projection می‌آید؛ هر نقطه
+به همان bucket زمانیِ نقطهٔ جاری متناظر است و هیچ مقدار یا تبدیل ارزی در Web ساخته
+نمی‌شود. سری روندی که producer تأییدشده ندارد همچنان صادقانه خالی می‌ماند.
+
+۶ تست هدفمند Reporting و ۱۶ تست Dashboard، lint و typecheck API/Web و build
+تولیدی API/Web موفق‌اند. Migration، Schema، Permission، Dependency/Lockfile و
+داده‌های دمو/عملیاتی تغییر نکرده‌اند. Web و API بازسازی و به‌ترتیب روی
+`localhost:3000` و ۴۰۰۰ با پاسخ HTTP ۲۰۰ فعال‌اند.
+
 ## 2026-09-17 — SYSTEM-MANAGEMENT-BACKEND-001 — PC-B — READY_FOR_REVIEW
 
 تغییرات تازهٔ develop برای Backend مدیریت سامانه همراه با تغییرات این چت یکپارچه شد: قرارداد v1، ۳۰ Permission، ۱۲ جدول افزایشی، تنظیمات نسخه‌دار، شماره‌گذاری اتمیک، اعلان، قالب immutable، Feature Flag، درخواست Backup، Health/Job read-only و نشست مدیریتی امن. حفاظت IAM در برابر Self-escalation و حذف آخرین مدیر فعال نیز حفظ شد.

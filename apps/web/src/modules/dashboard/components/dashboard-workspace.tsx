@@ -606,6 +606,16 @@ function compactChartValue(value: number) {
   }).format(value);
 }
 
+function trendAxisLabel(value: string, pointCount: number) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Tehran',
+    month: 'short',
+    ...(pointCount === 12 ? {} : { day: 'numeric' }),
+  }).format(date);
+}
+
 function formatDashboardNumber(
   value: number,
   options?: Intl.NumberFormatOptions,
@@ -1977,17 +1987,18 @@ function EmployeePerformanceBars({
 }
 
 function DashboardChart({
+  comparisonValues,
   kind,
   labels,
   title,
   values,
 }: {
+  comparisonValues?: readonly number[] | undefined;
   kind: DashboardVisualKind;
   labels: readonly string[];
   title: string;
   values: readonly number[];
 }) {
-  const lineAreaId = useId().replace(/:/g, '');
   const resolvedKind = dashboardVisualKindForData(kind, values);
   const maximum = Math.max(...values, 1);
   const total = values.reduce((sum, value) => sum + value, 0);
@@ -1999,52 +2010,153 @@ function DashboardChart({
     .join('، ');
 
   if (resolvedKind === 'line') {
+    const comparedValues =
+      comparisonValues?.length === values.length && values.length > 0
+        ? comparisonValues
+        : undefined;
+    const hasComparisonSeries = Boolean(comparedValues);
+    const plotMaximum = Math.max(
+      maximum,
+      ...(comparedValues ?? []),
+      1,
+    );
+    const chartLeft = 58;
+    const chartRight = 586;
+    const chartTop = 18;
+    const chartBottom = 142;
+    const pointFor = (value: number, index: number, totalPoints: number) => ({
+      x:
+        totalPoints > 1
+          ? chartLeft + (index * (chartRight - chartLeft)) / (totalPoints - 1)
+          : (chartLeft + chartRight) / 2,
+      y:
+        chartBottom - ((value / plotMaximum) * (chartBottom - chartTop)),
+    });
     const points = values.map((value, index) => ({
-      x: values.length > 1 ? 24 + (index * 552) / (values.length - 1) : 300,
-      y: 156 - (value / maximum) * 124,
+      ...pointFor(value, index, values.length),
+      value,
     }));
+    const comparisonPoints = comparedValues
+      ? comparedValues.map((value, index) => ({
+          ...pointFor(value, index, comparedValues.length),
+          value,
+        }))
+      : [];
+    const visibleLabelStep =
+      labels.length > 12 ? Math.ceil(labels.length / 8) : 1;
+    const axisLabelIndexes = labels
+      .map((_, index) => index)
+      .filter(
+        (index) =>
+          index % visibleLabelStep === 0 || index === labels.length - 1,
+      );
+    const comparisonSummary = comparedValues
+      ? comparedValues
+          .map(
+            (value, index) =>
+              `${labels[index] ?? `دوره ${index + 1}`}: ${formatDashboardNumber(value)}`,
+          )
+          .join('، ')
+      : '';
     return (
       <figure
-        aria-label={`${visualLabels[resolvedKind]} ${title}. ${accessibleSummary}`}
-        className="rounded-xl border border-border/80 bg-muted/[0.18] p-3"
+        aria-label={`${visualLabels[resolvedKind]} ${title}. بازه انتخاب‌شده: ${accessibleSummary}${comparisonSummary ? `؛ دوره قبل هم‌طول: ${comparisonSummary}` : ''}`}
+        className="rounded-xl border border-border/80 bg-background px-2 py-3 sm:px-3"
         role="img"
       >
-        <svg aria-hidden="true" className="h-36 w-full" viewBox="0 0 600 180">
-          <defs>
-            <linearGradient id={lineAreaId} x1="0" x2="0" y1="0" y2="1">
-              <stop offset="0%" stopColor="currentColor" stopOpacity="0.24" />
-              <stop offset="100%" stopColor="currentColor" stopOpacity="0" />
-            </linearGradient>
-          </defs>
-          {[32, 73, 114, 156].map((y) => (
-            <line key={y} stroke="currentColor" className="text-border" x1="24" x2="576" y1={y} y2={y} />
-          ))}
-          <polygon
-            className="text-primary"
-            fill={`url(#${lineAreaId})`}
-            points={`24,156 ${points.map(({ x, y }) => `${x},${y}`).join(' ')} 576,156`}
-          />
+        {hasComparisonSeries ? (
+          <div
+            aria-hidden="true"
+            className="mb-1 flex flex-wrap items-center gap-x-4 gap-y-1 px-2 text-[10px] font-bold text-muted-foreground"
+          >
+            <span className="inline-flex items-center gap-1.5 text-slate-900 dark:text-slate-100">
+              <i className="size-2 rounded-full bg-[#172554]" />بازهٔ انتخاب‌شده
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <i className="h-0.5 w-4 border-t-2 border-dashed border-slate-400" />دورهٔ قبل هم‌طول
+            </span>
+          </div>
+        ) : null}
+        <svg aria-hidden="true" className="h-48 w-full" viewBox="0 0 620 190">
+          {[0, 1, 2, 3, 4].map((index) => {
+            const y = chartTop + (index * (chartBottom - chartTop)) / 4;
+            const value = plotMaximum * (1 - index / 4);
+            return (
+              <g key={y}>
+                <line
+                  className="text-border"
+                  stroke="currentColor"
+                  strokeDasharray="2 5"
+                  strokeWidth="1"
+                  x1={chartLeft}
+                  x2={chartRight}
+                  y1={y}
+                  y2={y}
+                />
+                <text
+                  className="fill-muted-foreground"
+                  fontSize="10"
+                  textAnchor="end"
+                  x={chartLeft - 8}
+                  y={y + 3}
+                >
+                  {compactChartValue(value)}
+                </text>
+              </g>
+            );
+          })}
+          {comparisonPoints.length ? (
+            <>
+              <polyline
+                fill="none"
+                points={comparisonPoints.map(({ x, y }) => `${x},${y}`).join(' ')}
+                stroke="#a8aebc"
+                strokeDasharray="5 6"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2.25"
+              />
+              {comparisonPoints.map(({ x, y, value }, index) => (
+                <circle cx={x} cy={y} fill="#b8becb" key={`${x}-${y}-previous`} r="3">
+                  <title>{`دوره قبل هم‌طول — ${labels[index]}: ${formatDashboardNumber(value)}`}</title>
+                </circle>
+              ))}
+            </>
+          ) : null}
           <polyline
             fill="none"
             points={points.map(({ x, y }) => `${x},${y}`).join(' ')}
-            stroke="currentColor"
-            className="text-primary"
+            stroke="#172554"
             strokeLinecap="round"
             strokeLinejoin="round"
-            strokeWidth="4"
+            strokeWidth="3"
           />
-          {points.map(({ x, y }, index) => (
-            <circle key={`${x}-${y}`} cx={x} cy={y} fill="currentColor" className="text-primary" r="5">
-              <title>{`${labels[index]}: ${formatDashboardNumber(values[index] ?? 0)}`}</title>
+          {points.map(({ x, y, value }, index) => (
+            <circle key={`${x}-${y}`} cx={x} cy={y} fill="#172554" r="3.5">
+              <title>{`بازه انتخاب‌شده — ${labels[index]}: ${formatDashboardNumber(value)}`}</title>
             </circle>
           ))}
+          {axisLabelIndexes.map((index) => {
+            const point = points[index];
+            if (!point) return null;
+            return (
+              <text
+                className="fill-muted-foreground"
+                fontSize="10"
+                key={`${labels[index]}-${index}`}
+                textAnchor="middle"
+                x={point.x}
+                y="168"
+              >
+                {trendAxisLabel(labels[index] ?? '', labels.length)}
+              </text>
+            );
+          })}
         </svg>
-        <div aria-hidden="true" className="flex justify-between gap-2 text-[10px] font-semibold text-muted-foreground">
-          {labels.map((label, index) => (
-            <span className="min-w-0 flex-1 truncate text-center" key={`${label}-${index}`} title={label}>{label}</span>
-          ))}
-        </div>
-        <figcaption className="sr-only">{accessibleSummary}</figcaption>
+        <figcaption className="sr-only">
+          {accessibleSummary}
+          {comparisonSummary ? `؛ دوره قبل هم‌طول: ${comparisonSummary}` : ''}
+        </figcaption>
       </figure>
     );
   }
@@ -2329,6 +2441,7 @@ function ProjectionSlot({
         labels: readonly string[];
         values: readonly number[];
         currencyCode?: string;
+        comparisonValues?: readonly number[];
         comparison?: DashboardComparisonSnapshot;
         trend?: DashboardTrendSnapshot;
       }
@@ -2396,7 +2509,13 @@ function ProjectionSlot({
               values={data.values}
             />
           ) : (
-            <DashboardChart kind={kind} labels={data.labels} title={title} values={data.values} />
+            <DashboardChart
+              comparisonValues={data.comparisonValues}
+              kind={kind}
+              labels={data.labels}
+              title={title}
+              values={data.values}
+            />
           )
         ) : (
           <>

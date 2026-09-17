@@ -549,6 +549,11 @@ describe('dashboard permission and data states', () => {
     expect(source).toContain('compactCurrencyAmount');
     expect(source).toContain('compactCurrencyTypography');
     expect(source).toContain('compactChartValue');
+    expect(source).toContain('trendAxisLabel');
+    expect(source).toContain('comparisonValues?: readonly number[] | undefined;');
+    expect(source).toContain('strokeDasharray="5 6"');
+    expect(source).toContain('دورهٔ قبل هم‌طول');
+    expect(source).toContain('strokeDasharray="2 5"');
     expect(source).toContain('formatDashboardNumber');
     expect(source).toContain('latinizeDashboardNumericText');
     expect(source).toContain("Intl.NumberFormat('en-US'");

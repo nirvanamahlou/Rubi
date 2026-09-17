@@ -414,11 +414,14 @@ export class ReportingService {
     const trendFor = (
       rows: typeof facts,
       measure: (bucket: typeof facts) => number,
+      window?: { from: Date; to: Date },
     ) => {
-      if (!periodStart || periodDuration <= 0)
+      const from = window?.from ?? periodStart;
+      const to = window?.to ?? periodEnd;
+      if (!from || from.getTime() >= to.getTime())
         throw new Error('بازه زمانی معتبر برای محاسبه روند وجود ندارد.');
       const bucketStarts = dashboardTrendBucketStarts({
-        from: periodStart,
+        from,
         range: input.range as
           | 'today'
           | 'week'
@@ -427,13 +430,18 @@ export class ReportingService {
           | 'year'
           | 'custom'
           | undefined,
-        to: periodEnd,
+        to,
       });
       const buckets = Array.from(
         { length: bucketStarts.length },
         () => [] as typeof facts,
       );
       for (const fact of rows) {
+        if (
+          fact.occurredAt.getTime() < from.getTime() ||
+          fact.occurredAt.getTime() >= to.getTime()
+        )
+          continue;
         let index = bucketStarts.length - 1;
         for (let candidate = bucketStarts.length - 1; candidate >= 0; candidate -= 1)
           if (fact.occurredAt.getTime() >= bucketStarts[candidate]!.getTime()) {
@@ -657,11 +665,26 @@ export class ReportingService {
     );
     const visualAmount = (rows: typeof facts) =>
       sum(rows, (fact) => Number(fact.salesAmount));
+    const previousTrendWindow =
+      periodStart && periodDuration > 0
+        ? {
+            from: new Date(periodStart.getTime() - periodDuration),
+            to: periodStart,
+          }
+        : undefined;
     const visuals = Object.fromEntries(
       visualIds.flatMap<[string, DashboardProjectionV1['visuals'][string]]>(
         (id) => {
           if (trendVisualIds.has(id)) {
             const trend = trendFor(visualFacts, visualAmount);
+            const comparisonTrend =
+              previousFacts && previousTrendWindow
+                ? trendFor(
+                    previousVisualFacts,
+                    visualAmount,
+                    previousTrendWindow,
+                  )
+                : undefined;
             return [
               [
                 id,
@@ -669,6 +692,9 @@ export class ReportingService {
                   labels: trend.labels,
                   values: trend.values,
                   currencyCode: visualCurrency,
+                  ...(comparisonTrend?.values.length === trend.values.length
+                    ? { comparisonValues: comparisonTrend.values }
+                    : {}),
                 },
               ],
             ];

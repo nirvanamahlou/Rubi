@@ -116,7 +116,7 @@ describe('dashboard travel projection date boundaries', () => {
         range: 'month',
         currency: 'IRR',
         kpiIds: 'gross-sales',
-        visualIds: 'executive-sales-by-service',
+        visualIds: 'executive-sales-by-service,finalized-sales-trend',
       },
       actor,
     );
@@ -133,6 +133,24 @@ describe('dashboard travel projection date boundaries', () => {
     expect(
       result.visuals['executive-sales-by-service']?.trend?.values.length,
     ).toBeGreaterThan(0);
+    expect(result.visuals['finalized-sales-trend']).toMatchObject({
+      currencyCode: 'IRR',
+    });
+    expect(
+      result.visuals['finalized-sales-trend']?.comparisonValues,
+    ).toHaveLength(result.visuals['finalized-sales-trend']?.values.length ?? 0);
+    expect(
+      result.visuals['finalized-sales-trend']?.values.reduce(
+        (total, value) => total + value,
+        0,
+      ),
+    ).toBe(12_000_000);
+    expect(
+      result.visuals['finalized-sales-trend']?.comparisonValues?.reduce(
+        (total, value) => total + value,
+        0,
+      ),
+    ).toBe(6_000_000);
   });
 
   it('rejects malformed or reversed custom boundaries before accessing facts', async () => {
