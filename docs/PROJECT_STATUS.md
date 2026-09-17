@@ -1,8 +1,8 @@
-## 2026-09-17 — SYSTEM-MANAGEMENT-001 — PC-B — UI_INTEGRATION_IN_PROGRESS
+## 2026-09-17 — SYSTEM-MANAGEMENT-001 — PC-B — READY_FOR_REVIEW
 
-PR #305 مربوط به backend مدیریت سامانه در 2026-09-17 بازبینی و در `develop` ادغام شد. قفل Migration، قرارداد مشترک و اسناد مرکزی آن آزاد است. PR #304 در مرحلهٔ اتصال UI به همان endpointهای نسخه‌دار است و تغییر Schema/Migration یا قرارداد producer ندارد.
+PR #305 backend مدیریت سامانه در `develop` ادغام شد و قفل Migration، قرارداد مشترک و اسناد مرکزی آن آزاد است. PR #304 رابط `/system` را بدون Schema/Migration یا تغییر قرارداد producer، به endpointهای نسخه‌دار منتشرشده وصل می‌کند.
 
-مرکز `/system` به client احرازشدهٔ `system-management/v1` وصل می‌شود و عملیات تنظیم نسخه‌دار، طرح شماره‌گذاری، Feature Flag، درخواست Backup، پایان نشست، تلاش مجدد واقعی Reporting Export، Health و Audit را نمایش/ارسال می‌کند. Probe واقعی Storage از Port مالک Documents مصرف می‌شود؛ PostgreSQL واقعی probe می‌شود؛ Redis، Worker و Queue تا معرفی Port عمومی مالک، صادقانه `UNKNOWN` می‌مانند. هیچ موفقیت یا اتصال ساختگی ایجاد نمی‌شود. Branch: `codex/pc-b-system-management`.
+مرکز `/system` اکنون تنظیم نسخه‌دار، طرح شماره‌گذاری، Feature Flag، درخواست Backup، پایان نشست، Audit/Health و Retry واقعی Reporting Export را با client احرازشدهٔ `system-management/v1` نمایش و ارسال می‌کند. Probe Storage از Public Port مالک Documents و PostgreSQL از query فقط‌خواندنی می‌آید. Redis، Worker و Queue تا انتشار Public Port مالک، وضعیت `UNKNOWN` دارند؛ اتصال یا موفقیت ساختگی ساخته نشده است. Branch: `codex/pc-b-system-management`.
 
 ## 2026-09-16 — PROCUREMENT-INVOICE-ATTACHMENTS-0916 — READY_FOR_REVIEW
 
