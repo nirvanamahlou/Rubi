@@ -5,6 +5,8 @@ export type DashboardCalendarRange =
   | 'quarter'
   | 'year';
 
+export type DashboardTrendRange = DashboardCalendarRange | 'custom';
+
 const tehranTimeZone = 'Asia/Tehran';
 
 type CivilDateParts = {
@@ -92,6 +94,69 @@ function findPersianBoundary(
     cursor = addTehranDays(cursor, -1);
   }
   throw new Error('مرز تقویم فارسی در بازهٔ مجاز پیدا نشد.');
+}
+
+function nextPersianMonthStart(dayStart: Date) {
+  const current = persianParts(dayStart);
+  let cursor = addTehranDays(dayStart, 1);
+  for (let index = 0; index <= 32; index += 1) {
+    const next = persianParts(cursor);
+    if (
+      next.day === 1 &&
+      (next.month !== current.month || next.year !== current.year)
+    )
+      return cursor;
+    cursor = addTehranDays(cursor, 1);
+  }
+  throw new Error('مرز ماه فارسی در بازهٔ مجاز پیدا نشد.');
+}
+
+/**
+ * Returns only completed or currently active calendar buckets. Future buckets
+ * are intentionally excluded so an as-of dashboard never implies a measured
+ * zero for a future hour, day, week or month.
+ */
+export function dashboardTrendBucketStarts({
+  from,
+  range,
+  to,
+}: {
+  from: Date;
+  range?: DashboardTrendRange | undefined;
+  to: Date;
+}) {
+  if (from.getTime() >= to.getTime()) return [] as Date[];
+  const duration = to.getTime() - from.getTime();
+  const resolvedRange =
+    range === 'custom'
+      ? duration <= 24 * 60 * 60 * 1000
+        ? 'today'
+        : duration <= 31 * 24 * 60 * 60 * 1000
+          ? 'month'
+          : duration <= 94 * 24 * 60 * 60 * 1000
+            ? 'quarter'
+            : 'year'
+      : range;
+  const nextBucket =
+    resolvedRange === 'today'
+      ? (value: Date) => new Date(value.getTime() + 60 * 60 * 1000)
+      : resolvedRange === 'week' || resolvedRange === 'month'
+        ? (value: Date) => addTehranDays(value, 1)
+        : resolvedRange === 'quarter'
+          ? (value: Date) => addTehranDays(value, 7)
+          : resolvedRange === 'year'
+            ? nextPersianMonthStart
+            : (value: Date) => addTehranDays(value, 1);
+  const starts: Date[] = [];
+  let cursor = from;
+  while (cursor.getTime() < to.getTime()) {
+    starts.push(cursor);
+    const next = nextBucket(cursor);
+    if (next.getTime() <= cursor.getTime())
+      throw new Error('مرز بازهٔ روند معتبر نیست.');
+    cursor = next;
+  }
+  return starts;
 }
 
 /**

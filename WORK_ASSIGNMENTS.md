@@ -9,6 +9,12 @@
 
 # Work Assignments
 
+## DASHBOARD-KPI-CALENDAR-TRENDS-0917 — PC-C — LOCAL_COMPLETE
+
+- درخواست مالک: روند زیر KPI Card بر مبنای دانه‌بندی تقویمی واقعی باشد: امروز ساعتی، هفته روزانه، ماه روزانه، فصل هفتگی و سال ماهانه.
+- نتیجه: API Dashboard اکنون مرزهای واقعی `Asia/Tehran` را برای trend می‌سازد: ساعت برای امروز، روز برای هفته و ماه، هفت روز برای فصل و ابتدای ماه فارسی برای سال. بازهٔ سفارشی نیز متناسب با طول خود (ساعت/روز/هفته/ماه) دانه‌بندی می‌شود. bucket آینده ساخته نمی‌شود تا صفرِ ساختگی در KPI Card دیده نشود.
+- اعتبارسنجی: ۸ تست هدفمند Reporting، TypeScript و lint API موفق‌اند. API Contract، Migration، Schema، دادهٔ عملیاتی، وابستگی و Lockfile تغییر نکرده‌اند.
+
 ## DASHBOARD-FILTER-HOVER-CONTRAST-0917 — PC-C — LOCAL_COMPLETE
 
 - درخواست مالک: در گزینه‌های فیلتر Dashboard، متن در حالت hover روی پس‌زمینهٔ آبی سفید باشد.

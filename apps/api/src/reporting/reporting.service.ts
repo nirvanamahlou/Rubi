@@ -8,7 +8,10 @@ import {
   Optional,
 } from '@nestjs/common';
 import { ReportingExportService } from './reporting-export.service';
-import { dashboardCalendarRangeStart } from './reporting-dashboard-calendar';
+import {
+  dashboardCalendarRangeStart,
+  dashboardTrendBucketStarts,
+} from './reporting-dashboard-calendar';
 import { REPORTING_CATALOG_V1 } from './reporting.catalog';
 import type {
   ReportQueryV1,
@@ -414,22 +417,33 @@ export class ReportingService {
     ) => {
       if (!periodStart || periodDuration <= 0)
         throw new Error('بازه زمانی معتبر برای محاسبه روند وجود ندارد.');
-      const bucketCount = input.range === 'year' ? 12 : 8;
-      const buckets = Array.from({ length: bucketCount }, () => [] as typeof facts);
+      const bucketStarts = dashboardTrendBucketStarts({
+        from: periodStart,
+        range: input.range as
+          | 'today'
+          | 'week'
+          | 'month'
+          | 'quarter'
+          | 'year'
+          | 'custom'
+          | undefined,
+        to: periodEnd,
+      });
+      const buckets = Array.from(
+        { length: bucketStarts.length },
+        () => [] as typeof facts,
+      );
       for (const fact of rows) {
-        const offset = fact.occurredAt.getTime() - periodStart.getTime();
-        const index = Math.min(
-          bucketCount - 1,
-          Math.max(0, Math.floor((offset / periodDuration) * bucketCount)),
-        );
+        let index = bucketStarts.length - 1;
+        for (let candidate = bucketStarts.length - 1; candidate >= 0; candidate -= 1)
+          if (fact.occurredAt.getTime() >= bucketStarts[candidate]!.getTime()) {
+            index = candidate;
+            break;
+          }
         buckets[index]!.push(fact);
       }
       return {
-        labels: buckets.map((_, index) =>
-          new Date(
-            periodStart.getTime() + (index * periodDuration) / bucketCount,
-          ).toISOString(),
-        ),
+        labels: bucketStarts.map((bucketStart) => bucketStart.toISOString()),
         values: buckets.map((bucket) => Math.round(measure(bucket))),
       };
     };
