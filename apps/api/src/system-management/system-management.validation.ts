@@ -128,6 +128,8 @@ export function sanitizeText(value: unknown, max = 1000): string | null {
     throw new BadRequestException('مقدار متنی معتبر نیست.');
   const result = value.trim();
   if (result.length > max || sensitiveKeyPattern.test(result))
-    throw new BadRequestException('مقدار متنی شامل داده حساس یا بیش از حد مجاز است.');
+    throw new BadRequestException(
+      'مقدار متنی شامل داده حساس یا بیش از حد مجاز است.',
+    );
   return result || null;
 }

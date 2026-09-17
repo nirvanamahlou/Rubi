@@ -530,10 +530,7 @@ export class IamService implements IamStepUpPort {
     });
   }
 
-  async listAdministrativeSessions(
-    actor: AuthenticatedActor,
-    userId?: string,
-  ) {
+  async listAdministrativeSessions(actor: AuthenticatedActor, userId?: string) {
     const rows = await this.database.client.session.findMany({
       ...(userId ? { where: { userId } } : {}),
       take: 500,
@@ -1186,32 +1183,34 @@ export class IamService implements IamStepUpPort {
   ) {
     if (userId === actor.userId && status !== UserStatus.ACTIVE)
       throw new ConflictException('غیرفعال‌سازی حساب جاری مجاز نیست.');
-    const user = await this.database.client.$transaction(async (transaction) => {
-      await transaction.$queryRaw`SELECT pg_advisory_xact_lock(hashtext('iam-administrator-membership'))`;
-      if (status !== UserStatus.ACTIVE) {
-        const targetIsAdministrator = await transaction.userRole.findFirst({
-          where: { userId, role: { code: 'administrator' } },
-          select: { userId: true },
-        });
-        if (targetIsAdministrator) {
-          const activeAdministrators = await transaction.user.count({
-            where: {
-              status: UserStatus.ACTIVE,
-              roles: { some: { role: { code: 'administrator' } } },
-            },
+    const user = await this.database.client.$transaction(
+      async (transaction) => {
+        await transaction.$queryRaw`SELECT pg_advisory_xact_lock(hashtext('iam-administrator-membership'))`;
+        if (status !== UserStatus.ACTIVE) {
+          const targetIsAdministrator = await transaction.userRole.findFirst({
+            where: { userId, role: { code: 'administrator' } },
+            select: { userId: true },
           });
-          if (activeAdministrators <= 1)
-            throw new ConflictException(
-              'غیرفعال‌سازی آخرین مدیر فعال سامانه مجاز نیست.',
-            );
+          if (targetIsAdministrator) {
+            const activeAdministrators = await transaction.user.count({
+              where: {
+                status: UserStatus.ACTIVE,
+                roles: { some: { role: { code: 'administrator' } } },
+              },
+            });
+            if (activeAdministrators <= 1)
+              throw new ConflictException(
+                'غیرفعال‌سازی آخرین مدیر فعال سامانه مجاز نیست.',
+              );
+          }
         }
-      }
-      return transaction.user.update({
-        where: { id: userId },
-        data: { status, failedLoginAttempts: 0, lockedUntil: null },
-        select: { id: true, status: true },
-      });
-    });
+        return transaction.user.update({
+          where: { id: userId },
+          data: { status, failedLoginAttempts: 0, lockedUntil: null },
+          select: { id: true, status: true },
+        });
+      },
+    );
     if (status !== UserStatus.ACTIVE)
       await this.database.client.session.updateMany({
         where: { userId, status: SessionStatus.ACTIVE },
@@ -1431,13 +1430,19 @@ export class IamService implements IamStepUpPort {
   }
   private maskIp(value: string | null) {
     if (!value) return null;
-    if (value.includes(':')) return `${value.split(':').slice(0, 3).join(':')}:*`;
+    if (value.includes(':'))
+      return `${value.split(':').slice(0, 3).join(':')}:*`;
     const parts = value.split('.');
     return parts.length === 4 ? `${parts[0]}.${parts[1]}.*.*` : 'masked';
   }
   private summarizeUserAgent(value: string | null) {
     if (!value) return null;
-    return value.replace(/[\r\n\t]+/g, ' ').trim().slice(0, 160) || null;
+    return (
+      value
+        .replace(/[\r\n\t]+/g, ' ')
+        .trim()
+        .slice(0, 160) || null
+    );
   }
   private revokeFamily(familyId: string, reason: string) {
     return this.database.client.session.updateMany({

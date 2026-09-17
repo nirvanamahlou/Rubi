@@ -108,12 +108,14 @@ describe('SystemManagementService', () => {
   });
 
   it('reports unavailable owner probes as UNKNOWN instead of success', async () => {
-    const database = { client: { $queryRaw: vi.fn().mockResolvedValue([{ healthy: 1 }]) } };
+    const database = {
+      client: { $queryRaw: vi.fn().mockResolvedValue([{ healthy: 1 }]) },
+    };
     const service = new SystemManagementService(database as never, {} as never);
     const result = await service.health();
-    expect(result.find(({ component }) => component === 'POSTGRESQL')?.status).toBe(
-      'HEALTHY',
-    );
+    expect(
+      result.find(({ component }) => component === 'POSTGRESQL')?.status,
+    ).toBe('HEALTHY');
     expect(result.find(({ component }) => component === 'REDIS')?.status).toBe(
       'UNKNOWN',
     );

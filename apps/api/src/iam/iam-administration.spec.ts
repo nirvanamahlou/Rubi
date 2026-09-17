@@ -29,7 +29,10 @@ describe('IAM administration safety', () => {
       client: {
         permission: {
           findMany: vi.fn().mockResolvedValue([
-            { id: '00000000-0000-4000-8000-000000000003', code: 'system.backup.request' },
+            {
+              id: '00000000-0000-4000-8000-000000000003',
+              code: 'system.backup.request',
+            },
           ]),
         },
         role: { create: vi.fn() },

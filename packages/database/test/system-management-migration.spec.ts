@@ -33,7 +33,9 @@ describe('SYSTEM-MANAGEMENT-BACKEND-001 migration', () => {
   });
 
   it('protects versioning, idempotency, and bounded rollout values', () => {
-    expect(migration).toContain('system_issued_numbers_schemeId_idempotencyKey_key');
+    expect(migration).toContain(
+      'system_issued_numbers_schemeId_idempotencyKey_key',
+    );
     expect(migration).toContain('system_feature_flags_rollout_check');
     expect(migration).toContain('system_settings_activeVersion_check');
     expect(migration).toContain('system_numbering_padding_check');

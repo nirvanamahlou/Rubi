@@ -24,11 +24,7 @@ import type {
   SystemSettingWriteV1,
   SystemUserSessionsRevokeInputV1,
 } from '@nora/contracts';
-import {
-  Prisma,
-  SystemBackupStatus,
-  SystemRecordStatus,
-} from '@nora/database';
+import { Prisma, SystemBackupStatus, SystemRecordStatus } from '@nora/database';
 import type {
   SystemScope as DbSystemScope,
   SystemValueType as DbSystemValueType,
@@ -249,7 +245,8 @@ export class SystemManagementService {
     });
     const selected = [...rows].sort(
       (left, right) =>
-        orderedKeys.indexOf(left.scopeKey) - orderedKeys.indexOf(right.scopeKey),
+        orderedKeys.indexOf(left.scopeKey) -
+        orderedKeys.indexOf(right.scopeKey),
     )[0];
     return selected
       ? this.presentSetting(selected, selected.versions[0])
@@ -279,7 +276,11 @@ export class SystemManagementService {
       throw new BadRequestException('تقویم شماره‌گذاری معتبر نیست.');
     if (!['NEVER', 'YEARLY', 'MONTHLY'].includes(input.resetPolicy))
       throw new BadRequestException('سیاست بازنشانی معتبر نیست.');
-    if (!Number.isSafeInteger(input.padding) || input.padding < 1 || input.padding > 16)
+    if (
+      !Number.isSafeInteger(input.padding) ||
+      input.padding < 1 ||
+      input.padding > 16
+    )
       throw new BadRequestException('Padding باید بین ۱ تا ۱۶ باشد.');
     return this.database.client.$transaction(async (tx) => {
       await tx.$queryRaw(
@@ -331,9 +332,10 @@ export class SystemManagementService {
     const scheme = await this.findScheme(schemeId);
     const date = this.parseDate(input.now);
     const periodKey = this.periodKey(scheme, date);
-    const sequence = await this.database.client.systemNumberingSequence.findUnique({
-      where: { schemeId_periodKey: { schemeId, periodKey } },
-    });
+    const sequence =
+      await this.database.client.systemNumberingSequence.findUnique({
+        where: { schemeId_periodKey: { schemeId, periodKey } },
+      });
     const next = (sequence?.lastValue ?? 0n) + 1n;
     return this.presentIssued(
       scheme,
@@ -358,55 +360,55 @@ export class SystemManagementService {
     const date = this.parseDate(input.now);
     try {
       return await this.database.client.$transaction(async (tx) => {
-      const existing = await tx.systemIssuedNumber.findUnique({
-        where: { schemeId_idempotencyKey: { schemeId, idempotencyKey } },
-        include: { scheme: true },
-      });
-      if (existing)
-        return {
-          contract: 'system.number-issued.v1',
-          schemeId,
-          value: existing.issuedValue,
-          sequence: existing.sequenceValue.toString(),
-          periodKey: existing.periodKey,
-        };
-      const scheme = await tx.systemNumberingScheme.findUnique({
-        where: { id: schemeId },
-      });
-      if (!scheme || !scheme.isActive)
-        throw new NotFoundException('طرح شماره‌گذاری فعال یافت نشد.');
-      const periodKey = this.periodKey(scheme, date);
-      const sequence = await tx.systemNumberingSequence.upsert({
-        where: { schemeId_periodKey: { schemeId, periodKey } },
-        create: { schemeId, periodKey, lastValue: 1n },
-        update: { lastValue: { increment: 1 }, version: { increment: 1 } },
-      });
-      const projection = this.presentIssued(
-        scheme,
-        sequence.lastValue,
-        periodKey,
-        date,
-        input.legalEntityCode,
-        input.branchCode,
-      );
-      await tx.systemIssuedNumber.create({
-        data: {
-          schemeId,
-          idempotencyKey,
-          issuedValue: projection.value,
-          sequenceValue: sequence.lastValue,
+        const existing = await tx.systemIssuedNumber.findUnique({
+          where: { schemeId_idempotencyKey: { schemeId, idempotencyKey } },
+          include: { scheme: true },
+        });
+        if (existing)
+          return {
+            contract: 'system.number-issued.v1',
+            schemeId,
+            value: existing.issuedValue,
+            sequence: existing.sequenceValue.toString(),
+            periodKey: existing.periodKey,
+          };
+        const scheme = await tx.systemNumberingScheme.findUnique({
+          where: { id: schemeId },
+        });
+        if (!scheme || !scheme.isActive)
+          throw new NotFoundException('طرح شماره‌گذاری فعال یافت نشد.');
+        const periodKey = this.periodKey(scheme, date);
+        const sequence = await tx.systemNumberingSequence.upsert({
+          where: { schemeId_periodKey: { schemeId, periodKey } },
+          create: { schemeId, periodKey, lastValue: 1n },
+          update: { lastValue: { increment: 1 }, version: { increment: 1 } },
+        });
+        const projection = this.presentIssued(
+          scheme,
+          sequence.lastValue,
           periodKey,
-          actorUserId: actor.userId,
-        },
-      });
-      await this.auditTx(tx, actor, metadata, {
-        action: 'system.numbering.issue',
-        entityType: 'SystemNumberingScheme',
-        entityId: schemeId,
-        reason: 'صدور اتمیک شماره با Idempotency Key',
-        before: null,
-        after: { value: projection.value, periodKey },
-      });
+          date,
+          input.legalEntityCode,
+          input.branchCode,
+        );
+        await tx.systemIssuedNumber.create({
+          data: {
+            schemeId,
+            idempotencyKey,
+            issuedValue: projection.value,
+            sequenceValue: sequence.lastValue,
+            periodKey,
+            actorUserId: actor.userId,
+          },
+        });
+        await this.auditTx(tx, actor, metadata, {
+          action: 'system.numbering.issue',
+          entityType: 'SystemNumberingScheme',
+          entityId: schemeId,
+          reason: 'صدور اتمیک شماره با Idempotency Key',
+          before: null,
+          after: { value: projection.value, periodKey },
+        });
         return projection;
       });
     } catch (error) {
@@ -468,7 +470,8 @@ export class SystemManagementService {
         quietHoursStart: input.quietHoursStart ?? null,
         quietHoursEnd: input.quietHoursEnd ?? null,
         retryPolicy: (input.retryPolicy ?? {}) as Prisma.InputJsonValue,
-        providerStatus: sanitizeText(input.providerStatus, 40) ?? 'NOT_CONFIGURED',
+        providerStatus:
+          sanitizeText(input.providerStatus, 40) ?? 'NOT_CONFIGURED',
         reason,
         updatedByUserId: actor.userId,
       },
@@ -478,13 +481,23 @@ export class SystemManagementService {
         quietHoursStart: input.quietHoursStart ?? null,
         quietHoursEnd: input.quietHoursEnd ?? null,
         retryPolicy: (input.retryPolicy ?? {}) as Prisma.InputJsonValue,
-        providerStatus: sanitizeText(input.providerStatus, 40) ?? 'NOT_CONFIGURED',
+        providerStatus:
+          sanitizeText(input.providerStatus, 40) ?? 'NOT_CONFIGURED',
         reason,
         updatedByUserId: actor.userId,
         version: { increment: 1 },
       },
     });
-    await this.audit(actor, metadata, 'system.notification.write', 'SystemNotificationChannel', row.id, reason, current, row);
+    await this.audit(
+      actor,
+      metadata,
+      'system.notification.write',
+      'SystemNotificationChannel',
+      row.id,
+      reason,
+      current,
+      row,
+    );
     return row;
   }
 
@@ -510,7 +523,11 @@ export class SystemManagementService {
     if (!['DRAFT', 'ACTIVE', 'ARCHIVED'].includes(input.status))
       throw new BadRequestException('وضعیت قالب معتبر نیست.');
     const body = input.body?.trim();
-    if (!body || body.length > 20_000 || /<%|\$\{|__proto__|constructor/i.test(body))
+    if (
+      !body ||
+      body.length > 20_000 ||
+      /<%|\$\{|__proto__|constructor/i.test(body)
+    )
       throw new BadRequestException('متن قالب معتبر یا امن نیست.');
     const variables = [...new Set(input.allowedVariables ?? [])];
     if (variables.some((item) => !/^[a-z][a-z0-9_]{0,63}$/.test(item)))
@@ -539,7 +556,16 @@ export class SystemManagementService {
         publishedAt: input.status === 'ACTIVE' ? new Date() : null,
       },
     });
-    await this.audit(actor, metadata, 'system.template.create', 'SystemMessageTemplate', row.id, reason, null, { key, language, version: row.version, status: row.status });
+    await this.audit(
+      actor,
+      metadata,
+      'system.template.create',
+      'SystemMessageTemplate',
+      row.id,
+      reason,
+      null,
+      { key, language, version: row.version, status: row.status },
+    );
     return row;
   }
 
@@ -562,11 +588,18 @@ export class SystemManagementService {
     const reason = validReason(input.reason);
     const keyScope = scopeKey(input.scope, input.scopeId);
     const rollout = input.rolloutPercent ?? null;
-    if (rollout !== null && (!Number.isInteger(rollout) || rollout < 0 || rollout > 100))
+    if (
+      rollout !== null &&
+      (!Number.isInteger(rollout) || rollout < 0 || rollout > 100)
+    )
       throw new BadRequestException('درصد Rollout معتبر نیست.');
     const startsAt = input.startsAt ? new Date(input.startsAt) : null;
     const endsAt = input.endsAt ? new Date(input.endsAt) : null;
-    if ((startsAt && Number.isNaN(startsAt.valueOf())) || (endsAt && Number.isNaN(endsAt.valueOf())) || (startsAt && endsAt && startsAt >= endsAt))
+    if (
+      (startsAt && Number.isNaN(startsAt.valueOf())) ||
+      (endsAt && Number.isNaN(endsAt.valueOf())) ||
+      (startsAt && endsAt && startsAt >= endsAt)
+    )
       throw new BadRequestException('بازه زمانی Feature Flag معتبر نیست.');
     const current = await this.database.client.systemFeatureFlag.findUnique({
       where: { key_scopeKey: { key, scopeKey: keyScope } },
@@ -593,7 +626,16 @@ export class SystemManagementService {
       : await this.database.client.systemFeatureFlag.create({
           data: { ...data, key, scopeKey: keyScope },
         });
-    await this.audit(actor, metadata, 'system.feature-flag.write', 'SystemFeatureFlag', row.id, reason, current, row);
+    await this.audit(
+      actor,
+      metadata,
+      'system.feature-flag.write',
+      'SystemFeatureFlag',
+      row.id,
+      reason,
+      current,
+      row,
+    );
     return this.presentFlag(row);
   }
 
@@ -616,7 +658,10 @@ export class SystemManagementService {
     const retentionUntil = input.retentionUntil
       ? new Date(input.retentionUntil)
       : null;
-    if (retentionUntil && (Number.isNaN(retentionUntil.valueOf()) || retentionUntil <= new Date()))
+    if (
+      retentionUntil &&
+      (Number.isNaN(retentionUntil.valueOf()) || retentionUntil <= new Date())
+    )
       throw new BadRequestException('زمان نگهداری معتبر نیست.');
     const row = await this.database.client.systemBackupRequest.create({
       data: {
@@ -627,7 +672,16 @@ export class SystemManagementService {
         status: SystemBackupStatus.REQUESTED,
       },
     });
-    await this.audit(actor, metadata, 'system.backup.request', 'SystemBackupRequest', row.id, reason, null, { type: row.type, status: row.status });
+    await this.audit(
+      actor,
+      metadata,
+      'system.backup.request',
+      'SystemBackupRequest',
+      row.id,
+      reason,
+      null,
+      { type: row.type, status: row.status },
+    );
     return this.presentBackup(row);
   }
 
@@ -675,14 +729,31 @@ export class SystemManagementService {
   }
 
   async overview(): Promise<SystemOverviewV1> {
-    const [settings, featureFlags, pendingBackupRequests, failedAdminOperations, health] =
-      await Promise.all([
-        this.database.client.systemSetting.count({ where: { status: SystemRecordStatus.ACTIVE } }),
-        this.database.client.systemFeatureFlag.count({ where: { enabled: true } }),
-        this.database.client.systemBackupRequest.count({ where: { status: { in: [SystemBackupStatus.REQUESTED, SystemBackupStatus.RUNNING] } } }),
-        this.database.client.systemAdminOperation.count({ where: { status: 'FAILED' } }),
-        this.health(),
-      ]);
+    const [
+      settings,
+      featureFlags,
+      pendingBackupRequests,
+      failedAdminOperations,
+      health,
+    ] = await Promise.all([
+      this.database.client.systemSetting.count({
+        where: { status: SystemRecordStatus.ACTIVE },
+      }),
+      this.database.client.systemFeatureFlag.count({
+        where: { enabled: true },
+      }),
+      this.database.client.systemBackupRequest.count({
+        where: {
+          status: {
+            in: [SystemBackupStatus.REQUESTED, SystemBackupStatus.RUNNING],
+          },
+        },
+      }),
+      this.database.client.systemAdminOperation.count({
+        where: { status: 'FAILED' },
+      }),
+      this.health(),
+    ]);
     return {
       contract: 'system.overview.v1',
       generatedAt: new Date().toISOString(),
@@ -704,7 +775,16 @@ export class SystemManagementService {
       if (!actor.permissions.includes('system.audit.sensitive'))
         throw new ForbiddenException('مجوز مشاهده Audit حساس وجود ندارد.');
       const viewReason = validReason(reason);
-      await this.audit(actor, metadata, 'system.audit.sensitive.view', 'SystemAuditEvent', 'collection', viewReason, null, { includeSensitive: true });
+      await this.audit(
+        actor,
+        metadata,
+        'system.audit.sensitive.view',
+        'SystemAuditEvent',
+        'collection',
+        viewReason,
+        null,
+        { includeSensitive: true },
+      );
     }
     const rows = await this.database.client.systemAuditEvent.findMany({
       orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
@@ -737,7 +817,8 @@ export class SystemManagementService {
 
   private parseDate(input?: string | null): Date {
     const date = input ? new Date(input) : new Date();
-    if (Number.isNaN(date.valueOf())) throw new BadRequestException('زمان معتبر نیست.');
+    if (Number.isNaN(date.valueOf()))
+      throw new BadRequestException('زمان معتبر نیست.');
     return date;
   }
 
@@ -788,7 +869,10 @@ export class SystemManagementService {
   ): SystemNumberIssueV1 {
     const legal = legalEntityCode?.trim().toUpperCase();
     const branch = branchCode?.trim().toUpperCase();
-    if (scheme.includeLegalEntity && (!legal || !/^[A-Z0-9-]{1,20}$/.test(legal)))
+    if (
+      scheme.includeLegalEntity &&
+      (!legal || !/^[A-Z0-9-]{1,20}$/.test(legal))
+    )
       throw new BadRequestException('کد شرکت برای شماره‌گذاری الزامی است.');
     if (scheme.includeBranch && (!branch || !/^[A-Z0-9-]{1,20}$/.test(branch)))
       throw new BadRequestException('کد شعبه برای شماره‌گذاری الزامی است.');
@@ -820,7 +904,12 @@ export class SystemManagementService {
       updatedAt: Date;
     },
     version:
-      | { value: unknown; reason: string; createdByUserId: string; createdAt: Date }
+      | {
+          value: unknown;
+          reason: string;
+          createdByUserId: string;
+          createdAt: Date;
+        }
       | undefined,
   ): SystemSettingV1 {
     if (!version) throw new ConflictException('نسخه فعال تنظیم یافت نشد.');
@@ -931,8 +1020,10 @@ export class SystemManagementService {
         entityId,
         outcome: 'SUCCESS',
         reason,
-        before: before === null ? Prisma.JsonNull : (before as Prisma.InputJsonValue),
-        after: after === null ? Prisma.JsonNull : (after as Prisma.InputJsonValue),
+        before:
+          before === null ? Prisma.JsonNull : (before as Prisma.InputJsonValue),
+        after:
+          after === null ? Prisma.JsonNull : (after as Prisma.InputJsonValue),
         requestId: metadata.requestId ?? null,
         ipAddressMasked: maskIp(metadata.ipAddress),
       },
