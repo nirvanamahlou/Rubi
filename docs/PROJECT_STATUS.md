@@ -1,6 +1,8 @@
-## 2026-09-17 — SYSTEM-MANAGEMENT-BACKEND-001 — PC-B — ACTIVE
+## 2026-09-17 — SYSTEM-MANAGEMENT-BACKEND-001 — PC-B — READY_FOR_REVIEW
 
 پس از Merge PR #269 و بسته‌شدن PR #278، فایل‌های مرکزی و Migration برای Backend مدیریت سامانه آزاد شدند. PC-B روی `codex/pc-b-system-management-backend` از `origin/develop@6aa287c3` مالک Migration افزایشی، قرارداد عمومی System Management، permission catalog، API و تست‌های همین Slice است. تنظیمات نسخه‌دار، شماره‌گذاری اتمیک، اعلان، قالب، Feature Flag، درخواست Backup و Health/Job read-only بدون تکرار مالکیت IAM، Legal Entity، Documents یا Integrations پیاده می‌شوند. PR #304 رابط `/system` مستقل و بدون Merge باقی می‌ماند.
+
+Backend پایه آماده Review است: قرارداد v1، سی Permission، دوازده جدول افزایشی، resolve تنظیمات با اولویت USER/BRANCH/LEGAL_ENTITY/GLOBAL، شماره‌گذاری اتمیک و idempotent، قالب immutable، Feature Flag، درخواست Backup، Audit حساس با Reason و نشست مدیریتی بدون افشای Token ارائه شد. IAM از واگذاری Permission بالاتر از اختیار، Self-escalation و غیرفعال‌سازی/حذف نقش آخرین مدیر فعال جلوگیری می‌کند. Migration کامل روی PostgreSQL خالی، migrate status، دو اجرای Seed، ۱۶۰ تست Contracts/Database و ۹ تست هدفمند API، lint/typecheck و build موفق‌اند. تا زمان انتشار Port مالک، وضعیت Redis/Worker/Storage/Queue برابر `UNKNOWN` و Retry Job غیرفعال می‌ماند؛ UI PR #304 در Handoff بعدی به Endpointهای منتشرشده متصل می‌شود.
 
 ## 2026-09-16 — PROCUREMENT-INVOICE-ATTACHMENTS-0916 — READY_FOR_REVIEW
 
