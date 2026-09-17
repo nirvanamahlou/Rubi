@@ -1,3 +1,10 @@
+## SYSTEM-MANAGEMENT-BACKEND-001 — PC-B — ACTIVE
+
+- مجوز صریح مالک در 2026-09-17: ادامهٔ `SYSTEM-MANAGEMENT-001` پس از Merge PR #269 و بسته‌شدن PR #278. `COMPUTER_ID=PC-B`؛ شاخهٔ مستقل `codex/pc-b-system-management-backend` از `origin/develop@6aa287c3` و تحویل در Draft PR مستقل به `develop`.
+- محدودهٔ رزروشده: `apps/api/src/system-management/**`، اتصال محدود و عمومی IAM برای مدیریت نشست‌ها، `apps/api/src/app.module.ts`، قرارداد نسخه‌دار `packages/contracts/src/system-management/**` و root export، permission catalog/seed، Prisma schema و یک Migration کاملاً افزایشی، تست‌های هدفمند و اسناد همین واحد. `Migration Owner = PC-B/SYSTEM-MANAGEMENT-BACKEND-001`؛ `System Management shared-contract/root export = PC-B/SYSTEM-MANAGEMENT-BACKEND-001`؛ `Central Docs Owner = PC-B/SYSTEM-MANAGEMENT-BACKEND-001`. قفل Dependency/Lockfile گرفته نمی‌شود.
+- مرزها: IAM مالک کاربر/نقش/نشست، Legal Entity مالک شرکت و Branding، Documents مالک فایل/نسخه، Integrations مالک Provider است. ارتباط فقط از Public Contract/Port انجام می‌شود؛ Query مستقیم جدول ماژول دیگر، Secret خام، دادهٔ واقعی Seed، Restore مستقیم، حذف مخرب، Grant گسترده و Backdoor ممنوع است. Migration بدون DROP/TRUNCATE/DELETE و با UTC، optimistic version، idempotency، Audit و deny-by-default اجرا می‌شود.
+- قابلیت‌های این Slice: تنظیمات typed/versioned و resolve چهارسطحی، شماره‌گذاری اتمیک، تنظیم کانال اعلان، قالب نسخه‌دار immutable، Feature Flag scoped، درخواست Backup بدون اجرای مستقیم، نمای read-only سلامت سرویس‌ها/Jobها و عملیات مدیریتی کنترل‌شده. UI موجود `/system` پس از انتشار قرارداد به endpointهای واقعی متصل می‌شود؛ PR #304 UI مستقل باقی می‌ماند.
+
 ## PROCUREMENT-INVOICE-ATTACHMENTS-0916 — PC-B — READY_FOR_REVIEW
 
 - درخواست مالک در 2026-09-16: در فرم فاکتور خرید امکان بارگذاری مستقیم فایل فاکتور اضافه شود؛ فایل در ماژول اسناد با دامنهٔ Procurement آرشیو و به فاکتور متصل بماند. `COMPUTER_ID=PC-B`؛ شاخهٔ مستقل `codex/pc-b-procurement-invoice-attachments-0916` از `origin/develop@c441d33a`.

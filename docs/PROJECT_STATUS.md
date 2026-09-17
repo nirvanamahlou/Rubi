@@ -1,3 +1,7 @@
+## 2026-09-17 — SYSTEM-MANAGEMENT-BACKEND-001 — PC-B — ACTIVE
+
+پس از Merge PR #269 و بسته‌شدن PR #278، فایل‌های مرکزی و Migration برای Backend مدیریت سامانه آزاد شدند. PC-B روی `codex/pc-b-system-management-backend` از `origin/develop@6aa287c3` مالک Migration افزایشی، قرارداد عمومی System Management، permission catalog، API و تست‌های همین Slice است. تنظیمات نسخه‌دار، شماره‌گذاری اتمیک، اعلان، قالب، Feature Flag، درخواست Backup و Health/Job read-only بدون تکرار مالکیت IAM، Legal Entity، Documents یا Integrations پیاده می‌شوند. PR #304 رابط `/system` مستقل و بدون Merge باقی می‌ماند.
+
 ## 2026-09-16 — PROCUREMENT-INVOICE-ATTACHMENTS-0916 — READY_FOR_REVIEW
 
 فرم فاکتور خرید اکنون دکمهٔ بارگذاری مستقیم دارد. فایل با نوع سند Procurement، مرجع درخواست خرید و شناسهٔ آرشیو خودکار در Documents ذخیره می‌شود و نسخهٔ سالم آن به فاکتور در حال ثبت پیوست می‌گردد؛ سپس در «اسناد و فایل‌ها» نیز قابل مشاهده است. تست فرم و lint موفق‌اند. Branch: `codex/pc-b-procurement-invoice-attachments-0916`.
