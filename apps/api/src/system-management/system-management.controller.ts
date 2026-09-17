@@ -53,7 +53,11 @@ export class SystemManagementController {
     @Body() input: SystemSettingWriteV1,
     @Req() request: AuthenticatedRequest,
   ) {
-    return this.system.writeSetting(input, request.actor, this.metadata(request));
+    return this.system.writeSetting(
+      input,
+      request.actor,
+      this.metadata(request),
+    );
   }
 
   @Get('settings/resolve')
@@ -165,7 +169,8 @@ export class SystemManagementController {
   @Post('notification-channels')
   @RequirePermissions('system.notifications.manage')
   writeNotificationChannel(
-    @Body() input: Parameters<SystemManagementService['writeNotificationChannel']>[0],
+    @Body()
+    input: Parameters<SystemManagementService['writeNotificationChannel']>[0],
     @Req() request: AuthenticatedRequest,
   ) {
     return this.system.writeNotificationChannel(

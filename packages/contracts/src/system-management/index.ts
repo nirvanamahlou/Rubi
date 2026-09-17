@@ -91,8 +91,10 @@ export interface SystemNumberingSchemeV1 {
   isActive: boolean;
 }
 
-export interface SystemNumberingSchemeWriteV1
-  extends Omit<SystemNumberingSchemeV1, 'contract' | 'id' | 'version'> {
+export interface SystemNumberingSchemeWriteV1 extends Omit<
+  SystemNumberingSchemeV1,
+  'contract' | 'id' | 'version'
+> {
   reason: string;
   expectedVersion?: number;
 }
