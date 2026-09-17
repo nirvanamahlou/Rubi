@@ -702,22 +702,23 @@ export function ReservationOperationsWorkspace({
                   )}
                 </div>
                 <p>{operationContent[section].note}</p>
-                {visibleOperations.map((operation) => (
-                  <article key={operation.id} aria-label={operation.title}>
-                    <div className={styles.panelTitle}>
-                      <h3>{operation.title}</h3>
-                      <span>{operation.statusLabel}</span>
-                    </div>
-                    <dl className={styles.details}>
-                      {operation.fields.map((field) => (
-                        <div key={field.label}>
-                          <dt>{field.label}</dt>
-                          <dd>{field.value}</dd>
-                        </div>
-                      ))}
-                    </dl>
-                  </article>
-                ))}
+                {section !== 'manifests' &&
+                  visibleOperations.map((operation) => (
+                    <article key={operation.id} aria-label={operation.title}>
+                      <div className={styles.panelTitle}>
+                        <h3>{operation.title}</h3>
+                        <span>{operation.statusLabel}</span>
+                      </div>
+                      <dl className={styles.details}>
+                        {operation.fields.map((field) => (
+                          <div key={field.label}>
+                            <dt>{field.label}</dt>
+                            <dd>{field.value}</dd>
+                          </div>
+                        ))}
+                      </dl>
+                    </article>
+                  ))}
                 {section === 'manifests' ? (
                   <ManifestExport />
                 ) : (

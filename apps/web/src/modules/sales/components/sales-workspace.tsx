@@ -524,19 +524,25 @@ export function SalesWorkspace() {
                       {new Date(contract.updatedAt).toLocaleDateString('fa-IR')}
                     </td>
                     <td className="px-5 py-4">
-                      <div className="flex min-w-40 flex-col gap-1.5">
+                      <div className="flex w-60 min-w-60 flex-col gap-1.5">
                         <Button
                           size="sm"
                           variant="outline"
-                          className="justify-start bg-surface"
+                          className="w-full justify-start bg-surface"
                           onClick={() => setPaymentContractId(contract.id)}
                         >
                           <ReceiptText className="size-3.5" />
                           پرداخت‌ها و اقساط
                         </Button>
-                        <div className="flex flex-wrap gap-1">
-                          <ContractOutputButton contractId={contract.id} />
-                          <SalesTravelDocuments contractId={contract.id} />
+                        <div className="flex flex-col gap-1.5">
+                          <ContractOutputButton
+                            contractId={contract.id}
+                            className="w-full justify-start"
+                          />
+                          <SalesTravelDocuments
+                            contractId={contract.id}
+                            className="w-full justify-start"
+                          />
                         </div>
                       </div>
                     </td>

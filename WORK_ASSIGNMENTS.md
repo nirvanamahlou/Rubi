@@ -2,10 +2,11 @@
 
 - نتیجهٔ ادغام‌شده از `origin/develop`: قرارداد نسخهٔ ۱ مدیریت سامانه، ۳۰ Permission، ۱۲ جدول افزایشی و API کنترل‌شدهٔ تنظیمات/شماره‌گذاری/اعلان/قالب/Feature Flag/Backup/Health/Audit به‌همراه حفاظت IAM برای Self-escalation، آخرین مدیر فعال و بستن نشست جاری اضافه شده است. Migration و تست‌های این Slice در Draft PR #305 تأیید شده‌اند؛ قفل‌های Migration، قرارداد و اسناد مرکزی آزادند.
 
-## RESERVATION-UI-AND-CONTRACT-ACTIONS-0917 — PC-A — IN PROGRESS
+## RESERVATION-UI-AND-CONTRACT-ACTIONS-0917 — PC-A — COMPLETE
 
 - درخواست مالک در 2026-09-17: تغییرهای تاییدشده اما خارج از `develop` در رابط رزواسیون (پنل عملیات قرارداد، فرم کودک هتل، هویت مسافر و Manifest) به نسخهٔ نهایی اضافه شوند؛ همچنین کنترل‌های عملیات سمت راست جدول قراردادهای فروش عرض و چیدمان یکسان داشته باشند. شاخهٔ مستقل `codex/pc-a-reservation-ui-contract-actions-0917` از `develop@50c3e8cd`؛ COMPUTER_ID=PC-A.
-- محدودهٔ رزروشده: فایل‌های UI/API محلی رزواسیون در commitهای تاییدشده، `sales-workspace` و تست‌های هدفمند آن‌ها، همراه با این مدخل وضعیت. Migration، Schema، قرارداد مشترک، دادهٔ عملیاتی، Permission و Dependency/Lockfile تغییر نمی‌کنند. خروجی فقط پس از build/test به `develop` و سپس `origin/develop` push می‌شود.
+- محدودهٔ رزروشده: فایل‌های UI/API محلی رزواسیون در commitهای تاییدشده، `sales-workspace` و تست‌های هدفمند آن‌ها، همراه با این مدخل وضعیت. Migration، Schema، قرارداد مشترک، دادهٔ عملیاتی و Dependency/Lockfile تغییر نکردند. نقص ادغام قبلی در قرارگرفتن مجوزهای System در فهرست IAM نیز به‌صورت additive اصلاح شد.
+- نتیجه: پنل فشردهٔ عملیات رزواسیون، ظاهر و تب‌های ویرایش قرارداد، نمایش `CHD (2-6)`/`CHD (6-12)` در فرم و واچر، ویرایش کنترل‌شدهٔ هویت مسافر و حذف کارت عمومی از نمای Manifest در نسخه نهایی حاضرند. سه دکمهٔ عملیات هر قرارداد فروش نیز عرض ثابت و کامل دارند. ۳۲ تست Web، ۱۰ تست API، typecheck API/Web و build تولیدی API/Web موفق‌اند؛ بدون migration عملیاتی.
 
 ## CONTRACT-PASSENGER-CONTROLS-0917 — PC-A — READY_FOR_REVIEW
 

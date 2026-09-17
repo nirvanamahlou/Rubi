@@ -313,3 +313,27 @@ it('renders workflow colors with readable statuses and accessible arrival alert'
   );
   expect(denied).not.toContain('درخواست جدید به');
 });
+
+it('does not render generic reservation operation cards on the MANIFEST pane', () => {
+  const html = renderToStaticMarkup(
+    <ReservationOperationsWorkspace
+      state="SUCCESS"
+      rows={[row()]}
+      access={access}
+      initialSection="manifests"
+      operations={[
+        {
+          id: 'manifest-operation',
+          requestId: 'test-request',
+          section: 'manifests',
+          title: 'فرم رزواسیون داخلی',
+          statusLabel: 'پیش‌نویس',
+          fields: [{ label: 'شماره قرارداد', value: 'TEST-001' }],
+        },
+      ]}
+    />,
+  );
+  expect(html).toContain('MANIFEST بلیط‌ها');
+  expect(html).not.toContain('فرم رزواسیون داخلی');
+  expect(html).not.toContain('TEST-001');
+});

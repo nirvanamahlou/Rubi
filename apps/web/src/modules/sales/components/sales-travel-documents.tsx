@@ -15,7 +15,13 @@ import { travelRequest } from '@/modules/reservations/components/travel-workflow
 import { TravelDocument } from '@/modules/reservations/components/travel-document';
 import { ReservationTickets } from '@/modules/reservations/components/reservation-tickets';
 type Intake = ReservationIntakeV1 & { workflow: TravelWorkflowStateV1 };
-export function SalesTravelDocuments({ contractId }: { contractId: string }) {
+export function SalesTravelDocuments({
+  contractId,
+  className,
+}: {
+  contractId: string;
+  className?: string;
+}) {
   const [intake, setIntake] = useState<Intake>();
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
@@ -44,6 +50,7 @@ export function SalesTravelDocuments({ contractId }: { contractId: string }) {
       <Button
         size="sm"
         variant="outline"
+        className={className}
         disabled={busy}
         onClick={() => void load()}
       >

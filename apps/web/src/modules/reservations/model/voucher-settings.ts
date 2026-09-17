@@ -2,6 +2,7 @@ import type { voucherNumberKeys, voucherFlagKeys } from '@nora/contracts';
 import { voucherTextKeys, type VoucherSettingsV1 } from '@nora/contracts';
 import {
   reservationFormData,
+  reservationPassengerAgeLabel,
   type ReservationFormIntake,
   type ReservationFormReferences,
 } from './reservation-form';
@@ -156,18 +157,23 @@ export function voucherFormData(
   if (!v) return d;
   const passengers = d.passengers
     .filter((p) => v.passengers.some((s) => s.id === p.id && s.selected))
-    .map((p) => ({
-      ...p,
-      age: v.passengers.find((s) => s.id === p.id)!.age,
-      hotelChildAgeBand: v.passengers.find((s) => s.id === p.id)
-        ?.hotelChildAgeBand,
-      sex:
-        v.passengers.find((s) => s.id === p.id)?.sex === 'MALE'
-          ? 'Male'
-          : v.passengers.find((s) => s.id === p.id)?.sex === 'FEMALE'
-            ? 'Female'
-            : '-',
-    }));
+    .map((p) => {
+      const setting = v.passengers.find((s) => s.id === p.id)!;
+      return {
+        ...p,
+        age: reservationPassengerAgeLabel(
+          setting.age,
+          setting.hotelChildAgeBand,
+        ),
+        hotelChildAgeBand: setting.hotelChildAgeBand,
+        sex:
+          setting.sex === 'MALE'
+            ? 'Male'
+            : setting.sex === 'FEMALE'
+              ? 'Female'
+              : '-',
+      };
+    });
   const nights =
     (Date.parse(v.text.checkOut) - Date.parse(v.text.checkIn)) / 86400000;
   return {
@@ -201,7 +207,7 @@ export function voucherFormData(
       .join(' / '),
     passengers,
     adults: passengers.filter((p) => p.age === 'ADL').length,
-    children: passengers.filter((p) => p.age === 'CHD').length,
+    children: passengers.filter((p) => p.age.startsWith('CHD')).length,
     infants: passengers.filter((p) => p.age === 'INF').length,
     flights: (['arrival', 'departure'] as const).map((prefix) => ({
       leg: prefix === 'arrival' ? 'OUTBOUND' : 'RETURN',

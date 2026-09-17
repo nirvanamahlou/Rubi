@@ -126,6 +126,7 @@ export const IAM_PERMISSION_CODES = [
   ...HR_PERMISSION_CODES,
   ...IAM_SALES_PERMISSION_CODES,
   ...PACKAGE_PRICING_PERMISSION_CODES,
+  ...SYSTEM_PERMISSION_CODES,
   ...Object.values(CUSTOMER_AFFAIRS_PERMISSIONS),
   'ticket_catalog.read',
   'ticket_catalog.manage',
