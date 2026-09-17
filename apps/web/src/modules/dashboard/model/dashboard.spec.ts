@@ -644,6 +644,7 @@ describe('dashboard permission and data states', () => {
     expect(source).toContain('configurationOnly');
     expect(source).toContain('dashboardReportCodeFromDrilldown');
     expect(source).not.toContain('<Link href={reportHref}>');
+    expect(source).toContain('setReportConfigurationCode(reportCode);\n  };');
     expect(source).toContain('visualLabels');
     expect(source).toContain('EmptyVisualCanvas');
     expect(source).toContain('dashboardVisualKindForData');

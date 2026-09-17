@@ -2955,7 +2955,6 @@ export function DashboardWorkspace() {
     activePageKpis.find((item) => item.id === filters.widget) ?? null;
   const openReportConfiguration = (reportCode: string) => {
     setReportConfigurationCode(reportCode);
-    updateFilters({ widget: null });
   };
   return (
     <div className="min-w-0 space-y-5 pb-8" data-dashboard-workspace>

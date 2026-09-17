@@ -9,6 +9,11 @@
 
 # Work Assignments
 
+## DASHBOARD-KPI-DEFINITION-REPORT-STACK-0917 — PC-C — LOCAL_COMPLETE
+
+- درخواست مالک: با باز شدن فرم پیکربندی گزارشِ مرتبط، پنل توضیح KPI باز بماند.
+- نتیجه: باز کردن فرم گزارش دیگر فیلتر `widget` را پاک نمی‌کند؛ بنابراین Drawer تعریف KPI حفظ می‌شود و Dialog گزارش روی همان Dashboard باز می‌شود. با بستن فرم، کاربر همچنان به توضیح همان KPI دسترسی دارد.
+
 ## DASHBOARD-IN-PLACE-REPORT-CONFIGURATION-0917 — PC-C — LOCAL_COMPLETE
 
 - درخواست مالک: انتخاب «گزارش مرتبط» از KPI یا نمودار، فرم پیکربندی کامل گزارش را روی همان صفحهٔ Dashboard باز کند و به مسیر گزارش‌ها منتقل نشود.
