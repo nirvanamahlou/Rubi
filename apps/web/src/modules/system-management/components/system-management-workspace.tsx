@@ -159,7 +159,6 @@ export function SystemManagementWorkspace() {
   const [settings, setSettings] = useState<SystemSettingV1[]>([]);
   const [audit, setAudit] = useState<SystemAuditRecord[]>([]);
   const [overview, setOverview] = useState<SystemOverview | null>(null);
-  const [apiNotice, setApiNotice] = useState<string | null>(null);
   const [editing, setEditing] = useState<{
     module: SettingModule;
     group: SettingGroup;
@@ -182,14 +181,6 @@ export function SystemManagementWorkspace() {
     if (auditResult.status === 'fulfilled') setAudit(auditResult.value);
     if (overviewResult.status === 'fulfilled')
       setOverview(overviewResult.value);
-    const failed = [settingsResult, auditResult, overviewResult].find(
-      (result) => result.status === 'rejected',
-    );
-    setApiNotice(
-      failed?.status === 'rejected'
-        ? `نمایش مقادیر مرجع فعال است؛ ${apiMessage(failed.reason)}`
-        : null,
-    );
   }, []);
 
   useEffect(() => {
@@ -345,34 +336,6 @@ export function SystemManagementWorkspace() {
 
   const renderHub = () => (
     <>
-      {page === 'overview' ? (
-        <section className={styles.hero}>
-          <div>
-            <h2>تنظیمات یکپارچه روبی</h2>
-            <p className={styles.subtitle}>
-              سیاست‌ها و پیش‌فرض‌های بخش‌های کاری
-            </p>
-          </div>
-          <div className={styles.heroStats}>
-            <div>
-              <b>{settingsModules.length.toLocaleString('fa-IR')}</b>
-              <small>بخش</small>
-            </div>
-            <div>
-              <b>
-                {settingsModules
-                  .reduce((count, module) => count + module.groups.length, 0)
-                  .toLocaleString('fa-IR')}
-              </b>
-              <small>کارت تنظیمات</small>
-            </div>
-            <div>
-              <b>۰</b>
-              <small>منتظر بررسی</small>
-            </div>
-          </div>
-        </section>
-      ) : null}
       <div className={styles.searchbar}>
         <label className={styles.search}>
           <Search aria-hidden="true" size={21} />
@@ -404,6 +367,7 @@ export function SystemManagementWorkspace() {
             const Icon = iconMap[module.icon] ?? Settings;
             return (
               <button
+                aria-label={`مشاهده تنظیمات ${module.title}`}
                 className={styles.hubCard}
                 key={module.id}
                 onClick={() => openModule(module)}
@@ -431,7 +395,7 @@ export function SystemManagementWorkspace() {
                     {module.groups.length.toLocaleString('fa-IR')} کارت تنظیمات
                   </span>
                   <span className={styles.enter}>
-                    ورود به بخش <ArrowLeft aria-hidden="true" size={18} />
+                    مشاهده تنظیمات <ArrowLeft aria-hidden="true" size={18} />
                   </span>
                 </div>
               </button>
@@ -539,11 +503,12 @@ export function SystemManagementWorkspace() {
                       نسخه {(current?.version ?? 0).toLocaleString('fa-IR')}
                     </span>
                     <button
+                      aria-label={`ویرایش تنظیمات ${group.title}`}
                       className={styles.button}
                       onClick={() => openEditor(selectedModule, group)}
                       type="button"
                     >
-                      <Settings aria-hidden="true" size={17} /> تنظیمات
+                      <Settings aria-hidden="true" size={17} /> ویرایش تنظیمات
                     </button>
                   </div>
                 </article>
@@ -570,14 +535,11 @@ export function SystemManagementWorkspace() {
     <section className={styles.workspace} dir="rtl">
       <div className={styles.main}>
         <div className={styles.heading}>
-          <div>
-            <div className={styles.eyebrow}>مدیریت سیستم</div>
-            <h1>{pageTitle}</h1>
-          </div>
+          <h1>{pageTitle}</h1>
           <div className={styles.headingActions}>
             <label className={styles.scopeControl}>
               <Building2 aria-hidden="true" size={17} />
-              <span className="sr-only">دامنه تنظیمات</span>
+              <span className={styles.scopeLabel}>دامنه:</span>
               <select
                 aria-label="دامنه تنظیمات"
                 onChange={(event) => setScope(event.target.value)}
@@ -588,8 +550,9 @@ export function SystemManagementWorkspace() {
                 <option>جهان باستان</option>
               </select>
             </label>
-            <span className={styles.pill}>
-              {overview ? 'عملیاتی' : 'پیش‌نمایش'}
+            <span className={styles.statusBadge} role="status">
+              <span aria-hidden="true" className={styles.statusDot} />
+              {overview ? 'داده‌های عملیاتی' : 'مقادیر مرجع'}
             </span>
           </div>
         </div>
@@ -617,12 +580,6 @@ export function SystemManagementWorkspace() {
             );
           })}
         </nav>
-
-        {apiNotice ? (
-          <div className={styles.notice} role="status">
-            {apiNotice}
-          </div>
-        ) : null}
 
         {page === 'overview' || page === 'modules' ? renderHub() : null}
         {page === 'module' ? renderModule() : null}

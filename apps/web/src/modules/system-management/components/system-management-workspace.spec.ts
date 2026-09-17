@@ -22,8 +22,6 @@ describe('system management reference implementation', () => {
       'تنظیمات بخش‌ها',
       'بررسی تغییرات',
       'تاریخچه تغییرات',
-      'تنظیمات یکپارچه روبی',
-      'سیاست‌ها و پیش‌فرض‌های بخش‌های کاری',
       'جست‌وجوی تنظیمات',
     ])
       expect(workspace).toContain(label);
@@ -94,5 +92,11 @@ describe('system management reference implementation', () => {
     expect(workspace).not.toContain('styles.topbar');
     expect(workspace).toContain('aria-modal="true"');
     expect(workspace).toContain('aria-pressed={category === item}');
+    expect(workspace).toContain('داده‌های عملیاتی');
+    expect(workspace).toContain('مقادیر مرجع');
+    expect(workspace).toContain('مشاهده تنظیمات');
+    expect(workspace).toContain('ویرایش تنظیمات');
+    expect(workspace).not.toContain('styles.hero');
+    expect(workspace).not.toContain('apiNotice');
   });
 });
