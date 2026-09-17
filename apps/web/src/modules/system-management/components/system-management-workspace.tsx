@@ -40,6 +40,8 @@ import {
 import { getPublicApiBaseUrl } from '@/lib/environment';
 import { cn } from '@/lib/utils';
 
+import { SystemOperationsPanel } from './system-operations-panel';
+
 type ResourceState =
   'blocked' | 'forbidden' | 'ready' | 'unauthorized' | 'unavailable';
 type Readiness = 'connected' | 'owner' | 'restricted';
@@ -154,10 +156,9 @@ const managementAreas: readonly ManagementArea[] = [
     id: 'settings',
     title: 'تنظیمات عمومی',
     description:
-      'تنظیم Typed و versioned تنها پس از اتصال قرارداد عمومی Settings قابل تغییر است.',
-    owner: 'Settings',
-    href: '/settings',
-    readiness: 'owner',
+      'تنظیم Typed و versioned با Scope، نسخه و دلیل تغییر در API مدیریت سامانه ثبت می‌شود.',
+    owner: 'System Management',
+    readiness: 'connected',
     section: 'governance',
   },
   {
@@ -174,46 +175,44 @@ const managementAreas: readonly ManagementArea[] = [
     id: 'sessions',
     title: 'نشست‌ها و دستگاه‌ها',
     description:
-      'هیچ Token یا IP خامی نمایش داده نمی‌شود؛ پروژکشن مدیریت نشست هنوز باید از IAM منتشر شود.',
+      'نشست‌ها از قرارداد عمومی IAM، با IP ماسک‌شده و بدون Token خام مدیریت می‌شوند.',
     owner: 'IAM',
-    readiness: 'restricted',
+    readiness: 'connected',
     section: 'access',
   },
   {
     id: 'numbering',
     title: 'شماره‌گذاری و شناسه‌ها',
     description:
-      'الگو و Sequence باید از مالک Settings به‌صورت اتمیک و نسخه‌دار ارائه شوند.',
-    owner: 'Settings',
-    readiness: 'owner',
+      'الگو و Sequence به‌صورت اتمیک، نسخه‌دار و دارای Preview ارائه می‌شوند.',
+    owner: 'System Management',
+    readiness: 'connected',
     section: 'governance',
   },
   {
     id: 'calendar',
     title: 'تقویم، تاریخ و زمان',
     description:
-      'نمایش شمسی، زمان محلی و تقویم کاری بدون تغییر UTC در مالک تنظیمات اعمال می‌شوند.',
-    owner: 'Settings / Master Data',
-    readiness: 'owner',
+      'تنظیمات تقویم، زمان و نمایش از تنظیمات نسخه‌دار سامانه مصرف می‌شوند.',
+    owner: 'System Management',
+    readiness: 'connected',
     section: 'governance',
   },
   {
     id: 'notifications',
     title: 'اعلان‌ها',
     description:
-      'تنظیم کانال و سیاست ارسال از مالک Notification و Integrations مصرف می‌شود.',
-    owner: 'Notifications / Integrations',
-    href: '/integrations',
-    readiness: 'owner',
+      'کانال، Quiet Hours و Retry Policy ثبت می‌شود؛ ارسال واقعی همچنان مالک Worker است.',
+    owner: 'System Management / Notifications',
+    readiness: 'connected',
     section: 'operations',
   },
   {
     id: 'templates',
     title: 'قالب‌های سیستمی',
     description:
-      'فایل، نسخه و دسترسی قالب در Documents باقی می‌ماند؛ انتشار immutable است.',
-    owner: 'Documents',
-    href: '/documents',
+      'قالب پیام، ایمیل و SMS نسخه‌دار و immutable است؛ فایل‌های سندی در Documents باقی می‌مانند.',
+    owner: 'System Management / Documents',
     readiness: 'connected',
     section: 'governance',
   },
@@ -221,8 +220,8 @@ const managementAreas: readonly ManagementArea[] = [
     id: 'audit',
     title: 'Audit و رخدادهای امنیتی',
     description:
-      'نمایش رخدادها در صورت مجوز جداگانه انجام می‌شود و مقدار حساس هرگز اینجا افشا نمی‌شود.',
-    owner: 'IAM / Audit',
+      'Audit append-only با Reason و IP ماسک‌شده نمایش داده می‌شود؛ داده حساس Permission مستقل دارد.',
+    owner: 'System Management / IAM',
     readiness: 'connected',
     section: 'operations',
   },
@@ -230,18 +229,18 @@ const managementAreas: readonly ManagementArea[] = [
     id: 'health',
     title: 'وضعیت سرویس‌ها و Jobها',
     description:
-      'تنها Health عمومی API فعلاً متصل است؛ PostgreSQL، Redis، Worker و Storage نیازمند contract مشاهده‌پذیری‌اند.',
-    owner: 'Observability',
-    readiness: 'owner',
+      'API و PostgreSQL Probe واقعی دارند؛ Redis، Worker، Storage و Queue فقط با Port عمومی مالک نمایش داده می‌شوند.',
+    owner: 'System Management / Observability',
+    readiness: 'connected',
     section: 'operations',
   },
   {
     id: 'feature-flags',
     title: 'Feature Flagها',
     description:
-      'Flag هرگز جای Permission backend نیست و تا انتشار قرارداد مالک قابل تغییر نیست.',
-    owner: 'Settings',
-    readiness: 'owner',
+      'Flag scoped همراه دلیل تغییر ثبت می‌شود و هرگز Permission backend را دور نمی‌زند.',
+    owner: 'System Management',
+    readiness: 'connected',
     section: 'governance',
   },
   {
@@ -249,17 +248,17 @@ const managementAreas: readonly ManagementArea[] = [
     title: 'نگهداری و درخواست پشتیبان',
     description:
       'فقط ثبت و پیگیری درخواست امن مجاز است؛ Restore مستقیم از UI ارائه نمی‌شود.',
-    owner: 'Infrastructure',
-    readiness: 'restricted',
+    owner: 'System Management / Infrastructure',
+    readiness: 'connected',
     section: 'operations',
   },
   {
     id: 'setting-history',
     title: 'تاریخچه تغییرات تنظیمات',
     description:
-      'نسخه، دلیل و Before/After redacted باید از owner Settings به‌صورت append-only ارائه شود.',
-    owner: 'Settings / Audit',
-    readiness: 'owner',
+      'نسخه، دلیل و Before/After redacted به‌صورت append-only از Audit سامانه خوانده می‌شود.',
+    owner: 'System Management / Audit',
+    readiness: 'connected',
     section: 'governance',
   },
 ];
@@ -512,6 +511,8 @@ export function SystemManagementWorkspace() {
         description="Token، Cookie، Secret، رمز عبور و IP خام در این مرکز نمایش یا ثبت نمی‌شوند. معیار اتصال هر کارت از پاسخ واقعی API مالک می‌آید."
         title="کنترل دسترسی و محرمانگی"
       />
+
+      <SystemOperationsPanel />
 
       <section aria-labelledby="system-metrics-title">
         <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">

@@ -41,7 +41,12 @@ describe('SystemManagementService', () => {
     const database = {
       client: { systemSetting: { findMany: vi.fn().mockResolvedValue(rows) } },
     };
-    const service = new SystemManagementService(database as never, {} as never);
+    const service = new SystemManagementService(
+      database as never,
+      {} as never,
+      {} as never,
+      {} as never,
+    );
     const result = await service.resolveSetting({
       namespace: 'ui',
       key: 'system.name',
@@ -66,7 +71,12 @@ describe('SystemManagementService', () => {
         $transaction: vi.fn((run) => run(transaction)),
       },
     };
-    const service = new SystemManagementService(database as never, {} as never);
+    const service = new SystemManagementService(
+      database as never,
+      {} as never,
+      {} as never,
+      {} as never,
+    );
     await expect(
       service.writeSetting(
         {
@@ -96,7 +106,12 @@ describe('SystemManagementService', () => {
     const database = {
       client: { $transaction: vi.fn((run) => run(transaction)) },
     };
-    const service = new SystemManagementService(database as never, {} as never);
+    const service = new SystemManagementService(
+      database as never,
+      {} as never,
+      {} as never,
+      {} as never,
+    );
     const result = await service.issueNumber(
       '00000000-0000-4000-8000-000000000005',
       { idempotencyKey: 'request-0001' },
@@ -111,13 +126,55 @@ describe('SystemManagementService', () => {
     const database = {
       client: { $queryRaw: vi.fn().mockResolvedValue([{ healthy: 1 }]) },
     };
-    const service = new SystemManagementService(database as never, {} as never);
+    const service = new SystemManagementService(
+      database as never,
+      {} as never,
+      {} as never,
+      {
+        probe: vi.fn().mockResolvedValue({ healthy: true, latencyMs: 1 }),
+      } as never,
+    );
     const result = await service.health();
     expect(
       result.find(({ component }) => component === 'POSTGRESQL')?.status,
     ).toBe('HEALTHY');
     expect(result.find(({ component }) => component === 'REDIS')?.status).toBe(
       'UNKNOWN',
+    );
+  });
+
+  it('retries a reporting export through its owner service and audits the action', async () => {
+    const retryExport = vi.fn().mockResolvedValue({
+      id: '00000000-0000-4000-8000-000000000010',
+      status: 'QUEUED',
+    });
+    const create = vi.fn().mockResolvedValue({});
+    const database = { client: { systemAuditEvent: { create } } };
+    const service = new SystemManagementService(
+      database as never,
+      {} as never,
+      { retryExport } as never,
+      {} as never,
+    );
+
+    await service.retryReportingExport(
+      '00000000-0000-4000-8000-000000000010',
+      { reason: 'retry after transient delivery failure' },
+      actor,
+      { requestId: 'request-1' },
+    );
+
+    expect(retryExport).toHaveBeenCalledWith(
+      '00000000-0000-4000-8000-000000000010',
+      actor,
+    );
+    expect(create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          action: 'system.job.retry.reporting_export',
+          entityId: '00000000-0000-4000-8000-000000000010',
+        }),
+      }),
     );
   });
 });
