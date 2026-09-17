@@ -9,6 +9,8 @@ import {
   CalendarDays,
   ChartNoAxesColumnIncreasing,
   Check,
+  ChevronDown,
+  ChevronLeft,
   Clock3,
   Eye,
   FileText,
@@ -95,15 +97,63 @@ const tones: Record<SettingTone, { accent: string; tint: string }> = {
   violet: { tint: '#f1ebff', accent: '#8554ca' },
 };
 
-const categories = [
-  'همه',
-  'مشتری و فروش',
-  'عملیات سفر',
-  'مالی و همکاری',
-  'سازمان و بهره‌وری',
-  'زیرساخت و داده',
-  'مدیریت',
-] as const;
+type SystemCategoryId =
+  | 'all'
+  | 'company-settings'
+  | 'documents-reports'
+  | 'finance'
+  | 'human-resources'
+  | 'reservations-supply'
+  | 'sales-customers'
+  | 'workspace';
+
+const systemCategoryGroups: ReadonlyArray<{
+  id: Exclude<SystemCategoryId, 'all'>;
+  moduleIds: readonly string[];
+  title: string;
+}> = [
+  {
+    id: 'workspace',
+    title: 'فضای کار',
+    moduleIds: ['tasks', 'messages'],
+  },
+  {
+    id: 'sales-customers',
+    title: 'فروش و ارتباط با مشتری',
+    moduleIds: ['customers', 'affairs', 'sales', 'marketing'],
+  },
+  {
+    id: 'reservations-supply',
+    title: 'رزرواسیون و تأمین سفر',
+    moduleIds: ['catalog', 'operations', 'procurement'],
+  },
+  {
+    id: 'finance',
+    title: 'مالی',
+    moduleIds: ['finance', 'b2b'],
+  },
+  {
+    id: 'human-resources',
+    title: 'سرمایه انسانی',
+    moduleIds: ['hr'],
+  },
+  {
+    id: 'documents-reports',
+    title: 'اسناد و گزارش‌ها',
+    moduleIds: ['documents', 'reports'],
+  },
+  {
+    id: 'company-settings',
+    title: 'تنظیمات شرکت',
+    moduleIds: ['general', 'access', 'integrations', 'master'],
+  },
+];
+
+function systemCategoryFor(module: SettingModule) {
+  return systemCategoryGroups.find((group) =>
+    group.moduleIds.includes(module.id),
+  );
+}
 
 function palette(module: SettingModule): CSSProperties {
   return {
@@ -150,7 +200,11 @@ function apiMessage(error: unknown) {
 export function SystemManagementWorkspace() {
   const [page, setPage] = useState<Page>('overview');
   const [selectedModuleId, setSelectedModuleId] = useState('general');
-  const [category, setCategory] = useState<(typeof categories)[number]>('همه');
+  const [category, setCategory] = useState<SystemCategoryId>('all');
+  const [expandedCategory, setExpandedCategory] = useState<Exclude<
+    SystemCategoryId,
+    'all'
+  > | null>(null);
   const [query, setQuery] = useState('');
   const [scope, setScope] = useState('کل مجموعه');
   const [moduleTab, setModuleTab] = useState<'history' | 'settings'>(
@@ -224,9 +278,12 @@ export function SystemManagementWorkspace() {
 
   const filteredModules = useMemo(() => {
     const normalized = query.trim();
+    const selectedCategory = systemCategoryGroups.find(
+      (group) => group.id === category,
+    );
     return settingsModules.filter(
       (module) =>
-        (category === 'همه' || module.category === category) &&
+        (!selectedCategory || selectedCategory.moduleIds.includes(module.id)) &&
         (!normalized ||
           [
             module.title,
@@ -302,13 +359,6 @@ export function SystemManagementWorkspace() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const navItems: Array<{ icon: LucideIcon; label: string; page: Page }> = [
-    { page: 'overview', label: 'نمای کلی', icon: Home },
-    { page: 'modules', label: 'تنظیمات بخش‌ها', icon: LayoutGrid },
-    { page: 'reviews', label: 'بررسی تغییرات', icon: ShieldCheck },
-    { page: 'history', label: 'تاریخچه تغییرات', icon: History },
-  ];
-
   const renderHistory = (items = audit) => (
     <div className={styles.auditGrid}>
       {items.length ? (
@@ -348,19 +398,80 @@ export function SystemManagementWorkspace() {
           />
         </label>
       </div>
-      <div aria-label="دسته‌بندی تنظیمات" className={styles.filters}>
-        {categories.map((item) => (
-          <button
-            aria-pressed={category === item}
-            className={`${styles.filter} ${category === item ? styles.filterActive : ''}`}
-            key={item}
-            onClick={() => setCategory(item)}
-            type="button"
-          >
-            {item}
-          </button>
-        ))}
-      </div>
+      <nav aria-label="دسته‌بندی تنظیمات" className={styles.filters}>
+        <button
+          aria-pressed={category === 'all'}
+          className={`${styles.filter} ${category === 'all' ? styles.filterActive : ''}`}
+          onClick={() => {
+            setCategory('all');
+            setExpandedCategory(null);
+          }}
+          type="button"
+        >
+          <span aria-hidden="true" className={styles.categoryDot} />
+          همه بخش‌ها
+        </button>
+        {systemCategoryGroups.map((group) => {
+          const expanded = expandedCategory === group.id;
+          const panelId = `system-category-${group.id}`;
+          return (
+            <button
+              aria-controls={panelId}
+              aria-expanded={expanded}
+              aria-pressed={category === group.id}
+              className={`${styles.filter} ${category === group.id ? styles.filterActive : ''}`}
+              key={group.id}
+              onClick={() => {
+                setCategory(group.id);
+                setExpandedCategory((current) =>
+                  current === group.id ? null : group.id,
+                );
+              }}
+              type="button"
+            >
+              <span aria-hidden="true" className={styles.categoryDot} />
+              {group.title}
+              {expanded ? (
+                <ChevronDown
+                  aria-hidden="true"
+                  className={styles.categoryChevron}
+                />
+              ) : (
+                <ChevronLeft
+                  aria-hidden="true"
+                  className={styles.categoryChevron}
+                />
+              )}
+            </button>
+          );
+        })}
+      </nav>
+      {expandedCategory ? (
+        <div
+          aria-label={`زیرمجموعه‌های ${systemCategoryGroups.find((group) => group.id === expandedCategory)?.title ?? ''}`}
+          className={styles.categoryPanel}
+          id={`system-category-${expandedCategory}`}
+        >
+          {settingsModules
+            .filter((module) =>
+              systemCategoryGroups
+                .find((group) => group.id === expandedCategory)
+                ?.moduleIds.includes(module.id),
+            )
+            .map((module) => (
+              <button
+                aria-label={`مشاهده تنظیمات ${module.title}`}
+                className={styles.categoryChild}
+                key={module.id}
+                onClick={() => openModule(module)}
+                type="button"
+              >
+                {module.title}
+                <ArrowLeft aria-hidden="true" size={16} />
+              </button>
+            ))}
+        </div>
+      ) : null}
       <div className={styles.hubGrid}>
         {filteredModules.length ? (
           filteredModules.map((module) => {
@@ -380,7 +491,9 @@ export function SystemManagementWorkspace() {
                   </span>
                   <div className={styles.grow}>
                     <h3>{module.title}</h3>
-                    <p className={styles.subtitle}>{module.category}</p>
+                    <p className={styles.subtitle}>
+                      {systemCategoryFor(module)?.title ?? module.category}
+                    </p>
                   </div>
                 </div>
                 <div className={styles.tags}>
@@ -556,30 +669,6 @@ export function SystemManagementWorkspace() {
             </span>
           </div>
         </div>
-
-        <nav aria-label="بخش‌های مدیریت سیستم" className={styles.pageNav}>
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const active =
-              page === item.page ||
-              (item.page === 'modules' && page === 'module');
-            return (
-              <button
-                aria-current={active ? 'page' : undefined}
-                className={`${styles.navButton} ${active ? styles.navButtonActive : ''}`}
-                key={item.page}
-                onClick={() => navigate(item.page)}
-                type="button"
-              >
-                <Icon aria-hidden="true" size={17} />
-                {item.label}
-                {item.page === 'reviews' ? (
-                  <span className={styles.counter}>۰</span>
-                ) : null}
-              </button>
-            );
-          })}
-        </nav>
 
         {page === 'overview' || page === 'modules' ? renderHub() : null}
         {page === 'module' ? renderModule() : null}
