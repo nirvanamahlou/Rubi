@@ -2,65 +2,87 @@ import { readFileSync } from 'node:fs';
 
 import { describe, expect, it } from 'vitest';
 
-const source = readFileSync(
+const workspace = readFileSync(
   new URL('./system-management-workspace.tsx', import.meta.url),
   'utf8',
 );
+const catalog = readFileSync(
+  new URL('../model/settings-catalog.ts', import.meta.url),
+  'utf8',
+);
+const styles = readFileSync(
+  new URL('./system-management-workspace.module.css', import.meta.url),
+  'utf8',
+);
 
-describe('system management workspace contract', () => {
-  it('covers every requested administration area without creating a new main navigation item', () => {
+describe('system management reference implementation', () => {
+  it('recreates the reference navigation, overview, filters, and module hub', () => {
+    for (const label of [
+      'نمای کلی',
+      'تنظیمات بخش‌ها',
+      'بررسی تغییرات',
+      'تاریخچه تغییرات',
+      'تنظیمات یکپارچه روبی',
+      'سیاست‌ها و پیش‌فرض‌های بخش‌های کاری',
+      'جست‌وجوی تنظیمات',
+    ])
+      expect(workspace).toContain(label);
+
+    for (const category of [
+      'مشتری و فروش',
+      'عملیات سفر',
+      'مالی و همکاری',
+      'سازمان و بهره‌وری',
+      'زیرساخت و داده',
+      'مدیریت',
+    ])
+      expect(workspace).toContain(category);
+  });
+
+  it('includes every settings module and its reference card catalog', () => {
     for (const title of [
-      'کاربران',
-      'نقش‌ها',
-      'مجوزها و دامنه دسترسی',
-      'شعب و دسترسی سازمانی',
-      'شعب فعال',
-      'شرکت‌ها و سربرگ‌ها',
-      'تنظیمات عمومی',
-      'تنظیمات امنیتی',
-      'نشست‌ها و دستگاه‌ها',
-      'شماره‌گذاری و شناسه‌ها',
-      'تقویم، تاریخ و زمان',
-      'اعلان‌ها',
-      'قالب‌های سیستمی',
-      'Audit و رخدادهای امنیتی',
-      'وضعیت سرویس‌ها و Jobها',
-      'Feature Flagها',
-      'نگهداری و درخواست پشتیبان',
-      'تاریخچه تغییرات تنظیمات',
+      'سازمان و نمایش',
+      'کاربران و امنیت',
+      'مشتریان و مسافران',
+      'امور مشتریان و پشتیبانی',
+      'فروش، قرارداد و قیمت‌گذاری',
+      'بلیت و برنامه سفر',
+      'رزرواسیون و خدمات سفر',
+      'خرید و تأمین',
+      'مالی و خزانه‌داری',
+      'بازاریابی',
+      'آژانس‌ها و مشتریان سازمانی',
+      'منابع انسانی',
+      'میزکار و اتوماسیون',
+      'پیام و اعلان',
+      'اسناد و فایل‌ها',
+      'گزارش و نمای مدیریتی',
+      'اتصال‌ها و دو سایت',
+      'اطلاعات پایه',
     ])
-      expect(source).toContain(title);
-    expect(source).not.toContain('mainNavigation');
+      expect(catalog).toContain(title);
+
+    expect(catalog).toContain('شماره‌گذاری اسناد');
+    expect(catalog).toContain('سلامت و هشدار سرویس');
+    expect(catalog).toContain('خروجی و فایل گزارش');
   });
 
-  it('reads only public owner APIs and keeps unimplemented health sources explicit', () => {
-    for (const endpoint of [
-      '/iam/users',
-      '/iam/access-options',
-      '/legal-entities',
-      '/iam/audit-events',
-      '/health',
-    ])
-      expect(source).toContain(endpoint);
-    expect(source).toContain('بدون projection عمومی');
-    expect(source).toContain('API مالک منتشر نشده');
+  it('persists real versioned JSON settings with reason and optimistic version', () => {
+    expect(workspace).toContain('systemManagementApi.writeSetting');
+    expect(workspace).toContain("valueType: 'JSON'");
+    expect(workspace).toContain('expectedVersion');
+    expect(workspace).toContain('دلیل تغییر را وارد کنید');
+    expect(workspace).toContain('وضعیت ساختگی ایجاد');
+    expect(workspace).not.toContain('localStorage');
+    expect(workspace).not.toContain('Math.random');
   });
 
-  it('keeps sensitive values and dangerous server actions out of the UI', () => {
-    expect(source).toContain('Token، Cookie، Secret، رمز عبور و IP خام');
-    expect(source).toContain(
-      'امکان اجرای فرمان سرور، حذف داده یا بازیابی مستقیم را ارائه نمی‌کند',
-    );
-    expect(source).not.toContain('localStorage');
-    expect(source).not.toContain('Math.random');
-  });
-
-  it('has keyboard-operable filters and the full UI state vocabulary', () => {
-    expect(source).toContain('aria-pressed={activeSection === section}');
-    expect(source).toContain('aria-label="جست‌وجوی بخش مدیریت سیستم"');
-    expect(source).toContain('در حال بارگذاری مدیریت سیستم');
-    expect(source).toContain('نیازمند ورود');
-    expect(source).toContain('بدون مجوز');
-    expect(source).toContain('در دسترس نیست');
+  it('matches the responsive visual language of the supplied reference', () => {
+    expect(styles).toContain('linear-gradient(155deg, #16437d, #092655)');
+    expect(styles).toContain('grid-template-columns: repeat(3');
+    expect(styles).toContain('@media (max-width: 820px)');
+    expect(styles).toContain('@media (max-width: 580px)');
+    expect(workspace).toContain('aria-modal="true"');
+    expect(workspace).toContain('aria-pressed={category === item}');
   });
 });

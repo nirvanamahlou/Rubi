@@ -1,450 +1,196 @@
 'use client';
 
 import {
-  Activity,
   ArrowLeft,
-  BellRing,
+  Banknote,
+  Bell,
+  BriefcaseBusiness,
   Building2,
   CalendarDays,
+  ChartNoAxesColumnIncreasing,
+  Check,
   Clock3,
-  Database,
+  Eye,
   FileText,
-  Flag,
-  Gauge,
+  Grid2X2,
+  Headphones,
   History,
-  KeyRound,
-  ListOrdered,
+  Home,
+  LayoutGrid,
+  ListTodo,
   LockKeyhole,
-  Network,
-  RefreshCw,
-  ServerCog,
-  Settings2,
-  ShieldAlert,
+  Megaphone,
+  Plane,
+  Plug,
+  Save,
+  Search,
+  Settings,
   ShieldCheck,
-  SlidersHorizontal,
-  UsersRound,
+  ShoppingCart,
+  Ticket,
+  Users,
+  X,
   type LucideIcon,
 } from 'lucide-react';
-import Link from 'next/link';
-import { useCallback, useEffect, useMemo, useState } from 'react';
-
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/form-controls';
 import {
-  Alert,
-  Badge,
-  Card,
-  PageHeader,
-  Skeleton,
-} from '@/components/ui/surfaces';
-import { getPublicApiBaseUrl } from '@/lib/environment';
-import { cn } from '@/lib/utils';
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type CSSProperties,
+  type FormEvent,
+} from 'react';
 
-import { SystemOperationsPanel } from './system-operations-panel';
+import type { SystemSettingV1 } from '@nora/contracts';
+import {
+  systemManagementApi,
+  SystemManagementApiError,
+  type SystemAuditRecord,
+  type SystemOverview,
+} from '../api/client';
+import {
+  settingsModules,
+  type SettingField,
+  type SettingGroup,
+  type SettingModule,
+  type SettingTone,
+} from '../model/settings-catalog';
+import styles from './system-management-workspace.module.css';
 
-type ResourceState =
-  'blocked' | 'forbidden' | 'ready' | 'unauthorized' | 'unavailable';
-type Readiness = 'connected' | 'owner' | 'restricted';
-type SystemSection = 'access' | 'governance' | 'operations' | 'organization';
+type Page = 'history' | 'module' | 'modules' | 'overview' | 'reviews';
+type Values = Record<string, boolean | string>;
 
-interface Resource<T> {
-  data: T | null;
-  state: ResourceState;
-}
-
-interface UserRecord {
-  status: string;
-}
-
-interface AccessOptions {
-  branches: unknown[];
-  permissions: unknown[];
-  roles: unknown[];
-}
-
-interface LegalEntityRecord {
-  isActive: boolean;
-}
-
-interface AuditRecord {
-  action: string;
-  id: string;
-  occurredAt: string;
-  outcome: string;
-}
-
-interface HealthRecord {
-  status: string;
-  timestamp: string;
-}
-
-interface OverviewData {
-  access: Resource<AccessOptions>;
-  audit: Resource<AuditRecord[]>;
-  health: Resource<HealthRecord>;
-  legalEntities: Resource<LegalEntityRecord[]>;
-  users: Resource<UserRecord[]>;
-}
-
-interface ManagementArea {
-  description: string;
-  href?: string;
-  id: string;
-  owner: string;
-  readiness: Readiness;
-  section: SystemSection;
-  title: string;
-}
-
-const sectionLabels: Record<SystemSection | 'all', string> = {
-  all: 'همه بخش‌ها',
-  access: 'دسترسی و هویت',
-  organization: 'سازمان و هویت حقوقی',
-  governance: 'سیاست و حاکمیت',
-  operations: 'عملیات و پایداری',
-};
-
-const managementAreas: readonly ManagementArea[] = [
-  {
-    id: 'users',
-    title: 'کاربران',
-    description: 'فهرست، وضعیت، نقش و شعب مجاز کاربر از IAM مدیریت می‌شود.',
-    owner: 'IAM',
-    href: '/users',
-    readiness: 'connected',
-    section: 'access',
-  },
-  {
-    id: 'roles',
-    title: 'نقش‌ها',
-    description: 'ایجاد و تغییر نقش تنها از جریان کنترل‌شده IAM انجام می‌شود.',
-    owner: 'IAM',
-    href: '/users',
-    readiness: 'connected',
-    section: 'access',
-  },
-  {
-    id: 'permissions',
-    title: 'مجوزها و دامنه دسترسی',
-    description: 'ماتریس نقش و مجوز و دامنه شعبه در مالک IAM باقی می‌ماند.',
-    owner: 'IAM',
-    href: '/users',
-    readiness: 'connected',
-    section: 'access',
-  },
-  {
-    id: 'branches',
-    title: 'شعب و دسترسی سازمانی',
-    description:
-      'انتساب شعبه از IAM و مرجع شعب از مالک داده پایه خوانده می‌شود.',
-    owner: 'IAM / Master Data',
-    href: '/users',
-    readiness: 'connected',
-    section: 'organization',
-  },
-  {
-    id: 'legal-entities',
-    title: 'شرکت‌ها و سربرگ‌ها',
-    description:
-      'شرکت صادرکننده، Branding و نسخه‌های قابل ممیزی در Legal Entity است.',
-    owner: 'Legal Entity',
-    href: '/system/legal-entities',
-    readiness: 'connected',
-    section: 'organization',
-  },
-  {
-    id: 'settings',
-    title: 'تنظیمات عمومی',
-    description:
-      'تنظیم Typed و versioned با Scope، نسخه و دلیل تغییر در API مدیریت سامانه ثبت می‌شود.',
-    owner: 'System Management',
-    readiness: 'connected',
-    section: 'governance',
-  },
-  {
-    id: 'security',
-    title: 'تنظیمات امنیتی',
-    description:
-      'Password Policy، Session و کنترل حساس از سیاست‌های IAM پیروی می‌کنند.',
-    owner: 'IAM',
-    href: '/users',
-    readiness: 'owner',
-    section: 'access',
-  },
-  {
-    id: 'sessions',
-    title: 'نشست‌ها و دستگاه‌ها',
-    description:
-      'نشست‌ها از قرارداد عمومی IAM، با IP ماسک‌شده و بدون Token خام مدیریت می‌شوند.',
-    owner: 'IAM',
-    readiness: 'connected',
-    section: 'access',
-  },
-  {
-    id: 'numbering',
-    title: 'شماره‌گذاری و شناسه‌ها',
-    description:
-      'الگو و Sequence به‌صورت اتمیک، نسخه‌دار و دارای Preview ارائه می‌شوند.',
-    owner: 'System Management',
-    readiness: 'connected',
-    section: 'governance',
-  },
-  {
-    id: 'calendar',
-    title: 'تقویم، تاریخ و زمان',
-    description:
-      'تنظیمات تقویم، زمان و نمایش از تنظیمات نسخه‌دار سامانه مصرف می‌شوند.',
-    owner: 'System Management',
-    readiness: 'connected',
-    section: 'governance',
-  },
-  {
-    id: 'notifications',
-    title: 'اعلان‌ها',
-    description:
-      'کانال، Quiet Hours و Retry Policy ثبت می‌شود؛ ارسال واقعی همچنان مالک Worker است.',
-    owner: 'System Management / Notifications',
-    readiness: 'connected',
-    section: 'operations',
-  },
-  {
-    id: 'templates',
-    title: 'قالب‌های سیستمی',
-    description:
-      'قالب پیام، ایمیل و SMS نسخه‌دار و immutable است؛ فایل‌های سندی در Documents باقی می‌مانند.',
-    owner: 'System Management / Documents',
-    readiness: 'connected',
-    section: 'governance',
-  },
-  {
-    id: 'audit',
-    title: 'Audit و رخدادهای امنیتی',
-    description:
-      'Audit append-only با Reason و IP ماسک‌شده نمایش داده می‌شود؛ داده حساس Permission مستقل دارد.',
-    owner: 'System Management / IAM',
-    readiness: 'connected',
-    section: 'operations',
-  },
-  {
-    id: 'health',
-    title: 'وضعیت سرویس‌ها و Jobها',
-    description:
-      'API و PostgreSQL Probe واقعی دارند؛ Redis، Worker، Storage و Queue فقط با Port عمومی مالک نمایش داده می‌شوند.',
-    owner: 'System Management / Observability',
-    readiness: 'connected',
-    section: 'operations',
-  },
-  {
-    id: 'feature-flags',
-    title: 'Feature Flagها',
-    description:
-      'Flag scoped همراه دلیل تغییر ثبت می‌شود و هرگز Permission backend را دور نمی‌زند.',
-    owner: 'System Management',
-    readiness: 'connected',
-    section: 'governance',
-  },
-  {
-    id: 'backup',
-    title: 'نگهداری و درخواست پشتیبان',
-    description:
-      'فقط ثبت و پیگیری درخواست امن مجاز است؛ Restore مستقیم از UI ارائه نمی‌شود.',
-    owner: 'System Management / Infrastructure',
-    readiness: 'connected',
-    section: 'operations',
-  },
-  {
-    id: 'setting-history',
-    title: 'تاریخچه تغییرات تنظیمات',
-    description:
-      'نسخه، دلیل و Before/After redacted به‌صورت append-only از Audit سامانه خوانده می‌شود.',
-    owner: 'System Management / Audit',
-    readiness: 'connected',
-    section: 'governance',
-  },
-];
-
-const areaIcons: Record<string, LucideIcon> = {
-  users: UsersRound,
-  roles: ShieldCheck,
-  permissions: KeyRound,
-  branches: Building2,
-  'legal-entities': Building2,
-  settings: Settings2,
-  security: LockKeyhole,
-  sessions: Clock3,
-  numbering: ListOrdered,
+const iconMap: Record<string, LucideIcon> = {
+  bag: BriefcaseBusiness,
+  bell: Bell,
+  building: Building2,
   calendar: CalendarDays,
-  notifications: BellRing,
-  templates: FileText,
-  audit: History,
-  health: Gauge,
-  'feature-flags': Flag,
-  backup: Database,
-  'setting-history': SlidersHorizontal,
+  chart: ChartNoAxesColumnIncreasing,
+  check: Check,
+  clock: Clock3,
+  eye: Eye,
+  file: FileText,
+  grid: Grid2X2,
+  headset: Headphones,
+  history: History,
+  home: Home,
+  megaphone: Megaphone,
+  money: Banknote,
+  plane: Plane,
+  plug: Plug,
+  settings: Settings,
+  shield: ShieldCheck,
+  task: ListTodo,
+  ticket: Ticket,
+  users: Users,
+  cart: ShoppingCart,
 };
 
-function resourceLabel(state: ResourceState): string {
-  switch (state) {
-    case 'ready':
-      return 'متصل';
-    case 'forbidden':
-      return 'بدون مجوز';
-    case 'unauthorized':
-      return 'نیازمند ورود';
-    case 'blocked':
-      return 'API پیکربندی نشده';
-    default:
-      return 'در دسترس نیست';
+const tones: Record<SettingTone, { accent: string; tint: string }> = {
+  amber: { tint: '#fff5e5', accent: '#c5892a' },
+  blue: { tint: '#eaf3ff', accent: '#2175d6' },
+  cyan: { tint: '#e7f7fd', accent: '#0c94bb' },
+  rose: { tint: '#fff0f3', accent: '#d5597e' },
+  teal: { tint: '#e5f8f1', accent: '#00a381' },
+  violet: { tint: '#f1ebff', accent: '#8554ca' },
+};
+
+const categories = [
+  'همه',
+  'مشتری و فروش',
+  'عملیات سفر',
+  'مالی و همکاری',
+  'سازمان و بهره‌وری',
+  'زیرساخت و داده',
+  'مدیریت',
+] as const;
+
+function palette(module: SettingModule): CSSProperties {
+  return {
+    '--accent': tones[module.tone].accent,
+    '--tint': tones[module.tone].tint,
+  } as CSSProperties;
+}
+
+function defaults(group: SettingGroup): Values {
+  return Object.fromEntries(
+    group.fields.map((field) => [field.key, field.value]),
+  );
+}
+
+function isValues(value: unknown): value is Values {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+function displayValue(field: SettingField, value: boolean | string) {
+  if (typeof value === 'boolean') return value ? 'فعال' : 'غیرفعال';
+  if (field.type === 'number') {
+    const formatted = Number(value).toLocaleString('fa-IR');
+    return field.unit ? `${formatted} ${field.unit}` : formatted;
   }
+  return value;
 }
 
-function readinessLabel(readiness: Readiness): string {
-  switch (readiness) {
-    case 'connected':
-      return 'مسیر عملیاتی موجود';
-    case 'owner':
-      return 'نیازمند قرارداد مالک';
-    default:
-      return 'کنترل‌شده و محدود';
-  }
-}
-
-function metricValue<T>(resource: Resource<T>, value: string): string {
-  return resource.state === 'ready' ? value : resourceLabel(resource.state);
-}
-
-function formatDate(value: string): string {
+function formatDate(value: string) {
   const date = new Date(value);
-  return Number.isNaN(date.valueOf())
-    ? 'زمان ثبت‌شده نامعتبر است'
-    : date.toLocaleString('fa-IR');
+  return Number.isNaN(date.valueOf()) ? '—' : date.toLocaleString('fa-IR');
 }
 
-async function requestResource<T>(path: string): Promise<Resource<T>> {
-  const baseUrl = getPublicApiBaseUrl();
-  if (!baseUrl) return { data: null, state: 'blocked' };
-  try {
-    const response = await fetch(`${baseUrl}${path}`, {
-      credentials: 'include',
-      headers: { accept: 'application/json' },
-    });
-    if (response.status === 401) return { data: null, state: 'unauthorized' };
-    if (response.status === 403) return { data: null, state: 'forbidden' };
-    if (!response.ok) return { data: null, state: 'unavailable' };
-    return { data: (await response.json()) as T, state: 'ready' };
-  } catch {
-    return { data: null, state: 'unavailable' };
+function apiMessage(error: unknown) {
+  if (error instanceof SystemManagementApiError) {
+    if (error.status === 401) return 'برای ادامه باید وارد سامانه شوید.';
+    if (error.status === 403) return 'مجوز تغییر این تنظیم را ندارید.';
+    if (error.status === 409)
+      return 'نسخه تنظیم تغییر کرده است؛ صفحه را تازه کنید.';
+    return error.message;
   }
-}
-
-function ReadinessBadge({ readiness }: { readiness: Readiness }) {
-  return (
-    <Badge
-      className={cn(
-        'shrink-0 text-[10px]',
-        readiness === 'connected' &&
-          'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-200',
-        readiness === 'owner' &&
-          'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-100',
-        readiness === 'restricted' &&
-          'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200',
-      )}
-    >
-      {readinessLabel(readiness)}
-    </Badge>
-  );
-}
-
-function MetricCard({
-  detail,
-  icon: Icon,
-  title,
-  value,
-}: {
-  detail: string;
-  icon: LucideIcon;
-  title: string;
-  value: string;
-}) {
-  return (
-    <Card className="min-w-0 p-4">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-xs font-semibold text-muted-foreground">{title}</p>
-          <p className="mt-3 break-words text-2xl font-black tracking-tight text-foreground">
-            {value}
-          </p>
-        </div>
-        <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
-          <Icon aria-hidden="true" className="size-5" />
-        </span>
-      </div>
-      <p className="mt-2 text-xs leading-5 text-muted-foreground">{detail}</p>
-    </Card>
-  );
-}
-
-function ManagementAreaCard({ area }: { area: ManagementArea }) {
-  const Icon = areaIcons[area.id] ?? Settings2;
-  return (
-    <article className="flex min-w-0 flex-col rounded-2xl border border-border bg-surface p-4 shadow-sm">
-      <div className="flex items-start justify-between gap-3">
-        <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-muted text-foreground">
-          <Icon aria-hidden="true" className="size-5" />
-        </span>
-        <ReadinessBadge readiness={area.readiness} />
-      </div>
-      <h3 className="mt-4 font-black text-foreground">{area.title}</h3>
-      <p className="mt-2 flex-1 text-xs leading-6 text-muted-foreground">
-        {area.description}
-      </p>
-      <div className="mt-4 flex items-center justify-between gap-3 border-t border-border pt-3">
-        <span className="text-[11px] font-semibold text-muted-foreground">
-          مالک: <bdi dir="ltr">{area.owner}</bdi>
-        </span>
-        {area.href ? (
-          <Button asChild size="sm" variant="ghost">
-            <Link href={area.href}>
-              ورود به مالک
-              <ArrowLeft aria-hidden="true" className="size-3.5" />
-            </Link>
-          </Button>
-        ) : (
-          <span className="text-[11px] font-semibold text-muted-foreground">
-            API مالک منتشر نشده
-          </span>
-        )}
-      </div>
-    </article>
-  );
+  return 'ارتباط با مدیریت سامانه برقرار نشد.';
 }
 
 export function SystemManagementWorkspace() {
-  const [overview, setOverview] = useState<OverviewData | null>(null);
-  const [activeSection, setActiveSection] = useState<SystemSection | 'all'>(
-    'all',
-  );
+  const [page, setPage] = useState<Page>('overview');
+  const [selectedModuleId, setSelectedModuleId] = useState('general');
+  const [category, setCategory] = useState<(typeof categories)[number]>('همه');
   const [query, setQuery] = useState('');
+  const [scope, setScope] = useState('کل مجموعه');
+  const [actor, setActor] = useState<'admin' | 'reviewer'>('admin');
+  const [moduleTab, setModuleTab] = useState<'history' | 'settings'>(
+    'settings',
+  );
+  const [settings, setSettings] = useState<SystemSettingV1[]>([]);
+  const [audit, setAudit] = useState<SystemAuditRecord[]>([]);
+  const [overview, setOverview] = useState<SystemOverview | null>(null);
+  const [apiNotice, setApiNotice] = useState<string | null>(null);
+  const [editing, setEditing] = useState<{
+    module: SettingModule;
+    group: SettingGroup;
+  } | null>(null);
+  const [draft, setDraft] = useState<Values>({});
+  const [reason, setReason] = useState('');
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    setOverview(null);
-    const [users, access, legalEntities, audit, health] = await Promise.all([
-      requestResource<UserRecord[]>('/iam/users'),
-      requestResource<AccessOptions>('/iam/access-options'),
-      requestResource<{ data: LegalEntityRecord[] }>('/legal-entities'),
-      requestResource<AuditRecord[]>('/iam/audit-events'),
-      requestResource<{ data: HealthRecord }>('/health'),
-    ]);
-    setOverview({
-      users,
-      access,
-      legalEntities: {
-        data: legalEntities.data?.data ?? null,
-        state: legalEntities.state,
-      },
-      audit,
-      health: { data: health.data?.data ?? null, state: health.state },
-    });
+    const [settingsResult, auditResult, overviewResult] =
+      await Promise.allSettled([
+        systemManagementApi.settings(),
+        systemManagementApi.audit(),
+        systemManagementApi.overview(),
+      ]);
+    if (settingsResult.status === 'fulfilled')
+      setSettings(settingsResult.value);
+    if (auditResult.status === 'fulfilled') setAudit(auditResult.value);
+    if (overviewResult.status === 'fulfilled')
+      setOverview(overviewResult.value);
+    const failed = [settingsResult, auditResult, overviewResult].find(
+      (result) => result.status === 'rejected',
+    );
+    setApiNotice(
+      failed?.status === 'rejected'
+        ? `نمایش مقادیر مرجع فعال است؛ ${apiMessage(failed.reason)}`
+        : null,
+    );
   }, []);
 
   useEffect(() => {
@@ -452,294 +198,666 @@ export function SystemManagementWorkspace() {
     return () => window.clearTimeout(timer);
   }, [load]);
 
-  const filteredAreas = useMemo(() => {
-    const normalizedQuery = query.trim().toLocaleLowerCase('fa-IR');
-    return managementAreas.filter((area) => {
-      const inSection =
-        activeSection === 'all' || area.section === activeSection;
-      const matchesQuery =
-        !normalizedQuery ||
-        [area.title, area.description, area.owner].some((value) =>
-          value.toLocaleLowerCase('fa-IR').includes(normalizedQuery),
-        );
-      return inSection && matchesQuery;
-    });
-  }, [activeSection, query]);
+  useEffect(() => {
+    if (!toast) return;
+    const timer = window.setTimeout(() => setToast(null), 3500);
+    return () => window.clearTimeout(timer);
+  }, [toast]);
 
-  if (!overview) {
-    return (
-      <div className="space-y-5" aria-label="در حال بارگذاری مدیریت سیستم">
-        <Skeleton className="h-32" />
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          {[0, 1, 2, 3].map((item) => (
-            <Skeleton className="h-36" key={item} />
-          ))}
-        </div>
-        <Skeleton className="h-80" />
-      </div>
+  useEffect(() => {
+    if (!editing) return;
+    const close = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && !saving) setEditing(null);
+    };
+    window.addEventListener('keydown', close);
+    return () => window.removeEventListener('keydown', close);
+  }, [editing, saving]);
+
+  const selectedModule =
+    settingsModules.find((module) => module.id === selectedModuleId) ??
+    settingsModules[0]!;
+
+  const settingFor = (module: SettingModule, group: SettingGroup) =>
+    settings.find(
+      (setting) =>
+        setting.namespace === module.id &&
+        setting.key === group.id &&
+        setting.scope === 'GLOBAL',
     );
-  }
 
-  const activeUsers = overview.users.data?.filter(
-    (user) => user.status === 'ACTIVE',
-  ).length;
-  const inactiveUsers = overview.users.data
-    ? overview.users.data.length - (activeUsers ?? 0)
-    : 0;
-  const activeCompanies = overview.legalEntities.data?.filter(
-    (entity) => entity.isActive,
-  ).length;
-  const latestAudit = overview.audit.data?.slice(0, 4) ?? [];
-  const apiReady = overview.health.data?.status === 'ok';
-  const accessState = overview.access.state;
+  const valuesFor = (module: SettingModule, group: SettingGroup) => {
+    const setting = settingFor(module, group);
+    return setting && isValues(setting.value)
+      ? { ...defaults(group), ...setting.value }
+      : defaults(group);
+  };
 
-  return (
-    <div className="space-y-6">
-      <PageHeader
-        eyebrow="مرکز مدیریت سامانه"
-        title="مدیریت سیستم"
-        description="نمای کنترل‌شدهٔ وضعیت سامانه و مسیرهای مالک. این صفحه داده را تکرار نمی‌کند و هر عملیات حساس در API ماژول مالک دوباره مجوزسنجی می‌شود."
-        actions={
-          <Button onClick={() => void load()} type="button" variant="outline">
-            <RefreshCw aria-hidden="true" className="size-4" />
-            تازه‌سازی وضعیت
-          </Button>
-        }
-      />
+  const filteredModules = useMemo(() => {
+    const normalized = query.trim();
+    return settingsModules.filter(
+      (module) =>
+        (category === 'همه' || module.category === category) &&
+        (!normalized ||
+          [
+            module.title,
+            ...module.groups.flatMap((group) => [
+              group.title,
+              ...group.fields.map((field) => field.label),
+            ]),
+          ].some((text) => text.includes(normalized))),
+    );
+  }, [category, query]);
 
-      <Alert
-        description="Token، Cookie، Secret، رمز عبور و IP خام در این مرکز نمایش یا ثبت نمی‌شوند. معیار اتصال هر کارت از پاسخ واقعی API مالک می‌آید."
-        title="کنترل دسترسی و محرمانگی"
-      />
+  const openModule = (module: SettingModule) => {
+    setSelectedModuleId(module.id);
+    setModuleTab('settings');
+    setPage('module');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
-      <SystemOperationsPanel />
+  const openEditor = (module: SettingModule, group: SettingGroup) => {
+    setEditing({ module, group });
+    setDraft(valuesFor(module, group));
+    setReason('');
+    setSaveError(null);
+  };
 
-      <section aria-labelledby="system-metrics-title">
-        <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
-          <h2 className="font-black" id="system-metrics-title">
-            نمای کلی مجاز
-          </h2>
-          <span className="text-xs text-muted-foreground">
-            دسترسی IAM: {resourceLabel(accessState)}
-          </span>
-        </div>
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          <MetricCard
-            detail="فقط از فهرست دارای مجوز IAM"
-            icon={UsersRound}
-            title="کاربران فعال"
-            value={metricValue(
-              overview.users,
-              (activeUsers ?? 0).toLocaleString('fa-IR'),
-            )}
-          />
-          <MetricCard
-            detail="غیرفعال یا قفل‌شده در پاسخ IAM"
-            icon={ShieldAlert}
-            title="کاربران نیازمند بررسی"
-            value={metricValue(
-              overview.users,
-              inactiveUsers.toLocaleString('fa-IR'),
-            )}
-          />
-          <MetricCard
-            detail="نقش‌های فعال از قرارداد IAM"
-            icon={ShieldCheck}
-            title="نقش‌ها و مجوزها"
-            value={metricValue(
-              overview.access,
-              `${(overview.access.data?.roles.length ?? 0).toLocaleString('fa-IR')} / ${(overview.access.data?.permissions.length ?? 0).toLocaleString('fa-IR')}`,
-            )}
-          />
-          <MetricCard
-            detail="فهرست شعب فعال از قرارداد IAM"
-            icon={Building2}
-            title="شعب فعال"
-            value={metricValue(
-              overview.access,
-              (overview.access.data?.branches.length ?? 0).toLocaleString(
-                'fa-IR',
-              ),
-            )}
-          />
-          <MetricCard
-            detail="شرکت‌های فعال از Legal Entity"
-            icon={Building2}
-            title="شرکت‌های فعال"
-            value={metricValue(
-              overview.legalEntities,
-              (activeCompanies ?? 0).toLocaleString('fa-IR'),
-            )}
-          />
-          <MetricCard
-            detail="شمارش مدیریتی نشست هنوز public contract ندارد"
-            icon={Clock3}
-            title="نشست‌های فعال"
-            value="—"
-          />
-          <MetricCard
-            detail="آخرین رخدادهای مجاز IAM / Audit"
-            icon={History}
-            title="رخدادهای امنیتی"
-            value={metricValue(
-              overview.audit,
-              latestAudit.length.toLocaleString('fa-IR'),
-            )}
-          />
-          <MetricCard
-            detail={
-              apiReady
-                ? 'پاسخ liveness از API'
-                : resourceLabel(overview.health.state)
-            }
-            icon={Activity}
-            title="وضعیت API"
-            value={apiReady ? 'سالم' : resourceLabel(overview.health.state)}
-          />
-          <MetricCard
-            detail="Jobهای ناموفق فقط با projection Worker نمایش داده می‌شوند"
-            icon={ServerCog}
-            title="Jobهای ناموفق"
-            value="—"
-          />
-        </div>
-      </section>
+  const saveGroup = async (event: FormEvent) => {
+    event.preventDefault();
+    if (!editing) return;
+    if (scope !== 'کل مجموعه') {
+      setSaveError(
+        'ثبت Scope شرکتی به شناسه حقوقی معتبر نیاز دارد؛ دامنه «کل مجموعه» را انتخاب کنید.',
+      );
+      return;
+    }
+    if (!reason.trim()) {
+      setSaveError('دلیل تغییر را وارد کنید.');
+      return;
+    }
+    const current = settingFor(editing.module, editing.group);
+    setSaving(true);
+    setSaveError(null);
+    try {
+      const saved = await systemManagementApi.writeSetting({
+        ...(current ? { expectedVersion: current.version } : {}),
+        key: editing.group.id,
+        namespace: editing.module.id,
+        reason: reason.trim(),
+        scope: 'GLOBAL',
+        status: 'ACTIVE',
+        value: draft,
+        valueType: 'JSON',
+      });
+      setSettings((items) => [
+        saved,
+        ...items.filter((item) => item.id !== saved.id),
+      ]);
+      setEditing(null);
+      setToast(
+        editing.group.sensitive
+          ? 'تغییر حساس با دلیل و Audit ثبت شد.'
+          : 'تنظیمات ذخیره شد.',
+      );
+      void load();
+    } catch (error) {
+      setSaveError(apiMessage(error));
+    } finally {
+      setSaving(false);
+    }
+  };
 
-      <section
-        className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_21rem]"
-        aria-labelledby="system-areas-title"
-      >
-        <div className="min-w-0">
-          <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
+  const navigate = (next: Page) => {
+    setPage(next);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const navItems: Array<{ icon: LucideIcon; label: string; page: Page }> = [
+    { page: 'overview', label: 'نمای کلی', icon: Home },
+    { page: 'modules', label: 'تنظیمات بخش‌ها', icon: LayoutGrid },
+    { page: 'reviews', label: 'بررسی تغییرات', icon: ShieldCheck },
+    { page: 'history', label: 'تاریخچه تغییرات', icon: History },
+  ];
+
+  const renderHistory = (items = audit) => (
+    <div className={styles.auditGrid}>
+      {items.length ? (
+        items.map((event) => (
+          <article className={styles.auditItem} key={event.id}>
             <div>
-              <h2 className="font-black" id="system-areas-title">
-                بخش‌های مدیریت سیستم
-              </h2>
-              <p className="mt-1 text-sm text-muted-foreground">
-                هر بخش وضعیت اتصال و مالک دادهٔ خود را روشن می‌کند.
+              <strong>{event.action}</strong>
+              <p>
+                {event.entityType} • {event.entityId}
+              </p>
+              <p>
+                {event.reason} • {formatDate(event.createdAt)}
               </p>
             </div>
-            <div className="w-full sm:max-w-xs">
-              <Input
-                aria-label="جست‌وجوی بخش مدیریت سیستم"
-                onChange={(event) => setQuery(event.target.value)}
-                placeholder="جست‌وجو در بخش‌ها و مالکان"
-                value={query}
-              />
+            <div className={styles.tools}>
+              <span className={styles.pill}>{event.outcome}</span>
+            </div>
+          </article>
+        ))
+      ) : (
+        <div className={styles.empty}>تغییری در این بخش ثبت نشده است.</div>
+      )}
+    </div>
+  );
+
+  const renderHub = () => (
+    <>
+      {page === 'overview' ? (
+        <section className={styles.hero}>
+          <div>
+            <h2>تنظیمات یکپارچه روبی</h2>
+            <p className={styles.subtitle}>
+              سیاست‌ها و پیش‌فرض‌های بخش‌های کاری
+            </p>
+          </div>
+          <div className={styles.heroStats}>
+            <div>
+              <b>{settingsModules.length.toLocaleString('fa-IR')}</b>
+              <small>بخش</small>
+            </div>
+            <div>
+              <b>
+                {settingsModules
+                  .reduce((count, module) => count + module.groups.length, 0)
+                  .toLocaleString('fa-IR')}
+              </b>
+              <small>کارت تنظیمات</small>
+            </div>
+            <div>
+              <b>۰</b>
+              <small>منتظر بررسی</small>
             </div>
           </div>
-
-          <nav
-            aria-label="فیلتر بخش‌های مدیریت سیستم"
-            className="mt-4 flex gap-2 overflow-x-auto pb-1"
-          >
-            {(Object.keys(sectionLabels) as Array<SystemSection | 'all'>).map(
-              (section) => (
-                <Button
-                  aria-pressed={activeSection === section}
-                  key={section}
-                  onClick={() => setActiveSection(section)}
-                  size="sm"
-                  type="button"
-                  variant={activeSection === section ? 'primary' : 'outline'}
-                >
-                  {sectionLabels[section]}
-                </Button>
-              ),
-            )}
-          </nav>
-
-          {filteredAreas.length ? (
-            <div className="mt-4 grid gap-3 md:grid-cols-2 2xl:grid-cols-3">
-              {filteredAreas.map((area) => (
-                <ManagementAreaCard area={area} key={area.id} />
-              ))}
-            </div>
-          ) : (
-            <Card className="mt-4 p-6 text-center">
-              <p className="font-semibold">بخش منطبق با جست‌وجو پیدا نشد</p>
-              <p className="mt-2 text-sm text-muted-foreground">
-                عبارت دیگری را امتحان کنید یا فیلتر را به «همه بخش‌ها»
-                برگردانید.
-              </p>
-            </Card>
-          )}
-        </div>
-
-        <aside className="space-y-4">
-          <Card className="p-4">
-            <h2 className="flex items-center gap-2 font-black">
-              <Network aria-hidden="true" className="size-5 text-primary" />
-              وضعیت سرویس‌ها
-            </h2>
-            <dl className="mt-4 space-y-2 text-sm">
-              {[
-                [
-                  'API',
-                  apiReady ? 'سالم' : resourceLabel(overview.health.state),
-                ],
-                ['PostgreSQL', 'بدون projection عمومی'],
-                ['Redis', 'بدون projection عمومی'],
-                ['Worker', 'بدون projection عمومی'],
-                ['Storage', 'بدون projection عمومی'],
-              ].map(([service, status]) => (
-                <div
-                  className="flex items-center justify-between gap-3 rounded-xl bg-muted/55 px-3 py-2"
-                  key={service}
-                >
-                  <dt className="font-semibold">{service}</dt>
-                  <dd className="text-xs text-muted-foreground">{status}</dd>
-                </div>
-              ))}
-            </dl>
-            <p className="mt-3 text-xs leading-5 text-muted-foreground">
-              Commit runtime، صف و Migration status تنها پس از انتشار قرارداد
-              Observability نمایش داده می‌شوند.
-            </p>
-          </Card>
-
-          <Card className="p-4">
-            <h2 className="flex items-center gap-2 font-black">
-              <History aria-hidden="true" className="size-5 text-primary" />
-              آخرین رخدادهای مجاز
-            </h2>
-            {overview.audit.state === 'ready' && latestAudit.length ? (
-              <ol className="mt-4 space-y-3">
-                {latestAudit.map((event) => (
-                  <li
-                    className="border-b border-border pb-3 last:border-0 last:pb-0"
-                    key={event.id}
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <strong className="break-words text-xs">
-                        {event.action}
-                      </strong>
-                      <Badge className="bg-muted text-[10px] text-muted-foreground">
-                        {event.outcome}
-                      </Badge>
-                    </div>
-                    <p className="mt-1 text-[11px] text-muted-foreground">
-                      {formatDate(event.occurredAt)}
-                    </p>
-                  </li>
-                ))}
-              </ol>
-            ) : (
-              <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                {overview.audit.state === 'ready'
-                  ? 'رخداد قابل‌نمایشی ثبت نشده است.'
-                  : `نمایش Audit: ${resourceLabel(overview.audit.state)}`}
-              </p>
-            )}
-          </Card>
-
-          <Alert
-            description="عملیات حساس به دلیل معتبر، مجوز backend و Audit ماژول مالک نیاز دارند. این مرکز امکان اجرای فرمان سرور، حذف داده یا بازیابی مستقیم را ارائه نمی‌کند."
-            title="مرز عملیات مدیریتی"
-            tone="warning"
+        </section>
+      ) : null}
+      <div className={styles.searchbar}>
+        <label className={styles.search}>
+          <Search aria-hidden="true" size={21} />
+          <span className="sr-only">جست‌وجوی تنظیمات</span>
+          <input
+            aria-label="جست‌وجوی تنظیمات"
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="جست‌وجوی بخش، کارت یا تنظیم…"
+            value={query}
           />
+        </label>
+      </div>
+      <div aria-label="دسته‌بندی تنظیمات" className={styles.filters}>
+        {categories.map((item) => (
+          <button
+            aria-pressed={category === item}
+            className={`${styles.filter} ${category === item ? styles.filterActive : ''}`}
+            key={item}
+            onClick={() => setCategory(item)}
+            type="button"
+          >
+            {item}
+          </button>
+        ))}
+      </div>
+      <div className={styles.hubGrid}>
+        {filteredModules.length ? (
+          filteredModules.map((module) => {
+            const Icon = iconMap[module.icon] ?? Settings;
+            return (
+              <button
+                className={styles.hubCard}
+                key={module.id}
+                onClick={() => openModule(module)}
+                style={palette(module)}
+                type="button"
+              >
+                <div className={styles.cardTop}>
+                  <span className={styles.cardIcon}>
+                    <Icon aria-hidden="true" />
+                  </span>
+                  <div className={styles.grow}>
+                    <h3>{module.title}</h3>
+                    <p className={styles.subtitle}>{module.category}</p>
+                  </div>
+                </div>
+                <div className={styles.tags}>
+                  {module.groups.slice(0, 3).map((group) => (
+                    <span className={styles.tag} key={group.id}>
+                      {group.title}
+                    </span>
+                  ))}
+                </div>
+                <div className={styles.cardFoot}>
+                  <span>
+                    {module.groups.length.toLocaleString('fa-IR')} کارت تنظیمات
+                  </span>
+                  <span className={styles.enter}>
+                    ورود به بخش <ArrowLeft aria-hidden="true" size={18} />
+                  </span>
+                </div>
+              </button>
+            );
+          })
+        ) : (
+          <div className={styles.empty}>تنظیمی پیدا نشد.</div>
+        )}
+      </div>
+    </>
+  );
+
+  const renderModule = () => {
+    const ModuleIcon = iconMap[selectedModule.icon] ?? Settings;
+    return (
+      <>
+        <div className={styles.heading}>
+          <div className={styles.moduleHead} style={palette(selectedModule)}>
+            <span className={styles.cardIcon}>
+              <ModuleIcon aria-hidden="true" />
+            </span>
+            <div>
+              <h1>{selectedModule.title}</h1>
+              <p className={styles.subtitle}>
+                {selectedModule.groups.length.toLocaleString('fa-IR')} کارت
+                تنظیمات • {scope}
+              </p>
+            </div>
+          </div>
+          <button
+            className={styles.button}
+            onClick={() => navigate('modules')}
+            type="button"
+          >
+            <LayoutGrid aria-hidden="true" size={18} /> همه بخش‌ها
+          </button>
+        </div>
+        <div className={styles.sectionbar}>
+          <button
+            className={`${styles.tab} ${moduleTab === 'settings' ? styles.tabActive : ''}`}
+            onClick={() => setModuleTab('settings')}
+            type="button"
+          >
+            تنظیمات
+          </button>
+          <button
+            className={`${styles.tab} ${moduleTab === 'history' ? styles.tabActive : ''}`}
+            onClick={() => setModuleTab('history')}
+            type="button"
+          >
+            تاریخچه این بخش
+          </button>
+        </div>
+        {moduleTab === 'history' ? (
+          renderHistory()
+        ) : (
+          <div className={styles.settingsGrid}>
+            {selectedModule.groups.map((group) => {
+              const GroupIcon = iconMap[group.icon] ?? Settings;
+              const values = valuesFor(selectedModule, group);
+              const current = settingFor(selectedModule, group);
+              return (
+                <article
+                  className={styles.settingCard}
+                  key={group.id}
+                  style={palette(selectedModule)}
+                >
+                  <div className={styles.cardTop}>
+                    <span className={styles.cardIcon}>
+                      <GroupIcon aria-hidden="true" />
+                    </span>
+                    <div>
+                      <h3>{group.title}</h3>
+                      <p className={styles.subtitle}>
+                        {group.sensitive
+                          ? 'با ثبت دلیل و Audit'
+                          : 'ذخیره مستقیم'}
+                      </p>
+                    </div>
+                  </div>
+                  <div className={styles.previewValues}>
+                    {group.fields.slice(0, 3).map((field) => (
+                      <div className={styles.kv} key={field.key}>
+                        <span>{field.label}</span>
+                        <b>
+                          {displayValue(
+                            field,
+                            values[field.key] ?? field.value,
+                          )}
+                        </b>
+                      </div>
+                    ))}
+                  </div>
+                  {group.rules.length ? (
+                    <div className={styles.locked}>
+                      <LockKeyhole aria-hidden="true" />
+                      <span>
+                        {group.rules.length.toLocaleString('fa-IR')} قاعده
+                        الزامی
+                      </span>
+                    </div>
+                  ) : null}
+                  <div className={styles.cardFoot}>
+                    <span className={styles.pill}>
+                      نسخه {(current?.version ?? 0).toLocaleString('fa-IR')}
+                    </span>
+                    <button
+                      className={styles.button}
+                      onClick={() => openEditor(selectedModule, group)}
+                      type="button"
+                    >
+                      <Settings aria-hidden="true" size={17} /> تنظیمات
+                    </button>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        )}
+      </>
+    );
+  };
+
+  const pageTitle =
+    page === 'module'
+      ? selectedModule.title
+      : page === 'reviews'
+        ? 'بررسی تغییرات'
+        : page === 'history'
+          ? 'تاریخچه تغییرات'
+          : page === 'modules'
+            ? 'تنظیمات بخش‌ها'
+            : 'نمای کلی تنظیمات';
+
+  return (
+    <div className={styles.workspace} dir="rtl">
+      <div className={styles.layout}>
+        <aside className={styles.sidebar}>
+          <div className={styles.brand}>
+            <div className={styles.mark}>R</div>
+            <div>
+              <strong>روبی</strong>
+              <small>مدیریت یکپارچه سفر</small>
+            </div>
+          </div>
+          <div className={styles.sideCap}>مدیریت سیستم</div>
+          <nav aria-label="مدیریت سیستم" className={styles.nav}>
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              const active =
+                page === item.page ||
+                (item.page === 'modules' && page === 'module');
+              return (
+                <button
+                  aria-current={active ? 'page' : undefined}
+                  className={`${styles.navButton} ${active ? styles.navButtonActive : ''}`}
+                  key={item.page}
+                  onClick={() => navigate(item.page)}
+                  type="button"
+                >
+                  <Icon aria-hidden="true" size={21} /> {item.label}
+                  {item.page === 'reviews' ? (
+                    <span className={styles.counter}>۰</span>
+                  ) : null}
+                </button>
+              );
+            })}
+          </nav>
+          <div className={styles.sideFoot}>
+            <div className={styles.avatar}>
+              {actor === 'admin' ? 'م س' : 'ب ت'}
+            </div>
+            <div>
+              {actor === 'admin' ? 'مدیر سیستم' : 'بازبین تنظیمات'}
+              <small>محیط عملیاتی</small>
+            </div>
+          </div>
         </aside>
-      </section>
+
+        <div className={styles.shell}>
+          <header className={styles.topbar}>
+            <div className={styles.context}>
+              <span className={styles.iconBox}>
+                <Building2 aria-hidden="true" size={21} />
+              </span>
+              <select
+                aria-label="دامنه تنظیمات"
+                className={styles.control}
+                onChange={(event) => setScope(event.target.value)}
+                value={scope}
+              >
+                <option>کل مجموعه</option>
+                <option>نیایش سیر سحر</option>
+                <option>جهان باستان</option>
+              </select>
+              <span className={styles.subtitle}>تنظیمات سازمان</span>
+            </div>
+            <div className={styles.context}>
+              <span className={styles.pill}>
+                {overview ? 'عملیاتی' : 'پیش‌نمایش'}
+              </span>
+              <select
+                aria-label="نقش نمایشی"
+                className={styles.control}
+                onChange={(event) =>
+                  setActor(event.target.value as 'admin' | 'reviewer')
+                }
+                value={actor}
+              >
+                <option value="admin">مدیر سیستم</option>
+                <option value="reviewer">بازبین تنظیمات</option>
+              </select>
+            </div>
+          </header>
+
+          <main className={styles.main}>
+            <div className={styles.crumb}>
+              <button onClick={() => navigate('overview')} type="button">
+                مدیریت سیستم
+              </button>
+              <span>/</span>
+              <span>{pageTitle}</span>
+            </div>
+            <div className={styles.heading}>
+              <div>
+                <div className={styles.eyebrow}>مدیریت سیستم</div>
+                <h1>{pageTitle}</h1>
+              </div>
+              <span className={styles.pill}>
+                <Building2 aria-hidden="true" size={16} />
+                {scope}
+              </span>
+            </div>
+            {apiNotice ? (
+              <div className={styles.notice} role="status">
+                {apiNotice}
+              </div>
+            ) : null}
+
+            {page === 'overview' || page === 'modules' ? renderHub() : null}
+            {page === 'module' ? renderModule() : null}
+            {page === 'history' ? renderHistory() : null}
+            {page === 'reviews' ? (
+              <div className={styles.empty}>
+                <ShieldCheck
+                  aria-hidden="true"
+                  className="mx-auto mb-3"
+                  size={30}
+                />
+                تغییر واقعیِ منتظر بررسی وجود ندارد. این صفحه وضعیت ساختگی ایجاد
+                نمی‌کند.
+              </div>
+            ) : null}
+          </main>
+        </div>
+      </div>
+
+      {editing ? (
+        <div
+          className={styles.dialogBackdrop}
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget && !saving)
+              setEditing(null);
+          }}
+        >
+          <section
+            aria-labelledby="settings-dialog-title"
+            aria-modal="true"
+            className={styles.dialog}
+            role="dialog"
+          >
+            <div className={styles.modalHead} style={palette(editing.module)}>
+              <span className={styles.cardIcon}>
+                {(() => {
+                  const Icon = iconMap[editing.group.icon] ?? Settings;
+                  return <Icon aria-hidden="true" />;
+                })()}
+              </span>
+              <div className={styles.grow}>
+                <h2 id="settings-dialog-title">{editing.group.title}</h2>
+                <small>{editing.module.title}</small>
+              </div>
+              <button
+                aria-label="بستن"
+                className={styles.close}
+                disabled={saving}
+                onClick={() => setEditing(null)}
+                type="button"
+              >
+                <X aria-hidden="true" size={20} />
+              </button>
+            </div>
+            <form onSubmit={saveGroup}>
+              <div className={styles.modalBody}>
+                <div className={styles.saveMeta}>
+                  <span>{scope}</span>
+                  <span className={`${styles.pill} ${styles.pillBlue}`}>
+                    نسخه{' '}
+                    {settingFor(
+                      editing.module,
+                      editing.group,
+                    )?.version.toLocaleString('fa-IR') ?? '۰'}
+                  </span>
+                </div>
+                <div className={styles.formGrid}>
+                  {editing.group.fields.map((field) =>
+                    field.type === 'boolean' ? (
+                      <label
+                        className={`${styles.field} ${styles.switchField}`}
+                        key={field.key}
+                      >
+                        <span>{field.label}</span>
+                        <input
+                          className={styles.switch}
+                          checked={Boolean(draft[field.key])}
+                          onChange={(event) =>
+                            setDraft((value) => ({
+                              ...value,
+                              [field.key]: event.target.checked,
+                            }))
+                          }
+                          type="checkbox"
+                        />
+                      </label>
+                    ) : (
+                      <label className={styles.field} key={field.key}>
+                        <span>{field.label}</span>
+                        {field.type === 'select' ? (
+                          <select
+                            onChange={(event) =>
+                              setDraft((value) => ({
+                                ...value,
+                                [field.key]: event.target.value,
+                              }))
+                            }
+                            value={String(draft[field.key] ?? '')}
+                          >
+                            {field.options?.map((option) => (
+                              <option key={option}>{option}</option>
+                            ))}
+                          </select>
+                        ) : (
+                          <input
+                            max={field.max}
+                            min={field.min}
+                            onChange={(event) =>
+                              setDraft((value) => ({
+                                ...value,
+                                [field.key]: event.target.value,
+                              }))
+                            }
+                            type={field.type}
+                            value={String(draft[field.key] ?? '')}
+                          />
+                        )}
+                      </label>
+                    ),
+                  )}
+                  <label className={`${styles.field} ${styles.wide}`}>
+                    <span>دلیل تغییر</span>
+                    <textarea
+                      maxLength={300}
+                      onChange={(event) => setReason(event.target.value)}
+                      placeholder="دلیل اصلاح این تنظیمات"
+                      value={reason}
+                    />
+                  </label>
+                </div>
+                {editing.group.rules.length ? (
+                  <div className={styles.rules}>
+                    {editing.group.rules.map((rule) => (
+                      <div className={styles.locked} key={rule}>
+                        <LockKeyhole aria-hidden="true" />
+                        <span>{rule}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+                {saveError ? (
+                  <p className={styles.error} role="alert">
+                    {saveError}
+                  </p>
+                ) : null}
+              </div>
+              <div className={styles.modalFoot}>
+                <button
+                  className={`${styles.button} ${styles.quiet}`}
+                  disabled={saving}
+                  onClick={() => {
+                    setDraft(defaults(editing.group));
+                    setReason('');
+                    setSaveError(null);
+                  }}
+                  type="button"
+                >
+                  بازگردانی فرم
+                </button>
+                <div className={styles.tools}>
+                  <button
+                    className={styles.button}
+                    disabled={saving}
+                    onClick={() => setEditing(null)}
+                    type="button"
+                  >
+                    انصراف
+                  </button>
+                  <button
+                    className={`${styles.button} ${styles.primary}`}
+                    disabled={saving}
+                    type="submit"
+                  >
+                    <Save aria-hidden="true" size={18} />
+                    {saving ? 'در حال ذخیره…' : 'ذخیره تغییرات'}
+                  </button>
+                </div>
+              </div>
+            </form>
+          </section>
+        </div>
+      ) : null}
+      {toast ? (
+        <div className={styles.toast} role="status">
+          {toast}
+        </div>
+      ) : null}
     </div>
   );
 }

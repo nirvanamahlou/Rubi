@@ -447,7 +447,11 @@ function Breadcrumb() {
 }
 
 function AppShellContent({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
+  if (pathname === '/system') {
+    return <main id="main-content">{children}</main>;
+  }
   return (
     <div className="flex min-h-screen bg-background">
       <aside
