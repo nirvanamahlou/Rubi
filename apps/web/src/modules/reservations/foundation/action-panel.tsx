@@ -151,8 +151,12 @@ export function ContractActionPanel({
             : 'روی یک قرارداد از فهرست کلیک کنید.'}
         </span>
       </div>
-      {contractActionGroups.map((group) => (
-        <section key={group.title} className={styles.group}>
+      <div className={styles.groups}>
+      {contractActionGroups.map((group, groupIndex) => (
+        <section
+          key={group.title}
+          className={[styles.group, styles['group' + groupIndex]].join(' ')}
+        >
           <h2>{group.title}</h2>
           <div className={styles.buttons}>
             {group.items.map((action) =>
@@ -217,6 +221,7 @@ export function ContractActionPanel({
           </div>
         </section>
       ))}
+      </div>
     </aside>
   );
 }
