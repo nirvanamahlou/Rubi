@@ -624,7 +624,7 @@ describe('dashboard permission and data states', () => {
     expect(source).toContain('EmptyVisualCanvas');
     expect(source).toContain('dashboardVisualKindForData');
     expect(source).toContain('<polyline');
-    expect(source).toContain('conic-gradient');
+    expect(source).toContain('strokeDashoffset={-segment.start}');
     expect(source).toContain('externalLabels');
     expect(source).toContain('ringEdgeX');
     expect(source).toContain('lineEndY');
@@ -633,8 +633,8 @@ describe('dashboard permission and data states', () => {
     expect(source).toContain('textAnchor="middle"');
     expect(source).toContain('compactChartValue(item.value)');
     expect(source).toContain('max-w-[26rem]');
-    expect(source).toContain('const donutRadius = 104');
-    expect(source).toContain('fontSize="15"');
+    expect(source).toContain('const donutCenterY = 160');
+    expect(source).toContain('strokeWidth={22}');
     expect(source).toContain('comparisonRankPalette');
     expect(source).toContain('comparisonRankColor');
     expect(source).toContain("'#93c5fd'");

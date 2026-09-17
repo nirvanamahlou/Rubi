@@ -863,7 +863,7 @@ function Metric({
         <span className="flex w-full min-w-0 flex-col gap-1 font-black tabular-nums tracking-tight text-foreground">
           {currencyValues.map((value, index) => {
             const { amount, symbol } = currencyMetricParts(value);
-            const compactAmount = compactCurrencyAmount(amount, symbol);
+            const compactAmount = compactCurrencyAmount(amount);
             const compactAmountTypography = compactCurrencyTypography(compactAmount);
             const { comparison, comparisonUnavailable, currencyCode } =
               comparisonFor(index);
@@ -961,7 +961,7 @@ function currencyMetricParts(value: string) {
   };
 }
 
-function compactCurrencyAmount(amount: string, symbol: string) {
+function compactCurrencyAmount(amount: string) {
   const latinDigits = amount
     .replace(/[۰-۹]/g, (digit) => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(digit)))
     .replace(/[٠-٩]/g, (digit) => String('٠١٢٣٤٥٦٧٨٩'.indexOf(digit)))
@@ -2009,10 +2009,11 @@ function DashboardChart({
           total) *
         100;
       const end = start + (value / total) * 100;
-      return `${colorByIndex.get(index) ?? comparisonRankColor(index, values.length)} ${start}% ${end}%`;
+      return { start, end, color: colorByIndex.get(index) ?? comparisonRankColor(index, values.length) };
     });
     const donutCenter = 220;
-    const donutRadius = 104;
+    const donutRadius = 110;
+    const donutCenterY = 160;
     const externalLabels = values.map((value, index) => {
       const start =
         (values.slice(0, index).reduce((sum, item) => sum + item, 0) /
@@ -2023,13 +2024,13 @@ function DashboardChart({
       const cosine = Math.cos(radians);
       const sine = Math.sin(radians);
       const ringEdgeX = donutCenter + cosine * donutRadius;
-      const ringEdgeY = donutCenter + sine * donutRadius;
-      const lineEndX = donutCenter + cosine * (donutRadius + 28);
-      const lineEndY = donutCenter + sine * (donutRadius + 28);
+      const ringEdgeY = donutCenterY + sine * donutRadius;
+      const lineEndX = donutCenter + cosine * (donutRadius + 12);
+      const lineEndY = donutCenterY + sine * (donutRadius + 12);
       const onRight = cosine >= 0;
-      const labelX = onRight ? 380 : 60;
+      const labelX = lineEndX + (onRight ? 17 : -17);
       const labelY = Math.min(276, Math.max(42, lineEndY));
-      const connectorEndX = onRight ? 332 : 108;
+      const connectorEndX = labelX + (onRight ? -4 : 4);
       return {
         color:
           colorByIndex.get(index) ?? comparisonRankColor(index, values.length),
@@ -2039,6 +2040,7 @@ function DashboardChart({
         lineEndY,
         labelX,
         labelY,
+        onRight,
         ringEdgeX,
         ringEdgeY,
         value,
@@ -2051,22 +2053,26 @@ function DashboardChart({
         role="img"
       >
         <div aria-hidden="true" className="relative mx-auto h-64 w-full max-w-[26rem] sm:h-72">
-          <div
-            className="absolute left-1/2 top-1/2 size-40 -translate-x-1/2 -translate-y-1/2 rounded-full shadow-sm ring-1 ring-slate-200/80 dark:ring-slate-700/80 sm:size-48"
-            style={{ background: `conic-gradient(${segments.join(', ')})` }}
-          >
-            <span className="absolute inset-[24%] grid place-items-center rounded-full bg-surface text-center text-foreground shadow-sm ring-1 ring-border/70">
-              <span>
-                <b className="block text-lg font-black tabular-nums sm:text-xl">
-                  {compactChartValue(total)}
-                </b>
-                <small className="mt-1 block text-xs font-bold text-muted-foreground">
-                  مجموع
-                </small>
-              </span>
-            </span>
-          </div>
-          <svg className="absolute inset-0 size-full overflow-visible" viewBox="0 0 440 320">
+          <svg className="absolute inset-0 size-full" viewBox="0 0 440 320" direction="ltr">
+            {segments.map((segment, index) => (
+              <circle
+                key={index}
+                cx={donutCenter}
+                cy={donutCenterY}
+                r={99}
+                fill="none"
+                stroke={segment.color}
+                strokeWidth={22}
+                pathLength={100}
+                strokeDasharray={`${segment.end - segment.start} ${100 - (segment.end - segment.start)}`}
+                strokeDashoffset={-segment.start}
+                transform={`rotate(-90 ${donutCenter} ${donutCenterY})`}
+              />
+            ))}
+            <text x={donutCenter} y={155} textAnchor="middle" className="fill-foreground font-semibold" fontSize="26">
+              {compactChartValue(total)}
+            </text>
+            <text x={donutCenter} y={181} textAnchor="middle" className="fill-foreground" fontSize="14">مجموع</text>
             {externalLabels.map((item, index) => {
               const percent = formatDashboardNumber((item.value / total) * 100, {
                 maximumFractionDigits: 1,
@@ -2077,23 +2083,24 @@ function DashboardChart({
                   <polyline
                     fill="none"
                     points={`${item.ringEdgeX},${item.ringEdgeY} ${item.lineEndX},${item.lineEndY} ${item.connectorEndX},${item.labelY}`}
-                    stroke={item.color}
+                    stroke="currentColor"
+                    className="text-muted-foreground"
                     strokeLinecap="round"
                     strokeOpacity="0.85"
-                    strokeWidth="1.5"
+                    strokeWidth="0.8"
                   />
                   <text
-                    className="fill-foreground font-bold"
-                    fontSize="14"
-                    textAnchor="middle"
+                    className="fill-muted-foreground"
+                    fontSize="12"
+                    textAnchor={item.onRight ? 'start' : 'end'}
                     x={item.labelX}
                     y={textY}
                   >
                     <tspan x={item.labelX}>{item.label.slice(0, 18)}</tspan>
                     <tspan
-                      className="fill-foreground font-black"
+                      className="fill-muted-foreground"
                       direction="ltr"
-                      fontSize="15"
+                      fontSize="12"
                       x={item.labelX}
                       dy="18"
                     >
@@ -2867,13 +2874,13 @@ export function DashboardWorkspace() {
                 <Image
                   alt=""
                   aria-hidden="true"
-                  className="pointer-events-none object-cover object-right opacity-75 dark:opacity-25"
+                  className="pointer-events-none object-cover object-right opacity-100 dark:opacity-55"
                   fill
                   quality={45}
                   sizes="(min-width: 1024px) 72vw, 100vw"
                   src={activePageHeaderArtwork}
                 />
-                <span aria-hidden="true" className="pointer-events-none absolute inset-0 bg-gradient-to-l from-surface/90 via-surface/65 to-surface/10 dark:from-surface/95 dark:via-surface/75 dark:to-surface/35" />
+                <span aria-hidden="true" className="pointer-events-none absolute inset-0 bg-gradient-to-l from-surface/55 via-surface/25 to-transparent dark:from-surface/80 dark:via-surface/45 dark:to-surface/10" />
                 <span aria-hidden="true" className="pointer-events-none absolute -end-14 -top-14 size-40 rounded-full bg-primary/10 blur-3xl" />
                 <span aria-hidden="true" className="pointer-events-none absolute -start-16 bottom-0 size-32 rounded-full bg-cyan-400/10 blur-3xl" />
                 <span aria-hidden="true" className="pointer-events-none absolute -bottom-10 -end-2 text-primary/[0.055] dark:text-primary/[0.12]">

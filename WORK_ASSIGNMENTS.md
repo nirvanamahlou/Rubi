@@ -9,6 +9,11 @@
 
 # Work Assignments
 
+## DASHBOARD-DONUT-SVG-GEOMETRY-0917 — PC-C — LOCAL_COMPLETE
+
+- محدوده: DashboardChart و تست رندر. حلقهٔ CSS و خطوط SVG دو مرکز متفاوت داشتند؛ اکنون هر دو در SVG مشترک با مرکز (220,160)، شعاع بیرونی 110 و ضخامت 22 رسم می‌شوند. خطوط خنثی از محیط حلقه به برچسب بیرونی می‌رسند.
+- Donut اکنون به‌جای حلقهٔ CSS، یک SVG واحد دارد؛ مرکز، محیط حلقه و leader lineها مشترک‌اند و اتصال خطوط به بیرون حلقه قطعی است. مسیر `images/dashboard-headers/` نیز از Proxy ورود مستثنا شد تا تصویرهای سربرگ واقعاً به browser و بهینه‌ساز Next برسند. تست Dashboard/Proxy، TypeScript و lint موفق‌اند.
+
 ## DASHBOARD-DONUT-LEADER-LINES-AND-HEADER-ART-0916 — PC-C — LOCAL_COMPLETE
 
 - درخواست مالک: خطوط راهنمای Donut از لبهٔ حلقه به برچسب بیرونی برسند، بدون تداخل متن؛ برای پنج بخش اصلی Dashboard و زیرصفحه‌های آن‌ها نیز تصویر مینیمال مرجع سبک قرار بگیرد.

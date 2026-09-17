@@ -1,7 +1,10 @@
 import { NextRequest } from 'next/server';
 import { describe, expect, it } from 'vitest';
-import { proxy } from './proxy';
+import { config, proxy } from './proxy';
 describe('Reauthentication and local build verification', () => {
+  it('keeps decorative dashboard header artwork publicly reachable', () => {
+    expect(config.matcher[0]).toContain('images/dashboard-headers/');
+  });
   it('redirects the legacy route before mounting a second authenticated shell', () => {
     const request = new NextRequest(
       'http://localhost:3100/human-resources?section=employees&employee=employee-1',
