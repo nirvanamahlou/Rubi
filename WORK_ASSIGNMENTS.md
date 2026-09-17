@@ -1,3 +1,7 @@
+## SYSTEM-MANAGEMENT-BACKEND-001 — PC-B — READY_FOR_REVIEW
+
+- نتیجهٔ ادغام‌شده از `origin/develop`: قرارداد نسخهٔ ۱ مدیریت سامانه، ۳۰ Permission، ۱۲ جدول افزایشی و API کنترل‌شدهٔ تنظیمات/شماره‌گذاری/اعلان/قالب/Feature Flag/Backup/Health/Audit به‌همراه حفاظت IAM برای Self-escalation، آخرین مدیر فعال و بستن نشست جاری اضافه شده است. Migration و تست‌های این Slice در Draft PR #305 تأیید شده‌اند؛ قفل‌های Migration، قرارداد و اسناد مرکزی آزادند.
+
 ## CONTRACT-PASSENGER-CONTROLS-0917 — PC-A — READY_FOR_REVIEW
 
 - درخواست مالک در 2026-09-17: در جدول ورود اطلاعات مسافران قرارداد، جنسیت از ورودی آزاد M/F به انتخاب دوگزینه‌ای تبدیل شود و کنار هر ستون کشور نیازمند ISO3 یک راهنمای کوچک بازشونده شامل نام کشور و کد سه‌حرفی نمایش داده شود. COMPUTER_ID=PC-A؛ شاخه مستقل codex/pc-a-contract-passenger-controls-0917 از نسخه ترکیبی محلی d00cc1d4.

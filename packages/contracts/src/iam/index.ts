@@ -2,6 +2,7 @@ import { HR_PERMISSION_CODES } from '../hr';
 import { PROCUREMENT_PERMISSION_CODES } from '../procurement';
 import { CUSTOMER_AFFAIRS_PERMISSIONS } from '../customer-affairs';
 import { PACKAGE_PRICING_PERMISSION_CODES } from '../package-pricing';
+import { SYSTEM_PERMISSION_CODES } from '../system-management';
 
 export const IAM_PERMISSION_CONTRACT_VERSION = 11 as const;
 export const IAM_STEP_UP_CONTRACT_VERSION = 1 as const;

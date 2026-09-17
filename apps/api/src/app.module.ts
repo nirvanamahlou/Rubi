@@ -24,6 +24,7 @@ import { ProcurementModule } from './procurement/procurement.module';
 import { SalesModule } from './sales/sales.module';
 import { SettingsModule } from './settings/settings.module';
 import { TasksModule } from './tasks/tasks.module';
+import { SystemManagementModule } from './system-management/system-management.module';
 import { WorkbenchFeedbackModule } from './workbench-feedback/workbench-feedback.module';
 import { WorkbenchModule } from './workbench/workbench.module';
 
@@ -53,6 +54,7 @@ import { WorkbenchModule } from './workbench/workbench.module';
     PackagePricingModule,
     SalesModule,
     SettingsModule,
+    SystemManagementModule,
     TasksModule,
     NotificationsModule,
     ProcurementModule,
