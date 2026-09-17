@@ -1,7 +1,6 @@
 import type {
   SystemBackupRequestV1,
   SystemFeatureFlagV1,
-  SystemJobRetryInputV1,
   SystemNumberingSchemeV1,
   SystemNumberingSchemeWriteV1,
   SystemSessionRevokeInputV1,
@@ -171,7 +170,7 @@ export const systemManagementApi = {
   backupRequests: () => request<SystemBackupRequestV1[]>('/backup-requests'),
   requestBackup: (input: BackupRequestWrite) =>
     request<SystemBackupRequestV1>('/backup-requests', json(input)),
-  retryReportingExport: (id: string, input: SystemJobRetryInputV1) =>
+  retryReportingExport: (id: string, input: { reason: string }) =>
     request(`/jobs/reporting-exports/${id}/retry`, json(input)),
   health: () => request<SystemOverview['health']>('/health'),
   audit: () => request<SystemAuditRecord[]>('/audit'),
