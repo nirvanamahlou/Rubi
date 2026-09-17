@@ -3,283 +3,233 @@
   inset: 0;
   z-index: 0;
   overflow: hidden;
+  background: #72b5e8;
   pointer-events: none;
 }
 
-.aviationBackground {
+.staticBackground,
+.airplaneLayer {
   position: absolute;
-  inset: -3%;
+  inset: 0;
   background-image: url('/brand/login-airline-b2.png');
   background-position: center;
   background-size: cover;
-  opacity: 0;
-  transform: translate3d(34%, 0, 0) scale(1.055);
-  transform-origin: center;
-  will-change: transform, opacity;
-  animation: backgroundPlaneArrival 2.65s cubic-bezier(0.16, 0.84, 0.22, 1)
-    0.15s both;
 }
 
-.story::after {
+.staticBackground {
+  z-index: 0;
+}
+
+.skyPatch {
   position: absolute;
-  inset: 0;
+  inset: -2px;
   z-index: 1;
-  background: linear-gradient(
-    135deg,
-    rgb(8 47 94 / 20%),
-    rgb(13 79 135 / 4%) 46%,
-    rgb(255 255 255 / 8%)
+  background: linear-gradient(180deg, #4598dc 0%, #55a3e6 38%, #72b5e8 100%);
+  filter: blur(3px);
+  mask-image: radial-gradient(
+    ellipse 6.8% 4.8% at 85.5% 16%,
+    #000 44%,
+    rgb(0 0 0 / 94%) 65%,
+    transparent 100%
   );
-  content: '';
+  mask-repeat: no-repeat;
+  -webkit-mask-image: radial-gradient(
+    ellipse 6.8% 4.8% at 85.5% 16%,
+    #000 44%,
+    rgb(0 0 0 / 94%) 65%,
+    transparent 100%
+  );
+  -webkit-mask-repeat: no-repeat;
 }
 
-.windTrail {
-  position: absolute;
-  top: 31%;
-  right: 2%;
+.airplaneLayer {
   z-index: 2;
-  width: 38%;
-  height: 26px;
   opacity: 0;
-  transform: scaleX(0);
-  transform-origin: right center;
-  animation: windArrival 1.75s ease-out 0.5s both;
+  transform: translate3d(28%, -1.5%, 0);
+  will-change: transform, opacity;
+  mask-image: radial-gradient(
+    ellipse 7.2% 5.2% at 85.5% 16%,
+    #000 52%,
+    rgb(0 0 0 / 92%) 72%,
+    transparent 100%
+  );
+  mask-repeat: no-repeat;
+  -webkit-mask-image: radial-gradient(
+    ellipse 7.2% 5.2% at 85.5% 16%,
+    #000 52%,
+    rgb(0 0 0 / 92%) 72%,
+    transparent 100%
+  );
+  -webkit-mask-repeat: no-repeat;
+  animation: airplaneArrival 2.55s cubic-bezier(0.16, 0.84, 0.22, 1) 0.18s both;
 }
 
-.windTrail span {
+.nooraMist {
   position: absolute;
-  right: 0;
-  left: 0;
-  height: 2px;
-  border-radius: 999px;
-  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 68%));
-  filter: blur(0.4px);
-}
-
-.windTrail span:nth-child(2) {
-  top: 9px;
-  right: 11%;
-  opacity: 0.65;
-}
-
-.windTrail span:nth-child(3) {
-  top: 18px;
-  right: 24%;
-  opacity: 0.4;
-}
-
-.nooraMark {
-  position: absolute;
-  top: clamp(24px, 6vh, 72px);
-  left: clamp(20px, 4.5vw, 86px);
+  top: clamp(54px, 9vh, 105px);
+  left: 50%;
   z-index: 3;
-  width: clamp(220px, 23vw, 340px);
-  height: 128px;
-  opacity: 0;
-  transform: translate3d(18px, 8px, 0) scale(0.78);
-  filter: blur(10px);
-  animation: revealNooraCloud 1.15s cubic-bezier(0.2, 0.8, 0.2, 1) 2.65s both;
-}
-
-.nooraMark [class*='puff'] {
-  position: absolute;
-  display: block;
-  border: 1px solid rgb(255 255 255 / 72%);
-  border-radius: 50%;
-  background: linear-gradient(
-    145deg,
-    rgb(255 255 255 / 94%),
-    rgb(218 244 255 / 88%)
-  );
-  box-shadow:
-    inset -5px -6px 13px rgb(96 172 205 / 12%),
-    0 12px 28px rgb(9 50 92 / 12%);
-}
-
-.puffOne {
-  top: 25px;
-  left: 4%;
-  width: 66px;
-  height: 66px;
-}
-
-.puffTwo {
-  top: 2px;
-  left: 27%;
-  width: 98px;
-  height: 98px;
-}
-
-.puffThree {
-  top: 14px;
-  right: 17%;
-  width: 82px;
-  height: 82px;
-}
-
-.puffFour {
-  top: 35px;
-  right: 1%;
-  width: 62px;
-  height: 62px;
-}
-
-.cloudBody {
-  position: absolute;
-  top: 42px;
-  right: 3%;
-  left: 3%;
   display: grid;
-  min-height: 70px;
+  width: clamp(250px, 30vw, 470px);
+  height: clamp(82px, 10vw, 136px);
   place-items: center;
-  border: 1px solid rgb(255 255 255 / 78%);
-  border-radius: 999px;
-  background: linear-gradient(
-    180deg,
-    rgb(255 255 255 / 96%),
-    rgb(223 246 255 / 91%)
-  );
-  box-shadow:
-    0 16px 35px rgb(4 39 78 / 18%),
-    inset 0 1px 10px #fff;
+  opacity: 0;
+  transform: translate3d(-50%, 8px, 0) scale(0.9);
+  filter: blur(9px);
+  animation: revealNooraMist 1.45s ease-out 2.65s both;
 }
 
-.cloudBody strong {
-  color: #0a3e78;
+.nooraMist::before,
+.nooraMist::after {
+  position: absolute;
+  content: '';
+  pointer-events: none;
+}
+
+.nooraMist::before {
+  inset: 6% -8%;
+  border-radius: 50%;
+  background:
+    radial-gradient(
+      circle at 18% 60%,
+      rgb(255 255 255 / 38%) 0 13%,
+      transparent 31%
+    ),
+    radial-gradient(
+      circle at 37% 38%,
+      rgb(255 255 255 / 42%) 0 17%,
+      transparent 36%
+    ),
+    radial-gradient(
+      circle at 58% 50%,
+      rgb(255 255 255 / 36%) 0 20%,
+      transparent 40%
+    ),
+    radial-gradient(
+      circle at 80% 62%,
+      rgb(255 255 255 / 32%) 0 15%,
+      transparent 34%
+    );
+  filter: blur(12px);
+}
+
+.nooraMist::after {
+  right: 5%;
+  bottom: 16%;
+  left: 5%;
+  height: 32%;
+  border-radius: 50%;
+  background: rgb(255 255 255 / 24%);
+  filter: blur(16px);
+}
+
+.nooraMist span {
+  position: relative;
+  z-index: 1;
+  color: rgb(255 255 255 / 76%);
   font-family: Arial, Helvetica, sans-serif;
-  font-size: clamp(1.75rem, 3vw, 2.75rem);
+  font-size: clamp(2.4rem, 5.2vw, 5.2rem);
   font-weight: 900;
   letter-spacing: 0.28em;
   line-height: 1;
   text-indent: 0.28em;
   text-shadow:
-    0 2px 0 #fff,
-    0 8px 18px rgb(12 92 146 / 12%);
+    0 0 8px rgb(255 255 255 / 80%),
+    0 0 22px rgb(255 255 255 / 64%),
+    0 9px 28px rgb(23 105 166 / 28%);
 }
 
-.sparkle {
+.story::after {
   position: absolute;
-  top: 7px;
-  right: 12%;
-  color: #16a8c2;
-  font-size: 0.85rem;
-  animation: sparklePulse 1.8s ease-in-out 3.7s infinite;
+  inset: 0;
+  z-index: 4;
+  background: linear-gradient(
+    135deg,
+    rgb(8 47 94 / 16%),
+    rgb(13 79 135 / 2%) 46%,
+    rgb(255 255 255 / 6%)
+  );
+  content: '';
 }
 
-@keyframes backgroundPlaneArrival {
+@keyframes airplaneArrival {
   0% {
     opacity: 0;
-    transform: translate3d(34%, 0, 0) scale(1.055);
+    transform: translate3d(28%, -1.5%, 0);
   }
 
-  16% {
+  14% {
     opacity: 1;
   }
 
   78% {
-    transform: translate3d(-1.4%, 0, 0) scale(1.008);
+    transform: translate3d(-0.9%, 0.2%, 0);
   }
 
   90% {
-    transform: translate3d(0.45%, 0, 0) scale(1.002);
+    transform: translate3d(0.3%, -0.08%, 0);
   }
 
   100% {
     opacity: 1;
-    transform: translate3d(0, 0, 0) scale(1);
+    transform: translate3d(0, 0, 0);
   }
 }
 
-@keyframes windArrival {
-  0% {
-    opacity: 0;
-    transform: scaleX(0);
-  }
-
-  35% {
-    opacity: 0.75;
-  }
-
-  100% {
-    opacity: 0;
-    transform: scaleX(1);
-  }
-}
-
-@keyframes revealNooraCloud {
+@keyframes revealNooraMist {
   from {
     opacity: 0;
-    transform: translate3d(18px, 8px, 0) scale(0.78);
-    filter: blur(10px);
+    transform: translate3d(-50%, 8px, 0) scale(0.9);
+    filter: blur(9px);
   }
 
   to {
-    opacity: 0.94;
-    transform: translate3d(0, 0, 0) scale(1);
-    filter: blur(0);
-  }
-}
-
-@keyframes sparklePulse {
-  0%,
-  100% {
-    opacity: 0.45;
-    transform: scale(0.8) rotate(0);
-  }
-
-  50% {
     opacity: 1;
-    transform: scale(1.15) rotate(18deg);
+    transform: translate3d(-50%, 0, 0) scale(1);
+    filter: blur(0.5px);
   }
 }
 
-@media (max-width: 767px) {
-  .aviationBackground {
-    inset: -2%;
-    background-position: 58% center;
+@media (max-width: 900px) {
+  .skyPatch,
+  .airplaneLayer {
+    mask-image: none;
+    -webkit-mask-image: none;
   }
 
-  .nooraMark {
-    top: 14px;
-    left: 14px;
-    width: 210px;
-    height: 94px;
+  .skyPatch {
+    display: none;
   }
 
-  .nooraMark [class*='puff'] {
-    transform: scale(0.76);
+  .airplaneLayer {
+    display: none;
   }
 
-  .cloudBody {
-    top: 27px;
-    min-height: 54px;
+  .nooraMist {
+    top: 24px;
+    width: 240px;
+    height: 76px;
   }
 
-  .cloudBody strong {
-    font-size: 1.45rem;
+  .nooraMist span {
+    font-size: 2.2rem;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .aviationBackground,
-  .nooraMark,
-  .windTrail,
-  .sparkle {
+  .airplaneLayer,
+  .nooraMist {
     animation: none;
   }
 
-  .aviationBackground {
+  .airplaneLayer {
     opacity: 1;
     transform: none;
   }
 
-  .nooraMark {
-    opacity: 0.94;
-    transform: none;
-    filter: none;
-  }
-
-  .windTrail {
-    display: none;
+  .nooraMist {
+    opacity: 1;
+    transform: translate3d(-50%, 0, 0);
+    filter: blur(0.5px);
   }
 }
