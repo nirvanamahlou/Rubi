@@ -16,7 +16,7 @@ const styles = readFileSync(
 );
 
 describe('system management reference implementation', () => {
-  it('recreates the reference navigation, overview, filters, and module hub', () => {
+  it('includes the overview, internal navigation, filters, and module hub', () => {
     for (const label of [
       'نمای کلی',
       'تنظیمات بخش‌ها',
@@ -77,11 +77,21 @@ describe('system management reference implementation', () => {
     expect(workspace).not.toContain('Math.random');
   });
 
-  it('matches the responsive visual language of the supplied reference', () => {
-    expect(styles).toContain('linear-gradient(155deg, #16437d, #092655)');
+  it('inherits the shared application theme and remains responsive', () => {
+    expect(styles).toContain('var(--primary)');
+    expect(styles).toContain('var(--surface)');
+    expect(styles).toContain('var(--foreground)');
+    expect(styles).toContain('var(--border)');
+    expect(styles).toContain('.pageNav');
+    expect(styles).toContain(
+      'color-mix(in srgb, var(--accent) 9%, var(--surface))',
+    );
     expect(styles).toContain('grid-template-columns: repeat(3');
     expect(styles).toContain('@media (max-width: 820px)');
     expect(styles).toContain('@media (max-width: 580px)');
+    expect(workspace).toContain('styles.pageNav');
+    expect(workspace).not.toContain('styles.sidebar');
+    expect(workspace).not.toContain('styles.topbar');
     expect(workspace).toContain('aria-modal="true"');
     expect(workspace).toContain('aria-pressed={category === item}');
   });

@@ -153,7 +153,6 @@ export function SystemManagementWorkspace() {
   const [category, setCategory] = useState<(typeof categories)[number]>('همه');
   const [query, setQuery] = useState('');
   const [scope, setScope] = useState('کل مجموعه');
-  const [actor, setActor] = useState<'admin' | 'reviewer'>('admin');
   const [moduleTab, setModuleTab] = useState<'history' | 'settings'>(
     'settings',
   );
@@ -568,59 +567,19 @@ export function SystemManagementWorkspace() {
             : 'نمای کلی تنظیمات';
 
   return (
-    <div className={styles.workspace} dir="rtl">
-      <div className={styles.layout}>
-        <aside className={styles.sidebar}>
-          <div className={styles.brand}>
-            <div className={styles.mark}>R</div>
-            <div>
-              <strong>روبی</strong>
-              <small>مدیریت یکپارچه سفر</small>
-            </div>
+    <section className={styles.workspace} dir="rtl">
+      <div className={styles.main}>
+        <div className={styles.heading}>
+          <div>
+            <div className={styles.eyebrow}>مدیریت سیستم</div>
+            <h1>{pageTitle}</h1>
           </div>
-          <div className={styles.sideCap}>مدیریت سیستم</div>
-          <nav aria-label="مدیریت سیستم" className={styles.nav}>
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              const active =
-                page === item.page ||
-                (item.page === 'modules' && page === 'module');
-              return (
-                <button
-                  aria-current={active ? 'page' : undefined}
-                  className={`${styles.navButton} ${active ? styles.navButtonActive : ''}`}
-                  key={item.page}
-                  onClick={() => navigate(item.page)}
-                  type="button"
-                >
-                  <Icon aria-hidden="true" size={21} /> {item.label}
-                  {item.page === 'reviews' ? (
-                    <span className={styles.counter}>۰</span>
-                  ) : null}
-                </button>
-              );
-            })}
-          </nav>
-          <div className={styles.sideFoot}>
-            <div className={styles.avatar}>
-              {actor === 'admin' ? 'م س' : 'ب ت'}
-            </div>
-            <div>
-              {actor === 'admin' ? 'مدیر سیستم' : 'بازبین تنظیمات'}
-              <small>محیط عملیاتی</small>
-            </div>
-          </div>
-        </aside>
-
-        <div className={styles.shell}>
-          <header className={styles.topbar}>
-            <div className={styles.context}>
-              <span className={styles.iconBox}>
-                <Building2 aria-hidden="true" size={21} />
-              </span>
+          <div className={styles.headingActions}>
+            <label className={styles.scopeControl}>
+              <Building2 aria-hidden="true" size={17} />
+              <span className="sr-only">دامنه تنظیمات</span>
               <select
                 aria-label="دامنه تنظیمات"
-                className={styles.control}
                 onChange={(event) => setScope(event.target.value)}
                 value={scope}
               >
@@ -628,66 +587,57 @@ export function SystemManagementWorkspace() {
                 <option>نیایش سیر سحر</option>
                 <option>جهان باستان</option>
               </select>
-              <span className={styles.subtitle}>تنظیمات سازمان</span>
-            </div>
-            <div className={styles.context}>
-              <span className={styles.pill}>
-                {overview ? 'عملیاتی' : 'پیش‌نمایش'}
-              </span>
-              <select
-                aria-label="نقش نمایشی"
-                className={styles.control}
-                onChange={(event) =>
-                  setActor(event.target.value as 'admin' | 'reviewer')
-                }
-                value={actor}
-              >
-                <option value="admin">مدیر سیستم</option>
-                <option value="reviewer">بازبین تنظیمات</option>
-              </select>
-            </div>
-          </header>
-
-          <main className={styles.main}>
-            <div className={styles.crumb}>
-              <button onClick={() => navigate('overview')} type="button">
-                مدیریت سیستم
-              </button>
-              <span>/</span>
-              <span>{pageTitle}</span>
-            </div>
-            <div className={styles.heading}>
-              <div>
-                <div className={styles.eyebrow}>مدیریت سیستم</div>
-                <h1>{pageTitle}</h1>
-              </div>
-              <span className={styles.pill}>
-                <Building2 aria-hidden="true" size={16} />
-                {scope}
-              </span>
-            </div>
-            {apiNotice ? (
-              <div className={styles.notice} role="status">
-                {apiNotice}
-              </div>
-            ) : null}
-
-            {page === 'overview' || page === 'modules' ? renderHub() : null}
-            {page === 'module' ? renderModule() : null}
-            {page === 'history' ? renderHistory() : null}
-            {page === 'reviews' ? (
-              <div className={styles.empty}>
-                <ShieldCheck
-                  aria-hidden="true"
-                  className="mx-auto mb-3"
-                  size={30}
-                />
-                تغییر واقعیِ منتظر بررسی وجود ندارد. این صفحه وضعیت ساختگی ایجاد
-                نمی‌کند.
-              </div>
-            ) : null}
-          </main>
+            </label>
+            <span className={styles.pill}>
+              {overview ? 'عملیاتی' : 'پیش‌نمایش'}
+            </span>
+          </div>
         </div>
+
+        <nav aria-label="بخش‌های مدیریت سیستم" className={styles.pageNav}>
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            const active =
+              page === item.page ||
+              (item.page === 'modules' && page === 'module');
+            return (
+              <button
+                aria-current={active ? 'page' : undefined}
+                className={`${styles.navButton} ${active ? styles.navButtonActive : ''}`}
+                key={item.page}
+                onClick={() => navigate(item.page)}
+                type="button"
+              >
+                <Icon aria-hidden="true" size={17} />
+                {item.label}
+                {item.page === 'reviews' ? (
+                  <span className={styles.counter}>۰</span>
+                ) : null}
+              </button>
+            );
+          })}
+        </nav>
+
+        {apiNotice ? (
+          <div className={styles.notice} role="status">
+            {apiNotice}
+          </div>
+        ) : null}
+
+        {page === 'overview' || page === 'modules' ? renderHub() : null}
+        {page === 'module' ? renderModule() : null}
+        {page === 'history' ? renderHistory() : null}
+        {page === 'reviews' ? (
+          <div className={styles.empty}>
+            <ShieldCheck
+              aria-hidden="true"
+              className="mx-auto mb-3"
+              size={30}
+            />
+            تغییر واقعیِ منتظر بررسی وجود ندارد. این صفحه وضعیت ساختگی ایجاد
+            نمی‌کند.
+          </div>
+        ) : null}
       </div>
 
       {editing ? (
@@ -858,6 +808,6 @@ export function SystemManagementWorkspace() {
           {toast}
         </div>
       ) : null}
-    </div>
+    </section>
   );
 }
