@@ -12,7 +12,7 @@ import {
   ReceiptText,
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
-import type { ProcurementRequestV1 } from '@nora/contracts';
+import type { MasterDataRecord, ProcurementRequestV1 } from '@nora/contracts';
 import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
 import { FormField, Input, Textarea } from '@/components/ui/form-controls';
@@ -34,6 +34,7 @@ import { procurementApi, commandAttempt, type Bootstrap } from './api';
 import { DraftForm, selectClass } from './draft-form';
 import { statusLabels } from './model';
 import { OperationForm } from './operation-form';
+import { ProcurementRecordActions } from './record-actions';
 import { ProcurementSelect } from './procurement-select';
 import {
   sampleRequests,
@@ -227,6 +228,7 @@ export function InternalSections({
   onClose,
   onCreate,
   onSaved,
+  onDelete,
 }: {
   group: SectionIndex;
   bootstrap: Bootstrap;
@@ -239,6 +241,7 @@ export function InternalSections({
   onClose: () => void;
   onCreate: () => void;
   onSaved: (request: ProcurementRequestV1) => void;
+  onDelete?: (request: ProcurementRequestV1) => Promise<void>;
 }) {
   const [search, setSearch] = useState('');
   const [querySearch, setQuerySearch] = useState('');
@@ -248,7 +251,19 @@ export function InternalSections({
   const [page, setPage] = useState(1);
   const [candidate, setCandidate] = useState('');
   const [openedSampleId, setOpenedSampleId] = useState('');
-  const [supplierFormOpen, setSupplierFormOpen] = useState(false);
+  const [supplierForm, setSupplierForm] = useState<
+    { mode: 'create' } | { mode: 'edit'; record: MasterDataRecord } | null
+  >(null);
+  const [hiddenSamples, setHiddenSamples] = useState<string[]>(() => {
+    if (typeof window === 'undefined') return [];
+    try {
+      return JSON.parse(
+        window.sessionStorage.getItem('procurement:hidden-records') ?? '[]',
+      ) as string[];
+    } catch {
+      return [];
+    }
+  });
   useEffect(() => {
     const timer = setTimeout(() => {
       setQuerySearch(search);
@@ -306,21 +321,25 @@ export function InternalSections({
     !createdTo &&
     list.isSuccess &&
     !list.data.items.length;
-  const rows: ProcurementListRow[] = showSamples
-    ? sampleRequests.filter((item) =>
-        group === 1
-          ? item.section === undefined || item.section === 1
-          : item.section === group,
-      )
-    : (list.data?.items ?? []);
+  const rows: ProcurementListRow[] = (
+    showSamples
+      ? sampleRequests.filter((item) =>
+          group === 1
+            ? item.section === undefined || item.section === 1
+            : item.section === group,
+        )
+      : (list.data?.items ?? [])
+  ).filter((row) => !hiddenSamples.includes(row.id));
   const openedSample = rows.find(
     (row) => row.sample && row.id === openedSampleId,
   );
-  const supplierRows = suppliers.data?.items.length
-    ? suppliers.data.items
-    : page === 1 && !search && !querySearch && !createdFrom && !createdTo
-      ? sampleSuppliers
-      : [];
+  const supplierRows = (
+    suppliers.data?.items.length
+      ? suppliers.data.items
+      : page === 1 && !search && !querySearch && !createdFrom && !createdTo
+        ? sampleSuppliers
+        : []
+  ).filter((row) => !hiddenSamples.includes(row.id));
   const title = sections[group];
   const tone = sectionTone[group];
   const Icon = sectionIcons[group];
@@ -337,8 +356,27 @@ export function InternalSections({
       title: `تأمین‌کننده ${values.name ?? values.legalName ?? ''}`.trim(),
       ...(logoChange ? { logoChange } : {}),
     });
-    setSupplierFormOpen(false);
+    setSupplierForm(null);
     await suppliers.refetch();
+  }
+  function hideSample(id: string) {
+    setHiddenSamples((current) => {
+      const next = [...new Set([...current, id])];
+      window.sessionStorage.setItem(
+        'procurement:hidden-records',
+        JSON.stringify(next),
+      );
+      return next;
+    });
+  }
+  async function editSupplier(id: string) {
+    const result = await masterDataApi.detail('suppliers', id);
+    setSupplierForm({ mode: 'edit', record: result.data });
+  }
+  async function deleteRequest(row: ProcurementListRow) {
+    const result = await procurementApi.get(row.id);
+    if (!onDelete) throw new Error('حذف پرونده در این صفحه در دسترس نیست.');
+    await onDelete(result);
   }
 
   return (
@@ -535,6 +573,26 @@ export function InternalSections({
                           {'sample' in supplier && supplier.sample ? (
                             <Badge className={tone.chip}>نمونه</Badge>
                           ) : null}
+                          <ProcurementRecordActions
+                            label={supplier.name}
+                            onEdit={() => {
+                              if ('sample' in supplier && supplier.sample)
+                                return;
+                              void editSupplier(supplier.id);
+                            }}
+                            onDelete={async () => {
+                              if ('sample' in supplier) {
+                                hideSample(supplier.id);
+                                return;
+                              }
+                              await masterDataApi.remove(
+                                'suppliers',
+                                supplier.id,
+                                supplier.version,
+                              );
+                              await suppliers.refetch();
+                            }}
+                          />
                         </div>
                       </div>
                     ))}
@@ -581,10 +639,9 @@ export function InternalSections({
                         {row.sample ? (
                           <Badge className={tone.chip}>نمونه</Badge>
                         ) : null}
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => {
+                        <ProcurementRecordActions
+                          label={row.draft.title || row.number}
+                          onEdit={() => {
                             if (row.sample) {
                               setCandidate(row.id);
                               setOpenedSampleId(row.id);
@@ -592,9 +649,20 @@ export function InternalSections({
                               onOpen(row.id);
                             }
                           }}
-                        >
-                          باز کردن فرم
-                        </Button>
+                          onDelete={async () => {
+                            if (row.sample) {
+                              hideSample(row.id);
+                              return;
+                            }
+                            await deleteRequest(row);
+                          }}
+                          deleteDisabled={
+                            !row.sample &&
+                            !bootstrap.permissions.includes(
+                              'procurement.request.cancel',
+                            )
+                          }
+                        />
                       </div>
                     </div>
                   ))}
@@ -684,7 +752,7 @@ export function InternalSections({
               ) : group === 3 ? (
                 <Button
                   className="w-full"
-                  onClick={() => setSupplierFormOpen(true)}
+                  onClick={() => setSupplierForm({ mode: 'create' })}
                 >
                   ثبت تأمین‌کننده
                 </Button>
@@ -753,13 +821,18 @@ export function InternalSections({
           </Card>
         </div>
       )}
-      {supplierFormOpen && group === 3 && (
+      {supplierForm && group === 3 && (
         <MasterDataLiveForm
           definition={getMasterDataDefinition('suppliers')}
-          mode="create"
+          mode={supplierForm.mode}
           open
-          onOpenChange={setSupplierFormOpen}
+          onOpenChange={(open) => {
+            if (!open) setSupplierForm(null);
+          }}
           onPersist={persistSupplier}
+          {...(supplierForm.mode === 'edit'
+            ? { record: supplierForm.record }
+            : {})}
         />
       )}
     </div>

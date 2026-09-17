@@ -762,6 +762,112 @@ export class ProcurementService {
       },
     );
   }
+  /**
+   * Permanently removes a Procurement request and its Procurement-owned
+   * children. A finance handoff that Finance has already accepted is an
+   * immutable cross-module commitment and must be corrected from Finance.
+   */
+  async remove(id: string, body: unknown, actor: AuthenticatedActor) {
+    this.require(actor, 'procurement.request.cancel');
+    const input = v.object(body, ['expectedVersion']);
+    const expectedVersion = v.integer(input.expectedVersion);
+    const existing = await this.detail(id, actor);
+    requireRule(
+      existing.requesterUserId === actor.userId ||
+        actor.permissions.includes('procurement.assign'),
+      'FORBIDDEN',
+      'حذف این درخواست مجاز نیست.',
+    );
+    return this.database.client.$transaction(async (tx) => {
+      const before = await this.claim(tx, id, expectedVersion);
+      const acceptedHandoff = await tx.procurementFinanceHandoff.count({
+        where: {
+          requestId: id,
+          OR: [
+            { acceptedSourceId: { not: null } },
+            { status: { in: ['ACCEPTED', 'PAID'] } },
+          ],
+        },
+      });
+      requireRule(
+        acceptedHandoff === 0,
+        'INVALID_STATE',
+        'این پرونده به مالی تحویل شده است؛ برای حفظ سابقه مالی قابل حذف دائمی نیست.',
+      );
+      await this.purgeRequest(tx, id);
+      await this.tasks.syncProcurementWithinTransaction(tx, {
+        eventId: randomUUID(),
+        requestId: id,
+        requestNumber: before.number,
+        branchId: before.branchId,
+        status: 'CANCELLED',
+        ownerUserId: before.ownerUserId,
+        approverUserId: null,
+        action: 'DELETE_PERMANENT',
+      });
+      return { id, number: before.number, deleted: true as const };
+    });
+  }
+  private async purgeRequest(tx: ProcurementTx, requestId: string) {
+    const [orders, snapshots] = await Promise.all([
+      tx.procurementOrder.findMany({
+        where: { requestId },
+        select: { id: true },
+      }),
+      tx.procurementApprovalSnapshot.findMany({
+        where: { requestId },
+        select: { id: true },
+      }),
+    ]);
+    const orderIds = orders.map((row) => row.id);
+    const snapshotIds = snapshots.map((row) => row.id);
+    const steps = snapshotIds.length
+      ? await tx.procurementApprovalStep.findMany({
+          where: { snapshotId: { in: snapshotIds } },
+          select: { id: true },
+        })
+      : [];
+
+    await tx.procurementOutbox.deleteMany({ where: { requestId } });
+    await tx.procurementFinanceHandoff.deleteMany({ where: { requestId } });
+    await tx.procurementInvoiceMatch.deleteMany({
+      where: { orderId: { in: orderIds } },
+    });
+    await tx.procurementInvoiceItem.deleteMany({
+      where: { orderId: { in: orderIds } },
+    });
+    await tx.procurementInvoice.deleteMany({ where: { requestId } });
+    await tx.procurementReturn.deleteMany({ where: { requestId } });
+    await tx.procurementDiscrepancy.deleteMany({ where: { requestId } });
+    await tx.procurementServiceAcceptance.deleteMany({ where: { requestId } });
+    await tx.procurementReceiptAdjustment.deleteMany({ where: { requestId } });
+    await tx.procurementReceiptItem.deleteMany({
+      where: { orderId: { in: orderIds } },
+    });
+    await tx.procurementReceipt.deleteMany({ where: { requestId } });
+    await tx.procurementOrderItem.deleteMany({ where: { requestId } });
+    await tx.procurementOrderVersion.deleteMany({
+      where: { orderId: { in: orderIds } },
+    });
+    await tx.procurementOrder.deleteMany({ where: { requestId } });
+    await tx.procurementSelection.deleteMany({ where: { requestId } });
+    await tx.procurementQuotationItem.deleteMany({ where: { requestId } });
+    await tx.procurementQuotation.deleteMany({ where: { requestId } });
+    if (steps.length)
+      await tx.procurementApprovalDecision.deleteMany({
+        where: { stepId: { in: steps.map((step) => step.id) } },
+      });
+    if (snapshotIds.length)
+      await tx.procurementApprovalStep.deleteMany({
+        where: { snapshotId: { in: snapshotIds } },
+      });
+    await tx.procurementApprovalSnapshot.deleteMany({ where: { requestId } });
+    await tx.procurementExportJob.deleteMany({ where: { requestId } });
+    await tx.procurementAudit.deleteMany({ where: { requestId } });
+    await tx.procurementRequestVersion.deleteMany({ where: { requestId } });
+    await tx.procurementRequestItem.deleteMany({ where: { requestId } });
+    await tx.procurementRequest.delete({ where: { id: requestId } });
+  }
   private async claim(tx: ProcurementTx, id: string, version: number) {
     const before = await tx.procurementRequest.findUniqueOrThrow({
       where: { id },

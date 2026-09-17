@@ -12,10 +12,12 @@ const actor: AuthenticatedActor = {
 
 describe('HR procurement directory', () => {
   it('selects the first authorized branch that has active employees', async () => {
-    const findMany = vi.fn().mockResolvedValue([
-      { branchId: 'branch-other' },
-      { branchId: 'branch-with-hr' },
-    ]);
+    const findMany = vi
+      .fn()
+      .mockResolvedValue([
+        { branchId: 'branch-other' },
+        { branchId: 'branch-with-hr' },
+      ]);
     const directory = new HrProcurementDirectory({
       client: { hrEmployee: { findMany } },
     } as unknown as DatabaseService);

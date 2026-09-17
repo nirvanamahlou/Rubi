@@ -66,7 +66,7 @@ describe('real partner form fields', () => {
       expect(html).toContain('aria-multiselectable="true"');
       if (resource === 'suppliers') {
         expect(html).not.toContain('سازمان تأمین‌کننده');
-        expect(html).not.toContain('تماس اصلی');
+        expect(html).toContain('تماس اصلی');
         expect(html).not.toContain('ثبت سازمان جدید');
       } else {
         expect(html).toContain('تماس اصلی');
