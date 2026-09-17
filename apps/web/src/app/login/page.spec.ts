@@ -24,7 +24,7 @@ describe('login background', () => {
       "background-image: url('/brand/login-airline-b2.png')",
     );
     expect(backgroundStyles).toContain('@keyframes airplaneArrival');
-    expect(backgroundStyles).toContain('translate3d(28%, -1.5%, 0)');
+    expect(backgroundStyles).toContain('translate3d(72%, -2.5%, 0)');
     expect(fs.existsSync(asset)).toBe(true);
     expect(fs.statSync(asset).size).toBeGreaterThan(100_000);
   });
@@ -33,11 +33,14 @@ describe('login background', () => {
     expect(backgroundStory).toContain('NOORA');
     expect(backgroundStory).not.toContain('<svg');
     expect(backgroundStory).toContain('aria-hidden="true"');
-    expect(backgroundStyles).toContain('@keyframes revealNooraMist');
-    expect(backgroundStyles).toContain('2.65s both');
+    expect(backgroundStyles).toContain('@keyframes writeNoora');
+    expect(backgroundStyles).toContain('3.12s both');
     expect(backgroundStyles).toContain('.staticBackground');
     expect(backgroundStyles).toContain('.airplaneLayer');
     expect(backgroundStyles).toContain('mask-image: radial-gradient');
+    expect(backgroundStory).toContain('cloudWriter');
+    expect(backgroundStyles).toContain('@keyframes cloudWrite');
+    expect(backgroundStyles).toContain('clip-path: inset(0 100% 0 0)');
     expect(backgroundStyles).toContain(
       '@media (prefers-reduced-motion: reduce)',
     );

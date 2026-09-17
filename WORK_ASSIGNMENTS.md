@@ -53,12 +53,14 @@
 - Ticket Catalog exports branch-scoped departures; Reservations persists the departure FK on immutable rate batches; Sales consumes that departure's current batches through the public projection. Legacy packs remain readable and may be explicitly linked by revision. Matching dates do not assign historical packs to a tour.
 - Result: explicit linkage, exact stay-night pricing, fixed/percent adjustments and multicurrency room-package preview/publications are implemented. The integration retained both Package Pricing and Reporting modules/Prisma relations and both documentation histories. Prisma validate/generate, Contracts/Database/API/Web typechecks, full API tests (1436 passed, 135 skipped), full Web tests (1477 passed), full API/Web lint and production builds pass. Two local demo tours completed Ticket → Finance payment → two-currency hotel grid → maker/checker publication and edit/republication on isolated `rubi_pricing_flow_0916`; the operational database is untouched. Locks release with the merge commit; origin is public so no public push is performed.
 
-
-## LOGIN-NOORA-MOTION-FOLLOWUP-0917 — PC-A — IN_PROGRESS
+## LOGIN-NOORA-MOTION-FOLLOWUP-0917 — PC-A — READY FOR REVIEW
 
 - درخواست اصلاحی مالک در 2026-09-17: پس‌زمینهٔ صفحهٔ ورود ثابت بماند؛ فقط هواپیمای واقعی همان عکس از بیرون سمت راست به چپ حرکت کند و در جای اصلی متوقف شود. نام «NOORA» نیز یک‌باره ظاهر نشود و با حرکت ابر نرم از سمت چپ، تدریجی نوشته و ماندگار شود.
 - شاخهٔ مستقل codex/pc-a-login-noora-motion-followup-0917 از آخرین origin/develop؛ محدودهٔ رزرو فقط کامپوننت و CSS پس‌زمینهٔ Login، تست هدفمند و همین اسناد است. فرم/منطق احراز هویت، API، Migration، Permission، Dependency/Lockfile و دادهٔ عملیاتی تغییر نمی‌کنند.
 - تعارض اسناد با حفظ کامل تاریخچهٔ TOUR-HOTEL-PRICING-FLOW و افزودن این واحد مستقل حل شد.
+- نتیجه: عکس زمینه ثابت است؛ هواپیمای واقعی همان تصویر از بیرون سمت راست وارد می‌شود و به چپ تا جای اصلی می‌رود. ابر نرم از سمت چپ روی حروف حرکت می‌کند و NOORA را تدریجی آشکار می‌کند؛ کلمه در پایان ماندگار است.
+- اعتبارسنجی: 2 تست هدفمند Login، ESLint هدفمند، Web typecheck و Web production build موفق‌اند. خروجی نهایی و لحظهٔ نوشتن در مرورگر headless با اندازهٔ 1440×900 بررسی شد و پیش‌نمایش مستقل روی http://127.0.0.1:3201/login فعال است.
+
 ## HOTEL-RATE-PACKS-0915 — PC-A — IMPLEMENTED ON ISOLATED 3200 / REVIEW PENDING
 
 - 2026-09-16 follow-up requested by product owner: each selected hotel row in
@@ -113,6 +115,7 @@
 - محدودهٔ رزرو: API و UI ماژول Procurement، قراردادهای افزایشی مرتبط، seed محلیِ قابل‌تکرار با شناسه‌های اختصاصی Procurement، تست‌های هدفمند و مستندات این واحد. داده‌های نمونه هیچ سفارش بیرونی، پرداخت یا سند حسابداری واقعی ایجاد نمی‌کنند؛ اتصال Reservations، فایل‌های گزارش untracked، Dependency/Lockfile و Migration خارج از محدوده‌اند مگر پس از نیاز فنیِ اثبات‌شده.
 - مرزها: Finance و Tasks فقط از public contractهای نسخه‌دار Procurement مصرف می‌کنند؛ هیچ دسترسی مستقیم به جدول ماژول دیگر، انتساب نقش تجاری یا تغییر خودکار policy انجام نمی‌شود.
 - نتیجه: فرم‌های عملیاتیِ موجود برای همهٔ تب‌های چرخه به API اصلی وصل‌اند؛ پیام روشن «ثبت و ویرایش» برای نقش فاقد مجوز، و راهنمای اصلاح نسخه‌دار برای نقش مجاز اضافه شد. شش پروندهٔ محلی واقعی‌نما با استعلام، سفارش، رسید یا پذیرش خدمت، اصلاح/مغایرت/مرجوعی مرتبط، فاکتور و ارجاع مالی وارد PostgreSQL محلی شدند. ابزار idempotent `procurement:demo:apply` فقط روی localhost اجرا می‌شود و به‌دلیل append-only بودن سوابق چرخه، تاریخچه را حذف یا بازنویسی نمی‌کند. هیچ پرداخت، posting مالی یا ارسال تأمین‌کننده ساخته نشده است.
+
 ## RESERVATION-SECTION-EDIT-AGE-BANDS-0916 — PC-A — READY_FOR_REVIEW
 
 - درخواست مالک در 2026-09-16: تب‌های ویرایش قرارداد در رزواسیون برای طرف قرارداد، پرواز، هتل، سایر خدمات و مسافران واقعاً قابل ویرایش و ذخیره باشند؛ ردهٔ کودک هتل نیز در فرم ارسالی به کارگزار به‌صورت ۲ تا ۶ و ۶ تا ۱۲ سال نمایش داده شود.

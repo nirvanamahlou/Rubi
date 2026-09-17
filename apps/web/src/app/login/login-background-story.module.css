@@ -45,7 +45,7 @@
 .airplaneLayer {
   z-index: 2;
   opacity: 0;
-  transform: translate3d(28%, -1.5%, 0);
+  transform: translate3d(72%, -2.5%, 0);
   will-change: transform, opacity;
   mask-image: radial-gradient(
     ellipse 7.2% 5.2% at 85.5% 16%,
@@ -61,7 +61,7 @@
     transparent 100%
   );
   -webkit-mask-repeat: no-repeat;
-  animation: airplaneArrival 2.55s cubic-bezier(0.16, 0.84, 0.22, 1) 0.18s both;
+  animation: airplaneArrival 3.15s cubic-bezier(0.14, 0.78, 0.2, 1) 0.12s both;
 }
 
 .nooraMist {
@@ -73,17 +73,17 @@
   width: clamp(250px, 30vw, 470px);
   height: clamp(82px, 10vw, 136px);
   place-items: center;
-  opacity: 0;
-  transform: translate3d(-50%, 8px, 0) scale(0.9);
-  filter: blur(9px);
-  animation: revealNooraMist 1.45s ease-out 2.65s both;
+  transform: translate3d(-50%, 0, 0);
 }
 
 .nooraMist::before,
 .nooraMist::after {
   position: absolute;
+  opacity: 0;
+  clip-path: inset(0 100% 0 0);
   content: '';
   pointer-events: none;
+  animation: revealCloudBed 2.3s ease-out 3.05s both;
 }
 
 .nooraMist::before {
@@ -123,10 +123,10 @@
   filter: blur(16px);
 }
 
-.nooraMist span {
+.nooraWord {
   position: relative;
   z-index: 1;
-  color: rgb(255 255 255 / 76%);
+  color: rgb(255 255 255 / 78%);
   font-family: Arial, Helvetica, sans-serif;
   font-size: clamp(2.4rem, 5.2vw, 5.2rem);
   font-weight: 900;
@@ -137,6 +137,38 @@
     0 0 8px rgb(255 255 255 / 80%),
     0 0 22px rgb(255 255 255 / 64%),
     0 9px 28px rgb(23 105 166 / 28%);
+  opacity: 0;
+  clip-path: inset(0 100% 0 0);
+  animation: writeNoora 2.15s cubic-bezier(0.2, 0.75, 0.25, 1) 3.12s both;
+}
+
+.cloudWriter {
+  position: absolute;
+  top: 34%;
+  left: -7%;
+  z-index: 2;
+  width: 92px;
+  height: 48px;
+  border-radius: 50%;
+  background:
+    radial-gradient(
+      circle at 23% 58%,
+      rgb(255 255 255 / 84%) 0 18%,
+      transparent 38%
+    ),
+    radial-gradient(
+      circle at 48% 40%,
+      rgb(255 255 255 / 92%) 0 25%,
+      transparent 50%
+    ),
+    radial-gradient(
+      circle at 76% 61%,
+      rgb(255 255 255 / 76%) 0 20%,
+      transparent 43%
+    );
+  opacity: 0;
+  filter: blur(7px);
+  animation: cloudWrite 2.2s cubic-bezier(0.2, 0.7, 0.28, 1) 3.02s both;
 }
 
 .story::after {
@@ -155,10 +187,10 @@
 @keyframes airplaneArrival {
   0% {
     opacity: 0;
-    transform: translate3d(28%, -1.5%, 0);
+    transform: translate3d(72%, -2.5%, 0);
   }
 
-  14% {
+  8% {
     opacity: 1;
   }
 
@@ -176,17 +208,57 @@
   }
 }
 
-@keyframes revealNooraMist {
-  from {
+@keyframes revealCloudBed {
+  0% {
     opacity: 0;
-    transform: translate3d(-50%, 8px, 0) scale(0.9);
-    filter: blur(9px);
+    clip-path: inset(0 100% 0 0);
   }
 
-  to {
+  30% {
+    opacity: 0.55;
+  }
+
+  100% {
     opacity: 1;
-    transform: translate3d(-50%, 0, 0) scale(1);
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+@keyframes writeNoora {
+  0% {
+    opacity: 0;
+    clip-path: inset(0 100% 0 0);
+    filter: blur(5px);
+  }
+
+  16% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 1;
+    clip-path: inset(0 0 0 0);
     filter: blur(0.5px);
+  }
+}
+
+@keyframes cloudWrite {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 7px, 0) scale(0.72);
+  }
+
+  14% {
+    opacity: 0.95;
+  }
+
+  82% {
+    opacity: 0.82;
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate3d(470%, -3px, 0) scale(1.12);
   }
 }
 
@@ -197,10 +269,7 @@
     -webkit-mask-image: none;
   }
 
-  .skyPatch {
-    display: none;
-  }
-
+  .skyPatch,
   .airplaneLayer {
     display: none;
   }
@@ -211,14 +280,22 @@
     height: 76px;
   }
 
-  .nooraMist span {
+  .nooraWord {
     font-size: 2.2rem;
+  }
+
+  .cloudWriter {
+    width: 64px;
+    height: 36px;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .airplaneLayer,
-  .nooraMist {
+  .nooraWord,
+  .cloudWriter,
+  .nooraMist::before,
+  .nooraMist::after {
     animation: none;
   }
 
@@ -227,9 +304,15 @@
     transform: none;
   }
 
-  .nooraMist {
+  .nooraWord,
+  .nooraMist::before,
+  .nooraMist::after {
     opacity: 1;
-    transform: translate3d(-50%, 0, 0);
+    clip-path: none;
     filter: blur(0.5px);
+  }
+
+  .cloudWriter {
+    display: none;
   }
 }

@@ -7,7 +7,8 @@ export function LoginBackgroundStory() {
       <div className={styles.skyPatch} />
       <div className={styles.airplaneLayer} />
       <div className={styles.nooraMist}>
-        <span>NOORA</span>
+        <span className={styles.cloudWriter} />
+        <strong className={styles.nooraWord}>NOORA</strong>
       </div>
     </div>
   );
