@@ -4,6 +4,9 @@ import {
   Banknote,
   CalendarCheck,
   FilePlus2,
+  FileText,
+  ReceiptText,
+  UsersRound,
   RefreshCw,
   WalletCards,
   Search,
@@ -257,10 +260,13 @@ export function SalesWorkspace() {
       <section
         ref={contractsSearchPanel}
         aria-label="جست‌وجو و فهرست قراردادها"
-        className="rounded-2xl border border-border bg-surface p-4 sm:p-5"
+        className="relative overflow-hidden rounded-3xl border border-primary/15 bg-gradient-to-br from-surface via-surface to-primary/5 p-4 shadow-sm sm:p-5"
       >
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-          <h2 className="font-bold">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-border/70 pb-4">
+          <h2 className="flex items-center gap-2 text-base font-black text-foreground">
+            <span className="grid size-9 place-items-center rounded-xl bg-primary text-primary-foreground shadow-sm">
+              <FileText className="size-4" />
+            </span>
             قراردادها{' '}
             <span className="mr-2 text-xs font-normal text-muted-foreground">
               {!loading && !error
@@ -294,7 +300,7 @@ export function SalesWorkspace() {
           </p>
         ) : null}
         <form
-          className="flex flex-wrap gap-2"
+          className="grid gap-2 rounded-2xl border border-border/70 bg-muted/25 p-2 sm:grid-cols-[minmax(0,1fr)_14rem_auto_auto] sm:items-center"
           onSubmit={(event) => {
             event.preventDefault();
             setQuery((current) => ({
@@ -304,7 +310,7 @@ export function SalesWorkspace() {
             }));
           }}
         >
-          <div className="flex min-w-48 flex-1 items-center gap-2 rounded-xl border border-border px-3 focus-within:ring-2 focus-within:ring-primary/30">
+          <div className="flex min-w-48 items-center gap-2 rounded-xl border border-border bg-surface px-3 shadow-sm focus-within:ring-2 focus-within:ring-primary/30">
             <Search className="size-4 shrink-0 text-muted-foreground" />
             <input
               aria-label="جست‌وجوی قرارداد"
@@ -391,10 +397,10 @@ export function SalesWorkspace() {
         />
       ) : null}
       {contracts.length && !loading ? (
-        <Card className="overflow-hidden">
+        <Card className="overflow-hidden rounded-3xl border border-border/80 bg-surface shadow-sm">
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-muted/60 text-muted-foreground">
+            <table className="w-full min-w-[66rem] text-sm">
+              <thead className="bg-gradient-to-l from-muted/80 via-muted/45 to-transparent text-xs font-bold text-muted-foreground">
                 <tr>
                   {[
                     'شماره',
@@ -406,7 +412,10 @@ export function SalesWorkspace() {
                     'آخرین تغییر',
                     'پرداخت‌ها',
                   ].map((label) => (
-                    <th className="px-4 py-3 text-start" key={label}>
+                    <th
+                      className="px-5 py-3.5 text-start whitespace-nowrap"
+                      key={label}
+                    >
                       {label}
                     </th>
                   ))}
@@ -414,19 +423,37 @@ export function SalesWorkspace() {
               </thead>
               <tbody>
                 {contracts.map((contract) => (
-                  <tr className="border-t border-border" key={contract.id}>
-                    <td className="px-4 py-3 font-bold">
-                      {contract.contractNumber}
+                  <tr
+                    className="group border-t border-border/70 transition-colors hover:bg-primary/[0.035]"
+                    key={contract.id}
+                  >
+                    <td className="px-5 py-4 font-bold">
+                      <div className="inline-flex items-center gap-2 rounded-xl border border-primary/15 bg-primary/[0.055] px-2.5 py-1.5 text-primary">
+                        <FileText className="size-4" />
+                        <span dir="ltr">{contract.contractNumber}</span>
+                      </div>
                     </td>
-                    <td className="px-4 py-3">
-                      {contract.customerNameSnapshot}
+                    <td className="px-5 py-4">
+                      <div className="flex items-center gap-2">
+                        <span className="grid size-8 shrink-0 place-items-center rounded-full bg-sky-500/10 text-xs font-black text-sky-700 dark:text-sky-300">
+                          {contract.customerNameSnapshot.slice(0, 1)}
+                        </span>
+                        <span className="font-semibold text-foreground">
+                          {contract.customerNameSnapshot}
+                        </span>
+                      </div>
                     </td>
-                    <td className="px-4 py-3">
-                      <p>
-                        {contract.passengerNames.length.toLocaleString('fa-IR')}{' '}
-                        مسافر
-                      </p>
-                      <p className="mt-1 text-xs text-muted-foreground">
+                    <td className="px-5 py-4">
+                      <div className="flex items-center gap-1.5 font-semibold text-foreground">
+                        <UsersRound className="size-4 text-primary" />
+                        <p>
+                          {contract.passengerNames.length.toLocaleString(
+                            'fa-IR',
+                          )}{' '}
+                          مسافر
+                        </p>
+                      </div>
+                      <p className="mt-1.5 max-w-52 text-xs leading-5 text-muted-foreground">
                         {contract.services
                           .map(
                             (kind) =>
@@ -446,8 +473,8 @@ export function SalesWorkspace() {
                           .join('، ')}
                       </p>
                     </td>
-                    <td className="px-4 py-3">
-                      <Badge>
+                    <td className="px-5 py-4">
+                      <Badge className="rounded-full border border-primary/10 bg-primary/[0.07] px-2.5 py-1 text-primary">
                         {
                           {
                             DRAFT: 'پیش‌نویس',
@@ -461,7 +488,7 @@ export function SalesWorkspace() {
                         }
                       </Badge>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-5 py-4">
                       <Badge
                         className={
                           contract.settlementStatus === 'SETTLED'
@@ -483,7 +510,7 @@ export function SalesWorkspace() {
                           contract.settlementStatus}
                       </Badge>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-5 py-4 font-semibold text-foreground">
                       {contract.balances
                         .map((balance) =>
                           formatMoney(
@@ -493,20 +520,24 @@ export function SalesWorkspace() {
                         )
                         .join(' + ')}
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-5 py-4 text-muted-foreground">
                       {new Date(contract.updatedAt).toLocaleDateString('fa-IR')}
                     </td>
-                    <td className="px-4 py-3">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => setPaymentContractId(contract.id)}
-                      >
-                        پرداخت‌ها و اقساط
-                      </Button>
-                      <div className="mt-2">
-                        <ContractOutputButton contractId={contract.id} />
-                        <SalesTravelDocuments contractId={contract.id} />
+                    <td className="px-5 py-4">
+                      <div className="flex min-w-40 flex-col gap-1.5">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="justify-start bg-surface"
+                          onClick={() => setPaymentContractId(contract.id)}
+                        >
+                          <ReceiptText className="size-3.5" />
+                          پرداخت‌ها و اقساط
+                        </Button>
+                        <div className="flex flex-wrap gap-1">
+                          <ContractOutputButton contractId={contract.id} />
+                          <SalesTravelDocuments contractId={contract.id} />
+                        </div>
                       </div>
                     </td>
                   </tr>

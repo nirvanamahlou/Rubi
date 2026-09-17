@@ -28,6 +28,12 @@
 
 # Work Assignments
 
+## SALES-CONTRACTS-REDESIGN-0917 — PC-A — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-17: بازطراحی بخش فهرست قراردادهای فروش برای خوانایی بهتر، فیلتر فشرده و عملیات مرتب هر قرارداد؛ منطق قرارداد، پرداخت، خروجی و مسیرها تغییر نمی‌کند. `COMPUTER_ID=PC-A`؛ شاخهٔ مستقل `codex/pc-a-sales-contracts-redesign-0917` از آخرین `origin/develop`.
+- محدودهٔ رزرو: `apps/web/src/modules/sales/components/sales-workspace.tsx`، تست هدفمند همان workspace و اسناد همین واحد. بدون API، Migration، دادهٔ عملیاتی، Permission، وابستگی یا Runtime مشترک.
+- نتیجه: کارت جست‌وجوی فشرده، جدول قرارداد با هویت بصری واضح و عملیات منظم‌تر آماده است؛ تست هدفمند ۸ مورد، lint و typecheck Web موفق‌اند.
+
 ## PROCUREMENT-LIFECYCLE-ENTRY-0916 — PC-B — READY_FOR_REVIEW
 
 - درخواست مالک در 2026-09-16: تب‌های چرخهٔ پروندهٔ خرید (استعلام، سفارش، رسید، اصلاح، پذیرش خدمت، مغایرت، مرجوعی، فاکتور و ارجاع مالی) فقط نمایشی نباشند؛ ثبت و ویرایش مرحله‌ای داشته باشند و داده‌های محلی واقعی‌نما در همهٔ تب‌ها دیده شوند. `COMPUTER_ID=PC-B`؛ شاخهٔ مستقل `codex/pc-b-procurement-lifecycle-entry` از `origin/develop@20fc2d20`.
