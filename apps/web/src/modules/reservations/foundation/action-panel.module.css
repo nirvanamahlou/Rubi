@@ -28,7 +28,10 @@
 }
 .groups {
   display: grid;
-  grid-template-columns: minmax(440px, 2fr) minmax(210px, 1fr) minmax(120px, 0.55fr);
+  grid-template-columns: minmax(440px, 2fr) minmax(210px, 1fr) minmax(
+      120px,
+      0.55fr
+    );
   align-items: start;
   gap: 6px;
 }

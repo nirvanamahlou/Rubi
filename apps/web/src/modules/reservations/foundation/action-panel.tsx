@@ -152,75 +152,75 @@ export function ContractActionPanel({
         </span>
       </div>
       <div className={styles.groups}>
-      {contractActionGroups.map((group, groupIndex) => (
-        <section
-          key={group.title}
-          className={[styles.group, styles['group' + groupIndex]].join(' ')}
-        >
-          <h2>{group.title}</h2>
-          <div className={styles.buttons}>
-            {group.items.map((action) =>
-              action === 'مفاد' ? (
-                request ? (
-                  <a
-                    key={action}
-                    href="/contracts/terms.pdf"
-                    download="مفاد.pdf"
-                    className={`${styles.action} ${styles.download}`}
-                    aria-label="دریافت PDF مفاد قرارداد"
-                  >
-                    {action}
-                  </a>
-                ) : (
-                  <button
-                    key={action}
-                    type="button"
-                    disabled
-                    className={styles.action}
-                  >
-                    {action}
-                  </button>
-                )
-              ) : (
-                <Dialog key={action}>
-                  <DialogTrigger asChild>
+        {contractActionGroups.map((group, groupIndex) => (
+          <section
+            key={group.title}
+            className={[styles.group, styles['group' + groupIndex]].join(' ')}
+          >
+            <h2>{group.title}</h2>
+            <div className={styles.buttons}>
+              {group.items.map((action) =>
+                action === 'مفاد' ? (
+                  request ? (
+                    <a
+                      key={action}
+                      href="/contracts/terms.pdf"
+                      download="مفاد.pdf"
+                      className={`${styles.action} ${styles.download}`}
+                      aria-label="دریافت PDF مفاد قرارداد"
+                    >
+                      {action}
+                    </a>
+                  ) : (
                     <button
+                      key={action}
                       type="button"
-                      disabled={!request}
-                      className={`${styles.action} ${action === 'توضیحات' && request?.hasNotes ? styles.hasNotes : ''}`}
-                      aria-label={
-                        action === 'توضیحات' && request?.hasNotes
-                          ? 'توضیحات؛ این قرارداد یادداشت دارد'
-                          : action
-                      }
+                      disabled
+                      className={styles.action}
                     >
                       {action}
                     </button>
-                  </DialogTrigger>
-                  {request && (
-                    <DialogContent
-                      dir="rtl"
-                      className={`max-h-[92dvh] overflow-y-auto ${['مشاهده', 'دریافت‌ها', 'ویرایش'].includes(action) ? 'sm:max-w-6xl' : 'sm:max-w-3xl'}`}
-                    >
-                      <DialogTitle className="pe-10">{action}</DialogTitle>
-                      <DialogDescription>
-                        قرارداد {request.contractNumber} ·{' '}
-                        {request.customerName !== '—'
-                          ? request.customerName
-                          : (request.passengerNames[0] ?? request.branchName)}
-                      </DialogDescription>
-                      <ContractActionContent
-                        action={action}
-                        request={request}
-                      />
-                    </DialogContent>
-                  )}
-                </Dialog>
-              ),
-            )}
-          </div>
-        </section>
-      ))}
+                  )
+                ) : (
+                  <Dialog key={action}>
+                    <DialogTrigger asChild>
+                      <button
+                        type="button"
+                        disabled={!request}
+                        className={`${styles.action} ${action === 'توضیحات' && request?.hasNotes ? styles.hasNotes : ''}`}
+                        aria-label={
+                          action === 'توضیحات' && request?.hasNotes
+                            ? 'توضیحات؛ این قرارداد یادداشت دارد'
+                            : action
+                        }
+                      >
+                        {action}
+                      </button>
+                    </DialogTrigger>
+                    {request && (
+                      <DialogContent
+                        dir="rtl"
+                        className={`max-h-[92dvh] overflow-y-auto ${['مشاهده', 'دریافت‌ها', 'ویرایش'].includes(action) ? 'sm:max-w-6xl' : 'sm:max-w-3xl'}`}
+                      >
+                        <DialogTitle className="pe-10">{action}</DialogTitle>
+                        <DialogDescription>
+                          قرارداد {request.contractNumber} ·{' '}
+                          {request.customerName !== '—'
+                            ? request.customerName
+                            : (request.passengerNames[0] ?? request.branchName)}
+                        </DialogDescription>
+                        <ContractActionContent
+                          action={action}
+                          request={request}
+                        />
+                      </DialogContent>
+                    )}
+                  </Dialog>
+                ),
+              )}
+            </div>
+          </section>
+        ))}
       </div>
     </aside>
   );
