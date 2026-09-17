@@ -627,7 +627,11 @@ describe('dashboard permission and data states', () => {
     expect(kpiDefinitionPanelSource).toContain('size="icon"');
     expect(kpiDefinitionPanelSource).toContain('<X aria-hidden="true"');
     expect(kpiDefinitionPanelSource).toContain('text-2xl font-black');
-    expect(kpiDefinitionPanelSource).toContain('[&_svg]:text-white');
+    expect(kpiDefinitionPanelSource).toContain('!text-white');
+    expect(kpiDefinitionPanelSource).toContain('hover:!text-white');
+    expect(kpiDefinitionPanelSource).toContain('focus-visible:!text-white');
+    expect(kpiDefinitionPanelSource).toContain('[&_*]:!text-white');
+    expect(kpiDefinitionPanelSource).toContain('[&_svg]:!text-white');
     expect(kpiDefinitionPanelSource).toContain('فیچرهای استفاده‌شده در فرمول');
     expect(kpiDefinitionPanelSource).toContain('definition.source.map');
     expect(kpiDefinitionPanelSource).toContain('calculationFeatureFor(source)');

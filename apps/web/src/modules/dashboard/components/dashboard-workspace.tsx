@@ -1563,7 +1563,7 @@ function KpiDefinitionPanel({
             {report ? (
               <Button
                 asChild
-                className="w-full text-white [&_svg]:text-white"
+                className="w-full !text-white hover:!text-white focus-visible:!text-white [&_*]:!text-white [&_svg]:!text-white"
                 size="sm"
               >
                 <Link href={reportHref}>

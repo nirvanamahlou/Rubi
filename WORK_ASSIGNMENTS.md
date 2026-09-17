@@ -9,6 +9,11 @@
 
 # Work Assignments
 
+## DASHBOARD-KPI-REPORT-CTA-CONTRAST-0917 — PC-C — LOCAL_COMPLETE
+
+- درخواست مالک: متن و آیکون دکمهٔ «رفتن به فرم پیکربندی گزارش مرتبط» در پنل KPI در تمام حالت‌ها سفید باشد.
+- نتیجه: رنگ سفید با اولویت صریح برای خود لینک، محتوای داخلی، آیکون، hover و focus-visible اعمال شد تا style پیش‌فرض Button آن را بازنویسی نکند. تست هدفمند Dashboard نیز این قرارداد ظاهری را پوشش می‌دهد.
+
 ## SYSTEM-MANAGEMENT-BACKEND-0917 — PC-B — MERGED
 
 - دریافت‌شده از `origin/codex/pc-b-system-management-backend`: قراردادهای نسخه‌دار و APIهای مدیریت امن تنظیمات، شماره‌گذاری، نشست‌ها، اعلان‌ها، قالب‌ها، feature flagها، سلامت سامانه و پشتیبان‌گیری افزوده شد.
