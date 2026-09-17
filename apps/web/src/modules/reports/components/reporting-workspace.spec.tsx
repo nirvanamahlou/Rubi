@@ -224,6 +224,39 @@ describe('ReportingWorkspace', () => {
     expect(html).not.toContain('خانه گزارش‌ها');
   });
 
+  it('can render only a report configuration without its reports-page shell', () => {
+    const html = renderToStaticMarkup(
+      <ReportingWorkspace
+        configurationOnly
+        initialFilterState={{
+          reportCode: 'sales_by_organization',
+          fromDate: '',
+          toDate: '',
+          legalEntity: 'ALL',
+          currency: 'ALL',
+          filterValues: {},
+        }}
+      />,
+    );
+    const source = readFileSync(
+      join(
+        process.cwd(),
+        'src',
+        'modules',
+        'reports',
+        'components',
+        'reporting-workspace.tsx',
+      ),
+      'utf8',
+    );
+
+    expect(html).not.toContain('گزارش‌ها و خروجی‌های مدیریتی');
+    expect(source).toContain('configurationOnly = false');
+    expect(source).toContain('!configurationOnly ?');
+    expect(source).toContain('onConfigurationOpenChange?.(open)');
+    expect(source).toContain('configurationOnly ||');
+  });
+
   it('shows the selected company name in the filter summary', () => {
     expect(reportingLegalEntityLabel('ALL')).toBe('همه شرکت‌ها');
     expect(reportingLegalEntityLabel('NIYAYESH_SEIR_SAHAR')).toBe(

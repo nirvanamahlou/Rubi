@@ -45,7 +45,6 @@ import {
   X,
   type LucideIcon,
 } from 'lucide-react';
-import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
@@ -80,6 +79,7 @@ import {
 import { cn } from '@/lib/utils';
 import { faMessages } from '@/messages/fa';
 import { useLegalEntityContext } from '@/modules/legal-entities/components/legal-entity-context';
+import { ReportingWorkspace } from '@/modules/reports/components/reporting-workspace';
 import { reportCatalog } from '@/modules/reports/model/reporting';
 import {
   dashboardProjectionClient,
@@ -1411,17 +1411,16 @@ function KpiDefinitionPanel({
   definition,
   metric,
   onClose,
+  onOpenReportConfiguration,
 }: {
   definition: DashboardKpiDefinition;
   metric?: DashboardMetricSnapshot | undefined;
   onClose(): void;
+  onOpenReportConfiguration(reportCode: string): void;
 }) {
   const report = reportCatalog.find(
     (candidate) => candidate.displayCode === definition.reportCode,
   );
-  const reportHref = report
-    ? `/reports?report=${encodeURIComponent(report.code)}`
-    : '/reports';
 
   return (
     <Drawer
@@ -1562,14 +1561,13 @@ function KpiDefinitionPanel({
           <footer className="border-t border-border bg-surface p-4">
             {report ? (
               <Button
-                asChild
                 className="w-full !text-white hover:!text-white focus-visible:!text-white [&_*]:!text-white [&_svg]:!text-white"
+                onClick={() => onOpenReportConfiguration(report.code)}
                 size="sm"
+                type="button"
               >
-                <Link href={reportHref}>
-                  رفتن به فرم پیکربندی گزارش مرتبط
-                  <ArrowUpRight aria-hidden="true" className="size-3.5" />
-                </Link>
+                رفتن به فرم پیکربندی گزارش مرتبط
+                <ArrowUpRight aria-hidden="true" className="size-3.5" />
               </Button>
             ) : (
               <Button className="w-full" disabled size="sm" variant="outline">
@@ -2294,6 +2292,19 @@ function DashboardChart({
   );
 }
 
+export function dashboardReportCodeFromDrilldown(
+  drilldown: string,
+): string | undefined {
+  try {
+    const reportCode = new URL(drilldown, 'https://dashboard.local')
+      .searchParams.get('report')
+      ?.trim();
+    return reportCode || undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 function ProjectionSlot({
   visualId,
   kind,
@@ -2301,6 +2312,7 @@ function ProjectionSlot({
   description,
   decision,
   drilldown,
+  onOpenReportConfiguration,
   wide = false,
   data,
 }: {
@@ -2310,6 +2322,7 @@ function ProjectionSlot({
   description: string;
   decision?: string | undefined;
   drilldown: string;
+  onOpenReportConfiguration(reportCode: string): void;
   wide?: boolean;
   data?:
     | {
@@ -2331,6 +2344,10 @@ function ProjectionSlot({
   const visualLabel = isEmployeeComparison
     ? 'مقایسه عملکرد تیم'
     : visualLabels[resolvedKind];
+  const reportCode = dashboardReportCodeFromDrilldown(drilldown);
+  const report = reportCode
+    ? reportCatalog.find((candidate) => candidate.code === reportCode)
+    : undefined;
   return (
     <Card
       data-dashboard-visual
@@ -2406,8 +2423,17 @@ function ProjectionSlot({
             {decision}
           </Badge>
         ) : null}
-        <Button asChild className="ms-auto" size="sm" variant="outline">
-          <Link href={drilldown}>بررسی گزارش مرتبط</Link>
+        <Button
+          className="ms-auto"
+          disabled={!report}
+          onClick={() => {
+            if (report) onOpenReportConfiguration(report.code);
+          }}
+          size="sm"
+          type="button"
+          variant="outline"
+        >
+          {report ? 'بررسی گزارش مرتبط' : 'گزارش مرتبط در کاتالوگ موجود نیست'}
         </Button>
       </div>
     </Card>
@@ -2841,6 +2867,9 @@ export function DashboardWorkspace() {
   );
   const dateRangeError = dashboardDateRangeError(filters.from, filters.to);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [reportConfigurationCode, setReportConfigurationCode] = useState<
+    string | null
+  >(null);
   const [sidebarPanel, setSidebarPanel] = useState<'workspace' | 'filters'>(
     'workspace',
   );
@@ -2924,6 +2953,10 @@ export function DashboardWorkspace() {
   };
   const selectedKpi =
     activePageKpis.find((item) => item.id === filters.widget) ?? null;
+  const openReportConfiguration = (reportCode: string) => {
+    setReportConfigurationCode(reportCode);
+    updateFilters({ widget: null });
+  };
   return (
     <div className="min-w-0 space-y-5 pb-8" data-dashboard-workspace>
       <section aria-live="polite">
@@ -3081,6 +3114,7 @@ export function DashboardWorkspace() {
                         description={visualization.description}
                         decision={visualization.openDecision}
                         drilldown={visualization.drilldown}
+                        onOpenReportConfiguration={openReportConfiguration}
                         data={query.data?.visuals[visualization.id]}
                       />
                     ))}
@@ -3094,6 +3128,25 @@ export function DashboardWorkspace() {
               definition={selectedKpi}
               metric={query.data?.metrics[selectedKpi.id]}
               onClose={() => updateFilters({ widget: null })}
+              onOpenReportConfiguration={openReportConfiguration}
+            />
+          ) : null}
+
+          {reportConfigurationCode ? (
+            <ReportingWorkspace
+              configurationOnly
+              initialFilterState={{
+                reportCode: reportConfigurationCode,
+                fromDate: '',
+                toDate: '',
+                legalEntity: 'ALL',
+                currency: 'ALL',
+                filterValues: {},
+              }}
+              key={reportConfigurationCode}
+              onConfigurationOpenChange={(open) => {
+                if (!open) setReportConfigurationCode(null);
+              }}
             />
           ) : null}
 

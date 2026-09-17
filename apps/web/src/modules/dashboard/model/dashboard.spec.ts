@@ -640,6 +640,10 @@ describe('dashboard permission and data states', () => {
     expect(source).toContain('فرمول و قاعده محاسبه');
     expect(source).toContain('حذف‌ها و محدودیت‌های محاسبه');
     expect(source).toContain('رفتن به فرم پیکربندی گزارش مرتبط');
+    expect(source).toContain('onOpenReportConfiguration(report.code)');
+    expect(source).toContain('configurationOnly');
+    expect(source).toContain('dashboardReportCodeFromDrilldown');
+    expect(source).not.toContain('<Link href={reportHref}>');
     expect(source).toContain('visualLabels');
     expect(source).toContain('EmptyVisualCanvas');
     expect(source).toContain('dashboardVisualKindForData');

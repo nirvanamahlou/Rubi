@@ -1648,11 +1648,15 @@ export function ReportResultPanel({
 }
 
 export function ReportingWorkspace({
+  configurationOnly = false,
   initialFilterState,
+  onConfigurationOpenChange,
   view = 'catalog',
   savedFilter = 'all',
 }: {
+  configurationOnly?: boolean;
   initialFilterState?: ReportingFilterUrlState;
+  onConfigurationOpenChange?(open: boolean): void;
   view?: ReportingView;
   savedFilter?: SavedReportFilter;
 }) {
@@ -1670,7 +1674,7 @@ export function ReportingWorkspace({
     Boolean(initialFilterState?.reportCode),
   );
   const [persistFilterState, setPersistFilterState] = useState(
-    Boolean(initialFilterState?.reportCode),
+    !configurationOnly && Boolean(initialFilterState?.reportCode),
   );
   const [exportState, setExportState] = useState<
     'idle' | 'generating' | 'ready' | 'error'
@@ -1884,7 +1888,12 @@ export function ReportingWorkspace({
   }, [configurationOpen, connectedReportSelected, selected.code]);
 
   useEffect(() => {
-    if (!persistFilterState || typeof window === 'undefined') return;
+    if (
+      configurationOnly ||
+      !persistFilterState ||
+      typeof window === 'undefined'
+    )
+      return;
     const nextHref = reportingFilterStateHref(window.location.href, {
       currency,
       filterValues: reportFilterValues,
@@ -1897,6 +1906,7 @@ export function ReportingWorkspace({
     if (nextHref !== currentHref)
       window.history.replaceState(window.history.state, '', nextHref);
   }, [
+    configurationOnly,
     currency,
     fromDate,
     legalEntity,
@@ -2068,8 +2078,10 @@ export function ReportingWorkspace({
 
   return (
     <main className="space-y-6" dir="rtl">
-      <PageHeader title="گزارش‌ها و خروجی‌های مدیریتی" />
-      <nav
+      {!configurationOnly ? (
+        <>
+          <PageHeader title="گزارش‌ها و خروجی‌های مدیریتی" />
+          <nav
         aria-label="نماهای گزارش"
         className="flex gap-2 overflow-x-auto pb-1"
       >
@@ -2107,8 +2119,8 @@ export function ReportingWorkspace({
             </Button>
           );
         })}
-      </nav>
-      {view === 'catalog' ? (
+          </nav>
+          {view === 'catalog' ? (
         <section>
           <div className="space-y-4">
             <Card className="p-4">
@@ -2269,7 +2281,7 @@ export function ReportingWorkspace({
             </section>
           </div>
         </section>
-      ) : (
+          ) : (
         <Card
           className="space-y-4 p-6"
           aria-label={workspaceViews.find((item) => item.id === view)?.label}
@@ -2284,8 +2296,16 @@ export function ReportingWorkspace({
             savedFilter={savedFilter}
           />
         </Card>
-      )}
-      <Dialog onOpenChange={setConfigurationOpen} open={configurationOpen}>
+          )}
+        </>
+      ) : null}
+      <Dialog
+        onOpenChange={(open) => {
+          setConfigurationOpen(open);
+          onConfigurationOpenChange?.(open);
+        }}
+        open={configurationOpen}
+      >
         <DialogContent
           className="max-h-[calc(100vh-1rem)] max-w-6xl overflow-y-auto p-4 sm:p-6"
           dir="rtl"
