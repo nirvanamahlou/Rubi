@@ -2874,8 +2874,7 @@ export function DashboardWorkspace() {
     'workspace',
   );
   const [expandedGroups, setExpandedGroups] = useState<ReadonlySet<string>>(
-    () =>
-      new Set(['commercial-performance', 'customer-growth', 'workforce-hr']),
+    () => new Set(),
   );
   const legalEntity = useLegalEntityContext();
   const selection = legalEntity.context?.selection ?? null;

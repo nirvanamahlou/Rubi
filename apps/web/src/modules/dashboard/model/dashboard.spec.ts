@@ -645,6 +645,10 @@ describe('dashboard permission and data states', () => {
     expect(source).toContain('dashboardReportCodeFromDrilldown');
     expect(source).not.toContain('<Link href={reportHref}>');
     expect(source).toContain('setReportConfigurationCode(reportCode);\n  };');
+    expect(source).toContain('() => new Set(),');
+    expect(source).not.toContain(
+      "new Set(['commercial-performance', 'customer-growth', 'workforce-hr'])",
+    );
     expect(source).toContain('visualLabels');
     expect(source).toContain('EmptyVisualCanvas');
     expect(source).toContain('dashboardVisualKindForData');
