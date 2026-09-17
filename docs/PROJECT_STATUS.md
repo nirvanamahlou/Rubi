@@ -29,6 +29,10 @@
 # وضعیت پروژه
 
 - 2026-09-16 Package Pricing commission follow-up: drafts/publications now support percent or fixed commission with an explicit currency. Fixed commission is deducted once from the matching currency profit bucket and never changes sale; historical rows default to percent. Additive migration was applied only to isolated `rubi_pricing_flow_0916`. Tour demo 1 published version 3 with fixed EUR 15 while tour demo 2 remains percent.
+## 2026-09-17 — LOGIN-NOORA-ANIMATION-0917 — PC-A — READY_FOR_REVIEW
+
+بازطراحی حرکتی صفحهٔ ورود آمادهٔ بررسی است: پس‌زمینهٔ فعلی ثابت می‌ماند و فقط محدودهٔ هواپیمای واقعی همان عکس با ماسک نرم از راست وارد و در جای اصلی متوقف می‌شود. سپس «NOORA» بدون کادر و به‌شکل مه ابری نرم در مرکز آسمان نمایان و ماندگار می‌شود. هواپیمای SVG و کارت جداگانه حذف شده‌اند؛ حالت کاهش حرکت پیاده شده و منطق احراز هویت دست‌نخورده است. ۲ تست هدفمند، lint، typecheck و build تولیدی Web موفق‌اند و پیش‌نمایش پورت مستقل ۳۲۰۱ پاسخ HTTP 200 دارد.
+
 ## 2026-09-16 — TOUR-HOTEL-PRICING-FLOW-0916 — MERGED WITH DEVELOP / VERIFIED LOCALLY
 
 فرایند تور/نوبت بلیت ← بسته نرخ خرید هتل متصل به همان نوبت ← جدول خرید کل

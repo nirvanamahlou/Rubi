@@ -44,6 +44,13 @@
 
 # Work Assignments
 
+## LOGIN-NOORA-ANIMATION-0917 — PC-A — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-17: در صفحهٔ ورود، هواپیما از سمت راست وارد شود و در جای خود بایستد؛ پس از توقف، نام «NOORA» با تم ابری نمایان شود و روی صفحه بماند. COMPUTER_ID=PC-A؛ شاخهٔ مستقل codex/pc-a-login-noora-animation-0917 از origin/develop@33569058.
+- محدودهٔ رزرو: صفحه و کامپوننت و CSS انیمیشن صفحهٔ ورود، تست هدفمند و اسناد همین واحد. فرم و منطق احراز هویت، API، Migration، دادهٔ عملیاتی، Permission، Dependency/Lockfile و Runtime مشترک تغییر نمی‌کنند.
+- بررسی مالکیت: در آخرین تخصیص‌های فعال، فایل‌های صفحهٔ ورود مالک هم‌پوشان ندارند.
+- نتیجه: پس‌زمینهٔ اصلی کاملاً ثابت می‌ماند؛ فقط محدودهٔ هواپیمای واقعی همان عکس با ماسک نرم از راست وارد می‌شود و در جای دقیق اصلی می‌ایستد. سپس «NOORA» بدون کادر و به‌شکل مه ابری نرم در مرکز آسمان ظاهر و ماندگار می‌شود. هیچ هواپیمای SVG یا کارت بصری جداگانه‌ای وجود ندارد و حالت بدون حرکت برای دسترس‌پذیری نیز پوشش داده شد. ۲ تست هدفمند، lint فایل‌های متاثر، typecheck و build تولیدی Web موفق‌اند؛ پیش‌نمایش HTTP روی پورت مستقل ۳۲۰۱ پاسخ ۲۰۰ داد.
+
 ## TOUR-HOTEL-PRICING-FLOW-0916 — PC-A — MERGED WITH DEVELOP / VERIFIED LOCALLY
 
 - 2026-09-16 commission follow-up: product owner clarified that commission may be percent or a fixed amount with its own currency. PC-A reserves the additive Package Pricing contract/schema/migration, API arithmetic/persistence, Sales UI/tests and bounded pricing docs on the existing task branch. Historical rows default to percent; fixed commission remains a profit expense and never changes sale price. Migration and shared-contract locks are held only for this follow-up; dependency/lockfile remains unassigned.
