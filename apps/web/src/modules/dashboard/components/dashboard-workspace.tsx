@@ -42,6 +42,7 @@ import {
   UserPlus,
   UsersRound,
   WalletCards,
+  X,
   type LucideIcon,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -1289,38 +1290,27 @@ function KpiDefinitionPanel({
         style={{ left: 'auto', right: 0 }}
       >
         <div className="flex min-h-full flex-col">
-          <header className="border-b border-border bg-surface px-5 py-4">
-            <div className="flex items-start justify-between gap-4 pe-1">
-              <div className="min-w-0">
-                <p className="text-xs font-bold text-primary">
-                  تعریف قابل ممیزی KPI
-                </p>
-                <DialogTitle className="mt-1 text-xl font-black">
-                  {definition.title}
-                </DialogTitle>
-                <DialogDescription
-                  className="mt-1 break-words text-xs leading-6"
-                  dir="ltr"
-                  id={`kpi-definition-description-${definition.id}`}
-                >
-                  {definition.technicalName}
-                </DialogDescription>
-              </div>
-              <DrawerClose asChild>
-                <Button
-                  aria-label="بستن پنل تعریف شاخص"
-                  size="sm"
-                  variant="ghost"
-                >
-                  بستن
-                </Button>
-              </DrawerClose>
-            </div>
-            <div className="mt-3 flex flex-wrap gap-2">
-              <Badge dir="ltr">KPI ID: {definition.id}</Badge>
-              <Badge>{kpiRoleLabels[definition.role]}</Badge>
-              <Badge dir="ltr">{definition.reportCode}</Badge>
-            </div>
+          <header className="relative border-b border-border bg-surface px-12 py-5 text-center">
+            <DialogTitle className="text-2xl font-black tracking-tight sm:text-3xl">
+              {definition.title}
+            </DialogTitle>
+            <DialogDescription
+              className="mt-2 break-words text-xs leading-6"
+              dir="ltr"
+              id={`kpi-definition-description-${definition.id}`}
+            >
+              {definition.technicalName}
+            </DialogDescription>
+            <DrawerClose asChild>
+              <Button
+                aria-label="بستن پنل تعریف شاخص"
+                className="absolute end-4 top-4 size-9 p-0"
+                size="icon"
+                variant="ghost"
+              >
+                <X aria-hidden="true" className="size-5" />
+              </Button>
+            </DrawerClose>
           </header>
 
           <div className="flex-1 space-y-4 overflow-y-auto p-5 text-sm">
@@ -1375,26 +1365,6 @@ function KpiDefinitionPanel({
               <p className="mt-2 leading-7">{definition.rule}</p>
             </section>
 
-            <section aria-labelledby="kpi-data-lineage-title">
-              <h3
-                className="text-sm font-black text-foreground"
-                id="kpi-data-lineage-title"
-              >
-                فیچرها و منابع داده
-              </h3>
-              <div className="mt-2 flex flex-wrap gap-2">
-                {definition.source.map((source) => (
-                  <Badge
-                    className="max-w-full break-all font-mono text-[11px]"
-                    dir="ltr"
-                    key={source}
-                  >
-                    {source}
-                  </Badge>
-                ))}
-              </div>
-            </section>
-
             <section
               aria-labelledby="kpi-exclusions-title"
               className="rounded-2xl bg-amber-50 p-4 dark:bg-amber-950/30"
@@ -1410,39 +1380,15 @@ function KpiDefinitionPanel({
               </p>
             </section>
 
-            <section aria-labelledby="kpi-governance-title">
-              <h3
-                className="text-sm font-black text-foreground"
-                id="kpi-governance-title"
-              >
-                حاکمیت و ردگیری
-              </h3>
-              <dl className="mt-2 grid gap-2">
-                <div className="flex flex-wrap items-baseline justify-between gap-2 rounded-xl bg-muted/50 p-3">
-                  <dt className="text-xs font-bold text-muted-foreground">
-                    مجوز مشاهده
-                  </dt>
-                  <dd className="break-all font-mono text-xs" dir="ltr">
-                    {definition.permission}
-                  </dd>
-                </div>
-                {definition.openDecision ? (
-                  <div className="flex flex-wrap items-baseline justify-between gap-2 rounded-xl bg-muted/50 p-3">
-                    <dt className="text-xs font-bold text-muted-foreground">
-                      تصمیم باز وابسته
-                    </dt>
-                    <dd className="font-mono text-xs" dir="ltr">
-                      {definition.openDecision}
-                    </dd>
-                  </div>
-                ) : null}
-              </dl>
-            </section>
           </div>
 
           <footer className="border-t border-border bg-surface p-4">
             {report ? (
-              <Button asChild className="w-full" size="sm">
+              <Button
+                asChild
+                className="w-full text-white [&_svg]:text-white"
+                size="sm"
+              >
                 <Link href={reportHref}>
                   رفتن به فرم پیکربندی گزارش مرتبط
                   <ArrowUpRight aria-hidden="true" className="size-3.5" />

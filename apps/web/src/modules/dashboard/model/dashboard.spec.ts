@@ -615,10 +615,16 @@ describe('dashboard permission and data states', () => {
     expect(kpiDefinitionPanelSource).toContain('مقدار دقیق در بازهٔ انتخابی');
     expect(kpiDefinitionPanelSource).toContain("metric.value.split(' · ')");
     expect(kpiDefinitionPanelSource).not.toContain('definition.comparison');
+    expect(kpiDefinitionPanelSource).not.toContain('تعریف قابل ممیزی KPI');
+    expect(kpiDefinitionPanelSource).not.toContain('KPI ID:');
+    expect(kpiDefinitionPanelSource).not.toContain('فیچرها و منابع داده');
+    expect(kpiDefinitionPanelSource).not.toContain('حاکمیت و ردگیری');
+    expect(kpiDefinitionPanelSource).toContain('size="icon"');
+    expect(kpiDefinitionPanelSource).toContain('<X aria-hidden="true"');
+    expect(kpiDefinitionPanelSource).toContain('text-2xl font-black');
+    expect(kpiDefinitionPanelSource).toContain('[&_svg]:text-white');
     expect(source).toContain('فرمول و قاعده محاسبه');
-    expect(source).toContain('فیچرها و منابع داده');
     expect(source).toContain('حذف‌ها و محدودیت‌های محاسبه');
-    expect(source).toContain('حاکمیت و ردگیری');
     expect(source).toContain('رفتن به فرم پیکربندی گزارش مرتبط');
     expect(source).toContain('visualLabels');
     expect(source).toContain('EmptyVisualCanvas');
