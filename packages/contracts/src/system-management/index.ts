@@ -170,10 +170,6 @@ export interface SystemUserSessionsRevokeInputV1 {
   confirmCurrentSession?: boolean;
 }
 
-export interface SystemJobRetryInputV1 {
-  reason: string;
-}
-
 export interface SystemHealthComponentV1 {
   component: 'API' | 'POSTGRESQL' | 'REDIS' | 'WORKER' | 'STORAGE' | 'QUEUE';
   status: 'HEALTHY' | 'DEGRADED' | 'UNAVAILABLE' | 'UNKNOWN';

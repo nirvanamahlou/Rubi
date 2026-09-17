@@ -27,22 +27,6 @@ export class LocalDocumentStorage {
     }
   }
 
-  async probe(): Promise<{ latencyMs: number; healthy: boolean }> {
-    const started = performance.now();
-    try {
-      await mkdir(this.quarantineRoot, { recursive: true, mode: 0o700 });
-      return {
-        healthy: true,
-        latencyMs: Math.round(performance.now() - started),
-      };
-    } catch {
-      return {
-        healthy: false,
-        latencyMs: Math.round(performance.now() - started),
-      };
-    }
-  }
-
   private pathFor(objectKey: string): string {
     if (!validateStorageObjectKey(objectKey)) {
       throw new Error('Invalid document storage key.');
