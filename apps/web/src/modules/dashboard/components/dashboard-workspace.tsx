@@ -352,13 +352,6 @@ const visualLabels: Record<DashboardVisualKind, string> = {
   queue: 'صف اقدام',
 };
 
-const kpiRoleLabels: Record<DashboardKpiRole, string> = {
-  outcome: 'نتیجه',
-  driver: 'محرک',
-  guardrail: 'کنترل ریسک',
-  diagnostic: 'تشخیصی',
-};
-
 const dashboardPageById = new Map(
   dashboardPages.map((page) => [page.id, page] as const),
 );
@@ -821,6 +814,161 @@ const dashboardHeaderArtworkByPageId: Record<string, string> = {
   'documents-reports-data-quality':
     '/images/dashboard-headers/executive-overview.png',
 };
+
+const calculationFeatureDescriptionBySource: Record<
+  string,
+  { label: string; description: string }
+> = {
+  reporting_sales_contract_facts: {
+    label: 'finalized sales contracts',
+    description:
+      'قراردادهای فروش با وضعیت نهایی، مبلغ، ارز و زمان تأیید فروش را در اختیار فرمول می‌گذارند.',
+  },
+  reporting_contract_service_facts: {
+    label: 'recognized sale revenue',
+    description:
+      'اقلام خدمتِ قراردادهای نهایی و مبلغ فروش پذیرفته‌شدهٔ هر خدمت و ارز را نگه می‌دارد.',
+  },
+  reporting_reservation_facts: {
+    label: 'reservation facts',
+    description:
+      'وضعیت، زمان و نتیجهٔ رزرو را برای شمارش، لغو یا آمادگی صدور فراهم می‌کند.',
+  },
+  reporting_payment_facts: {
+    label: 'verified and settled payments',
+    description:
+      'پرداخت‌های تأییدشده یا تسویه‌شده، مبلغ، ارز و وضعیت برگشت آن‌ها را در محاسبه وارد می‌کند.',
+  },
+  reporting_journal_balance_facts: {
+    label: 'posted journal balances',
+    description:
+      'مانده‌ها و ثبت‌های حسابداری ثبت‌شده را بر پایهٔ حساب، دوره و ارز ارائه می‌دهد.',
+  },
+  reporting_ticket_facts: {
+    label: 'issued ticket facts',
+    description:
+      'اطلاعات سند یا بلیت نهایی، زمان صدور و وضعیت لغو را فراهم می‌کند.',
+  },
+  'reporting.travel.facts.v1': {
+    label: 'travel operation facts',
+    description:
+      'اقلام سفر، خدمت، مقصد، فروش و وضعیت عملیاتی تأییدشده را برای تحلیل سفر نگه می‌دارد.',
+  },
+  reporting_sales_contract_pipeline_facts_v1: {
+    label: 'sales pipeline facts',
+    description:
+      'مرحله‌های جاری قرارداد و زمان هر تغییر مرحله را برای پایش قیف فروش فراهم می‌کند.',
+  },
+  reporting_ticket_capacity_facts_v1: {
+    label: 'ticket capacity facts',
+    description:
+      'ظرفیت کل، ظرفیت تخصیص‌شده و ظرفیت باقی‌ماندهٔ پیشنهادهای فعال را ارائه می‌دهد.',
+  },
+  reporting_supplier_payment_queue_facts_v1: {
+    label: 'supplier payment queue',
+    description:
+      'خریدهای تأمین‌کننده، وضعیت پرداخت و زمان رسیدن آن‌ها به وضعیت نهایی را نگه می‌دارد.',
+  },
+  reporting_reservation_delivery_readiness_facts_v1: {
+    label: 'delivery readiness facts',
+    description:
+      'مانع‌های خرید، عملیات و تأیید مالیِ رزروهای در جریان را برای پیگیری عملیاتی نشان می‌دهد.',
+  },
+  reporting_customer_affairs_lead_facts_v1: {
+    label: 'lead pipeline facts',
+    description:
+      'سرنخ‌ها، مالکیت، وضعیت، زمان ایجاد و اتصال آن‌ها به سفارش یا مشتری را ارائه می‌دهد.',
+  },
+  reporting_support_ticket_facts_v1: {
+    label: 'support ticket facts',
+    description:
+      'تیکت‌های پشتیبانی، وضعیت SLA و زمان پاسخ‌گویی واجد محاسبه را نگه می‌دارد.',
+  },
+  reporting_customer_satisfaction_facts_v1: {
+    label: 'customer satisfaction facts',
+    description:
+      'پاسخ‌های رضایت مشتری و اقدام اصلاحی مرتبط با آن‌ها را برای شاخص کیفیت فراهم می‌کند.',
+  },
+  reporting_customer_consent_facts_v1: {
+    label: 'customer consent facts',
+    description:
+      'آخرین وضعیت معتبر رضایت مشتری برای برقراری ارتباط را نگه می‌دارد.',
+  },
+  reporting_customer_portfolio_growth_facts_v1: {
+    label: 'customer portfolio facts',
+    description:
+      'کانال جذب و مشخصات مشتریان فعال یا جدید را برای تحلیل رشد مشتری ارائه می‌دهد.',
+  },
+  reporting_b2b_agency_risk_facts_v1: {
+    label: 'agency risk facts',
+    description:
+      'سقف اعتبار، تضمین و وضعیت اقدام‌های ریسک آژانس‌ها را نگه می‌دارد.',
+  },
+  reporting_campaign_facts_v1: {
+    label: 'campaign performance facts',
+    description:
+      'هزینه، فروش منتسب، مخاطب و تبدیل‌های معتبر کمپین‌ها را برای محاسبه استفاده می‌کند.',
+  },
+  reporting_employee_performance_facts_v1: {
+    label: 'employee performance facts',
+    description:
+      'کارکرد، مرخصی، اضافه‌کاری و نتیجهٔ ارزیابی تأییدشدهٔ کارکنان را ارائه می‌دهد.',
+  },
+  reporting_hr_record_expiry_facts_v1: {
+    label: 'HR record expiry facts',
+    description:
+      'تاریخ انقضا و کامل‌بودن سوابق فعال منابع انسانی را نگه می‌دارد.',
+  },
+  reporting_hotel_rate_comparison_facts_v1: {
+    label: 'hotel rate comparison facts',
+    description:
+      'نرخ‌های قابل مقایسهٔ هتل و شرایط معتبر آن‌ها را برای تحلیل قیمت فراهم می‌کند.',
+  },
+  reporting_purchase_request_facts: {
+    label: 'matched purchase cost',
+    description:
+      'خریدهای تأییدشده و منطبق با فروش را با مبلغ، ارز و وضعیت تطبیق معتبر فراهم می‌کند.',
+  },
+  approved_customer_affairs_ticket_projection: {
+    label: 'approved customer-affairs tickets',
+    description:
+      'نمای تأییدشدهٔ تیکت‌های امور مشتریان و وضعیت نهایی آن‌ها را ارائه می‌دهد.',
+  },
+  approved_task_projection: {
+    label: 'approved task projection',
+    description:
+      'وظایف باز، مالک، موعد و وضعیت آن‌ها را از نمای تأییدشده فراهم می‌کند.',
+  },
+  approved_finance_check_projection: {
+    label: 'approved finance checks',
+    description:
+      'چک‌های فعال، سررسید و وضعیت مالی تأییدشده را برای شاخص سررسید ارائه می‌دهد.',
+  },
+  reporting_counterparty_balance_facts_v1: {
+    label: 'counterparty balance facts',
+    description:
+      'ماندهٔ ثبت‌شدهٔ طرف حساب و سررسید آن را به تفکیک ارز ارائه می‌دهد.',
+  },
+  reporting_employee_commercial_activity_facts_v1: {
+    label: 'employee commercial activity',
+    description:
+      'لید، تماس، پیگیری، لغو و مالکیت فعالیت‌های تجاری کارکنان را نگه می‌دارد.',
+  },
+  'sales.reporting.organization.v2': {
+    label: 'employee sales attribution',
+    description:
+      'فروش نهایی و انتساب مصوب آن به کارشناس را برای محاسبهٔ عملکرد فردی فراهم می‌کند.',
+  },
+};
+
+function calculationFeatureFor(source: string) {
+  return (
+    calculationFeatureDescriptionBySource[source] ?? {
+      label: source,
+      description: 'رکوردهای تأییدشدهٔ این فیچر که در فرمول شاخص استفاده می‌شوند.',
+    }
+  );
+}
 
 function Metric({
   compact = false,
@@ -1363,6 +1511,35 @@ function KpiDefinitionPanel({
                 فرمول و قاعده محاسبه
               </h3>
               <p className="mt-2 leading-7">{definition.rule}</p>
+            </section>
+
+            <section aria-labelledby="kpi-calculation-features-title">
+              <h3
+                className="text-sm font-black text-foreground"
+                id="kpi-calculation-features-title"
+              >
+                فیچرهای استفاده‌شده در فرمول
+              </h3>
+              <ul className="mt-3 space-y-3 text-sm leading-7 text-muted-foreground">
+                {definition.source.map((source) => {
+                  const feature = calculationFeatureFor(source);
+                  return (
+                    <li className="flex gap-2" key={source}>
+                      <span aria-hidden="true" className="mt-3 size-1.5 shrink-0 rounded-full bg-primary" />
+                      <span>
+                        <bdi
+                          className="font-mono text-xs font-bold text-foreground"
+                          dir="ltr"
+                        >
+                          {feature.label}
+                        </bdi>
+                        <span className="mx-1">:</span>
+                        {feature.description}
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
             </section>
 
             <section
