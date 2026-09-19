@@ -572,8 +572,10 @@ describe('dashboard permission and data states', () => {
     expect(source).toContain('جزئیات نمودار');
     expect(source).not.toContain('const sampleValues = (data?.values ?? []).slice(0, 4);');
     expect(source).toContain('<SelectContent align="end" dir="rtl">');
-    expect(source).toContain('w-full justify-end text-right data-[highlighted]:bg-primary');
-    expect(source).toContain('<span className="block w-full text-end">{label}</span>');
+    expect(source).toContain(
+      '[&>span:first-child]:w-full [&>span:first-child]:text-right',
+    );
+    expect(source).toContain('<span className="block w-full text-right">{label}</span>');
     expect(source).toContain('selectedCurrencyCode');
     expect(source).toContain('currencySeries');
     expect(source).toContain('adverseKpiIdPattern');

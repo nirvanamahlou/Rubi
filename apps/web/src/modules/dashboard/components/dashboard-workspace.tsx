@@ -3507,11 +3507,11 @@ function DashboardSidebar({
                     <SelectContent align="end" dir="rtl">
                       {rangeOptions.map(([value, label]) => (
                         <SelectItem
-                          className="w-full justify-end text-right data-[highlighted]:bg-primary data-[highlighted]:text-primary-foreground"
+                          className="w-full justify-end text-right [&>span:first-child]:block [&>span:first-child]:w-full [&>span:first-child]:text-right data-[highlighted]:bg-primary data-[highlighted]:text-primary-foreground"
                           key={value}
                           value={value}
                         >
-                          <span className="block w-full text-end">{label}</span>
+                          <span className="block w-full text-right">{label}</span>
                         </SelectItem>
                       ))}
                     </SelectContent>
