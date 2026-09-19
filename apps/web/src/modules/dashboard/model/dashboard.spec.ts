@@ -561,7 +561,7 @@ describe('dashboard permission and data states', () => {
     expect(source).toContain('data-dashboard-visual-currency-selector');
     expect(source).toContain('data-dashboard-trend-controls');
     expect(source).toContain('min-w-[15.875rem] flex-row flex-nowrap justify-end');
-    expect(source).toContain('w-[8.5rem] shrink-0 whitespace-nowrap');
+    expect(source).toContain('h-8 w-[9.5rem] shrink-0 whitespace-nowrap');
     expect(source).toContain('CalendarDays');
     expect(source).toContain('size-4 shrink-0 text-primary');
     expect(source).toContain('mt-3 flex min-h-24 flex-col pt-0');
@@ -572,7 +572,7 @@ describe('dashboard permission and data states', () => {
     expect(source).toContain('جزئیات نمودار');
     expect(source).not.toContain('const sampleValues = (data?.values ?? []).slice(0, 4);');
     expect(source).toContain('<SelectContent align="end" dir="rtl">');
-    expect(source).toContain('justify-end text-right data-[highlighted]:bg-primary');
+    expect(source).toContain('w-full justify-end text-right data-[highlighted]:bg-primary');
     expect(source).toContain('selectedCurrencyCode');
     expect(source).toContain('currencySeries');
     expect(source).toContain('adverseKpiIdPattern');

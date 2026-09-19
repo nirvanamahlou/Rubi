@@ -3006,7 +3006,7 @@ function ProjectionSlot({
               >
                 <SelectTrigger
                   aria-label="تقویم برچسب‌های محور زمان"
-                  className="h-7 w-[8.5rem] shrink-0 whitespace-nowrap border-border/80 bg-background px-2 text-[10px] font-bold"
+                  className="h-8 w-[9.5rem] shrink-0 whitespace-nowrap border-border/80 bg-background px-2.5 text-[10px] font-bold"
                 >
                   <CalendarDays
                     aria-hidden="true"
@@ -3507,7 +3507,7 @@ function DashboardSidebar({
                     <SelectContent align="end" dir="rtl">
                       {rangeOptions.map(([value, label]) => (
                         <SelectItem
-                          className="justify-end text-right data-[highlighted]:bg-primary data-[highlighted]:text-primary-foreground"
+                          className="w-full justify-end text-right data-[highlighted]:bg-primary data-[highlighted]:text-primary-foreground"
                           key={value}
                           value={value}
                         >
