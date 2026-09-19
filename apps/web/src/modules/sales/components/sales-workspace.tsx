@@ -397,10 +397,13 @@ export function SalesWorkspace() {
         />
       ) : null}
       {contracts.length && !loading ? (
-        <Card className="overflow-hidden rounded-3xl border border-border/80 bg-surface shadow-sm">
+        <Card className="overflow-hidden rounded-2xl border border-border/80 bg-surface shadow-md shadow-primary/[0.035]">
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[66rem] text-sm">
-              <thead className="bg-gradient-to-l from-muted/80 via-muted/45 to-transparent text-xs font-bold text-muted-foreground">
+            <table className="w-full min-w-[71rem] text-sm">
+              <caption className="sr-only">
+                فهرست قراردادهای فروش؛ عملیات هر قرارداد در ستون آخر قرار دارد.
+              </caption>
+              <thead className="bg-gradient-to-l from-primary/[0.10] via-muted/70 to-surface text-xs font-bold text-muted-foreground">
                 <tr>
                   {[
                     'شماره',
@@ -410,10 +413,10 @@ export function SalesWorkspace() {
                     'تسویه',
                     'مانده',
                     'آخرین تغییر',
-                    'پرداخت‌ها',
+                    'عملیات',
                   ].map((label) => (
                     <th
-                      className="px-5 py-3.5 text-start whitespace-nowrap"
+                      className="px-4 py-3 text-start whitespace-nowrap first:pr-5 last:pl-5"
                       key={label}
                     >
                       {label}
@@ -424,26 +427,26 @@ export function SalesWorkspace() {
               <tbody>
                 {contracts.map((contract) => (
                   <tr
-                    className="group border-t border-border/70 transition-colors hover:bg-primary/[0.035]"
+                    className="group border-t border-border/70 transition-colors odd:bg-muted/[0.12] hover:bg-primary/[0.055]"
                     key={contract.id}
                   >
-                    <td className="px-5 py-4 font-bold">
-                      <div className="inline-flex items-center gap-2 rounded-xl border border-primary/15 bg-primary/[0.055] px-2.5 py-1.5 text-primary">
-                        <FileText className="size-4" />
+                    <td className="px-4 py-3 font-bold first:pr-5">
+                      <div className="inline-flex items-center gap-2 rounded-lg border border-primary/15 bg-primary/[0.055] px-2.5 py-1.5 text-primary shadow-sm">
+                        <FileText className="size-3.5" />
                         <span dir="ltr">{contract.contractNumber}</span>
                       </div>
                     </td>
-                    <td className="px-5 py-4">
+                    <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
-                        <span className="grid size-8 shrink-0 place-items-center rounded-full bg-sky-500/10 text-xs font-black text-sky-700 dark:text-sky-300">
+                        <span className="grid size-8 shrink-0 place-items-center rounded-full border border-sky-500/10 bg-sky-500/10 text-xs font-black text-sky-700 dark:text-sky-300">
                           {contract.customerNameSnapshot.slice(0, 1)}
                         </span>
-                        <span className="font-semibold text-foreground">
+                        <span className="max-w-40 truncate font-semibold text-foreground">
                           {contract.customerNameSnapshot}
                         </span>
                       </div>
                     </td>
-                    <td className="px-5 py-4">
+                    <td className="px-4 py-3">
                       <div className="flex items-center gap-1.5 font-semibold text-foreground">
                         <UsersRound className="size-4 text-primary" />
                         <p>
@@ -453,7 +456,7 @@ export function SalesWorkspace() {
                           مسافر
                         </p>
                       </div>
-                      <p className="mt-1.5 max-w-52 text-xs leading-5 text-muted-foreground">
+                      <p className="mt-1 max-w-52 text-xs leading-5 text-muted-foreground">
                         {contract.services
                           .map(
                             (kind) =>
@@ -473,8 +476,8 @@ export function SalesWorkspace() {
                           .join('، ')}
                       </p>
                     </td>
-                    <td className="px-5 py-4">
-                      <Badge className="rounded-full border border-primary/10 bg-primary/[0.07] px-2.5 py-1 text-primary">
+                    <td className="px-4 py-3">
+                      <Badge className="rounded-full border border-primary/10 bg-primary/[0.07] px-2.5 py-1 text-primary shadow-sm">
                         {
                           {
                             DRAFT: 'پیش‌نویس',
@@ -488,7 +491,7 @@ export function SalesWorkspace() {
                         }
                       </Badge>
                     </td>
-                    <td className="px-5 py-4">
+                    <td className="px-4 py-3">
                       <Badge
                         className={
                           contract.settlementStatus === 'SETTLED'
@@ -510,40 +513,42 @@ export function SalesWorkspace() {
                           contract.settlementStatus}
                       </Badge>
                     </td>
-                    <td className="px-5 py-4 font-semibold text-foreground">
-                      {contract.balances
-                        .map((balance) =>
-                          formatMoney(
-                            balance.outstanding,
-                            balance.currencyCode,
-                          ),
-                        )
-                        .join(' + ')}
+                    <td className="px-4 py-3 font-semibold text-foreground">
+                      <div className="max-w-44 text-xs leading-5">
+                        {contract.balances
+                          .map((balance) =>
+                            formatMoney(
+                              balance.outstanding,
+                              balance.currencyCode,
+                            ),
+                          )
+                          .join(' + ')}
+                      </div>
                     </td>
-                    <td className="px-5 py-4 text-muted-foreground">
+                    <td className="px-4 py-3 text-xs text-muted-foreground">
                       {new Date(contract.updatedAt).toLocaleDateString('fa-IR')}
                     </td>
-                    <td className="px-5 py-4">
-                      <div className="flex w-60 min-w-60 flex-col gap-1.5">
+                    <td className="px-4 py-3 last:pl-5">
+                      <div className="grid min-w-72 grid-cols-3 gap-1.5">
                         <Button
                           size="sm"
                           variant="outline"
-                          className="w-full justify-start bg-surface"
+                          className="h-8 min-w-0 bg-surface px-2 text-xs shadow-sm"
                           onClick={() => setPaymentContractId(contract.id)}
                         >
                           <ReceiptText className="size-3.5" />
-                          پرداخت‌ها و اقساط
+                          پرداخت‌ها
                         </Button>
-                        <div className="flex flex-col gap-1.5">
-                          <ContractOutputButton
-                            contractId={contract.id}
-                            className="w-full justify-start"
-                          />
-                          <SalesTravelDocuments
-                            contractId={contract.id}
-                            className="w-full justify-start"
-                          />
-                        </div>
+                        <ContractOutputButton
+                          contractId={contract.id}
+                          label="PDF قرارداد"
+                          className="h-8 min-w-0 px-2 text-xs shadow-sm"
+                        />
+                        <SalesTravelDocuments
+                          contractId={contract.id}
+                          label="مدارک"
+                          className="h-8 min-w-0 px-2 text-xs shadow-sm"
+                        />
                       </div>
                     </td>
                   </tr>

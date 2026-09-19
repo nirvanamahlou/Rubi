@@ -44,6 +44,10 @@
 
 # Work Assignments
 
+## SALES-CONTRACT-TABLE-0919 — PC-A — LOCAL_COMPLETE
+
+Base acc35d18; COMPUTER_ID=PC-A. فهرست `/sales` اکنون سرستون خواناتر، ردیف‌های کم‌ارتفاع راه‌راه، شماره قرارداد برجسته، نام مشتری کوتاه‌شونده و ستون عملیات هم‌ردیف دارد. سه عمل موجود بدون تغییر دسترسی یا رفتار باقی مانده‌اند: پرداخت‌ها، PDF قرارداد و مدارک مسافر. API، داده، مجوز، Migration، وابستگی و ماژول دیگری تغییر نکرد. اعتبارسنجی: build بستهٔ Contracts، ۸ تست هدفمند Sales، lint سه فایل تغییرکرده، typecheck Web و build تولیدی Web موفق. شاخه: `codex/pc-a-sales-contract-table-0919`.
+
 ## TOUR-HOTEL-PRICING-FLOW-0916 — PC-A — MERGED WITH DEVELOP / VERIFIED LOCALLY
 
 - 2026-09-16 commission follow-up: product owner clarified that commission may be percent or a fixed amount with its own currency. PC-A reserves the additive Package Pricing contract/schema/migration, API arithmetic/persistence, Sales UI/tests and bounded pricing docs on the existing task branch. Historical rows default to percent; fixed commission remains a profit expense and never changes sale price. Migration and shared-contract locks are held only for this follow-up; dependency/lockfile remains unassigned.
@@ -107,6 +111,7 @@
 - محدودهٔ رزرو: API و UI ماژول Procurement، قراردادهای افزایشی مرتبط، seed محلیِ قابل‌تکرار با شناسه‌های اختصاصی Procurement، تست‌های هدفمند و مستندات این واحد. داده‌های نمونه هیچ سفارش بیرونی، پرداخت یا سند حسابداری واقعی ایجاد نمی‌کنند؛ اتصال Reservations، فایل‌های گزارش untracked، Dependency/Lockfile و Migration خارج از محدوده‌اند مگر پس از نیاز فنیِ اثبات‌شده.
 - مرزها: Finance و Tasks فقط از public contractهای نسخه‌دار Procurement مصرف می‌کنند؛ هیچ دسترسی مستقیم به جدول ماژول دیگر، انتساب نقش تجاری یا تغییر خودکار policy انجام نمی‌شود.
 - نتیجه: فرم‌های عملیاتیِ موجود برای همهٔ تب‌های چرخه به API اصلی وصل‌اند؛ پیام روشن «ثبت و ویرایش» برای نقش فاقد مجوز، و راهنمای اصلاح نسخه‌دار برای نقش مجاز اضافه شد. شش پروندهٔ محلی واقعی‌نما با استعلام، سفارش، رسید یا پذیرش خدمت، اصلاح/مغایرت/مرجوعی مرتبط، فاکتور و ارجاع مالی وارد PostgreSQL محلی شدند. ابزار idempotent `procurement:demo:apply` فقط روی localhost اجرا می‌شود و به‌دلیل append-only بودن سوابق چرخه، تاریخچه را حذف یا بازنویسی نمی‌کند. هیچ پرداخت، posting مالی یا ارسال تأمین‌کننده ساخته نشده است.
+
 ## RESERVATION-SECTION-EDIT-AGE-BANDS-0916 — PC-A — READY_FOR_REVIEW
 
 - درخواست مالک در 2026-09-16: تب‌های ویرایش قرارداد در رزواسیون برای طرف قرارداد، پرواز، هتل، سایر خدمات و مسافران واقعاً قابل ویرایش و ذخیره باشند؛ ردهٔ کودک هتل نیز در فرم ارسالی به کارگزار به‌صورت ۲ تا ۶ و ۶ تا ۱۲ سال نمایش داده شود.

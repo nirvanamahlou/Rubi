@@ -73,9 +73,11 @@ export async function loadContractPrint(id: string) {
 export function ContractOutputButton({
   contractId,
   className,
+  label = 'خروجی قرارداد / PDF',
 }: {
   contractId: string;
   className?: string;
+  label?: string;
 }) {
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -171,7 +173,7 @@ export function ContractOutputButton({
         className={className}
         onClick={() => void load()}
       >
-        خروجی قرارداد / PDF
+        {label}
       </Button>
       <Dialog
         open={open}
