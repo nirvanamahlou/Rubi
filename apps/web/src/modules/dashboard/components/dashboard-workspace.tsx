@@ -1300,8 +1300,8 @@ function MiniTrend({
     const maximum = Math.max(...values);
     const span = Math.max(maximum - minimum, 1);
     return values.map((value, index) => ({
-      x: values.length > 1 ? 4 + (index * 152) / (values.length - 1) : 80,
-      y: 50 - ((value - minimum) / span) * 40,
+      x: values.length > 1 ? 8 + (index * 224) / (values.length - 1) : 120,
+      y: 72 - ((value - minimum) / span) * 58,
     }));
   };
   const renderedSeries = series.map((item) => ({
@@ -1320,12 +1320,13 @@ function MiniTrend({
     .join('؛ ');
 
   return (
-    <span className="flex min-w-0 flex-1 flex-col gap-2">
+    <span className="flex w-full min-w-0 flex-1 flex-col gap-2">
       <svg
         aria-label={`روند ${title}. هر خط در مقیاس مستقل همان ارز نمایش داده می‌شود. ${summary}`}
-        className="h-14 w-full overflow-visible"
+        className="h-20 w-full overflow-visible"
+        preserveAspectRatio="none"
         role="img"
-        viewBox="0 0 160 58"
+        viewBox="0 0 240 84"
       >
         <defs>
           {renderedSeries.map(({ currencyCode }, seriesIndex) => {
@@ -1350,8 +1351,8 @@ function MiniTrend({
           const linePoints = points.map(({ x, y }) => `${x},${y}`).join(' ');
           const areaPoints = [
             linePoints,
-            `${points.at(-1)?.x ?? 80},54`,
-            `${points[0]?.x ?? 80},54`,
+            `${points.at(-1)?.x ?? 120},78`,
+            `${points[0]?.x ?? 120},78`,
           ].join(' ');
           return (
             <g key={currencyCode || `default-${seriesIndex}`}>
@@ -1366,7 +1367,7 @@ function MiniTrend({
                 stroke={color}
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                strokeWidth="2.5"
+                strokeWidth="3.25"
               />
             </g>
           );
@@ -1535,7 +1536,7 @@ function KpiCard({
         />
       </span>
       {metric ? (
-        <span className="relative mt-3 flex min-h-14 flex-col border-t border-border/60 pt-2">
+        <span className="relative mt-3 flex min-h-24 flex-col border-t border-border/60 pt-2">
           {metric.trend ? (
             <MiniTrend title={definition.title} trend={metric.trend} />
           ) : null}

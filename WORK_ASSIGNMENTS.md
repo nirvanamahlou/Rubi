@@ -44,6 +44,12 @@
 
 # Work Assignments
 
+## DASHBOARD-KPI-SPARKLINE-SCALE-0919 — PC-C — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-19: نمودار روند زیر KPI Cardها بزرگ‌تر و هم‌تراز نمونهٔ مرجع شود.
+- `COMPUTER_ID=PC-C`؛ ادامهٔ شاخهٔ `codex/pc-c-dashboard-reporting-latest`. محدودهٔ رزروشده: renderer و تست‌های Dashboard Web و اسناد وضعیت. بدون تغییر API، Migration، Schema، دادهٔ عملیاتی/دمو، Permission، Dependency یا Lockfile.
+- نتیجه: canvas روند از `160×58` و ارتفاع `h-14` به `240×84` و `h-20` رسید، تمام عرض Card را با `preserveAspectRatio=none` مصرف می‌کند و ضخامت خط از `2.5` به `3.25` افزایش یافت؛ سایهٔ زیر هر سری همچنان حفظ شد. ۱۶ تست Dashboard، lint، TypeScript و build تولیدی Web موفق‌اند.
+
 ## DASHBOARD-VISUAL-DETAILS-CONTROLS-0919 — PC-C — READY_FOR_REVIEW
 
 - درخواست مالک در 2026-09-19: انتخاب‌گر نوع نمایش تاریخ محور X نمودار روند بدون سرریز متن در یک خط باشد و برای هر نمودار دکمهٔ پایین-راستِ نمایش جزئیات اضافه شود.

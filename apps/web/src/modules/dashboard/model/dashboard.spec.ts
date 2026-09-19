@@ -541,6 +541,9 @@ describe('dashboard permission and data states', () => {
     expect(source).toContain('OperationalDataTable');
     expect(source).toContain('EmployeePerformanceBars');
     expect(source).toContain('MiniTrend');
+    expect(source).toContain('className="h-20 w-full overflow-visible"');
+    expect(source).toContain('viewBox="0 0 240 84"');
+    expect(source).toContain('strokeWidth="3.25"');
     expect(source).toContain('GrowthIndicator');
     expect(source).toContain(
       'comparison?: DashboardComparisonSnapshot | undefined;',
@@ -592,7 +595,7 @@ describe('dashboard permission and data states', () => {
     expect(source).not.toContain('KpiComparisonBadges');
     expect(source).toContain('linearGradient');
     expect(source).toContain('stopOpacity="0.32"');
-    expect(source).toContain('h-14 w-full overflow-visible');
+    expect(source).toContain('h-20 w-full overflow-visible');
     expect(source).not.toContain('هر ارز مستقل و بدون تبدیل نمایش داده می‌شود');
     expect(source).toContain('currencySymbols');
     expect(source).toContain('راهنمای روند ارزها');
