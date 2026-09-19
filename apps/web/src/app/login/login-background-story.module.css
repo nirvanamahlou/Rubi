@@ -64,79 +64,51 @@
   animation: airplaneArrival 2.55s cubic-bezier(0.16, 0.84, 0.22, 1) 0.18s both;
 }
 
-.nooraMist {
+.nooraCloud {
   position: absolute;
-  top: clamp(54px, 9vh, 105px);
-  left: 50%;
-  z-index: 3;
+  top: clamp(46px, 6.4vh, 96px);
+  left: clamp(30px, 4.8vw, 92px);
+  z-index: 5;
   display: grid;
-  width: clamp(250px, 30vw, 470px);
-  height: clamp(82px, 10vw, 136px);
+  width: clamp(250px, 26vw, 410px);
+  aspect-ratio: 640 / 300;
   place-items: center;
   opacity: 0;
-  transform: translate3d(-50%, 8px, 0) scale(0.9);
-  filter: blur(9px);
-  animation: revealNooraMist 1.45s ease-out 2.65s both;
+  transform: translate3d(-12px, 8px, 0) scale(0.9);
+  filter: blur(7px);
+  animation: revealNooraCloud 1.2s ease-out 2.65s both;
 }
 
-.nooraMist::before,
-.nooraMist::after {
+.nooraCloudOutline {
   position: absolute;
-  content: '';
-  pointer-events: none;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  filter: drop-shadow(0 8px 14px rgb(11 91 156 / 18%));
 }
 
-.nooraMist::before {
-  inset: 6% -8%;
-  border-radius: 50%;
-  background:
-    radial-gradient(
-      circle at 18% 60%,
-      rgb(255 255 255 / 38%) 0 13%,
-      transparent 31%
-    ),
-    radial-gradient(
-      circle at 37% 38%,
-      rgb(255 255 255 / 42%) 0 17%,
-      transparent 36%
-    ),
-    radial-gradient(
-      circle at 58% 50%,
-      rgb(255 255 255 / 36%) 0 20%,
-      transparent 40%
-    ),
-    radial-gradient(
-      circle at 80% 62%,
-      rgb(255 255 255 / 32%) 0 15%,
-      transparent 34%
-    );
-  filter: blur(12px);
+.nooraCloudOutline path {
+  fill: rgb(244 252 255 / 40%);
+  stroke: #23a7e5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 10;
 }
 
-.nooraMist::after {
-  right: 5%;
-  bottom: 16%;
-  left: 5%;
-  height: 32%;
-  border-radius: 50%;
-  background: rgb(255 255 255 / 24%);
-  filter: blur(16px);
-}
-
-.nooraMist span {
+.nooraCloud span {
   position: relative;
   z-index: 1;
-  color: rgb(255 255 255 / 76%);
+  color: #158fce;
   font-family: Arial, Helvetica, sans-serif;
-  font-size: clamp(2.4rem, 5.2vw, 5.2rem);
+  font-size: clamp(1.6rem, 3.1vw, 3.2rem);
   font-weight: 900;
-  letter-spacing: 0.28em;
+  letter-spacing: 0.24em;
   line-height: 1;
-  text-indent: 0.28em;
+  text-indent: 0.24em;
   text-shadow:
-    0 0 8px rgb(255 255 255 / 80%),
-    0 0 22px rgb(255 255 255 / 64%),
-    0 9px 28px rgb(23 105 166 / 28%);
+    0 1px 0 rgb(255 255 255 / 74%),
+    0 5px 14px rgb(9 82 143 / 18%);
 }
 
 .story::after {
@@ -176,17 +148,17 @@
   }
 }
 
-@keyframes revealNooraMist {
+@keyframes revealNooraCloud {
   from {
     opacity: 0;
-    transform: translate3d(-50%, 8px, 0) scale(0.9);
-    filter: blur(9px);
+    transform: translate3d(-12px, 8px, 0) scale(0.9);
+    filter: blur(7px);
   }
 
   to {
     opacity: 1;
-    transform: translate3d(-50%, 0, 0) scale(1);
-    filter: blur(0.5px);
+    transform: translate3d(0, 0, 0) scale(1);
+    filter: blur(0);
   }
 }
 
@@ -205,20 +177,20 @@
     display: none;
   }
 
-  .nooraMist {
-    top: 24px;
-    width: 240px;
-    height: 76px;
+  .nooraCloud {
+    top: 18px;
+    left: 18px;
+    width: min(228px, calc(100vw - 36px));
   }
 
-  .nooraMist span {
-    font-size: 2.2rem;
+  .nooraCloud span {
+    font-size: 1.45rem;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .airplaneLayer,
-  .nooraMist {
+  .nooraCloud {
     animation: none;
   }
 
@@ -227,9 +199,9 @@
     transform: none;
   }
 
-  .nooraMist {
+  .nooraCloud {
     opacity: 1;
-    transform: translate3d(-50%, 0, 0);
-    filter: blur(0.5px);
+    transform: none;
+    filter: none;
   }
 }

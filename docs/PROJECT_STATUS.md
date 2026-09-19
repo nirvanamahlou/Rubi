@@ -28,6 +28,10 @@
 پنل عملیات قرارداد در رزواسیون اکنون زیر بخش جدول قرار دارد و دکمه‌ها در دسکتاپ به‌صورت چهارستونه نمایش داده می‌شوند. صفحه‌بندی از فهرست حذف شد؛ تمام قراردادهای بازه در یک جدول اسکرول‌پذیر با ارتفاع نزدیک هفت ردیف قابل انتخاب‌اند. اگر کاربر بازهٔ تاریخ تعیین نکند، فهرست از تاریخ قرارداد فقط سه ماه تقویمی اخیر را نمایش می‌دهد؛ با انتخاب هر بازهٔ تاریخ، همان بازه بدون محدودیت پیش‌فرض اجرا می‌شود. ۲۱ تست هدفمند، lint، typecheck و build تولیدی Web موفق‌اند. Migration، دادهٔ عملیاتی و Runtime مشترک تغییری نکردند.
 # وضعیت پروژه
 
+## 2026-09-19 — LOGIN-NOORA-CLOUD-OUTLINE-0919 — PC-B — READY_FOR_REVIEW
+
+ابر مه‌آلود صفحهٔ ورود با ابر خطی آبیِ مرجع جایگزین شد؛ سطح داخلی نیمه‌شفاف است و `NOORA` در مرکز آن دیده می‌شود. پس از توقف هواپیما ظاهر می‌شود و برای کاربران با کاهش حرکت، بدون انیمیشن نمایش دارد. ۲ تست هدفمند، typecheck و build تولیدی Web موفق‌اند و نسخهٔ جدید روی localhost:3100 بازراه‌اندازی شد. منطق ورود، API، Migration و دادهٔ عملیاتی تغییری نکرده‌اند.
+
 - 2026-09-16 Package Pricing commission follow-up: drafts/publications now support percent or fixed commission with an explicit currency. Fixed commission is deducted once from the matching currency profit bucket and never changes sale; historical rows default to percent. Additive migration was applied only to isolated `rubi_pricing_flow_0916`. Tour demo 1 published version 3 with fixed EUR 15 while tour demo 2 remains percent.
 ## 2026-09-17 — LOGIN-NOORA-ANIMATION-0917 — PC-A — READY_FOR_REVIEW
 

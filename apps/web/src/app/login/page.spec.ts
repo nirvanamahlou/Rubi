@@ -29,12 +29,16 @@ describe('login background', () => {
     expect(fs.statSync(asset).size).toBeGreaterThan(100_000);
   });
 
-  it('reveals persistent cloud-themed NOORA after the background stops', () => {
+  it('reveals NOORA inside the requested blue outline cloud after the airplane stops', () => {
     expect(backgroundStory).toContain('NOORA');
-    expect(backgroundStory).not.toContain('<svg');
+    expect(backgroundStory).toContain('<svg');
+    expect(backgroundStory).toContain('viewBox="0 0 640 300"');
+    expect(backgroundStory).toContain('<path');
     expect(backgroundStory).toContain('aria-hidden="true"');
-    expect(backgroundStyles).toContain('@keyframes revealNooraMist');
+    expect(backgroundStyles).toContain('@keyframes revealNooraCloud');
     expect(backgroundStyles).toContain('2.65s both');
+    expect(backgroundStyles).toContain('.nooraCloudOutline path');
+    expect(backgroundStyles).toContain('stroke: #23a7e5');
     expect(backgroundStyles).toContain('.staticBackground');
     expect(backgroundStyles).toContain('.airplaneLayer');
     expect(backgroundStyles).toContain('mask-image: radial-gradient');
