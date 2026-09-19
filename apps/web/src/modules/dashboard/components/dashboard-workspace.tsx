@@ -2736,12 +2736,13 @@ function ProjectionSlot({
           </Badge>
           <div
             className={cn(
-              'flex max-w-full items-center gap-1.5',
+              'flex items-center gap-1.5',
               resolvedKind === 'line'
-                ? 'flex-row flex-wrap justify-end'
-                : 'flex-col items-end',
+                ? 'min-w-[14.875rem] flex-row flex-nowrap justify-end'
+                : 'max-w-full flex-col items-end',
             )}
             data-dashboard-trend-controls={resolvedKind === 'line' || undefined}
+            dir={resolvedKind === 'line' ? 'rtl' : undefined}
           >
             {currencySeries.length ? (
               <Select

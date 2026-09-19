@@ -48,7 +48,7 @@
 
 - درخواست مالک در 2026-09-19: انتخاب‌گر تقویمِ نمودار روند و انتخاب‌گر واحد پول همان نمودار، زیر برچسب نوع نمودار و کنار هم نمایش یابند.
 - `COMPUTER_ID=PC-C`؛ ادامهٔ شاخهٔ `codex/pc-c-dashboard-reporting-latest`. محدودهٔ رزروشده: renderer و تست‌های Dashboard Web و اسناد وضعیت. بدون تغییر API، Migration، Schema، دادهٔ عملیاتی/دمو، Permission، Dependency یا Lockfile.
-- نتیجه: در visualهای `line`، یک گروه کنترل افقی و wrap-safe زیر badge قرار دارد و انتخاب ارز و تقویم محور زمان را کنار هم می‌چیند؛ visualهای غیرروند فقط انتخاب‌گر ارزِ قبلی را دارند. ۱۶ تست Dashboard، lint، TypeScript و build تولیدی Web موفق‌اند.
+- نتیجه: در visualهای `line`، انتخاب ارز با همان اندازهٔ قبلی در سمت راستِ انتخاب تقویم می‌ماند؛ گروه کنترل زیر badge بدون wrap و با حداقل عرض برابر مجموع همان دو کنترل چیده می‌شود. visualهای غیرروند فقط انتخاب‌گر ارزِ قبلی را دارند. ۱۶ تست Dashboard، lint، TypeScript و build تولیدی Web موفق‌اند.
 
 ## DASHBOARD-VISUAL-CURRENCY-SELECTOR-0919 — PC-C — READY_FOR_REVIEW
 

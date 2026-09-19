@@ -557,6 +557,7 @@ describe('dashboard permission and data states', () => {
     expect(source).not.toContain('بازه انتخاب‌شده — ${labels[index]}');
     expect(source).toContain('data-dashboard-visual-currency-selector');
     expect(source).toContain('data-dashboard-trend-controls');
+    expect(source).toContain('min-w-[14.875rem] flex-row flex-nowrap justify-end');
     expect(source).toContain('selectedCurrencyCode');
     expect(source).toContain('currencySeries');
     expect(source).toContain('adverseKpiIdPattern');
