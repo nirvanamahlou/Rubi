@@ -141,6 +141,7 @@ export class MasterTravelDirectory {
     carrierName: string,
     destinationCityId: string,
     travelDay: string,
+    serviceNumber?: string,
   ) {
     const normalize = (value: unknown) =>
       String(value ?? '')
@@ -150,6 +151,10 @@ export class MasterTravelDirectory {
         .replace(/[^A-Za-z0-9آ-ی]/g, '')
         .toUpperCase();
     const carrier = normalize(carrierName);
+    const carrierCode = String(serviceNumber ?? '')
+      .trim()
+      .split(/[\s-]+/, 1)[0]
+      ?.toUpperCase();
     const rows = [];
     let page = 1;
     for (;;) {
@@ -178,7 +183,8 @@ export class MasterTravelDirectory {
           candidate.length > 0 &&
           (carrier === candidate ||
             carrier.includes(candidate) ||
-            candidate.includes(carrier))
+            candidate.includes(carrier) ||
+            (Boolean(carrierCode) && carrierCode === candidate))
         );
       });
       return (
