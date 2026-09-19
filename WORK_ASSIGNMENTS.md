@@ -54,11 +54,12 @@
 - Result: explicit linkage, exact stay-night pricing, fixed/percent adjustments and multicurrency room-package preview/publications are implemented. The integration retained both Package Pricing and Reporting modules/Prisma relations and both documentation histories. Prisma validate/generate, Contracts/Database/API/Web typechecks, full API tests (1436 passed, 135 skipped), full Web tests (1477 passed), full API/Web lint and production builds pass. Two local demo tours completed Ticket → Finance payment → two-currency hotel grid → maker/checker publication and edit/republication on isolated `rubi_pricing_flow_0916`; the operational database is untouched. Locks release with the merge commit; origin is public so no public push is performed.
 
 
-## LOGIN-NOORA-MOTION-FOLLOWUP-0917 — PC-A — IN_PROGRESS
+## LOGIN-NOORA-MOTION-FOLLOWUP-0917 — PC-A — READY FOR REVIEW
 
 - درخواست اصلاحی مالک در 2026-09-17: پس‌زمینهٔ صفحهٔ ورود ثابت بماند؛ فقط هواپیمای واقعی همان عکس از بیرون سمت راست به چپ حرکت کند و در جای اصلی متوقف شود. نام «NOORA» نیز یک‌باره ظاهر نشود و با حرکت ابر نرم از سمت چپ، تدریجی نوشته و ماندگار شود.
 - شاخهٔ مستقل codex/pc-a-login-noora-motion-followup-0917 از آخرین origin/develop؛ محدودهٔ رزرو فقط کامپوننت و CSS پس‌زمینهٔ Login، تست هدفمند و همین اسناد است. فرم/منطق احراز هویت، API، Migration، Permission، Dependency/Lockfile و دادهٔ عملیاتی تغییر نمی‌کنند.
 - تعارض اسناد با حفظ کامل تاریخچهٔ TOUR-HOTEL-PRICING-FLOW و افزودن این واحد مستقل حل شد.
+- تغییر نهایی در 2026-09-19 طبق درخواست مالک: لایهٔ ماسک و حرکت هواپیما حذف شد و خود تصویر login-airline-b2.png به‌صورت پس‌زمینهٔ ثابت باقی می‌ماند.
 ## HOTEL-RATE-PACKS-0915 — PC-A — IMPLEMENTED ON ISOLATED 3200 / REVIEW PENDING
 
 - 2026-09-16 follow-up requested by product owner: each selected hotel row in

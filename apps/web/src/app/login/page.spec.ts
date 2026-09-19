@@ -18,26 +18,26 @@ describe('login background', () => {
     '../../../public/brand/login-airline-b2.png',
   );
 
-  it('uses the selected B2 aviation image as the animated page background', () => {
+  it('keeps the selected B2 aviation image fixed as the page background', () => {
     expect(source).toContain('<LoginBackgroundStory />');
     expect(backgroundStyles).toContain(
       "background-image: url('/brand/login-airline-b2.png')",
     );
-    expect(backgroundStyles).toContain('@keyframes airplaneArrival');
-    expect(backgroundStyles).toContain('translate3d(28%, -1.5%, 0)');
+    expect(backgroundStyles).not.toContain('@keyframes airplaneArrival');
+    expect(backgroundStory).not.toContain('airplaneLayer');
+    expect(backgroundStory).not.toContain('skyPatch');
     expect(fs.existsSync(asset)).toBe(true);
     expect(fs.statSync(asset).size).toBeGreaterThan(100_000);
   });
 
-  it('reveals persistent cloud-themed NOORA after the background stops', () => {
+  it('reveals persistent cloud-themed NOORA without moving the airplane', () => {
     expect(backgroundStory).toContain('NOORA');
     expect(backgroundStory).not.toContain('<svg');
     expect(backgroundStory).toContain('aria-hidden="true"');
     expect(backgroundStyles).toContain('@keyframes revealNooraMist');
     expect(backgroundStyles).toContain('2.65s both');
     expect(backgroundStyles).toContain('.staticBackground');
-    expect(backgroundStyles).toContain('.airplaneLayer');
-    expect(backgroundStyles).toContain('mask-image: radial-gradient');
+    expect(backgroundStyles).not.toContain('mask-image: radial-gradient');
     expect(backgroundStyles).toContain(
       '@media (prefers-reduced-motion: reduce)',
     );
