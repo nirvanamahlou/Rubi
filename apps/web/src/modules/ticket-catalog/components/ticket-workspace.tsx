@@ -245,7 +245,10 @@ function TicketCatalogWorkspace() {
   };
 
   useEffect(() => {
-    void refreshPublishedOffers();
+    const timer = window.setTimeout(() => {
+      void refreshPublishedOffers();
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, []);
   useEffect(() => {
     const timer = window.setTimeout(() => {
