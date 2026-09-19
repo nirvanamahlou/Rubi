@@ -1,3 +1,11 @@
+## FINANCE-INBOX-FILTERS-0919 — PC-A — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-19: کارتابل مالی با فیلتر تاریخ و بخش، و KPIهای مبتنی بر همان فیلترها تکمیل شود. شاخه `codex/pc-a-finance-inbox-filters-0919` از `origin/develop@5d588cbd`؛ `COMPUTER_ID=PC-A`.
+- محدودهٔ رزروشده: فقط `apps/web/src/modules/finance/components/finance-inbox-live-workspace.tsx`، تست هدفمند همان UI و این ثبت وضعیت. فیلترها روی دادهٔ عملیاتی موجود اعمال می‌شوند و API، قرارداد مشترک، Schema/Migration، حسابداری، Permission، Dependency/Lockfile و دادهٔ واقعی تغییر نمی‌کنند.
+- ثبت حساب مقصد برای تأیید دریافت، به‌دلیل نیاز به قرارداد و persistence مشترک Sales↔Finance، خارج از این slice است و نباید به‌صورت نمایشی/غیرقابل‌ثبت اضافه شود.
+- نتیجه: فیلتر بخش، وضعیت، جست‌وجو و بازهٔ تاریخ ثبت درخواست در یک نمای عملیاتی جمع شده‌اند؛ کارت «کل درخواست‌ها» نیز مطابق نتیجهٔ فیلترشده به‌روزرسانی می‌شود. داده یا تصمیم مالی جدیدی ساخته نمی‌شود.
+- اعتبارسنجی: ۸ تست متمرکز رابط مالی، Web TypeScript و lint فایل تغییرکرده موفق‌اند. Migration، API، قرارداد مشترک، Permission، Dependency/Lockfile و دادهٔ عملیاتی تغییر نکرده‌اند.
+
 ## SYSTEM-MANAGEMENT-BACKEND-001 — PC-B — READY_FOR_REVIEW
 
 - نتیجهٔ ادغام‌شده از `origin/develop`: قرارداد نسخهٔ ۱ مدیریت سامانه، ۳۰ Permission، ۱۲ جدول افزایشی و API کنترل‌شدهٔ تنظیمات/شماره‌گذاری/اعلان/قالب/Feature Flag/Backup/Health/Audit به‌همراه حفاظت IAM برای Self-escalation، آخرین مدیر فعال و بستن نشست جاری اضافه شده است. Migration و تست‌های این Slice در Draft PR #305 تأیید شده‌اند؛ قفل‌های Migration، قرارداد و اسناد مرکزی آزادند.
