@@ -51,4 +51,8 @@ describe('LocalDocumentStorage encryption boundary', () => {
       storage.putQuarantined('../../contract.pdf', Buffer.from('unsafe')),
     ).rejects.toThrow(/Invalid document storage key/);
   });
+
+  it('checks the private storage root without reading a document', async () => {
+    await expect(storage.health()).resolves.toBeUndefined();
+  });
 });

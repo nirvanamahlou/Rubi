@@ -5,6 +5,7 @@ import {
   Inject,
   Injectable,
   NotFoundException,
+  Optional,
 } from '@nestjs/common';
 import type {
   AuthenticatedActor,
@@ -16,6 +17,7 @@ import type {
   SystemNumberIssueInputV1,
   SystemNumberIssueV1,
   SystemOverviewV1,
+  SystemReportingExportRetryInputV1,
   SystemScope,
   SystemSessionRevokeInputV1,
   SystemSessionV1,
@@ -31,7 +33,9 @@ import type {
 } from '@nora/database';
 
 import { DatabaseService } from '../database/database.service';
+import { DocumentsService } from '../documents/documents.service';
 import { IamService } from '../iam/iam.service';
+import { ReportingService } from '../reporting/reporting.service';
 import {
   assertSafeJson,
   maskIp,
@@ -96,6 +100,12 @@ export class SystemManagementService {
   constructor(
     @Inject(DatabaseService) private readonly database: DatabaseService,
     @Inject(IamService) private readonly iam: IamService,
+    @Optional()
+    @Inject(DocumentsService)
+    private readonly documents?: DocumentsService,
+    @Optional()
+    @Inject(ReportingService)
+    private readonly reporting?: ReportingService,
   ) {}
 
   listSessions(
@@ -685,6 +695,34 @@ export class SystemManagementService {
     return this.presentBackup(row);
   }
 
+  /**
+   * System Management authorizes and audits the command, while Reporting owns
+   * the export state machine and repeats the original export itself.
+   */
+  async retryReportingExport(
+    exportId: string,
+    input: SystemReportingExportRetryInputV1,
+    actor: AuthenticatedActor,
+    metadata: AuditMetadata,
+  ) {
+    const id = validUuid(exportId, 'شناسه خروجی گزارش');
+    const reason = validReason(input?.reason);
+    if (!this.reporting)
+      throw new ConflictException('Port عمومی Reporting در دسترس نیست.');
+    const result = await this.reporting.retryExport(id, actor);
+    await this.audit(
+      actor,
+      metadata,
+      'REPORTING_EXPORT_RETRY_REQUESTED',
+      'REPORTING_EXPORT',
+      id,
+      reason,
+      null,
+      { status: 'RETRY_REQUESTED' },
+    );
+    return result;
+  }
+
   async health(): Promise<SystemHealthComponentV1[]> {
     const checkedAt = new Date().toISOString();
     const started = performance.now();
@@ -707,6 +745,10 @@ export class SystemManagementService {
         detail: 'پایگاه‌داده در بررسی فعلی پاسخ نداد.',
       };
     }
+    const [worker, storage] = await Promise.all([
+      this.probeWorkerHealth(checkedAt),
+      this.probeStorageHealth(checkedAt),
+    ]);
     return [
       {
         component: 'API',
@@ -716,16 +758,106 @@ export class SystemManagementService {
         detail: `API فعال است؛ uptime=${Math.floor(process.uptime())}s`,
       },
       database,
-      ...(['REDIS', 'WORKER', 'STORAGE', 'QUEUE'] as const).map(
-        (component): SystemHealthComponentV1 => ({
-          component,
-          status: 'UNKNOWN',
-          checkedAt,
-          latencyMs: null,
-          detail: 'Probe عمومی مالک این سرویس هنوز منتشر نشده است.',
-        }),
-      ),
+      worker.REDIS,
+      worker.WORKER,
+      storage,
+      worker.QUEUE,
     ];
+  }
+
+  private async probeStorageHealth(
+    checkedAt: string,
+  ): Promise<SystemHealthComponentV1> {
+    if (!this.documents) {
+      return {
+        component: 'STORAGE',
+        status: 'UNKNOWN',
+        checkedAt,
+        latencyMs: null,
+        detail: 'Port عمومی Storage ماژول Documents در این اجرا در دسترس نیست.',
+      };
+    }
+    const started = performance.now();
+    try {
+      await this.documents.storageHealth();
+      return {
+        component: 'STORAGE',
+        status: 'HEALTHY',
+        checkedAt,
+        latencyMs: Math.round(performance.now() - started),
+        detail: 'Storage خصوصی Documents با بررسی خواندن/نوشتن مسیر تأیید شد.',
+      };
+    } catch {
+      return {
+        component: 'STORAGE',
+        status: 'UNAVAILABLE',
+        checkedAt,
+        latencyMs: null,
+        detail: 'Storage ماژول Documents در بررسی فعلی پاسخ نداد.',
+      };
+    }
+  }
+
+  private async probeWorkerHealth(
+    checkedAt: string,
+  ): Promise<Record<'QUEUE' | 'REDIS' | 'WORKER', SystemHealthComponentV1>> {
+    const unavailable = (
+      component: 'QUEUE' | 'REDIS' | 'WORKER',
+      detail: string,
+    ): SystemHealthComponentV1 => ({
+      component,
+      status: 'UNAVAILABLE',
+      checkedAt,
+      latencyMs: null,
+      detail,
+    });
+    const url = process.env.WORKER_HEALTH_URL ?? 'http://127.0.0.1:4100/health';
+    try {
+      const response = await fetch(url, { signal: AbortSignal.timeout(2_500) });
+      if (!response.ok) throw new Error('Worker health response failed.');
+      const payload = (await response.json()) as {
+        components?: Array<{
+          component?: unknown;
+          status?: unknown;
+          checkedAt?: unknown;
+          latencyMs?: unknown;
+          detail?: unknown;
+        }>;
+      };
+      const component = (name: 'QUEUE' | 'REDIS' | 'WORKER') => {
+        const source = payload.components?.find(
+          (item) => item.component === name,
+        );
+        if (
+          !source ||
+          (source.status !== 'HEALTHY' && source.status !== 'UNAVAILABLE')
+        )
+          return unavailable(name, 'Port Worker پاسخ معتبر برای این جزء نداد.');
+        return {
+          component: name,
+          status: source.status,
+          checkedAt:
+            typeof source.checkedAt === 'string' ? source.checkedAt : checkedAt,
+          latencyMs:
+            typeof source.latencyMs === 'number' ? source.latencyMs : null,
+          detail:
+            typeof source.detail === 'string'
+              ? source.detail.slice(0, 300)
+              : 'نتیجهٔ بررسی از Port عمومی Worker دریافت شد.',
+        } satisfies SystemHealthComponentV1;
+      };
+      return {
+        REDIS: component('REDIS'),
+        WORKER: component('WORKER'),
+        QUEUE: component('QUEUE'),
+      };
+    } catch {
+      return {
+        REDIS: unavailable('REDIS', 'Port عمومی Worker در دسترس نیست.'),
+        WORKER: unavailable('WORKER', 'Port عمومی Worker در دسترس نیست.'),
+        QUEUE: unavailable('QUEUE', 'Port عمومی Worker در دسترس نیست.'),
+      };
+    }
   }
 
   async overview(): Promise<SystemOverviewV1> {

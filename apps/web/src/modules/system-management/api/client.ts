@@ -3,6 +3,7 @@ import type {
   SystemFeatureFlagV1,
   SystemNumberingSchemeV1,
   SystemNumberingSchemeWriteV1,
+  SystemReportingExportRetryInputV1,
   SystemSessionRevokeInputV1,
   SystemSessionV1,
   SystemSettingV1,
@@ -170,8 +171,10 @@ export const systemManagementApi = {
   backupRequests: () => request<SystemBackupRequestV1[]>('/backup-requests'),
   requestBackup: (input: BackupRequestWrite) =>
     request<SystemBackupRequestV1>('/backup-requests', json(input)),
-  retryReportingExport: (id: string, input: { reason: string }) =>
-    request(`/jobs/reporting-exports/${id}/retry`, json(input)),
+  retryReportingExport: (
+    id: string,
+    input: SystemReportingExportRetryInputV1,
+  ) => request(`/jobs/reporting-exports/${id}/retry`, json(input)),
   health: () => request<SystemOverview['health']>('/health'),
   audit: () => request<SystemAuditRecord[]>('/audit'),
 };

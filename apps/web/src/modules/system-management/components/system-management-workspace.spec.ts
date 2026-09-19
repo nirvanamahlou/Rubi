@@ -76,6 +76,13 @@ describe('system management reference implementation', () => {
     expect(workspace).not.toContain('Math.random');
   });
 
+  it('uses the Legal Entity public API for a real company scope', () => {
+    expect(workspace).toContain('legalEntitiesApi.selectable');
+    expect(workspace).toContain("scope: 'LEGAL_ENTITY'");
+    expect(workspace).toContain('scopeId: entity.id');
+    expect(workspace).toContain('scopeId: scope.scopeId');
+  });
+
   it('inherits the shared application theme and remains responsive', () => {
     expect(styles).toContain('var(--primary)');
     expect(styles).toContain('var(--surface)');

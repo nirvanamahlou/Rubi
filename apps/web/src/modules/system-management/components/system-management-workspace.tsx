@@ -34,6 +34,7 @@ import {
   X,
   type LucideIcon,
 } from 'lucide-react';
+import Link from 'next/link';
 import {
   useCallback,
   useEffect,
@@ -43,7 +44,8 @@ import {
   type FormEvent,
 } from 'react';
 
-import type { SystemSettingV1 } from '@nora/contracts';
+import type { LegalEntitySummary, SystemSettingV1 } from '@nora/contracts';
+import { legalEntitiesApi } from '@/modules/legal-entities/api/client';
 import {
   systemManagementApi,
   SystemManagementApiError,
@@ -61,6 +63,72 @@ import styles from './system-management-workspace.module.css';
 
 type Page = 'history' | 'module' | 'modules' | 'overview' | 'reviews';
 type Values = Record<string, boolean | string>;
+type SettingsScope = {
+  scope: 'GLOBAL' | 'LEGAL_ENTITY';
+  scopeId: string | null;
+  title: string;
+};
+
+interface ManagementArea {
+  id: string;
+  description: string;
+  href: string;
+  moduleIds: readonly string[];
+  owner: string;
+  title: string;
+}
+
+const globalScope: SettingsScope = {
+  scope: 'GLOBAL',
+  scopeId: null,
+  title: 'کل مجموعه',
+};
+
+/** Links retain ownership instead of duplicating an owner's administration UI. */
+const managementAreas: readonly ManagementArea[] = [
+  {
+    id: 'legal-entities',
+    title: 'شرکت صادرکننده و برند',
+    description: 'هویت حقوقی، Branding و سربرگ‌ها در ماژول مالک ثبت می‌شوند.',
+    owner: 'Legal Entity',
+    href: '/system/legal-entities',
+    moduleIds: ['general'],
+  },
+  {
+    id: 'iam',
+    title: 'کاربران، نقش‌ها و دامنه دسترسی',
+    description:
+      'IAM وضعیت کاربر، نقش و مجوز مؤثر را دوباره اعتبارسنجی می‌کند.',
+    owner: 'IAM',
+    href: '/users',
+    moduleIds: ['access'],
+  },
+  {
+    id: 'documents',
+    title: 'اسناد و فایل‌ها',
+    description: 'فایل، دسترسی و نگه‌داری در مالک Documents باقی می‌ماند.',
+    owner: 'Documents',
+    href: '/documents',
+    moduleIds: ['documents'],
+  },
+  {
+    id: 'reporting',
+    title: 'گزارش‌ها و خروجی‌ها',
+    description: 'کاتالوگ و چرخهٔ خروجی گزارش را Reporting مالک است.',
+    owner: 'Reporting',
+    href: '/reports',
+    moduleIds: ['reports'],
+  },
+  {
+    id: 'operations',
+    title: 'عملیات، سلامت و پشتیبان',
+    description:
+      'عملیات نسخه‌دار System Management و Probeهای مالک در این صفحه‌اند.',
+    owner: 'System Management',
+    href: '/system/operations',
+    moduleIds: ['integrations'],
+  },
+];
 
 const iconMap: Record<string, LucideIcon> = {
   bag: BriefcaseBusiness,
@@ -206,7 +274,9 @@ export function SystemManagementWorkspace() {
     'all'
   > | null>(null);
   const [query, setQuery] = useState('');
-  const [scope, setScope] = useState('کل مجموعه');
+  const [scope, setScope] = useState<SettingsScope>(globalScope);
+  const [legalEntities, setLegalEntities] = useState<LegalEntitySummary[]>([]);
+  const [scopeLoadError, setScopeLoadError] = useState<string | null>(null);
   const [moduleTab, setModuleTab] = useState<'history' | 'settings'>(
     'settings',
   );
@@ -224,17 +294,30 @@ export function SystemManagementWorkspace() {
   const [toast, setToast] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    const [settingsResult, auditResult, overviewResult] =
+    const [settingsResult, auditResult, overviewResult, legalEntitiesResult] =
       await Promise.allSettled([
         systemManagementApi.settings(),
         systemManagementApi.audit(),
         systemManagementApi.overview(),
+        legalEntitiesApi.selectable(),
       ]);
     if (settingsResult.status === 'fulfilled')
       setSettings(settingsResult.value);
     if (auditResult.status === 'fulfilled') setAudit(auditResult.value);
     if (overviewResult.status === 'fulfilled')
       setOverview(overviewResult.value);
+    if (legalEntitiesResult.status === 'fulfilled') {
+      setLegalEntities(
+        legalEntitiesResult.value.data.filter((entity) => entity.isActive),
+      );
+      setScopeLoadError(null);
+    } else {
+      setLegalEntities([]);
+      setScopeLoadError(
+        'دامنه‌های حقوقی از API مالک در دسترس نیست؛ فقط دامنه کل مجموعه قابل استفاده است.',
+      );
+      setScope(globalScope);
+    }
   }, []);
 
   useEffect(() => {
@@ -266,7 +349,8 @@ export function SystemManagementWorkspace() {
       (setting) =>
         setting.namespace === module.id &&
         setting.key === group.id &&
-        setting.scope === 'GLOBAL',
+        setting.scope === scope.scope &&
+        setting.scopeId === scope.scopeId,
     );
 
   const valuesFor = (module: SettingModule, group: SettingGroup) => {
@@ -312,12 +396,6 @@ export function SystemManagementWorkspace() {
   const saveGroup = async (event: FormEvent) => {
     event.preventDefault();
     if (!editing) return;
-    if (scope !== 'کل مجموعه') {
-      setSaveError(
-        'ثبت Scope شرکتی به شناسه حقوقی معتبر نیاز دارد؛ دامنه «کل مجموعه» را انتخاب کنید.',
-      );
-      return;
-    }
     if (!reason.trim()) {
       setSaveError('دلیل تغییر را وارد کنید.');
       return;
@@ -331,7 +409,8 @@ export function SystemManagementWorkspace() {
         key: editing.group.id,
         namespace: editing.module.id,
         reason: reason.trim(),
-        scope: 'GLOBAL',
+        scope: scope.scope,
+        scopeId: scope.scopeId,
         status: 'ACTIVE',
         value: draft,
         valueType: 'JSON',
@@ -523,6 +602,24 @@ export function SystemManagementWorkspace() {
 
   const renderModule = () => {
     const ModuleIcon = iconMap[selectedModule.icon] ?? Settings;
+    const ownerAreas = managementAreas.filter((area) =>
+      area.moduleIds.includes(selectedModule.id),
+    );
+    const moduleSettingIds = new Set(
+      settings
+        .filter(
+          (setting) =>
+            setting.namespace === selectedModule.id &&
+            setting.scope === scope.scope &&
+            setting.scopeId === scope.scopeId,
+        )
+        .map((setting) => setting.id),
+    );
+    const moduleAudit = audit.filter(
+      (event) =>
+        event.entityType === 'SYSTEM_SETTING' &&
+        moduleSettingIds.has(event.entityId),
+    );
     return (
       <>
         <div className={styles.heading}>
@@ -534,7 +631,7 @@ export function SystemManagementWorkspace() {
               <h1>{selectedModule.title}</h1>
               <p className={styles.subtitle}>
                 {selectedModule.groups.length.toLocaleString('fa-IR')} کارت
-                تنظیمات • {scope}
+                تنظیمات • {scope.title}
               </p>
             </div>
           </div>
@@ -546,6 +643,19 @@ export function SystemManagementWorkspace() {
             <LayoutGrid aria-hidden="true" size={18} /> همه بخش‌ها
           </button>
         </div>
+        {ownerAreas.length ? (
+          <div className={styles.ownerLinks}>
+            {ownerAreas.map((area) => (
+              <p key={area.id}>
+                <span>{area.description}</span>
+                <Link href={area.href}>
+                  ادامه در {area.owner}: {area.title}
+                  <ArrowLeft aria-hidden="true" size={16} />
+                </Link>
+              </p>
+            ))}
+          </div>
+        ) : null}
         <div className={styles.sectionbar}>
           <button
             className={`${styles.tab} ${moduleTab === 'settings' ? styles.tabActive : ''}`}
@@ -563,7 +673,7 @@ export function SystemManagementWorkspace() {
           </button>
         </div>
         {moduleTab === 'history' ? (
-          renderHistory()
+          renderHistory(moduleAudit)
         ) : (
           <div className={styles.settingsGrid}>
             {selectedModule.groups.map((group) => {
@@ -655,12 +765,28 @@ export function SystemManagementWorkspace() {
               <span className={styles.scopeLabel}>دامنه:</span>
               <select
                 aria-label="دامنه تنظیمات"
-                onChange={(event) => setScope(event.target.value)}
-                value={scope}
+                onChange={(event) => {
+                  const next = event.target.value;
+                  if (next === 'GLOBAL') {
+                    setScope(globalScope);
+                    return;
+                  }
+                  const entity = legalEntities.find((item) => item.id === next);
+                  if (entity)
+                    setScope({
+                      scope: 'LEGAL_ENTITY',
+                      scopeId: entity.id,
+                      title: entity.persianName,
+                    });
+                }}
+                value={scope.scopeId ?? 'GLOBAL'}
               >
-                <option>کل مجموعه</option>
-                <option>نیایش سیر سحر</option>
-                <option>جهان باستان</option>
+                <option value="GLOBAL">کل مجموعه</option>
+                {legalEntities.map((entity) => (
+                  <option key={entity.id} value={entity.id}>
+                    {entity.persianName}
+                  </option>
+                ))}
               </select>
             </label>
             <span className={styles.statusBadge} role="status">
@@ -669,6 +795,11 @@ export function SystemManagementWorkspace() {
             </span>
           </div>
         </div>
+        {scopeLoadError ? (
+          <p className={styles.scopeHint} role="status">
+            {scopeLoadError}
+          </p>
+        ) : null}
 
         {page === 'overview' || page === 'modules' ? renderHub() : null}
         {page === 'module' ? renderModule() : null}
@@ -724,7 +855,7 @@ export function SystemManagementWorkspace() {
             <form onSubmit={saveGroup}>
               <div className={styles.modalBody}>
                 <div className={styles.saveMeta}>
-                  <span>{scope}</span>
+                  <span>{scope.title}</span>
                   <span className={`${styles.pill} ${styles.pillBlue}`}>
                     نسخه{' '}
                     {settingFor(

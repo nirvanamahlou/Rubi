@@ -1,3 +1,10 @@
+## SYSTEM-MANAGEMENT-CONNECTIONS-002 — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-19: پیاده‌سازی اتصال‌های باقی‌ماندهٔ مرکز مدیریت سیستم. `COMPUTER_ID=PC-B`؛ شاخهٔ کاری `codex/pc-b-system-management` است.
+- محدودهٔ رزروشده: قرارداد سلامت Worker، Port عمومی سلامت Worker، Port سلامت Storage در Documents، مصرف‌کنندهٔ عمومی آن‌ها در System Management، Retry کنترل‌شدهٔ Export Reporting و UI/System Workspace شامل Scope شرکت حقوقی و پیوندهای مالک IAM/Legal Entity/Operations. قرارداد مشترک، APIهای محدود همین واحدها، تست‌های هدفمند و مستندات همین Task در این برش‌اند.
+- مرزها: مدیریت سیستم فقط Service/HTTP Port عمومی مالک را مصرف می‌کند؛ به Redis، Queue، Storage یا جدول Reporting/Documents دسترسی مستقیم ندارد. تغییر تنظیماتِ بدون Consumer مالک فعال نمی‌شود و به‌عنوان اتصال موفق نمایش داده نخواهد شد. Migration، دادهٔ عملیاتی، Grant نقش، Dependency/Lockfile و تغییرات ماژول‌های تجاری خارج از محدوده‌اند.
+- نتیجه: `POST /system-management/v1/jobs/reporting-exports/:id/retry` با `system.jobs.retry` فرمان را Audit می‌کند و اجرای واقعی را به Public Service Reporting می‌سپارد؛ Reporting نیز `reporting.export` و وضعیت Export را خودش کنترل می‌کند. Documents یک Port محدود سلامت Storage و Worker یک Port loopback سلامت Redis/Queue/Worker با قرارداد بدون Credential منتشر کردند؛ System Management فقط آن Portها را مصرف می‌کند. Scope شرکت حقوقی از `legal-entities/selectable` با UUID معتبر ذخیره می‌شود، تاریخچهٔ هر بخش فیلتر می‌شود و مسیر `/system/operations` پنل عملیاتی پیشین را واقعاً در دسترس قرار می‌دهد. پیوندهای IAM، Legal Entity، Documents و Reporting مالکیت داده را حفظ می‌کنند. ۱۲ تست API، ۲ تست Worker، ۱۰ تست Web، lint و typecheck هر سه workspace موفق‌اند؛ API ۴۰۰۰، Web ۳۱۰۰ و Worker ۴۱۰۰ در Smoke محلی پاسخ داده‌اند.
+
 ## SYSTEM-MANAGEMENT-BACKEND-001 — PC-B — READY_FOR_REVIEW
 
 - نتیجهٔ ادغام‌شده از `origin/develop`: قرارداد نسخهٔ ۱ مدیریت سامانه، ۳۰ Permission، ۱۲ جدول افزایشی و API کنترل‌شدهٔ تنظیمات/شماره‌گذاری/اعلان/قالب/Feature Flag/Backup/Health/Audit به‌همراه حفاظت IAM برای Self-escalation، آخرین مدیر فعال و بستن نشست جاری اضافه شده است. Migration و تست‌های این Slice در Draft PR #305 تأیید شده‌اند؛ قفل‌های Migration، قرارداد و اسناد مرکزی آزادند.
@@ -115,6 +122,7 @@
 - محدودهٔ رزرو: API و UI ماژول Procurement، قراردادهای افزایشی مرتبط، seed محلیِ قابل‌تکرار با شناسه‌های اختصاصی Procurement، تست‌های هدفمند و مستندات این واحد. داده‌های نمونه هیچ سفارش بیرونی، پرداخت یا سند حسابداری واقعی ایجاد نمی‌کنند؛ اتصال Reservations، فایل‌های گزارش untracked، Dependency/Lockfile و Migration خارج از محدوده‌اند مگر پس از نیاز فنیِ اثبات‌شده.
 - مرزها: Finance و Tasks فقط از public contractهای نسخه‌دار Procurement مصرف می‌کنند؛ هیچ دسترسی مستقیم به جدول ماژول دیگر، انتساب نقش تجاری یا تغییر خودکار policy انجام نمی‌شود.
 - نتیجه: فرم‌های عملیاتیِ موجود برای همهٔ تب‌های چرخه به API اصلی وصل‌اند؛ پیام روشن «ثبت و ویرایش» برای نقش فاقد مجوز، و راهنمای اصلاح نسخه‌دار برای نقش مجاز اضافه شد. شش پروندهٔ محلی واقعی‌نما با استعلام، سفارش، رسید یا پذیرش خدمت، اصلاح/مغایرت/مرجوعی مرتبط، فاکتور و ارجاع مالی وارد PostgreSQL محلی شدند. ابزار idempotent `procurement:demo:apply` فقط روی localhost اجرا می‌شود و به‌دلیل append-only بودن سوابق چرخه، تاریخچه را حذف یا بازنویسی نمی‌کند. هیچ پرداخت، posting مالی یا ارسال تأمین‌کننده ساخته نشده است.
+
 ## RESERVATION-SECTION-EDIT-AGE-BANDS-0916 — PC-A — READY_FOR_REVIEW
 
 - درخواست مالک در 2026-09-16: تب‌های ویرایش قرارداد در رزواسیون برای طرف قرارداد، پرواز، هتل، سایر خدمات و مسافران واقعاً قابل ویرایش و ذخیره باشند؛ ردهٔ کودک هتل نیز در فرم ارسالی به کارگزار به‌صورت ۲ تا ۶ و ۶ تا ۱۲ سال نمایش داده شود.
