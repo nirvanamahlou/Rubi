@@ -208,9 +208,8 @@ export function voucherFormData(
     passengers,
     adults: passengers.filter((p) => p.age === 'ADL').length,
     children: passengers.filter((p) => p.age.startsWith('CHD')).length,
-    children2To6: passengers.filter(
-      (p) => p.hotelChildAgeBand === 'CHD_2_TO_6',
-    ).length,
+    children2To6: passengers.filter((p) => p.hotelChildAgeBand === 'CHD_2_TO_6')
+      .length,
     children6To12: passengers.filter(
       (p) => p.hotelChildAgeBand === 'CHD_6_TO_12',
     ).length,
