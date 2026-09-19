@@ -57,6 +57,14 @@ import {
 import styles from './system-management-workspace.module.css';
 
 type Page = 'history' | 'module' | 'overview' | 'reviews';
+type SystemSectionId =
+  | 'documents'
+  | 'finance'
+  | 'hr'
+  | 'reservations'
+  | 'sales'
+  | 'settings'
+  | 'workbench';
 type Values = Record<string, boolean | string>;
 
 const iconMap: Record<string, LucideIcon> = {
@@ -94,15 +102,55 @@ const tones: Record<SettingTone, { accent: string; tint: string }> = {
   violet: { tint: '#f1ebff', accent: '#8554ca' },
 };
 
-const categories = [
-  'همه',
-  'مشتری و فروش',
-  'عملیات سفر',
-  'مالی و همکاری',
-  'سازمان و بهره‌وری',
-  'زیرساخت و داده',
-  'مدیریت',
-] as const;
+const systemSections: ReadonlyArray<{
+  id: SystemSectionId;
+  icon: LucideIcon;
+  moduleIds: readonly string[];
+  title: string;
+}> = [
+  {
+    id: 'workbench',
+    icon: Home,
+    moduleIds: ['tasks', 'messages'],
+    title: 'فضای کار',
+  },
+  {
+    id: 'sales',
+    icon: Users,
+    moduleIds: ['customers', 'affairs', 'sales', 'marketing', 'b2b'],
+    title: 'فروش و ارتباط با مشتری',
+  },
+  {
+    id: 'reservations',
+    icon: BriefcaseBusiness,
+    moduleIds: ['catalog', 'operations', 'procurement'],
+    title: 'رزرواسیون و تامین سفر',
+  },
+  {
+    id: 'finance',
+    icon: Banknote,
+    moduleIds: ['finance'],
+    title: 'مالی',
+  },
+  {
+    id: 'hr',
+    icon: Users,
+    moduleIds: ['hr'],
+    title: 'سرمایه انسانی',
+  },
+  {
+    id: 'documents',
+    icon: FileText,
+    moduleIds: ['documents', 'reports'],
+    title: 'اسناد و گزارش',
+  },
+  {
+    id: 'settings',
+    icon: Settings,
+    moduleIds: ['general', 'access', 'integrations', 'master'],
+    title: 'تنظیمات شرکت',
+  },
+];
 
 function palette(module: SettingModule): CSSProperties {
   return {
@@ -149,7 +197,8 @@ function apiMessage(error: unknown) {
 export function SystemManagementWorkspace() {
   const [page, setPage] = useState<Page>('overview');
   const [selectedModuleId, setSelectedModuleId] = useState('general');
-  const [category, setCategory] = useState<(typeof categories)[number]>('همه');
+  const [activeSystemSectionId, setActiveSystemSectionId] =
+    useState<SystemSectionId>('workbench');
   const [query, setQuery] = useState('');
   const [scope, setScope] = useState('کل مجموعه');
   const [moduleTab, setModuleTab] = useState<'history' | 'settings'>(
@@ -223,9 +272,12 @@ export function SystemManagementWorkspace() {
 
   const filteredModules = useMemo(() => {
     const normalized = query.trim();
+    const activeSystemSection = systemSections.find(
+      (section) => section.id === activeSystemSectionId,
+    )!;
     return settingsModules.filter(
       (module) =>
-        (category === 'همه' || module.category === category) &&
+        activeSystemSection.moduleIds.includes(module.id) &&
         (!normalized ||
           [
             module.title,
@@ -235,7 +287,7 @@ export function SystemManagementWorkspace() {
             ]),
           ].some((text) => text.includes(normalized))),
     );
-  }, [category, query]);
+  }, [activeSystemSectionId, query]);
 
   const openModule = (module: SettingModule) => {
     setSelectedModuleId(module.id);
@@ -301,11 +353,10 @@ export function SystemManagementWorkspace() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const navItems: Array<{ icon: LucideIcon; label: string; page: Page }> = [
-    { page: 'overview', label: 'نمای کلی', icon: Home },
-    { page: 'reviews', label: 'بررسی تغییرات', icon: ShieldCheck },
-    { page: 'history', label: 'تاریخچه تغییرات', icon: History },
-  ];
+  const selectSystemSection = (sectionId: SystemSectionId) => {
+    setActiveSystemSectionId(sectionId);
+    navigate('overview');
+  };
 
   const renderHistory = (items = audit) => (
     <div className={styles.auditGrid}>
@@ -345,19 +396,6 @@ export function SystemManagementWorkspace() {
             value={query}
           />
         </label>
-      </div>
-      <div aria-label="دسته‌بندی تنظیمات" className={styles.filters}>
-        {categories.map((item) => (
-          <button
-            aria-pressed={category === item}
-            className={`${styles.filter} ${category === item ? styles.filterActive : ''}`}
-            key={item}
-            onClick={() => setCategory(item)}
-            type="button"
-          >
-            {item}
-          </button>
-        ))}
       </div>
       <div className={styles.hubGrid}>
         {filteredModules.length ? (
@@ -518,7 +556,9 @@ export function SystemManagementWorkspace() {
         ? 'بررسی تغییرات'
         : page === 'history'
           ? 'تاریخچه تغییرات'
-          : 'نمای کلی تنظیمات';
+          : systemSections.find(
+                (section) => section.id === activeSystemSectionId,
+              )?.title ?? 'مدیریت سیستم';
 
   return (
     <section className={styles.workspace} dir="rtl">
@@ -543,28 +583,38 @@ export function SystemManagementWorkspace() {
               <span aria-hidden="true" className={styles.statusDot} />
               {overview ? 'داده‌های عملیاتی' : 'مقادیر مرجع'}
             </span>
+            <button
+              className={styles.button}
+              onClick={() => navigate('reviews')}
+              type="button"
+            >
+              <ShieldCheck aria-hidden="true" size={17} /> بررسی تغییرات
+            </button>
+            <button
+              className={styles.button}
+              onClick={() => navigate('history')}
+              type="button"
+            >
+              <History aria-hidden="true" size={17} /> تاریخچه تغییرات
+            </button>
           </div>
         </div>
 
-        <nav aria-label="بخش‌های مدیریت سیستم" className={styles.pageNav}>
-          {navItems.map((item) => {
+        <nav aria-label="حوزه‌های مدیریت سیستم" className={styles.pageNav}>
+          {systemSections.map((item) => {
             const Icon = item.icon;
-            const active =
-              page === item.page ||
-              (item.page === 'overview' && page === 'module');
+            const active = activeSystemSectionId === item.id;
             return (
               <button
                 aria-current={active ? 'page' : undefined}
+                aria-pressed={active}
                 className={`${styles.navButton} ${active ? styles.navButtonActive : ''}`}
-                key={item.page}
-                onClick={() => navigate(item.page)}
+                key={item.id}
+                onClick={() => selectSystemSection(item.id)}
                 type="button"
               >
                 <Icon aria-hidden="true" size={17} />
-                {item.label}
-                {item.page === 'reviews' ? (
-                  <span className={styles.counter}>۰</span>
-                ) : null}
+                {item.title}
               </button>
             );
           })}

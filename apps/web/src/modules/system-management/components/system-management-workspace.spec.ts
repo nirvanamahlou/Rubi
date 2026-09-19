@@ -16,9 +16,15 @@ const styles = readFileSync(
 );
 
 describe('system management reference implementation', () => {
-  it('keeps the overview, filters, and module hub without a duplicate section-settings tab', () => {
+  it('groups the module hub under the seven primary system sections', () => {
     for (const label of [
-      'نمای کلی',
+      'فضای کار',
+      'فروش و ارتباط با مشتری',
+      'رزرواسیون و تامین سفر',
+      'مالی',
+      'سرمایه انسانی',
+      'اسناد و گزارش',
+      'تنظیمات شرکت',
       'بررسی تغییرات',
       'تاریخچه تغییرات',
       'جست‌وجوی تنظیمات',
@@ -27,16 +33,8 @@ describe('system management reference implementation', () => {
 
     expect(workspace).not.toContain('تنظیمات بخش‌ها');
     expect(workspace).not.toContain("page: 'modules'");
-
-    for (const category of [
-      'مشتری و فروش',
-      'عملیات سفر',
-      'مالی و همکاری',
-      'سازمان و بهره‌وری',
-      'زیرساخت و داده',
-      'مدیریت',
-    ])
-      expect(workspace).toContain(category);
+    expect(workspace).toContain("moduleIds: ['tasks', 'messages']");
+    expect(workspace).toContain("moduleIds: ['documents', 'reports']");
   });
 
   it('includes every settings module and its reference card catalog', () => {
@@ -93,7 +91,7 @@ describe('system management reference implementation', () => {
     expect(workspace).not.toContain('styles.sidebar');
     expect(workspace).not.toContain('styles.topbar');
     expect(workspace).toContain('aria-modal="true"');
-    expect(workspace).toContain('aria-pressed={category === item}');
+    expect(workspace).toContain('aria-pressed={active}');
     expect(workspace).toContain('داده‌های عملیاتی');
     expect(workspace).toContain('مقادیر مرجع');
     expect(workspace).toContain('مشاهده تنظیمات');
