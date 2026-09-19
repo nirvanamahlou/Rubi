@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import type { TicketOfferCreateV1, TicketOfferV1 } from '@nora/contracts';
 import {
   BusFront,
   Plane,
@@ -69,6 +70,9 @@ import formStyles from './ticket-form.module.css';
 import { TicketDatePicker } from './ticket-date-picker';
 import { IssuedTicketsWorkspace } from './issued-tickets-workspace';
 import { TourWorkspace } from './tour-workspace';
+import { toursApi } from '../api/tours';
+import { getPublicApiBaseUrl } from '@/lib/environment';
+import { refreshAuthenticatedSession } from '@/lib/auth-session';
 
 const actor = 'کاربر جاری';
 const transportIcons = {
@@ -85,6 +89,44 @@ function availableInventory(product: Product): Inventory {
   };
 }
 
+function flightOfferInput(
+  definition: ProductInput,
+  references: readonly Reference[],
+): TicketOfferCreateV1 | undefined {
+  if (definition.transport !== 'flight') return undefined;
+  if (definition.segments.length !== 1)
+    throw new Error('برای فروش، هر بلیط پرواز باید یک مسیر مستقل داشته باشد.');
+  const segment = definition.segments[0]!;
+  if (!segment.departureAt || !segment.arrivalAt)
+    throw new Error('ساعت حرکت و رسیدن برای بلیط قابل فروش الزامی است.');
+  const carrier = references.find(
+    (reference) =>
+      reference.kind === 'airline' && reference.id === segment.airlineId,
+  );
+  if (!carrier?.name || !segment.flightNumber.trim())
+    throw new Error('ایرلاین و شماره پرواز برای بلیط قابل فروش الزامی است.');
+  const cabin = references.find(
+    (reference) =>
+      reference.kind === 'flightClass' &&
+      reference.id === definition.flightClassId,
+  );
+  const classText = `${cabin?.code ?? ''} ${cabin?.name ?? ''}`.toUpperCase();
+  const cabinClassCode = classText.includes('FIRST')
+    ? 'FIRST'
+    : classText.includes('BUSINESS')
+      ? 'BUSINESS'
+      : 'ECONOMY';
+  return {
+    originId: segment.originCityId,
+    destinationId: segment.destinationCityId,
+    departureAt: segment.departureAt,
+    arrivalAt: segment.arrivalAt,
+    carrierName: carrier.name,
+    serviceNumber: segment.flightNumber.trim(),
+    cabinClassCode,
+    totalCapacity: definition.totalCapacity,
+  };
+}
 export function TicketWorkspace() {
   return (
     <>
@@ -166,7 +208,45 @@ function TicketCatalogWorkspace() {
     startDate: string;
   }>();
   const [reason, setReason] = useState('');
+  const [publishedOffers, setPublishedOffers] = useState<
+    readonly TicketOfferV1[]
+  >([]);
+  const [publishedProblem, setPublishedProblem] = useState('');
 
+  const refreshPublishedOffers = async () => {
+    try {
+      const result = await toursApi.managedOffers();
+      setPublishedOffers(result.data);
+      setPublishedProblem('');
+    } catch (error) {
+      setPublishedProblem(
+        error instanceof Error
+          ? error.message
+          : 'دریافت بلیط‌های قابل فروش ناموفق بود.',
+      );
+    }
+  };
+  const publishFlights = async (inputs: readonly ProductInput[]) => {
+    const publishable = inputs
+      .map((input) => flightOfferInput(input, references))
+      .filter((input): input is TicketOfferCreateV1 => Boolean(input));
+    if (!publishable.length) return;
+    const base = getPublicApiBaseUrl();
+    if (!base) throw new Error('نشانی سرور تنظیم نشده است.');
+    const session = await refreshAuthenticatedSession(base);
+    const branchId = session?.user.branches[0]?.id;
+    if (!branchId) throw new Error('شعبه مجاز برای ثبت بلیط پیدا نشد.');
+    await Promise.all(
+      publishable.map((input) =>
+        toursApi.publishOffer(input, branchId, crypto.randomUUID()),
+      ),
+    );
+    await refreshPublishedOffers();
+  };
+
+  useEffect(() => {
+    void refreshPublishedOffers();
+  }, []);
   useEffect(() => {
     const timer = window.setTimeout(() => {
       const stored = parseCatalogSnapshot(
@@ -243,6 +323,7 @@ function TicketCatalogWorkspace() {
         updated = replacePreview(updated, next);
       }
     }
+    if (!current) await publishFlights(inputs);
     setProducts(updated);
     setForm(null);
     setProblem('');
@@ -281,6 +362,7 @@ function TicketCatalogWorkspace() {
           now,
           actor,
         );
+        await publishFlights([definition]);
         updated = replacePreview(updated, next);
       }
       setProducts(updated);
@@ -378,6 +460,73 @@ function TicketCatalogWorkspace() {
       {problem && !statusChange && !repeat ? (
         <Alert tone="error" title={problem} />
       ) : null}
+      <Card className="overflow-hidden p-0">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b bg-primary/5 px-4 py-3">
+          <div>
+            <h2 className="font-bold">بلیط‌های ثبت‌شده برای فروش و قرارداد</h2>
+            <p className="mt-1 text-xs text-muted-foreground">
+              این فهرست همان منبع انتخاب بلیط در قرارداد جدید است.
+            </p>
+          </div>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            onClick={() => void refreshPublishedOffers()}
+          >
+            به‌روزرسانی فهرست
+          </Button>
+        </div>
+        {publishedProblem ? (
+          <Alert className="m-4" tone="error" title={publishedProblem} />
+        ) : publishedOffers.length ? (
+          <div className="overflow-x-auto">
+            <table className="min-w-full text-sm">
+              <thead className="bg-muted/40 text-xs text-muted-foreground">
+                <tr>
+                  <th className="px-4 py-3 text-start">ایرلاین / پرواز</th>
+                  <th className="px-4 py-3 text-start">مسیر</th>
+                  <th className="px-4 py-3 text-start">حرکت</th>
+                  <th className="px-4 py-3 text-start">ظرفیت قابل فروش</th>
+                  <th className="px-4 py-3 text-start">وضعیت</th>
+                </tr>
+              </thead>
+              <tbody>
+                {publishedOffers.map((offer) => (
+                  <tr key={offer.id} className="border-t">
+                    <td className="px-4 py-3 font-medium">
+                      {offer.carrierName} ·{' '}
+                      <span dir="ltr">{offer.serviceNumber}</span>
+                    </td>
+                    <td className="px-4 py-3">
+                      {referenceLabel('city', offer.originId, offer.originId)} ←{' '}
+                      {referenceLabel(
+                        'city',
+                        offer.destinationId,
+                        offer.destinationId,
+                      )}
+                    </td>
+                    <td className="px-4 py-3" dir="ltr">
+                      {displayTime(offer.departureAt, 'Asia/Tehran')}
+                    </td>
+                    <td className="px-4 py-3">
+                      {offer.remainingCapacity.toLocaleString('fa-IR')} از{' '}
+                      {offer.totalCapacity.toLocaleString('fa-IR')}
+                    </td>
+                    <td className="px-4 py-3">
+                      {offer.status === 'ACTIVE' ? 'فعال' : offer.status}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <p className="px-4 py-5 text-sm text-muted-foreground">
+            هنوز بلیط قابل فروش ثبت نشده است.
+          </p>
+        )}
+      </Card>
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <Card className="border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100/70 p-5 dark:border-blue-900 dark:from-blue-950/70 dark:to-blue-900/30">
           <p className="text-sm text-muted-foreground">کل بلیط‌ها</p>
