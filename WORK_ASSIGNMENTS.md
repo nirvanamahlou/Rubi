@@ -1,3 +1,10 @@
+## FINANCE-OPERATIONAL-CARTABLE-0919 — PC-A — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-19: کارتابل مالی عملیاتی با تأیید دریافت در حساب مقصد، پرداخت کارگزار از حساب مبدأ، مانده و تاریخ/شماره پیگیری، جست‌وجوی قرارداد و تأیید تحویل مدارک، و KPIهای فیلترپذیر تکمیل شود. شاخه `codex/pc-a-finance-operational-cartable-0919` از `origin/develop@a8c050bd`؛ `COMPUTER_ID=PC-A`.
+- رزرو: Finance/Sales public receipt contract، Finance API/Web، Sales public projection/confirmation، migration افزایشی و سازگار برای ثبت حساب مقصد دریافت، تست‌های هدفمند و این سند. `Migration Owner`، Finance/Sales shared-contract و Central Docs برای این slice: `PC-A/FINANCE-OPERATIONAL-CARTABLE-0919`. Dependency/Lockfile رزرو نمی‌شود.
+- مرز: Finance فقط public service Sales/Reservations را فراخوانی می‌کند؛ مبلغ Decimal/ارز و زمان UTC، مجوز، audit، optimistic/idempotency و FK واقعی اجباری‌اند. هیچ دادهٔ واقعی، پرداخت بیرونی، Grant، حذف/بازنویسی تاریخچه یا تغییر ماژول مالک دیگر انجام نمی‌شود.
+- نتیجه: تأیید دریافت فقط با حساب مقصد فعال، هم‌ارز و هم‌شعبه انجام و FK حساب روی پرداخت Sales ثبت می‌شود؛ UI انتخاب/تعریف حساب، KPI و فیلترها به جریان عملیاتی متصل‌اند. ۱۶ تست هدفمند، Prisma validate، lint/typecheck و build بخش‌های متاثر موفق و migration محلی اعمال شده است.
+
 ## SYSTEM-MANAGEMENT-NAVIGATION-003 — PC-B — READY_FOR_REVIEW
 
 - درخواست مالک در 2026-09-19: زیر‌بخش‌های دسته‌های «مدیریت سیستم» باید با مسیرهای واقعی Rubi منطبق باشند؛ «فضای کار» نیز صریحاً «میزکار من» و «داشبورد» را داشته باشد. `COMPUTER_ID=PC-B`؛ ادامه روی شاخهٔ `codex/pc-b-system-management`.

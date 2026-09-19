@@ -481,6 +481,7 @@ export interface FinanceBankOptionV1 {
 
 export interface FinanceReceiptDecisionCommandV1 {
   version: 1;
+  accountId?: string | null;
   contractId: string;
   action: 'APPROVE' | 'CORRECTION_REQUIRED';
   reason?: string | null;

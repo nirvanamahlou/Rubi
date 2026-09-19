@@ -168,6 +168,12 @@ describe('finance workspace component contract', () => {
     expect(liveInboxSource).not.toContain('عملیات مالی پس از فعال‌سازی');
     expect(liveInboxSource).toContain('origin');
     expect(liveInboxSource).toContain('تأیید دریافت');
+    expect(liveInboxSource).toContain('واریز به حساب');
+    expect(liveInboxSource).toContain('انتخاب حساب مقصد');
+    expect(liveInboxSource).toContain("accountId: actionKind === 'APPROVE'");
+    expect(liveInboxSource).toContain(
+      'account.branchId === actionItem?.branchReference',
+    );
     expect(liveInboxSource).toContain('درخواست اصلاح');
     expect(liveInboxSource).toContain('ثبت پرداخت کارگزار');
     expect(liveInboxSource).toContain('حساب پرداخت‌کننده');

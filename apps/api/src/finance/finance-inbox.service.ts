@@ -91,7 +91,9 @@ export class FinanceInboxService {
         : [];
     const ticketItems =
       ticketResult.status === 'fulfilled' ? ticketResult.value : [];
-    const ticketStates = await this.ticketCosts.queueStates(ticketItems.map((item) => item.id));
+    const ticketStates = await this.ticketCosts.queueStates(
+      ticketItems.map((item) => item.id),
+    );
     const invoiceItems =
       invoiceResult.status === 'fulfilled' ? invoiceResult.value : [];
     const correctionItems =
@@ -194,7 +196,9 @@ export class FinanceInboxService {
         source: 'PURCHASES',
         kind: 'PAYMENT_REQUEST',
         sourceReference: purchase.id,
-        sourceContextReference: ticketStates.get(purchase.id)?.costRevisionId ?? purchase.catalogProductReference,
+        sourceContextReference:
+          ticketStates.get(purchase.id)?.costRevisionId ??
+          purchase.catalogProductReference,
         contractReference: null,
         title: 'خرید بلیط ' + purchase.title,
         partyDisplaySnapshot: purchase.supplierDisplaySnapshot,
@@ -202,15 +206,21 @@ export class FinanceInboxService {
           ? 'قیمت خرید بلیط برای تاریخ ' + purchase.serviceDate
           : 'درخواست ثبت قیمت خرید بلیط توسط مالی',
         amount: ticketStates.has(purchase.id)
-          ? { amount: ticketStates.get(purchase.id)!.invoiceAmount,
-              currencyCode: ticketStates.get(purchase.id)!.currencyCode }
+          ? {
+              amount: ticketStates.get(purchase.id)!.invoiceAmount,
+              currencyCode: ticketStates.get(purchase.id)!.currencyCode,
+            }
           : null,
         settlement: ticketStates.has(purchase.id)
-          ? { paidAmount: ticketStates.get(purchase.id)!.paidAmount,
-              remainingAmount: ticketStates.get(purchase.id)!.remainingAmount }
+          ? {
+              paidAmount: ticketStates.get(purchase.id)!.paidAmount,
+              remainingAmount: ticketStates.get(purchase.id)!.remainingAmount,
+            }
           : null,
         status: ticketStates.get(purchase.id)?.status ?? 'NEW',
-        dueAt: purchase.serviceDate ? purchase.serviceDate + 'T00:00:00.000Z' : null,
+        dueAt: purchase.serviceDate
+          ? purchase.serviceDate + 'T00:00:00.000Z'
+          : null,
         createdAt: purchase.createdAt,
         requesterDisplaySnapshot: null,
         branchReference: purchase.branchId,
@@ -442,6 +452,22 @@ export class FinanceInboxService {
     if (!payment)
       throw new NotFoundException('درخواست دریافت در صف مالی یافت نشد.');
     if (input.action === 'APPROVE') {
+      if (!input.accountId)
+        throw new BadRequestException('حساب مقصد دریافت را انتخاب کنید.');
+      const account =
+        await this.database.client.financeSettlementAccount.findFirst({
+          where: {
+            id: input.accountId,
+            branchId: payment.branchId,
+            currencyCode: payment.currencyCode,
+            isActive: true,
+          },
+          select: { id: true },
+        });
+      if (!account)
+        throw new BadRequestException(
+          'حساب مقصد فعال و هم‌ارز با پرداخت نیست.',
+        );
       const eventId = randomUUID();
       const result = await this.sales.applyFinancePaymentConfirmed({
         version: 1,
@@ -449,6 +475,7 @@ export class FinanceInboxService {
         contractId: input.contractId,
         paymentId,
         financePaymentReference: `FIN-RCPT-${eventId}`,
+        receiptAccountId: account.id,
         confirmedAt: new Date().toISOString(),
         reviewedByUserId: actor.userId,
         reason,

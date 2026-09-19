@@ -215,15 +215,13 @@ export function FinanceInboxLiveWorkspace() {
   }, [data, fromDate, search, source, status, toDate]);
   const selected =
     items.find(({ id }) => id === selectedId) ?? items[0] ?? null;
-  const openCount =
-    data?.items.filter((item) => !closed.has(item.status)).length ?? 0;
-  const overdueCount =
-    data?.items.filter(
-      (item) =>
-        !closed.has(item.status) &&
-        item.dueAt !== null &&
-        data.generatedAt > item.dueAt,
-    ).length ?? 0;
+  const openCount = items.filter((item) => !closed.has(item.status)).length;
+  const overdueCount = items.filter(
+    (item) =>
+      !closed.has(item.status) &&
+      item.dueAt !== null &&
+      (data?.generatedAt ?? '') > item.dueAt,
+  ).length;
   const availableSources = (data?.sources ?? []).filter(
     ({ connection }) => connection !== 'NOT_CONNECTED',
   );
@@ -252,8 +250,14 @@ export function FinanceInboxLiveWorkspace() {
     item: FinanceInboxItemV1,
     kind: 'APPROVE' | 'CORRECTION_REQUIRED',
   ) {
+    const eligibleAccounts = accounts.filter(
+      (account) =>
+        account.branchId === item.branchReference &&
+        account.currencyCode === item.amount?.currencyCode,
+    );
     setActionItem(item);
     setActionKind(kind);
+    setAccountId(kind === 'APPROVE' ? (eligibleAccounts[0]?.id ?? '') : '');
     setReason('');
     setActionError('');
   }
@@ -339,6 +343,7 @@ export function FinanceInboxLiveWorkspace() {
           version: 1,
           contractId: actionItem.sourceContextReference,
           action: actionKind,
+          accountId: actionKind === 'APPROVE' ? accountId : null,
           reason: reason.trim() || null,
         });
       }
@@ -840,6 +845,42 @@ export function FinanceInboxLiveWorkspace() {
                 </label>
               </>
             ) : null}
+            {actionKind === 'APPROVE' ? (
+              <label className="grid gap-2">
+                <span>واریز به حساب</span>
+                <Select value={accountId} onValueChange={setAccountId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="انتخاب حساب مقصد" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {accounts
+                      .filter(
+                        (account) =>
+                          account.branchId === actionItem?.branchReference &&
+                          account.currencyCode ===
+                            actionItem?.amount?.currencyCode,
+                      )
+                      .map((account) => (
+                        <SelectItem key={account.id} value={account.id}>
+                          {account.title} · {account.currencyCode}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    setAccountDialog(true);
+                    setActionError('');
+                  }}
+                >
+                  <PlusCircle className="size-4" />
+                  تعریف حساب جدید
+                </Button>
+              </label>
+            ) : null}
             <label className="grid gap-2">
               <span>
                 {actionKind === 'CORRECTION_REQUIRED'
@@ -870,6 +911,7 @@ export function FinanceInboxLiveWorkspace() {
                 type="submit"
                 disabled={
                   actionBusy ||
+                  (actionKind === 'APPROVE' && !accountId) ||
                   (actionKind === 'PAYMENT' &&
                     (!accountId || !paymentMethodId || !paidAmount)) ||
                   (actionKind === 'TICKET_COST' &&
@@ -900,7 +942,11 @@ export function FinanceInboxLiveWorkspace() {
 
       <Dialog open={accountDialog} onOpenChange={setAccountDialog}>
         <DialogContent dir="rtl">
-          <DialogTitle>تعریف حساب پرداخت</DialogTitle>
+          <DialogTitle>
+            {actionKind === 'APPROVE'
+              ? 'تعریف حساب دریافت'
+              : 'تعریف حساب پرداخت'}
+          </DialogTitle>
           <DialogDescription>
             این حساب فقط برای شعبه و ارز همین درخواست قابل انتخاب است.
           </DialogDescription>

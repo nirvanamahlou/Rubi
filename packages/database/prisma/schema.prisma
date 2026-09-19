@@ -3946,34 +3946,37 @@ model SalesContractPriceComponent {
 }
 
 model SalesContractPaymentEntry {
-  id                      String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  contractId              String             @map("contract_id") @db.Uuid
-  amount                  Decimal            @db.Decimal(20, 4)
-  currencyCode            String             @map("currency_code") @db.VarChar(3)
-  dueAt                   DateTime           @map("due_at") @db.Timestamptz(3)
+  id                      String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  contractId              String                    @map("contract_id") @db.Uuid
+  amount                  Decimal                   @db.Decimal(20, 4)
+  currencyCode            String                    @map("currency_code") @db.VarChar(3)
+  dueAt                   DateTime                  @map("due_at") @db.Timestamptz(3)
   method                  SalesPaymentMethod
-  status                  SalesPaymentStatus @default(PENDING_FINANCE_CONFIRMATION)
-  description             String?            @db.VarChar(500)
-  paymentReference        String?            @map("payment_reference") @db.VarChar(160)
-  bankId                  String?            @map("bank_id") @db.Uuid
-  checkSecureIdentifier   String?            @map("check_secure_identifier") @db.VarChar(160)
-  checkOwnerName          String?            @map("check_owner_name") @db.VarChar(200)
-  checkDueDate            DateTime?          @map("check_due_date") @db.Date
-  idempotencyKey          String             @map("idempotency_key") @db.VarChar(160)
-  requestFingerprint      String             @map("request_fingerprint") @db.Char(64)
-  createdByUserId         String             @map("created_by_user_id") @db.Uuid
-  financePaymentReference String?            @map("finance_payment_reference") @db.VarChar(160)
-  financeConfirmedByRef   String?            @map("finance_confirmed_by_ref") @db.VarChar(160)
-  financeConfirmedAt      DateTime?          @map("finance_confirmed_at") @db.Timestamptz(3)
-  financeDecisionReason   String?            @map("finance_decision_reason") @db.VarChar(500)
-  financeReviewedByUserId String?            @map("finance_reviewed_by_user_id") @db.Uuid
-  financeReviewedAt       DateTime?          @map("finance_reviewed_at") @db.Timestamptz(3)
-  createdAt               DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt               DateTime           @updatedAt @map("updated_at") @db.Timestamptz(3)
-  contract                SalesContract      @relation(fields: [contractId], references: [id], onDelete: Cascade)
-  financeReviewedBy       User?              @relation("SalesPaymentFinanceReviewer", fields: [financeReviewedByUserId], references: [id], onDelete: Restrict)
+  status                  SalesPaymentStatus        @default(PENDING_FINANCE_CONFIRMATION)
+  description             String?                   @db.VarChar(500)
+  paymentReference        String?                   @map("payment_reference") @db.VarChar(160)
+  bankId                  String?                   @map("bank_id") @db.Uuid
+  checkSecureIdentifier   String?                   @map("check_secure_identifier") @db.VarChar(160)
+  checkOwnerName          String?                   @map("check_owner_name") @db.VarChar(200)
+  checkDueDate            DateTime?                 @map("check_due_date") @db.Date
+  idempotencyKey          String                    @map("idempotency_key") @db.VarChar(160)
+  requestFingerprint      String                    @map("request_fingerprint") @db.Char(64)
+  createdByUserId         String                    @map("created_by_user_id") @db.Uuid
+  financePaymentReference String?                   @map("finance_payment_reference") @db.VarChar(160)
+  financeConfirmedByRef   String?                   @map("finance_confirmed_by_ref") @db.VarChar(160)
+  financeConfirmedAt      DateTime?                 @map("finance_confirmed_at") @db.Timestamptz(3)
+  financeReceiptAccountId String?                   @map("finance_receipt_account_id") @db.Uuid
+  financeReceiptAccount   FinanceSettlementAccount? @relation("SalesPaymentReceiptAccount", fields: [financeReceiptAccountId], references: [id], onDelete: Restrict)
+  financeDecisionReason   String?                   @map("finance_decision_reason") @db.VarChar(500)
+  financeReviewedByUserId String?                   @map("finance_reviewed_by_user_id") @db.Uuid
+  financeReviewedAt       DateTime?                 @map("finance_reviewed_at") @db.Timestamptz(3)
+  createdAt               DateTime                  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt               DateTime                  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  contract                SalesContract             @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  financeReviewedBy       User?                     @relation("SalesPaymentFinanceReviewer", fields: [financeReviewedByUserId], references: [id], onDelete: Restrict)
 
   @@unique([contractId, idempotencyKey])
+  @@index([financeReceiptAccountId, financeConfirmedAt])
   @@index([contractId, status, dueAt])
   @@index([financePaymentReference])
   @@index([financeReviewedByUserId, financeReviewedAt])
@@ -4296,6 +4299,7 @@ model FinanceSettlementAccount {
   createdAt                  DateTime                               @default(now()) @db.Timestamptz(3)
   updatedAt                  DateTime                               @updatedAt @db.Timestamptz(3)
   branch                     Branch                                 @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  salesReceiptPayments       SalesContractPaymentEntry[]            @relation("SalesPaymentReceiptAccount")
   bank                       MasterBank?                            @relation(fields: [bankId], references: [id], onDelete: Restrict)
   createdBy                  User                                   @relation("FinanceSettlementAccountCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
   supplierPayments           FinanceSupplierPaymentRevision[]

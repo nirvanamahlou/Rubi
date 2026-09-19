@@ -920,6 +920,7 @@ export class SalesService {
     contractId: string;
     paymentId: string;
     financePaymentReference: string;
+    receiptAccountId: string;
     confirmedAt: string;
     reviewedByUserId?: string;
     reason?: string;
@@ -928,6 +929,7 @@ export class SalesService {
       contractId: event.contractId,
       paymentId: event.paymentId,
       financePaymentReference: event.financePaymentReference,
+      receiptAccountId: event.receiptAccountId,
       financeConfirmationId: event.eventId,
       confirmedAt: event.confirmedAt,
       ...(event.reviewedByUserId

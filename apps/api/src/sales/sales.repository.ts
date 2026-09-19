@@ -755,6 +755,7 @@ export class SalesRepository {
     contractId: string;
     paymentId: string;
     financePaymentReference: string;
+    receiptAccountId: string;
     financeConfirmationId: string;
     confirmedAt: string;
     reviewedByUserId?: string;
@@ -773,6 +774,7 @@ export class SalesRepository {
           data: {
             status: 'FINANCE_CONFIRMED',
             financePaymentReference: event.financePaymentReference,
+            financeReceiptAccountId: event.receiptAccountId,
             financeConfirmedByRef: event.financeConfirmationId,
             financeConfirmedAt: new Date(event.confirmedAt),
             financeDecisionReason: event.reason?.trim() || null,
@@ -836,6 +838,7 @@ export class SalesRepository {
               afterSnapshot: {
                 paymentId: event.paymentId,
                 financePaymentReference: event.financePaymentReference,
+                receiptAccountId: event.receiptAccountId,
               },
             },
           });
