@@ -719,6 +719,30 @@ function trendDateLabel(
   ).format(date);
 }
 
+function trendTooltipTime(
+  value: string,
+  calendarSystem: TrendCalendarSystem,
+  grain: TrendTemporalGrain,
+) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  const locale =
+    calendarSystem === 'persian'
+      ? 'fa-IR-u-ca-persian-nu-latn'
+      : 'en-US-u-ca-gregory';
+  const time = new Intl.DateTimeFormat(locale, {
+    timeZone: 'Asia/Tehran',
+    month: 'short',
+    ...(grain === 'hour'
+      ? { day: 'numeric', hour: '2-digit', hourCycle: 'h23' }
+      : grain === 'month'
+        ? { year: 'numeric' }
+        : { day: 'numeric', year: 'numeric' }),
+  }).format(date);
+
+  return grain === 'week' ? `هفتهٔ ${time}` : time;
+}
+
 function formatDashboardNumber(
   value: number,
   options?: Intl.NumberFormatOptions,
@@ -2227,7 +2251,11 @@ function DashboardChart({
           />
           {points.map(({ x, y, value }, index) => (
             <circle key={`${x}-${y}`} cx={x} cy={y} fill="#172554" r="3.5">
-              <title>{`بازه انتخاب‌شده — ${labels[index]}: ${formatDashboardNumber(value)}`}</title>
+              <title>{`${trendTooltipTime(
+                labels[index] ?? '',
+                trendCalendarSystem,
+                temporalGrain,
+              )} — ${formatDashboardNumber(value)}`}</title>
             </circle>
           ))}
           {axisLabelIndexes.map((index) => {

@@ -44,6 +44,12 @@
 
 # Work Assignments
 
+## DASHBOARD-TREND-POINT-TOOLTIP-0919 — PC-C — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-19: tooltip هر نقطهٔ نمودار روند فقط زمان متناظر با grain نمودار و مقدار همان نقطه را نشان دهد؛ برای روز تاریخ و مقدار، برای ساعت ساعت همان روز و مقدار، و برای هفته/ماه برچسب زمانی متناسب نمایش داده شود.
+- `COMPUTER_ID=PC-C`؛ ادامهٔ شاخهٔ `codex/pc-c-dashboard-reporting-latest` از `origin/develop@acc35d18`. محدودهٔ رزروشده: renderer و تست‌های Dashboard Web و اسناد وضعیت. بدون Migration، Schema، دادهٔ عملیاتی/دمو، Permission، Dependency یا Lockfile.
+- نتیجه: Tooltip بومی هر point line اکنون فقط «زمانِ قالب‌بندی‌شده — مقدار انگلیسی» دارد؛ timestamp خام و عبارت اضافی حذف شدند. زمان با grain مشترک ساعت/روز/هفته/ماه، تقویم انتخاب‌شده و `Asia/Tehran` ساخته می‌شود. ۱۶ تست Dashboard، lint، typecheck و build تولیدی Web موفق‌اند؛ Web3000 و API4000 پاسخ HTTP ۲۰۰ دارند.
+
 ## DASHBOARD-TREND-TEXT-SUMMARY-0919 — PC-C — READY_FOR_REVIEW
 
 - درخواست مالک در 2026-09-19: خلاصهٔ متنی/جدول دادهٔ هر نمودار روند Dashboard نیز دقیقاً با grain زمانی نمودار ساخته و نمایش داده شود: امروز ساعتی، هفته و ماه روزانه، فصل هفتگی و سال ماهانه.

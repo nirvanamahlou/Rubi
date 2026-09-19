@@ -553,6 +553,8 @@ describe('dashboard permission and data states', () => {
     expect(source).toContain('compactChartValue');
     expect(source).toContain('trendTemporalGrain');
     expect(source).toContain('trendDateLabel');
+    expect(source).toContain('trendTooltipTime');
+    expect(source).not.toContain('بازه انتخاب‌شده — ${labels[index]}');
     expect(source).toContain('trendCalendarOptions');
     expect(source).toContain('تقویم برچسب‌های محور زمان');
     expect(source).toContain("key) => key === 'currency'");
