@@ -2,6 +2,7 @@
 
 - درخواست مالک در 2026-09-19: آیکون فیلتر تقویم محور X نمودار روند در frontend واضح و قابل‌مشاهده شود و خط جداکنندهٔ بالای Sparkline از همهٔ KPI Cardها حذف شود.
 - نتیجه: `CalendarDays` با رنگ اصلی و stroke واضح جایگزین آیکون کم‌کنتراستِ انتخاب تاریخ محور زمان شد؛ جداکنندهٔ `border-t` پیش از Sparkline از همهٔ KPI Cardها حذف شد. ۱۶ تست Dashboard، lint و typecheck Web موفق‌اند؛ API، Schema/Migration، Permission، دادهٔ عملیاتی و Dependency/Lockfile تغییر نکردند.
+
 ## FINANCE-INBOX-FILTERS-0919 — PC-A — READY_FOR_REVIEW
 
 - درخواست مالک در 2026-09-19: کارتابل مالی با فیلتر تاریخ و بخش، و KPIهای مبتنی بر همان فیلترها تکمیل شود. شاخه `codex/pc-a-finance-inbox-filters-0919` از `origin/develop@5d588cbd`؛ `COMPUTER_ID=PC-A`.
@@ -135,6 +136,7 @@
 - `COMPUTER_ID=PC-C`؛ شاخهٔ کاری `codex/pc-c-dashboard-reporting-latest` پس از دریافت `origin/develop@acc35d18`. محدودهٔ رزروشده: Projection نسخه‌دار Dashboard در `apps/api/src/reporting/**`، مصرف‌کننده و تست‌های Dashboard در `apps/web/src/modules/dashboard/**` و اسناد وضعیت همین واحد.
 - بدون Migration، Schema، دادهٔ عملیاتی/دمو، Permission، Dependency یا Lockfile. سری مقایسه فقط از factهای Projection تأییدشده و بازهٔ قبل هم‌طول تولید می‌شود؛ مقدار فرضی یا تبدیل ارز افزوده نخواهد شد.
 - نتیجه: این طراحی در Work Item `DASHBOARD-TREND-AXIS-CALENDAR-0919` با درخواست جدید مالک جایگزین شد: سری `comparisonValues` از trend حذف شده، اما مقایسهٔ KPI Cardها و visualهای غیرروند باقی مانده است.
+
 ## SALES-CONTRACT-TABLE-0919 — PC-A — LOCAL_COMPLETE
 
 Base acc35d18; COMPUTER_ID=PC-A. فهرست `/sales` اکنون سرستون خواناتر، ردیف‌های کم‌ارتفاع راه‌راه، شماره قرارداد برجسته، نام مشتری کوتاه‌شونده و ستون عملیات هم‌ردیف دارد. سه عمل موجود بدون تغییر دسترسی یا رفتار باقی مانده‌اند: پرداخت‌ها، PDF قرارداد و مدارک مسافر. API، داده، مجوز، Migration، وابستگی و ماژول دیگری تغییر نکرد. اعتبارسنجی: build بستهٔ Contracts، ۸ تست هدفمند Sales، lint سه فایل تغییرکرده، typecheck Web و build تولیدی Web موفق. شاخه: `codex/pc-a-sales-contract-table-0919`.
@@ -147,6 +149,13 @@ Base acc35d18; COMPUTER_ID=PC-A. فهرست `/sales` اکنون سرستون خ�
 - Reserve Reservations hotel-rate API/Web, Ticket Catalog public departure usage, Package Pricing API/Web/math/tests, additive Prisma migration/FKs, shared pricing contracts and bounded task/status/data/decision docs. Migration and central contract/docs owner: PC-A/TOUR-HOTEL-PRICING-FLOW-0916. No dependency lock. The initial preview-only restriction was superseded on 2026-09-16 by the owner's explicit request to combine this work with the primary development line; `origin/develop@10851d1a` is merged into this task branch without changing port 3100.
 - Ticket Catalog exports branch-scoped departures; Reservations persists the departure FK on immutable rate batches; Sales consumes that departure's current batches through the public projection. Legacy packs remain readable and may be explicitly linked by revision. Matching dates do not assign historical packs to a tour.
 - Result: explicit linkage, exact stay-night pricing, fixed/percent adjustments and multicurrency room-package preview/publications are implemented. The integration retained both Package Pricing and Reporting modules/Prisma relations and both documentation histories. Prisma validate/generate, Contracts/Database/API/Web typechecks, full API tests (1436 passed, 135 skipped), full Web tests (1477 passed), full API/Web lint and production builds pass. Two local demo tours completed Ticket → Finance payment → two-currency hotel grid → maker/checker publication and edit/republication on isolated `rubi_pricing_flow_0916`; the operational database is untouched. Locks release with the merge commit; origin is public so no public push is performed.
+
+## LOGIN-NOORA-MOTION-FOLLOWUP-0917 — PC-A — READY FOR REVIEW
+
+- درخواست اصلاحی مالک در 2026-09-17: پس‌زمینهٔ صفحهٔ ورود ثابت بماند؛ فقط هواپیمای واقعی همان عکس از بیرون سمت راست به چپ حرکت کند و در جای اصلی متوقف شود. نام «NOORA» نیز یک‌باره ظاهر نشود و با حرکت ابر نرم از سمت چپ، تدریجی نوشته و ماندگار شود.
+- شاخهٔ مستقل codex/pc-a-login-noora-motion-followup-0917 از آخرین origin/develop؛ محدودهٔ رزرو فقط کامپوننت و CSS پس‌زمینهٔ Login، تست هدفمند و همین اسناد است. فرم/منطق احراز هویت، API، Migration، Permission، Dependency/Lockfile و دادهٔ عملیاتی تغییر نمی‌کنند.
+- تعارض اسناد با حفظ کامل تاریخچهٔ TOUR-HOTEL-PRICING-FLOW و افزودن این واحد مستقل حل شد.
+- تغییر نهایی در 2026-09-19 طبق درخواست مالک: لایهٔ ماسک و حرکت هواپیما حذف شد و خود تصویر login-airline-b2.png به‌صورت پس‌زمینهٔ ثابت باقی می‌ماند.
 
 ## HOTEL-RATE-PACKS-0915 — PC-A — IMPLEMENTED ON ISOLATED 3200 / REVIEW PENDING
 
