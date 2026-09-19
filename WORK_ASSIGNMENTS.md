@@ -2,6 +2,13 @@
 
 - درخواست مالک در 2026-09-19: آیکون فیلتر تقویم محور X نمودار روند در frontend واضح و قابل‌مشاهده شود و خط جداکنندهٔ بالای Sparkline از همهٔ KPI Cardها حذف شود.
 - نتیجه: `CalendarDays` با رنگ اصلی و stroke واضح جایگزین آیکون کم‌کنتراستِ انتخاب تاریخ محور زمان شد؛ جداکنندهٔ `border-t` پیش از Sparkline از همهٔ KPI Cardها حذف شد. ۱۶ تست Dashboard، lint و typecheck Web موفق‌اند؛ API، Schema/Migration، Permission، دادهٔ عملیاتی و Dependency/Lockfile تغییر نکردند.
+## FINANCE-INBOX-FILTERS-0919 — PC-A — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-19: کارتابل مالی با فیلتر تاریخ و بخش، و KPIهای مبتنی بر همان فیلترها تکمیل شود. شاخه `codex/pc-a-finance-inbox-filters-0919` از `origin/develop@5d588cbd`؛ `COMPUTER_ID=PC-A`.
+- محدودهٔ رزروشده: فقط `apps/web/src/modules/finance/components/finance-inbox-live-workspace.tsx`، تست هدفمند همان UI و این ثبت وضعیت. فیلترها روی دادهٔ عملیاتی موجود اعمال می‌شوند و API، قرارداد مشترک، Schema/Migration، حسابداری، Permission، Dependency/Lockfile و دادهٔ واقعی تغییر نمی‌کنند.
+- ثبت حساب مقصد برای تأیید دریافت، به‌دلیل نیاز به قرارداد و persistence مشترک Sales↔Finance، خارج از این slice است و نباید به‌صورت نمایشی/غیرقابل‌ثبت اضافه شود.
+- نتیجه: فیلتر بخش، وضعیت، جست‌وجو و بازهٔ تاریخ ثبت درخواست در یک نمای عملیاتی جمع شده‌اند؛ کارت «کل درخواست‌ها» نیز مطابق نتیجهٔ فیلترشده به‌روزرسانی می‌شود. داده یا تصمیم مالی جدیدی ساخته نمی‌شود.
+- اعتبارسنجی: ۸ تست متمرکز رابط مالی، Web TypeScript و lint فایل تغییرکرده موفق‌اند. Migration، API، قرارداد مشترک، Permission، Dependency/Lockfile و دادهٔ عملیاتی تغییر نکرده‌اند.
 
 ## SYSTEM-MANAGEMENT-BACKEND-001 — PC-B — READY_FOR_REVIEW
 
@@ -128,6 +135,9 @@
 - `COMPUTER_ID=PC-C`؛ شاخهٔ کاری `codex/pc-c-dashboard-reporting-latest` پس از دریافت `origin/develop@acc35d18`. محدودهٔ رزروشده: Projection نسخه‌دار Dashboard در `apps/api/src/reporting/**`، مصرف‌کننده و تست‌های Dashboard در `apps/web/src/modules/dashboard/**` و اسناد وضعیت همین واحد.
 - بدون Migration، Schema، دادهٔ عملیاتی/دمو، Permission، Dependency یا Lockfile. سری مقایسه فقط از factهای Projection تأییدشده و بازهٔ قبل هم‌طول تولید می‌شود؛ مقدار فرضی یا تبدیل ارز افزوده نخواهد شد.
 - نتیجه: این طراحی در Work Item `DASHBOARD-TREND-AXIS-CALENDAR-0919` با درخواست جدید مالک جایگزین شد: سری `comparisonValues` از trend حذف شده، اما مقایسهٔ KPI Cardها و visualهای غیرروند باقی مانده است.
+## SALES-CONTRACT-TABLE-0919 — PC-A — LOCAL_COMPLETE
+
+Base acc35d18; COMPUTER_ID=PC-A. فهرست `/sales` اکنون سرستون خواناتر، ردیف‌های کم‌ارتفاع راه‌راه، شماره قرارداد برجسته، نام مشتری کوتاه‌شونده و ستون عملیات هم‌ردیف دارد. سه عمل موجود بدون تغییر دسترسی یا رفتار باقی مانده‌اند: پرداخت‌ها، PDF قرارداد و مدارک مسافر. API، داده، مجوز، Migration، وابستگی و ماژول دیگری تغییر نکرد. اعتبارسنجی: build بستهٔ Contracts، ۸ تست هدفمند Sales، lint سه فایل تغییرکرده، typecheck Web و build تولیدی Web موفق. شاخه: `codex/pc-a-sales-contract-table-0919`.
 
 ## TOUR-HOTEL-PRICING-FLOW-0916 — PC-A — MERGED WITH DEVELOP / VERIFIED LOCALLY
 

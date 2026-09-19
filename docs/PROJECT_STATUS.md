@@ -160,6 +160,9 @@ Sparklineهای KPI Card بدون marker نقطه‌ای، با خط و سایه
 دمو/عملیاتی تغییر نکرده‌اند. Web روی `localhost:3000` و API روی ۴۰۰۰ با پاسخ HTTP
 ۲۰۰ فعال‌اند.
 
+## 2026-09-19 — SALES-CONTRACT-TABLE-0919 — LOCAL_COMPLETE
+
+فهرست قراردادهای `/sales` به جدول فشرده‌تر و قابل اسکن بازطراحی شد: سرستون با کنتراست ملایم، ردیف‌های راه‌راه، شماره قرارداد برجسته، نام مشتری کنترل‌شده و ستون عملیات سه‌دکمه‌ای هم‌ردیف. پرداخت‌ها، PDF قرارداد و مدارک مسافر همان عملیات پیشین با مجوزها و مسیرهای قبلی‌اند. API، داده، مجوز، Migration و وابستگی تغییری نکردند. build بستهٔ Contracts، ۸ تست هدفمند Sales، lint سه فایل تغییرکرده، typecheck Web و build تولیدی Web موفق‌اند. شاخه: `codex/pc-a-sales-contract-table-0919`.
 - 2026-09-16 Package Pricing commission follow-up: drafts/publications now support percent or fixed commission with an explicit currency. Fixed commission is deducted once from the matching currency profit bucket and never changes sale; historical rows default to percent. Additive migration was applied only to isolated `rubi_pricing_flow_0916`. Tour demo 1 published version 3 with fixed EUR 15 while tour demo 2 remains percent.
 ## 2026-09-16 — TOUR-HOTEL-PRICING-FLOW-0916 — MERGED WITH DEVELOP / VERIFIED LOCALLY
 

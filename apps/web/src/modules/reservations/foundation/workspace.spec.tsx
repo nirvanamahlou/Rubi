@@ -115,7 +115,6 @@ describe('reservations workspace access and states', () => {
       'hotels',
       'vouchers',
       'insurance',
-      'manifests',
       'costs',
     ] as const) {
       const html = renderToStaticMarkup(
@@ -336,4 +335,6 @@ it('does not render generic reservation operation cards on the MANIFEST pane', (
   expect(html).toContain('MANIFEST بلیط‌ها');
   expect(html).not.toContain('فرم رزواسیون داخلی');
   expect(html).not.toContain('TEST-001');
+  expect(html).not.toContain('قرارداد انتخاب‌شده');
+  expect(html).not.toContain('عملیات قرارداد انتخاب‌شده');
 });

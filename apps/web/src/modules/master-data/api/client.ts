@@ -408,13 +408,29 @@ export const masterDataApi = {
           };
         }
       }
-      return uploaded.scanStatus === 'CLEAN'
-        ? attached
-        : {
-            ...attached,
-            warning:
-              'قالب ذخیره شد و تا پایان اسکن امنیتی اسناد به‌صورت پیش‌نویس باقی می‌ماند.',
-          };
+      if (uploaded.scanStatus !== 'CLEAN')
+        return {
+          ...attached,
+          warning:
+            'قالب ذخیره شد و تا پایان اسکن امنیتی اسناد به‌صورت پیش‌نویس باقی می‌ماند.',
+        };
+
+      try {
+        return await masterDataApi.update('manifest-templates', base.data.id, {
+          values: {
+            fileReferenceId: uploaded.id,
+            publicationStatus: 'ACTIVE',
+          },
+          version: attached.data.version,
+        });
+      } catch (error) {
+        return {
+          ...attached,
+          warning:
+            'فایل با موفقیت اسکن شد، اما فعال‌سازی قالب نیازمند اقدام مجدد است: ' +
+            (error instanceof Error ? error.message : 'خطای نامشخص'),
+        };
+      }
     } catch (error) {
       try {
         await masterDataApi.archiveManifestTemplateFile(uploaded.id);
