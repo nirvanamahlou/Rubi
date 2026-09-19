@@ -44,6 +44,12 @@
 
 # Work Assignments
 
+## DASHBOARD-VISUAL-DETAILS-DRAWER-0919 — PC-C — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-19: جدول بازشوندهٔ قبلی جزئیات دادهٔ نمودار بازگردد؛ «جزئیات نمودار» به یک Drawer مشابه پنل تعریف KPI تبدیل و دکمه‌اش در نوار پایینِ سمت راست، روبه‌روی دکمهٔ بررسی گزارش مرتبط قرار بگیرد.
+- `COMPUTER_ID=PC-C`؛ ادامهٔ شاخهٔ `codex/pc-c-dashboard-reporting-latest`. محدودهٔ رزروشده: renderer و تست‌های Dashboard Web و اسناد وضعیت. بدون تغییر API، Migration، Schema، دادهٔ عملیاتی/دمو، Permission، Dependency یا Lockfile.
+- نتیجه: `VisualDataSummary` به `<details>` بازشوندهٔ قبلی با عنوان و جدول داده بازگشت. دکمهٔ پایین-راست `جزئیات نمودار` یک Drawer مستقل و قابل‌دسترسی باز می‌کند که هدف، خروجی واقعی، قاعدهٔ نمایش، فیچرهای منبع و مجوز همان visual را نشان می‌دهد؛ گزارش مرتبط در footer Drawer باز می‌شود و Drawer را نمی‌بندد. ۱۶ تست Dashboard، lint، TypeScript و build تولیدی Web موفق‌اند.
+
 ## DASHBOARD-KPI-SPARKLINE-SCALE-0919 — PC-C — READY_FOR_REVIEW
 
 - درخواست مالک در 2026-09-19: نمودار روند زیر KPI Cardها بزرگ‌تر و هم‌تراز نمونهٔ مرجع شود.

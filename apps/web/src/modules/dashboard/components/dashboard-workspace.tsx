@@ -102,6 +102,7 @@ import {
   dashboardNavigation,
   dashboardPages,
   type DashboardKpiDefinition,
+  type DashboardVisualDefinition,
   type DashboardVisualKind,
 } from '../model/registry';
 
@@ -1941,15 +1942,11 @@ function EmptyVisualCanvas({ kind }: { kind: DashboardVisualKind }) {
 
 function VisualDataSummary({
   labels,
-  onOpenChange,
-  open,
   title,
   trend,
   values,
 }: {
   labels: readonly string[];
-  onOpenChange?(open: boolean): void;
-  open?: boolean;
   title: string;
   trend?: {
     calendarSystem: TrendCalendarSystem;
@@ -1968,12 +1965,8 @@ function VisualDataSummary({
           : 'روز'
     : 'دسته';
   return (
-    <details
-      className="mt-3 rounded-xl border border-border bg-surface"
-      onToggle={(event) => onOpenChange?.(event.currentTarget.open)}
-      open={open}
-    >
-      <summary className="sr-only">
+    <details className="mt-3 rounded-xl border border-border bg-surface">
+      <summary className="cursor-pointer rounded-xl px-3 py-2 text-xs font-bold text-foreground outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background">
         {temporalLabel
           ? `خلاصهٔ ${temporalLabel} و جدول داده`
           : 'خلاصه متنی و جدول داده'}
@@ -2663,6 +2656,230 @@ export function dashboardReportCodeFromDrilldown(
   }
 }
 
+function VisualDetailsPanel({
+  data,
+  decision,
+  description,
+  kind,
+  onClose,
+  onOpenReportConfiguration,
+  permission,
+  range,
+  reportCode,
+  source,
+  title,
+  trendCalendarSystem,
+  visualId,
+}: {
+  data?: DashboardVisualSnapshot | undefined;
+  decision?: string | undefined;
+  description: string;
+  kind: DashboardVisualKind;
+  onClose(): void;
+  onOpenReportConfiguration(reportCode: string): void;
+  permission: string;
+  range: DashboardRange;
+  reportCode?: string | undefined;
+  source: DashboardVisualDefinition['source'];
+  title: string;
+  trendCalendarSystem: TrendCalendarSystem;
+  visualId: string;
+}) {
+  const rangeLabel =
+    rangeOptions.find(([value]) => value === range)?.[1] ?? 'بازه انتخابی';
+  const temporalGrain =
+    kind === 'line' && data
+      ? trendTemporalGrain(range, data.labels)
+      : undefined;
+  const sampleValues = (data?.values ?? []).slice(0, 4);
+
+  return (
+    <Drawer
+      open
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
+      <DrawerContent
+        aria-describedby={`visual-definition-description-${visualId}`}
+        className="w-[min(94vw,38rem)] p-0"
+        dir="rtl"
+        id={`dashboard-visual-definition-panel-${visualId}`}
+        style={{ left: 'auto', right: 0 }}
+      >
+        <div className="flex min-h-full flex-col">
+          <header className="relative border-b border-border bg-surface px-12 py-5 text-center">
+            <DialogTitle className="text-2xl font-black tracking-tight sm:text-3xl">
+              {title}
+            </DialogTitle>
+            <DialogDescription
+              className="mt-2 break-words text-xs leading-6"
+              dir="ltr"
+              id={`visual-definition-description-${visualId}`}
+            >
+              {visualId}
+            </DialogDescription>
+            <DrawerClose asChild>
+              <Button
+                aria-label="بستن پنل جزئیات نمودار"
+                className="absolute end-4 top-4 size-9 p-0"
+                size="icon"
+                variant="ghost"
+              >
+                <X aria-hidden="true" className="size-5" />
+              </Button>
+            </DrawerClose>
+          </header>
+
+          <div className="flex-1 space-y-4 overflow-y-auto p-5 text-sm">
+            <section aria-labelledby={`visual-purpose-${visualId}`}>
+              <h3
+                className="text-sm font-black text-foreground"
+                id={`visual-purpose-${visualId}`}
+              >
+                تعریف و هدف کسب‌وکار
+              </h3>
+              <p className="mt-2 leading-7 text-muted-foreground">
+                {description}
+              </p>
+              {decision ? (
+                <p className="mt-3 leading-7 text-muted-foreground">
+                  این نمودار برای پاسخ به این تصمیم استفاده می‌شود:{' '}
+                  <span className="font-semibold text-foreground">
+                    {decision}
+                  </span>
+                </p>
+              ) : null}
+            </section>
+
+            <section aria-labelledby={`visual-current-output-${visualId}`}>
+              <h3
+                className="text-sm font-black text-foreground"
+                id={`visual-current-output-${visualId}`}
+              >
+                خروجی در بازهٔ انتخابی
+              </h3>
+              <div className="mt-2 flex flex-wrap gap-2">
+                <Badge>{rangeLabel}</Badge>
+                <Badge>{visualLabels[kind]}</Badge>
+                {data?.currencyCode ? (
+                  <Badge dir="ltr">
+                    {currencySymbols[data.currencyCode] ?? data.currencyCode}{' '}
+                    {data.currencyCode}
+                  </Badge>
+                ) : null}
+                <Badge>{`${data?.values.length ?? 0} دسته نمایش‌داده‌شده`}</Badge>
+              </div>
+              {sampleValues.length ? (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {sampleValues.map((value, index) => (
+                    <Badge
+                      className="max-w-full truncate"
+                      key={`${data?.labels[index] ?? index}-${value}`}
+                      title={`${data?.labels[index] ?? `دسته ${index + 1}`}: ${formatDashboardNumber(value)}`}
+                    >
+                      {`${data?.labels[index] ?? `دسته ${index + 1}`}: ${formatDashboardNumber(value)}`}
+                    </Badge>
+                  ))}
+                </div>
+              ) : null}
+            </section>
+
+            <section
+              aria-labelledby={`visual-display-rule-${visualId}`}
+              className="rounded-2xl border border-primary/20 bg-primary/[0.035] p-4"
+            >
+              <h3
+                className="text-sm font-black text-foreground"
+                id={`visual-display-rule-${visualId}`}
+              >
+                قاعدهٔ نمایش
+              </h3>
+              <p className="mt-2 leading-7">
+                خروجی از Projection تأییدشده و با فیلترهای فعال نمایش داده
+                می‌شود. نوع نمایش: {visualLabels[kind]}.
+                {temporalGrain
+                  ? ` تفکیک زمانی: ${trendTemporalLabels[temporalGrain]} (${trendCalendarSystem === 'persian' ? 'تقویم شمسی' : 'تقویم میلادی'}).`
+                  : ''}
+              </p>
+            </section>
+
+            <section aria-labelledby={`visual-sources-${visualId}`}>
+              <h3
+                className="text-sm font-black text-foreground"
+                id={`visual-sources-${visualId}`}
+              >
+                فیچرهای استفاده‌شده در نمودار
+              </h3>
+              <ul className="mt-3 space-y-3 text-sm leading-7 text-muted-foreground">
+                {source.map((sourceId) => {
+                  const feature = calculationFeatureFor(sourceId);
+                  return (
+                    <li className="flex gap-2" key={sourceId}>
+                      <span
+                        aria-hidden="true"
+                        className="mt-3 size-1.5 shrink-0 rounded-full bg-primary"
+                      />
+                      <span>
+                        <bdi
+                          className="font-mono text-xs font-bold text-foreground"
+                          dir="ltr"
+                        >
+                          {feature.label}
+                        </bdi>
+                        <span className="mx-1">:</span>
+                        {feature.description}
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+
+            <section
+              aria-labelledby={`visual-limitations-${visualId}`}
+              className="rounded-2xl bg-amber-50 p-4 dark:bg-amber-950/30"
+            >
+              <h3
+                className="text-sm font-black text-amber-900 dark:text-amber-100"
+                id={`visual-limitations-${visualId}`}
+              >
+                محدودیت‌ها و دسترسی
+              </h3>
+              <p className="mt-2 leading-7 text-amber-900/80 dark:text-amber-100/80">
+                فقط دادهٔ مجازِ Projection در محدودهٔ انتخاب‌شده نمایش داده
+                می‌شود. مجوز موردنیاز:{' '}
+                <bdi className="font-mono text-xs font-bold" dir="ltr">
+                  {permission}
+                </bdi>
+                .
+              </p>
+            </section>
+          </div>
+
+          <footer className="border-t border-border bg-surface p-4">
+            {reportCode ? (
+              <Button
+                className="w-full !text-white hover:!text-white focus-visible:!text-white [&_*]:!text-white [&_svg]:!text-white"
+                onClick={() => onOpenReportConfiguration(reportCode)}
+                size="sm"
+                type="button"
+              >
+                رفتن به فرم پیکربندی گزارش مرتبط
+                <ArrowUpRight aria-hidden="true" className="size-3.5" />
+              </Button>
+            ) : (
+              <Button className="w-full" disabled size="sm" variant="outline">
+                گزارش مرتبط در کاتالوگ موجود نیست
+              </Button>
+            )}
+          </footer>
+        </div>
+      </DrawerContent>
+    </Drawer>
+  );
+}
+
 function ProjectionSlot({
   visualId,
   kind,
@@ -2672,7 +2889,9 @@ function ProjectionSlot({
   drilldown,
   onOpenReportConfiguration,
   onTrendCalendarSystemChange,
+  permission,
   range,
+  source,
   trendCalendarSystem,
   wide = false,
   data,
@@ -2685,7 +2904,9 @@ function ProjectionSlot({
   drilldown: string;
   onOpenReportConfiguration(reportCode: string): void;
   onTrendCalendarSystemChange(value: TrendCalendarSystem): void;
+  permission: string;
   range: DashboardRange;
+  source: DashboardVisualDefinition['source'];
   trendCalendarSystem: TrendCalendarSystem;
   wide?: boolean;
   data?: DashboardVisualSnapshot | undefined;
@@ -2719,8 +2940,13 @@ function ProjectionSlot({
   const report = reportCode
     ? reportCatalog.find((candidate) => candidate.code === reportCode)
     : undefined;
+  const canOpenVisualDetails =
+    Boolean(displayData?.values.length) &&
+    resolvedKind !== 'table' &&
+    resolvedKind !== 'queue';
   return (
-    <Card
+    <>
+      <Card
       data-dashboard-visual
       data-dashboard-employee-visual={isEmployeeComparison || undefined}
       className={cn(
@@ -2859,48 +3085,40 @@ function ProjectionSlot({
               </p>
             ) : null}
             {resolvedKind === 'table' || resolvedKind === 'queue' ? null : (
-              <>
-                <div className="mt-3 flex justify-start" dir="rtl">
-                  <Button
-                    aria-controls={`dashboard-visual-details-${visualId}`}
-                    aria-expanded={isVisualDetailsOpen}
-                    onClick={() => setIsVisualDetailsOpen((open) => !open)}
-                    size="sm"
-                    type="button"
-                    variant="outline"
-                  >
-                    <Info aria-hidden="true" className="size-3.5" />
-                    {isVisualDetailsOpen
-                      ? 'بستن جزئیات نمودار'
-                      : 'جزئیات نمودار'}
-                  </Button>
-                </div>
-                <div id={`dashboard-visual-details-${visualId}`}>
-                  <VisualDataSummary
-                    labels={displayData.labels}
-                    onOpenChange={setIsVisualDetailsOpen}
-                    open={isVisualDetailsOpen}
-                    title={title}
-                    trend={
-                      resolvedKind === 'line'
-                        ? {
-                            calendarSystem: trendCalendarSystem,
-                            grain: trendTemporalGrain(
-                              range,
-                              displayData.labels,
-                            ),
-                          }
-                        : undefined
-                    }
-                    values={displayData.values}
-                  />
-                </div>
-              </>
+              <VisualDataSummary
+                labels={displayData.labels}
+                title={title}
+                trend={
+                  resolvedKind === 'line'
+                    ? {
+                        calendarSystem: trendCalendarSystem,
+                        grain: trendTemporalGrain(range, displayData.labels),
+                      }
+                    : undefined
+                }
+                values={displayData.values}
+              />
             )}
           </>
         ) : null}
       </div>
-      <div className="flex flex-wrap items-center gap-2 border-t border-border/80 bg-muted/20 px-4 py-3">
+      <div
+        className="flex flex-wrap items-center gap-2 border-t border-border/80 bg-muted/20 px-4 py-3"
+        dir="rtl"
+      >
+        {canOpenVisualDetails ? (
+          <Button
+            aria-controls={`dashboard-visual-definition-panel-${visualId}`}
+            aria-expanded={isVisualDetailsOpen}
+            onClick={() => setIsVisualDetailsOpen(true)}
+            size="sm"
+            type="button"
+            variant="outline"
+          >
+            <Info aria-hidden="true" className="size-3.5" />
+            جزئیات نمودار
+          </Button>
+        ) : null}
         {decision ? (
           <Badge className="bg-amber-100 text-[10px] text-amber-800 dark:bg-amber-950 dark:text-amber-200">
             {decision}
@@ -2919,7 +3137,25 @@ function ProjectionSlot({
           {report ? 'بررسی گزارش مرتبط' : 'گزارش مرتبط در کاتالوگ موجود نیست'}
         </Button>
       </div>
-    </Card>
+      </Card>
+      {isVisualDetailsOpen ? (
+        <VisualDetailsPanel
+          data={displayData}
+          decision={decision}
+          description={description}
+          kind={resolvedKind}
+          onClose={() => setIsVisualDetailsOpen(false)}
+          onOpenReportConfiguration={onOpenReportConfiguration}
+          permission={permission}
+          range={range}
+          reportCode={report?.code}
+          source={source}
+          title={title}
+          trendCalendarSystem={trendCalendarSystem}
+          visualId={visualId}
+        />
+      ) : null}
+    </>
   );
 }
 
@@ -3630,13 +3866,15 @@ export function DashboardWorkspace() {
                       key={visualization.id}
                       kind={visualization.kind}
                       title={visualization.title}
-                      description={visualization.description}
-                      decision={visualization.openDecision}
-                      drilldown={visualization.drilldown}
-                      onOpenReportConfiguration={openReportConfiguration}
-                      onTrendCalendarSystemChange={setTrendCalendarSystem}
-                      range={filters.range}
-                      trendCalendarSystem={trendCalendarSystem}
+                       description={visualization.description}
+                       decision={visualization.openDecision}
+                       drilldown={visualization.drilldown}
+                       onOpenReportConfiguration={openReportConfiguration}
+                       onTrendCalendarSystemChange={setTrendCalendarSystem}
+                       permission={visualization.permission}
+                       range={filters.range}
+                       source={visualization.source}
+                       trendCalendarSystem={trendCalendarSystem}
                       data={query.data?.visuals[visualization.id]}
                     />
                   ))}

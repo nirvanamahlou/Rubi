@@ -562,8 +562,10 @@ describe('dashboard permission and data states', () => {
     expect(source).toContain('data-dashboard-trend-controls');
     expect(source).toContain('min-w-[15.875rem] flex-row flex-nowrap justify-end');
     expect(source).toContain('w-[8.5rem] shrink-0 whitespace-nowrap');
-    expect(source).toContain('dashboard-visual-details-${visualId}');
-    expect(source).toContain("'جزئیات نمودار'");
+    expect(source).toContain('dashboard-visual-definition-panel-${visualId}');
+    expect(source).toContain('function VisualDetailsPanel');
+    expect(source).toContain('خلاصه متنی و جدول داده');
+    expect(source).toContain('جزئیات نمودار');
     expect(source).toContain('<SelectContent align="end" dir="rtl">');
     expect(source).toContain('justify-end text-right data-[highlighted]:bg-primary');
     expect(source).toContain('selectedCurrencyCode');
