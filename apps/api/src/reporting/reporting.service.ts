@@ -639,7 +639,10 @@ export class ReportingService {
               id,
               {
                 value: count(facts).toLocaleString('fa-IR'),
-                unit: id.includes('conversion') ? 'درصد' : 'قلم',
+                unit:
+                  id === 'issue-success-rate' || id.includes('conversion')
+                    ? 'درصد'
+                    : 'قلم',
                 detail: 'محاسبه از grain مصوب fact سفر؛ بدون جمع‌زدن مبلغ',
                 metricId: id,
                 aggregation: id.includes('conversion')
