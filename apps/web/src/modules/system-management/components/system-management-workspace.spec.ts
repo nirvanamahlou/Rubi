@@ -16,15 +16,17 @@ const styles = readFileSync(
 );
 
 describe('system management reference implementation', () => {
-  it('includes the overview, internal navigation, filters, and module hub', () => {
+  it('keeps the overview, filters, and module hub without a duplicate section-settings tab', () => {
     for (const label of [
       'نمای کلی',
-      'تنظیمات بخش‌ها',
       'بررسی تغییرات',
       'تاریخچه تغییرات',
       'جست‌وجوی تنظیمات',
     ])
       expect(workspace).toContain(label);
+
+    expect(workspace).not.toContain('تنظیمات بخش‌ها');
+    expect(workspace).not.toContain("page: 'modules'");
 
     for (const category of [
       'مشتری و فروش',

@@ -16,7 +16,6 @@ import {
   Headphones,
   History,
   Home,
-  LayoutGrid,
   ListTodo,
   LockKeyhole,
   Megaphone,
@@ -57,7 +56,7 @@ import {
 } from '../model/settings-catalog';
 import styles from './system-management-workspace.module.css';
 
-type Page = 'history' | 'module' | 'modules' | 'overview' | 'reviews';
+type Page = 'history' | 'module' | 'overview' | 'reviews';
 type Values = Record<string, boolean | string>;
 
 const iconMap: Record<string, LucideIcon> = {
@@ -304,7 +303,6 @@ export function SystemManagementWorkspace() {
 
   const navItems: Array<{ icon: LucideIcon; label: string; page: Page }> = [
     { page: 'overview', label: 'نمای کلی', icon: Home },
-    { page: 'modules', label: 'تنظیمات بخش‌ها', icon: LayoutGrid },
     { page: 'reviews', label: 'بررسی تغییرات', icon: ShieldCheck },
     { page: 'history', label: 'تاریخچه تغییرات', icon: History },
   ];
@@ -425,13 +423,6 @@ export function SystemManagementWorkspace() {
               </p>
             </div>
           </div>
-          <button
-            className={styles.button}
-            onClick={() => navigate('modules')}
-            type="button"
-          >
-            <LayoutGrid aria-hidden="true" size={18} /> همه بخش‌ها
-          </button>
         </div>
         <div className={styles.sectionbar}>
           <button
@@ -527,9 +518,7 @@ export function SystemManagementWorkspace() {
         ? 'بررسی تغییرات'
         : page === 'history'
           ? 'تاریخچه تغییرات'
-          : page === 'modules'
-            ? 'تنظیمات بخش‌ها'
-            : 'نمای کلی تنظیمات';
+          : 'نمای کلی تنظیمات';
 
   return (
     <section className={styles.workspace} dir="rtl">
@@ -562,7 +551,7 @@ export function SystemManagementWorkspace() {
             const Icon = item.icon;
             const active =
               page === item.page ||
-              (item.page === 'modules' && page === 'module');
+              (item.page === 'overview' && page === 'module');
             return (
               <button
                 aria-current={active ? 'page' : undefined}
@@ -581,7 +570,7 @@ export function SystemManagementWorkspace() {
           })}
         </nav>
 
-        {page === 'overview' || page === 'modules' ? renderHub() : null}
+        {page === 'overview' ? renderHub() : null}
         {page === 'module' ? renderModule() : null}
         {page === 'history' ? renderHistory() : null}
         {page === 'reviews' ? (
