@@ -208,6 +208,17 @@ export function voucherFormData(
     passengers,
     adults: passengers.filter((p) => p.age === 'ADL').length,
     children: passengers.filter((p) => p.age.startsWith('CHD')).length,
+    children2To6: passengers.filter(
+      (p) => p.hotelChildAgeBand === 'CHD_2_TO_6',
+    ).length,
+    children6To12: passengers.filter(
+      (p) => p.hotelChildAgeBand === 'CHD_6_TO_12',
+    ).length,
+    childrenUnclassified: passengers.filter(
+      (p) =>
+        p.age.startsWith('CHD') &&
+        !['CHD_2_TO_6', 'CHD_6_TO_12'].includes(p.hotelChildAgeBand ?? ''),
+    ).length,
     infants: passengers.filter((p) => p.age === 'INF').length,
     flights: (['arrival', 'departure'] as const).map((prefix) => ({
       leg: prefix === 'arrival' ? 'OUTBOUND' : 'RETURN',
