@@ -3243,10 +3243,10 @@ function DashboardSidebar({
                       <CalendarRange aria-hidden="true" className="size-4" />
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent align="end" dir="rtl">
                       {rangeOptions.map(([value, label]) => (
                         <SelectItem
-                          className="data-[highlighted]:bg-primary data-[highlighted]:text-primary-foreground"
+                          className="justify-end text-right data-[highlighted]:bg-primary data-[highlighted]:text-primary-foreground"
                           key={value}
                           value={value}
                         >

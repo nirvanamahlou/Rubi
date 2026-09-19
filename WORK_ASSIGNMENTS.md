@@ -44,6 +44,12 @@
 
 # Work Assignments
 
+## DASHBOARD-RANGE-FILTER-RTL-0919 — PC-C — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-19: گزینه‌های داخل فیلتر «بازه زمانی» Dashboard راست‌چین شوند.
+- `COMPUTER_ID=PC-C`؛ ادامهٔ شاخهٔ `codex/pc-c-dashboard-reporting-latest`. محدودهٔ رزروشده: renderer و تست‌های Dashboard Web و اسناد وضعیت. بدون تغییر API، Migration، Schema، دادهٔ عملیاتی/دمو، Permission، Dependency یا Lockfile.
+- نتیجه: محتوای dropdown بازهٔ زمانی `dir=rtl` و aligned-to-end است؛ هر گزینه با `justify-end text-right` نمایش می‌یابد و رنگ hover دست‌نخورده می‌ماند. ۱۶ تست Dashboard، lint، TypeScript و build تولیدی Web موفق‌اند.
+
 ## DASHBOARD-TREND-CONTROL-LAYOUT-0919 — PC-C — READY_FOR_REVIEW
 
 - درخواست مالک در 2026-09-19: انتخاب‌گر تقویمِ نمودار روند و انتخاب‌گر واحد پول همان نمودار، زیر برچسب نوع نمودار و کنار هم نمایش یابند.
