@@ -223,10 +223,6 @@ export interface DashboardProjectionV1 {
         labels: readonly string[];
         values: readonly number[];
         currencyCode?: string;
-        /** Values from the immediately preceding equal-length period. Their
-         * ordinal position matches `labels` and `values`; charts never infer
-         * this series from the current period. */
-        comparisonValues?: readonly number[];
         comparison?: DashboardComparisonV1;
         trend?: DashboardTrendV1;
       }

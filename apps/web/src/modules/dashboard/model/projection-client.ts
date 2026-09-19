@@ -23,8 +23,7 @@ export interface DashboardComparisonSnapshot {
   direction: 'up' | 'down' | 'flat';
 }
 
-export interface DashboardCurrencyComparisonSnapshot
-  extends DashboardComparisonSnapshot {
+export interface DashboardCurrencyComparisonSnapshot extends DashboardComparisonSnapshot {
   currencyCode: string;
 }
 
@@ -72,7 +71,6 @@ export interface DashboardProjectionSnapshot {
         labels: readonly string[];
         values: readonly number[];
         currencyCode?: string;
-        comparisonValues?: readonly number[];
         comparison?: DashboardComparisonSnapshot;
         trend?: DashboardTrendSnapshot;
       }

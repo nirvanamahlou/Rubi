@@ -281,12 +281,7 @@ export class ReportingService {
       (input.range && input.range !== 'custom'
         ? dashboardCalendarRangeStart(
             now,
-            input.range as
-              | 'today'
-              | 'week'
-              | 'month'
-              | 'quarter'
-              | 'year',
+            input.range as 'today' | 'week' | 'month' | 'quarter' | 'year',
           ).toISOString()
         : undefined);
     const filters: Record<string, string> = {};
@@ -365,9 +360,7 @@ export class ReportingService {
         metrics: {},
         visuals: {},
       };
-    const periodStart = filters.fromUtc
-      ? new Date(filters.fromUtc)
-      : undefined;
+    const periodStart = filters.fromUtc ? new Date(filters.fromUtc) : undefined;
     const periodEnd = filters.toUtc ? new Date(filters.toUtc) : now;
     const periodDuration = periodStart
       ? periodEnd.getTime() - periodStart.getTime()
@@ -402,8 +395,7 @@ export class ReportingService {
         previousValue === 0
           ? null
           : Math.round(
-              ((currentValue - previousValue) / Math.abs(previousValue)) *
-                1000,
+              ((currentValue - previousValue) / Math.abs(previousValue)) * 1000,
             ) / 10,
       direction: (currentValue > previousValue
         ? 'up'
@@ -414,14 +406,11 @@ export class ReportingService {
     const trendFor = (
       rows: typeof facts,
       measure: (bucket: typeof facts) => number,
-      window?: { from: Date; to: Date },
     ) => {
-      const from = window?.from ?? periodStart;
-      const to = window?.to ?? periodEnd;
-      if (!from || from.getTime() >= to.getTime())
+      if (!periodStart || periodStart.getTime() >= periodEnd.getTime())
         throw new Error('بازه زمانی معتبر برای محاسبه روند وجود ندارد.');
       const bucketStarts = dashboardTrendBucketStarts({
-        from,
+        from: periodStart,
         range: input.range as
           | 'today'
           | 'week'
@@ -430,7 +419,7 @@ export class ReportingService {
           | 'year'
           | 'custom'
           | undefined,
-        to,
+        to: periodEnd,
       });
       const buckets = Array.from(
         { length: bucketStarts.length },
@@ -438,12 +427,16 @@ export class ReportingService {
       );
       for (const fact of rows) {
         if (
-          fact.occurredAt.getTime() < from.getTime() ||
-          fact.occurredAt.getTime() >= to.getTime()
+          fact.occurredAt.getTime() < periodStart.getTime() ||
+          fact.occurredAt.getTime() >= periodEnd.getTime()
         )
           continue;
         let index = bucketStarts.length - 1;
-        for (let candidate = bucketStarts.length - 1; candidate >= 0; candidate -= 1)
+        for (
+          let candidate = bucketStarts.length - 1;
+          candidate >= 0;
+          candidate -= 1
+        )
           if (fact.occurredAt.getTime() >= bucketStarts[candidate]!.getTime()) {
             index = candidate;
             break;
@@ -547,9 +540,7 @@ export class ReportingService {
                 currencyCode,
                 ...comparisonFor(
                   amount(
-                    facts.filter(
-                      (fact) => fact.currencyCode === currencyCode,
-                    ),
+                    facts.filter((fact) => fact.currencyCode === currencyCode),
                   ),
                   amount(
                     previousFacts.filter(
@@ -665,26 +656,11 @@ export class ReportingService {
     );
     const visualAmount = (rows: typeof facts) =>
       sum(rows, (fact) => Number(fact.salesAmount));
-    const previousTrendWindow =
-      periodStart && periodDuration > 0
-        ? {
-            from: new Date(periodStart.getTime() - periodDuration),
-            to: periodStart,
-          }
-        : undefined;
     const visuals = Object.fromEntries(
       visualIds.flatMap<[string, DashboardProjectionV1['visuals'][string]]>(
         (id) => {
           if (trendVisualIds.has(id)) {
             const trend = trendFor(visualFacts, visualAmount);
-            const comparisonTrend =
-              previousFacts && previousTrendWindow
-                ? trendFor(
-                    previousVisualFacts,
-                    visualAmount,
-                    previousTrendWindow,
-                  )
-                : undefined;
             return [
               [
                 id,
@@ -692,9 +668,6 @@ export class ReportingService {
                   labels: trend.labels,
                   values: trend.values,
                   currencyCode: visualCurrency,
-                  ...(comparisonTrend?.values.length === trend.values.length
-                    ? { comparisonValues: comparisonTrend.values }
-                    : {}),
                 },
               ],
             ];

@@ -320,12 +320,11 @@ describe('dashboard registry', () => {
 
   it('uses donut only for explicit low-cardinality share visuals', () => {
     const visuals = dashboardPages.flatMap((page) => page.visualizations);
+    expect(visuals.find((item) => item.id === 'collection-status')?.kind).toBe(
+      'donut',
+    );
     expect(
-      visuals.find((item) => item.id === 'collection-status')?.kind,
-    ).toBe('donut');
-    expect(
-      visuals.find((item) => item.id === 'customer-service-distribution')
-        ?.kind,
+      visuals.find((item) => item.id === 'customer-service-distribution')?.kind,
     ).toBe('donut');
     expect(
       visuals.find((item) => item.id === 'sales-destination-ranking')?.kind,
@@ -529,7 +528,8 @@ describe('dashboard permission and data states', () => {
       "state === 'forbidden'",
       "state === 'empty'",
       "state === 'stale'",
-    ]) expect(source).toContain(state);
+    ])
+      expect(source).toContain(state);
     expect(source).toContain('داده‌ای دریافت نشده');
     expect(source).not.toMatch(/\b(value|amount|count):\s*\d+/);
     expect(source).not.toContain('Math.random');
@@ -542,7 +542,9 @@ describe('dashboard permission and data states', () => {
     expect(source).toContain('EmployeePerformanceBars');
     expect(source).toContain('MiniTrend');
     expect(source).toContain('GrowthIndicator');
-    expect(source).toContain('comparison?: DashboardComparisonSnapshot | undefined;');
+    expect(source).toContain(
+      'comparison?: DashboardComparisonSnapshot | undefined;',
+    );
     expect(source).toContain('!hasComparison || unavailable');
     expect(source).not.toContain('comparisonUnavailableForPeriod');
     expect(source).toContain('currencyMetricParts');
@@ -550,9 +552,13 @@ describe('dashboard permission and data states', () => {
     expect(source).toContain('compactCurrencyTypography');
     expect(source).toContain('compactChartValue');
     expect(source).toContain('trendAxisLabel');
-    expect(source).toContain('comparisonValues?: readonly number[] | undefined;');
-    expect(source).toContain('strokeDasharray="5 6"');
-    expect(source).toContain('دورهٔ قبل هم‌طول');
+    expect(source).toContain('trendCalendarOptions');
+    expect(source).toContain('تقویم برچسب‌های محور زمان');
+    expect(source).toContain("key) => key === 'currency'");
+    expect(source).not.toContain(
+      'comparisonValues?: readonly number[] | undefined;',
+    );
+    expect(source).not.toContain('strokeDasharray="5 6"');
     expect(source).toContain('strokeDasharray="2 5"');
     expect(source).toContain('formatDashboardNumber');
     expect(source).toContain('latinizeDashboardNumericText');
@@ -703,7 +709,9 @@ describe('dashboard permission and data states', () => {
     expect(source).toContain('activePageHeaderTheme');
     expect(source).toContain('dashboardHeaderArtworkByPageId');
     expect(source).toContain('activePageHeaderArtwork');
-    expect(source).toContain("'/images/dashboard-headers/executive-overview.png'");
+    expect(source).toContain(
+      "'/images/dashboard-headers/executive-overview.png'",
+    );
     expect(source).toContain('quality={45}');
     expect(source).toContain('pointer-events-none absolute -bottom-10 -end-2');
     expect(source).toContain('size-44 stroke-[1.15] sm:size-52');
@@ -714,7 +722,9 @@ describe('dashboard permission and data states', () => {
     expect(source).toContain("'employee-crm-activity': PhoneCall");
     expect(source).toContain('items-center text-center');
     expect(source).toContain("'from-cyan-50 via-surface to-blue-50");
-    expect(source).toContain('max-w-2xl text-sm leading-6 text-muted-foreground');
+    expect(source).toContain(
+      'max-w-2xl text-sm leading-6 text-muted-foreground',
+    );
     expect(source).toContain('lg:sticky lg:top-20');
     expect(source).toContain('lg:overflow-y-auto');
     expect(source).toContain('صفحه‌های داشبورد');

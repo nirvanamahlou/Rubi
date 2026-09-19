@@ -114,6 +114,13 @@ const rangeOptions: readonly [DashboardRange, string][] = [
   ['custom', 'بازه سفارشی'],
 ];
 
+type TrendCalendarSystem = 'persian' | 'gregorian';
+
+const trendCalendarOptions: readonly [TrendCalendarSystem, string][] = [
+  ['persian', 'تاریخ شمسی'],
+  ['gregorian', 'تاریخ میلادی'],
+];
+
 const executiveSalesTitles: Record<DashboardRange, string> = {
   today: 'فروش امروز',
   week: 'فروش این هفته',
@@ -140,8 +147,16 @@ const dimensionFilters: readonly {
 
 type DashboardFilterKey = keyof DashboardFilterOptions;
 
-const dashboardPageFilterKeys: Readonly<Record<string, readonly DashboardFilterKey[]>> = {
-  'executive-overview': ['salesChannel', 'branch', 'service', 'currency', 'status'],
+const dashboardPageFilterKeys: Readonly<
+  Record<string, readonly DashboardFilterKey[]>
+> = {
+  'executive-overview': [
+    'salesChannel',
+    'branch',
+    'service',
+    'currency',
+    'status',
+  ],
   'executive-growth-risk': ['branch', 'service', 'currency', 'status'],
   'commercial-performance': [
     'salesChannel',
@@ -153,28 +168,76 @@ const dashboardPageFilterKeys: Readonly<Record<string, readonly DashboardFilterK
     'currency',
     'status',
   ],
-  'sales-profitability-analysis': ['salesChannel', 'branch', 'agent', 'service', 'currency'],
-  'sales-segment-analysis': ['salesChannel', 'branch', 'service', 'agency', 'currency'],
+  'sales-profitability-analysis': [
+    'salesChannel',
+    'branch',
+    'agent',
+    'service',
+    'currency',
+  ],
+  'sales-segment-analysis': [
+    'salesChannel',
+    'branch',
+    'service',
+    'agency',
+    'currency',
+  ],
   'revenue-collections': ['branch', 'service', 'currency', 'status'],
   'travel-operations': ['branch', 'agent', 'service', 'provider', 'status'],
-  'flight-route-analysis': ['branch', 'service', 'provider', 'currency', 'status'],
+  'flight-route-analysis': [
+    'branch',
+    'service',
+    'provider',
+    'currency',
+    'status',
+  ],
   'inventory-products': ['branch', 'service', 'provider', 'currency'],
   'tour-hotel-performance': ['branch', 'service', 'provider', 'currency'],
-  'procurement-suppliers': ['branch', 'service', 'provider', 'currency', 'status'],
+  'procurement-suppliers': [
+    'branch',
+    'service',
+    'provider',
+    'currency',
+    'status',
+  ],
   'finance-treasury': ['branch', 'currency', 'status', 'service'],
   'finance-profitability-costs': ['branch', 'service', 'currency', 'status'],
-  'finance-obligations-risk': ['branch', 'currency', 'status', 'agency', 'provider'],
+  'finance-obligations-risk': [
+    'branch',
+    'currency',
+    'status',
+    'agency',
+    'provider',
+  ],
   'customer-growth': ['salesChannel', 'branch', 'service', 'agency', 'status'],
   'customer-behavior-analysis': ['salesChannel', 'branch', 'service', 'agency'],
   'customer-crm': ['salesChannel', 'branch', 'agent', 'service', 'status'],
   'support-service-quality': ['branch', 'agent', 'service', 'status'],
-  'partners-b2b': ['agency', 'branch', 'salesChannel', 'service', 'provider', 'currency'],
+  'partners-b2b': [
+    'agency',
+    'branch',
+    'salesChannel',
+    'service',
+    'provider',
+    'currency',
+  ],
   'marketing-growth': ['salesChannel', 'branch', 'service', 'agency', 'status'],
   'workforce-hr': ['branch', 'agent', 'status'],
   'hr-record-quality': ['branch', 'agent', 'status'],
-  'employee-commercial-performance': ['branch', 'agent', 'service', 'salesChannel'],
+  'employee-commercial-performance': [
+    'branch',
+    'agent',
+    'service',
+    'salesChannel',
+  ],
   'employee-crm-activity': ['branch', 'agent', 'salesChannel', 'status'],
-  'employee-sales-quality': ['branch', 'agent', 'service', 'salesChannel', 'status'],
+  'employee-sales-quality': [
+    'branch',
+    'agent',
+    'service',
+    'salesChannel',
+    'status',
+  ],
   'tasks-automation': ['branch', 'agent', 'status'],
   'documents-reports-data-quality': ['branch', 'status'],
 };
@@ -569,8 +632,7 @@ const kpiVisualOverrides: Readonly<Record<string, KpiVisual>> = {
 function kpiVisualFor(definition: DashboardKpiDefinition): KpiVisual {
   return (
     kpiVisualOverrides[definition.id] ??
-    kpiVisualMatchers.find(([pattern]) => pattern.test(definition.id))?.[1] ??
-    {
+    kpiVisualMatchers.find(([pattern]) => pattern.test(definition.id))?.[1] ?? {
       icon: CircleDollarSign,
       label: 'شاخص عملکرد',
       className:
@@ -606,14 +668,23 @@ function compactChartValue(value: number) {
   }).format(value);
 }
 
-function trendAxisLabel(value: string, pointCount: number) {
+function trendAxisLabel(
+  value: string,
+  pointCount: number,
+  calendarSystem: TrendCalendarSystem,
+) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
-  return new Intl.DateTimeFormat('en-US', {
-    timeZone: 'Asia/Tehran',
-    month: 'short',
-    ...(pointCount === 12 ? {} : { day: 'numeric' }),
-  }).format(date);
+  return new Intl.DateTimeFormat(
+    calendarSystem === 'persian'
+      ? 'fa-IR-u-ca-persian-nu-latn'
+      : 'en-US-u-ca-gregory',
+    {
+      timeZone: 'Asia/Tehran',
+      month: 'short',
+      ...(pointCount === 12 ? {} : { day: 'numeric' }),
+    },
+  ).format(date);
 }
 
 function formatDashboardNumber(
@@ -656,8 +727,7 @@ function kpiGridColumns(count: number) {
   if (count === 3) return 'sm:grid-cols-2 lg:grid-cols-3';
   if (count === 4) return 'sm:grid-cols-2 xl:grid-cols-4';
   if (count === 5) return 'sm:grid-cols-2 xl:grid-cols-5';
-  if (count === 6)
-    return 'sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6';
+  if (count === 6) return 'sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6';
   if (count % 2 === 0) return 'sm:grid-cols-2 xl:grid-cols-4';
   return 'sm:grid-cols-2 xl:grid-flow-col xl:auto-cols-[minmax(13rem,1fr)] xl:overflow-x-auto';
 }
@@ -787,14 +857,11 @@ const dashboardHeaderArtworkByPageId: Record<string, string> = {
     '/images/dashboard-headers/commercial-performance.png',
   'sales-segment-analysis':
     '/images/dashboard-headers/commercial-performance.png',
-  'revenue-collections':
-    '/images/dashboard-headers/commercial-performance.png',
-  'travel-operations':
-    '/images/dashboard-headers/commercial-performance.png',
+  'revenue-collections': '/images/dashboard-headers/commercial-performance.png',
+  'travel-operations': '/images/dashboard-headers/commercial-performance.png',
   'flight-route-analysis':
     '/images/dashboard-headers/commercial-performance.png',
-  'inventory-products':
-    '/images/dashboard-headers/commercial-performance.png',
+  'inventory-products': '/images/dashboard-headers/commercial-performance.png',
   'tour-hotel-performance':
     '/images/dashboard-headers/commercial-performance.png',
   'procurement-suppliers':
@@ -802,24 +869,19 @@ const dashboardHeaderArtworkByPageId: Record<string, string> = {
   'finance-treasury': '/images/dashboard-headers/finance-treasury.png',
   'finance-profitability-costs':
     '/images/dashboard-headers/finance-treasury.png',
-  'finance-obligations-risk':
-    '/images/dashboard-headers/finance-treasury.png',
+  'finance-obligations-risk': '/images/dashboard-headers/finance-treasury.png',
   'customer-growth': '/images/dashboard-headers/customer-growth.png',
-  'customer-behavior-analysis':
-    '/images/dashboard-headers/customer-growth.png',
+  'customer-behavior-analysis': '/images/dashboard-headers/customer-growth.png',
   'customer-crm': '/images/dashboard-headers/customer-growth.png',
-  'support-service-quality':
-    '/images/dashboard-headers/customer-growth.png',
+  'support-service-quality': '/images/dashboard-headers/customer-growth.png',
   'partners-b2b': '/images/dashboard-headers/customer-growth.png',
   'marketing-growth': '/images/dashboard-headers/customer-growth.png',
   'workforce-hr': '/images/dashboard-headers/workforce-hr.png',
   'hr-record-quality': '/images/dashboard-headers/workforce-hr.png',
   'employee-commercial-performance':
     '/images/dashboard-headers/workforce-hr.png',
-  'employee-crm-activity':
-    '/images/dashboard-headers/workforce-hr.png',
-  'employee-sales-quality':
-    '/images/dashboard-headers/workforce-hr.png',
+  'employee-crm-activity': '/images/dashboard-headers/workforce-hr.png',
+  'employee-sales-quality': '/images/dashboard-headers/workforce-hr.png',
   'tasks-automation': '/images/dashboard-headers/executive-overview.png',
   'documents-reports-data-quality':
     '/images/dashboard-headers/executive-overview.png',
@@ -975,7 +1037,8 @@ function calculationFeatureFor(source: string) {
   return (
     calculationFeatureDescriptionBySource[source] ?? {
       label: source,
-      description: 'رکوردهای تأییدشدهٔ این فیچر که در فرمول شاخص استفاده می‌شوند.',
+      description:
+        'رکوردهای تأییدشدهٔ این فیچر که در فرمول شاخص استفاده می‌شوند.',
     }
   );
 }
@@ -991,9 +1054,7 @@ function Metric({
   metric?: DashboardMetricSnapshot | undefined;
   role?: DashboardKpiRole;
 }) {
-  const currencyValues = currency && metric
-    ? metric.value.split(' · ')
-    : null;
+  const currencyValues = currency && metric ? metric.value.split(' · ') : null;
   const comparisonFor = (index: number) => {
     const currencyCode =
       metric?.trend?.series?.[index]?.currencyCode ??
@@ -1023,7 +1084,8 @@ function Metric({
           {currencyValues.map((value, index) => {
             const { amount, symbol } = currencyMetricParts(value);
             const compactAmount = compactCurrencyAmount(amount);
-            const compactAmountTypography = compactCurrencyTypography(compactAmount);
+            const compactAmountTypography =
+              compactCurrencyTypography(compactAmount);
             const { comparison, comparisonUnavailable, currencyCode } =
               comparisonFor(index);
             return (
@@ -1148,8 +1210,7 @@ function compactCurrencyTypography(value: string) {
   const visibleLength = [...value.replace(/\s/g, '')].length;
   if (visibleLength >= 13)
     return 'text-[clamp(0.75rem,5cqw,0.875rem)] leading-5';
-  if (visibleLength >= 10)
-    return 'text-[clamp(0.875rem,6cqw,1rem)] leading-5';
+  if (visibleLength >= 10) return 'text-[clamp(0.875rem,6cqw,1rem)] leading-5';
   return 'text-[clamp(1rem,7cqw,1.125rem)] leading-6';
 }
 
@@ -1169,11 +1230,11 @@ function MiniTrend({
 }) {
   const gradientPrefix = useId().replace(/:/g, '');
   const paletteFor = (index: number) =>
-    trendSeriesPalette[index % trendSeriesPalette.length] ?? trendSeriesPalette[0]!;
-  const series =
-    trend.series?.length
-      ? trend.series
-      : [{ currencyCode: '', values: trend.values }];
+    trendSeriesPalette[index % trendSeriesPalette.length] ??
+    trendSeriesPalette[0]!;
+  const series = trend.series?.length
+    ? trend.series
+    : [{ currencyCode: '', values: trend.values }];
   const pointsFor = (values: readonly number[]) => {
     const minimum = Math.min(...values);
     const maximum = Math.max(...values);
@@ -1279,7 +1340,9 @@ function MiniTrend({
                   paletteFor(index).dotClassName,
                 )}
               />
-              <bdi dir="ltr">{currencySymbols[currencyCode] ?? currencyCode}</bdi>
+              <bdi dir="ltr">
+                {currencySymbols[currencyCode] ?? currencyCode}
+              </bdi>
             </span>
           ))}
         </span>
@@ -1375,8 +1438,14 @@ function KpiCard({
       onClick={onSelect}
       type="button"
     >
-      <span aria-hidden="true" className="absolute inset-x-5 top-0 h-0.5 rounded-b-full bg-primary/70" />
-      <span aria-hidden="true" className="absolute -start-8 -top-10 size-28 rounded-full bg-primary/[0.045] blur-2xl transition group-hover:bg-primary/[0.08]" />
+      <span
+        aria-hidden="true"
+        className="absolute inset-x-5 top-0 h-0.5 rounded-b-full bg-primary/70"
+      />
+      <span
+        aria-hidden="true"
+        className="absolute -start-8 -top-10 size-28 rounded-full bg-primary/[0.045] blur-2xl transition group-hover:bg-primary/[0.08]"
+      />
       <span className="relative flex min-w-0 items-center gap-2.5">
         <span className="flex min-w-0 items-center gap-2.5">
           <span
@@ -1501,7 +1570,11 @@ function KpiDefinitionPanel({
                 </h3>
                 <div className="mt-2 flex flex-wrap gap-2">
                   {metric.value.split(' · ').map((value) => (
-                    <Badge dir="ltr" key={value} title="مقدار دقیق بدون فشرده‌سازی">
+                    <Badge
+                      dir="ltr"
+                      key={value}
+                      title="مقدار دقیق بدون فشرده‌سازی"
+                    >
                       {latinizeDashboardNumericText(value)}
                     </Badge>
                   ))}
@@ -1534,7 +1607,10 @@ function KpiDefinitionPanel({
                   const feature = calculationFeatureFor(source);
                   return (
                     <li className="flex gap-2" key={source}>
-                      <span aria-hidden="true" className="mt-3 size-1.5 shrink-0 rounded-full bg-primary" />
+                      <span
+                        aria-hidden="true"
+                        className="mt-3 size-1.5 shrink-0 rounded-full bg-primary"
+                      />
                       <span>
                         <bdi
                           className="font-mono text-xs font-bold text-foreground"
@@ -1565,7 +1641,6 @@ function KpiDefinitionPanel({
                 {definition.exclusions}
               </p>
             </section>
-
           </div>
 
           <footer className="border-t border-border bg-surface p-4">
@@ -1823,13 +1898,20 @@ function VisualDataSummary({
           <caption className="sr-only">داده‌های نمودار {title}</caption>
           <thead className="bg-muted/60 text-foreground">
             <tr>
-              <th className="px-3 py-2 text-start" scope="col">دسته</th>
-              <th className="px-3 py-2 text-end" scope="col">مقدار</th>
+              <th className="px-3 py-2 text-start" scope="col">
+                دسته
+              </th>
+              <th className="px-3 py-2 text-end" scope="col">
+                مقدار
+              </th>
             </tr>
           </thead>
           <tbody>
             {values.map((value, index) => (
-              <tr className="border-t border-border/70" key={`${labels[index]}-${index}`}>
+              <tr
+                className="border-t border-border/70"
+                key={`${labels[index]}-${index}`}
+              >
                 <th className="px-3 py-2 text-start font-medium" scope="row">
                   {labels[index] ?? `دسته ${index + 1}`}
                 </th>
@@ -1861,13 +1943,23 @@ function OperationalDataTable({
   return (
     <div className="max-h-80 overflow-auto rounded-xl border border-border/80 bg-surface shadow-inner shadow-slate-100/50 dark:shadow-none">
       <table className="w-full min-w-[34rem] text-xs">
-        <caption className="sr-only">{visualLabels[kind]} {title}</caption>
+        <caption className="sr-only">
+          {visualLabels[kind]} {title}
+        </caption>
         <thead className="bg-slate-100/95 text-foreground dark:bg-slate-900/95">
           <tr>
-            <th className="w-10 px-3 py-2.5 text-center" scope="col">#</th>
-            <th className="px-3 py-2.5 text-start" scope="col">عنوان</th>
-            <th className="px-3 py-2.5 text-end" scope="col">مقدار</th>
-            <th className="w-40 px-3 py-2.5 text-start" scope="col">سهم مقایسه‌ای</th>
+            <th className="w-10 px-3 py-2.5 text-center" scope="col">
+              #
+            </th>
+            <th className="px-3 py-2.5 text-start" scope="col">
+              عنوان
+            </th>
+            <th className="px-3 py-2.5 text-end" scope="col">
+              مقدار
+            </th>
+            <th className="w-40 px-3 py-2.5 text-start" scope="col">
+              سهم مقایسه‌ای
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -1914,8 +2006,12 @@ function OperationalDataTable({
         <tfoot className="border-t border-border bg-slate-50/95 font-black dark:bg-slate-950/95">
           <tr>
             <td className="px-3 py-2.5" />
-            <th className="px-3 py-2.5 text-start" scope="row">جمع نمایش‌داده‌شده</th>
-            <td className="px-3 py-2.5 text-end tabular-nums">{formatDashboardNumber(total)}</td>
+            <th className="px-3 py-2.5 text-start" scope="row">
+              جمع نمایش‌داده‌شده
+            </th>
+            <td className="px-3 py-2.5 text-end tabular-nums">
+              {formatDashboardNumber(total)}
+            </td>
             <td className="px-3 py-2.5" />
           </tr>
         </tfoot>
@@ -1955,7 +2051,10 @@ function EmployeePerformanceBars({
         {values.slice(0, 6).map((value, index) => {
           const label = labels[index] ?? `کارشناس ${index + 1}`;
           return (
-            <div className="grid grid-cols-[2rem_minmax(0,1fr)_auto] items-center gap-2.5" key={`${label}-${index}`}>
+            <div
+              className="grid grid-cols-[2rem_minmax(0,1fr)_auto] items-center gap-2.5"
+              key={`${label}-${index}`}
+            >
               <span
                 aria-hidden="true"
                 className="grid size-8 place-items-center rounded-full bg-gradient-to-br from-cyan-100 to-blue-100 text-[10px] font-black text-blue-800 ring-1 ring-blue-200 dark:from-cyan-950 dark:to-blue-950 dark:text-blue-100 dark:ring-blue-800"
@@ -1963,14 +2062,19 @@ function EmployeePerformanceBars({
                 {label.trim().slice(0, 2)}
               </span>
               <span className="min-w-0">
-                <span className="block truncate text-xs font-bold text-foreground" title={label}>
+                <span
+                  className="block truncate text-xs font-bold text-foreground"
+                  title={label}
+                >
                   {label}
                 </span>
                 <span className="mt-1.5 block h-1.5 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
                   <span
                     aria-hidden="true"
                     className="block h-full rounded-full bg-gradient-to-l from-cyan-500 to-blue-600"
-                    style={{ width: `${Math.max(4, (value / maximum) * 100)}%` }}
+                    style={{
+                      width: `${Math.max(4, (value / maximum) * 100)}%`,
+                    }}
                   />
                 </span>
               </span>
@@ -1987,16 +2091,16 @@ function EmployeePerformanceBars({
 }
 
 function DashboardChart({
-  comparisonValues,
   kind,
   labels,
   title,
+  trendCalendarSystem,
   values,
 }: {
-  comparisonValues?: readonly number[] | undefined;
   kind: DashboardVisualKind;
   labels: readonly string[];
   title: string;
+  trendCalendarSystem: TrendCalendarSystem;
   values: readonly number[];
 }) {
   const resolvedKind = dashboardVisualKindForData(kind, values);
@@ -2010,38 +2114,21 @@ function DashboardChart({
     .join('، ');
 
   if (resolvedKind === 'line') {
-    const comparedValues =
-      comparisonValues?.length === values.length && values.length > 0
-        ? comparisonValues
-        : undefined;
-    const hasComparisonSeries = Boolean(comparedValues);
-    const plotMaximum = Math.max(
-      maximum,
-      ...(comparedValues ?? []),
-      1,
-    );
-    const chartLeft = 58;
-    const chartRight = 586;
-    const chartTop = 18;
+    const chartLeft = 88;
+    const chartRight = 602;
+    const chartTop = 20;
     const chartBottom = 142;
     const pointFor = (value: number, index: number, totalPoints: number) => ({
       x:
         totalPoints > 1
           ? chartLeft + (index * (chartRight - chartLeft)) / (totalPoints - 1)
           : (chartLeft + chartRight) / 2,
-      y:
-        chartBottom - ((value / plotMaximum) * (chartBottom - chartTop)),
+      y: chartBottom - (value / maximum) * (chartBottom - chartTop),
     });
     const points = values.map((value, index) => ({
       ...pointFor(value, index, values.length),
       value,
     }));
-    const comparisonPoints = comparedValues
-      ? comparedValues.map((value, index) => ({
-          ...pointFor(value, index, comparedValues.length),
-          value,
-        }))
-      : [];
     const visibleLabelStep =
       labels.length > 12 ? Math.ceil(labels.length / 8) : 1;
     const axisLabelIndexes = labels
@@ -2050,37 +2137,27 @@ function DashboardChart({
         (index) =>
           index % visibleLabelStep === 0 || index === labels.length - 1,
       );
-    const comparisonSummary = comparedValues
-      ? comparedValues
-          .map(
-            (value, index) =>
-              `${labels[index] ?? `دوره ${index + 1}`}: ${formatDashboardNumber(value)}`,
-          )
-          .join('، ')
-      : '';
+    const calendarLabel = trendCalendarSystem === 'persian' ? 'شمسی' : 'میلادی';
     return (
       <figure
-        aria-label={`${visualLabels[resolvedKind]} ${title}. بازه انتخاب‌شده: ${accessibleSummary}${comparisonSummary ? `؛ دوره قبل هم‌طول: ${comparisonSummary}` : ''}`}
+        aria-label={`${visualLabels[resolvedKind]} ${title}. بازه انتخاب‌شده: ${accessibleSummary}`}
         className="rounded-xl border border-border/80 bg-background px-2 py-3 sm:px-3"
         role="img"
       >
-        {hasComparisonSeries ? (
-          <div
-            aria-hidden="true"
-            className="mb-1 flex flex-wrap items-center gap-x-4 gap-y-1 px-2 text-[10px] font-bold text-muted-foreground"
+        <svg aria-hidden="true" className="h-56 w-full" viewBox="0 0 640 214">
+          <text
+            className="fill-muted-foreground"
+            fontSize="10"
+            textAnchor="middle"
+            transform="rotate(-90 18 82)"
+            x="18"
+            y="82"
           >
-            <span className="inline-flex items-center gap-1.5 text-slate-900 dark:text-slate-100">
-              <i className="size-2 rounded-full bg-[#172554]" />بازهٔ انتخاب‌شده
-            </span>
-            <span className="inline-flex items-center gap-1.5">
-              <i className="h-0.5 w-4 border-t-2 border-dashed border-slate-400" />دورهٔ قبل هم‌طول
-            </span>
-          </div>
-        ) : null}
-        <svg aria-hidden="true" className="h-48 w-full" viewBox="0 0 620 190">
+            مقدار
+          </text>
           {[0, 1, 2, 3, 4].map((index) => {
             const y = chartTop + (index * (chartBottom - chartTop)) / 4;
-            const value = plotMaximum * (1 - index / 4);
+            const value = maximum * (1 - index / 4);
             return (
               <g key={y}>
                 <line
@@ -2097,7 +2174,7 @@ function DashboardChart({
                   className="fill-muted-foreground"
                   fontSize="10"
                   textAnchor="end"
-                  x={chartLeft - 8}
+                  x={chartLeft - 12}
                   y={y + 3}
                 >
                   {compactChartValue(value)}
@@ -2105,24 +2182,6 @@ function DashboardChart({
               </g>
             );
           })}
-          {comparisonPoints.length ? (
-            <>
-              <polyline
-                fill="none"
-                points={comparisonPoints.map(({ x, y }) => `${x},${y}`).join(' ')}
-                stroke="#a8aebc"
-                strokeDasharray="5 6"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2.25"
-              />
-              {comparisonPoints.map(({ x, y, value }, index) => (
-                <circle cx={x} cy={y} fill="#b8becb" key={`${x}-${y}-previous`} r="3">
-                  <title>{`دوره قبل هم‌طول — ${labels[index]}: ${formatDashboardNumber(value)}`}</title>
-                </circle>
-              ))}
-            </>
-          ) : null}
           <polyline
             fill="none"
             points={points.map(({ x, y }) => `${x},${y}`).join(' ')}
@@ -2146,17 +2205,27 @@ function DashboardChart({
                 key={`${labels[index]}-${index}`}
                 textAnchor="middle"
                 x={point.x}
-                y="168"
+                y="166"
               >
-                {trendAxisLabel(labels[index] ?? '', labels.length)}
+                {trendAxisLabel(
+                  labels[index] ?? '',
+                  labels.length,
+                  trendCalendarSystem,
+                )}
               </text>
             );
           })}
+          <text
+            className="fill-muted-foreground"
+            fontSize="10"
+            textAnchor="middle"
+            x={(chartLeft + chartRight) / 2}
+            y="200"
+          >
+            {`تاریخ (${calendarLabel})`}
+          </text>
         </svg>
-        <figcaption className="sr-only">
-          {accessibleSummary}
-          {comparisonSummary ? `؛ دوره قبل هم‌طول: ${comparisonSummary}` : ''}
-        </figcaption>
+        <figcaption className="sr-only">{accessibleSummary}</figcaption>
       </figure>
     );
   }
@@ -2182,15 +2251,37 @@ function DashboardChart({
         className="rounded-xl border border-border/80 bg-muted/[0.12] p-3"
         role="img"
       >
-        <div aria-hidden="true" className="mb-2 flex flex-wrap items-center gap-4 text-[10px] font-bold text-muted-foreground">
-          <span className="inline-flex items-center gap-1.5"><i className="size-2.5 rounded-sm bg-blue-700" />مقدار</span>
-          <span className="inline-flex items-center gap-1.5"><i className="h-0.5 w-4 bg-amber-500" />میانگین روند</span>
+        <div
+          aria-hidden="true"
+          className="mb-2 flex flex-wrap items-center gap-4 text-[10px] font-bold text-muted-foreground"
+        >
+          <span className="inline-flex items-center gap-1.5">
+            <i className="size-2.5 rounded-sm bg-blue-700" />
+            مقدار
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <i className="h-0.5 w-4 bg-amber-500" />
+            میانگین روند
+          </span>
         </div>
         <svg aria-hidden="true" className="h-48 w-full" viewBox="0 0 600 205">
           {[36, 75, 114, 154].map((y, index) => (
             <g key={y}>
-              <line className="text-border" stroke="currentColor" strokeDasharray="4 5" x1="42" x2="582" y1={y} y2={y} />
-              <text className="fill-muted-foreground text-[9px]" x="36" y={y + 3} textAnchor="end">
+              <line
+                className="text-border"
+                stroke="currentColor"
+                strokeDasharray="4 5"
+                x1="42"
+                x2="582"
+                y1={y}
+                y2={y}
+              />
+              <text
+                className="fill-muted-foreground text-[9px]"
+                x="36"
+                y={y + 3}
+                textAnchor="end"
+              >
                 {compactChartValue(comboMaximum * (1 - index / 3))}
               </text>
             </g>
@@ -2201,10 +2292,22 @@ function DashboardChart({
             const x = 48 + slotWidth * index + (slotWidth - width) / 2;
             return (
               <g key={`${visibleLabels[index]}-${index}`}>
-                <rect fill={index === 0 ? '#1e3a8a' : '#93a4c7'} height={height} rx="4" width={width} x={x} y={154 - height}>
+                <rect
+                  fill={index === 0 ? '#1e3a8a' : '#93a4c7'}
+                  height={height}
+                  rx="4"
+                  width={width}
+                  x={x}
+                  y={154 - height}
+                >
                   <title>{`${visibleLabels[index]}: ${formatDashboardNumber(value)}`}</title>
                 </rect>
-                <text className="fill-muted-foreground text-[9px]" textAnchor="middle" x={x + width / 2} y="176">
+                <text
+                  className="fill-muted-foreground text-[9px]"
+                  textAnchor="middle"
+                  x={x + width / 2}
+                  y="176"
+                >
                   {(visibleLabels[index] ?? '').slice(0, 10)}
                 </text>
               </g>
@@ -2219,7 +2322,15 @@ function DashboardChart({
             strokeWidth="3"
           />
           {linePoints.map(({ x, y }, index) => (
-            <circle cx={x} cy={y} fill="#fff" key={`${x}-${y}`} r="4" stroke="#d97706" strokeWidth="2">
+            <circle
+              cx={x}
+              cy={y}
+              fill="#fff"
+              key={`${x}-${y}`}
+              r="4"
+              stroke="#d97706"
+              strokeWidth="2"
+            >
               <title>{`میانگین روند: ${formatDashboardNumber(rollingAverage[index] ?? 0, { maximumFractionDigits: 1 })}`}</title>
             </circle>
           ))}
@@ -2241,19 +2352,22 @@ function DashboardChart({
     );
     const segments = values.map((value, index) => {
       const start =
-        (values.slice(0, index).reduce((sum, item) => sum + item, 0) /
-          total) *
+        (values.slice(0, index).reduce((sum, item) => sum + item, 0) / total) *
         100;
       const end = start + (value / total) * 100;
-      return { start, end, color: colorByIndex.get(index) ?? comparisonRankColor(index, values.length) };
+      return {
+        start,
+        end,
+        color:
+          colorByIndex.get(index) ?? comparisonRankColor(index, values.length),
+      };
     });
     const donutCenter = 220;
     const donutRadius = 110;
     const donutCenterY = 160;
     const externalLabels = values.map((value, index) => {
       const start =
-        (values.slice(0, index).reduce((sum, item) => sum + item, 0) /
-          total) *
+        (values.slice(0, index).reduce((sum, item) => sum + item, 0) / total) *
         360;
       const end = start + (value / total) * 360;
       const radians = (((start + end) / 2 - 90) * Math.PI) / 180;
@@ -2288,8 +2402,15 @@ function DashboardChart({
         className="rounded-xl border border-border/80 bg-muted/[0.12] p-3 sm:p-4"
         role="img"
       >
-        <div aria-hidden="true" className="relative mx-auto h-64 w-full max-w-[26rem] sm:h-72">
-          <svg className="absolute inset-0 size-full" viewBox="0 0 440 320" direction="ltr">
+        <div
+          aria-hidden="true"
+          className="relative mx-auto h-64 w-full max-w-[26rem] sm:h-72"
+        >
+          <svg
+            className="absolute inset-0 size-full"
+            viewBox="0 0 440 320"
+            direction="ltr"
+          >
             {segments.map((segment, index) => (
               <circle
                 key={index}
@@ -2305,14 +2426,31 @@ function DashboardChart({
                 transform={`rotate(-90 ${donutCenter} ${donutCenterY})`}
               />
             ))}
-            <text x={donutCenter} y={155} textAnchor="middle" className="fill-foreground font-semibold" fontSize="26">
+            <text
+              x={donutCenter}
+              y={155}
+              textAnchor="middle"
+              className="fill-foreground font-semibold"
+              fontSize="26"
+            >
               {compactChartValue(total)}
             </text>
-            <text x={donutCenter} y={181} textAnchor="middle" className="fill-foreground" fontSize="14">مجموع</text>
+            <text
+              x={donutCenter}
+              y={181}
+              textAnchor="middle"
+              className="fill-foreground"
+              fontSize="14"
+            >
+              مجموع
+            </text>
             {externalLabels.map((item, index) => {
-              const percent = formatDashboardNumber((item.value / total) * 100, {
-                maximumFractionDigits: 1,
-              });
+              const percent = formatDashboardNumber(
+                (item.value / total) * 100,
+                {
+                  maximumFractionDigits: 1,
+                },
+              );
               const textY = item.labelY - 9;
               return (
                 <g key={`${item.label}-${index}`}>
@@ -2355,7 +2493,11 @@ function DashboardChart({
 
   if (resolvedKind === 'funnel') {
     return (
-      <figure aria-label={`قیف ${title}. ${accessibleSummary}`} className="space-y-2 rounded-xl border border-border/80 bg-muted/[0.18] p-4" role="img">
+      <figure
+        aria-label={`قیف ${title}. ${accessibleSummary}`}
+        className="space-y-2 rounded-xl border border-border/80 bg-muted/[0.18] p-4"
+        role="img"
+      >
         {values.map((value, index) => (
           <div
             aria-hidden="true"
@@ -2373,7 +2515,11 @@ function DashboardChart({
   }
 
   const rankedRows = values
-    .map((value, index) => ({ label: labels[index] ?? `دسته ${index + 1}`, value, index }))
+    .map((value, index) => ({
+      label: labels[index] ?? `دسته ${index + 1}`,
+      value,
+      index,
+    }))
     .sort((left, right) => right.value - left.value)
     .slice(0, 12);
   return (
@@ -2384,8 +2530,14 @@ function DashboardChart({
     >
       <div className="space-y-2.5">
         {rankedRows.map(({ label, value, index }, rank) => (
-          <div aria-hidden="true" className="grid grid-cols-[minmax(6rem,0.8fr)_minmax(8rem,2fr)_auto] items-center gap-2.5" key={`${label}-${index}`}>
-            <span className="truncate text-[11px] font-bold" title={label}>{label}</span>
+          <div
+            aria-hidden="true"
+            className="grid grid-cols-[minmax(6rem,0.8fr)_minmax(8rem,2fr)_auto] items-center gap-2.5"
+            key={`${label}-${index}`}
+          >
+            <span className="truncate text-[11px] font-bold" title={label}>
+              {label}
+            </span>
             <span className="relative block h-5 overflow-hidden rounded-md bg-slate-200/80 dark:bg-slate-700/80">
               <span
                 className="absolute inset-y-0 start-0 rounded-md"
@@ -2395,7 +2547,9 @@ function DashboardChart({
                 }}
               />
             </span>
-            <strong className="min-w-14 text-end text-[11px] tabular-nums text-foreground">{compactChartValue(value)}</strong>
+            <strong className="min-w-14 text-end text-[11px] tabular-nums text-foreground">
+              {compactChartValue(value)}
+            </strong>
           </div>
         ))}
       </div>
@@ -2408,8 +2562,11 @@ export function dashboardReportCodeFromDrilldown(
   drilldown: string,
 ): string | undefined {
   try {
-    const reportCode = new URL(drilldown, 'https://dashboard.local')
-      .searchParams.get('report')
+    const reportCode = new URL(
+      drilldown,
+      'https://dashboard.local',
+    ).searchParams
+      .get('report')
       ?.trim();
     return reportCode || undefined;
   } catch {
@@ -2425,6 +2582,8 @@ function ProjectionSlot({
   decision,
   drilldown,
   onOpenReportConfiguration,
+  onTrendCalendarSystemChange,
+  trendCalendarSystem,
   wide = false,
   data,
 }: {
@@ -2435,13 +2594,14 @@ function ProjectionSlot({
   decision?: string | undefined;
   drilldown: string;
   onOpenReportConfiguration(reportCode: string): void;
+  onTrendCalendarSystemChange(value: TrendCalendarSystem): void;
+  trendCalendarSystem: TrendCalendarSystem;
   wide?: boolean;
   data?:
     | {
         labels: readonly string[];
         values: readonly number[];
         currencyCode?: string;
-        comparisonValues?: readonly number[];
         comparison?: DashboardComparisonSnapshot;
         trend?: DashboardTrendSnapshot;
       }
@@ -2486,6 +2646,33 @@ function ProjectionSlot({
           <Badge className="bg-blue-50 text-[10px] text-blue-700 dark:bg-blue-950/50 dark:text-blue-200">
             {visualLabel}
           </Badge>
+          {resolvedKind === 'line' ? (
+            <Select
+              value={trendCalendarSystem}
+              onValueChange={(value) =>
+                onTrendCalendarSystemChange(value as TrendCalendarSystem)
+              }
+            >
+              <SelectTrigger
+                aria-label="تقویم برچسب‌های محور زمان"
+                className="h-7 min-w-28 border-border/80 bg-background px-2 text-[10px] font-bold"
+              >
+                <CalendarCheck aria-hidden="true" className="size-3.5" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {trendCalendarOptions.map(([value, label]) => (
+                  <SelectItem
+                    className="data-[highlighted]:bg-primary data-[highlighted]:text-primary-foreground"
+                    key={value}
+                    value={value}
+                  >
+                    {label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : null}
         </div>
       </div>
       <div className="relative flex-1 p-3.5">
@@ -2510,10 +2697,10 @@ function ProjectionSlot({
             />
           ) : (
             <DashboardChart
-              comparisonValues={data.comparisonValues}
               kind={kind}
               labels={data.labels}
               title={title}
+              trendCalendarSystem={trendCalendarSystem}
               values={data.values}
             />
           )
@@ -2527,11 +2714,16 @@ function ProjectionSlot({
           <>
             {kind === 'donut' && resolvedKind !== 'donut' ? (
               <p className="mt-2 text-[11px] text-muted-foreground">
-                به‌دلیل تعداد یا ماهیت دسته‌ها، سهم‌ها به‌صورت میله‌ای نمایش داده شده‌اند.
+                به‌دلیل تعداد یا ماهیت دسته‌ها، سهم‌ها به‌صورت میله‌ای نمایش
+                داده شده‌اند.
               </p>
             ) : null}
             {resolvedKind === 'table' || resolvedKind === 'queue' ? null : (
-              <VisualDataSummary labels={data.labels} title={title} values={data.values} />
+              <VisualDataSummary
+                labels={data.labels}
+                title={title}
+                values={data.values}
+              />
             )}
           </>
         ) : null}
@@ -2667,7 +2859,10 @@ function DashboardSidebar({
           </Button>
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-1 border-b border-border p-2" role="tablist">
+        <div
+          className="grid grid-cols-2 gap-1 border-b border-border p-2"
+          role="tablist"
+        >
           <button
             aria-selected={activePanel === 'workspace'}
             className={cn(
@@ -2700,232 +2895,239 @@ function DashboardSidebar({
       )}
 
       {activePanel === 'workspace' ? (
-      <nav aria-labelledby="dashboard-pages-title" className="space-y-1 p-2">
-        {dashboardNavigation.map((item) => {
-          const page = dashboardPageById.get(item.pageId);
-          if (!page) return null;
-          const Icon = navigationIcons[item.pageId] ?? LayoutDashboard;
-          const hasChildren = Boolean(item.children?.length);
-          const expanded = expandedGroups.has(item.pageId);
-          const branchActive =
-            activePageId === item.pageId ||
-            Boolean(
-              item.children?.some((child) => child.pageId === activePageId),
-            );
+        <nav aria-labelledby="dashboard-pages-title" className="space-y-1 p-2">
+          {dashboardNavigation.map((item) => {
+            const page = dashboardPageById.get(item.pageId);
+            if (!page) return null;
+            const Icon = navigationIcons[item.pageId] ?? LayoutDashboard;
+            const hasChildren = Boolean(item.children?.length);
+            const expanded = expandedGroups.has(item.pageId);
+            const branchActive =
+              activePageId === item.pageId ||
+              Boolean(
+                item.children?.some((child) => child.pageId === activePageId),
+              );
 
-          return (
-            <div key={item.pageId}>
-              <div className="flex items-center gap-1">
-                <button
-                  aria-current={
-                    activePageId === item.pageId ? 'page' : undefined
-                  }
-                  aria-label={collapsed ? page.title : undefined}
-                  className={cn(
-                    'flex min-h-11 min-w-0 flex-1 items-center rounded-xl text-start text-sm font-bold outline-none transition focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background',
-                    collapsed ? 'justify-center px-2' : 'gap-3 px-3',
-                    branchActive
-                      ? 'bg-primary text-primary-foreground shadow-sm'
-                      : 'text-foreground hover:bg-muted',
-                  )}
-                  onClick={() => onPageSelect(item.pageId)}
-                  title={collapsed ? page.title : undefined}
-                  type="button"
-                >
-                  <Icon aria-hidden="true" className="size-[18px] shrink-0" />
-                  {collapsed ? null : (
-                    <span className="min-w-0 flex-1">{page.title}</span>
-                  )}
-                </button>
-                {hasChildren && !collapsed ? (
+            return (
+              <div key={item.pageId}>
+                <div className="flex items-center gap-1">
                   <button
-                    aria-expanded={expanded}
-                    aria-label={`${expanded ? 'بستن' : 'بازکردن'} زیرصفحه‌های ${page.title}`}
-                    className="grid size-10 shrink-0 place-items-center rounded-xl text-muted-foreground outline-none transition hover:bg-muted focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-                    onClick={() => onGroupToggle(item.pageId)}
+                    aria-current={
+                      activePageId === item.pageId ? 'page' : undefined
+                    }
+                    aria-label={collapsed ? page.title : undefined}
+                    className={cn(
+                      'flex min-h-11 min-w-0 flex-1 items-center rounded-xl text-start text-sm font-bold outline-none transition focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+                      collapsed ? 'justify-center px-2' : 'gap-3 px-3',
+                      branchActive
+                        ? 'bg-primary text-primary-foreground shadow-sm'
+                        : 'text-foreground hover:bg-muted',
+                    )}
+                    onClick={() => onPageSelect(item.pageId)}
+                    title={collapsed ? page.title : undefined}
                     type="button"
                   >
-                    <ChevronDown
-                      aria-hidden="true"
-                      className={cn(
-                        'size-4 transition-transform',
-                        expanded && 'rotate-180',
-                      )}
-                    />
+                    <Icon aria-hidden="true" className="size-[18px] shrink-0" />
+                    {collapsed ? null : (
+                      <span className="min-w-0 flex-1">{page.title}</span>
+                    )}
                   </button>
+                  {hasChildren && !collapsed ? (
+                    <button
+                      aria-expanded={expanded}
+                      aria-label={`${expanded ? 'بستن' : 'بازکردن'} زیرصفحه‌های ${page.title}`}
+                      className="grid size-10 shrink-0 place-items-center rounded-xl text-muted-foreground outline-none transition hover:bg-muted focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                      onClick={() => onGroupToggle(item.pageId)}
+                      type="button"
+                    >
+                      <ChevronDown
+                        aria-hidden="true"
+                        className={cn(
+                          'size-4 transition-transform',
+                          expanded && 'rotate-180',
+                        )}
+                      />
+                    </button>
+                  ) : null}
+                </div>
+
+                {hasChildren && expanded && !collapsed ? (
+                  <div className="me-5 mt-1 space-y-1 border-e border-border pe-3">
+                    {item.children?.map((child) => {
+                      const childPage = dashboardPageById.get(child.pageId);
+                      if (!childPage) return null;
+                      const selected = child.pageId === activePageId;
+                      return (
+                        <button
+                          aria-current={selected ? 'page' : undefined}
+                          className={cn(
+                            'flex min-h-10 w-full items-center rounded-lg px-3 text-start text-xs font-bold outline-none transition focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+                            selected
+                              ? 'bg-primary/10 text-primary'
+                              : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+                          )}
+                          key={child.pageId}
+                          onClick={() => onPageSelect(child.pageId)}
+                          type="button"
+                        >
+                          {childPage.title}
+                        </button>
+                      );
+                    })}
+                  </div>
                 ) : null}
               </div>
-
-              {hasChildren && expanded && !collapsed ? (
-                <div className="me-5 mt-1 space-y-1 border-e border-border pe-3">
-                  {item.children?.map((child) => {
-                    const childPage = dashboardPageById.get(child.pageId);
-                    if (!childPage) return null;
-                    const selected = child.pageId === activePageId;
-                    return (
-                      <button
-                        aria-current={selected ? 'page' : undefined}
-                        className={cn(
-                          'flex min-h-10 w-full items-center rounded-lg px-3 text-start text-xs font-bold outline-none transition focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background',
-                          selected
-                            ? 'bg-primary/10 text-primary'
-                            : 'text-muted-foreground hover:bg-muted hover:text-foreground',
-                        )}
-                        key={child.pageId}
-                        onClick={() => onPageSelect(child.pageId)}
-                        type="button"
-                      >
-                        {childPage.title}
-                      </button>
-                    );
-                  })}
-                </div>
-              ) : null}
-            </div>
-          );
-        })}
-      </nav>
+            );
+          })}
+        </nav>
       ) : null}
 
       {activePanel === 'filters' ? (
-      <section
-        aria-label={collapsed ? activeFiltersTitle : undefined}
-        aria-labelledby={
-          collapsed ? undefined : 'dashboard-sidebar-filters-title'
-        }
-        className={cn(
-          'border-t border-border',
-          collapsed ? 'space-y-2 p-2' : 'p-3',
-        )}
-      >
-        {collapsed ? (
-          <>
-            <Button
-              aria-label={`پاک‌کردن ${activeFiltersTitle}`}
-              className="size-10 w-full p-0"
-              onClick={onFiltersReset}
-              size="icon"
-              title="پاک‌کردن فیلترها"
-              variant="ghost"
-            >
-              <RotateCcw aria-hidden="true" className="size-4" />
-            </Button>
-            <Button
-              aria-label="به‌روزرسانی دستی داشبورد"
-              className="size-10 w-full p-0"
-              disabled={Boolean(dateRangeError)}
-              loading={isFetching}
-              onClick={onRefresh}
-              size="icon"
-              title="به‌روزرسانی دستی"
-              variant="ghost"
-            >
-              <RefreshCw aria-hidden="true" className="size-4" />
-            </Button>
-          </>
-        ) : (
-          <>
-            <div className="flex items-center gap-2">
-              <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
-                <Filter aria-hidden="true" className="size-4" />
-              </span>
-              <h3
-                id="dashboard-sidebar-filters-title"
-                className="min-w-0 flex-1 text-sm font-black"
+        <section
+          aria-label={collapsed ? activeFiltersTitle : undefined}
+          aria-labelledby={
+            collapsed ? undefined : 'dashboard-sidebar-filters-title'
+          }
+          className={cn(
+            'border-t border-border',
+            collapsed ? 'space-y-2 p-2' : 'p-3',
+          )}
+        >
+          {collapsed ? (
+            <>
+              <Button
+                aria-label={`پاک‌کردن ${activeFiltersTitle}`}
+                className="size-10 w-full p-0"
+                onClick={onFiltersReset}
+                size="icon"
+                title="پاک‌کردن فیلترها"
+                variant="ghost"
               >
-                {activeFiltersTitle}
-              </h3>
-            </div>
-
-            <div className="mt-4 space-y-3">
-              <div>
-                <div className="grid gap-3">
-                  <FormField id="dashboard-from" label="از تاریخ">
-                    <DatePicker
-                      aria-describedby={
-                        dateRangeError
-                          ? 'dashboard-date-range-error'
-                          : undefined
-                      }
-                      aria-invalid={Boolean(dateRangeError)}
-                      calendarSystem={dateCalendarSystem}
-                      className="rounded-xl focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 focus-within:ring-offset-background"
-                      gregorianEnglish
-                      id="dashboard-from"
-                      onCalendarSystemChange={setDateCalendarSystem}
-                      onChange={(from) =>
-                        onFiltersChange({ from, range: 'custom' })
-                      }
-                      placeholder="انتخاب تاریخ"
-                      value={filters.from ?? ''}
-                    />
-                  </FormField>
-                  <FormField id="dashboard-to" label="تا تاریخ">
-                    <DatePicker
-                      aria-describedby={
-                        dateRangeError
-                          ? 'dashboard-date-range-error'
-                          : undefined
-                      }
-                      aria-invalid={Boolean(dateRangeError)}
-                      calendarSystem={dateCalendarSystem}
-                      className="rounded-xl focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 focus-within:ring-offset-background"
-                      gregorianEnglish
-                      id="dashboard-to"
-                      onCalendarSystemChange={setDateCalendarSystem}
-                      onChange={(to) =>
-                        onFiltersChange({ range: 'custom', to })
-                      }
-                      placeholder="انتخاب تاریخ"
-                      value={filters.to ?? ''}
-                    />
-                  </FormField>
-                </div>
-                {dateRangeError ? (
-                  <p
-                    className="mt-2 text-xs font-medium text-destructive"
-                    id="dashboard-date-range-error"
-                    role="alert"
-                  >
-                    {dateRangeError}
-                  </p>
-                ) : null}
+                <RotateCcw aria-hidden="true" className="size-4" />
+              </Button>
+              <Button
+                aria-label="به‌روزرسانی دستی داشبورد"
+                className="size-10 w-full p-0"
+                disabled={Boolean(dateRangeError)}
+                loading={isFetching}
+                onClick={onRefresh}
+                size="icon"
+                title="به‌روزرسانی دستی"
+                variant="ghost"
+              >
+                <RefreshCw aria-hidden="true" className="size-4" />
+              </Button>
+            </>
+          ) : (
+            <>
+              <div className="flex items-center gap-2">
+                <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
+                  <Filter aria-hidden="true" className="size-4" />
+                </span>
+                <h3
+                  id="dashboard-sidebar-filters-title"
+                  className="min-w-0 flex-1 text-sm font-black"
+                >
+                  {activeFiltersTitle}
+                </h3>
               </div>
 
-              <FormField id="dashboard-range" label="بازه زمانی">
-                <Select
-                  value={filters.range}
-                  onValueChange={(value) => {
-                    const range = value as DashboardRange;
-                    onFiltersChange({
-                      range,
-                      ...(range === 'custom' ? {} : { from: null, to: null }),
-                    });
-                  }}
-                >
-                  <SelectTrigger
-                    className="focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-                    id="dashboard-range"
+              <div className="mt-4 space-y-3">
+                <div>
+                  <div className="grid gap-3">
+                    <FormField id="dashboard-from" label="از تاریخ">
+                      <DatePicker
+                        aria-describedby={
+                          dateRangeError
+                            ? 'dashboard-date-range-error'
+                            : undefined
+                        }
+                        aria-invalid={Boolean(dateRangeError)}
+                        calendarSystem={dateCalendarSystem}
+                        className="rounded-xl focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 focus-within:ring-offset-background"
+                        gregorianEnglish
+                        id="dashboard-from"
+                        onCalendarSystemChange={setDateCalendarSystem}
+                        onChange={(from) =>
+                          onFiltersChange({ from, range: 'custom' })
+                        }
+                        placeholder="انتخاب تاریخ"
+                        value={filters.from ?? ''}
+                      />
+                    </FormField>
+                    <FormField id="dashboard-to" label="تا تاریخ">
+                      <DatePicker
+                        aria-describedby={
+                          dateRangeError
+                            ? 'dashboard-date-range-error'
+                            : undefined
+                        }
+                        aria-invalid={Boolean(dateRangeError)}
+                        calendarSystem={dateCalendarSystem}
+                        className="rounded-xl focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 focus-within:ring-offset-background"
+                        gregorianEnglish
+                        id="dashboard-to"
+                        onCalendarSystemChange={setDateCalendarSystem}
+                        onChange={(to) =>
+                          onFiltersChange({ range: 'custom', to })
+                        }
+                        placeholder="انتخاب تاریخ"
+                        value={filters.to ?? ''}
+                      />
+                    </FormField>
+                  </div>
+                  {dateRangeError ? (
+                    <p
+                      className="mt-2 text-xs font-medium text-destructive"
+                      id="dashboard-date-range-error"
+                      role="alert"
+                    >
+                      {dateRangeError}
+                    </p>
+                  ) : null}
+                </div>
+
+                <FormField id="dashboard-range" label="بازه زمانی">
+                  <Select
+                    value={filters.range}
+                    onValueChange={(value) => {
+                      const range = value as DashboardRange;
+                      onFiltersChange({
+                        range,
+                        ...(range === 'custom' ? {} : { from: null, to: null }),
+                      });
+                    }}
                   >
-                    <CalendarRange aria-hidden="true" className="size-4" />
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {rangeOptions.map(([value, label]) => (
-                      <SelectItem
-                        className="data-[highlighted]:bg-primary data-[highlighted]:text-primary-foreground"
-                        key={value}
-                        value={value}
-                      >
-                        {label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </FormField>
+                    <SelectTrigger
+                      className="focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                      id="dashboard-range"
+                    >
+                      <CalendarRange aria-hidden="true" className="size-4" />
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {rangeOptions.map(([value, label]) => (
+                        <SelectItem
+                          className="data-[highlighted]:bg-primary data-[highlighted]:text-primary-foreground"
+                          key={value}
+                          value={value}
+                        >
+                          {label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </FormField>
 
                 <div className="space-y-3 rounded-xl bg-muted/30 p-3">
-                  {(dashboardPageFilterKeys[activePageId] ?? []).map((key) => {
+                  {[
+                    ...(dashboardPageFilterKeys[activePageId] ?? []).filter(
+                      (key) => key === 'currency',
+                    ),
+                    ...(dashboardPageFilterKeys[activePageId] ?? []).filter(
+                      (key) => key !== 'currency',
+                    ),
+                  ].map((key) => {
                     const copy = filterCopyForPage(activePageId, key);
                     return (
                       <DimensionFilter
@@ -2942,32 +3144,35 @@ function DashboardSidebar({
                   })}
                   {!(dashboardPageFilterKeys[activePageId] ?? []).length ? (
                     <p className="text-[11px] leading-5 text-muted-foreground">
-                      <Info aria-hidden="true" className="me-1 inline size-3.5" />
+                      <Info
+                        aria-hidden="true"
+                        className="me-1 inline size-3.5"
+                      />
                       برای این صفحه فیلتر تکمیلی منتشر نشده است.
                     </p>
                   ) : null}
                 </div>
 
-              <div className="grid grid-cols-2 gap-2 border-t border-border pt-3">
-                <Button onClick={onFiltersReset} size="sm" variant="outline">
-                  <RotateCcw aria-hidden="true" className="size-4" />
-                  پاک‌کردن
-                </Button>
-                <Button
-                  disabled={Boolean(dateRangeError)}
-                  loading={isFetching}
-                  onClick={onRefresh}
-                  size="sm"
-                  variant="outline"
-                >
-                  <RefreshCw aria-hidden="true" className="size-4" />
-                  به‌روزرسانی
-                </Button>
+                <div className="grid grid-cols-2 gap-2 border-t border-border pt-3">
+                  <Button onClick={onFiltersReset} size="sm" variant="outline">
+                    <RotateCcw aria-hidden="true" className="size-4" />
+                    پاک‌کردن
+                  </Button>
+                  <Button
+                    disabled={Boolean(dateRangeError)}
+                    loading={isFetching}
+                    onClick={onRefresh}
+                    size="sm"
+                    variant="outline"
+                  >
+                    <RefreshCw aria-hidden="true" className="size-4" />
+                    به‌روزرسانی
+                  </Button>
+                </div>
               </div>
-            </div>
-          </>
-        )}
-      </section>
+            </>
+          )}
+        </section>
       ) : null}
     </Card>
   );
@@ -2995,6 +3200,8 @@ export function DashboardWorkspace() {
   const [expandedGroups, setExpandedGroups] = useState<ReadonlySet<string>>(
     () => new Set(),
   );
+  const [trendCalendarSystem, setTrendCalendarSystem] =
+    useState<TrendCalendarSystem>('persian');
   const legalEntity = useLegalEntityContext();
   const selection = legalEntity.context?.selection ?? null;
   const activePage =
@@ -3143,14 +3350,19 @@ export function DashboardWorkspace() {
           onFiltersChange={updateFilters}
           onFiltersReset={resetFilters}
           onGroupToggle={toggleNavigationGroup}
-           onPageSelect={selectPage}
+          onPageSelect={selectPage}
           onRefresh={() => void query.refetch()}
         />
 
         <div className="min-w-0 space-y-5">
           <section aria-labelledby="active-dashboard-page-title">
             <div className="space-y-4">
-              <header className={cn('relative isolate overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-bl p-4 shadow-sm sm:p-5', activePageHeaderTheme)}>
+              <header
+                className={cn(
+                  'relative isolate overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-bl p-4 shadow-sm sm:p-5',
+                  activePageHeaderTheme,
+                )}
+              >
                 <Image
                   alt=""
                   aria-hidden="true"
@@ -3160,13 +3372,28 @@ export function DashboardWorkspace() {
                   sizes="(min-width: 1024px) 72vw, 100vw"
                   src={activePageHeaderArtwork}
                 />
-                <span aria-hidden="true" className="pointer-events-none absolute inset-0 bg-gradient-to-l from-surface/55 via-surface/25 to-transparent dark:from-surface/80 dark:via-surface/45 dark:to-surface/10" />
-                <span aria-hidden="true" className="pointer-events-none absolute -end-14 -top-14 size-40 rounded-full bg-primary/10 blur-3xl" />
-                <span aria-hidden="true" className="pointer-events-none absolute -start-16 bottom-0 size-32 rounded-full bg-cyan-400/10 blur-3xl" />
-                <span aria-hidden="true" className="pointer-events-none absolute -bottom-10 -end-2 text-primary/[0.055] dark:text-primary/[0.12]">
+                <span
+                  aria-hidden="true"
+                  className="pointer-events-none absolute inset-0 bg-gradient-to-l from-surface/55 via-surface/25 to-transparent dark:from-surface/80 dark:via-surface/45 dark:to-surface/10"
+                />
+                <span
+                  aria-hidden="true"
+                  className="pointer-events-none absolute -end-14 -top-14 size-40 rounded-full bg-primary/10 blur-3xl"
+                />
+                <span
+                  aria-hidden="true"
+                  className="pointer-events-none absolute -start-16 bottom-0 size-32 rounded-full bg-cyan-400/10 blur-3xl"
+                />
+                <span
+                  aria-hidden="true"
+                  className="pointer-events-none absolute -bottom-10 -end-2 text-primary/[0.055] dark:text-primary/[0.12]"
+                >
                   <ActivePageIcon className="size-44 stroke-[1.15] sm:size-52" />
                 </span>
-                <span aria-hidden="true" className="pointer-events-none absolute inset-x-10 bottom-0 h-px bg-gradient-to-l from-transparent via-primary/25 to-transparent" />
+                <span
+                  aria-hidden="true"
+                  className="pointer-events-none absolute inset-x-10 bottom-0 h-px bg-gradient-to-l from-transparent via-primary/25 to-transparent"
+                />
                 <div className="relative mx-auto flex max-w-3xl flex-col items-center text-center">
                   <span className="mb-2 grid size-10 place-items-center rounded-xl bg-primary/10 text-primary ring-1 ring-primary/15 shadow-sm">
                     <ActivePageIcon aria-hidden="true" className="size-5" />
@@ -3177,7 +3404,10 @@ export function DashboardWorkspace() {
                   >
                     {activePage.title}
                   </h2>
-                  <p className="mt-1 text-xs font-bold tracking-wide text-primary" dir="ltr">
+                  <p
+                    className="mt-1 text-xs font-bold tracking-wide text-primary"
+                    dir="ltr"
+                  >
                     {activePage.technicalName}
                   </p>
                   <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
@@ -3188,26 +3418,26 @@ export function DashboardWorkspace() {
 
               {activePageKpis.length > 0 ? (
                 <div
-                    className={cn(
-                      'grid grid-cols-1 gap-3',
-                      kpiGridColumns(activePageKpis.length),
-                    )}
-                    data-dashboard-kpi-count={activePageKpis.length}
-                  >
-                    {activePageKpis.map((item) => (
-                      <KpiCard
-                        key={item.id}
-                        definition={item}
-                        featured
-                        metric={query.data?.metrics[item.id]}
-                        selected={filters.widget === item.id}
-                        onSelect={() =>
-                          updateFilters({
-                            widget: filters.widget === item.id ? null : item.id,
-                          })
-                        }
-                      />
-                    ))}
+                  className={cn(
+                    'grid grid-cols-1 gap-3',
+                    kpiGridColumns(activePageKpis.length),
+                  )}
+                  data-dashboard-kpi-count={activePageKpis.length}
+                >
+                  {activePageKpis.map((item) => (
+                    <KpiCard
+                      key={item.id}
+                      definition={item}
+                      featured
+                      metric={query.data?.metrics[item.id]}
+                      selected={filters.widget === item.id}
+                      onSelect={() =>
+                        updateFilters({
+                          widget: filters.widget === item.id ? null : item.id,
+                        })
+                      }
+                    />
+                  ))}
                 </div>
               ) : (
                 <p className="rounded-xl bg-muted/50 p-3 text-sm text-muted-foreground">
@@ -3218,23 +3448,25 @@ export function DashboardWorkspace() {
 
               {activePage.visualizations.length ? (
                 <div className="grid items-stretch gap-3 xl:grid-cols-2">
-                    {activePage.visualizations.map((visualization, index) => (
-                      <ProjectionSlot
-                        visualId={visualization.id}
-                        wide={dashboardVisualIsWide(
-                          activePage.visualizations,
-                          index,
-                        )}
-                        key={visualization.id}
-                        kind={visualization.kind}
-                        title={visualization.title}
-                        description={visualization.description}
-                        decision={visualization.openDecision}
-                        drilldown={visualization.drilldown}
-                        onOpenReportConfiguration={openReportConfiguration}
-                        data={query.data?.visuals[visualization.id]}
-                      />
-                    ))}
+                  {activePage.visualizations.map((visualization, index) => (
+                    <ProjectionSlot
+                      visualId={visualization.id}
+                      wide={dashboardVisualIsWide(
+                        activePage.visualizations,
+                        index,
+                      )}
+                      key={visualization.id}
+                      kind={visualization.kind}
+                      title={visualization.title}
+                      description={visualization.description}
+                      decision={visualization.openDecision}
+                      drilldown={visualization.drilldown}
+                      onOpenReportConfiguration={openReportConfiguration}
+                      onTrendCalendarSystemChange={setTrendCalendarSystem}
+                      trendCalendarSystem={trendCalendarSystem}
+                      data={query.data?.visuals[visualization.id]}
+                    />
+                  ))}
                 </div>
               ) : null}
             </div>
@@ -3266,9 +3498,8 @@ export function DashboardWorkspace() {
               }}
             />
           ) : null}
-
         </div>
-          </section>
+      </section>
     </div>
   );
 }
