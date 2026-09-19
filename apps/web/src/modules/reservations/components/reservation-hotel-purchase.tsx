@@ -30,13 +30,30 @@ type PurchaseRequest = ReservationIntakeV1 & {
   workflow?: TravelWorkflowStateV1 | null;
 };
 
+type PurchasableService =
+  ReservationIntakeV1['snapshot']['serviceSelections'][number];
+
 export const reservationPurchaseServices = (
-  services: ReservationIntakeV1['snapshot']['serviceSelections'],
-) =>
-  services.filter(
+  snapshot: ReservationIntakeV1['snapshot'],
+): PurchasableService[] => {
+  const services = snapshot.serviceSelections.filter(
     (service) => service.kind === 'HOTEL' || service.kind === 'TRANSFER',
   );
-
+  const hotel = snapshot.hotelSelection;
+  if (
+    !hotel ||
+    services.some((service) => service.clientKey === hotel.serviceClientKey)
+  )
+    return services;
+  return [
+    ...services,
+    {
+      clientKey: hotel.serviceClientKey,
+      kind: 'HOTEL',
+      titleSnapshot: hotel.hotelNameSnapshot,
+    },
+  ];
+};
 export function hotelPurchaseTotal(
   amount: string,
   basis: 'NIGHT' | 'TOTAL',
@@ -100,7 +117,7 @@ function ServicePurchaseCard({
   onSaved,
 }: {
   request: PurchaseRequest;
-  service: ReservationIntakeV1['snapshot']['serviceSelections'][number];
+  service: PurchasableService;
   purchase: ReservationServicePurchaseV1 | undefined;
   onSaved: () => void;
 }) {
@@ -309,34 +326,57 @@ export function ReservationHotelPurchase({
   request: PurchaseRequest;
   onSaved: () => void;
 }) {
+  const services = reservationPurchaseServices(request.snapshot);
+  const [selectedServiceKey, setSelectedServiceKey] = useState(
+    services[0]?.clientKey ?? '',
+  );
+  const selectedService =
+    services.find((service) => service.clientKey === selectedServiceKey) ??
+    services[0];
+
   return (
     <div className="mt-4 space-y-4 rounded-xl border bg-muted/20 p-4">
       <div>
         <h3 className="font-bold">خرید خدمات و ارسال به مالی</h3>
         <p className="text-xs text-muted-foreground">
-          برای هر خدمت، کارگزار و مبلغ خرید را جدا ثبت کنید. اصلاح خرید یک نسخه
-          تازه می‌سازد و تا پرداخت نسخه تازه، تحویل مدارک به فروش بسته می‌ماند.
+          ابتدا خدمت هتل یا ترانسفر را انتخاب کنید؛ سپس کارگزار، مبلغ و ارز خرید
+          را ثبت کنید. هر ثبت، نسخهٔ خریدِ قابل پرداخت را به کارتابل مالی
+          می‌فرستد.
         </p>
       </div>
       <SupplierFormPurchaseContext request={request} />
-      {reservationPurchaseServices(request.snapshot.serviceSelections).map(
-        (service) => (
-          <ServicePurchaseCard
-            key={service.clientKey}
-            request={request}
-            service={service}
-            purchase={request.servicePurchases?.find(
-              (item) => item.serviceClientKey === service.clientKey,
-            )}
-            onSaved={onSaved}
-          />
-        ),
-      )}
-      {!reservationPurchaseServices(request.snapshot.serviceSelections)
-        .length && (
-        <p>
-          برای این قرارداد هتل یا ترانسفری برای خرید از کارگزار ثبت نشده است.
-          قیمت خرید بلیط هنگام تعریف بلیط به مالی ارسال می‌شود.
+      {services.length ? (
+        <>
+          <FormField label="خدمت مورد خرید">
+            <select
+              className="h-11 w-full rounded-xl border border-input bg-surface px-3 text-sm"
+              value={selectedService?.clientKey ?? ''}
+              onChange={(event) => setSelectedServiceKey(event.target.value)}
+            >
+              {services.map((service) => (
+                <option key={service.clientKey} value={service.clientKey}>
+                  {service.kind === 'HOTEL' ? 'هتل' : 'ترانسفر'} ·{' '}
+                  {service.titleSnapshot}
+                </option>
+              ))}
+            </select>
+          </FormField>
+          {selectedService ? (
+            <ServicePurchaseCard
+              key={`${selectedService.clientKey}:${request.purchaseVersion ?? 0}`}
+              request={request}
+              service={selectedService}
+              purchase={request.servicePurchases?.find(
+                (item) => item.serviceClientKey === selectedService.clientKey,
+              )}
+              onSaved={onSaved}
+            />
+          ) : null}
+        </>
+      ) : (
+        <p className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-100">
+          در این قرارداد هتل یا ترانسفر ثبت نشده است. ابتدا خدمت را در قرارداد
+          اضافه کنید؛ قیمت خرید بلیط هنگام تعریف بلیط برای مالی ثبت می‌شود.
         </p>
       )}
       {!!request.hotelPurchases?.length && (
@@ -353,7 +393,6 @@ export function ReservationHotelPurchase({
     </div>
   );
 }
-
 export function ReservationPurchaseDialog({ id }: { id: string }) {
   const [request, setRequest] = useState<PurchaseRequest>();
   const [error, setError] = useState('');
