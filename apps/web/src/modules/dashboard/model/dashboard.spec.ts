@@ -600,6 +600,8 @@ describe('dashboard permission and data states', () => {
     expect(source).not.toContain('تاریخ (${calendarLabel})');
     expect(source).not.toContain('transform="rotate(-90 18 82)"');
     expect(source).toContain('formatDashboardNumber');
+    expect(source).toContain('funnelStageDesigns');
+    expect(source).toContain('polygon(4% 5%, 100% 0, 96% 100%, 0 94%)');
     expect(source).toContain('latinizeDashboardNumericText');
     expect(source).toContain("Intl.NumberFormat('en-US'");
     expect(source).toContain(".replaceAll('میلیون', 'M')");

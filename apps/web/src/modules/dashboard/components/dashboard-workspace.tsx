@@ -2697,12 +2697,32 @@ function DashboardChart({
       }))
       .sort((left, right) => right.drop - left.drop);
     const largestDrop = drops[0];
-    const funnelColors = [
-      'from-blue-100 to-blue-50 text-slate-900 dark:from-blue-950/60 dark:to-blue-950/20 dark:text-blue-100',
-      'from-blue-500 to-blue-600 text-white',
-      'from-blue-600 to-blue-700 text-white',
-      'from-blue-700 to-blue-800 text-white',
-      'from-slate-800 to-slate-950 text-white',
+    // The stages run RTL: the light "source" stage is at the right and the
+    // final outcome becomes progressively darker toward the left. Each stage
+    // has its own deliberately asymmetric trapezoid, rather than a generic
+    // rounded card, to preserve the decision-flow affordance at every width.
+    const funnelStageDesigns = [
+      {
+        className:
+          'from-[#edf4ff] via-[#dceaff] to-[#c7dcff] text-[#14275a] dark:from-blue-950/60 dark:via-blue-900/55 dark:to-blue-900/45 dark:text-blue-50',
+        clipPath: 'polygon(4% 5%, 100% 0, 96% 100%, 0 94%)',
+      },
+      {
+        className: 'from-[#5c98ff] via-[#3f7df2] to-[#2d69dc] text-white',
+        clipPath: 'polygon(2% 0, 100% 4%, 96% 100%, 0 96%)',
+      },
+      {
+        className: 'from-[#3d7eef] via-[#2d68da] to-[#2355bd] text-white',
+        clipPath: 'polygon(0 4%, 100% 0, 97% 96%, 3% 100%)',
+      },
+      {
+        className: 'from-[#2a5fc7] via-[#17438f] to-[#0d285c] text-white',
+        clipPath: 'polygon(0 0, 96% 6%, 92% 100%, 5% 96%)',
+      },
+      {
+        className: 'from-[#183d82] via-[#0e285d] to-[#071a40] text-white',
+        clipPath: 'polygon(4% 0, 100% 5%, 94% 100%, 0 95%)',
+      },
     ];
     return (
       <figure
@@ -2710,20 +2730,30 @@ function DashboardChart({
         className="space-y-4 rounded-xl border border-border/80 bg-surface p-4"
         role="img"
       >
-        <div className="flex flex-col gap-2 lg:flex-row lg:items-center" dir="rtl">
+        <div
+          className="flex flex-col gap-2 lg:flex-row lg:items-center"
+          dir="rtl"
+        >
           {stages.map((stage, index) => (
             <div className="contents" key={`${stage.label}-${index}`}>
               <div className="min-w-0 flex-1">
                 <div
                   className={cn(
-                    'grid min-h-28 place-items-center px-3 text-center shadow-sm',
+                    'grid min-h-32 place-items-center px-3 text-center shadow-[0_12px_24px_-18px_rgba(20,63,145,0.85)] transition-transform duration-200 hover:-translate-y-0.5',
                     'bg-gradient-to-bl',
-                    funnelColors[index] ?? funnelColors.at(-1),
+                    funnelStageDesigns[index]?.className ??
+                      funnelStageDesigns.at(-1)?.className,
                   )}
-                  style={{ clipPath: 'polygon(7% 0, 100% 7%, 93% 100%, 0 93%)' }}
+                  style={{
+                    clipPath:
+                      funnelStageDesigns[index]?.clipPath ??
+                      funnelStageDesigns.at(-1)?.clipPath,
+                  }}
                 >
                   <span className="min-w-0">
-                    <span className="block truncate text-sm font-black">{stage.label}</span>
+                    <span className="block truncate text-sm font-black">
+                      {stage.label}
+                    </span>
                     <strong className="mt-1 block text-xl tabular-nums">
                       {formatDashboardNumber(stage.value)}
                     </strong>
