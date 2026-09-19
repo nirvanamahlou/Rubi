@@ -3,6 +3,7 @@
 import { useQuery } from '@tanstack/react-query';
 import {
   AlertTriangle,
+  ArrowLeft,
   ArrowDownRight,
   ArrowUpRight,
   BadgeDollarSign,
@@ -25,6 +26,7 @@ import {
   Hotel,
   Info,
   LayoutDashboard,
+  Lightbulb,
   LineChart,
   ListFilter,
   LockKeyhole,
@@ -2018,6 +2020,109 @@ function VisualDataSummary({
   );
 }
 
+function ActionQueue({
+  labels,
+  title,
+  values,
+}: {
+  labels: readonly string[];
+  title: string;
+  values: readonly number[];
+}) {
+  const maximum = Math.max(...values, 1);
+  const rows = labels.slice(0, 8).map((label, index) => {
+    const value = values[index] ?? 0;
+    const ratio = value / maximum;
+    const priority = ratio >= 0.75 ? 'بالا' : ratio >= 0.45 ? 'متوسط' : 'کم';
+    const tone =
+      priority === 'بالا'
+        ? 'bg-rose-100 text-rose-700 dark:bg-rose-950/50 dark:text-rose-200'
+        : priority === 'متوسط'
+          ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-200'
+          : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-200';
+    return { index, label, priority, ratio, tone, value };
+  });
+
+  return (
+    <div className="overflow-x-auto rounded-xl border border-border/80 bg-surface shadow-inner shadow-slate-100/50 dark:shadow-none">
+      <table className="w-full min-w-[46rem] text-xs">
+        <caption className="sr-only">صف اقدام {title}</caption>
+        <thead className="bg-slate-100/95 text-foreground dark:bg-slate-900/95">
+          <tr>
+            <th className="px-3 py-3 text-start" scope="col">
+              فرصت / موضوع
+            </th>
+            <th className="px-3 py-3 text-start" scope="col">
+              اولویت
+            </th>
+            <th className="px-3 py-3 text-start" scope="col">
+              مهلت
+            </th>
+            <th className="px-3 py-3 text-start" scope="col">
+              مالک
+            </th>
+            <th className="px-3 py-3 text-start" scope="col">
+              ریسک
+            </th>
+            <th className="px-3 py-3 text-start" scope="col">
+              اقدام بعدی
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row) => (
+            <tr
+              className="border-t border-border/70 transition-colors hover:bg-blue-50/60 dark:hover:bg-blue-950/20"
+              key={`${row.label}-${row.index}`}
+            >
+              <th className="px-3 py-3 text-start" scope="row">
+                <span className="block font-bold text-foreground">{row.label}</span>
+                <span className="mt-1 block text-[11px] font-semibold tabular-nums text-muted-foreground">
+                  {formatDashboardNumber(row.value)}
+                </span>
+              </th>
+              <td className="px-3 py-3">
+                <span className={cn('inline-flex min-w-12 justify-center rounded-full px-2 py-1 font-bold', row.tone)}>
+                  {row.priority}
+                </span>
+              </td>
+              <td className="px-3 py-3 text-muted-foreground">—</td>
+              <td className="px-3 py-3 text-muted-foreground">—</td>
+              <td className="px-3 py-3">
+                <span className="flex min-w-24 items-center gap-2">
+                  <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
+                    <span
+                      aria-hidden="true"
+                      className={cn(
+                        'block h-full rounded-full',
+                        row.priority === 'بالا'
+                          ? 'bg-rose-500'
+                          : row.priority === 'متوسط'
+                            ? 'bg-amber-500'
+                            : 'bg-emerald-500',
+                      )}
+                      style={{ width: `${Math.max(8, row.ratio * 100)}%` }}
+                    />
+                  </span>
+                  <span className="text-[10px] font-bold text-muted-foreground">
+                    {`${Math.round(row.ratio * 100)}%`}
+                  </span>
+                </span>
+              </td>
+              <td className="px-3 py-3">
+                <span className="inline-flex items-center gap-1 rounded-md bg-primary px-2.5 py-1.5 font-bold text-primary-foreground">
+                  بررسی مورد
+                  <ArrowLeft aria-hidden="true" className="size-3.5" />
+                </span>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 function OperationalDataTable({
   kind,
   labels,
@@ -2029,6 +2134,9 @@ function OperationalDataTable({
   title: string;
   values: readonly number[];
 }) {
+  if (kind === 'queue') {
+    return <ActionQueue labels={labels} title={title} values={values} />;
+  }
   const maximum = Math.max(...values, 1);
   const total = values.reduce((sum, value) => sum + value, 0);
   return (
@@ -2065,7 +2173,7 @@ function OperationalDataTable({
                   aria-hidden="true"
                   className={cn(
                     'mx-auto mt-1 block size-1.5 rounded-full',
-                    kind === 'queue' ? 'bg-amber-500' : 'bg-primary',
+                    'bg-primary',
                   )}
                 />
               </td>
@@ -2081,9 +2189,7 @@ function OperationalDataTable({
                     aria-hidden="true"
                     className={cn(
                       'block h-full rounded-full',
-                      kind === 'queue'
-                        ? 'bg-gradient-to-l from-amber-400 to-orange-500'
-                        : 'bg-gradient-to-l from-blue-500 to-indigo-700',
+                      'bg-gradient-to-l from-blue-500 to-indigo-700',
                     )}
                     style={{
                       width: `${Math.max(3, ((values[index] ?? 0) / maximum) * 100)}%`,
@@ -2575,23 +2681,76 @@ function DashboardChart({
   }
 
   if (resolvedKind === 'funnel') {
+    const stages = values.slice(0, 5).map((value, index) => ({
+      conversion:
+        index < values.length - 1 && value > 0
+          ? Math.round(((values[index + 1] ?? 0) / value) * 100)
+          : null,
+      label: labels[index] ?? `مرحله ${index + 1}`,
+      value,
+    }));
+    const drops = stages
+      .slice(0, -1)
+      .map((stage, index) => ({
+        drop: Math.max(0, stage.value - (stages[index + 1]?.value ?? 0)),
+        index,
+      }))
+      .sort((left, right) => right.drop - left.drop);
+    const largestDrop = drops[0];
+    const funnelColors = [
+      'from-blue-100 to-blue-50 text-slate-900 dark:from-blue-950/60 dark:to-blue-950/20 dark:text-blue-100',
+      'from-blue-500 to-blue-600 text-white',
+      'from-blue-600 to-blue-700 text-white',
+      'from-blue-700 to-blue-800 text-white',
+      'from-slate-800 to-slate-950 text-white',
+    ];
     return (
       <figure
         aria-label={`قیف ${title}. ${accessibleSummary}`}
-        className="space-y-2 rounded-xl border border-border/80 bg-muted/[0.18] p-4"
+        className="space-y-4 rounded-xl border border-border/80 bg-surface p-4"
         role="img"
       >
-        {values.map((value, index) => (
-          <div
-            aria-hidden="true"
-            className="mx-auto flex min-h-9 items-center justify-between rounded-lg bg-primary px-3 text-xs font-bold text-primary-foreground"
-            key={`${labels[index]}-${index}`}
-            style={{ width: `${Math.max(36, (value / maximum) * 100)}%` }}
-          >
-            <span className="truncate">{labels[index]}</span>
-            <span>{formatDashboardNumber(value)}</span>
-          </div>
-        ))}
+        <div className="flex flex-col gap-2 lg:flex-row lg:items-center" dir="rtl">
+          {stages.map((stage, index) => (
+            <div className="contents" key={`${stage.label}-${index}`}>
+              <div className="min-w-0 flex-1">
+                <div
+                  className={cn(
+                    'grid min-h-28 place-items-center px-3 text-center shadow-sm',
+                    'bg-gradient-to-bl',
+                    funnelColors[index] ?? funnelColors.at(-1),
+                  )}
+                  style={{ clipPath: 'polygon(7% 0, 100% 7%, 93% 100%, 0 93%)' }}
+                >
+                  <span className="min-w-0">
+                    <span className="block truncate text-sm font-black">{stage.label}</span>
+                    <strong className="mt-1 block text-xl tabular-nums">
+                      {formatDashboardNumber(stage.value)}
+                    </strong>
+                  </span>
+                </div>
+              </div>
+              {stage.conversion !== null ? (
+                <div className="flex shrink-0 items-center justify-center gap-1.5 px-1 text-primary lg:flex-col">
+                  <ArrowLeft aria-hidden="true" className="size-4" />
+                  <strong className="text-sm tabular-nums">{`${stage.conversion}%`}</strong>
+                  <span className="text-[10px] text-muted-foreground">نرخ تبدیل</span>
+                </div>
+              ) : null}
+            </div>
+          ))}
+        </div>
+        <div className="flex flex-col gap-3 rounded-xl border border-blue-100 bg-blue-50/75 p-3 sm:flex-row sm:items-center sm:justify-between dark:border-blue-900/70 dark:bg-blue-950/30">
+          <span className="flex items-center gap-2 text-sm font-bold text-primary">
+            <Lightbulb aria-hidden="true" className="size-5" />
+            بینش
+          </span>
+          <p className="text-sm text-muted-foreground">
+            {largestDrop
+              ? `بیشترین افت بین «${stages[largestDrop.index]?.label}» و «${stages[largestDrop.index + 1]?.label}» رخ داده است (${formatDashboardNumber(largestDrop.drop)}).`
+              : 'برای محاسبهٔ افت مراحل، دادهٔ کافی در دسترس نیست.'}
+          </p>
+        </div>
         <figcaption className="sr-only">{accessibleSummary}</figcaption>
       </figure>
     );

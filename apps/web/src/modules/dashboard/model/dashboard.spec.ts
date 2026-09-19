@@ -539,6 +539,11 @@ describe('dashboard permission and data states', () => {
     expect(source).toContain('data-dashboard-kpi');
     expect(source).toContain('data-dashboard-visual');
     expect(source).toContain('OperationalDataTable');
+    expect(source).toContain('function ActionQueue');
+    expect(source).toContain('فرصت / موضوع');
+    expect(source).toContain('اقدام بعدی');
+    expect(source).toContain('بیشترین افت بین');
+    expect(source).toContain("clipPath: 'polygon(7% 0, 100% 7%, 93% 100%, 0 93%)'");
     expect(source).toContain('EmployeePerformanceBars');
     expect(source).toContain('MiniTrend');
     expect(source).toContain('className="h-20 w-full overflow-visible"');
