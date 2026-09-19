@@ -53,6 +53,7 @@ export interface DashboardVisualCurrencySeriesSnapshot {
   currencyCode: string;
   labels: readonly string[];
   values: readonly number[];
+  unit?: string;
   comparison?: DashboardComparisonSnapshot;
   trend?: DashboardTrendSnapshot;
 }
@@ -60,6 +61,7 @@ export interface DashboardVisualCurrencySeriesSnapshot {
 export interface DashboardVisualSnapshot {
   labels: readonly string[];
   values: readonly number[];
+  unit?: string;
   currencyCode?: string;
   currencySeries?: readonly DashboardVisualCurrencySeriesSnapshot[];
   comparison?: DashboardComparisonSnapshot;

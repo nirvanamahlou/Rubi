@@ -224,6 +224,7 @@ export interface DashboardProjectionV1 {
       {
         labels: readonly string[];
         values: readonly number[];
+        unit?: string;
         metricId?: string;
         aggregation?: string;
         currencyCode?: string;

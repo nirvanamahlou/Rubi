@@ -237,11 +237,13 @@ describe('dashboard travel projection date boundaries', () => {
       facts,
     } as unknown as ReportingRepository);
 
-    const result = await service.dashboardProjection(
-      {
-        range: 'month',
-        currency: 'IRR',
-        visualIds:
+      const result = await service.dashboardProjection(
+        {
+          range: 'month',
+          currency: 'IRR',
+          kpiIds:
+            'issue-success-rate,collection-rate,refund-rate,lead-conversion-rate',
+          visualIds:
           'finalized-sales-trend,crm-followup-queue,commercial-pipeline,employee-performance-ranking,employee-sales-count-by-agent,employee-sales-amount-by-agent,employee-conversion-by-agent,employee-cancellations-by-agent',
       },
       actor,
@@ -279,5 +281,12 @@ describe('dashboard travel projection date boundaries', () => {
     expect(result.visuals['employee-cancellations-by-agent']?.values).toEqual([
       0, 0, 0,
     ]);
+    expect(result.metrics['issue-success-rate']).toMatchObject({
+      unit: 'درصد',
+      value: '۶۷',
+    });
+    expect(result.metrics['collection-rate']?.unit).toBe('درصد');
+    expect(result.metrics['refund-rate']?.unit).toBe('درصد');
+    expect(result.metrics['lead-conversion-rate']?.unit).toBe('درصد');
   });
 });

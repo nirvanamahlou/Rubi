@@ -540,6 +540,67 @@ export class ReportingService {
             .map((fact) => fact.orderNumber ?? fact.id),
         ).size,
     };
+    const ratio = (numerator: number, denominator: number) =>
+      denominator > 0 ? Math.round((numerator / denominator) * 100) : 0;
+    const percentageMetrics: Record<string, (rows: typeof facts) => number> = {
+      'ticket-cancellation-rate': (rows) =>
+        ratio(
+          rows.filter((fact) => fact.reservationStatus === 'CANCELLED').length,
+          rows.length,
+        ),
+      'collection-rate': (rows) =>
+        ratio(
+          sum(rows, (fact) => Number(fact.settledAmount)),
+          sum(rows, (fact) => Number(fact.salesAmount)),
+        ),
+      'refund-rate': (rows) =>
+        ratio(
+          sum(rows, (fact) => Number(fact.refundAmount)),
+          sum(rows, (fact) => Number(fact.salesAmount)),
+        ),
+      'reservation-failure-rate': (rows) =>
+        ratio(
+          rows.filter((fact) => fact.issueStatus === 'FAILED').length,
+          rows.length,
+        ),
+      'sell-through-rate': (rows) =>
+        ratio(
+          rows.filter((fact) => fact.reservationStatus === 'CONFIRMED').length,
+          rows.length,
+        ),
+      'tour-sell-through-rate': (rows) =>
+        ratio(
+          rows.filter((fact) => fact.reservationStatus === 'CONFIRMED').length,
+          rows.length,
+        ),
+      'customer-interest-coverage': (rows) =>
+        ratio(rows.filter((fact) => Boolean(fact.destinationCity)).length, rows.length),
+      'lead-conversion-rate': (rows) =>
+        ratio(
+          rows.filter(
+            (fact) =>
+              fact.issueStatus === 'ISSUED' &&
+              fact.reservationStatus !== 'CANCELLED',
+          ).length,
+          rows.length,
+        ),
+      'sla-breach-rate': (rows) =>
+        ratio(
+          rows.filter((fact) => fact.issueStatus === 'FAILED').length,
+          rows.length,
+        ),
+      'campaign-conversion': (rows) =>
+        ratio(
+          rows.filter(
+            (fact) =>
+              fact.issueStatus === 'ISSUED' &&
+              fact.reservationStatus !== 'CANCELLED',
+          ).length,
+          rows.length,
+        ),
+      'consent-coverage': (rows) =>
+        ratio(rows.filter((fact) => Boolean(fact.leadSource)).length, rows.length),
+    };
     const amountMetrics: Record<string, (rows: typeof facts) => number> = {
       'gross-sales': (rows) => sum(rows, (fact) => Number(fact.salesAmount)),
       'net-sales': (rows) =>
@@ -662,6 +723,40 @@ export class ReportingService {
               },
             ],
           ];
+        const percentage = percentageMetrics[id];
+        if (percentage || id === 'lead-growth-rate') {
+          const current = percentage
+            ? percentage(facts)
+            : (() => {
+                const currentLeads = facts.filter((fact) => Boolean(fact.leadSource)).length;
+                const previousLeads = previousFacts?.filter((fact) => Boolean(fact.leadSource)).length ?? 0;
+                return previousLeads > 0
+                  ? Math.round(((currentLeads - previousLeads) / previousLeads) * 100)
+                  : 0;
+              })();
+          return [
+            [
+              id,
+              {
+                value: String(current),
+                unit: 'درصد',
+                detail: 'نسبت مصوب شاخص به‌صورت درصدی از grain فکت سفر محاسبه شده است.',
+                metricId: id,
+                aggregation: id === 'lead-growth-rate'
+                  ? 'change in lead count versus equal previous period × 100'
+                  : 'numerator / denominator × 100',
+                ...(previousFacts
+                  ? {
+                      comparison: comparisonFor(
+                        current,
+                        percentage ? percentage(previousFacts) : 0,
+                      ),
+                    }
+                  : {}),
+              },
+            ],
+          ];
+        }
         return [];
       }),
     );
@@ -796,6 +891,50 @@ export class ReportingService {
       'employee-cancellations-by-agent': 'ownerName',
       'employee-performance-ranking': 'ownerName',
     };
+    const percentageVisuals: Record<
+      string,
+      {
+        field: keyof (typeof facts)[number];
+        numerator: (rows: typeof facts) => number;
+        denominator?: (rows: typeof facts) => number;
+        aggregation: string;
+      }
+    > = {
+      'provider-failure-rate': {
+        field: 'providerName',
+        numerator: (rows) =>
+          rows.filter((fact) => fact.issueStatus === 'FAILED').length,
+        aggregation: 'failed operations / provider operations × 100',
+      },
+      'ticket-cancellation-analysis': {
+        field: 'airlineName',
+        numerator: (rows) =>
+          rows.filter((fact) => fact.reservationStatus === 'CANCELLED').length,
+        aggregation: 'cancelled tickets / eligible tickets × 100',
+      },
+      'lead-source-conversion': {
+        field: 'leadSource',
+        numerator: (rows) =>
+          rows.filter(
+            (fact) =>
+              fact.issueStatus === 'ISSUED' &&
+              fact.reservationStatus !== 'CANCELLED',
+          ).length,
+        aggregation: 'converted leads / eligible leads × 100',
+      },
+      'popular-hotel-cities': {
+        field: 'destinationCity',
+        numerator: (rows) => rows.length,
+        denominator: () => visualFacts.length,
+        aggregation: 'hotel reservations in city / all hotel reservations × 100',
+      },
+      'customer-acquisition-channel-mix': {
+        field: 'leadSource',
+        numerator: (rows) => rows.length,
+        denominator: () => visualFacts.length,
+        aggregation: 'customers in channel / all customers × 100',
+      },
+    };
     const trendVisualIds = new Set([
       'finalized-sales-trend',
       'executive-lead-acquisition',
@@ -895,6 +1034,9 @@ export class ReportingService {
                 {
                   labels: entries.map(([label]) => label),
                   values: entries.map(([, value]) => Math.round(value)),
+                  ...(id === 'employee-conversion-by-agent'
+                    ? { unit: 'درصد' }
+                    : {}),
                   metricId: id,
                   aggregation: employeeVisuals[id].aggregation,
                   ...(previousFacts
@@ -905,6 +1047,30 @@ export class ReportingService {
                         ),
                       }
                     : {}),
+                },
+              ],
+            ];
+          }
+          const percentageVisual = percentageVisuals[id];
+          if (percentageVisual) {
+            const entries = by(
+              percentageVisual.field,
+              visualFacts,
+              (rows) =>
+                ratio(
+                  percentageVisual.numerator(rows),
+                  percentageVisual.denominator?.(rows) ?? rows.length,
+                ),
+            );
+            return [
+              [
+                id,
+                {
+                  labels: entries.map(([label]) => label),
+                  values: entries.map(([, value]) => value),
+                  unit: 'درصد',
+                  metricId: id,
+                  aggregation: percentageVisual.aggregation,
                 },
               ],
             ];

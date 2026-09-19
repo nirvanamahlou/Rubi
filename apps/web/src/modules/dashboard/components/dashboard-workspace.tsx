@@ -759,6 +759,20 @@ function formatDashboardNumber(
   return value.toLocaleString('en-US', options);
 }
 
+function formatVisualNumber(
+  value: number,
+  unit?: string,
+  options?: Intl.NumberFormatOptions,
+) {
+  const formatted = formatDashboardNumber(value, options);
+  return unit === 'درصد' ? `${formatted}%` : formatted;
+}
+
+function compactVisualNumber(value: number, unit?: string) {
+  const formatted = compactChartValue(value);
+  return unit === 'درصد' ? `${formatted}%` : formatted;
+}
+
 function latinizeDashboardNumericText(value: string) {
   return value
     .replace(/[۰-۹]/g, (digit) => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(digit)))
@@ -1119,9 +1133,24 @@ function Metric({
   definition?: DashboardKpiDefinition | undefined;
   metric?: DashboardMetricSnapshot | undefined;
 }) {
+  const percentageKpiIds = new Set([
+    'ticket-cancellation-rate',
+    'collection-rate',
+    'refund-rate',
+    'reservation-failure-rate',
+    'issue-success-rate',
+    'sell-through-rate',
+    'tour-sell-through-rate',
+    'customer-interest-coverage',
+    'lead-growth-rate',
+    'lead-conversion-rate',
+    'sla-breach-rate',
+    'campaign-conversion',
+    'consent-coverage',
+    'employee-lead-conversion',
+  ]);
   const isPercentageMetric =
-    definition?.id === 'issue-success-rate' ||
-    definition?.id === 'employee-lead-conversion' ||
+    (definition?.id ? percentageKpiIds.has(definition.id) : false) ||
     metric?.unit === 'درصد';
   const currencyValues = currency && metric ? metric.value.split(' · ') : null;
   const comparisonFor = (index: number) => {
@@ -1954,10 +1983,12 @@ function VisualDataSummary({
   labels,
   title,
   trend,
+  unit,
   values,
 }: {
   labels: readonly string[];
   title: string;
+  unit: string | undefined;
   trend?:
     | {
         calendarSystem: TrendCalendarSystem;
@@ -2019,7 +2050,7 @@ function VisualDataSummary({
                     : (labels[index] ?? `دسته ${index + 1}`)}
                 </th>
                 <td className="px-3 py-2 text-end font-bold tabular-nums">
-                  {formatDashboardNumber(value)}
+                  {formatVisualNumber(value, unit)}
                 </td>
               </tr>
             ))}
@@ -2237,17 +2268,19 @@ function OperationalDataTable({
 function EmployeePerformanceBars({
   labels,
   title,
+  unit,
   values,
 }: {
   labels: readonly string[];
   title: string;
+  unit: string | undefined;
   values: readonly number[];
 }) {
   const maximum = Math.max(...values, 1);
   const accessibleSummary = values
     .map(
       (value, index) =>
-        `${labels[index] ?? `کارشناس ${index + 1}`}: ${formatDashboardNumber(value)}`,
+        `${labels[index] ?? `کارشناس ${index + 1}`}: ${formatVisualNumber(value, unit)}`,
     )
     .join('، ');
 
@@ -2293,7 +2326,7 @@ function EmployeePerformanceBars({
                 </span>
               </span>
               <strong className="min-w-12 text-end text-xs tabular-nums text-foreground">
-                {formatDashboardNumber(value)}
+                {formatVisualNumber(value, unit)}
               </strong>
             </div>
           );
@@ -2310,6 +2343,7 @@ function DashboardChart({
   range,
   title,
   trendCalendarSystem,
+  unit,
   values,
 }: {
   kind: DashboardVisualKind;
@@ -2317,6 +2351,7 @@ function DashboardChart({
   range: DashboardRange;
   title: string;
   trendCalendarSystem: TrendCalendarSystem;
+  unit: string | undefined;
   values: readonly number[];
 }) {
   const resolvedKind = dashboardVisualKindForData(kind, values);
@@ -2325,7 +2360,7 @@ function DashboardChart({
   const accessibleSummary = values
     .map(
       (value, index) =>
-        `${labels[index] ?? `دسته ${index + 1}`}: ${formatDashboardNumber(value)}`,
+        `${labels[index] ?? `دسته ${index + 1}`}: ${formatVisualNumber(value, unit)}`,
     )
     .join('، ');
 
@@ -2388,7 +2423,7 @@ function DashboardChart({
                   x={chartLeft - 34}
                   y={y + 3}
                 >
-                  {compactChartValue(value)}
+                {compactVisualNumber(value, unit)}
                 </text>
               </g>
             );
@@ -2407,7 +2442,7 @@ function DashboardChart({
                 labels[index] ?? '',
                 trendCalendarSystem,
                 temporalGrain,
-              )} — ${formatDashboardNumber(value)}`}</title>
+              )} — ${formatVisualNumber(value, unit)}`}</title>
             </circle>
           ))}
           {axisLabelIndexes.map((index) => {
@@ -2488,7 +2523,7 @@ function DashboardChart({
                 y={y + 3}
                 textAnchor="end"
               >
-                {compactChartValue(comboMaximum * (1 - index / 3))}
+                {compactVisualNumber(comboMaximum * (1 - index / 3), unit)}
               </text>
             </g>
           ))}
@@ -2506,7 +2541,7 @@ function DashboardChart({
                   x={x}
                   y={154 - height}
                 >
-                  <title>{`${visibleLabels[index]}: ${formatDashboardNumber(value)}`}</title>
+                  <title>{`${visibleLabels[index]}: ${formatVisualNumber(value, unit)}`}</title>
                 </rect>
                 <text
                   className="fill-muted-foreground text-[9px]"
@@ -2537,7 +2572,7 @@ function DashboardChart({
               stroke="#d97706"
               strokeWidth="2"
             >
-              <title>{`میانگین روند: ${formatDashboardNumber(rollingAverage[index] ?? 0, { maximumFractionDigits: 1 })}`}</title>
+              <title>{`میانگین روند: ${formatVisualNumber(rollingAverage[index] ?? 0, unit, { maximumFractionDigits: 1 })}`}</title>
             </circle>
           ))}
         </svg>
@@ -2684,7 +2719,7 @@ function DashboardChart({
                       x={item.labelX}
                       dy="18"
                     >
-                      {`${compactChartValue(item.value)} (${percent}%)`}
+                      {`${compactVisualNumber(item.value, unit)} (${percent}%)`}
                     </tspan>
                   </text>
                 </g>
@@ -3121,6 +3156,7 @@ function ProjectionSlot({
         (series) => series.currencyCode === activeCurrencyCode,
       ) ?? data)
     : data;
+  const displayUnit = displayData?.unit ?? data?.unit;
   const resolvedKind = displayData?.values.length
     ? dashboardVisualKindForData(kind, displayData.values)
     : kind;
@@ -3255,6 +3291,7 @@ function ProjectionSlot({
               <EmployeePerformanceBars
                 labels={displayData.labels}
                 title={title}
+                unit={displayUnit}
                 values={displayData.values}
               />
             ) : resolvedKind === 'table' || resolvedKind === 'queue' ? (
@@ -3271,6 +3308,7 @@ function ProjectionSlot({
                 range={range}
                 title={title}
                 trendCalendarSystem={trendCalendarSystem}
+                unit={displayUnit}
                 values={displayData.values}
               />
             )
@@ -3300,6 +3338,7 @@ function ProjectionSlot({
                         }
                       : undefined
                   }
+                  unit={displayUnit}
                   values={displayData.values}
                 />
               )}
