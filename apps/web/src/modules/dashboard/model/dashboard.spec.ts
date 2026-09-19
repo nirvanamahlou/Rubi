@@ -567,6 +567,8 @@ describe('dashboard permission and data states', () => {
     expect(source).not.toContain('strokeDasharray="5 6"');
     expect(source).toContain('strokeDasharray="2 5"');
     expect(source).toContain('preserveAspectRatio="none"');
+    expect(source).toContain('const chartLeft = 100;');
+    expect(source).toContain('const chartRight = 930;');
     expect(source).not.toContain('تاریخ (${calendarLabel})');
     expect(source).not.toContain('transform="rotate(-90 18 82)"');
     expect(source).toContain('formatDashboardNumber');

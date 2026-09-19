@@ -44,6 +44,12 @@
 
 # Work Assignments
 
+## DASHBOARD-TREND-PLOT-BOUNDS-0919 — PC-C — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-19: حاشیهٔ چپ نمودار روند کاهش یابد و آخرین برچسب محور زمان، از جمله ماهی مانند «شهریور 1405»، داخل کادر قابل مشاهده بماند.
+- `COMPUTER_ID=PC-C`؛ ادامهٔ شاخهٔ `codex/pc-c-dashboard-reporting-latest` از `origin/develop@acc35d18`. محدودهٔ رزروشده: renderer و تست‌های Dashboard Web و اسناد وضعیت. بدون Migration، Schema، دادهٔ عملیاتی/دمو، Permission، Dependency یا Lockfile.
+- نتیجه: plot خطی از x=126 به x=100 منتقل و انتهای آن از x=976 به x=930 محدود شد؛ اعداد y همچنان در gutter چپ مستقل‌اند، اما نمودار به چپ آمده و برای آخرین برچسب محور زمان حاشیهٔ امن داخل SVG دارد. ۱۶ تست Dashboard، lint، typecheck و build تولیدی Web موفق‌اند؛ Web3000 و API4000 پاسخ HTTP ۲۰۰ دارند.
+
 ## DASHBOARD-KPI-SEMANTIC-DELTA-0919 — PC-C — READY_FOR_REVIEW
 
 - درخواست مالک در 2026-09-19: رنگ پس‌زمینهٔ تگ تغییر KPI بر اثر کسب‌وکار باشد، نه صرفاً جهت عدد؛ افزایش KPI زیان‌زا مانند استرداد نسبت به بازهٔ هم‌طول قبل باید قرمز نمایش داده شود.

@@ -2203,8 +2203,8 @@ function DashboardChart({
     .join('، ');
 
   if (resolvedKind === 'line') {
-    const chartLeft = 126;
-    const chartRight = 976;
+    const chartLeft = 100;
+    const chartRight = 930;
     const chartTop = 18;
     const chartBottom = 140;
     const pointFor = (value: number, index: number, totalPoints: number) => ({
@@ -2258,7 +2258,7 @@ function DashboardChart({
                   className="fill-muted-foreground"
                   fontSize="10"
                   textAnchor="end"
-                  x={chartLeft - 38}
+                  x={chartLeft - 34}
                   y={y + 3}
                 >
                   {compactChartValue(value)}
