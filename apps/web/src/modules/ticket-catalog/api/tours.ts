@@ -81,6 +81,8 @@ export const toursApi = {
       if (!result.hasMore) return data;
     }
   },
+  managedOffers: () =>
+    request<{ version: 1; data: TicketOfferV1[] }>('/offers/management'),
   publishOffer: (input: TicketOfferCreateV1, branch: string, key: string) =>
     request<{ data: { id: string } }>('/offers', post(input, branch, key)),
 };

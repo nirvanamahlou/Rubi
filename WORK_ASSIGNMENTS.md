@@ -2,6 +2,7 @@
 
 - درخواست مالک در 2026-09-19: آیکون فیلتر تقویم محور X نمودار روند در frontend واضح و قابل‌مشاهده شود و خط جداکنندهٔ بالای Sparkline از همهٔ KPI Cardها حذف شود.
 - نتیجه: `CalendarDays` با رنگ اصلی و stroke واضح جایگزین آیکون کم‌کنتراستِ انتخاب تاریخ محور زمان شد؛ جداکنندهٔ `border-t` پیش از Sparkline از همهٔ KPI Cardها حذف شد. ۱۶ تست Dashboard، lint و typecheck Web موفق‌اند؛ API، Schema/Migration، Permission، دادهٔ عملیاتی و Dependency/Lockfile تغییر نکردند.
+
 ## FINANCE-INBOX-FILTERS-0919 — PC-A — READY_FOR_REVIEW
 
 - درخواست مالک در 2026-09-19: کارتابل مالی با فیلتر تاریخ و بخش، و KPIهای مبتنی بر همان فیلترها تکمیل شود. شاخه `codex/pc-a-finance-inbox-filters-0919` از `origin/develop@5d588cbd`؛ `COMPUTER_ID=PC-A`.
@@ -135,6 +136,7 @@
 - `COMPUTER_ID=PC-C`؛ شاخهٔ کاری `codex/pc-c-dashboard-reporting-latest` پس از دریافت `origin/develop@acc35d18`. محدودهٔ رزروشده: Projection نسخه‌دار Dashboard در `apps/api/src/reporting/**`، مصرف‌کننده و تست‌های Dashboard در `apps/web/src/modules/dashboard/**` و اسناد وضعیت همین واحد.
 - بدون Migration، Schema، دادهٔ عملیاتی/دمو، Permission، Dependency یا Lockfile. سری مقایسه فقط از factهای Projection تأییدشده و بازهٔ قبل هم‌طول تولید می‌شود؛ مقدار فرضی یا تبدیل ارز افزوده نخواهد شد.
 - نتیجه: این طراحی در Work Item `DASHBOARD-TREND-AXIS-CALENDAR-0919` با درخواست جدید مالک جایگزین شد: سری `comparisonValues` از trend حذف شده، اما مقایسهٔ KPI Cardها و visualهای غیرروند باقی مانده است.
+
 ## SALES-CONTRACT-TABLE-0919 — PC-A — LOCAL_COMPLETE
 
 Base acc35d18; COMPUTER_ID=PC-A. فهرست `/sales` اکنون سرستون خواناتر، ردیف‌های کم‌ارتفاع راه‌راه، شماره قرارداد برجسته، نام مشتری کوتاه‌شونده و ستون عملیات هم‌ردیف دارد. سه عمل موجود بدون تغییر دسترسی یا رفتار باقی مانده‌اند: پرداخت‌ها، PDF قرارداد و مدارک مسافر. API، داده، مجوز، Migration، وابستگی و ماژول دیگری تغییر نکرد. اعتبارسنجی: build بستهٔ Contracts، ۸ تست هدفمند Sales، lint سه فایل تغییرکرده، typecheck Web و build تولیدی Web موفق. شاخه: `codex/pc-a-sales-contract-table-0919`.
@@ -3434,3 +3436,9 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 - پیاده‌سازی تکمیل شد: قالب A4 با لوگوی نیایش و لوگوی ایرلاین ثبت‌شده، مسیر و زمان پویا، عنوان مسافر از رده سن/جنسیت، نام لاتین گذرنامه و هشدار دو زبانه ساخته می‌شود. برای ایرلاین بدون لوگو، نام ثبت‌شده نمایش دارد. ۱۵ تست هدفمند، lint و typecheck Web موفق‌اند؛ یک PDF مصنوعی رفت/برگشت در یک صفحه A4 رندر شد. بدون داده واقعی، Migration، Seed، تغییر localhost یا ادغام PR #283. وضعیت: READY_FOR_REVIEW؛ قفل‌های فایل آزادند.
 - build تولیدی Web نیز با ۴۶ route موفق شد؛ خروجی نمونهٔ PDF با Chrome/Poppler یک صفحه A4 دارد. تغییر عمومی API/Database و جابه‌جایی localhost انجام نشد.
 - پیگیری 2026-09-15: سایهٔ روشن شهر پشت نام/کد مبدأ و مقصد برای هر مسیر پویا اضافه شد؛ ۸ تست قالب، lint و نمونه واقعی PDF/PNG موفق‌اند.
+
+## SALES-TICKET-CATALOG-SYNC-0919 — PC-A — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-19: بلیط‌های تعریف‌شده در «مدیریت بلیط» باید همان منبع انتخاب در «قرارداد جدید» باشند؛ پیشنهادهای قدیمی یا محلیِ نامرتبط در فرم قرارداد نمایش داده نشوند و ثبت بلیط جدید قابل انتخاب باشد.
+- `COMPUTER_ID=PC-A`؛ شاخه `codex/pc-a-sales-ticket-catalog-sync-0919` از `origin/develop@5d588cbd`. محدوده: API عمومی موجود Ticket Catalog برای فهرست مدیریت‌شده، ثبت تعریف پرواز در همان منبع `TicketPublishedOffer`، نمایش منبع ثبت‌شده در مدیریت بلیط، انتخاب Sales و تست‌های هدفمند؛ بدون Schema/Migration/Dependency/Lockfile یا داده عملیاتی.
+- نتیجه: تعریف تازهٔ پرواز، از همان فرم مدیریت بلیط، پیش از ذخیرهٔ نمای محلی در `TicketPublishedOffer` منتشر می‌شود و همان لحظه در فهرست «ثبت‌شده برای فروش و قرارداد» و انتخاب قرارداد جدید قابل‌دریافت است. رفت/برگشت و تکرار نیز هر پرواز مستقل را منتشر می‌کنند. فهرست مدیریت‌شده فقط ردیف‌های شعبه‌های مجاز و ظرفیت مانده را می‌خواند. تست Web ۱/۱، تست API ۳/۳، lint، Prettier و typecheck API/Web موفق‌اند؛ بدون Migration، Dependency/Lockfile یا داده عملیاتی.
