@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { DatePicker } from '@/components/ui/date-picker';
 import { Input } from '@/components/ui/form-controls';
 import {
   passengerFilesRequest,
@@ -220,13 +221,12 @@ export function ReservationPassengers({ id }: { id: string }) {
                     </select>
                   </td>
                   <td>
-                    <Input
+                    <DatePicker
                       aria-label={`تاریخ تولد مسافر ${index + 1}`}
-                      type="date"
+                      defaultCalendarSystem="gregorian"
+                      gregorianEnglish
                       value={nullable(row.birthDate)}
-                      onChange={(event) =>
-                        change(row.id, 'birthDate', event.target.value)
-                      }
+                      onChange={(value) => change(row.id, 'birthDate', value)}
                       disabled={identityDisabled}
                     />
                   </td>
@@ -254,12 +254,13 @@ export function ReservationPassengers({ id }: { id: string }) {
                     />
                   </td>
                   <td>
-                    <Input
+                    <DatePicker
                       aria-label={`انقضای پاسپورت مسافر ${index + 1}`}
-                      type="date"
+                      defaultCalendarSystem="gregorian"
+                      gregorianEnglish
                       value={nullable(row.passportExpiryDate)}
-                      onChange={(event) =>
-                        change(row.id, 'passportExpiryDate', event.target.value)
+                      onChange={(value) =>
+                        change(row.id, 'passportExpiryDate', value)
                       }
                       disabled={identityDisabled}
                     />

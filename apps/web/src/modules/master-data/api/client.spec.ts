@@ -441,9 +441,16 @@ describe('master data browser client', () => {
         scanStatus: 'CLEAN',
         reused: false,
       });
-    const update = vi.spyOn(masterDataApi, 'update').mockResolvedValue({
-      data: { ...created, version: 2 },
-    });
+    const update = vi
+      .spyOn(masterDataApi, 'update')
+      .mockResolvedValueOnce({ data: { ...created, version: 2 } })
+      .mockResolvedValueOnce({
+        data: {
+          ...created,
+          attributes: { ...created.attributes, publicationStatus: 'ACTIVE' },
+          version: 3,
+        },
+      });
     const file = new File(['PK'], 'antalya.xlsx', {
       type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     });
@@ -461,9 +468,26 @@ describe('master data browser client', () => {
     expect(create.mock.invocationCallOrder[0]).toBeLessThan(
       upload.mock.invocationCallOrder[0]!,
     );
-    expect(update).toHaveBeenCalledWith('manifest-templates', created.id, {
-      values: { fileReferenceId: 'manifest-document-id' },
-      version: 1,
-    });
+    expect(update).toHaveBeenNthCalledWith(
+      1,
+      'manifest-templates',
+      created.id,
+      {
+        values: { fileReferenceId: 'manifest-document-id' },
+        version: 1,
+      },
+    );
+    expect(update).toHaveBeenNthCalledWith(
+      2,
+      'manifest-templates',
+      created.id,
+      {
+        values: {
+          fileReferenceId: 'manifest-document-id',
+          publicationStatus: 'ACTIVE',
+        },
+        version: 2,
+      },
+    );
   });
 });
