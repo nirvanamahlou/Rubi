@@ -305,6 +305,8 @@ function TicketCatalogWorkspace() {
       setHydrated(true);
     }, 0);
     return () => window.clearTimeout(timer);
+    // Hydration must backfill once; adding the render-scoped helper would loop.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   useEffect(() => {
     if (!hydrated) return;
