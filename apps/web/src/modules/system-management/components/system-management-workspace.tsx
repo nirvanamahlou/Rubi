@@ -45,6 +45,7 @@ import {
 } from 'react';
 
 import type { LegalEntitySummary, SystemSettingV1 } from '@nora/contracts';
+import { navigationGroups, navigationItems } from '@/lib/navigation';
 import { legalEntitiesApi } from '@/modules/legal-entities/api/client';
 import {
   systemManagementApi,
@@ -175,47 +176,85 @@ type SystemCategoryId =
   | 'sales-customers'
   | 'workspace';
 
-const systemCategoryGroups: ReadonlyArray<{
+interface SystemCategoryLink {
+  href: string;
+  title: string;
+}
+
+interface SystemCategoryGroup {
   id: Exclude<SystemCategoryId, 'all'>;
+  links: readonly SystemCategoryLink[];
   moduleIds: readonly string[];
   title: string;
-}> = [
-  {
-    id: 'workspace',
-    title: 'فضای کار',
-    moduleIds: ['tasks', 'messages'],
-  },
-  {
-    id: 'sales-customers',
-    title: 'فروش و ارتباط با مشتری',
-    moduleIds: ['customers', 'affairs', 'sales', 'marketing'],
-  },
-  {
-    id: 'reservations-supply',
-    title: 'رزرواسیون و تأمین سفر',
-    moduleIds: ['catalog', 'operations', 'procurement'],
-  },
-  {
-    id: 'finance',
-    title: 'مالی',
-    moduleIds: ['finance', 'b2b'],
-  },
-  {
-    id: 'human-resources',
-    title: 'سرمایه انسانی',
-    moduleIds: ['hr'],
-  },
-  {
-    id: 'documents-reports',
-    title: 'اسناد و گزارش‌ها',
-    moduleIds: ['documents', 'reports'],
-  },
-  {
-    id: 'company-settings',
-    title: 'تنظیمات شرکت',
-    moduleIds: ['general', 'access', 'integrations', 'master'],
-  },
-];
+}
+
+const systemCategoryIdByNavigationGroup = {
+  work: 'workspace',
+  sales: 'sales-customers',
+  operations: 'reservations-supply',
+  finance: 'finance',
+  hr: 'human-resources',
+  resources: 'documents-reports',
+  system: 'company-settings',
+} as const satisfies Record<
+  (typeof navigationGroups)[number]['id'],
+  Exclude<SystemCategoryId, 'all'>
+>;
+
+const moduleIdsBySystemCategory: Record<
+  Exclude<SystemCategoryId, 'all'>,
+  readonly string[]
+> = {
+  workspace: ['tasks', 'messages'],
+  'sales-customers': ['customers', 'affairs', 'sales', 'marketing'],
+  'reservations-supply': ['catalog', 'operations', 'procurement'],
+  finance: ['finance', 'b2b'],
+  'human-resources': ['hr'],
+  'documents-reports': ['documents', 'reports'],
+  'company-settings': ['general', 'access', 'integrations', 'master'],
+};
+
+/** Actual routes that live below a primary navigation destination. */
+const categoryExtraLinks: Record<
+  Exclude<SystemCategoryId, 'all'>,
+  readonly SystemCategoryLink[]
+> = {
+  workspace: [],
+  'sales-customers': [
+    { href: '/sales/pricing', title: 'مدیریت قیمت و پکیج‌ها' },
+  ],
+  'reservations-supply': [
+    { href: '/reservations/operations', title: 'عملیات رزرواسیون' },
+    { href: '/reservations/processing', title: 'فرآیند رزرواسیون' },
+  ],
+  finance: [],
+  'human-resources': [],
+  'documents-reports': [],
+  'company-settings': [
+    { href: '/users', title: 'کاربران، نقش‌ها و دسترسی‌ها' },
+    { href: '/system/legal-entities', title: 'شرکت‌های حقوقی و برندها' },
+    { href: '/system/operations', title: 'عملیات و سلامت سامانه' },
+  ],
+};
+
+const systemCategoryGroups: readonly SystemCategoryGroup[] =
+  navigationGroups.map((group) => {
+    const id = systemCategoryIdByNavigationGroup[group.id];
+    return {
+      id,
+      title: group.title,
+      moduleIds: moduleIdsBySystemCategory[id],
+      links: [
+        ...group.hrefs.map((href) => {
+          const item = navigationItems.find((navigationItem) =>
+            navigationItem.href === href,
+          );
+          return { href, title: item?.title ?? href };
+        }),
+        ...categoryExtraLinks[id],
+      ],
+    };
+  });
 
 function systemCategoryFor(module: SettingModule) {
   return systemCategoryGroups.find((group) =>
@@ -531,23 +570,18 @@ export function SystemManagementWorkspace() {
           className={styles.categoryPanel}
           id={`system-category-${expandedCategory}`}
         >
-          {settingsModules
-            .filter((module) =>
-              systemCategoryGroups
-                .find((group) => group.id === expandedCategory)
-                ?.moduleIds.includes(module.id),
-            )
-            .map((module) => (
-              <button
-                aria-label={`مشاهده تنظیمات ${module.title}`}
+          {systemCategoryGroups
+            .find((group) => group.id === expandedCategory)
+            ?.links.map((link) => (
+              <Link
+                aria-label={`رفتن به ${link.title}`}
                 className={styles.categoryChild}
-                key={module.id}
-                onClick={() => openModule(module)}
-                type="button"
+                href={link.href}
+                key={link.href}
               >
-                {module.title}
+                {link.title}
                 <ArrowLeft aria-hidden="true" size={16} />
-              </button>
+              </Link>
             ))}
         </div>
       ) : null}

@@ -10,6 +10,10 @@ const catalog = readFileSync(
   new URL('../model/settings-catalog.ts', import.meta.url),
   'utf8',
 );
+const navigation = readFileSync(
+  new URL('../../../lib/navigation.ts', import.meta.url),
+  'utf8',
+);
 const styles = readFileSync(
   new URL('./system-management-workspace.module.css', import.meta.url),
   'utf8',
@@ -35,7 +39,7 @@ describe('system management reference implementation', () => {
       'اسناد و گزارش‌ها',
       'تنظیمات شرکت',
     ])
-      expect(workspace).toContain(category);
+      expect(navigation).toContain(category);
   });
 
   it('includes every settings module and its reference card catalog', () => {
@@ -64,6 +68,20 @@ describe('system management reference implementation', () => {
     expect(catalog).toContain('شماره‌گذاری اسناد');
     expect(catalog).toContain('سلامت و هشدار سرویس');
     expect(catalog).toContain('خروجی و فایل گزارش');
+  });
+
+  it('uses the real application navigation for every expandable category', () => {
+    expect(workspace).toContain('navigationGroups');
+    expect(workspace).toContain('categoryExtraLinks');
+    expect(workspace).toContain('رفتن به ${link.title}');
+    expect(workspace).toContain("href: '/sales/pricing'");
+    expect(workspace).toContain("href: '/reservations/operations'");
+    expect(workspace).toContain("href: '/reservations/processing'");
+    expect(workspace).toContain("href: '/system/legal-entities'");
+    expect(workspace).toContain("href: '/system/operations'");
+    expect(navigation).toContain("hrefs: ['/workbench', '/dashboard']");
+    expect(navigation).toContain("hrefs: ['/human-resources']");
+    expect(navigation).toContain("'/ticket-management',\n      '/purchases'");
   });
 
   it('persists real versioned JSON settings with reason and optimistic version', () => {
@@ -100,8 +118,8 @@ describe('system management reference implementation', () => {
     expect(workspace).toContain('aria-modal="true"');
     expect(workspace).toContain("aria-pressed={category === 'all'}");
     expect(workspace).toContain('aria-expanded={expanded}');
-    expect(workspace).toContain('رزرواسیون و تأمین سفر');
-    expect(workspace).toContain('فروش و ارتباط با مشتری');
+    expect(navigation).toContain('رزرواسیون و تأمین سفر');
+    expect(navigation).toContain('فروش و ارتباط با مشتری');
     expect(workspace).toContain('زیرمجموعه‌های ${systemCategoryGroups.find');
     expect(workspace).toContain('styles.categoryPanel');
     expect(workspace).toContain('داده‌های عملیاتی');
