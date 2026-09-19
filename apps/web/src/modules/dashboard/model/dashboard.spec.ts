@@ -555,6 +555,9 @@ describe('dashboard permission and data states', () => {
     expect(source).toContain('trendDateLabel');
     expect(source).toContain('trendTooltipTime');
     expect(source).not.toContain('بازه انتخاب‌شده — ${labels[index]}');
+    expect(source).toContain('adverseKpiIdPattern');
+    expect(source).toContain("definition.role === 'guardrail'");
+    expect(source).toContain("semanticTone === 'negative'");
     expect(source).toContain('trendCalendarOptions');
     expect(source).toContain('تقویم برچسب‌های محور زمان');
     expect(source).toContain("key) => key === 'currency'");

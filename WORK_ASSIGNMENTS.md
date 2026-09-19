@@ -44,6 +44,12 @@
 
 # Work Assignments
 
+## DASHBOARD-KPI-SEMANTIC-DELTA-0919 — PC-C — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-19: رنگ پس‌زمینهٔ تگ تغییر KPI بر اثر کسب‌وکار باشد، نه صرفاً جهت عدد؛ افزایش KPI زیان‌زا مانند استرداد نسبت به بازهٔ هم‌طول قبل باید قرمز نمایش داده شود.
+- `COMPUTER_ID=PC-C`؛ ادامهٔ شاخهٔ `codex/pc-c-dashboard-reporting-latest` از `origin/develop@acc35d18`. محدودهٔ رزروشده: renderer و تست‌های Dashboard Web و اسناد وضعیت. بدون Migration، Schema، دادهٔ عملیاتی/دمو، Permission، Dependency یا Lockfile.
+- نتیجه: رنگ تگ comparison اکنون semantic است. KPIهای `guardrail` و KPIهای شناخته‌شدهٔ هزینه/استرداد/لغو/تخفیف/تاخیر، در صورت افزایش تگ قرمز با پس‌زمینهٔ واضح و در صورت کاهش تگ سبز می‌گیرند؛ فلش جهت واقعی را حفظ می‌کند. KPIهای عادی افزایش سبز و کاهش قرمز دارند. ۱۶ تست Dashboard، lint، typecheck و build تولیدی Web موفق‌اند؛ Web3000 و API4000 پاسخ HTTP ۲۰۰ دارند.
+
 ## DASHBOARD-TREND-POINT-TOOLTIP-0919 — PC-C — READY_FOR_REVIEW
 
 - درخواست مالک در 2026-09-19: tooltip هر نقطهٔ نمودار روند فقط زمان متناظر با grain نمودار و مقدار همان نقطه را نشان دهد؛ برای روز تاریخ و مقدار، برای ساعت ساعت همان روز و مقدار، و برای هفته/ماه برچسب زمانی متناسب نمایش داده شود.

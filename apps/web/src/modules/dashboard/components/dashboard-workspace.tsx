@@ -500,6 +500,9 @@ const kpiVisualMatchers: readonly [RegExp, KpiVisual][] = [
   ],
 ];
 
+const adverseKpiIdPattern =
+  /refund|cancel|discount|expense|commission|overdue|awaiting|pending|failure|breach|debt|payable|risk|complaint|escalation|expired|blocked|shortage/i;
+
 const kpiVisualOverrides: Readonly<Record<string, KpiVisual>> = {
   'gross-sales': {
     icon: Banknote,
@@ -1102,10 +1105,12 @@ function calculationFeatureFor(source: string) {
 function Metric({
   compact = false,
   currency = false,
+  definition,
   metric,
 }: {
   compact?: boolean;
   currency?: boolean;
+  definition?: DashboardKpiDefinition | undefined;
   metric?: DashboardMetricSnapshot | undefined;
 }) {
   const currencyValues = currency && metric ? metric.value.split(' · ') : null;
@@ -1151,6 +1156,7 @@ function Metric({
                 {metric ? (
                   <GrowthIndicator
                     comparison={comparison}
+                    definition={definition}
                     unavailable={comparisonUnavailable}
                     currencyCode={currencyCode}
                   />
@@ -1180,6 +1186,7 @@ function Metric({
             {metric ? (
               <GrowthIndicator
                 comparison={metric.comparison}
+                definition={definition}
                 unavailable={!metric.comparison}
               />
             ) : null}
@@ -1396,14 +1403,31 @@ function MiniTrend({
 function GrowthIndicator({
   comparison,
   currencyCode,
+  definition,
   unavailable = false,
 }: {
   comparison?: DashboardComparisonSnapshot | undefined;
   currencyCode?: string | undefined;
+  definition?: DashboardKpiDefinition | undefined;
   unavailable?: boolean;
 }) {
   const hasComparison = Boolean(comparison);
   const direction = comparison?.direction ?? 'flat';
+  const isAdverseKpi = Boolean(
+    definition &&
+      (definition.role === 'guardrail' ||
+        adverseKpiIdPattern.test(definition.id)),
+  );
+  const semanticTone =
+    direction === 'flat'
+      ? 'neutral'
+      : isAdverseKpi
+        ? direction === 'up'
+          ? 'negative'
+          : 'positive'
+        : direction === 'up'
+          ? 'positive'
+          : 'negative';
   const Icon =
     direction === 'up'
       ? ArrowUpRight
@@ -1421,11 +1445,11 @@ function GrowthIndicator({
     <span
       className={cn(
         'inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-black tabular-nums shadow-sm',
-        direction === 'up' &&
+        semanticTone === 'positive' &&
           'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/45 dark:text-emerald-200',
-        direction === 'down' &&
-          'bg-rose-50 text-rose-700 dark:bg-rose-950/45 dark:text-rose-200',
-        direction === 'flat' &&
+        semanticTone === 'negative' &&
+          'bg-rose-100 text-rose-800 dark:bg-rose-950/75 dark:text-rose-100',
+        semanticTone === 'neutral' &&
           'bg-blue-50 text-blue-700 dark:bg-blue-950/45 dark:text-blue-200',
       )}
       title={`${currencyCode ? `${currencyNames[currencyCode] ?? currencyCode} · ` : ''}${comparison?.label ?? 'دوره قبل هم‌طول'} · ${
@@ -1505,6 +1529,7 @@ function KpiCard({
         <Metric
           compact
           currency={definition.currency === 'required'}
+          definition={definition}
           metric={metric}
         />
       </span>
