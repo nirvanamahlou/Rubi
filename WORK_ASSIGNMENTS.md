@@ -44,6 +44,10 @@
 
 # Work Assignments
 
+## SALES-CONTRACT-TABLE-0919 — PC-A — LOCAL_COMPLETE
+
+Base acc35d18; COMPUTER_ID=PC-A. فهرست `/sales` اکنون سرستون خواناتر، ردیف‌های کم‌ارتفاع راه‌راه، شماره قرارداد برجسته، نام مشتری کوتاه‌شونده و ستون عملیات هم‌ردیف دارد. سه عمل موجود بدون تغییر دسترسی یا رفتار باقی مانده‌اند: پرداخت‌ها، PDF قرارداد و مدارک مسافر. API، داده، مجوز، Migration، وابستگی و ماژول دیگری تغییر نکرد. اعتبارسنجی: build بستهٔ Contracts، ۸ تست هدفمند Sales، lint سه فایل تغییرکرده، typecheck Web و build تولیدی Web موفق. شاخه: `codex/pc-a-sales-contract-table-0919`.
+
 ## TOUR-HOTEL-PRICING-FLOW-0916 — PC-A — MERGED WITH DEVELOP / VERIFIED LOCALLY
 
 - 2026-09-16 commission follow-up: product owner clarified that commission may be percent or a fixed amount with its own currency. PC-A reserves the additive Package Pricing contract/schema/migration, API arithmetic/persistence, Sales UI/tests and bounded pricing docs on the existing task branch. Historical rows default to percent; fixed commission remains a profit expense and never changes sale price. Migration and shared-contract locks are held only for this follow-up; dependency/lockfile remains unassigned.
