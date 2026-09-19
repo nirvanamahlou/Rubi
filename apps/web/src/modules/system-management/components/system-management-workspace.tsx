@@ -32,6 +32,7 @@ import {
   X,
   type LucideIcon,
 } from 'lucide-react';
+import Link from 'next/link';
 import {
   useCallback,
   useEffect,
@@ -103,6 +104,21 @@ const categories = [
   'سازمان و بهره‌وری',
   'زیرساخت و داده',
   'مدیریت',
+] as const;
+
+const managementAreas = [
+  {
+    href: '/users',
+    title: 'مدیریت کاربران و نقش‌ها',
+    description:
+      'کاربران، نقش‌ها، مجوزها و شعب مجاز را در ماژول IAM مدیریت کنید.',
+  },
+  {
+    href: '/system/legal-entities',
+    title: 'شرکت‌ها و سربرگ خروجی (Legal Entity)',
+    description:
+      'شرکت فعال، برندینگ و سربرگ اسناد را در ماژول شرکت‌های حقوقی مدیریت کنید.',
+  },
 ] as const;
 
 function palette(module: SettingModule): CSSProperties {
@@ -556,6 +572,31 @@ export function SystemManagementWorkspace() {
             </span>
           </div>
         </div>
+
+        <section
+          aria-label="مدیریت‌های تخصصی"
+          className={styles.managementAreas}
+        >
+          {managementAreas.map((area) => (
+            <Link
+              className={styles.managementArea}
+              href={area.href}
+              key={area.href}
+            >
+              <span>
+                <ShieldCheck aria-hidden="true" size={18} />
+                {area.title}
+              </span>
+              <small>{area.description}</small>
+              <b>
+                ورود به ماژول مالک <ArrowLeft aria-hidden="true" size={16} />
+              </b>
+            </Link>
+          ))}
+          <p className={styles.managementNotice}>
+            هر عملیات حساس در API ماژول مالک دوباره مجوزسنجی می‌شود.
+          </p>
+        </section>
 
         <nav aria-label="بخش‌های مدیریت سیستم" className={styles.pageNav}>
           {navItems.map((item) => {
