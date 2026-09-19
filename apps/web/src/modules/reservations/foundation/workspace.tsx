@@ -784,10 +784,12 @@ export function ReservationOperationsWorkspace({
             </section>
           )}
         </div>
-        <ContractActionPanel
-          key={selected?.id ?? 'unselected'}
-          request={selected}
-        />
+        {section !== 'manifests' && (
+          <ContractActionPanel
+            key={selected?.id ?? 'unselected'}
+            request={selected}
+          />
+        )}
       </div>
     </main>
   );
