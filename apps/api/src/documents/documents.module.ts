@@ -11,6 +11,7 @@ import { DocumentsRepository } from './documents.repository';
 import { DocumentsScanProcessor } from './documents.scan-processor';
 import { DocumentsService } from './documents.service';
 import { LocalDocumentStorage } from './documents.storage';
+import { DOCUMENTS_STORAGE_HEALTH_PORT } from './documents-storage-health.port';
 
 @Module({
   imports: [IamModule, NotificationsModule, HrDirectoryModule],
@@ -22,8 +23,16 @@ import { LocalDocumentStorage } from './documents.storage';
     DocumentsScanProcessor,
     DocumentsService,
     LocalDocumentStorage,
+    {
+      provide: DOCUMENTS_STORAGE_HEALTH_PORT,
+      useExisting: LocalDocumentStorage,
+    },
     WindowsDefenderAntivirus,
   ],
-  exports: [DocumentsService, LocalDocumentStorage],
+  exports: [
+    DocumentsService,
+    LocalDocumentStorage,
+    DOCUMENTS_STORAGE_HEALTH_PORT,
+  ],
 })
 export class DocumentsModule {}

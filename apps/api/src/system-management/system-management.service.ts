@@ -11,6 +11,7 @@ import type {
   SystemBackupRequestV1,
   SystemFeatureFlagV1,
   SystemHealthComponentV1,
+  SystemJobRetryInputV1,
   SystemNumberingSchemeV1,
   SystemNumberingSchemeWriteV1,
   SystemNumberIssueInputV1,
@@ -31,7 +32,12 @@ import type {
 } from '@nora/database';
 
 import { DatabaseService } from '../database/database.service';
+import {
+  DOCUMENTS_STORAGE_HEALTH_PORT,
+  type DocumentsStorageHealthPort,
+} from '../documents/documents-storage-health.port';
 import { IamService } from '../iam/iam.service';
+import { ReportingService } from '../reporting/reporting.service';
 import {
   assertSafeJson,
   maskIp,
@@ -96,6 +102,9 @@ export class SystemManagementService {
   constructor(
     @Inject(DatabaseService) private readonly database: DatabaseService,
     @Inject(IamService) private readonly iam: IamService,
+    @Inject(ReportingService) private readonly reporting: ReportingService,
+    @Inject(DOCUMENTS_STORAGE_HEALTH_PORT)
+    private readonly documentsStorage: DocumentsStorageHealthPort,
   ) {}
 
   listSessions(
@@ -137,6 +146,28 @@ export class SystemManagementService {
       input?.confirmCurrentSession === true,
       metadata,
     );
+  }
+
+  async retryReportingExport(
+    exportId: string,
+    input: SystemJobRetryInputV1,
+    actor: AuthenticatedActor,
+    metadata: AuditMetadata,
+  ) {
+    const id = validUuid(exportId, 'شناسه خروجی گزارش');
+    const reason = validReason(input?.reason);
+    const result = await this.reporting.retryExport(id, actor);
+    await this.audit(
+      actor,
+      metadata,
+      'system.job.retry.reporting_export',
+      'ReportingExportArtifact',
+      id,
+      reason,
+      null,
+      { retried: true },
+    );
+    return result;
   }
 
   async listSettings(): Promise<SystemSettingV1[]> {
@@ -707,6 +738,21 @@ export class SystemManagementService {
         detail: 'پایگاه‌داده در بررسی فعلی پاسخ نداد.',
       };
     }
+    let storageProbe: { healthy: boolean; latencyMs: number | null };
+    try {
+      storageProbe = await this.documentsStorage.probe();
+    } catch {
+      storageProbe = { healthy: false, latencyMs: null };
+    }
+    const storage: SystemHealthComponentV1 = {
+      component: 'STORAGE',
+      status: storageProbe.healthy ? 'HEALTHY' : 'UNAVAILABLE',
+      checkedAt,
+      latencyMs: storageProbe.latencyMs,
+      detail: storageProbe.healthy
+        ? 'Probe عمومی مالک Documents با موفقیت اجرا شد.'
+        : 'Probe عمومی مالک Documents در بررسی فعلی پاسخ نداد.',
+    };
     return [
       {
         component: 'API',
@@ -716,7 +762,7 @@ export class SystemManagementService {
         detail: `API فعال است؛ uptime=${Math.floor(process.uptime())}s`,
       },
       database,
-      ...(['REDIS', 'WORKER', 'STORAGE', 'QUEUE'] as const).map(
+      ...(['REDIS', 'WORKER', 'QUEUE'] as const).map(
         (component): SystemHealthComponentV1 => ({
           component,
           status: 'UNKNOWN',
@@ -725,6 +771,7 @@ export class SystemManagementService {
           detail: 'Probe عمومی مالک این سرویس هنوز منتشر نشده است.',
         }),
       ),
+      storage,
     ];
   }
 
