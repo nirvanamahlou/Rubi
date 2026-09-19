@@ -1,3 +1,10 @@
+## 2026-09-19 — DASHBOARD-KPI-TREND-PRESENTATION-0919 — READY_FOR_REVIEW
+
+آیکون انتخاب تقویمِ برچسب‌های محور زمان نمودار روند با `CalendarDays` بزرگ‌تر،
+رنگ اصلی رابط و stroke واضح اصلاح شد. همچنین جداکنندهٔ بصری پیش از Sparkline از
+همهٔ KPI Cardها حذف شد. ۱۶ تست Dashboard، lint و typecheck Web موفق‌اند؛ API،
+Schema/Migration، Permission، دادهٔ عملیاتی و Dependency/Lockfile تغییر نکردند.
+
 ## 2026-09-19 — DASHBOARD-TREND-AXIS-CALENDAR-0919 — READY_FOR_REVIEW
 
 نمودارهای روند Dashboard اکنون فقط سری بازهٔ انتخاب‌شده را نمایش می‌دهند؛

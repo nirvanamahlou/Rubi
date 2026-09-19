@@ -562,6 +562,10 @@ describe('dashboard permission and data states', () => {
     expect(source).toContain('data-dashboard-trend-controls');
     expect(source).toContain('min-w-[15.875rem] flex-row flex-nowrap justify-end');
     expect(source).toContain('w-[8.5rem] shrink-0 whitespace-nowrap');
+    expect(source).toContain('CalendarDays');
+    expect(source).toContain('size-4 shrink-0 text-primary');
+    expect(source).toContain('mt-3 flex min-h-24 flex-col pt-0');
+    expect(source).not.toContain('flex min-h-24 flex-col border-t border-border/60');
     expect(source).toContain('dashboard-visual-definition-panel-${visualId}');
     expect(source).toContain('function VisualDetailsPanel');
     expect(source).toContain('خلاصه متنی و جدول داده');

@@ -1,3 +1,8 @@
+## DASHBOARD-KPI-TREND-PRESENTATION-0919 — PC-C — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-19: آیکون فیلتر تقویم محور X نمودار روند در frontend واضح و قابل‌مشاهده شود و خط جداکنندهٔ بالای Sparkline از همهٔ KPI Cardها حذف شود.
+- نتیجه: `CalendarDays` با رنگ اصلی و stroke واضح جایگزین آیکون کم‌کنتراستِ انتخاب تاریخ محور زمان شد؛ جداکنندهٔ `border-t` پیش از Sparkline از همهٔ KPI Cardها حذف شد. ۱۶ تست Dashboard، lint و typecheck Web موفق‌اند؛ API، Schema/Migration، Permission، دادهٔ عملیاتی و Dependency/Lockfile تغییر نکردند.
+
 ## SYSTEM-MANAGEMENT-BACKEND-001 — PC-B — READY_FOR_REVIEW
 
 - نتیجهٔ ادغام‌شده از `origin/develop`: قرارداد نسخهٔ ۱ مدیریت سامانه، ۳۰ Permission، ۱۲ جدول افزایشی و API کنترل‌شدهٔ تنظیمات/شماره‌گذاری/اعلان/قالب/Feature Flag/Backup/Health/Audit به‌همراه حفاظت IAM برای Self-escalation، آخرین مدیر فعال و بستن نشست جاری اضافه شده است. Migration و تست‌های این Slice در Draft PR #305 تأیید شده‌اند؛ قفل‌های Migration، قرارداد و اسناد مرکزی آزادند.

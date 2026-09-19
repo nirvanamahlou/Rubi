@@ -11,6 +11,7 @@ import {
   BriefcaseBusiness,
   Building2,
   CalendarCheck,
+  CalendarDays,
   CalendarRange,
   ChartNoAxesCombined,
   Check,
@@ -1537,7 +1538,7 @@ function KpiCard({
         />
       </span>
       {metric ? (
-        <span className="relative mt-3 flex min-h-24 flex-col border-t border-border/60 pt-2">
+        <span className="relative mt-3 flex min-h-24 flex-col pt-0">
           {metric.trend ? (
             <MiniTrend title={definition.title} trend={metric.trend} />
           ) : null}
@@ -3021,7 +3022,11 @@ function ProjectionSlot({
                   aria-label="تقویم برچسب‌های محور زمان"
                   className="h-7 w-[8.5rem] shrink-0 whitespace-nowrap border-border/80 bg-background px-2 text-[10px] font-bold"
                 >
-                  <CalendarCheck aria-hidden="true" className="size-3.5" />
+                  <CalendarDays
+                    aria-hidden="true"
+                    className="size-4 shrink-0 text-primary"
+                    strokeWidth={2.5}
+                  />
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
