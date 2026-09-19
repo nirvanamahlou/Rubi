@@ -2734,63 +2734,73 @@ function ProjectionSlot({
           <Badge className="bg-blue-50 text-[10px] text-blue-700 dark:bg-blue-950/50 dark:text-blue-200">
             {visualLabel}
           </Badge>
-          {currencySeries.length ? (
-            <Select
-              value={activeCurrencyCode ?? currencySeries[0]?.currencyCode ?? ''}
-              onValueChange={setSelectedCurrencyCode}
-            >
-              <SelectTrigger
-                aria-label={`واحد پول نمودار ${title}`}
-                className="h-7 min-w-28 border-border/80 bg-background px-2 text-[10px] font-bold"
-                data-dashboard-visual-currency-selector
+          <div
+            className={cn(
+              'flex max-w-full items-center gap-1.5',
+              resolvedKind === 'line'
+                ? 'flex-row flex-wrap justify-end'
+                : 'flex-col items-end',
+            )}
+            data-dashboard-trend-controls={resolvedKind === 'line' || undefined}
+          >
+            {currencySeries.length ? (
+              <Select
+                value={activeCurrencyCode ?? currencySeries[0]?.currencyCode ?? ''}
+                onValueChange={setSelectedCurrencyCode}
               >
-                <CircleDollarSign aria-hidden="true" className="size-3.5" />
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {currencySeries.map((series) => {
-                  const symbol = currencySymbols[series.currencyCode] ??
-                    series.currencyCode;
-                  return (
+                <SelectTrigger
+                  aria-label={`واحد پول نمودار ${title}`}
+                  className="h-7 min-w-28 border-border/80 bg-background px-2 text-[10px] font-bold"
+                  data-dashboard-visual-currency-selector
+                >
+                  <CircleDollarSign aria-hidden="true" className="size-3.5" />
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {currencySeries.map((series) => {
+                    const symbol = currencySymbols[series.currencyCode] ??
+                      series.currencyCode;
+                    return (
+                      <SelectItem
+                        className="data-[highlighted]:bg-primary data-[highlighted]:text-primary-foreground"
+                        key={series.currencyCode}
+                        value={series.currencyCode}
+                      >
+                        <bdi dir="ltr">{`${symbol} ${series.currencyCode}`}</bdi>
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+            ) : null}
+            {resolvedKind === 'line' ? (
+              <Select
+                value={trendCalendarSystem}
+                onValueChange={(value) =>
+                  onTrendCalendarSystemChange(value as TrendCalendarSystem)
+                }
+              >
+                <SelectTrigger
+                  aria-label="تقویم برچسب‌های محور زمان"
+                  className="h-7 min-w-28 border-border/80 bg-background px-2 text-[10px] font-bold"
+                >
+                  <CalendarCheck aria-hidden="true" className="size-3.5" />
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {trendCalendarOptions.map(([value, label]) => (
                     <SelectItem
                       className="data-[highlighted]:bg-primary data-[highlighted]:text-primary-foreground"
-                      key={series.currencyCode}
-                      value={series.currencyCode}
+                      key={value}
+                      value={value}
                     >
-                      <bdi dir="ltr">{`${symbol} ${series.currencyCode}`}</bdi>
+                      {label}
                     </SelectItem>
-                  );
-                })}
-              </SelectContent>
-            </Select>
-          ) : null}
-          {resolvedKind === 'line' ? (
-            <Select
-              value={trendCalendarSystem}
-              onValueChange={(value) =>
-                onTrendCalendarSystemChange(value as TrendCalendarSystem)
-              }
-            >
-              <SelectTrigger
-                aria-label="تقویم برچسب‌های محور زمان"
-                className="h-7 min-w-28 border-border/80 bg-background px-2 text-[10px] font-bold"
-              >
-                <CalendarCheck aria-hidden="true" className="size-3.5" />
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {trendCalendarOptions.map(([value, label]) => (
-                  <SelectItem
-                    className="data-[highlighted]:bg-primary data-[highlighted]:text-primary-foreground"
-                    key={value}
-                    value={value}
-                  >
-                    {label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          ) : null}
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : null}
+          </div>
         </div>
       </div>
       <div className="relative flex-1 p-3.5">
