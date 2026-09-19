@@ -242,7 +242,7 @@ describe('dashboard travel projection date boundaries', () => {
         range: 'month',
         currency: 'IRR',
         visualIds:
-          'finalized-sales-trend,crm-followup-queue,commercial-pipeline,employee-performance-ranking',
+          'finalized-sales-trend,crm-followup-queue,commercial-pipeline,employee-performance-ranking,employee-sales-count-by-agent,employee-sales-amount-by-agent,employee-conversion-by-agent,employee-cancellations-by-agent',
       },
       actor,
     );
@@ -260,5 +260,24 @@ describe('dashboard travel projection date boundaries', () => {
     expect(result.visuals['employee-performance-ranking']).toMatchObject({
       labels: expect.arrayContaining(['کارشناس دمو آریا', 'کارشناس دمو پارسا']),
     });
+    expect(result.visuals['employee-sales-count-by-agent']).toMatchObject({
+      metricId: 'employee-sales-count-by-agent',
+      aggregation: 'count distinct confirmed non-cancelled orders',
+      values: [1, 1, 1],
+    });
+    expect(result.visuals['employee-sales-count-by-agent']).not.toHaveProperty(
+      'currencySeries',
+    );
+    expect(result.visuals['employee-sales-amount-by-agent']).toMatchObject({
+      metricId: 'employee-sales-amount-by-agent',
+      aggregation: 'sum salesAmount at order-item-currency grain',
+      values: [12_000_000, 12_000_000, 12_000_000],
+    });
+    expect(result.visuals['employee-conversion-by-agent']?.values).toEqual([
+      100, 100, 0,
+    ]);
+    expect(result.visuals['employee-cancellations-by-agent']?.values).toEqual([
+      0, 0, 0,
+    ]);
   });
 });

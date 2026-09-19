@@ -210,6 +210,8 @@ export interface DashboardProjectionV1 {
         value: string;
         unit: string;
         detail: string;
+        metricId?: string;
+        aggregation?: string;
         comparison?: DashboardComparisonV1;
         comparisonSeries?: readonly DashboardCurrencyComparisonV1[];
         trend?: DashboardTrendV1;
@@ -222,6 +224,8 @@ export interface DashboardProjectionV1 {
       {
         labels: readonly string[];
         values: readonly number[];
+        metricId?: string;
+        aggregation?: string;
         currencyCode?: string;
         currencySeries?: readonly DashboardVisualCurrencySeriesV1[];
         comparison?: DashboardComparisonV1;

@@ -3063,6 +3063,15 @@ Permission، دادهٔ عملیاتی و Dependency/Lockfile تغییر نکر�
 
 ## 2026-09-19 — Sales/Ticket Catalog source synchronization (PC-A, in progress)
 
+## 2026-09-19 — Dashboard metric-specific aggregations (PC-C, in progress)
+
+Dashboard Projection now has explicit metric/aggregation metadata. Monetary visuals aggregate
+`salesAmount` only within the selected source currency; count, status and rate visuals use
+their own distinct-order/status/rate functions and no longer inherit the monetary sum. Employee
+comparison visuals therefore no longer render the same sales-amount series under different titles.
+Focused API assertions were added; full typecheck/test execution remains blocked by the checkout's
+pre-existing workspace package-link errors (`@nora/contracts`/`@nora/database` not built).
+
 Ticket Management local-only definitions and Sales offer selection are being unified on the existing Ticket Catalog public source. No schema, migration, dependency lock, operational data, or direct cross-module table access is in scope.
 
 Result: Ticket Management now publishes new flight definitions to the existing Ticket Catalog offer source before closing the form, and exposes the branch-scoped published offer list used by Sales contracts. Round-trip and repetition publish independent flight offers. Focused Web (1) and API (3) tests, lint, Prettier and API/Web typecheck passed. No migration, dependency lock, or operational data changed.

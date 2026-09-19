@@ -490,6 +490,55 @@ export class ReportingService {
           : 0,
       'customer-destination-demand': (rows) =>
         rows.filter((fact) => Boolean(fact.destinationCity)).length,
+      // Employee activity is not present in the travel fact grain yet. Until
+      // the employee-activity projection is wired, these measures use the
+      // approved travel/order grain and explicitly count distinct orders (or
+      // status events) instead of summing a monetary column.
+      'employee-lead-count': (rows) =>
+        new Set(rows.map((fact) => fact.orderNumber ?? fact.id)).size,
+      'employee-call-count': (rows) => rows.length,
+      'employee-followup-count': (rows) =>
+        rows.filter(
+          (fact) =>
+            fact.reservationStatus === 'PENDING' ||
+            fact.paymentStatus === 'PENDING' ||
+            fact.issueStatus === 'PENDING',
+        ).length,
+      'employee-finalized-sales-count': (rows) =>
+        new Set(
+          rows
+            .filter(
+              (fact) =>
+                fact.orderStatus === 'CONFIRMED' &&
+                fact.reservationStatus !== 'CANCELLED',
+            )
+            .map((fact) => fact.orderNumber ?? fact.id),
+        ).size,
+      'employee-lead-conversion': (rows) => {
+        const eligible = new Set(
+          rows.map((fact) => fact.orderNumber ?? fact.id),
+        );
+        const converted = new Set(
+          rows
+            .filter(
+              (fact) =>
+                fact.issueStatus === 'ISSUED' &&
+                fact.reservationStatus !== 'CANCELLED',
+            )
+            .map((fact) => fact.orderNumber ?? fact.id),
+        );
+        return eligible.size
+          ? Math.round((converted.size / eligible.size) * 100)
+          : 0;
+      },
+      'employee-contract-count': (rows) =>
+        new Set(rows.map((fact) => fact.orderNumber ?? fact.id)).size,
+      'employee-cancellation-count': (rows) =>
+        new Set(
+          rows
+            .filter((fact) => fact.reservationStatus === 'CANCELLED')
+            .map((fact) => fact.orderNumber ?? fact.id),
+        ).size,
     };
     const amountMetrics: Record<string, (rows: typeof facts) => number> = {
       'gross-sales': (rows) => sum(rows, (fact) => Number(fact.salesAmount)),
@@ -527,6 +576,12 @@ export class ReportingService {
             Number(fact.purchaseAmount) +
             Number(fact.commissionAmount),
         ),
+      'employee-average-sale': (rows) => {
+        const orders = new Set(rows.map((fact) => fact.orderNumber ?? fact.id));
+        return orders.size
+          ? sum(rows, (fact) => Number(fact.salesAmount)) / orders.size
+          : 0;
+      },
     };
     const currencies = [
       ...new Set(facts.map((fact) => fact.currencyCode)),
@@ -568,6 +623,8 @@ export class ReportingService {
                   .join(' · '),
                 unit: 'ارزها مستقل',
                 detail: `${facts.length.toLocaleString('fa-IR')} قلم سفر دمو، بدون تبدیل ارز یا تکثیر مبلغ`,
+                metricId: id,
+                aggregation: 'sum source-currency amount per currency',
                 ...(comparison ? { comparison } : {}),
                 ...(comparisonSeries.length ? { comparisonSeries } : {}),
                 ...(trend ? { trend } : {}),
@@ -582,8 +639,14 @@ export class ReportingService {
               id,
               {
                 value: count(facts).toLocaleString('fa-IR'),
-                unit: id.endsWith('rate') ? 'درصد' : 'قلم سفر',
-                detail: 'فقط دادهٔ سفر موجود در Projection دمو',
+                unit: id.includes('conversion') ? 'درصد' : 'قلم',
+                detail: 'محاسبه از grain مصوب fact سفر؛ بدون جمع‌زدن مبلغ',
+                metricId: id,
+                aggregation: id.includes('conversion')
+                  ? 'distinct converted orders / distinct eligible orders × 100'
+                  : id.includes('cancellation')
+                    ? 'count distinct cancelled orders'
+                    : 'count distinct orders at approved fact grain',
                 ...(previousFacts
                   ? {
                       comparison: comparisonFor(
@@ -599,13 +662,113 @@ export class ReportingService {
         return [];
       }),
     );
-    const by = (field: keyof (typeof facts)[number], rows: typeof facts) => {
-      const groups = new Map<string, number>();
+    const by = (
+      field: keyof (typeof facts)[number],
+      rows: typeof facts,
+      aggregate: (groupRows: typeof facts) => number,
+    ) => {
+      const grouped = new Map<string, typeof facts>();
       for (const fact of rows) {
         const label = String(fact[field] ?? 'نامشخص');
-        groups.set(label, (groups.get(label) ?? 0) + Number(fact.salesAmount));
+        const group = grouped.get(label) ?? [];
+        group.push(fact);
+        grouped.set(label, group);
       }
-      return [...groups.entries()].sort((a, b) => b[1] - a[1]).slice(0, 6);
+      return [...grouped.entries()]
+        .map(([label, groupRows]) => [label, aggregate(groupRows)] as const)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 6);
+    };
+    const distinctOrders = (rows: typeof facts) =>
+      new Set(rows.map((fact) => fact.orderNumber ?? fact.id)).size;
+    const employeeVisuals: Record<
+      string,
+      {
+        aggregation: string;
+        aggregate: (rows: typeof facts) => number;
+        monetary?: boolean;
+      }
+    > = {
+      'employee-leads-by-agent': {
+        aggregation: 'count distinct order grain',
+        aggregate: distinctOrders,
+      },
+      'employee-calls-by-agent': {
+        aggregation: 'count fact rows',
+        aggregate: (rows) => rows.length,
+      },
+      'employee-followups-by-agent': {
+        aggregation: 'count pending workflow actions',
+        aggregate: (rows) =>
+          rows.filter(
+            (fact) =>
+              fact.reservationStatus === 'PENDING' ||
+              fact.paymentStatus === 'PENDING' ||
+              fact.issueStatus === 'PENDING',
+          ).length,
+      },
+      'employee-sales-count-by-agent': {
+        aggregation: 'count distinct confirmed non-cancelled orders',
+        aggregate: (rows) =>
+          new Set(
+            rows
+              .filter(
+                (fact) =>
+                  fact.orderStatus === 'CONFIRMED' &&
+                  fact.reservationStatus !== 'CANCELLED',
+              )
+              .map((fact) => fact.orderNumber ?? fact.id),
+          ).size,
+      },
+      'employee-sales-amount-by-agent': {
+        aggregation: 'sum salesAmount at order-item-currency grain',
+        aggregate: (rows) => sum(rows, (fact) => Number(fact.salesAmount)),
+        monetary: true,
+      },
+      'employee-conversion-by-agent': {
+        aggregation: 'distinct issued orders / distinct eligible orders × 100',
+        aggregate: (rows) => {
+          const eligible = distinctOrders(rows);
+          const converted = new Set(
+            rows
+              .filter(
+                (fact) =>
+                  fact.issueStatus === 'ISSUED' &&
+                  fact.reservationStatus !== 'CANCELLED',
+              )
+              .map((fact) => fact.orderNumber ?? fact.id),
+          ).size;
+          return eligible ? Math.round((converted / eligible) * 100) : 0;
+        },
+      },
+      'employee-average-sale-by-agent': {
+        aggregation: 'sum salesAmount / count distinct orders',
+        aggregate: (rows) => {
+          const orders = distinctOrders(rows);
+          return orders
+            ? sum(rows, (fact) => Number(fact.salesAmount)) / orders
+            : 0;
+        },
+        monetary: true,
+      },
+      'employee-contracts-by-agent': {
+        aggregation: 'count distinct orders by contract status',
+        aggregate: distinctOrders,
+      },
+      'employee-cancellations-by-agent': {
+        aggregation: 'count distinct cancelled orders',
+        aggregate: (rows) =>
+          new Set(
+            rows
+              .filter((fact) => fact.reservationStatus === 'CANCELLED')
+              .map((fact) => fact.orderNumber ?? fact.id),
+          ).size,
+      },
+      'employee-performance-ranking': {
+        aggregation: 'rank by sum salesAmount in selected currency',
+        aggregate: (rows) => sum(rows, (fact) => Number(fact.salesAmount)),
+        monetary: true,
+      },
     };
     const visualIds = (input.visualIds ?? '').split(',').filter(Boolean);
     const visualFields: Record<string, keyof (typeof facts)[number]> = {
@@ -666,15 +829,43 @@ export class ReportingService {
           labels: trend.labels,
           values: trend.values,
           currencyCode,
+          metricId: id,
+          aggregation: 'sum salesAmount per time bucket',
+        };
+      }
+      const employeeVisual = employeeVisuals[id];
+      if (employeeVisual) {
+        if (!employeeVisual.monetary) return undefined;
+        const entries = by(
+          'ownerName',
+          currencyFacts,
+          employeeVisual.aggregate,
+        );
+        return {
+          labels: entries.map(([label]) => label),
+          values: entries.map(([, value]) => Math.round(value)),
+          currencyCode,
+          metricId: id,
+          aggregation: employeeVisual.aggregation,
+          ...(previousFacts
+            ? {
+                comparison: comparisonFor(
+                  employeeVisual.aggregate(currencyFacts),
+                  employeeVisual.aggregate(previousCurrencyFacts),
+                ),
+              }
+            : {}),
         };
       }
       const field = visualFields[id];
       if (!field) return undefined;
-      const entries = by(field, currencyFacts);
+      const entries = by(field, currencyFacts, visualAmount);
       return {
         labels: entries.map(([label]) => label),
         values: entries.map(([, value]) => Math.round(value)),
         currencyCode,
+        metricId: id,
+        aggregation: 'sum salesAmount by selected dimension',
         ...(previousFacts
           ? {
               comparison: comparisonFor(
@@ -689,8 +880,37 @@ export class ReportingService {
     const visuals = Object.fromEntries(
       visualIds.flatMap<[string, DashboardProjectionV1['visuals'][string]]>(
         (id) => {
+          if (employeeVisuals[id] && !employeeVisuals[id].monetary) {
+            const entries = by(
+              'ownerName',
+              facts,
+              employeeVisuals[id].aggregate,
+            );
+            return [
+              [
+                id,
+                {
+                  labels: entries.map(([label]) => label),
+                  values: entries.map(([, value]) => Math.round(value)),
+                  metricId: id,
+                  aggregation: employeeVisuals[id].aggregation,
+                  ...(previousFacts
+                    ? {
+                        comparison: comparisonFor(
+                          employeeVisuals[id].aggregate(facts),
+                          employeeVisuals[id].aggregate(previousFacts),
+                        ),
+                      }
+                    : {}),
+                },
+              ],
+            ];
+          }
           if (trendVisualIds.has(id) || visualFields[id]) {
-            const selectedCurrencyVisual = monetaryVisualFor(id, visualCurrency);
+            const selectedCurrencyVisual = monetaryVisualFor(
+              id,
+              visualCurrency,
+            );
             if (!selectedCurrencyVisual) return [];
             const currencySeries = currencies.flatMap((currencyCode) => {
               const series = monetaryVisualFor(id, currencyCode);
@@ -735,6 +955,8 @@ export class ReportingService {
                 {
                   labels: stages.map(([label]) => label),
                   values: stages.map(([, value]) => value),
+                  metricId: id,
+                  aggregation: 'count rows by reservation/payment/issue stage',
                 },
               ],
             ];
@@ -770,6 +992,8 @@ export class ReportingService {
                 {
                   labels: queue.map(([label]) => label),
                   values: queue.map(([, value]) => value),
+                  metricId: id,
+                  aggregation: 'count rows by pending workflow state',
                 },
               ],
             ];
