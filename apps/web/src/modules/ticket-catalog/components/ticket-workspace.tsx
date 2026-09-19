@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { TicketOfferCreateV1, TicketOfferV1 } from '@nora/contracts';
 import {
   BusFront,
@@ -212,6 +212,7 @@ function TicketCatalogWorkspace() {
     readonly TicketOfferV1[]
   >([]);
   const [publishedProblem, setPublishedProblem] = useState('');
+  const backfillStarted = useRef(false);
 
   const refreshPublishedOffers = async () => {
     try {
@@ -243,6 +244,32 @@ function TicketCatalogWorkspace() {
     );
     await refreshPublishedOffers();
   };
+  const publishExistingFlights = async (
+    items: readonly Product[],
+    itemReferences: readonly Reference[],
+  ) => {
+    const publishable = items
+      .map((product) => ({
+        product,
+        input: flightOfferInput(product.definition, itemReferences),
+      }))
+      .filter(
+        (item): item is { product: Product; input: TicketOfferCreateV1 } =>
+          Boolean(item.input),
+      );
+    if (!publishable.length) return;
+    const base = getPublicApiBaseUrl();
+    if (!base) throw new Error('نشانی سرور تنظیم نشده است.');
+    const session = await refreshAuthenticatedSession(base);
+    const branchId = session?.user.branches[0]?.id;
+    if (!branchId) throw new Error('شعبه مجاز برای ثبت بلیط پیدا نشد.');
+    await Promise.all(
+      publishable.map(({ product, input }) =>
+        toursApi.publishOffer(input, branchId, `ticket-catalog:${product.id}`),
+      ),
+    );
+    await refreshPublishedOffers();
+  };
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -256,12 +283,24 @@ function TicketCatalogWorkspace() {
         localStorage.getItem(catalogStorageKey),
       );
       if (stored) {
-        setProducts(
-          stored.products.map((product) =>
-            activateCatalogSample(product, new Date().toISOString()),
-          ),
+        const restoredProducts = stored.products.map((product) =>
+          activateCatalogSample(product, new Date().toISOString()),
         );
+        setProducts(restoredProducts);
         setReferences(stored.references);
+        if (!backfillStarted.current) {
+          backfillStarted.current = true;
+          void publishExistingFlights(
+            restoredProducts,
+            stored.references,
+          ).catch((error) =>
+            setPublishedProblem(
+              error instanceof Error
+                ? error.message
+                : 'اتصال بلیط‌های قبلی به قراردادها ناموفق بود.',
+            ),
+          );
+        }
       } else setProducts(catalogSamples(new Date().toISOString()));
       setHydrated(true);
     }, 0);
