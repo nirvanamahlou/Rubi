@@ -2692,7 +2692,6 @@ function VisualDetailsPanel({
     kind === 'line' && data
       ? trendTemporalGrain(range, data.labels)
       : undefined;
-  const sampleValues = (data?.values ?? []).slice(0, 4);
 
   return (
     <Drawer
@@ -2771,19 +2770,6 @@ function VisualDetailsPanel({
                 ) : null}
                 <Badge>{`${data?.values.length ?? 0} دسته نمایش‌داده‌شده`}</Badge>
               </div>
-              {sampleValues.length ? (
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {sampleValues.map((value, index) => (
-                    <Badge
-                      className="max-w-full truncate"
-                      key={`${data?.labels[index] ?? index}-${value}`}
-                      title={`${data?.labels[index] ?? `دسته ${index + 1}`}: ${formatDashboardNumber(value)}`}
-                    >
-                      {`${data?.labels[index] ?? `دسته ${index + 1}`}: ${formatDashboardNumber(value)}`}
-                    </Badge>
-                  ))}
-                </div>
-              ) : null}
             </section>
 
             <section

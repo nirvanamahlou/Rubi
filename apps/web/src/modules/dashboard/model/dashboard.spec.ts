@@ -570,6 +570,7 @@ describe('dashboard permission and data states', () => {
     expect(source).toContain('function VisualDetailsPanel');
     expect(source).toContain('خلاصه متنی و جدول داده');
     expect(source).toContain('جزئیات نمودار');
+    expect(source).not.toContain('const sampleValues = (data?.values ?? []).slice(0, 4);');
     expect(source).toContain('<SelectContent align="end" dir="rtl">');
     expect(source).toContain('justify-end text-right data-[highlighted]:bg-primary');
     expect(source).toContain('selectedCurrencyCode');
