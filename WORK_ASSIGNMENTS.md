@@ -3443,7 +3443,7 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 - `COMPUTER_ID=PC-A`؛ شاخه `codex/pc-a-sales-ticket-catalog-sync-0919` از `origin/develop@5d588cbd`. محدوده: API عمومی موجود Ticket Catalog برای فهرست مدیریت‌شده، ثبت تعریف پرواز در همان منبع `TicketPublishedOffer`، نمایش منبع ثبت‌شده در مدیریت بلیط، انتخاب Sales و تست‌های هدفمند؛ بدون Schema/Migration/Dependency/Lockfile یا داده عملیاتی.
 - نتیجه: تعریف تازهٔ پرواز، از همان فرم مدیریت بلیط، پیش از ذخیرهٔ نمای محلی در `TicketPublishedOffer` منتشر می‌شود و همان لحظه در فهرست «ثبت‌شده برای فروش و قرارداد» و انتخاب قرارداد جدید قابل‌دریافت است. رفت/برگشت و تکرار نیز هر پرواز مستقل را منتشر می‌کنند. فهرست مدیریت‌شده فقط ردیف‌های شعبه‌های مجاز و ظرفیت مانده را می‌خواند. تست Web ۱/۱، تست API ۳/۳، lint، Prettier و typecheck API/Web موفق‌اند؛ بدون Migration، Dependency/Lockfile یا داده عملیاتی.
 
-## DASHBOARD-METRIC-AGGREGATIONS-0919 — PC-C — IN_PROGRESS
+## DASHBOARD-METRIC-AGGREGATIONS-0919 — PC-C — READY_FOR_REVIEW
 
 - `COMPUTER_ID=PC-C`; شاخهٔ مستقل `codex/pc-c-dashboard-metrics-0919` برای اصلاح metric/aggregation مستقل KPIها و Visualهای Dashboard رزرو شد.
-- محدوده فقط قرارداد و producer Projection گزارش و تست هدفمند API است. برای Visualهای مالی، جمع مبلغ فقط در ارز انتخابی انجام می‌شود؛ Visualهای تعدادی/نرخی از count distinct/status/rate خود استفاده می‌کنند و currencySeries دریافت نمی‌کنند. تغییر Schema/Migration، دادهٔ عملیاتی/دمو، Permission و فایل‌های فعال PC-A/PC-B خارج از محدوده است.
+- قرارداد و producer Projection گزارش، نمایش واحد درصد در Web و تست هدفمند API تکمیل شد. برای Visualهای مالی، جمع مبلغ فقط در ارز انتخابی انجام می‌شود؛ Visualهای تعدادی/نرخی از count distinct/status/rate خود استفاده می‌کنند و currencySeries دریافت نمی‌کنند. تغییر Schema/Migration، دادهٔ عملیاتی/دمو، Permission و فایل‌های فعال PC-A/PC-B خارج از محدوده است.

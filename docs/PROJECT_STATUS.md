@@ -3075,3 +3075,11 @@ pre-existing workspace package-link errors (`@nora/contracts`/`@nora/database` n
 Ticket Management local-only definitions and Sales offer selection are being unified on the existing Ticket Catalog public source. No schema, migration, dependency lock, operational data, or direct cross-module table access is in scope.
 
 Result: Ticket Management now publishes new flight definitions to the existing Ticket Catalog offer source before closing the form, and exposes the branch-scoped published offer list used by Sales contracts. Round-trip and repetition publish independent flight offers. Focused Web (1) and API (3) tests, lint, Prettier and API/Web typecheck passed. No migration, dependency lock, or operational data changed.
+## 2026-09-19 — DASHBOARD-PERCENTAGE-METRICS-0919 — READY_FOR_REVIEW
+
+تمام KPIها و Visualهای نرخ/تبدیل/سهم که در قرارداد Dashboard قابل محاسبه‌اند،
+واحد صریح `درصد` دارند. نرخ لغو، وصول، استرداد، خطای رزرو، تکمیل ظرفیت، تبدیل،
+رشد لید، نقض SLA و پوشش رضایت در API با صورت و مخرج مشخص محاسبه می‌شوند؛
+نمودارهای نرخ Provider، لغو بلیت، تبدیل منبع لید و سهم کانال/شهر نیز همین قرارداد
+را به UI می‌دهند. کارت، نمودار، tooltip و جدول خلاصه علامت درصد را از قرارداد می‌خوانند.
+۶ تست Reporting، lint و typecheck Web موفق‌اند؛ API روی ۴۰۰۰ و Web روی ۳۰۰۰ با HTTP 200 فعال‌اند.
