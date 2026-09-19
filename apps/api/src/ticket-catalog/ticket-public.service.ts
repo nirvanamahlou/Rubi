@@ -55,6 +55,63 @@ export class TicketPublicService {
       throw new ForbiddenException('مجوز بلیت وجود ندارد.');
   }
 
+  private offerView(row: {
+    id: string;
+    version: number;
+    branchId: string;
+    originId: string;
+    destinationId: string;
+    departureAt: Date;
+    arrivalAt: Date;
+    carrierName: string;
+    serviceNumber: string;
+    cabinClassCode: string;
+    totalCapacity: number;
+    status: string;
+    capacityAllocations: readonly { quantity: number }[];
+  }): TicketOfferV1 {
+    return {
+      id: row.id,
+      version: row.version,
+      branchId: row.branchId,
+      originId: row.originId,
+      destinationId: row.destinationId,
+      departureAt: row.departureAt.toISOString(),
+      arrivalAt: row.arrivalAt.toISOString(),
+      carrierName: row.carrierName,
+      serviceNumber: row.serviceNumber,
+      cabinClassCode: row.cabinClassCode as TicketOfferV1['cabinClassCode'],
+      totalCapacity: row.totalCapacity,
+      remainingCapacity:
+        row.totalCapacity -
+        row.capacityAllocations.reduce(
+          (sum, allocation) => sum + allocation.quantity,
+          0,
+        ),
+      status: row.status as TicketOfferV1['status'],
+    };
+  }
+
+  /** Management and Sales deliberately read the same published offer rows. */
+  async managed(actor: AuthenticatedActor) {
+    this.require(actor, 'ticket_catalog.manage');
+    const rows = await this.database.client.ticketPublishedOffer.findMany({
+      where: { branchId: { in: actor.branchIds } },
+      include: {
+        capacityAllocations: {
+          where: { status: 'ACTIVE' },
+          select: { quantity: true },
+        },
+      },
+      orderBy: [{ departureAt: 'asc' }, { id: 'asc' }],
+      take: 500,
+    });
+    return {
+      version: 1 as const,
+      data: rows.map((row) => this.offerView(row)),
+    };
+  }
+
   async search(input: TicketOfferSearchV1, actor: AuthenticatedActor) {
     this.require(actor, 'ticket_catalog.read');
     const result = Joi.object({
@@ -98,26 +155,7 @@ export class TicketPublicService {
     });
     return {
       version: 1 as const,
-      data: rows.slice(0, 50).map((row): TicketOfferV1 => ({
-        id: row.id,
-        version: row.version,
-        branchId: row.branchId,
-        originId: row.originId,
-        destinationId: row.destinationId,
-        departureAt: row.departureAt.toISOString(),
-        arrivalAt: row.arrivalAt.toISOString(),
-        carrierName: row.carrierName,
-        serviceNumber: row.serviceNumber,
-        cabinClassCode: row.cabinClassCode as TicketOfferV1['cabinClassCode'],
-        totalCapacity: row.totalCapacity,
-        remainingCapacity:
-          row.totalCapacity -
-          row.capacityAllocations.reduce(
-            (sum, allocation) => sum + allocation.quantity,
-            0,
-          ),
-        status: row.status as TicketOfferV1['status'],
-      })),
+      data: rows.slice(0, 50).map((row) => this.offerView(row)),
       hasMore: rows.length > 50,
     };
   }
@@ -164,12 +202,16 @@ export class TicketPublicService {
     });
     // Legacy fingerprints depended on JSON field order. Compare stored offer facts
     // before rejecting a retried key so semantically identical requests remain safe.
-    const sameOffer = row.branchId === branchId &&
-      row.originId === value.originId && row.destinationId === value.destinationId &&
+    const sameOffer =
+      row.branchId === branchId &&
+      row.originId === value.originId &&
+      row.destinationId === value.destinationId &&
       row.departureAt.getTime() === new Date(value.departureAt).getTime() &&
       row.arrivalAt.getTime() === new Date(value.arrivalAt).getTime() &&
-      row.carrierName === value.carrierName && row.serviceNumber === value.serviceNumber &&
-      row.cabinClassCode === value.cabinClassCode && row.totalCapacity === value.totalCapacity;
+      row.carrierName === value.carrierName &&
+      row.serviceNumber === value.serviceNumber &&
+      row.cabinClassCode === value.cabinClassCode &&
+      row.totalCapacity === value.totalCapacity;
     if (row.fingerprint !== fingerprint && !sameOffer)
       throw new ConflictException(
         'کلید درخواست قبلاً با اطلاعات متفاوت استفاده شده است.',

@@ -221,6 +221,54 @@
   justify-content: flex-end;
   gap: 8px;
 }
+.managementAreas {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0 0 18px;
+}
+.managementArea {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  padding: 13px 15px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  color: var(--foreground);
+  background: var(--surface);
+  transition:
+    border-color 150ms ease,
+    background 150ms ease;
+}
+.managementArea:hover {
+  border-color: color-mix(in srgb, var(--primary) 42%, var(--border));
+  background: color-mix(in srgb, var(--primary) 4%, var(--surface));
+}
+.managementArea span,
+.managementArea b {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+.managementArea span {
+  font-weight: 750;
+}
+.managementArea small {
+  color: var(--muted-foreground);
+}
+.managementArea b {
+  color: var(--primary);
+  font-size: 12px;
+}
+.managementNotice {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: 9px;
+  color: var(--muted-foreground);
+  background: var(--muted);
+  font-size: 12px;
+}
 .scopeControl {
   display: inline-flex;
   min-height: 38px;

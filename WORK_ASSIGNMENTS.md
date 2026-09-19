@@ -11,6 +11,18 @@
 - مرزها: مدیریت سیستم فقط Service/HTTP Port عمومی مالک را مصرف می‌کند؛ به Redis، Queue، Storage یا جدول Reporting/Documents دسترسی مستقیم ندارد. تغییر تنظیماتِ بدون Consumer مالک فعال نمی‌شود و به‌عنوان اتصال موفق نمایش داده نخواهد شد. Migration، دادهٔ عملیاتی، Grant نقش، Dependency/Lockfile و تغییرات ماژول‌های تجاری خارج از محدوده‌اند.
 - نتیجه: `POST /system-management/v1/jobs/reporting-exports/:id/retry` با `system.jobs.retry` فرمان را Audit می‌کند و اجرای واقعی را به Public Service Reporting می‌سپارد؛ Reporting نیز `reporting.export` و وضعیت Export را خودش کنترل می‌کند. Documents یک Port محدود سلامت Storage و Worker یک Port loopback سلامت Redis/Queue/Worker با قرارداد بدون Credential منتشر کردند؛ System Management فقط آن Portها را مصرف می‌کند. Scope شرکت حقوقی از `legal-entities/selectable` با UUID معتبر ذخیره می‌شود، تاریخچهٔ هر بخش فیلتر می‌شود و مسیر `/system/operations` پنل عملیاتی پیشین را واقعاً در دسترس قرار می‌دهد. پیوندهای IAM، Legal Entity، Documents و Reporting مالکیت داده را حفظ می‌کنند. ۱۲ تست API، ۲ تست Worker، ۱۰ تست Web، lint و typecheck هر سه workspace موفق‌اند؛ API ۴۰۰۰، Web ۳۱۰۰ و Worker ۴۱۰۰ در Smoke محلی پاسخ داده‌اند.
 
+## DASHBOARD-KPI-TREND-PRESENTATION-0919 — PC-C — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-19: آیکون فیلتر تقویم محور X نمودار روند در frontend واضح و قابل‌مشاهده شود و خط جداکنندهٔ بالای Sparkline از همهٔ KPI Cardها حذف شود.
+- نتیجه: `CalendarDays` با رنگ اصلی و stroke واضح جایگزین آیکون کم‌کنتراستِ انتخاب تاریخ محور زمان شد؛ جداکنندهٔ `border-t` پیش از Sparkline از همهٔ KPI Cardها حذف شد. ۱۶ تست Dashboard، lint و typecheck Web موفق‌اند؛ API، Schema/Migration، Permission، دادهٔ عملیاتی و Dependency/Lockfile تغییر نکردند.
+
+## FINANCE-INBOX-FILTERS-0919 — PC-A — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-19: کارتابل مالی با فیلتر تاریخ و بخش، و KPIهای مبتنی بر همان فیلترها تکمیل شود. شاخه `codex/pc-a-finance-inbox-filters-0919` از `origin/develop@5d588cbd`؛ `COMPUTER_ID=PC-A`.
+- محدودهٔ رزروشده: فقط `apps/web/src/modules/finance/components/finance-inbox-live-workspace.tsx`، تست هدفمند همان UI و این ثبت وضعیت. فیلترها روی دادهٔ عملیاتی موجود اعمال می‌شوند و API، قرارداد مشترک، Schema/Migration، حسابداری، Permission، Dependency/Lockfile و دادهٔ واقعی تغییر نمی‌کنند.
+- ثبت حساب مقصد برای تأیید دریافت، به‌دلیل نیاز به قرارداد و persistence مشترک Sales↔Finance، خارج از این slice است و نباید به‌صورت نمایشی/غیرقابل‌ثبت اضافه شود.
+- نتیجه: فیلتر بخش، وضعیت، جست‌وجو و بازهٔ تاریخ ثبت درخواست در یک نمای عملیاتی جمع شده‌اند؛ کارت «کل درخواست‌ها» نیز مطابق نتیجهٔ فیلترشده به‌روزرسانی می‌شود. داده یا تصمیم مالی جدیدی ساخته نمی‌شود.
+- اعتبارسنجی: ۸ تست متمرکز رابط مالی، Web TypeScript و lint فایل تغییرکرده موفق‌اند. Migration، API، قرارداد مشترک، Permission، Dependency/Lockfile و دادهٔ عملیاتی تغییر نکرده‌اند.
 ## SYSTEM-MANAGEMENT-BACKEND-001 — PC-B — READY_FOR_REVIEW
 
 - نتیجهٔ ادغام‌شده از `origin/develop`: قرارداد نسخهٔ ۱ مدیریت سامانه، ۳۰ Permission، ۱۲ جدول افزایشی و API کنترل‌شدهٔ تنظیمات/شماره‌گذاری/اعلان/قالب/Feature Flag/Backup/Health/Audit به‌همراه حفاظت IAM برای Self-escalation، آخرین مدیر فعال و بستن نشست جاری اضافه شده است. Migration و تست‌های این Slice در Draft PR #305 تأیید شده‌اند؛ قفل‌های Migration، قرارداد و اسناد مرکزی آزادند.
@@ -64,6 +76,90 @@
 - اعتبارسنجی: ۲۱ تست هدفمند Web، lint و typecheck Web و build تولیدی Web موفق‌اند. Migration، دادهٔ عملیاتی، Permission، Dependency/Lockfile و Runtime مشترک تغییر نکردند.
 
 # Work Assignments
+
+## DASHBOARD-VISUAL-DETAILS-DRAWER-0919 — PC-C — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-19: جدول بازشوندهٔ قبلی جزئیات دادهٔ نمودار بازگردد؛ «جزئیات نمودار» به یک Drawer مشابه پنل تعریف KPI تبدیل و دکمه‌اش در نوار پایینِ سمت راست، روبه‌روی دکمهٔ بررسی گزارش مرتبط قرار بگیرد.
+- `COMPUTER_ID=PC-C`؛ ادامهٔ شاخهٔ `codex/pc-c-dashboard-reporting-latest`. محدودهٔ رزروشده: renderer و تست‌های Dashboard Web و اسناد وضعیت. بدون تغییر API، Migration، Schema، دادهٔ عملیاتی/دمو، Permission، Dependency یا Lockfile.
+- نتیجه: `VisualDataSummary` به `<details>` بازشوندهٔ قبلی با عنوان و جدول داده بازگشت. دکمهٔ پایین-راست `جزئیات نمودار` یک Drawer مستقل و قابل‌دسترسی باز می‌کند که هدف، خروجی واقعی، قاعدهٔ نمایش، فیچرهای منبع و مجوز همان visual را نشان می‌دهد؛ گزارش مرتبط در footer Drawer باز می‌شود و Drawer را نمی‌بندد. ۱۶ تست Dashboard، lint، TypeScript و build تولیدی Web موفق‌اند.
+
+## DASHBOARD-KPI-SPARKLINE-SCALE-0919 — PC-C — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-19: نمودار روند زیر KPI Cardها بزرگ‌تر و هم‌تراز نمونهٔ مرجع شود.
+- `COMPUTER_ID=PC-C`؛ ادامهٔ شاخهٔ `codex/pc-c-dashboard-reporting-latest`. محدودهٔ رزروشده: renderer و تست‌های Dashboard Web و اسناد وضعیت. بدون تغییر API، Migration، Schema، دادهٔ عملیاتی/دمو، Permission، Dependency یا Lockfile.
+- نتیجه: canvas روند از `160×58` و ارتفاع `h-14` به `240×84` و `h-20` رسید، تمام عرض Card را با `preserveAspectRatio=none` مصرف می‌کند و ضخامت خط از `2.5` به `3.25` افزایش یافت؛ سایهٔ زیر هر سری همچنان حفظ شد. ۱۶ تست Dashboard، lint، TypeScript و build تولیدی Web موفق‌اند.
+
+## DASHBOARD-VISUAL-DETAILS-CONTROLS-0919 — PC-C — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-19: انتخاب‌گر نوع نمایش تاریخ محور X نمودار روند بدون سرریز متن در یک خط باشد و برای هر نمودار دکمهٔ پایین-راستِ نمایش جزئیات اضافه شود.
+- `COMPUTER_ID=PC-C`؛ ادامهٔ شاخهٔ `codex/pc-c-dashboard-reporting-latest`. محدودهٔ رزروشده: renderer و تست‌های Dashboard Web و اسناد وضعیت. بدون تغییر API، Migration، Schema، دادهٔ عملیاتی/دمو، Permission، Dependency یا Lockfile.
+- نتیجه: کنترل تقویم محور X عرض ثابت `8.5rem`، `shrink-0` و `whitespace-nowrap` دارد و گروه خطی نیز به‌اندازهٔ مجموع دو کنترل فضا می‌گیرد. دکمهٔ `جزئیات نمودار` با `aria-expanded` در پایین-راست هر visual غیرجدولی اضافه شد و خلاصه/جدول دادهٔ همان visual را باز و بسته می‌کند. ۱۶ تست Dashboard، lint، TypeScript و build تولیدی Web موفق‌اند.
+
+## DASHBOARD-RANGE-FILTER-RTL-0919 — PC-C — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-19: گزینه‌های داخل فیلتر «بازه زمانی» Dashboard راست‌چین شوند.
+- `COMPUTER_ID=PC-C`؛ ادامهٔ شاخهٔ `codex/pc-c-dashboard-reporting-latest`. محدودهٔ رزروشده: renderer و تست‌های Dashboard Web و اسناد وضعیت. بدون تغییر API، Migration، Schema، دادهٔ عملیاتی/دمو، Permission، Dependency یا Lockfile.
+- نتیجه: محتوای dropdown بازهٔ زمانی `dir=rtl` و aligned-to-end است؛ هر گزینه با `justify-end text-right` نمایش می‌یابد و رنگ hover دست‌نخورده می‌ماند. ۱۶ تست Dashboard، lint، TypeScript و build تولیدی Web موفق‌اند.
+
+## DASHBOARD-TREND-CONTROL-LAYOUT-0919 — PC-C — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-19: انتخاب‌گر تقویمِ نمودار روند و انتخاب‌گر واحد پول همان نمودار، زیر برچسب نوع نمودار و کنار هم نمایش یابند.
+- `COMPUTER_ID=PC-C`؛ ادامهٔ شاخهٔ `codex/pc-c-dashboard-reporting-latest`. محدودهٔ رزروشده: renderer و تست‌های Dashboard Web و اسناد وضعیت. بدون تغییر API، Migration، Schema، دادهٔ عملیاتی/دمو، Permission، Dependency یا Lockfile.
+- نتیجه: در visualهای `line`، انتخاب ارز با همان اندازهٔ قبلی در سمت راستِ انتخاب تقویم می‌ماند؛ گروه کنترل زیر badge بدون wrap و با حداقل عرض برابر مجموع همان دو کنترل چیده می‌شود. visualهای غیرروند فقط انتخاب‌گر ارزِ قبلی را دارند. ۱۶ تست Dashboard، lint، TypeScript و build تولیدی Web موفق‌اند.
+
+## DASHBOARD-VISUAL-CURRENCY-SELECTOR-0919 — PC-C — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-19: برای هر نمودار مبلغ‌محور Dashboard، dropdown مستقل انتخاب واحد پول نمایش یابد و فقط همان نمودار را از دادهٔ تأییدشدهٔ همان ارز بدون FX تغییر دهد.
+- `COMPUTER_ID=PC-C`؛ ادامهٔ شاخهٔ `codex/pc-c-dashboard-reporting-latest` از `origin/develop@acc35d18`. محدودهٔ رزروشده: قرارداد افزایشی Projection Dashboard و producer آن در Reporting، مصرف‌کننده و تست‌های Dashboard Web/API و اسناد وضعیت. هر سری ارز شامل labels/values/comparison/trend همان ارز است؛ UI حق جمع یا تبدیل بین ارزها ندارد. بدون Migration، Schema، دادهٔ عملیاتی/دمو، Permission، Dependency یا Lockfile.
+- نتیجه: `currencySeries` افزایشی برای visualهای پولی منتشر شد و هر card نمودار dropdown مستقل واحد پول دارد؛ انتخاب محلی فقط labels/values/comparison/trend همان ارز را render می‌کند. برای نمودارهای شمارشی، صف و قیف که مبلغ در خروجی ندارند انتخاب‌گر نمایش داده نمی‌شود. ۶ تست API و ۱۶ تست Web، lint/typecheck API/Web و build تولیدی هر دو سرویس موفق‌اند؛ Web3000 و API4000 پاسخ HTTP ۲۰۰ دارند.
+
+## DASHBOARD-TREND-PLOT-BOUNDS-0919 — PC-C — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-19: حاشیهٔ چپ نمودار روند کاهش یابد و آخرین برچسب محور زمان، از جمله ماهی مانند «شهریور 1405»، داخل کادر قابل مشاهده بماند.
+- `COMPUTER_ID=PC-C`؛ ادامهٔ شاخهٔ `codex/pc-c-dashboard-reporting-latest` از `origin/develop@acc35d18`. محدودهٔ رزروشده: renderer و تست‌های Dashboard Web و اسناد وضعیت. بدون Migration، Schema، دادهٔ عملیاتی/دمو، Permission، Dependency یا Lockfile.
+- نتیجه: plot خطی از x=126 به x=100 منتقل و انتهای آن از x=976 به x=930 محدود شد؛ اعداد y همچنان در gutter چپ مستقل‌اند، اما نمودار به چپ آمده و برای آخرین برچسب محور زمان حاشیهٔ امن داخل SVG دارد. ۱۶ تست Dashboard، lint، typecheck و build تولیدی Web موفق‌اند؛ Web3000 و API4000 پاسخ HTTP ۲۰۰ دارند.
+
+## DASHBOARD-KPI-SEMANTIC-DELTA-0919 — PC-C — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-19: رنگ پس‌زمینهٔ تگ تغییر KPI بر اثر کسب‌وکار باشد، نه صرفاً جهت عدد؛ افزایش KPI زیان‌زا مانند استرداد نسبت به بازهٔ هم‌طول قبل باید قرمز نمایش داده شود.
+- `COMPUTER_ID=PC-C`؛ ادامهٔ شاخهٔ `codex/pc-c-dashboard-reporting-latest` از `origin/develop@acc35d18`. محدودهٔ رزروشده: renderer و تست‌های Dashboard Web و اسناد وضعیت. بدون Migration، Schema، دادهٔ عملیاتی/دمو، Permission، Dependency یا Lockfile.
+- نتیجه: رنگ تگ comparison اکنون semantic است. KPIهای `guardrail` و KPIهای شناخته‌شدهٔ هزینه/استرداد/لغو/تخفیف/تاخیر، در صورت افزایش تگ قرمز با پس‌زمینهٔ واضح و در صورت کاهش تگ سبز می‌گیرند؛ فلش جهت واقعی را حفظ می‌کند. KPIهای عادی افزایش سبز و کاهش قرمز دارند. ۱۶ تست Dashboard، lint، typecheck و build تولیدی Web موفق‌اند؛ Web3000 و API4000 پاسخ HTTP ۲۰۰ دارند.
+
+## DASHBOARD-TREND-POINT-TOOLTIP-0919 — PC-C — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-19: tooltip هر نقطهٔ نمودار روند فقط زمان متناظر با grain نمودار و مقدار همان نقطه را نشان دهد؛ برای روز تاریخ و مقدار، برای ساعت ساعت همان روز و مقدار، و برای هفته/ماه برچسب زمانی متناسب نمایش داده شود.
+- `COMPUTER_ID=PC-C`؛ ادامهٔ شاخهٔ `codex/pc-c-dashboard-reporting-latest` از `origin/develop@acc35d18`. محدودهٔ رزروشده: renderer و تست‌های Dashboard Web و اسناد وضعیت. بدون Migration، Schema، دادهٔ عملیاتی/دمو، Permission، Dependency یا Lockfile.
+- نتیجه: Tooltip بومی هر point line اکنون فقط «زمانِ قالب‌بندی‌شده — مقدار انگلیسی» دارد؛ timestamp خام و عبارت اضافی حذف شدند. زمان با grain مشترک ساعت/روز/هفته/ماه، تقویم انتخاب‌شده و `Asia/Tehran` ساخته می‌شود. ۱۶ تست Dashboard، lint، typecheck و build تولیدی Web موفق‌اند؛ Web3000 و API4000 پاسخ HTTP ۲۰۰ دارند.
+
+## DASHBOARD-TREND-TEXT-SUMMARY-0919 — PC-C — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-19: خلاصهٔ متنی/جدول دادهٔ هر نمودار روند Dashboard نیز دقیقاً با grain زمانی نمودار ساخته و نمایش داده شود: امروز ساعتی، هفته و ماه روزانه، فصل هفتگی و سال ماهانه.
+- `COMPUTER_ID=PC-C`؛ ادامهٔ شاخهٔ `codex/pc-c-dashboard-reporting-latest` از `origin/develop@acc35d18`. محدودهٔ رزروشده: renderer و تست‌های Dashboard Web، در صورت نیاز تست‌های bucket موجود در Reporting و اسناد وضعیت. بدون Migration، Schema، دادهٔ عملیاتی/دمو، Permission، Dependency یا Lockfile.
+- نتیجه: جدول بازشوندهٔ نمودارهای line اکنون عنوان «خلاصهٔ ساعتی/روزانه/هفتگی/ماهانه» و ستون زمانی هم‌راستا با grain دارد؛ ردیف‌ها نیز با همان تقویم شمسی/میلادی انتخاب‌شده برای محور نمودار و زمان `Asia/Tehran` قالب‌بندی می‌شوند. ۱۶ تست هدفمند Dashboard، lint و typecheck و build تولیدی Web موفق‌اند؛ Web3000 و API4000 پاسخ HTTP ۲۰۰ دارند.
+
+## DASHBOARD-TREND-SPARKLINE-AXIS-0919 — PC-C — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-19: Sparklineهای KPI Card بدون نقطهٔ زمانی نمایش یابند و تگ رشد/افت نسبت به بازهٔ هم‌طول قبل با آیکون و درصد خوانا در کنار مقدار KPI باشد. نمودارهای روندِ اصلی عنوان محور نداشته باشند، از عرض کامل canvas استفاده کنند و برچسب‌های مقدار در gutter چپ قرار بگیرند. grain زمانی نیز برای امروز/هفته/ماه/فصل/سال به‌ترتیب ساعت/روز/روز/هفته/ماه باقی بماند و در محور زمان منعکس شود.
+- `COMPUTER_ID=PC-C`؛ ادامهٔ شاخهٔ `codex/pc-c-dashboard-reporting-latest` از `origin/develop@acc35d18`. محدودهٔ رزروشده: dashboard renderer و تست‌های Web، calendar bucketهای Reporting و تست‌های هدفمند و اسناد وضعیت. بدون Migration، Schema، دادهٔ عملیاتی/دمو، Permission، Dependency یا Lockfile.
+- نتیجه: markerهای Sparkline حذف شدند؛ تگ رشد/افت با آیکون جهت، درصد انگلیسی و رنگ مستقیم رشد/افت/ثبات خواناتر شد. خط روند اصلی تمام canvas را با `preserveAspectRatio="none"` مصرف می‌کند، labels مقدار در gutter چپ هستند و عنوان محور ندارد. ساعتِ امروز با `Intl` در `Asia/Tehran` نمایش داده می‌شود و تست ۱۰ رفتار bucket ساعت/روز/هفته/ماه را پوشش می‌دهد. ۱۶ تست Web، lint/typecheck API/Web، build تولیدی Web و healthcheck Web3000/API4000 موفق‌اند.
+
+## DASHBOARD-TREND-AXIS-CALENDAR-0919 — PC-C — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-19: سری «دورهٔ قبل هم‌طول» از نمودارهای روند Dashboard حذف شود؛ محورهای نمودار با gutter مستقل و برچسب‌های بدون تداخل نمایش یابند؛ انتخاب واحد پول بلافاصله پس از بازهٔ زمانی در پنل فیلتر قرار بگیرد؛ و برای برچسب‌های زمانی نمودار روند، انتخاب تقویم شمسی/میلادی در خود نمودار فراهم شود.
+- `COMPUTER_ID=PC-C`؛ ادامهٔ شاخهٔ `codex/pc-c-dashboard-reporting-latest` از `origin/develop@acc35d18`. محدودهٔ رزروشده: قرارداد Projection Dashboard در `apps/api/src/reporting/**`، مصرف‌کننده و تست‌های Dashboard در `apps/web/src/modules/dashboard/**` و اسناد وضعیت همین واحد. این تغییر قرارداد، نسخهٔ V1 را additive نمی‌کند؛ فیلد اختیاریِ استفاده‌نشدهٔ `comparisonValues` حذف می‌شود و API همچنان مقایسهٔ KPI Cardها را منتشر می‌کند.
+- بدون Migration، Schema، دادهٔ عملیاتی/دمو، Permission، Dependency یا Lockfile.
+- نتیجه: نمودارهای خطی فقط روند بازهٔ انتخاب‌شده را دارند؛ برای هر نمودار line انتخاب «تاریخ شمسی/تاریخ میلادی» در UI عرضه شده و labels آن با زمان `Asia/Tehran` ساخته می‌شوند. plot و محورهای نمودار gutter جدا دارند. انتخاب واحد پول در تمام فیلترهای داشبوردی که آن را پشتیبانی می‌کنند، نخستین فیلتر بعد از بازهٔ زمانی است. ۶ تست API و ۱۶ تست Web، lint/typecheck و build تولیدی API/Web موفق‌اند؛ runtime تازه روی `localhost:3000` و API روی ۴۰۰۰ پاسخ HTTP ۲۰۰ می‌دهند.
+
+## DASHBOARD-TREND-COMPARISON-VISUAL-0917 — PC-C — SUPERSEDED
+
+- درخواست مالک در 2026-09-17: نمودارهای روند Dashboard از نظر خروجی با مرجع ارسالی هم‌راستا شوند؛ سری بازهٔ انتخاب‌شده با خط سرمه‌ای و نقطه‌ها، سری دورهٔ قبلِ هم‌طول با خط خاکستریِ خط‌چین، محور مقدار، خطوط راهنمای نقطه‌چین و برچسب‌های زمانی خوانا نمایش یابند.
+- `COMPUTER_ID=PC-C`؛ شاخهٔ کاری `codex/pc-c-dashboard-reporting-latest` پس از دریافت `origin/develop@acc35d18`. محدودهٔ رزروشده: Projection نسخه‌دار Dashboard در `apps/api/src/reporting/**`، مصرف‌کننده و تست‌های Dashboard در `apps/web/src/modules/dashboard/**` و اسناد وضعیت همین واحد.
+- بدون Migration، Schema، دادهٔ عملیاتی/دمو، Permission، Dependency یا Lockfile. سری مقایسه فقط از factهای Projection تأییدشده و بازهٔ قبل هم‌طول تولید می‌شود؛ مقدار فرضی یا تبدیل ارز افزوده نخواهد شد.
+- نتیجه: این طراحی در Work Item `DASHBOARD-TREND-AXIS-CALENDAR-0919` با درخواست جدید مالک جایگزین شد: سری `comparisonValues` از trend حذف شده، اما مقایسهٔ KPI Cardها و visualهای غیرروند باقی مانده است.
+
+## SALES-CONTRACT-TABLE-0919 — PC-A — LOCAL_COMPLETE
+
+Base acc35d18; COMPUTER_ID=PC-A. فهرست `/sales` اکنون سرستون خواناتر، ردیف‌های کم‌ارتفاع راه‌راه، شماره قرارداد برجسته، نام مشتری کوتاه‌شونده و ستون عملیات هم‌ردیف دارد. سه عمل موجود بدون تغییر دسترسی یا رفتار باقی مانده‌اند: پرداخت‌ها، PDF قرارداد و مدارک مسافر. API، داده، مجوز، Migration، وابستگی و ماژول دیگری تغییر نکرد. اعتبارسنجی: build بستهٔ Contracts، ۸ تست هدفمند Sales، lint سه فایل تغییرکرده، typecheck Web و build تولیدی Web موفق. شاخه: `codex/pc-a-sales-contract-table-0919`.
 
 ## TOUR-HOTEL-PRICING-FLOW-0916 — PC-A — MERGED WITH DEVELOP / VERIFIED LOCALLY
 
@@ -3360,3 +3456,9 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 - پیاده‌سازی تکمیل شد: قالب A4 با لوگوی نیایش و لوگوی ایرلاین ثبت‌شده، مسیر و زمان پویا، عنوان مسافر از رده سن/جنسیت، نام لاتین گذرنامه و هشدار دو زبانه ساخته می‌شود. برای ایرلاین بدون لوگو، نام ثبت‌شده نمایش دارد. ۱۵ تست هدفمند، lint و typecheck Web موفق‌اند؛ یک PDF مصنوعی رفت/برگشت در یک صفحه A4 رندر شد. بدون داده واقعی، Migration، Seed، تغییر localhost یا ادغام PR #283. وضعیت: READY_FOR_REVIEW؛ قفل‌های فایل آزادند.
 - build تولیدی Web نیز با ۴۶ route موفق شد؛ خروجی نمونهٔ PDF با Chrome/Poppler یک صفحه A4 دارد. تغییر عمومی API/Database و جابه‌جایی localhost انجام نشد.
 - پیگیری 2026-09-15: سایهٔ روشن شهر پشت نام/کد مبدأ و مقصد برای هر مسیر پویا اضافه شد؛ ۸ تست قالب، lint و نمونه واقعی PDF/PNG موفق‌اند.
+
+## SALES-TICKET-CATALOG-SYNC-0919 — PC-A — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-19: بلیط‌های تعریف‌شده در «مدیریت بلیط» باید همان منبع انتخاب در «قرارداد جدید» باشند؛ پیشنهادهای قدیمی یا محلیِ نامرتبط در فرم قرارداد نمایش داده نشوند و ثبت بلیط جدید قابل انتخاب باشد.
+- `COMPUTER_ID=PC-A`؛ شاخه `codex/pc-a-sales-ticket-catalog-sync-0919` از `origin/develop@5d588cbd`. محدوده: API عمومی موجود Ticket Catalog برای فهرست مدیریت‌شده، ثبت تعریف پرواز در همان منبع `TicketPublishedOffer`، نمایش منبع ثبت‌شده در مدیریت بلیط، انتخاب Sales و تست‌های هدفمند؛ بدون Schema/Migration/Dependency/Lockfile یا داده عملیاتی.
+- نتیجه: تعریف تازهٔ پرواز، از همان فرم مدیریت بلیط، پیش از ذخیرهٔ نمای محلی در `TicketPublishedOffer` منتشر می‌شود و همان لحظه در فهرست «ثبت‌شده برای فروش و قرارداد» و انتخاب قرارداد جدید قابل‌دریافت است. رفت/برگشت و تکرار نیز هر پرواز مستقل را منتشر می‌کنند. فهرست مدیریت‌شده فقط ردیف‌های شعبه‌های مجاز و ظرفیت مانده را می‌خواند. تست Web ۱/۱، تست API ۳/۳، lint، Prettier و typecheck API/Web موفق‌اند؛ بدون Migration، Dependency/Lockfile یا داده عملیاتی.

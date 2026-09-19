@@ -71,12 +71,6 @@ export function useReservationFormReferences(
     failed: loaded?.key === key && loaded.failed,
   };
 }
-function hotelChildAgeSuffix(band: string | undefined) {
-  if (band === 'CHD_2_TO_6') return ' (2-6)';
-  if (band === 'CHD_6_TO_12') return ' (6-12)';
-  return '';
-}
-
 function Heading({
   number,
   title,
@@ -191,7 +185,11 @@ export function ReservationFormSheet({
             <div className={styles.summary}>
               {[
                 ['ADULTS', data.adults],
-                ['CHILDREN', data.children],
+                ['CHILDREN 6-12', data.children6To12],
+                ['CHILDREN 2-6', data.children2To6],
+                ...(data.childrenUnclassified
+                  ? [['CHILDREN (UNSPECIFIED)', data.childrenUnclassified]]
+                  : []),
                 ['INFANTS', data.infants],
                 ['DESTINATION', data.destination],
                 [
@@ -395,7 +393,7 @@ export function ReservationFormSheet({
                       <td>{String(first + i + 1).padStart(2, '0')}</td>
                       <td dir="auto">{p.name}</td>
                       <td>{p.sex}</td>
-                      <td>{`${p.age}${hotelChildAgeSuffix(p.hotelChildAgeBand)}`}</td>
+                      <td>{p.age}</td>
                       {voucher && (
                         <td>
                           {settings?.passengers.find((s) => s.id === p.id)

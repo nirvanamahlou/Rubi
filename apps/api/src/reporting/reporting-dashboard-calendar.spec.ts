@@ -65,4 +65,41 @@ describe('dashboard calendar ranges', () => {
       expect.arrayContaining([expect.objectContaining({ day: 1 })]),
     );
   });
+
+  it('keeps the requested hourly, daily, weekly and monthly bucket spacing', () => {
+    const today = dashboardCalendarRangeStart(now, 'today');
+    const week = dashboardCalendarRangeStart(now, 'week');
+    const month = dashboardCalendarRangeStart(now, 'month');
+    const quarter = dashboardCalendarRangeStart(now, 'quarter');
+
+    const intervals = (buckets: readonly Date[]) =>
+      buckets.slice(1).map((bucket, index) =>
+        bucket.getTime() - buckets[index]!.getTime(),
+      );
+
+    expect(
+      intervals(
+        dashboardTrendBucketStarts({ from: today, range: 'today', to: now }),
+      ),
+    ).toEqual(expect.arrayContaining([60 * 60 * 1000]));
+    expect(
+      intervals(
+        dashboardTrendBucketStarts({ from: week, range: 'week', to: now }),
+      ),
+    ).toEqual(expect.arrayContaining([24 * 60 * 60 * 1000]));
+    expect(
+      intervals(
+        dashboardTrendBucketStarts({ from: month, range: 'month', to: now }),
+      ),
+    ).toEqual(expect.arrayContaining([24 * 60 * 60 * 1000]));
+    expect(
+      intervals(
+        dashboardTrendBucketStarts({
+          from: quarter,
+          range: 'quarter',
+          to: now,
+        }),
+      ),
+    ).toEqual(expect.arrayContaining([7 * 24 * 60 * 60 * 1000]));
+  });
 });

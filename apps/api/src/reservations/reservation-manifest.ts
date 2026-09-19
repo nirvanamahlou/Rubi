@@ -254,6 +254,7 @@ export class ReservationManifestService {
           ticket.carrierNameSnapshot,
           ticket.destinationId,
           tehranDay(ticket.departureAt),
+          ticket.serviceNumberSnapshot,
         ),
       ]);
       cards.push({
@@ -394,6 +395,7 @@ export class ReservationManifestService {
       ticket.carrierNameSnapshot,
       ticket.destinationId,
       tehranDay(ticket.departureAt),
+      ticket.serviceNumberSnapshot,
     );
     if (!template)
       throw new BadRequestException(
