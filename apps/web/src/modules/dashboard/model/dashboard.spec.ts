@@ -551,8 +551,8 @@ describe('dashboard permission and data states', () => {
     expect(source).toContain('compactCurrencyAmount');
     expect(source).toContain('compactCurrencyTypography');
     expect(source).toContain('compactChartValue');
-    expect(source).toContain('trendAxisLabel');
-    expect(source).toContain('showHour');
+    expect(source).toContain('trendTemporalGrain');
+    expect(source).toContain('trendDateLabel');
     expect(source).toContain('trendCalendarOptions');
     expect(source).toContain('تقویم برچسب‌های محور زمان');
     expect(source).toContain("key) => key === 'currency'");
@@ -689,6 +689,7 @@ describe('dashboard permission and data states', () => {
     expect(source).toContain('جمع نمایش‌داده‌شده');
     expect(source).toContain('values.length > 6');
     expect(source).toContain('خلاصه متنی و جدول داده');
+    expect(source).toContain('تفکیک زمانی:');
     expect(source).toContain('<table');
     expect(source).toContain('role="img"');
     expect(source).toContain('focus-visible:ring-offset-2');

@@ -101,7 +101,6 @@ import {
   dashboardNavigation,
   dashboardPages,
   type DashboardKpiDefinition,
-  type DashboardKpiRole,
   type DashboardVisualKind,
 } from '../model/registry';
 
@@ -115,6 +114,7 @@ const rangeOptions: readonly [DashboardRange, string][] = [
 ];
 
 type TrendCalendarSystem = 'persian' | 'gregorian';
+type TrendTemporalGrain = 'hour' | 'day' | 'week' | 'month';
 
 const trendCalendarOptions: readonly [TrendCalendarSystem, string][] = [
   ['persian', 'تاریخ شمسی'],
@@ -668,11 +668,38 @@ function compactChartValue(value: number) {
   }).format(value);
 }
 
-function trendAxisLabel(
+function trendTemporalGrain(
+  range: DashboardRange,
+  labels: readonly string[],
+): TrendTemporalGrain {
+  if (range === 'today') return 'hour';
+  if (range === 'week' || range === 'month') return 'day';
+  if (range === 'quarter') return 'week';
+  if (range === 'year') return 'month';
+
+  const firstInterval =
+    labels.length > 1
+      ? new Date(labels[1] ?? '').getTime() - new Date(labels[0] ?? '').getTime()
+      : Number.NaN;
+  if (!Number.isFinite(firstInterval)) return 'day';
+  if (firstInterval <= 60 * 60 * 1000) return 'hour';
+  if (firstInterval >= 25 * 24 * 60 * 60 * 1000) return 'month';
+  if (firstInterval >= 6 * 24 * 60 * 60 * 1000) return 'week';
+  return 'day';
+}
+
+const trendTemporalLabels: Record<TrendTemporalGrain, string> = {
+  hour: 'ساعتی',
+  day: 'روزانه',
+  week: 'هفتگی',
+  month: 'ماهانه',
+};
+
+function trendDateLabel(
   value: string,
   calendarSystem: TrendCalendarSystem,
-  showHour: boolean,
-  showMonthOnly: boolean,
+  grain: TrendTemporalGrain,
+  includeYear = false,
 ) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
@@ -683,11 +710,11 @@ function trendAxisLabel(
     {
       timeZone: 'Asia/Tehran',
       month: 'short',
-      ...(showHour
+      ...(grain === 'hour'
         ? { hour: '2-digit', hourCycle: 'h23' }
-        : showMonthOnly
-          ? {}
-          : { day: 'numeric' }),
+        : grain === 'month'
+          ? { year: 'numeric' }
+          : { day: 'numeric', ...(includeYear ? { year: 'numeric' } : {}) }),
     },
   ).format(date);
 }
@@ -1864,24 +1891,46 @@ function EmptyVisualCanvas({ kind }: { kind: DashboardVisualKind }) {
 function VisualDataSummary({
   labels,
   title,
+  trend,
   values,
 }: {
   labels: readonly string[];
   title: string;
+  trend?: {
+    calendarSystem: TrendCalendarSystem;
+    grain: TrendTemporalGrain;
+  } | undefined;
   values: readonly number[];
 }) {
+  const temporalLabel = trend ? trendTemporalLabels[trend.grain] : null;
+  const firstColumnLabel = trend
+    ? trend.grain === 'hour'
+      ? 'ساعت'
+      : trend.grain === 'week'
+        ? 'هفتهٔ شروع'
+        : trend.grain === 'month'
+          ? 'ماه'
+          : 'روز'
+    : 'دسته';
   return (
     <details className="mt-3 rounded-xl border border-border bg-surface">
       <summary className="cursor-pointer rounded-xl px-3 py-2 text-xs font-bold text-foreground outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background">
-        خلاصه متنی و جدول داده
+        {temporalLabel
+          ? `خلاصهٔ ${temporalLabel} و جدول داده`
+          : 'خلاصه متنی و جدول داده'}
       </summary>
       <div className="overflow-x-auto border-t border-border">
+        {temporalLabel ? (
+          <p className="border-b border-border/70 bg-muted/30 px-3 py-2 text-[11px] text-muted-foreground">
+            تفکیک زمانی: <strong className="text-foreground">{temporalLabel}</strong>
+          </p>
+        ) : null}
         <table className="w-full min-w-72 text-xs">
           <caption className="sr-only">داده‌های نمودار {title}</caption>
           <thead className="bg-muted/60 text-foreground">
             <tr>
               <th className="px-3 py-2 text-start" scope="col">
-                دسته
+                {firstColumnLabel}
               </th>
               <th className="px-3 py-2 text-end" scope="col">
                 مقدار
@@ -1895,7 +1944,14 @@ function VisualDataSummary({
                 key={`${labels[index]}-${index}`}
               >
                 <th className="px-3 py-2 text-start font-medium" scope="row">
-                  {labels[index] ?? `دسته ${index + 1}`}
+                  {trend
+                    ? trendDateLabel(
+                        labels[index] ?? '',
+                        trend.calendarSystem,
+                        trend.grain,
+                        true,
+                      )
+                    : (labels[index] ?? `دسته ${index + 1}`)}
                 </th>
                 <td className="px-3 py-2 text-end font-bold tabular-nums">
                   {formatDashboardNumber(value)}
@@ -2121,20 +2177,7 @@ function DashboardChart({
         (index) =>
           index % visibleLabelStep === 0 || index === labels.length - 1,
       );
-    const firstInterval =
-      labels.length > 1
-        ? new Date(labels[1] ?? '').getTime() - new Date(labels[0] ?? '').getTime()
-        : Number.NaN;
-    const showHour =
-      range === 'today' ||
-      (range === 'custom' &&
-        Number.isFinite(firstInterval) &&
-        firstInterval <= 60 * 60 * 1000);
-    const showMonthOnly =
-      range === 'year' ||
-      (range === 'custom' &&
-        Number.isFinite(firstInterval) &&
-        firstInterval >= 25 * 24 * 60 * 60 * 1000);
+    const temporalGrain = trendTemporalGrain(range, labels);
     return (
       <figure
         aria-label={`${visualLabels[resolvedKind]} ${title}. بازه انتخاب‌شده: ${accessibleSummary}`}
@@ -2199,11 +2242,10 @@ function DashboardChart({
                 x={point.x}
                 y="162"
               >
-                {trendAxisLabel(
+                {trendDateLabel(
                   labels[index] ?? '',
                   trendCalendarSystem,
-                  showHour,
-                  showMonthOnly,
+                  temporalGrain,
                 )}
               </text>
             );
@@ -2709,6 +2751,14 @@ function ProjectionSlot({
               <VisualDataSummary
                 labels={data.labels}
                 title={title}
+                trend={
+                  resolvedKind === 'line'
+                    ? {
+                        calendarSystem: trendCalendarSystem,
+                        grain: trendTemporalGrain(range, data.labels),
+                      }
+                    : undefined
+                }
                 values={data.values}
               />
             )}
