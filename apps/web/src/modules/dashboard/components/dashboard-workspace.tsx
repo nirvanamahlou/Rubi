@@ -1940,11 +1940,15 @@ function EmptyVisualCanvas({ kind }: { kind: DashboardVisualKind }) {
 
 function VisualDataSummary({
   labels,
+  onOpenChange,
+  open,
   title,
   trend,
   values,
 }: {
   labels: readonly string[];
+  onOpenChange?(open: boolean): void;
+  open?: boolean;
   title: string;
   trend?: {
     calendarSystem: TrendCalendarSystem;
@@ -1963,8 +1967,12 @@ function VisualDataSummary({
           : 'روز'
     : 'دسته';
   return (
-    <details className="mt-3 rounded-xl border border-border bg-surface">
-      <summary className="cursor-pointer rounded-xl px-3 py-2 text-xs font-bold text-foreground outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background">
+    <details
+      className="mt-3 rounded-xl border border-border bg-surface"
+      onToggle={(event) => onOpenChange?.(event.currentTarget.open)}
+      open={open}
+    >
+      <summary className="sr-only">
         {temporalLabel
           ? `خلاصهٔ ${temporalLabel} و جدول داده`
           : 'خلاصه متنی و جدول داده'}
@@ -2684,6 +2692,7 @@ function ProjectionSlot({
   const [selectedCurrencyCode, setSelectedCurrencyCode] = useState<
     string | undefined
   >();
+  const [isVisualDetailsOpen, setIsVisualDetailsOpen] = useState(false);
   const currencySeries = data?.currencySeries ?? [];
   const activeCurrencyCode = currencySeries.some(
     (series) => series.currencyCode === selectedCurrencyCode,
@@ -2738,7 +2747,7 @@ function ProjectionSlot({
             className={cn(
               'flex items-center gap-1.5',
               resolvedKind === 'line'
-                ? 'min-w-[14.875rem] flex-row flex-nowrap justify-end'
+                ? 'min-w-[15.875rem] flex-row flex-nowrap justify-end'
                 : 'max-w-full flex-col items-end',
             )}
             data-dashboard-trend-controls={resolvedKind === 'line' || undefined}
@@ -2783,7 +2792,7 @@ function ProjectionSlot({
               >
                 <SelectTrigger
                   aria-label="تقویم برچسب‌های محور زمان"
-                  className="h-7 min-w-28 border-border/80 bg-background px-2 text-[10px] font-bold"
+                  className="h-7 w-[8.5rem] shrink-0 whitespace-nowrap border-border/80 bg-background px-2 text-[10px] font-bold"
                 >
                   <CalendarCheck aria-hidden="true" className="size-3.5" />
                   <SelectValue />
@@ -2849,19 +2858,43 @@ function ProjectionSlot({
               </p>
             ) : null}
             {resolvedKind === 'table' || resolvedKind === 'queue' ? null : (
-              <VisualDataSummary
-                labels={displayData.labels}
-                title={title}
-                trend={
-                  resolvedKind === 'line'
-                    ? {
-                        calendarSystem: trendCalendarSystem,
-                        grain: trendTemporalGrain(range, displayData.labels),
-                      }
-                    : undefined
-                }
-                values={displayData.values}
-              />
+              <>
+                <div className="mt-3 flex justify-start" dir="rtl">
+                  <Button
+                    aria-controls={`dashboard-visual-details-${visualId}`}
+                    aria-expanded={isVisualDetailsOpen}
+                    onClick={() => setIsVisualDetailsOpen((open) => !open)}
+                    size="sm"
+                    type="button"
+                    variant="outline"
+                  >
+                    <Info aria-hidden="true" className="size-3.5" />
+                    {isVisualDetailsOpen
+                      ? 'بستن جزئیات نمودار'
+                      : 'جزئیات نمودار'}
+                  </Button>
+                </div>
+                <div id={`dashboard-visual-details-${visualId}`}>
+                  <VisualDataSummary
+                    labels={displayData.labels}
+                    onOpenChange={setIsVisualDetailsOpen}
+                    open={isVisualDetailsOpen}
+                    title={title}
+                    trend={
+                      resolvedKind === 'line'
+                        ? {
+                            calendarSystem: trendCalendarSystem,
+                            grain: trendTemporalGrain(
+                              range,
+                              displayData.labels,
+                            ),
+                          }
+                        : undefined
+                    }
+                    values={displayData.values}
+                  />
+                </div>
+              </>
             )}
           </>
         ) : null}

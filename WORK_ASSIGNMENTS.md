@@ -44,6 +44,12 @@
 
 # Work Assignments
 
+## DASHBOARD-VISUAL-DETAILS-CONTROLS-0919 — PC-C — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-19: انتخاب‌گر نوع نمایش تاریخ محور X نمودار روند بدون سرریز متن در یک خط باشد و برای هر نمودار دکمهٔ پایین-راستِ نمایش جزئیات اضافه شود.
+- `COMPUTER_ID=PC-C`؛ ادامهٔ شاخهٔ `codex/pc-c-dashboard-reporting-latest`. محدودهٔ رزروشده: renderer و تست‌های Dashboard Web و اسناد وضعیت. بدون تغییر API، Migration، Schema، دادهٔ عملیاتی/دمو، Permission، Dependency یا Lockfile.
+- نتیجه: کنترل تقویم محور X عرض ثابت `8.5rem`، `shrink-0` و `whitespace-nowrap` دارد و گروه خطی نیز به‌اندازهٔ مجموع دو کنترل فضا می‌گیرد. دکمهٔ `جزئیات نمودار` با `aria-expanded` در پایین-راست هر visual غیرجدولی اضافه شد و خلاصه/جدول دادهٔ همان visual را باز و بسته می‌کند. ۱۶ تست Dashboard، lint، TypeScript و build تولیدی Web موفق‌اند.
+
 ## DASHBOARD-RANGE-FILTER-RTL-0919 — PC-C — READY_FOR_REVIEW
 
 - درخواست مالک در 2026-09-19: گزینه‌های داخل فیلتر «بازه زمانی» Dashboard راست‌چین شوند.
