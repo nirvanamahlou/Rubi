@@ -690,7 +690,10 @@ export class ReportingService {
       visualIds.flatMap<[string, DashboardProjectionV1['visuals'][string]]>(
         (id) => {
           if (trendVisualIds.has(id) || visualFields[id]) {
-            const selectedCurrencyVisual = monetaryVisualFor(id, visualCurrency);
+            const selectedCurrencyVisual = monetaryVisualFor(
+              id,
+              visualCurrency,
+            );
             if (!selectedCurrencyVisual) return [];
             const currencySeries = currencies.flatMap((currencyCode) => {
               const series = monetaryVisualFor(id, currencyCode);

@@ -87,7 +87,12 @@ export const navigationGroups = [
     id: 'operations',
     dotClass: 'bg-[#62d5c6]',
     title: 'رزرواسیون و تأمین سفر',
-    hrefs: ['/reservations', '/reservations/hotel-rates', '/ticket-management'],
+    hrefs: [
+      '/reservations',
+      '/reservations/hotel-rates',
+      '/ticket-management',
+      '/purchases',
+    ],
   },
   {
     id: 'finance',
@@ -99,7 +104,7 @@ export const navigationGroups = [
     id: 'hr',
     dotClass: 'bg-[#d4b4fc]',
     title: 'سرمایه انسانی',
-    hrefs: ['/human-resources', '/purchases'],
+    hrefs: ['/human-resources'],
   },
   {
     id: 'resources',
@@ -111,7 +116,7 @@ export const navigationGroups = [
     id: 'system',
     dotClass: 'bg-[#94a3b8]',
     title: 'تنظیمات شرکت',
-    hrefs: ['/master-data', '/integrations', '/system'],
+    hrefs: ['/system', '/master-data', '/integrations'],
   },
 ] as const satisfies readonly {
   id: string;

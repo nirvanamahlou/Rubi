@@ -687,7 +687,8 @@ function trendTemporalGrain(
 
   const firstInterval =
     labels.length > 1
-      ? new Date(labels[1] ?? '').getTime() - new Date(labels[0] ?? '').getTime()
+      ? new Date(labels[1] ?? '').getTime() -
+        new Date(labels[0] ?? '').getTime()
       : Number.NaN;
   if (!Number.isFinite(firstInterval)) return 'day';
   if (firstInterval <= 60 * 60 * 1000) return 'hour';
@@ -1421,8 +1422,8 @@ function GrowthIndicator({
   const direction = comparison?.direction ?? 'flat';
   const isAdverseKpi = Boolean(
     definition &&
-      (definition.role === 'guardrail' ||
-        adverseKpiIdPattern.test(definition.id)),
+    (definition.role === 'guardrail' ||
+      adverseKpiIdPattern.test(definition.id)),
   );
   const semanticTone =
     direction === 'flat'
@@ -1951,10 +1952,12 @@ function VisualDataSummary({
 }: {
   labels: readonly string[];
   title: string;
-  trend?: {
-    calendarSystem: TrendCalendarSystem;
-    grain: TrendTemporalGrain;
-  } | undefined;
+  trend?:
+    | {
+        calendarSystem: TrendCalendarSystem;
+        grain: TrendTemporalGrain;
+      }
+    | undefined;
   values: readonly number[];
 }) {
   const temporalLabel = trend ? trendTemporalLabels[trend.grain] : null;
@@ -1977,7 +1980,8 @@ function VisualDataSummary({
       <div className="overflow-x-auto border-t border-border">
         {temporalLabel ? (
           <p className="border-b border-border/70 bg-muted/30 px-3 py-2 text-[11px] text-muted-foreground">
-            تفکیک زمانی: <strong className="text-foreground">{temporalLabel}</strong>
+            تفکیک زمانی:{' '}
+            <strong className="text-foreground">{temporalLabel}</strong>
           </p>
         ) : null}
         <table className="w-full min-w-72 text-xs">
@@ -2076,13 +2080,20 @@ function ActionQueue({
               key={`${row.label}-${row.index}`}
             >
               <th className="px-3 py-3 text-start" scope="row">
-                <span className="block font-bold text-foreground">{row.label}</span>
+                <span className="block font-bold text-foreground">
+                  {row.label}
+                </span>
                 <span className="mt-1 block text-[11px] font-semibold tabular-nums text-muted-foreground">
                   {formatDashboardNumber(row.value)}
                 </span>
               </th>
               <td className="px-3 py-3">
-                <span className={cn('inline-flex min-w-12 justify-center rounded-full px-2 py-1 font-bold', row.tone)}>
+                <span
+                  className={cn(
+                    'inline-flex min-w-12 justify-center rounded-full px-2 py-1 font-bold',
+                    row.tone,
+                  )}
+                >
                   {row.priority}
                 </span>
               </td>
@@ -2710,7 +2721,10 @@ function DashboardChart({
         className="space-y-4 rounded-xl border border-border/80 bg-surface p-4"
         role="img"
       >
-        <div className="flex flex-col gap-2 lg:flex-row lg:items-center" dir="rtl">
+        <div
+          className="flex flex-col gap-2 lg:flex-row lg:items-center"
+          dir="rtl"
+        >
           {stages.map((stage, index) => (
             <div className="contents" key={`${stage.label}-${index}`}>
               <div className="min-w-0 flex-1">
@@ -2720,10 +2734,14 @@ function DashboardChart({
                     'bg-gradient-to-bl',
                     funnelColors[index] ?? funnelColors.at(-1),
                   )}
-                  style={{ clipPath: 'polygon(7% 0, 100% 7%, 93% 100%, 0 93%)' }}
+                  style={{
+                    clipPath: 'polygon(7% 0, 100% 7%, 93% 100%, 0 93%)',
+                  }}
                 >
                   <span className="min-w-0">
-                    <span className="block truncate text-sm font-black">{stage.label}</span>
+                    <span className="block truncate text-sm font-black">
+                      {stage.label}
+                    </span>
                     <strong className="mt-1 block text-xl tabular-nums">
                       {formatDashboardNumber(stage.value)}
                     </strong>
@@ -2734,7 +2752,9 @@ function DashboardChart({
                 <div className="flex shrink-0 items-center justify-center gap-1.5 px-1 text-primary lg:flex-col">
                   <ArrowLeft aria-hidden="true" className="size-4" />
                   <strong className="text-sm tabular-nums">{`${stage.conversion}%`}</strong>
-                  <span className="text-[10px] text-muted-foreground">نرخ تبدیل</span>
+                  <span className="text-[10px] text-muted-foreground">
+                    نرخ تبدیل
+                  </span>
                 </div>
               ) : null}
             </div>
@@ -3093,200 +3113,205 @@ function ProjectionSlot({
   return (
     <>
       <Card
-      data-dashboard-visual
-      data-dashboard-employee-visual={isEmployeeComparison || undefined}
-      className={cn(
-        'flex h-full min-w-0 flex-col overflow-hidden p-0 shadow-sm',
-        wide && 'xl:col-span-2',
-      )}
-    >
-      <div className="flex items-start justify-between gap-3 border-b border-border/70 bg-gradient-to-l from-blue-50/70 via-surface to-surface p-3.5 dark:from-blue-950/20">
-        <div className="flex min-w-0 items-start gap-3">
-          <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-blue-50 text-blue-700 ring-1 ring-blue-100 dark:bg-blue-950/50 dark:text-blue-300 dark:ring-blue-900">
-            <Icon aria-hidden="true" className="size-5" />
-          </span>
-          <div className="min-w-0">
-            <h3 className="font-black text-foreground">{title}</h3>
-            <p className="mt-1 text-xs leading-6 text-muted-foreground">
-              {description}
-            </p>
+        data-dashboard-visual
+        data-dashboard-employee-visual={isEmployeeComparison || undefined}
+        className={cn(
+          'flex h-full min-w-0 flex-col overflow-hidden p-0 shadow-sm',
+          wide && 'xl:col-span-2',
+        )}
+      >
+        <div className="flex items-start justify-between gap-3 border-b border-border/70 bg-gradient-to-l from-blue-50/70 via-surface to-surface p-3.5 dark:from-blue-950/20">
+          <div className="flex min-w-0 items-start gap-3">
+            <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-blue-50 text-blue-700 ring-1 ring-blue-100 dark:bg-blue-950/50 dark:text-blue-300 dark:ring-blue-900">
+              <Icon aria-hidden="true" className="size-5" />
+            </span>
+            <div className="min-w-0">
+              <h3 className="font-black text-foreground">{title}</h3>
+              <p className="mt-1 text-xs leading-6 text-muted-foreground">
+                {description}
+              </p>
+            </div>
           </div>
-        </div>
-        <div className="flex shrink-0 flex-col items-end gap-1.5">
-          <Badge className="bg-blue-50 text-[10px] text-blue-700 dark:bg-blue-950/50 dark:text-blue-200">
-            {visualLabel}
-          </Badge>
-          <div
-            className={cn(
-              'flex items-center gap-1.5',
-              resolvedKind === 'line'
-                ? 'min-w-[15.875rem] flex-row flex-nowrap justify-end'
-                : 'max-w-full flex-col items-end',
-            )}
-            data-dashboard-trend-controls={resolvedKind === 'line' || undefined}
-            dir={resolvedKind === 'line' ? 'rtl' : undefined}
-          >
-            {currencySeries.length ? (
-              <Select
-                value={activeCurrencyCode ?? currencySeries[0]?.currencyCode ?? ''}
-                onValueChange={setSelectedCurrencyCode}
-              >
-                <SelectTrigger
-                  aria-label={`واحد پول نمودار ${title}`}
-                  className="h-7 min-w-28 border-border/80 bg-background px-2 text-[10px] font-bold"
-                  data-dashboard-visual-currency-selector
+          <div className="flex shrink-0 flex-col items-end gap-1.5">
+            <Badge className="bg-blue-50 text-[10px] text-blue-700 dark:bg-blue-950/50 dark:text-blue-200">
+              {visualLabel}
+            </Badge>
+            <div
+              className={cn(
+                'flex items-center gap-1.5',
+                resolvedKind === 'line'
+                  ? 'min-w-[15.875rem] flex-row flex-nowrap justify-end'
+                  : 'max-w-full flex-col items-end',
+              )}
+              data-dashboard-trend-controls={
+                resolvedKind === 'line' || undefined
+              }
+              dir={resolvedKind === 'line' ? 'rtl' : undefined}
+            >
+              {currencySeries.length ? (
+                <Select
+                  value={
+                    activeCurrencyCode ?? currencySeries[0]?.currencyCode ?? ''
+                  }
+                  onValueChange={setSelectedCurrencyCode}
                 >
-                  <CircleDollarSign aria-hidden="true" className="size-3.5" />
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {currencySeries.map((series) => {
-                    const symbol = currencySymbols[series.currencyCode] ??
-                      series.currencyCode;
-                    return (
+                  <SelectTrigger
+                    aria-label={`واحد پول نمودار ${title}`}
+                    className="h-7 min-w-28 border-border/80 bg-background px-2 text-[10px] font-bold"
+                    data-dashboard-visual-currency-selector
+                  >
+                    <CircleDollarSign aria-hidden="true" className="size-3.5" />
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {currencySeries.map((series) => {
+                      const symbol =
+                        currencySymbols[series.currencyCode] ??
+                        series.currencyCode;
+                      return (
+                        <SelectItem
+                          className="data-[highlighted]:bg-primary data-[highlighted]:text-primary-foreground"
+                          key={series.currencyCode}
+                          value={series.currencyCode}
+                        >
+                          <bdi dir="ltr">{`${symbol} ${series.currencyCode}`}</bdi>
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
+              ) : null}
+              {resolvedKind === 'line' ? (
+                <Select
+                  value={trendCalendarSystem}
+                  onValueChange={(value) =>
+                    onTrendCalendarSystemChange(value as TrendCalendarSystem)
+                  }
+                >
+                  <SelectTrigger
+                    aria-label="تقویم برچسب‌های محور زمان"
+                    className="h-8 w-[9.5rem] shrink-0 whitespace-nowrap border-border/80 bg-background px-2.5 text-[10px] font-bold"
+                  >
+                    <CalendarDays
+                      aria-hidden="true"
+                      className="size-4 shrink-0 text-primary"
+                      strokeWidth={2.5}
+                    />
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {trendCalendarOptions.map(([value, label]) => (
                       <SelectItem
                         className="data-[highlighted]:bg-primary data-[highlighted]:text-primary-foreground"
-                        key={series.currencyCode}
-                        value={series.currencyCode}
+                        key={value}
+                        value={value}
                       >
-                        <bdi dir="ltr">{`${symbol} ${series.currencyCode}`}</bdi>
+                        {label}
                       </SelectItem>
-                    );
-                  })}
-                </SelectContent>
-              </Select>
-            ) : null}
-            {resolvedKind === 'line' ? (
-              <Select
-                value={trendCalendarSystem}
-                onValueChange={(value) =>
-                  onTrendCalendarSystemChange(value as TrendCalendarSystem)
-                }
-              >
-                <SelectTrigger
-                  aria-label="تقویم برچسب‌های محور زمان"
-                  className="h-8 w-[9.5rem] shrink-0 whitespace-nowrap border-border/80 bg-background px-2.5 text-[10px] font-bold"
-                >
-                  <CalendarDays
-                    aria-hidden="true"
-                    className="size-4 shrink-0 text-primary"
-                    strokeWidth={2.5}
-                  />
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {trendCalendarOptions.map(([value, label]) => (
-                    <SelectItem
-                      className="data-[highlighted]:bg-primary data-[highlighted]:text-primary-foreground"
-                      key={value}
-                      value={value}
-                    >
-                      {label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            ) : null}
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : null}
+            </div>
           </div>
         </div>
-      </div>
-      <div className="relative flex-1 p-3.5">
-        {displayData?.currencyCode ? (
-          <span className="mb-2 block text-[11px] font-semibold text-muted-foreground">
-            مبلغ فروش · <bdi dir="ltr">{displayData.currencyCode}</bdi>
-          </span>
-        ) : null}
-        {displayData?.values.length ? (
-          isEmployeeComparison ? (
-            <EmployeePerformanceBars
-              labels={displayData.labels}
-              title={title}
-              values={displayData.values}
-            />
-          ) : resolvedKind === 'table' || resolvedKind === 'queue' ? (
-            <OperationalDataTable
-              kind={resolvedKind}
-              labels={displayData.labels}
-              title={title}
-              values={displayData.values}
-            />
-          ) : (
-            <DashboardChart
-              kind={kind}
-              labels={displayData.labels}
-              range={range}
-              title={title}
-              trendCalendarSystem={trendCalendarSystem}
-              values={displayData.values}
-            />
-          )
-        ) : (
-          <>
-            <EmptyVisualCanvas kind={kind} />
-            <p className="sr-only">دادهٔ تأییدشده برای نمایش موجود نیست</p>
-          </>
-        )}
-        {displayData?.values.length ? (
-          <>
-            {kind === 'donut' && resolvedKind !== 'donut' ? (
-              <p className="mt-2 text-[11px] text-muted-foreground">
-                به‌دلیل تعداد یا ماهیت دسته‌ها، سهم‌ها به‌صورت میله‌ای نمایش
-                داده شده‌اند.
-              </p>
-            ) : null}
-            {resolvedKind === 'table' || resolvedKind === 'queue' ? null : (
-              <VisualDataSummary
+        <div className="relative flex-1 p-3.5">
+          {displayData?.currencyCode ? (
+            <span className="mb-2 block text-[11px] font-semibold text-muted-foreground">
+              مبلغ فروش · <bdi dir="ltr">{displayData.currencyCode}</bdi>
+            </span>
+          ) : null}
+          {displayData?.values.length ? (
+            isEmployeeComparison ? (
+              <EmployeePerformanceBars
                 labels={displayData.labels}
                 title={title}
-                trend={
-                  resolvedKind === 'line'
-                    ? {
-                        calendarSystem: trendCalendarSystem,
-                        grain: trendTemporalGrain(range, displayData.labels),
-                      }
-                    : undefined
-                }
                 values={displayData.values}
               />
-            )}
-          </>
-        ) : null}
-      </div>
-      <div
-        className="flex flex-wrap items-center gap-2 border-t border-border/80 bg-muted/20 px-4 py-3"
-        dir="rtl"
-      >
-        {canOpenVisualDetails ? (
+            ) : resolvedKind === 'table' || resolvedKind === 'queue' ? (
+              <OperationalDataTable
+                kind={resolvedKind}
+                labels={displayData.labels}
+                title={title}
+                values={displayData.values}
+              />
+            ) : (
+              <DashboardChart
+                kind={kind}
+                labels={displayData.labels}
+                range={range}
+                title={title}
+                trendCalendarSystem={trendCalendarSystem}
+                values={displayData.values}
+              />
+            )
+          ) : (
+            <>
+              <EmptyVisualCanvas kind={kind} />
+              <p className="sr-only">دادهٔ تأییدشده برای نمایش موجود نیست</p>
+            </>
+          )}
+          {displayData?.values.length ? (
+            <>
+              {kind === 'donut' && resolvedKind !== 'donut' ? (
+                <p className="mt-2 text-[11px] text-muted-foreground">
+                  به‌دلیل تعداد یا ماهیت دسته‌ها، سهم‌ها به‌صورت میله‌ای نمایش
+                  داده شده‌اند.
+                </p>
+              ) : null}
+              {resolvedKind === 'table' || resolvedKind === 'queue' ? null : (
+                <VisualDataSummary
+                  labels={displayData.labels}
+                  title={title}
+                  trend={
+                    resolvedKind === 'line'
+                      ? {
+                          calendarSystem: trendCalendarSystem,
+                          grain: trendTemporalGrain(range, displayData.labels),
+                        }
+                      : undefined
+                  }
+                  values={displayData.values}
+                />
+              )}
+            </>
+          ) : null}
+        </div>
+        <div
+          className="flex flex-wrap items-center gap-2 border-t border-border/80 bg-muted/20 px-4 py-3"
+          dir="rtl"
+        >
+          {canOpenVisualDetails ? (
+            <Button
+              aria-controls={`dashboard-visual-definition-panel-${visualId}`}
+              aria-expanded={isVisualDetailsOpen}
+              onClick={() => setIsVisualDetailsOpen(true)}
+              size="sm"
+              type="button"
+              variant="outline"
+            >
+              <Info aria-hidden="true" className="size-3.5" />
+              جزئیات نمودار
+            </Button>
+          ) : null}
+          {decision ? (
+            <Badge className="bg-amber-100 text-[10px] text-amber-800 dark:bg-amber-950 dark:text-amber-200">
+              {decision}
+            </Badge>
+          ) : null}
           <Button
-            aria-controls={`dashboard-visual-definition-panel-${visualId}`}
-            aria-expanded={isVisualDetailsOpen}
-            onClick={() => setIsVisualDetailsOpen(true)}
+            className="ms-auto"
+            disabled={!report}
+            onClick={() => {
+              if (report) onOpenReportConfiguration(report.code);
+            }}
             size="sm"
             type="button"
             variant="outline"
           >
-            <Info aria-hidden="true" className="size-3.5" />
-            جزئیات نمودار
+            {report ? 'بررسی گزارش مرتبط' : 'گزارش مرتبط در کاتالوگ موجود نیست'}
           </Button>
-        ) : null}
-        {decision ? (
-          <Badge className="bg-amber-100 text-[10px] text-amber-800 dark:bg-amber-950 dark:text-amber-200">
-            {decision}
-          </Badge>
-        ) : null}
-        <Button
-          className="ms-auto"
-          disabled={!report}
-          onClick={() => {
-            if (report) onOpenReportConfiguration(report.code);
-          }}
-          size="sm"
-          type="button"
-          variant="outline"
-        >
-          {report ? 'بررسی گزارش مرتبط' : 'گزارش مرتبط در کاتالوگ موجود نیست'}
-        </Button>
-      </div>
+        </div>
       </Card>
       {isVisualDetailsOpen ? (
         <VisualDetailsPanel
@@ -3670,7 +3695,9 @@ function DashboardSidebar({
                           key={value}
                           value={value}
                         >
-                          <span className="block w-full text-right">{label}</span>
+                          <span className="block w-full text-right">
+                            {label}
+                          </span>
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -4016,15 +4043,15 @@ export function DashboardWorkspace() {
                       key={visualization.id}
                       kind={visualization.kind}
                       title={visualization.title}
-                       description={visualization.description}
-                       decision={visualization.openDecision}
-                       drilldown={visualization.drilldown}
-                       onOpenReportConfiguration={openReportConfiguration}
-                       onTrendCalendarSystemChange={setTrendCalendarSystem}
-                       permission={visualization.permission}
-                       range={filters.range}
-                       source={visualization.source}
-                       trendCalendarSystem={trendCalendarSystem}
+                      description={visualization.description}
+                      decision={visualization.openDecision}
+                      drilldown={visualization.drilldown}
+                      onOpenReportConfiguration={openReportConfiguration}
+                      onTrendCalendarSystemChange={setTrendCalendarSystem}
+                      permission={visualization.permission}
+                      range={filters.range}
+                      source={visualization.source}
+                      trendCalendarSystem={trendCalendarSystem}
                       data={query.data?.visuals[visualization.id]}
                     />
                   ))}

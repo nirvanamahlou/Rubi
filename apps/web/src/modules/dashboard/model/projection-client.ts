@@ -81,9 +81,7 @@ export interface DashboardProjectionSnapshot {
   metadata: DashboardMetadata | null;
   filterOptions?: DashboardFilterOptions;
   metrics: Readonly<Record<string, DashboardMetricSnapshot>>;
-  visuals: Readonly<
-    Record<string, DashboardVisualSnapshot>
-  >;
+  visuals: Readonly<Record<string, DashboardVisualSnapshot>>;
 }
 
 export interface DashboardProjectionClient {

@@ -1,3 +1,16 @@
+## SYSTEM-MANAGEMENT-NAVIGATION-003 — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-19: زیر‌بخش‌های دسته‌های «مدیریت سیستم» باید با مسیرهای واقعی Rubi منطبق باشند؛ «فضای کار» نیز صریحاً «میزکار من» و «داشبورد» را داشته باشد. `COMPUTER_ID=PC-B`؛ ادامه روی شاخهٔ `codex/pc-b-system-management`.
+- محدودهٔ رزروشده: مدل گروه‌های ناوبری Web، پنل زیر‌دسته‌های `/system` و تست هدفمند آن‌ها. فقط مسیرهای منتشرشدهٔ همین پروژه نمایش/پیوند می‌شوند؛ API، قرارداد مشترک، Migration، دادهٔ عملیاتی، مجوزها و Dependency/Lockfile خارج از محدوده‌اند.
+- نتیجه: پنل بازشوندهٔ `/system` از گروه‌های canonical سایدبار استفاده می‌کند و هر زیر‌بخش با `Link` به مسیر واقعی خود می‌رود. «فضای کار» شامل `میزکار من` و `داشبورد` است؛ قیمت‌گذاری فروش، عملیات/فرآیند رزرواسیون و کاربران/شرکت‌های حقوقی/سلامت سامانه نیز به‌عنوان زیرمسیرهای واقعی افزوده شدند. خرید و تأمین از گروه نادرست سرمایه انسانی به «رزرواسیون و تأمین سفر» منتقل شد. ۲۰ تست ناوبری و System Management، lint و typecheck وب موفق‌اند. ساخت production به‌دلیل اشتراک `.next` با runtime فعال ۳۱۰۰ بدون پیشرفت ماند و فقط همان فرایند ساخت متوقف شد؛ runtime فعال با HTTP 200 حفظ شد.
+
+## SYSTEM-MANAGEMENT-CONNECTIONS-002 — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-19: پیاده‌سازی اتصال‌های باقی‌ماندهٔ مرکز مدیریت سیستم. `COMPUTER_ID=PC-B`؛ شاخهٔ کاری `codex/pc-b-system-management` است.
+- محدودهٔ رزروشده: قرارداد سلامت Worker، Port عمومی سلامت Worker، Port سلامت Storage در Documents، مصرف‌کنندهٔ عمومی آن‌ها در System Management، Retry کنترل‌شدهٔ Export Reporting و UI/System Workspace شامل Scope شرکت حقوقی و پیوندهای مالک IAM/Legal Entity/Operations. قرارداد مشترک، APIهای محدود همین واحدها، تست‌های هدفمند و مستندات همین Task در این برش‌اند.
+- مرزها: مدیریت سیستم فقط Service/HTTP Port عمومی مالک را مصرف می‌کند؛ به Redis، Queue، Storage یا جدول Reporting/Documents دسترسی مستقیم ندارد. تغییر تنظیماتِ بدون Consumer مالک فعال نمی‌شود و به‌عنوان اتصال موفق نمایش داده نخواهد شد. Migration، دادهٔ عملیاتی، Grant نقش، Dependency/Lockfile و تغییرات ماژول‌های تجاری خارج از محدوده‌اند.
+- نتیجه: `POST /system-management/v1/jobs/reporting-exports/:id/retry` با `system.jobs.retry` فرمان را Audit می‌کند و اجرای واقعی را به Public Service Reporting می‌سپارد؛ Reporting نیز `reporting.export` و وضعیت Export را خودش کنترل می‌کند. Documents یک Port محدود سلامت Storage و Worker یک Port loopback سلامت Redis/Queue/Worker با قرارداد بدون Credential منتشر کردند؛ System Management فقط آن Portها را مصرف می‌کند. Scope شرکت حقوقی از `legal-entities/selectable` با UUID معتبر ذخیره می‌شود، تاریخچهٔ هر بخش فیلتر می‌شود و مسیر `/system/operations` پنل عملیاتی پیشین را واقعاً در دسترس قرار می‌دهد. پیوندهای IAM، Legal Entity، Documents و Reporting مالکیت داده را حفظ می‌کنند. ۱۲ تست API، ۲ تست Worker، ۱۰ تست Web، lint و typecheck هر سه workspace موفق‌اند؛ API ۴۰۰۰، Web ۳۱۰۰ و Worker ۴۱۰۰ در Smoke محلی پاسخ داده‌اند.
+
 ## DASHBOARD-KPI-TREND-PRESENTATION-0919 — PC-C — READY_FOR_REVIEW
 
 - درخواست مالک در 2026-09-19: آیکون فیلتر تقویم محور X نمودار روند در frontend واضح و قابل‌مشاهده شود و خط جداکنندهٔ بالای Sparkline از همهٔ KPI Cardها حذف شود.
@@ -14,6 +27,14 @@
 ## SYSTEM-MANAGEMENT-BACKEND-001 — PC-B — READY_FOR_REVIEW
 
 - نتیجهٔ ادغام‌شده از `origin/develop`: قرارداد نسخهٔ ۱ مدیریت سامانه، ۳۰ Permission، ۱۲ جدول افزایشی و API کنترل‌شدهٔ تنظیمات/شماره‌گذاری/اعلان/قالب/Feature Flag/Backup/Health/Audit به‌همراه حفاظت IAM برای Self-escalation، آخرین مدیر فعال و بستن نشست جاری اضافه شده است. Migration و تست‌های این Slice در Draft PR #305 تأیید شده‌اند؛ قفل‌های Migration، قرارداد و اسناد مرکزی آزادند.
+
+## SYSTEM-MANAGEMENT-001 — PC-B — READY_FOR_REVIEW
+
+- Backend مدیریت سامانه در PR #305 بازبینی و در `develop` ادغام شد. قفل Migration، قرارداد مشترک و اسناد مرکزی آن آزاد است؛ PR #304 فقط مصرف‌کنندهٔ UI همان قراردادهای نسخه‌دار است.
+- محدودهٔ تحویل: صفحه و تست‌های `/system` و client احرازشدهٔ `system-management/v1`. UI APIهای عمومی IAM، Legal Entity و System Management را مصرف می‌کند و مالکیت داده/قرارداد هیچ ماژول دیگری را نمی‌گیرد.
+- نتیجه: طرح مرجع `rubi-settings-fixed.html` با نمای کلی، جست‌وجو، دسته‌بندی، جزئیات و فرم‌های ویرایش به `/system` تبدیل شد. سپس طبق درخواست مالک، پوستهٔ خاص آن حذف و با نوار کناری، هدر، انتخاب شرکت و تم روشن/تاریک سراسری Rubi یکپارچه شد؛ کارت‌ها و پنجره‌ها نیز از توکن‌های مرکزی رنگ/سطح/مرز استفاده می‌کنند. هر ۱۸ بخش و ۷۸ کارت تنظیمات مرجع در کاتالوگ تایپ‌شده حضور دارند و فرم‌ها مقدار را از API نسخه‌دار می‌خوانند و با `expectedVersion`، دلیل تغییر و Scope واقعی ذخیره می‌کنند؛ `localStorage`، تأیید یا موفقیت ساختگی استفاده نشده است. کارت‌های عملیاتی نشست، Backup، Health، Audit و Retry واقعی Reporting Export نیز به endpointهای منتشرشده متصل‌اند. Probe Storage از Public Port مالک Documents و PostgreSQL از query فقط‌خواندنی استفاده می‌کند؛ Redis، Worker و Queue تا انتشار adapter/Port مالک، صادقانه `UNKNOWN` می‌مانند. ۶ تست هدفمند، typecheck، lint، build تولیدی و بازبینی بصری صفحه موفق‌اند.
+- اصلاح بازخورد ۲۰۲۶-۰۹-۱۷: عنوان تکراری، پیام اطلاع‌رسانی اتصال و کارت آماری بزرگ از نمای کلی حذف شدند. دامنه و وضعیت داده اکنون برچسب روشن دارند و کارت‌ها/فرم‌ها اقدام‌های «مشاهده تنظیمات» و «ویرایش تنظیمات» را صریح نشان می‌دهند؛ کنترل تزئینی یا بدون معنای عملی باقی نمانده است.
+- اصلاح دوم رابط ۲۰۲۶-۰۹-۱۷: نوار افقی دسته‌ها حفظ شد، اما نام‌ها با گروه‌های سایدبار یکسان شدند. با انتخاب هر عنوان، زیرمجموعه‌های واقعی همان گروه زیر نوار نمایان می‌شوند. دکمه‌های سکشن بالای صفحه، کادرهای خاکستری و شمارنده‌های تزئینی حذف شدند.
 
 ## RESERVATION-UI-AND-CONTRACT-ACTIONS-0917 — PC-A — COMPLETE
 

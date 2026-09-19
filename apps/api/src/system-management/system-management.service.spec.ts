@@ -107,7 +107,7 @@ describe('SystemManagementService', () => {
     expect(result.sequence).toBe('1');
   });
 
-  it('reports unavailable owner probes as UNKNOWN instead of success', async () => {
+  it('reports a published but unreachable Worker port as UNAVAILABLE', async () => {
     const database = {
       client: { $queryRaw: vi.fn().mockResolvedValue([{ healthy: 1 }]) },
     };
@@ -117,7 +117,100 @@ describe('SystemManagementService', () => {
       result.find(({ component }) => component === 'POSTGRESQL')?.status,
     ).toBe('HEALTHY');
     expect(result.find(({ component }) => component === 'REDIS')?.status).toBe(
-      'UNKNOWN',
+      'UNAVAILABLE',
+    );
+  });
+
+  it('uses the published Worker and Documents owner probes when available', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      json: async () => ({
+        components: [
+          {
+            component: 'REDIS',
+            status: 'HEALTHY',
+            checkedAt: '2026-09-19T00:00:00.000Z',
+            latencyMs: 4,
+            detail: 'Redis confirmed by Worker.',
+          },
+          {
+            component: 'WORKER',
+            status: 'HEALTHY',
+            checkedAt: '2026-09-19T00:00:00.000Z',
+            latencyMs: 0,
+            detail: 'Worker is running.',
+          },
+          {
+            component: 'QUEUE',
+            status: 'HEALTHY',
+            checkedAt: '2026-09-19T00:00:00.000Z',
+            latencyMs: 3,
+            detail: 'Queue confirmed by Worker.',
+          },
+        ],
+      }),
+      ok: true,
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    try {
+      const database = {
+        client: { $queryRaw: vi.fn().mockResolvedValue([{ healthy: 1 }]) },
+      };
+      const storageHealth = vi.fn().mockResolvedValue(undefined);
+      const service = new SystemManagementService(
+        database as never,
+        {} as never,
+        { storageHealth } as never,
+      );
+
+      const result = await service.health();
+
+      expect(
+        result.find(({ component }) => component === 'STORAGE'),
+      ).toMatchObject({ status: 'HEALTHY' });
+      expect(
+        result.find(({ component }) => component === 'REDIS'),
+      ).toMatchObject({ status: 'HEALTHY', latencyMs: 4 });
+      expect(
+        result.find(({ component }) => component === 'QUEUE'),
+      ).toMatchObject({ status: 'HEALTHY', latencyMs: 3 });
+      expect(storageHealth).toHaveBeenCalledOnce();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('routes an export retry to Reporting and audits the control-plane action', async () => {
+    const retryExport = vi.fn().mockResolvedValue({ id: 'new-export' });
+    const create = vi.fn().mockResolvedValue({});
+    const database = { client: { systemAuditEvent: { create } } };
+    const service = new SystemManagementService(
+      database as never,
+      {} as never,
+      undefined,
+      { retryExport } as never,
+    );
+
+    await expect(
+      service.retryReportingExport(
+        '00000000-0000-4000-8000-000000000005',
+        { reason: 'رفع خطای موقت خروجی' },
+        actor,
+        { requestId: 'request-1' },
+      ),
+    ).resolves.toEqual({ id: 'new-export' });
+
+    expect(retryExport).toHaveBeenCalledWith(
+      '00000000-0000-4000-8000-000000000005',
+      actor,
+    );
+    expect(create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          action: 'REPORTING_EXPORT_RETRY_REQUESTED',
+          entityType: 'REPORTING_EXPORT',
+          reason: 'رفع خطای موقت خروجی',
+        }),
+      }),
     );
   });
 });
