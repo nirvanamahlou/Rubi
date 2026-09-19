@@ -246,8 +246,8 @@ const systemCategoryGroups: readonly SystemCategoryGroup[] =
       moduleIds: moduleIdsBySystemCategory[id],
       links: [
         ...group.hrefs.map((href) => {
-          const item = navigationItems.find((navigationItem) =>
-            navigationItem.href === href,
+          const item = navigationItems.find(
+            (navigationItem) => navigationItem.href === href,
           );
           return { href, title: item?.title ?? href };
         }),
