@@ -1,0 +1,339 @@
+import { createHash } from 'node:crypto';
+import {
+  BadRequestException,
+  ConflictException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import type {
+  ReservationArrangementUpdateV1,
+  ReservationIntakeV1,
+  SalesReservationRequestV1,
+} from '@nora/contracts';
+import { Prisma } from '@nora/database';
+import { DatabaseService } from '../database/database.service';
+
+const intakeInclude = {
+  workflowRevisions: { orderBy: { version: 'desc' }, take: 1 },
+  arrangements: { orderBy: { version: 'desc' }, take: 1 },
+  hotelPurchases: {
+    orderBy: { version: 'desc' },
+    distinct: ['currencyCode'],
+    select: {
+      id: true,
+      version: true,
+      amount: true,
+      currencyCode: true,
+      actorUserId: true,
+      createdAt: true,
+    },
+  },
+  servicePurchases: {
+    orderBy: { version: 'desc' },
+    include: {
+      financeRevisions: {
+        orderBy: { version: 'desc' },
+        include: {
+          account: { select: { title: true, bankId: true } },
+          paymentMethod: { select: { name: true } },
+        },
+      },
+    },
+  },
+} satisfies Prisma.ReservationIntakeInclude;
+
+function present(
+  row: Prisma.ReservationIntakeGetPayload<{ include: typeof intakeInclude }>,
+): ReservationIntakeV1 & {
+  workflow: unknown;
+  salesOwnerUserId: string | null;
+} {
+  const arrangement = row.arrangements[0];
+  const latestServicePurchases = new Map<
+    string,
+    (typeof row.servicePurchases)[number]
+  >();
+  for (const purchase of row.servicePurchases)
+    if (!latestServicePurchases.has(purchase.serviceClientKey))
+      latestServicePurchases.set(purchase.serviceClientKey, purchase);
+  return {
+    workflow: row.workflowRevisions?.[0]?.state ?? null,
+    salesOwnerUserId: row.salesOwnerUserId,
+    purchaseVersion: row.purchaseVersion,
+    hotelPurchases: row.hotelPurchases.map((cost) => ({
+      ...cost,
+      amount: cost.amount.toString(),
+      createdAt: cost.createdAt.toISOString(),
+    })),
+    servicePurchases: [...latestServicePurchases.values()].map((purchase) => {
+      const finance = purchase.financeRevisions[0];
+      const legacyPaid = finance?.status === 'PAID' && !finance.cumulativePaid;
+      return {
+        id: purchase.id,
+        version: purchase.version,
+        serviceClientKey: purchase.serviceClientKey,
+        serviceKind: purchase.serviceKind,
+        serviceTitle: purchase.serviceTitleSnapshot,
+        supplierOrganizationId: purchase.supplierOrganizationId,
+        supplierName: purchase.supplierNameSnapshot,
+        amount: purchase.amount.toString(),
+        currencyCode: purchase.currencyCode,
+        actorUserId: purchase.actorUserId,
+        createdAt: purchase.createdAt.toISOString(),
+        finance: finance
+          ? {
+              version: finance.version,
+              status: finance.status,
+              bankId: finance.account?.bankId ?? finance.bankId,
+              accountId: finance.accountId,
+              accountTitle: finance.account?.title ?? null,
+              paymentMethodId: finance.paymentMethodId,
+              paymentMethodName: finance.paymentMethod?.name ?? null,
+              paidAmount: legacyPaid
+                ? purchase.amount.toString()
+                : (finance.cumulativePaid?.toString() ?? '0'),
+              remainingAmount: legacyPaid
+                ? '0'
+                : (finance.remainingAmount?.toString() ??
+                  purchase.amount.toString()),
+              exchangeRateToIrr: finance.exchangeRateToIrr?.toString() ?? null,
+              rialEquivalent: finance.rialEquivalent?.toString() ?? null,
+              transferAt: finance.transferAt?.toISOString() ?? null,
+              paymentReference: finance.paymentReference,
+              reason: finance.reason,
+              updatedAt: finance.createdAt.toISOString(),
+              updatedByUserId: finance.actorUserId,
+            }
+          : {
+              version: 0,
+              status: 'PENDING' as const,
+              bankId: null,
+              accountId: null,
+              accountTitle: null,
+              paymentMethodId: null,
+              paymentMethodName: null,
+              paidAmount: '0',
+              remainingAmount: purchase.amount.toString(),
+              exchangeRateToIrr: null,
+              rialEquivalent: null,
+              transferAt: null,
+              paymentReference: null,
+              reason: '',
+              updatedAt: null,
+              updatedByUserId: null,
+            },
+      };
+    }),
+    id: row.id,
+    requestId: row.requestId,
+    contractId: row.contractId,
+    contractVersion: row.contractVersion,
+    branchId: row.branchId,
+    status: row.status as 'QUEUED',
+    receivedAt: row.receivedAt.toISOString(),
+    snapshot: row.snapshot as unknown as SalesReservationRequestV1,
+    arrangement: arrangement
+      ? {
+          version: arrangement.version,
+          roomCount: arrangement.roomCount,
+          singleRoomCount: arrangement.singleRoomCount,
+          doubleRoomCount: arrangement.doubleRoomCount,
+          extraBedCount: arrangement.extraBedCount,
+          hotelGuestCustomerIds: Array.isArray(
+            arrangement.hotelGuestCustomerIds,
+          )
+            ? arrangement.hotelGuestCustomerIds.filter(
+                (value): value is string => typeof value === 'string',
+              )
+            : [],
+          reason: arrangement.reason,
+          updatedAt: arrangement.updatedAt.toISOString(),
+          updatedByUserId: arrangement.updatedByUserId,
+        }
+      : null,
+  };
+}
+
+/** Public module boundary. Only the trusted Sales outbox invokes intake, never a browser payload. */
+@Injectable()
+export class ReservationsPublicService {
+  constructor(
+    @Inject(DatabaseService) private readonly database: DatabaseService,
+  ) {}
+
+  async receive(
+    snapshot: SalesReservationRequestV1,
+    branchId: string,
+    salesOwnerUserId?: string,
+  ) {
+    const fingerprint = createHash('sha256')
+      .update(JSON.stringify({ branchId, snapshot }))
+      .digest('hex');
+    let row;
+    try {
+      row = await this.database.client.reservationIntake.upsert({
+        where: { requestId: snapshot.requestId },
+        update: {},
+        create: {
+          requestId: snapshot.requestId,
+          contractId: snapshot.contractId,
+          contractVersion: snapshot.contractVersion,
+          branchId,
+          ...(salesOwnerUserId ? { salesOwnerUserId } : {}),
+          fingerprint,
+          snapshot: snapshot as unknown as Prisma.InputJsonValue,
+        },
+      });
+    } catch (error) {
+      if (
+        !(error instanceof Prisma.PrismaClientKnownRequestError) ||
+        error.code !== 'P2002'
+      )
+        throw error;
+      row = await this.database.client.reservationIntake.findUniqueOrThrow({
+        where: { requestId: snapshot.requestId },
+      });
+    }
+    if (row.fingerprint !== fingerprint)
+      throw new ConflictException(
+        'نسخه درخواست رزرو با اطلاعات قبلی متفاوت است.',
+      );
+    return { id: row.id, requestId: row.requestId, status: row.status };
+  }
+
+  async purchaseContext(id: string, branchIds: readonly string[]) {
+    const row = await this.database.client.reservationIntake.findFirst({
+      where: { id, branchId: { in: [...branchIds] } },
+      include: intakeInclude,
+    });
+    if (!row) throw new NotFoundException('درخواست در دسترس نیست.');
+    return present(row);
+  }
+  async list(
+    branchIds: readonly string[],
+    options: {
+      page?: string | undefined;
+      contractNumber?: string | undefined;
+    } = {},
+  ) {
+    if (
+      options.contractNumber !== undefined &&
+      typeof options.contractNumber !== 'string'
+    )
+      throw new BadRequestException('جست‌وجوی قرارداد باید متن باشد.');
+    const page = options.page === undefined ? 1 : Number(options.page);
+    if (
+      !Number.isInteger(page) ||
+      page < 1 ||
+      page > 1000000 ||
+      (options.contractNumber?.length ?? 0) > 100
+    )
+      throw new BadRequestException(
+        'شماره صفحه یا جست‌وجوی قرارداد معتبر نیست.',
+      );
+    const contractNumber = options.contractNumber?.trim();
+    const rows = await this.database.client.reservationIntake.findMany({
+      where: {
+        branchId: { in: [...branchIds] },
+        ...(contractNumber
+          ? {
+              snapshot: {
+                path: ['contractNumber'],
+                string_contains: contractNumber,
+              },
+            }
+          : {}),
+      },
+      include: intakeInclude,
+      orderBy: [{ receivedAt: 'desc' }, { id: 'asc' }],
+      take: 100,
+      skip: (page - 1) * 100,
+    });
+    return rows.map(present);
+  }
+
+  async updateArrangement(
+    id: string,
+    input: ReservationArrangementUpdateV1,
+    branchIds: readonly string[],
+    userId: string,
+  ) {
+    if (
+      !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+        id,
+      )
+    )
+      throw new NotFoundException('درخواست رزرواسیون یافت نشد.');
+    const counts = [
+      input.roomCount,
+      input.singleRoomCount,
+      input.doubleRoomCount,
+      input.extraBedCount,
+    ];
+    if (
+      !Number.isInteger(input.expectedVersion) ||
+      input.expectedVersion < 0 ||
+      !counts.every((value) => Number.isInteger(value) && value >= 0) ||
+      input.roomCount < 1 ||
+      input.singleRoomCount + input.doubleRoomCount > input.roomCount ||
+      !Array.isArray(input.hotelGuestCustomerIds) ||
+      !input.hotelGuestCustomerIds.every(
+        (value) => typeof value === 'string',
+      ) ||
+      !input.reason?.trim() ||
+      input.reason.trim().length > 500
+    )
+      throw new BadRequestException('ترکیب اتاق یا دلیل تغییر معتبر نیست.');
+    const guestIds = [...new Set(input.hotelGuestCustomerIds)];
+    return this.database.client.$transaction(async (transaction) => {
+      await transaction.$queryRaw(
+        Prisma.sql`SELECT 1 AS locked FROM pg_advisory_xact_lock(hashtextextended(${id}, 0))`,
+      );
+      await transaction.$queryRaw(
+        Prisma.sql`SELECT "id" FROM "ReservationIntake" WHERE "id" = ${id}::uuid FOR UPDATE`,
+      );
+      const row = await transaction.reservationIntake.findUnique({
+        where: { id },
+        include: intakeInclude,
+      });
+      if (!row || !branchIds.includes(row.branchId))
+        throw new NotFoundException('درخواست رزرواسیون یافت نشد.');
+      const workflow = row.workflowRevisions?.[0]?.state as
+        { voucherIssued?: boolean; supplierStatus?: string } | undefined;
+      if (workflow?.voucherIssued || workflow?.supplierStatus === 'CANCELLED')
+        throw new ConflictException(
+          'درخواست بسته شده است؛ چیدمان قابل تغییر نیست.',
+        );
+      const snapshot = row.snapshot as unknown as SalesReservationRequestV1;
+      if (!snapshot.hotelSelection)
+        throw new BadRequestException('این درخواست خدمت هتل ندارد.');
+      const allowed = new Set(snapshot.passengerIds);
+      if (!guestIds.length || guestIds.some((guestId) => !allowed.has(guestId)))
+        throw new BadRequestException(
+          'اعضای هتل باید از مسافران همین قرارداد انتخاب شوند.',
+        );
+      const currentVersion = row.arrangements[0]?.version ?? 0;
+      if (currentVersion !== input.expectedVersion)
+        throw new ConflictException('چیدمان هم‌زمان تغییر کرده است.');
+      await transaction.reservationArrangementRevision.create({
+        data: {
+          intakeId: row.id,
+          version: currentVersion + 1,
+          roomCount: input.roomCount,
+          singleRoomCount: input.singleRoomCount,
+          doubleRoomCount: input.doubleRoomCount,
+          extraBedCount: input.extraBedCount,
+          hotelGuestCustomerIds: guestIds,
+          reason: input.reason.trim(),
+          updatedByUserId: userId,
+        },
+      });
+      const updated = await transaction.reservationIntake.findUniqueOrThrow({
+        where: { id },
+        include: intakeInclude,
+      });
+      return present(updated);
+    });
+  }
+}
