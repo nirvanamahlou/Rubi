@@ -9,7 +9,6 @@ import {
   Building2,
   Bookmark,
   Check,
-  CalendarClock,
   ChevronDown,
   Clock3,
   Download,
@@ -95,7 +94,7 @@ import {
 } from '../model/navigation';
 
 type ExportFormat = 'XLSX' | 'PDF' | 'CSV';
-type ReportResultMode = 'table' | 'chart';
+export type ReportResultMode = 'table' | 'chart';
 export type ReportChartType = 'horizontal-bar' | 'column' | 'pie';
 type ReportSort = NonNullable<SalesByOrganizationPreviewInput['sort']>;
 type ReportRunError = {
@@ -110,6 +109,13 @@ const defaultReportSort: ReportSort = {
   column: 'amount',
   direction: 'DESC',
 };
+
+const reportTablePageSize = 5;
+const reportChartPreviewSize = 100;
+
+export function reportResultPageSize(mode: ReportResultMode): number {
+  return mode === 'table' ? reportTablePageSize : reportChartPreviewSize;
+}
 
 const reportChartTypeLabels: Record<ReportChartType, string> = {
   'horizontal-bar': 'میله‌ای افقی',
@@ -622,6 +628,35 @@ export function ReportCategorySelectOption({ category }: { category: string }) {
   );
 }
 
+function ReportAvailabilitySelectOption({
+  availability,
+}: {
+  availability: string;
+}) {
+  const Icon =
+    availability === 'READY'
+      ? Check
+      : availability === 'PENDING_CONNECTION'
+        ? Clock3
+        : ShieldCheck;
+  const label =
+    availability === 'READY'
+      ? 'قابل اجرای محدود'
+      : availability === 'PENDING_CONNECTION'
+        ? 'در انتظار منبع داده'
+        : 'همه وضعیت‌های اتصال';
+  return (
+    <span className="flex w-full items-center gap-2 text-right" dir="rtl">
+      <Icon
+        aria-hidden="true"
+        className="size-4 shrink-0 text-foreground"
+        strokeWidth={1.75}
+      />
+      <span className="min-w-0 flex-1 text-right">{label}</span>
+    </span>
+  );
+}
+
 const reportCategoryColors: Readonly<Record<string, string>> = {
   'فروش و قراردادها':
     'bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300',
@@ -773,29 +808,6 @@ function ReportCard({
   );
 }
 
-function SummaryCard({
-  description,
-  icon: Icon,
-  label,
-  value,
-}: {
-  description: string;
-  icon: LucideIcon;
-  label: string;
-  value: string;
-}) {
-  return (
-    <Card className="flex items-center justify-between p-4">
-      <div>
-        <p className="text-xs font-semibold text-muted-foreground">{label}</p>
-        <p className="mt-2 text-2xl font-black">{value}</p>
-        <p className="mt-1 text-xs text-muted-foreground">{description}</p>
-      </div>
-      <Icon className="size-6 text-primary" />
-    </Card>
-  );
-}
-
 const reportSortLabels: Record<ReportSort['column'], string> = {
   amount: 'مبلغ فروش',
   branchId: 'شعبه',
@@ -808,6 +820,7 @@ const reportSortLabels: Record<ReportSort['column'], string> = {
   grossProfit: 'سود ناخالص',
   refundAmount: 'مبلغ استرداد',
   settlementBalance: 'مانده تسویه',
+  pendingReservationActions: 'اقدام رزرو در انتظار',
 };
 
 const descendingFirstColumns = new Set<ReportSort['column']>([
@@ -819,6 +832,7 @@ const descendingFirstColumns = new Set<ReportSort['column']>([
   'grossProfit',
   'refundAmount',
   'settlementBalance',
+  'pendingReservationActions',
 ]);
 
 export function nextReportSort(
@@ -943,11 +957,6 @@ export function ReportResultPanel({
   started: boolean;
 }) {
   const hasRows = Boolean(result?.rows.length);
-  const showDistinctContractKpi = Boolean(
-    result &&
-    result.rowGrain !== 'ORDER_ITEM_CURRENCY' &&
-    result.contractCount !== result.total,
-  );
   const incomplete = Boolean(
     result && (!result.sourceDataAsOfUtc || result.warnings.length),
   );
@@ -1025,6 +1034,9 @@ export function ReportResultPanel({
       refundAmount: rows.some((row) => typeof row.refundAmount === 'string'),
       settlementBalance: rows.some(
         (row) => typeof row.settlementBalance === 'string',
+      ),
+      pendingReservationActions: rows.some(
+        (row) => typeof row.pendingReservationActions === 'number',
       ),
     };
   }, [result]);
@@ -1153,41 +1165,6 @@ export function ReportResultPanel({
               </p>
             </div>
           ) : null}
-          <div
-            className={`grid gap-3 sm:grid-cols-2 ${
-              showDistinctContractKpi ? 'lg:grid-cols-4' : 'lg:grid-cols-3'
-            }`}
-          >
-            <SummaryCard
-              description="در کل محدوده فیلترشده"
-              icon={Table2}
-              label="تعداد نتایج"
-              value={result.total.toLocaleString('fa-IR')}
-            />
-            {showDistinctContractKpi ? (
-              <SummaryCard
-                description="بدون تکثیر Passenger یا Segment"
-                icon={FileText}
-                label="قراردادهای یکتا"
-                value={result.contractCount.toLocaleString('fa-IR')}
-              />
-            ) : null}
-            <SummaryCard
-              description="جمع مستقل در هر ارز"
-              icon={BarChart3}
-              label="ارزهای دارای فروش"
-              value={result.totalsByCurrency.length.toLocaleString('fa-IR')}
-            />
-            <SummaryCard
-              description="نیازمند پیگیری عملیاتی"
-              icon={CalendarClock}
-              label="اقدام رزرو در انتظار"
-              value={result.summary.pendingReservationActions.toLocaleString(
-                'fa-IR',
-              )}
-            />
-          </div>
-
           {mode === 'chart' ? (
             <div className="flex flex-wrap items-end gap-3 rounded-xl border bg-muted/20 p-3">
               <FormField id="report-result-chart-type" label="نوع نمودار">
@@ -1336,6 +1313,14 @@ export function ReportResultPanel({
                         sort={sort}
                       />
                     ) : null}
+                    {detailColumns.pendingReservationActions ? (
+                      <ResultSortHeader
+                        column="pendingReservationActions"
+                        label="اقدام رزرو در انتظار"
+                        onSortChange={onSortChange}
+                        sort={sort}
+                      />
+                    ) : null}
                   </tr>
                 </thead>
                 <tbody>
@@ -1392,6 +1377,25 @@ export function ReportResultPanel({
                           {row.settlementBalance ?? '—'}
                         </td>
                       ) : null}
+                      {detailColumns.pendingReservationActions ? (
+                        <td className="p-3 text-center">
+                          {typeof row.pendingReservationActions === 'number' ? (
+                            <Badge
+                              className={
+                                row.pendingReservationActions > 0
+                                  ? 'bg-amber-500/15 text-amber-900'
+                                  : 'bg-muted text-muted-foreground'
+                              }
+                            >
+                              {row.pendingReservationActions > 0
+                                ? `${row.pendingReservationActions.toLocaleString('fa-IR')} مورد`
+                                : 'ندارد'}
+                            </Badge>
+                          ) : (
+                            '—'
+                          )}
+                        </td>
+                      ) : null}
                     </tr>
                   ))}
                 </tbody>
@@ -1412,33 +1416,40 @@ export function ReportResultPanel({
                   طول هر میله نسبت به بیشترین مبلغ همان ارز محاسبه شده است.
                 </p>
               </div>
-              {result.rows.map((row) => {
-                const maximum = maxAmountByCurrency.get(row.currencyCode) ?? 0;
-                const width = maximum
-                  ? Math.max(
-                      3,
-                      (reportAmountMagnitude(row.amount) / maximum) * 100,
-                    )
-                  : 3;
-                return (
-                  <div className="space-y-1" key={row.grainId}>
-                    <div className="flex justify-between gap-3 text-xs">
-                      <span className="truncate">
-                        {row.branchId} · {row.ownerUserId}
-                      </span>
-                      <span className="shrink-0 font-semibold" dir="ltr">
-                        {row.amount} {row.currencyCode}
-                      </span>
+              <div
+                aria-label="داده‌های نمودار میله‌ای؛ برای مشاهده موارد بیشتر اسکرول کنید"
+                className="max-h-[32rem] space-y-3 overflow-y-auto overscroll-contain pe-2"
+                tabIndex={0}
+              >
+                {result.rows.map((row) => {
+                  const maximum =
+                    maxAmountByCurrency.get(row.currencyCode) ?? 0;
+                  const width = maximum
+                    ? Math.max(
+                        3,
+                        (reportAmountMagnitude(row.amount) / maximum) * 100,
+                      )
+                    : 3;
+                  return (
+                    <div className="space-y-1" key={row.grainId}>
+                      <div className="flex justify-between gap-3 text-xs">
+                        <span className="truncate">
+                          {row.branchId} · {row.ownerUserId}
+                        </span>
+                        <span className="shrink-0 font-semibold" dir="ltr">
+                          {row.amount} {row.currencyCode}
+                        </span>
+                      </div>
+                      <div className="h-3 overflow-hidden rounded-full bg-muted">
+                        <div
+                          className="h-full rounded-full bg-primary"
+                          style={{ width: `${width}%` }}
+                        />
+                      </div>
                     </div>
-                    <div className="h-3 overflow-hidden rounded-full bg-muted">
-                      <div
-                        className="h-full rounded-full bg-primary"
-                        style={{ width: `${width}%` }}
-                      />
-                    </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
           ) : chartType === 'column' ? (
             <div
@@ -1455,7 +1466,11 @@ export function ReportResultPanel({
                   ارتفاع هر ستون نسبت به بیشترین مبلغ همان ارز محاسبه شده است.
                 </p>
               </div>
-              <div className="overflow-x-auto pb-2">
+              <div
+                aria-label="داده‌های نمودار ستونی؛ برای مشاهده موارد بیشتر اسکرول کنید"
+                className="max-h-[32rem] overflow-auto overscroll-contain pb-2"
+                tabIndex={0}
+              >
                 <div className="flex min-w-max items-end gap-4 border-b border-border px-3 pt-8">
                   {result.rows.map((row) => {
                     const maximum =
@@ -1507,82 +1522,112 @@ export function ReportResultPanel({
                   سهم هر بخش در هر ارز به‌صورت مستقل محاسبه شده است.
                 </p>
               </div>
-              <div className="grid gap-5 lg:grid-cols-2">
-                {pieGroups.map((group) => (
-                  <div
-                    className="grid items-center gap-4 rounded-xl bg-muted/25 p-4 sm:grid-cols-[12rem_1fr]"
-                    key={group.currencyCode}
-                  >
-                    <div className="mx-auto text-center">
-                      <div
-                        aria-hidden="true"
-                        className="size-44 rounded-full border-8 border-background shadow-sm"
-                        style={{ background: group.gradient }}
-                      />
-                      <span className="mt-2 block text-xs font-bold" dir="ltr">
-                        {group.currencyCode}
-                      </span>
-                    </div>
-                    <ul className="space-y-2 text-xs">
-                      {group.segments.map((segment) => (
-                        <li
-                          className="flex items-center justify-between gap-3"
-                          key={segment.row.grainId}
+              <div
+                aria-label="داده‌های نمودار دایره‌ای؛ برای مشاهده موارد بیشتر اسکرول کنید"
+                className="max-h-[32rem] overflow-auto overscroll-contain pe-2"
+                tabIndex={0}
+              >
+                <div className="grid gap-5 lg:grid-cols-2">
+                  {pieGroups.map((group) => (
+                    <div
+                      className="rounded-xl bg-muted/25 p-4"
+                      key={group.currencyCode}
+                    >
+                      <div className="flex flex-col items-center text-center">
+                        <div
+                          aria-hidden="true"
+                          className="size-44 rounded-full border-8 border-background shadow-sm"
+                          style={{ background: group.gradient }}
+                        />
+                        <span
+                          className="mt-2 block text-xs font-bold"
+                          dir="ltr"
                         >
-                          <span className="flex min-w-0 items-center gap-2">
-                            <span
-                              aria-hidden="true"
-                              className="size-3 shrink-0 rounded-sm"
-                              style={{ backgroundColor: segment.color }}
-                            />
-                            <span className="truncate">
-                              {segment.row.branchId} · {segment.row.ownerUserId}
-                            </span>
-                          </span>
-                          <span className="shrink-0 font-semibold" dir="ltr">
-                            {segment.percentage.toLocaleString('fa-IR', {
-                              maximumFractionDigits: 1,
-                            })}
-                            ٪
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                ))}
+                          {group.currencyCode}
+                        </span>
+                      </div>
+                      <div className="mt-4 border-t border-border pt-4">
+                        <p className="mb-2 text-xs font-semibold text-muted-foreground">
+                          راهنمای رنگ‌های نمودار
+                        </p>
+                        <ul
+                          aria-label={`راهنمای رنگ‌های نمودار ${group.currencyCode}`}
+                          className="space-y-2 text-xs"
+                        >
+                          {group.segments.map((segment) => (
+                            <li
+                              className="flex items-center justify-between gap-3"
+                              key={segment.row.grainId}
+                            >
+                              <span className="flex min-w-0 items-center gap-2">
+                                <span
+                                  aria-hidden="true"
+                                  className="size-3 shrink-0 rounded-sm"
+                                  style={{ backgroundColor: segment.color }}
+                                />
+                                <span className="truncate">
+                                  {segment.row.branchId} ·{' '}
+                                  {segment.row.ownerUserId}
+                                </span>
+                              </span>
+                              <span
+                                className="shrink-0 font-semibold"
+                                dir="ltr"
+                              >
+                                {segment.percentage.toLocaleString('fa-IR', {
+                                  maximumFractionDigits: 1,
+                                })}
+                                ٪
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           )}
 
-          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-muted/35 px-3 py-2 text-xs">
-            <span>
-              صفحه {result.page.toLocaleString('fa-IR')} ·{' '}
-              {result.total.toLocaleString('fa-IR')} نتیجه · سقف پیش‌نمایش{' '}
-              {result.previewLimit.toLocaleString('fa-IR')}
-            </span>
-            <div className="flex gap-2">
-              <Button
-                disabled={running || result.page <= 1}
-                onClick={() => onPageChange(result.page - 1)}
-                size="sm"
-                type="button"
-                variant="outline"
-              >
-                قبلی
-              </Button>
-              <Button
-                disabled={
-                  running || result.page * result.pageSize >= result.total
-                }
-                onClick={() => onPageChange(result.page + 1)}
-                size="sm"
-                type="button"
-                variant="outline"
-              >
-                بعدی
-              </Button>
+          {mode === 'table' ? (
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-muted/35 px-3 py-2 text-xs">
+              <span>
+                صفحه {result.page.toLocaleString('fa-IR')} ·{' '}
+                {result.total.toLocaleString('fa-IR')} نتیجه · ۵ رکورد در هر
+                صفحه · سقف پیش‌نمایش{' '}
+                {result.previewLimit.toLocaleString('fa-IR')}
+              </span>
+              <div className="flex gap-2">
+                <Button
+                  disabled={running || result.page <= 1}
+                  onClick={() => onPageChange(result.page - 1)}
+                  size="sm"
+                  type="button"
+                  variant="outline"
+                >
+                  قبلی
+                </Button>
+                <Button
+                  disabled={
+                    running || result.page * result.pageSize >= result.total
+                  }
+                  onClick={() => onPageChange(result.page + 1)}
+                  size="sm"
+                  type="button"
+                  variant="outline"
+                >
+                  بعدی
+                </Button>
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="rounded-xl bg-muted/35 px-3 py-2 text-xs text-muted-foreground">
+              نمودار قابل اسکرول است و تا{' '}
+              {result.previewLimit.toLocaleString('fa-IR')} رکورد از محدودهٔ
+              مجاز را نمایش می‌دهد.
+            </div>
+          )}
           <p className="text-xs leading-6 text-muted-foreground">
             منبع: <span dir="ltr">{result.sourceProjection}</span> · نسخه گزارش{' '}
             {result.reportVersion.toLocaleString('fa-IR')} · تطبیق مبلغ با نمای
@@ -1603,11 +1648,15 @@ export function ReportResultPanel({
 }
 
 export function ReportingWorkspace({
+  configurationOnly = false,
   initialFilterState,
+  onConfigurationOpenChange,
   view = 'catalog',
   savedFilter = 'all',
 }: {
+  configurationOnly?: boolean;
   initialFilterState?: ReportingFilterUrlState;
+  onConfigurationOpenChange?(open: boolean): void;
   view?: ReportingView;
   savedFilter?: SavedReportFilter;
 }) {
@@ -1625,9 +1674,8 @@ export function ReportingWorkspace({
     Boolean(initialFilterState?.reportCode),
   );
   const [persistFilterState, setPersistFilterState] = useState(
-    Boolean(initialFilterState?.reportCode),
+    !configurationOnly && Boolean(initialFilterState?.reportCode),
   );
-  const [exportFormat, setExportFormat] = useState<ExportFormat>('XLSX');
   const [exportState, setExportState] = useState<
     'idle' | 'generating' | 'ready' | 'error'
   >('idle');
@@ -1661,6 +1709,7 @@ export function ReportingWorkspace({
   >(null);
   const [runError, setRunError] = useState<ReportRunError | null>(null);
   const [running, setRunning] = useState(false);
+  const [runHistoryRevision, setRunHistoryRevision] = useState(0);
   const [saveFeedback, setSaveFeedback] = useState('');
   const [workspaceCounts, setWorkspaceCounts] =
     useState<ReportingWorkspaceCounts | null>(null);
@@ -1839,7 +1888,12 @@ export function ReportingWorkspace({
   }, [configurationOpen, connectedReportSelected, selected.code]);
 
   useEffect(() => {
-    if (!persistFilterState || typeof window === 'undefined') return;
+    if (
+      configurationOnly ||
+      !persistFilterState ||
+      typeof window === 'undefined'
+    )
+      return;
     const nextHref = reportingFilterStateHref(window.location.href, {
       currency,
       filterValues: reportFilterValues,
@@ -1852,6 +1906,7 @@ export function ReportingWorkspace({
     if (nextHref !== currentHref)
       window.history.replaceState(window.history.state, '', nextHref);
   }, [
+    configurationOnly,
     currency,
     fromDate,
     legalEntity,
@@ -1876,7 +1931,6 @@ export function ReportingWorkspace({
     setResultMode('table');
     setResultChartType('horizontal-bar');
     setResultSort(defaultReportSort);
-    setExportFormat('XLSX');
     setFromDate('');
     setToDate('');
     setCurrency('ALL');
@@ -1916,7 +1970,12 @@ export function ReportingWorkspace({
     setRunError(null);
   }
 
-  async function runReport(page = 1, sort = resultSort) {
+  async function runReport(
+    page = 1,
+    sort = resultSort,
+    recordAction = false,
+    mode = resultMode,
+  ) {
     if (dateRangeError) {
       setRunError({ kind: 'validation', message: dateRangeError });
       return;
@@ -1937,6 +1996,7 @@ export function ReportingWorkspace({
     try {
       const preview = await reportingApi.salesByOrganization({
         reportCode: selected.code,
+        recordAction,
         ...(currency === 'ALL' ? {} : { currencyCode: currency }),
         ...(fromDate ? { fromDate } : {}),
         ...(toDate ? { toDate } : {}),
@@ -1958,6 +2018,7 @@ export function ReportingWorkspace({
             ? {}
             : reportFilterApiValues(reportFilterValues),
         page,
+        pageSize: reportResultPageSize(mode),
         sort,
       });
       setAvailableFilterOptions(preview.filterOptions);
@@ -1966,6 +2027,17 @@ export function ReportingWorkspace({
       setRunError(reportingRunError(error));
     } finally {
       setRunning(false);
+      if (recordAction) {
+        setRunHistoryRevision((current) => current + 1);
+        void refreshWorkspaceCounts();
+      }
+    }
+  }
+
+  function changeResultMode(mode: ReportResultMode) {
+    setResultMode(mode);
+    if (resultPreviewVisible && connectedReportSelected) {
+      void runReport(1, resultSort, false, mode);
     }
   }
 
@@ -1987,11 +2059,10 @@ export function ReportingWorkspace({
     setExportFeedback('فایل در حال تولید است…');
     try {
       await createAndDownloadReportExport({
-        format: exportFormat,
+        format: 'XLSX',
         query: reportExportQuery,
         reportCode: selected.code,
       });
-      await refreshWorkspaceCounts();
       setExportState('ready');
       setExportFeedback('فایل آماده شد و دانلود آن آغاز شد.');
     } catch (error) {
@@ -1999,13 +2070,18 @@ export function ReportingWorkspace({
       setExportFeedback(
         error instanceof Error ? error.message : 'تولید خروجی ناموفق بود.',
       );
+    } finally {
+      setRunHistoryRevision((current) => current + 1);
+      void refreshWorkspaceCounts();
     }
   }
 
   return (
     <main className="space-y-6" dir="rtl">
-      <PageHeader title="گزارش‌ها و خروجی‌های مدیریتی" />
-      <nav
+      {!configurationOnly ? (
+        <>
+          <PageHeader title="گزارش‌ها و خروجی‌های مدیریتی" />
+          <nav
         aria-label="نماهای گزارش"
         className="flex gap-2 overflow-x-auto pb-1"
       >
@@ -2043,8 +2119,8 @@ export function ReportingWorkspace({
             </Button>
           );
         })}
-      </nav>
-      {view === 'catalog' ? (
+          </nav>
+          {view === 'catalog' ? (
         <section>
           <div className="space-y-4">
             <Card className="p-4">
@@ -2092,11 +2168,18 @@ export function ReportingWorkspace({
                     <ShieldCheck className="size-4" />
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">همه وضعیت‌های اتصال</SelectItem>
-                    <SelectItem value="READY">قابل اجرای محدود</SelectItem>
-                    <SelectItem value="PENDING_CONNECTION">
-                      در انتظار منبع داده
+                  <SelectContent dir="rtl" className="text-right">
+                    <SelectItem className="text-right" value="all">
+                      <ReportAvailabilitySelectOption availability="all" />
+                    </SelectItem>
+                    <SelectItem className="text-right" value="READY">
+                      <ReportAvailabilitySelectOption availability="READY" />
+                    </SelectItem>
+                    <SelectItem
+                      className="text-right"
+                      value="PENDING_CONNECTION"
+                    >
+                      <ReportAvailabilitySelectOption availability="PENDING_CONNECTION" />
                     </SelectItem>
                   </SelectContent>
                 </Select>
@@ -2159,13 +2242,7 @@ export function ReportingWorkspace({
                 </Card>
               )}
             </section>
-            <section
-              aria-labelledby="catalog-reports-title"
-              className="space-y-3"
-            >
-              <h2 id="catalog-reports-title" className="text-lg font-bold">
-                گزارش‌های کاتالوگ
-              </h2>
+            <section className="space-y-3">
               {otherReports.length ? (
                 <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
                   {otherReports.map((report) => (
@@ -2204,7 +2281,7 @@ export function ReportingWorkspace({
             </section>
           </div>
         </section>
-      ) : (
+          ) : (
         <Card
           className="space-y-4 p-6"
           aria-label={workspaceViews.find((item) => item.id === view)?.label}
@@ -2214,12 +2291,21 @@ export function ReportingWorkspace({
           </h2>
           <ReportingOperationsView
             onMutation={refreshWorkspaceCounts}
+            mutationRevision={runHistoryRevision}
             view={view}
             savedFilter={savedFilter}
           />
         </Card>
-      )}
-      <Dialog onOpenChange={setConfigurationOpen} open={configurationOpen}>
+          )}
+        </>
+      ) : null}
+      <Dialog
+        onOpenChange={(open) => {
+          setConfigurationOpen(open);
+          onConfigurationOpenChange?.(open);
+        }}
+        open={configurationOpen}
+      >
         <DialogContent
           className="max-h-[calc(100vh-1rem)] max-w-6xl overflow-y-auto p-4 sm:p-6"
           dir="rtl"
@@ -2429,7 +2515,7 @@ export function ReportingWorkspace({
                   loading={running}
                   onClick={() => {
                     setResultPreviewVisible(true);
-                    void runReport();
+                    void runReport(1, resultSort, true);
                   }}
                   type="button"
                 >
@@ -2445,6 +2531,7 @@ export function ReportingWorkspace({
                         name: selected.title,
                         sharingScope: 'PERSONAL',
                         isFavorite: false,
+                        recordAction: true,
                         filterState: {
                           fromDate,
                           toDate,
@@ -2454,6 +2541,7 @@ export function ReportingWorkspace({
                         },
                       });
                       setSaveFeedback('گزارش با تنظیمات فعلی ذخیره شد.');
+                      setRunHistoryRevision((current) => current + 1);
                       await refreshWorkspaceCounts();
                     } catch (error) {
                       setSaveFeedback(
@@ -2495,35 +2583,6 @@ export function ReportingWorkspace({
                     {saveFeedback}
                   </p>
                 ) : null}
-                <div className="border-t pt-3">
-                  <label
-                    className="mb-1.5 block text-xs font-semibold"
-                    htmlFor="report-export-format"
-                  >
-                    نوع فایل خروجی
-                  </label>
-                  <Select
-                    onValueChange={(value) => {
-                      setExportFormat(value as ExportFormat);
-                      setExportState('idle');
-                      setExportFeedback('');
-                    }}
-                    value={exportFormat}
-                  >
-                    <SelectTrigger
-                      aria-label="نوع فایل خروجی"
-                      className="h-10 w-full"
-                      id="report-export-format"
-                    >
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="XLSX">Excel</SelectItem>
-                      <SelectItem value="PDF">PDF</SelectItem>
-                      <SelectItem value="CSV">CSV</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
                 <Button
                   className="w-full"
                   disabled={exportState === 'generating'}
@@ -2537,7 +2596,7 @@ export function ReportingWorkspace({
                     ? 'در حال تولید فایل…'
                     : exportState === 'error'
                       ? 'تلاش مجدد برای خروجی'
-                      : 'خروجی گرفتن نتیجه'}
+                      : 'دریافت خروجی اکسل'}
                 </Button>
                 {exportFeedback ? (
                   <p
@@ -2572,10 +2631,16 @@ export function ReportingWorkspace({
                   error={runError}
                   mode={resultMode}
                   onChartTypeChange={setResultChartType}
-                  onModeChange={setResultMode}
-                  onPageChange={(page) => void runReport(page)}
-                  onRetry={() => void runReport()}
-                  onSortChange={(sort) => void runReport(1, sort)}
+                  onModeChange={changeResultMode}
+                  onPageChange={(page) =>
+                    void runReport(page, resultSort, false, 'table')
+                  }
+                  onRetry={() =>
+                    void runReport(1, resultSort, false, resultMode)
+                  }
+                  onSortChange={(sort) =>
+                    void runReport(1, sort, false, resultMode)
+                  }
                   report={selected}
                   result={result}
                   running={running}

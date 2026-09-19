@@ -22,6 +22,7 @@ export interface SalesByOrganizationReportResult {
     grossProfit?: string;
     refundAmount?: string;
     settlementBalance?: string;
+    pendingReservationActions?: number;
   }[];
   total: number;
   page: number;
@@ -78,6 +79,7 @@ export interface SalesByOrganizationPreviewInput {
   filterValues?: Readonly<Record<string, string>>;
   page?: number;
   pageSize?: number;
+  recordAction?: boolean;
   sort?: {
     column:
       | 'branchId'
@@ -90,7 +92,8 @@ export interface SalesByOrganizationPreviewInput {
       | 'purchaseAmount'
       | 'grossProfit'
       | 'refundAmount'
-      | 'settlementBalance';
+      | 'settlementBalance'
+      | 'pendingReservationActions';
     direction: 'ASC' | 'DESC';
   };
 }
@@ -134,6 +137,7 @@ interface TravelReportResult {
     grossProfit: string;
     refundAmount: string;
     settlementBalance: string;
+    pendingReservationActions: number;
   }[];
   total: number;
   page: number;
@@ -228,6 +232,7 @@ export const reportingApi = {
       grossProfit: 'grossProfit',
       refundAmount: 'refundAmount',
       settlementBalance: 'settlementBalance',
+      pendingReservationActions: 'pendingReservationActions',
       currencyCode: 'currencyCode',
     };
     const filters = {
@@ -239,7 +244,7 @@ export const reportingApi = {
       ...(input.filterValues ?? {}),
     };
     return request<SalesByOrganizationReportResult | TravelReportResult>(
-      `/${input.reportCode ?? 'sales_by_organization'}/preview`,
+      `/${input.reportCode ?? 'sales_by_organization'}/${input.recordAction ? 'preview-run' : 'preview'}`,
       {
         method: 'POST',
         body: JSON.stringify({
@@ -282,6 +287,7 @@ export const reportingApi = {
           grossProfit: row.grossProfit,
           refundAmount: row.refundAmount,
           settlementBalance: row.settlementBalance,
+          pendingReservationActions: row.pendingReservationActions,
         })),
         total: travel.total,
         page: travel.page,
@@ -342,6 +348,7 @@ export const reportingApi = {
     sharingScope: 'PERSONAL' | 'TEAM';
     isFavorite: boolean;
     filterState: Record<string, unknown>;
+    recordAction?: boolean;
   }) {
     return request<ReportingSavedReportRecord>('/saved', {
       method: 'POST',

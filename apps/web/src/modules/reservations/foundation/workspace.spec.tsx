@@ -168,6 +168,21 @@ describe('reservations workspace access and states', () => {
     );
     expect(html).not.toContain('صفحه ۱ از');
   });
+  it('selects the first visible contract for all operations by default', () => {
+    const html = renderToStaticMarkup(
+      <ReservationOperationsWorkspace
+        state="SUCCESS"
+        rows={[row('first'), row('second')]}
+        access={access}
+        now={now}
+        initialSection="inbox"
+      />,
+    );
+    expect(html).toContain('قرارداد انتخاب‌شده');
+    expect(html).toContain('TEST-first');
+    expect(html).toContain('aria-selected="true"');
+    expect(html).not.toContain('قراردادی انتخاب نشده');
+  });
   it('limits an unfiltered inbox to the previous three calendar months', () => {
     const rows = [
       { ...row('recent'), createdAt: '2026-06-08T09:00:00.000Z' },
@@ -297,4 +312,28 @@ it('renders workflow colors with readable statuses and accessible arrival alert'
     />,
   );
   expect(denied).not.toContain('درخواست جدید به');
+});
+
+it('does not render generic reservation operation cards on the MANIFEST pane', () => {
+  const html = renderToStaticMarkup(
+    <ReservationOperationsWorkspace
+      state="SUCCESS"
+      rows={[row()]}
+      access={access}
+      initialSection="manifests"
+      operations={[
+        {
+          id: 'manifest-operation',
+          requestId: 'test-request',
+          section: 'manifests',
+          title: 'فرم رزواسیون داخلی',
+          statusLabel: 'پیش‌نویس',
+          fields: [{ label: 'شماره قرارداد', value: 'TEST-001' }],
+        },
+      ]}
+    />,
+  );
+  expect(html).toContain('MANIFEST بلیط‌ها');
+  expect(html).not.toContain('فرم رزواسیون داخلی');
+  expect(html).not.toContain('TEST-001');
 });

@@ -70,7 +70,13 @@ export async function loadContractPrint(id: string) {
   return { output, html: contractPrintHtml(output, refs), warnings };
 }
 
-export function ContractOutputButton({ contractId }: { contractId: string }) {
+export function ContractOutputButton({
+  contractId,
+  className,
+}: {
+  contractId: string;
+  className?: string;
+}) {
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [ready, setReady] = useState(false);
@@ -159,7 +165,12 @@ export function ContractOutputButton({ contractId }: { contractId: string }) {
   }
   return (
     <>
-      <Button size="sm" variant="outline" onClick={() => void load()}>
+      <Button
+        size="sm"
+        variant="outline"
+        className={className}
+        onClick={() => void load()}
+      >
         خروجی قرارداد / PDF
       </Button>
       <Dialog

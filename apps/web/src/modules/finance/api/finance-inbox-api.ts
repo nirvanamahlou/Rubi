@@ -8,6 +8,8 @@ import type {
   FinanceSettlementAccountCreateV1,
   FinanceSettlementAccountV1,
   FinanceSupplierPaymentCommandV1,
+  FinanceTicketCostCommandV1,
+  FinanceTicketPaymentCommandV1,
 } from '@nora/contracts';
 
 import { refreshAuthenticatedSession } from '@/lib/auth-session';
@@ -111,6 +113,16 @@ export const financeInboxApi = {
   ) =>
     apiRequest<{ data: unknown }>(
       `/finance/inbox/reservations/${encodeURIComponent(intakeId)}/purchases/${encodeURIComponent(purchaseId)}/payments`,
+      { method: 'POST', body: JSON.stringify(input) },
+    ),
+  recordTicketCost: (requestId: string, input: FinanceTicketCostCommandV1) =>
+    apiRequest<{ data: unknown }>(
+      `/finance/ticket-purchases/${encodeURIComponent(requestId)}/costs`,
+      { method: 'POST', body: JSON.stringify(input) },
+    ),
+  payTicket: (requestId: string, input: FinanceTicketPaymentCommandV1) =>
+    apiRequest<{ data: unknown }>(
+      `/finance/ticket-purchases/${encodeURIComponent(requestId)}/payments`,
       { method: 'POST', body: JSON.stringify(input) },
     ),
 };

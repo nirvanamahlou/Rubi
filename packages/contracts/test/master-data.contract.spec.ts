@@ -9,7 +9,7 @@ import {
 
 describe('master data public contract', () => {
   it('publishes a stable versioned resource catalog', () => {
-    expect(MASTER_DATA_CONTRACT_VERSION).toBe(12);
+    expect(MASTER_DATA_CONTRACT_VERSION).toBe(13);
     expect(MASTER_DATA_API_PREFIX).toBe('/api/v1/master-data');
     expect(MASTER_DATA_RESOURCES).toHaveLength(45);
     expect(new Set(MASTER_DATA_RESOURCES).size).toBe(45);

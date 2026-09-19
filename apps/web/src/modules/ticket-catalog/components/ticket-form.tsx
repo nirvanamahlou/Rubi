@@ -896,14 +896,14 @@ export function TicketForm({
           </div>
         </section>
         <section className="space-y-4">
-          <h3 className="font-bold text-primary">۵. قیمت خرید</h3>
+          <h3 className="font-bold text-primary">۵. درخواست قیمت خرید از مالی</h3>
           <p className="text-sm text-muted-foreground">
-            قیمت فروش هنگام فروش تعیین می‌شود.
+            این فرم پیش‌نویس محلی بلیت است. هنگام ثبت «بلیط قابل فروش» در نوبت تور، درخواست خریدِ بدون مبلغ و متصل به همان آفر به کارتابل مالی می‌رود؛ قیمت خرید و پرداخت را مالی ثبت می‌کند. قیمت فروش در ماژول فروش تعیین می‌شود.
           </p>
           <div className={styles.fields}>
             <ReferencePicker
               id="ticket-currency"
-              label="ارز خرید"
+              label="ارز پیشنهادی بلیت"
               resource="currencies"
               readOnly={readOnly}
               value={references.find(
@@ -921,28 +921,6 @@ export function TicketForm({
                 });
               }}
             />
-            {(
-              [
-                ['purchase', 'قیمت خرید'],
-                ['fee', 'کارمزد'],
-                ['commission', 'کمیسیون'],
-              ] as const
-            ).map(([key, label]) => (
-              <FormField label={label} key={key} id={`ticket-${key}`}>
-                <Input
-                  id={`ticket-${key}`}
-                  dir="ltr"
-                  inputMode="decimal"
-                  value={input.fare[key]}
-                  onChange={(event) =>
-                    setInput({
-                      ...input,
-                      fare: { ...input.fare, [key]: event.target.value },
-                    })
-                  }
-                />
-              </FormField>
-            ))}
           </div>
         </section>
         <section className="space-y-4">

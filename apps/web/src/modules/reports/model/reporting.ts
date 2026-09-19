@@ -85,6 +85,7 @@ const reportDisplayCodes: Readonly<Record<string, string>> = {
   reservation_cycle_time: 'RPT-034',
   manifest_finance_exclusions: 'RPT-035',
   customer_portfolio_growth: 'RPT-036',
+  cash_position: 'RPT-037',
 };
 
 function report(
@@ -100,8 +101,8 @@ function report(
   return {
     ...definition,
     displayCode,
-    // Every catalog card has an approved local demo projection. Production
-    // domain projections can still replace this contract independently.
+    // A producer must publish its approved projection before a pending card
+    // can become an executable financial report.
     availability: definition.availability ?? 'PENDING_CONNECTION',
     dateBasis: definition.dateBasis ?? 'زمان مؤثر رویداد در UTC',
     outputs: definition.outputs ?? allOutputs,
@@ -742,6 +743,39 @@ export const reportCatalog: readonly ReportDefinition[] = [
     ],
     drillDown: 'پرونده‌های مشتری مجاز بدون نمایش داده هویتی حساس',
   }),
+  report({
+    code: 'cash_position',
+    title:
+      'با وضعیت فعلی پرونده‌ها و تعهدات، شرکت نیاز به تزریق نقدینگی دارد یا امکان برداشت وجه وجود دارد؟',
+    category: 'مالی و خزانه‌داری',
+    description:
+      'مقایسه وجه قابل استفاده امروز با تعهدات پرداخت قطعی تا هفت روز آینده، به تفکیک شرکت و ارز؛ فقط پس از تأیید داده خزانه‌داری منتشر می‌شود.',
+    grain:
+      'شرکت، ارز و زمان مبنای محاسبه؛ اقلام پرونده و تعهد پیش از تجمیع جداگانه محاسبه می‌شوند',
+    permission: 'reporting.finance.read',
+    approvedView: 'reporting_cash_position_facts_v1',
+    dateBasis:
+      'مانده امروز و سررسید تعهدات در هفت روز آینده، با ثبت زمان دریافت داده در UTC',
+    dimensions: [
+      'شرکت',
+      'ارز',
+      'نوع منبع نقد',
+      'پرونده',
+      'تأمین‌کننده',
+      'سررسید',
+    ],
+    measures: [
+      'وجه قابل استفاده',
+      'دریافت قطعی مشتری',
+      'خرید تأییدشده',
+      'پرداخت تأمین‌کننده',
+      'تعهد هفت روزه',
+      'کسری یا مازاد مشروط',
+    ],
+    filters: [...commonFilters, 'نوع منبع نقد', 'پرونده', 'تأمین‌کننده'],
+    drillDown:
+      'ردیف‌های تأییدشده حساب، وصول، پرونده و تعهد با تفکیک شرکت و ارز',
+  }),
 ];
 
 export const reportPriorityGroups: readonly ReportPriorityGroup[] = [
@@ -757,6 +791,7 @@ export const reportPriorityGroups: readonly ReportPriorityGroup[] = [
       'receivables_payables',
       'account_balances',
       'due_checks',
+      'cash_position',
       'paid_not_issued',
       'reservation_errors',
       'agency_performance',
@@ -837,6 +872,8 @@ const reportSearchAliases: Readonly<Record<string, string>> = {
   receivables_payables: 'مطالبات و بدهی‌ها',
   account_balances: 'مانده حساب‌ها',
   due_checks: 'چک‌های سررسید',
+  cash_position:
+    'موقعیت نقدینگی تزریق وجه برداشت وجه تعهد تامین‌کننده هفت روز آینده',
   payments_refunds: 'پرداخت و استرداد',
   paid_not_issued: 'پرداخت موفق بدون صدور',
   reservation_errors: 'خطاهای رزرواسیون',

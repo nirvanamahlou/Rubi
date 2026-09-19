@@ -3,6 +3,11 @@ import type { NextConfig } from 'next';
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  images: {
+    // Dashboard header artwork is decorative. Allow the intentionally lighter
+    // rendition used by the active page without loosening image optimization.
+    qualities: [45, 75],
+  },
   outputFileTracingIncludes: {
     '/reservations/requests/*/pdf': [
       './src/modules/reservations/components/reservation-form-sheet.module.css',

@@ -31,6 +31,7 @@ import {
   isNavigationItemActive,
   MARKETING_SECTION_CHANGE_EVENT,
   navigationItems,
+  salesPricingSubsection,
 } from '@/lib/navigation';
 import { cn } from '@/lib/utils';
 import { faMessages } from '@/messages/fa';
@@ -112,7 +113,9 @@ function Navigation({
   const pathname = usePathname();
   const groupId = useId();
   const [closedGroups, setClosedGroups] = useState<string[]>(() =>
-    groupedNavigationItems.map((group) => group.id),
+    groupedNavigationItems
+      .filter((group) => group.id !== 'sales')
+      .map((group) => group.id),
   );
   const isGroupClosed = (id: string) => closedGroups.includes(id);
   function toggleGroup(id: string) {
@@ -120,8 +123,24 @@ function Navigation({
       ids.includes(id) ? ids.filter((value) => value !== id) : [...ids, id],
     );
   }
-  function renderItem({ href, title }: (typeof navigationItems)[number]) {
-    const active = isNavigationItemActive(href, pathname);
+  function renderItem({
+    href,
+    title,
+    secondary = false,
+  }: {
+    href:
+      | (typeof navigationItems)[number]['href']
+      | typeof salesPricingSubsection.href;
+    title: string;
+    secondary?: boolean;
+  }) {
+    const active = secondary
+      ? pathname === href || pathname.startsWith(`${href}/`)
+      : isNavigationItemActive(
+          href as (typeof navigationItems)[number]['href'],
+          pathname,
+        ) &&
+        !(href === '/sales' && pathname.startsWith(salesPricingSubsection.href));
     const Icon = sidebarIcons[href];
     const link = (
       <Link
@@ -170,6 +189,14 @@ function Navigation({
       </Tooltip>
     );
   }
+  function renderGroupEntries(group: (typeof groupedNavigationItems)[number]) {
+    return group.items.flatMap((item) => [
+      renderItem(item),
+      ...(group.id === 'sales' && item.href === '/sales'
+        ? [renderItem({ ...salesPricingSubsection, secondary: true })]
+        : []),
+    ]);
+  }
   return (
     <nav
       aria-label="منوی اصلی"
@@ -181,7 +208,7 @@ function Navigation({
       )}
     >
       {compact
-        ? groupedNavigationItems.flatMap((group) => group.items).map(renderItem)
+        ? groupedNavigationItems.flatMap(renderGroupEntries)
         : groupedNavigationItems.map((group) => (
             <section
               key={group.id}
@@ -227,7 +254,7 @@ function Navigation({
                   isGroupClosed(group.id) ? 'hidden' : 'grid gap-[3px]'
                 }
               >
-                {group.items.map(renderItem)}
+                {renderGroupEntries(group)}
               </div>
             </section>
           ))}

@@ -19,6 +19,15 @@ describe('reporting catalog', () => {
       reportCatalog.find((report) => report.code === 'due_checks')
         ?.availability,
     ).toBe('PENDING_CONNECTION');
+    expect(
+      reportCatalog.find((report) => report.code === 'cash_position'),
+    ).toEqual(
+      expect.objectContaining({
+        displayCode: 'RPT-037',
+        availability: 'PENDING_CONNECTION',
+        approvedView: 'reporting_cash_position_facts_v1',
+      }),
+    );
   });
 
   it('finds reports by Persian title but not by internal or display code', () => {
@@ -84,6 +93,7 @@ describe('reporting catalog', () => {
       'receivables_payables',
       'account_balances',
       'due_checks',
+      'cash_position',
       'payments_refunds',
       'paid_not_issued',
       'reservation_errors',

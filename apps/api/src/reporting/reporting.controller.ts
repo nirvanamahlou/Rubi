@@ -22,6 +22,7 @@ import type {
 } from './reporting.contracts';
 import {
   ExportCreateDto,
+  ReportQueryDto,
   SaveReportDto,
   ShareSavedReportDto,
 } from './reporting.dto';
@@ -157,6 +158,17 @@ export class ReportingController {
     @Req() request: AuthenticatedRequest,
   ) {
     return this.service.preview(code, body, request.actor);
+  }
+
+  @Post(':code/preview-run')
+  @Header('Cache-Control', 'private, no-store')
+  @ApiBody({ type: ReportQueryDto })
+  previewRun(
+    @Param('code') code: string,
+    @Body() body: ReportQueryDto,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.service.previewRun(code, body, request.actor);
   }
 
   @Post(':code/exports')

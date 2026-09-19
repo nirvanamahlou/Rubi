@@ -16,6 +16,7 @@ import type {
   TicketOfferV1,
 } from '@nora/contracts';
 import { DatabaseService } from '../database/database.service';
+import { ProcurementPublicService } from '../procurement/procurement-public.service';
 
 const uuid = Joi.string().guid();
 const createSchema = Joi.object({
@@ -42,6 +43,8 @@ export function validateTicketOffer(input: unknown): TicketOfferCreateV1 {
 export class TicketPublicService {
   constructor(
     @Inject(DatabaseService) private readonly database: DatabaseService,
+    @Inject(ProcurementPublicService)
+    private readonly purchases: ProcurementPublicService,
   ) {}
 
   private require(
@@ -159,10 +162,20 @@ export class TicketPublicService {
         },
       },
     });
-    if (row.fingerprint !== fingerprint)
+    // Legacy fingerprints depended on JSON field order. Compare stored offer facts
+    // before rejecting a retried key so semantically identical requests remain safe.
+    const sameOffer = row.branchId === branchId &&
+      row.originId === value.originId && row.destinationId === value.destinationId &&
+      row.departureAt.getTime() === new Date(value.departureAt).getTime() &&
+      row.arrivalAt.getTime() === new Date(value.arrivalAt).getTime() &&
+      row.carrierName === value.carrierName && row.serviceNumber === value.serviceNumber &&
+      row.cabinClassCode === value.cabinClassCode && row.totalCapacity === value.totalCapacity;
+    if (row.fingerprint !== fingerprint && !sameOffer)
       throw new ConflictException(
         'کلید درخواست قبلاً با اطلاعات متفاوت استفاده شده است.',
       );
+    // A failed public-producer call makes this command retriable with the same key.
+    await this.purchases.ensureOfferPurchaseRequest(row);
     return { data: { id: row.id, version: row.version } };
   }
 

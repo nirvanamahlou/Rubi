@@ -38,6 +38,25 @@ const namesSchema = Joi.object({
   lastName: Joi.string().trim().min(1).max(100).required(),
   version: Joi.number().integer().min(1).required(),
 });
+const identitySchema = Joi.object({
+  firstName: Joi.string().trim().min(1).max(100).required(),
+  lastName: Joi.string().trim().min(1).max(100).required(),
+  passportFirstName: Joi.string().trim().max(120).allow(''),
+  passportLastName: Joi.string().trim().max(120).allow(''),
+  gender: Joi.string().valid('M', 'F').allow(''),
+  birthDate: Joi.string()
+    .pattern(/^\d{4}-\d{2}-\d{2}$/)
+    .allow(''),
+  nationalId: Joi.string().trim().max(16).allow(''),
+  passportNumber: Joi.string().trim().max(24).allow(''),
+  passportExpiryDate: Joi.string()
+    .pattern(/^\d{4}-\d{2}-\d{2}$/)
+    .allow(''),
+  passportIssuingCountryCode: Joi.string().trim().max(3).allow(''),
+  nationalityCode: Joi.string().trim().max(3).allow(''),
+  birthCountryCode: Joi.string().trim().max(3).allow(''),
+  version: Joi.number().integer().min(1).required(),
+});
 const uploadSchema = Joi.object({
   passengerId: Joi.string().uuid().allow(''),
   documentTypeId: uuid,
@@ -155,6 +174,9 @@ export class ReservationPassengerFilesService {
     return {
       data,
       canEdit: actor.permissions.includes('customers.update'),
+      canEditIdentity:
+        actor.permissions.includes('customers.update') &&
+        actor.permissions.includes('customers.sensitive.read'),
     };
   }
   async rename(
@@ -188,6 +210,74 @@ export class ReservationPassengerFilesService {
       },
       actor,
       current.ownerBranchId,
+    );
+    return { data: nameView(result.data) };
+  }
+  async identity(
+    id: string,
+    passengerId: string,
+    raw: unknown,
+    actor: AuthenticatedActor,
+    traceId?: string,
+  ) {
+    this.require(actor, [
+      'customers.read',
+      'customers.update',
+      'customers.sensitive.read',
+    ]);
+    await this.intake(id, actor, passengerId);
+    const input = parse<{
+      firstName: string;
+      lastName: string;
+      passportFirstName: string;
+      passportLastName: string;
+      gender: 'M' | 'F' | '';
+      birthDate: string;
+      nationalId: string;
+      passportNumber: string;
+      passportExpiryDate: string;
+      passportIssuingCountryCode: string;
+      nationalityCode: string;
+      birthCountryCode: string;
+      version: number;
+    }>(identitySchema, raw);
+    const { data: current } = await this.customers.detail(
+      passengerId,
+      actor,
+      traceId,
+      'customer-verification',
+    );
+    if (current.kind !== 'person')
+      throw new BadRequestException('فقط مشخصات مسافر حقیقی قابل ویرایش است.');
+    const optional = (value: string) => value.trim() || null;
+    const protectedValue = (value: string) => value.trim() || undefined;
+    const nationalId = protectedValue(input.nationalId);
+    const passportNumber = protectedValue(input.passportNumber);
+    const result = await this.customers.update(
+      passengerId,
+      {
+        kind: current.kind,
+        organizationId: current.organizationId,
+        roles: current.roles,
+        acquaintanceMethodId: current.acquaintanceMethodId,
+        firstName: input.firstName,
+        lastName: input.lastName,
+        displayName: `${input.firstName.trim()} ${input.lastName.trim()}`,
+        passportFirstName: optional(input.passportFirstName),
+        passportLastName: optional(input.passportLastName),
+        gender: input.gender || null,
+        birthDate: optional(input.birthDate),
+        ...(nationalId ? { nationalId } : {}),
+        ...(passportNumber ? { passportNumber } : {}),
+        passportExpiryDate: optional(input.passportExpiryDate),
+        passportIssuingCountryCode: optional(input.passportIssuingCountryCode),
+        nationalityCode: optional(input.nationalityCode),
+        birthCountryCode: optional(input.birthCountryCode),
+        version: input.version,
+      },
+      actor,
+      current.ownerBranchId,
+      traceId,
     );
     return { data: nameView(result.data) };
   }
@@ -321,6 +411,22 @@ export class ReservationPassengerFilesController {
     @Req() req: AuthenticatedRequest,
   ) {
     return this.service.rename(id, passengerId, body, req.actor);
+  }
+  @Patch('passengers/:passengerId/identity')
+  @RequirePermissions(
+    'reservations.read',
+    'customers.read',
+    'customers.update',
+    'customers.sensitive.read',
+  )
+  identity(
+    @Param('intakeId') id: string,
+    @Param('passengerId') passengerId: string,
+    @Body() body: unknown,
+    @Req() req: AuthenticatedRequest,
+    @Headers('x-request-id') traceId?: string,
+  ) {
+    return this.service.identity(id, passengerId, body, req.actor, traceId);
   }
   @Get('documents/options')
   @Header('Cache-Control', 'private, no-store')

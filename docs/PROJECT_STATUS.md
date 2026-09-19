@@ -1,10 +1,14 @@
-## 2026-09-17 — SYSTEM-MANAGEMENT-001 — PC-B — READY_FOR_REVIEW
+## 2026-09-17 — SYSTEM-MANAGEMENT-BACKEND-001 — PC-B — READY_FOR_REVIEW
 
-PR #305 backend مدیریت سامانه در `develop` ادغام شد و قفل Migration، قرارداد مشترک و اسناد مرکزی آن آزاد است. PR #304 رابط `/system` را بدون Schema/Migration یا تغییر قرارداد producer، به endpointهای نسخه‌دار منتشرشده وصل می‌کند.
+تغییرات تازهٔ develop برای Backend مدیریت سامانه همراه با تغییرات این چت یکپارچه شد: قرارداد v1، ۳۰ Permission، ۱۲ جدول افزایشی، تنظیمات نسخه‌دار، شماره‌گذاری اتمیک، اعلان، قالب immutable، Feature Flag، درخواست Backup، Health/Job read-only و نشست مدیریتی امن. حفاظت IAM در برابر Self-escalation و حذف آخرین مدیر فعال نیز حفظ شد.
 
-مرکز `/system` طرح مرجع `rubi-settings-fixed.html` را با نمای کلی، جست‌وجو، فیلتر دسته‌ها، نمای جزئیات و فرم ویرایش پیاده می‌کند. طبق درخواست مالک، پوستهٔ خاص صفحه حذف و با نوار کناری، هدر، انتخاب شرکت و تم روشن/تاریک سراسری Rubi یکپارچه شد؛ کارت‌ها و پنجره‌ها از توکن‌های مرکزی رنگ، سطح و مرز پیروی می‌کنند. هر ۱۸ بخش و ۷۸ کارت مرجع در کاتالوگ تایپ‌شده حضور دارند. مقادیر از client احرازشدهٔ `system-management/v1` خوانده و با قرارداد نسخه‌دار، `expectedVersion`، دلیل تغییر و Scope واقعی ذخیره می‌شوند؛ `localStorage`، تأیید یا موفقیت ساختگی وجود ندارد. عملیات شماره‌گذاری، Feature Flag، Backup، پایان نشست، Audit/Health و Retry واقعی Reporting Export نیز به endpointهای منتشرشده متصل‌اند. Probe Storage از Public Port مالک Documents و PostgreSQL از query فقط‌خواندنی می‌آید؛ Redis، Worker و Queue تا انتشار Public Port مالک، وضعیت `UNKNOWN` دارند. ۶ تست هدفمند، typecheck، lint، build تولیدی و بازبینی بصری مرورگر موفق‌اند. Branch: `codex/pc-b-system-management`.
+## 2026-09-17 — RESERVATION-UI-AND-CONTRACT-ACTIONS-0917 — COMPLETE
 
-بازخورد رابط ۲۰۲۶-۰۹-۱۷ اعمال شد: عنوان تکراری، پیام اطلاع‌رسانی اتصال و نوار آماری بزرگ حذف شدند؛ وضعیت داده و دامنه دارای متن روشن‌اند و تمام ورودی‌های اصلی این صفحه با فعل مشخص «مشاهده تنظیمات» یا «ویرایش تنظیمات» ارائه می‌شوند.
+تغییرهای خارج‌ماندهٔ رابط رزواسیون به نسخهٔ نهایی افزوده شدند: پنل عملیات فشرده زیر جدول، ویرایشگر قراردادی با بخش‌های واضح‌تر، نمایش ردهٔ کودک هتل در فرم/واچر، ویرایش مشخصات هویتی مسافر با مجوز حساس، و پنهان‌شدن کارت عمومی در نمای Manifest. سه دکمهٔ عملیات هر ردیف قرارداد فروش اکنون در یک ستونِ عرض ثابت هستند. یک نقص قدیمی در الحاق مجوزهای System به فهرست IAM نیز رفع شد. ۳۲ تست Web، ۱۰ تست API، typecheck و build API/Web موفق‌اند؛ Migration و دادهٔ عملیاتی تغییر نکردند.
+
+## 2026-09-17 — CONTRACT-PASSENGER-CONTROLS-0917 — READY_FOR_REVIEW
+
+جدول ورود اطلاعات مسافران قرارداد اکنون برای جنسیت انتخاب دوگزینه‌ای مرد/زن دارد و مقدار سازگار M/F را ذخیره می‌کند. در عنوان هر سه فیلد کشور نیازمند ISO3، دکمه راهنمای کوچک اضافه شد که فهرست اسکرول‌دار نام کشورهای پرکاربرد و کد سه‌حرفی آن‌ها را در همان صفحه باز می‌کند. ردیف جدید، ردیف پاک‌شده و مسافر افزوده‌شده، سه فیلد ISO3 را با IRN پیش‌پر می‌کنند اما کاربر می‌تواند هر سه را تغییر دهد؛ پرونده‌های از پیش موجود تغییر نمی‌کنند. ۳۱ تست مدل و ۱۱ تست رابط، lint، typecheck و build تولیدی Web موفق‌اند و نسخه جدید روی پورت‌های 3100 و 3200 فعال است. Branch: codex/pc-a-contract-passenger-controls-0917.
 
 نوار دسته‌های `/system` اکنون همان ساختار افقی خود را حفظ می‌کند، ولی نام‌هایش با گروه‌های سایدبار Rubi یکسان است. کلیک روی هر عنوان، زیرمجموعه‌های واقعی آن را باز و کارت‌ها را به همان گروه محدود می‌کند؛ کادرهای خاکستری و دکمه‌های سکشن بالای صفحه حذف شده‌اند.
 
@@ -14,6 +18,9 @@ PR #305 backend مدیریت سامانه در `develop` ادغام شد و قف
 ## 2026-09-16 — PROCUREMENT-RECORD-ACTIONS-0916 — READY_FOR_REVIEW
 
 همهٔ ردیف‌های خرید و تأمین اکنون کنترل‌های آیکونی ویرایش و حذف دائمی دارند. ویرایش، فرم همان پرونده یا تأمین‌کننده را باز می‌کند؛ حذف بعد از تأیید صریح از API انجام می‌شود و فهرست‌ها تازه‌سازی می‌شوند. حذف پرونده، وابستگی‌های متعلق به Procurement را در یک تراکنش پاک می‌کند و وظایف باز را می‌بندد؛ اگر مالی پرونده را پذیرفته باشد، عملیات متوقف می‌شود تا سابقهٔ مالی حفظ شود. تست API حذف و lint فایل‌های متاثر موفق‌اند؛ typecheck سراسری تا رفع خطای موجود `contractPartyName` در رزواسیون و فروش مسدود است. Branch: `codex/pc-b-procurement-record-actions-0916`.
+## 2026-09-16 — RESERVATION-PANEL-HORIZONTAL-0916 — PC-A — READY_FOR_REVIEW
+
+پنل عملیات رزواسیون زیر جدول فشرده شد تا در دسکتاپ، بدون جابه‌جایی صفحه، قرارداد انتخاب‌شده و سه گروه عملیات کنار هم دیده شوند. نوار قرارداد انتخاب‌شده کوتاه است؛ عملیات قرارداد در دو ردیف چهارستونه، اطلاعات قرارداد در دو ردیف دو ستونه و یادداشت‌ها با یک دکمهٔ کم‌ارتفاع نمایش داده می‌شود. روی موبایل گروه‌ها به دو ستون و سپس یک ستون برمی‌گردند. اولین قراردادِ فهرستِ فیلترشده به‌صورت پیش‌فرض انتخاب می‌شود؛ با تغییر فیلتر یا حذف انتخاب قبلی، پنل و همهٔ عملیات به نخستین قرارداد باقی‌مانده متصل می‌شوند. ۲۸ تست هدفمند، lint فایل‌های TypeScript، typecheck و build تولیدی Web موفق‌اند. Migration، API، دادهٔ عملیاتی و Runtime مشترک تغییر نکردند. Branch: `codex/pc-a-reservation-panel-horizontal-0916`.
 ## 2026-09-16 — PROCUREMENT-LIFECYCLE-ENTRY-0916 — PC-B — READY_FOR_REVIEW
 
 تب‌های چرخهٔ پروندهٔ خرید اکنون با سوابق محلی واقعی‌نما قابل مشاهده و فرم عملیات آن‌ها قابل استفاده‌اند: استعلام، سفارش، رسید کالا، اصلاح رسید، پذیرش خدمت، مغایرت، مرجوعی، فاکتور و ارجاع مالی. ثبت/اصلاح فقط با نقش عملیاتی مجاز انجام می‌شود و هر تغییر به‌صورت نسخه یا اصلاح جبرانی حفظ می‌شود؛ برای کاربر فاقد مجوز، بخش خالی نمی‌ماند و نقش «کارشناس تأمین و سفارش» را مشخص می‌کند. شش پروندهٔ محلی بدون عنوان یا نشان آزمایشی، شامل دادهٔ مرحله‌ای در همهٔ تب‌ها، با ابزار `procurement:demo:apply` روی PostgreSQL localhost وارد شده‌اند. هیچ سفارش بیرونی، پرداخت یا سند حسابداری واقعی ایجاد نشده است. تست‌های هدفمند فرم، lint و typecheck Web، Prisma validate و اجرای/بازرسی ابزار دادهٔ محلی موفق‌اند. Branch: `codex/pc-b-procurement-lifecycle-entry`.
@@ -23,10 +30,135 @@ PR #305 backend مدیریت سامانه در `develop` ادغام شد و قف
 پنل عملیات قرارداد در رزواسیون اکنون زیر بخش جدول قرار دارد و دکمه‌ها در دسکتاپ به‌صورت چهارستونه نمایش داده می‌شوند. صفحه‌بندی از فهرست حذف شد؛ تمام قراردادهای بازه در یک جدول اسکرول‌پذیر با ارتفاع نزدیک هفت ردیف قابل انتخاب‌اند. اگر کاربر بازهٔ تاریخ تعیین نکند، فهرست از تاریخ قرارداد فقط سه ماه تقویمی اخیر را نمایش می‌دهد؛ با انتخاب هر بازهٔ تاریخ، همان بازه بدون محدودیت پیش‌فرض اجرا می‌شود. ۲۱ تست هدفمند، lint، typecheck و build تولیدی Web موفق‌اند. Migration، دادهٔ عملیاتی و Runtime مشترک تغییری نکردند.
 # وضعیت پروژه
 
+- 2026-09-16 Package Pricing commission follow-up: drafts/publications now support percent or fixed commission with an explicit currency. Fixed commission is deducted once from the matching currency profit bucket and never changes sale; historical rows default to percent. Additive migration was applied only to isolated `rubi_pricing_flow_0916`. Tour demo 1 published version 3 with fixed EUR 15 while tour demo 2 remains percent.
+## 2026-09-16 — TOUR-HOTEL-PRICING-FLOW-0916 — MERGED WITH DEVELOP / VERIFIED LOCALLY
+
+فرایند تور/نوبت بلیت ← بسته نرخ خرید هتل متصل به همان نوبت ← جدول خرید کل
+اقامت و تعدیل درصدی/ثابت ← فروش پکیج چندارزی پیاده شد. هتل‌ها مستقل و جمع
+مبلغ فقط بین ارزهای یکسان است؛ کمیسیون از سود همان ارز کسر می‌شود. ترکیب
+اتاق خانوادگی در پیش‌نویس و انتشار ثبت می‌شود؛ اکسل و بنر طبق درخواست مؤجل‌اند.
+با درخواست صریح مالک، `origin/develop@10851d1a` داخل شاخه Task ادغام شد. چهار
+تعارض مرکزی با حفظ هر دو سمت حل شدند: Package Pricing و Reporting هر دو در
+AppModule فعال‌اند، روابط هر دو دامنه در Prisma باقی مانده‌اند و تاریخچه هر دو
+واحد در اسناد حفظ شده است. Prisma validate/generate، typecheck بسته‌های
+Contracts/Database/API/Web، همه تست‌های API (۱۴۳۶ پاس، ۱۳۵ skip)، همه تست‌های
+Web (۱۴۷۷ پاس)، lint کامل API/Web و build تولیدی هر دو برنامه با ۴۸ route موفق‌اند.
+
+در دیتابیس کپی `rubi_pricing_flow_0916` مجوزهای محلی Seed شد و دو تور آینده با
+چهار پرواز، پرداخت کامل مالی، دو هتل EUR/IRR، دو نسخه پیش‌نویس و دو نسخه انتشار
+برای هر تور با maker/checker واقعی تست شدند. دیتابیس عملیاتی دست‌نخورده است. شاخه
+محلی می‌ماند چون origin عمومی است و هیچ Push عمومی انجام نشده است.
+
+
+## 2026-09-16 — HOTEL-RATE-PACKS-0915 — PC-A — PER-HOTEL CURRENCY READY FOR REVIEW
+
+در جدول نرخ خرید گروهی هتل، هر ردیف هتل اکنون ستون و انتخاب‌گر ارز مستقل
+`EUR`، `USD` یا `IRR` دارد؛ مبلغ پایه و محاسبهٔ تمام رده‌های اتاق با ارز همان
+ردیف نمایش و ذخیره می‌شود. Migration افزایشی `currency` را به ردیف‌های نرخ
+افزود و نرخ‌های تاریخی را از ارز بستهٔ خود مقداردهی کرد؛ درخواست‌های کلاینت
+قدیمی نیز به‌صورت سازگار همان ارز پیش‌فرض بسته را برای هر ردیف دریافت می‌کنند.
+Prisma generate، typecheck API/Web، build تولیدی API/Web و health API4200
+موفق‌اند؛ Web3200 و API4200 با نسخهٔ تازه اجرا شده‌اند. کنترل دیداریِ مرورگر
+به‌دلیل خطای sandbox ابزار در دست مالک محصول است. Web3100، Sales و Package
+Pricing تغییر داده نشدند.
+
+## 2026-09-15 — HOTEL-RATE-PACKS-0915 — PC-A — ISOLATED 3200 IMPLEMENTED / REVIEW PENDING
+
+صفحهٔ `/reservations/hotel-rates` روی شاخهٔ مستقل
+`codex/pc-a-hotel-rate-packs-0915` به جریان شهر ← بازهٔ اقامت ← تیک هتل‌های
+فعال و قابل‌فروش همان شهر ← ویرایش کارگزار، پایه و ضرایب تبدیل شد. بسته‌های
+ثبت‌شده ردیف جدا در جدول شهر/تاریخ/تعداد شب/هتل/نسخه دارند و با بازکردن ردیف، نسخهٔ
+جدید همان بسته ثبت می‌شود. Batch و ردیف قدیمی immutable می‌مانند. Migration
+افزایشی فقط روی PostgreSQL آزمایشی Web3200/API4200 اعمال شد؛ Web3100،
+دیتابیس عملیاتی، Sales/Package Pricing و `develop/main` تغییر نکردند. دسترس‌پذیری
+شبانهٔ واقعی منبع ندارد؛ تیک، تأیید اپراتور برای همان بازه است و API مرجع
+active/saleable/city را بازبینی می‌کند. جزئیات و QA در
+`docs/tasks/HOTEL-RATE-PACKS-0915.md`.
+Prisma schema معتبر و client تولید شد؛ ۱۹ تست API و ۴ تست Web، lint هدفمند و
+build تولیدی هر دو برنامه پاس شدند. بستهٔ synthetic تهران برای ۲۰۲۷-۰۲-۰۱ تا
+۲۰۲۷-۰۲-۰۶ ساخته/باز شد و نرخ ۱۰۰ به ۱۱۰ در نسخهٔ ۲ رسید. API4200/Web3200
+و login/detail دوباره پاسخ ۲۰۰ دارند. قفل‌های Migration و اسناد این کار آزادند؛
+انتقال به ۳۱۰۰ و ادغام به Review و تصمیم مالک محصول وابسته است.
+پیگیری UX گزارش‌شده نیز در همان PR #293 انجام شد: دکمهٔ «بستهٔ جدید» قبلاً فقط
+فرم همیشه‌نمایان را پاک می‌کرد و وقتی خالی بود بی‌اثر به‌نظر می‌رسید؛ اکنون
+یک ردیف پیش‌نویس ثبت‌نشده و جدول ویرایش را باز می‌کند و جست‌وجوی شهر را فوکوس
+می‌دهد. فهرست بسته‌ها و شهر/بازه هم جدولی شدند؛ نرخ‌های هتل همان جدول انتخاب/ویرایش
+هستند. ۶ تست Web، typecheck، lint و build ۴۸مسیره موفق‌اند؛ Web3200/API4200
+پاسخ ۲۰۰ دارند. آزمون کلیک در مرورگر واردشدهٔ Codex به دلیل محدودیت مهارت
+Computer Use به تأیید بصری مالک محصول واگذار است؛ ۳۱۰۰ و Sales تغییر نکردند.
+
+## 2026-09-15 — PACKAGE-PRICING-001 Finance ticket bridge and tour publications (isolated 3200)
+
+The owner-approved `origin/develop` merge was committed on the PC-A task
+branch only; PR #278 still targets `develop` and is not merged. A real Ticket
+offer now creates an amount-free, FK-linked Procurement purchase request;
+Finance records immutable adult/child purchase-cost revisions, invoice and
+payment evidence directly. Only a fully PAID cost is exposed through Finance's
+public projection to Sales; a partial payment or a legacy catalog estimate is
+not treated as confirmed. `/sales/pricing` reads the same tour, Reservations'
+hotel purchase batch and Finance paid flight rates, saves versioned drafts by
+tour/batch and publishes 18 independent hotel/room prices in the synthetic
+three-hotel example after maker/checker and currency/capacity/source recheck.
+The known occupancy codes have final package sale and net profit after
+commission; family remains hotel-only until occupancy is defined. A new
+synthetic offer produced a NEW Finance request without amount, a full synthetic
+Finance payment released its cost, draft version 1→2 reopened, self-publication
+returned 403, and a second synthetic reviewer published version 1. Two
+additive migrations succeeded in a fresh 67-migration isolated PG rehearsal
+and on the separate 3200 preview DB. Web3200/API4200 responded 200;
+Web3100, shared data, `develop` and `main` remain untouched. Browser visual QA
+was unavailable due the Windows sandbox ACL helper; component/API tests and
+production builds are the available evidence. Cross-currency FX, Sales
+contract quote selection and unknown family occupancy remain follow-ups.
+
+Final isolated smoke after rebuilt Web3200/API4200: 200 login/health,
+67/67 migrations up to date, one saved publication with 18 room prices,
+the same offer ID on an idempotent retry, and the original Web3100 listener
+unchanged. API/Web lint, typecheck, focused tests and production builds pass.
+Scoped implementation commit `e9f91e6f` released the reserved PC-A migration,
+central-doc and shared-contract locks; PR #278 remains a draft review, unmerged.
+
+The older preview-only entry below records the earlier stage, not the current
+publication status.
+
+## 2026-09-15 — PACKAGE-PRICING-001 tour-cost Sales preview (not published)
+
+The /sales/pricing page is now a real Sales sidebar child and tour-cost
+workspace instead of the old mostly-empty tab layout. It reads existing tour
+departures through Ticket Catalog's public service and hotel broker purchase
+rates through Reservations' public projection, scoped to branch/date/hotel.
+Separate hotel/room stay-sale previews respond to fixed/percent increase or
+decrease; commission is a net-margin expense, not a sale uplift. The isolated
+Web3200/API4200/PostgreSQL demo has one synthetic five-night tour and three
+hotel rates; authenticated tour/cost endpoints returned 200. Web3100 and
+operational data were not changed. Publication/durable Sales drafts remain
+incomplete: the owner requires Ticket-definition purchase requests priced and
+paid by Finance, but current TicketPublishedOffer has no purchase fare and
+Finance inbox has no pre-sale Ticket source. Package price publication stays
+disabled instead of inventing a flight cost or net profit. Browser visual QA
+was unavailable because its sandbox helper failed; API/live route, component
+tests and builds are the available checks. See docs/tasks/PACKAGE-PRICING-001.md
+and ADR-PACKAGE-FLIGHT-FINANCE-COST-0915.
+
+## 2026-09-15 — PACKAGE-PRICING-001 — PC-A — ISOLATED WEB3200 PREVIEW
+
+- گزارش کاربر از نبود بخش مدیریت قیمت در UI درست بود: route /sales/pricing وجود داشت اما داشبورد Sales هیچ ورودی نمایانی به آن نداشت. CTA «مدیریت قیمت و پکیج‌ها» به سرصفحه قراردادها افزوده شد؛ ساختار ۱۷ آیتم منوی اصلی حفظ شد.
+- نسخه جدید Web3200 build شد: ۹ تست Sales/Pricing، lint و typecheck موفق؛ با session واقعی آزمایشی، داشبورد Sales و صفحه Pricing هر دو ۲۰۰ هستند و href دکمه در HTML زنده دیده می‌شود. بازبینی بصری در مرورگر همچنان با مالک محصول است.
+- Web3200 به API4200 و PostgreSQL آزمایشی مستقل متصل است؛ Web3100/API مشترک و داده عملیاتی دست‌نخورده‌اند.
+- تداخل route بازه نرخ هتل با wildcard اطلاعات پایه رفع شد. شهر تهران و سه هتل synthetic در Grid قابل دریافت‌اند؛ بازه پنج‌شبه با دو هتل منتخب ذخیره و از نسخه ۱ به ۲ ویرایش شد و نرخ اصلاح‌شده ۱۳۰ بازخوانی شد.
+- مسیر صفحه و login در Web3200 و health API4200 پاسخ ۲۰۰ می‌دهند. تأیید بصری مرورگر از داخل ابزار به علت reset مکرر آن ممکن نشد؛ بازبینی ظاهر و تصمیم انتقال به 3100 با مالک محصول است.
+
+## 2026-09-14 — PACKAGE-PRICING-001 — PC-A — IMPLEMENTED / PARTIAL UPSTREAM BLOCKED
+
+- زیر‌بخش `/sales/pricing` بدون آیتم مستقل منوی اصلی به Sales افزوده شد. Preview و قیمت‌های synthetic قبلی حذف شدند و UI هشت‌برگه از API واقعی، branch scope و permissionهای مستقل استفاده می‌کند.
+- قرارداد نسخه‌دار، ۱۳ مدل Package Pricing، Migration افزایشی، موتور Decimal، نسخه قیمت immutable، maker/checker، quote، render request واقعی با `AWAITING_RENDERER`، توقف فروش، قالب نسخه‌دار و Audit پیاده‌سازی شده‌اند.
+- Follow-up قیمت هتل تکمیل شد: در `/master-data/accommodation/hotel-rates` شهر و بازه اقامت انتخاب می‌شود، شب‌ها محاسبه و همه هتل‌های فعال همان شهر در Grid اکسل‌مانند با تیک حضور در تور، مبلغ پایه و ضرایب قابل ویرایش نمایش داده می‌شوند. هر Save یک نسخه immutable می‌سازد و بازه بعداً قابل بازکردن و اصلاح است.
+- Public Contract نسخه‌دار نرخ پایه هتل از Master Data به Package Pricing متصل شد؛ مبلغ و ضرایب snapshot می‌شوند و reference قدیمی یا خارج از شعبه fail-closed است. blocker هتل رفع شد، اما تولید Price Version ترکیبی همچنان تا producer نرخ/ظرفیت بلیت در Ticket Catalog fail-closed است؛ Renderer نیز در `AWAITING_RENDERER` می‌ماند.
+- جزئیات، endpointها، validation و handoff در [PACKAGE-PRICING-001](tasks/PACKAGE-PRICING-001.md) ثبت شده است.
+
 ## 2026-09-16 — اتصال‌های عملیاتی غیررزرواسیونی خرید — PC-B — READY_FOR_REVIEW
 
 Procurement اکنون سیاست تأیید نسخه‌دار Settings، projection پایدار وظایف، کارتابل Finance برای تأیید/برگشت/پرداخت مرحله‌ای فاکتور و اصلاح مالی مرجوعی را دارد. سفارش صادرشده در outbox امن تأمین‌کننده با HMAC، idempotency، replay guard و retry ثبت می‌شود و تا هنگام معرفی URL و Secret بیرونی، ارسال واقعی ندارد. اتصال Reservations بنا به درخواست مالک خارج از این واحد کار است. Migration افزایشی policy، task، revision مالی و inbox تأمین‌کننده را ایجاد می‌کند و جدول قدیمی حساب تسویه را به‌صورت idempotent جبران می‌کند. ۳۰ تست یکپارچه Procurement، ۲۱ تست API هدفمند، Prisma validate/generate، lint/typecheck و build Contracts/Database/API موفق بوده‌اند. Migration روی runtime محلی نیز با backup پیشین با موفقیت اعمال شد. Branch: `codex/pc-b-procurement-live-integration`.
-
 ## 2026-09-16 — RESERVATION-SECTION-EDIT-AGE-BANDS-0916 — PC-A — READY_FOR_REVIEW
 
 پنجره «ویرایش» رزواسیون اکنون در تب‌های طرف قرارداد، پرواز، هتل، سایر و مسافران ورودی‌های قابل‌ویرایش همان بخش را نشان می‌دهد و هر ثبت یک نسخهٔ مستقل از فرم رزواسیون می‌سازد. تب هتل تاریخ ورود/خروج، مشخصات هتل، سرویس، نوع اتاق و تعداد اتاق‌ها را ویرایش می‌کند. در تب مسافران، ردهٔ بلیط ADL/CHD/INF از ردهٔ کودک هتل جداست؛ برای هر کودک انتخاب‌شده تعیین «۲ تا ۶» یا «۶ تا ۱۲» اجباری است و همین مقدار در PDF ارسالی کارگزار و خروجی قرارداد چاپ می‌شود. مشاهدهٔ قرارداد در رزواسیون اکنون همان خروجی HTML فروش را نمایش می‌دهد و امکان چاپ یا ذخیره PDF دارد؛ بنابراین اختلال موتور PDF سروری مانع مشاهدهٔ قرارداد نیست.
@@ -2723,6 +2855,7 @@ The Web Reporting adapter now preserves all existing Travel projection measures 
 تمام ستون‌های قابل‌نمایش جدول نتیجه Reports، شامل ابعاد، ارز، تعداد سفارش/مسافر/بلیت و مبالغ فروش، خرید، سود ناخالص، استرداد و مانده تسویه، اکنون فلش مرتب‌سازی سرستون دارند و Sort پیش از Pagination در API اجرا می‌شود. ماژول Backend گزارش با endpointهای Preview، Workspace و CSV/XLSX/PDF به Runtime نهایی افزوده شد. ۴۸ fact واقعی‌نمای قبلی از fixture ignored خارج از Worktree، به‌صورت idempotent فقط در PostgreSQL محلی وارد شدند؛ فایل داده، PII واقعی و Seed عمومی وارد Git نشده‌اند. Prisma validate/generate، API و Web typecheck و مجموعه کامل تست‌ها موفق‌اند؛ Web روی 3000 و API روی 4000 از Worktree canonical فعال‌اند.
 # وضعیت 2026-09-14 — اشتراک‌گذاری مستقیم گزارش‌ها
 
+- 2026-09-16 Package Pricing commission follow-up: drafts/publications now support percent or fixed commission with an explicit currency. Fixed commission is deducted once from the matching currency profit bucket and never changes sale; historical rows default to percent. Additive migration was applied only to isolated `rubi_pricing_flow_0916`. Tour demo 1 published version 3 with fixed EUR 15 while tour demo 2 remains percent.
 - دکمه اشتراک‌گذاری به فرم پیکربندی و عملیات «گزارش‌های من» اضافه شد؛ انتخاب گیرنده
   جست‌وجوپذیر و چندانتخابی است و بازخورد موفق/خطا دارد.
 - Backend فقط به مالک دارای `reporting.share` اجازه تغییر grant می‌دهد و گیرندگان را
@@ -2734,6 +2867,7 @@ The Web Reporting adapter now preserves all existing Travel projection measures 
   Web روی 3000 و API روی 4000 فعال و health هر دو برابر 200 است.
 # وضعیت دیتای دموی Dashboard و Reports — 2026-09-15
 
+- 2026-09-16 Package Pricing commission follow-up: drafts/publications now support percent or fixed commission with an explicit currency. Fixed commission is deducted once from the matching currency profit bucket and never changes sale; historical rows default to percent. Additive migration was applied only to isolated `rubi_pricing_flow_0916`. Tour demo 1 published version 3 with fixed EUR 15 while tour demo 2 remains percent.
 - Dashboard اکنون از Projection عمومی و نسخه‌دار `reporting.dashboard.travel.v1`
   استفاده می‌کند و KPIها و نمودارهای هر صفحه را از `reporting.travel.facts.v1`
   دریافت می‌کند.

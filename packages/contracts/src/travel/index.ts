@@ -36,15 +36,22 @@ export interface TicketCatalogPurchaseCreateV1 {
   version: 1;
   catalogProductReference: string;
   title: string;
-  serviceDate: string;
+  serviceDate?: string | null;
   supplierDisplaySnapshot: string | null;
-  amount: string;
-  currencyCode: string;
+  /** Legacy unconfirmed catalog estimate; new requests omit it for Finance pricing. */
+  amount?: string | null;
+  currencyCode?: string | null;
 }
 
 export interface TicketCatalogPurchaseV1 extends TicketCatalogPurchaseCreateV1 {
   id: string;
   branchId: string;
+  serviceDate: string | null;
+  amount: string | null;
+  currencyCode: string | null;
+  /** Real runtime offer linkage; null for legacy local catalog definitions. */
+  offerId: string | null;
+  offerVersion: number | null;
   requestVersion: number;
   status: 'PENDING' | 'PAID' | 'CANCELLED';
   createdByUserId: string;
