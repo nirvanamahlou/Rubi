@@ -223,6 +223,7 @@ export interface DashboardProjectionV1 {
         labels: readonly string[];
         values: readonly number[];
         currencyCode?: string;
+        currencySeries?: readonly DashboardVisualCurrencySeriesV1[];
         comparison?: DashboardComparisonV1;
         trend?: DashboardTrendV1;
       }
@@ -241,6 +242,16 @@ export interface DashboardComparisonV1 {
  * denominator and deliberately never represents an FX-converted total. */
 export interface DashboardCurrencyComparisonV1 extends DashboardComparisonV1 {
   currencyCode: string;
+}
+
+/** A monetary visual's values for exactly one source currency. This is an
+ * additive UI-selection contract and never an FX-converted aggregate. */
+export interface DashboardVisualCurrencySeriesV1 {
+  currencyCode: string;
+  labels: readonly string[];
+  values: readonly number[];
+  comparison?: DashboardComparisonV1;
+  trend?: DashboardTrendV1;
 }
 
 export interface DashboardTrendV1 {

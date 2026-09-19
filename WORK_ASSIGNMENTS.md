@@ -44,6 +44,12 @@
 
 # Work Assignments
 
+## DASHBOARD-VISUAL-CURRENCY-SELECTOR-0919 — PC-C — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-19: برای هر نمودار مبلغ‌محور Dashboard، dropdown مستقل انتخاب واحد پول نمایش یابد و فقط همان نمودار را از دادهٔ تأییدشدهٔ همان ارز بدون FX تغییر دهد.
+- `COMPUTER_ID=PC-C`؛ ادامهٔ شاخهٔ `codex/pc-c-dashboard-reporting-latest` از `origin/develop@acc35d18`. محدودهٔ رزروشده: قرارداد افزایشی Projection Dashboard و producer آن در Reporting، مصرف‌کننده و تست‌های Dashboard Web/API و اسناد وضعیت. هر سری ارز شامل labels/values/comparison/trend همان ارز است؛ UI حق جمع یا تبدیل بین ارزها ندارد. بدون Migration، Schema، دادهٔ عملیاتی/دمو، Permission، Dependency یا Lockfile.
+- نتیجه: `currencySeries` افزایشی برای visualهای پولی منتشر شد و هر card نمودار dropdown مستقل واحد پول دارد؛ انتخاب محلی فقط labels/values/comparison/trend همان ارز را render می‌کند. برای نمودارهای شمارشی، صف و قیف که مبلغ در خروجی ندارند انتخاب‌گر نمایش داده نمی‌شود. ۶ تست API و ۱۶ تست Web، lint/typecheck API/Web و build تولیدی هر دو سرویس موفق‌اند؛ Web3000 و API4000 پاسخ HTTP ۲۰۰ دارند.
+
 ## DASHBOARD-TREND-PLOT-BOUNDS-0919 — PC-C — READY_FOR_REVIEW
 
 - درخواست مالک در 2026-09-19: حاشیهٔ چپ نمودار روند کاهش یابد و آخرین برچسب محور زمان، از جمله ماهی مانند «شهریور 1405»، داخل کادر قابل مشاهده بماند.

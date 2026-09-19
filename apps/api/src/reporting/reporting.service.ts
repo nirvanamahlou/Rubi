@@ -644,30 +644,64 @@ export class ReportingService {
       'crm-followup-queue',
       'executive-exceptions',
     ]);
-    // Charts represent one currency only. An unselected currency uses IRR in
-    // the local fixture; unlike KPIs, numeric marks cannot combine IRR and USD.
+    // Every monetary chart has one default currency plus separate source-currency
+    // series for its local selector; numeric marks never combine IRR and USD.
     const visualCurrency =
       input.currency ?? (currencies.includes('IRR') ? 'IRR' : currencies[0]!);
     const visualFacts = facts.filter(
       (fact) => fact.currencyCode === visualCurrency,
     );
-    const previousVisualFacts = (previousFacts ?? []).filter(
-      (fact) => fact.currencyCode === visualCurrency,
-    );
     const visualAmount = (rows: typeof facts) =>
       sum(rows, (fact) => Number(fact.salesAmount));
+    const monetaryVisualFor = (id: string, currencyCode: string) => {
+      const currencyFacts = facts.filter(
+        (fact) => fact.currencyCode === currencyCode,
+      );
+      const previousCurrencyFacts = (previousFacts ?? []).filter(
+        (fact) => fact.currencyCode === currencyCode,
+      );
+      if (trendVisualIds.has(id)) {
+        const trend = trendFor(currencyFacts, visualAmount);
+        return {
+          labels: trend.labels,
+          values: trend.values,
+          currencyCode,
+        };
+      }
+      const field = visualFields[id];
+      if (!field) return undefined;
+      const entries = by(field, currencyFacts);
+      return {
+        labels: entries.map(([label]) => label),
+        values: entries.map(([, value]) => Math.round(value)),
+        currencyCode,
+        ...(previousFacts
+          ? {
+              comparison: comparisonFor(
+                visualAmount(currencyFacts),
+                visualAmount(previousCurrencyFacts),
+              ),
+              trend: trendFor(currencyFacts, visualAmount),
+            }
+          : {}),
+      };
+    };
     const visuals = Object.fromEntries(
       visualIds.flatMap<[string, DashboardProjectionV1['visuals'][string]]>(
         (id) => {
-          if (trendVisualIds.has(id)) {
-            const trend = trendFor(visualFacts, visualAmount);
+          if (trendVisualIds.has(id) || visualFields[id]) {
+            const selectedCurrencyVisual = monetaryVisualFor(id, visualCurrency);
+            if (!selectedCurrencyVisual) return [];
+            const currencySeries = currencies.flatMap((currencyCode) => {
+              const series = monetaryVisualFor(id, currencyCode);
+              return series ? [series] : [];
+            });
             return [
               [
                 id,
                 {
-                  labels: trend.labels,
-                  values: trend.values,
-                  currencyCode: visualCurrency,
+                  ...selectedCurrencyVisual,
+                  currencySeries,
                 },
               ],
             ];
@@ -740,28 +774,7 @@ export class ReportingService {
               ],
             ];
           }
-          const field = visualFields[id];
-          if (!field) return [];
-          const entries = by(field, visualFacts);
-          return [
-            [
-              id,
-              {
-                labels: entries.map(([label]) => label),
-                values: entries.map(([, value]) => Math.round(value)),
-                currencyCode: visualCurrency,
-                ...(previousFacts
-                  ? {
-                      comparison: comparisonFor(
-                        visualAmount(visualFacts),
-                        visualAmount(previousVisualFacts),
-                      ),
-                      trend: trendFor(visualFacts, visualAmount),
-                    }
-                  : {}),
-              },
-            ],
-          ];
+          return [];
         },
       ),
     );

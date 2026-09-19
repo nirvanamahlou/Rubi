@@ -47,6 +47,23 @@ export interface DashboardMetricSnapshot {
   trend?: DashboardTrendSnapshot;
 }
 
+export interface DashboardVisualCurrencySeriesSnapshot {
+  currencyCode: string;
+  labels: readonly string[];
+  values: readonly number[];
+  comparison?: DashboardComparisonSnapshot;
+  trend?: DashboardTrendSnapshot;
+}
+
+export interface DashboardVisualSnapshot {
+  labels: readonly string[];
+  values: readonly number[];
+  currencyCode?: string;
+  currencySeries?: readonly DashboardVisualCurrencySeriesSnapshot[];
+  comparison?: DashboardComparisonSnapshot;
+  trend?: DashboardTrendSnapshot;
+}
+
 export interface DashboardFilterOptions {
   salesChannel: readonly string[];
   branch: readonly string[];
@@ -65,16 +82,7 @@ export interface DashboardProjectionSnapshot {
   filterOptions?: DashboardFilterOptions;
   metrics: Readonly<Record<string, DashboardMetricSnapshot>>;
   visuals: Readonly<
-    Record<
-      string,
-      {
-        labels: readonly string[];
-        values: readonly number[];
-        currencyCode?: string;
-        comparison?: DashboardComparisonSnapshot;
-        trend?: DashboardTrendSnapshot;
-      }
-    >
+    Record<string, DashboardVisualSnapshot>
   >;
 }
 

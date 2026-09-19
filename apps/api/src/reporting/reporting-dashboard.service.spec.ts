@@ -203,6 +203,17 @@ describe('dashboard travel projection date boundaries', () => {
     expect(result.visuals['executive-sales-by-service']?.values).toEqual([
       12_000_000,
     ]);
+    expect(
+      result.visuals['executive-sales-by-service']?.currencySeries,
+    ).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          currencyCode: 'IRR',
+          values: [12_000_000],
+        }),
+        expect.objectContaining({ currencyCode: 'USD', values: [100] }),
+      ]),
+    );
   });
 
   it('publishes trend, action queue, decision funnel and team comparison from the approved fact projection', async () => {

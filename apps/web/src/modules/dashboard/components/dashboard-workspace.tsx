@@ -87,6 +87,7 @@ import {
   type DashboardFilterOptions,
   type DashboardMetricSnapshot,
   type DashboardTrendSnapshot,
+  type DashboardVisualSnapshot,
 } from '../model/projection-client';
 import {
   dashboardDateRangeError,
@@ -2678,18 +2679,24 @@ function ProjectionSlot({
   range: DashboardRange;
   trendCalendarSystem: TrendCalendarSystem;
   wide?: boolean;
-  data?:
-    | {
-        labels: readonly string[];
-        values: readonly number[];
-        currencyCode?: string;
-        comparison?: DashboardComparisonSnapshot;
-        trend?: DashboardTrendSnapshot;
-      }
-    | undefined;
+  data?: DashboardVisualSnapshot | undefined;
 }) {
-  const resolvedKind = data?.values.length
-    ? dashboardVisualKindForData(kind, data.values)
+  const [selectedCurrencyCode, setSelectedCurrencyCode] = useState<
+    string | undefined
+  >();
+  const currencySeries = data?.currencySeries ?? [];
+  const activeCurrencyCode = currencySeries.some(
+    (series) => series.currencyCode === selectedCurrencyCode,
+  )
+    ? selectedCurrencyCode
+    : (data?.currencyCode ?? currencySeries[0]?.currencyCode);
+  const displayData = activeCurrencyCode
+    ? (currencySeries.find(
+        (series) => series.currencyCode === activeCurrencyCode,
+      ) ?? data)
+    : data;
+  const resolvedKind = displayData?.values.length
+    ? dashboardVisualKindForData(kind, displayData.values)
     : kind;
   const isEmployeeComparison =
     visualId.startsWith('employee-') &&
@@ -2727,6 +2734,36 @@ function ProjectionSlot({
           <Badge className="bg-blue-50 text-[10px] text-blue-700 dark:bg-blue-950/50 dark:text-blue-200">
             {visualLabel}
           </Badge>
+          {currencySeries.length ? (
+            <Select
+              value={activeCurrencyCode ?? currencySeries[0]?.currencyCode ?? ''}
+              onValueChange={setSelectedCurrencyCode}
+            >
+              <SelectTrigger
+                aria-label={`واحد پول نمودار ${title}`}
+                className="h-7 min-w-28 border-border/80 bg-background px-2 text-[10px] font-bold"
+                data-dashboard-visual-currency-selector
+              >
+                <CircleDollarSign aria-hidden="true" className="size-3.5" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {currencySeries.map((series) => {
+                  const symbol = currencySymbols[series.currencyCode] ??
+                    series.currencyCode;
+                  return (
+                    <SelectItem
+                      className="data-[highlighted]:bg-primary data-[highlighted]:text-primary-foreground"
+                      key={series.currencyCode}
+                      value={series.currencyCode}
+                    >
+                      <bdi dir="ltr">{`${symbol} ${series.currencyCode}`}</bdi>
+                    </SelectItem>
+                  );
+                })}
+              </SelectContent>
+            </Select>
+          ) : null}
           {resolvedKind === 'line' ? (
             <Select
               value={trendCalendarSystem}
@@ -2757,33 +2794,33 @@ function ProjectionSlot({
         </div>
       </div>
       <div className="relative flex-1 p-3.5">
-        {data?.currencyCode ? (
+        {displayData?.currencyCode ? (
           <span className="mb-2 block text-[11px] font-semibold text-muted-foreground">
-            مبلغ فروش · <bdi dir="ltr">{data.currencyCode}</bdi>
+            مبلغ فروش · <bdi dir="ltr">{displayData.currencyCode}</bdi>
           </span>
         ) : null}
-        {data?.values.length ? (
+        {displayData?.values.length ? (
           isEmployeeComparison ? (
             <EmployeePerformanceBars
-              labels={data.labels}
+              labels={displayData.labels}
               title={title}
-              values={data.values}
+              values={displayData.values}
             />
           ) : resolvedKind === 'table' || resolvedKind === 'queue' ? (
             <OperationalDataTable
               kind={resolvedKind}
-              labels={data.labels}
+              labels={displayData.labels}
               title={title}
-              values={data.values}
+              values={displayData.values}
             />
           ) : (
             <DashboardChart
               kind={kind}
-              labels={data.labels}
+              labels={displayData.labels}
               range={range}
               title={title}
               trendCalendarSystem={trendCalendarSystem}
-              values={data.values}
+              values={displayData.values}
             />
           )
         ) : (
@@ -2792,7 +2829,7 @@ function ProjectionSlot({
             <p className="sr-only">دادهٔ تأییدشده برای نمایش موجود نیست</p>
           </>
         )}
-        {data?.values.length ? (
+        {displayData?.values.length ? (
           <>
             {kind === 'donut' && resolvedKind !== 'donut' ? (
               <p className="mt-2 text-[11px] text-muted-foreground">
@@ -2802,17 +2839,17 @@ function ProjectionSlot({
             ) : null}
             {resolvedKind === 'table' || resolvedKind === 'queue' ? null : (
               <VisualDataSummary
-                labels={data.labels}
+                labels={displayData.labels}
                 title={title}
                 trend={
                   resolvedKind === 'line'
                     ? {
                         calendarSystem: trendCalendarSystem,
-                        grain: trendTemporalGrain(range, data.labels),
+                        grain: trendTemporalGrain(range, displayData.labels),
                       }
                     : undefined
                 }
-                values={data.values}
+                values={displayData.values}
               />
             )}
           </>
