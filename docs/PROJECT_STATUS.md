@@ -44,6 +44,20 @@
 پنل عملیات قرارداد در رزواسیون اکنون زیر بخش جدول قرار دارد و دکمه‌ها در دسکتاپ به‌صورت چهارستونه نمایش داده می‌شوند. صفحه‌بندی از فهرست حذف شد؛ تمام قراردادهای بازه در یک جدول اسکرول‌پذیر با ارتفاع نزدیک هفت ردیف قابل انتخاب‌اند. اگر کاربر بازهٔ تاریخ تعیین نکند، فهرست از تاریخ قرارداد فقط سه ماه تقویمی اخیر را نمایش می‌دهد؛ با انتخاب هر بازهٔ تاریخ، همان بازه بدون محدودیت پیش‌فرض اجرا می‌شود. ۲۱ تست هدفمند، lint، typecheck و build تولیدی Web موفق‌اند. Migration، دادهٔ عملیاتی و Runtime مشترک تغییری نکردند.
 # وضعیت پروژه
 
+## 2026-09-19 — DASHBOARD-TREND-SPARKLINE-AXIS-0919 — READY_FOR_REVIEW
+
+Sparklineهای KPI Card بدون marker نقطه‌ای، با خط و سایهٔ گرادیانی باقی مانده‌اند.
+نشان تغییر KPI اکنون آیکون جهت و درصد خواناتر دارد: رشد سبز، افت قرمز و ثبات آبی؛
+این نشان همچنان از بازهٔ هم‌طول قبل در Projection تأییدشده محاسبه می‌شود. نمودارهای
+روند اصلی عنوان‌های محور را ندارند، gutter مقدار در چپِ canvas جدا شده و نمودار در
+عرض کامل canvas رسم می‌شود. نمایش محور زمان برای امروز ساعتی، هفته/ماه روزانه، فصل
+هفتگی و سال ماهانه است؛ testهای calendar فاصلهٔ واقعی هر bucket را تأیید می‌کنند.
+
+۱۰ تست هدفمند API و ۱۶ تست Web، lint و typecheck API/Web و build تولیدی Web موفق
+هستند. Migration، Schema، Permission، Dependency/Lockfile و داده‌های
+دمو/عملیاتی تغییر نکرده‌اند. Web روی `localhost:3000` و API روی ۴۰۰۰ با پاسخ HTTP
+۲۰۰ فعال‌اند.
+
 - 2026-09-16 Package Pricing commission follow-up: drafts/publications now support percent or fixed commission with an explicit currency. Fixed commission is deducted once from the matching currency profit bucket and never changes sale; historical rows default to percent. Additive migration was applied only to isolated `rubi_pricing_flow_0916`. Tour demo 1 published version 3 with fixed EUR 15 while tour demo 2 remains percent.
 ## 2026-09-16 — TOUR-HOTEL-PRICING-FLOW-0916 — MERGED WITH DEVELOP / VERIFIED LOCALLY
 

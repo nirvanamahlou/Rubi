@@ -670,8 +670,9 @@ function compactChartValue(value: number) {
 
 function trendAxisLabel(
   value: string,
-  pointCount: number,
   calendarSystem: TrendCalendarSystem,
+  showHour: boolean,
+  showMonthOnly: boolean,
 ) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
@@ -682,7 +683,11 @@ function trendAxisLabel(
     {
       timeZone: 'Asia/Tehran',
       month: 'short',
-      ...(pointCount === 12 ? {} : { day: 'numeric' }),
+      ...(showHour
+        ? { hour: '2-digit', hourCycle: 'h23' }
+        : showMonthOnly
+          ? {}
+          : { day: 'numeric' }),
     },
   ).format(date);
 }
@@ -1047,12 +1052,10 @@ function Metric({
   compact = false,
   currency = false,
   metric,
-  role = 'diagnostic',
 }: {
   compact?: boolean;
   currency?: boolean;
   metric?: DashboardMetricSnapshot | undefined;
-  role?: DashboardKpiRole;
 }) {
   const currencyValues = currency && metric ? metric.value.split(' · ') : null;
   const comparisonFor = (index: number) => {
@@ -1099,7 +1102,6 @@ function Metric({
                     comparison={comparison}
                     unavailable={comparisonUnavailable}
                     currencyCode={currencyCode}
-                    role={role}
                   />
                 ) : null}
                 <bdi
@@ -1127,7 +1129,6 @@ function Metric({
             {metric ? (
               <GrowthIndicator
                 comparison={metric.comparison}
-                role={role}
                 unavailable={!metric.comparison}
               />
             ) : null}
@@ -1308,16 +1309,6 @@ function MiniTrend({
                 strokeLinejoin="round"
                 strokeWidth="2.5"
               />
-              {points.map(({ x, y }, index) => (
-                <circle
-                  aria-hidden="true"
-                  cx={x}
-                  cy={y}
-                  fill={color}
-                  key={`${currencyCode}-${x}-${y}-${index}`}
-                  r="1.8"
-                />
-              ))}
             </g>
           );
         })}
@@ -1354,22 +1345,14 @@ function MiniTrend({
 function GrowthIndicator({
   comparison,
   currencyCode,
-  role = 'diagnostic',
   unavailable = false,
 }: {
   comparison?: DashboardComparisonSnapshot | undefined;
   currencyCode?: string | undefined;
-  role?: DashboardKpiRole;
   unavailable?: boolean;
 }) {
   const hasComparison = Boolean(comparison);
   const direction = comparison?.direction ?? 'flat';
-  const favorable =
-    role === 'diagnostic' || direction === 'flat'
-      ? null
-      : role === 'guardrail'
-        ? direction === 'down'
-        : direction === 'up';
   const Icon =
     direction === 'up'
       ? ArrowUpRight
@@ -1379,19 +1362,19 @@ function GrowthIndicator({
   const value =
     comparison?.deltaPercent === null || !hasComparison
       ? '—'
-      : `${direction === 'up' ? '+' : direction === 'down' ? '−' : ''}${Math.abs(
-          comparison!.deltaPercent,
-        ).toLocaleString('en-US', { maximumFractionDigits: 1 })}%`;
+      : `${Math.abs(comparison!.deltaPercent).toLocaleString('en-US', {
+          maximumFractionDigits: 1,
+        })}%`;
 
   return (
     <span
       className={cn(
-        'inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-1 text-[10px] font-black tabular-nums',
-        favorable === true &&
+        'inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-black tabular-nums shadow-sm',
+        direction === 'up' &&
           'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/45 dark:text-emerald-200',
-        favorable === false &&
+        direction === 'down' &&
           'bg-rose-50 text-rose-700 dark:bg-rose-950/45 dark:text-rose-200',
-        favorable === null &&
+        direction === 'flat' &&
           'bg-blue-50 text-blue-700 dark:bg-blue-950/45 dark:text-blue-200',
       )}
       title={`${currencyCode ? `${currencyNames[currencyCode] ?? currencyCode} · ` : ''}${comparison?.label ?? 'دوره قبل هم‌طول'} · ${
@@ -1402,8 +1385,8 @@ function GrowthIndicator({
             : `مقدار قبلی ${formatDashboardNumber(comparison!.previousValue)}`
       }`}
     >
-      <Icon aria-hidden="true" className="size-3.5" />
-      <span>{value}</span>
+      <Icon aria-hidden="true" className="size-4" strokeWidth={2.5} />
+      <span dir="ltr">{value}</span>
     </span>
   );
 }
@@ -1472,7 +1455,6 @@ function KpiCard({
           compact
           currency={definition.currency === 'required'}
           metric={metric}
-          role={definition.role}
         />
       </span>
       {metric ? (
@@ -2093,12 +2075,14 @@ function EmployeePerformanceBars({
 function DashboardChart({
   kind,
   labels,
+  range,
   title,
   trendCalendarSystem,
   values,
 }: {
   kind: DashboardVisualKind;
   labels: readonly string[];
+  range: DashboardRange;
   title: string;
   trendCalendarSystem: TrendCalendarSystem;
   values: readonly number[];
@@ -2114,10 +2098,10 @@ function DashboardChart({
     .join('، ');
 
   if (resolvedKind === 'line') {
-    const chartLeft = 88;
-    const chartRight = 602;
-    const chartTop = 20;
-    const chartBottom = 142;
+    const chartLeft = 126;
+    const chartRight = 976;
+    const chartTop = 18;
+    const chartBottom = 140;
     const pointFor = (value: number, index: number, totalPoints: number) => ({
       x:
         totalPoints > 1
@@ -2137,24 +2121,32 @@ function DashboardChart({
         (index) =>
           index % visibleLabelStep === 0 || index === labels.length - 1,
       );
-    const calendarLabel = trendCalendarSystem === 'persian' ? 'شمسی' : 'میلادی';
+    const firstInterval =
+      labels.length > 1
+        ? new Date(labels[1] ?? '').getTime() - new Date(labels[0] ?? '').getTime()
+        : Number.NaN;
+    const showHour =
+      range === 'today' ||
+      (range === 'custom' &&
+        Number.isFinite(firstInterval) &&
+        firstInterval <= 60 * 60 * 1000);
+    const showMonthOnly =
+      range === 'year' ||
+      (range === 'custom' &&
+        Number.isFinite(firstInterval) &&
+        firstInterval >= 25 * 24 * 60 * 60 * 1000);
     return (
       <figure
         aria-label={`${visualLabels[resolvedKind]} ${title}. بازه انتخاب‌شده: ${accessibleSummary}`}
         className="rounded-xl border border-border/80 bg-background px-2 py-3 sm:px-3"
         role="img"
       >
-        <svg aria-hidden="true" className="h-56 w-full" viewBox="0 0 640 214">
-          <text
-            className="fill-muted-foreground"
-            fontSize="10"
-            textAnchor="middle"
-            transform="rotate(-90 18 82)"
-            x="18"
-            y="82"
-          >
-            مقدار
-          </text>
+        <svg
+          aria-hidden="true"
+          className="h-52 w-full"
+          preserveAspectRatio="none"
+          viewBox="0 0 1000 180"
+        >
           {[0, 1, 2, 3, 4].map((index) => {
             const y = chartTop + (index * (chartBottom - chartTop)) / 4;
             const value = maximum * (1 - index / 4);
@@ -2174,7 +2166,7 @@ function DashboardChart({
                   className="fill-muted-foreground"
                   fontSize="10"
                   textAnchor="end"
-                  x={chartLeft - 12}
+                  x={chartLeft - 38}
                   y={y + 3}
                 >
                   {compactChartValue(value)}
@@ -2205,25 +2197,17 @@ function DashboardChart({
                 key={`${labels[index]}-${index}`}
                 textAnchor="middle"
                 x={point.x}
-                y="166"
+                y="162"
               >
                 {trendAxisLabel(
                   labels[index] ?? '',
-                  labels.length,
                   trendCalendarSystem,
+                  showHour,
+                  showMonthOnly,
                 )}
               </text>
             );
           })}
-          <text
-            className="fill-muted-foreground"
-            fontSize="10"
-            textAnchor="middle"
-            x={(chartLeft + chartRight) / 2}
-            y="200"
-          >
-            {`تاریخ (${calendarLabel})`}
-          </text>
         </svg>
         <figcaption className="sr-only">{accessibleSummary}</figcaption>
       </figure>
@@ -2583,6 +2567,7 @@ function ProjectionSlot({
   drilldown,
   onOpenReportConfiguration,
   onTrendCalendarSystemChange,
+  range,
   trendCalendarSystem,
   wide = false,
   data,
@@ -2595,6 +2580,7 @@ function ProjectionSlot({
   drilldown: string;
   onOpenReportConfiguration(reportCode: string): void;
   onTrendCalendarSystemChange(value: TrendCalendarSystem): void;
+  range: DashboardRange;
   trendCalendarSystem: TrendCalendarSystem;
   wide?: boolean;
   data?:
@@ -2699,6 +2685,7 @@ function ProjectionSlot({
             <DashboardChart
               kind={kind}
               labels={data.labels}
+              range={range}
               title={title}
               trendCalendarSystem={trendCalendarSystem}
               values={data.values}
@@ -3463,6 +3450,7 @@ export function DashboardWorkspace() {
                       drilldown={visualization.drilldown}
                       onOpenReportConfiguration={openReportConfiguration}
                       onTrendCalendarSystemChange={setTrendCalendarSystem}
+                      range={filters.range}
                       trendCalendarSystem={trendCalendarSystem}
                       data={query.data?.visuals[visualization.id]}
                     />

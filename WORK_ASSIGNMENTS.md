@@ -44,6 +44,12 @@
 
 # Work Assignments
 
+## DASHBOARD-TREND-SPARKLINE-AXIS-0919 — PC-C — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-19: Sparklineهای KPI Card بدون نقطهٔ زمانی نمایش یابند و تگ رشد/افت نسبت به بازهٔ هم‌طول قبل با آیکون و درصد خوانا در کنار مقدار KPI باشد. نمودارهای روندِ اصلی عنوان محور نداشته باشند، از عرض کامل canvas استفاده کنند و برچسب‌های مقدار در gutter چپ قرار بگیرند. grain زمانی نیز برای امروز/هفته/ماه/فصل/سال به‌ترتیب ساعت/روز/روز/هفته/ماه باقی بماند و در محور زمان منعکس شود.
+- `COMPUTER_ID=PC-C`؛ ادامهٔ شاخهٔ `codex/pc-c-dashboard-reporting-latest` از `origin/develop@acc35d18`. محدودهٔ رزروشده: dashboard renderer و تست‌های Web، calendar bucketهای Reporting و تست‌های هدفمند و اسناد وضعیت. بدون Migration، Schema، دادهٔ عملیاتی/دمو، Permission، Dependency یا Lockfile.
+- نتیجه: markerهای Sparkline حذف شدند؛ تگ رشد/افت با آیکون جهت، درصد انگلیسی و رنگ مستقیم رشد/افت/ثبات خواناتر شد. خط روند اصلی تمام canvas را با `preserveAspectRatio="none"` مصرف می‌کند، labels مقدار در gutter چپ هستند و عنوان محور ندارد. ساعتِ امروز با `Intl` در `Asia/Tehran` نمایش داده می‌شود و تست ۱۰ رفتار bucket ساعت/روز/هفته/ماه را پوشش می‌دهد. ۱۶ تست Web، lint/typecheck API/Web، build تولیدی Web و healthcheck Web3000/API4000 موفق‌اند.
+
 ## DASHBOARD-TREND-AXIS-CALENDAR-0919 — PC-C — READY_FOR_REVIEW
 
 - درخواست مالک در 2026-09-19: سری «دورهٔ قبل هم‌طول» از نمودارهای روند Dashboard حذف شود؛ محورهای نمودار با gutter مستقل و برچسب‌های بدون تداخل نمایش یابند؛ انتخاب واحد پول بلافاصله پس از بازهٔ زمانی در پنل فیلتر قرار بگیرد؛ و برای برچسب‌های زمانی نمودار روند، انتخاب تقویم شمسی/میلادی در خود نمودار فراهم شود.

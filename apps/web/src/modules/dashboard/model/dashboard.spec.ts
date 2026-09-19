@@ -552,6 +552,7 @@ describe('dashboard permission and data states', () => {
     expect(source).toContain('compactCurrencyTypography');
     expect(source).toContain('compactChartValue');
     expect(source).toContain('trendAxisLabel');
+    expect(source).toContain('showHour');
     expect(source).toContain('trendCalendarOptions');
     expect(source).toContain('تقویم برچسب‌های محور زمان');
     expect(source).toContain("key) => key === 'currency'");
@@ -560,6 +561,9 @@ describe('dashboard permission and data states', () => {
     );
     expect(source).not.toContain('strokeDasharray="5 6"');
     expect(source).toContain('strokeDasharray="2 5"');
+    expect(source).toContain('preserveAspectRatio="none"');
+    expect(source).not.toContain('تاریخ (${calendarLabel})');
+    expect(source).not.toContain('transform="rotate(-90 18 82)"');
     expect(source).toContain('formatDashboardNumber');
     expect(source).toContain('latinizeDashboardNumericText');
     expect(source).toContain("Intl.NumberFormat('en-US'");
