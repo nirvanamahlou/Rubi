@@ -3511,7 +3511,7 @@ function DashboardSidebar({
                           key={value}
                           value={value}
                         >
-                          {label}
+                          <span className="block w-full text-end">{label}</span>
                         </SelectItem>
                       ))}
                     </SelectContent>
