@@ -3060,3 +3060,9 @@ Permission، دادهٔ عملیاتی و Dependency/Lockfile تغییر نکر�
 فهرست، مقدارهایی مانند «امروز»، «این هفته» و «این ماه» در سمت راست کادر نمایش
 داده شوند. تست Dashboard، lint، typecheck و build تولیدی Web موفق‌اند و Web/API
 روی پورت‌های ۳۰۰۰/۴۰۰۰ پاسخ ۲۰۰ دارند.
+
+## 2026-09-19 — Sales/Ticket Catalog source synchronization (PC-A, in progress)
+
+Ticket Management local-only definitions and Sales offer selection are being unified on the existing Ticket Catalog public source. No schema, migration, dependency lock, operational data, or direct cross-module table access is in scope.
+
+Result: Ticket Management now publishes new flight definitions to the existing Ticket Catalog offer source before closing the form, and exposes the branch-scoped published offer list used by Sales contracts. Round-trip and repetition publish independent flight offers. Focused Web (1) and API (3) tests, lint, Prettier and API/Web typecheck passed. No migration, dependency lock, or operational data changed.

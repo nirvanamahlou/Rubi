@@ -27,6 +27,9 @@ class TicketOffersController {
   constructor(
     @Inject(TicketPublicService) private readonly service: TicketPublicService,
   ) {}
+  @Get('management') managed(@Req() req: AuthenticatedRequest) {
+    return this.service.managed(req.actor);
+  }
   @Get() search(
     @Query() query: TicketOfferSearchV1,
     @Req() req: AuthenticatedRequest,
