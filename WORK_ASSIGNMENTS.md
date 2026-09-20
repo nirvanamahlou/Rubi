@@ -1,3 +1,10 @@
+## LOGIN-STATIC-BACKGROUND-0920 — PC-A — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-20: نوشته و طرح ابری `NOORA` از صفحهٔ ورود حذف شود و همان تصویر هواپیما/آسمان به‌صورت پس‌زمینهٔ ثابت باقی بماند. `COMPUTER_ID=PC-A`؛ شاخهٔ مستقل `codex/pc-a-login-brand-cleanup-0920` از `origin/develop@f139266d`.
+- محدودهٔ رزروشده: فقط `apps/web/src/app/login/login-background-story.tsx`، CSS و تست متمرکز همان پس‌زمینه و ثبت محدود وضعیت. فایل تصویری `login-airline-b2.png` بدون تغییر می‌ماند؛ API، احراز هویت، فرم ورود، Schema/Migration، Permission، Dependency/Lockfile، داده و runtime پورت 3100 تغییر نمی‌کنند.
+- بررسی مالکیت: کار قبلی `BRAND-NORA-001` با وضعیت `COMPLETE / VERIFIED` ثبت شده و قفل فعال دیگری برای فایل‌های هدف یافت نشد. رزرو محدود Central Docs این slice با `PC-A/LOGIN-STATIC-BACKGROUND-0920` است.
+- نتیجه: لایه‌های `NOORA`، ابر، باد و انیمیشن ورود حذف شدند و `login-airline-b2.png` بدون تغییر به‌صورت پس‌زمینهٔ ثابت با همان crop واکنش‌گرا و overlay قبلی باقی ماند. ۵ تست صفحه ورود، lint، typecheck و build تولیدی Web موفق‌اند؛ پورت 3100 تغییر نکرد. رزرو محدود Central Docs این slice `RELEASED` است.
+
 ## HOTEL-RATE-ROOM-CAPACITY-0920 — PC-A — READY_FOR_REVIEW
 
 - درخواست مالک در 2026-09-20: نرخ هر هتل باید برای نوع‌های اتاق واقعی آن ثبت شود؛ هر نوع اتاق ضریب و ظرفیت مستقل بزرگسال/کودک دارد، نبود ضریب یعنی اتاق قابل فروش نیست و قرارداد نباید از ظرفیت ثبت‌شده عبور کند. افزودن نوع اتاق از همین جریان فقط با Permissionهای اطلاعات پایه مجاز است.
