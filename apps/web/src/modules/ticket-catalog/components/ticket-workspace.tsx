@@ -127,6 +127,25 @@ function flightOfferInput(
     totalCapacity: definition.totalCapacity,
   };
 }
+export function planCatalogPublication(
+  items: readonly Product[],
+  references: readonly Reference[],
+) {
+  const problems: string[] = [];
+  const publishable = items.flatMap((product) => {
+    if (product.id.startsWith('sample-ticket-')) return [];
+    try {
+      const input = flightOfferInput(product.definition, references);
+      return input ? [{ product, input }] : [];
+    } catch (error) {
+      problems.push(
+        `${product.definition.title}: ${error instanceof Error ? error.message : 'اطلاعات ناقص است.'}`,
+      );
+      return [];
+    }
+  });
+  return { publishable, problems };
+}
 export function TicketWorkspace() {
   return (
     <>
@@ -293,27 +312,32 @@ function TicketCatalogWorkspace() {
     items: readonly Product[],
     itemReferences: readonly Reference[],
   ) => {
-    const publishable = items
-      .map((product) => ({
-        product,
-        input: flightOfferInput(product.definition, itemReferences),
-      }))
-      .filter(
-        (item): item is { product: Product; input: TicketOfferCreateV1 } =>
-          Boolean(item.input),
-      );
-    if (!publishable.length) return;
+    const { publishable, problems } = planCatalogPublication(
+      items,
+      itemReferences,
+    );
+    if (!publishable.length) {
+      if (problems.length) setPublishedProblem(problems.join('؛ '));
+      return;
+    }
     const base = getPublicApiBaseUrl();
     if (!base) throw new Error('نشانی سرور تنظیم نشده است.');
     const session = await refreshAuthenticatedSession(base);
     const branchId = session?.user.branches[0]?.id;
     if (!branchId) throw new Error('شعبه مجاز برای ثبت بلیط پیدا نشد.');
-    await Promise.all(
+    const outcomes = await Promise.allSettled(
       publishable.map(({ product, input }) =>
         toursApi.publishOffer(input, branchId, `ticket-catalog:${product.id}`),
       ),
     );
     await refreshPublishedOffers();
+    outcomes.forEach((result, index) => {
+      if (result.status === 'rejected')
+        problems.push(
+          `${publishable[index]!.product.definition.title}: ${result.reason instanceof Error ? result.reason.message : 'ثبت ناموفق بود.'}`,
+        );
+    });
+    if (problems.length) setPublishedProblem(problems.join('؛ '));
   };
 
   useEffect(() => {
@@ -413,6 +437,11 @@ function TicketCatalogWorkspace() {
       }
     }
     if (!current) await publishFlights(inputs);
+    else
+      await publishExistingFlights(
+        updated.filter((product) => product.id === current.id),
+        references,
+      );
     setProducts(updated);
     setForm(null);
     setProblem('');
