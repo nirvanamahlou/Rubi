@@ -20,6 +20,8 @@ import type {
   FinanceSettlementAccountCreateV1,
   FinanceSettlementAccountV1,
   FinanceSupplierPaymentCommandV1,
+  FinanceCustomerDocumentDeliveryCandidateV1,
+  FinanceCustomerDocumentDeliveryCommandV1,
   HrConnectionStatus,
 } from '@nora/contracts';
 
@@ -430,6 +432,40 @@ export class FinanceInboxService {
     };
   }
 
+  async customerDocumentDeliveryQueue(
+    contractNumber: string | undefined,
+    actor: AuthenticatedActor,
+  ): Promise<readonly FinanceCustomerDocumentDeliveryCandidateV1[]> {
+    if (!actor.permissions.includes('finance.financial_release.read'))
+      throw new ForbiddenException('مجوز مشاهده مجوز تحویل مدارک وجود ندارد.');
+    const candidates =
+      await this.sales.financeCustomerDocumentDeliveryCandidates(
+        actor,
+        contractNumber,
+      );
+    return Promise.all(
+      candidates.map(async (candidate) => ({
+        ...candidate,
+        delivery: await this.delivery.readCustomerContract(
+          candidate.contractId,
+        ),
+      })),
+    );
+  }
+
+  async decideCustomerDocumentDelivery(
+    contractId: string,
+    input: FinanceCustomerDocumentDeliveryCommandV1,
+    actor: AuthenticatedActor,
+  ) {
+    if (!actor.permissions.includes('finance.financial_release.approve'))
+      throw new ForbiddenException('مجوز صدور تحویل مدارک وجود ندارد.');
+    const facts = await this.sales.financeCustomerDocumentDeliveryFacts(
+      contractId,
+      actor.branchIds,
+    );
+    return this.delivery.updateCustomerContract(input, facts, actor);
+  }
   async decideReceipt(
     paymentId: string,
     input: FinanceReceiptDecisionCommandV1,
@@ -482,7 +518,29 @@ export class FinanceInboxService {
       });
       if (result === 'not-found')
         throw new NotFoundException('پرداخت یافت نشد.');
-      return { status: 'RECEIPT_CONFIRMED' as const };
+      let documentDelivery = null;
+      if (input.documentDelivery?.approved) {
+        const current = await this.delivery.readCustomerContract(
+          input.contractId,
+        );
+        const facts = await this.sales.financeCustomerDocumentDeliveryFacts(
+          input.contractId,
+          actor.branchIds,
+        );
+        documentDelivery = await this.delivery.updateCustomerContract(
+          {
+            ...input.documentDelivery,
+            expectedVersion:
+              input.documentDelivery.expectedVersion ?? current.version,
+          },
+          facts,
+          actor,
+        );
+      }
+      return {
+        status: 'RECEIPT_CONFIRMED' as const,
+        ...(documentDelivery ? { documentDelivery } : {}),
+      };
     }
     const result = await this.sales.applyFinancePaymentCorrection({
       contractId: input.contractId,
