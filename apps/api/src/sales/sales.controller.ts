@@ -54,7 +54,7 @@ export class SalesController {
   ) {
     await this.service.detail(id, req.actor);
     const intake = await this.travel.forContract(id, req.actor.branchIds);
-    const authorization = await this.delivery.read(intake.id);
+    const authorization = await this.delivery.readCustomerContract(id);
     if (
       !authorization.approved ||
       intake.workflow.supplierStatus === 'CANCELLED'

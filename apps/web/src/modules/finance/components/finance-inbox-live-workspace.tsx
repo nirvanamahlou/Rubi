@@ -27,6 +27,7 @@ import type {
   FinanceRequestStatus,
   FinanceSettlementAccountKind,
   FinanceSettlementAccountV1,
+  FinanceCustomerDocumentDeliveryBasisV1,
 } from '@nora/contracts';
 
 import { Button } from '@/components/ui/button';
@@ -131,6 +132,15 @@ export function FinanceInboxLiveWorkspace() {
   const [actionBusy, setActionBusy] = useState(false);
   const [actionError, setActionError] = useState('');
   const [reason, setReason] = useState('');
+  const [issueDocumentDelivery, setIssueDocumentDelivery] = useState(false);
+  const [documentDeliveryBasis, setDocumentDeliveryBasis] =
+    useState<FinanceCustomerDocumentDeliveryBasisV1>('AFTER_RECEIPT');
+  const [documentDeliveryReason, setDocumentDeliveryReason] =
+    useState('تأیید دریافت مشتری');
+  const [documentDeliverySecondApprover, setDocumentDeliverySecondApprover] =
+    useState('');
+  const [documentDeliveryExpiresAt, setDocumentDeliveryExpiresAt] =
+    useState('');
   const [accountId, setAccountId] = useState('');
   const [paymentMethodId, setPaymentMethodId] = useState('');
   const [paidAmount, setPaidAmount] = useState('');
@@ -298,6 +308,11 @@ export function FinanceInboxLiveWorkspace() {
     setActionKind(kind);
     setAccountId(kind === 'APPROVE' ? (eligibleAccounts[0]?.id ?? '') : '');
     setReason('');
+    setIssueDocumentDelivery(false);
+    setDocumentDeliveryBasis('AFTER_RECEIPT');
+    setDocumentDeliveryReason('تأیید دریافت مشتری');
+    setDocumentDeliverySecondApprover('');
+    setDocumentDeliveryExpiresAt('');
     setActionError('');
   }
 
@@ -384,6 +399,25 @@ export function FinanceInboxLiveWorkspace() {
           action: actionKind,
           accountId: actionKind === 'APPROVE' ? accountId : null,
           reason: reason.trim() || null,
+          ...(actionKind === 'APPROVE' && issueDocumentDelivery
+            ? {
+                documentDelivery: {
+                  approved: true,
+                  basis: documentDeliveryBasis,
+                  reason: documentDeliveryReason.trim(),
+                  secondApproverReference:
+                    documentDeliveryBasis === 'MANAGER_EXCEPTION'
+                      ? documentDeliverySecondApprover.trim() || null
+                      : null,
+                  exceptionExpiresAt:
+                    documentDeliveryBasis === 'MANAGER_EXCEPTION'
+                      ? documentDeliveryExpiresAt
+                        ? new Date(documentDeliveryExpiresAt).toISOString()
+                        : null
+                      : null,
+                },
+              }
+            : {}),
         });
       }
       setActionItem(null);
@@ -1139,6 +1173,98 @@ export function FinanceInboxLiveWorkspace() {
                   تعریف حساب جدید
                 </Button>
               </label>
+            ) : null}
+            {actionKind === 'APPROVE' ? (
+              <div className="grid gap-3 rounded-2xl border border-blue-200 bg-blue-50/60 p-3 dark:border-blue-900 dark:bg-blue-950/20">
+                <label className="flex cursor-pointer items-start gap-3 text-sm font-bold">
+                  <input
+                    className="mt-1 size-4 accent-primary"
+                    type="checkbox"
+                    checked={issueDocumentDelivery}
+                    onChange={(event) =>
+                      setIssueDocumentDelivery(event.target.checked)
+                    }
+                  />
+                  <span>
+                    هم‌زمان مجوز تحویل مدارک به مشتری صادر شود
+                    <small className="mt-1 block font-normal leading-5 text-muted-foreground">
+                      این مجوز مستقل از خرید کارگزار و رزرواسیون است.
+                    </small>
+                  </span>
+                </label>
+                {issueDocumentDelivery ? (
+                  <>
+                    <label className="grid gap-2">
+                      <span>مبنای مجوز تحویل مدارک</span>
+                      <Select
+                        value={documentDeliveryBasis}
+                        onValueChange={(value) =>
+                          setDocumentDeliveryBasis(
+                            value as FinanceCustomerDocumentDeliveryBasisV1,
+                          )
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="AFTER_RECEIPT">
+                            پس از تأیید همین دریافت مشتری
+                          </SelectItem>
+                          <SelectItem value="FULL_SETTLEMENT">
+                            فقط در صورت تسویه کامل قرارداد
+                          </SelectItem>
+                          <SelectItem value="MANAGER_EXCEPTION">
+                            استثنای مدیر
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </label>
+                    {documentDeliveryBasis === 'MANAGER_EXCEPTION' ? (
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <label className="grid gap-2">
+                          <span>شناسه تأییدکننده دوم</span>
+                          <Input
+                            required
+                            dir="ltr"
+                            placeholder="UUID"
+                            value={documentDeliverySecondApprover}
+                            onChange={(event) =>
+                              setDocumentDeliverySecondApprover(
+                                event.target.value,
+                              )
+                            }
+                          />
+                        </label>
+                        <label className="grid gap-2">
+                          <span>انقضای استثنا (UTC)</span>
+                          <DatePicker
+                            required
+                            withinDialog
+                            includeTime
+                            defaultCalendarSystem="gregorian"
+                            gregorianEnglish
+                            value={documentDeliveryExpiresAt}
+                            onChange={setDocumentDeliveryExpiresAt}
+                            aria-label="تاریخ و ساعت انقضای استثنا"
+                          />
+                        </label>
+                      </div>
+                    ) : null}
+                    <label className="grid gap-2">
+                      <span>دلیل مجوز در Audit</span>
+                      <Input
+                        required
+                        maxLength={500}
+                        value={documentDeliveryReason}
+                        onChange={(event) =>
+                          setDocumentDeliveryReason(event.target.value)
+                        }
+                      />
+                    </label>
+                  </>
+                ) : null}
+              </div>
             ) : null}
             <label className="grid gap-2">
               <span>

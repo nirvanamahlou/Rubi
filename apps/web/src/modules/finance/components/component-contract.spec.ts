@@ -187,18 +187,20 @@ describe('finance workspace component contract', () => {
     expect(coreSource).toContain('<FinanceWorkspace />');
   });
 
-  it('presents supplier settlement and document delivery as two clear steps', () => {
+  it('keeps customer document delivery independent from supplier purchases', () => {
     expect(deliveryPanelSource).toContain('کنترل مالی قرارداد');
-    expect(deliveryPanelSource).toContain('۱. پرداخت خدمات به کارگزاران');
-    expect(deliveryPanelSource).toContain('۲. مجوز تحویل مدارک به فروش');
-    expect(deliveryPanelSource).toContain('وضعیت پرداخت هر خدمت این قرارداد');
-    expect(deliveryPanelSource).toContain('این مرحله هنوز فعال نیست');
+    expect(deliveryPanelSource).toContain('مجوز تحویل مدارک به مشتری');
+    expect(deliveryPanelSource).toContain('AFTER_RECEIPT');
+    expect(deliveryPanelSource).toContain('FULL_SETTLEMENT');
+    expect(deliveryPanelSource).toContain('MANAGER_EXCEPTION');
+    expect(deliveryPanelSource).toContain('بخشی یا همهٔ شماره');
+    expect(deliveryPanelSource).toContain('شرط تحویل مدارک نیستند');
     expect(deliveryPanelSource).toContain('صدور مجوز تحویل مدارک');
-    expect(deliveryPanelSource).toContain('void load()');
-    expect(deliveryPanelSource).toContain('savePayment');
-    expect(deliveryPanelSource).toContain('updateDelivery');
+    expect(deliveryPanelSource).not.toContain(
+      'وضعیت پرداخت هر خدمت این قرارداد',
+    );
+    expect(deliveryPanelSource).not.toContain('savePayment');
   });
-
   it('covers dashboard, filters, internal navigation and all preview states', () => {
     expect(componentSource).toContain('جست‌وجوی سراسری مالی');
     expect(componentSource).toContain('گروه‌های داخلی مالی');

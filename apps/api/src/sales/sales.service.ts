@@ -24,6 +24,7 @@ import type {
   SalesPaymentCreateRequest,
   SalesReservationRequestV1,
   SalesFinanceInboxPaymentV1,
+  FinanceCustomerDocumentDeliveryCandidateV1,
 } from '@nora/contracts';
 import type { Prisma } from '@nora/database';
 
@@ -437,6 +438,54 @@ export class SalesService {
     };
   }
 
+  async financeCustomerDocumentDeliveryCandidates(
+    actor: AuthenticatedActor,
+    contractNumber?: string,
+  ): Promise<
+    readonly Omit<FinanceCustomerDocumentDeliveryCandidateV1, 'delivery'>[]
+  > {
+    if (!has(actor, 'finance.read'))
+      throw new ForbiddenException({
+        code: 'FINANCE_INBOX_FORBIDDEN',
+        message: 'مجوز مشاهده کارتابل مالی وجود ندارد.',
+      });
+    if (
+      contractNumber !== undefined &&
+      (typeof contractNumber !== 'string' || contractNumber.length > 100)
+    )
+      throw new BadRequestException('جست‌وجوی شماره قرارداد معتبر نیست.');
+    const rows = await this.repository.customerDocumentDeliveryCandidates(
+      actor.branchIds,
+      contractNumber,
+    );
+    return rows.map((row) => ({
+      contractId: row.id,
+      contractNumber: row.contractNumber,
+      branchId: row.branchId,
+      customerNameSnapshot: row.customerNameSnapshot,
+      settlementStatus: row.settlementStatus,
+      hasConfirmedPayment: row.payments.length > 0,
+    }));
+  }
+
+  async financeCustomerDocumentDeliveryFacts(
+    contractId: string,
+    branchIds: readonly string[],
+  ) {
+    const row = await this.repository.financeCustomerDocumentDeliveryFacts(
+      contractId,
+      branchIds,
+    );
+    if (!row)
+      throw new NotFoundException('قرارداد در شعب مجاز برای مالی یافت نشد.');
+    return {
+      contractId: row.id,
+      branchId: row.branchId,
+      salesOwnerUserId: row.ownerUserId,
+      hasConfirmedPayment: row.payments.length > 0,
+      fullySettled: ['SETTLED', 'OVERPAID'].includes(row.settlementStatus),
+    };
+  }
   async financeInbox(
     actor: AuthenticatedActor,
   ): Promise<readonly SalesFinanceInboxPaymentV1[]> {
