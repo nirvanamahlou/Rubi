@@ -51,6 +51,7 @@ describe('TicketPublicService offer retry', () => {
         ...row,
         status: 'ACTIVE',
         capacityAllocations: [{ quantity: 1 }],
+        capacityHolds: [{ quantity: 1 }],
       },
     ]);
     const service = new TicketPublicService(
@@ -64,7 +65,7 @@ describe('TicketPublicService offer retry', () => {
       data: [
         expect.objectContaining({
           id: row.id,
-          remainingCapacity: 1,
+          remainingCapacity: 0,
           totalCapacity: 2,
         }),
       ],
