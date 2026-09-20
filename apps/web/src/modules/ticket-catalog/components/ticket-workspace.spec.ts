@@ -72,7 +72,7 @@ describe('ticket workspace entry points', () => {
     );
     expect(source).not.toContain("from './published-offers'");
     expect(source).toContain('managedOffers()');
-    expect(source).toContain('publishFlights(inputs)');
+    expect(source).toContain('publishFlights(inputs, createdIds)');
     expect(source).toContain('publishExistingFlights(');
     expect(source).toContain('`ticket-catalog:${product.id}`');
     expect(source).toContain('backfillStarted.current');

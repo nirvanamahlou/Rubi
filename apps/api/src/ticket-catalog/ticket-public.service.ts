@@ -141,7 +141,7 @@ export class TicketPublicService {
     this.require(actor, 'ticket_catalog.manage');
     await this.pauseExpiredOffers(actor);
     const rows = await this.database.client.ticketPublishedOffer.findMany({
-      where: { branchId: { in: actor.branchIds } },
+      where: { branchId: { in: actor.branchIds }, status: { not: 'ARCHIVED' } },
       include: {
         capacityAllocations: {
           where: { status: 'ACTIVE' },
@@ -275,6 +275,121 @@ export class TicketPublicService {
     // A failed public-producer call makes this command retriable with the same key.
     await this.purchases.ensureOfferPurchaseRequest(row);
     return { data: { id: row.id, version: row.version } };
+  }
+
+  async archiveExpired(
+    id: string,
+    expectedVersion: number,
+    actor: AuthenticatedActor,
+  ) {
+    this.require(actor, 'ticket_catalog.manage');
+    if (
+      uuid.validate(id).error ||
+      !Number.isSafeInteger(expectedVersion) ||
+      expectedVersion < 1
+    )
+      throw new BadRequestException('شناسه یا نسخه بلیط معتبر نیست.');
+    return this.database.client.$transaction(async (tx) => {
+      const updated = await tx.ticketPublishedOffer.updateMany({
+        where: {
+          id,
+          branchId: { in: actor.branchIds },
+          version: expectedVersion,
+          status: { not: 'ARCHIVED' },
+          departureAt: { lte: new Date() },
+        },
+        data: { status: 'ARCHIVED', version: { increment: 1 } },
+      });
+      if (updated.count !== 1)
+        throw new ConflictException(
+          'فقط بلیط تاریخ‌گذشتهٔ مجاز و بدون تغییر هم‌زمان قابل حذف است.',
+        );
+      await tx.ticketOfferAudit.create({
+        data: {
+          offerId: id,
+          actorUserId: actor.userId,
+          action: 'ticket.offer.archived',
+          version: expectedVersion + 1,
+        },
+      });
+      return { data: { id } };
+    });
+  }
+
+  async revise(
+    id: string,
+    input: { expectedVersion: number; offer: TicketOfferCreateV1 },
+    actor: AuthenticatedActor,
+  ) {
+    this.require(actor, 'ticket_catalog.manage');
+    if (
+      !input ||
+      !Number.isSafeInteger(input.expectedVersion) ||
+      input.expectedVersion < 1 ||
+      uuid.validate(id).error
+    )
+      throw new BadRequestException('شناسه یا نسخه بلیط معتبر نیست.');
+    const value = validateTicketOffer(input.offer);
+    return this.database.client.$transaction(async (tx) => {
+      await tx.$queryRaw(
+        Prisma.sql`SELECT "id" FROM "TicketPublishedOffer" WHERE "id" = ${id}::uuid FOR UPDATE`,
+      );
+      const row = await tx.ticketPublishedOffer.findFirst({
+        where: { id, branchId: { in: actor.branchIds } },
+        include: {
+          capacityAllocations: { where: { status: 'ACTIVE' } },
+          capacityHolds: {
+            where: { status: 'ACTIVE', expiresAt: { gt: new Date() } },
+          },
+          tourOutboundDepartures: { select: { id: true } },
+          tourReturnDepartures: { select: { id: true } },
+          audit: {
+            orderBy: { occurredAt: 'desc' },
+            take: 1,
+            select: { action: true },
+          },
+        },
+      });
+      if (!row) throw new ForbiddenException('بلیط در شعبه مجاز شما نیست.');
+      if (row.version !== input.expectedVersion)
+        throw new ConflictException('بلیط تغییر کرده؛ فهرست را تازه کنید.');
+      if (
+        row.capacityAllocations.length ||
+        row.capacityHolds.length ||
+        row.tourOutboundDepartures.length ||
+        row.tourReturnDepartures.length
+      )
+        throw new ConflictException(
+          'بلیط به قرارداد، رزرو ظرفیت یا تور متصل است؛ ابتدا وابستگی آن را تعیین تکلیف کنید.',
+        );
+      const updated = await tx.ticketPublishedOffer.update({
+        where: { id },
+        data: {
+          ...value,
+          departureAt: new Date(value.departureAt),
+          arrivalAt: new Date(value.arrivalAt),
+          fingerprint: createHash('sha256')
+            .update(JSON.stringify({ branchId: row.branchId, ...value }))
+            .digest('hex'),
+          version: { increment: 1 },
+          ...(new Date(value.departureAt) > new Date() &&
+          (row.status === 'EXPIRED' ||
+            (row.status === 'PAUSED' &&
+              row.audit[0]?.action === 'ticket.offer.expired'))
+            ? { status: 'ACTIVE' }
+            : {}),
+        },
+      });
+      await tx.ticketOfferAudit.create({
+        data: {
+          offerId: id,
+          actorUserId: actor.userId,
+          action: 'ticket.offer.revised',
+          version: updated.version,
+        },
+      });
+      return { data: { id, version: updated.version } };
+    });
   }
 
   /** Public module service; caller supplies the contract's authorized branch. This is revalidation, not a capacity hold. */
