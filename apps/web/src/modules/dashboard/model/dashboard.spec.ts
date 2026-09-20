@@ -135,6 +135,12 @@ describe('dashboard registry', () => {
         'customers-by-acquisition-channel',
       ]),
     );
+    expect(
+      dashboardKpis.find((kpi) => kpi.id === 'customer-destination-demand'),
+    ).toMatchObject({
+      title: 'سفارش‌های دارای مقصد',
+      rule: expect.stringContaining('سفارش‌های یکتای معتبر دارای مقصد'),
+    });
     expect(customerGrowth?.visualizations.map((item) => item.id)).toEqual(
       expect.arrayContaining([
         'customer-interest-distribution',

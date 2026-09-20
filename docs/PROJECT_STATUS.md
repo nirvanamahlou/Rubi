@@ -3156,3 +3156,11 @@ Migration، Permission، دادهٔ عملیاتی و runtime محلی تغیی�
 فعال، lineage فیچرها، محدودیت‌ها و اقدام گزارش مرتبط باقی مانده‌اند. ۱۸ تست مدل
 Dashboard موفق و یک تست قدیمی عمداً غیرفعال است؛ TypeScript Web نیز موفق است. API،
 Schema، Migration، Permission، دادهٔ عملیاتی و runtime محلی تغییر نکردند.
+## 2026-09-20 — DASHBOARD-DESTINATION-ORDER-KPI-ALIGNMENT-0920 — READY_FOR_REVIEW
+
+KPI «مقصدهای مورد تقاضای مشتریان» با خروجی واقعی خود هم‌راستا شد و عنوان آن به
+«سفارش‌های دارای مقصد» تغییر یافت. Backend اکنون فقط سفارش‌های معتبر دارای مقصد را
+به‌صورت یکتا می‌شمارد (`orderNumber` و در نبود آن شناسهٔ fact)؛ بنابراین سطرهای متعدد
+یک سفارش، مقدار KPI، مقایسه و روند آن را تکراری افزایش نمی‌دهند. تست هدفمند API ۷/۷،
+تست Web ۱۸/۱۸ با یک skip موجود و typecheck API/Web موفق‌اند. Schema، Migration، دادهٔ
+عملیاتی، Dependency و Lockfile تغییری نکرده‌اند.

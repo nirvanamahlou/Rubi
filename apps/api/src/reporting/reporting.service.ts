@@ -508,7 +508,11 @@ export class ReportingService {
             )
           : 0,
       'customer-destination-demand': (rows) =>
-        rows.filter((fact) => Boolean(fact.destinationCity)).length,
+        new Set(
+          rows
+            .filter((fact) => Boolean(fact.destinationCity))
+            .map((fact) => fact.orderNumber ?? fact.id),
+        ).size,
       // Employee activity is not present in the travel fact grain yet. Until
       // the employee-activity projection is wired, these measures use the
       // approved travel/order grain and explicitly count distinct orders (or
@@ -725,11 +729,13 @@ export class ReportingService {
                     : 'قلم',
                 detail: 'محاسبه از grain مصوب fact سفر؛ بدون جمع‌زدن مبلغ',
                 metricId: id,
-                aggregation: id.includes('conversion')
-                  ? 'distinct converted orders / distinct eligible orders × 100'
-                  : id.includes('cancellation')
-                    ? 'count distinct cancelled orders'
-                    : 'count distinct orders at approved fact grain',
+                aggregation: id === 'customer-destination-demand'
+                  ? 'count distinct valid orders with a destination'
+                  : id.includes('conversion')
+                    ? 'distinct converted orders / distinct eligible orders × 100'
+                    : id.includes('cancellation')
+                      ? 'count distinct cancelled orders'
+                      : 'count distinct orders at approved fact grain',
                 ...(previousFacts
                   ? {
                       comparison: comparisonFor(

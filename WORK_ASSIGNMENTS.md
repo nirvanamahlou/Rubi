@@ -3515,3 +3515,9 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 - Request: remove the “خروجی در بازهٔ انتخابی” section from every Dashboard visual-details drawer while retaining its auditable definition, display rule, feature lineage, constraints and related-report action.
 - Scope reserved: Dashboard visual-details renderer, focused Dashboard test, and task/status documentation. No API, Schema/Migration, data, permission, dependency or Reports-form change.
 - Result: the generic selected-range output heading and its range/type/currency/category badges are removed from every visual-details drawer. The display rule continues to state the approved projection and active-filter context. Dashboard model tests pass (18 passed, 1 intentionally skipped) and Web TypeScript passes.
+
+## DASHBOARD-DESTINATION-ORDER-KPI-ALIGNMENT-0920 — PC-C — READY_FOR_REVIEW
+
+- Request: align the customer-destination KPI implementation with its documented distinct-order rule and rename the card to accurately state the displayed output.
+- Scope reserved: Dashboard Reporting aggregation/test, Dashboard registry/test and task/status documentation. No Schema/Migration, operational data, permission, dependency or lockfile change.
+- Result: the card is renamed to «سفارش‌های دارای مقصد». Its output now counts each valid order with a known destination exactly once, using `orderNumber` (or the fact ID when absent), rather than counting every fact row. The same aggregation feeds the snapshot, comparison and trend data. API tests 7/7, Web tests 18/18 (one existing skip) and API/Web typechecks pass; no migration was created.

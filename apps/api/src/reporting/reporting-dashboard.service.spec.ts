@@ -94,6 +94,43 @@ describe('dashboard travel projection date boundaries', () => {
     expect(dashboardPersianDateParts(new Date(fromUtc)).day).toBe(1);
   });
 
+  it('counts distinct valid orders with a destination for the customer destination KPI', async () => {
+    const facts = vi.fn().mockResolvedValue([
+      { ...demoFact, id: 'destination-line-1', orderNumber: 'ORD-1' },
+      { ...demoFact, id: 'destination-line-2', orderNumber: 'ORD-1' },
+      {
+        ...demoFact,
+        id: 'destination-line-3',
+        orderNumber: 'ORD-2',
+        destinationCity: 'استانبول',
+      },
+      {
+        ...demoFact,
+        id: 'without-destination',
+        orderNumber: 'ORD-3',
+        destinationCity: null,
+      },
+    ]);
+    const service = new ReportingService({
+      facts,
+    } as unknown as ReportingRepository);
+
+    const result = await service.dashboardProjection(
+      {
+        from: '2026-09-01',
+        kpiIds: 'customer-destination-demand',
+        to: '2026-09-30',
+      },
+      actor,
+    );
+
+    expect(result.metrics['customer-destination-demand']).toMatchObject({
+      aggregation: 'count distinct valid orders with a destination',
+      unit: 'قلم',
+      value: '۲',
+    });
+  });
+
   it('computes KPI and chart growth from the immediately preceding equal-length period', async () => {
     const facts = vi
       .fn()
