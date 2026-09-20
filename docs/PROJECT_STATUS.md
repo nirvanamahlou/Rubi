@@ -3093,6 +3093,12 @@ Reservations از API عمومی Master Data برای تطبیق قالب و ا�
 خروجی PDF بلیط، فرم A4 بر اساس نمونه کاربر دارد: نام و لوگوی ایرلاین از رکورد فعال اطلاعات پایه و فایل مجاز Documents، لوگوی شرکت صادرکننده از سربرگ ثبت‌شده، مسیر و ساعت از داده پرواز قرارداد، و عنوان MR/MRS/CHD/INF از رده سن و جنسیت پرونده مسافر. نام لاتین گذرنامه بر نمایش اولویت دارد. هشدار حضور سه ساعت پیش از پرواز به انگلیسی و فارسی درج می‌شود. در نبود لوگوی ایرلاین، نام آن می‌آید و داده ناموجود بار مجاز/QR یا شماره رسمی بلیط ساخته نمی‌شود. خروجی نمونه با دو مسیر، یک صفحه A4 است؛ ۱۵ تست هدفمند، lint و typecheck Web موفق‌اند. PR #283 هنوز باز است و هنگام ادغام باید اشتراک route/model PDF بلیط با این تغییر بررسی شود. localhost یکپارچه تغییر نکرده است.
 - build تولیدی Web نیز با ۴۶ route موفق شد؛ خروجی نمونهٔ PDF با Chrome/Poppler یک صفحه A4 دارد. تغییر عمومی API/Database و جابه‌جایی localhost انجام نشد.
 پیگیری 2026-09-15: نام و کد شهر در هر مسیر رفت/برگشت روی سایهٔ روشن شهری قرار گرفتند. PDF واقعی با Chrome تولید و صفحهٔ A4 به تصویر رندر و بررسی شد.
+
+## 2026-09-19 — RESERVATION-SERVICE-PURCHASE-PICKER-0919 — PC-A — READY_FOR_REVIEW
+
+پنجرهٔ خرید رزرواسیون برای انتخاب خدمت هتل/ترانسفر، ثبت کارگزار و مبلغ/ارز و ارسال نسخهٔ خرید به کارتابل مالی در حال تکمیل است. این واحد از قرارداد عمومی موجود استفاده می‌کند و Migration یا دادهٔ عملیاتی ندارد.
+
+نتیجه: انتخاب خدمت هتل/ترانسفر، کارگزار، مبلغ و ارز به پنجرهٔ خرید افزوده شد. ثبت از قرارداد عمومی نسخه‌دار رزواسیون استفاده می‌کند و وضعیت پرداخت در Finance باقی می‌ماند. قراردادهای قدیمی دارای hotelSelection نیز قابل خرید هستند. تست هدفمند، lint، Prettier و typecheck API/Web موفق‌اند؛ Migration، dependency و دادهٔ عملیاتی تغییر نکرده است.
 ## 2026-09-19 — DASHBOARD-TREND-FILTER-UX-0919 — READY_FOR_REVIEW
 
 کادر انتخاب تقویم محور X نمودار روند از نظر ارتفاع و عرض کمی بزرگ‌تر شد تا آیکون
@@ -3112,3 +3118,9 @@ Permission، دادهٔ عملیاتی و Dependency/Lockfile تغییر نکر�
 Ticket Management local-only definitions and Sales offer selection are being unified on the existing Ticket Catalog public source. No schema, migration, dependency lock, operational data, or direct cross-module table access is in scope.
 
 Result: Ticket Management now publishes new flight definitions to the existing Ticket Catalog offer source before closing the form, and exposes the branch-scoped published offer list used by Sales contracts. Round-trip and repetition publish independent flight offers. Focused Web (1) and API (3) tests, lint, Prettier and API/Web typecheck passed. No migration, dependency lock, or operational data changed.
+
+## 2026-09-20 — انقضای خودکار و تکمیل نمایش بلیط قرارداد — READY_FOR_REVIEW
+
+PC-A روی شاخهٔ مستقل `codex/pc-a-ticket-expiry-sales-visibility-0920` منبع عمومی Ticket Catalog را اصلاح می‌کند تا پروازهای گذشته از وضعیت فعال خارج شوند و تعریف‌های معتبر چندقطعه‌ای مدیریت بلیط نیز به انتخاب قرارداد جدید برسند. دادهٔ نمونهٔ صرفاً مرورگری دیگر به‌عنوان بلیط واقعی مدیریت نمایش داده نمی‌شود. این واحد Schema/Migration، Dependency/Lockfile، دادهٔ عملیاتی و localhost را تغییر نمی‌دهد.
+
+پیاده‌سازی کامل است: انقضا به‌صورت `ACTIVE` → `PAUSED` همراه افزایش نسخه و Audit انجام می‌شود، جست‌وجوی فروش از لحظهٔ جاری عقب‌تر نمی‌رود، پرواز چندقطعه‌ای از اولین مبدأ تا آخرین مقصد در منبع مشترک منتشر می‌شود و کارت‌های نمونهٔ محلی از صفحهٔ عملیاتی حذف شدند. کارت‌های ذخیره‌شدهٔ منقضی هنگام بارگذاری متوقف و فهرست Backend هر دقیقه تازه می‌شود. ۲۳ تست هدفمند، lint، typecheck API/Web، build API و build تولیدی Web با ۵۰ route موفق‌اند؛ Webpack برای build این worktree استفاده شد چون Turbopack junction وابستگی بیرون از ریشهٔ worktree را رد می‌کند.

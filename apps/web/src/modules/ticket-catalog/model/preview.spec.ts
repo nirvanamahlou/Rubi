@@ -8,6 +8,7 @@ import {
   initialQuery,
   moveDefinitionToDate,
   parseCatalogSnapshot,
+  pauseExpiredCatalogProduct,
   previewSamples,
   queryProducts,
   repeatDefinition,
@@ -167,6 +168,27 @@ describe('Ticket catalog browser collection and query', () => {
     expect(activateCatalogSample(samples[0]!, '2026-09-02T00:00:00.000Z')).toBe(
       samples[0],
     );
+  });
+  it('automatically pauses an active ticket after its first departure', () => {
+    const active = {
+      ...samples[0]!,
+      status: 'active' as const,
+      version: 7,
+    };
+    const before = pauseExpiredCatalogProduct(
+      active,
+      '2026-08-31T00:00:00.000Z',
+    );
+    const after = pauseExpiredCatalogProduct(
+      active,
+      '2027-01-01T00:00:00.000Z',
+    );
+    expect(before).toBe(active);
+    expect(after).toMatchObject({ status: 'paused', version: 8 });
+    expect(after.history.at(-1)).toMatchObject({
+      action: 'paused',
+      actor: 'سیستم',
+    });
   });
   it('round-trips valid browser storage and rejects malformed data', () => {
     const raw = JSON.stringify({ products: samples, references: [] });

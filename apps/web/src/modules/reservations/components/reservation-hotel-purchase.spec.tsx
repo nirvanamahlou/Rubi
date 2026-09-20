@@ -86,6 +86,23 @@ it('keeps ticket purchases out of the Reservations broker form', () => {
     { clientKey: 'transfer', kind: 'TRANSFER', titleSnapshot: 'Transfer' },
   ] as unknown as ReservationIntakeV1['snapshot']['serviceSelections'];
   expect(
-    reservationPurchaseServices(services).map((service) => service.clientKey),
+    reservationPurchaseServices({
+      serviceSelections: services,
+      hotelSelection: null,
+    } as ReservationIntakeV1['snapshot']).map((service) => service.clientKey),
   ).toEqual(['hotel', 'transfer']);
+});
+
+it('offers a legacy hotel selection even when its old snapshot lacks services', () => {
+  expect(
+    reservationPurchaseServices({
+      serviceSelections: [],
+      hotelSelection: {
+        serviceClientKey: 'hotel-legacy',
+        hotelNameSnapshot: 'رویال وینگز',
+      },
+    } as unknown as ReservationIntakeV1['snapshot']).map(
+      (service) => service.clientKey,
+    ),
+  ).toEqual(['hotel-legacy']);
 });
