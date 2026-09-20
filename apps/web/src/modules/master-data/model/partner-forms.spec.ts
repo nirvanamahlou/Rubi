@@ -1,0 +1,117 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { describe, expect, it } from 'vitest';
+import { getMasterDataDefinition } from './catalog';
+import { getReferenceFieldConfig } from './reference-fields';
+import { validateMasterDataDraft } from './validation';
+
+describe('supplier and broker form coverage', () => {
+  it.each(['suppliers', 'brokers'] as const)(
+    'offers the intended identity, contact and service fields for %s',
+    (resource) => {
+      const fields = getMasterDataDefinition(resource).fields.map(
+        (field) => field.key,
+      );
+      expect(fields).toEqual(
+        expect.arrayContaining(['serviceCodes', 'collaborationStatus']),
+      );
+      if (resource === 'suppliers') {
+        expect(fields).toContain('name');
+        expect(fields).toEqual(
+          expect.arrayContaining(['address', 'primaryPhone']),
+        );
+        expect(fields).not.toContain('externalProviderReference');
+        expect(fields).not.toEqual(
+          expect.arrayContaining([
+            'englishName',
+            'countryId',
+            'cityId',
+            'organizationId',
+            'primaryContactId',
+          ]),
+        );
+      } else {
+        expect(fields).toEqual(
+          expect.arrayContaining([
+            'englishName',
+            'countryId',
+            'cityId',
+            'organizationId',
+            'primaryContactId',
+          ]),
+        );
+        expect(
+          getReferenceFieldConfig(resource, 'primaryContactId'),
+        ).toMatchObject({
+          target: 'organization-contacts',
+          scopeField: 'organizationId',
+          optional: true,
+        });
+      }
+      expect(fields).not.toEqual(
+        expect.arrayContaining(['purchaseLimit', 'contractStatus']),
+      );
+      if (resource === 'suppliers')
+        expect(
+          getReferenceFieldConfig(resource, 'primaryContactId'),
+        ).toBeUndefined();
+      expect(getReferenceFieldConfig(resource, 'serviceCodes')).toMatchObject({
+        target: 'travel-services',
+        multiple: true,
+        payload: 'code',
+      });
+      expect(
+        validateMasterDataDraft(resource, { englishName: 'x'.repeat(161) })
+          .errors.englishName,
+      ).toBeTruthy();
+    },
+  );
+  it('keeps natural/legal identity on the canonical organization', () => {
+    expect(
+      getMasterDataDefinition('organizations')
+        .fields.find((field) => field.key === 'personType')
+        ?.options?.map((option) => option.value),
+    ).toEqual(['NATURAL', 'LEGAL']);
+    expect(
+      validateMasterDataDraft('organizations', { personType: 'BROKER' }).errors
+        .personType,
+    ).toBeTruthy();
+  });
+  it('opens related editors as popups and resets dependent selection when organization changes', () => {
+    const source = readFileSync(
+      resolve(
+        process.cwd(),
+        'src/modules/master-data/components/master-data-live-form.tsx',
+      ),
+      'utf8',
+    );
+    expect(source).toContain('referenceForm');
+    expect(source).toContain("primaryContactId: ''");
+    expect(source).toContain('masterDataApi.persistWithLogo');
+    expect(source).toContain('existing: referenceForm.record');
+    expect(source).toContain('lockedFields');
+    expect(source).toContain("isPrimary: 'true'");
+    expect(source).toContain(
+      "getMasterDataDefinition('organization-contacts')",
+    );
+  });
+  it('renders English name, person type and masked primary contact in the popup/list', () => {
+    const source = readFileSync(
+      resolve(
+        process.cwd(),
+        'src/modules/master-data/components/master-data-suppliers-workspace.tsx',
+      ),
+      'utf8',
+    );
+    for (const field of [
+      'englishName',
+      'organizationPersonType',
+      'primaryContactName',
+      'primaryPhoneMasked',
+      'primaryEmailMasked',
+    ])
+      expect(source).toContain(field);
+    expect(source).not.toContain('/ BROKER');
+    expect(source).toContain('MasterDataProfileDialog');
+  });
+});

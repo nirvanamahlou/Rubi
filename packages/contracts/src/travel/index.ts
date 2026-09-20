@@ -1,0 +1,330 @@
+import type { SalesReservationRequestV1 } from '../sales';
+
+export const TRAVEL_RUNTIME_VERSION = 1 as const;
+
+/** Catalog owns published schedule and capacity; negotiated sale price belongs to Sales. */
+export interface TicketOfferV1 {
+  id: string;
+  version: number;
+  branchId: string;
+  originId: string;
+  destinationId: string;
+  departureAt: string;
+  arrivalAt: string;
+  carrierName: string;
+  serviceNumber: string;
+  cabinClassCode: 'ECONOMY' | 'BUSINESS' | 'FIRST';
+  totalCapacity: number;
+  remainingCapacity: number;
+  status: 'ACTIVE' | 'PAUSED';
+}
+
+export type TicketOfferCreateV1 = Omit<
+  TicketOfferV1,
+  'id' | 'version' | 'branchId' | 'remainingCapacity' | 'status'
+>;
+export interface TicketOfferSearchV1 {
+  originId: string;
+  destinationId: string;
+  departureFrom: string;
+  departureTo?: string;
+  cabinClassCode?: TicketOfferV1['cabinClassCode'];
+  page?: number;
+}
+
+export interface TicketCatalogPurchaseCreateV1 {
+  version: 1;
+  catalogProductReference: string;
+  title: string;
+  serviceDate?: string | null;
+  supplierDisplaySnapshot: string | null;
+  /** Legacy unconfirmed catalog estimate; new requests omit it for Finance pricing. */
+  amount?: string | null;
+  currencyCode?: string | null;
+}
+
+export interface TicketCatalogPurchaseV1 extends TicketCatalogPurchaseCreateV1 {
+  id: string;
+  branchId: string;
+  serviceDate: string | null;
+  amount: string | null;
+  currencyCode: string | null;
+  /** Real runtime offer linkage; null for legacy local catalog definitions. */
+  offerId: string | null;
+  offerVersion: number | null;
+  requestVersion: number;
+  status: 'PENDING' | 'PAID' | 'CANCELLED';
+  createdByUserId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ReservationArrangementV1 {
+  version: number;
+  roomCount: number;
+  singleRoomCount: number;
+  doubleRoomCount: number;
+  extraBedCount: number;
+  hotelGuestCustomerIds: readonly string[];
+  reason: string;
+  updatedAt: string;
+  updatedByUserId: string;
+}
+
+export interface ReservationArrangementUpdateV1 {
+  expectedVersion: number;
+  roomCount: number;
+  singleRoomCount: number;
+  doubleRoomCount: number;
+  extraBedCount: number;
+  hotelGuestCustomerIds: readonly string[];
+  reason: string;
+}
+
+export interface ReservationIntakeV1 {
+  contractEditVersion?: number;
+  purchaseVersion?: number;
+  hotelPurchases?: readonly ReservationHotelPurchaseV1[];
+  servicePurchases?: readonly ReservationServicePurchaseV1[];
+  id: string;
+  requestId: string;
+  contractId: string;
+  contractVersion: number;
+  branchId: string;
+  status: 'QUEUED';
+  receivedAt: string;
+  snapshot: SalesReservationRequestV1;
+  arrangement: ReservationArrangementV1 | null;
+}
+
+export interface ReservationManifestTicketTemplateV1 {
+  id: string;
+  name: string;
+  versionNumber: number;
+}
+
+export interface ReservationManifestTicketCardV1 {
+  offerId: string;
+  direction: 'OUTBOUND' | 'RETURN';
+  carrierName: string;
+  serviceNumber: string;
+  originName: string;
+  destinationName: string;
+  departureAt: string;
+  arrivalAt: string;
+  contractCount: number;
+  passengerCount: number;
+  template: ReservationManifestTicketTemplateV1 | null;
+  unavailableReason: string | null;
+}
+
+export interface ReservationManifestTicketListV1 {
+  data: readonly ReservationManifestTicketCardV1[];
+}
+
+export interface ReservationManifestTicketExportInputV1 {
+  fromDate: string;
+  toDate: string;
+  includePreviouslyExported?: boolean;
+}
+
+export interface ReservationServicePurchaseV1 {
+  id: string;
+  version: number;
+  serviceClientKey: string;
+  serviceKind: string;
+  serviceTitle: string;
+  supplierOrganizationId: string;
+  supplierName: string;
+  amount: string;
+  currencyCode: string;
+  actorUserId: string;
+  createdAt: string;
+  finance: {
+    version: number;
+    status: 'PENDING' | 'PARTIALLY_PAID' | 'PAID' | 'REJECTED';
+    bankId: string | null;
+    accountId: string | null;
+    accountTitle: string | null;
+    paymentMethodId: string | null;
+    paymentMethodName: string | null;
+    paidAmount: string;
+    remainingAmount: string;
+    exchangeRateToIrr: string | null;
+    rialEquivalent: string | null;
+    transferAt: string | null;
+    paymentReference: string | null;
+    reason: string;
+    updatedAt: string | null;
+    updatedByUserId: string | null;
+  };
+}
+
+export interface ReservationServicePurchaseInputV1 {
+  version: 1;
+  expectedVersion: number;
+  serviceClientKey: string;
+  supplierOrganizationId: string;
+  amount: string;
+  currencyCode: string;
+}
+
+export interface FinanceSupplierPaymentCommandV1 {
+  expectedVersion: number;
+  status: 'PAID' | 'REJECTED';
+  bankId?: string | null;
+  accountId?: string | null;
+  paymentMethodId?: string | null;
+  paidAmount?: string | null;
+  exchangeRateToIrr?: string | null;
+  transferAt?: string | null;
+  paymentReference?: string | null;
+  reason: string;
+}
+
+export interface SupplierPurchaseGateV1 {
+  complete: boolean;
+  requiredServiceCount: number;
+  missingServiceTitles: readonly string[];
+  unpaidServiceTitles: readonly string[];
+  purchases: readonly ReservationServicePurchaseV1[];
+}
+
+export interface ReservationHotelPurchaseV1 {
+  id: string;
+  version: number;
+  amount: string;
+  currencyCode: string;
+  actorUserId: string;
+  createdAt: string;
+}
+export interface ReservationHotelPurchaseInputV1 {
+  version: 1;
+  expectedVersion: number;
+  amount: string;
+  currencyCode: string;
+}
+
+export interface TravelBrandingV1 {
+  kind: 'OWN' | 'AGENCY';
+  referenceId: string;
+  name: string;
+  logoFileId: string | null;
+  companyCode?: string;
+}
+export interface TravelWorkflowStateV1 {
+  version: number;
+  supplierStatus: 'NEW' | 'REQUESTED' | 'CONFIRMED' | 'CANCELLED';
+  supplierReference: string;
+  insuranceIssued: boolean;
+  insuranceReference: string;
+  voucherIssued: boolean;
+  insuranceWarningAcknowledged: boolean;
+  branding: TravelBrandingV1 | null;
+  roomOrder: string[];
+  ageOverrides: Record<string, 'ADULT' | 'CHILD' | 'INFANT'>;
+  supplierFormSettings?: VoucherSettingsV1;
+  sentSupplierFormSettings?: VoucherSettingsV1;
+  sentSupplierFormVersion?: number;
+  appliedContractVersion?: number;
+  voucherSettings?: VoucherSettingsV1;
+  reservationNotes?: string[];
+  note: string;
+  updatedAt: string | null;
+  updatedByUserId: string | null;
+}
+export interface TravelWorkflowCommandV1 {
+  expectedVersion: number;
+  action:
+    | 'BRANDING'
+    | 'REQUEST_SUPPLIER'
+    | 'CONFIRM_SUPPLIER'
+    | 'CANCEL'
+    | 'REOPEN'
+    | 'INSURANCE'
+    | 'ISSUE_VOUCHER'
+    | 'ARRANGEMENT'
+    | 'NOTE'
+    | 'VOUCHER_SETTINGS'
+    | 'SUPPLIER_FORM_SETTINGS';
+  note: string;
+  applyToContractAndVoucher?: boolean;
+  expectedContractVersion?: number;
+  voucherSettings?: VoucherSettingsV1;
+  supplierReference?: string;
+  insuranceReference?: string;
+  acknowledgeMissingInsurance?: boolean;
+  roomOrder?: string[];
+  ageOverrides?: Record<string, 'ADULT' | 'CHILD' | 'INFANT'>;
+  branding?: { kind: 'OWN' | 'AGENCY'; referenceId?: string };
+}
+export interface TravelDeliveryAuthorizationV1 {
+  version: number;
+  approved: boolean;
+  reason: string;
+  updatedAt: string | null;
+  updatedByUserId: string | null;
+}
+
+export const voucherTextKeys = [
+  'country',
+  'city',
+  'hotel',
+  'stars',
+  'meal',
+  'roomType',
+  'checkIn',
+  'checkOut',
+  'website',
+  'stayNotes',
+  'broker',
+  'leaderLanguage',
+  'leaderName',
+  'leaderPhone',
+  'transferBoard',
+  'transferPhone',
+  'transferKind',
+  'excursionDescription',
+  'extraServices',
+  'remarks',
+  'arrivalAirline',
+  'arrivalFlight',
+  'arrivalDate',
+  'arrivalTime',
+  'departureAirline',
+  'departureFlight',
+  'departureDate',
+  'departureTime',
+] as const;
+export const voucherNumberKeys = [
+  'singleRooms',
+  'doubleRooms',
+  'extraBeds',
+  'customRooms',
+] as const;
+export const voucherFlagKeys = [
+  'withLetterhead',
+  'hotel',
+  'transfer',
+  'tourLeader',
+  'excursion',
+  'specialRoom',
+] as const;
+export interface VoucherSettingsV1 {
+  text: Record<(typeof voucherTextKeys)[number], string> & {
+    contractPartyName?: string;
+  };
+  numbers: Record<(typeof voucherNumberKeys)[number], number>;
+  flags: Record<(typeof voucherFlagKeys)[number], boolean>;
+  passengers: {
+    id: string;
+    selected: boolean;
+    roomType: string;
+    age: 'ADL' | 'CHD' | 'INF';
+    /** Hotel-only split for a child. Ticket age remains CHD. */
+    hotelChildAgeBand?: 'CHD_2_TO_6' | 'CHD_6_TO_12' | '';
+    sex?: 'MALE' | 'FEMALE' | '';
+    birthDate?: string;
+    documentNumber?: string;
+  }[];
+}

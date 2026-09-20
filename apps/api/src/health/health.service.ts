@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { createHealthData, type HealthData } from '@rubi/contracts';
+import { createHealthData, type HealthData } from '@nora/contracts';
 
 @Injectable()
 export class HealthService {

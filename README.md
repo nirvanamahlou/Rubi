@@ -1,6 +1,6 @@
-# Rubi Airline CRM
+# Nora Airline CRM
 
-Rubi یک CRM ماژولار برای شرکت خدمات مسافرتی و هواپیمایی است. Repository به‌صورت
+Nora یک CRM ماژولار برای شرکت خدمات مسافرتی و هواپیمایی است. Repository به‌صورت
 Modular Monolith در یک pnpm/Turborepo monorepo پیاده‌سازی می‌شود. رابط کاربری فارسی و
 RTL است و نام‌گذاری کد، API و دیتابیس انگلیسی باقی می‌ماند.
 
@@ -75,18 +75,42 @@ tests                    محل تست‌های cross-application آینده
 برای اجرای یک app به‌تنهایی:
 
 ```powershell
-pnpm --filter @rubi/web dev
-pnpm --filter @rubi/api dev
-pnpm --filter @rubi/worker dev
+pnpm --filter @nora/web dev
+pnpm --filter @nora/api dev
+pnpm --filter @nora/worker dev
 ```
 
 Worker برای startup به Redis در دسترس نیاز دارد. Prisma commandها نیز `DATABASE_URL` را از
 `.env` ریشه می‌خوانند. schema فعلی عمداً model ندارد و تولید Client بدون مدل مصنوعی معتبر است.
 
+## داده نمایشی اسناد
+
+هر توسعه‌دهنده می‌تواند همان هفت سند و تصویر کاملاً ساختگی را روی دیتابیس و Storage محلی
+خود ایجاد کند. ابتدا نتیجه را بدون هیچ تغییری ببینید:
+
+```powershell
+pnpm documents:demo:preview
+```
+
+سپس، در حالی که PostgreSQL و Antivirus محلی فعال‌اند، داده‌ها را با یک فرمان اعمال کنید:
+
+```powershell
+pnpm documents:demo:apply
+```
+
+فرمان Apply تولید Prisma Client، اعمال Migrationهای موجود، Seed معمول و Build لازم را
+نیز خودش اجرا می‌کند و تنها وقتی موفق است که هر هفت سند با اسکن `CLEAN` را تأیید کند.
+
+فرمان Apply فقط در محیط `development/test` و فقط برای PostgreSQL محلی Nora روی پورت
+`55432` اجرا می‌شود. اجرای دوباره رکورد تکراری نمی‌سازد و Metadata ویرایش‌شده کاربر را
+بازنویسی نمی‌کند. تنظیمات به‌طور پیش‌فرض از `apps/api/.env` خوانده می‌شوند؛ برای مسیر
+دیگر، `NORA_API_ENV_FILE` را تعیین کنید. این بسته حساب مدیر یا رمز ایجاد نمی‌کند و به یک
+مدیر فعال و شعبه مجاز موجود نیاز دارد.
+
 ## اسناد مرجع
 
 - نیازمندی محصول: [docs/PRODUCT_REQUIREMENTS.md](docs/PRODUCT_REQUIREMENTS.md)
-- معماری و مرزها: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) و [docs/MODULE_BOUNDARIES.md](docs/MODULE_BOUNDARIES.md)
+- معماری و مرزها: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)، [docs/MODULE_BOUNDARIES.md](docs/MODULE_BOUNDARIES.md) و [docs/MODULE_OWNERSHIP.md](docs/MODULE_OWNERSHIP.md)
 - مدل داده: [docs/DATA_MODEL.md](docs/DATA_MODEL.md)
 - روش همکاری: [AGENTS.md](AGENTS.md) و [docs/DEVELOPMENT_WORKFLOW.md](docs/DEVELOPMENT_WORKFLOW.md)
 - وضعیت و تخصیص: [docs/PROJECT_STATUS.md](docs/PROJECT_STATUS.md) و [WORK_ASSIGNMENTS.md](WORK_ASSIGNMENTS.md)

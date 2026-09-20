@@ -1,0 +1,170 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+
+import { describe, expect, it } from 'vitest';
+
+import { getMasterDataDefinition, masterDataCatalog } from './catalog';
+import { getMasterDataFormFields } from './form-fields';
+import { validateMasterDataDraft } from './validation';
+
+describe('payment-method form fields', () => {
+  it('keeps airport enrichment out of create while preserving it for later editing', () => {
+    const definition = getMasterDataDefinition('airports');
+    const createFields = getMasterDataFormFields(definition, 'create').map(
+      (field) => field.key,
+    );
+    const editFields = getMasterDataFormFields(definition, 'edit').map(
+      (field) => field.key,
+    );
+    for (const field of ['icaoCode', 'ianaTimezone', 'latitude', 'longitude']) {
+      expect(createFields).not.toContain(field);
+      expect(editFields).toContain(field);
+    }
+    expect(
+      validateMasterDataDraft('airports', {
+        name: 'فرودگاه کیش',
+        englishName: 'Kish Airport',
+        countryId: 'country-id',
+        cityId: 'city-id',
+        iataCode: 'KIH',
+      }).success,
+    ).toBe(true);
+  });
+  it('omits channel only while creating without changing stored payment metadata', () => {
+    const definition = getMasterDataDefinition('payment-methods');
+    expect(
+      getMasterDataFormFields(definition, 'create').map((field) => field.key),
+    ).toEqual([
+      'name',
+      'direction',
+      'requiresManualApproval',
+      'displayOrder',
+      'description',
+    ]);
+    expect(
+      getMasterDataFormFields(definition, 'edit').map((field) => field.key),
+    ).toContain('channel');
+    expect(definition.fields.map((field) => field.key)).toEqual(
+      expect.arrayContaining(['code', 'englishName', 'channel']),
+    );
+  });
+
+  it('adds display order to every resource form', () => {
+    for (const definition of masterDataCatalog) {
+      if (definition.key === 'exchange-rates') continue;
+      expect(
+        getMasterDataFormFields(definition).map((field) => field.key),
+      ).toContain('displayOrder');
+    }
+  });
+
+  it('omits the fields explicitly removed from the requested forms', () => {
+    const omitted: Partial<
+      Record<(typeof masterDataCatalog)[number]['key'], readonly string[]>
+    > = {
+      regions: ['type', 'parentRegionId'],
+      hotels: ['latitude', 'longitude'],
+      organizations: ['displayName'],
+      suppliers: ['displayName'],
+      brokers: ['displayName'],
+      airlines: ['organizationId', 'iataCode', 'icaoCode'],
+      'cabin-classes': ['name', 'bodyType', 'cabinType'],
+      'baggage-rules': ['name', 'validFrom', 'validTo'],
+      'bus-companies': ['supplierId'],
+      'visa-services': [
+        'supplierId',
+        'providerId',
+        'passportId',
+        'passportIdentifier',
+      ],
+      'exchange-rates': ['observedAt', 'validFrom', 'validTo'],
+      'travel-services': ['code', 'englishName'],
+    };
+    for (const [resource, hidden] of Object.entries(omitted)) {
+      const visible = getMasterDataFormFields(
+        getMasterDataDefinition(
+          resource as (typeof masterDataCatalog)[number]['key'],
+        ),
+      ).map((field) => field.key);
+      for (const key of hidden ?? []) expect(visible).not.toContain(key);
+    }
+  });
+
+  it('accepts visible fields while retaining the remaining required fields', () => {
+    const values = { name: 'روش آزمایشی', channel: 'CASH', direction: 'BOTH' };
+    const result = validateMasterDataDraft('payment-methods', values);
+    expect(result.success).toBe(true);
+    expect(result.values).toEqual(values);
+    expect(validateMasterDataDraft('payment-methods', {}).errors).toEqual({
+      name: expect.any(String),
+      channel: expect.any(String),
+      direction: expect.any(String),
+    });
+  });
+
+  it('uses mode-aware visible fields when rendering both forms', () => {
+    for (const file of ['master-data-form.tsx', 'master-data-live-form.tsx']) {
+      const source = readFileSync(
+        resolve(process.cwd(), 'src/modules/master-data/components', file),
+        'utf8',
+      );
+      expect(source).toContain('getMasterDataFormFields(definition, mode).map');
+      expect(source).not.toContain('definition.fields.map');
+    }
+  });
+
+  it('keeps a neutral hidden channel so the create request remains valid', () => {
+    for (const file of ['master-data-form.tsx', 'master-data-live-form.tsx']) {
+      const source = readFileSync(
+        resolve(process.cwd(), 'src/modules/master-data/components', file),
+        'utf8',
+      );
+      expect(source).toContain("field.key === 'channel'");
+      expect(source).toContain("? 'OTHER'");
+    }
+  });
+
+  it('marks every catalog-required field and forwards required semantics to each control kind', () => {
+    const source = readFileSync(
+      resolve(
+        process.cwd(),
+        'src/modules/master-data/components/master-data-live-form.tsx',
+      ),
+      'utf8',
+    );
+    expect(source).toContain('{...(field.required ? { required: true } : {})}');
+    expect(
+      source.match(/required=\{Boolean\(field\.required\)\}/g),
+    ).toHaveLength(6);
+
+    for (const definition of masterDataCatalog) {
+      for (const field of getMasterDataFormFields(definition)) {
+        if (!field.required) continue;
+        expect(
+          validateMasterDataDraft(definition.key, { [field.key]: '' }).errors[
+            field.key
+          ],
+          `${definition.key}.${field.key}`,
+        ).toBeTruthy();
+      }
+    }
+  });
+
+  it('uses a required English-only title for cabin classes', () => {
+    const definition = getMasterDataDefinition('cabin-classes');
+    const fields = getMasterDataFormFields(definition);
+    const englishName = fields.find((field) => field.key === 'englishName');
+
+    expect(fields.map((field) => field.key)).not.toContain('name');
+    expect(englishName).toMatchObject({ required: true });
+    expect(
+      validateMasterDataDraft('cabin-classes', { bookingCode: 'Y' }).errors,
+    ).toHaveProperty('englishName');
+    expect(
+      validateMasterDataDraft('cabin-classes', {
+        englishName: 'Economy',
+        bookingCode: 'Y',
+      }).success,
+    ).toBe(true);
+  });
+});
