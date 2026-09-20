@@ -3,7 +3,7 @@
 - مالک: `PC-A`
 - شاخه: `codex/pc-a-finance-operational-cartable-0919`
 - والد: `FINANCE-OPERATIONAL-CARTABLE-0919`
-- وضعیت: `READY_FOR_REVIEW`
+- وضعیت: `DONE / MERGED`
 - تاریخ: `2026-09-20`
 
 ## تصمیم کسب‌وکار
@@ -60,3 +60,10 @@
 - lint و typecheck بخش‌های Contracts، Database، API و Web: پاس؛
 - Production Build قرارداد، دیتابیس، API و Web با ۵۰ route: پاس؛
 - PostgreSQL موقت بدون Volume متوقف و حذف شد.
+
+## Handoff نهایی
+
+PR #322 با Source HEAD `ef13aa9e49b618d244fe42fb52bf9caacfbb6460` و
+Merge Commit `9c5362333f2a30cd81e0fe63faca16d7a3c0ad47` وارد `develop` شد.
+قفل‌های Migration، Finance/Sales shared-contract و Central Docs این Task
+`RELEASED / STABLE` هستند. Dependency/Lockfile در تمام Task آزاد باقی ماند.

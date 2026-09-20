@@ -1,4 +1,4 @@
-## 2026-09-20 — FINANCE-CUSTOMER-DOCUMENT-DELIVERY-0920 — READY_FOR_REVIEW
+## 2026-09-20 — FINANCE-CUSTOMER-DOCUMENT-DELIVERY-0920 — DONE/MERGED
 
 مجوز تحویل مدارک مشتری از خرید و پرداخت کارگزار و اجرای رزرواسیون مستقل شد.
 مالی اکنون می‌تواند آن را پس از حداقل یک دریافت تأییدشده، پس از تسویه کامل، یا
@@ -7,6 +7,9 @@
 مجوز contract-level مالی را مصرف می‌کنند. جزئیات در
 [FINANCE-CUSTOMER-DOCUMENT-DELIVERY-0920](tasks/FINANCE-CUSTOMER-DOCUMENT-DELIVERY-0920.md)
 ثبت شده است.
+
+PR #322 با Merge Commit `9c536233` وارد `develop` شد و قفل‌های Task آزاد شدند.
+
 ## 2026-09-19 — FINANCE-OPERATIONAL-CARTABLE-0919 — READY_FOR_REVIEW
 
 کارتابل مالی اکنون تأیید دریافت را فقط پس از انتخاب حساب مقصد فعال، هم‌ارز و متعلق
