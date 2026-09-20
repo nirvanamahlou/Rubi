@@ -320,12 +320,11 @@ describe('dashboard registry', () => {
 
   it('uses donut only for explicit low-cardinality share visuals', () => {
     const visuals = dashboardPages.flatMap((page) => page.visualizations);
+    expect(visuals.find((item) => item.id === 'collection-status')?.kind).toBe(
+      'donut',
+    );
     expect(
-      visuals.find((item) => item.id === 'collection-status')?.kind,
-    ).toBe('donut');
-    expect(
-      visuals.find((item) => item.id === 'customer-service-distribution')
-        ?.kind,
+      visuals.find((item) => item.id === 'customer-service-distribution')?.kind,
     ).toBe('donut');
     expect(
       visuals.find((item) => item.id === 'sales-destination-ranking')?.kind,
@@ -529,7 +528,8 @@ describe('dashboard permission and data states', () => {
       "state === 'forbidden'",
       "state === 'empty'",
       "state === 'stale'",
-    ]) expect(source).toContain(state);
+    ])
+      expect(source).toContain(state);
     expect(source).toContain('داده‌ای دریافت نشده');
     expect(source).not.toMatch(/\b(value|amount|count):\s*\d+/);
     expect(source).not.toContain('Math.random');
@@ -539,16 +539,75 @@ describe('dashboard permission and data states', () => {
     expect(source).toContain('data-dashboard-kpi');
     expect(source).toContain('data-dashboard-visual');
     expect(source).toContain('OperationalDataTable');
+    expect(source).toContain('function ActionQueue');
+    expect(source).toContain('فرصت / موضوع');
+    expect(source).toContain('اقدام بعدی');
+    expect(source).toContain('بیشترین افت بین');
+    expect(source).toContain(
+      "clipPath: 'polygon(7% 0, 100% 7%, 93% 100%, 0 93%)'",
+    );
     expect(source).toContain('EmployeePerformanceBars');
     expect(source).toContain('MiniTrend');
+    expect(source).toContain('className="h-20 w-full overflow-visible"');
+    expect(source).toContain('viewBox="0 0 240 84"');
+    expect(source).toContain('strokeWidth="3.25"');
     expect(source).toContain('GrowthIndicator');
-    expect(source).toContain('comparison?: DashboardComparisonSnapshot | undefined;');
+    expect(source).toContain(
+      'comparison?: DashboardComparisonSnapshot | undefined;',
+    );
     expect(source).toContain('!hasComparison || unavailable');
     expect(source).not.toContain('comparisonUnavailableForPeriod');
     expect(source).toContain('currencyMetricParts');
     expect(source).toContain('compactCurrencyAmount');
     expect(source).toContain('compactCurrencyTypography');
     expect(source).toContain('compactChartValue');
+    expect(source).toContain('trendTemporalGrain');
+    expect(source).toContain('trendDateLabel');
+    expect(source).toContain('trendTooltipTime');
+    expect(source).not.toContain('بازه انتخاب‌شده — ${labels[index]}');
+    expect(source).toContain('data-dashboard-visual-currency-selector');
+    expect(source).toContain('data-dashboard-trend-controls');
+    expect(source).toContain(
+      'min-w-[15.875rem] flex-row flex-nowrap justify-end',
+    );
+    expect(source).toContain('h-8 w-[9.5rem] shrink-0 whitespace-nowrap');
+    expect(source).toContain('CalendarDays');
+    expect(source).toContain('size-4 shrink-0 text-primary');
+    expect(source).toContain('mt-3 flex min-h-24 flex-col pt-0');
+    expect(source).not.toContain(
+      'flex min-h-24 flex-col border-t border-border/60',
+    );
+    expect(source).toContain('dashboard-visual-definition-panel-${visualId}');
+    expect(source).toContain('function VisualDetailsPanel');
+    expect(source).toContain('خلاصه متنی و جدول داده');
+    expect(source).toContain('جزئیات نمودار');
+    expect(source).not.toContain(
+      'const sampleValues = (data?.values ?? []).slice(0, 4);',
+    );
+    expect(source).toContain('<SelectContent align="end" dir="rtl">');
+    expect(source).toContain(
+      '[&>span:first-child]:w-full [&>span:first-child]:text-right',
+    );
+    expect(source).toContain('<span className="block w-full text-right">');
+    expect(source).toContain('{label}');
+    expect(source).toContain('selectedCurrencyCode');
+    expect(source).toContain('currencySeries');
+    expect(source).toContain('adverseKpiIdPattern');
+    expect(source).toContain("definition.role === 'guardrail'");
+    expect(source).toContain("semanticTone === 'negative'");
+    expect(source).toContain('trendCalendarOptions');
+    expect(source).toContain('تقویم برچسب‌های محور زمان');
+    expect(source).toContain("key) => key === 'currency'");
+    expect(source).not.toContain(
+      'comparisonValues?: readonly number[] | undefined;',
+    );
+    expect(source).not.toContain('strokeDasharray="5 6"');
+    expect(source).toContain('strokeDasharray="2 5"');
+    expect(source).toContain('preserveAspectRatio="none"');
+    expect(source).toContain('const chartLeft = 100;');
+    expect(source).toContain('const chartRight = 930;');
+    expect(source).not.toContain('تاریخ (${calendarLabel})');
+    expect(source).not.toContain('transform="rotate(-90 18 82)"');
     expect(source).toContain('formatDashboardNumber');
     expect(source).toContain('latinizeDashboardNumericText');
     expect(source).toContain("Intl.NumberFormat('en-US'");
@@ -560,7 +619,7 @@ describe('dashboard permission and data states', () => {
     expect(source).not.toContain('KpiComparisonBadges');
     expect(source).toContain('linearGradient');
     expect(source).toContain('stopOpacity="0.32"');
-    expect(source).toContain('h-14 w-full overflow-visible');
+    expect(source).toContain('h-20 w-full overflow-visible');
     expect(source).not.toContain('هر ارز مستقل و بدون تبدیل نمایش داده می‌شود');
     expect(source).toContain('currencySymbols');
     expect(source).toContain('راهنمای روند ارزها');
@@ -644,7 +703,7 @@ describe('dashboard permission and data states', () => {
     expect(source).toContain('configurationOnly');
     expect(source).toContain('dashboardReportCodeFromDrilldown');
     expect(source).not.toContain('<Link href={reportHref}>');
-    expect(source).toContain('setReportConfigurationCode(reportCode);\n  };');
+    expect(source).toContain('setReportConfigurationCode(reportCode);');
     expect(source).toContain('() => new Set(),');
     expect(source).not.toContain(
       "new Set(['commercial-performance', 'customer-growth', 'workforce-hr'])",
@@ -674,6 +733,7 @@ describe('dashboard permission and data states', () => {
     expect(source).toContain('جمع نمایش‌داده‌شده');
     expect(source).toContain('values.length > 6');
     expect(source).toContain('خلاصه متنی و جدول داده');
+    expect(source).toContain('تفکیک زمانی:');
     expect(source).toContain('<table');
     expect(source).toContain('role="img"');
     expect(source).toContain('focus-visible:ring-offset-2');
@@ -698,7 +758,9 @@ describe('dashboard permission and data states', () => {
     expect(source).toContain('activePageHeaderTheme');
     expect(source).toContain('dashboardHeaderArtworkByPageId');
     expect(source).toContain('activePageHeaderArtwork');
-    expect(source).toContain("'/images/dashboard-headers/executive-overview.png'");
+    expect(source).toContain(
+      "'/images/dashboard-headers/executive-overview.png'",
+    );
     expect(source).toContain('quality={45}');
     expect(source).toContain('pointer-events-none absolute -bottom-10 -end-2');
     expect(source).toContain('size-44 stroke-[1.15] sm:size-52');
@@ -709,7 +771,9 @@ describe('dashboard permission and data states', () => {
     expect(source).toContain("'employee-crm-activity': PhoneCall");
     expect(source).toContain('items-center text-center');
     expect(source).toContain("'from-cyan-50 via-surface to-blue-50");
-    expect(source).toContain('max-w-2xl text-sm leading-6 text-muted-foreground');
+    expect(source).toContain(
+      'max-w-2xl text-sm leading-6 text-muted-foreground',
+    );
     expect(source).toContain('lg:sticky lg:top-20');
     expect(source).toContain('lg:overflow-y-auto');
     expect(source).toContain('صفحه‌های داشبورد');

@@ -81,6 +81,17 @@ export const toursApi = {
       if (!result.hasMore) return data;
     }
   },
+  managedOffers: () =>
+    request<{ version: 1; data: TicketOfferV1[] }>('/offers/management'),
   publishOffer: (input: TicketOfferCreateV1, branch: string, key: string) =>
     request<{ data: { id: string } }>('/offers', post(input, branch, key)),
+  temporaryHold: (
+    offerId: string,
+    input: { quantity: number; expiresAt: string },
+    branch: string,
+    key: string,
+  ) =>
+    request<{
+      data: { id: string; quantity: number; expiresAt: string; status: string };
+    }>(`/offers/${offerId}/capacity-holds`, post(input, branch, key)),
 };

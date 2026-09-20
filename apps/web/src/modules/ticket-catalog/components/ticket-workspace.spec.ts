@@ -7,7 +7,12 @@ describe('ticket workspace entry points', () => {
       new URL('./ticket-workspace.tsx', import.meta.url),
       'utf8',
     );
-    expect(source).not.toContain('PublishedOffers');
+    expect(source).not.toContain("from './published-offers'");
+    expect(source).toContain('managedOffers()');
+    expect(source).toContain('publishFlights(inputs)');
+    expect(source).toContain('publishExistingFlights(');
+    expect(source).toContain('`ticket-catalog:${product.id}`');
+    expect(source).toContain('backfillStarted.current');
     expect(source).toContain('repeatDefinition(');
     expect(source).toContain('setRepeat(');
   });

@@ -1,3 +1,78 @@
+
+## 2026-09-20 — TICKET-TIME-REPEAT-0920 — آماده بازبینی
+
+فیلدهای تاریخ و ساعت حرکت/رسیدنِ Ticket Catalog برای بلیت یک‌طرفه، رفت‌وبرگشت و هر قطعهٔ ترکیبی بازگشتند. زمان ورودی با منطقهٔ زمانی مسیر به UTC تبدیل می‌شود و زمان حرکت، تاریخ اولین بلیت را همگام می‌کند؛ در نتیجه تکرار هفتگی/ماهانه ساعت‌های ثبت‌شده را همراه تاریخ جابه‌جا می‌کند. بلیت قدیمیِ بدون ساعت همچنان تکرارپذیر است. ۱۰۰ تست Ticket Catalog، lint و typecheck Web موفق‌اند و build تولیدی در Worktree جدا خروجی `BUILD_ID` ساخته است. Schema/Migration/API/contract/runtime و Web3100 تغییر نکرده‌اند. جزئیات در [TICKET-TIME-REPEAT-0920](tasks/TICKET-TIME-REPEAT-0920.md) است.
+
+## 2026-09-20 — LOGIN-STATIC-BACKGROUND-0920 — PC-A — READY FOR REVIEW
+
+- طبق درخواست مالک، نوشتهٔ `NOORA` و طرح ابری/باد از صفحهٔ ورود حذف شد. تصویر موجود `login-airline-b2.png` بدون تغییر فایل، حرکت یا تعویض به‌عنوان پس‌زمینهٔ ثابت حفظ شده و crop موبایل و overlay خوانایی قبلی باقی مانده‌اند.
+- اعتبارسنجی: ۵ تست متمرکز صفحه ورود، lint فایل‌های تغییرکرده، typecheck کامل Web و build تولیدی ۵۰ مسیر موفق‌اند. API، احراز هویت، فرم ورود، Schema/Migration، Permission، Dependency/Lockfile، داده و Web3100 تغییر نکردند.
+
+## 2026-09-20 — HOTEL-RATE-ROOM-CAPACITY-0920 — READY_FOR_REVIEW
+
+مدیریت نرخ هتل از ضرایب ثابت به نرخ نوع اتاق واقعی با ظرفیت مستقل بزرگسال و کودک ارتقا یافت. اتاق بدون ضریب در ارقام پکیج نمایش یا محاسبه نمی‌شود و در فروش قابل انتخاب نیست و Backend فروش ظرفیت هر اتاق را هنگام ایجاد، ویرایش و تأیید قرارداد به‌صورت fail-closed کنترل می‌کند. Migration روی PostgreSQL 18.1 خالی، Prisma، lint/typecheck، تست‌های هدفمند و Build API/Web پاس شدند؛ قفل‌های Migration/Contract/Central Docs تا Merge و Handoff رسمی فعال‌اند.
+
+## 2026-09-20 — FINANCE-CUSTOMER-DOCUMENT-DELIVERY-0920 — DONE/MERGED
+
+مجوز تحویل مدارک مشتری از خرید و پرداخت کارگزار و اجرای رزرواسیون مستقل شد.
+مالی اکنون می‌تواند آن را پس از حداقل یک دریافت تأییدشده، پس از تسویه کامل، یا
+با استثنای معتبر مدیر صادر کند. مبنا، دلیل، نسخه، عامل و اطلاعات استثنا Audit
+می‌شوند؛ جست‌وجوی قرارداد شماره کامل و بخشی را می‌پذیرد. Sales و Manifest فقط
+مجوز contract-level مالی را مصرف می‌کنند. جزئیات در
+[FINANCE-CUSTOMER-DOCUMENT-DELIVERY-0920](tasks/FINANCE-CUSTOMER-DOCUMENT-DELIVERY-0920.md)
+ثبت شده است.
+
+PR #322 با Merge Commit `9c536233` وارد `develop` شد و قفل‌های Task آزاد شدند.
+
+## 2026-09-19 — FINANCE-OPERATIONAL-CARTABLE-0919 — READY_FOR_REVIEW
+
+کارتابل مالی اکنون تأیید دریافت را فقط پس از انتخاب حساب مقصد فعال، هم‌ارز و متعلق
+به شعبه قرارداد می‌پذیرد و همان حساب را با FK واقعی روی پرداخت قرارداد ذخیره و audit
+می‌کند. پرداخت کارگزار از حساب مبدأ، تعریف حساب جدید، مانده و جزئیات انتقال، جست‌وجوی
+قرارداد و تأیید/لغو دستی تحویل مدارک از قابلیت‌های عملیاتی موجود به همان کارتابل متصل
+مانده‌اند. KPIهای کارت‌محور و شمارنده‌های باز/سررسیدگذشته اکنون با جست‌وجو، بخش، وضعیت
+و بازه تاریخ همگام‌اند.
+
+Migration افزایشی روی PostgreSQL محلی اعمال و وضعیت ۸۵ migration به‌روز تأیید شد.
+۸ تست API و ۸ تست Web، Prisma validate، lint و typecheck چهار بخش API/Web/Contracts/
+Database و build تولیدی API/Web موفق‌اند. نسخه جدید روی Web 3100 و API 4190 با health
+و CORS موفق فعال است. هیچ پرداخت بیرونی یا داده مالی ساختگی ثبت نشده است.
+
+## 2026-09-19 — SYSTEM-MANAGEMENT-NAVIGATION-003 — PC-B — READY_FOR_REVIEW
+
+دسته‌های قابل‌گسترشِ `/system` اکنون همان منبع canonical سایدبار را مصرف می‌کنند؛ بنابراین عنوان و مسیر زیر‌بخش‌ها در دو جای رابط واگرا نمی‌شوند. فضای کار شامل «میزکار من» و «داشبورد» است و پیوندهای قیمت‌گذاری فروش، عملیات/فرآیند رزرواسیون، کاربران، شرکت‌های حقوقی و سلامت سامانه نیز به زیرگروه واقعی خود افزوده شدند. خرید و تأمین از سرمایه انسانی به گروه درست «رزرواسیون و تأمین سفر» منتقل شد. ۲۰ تست هدفمند ناوبری و مدیریت سیستم، lint و typecheck وب موفق‌اند؛ API، قرارداد، Migration، داده و مجوزها تغییری نکرده‌اند. ساخت production به‌سبب اشتراک `.next` با dev server فعال ۳۱۰۰ بدون پیشرفت ماند و فقط فرایند ساخت متوقف شد؛ HTTP 200 runtime حفظ شد.
+
+## 2026-09-19 — DASHBOARD-VISUAL-DETAIL-OUTPUT-0919 — READY_FOR_REVIEW
+
+پنل «جزئیات نمودار» دیگر نمونه‌های خامِ نقاط خروجی را به‌شکل تاریخ/مبلغ نمایش
+نمی‌دهد. اطلاعات زمینه‌ای شامل بازهٔ فعال، نوع نمودار، واحد پول، تعریف کسب‌وکار،
+قاعدهٔ نمایش، فیچرهای استفاده‌شده و محدودیت‌ها باقی می‌مانند. تست هدفمند Dashboard،
+lint، typecheck و build تولیدی Web موفق‌اند؛ API، Schema/Migration، Permission،
+دادهٔ عملیاتی و Dependency/Lockfile تغییر نکردند.
+
+## 2026-09-19 — DASHBOARD-KPI-TREND-PRESENTATION-0919 — READY_FOR_REVIEW
+
+آیکون انتخاب تقویمِ برچسب‌های محور زمان نمودار روند با `CalendarDays` بزرگ‌تر،
+رنگ اصلی رابط و stroke واضح اصلاح شد. همچنین جداکنندهٔ بصری پیش از Sparkline از
+همهٔ KPI Cardها حذف شد. ۱۶ تست Dashboard، lint و typecheck Web موفق‌اند؛ API،
+Schema/Migration، Permission، دادهٔ عملیاتی و Dependency/Lockfile تغییر نکردند.
+
+## 2026-09-19 — DASHBOARD-TREND-AXIS-CALENDAR-0919 — READY_FOR_REVIEW
+
+نمودارهای روند Dashboard اکنون فقط سری بازهٔ انتخاب‌شده را نمایش می‌دهند؛
+`comparisonValues` از قرارداد Projection و producer حذف شده است، در حالی که
+مقایسهٔ دورهٔ قبل برای KPI Cardها و visualهای غیرروند همچنان از دادهٔ تأییدشده
+می‌آید. ناحیهٔ رسم خط با gutter مستقلِ محور مقدار و محور زمان بازچینی شد تا marker
+و خط با عنوان‌ها و برچسب‌های محور تداخل نداشته باشند. انتخاب «تاریخ شمسی/تاریخ
+میلادی» در سرستون هر نمودار روند، تنها قالب برچسب محور زمان را در `Asia/Tehran`
+تغییر می‌دهد و داده یا بازهٔ Query را تغییر نمی‌دهد. واحد پول نیز در تمام صفحات
+دارای این فیلتر، بلافاصله پس از «بازه زمانی» نمایش داده می‌شود.
+
+۶ تست هدفمند Reporting و ۱۶ تست Dashboard، lint و typecheck API/Web و build
+تولیدی هر دو برنامه موفق‌اند. Migration، Schema، Permission، Dependency/Lockfile
+و داده‌های دمو/عملیاتی تغییر نکرده‌اند. runtime تازه روی `localhost:3000` و API
+روی ۴۰۰۰ با پاسخ HTTP ۲۰۰ فعال‌اند.
+
 ## 2026-09-17 — SYSTEM-MANAGEMENT-BACKEND-001 — PC-B — READY_FOR_REVIEW
 
 تغییرات تازهٔ develop برای Backend مدیریت سامانه همراه با تغییرات این چت یکپارچه شد: قرارداد v1، ۳۰ Permission، ۱۲ جدول افزایشی، تنظیمات نسخه‌دار، شماره‌گذاری اتمیک، اعلان، قالب immutable، Feature Flag، درخواست Backup، Health/Job read-only و نشست مدیریتی امن. حفاظت IAM در برابر Self-escalation و حذف آخرین مدیر فعال نیز حفظ شد.
@@ -9,6 +84,8 @@
 ## 2026-09-17 — CONTRACT-PASSENGER-CONTROLS-0917 — READY_FOR_REVIEW
 
 جدول ورود اطلاعات مسافران قرارداد اکنون برای جنسیت انتخاب دوگزینه‌ای مرد/زن دارد و مقدار سازگار M/F را ذخیره می‌کند. در عنوان هر سه فیلد کشور نیازمند ISO3، دکمه راهنمای کوچک اضافه شد که فهرست اسکرول‌دار نام کشورهای پرکاربرد و کد سه‌حرفی آن‌ها را در همان صفحه باز می‌کند. ردیف جدید، ردیف پاک‌شده و مسافر افزوده‌شده، سه فیلد ISO3 را با IRN پیش‌پر می‌کنند اما کاربر می‌تواند هر سه را تغییر دهد؛ پرونده‌های از پیش موجود تغییر نمی‌کنند. ۳۱ تست مدل و ۱۱ تست رابط، lint، typecheck و build تولیدی Web موفق‌اند و نسخه جدید روی پورت‌های 3100 و 3200 فعال است. Branch: codex/pc-a-contract-passenger-controls-0917.
+
+نوار دسته‌های `/system` اکنون همان ساختار افقی خود را حفظ می‌کند، ولی نام‌هایش با گروه‌های سایدبار Rubi یکسان است. کلیک روی هر عنوان، زیرمجموعه‌های واقعی آن را باز و کارت‌ها را به همان گروه محدود می‌کند؛ کادرهای خاکستری و دکمه‌های سکشن بالای صفحه حذف شده‌اند.
 
 ## 2026-09-16 — PROCUREMENT-INVOICE-ATTACHMENTS-0916 — READY_FOR_REVIEW
 
@@ -27,6 +104,107 @@
 
 پنل عملیات قرارداد در رزواسیون اکنون زیر بخش جدول قرار دارد و دکمه‌ها در دسکتاپ به‌صورت چهارستونه نمایش داده می‌شوند. صفحه‌بندی از فهرست حذف شد؛ تمام قراردادهای بازه در یک جدول اسکرول‌پذیر با ارتفاع نزدیک هفت ردیف قابل انتخاب‌اند. اگر کاربر بازهٔ تاریخ تعیین نکند، فهرست از تاریخ قرارداد فقط سه ماه تقویمی اخیر را نمایش می‌دهد؛ با انتخاب هر بازهٔ تاریخ، همان بازه بدون محدودیت پیش‌فرض اجرا می‌شود. ۲۱ تست هدفمند، lint، typecheck و build تولیدی Web موفق‌اند. Migration، دادهٔ عملیاتی و Runtime مشترک تغییری نکردند.
 # وضعیت پروژه
+
+## 2026-09-19 — REPORTING-XLSX-COMPACT-LAYOUT-0919 — LOCAL_COMPLETE
+
+خروجی Excel گزارش‌ها اکنون نام گزارش را در سطر ۱، زمان تولید را در سطر ۲، جدول
+فیلترها را در سطرهای ۳ و ۴ و سرستون و دادهٔ گزارش را از سطر ۵ نمایش می‌دهد. نام
+گزارش در عرض جدول merge شده، تمام مقدارها و عنوان‌ها وسط‌چین‌اند و Gridlineهای شیت
+برای نمایش حرفه‌ای فایل پنهان شده‌اند. Schema/Migration، داده، Dashboard،
+Dependency و Lockfile تغییر نکردند.
+
+## 2026-09-19 — REPORTING-PENDING-RESERVATION-COLUMN-SCOPE-0919 — LOCAL_COMPLETE
+
+ستون و امکان مرتب‌سازی «اقدام رزرو در انتظار» اکنون تنها در گزارش عملیاتی
+`paid_not_issued` دیده می‌شود؛ گزارش‌های فروش، مالی، CRM و تحلیلی آن را در نمای
+نتیجه و خروجی دریافت نمی‌کنند. محاسبهٔ داخلی row برای سازگاری قرارداد موجود حفظ
+شده است، اما در ستون‌های قابل‌نمایش یا قابل‌مرتب‌سازی افشا نمی‌شود. ۶ تست API و
+۱۷ تست Web، lint و typecheck هر دو برنامه موفق‌اند؛ Schema/Migration، داده،
+Dashboard، Dependency و Lockfile تغییری نکردند.
+
+## 2026-09-19 — DASHBOARD-VISUAL-DETAILS-DRAWER-0919 — READY_FOR_REVIEW
+
+جدول جزئیات دادهٔ نمودار به `<details>` بازشوندهٔ پیشین بازگشت. دکمهٔ پایین-راست `جزئیات نمودار` اکنون Drawer قابل‌دسترسی مشابه پنل تعریف KPI باز می‌کند و هدف، خروجی واقعی، قاعدهٔ نمایش، فیچرهای منبع و مجوز همان visual را می‌نمایاند؛ دکمهٔ گزارش مرتبط در footer Drawer فرم پیکربندی را بدون بستن Drawer باز می‌کند. ۱۶ تست Dashboard، lint، TypeScript و build تولیدی Web موفق‌اند؛ API و داده تغییر نکرده‌اند.
+
+## 2026-09-19 — DASHBOARD-KPI-SPARKLINE-SCALE-0919 — READY_FOR_REVIEW
+
+نمودارهای روند کوچک KPI Cardها بزرگ‌تر و خواناتر شدند: canvas از `160×58` و `h-14` به `240×84` و `h-20` رسیده، تمام عرض Card را با `preserveAspectRatio=none` می‌گیرد و ضخامت خط از `2.5` به `3.25` افزایش یافته است؛ سایهٔ هر سری حفظ شد. ۱۶ تست Dashboard، lint، TypeScript و build تولیدی Web موفق‌اند؛ API و داده تغییر نکرده‌اند.
+
+## 2026-09-19 — DASHBOARD-VISUAL-DETAILS-CONTROLS-0919 — READY_FOR_REVIEW
+
+کنترل تقویم محور X برای نگه‌داشتن «تاریخ شمسی/میلادی» در یک خط، عرض ثابت `8.5rem`، `shrink-0` و `whitespace-nowrap` دارد و گروه کنترل روند متناسب با آن فضا می‌گیرد. دکمهٔ پایین-راستِ `جزئیات نمودار` با وضعیت دسترس‌پذیر، خلاصه و جدول دادهٔ همان visual را باز و بسته می‌کند. ۱۶ تست Dashboard، lint، TypeScript و build تولیدی Web موفق‌اند؛ API و داده تغییر نکرده‌اند.
+
+## 2026-09-19 — DASHBOARD-RANGE-FILTER-RTL-0919 — READY_FOR_REVIEW
+
+گزینه‌های بازشوندهٔ فیلتر بازهٔ زمانی Dashboard برای خوانایی RTL راست‌چین شدند: محتوا `dir=rtl` و aligned-to-end است و گزینه‌ها با `justify-end text-right` نمایش دارند. رنگ hover و رفتار فیلتر تغییر نکرده است. ۱۶ تست Dashboard، lint، TypeScript و build تولیدی Web موفق‌اند؛ API و داده تغییر نکرده‌اند.
+
+## 2026-09-19 — DASHBOARD-TREND-CONTROL-LAYOUT-0919 — READY_FOR_REVIEW
+
+کنترل‌های سرستون نمودار روند اصلاح شدند: واحد پول با اندازهٔ پیشین در سمت راستِ تقویم محور زمان قرار می‌گیرد و هر دو زیر برچسب نوع نمودار، در یک ردیف ثابت و بدون wrap نمایش دارند. نمودارهای غیرروند همان انتخاب‌گر مستقل ارز را حفظ می‌کنند. ۱۶ تست Dashboard، lint، TypeScript و build تولیدی Web موفق‌اند؛ API و داده تغییر نکرده‌اند.
+
+## 2026-09-19 — DASHBOARD-VISUAL-CURRENCY-SELECTOR-0919 — READY_FOR_REVIEW
+
+قرارداد عمومی Dashboard به‌صورت افزایشی `currencySeries` برای هر visual پولی
+منتشر می‌کند. هر سری labels، values، comparison و trend همان ارز را جداگانه دارد
+و هیچ جمع یا تبدیل FX در UI رخ نمی‌دهد. هر نمودار مبلغ‌محور در سربرگ خودش dropdown
+واحد پول دارد؛ تغییر آن محلی است و فیلتر یا نمودارهای دیگر را تغییر نمی‌دهد. نمودار
+شمارشی، صف اقدام و قیف تصمیم که مبلغی نشان نمی‌دهند selector ندارند. ۶ تست Reporting
+و ۱۶ تست Dashboard، lint/typecheck API/Web و build تولیدی هر دو سرویس موفق‌اند؛ Web
+روی ۳۰۰۰ و API روی ۴۰۰۰ پاسخ HTTP ۲۰۰ دارند. Migration، Schema، داده، Permission،
+وابستگی و Lockfile تغییر نکرده‌اند.
+
+## 2026-09-19 — DASHBOARD-TREND-PLOT-BOUNDS-0919 — READY_FOR_REVIEW
+
+هندسهٔ نمودارهای line Dashboard برای استفادهٔ بهتر از عرض card اصلاح شد: نقطهٔ شروع
+plot به چپ منتقل شد و انتهای plot پیش از مرز SVG می‌ایستد. gutter مستقلِ اعداد y
+حفظ شده، اما دیگر فضای چپ غیرضروری ندارد و آخرین label زمان مانند «شهریور 1405»
+داخل کادر باقی می‌ماند. ۱۶ تست Dashboard، lint، typecheck و build تولیدی Web
+موفق‌اند؛ Web روی ۳۰۰۰ و API روی ۴۰۰۰ پاسخ HTTP ۲۰۰ دارند. Migration، Schema،
+داده، Permission، وابستگی و Lockfile تغییر نکرده‌اند.
+
+## 2026-09-19 — DASHBOARD-KPI-SEMANTIC-DELTA-0919 — READY_FOR_REVIEW
+
+تگ تغییر KPI دیگر صرفاً بر اساس فلش بالا/پایین رنگ نمی‌گیرد؛ رنگ، اثر کسب‌وکاری
+تغییر را بیان می‌کند. KPIهای کنترلی (`guardrail`) و شاخص‌های ماهیتاً زیان‌زا مانند
+استرداد، لغو، تخفیف، هزینه، کمیسیون، تاخیر و بدهی، هنگام افزایش تگ قرمزِ واضح و
+هنگام کاهش تگ سبز می‌گیرند. فلش جهت واقعی تغییر را نگه می‌دارد. KPIهای عادی برعکس
+رفتار می‌کنند: افزایش سبز و کاهش قرمز. ۱۶ تست Dashboard، lint، typecheck و build
+تولیدی Web موفق‌اند؛ Web روی ۳۰۰۰ و API روی ۴۰۰۰ پاسخ HTTP ۲۰۰ دارند. Migration،
+Schema، داده، Permission، وابستگی و Lockfile تغییر نکرده‌اند.
+
+## 2026-09-19 — DASHBOARD-TREND-POINT-TOOLTIP-0919 — READY_FOR_REVIEW
+
+Tooltip نقطه‌های نمودار روند فقط زمان همان bucket و مقدار همان نقطه را نمایش
+می‌دهد. برای bucket ساعتی، تاریخ و ساعت در `Asia/Tehran` با هم می‌آیند؛ bucketهای
+روز، هفته و ماه نیز به‌ترتیب با برچسب زمانی خوانای خودشان نمایش می‌یابند. برچسب خام
+ISO و عبارت اضافی «بازه انتخاب‌شده» حذف شد. تقویم tooltip همان انتخاب شمسی/میلادی
+نمودار است. ۱۶ تست Dashboard، lint، typecheck و build تولیدی Web موفق‌اند؛ Web روی
+۳۰۰۰ و API روی ۴۰۰۰ پاسخ HTTP ۲۰۰ دارند. Migration، Schema، داده، Permission،
+وابستگی و Lockfile تغییر نکرده‌اند.
+
+## 2026-09-19 — DASHBOARD-TREND-TEXT-SUMMARY-0919 — READY_FOR_REVIEW
+
+جدول بازشوندهٔ هر نمودار روند، دیگر timestamp خام منبع را نمایش نمی‌دهد. همان
+منطق دانه‌بندی نمودار برای آن استفاده می‌شود: امروز ساعتی، هفته و ماه روزانه، فصل
+هفتگی و سال ماهانه. عنوان خلاصه، نام ستون زمان و برچسب همهٔ ردیف‌ها با این grain
+هماهنگ‌اند و انتخاب «تاریخ شمسی/تاریخ میلادی» نمودار، جدول را نیز با تقویم یکسان و
+زمان `Asia/Tehran` قالب‌بندی می‌کند. Migration، Schema، داده، Permission، وابستگی
+و Lockfile تغییر نکرده‌اند. ۱۶ تست Dashboard، lint، typecheck و build تولیدی Web
+موفق‌اند؛ Web روی ۳۰۰۰ و API روی ۴۰۰۰ پاسخ HTTP ۲۰۰ دارند.
+
+## 2026-09-19 — DASHBOARD-TREND-SPARKLINE-AXIS-0919 — READY_FOR_REVIEW
+
+Sparklineهای KPI Card بدون marker نقطه‌ای، با خط و سایهٔ گرادیانی باقی مانده‌اند.
+نشان تغییر KPI اکنون آیکون جهت و درصد خواناتر دارد: رشد سبز، افت قرمز و ثبات آبی؛
+این نشان همچنان از بازهٔ هم‌طول قبل در Projection تأییدشده محاسبه می‌شود. نمودارهای
+روند اصلی عنوان‌های محور را ندارند، gutter مقدار در چپِ canvas جدا شده و نمودار در
+عرض کامل canvas رسم می‌شود. نمایش محور زمان برای امروز ساعتی، هفته/ماه روزانه، فصل
+هفتگی و سال ماهانه است؛ testهای calendar فاصلهٔ واقعی هر bucket را تأیید می‌کنند.
+
+۱۰ تست هدفمند API و ۱۶ تست Web، lint و typecheck API/Web و build تولیدی Web موفق
+هستند. Migration، Schema، Permission، Dependency/Lockfile و داده‌های
+دمو/عملیاتی تغییر نکرده‌اند. Web روی `localhost:3000` و API روی ۴۰۰۰ با پاسخ HTTP
+۲۰۰ فعال‌اند.
 
 ## 2026-09-19 — SALES-CONTRACT-TABLE-0919 — LOCAL_COMPLETE
 
@@ -2921,3 +3099,22 @@ Reservations از API عمومی Master Data برای تطبیق قالب و ا�
 پنجرهٔ خرید رزرواسیون برای انتخاب خدمت هتل/ترانسفر، ثبت کارگزار و مبلغ/ارز و ارسال نسخهٔ خرید به کارتابل مالی در حال تکمیل است. این واحد از قرارداد عمومی موجود استفاده می‌کند و Migration یا دادهٔ عملیاتی ندارد.
 
 نتیجه: انتخاب خدمت هتل/ترانسفر، کارگزار، مبلغ و ارز به پنجرهٔ خرید افزوده شد. ثبت از قرارداد عمومی نسخه‌دار رزواسیون استفاده می‌کند و وضعیت پرداخت در Finance باقی می‌ماند. قراردادهای قدیمی دارای hotelSelection نیز قابل خرید هستند. تست هدفمند، lint، Prettier و typecheck API/Web موفق‌اند؛ Migration، dependency و دادهٔ عملیاتی تغییر نکرده است.
+## 2026-09-19 — DASHBOARD-TREND-FILTER-UX-0919 — READY_FOR_REVIEW
+
+کادر انتخاب تقویم محور X نمودار روند از نظر ارتفاع و عرض کمی بزرگ‌تر شد تا آیکون
+و متن «تاریخ شمسی/میلادی» داخل کادر باقی بمانند. آیتم‌های بازهٔ زمانی نیز با
+عرض کامل، راست‌چین و هم‌تراز با سمت راست کادر نمایش داده می‌شوند. تست هدفمند
+Dashboard، lint، typecheck و build تولیدی Web موفق‌اند؛ API، Schema/Migration،
+Permission، دادهٔ عملیاتی و Dependency/Lockfile تغییر نکردند.
+## 2026-09-19 — DASHBOARD-RANGE-OPTION-ALIGNMENT-0919 — READY_FOR_REVIEW
+
+متن گزینه‌های فیلتر «بازه زمانی» داخل آیتمی تمام‌عرض قرار گرفت تا هنگام بازشدن
+فهرست، مقدارهایی مانند «امروز»، «این هفته» و «این ماه» در سمت راست کادر نمایش
+داده شوند. تست Dashboard، lint، typecheck و build تولیدی Web موفق‌اند و Web/API
+روی پورت‌های ۳۰۰۰/۴۰۰۰ پاسخ ۲۰۰ دارند.
+
+## 2026-09-19 — Sales/Ticket Catalog source synchronization (PC-A, in progress)
+
+Ticket Management local-only definitions and Sales offer selection are being unified on the existing Ticket Catalog public source. No schema, migration, dependency lock, operational data, or direct cross-module table access is in scope.
+
+Result: Ticket Management now publishes new flight definitions to the existing Ticket Catalog offer source before closing the form, and exposes the branch-scoped published offer list used by Sales contracts. Round-trip and repetition publish independent flight offers. Focused Web (1) and API (3) tests, lint, Prettier and API/Web typecheck passed. No migration, dependency lock, or operational data changed.

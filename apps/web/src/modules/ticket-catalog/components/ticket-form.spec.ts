@@ -6,6 +6,7 @@ import {
   createConnectedSegment,
   createReturnTicketDraft,
   inferWallTimeOffset,
+  scheduleToUtc,
 } from './ticket-form';
 
 describe('Round-trip ticket definition', () => {
@@ -137,6 +138,12 @@ describe('Hidden ticket metadata', () => {
     );
   });
 
+  it('stores optional departure and arrival times as UTC values', () => {
+    expect(scheduleToUtc('', 'Asia/Tehran')).toBe('');
+    expect(scheduleToUtc('2026-09-01T10:00', 'Asia/Tehran')).toBe(
+      '2026-09-01T06:30:00.000Z',
+    );
+  });
   it('rejects a daylight-saving gap with a user-facing message', () => {
     expect(() =>
       inferWallTimeOffset('2026-03-08T02:30', 'America/New_York'),

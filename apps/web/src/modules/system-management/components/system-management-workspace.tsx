@@ -9,6 +9,8 @@ import {
   CalendarDays,
   ChartNoAxesColumnIncreasing,
   Check,
+  ChevronDown,
+  ChevronLeft,
   Clock3,
   Eye,
   FileText,
@@ -32,6 +34,7 @@ import {
   X,
   type LucideIcon,
 } from 'lucide-react';
+import Link from 'next/link';
 import {
   useCallback,
   useEffect,
@@ -41,7 +44,9 @@ import {
   type FormEvent,
 } from 'react';
 
-import type { SystemSettingV1 } from '@nora/contracts';
+import type { LegalEntitySummary, SystemSettingV1 } from '@nora/contracts';
+import { navigationGroups, navigationItems } from '@/lib/navigation';
+import { legalEntitiesApi } from '@/modules/legal-entities/api/client';
 import {
   systemManagementApi,
   SystemManagementApiError,
@@ -59,6 +64,72 @@ import styles from './system-management-workspace.module.css';
 
 type Page = 'history' | 'module' | 'modules' | 'overview' | 'reviews';
 type Values = Record<string, boolean | string>;
+type SettingsScope = {
+  scope: 'GLOBAL' | 'LEGAL_ENTITY';
+  scopeId: string | null;
+  title: string;
+};
+
+interface ManagementArea {
+  id: string;
+  description: string;
+  href: string;
+  moduleIds: readonly string[];
+  owner: string;
+  title: string;
+}
+
+const globalScope: SettingsScope = {
+  scope: 'GLOBAL',
+  scopeId: null,
+  title: 'کل مجموعه',
+};
+
+/** Links retain ownership instead of duplicating an owner's administration UI. */
+const managementAreas: readonly ManagementArea[] = [
+  {
+    id: 'legal-entities',
+    title: 'شرکت صادرکننده و برند',
+    description: 'هویت حقوقی، Branding و سربرگ‌ها در ماژول مالک ثبت می‌شوند.',
+    owner: 'Legal Entity',
+    href: '/system/legal-entities',
+    moduleIds: ['general'],
+  },
+  {
+    id: 'iam',
+    title: 'کاربران، نقش‌ها و دامنه دسترسی',
+    description:
+      'IAM وضعیت کاربر، نقش و مجوز مؤثر را دوباره اعتبارسنجی می‌کند.',
+    owner: 'IAM',
+    href: '/users',
+    moduleIds: ['access'],
+  },
+  {
+    id: 'documents',
+    title: 'اسناد و فایل‌ها',
+    description: 'فایل، دسترسی و نگه‌داری در مالک Documents باقی می‌ماند.',
+    owner: 'Documents',
+    href: '/documents',
+    moduleIds: ['documents'],
+  },
+  {
+    id: 'reporting',
+    title: 'گزارش‌ها و خروجی‌ها',
+    description: 'کاتالوگ و چرخهٔ خروجی گزارش را Reporting مالک است.',
+    owner: 'Reporting',
+    href: '/reports',
+    moduleIds: ['reports'],
+  },
+  {
+    id: 'operations',
+    title: 'عملیات، سلامت و پشتیبان',
+    description:
+      'عملیات نسخه‌دار System Management و Probeهای مالک در این صفحه‌اند.',
+    owner: 'System Management',
+    href: '/system/operations',
+    moduleIds: ['integrations'],
+  },
+];
 
 const iconMap: Record<string, LucideIcon> = {
   bag: BriefcaseBusiness,
@@ -95,15 +166,101 @@ const tones: Record<SettingTone, { accent: string; tint: string }> = {
   violet: { tint: '#f1ebff', accent: '#8554ca' },
 };
 
-const categories = [
-  'همه',
-  'مشتری و فروش',
-  'عملیات سفر',
-  'مالی و همکاری',
-  'سازمان و بهره‌وری',
-  'زیرساخت و داده',
-  'مدیریت',
-] as const;
+type SystemCategoryId =
+  | 'all'
+  | 'company-settings'
+  | 'documents-reports'
+  | 'finance'
+  | 'human-resources'
+  | 'reservations-supply'
+  | 'sales-customers'
+  | 'workspace';
+
+interface SystemCategoryLink {
+  href: string;
+  title: string;
+}
+
+interface SystemCategoryGroup {
+  id: Exclude<SystemCategoryId, 'all'>;
+  links: readonly SystemCategoryLink[];
+  moduleIds: readonly string[];
+  title: string;
+}
+
+const systemCategoryIdByNavigationGroup = {
+  work: 'workspace',
+  sales: 'sales-customers',
+  operations: 'reservations-supply',
+  finance: 'finance',
+  hr: 'human-resources',
+  resources: 'documents-reports',
+  system: 'company-settings',
+} as const satisfies Record<
+  (typeof navigationGroups)[number]['id'],
+  Exclude<SystemCategoryId, 'all'>
+>;
+
+const moduleIdsBySystemCategory: Record<
+  Exclude<SystemCategoryId, 'all'>,
+  readonly string[]
+> = {
+  workspace: ['tasks', 'messages'],
+  'sales-customers': ['customers', 'affairs', 'sales', 'marketing'],
+  'reservations-supply': ['catalog', 'operations', 'procurement'],
+  finance: ['finance', 'b2b'],
+  'human-resources': ['hr'],
+  'documents-reports': ['documents', 'reports'],
+  'company-settings': ['general', 'access', 'integrations', 'master'],
+};
+
+/** Actual routes that live below a primary navigation destination. */
+const categoryExtraLinks: Record<
+  Exclude<SystemCategoryId, 'all'>,
+  readonly SystemCategoryLink[]
+> = {
+  workspace: [],
+  'sales-customers': [
+    { href: '/sales/pricing', title: 'مدیریت قیمت و پکیج‌ها' },
+  ],
+  'reservations-supply': [
+    { href: '/reservations/operations', title: 'عملیات رزرواسیون' },
+    { href: '/reservations/processing', title: 'فرآیند رزرواسیون' },
+  ],
+  finance: [],
+  'human-resources': [],
+  'documents-reports': [],
+  'company-settings': [
+    { href: '/users', title: 'کاربران، نقش‌ها و دسترسی‌ها' },
+    { href: '/system/legal-entities', title: 'شرکت‌های حقوقی و برندها' },
+    { href: '/system/operations', title: 'عملیات و سلامت سامانه' },
+  ],
+};
+
+const systemCategoryGroups: readonly SystemCategoryGroup[] =
+  navigationGroups.map((group) => {
+    const id = systemCategoryIdByNavigationGroup[group.id];
+    return {
+      id,
+      title: group.title,
+      moduleIds: moduleIdsBySystemCategory[id],
+      links: [
+        ...group.hrefs.map((href) => {
+          const item = navigationItems.find(
+            (navigationItem) => navigationItem.href === href,
+          );
+          return { href, title: item?.title ?? href };
+        }),
+        ...categoryExtraLinks[id],
+      ],
+    };
+  });
+
+function systemCategoryFor(module: SettingModule) {
+  return systemCategoryGroups.find((group) =>
+    group.moduleIds.includes(module.id),
+  );
+}
 
 function palette(module: SettingModule): CSSProperties {
   return {
@@ -150,9 +307,15 @@ function apiMessage(error: unknown) {
 export function SystemManagementWorkspace() {
   const [page, setPage] = useState<Page>('overview');
   const [selectedModuleId, setSelectedModuleId] = useState('general');
-  const [category, setCategory] = useState<(typeof categories)[number]>('همه');
+  const [category, setCategory] = useState<SystemCategoryId>('all');
+  const [expandedCategory, setExpandedCategory] = useState<Exclude<
+    SystemCategoryId,
+    'all'
+  > | null>(null);
   const [query, setQuery] = useState('');
-  const [scope, setScope] = useState('کل مجموعه');
+  const [scope, setScope] = useState<SettingsScope>(globalScope);
+  const [legalEntities, setLegalEntities] = useState<LegalEntitySummary[]>([]);
+  const [scopeLoadError, setScopeLoadError] = useState<string | null>(null);
   const [moduleTab, setModuleTab] = useState<'history' | 'settings'>(
     'settings',
   );
@@ -170,17 +333,30 @@ export function SystemManagementWorkspace() {
   const [toast, setToast] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    const [settingsResult, auditResult, overviewResult] =
+    const [settingsResult, auditResult, overviewResult, legalEntitiesResult] =
       await Promise.allSettled([
         systemManagementApi.settings(),
         systemManagementApi.audit(),
         systemManagementApi.overview(),
+        legalEntitiesApi.selectable(),
       ]);
     if (settingsResult.status === 'fulfilled')
       setSettings(settingsResult.value);
     if (auditResult.status === 'fulfilled') setAudit(auditResult.value);
     if (overviewResult.status === 'fulfilled')
       setOverview(overviewResult.value);
+    if (legalEntitiesResult.status === 'fulfilled') {
+      setLegalEntities(
+        legalEntitiesResult.value.data.filter((entity) => entity.isActive),
+      );
+      setScopeLoadError(null);
+    } else {
+      setLegalEntities([]);
+      setScopeLoadError(
+        'دامنه‌های حقوقی از API مالک در دسترس نیست؛ فقط دامنه کل مجموعه قابل استفاده است.',
+      );
+      setScope(globalScope);
+    }
   }, []);
 
   useEffect(() => {
@@ -212,7 +388,8 @@ export function SystemManagementWorkspace() {
       (setting) =>
         setting.namespace === module.id &&
         setting.key === group.id &&
-        setting.scope === 'GLOBAL',
+        setting.scope === scope.scope &&
+        setting.scopeId === scope.scopeId,
     );
 
   const valuesFor = (module: SettingModule, group: SettingGroup) => {
@@ -224,9 +401,12 @@ export function SystemManagementWorkspace() {
 
   const filteredModules = useMemo(() => {
     const normalized = query.trim();
+    const selectedCategory = systemCategoryGroups.find(
+      (group) => group.id === category,
+    );
     return settingsModules.filter(
       (module) =>
-        (category === 'همه' || module.category === category) &&
+        (!selectedCategory || selectedCategory.moduleIds.includes(module.id)) &&
         (!normalized ||
           [
             module.title,
@@ -255,12 +435,6 @@ export function SystemManagementWorkspace() {
   const saveGroup = async (event: FormEvent) => {
     event.preventDefault();
     if (!editing) return;
-    if (scope !== 'کل مجموعه') {
-      setSaveError(
-        'ثبت Scope شرکتی به شناسه حقوقی معتبر نیاز دارد؛ دامنه «کل مجموعه» را انتخاب کنید.',
-      );
-      return;
-    }
     if (!reason.trim()) {
       setSaveError('دلیل تغییر را وارد کنید.');
       return;
@@ -274,7 +448,8 @@ export function SystemManagementWorkspace() {
         key: editing.group.id,
         namespace: editing.module.id,
         reason: reason.trim(),
-        scope: 'GLOBAL',
+        scope: scope.scope,
+        scopeId: scope.scopeId,
         status: 'ACTIVE',
         value: draft,
         valueType: 'JSON',
@@ -301,13 +476,6 @@ export function SystemManagementWorkspace() {
     setPage(next);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
-
-  const navItems: Array<{ icon: LucideIcon; label: string; page: Page }> = [
-    { page: 'overview', label: 'نمای کلی', icon: Home },
-    { page: 'modules', label: 'تنظیمات بخش‌ها', icon: LayoutGrid },
-    { page: 'reviews', label: 'بررسی تغییرات', icon: ShieldCheck },
-    { page: 'history', label: 'تاریخچه تغییرات', icon: History },
-  ];
 
   const renderHistory = (items = audit) => (
     <div className={styles.auditGrid}>
@@ -348,19 +516,75 @@ export function SystemManagementWorkspace() {
           />
         </label>
       </div>
-      <div aria-label="دسته‌بندی تنظیمات" className={styles.filters}>
-        {categories.map((item) => (
-          <button
-            aria-pressed={category === item}
-            className={`${styles.filter} ${category === item ? styles.filterActive : ''}`}
-            key={item}
-            onClick={() => setCategory(item)}
-            type="button"
-          >
-            {item}
-          </button>
-        ))}
-      </div>
+      <nav aria-label="دسته‌بندی تنظیمات" className={styles.filters}>
+        <button
+          aria-pressed={category === 'all'}
+          className={`${styles.filter} ${category === 'all' ? styles.filterActive : ''}`}
+          onClick={() => {
+            setCategory('all');
+            setExpandedCategory(null);
+          }}
+          type="button"
+        >
+          <span aria-hidden="true" className={styles.categoryDot} />
+          همه بخش‌ها
+        </button>
+        {systemCategoryGroups.map((group) => {
+          const expanded = expandedCategory === group.id;
+          const panelId = `system-category-${group.id}`;
+          return (
+            <button
+              aria-controls={panelId}
+              aria-expanded={expanded}
+              aria-pressed={category === group.id}
+              className={`${styles.filter} ${category === group.id ? styles.filterActive : ''}`}
+              key={group.id}
+              onClick={() => {
+                setCategory(group.id);
+                setExpandedCategory((current) =>
+                  current === group.id ? null : group.id,
+                );
+              }}
+              type="button"
+            >
+              <span aria-hidden="true" className={styles.categoryDot} />
+              {group.title}
+              {expanded ? (
+                <ChevronDown
+                  aria-hidden="true"
+                  className={styles.categoryChevron}
+                />
+              ) : (
+                <ChevronLeft
+                  aria-hidden="true"
+                  className={styles.categoryChevron}
+                />
+              )}
+            </button>
+          );
+        })}
+      </nav>
+      {expandedCategory ? (
+        <div
+          aria-label={`زیرمجموعه‌های ${systemCategoryGroups.find((group) => group.id === expandedCategory)?.title ?? ''}`}
+          className={styles.categoryPanel}
+          id={`system-category-${expandedCategory}`}
+        >
+          {systemCategoryGroups
+            .find((group) => group.id === expandedCategory)
+            ?.links.map((link) => (
+              <Link
+                aria-label={`رفتن به ${link.title}`}
+                className={styles.categoryChild}
+                href={link.href}
+                key={link.href}
+              >
+                {link.title}
+                <ArrowLeft aria-hidden="true" size={16} />
+              </Link>
+            ))}
+        </div>
+      ) : null}
       <div className={styles.hubGrid}>
         {filteredModules.length ? (
           filteredModules.map((module) => {
@@ -380,7 +604,9 @@ export function SystemManagementWorkspace() {
                   </span>
                   <div className={styles.grow}>
                     <h3>{module.title}</h3>
-                    <p className={styles.subtitle}>{module.category}</p>
+                    <p className={styles.subtitle}>
+                      {systemCategoryFor(module)?.title ?? module.category}
+                    </p>
                   </div>
                 </div>
                 <div className={styles.tags}>
@@ -410,6 +636,24 @@ export function SystemManagementWorkspace() {
 
   const renderModule = () => {
     const ModuleIcon = iconMap[selectedModule.icon] ?? Settings;
+    const ownerAreas = managementAreas.filter((area) =>
+      area.moduleIds.includes(selectedModule.id),
+    );
+    const moduleSettingIds = new Set(
+      settings
+        .filter(
+          (setting) =>
+            setting.namespace === selectedModule.id &&
+            setting.scope === scope.scope &&
+            setting.scopeId === scope.scopeId,
+        )
+        .map((setting) => setting.id),
+    );
+    const moduleAudit = audit.filter(
+      (event) =>
+        event.entityType === 'SYSTEM_SETTING' &&
+        moduleSettingIds.has(event.entityId),
+    );
     return (
       <>
         <div className={styles.heading}>
@@ -421,7 +665,7 @@ export function SystemManagementWorkspace() {
               <h1>{selectedModule.title}</h1>
               <p className={styles.subtitle}>
                 {selectedModule.groups.length.toLocaleString('fa-IR')} کارت
-                تنظیمات • {scope}
+                تنظیمات • {scope.title}
               </p>
             </div>
           </div>
@@ -433,6 +677,19 @@ export function SystemManagementWorkspace() {
             <LayoutGrid aria-hidden="true" size={18} /> همه بخش‌ها
           </button>
         </div>
+        {ownerAreas.length ? (
+          <div className={styles.ownerLinks}>
+            {ownerAreas.map((area) => (
+              <p key={area.id}>
+                <span>{area.description}</span>
+                <Link href={area.href}>
+                  ادامه در {area.owner}: {area.title}
+                  <ArrowLeft aria-hidden="true" size={16} />
+                </Link>
+              </p>
+            ))}
+          </div>
+        ) : null}
         <div className={styles.sectionbar}>
           <button
             className={`${styles.tab} ${moduleTab === 'settings' ? styles.tabActive : ''}`}
@@ -450,7 +707,7 @@ export function SystemManagementWorkspace() {
           </button>
         </div>
         {moduleTab === 'history' ? (
-          renderHistory()
+          renderHistory(moduleAudit)
         ) : (
           <div className={styles.settingsGrid}>
             {selectedModule.groups.map((group) => {
@@ -542,12 +799,28 @@ export function SystemManagementWorkspace() {
               <span className={styles.scopeLabel}>دامنه:</span>
               <select
                 aria-label="دامنه تنظیمات"
-                onChange={(event) => setScope(event.target.value)}
-                value={scope}
+                onChange={(event) => {
+                  const next = event.target.value;
+                  if (next === 'GLOBAL') {
+                    setScope(globalScope);
+                    return;
+                  }
+                  const entity = legalEntities.find((item) => item.id === next);
+                  if (entity)
+                    setScope({
+                      scope: 'LEGAL_ENTITY',
+                      scopeId: entity.id,
+                      title: entity.persianName,
+                    });
+                }}
+                value={scope.scopeId ?? 'GLOBAL'}
               >
-                <option>کل مجموعه</option>
-                <option>نیایش سیر سحر</option>
-                <option>جهان باستان</option>
+                <option value="GLOBAL">کل مجموعه</option>
+                {legalEntities.map((entity) => (
+                  <option key={entity.id} value={entity.id}>
+                    {entity.persianName}
+                  </option>
+                ))}
               </select>
             </label>
             <span className={styles.statusBadge} role="status">
@@ -556,30 +829,11 @@ export function SystemManagementWorkspace() {
             </span>
           </div>
         </div>
-
-        <nav aria-label="بخش‌های مدیریت سیستم" className={styles.pageNav}>
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const active =
-              page === item.page ||
-              (item.page === 'modules' && page === 'module');
-            return (
-              <button
-                aria-current={active ? 'page' : undefined}
-                className={`${styles.navButton} ${active ? styles.navButtonActive : ''}`}
-                key={item.page}
-                onClick={() => navigate(item.page)}
-                type="button"
-              >
-                <Icon aria-hidden="true" size={17} />
-                {item.label}
-                {item.page === 'reviews' ? (
-                  <span className={styles.counter}>۰</span>
-                ) : null}
-              </button>
-            );
-          })}
-        </nav>
+        {scopeLoadError ? (
+          <p className={styles.scopeHint} role="status">
+            {scopeLoadError}
+          </p>
+        ) : null}
 
         {page === 'overview' || page === 'modules' ? renderHub() : null}
         {page === 'module' ? renderModule() : null}
@@ -635,7 +889,7 @@ export function SystemManagementWorkspace() {
             <form onSubmit={saveGroup}>
               <div className={styles.modalBody}>
                 <div className={styles.saveMeta}>
-                  <span>{scope}</span>
+                  <span>{scope.title}</span>
                   <span className={`${styles.pill} ${styles.pillBlue}`}>
                     نسخه{' '}
                     {settingFor(
