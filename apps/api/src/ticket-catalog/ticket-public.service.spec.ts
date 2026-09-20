@@ -91,7 +91,10 @@ describe('TicketPublicService offer retry', () => {
     });
     expect(findMany).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { branchId: { in: ['branch-1'] }, status: { not: 'ARCHIVED' } },
+        where: {
+          branchId: { in: ['branch-1'] },
+          audit: { none: { action: 'ticket.offer.archived' } },
+        },
       }),
     );
   });

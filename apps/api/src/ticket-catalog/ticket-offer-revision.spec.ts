@@ -70,10 +70,10 @@ describe('published ticket revision', () => {
         id,
         branchId: { in: ['branch'] },
         version: 1,
-        status: { not: 'ARCHIVED' },
+        audit: { none: { action: 'ticket.offer.archived' } },
         departureAt: { lte: expect.any(Date) },
       },
-      data: { status: 'ARCHIVED', version: { increment: 1 } },
+      data: { status: 'PAUSED', version: { increment: 1 } },
     });
     expect(create).toHaveBeenCalledOnce();
     updateMany.mockResolvedValue({ count: 0 });
