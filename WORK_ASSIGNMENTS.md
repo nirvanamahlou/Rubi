@@ -3,6 +3,7 @@
 - Scope: add time-bucket trend series to percentage KPI metrics in the Reporting projection; preserve percentage aggregation semantics and existing comparison behavior. CI repair is also reserved for the public hotel-rate projection/test and Dashboard model test: `apps/api/src/reservations/hotel-purchase-rates.public.{ts,spec.ts}` and `apps/web/src/modules/dashboard/model/dashboard.spec.ts`.
 - No Schema/Migration/Dependency/Lockfile or operational-data changes. API contract change is additive: percentage KPI snapshots may now include `trend`.
 - Result: percentage ratio metrics now emit a time-bucket trend, count-based percentage metrics emit their current-period trend independently of comparison availability, and `lead-growth-rate` emits bucket-aligned growth against the corresponding bucket in the equal previous period. The CI repairs make the public hotel-rate projection safe for an omitted relation and replace the Dashboard source-literal check with registry/query contract coverage. Full repository lint, typecheck, test and production build pass under CI-equivalent environment variables; 84 migrations, status and two repeatable seeds also pass on an isolated PostgreSQL 18 container, which was removed afterward. The shared API4000 process was not restarted because it is owned by the active integrated runtime.
+
 ## HOTEL-RATE-ROOM-CAPACITY-0920 — PC-A — READY_FOR_REVIEW
 
 - درخواست مالک در 2026-09-20: نرخ هر هتل باید برای نوع‌های اتاق واقعی آن ثبت شود؛ هر نوع اتاق ضریب و ظرفیت مستقل بزرگسال/کودک دارد، نبود ضریب یعنی اتاق قابل فروش نیست و قرارداد نباید از ظرفیت ثبت‌شده عبور کند. افزودن نوع اتاق از همین جریان فقط با Permissionهای اطلاعات پایه مجاز است.
@@ -3501,3 +3502,10 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 
 - `COMPUTER_ID=PC-C`; شاخهٔ مستقل `codex/pc-c-dashboard-metrics-0919` برای اصلاح metric/aggregation مستقل KPIها و Visualهای Dashboard رزرو شد.
 - قرارداد و producer Projection گزارش، نمایش واحد درصد در Web و تست هدفمند API تکمیل شد. برای Visualهای مالی، جمع مبلغ فقط در ارز انتخابی انجام می‌شود؛ Visualهای تعدادی/نرخی از count distinct/status/rate خود استفاده می‌کنند و currencySeries دریافت نمی‌کنند. تغییر Schema/Migration، دادهٔ عملیاتی/دمو، Permission و فایل‌های فعال PC-A/PC-B خارج از محدوده است.
+
+## DASHBOARD-REPORT-FILTER-INHERITANCE-0920 — PC-C — READY_FOR_REVIEW
+
+- Request: when a user opens a related report configuration from a Dashboard KPI or visualization, carry only the matching active Dashboard filters into that report form so the same scope does not need to be selected twice.
+- Scope reserved: `apps/web/src/modules/dashboard/model/query.ts`, `apps/web/src/modules/dashboard/components/dashboard-workspace.tsx`, their focused tests, and this task/status entry. No API, schema, migration, operational data, permission, dependency, lockfile, or Reports-module form changes.
+- Compatibility: the Dashboard owns the mapping. The existing Reports form remains the authority for which filters apply to each report; it discards mapped values for filters absent from its catalog definition.
+- Result: opening a related report now preserves Dashboard custom dates or the selected Tehran calendar-to-date range, selected legal entity, currency, branch, agent, sales channel, service, agency, Provider and status. A report receives only the labels in its own catalog. Dashboard model tests pass (18 passed, 1 intentionally skipped) and Web TypeScript passes after rebuilding the merged Contracts output.

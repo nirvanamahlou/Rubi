@@ -7,6 +7,7 @@ import {
   dashboardDateRangeError,
   dashboardFilterSnapshot,
   dashboardFiltersFromSearchParams,
+  dashboardFiltersToReportFilterState,
   dashboardFiltersToSearchParams,
   defaultDashboardFilters,
 } from './query';
@@ -471,6 +472,60 @@ describe('dashboard URL filters', () => {
         new URLSearchParams('range=tomorrow&dateBasis=deleted'),
       ),
     ).toMatchObject(defaultDashboardFilters);
+  });
+
+  it('carries matching active dashboard filters into a related report', () => {
+    expect(
+      dashboardFiltersToReportFilterState(
+        {
+          ...defaultDashboardFilters,
+          agent: 'user-17',
+          agency: 'agency-3',
+          branch: 'THR',
+          currency: 'IRR',
+          from: '2026-09-01',
+          provider: 'provider-8',
+          range: 'custom',
+          salesChannel: 'WEB',
+          service: 'FLIGHT',
+          status: 'SETTLED',
+          to: '2026-09-13',
+        },
+        'sales_by_organization',
+        'NIYAYESH_SEIR_SAHAR',
+        new Date('2026-09-20T08:00:00.000Z'),
+      ),
+    ).toEqual({
+      reportCode: 'sales_by_organization',
+      fromDate: '2026-09-01',
+      toDate: '2026-09-13',
+      legalEntity: 'NIYAYESH_SEIR_SAHAR',
+      currency: 'IRR',
+      filterValues: {
+        شعبه: 'THR',
+        کارشناس: 'user-17',
+        'کانال فروش': 'WEB',
+        'نوع خدمت': 'FLIGHT',
+        آژانس: 'agency-3',
+        Provider: 'provider-8',
+        وضعیت: 'SETTLED',
+      },
+    });
+  });
+
+  it('converts a preset dashboard range to the same Tehran calendar dates', () => {
+    expect(
+      dashboardFiltersToReportFilterState(
+        { ...defaultDashboardFilters, range: 'today' },
+        'sales_by_organization',
+        null,
+        new Date('2026-09-20T08:00:00.000Z'),
+      ),
+    ).toMatchObject({
+      fromDate: '2026-09-20',
+      toDate: '2026-09-20',
+      legalEntity: 'ALL',
+    });
   });
 
   it('maps legacy section links to a dashboard page without exposing task pages', () => {

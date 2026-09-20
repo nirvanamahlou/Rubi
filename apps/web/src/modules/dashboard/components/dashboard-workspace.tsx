@@ -95,6 +95,7 @@ import {
 import {
   dashboardDateRangeError,
   dashboardFiltersFromSearchParams,
+  dashboardFiltersToReportFilterState,
   dashboardFiltersToSearchParams,
   defaultDashboardFilters,
   type DashboardFilters,
@@ -3934,6 +3935,13 @@ export function DashboardWorkspace() {
   const openReportConfiguration = (reportCode: string) => {
     setReportConfigurationCode(reportCode);
   };
+  const reportConfigurationState = reportConfigurationCode
+    ? dashboardFiltersToReportFilterState(
+        filters,
+        reportConfigurationCode,
+        selection,
+      )
+    : null;
   return (
     <div className="min-w-0 space-y-5 pb-8" data-dashboard-workspace>
       <section aria-live="polite">
@@ -4137,18 +4145,11 @@ export function DashboardWorkspace() {
             />
           ) : null}
 
-          {reportConfigurationCode ? (
+          {reportConfigurationState ? (
             <ReportingWorkspace
               configurationOnly
-              initialFilterState={{
-                reportCode: reportConfigurationCode,
-                fromDate: '',
-                toDate: '',
-                legalEntity: 'ALL',
-                currency: 'ALL',
-                filterValues: {},
-              }}
-              key={reportConfigurationCode}
+              initialFilterState={reportConfigurationState}
+              key={JSON.stringify(reportConfigurationState)}
               onConfigurationOpenChange={(open) => {
                 if (!open) setReportConfigurationCode(null);
               }}

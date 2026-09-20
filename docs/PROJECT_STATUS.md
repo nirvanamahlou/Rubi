@@ -3139,3 +3139,12 @@ in scope. Full repository lint, typecheck, test and production build pass with C
 environment variables. The database gate also passed on an isolated PostgreSQL 18 container: all
 84 migrations deployed and reported current, followed by two successful seeds; the temporary
 container was removed afterward.
+## 2026-09-20 — DASHBOARD-REPORT-FILTER-INHERITANCE-0920 — READY_FOR_REVIEW
+
+بازکردن «گزارش مرتبط» از KPI Card یا نمودار Dashboard اکنون دامنهٔ فعال Dashboard را
+به فرم پیکربندی گزارش منتقل می‌کند: بازهٔ سفارشی یا بازهٔ تقویمی تهران، شرکت، ارز،
+شعبه، کارشناس، کانال فروش، نوع خدمت، آژانس، Provider و وضعیت. فرم گزارش تنها
+فیلترهایی را نگه می‌دارد که در کاتالوگ همان گزارش تعریف شده‌اند؛ بنابراین هیچ فیلتر
+نامرتبطی به Query گزارش افزوده نمی‌شود. ۱۸ تست مدل Dashboard موفق و یک تست قدیمی
+عمداً غیرفعال است؛ TypeScript Web نیز پس از بازتولید Contracts موفق است. API، Schema،
+Migration، Permission، دادهٔ عملیاتی و runtime محلی تغییر نکردند.
