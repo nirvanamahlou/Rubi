@@ -1,3 +1,10 @@
+## TICKET-TIME-REPEAT-0920 — PC-A — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-20: فیلدهای زمان حرکت و رسیدنِ تعریف بلیت دوباره در فرم در دسترس باشند و هنگام تکرار هفتگی/ماهانه همراه بلیت کپی شوند. `COMPUTER_ID=PC-A`؛ شاخه `codex/pc-a-ticket-time-repeat-0920` از آخرین `origin/develop@7e52d309`.
+- محدودهٔ رزروشده: فقط `apps/web/src/modules/ticket-catalog/**` برای فرم، مدل تکرار و تست‌های همان ماژول، به‌علاوهٔ گزارش همین Work Item و مدخل‌های محدود وضعیت. هیچ Schema/Migration، قرارداد عمومی، API، Permission، Dependency/Lockfile، دادهٔ عملیاتی یا runtime محلی تغییر نمی‌کند.
+- سازگاری: تعریف‌های قدیمیِ بدون زمان همچنان معتبر و تکرارپذیر می‌مانند؛ زمان‌ها در صورت ثبت، UTC و zone موجود را نگه می‌دارند و تاریخ اولین بلیت مبنای تکرار است.
+- تحویل: فیلدهای زمان برای بلیت یک‌طرفه، برگشت و همهٔ قطعه‌های ترکیبی بازگشتند؛ انتخاب زمان حرکت `serviceDate` را همگام می‌کند و تکرار، timestampهای ذخیره‌شده را همراه تاریخ جابه‌جا می‌کند. ۱۰ فایل / ۱۰۰ تست Ticket Catalog، lint و typecheck Web موفق‌اند و build تولیدی در Worktree جدا خروجی `BUILD_ID` ساخته است. Schema/Migration/contract/API/runtime/3100 تغییر نکرده‌اند. وضعیت `READY_FOR_REVIEW`؛ رزرو محدود Central Docs با این Commit `RELEASED` می‌شود.
+
 ## FINANCE-DASHBOARD-REDESIGN-0919 — PC-A — READY_FOR_REVIEW
 
 - درخواست مالک در 2026-09-19: کارتابل مالی از فهرست ساده به داشبورد مالی عملیاتی و قابل‌خواندن تبدیل شود؛ KPIهای واقعی، اولویت‌های پرداخت/دریافت، تفکیک واحدها، وضعیت حساب‌ها و اقدام سریع در همان صفحه نمایش داده شوند. `COMPUTER_ID=PC-A`؛ شاخه `codex/pc-a-finance-dashboard-redesign-0919` از `origin/develop@47762934`.
