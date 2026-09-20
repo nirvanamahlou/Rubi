@@ -666,6 +666,7 @@ describe('dashboard permission and data states', () => {
     );
     expect(source).toContain('dashboard-visual-definition-panel-${visualId}');
     expect(source).toContain('function VisualDetailsPanel');
+    expect(source).not.toContain('خروجی در بازهٔ انتخابی');
     expect(source).toContain('خلاصه متنی و جدول داده');
     expect(source).toContain('جزئیات نمودار');
     expect(source).not.toContain(

@@ -2930,8 +2930,6 @@ function VisualDetailsPanel({
   trendCalendarSystem: TrendCalendarSystem;
   visualId: string;
 }) {
-  const rangeLabel =
-    rangeOptions.find(([value]) => value === range)?.[1] ?? 'بازه انتخابی';
   const temporalGrain =
     kind === 'line' && data
       ? trendTemporalGrain(range, data.labels)
@@ -2994,26 +2992,6 @@ function VisualDetailsPanel({
                   </span>
                 </p>
               ) : null}
-            </section>
-
-            <section aria-labelledby={`visual-current-output-${visualId}`}>
-              <h3
-                className="text-sm font-black text-foreground"
-                id={`visual-current-output-${visualId}`}
-              >
-                خروجی در بازهٔ انتخابی
-              </h3>
-              <div className="mt-2 flex flex-wrap gap-2">
-                <Badge>{rangeLabel}</Badge>
-                <Badge>{visualLabels[kind]}</Badge>
-                {data?.currencyCode ? (
-                  <Badge dir="ltr">
-                    {currencySymbols[data.currencyCode] ?? data.currencyCode}{' '}
-                    {data.currencyCode}
-                  </Badge>
-                ) : null}
-                <Badge>{`${data?.values.length ?? 0} دسته نمایش‌داده‌شده`}</Badge>
-              </div>
             </section>
 
             <section

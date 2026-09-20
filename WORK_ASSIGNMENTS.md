@@ -3509,3 +3509,9 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 - Scope reserved: `apps/web/src/modules/dashboard/model/query.ts`, `apps/web/src/modules/dashboard/components/dashboard-workspace.tsx`, their focused tests, and this task/status entry. No API, schema, migration, operational data, permission, dependency, lockfile, or Reports-module form changes.
 - Compatibility: the Dashboard owns the mapping. The existing Reports form remains the authority for which filters apply to each report; it discards mapped values for filters absent from its catalog definition.
 - Result: opening a related report now preserves Dashboard custom dates or the selected Tehran calendar-to-date range, selected legal entity, currency, branch, agent, sales channel, service, agency, Provider and status. A report receives only the labels in its own catalog. Dashboard model tests pass (18 passed, 1 intentionally skipped) and Web TypeScript passes after rebuilding the merged Contracts output.
+
+## DASHBOARD-VISUAL-DETAIL-OUTPUT-REMOVAL-0920 — PC-C — READY_FOR_REVIEW
+
+- Request: remove the “خروجی در بازهٔ انتخابی” section from every Dashboard visual-details drawer while retaining its auditable definition, display rule, feature lineage, constraints and related-report action.
+- Scope reserved: Dashboard visual-details renderer, focused Dashboard test, and task/status documentation. No API, Schema/Migration, data, permission, dependency or Reports-form change.
+- Result: the generic selected-range output heading and its range/type/currency/category badges are removed from every visual-details drawer. The display rule continues to state the approved projection and active-filter context. Dashboard model tests pass (18 passed, 1 intentionally skipped) and Web TypeScript passes.

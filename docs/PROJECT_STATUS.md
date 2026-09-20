@@ -3148,3 +3148,11 @@ container was removed afterward.
 نامرتبطی به Query گزارش افزوده نمی‌شود. ۱۸ تست مدل Dashboard موفق و یک تست قدیمی
 عمداً غیرفعال است؛ TypeScript Web نیز پس از بازتولید Contracts موفق است. API، Schema،
 Migration، Permission، دادهٔ عملیاتی و runtime محلی تغییر نکردند.
+## 2026-09-20 — DASHBOARD-VISUAL-DETAIL-OUTPUT-REMOVAL-0920 — READY_FOR_REVIEW
+
+بخش عمومی «خروجی در بازهٔ انتخابی» از Drawer جزئیات تمام نمودارهای Dashboard حذف شد؛
+بنابراین نشان‌های بازه، نوع نمودار، ارز و شمار دسته‌های نمایشی دیگر در این پنل
+تکرار نمی‌شوند. تعریف و هدف کسب‌وکار، قاعدهٔ نمایش مبتنی بر Projection و فیلترهای
+فعال، lineage فیچرها، محدودیت‌ها و اقدام گزارش مرتبط باقی مانده‌اند. ۱۸ تست مدل
+Dashboard موفق و یک تست قدیمی عمداً غیرفعال است؛ TypeScript Web نیز موفق است. API،
+Schema، Migration، Permission، دادهٔ عملیاتی و runtime محلی تغییر نکردند.
