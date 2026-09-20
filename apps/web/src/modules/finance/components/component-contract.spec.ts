@@ -163,11 +163,21 @@ describe('finance workspace component contract', () => {
     expect(coreSource).toContain('<FinanceDeliveryPanel />');
     expect(componentSource).not.toContain('<FinanceDeliveryPanel />');
     expect(coreSource).not.toContain('<InboxSpace />');
-    expect(liveInboxSource).toContain('صف درخواست‌های مالی');
+    expect(liveInboxSource).toContain('امروز چه چیزی نیاز به تصمیم مالی دارد؟');
+    expect(liveInboxSource).toContain('مرکز کنترل مالی');
+    expect(liveInboxSource).toContain('جریان کارتابل بر اساس واحد');
+    expect(liveInboxSource).toContain('اولویت‌های نزدیک');
+    expect(liveInboxSource).toContain('حساب‌های قابل استفاده');
     expect(liveInboxSource).not.toContain('Live sources');
     expect(liveInboxSource).not.toContain('عملیات مالی پس از فعال‌سازی');
     expect(liveInboxSource).toContain('origin');
     expect(liveInboxSource).toContain('تأیید دریافت');
+    expect(liveInboxSource).toContain('واریز به حساب');
+    expect(liveInboxSource).toContain('انتخاب حساب مقصد');
+    expect(liveInboxSource).toContain("accountId: actionKind === 'APPROVE'");
+    expect(liveInboxSource).toContain(
+      'account.branchId === actionItem?.branchReference',
+    );
     expect(liveInboxSource).toContain('درخواست اصلاح');
     expect(liveInboxSource).toContain('ثبت پرداخت کارگزار');
     expect(liveInboxSource).toContain('حساب پرداخت‌کننده');
@@ -177,18 +187,20 @@ describe('finance workspace component contract', () => {
     expect(coreSource).toContain('<FinanceWorkspace />');
   });
 
-  it('presents supplier settlement and document delivery as two clear steps', () => {
+  it('keeps customer document delivery independent from supplier purchases', () => {
     expect(deliveryPanelSource).toContain('کنترل مالی قرارداد');
-    expect(deliveryPanelSource).toContain('۱. پرداخت خدمات به کارگزاران');
-    expect(deliveryPanelSource).toContain('۲. مجوز تحویل مدارک به فروش');
-    expect(deliveryPanelSource).toContain('وضعیت پرداخت هر خدمت این قرارداد');
-    expect(deliveryPanelSource).toContain('این مرحله هنوز فعال نیست');
+    expect(deliveryPanelSource).toContain('مجوز تحویل مدارک به مشتری');
+    expect(deliveryPanelSource).toContain('AFTER_RECEIPT');
+    expect(deliveryPanelSource).toContain('FULL_SETTLEMENT');
+    expect(deliveryPanelSource).toContain('MANAGER_EXCEPTION');
+    expect(deliveryPanelSource).toContain('بخشی یا همهٔ شماره');
+    expect(deliveryPanelSource).toContain('شرط تحویل مدارک نیستند');
     expect(deliveryPanelSource).toContain('صدور مجوز تحویل مدارک');
-    expect(deliveryPanelSource).toContain('void load()');
-    expect(deliveryPanelSource).toContain('savePayment');
-    expect(deliveryPanelSource).toContain('updateDelivery');
+    expect(deliveryPanelSource).not.toContain(
+      'وضعیت پرداخت هر خدمت این قرارداد',
+    );
+    expect(deliveryPanelSource).not.toContain('savePayment');
   });
-
   it('covers dashboard, filters, internal navigation and all preview states', () => {
     expect(componentSource).toContain('جست‌وجوی سراسری مالی');
     expect(componentSource).toContain('گروه‌های داخلی مالی');

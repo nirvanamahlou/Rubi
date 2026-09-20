@@ -89,6 +89,15 @@ describe('PackageTourPricingService', () => {
                   'family',
                 ].map((code) => [code, '1']),
               ),
+              roomRates: [
+                {
+                  roomTypeId: 'double',
+                  roomTypeName: 'دوتخته',
+                  factor: '1',
+                  maxAdults: 2,
+                  maxChildren: 0,
+                },
+              ],
             },
           ],
         },
@@ -134,6 +143,7 @@ describe('PackageTourPricingService', () => {
       actor,
     );
     const double = result.roomPrices.find((row) => row.roomCode === 'double')!;
+    expect(result.roomPrices).toHaveLength(1);
     expect(double.hotelPurchase).toBe('600');
     expect(double.packageSale).toBeNull();
     expect(double.currencyAmounts).toEqual([
@@ -152,21 +162,19 @@ describe('PackageTourPricingService', () => {
         profit: '3000000',
       },
     ]);
-    expect(result.roomPrices).toHaveLength(6);
+    expect(result.roomPrices).toHaveLength(1);
     expect(result.familyChildren).toBe(1);
   });
   it('never permits publishing by the last draft editor', async () => {
     const database = {
       client: {
         packagePricingTourDraft: {
-          findFirst: vi
-            .fn()
-            .mockResolvedValue({
-              id: 'draft-1',
-              version: 1,
-              updatedByUserId: 'sales-user',
-              adjustments: [],
-            }),
+          findFirst: vi.fn().mockResolvedValue({
+            id: 'draft-1',
+            version: 1,
+            updatedByUserId: 'sales-user',
+            adjustments: [],
+          }),
         },
       },
     } as unknown as DatabaseService;

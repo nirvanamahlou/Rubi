@@ -10,6 +10,10 @@ const catalog = readFileSync(
   new URL('../model/settings-catalog.ts', import.meta.url),
   'utf8',
 );
+const navigation = readFileSync(
+  new URL('../../../lib/navigation.ts', import.meta.url),
+  'utf8',
+);
 const styles = readFileSync(
   new URL('./system-management-workspace.module.css', import.meta.url),
   'utf8',
@@ -27,14 +31,15 @@ describe('system management reference implementation', () => {
       expect(workspace).toContain(label);
 
     for (const category of [
-      'مشتری و فروش',
-      'عملیات سفر',
-      'مالی و همکاری',
-      'سازمان و بهره‌وری',
-      'زیرساخت و داده',
-      'مدیریت',
+      'فضای کار',
+      'فروش و ارتباط با مشتری',
+      'رزرواسیون و تأمین سفر',
+      'مالی',
+      'سرمایه انسانی',
+      'اسناد و گزارش‌ها',
+      'تنظیمات شرکت',
     ])
-      expect(workspace).toContain(category);
+      expect(navigation).toContain(category);
   });
 
   it('includes every settings module and its reference card catalog', () => {
@@ -65,6 +70,21 @@ describe('system management reference implementation', () => {
     expect(catalog).toContain('خروجی و فایل گزارش');
   });
 
+  it('uses the real application navigation for every expandable category', () => {
+    expect(workspace).toContain('navigationGroups');
+    expect(workspace).toContain('categoryExtraLinks');
+    expect(workspace).toContain('رفتن به ${link.title}');
+    expect(workspace).toContain("href: '/sales/pricing'");
+    expect(workspace).toContain("href: '/reservations/operations'");
+    expect(workspace).toContain("href: '/reservations/processing'");
+    expect(workspace).toContain("href: '/system/legal-entities'");
+    expect(workspace).toContain("href: '/system/operations'");
+    expect(navigation).toContain("hrefs: ['/workbench', '/dashboard']");
+    expect(navigation).toContain("hrefs: ['/human-resources']");
+    expect(navigation).toContain("'/ticket-management'");
+    expect(navigation).toContain("'/purchases'");
+  });
+
   it('persists real versioned JSON settings with reason and optimistic version', () => {
     expect(workspace).toContain('systemManagementApi.writeSetting');
     expect(workspace).toContain("valueType: 'JSON'");
@@ -75,23 +95,34 @@ describe('system management reference implementation', () => {
     expect(workspace).not.toContain('Math.random');
   });
 
+  it('uses the Legal Entity public API for a real company scope', () => {
+    expect(workspace).toContain('legalEntitiesApi.selectable');
+    expect(workspace).toContain("scope: 'LEGAL_ENTITY'");
+    expect(workspace).toContain('scopeId: entity.id');
+    expect(workspace).toContain('scopeId: scope.scopeId');
+  });
+
   it('inherits the shared application theme and remains responsive', () => {
     expect(styles).toContain('var(--primary)');
     expect(styles).toContain('var(--surface)');
     expect(styles).toContain('var(--foreground)');
     expect(styles).toContain('var(--border)');
-    expect(styles).toContain('.pageNav');
     expect(styles).toContain(
       'color-mix(in srgb, var(--accent) 9%, var(--surface))',
     );
     expect(styles).toContain('grid-template-columns: repeat(3');
     expect(styles).toContain('@media (max-width: 820px)');
     expect(styles).toContain('@media (max-width: 580px)');
-    expect(workspace).toContain('styles.pageNav');
+    expect(workspace).not.toContain('styles.pageNav');
     expect(workspace).not.toContain('styles.sidebar');
     expect(workspace).not.toContain('styles.topbar');
     expect(workspace).toContain('aria-modal="true"');
-    expect(workspace).toContain('aria-pressed={category === item}');
+    expect(workspace).toContain("aria-pressed={category === 'all'}");
+    expect(workspace).toContain('aria-expanded={expanded}');
+    expect(navigation).toContain('رزرواسیون و تأمین سفر');
+    expect(navigation).toContain('فروش و ارتباط با مشتری');
+    expect(workspace).toContain('زیرمجموعه‌های ${systemCategoryGroups.find');
+    expect(workspace).toContain('styles.categoryPanel');
     expect(workspace).toContain('داده‌های عملیاتی');
     expect(workspace).toContain('مقادیر مرجع');
     expect(workspace).toContain('مشاهده تنظیمات');

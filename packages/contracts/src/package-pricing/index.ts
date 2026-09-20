@@ -254,6 +254,14 @@ export interface PackagePageV1 {
   meta: { page: number; pageSize: number; total: number };
 }
 
+export interface HotelRoomRateV1 {
+  roomTypeId: string;
+  roomTypeName: string;
+  factor: string;
+  maxAdults: number;
+  maxChildren: number;
+}
+
 export interface PackageTourHotelPurchaseRowV1 {
   id: string;
   version: 1;
@@ -266,6 +274,8 @@ export interface PackageTourHotelPurchaseRowV1 {
   /** Row currency; omitted only for legacy batches that used batch currency. */
   currencyCode?: string;
   factors: Readonly<Record<string, string>>;
+  /** Explicit saleable room types; absence means legacy rate data only. */
+  roomRates: readonly HotelRoomRateV1[];
 }
 
 export interface PackageTourHotelPurchaseBatchV1 {

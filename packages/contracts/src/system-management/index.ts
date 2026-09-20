@@ -170,6 +170,11 @@ export interface SystemUserSessionsRevokeInputV1 {
   confirmCurrentSession?: boolean;
 }
 
+/** A reasoned retry request routed to the public job owner. */
+export interface SystemReportingExportRetryInputV1 {
+  reason: string;
+}
+
 export interface SystemHealthComponentV1 {
   component: 'API' | 'POSTGRESQL' | 'REDIS' | 'WORKER' | 'STORAGE' | 'QUEUE';
   status: 'HEALTHY' | 'DEGRADED' | 'UNAVAILABLE' | 'UNKNOWN';

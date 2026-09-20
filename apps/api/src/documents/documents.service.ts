@@ -265,6 +265,11 @@ export class DocumentsService {
     private readonly hrDirectory: HrDirectoryService,
   ) {}
 
+  /** Public storage-health port; consumers never access Documents storage directly. */
+  async storageHealth(): Promise<void> {
+    await this.storage.health();
+  }
+
   private assertDomain(
     domain: DocumentDomainCode,
     permissions: readonly string[],

@@ -447,7 +447,9 @@ export class ReservationManifestService {
     const selected = [];
     let skippedFinanceCount = existing?.skippedFinanceCount ?? 0;
     for (const row of candidates) {
-      if (!(await this.delivery.read(row.id)).approved) {
+      if (
+        !(await this.delivery.readCustomerContract(row.contractId)).approved
+      ) {
         skippedFinanceCount += 1;
         continue;
       }
@@ -637,7 +639,9 @@ export class ReservationManifestService {
 
       selectedMetadata = [];
       for (const candidate of filtered) {
-        const authorization = await this.delivery.read(candidate.row.id);
+        const authorization = await this.delivery.readCustomerContract(
+          candidate.row.contractId,
+        );
         if (!authorization.approved) {
           skippedFinanceCount += 1;
           continue;
@@ -661,12 +665,14 @@ export class ReservationManifestService {
 
     const rows: IranAirtourManifestRow[] = [];
     for (const id of selectedIds) {
-      const authorization = await this.delivery.read(id);
+      const intake = await this.workflow.detail(id, actor.branchIds);
+      const authorization = await this.delivery.readCustomerContract(
+        intake.contractId,
+      );
       if (!authorization.approved)
         throw new ForbiddenException(
           'دریافت MANIFEST تا تأیید تحویل مدارک توسط مالی مجاز نیست.',
         );
-      const intake = await this.workflow.detail(id, actor.branchIds);
       rows.push(...(await this.passengerRows(intake, actor, traceId)));
     }
     const template = await readFile(
@@ -710,7 +716,9 @@ export class ReservationManifestService {
   async export(id: string, actor: AuthenticatedActor, traceId?: string) {
     this.requirePermissions(actor);
     const intake = await this.workflow.detail(id, actor.branchIds);
-    const authorization = await this.delivery.read(id);
+    const authorization = await this.delivery.readCustomerContract(
+      intake.contractId,
+    );
     if (!authorization.approved)
       throw new ForbiddenException(
         'دریافت MANIFEST تا تأیید تحویل مدارک توسط مالی مجاز نیست.',
