@@ -1,3 +1,8 @@
+## 2026-09-20 — LOGIN-STATIC-BACKGROUND-0920 — PC-A — READY FOR REVIEW
+
+- طبق درخواست مالک، نوشتهٔ `NOORA` و طرح ابری/باد از صفحهٔ ورود حذف شد. تصویر موجود `login-airline-b2.png` بدون تغییر فایل، حرکت یا تعویض به‌عنوان پس‌زمینهٔ ثابت حفظ شده و crop موبایل و overlay خوانایی قبلی باقی مانده‌اند.
+- اعتبارسنجی: ۵ تست متمرکز صفحه ورود، lint فایل‌های تغییرکرده، typecheck کامل Web و build تولیدی ۵۰ مسیر موفق‌اند. API، احراز هویت، فرم ورود، Schema/Migration، Permission، Dependency/Lockfile، داده و Web3100 تغییر نکردند.
+
 ## 2026-09-20 — HOTEL-RATE-ROOM-CAPACITY-0920 — READY_FOR_REVIEW
 
 مدیریت نرخ هتل از ضرایب ثابت به نرخ نوع اتاق واقعی با ظرفیت مستقل بزرگسال و کودک ارتقا یافت. اتاق بدون ضریب در ارقام پکیج نمایش یا محاسبه نمی‌شود و در فروش قابل انتخاب نیست و Backend فروش ظرفیت هر اتاق را هنگام ایجاد، ویرایش و تأیید قرارداد به‌صورت fail-closed کنترل می‌کند. Migration روی PostgreSQL 18.1 خالی، Prisma، lint/typecheck، تست‌های هدفمند و Build API/Web پاس شدند؛ قفل‌های Migration/Contract/Central Docs تا Merge و Handoff رسمی فعال‌اند.
