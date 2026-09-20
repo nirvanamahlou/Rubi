@@ -37,6 +37,19 @@ export class MasterTravelDirectory {
     };
   }
 
+  private hotelRoomTypes(attributes: Readonly<Record<string, unknown>>) {
+    const ids = String(attributes.roomTypeIds ?? '')
+      .split(',')
+      .filter(Boolean);
+    const names = String(attributes.roomTypeNames ?? '').split(',');
+    const codes = String(attributes.roomTypeCodes ?? '').split(',');
+    return ids.map((id, index) => ({
+      id,
+      name: names[index] || codes[index] || 'نوع اتاق',
+      code: codes[index] || '',
+    }));
+  }
+
   /** Active city / saleable hotel choices for a Reservations-owned rate pack. */
   async hotelRatePackChoices(
     kind: 'cities' | 'hotels',
@@ -60,6 +73,9 @@ export class MasterTravelDirectory {
         id: row.id,
         name: row.name,
         englishName: String(row.attributes.englishName ?? ''),
+        ...(kind === 'hotels'
+          ? { roomTypes: this.hotelRoomTypes(row.attributes) }
+          : {}),
       })),
       meta: result.meta,
     };
@@ -70,6 +86,7 @@ export class MasterTravelDirectory {
     cityId: string,
     hotelId: string,
     brokerId: string,
+    roomTypeIds: readonly string[] = [],
   ) {
     const [{ data: hotel }, reference] = await Promise.all([
       this.master.detail('hotels', hotelId),
@@ -83,7 +100,16 @@ export class MasterTravelDirectory {
       throw new BadRequestException(
         'هتل منتخب باید فعال، قابل فروش و متعلق به شهر این بازه باشد.',
       );
-    return reference;
+    const assignedRooms = this.hotelRoomTypes(hotel.attributes);
+    const names = new Map(assignedRooms.map((room) => [room.id, room.name]));
+    if (roomTypeIds.some((id) => !names.has(id)))
+      throw new BadRequestException(
+        'نوع اتاق انتخاب‌شده باید فعال و به همین هتل متصل باشد.',
+      );
+    return {
+      ...reference,
+      roomTypes: roomTypeIds.map((id) => ({ id, name: names.get(id)! })),
+    };
   }
 
   async hotelRateReference(hotelId: string, brokerId: string) {

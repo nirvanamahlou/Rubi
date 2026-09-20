@@ -34,7 +34,7 @@ model User {
   tourPricingDraftsUpdated                         PackagePricingTourDraft[]                 @relation("TourPricingDraftUpdater")
   tourPricingVersionsPublished                     PackagePricingTourPublishedVersion[]      @relation("TourPricingPublisher")
   financeTicketCostRevisions                       FinanceTicketPurchaseCostRevision[]       @relation("FinanceTicketCostActor")
-  ticketCapacityHolds                             TicketOfferCapacityHold[]                 @relation("TicketCapacityHoldCreator")
+  ticketCapacityHolds                              TicketOfferCapacityHold[]                 @relation("TicketCapacityHoldCreator")
   financeTicketPaymentRevisions                    FinanceTicketPurchasePaymentRevision[]    @relation("FinanceTicketPaymentActor")
   masterHotelRatePeriodsCreated                    MasterHotelRatePeriod[]                   @relation("MasterHotelRatePeriodCreatedBy")
   masterHotelRatePeriodsUpdated                    MasterHotelRatePeriod[]                   @relation("MasterHotelRatePeriodUpdatedBy")
@@ -218,7 +218,7 @@ model RolePermission {
 model Branch {
   tourPricingDrafts                   PackagePricingTourDraft[]
   financeTicketCostRevisions          FinanceTicketPurchaseCostRevision[]
-  ticketCapacityHolds                TicketOfferCapacityHold[]                 @relation("TicketCapacityHoldBranch")
+  ticketCapacityHolds                 TicketOfferCapacityHold[]           @relation("TicketCapacityHoldBranch")
   hotelRatePacks                      ReservationHotelRatePack[]
   masterHotelRatePeriods              MasterHotelRatePeriod[]
   hotelRateBatches                    ReservationHotelRateBatch[]
@@ -2206,23 +2206,24 @@ model MasterMealService {
 }
 
 model MasterRoomType {
-  id                  String                @id @default(uuid()) @db.Uuid
-  code                String                @unique @db.VarChar(32)
-  name                String                @db.VarChar(160)
-  englishName         String?               @db.VarChar(160)
-  referenceCapacity   Int?
-  usageDescription    String?               @db.VarChar(500)
-  displayOrder        Int                   @default(0)
-  isActive            Boolean               @default(true)
-  version             Int                   @default(1)
-  createdByUserId     String                @db.Uuid
-  updatedByUserId     String                @db.Uuid
-  deactivatedByUserId String?               @db.Uuid
-  deactivatedAt       DateTime?             @db.Timestamptz(3)
-  createdAt           DateTime              @default(now()) @db.Timestamptz(3)
-  updatedAt           DateTime              @updatedAt @db.Timestamptz(3)
-  hotels              MasterHotel[]
-  hotelLinks          MasterHotelRoomType[]
+  id                        String                     @id @default(uuid()) @db.Uuid
+  code                      String                     @unique @db.VarChar(32)
+  name                      String                     @db.VarChar(160)
+  englishName               String?                    @db.VarChar(160)
+  referenceCapacity         Int?
+  usageDescription          String?                    @db.VarChar(500)
+  displayOrder              Int                        @default(0)
+  isActive                  Boolean                    @default(true)
+  version                   Int                        @default(1)
+  createdByUserId           String                     @db.Uuid
+  updatedByUserId           String                     @db.Uuid
+  deactivatedByUserId       String?                    @db.Uuid
+  deactivatedAt             DateTime?                  @db.Timestamptz(3)
+  createdAt                 DateTime                   @default(now()) @db.Timestamptz(3)
+  updatedAt                 DateTime                   @updatedAt @db.Timestamptz(3)
+  hotels                    MasterHotel[]
+  hotelLinks                MasterHotelRoomType[]
+  reservationHotelRoomRates ReservationHotelRoomRate[]
 
   @@index([isActive, name])
   @@map("master_room_types")
@@ -4142,6 +4143,7 @@ model TicketOfferCapacityHold {
   @@index([offerId, status, expiresAt])
   @@index([branchId, expiresAt])
 }
+
 model ProcurementTicketPurchaseRequest {
   id                      String                              @id @default(uuid()) @db.Uuid
   version                 Int                                 @default(1)
@@ -4886,6 +4888,7 @@ model ReservationHotelGroupRate {
   base                Decimal                                @db.Decimal(18, 2)
   currency            String                                 @db.VarChar(3)
   factors             Json
+  roomRates           ReservationHotelRoomRate[]
   batch               ReservationHotelRateBatch              @relation(fields: [batchId], references: [id], onDelete: Restrict)
   hotel               MasterHotel                            @relation(fields: [hotelId], references: [id], onDelete: Restrict)
   broker              MasterOrganization                     @relation(fields: [brokerId], references: [id], onDelete: Restrict)
@@ -4898,6 +4901,22 @@ model ReservationHotelGroupRate {
 /**
  * Sales-owned, editable per-tour and per-hotel source batch.
  */
+model ReservationHotelRoomRate {
+  id           String                    @id @default(uuid()) @db.Uuid
+  groupRateId  String                    @db.Uuid
+  roomTypeId   String                    @db.Uuid
+  roomTypeName String                    @db.VarChar(160)
+  factor       Decimal                   @db.Decimal(12, 3)
+  maxAdults    Int
+  maxChildren  Int
+  groupRate    ReservationHotelGroupRate @relation(fields: [groupRateId], references: [id], onDelete: Restrict)
+  roomType     MasterRoomType            @relation(fields: [roomTypeId], references: [id], onDelete: Restrict)
+
+  @@unique([groupRateId, roomTypeId])
+  @@index([roomTypeId, groupRateId])
+  @@map("reservation_hotel_room_rates")
+}
+
 model PackagePricingTourDraft {
   familyAdults                Int?
   familyChildren              Int?
