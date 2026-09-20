@@ -1238,14 +1238,15 @@ export function FinanceInboxLiveWorkspace() {
                         </label>
                         <label className="grid gap-2">
                           <span>انقضای استثنا (UTC)</span>
-                          <Input
+                          <DatePicker
                             required
-                            dir="ltr"
-                            type="datetime-local"
+                            withinDialog
+                            includeTime
+                            defaultCalendarSystem="gregorian"
+                            gregorianEnglish
                             value={documentDeliveryExpiresAt}
-                            onChange={(event) =>
-                              setDocumentDeliveryExpiresAt(event.target.value)
-                            }
+                            onChange={setDocumentDeliveryExpiresAt}
+                            aria-label="تاریخ و ساعت انقضای استثنا"
                           />
                         </label>
                       </div>

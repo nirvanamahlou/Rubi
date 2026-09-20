@@ -14,6 +14,7 @@ import type {
   FinanceCustomerDocumentDeliveryCandidateV1,
 } from '@nora/contracts';
 import { Button } from '@/components/ui/button';
+import { DatePicker } from '@/components/ui/date-picker';
 import {
   Input,
   Select,
@@ -349,14 +350,15 @@ export function FinanceDeliveryPanel() {
                 </label>
                 <label className="grid gap-2">
                   <span>انقضای استثنا (UTC)</span>
-                  <Input
+                  <DatePicker
                     required
-                    dir="ltr"
-                    type="datetime-local"
+                    withinDialog
+                    includeTime
+                    defaultCalendarSystem="gregorian"
+                    gregorianEnglish
                     value={exceptionExpiresAt}
-                    onChange={(event) =>
-                      setExceptionExpiresAt(event.target.value)
-                    }
+                    onChange={setExceptionExpiresAt}
+                    aria-label="تاریخ و ساعت انقضای استثنا"
                   />
                 </label>
               </>
