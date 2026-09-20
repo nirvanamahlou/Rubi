@@ -10,6 +10,7 @@
 - رزرو: Finance/Sales public receipt contract، Finance API/Web، Sales public projection/confirmation، migration افزایشی و سازگار برای ثبت حساب مقصد دریافت، تست‌های هدفمند و این سند. `Migration Owner`، Finance/Sales shared-contract و Central Docs برای این slice: `PC-A/FINANCE-OPERATIONAL-CARTABLE-0919`. Dependency/Lockfile رزرو نمی‌شود.
 - مرز: Finance فقط public service Sales/Reservations را فراخوانی می‌کند؛ مبلغ Decimal/ارز و زمان UTC، مجوز، audit، optimistic/idempotency و FK واقعی اجباری‌اند. هیچ دادهٔ واقعی، پرداخت بیرونی، Grant، حذف/بازنویسی تاریخچه یا تغییر ماژول مالک دیگر انجام نمی‌شود.
 - نتیجه: تأیید دریافت فقط با حساب مقصد فعال، هم‌ارز و هم‌شعبه انجام و FK حساب روی پرداخت Sales ثبت می‌شود؛ UI انتخاب/تعریف حساب، KPI و فیلترها به جریان عملیاتی متصل‌اند. ۱۶ تست هدفمند، Prisma validate، lint/typecheck و build بخش‌های متاثر موفق و migration محلی اعمال شده است.
+- ادامه 2026-09-20: مجوز تحویل مدارک مشتری از پرداخت کارگزار/رزرواسیون جدا شد و سه مبنای «پس از دریافت تأییدشده»، «تسویه کامل» و «استثنای مدیر» با Audit، Optimistic Lock، Branch scope و جست‌وجوی جزئی شماره قرارداد پیاده شد. Migration/Finance contract/Central Docs همین Task تا Merge فعال‌اند؛ جزئیات در `docs/tasks/FINANCE-CUSTOMER-DOCUMENT-DELIVERY-0920.md`.
 
 ## SYSTEM-MANAGEMENT-NAVIGATION-003 — PC-B — READY_FOR_REVIEW
 
