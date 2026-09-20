@@ -285,8 +285,15 @@ describe('dashboard travel projection date boundaries', () => {
       unit: 'درصد',
       value: '۶۷',
     });
+    expect(result.metrics['issue-success-rate']?.trend?.values.length).toBeGreaterThan(0);
+    expect(result.metrics['issue-success-rate']?.trend?.values).toEqual(
+      expect.arrayContaining([expect.any(Number)]),
+    );
     expect(result.metrics['collection-rate']?.unit).toBe('درصد');
+    expect(result.metrics['collection-rate']?.trend?.values.length).toBeGreaterThan(0);
     expect(result.metrics['refund-rate']?.unit).toBe('درصد');
+    expect(result.metrics['refund-rate']?.trend?.values.length).toBeGreaterThan(0);
     expect(result.metrics['lead-conversion-rate']?.unit).toBe('درصد');
+    expect(result.metrics['lead-conversion-rate']?.trend?.values.length).toBeGreaterThan(0);
   });
 });

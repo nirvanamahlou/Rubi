@@ -476,6 +476,25 @@ export class ReportingService {
         series,
       };
     };
+    const leadGrowthTrend = previousFacts
+      ? (() => {
+          const leadCount = (rows: typeof facts) =>
+            rows.filter((fact) => Boolean(fact.leadSource)).length;
+          const current = trendFor(facts, leadCount);
+          const previous = trendFor(previousFacts, leadCount);
+          return {
+            labels: current.labels,
+            values: current.values.map((value, index) => {
+              const previousValue = previous.values[index] ?? 0;
+              return previousValue === 0
+                ? 0
+                : Math.round(
+                    ((value - previousValue) / Math.abs(previousValue)) * 100,
+                  );
+            }),
+          };
+        })()
+      : undefined;
     const metricIds = (input.kpiIds ?? '').split(',').filter(Boolean);
     const countMetrics: Record<string, (rows: typeof facts) => number> = {
       'cancelled-reservations': (rows) =>
@@ -717,8 +736,10 @@ export class ReportingService {
                         count(facts),
                         count(previousFacts),
                       ),
-                      trend: trendFor(facts, count),
                     }
+                  : {}),
+                ...(periodStart && periodDuration > 0
+                  ? { trend: trendFor(facts, count) }
                   : {}),
               },
             ],
@@ -753,6 +774,11 @@ export class ReportingService {
                       ),
                     }
                   : {}),
+                ...(periodStart && periodDuration > 0 && percentage
+                  ? { trend: trendFor(facts, percentage) }
+                  : id === 'lead-growth-rate' && leadGrowthTrend
+                    ? { trend: leadGrowthTrend }
+                    : {}),
               },
             ],
           ];

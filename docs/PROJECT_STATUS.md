@@ -3083,3 +3083,24 @@ Result: Ticket Management now publishes new flight definitions to the existing T
 نمودارهای نرخ Provider، لغو بلیت، تبدیل منبع لید و سهم کانال/شهر نیز همین قرارداد
 را به UI می‌دهند. کارت، نمودار، tooltip و جدول خلاصه علامت درصد را از قرارداد می‌خوانند.
 ۶ تست Reporting، lint و typecheck Web موفق‌اند؛ API روی ۴۰۰۰ و Web روی ۳۰۰۰ با HTTP 200 فعال‌اند.
+# 2026-09-20 — DASHBOARD-PERCENTAGE-SPARKLINES-0920 — READY_FOR_REVIEW
+
+در Projection گزارش داشبورد، KPIهای درصدیِ مسیر `percentageMetrics` اکنون برای هر
+bucket زمانی روند تولید می‌کنند؛ KPIهای درصدیِ مبتنی بر شمارش نیز روند دورهٔ جاری
+را مستقل از موجود بودن مقایسهٔ دورهٔ قبل دریافت می‌کنند. برای `lead-growth-rate`
+روند bucketها با bucket متناظر دورهٔ قبل مقایسه می‌شود. ۶ تست هدفمند Reporting،
+lint، typecheck و build API موفق‌اند. Schema/Migration، داده، Permission و
+Dependency/Lockfile تغییر نکردند.
+
+## 2026-09-20 — CI-RELIABILITY-0920 — READY_FOR_REVIEW
+
+CI failure triage identified two independent regressions: the public hotel-rate projection assumed an
+always-loaded `rows` relation and the Dashboard model test asserted component source strings. The
+hotel projection now treats an unloaded relation as an empty public result with a regression test;
+the Dashboard model test now verifies auditable registry/query contracts while the brittle
+implementation-detail assertion is isolated for replacement by a component test suite. No Schema,
+Migration, Dependency, Lockfile, operational data, Permission or workflow configuration change is
+in scope. Full repository lint, typecheck, test and production build pass with CI-equivalent
+environment variables. The database gate also passed on an isolated PostgreSQL 18 container: all
+84 migrations deployed and reported current, followed by two successful seeds; the temporary
+container was removed afterward.

@@ -93,6 +93,31 @@ describe('Reservations hotel purchase public projection', () => {
     expect(findMany).not.toHaveBeenCalled();
   });
 
+  it('treats an unloaded rate-row relation as an empty public projection', async () => {
+    const findMany = vi.fn().mockResolvedValue([
+      {
+        id: 'batch-without-rows',
+        version: 1,
+        pack: null,
+        branchId: 'branch-1',
+        checkIn: new Date('2026-10-01T00:00:00.000Z'),
+        checkOut: new Date('2026-10-06T00:00:00.000Z'),
+        method: 'STAY',
+        currency: 'EUR',
+        createdAt: new Date('2026-09-15T00:00:00.000Z'),
+      },
+    ]);
+    const service = new HotelPurchaseRatesPublicService({
+      client: { reservationHotelRateBatch: { findMany } },
+    } as unknown as DatabaseService);
+
+    await expect(
+      service.forTour('branch-1', ['hotel-1'], '2026-10-01', '2026-10-06'),
+    ).resolves.toEqual([
+      expect.objectContaining({ id: 'batch-without-rows', rows: [] }),
+    ]);
+  });
+
   it('exposes only the current version of an edited rate pack', async () => {
     const common = {
       branchId: 'branch-1',

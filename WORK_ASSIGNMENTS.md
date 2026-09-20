@@ -1,3 +1,9 @@
+## DASHBOARD-PERCENTAGE-SPARKLINES-0920 — PC-C — READY_FOR_REVIEW
+
+- Scope: add time-bucket trend series to percentage KPI metrics in the Reporting projection; preserve percentage aggregation semantics and existing comparison behavior. CI repair is also reserved for the public hotel-rate projection/test and Dashboard model test: `apps/api/src/reservations/hotel-purchase-rates.public.{ts,spec.ts}` and `apps/web/src/modules/dashboard/model/dashboard.spec.ts`.
+- No Schema/Migration/Dependency/Lockfile or operational-data changes. API contract change is additive: percentage KPI snapshots may now include `trend`.
+- Result: percentage ratio metrics now emit a time-bucket trend, count-based percentage metrics emit their current-period trend independently of comparison availability, and `lead-growth-rate` emits bucket-aligned growth against the corresponding bucket in the equal previous period. The CI repairs make the public hotel-rate projection safe for an omitted relation and replace the Dashboard source-literal check with registry/query contract coverage. Full repository lint, typecheck, test and production build pass under CI-equivalent environment variables; 84 migrations, status and two repeatable seeds also pass on an isolated PostgreSQL 18 container, which was removed afterward. The shared API4000 process was not restarted because it is owned by the active integrated runtime.
+
 ## DASHBOARD-KPI-TREND-PRESENTATION-0919 — PC-C — READY_FOR_REVIEW
 
 - درخواست مالک در 2026-09-19: آیکون فیلتر تقویم محور X نمودار روند در frontend واضح و قابل‌مشاهده شود و خط جداکنندهٔ بالای Sparkline از همهٔ KPI Cardها حذف شود.
