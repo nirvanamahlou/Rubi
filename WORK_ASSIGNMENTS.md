@@ -1,4 +1,3 @@
-
 ## TICKET-TIME-REPEAT-0920 — PC-A — READY_FOR_REVIEW
 
 - درخواست مالک در 2026-09-20: فیلدهای زمان حرکت و رسیدنِ تعریف بلیت دوباره در فرم در دسترس باشند و هنگام تکرار هفتگی/ماهانه همراه بلیت کپی شوند. `COMPUTER_ID=PC-A`؛ شاخه `codex/pc-a-ticket-time-repeat-0920` از آخرین `origin/develop@7e52d309`.
@@ -25,7 +24,6 @@
 - درخواست مالک در 2026-09-20: از فهرست مدیریت بلیت، کاربر بتواند برای تعداد مشخصی نفر «رزرو موقت ظرفیت» با تاریخ/ساعت انقضا ثبت کند. `COMPUTER_ID=PC-A`؛ شاخه `codex/pc-a-ticket-capacity-hold-0920` از `origin/develop@7e52d309`.
 - محدودهٔ رزروشده: Ticket Catalog API/Web/tests، مدل Prisma و یک Migration افزایشی برای hold موقت، API محلی همان ماژول و اسناد محدود Task/status. `Migration Owner` و رزرو محدود Central Docs برای این slice: `PC-A/TICKET-CAPACITY-HOLD-0920`. Dependency/Lockfile، قرارداد مشترک، Sales/Reservations، Permission و runtime محلی تغییر نمی‌کنند.
 - یکپارچگی: Hold به Ticket Published Offer و Branch/User واقعی FK دارد، تعداد مثبت و زمان UTC آینده می‌گیرد، با قفل ردیفی و idempotency از oversell جلوگیری می‌کند و فقط Holdهای ACTIVE و منقضی‌نشده از ظرفیت قابل فروش کم می‌شوند. انقضا، ظرفیت را بدون حذف history آزاد می‌کند.
-
 
 ## FINANCE-DASHBOARD-REDESIGN-0919 — PC-A — READY_FOR_REVIEW
 
