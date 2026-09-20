@@ -93,6 +93,19 @@ export class SalesController {
     return this.service.dashboard(request.actor);
   }
 
+  @Get('hotel-room-rates')
+  @Header('Cache-Control', 'private, no-store')
+  hotelRoomRates(
+    @Query('hotelId') hotelId: string,
+    @Query('checkIn') checkIn: string,
+    @Query('checkOut') checkOut: string,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.service.availableHotelRoomRates(
+      { hotelId, checkIn, checkOut },
+      request.actor,
+    );
+  }
   @Get('contracts')
   @Header('Cache-Control', 'private, no-store')
   list(

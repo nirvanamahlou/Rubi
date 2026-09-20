@@ -8,10 +8,21 @@ import { refreshAuthenticatedSession } from '@/lib/auth-session';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Choice, Lookup, rateRequest, type Option } from './controls';
 import { RateHistory } from './history';
-import { initialFactors, kinds, labels, price, type Factors } from './model';
+import { initialFactors, type Factors } from './model';
 import styles from './rates.module.css';
 
-type HotelOption = Option & { englishName?: string };
+type RoomTypeOption = Option & { code?: string };
+type HotelOption = Option & {
+  englishName?: string;
+  roomTypes?: RoomTypeOption[];
+};
+type RoomRateDraft = {
+  roomTypeId: string;
+  roomTypeName: string;
+  factor: string;
+  maxAdults: string;
+  maxChildren: string;
+};
 type GridRow = {
   hotel: HotelOption;
   selected: boolean;
@@ -19,6 +30,7 @@ type GridRow = {
   base: string;
   currency: string;
   factors: Factors;
+  roomRates: RoomRateDraft[];
   inCityList: boolean;
 };
 type PackSummary = {
@@ -46,6 +58,7 @@ type PackDetail = Omit<PackSummary, 'hotelCount' | 'updatedAt'> & {
     base: string;
     currency: string;
     factors: Factors;
+    roomRates: RoomRateDraft[];
   }[];
 };
 const blankRow = (hotel: HotelOption, currency: string): GridRow => ({
@@ -55,6 +68,13 @@ const blankRow = (hotel: HotelOption, currency: string): GridRow => ({
   base: '',
   currency,
   factors: { ...initialFactors },
+  roomRates: (hotel.roomTypes ?? []).map((room) => ({
+    roomTypeId: room.id,
+    roomTypeName: room.name,
+    factor: '',
+    maxAdults: '2',
+    maxChildren: '0',
+  })),
   inCityList: true,
 });
 const dayCount = (checkIn: string, checkOut: string) =>
@@ -466,6 +486,7 @@ export function HotelRatePacksWorkspace() {
           base: row.base,
           currency: row.currency ?? item.currency,
           factors: row.factors,
+          roomRates: row.roomRates ?? [],
           inCityList: true,
         })),
       );
@@ -489,7 +510,13 @@ export function HotelRatePacksWorkspace() {
       nights <= 0 ||
       !selected.length ||
       selected.length > 50 ||
-      selected.some((row) => !row.broker || !row.base || !row.inCityList)
+      selected.some(
+        (row) =>
+          !row.broker ||
+          !row.base ||
+          !row.inCityList ||
+          !row.roomRates.some((room) => Number(room.factor) > 0),
+      )
     ) {
       setError(
         'تور و نوبت بلیت، شهر و بازهٔ معتبر را مشخص کنید و برای هر هتل منتخب، کارگزار و قیمت را وارد کنید.',
@@ -512,6 +539,14 @@ export function HotelRatePacksWorkspace() {
         base: row.base,
         currency: row.currency,
         factors: row.factors,
+        roomRates: row.roomRates
+          .filter((room) => Number(room.factor) > 0)
+          .map((room) => ({
+            roomTypeId: room.roomTypeId,
+            factor: room.factor,
+            maxAdults: Number(room.maxAdults),
+            maxChildren: Number(room.maxChildren),
+          })),
       })),
     });
     if (pending.current?.body !== body || pending.current.route !== route)
@@ -653,8 +688,8 @@ export function HotelRatePacksWorkspace() {
                 {!departures.some((tour) => tour.branchId === branch) && (
                   <p role="status">
                     برای این شعبه نوبت تور فعالی وجود ندارد. ابتدا در{' '}
-                    <Link href="/ticket-management">مدیریت بلیت</Link> تور و نوبتِ
-                    متصل به بلیت رفت‌وبرگشت را ثبت کنید، سپس این صفحه را
+                    <Link href="/ticket-management">مدیریت بلیت</Link> تور و
+                    نوبتِ متصل به بلیت رفت‌وبرگشت را ثبت کنید، سپس این صفحه را
                     تازه‌سازی کنید.
                   </p>
                 )}
@@ -855,9 +890,7 @@ export function HotelRatePacksWorkspace() {
                             <th>کارگزار</th>
                             <th>ارز</th>
                             <th>قیمت پایه / شب</th>
-                            {labels.map((label) => (
-                              <th key={label}>{label}</th>
-                            ))}
+                            <th>نوع اتاق، ضریب و ظرفیت</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -957,40 +990,115 @@ export function HotelRatePacksWorkspace() {
                                   '—'
                                 )}
                               </td>
-                              {kinds.map((kind, index) => (
-                                <td key={kind}>
-                                  {row.selected ? (
-                                    <>
-                                      <input
-                                        aria-label={`ضریب ${labels[index]} ${row.hotel.name}`}
-                                        type="number"
-                                        min="0"
-                                        max="999.999"
-                                        step="0.001"
-                                        required
-                                        value={row.factors[kind]}
-                                        onChange={(event) =>
+                              <td>
+                                {row.selected ? (
+                                  <div className={styles.roomRateEditor}>
+                                    {(row.hotel.roomTypes ?? []).map(
+                                      (roomType) => {
+                                        const value = row.roomRates.find(
+                                          (room) =>
+                                            room.roomTypeId === roomType.id,
+                                        ) ?? {
+                                          roomTypeId: roomType.id,
+                                          roomTypeName: roomType.name,
+                                          factor: '',
+                                          maxAdults: '2',
+                                          maxChildren: '0',
+                                        };
+                                        const update = (
+                                          patch: Partial<RoomRateDraft>,
+                                        ) =>
                                           changeRow(row.hotel.id, {
-                                            factors: {
-                                              ...row.factors,
-                                              [kind]: event.target.value,
-                                            },
-                                          })
-                                        }
-                                      />
-                                      <output dir="ltr">
-                                        {price(
-                                          row.base,
-                                          row.factors[kind],
-                                          row.currency,
-                                        )}
-                                      </output>
-                                    </>
-                                  ) : (
-                                    '—'
-                                  )}
-                                </td>
-                              ))}
+                                            roomRates: [
+                                              ...row.roomRates.filter(
+                                                (room) =>
+                                                  room.roomTypeId !==
+                                                  roomType.id,
+                                              ),
+                                              { ...value, ...patch },
+                                            ],
+                                          });
+                                        return (
+                                          <fieldset
+                                            key={roomType.id}
+                                            className={styles.roomRateCard}
+                                          >
+                                            <legend>{roomType.name}</legend>
+                                            <label>
+                                              ضریب
+                                              <input
+                                                aria-label={`ضریب ${roomType.name} ${row.hotel.name}`}
+                                                type="number"
+                                                min="0"
+                                                max="999.999"
+                                                step="0.001"
+                                                value={value.factor}
+                                                placeholder="ندارد"
+                                                onChange={(event) =>
+                                                  update({
+                                                    factor: event.target.value,
+                                                  })
+                                                }
+                                              />
+                                            </label>
+                                            <label>
+                                              بزرگسال
+                                              <input
+                                                aria-label={`ظرفیت بزرگسال ${roomType.name}`}
+                                                type="number"
+                                                min="1"
+                                                max="20"
+                                                value={value.maxAdults}
+                                                onChange={(event) =>
+                                                  update({
+                                                    maxAdults:
+                                                      event.target.value,
+                                                  })
+                                                }
+                                              />
+                                            </label>
+                                            <label>
+                                              کودک
+                                              <input
+                                                aria-label={`ظرفیت کودک ${roomType.name}`}
+                                                type="number"
+                                                min="0"
+                                                max="20"
+                                                value={value.maxChildren}
+                                                onChange={(event) =>
+                                                  update({
+                                                    maxChildren:
+                                                      event.target.value,
+                                                  })
+                                                }
+                                              />
+                                            </label>
+                                            <small dir="ltr">
+                                              {value.maxAdults || '0'} +{' '}
+                                              {value.maxChildren || '0'}
+                                            </small>
+                                          </fieldset>
+                                        );
+                                      },
+                                    )}
+                                    {!(row.hotel.roomTypes ?? []).length && (
+                                      <small role="alert">
+                                        ابتدا نوع اتاق را برای این هتل در
+                                        اطلاعات پایه تعریف کنید.
+                                      </small>
+                                    )}
+                                    <Link href="/master-data/accommodation?tab=room-types">
+                                      افزودن نوع اتاق و اتصال به هتل
+                                    </Link>
+                                    <small>
+                                      نوع اتاق بدون ضریب در قرارداد فروش نمایش
+                                      داده نمی‌شود.
+                                    </small>
+                                  </div>
+                                ) : (
+                                  '—'
+                                )}
+                              </td>
                             </tr>
                           ))}
                         </tbody>
