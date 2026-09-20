@@ -9,6 +9,7 @@
 ثبت شده است.
 
 PR #322 با Merge Commit `9c536233` وارد `develop` شد و قفل‌های Task آزاد شدند.
+
 ## 2026-09-19 — FINANCE-OPERATIONAL-CARTABLE-0919 — READY_FOR_REVIEW
 
 کارتابل مالی اکنون تأیید دریافت را فقط پس از انتخاب حساب مقصد فعال، هم‌ارز و متعلق
@@ -320,8 +321,6 @@ and ADR-PACKAGE-FLIGHT-FINANCE-COST-0915.
 - Public Contract نسخه‌دار نرخ پایه هتل از Master Data به Package Pricing متصل شد؛ مبلغ و ضرایب snapshot می‌شوند و reference قدیمی یا خارج از شعبه fail-closed است. blocker هتل رفع شد، اما تولید Price Version ترکیبی همچنان تا producer نرخ/ظرفیت بلیت در Ticket Catalog fail-closed است؛ Renderer نیز در `AWAITING_RENDERER` می‌ماند.
 - جزئیات، endpointها، validation و handoff در [PACKAGE-PRICING-001](tasks/PACKAGE-PRICING-001.md) ثبت شده است.
 
-PR #322 با Merge Commit `9c536233` وارد `develop` شد و قفل‌های Task آزاد شدند.
-
 ## 2026-09-16 — اتصال‌های عملیاتی غیررزرواسیونی خرید — PC-B — READY_FOR_REVIEW
 
 Procurement اکنون سیاست تأیید نسخه‌دار Settings، projection پایدار وظایف، کارتابل Finance برای تأیید/برگشت/پرداخت مرحله‌ای فاکتور و اصلاح مالی مرجوعی را دارد. سفارش صادرشده در outbox امن تأمین‌کننده با HMAC، idempotency، replay guard و retry ثبت می‌شود و تا هنگام معرفی URL و Secret بیرونی، ارسال واقعی ندارد. اتصال Reservations بنا به درخواست مالک خارج از این واحد کار است. Migration افزایشی policy، task، revision مالی و inbox تأمین‌کننده را ایجاد می‌کند و جدول قدیمی حساب تسویه را به‌صورت idempotent جبران می‌کند. ۳۰ تست یکپارچه Procurement، ۲۱ تست API هدفمند، Prisma validate/generate، lint/typecheck و build Contracts/Database/API موفق بوده‌اند. Migration روی runtime محلی نیز با backup پیشین با موفقیت اعمال شد. Branch: `codex/pc-b-procurement-live-integration`.
@@ -339,8 +338,6 @@ Procurement اکنون سیاست تأیید نسخه‌دار Settings، projec
 ## 2026-09-14 — RESERVATION-TICKET-PDF-PASSENGER-0914 — PC-A — READY_FOR_REVIEW
 
 نام مسافر در درخواست‌های تازه Sales داخل Snapshot نسخه‌دار Reservations حفظ می‌شود. برای قراردادهای قدیمی مانند `SC-2026-000003` که نام در Snapshot جا افتاده، پنجره بلیط و PDF نام را از پرونده اصلی مسافر می‌خوانند، بدون بازنویسی Snapshot یا سند تاریخی. موتور PDF مسیر Chrome یا Edge و فونت نازنین محلی را خودکار پیدا می‌کند و نبود فونت سفارشی مانع صدور نیست. ۴ تست API، ۱۸ تست Web، lint/typecheck/build API/Web و ساخت واقعی PDF با Chrome نصب‌شده موفق‌اند. جزئیات در [RESERVATION-TICKET-PDF-PASSENGER-0914](tasks/RESERVATION-TICKET-PDF-PASSENGER-0914.md) ثبت شده است.
-
-PR #322 با Merge Commit `9c536233` وارد `develop` شد و قفل‌های Task آزاد شدند.
 
 ## 2026-09-15 — PC-C Dashboard/Reports + PC-A/PC-B develop integration
 
@@ -381,8 +378,6 @@ Prisma validate، typecheck و build بسته‌های مشترک/API/Web، lint
 lint، typecheck و build تولیدی ۴۶ route پاس شدند. جزئیات در
 [DASHBOARD-REPORTING-LATEST-009](tasks/DASHBOARD-REPORTING-LATEST-009.md) ثبت شده است.
 
-PR #322 با Merge Commit `9c536233` وارد `develop` شد و قفل‌های Task آزاد شدند.
-
 ## REPORTING-REMOVE-SCHEDULING — حذف قابلیت زمان‌بندی گزارش
 
 - تب و صفحه «زمان‌بندی‌ها» و دکمه/فرم «زمان‌بندی گزارش» از Workspace گزارش‌ها حذف
@@ -403,8 +398,6 @@ PR #322 با Merge Commit `9c536233` وارد `develop` شد و قفل‌های 
   TypeScript وب موفق‌اند و Frontend همین Worktree روی `localhost:3000` فعال است.
 - جزئیات در [گزارش واحد کار](tasks/REPORTING-REMOVE-FAVORITES-UI.md) ثبت شده است.
 
-PR #322 با Merge Commit `9c536233` وارد `develop` شد و قفل‌های Task آزاد شدند.
-
 ## REPORTING-OPERATIONS-STAY-IN-VIEW — حفظ نمای عملیاتی هنگام اجرا
 
 - دکمه اجرا در «گزارش‌های من»، «اشتراک‌گذاری‌شده با من»، «اجراها» و
@@ -417,8 +410,6 @@ PR #322 با Merge Commit `9c536233` وارد `develop` شد و قفل‌های 
   و TypeScript روی prerender دو مسیر نامرتبط `/_global-error` و
   `/pricing-management` با Invariant داخلی Next.js متوقف می‌شود. جزئیات در
   [گزارش واحد کار](tasks/REPORTING-OPERATIONS-STAY-IN-VIEW.md) ثبت شده است.
-
-PR #322 با Merge Commit `9c536233` وارد `develop` شد و قفل‌های Task آزاد شدند.
 
 ## REPORTING-CATALOG-MANAGEMENT-DECISIONS — بازبینی تصمیم‌محور کاتالوگ
 
@@ -434,8 +425,6 @@ PR #322 با Merge Commit `9c536233` وارد `develop` شد و قفل‌های 
   متوقف می‌شود. جزئیات در
   [گزارش واحد کار](tasks/REPORTING-CATALOG-MANAGEMENT-DECISIONS.md) ثبت شده است.
 
-PR #322 با Merge Commit `9c536233` وارد `develop` شد و قفل‌های Task آزاد شدند.
-
 ## REPORTING-OPERATIONS-CONFIG-LAUNCH — بازیابی فرم و فیلتر از عملیات
 
 - Deep Link دکمه «اجرا» در گزارش‌های من، اشتراک‌گذاری‌شده، اجراها و زمان‌بندی‌ها
@@ -447,8 +436,6 @@ PR #322 با Merge Commit `9c536233` وارد `develop` شد و قفل‌های 
   موفق شدند.
 - جزئیات فنی در
   [گزارش واحد کار](tasks/REPORTING-OPERATIONS-CONFIG-LAUNCH.md) ثبت شده است.
-
-PR #322 با Merge Commit `9c536233` وارد `develop` شد و قفل‌های Task آزاد شدند.
 
 ## REPORTING-CATALOG-FEATURE-COVERAGE — توسعه کاتالوگ بر مبنای مدل واقعی
 
@@ -465,8 +452,6 @@ PR #322 با Merge Commit `9c536233` وارد `develop` شد و قفل‌های 
 - جزئیات نگاشت مدل‌ها و مسیر اجرایی‌کردن در
   [گزارش واحد کار](tasks/REPORTING-CATALOG-FEATURE-COVERAGE.md) ثبت شده است.
 
-PR #322 با Merge Commit `9c536233` وارد `develop` شد و قفل‌های Task آزاد شدند.
-
 ## REPORTING-RESTORE-219-LATEST — بازیابی نسخه نهایی Reports روی مبنای جدید
 
 - آخرین `origin/develop` در `40d8f1f4` دریافت شد و UI اختصاصی Reports فقط از
@@ -479,8 +464,6 @@ PR #322 با Merge Commit `9c536233` وارد `develop` شد و قفل‌های 
 - Runtime وب این شاخه روی پورت 3000 و API موجود بدون restart روی پورت 4000 ارائه
   می‌شود. جزئیات در `docs/tasks/REPORTING-RESTORE-219-LATEST.md` ثبت شده است.
 
-PR #322 با Merge Commit `9c536233` وارد `develop` شد و قفل‌های Task آزاد شدند.
-
 ## 2026-09-15 — RESERVATION-PURCHASE-LAYOUT-0915 — PC-A — IN REVIEW
 
 فرم خرید رزرواسیون برای هتل و ترانسفر کارگزار چیدمان جدا و واکنش‌گرا دارد. قیمت هتل به انتخاب کاربر به‌صورت هر شب یا جمع کل وارد می‌شود؛ حالت هر شب با تعداد شب‌های آخرین فرم ارسال‌شده به کارگزار به جمع خرید تبدیل و همان مبلغ به مالی ارسال می‌شود. خرید بلیط در این فرم درخواست نمی‌شود و شرط تحویل مدارک مالی فقط خریدهای هتل/ترانسفر همین مسیر را بررسی می‌کند. قیمت خرید بلیط هنگام تعریف آن در مسیر مستقل Ticket Catalog/Procurement با PR #282 وارد develop شده. ۴ تست هدفمند Web، ۶ تست هدفمند API، lint/typecheck و build تولیدی هر دو برنامه با ۴۶ مسیر وب موفق‌اند. بدون Schema/Migration، داده عملیاتی، Permission یا Dependency؛ گزارش بررسی در [RESERVATION-PURCHASE-LAYOUT-0915](tasks/RESERVATION-PURCHASE-LAYOUT-0915.md).
@@ -490,8 +473,6 @@ PR #322 با Merge Commit `9c536233` وارد `develop` شد و قفل‌های 
 فرم تعریف بلیط اکنون «تاریخ اولین بلیط» را مستقل از ساعت حرکت می‌گیرد. تکرار هفتگی یا ماهانه بر پایه همین تاریخ انجام می‌شود و بلیط قدیمی بدون ساعت دیگر با خطای «زمان حرکت بلیط مبدأ معتبر نیست» متوقف نمی‌شود. برای رفت‌وبرگشت، تاریخ اولین اجرای هر جهت جداگانه قابل انتخاب است.
 
 قیمت خرید مثبت تعریف بلیط با مبلغ Decimal، ارز، تأمین‌کننده و تاریخ خدمت در مالکیت Procurement ثبت می‌شود، تا پیش از رسیدگی مالی قابل اصلاح است و در کارتابل Finance نمایش داده می‌شود. Migration افزایشی است و داده قدیمی را تغییر نمی‌دهد. ۱۹ تست Web، ۸ تست API، lint، typecheck و build API/Web و اعتبارسنجی Prisma موفق‌اند. جزئیات در [TICKET-REPEAT-PURCHASE-0914](tasks/TICKET-REPEAT-PURCHASE-0914.md) ثبت شده است.
-
-PR #322 با Merge Commit `9c536233` وارد `develop` شد و قفل‌های Task آزاد شدند.
 
 ## MASTER-012-AIRLINE-BAGGAGE-FORM — PC-B — READY_FOR_REVIEW
 
@@ -512,15 +493,11 @@ PR #322 با Merge Commit `9c536233` وارد `develop` شد و قفل‌های 
 
 عنوان فارسی از فرم ایجاد/ویرایش، فهرست، پروفایل و خروجی Excel کلاس پروازی حذف و عنوان انگلیسی در Web و API اجباری شد. برای حفظ Schema و FKهای موجود، ستون داخلی `name` بدون Migration از `englishName` همگام می‌شود؛ Fixtureهای ساده و واقع‌نما نیز English-only شدند. ۳۹ تست هدفمند Web و ۳۲ تست هدفمند API، lint، TypeScript و build تولیدی Web/API موفق‌اند. این تحویل به‌ترتیب روی PRهای #240 و #236 متکی است و جزئیات در [MASTER-010-CABIN-CLASS-TITLE](tasks/MASTER-010-CABIN-CLASS-TITLE.md) ثبت شده است.
 
-PR #322 با Merge Commit `9c536233` وارد `develop` شد و قفل‌های Task آزاد شدند.
-
 مالک محصول ادغام PR تجمیعی #241 با `develop` را برای بازیابی این سه اصلاح جاافتاده مجاز کرده است؛ آخرین `develop` داخل شاخه ادغام و هر دو مجموعه تغییر حفظ می‌شوند.
 
 ## MASTER-009 — انتقال قواعد بار به بخش ایرلاین
 
 تب مستقل «قواعد بار» از ناوبری اصلی حمل‌ونقل حذف و مدیریت آن به زیرناوبری داخلی «ایرلاین‌ها» منتقل شد. صفحه هنگام مشاهده قواعد بار همچنان عنوان و مالکیت «ایرلاین‌ها» را حفظ می‌کند، اما فرم، فیلتر، KPI، جدول و عملیات واقعی قواعد بار با ارتباط `airlineId` بدون کپی داده یا تغییر قرارداد در همان بخش باقی مانده‌اند. ۳۲ تست هدفمند، lint، typecheck و build تولیدی ۴۶مسیره Web موفق‌اند. این تحویل روی PR #236 متکی است و جزئیات در [MASTER-009-AIRLINE-BAGGAGE](tasks/MASTER-009-AIRLINE-BAGGAGE.md) ثبت شده است.
-
-PR #322 با Merge Commit `9c536233` وارد `develop` شد و قفل‌های Task آزاد شدند.
 
 ## MASTER-008 — یکپارچه‌سازی فیلدهای نوع هواپیما
 
@@ -556,8 +533,6 @@ Migration و Seed محلی اعمال شده و نقش `finance_staff` بدون 
 build تولیدی API/Web با ۴۶ مسیر موفق‌اند و Web3100/API4190 فعال‌اند. جزئیات در
 [FINANCE-008](tasks/FINANCE-008-INBOX-ACTIONS.md) ثبت شده است.
 
-PR #322 با Merge Commit `9c536233` وارد `develop` شد و قفل‌های Task آزاد شدند.
-
 ## WORKBENCH-040 — Performance summary
 
 Personal performance now shows leave count, dated shifts, approved payslip period/net amount, today's entry/exit, own customers and sales. Raw activity rows were removed. Additive HR projection preserves self/branch scope and applies approved attendance corrections. No employee reassignment or migration. See [WORKBENCH-040](tasks/WORKBENCH-040-PERFORMANCE-SUMMARY.md).
@@ -571,8 +546,6 @@ The messenger unit list no longer overrides the selected primary button with a l
 ## FINANCE-007 — تکمیل کارتابل درخواست‌های مالی
 
 کارتابل مالی بازطراحی و ساده شد: Preview قدیمی، نوشته‌های فنی و اقدام غیرفعال حذف شدند و درخواست‌های واقعی فروش، ارجاع‌های مالی منابع انسانی و خرید خدمات رزرواسیون اکنون از مرز عمومی ماژول‌های مالک وارد صف واحد می‌شوند. منبع خرید مستقل چون Producer عملیاتی ندارد، داده ساختگی نمایش نمی‌دهد. ۳ تست API، ۸ تست قرارداد Web، ۳ تست Migration، lint محدوده، typecheck و build تولیدی API/Web موفق‌اند؛ Web3100 و API4190 فعال‌اند. مشخصات Seed نقش مالی کامل شده، اما انتساب افزایشی `finance_staff` به `Ramtin` برای رفع نهایی 403 هنوز منتظر تأیید صریح مالک محصول است. جزئیات در [FINANCE-007](tasks/FINANCE-007-INBOX-COMPLETION.md) ثبت شده است.
-
-PR #322 با Merge Commit `9c536233` وارد `develop` شد و قفل‌های Task آزاد شدند.
 
 ## WORKBENCH-038 — عملکرد من
 
@@ -589,8 +562,6 @@ Dependency؛ جزئیات در [WORKBENCH-038](tasks/WORKBENCH-038-MY-PERFORMANC
 
 کارتابل مالی بازطراحی و ساده شد: Preview قدیمی، نوشته‌های فنی و اقدام غیرفعال حذف شدند و درخواست‌های واقعی فروش، ارجاع‌های مالی منابع انسانی و خرید خدمات رزرواسیون اکنون از مرز عمومی ماژول‌های مالک وارد صف واحد می‌شوند. منبع خرید مستقل چون Producer عملیاتی ندارد، داده ساختگی نمایش نمی‌دهد. ۳ تست API، ۸ تست قرارداد Web، ۳ تست Migration، lint محدوده، typecheck و build تولیدی API/Web موفق‌اند؛ Web3100 و API4190 فعال‌اند. مشخصات Seed نقش مالی کامل شده، اما انتساب افزایشی `finance_staff` به `Ramtin` برای رفع نهایی 403 هنوز منتظر تأیید صریح مالک محصول است. جزئیات در [FINANCE-007](tasks/FINANCE-007-INBOX-COMPLETION.md) ثبت شده است.
 
-PR #322 با Merge Commit `9c536233` وارد `develop` شد و قفل‌های Task آزاد شدند.
-
 ## WORKBENCH-037 — حذف کارت پایین درخواست‌های منابع انسانی
 
 کارت نمایشی «درخواست‌های منابع انسانی» از مقصدهای پایین خانه میزکار حذف شد. این تغییر فقط پوسته Frontend را پوشش می‌دهد؛ Backend، مسیر `/hr`، مجوزهای خواندن HR و اعلان‌های منابع انسانی دست‌نخورده ماندند. چهار تست هدفمند، lint، TypeScript و Production Build با ۴۶ Route موفق‌اند.
@@ -599,13 +570,9 @@ PR #322 با Merge Commit `9c536233` وارد `develop` شد و قفل‌های 
 
 گروه تاریخ، زبان، پوسته، اعلان و منوی کاربر اکنون به‌صورت یک بلوک منسجم در لبه چپ هدر RTL قرار دارد. رفتار کنترل‌ها و نمایش واکنش‌گرا حفظ شده و ۴ تست متمرکز، lint، typecheck و build ۴۶ مسیر موفق بوده است. جزئیات در [APP-SHELL-HEADER-UTILITY-LEFT-001](tasks/APP-SHELL-HEADER-UTILITY-LEFT-001.md) ثبت شده است.
 
-PR #322 با Merge Commit `9c536233` وارد `develop` شد و قفل‌های Task آزاد شدند.
-
 ## FINANCE-006 — بازطراحی کنترل پرداخت و تحویل مدارک
 
 نمای پرداخت کارگزاران و مجوز تحویل مدارک اکنون در خود کارتابل درخواست‌ها یک جریان دو مرحله‌ای روشن دارد. هر قرارداد، وضعیت خدمات و اقدام بعدی را در کارت مستقل نشان می‌دهد و علت قفل بودن تحویل مدارک را صریح اعلام می‌کند. کنترل از Workspace قدیمی حسابداری به `/finance/requests` منتقل شده و منطق/API مالی تغییری نکرده است. تست کامل Web (۱۳۴۰ مورد)، تست متمرکز، lint، typecheck و build ۴۶ مسیر موفق بود. جزئیات در [FINANCE-006](tasks/FINANCE-006-DELIVERY-PANEL-REDESIGN.md) ثبت شده است.
-
-PR #322 با Merge Commit `9c536233` وارد `develop` شد و قفل‌های Task آزاد شدند.
 
 PR #254 در `e40878f1` Merge و build `55JsHVl1EIROpWDpoCZuS` روی Web3100 فعال شد؛ API4190 سالم است.
 
@@ -616,8 +583,6 @@ PR #254 در `e40878f1` Merge و build `55JsHVl1EIROpWDpoCZuS` روی Web3100 ف
 فعلاً هیچ زیرگروه یا محتوایی ندارند. ۲۵ تست هدفمند، lint، TypeScript و build تولیدی ۴۶
 مسیر موفق‌اند؛ بدون تغییر API، داده، Permission، Schema/Migration یا Dependency.
 جزئیات در [FINANCE-005](tasks/FINANCE-005-ACCOUNTING-DROPDOWN-DEFAULTS.md) ثبت شده است.
-
-PR #322 با Merge Commit `9c536233` وارد `develop` شد و قفل‌های Task آزاد شدند.
 هر چهار Gate CI موفق شدند و PR #246 با Merge Commit `88d26ebc` وارد `develop` شد.
 Web3100 با Build ID `60YeidM5vzsZuojUx7D85` فعال و API4190 سالم است.
 
@@ -630,8 +595,6 @@ Web3100 با Build ID `60YeidM5vzsZuojUx7D85` فعال و API4190 سالم اس�
 ساخته نشده است. ۲۰ تست Finance/Navigation، Prettier، ESLint، TypeScript، build تولیدی ۴۶
 مسیر و QA مرورگر موفق‌اند. جزئیات در
 [FINANCE-004](tasks/FINANCE-004-ACCOUNTING-SECONDARY-NAV.md) ثبت شده است.
-
-PR #322 با Merge Commit `9c536233` وارد `develop` شد و قفل‌های Task آزاد شدند.
 مالک محصول در 2026-09-13 ادغام این واحد با `develop` و فعال‌سازی Web3100 را تأیید کرد.
 تغییرات با Merge Commit `b5fdbe75` وارد `develop` شد.
 Web3100 با Build ID `RAhkQQeixfqHkOKXiubFX` از Worktree ادغام‌شده فعال است و مسیر
@@ -648,8 +611,6 @@ hero، KPI، وضعیت اتصال واحدها، جست‌وجو، فیلتر �
 Persistence مستقل Finance غیرفعال است. ۸۲ تست هدفمند، lint، typecheck و build API/Web
 موفق و QA مرورگر ایزوله تأیید شد؛ runtime مشترک تغییر نکرد. جزئیات در
 [FINANCE-003](tasks/FINANCE-003-INBOX-REDESIGN-INTEGRATION.md) ثبت شده است.
-
-PR #322 با Merge Commit `9c536233` وارد `develop` شد و قفل‌های Task آزاد شدند.
 مالک محصول در 2026-09-13 ادغام نسخه ترکیبی و نمایش کارتابل جدید روی Web3100 را مجاز
 کرد؛ بازآزمایی روی آخرین `develop` شامل ۵۵ تست هدفمند، lint/typecheck و build API/Web
 موفق بود.
@@ -800,8 +761,6 @@ Gate تست کامل، کیفیت، build و PostgreSQL 18 را گذراند؛ �
 
 مسیر بارگذاری لوگوی اطلاعات پایه از دسترسی مستقیم Web به آرشیو اسناد جدا شد. ویرایشگر دارای `master_data.update` اکنون از endpoint محدود Master Data استفاده می‌کند و Documents همچنان مالک باینری، اسکن، Audit و رابطه منبع است. شناسه واقعی سند با کنترل نسخه به ایرلاین، بانک، بیمه، هتل، زنجیره هتل، شرکت ریلی/اتوبوس، سازمان، تأمین‌کننده و کارگزار متصل می‌شود؛ جایگزینی و حذف نیز فقط برای فایل مربوط به همان رکورد مجاز است. ۵۰۶ تست API، ۳۳۸ تست Web، lint، typecheck و build تولیدی هر دو برنامه موفق‌اند. این اصلاح Schema، Migration، Seed، Dependency و IAM grant ندارد؛ جزئیات در [MASTER-007](tasks/MASTER-007-LOGO-UPLOAD.md) ثبت شده است.
 
-PR #322 با Merge Commit `9c536233` وارد `develop` شد و قفل‌های Task آزاد شدند.
-
 ## WORKBENCH-021 — مخاطبان، گروه و فوروارد پیام
 
 پیام‌رسان میزکار به سرویس پایدار Messaging متصل شد: مخاطبان فعال داخلی CRM با
@@ -811,8 +770,6 @@ PR #322 با Merge Commit `9c536233` وارد `develop` شد و قفل‌های 
 FK و idempotency دارد و کل ۵۶ Migration در PostgreSQL ایزوله موفق بود. ۱۲۲۲ تست
 API، ۱۳۲۷ تست Web، lint، typecheck و build تولیدی ۴۶ route پاس شدند. جزئیات در
 [WORKBENCH-021-MESSAGING](tasks/WORKBENCH-021-MESSAGING.md) ثبت شده است.
-
-PR #322 با Merge Commit `9c536233` وارد `develop` شد و قفل‌های Task آزاد شدند.
 
 نسخه ترکیبی `05768d7` روی Web3100 و API4190 فعال است. Migration پس از backup
 روی دیتابیس فعلی اعمال شد و ۳۸ کاربر، ۵ شعبه و ۴۴ سند بدون تغییر باقی ماندند.
@@ -1007,8 +964,6 @@ Migration افزایشی `20260912173000_workbench_feedback` پس از Backup و
   کنترل Working Tree و Push معمولی شاخه PC-C آماده محسوب می‌شود.
 - جزئیات Scope، امنیت، پورت و Handoff در
   [REPORTING-PC-C-AUTHORIZATION](tasks/REPORTING-PC-C-AUTHORIZATION.md) ثبت شده است.
-
-PR #322 با Merge Commit `9c536233` وارد `develop` شد و قفل‌های Task آزاد شدند.
 ## SALES-PRICE-MANAGEMENT-0912 — READY_FOR_REVIEW / UI_PREVIEW — 2026-09-12
 
 - PC-A روی شاخه مستقل و stacked `codex/pc-a-pricing-management` ورودی «مدیریت قیمت»
@@ -1154,8 +1109,6 @@ Persisted Reservations supplier/insurance/voucher/cancellation workflow, version
 ## WORKBENCH-004 — مسیر مستقیم میزکار روی نسخه جدید برنامه
 
 پس از جایگزینی اجرای میزکار با نسخه تازه آژانس‌ها، میزکار مجدداً بر پایه `56d5d48` اضافه شد تا فیلترهای جدید تاریخ حفظ شوند. با فعال‌بودن محیط نمونه، مسیر منوی فعلی `/tasks` مستقیماً به `/workbench/demo` هدایت می‌شود. بدون تغییر API، داده، Schema، Dependency یا منوی مشترک. ۱۰۳ تست، typecheck و build موفق‌اند؛ کلیک منو روی اجرای ۳۱۰۰ در مرورگر تأیید شد. نتیجه در [WORKBENCH-004](tasks/WORKBENCH-004-MENU-CURRENT-RUNTIME.md) ثبت شده است.
-
-PR #322 با Merge Commit `9c536233` وارد `develop` شد و قفل‌های Task آزاد شدند.
 
 ## B2B-NAMED-BRANCHES-001 — شعب نام‌گذاری‌شده و تراز انتخاب‌گر
 
@@ -1875,8 +1828,6 @@ Individual agreed package totals per passenger/currency are persisted with exact
 - هیچ Schema/Migration، Permission، Dependency/Lockfile یا Seed عمومی تغییر نکرده است؛
   Runner فقط خطای گذرای Seed اتمیک و idempotent محلی را یک‌بار تکرار می‌کند.
   جزئیات و دستور PC-A در `docs/tasks/DOCUMENTS-003D-LOCAL-INTERACTIONS.md` ثبت شده است.
-
-PR #322 با Merge Commit `9c536233` وارد `develop` شد و قفل‌های Task آزاد شدند.
 - lint، typecheck و Build کامل Monorepo موفق‌اند؛ ۱٬۳۹۰ تست موفق و ۷۰ تست PostgreSQL
   اختیاری skip شدند. Apply واقعی و تکراری پس از Backup خصوصی هر هفت سند را با
   `readyForViewing=true` و `verifiedRecords=7` تأیید کرد.
@@ -1911,8 +1862,6 @@ PR #322 با Merge Commit `9c536233` وارد `develop` شد و قفل‌های 
   مشاهده هفت سند و یک Preview PNG از API زنده موفق بود. تست PostgreSQL مستقل، تست‌های
   عمومی و Build API نیز موفق‌اند. راه‌اندازی PC-A در
   `docs/tasks/DOCUMENTS-003C-DEMO-BOOTSTRAP.md` ثبت شده است.
-
-PR #322 با Merge Commit `9c536233` وارد `develop` شد و قفل‌های Task آزاد شدند.
 - Follow-up یکپارچه‌سازی CI، تشخیص Windows drive root و UNC را روی Windows/Linux یکسان
   و fail-closed کرد؛ مسیرهای scoped معتبر حفظ و ۱۴ تست Fixture موفق شدند.
 
@@ -2715,8 +2664,6 @@ PR #322 با Merge Commit `9c536233` وارد `develop` شد و قفل‌های 
 
 - Merge Commit: `99dd1cff21cff76f0edb101fb8e6033900c8b4a9` روی `origin/develop`
 - ساختار ۱۷ بخشی شامل «مدیریت و تعریف بلیت‌ها» و «مدیریت سیستم» ثبت شده است.
-
-PR #322 با Merge Commit `9c536233` وارد `develop` شد و قفل‌های Task آزاد شدند.
 - Customer Affairs مالک Lead/Support؛ Sales مالک قرارداد و تخصیص passenger/service؛
   Reservations مالک استعلام/Hold/صدور/Manifest؛ Procurement مالک خرید و Finance مالک
   financial release است.
@@ -2761,8 +2708,6 @@ PR #322 با Merge Commit `9c536233` وارد `develop` شد و قفل‌های 
 
 - Technical Bootstrap با Merge Commit `bdb5461` روی `develop` قرار دارد.
 - مالکیت Full-Stack ماژول‌ها و Human Resources با Merge Commit `b5b7c5d` ثبت شده است.
-
-PR #322 با Merge Commit `9c536233` وارد `develop` شد و قفل‌های Task آزاد شدند.
 - Frontend Foundation و طراحی Dashboard با Merge Commit `c4f8bde` روی `develop` قرار دارد.
 - Prisma baseline شامل مدل‌های IAM، branch reference، Session و Audit و دو Migration غیرمخرب
   با Merge Commit `50eacca` وارد `develop` شده است.
@@ -2794,8 +2739,6 @@ PR #322 با Merge Commit `9c536233` وارد `develop` شد و قفل‌های 
 
 - در زمان آن Task، قابلیت IAM یا Master Data هنوز پیاده‌سازی نشده و وضعیت هر دو `PLANNED` بود؛
   وضعیت جاری آن‌ها در بخش Sprint اول ثبت شده است.
-
-PR #322 با Merge Commit `9c536233` وارد `develop` شد و قفل‌های Task آزاد شدند.
 - خود Commit مستنداتی `DOCS-003` هیچ فایل نرم‌افزاری، Prisma schema، Migration، Seed،
   Dependency یا Lockfile را تغییر نداد.
 - Nginx، CI و deployment محیط غیرمحلی هنوز ساخته نشده‌اند.

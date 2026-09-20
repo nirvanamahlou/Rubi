@@ -60,6 +60,7 @@
 - lint و typecheck بخش‌های Contracts، Database، API و Web: پاس؛
 - Production Build قرارداد، دیتابیس، API و Web با ۵۰ route: پاس؛
 - PostgreSQL موقت بدون Volume متوقف و حذف شد.
+
 ## Handoff نهایی
 
 PR #322 با Source HEAD `ef13aa9e49b618d244fe42fb52bf9caacfbb6460` و
