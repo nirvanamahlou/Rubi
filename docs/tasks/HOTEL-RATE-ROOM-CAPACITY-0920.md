@@ -28,7 +28,7 @@
 - Frozen install، Prisma format/validate/generate: پاس.
 - تمام ۸۷ Migration روی PostgreSQL 18.1 خالی و Migration status: پاس.
 - Constraintهای factor و ظرفیت و هر دو FK: تأیید مستقیم.
-- Contracts: ۷۸ تست پاس؛ API هدفمند: ۲۳ تست پاس.
+- Contracts: ۷۸ تست پاس؛ API هدفمند: ۲۶ تست پاس.
 - lint و typecheck قراردادها/API/Web: پاس.
 - Production Build API و Web با ۵۰ Route: پاس.
 - `git diff --check`: پاس.

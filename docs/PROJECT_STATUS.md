@@ -1,6 +1,6 @@
 ## 2026-09-20 — HOTEL-RATE-ROOM-CAPACITY-0920 — READY_FOR_REVIEW
 
-مدیریت نرخ هتل از ضرایب ثابت به نرخ نوع اتاق واقعی با ظرفیت مستقل بزرگسال و کودک ارتقا یافت. اتاق بدون ضریب در فروش قابل انتخاب نیست و Backend فروش ظرفیت هر اتاق را هنگام ایجاد، ویرایش و تأیید قرارداد به‌صورت fail-closed کنترل می‌کند. Migration روی PostgreSQL 18.1 خالی، Prisma، lint/typecheck، تست‌های هدفمند و Build API/Web پاس شدند؛ قفل‌های Migration/Contract/Central Docs تا Merge و Handoff رسمی فعال‌اند.
+مدیریت نرخ هتل از ضرایب ثابت به نرخ نوع اتاق واقعی با ظرفیت مستقل بزرگسال و کودک ارتقا یافت. اتاق بدون ضریب در ارقام پکیج نمایش یا محاسبه نمی‌شود و در فروش قابل انتخاب نیست و Backend فروش ظرفیت هر اتاق را هنگام ایجاد، ویرایش و تأیید قرارداد به‌صورت fail-closed کنترل می‌کند. Migration روی PostgreSQL 18.1 خالی، Prisma، lint/typecheck، تست‌های هدفمند و Build API/Web پاس شدند؛ قفل‌های Migration/Contract/Central Docs تا Merge و Handoff رسمی فعال‌اند.
 ## 2026-09-20 — FINANCE-CUSTOMER-DOCUMENT-DELIVERY-0920 — DONE/MERGED
 
 مجوز تحویل مدارک مشتری از خرید و پرداخت کارگزار و اجرای رزرواسیون مستقل شد.
