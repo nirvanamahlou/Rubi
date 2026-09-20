@@ -87,7 +87,7 @@ export class HotelPurchaseRatesPublicService {
           basePerNight: row.base.toString(),
           currencyCode: row.currency,
           factors: row.factors as Record<string, string>,
-          roomRates: row.roomRates.map((room) => ({
+          roomRates: (row.roomRates ?? []).map((room) => ({
             roomTypeId: room.roomTypeId,
             roomTypeName: room.roomTypeName,
             factor: room.factor.toString(),
