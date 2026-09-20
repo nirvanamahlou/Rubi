@@ -34,7 +34,7 @@ model User {
   tourPricingDraftsUpdated                         PackagePricingTourDraft[]                 @relation("TourPricingDraftUpdater")
   tourPricingVersionsPublished                     PackagePricingTourPublishedVersion[]      @relation("TourPricingPublisher")
   financeTicketCostRevisions                       FinanceTicketPurchaseCostRevision[]       @relation("FinanceTicketCostActor")
-  ticketCapacityHolds                             TicketOfferCapacityHold[]                 @relation("TicketCapacityHoldCreator")
+  ticketCapacityHolds                              TicketOfferCapacityHold[]                 @relation("TicketCapacityHoldCreator")
   financeTicketPaymentRevisions                    FinanceTicketPurchasePaymentRevision[]    @relation("FinanceTicketPaymentActor")
   masterHotelRatePeriodsCreated                    MasterHotelRatePeriod[]                   @relation("MasterHotelRatePeriodCreatedBy")
   masterHotelRatePeriodsUpdated                    MasterHotelRatePeriod[]                   @relation("MasterHotelRatePeriodUpdatedBy")
@@ -218,7 +218,7 @@ model RolePermission {
 model Branch {
   tourPricingDrafts                   PackagePricingTourDraft[]
   financeTicketCostRevisions          FinanceTicketPurchaseCostRevision[]
-  ticketCapacityHolds                TicketOfferCapacityHold[]                 @relation("TicketCapacityHoldBranch")
+  ticketCapacityHolds                 TicketOfferCapacityHold[]           @relation("TicketCapacityHoldBranch")
   hotelRatePacks                      ReservationHotelRatePack[]
   masterHotelRatePeriods              MasterHotelRatePeriod[]
   hotelRateBatches                    ReservationHotelRateBatch[]
@@ -4143,6 +4143,7 @@ model TicketOfferCapacityHold {
   @@index([offerId, status, expiresAt])
   @@index([branchId, expiresAt])
 }
+
 model ProcurementTicketPurchaseRequest {
   id                      String                              @id @default(uuid()) @db.Uuid
   version                 Int                                 @default(1)
