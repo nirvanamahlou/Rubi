@@ -90,7 +90,9 @@ describe('TicketPublicService offer retry', () => {
       ],
     });
     expect(findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { branchId: { in: ['branch-1'] } } }),
+      expect.objectContaining({
+        where: { branchId: { in: ['branch-1'] }, status: { not: 'ARCHIVED' } },
+      }),
     );
   });
 

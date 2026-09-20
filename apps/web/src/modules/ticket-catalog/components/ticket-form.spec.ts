@@ -7,9 +7,29 @@ import {
   createReturnTicketDraft,
   inferWallTimeOffset,
   scheduleToUtc,
+  changeTicketServiceDate,
 } from './ticket-form';
 
 describe('Round-trip ticket definition', () => {
+  it('moves actual flight timestamps to 31 Shahrivar while preserving local times and return role', () => {
+    const input = emptyInput();
+    input.serviceDate = '2026-09-25';
+    input.journeyRole = 'return';
+    input.segments = [
+      {
+        ...input.segments[0]!,
+        departureZone: 'Asia/Tehran',
+        arrivalZone: 'Europe/Istanbul',
+        departureAt: '2026-09-24T21:00:00.000Z',
+        arrivalAt: '2026-09-25T01:00:00.000Z',
+      },
+    ];
+    const updated = changeTicketServiceDate(input, '2026-09-22');
+    expect(updated.serviceDate).toBe('2026-09-22');
+    expect(updated.journeyRole).toBe('return');
+    expect(updated.segments[0]!.departureAt).toBe('2026-09-21T21:00:00.000Z');
+    expect(updated.segments[0]!.arrivalAt).toBe('2026-09-22T01:00:00.000Z');
+  });
   it('creates an independent return draft with the outbound route reversed', () => {
     const outbound = emptyInput();
     const segment = outbound.segments[0]!;

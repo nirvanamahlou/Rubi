@@ -36,9 +36,7 @@ describe('readable sales ticket card', () => {
       const dates = html.match(/<time[^>]*>/g) ?? [];
       expect(dates).toHaveLength(2);
       for (const date of dates) {
-        expect(date).toContain(
-          'text-sm font-bold leading-relaxed sm:text-base',
-        );
+        expect(date).toContain('text-xs font-semibold leading-5');
         expect(date).toContain('break-words');
         expect(date).not.toContain('opacity');
         expect(date).not.toContain('truncate');

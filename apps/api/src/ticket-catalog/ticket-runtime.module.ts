@@ -1,11 +1,13 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Headers,
   Inject,
   Module,
   Param,
+  Patch,
   Post,
   Query,
   Req,
@@ -45,6 +47,24 @@ class TicketOffersController {
     @Headers('idempotency-key') key?: string,
   ) {
     return this.service.holdTemporary(offerId, input, req.actor, branchId, key);
+  }
+  @Patch(':offerId') revise(
+    @Param('offerId') offerId: string,
+    @Body() input: { expectedVersion: number; offer: TicketOfferCreateV1 },
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.service.revise(offerId, input, req.actor);
+  }
+  @Delete(':offerId') archiveExpired(
+    @Param('offerId') offerId: string,
+    @Body() input: { expectedVersion: number },
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.service.archiveExpired(
+      offerId,
+      input?.expectedVersion,
+      req.actor,
+    );
   }
   @Post() publish(
     @Body() input: TicketOfferCreateV1,
