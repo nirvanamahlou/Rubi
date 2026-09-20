@@ -5,6 +5,7 @@ import {
   Headers,
   Inject,
   Module,
+  Param,
   Post,
   Query,
   Req,
@@ -35,6 +36,15 @@ class TicketOffersController {
     @Req() req: AuthenticatedRequest,
   ) {
     return this.service.search(query, req.actor);
+  }
+  @Post(':offerId/capacity-holds') holdTemporary(
+    @Param('offerId') offerId: string,
+    @Body() input: { quantity: number; expiresAt: string },
+    @Req() req: AuthenticatedRequest,
+    @Headers('x-branch-id') branchId?: string,
+    @Headers('idempotency-key') key?: string,
+  ) {
+    return this.service.holdTemporary(offerId, input, req.actor, branchId, key);
   }
   @Post() publish(
     @Body() input: TicketOfferCreateV1,

@@ -34,6 +34,7 @@ model User {
   tourPricingDraftsUpdated                         PackagePricingTourDraft[]                 @relation("TourPricingDraftUpdater")
   tourPricingVersionsPublished                     PackagePricingTourPublishedVersion[]      @relation("TourPricingPublisher")
   financeTicketCostRevisions                       FinanceTicketPurchaseCostRevision[]       @relation("FinanceTicketCostActor")
+  ticketCapacityHolds                             TicketOfferCapacityHold[]                 @relation("TicketCapacityHoldCreator")
   financeTicketPaymentRevisions                    FinanceTicketPurchasePaymentRevision[]    @relation("FinanceTicketPaymentActor")
   masterHotelRatePeriodsCreated                    MasterHotelRatePeriod[]                   @relation("MasterHotelRatePeriodCreatedBy")
   masterHotelRatePeriodsUpdated                    MasterHotelRatePeriod[]                   @relation("MasterHotelRatePeriodUpdatedBy")
@@ -217,6 +218,7 @@ model RolePermission {
 model Branch {
   tourPricingDrafts                   PackagePricingTourDraft[]
   financeTicketCostRevisions          FinanceTicketPurchaseCostRevision[]
+  ticketCapacityHolds                TicketOfferCapacityHold[]                 @relation("TicketCapacityHoldBranch")
   hotelRatePacks                      ReservationHotelRatePack[]
   masterHotelRatePeriods              MasterHotelRatePeriod[]
   hotelRateBatches                    ReservationHotelRateBatch[]
@@ -4085,6 +4087,7 @@ model TicketPublishedOffer {
   createdAt              DateTime                            @default(now()) @db.Timestamptz(3)
   audit                  TicketOfferAudit[]
   capacityAllocations    TicketOfferCapacityAllocation[]
+  capacityHolds          TicketOfferCapacityHold[]
   purchaseRequest        ProcurementTicketPurchaseRequest?
   financeTicketCosts     FinanceTicketPurchaseCostRevision[]
 
@@ -4120,6 +4123,26 @@ model TicketOfferCapacityAllocation {
   @@index([contractId, status])
 }
 
+model TicketOfferCapacityHold {
+  id              String               @id @default(uuid()) @db.Uuid
+  offerId         String               @db.Uuid
+  branchId        String               @db.Uuid
+  quantity        Int
+  status          String               @default("ACTIVE") @db.VarChar(20)
+  expiresAt       DateTime             @db.Timestamptz(3)
+  createdByUserId String               @db.Uuid
+  idempotencyKey  String               @db.VarChar(160)
+  fingerprint     String               @db.VarChar(64)
+  createdAt       DateTime             @default(now()) @db.Timestamptz(3)
+  releasedAt      DateTime?            @db.Timestamptz(3)
+  offer           TicketPublishedOffer @relation(fields: [offerId], references: [id], onDelete: Restrict)
+  branch          Branch               @relation("TicketCapacityHoldBranch", fields: [branchId], references: [id], onDelete: Restrict)
+  createdByUser   User                 @relation("TicketCapacityHoldCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
+
+  @@unique([createdByUserId, idempotencyKey])
+  @@index([offerId, status, expiresAt])
+  @@index([branchId, expiresAt])
+}
 model ProcurementTicketPurchaseRequest {
   id                      String                              @id @default(uuid()) @db.Uuid
   version                 Int                                 @default(1)
