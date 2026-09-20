@@ -29,6 +29,21 @@ const row = {
   fingerprint: 'legacy-json-order-hash',
 };
 
+function expiryTransaction(
+  expired: readonly { id: string; version: number }[] = [],
+) {
+  const findMany = vi.fn().mockResolvedValue(expired);
+  const updateMany = vi.fn().mockResolvedValue({ count: 1 });
+  const create = vi.fn().mockResolvedValue(undefined);
+  const transaction = vi.fn(async (operation) =>
+    operation({
+      ticketPublishedOffer: { findMany, updateMany },
+      ticketOfferAudit: { create },
+    }),
+  );
+  return { transaction, findMany, updateMany, create };
+}
+
 describe('TicketPublicService offer retry', () => {
   it('accepts the same persisted offer despite a legacy order-dependent fingerprint', async () => {
     const upsert = vi.fn().mockResolvedValue(row);
@@ -53,9 +68,13 @@ describe('TicketPublicService offer retry', () => {
         capacityAllocations: [{ quantity: 1 }],
       },
     ]);
+    const expiry = expiryTransaction();
     const service = new TicketPublicService(
       {
-        client: { ticketPublishedOffer: { findMany } },
+        client: {
+          $transaction: expiry.transaction,
+          ticketPublishedOffer: { findMany },
+        },
       } as unknown as DatabaseService,
       {} as ProcurementPublicService,
     );
@@ -72,6 +91,44 @@ describe('TicketPublicService offer retry', () => {
     expect(findMany).toHaveBeenCalledWith(
       expect.objectContaining({ where: { branchId: { in: ['branch-1'] } } }),
     );
+  });
+
+  it('automatically pauses departed offers with a versioned audit', async () => {
+    const expiry = expiryTransaction([{ id: 'expired-offer', version: 4 }]);
+    const list = vi.fn().mockResolvedValue([]);
+    const service = new TicketPublicService(
+      {
+        client: {
+          $transaction: expiry.transaction,
+          ticketPublishedOffer: { findMany: list },
+        },
+      } as unknown as DatabaseService,
+      {} as ProcurementPublicService,
+    );
+
+    await service.managed(actor);
+
+    expect(expiry.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          branchId: { in: ['branch-1'] },
+          status: 'ACTIVE',
+          departureAt: { lte: expect.any(Date) },
+        }),
+      }),
+    );
+    expect(expiry.updateMany).toHaveBeenCalledWith({
+      where: { id: 'expired-offer', status: 'ACTIVE', version: 4 },
+      data: { status: 'PAUSED', version: { increment: 1 } },
+    });
+    expect(expiry.create).toHaveBeenCalledWith({
+      data: {
+        offerId: 'expired-offer',
+        actorUserId: 'user-1',
+        action: 'ticket.offer.expired',
+        version: 5,
+      },
+    });
   });
 
   it('still rejects a changed offer under the same key', async () => {

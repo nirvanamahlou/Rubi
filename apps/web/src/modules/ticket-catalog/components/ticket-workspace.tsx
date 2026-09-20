@@ -45,7 +45,6 @@ import {
 } from '../model/catalog';
 import {
   activateCatalogSample,
-  catalogSamples,
   catalogStorageKey,
   countProductsByRoute,
   displayTime,
@@ -53,6 +52,7 @@ import {
   groupProductsForCards,
   initialQuery,
   parseCatalogSnapshot,
+  pauseExpiredCatalogProduct,
   queryProducts,
   moveDefinitionToDate,
   repeatDefinition,
@@ -89,22 +89,42 @@ function availableInventory(product: Product): Inventory {
   };
 }
 
-function flightOfferInput(
+export function flightOfferInput(
   definition: ProductInput,
   references: readonly Reference[],
 ): TicketOfferCreateV1 | undefined {
   if (definition.transport !== 'flight') return undefined;
-  if (definition.segments.length !== 1)
-    throw new Error('برای فروش، هر بلیط پرواز باید یک مسیر مستقل داشته باشد.');
-  const segment = definition.segments[0]!;
-  if (!segment.departureAt || !segment.arrivalAt)
+  const firstSegment = definition.segments[0];
+  const lastSegment = definition.segments.at(-1);
+  if (!firstSegment || !lastSegment)
+    throw new Error('حداقل یک مسیر برای بلیط قابل فروش الزامی است.');
+  if (
+    definition.segments.some(
+      (segment) => !segment.departureAt || !segment.arrivalAt,
+    )
+  )
     throw new Error('ساعت حرکت و رسیدن برای بلیط قابل فروش الزامی است.');
-  const carrier = references.find(
-    (reference) =>
-      reference.kind === 'airline' && reference.id === segment.airlineId,
+  const carriers = definition.segments.map((segment) =>
+    references.find(
+      (reference) =>
+        reference.kind === 'airline' && reference.id === segment.airlineId,
+    ),
   );
-  if (!carrier?.name || !segment.flightNumber.trim())
+  if (
+    carriers.some((carrier) => !carrier?.name) ||
+    definition.segments.some((segment) => !segment.flightNumber.trim())
+  )
     throw new Error('ایرلاین و شماره پرواز برای بلیط قابل فروش الزامی است.');
+  const carrierName = [
+    ...new Set(carriers.map((carrier) => carrier!.name.trim())),
+  ].join(' / ');
+  const serviceNumber = definition.segments
+    .map((segment) => segment.flightNumber.trim())
+    .join(' / ');
+  if (carrierName.length > 160 || serviceNumber.length > 80)
+    throw new Error(
+      'نام ایرلاین‌ها یا شماره‌های پرواز برای ثبت بیش از حد طولانی است.',
+    );
   const cabin = references.find(
     (reference) =>
       reference.kind === 'flightClass' &&
@@ -117,12 +137,12 @@ function flightOfferInput(
       ? 'BUSINESS'
       : 'ECONOMY';
   return {
-    originId: segment.originCityId,
-    destinationId: segment.destinationCityId,
-    departureAt: segment.departureAt,
-    arrivalAt: segment.arrivalAt,
-    carrierName: carrier.name,
-    serviceNumber: segment.flightNumber.trim(),
+    originId: firstSegment.originCityId,
+    destinationId: lastSegment.destinationCityId,
+    departureAt: firstSegment.departureAt,
+    arrivalAt: lastSegment.arrivalAt,
+    carrierName,
+    serviceNumber,
     cabinClassCode,
     totalCapacity: definition.totalCapacity,
   };
@@ -272,10 +292,13 @@ function TicketCatalogWorkspace() {
   };
 
   useEffect(() => {
-    const timer = window.setTimeout(() => {
-      void refreshPublishedOffers();
-    }, 0);
-    return () => window.clearTimeout(timer);
+    const refresh = () => void refreshPublishedOffers();
+    const timer = window.setTimeout(refresh, 0);
+    const interval = window.setInterval(refresh, 60_000);
+    return () => {
+      window.clearTimeout(timer);
+      window.clearInterval(interval);
+    };
   }, []);
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -283,8 +306,9 @@ function TicketCatalogWorkspace() {
         localStorage.getItem(catalogStorageKey),
       );
       if (stored) {
+        const now = new Date().toISOString();
         const restoredProducts = stored.products.map((product) =>
-          activateCatalogSample(product, new Date().toISOString()),
+          pauseExpiredCatalogProduct(activateCatalogSample(product, now), now),
         );
         setProducts(restoredProducts);
         setReferences(stored.references);
@@ -301,7 +325,7 @@ function TicketCatalogWorkspace() {
             ),
           );
         }
-      } else setProducts(catalogSamples(new Date().toISOString()));
+      } else setProducts([]);
       setHydrated(true);
     }, 0);
     return () => window.clearTimeout(timer);

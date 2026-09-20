@@ -92,9 +92,47 @@ export class TicketPublicService {
     };
   }
 
+  private async pauseExpiredOffers(
+    actor: AuthenticatedActor,
+    now = new Date(),
+  ) {
+    if (!actor.branchIds.length) return;
+    await this.database.client.$transaction(async (tx) => {
+      const expired = await tx.ticketPublishedOffer.findMany({
+        where: {
+          branchId: { in: actor.branchIds },
+          status: 'ACTIVE',
+          departureAt: { lte: now },
+        },
+        select: { id: true, version: true },
+        take: 500,
+      });
+      for (const offer of expired) {
+        const updated = await tx.ticketPublishedOffer.updateMany({
+          where: {
+            id: offer.id,
+            status: 'ACTIVE',
+            version: offer.version,
+          },
+          data: { status: 'PAUSED', version: { increment: 1 } },
+        });
+        if (updated.count === 1)
+          await tx.ticketOfferAudit.create({
+            data: {
+              offerId: offer.id,
+              actorUserId: actor.userId,
+              action: 'ticket.offer.expired',
+              version: offer.version + 1,
+            },
+          });
+      }
+    });
+  }
+
   /** Management and Sales deliberately read the same published offer rows. */
   async managed(actor: AuthenticatedActor) {
     this.require(actor, 'ticket_catalog.manage');
+    await this.pauseExpiredOffers(actor);
     const rows = await this.database.client.ticketPublishedOffer.findMany({
       where: { branchId: { in: actor.branchIds } },
       include: {
@@ -126,6 +164,9 @@ export class TicketPublicService {
       throw new BadRequestException('فیلتر مسیر و تاریخ معتبر لازم است.');
     const query = result.value as TicketOfferSearchV1;
     const from = new Date(query.departureFrom);
+    const now = new Date();
+    await this.pauseExpiredOffers(actor, now);
+    const effectiveFrom = from > now ? from : now;
     const to = query.departureTo
       ? new Date(`${query.departureTo.slice(0, 10)}T23:59:59.999Z`)
       : undefined;
@@ -137,7 +178,7 @@ export class TicketPublicService {
         status: 'ACTIVE',
         originId: query.originId,
         destinationId: query.destinationId,
-        departureAt: { gte: from, ...(to ? { lte: to } : {}) },
+        departureAt: { gte: effectiveFrom, ...(to ? { lte: to } : {}) },
         ...(query.cabinClassCode
           ? { cabinClassCode: query.cabinClassCode }
           : {}),

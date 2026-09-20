@@ -3086,3 +3086,9 @@ Permission، دادهٔ عملیاتی و Dependency/Lockfile تغییر نکر�
 Ticket Management local-only definitions and Sales offer selection are being unified on the existing Ticket Catalog public source. No schema, migration, dependency lock, operational data, or direct cross-module table access is in scope.
 
 Result: Ticket Management now publishes new flight definitions to the existing Ticket Catalog offer source before closing the form, and exposes the branch-scoped published offer list used by Sales contracts. Round-trip and repetition publish independent flight offers. Focused Web (1) and API (3) tests, lint, Prettier and API/Web typecheck passed. No migration, dependency lock, or operational data changed.
+
+## 2026-09-20 — انقضای خودکار و تکمیل نمایش بلیط قرارداد — READY_FOR_REVIEW
+
+PC-A روی شاخهٔ مستقل `codex/pc-a-ticket-expiry-sales-visibility-0920` منبع عمومی Ticket Catalog را اصلاح می‌کند تا پروازهای گذشته از وضعیت فعال خارج شوند و تعریف‌های معتبر چندقطعه‌ای مدیریت بلیط نیز به انتخاب قرارداد جدید برسند. دادهٔ نمونهٔ صرفاً مرورگری دیگر به‌عنوان بلیط واقعی مدیریت نمایش داده نمی‌شود. این واحد Schema/Migration، Dependency/Lockfile، دادهٔ عملیاتی و localhost را تغییر نمی‌دهد.
+
+پیاده‌سازی کامل است: انقضا به‌صورت `ACTIVE` → `PAUSED` همراه افزایش نسخه و Audit انجام می‌شود، جست‌وجوی فروش از لحظهٔ جاری عقب‌تر نمی‌رود، پرواز چندقطعه‌ای از اولین مبدأ تا آخرین مقصد در منبع مشترک منتشر می‌شود و کارت‌های نمونهٔ محلی از صفحهٔ عملیاتی حذف شدند. کارت‌های ذخیره‌شدهٔ منقضی هنگام بارگذاری متوقف و فهرست Backend هر دقیقه تازه می‌شود. ۲۳ تست هدفمند، lint، typecheck API/Web، build API و build تولیدی Web با ۵۰ route موفق‌اند؛ Webpack برای build این worktree استفاده شد چون Turbopack junction وابستگی بیرون از ریشهٔ worktree را رد می‌کند.
