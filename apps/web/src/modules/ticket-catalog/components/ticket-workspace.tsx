@@ -232,6 +232,12 @@ function TicketCatalogWorkspace() {
     readonly TicketOfferV1[]
   >([]);
   const [publishedProblem, setPublishedProblem] = useState('');
+  const [capacityHold, setCapacityHold] = useState<{
+    offer: TicketOfferV1;
+    quantity: number;
+    expiresAt: string;
+  }>();
+  const [capacityHoldSaving, setCapacityHoldSaving] = useState(false);
   const backfillStarted = useRef(false);
 
   const refreshPublishedOffers = async () => {
@@ -245,6 +251,45 @@ function TicketCatalogWorkspace() {
           ? error.message
           : 'دریافت بلیط‌های قابل فروش ناموفق بود.',
       );
+    }
+  };
+  const submitCapacityHold = async () => {
+    if (!capacityHold) return;
+    try {
+      if (
+        !Number.isSafeInteger(capacityHold.quantity) ||
+        capacityHold.quantity < 1
+      )
+        throw new Error('تعداد نفرات رزرو باید حداقل ۱ باشد.');
+      if (capacityHold.quantity > capacityHold.offer.remainingCapacity)
+        throw new Error('تعداد واردشده از ظرفیت باقی‌مانده بیشتر است.');
+      const expiresAt = new Date(capacityHold.expiresAt);
+      if (Number.isNaN(expiresAt.getTime()) || expiresAt <= new Date())
+        throw new Error('تاریخ و ساعت انقضا باید در آینده باشد.');
+      setCapacityHoldSaving(true);
+      const base = getPublicApiBaseUrl();
+      if (!base) throw new Error('نشانی سرور تنظیم نشده است.');
+      const session = await refreshAuthenticatedSession(base);
+      const branchId = session?.user.branches[0]?.id;
+      if (!branchId) throw new Error('شعبه مجاز برای رزرو ظرفیت پیدا نشد.');
+      const result = await toursApi.temporaryHold(
+        capacityHold.offer.id,
+        { quantity: capacityHold.quantity, expiresAt: expiresAt.toISOString() },
+        branchId,
+        crypto.randomUUID(),
+      );
+      await refreshPublishedOffers();
+      setNotice(
+        `${result.data.quantity.toLocaleString('fa-IR')} نفر تا ${displayTime(result.data.expiresAt, 'Asia/Tehran')} رزرو شد.`,
+      );
+      setProblem('');
+      setCapacityHold(undefined);
+    } catch (error) {
+      setProblem(
+        error instanceof Error ? error.message : 'رزرو ظرفیت ناموفق بود.',
+      );
+    } finally {
+      setCapacityHoldSaving(false);
     }
   };
   const publishFlights = async (inputs: readonly ProductInput[]) => {
@@ -557,6 +602,7 @@ function TicketCatalogWorkspace() {
                   <th className="px-4 py-3 text-start">حرکت</th>
                   <th className="px-4 py-3 text-start">ظرفیت قابل فروش</th>
                   <th className="px-4 py-3 text-start">وضعیت</th>
+                  <th className="px-4 py-3 text-start">اقدام</th>
                 </tr>
               </thead>
               <tbody>
@@ -583,6 +629,27 @@ function TicketCatalogWorkspace() {
                     </td>
                     <td className="px-4 py-3">
                       {offer.status === 'ACTIVE' ? 'فعال' : offer.status}
+                    </td>
+                    <td className="px-4 py-3">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={
+                          offer.status !== 'ACTIVE' ||
+                          offer.remainingCapacity < 1
+                        }
+                        onClick={() =>
+                          setCapacityHold({
+                            offer,
+                            quantity: 1,
+                            expiresAt: new Date(Date.now() + 60 * 60 * 1000)
+                              .toISOString()
+                              .slice(0, 16),
+                          })
+                        }
+                      >
+                        رزرو ظرفیت
+                      </Button>
                     </td>
                   </tr>
                 ))}
@@ -953,6 +1020,77 @@ function TicketCatalogWorkspace() {
               ) : null}
             </div>
           ) : null}
+        </DialogContent>
+      </Dialog>
+      <Dialog
+        open={Boolean(capacityHold)}
+        onOpenChange={(open) => {
+          if (!open && !capacityHoldSaving) setCapacityHold(undefined);
+        }}
+      >
+        <DialogContent dir="rtl" className="start-auto! left-1/2!">
+          <DialogTitle>رزرو موقت ظرفیت</DialogTitle>
+          <DialogDescription>
+            ظرفیت تا زمان انقضا برای این بلیت نگه داشته می‌شود و پس از آن خودکار
+            آزاد خواهد شد.
+          </DialogDescription>
+          {problem ? <Alert tone="error" title={problem} /> : null}
+          <p className="rounded-xl bg-muted/50 px-3 py-2 text-sm">
+            {capacityHold?.offer.carrierName} ·{' '}
+            <span dir="ltr">{capacityHold?.offer.serviceNumber}</span> · ظرفیت
+            باقی‌مانده:{' '}
+            {capacityHold?.offer.remainingCapacity.toLocaleString('fa-IR')}
+          </p>
+          <FormField
+            label="تعداد نفرات"
+            id="ticket-capacity-hold-quantity"
+            required
+          >
+            <Input
+              id="ticket-capacity-hold-quantity"
+              type="number"
+              min={1}
+              max={capacityHold?.offer.remainingCapacity ?? 1}
+              value={capacityHold?.quantity ?? 1}
+              onChange={(event) =>
+                capacityHold &&
+                setCapacityHold({
+                  ...capacityHold,
+                  quantity: Number(event.target.value),
+                })
+              }
+            />
+          </FormField>
+          <FormField
+            label="تاریخ و ساعت انقضا"
+            id="ticket-capacity-hold-expires-at"
+            required
+          >
+            <TicketDatePicker
+              id="ticket-capacity-hold-expires-at"
+              includeTime
+              required
+              value={capacityHold?.expiresAt ?? ''}
+              onChange={(expiresAt) =>
+                capacityHold && setCapacityHold({ ...capacityHold, expiresAt })
+              }
+            />
+          </FormField>
+          <div className="mt-2 flex gap-2">
+            <Button
+              disabled={capacityHoldSaving}
+              onClick={() => void submitCapacityHold()}
+            >
+              {capacityHoldSaving ? 'در حال ثبت…' : 'ثبت رزرو موقت'}
+            </Button>
+            <Button
+              disabled={capacityHoldSaving}
+              variant="outline"
+              onClick={() => setCapacityHold(undefined)}
+            >
+              انصراف
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
       <Dialog

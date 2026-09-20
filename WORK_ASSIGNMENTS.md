@@ -1,15 +1,44 @@
+## TICKET-TIME-REPEAT-0920 — PC-A — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-20: فیلدهای زمان حرکت و رسیدنِ تعریف بلیت دوباره در فرم در دسترس باشند و هنگام تکرار هفتگی/ماهانه همراه بلیت کپی شوند. `COMPUTER_ID=PC-A`؛ شاخه `codex/pc-a-ticket-time-repeat-0920` از آخرین `origin/develop@7e52d309`.
+- محدودهٔ رزروشده: فقط `apps/web/src/modules/ticket-catalog/**` برای فرم، مدل تکرار و تست‌های همان ماژول، به‌علاوهٔ گزارش همین Work Item و مدخل‌های محدود وضعیت. هیچ Schema/Migration، قرارداد عمومی، API، Permission، Dependency/Lockfile، دادهٔ عملیاتی یا runtime محلی تغییر نمی‌کند.
+- سازگاری: تعریف‌های قدیمیِ بدون زمان همچنان معتبر و تکرارپذیر می‌مانند؛ زمان‌ها در صورت ثبت، UTC و zone موجود را نگه می‌دارند و تاریخ اولین بلیت مبنای تکرار است.
+- تحویل: فیلدهای زمان برای بلیت یک‌طرفه، برگشت و همهٔ قطعه‌های ترکیبی بازگشتند؛ انتخاب زمان حرکت `serviceDate` را همگام می‌کند و تکرار، timestampهای ذخیره‌شده را همراه تاریخ جابه‌جا می‌کند. ۱۰ فایل / ۱۰۰ تست Ticket Catalog، lint و typecheck Web موفق‌اند و build تولیدی در Worktree جدا خروجی `BUILD_ID` ساخته است. Schema/Migration/contract/API/runtime/3100 تغییر نکرده‌اند. وضعیت `READY_FOR_REVIEW`؛ رزرو محدود Central Docs با این Commit `RELEASED` می‌شود.
+
+## LOGIN-STATIC-BACKGROUND-0920 — PC-A — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-20: نوشته و طرح ابری `NOORA` از صفحهٔ ورود حذف شود و همان تصویر هواپیما/آسمان به‌صورت پس‌زمینهٔ ثابت باقی بماند. `COMPUTER_ID=PC-A`؛ شاخهٔ مستقل `codex/pc-a-login-brand-cleanup-0920` از `origin/develop@f139266d`.
+- محدودهٔ رزروشده: فقط `apps/web/src/app/login/login-background-story.tsx`، CSS و تست متمرکز همان پس‌زمینه و ثبت محدود وضعیت. فایل تصویری `login-airline-b2.png` بدون تغییر می‌ماند؛ API، احراز هویت، فرم ورود، Schema/Migration، Permission، Dependency/Lockfile، داده و runtime پورت 3100 تغییر نمی‌کنند.
+- بررسی مالکیت: کار قبلی `BRAND-NORA-001` با وضعیت `COMPLETE / VERIFIED` ثبت شده و قفل فعال دیگری برای فایل‌های هدف یافت نشد. رزرو محدود Central Docs این slice با `PC-A/LOGIN-STATIC-BACKGROUND-0920` است.
+- نتیجه: لایه‌های `NOORA`، ابر، باد و انیمیشن ورود حذف شدند و `login-airline-b2.png` بدون تغییر به‌صورت پس‌زمینهٔ ثابت با همان crop واکنش‌گرا و overlay قبلی باقی ماند. ۵ تست صفحه ورود، lint، typecheck و build تولیدی Web موفق‌اند؛ پورت 3100 تغییر نکرد. رزرو محدود Central Docs این slice `RELEASED` است.
+
+## HOTEL-RATE-ROOM-CAPACITY-0920 — PC-A — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-20: نرخ هر هتل باید برای نوع‌های اتاق واقعی آن ثبت شود؛ هر نوع اتاق ضریب و ظرفیت مستقل بزرگسال/کودک دارد، نبود ضریب یعنی اتاق قابل فروش نیست و قرارداد نباید از ظرفیت ثبت‌شده عبور کند. افزودن نوع اتاق از همین جریان فقط با Permissionهای اطلاعات پایه مجاز است.
+- Branch: `codex/pc-a-hotel-rate-room-capacity-0920` از `origin/develop@7e52d309`؛ محدوده شامل Reservations hotel-rate API/Web، Public Projection، کنترل ظرفیت Sales، Master Data public room reference، Prisma/Migration افزایشی، تست‌ها و اسناد همین Task است.
+- قفل‌ها: `Migration Owner = PC-A/HOTEL-RATE-ROOM-CAPACITY-0920`، Reservations/Sales additive shared-contract و Central Docs برای همین Task رزرو هستند. Dependency/Lockfile رزرو نمی‌شود. Query مستقیم جدول ماژول دیگر ممنوع و مراجع نوع اتاق فقط از Public Boundary اطلاعات پایه مصرف می‌شوند.
+- نتیجه: نرخ نسخه‌دار برای نوع اتاق واقعی، ضریب مثبت، ظرفیت مستقل بزرگسال/کودک، فیلتر نوع اتاق قابل‌فروش در قرارداد و کنترل fail-closed ظرفیت در Create/Update/Confirm تکمیل شد. Migration روی PostgreSQL 18.1 خالی، Prisma، lint/typecheck، ۱۰۴ تست هدفمند و Build API/Web پاس شدند. قفل‌ها تا Merge و Handoff رسمی فعال می‌مانند.
+
+## TICKET-CAPACITY-HOLD-0920 — PC-A — IN_PROGRESS
+
+- درخواست مالک در 2026-09-20: از فهرست مدیریت بلیت، کاربر بتواند برای تعداد مشخصی نفر «رزرو موقت ظرفیت» با تاریخ/ساعت انقضا ثبت کند. `COMPUTER_ID=PC-A`؛ شاخه `codex/pc-a-ticket-capacity-hold-0920` از `origin/develop@7e52d309`.
+- محدودهٔ رزروشده: Ticket Catalog API/Web/tests، مدل Prisma و یک Migration افزایشی برای hold موقت، API محلی همان ماژول و اسناد محدود Task/status. `Migration Owner` و رزرو محدود Central Docs برای این slice: `PC-A/TICKET-CAPACITY-HOLD-0920`. Dependency/Lockfile، قرارداد مشترک، Sales/Reservations، Permission و runtime محلی تغییر نمی‌کنند.
+- یکپارچگی: Hold به Ticket Published Offer و Branch/User واقعی FK دارد، تعداد مثبت و زمان UTC آینده می‌گیرد، با قفل ردیفی و idempotency از oversell جلوگیری می‌کند و فقط Holdهای ACTIVE و منقضی‌نشده از ظرفیت قابل فروش کم می‌شوند. انقضا، ظرفیت را بدون حذف history آزاد می‌کند.
+
 ## FINANCE-DASHBOARD-REDESIGN-0919 — PC-A — READY_FOR_REVIEW
 
 - درخواست مالک در 2026-09-19: کارتابل مالی از فهرست ساده به داشبورد مالی عملیاتی و قابل‌خواندن تبدیل شود؛ KPIهای واقعی، اولویت‌های پرداخت/دریافت، تفکیک واحدها، وضعیت حساب‌ها و اقدام سریع در همان صفحه نمایش داده شوند. `COMPUTER_ID=PC-A`؛ شاخه `codex/pc-a-finance-dashboard-redesign-0919` از `origin/develop@47762934`.
 - محدوده: فقط رابط و تست قرارداد صفحه کارتابل مالی و این مدخل؛ داده صرفاً از Finance Inbox و حساب‌های موجود خوانده می‌شود. API، قرارداد، Schema/Migration، داده مالی، Permission، Dependency/Lockfile تغییر نمی‌کنند.
 - نتیجه: کارتابل از فهرست ساده به «مرکز کنترل مالی» تبدیل شد: KPIهای مبتنی بر دادهٔ واقعی، تفکیک صف بر اساس واحد، اولویت‌های نزدیک، وضعیت حساب‌های فعال و فیلترهای اقدام سریع در کنار جست‌وجو و فیلترهای قبلی. تست قرارداد کارتابل، lint، typecheck و build Web موفق‌اند؛ پیش‌نمایش محلی روی پورت 3200 با API 4190 و CORS تأیید شده است.
 
-## FINANCE-OPERATIONAL-CARTABLE-0919 — PC-A — READY_FOR_REVIEW
+## FINANCE-OPERATIONAL-CARTABLE-0919 — PC-A — DONE/MERGED
 
 - درخواست مالک در 2026-09-19: کارتابل مالی عملیاتی با تأیید دریافت در حساب مقصد، پرداخت کارگزار از حساب مبدأ، مانده و تاریخ/شماره پیگیری، جست‌وجوی قرارداد و تأیید تحویل مدارک، و KPIهای فیلترپذیر تکمیل شود. شاخه `codex/pc-a-finance-operational-cartable-0919` از `origin/develop@a8c050bd`؛ `COMPUTER_ID=PC-A`.
 - رزرو: Finance/Sales public receipt contract، Finance API/Web، Sales public projection/confirmation، migration افزایشی و سازگار برای ثبت حساب مقصد دریافت، تست‌های هدفمند و این سند. `Migration Owner`، Finance/Sales shared-contract و Central Docs برای این slice: `PC-A/FINANCE-OPERATIONAL-CARTABLE-0919`. Dependency/Lockfile رزرو نمی‌شود.
 - مرز: Finance فقط public service Sales/Reservations را فراخوانی می‌کند؛ مبلغ Decimal/ارز و زمان UTC، مجوز، audit، optimistic/idempotency و FK واقعی اجباری‌اند. هیچ دادهٔ واقعی، پرداخت بیرونی، Grant، حذف/بازنویسی تاریخچه یا تغییر ماژول مالک دیگر انجام نمی‌شود.
 - نتیجه: تأیید دریافت فقط با حساب مقصد فعال، هم‌ارز و هم‌شعبه انجام و FK حساب روی پرداخت Sales ثبت می‌شود؛ UI انتخاب/تعریف حساب، KPI و فیلترها به جریان عملیاتی متصل‌اند. ۱۶ تست هدفمند، Prisma validate، lint/typecheck و build بخش‌های متاثر موفق و migration محلی اعمال شده است.
+- ادامه 2026-09-20: مجوز تحویل مدارک مشتری از پرداخت کارگزار/رزرواسیون جدا شد و سه مبنای «پس از دریافت تأییدشده»، «تسویه کامل» و «استثنای مدیر» با Audit، Optimistic Lock، Branch scope و جست‌وجوی جزئی شماره قرارداد پیاده شد. Migration/Finance contract/Central Docs همین Task تا Merge فعال‌اند؛ جزئیات در `docs/tasks/FINANCE-CUSTOMER-DOCUMENT-DELIVERY-0920.md`.
+- Handoff نهایی: PR #322 با Merge Commit `9c5362333f2a30cd81e0fe63faca16d7a3c0ad47` وارد `develop` شد؛ Migration Owner، Finance/Sales contract lock و Central Docs lock این Task برابر `RELEASED / STABLE` هستند.
 
 ## SYSTEM-MANAGEMENT-NAVIGATION-003 — PC-B — READY_FOR_REVIEW
 

@@ -19,6 +19,11 @@ import { DatabaseService } from '../database/database.service';
 import { ProcurementPublicService } from '../procurement/procurement-public.service';
 
 const uuid = Joi.string().guid();
+const capacityHoldSchema = Joi.object({
+  quantity: Joi.number().integer().min(1).max(100000).required(),
+  expiresAt: Joi.string().isoDate().required(),
+});
+type CapacityHoldInput = { quantity: number; expiresAt: string };
 const createSchema = Joi.object({
   originId: uuid.required(),
   destinationId: uuid.invalid(Joi.ref('originId')).required(),
@@ -69,6 +74,7 @@ export class TicketPublicService {
     totalCapacity: number;
     status: string;
     capacityAllocations: readonly { quantity: number }[];
+    capacityHolds: readonly { quantity: number }[];
   }): TicketOfferV1 {
     return {
       id: row.id,
@@ -87,7 +93,8 @@ export class TicketPublicService {
         row.capacityAllocations.reduce(
           (sum, allocation) => sum + allocation.quantity,
           0,
-        ),
+        ) -
+        row.capacityHolds.reduce((sum, hold) => sum + hold.quantity, 0),
       status: row.status as TicketOfferV1['status'],
     };
   }
@@ -140,6 +147,10 @@ export class TicketPublicService {
           where: { status: 'ACTIVE' },
           select: { quantity: true },
         },
+        capacityHolds: {
+          where: { status: 'ACTIVE', expiresAt: { gt: new Date() } },
+          select: { quantity: true },
+        },
       },
       orderBy: [{ departureAt: 'asc' }, { id: 'asc' }],
       take: 500,
@@ -187,6 +198,10 @@ export class TicketPublicService {
       include: {
         capacityAllocations: {
           where: { status: 'ACTIVE' },
+          select: { quantity: true },
+        },
+        capacityHolds: {
+          where: { status: 'ACTIVE', expiresAt: { gt: new Date() } },
           select: { quantity: true },
         },
       },
@@ -361,6 +376,10 @@ export class TicketPublicService {
             where: { status: 'ACTIVE' },
             select: { contractId: true, direction: true, quantity: true },
           },
+          capacityHolds: {
+            where: { status: 'ACTIVE', expiresAt: { gt: new Date() } },
+            select: { quantity: true },
+          },
         },
       });
       const byId = new Map(offers.map((offer) => [offer.id, offer]));
@@ -395,10 +414,12 @@ export class TicketPublicService {
               replay.offerId !== offer.id ||
               replay.quantity !== seatCount
             );
-          const allocated = offer.capacityAllocations.reduce(
-            (sum, allocation) => sum + allocation.quantity,
-            0,
-          );
+          const allocated =
+            offer.capacityAllocations.reduce(
+              (sum, allocation) => sum + allocation.quantity,
+              0,
+            ) +
+            offer.capacityHolds.reduce((sum, hold) => sum + hold.quantity, 0);
           return offer.totalCapacity - allocated < seatCount;
         })
         .map(({ offerId }) => offerId);
@@ -426,6 +447,125 @@ export class TicketPublicService {
     });
   }
 
+  async holdTemporary(
+    offerId: string,
+    input: CapacityHoldInput,
+    actor: AuthenticatedActor,
+    branchId?: string,
+    key?: string,
+  ) {
+    this.require(actor, 'ticket_catalog.manage');
+    if (
+      !uuid.validate(offerId).error &&
+      branchId &&
+      actor.branchIds.includes(branchId) &&
+      key?.trim() &&
+      key.length <= 160
+    ) {
+      // Valid envelope; detailed input validation and transaction follow.
+    } else throw new ForbiddenException('شعبه یا کلید درخواست معتبر لازم است.');
+    const validation = capacityHoldSchema.validate(input, { convert: false });
+    if (validation.error)
+      throw new BadRequestException('تعداد یا زمان انقضای رزرو معتبر نیست.');
+    const value = validation.value as CapacityHoldInput;
+    const expiresAt = new Date(value.expiresAt);
+    const now = new Date();
+    if (
+      expiresAt <= now ||
+      expiresAt.getTime() > now.getTime() + 30 * 86_400_000
+    )
+      throw new BadRequestException(
+        'انقضای رزرو باید حداکثر تا ۳۰ روز آینده باشد.',
+      );
+    const fingerprint = createHash('sha256')
+      .update(
+        JSON.stringify({
+          offerId,
+          branchId,
+          quantity: value.quantity,
+          expiresAt: expiresAt.toISOString(),
+        }),
+      )
+      .digest('hex');
+    return this.database.client.$transaction(async (transaction) => {
+      const replay = await transaction.ticketOfferCapacityHold.findUnique({
+        where: {
+          createdByUserId_idempotencyKey: {
+            createdByUserId: actor.userId,
+            idempotencyKey: key!,
+          },
+        },
+      });
+      if (replay) {
+        if (replay.fingerprint !== fingerprint)
+          throw new ConflictException(
+            'کلید درخواست قبلاً با اطلاعات متفاوت استفاده شده است.',
+          );
+        return {
+          data: {
+            id: replay.id,
+            quantity: replay.quantity,
+            expiresAt: replay.expiresAt.toISOString(),
+            status: replay.status,
+          },
+        };
+      }
+      await transaction.ticketOfferCapacityHold.updateMany({
+        where: { offerId, status: 'ACTIVE', expiresAt: { lte: now } },
+        data: { status: 'EXPIRED', releasedAt: now },
+      });
+      await transaction.$queryRaw(
+        Prisma.sql`SELECT "id" FROM "TicketPublishedOffer" WHERE "id" = ${offerId} FOR UPDATE`,
+      );
+      const offer = await transaction.ticketPublishedOffer.findFirst({
+        where: {
+          id: offerId,
+          branchId,
+          status: 'ACTIVE',
+          departureAt: { gt: now },
+        },
+        include: {
+          capacityAllocations: {
+            where: { status: 'ACTIVE' },
+            select: { quantity: true },
+          },
+          capacityHolds: {
+            where: { status: 'ACTIVE', expiresAt: { gt: now } },
+            select: { quantity: true },
+          },
+        },
+      });
+      if (!offer) throw new BadRequestException('بلیط قابل رزرو نیست.');
+      const used =
+        offer.capacityAllocations.reduce(
+          (sum, item) => sum + item.quantity,
+          0,
+        ) + offer.capacityHolds.reduce((sum, item) => sum + item.quantity, 0);
+      if (offer.totalCapacity - used < value.quantity)
+        throw new ConflictException(
+          'ظرفیت باقی‌مانده برای این تعداد نفر کافی نیست.',
+        );
+      const hold = await transaction.ticketOfferCapacityHold.create({
+        data: {
+          offerId,
+          branchId: branchId!,
+          quantity: value.quantity,
+          expiresAt,
+          createdByUserId: actor.userId,
+          idempotencyKey: key!,
+          fingerprint,
+        },
+      });
+      return {
+        data: {
+          id: hold.id,
+          quantity: hold.quantity,
+          expiresAt: hold.expiresAt.toISOString(),
+          status: hold.status,
+        },
+      };
+    });
+  }
   async release(allocationIds: readonly string[]) {
     if (!allocationIds.length) return;
     await this.database.client.ticketOfferCapacityAllocation.updateMany({
