@@ -156,6 +156,10 @@ export function inferWallTimeOffset(wallTime: string, zone: string): string {
     'این ساعت در منطقه زمانی مسیر معتبر نیست؛ ساعت دیگری انتخاب کنید.',
   );
 }
+export function scheduleToUtc(wallTime: string, zone: string) {
+  if (!wallTime) return '';
+  return wallTimeToUtc(wallTime, zone, inferWallTimeOffset(wallTime, zone));
+}
 function referenceLabel(
   references: readonly Reference[],
   kind: Reference['kind'],
@@ -332,6 +336,59 @@ function TransportFields({
   );
 }
 
+function ScheduleFields({
+  prefix,
+  suffix,
+  segment,
+  readOnly,
+  onChange,
+}: {
+  prefix: string;
+  suffix: string;
+  segment: Segment;
+  readOnly: boolean;
+  onChange: (patch: Partial<Segment>, serviceDate?: string) => void;
+}) {
+  const updateDeparture = (wallTime: string) =>
+    onChange(
+      { departureAt: scheduleToUtc(wallTime, segment.departureZone) },
+      wallTime ? wallTime.slice(0, 10) : undefined,
+    );
+  const updateArrival = (wallTime: string) =>
+    onChange({ arrivalAt: scheduleToUtc(wallTime, segment.arrivalZone) });
+  return (
+    <div className={styles.fields}>
+      <FormField
+        label={`تاریخ و ساعت حرکت${suffix}`}
+        id={`${prefix}-departure`}
+      >
+        <TicketDatePicker
+          id={`${prefix}-departure`}
+          includeTime
+          value={wallValue(segment.departureAt, segment.departureZone)}
+          onChange={updateDeparture}
+          disabled={readOnly}
+          placeholder="انتخاب ساعت حرکت"
+        />
+      </FormField>
+      <FormField label={`تاریخ و ساعت رسیدن${suffix}`} id={`${prefix}-arrival`}>
+        <TicketDatePicker
+          id={`${prefix}-arrival`}
+          includeTime
+          value={wallValue(segment.arrivalAt, segment.arrivalZone)}
+          onChange={updateArrival}
+          disabled={readOnly}
+          placeholder="انتخاب ساعت رسیدن"
+        />
+      </FormField>
+      <p className="col-span-full text-xs leading-6 text-muted-foreground">
+        ثبت زمان اختیاری است؛ در تکرار هفتگی یا ماهانه، ساعت حرکت و رسیدن همراه
+        تاریخ جابه‌جا می‌شوند.
+      </p>
+    </div>
+  );
+}
+
 function RouteFields({
   prefix,
   suffix,
@@ -486,9 +543,39 @@ export function TicketForm({
         itemIndex === index ? { ...item, ...patch } : item,
       ),
     });
+  const changeScheduledSegment = (
+    patch: Partial<Segment>,
+    serviceDate?: string,
+  ) =>
+    setInput({
+      ...input,
+      ...(serviceDate ? { serviceDate } : {}),
+      segments: [{ ...segment, ...patch }],
+    });
+  const changeScheduledSegmentAt = (
+    index: number,
+    patch: Partial<Segment>,
+    serviceDate?: string,
+  ) =>
+    setInput({
+      ...input,
+      ...(index === 0 && serviceDate ? { serviceDate } : {}),
+      segments: input.segments.map((item, itemIndex) =>
+        itemIndex === index ? { ...item, ...patch } : item,
+      ),
+    });
   const changeReturnSegment = (patch: Partial<Segment>) =>
     setReturnInput({
       ...returnInput,
+      segments: [{ ...returnSegment, ...patch }],
+    });
+  const changeScheduledReturnSegment = (
+    patch: Partial<Segment>,
+    serviceDate?: string,
+  ) =>
+    setReturnInput({
+      ...returnInput,
+      ...(serviceDate ? { serviceDate } : {}),
       segments: [{ ...returnSegment, ...patch }],
     });
   function chooseTransport(transport: TransportType) {
@@ -673,6 +760,13 @@ export function TicketForm({
               onSegment={changeSegment}
               onReference={onReference}
             />
+            <ScheduleFields
+              prefix="ticket"
+              suffix=""
+              segment={segment}
+              readOnly={readOnly}
+              onChange={changeScheduledSegment}
+            />
             <h4 className="font-semibold">مسیر</h4>
             <RouteFields
               prefix="ticket"
@@ -754,6 +848,15 @@ export function TicketForm({
                   onSegment={(patch) => changeSegmentAt(index, patch)}
                   onReference={onReference}
                 />
+                <ScheduleFields
+                  prefix={'ticket-segment-' + index}
+                  suffix={' قطعه ' + (index + 1).toLocaleString('fa-IR')}
+                  segment={item}
+                  readOnly={readOnly}
+                  onChange={(patch, serviceDate) =>
+                    changeScheduledSegmentAt(index, patch, serviceDate)
+                  }
+                />
                 <RouteFields
                   prefix={'ticket-segment-' + index}
                   suffix={' قطعه ' + (index + 1).toLocaleString('fa-IR')}
@@ -799,6 +902,13 @@ export function TicketForm({
               onInput={setReturnInput}
               onSegment={changeReturnSegment}
               onReference={onReference}
+            />
+            <ScheduleFields
+              prefix="ticket-return"
+              suffix=" برگشت"
+              segment={returnSegment}
+              readOnly={readOnly}
+              onChange={changeScheduledReturnSegment}
             />
             <RouteFields
               prefix="ticket-return"
@@ -896,9 +1006,14 @@ export function TicketForm({
           </div>
         </section>
         <section className="space-y-4">
-          <h3 className="font-bold text-primary">۵. درخواست قیمت خرید از مالی</h3>
+          <h3 className="font-bold text-primary">
+            ۵. درخواست قیمت خرید از مالی
+          </h3>
           <p className="text-sm text-muted-foreground">
-            این فرم پیش‌نویس محلی بلیت است. هنگام ثبت «بلیط قابل فروش» در نوبت تور، درخواست خریدِ بدون مبلغ و متصل به همان آفر به کارتابل مالی می‌رود؛ قیمت خرید و پرداخت را مالی ثبت می‌کند. قیمت فروش در ماژول فروش تعیین می‌شود.
+            این فرم پیش‌نویس محلی بلیت است. هنگام ثبت «بلیط قابل فروش» در نوبت
+            تور، درخواست خریدِ بدون مبلغ و متصل به همان آفر به کارتابل مالی
+            می‌رود؛ قیمت خرید و پرداخت را مالی ثبت می‌کند. قیمت فروش در ماژول
+            فروش تعیین می‌شود.
           </p>
           <div className={styles.fields}>
             <ReferencePicker
