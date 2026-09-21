@@ -1,3 +1,7 @@
+## 2026-09-21 — SALES-TICKET-CLARITY-0921 — READY_FOR_REVIEW
+
+Airline, route, departure/arrival dates and times are clearer in the contract ticket selector; selected cards use a restrained themed border. Capacity/fare guards and Tehran timezone preserved. Owner-authorized overlap reconciliation excludes stale namespace changes without modifying old worktrees. 7 tests, lint, TypeScript and production build (50 pages) passed. No migration or 3100 changes. Branch: codex/pc-a-finance-sales-clarity-0921. Details: [task](tasks/SALES-TICKET-CLARITY-0921.md).
+
 ## 2026-09-21 — TOUR-DEFINITION-PRICING-HANDOFF-0921 — IN_PROGRESS
 
 فرم تعریف تور از زمان‌بندی و قیمت جدا شد: مدیریت بلیت فقط مشخصات و خدمات ثابت را ثبت می‌کند و فهرست فشرده تورها را نشان می‌دهد؛ ساخت نوبت و اتصال بلیت‌ها در مدیریت قیمت پکیج انجام می‌شود و هر نوبت مسیر مستقیم به اتصال هتل‌های همان مقصد و بازه دارد. فرم نرخ هتل با نوبت، مقصد و تاریخ‌های از پیش انتخاب‌شده باز می‌شود. ۸ تست هدفمند، typecheck، lint و build تولیدی Web با ۵۰ route موفق‌اند؛ بدون Migration، Dependency یا تغییر داده عملیاتی.

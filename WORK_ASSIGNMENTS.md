@@ -1,3 +1,9 @@
+## SALES-TICKET-CLARITY-0921 — PC-A — READY_FOR_REVIEW
+
+- COMPUTER_ID=PC-A; base origin/develop@5f66ef97; branch codex/pc-a-finance-sales-clarity-0921. Scope: Sales ticket card, its tests and this task's status entries only. No API, migration or dependency changes.
+- Owner authorized overlap reconciliation. Preserve current @nora contracts and capacity/fare guards; do not import the stale @rubi namespace rename. Old worktrees remain untouched. Finance will ship separately.
+- Validation: 7 focused tests, scoped ESLint, Web TypeScript and production build (50 pages) passed. Scoped reservation released. No merge or runtime change.
+
 ## TOUR-DEFINITION-PRICING-HANDOFF-0921 — PC-A — READY_FOR_REVIEW
 
 - درخواست مالک در 2026-09-21: فرم تعریف تور در مدیریت بلیت فشرده و محدود به مشخصات و خدمات ثابت باشد؛ ساخت نوبت، اتصال بلیت‌های رفت/برگشت و ورود به اتصال هتل‌های همان بازه از مدیریت قیمت پکیج انجام شود.
