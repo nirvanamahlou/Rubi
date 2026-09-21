@@ -141,7 +141,10 @@ export class TicketPublicService {
     this.require(actor, 'ticket_catalog.manage');
     await this.pauseExpiredOffers(actor);
     const rows = await this.database.client.ticketPublishedOffer.findMany({
-      where: { branchId: { in: actor.branchIds }, status: { not: 'ARCHIVED' } },
+      where: {
+        branchId: { in: actor.branchIds },
+        audit: { none: { action: 'ticket.offer.archived' } },
+      },
       include: {
         capacityAllocations: {
           where: { status: 'ACTIVE' },
@@ -295,10 +298,10 @@ export class TicketPublicService {
           id,
           branchId: { in: actor.branchIds },
           version: expectedVersion,
-          status: { not: 'ARCHIVED' },
+          audit: { none: { action: 'ticket.offer.archived' } },
           departureAt: { lte: new Date() },
         },
-        data: { status: 'ARCHIVED', version: { increment: 1 } },
+        data: { status: 'PAUSED', version: { increment: 1 } },
       });
       if (updated.count !== 1)
         throw new ConflictException(
