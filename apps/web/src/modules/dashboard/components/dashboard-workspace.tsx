@@ -50,7 +50,14 @@ import {
 } from 'lucide-react';
 import Image from 'next/image';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useId, useMemo, useRef, useState } from 'react';
+import {
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 
 import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
@@ -1512,12 +1519,14 @@ function GrowthIndicator({
 
 function KpiCard({
   definition,
+  loading = false,
   selected,
   onSelect,
   featured = false,
   metric,
 }: {
   definition: DashboardKpiDefinition;
+  loading?: boolean;
   selected: boolean;
   onSelect(): void;
   featured?: boolean;
@@ -1569,21 +1578,35 @@ function KpiCard({
           </span>
         </span>
       </span>
-      <span className="relative block text-center">
-        <Metric
-          compact
-          currency={definition.currency === 'required'}
-          definition={definition}
-          metric={metric}
-        />
-      </span>
-      {metric ? (
-        <span className="relative mt-3 flex min-h-24 flex-col pt-0">
-          {metric.trend ? (
-            <MiniTrend title={definition.title} trend={metric.trend} />
-          ) : null}
+      {loading ? (
+        <span
+          aria-label="در حال دریافت مقدار شاخص"
+          className="relative mt-4 block"
+        >
+          <Skeleton className="mx-auto h-7 w-24" />
+          <span className="mt-3 flex min-h-24 flex-col">
+            <Skeleton className="h-20 w-full" />
+          </span>
         </span>
-      ) : null}
+      ) : (
+        <>
+          <span className="relative block text-center">
+            <Metric
+              compact
+              currency={definition.currency === 'required'}
+              definition={definition}
+              metric={metric}
+            />
+          </span>
+          {metric ? (
+            <span className="relative mt-3 flex min-h-24 flex-col pt-0">
+              {metric.trend ? (
+                <MiniTrend title={definition.title} trend={metric.trend} />
+              ) : null}
+            </span>
+          ) : null}
+        </>
+      )}
     </button>
   );
 }
@@ -1799,7 +1822,7 @@ function DimensionFilter({
 
   useEffect(() => {
     if (!open) return;
-    searchRef.current?.focus();
+    searchRef.current?.focus({ preventScroll: true });
     function closeOnOutside(event: MouseEvent) {
       if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
     }
@@ -3150,6 +3173,7 @@ function ProjectionSlot({
   onTrendCalendarSystemChange,
   permission,
   range,
+  loading = false,
   source,
   trendCalendarSystem,
   wide = false,
@@ -3165,6 +3189,7 @@ function ProjectionSlot({
   onTrendCalendarSystemChange(value: TrendCalendarSystem): void;
   permission: string;
   range: DashboardRange;
+  loading?: boolean;
   source: DashboardVisualDefinition['source'];
   trendCalendarSystem: TrendCalendarSystem;
   wide?: boolean;
@@ -3315,7 +3340,12 @@ function ProjectionSlot({
               مبلغ فروش · <bdi dir="ltr">{displayData.currencyCode}</bdi>
             </span>
           ) : null}
-          {displayData?.values.length ? (
+          {loading ? (
+            <Skeleton
+              aria-label="در حال دریافت دادهٔ نمودار"
+              className="h-52 w-full rounded-xl"
+            />
+          ) : displayData?.values.length ? (
             isEmployeeComparison ? (
               <EmployeePerformanceBars
                 labels={displayData.labels}
@@ -3885,6 +3915,10 @@ export function DashboardWorkspace() {
   );
   const [trendCalendarSystem, setTrendCalendarSystem] =
     useState<TrendCalendarSystem>('persian');
+  const preservedViewportRef = useRef<{
+    left: number;
+    top: number;
+  } | null>(null);
   const legalEntity = useLegalEntityContext();
   const selection = legalEntity.context?.selection ?? null;
   const activePage =
@@ -3919,20 +3953,59 @@ export function DashboardWorkspace() {
     staleTime: 30_000,
   });
 
-  const updateFilters = (patch: Partial<DashboardFilters>) => {
-    const params = dashboardFiltersToSearchParams({ ...filters, ...patch });
-    router.replace(params.size ? `${pathname}?${params}` : pathname, {
+  const preserveDashboardViewport = () => {
+    preservedViewportRef.current = {
+      left: window.scrollX,
+      top: window.scrollY,
+    };
+  };
+
+  const replaceDashboardSearchParams = (params: URLSearchParams) => {
+    const nextSearch = params.toString();
+    if (nextSearch === searchParams.toString()) return;
+
+    preserveDashboardViewport();
+    router.replace(nextSearch ? `${pathname}?${nextSearch}` : pathname, {
       scroll: false,
     });
+  };
+
+  useLayoutEffect(() => {
+    const position = preservedViewportRef.current;
+    if (!position) return;
+
+    const restoreViewport = () => window.scrollTo(position.left, position.top);
+    restoreViewport();
+    const navigationFrame = window.requestAnimationFrame(restoreViewport);
+    let settledFrame: number | undefined;
+
+    if (!query.isFetching) {
+      settledFrame = window.requestAnimationFrame(() => {
+        restoreViewport();
+        if (preservedViewportRef.current === position) {
+          preservedViewportRef.current = null;
+        }
+      });
+    }
+
+    return () => {
+      window.cancelAnimationFrame(navigationFrame);
+      if (settledFrame !== undefined) {
+        window.cancelAnimationFrame(settledFrame);
+      }
+    };
+  }, [filters, query.isFetching]);
+
+  const updateFilters = (patch: Partial<DashboardFilters>) => {
+    const params = dashboardFiltersToSearchParams({ ...filters, ...patch });
+    replaceDashboardSearchParams(params);
   };
   const resetFilters = () => {
     const params = dashboardFiltersToSearchParams({
       ...defaultDashboardFilters,
       page: activePage.id,
     });
-    router.replace(params.size ? `${pathname}?${params}` : pathname, {
-      scroll: false,
-    });
+    replaceDashboardSearchParams(params);
   };
   const toggleNavigationGroup = (pageId: string) => {
     setExpandedGroups((current) => {
@@ -3964,6 +4037,10 @@ export function DashboardWorkspace() {
   const openReportConfiguration = (reportCode: string) => {
     setReportConfigurationCode(reportCode);
   };
+  const refreshDashboard = () => {
+    preserveDashboardViewport();
+    void query.refetch();
+  };
   const reportConfigurationState = reportConfigurationCode
     ? dashboardFiltersToReportFilterState(
         filters,
@@ -3972,21 +4049,18 @@ export function DashboardWorkspace() {
       )
     : null;
   return (
-    <div className="min-w-0 space-y-5 pb-8" data-dashboard-workspace>
+    <div
+      className="min-w-0 space-y-5 pb-8"
+      data-dashboard-workspace
+      style={{ overflowAnchor: 'none' }}
+    >
       <section aria-live="polite">
-        {query.isPending ? (
-          <div className="grid gap-3 sm:grid-cols-3">
-            <Skeleton className="h-28" />
-            <Skeleton className="h-28" />
-            <Skeleton className="h-28" />
-          </div>
-        ) : null}
         {query.isError ? (
           <ErrorState
             title="خطا در دریافت Dashboard"
             description="هیچ دادهٔ قدیمی یا حدسی نمایش داده نمی‌شود."
             action={
-              <Button onClick={() => void query.refetch()} variant="outline">
+              <Button onClick={refreshDashboard} variant="outline">
                 تلاش دوباره
               </Button>
             }
@@ -4041,7 +4115,7 @@ export function DashboardWorkspace() {
           onFiltersReset={resetFilters}
           onGroupToggle={toggleNavigationGroup}
           onPageSelect={selectPage}
-          onRefresh={() => void query.refetch()}
+          onRefresh={refreshDashboard}
         />
 
         <div className="min-w-0 space-y-5">
@@ -4119,6 +4193,7 @@ export function DashboardWorkspace() {
                       key={item.id}
                       definition={item}
                       featured
+                      loading={query.isPending}
                       metric={query.data?.metrics[item.id]}
                       selected={filters.widget === item.id}
                       onSelect={() =>
@@ -4155,6 +4230,7 @@ export function DashboardWorkspace() {
                       onTrendCalendarSystemChange={setTrendCalendarSystem}
                       permission={visualization.permission}
                       range={filters.range}
+                      loading={query.isPending}
                       source={visualization.source}
                       trendCalendarSystem={trendCalendarSystem}
                       data={query.data?.visuals[visualization.id]}
