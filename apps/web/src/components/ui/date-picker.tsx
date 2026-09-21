@@ -4,6 +4,7 @@ import { CalendarDays, ChevronLeft, ChevronRight, Clock3 } from 'lucide-react';
 import * as React from 'react';
 import { createPortal } from 'react-dom';
 
+import { useSystemPreferences } from '@/components/system-preferences-provider';
 import { cn } from '@/lib/utils';
 import {
   calendarMonthDays,
@@ -61,7 +62,7 @@ export function DatePicker({
   withinDialog = false,
   className,
   gregorianEnglish = false,
-  defaultCalendarSystem = 'persian',
+  defaultCalendarSystem,
   defaultValue = '',
   disabled,
   id,
@@ -76,12 +77,17 @@ export function DatePicker({
   variant = 'default',
   ...ariaProps
 }: DatePickerProps) {
+  const systemPreferences = useSystemPreferences();
   const [internalValue, setInternalValue] = React.useState(defaultValue);
   const currentValue = value ?? internalValue;
   const [internalCalendarSystem, setInternalCalendarSystem] =
-    React.useState<CalendarSystem>(defaultCalendarSystem);
+    React.useState<CalendarSystem>(
+      defaultCalendarSystem ?? systemPreferences.calendar,
+    );
   const calendarSystem = controlledCalendarSystem ?? internalCalendarSystem;
-  const english = gregorianEnglish && calendarSystem === 'gregorian';
+  const english =
+    (gregorianEnglish || systemPreferences.language === 'en') &&
+    calendarSystem === 'gregorian';
   const t = (fa: string, en: string) => (english ? en : fa);
   const [calendarView, setCalendarView] = React.useState<CalendarView>('days');
   const [yearGridStart, setYearGridStart] = React.useState(0);
@@ -100,6 +106,7 @@ export function DatePicker({
   const triggerRef = React.useRef<HTMLButtonElement>(null);
   const popoverId = `${React.useId()}-calendar`;
   const selectedDate = currentValue.slice(0, 10);
+
   const days = calendarMonthDays(anchor, calendarSystem);
   const rubiCalendar = variant === 'rubi';
   const anchorParts = calendarParts(anchor, calendarSystem);
@@ -119,10 +126,10 @@ export function DatePicker({
         );
         return {
           month,
-          label: calendarMonthName(date, calendarSystem, gregorianEnglish),
+          label: calendarMonthName(date, calendarSystem, english),
         };
       }),
-    [anchor, anchorParts.year, calendarSystem, gregorianEnglish],
+    [anchor, anchorParts.year, calendarSystem, english],
   );
 
   React.useEffect(() => {
@@ -418,11 +425,7 @@ export function DatePicker({
                         onClick={() => setCalendarView('months')}
                         type="button"
                       >
-                        {calendarMonthName(
-                          anchor,
-                          calendarSystem,
-                          gregorianEnglish,
-                        )}
+                        {calendarMonthName(anchor, calendarSystem, english)}
                       </button>
                       <button
                         aria-label={t('نمایش شبکه سال‌ها', 'Choose year')}
@@ -439,11 +442,7 @@ export function DatePicker({
                     </>
                   )}
                   <span className="sr-only">
-                    {calendarMonthLabel(
-                      anchor,
-                      calendarSystem,
-                      gregorianEnglish,
-                    )}
+                    {calendarMonthLabel(anchor, calendarSystem, english)}
                   </span>
                 </div>
                 <button

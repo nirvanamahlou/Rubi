@@ -93,6 +93,36 @@ const m = (
   groups: SettingGroup[],
 ): SettingModule => ({ id, title, category, icon, tone, groups });
 const currency = 'IRR|USD|EUR|AED';
+export const systemTimezones = [
+  'Asia/Tehran',
+  'Asia/Dubai',
+  'Asia/Riyadh',
+  'Asia/Baghdad',
+  'Asia/Kuwait',
+  'Asia/Qatar',
+  'Asia/Muscat',
+  'Asia/Kabul',
+  'Asia/Karachi',
+  'Asia/Kolkata',
+  'Asia/Baku',
+  'Asia/Tbilisi',
+  'Asia/Yerevan',
+  'Europe/Istanbul',
+  'Europe/London',
+  'Europe/Berlin',
+  'Europe/Paris',
+  'Europe/Moscow',
+  'America/New_York',
+  'America/Toronto',
+  'America/Chicago',
+  'America/Los_Angeles',
+  'Asia/Singapore',
+  'Asia/Shanghai',
+  'Asia/Tokyo',
+  'Australia/Sydney',
+  'UTC',
+] as const;
+const timezoneOptions = systemTimezones.join('|');
 
 export const settingsModules: SettingModule[] = [
   m('general', 'سازمان و نمایش', 'مدیریت', 'building', 'blue', [
@@ -110,38 +140,11 @@ export const settingsModules: SettingModule[] = [
       ['ارز ثبت مالی IRR؛ تومان فقط واحد نمایش است.'],
     ),
     g('worktime', 'تقویم کاری و منطقه زمانی', 'calendar', [
-      s(
-        'timezone',
-        'منطقه زمانی',
-        'Asia/Tehran',
-        'Asia/Tehran|Asia/Dubai|Europe/Istanbul',
-      ),
+      s('timezone', 'منطقه زمانی', 'Asia/Tehran', timezoneOptions),
       t('start', 'شروع ساعت کاری', '08:00', 'time'),
       t('end', 'پایان ساعت کاری', '17:00', 'time'),
       s('weekend', 'تعطیلی هفتگی', 'پنجشنبه و جمعه', 'جمعه|پنجشنبه و جمعه'),
     ]),
-    g(
-      'branding',
-      'برند و اسناد صادره',
-      'file',
-      [
-        s(
-          'issuer',
-          'شرکت صادرکننده پیش‌فرض',
-          'نیایش سیر سحر',
-          'نیایش سیر سحر|جهان باستان',
-        ),
-        s(
-          'letterhead',
-          'سربرگ پیش‌فرض',
-          'سربرگ رسمی فارسی',
-          'سربرگ رسمی فارسی|سربرگ رسمی انگلیسی',
-        ),
-        b('confirm', 'تأیید شرکت پیش از صدور', true),
-      ],
-      true,
-      ['هویت اسناد صادرشده با تغییر تنظیمات بازنویسی نمی‌شود.'],
-    ),
     g(
       'numbering',
       'شماره‌گذاری اسناد',
@@ -220,12 +223,6 @@ export const settingsModules: SettingModule[] = [
           'کد ملی / پاسپورت|موبایل تأییدشده',
         ),
         b('contactWarning', 'هشدار تماس مشترک', true),
-        s(
-          'review',
-          'مرجع تأیید ادغام',
-          'سرپرست امور مشتریان',
-          'سرپرست امور مشتریان|مدیر شعبه',
-        ),
       ],
       true,
       ['ادغام پرونده نیازمند تأیید و حفظ سوابق است.'],
@@ -248,7 +245,6 @@ export const settingsModules: SettingModule[] = [
       ['کامل‌بودن مدارک سفر خارجی پیش از تأیید مسافران کنترل می‌شود.'],
     ),
     g('contact', 'ارتباط با مشتری', 'headset', [
-      s('language', 'زبان ارتباط', 'فارسی', 'فارسی|English|عربی'),
       s('channel', 'کانال ترجیحی', 'تلفن', 'تلفن|ایمیل|WhatsApp'),
       n('followup', 'یادآوری تکمیل پرونده', 3, 'روز', 1, 30),
     ]),
@@ -261,7 +257,7 @@ export const settingsModules: SettingModule[] = [
           'consentChannel',
           'ثبت رضایت از طریق',
           'فرم و تأیید مشتری',
-          'فرم و تأیید مشتری|تأیید دیجیتال',
+          'فرم و تأیید مشتری|تأیید دیجیتال|پیامک و کد تأیید|ایمیل و لینک تأیید|امضای الکترونیکی|ضبط مکالمه با اعلام رضایت',
         ),
         b('auditDownload', 'اعلان خروجی حساس به مسئول', true),
       ],
@@ -277,7 +273,6 @@ export const settingsModules: SettingModule[] = [
       n('urgent', 'پاسخ اولیه فوری', 15, 'دقیقه', 1, 180),
       n('normal', 'پاسخ اولیه عادی', 120, 'دقیقه', 1, 1440),
       n('resolution', 'حل درخواست فوری', 4, 'ساعت', 1, 72),
-      n('warning', 'هشدار مصرف مهلت', 80, 'درصد', 1, 99),
     ]),
     g('assignment', 'تخصیص و ارجاع', 'users', [
       s(
@@ -295,31 +290,10 @@ export const settingsModules: SettingModule[] = [
       ),
     ]),
     g(
-      'leads',
-      'پیگیری و تحویل سرنخ',
-      'task',
-      [
-        n('first', 'مهلت اولین اقدام', 60, 'دقیقه', 1, 1440),
-        n('reminder', 'فاصله یادآوری پیگیری', 24, 'ساعت', 1, 168),
-        s(
-          'handoff',
-          'تخصیص سرنخ واجد شرایط',
-          'تیم فروش همان شعبه',
-          'تیم فروش همان شعبه|مدیر فروش',
-        ),
-      ],
-      false,
-      ['منبع سرنخ، نحوه آشنایی و کانال فروش مستقل‌اند.'],
-    ),
-    g(
       'closure',
-      'بستن و رضایت‌سنجی',
+      'بستن درخواست',
       'check',
-      [
-        n('reopen', 'مهلت بازگشایی', 7, 'روز', 1, 30),
-        b('survey', 'ارسال نظرسنجی پس از حل', true),
-        n('delay', 'فاصله ارسال نظرسنجی', 24, 'ساعت', 1, 72),
-      ],
+      [n('reopen', 'مهلت بازگشایی', 7, 'روز', 1, 30)],
       false,
       ['بستن درخواست با ثبت نتیجه و دلیل انجام می‌شود.'],
     ),
@@ -1070,7 +1044,7 @@ export const settingsModules: SettingModule[] = [
     ),
     g('schedule', 'گزارش زمان‌بندی‌شده', 'calendar', [
       t('time', 'ساعت گزارش روزانه', '08:00', 'time'),
-      s('zone', 'منطقه زمانی', 'Asia/Tehran', 'Asia/Tehran|UTC'),
+      s('zone', 'منطقه زمانی', 'Asia/Tehran', timezoneOptions),
       s('channel', 'کانال دریافت', 'داخل سامانه', 'داخل سامانه|ایمیل'),
     ]),
     g(

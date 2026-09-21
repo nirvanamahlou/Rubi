@@ -159,7 +159,7 @@ export function SystemOperationsPanel() {
       systemManagementApi.writeSetting({
         key: String(form.get('key')),
         namespace: String(form.get('namespace')),
-        reason: String(form.get('reason')),
+        reason: `ویرایش تنظیم عمومی ${String(form.get('namespace'))}.${String(form.get('key'))}`,
         scope: 'GLOBAL',
         value,
         valueType,
@@ -180,7 +180,7 @@ export function SystemOperationsPanel() {
         isActive: true,
         padding: Number(form.get('padding')),
         prefix: String(form.get('prefix')),
-        reason: String(form.get('reason')),
+        reason: `ویرایش طرح شماره‌گذاری ${String(form.get('code'))}`,
         resetPolicy: 'YEARLY',
         scope: 'GLOBAL',
         scopeId: null,
@@ -196,7 +196,7 @@ export function SystemOperationsPanel() {
         description: String(form.get('description')) || null,
         enabled: form.get('enabled') === 'on',
         key: String(form.get('key')),
-        reason: String(form.get('reason')),
+        reason: `ویرایش Feature Flag ${String(form.get('key'))}`,
         rolloutPercent: Number(form.get('rolloutPercent') || 100),
         scope: 'GLOBAL',
         title: String(form.get('title')),
@@ -317,9 +317,6 @@ export function SystemOperationsPanel() {
                 <Input defaultValue="fa" name="value" required />
               </FormField>
             </div>
-            <FormField label="دلیل تغییر" required>
-              <Textarea name="reason" required />
-            </FormField>
             <Button disabled={saving === 'setting'} type="submit">
               ثبت نسخه جدید تنظیم
             </Button>
@@ -347,9 +344,6 @@ export function SystemOperationsPanel() {
                 />
               </FormField>
             </div>
-            <FormField label="دلیل تغییر" required>
-              <Textarea name="reason" required />
-            </FormField>
             <Button disabled={saving === 'numbering'} type="submit">
               ذخیره طرح شماره‌گذاری
             </Button>
@@ -382,9 +376,6 @@ export function SystemOperationsPanel() {
             <label className="flex items-center gap-2 text-sm font-semibold">
               <input defaultChecked name="enabled" type="checkbox" /> فعال
             </label>
-            <FormField label="دلیل تغییر" required>
-              <Textarea name="reason" required />
-            </FormField>
             <Button disabled={saving === 'flag'} type="submit">
               ثبت Feature Flag
             </Button>

@@ -24,9 +24,9 @@ describe('system management access', () => {
     expect(systemPageSource).not.toContain('ModuleFoundationWorkspace');
   });
 
-  it('retains navigation links without showing the Legal Entity callout', () => {
+  it('retains user management navigation without the Legal Entity callout', () => {
     expect(workspaceSource).toContain("href: '/users'");
-    expect(workspaceSource).toContain("href: '/system/legal-entities'");
+    expect(workspaceSource).not.toContain("href: '/system/legal-entities'");
     expect(workspaceSource).not.toContain("owner: 'Legal Entity'");
     expect(workspaceSource).not.toContain(
       'هویت حقوقی، Branding و سربرگ‌ها در ماژول مالک ثبت می‌شوند.',

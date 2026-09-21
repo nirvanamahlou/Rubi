@@ -42,4 +42,13 @@ describe('system operations panel', () => {
     expect(panel).toContain('{item.detail}');
     expect(panel).not.toContain('Math.random');
   });
+
+  it('hides change-reason fields from settings forms and records audit reasons automatically', () => {
+    expect(panel).not.toContain('label="دلیل تغییر"');
+    expect(panel).toContain('ویرایش تنظیم عمومی');
+    expect(panel).toContain('ویرایش طرح شماره‌گذاری');
+    expect(panel).toContain('ویرایش Feature Flag');
+    expect(panel).toContain('label="دلیل درخواست"');
+    expect(panel).toContain('label="دلیل تلاش مجدد"');
+  });
 });

@@ -25,8 +25,29 @@ export function headerDateKey(now = new Date()): string {
   return `${value('year')}-${value('month')}-${value('day')}`;
 }
 
-export function formatHeaderDate(day: string): string {
-  const parts = fullDateFormatter.formatToParts(new Date(`${day}T12:00:00Z`));
+export function formatHeaderDate(
+  day: string,
+  options?: {
+    calendar: 'persian' | 'gregorian';
+    locale: 'en-US' | 'fa-IR';
+    numberingSystem: 'arabext' | 'latn';
+    timezone: string;
+  },
+): string {
+  const formatter = options
+    ? new Intl.DateTimeFormat(options.locale, {
+        timeZone: options.timezone,
+        calendar: options.calendar === 'gregorian' ? 'gregory' : 'persian',
+        numberingSystem: options.numberingSystem,
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      })
+    : fullDateFormatter;
+  const date = new Date(`${day}T12:00:00Z`);
+  if (options) return formatter.format(date);
+  const parts = formatter.formatToParts(date);
   const value = (type: string) =>
     parts.find((part) => part.type === type)?.value;
   return `${value('weekday')}، ${value('day')} ${value('month')} ${value('year')}`;
