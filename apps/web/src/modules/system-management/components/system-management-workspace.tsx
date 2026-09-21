@@ -44,14 +44,12 @@ import {
   type FormEvent,
 } from 'react';
 
-import type { LegalEntitySummary, SystemSettingV1 } from '@nora/contracts';
+import type { SystemSettingV1 } from '@nora/contracts';
 import { navigationGroups, navigationItems } from '@/lib/navigation';
-import { legalEntitiesApi } from '@/modules/legal-entities/api/client';
 import {
   systemManagementApi,
   SystemManagementApiError,
   type SystemAuditRecord,
-  type SystemOverview,
 } from '../api/client';
 import {
   settingsModules,
@@ -305,14 +303,12 @@ export function SystemManagementWorkspace() {
     'all'
   > | null>(null);
   const [query, setQuery] = useState('');
-  const [scope, setScope] = useState<SettingsScope>(globalScope);
-  const [legalEntities, setLegalEntities] = useState<LegalEntitySummary[]>([]);
+  const scope: SettingsScope = globalScope;
   const [moduleTab, setModuleTab] = useState<'history' | 'settings'>(
     'settings',
   );
   const [settings, setSettings] = useState<SystemSettingV1[]>([]);
   const [audit, setAudit] = useState<SystemAuditRecord[]>([]);
-  const [overview, setOverview] = useState<SystemOverview | null>(null);
   const [editing, setEditing] = useState<{
     module: SettingModule;
     group: SettingGroup;
@@ -324,26 +320,13 @@ export function SystemManagementWorkspace() {
   const [toast, setToast] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    const [settingsResult, auditResult, overviewResult, legalEntitiesResult] =
-      await Promise.allSettled([
-        systemManagementApi.settings(),
-        systemManagementApi.audit(),
-        systemManagementApi.overview(),
-        legalEntitiesApi.selectable(),
-      ]);
+    const [settingsResult, auditResult] = await Promise.allSettled([
+      systemManagementApi.settings(),
+      systemManagementApi.audit(),
+    ]);
     if (settingsResult.status === 'fulfilled')
       setSettings(settingsResult.value);
     if (auditResult.status === 'fulfilled') setAudit(auditResult.value);
-    if (overviewResult.status === 'fulfilled')
-      setOverview(overviewResult.value);
-    if (legalEntitiesResult.status === 'fulfilled') {
-      setLegalEntities(
-        legalEntitiesResult.value.data.filter((entity) => entity.isActive),
-      );
-    } else {
-      setLegalEntities([]);
-      setScope(globalScope);
-    }
   }, []);
 
   useEffect(() => {
@@ -790,41 +773,6 @@ export function SystemManagementWorkspace() {
       <div className={styles.main}>
         <div className={styles.heading}>
           <h1>{pageTitle}</h1>
-          <div className={styles.headingActions}>
-            <label className={styles.scopeControl}>
-              <Building2 aria-hidden="true" size={17} />
-              <span className={styles.scopeLabel}>دامنه:</span>
-              <select
-                aria-label="دامنه تنظیمات"
-                onChange={(event) => {
-                  const next = event.target.value;
-                  if (next === 'GLOBAL') {
-                    setScope(globalScope);
-                    return;
-                  }
-                  const entity = legalEntities.find((item) => item.id === next);
-                  if (entity)
-                    setScope({
-                      scope: 'LEGAL_ENTITY',
-                      scopeId: entity.id,
-                      title: entity.persianName,
-                    });
-                }}
-                value={scope.scopeId ?? 'GLOBAL'}
-              >
-                <option value="GLOBAL">کل مجموعه</option>
-                {legalEntities.map((entity) => (
-                  <option key={entity.id} value={entity.id}>
-                    {entity.persianName}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <span className={styles.statusBadge} role="status">
-              <span aria-hidden="true" className={styles.statusDot} />
-              {overview ? 'داده‌های عملیاتی' : 'مقادیر مرجع'}
-            </span>
-          </div>
         </div>
         {page === 'overview' || page === 'modules' ? renderHub() : null}
         {page === 'module' ? renderModule() : null}

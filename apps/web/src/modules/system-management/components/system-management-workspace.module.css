@@ -214,13 +214,6 @@
   color: var(--primary);
   background: color-mix(in srgb, var(--primary) 10%, var(--surface));
 }
-.headingActions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 8px;
-}
 .managementAreas {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -268,51 +261,6 @@
   color: var(--muted-foreground);
   background: var(--muted);
   font-size: 12px;
-}
-.scopeControl {
-  display: inline-flex;
-  min-height: 38px;
-  align-items: center;
-  gap: 8px;
-  padding: 0 10px;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  color: var(--primary);
-  background: var(--surface);
-}
-.scopeLabel {
-  color: var(--muted-foreground);
-  font-size: 12px;
-  font-weight: 650;
-}
-.scopeControl select {
-  min-width: 0;
-  border: 0;
-  outline: 0;
-  color: var(--foreground);
-  background: transparent;
-  font: inherit;
-  font-size: 13px;
-}
-.statusBadge {
-  display: inline-flex;
-  min-height: 38px;
-  align-items: center;
-  gap: 7px;
-  padding: 0 11px;
-  border: 1px solid color-mix(in srgb, var(--primary) 25%, var(--border));
-  border-radius: 10px;
-  color: var(--primary);
-  background: color-mix(in srgb, var(--primary) 7%, var(--surface));
-  font-size: 13px;
-  font-weight: 650;
-  white-space: nowrap;
-}
-.statusDot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--primary);
 }
 .searchbar {
   display: flex;

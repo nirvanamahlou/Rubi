@@ -38,7 +38,7 @@ describe('system management access', () => {
       'عملیات حساس در API مالک دوباره مجوزسنجی و ثبت Audit می‌شود',
     );
     expect(workspaceSource).toContain('managementAreas');
-    expect(workspaceSource).toContain('legalEntitiesApi.selectable');
-    expect(workspaceSource).toContain("scope: 'LEGAL_ENTITY'");
+    expect(workspaceSource).not.toContain('legalEntitiesApi.selectable');
+    expect(workspaceSource).toContain("scope: 'GLOBAL'");
   });
 });
