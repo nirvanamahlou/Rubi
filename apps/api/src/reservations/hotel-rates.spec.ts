@@ -67,6 +67,56 @@ describe('group hotel rate integrity', () => {
       }),
     ).toThrow();
   });
+  it('accepts 2+1 and 2+3 capacities and rejects unavailable or duplicate room rates', () => {
+    const data = input();
+    const roomTypeA = randomUUID();
+    const roomTypeB = randomUUID();
+    const pack = {
+      ...data,
+      cityId: randomUUID(),
+      rows: [
+        {
+          ...data.rows[0],
+          factors: undefined,
+          roomRates: [
+            {
+              roomTypeId: roomTypeA,
+              factor: '1.2',
+              maxAdults: 2,
+              maxChildren: 1,
+            },
+            {
+              roomTypeId: roomTypeB,
+              factor: '1.8',
+              maxAdults: 2,
+              maxChildren: 3,
+            },
+          ],
+        },
+      ],
+    };
+    expect(validateRatePack(pack).rows[0]?.roomRates).toMatchObject([
+      { maxAdults: 2, maxChildren: 1 },
+      { maxAdults: 2, maxChildren: 3 },
+    ]);
+    expect(() =>
+      validateRatePack({ ...pack, rows: [{ ...pack.rows[0], roomRates: [] }] }),
+    ).toThrow();
+    expect(() =>
+      validateRatePack({
+        ...pack,
+        rows: [
+          {
+            ...pack.rows[0],
+            roomRates: [
+              pack.rows[0]!.roomRates[0],
+              { ...pack.rows[0]!.roomRates[1], roomTypeId: roomTypeA },
+            ],
+          },
+        ],
+      }),
+    ).toThrow();
+  });
   it('denies unauthorized branch before reference lookup or writes', async () => {
     const directory = { hotelRateReference: vi.fn() };
     const db = {

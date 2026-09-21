@@ -60,7 +60,7 @@ import {
 } from '../model/settings-catalog';
 import styles from './system-management-workspace.module.css';
 
-type Page = 'history' | 'module' | 'modules' | 'overview' | 'reviews';
+type Page = 'history' | 'module' | 'overview' | 'reviews';
 type Values = Record<string, boolean | string>;
 type SettingsScope = {
   scope: 'GLOBAL' | 'LEGAL_ENTITY';
@@ -655,7 +655,7 @@ export function SystemManagementWorkspace() {
           </div>
           <button
             className={styles.button}
-            onClick={() => navigate('modules')}
+            onClick={() => navigate('overview')}
             type="button"
           >
             <LayoutGrid aria-hidden="true" size={18} /> همه بخش‌ها
@@ -764,9 +764,7 @@ export function SystemManagementWorkspace() {
         ? 'بررسی تغییرات'
         : page === 'history'
           ? 'تاریخچه تغییرات'
-          : page === 'modules'
-            ? 'تنظیمات بخش‌ها'
-            : 'نمای کلی تنظیمات';
+          : 'نمای کلی تنظیمات';
 
   return (
     <section className={styles.workspace} dir="rtl">
@@ -774,7 +772,7 @@ export function SystemManagementWorkspace() {
         <div className={styles.heading}>
           <h1>{pageTitle}</h1>
         </div>
-        {page === 'overview' || page === 'modules' ? renderHub() : null}
+        {page === 'overview' ? renderHub() : null}
         {page === 'module' ? renderModule() : null}
         {page === 'history' ? renderHistory() : null}
         {page === 'reviews' ? (

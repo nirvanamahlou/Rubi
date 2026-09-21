@@ -1,5 +1,8 @@
 import { Inject, Injectable } from '@nestjs/common';
-import type { PackageTourHotelPurchaseBatchV1 } from '@nora/contracts';
+import type {
+  HotelRoomRateV1,
+  PackageTourHotelPurchaseBatchV1,
+} from '@nora/contracts';
 import { DatabaseService } from '../database/database.service';
 
 const dateOnly = (value: Date) => value.toISOString().slice(0, 10);
@@ -48,6 +51,7 @@ export class HotelPurchaseRatesPublicService {
         include: {
           pack: { select: { currentVersion: true } },
           rows: {
+            include: { roomRates: { orderBy: { roomTypeName: 'asc' } } },
             ...(tourDepartureId
               ? {}
               : { where: { hotelId: { in: [...hotelIds] } } }),
@@ -83,7 +87,48 @@ export class HotelPurchaseRatesPublicService {
           basePerNight: row.base.toString(),
           currencyCode: row.currency,
           factors: row.factors as Record<string, string>,
+          roomRates: (row.roomRates ?? []).map((room) => ({
+            roomTypeId: room.roomTypeId,
+            roomTypeName: room.roomTypeName,
+            factor: room.factor.toString(),
+            maxAdults: room.maxAdults,
+            maxChildren: room.maxChildren,
+          })),
         })),
       }));
+  }
+
+  async availableRoomRates(input: {
+    branchId: string;
+    hotelId: string;
+    checkIn: string;
+    checkOut: string;
+  }): Promise<readonly HotelRoomRateV1[]> {
+    const batches = await this.forTour(
+      input.branchId,
+      [input.hotelId],
+      input.checkIn,
+      input.checkOut,
+    );
+    const result = new Map<string, HotelRoomRateV1>();
+    for (const batch of batches)
+      for (const row of batch.rows)
+        if (row.hotelId === input.hotelId)
+          for (const room of row.roomRates)
+            if (!result.has(room.roomTypeId)) result.set(room.roomTypeId, room);
+    return [...result.values()];
+  }
+  async roomAvailability(input: {
+    branchId: string;
+    hotelId: string;
+    roomTypeId: string;
+    checkIn: string;
+    checkOut: string;
+  }): Promise<HotelRoomRateV1 | null> {
+    const rooms = await this.availableRoomRates(input);
+    return (
+      rooms.find((candidate) => candidate.roomTypeId === input.roomTypeId) ??
+      null
+    );
   }
 }

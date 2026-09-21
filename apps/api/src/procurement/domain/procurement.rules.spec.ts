@@ -195,6 +195,12 @@ describe('Submission and policy fail closed', () => {
       ),
     ).not.toThrow();
   });
+  it('allows a request to be submitted without a supplier', () => {
+    const input = draft();
+    expect('supplierId' in input).toBe(false);
+    expect('supplierName' in input).toBe(false);
+    expect(() => validateSubmission(input)).not.toThrow();
+  });
   it('retains the draft when no approved policy exists', () => {
     const input = draft();
     const before = structuredClone(input);

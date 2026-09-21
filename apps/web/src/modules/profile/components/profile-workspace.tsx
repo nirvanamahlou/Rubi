@@ -15,9 +15,10 @@ import { useCallback, useEffect, useState, type ReactNode } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { PersonalDetailsForm } from './personal-details-form';
-import { workbenchPersonalApi } from '@/modules/workbench/workbench-personal-api';
-import { uploadWorkbenchAttachments } from '@/modules/workbench/workbench-attachments';
-import { documentsApi } from '@/modules/documents/api/client';
+import {
+  PROFILE_PHOTO_CHANGED_EVENT,
+  workbenchPersonalApi,
+} from '@/modules/workbench/workbench-personal-api';
 import {
   Badge,
   Card,
@@ -293,18 +294,11 @@ function PersonalPreferences({ profile }: { profile: AuthenticatedProfile }) {
   const [error, setError] = useState('');
   useEffect(() => {
     let disposed = false;
-    let objectUrl = '';
     void workbenchPersonalApi
       .profile()
-      .then(async ({ data }) => {
+      .then(({ data }) => {
         if (disposed) return;
         setPersonal(data);
-        if (data.photoDocumentId) {
-          const result = await documentsApi.preview(data.photoDocumentId);
-          if (disposed) return;
-          objectUrl = URL.createObjectURL(result.blob);
-          setPhotoUrl(objectUrl);
-        }
       })
       .catch((reason) =>
         setError(
@@ -315,9 +309,33 @@ function PersonalPreferences({ profile }: { profile: AuthenticatedProfile }) {
       );
     return () => {
       disposed = true;
-      if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
   }, [profile.user.id]);
+
+  useEffect(() => {
+    if (!personal?.photoDocumentId) return;
+    let disposed = false;
+    let objectUrl = '';
+    void workbenchPersonalApi
+      .profilePhoto()
+      .then((blob) => {
+        if (disposed) return;
+        objectUrl = URL.createObjectURL(blob);
+        setPhotoUrl(objectUrl);
+      })
+      .catch((reason) => {
+        if (disposed) return;
+        setError(
+          reason instanceof Error
+            ? reason.message
+            : 'دریافت عکس پروفایل انجام نشد.',
+        );
+      });
+    return () => {
+      disposed = true;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [personal?.photoDocumentId]);
   return (
     <section className="min-w-0 space-y-5" dir="rtl">
       <PageHeader
@@ -346,17 +364,12 @@ function PersonalPreferences({ profile }: { profile: AuthenticatedProfile }) {
             if (photo) {
               if (!branchId)
                 throw new Error('شعبه مجاز برای ذخیره عکس پیدا نشد.');
-              const uploaded = await uploadWorkbenchAttachments({
-                entityType: 'IamProfile',
-                entityId: profile.user.id,
-                title: `عکس پروفایل ${details.displayName}`,
-                description: 'عکس پروفایل ثبت‌شده از تنظیمات شخصی',
+              const uploaded = await workbenchPersonalApi.uploadProfilePhoto({
                 branchId,
-                files: [photo],
-                confidentiality: 'RESTRICTED',
+                title: `عکس پروفایل ${details.displayName}`,
+                file: photo,
               });
-              if (!uploaded[0]) throw new Error('بارگذاری عکس انجام نشد.');
-              photoDocumentId = uploaded[0];
+              photoDocumentId = uploaded.data.id;
             }
             const photoBranchId = photoDocumentId ? (branchId ?? null) : null;
             const response = await workbenchPersonalApi.updateProfile({
@@ -365,6 +378,8 @@ function PersonalPreferences({ profile }: { profile: AuthenticatedProfile }) {
               photoBranchId,
             });
             setPersonal(response.data);
+            if (photo)
+              window.dispatchEvent(new Event(PROFILE_PHOTO_CHANGED_EVENT));
           }}
         />
       ) : null}

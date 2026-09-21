@@ -23,6 +23,29 @@ const offer: TicketOfferV1 = {
   status: 'ACTIVE',
 };
 describe('readable sales ticket card', () => {
+  it('keeps standalone fare validation and shows an available fare', () => {
+    const render = (value: TicketOfferV1) =>
+      renderToStaticMarkup(
+        <TicketOfferCard
+          offer={value}
+          selected={false}
+          requireStandaloneFare
+          onSelect={vi.fn()}
+        />,
+      );
+    expect(render(offer)).toContain('disabled=""');
+    expect(render(offer)).toContain('قیمت فروش تکی ثبت نشده');
+    const priced = render({
+      ...offer,
+      standaloneSalePrice: {
+        amount: '2500000',
+        currencyCode: 'IRR',
+        revision: 1,
+      },
+    });
+    expect(priced).not.toContain('disabled=""');
+    expect(priced).toContain('2500000 IRR');
+  });
   it.each([true, false])(
     'shows both dates larger, bold and full-contrast (selected=%s)',
     (selected) => {
@@ -36,9 +59,7 @@ describe('readable sales ticket card', () => {
       const dates = html.match(/<time[^>]*>/g) ?? [];
       expect(dates).toHaveLength(2);
       for (const date of dates) {
-        expect(date).toContain(
-          'text-sm font-bold leading-relaxed sm:text-base',
-        );
+        expect(date).toContain('text-sm font-semibold leading-6');
         expect(date).toContain('break-words');
         expect(date).not.toContain('opacity');
         expect(date).not.toContain('truncate');
@@ -67,7 +88,9 @@ describe('readable sales ticket card', () => {
       'انتخاب‌شده',
       'ظرفیت کل',
       'aria-pressed="true"',
-      'bg-blue-600',
+      'ring-primary/20',
+      'مدت پرواز:',
+      'ساعت‌ها به وقت تهران',
     ])
       expect(html).toContain(text);
     expect(html).toContain('مانده');

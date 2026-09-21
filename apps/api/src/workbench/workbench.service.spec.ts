@@ -19,16 +19,17 @@ function service(
   client: Record<string, unknown>,
   documents = {},
   customerAffairs = { workbench: vi.fn().mockResolvedValue({ data: [] }) },
+  iam = {
+    recordSelfActivity: vi.fn(),
+    personalProfile: vi.fn(),
+    updateOwnProfile: vi.fn(),
+  },
   settings?: unknown,
 ) {
   return new WorkbenchService(
     { client } as never,
     documents as never,
-    {
-      recordSelfActivity: vi.fn(),
-      personalProfile: vi.fn(),
-      updateOwnProfile: vi.fn(),
-    } as never,
+    iam as never,
     customerAffairs as never,
     settings as never,
   );
@@ -131,6 +132,7 @@ describe('WorkbenchService backend boundaries', () => {
       { workbenchCalendarEvent: { create } },
       {},
       undefined,
+      undefined,
       settings,
     ).createEvent(event, actor);
     expect(create).toHaveBeenCalledWith(
@@ -165,5 +167,51 @@ describe('WorkbenchService backend boundaries', () => {
         actor,
       ),
     ).rejects.toBeInstanceOf(ConflictException);
+  });
+
+  it('routes profile photo uploads through the Documents owner boundary', async () => {
+    const uploadOwnProfilePhoto = vi.fn().mockResolvedValue({
+      id: '44444444-4444-4444-8444-444444444444',
+      scanStatus: 'PENDING_SCAN',
+    });
+    const file = {
+      buffer: Buffer.from([137, 80, 78, 71]),
+      mimetype: 'image/png',
+      originalname: 'profile.png',
+      size: 4,
+    };
+    const result = await service(
+      {},
+      { uploadOwnProfilePhoto },
+    ).uploadProfilePhoto(
+      { branchId: actor.branchIds[0]!, title: 'عکس پروفایل' },
+      file,
+      actor,
+      { ipAddress: '127.0.0.1' },
+    );
+    expect(uploadOwnProfilePhoto).toHaveBeenCalledWith(
+      { branchId: actor.branchIds[0]!, title: 'عکس پروفایل' },
+      file,
+      actor,
+      { ipAddress: '127.0.0.1' },
+    );
+    expect(result.data.id).toBe('44444444-4444-4444-8444-444444444444');
+  });
+
+  it('loads the stored profile photo through the Documents owner boundary', async () => {
+    const documentId = '44444444-4444-4444-8444-444444444444';
+    const previewOwnProfilePhoto = vi
+      .fn()
+      .mockResolvedValue({ stream: 'file' });
+    const personalProfile = vi.fn().mockResolvedValue({
+      profile: { photoDocumentId: documentId },
+    });
+    await service({}, { previewOwnProfilePhoto }, undefined, {
+      recordSelfActivity: vi.fn(),
+      personalProfile,
+      updateOwnProfile: vi.fn(),
+    }).profilePhoto(actor, {});
+    expect(personalProfile).toHaveBeenCalledWith(actor.userId);
+    expect(previewOwnProfilePhoto).toHaveBeenCalledWith(documentId, actor, {});
   });
 });

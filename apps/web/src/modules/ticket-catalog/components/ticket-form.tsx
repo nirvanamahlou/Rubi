@@ -156,6 +156,41 @@ export function inferWallTimeOffset(wallTime: string, zone: string): string {
     'این ساعت در منطقه زمانی مسیر معتبر نیست؛ ساعت دیگری انتخاب کنید.',
   );
 }
+export function scheduleToUtc(wallTime: string, zone: string) {
+  if (!wallTime) return '';
+  return wallTimeToUtc(wallTime, zone, inferWallTimeOffset(wallTime, zone));
+}
+export function changeTicketServiceDate(
+  input: ProductInput,
+  serviceDate: string,
+): ProductInput {
+  if (!serviceDate) return { ...input, serviceDate };
+  const first = input.segments[0];
+  const oldDate = first?.departureAt
+    ? wallValue(first.departureAt, first.departureZone).slice(0, 10)
+    : input.serviceDate;
+  const shift = oldDate
+    ? Date.parse(serviceDate + 'T00:00:00Z') -
+      Date.parse(oldDate + 'T00:00:00Z')
+    : 0;
+  const move = (value: string, zone: string) => {
+    if (!value || !oldDate) return value;
+    const wall = wallValue(value, zone);
+    const shifted = new Date(Date.parse(wall + ':00Z') + shift)
+      .toISOString()
+      .slice(0, 16);
+    return scheduleToUtc(shifted, zone);
+  };
+  return {
+    ...input,
+    serviceDate,
+    segments: input.segments.map((segment) => ({
+      ...segment,
+      departureAt: move(segment.departureAt, segment.departureZone),
+      arrivalAt: move(segment.arrivalAt, segment.arrivalZone),
+    })),
+  };
+}
 function referenceLabel(
   references: readonly Reference[],
   kind: Reference['kind'],
@@ -332,6 +367,148 @@ function TransportFields({
   );
 }
 
+function ScheduleFields({
+  prefix,
+  suffix,
+  segment,
+  serviceDate,
+  readOnly,
+  onChange,
+}: {
+  prefix: string;
+  suffix: string;
+  segment: Segment;
+  serviceDate: string;
+  readOnly: boolean;
+  onChange: (patch: Partial<Segment>, serviceDate?: string) => void;
+}) {
+  const departure = wallValue(segment.departureAt, segment.departureZone);
+  const arrival = wallValue(segment.arrivalAt, segment.arrivalZone);
+  const hasOwnDate =
+    prefix === 'ticket-return' ||
+    (prefix.startsWith('ticket-segment-') && prefix !== 'ticket-segment-0');
+  const [ownDate, setOwnDate] = useState(departure.slice(0, 10) || serviceDate);
+  const date = hasOwnDate ? ownDate : serviceDate;
+  const [arrivalDay, setArrivalDay] = useState(() =>
+    departure && arrival
+      ? Math.round(
+          (Date.parse(arrival.slice(0, 10)) -
+            Date.parse(departure.slice(0, 10))) /
+            86400000,
+        )
+      : 0,
+  );
+  const toTimestamp = (
+    clock: string,
+    zone: string,
+    offset = 0,
+    baseDate = date,
+  ) => {
+    if (!clock || !baseDate) return '';
+    const day = new Date(
+      Date.parse(baseDate + 'T00:00:00Z') + offset * 86400000,
+    )
+      .toISOString()
+      .slice(0, 10);
+    return scheduleToUtc(day + 'T' + clock, zone);
+  };
+  return (
+    <div className={styles.fields}>
+      {hasOwnDate ? (
+        <FormField label={'تاریخ بلیط' + suffix} id={prefix + '-date'}>
+          <TicketDatePicker
+            id={prefix + '-date'}
+            value={date}
+            disabled={readOnly}
+            onChange={(next) => {
+              setOwnDate(next);
+              onChange(
+                {
+                  departureAt: toTimestamp(
+                    departure.slice(11, 16),
+                    segment.departureZone,
+                    0,
+                    next,
+                  ),
+                  arrivalAt: toTimestamp(
+                    arrival.slice(11, 16),
+                    segment.arrivalZone,
+                    arrivalDay,
+                    next,
+                  ),
+                },
+                next,
+              );
+            }}
+          />
+        </FormField>
+      ) : null}
+      <FormField label={'ساعت حرکت' + suffix} id={prefix + '-departure'}>
+        <Input
+          id={prefix + '-departure'}
+          type="time"
+          value={departure.slice(11, 16)}
+          disabled={readOnly || !date}
+          onChange={(event) =>
+            onChange({
+              departureAt: toTimestamp(
+                event.target.value,
+                segment.departureZone,
+              ),
+            })
+          }
+        />
+      </FormField>
+      <FormField label={'ساعت رسیدن' + suffix} id={prefix + '-arrival'}>
+        <Input
+          id={prefix + '-arrival'}
+          type="time"
+          value={arrival.slice(11, 16)}
+          disabled={readOnly || !date}
+          onChange={(event) =>
+            onChange({
+              arrivalAt: toTimestamp(
+                event.target.value,
+                segment.arrivalZone,
+                arrivalDay,
+              ),
+            })
+          }
+        />
+      </FormField>
+      <FormField label="روز رسیدن" id={prefix + '-arrival-day'}>
+        <select
+          id={prefix + '-arrival-day'}
+          className="h-11 w-full rounded-xl border bg-surface px-3"
+          value={arrivalDay}
+          disabled={readOnly}
+          onChange={(event) => {
+            const offset = Number(event.target.value);
+            setArrivalDay(offset);
+            onChange({
+              arrivalAt: toTimestamp(
+                arrival.slice(11, 16),
+                segment.arrivalZone,
+                offset,
+              ),
+            });
+          }}
+        >
+          <option value={0}>همان روز</option>
+          <option value={1}>روز بعد</option>
+          <option value={2}>دو روز بعد</option>
+          {![0, 1, 2].includes(arrivalDay) ? (
+            <option value={arrivalDay}>{arrivalDay} روز اختلاف</option>
+          ) : null}
+        </select>
+      </FormField>
+      <p className="col-span-full text-xs leading-6 text-muted-foreground">
+        تاریخ بلیط، تاریخ حرکت است. ساعت‌ها به وقت محلی مبدأ و مقصد هستند.
+      </p>
+    </div>
+  );
+}
+
 function RouteFields({
   prefix,
   suffix,
@@ -475,26 +652,72 @@ export function TicketForm({
   const [reason, setReason] = useState('');
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
+  const updateInput = (value: ProductInput) => {
+    setError('');
+    setInput(value);
+  };
+  const updateReturnInput = (value: ProductInput) => {
+    setError('');
+    setReturnInput(value);
+  };
+  const updateDefinitionMode = (value: TicketDefinitionMode) => {
+    setError('');
+    setDefinitionMode(value);
+  };
+  const updateReason = (value: string) => {
+    setError('');
+    setReason(value);
+  };
   const segment = input.segments[0]!;
   const returnSegment = returnInput.segments[0]!;
   const changeSegment = (patch: Partial<Segment>) =>
-    setInput({ ...input, segments: [{ ...segment, ...patch }] });
+    updateInput({ ...input, segments: [{ ...segment, ...patch }] });
   const changeSegmentAt = (index: number, patch: Partial<Segment>) =>
-    setInput({
+    updateInput({
       ...input,
       segments: input.segments.map((item, itemIndex) =>
         itemIndex === index ? { ...item, ...patch } : item,
       ),
     });
+  const changeScheduledSegment = (
+    patch: Partial<Segment>,
+    serviceDate?: string,
+  ) =>
+    updateInput({
+      ...input,
+      ...(serviceDate ? { serviceDate } : {}),
+      segments: [{ ...segment, ...patch }],
+    });
+  const changeScheduledSegmentAt = (
+    index: number,
+    patch: Partial<Segment>,
+    serviceDate?: string,
+  ) =>
+    updateInput({
+      ...input,
+      ...(index === 0 && serviceDate ? { serviceDate } : {}),
+      segments: input.segments.map((item, itemIndex) =>
+        itemIndex === index ? { ...item, ...patch } : item,
+      ),
+    });
   const changeReturnSegment = (patch: Partial<Segment>) =>
-    setReturnInput({
+    updateReturnInput({
       ...returnInput,
+      segments: [{ ...returnSegment, ...patch }],
+    });
+  const changeScheduledReturnSegment = (
+    patch: Partial<Segment>,
+    serviceDate?: string,
+  ) =>
+    updateReturnInput({
+      ...returnInput,
+      ...(serviceDate ? { serviceDate } : {}),
       segments: [{ ...returnSegment, ...patch }],
     });
   function chooseTransport(transport: TransportType) {
     const fresh = emptyInput(transport);
     const freshSegment = fresh.segments[0]!;
-    setInput({
+    updateInput({
       ...input,
       transport,
       flightClassId: '',
@@ -502,8 +725,8 @@ export function TicketForm({
       display: undefined,
       segments: [freshSegment],
     });
-    setDefinitionMode('one-way');
-    setReturnInput(
+    updateDefinitionMode('one-way');
+    updateReturnInput(
       createReturnTicketDraft({
         ...input,
         transport,
@@ -512,15 +735,15 @@ export function TicketForm({
     );
   }
   function chooseDefinitionMode(mode: TicketDefinitionMode) {
-    setDefinitionMode(mode);
+    updateDefinitionMode(mode);
     if (mode === 'round-trip') {
       const outbound = { ...input, segments: [{ ...input.segments[0]! }] };
-      setInput(outbound);
-      setReturnInput(createReturnTicketDraft(outbound));
+      updateInput(outbound);
+      updateReturnInput(createReturnTicketDraft(outbound));
     } else if (mode === 'one-way') {
-      setInput({ ...input, segments: [{ ...input.segments[0]! }] });
+      updateInput({ ...input, segments: [{ ...input.segments[0]! }] });
     } else if (input.segments.length === 1) {
-      setInput({
+      updateInput({
         ...input,
         segments: [...input.segments, createConnectedSegment(input)],
       });
@@ -608,7 +831,9 @@ export function TicketForm({
                   input.segments[0]?.departureAt.slice(0, 10) ||
                   ''
                 }
-                onChange={(serviceDate) => setInput({ ...input, serviceDate })}
+                onChange={(serviceDate) =>
+                  updateInput(changeTicketServiceDate(input, serviceDate))
+                }
               />
             </FormField>
             <FormField label="نوع وسیله سفر" id="ticket-transport" required>
@@ -673,6 +898,14 @@ export function TicketForm({
               onSegment={changeSegment}
               onReference={onReference}
             />
+            <ScheduleFields
+              prefix="ticket"
+              serviceDate={input.serviceDate ?? ''}
+              suffix=""
+              segment={segment}
+              readOnly={readOnly}
+              onChange={changeScheduledSegment}
+            />
             <h4 className="font-semibold">مسیر</h4>
             <RouteFields
               prefix="ticket"
@@ -702,7 +935,7 @@ export function TicketForm({
                   type="button"
                   variant="outline"
                   onClick={() =>
-                    setInput({
+                    updateInput({
                       ...input,
                       segments: [
                         ...input.segments,
@@ -730,7 +963,7 @@ export function TicketForm({
                       size="sm"
                       variant="outline"
                       onClick={() =>
-                        setInput({
+                        updateInput({
                           ...input,
                           segments: input.segments.filter(
                             (_, itemIndex) => itemIndex !== index,
@@ -753,6 +986,16 @@ export function TicketForm({
                   onInput={setInput}
                   onSegment={(patch) => changeSegmentAt(index, patch)}
                   onReference={onReference}
+                />
+                <ScheduleFields
+                  prefix={'ticket-segment-' + index}
+                  serviceDate={input.serviceDate ?? ''}
+                  suffix={' قطعه ' + (index + 1).toLocaleString('fa-IR')}
+                  segment={item}
+                  readOnly={readOnly}
+                  onChange={(patch, serviceDate) =>
+                    changeScheduledSegmentAt(index, patch, serviceDate)
+                  }
                 />
                 <RouteFields
                   prefix={'ticket-segment-' + index}
@@ -785,7 +1028,9 @@ export function TicketForm({
                   ''
                 }
                 onChange={(serviceDate) =>
-                  setReturnInput({ ...returnInput, serviceDate })
+                  updateReturnInput(
+                    changeTicketServiceDate(returnInput, serviceDate),
+                  )
                 }
               />
             </FormField>
@@ -799,6 +1044,14 @@ export function TicketForm({
               onInput={setReturnInput}
               onSegment={changeReturnSegment}
               onReference={onReference}
+            />
+            <ScheduleFields
+              prefix="ticket-return"
+              serviceDate={returnInput.serviceDate ?? ''}
+              suffix=" برگشت"
+              segment={returnSegment}
+              readOnly={readOnly}
+              onChange={changeScheduledReturnSegment}
             />
             <RouteFields
               prefix="ticket-return"
@@ -819,7 +1072,7 @@ export function TicketForm({
               type="checkbox"
               checked={input.companyOwned}
               onChange={(event) =>
-                setInput({
+                updateInput({
                   ...input,
                   companyOwned: event.target.checked,
                   supplyType: event.target.checked ? 'company' : 'supplier',
@@ -833,7 +1086,7 @@ export function TicketForm({
               <Select
                 value={input.supplyType}
                 onValueChange={(supplyType) =>
-                  setInput({
+                  updateInput({
                     ...input,
                     supplyType: supplyType as ProductInput['supplyType'],
                     companyOwned: supplyType === 'company',
@@ -856,7 +1109,7 @@ export function TicketForm({
               <Select
                 value={input.entryMethod}
                 onValueChange={(entryMethod) =>
-                  setInput({
+                  updateInput({
                     ...input,
                     entryMethod: entryMethod as ProductInput['entryMethod'],
                   })
@@ -883,7 +1136,7 @@ export function TicketForm({
                   Number.isNaN(input.totalCapacity) ? '' : input.totalCapacity
                 }
                 onChange={(event) =>
-                  setInput({
+                  updateInput({
                     ...input,
                     totalCapacity:
                       event.target.value === ''
@@ -896,9 +1149,14 @@ export function TicketForm({
           </div>
         </section>
         <section className="space-y-4">
-          <h3 className="font-bold text-primary">۵. درخواست قیمت خرید از مالی</h3>
+          <h3 className="font-bold text-primary">
+            ۵. درخواست قیمت خرید از مالی
+          </h3>
           <p className="text-sm text-muted-foreground">
-            این فرم پیش‌نویس محلی بلیت است. هنگام ثبت «بلیط قابل فروش» در نوبت تور، درخواست خریدِ بدون مبلغ و متصل به همان آفر به کارتابل مالی می‌رود؛ قیمت خرید و پرداخت را مالی ثبت می‌کند. قیمت فروش در ماژول فروش تعیین می‌شود.
+            این فرم پیش‌نویس محلی بلیت است. هنگام ثبت «بلیط قابل فروش» در نوبت
+            تور، درخواست خریدِ بدون مبلغ و متصل به همان آفر به کارتابل مالی
+            می‌رود؛ قیمت خرید و پرداخت را مالی ثبت می‌کند. قیمت فروش در ماژول
+            فروش تعیین می‌شود.
           </p>
           <div className={styles.fields}>
             <ReferencePicker
@@ -911,7 +1169,7 @@ export function TicketForm({
               )}
               onSelect={(ref) => {
                 if (ref) onReference?.(ref);
-                setInput({
+                updateInput({
                   ...input,
                   fare: {
                     ...input.fare,
@@ -934,7 +1192,7 @@ export function TicketForm({
               value={input.rules}
               maxLength={4000}
               onChange={(event) =>
-                setInput({ ...input, rules: event.target.value })
+                updateInput({ ...input, rules: event.target.value })
               }
             />
           </FormField>
@@ -942,7 +1200,7 @@ export function TicketForm({
             <Input
               id="ticket-reason"
               value={reason}
-              onChange={(event) => setReason(event.target.value)}
+              onChange={(event) => updateReason(event.target.value)}
             />
           </FormField>
         </section>

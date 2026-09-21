@@ -1,5 +1,6 @@
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { TicketWorkspace } from './ticket-workspace';
 import { TicketForm } from './ticket-form';
@@ -85,7 +86,6 @@ describe('Rendered ticket UI', () => {
     );
     const issued = renderToStaticMarkup(
       createElement(IssuedTicketsWorkspace, {
-        connected: false,
         tickets: [],
       }),
     );
@@ -109,7 +109,8 @@ describe('Rendered ticket UI', () => {
     expect(issued).toContain('شماره بلیط یا PNR');
     expect(issued).toContain('مبدأ');
     expect(issued).toContain('مقصد');
-    expect(issued).toContain('در انتظار اتصال قرارداد عمومی رزرواسیون');
+    expect(issued).not.toContain('در انتظار اتصال قرارداد عمومی رزرواسیون');
+    expect(issued).toContain('بلیطی با این فیلترها پیدا نشد');
   });
   it('renders flight fields and browser-backed save without Hold editor', () => {
     const html = renderToStaticMarkup(
@@ -129,7 +130,8 @@ describe('Rendered ticket UI', () => {
     expect(html).not.toContain('پیش‌نمایش');
     expect(html).not.toMatch(/name="(held|confirmed)"/);
     expect(html).not.toContain('type="datetime-local"');
-    expect(html).not.toContain('تاریخ و ساعت حرکت');
+    expect(html).toContain('ساعت حرکت');
+    expect(html).toContain('ساعت رسیدن');
     expect(html).not.toContain('شروع اعتبار نرخ');
     expect(html).not.toContain('پایان اعتبار نرخ');
     expect(html).not.toContain('id="ticket-sale"');
@@ -137,6 +139,28 @@ describe('Rendered ticket UI', () => {
     expect(html).toContain('کشور مبدأ');
     expect(html).toContain('شهر مقصد');
     expect(html).toContain('انتخاب و جست‌وجوی ایرلاین');
+  });
+  it('clears stale validation errors after correcting ticket form values', () => {
+    const formSource = readFileSync(
+      new URL('./ticket-form.tsx', import.meta.url),
+      'utf8',
+    );
+    const workspaceSource = readFileSync(
+      new URL('./ticket-workspace.tsx', import.meta.url),
+      'utf8',
+    );
+    expect(formSource).toMatch(
+      /const updateInput[\s\S]*setError\(''\);[\s\S]*setInput\(value\)/,
+    );
+    expect(formSource).toMatch(
+      /const updateReturnInput[\s\S]*setError\(''\);[\s\S]*setReturnInput\(value\)/,
+    );
+    expect(workspaceSource).toMatch(
+      /const updateCapacityHold[\s\S]*setProblem\(''\);[\s\S]*setCapacityHold\(value\)/,
+    );
+    expect(workspaceSource).toMatch(
+      /const updateRepeat[\s\S]*setProblem\(''\);[\s\S]*setRepeat\(value\)/,
+    );
   });
   it('renders train and bus fields from the same ticket form', () => {
     const train = renderToStaticMarkup(

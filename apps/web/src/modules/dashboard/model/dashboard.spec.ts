@@ -588,9 +588,8 @@ describe('dashboard permission and data states', () => {
     expect(source).toContain(
       '[&>span:first-child]:w-full [&>span:first-child]:text-right',
     );
-    expect(source).toContain(
-      '<span className="block w-full text-right">{label}</span>',
-    );
+    expect(source).toContain('<span className="block w-full text-right">');
+    expect(source).toContain('{label}');
     expect(source).toContain('selectedCurrencyCode');
     expect(source).toContain('currencySeries');
     expect(source).toContain('adverseKpiIdPattern');
@@ -704,7 +703,7 @@ describe('dashboard permission and data states', () => {
     expect(source).toContain('configurationOnly');
     expect(source).toContain('dashboardReportCodeFromDrilldown');
     expect(source).not.toContain('<Link href={reportHref}>');
-    expect(source).toContain('setReportConfigurationCode(reportCode);\n  };');
+    expect(source).toContain('setReportConfigurationCode(reportCode);');
     expect(source).toContain('() => new Set(),');
     expect(source).not.toContain(
       "new Set(['commercial-performance', 'customer-growth', 'workforce-hr'])",

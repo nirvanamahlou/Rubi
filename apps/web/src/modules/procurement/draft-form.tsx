@@ -163,7 +163,6 @@ export function DraftForm({
     retry: false,
   });
   const [customFields, setCustomFields] = useState({
-    purchaseType: false,
     category: false,
   });
   const [customItemFields, setCustomItemFields] = useState<
@@ -186,6 +185,19 @@ export function DraftForm({
   const [documentsLoaded, setDocumentsLoaded] = useState(false);
   const [documentsBusy, setDocumentsBusy] = useState(false);
   const identity = useRef<ReturnType<typeof retryIdentity> | null>(null);
+  const requesterIsRequired = !baseRequest && !requesterEmployeeId;
+
+  function showRequesterRequired() {
+    setError(
+      'برای ثبت پیش‌نویس، درخواست‌کننده را از فهرست کارکنان فعال انتخاب کنید.',
+    );
+    requestAnimationFrame(() => {
+      const control = document.getElementById('proc-requester');
+      control?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      control?.focus();
+    });
+  }
+
   function update<K extends keyof ProcurementDraftV1>(
     key: K,
     value: ProcurementDraftV1[K],
@@ -195,7 +207,6 @@ export function DraftForm({
   const text = (
     key:
       | 'title'
-      | 'purchaseType'
       | 'category'
       | 'needReason'
       | 'urgencyReason'
@@ -221,7 +232,7 @@ export function DraftForm({
       )}
     </FormField>
   );
-  const savedChoice = (key: 'purchaseType' | 'category', label: string) => {
+  const savedChoice = (key: 'category', label: string) => {
     const existing = [
       ...new Set(
         [
@@ -231,7 +242,7 @@ export function DraftForm({
               (item) =>
                 !draft.branchId || item.draft.branchId === draft.branchId,
             )
-            .map((item) => item.draft[key].trim()),
+            .map((item) => (item.draft[key] ?? '').trim()),
         ].filter(Boolean),
       ),
     ];
@@ -350,9 +361,9 @@ export function DraftForm({
       </FormField>
     );
   };
-  async function save() {
-    if (!baseRequest && !requesterEmployeeId) {
-      setError('درخواست‌کننده را از فهرست کارکنان انتخاب کنید.');
+  async function save(mode: 'DRAFT' | 'PUBLISH' = 'DRAFT') {
+    if (requesterIsRequired) {
+      showRequesterRequired();
       return;
     }
     setBusy(true);
@@ -364,12 +375,18 @@ export function DraftForm({
       version: baseRequest?.version,
     });
     try {
-      const saved = await procurementApi.save(
+      let saved = await procurementApi.save(
         draft,
         identity.current.key,
         baseRequest,
         requesterEmployeeId,
       );
+      if (mode === 'PUBLISH')
+        saved = await procurementApi.command(
+          saved,
+          { action: 'PUBLISH' },
+          crypto.randomUUID(),
+        );
       rememberSavedRequestFieldOptions(queryClient, saved);
       onSaved(saved);
     } catch (caught) {
@@ -452,9 +469,6 @@ export function DraftForm({
               {request?.number ?? 'پس از نخستین ثبت، خودکار تعیین می‌شود'}
             </p>
           </div>
-          <span className="rounded-full border border-primary/20 bg-surface/80 px-3 py-1 text-xs font-semibold text-primary">
-            {request ? 'ویرایش پیش‌نویس' : 'ثبت پیش‌نویس'}
-          </span>
         </div>
         {error && (
           <Alert tone="error" title="ذخیره انجام نشد" description={error} />
@@ -546,7 +560,17 @@ export function DraftForm({
           </legend>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {text('title', 'عنوان درخواست')}
-            <FormField id="proc-requester" label="درخواست‌کننده">
+            <FormField
+              id="proc-requester"
+              label="درخواست‌کننده"
+              required={!request}
+              {...(requesterIsRequired
+                ? {
+                    error:
+                      'پیش از ثبت پیش‌نویس، یک کارمند فعال را انتخاب کنید.',
+                  }
+                : {})}
+            >
               {request ? (
                 <Input
                   id="proc-requester"
@@ -667,7 +691,6 @@ export function DraftForm({
                 </p>
               )}
             </FormField>
-            {savedChoice('purchaseType', 'نوع خرید')}
             {savedChoice('category', 'دسته خرید')}
             <FormField id="proc-requiredAt" label="تاریخ نیاز">
               <DatePicker
@@ -695,6 +718,14 @@ export function DraftForm({
                 ))}
               </ProcurementSelect>
             </FormField>
+          </div>
+          <div
+            role="note"
+            className="rounded-xl border border-sky-200/80 bg-sky-50/80 px-4 py-3 text-sm leading-6 text-sky-900 dark:border-sky-400/25 dark:bg-sky-400/10 dark:text-sky-100"
+          >
+            تأمین‌کننده در درخواست اولیه اختیاری است؛ می‌توانید درخواست را بدون
+            انتخاب یا نوشتن تأمین‌کننده ثبت کنید. تأمین‌کنندهٔ فعلی یا
+            تأمین‌کنندهٔ تازه در مرحلهٔ استعلام و سفارش تعیین می‌شود.
           </div>
           {text('needReason', 'شرح نیاز و توجیه خرید', true)}
           <label className="flex min-h-11 items-center gap-3 text-sm font-semibold">
@@ -987,6 +1018,13 @@ export function DraftForm({
           </Button>
           <Button
             type="button"
+            loading={busy}
+            onClick={() => void save('PUBLISH')}
+          >
+            تأیید و انتشار
+          </Button>
+          <Button
+            type="button"
             variant="outline"
             disabled={busy}
             onClick={() => {
@@ -1010,6 +1048,13 @@ export function DraftForm({
             بستن فرم
           </Button>
         </div>
+        {error && (
+          <Alert
+            tone="error"
+            title="ثبت پیش‌نویس انجام نشد"
+            description={error}
+          />
+        )}
       </form>
     </Card>
   );
