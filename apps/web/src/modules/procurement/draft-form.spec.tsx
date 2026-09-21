@@ -253,6 +253,31 @@ describe('Purchase draft accessibility and persisted input', () => {
     expect(html).not.toContain('دوره ارائه خدمت');
     expect(html).not.toContain('مقدار تازهٔ نوع خرید');
   });
+  it('renders when a historic request is missing saved classifications', () => {
+    const client = new QueryClient();
+    const legacyDraft = emptyDraft();
+    legacyDraft.branchId = 'branch-1';
+    Reflect.deleteProperty(legacyDraft, 'purchaseType');
+    Reflect.deleteProperty(legacyDraft, 'category');
+    client.setQueryData(savedRequestFieldOptionsKey, {
+      items: [{ draft: legacyDraft }],
+      page: 1,
+      pageSize: 50,
+      hasMore: false,
+    });
+
+    expect(() =>
+      renderToStaticMarkup(
+        <QueryClientProvider client={client}>
+          <DraftForm
+            bootstrap={bootstrap}
+            onClose={() => undefined}
+            onSaved={() => undefined}
+          />
+        </QueryClientProvider>,
+      ),
+    ).not.toThrow();
+  });
   it('shows the persisted choices before the saved-options query finishes', () => {
     const draft = {
       ...emptyDraft(),

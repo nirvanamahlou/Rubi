@@ -231,7 +231,7 @@ export function DraftForm({
               (item) =>
                 !draft.branchId || item.draft.branchId === draft.branchId,
             )
-            .map((item) => item.draft[key].trim()),
+            .map((item) => (item.draft[key] ?? '').trim()),
         ].filter(Boolean),
       ),
     ];

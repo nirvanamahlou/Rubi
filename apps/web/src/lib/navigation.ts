@@ -87,12 +87,7 @@ export const navigationGroups = [
     id: 'operations',
     dotClass: 'bg-[#62d5c6]',
     title: 'رزرواسیون و تأمین سفر',
-    hrefs: [
-      '/reservations',
-      '/reservations/hotel-rates',
-      '/ticket-management',
-      '/purchases',
-    ],
+    hrefs: ['/reservations', '/reservations/hotel-rates', '/ticket-management'],
   },
   {
     id: 'finance',
@@ -104,7 +99,7 @@ export const navigationGroups = [
     id: 'hr',
     dotClass: 'bg-[#d4b4fc]',
     title: 'سرمایه انسانی',
-    hrefs: ['/human-resources'],
+    hrefs: ['/human-resources', '/purchases'],
   },
   {
     id: 'resources',
