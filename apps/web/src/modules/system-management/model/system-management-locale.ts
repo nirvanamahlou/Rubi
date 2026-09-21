@@ -184,8 +184,11 @@ export function englishText(value: string, fallback = 'Configured value') {
   return valueLabels[value] ?? fallback;
 }
 
-export function localizeCategory(title: string, language: SystemManagementLanguage) {
-  return language === 'en' ? categoryTitles[title] ?? title : title;
+export function localizeCategory(
+  title: string,
+  language: SystemManagementLanguage,
+) {
+  return language === 'en' ? (categoryTitles[title] ?? title) : title;
 }
 
 function localizeField(field: SettingField): SettingField {
@@ -201,8 +204,8 @@ function localizeGroup(group: SettingGroup): SettingGroup {
     ...group,
     title: groupTitles[group.title] ?? humanize(group.id),
     fields: group.fields.map(localizeField),
-    rules: group.rules.map(() =>
-      'This policy is enforced and audited by the owning module.',
+    rules: group.rules.map(
+      () => 'This policy is enforced and audited by the owning module.',
     ),
   };
 }

@@ -223,7 +223,9 @@ export function LegalEntityContextSelector() {
   if (state.loading) {
     selector = (
       <div
-        aria-label={english ? 'Loading active company' : 'در حال دریافت شرکت فعال'}
+        aria-label={
+          english ? 'Loading active company' : 'در حال دریافت شرکت فعال'
+        }
         className="flex h-11 min-w-36 items-center gap-2 rounded-xl bg-muted/70 px-3 text-xs text-muted-foreground"
       >
         <LoaderCircle className="size-4 animate-spin" />
@@ -278,8 +280,8 @@ export function LegalEntityContextSelector() {
                     ? english
                       ? selection === 'ALL'
                         ? 'All companies'
-                        : state.entities.find(({ code }) => code === selection)
-                            ?.latinName ?? selection.replaceAll('_', ' ')
+                        : (state.entities.find(({ code }) => code === selection)
+                            ?.latinName ?? selection.replaceAll('_', ' '))
                       : legalEntitySelectionLabel(selection, state.entities)
                     : english
                       ? 'Select company'
@@ -305,8 +307,8 @@ export function LegalEntityContextSelector() {
                   {english
                     ? choice.aggregate
                       ? 'All companies — administrators'
-                      : choice.entity?.latinName ??
-                        choice.value.replaceAll('_', ' ')
+                      : (choice.entity?.latinName ??
+                        choice.value.replaceAll('_', ' '))
                     : choice.label}
                 </span>
               </SelectItem>

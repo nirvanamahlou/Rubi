@@ -163,7 +163,9 @@ describe('system management reference implementation', () => {
     expect(workspace).not.toContain('aria-expanded={expanded}');
     expect(navigation).toContain('رزرواسیون و تأمین سفر');
     expect(navigation).toContain('فروش و ارتباط با مشتری');
-    expect(workspace).not.toContain('زیرمجموعه‌های ${systemCategoryGroups.find');
+    expect(workspace).not.toContain(
+      'زیرمجموعه‌های ${systemCategoryGroups.find',
+    );
     expect(workspace).not.toContain('styles.categoryPanel');
     expect(workspace).not.toContain('داده‌های عملیاتی');
     expect(workspace).not.toContain('مقادیر مرجع');

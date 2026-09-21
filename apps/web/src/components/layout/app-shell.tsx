@@ -152,16 +152,16 @@ function Navigation({
     title: string;
     secondary?: boolean;
   }) {
-    const displayTitle = english
-      ? englishNavigationTitle(href, title)
-      : title;
+    const displayTitle = english ? englishNavigationTitle(href, title) : title;
     const active = secondary
       ? pathname === href || pathname.startsWith(`${href}/`)
       : isNavigationItemActive(
           href as (typeof navigationItems)[number]['href'],
           pathname,
         ) &&
-        !(href === '/sales' && pathname.startsWith(salesPricingSubsection.href));
+        !(
+          href === '/sales' && pathname.startsWith(salesPricingSubsection.href)
+        );
     const Icon = sidebarIcons[href];
     const link = (
       <Link
@@ -237,7 +237,7 @@ function Navigation({
               key={group.id}
               aria-label={
                 english
-                  ? englishNavigationGroups[group.id] ?? group.title
+                  ? (englishNavigationGroups[group.id] ?? group.title)
                   : group.title
               }
               className="min-w-0"
@@ -261,7 +261,7 @@ function Navigation({
                     )}
                   />
                   {english
-                    ? englishNavigationGroups[group.id] ?? group.title
+                    ? (englishNavigationGroups[group.id] ?? group.title)
                     : group.title}
                   {isGroupClosed(group.id) ? (
                     <ChevronLeft
@@ -299,10 +299,10 @@ function SearchDialog() {
   const results = useMemo(
     () =>
       navigationItems.filter((item) => {
-        const title = english
-          ? englishNavigation[item.href].title
-          : item.title;
-        return title.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase());
+        const title = english ? englishNavigation[item.href].title : item.title;
+        return title
+          .toLocaleLowerCase()
+          .includes(query.trim().toLocaleLowerCase());
       }),
     [english, query],
   );
@@ -362,7 +362,9 @@ function SearchDialog() {
                     {english ? englishNavigation[href].title : title}
                   </strong>
                   <span className="text-xs text-muted-foreground">
-                    {english ? englishNavigation[href].description : description}
+                    {english
+                      ? englishNavigation[href].description
+                      : description}
                   </span>
                 </span>
               </Link>
@@ -568,7 +570,11 @@ function AppShellContent({ children }: { children: ReactNode }) {
           >
             <Command aria-hidden="true" className="size-3.5" />
             {!collapsed ? (
-              english ? 'System status' : 'وضعیت سامانه'
+              english ? (
+                'System status'
+              ) : (
+                'وضعیت سامانه'
+              )
             ) : (
               <span className="sr-only">
                 {english ? 'System status' : 'وضعیت سامانه'}
@@ -614,7 +620,9 @@ function AppShellContent({ children }: { children: ReactNode }) {
                   {messages.shell.openNavigation}
                 </DialogTitle>
                 <DialogDescription className="sr-only">
-                  {english ? 'Main application navigation' : 'منوی ناوبری اصلی سامانه'}
+                  {english
+                    ? 'Main application navigation'
+                    : 'منوی ناوبری اصلی سامانه'}
                 </DialogDescription>
                 <div className="mb-6 flex items-center justify-between">
                   <Brand />

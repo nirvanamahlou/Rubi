@@ -20,8 +20,8 @@ describe('system management permission migration', () => {
   });
 
   it('grants system permissions idempotently to the administrator role', () => {
-    expect(sql).toContain("role.\"code\" = 'administrator'");
-    expect(sql).toContain("permission.\"code\" LIKE 'system.%'");
+    expect(sql).toContain('role."code" = \'administrator\'');
+    expect(sql).toContain('permission."code" LIKE \'system.%\'');
     expect(sql).toContain('ON CONFLICT ("roleId", "permissionId") DO NOTHING');
   });
 

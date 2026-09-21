@@ -140,12 +140,7 @@ export const settingsModules: SettingModule[] = [
       ['ارز ثبت مالی IRR؛ تومان فقط واحد نمایش است.'],
     ),
     g('worktime', 'تقویم کاری و منطقه زمانی', 'calendar', [
-      s(
-        'timezone',
-        'منطقه زمانی',
-        'Asia/Tehran',
-        timezoneOptions,
-      ),
+      s('timezone', 'منطقه زمانی', 'Asia/Tehran', timezoneOptions),
       t('start', 'شروع ساعت کاری', '08:00', 'time'),
       t('end', 'پایان ساعت کاری', '17:00', 'time'),
       s('weekend', 'تعطیلی هفتگی', 'پنجشنبه و جمعه', 'جمعه|پنجشنبه و جمعه'),

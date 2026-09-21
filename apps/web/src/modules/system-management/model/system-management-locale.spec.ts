@@ -37,7 +37,9 @@ describe('system management English localization', () => {
     expect(systemTimezones.length).toBeGreaterThanOrEqual(25);
     expect(new Set(systemTimezones).size).toBe(systemTimezones.length);
     for (const zone of systemTimezones)
-      expect(() => new Intl.DateTimeFormat('en-US', { timeZone: zone })).not.toThrow();
+      expect(
+        () => new Intl.DateTimeFormat('en-US', { timeZone: zone }),
+      ).not.toThrow();
 
     const timeZoneFields = settingsModules.flatMap((settingsModule) =>
       settingsModule.groups.flatMap((group) =>
@@ -53,12 +55,8 @@ describe('system management English localization', () => {
   });
 
   it('localizes consent methods and numeric units with meaningful English labels', () => {
-    expect(localizeOption('پیامک و کد تأیید', 0)).toBe(
-      'SMS verification code',
-    );
-    expect(localizeOption('امضای الکترونیکی', 0)).toBe(
-      'Electronic signature',
-    );
+    expect(localizeOption('پیامک و کد تأیید', 0)).toBe('SMS verification code');
+    expect(localizeOption('امضای الکترونیکی', 0)).toBe('Electronic signature');
     expect(englishText('روز', 'units')).toBe('days');
     expect(englishText('دقیقه', 'units')).toBe('minutes');
   });
