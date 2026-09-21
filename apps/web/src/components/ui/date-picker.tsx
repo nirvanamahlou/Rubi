@@ -333,11 +333,7 @@ export function DatePicker({
                 }
               }}
               aria-label={t('انتخاب تاریخ', 'Select date')}
-              className={cn(
-                'fixed z-[70] w-[min(22rem,calc(100vw-2rem))] overflow-y-auto overscroll-contain rounded-2xl border border-primary/25 bg-popover p-3 text-popover-foreground shadow-2xl shadow-primary/15',
-                rubiCalendar &&
-                  'border-primary/30 bg-gradient-to-b from-popover via-popover to-primary/5 shadow-[0_22px_55px_-24px_color-mix(in_srgb,var(--primary)_55%,transparent)] ring-1 ring-primary/10 backdrop-blur-xl',
-              )}
+              className="fixed z-[70] w-[min(22rem,calc(100vw-2rem))] overflow-y-auto overscroll-contain rounded-2xl border border-primary/25 bg-popover p-3 text-popover-foreground shadow-2xl shadow-primary/15 backdrop-blur-xl"
               dir={english ? 'ltr' : 'rtl'}
               ref={popoverRef}
               id={popoverId}
