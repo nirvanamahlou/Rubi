@@ -85,9 +85,7 @@ describe('readable sales ticket card', () => {
     }
     expect(departureTime).toContain('text-start');
     expect(arrivalTime).toContain('text-end');
-    expect(html).toContain(
-      'grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]',
-    );
+    expect(html).toContain('grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]');
   });
   it('separates departure and arrival with the actual route and selected state', () => {
     const html = renderToStaticMarkup(
