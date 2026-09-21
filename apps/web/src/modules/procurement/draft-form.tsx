@@ -163,7 +163,6 @@ export function DraftForm({
     retry: false,
   });
   const [customFields, setCustomFields] = useState({
-    purchaseType: false,
     category: false,
   });
   const [customItemFields, setCustomItemFields] = useState<
@@ -195,7 +194,6 @@ export function DraftForm({
   const text = (
     key:
       | 'title'
-      | 'purchaseType'
       | 'category'
       | 'needReason'
       | 'urgencyReason'
@@ -221,7 +219,7 @@ export function DraftForm({
       )}
     </FormField>
   );
-  const savedChoice = (key: 'purchaseType' | 'category', label: string) => {
+  const savedChoice = (key: 'category', label: string) => {
     const existing = [
       ...new Set(
         [
@@ -667,7 +665,6 @@ export function DraftForm({
                 </p>
               )}
             </FormField>
-            {savedChoice('purchaseType', 'نوع خرید')}
             {savedChoice('category', 'دسته خرید')}
             <FormField id="proc-requiredAt" label="تاریخ نیاز">
               <DatePicker

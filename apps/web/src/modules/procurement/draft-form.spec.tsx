@@ -101,6 +101,7 @@ describe('Purchase draft accessibility and persisted input', () => {
     expect(html).toContain('تأمین‌کننده در درخواست اولیه اختیاری است');
     expect(html).toContain('بدون انتخاب یا نوشتن تأمین‌کننده');
     expect(html).not.toContain('id="proc-supplier"');
+    expect(html).not.toContain('id="proc-purchaseType"');
     expect(html).not.toContain('id="proc-priority"');
     expect(html).toContain('پیوست‌ها و یادداشت‌ها');
     expect(html).not.toContain('نوع منشأ درخواست');
@@ -190,7 +191,7 @@ describe('Purchase draft accessibility and persisted input', () => {
     expect(html).toContain('1.5000');
     expect(html).not.toContain('for="line-1-acceptanceCriteria"');
   });
-  it('shows saved purchase classifications and measurement units as selected dropdown values', () => {
+  it('shows saved purchase categories and measurement units as selected dropdown values', () => {
     const client = new QueryClient();
     client.setQueryData(['procurement', 'saved-request-field-options'], {
       items: [
@@ -246,7 +247,6 @@ describe('Purchase draft accessibility and persisted input', () => {
         />
       </QueryClientProvider>,
     );
-    expect(html).toContain('خرید عمومی');
     expect(html).toContain('تجهیزات اداری');
     expect(html).toContain('عدد');
     expect(html).toContain('role="combobox"');
@@ -322,11 +322,11 @@ describe('Purchase draft accessibility and persisted input', () => {
       html.match(
         new RegExp(`<button[^>]*id="${id}"[^>]*>(.*?)</button>`, 's'),
       )?.[1] ?? '';
-    expect(trigger('proc-purchaseType')).toContain('خرید عمومی');
     expect(trigger('proc-category')).toContain('ملزومات اداری');
     expect(trigger('item-1-unit')).toContain('ساعت');
     expect(trigger('item-1-period')).toBe('');
     expect(html).toContain('اقلام و خدمات');
+    expect(html).not.toContain('id="proc-purchaseType"');
     expect(html).not.toContain('دوره ارائه خدمت');
     expect(html).not.toContain('مقدار تازهٔ نوع خرید');
     expect(html).not.toContain('مقدار تازهٔ دسته خرید');
