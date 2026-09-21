@@ -786,14 +786,24 @@ export function salesPayload(
                 cabinClassCode:
                   state.outboundOffer?.cabinClassCode ??
                   state.ticket.cabinClassCode,
-                ...(state.ticket.amount
+                ...(!state.tour &&
+                !state.serviceKinds.includes('HOTEL') &&
+                state.outboundOffer?.standaloneSalePrice
                   ? {
                       quotedPrice: {
-                        amount: state.ticket.amount,
-                        currencyCode: state.ticket.currencyCode,
+                        amount: state.outboundOffer.standaloneSalePrice.amount,
+                        currencyCode:
+                          state.outboundOffer.standaloneSalePrice.currencyCode,
                       },
                     }
-                  : {}),
+                  : state.ticket.amount
+                    ? {
+                        quotedPrice: {
+                          amount: state.ticket.amount,
+                          currencyCode: state.ticket.currencyCode,
+                        },
+                      }
+                    : {}),
               },
             ]
           : []),
@@ -815,14 +825,24 @@ export function salesPayload(
                 cabinClassCode:
                   state.returnOffer?.cabinClassCode ??
                   state.ticket.cabinClassCode,
-                ...(state.ticket.amount
+                ...(!state.tour &&
+                !state.serviceKinds.includes('HOTEL') &&
+                state.returnOffer?.standaloneSalePrice
                   ? {
                       quotedPrice: {
-                        amount: state.ticket.amount,
-                        currencyCode: state.ticket.currencyCode,
+                        amount: state.returnOffer.standaloneSalePrice.amount,
+                        currencyCode:
+                          state.returnOffer.standaloneSalePrice.currencyCode,
                       },
                     }
-                  : {}),
+                  : state.ticket.amount
+                    ? {
+                        quotedPrice: {
+                          amount: state.ticket.amount,
+                          currencyCode: state.ticket.currencyCode,
+                        },
+                      }
+                    : {}),
               },
             ]
           : []),
