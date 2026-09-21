@@ -20,10 +20,9 @@ const styles = readFileSync(
 );
 
 describe('system management reference implementation', () => {
-  it('includes the overview, internal navigation, filters, and module hub', () => {
+  it('includes the overview, primary category filters, and module hub', () => {
     for (const label of [
       'نمای کلی',
-      'تنظیمات بخش‌ها',
       'بررسی تغییرات',
       'تاریخچه تغییرات',
       'جست‌وجوی تنظیمات',
@@ -40,6 +39,8 @@ describe('system management reference implementation', () => {
       'تنظیمات شرکت',
     ])
       expect(navigation).toContain(category);
+
+    expect(workspace).not.toContain('تنظیمات بخش‌ها');
   });
 
   it('includes every settings module and its reference card catalog', () => {
@@ -80,7 +81,10 @@ describe('system management reference implementation', () => {
     expect(workspace).toContain("href: '/system/legal-entities'");
     expect(workspace).toContain("href: '/system/operations'");
     expect(navigation).toContain("hrefs: ['/workbench', '/dashboard']");
-    expect(navigation).toContain("hrefs: ['/human-resources']");
+    expect(navigation).toContain("hrefs: ['/human-resources', '/purchases']");
+    expect(navigation).toContain(
+      "hrefs: ['/reservations', '/reservations/hotel-rates', '/ticket-management']",
+    );
     expect(navigation).toContain("'/ticket-management'");
     expect(navigation).toContain("'/purchases'");
   });

@@ -98,15 +98,38 @@ describe('Purchase draft accessibility and persisted input', () => {
     expect(html).toContain('کاربر جاری');
     expect(html).toContain('شعبه مرکزی');
     expect(html).toContain('انتخاب واحد از منابع انسانی');
+    expect(html).toContain('تأمین‌کننده در درخواست اولیه اختیاری است');
+    expect(html).toContain('بدون انتخاب یا نوشتن تأمین‌کننده');
+    expect(html).not.toContain('id="proc-supplier"');
+    expect(html).not.toContain('id="proc-purchaseType"');
     expect(html).not.toContain('id="proc-priority"');
     expect(html).toContain('پیوست‌ها و یادداشت‌ها');
     expect(html).not.toContain('نوع منشأ درخواست');
     expect(html).not.toContain('ارجاع از رزرواسیون');
     expect(html).not.toContain('type="date"');
     expect(html).toContain('ذخیره پیش‌نویس');
+    expect(html).toContain('تأیید و انتشار');
+    expect(html).not.toContain('>ثبت پیش‌نویس</span>');
+    expect(html).not.toContain('>ویرایش پیش‌نویس</span>');
     expect(html).toContain(
       'شماره درخواست: پس از نخستین ثبت، خودکار تعیین می‌شود',
     );
+  });
+  it('makes the requester requirement visible before saving a new draft', () => {
+    const html = renderToStaticMarkup(
+      <QueryClientProvider client={new QueryClient()}>
+        <DraftForm
+          bootstrap={{ ...bootstrap, requester: null }}
+          onClose={() => undefined}
+          onSaved={() => undefined}
+        />
+      </QueryClientProvider>,
+    );
+
+    expect(html).toContain(
+      'پیش از ثبت پیش‌نویس، یک کارمند فعال را انتخاب کنید.',
+    );
+    expect(html).toContain('id="proc-requester-error"');
   });
   it('loads HR employees and units immediately from the requester branch', () => {
     const client = new QueryClient();
@@ -187,7 +210,7 @@ describe('Purchase draft accessibility and persisted input', () => {
     expect(html).toContain('1.5000');
     expect(html).not.toContain('for="line-1-acceptanceCriteria"');
   });
-  it('shows saved purchase classifications and measurement units as selected dropdown values', () => {
+  it('shows saved purchase categories and measurement units as selected dropdown values', () => {
     const client = new QueryClient();
     client.setQueryData(['procurement', 'saved-request-field-options'], {
       items: [
@@ -243,12 +266,36 @@ describe('Purchase draft accessibility and persisted input', () => {
         />
       </QueryClientProvider>,
     );
-    expect(html).toContain('خرید عمومی');
     expect(html).toContain('تجهیزات اداری');
     expect(html).toContain('عدد');
     expect(html).toContain('role="combobox"');
     expect(html).not.toContain('دوره ارائه خدمت');
     expect(html).not.toContain('مقدار تازهٔ نوع خرید');
+  });
+  it('renders when a historic request is missing saved classifications', () => {
+    const client = new QueryClient();
+    const legacyDraft = emptyDraft();
+    legacyDraft.branchId = 'branch-1';
+    Reflect.deleteProperty(legacyDraft, 'purchaseType');
+    Reflect.deleteProperty(legacyDraft, 'category');
+    client.setQueryData(savedRequestFieldOptionsKey, {
+      items: [{ draft: legacyDraft }],
+      page: 1,
+      pageSize: 50,
+      hasMore: false,
+    });
+
+    expect(() =>
+      renderToStaticMarkup(
+        <QueryClientProvider client={client}>
+          <DraftForm
+            bootstrap={bootstrap}
+            onClose={() => undefined}
+            onSaved={() => undefined}
+          />
+        </QueryClientProvider>,
+      ),
+    ).not.toThrow();
   });
   it('shows the persisted choices before the saved-options query finishes', () => {
     const draft = {
@@ -294,11 +341,11 @@ describe('Purchase draft accessibility and persisted input', () => {
       html.match(
         new RegExp(`<button[^>]*id="${id}"[^>]*>(.*?)</button>`, 's'),
       )?.[1] ?? '';
-    expect(trigger('proc-purchaseType')).toContain('خرید عمومی');
     expect(trigger('proc-category')).toContain('ملزومات اداری');
     expect(trigger('item-1-unit')).toContain('ساعت');
     expect(trigger('item-1-period')).toBe('');
     expect(html).toContain('اقلام و خدمات');
+    expect(html).not.toContain('id="proc-purchaseType"');
     expect(html).not.toContain('دوره ارائه خدمت');
     expect(html).not.toContain('مقدار تازهٔ نوع خرید');
     expect(html).not.toContain('مقدار تازهٔ دسته خرید');

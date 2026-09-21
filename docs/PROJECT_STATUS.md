@@ -11,6 +11,34 @@ Airline, route, departure/arrival dates and times are clearer in the contract ti
 
 Compact request list with explicit selection, responsive filters and a labelled sticky details panel. Current receipt, supplier-payment and ticket-cost workflows preserved during owner-authorized reconciliation of stale local changes. 11 focused tests, lint, Web TypeScript and production build (50 pages) passed. No migration, dependency, operational data or 3100 changes. Branch: codex/pc-a-finance-inbox-clarity-0921; review before merge. Details: [task](tasks/FINANCE-INBOX-CLARITY-0921.md).
 
+## 2026-09-21 — PROCUREMENT-DRAFT-FORM-HEADER-CLEANUP-0921 — PC-B — READY_FOR_REVIEW
+
+نشان تکراری «ثبت پیش‌نویس» از بالای فرم درخواست خرید حذف شد و دکمهٔ «ذخیره پیش‌نویس» در پایین فرم برای انجام عملیات باقی ماند. تست متمرکز فرم این تفکیک را کنترل می‌کند؛ API، Schema/Migration، Permission و داده تغییری ندارند.
+
+## 2026-09-21 — PROCUREMENT-DRAFT-SAVE-LOCAL-TASKS-RESILIENCE-0921 — READY_FOR_REVIEW
+
+ثبت پیش‌نویس خریدِ بدون مسئول یا تأییدکننده دیگر task عملیاتی نمی‌سازد؛ در نتیجه نبود موقت جدول projection وظایف در دیتابیس محلی، تراکنش ایجاد خرید را برنمی‌گرداند. دکمهٔ «تأیید و انتشار» داخل فرم و کنار «ذخیره پیش‌نویس» قرار دارد و درخواست کامل را با مجوز ثبت به `SUBMITTED` می‌برد؛ سپس «ارسال برای تأیید» با سیاست و تأییدکنندهٔ واقعی آن را وارد گردش بررسی می‌کند. درخواست‌های دارای مسئول، تأیید یا اقدام‌های غیرایجادی همچنان به اتصال Tasks متکی هستند. ۸ تست فرم، تست Tasks، تست یکپارچهٔ guardشدهٔ انتشار، lint/typecheck API/Web و build API موفق‌اند؛ Migration/Schema و دادهٔ عملیاتی تغییری ندارند.
+
+## 2026-09-21 — PROCUREMENT-CATEGORY-ONLY-REQUEST-FORM-0921 — PC-B — READY_FOR_REVIEW
+
+فرم ایجاد درخواست خرید فقط «دسته خرید» را از کاربر می‌گیرد؛ «نوع خرید» حذف شده و برای حفظ سازگاری با اعتبارسنجی فعلی API، در درخواست تازه به‌طور داخلی `خرید عمومی` مقداردهی می‌شود. ۱۰ تست هدفمند، lint و typecheck Web موفق‌اند؛ API، Schema/Migration، مجوز و دادهٔ عملیاتی تغییری ندارند.
+
+## 2026-09-21 — PROCUREMENT-NAVIGATION-AND-DRAFT-ROBUSTNESS-0921 — PC-B — READY_FOR_REVIEW
+
+یک درخواست قدیمی با فیلد دسته‌بندی ناقص باعث خطای اجرای فرم خرید می‌شد؛ فرم اکنون مقدار ناقص را امن نادیده می‌گیرد و خطای `trim` رخ نمی‌دهد. جایگاه نمایش «خرید و تأمین» نیز طبق درخواست مالک به زیرگروه «سرمایه انسانی» منتقل شد. ۲۱ تست هدفمند، lint و typecheck Web موفق‌اند؛ API، دادهٔ خرید، Schema/Migration و مجوزها تغییری نکرده‌اند.
+
+## 2026-09-21 — PROCUREMENT-REQUEST-NO-SUPPLIER-0921 — PC-B — READY_FOR_REVIEW
+
+فرم «درخواست خرید جدید» اکنون بدون ثبت یا انتخاب تأمین‌کننده قابل تکمیل و ثبت است؛ تأمین‌کننده در درخواست اولیه اختیاری است و برای مرحلهٔ استعلام/سفارش تعیین می‌شود. توضیح این قاعده داخل فرم اضافه شد و قواعد دامنه نیز ارسال درخواست بدون `supplierId` یا `supplierName` را معتبر می‌دانند؛ الزام تأمین‌کننده در استعلام، سفارش و فاکتور تغییری نکرده است. تست هدفمند، lint و typecheck Web/API موفق‌اند. Branch: `codex/pc-b-procurement-request-no-supplier-0921`.
+
+## 2026-09-19 — SYSTEM-REMOVE-MODULE-SETTINGS-0919 — PC-B — READY_FOR_REVIEW
+
+تب و دکمهٔ تکراری «تنظیمات بخش‌ها» از مدیریت سیستم حذف شدند. ناوبری مدیریت سیستم اکنون بر هفت گروه اصلی فضای کار، فروش و ارتباط با مشتری، رزرواسیون و تأمین سفر، مالی، سرمایه انسانی، اسناد و گزارش‌ها و تنظیمات شرکت استوار است و هر انتخاب کارت‌های همان حوزه را نمایش می‌دهد. عملیات ویرایش نسخه‌دار و بررسی/تاریخچهٔ تغییرات حفظ شده‌اند. تست هدفمند، ESLint، typecheck و build تولیدی Web موفق‌اند. Migration، API، داده، مجوز و وابستگی‌ها تغییری نکردند.
+
+## 2026-09-19 — LOGIN-NOORA-CLOUD-OUTLINE-0919 — PC-B — READY_FOR_REVIEW
+
+ابر مه‌آلود صفحهٔ ورود با ابر خطی آبیِ مرجع جایگزین شد؛ سطح داخلی نیمه‌شفاف است و `NOORA` در مرکز آن دیده می‌شود. پس از توقف هواپیما ظاهر می‌شود و برای کاربران با کاهش حرکت، بدون انیمیشن نمایش دارد. تست هدفمند، typecheck و build تولیدی Web موفق‌اند و منطق ورود، API، Migration و دادهٔ عملیاتی تغییری نکرده‌اند.
+
 ## 2026-09-20 — TICKET-TIME-REPEAT-0920 — آماده بازبینی
 
 فیلدهای تاریخ و ساعت حرکت/رسیدنِ Ticket Catalog برای بلیت یک‌طرفه، رفت‌وبرگشت و هر قطعهٔ ترکیبی بازگشتند. زمان ورودی با منطقهٔ زمانی مسیر به UTC تبدیل می‌شود و زمان حرکت، تاریخ اولین بلیت را همگام می‌کند؛ در نتیجه تکرار هفتگی/ماهانه ساعت‌های ثبت‌شده را همراه تاریخ جابه‌جا می‌کند. بلیت قدیمیِ بدون ساعت همچنان تکرارپذیر است. ۱۰۰ تست Ticket Catalog، lint و typecheck Web موفق‌اند و build تولیدی در Worktree جدا خروجی `BUILD_ID` ساخته است. Schema/Migration/API/contract/runtime و Web3100 تغییر نکرده‌اند. جزئیات در [TICKET-TIME-REPEAT-0920](tasks/TICKET-TIME-REPEAT-0920.md) است.
@@ -3137,6 +3165,9 @@ PC-A روی شاخهٔ مستقل `codex/pc-a-ticket-expiry-sales-visibility-092
 
 پیاده‌سازی کامل است: انقضا به‌صورت `ACTIVE` → `PAUSED` همراه افزایش نسخه و Audit انجام می‌شود، جست‌وجوی فروش از لحظهٔ جاری عقب‌تر نمی‌رود، پرواز چندقطعه‌ای از اولین مبدأ تا آخرین مقصد در منبع مشترک منتشر می‌شود و کارت‌های نمونهٔ محلی از صفحهٔ عملیاتی حذف شدند. کارت‌های ذخیره‌شدهٔ منقضی هنگام بارگذاری متوقف و فهرست Backend هر دقیقه تازه می‌شود. ۲۳ تست هدفمند، lint، typecheck API/Web، build API و build تولیدی Web با ۵۰ route موفق‌اند؛ Webpack برای build این worktree استفاده شد چون Turbopack junction وابستگی بیرون از ریشهٔ worktree را رد می‌کند.
 
+## 2026-09-21 — PROCUREMENT-DRAFT-SAVE-AND-SUBMISSION-0921 — PC-B — READY_FOR_REVIEW
+
+فرم درخواست خرید اکنون پیش از ثبت، انتخاب «درخواست‌کننده» از کارکنان فعال را در همان محل روشن می‌کند؛ تلاش برای ثبت بدون انتخاب، کنترل مربوط را به کادر دید و فوکوس می‌آورد و خطا کنار دکمهٔ ثبت هم دیده می‌شود. مسدودسازی ایستای رابط برای ارسال حذف شد، بنابراین پس از تعریف سیاست معتبر، درخواست کامل به Backend ارسال می‌شود. Backend همچنان بدون سیاست نسخه‌دار و تأییدکنندهٔ مستقل، انتشار را fail-closed رد می‌کند. ۸ تست مستقیم فرم، lint و typecheck Web و پاسخ HTTP 200 روی Web3100 موفق‌اند.
 ## 2026-09-21 — پاک‌شدن خطای فرم پس از اصلاح ورودی — READY_FOR_REVIEW
 
 در تعریف و ویرایش بلیط، هر تغییر در مشخصات رفت، برگشت، مسیر ترکیبی، ظرفیت، نرخ و دلیل ویرایش، پیام اعتبارسنجی قبلی را همان لحظه پاک می‌کند. فرم‌های تکرار بلیط، رزرو موقت ظرفیت و تغییر وضعیت نیز همین رفتار را دارند؛ اگر مقدار هنوز نامعتبر باشد، پیام در ثبت بعدی دوباره نمایش داده می‌شود. ۱۰۵ تست Ticket Catalog، lint، typecheck و build تولیدی Web با ۵۰ route موفق‌اند؛ API، داده و Schema تغییر نکرده‌اند.

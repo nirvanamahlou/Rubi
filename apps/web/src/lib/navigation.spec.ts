@@ -98,13 +98,12 @@ describe('CRM navigation', () => {
       '/reservations',
       '/reservations/hotel-rates',
       '/ticket-management',
-      '/purchases',
     ]);
     expect(
       groupedNavigationItems
         .find((group) => group.id === 'hr')
         ?.items.map((item) => item.href),
-    ).toEqual(['/human-resources']);
+    ).toEqual(['/human-resources', '/purchases']);
   });
   it('contains the approved routes plus the separate finance inbox in order', () => {
     expect(navigationItems.map((item) => item.href)).toEqual(expectedRoutes);
