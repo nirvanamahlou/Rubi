@@ -6,6 +6,10 @@
 
 بلیط تازه و پیش‌نویس‌های معتبر قبلی بدون ورود دلیل کاربر فعال می‌شوند؛ ارز پیشنهادی خرید اختیاری است و قیمت خرید بعداً در مالی تکمیل می‌شود. Audit تغییر وضعیت با دلیل ثابت سیستمی حفظ شده است. ۱۱۴ تست هدفمند، lint، typecheck و build تولیدی Web/API موفق‌اند. شاخهٔ مستقل `codex/pc-a-ticket-auto-active-0921`؛ بدون Migration، Schema یا تغییر دادهٔ عملیاتی.
 
+## 2026-09-21 — TICKET-SALE-CURRENCY-SELECT-0921 — READY_FOR_REVIEW
+
+ارز قیمت فروش تکی مدیریت بلیت از ورودی آزاد به dropdown متصل به همهٔ ارزهای فعال اطلاعات پایه تبدیل شد؛ ثبت با کد تایپی یا ارز خارج از فهرست مجاز نیست و نبود فهرست ثبت را متوقف می‌کند. ۱۵ تست متمرکز، lint، typecheck و build تولیدی Web با ۵۰ route موفق‌اند.
+
 ## 2026-09-21 — SALES-TICKET-CLARITY-0921 — READY_FOR_REVIEW
 
 Airline, route, departure/arrival dates and times are clearer in the contract ticket selector; selected cards use a restrained themed border. Capacity/fare guards and Tehran timezone preserved. Owner-authorized overlap reconciliation excludes stale namespace changes without modifying old worktrees. 7 tests, lint, TypeScript and production build (50 pages) passed. No migration or 3100 changes. Branch: codex/pc-a-finance-sales-clarity-0921. Details: [task](tasks/SALES-TICKET-CLARITY-0921.md).
