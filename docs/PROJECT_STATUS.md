@@ -1,3 +1,7 @@
+## 2026-09-21 — CUSTOMER-HIDE-TECH-BADGES-0921 — READY_FOR_REVIEW
+
+کارت سه‌ردیفیِ توضیحات فنی از پایین فضای مشتریان و مسافران حذف شد؛ اجرای دسترسی حساس، City FK، Audit و کنترل نسخه در Backend دست‌نخورده ماند. ۴۱ تست Customers، lint متمرکز، typecheck و build تولیدی Web با ۵۰ route موفق‌اند.
+
 ## 2026-09-21 — TICKET-AUTO-ACTIVE-0921 — READY_FOR_REVIEW
 
 بلیط تازه و پیش‌نویس‌های معتبر قبلی بدون ورود دلیل کاربر فعال می‌شوند؛ ارز پیشنهادی خرید اختیاری است و قیمت خرید بعداً در مالی تکمیل می‌شود. Audit تغییر وضعیت با دلیل ثابت سیستمی حفظ شده است. ۱۱۴ تست هدفمند، lint، typecheck و build تولیدی Web/API موفق‌اند. شاخهٔ مستقل `codex/pc-a-ticket-auto-active-0921`؛ بدون Migration، Schema یا تغییر دادهٔ عملیاتی.

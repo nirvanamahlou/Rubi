@@ -22,16 +22,13 @@ import type {
 import {
   AlertTriangle,
   Ban,
-  CheckCircle2,
   Download,
   Eye,
   FilePenLine,
-  MapPin,
   Phone,
   Plus,
   RefreshCw,
   Search,
-  ShieldCheck,
   ShoppingBag,
   TrendingUp,
   Upload,
@@ -3824,20 +3821,6 @@ export function CustomerWorkspace() {
           </Button>
         </div>
       </div>
-      <Card className="grid gap-3 p-4 sm:grid-cols-3">
-        <div className="flex items-center gap-2">
-          <ShieldCheck className="size-4 text-primary" />
-          <span className="text-sm">دسترسی حساس Backend-enforced</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <MapPin className="size-4 text-primary" />
-          <span className="text-sm">نشانی غیرحساس + City FK</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <CheckCircle2 className="size-4 text-primary" />
-          <span className="text-sm">Audit و Optimistic Version</span>
-        </div>
-      </Card>
       {formMode && (formMode === 'create' || selected) ? (
         <CustomerDrawer
           activeTab={activeTab}
