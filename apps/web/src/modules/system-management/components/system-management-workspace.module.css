@@ -221,6 +221,54 @@
   justify-content: flex-end;
   gap: 8px;
 }
+.managementAreas {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0 0 18px;
+}
+.managementArea {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  padding: 13px 15px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  color: var(--foreground);
+  background: var(--surface);
+  transition:
+    border-color 150ms ease,
+    background 150ms ease;
+}
+.managementArea:hover {
+  border-color: color-mix(in srgb, var(--primary) 42%, var(--border));
+  background: color-mix(in srgb, var(--primary) 4%, var(--surface));
+}
+.managementArea span,
+.managementArea b {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+.managementArea span {
+  font-weight: 750;
+}
+.managementArea small {
+  color: var(--muted-foreground);
+}
+.managementArea b {
+  color: var(--primary);
+  font-size: 12px;
+}
+.managementNotice {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: 9px;
+  color: var(--muted-foreground);
+  background: var(--muted);
+  font-size: 12px;
+}
 .scopeControl {
   display: inline-flex;
   min-height: 38px;
@@ -246,6 +294,11 @@
   font: inherit;
   font-size: 13px;
 }
+.scopeHint {
+  margin: -10px 0 18px;
+  color: var(--muted-foreground);
+  font-size: 12px;
+}
 .statusBadge {
   display: inline-flex;
   min-height: 38px;
@@ -265,17 +318,6 @@
   height: 7px;
   border-radius: 50%;
   background: var(--primary);
-}
-.pageNav {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 7px;
-  margin-bottom: 20px;
-  padding: 7px;
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  background: var(--surface);
-  box-shadow: 0 4px 16px color-mix(in srgb, var(--foreground) 4%, transparent);
 }
 .searchbar {
   display: flex;
@@ -309,16 +351,70 @@
   margin-bottom: 20px;
 }
 .filter {
-  padding: 7px 13px;
-  border: 1px solid transparent;
-  border-radius: 9px;
+  display: inline-flex;
+  min-height: 32px;
+  align-items: center;
+  gap: 9px;
+  padding: 5px 4px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
   color: var(--muted-foreground);
+  background: transparent;
+  text-align: start;
+  font-size: 14px;
+  font-weight: 650;
+  transition:
+    color 0.16s,
+    background 0.16s;
+}
+.filter:hover {
+  color: var(--foreground);
   background: transparent;
 }
 .filterActive {
-  border-color: color-mix(in srgb, var(--primary) 45%, var(--border));
+  border-bottom-color: var(--primary);
   color: var(--primary);
-  background: color-mix(in srgb, var(--primary) 8%, var(--surface));
+}
+.categoryDot {
+  width: 6px;
+  height: 6px;
+  flex: none;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--primary) 72%, var(--muted-foreground));
+}
+.categoryChevron {
+  width: 16px;
+  height: 16px;
+  flex: none;
+}
+.categoryPanel {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin: -8px 0 20px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+}
+.categoryChild {
+  display: inline-flex;
+  min-height: 36px;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 3px;
+  border: 0;
+  border-radius: 0;
+  color: var(--muted-foreground);
+  background: transparent;
+  text-align: start;
+  font-size: 13px;
+}
+.categoryChild:hover {
+  color: var(--primary);
+  background: transparent;
+}
+.categoryChild svg {
+  margin-inline-start: 2px;
 }
 .hubGrid,
 .settingsGrid {
@@ -460,6 +556,31 @@
   gap: 18px;
   margin: 20px 0;
   border-bottom: 1px solid var(--line);
+}
+.ownerLinks {
+  display: grid;
+  gap: 8px;
+  margin: -4px 0 16px;
+}
+.ownerLinks p {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  color: var(--muted-foreground);
+  font-size: 13px;
+}
+.ownerLinks a {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--primary);
+  font-weight: 700;
+  text-decoration: none;
+}
+.ownerLinks a:hover {
+  text-decoration: underline;
 }
 .tab {
   padding: 10px 4px;

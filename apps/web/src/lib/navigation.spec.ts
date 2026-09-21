@@ -92,9 +92,19 @@ describe('CRM navigation', () => {
     );
     expect(
       groupedNavigationItems
+        .find((group) => group.id === 'operations')
+        ?.items.map((item) => item.href),
+    ).toEqual([
+      '/reservations',
+      '/reservations/hotel-rates',
+      '/ticket-management',
+      '/purchases',
+    ]);
+    expect(
+      groupedNavigationItems
         .find((group) => group.id === 'hr')
         ?.items.map((item) => item.href),
-    ).toEqual(['/human-resources', '/purchases']);
+    ).toEqual(['/human-resources']);
   });
   it('contains the approved routes plus the separate finance inbox in order', () => {
     expect(navigationItems.map((item) => item.href)).toEqual(expectedRoutes);

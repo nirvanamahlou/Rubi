@@ -3,6 +3,7 @@
 import { useQuery } from '@tanstack/react-query';
 import {
   AlertTriangle,
+  ArrowLeft,
   ArrowDownRight,
   ArrowUpRight,
   BadgeDollarSign,
@@ -11,6 +12,7 @@ import {
   BriefcaseBusiness,
   Building2,
   CalendarCheck,
+  CalendarDays,
   CalendarRange,
   ChartNoAxesCombined,
   Check,
@@ -24,6 +26,7 @@ import {
   Hotel,
   Info,
   LayoutDashboard,
+  Lightbulb,
   LineChart,
   ListFilter,
   LockKeyhole,
@@ -87,6 +90,7 @@ import {
   type DashboardFilterOptions,
   type DashboardMetricSnapshot,
   type DashboardTrendSnapshot,
+  type DashboardVisualSnapshot,
 } from '../model/projection-client';
 import {
   dashboardDateRangeError,
@@ -101,7 +105,7 @@ import {
   dashboardNavigation,
   dashboardPages,
   type DashboardKpiDefinition,
-  type DashboardKpiRole,
+  type DashboardVisualDefinition,
   type DashboardVisualKind,
 } from '../model/registry';
 
@@ -112,6 +116,14 @@ const rangeOptions: readonly [DashboardRange, string][] = [
   ['quarter', 'این فصل'],
   ['year', 'امسال'],
   ['custom', 'بازه سفارشی'],
+];
+
+type TrendCalendarSystem = 'persian' | 'gregorian';
+type TrendTemporalGrain = 'hour' | 'day' | 'week' | 'month';
+
+const trendCalendarOptions: readonly [TrendCalendarSystem, string][] = [
+  ['persian', 'تاریخ شمسی'],
+  ['gregorian', 'تاریخ میلادی'],
 ];
 
 const executiveSalesTitles: Record<DashboardRange, string> = {
@@ -140,8 +152,16 @@ const dimensionFilters: readonly {
 
 type DashboardFilterKey = keyof DashboardFilterOptions;
 
-const dashboardPageFilterKeys: Readonly<Record<string, readonly DashboardFilterKey[]>> = {
-  'executive-overview': ['salesChannel', 'branch', 'service', 'currency', 'status'],
+const dashboardPageFilterKeys: Readonly<
+  Record<string, readonly DashboardFilterKey[]>
+> = {
+  'executive-overview': [
+    'salesChannel',
+    'branch',
+    'service',
+    'currency',
+    'status',
+  ],
   'executive-growth-risk': ['branch', 'service', 'currency', 'status'],
   'commercial-performance': [
     'salesChannel',
@@ -153,28 +173,76 @@ const dashboardPageFilterKeys: Readonly<Record<string, readonly DashboardFilterK
     'currency',
     'status',
   ],
-  'sales-profitability-analysis': ['salesChannel', 'branch', 'agent', 'service', 'currency'],
-  'sales-segment-analysis': ['salesChannel', 'branch', 'service', 'agency', 'currency'],
+  'sales-profitability-analysis': [
+    'salesChannel',
+    'branch',
+    'agent',
+    'service',
+    'currency',
+  ],
+  'sales-segment-analysis': [
+    'salesChannel',
+    'branch',
+    'service',
+    'agency',
+    'currency',
+  ],
   'revenue-collections': ['branch', 'service', 'currency', 'status'],
   'travel-operations': ['branch', 'agent', 'service', 'provider', 'status'],
-  'flight-route-analysis': ['branch', 'service', 'provider', 'currency', 'status'],
+  'flight-route-analysis': [
+    'branch',
+    'service',
+    'provider',
+    'currency',
+    'status',
+  ],
   'inventory-products': ['branch', 'service', 'provider', 'currency'],
   'tour-hotel-performance': ['branch', 'service', 'provider', 'currency'],
-  'procurement-suppliers': ['branch', 'service', 'provider', 'currency', 'status'],
+  'procurement-suppliers': [
+    'branch',
+    'service',
+    'provider',
+    'currency',
+    'status',
+  ],
   'finance-treasury': ['branch', 'currency', 'status', 'service'],
   'finance-profitability-costs': ['branch', 'service', 'currency', 'status'],
-  'finance-obligations-risk': ['branch', 'currency', 'status', 'agency', 'provider'],
+  'finance-obligations-risk': [
+    'branch',
+    'currency',
+    'status',
+    'agency',
+    'provider',
+  ],
   'customer-growth': ['salesChannel', 'branch', 'service', 'agency', 'status'],
   'customer-behavior-analysis': ['salesChannel', 'branch', 'service', 'agency'],
   'customer-crm': ['salesChannel', 'branch', 'agent', 'service', 'status'],
   'support-service-quality': ['branch', 'agent', 'service', 'status'],
-  'partners-b2b': ['agency', 'branch', 'salesChannel', 'service', 'provider', 'currency'],
+  'partners-b2b': [
+    'agency',
+    'branch',
+    'salesChannel',
+    'service',
+    'provider',
+    'currency',
+  ],
   'marketing-growth': ['salesChannel', 'branch', 'service', 'agency', 'status'],
   'workforce-hr': ['branch', 'agent', 'status'],
   'hr-record-quality': ['branch', 'agent', 'status'],
-  'employee-commercial-performance': ['branch', 'agent', 'service', 'salesChannel'],
+  'employee-commercial-performance': [
+    'branch',
+    'agent',
+    'service',
+    'salesChannel',
+  ],
   'employee-crm-activity': ['branch', 'agent', 'salesChannel', 'status'],
-  'employee-sales-quality': ['branch', 'agent', 'service', 'salesChannel', 'status'],
+  'employee-sales-quality': [
+    'branch',
+    'agent',
+    'service',
+    'salesChannel',
+    'status',
+  ],
   'tasks-automation': ['branch', 'agent', 'status'],
   'documents-reports-data-quality': ['branch', 'status'],
 };
@@ -437,6 +505,9 @@ const kpiVisualMatchers: readonly [RegExp, KpiVisual][] = [
   ],
 ];
 
+const adverseKpiIdPattern =
+  /refund|cancel|discount|expense|commission|overdue|awaiting|pending|failure|breach|debt|payable|risk|complaint|escalation|expired|blocked|shortage/i;
+
 const kpiVisualOverrides: Readonly<Record<string, KpiVisual>> = {
   'gross-sales': {
     icon: Banknote,
@@ -569,8 +640,7 @@ const kpiVisualOverrides: Readonly<Record<string, KpiVisual>> = {
 function kpiVisualFor(definition: DashboardKpiDefinition): KpiVisual {
   return (
     kpiVisualOverrides[definition.id] ??
-    kpiVisualMatchers.find(([pattern]) => pattern.test(definition.id))?.[1] ??
-    {
+    kpiVisualMatchers.find(([pattern]) => pattern.test(definition.id))?.[1] ?? {
       icon: CircleDollarSign,
       label: 'شاخص عملکرد',
       className:
@@ -604,6 +674,82 @@ function compactChartValue(value: number) {
     notation: Math.abs(value) >= 10_000 ? 'compact' : 'standard',
     maximumFractionDigits: 1,
   }).format(value);
+}
+
+function trendTemporalGrain(
+  range: DashboardRange,
+  labels: readonly string[],
+): TrendTemporalGrain {
+  if (range === 'today') return 'hour';
+  if (range === 'week' || range === 'month') return 'day';
+  if (range === 'quarter') return 'week';
+  if (range === 'year') return 'month';
+
+  const firstInterval =
+    labels.length > 1
+      ? new Date(labels[1] ?? '').getTime() -
+        new Date(labels[0] ?? '').getTime()
+      : Number.NaN;
+  if (!Number.isFinite(firstInterval)) return 'day';
+  if (firstInterval <= 60 * 60 * 1000) return 'hour';
+  if (firstInterval >= 25 * 24 * 60 * 60 * 1000) return 'month';
+  if (firstInterval >= 6 * 24 * 60 * 60 * 1000) return 'week';
+  return 'day';
+}
+
+const trendTemporalLabels: Record<TrendTemporalGrain, string> = {
+  hour: 'ساعتی',
+  day: 'روزانه',
+  week: 'هفتگی',
+  month: 'ماهانه',
+};
+
+function trendDateLabel(
+  value: string,
+  calendarSystem: TrendCalendarSystem,
+  grain: TrendTemporalGrain,
+  includeYear = false,
+) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return new Intl.DateTimeFormat(
+    calendarSystem === 'persian'
+      ? 'fa-IR-u-ca-persian-nu-latn'
+      : 'en-US-u-ca-gregory',
+    {
+      timeZone: 'Asia/Tehran',
+      month: 'short',
+      ...(grain === 'hour'
+        ? { hour: '2-digit', hourCycle: 'h23' }
+        : grain === 'month'
+          ? { year: 'numeric' }
+          : { day: 'numeric', ...(includeYear ? { year: 'numeric' } : {}) }),
+    },
+  ).format(date);
+}
+
+function trendTooltipTime(
+  value: string,
+  calendarSystem: TrendCalendarSystem,
+  grain: TrendTemporalGrain,
+) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  const locale =
+    calendarSystem === 'persian'
+      ? 'fa-IR-u-ca-persian-nu-latn'
+      : 'en-US-u-ca-gregory';
+  const time = new Intl.DateTimeFormat(locale, {
+    timeZone: 'Asia/Tehran',
+    month: 'short',
+    ...(grain === 'hour'
+      ? { day: 'numeric', hour: '2-digit', hourCycle: 'h23' }
+      : grain === 'month'
+        ? { year: 'numeric' }
+        : { day: 'numeric', year: 'numeric' }),
+  }).format(date);
+
+  return grain === 'week' ? `هفتهٔ ${time}` : time;
 }
 
 function formatDashboardNumber(
@@ -646,8 +792,7 @@ function kpiGridColumns(count: number) {
   if (count === 3) return 'sm:grid-cols-2 lg:grid-cols-3';
   if (count === 4) return 'sm:grid-cols-2 xl:grid-cols-4';
   if (count === 5) return 'sm:grid-cols-2 xl:grid-cols-5';
-  if (count === 6)
-    return 'sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6';
+  if (count === 6) return 'sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6';
   if (count % 2 === 0) return 'sm:grid-cols-2 xl:grid-cols-4';
   return 'sm:grid-cols-2 xl:grid-flow-col xl:auto-cols-[minmax(13rem,1fr)] xl:overflow-x-auto';
 }
@@ -777,14 +922,11 @@ const dashboardHeaderArtworkByPageId: Record<string, string> = {
     '/images/dashboard-headers/commercial-performance.png',
   'sales-segment-analysis':
     '/images/dashboard-headers/commercial-performance.png',
-  'revenue-collections':
-    '/images/dashboard-headers/commercial-performance.png',
-  'travel-operations':
-    '/images/dashboard-headers/commercial-performance.png',
+  'revenue-collections': '/images/dashboard-headers/commercial-performance.png',
+  'travel-operations': '/images/dashboard-headers/commercial-performance.png',
   'flight-route-analysis':
     '/images/dashboard-headers/commercial-performance.png',
-  'inventory-products':
-    '/images/dashboard-headers/commercial-performance.png',
+  'inventory-products': '/images/dashboard-headers/commercial-performance.png',
   'tour-hotel-performance':
     '/images/dashboard-headers/commercial-performance.png',
   'procurement-suppliers':
@@ -792,24 +934,19 @@ const dashboardHeaderArtworkByPageId: Record<string, string> = {
   'finance-treasury': '/images/dashboard-headers/finance-treasury.png',
   'finance-profitability-costs':
     '/images/dashboard-headers/finance-treasury.png',
-  'finance-obligations-risk':
-    '/images/dashboard-headers/finance-treasury.png',
+  'finance-obligations-risk': '/images/dashboard-headers/finance-treasury.png',
   'customer-growth': '/images/dashboard-headers/customer-growth.png',
-  'customer-behavior-analysis':
-    '/images/dashboard-headers/customer-growth.png',
+  'customer-behavior-analysis': '/images/dashboard-headers/customer-growth.png',
   'customer-crm': '/images/dashboard-headers/customer-growth.png',
-  'support-service-quality':
-    '/images/dashboard-headers/customer-growth.png',
+  'support-service-quality': '/images/dashboard-headers/customer-growth.png',
   'partners-b2b': '/images/dashboard-headers/customer-growth.png',
   'marketing-growth': '/images/dashboard-headers/customer-growth.png',
   'workforce-hr': '/images/dashboard-headers/workforce-hr.png',
   'hr-record-quality': '/images/dashboard-headers/workforce-hr.png',
   'employee-commercial-performance':
     '/images/dashboard-headers/workforce-hr.png',
-  'employee-crm-activity':
-    '/images/dashboard-headers/workforce-hr.png',
-  'employee-sales-quality':
-    '/images/dashboard-headers/workforce-hr.png',
+  'employee-crm-activity': '/images/dashboard-headers/workforce-hr.png',
+  'employee-sales-quality': '/images/dashboard-headers/workforce-hr.png',
   'tasks-automation': '/images/dashboard-headers/executive-overview.png',
   'documents-reports-data-quality':
     '/images/dashboard-headers/executive-overview.png',
@@ -965,7 +1102,8 @@ function calculationFeatureFor(source: string) {
   return (
     calculationFeatureDescriptionBySource[source] ?? {
       label: source,
-      description: 'رکوردهای تأییدشدهٔ این فیچر که در فرمول شاخص استفاده می‌شوند.',
+      description:
+        'رکوردهای تأییدشدهٔ این فیچر که در فرمول شاخص استفاده می‌شوند.',
     }
   );
 }
@@ -973,17 +1111,15 @@ function calculationFeatureFor(source: string) {
 function Metric({
   compact = false,
   currency = false,
+  definition,
   metric,
-  role = 'diagnostic',
 }: {
   compact?: boolean;
   currency?: boolean;
+  definition?: DashboardKpiDefinition | undefined;
   metric?: DashboardMetricSnapshot | undefined;
-  role?: DashboardKpiRole;
 }) {
-  const currencyValues = currency && metric
-    ? metric.value.split(' · ')
-    : null;
+  const currencyValues = currency && metric ? metric.value.split(' · ') : null;
   const comparisonFor = (index: number) => {
     const currencyCode =
       metric?.trend?.series?.[index]?.currencyCode ??
@@ -1013,7 +1149,8 @@ function Metric({
           {currencyValues.map((value, index) => {
             const { amount, symbol } = currencyMetricParts(value);
             const compactAmount = compactCurrencyAmount(amount);
-            const compactAmountTypography = compactCurrencyTypography(compactAmount);
+            const compactAmountTypography =
+              compactCurrencyTypography(compactAmount);
             const { comparison, comparisonUnavailable, currencyCode } =
               comparisonFor(index);
             return (
@@ -1025,9 +1162,9 @@ function Metric({
                 {metric ? (
                   <GrowthIndicator
                     comparison={comparison}
+                    definition={definition}
                     unavailable={comparisonUnavailable}
                     currencyCode={currencyCode}
-                    role={role}
                   />
                 ) : null}
                 <bdi
@@ -1055,7 +1192,7 @@ function Metric({
             {metric ? (
               <GrowthIndicator
                 comparison={metric.comparison}
-                role={role}
+                definition={definition}
                 unavailable={!metric.comparison}
               />
             ) : null}
@@ -1138,8 +1275,7 @@ function compactCurrencyTypography(value: string) {
   const visibleLength = [...value.replace(/\s/g, '')].length;
   if (visibleLength >= 13)
     return 'text-[clamp(0.75rem,5cqw,0.875rem)] leading-5';
-  if (visibleLength >= 10)
-    return 'text-[clamp(0.875rem,6cqw,1rem)] leading-5';
+  if (visibleLength >= 10) return 'text-[clamp(0.875rem,6cqw,1rem)] leading-5';
   return 'text-[clamp(1rem,7cqw,1.125rem)] leading-6';
 }
 
@@ -1159,18 +1295,18 @@ function MiniTrend({
 }) {
   const gradientPrefix = useId().replace(/:/g, '');
   const paletteFor = (index: number) =>
-    trendSeriesPalette[index % trendSeriesPalette.length] ?? trendSeriesPalette[0]!;
-  const series =
-    trend.series?.length
-      ? trend.series
-      : [{ currencyCode: '', values: trend.values }];
+    trendSeriesPalette[index % trendSeriesPalette.length] ??
+    trendSeriesPalette[0]!;
+  const series = trend.series?.length
+    ? trend.series
+    : [{ currencyCode: '', values: trend.values }];
   const pointsFor = (values: readonly number[]) => {
     const minimum = Math.min(...values);
     const maximum = Math.max(...values);
     const span = Math.max(maximum - minimum, 1);
     return values.map((value, index) => ({
-      x: values.length > 1 ? 4 + (index * 152) / (values.length - 1) : 80,
-      y: 50 - ((value - minimum) / span) * 40,
+      x: values.length > 1 ? 8 + (index * 224) / (values.length - 1) : 120,
+      y: 72 - ((value - minimum) / span) * 58,
     }));
   };
   const renderedSeries = series.map((item) => ({
@@ -1189,12 +1325,13 @@ function MiniTrend({
     .join('؛ ');
 
   return (
-    <span className="flex min-w-0 flex-1 flex-col gap-2">
+    <span className="flex w-full min-w-0 flex-1 flex-col gap-2">
       <svg
         aria-label={`روند ${title}. هر خط در مقیاس مستقل همان ارز نمایش داده می‌شود. ${summary}`}
-        className="h-14 w-full overflow-visible"
+        className="h-20 w-full overflow-visible"
+        preserveAspectRatio="none"
         role="img"
-        viewBox="0 0 160 58"
+        viewBox="0 0 240 84"
       >
         <defs>
           {renderedSeries.map(({ currencyCode }, seriesIndex) => {
@@ -1219,8 +1356,8 @@ function MiniTrend({
           const linePoints = points.map(({ x, y }) => `${x},${y}`).join(' ');
           const areaPoints = [
             linePoints,
-            `${points.at(-1)?.x ?? 80},54`,
-            `${points[0]?.x ?? 80},54`,
+            `${points.at(-1)?.x ?? 120},78`,
+            `${points[0]?.x ?? 120},78`,
           ].join(' ');
           return (
             <g key={currencyCode || `default-${seriesIndex}`}>
@@ -1235,18 +1372,8 @@ function MiniTrend({
                 stroke={color}
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                strokeWidth="2.5"
+                strokeWidth="3.25"
               />
-              {points.map(({ x, y }, index) => (
-                <circle
-                  aria-hidden="true"
-                  cx={x}
-                  cy={y}
-                  fill={color}
-                  key={`${currencyCode}-${x}-${y}-${index}`}
-                  r="1.8"
-                />
-              ))}
             </g>
           );
         })}
@@ -1269,7 +1396,9 @@ function MiniTrend({
                   paletteFor(index).dotClassName,
                 )}
               />
-              <bdi dir="ltr">{currencySymbols[currencyCode] ?? currencyCode}</bdi>
+              <bdi dir="ltr">
+                {currencySymbols[currencyCode] ?? currencyCode}
+              </bdi>
             </span>
           ))}
         </span>
@@ -1281,22 +1410,31 @@ function MiniTrend({
 function GrowthIndicator({
   comparison,
   currencyCode,
-  role = 'diagnostic',
+  definition,
   unavailable = false,
 }: {
   comparison?: DashboardComparisonSnapshot | undefined;
   currencyCode?: string | undefined;
-  role?: DashboardKpiRole;
+  definition?: DashboardKpiDefinition | undefined;
   unavailable?: boolean;
 }) {
   const hasComparison = Boolean(comparison);
   const direction = comparison?.direction ?? 'flat';
-  const favorable =
-    role === 'diagnostic' || direction === 'flat'
-      ? null
-      : role === 'guardrail'
-        ? direction === 'down'
-        : direction === 'up';
+  const isAdverseKpi = Boolean(
+    definition &&
+    (definition.role === 'guardrail' ||
+      adverseKpiIdPattern.test(definition.id)),
+  );
+  const semanticTone =
+    direction === 'flat'
+      ? 'neutral'
+      : isAdverseKpi
+        ? direction === 'up'
+          ? 'negative'
+          : 'positive'
+        : direction === 'up'
+          ? 'positive'
+          : 'negative';
   const Icon =
     direction === 'up'
       ? ArrowUpRight
@@ -1306,19 +1444,19 @@ function GrowthIndicator({
   const value =
     comparison?.deltaPercent === null || !hasComparison
       ? '—'
-      : `${direction === 'up' ? '+' : direction === 'down' ? '−' : ''}${Math.abs(
-          comparison!.deltaPercent,
-        ).toLocaleString('en-US', { maximumFractionDigits: 1 })}%`;
+      : `${Math.abs(comparison!.deltaPercent).toLocaleString('en-US', {
+          maximumFractionDigits: 1,
+        })}%`;
 
   return (
     <span
       className={cn(
-        'inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-1 text-[10px] font-black tabular-nums',
-        favorable === true &&
+        'inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-black tabular-nums shadow-sm',
+        semanticTone === 'positive' &&
           'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/45 dark:text-emerald-200',
-        favorable === false &&
-          'bg-rose-50 text-rose-700 dark:bg-rose-950/45 dark:text-rose-200',
-        favorable === null &&
+        semanticTone === 'negative' &&
+          'bg-rose-100 text-rose-800 dark:bg-rose-950/75 dark:text-rose-100',
+        semanticTone === 'neutral' &&
           'bg-blue-50 text-blue-700 dark:bg-blue-950/45 dark:text-blue-200',
       )}
       title={`${currencyCode ? `${currencyNames[currencyCode] ?? currencyCode} · ` : ''}${comparison?.label ?? 'دوره قبل هم‌طول'} · ${
@@ -1329,8 +1467,8 @@ function GrowthIndicator({
             : `مقدار قبلی ${formatDashboardNumber(comparison!.previousValue)}`
       }`}
     >
-      <Icon aria-hidden="true" className="size-3.5" />
-      <span>{value}</span>
+      <Icon aria-hidden="true" className="size-4" strokeWidth={2.5} />
+      <span dir="ltr">{value}</span>
     </span>
   );
 }
@@ -1365,8 +1503,14 @@ function KpiCard({
       onClick={onSelect}
       type="button"
     >
-      <span aria-hidden="true" className="absolute inset-x-5 top-0 h-0.5 rounded-b-full bg-primary/70" />
-      <span aria-hidden="true" className="absolute -start-8 -top-10 size-28 rounded-full bg-primary/[0.045] blur-2xl transition group-hover:bg-primary/[0.08]" />
+      <span
+        aria-hidden="true"
+        className="absolute inset-x-5 top-0 h-0.5 rounded-b-full bg-primary/70"
+      />
+      <span
+        aria-hidden="true"
+        className="absolute -start-8 -top-10 size-28 rounded-full bg-primary/[0.045] blur-2xl transition group-hover:bg-primary/[0.08]"
+      />
       <span className="relative flex min-w-0 items-center gap-2.5">
         <span className="flex min-w-0 items-center gap-2.5">
           <span
@@ -1392,12 +1536,12 @@ function KpiCard({
         <Metric
           compact
           currency={definition.currency === 'required'}
+          definition={definition}
           metric={metric}
-          role={definition.role}
         />
       </span>
       {metric ? (
-        <span className="relative mt-3 flex min-h-14 flex-col border-t border-border/60 pt-2">
+        <span className="relative mt-3 flex min-h-24 flex-col pt-0">
           {metric.trend ? (
             <MiniTrend title={definition.title} trend={metric.trend} />
           ) : null}
@@ -1491,7 +1635,11 @@ function KpiDefinitionPanel({
                 </h3>
                 <div className="mt-2 flex flex-wrap gap-2">
                   {metric.value.split(' · ').map((value) => (
-                    <Badge dir="ltr" key={value} title="مقدار دقیق بدون فشرده‌سازی">
+                    <Badge
+                      dir="ltr"
+                      key={value}
+                      title="مقدار دقیق بدون فشرده‌سازی"
+                    >
                       {latinizeDashboardNumericText(value)}
                     </Badge>
                   ))}
@@ -1524,7 +1672,10 @@ function KpiDefinitionPanel({
                   const feature = calculationFeatureFor(source);
                   return (
                     <li className="flex gap-2" key={source}>
-                      <span aria-hidden="true" className="mt-3 size-1.5 shrink-0 rounded-full bg-primary" />
+                      <span
+                        aria-hidden="true"
+                        className="mt-3 size-1.5 shrink-0 rounded-full bg-primary"
+                      />
                       <span>
                         <bdi
                           className="font-mono text-xs font-bold text-foreground"
@@ -1555,7 +1706,6 @@ function KpiDefinitionPanel({
                 {definition.exclusions}
               </p>
             </section>
-
           </div>
 
           <footer className="border-t border-border bg-surface p-4">
@@ -1797,31 +1947,70 @@ function EmptyVisualCanvas({ kind }: { kind: DashboardVisualKind }) {
 function VisualDataSummary({
   labels,
   title,
+  trend,
   values,
 }: {
   labels: readonly string[];
   title: string;
+  trend?:
+    | {
+        calendarSystem: TrendCalendarSystem;
+        grain: TrendTemporalGrain;
+      }
+    | undefined;
   values: readonly number[];
 }) {
+  const temporalLabel = trend ? trendTemporalLabels[trend.grain] : null;
+  const firstColumnLabel = trend
+    ? trend.grain === 'hour'
+      ? 'ساعت'
+      : trend.grain === 'week'
+        ? 'هفتهٔ شروع'
+        : trend.grain === 'month'
+          ? 'ماه'
+          : 'روز'
+    : 'دسته';
   return (
     <details className="mt-3 rounded-xl border border-border bg-surface">
       <summary className="cursor-pointer rounded-xl px-3 py-2 text-xs font-bold text-foreground outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background">
-        خلاصه متنی و جدول داده
+        {temporalLabel
+          ? `خلاصهٔ ${temporalLabel} و جدول داده`
+          : 'خلاصه متنی و جدول داده'}
       </summary>
       <div className="overflow-x-auto border-t border-border">
+        {temporalLabel ? (
+          <p className="border-b border-border/70 bg-muted/30 px-3 py-2 text-[11px] text-muted-foreground">
+            تفکیک زمانی:{' '}
+            <strong className="text-foreground">{temporalLabel}</strong>
+          </p>
+        ) : null}
         <table className="w-full min-w-72 text-xs">
           <caption className="sr-only">داده‌های نمودار {title}</caption>
           <thead className="bg-muted/60 text-foreground">
             <tr>
-              <th className="px-3 py-2 text-start" scope="col">دسته</th>
-              <th className="px-3 py-2 text-end" scope="col">مقدار</th>
+              <th className="px-3 py-2 text-start" scope="col">
+                {firstColumnLabel}
+              </th>
+              <th className="px-3 py-2 text-end" scope="col">
+                مقدار
+              </th>
             </tr>
           </thead>
           <tbody>
             {values.map((value, index) => (
-              <tr className="border-t border-border/70" key={`${labels[index]}-${index}`}>
+              <tr
+                className="border-t border-border/70"
+                key={`${labels[index]}-${index}`}
+              >
                 <th className="px-3 py-2 text-start font-medium" scope="row">
-                  {labels[index] ?? `دسته ${index + 1}`}
+                  {trend
+                    ? trendDateLabel(
+                        labels[index] ?? '',
+                        trend.calendarSystem,
+                        trend.grain,
+                        true,
+                      )
+                    : (labels[index] ?? `دسته ${index + 1}`)}
                 </th>
                 <td className="px-3 py-2 text-end font-bold tabular-nums">
                   {formatDashboardNumber(value)}
@@ -1832,6 +2021,116 @@ function VisualDataSummary({
         </table>
       </div>
     </details>
+  );
+}
+
+function ActionQueue({
+  labels,
+  title,
+  values,
+}: {
+  labels: readonly string[];
+  title: string;
+  values: readonly number[];
+}) {
+  const maximum = Math.max(...values, 1);
+  const rows = labels.slice(0, 8).map((label, index) => {
+    const value = values[index] ?? 0;
+    const ratio = value / maximum;
+    const priority = ratio >= 0.75 ? 'بالا' : ratio >= 0.45 ? 'متوسط' : 'کم';
+    const tone =
+      priority === 'بالا'
+        ? 'bg-rose-100 text-rose-700 dark:bg-rose-950/50 dark:text-rose-200'
+        : priority === 'متوسط'
+          ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-200'
+          : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-200';
+    return { index, label, priority, ratio, tone, value };
+  });
+
+  return (
+    <div className="overflow-x-auto rounded-xl border border-border/80 bg-surface shadow-inner shadow-slate-100/50 dark:shadow-none">
+      <table className="w-full min-w-[46rem] text-xs">
+        <caption className="sr-only">صف اقدام {title}</caption>
+        <thead className="bg-slate-100/95 text-foreground dark:bg-slate-900/95">
+          <tr>
+            <th className="px-3 py-3 text-start" scope="col">
+              فرصت / موضوع
+            </th>
+            <th className="px-3 py-3 text-start" scope="col">
+              اولویت
+            </th>
+            <th className="px-3 py-3 text-start" scope="col">
+              مهلت
+            </th>
+            <th className="px-3 py-3 text-start" scope="col">
+              مالک
+            </th>
+            <th className="px-3 py-3 text-start" scope="col">
+              ریسک
+            </th>
+            <th className="px-3 py-3 text-start" scope="col">
+              اقدام بعدی
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row) => (
+            <tr
+              className="border-t border-border/70 transition-colors hover:bg-blue-50/60 dark:hover:bg-blue-950/20"
+              key={`${row.label}-${row.index}`}
+            >
+              <th className="px-3 py-3 text-start" scope="row">
+                <span className="block font-bold text-foreground">
+                  {row.label}
+                </span>
+                <span className="mt-1 block text-[11px] font-semibold tabular-nums text-muted-foreground">
+                  {formatDashboardNumber(row.value)}
+                </span>
+              </th>
+              <td className="px-3 py-3">
+                <span
+                  className={cn(
+                    'inline-flex min-w-12 justify-center rounded-full px-2 py-1 font-bold',
+                    row.tone,
+                  )}
+                >
+                  {row.priority}
+                </span>
+              </td>
+              <td className="px-3 py-3 text-muted-foreground">—</td>
+              <td className="px-3 py-3 text-muted-foreground">—</td>
+              <td className="px-3 py-3">
+                <span className="flex min-w-24 items-center gap-2">
+                  <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
+                    <span
+                      aria-hidden="true"
+                      className={cn(
+                        'block h-full rounded-full',
+                        row.priority === 'بالا'
+                          ? 'bg-rose-500'
+                          : row.priority === 'متوسط'
+                            ? 'bg-amber-500'
+                            : 'bg-emerald-500',
+                      )}
+                      style={{ width: `${Math.max(8, row.ratio * 100)}%` }}
+                    />
+                  </span>
+                  <span className="text-[10px] font-bold text-muted-foreground">
+                    {`${Math.round(row.ratio * 100)}%`}
+                  </span>
+                </span>
+              </td>
+              <td className="px-3 py-3">
+                <span className="inline-flex items-center gap-1 rounded-md bg-primary px-2.5 py-1.5 font-bold text-primary-foreground">
+                  بررسی مورد
+                  <ArrowLeft aria-hidden="true" className="size-3.5" />
+                </span>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }
 
@@ -1846,18 +2145,31 @@ function OperationalDataTable({
   title: string;
   values: readonly number[];
 }) {
+  if (kind === 'queue') {
+    return <ActionQueue labels={labels} title={title} values={values} />;
+  }
   const maximum = Math.max(...values, 1);
   const total = values.reduce((sum, value) => sum + value, 0);
   return (
     <div className="max-h-80 overflow-auto rounded-xl border border-border/80 bg-surface shadow-inner shadow-slate-100/50 dark:shadow-none">
       <table className="w-full min-w-[34rem] text-xs">
-        <caption className="sr-only">{visualLabels[kind]} {title}</caption>
+        <caption className="sr-only">
+          {visualLabels[kind]} {title}
+        </caption>
         <thead className="bg-slate-100/95 text-foreground dark:bg-slate-900/95">
           <tr>
-            <th className="w-10 px-3 py-2.5 text-center" scope="col">#</th>
-            <th className="px-3 py-2.5 text-start" scope="col">عنوان</th>
-            <th className="px-3 py-2.5 text-end" scope="col">مقدار</th>
-            <th className="w-40 px-3 py-2.5 text-start" scope="col">سهم مقایسه‌ای</th>
+            <th className="w-10 px-3 py-2.5 text-center" scope="col">
+              #
+            </th>
+            <th className="px-3 py-2.5 text-start" scope="col">
+              عنوان
+            </th>
+            <th className="px-3 py-2.5 text-end" scope="col">
+              مقدار
+            </th>
+            <th className="w-40 px-3 py-2.5 text-start" scope="col">
+              سهم مقایسه‌ای
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -1872,7 +2184,7 @@ function OperationalDataTable({
                   aria-hidden="true"
                   className={cn(
                     'mx-auto mt-1 block size-1.5 rounded-full',
-                    kind === 'queue' ? 'bg-amber-500' : 'bg-primary',
+                    'bg-primary',
                   )}
                 />
               </td>
@@ -1888,9 +2200,7 @@ function OperationalDataTable({
                     aria-hidden="true"
                     className={cn(
                       'block h-full rounded-full',
-                      kind === 'queue'
-                        ? 'bg-gradient-to-l from-amber-400 to-orange-500'
-                        : 'bg-gradient-to-l from-blue-500 to-indigo-700',
+                      'bg-gradient-to-l from-blue-500 to-indigo-700',
                     )}
                     style={{
                       width: `${Math.max(3, ((values[index] ?? 0) / maximum) * 100)}%`,
@@ -1904,8 +2214,12 @@ function OperationalDataTable({
         <tfoot className="border-t border-border bg-slate-50/95 font-black dark:bg-slate-950/95">
           <tr>
             <td className="px-3 py-2.5" />
-            <th className="px-3 py-2.5 text-start" scope="row">جمع نمایش‌داده‌شده</th>
-            <td className="px-3 py-2.5 text-end tabular-nums">{formatDashboardNumber(total)}</td>
+            <th className="px-3 py-2.5 text-start" scope="row">
+              جمع نمایش‌داده‌شده
+            </th>
+            <td className="px-3 py-2.5 text-end tabular-nums">
+              {formatDashboardNumber(total)}
+            </td>
             <td className="px-3 py-2.5" />
           </tr>
         </tfoot>
@@ -1945,7 +2259,10 @@ function EmployeePerformanceBars({
         {values.slice(0, 6).map((value, index) => {
           const label = labels[index] ?? `کارشناس ${index + 1}`;
           return (
-            <div className="grid grid-cols-[2rem_minmax(0,1fr)_auto] items-center gap-2.5" key={`${label}-${index}`}>
+            <div
+              className="grid grid-cols-[2rem_minmax(0,1fr)_auto] items-center gap-2.5"
+              key={`${label}-${index}`}
+            >
               <span
                 aria-hidden="true"
                 className="grid size-8 place-items-center rounded-full bg-gradient-to-br from-cyan-100 to-blue-100 text-[10px] font-black text-blue-800 ring-1 ring-blue-200 dark:from-cyan-950 dark:to-blue-950 dark:text-blue-100 dark:ring-blue-800"
@@ -1953,14 +2270,19 @@ function EmployeePerformanceBars({
                 {label.trim().slice(0, 2)}
               </span>
               <span className="min-w-0">
-                <span className="block truncate text-xs font-bold text-foreground" title={label}>
+                <span
+                  className="block truncate text-xs font-bold text-foreground"
+                  title={label}
+                >
                   {label}
                 </span>
                 <span className="mt-1.5 block h-1.5 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
                   <span
                     aria-hidden="true"
                     className="block h-full rounded-full bg-gradient-to-l from-cyan-500 to-blue-600"
-                    style={{ width: `${Math.max(4, (value / maximum) * 100)}%` }}
+                    style={{
+                      width: `${Math.max(4, (value / maximum) * 100)}%`,
+                    }}
                   />
                 </span>
               </span>
@@ -1979,15 +2301,18 @@ function EmployeePerformanceBars({
 function DashboardChart({
   kind,
   labels,
+  range,
   title,
+  trendCalendarSystem,
   values,
 }: {
   kind: DashboardVisualKind;
   labels: readonly string[];
+  range: DashboardRange;
   title: string;
+  trendCalendarSystem: TrendCalendarSystem;
   values: readonly number[];
 }) {
-  const lineAreaId = useId().replace(/:/g, '');
   const resolvedKind = dashboardVisualKindForData(kind, values);
   const maximum = Math.max(...values, 1);
   const total = values.reduce((sum, value) => sum + value, 0);
@@ -1999,51 +2324,107 @@ function DashboardChart({
     .join('، ');
 
   if (resolvedKind === 'line') {
+    const chartLeft = 100;
+    const chartRight = 930;
+    const chartTop = 18;
+    const chartBottom = 140;
+    const pointFor = (value: number, index: number, totalPoints: number) => ({
+      x:
+        totalPoints > 1
+          ? chartLeft + (index * (chartRight - chartLeft)) / (totalPoints - 1)
+          : (chartLeft + chartRight) / 2,
+      y: chartBottom - (value / maximum) * (chartBottom - chartTop),
+    });
     const points = values.map((value, index) => ({
-      x: values.length > 1 ? 24 + (index * 552) / (values.length - 1) : 300,
-      y: 156 - (value / maximum) * 124,
+      ...pointFor(value, index, values.length),
+      value,
     }));
+    const visibleLabelStep =
+      labels.length > 12 ? Math.ceil(labels.length / 8) : 1;
+    const axisLabelIndexes = labels
+      .map((_, index) => index)
+      .filter(
+        (index) =>
+          index % visibleLabelStep === 0 || index === labels.length - 1,
+      );
+    const temporalGrain = trendTemporalGrain(range, labels);
     return (
       <figure
-        aria-label={`${visualLabels[resolvedKind]} ${title}. ${accessibleSummary}`}
-        className="rounded-xl border border-border/80 bg-muted/[0.18] p-3"
+        aria-label={`${visualLabels[resolvedKind]} ${title}. بازه انتخاب‌شده: ${accessibleSummary}`}
+        className="rounded-xl border border-border/80 bg-background px-2 py-3 sm:px-3"
         role="img"
       >
-        <svg aria-hidden="true" className="h-36 w-full" viewBox="0 0 600 180">
-          <defs>
-            <linearGradient id={lineAreaId} x1="0" x2="0" y1="0" y2="1">
-              <stop offset="0%" stopColor="currentColor" stopOpacity="0.24" />
-              <stop offset="100%" stopColor="currentColor" stopOpacity="0" />
-            </linearGradient>
-          </defs>
-          {[32, 73, 114, 156].map((y) => (
-            <line key={y} stroke="currentColor" className="text-border" x1="24" x2="576" y1={y} y2={y} />
-          ))}
-          <polygon
-            className="text-primary"
-            fill={`url(#${lineAreaId})`}
-            points={`24,156 ${points.map(({ x, y }) => `${x},${y}`).join(' ')} 576,156`}
-          />
+        <svg
+          aria-hidden="true"
+          className="h-52 w-full"
+          preserveAspectRatio="none"
+          viewBox="0 0 1000 180"
+        >
+          {[0, 1, 2, 3, 4].map((index) => {
+            const y = chartTop + (index * (chartBottom - chartTop)) / 4;
+            const value = maximum * (1 - index / 4);
+            return (
+              <g key={y}>
+                <line
+                  className="text-border"
+                  stroke="currentColor"
+                  strokeDasharray="2 5"
+                  strokeWidth="1"
+                  x1={chartLeft}
+                  x2={chartRight}
+                  y1={y}
+                  y2={y}
+                />
+                <text
+                  className="fill-muted-foreground"
+                  fontSize="10"
+                  textAnchor="end"
+                  x={chartLeft - 34}
+                  y={y + 3}
+                >
+                  {compactChartValue(value)}
+                </text>
+              </g>
+            );
+          })}
           <polyline
             fill="none"
             points={points.map(({ x, y }) => `${x},${y}`).join(' ')}
-            stroke="currentColor"
-            className="text-primary"
+            stroke="#172554"
             strokeLinecap="round"
             strokeLinejoin="round"
-            strokeWidth="4"
+            strokeWidth="3"
           />
-          {points.map(({ x, y }, index) => (
-            <circle key={`${x}-${y}`} cx={x} cy={y} fill="currentColor" className="text-primary" r="5">
-              <title>{`${labels[index]}: ${formatDashboardNumber(values[index] ?? 0)}`}</title>
+          {points.map(({ x, y, value }, index) => (
+            <circle key={`${x}-${y}`} cx={x} cy={y} fill="#172554" r="3.5">
+              <title>{`${trendTooltipTime(
+                labels[index] ?? '',
+                trendCalendarSystem,
+                temporalGrain,
+              )} — ${formatDashboardNumber(value)}`}</title>
             </circle>
           ))}
+          {axisLabelIndexes.map((index) => {
+            const point = points[index];
+            if (!point) return null;
+            return (
+              <text
+                className="fill-muted-foreground"
+                fontSize="10"
+                key={`${labels[index]}-${index}`}
+                textAnchor="middle"
+                x={point.x}
+                y="162"
+              >
+                {trendDateLabel(
+                  labels[index] ?? '',
+                  trendCalendarSystem,
+                  temporalGrain,
+                )}
+              </text>
+            );
+          })}
         </svg>
-        <div aria-hidden="true" className="flex justify-between gap-2 text-[10px] font-semibold text-muted-foreground">
-          {labels.map((label, index) => (
-            <span className="min-w-0 flex-1 truncate text-center" key={`${label}-${index}`} title={label}>{label}</span>
-          ))}
-        </div>
         <figcaption className="sr-only">{accessibleSummary}</figcaption>
       </figure>
     );
@@ -2070,15 +2451,37 @@ function DashboardChart({
         className="rounded-xl border border-border/80 bg-muted/[0.12] p-3"
         role="img"
       >
-        <div aria-hidden="true" className="mb-2 flex flex-wrap items-center gap-4 text-[10px] font-bold text-muted-foreground">
-          <span className="inline-flex items-center gap-1.5"><i className="size-2.5 rounded-sm bg-blue-700" />مقدار</span>
-          <span className="inline-flex items-center gap-1.5"><i className="h-0.5 w-4 bg-amber-500" />میانگین روند</span>
+        <div
+          aria-hidden="true"
+          className="mb-2 flex flex-wrap items-center gap-4 text-[10px] font-bold text-muted-foreground"
+        >
+          <span className="inline-flex items-center gap-1.5">
+            <i className="size-2.5 rounded-sm bg-blue-700" />
+            مقدار
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <i className="h-0.5 w-4 bg-amber-500" />
+            میانگین روند
+          </span>
         </div>
         <svg aria-hidden="true" className="h-48 w-full" viewBox="0 0 600 205">
           {[36, 75, 114, 154].map((y, index) => (
             <g key={y}>
-              <line className="text-border" stroke="currentColor" strokeDasharray="4 5" x1="42" x2="582" y1={y} y2={y} />
-              <text className="fill-muted-foreground text-[9px]" x="36" y={y + 3} textAnchor="end">
+              <line
+                className="text-border"
+                stroke="currentColor"
+                strokeDasharray="4 5"
+                x1="42"
+                x2="582"
+                y1={y}
+                y2={y}
+              />
+              <text
+                className="fill-muted-foreground text-[9px]"
+                x="36"
+                y={y + 3}
+                textAnchor="end"
+              >
                 {compactChartValue(comboMaximum * (1 - index / 3))}
               </text>
             </g>
@@ -2089,10 +2492,22 @@ function DashboardChart({
             const x = 48 + slotWidth * index + (slotWidth - width) / 2;
             return (
               <g key={`${visibleLabels[index]}-${index}`}>
-                <rect fill={index === 0 ? '#1e3a8a' : '#93a4c7'} height={height} rx="4" width={width} x={x} y={154 - height}>
+                <rect
+                  fill={index === 0 ? '#1e3a8a' : '#93a4c7'}
+                  height={height}
+                  rx="4"
+                  width={width}
+                  x={x}
+                  y={154 - height}
+                >
                   <title>{`${visibleLabels[index]}: ${formatDashboardNumber(value)}`}</title>
                 </rect>
-                <text className="fill-muted-foreground text-[9px]" textAnchor="middle" x={x + width / 2} y="176">
+                <text
+                  className="fill-muted-foreground text-[9px]"
+                  textAnchor="middle"
+                  x={x + width / 2}
+                  y="176"
+                >
                   {(visibleLabels[index] ?? '').slice(0, 10)}
                 </text>
               </g>
@@ -2107,7 +2522,15 @@ function DashboardChart({
             strokeWidth="3"
           />
           {linePoints.map(({ x, y }, index) => (
-            <circle cx={x} cy={y} fill="#fff" key={`${x}-${y}`} r="4" stroke="#d97706" strokeWidth="2">
+            <circle
+              cx={x}
+              cy={y}
+              fill="#fff"
+              key={`${x}-${y}`}
+              r="4"
+              stroke="#d97706"
+              strokeWidth="2"
+            >
               <title>{`میانگین روند: ${formatDashboardNumber(rollingAverage[index] ?? 0, { maximumFractionDigits: 1 })}`}</title>
             </circle>
           ))}
@@ -2129,19 +2552,22 @@ function DashboardChart({
     );
     const segments = values.map((value, index) => {
       const start =
-        (values.slice(0, index).reduce((sum, item) => sum + item, 0) /
-          total) *
+        (values.slice(0, index).reduce((sum, item) => sum + item, 0) / total) *
         100;
       const end = start + (value / total) * 100;
-      return { start, end, color: colorByIndex.get(index) ?? comparisonRankColor(index, values.length) };
+      return {
+        start,
+        end,
+        color:
+          colorByIndex.get(index) ?? comparisonRankColor(index, values.length),
+      };
     });
     const donutCenter = 220;
     const donutRadius = 110;
     const donutCenterY = 160;
     const externalLabels = values.map((value, index) => {
       const start =
-        (values.slice(0, index).reduce((sum, item) => sum + item, 0) /
-          total) *
+        (values.slice(0, index).reduce((sum, item) => sum + item, 0) / total) *
         360;
       const end = start + (value / total) * 360;
       const radians = (((start + end) / 2 - 90) * Math.PI) / 180;
@@ -2176,8 +2602,15 @@ function DashboardChart({
         className="rounded-xl border border-border/80 bg-muted/[0.12] p-3 sm:p-4"
         role="img"
       >
-        <div aria-hidden="true" className="relative mx-auto h-64 w-full max-w-[26rem] sm:h-72">
-          <svg className="absolute inset-0 size-full" viewBox="0 0 440 320" direction="ltr">
+        <div
+          aria-hidden="true"
+          className="relative mx-auto h-64 w-full max-w-[26rem] sm:h-72"
+        >
+          <svg
+            className="absolute inset-0 size-full"
+            viewBox="0 0 440 320"
+            direction="ltr"
+          >
             {segments.map((segment, index) => (
               <circle
                 key={index}
@@ -2193,14 +2626,31 @@ function DashboardChart({
                 transform={`rotate(-90 ${donutCenter} ${donutCenterY})`}
               />
             ))}
-            <text x={donutCenter} y={155} textAnchor="middle" className="fill-foreground font-semibold" fontSize="26">
+            <text
+              x={donutCenter}
+              y={155}
+              textAnchor="middle"
+              className="fill-foreground font-semibold"
+              fontSize="26"
+            >
               {compactChartValue(total)}
             </text>
-            <text x={donutCenter} y={181} textAnchor="middle" className="fill-foreground" fontSize="14">مجموع</text>
+            <text
+              x={donutCenter}
+              y={181}
+              textAnchor="middle"
+              className="fill-foreground"
+              fontSize="14"
+            >
+              مجموع
+            </text>
             {externalLabels.map((item, index) => {
-              const percent = formatDashboardNumber((item.value / total) * 100, {
-                maximumFractionDigits: 1,
-              });
+              const percent = formatDashboardNumber(
+                (item.value / total) * 100,
+                {
+                  maximumFractionDigits: 1,
+                },
+              );
               const textY = item.labelY - 9;
               return (
                 <g key={`${item.label}-${index}`}>
@@ -2242,26 +2692,96 @@ function DashboardChart({
   }
 
   if (resolvedKind === 'funnel') {
+    const stages = values.slice(0, 5).map((value, index) => ({
+      conversion:
+        index < values.length - 1 && value > 0
+          ? Math.round(((values[index + 1] ?? 0) / value) * 100)
+          : null,
+      label: labels[index] ?? `مرحله ${index + 1}`,
+      value,
+    }));
+    const drops = stages
+      .slice(0, -1)
+      .map((stage, index) => ({
+        drop: Math.max(0, stage.value - (stages[index + 1]?.value ?? 0)),
+        index,
+      }))
+      .sort((left, right) => right.drop - left.drop);
+    const largestDrop = drops[0];
+    const funnelColors = [
+      'from-blue-100 to-blue-50 text-slate-900 dark:from-blue-950/60 dark:to-blue-950/20 dark:text-blue-100',
+      'from-blue-500 to-blue-600 text-white',
+      'from-blue-600 to-blue-700 text-white',
+      'from-blue-700 to-blue-800 text-white',
+      'from-slate-800 to-slate-950 text-white',
+    ];
     return (
-      <figure aria-label={`قیف ${title}. ${accessibleSummary}`} className="space-y-2 rounded-xl border border-border/80 bg-muted/[0.18] p-4" role="img">
-        {values.map((value, index) => (
-          <div
-            aria-hidden="true"
-            className="mx-auto flex min-h-9 items-center justify-between rounded-lg bg-primary px-3 text-xs font-bold text-primary-foreground"
-            key={`${labels[index]}-${index}`}
-            style={{ width: `${Math.max(36, (value / maximum) * 100)}%` }}
-          >
-            <span className="truncate">{labels[index]}</span>
-            <span>{formatDashboardNumber(value)}</span>
-          </div>
-        ))}
+      <figure
+        aria-label={`قیف ${title}. ${accessibleSummary}`}
+        className="space-y-4 rounded-xl border border-border/80 bg-surface p-4"
+        role="img"
+      >
+        <div
+          className="flex flex-col gap-2 lg:flex-row lg:items-center"
+          dir="rtl"
+        >
+          {stages.map((stage, index) => (
+            <div className="contents" key={`${stage.label}-${index}`}>
+              <div className="min-w-0 flex-1">
+                <div
+                  className={cn(
+                    'grid min-h-28 place-items-center px-3 text-center shadow-sm',
+                    'bg-gradient-to-bl',
+                    funnelColors[index] ?? funnelColors.at(-1),
+                  )}
+                  style={{
+                    clipPath: 'polygon(7% 0, 100% 7%, 93% 100%, 0 93%)',
+                  }}
+                >
+                  <span className="min-w-0">
+                    <span className="block truncate text-sm font-black">
+                      {stage.label}
+                    </span>
+                    <strong className="mt-1 block text-xl tabular-nums">
+                      {formatDashboardNumber(stage.value)}
+                    </strong>
+                  </span>
+                </div>
+              </div>
+              {stage.conversion !== null ? (
+                <div className="flex shrink-0 items-center justify-center gap-1.5 px-1 text-primary lg:flex-col">
+                  <ArrowLeft aria-hidden="true" className="size-4" />
+                  <strong className="text-sm tabular-nums">{`${stage.conversion}%`}</strong>
+                  <span className="text-[10px] text-muted-foreground">
+                    نرخ تبدیل
+                  </span>
+                </div>
+              ) : null}
+            </div>
+          ))}
+        </div>
+        <div className="flex flex-col gap-3 rounded-xl border border-blue-100 bg-blue-50/75 p-3 sm:flex-row sm:items-center sm:justify-between dark:border-blue-900/70 dark:bg-blue-950/30">
+          <span className="flex items-center gap-2 text-sm font-bold text-primary">
+            <Lightbulb aria-hidden="true" className="size-5" />
+            بینش
+          </span>
+          <p className="text-sm text-muted-foreground">
+            {largestDrop
+              ? `بیشترین افت بین «${stages[largestDrop.index]?.label}» و «${stages[largestDrop.index + 1]?.label}» رخ داده است (${formatDashboardNumber(largestDrop.drop)}).`
+              : 'برای محاسبهٔ افت مراحل، دادهٔ کافی در دسترس نیست.'}
+          </p>
+        </div>
         <figcaption className="sr-only">{accessibleSummary}</figcaption>
       </figure>
     );
   }
 
   const rankedRows = values
-    .map((value, index) => ({ label: labels[index] ?? `دسته ${index + 1}`, value, index }))
+    .map((value, index) => ({
+      label: labels[index] ?? `دسته ${index + 1}`,
+      value,
+      index,
+    }))
     .sort((left, right) => right.value - left.value)
     .slice(0, 12);
   return (
@@ -2272,8 +2792,14 @@ function DashboardChart({
     >
       <div className="space-y-2.5">
         {rankedRows.map(({ label, value, index }, rank) => (
-          <div aria-hidden="true" className="grid grid-cols-[minmax(6rem,0.8fr)_minmax(8rem,2fr)_auto] items-center gap-2.5" key={`${label}-${index}`}>
-            <span className="truncate text-[11px] font-bold" title={label}>{label}</span>
+          <div
+            aria-hidden="true"
+            className="grid grid-cols-[minmax(6rem,0.8fr)_minmax(8rem,2fr)_auto] items-center gap-2.5"
+            key={`${label}-${index}`}
+          >
+            <span className="truncate text-[11px] font-bold" title={label}>
+              {label}
+            </span>
             <span className="relative block h-5 overflow-hidden rounded-md bg-slate-200/80 dark:bg-slate-700/80">
               <span
                 className="absolute inset-y-0 start-0 rounded-md"
@@ -2283,7 +2809,9 @@ function DashboardChart({
                 }}
               />
             </span>
-            <strong className="min-w-14 text-end text-[11px] tabular-nums text-foreground">{compactChartValue(value)}</strong>
+            <strong className="min-w-14 text-end text-[11px] tabular-nums text-foreground">
+              {compactChartValue(value)}
+            </strong>
           </div>
         ))}
       </div>
@@ -2296,13 +2824,226 @@ export function dashboardReportCodeFromDrilldown(
   drilldown: string,
 ): string | undefined {
   try {
-    const reportCode = new URL(drilldown, 'https://dashboard.local')
-      .searchParams.get('report')
+    const reportCode = new URL(
+      drilldown,
+      'https://dashboard.local',
+    ).searchParams
+      .get('report')
       ?.trim();
     return reportCode || undefined;
   } catch {
     return undefined;
   }
+}
+
+function VisualDetailsPanel({
+  data,
+  decision,
+  description,
+  kind,
+  onClose,
+  onOpenReportConfiguration,
+  permission,
+  range,
+  reportCode,
+  source,
+  title,
+  trendCalendarSystem,
+  visualId,
+}: {
+  data?: DashboardVisualSnapshot | undefined;
+  decision?: string | undefined;
+  description: string;
+  kind: DashboardVisualKind;
+  onClose(): void;
+  onOpenReportConfiguration(reportCode: string): void;
+  permission: string;
+  range: DashboardRange;
+  reportCode?: string | undefined;
+  source: DashboardVisualDefinition['source'];
+  title: string;
+  trendCalendarSystem: TrendCalendarSystem;
+  visualId: string;
+}) {
+  const rangeLabel =
+    rangeOptions.find(([value]) => value === range)?.[1] ?? 'بازه انتخابی';
+  const temporalGrain =
+    kind === 'line' && data
+      ? trendTemporalGrain(range, data.labels)
+      : undefined;
+
+  return (
+    <Drawer
+      open
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
+      <DrawerContent
+        aria-describedby={`visual-definition-description-${visualId}`}
+        className="w-[min(94vw,38rem)] p-0"
+        dir="rtl"
+        id={`dashboard-visual-definition-panel-${visualId}`}
+        style={{ left: 'auto', right: 0 }}
+      >
+        <div className="flex min-h-full flex-col">
+          <header className="relative border-b border-border bg-surface px-12 py-5 text-center">
+            <DialogTitle className="text-2xl font-black tracking-tight sm:text-3xl">
+              {title}
+            </DialogTitle>
+            <DialogDescription
+              className="mt-2 break-words text-xs leading-6"
+              dir="ltr"
+              id={`visual-definition-description-${visualId}`}
+            >
+              {visualId}
+            </DialogDescription>
+            <DrawerClose asChild>
+              <Button
+                aria-label="بستن پنل جزئیات نمودار"
+                className="absolute end-4 top-4 size-9 p-0"
+                size="icon"
+                variant="ghost"
+              >
+                <X aria-hidden="true" className="size-5" />
+              </Button>
+            </DrawerClose>
+          </header>
+
+          <div className="flex-1 space-y-4 overflow-y-auto p-5 text-sm">
+            <section aria-labelledby={`visual-purpose-${visualId}`}>
+              <h3
+                className="text-sm font-black text-foreground"
+                id={`visual-purpose-${visualId}`}
+              >
+                تعریف و هدف کسب‌وکار
+              </h3>
+              <p className="mt-2 leading-7 text-muted-foreground">
+                {description}
+              </p>
+              {decision ? (
+                <p className="mt-3 leading-7 text-muted-foreground">
+                  این نمودار برای پاسخ به این تصمیم استفاده می‌شود:{' '}
+                  <span className="font-semibold text-foreground">
+                    {decision}
+                  </span>
+                </p>
+              ) : null}
+            </section>
+
+            <section aria-labelledby={`visual-current-output-${visualId}`}>
+              <h3
+                className="text-sm font-black text-foreground"
+                id={`visual-current-output-${visualId}`}
+              >
+                خروجی در بازهٔ انتخابی
+              </h3>
+              <div className="mt-2 flex flex-wrap gap-2">
+                <Badge>{rangeLabel}</Badge>
+                <Badge>{visualLabels[kind]}</Badge>
+                {data?.currencyCode ? (
+                  <Badge dir="ltr">
+                    {currencySymbols[data.currencyCode] ?? data.currencyCode}{' '}
+                    {data.currencyCode}
+                  </Badge>
+                ) : null}
+                <Badge>{`${data?.values.length ?? 0} دسته نمایش‌داده‌شده`}</Badge>
+              </div>
+            </section>
+
+            <section
+              aria-labelledby={`visual-display-rule-${visualId}`}
+              className="rounded-2xl border border-primary/20 bg-primary/[0.035] p-4"
+            >
+              <h3
+                className="text-sm font-black text-foreground"
+                id={`visual-display-rule-${visualId}`}
+              >
+                قاعدهٔ نمایش
+              </h3>
+              <p className="mt-2 leading-7">
+                خروجی از Projection تأییدشده و با فیلترهای فعال نمایش داده
+                می‌شود. نوع نمایش: {visualLabels[kind]}.
+                {temporalGrain
+                  ? ` تفکیک زمانی: ${trendTemporalLabels[temporalGrain]} (${trendCalendarSystem === 'persian' ? 'تقویم شمسی' : 'تقویم میلادی'}).`
+                  : ''}
+              </p>
+            </section>
+
+            <section aria-labelledby={`visual-sources-${visualId}`}>
+              <h3
+                className="text-sm font-black text-foreground"
+                id={`visual-sources-${visualId}`}
+              >
+                فیچرهای استفاده‌شده در نمودار
+              </h3>
+              <ul className="mt-3 space-y-3 text-sm leading-7 text-muted-foreground">
+                {source.map((sourceId) => {
+                  const feature = calculationFeatureFor(sourceId);
+                  return (
+                    <li className="flex gap-2" key={sourceId}>
+                      <span
+                        aria-hidden="true"
+                        className="mt-3 size-1.5 shrink-0 rounded-full bg-primary"
+                      />
+                      <span>
+                        <bdi
+                          className="font-mono text-xs font-bold text-foreground"
+                          dir="ltr"
+                        >
+                          {feature.label}
+                        </bdi>
+                        <span className="mx-1">:</span>
+                        {feature.description}
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+
+            <section
+              aria-labelledby={`visual-limitations-${visualId}`}
+              className="rounded-2xl bg-amber-50 p-4 dark:bg-amber-950/30"
+            >
+              <h3
+                className="text-sm font-black text-amber-900 dark:text-amber-100"
+                id={`visual-limitations-${visualId}`}
+              >
+                محدودیت‌ها و دسترسی
+              </h3>
+              <p className="mt-2 leading-7 text-amber-900/80 dark:text-amber-100/80">
+                فقط دادهٔ مجازِ Projection در محدودهٔ انتخاب‌شده نمایش داده
+                می‌شود. مجوز موردنیاز:{' '}
+                <bdi className="font-mono text-xs font-bold" dir="ltr">
+                  {permission}
+                </bdi>
+                .
+              </p>
+            </section>
+          </div>
+
+          <footer className="border-t border-border bg-surface p-4">
+            {reportCode ? (
+              <Button
+                className="w-full !text-white hover:!text-white focus-visible:!text-white [&_*]:!text-white [&_svg]:!text-white"
+                onClick={() => onOpenReportConfiguration(reportCode)}
+                size="sm"
+                type="button"
+              >
+                رفتن به فرم پیکربندی گزارش مرتبط
+                <ArrowUpRight aria-hidden="true" className="size-3.5" />
+              </Button>
+            ) : (
+              <Button className="w-full" disabled size="sm" variant="outline">
+                گزارش مرتبط در کاتالوگ موجود نیست
+              </Button>
+            )}
+          </footer>
+        </div>
+      </DrawerContent>
+    </Drawer>
+  );
 }
 
 function ProjectionSlot({
@@ -2313,6 +3054,11 @@ function ProjectionSlot({
   decision,
   drilldown,
   onOpenReportConfiguration,
+  onTrendCalendarSystemChange,
+  permission,
+  range,
+  source,
+  trendCalendarSystem,
   wide = false,
   data,
 }: {
@@ -2323,19 +3069,31 @@ function ProjectionSlot({
   decision?: string | undefined;
   drilldown: string;
   onOpenReportConfiguration(reportCode: string): void;
+  onTrendCalendarSystemChange(value: TrendCalendarSystem): void;
+  permission: string;
+  range: DashboardRange;
+  source: DashboardVisualDefinition['source'];
+  trendCalendarSystem: TrendCalendarSystem;
   wide?: boolean;
-  data?:
-    | {
-        labels: readonly string[];
-        values: readonly number[];
-        currencyCode?: string;
-        comparison?: DashboardComparisonSnapshot;
-        trend?: DashboardTrendSnapshot;
-      }
-    | undefined;
+  data?: DashboardVisualSnapshot | undefined;
 }) {
-  const resolvedKind = data?.values.length
-    ? dashboardVisualKindForData(kind, data.values)
+  const [selectedCurrencyCode, setSelectedCurrencyCode] = useState<
+    string | undefined
+  >();
+  const [isVisualDetailsOpen, setIsVisualDetailsOpen] = useState(false);
+  const currencySeries = data?.currencySeries ?? [];
+  const activeCurrencyCode = currencySeries.some(
+    (series) => series.currencyCode === selectedCurrencyCode,
+  )
+    ? selectedCurrencyCode
+    : (data?.currencyCode ?? currencySeries[0]?.currencyCode);
+  const displayData = activeCurrencyCode
+    ? (currencySeries.find(
+        (series) => series.currencyCode === activeCurrencyCode,
+      ) ?? data)
+    : data;
+  const resolvedKind = displayData?.values.length
+    ? dashboardVisualKindForData(kind, displayData.values)
     : kind;
   const isEmployeeComparison =
     visualId.startsWith('employee-') &&
@@ -2348,95 +3106,231 @@ function ProjectionSlot({
   const report = reportCode
     ? reportCatalog.find((candidate) => candidate.code === reportCode)
     : undefined;
+  const canOpenVisualDetails =
+    Boolean(displayData?.values.length) &&
+    resolvedKind !== 'table' &&
+    resolvedKind !== 'queue';
   return (
-    <Card
-      data-dashboard-visual
-      data-dashboard-employee-visual={isEmployeeComparison || undefined}
-      className={cn(
-        'flex h-full min-w-0 flex-col overflow-hidden p-0 shadow-sm',
-        wide && 'xl:col-span-2',
-      )}
-    >
-      <div className="flex items-start justify-between gap-3 border-b border-border/70 bg-gradient-to-l from-blue-50/70 via-surface to-surface p-3.5 dark:from-blue-950/20">
-        <div className="flex min-w-0 items-start gap-3">
-          <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-blue-50 text-blue-700 ring-1 ring-blue-100 dark:bg-blue-950/50 dark:text-blue-300 dark:ring-blue-900">
-            <Icon aria-hidden="true" className="size-5" />
-          </span>
-          <div className="min-w-0">
-            <h3 className="font-black text-foreground">{title}</h3>
-            <p className="mt-1 text-xs leading-6 text-muted-foreground">
-              {description}
-            </p>
+    <>
+      <Card
+        data-dashboard-visual
+        data-dashboard-employee-visual={isEmployeeComparison || undefined}
+        className={cn(
+          'flex h-full min-w-0 flex-col overflow-hidden p-0 shadow-sm',
+          wide && 'xl:col-span-2',
+        )}
+      >
+        <div className="flex items-start justify-between gap-3 border-b border-border/70 bg-gradient-to-l from-blue-50/70 via-surface to-surface p-3.5 dark:from-blue-950/20">
+          <div className="flex min-w-0 items-start gap-3">
+            <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-blue-50 text-blue-700 ring-1 ring-blue-100 dark:bg-blue-950/50 dark:text-blue-300 dark:ring-blue-900">
+              <Icon aria-hidden="true" className="size-5" />
+            </span>
+            <div className="min-w-0">
+              <h3 className="font-black text-foreground">{title}</h3>
+              <p className="mt-1 text-xs leading-6 text-muted-foreground">
+                {description}
+              </p>
+            </div>
+          </div>
+          <div className="flex shrink-0 flex-col items-end gap-1.5">
+            <Badge className="bg-blue-50 text-[10px] text-blue-700 dark:bg-blue-950/50 dark:text-blue-200">
+              {visualLabel}
+            </Badge>
+            <div
+              className={cn(
+                'flex items-center gap-1.5',
+                resolvedKind === 'line'
+                  ? 'min-w-[15.875rem] flex-row flex-nowrap justify-end'
+                  : 'max-w-full flex-col items-end',
+              )}
+              data-dashboard-trend-controls={
+                resolvedKind === 'line' || undefined
+              }
+              dir={resolvedKind === 'line' ? 'rtl' : undefined}
+            >
+              {currencySeries.length ? (
+                <Select
+                  value={
+                    activeCurrencyCode ?? currencySeries[0]?.currencyCode ?? ''
+                  }
+                  onValueChange={setSelectedCurrencyCode}
+                >
+                  <SelectTrigger
+                    aria-label={`واحد پول نمودار ${title}`}
+                    className="h-7 min-w-28 border-border/80 bg-background px-2 text-[10px] font-bold"
+                    data-dashboard-visual-currency-selector
+                  >
+                    <CircleDollarSign aria-hidden="true" className="size-3.5" />
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {currencySeries.map((series) => {
+                      const symbol =
+                        currencySymbols[series.currencyCode] ??
+                        series.currencyCode;
+                      return (
+                        <SelectItem
+                          className="data-[highlighted]:bg-primary data-[highlighted]:text-primary-foreground"
+                          key={series.currencyCode}
+                          value={series.currencyCode}
+                        >
+                          <bdi dir="ltr">{`${symbol} ${series.currencyCode}`}</bdi>
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
+              ) : null}
+              {resolvedKind === 'line' ? (
+                <Select
+                  value={trendCalendarSystem}
+                  onValueChange={(value) =>
+                    onTrendCalendarSystemChange(value as TrendCalendarSystem)
+                  }
+                >
+                  <SelectTrigger
+                    aria-label="تقویم برچسب‌های محور زمان"
+                    className="h-8 w-[9.5rem] shrink-0 whitespace-nowrap border-border/80 bg-background px-2.5 text-[10px] font-bold"
+                  >
+                    <CalendarDays
+                      aria-hidden="true"
+                      className="size-4 shrink-0 text-primary"
+                      strokeWidth={2.5}
+                    />
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {trendCalendarOptions.map(([value, label]) => (
+                      <SelectItem
+                        className="data-[highlighted]:bg-primary data-[highlighted]:text-primary-foreground"
+                        key={value}
+                        value={value}
+                      >
+                        {label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : null}
+            </div>
           </div>
         </div>
-        <div className="flex shrink-0 flex-col items-end gap-1.5">
-          <Badge className="bg-blue-50 text-[10px] text-blue-700 dark:bg-blue-950/50 dark:text-blue-200">
-            {visualLabel}
-          </Badge>
-        </div>
-      </div>
-      <div className="relative flex-1 p-3.5">
-        {data?.currencyCode ? (
-          <span className="mb-2 block text-[11px] font-semibold text-muted-foreground">
-            مبلغ فروش · <bdi dir="ltr">{data.currencyCode}</bdi>
-          </span>
-        ) : null}
-        {data?.values.length ? (
-          isEmployeeComparison ? (
-            <EmployeePerformanceBars
-              labels={data.labels}
-              title={title}
-              values={data.values}
-            />
-          ) : resolvedKind === 'table' || resolvedKind === 'queue' ? (
-            <OperationalDataTable
-              kind={resolvedKind}
-              labels={data.labels}
-              title={title}
-              values={data.values}
-            />
+        <div className="relative flex-1 p-3.5">
+          {displayData?.currencyCode ? (
+            <span className="mb-2 block text-[11px] font-semibold text-muted-foreground">
+              مبلغ فروش · <bdi dir="ltr">{displayData.currencyCode}</bdi>
+            </span>
+          ) : null}
+          {displayData?.values.length ? (
+            isEmployeeComparison ? (
+              <EmployeePerformanceBars
+                labels={displayData.labels}
+                title={title}
+                values={displayData.values}
+              />
+            ) : resolvedKind === 'table' || resolvedKind === 'queue' ? (
+              <OperationalDataTable
+                kind={resolvedKind}
+                labels={displayData.labels}
+                title={title}
+                values={displayData.values}
+              />
+            ) : (
+              <DashboardChart
+                kind={kind}
+                labels={displayData.labels}
+                range={range}
+                title={title}
+                trendCalendarSystem={trendCalendarSystem}
+                values={displayData.values}
+              />
+            )
           ) : (
-            <DashboardChart kind={kind} labels={data.labels} title={title} values={data.values} />
-          )
-        ) : (
-          <>
-            <EmptyVisualCanvas kind={kind} />
-            <p className="sr-only">دادهٔ تأییدشده برای نمایش موجود نیست</p>
-          </>
-        )}
-        {data?.values.length ? (
-          <>
-            {kind === 'donut' && resolvedKind !== 'donut' ? (
-              <p className="mt-2 text-[11px] text-muted-foreground">
-                به‌دلیل تعداد یا ماهیت دسته‌ها، سهم‌ها به‌صورت میله‌ای نمایش داده شده‌اند.
-              </p>
-            ) : null}
-            {resolvedKind === 'table' || resolvedKind === 'queue' ? null : (
-              <VisualDataSummary labels={data.labels} title={title} values={data.values} />
-            )}
-          </>
-        ) : null}
-      </div>
-      <div className="flex flex-wrap items-center gap-2 border-t border-border/80 bg-muted/20 px-4 py-3">
-        {decision ? (
-          <Badge className="bg-amber-100 text-[10px] text-amber-800 dark:bg-amber-950 dark:text-amber-200">
-            {decision}
-          </Badge>
-        ) : null}
-        <Button
-          className="ms-auto"
-          disabled={!report}
-          onClick={() => {
-            if (report) onOpenReportConfiguration(report.code);
-          }}
-          size="sm"
-          type="button"
-          variant="outline"
+            <>
+              <EmptyVisualCanvas kind={kind} />
+              <p className="sr-only">دادهٔ تأییدشده برای نمایش موجود نیست</p>
+            </>
+          )}
+          {displayData?.values.length ? (
+            <>
+              {kind === 'donut' && resolvedKind !== 'donut' ? (
+                <p className="mt-2 text-[11px] text-muted-foreground">
+                  به‌دلیل تعداد یا ماهیت دسته‌ها، سهم‌ها به‌صورت میله‌ای نمایش
+                  داده شده‌اند.
+                </p>
+              ) : null}
+              {resolvedKind === 'table' || resolvedKind === 'queue' ? null : (
+                <VisualDataSummary
+                  labels={displayData.labels}
+                  title={title}
+                  trend={
+                    resolvedKind === 'line'
+                      ? {
+                          calendarSystem: trendCalendarSystem,
+                          grain: trendTemporalGrain(range, displayData.labels),
+                        }
+                      : undefined
+                  }
+                  values={displayData.values}
+                />
+              )}
+            </>
+          ) : null}
+        </div>
+        <div
+          className="flex flex-wrap items-center gap-2 border-t border-border/80 bg-muted/20 px-4 py-3"
+          dir="rtl"
         >
-          {report ? 'بررسی گزارش مرتبط' : 'گزارش مرتبط در کاتالوگ موجود نیست'}
-        </Button>
-      </div>
-    </Card>
+          {canOpenVisualDetails ? (
+            <Button
+              aria-controls={`dashboard-visual-definition-panel-${visualId}`}
+              aria-expanded={isVisualDetailsOpen}
+              onClick={() => setIsVisualDetailsOpen(true)}
+              size="sm"
+              type="button"
+              variant="outline"
+            >
+              <Info aria-hidden="true" className="size-3.5" />
+              جزئیات نمودار
+            </Button>
+          ) : null}
+          {decision ? (
+            <Badge className="bg-amber-100 text-[10px] text-amber-800 dark:bg-amber-950 dark:text-amber-200">
+              {decision}
+            </Badge>
+          ) : null}
+          <Button
+            className="ms-auto"
+            disabled={!report}
+            onClick={() => {
+              if (report) onOpenReportConfiguration(report.code);
+            }}
+            size="sm"
+            type="button"
+            variant="outline"
+          >
+            {report ? 'بررسی گزارش مرتبط' : 'گزارش مرتبط در کاتالوگ موجود نیست'}
+          </Button>
+        </div>
+      </Card>
+      {isVisualDetailsOpen ? (
+        <VisualDetailsPanel
+          data={displayData}
+          decision={decision}
+          description={description}
+          kind={resolvedKind}
+          onClose={() => setIsVisualDetailsOpen(false)}
+          onOpenReportConfiguration={onOpenReportConfiguration}
+          permission={permission}
+          range={range}
+          reportCode={report?.code}
+          source={source}
+          title={title}
+          trendCalendarSystem={trendCalendarSystem}
+          visualId={visualId}
+        />
+      ) : null}
+    </>
   );
 }
 
@@ -2548,7 +3442,10 @@ function DashboardSidebar({
           </Button>
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-1 border-b border-border p-2" role="tablist">
+        <div
+          className="grid grid-cols-2 gap-1 border-b border-border p-2"
+          role="tablist"
+        >
           <button
             aria-selected={activePanel === 'workspace'}
             className={cn(
@@ -2581,232 +3478,241 @@ function DashboardSidebar({
       )}
 
       {activePanel === 'workspace' ? (
-      <nav aria-labelledby="dashboard-pages-title" className="space-y-1 p-2">
-        {dashboardNavigation.map((item) => {
-          const page = dashboardPageById.get(item.pageId);
-          if (!page) return null;
-          const Icon = navigationIcons[item.pageId] ?? LayoutDashboard;
-          const hasChildren = Boolean(item.children?.length);
-          const expanded = expandedGroups.has(item.pageId);
-          const branchActive =
-            activePageId === item.pageId ||
-            Boolean(
-              item.children?.some((child) => child.pageId === activePageId),
-            );
+        <nav aria-labelledby="dashboard-pages-title" className="space-y-1 p-2">
+          {dashboardNavigation.map((item) => {
+            const page = dashboardPageById.get(item.pageId);
+            if (!page) return null;
+            const Icon = navigationIcons[item.pageId] ?? LayoutDashboard;
+            const hasChildren = Boolean(item.children?.length);
+            const expanded = expandedGroups.has(item.pageId);
+            const branchActive =
+              activePageId === item.pageId ||
+              Boolean(
+                item.children?.some((child) => child.pageId === activePageId),
+              );
 
-          return (
-            <div key={item.pageId}>
-              <div className="flex items-center gap-1">
-                <button
-                  aria-current={
-                    activePageId === item.pageId ? 'page' : undefined
-                  }
-                  aria-label={collapsed ? page.title : undefined}
-                  className={cn(
-                    'flex min-h-11 min-w-0 flex-1 items-center rounded-xl text-start text-sm font-bold outline-none transition focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background',
-                    collapsed ? 'justify-center px-2' : 'gap-3 px-3',
-                    branchActive
-                      ? 'bg-primary text-primary-foreground shadow-sm'
-                      : 'text-foreground hover:bg-muted',
-                  )}
-                  onClick={() => onPageSelect(item.pageId)}
-                  title={collapsed ? page.title : undefined}
-                  type="button"
-                >
-                  <Icon aria-hidden="true" className="size-[18px] shrink-0" />
-                  {collapsed ? null : (
-                    <span className="min-w-0 flex-1">{page.title}</span>
-                  )}
-                </button>
-                {hasChildren && !collapsed ? (
+            return (
+              <div key={item.pageId}>
+                <div className="flex items-center gap-1">
                   <button
-                    aria-expanded={expanded}
-                    aria-label={`${expanded ? 'بستن' : 'بازکردن'} زیرصفحه‌های ${page.title}`}
-                    className="grid size-10 shrink-0 place-items-center rounded-xl text-muted-foreground outline-none transition hover:bg-muted focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-                    onClick={() => onGroupToggle(item.pageId)}
+                    aria-current={
+                      activePageId === item.pageId ? 'page' : undefined
+                    }
+                    aria-label={collapsed ? page.title : undefined}
+                    className={cn(
+                      'flex min-h-11 min-w-0 flex-1 items-center rounded-xl text-start text-sm font-bold outline-none transition focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+                      collapsed ? 'justify-center px-2' : 'gap-3 px-3',
+                      branchActive
+                        ? 'bg-primary text-primary-foreground shadow-sm'
+                        : 'text-foreground hover:bg-muted',
+                    )}
+                    onClick={() => onPageSelect(item.pageId)}
+                    title={collapsed ? page.title : undefined}
                     type="button"
                   >
-                    <ChevronDown
-                      aria-hidden="true"
-                      className={cn(
-                        'size-4 transition-transform',
-                        expanded && 'rotate-180',
-                      )}
-                    />
+                    <Icon aria-hidden="true" className="size-[18px] shrink-0" />
+                    {collapsed ? null : (
+                      <span className="min-w-0 flex-1">{page.title}</span>
+                    )}
                   </button>
+                  {hasChildren && !collapsed ? (
+                    <button
+                      aria-expanded={expanded}
+                      aria-label={`${expanded ? 'بستن' : 'بازکردن'} زیرصفحه‌های ${page.title}`}
+                      className="grid size-10 shrink-0 place-items-center rounded-xl text-muted-foreground outline-none transition hover:bg-muted focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                      onClick={() => onGroupToggle(item.pageId)}
+                      type="button"
+                    >
+                      <ChevronDown
+                        aria-hidden="true"
+                        className={cn(
+                          'size-4 transition-transform',
+                          expanded && 'rotate-180',
+                        )}
+                      />
+                    </button>
+                  ) : null}
+                </div>
+
+                {hasChildren && expanded && !collapsed ? (
+                  <div className="me-5 mt-1 space-y-1 border-e border-border pe-3">
+                    {item.children?.map((child) => {
+                      const childPage = dashboardPageById.get(child.pageId);
+                      if (!childPage) return null;
+                      const selected = child.pageId === activePageId;
+                      return (
+                        <button
+                          aria-current={selected ? 'page' : undefined}
+                          className={cn(
+                            'flex min-h-10 w-full items-center rounded-lg px-3 text-start text-xs font-bold outline-none transition focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+                            selected
+                              ? 'bg-primary/10 text-primary'
+                              : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+                          )}
+                          key={child.pageId}
+                          onClick={() => onPageSelect(child.pageId)}
+                          type="button"
+                        >
+                          {childPage.title}
+                        </button>
+                      );
+                    })}
+                  </div>
                 ) : null}
               </div>
-
-              {hasChildren && expanded && !collapsed ? (
-                <div className="me-5 mt-1 space-y-1 border-e border-border pe-3">
-                  {item.children?.map((child) => {
-                    const childPage = dashboardPageById.get(child.pageId);
-                    if (!childPage) return null;
-                    const selected = child.pageId === activePageId;
-                    return (
-                      <button
-                        aria-current={selected ? 'page' : undefined}
-                        className={cn(
-                          'flex min-h-10 w-full items-center rounded-lg px-3 text-start text-xs font-bold outline-none transition focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background',
-                          selected
-                            ? 'bg-primary/10 text-primary'
-                            : 'text-muted-foreground hover:bg-muted hover:text-foreground',
-                        )}
-                        key={child.pageId}
-                        onClick={() => onPageSelect(child.pageId)}
-                        type="button"
-                      >
-                        {childPage.title}
-                      </button>
-                    );
-                  })}
-                </div>
-              ) : null}
-            </div>
-          );
-        })}
-      </nav>
+            );
+          })}
+        </nav>
       ) : null}
 
       {activePanel === 'filters' ? (
-      <section
-        aria-label={collapsed ? activeFiltersTitle : undefined}
-        aria-labelledby={
-          collapsed ? undefined : 'dashboard-sidebar-filters-title'
-        }
-        className={cn(
-          'border-t border-border',
-          collapsed ? 'space-y-2 p-2' : 'p-3',
-        )}
-      >
-        {collapsed ? (
-          <>
-            <Button
-              aria-label={`پاک‌کردن ${activeFiltersTitle}`}
-              className="size-10 w-full p-0"
-              onClick={onFiltersReset}
-              size="icon"
-              title="پاک‌کردن فیلترها"
-              variant="ghost"
-            >
-              <RotateCcw aria-hidden="true" className="size-4" />
-            </Button>
-            <Button
-              aria-label="به‌روزرسانی دستی داشبورد"
-              className="size-10 w-full p-0"
-              disabled={Boolean(dateRangeError)}
-              loading={isFetching}
-              onClick={onRefresh}
-              size="icon"
-              title="به‌روزرسانی دستی"
-              variant="ghost"
-            >
-              <RefreshCw aria-hidden="true" className="size-4" />
-            </Button>
-          </>
-        ) : (
-          <>
-            <div className="flex items-center gap-2">
-              <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
-                <Filter aria-hidden="true" className="size-4" />
-              </span>
-              <h3
-                id="dashboard-sidebar-filters-title"
-                className="min-w-0 flex-1 text-sm font-black"
+        <section
+          aria-label={collapsed ? activeFiltersTitle : undefined}
+          aria-labelledby={
+            collapsed ? undefined : 'dashboard-sidebar-filters-title'
+          }
+          className={cn(
+            'border-t border-border',
+            collapsed ? 'space-y-2 p-2' : 'p-3',
+          )}
+        >
+          {collapsed ? (
+            <>
+              <Button
+                aria-label={`پاک‌کردن ${activeFiltersTitle}`}
+                className="size-10 w-full p-0"
+                onClick={onFiltersReset}
+                size="icon"
+                title="پاک‌کردن فیلترها"
+                variant="ghost"
               >
-                {activeFiltersTitle}
-              </h3>
-            </div>
-
-            <div className="mt-4 space-y-3">
-              <div>
-                <div className="grid gap-3">
-                  <FormField id="dashboard-from" label="از تاریخ">
-                    <DatePicker
-                      aria-describedby={
-                        dateRangeError
-                          ? 'dashboard-date-range-error'
-                          : undefined
-                      }
-                      aria-invalid={Boolean(dateRangeError)}
-                      calendarSystem={dateCalendarSystem}
-                      className="rounded-xl focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 focus-within:ring-offset-background"
-                      gregorianEnglish
-                      id="dashboard-from"
-                      onCalendarSystemChange={setDateCalendarSystem}
-                      onChange={(from) =>
-                        onFiltersChange({ from, range: 'custom' })
-                      }
-                      placeholder="انتخاب تاریخ"
-                      value={filters.from ?? ''}
-                    />
-                  </FormField>
-                  <FormField id="dashboard-to" label="تا تاریخ">
-                    <DatePicker
-                      aria-describedby={
-                        dateRangeError
-                          ? 'dashboard-date-range-error'
-                          : undefined
-                      }
-                      aria-invalid={Boolean(dateRangeError)}
-                      calendarSystem={dateCalendarSystem}
-                      className="rounded-xl focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 focus-within:ring-offset-background"
-                      gregorianEnglish
-                      id="dashboard-to"
-                      onCalendarSystemChange={setDateCalendarSystem}
-                      onChange={(to) =>
-                        onFiltersChange({ range: 'custom', to })
-                      }
-                      placeholder="انتخاب تاریخ"
-                      value={filters.to ?? ''}
-                    />
-                  </FormField>
-                </div>
-                {dateRangeError ? (
-                  <p
-                    className="mt-2 text-xs font-medium text-destructive"
-                    id="dashboard-date-range-error"
-                    role="alert"
-                  >
-                    {dateRangeError}
-                  </p>
-                ) : null}
+                <RotateCcw aria-hidden="true" className="size-4" />
+              </Button>
+              <Button
+                aria-label="به‌روزرسانی دستی داشبورد"
+                className="size-10 w-full p-0"
+                disabled={Boolean(dateRangeError)}
+                loading={isFetching}
+                onClick={onRefresh}
+                size="icon"
+                title="به‌روزرسانی دستی"
+                variant="ghost"
+              >
+                <RefreshCw aria-hidden="true" className="size-4" />
+              </Button>
+            </>
+          ) : (
+            <>
+              <div className="flex items-center gap-2">
+                <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
+                  <Filter aria-hidden="true" className="size-4" />
+                </span>
+                <h3
+                  id="dashboard-sidebar-filters-title"
+                  className="min-w-0 flex-1 text-sm font-black"
+                >
+                  {activeFiltersTitle}
+                </h3>
               </div>
 
-              <FormField id="dashboard-range" label="بازه زمانی">
-                <Select
-                  value={filters.range}
-                  onValueChange={(value) => {
-                    const range = value as DashboardRange;
-                    onFiltersChange({
-                      range,
-                      ...(range === 'custom' ? {} : { from: null, to: null }),
-                    });
-                  }}
-                >
-                  <SelectTrigger
-                    className="focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-                    id="dashboard-range"
+              <div className="mt-4 space-y-3">
+                <div>
+                  <div className="grid gap-3">
+                    <FormField id="dashboard-from" label="از تاریخ">
+                      <DatePicker
+                        aria-describedby={
+                          dateRangeError
+                            ? 'dashboard-date-range-error'
+                            : undefined
+                        }
+                        aria-invalid={Boolean(dateRangeError)}
+                        calendarSystem={dateCalendarSystem}
+                        className="rounded-xl focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 focus-within:ring-offset-background"
+                        gregorianEnglish
+                        id="dashboard-from"
+                        onCalendarSystemChange={setDateCalendarSystem}
+                        onChange={(from) =>
+                          onFiltersChange({ from, range: 'custom' })
+                        }
+                        placeholder="انتخاب تاریخ"
+                        value={filters.from ?? ''}
+                      />
+                    </FormField>
+                    <FormField id="dashboard-to" label="تا تاریخ">
+                      <DatePicker
+                        aria-describedby={
+                          dateRangeError
+                            ? 'dashboard-date-range-error'
+                            : undefined
+                        }
+                        aria-invalid={Boolean(dateRangeError)}
+                        calendarSystem={dateCalendarSystem}
+                        className="rounded-xl focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 focus-within:ring-offset-background"
+                        gregorianEnglish
+                        id="dashboard-to"
+                        onCalendarSystemChange={setDateCalendarSystem}
+                        onChange={(to) =>
+                          onFiltersChange({ range: 'custom', to })
+                        }
+                        placeholder="انتخاب تاریخ"
+                        value={filters.to ?? ''}
+                      />
+                    </FormField>
+                  </div>
+                  {dateRangeError ? (
+                    <p
+                      className="mt-2 text-xs font-medium text-destructive"
+                      id="dashboard-date-range-error"
+                      role="alert"
+                    >
+                      {dateRangeError}
+                    </p>
+                  ) : null}
+                </div>
+
+                <FormField id="dashboard-range" label="بازه زمانی">
+                  <Select
+                    value={filters.range}
+                    onValueChange={(value) => {
+                      const range = value as DashboardRange;
+                      onFiltersChange({
+                        range,
+                        ...(range === 'custom' ? {} : { from: null, to: null }),
+                      });
+                    }}
                   >
-                    <CalendarRange aria-hidden="true" className="size-4" />
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {rangeOptions.map(([value, label]) => (
-                      <SelectItem
-                        className="data-[highlighted]:bg-primary data-[highlighted]:text-primary-foreground"
-                        key={value}
-                        value={value}
-                      >
-                        {label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </FormField>
+                    <SelectTrigger
+                      className="focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                      id="dashboard-range"
+                    >
+                      <CalendarRange aria-hidden="true" className="size-4" />
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent align="end" dir="rtl">
+                      {rangeOptions.map(([value, label]) => (
+                        <SelectItem
+                          className="w-full justify-end text-right [&>span:first-child]:block [&>span:first-child]:w-full [&>span:first-child]:text-right data-[highlighted]:bg-primary data-[highlighted]:text-primary-foreground"
+                          key={value}
+                          value={value}
+                        >
+                          <span className="block w-full text-right">
+                            {label}
+                          </span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </FormField>
 
                 <div className="space-y-3 rounded-xl bg-muted/30 p-3">
-                  {(dashboardPageFilterKeys[activePageId] ?? []).map((key) => {
+                  {[
+                    ...(dashboardPageFilterKeys[activePageId] ?? []).filter(
+                      (key) => key === 'currency',
+                    ),
+                    ...(dashboardPageFilterKeys[activePageId] ?? []).filter(
+                      (key) => key !== 'currency',
+                    ),
+                  ].map((key) => {
                     const copy = filterCopyForPage(activePageId, key);
                     return (
                       <DimensionFilter
@@ -2823,32 +3729,35 @@ function DashboardSidebar({
                   })}
                   {!(dashboardPageFilterKeys[activePageId] ?? []).length ? (
                     <p className="text-[11px] leading-5 text-muted-foreground">
-                      <Info aria-hidden="true" className="me-1 inline size-3.5" />
+                      <Info
+                        aria-hidden="true"
+                        className="me-1 inline size-3.5"
+                      />
                       برای این صفحه فیلتر تکمیلی منتشر نشده است.
                     </p>
                   ) : null}
                 </div>
 
-              <div className="grid grid-cols-2 gap-2 border-t border-border pt-3">
-                <Button onClick={onFiltersReset} size="sm" variant="outline">
-                  <RotateCcw aria-hidden="true" className="size-4" />
-                  پاک‌کردن
-                </Button>
-                <Button
-                  disabled={Boolean(dateRangeError)}
-                  loading={isFetching}
-                  onClick={onRefresh}
-                  size="sm"
-                  variant="outline"
-                >
-                  <RefreshCw aria-hidden="true" className="size-4" />
-                  به‌روزرسانی
-                </Button>
+                <div className="grid grid-cols-2 gap-2 border-t border-border pt-3">
+                  <Button onClick={onFiltersReset} size="sm" variant="outline">
+                    <RotateCcw aria-hidden="true" className="size-4" />
+                    پاک‌کردن
+                  </Button>
+                  <Button
+                    disabled={Boolean(dateRangeError)}
+                    loading={isFetching}
+                    onClick={onRefresh}
+                    size="sm"
+                    variant="outline"
+                  >
+                    <RefreshCw aria-hidden="true" className="size-4" />
+                    به‌روزرسانی
+                  </Button>
+                </div>
               </div>
-            </div>
-          </>
-        )}
-      </section>
+            </>
+          )}
+        </section>
       ) : null}
     </Card>
   );
@@ -2876,6 +3785,8 @@ export function DashboardWorkspace() {
   const [expandedGroups, setExpandedGroups] = useState<ReadonlySet<string>>(
     () => new Set(),
   );
+  const [trendCalendarSystem, setTrendCalendarSystem] =
+    useState<TrendCalendarSystem>('persian');
   const legalEntity = useLegalEntityContext();
   const selection = legalEntity.context?.selection ?? null;
   const activePage =
@@ -3024,14 +3935,19 @@ export function DashboardWorkspace() {
           onFiltersChange={updateFilters}
           onFiltersReset={resetFilters}
           onGroupToggle={toggleNavigationGroup}
-           onPageSelect={selectPage}
+          onPageSelect={selectPage}
           onRefresh={() => void query.refetch()}
         />
 
         <div className="min-w-0 space-y-5">
           <section aria-labelledby="active-dashboard-page-title">
             <div className="space-y-4">
-              <header className={cn('relative isolate overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-bl p-4 shadow-sm sm:p-5', activePageHeaderTheme)}>
+              <header
+                className={cn(
+                  'relative isolate overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-bl p-4 shadow-sm sm:p-5',
+                  activePageHeaderTheme,
+                )}
+              >
                 <Image
                   alt=""
                   aria-hidden="true"
@@ -3041,13 +3957,28 @@ export function DashboardWorkspace() {
                   sizes="(min-width: 1024px) 72vw, 100vw"
                   src={activePageHeaderArtwork}
                 />
-                <span aria-hidden="true" className="pointer-events-none absolute inset-0 bg-gradient-to-l from-surface/55 via-surface/25 to-transparent dark:from-surface/80 dark:via-surface/45 dark:to-surface/10" />
-                <span aria-hidden="true" className="pointer-events-none absolute -end-14 -top-14 size-40 rounded-full bg-primary/10 blur-3xl" />
-                <span aria-hidden="true" className="pointer-events-none absolute -start-16 bottom-0 size-32 rounded-full bg-cyan-400/10 blur-3xl" />
-                <span aria-hidden="true" className="pointer-events-none absolute -bottom-10 -end-2 text-primary/[0.055] dark:text-primary/[0.12]">
+                <span
+                  aria-hidden="true"
+                  className="pointer-events-none absolute inset-0 bg-gradient-to-l from-surface/55 via-surface/25 to-transparent dark:from-surface/80 dark:via-surface/45 dark:to-surface/10"
+                />
+                <span
+                  aria-hidden="true"
+                  className="pointer-events-none absolute -end-14 -top-14 size-40 rounded-full bg-primary/10 blur-3xl"
+                />
+                <span
+                  aria-hidden="true"
+                  className="pointer-events-none absolute -start-16 bottom-0 size-32 rounded-full bg-cyan-400/10 blur-3xl"
+                />
+                <span
+                  aria-hidden="true"
+                  className="pointer-events-none absolute -bottom-10 -end-2 text-primary/[0.055] dark:text-primary/[0.12]"
+                >
                   <ActivePageIcon className="size-44 stroke-[1.15] sm:size-52" />
                 </span>
-                <span aria-hidden="true" className="pointer-events-none absolute inset-x-10 bottom-0 h-px bg-gradient-to-l from-transparent via-primary/25 to-transparent" />
+                <span
+                  aria-hidden="true"
+                  className="pointer-events-none absolute inset-x-10 bottom-0 h-px bg-gradient-to-l from-transparent via-primary/25 to-transparent"
+                />
                 <div className="relative mx-auto flex max-w-3xl flex-col items-center text-center">
                   <span className="mb-2 grid size-10 place-items-center rounded-xl bg-primary/10 text-primary ring-1 ring-primary/15 shadow-sm">
                     <ActivePageIcon aria-hidden="true" className="size-5" />
@@ -3058,7 +3989,10 @@ export function DashboardWorkspace() {
                   >
                     {activePage.title}
                   </h2>
-                  <p className="mt-1 text-xs font-bold tracking-wide text-primary" dir="ltr">
+                  <p
+                    className="mt-1 text-xs font-bold tracking-wide text-primary"
+                    dir="ltr"
+                  >
                     {activePage.technicalName}
                   </p>
                   <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
@@ -3069,26 +4003,26 @@ export function DashboardWorkspace() {
 
               {activePageKpis.length > 0 ? (
                 <div
-                    className={cn(
-                      'grid grid-cols-1 gap-3',
-                      kpiGridColumns(activePageKpis.length),
-                    )}
-                    data-dashboard-kpi-count={activePageKpis.length}
-                  >
-                    {activePageKpis.map((item) => (
-                      <KpiCard
-                        key={item.id}
-                        definition={item}
-                        featured
-                        metric={query.data?.metrics[item.id]}
-                        selected={filters.widget === item.id}
-                        onSelect={() =>
-                          updateFilters({
-                            widget: filters.widget === item.id ? null : item.id,
-                          })
-                        }
-                      />
-                    ))}
+                  className={cn(
+                    'grid grid-cols-1 gap-3',
+                    kpiGridColumns(activePageKpis.length),
+                  )}
+                  data-dashboard-kpi-count={activePageKpis.length}
+                >
+                  {activePageKpis.map((item) => (
+                    <KpiCard
+                      key={item.id}
+                      definition={item}
+                      featured
+                      metric={query.data?.metrics[item.id]}
+                      selected={filters.widget === item.id}
+                      onSelect={() =>
+                        updateFilters({
+                          widget: filters.widget === item.id ? null : item.id,
+                        })
+                      }
+                    />
+                  ))}
                 </div>
               ) : (
                 <p className="rounded-xl bg-muted/50 p-3 text-sm text-muted-foreground">
@@ -3099,23 +4033,28 @@ export function DashboardWorkspace() {
 
               {activePage.visualizations.length ? (
                 <div className="grid items-stretch gap-3 xl:grid-cols-2">
-                    {activePage.visualizations.map((visualization, index) => (
-                      <ProjectionSlot
-                        visualId={visualization.id}
-                        wide={dashboardVisualIsWide(
-                          activePage.visualizations,
-                          index,
-                        )}
-                        key={visualization.id}
-                        kind={visualization.kind}
-                        title={visualization.title}
-                        description={visualization.description}
-                        decision={visualization.openDecision}
-                        drilldown={visualization.drilldown}
-                        onOpenReportConfiguration={openReportConfiguration}
-                        data={query.data?.visuals[visualization.id]}
-                      />
-                    ))}
+                  {activePage.visualizations.map((visualization, index) => (
+                    <ProjectionSlot
+                      visualId={visualization.id}
+                      wide={dashboardVisualIsWide(
+                        activePage.visualizations,
+                        index,
+                      )}
+                      key={visualization.id}
+                      kind={visualization.kind}
+                      title={visualization.title}
+                      description={visualization.description}
+                      decision={visualization.openDecision}
+                      drilldown={visualization.drilldown}
+                      onOpenReportConfiguration={openReportConfiguration}
+                      onTrendCalendarSystemChange={setTrendCalendarSystem}
+                      permission={visualization.permission}
+                      range={filters.range}
+                      source={visualization.source}
+                      trendCalendarSystem={trendCalendarSystem}
+                      data={query.data?.visuals[visualization.id]}
+                    />
+                  ))}
                 </div>
               ) : null}
             </div>
@@ -3147,9 +4086,8 @@ export function DashboardWorkspace() {
               }}
             />
           ) : null}
-
         </div>
-          </section>
+      </section>
     </div>
   );
 }

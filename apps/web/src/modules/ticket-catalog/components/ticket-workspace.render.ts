@@ -129,7 +129,8 @@ describe('Rendered ticket UI', () => {
     expect(html).not.toContain('پیش‌نمایش');
     expect(html).not.toMatch(/name="(held|confirmed)"/);
     expect(html).not.toContain('type="datetime-local"');
-    expect(html).not.toContain('تاریخ و ساعت حرکت');
+    expect(html).toContain('ساعت حرکت');
+    expect(html).toContain('ساعت رسیدن');
     expect(html).not.toContain('شروع اعتبار نرخ');
     expect(html).not.toContain('پایان اعتبار نرخ');
     expect(html).not.toContain('id="ticket-sale"');

@@ -13,6 +13,10 @@ const workspaceSource = readFileSync(
   ),
   'utf8',
 );
+const operationsPageSource = readFileSync(
+  new URL('./operations/page.tsx', import.meta.url),
+  'utf8',
+);
 
 describe('system management access', () => {
   it('uses the dedicated management center rather than a placeholder workspace', () => {
@@ -26,10 +30,12 @@ describe('system management access', () => {
     expect(workspaceSource).toContain('Legal Entity');
   });
 
-  it('does not add a navigation item or bypass owner APIs', () => {
-    expect(workspaceSource).toContain(
-      'هر عملیات حساس در API ماژول مالک دوباره مجوزسنجی می‌شود',
+  it('does not duplicate owner APIs and exposes the live operations panel', () => {
+    expect(operationsPageSource).toContain(
+      'عملیات حساس در API مالک دوباره مجوزسنجی و ثبت Audit می‌شود',
     );
     expect(workspaceSource).toContain('managementAreas');
+    expect(workspaceSource).toContain('legalEntitiesApi.selectable');
+    expect(workspaceSource).toContain("scope: 'LEGAL_ENTITY'");
   });
 });

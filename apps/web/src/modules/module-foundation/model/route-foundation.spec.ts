@@ -29,13 +29,7 @@ const approvedRoutes = [
   'master-data',
 ] as const;
 
-const foundationRoutes = [
-  'marketing',
-  'human-resources',
-  'documents',
-  'integrations',
-  'system',
-] as const;
+const foundationRoutes = ['integrations'] as const;
 
 describe('main-route module foundation', () => {
   it('keeps every approved main route reviewable', () => {
@@ -51,7 +45,7 @@ describe('main-route module foundation', () => {
     expect(page).toContain("redirect('/workbench')");
   });
 
-  it('connects every incomplete route to the shared workspace', () => {
+  it('connects the remaining incomplete route to the shared workspace', () => {
     for (const route of foundationRoutes) {
       const page = readFileSync(resolve(crmRoot, route, 'page.tsx'), 'utf8');
       expect(page).toContain('ModuleFoundationWorkspace');

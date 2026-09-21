@@ -81,6 +81,31 @@ export const toursApi = {
       if (!result.hasMore) return data;
     }
   },
+  managedOffers: () =>
+    request<{ version: 1; data: TicketOfferV1[] }>('/offers/management'),
+  archiveExpiredOffer: (id: string, expectedVersion: number) =>
+    request<{ data: { id: string } }>(`/offers/${id}`, {
+      method: 'DELETE',
+      body: JSON.stringify({ expectedVersion }),
+    }),
+  reviseOffer: (
+    id: string,
+    expectedVersion: number,
+    offer: TicketOfferCreateV1,
+  ) =>
+    request<{ data: { id: string; version: number } }>(`/offers/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ expectedVersion, offer }),
+    }),
   publishOffer: (input: TicketOfferCreateV1, branch: string, key: string) =>
     request<{ data: { id: string } }>('/offers', post(input, branch, key)),
+  temporaryHold: (
+    offerId: string,
+    input: { quantity: number; expiresAt: string },
+    branch: string,
+    key: string,
+  ) =>
+    request<{
+      data: { id: string; quantity: number; expiresAt: string; status: string };
+    }>(`/offers/${offerId}/capacity-holds`, post(input, branch, key)),
 };

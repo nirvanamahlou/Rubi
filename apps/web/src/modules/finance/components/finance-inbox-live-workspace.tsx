@@ -1,15 +1,20 @@
-'use client';
-
 import {
+  ArrowDownLeft,
+  ArrowUpRight,
+  BarChart3,
+  Building2,
   CheckCircle2,
   ChevronLeft,
-  CircleDollarSign,
+  CircleAlert,
   Clock3,
-  Inbox,
+  Landmark,
+  ListFilter,
   PlusCircle,
   RefreshCw,
   RotateCcw,
   Search,
+  ShieldCheck,
+  TrendingUp,
   WalletCards,
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
@@ -22,6 +27,7 @@ import type {
   FinanceRequestStatus,
   FinanceSettlementAccountKind,
   FinanceSettlementAccountV1,
+  FinanceCustomerDocumentDeliveryBasisV1,
 } from '@nora/contracts';
 
 import { Button } from '@/components/ui/button';
@@ -110,6 +116,8 @@ export function FinanceInboxLiveWorkspace() {
   const [source, setSource] = useState<FinanceInboxSource | 'ALL'>('ALL');
   const [status, setStatus] = useState<'ALL' | 'OPEN' | 'CLOSED'>('OPEN');
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [fromDate, setFromDate] = useState('');
+  const [toDate, setToDate] = useState('');
   const [accounts, setAccounts] = useState<
     readonly FinanceSettlementAccountV1[]
   >([]);
@@ -124,6 +132,15 @@ export function FinanceInboxLiveWorkspace() {
   const [actionBusy, setActionBusy] = useState(false);
   const [actionError, setActionError] = useState('');
   const [reason, setReason] = useState('');
+  const [issueDocumentDelivery, setIssueDocumentDelivery] = useState(false);
+  const [documentDeliveryBasis, setDocumentDeliveryBasis] =
+    useState<FinanceCustomerDocumentDeliveryBasisV1>('AFTER_RECEIPT');
+  const [documentDeliveryReason, setDocumentDeliveryReason] =
+    useState('تأیید دریافت مشتری');
+  const [documentDeliverySecondApprover, setDocumentDeliverySecondApprover] =
+    useState('');
+  const [documentDeliveryExpiresAt, setDocumentDeliveryExpiresAt] =
+    useState('');
   const [accountId, setAccountId] = useState('');
   const [paymentMethodId, setPaymentMethodId] = useState('');
   const [paidAmount, setPaidAmount] = useState('');
@@ -187,6 +204,10 @@ export function FinanceInboxLiveWorkspace() {
         (status === 'OPEN'
           ? !closed.has(item.status)
           : closed.has(item.status));
+      const createdAt = new Date(item.createdAt).getTime();
+      const matchesFrom =
+        !fromDate || createdAt >= new Date(fromDate).getTime();
+      const matchesTo = !toDate || createdAt <= new Date(toDate).getTime();
       const haystack = [
         item.title,
         item.sourceReference,
@@ -199,42 +220,78 @@ export function FinanceInboxLiveWorkspace() {
         .join(' ')
         .toLocaleLowerCase('fa');
       return (
-        matchesSource && matchesStatus && (!query || haystack.includes(query))
+        matchesSource &&
+        matchesStatus &&
+        matchesFrom &&
+        matchesTo &&
+        (!query || haystack.includes(query))
       );
     });
-  }, [data, search, source, status]);
+  }, [data, fromDate, search, source, status, toDate]);
+  const dashboard = useMemo(() => {
+    const openItems = items.filter((item) => !closed.has(item.status));
+    const receiptItems = openItems.filter((item) => item.source === 'SALES');
+    const paymentItems = openItems.filter((item) => item.source !== 'SALES');
+    const dueItems = [...openItems]
+      .filter((item) => item.dueAt)
+      .sort((left, right) =>
+        (left.dueAt ?? '').localeCompare(right.dueAt ?? ''),
+      )
+      .slice(0, 3);
+    const sourceSummary = (Object.keys(sourceLabels) as FinanceInboxSource[])
+      .map((key) => ({
+        source: key,
+        count: openItems.filter((item) => item.source === key).length,
+      }))
+      .filter((item) => item.count > 0);
+    return {
+      receiptCount: receiptItems.length,
+      paymentCount: paymentItems.length,
+      dueItems,
+      sourceSummary,
+      activeAccountCount: accounts.filter((account) => account.isActive).length,
+    };
+  }, [accounts, items]);
   const selected =
     items.find(({ id }) => id === selectedId) ?? items[0] ?? null;
-  const openCount =
-    data?.items.filter((item) => !closed.has(item.status)).length ?? 0;
-  const overdueCount =
-    data?.items.filter(
-      (item) =>
-        !closed.has(item.status) &&
-        item.dueAt !== null &&
-        data.generatedAt > item.dueAt,
-    ).length ?? 0;
+  const openCount = items.filter((item) => !closed.has(item.status)).length;
+  const overdueCount = items.filter(
+    (item) =>
+      !closed.has(item.status) &&
+      item.dueAt !== null &&
+      (data?.generatedAt ?? '') > item.dueAt,
+  ).length;
   const availableSources = (data?.sources ?? []).filter(
     ({ connection }) => connection !== 'NOT_CONNECTED',
   );
   const kpis = [
     {
-      label: 'کل درخواست‌های واقعی',
-      value: data?.items.length ?? 0,
-      icon: Inbox,
-      tone: 'text-blue-600 bg-blue-50 dark:bg-blue-950/40',
+      label: 'دریافت‌های در انتظار',
+      helper: 'نیازمند تعیین حساب مقصد',
+      value: dashboard.receiptCount,
+      icon: ArrowDownLeft,
+      tone: 'from-emerald-500 to-teal-600',
     },
     {
-      label: 'درخواست‌های باز',
-      value: openCount,
-      icon: CircleDollarSign,
-      tone: 'text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40',
+      label: 'پرداخت‌های قابل اقدام',
+      helper: 'کارگزار، خرید و رزرواسیون',
+      value: dashboard.paymentCount,
+      icon: ArrowUpRight,
+      tone: 'from-blue-600 to-indigo-700',
     },
     {
-      label: 'گذشته از سررسید',
+      label: 'ریسک سررسید',
+      helper: 'درخواست‌های گذشته از موعد',
       value: overdueCount,
-      icon: Clock3,
-      tone: 'text-rose-600 bg-rose-50 dark:bg-rose-950/40',
+      icon: CircleAlert,
+      tone: 'from-rose-500 to-pink-600',
+    },
+    {
+      label: 'حساب‌های فعال',
+      helper: 'حساب مبدأ و مقصد قابل انتخاب',
+      value: dashboard.activeAccountCount,
+      icon: Landmark,
+      tone: 'from-violet-600 to-purple-700',
     },
   ];
 
@@ -242,9 +299,20 @@ export function FinanceInboxLiveWorkspace() {
     item: FinanceInboxItemV1,
     kind: 'APPROVE' | 'CORRECTION_REQUIRED',
   ) {
+    const eligibleAccounts = accounts.filter(
+      (account) =>
+        account.branchId === item.branchReference &&
+        account.currencyCode === item.amount?.currencyCode,
+    );
     setActionItem(item);
     setActionKind(kind);
+    setAccountId(kind === 'APPROVE' ? (eligibleAccounts[0]?.id ?? '') : '');
     setReason('');
+    setIssueDocumentDelivery(false);
+    setDocumentDeliveryBasis('AFTER_RECEIPT');
+    setDocumentDeliveryReason('تأیید دریافت مشتری');
+    setDocumentDeliverySecondApprover('');
+    setDocumentDeliveryExpiresAt('');
     setActionError('');
   }
 
@@ -286,16 +354,27 @@ export function FinanceInboxLiveWorkspace() {
     try {
       if (actionKind === 'TICKET_COST') {
         await financeInboxApi.recordTicketCost(actionItem.sourceReference, {
-          version: 1, adultUnitCost: ticketAdultCost,
-          childUnitCost: ticketChildCost, invoiceAmount: ticketInvoice,
-          currencyCode: ticketCurrency.toUpperCase().trim(), reason: reason.trim(),
+          version: 1,
+          adultUnitCost: ticketAdultCost,
+          childUnitCost: ticketChildCost,
+          invoiceAmount: ticketInvoice,
+          currencyCode: ticketCurrency.toUpperCase().trim(),
+          reason: reason.trim(),
         });
-      } else if (actionKind === 'PAYMENT' && actionItem.source === 'PURCHASES') {
+      } else if (
+        actionKind === 'PAYMENT' &&
+        actionItem.source === 'PURCHASES'
+      ) {
         await financeInboxApi.payTicket(actionItem.sourceReference, {
-          version: 1, costRevisionId: actionItem.sourceContextReference,
-          accountId, paymentMethodId, paidAmount,
-          exchangeRateToIrr: exchangeRate, transferAt: paidAt,
-          paymentReference: paymentReference.trim() || null, reason: reason.trim(),
+          version: 1,
+          costRevisionId: actionItem.sourceContextReference,
+          accountId,
+          paymentMethodId,
+          paidAmount,
+          exchangeRateToIrr: exchangeRate,
+          transferAt: paidAt,
+          paymentReference: paymentReference.trim() || null,
+          reason: reason.trim(),
         });
       } else if (actionKind === 'PAYMENT') {
         await financeInboxApi.paySupplier(
@@ -318,7 +397,27 @@ export function FinanceInboxLiveWorkspace() {
           version: 1,
           contractId: actionItem.sourceContextReference,
           action: actionKind,
+          accountId: actionKind === 'APPROVE' ? accountId : null,
           reason: reason.trim() || null,
+          ...(actionKind === 'APPROVE' && issueDocumentDelivery
+            ? {
+                documentDelivery: {
+                  approved: true,
+                  basis: documentDeliveryBasis,
+                  reason: documentDeliveryReason.trim(),
+                  secondApproverReference:
+                    documentDeliveryBasis === 'MANAGER_EXCEPTION'
+                      ? documentDeliverySecondApprover.trim() || null
+                      : null,
+                  exceptionExpiresAt:
+                    documentDeliveryBasis === 'MANAGER_EXCEPTION'
+                      ? documentDeliveryExpiresAt
+                        ? new Date(documentDeliveryExpiresAt).toISOString()
+                        : null
+                      : null,
+                },
+              }
+            : {}),
         });
       }
       setActionItem(null);
@@ -368,40 +467,260 @@ export function FinanceInboxLiveWorkspace() {
 
   return (
     <section className="space-y-5" aria-label="کارتابل یکپارچه مالی">
-      <Card className="flex flex-col justify-between gap-3 p-4 sm:flex-row sm:items-center">
-        <div>
-          <h2 className="font-black">صف درخواست‌های مالی</h2>
-          <p className="mt-1 text-xs text-muted-foreground">
-            آخرین به‌روزرسانی: {data ? faDate(data.generatedAt) : '—'}
-          </p>
+      <Card className="overflow-hidden border-0 bg-gradient-to-l from-slate-950 via-blue-950 to-indigo-900 p-0 text-white shadow-xl shadow-primary/10">
+        <div className="grid gap-6 p-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+          <div>
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge className="border-white/20 bg-white/10 text-white">
+                <BarChart3 className="size-3.5" />
+                مرکز کنترل مالی
+              </Badge>
+              <span className="text-xs text-blue-200">
+                داده‌های عملیاتی ·{' '}
+                {data ? faDate(data.generatedAt) : 'در حال دریافت'}
+              </span>
+            </div>
+            <h2 className="mt-4 text-2xl font-black sm:text-3xl">
+              امروز چه چیزی نیاز به تصمیم مالی دارد؟
+            </h2>
+            <p className="mt-2 max-w-2xl text-sm leading-7 text-blue-100">
+              دریافت‌ها را به حساب مقصد متصل کنید، پرداخت‌های کارگزار را از حساب
+              مبدأ ثبت کنید و موارد سررسیددار را پیش از تأخیر ببندید.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              className="border-white/20 bg-white/10 text-white hover:bg-white/20"
+              disabled={loading}
+              onClick={() => setRevision((value) => value + 1)}
+              size="sm"
+              variant="outline"
+            >
+              <RefreshCw
+                className={`size-4 ${loading ? 'animate-spin' : ''}`}
+              />
+              به‌روزرسانی
+            </Button>
+            <Button
+              className="bg-white text-slate-900 hover:bg-blue-50"
+              onClick={() => {
+                setStatus('OPEN');
+                setSource('ALL');
+              }}
+              size="sm"
+            >
+              <ListFilter className="size-4" />
+              مشاهده موارد باز
+            </Button>
+          </div>
         </div>
-        <Button
-          disabled={loading}
-          onClick={() => setRevision((value) => value + 1)}
-          size="sm"
-          variant="outline"
-        >
-          <RefreshCw className={`size-4 ${loading ? 'animate-spin' : ''}`} />
-          به‌روزرسانی
-        </Button>
+        <div className="grid border-t border-white/10 sm:grid-cols-3">
+          <div className="border-b border-white/10 p-4 sm:border-b-0 sm:border-l">
+            <p className="text-xs text-blue-200">صف کارتابل</p>
+            <p className="mt-1 text-2xl font-black">{items.length}</p>
+          </div>
+          <div className="border-b border-white/10 p-4 sm:border-b-0 sm:border-l">
+            <p className="text-xs text-blue-200">نیازمند اقدام امروز</p>
+            <p className="mt-1 text-2xl font-black">{openCount}</p>
+          </div>
+          <div className="p-4">
+            <p className="text-xs text-blue-200">اولویت سررسید</p>
+            <p className="mt-1 text-2xl font-black">{overdueCount}</p>
+          </div>
+        </div>
       </Card>
 
-      <div className="grid gap-3 sm:grid-cols-3">
-        {kpis.map(({ label, value, icon: Icon, tone }) => (
-          <Card className="flex items-center gap-4 p-4" key={label}>
-            <span className={`rounded-2xl p-3 ${tone}`}>
-              <Icon className="size-6" />
-            </span>
-            <div>
-              <p className="text-xs text-muted-foreground">{label}</p>
-              <p className="mt-1 text-2xl font-black">{String(value)}</p>
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        {kpis.map(({ label, helper, value, icon: Icon, tone }) => (
+          <Card className="group overflow-hidden p-0" key={label}>
+            <div className={`h-1 bg-gradient-to-l ${tone}`} />
+            <div className="flex items-start justify-between gap-3 p-4">
+              <div>
+                <p className="text-xs font-medium text-muted-foreground">
+                  {label}
+                </p>
+                <p className="mt-2 text-3xl font-black">{String(value)}</p>
+                <p className="mt-2 text-xs text-muted-foreground">{helper}</p>
+              </div>
+              <span
+                className={`rounded-2xl bg-gradient-to-br p-3 text-white shadow-lg ${tone}`}
+              >
+                <Icon className="size-5" />
+              </span>
             </div>
           </Card>
         ))}
       </div>
 
+      <div className="grid gap-4 xl:grid-cols-[1.05fr_0.95fr]">
+        <Card className="p-5">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-sm font-black">جریان کارتابل بر اساس واحد</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                حجم درخواست‌های باز در هر واحد عملیاتی
+              </p>
+            </div>
+            <TrendingUp className="size-5 text-primary" />
+          </div>
+          <div className="mt-5 space-y-4">
+            {dashboard.sourceSummary.length ? (
+              dashboard.sourceSummary.map(({ source: sourceName, count }) => {
+                const ratio = openCount
+                  ? Math.round((count / openCount) * 100)
+                  : 0;
+                return (
+                  <div key={sourceName}>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="font-semibold">
+                        {sourceLabels[sourceName]}
+                      </span>
+                      <span className="text-muted-foreground">
+                        {count} مورد · {ratio}٪
+                      </span>
+                    </div>
+                    <div className="mt-2 h-2 overflow-hidden rounded-full bg-muted">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-l from-primary to-cyan-400"
+                        style={{ width: `${Math.max(ratio, 6)}%` }}
+                      />
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
+              <p className="rounded-2xl bg-muted/60 p-4 text-sm text-muted-foreground">
+                درخواستی برای نمایش در بازه و فیلتر فعلی وجود ندارد.
+              </p>
+            )}
+          </div>
+        </Card>
+
+        <Card className="p-5">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-sm font-black">اولویت‌های نزدیک</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                موارد باز با نزدیک‌ترین سررسید
+              </p>
+            </div>
+            <Clock3 className="size-5 text-rose-500" />
+          </div>
+          <div className="mt-4 space-y-2">
+            {dashboard.dueItems.length ? (
+              dashboard.dueItems.map((item) => (
+                <button
+                  className="flex w-full items-center justify-between gap-3 rounded-2xl border border-border p-3 text-start transition hover:border-primary/40 hover:bg-muted/40"
+                  key={item.id}
+                  onClick={() => setSelectedId(item.id)}
+                  type="button"
+                >
+                  <span className="min-w-0">
+                    <span className="block truncate text-sm font-bold">
+                      {item.title}
+                    </span>
+                    <span className="mt-1 block text-xs text-muted-foreground">
+                      {sourceLabels[item.source]} · {faDate(item.dueAt)}
+                    </span>
+                  </span>
+                  <ChevronLeft className="size-4 shrink-0 text-primary" />
+                </button>
+              ))
+            ) : (
+              <p className="rounded-2xl bg-emerald-50 p-4 text-sm text-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-200">
+                هیچ سررسید بازی در فیلتر فعلی وجود ندارد.
+              </p>
+            )}
+          </div>
+        </Card>
+      </div>
+
+      <div className="grid gap-4 xl:grid-cols-[0.85fr_1.15fr]">
+        <Card className="p-5">
+          <div className="flex items-center gap-3">
+            <span className="rounded-2xl bg-violet-100 p-3 text-violet-700 dark:bg-violet-950/40 dark:text-violet-200">
+              <Building2 className="size-5" />
+            </span>
+            <div>
+              <p className="text-sm font-black">حساب‌های قابل استفاده</p>
+              <p className="text-xs text-muted-foreground">
+                برای ثبت دریافت و پرداخت
+              </p>
+            </div>
+          </div>
+          <div className="mt-4 space-y-2">
+            {accounts
+              .filter((account) => account.isActive)
+              .slice(0, 3)
+              .map((account) => (
+                <div
+                  className="flex items-center justify-between gap-2 rounded-xl bg-muted/60 px-3 py-2.5"
+                  key={account.id}
+                >
+                  <span className="truncate text-sm font-semibold">
+                    {account.title}
+                  </span>
+                  <Badge>{account.currencyCode}</Badge>
+                </div>
+              ))}
+            {!accounts.filter((account) => account.isActive).length ? (
+              <p className="text-sm text-muted-foreground">
+                حساب فعالی برای شعبه انتخاب‌شده دریافت نشد.
+              </p>
+            ) : null}
+          </div>
+        </Card>
+
+        <Card className="flex flex-col justify-between gap-4 bg-gradient-to-l from-primary/10 via-surface to-cyan-500/10 p-5">
+          <div className="flex items-start gap-3">
+            <span className="rounded-2xl bg-primary p-3 text-primary-foreground">
+              <ShieldCheck className="size-5" />
+            </span>
+            <div>
+              <p className="font-black">راهنمای اقدام مالی</p>
+              <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                برای دریافت قرارداد، حساب مقصد را تعیین کن؛ برای پرداخت کارگزار،
+                حساب مبدأ، روش پرداخت و شماره پیگیری را ثبت کن.
+              </p>
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              onClick={() => {
+                setSource('SALES');
+                setStatus('OPEN');
+              }}
+              size="sm"
+            >
+              <ArrowDownLeft className="size-4" />
+              دریافت‌های فروش
+            </Button>
+            <Button
+              onClick={() => {
+                setSource('RESERVATIONS');
+                setStatus('OPEN');
+              }}
+              size="sm"
+              variant="outline"
+            >
+              <ArrowUpRight className="size-4" />
+              پرداخت کارگزار
+            </Button>
+          </div>
+        </Card>
+      </div>
+
       <Card className="p-4">
-        <div className="grid gap-3 lg:grid-cols-[1fr_13rem_13rem_auto]">
+        <div className="mb-4 flex items-center gap-2">
+          <ListFilter className="size-4 text-primary" />
+          <div>
+            <h3 className="text-sm font-black">فیلتر و جست‌وجوی کارتابل</h3>
+            <p className="text-xs text-muted-foreground">
+              تمام کارت‌ها و اولویت‌ها با فیلترهای زیر همگام می‌شوند.
+            </p>
+          </div>
+        </div>
+        <div className="grid gap-3 xl:grid-cols-[1fr_12rem_12rem_11rem_11rem_auto]">
           <div className="relative">
             <Search className="absolute end-3 top-3 size-4 text-muted-foreground" />
             <Input
@@ -440,11 +759,21 @@ export function FinanceInboxLiveWorkspace() {
               <SelectItem value="ALL">همه وضعیت‌ها</SelectItem>
             </SelectContent>
           </Select>
+          <label className="grid gap-1 text-xs text-muted-foreground">
+            از تاریخ ثبت درخواست
+            <DatePicker onChange={setFromDate} value={fromDate} />
+          </label>
+          <label className="grid gap-1 text-xs text-muted-foreground">
+            تا تاریخ ثبت درخواست
+            <DatePicker onChange={setToDate} value={toDate} />
+          </label>
           <Button
             onClick={() => {
               setSearch('');
               setSource('ALL');
               setStatus('OPEN');
+              setFromDate('');
+              setToDate('');
             }}
             variant="outline"
           >
@@ -618,15 +947,26 @@ export function FinanceInboxLiveWorkspace() {
                     </Button>
                   </div>
                 ) : null}
-                {selected.kind === 'PAYMENT_REQUEST' && selected.source === 'PURCHASES' ? (
+                {selected.kind === 'PAYMENT_REQUEST' &&
+                selected.source === 'PURCHASES' ? (
                   <div className="space-y-2 rounded-2xl border border-emerald-200 bg-emerald-50/50 p-3 dark:border-emerald-900 dark:bg-emerald-950/20">
                     <p className="text-xs leading-5 text-muted-foreground">
-                      مالی قیمت خرید بزرگسال و کودک و مبلغ فاکتور را ثبت می‌کند؛ پس از پرداخت کامل، این نرخ برای قیمت‌گذاری پکیج آزاد می‌شود.
+                      مالی قیمت خرید بزرگسال و کودک و مبلغ فاکتور را ثبت می‌کند؛
+                      پس از پرداخت کامل، این نرخ برای قیمت‌گذاری پکیج آزاد
+                      می‌شود.
                     </p>
-                    <Button className="w-full" onClick={() => selected.amount
-                      ? openSupplierPayment(selected) : openTicketCost(selected)}>
+                    <Button
+                      className="w-full"
+                      onClick={() =>
+                        selected.amount
+                          ? openSupplierPayment(selected)
+                          : openTicketCost(selected)
+                      }
+                    >
                       <WalletCards className="size-4" />
-                      {selected.amount ? 'ثبت پرداخت خرید بلیت' : 'ثبت قیمت خرید بلیت'}
+                      {selected.amount
+                        ? 'ثبت پرداخت خرید بلیت'
+                        : 'ثبت قیمت خرید بلیت'}
                     </Button>
                   </div>
                 ) : null}
@@ -669,21 +1009,35 @@ export function FinanceInboxLiveWorkspace() {
           >
             {actionKind === 'TICKET_COST' ? (
               <>
-                {([
-                  ['نرخ خرید بزرگسال', ticketAdultCost, setTicketAdultCost],
-                  ['نرخ خرید کودک', ticketChildCost, setTicketChildCost],
-                  ['مبلغ کل فاکتور', ticketInvoice, setTicketInvoice],
-                ] as const).map(([label, value, change]) => (
+                {(
+                  [
+                    ['نرخ خرید بزرگسال', ticketAdultCost, setTicketAdultCost],
+                    ['نرخ خرید کودک', ticketChildCost, setTicketChildCost],
+                    ['مبلغ کل فاکتور', ticketInvoice, setTicketInvoice],
+                  ] as const
+                ).map(([label, value, change]) => (
                   <label key={label} className="grid gap-2">
                     <span>{label}</span>
-                    <Input required dir="ltr" inputMode="decimal" value={value}
-                      onChange={(event) => change(event.target.value)} />
+                    <Input
+                      required
+                      dir="ltr"
+                      inputMode="decimal"
+                      value={value}
+                      onChange={(event) => change(event.target.value)}
+                    />
                   </label>
                 ))}
                 <label className="grid gap-2">
                   <span>کد ارز خرید</span>
-                  <Input required dir="ltr" maxLength={3} value={ticketCurrency}
-                    onChange={(event) => setTicketCurrency(event.target.value.toUpperCase())} />
+                  <Input
+                    required
+                    dir="ltr"
+                    maxLength={3}
+                    value={ticketCurrency}
+                    onChange={(event) =>
+                      setTicketCurrency(event.target.value.toUpperCase())
+                    }
+                  />
                 </label>
               </>
             ) : null}
@@ -784,17 +1138,149 @@ export function FinanceInboxLiveWorkspace() {
                 </label>
               </>
             ) : null}
+            {actionKind === 'APPROVE' ? (
+              <label className="grid gap-2">
+                <span>واریز به حساب</span>
+                <Select value={accountId} onValueChange={setAccountId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="انتخاب حساب مقصد" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {accounts
+                      .filter(
+                        (account) =>
+                          account.branchId === actionItem?.branchReference &&
+                          account.currencyCode ===
+                            actionItem?.amount?.currencyCode,
+                      )
+                      .map((account) => (
+                        <SelectItem key={account.id} value={account.id}>
+                          {account.title} · {account.currencyCode}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    setAccountDialog(true);
+                    setActionError('');
+                  }}
+                >
+                  <PlusCircle className="size-4" />
+                  تعریف حساب جدید
+                </Button>
+              </label>
+            ) : null}
+            {actionKind === 'APPROVE' ? (
+              <div className="grid gap-3 rounded-2xl border border-blue-200 bg-blue-50/60 p-3 dark:border-blue-900 dark:bg-blue-950/20">
+                <label className="flex cursor-pointer items-start gap-3 text-sm font-bold">
+                  <input
+                    className="mt-1 size-4 accent-primary"
+                    type="checkbox"
+                    checked={issueDocumentDelivery}
+                    onChange={(event) =>
+                      setIssueDocumentDelivery(event.target.checked)
+                    }
+                  />
+                  <span>
+                    هم‌زمان مجوز تحویل مدارک به مشتری صادر شود
+                    <small className="mt-1 block font-normal leading-5 text-muted-foreground">
+                      این مجوز مستقل از خرید کارگزار و رزرواسیون است.
+                    </small>
+                  </span>
+                </label>
+                {issueDocumentDelivery ? (
+                  <>
+                    <label className="grid gap-2">
+                      <span>مبنای مجوز تحویل مدارک</span>
+                      <Select
+                        value={documentDeliveryBasis}
+                        onValueChange={(value) =>
+                          setDocumentDeliveryBasis(
+                            value as FinanceCustomerDocumentDeliveryBasisV1,
+                          )
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="AFTER_RECEIPT">
+                            پس از تأیید همین دریافت مشتری
+                          </SelectItem>
+                          <SelectItem value="FULL_SETTLEMENT">
+                            فقط در صورت تسویه کامل قرارداد
+                          </SelectItem>
+                          <SelectItem value="MANAGER_EXCEPTION">
+                            استثنای مدیر
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </label>
+                    {documentDeliveryBasis === 'MANAGER_EXCEPTION' ? (
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <label className="grid gap-2">
+                          <span>شناسه تأییدکننده دوم</span>
+                          <Input
+                            required
+                            dir="ltr"
+                            placeholder="UUID"
+                            value={documentDeliverySecondApprover}
+                            onChange={(event) =>
+                              setDocumentDeliverySecondApprover(
+                                event.target.value,
+                              )
+                            }
+                          />
+                        </label>
+                        <label className="grid gap-2">
+                          <span>انقضای استثنا (UTC)</span>
+                          <DatePicker
+                            required
+                            withinDialog
+                            includeTime
+                            defaultCalendarSystem="gregorian"
+                            gregorianEnglish
+                            value={documentDeliveryExpiresAt}
+                            onChange={setDocumentDeliveryExpiresAt}
+                            aria-label="تاریخ و ساعت انقضای استثنا"
+                          />
+                        </label>
+                      </div>
+                    ) : null}
+                    <label className="grid gap-2">
+                      <span>دلیل مجوز در Audit</span>
+                      <Input
+                        required
+                        maxLength={500}
+                        value={documentDeliveryReason}
+                        onChange={(event) =>
+                          setDocumentDeliveryReason(event.target.value)
+                        }
+                      />
+                    </label>
+                  </>
+                ) : null}
+              </div>
+            ) : null}
             <label className="grid gap-2">
               <span>
                 {actionKind === 'CORRECTION_REQUIRED'
                   ? 'دلیل اصلاح (الزامی)'
-                  : actionKind === 'TICKET_COST' || actionItem?.source === 'PURCHASES'
+                  : actionKind === 'TICKET_COST' ||
+                      actionItem?.source === 'PURCHASES'
                     ? 'توضیح ثبت مالی (الزامی)'
                     : 'توضیح مالی (اختیاری)'}
               </span>
               <Textarea
-                required={actionKind === 'CORRECTION_REQUIRED' ||
-                  actionKind === 'TICKET_COST' || actionItem?.source === 'PURCHASES'}
+                required={
+                  actionKind === 'CORRECTION_REQUIRED' ||
+                  actionKind === 'TICKET_COST' ||
+                  actionItem?.source === 'PURCHASES'
+                }
                 maxLength={500}
                 value={reason}
                 onChange={(event) => setReason(event.target.value)}
@@ -810,10 +1296,15 @@ export function FinanceInboxLiveWorkspace() {
                 type="submit"
                 disabled={
                   actionBusy ||
+                  (actionKind === 'APPROVE' && !accountId) ||
                   (actionKind === 'PAYMENT' &&
                     (!accountId || !paymentMethodId || !paidAmount)) ||
                   (actionKind === 'TICKET_COST' &&
-                    (!ticketAdultCost || !ticketChildCost || !ticketInvoice || !ticketCurrency || !reason.trim()))
+                    (!ticketAdultCost ||
+                      !ticketChildCost ||
+                      !ticketInvoice ||
+                      !ticketCurrency ||
+                      !reason.trim()))
                 }
               >
                 {actionBusy ? 'در حال ثبت…' : 'ثبت عملیات'}
@@ -836,7 +1327,11 @@ export function FinanceInboxLiveWorkspace() {
 
       <Dialog open={accountDialog} onOpenChange={setAccountDialog}>
         <DialogContent dir="rtl">
-          <DialogTitle>تعریف حساب پرداخت</DialogTitle>
+          <DialogTitle>
+            {actionKind === 'APPROVE'
+              ? 'تعریف حساب دریافت'
+              : 'تعریف حساب پرداخت'}
+          </DialogTitle>
           <DialogDescription>
             این حساب فقط برای شعبه و ارز همین درخواست قابل انتخاب است.
           </DialogDescription>
