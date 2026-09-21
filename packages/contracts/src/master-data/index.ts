@@ -1,4 +1,4 @@
-export const MASTER_DATA_CONTRACT_VERSION = 12 as const;
+export const MASTER_DATA_CONTRACT_VERSION = 13 as const;
 export const MASTER_DATA_API_PREFIX = '/api/v1/master-data' as const;
 
 export const MASTER_DATA_RESOURCES = [
@@ -92,6 +92,20 @@ export type MasterOrganizationContactChannel =
 export const MASTER_ORGANIZATION_PERSON_TYPES = ['NATURAL', 'LEGAL'] as const;
 export type MasterOrganizationPersonType =
   (typeof MASTER_ORGANIZATION_PERSON_TYPES)[number];
+export const MASTER_ORGANIZATION_ROLE_CODES = [
+  'AGENCY',
+  'CORPORATE_CUSTOMER',
+  'SUPPLIER',
+  'AIRLINE',
+  'HOTEL_PROVIDER',
+  'INSURANCE_PROVIDER',
+  'BUS_PROVIDER',
+  'TOUR_OPERATOR',
+  'BROKER',
+  'RAIL_OPERATOR',
+] as const;
+export type MasterOrganizationRoleCode =
+  (typeof MASTER_ORGANIZATION_ROLE_CODES)[number];
 /** Additive v12 fields; omitted PATCH fields retain their saved values. */
 export interface MasterPartnerProfileFields {
   englishName?: string | null;
@@ -147,6 +161,8 @@ export interface MasterDataListQuery {
   paymentChannel?: MasterPaymentMethodChannel;
   paymentDirection?: MasterPaymentMethodDirection;
   organizationId?: string;
+  /** Exact shared-organization role filter; additive for operational consumers. */
+  organizationRole?: MasterOrganizationRoleCode;
   serviceId?: string;
   collaborationStatus?: MasterCollaborationStatus;
   providerConnected?: boolean;
@@ -231,8 +247,8 @@ export interface MasterCurrencyRateQuoteRequest {
   toCurrencyCode: string;
   buyRate?: string;
   sellRate?: string;
-  source: string;
-  observedAt: string;
+  source?: string;
+  observedAt?: string;
   validFrom?: string;
   validTo?: string;
   correctionReason?: string;
@@ -278,6 +294,36 @@ export interface MasterOrganizationContactUnmasked {
   id: string;
   phone: string | null;
   email: string | null;
+}
+
+export interface MasterOrganizationAddressV1 {
+  id: string;
+  organizationId: string;
+  countryId: string;
+  countryName: string;
+  cityId: string;
+  cityName: string;
+  label: string;
+  postalCode: string | null;
+  addressLine: string;
+  isPrimary: boolean;
+  displayOrder: number;
+  isActive: boolean;
+  version: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface MasterOrganizationAddressMutationV1 {
+  countryId: string;
+  cityId: string;
+  label: string;
+  postalCode?: string | null;
+  addressLine: string;
+  isPrimary?: boolean;
+  displayOrder?: number;
+  isActive?: boolean;
+  version?: number;
 }
 
 export interface MasterOrganizationSupplierSummary {
@@ -477,6 +523,64 @@ export interface MasterHotelImportCommitResult {
   committedAt: string | null;
 }
 
+export const MASTER_HOTEL_RATE_FACTOR_KEYS = [
+  'double',
+  'single',
+  'triple',
+  'childWithBed',
+  'childWithoutBed',
+  'infant',
+] as const;
+export type MasterHotelRateFactorKey =
+  (typeof MASTER_HOTEL_RATE_FACTOR_KEYS)[number];
+export type MasterHotelRateFactorsV1 = Record<MasterHotelRateFactorKey, string>;
+
+export interface MasterHotelRateGridRowV1 {
+  id?: string;
+  hotelId: string;
+  hotelVersion: number;
+  hotelName: string;
+  starRating: number | null;
+  included: boolean;
+  baseAmount: string | null;
+  factors: MasterHotelRateFactorsV1;
+}
+
+export interface MasterHotelRatePeriodSaveV1 {
+  branchId: string;
+  cityId: string;
+  title: string;
+  checkIn: string;
+  checkOut: string;
+  currencyCode: string;
+  reason: string;
+  rows: readonly MasterHotelRateGridRowV1[];
+  expectedVersion?: number;
+}
+
+export interface MasterHotelRatePeriodSummaryV1 {
+  id: string;
+  branchId: string;
+  cityId: string;
+  cityName: string;
+  title: string;
+  checkIn: string;
+  checkOut: string;
+  nights: number;
+  currentVersion: number;
+  currencyCode: string;
+  includedHotels: number;
+  totalHotels: number;
+  updatedAt: string;
+  updatedByUserId: string;
+}
+
+export interface MasterHotelRatePeriodDetailV1 extends MasterHotelRatePeriodSummaryV1 {
+  pricingBasis: 'ROOM_PER_NIGHT';
+  reason: string;
+  rows: readonly MasterHotelRateGridRowV1[];
+}
+
 export const masterDataEndpoints = {
   list: (resource: MasterDataResource) =>
     `${MASTER_DATA_API_PREFIX}/${resource}` as const,
@@ -495,6 +599,10 @@ export const masterDataEndpoints = {
     `${MASTER_DATA_API_PREFIX}/audit/${encodeURIComponent(resource)}/${encodeURIComponent(entityId)}` as const,
   unmaskOrganizationContact: (id: string) =>
     `${MASTER_DATA_API_PREFIX}/organization-contacts/${encodeURIComponent(id)}/unmask` as const,
+  organizationAddresses: (organizationId: string) =>
+    `${MASTER_DATA_API_PREFIX}/organizations/${encodeURIComponent(organizationId)}/addresses` as const,
+  organizationAddress: (organizationId: string, addressId: string) =>
+    `${MASTER_DATA_API_PREFIX}/organizations/${encodeURIComponent(organizationId)}/addresses/${encodeURIComponent(addressId)}` as const,
   organizationSupplierSummary:
     `${MASTER_DATA_API_PREFIX}/organizations-suppliers/summary` as const,
   accommodationSummary:
@@ -506,6 +614,11 @@ export const masterDataEndpoints = {
     `${MASTER_DATA_API_PREFIX}/hotel-imports/preview` as const,
   hotelImportCommit: (sessionId: string) =>
     `${MASTER_DATA_API_PREFIX}/hotel-imports/${encodeURIComponent(sessionId)}/commit` as const,
+  hotelRatePeriods: `${MASTER_DATA_API_PREFIX}/hotel-rate-periods` as const,
+  hotelRatePeriod: (id: string) =>
+    `${MASTER_DATA_API_PREFIX}/hotel-rate-periods/${encodeURIComponent(id)}` as const,
+  hotelRateOptions:
+    `${MASTER_DATA_API_PREFIX}/hotel-rate-periods/options` as const,
 
   exports: `${MASTER_DATA_API_PREFIX}/exports` as const,
   excelDownload: `${MASTER_DATA_API_PREFIX}/exports/xlsx/download` as const,

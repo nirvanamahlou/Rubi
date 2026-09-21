@@ -1,11 +1,14 @@
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
+import { Eye, EyeOff } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { FormField, Input } from '@/components/ui/form-controls';
 import { getPublicApiBaseUrl } from '@/lib/environment';
+import { rememberHeaderSession } from '@/lib/header-session';
+import type { LoginResponse } from '@nora/contracts';
 import { loginErrorMessage } from './login-error';
 
 export function LoginForm() {
@@ -13,6 +16,7 @@ export function LoginForm() {
   const search = useSearchParams();
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError('');
@@ -38,6 +42,8 @@ export function LoginForm() {
         setError(loginErrorMessage(response.status));
         return;
       }
+      const session = (await response.json()) as LoginResponse;
+      rememberHeaderSession(session.user);
       const target = search.get('next');
       router.replace(
         target?.startsWith('/') && !target.startsWith('//')
@@ -65,14 +71,30 @@ export function LoginForm() {
         />
       </FormField>
       <FormField id="password" label="رمز عبور" required>
-        <Input
-          autoComplete="current-password"
-          dir="ltr"
-          id="password"
-          name="password"
-          required
-          type="password"
-        />
+        <div className="relative">
+          <Input
+            autoComplete="current-password"
+            className="pr-11"
+            dir="ltr"
+            id="password"
+            name="password"
+            required
+            type={showPassword ? 'text' : 'password'}
+          />
+          <button
+            aria-label={showPassword ? 'پنهان کردن رمز عبور' : 'نمایش رمز عبور'}
+            aria-pressed={showPassword}
+            className="absolute inset-y-0 right-0 flex w-11 items-center justify-center rounded-r-xl text-muted-foreground transition hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+            onClick={() => setShowPassword((visible) => !visible)}
+            type="button"
+          >
+            {showPassword ? (
+              <EyeOff aria-hidden="true" className="size-5" />
+            ) : (
+              <Eye aria-hidden="true" className="size-5" />
+            )}
+          </button>
+        </div>
       </FormField>
       {error ? (
         <p

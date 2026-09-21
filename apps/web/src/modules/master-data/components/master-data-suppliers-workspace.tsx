@@ -11,7 +11,7 @@ import type {
   MasterDataResource,
   MasterDataStatus,
   MasterOrganizationSupplierSummary,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import {
   AlertTriangle,
   ArrowRight,
@@ -58,7 +58,11 @@ import {
   PaginationShell,
   Skeleton,
 } from '@/components/ui/surfaces';
-import { masterDataApi, MasterDataApiError } from '../api/client';
+import {
+  masterDataApi,
+  MasterDataApiError,
+  type MasterDataLogoChange,
+} from '../api/client';
 import { MasterDataDeleteButton } from './master-data-delete-button';
 import { MasterDataFilterActions } from './master-data-filter-actions';
 import { getMasterDataDefinition } from '../model/catalog';
@@ -211,7 +215,7 @@ export function MasterDataSuppliersWorkspace() {
     useState<MasterOrganizationSupplierSummary>(emptySummary);
   const [requestState, setRequestState] = useState<RequestState>('loading');
   const [search, setSearch] = useState('');
-  const [status, setStatus] = useState<'all' | MasterDataStatus>('all');
+  const [status, setStatus] = useState<'all' | MasterDataStatus>('active');
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [selected, setSelected] = useState<MasterDataRecord>();
@@ -394,7 +398,7 @@ export function MasterDataSuppliersWorkspace() {
     setTab(next);
     setSearch('');
     resetColumnFilters();
-    setStatus('all');
+    setStatus('active');
     setPage(1);
     setSelected(undefined);
     setProfileOpen(false);
@@ -407,18 +411,25 @@ export function MasterDataSuppliersWorkspace() {
     setProfileOpen(true);
   }
 
-  async function persist(values: Record<string, string>) {
+  async function persist(
+    values: Record<string, string>,
+    logoChange?: MasterDataLogoChange,
+  ) {
     if (tab === 'collaboration') return;
-    if (formMode === 'edit' && selected) {
-      await masterDataApi.update(selected.resource, selected.id, {
-        values,
-        version: selected.version,
-      });
-      setNotice(`${formDefinition.singularLabel} با موفقیت ویرایش شد.`);
-    } else {
-      await masterDataApi.create(resource, { values });
-      setNotice(`${definition.singularLabel} با موفقیت ایجاد شد.`);
-    }
+    const target =
+      formMode === 'edit' && selected ? selected.resource : resource;
+    const result = await masterDataApi.persistWithLogo({
+      resource: target,
+      values,
+      title:
+        `${formDefinition.singularLabel} ${values.name ?? values.legalName ?? selected?.name ?? ''}`.trim(),
+      ...(formMode === 'edit' && selected ? { existing: selected } : {}),
+      ...(logoChange ? { logoChange } : {}),
+    });
+    setNotice(
+      result.warning ??
+        `${formDefinition.singularLabel} با موفقیت ${formMode === 'edit' ? 'ویرایش' : 'ایجاد'} شد.`,
+    );
     setFormMode(null);
     await Promise.all([load(), loadSummary()]);
   }
@@ -491,7 +502,7 @@ export function MasterDataSuppliersWorkspace() {
   };
 
   const rowActions = (record: MasterDataRecord) => (
-    <div className="flex flex-wrap gap-2">
+    <div className="flex flex-wrap justify-end gap-2">
       <Button onClick={() => openProfile(record)} size="sm" variant="outline">
         <Eye className="size-4" /> مشاهده
       </Button>
@@ -934,7 +945,7 @@ export function MasterDataSuppliersWorkspace() {
       <PageHeader
         actions={
           <Link
-            className={buttonVariants({ variant: 'outline' })}
+            className={`${buttonVariants({ variant: 'outline' })} ms-auto`}
             href="/master-data"
           >
             <ArrowRight className="size-4" /> همه بخش‌ها
@@ -943,7 +954,7 @@ export function MasterDataSuppliersWorkspace() {
         description={copy.description}
         title={copy.title}
       />
-      <div className="flex flex-wrap gap-2">
+      <div className="flex w-full flex-wrap justify-end gap-2">
         {tab !== 'collaboration' ? (
           <>
             <Button
@@ -1027,13 +1038,10 @@ export function MasterDataSuppliersWorkspace() {
             setSearch('');
             resetColumnFilters();
             resetDateRange();
-            setStatus('all');
+            setStatus('active');
             setPage(1);
           }}
           onRefresh={() => void Promise.all([load(), loadSummary()])}
-          refreshLabel={
-            tab === 'collaboration' ? 'تازه‌سازی وضعیت‌ها' : 'تازه‌سازی'
-          }
         />
       </FilterBar>
       {content}

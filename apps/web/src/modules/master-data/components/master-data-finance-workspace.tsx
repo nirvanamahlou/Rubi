@@ -11,7 +11,7 @@ import type {
   MasterDataRecord,
   MasterDataResource,
   MasterDataStatus,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import {
   ArrowRight,
   Building2,
@@ -59,7 +59,11 @@ import {
   PaginationShell,
   Skeleton,
 } from '@/components/ui/surfaces';
-import { masterDataApi, MasterDataApiError } from '../api/client';
+import {
+  masterDataApi,
+  MasterDataApiError,
+  type MasterDataLogoChange,
+} from '../api/client';
 import { MasterDataDeleteButton } from './master-data-delete-button';
 import { MasterDataFilterActions } from './master-data-filter-actions';
 import {
@@ -293,7 +297,7 @@ export function MasterDataFinanceWorkspace({
   const [rates, setRates] = useState<readonly CurrencyRateRow[]>([]);
   const [requestState, setRequestState] = useState<RequestState>('loading');
   const [search, setSearch] = useState('');
-  const [status, setStatus] = useState<'all' | MasterDataStatus>('all');
+  const [status, setStatus] = useState<'all' | MasterDataStatus>('active');
   const [rangeDays, setRangeDays] = useState('90');
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
@@ -518,7 +522,7 @@ export function MasterDataFinanceWorkspace({
     setTab(next);
     setSearch('');
     resetColumnFilters();
-    setStatus('all');
+    setStatus('active');
     setPage(1);
     setSelected(undefined);
     setSelectedCurrency(undefined);
@@ -528,17 +532,22 @@ export function MasterDataFinanceWorkspace({
     setNotice(null);
   }
 
-  async function persist(values: Record<string, string>) {
-    if (formMode === 'edit' && selected) {
-      await masterDataApi.update(resource, selected.id, {
-        values,
-        version: selected.version,
-      });
-      setNotice(`${definition.singularLabel} با موفقیت ویرایش شد.`);
-    } else {
-      await masterDataApi.create(resource, { values });
-      setNotice(`${definition.singularLabel} با موفقیت ایجاد شد.`);
-    }
+  async function persist(
+    values: Record<string, string>,
+    logoChange?: MasterDataLogoChange,
+  ) {
+    const result = await masterDataApi.persistWithLogo({
+      resource,
+      values,
+      title:
+        `${definition.singularLabel} ${values.name ?? selected?.name ?? ''}`.trim(),
+      ...(formMode === 'edit' && selected ? { existing: selected } : {}),
+      ...(logoChange ? { logoChange } : {}),
+    });
+    setNotice(
+      result.warning ??
+        `${definition.singularLabel} با موفقیت ${formMode === 'edit' ? 'ویرایش' : 'ایجاد'} شد.`,
+    );
     setFormMode(null);
     await load();
   }
@@ -866,7 +875,7 @@ export function MasterDataFinanceWorkspace({
       <PageHeader
         actions={
           <Link
-            className={buttonVariants({ variant: 'outline' })}
+            className={`${buttonVariants({ variant: 'outline' })} ms-auto`}
             href="/master-data"
           >
             <ArrowRight aria-hidden="true" className="size-4" />
@@ -879,8 +888,8 @@ export function MasterDataFinanceWorkspace({
 
       {notice ? <Alert description={notice} title="نتیجه عملیات" /> : null}
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex flex-wrap gap-2">
+      <div className="flex w-full flex-col items-end gap-3 sm:flex-row sm:justify-end">
+        <div className="flex flex-wrap justify-end gap-2">
           <Button
             onClick={() => {
               setSelected(undefined);
@@ -892,14 +901,16 @@ export function MasterDataFinanceWorkspace({
               ? 'درخواست نرخ'
               : `افزودن ${definition.singularLabel}`}
           </Button>
-          <Button
-            loading={exporting}
-            onClick={() => void exportExcel()}
-            variant="outline"
-          >
-            <FileSpreadsheet aria-hidden="true" className="size-4" />
-            خروجی اکسل
-          </Button>
+          {!['currencies', 'payment-methods'].includes(resource) ? (
+            <Button
+              loading={exporting}
+              onClick={() => void exportExcel()}
+              variant="outline"
+            >
+              <FileSpreadsheet aria-hidden="true" className="size-4" />
+              خروجی اکسل
+            </Button>
+          ) : null}
         </div>
       </div>
 
@@ -989,7 +1000,7 @@ export function MasterDataFinanceWorkspace({
             setSearch('');
             resetColumnFilters();
             resetDateRange();
-            setStatus('all');
+            setStatus('active');
             setPage(1);
           }}
           onRefresh={() => void load()}
@@ -1028,7 +1039,6 @@ export function MasterDataFinanceWorkspace({
                   <th className="p-4 text-start">نرخ</th>
                   <th className="p-4 text-start">نوع</th>
                   <th className="p-4 text-start">منبع</th>
-                  <th className="p-4 text-start">زمان UTC</th>
                   <th className="p-4 text-start">وضعیت</th>
                   <th className="p-4 text-start">مسئول ثبت</th>
                   <th className="p-4 text-start">عملیات</th>
@@ -1045,7 +1055,6 @@ export function MasterDataFinanceWorkspace({
                     </td>
                     <td className="p-4">{rateTypeLabel(row.rateType)}</td>
                     <td className="p-4">{row.source}</td>
-                    <td className="p-4">{faDate(row.observedAt)}</td>
                     <td className="p-4">
                       <Badge>{statusLabel(row.status)}</Badge>
                     </td>
@@ -1053,7 +1062,7 @@ export function MasterDataFinanceWorkspace({
                       {row.createdByUserId}
                     </td>
                     <td className="p-4">
-                      <div className="flex flex-wrap gap-2">
+                      <div className="flex flex-wrap justify-end gap-2">
                         <Button
                           onClick={() => {
                             setSelected(rateRecord(row));
@@ -1131,7 +1140,7 @@ export function MasterDataFinanceWorkspace({
                     record.attributes.description ?? 'تعریف مرجع روش پرداخت',
                   )}
                 </p>
-                <div className="mt-4 flex flex-wrap gap-2 border-t border-border pt-4">
+                <div className="mt-4 flex flex-wrap justify-end gap-2 border-t border-border pt-4">
                   <Button
                     onClick={() => {
                       setSelected(record);
@@ -1216,7 +1225,7 @@ export function MasterDataFinanceWorkspace({
                       </Badge>
                     </td>
                     <td className="p-4">
-                      <div className="flex flex-wrap gap-2">
+                      <div className="flex flex-wrap justify-end gap-2">
                         <Button
                           onClick={() => {
                             if (tab === 'currencies')

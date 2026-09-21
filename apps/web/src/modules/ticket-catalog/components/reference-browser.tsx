@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import type { MasterDataRecord } from '@rubi/contracts';
+import type { MasterDataRecord } from '@nora/contracts';
 import {
   Alert,
   Badge,
@@ -83,7 +83,7 @@ export function ReferenceBrowser({
       </div>
       <p className="text-sm text-muted-foreground">
         انتخاب و جست‌وجوی ایرلاین، فرودگاه، هواپیما، کلاس، بار، ارز، کشور و شهر
-        مستقیماً از API جدید اطلاعات پایه در فرم بلیت در دسترس است.
+        مستقیماً از API جدید اطلاعات پایه در فرم بلیط در دسترس است.
       </p>
       <div className="flex flex-wrap gap-2">
         <Select
@@ -142,7 +142,7 @@ export function ReferenceBrowser({
               } as Record<string, string>
             )[result.state] ?? 'مرجع در دسترس نیست'
           }
-          description="هیچ داده یا شناسه جایگزین تولید نشده است. Preview مستقل بلیت قابل بررسی است."
+          description="هیچ داده یا شناسه جایگزین تولید نشده است. Preview مستقل بلیط قابل بررسی است."
         />
       ) : (
         <>

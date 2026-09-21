@@ -12,7 +12,7 @@ import type {
   MasterDataResource,
   MasterDataStatus,
   MasterTravelServicesSummary,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import {
   ArrowRight,
   CheckCircle2,
@@ -276,7 +276,7 @@ export function MasterDataTravelServicesWorkspace() {
   const [summary, setSummary] = useState<MasterTravelServicesSummary>();
   const [countries, setCountries] = useState<readonly MasterDataRecord[]>([]);
   const [search, setSearch] = useState('');
-  const [status, setStatus] = useState<'all' | MasterDataStatus>('all');
+  const [status, setStatus] = useState<'all' | MasterDataStatus>('active');
   const [referenceFilter, setReferenceFilter] = useState('all');
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
@@ -484,7 +484,7 @@ export function MasterDataTravelServicesWorkspace() {
     setResource(next);
     setSearch('');
     resetColumnFilters();
-    setStatus('all');
+    setStatus('active');
     setReferenceFilter('all');
     setPage(1);
     setSelected(undefined);
@@ -592,7 +592,7 @@ export function MasterDataTravelServicesWorkspace() {
   }
 
   const actions = (record: MasterDataRecord) => (
-    <div className="flex flex-wrap gap-2">
+    <div className="flex flex-wrap justify-end gap-2">
       <Button
         aria-label={`مشاهده ${record.name}`}
         onClick={() => openProfile(record)}
@@ -759,7 +759,7 @@ export function MasterDataTravelServicesWorkspace() {
       <PageHeader
         actions={
           <Link
-            className={buttonVariants({ variant: 'outline' })}
+            className={`${buttonVariants({ variant: 'outline' })} ms-auto`}
             href="/master-data"
           >
             <ArrowRight className="size-4" /> همه بخش‌ها
@@ -768,7 +768,7 @@ export function MasterDataTravelServicesWorkspace() {
         description={definition.description}
         title={definition.label}
       />
-      <div className="flex flex-wrap gap-2">
+      <div className="flex w-full flex-wrap justify-end gap-2">
         <Button
           loading={exporting}
           onClick={() => void downloadExcel()}
@@ -873,7 +873,7 @@ export function MasterDataTravelServicesWorkspace() {
             setSearch('');
             resetColumnFilters();
             resetDateRange();
-            setStatus('all');
+            setStatus('active');
             setReferenceFilter('all');
             setPage(1);
           }}

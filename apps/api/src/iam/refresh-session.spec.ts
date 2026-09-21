@@ -2,11 +2,12 @@ import { createHash } from 'node:crypto';
 
 import { ConflictException } from '@nestjs/common';
 import type { JwtService } from '@nestjs/jwt';
-import { SessionStatus, UserStatus } from '@rubi/database';
+import { SessionStatus, UserStatus } from '@nora/database';
 import type { DatabaseService } from '../database/database.service';
 import { describe, expect, it, vi } from 'vitest';
 
 import { IamService } from './iam.service';
+import type { MfaTotpService } from './mfa-totp';
 
 describe('IAM refresh concurrency', () => {
   it('does not revoke the session family for a just-rotated matching token', async () => {
@@ -36,6 +37,7 @@ describe('IAM refresh concurrency', () => {
     const service = new IamService(
       { client } as unknown as DatabaseService,
       {} as JwtService,
+      {} as MfaTotpService,
     );
 
     const failure = await service

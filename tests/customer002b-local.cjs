@@ -6,11 +6,11 @@ const { spawn, spawnSync } = require('node:child_process');
 const repo = path.resolve(__dirname, '..');
 const runtime = path.join(
   process.env.LOCALAPPDATA,
-  'Rubi',
+  'Nora',
   'customer002b-completion',
 );
 const stateFile = path.join(runtime, 'private-runtime.json');
-const container = 'rubi-customer002b-completion-pg';
+const container = 'nora-customer002b-completion-pg';
 const existing =
   spawnSync('docker', ['inspect', container], {
     windowsHide: true,
@@ -40,7 +40,7 @@ const state = JSON.parse(fs.readFileSync(stateFile, 'utf8'));
 const env = {
   ...process.env,
   NODE_ENV: 'development',
-  DATABASE_URL: `postgresql://rubi_customers_test:${state.dbPassword}@127.0.0.1:55432/rubi_customers_completion?schema=public`,
+  DATABASE_URL: `postgresql://nora_customers_test:${state.dbPassword}@127.0.0.1:55432/nora_customers_completion?schema=public`,
   POSTGRES_PASSWORD: state.dbPassword,
   IAM_ACCESS_TOKEN_SECRET: state.jwt,
   CUSTOMER_CONTACT_ENCRYPTION_KEY_BASE64: state.encryption,
@@ -78,9 +78,9 @@ async function prepare() {
       '-e',
       'POSTGRES_PASSWORD',
       '-e',
-      'POSTGRES_USER=rubi_customers_test',
+      'POSTGRES_USER=nora_customers_test',
       '-e',
-      'POSTGRES_DB=rubi_customers_completion',
+      'POSTGRES_DB=nora_customers_completion',
       'postgres:18.1-alpine',
     ]);
   else run('docker', ['start', container]);
@@ -94,9 +94,9 @@ async function prepare() {
           container,
           'pg_isready',
           '-U',
-          'rubi_customers_test',
+          'nora_customers_test',
           '-d',
-          'rubi_customers_completion',
+          'nora_customers_completion',
         ],
         { windowsHide: true, stdio: 'ignore' },
       ).status === 0
@@ -118,13 +118,13 @@ async function prepare() {
     path.join(repo, 'packages/database'),
   );
   pnpm('db:generate');
-  pnpm('--filter', '@rubi/contracts', 'build');
-  pnpm('--filter', '@rubi/config', 'build');
-  pnpm('--filter', '@rubi/database', 'build');
-  pnpm('--filter', '@rubi/database', 'db:seed');
-  pnpm('--filter', '@rubi/database', 'db:seed');
-  pnpm('--filter', '@rubi/api', 'build');
-  pnpm('--filter', '@rubi/api', 'iam:bootstrap-admin');
+  pnpm('--filter', '@nora/contracts', 'build');
+  pnpm('--filter', '@nora/config', 'build');
+  pnpm('--filter', '@nora/database', 'build');
+  pnpm('--filter', '@nora/database', 'db:seed');
+  pnpm('--filter', '@nora/database', 'db:seed');
+  pnpm('--filter', '@nora/api', 'build');
+  pnpm('--filter', '@nora/api', 'iam:bootstrap-admin');
 }
 function start() {
   const services = [
@@ -174,16 +174,16 @@ async function main() {
     await require('./customer002b-smoke.cjs')(env, state);
   else if (mode === 'database-check') {
     pnpm('db:validate');
-    pnpm('--filter', '@rubi/database', 'exec', 'prisma', 'migrate', 'deploy');
-    pnpm('--filter', '@rubi/database', 'exec', 'prisma', 'migrate', 'status');
+    pnpm('--filter', '@nora/database', 'exec', 'prisma', 'migrate', 'deploy');
+    pnpm('--filter', '@nora/database', 'exec', 'prisma', 'migrate', 'status');
   } else if (mode === 'gates') {
     pnpm('lint');
     pnpm('typecheck');
     pnpm('test');
     pnpm('build');
   } else if (mode === 'tests') {
-    pnpm('--filter', '@rubi/web', 'test', 'src/modules/customers');
-    pnpm('--filter', '@rubi/api', 'test', 'src/customers');
+    pnpm('--filter', '@nora/web', 'test', 'src/modules/customers');
+    pnpm('--filter', '@nora/api', 'test', 'src/customers');
   } else
     throw new Error(
       'Use prepare, start, smoke, database-check, tests or gates. Credentials are never printed.',

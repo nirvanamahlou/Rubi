@@ -15,7 +15,7 @@ their own local database after pulling `develop`.
 - Keep application startup and the general Prisma seed unchanged.
 - Apply only after an explicit command acknowledgement.
 - Retain the existing environment and target guard: development/test only,
-  PostgreSQL on localhost/127.0.0.1:55432, and the named Rubi local/test database.
+  PostgreSQL on localhost/127.0.0.1:55432, and the named Nora local/test database.
 - Retain the enclosing transaction, advisory lock, Audit provenance,
   idempotency and protection of user-edited fixture records.
 - No exchange rates, real PII, accounts, cards, credentials, external
@@ -37,7 +37,7 @@ reuses the realistic synthetic fixture pack. The command itself supplies the
 explicit acknowledgement; the lower-level script still accepts the original
 environment acknowledgement for backward compatibility. The runner loads
 `apps/api/.env` before Prisma generation and builds the API with its workspace
-dependencies. An isolated worktree may set `RUBI_API_ENV_FILE` to its existing
+dependencies. An isolated worktree may set `NORA_API_ENV_FILE` to its existing
 private API environment file without copying or committing it.
 
 ## Verification

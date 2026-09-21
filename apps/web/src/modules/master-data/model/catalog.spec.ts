@@ -24,6 +24,13 @@ describe('master data catalog', () => {
     ).toBe(false);
   });
 
+  it('keeps the airline description focused on reference codes', () => {
+    const description = getMasterDataDefinition('airlines').description;
+    expect(description).toBe('مشخصات مرجع ایرلاین با کدهای IATA/ICAO.');
+    expect(description).not.toContain('Credential');
+    expect(description).not.toContain('Provider');
+  });
+
   it('defines the complete geography fields and selector options', () => {
     expect(
       getMasterDataDefinition('airports').fields.map((field) => field.key),
@@ -62,7 +69,6 @@ describe('master data catalog', () => {
       'bank-branches',
       'payment-methods',
       'travel-services',
-      'airlines',
       'meal-services',
     ]);
     for (const resource of masterDataResourceKeys) {
@@ -124,5 +130,16 @@ describe('master data catalog', () => {
           (field) => field.key === 'code',
         ),
       ).toBe(false);
+  });
+
+  it('keeps hotel catalogs optional while requiring only the hotel identity and city', () => {
+    const hotel = getMasterDataDefinition('hotels');
+    expect(
+      hotel.fields.filter((field) => field.required).map((field) => field.key),
+    ).toEqual(['name', 'cityId']);
+    for (const field of ['mealServiceIds', 'roomTypeIds', 'facilityIds'])
+      expect(
+        hotel.fields.find((item) => item.key === field)?.required,
+      ).not.toBe(true);
   });
 });

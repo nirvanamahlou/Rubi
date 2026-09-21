@@ -5,7 +5,7 @@ import type {
   CustomerDetail,
   CustomerListQuery,
   CustomerSummary,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import {
   AuditOutcome,
   CustomerDuplicateReviewStatus,
@@ -17,7 +17,7 @@ import {
   type CustomerKind,
   type CustomerRelationshipType,
   type Prisma,
-} from '@rubi/database';
+} from '@nora/database';
 
 import { DatabaseService } from '../database/database.service';
 import {
@@ -40,6 +40,18 @@ export interface CustomerRow {
   nationalIdAuthTag: string | null;
   nationalIdKeyVersion: number | null;
   nationalIdMasked: string | null;
+  passportNumberEncrypted?: string | null;
+  passportNumberIv?: string | null;
+  passportNumberAuthTag?: string | null;
+  passportNumberKeyVersion?: number | null;
+  passportNumberMasked?: string | null;
+  passportExpiryDate?: Date | null;
+  passportFirstName?: string | null;
+  passportLastName?: string | null;
+  gender?: string | null;
+  nationalityCode?: string | null;
+  passportIssuingCountryCode?: string | null;
+  birthCountryCode?: string | null;
   isActive: boolean;
   isCustomer: boolean;
   isPassenger: boolean;
@@ -146,7 +158,9 @@ function utcRange(from: string | null, to: string | null) {
 
 export function toCustomerSummary(row: CustomerRow): CustomerSummary {
   const primary =
-    row.contacts?.find(({ isPrimary }) => isPrimary) ?? row.contacts?.[0];
+    row.contacts?.find(
+      ({ isPrimary, type }) => isPrimary && type === 'PHONE',
+    ) ?? row.contacts?.find(({ type }) => type === 'PHONE');
   const latestConsent = row.consents?.[0];
   return {
     id: row.id,
@@ -160,6 +174,7 @@ export function toCustomerSummary(row: CustomerRow): CustomerSummary {
     ],
     maskedPrimaryContact: primary?.maskedValue ?? null,
     maskedNationalId: row.nationalIdMasked ?? null,
+    maskedPassportNumber: row.passportNumberMasked ?? null,
     currentConsentStatus: latestConsent
       ? (lower(latestConsent.status) as 'granted' | 'revoked')
       : 'not-recorded',
@@ -185,6 +200,15 @@ export function toCustomerDetail(
         : null,
     birthDateMasked: Boolean(row.birthDate) && !sensitive,
     nationalId: null,
+    passportNumber: null,
+    passportExpiryDate:
+      row.passportExpiryDate?.toISOString().slice(0, 10) ?? null,
+    passportFirstName: row.passportFirstName ?? null,
+    passportLastName: row.passportLastName ?? null,
+    gender: row.gender === 'M' || row.gender === 'F' ? row.gender : null,
+    nationalityCode: row.nationalityCode ?? null,
+    passportIssuingCountryCode: row.passportIssuingCountryCode ?? null,
+    birthCountryCode: row.birthCountryCode ?? null,
     acquaintanceMethodId: row.acquaintanceMethodId,
     contacts: (row.contacts ?? []).map((contact) => ({
       id: contact.id,
@@ -294,7 +318,11 @@ export class CustomerRepository {
         this.database.client.customer.findMany({
           where,
           include: {
-            contacts: { where: { isPrimary: true }, take: 1 },
+            contacts: {
+              where: { type: 'PHONE' },
+              orderBy: [{ isPrimary: 'desc' }, { createdAt: 'asc' }],
+              take: 1,
+            },
             consents: { orderBy: { occurredAt: 'desc' }, take: 1 },
             _count: { select: { relationships: true } },
           },
@@ -333,6 +361,20 @@ export class CustomerRepository {
       where: { id, ownerBranchId: { in: [...branchIds] }, mergedIntoId: null },
       include: detailInclude,
     }) as unknown as Promise<CustomerRow | null>;
+  }
+
+  async findRegistration(fingerprint: string, branchIds: readonly string[]) {
+    const match = await this.database.client.customer.findFirst({
+      where: {
+        nationalIdFingerprint: fingerprint,
+        ownerBranchId: { in: [...branchIds] },
+        mergedIntoId: null,
+        isActive: true,
+        kind: 'PERSON',
+      },
+      select: { id: true },
+    });
+    return match ? this.find(match.id, branchIds) : null;
   }
 
   async statusHistory(id: string, branchIds: readonly string[]) {
@@ -397,8 +439,9 @@ export class CustomerRepository {
     actorUserId: string,
     actorBranchId: string,
     traceId?: string,
+    existingTransaction?: Prisma.TransactionClient,
   ) {
-    return this.database.client.$transaction(async (transaction) => {
+    const work = async (transaction: Prisma.TransactionClient) => {
       const row = await transaction.customer.create({
         data: {
           ...data,
@@ -431,7 +474,10 @@ export class CustomerRepository {
         },
       });
       return row as unknown as CustomerRow;
-    });
+    };
+    return existingTransaction
+      ? work(existingTransaction)
+      : this.database.client.$transaction(work);
   }
 
   async update(

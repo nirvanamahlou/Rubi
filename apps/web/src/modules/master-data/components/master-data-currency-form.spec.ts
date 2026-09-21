@@ -18,7 +18,7 @@ const workspace = readFileSync(
 );
 
 describe('currency popup form', () => {
-  it('contains both mockup field sets and no display policy control', () => {
+  it('contains the requested currency fields without manual date/time or display policy', () => {
     for (const label of [
       'نام فارسی ارز',
       'وضعیت ارز',
@@ -26,13 +26,15 @@ describe('currency popup form', () => {
       'نرخ خرید',
       'نرخ فروش',
       'منبع',
-      'تاریخ و ساعت',
       'ثبت‌کننده',
       'وضعیت نرخ',
     ])
       expect(source).toContain(label);
     expect(source).not.toContain('displayPolicy');
     expect(source).not.toContain('سیاست نمایش');
+    expect(source).not.toContain('تاریخ و ساعت');
+    expect(source).not.toContain('observedAt');
+    expect(source).toContain('MasterDataNumberInput');
     expect(source).toContain('MasterDataProfileDialog');
   });
   it('uses atomic quote API and opens it inside currencies without changing sections', () => {

@@ -68,7 +68,7 @@ export function MasterDataWorkspace({
   const [previewState, setPreviewState] =
     useState<MasterDataPreviewState>(initialPreviewState);
   const [search, setSearch] = useState('');
-  const [status, setStatus] = useState<'all' | 'active' | 'inactive'>('all');
+  const [status, setStatus] = useState<'all' | 'active' | 'inactive'>('active');
   const [sort, setSort] = useState<'name' | 'code' | 'updatedAt'>('name');
   const [formMode, setFormMode] = useState<MasterDataFormMode | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -78,7 +78,7 @@ export function MasterDataWorkspace({
     setResource(next);
     setPreviewState('empty');
     setSearch('');
-    setStatus('all');
+    setStatus('active');
     setSort('name');
     setNotice(null);
   }
@@ -178,7 +178,7 @@ export function MasterDataWorkspace({
                   {definition.description}
                 </p>
               </div>
-              <div className="flex gap-2">
+              <div className="flex self-end gap-2">
                 <Button
                   onClick={() => setFormMode('view')}
                   size="sm"
@@ -246,7 +246,7 @@ export function MasterDataWorkspace({
             <MasterDataFilterActions
               onClear={() => {
                 setSearch('');
-                setStatus('all');
+                setStatus('active');
                 setSort('name');
               }}
               onRefresh={() => setPreviewState(initialPreviewState)}
@@ -258,7 +258,7 @@ export function MasterDataWorkspace({
               <legend className="text-xs font-bold text-muted-foreground">
                 پیش‌نمایش Stateهای اجباری UI
               </legend>
-              <div className="mt-2 flex flex-wrap gap-2">
+              <div className="mt-2 flex flex-wrap justify-end gap-2">
                 {masterDataStateOptions.map(([value, label]) => (
                   <Button
                     aria-pressed={previewState === value}

@@ -1,5 +1,5 @@
 {
-  "extends": "@rubi/typescript-config/next.json",
+  "extends": "@nora/typescript-config/next.json",
   "compilerOptions": {
     "paths": {
       "@/*": ["./src/*"]

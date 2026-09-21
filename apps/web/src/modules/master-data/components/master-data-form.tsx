@@ -48,7 +48,12 @@ function initialValues(
 ) {
   if (mode === 'create') {
     return Object.fromEntries(
-      getMasterDataFormFields(definition).map((field) => [field.key, '']),
+      getMasterDataFormFields(definition).map((field) => [
+        field.key,
+        definition.key === 'payment-methods' && field.key === 'channel'
+          ? 'OTHER'
+          : '',
+      ]),
     );
   }
   return Object.fromEntries(
@@ -105,7 +110,7 @@ export function MasterDataForm({
         </div>
 
         <form className="mt-6 space-y-5" onSubmit={handleSubmit}>
-          {getMasterDataFormFields(definition).map((field) => {
+          {getMasterDataFormFields(definition, mode).map((field) => {
             const error = errors[field.key];
             const helpId = `${definition.key}-${field.key}-help`;
             const errorId = `${definition.key}-${field.key}-error`;

@@ -4,7 +4,7 @@ import type {
   LegalEntitySelection,
   LegalEntitySummary,
   LegalEntityUpdateRequest,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 
 import { getPublicApiBaseUrl } from '@/lib/environment';
 

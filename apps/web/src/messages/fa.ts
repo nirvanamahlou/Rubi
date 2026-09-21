@@ -25,6 +25,7 @@ export const faMessages = {
     userMenu: 'منوی کاربر',
     profile: 'پروفایل من',
     preferences: 'تنظیمات شخصی',
+    securitySessions: 'امنیت و نشست‌ها',
     signOut: 'خروج از حساب',
     collapseSidebar: 'جمع‌کردن نوار کناری',
     expandSidebar: 'بازکردن نوار کناری',
@@ -37,7 +38,7 @@ export const faMessages = {
   },
   placeholder: {
     eyebrow: 'زیرساخت آماده توسعه',
-    title: 'این بخش برای توسعه قابلیت‌های تخصصی آماده است',
+    title: 'این بخش برای توسعه قابلیط‌های تخصصی آماده است',
     description:
       'در این مرحله فقط مسیر، ناوبری، عنوان صفحه و وضعیت‌های استاندارد ایجاد شده‌اند و هیچ داده تجاری واقعی نمایش داده نمی‌شود.',
     emptyTitle: 'داده‌ای ثبت نشده است',
@@ -76,6 +77,11 @@ export const faMessages = {
 
 export const navigationMessages = [
   {
+    title: 'میزکار من',
+    href: '/workbench',
+    description: 'اعلان‌ها، فایل‌ها و حساب شخصی من',
+  },
+  {
     title: 'داشبورد',
     href: '/dashboard',
     description: 'نمای کلی عملکرد و کارهای روزانه',
@@ -86,9 +92,9 @@ export const navigationMessages = [
     description: 'پرونده و تعاملات مشتریان',
   },
   {
-    title: 'امور مشتریان، سرنخ‌ها و پشتیبانی',
+    title: 'امور مشتریان و پشتیبانی',
     href: '/customer-affairs',
-    description: 'سرنخ‌ها، درخواست‌های قبل از فروش و پشتیبانی پس از سفر',
+    description: 'درخواست‌های مشتریان و پشتیبانی پس از سفر',
   },
   {
     title: 'رزرواسیون و عملیات سفر',
@@ -96,12 +102,17 @@ export const navigationMessages = [
     description: 'بررسی ظرفیت، صدور خدمات، واچر، بیمه و منیفست',
   },
   {
-    title: 'مدیریت و تعریف بلیت‌ها',
-    href: '/ticket-management',
-    description: 'تعریف محصول بلیت، برنامه حرکت، نرخ و ظرفیت',
+    title: 'مدیریت گروهی نرخ‌های هتل‌ها',
+    href: '/reservations/hotel-rates',
+    description: 'ثبت گروهی قیمت خرید هتل در بازه اقامت',
   },
   {
-    title: 'قراردادها، فروش و تخصیص خدمات',
+    title: 'مدیریت و تعریف بلیط‌ها',
+    href: '/ticket-management',
+    description: 'تعریف محصول بلیط، برنامه حرکت، نرخ و ظرفیت',
+  },
+  {
+    title: 'قرارداد',
     href: '/sales',
     description: 'قرارداد جدید و تخصیص مسافر به خدمات',
   },
@@ -111,9 +122,14 @@ export const navigationMessages = [
     description: 'خرید خدمات و تأمین‌کنندگان',
   },
   {
-    title: 'مالی و خزانه‌داری',
+    title: 'حسابداری',
     href: '/finance',
-    description: 'دریافت، پرداخت و خزانه',
+    description: 'کدینگ، اسناد، دفاتر و خزانه',
+  },
+  {
+    title: 'کارتابل درخواست‌ها',
+    href: '/finance/requests',
+    description: 'رسیدگی به درخواست‌های دریافت و پرداخت واحدها',
   },
   { title: 'مارکتینگ', href: '/marketing', description: 'کمپین‌ها و مخاطبان' },
   {
@@ -125,11 +141,6 @@ export const navigationMessages = [
     title: 'منابع انسانی',
     href: '/human-resources',
     description: 'پرونده و عملیات کارکنان',
-  },
-  {
-    title: 'وظایف و اتوماسیون',
-    href: '/tasks',
-    description: 'کارها و جریان‌های خودکار',
   },
   {
     title: 'اسناد و فایل‌ها',

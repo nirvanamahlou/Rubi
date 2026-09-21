@@ -3,8 +3,9 @@
 import { FileUp, FolderKanban, Link2, ShieldCheck } from 'lucide-react';
 import type {
   BranchReference,
+  DocumentCaseOptionV1,
   DocumentOptionsResponseV1,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import { useMemo, useState } from 'react';
 
 import {
@@ -13,10 +14,14 @@ import {
   type DocumentUploadValues,
   validateDocumentUpload,
 } from '../model/document-upload-form';
+import { DocumentCasePicker } from './document-case-picker';
+import { HrDirectoryPicker } from '@/modules/hr/hr-directory-picker';
+import { hrDirectoryLabel, type HrDirectoryEmployee } from '@nora/contracts';
 
 import {
   Alert,
   Button,
+  Checkbox,
   DatePicker,
   Dialog,
   DialogContent,
@@ -61,6 +66,10 @@ export function DocumentUploadDialog({
       : { ...emptyDocumentUploadValues },
   );
   const [file, setFile] = useState<File | null>(null);
+  const [employee, setEmployee] = useState<HrDirectoryEmployee | null>(null);
+  const [selectedCase, setSelectedCase] = useState<DocumentCaseOptionV1 | null>(
+    null,
+  );
   const [validationError, setValidationError] = useState('');
 
   const selectedType = useMemo(
@@ -69,7 +78,10 @@ export function DocumentUploadDialog({
     [options, values.documentTypeId],
   );
 
-  function update(name: keyof DocumentUploadValues, value: string) {
+  function update<K extends keyof DocumentUploadValues>(
+    name: K,
+    value: DocumentUploadValues[K],
+  ) {
     setValidationError('');
     setValues((current) => ({ ...current, [name]: value }));
   }
@@ -88,11 +100,24 @@ export function DocumentUploadDialog({
     const form = new FormData();
     form.set('file', file!);
     for (const [name, value] of Object.entries(values)) {
-      if (value) form.set(name, value);
+      if (name === 'employeeId') continue;
+      if (value) form.set(name, String(value));
+    }
+    if (
+      employee &&
+      values.employeeId === employee.id &&
+      !values.sourceRelationId
+    ) {
+      form.set('sourceModule', 'HUMAN_RESOURCES');
+      form.set('sourceEntityType', 'Employee');
+      form.set('sourceEntityId', employee.id);
+      form.set('sourceDisplayLabel', hrDirectoryLabel(employee));
     }
     if (await onSubmit(form)) {
       setValues({ ...emptyDocumentUploadValues });
       setFile(null);
+      setSelectedCase(null);
+      setEmployee(null);
       setValidationError('');
     }
   }
@@ -101,6 +126,8 @@ export function DocumentUploadDialog({
     if (!nextOpen && !submitting) {
       setValues({ ...emptyDocumentUploadValues });
       setFile(null);
+      setSelectedCase(null);
+      setEmployee(null);
       setValidationError('');
     }
     onOpenChange(nextOpen);
@@ -173,7 +200,13 @@ export function DocumentUploadDialog({
               <FormField id="document-type" label="نوع سند" required>
                 <Select
                   disabled={!options?.documentTypes.length || submitting}
-                  onValueChange={(value) => update('documentTypeId', value)}
+                  onValueChange={(value) => {
+                    update('documentTypeId', value);
+                    update('employeeId', '');
+                    setEmployee(null);
+                    update('sourceRelationId', '');
+                    setSelectedCase(null);
+                  }}
                   value={values.documentTypeId}
                 >
                   <SelectTrigger aria-label="نوع سند" id="document-type">
@@ -268,57 +301,47 @@ export function DocumentUploadDialog({
                 ۳. ارتباط با پرونده
               </h3>
             </div>
-            <div className="mt-4 grid gap-4 md:grid-cols-2">
-              <FormField id="source-module" label="ماژول مبدأ" required>
-                <Input
-                  id="source-module"
-                  onChange={(event) =>
-                    update('sourceModule', event.target.value)
-                  }
-                  placeholder="Sales Contracts"
-                  required
-                  value={values.sourceModule}
-                />
-              </FormField>
+            <p className="mt-2 text-sm text-muted-foreground">
+              پرونده موجود در آرشیو را انتخاب کنید؛ برای اسناد پرسنلی، انتخاب
+              مستقیم کارمند از منابع انسانی هم ممکن است.
+            </p>
+            <div className="mt-4">
               <FormField
-                id="source-entity-type"
-                label="نوع رکورد مبدأ"
+                description="فقط پرونده‌های قابل‌دسترسی در شعبه انتخاب‌شده نمایش داده می‌شوند."
+                id="source-relation"
+                label="پرونده مربوطه"
                 required
               >
-                <Input
-                  id="source-entity-type"
-                  onChange={(event) =>
-                    update('sourceEntityType', event.target.value)
-                  }
-                  placeholder="sales_contract"
-                  required
-                  value={values.sourceEntityType}
+                <DocumentCasePicker
+                  branchId={values.branchId}
+                  disabled={submitting}
+                  onSelect={(option) => {
+                    setSelectedCase(option);
+                    update('sourceRelationId', option?.id ?? '');
+                    update('employeeId', '');
+                    setEmployee(null);
+                  }}
+                  selected={selectedCase}
                 />
               </FormField>
-              <FormField
-                id="source-entity-id"
-                label="شناسه رکورد مبدأ"
-                required
-              >
-                <Input
-                  id="source-entity-id"
-                  onChange={(event) =>
-                    update('sourceEntityId', event.target.value)
-                  }
-                  required
-                  value={values.sourceEntityId}
+              {selectedType?.domain === 'HUMAN_RESOURCES' && values.branchId ? (
+                <HrDirectoryPicker
+                  key={values.branchId}
+                  branchId={values.branchId}
+                  disabled={submitting}
+                  label="یا انتخاب پرونده کارمند از منابع انسانی"
+                  selected={employee}
+                  onSelect={(item) => {
+                    setEmployee(item);
+                    setSelectedCase(null);
+                    setValues((current) => ({
+                      ...current,
+                      employeeId: item?.id ?? '',
+                      sourceRelationId: '',
+                    }));
+                  }}
                 />
-              </FormField>
-              <FormField id="source-label" label="عنوان پرونده" required>
-                <Input
-                  id="source-label"
-                  onChange={(event) =>
-                    update('sourceDisplayLabel', event.target.value)
-                  }
-                  required
-                  value={values.sourceDisplayLabel}
-                />
-              </FormField>
+              ) : null}
             </div>
           </section>
 
@@ -333,7 +356,19 @@ export function DocumentUploadDialog({
               <FormField id="document-branch" label="شعبه" required>
                 <Select
                   disabled={!branches.length || submitting}
-                  onValueChange={(value) => update('branchId', value)}
+                  onValueChange={(value) => {
+                    if (value !== values.branchId) {
+                      setSelectedCase(null);
+                      setValues((current) => ({
+                        ...current,
+                        branchId: value,
+                        sourceRelationId: '',
+                        employeeId: '',
+                      }));
+                      setValidationError('');
+                      setEmployee(null);
+                    }
+                  }}
                   value={values.branchId}
                 >
                   <SelectTrigger aria-label="شعبه" id="document-branch">
@@ -367,6 +402,27 @@ export function DocumentUploadDialog({
                 </Select>
               </FormField>
             </div>
+            <label
+              className="mt-4 flex cursor-pointer items-start gap-3 rounded-2xl border border-sky-200 bg-sky-50/70 p-4 transition hover:border-primary dark:bg-sky-950/20"
+              htmlFor="document-requires-step-up"
+            >
+              <Checkbox
+                checked={values.requiresStepUpVerification}
+                id="document-requires-step-up"
+                onCheckedChange={(checked) =>
+                  update('requiresStepUpVerification', checked === true)
+                }
+              />
+              <span>
+                <span className="block font-black">
+                  نیازمند اعتبارسنجی دومرحله‌ای
+                </span>
+                <span className="mt-1 block text-xs leading-6 text-muted-foreground">
+                  مشاهده و دانلود این سند فقط پس از ورود کد شش‌رقمی
+                  Authenticator انجام می‌شود.
+                </span>
+              </span>
+            </label>
             <Alert
               className="mt-4"
               description={

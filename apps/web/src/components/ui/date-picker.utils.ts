@@ -13,8 +13,61 @@ export interface CalendarDay extends CalendarParts {
   isToday: boolean;
 }
 
+export interface CalendarPopoverRect {
+  bottom: number;
+  height: number;
+  left: number;
+  top: number;
+  width: number;
+}
+
+export interface CalendarViewport {
+  height: number;
+  width: number;
+}
+
+export interface CalendarConstrainedPopoverPosition {
+  left: number;
+  maxHeight: number;
+  top: number;
+}
+
 const persianDigits = '۰۱۲۳۴۵۶۷۸۹';
 const arabicDigits = '٠١٢٣٤٥٦٧٨٩';
+
+export function resolveCalendarPopoverPosition(
+  trigger: CalendarPopoverRect,
+  popover: Pick<CalendarPopoverRect, 'height' | 'width'>,
+  viewport: CalendarViewport,
+  gap = 8,
+  padding = 16,
+): CalendarConstrainedPopoverPosition {
+  const maxHeight = Math.max(0, viewport.height - padding * 2);
+  const renderedHeight = Math.min(popover.height, maxHeight);
+  const renderedWidth = Math.min(
+    popover.width,
+    Math.max(0, viewport.width - padding * 2),
+  );
+  const maximumLeft = Math.max(
+    padding,
+    viewport.width - padding - renderedWidth,
+  );
+  const left = Math.min(Math.max(trigger.left, padding), maximumLeft);
+  const below = trigger.bottom + gap;
+  const above = trigger.top - gap - renderedHeight;
+  const maximumTop = Math.max(
+    padding,
+    viewport.height - padding - renderedHeight,
+  );
+  const top =
+    below + renderedHeight <= viewport.height - padding
+      ? below
+      : above >= padding
+        ? above
+        : Math.min(Math.max(below, padding), maximumTop);
+
+  return { left, maxHeight, top };
+}
 
 function latinNumber(value: string): number {
   const normalized = [...value]
@@ -28,8 +81,12 @@ function latinNumber(value: string): number {
   return Number(normalized);
 }
 
-function localeFor(system: CalendarSystem): string {
-  return system === 'persian' ? 'fa-IR-u-ca-persian' : 'fa-IR-u-ca-gregory';
+function localeFor(system: CalendarSystem, gregorianEnglish = false): string {
+  return system === 'persian'
+    ? 'fa-IR-u-ca-persian'
+    : gregorianEnglish
+      ? 'en-GB-u-ca-gregory-nu-latn'
+      : 'fa-IR-u-ca-gregory-nu-latn';
 }
 
 export function parseIsoDate(value?: string): Date | null {
@@ -134,6 +191,38 @@ export function moveCalendarMonth(
   return target;
 }
 
+export function setCalendarMonthYear(
+  anchor: Date,
+  year: number,
+  month: number,
+  system: CalendarSystem,
+): Date {
+  if (
+    !Number.isInteger(year) ||
+    !Number.isInteger(month) ||
+    month < 1 ||
+    month > 12
+  )
+    return anchor;
+  const current = calendarParts(anchor, system);
+  const delta = (year - current.year) * 12 + (month - current.month);
+  let next = anchor;
+  const direction = delta < 0 ? -1 : 1;
+  for (let index = 0; index < Math.abs(delta); index += 1)
+    next = moveCalendarMonth(next, direction, system);
+  return next;
+}
+
+export function calendarMonthName(
+  anchor: Date,
+  system: CalendarSystem,
+  gregorianEnglish = false,
+): string {
+  return new Intl.DateTimeFormat(localeFor(system, gregorianEnglish), {
+    month: 'long',
+  }).format(anchor);
+}
+
 export function calendarMonthDays(
   anchor: Date,
   system: CalendarSystem,
@@ -163,8 +252,9 @@ export function calendarMonthDays(
 export function calendarMonthLabel(
   anchor: Date,
   system: CalendarSystem,
+  gregorianEnglish = false,
 ): string {
-  return new Intl.DateTimeFormat(localeFor(system), {
+  return new Intl.DateTimeFormat(localeFor(system, gregorianEnglish), {
     year: 'numeric',
     month: 'long',
   }).format(anchor);
@@ -174,17 +264,23 @@ export function formatCalendarValue(
   value: string,
   system: CalendarSystem,
   includeTime = false,
+  gregorianEnglish = false,
 ): string {
   const date = parseIsoDate(value);
   if (!date) return '';
-  const formattedDate = new Intl.DateTimeFormat(localeFor(system), {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  }).format(date);
+  const formattedDate = new Intl.DateTimeFormat(
+    localeFor(system, gregorianEnglish),
+    {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    },
+  ).format(date);
   if (!includeTime) return formattedDate;
   const time = /T(\d{2}:\d{2})/.exec(value)?.[1];
-  return time ? `${formattedDate}، ساعت ${time}` : formattedDate;
+  return time
+    ? `${formattedDate}${system === 'gregorian' && gregorianEnglish ? ', ' : '، ساعت '}${time}`
+    : formattedDate;
 }
 
 export function joinDateAndTime(
@@ -195,4 +291,56 @@ export function joinDateAndTime(
   if (!includeTime) return isoDate;
   const time = /T(\d{2}:\d{2})/.exec(currentValue)?.[1] ?? '00:00';
   return `${isoDate}T${time}`;
+}
+
+export interface CalendarPopoverAnchor {
+  top: number;
+  right: number;
+  bottom: number;
+}
+
+export interface CalendarPopoverSize {
+  width: number;
+  height: number;
+}
+
+export interface CalendarViewportSize {
+  width: number;
+  height: number;
+}
+
+export interface CalendarPopoverPosition {
+  top: number;
+  left: number;
+  placement: 'above' | 'below';
+}
+
+export function calculateCalendarPopoverPosition(
+  anchor: CalendarPopoverAnchor,
+  popover: CalendarPopoverSize,
+  viewport: CalendarViewportSize,
+  margin = 16,
+  gap = 8,
+): CalendarPopoverPosition {
+  const clamp = (value: number, minimum: number, maximum: number) =>
+    Math.min(Math.max(value, minimum), maximum);
+  const maximumLeft = Math.max(margin, viewport.width - margin - popover.width);
+  const left = clamp(anchor.right - popover.width, margin, maximumLeft);
+  const belowTop = anchor.bottom + gap;
+  const aboveTop = anchor.top - gap - popover.height;
+  const fitsBelow = belowTop + popover.height <= viewport.height - margin;
+  const fitsAbove = aboveTop >= margin;
+  const spaceBelow = viewport.height - anchor.bottom - gap - margin;
+  const spaceAbove = anchor.top - gap - margin;
+  const placeAbove = !fitsBelow && (fitsAbove || spaceAbove > spaceBelow);
+  const maximumTop = Math.max(
+    margin,
+    viewport.height - margin - popover.height,
+  );
+
+  return {
+    top: clamp(placeAbove ? aboveTop : belowTop, margin, maximumTop),
+    left,
+    placement: placeAbove ? 'above' : 'below',
+  };
 }

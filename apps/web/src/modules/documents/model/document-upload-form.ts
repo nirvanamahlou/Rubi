@@ -1,22 +1,21 @@
 import type {
   BranchReference,
   DocumentOptionsResponseV1,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 
 export interface DocumentUploadValues {
+  employeeId?: string;
   title: string;
   description: string;
   documentTypeId: string;
   categoryId: string;
   branchId: string;
   ownerUserId: string;
-  sourceModule: string;
-  sourceEntityType: string;
-  sourceEntityId: string;
-  sourceDisplayLabel: string;
+  sourceRelationId: string;
   confidentiality: string;
   validUntil: string;
   versionNote: string;
+  requiresStepUpVerification: boolean;
 }
 
 export const emptyDocumentUploadValues: DocumentUploadValues = {
@@ -26,13 +25,11 @@ export const emptyDocumentUploadValues: DocumentUploadValues = {
   categoryId: '',
   branchId: '',
   ownerUserId: '',
-  sourceModule: '',
-  sourceEntityType: '',
-  sourceEntityId: '',
-  sourceDisplayLabel: '',
+  sourceRelationId: '',
   confidentiality: '',
   validUntil: '',
   versionNote: '',
+  requiresStepUpVerification: false,
 };
 
 export function hydrateDocumentUploadDefaults(
@@ -60,10 +57,10 @@ export function validateDocumentUpload(
   if (!values.categoryId) return 'دسته‌بندی را انتخاب کنید.';
   if (!values.branchId) return 'شعبه را انتخاب کنید.';
   if (!values.ownerUserId) return 'مالک فایل را انتخاب کنید.';
-  if (!values.sourceModule.trim()) return 'ماژول مبدأ را وارد کنید.';
-  if (!values.sourceEntityType.trim()) return 'نوع رکورد مبدأ را وارد کنید.';
-  if (!values.sourceEntityId.trim()) return 'شناسه رکورد مبدأ را وارد کنید.';
-  if (!values.sourceDisplayLabel.trim()) return 'عنوان پرونده را وارد کنید.';
+  if (!values.sourceRelationId && !values.employeeId)
+    return 'پرونده مربوطه را انتخاب کنید.';
+  if (values.sourceRelationId && values.employeeId)
+    return 'فقط یک پرونده مرجع انتخاب کنید.';
   if (requiresExpiry && !values.validUntil)
     return 'برای این نوع سند، تاریخ اعتبار الزامی است.';
   return null;

@@ -1,4 +1,11 @@
-export const IAM_PERMISSION_CONTRACT_VERSION = 6 as const;
+import { HR_PERMISSION_CODES } from '../hr';
+import { PROCUREMENT_PERMISSION_CODES } from '../procurement';
+import { CUSTOMER_AFFAIRS_PERMISSIONS } from '../customer-affairs';
+import { PACKAGE_PRICING_PERMISSION_CODES } from '../package-pricing';
+import { SYSTEM_PERMISSION_CODES } from '../system-management';
+
+export const IAM_PERMISSION_CONTRACT_VERSION = 11 as const;
+export const IAM_STEP_UP_CONTRACT_VERSION = 1 as const;
 
 export const IAM_CORE_PERMISSION_CODES = [
   'iam.users.read',
@@ -31,6 +38,19 @@ export const CUSTOMER_PERMISSION_CODES = [
   'customers.merge',
   'customers.consent.manage',
   'customers.sensitive.read',
+] as const;
+
+export const B2B_PERMISSION_CODES = [
+  'b2b.agency.read',
+  'b2b.agency.manage',
+  'b2b.agreement.read',
+  'b2b.agreement.manage',
+  'b2b.agreement.approve',
+  'b2b.credit.read',
+  'b2b.credit.manage',
+  'b2b.credit.approve',
+  'b2b.rate.read',
+  'b2b.rate.manage',
 ] as const;
 
 export const LEGAL_ENTITY_AUTHENTICATED_BASELINE_PERMISSION_CODES = [
@@ -79,12 +99,48 @@ export const DOCUMENT_PERMISSION_CODES = [
   'documents.brand.read',
 ] as const;
 
+export const IAM_SALES_PERMISSION_CODES = [
+  'sales.contracts.read.own',
+  'sales.contracts.read.branch',
+  'sales.contracts.read.all',
+  'sales.contracts.create',
+  'sales.contracts.update.own',
+  'sales.contracts.update.branch',
+  'sales.contracts.confirm',
+  'sales.contracts.cancel',
+  'sales.payments.create',
+  'sales.payments.read',
+  'sales.reservation_request.create',
+  'sales.audit.read',
+  'sales.export',
+] as const;
+
 export const IAM_PERMISSION_CODES = [
+  ...PROCUREMENT_PERMISSION_CODES,
   ...IAM_CORE_PERMISSION_CODES,
   ...MASTER_DATA_PERMISSION_CODES,
   ...CUSTOMER_PERMISSION_CODES,
+  ...B2B_PERMISSION_CODES,
   ...LEGAL_ENTITY_PERMISSION_CODES,
   ...DOCUMENT_PERMISSION_CODES,
+  ...HR_PERMISSION_CODES,
+  ...IAM_SALES_PERMISSION_CODES,
+  ...PACKAGE_PRICING_PERMISSION_CODES,
+  ...SYSTEM_PERMISSION_CODES,
+  ...Object.values(CUSTOMER_AFFAIRS_PERMISSIONS),
+  'ticket_catalog.read',
+  'ticket_catalog.manage',
+  'reservations.read',
+  'reservations.documents.manage',
+  'finance.read',
+  'finance.receipt.approve',
+  'finance.payment.create',
+  'finance.account.manage',
+  'finance.financial_release.read',
+  'finance.financial_release.approve',
+  'reservations.hotel_purchase.write',
+
+  'reservations.arrangements.update',
 ] as const;
 
 export type IamPermissionCode = (typeof IAM_PERMISSION_CODES)[number];
@@ -111,4 +167,54 @@ export interface LoginResponse {
     permissions: IamPermissionCode[];
     branches: BranchReference[];
   };
+}
+
+export interface IamMfaStatusV1 {
+  enabled: boolean;
+  setupPending: boolean;
+  lockedUntil: string | null;
+}
+
+export interface IamMfaStatusResponseV1 {
+  data: IamMfaStatusV1;
+}
+
+export interface IamMfaSetupBeginInputV1 {
+  currentPassword: string;
+}
+
+export interface IamMfaSetupBeginResponseV1 {
+  data: {
+    manualKey: string;
+    otpAuthUri: string;
+    expiresAt: string;
+  };
+}
+
+export interface IamMfaSetupConfirmInputV1 {
+  code: string;
+}
+
+export interface IamMfaSetupConfirmResponseV1 {
+  data: IamMfaStatusV1;
+}
+
+export interface IamPersonalProfileV1 {
+  displayName: string;
+  email: string | null;
+  phone: string | null;
+  photoDocumentId: string | null;
+  updatedAt: string | null;
+}
+
+export interface IamPersonalProfileResponseV1 {
+  data: IamPersonalProfileV1;
+}
+
+export interface IamPersonalProfileUpdateInputV1 {
+  displayName: string;
+  email?: string | null;
+  phone?: string | null;
+  photoDocumentId?: string | null;
+  photoBranchId?: string | null;
 }

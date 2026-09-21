@@ -1,4 +1,4 @@
-import type { AuthenticatedActor } from '@rubi/contracts';
+import type { AuthenticatedActor } from '@nora/contracts';
 import { describe, expect, it, vi } from 'vitest';
 
 import type { MasterDataRepository } from './master-data.repository';
@@ -64,6 +64,7 @@ describe('payment-method form persistence', () => {
         name: existing.name,
         channel: 'CASH',
         direction: 'BOTH',
+        displayOrder: 0,
       },
       actor,
     );
@@ -78,6 +79,7 @@ describe('payment-method form persistence', () => {
         name: existing.name,
         channel: 'CASH',
         direction: 'BOTH',
+        displayOrder: 0,
       },
       actor.userId,
       actor.branchIds[0],

@@ -11,7 +11,7 @@ import type {
   MasterDataResource,
   MasterDataStatus,
   MasterInsuranceSummary,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import {
   ArrowRight,
   Banknote,
@@ -56,7 +56,11 @@ import {
   PaginationShell,
   Skeleton,
 } from '@/components/ui/surfaces';
-import { masterDataApi, MasterDataApiError } from '../api/client';
+import {
+  masterDataApi,
+  MasterDataApiError,
+  type MasterDataLogoChange,
+} from '../api/client';
 import { MasterDataDeleteButton } from './master-data-delete-button';
 import { MasterDataFilterActions } from './master-data-filter-actions';
 import { getMasterDataDefinition } from '../model/catalog';
@@ -169,7 +173,7 @@ export function MasterDataInsuranceWorkspace() {
   const [insurers, setInsurers] = useState<readonly MasterDataRecord[]>([]);
   const [currencies, setCurrencies] = useState<readonly MasterDataRecord[]>([]);
   const [search, setSearch] = useState('');
-  const [status, setStatus] = useState<'all' | MasterDataStatus>('all');
+  const [status, setStatus] = useState<'all' | MasterDataStatus>('active');
   const [referenceFilter, setReferenceFilter] = useState('all');
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
@@ -376,7 +380,7 @@ export function MasterDataInsuranceWorkspace() {
     setResource(next);
     setSearch('');
     resetColumnFilters();
-    setStatus('all');
+    setStatus('active');
     setReferenceFilter('all');
     setPage(1);
     setSelected(undefined);
@@ -390,19 +394,22 @@ export function MasterDataInsuranceWorkspace() {
     setProfileOpen(true);
   }
 
-  async function persist(values: Record<string, string>) {
-    if (formMode === 'edit' && selected) {
-      await masterDataApi.update(resource, selected.id, {
-        values,
-        version: selected.version,
-      });
-      setNotice(
-        `${definition.singularLabel} با Optimistic Lock و Audit ویرایش شد.`,
-      );
-    } else {
-      await masterDataApi.create(resource, { values });
-      setNotice(`${definition.singularLabel} ثبت شد.`);
-    }
+  async function persist(
+    values: Record<string, string>,
+    logoChange?: MasterDataLogoChange,
+  ) {
+    const result = await masterDataApi.persistWithLogo({
+      resource,
+      values,
+      title:
+        `${definition.singularLabel} ${values.name ?? selected?.name ?? ''}`.trim(),
+      ...(formMode === 'edit' && selected ? { existing: selected } : {}),
+      ...(logoChange ? { logoChange } : {}),
+    });
+    setNotice(
+      result.warning ??
+        `${definition.singularLabel} با Optimistic Lock و Audit ${formMode === 'edit' ? 'ویرایش' : 'ثبت'} شد.`,
+    );
     setFormMode(null);
     await Promise.all([load(), loadSummary()]);
   }
@@ -461,7 +468,7 @@ export function MasterDataInsuranceWorkspace() {
   }
 
   const actions = (record: MasterDataRecord) => (
-    <div className="flex flex-wrap gap-2">
+    <div className="flex flex-wrap justify-end gap-2">
       <Button
         aria-label={`مشاهده ${record.name}`}
         onClick={() => openProfile(record)}
@@ -704,7 +711,7 @@ export function MasterDataInsuranceWorkspace() {
       <PageHeader
         actions={
           <Link
-            className={buttonVariants({ variant: 'outline' })}
+            className={`${buttonVariants({ variant: 'outline' })} ms-auto`}
             href="/master-data"
           >
             <ArrowRight className="size-4" /> همه بخش‌ها
@@ -713,7 +720,7 @@ export function MasterDataInsuranceWorkspace() {
         description={definition.description}
         title={definition.label}
       />
-      <div className="flex flex-wrap gap-2">
+      <div className="flex w-full flex-wrap justify-end gap-2">
         <Button
           loading={exporting}
           onClick={() => void downloadExcel()}
@@ -815,7 +822,7 @@ export function MasterDataInsuranceWorkspace() {
             setSearch('');
             resetColumnFilters();
             resetDateRange();
-            setStatus('all');
+            setStatus('active');
             setReferenceFilter('all');
             setPage(1);
           }}

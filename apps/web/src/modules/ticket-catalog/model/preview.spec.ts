@@ -3,10 +3,12 @@ import { describe, expect, it } from 'vitest';
 import {
   activateCatalogSample,
   catalogStorageKey,
+  countProductsByRoute,
   groupProductsForCards,
   initialQuery,
   moveDefinitionToDate,
   parseCatalogSnapshot,
+  pauseExpiredCatalogProduct,
   previewSamples,
   queryProducts,
   repeatDefinition,
@@ -70,6 +72,36 @@ describe('Ticket catalog browser collection and query', () => {
         to: '2026-09-08',
       }).total,
     ).toBe(1);
+    const route = samples[0]!.definition.segments[0]!;
+    expect(
+      queryProducts(samples, {
+        ...initialQuery,
+        originCityId: route.originCityId,
+        destinationCityId: route.destinationCityId,
+      }).total,
+    ).toBeGreaterThan(0);
+    expect(
+      queryProducts(samples, {
+        ...initialQuery,
+        originCityId: route.destinationCityId,
+        destinationCityId: route.originCityId,
+      }).rows.every(
+        (product) =>
+          product.definition.segments[0]!.originCityId ===
+            route.destinationCityId &&
+          product.definition.segments[0]!.destinationCityId ===
+            route.originCityId,
+      ),
+    ).toBe(true);
+  });
+  it('counts every catalog product once under its route', () => {
+    const routes = countProductsByRoute(samples);
+    expect(routes.reduce((sum, route) => sum + route.count, 0)).toBe(
+      samples.length,
+    );
+    expect(routes.every((route) => route.origin && route.destination)).toBe(
+      true,
+    );
   });
   it('anchors the first repeated ticket on the selected date and keeps times', () => {
     const source = samples[0]!.definition;
@@ -85,6 +117,26 @@ describe('Ticket catalog browser collection and query', () => {
       Date.parse(source.segments[0]!.arrivalAt) -
         Date.parse(source.segments[0]!.departureAt),
     );
+  });
+  it('anchors and repeats a ticket that has no departure time', () => {
+    const source = {
+      ...samples[0]!.definition,
+      serviceDate: '',
+      segments: samples[0]!.definition.segments.map((segment) => ({
+        ...segment,
+        departureAt: '',
+        arrivalAt: '',
+      })),
+      fare: {
+        ...samples[0]!.definition.fare,
+        validFrom: '',
+        validTo: '',
+      },
+    };
+    const moved = moveDefinitionToDate(source, '2026-09-22');
+    expect(moved.serviceDate).toBe('2026-09-22');
+    expect(moved.segments[0]!.departureAt).toBe('');
+    expect(repeatDefinition(moved, 'weekly', 1).serviceDate).toBe('2026-09-29');
   });
   it('shifts all schedule and fare dates for weekly and monthly repeats', () => {
     const source = samples[0]!.definition;
@@ -116,6 +168,27 @@ describe('Ticket catalog browser collection and query', () => {
     expect(activateCatalogSample(samples[0]!, '2026-09-02T00:00:00.000Z')).toBe(
       samples[0],
     );
+  });
+  it('automatically pauses an active ticket after its first departure', () => {
+    const active = {
+      ...samples[0]!,
+      status: 'active' as const,
+      version: 7,
+    };
+    const before = pauseExpiredCatalogProduct(
+      active,
+      '2026-08-31T00:00:00.000Z',
+    );
+    const after = pauseExpiredCatalogProduct(
+      active,
+      '2027-01-01T00:00:00.000Z',
+    );
+    expect(before).toBe(active);
+    expect(after).toMatchObject({ status: 'paused', version: 8 });
+    expect(after.history.at(-1)).toMatchObject({
+      action: 'paused',
+      actor: 'سیستم',
+    });
   });
   it('round-trips valid browser storage and rejects malformed data', () => {
     const raw = JSON.stringify({ products: samples, references: [] });

@@ -118,6 +118,16 @@ describe('master data API proposal', () => {
     expect(serialized).toContain('busServiceClass=VIP');
   });
 
+  it('serializes only allowlisted shared-organization roles', () => {
+    const query = parseMasterDataListQuery({ organizationRole: 'AGENCY' });
+    expect(serializeMasterDataListQuery(query)).toContain(
+      'organizationRole=AGENCY',
+    );
+    expect(() =>
+      parseMasterDataListQuery({ organizationRole: 'UNTRUSTED_ROLE' }),
+    ).toThrow();
+  });
+
   it('rejects uncontrolled page sizes', () => {
     expect(() => parseMasterDataListQuery({ pageSize: 101 })).toThrow();
   });

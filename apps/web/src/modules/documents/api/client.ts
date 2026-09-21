@@ -1,13 +1,25 @@
 import type {
   DocumentAuditResponseV1,
+  DocumentAccessGrantInputV1,
+  DocumentAccessGrantResponseV1,
+  DocumentArchiveActionInputV1,
+  DocumentBulkActionInputV1,
+  DocumentBulkActionResponseV1,
+  DocumentCaseOptionsQueryV1,
+  DocumentCaseOptionsResponseV1,
   DocumentDetailResponseV1,
+  DocumentFavoriteResponseV1,
+  DocumentFavoritesResponseV1,
   DocumentListQueryV1,
   DocumentListResponseV1,
   DocumentOptionsResponseV1,
-} from '@rubi/contracts';
+  DocumentDeleteInputV1,
+  DocumentUpdateInputV1,
+} from '@nora/contracts';
 
 import { getPublicApiBaseUrl } from '../../../lib/environment';
 import { refreshAuthenticatedSession } from '../../../lib/auth-session';
+import { notifyNotificationFeedChanged } from '../../notifications/api/client';
 
 export class DocumentsApiError extends Error {
   constructor(
@@ -52,6 +64,7 @@ async function request<T>(
       envelope?.error?.code ?? envelope?.code,
     );
   }
+  if (response.status === 204) return undefined as T;
   return response.json() as Promise<T>;
 }
 
@@ -59,6 +72,7 @@ async function requestFile(
   path: string,
   sensitiveReason?: string,
   signal?: AbortSignal,
+  accessGrantToken?: string,
   retriedAfterRefresh = false,
 ): Promise<{ blob: Blob; disposition: string | null }> {
   const baseUrl = getPublicApiBaseUrl();
@@ -74,6 +88,9 @@ async function requestFile(
             'x-sensitive-read-reason': encodeURIComponent(sensitiveReason),
           }
         : {}),
+      ...(accessGrantToken
+        ? { 'x-document-access-grant': accessGrantToken }
+        : {}),
     },
   });
   if (
@@ -81,16 +98,18 @@ async function requestFile(
     !retriedAfterRefresh &&
     (await refreshAuthenticatedSession(baseUrl))
   ) {
-    return requestFile(path, sensitiveReason, signal, true);
+    return requestFile(path, sensitiveReason, signal, accessGrantToken, true);
   }
   if (!response.ok) {
     const envelope = (await response.json().catch(() => null)) as {
+      code?: string;
       message?: string;
-      error?: { message?: string };
+      error?: { code?: string; message?: string };
     } | null;
     throw new DocumentsApiError(
       envelope?.error?.message ?? envelope?.message ?? 'دریافت فایل مجاز نیست.',
       response.status,
+      envelope?.error?.code ?? envelope?.code,
     );
   }
   return {
@@ -99,7 +118,7 @@ async function requestFile(
   };
 }
 
-function serializeListQuery(query: DocumentListQueryV1): string {
+function serializeQuery(query: object): string {
   const params = new URLSearchParams();
   for (const [key, value] of Object.entries(query)) {
     if (value !== undefined && value !== '' && value !== 'ALL') {
@@ -109,12 +128,33 @@ function serializeListQuery(query: DocumentListQueryV1): string {
   return params.toString();
 }
 
+async function refreshNotificationsAfter<T>(operation: Promise<T>): Promise<T> {
+  const result = await operation;
+  notifyNotificationFeedChanged();
+  return result;
+}
+
 export const documentsApi = {
   list(query: DocumentListQueryV1) {
-    return request<DocumentListResponseV1>(`?${serializeListQuery(query)}`);
+    return request<DocumentListResponseV1>(`?${serializeQuery(query)}`);
   },
   options() {
     return request<DocumentOptionsResponseV1>('/options');
+  },
+  favorites() {
+    return request<DocumentFavoritesResponseV1>('/favorites');
+  },
+  setFavorite(id: string, favorite: boolean) {
+    return request<DocumentFavoriteResponseV1>(
+      `/${encodeURIComponent(id)}/favorite`,
+      { method: favorite ? 'POST' : 'DELETE' },
+    );
+  },
+  caseOptions(query: DocumentCaseOptionsQueryV1, signal?: AbortSignal) {
+    return request<DocumentCaseOptionsResponseV1>(
+      `/case-options?${serializeQuery(query)}`,
+      signal ? { signal } : undefined,
+    );
   },
   detail(id: string, sensitiveReason?: string) {
     return request<DocumentDetailResponseV1>(
@@ -132,19 +172,87 @@ export const documentsApi = {
     return request<DocumentAuditResponseV1>(`/${encodeURIComponent(id)}/audit`);
   },
   upload(form: FormData) {
-    return request<DocumentDetailResponseV1>('/upload', {
-      method: 'POST',
-      body: form,
-    });
+    return refreshNotificationsAfter(
+      request<DocumentDetailResponseV1>('/upload', {
+        method: 'POST',
+        body: form,
+      }),
+    );
   },
-  download(id: string, sensitiveReason?: string) {
-    return requestFile(`/${encodeURIComponent(id)}/download`, sensitiveReason);
+  update(id: string, input: DocumentUpdateInputV1) {
+    return refreshNotificationsAfter(
+      request<DocumentDetailResponseV1>(`/${encodeURIComponent(id)}`, {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(input),
+      }),
+    );
   },
-  preview(id: string, sensitiveReason?: string, signal?: AbortSignal) {
+  archive(id: string, input: DocumentArchiveActionInputV1) {
+    return refreshNotificationsAfter(
+      request<DocumentDetailResponseV1>(`/${encodeURIComponent(id)}/archive`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(input),
+      }),
+    );
+  },
+  restore(id: string, input: DocumentArchiveActionInputV1) {
+    return refreshNotificationsAfter(
+      request<DocumentDetailResponseV1>(`/${encodeURIComponent(id)}/restore`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(input),
+      }),
+    );
+  },
+  bulk(input: DocumentBulkActionInputV1) {
+    return refreshNotificationsAfter(
+      request<DocumentBulkActionResponseV1>('/bulk', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(input),
+      }),
+    );
+  },
+  permanentlyDelete(id: string, input: DocumentDeleteInputV1) {
+    return refreshNotificationsAfter(
+      request<void>(`/${encodeURIComponent(id)}`, {
+        method: 'DELETE',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(input),
+      }),
+    );
+  },
+  createAccessGrant(id: string, input: DocumentAccessGrantInputV1) {
+    return request<DocumentAccessGrantResponseV1>(
+      `/${encodeURIComponent(id)}/access-grants`,
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(input),
+      },
+    );
+  },
+  download(id: string, sensitiveReason?: string, accessGrantToken?: string) {
+    return requestFile(
+      `/${encodeURIComponent(id)}/download`,
+      sensitiveReason,
+      undefined,
+      accessGrantToken,
+    );
+  },
+  preview(
+    id: string,
+    sensitiveReason?: string,
+    signal?: AbortSignal,
+    accessGrantToken?: string,
+  ) {
     return requestFile(
       `/${encodeURIComponent(id)}/preview`,
       sensitiveReason,
       signal,
+      accessGrantToken,
     );
   },
 };

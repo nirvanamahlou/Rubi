@@ -1,6 +1,6 @@
 'use client';
 
-import type { MasterDataRecord } from '@rubi/contracts';
+import type { MasterDataRecord } from '@nora/contracts';
 import { useRef, useState, type FormEvent } from 'react';
 import { Save, UtensilsCrossed } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -19,6 +19,7 @@ import {
   MasterDataClearSelection,
 } from './master-data-clearable-field';
 import { MasterDataProfileDialog } from './master-data-profile-dialog';
+import { MasterDataNumberInput } from './master-data-number-input';
 import {
   includedMealOptions,
   mealServiceCodes,
@@ -199,6 +200,18 @@ export function MasterDataMealServiceForm({
                     )
                   : 'پس از ثبت محاسبه می‌شود'
               }
+            />
+          </FormField>
+          <FormField
+            id="meal-displayOrder"
+            label="ترتیب نمایش"
+            {...(errors.displayOrder ? { error: errors.displayOrder } : {})}
+          >
+            <MasterDataNumberInput
+              id="meal-displayOrder"
+              disabled={disabled}
+              value={values.displayOrder ?? '0'}
+              onChange={(value) => change('displayOrder', value)}
             />
           </FormField>
         </div>

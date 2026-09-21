@@ -14,13 +14,8 @@ const source = readFileSync(
 );
 
 describe('sales references workspace', () => {
-  it('keeps the four remaining tabs without a standalone profile section', () => {
-    for (const label of [
-      'نحوه آشنایی',
-      'کانال فروش',
-      'دلیل از دست رفتن',
-      'Tag',
-    ])
+  it('keeps only the two requested tabs without a standalone profile section', () => {
+    for (const label of ['نحوه آشنایی', 'کانال فروش'])
       expect(source).toContain(label);
     expect(source).toContain('<MasterDataProfileDialog');
     expect(source).toContain('setProfileOpen(true)');
@@ -38,9 +33,15 @@ describe('sales references workspace', () => {
     expect(resources).toEqual(
       getMasterDataSection('sales-references')?.resources,
     );
-    expect(resources).toHaveLength(4);
-    for (const resource of ['lead-sources', 'customer-types', 'campaign-types'])
-      expect(source).not.toContain(resource);
+    expect(resources).toHaveLength(2);
+    for (const resource of [
+      'lead-sources',
+      'customer-types',
+      'campaign-types',
+      'lost-reasons',
+      'tags',
+    ])
+      expect(tabs).not.toContain(resource);
   });
 
   it('uses the exact four KPI names from the mockup', () => {

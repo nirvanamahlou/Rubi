@@ -1,5 +1,4 @@
 'use client';
-
 import {
   ArrowDownUp,
   Banknote,
@@ -457,7 +456,7 @@ function CapabilityWorkspace({
       <Alert
         description="Navigation داخلی Grid است؛ منوی اصلی CRM همچنان دقیقاً ۱۷ بخش دارد."
         title={
-          features.length.toLocaleString('fa-IR') + ' قابلیت مطابق جست‌وجو'
+          features.length.toLocaleString('fa-IR') + ' قابلیط مطابق جست‌وجو'
         }
       />
       {features.length ? (
@@ -469,7 +468,7 @@ function CapabilityWorkspace({
       ) : (
         <EmptyState
           description="کلیدواژه دیگری مانند چک، ارز، سود یا بودجه را جست‌وجو کنید."
-          title="قابلیت پیدا نشد"
+          title="قابلیط پیدا نشد"
         />
       )}
     </div>

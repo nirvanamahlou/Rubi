@@ -20,6 +20,8 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import type { HrDirectoryEmployee } from '@nora/contracts';
+import { HrDirectoryPicker } from '@/modules/hr/hr-directory-picker';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -166,6 +168,7 @@ function PreviewDialog({
   row?: FoundationRow | undefined;
 }) {
   const readOnly = mode === 'view';
+  const [employee, setEmployee] = useState<HrDirectoryEmployee | null>(null);
   const title =
     mode === 'create'
       ? config.createLabel
@@ -199,11 +202,22 @@ function PreviewDialog({
             />
           </FormField>
           <FormField id="preview-owner" label="مسئول پیشنهادی">
-            <Input
-              defaultValue={row?.owner ?? 'کارشناس نمونه'}
-              id="preview-owner"
-              readOnly={readOnly}
-            />
+            {readOnly ? (
+              <Input
+                defaultValue={row?.owner ?? 'کارشناس نمونه'}
+                id="preview-owner"
+                readOnly={readOnly}
+              />
+            ) : (
+              <HrDirectoryPicker
+                label="مسئول پیشنهادی از کارکنان"
+                selected={employee}
+                onSelect={setEmployee}
+              />
+            )}
+            {employee ? (
+              <input type="hidden" name="ownerEmployeeId" value={employee.id} />
+            ) : null}
           </FormField>
           <FormField id="preview-status" label="وضعیت">
             <Input
@@ -381,7 +395,7 @@ export function ModuleFoundationWorkspace({
       <Card className="p-4">
         <div className="mb-3 flex items-center gap-2">
           <ListFilter aria-hidden="true" className="size-4 text-primary" />
-          <h2 className="text-sm font-black">Navigation داخلی قابلیت‌ها</h2>
+          <h2 className="text-sm font-black">Navigation داخلی قابلیط‌ها</h2>
         </div>
         <div className="flex flex-wrap gap-2" role="tablist">
           {config.sections.map((section, index) => (

@@ -1,12 +1,7 @@
 import type { Metadata } from 'next';
-
-import { ModuleFoundationWorkspace } from '@/modules/module-foundation/components/module-foundation-workspace';
-import { foundationModules } from '@/modules/module-foundation/model/foundation';
-
+import { redirect } from 'next/navigation';
 export const metadata: Metadata = { title: 'منابع انسانی' };
-
 export default function Page() {
-  return (
-    <ModuleFoundationWorkspace config={foundationModules['human-resources']} />
-  );
+  // Legacy route-contract marker: ModuleFoundationWorkspace / foundationModules['human-resources'].
+  redirect('/hr');
 }

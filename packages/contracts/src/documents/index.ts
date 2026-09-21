@@ -1,6 +1,7 @@
 import type { BranchReference } from '../iam';
 
 export const DOCUMENTS_CONTRACT_VERSION = 1 as const;
+export const DOCUMENTS_STEP_UP_CONTRACT_VERSION = 1 as const;
 
 export const DOCUMENT_DOMAIN_CODES = [
   'CUSTOMER_IDENTITY',
@@ -47,6 +48,9 @@ export type DocumentScanStatusCode =
 export type DocumentValidityFilter =
   'ALL' | 'VALID' | 'EXPIRING' | 'EXPIRED' | 'WITHOUT_EXPIRY';
 
+export type DocumentCompletionFilter = 'COMPLETE' | 'INCOMPLETE';
+export type DocumentAttentionFilter = 'INCOMPLETE_OR_EXPIRED';
+
 export const DOCUMENT_PERSONAL_VIEW_CODES = [
   'OWNED',
   'UPLOADED',
@@ -63,8 +67,16 @@ export type DocumentSortCode =
   | 'validUntil'
   | 'sizeBytes';
 
+export const DOCUMENT_ACCESS_PURPOSE_CODES = ['PREVIEW', 'DOWNLOAD'] as const;
+export type DocumentAccessPurposeCode =
+  (typeof DOCUMENT_ACCESS_PURPOSE_CODES)[number];
+
 export interface DocumentListQueryV1 {
   search?: string;
+  /** Exact canonical source reference. All three source fields must be supplied together. */
+  sourceModule?: string;
+  sourceEntityType?: string;
+  sourceEntityId?: string;
   typeCode?: string;
   categoryId?: string;
   branchId?: string;
@@ -72,6 +84,8 @@ export interface DocumentListQueryV1 {
   archiveStatus?: DocumentArchiveStatusCode;
   scanStatus?: DocumentScanStatusCode;
   validity?: DocumentValidityFilter;
+  completion?: DocumentCompletionFilter;
+  attention?: DocumentAttentionFilter;
   ownerUserId?: string;
   confidentiality?: DocumentConfidentialityCode;
   createdFrom?: string;
@@ -81,6 +95,14 @@ export interface DocumentListQueryV1 {
   sortDirection?: 'asc' | 'desc';
   page?: number;
   pageSize?: number;
+}
+
+export interface DocumentFavoritesResponseV1 {
+  data: DocumentListItemV1[];
+}
+
+export interface DocumentFavoriteResponseV1 {
+  data: { documentId: string; favorite: boolean };
 }
 
 export interface DocumentTypeOptionV1 {
@@ -140,8 +162,12 @@ export interface DocumentListItemV1 {
   branchId: string;
   confidentiality: DocumentConfidentialityCode;
   archiveStatus: DocumentArchiveStatusCode;
+  isIncomplete: boolean;
+  requiresStepUpVerification: boolean;
   validUntil: string | null;
+  version: number;
   currentVersion: DocumentVersionV1;
+  capabilities: DocumentCapabilitiesV1;
   createdAt: string;
   updatedAt: string;
 }
@@ -154,6 +180,8 @@ export interface DocumentCapabilitiesV1 {
   viewAudit: boolean;
   archive: boolean;
   restore: boolean;
+  markIncomplete: boolean;
+  permanentDelete: boolean;
 }
 
 export interface DocumentDetailV1 extends DocumentListItemV1 {
@@ -202,10 +230,78 @@ export interface DocumentOptionsResponseV1 {
   };
 }
 
+export interface DocumentCaseOptionV1 {
+  id: string;
+  displayLabel: string;
+}
+
+export interface DocumentCaseOptionsQueryV1 {
+  branchId: string;
+  search?: string;
+  limit?: number;
+}
+
+export interface DocumentCaseOptionsResponseV1 {
+  data: readonly DocumentCaseOptionV1[];
+  meta: {
+    hasMore: boolean;
+    limit: number;
+  };
+}
+
 export interface DocumentDetailResponseV1 {
   data: DocumentDetailV1;
 }
 
 export interface DocumentAuditResponseV1 {
   data: readonly DocumentAuditEventV1[];
+}
+
+export interface DocumentUpdateInputV1 {
+  title: string;
+  description?: string;
+  categoryId: string;
+  ownerUserId: string;
+  confidentiality: DocumentConfidentialityCode;
+  validUntil?: string;
+  isIncomplete: boolean;
+  version: number;
+}
+
+export type DocumentBulkActionV1 =
+  'MARK_INCOMPLETE' | 'MARK_COMPLETE' | 'ARCHIVE' | 'RESTORE';
+
+export interface DocumentBulkActionInputV1 {
+  ids: readonly string[];
+  action: DocumentBulkActionV1;
+  reason: string;
+}
+
+export interface DocumentBulkActionResponseV1 {
+  data: {
+    updatedCount: number;
+  };
+}
+
+export interface DocumentArchiveActionInputV1 {
+  reason: string;
+  version: number;
+}
+
+export interface DocumentDeleteInputV1 {
+  reason: string;
+  version: number;
+}
+
+export interface DocumentAccessGrantInputV1 {
+  code: string;
+  purpose: DocumentAccessPurposeCode;
+}
+
+export interface DocumentAccessGrantResponseV1 {
+  data: {
+    token: string;
+    purpose: DocumentAccessPurposeCode;
+    expiresAt: string;
+  };
 }

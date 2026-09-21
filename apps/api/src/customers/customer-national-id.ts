@@ -27,6 +27,30 @@ export type StoredNationalId = {
   nationalIdKeyVersion: number | null;
 };
 
+export type ProtectedPassportNumber = {
+  passportNumberEncrypted: string;
+  passportNumberIv: string;
+  passportNumberAuthTag: string;
+  passportNumberKeyVersion: number;
+  passportNumberFingerprint: string;
+  passportNumberMasked: string;
+};
+
+export type StoredPassportNumber = {
+  passportNumberEncrypted: string | null;
+  passportNumberIv: string | null;
+  passportNumberAuthTag: string | null;
+  passportNumberKeyVersion: number | null;
+};
+
+export function normalizePassportNumber(value: string): string {
+  return value.trim().toUpperCase().replace(/\s+/g, '');
+}
+
+export function isValidPassportNumber(value: string): boolean {
+  return /^[A-Z0-9-]{4,24}$/.test(normalizePassportNumber(value));
+}
+
 export function normalizeNationalId(value: string): string {
   return value
     .trim()
@@ -123,6 +147,69 @@ export class CustomerNationalIdProtector {
     ]).toString('utf8');
     if (!isValidIranianNationalId(decrypted))
       throw new Error('Customer national ID plaintext is invalid.');
+    return decrypted;
+  }
+
+  protectPassportNumber(value: string): ProtectedPassportNumber {
+    const normalized = normalizePassportNumber(value);
+    if (!isValidPassportNumber(normalized))
+      throw new BadRequestException({
+        code: 'CUSTOMER_PASSPORT_NUMBER_INVALID',
+        message:
+          'شماره پاسپورت باید بین ۴ تا ۲۴ نویسه و شامل حروف لاتین، عدد یا خط تیره باشد.',
+      });
+    const iv = randomBytes(12);
+    const cipher = createCipheriv('aes-256-gcm', this.encryptionKey, iv);
+    cipher.setAAD(Buffer.from('rubi:customer-passport-number:v1', 'utf8'));
+    const encrypted = Buffer.concat([
+      cipher.update(normalized, 'utf8'),
+      cipher.final(),
+    ]);
+    return {
+      passportNumberEncrypted: encrypted.toString('base64'),
+      passportNumberIv: iv.toString('base64'),
+      passportNumberAuthTag: cipher.getAuthTag().toString('base64'),
+      passportNumberKeyVersion: this.keyVersion,
+      passportNumberFingerprint: createHmac('sha256', this.fingerprintKey)
+        .update(`passport-number:v1:${normalized}`, 'utf8')
+        .digest('hex'),
+      passportNumberMasked:
+        normalized.length <= 4
+          ? '*'.repeat(normalized.length)
+          : `${normalized.slice(0, 2)}${'*'.repeat(normalized.length - 4)}${normalized.slice(-2)}`,
+    };
+  }
+
+  decryptPassportNumber(value: StoredPassportNumber): string | null {
+    if (
+      value.passportNumberEncrypted === null &&
+      value.passportNumberIv === null &&
+      value.passportNumberAuthTag === null &&
+      value.passportNumberKeyVersion === null
+    )
+      return null;
+    if (
+      !value.passportNumberEncrypted ||
+      !value.passportNumberIv ||
+      !value.passportNumberAuthTag ||
+      value.passportNumberKeyVersion !== this.keyVersion
+    )
+      throw new Error(
+        'Customer passport number encryption metadata is invalid.',
+      );
+    const decipher = createDecipheriv(
+      'aes-256-gcm',
+      this.encryptionKey,
+      Buffer.from(value.passportNumberIv, 'base64'),
+    );
+    decipher.setAAD(Buffer.from('rubi:customer-passport-number:v1', 'utf8'));
+    decipher.setAuthTag(Buffer.from(value.passportNumberAuthTag, 'base64'));
+    const decrypted = Buffer.concat([
+      decipher.update(Buffer.from(value.passportNumberEncrypted, 'base64')),
+      decipher.final(),
+    ]).toString('utf8');
+    if (!isValidPassportNumber(decrypted))
+      throw new Error('Customer passport number plaintext is invalid.');
     return decrypted;
   }
 }

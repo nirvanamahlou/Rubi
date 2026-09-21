@@ -1,4 +1,4 @@
-import { MASTER_DATA_RESOURCES } from '@rubi/contracts';
+import { MASTER_DATA_RESOURCES } from '@nora/contracts';
 import { describe, expect, it } from 'vitest';
 import { DEMO_EXCLUDED, masterDataDemoRecords } from './demo-data';
 import { assertLocalDemoTarget } from './local-demo';
@@ -24,6 +24,21 @@ describe('explicit local Master Data demo fixtures', () => {
     expect(values.find((value) => value.code === 'BB')?.englishName).toBe(
       'Bed & Breakfast',
     );
+    expect(
+      fixtures.find((row) => row.key === 'aircraft-1')?.values((key) => key),
+    ).toMatchObject({
+      englishName: 'Airbus A320-200',
+      manufacturerModel: 'Airbus / A320-200',
+    });
+    expect(
+      fixtures.find((row) => row.key === 'aircraft-1')?.values((key) => key),
+    ).not.toHaveProperty('name');
+    expect(
+      fixtures.find((row) => row.key === 'cabin-1')?.values((key) => key),
+    ).toMatchObject({ englishName: 'Economy', bookingCode: 'Y' });
+    expect(
+      fixtures.find((row) => row.key === 'cabin-1')?.values((key) => key),
+    ).not.toHaveProperty('name');
   });
   it('covers all retained reference catalogs with ordered dependencies and marked synthetic names', () => {
     const fixtures = masterDataDemoRecords();
@@ -39,8 +54,16 @@ describe('explicit local Master Data demo fixtures', () => {
         expect(seen.has(key), `${row.key} depends on ${key}`).toBe(true);
         return '11111111-1111-4111-8111-111111111111';
       });
-      if (row.resource !== 'suppliers')
-        expect(values.name ?? values.displayName ?? values.fullName).toContain(
+      if (row.resource === 'aircraft-types') {
+        expect(values.manufacturerModel).toContain(' / ');
+        expect(values).not.toHaveProperty('name');
+        expect(values).not.toHaveProperty('manufacturer');
+        expect(values).not.toHaveProperty('model');
+      } else if (row.resource === 'cabin-classes') {
+        expect(values.englishName).toMatch(/^Demo Cabin \d+$/);
+        expect(values).not.toHaveProperty('name');
+      } else if (row.resource !== 'suppliers')
+        expect(values.name ?? values.legalName ?? values.fullName).toContain(
           'آزمایشی',
         );
       expect(JSON.stringify(values)).not.toMatch(
@@ -51,9 +74,9 @@ describe('explicit local Master Data demo fixtures', () => {
   });
 
   it.each([
-    ['postgresql://localhost:55432/rubi?schema=public', 'development'],
+    ['postgresql://localhost:55432/nora?schema=public', 'development'],
     [
-      'postgresql://127.0.0.1:55432/rubi_md_demo_test_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+      'postgresql://127.0.0.1:55432/nora_md_demo_test_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
       'test',
     ],
   ])('allows only the intended local targets', (url, environment) => {
@@ -61,12 +84,12 @@ describe('explicit local Master Data demo fixtures', () => {
   });
 
   it.each([
-    ['postgresql://remote.example:55432/rubi', 'development'],
-    ['postgresql://127.0.0.1:5432/rubi', 'development'],
+    ['postgresql://remote.example:55432/nora', 'development'],
+    ['postgresql://127.0.0.1:5432/nora', 'development'],
     ['postgresql://127.0.0.1:55432/postgres', 'development'],
-    ['postgresql://127.0.0.1:55432/rubi', 'production'],
-    ['postgresql://127.0.0.1:55432/rubi?host=remote.example', 'development'],
-    ['postgresql://127.0.0.1:55432/rubi?schema=other', 'development'],
+    ['postgresql://127.0.0.1:55432/nora', 'production'],
+    ['postgresql://127.0.0.1:55432/nora?host=remote.example', 'development'],
+    ['postgresql://127.0.0.1:55432/nora?schema=other', 'development'],
   ])(
     'rejects remote, production, other databases and connection overrides',
     (url, environment) => {
@@ -92,7 +115,7 @@ describe('explicit local Master Data demo fixtures', () => {
   it('retains the environment acknowledgement and rejects accidental apply arguments', () => {
     expect(
       parseLocalDemoCli(['--apply'], {
-        RUBI_ALLOW_LOCAL_MASTER_DEMO: '1',
+        NORA_ALLOW_LOCAL_MASTER_DEMO: '1',
       }),
     ).toMatchObject({ apply: true, realistic: false });
     expect(() => parseLocalDemoCli(['--apply-realistic'], {})).toThrow(

@@ -103,6 +103,37 @@ describe('documents API client', () => {
     expect(fetchMock.mock.calls[0]?.[0]).not.toContain('/iam/auth/refresh');
   });
 
+  it('searches case options in the selected branch with an abort signal', async () => {
+    process.env.NEXT_PUBLIC_API_BASE_URL = 'http://localhost:4000/api/v1';
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          data: [],
+          meta: { hasMore: false, limit: 20 },
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      ),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+    const controller = new AbortController();
+
+    await documentsApi.caseOptions(
+      { branchId: 'branch-1', search: 'قرارداد', limit: 20 },
+      controller.signal,
+    );
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining(
+        '/documents/case-options?branchId=branch-1&search=%D9%82%D8%B1%D8%A7%D8%B1%D8%AF%D8%A7%D8%AF&limit=20',
+      ),
+      expect.objectContaining({
+        credentials: 'include',
+        cache: 'no-store',
+        signal: controller.signal,
+      }),
+    );
+  });
+
   it('loads an authenticated image preview with the sensitive-read reason and abort signal', async () => {
     process.env.NEXT_PUBLIC_API_BASE_URL = 'http://localhost:4000/api/v1';
     const fetchMock = vi.fn().mockResolvedValue(
@@ -135,5 +166,56 @@ describe('documents API client', () => {
         }),
       }),
     );
+  });
+
+  it('calls the real edit, bulk, archive, restore and permanent-delete endpoints', async () => {
+    process.env.NEXT_PUBLIC_API_BASE_URL = 'http://localhost:4000/api/v1';
+    const fetchMock = vi.fn().mockImplementation((_url, init) =>
+      Promise.resolve(
+        init?.method === 'DELETE'
+          ? new Response(null, { status: 204 })
+          : new Response(JSON.stringify({ data: {} }), {
+              status: 200,
+              headers: { 'content-type': 'application/json' },
+            }),
+      ),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+    const id = 'document/id';
+
+    await documentsApi.update(id, {
+      title: 'سند اصلاح‌شده',
+      categoryId: 'category-id',
+      ownerUserId: 'owner-id',
+      confidentiality: 'INTERNAL',
+      isIncomplete: true,
+      version: 1,
+    });
+    await documentsApi.archive(id, { reason: 'انتقال به آرشیو', version: 2 });
+    await documentsApi.restore(id, { reason: 'بازیابی از آرشیو', version: 3 });
+    await documentsApi.bulk({
+      ids: [id],
+      action: 'MARK_COMPLETE',
+      reason: 'مدارک تکمیل شده است',
+    });
+    await documentsApi.permanentlyDelete(id, {
+      reason: 'حذف قطعی رکورد اشتباه',
+      version: 4,
+    });
+
+    expect(fetchMock.mock.calls.map(([url]) => url)).toEqual([
+      'http://localhost:4000/api/v1/documents/document%2Fid',
+      'http://localhost:4000/api/v1/documents/document%2Fid/archive',
+      'http://localhost:4000/api/v1/documents/document%2Fid/restore',
+      'http://localhost:4000/api/v1/documents/bulk',
+      'http://localhost:4000/api/v1/documents/document%2Fid',
+    ]);
+    expect(fetchMock.mock.calls.map(([, init]) => init?.method)).toEqual([
+      'PATCH',
+      'POST',
+      'POST',
+      'POST',
+      'DELETE',
+    ]);
   });
 });

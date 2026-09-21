@@ -5,13 +5,13 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { isMasterTransportFormResource } from '@rubi/contracts';
+import { isMasterTransportFormResource } from '@nora/contracts';
 import type {
   MasterDataListQuery,
   MasterDataRecord,
   MasterDataResource,
-} from '@rubi/contracts';
-import { AuditOutcome } from '@rubi/database';
+} from '@nora/contracts';
+import { AuditOutcome } from '@nora/database';
 
 import { DatabaseService } from '../database/database.service';
 import {
@@ -76,7 +76,9 @@ const protectedContactFields = new Set([
 function auditSnapshot(resource: MasterDataResource, value: unknown) {
   const snapshot = json(value);
   if (
-    (resource !== 'organization-contacts' && resource !== 'leaders') ||
+    (resource !== 'organization-contacts' &&
+      resource !== 'leaders' &&
+      resource !== 'suppliers') ||
     typeof snapshot !== 'object' ||
     Array.isArray(snapshot)
   )
@@ -165,8 +167,8 @@ const nameFields: Record<MasterDataResource, string> = {
   'meal-services': 'name',
   facilities: 'name',
   'composite-hotels': 'name',
-  organizations: 'displayName',
-  suppliers: 'code',
+  organizations: 'legalName',
+  suppliers: 'name',
   brokers: 'name',
   'travel-services': 'name',
   'organization-contacts': 'fullName',
@@ -267,8 +269,8 @@ const searchFields: Record<MasterDataResource, readonly string[]> = {
   'meal-services': ['name', 'englishName', 'code'],
   facilities: ['name', 'englishName', 'code', 'category'],
   'composite-hotels': ['name', 'englishName', 'code', 'usageCondition'],
-  organizations: ['displayName', 'legalName', 'code'],
-  suppliers: ['code', 'englishName', 'externalProviderReference'],
+  organizations: ['legalName', 'code', 'nationalId'],
+  suppliers: ['name', 'code', 'englishName', 'externalProviderReference'],
   brokers: ['name', 'englishName', 'code'],
   'travel-services': ['name', 'englishName', 'code'],
   'organization-contacts': ['fullName', 'jobTitle', 'code'],
@@ -335,7 +337,11 @@ function relations(resource: MasterDataResource): object | undefined {
     return { currency: true, _count: { select: { plans: true } } };
   if (resource === 'airlines') return { organization: true, country: true };
   if (resource === 'baggage-rules') return { airline: true, cabinClass: true };
-  if (resource === 'manifest-templates') return { airline: true };
+  if (resource === 'manifest-templates')
+    return {
+      airline: true,
+      destinationCity: { include: { country: true } },
+    };
   if (resource === 'rail-companies')
     return { organization: true, country: true };
   if (resource === 'bus-companies')
@@ -472,6 +478,8 @@ export function toMasterDataRecord(
   const supplier = row.supplier as Record<string, unknown> | undefined;
   const currency = row.currency as Record<string, unknown> | undefined;
   const airline = row.airline as Record<string, unknown> | undefined;
+  const destinationCity = row.destinationCity as
+    Record<string, unknown> | undefined;
   const cabinClass = row.cabinClass as Record<string, unknown> | undefined;
   const services = row.services as
     { service: Record<string, unknown> }[] | undefined;
@@ -503,9 +511,9 @@ export function toMasterDataRecord(
         : String(row.code ?? '');
   const name =
     resource === 'organizations'
-      ? String(row.displayName ?? '')
+      ? String(row.legalName ?? row.displayName ?? '')
       : resource === 'suppliers'
-        ? String(organization?.displayName ?? '')
+        ? String(row.name ?? organization?.displayName ?? row.code ?? '')
         : resource === 'organization-contacts'
           ? String(row.fullName ?? '')
           : resource === 'exchange-rates'
@@ -539,6 +547,7 @@ export function toMasterDataRecord(
     'supplier',
     'currency',
     'airline',
+    'destinationCity',
     'cabinClass',
     'services',
     'chain',
@@ -638,9 +647,12 @@ export function toMasterDataRecord(
     attributes.primaryContactName = primaryContact?.isActive
       ? String(primaryContact.fullName ?? '')
       : null;
-    attributes.primaryPhoneMasked = primaryContact?.isActive
-      ? (primaryContact.phoneMasked as string | null)
-      : null;
+    attributes.primaryPhoneMasked =
+      resource === 'suppliers'
+        ? (row.primaryPhoneMasked as string | null)
+        : primaryContact?.isActive
+          ? (primaryContact.phoneMasked as string | null)
+          : null;
     attributes.primaryEmailMasked = primaryContact?.isActive
       ? (primaryContact.emailMasked as string | null)
       : null;
@@ -769,6 +781,11 @@ export function toMasterDataRecord(
   if (resource === 'manifest-templates') {
     attributes.airlineName = String(airline?.name ?? '');
     attributes.airlineCode = String(airline?.code ?? '');
+    attributes.destinationCityName = String(destinationCity?.name ?? '');
+    attributes.destinationCountryName = String(
+      (destinationCity?.country as Record<string, unknown> | undefined)?.name ??
+        '',
+    );
   }
   if (resource === 'hotels') {
     const hotelCountry = city?.country as Record<string, unknown> | undefined;
@@ -1004,6 +1021,8 @@ export class MasterDataRepository {
       if (query.contactCompleteness === 'incomplete')
         where.AND = [{ OR: [{ phoneMasked: null }, { emailMasked: null }] }];
     }
+    if (resource === 'organizations' && query.organizationRole)
+      where.roles = { some: { roleCode: query.organizationRole } };
     if (isMasterTransportFormResource(resource) && query.transportStatus) {
       where.isUnderReview = query.transportStatus === 'UNDER_REVIEW';
       where.isActive = query.transportStatus === 'ACTIVE';
@@ -1055,10 +1074,7 @@ export class MasterDataRepository {
         : query.sortBy === 'code'
           ? codeFields[resource]
           : query.sortBy;
-    const orderBy =
-      query.sortBy === 'name' && resource === 'suppliers'
-        ? { organization: { displayName: query.sortDirection } }
-        : { [sortField]: query.sortDirection };
+    const orderBy = { [sortField]: query.sortDirection };
     const args: Record<string, unknown> = {
       where,
       orderBy,
@@ -1125,9 +1141,20 @@ export class MasterDataRepository {
     actorBranchId: string,
   ) {
     return this.database.client.$transaction(async (transaction) => {
+      const createData = { ...data };
+      if (
+        resource === 'manifest-templates' &&
+        createData.versionNumber === undefined
+      ) {
+        const latest = await transaction.masterManifestTemplate.aggregate({
+          where: { airlineId: String(createData.airlineId) },
+          _max: { versionNumber: true },
+        });
+        createData.versionNumber = (latest._max.versionNumber ?? 0) + 1;
+      }
       const row = await delegate(transaction, resource).create({
         data: {
-          ...data,
+          ...createData,
           createdByUserId: actorUserId,
           updatedByUserId: actorUserId,
         },
@@ -1233,7 +1260,14 @@ export class MasterDataRepository {
           resource,
           entityId: id,
           outcome: AuditOutcome.SUCCESS,
-          beforeSnapshot: { id, version: before.version },
+          beforeSnapshot: {
+            id,
+            version: before.version,
+            ...(resource === 'organization-contacts' &&
+            typeof before.organizationId === 'string'
+              ? { organizationId: before.organizationId }
+              : {}),
+          },
         },
       });
     });

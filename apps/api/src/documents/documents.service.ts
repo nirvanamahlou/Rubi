@@ -1,5 +1,7 @@
-import { createHash, randomUUID } from 'node:crypto';
+import { createHash, randomBytes, randomUUID } from 'node:crypto';
+import type { ActivityWindow } from '../common/organization-activity';
 import type { Readable } from 'node:stream';
+import { HrDirectoryService } from '../hr/hr-directory.service';
 
 import {
   BadRequestException,
@@ -8,11 +10,18 @@ import {
   Inject,
   Injectable,
   NotFoundException,
+  Optional,
   UnsupportedMediaTypeException,
 } from '@nestjs/common';
 import type {
   AuthenticatedActor,
+  DocumentAccessGrantResponseV1,
+  DocumentAccessPurposeCode,
+  DocumentCaseOptionsQueryV1,
+  DocumentCaseOptionsResponseV1,
   DocumentAuditEventV1,
+  DocumentBulkActionInputV1,
+  DocumentBulkActionResponseV1,
   DocumentConfidentialityCode,
   DocumentDetailV1,
   DocumentDomainCode,
@@ -21,9 +30,16 @@ import type {
   DocumentOptionsResponseV1,
   DocumentSortCode,
   DocumentVersionV1,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 
-import type { DocumentUploadDto } from './documents.dto';
+import type {
+  DocumentAccessGrantDto,
+  DocumentArchiveActionDto,
+  DocumentDeleteDto,
+  DocumentUpdateDto,
+  DocumentUploadDto,
+} from './documents.dto';
+import { IAM_STEP_UP_PORT, type IamStepUpPort } from '../iam/iam-step-up.port';
 import {
   allowedDocumentDomains,
   type DocumentDetailRow,
@@ -32,6 +48,7 @@ import {
 } from './documents.repository';
 import { DocumentsScanProcessor } from './documents.scan-processor';
 import { LocalDocumentStorage } from './documents.storage';
+import { SettingsRuntimeService } from '../settings/settings-runtime.service';
 import {
   MAX_DOCUMENT_SIZE_BYTES,
   validateUploadFile,
@@ -48,6 +65,61 @@ export interface DocumentRequestMetadata {
   ipAddress?: string;
   userAgent?: string;
   sensitiveReason?: string;
+  accessGrantToken?: string;
+}
+
+export interface MasterDataLogoDocumentResult {
+  id: string;
+  reused: boolean;
+  scanStatus: DocumentVersionV1['scanStatus'];
+}
+
+export interface ProfilePhotoDocumentResult {
+  id: string;
+  scanStatus: DocumentVersionV1['scanStatus'];
+}
+
+const MASTER_DATA_LOGO_MAX_BYTES = 5 * 1024 * 1024;
+
+function masterDataLogoMarker(file: UploadedDocumentFile): string {
+  const bytes = createHash('sha256')
+    .update(file.buffer)
+    .digest()
+    .subarray(0, 16);
+  bytes[6] = (bytes[6]! & 0x0f) | 0x50;
+  bytes[8] = (bytes[8]! & 0x3f) | 0x80;
+  const token = bytes.toString('hex');
+  return `master-data-logo-v1:${token.slice(0, 8)}-${token.slice(8, 12)}-${token.slice(12, 16)}-${token.slice(16, 20)}-${token.slice(20)}`;
+}
+
+function masterDataLogoActor(
+  actor: AuthenticatedActor,
+  ...permissions: AuthenticatedActor['permissions'][number][]
+): AuthenticatedActor {
+  const grants: AuthenticatedActor['permissions'] = [
+    ...actor.permissions,
+    'documents.brand.read',
+    ...permissions,
+  ];
+  return {
+    ...actor,
+    permissions: [...new Set(grants)],
+  };
+}
+
+function profilePhotoActor(
+  actor: AuthenticatedActor,
+  ...permissions: AuthenticatedActor['permissions'][number][]
+): AuthenticatedActor {
+  const grants: AuthenticatedActor['permissions'] = [
+    ...actor.permissions,
+    'documents.brand.read',
+    ...permissions,
+  ];
+  return {
+    ...actor,
+    permissions: [...new Set(grants)],
+  };
 }
 
 const validSortFields = new Set<DocumentSortCode>([
@@ -168,10 +240,33 @@ function mapListItem(
     branchId: row.branchId,
     confidentiality: row.confidentiality,
     archiveStatus: row.archiveStatus,
+    isIncomplete: row.isIncomplete,
+    requiresStepUpVerification: row.requiresStepUpVerification,
     validUntil: row.validUntil?.toISOString() ?? null,
+    version: row.version,
     currentVersion: mapVersion(
       row.currentVersion as DocumentDetailRow['versions'][number],
     ),
+    capabilities: {
+      viewFile: permissions.includes('documents.file.read') && sensitiveAllowed,
+      download:
+        permissions.includes('documents.file.read') &&
+        permissions.includes('documents.download') &&
+        sensitiveAllowed,
+      uploadVersion: permissions.includes('documents.version.create'),
+      editMetadata: permissions.includes('documents.metadata.update'),
+      viewAudit: permissions.includes('documents.audit.read'),
+      archive:
+        permissions.includes('documents.delete') &&
+        row.archiveStatus === 'ACTIVE',
+      restore:
+        permissions.includes('documents.restore') &&
+        row.archiveStatus === 'ARCHIVED' &&
+        !row.legalHoldActive,
+      markIncomplete: permissions.includes('documents.metadata.update'),
+      permanentDelete:
+        permissions.includes('documents.delete') && !row.legalHoldActive,
+    },
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };
@@ -186,7 +281,19 @@ export class DocumentsService {
     private readonly storage: LocalDocumentStorage,
     @Inject(DocumentsScanProcessor)
     private readonly scanProcessor: DocumentsScanProcessor,
+    @Inject(IAM_STEP_UP_PORT)
+    private readonly iamStepUp: IamStepUpPort,
+    @Inject(HrDirectoryService)
+    private readonly hrDirectory: HrDirectoryService,
+    @Optional()
+    @Inject(SettingsRuntimeService)
+    private readonly settings?: SettingsRuntimeService,
   ) {}
+
+  /** Public storage-health port; consumers never access Documents storage directly. */
+  async storageHealth(): Promise<void> {
+    await this.storage.health();
+  }
 
   private assertDomain(
     domain: DocumentDomainCode,
@@ -197,7 +304,337 @@ export class DocumentsService {
     }
   }
 
+  /** Public ownership/reference check; Workbench never reads Documents tables. */
+  async assertWorkbenchFeedbackAttachments(
+    documentIds: readonly string[],
+    feedbackId: string,
+    branchId: string,
+    actor: AuthenticatedActor,
+  ): Promise<void> {
+    await this.assertWorkbenchOwnedAttachments(
+      documentIds,
+      'WorkbenchFeedback',
+      feedbackId,
+      branchId,
+      actor,
+    );
+  }
+
+  async assertWorkbenchOwnedAttachments(
+    documentIds: readonly string[],
+    sourceEntityType: string,
+    sourceEntityId: string,
+    branchId: string,
+    actor: AuthenticatedActor,
+  ): Promise<Array<{ id: string; title: string }>> {
+    if (!documentIds.length) return [];
+    if (!actor.branchIds.includes(branchId))
+      throw new ForbiddenException('شعبه فایل در دامنه دسترسی نیست.');
+    const uniqueIds = [...new Set(documentIds)];
+    const matches = await this.repository.workbenchOwnedAttachmentIds({
+      documentIds: uniqueIds,
+      sourceEntityType,
+      sourceEntityId,
+      branchId,
+      ownerUserId: actor.userId,
+    });
+    if (matches.length !== uniqueIds.length) {
+      throw new BadRequestException(
+        'یک یا چند فایل پیوست متعلق به این رکورد میزکار نیست.',
+      );
+    }
+    return matches;
+  }
+
+  /**
+   * Narrow owner-only boundary for an account avatar. The caller cannot choose
+   * a Documents domain, owner or source reference and gains no catalogue access.
+   */
+  async uploadOwnProfilePhoto(
+    input: { branchId: string; title: string },
+    file: UploadedDocumentFile | undefined,
+    actor: AuthenticatedActor,
+    metadata: DocumentRequestMetadata,
+  ): Promise<ProfilePhotoDocumentResult> {
+    if (!actor.branchIds.includes(input.branchId))
+      throw new ForbiddenException('شعبه عکس پروفایل خارج از دسترسی شما است.');
+    if (!file) throw new BadRequestException('انتخاب عکس پروفایل الزامی است.');
+    if (!['image/png', 'image/jpeg'].includes(file.mimetype))
+      throw new UnsupportedMediaTypeException(
+        'عکس پروفایل باید PNG یا JPEG باشد.',
+      );
+    if (file.size < 1 || file.size > 5 * 1024 * 1024)
+      throw new BadRequestException('حجم عکس باید حداکثر ۵ مگابایت باشد.');
+
+    const values = await this.repository.options(actor.branchIds, ['BRAND']);
+    const branch = values.branches.find(({ id }) => id === input.branchId);
+    const owner = values.owners.find(({ id }) => id === actor.userId);
+    const documentType = values.documentTypes.find(
+      ({ code }) => code === 'BRAND_ASSET_TEMPLATE',
+    );
+    const category = values.categories.find(
+      ({ code }) => code === 'BRAND_ASSETS',
+    );
+    if (!branch)
+      throw new ForbiddenException('شعبه مجاز عکس پروفایل پیدا نشد.');
+    if (!owner || !documentType || !category)
+      throw new ConflictException(
+        'پیش‌نیاز ذخیره عکس پروفایل در آرشیو اسناد کامل نیست.',
+      );
+
+    const title = input.title.trim().slice(0, 240) || 'عکس پروفایل';
+    const uploaded = await this.upload(
+      {
+        title,
+        description: 'عکس پروفایل ثبت‌شده در تنظیمات شخصی',
+        documentTypeId: documentType.id,
+        categoryId: category.id,
+        branchId: branch.id,
+        ownerUserId: owner.id,
+        confidentiality: 'INTERNAL',
+        sourceModule: 'WORKBENCH',
+        sourceEntityType: 'IamProfile',
+        sourceEntityId: actor.userId,
+        sourceDisplayLabel: title,
+        versionNote: 'عکس پروفایل',
+      },
+      file,
+      profilePhotoActor(actor),
+      metadata,
+    );
+    return {
+      id: uploaded.data.id,
+      scanStatus: uploaded.data.currentVersion.scanStatus,
+    };
+  }
+
+  async previewOwnProfilePhoto(
+    documentId: string,
+    actor: AuthenticatedActor,
+    metadata: DocumentRequestMetadata,
+  ): Promise<DocumentFileDelivery> {
+    const row = await this.repository.findDetail(documentId, actor.branchIds);
+    const ownsProfileReference = row?.relations.some(
+      (relation) =>
+        relation.relationType === 'PRIMARY_CASE' &&
+        relation.sourceModule === 'WORKBENCH' &&
+        relation.sourceEntityType === 'IamProfile' &&
+        relation.sourceEntityId === actor.userId,
+    );
+    if (
+      !row ||
+      row.ownerUserId !== actor.userId ||
+      row.documentType.domain !== 'BRAND' ||
+      !ownsProfileReference
+    )
+      throw new ForbiddenException('مشاهده این عکس پروفایل مجاز نیست.');
+    return this.preview(
+      documentId,
+      profilePhotoActor(actor, 'documents.file.read'),
+      metadata,
+    );
+  }
+
+  async favorites(actor: AuthenticatedActor) {
+    const rows = await this.repository.favoriteDocuments(
+      actor.userId,
+      actor.branchIds,
+      allowedDocumentDomains(actor.permissions),
+    );
+    return { data: rows.map((row) => mapListItem(row, actor.permissions)) };
+  }
+
+  async setFavorite(id: string, favorite: boolean, actor: AuthenticatedActor) {
+    const row = await this.repository.findDetail(id, actor.branchIds);
+    if (
+      !row ||
+      !allowedDocumentDomains(actor.permissions).includes(
+        row.documentType.domain,
+      )
+    )
+      throw new ForbiddenException('سند در محدوده دسترسی شما نیست.');
+    await this.repository.setFavorite(actor.userId, id, favorite);
+    return { data: { documentId: id, favorite } };
+  }
+
+  /**
+   * Narrow owner boundary for Master Data brand images. It deliberately does
+   * not grant access to the Documents catalogue; callers can only create an
+   * image attached to the exact persisted Master Data source they provide.
+   */
+  async uploadMasterDataLogo(
+    input: {
+      branchId?: string;
+      resource: string;
+      recordId: string;
+      title: string;
+    },
+    file: UploadedDocumentFile | undefined,
+    actor: AuthenticatedActor,
+    metadata: DocumentRequestMetadata,
+  ): Promise<MasterDataLogoDocumentResult> {
+    this.assertPermission(actor.permissions, 'master_data.update');
+    if (!file) throw new BadRequestException('انتخاب فایل لوگو الزامی است.');
+    if (!['image/png', 'image/jpeg'].includes(file.mimetype))
+      throw new UnsupportedMediaTypeException('لوگو باید PNG یا JPEG باشد.');
+    if (file.size < 1 || file.size > MASTER_DATA_LOGO_MAX_BYTES)
+      throw new BadRequestException('حجم لوگو باید حداکثر ۵ مگابایت باشد.');
+
+    const values = await this.repository.options(actor.branchIds, ['BRAND']);
+    const branch = input.branchId
+      ? values.branches.find((item) => item.id === input.branchId)
+      : values.branches[0];
+    const owner = values.owners.find((item) => item.id === actor.userId);
+    const documentType = values.documentTypes.find(
+      (item) => item.code === 'BRAND_ASSET_TEMPLATE',
+    );
+    const category = values.categories.find(
+      (item) => item.code === 'BRAND_ASSETS',
+    );
+    if (!branch)
+      throw new ForbiddenException('شعبه مجاز برای بارگذاری لوگو مشخص نیست.');
+    if (!owner || !documentType || !category)
+      throw new ConflictException(
+        'پیش‌نیاز بارگذاری لوگو در آرشیو اسناد کامل نیست.',
+      );
+
+    const versionNote = masterDataLogoMarker(file);
+    const duplicate = (
+      await this.repository.list(
+        {
+          domain: 'BRAND',
+          archiveStatus: 'ACTIVE',
+          branchId: branch.id,
+          sourceModule: 'master-data',
+          sourceEntityType: input.resource,
+          sourceEntityId: input.recordId,
+          sortBy: 'updatedAt',
+          sortDirection: 'desc',
+          page: 1,
+          pageSize: 100,
+        },
+        actor.branchIds,
+        ['BRAND'],
+        actor.userId,
+      )
+    ).rows.find((item) => item.currentVersion?.versionNote === versionNote);
+    if (duplicate?.currentVersion)
+      return {
+        id: duplicate.id,
+        reused: true,
+        scanStatus: duplicate.currentVersion.scanStatus,
+      };
+
+    const uploaded = await this.upload(
+      {
+        title: input.title.trim() || `لوگوی ${input.resource}`,
+        documentTypeId: documentType.id,
+        categoryId: category.id,
+        branchId: branch.id,
+        ownerUserId: owner.id,
+        confidentiality: 'INTERNAL',
+        sourceModule: 'master-data',
+        sourceEntityType: input.resource,
+        sourceEntityId: input.recordId,
+        sourceDisplayLabel: input.title.trim() || `لوگوی ${input.resource}`,
+        versionNote,
+      },
+      file,
+      masterDataLogoActor(actor),
+      metadata,
+    );
+    return {
+      id: uploaded.data.id,
+      reused: false,
+      scanStatus: uploaded.data.currentVersion.scanStatus,
+    };
+  }
+
+  /** Archives only the BRAND document related to the supplied Master Data row. */
+  async archiveMasterDataLogo(
+    input: { documentId: string; resource: string; recordId: string },
+    actor: AuthenticatedActor,
+    metadata: DocumentRequestMetadata,
+  ): Promise<void> {
+    this.assertPermission(actor.permissions, 'master_data.update');
+    const row = await this.repository.findDetail(
+      input.documentId,
+      actor.branchIds,
+    );
+    if (!row || row.archiveStatus !== 'ACTIVE') return;
+    const ownsReference = row.relations.some(
+      (relation) =>
+        relation.relationType === 'PRIMARY_CASE' &&
+        relation.sourceModule === 'master-data' &&
+        relation.sourceEntityType === input.resource &&
+        relation.sourceEntityId === input.recordId,
+    );
+    if (row.documentType.domain !== 'BRAND' || !ownsReference)
+      throw new ForbiddenException('لوگوی انتخاب‌شده متعلق به این رکورد نیست.');
+    await this.archive(
+      row.id,
+      {
+        reason: 'حذف یا جایگزینی لوگوی مرجع اطلاعات پایه',
+        version: row.version,
+      },
+      masterDataLogoActor(actor, 'documents.delete'),
+      metadata,
+    );
+  }
+
+  /** Public reference-only lookup; file contents and metadata stay inside Documents. */
+  async organizationVersionReferences(
+    versionIds: readonly string[],
+    organizationId: string,
+    branchId: string,
+    actor: AuthenticatedActor,
+  ) {
+    if (!actor.branchIds.includes(branchId))
+      throw new ForbiddenException('شعبه سند در دامنه دسترسی نیست.');
+    if (
+      ![
+        'documents.list',
+        'documents.organization.read',
+        'documents.metadata.read',
+      ].every((code) =>
+        actor.permissions.includes(code as (typeof actor.permissions)[number]),
+      )
+    )
+      return [];
+    if (versionIds.length > 200)
+      throw new BadRequestException(
+        'تعداد نسخه‌های درخواست‌شده بیش از حد مجاز است.',
+      );
+    if (!versionIds.length) return [];
+    return this.repository.organizationVersionReferences(
+      versionIds,
+      organizationId,
+      branchId,
+    );
+  }
+
   async list(query: DocumentListQueryV1, actor: AuthenticatedActor) {
+    const sourceReference = [
+      query.sourceModule,
+      query.sourceEntityType,
+      query.sourceEntityId,
+    ];
+    const suppliedSourceFields = sourceReference.filter(
+      (value) => value !== undefined,
+    ).length;
+    const normalizedSourceReference = sourceReference.map((value) =>
+      value?.trim(),
+    );
+    if (
+      suppliedSourceFields !== 0 &&
+      (suppliedSourceFields !== 3 ||
+        normalizedSourceReference.some((value) => !value))
+    ) {
+      throw new BadRequestException({
+        code: 'DOCUMENT_SOURCE_FILTER_INCOMPLETE',
+        message: 'مرجع پرونده برای فیلتر اسناد باید کامل باشد.',
+      });
+    }
     const page = Math.max(1, query.page ?? 1);
     const pageSize = Math.min(100, Math.max(10, query.pageSize ?? 25));
     const sortBy = validSortFields.has(query.sortBy ?? 'updatedAt')
@@ -206,6 +643,13 @@ export class DocumentsService {
     const normalized = {
       ...query,
       ...(query.search ? { search: query.search.trim().slice(0, 120) } : {}),
+      ...(suppliedSourceFields === 3
+        ? {
+            sourceModule: normalizedSourceReference[0]!,
+            sourceEntityType: normalizedSourceReference[1]!,
+            sourceEntityId: normalizedSourceReference[2]!,
+          }
+        : {}),
       page,
       pageSize,
       sortBy,
@@ -256,7 +700,7 @@ export class DocumentsService {
         owners: values.owners,
         uploadPolicy: {
           maxFileSizeBytes: Math.min(
-            MAX_DOCUMENT_SIZE_BYTES,
+            await this.configuredMaxFileSizeBytes(actor.branchIds[0]),
             ...documentTypes.map((type) => type.maxFileSizeBytes),
           ),
           allowedMimeTypes: [
@@ -265,6 +709,27 @@ export class DocumentsService {
           antivirusAvailable: this.scanProcessor.available,
         },
       },
+    };
+  }
+
+  async caseOptions(
+    query: DocumentCaseOptionsQueryV1,
+    actor: AuthenticatedActor,
+  ): Promise<DocumentCaseOptionsResponseV1> {
+    if (!actor.branchIds.includes(query.branchId)) {
+      throw new ForbiddenException('شعبه انتخاب‌شده خارج از دسترسی کاربر است.');
+    }
+    const limit = Math.min(50, Math.max(10, query.limit ?? 20));
+    const { rows, hasMore } = await this.repository.caseOptions({
+      branchId: query.branchId,
+      domains: allowedDocumentDomains(actor.permissions),
+      includeSensitive: actor.permissions.includes('documents.sensitive.read'),
+      search: query.search?.trim().slice(0, 120) ?? '',
+      limit,
+    });
+    return {
+      data: rows.map(({ id, displayLabel }) => ({ id, displayLabel })),
+      meta: { hasMore, limit },
     };
   }
 
@@ -321,19 +786,235 @@ export class DocumentsService {
           : 'پرونده محرمانه',
       })),
       capabilities: {
-        viewFile:
-          permissions.includes('documents.file.read') && sensitiveAllowed,
+        ...base.capabilities,
         download:
-          permissions.includes('documents.file.read') &&
-          permissions.includes('documents.download') &&
+          base.capabilities.download &&
           (!sensitive || permissions.includes('documents.sensitive.download')),
-        uploadVersion: permissions.includes('documents.version.create'),
-        editMetadata: permissions.includes('documents.metadata.update'),
-        viewAudit: permissions.includes('documents.audit.read'),
-        archive: permissions.includes('documents.delete'),
-        restore: permissions.includes('documents.restore'),
       },
     };
+  }
+
+  private assertPermission(
+    permissions: readonly string[],
+    permission: string,
+  ): void {
+    if (!permissions.includes(permission)) {
+      throw new ForbiddenException('مجوز لازم برای این عملیات وجود ندارد.');
+    }
+  }
+
+  async update(
+    id: string,
+    dto: DocumentUpdateDto,
+    actor: AuthenticatedActor,
+    metadata: DocumentRequestMetadata,
+  ): Promise<{ data: DocumentDetailV1 }> {
+    this.assertPermission(actor.permissions, 'documents.metadata.update');
+    const row = await this.repository.findDetail(id, actor.branchIds);
+    if (!row) throw new NotFoundException('سند پیدا نشد.');
+    this.assertDomain(row.documentType.domain, actor.permissions);
+    if (row.archiveStatus === 'DELETED') {
+      throw new ConflictException('سند حذف‌شده قابل ویرایش نیست.');
+    }
+    if (row.documentType.requiresExpiry && !dto.validUntil) {
+      throw new BadRequestException(
+        'تاریخ اعتبار برای این نوع سند الزامی است.',
+      );
+    }
+    const references = await this.repository.editReferences({
+      categoryId: dto.categoryId,
+      ownerUserId: dto.ownerUserId,
+      branchId: row.branchId,
+    });
+    if (!references.category)
+      throw new BadRequestException('دسته‌بندی معتبر نیست.');
+    if (!references.owner)
+      throw new BadRequestException('مالک در شعبه سند معتبر نیست.');
+    const updated = await this.repository.updateMetadata({
+      documentId: id,
+      expectedVersion: dto.version,
+      title: dto.title.trim(),
+      description: dto.description?.trim() || null,
+      categoryId: dto.categoryId,
+      ownerUserId: dto.ownerUserId,
+      confidentiality: dto.confidentiality,
+      validUntil: dto.validUntil
+        ? new Date(`${dto.validUntil.slice(0, 10)}T23:59:59.999Z`)
+        : null,
+      isIncomplete: dto.isIncomplete,
+      actorUserId: actor.userId,
+      actorBranchId: row.branchId,
+      ipSummary: summarizeIp(metadata.ipAddress),
+      userAgentSummary: summarizeUserAgent(metadata.userAgent),
+    });
+    if (!updated) {
+      throw new ConflictException(
+        'سند هم‌زمان تغییر کرده است؛ اطلاعات را دوباره باز کنید.',
+      );
+    }
+    return { data: this.mapDetail(updated, actor.permissions) };
+  }
+
+  async archive(
+    id: string,
+    dto: DocumentArchiveActionDto,
+    actor: AuthenticatedActor,
+    metadata: DocumentRequestMetadata,
+  ): Promise<{ data: DocumentDetailV1 }> {
+    this.assertPermission(actor.permissions, 'documents.delete');
+    const row = await this.repository.findDetail(id, actor.branchIds);
+    if (!row) throw new NotFoundException('سند پیدا نشد.');
+    this.assertDomain(row.documentType.domain, actor.permissions);
+    if (row.archiveStatus !== 'ACTIVE') {
+      throw new ConflictException('فقط سند فعال قابل آرشیو است.');
+    }
+    const updated = await this.repository.changeArchiveStatus({
+      documentId: id,
+      expectedVersion: dto.version,
+      expectedStatus: 'ACTIVE',
+      nextStatus: 'ARCHIVED',
+      action: 'documents.archive',
+      reason: dto.reason.trim(),
+      actorUserId: actor.userId,
+      actorBranchId: row.branchId,
+      ownerUserId: row.ownerUserId,
+      documentTitle: row.title,
+      ipSummary: summarizeIp(metadata.ipAddress),
+      userAgentSummary: summarizeUserAgent(metadata.userAgent),
+    });
+    if (!updated) throw new ConflictException('سند هم‌زمان تغییر کرده است.');
+    return { data: this.mapDetail(updated, actor.permissions) };
+  }
+
+  async restore(
+    id: string,
+    dto: DocumentArchiveActionDto,
+    actor: AuthenticatedActor,
+    metadata: DocumentRequestMetadata,
+  ): Promise<{ data: DocumentDetailV1 }> {
+    this.assertPermission(actor.permissions, 'documents.restore');
+    const row = await this.repository.findDetail(id, actor.branchIds);
+    if (!row) throw new NotFoundException('سند پیدا نشد.');
+    this.assertDomain(row.documentType.domain, actor.permissions);
+    if (row.archiveStatus !== 'ARCHIVED') {
+      throw new ConflictException('فقط سند آرشیوشده قابل بازیابی است.');
+    }
+    if (row.legalHoldActive) {
+      throw new ConflictException('به‌دلیل توقف حقوقی، بازیابی مجاز نیست.');
+    }
+    const updated = await this.repository.changeArchiveStatus({
+      documentId: id,
+      expectedVersion: dto.version,
+      expectedStatus: 'ARCHIVED',
+      nextStatus: 'ACTIVE',
+      action: 'documents.restore',
+      reason: dto.reason.trim(),
+      actorUserId: actor.userId,
+      actorBranchId: row.branchId,
+      ownerUserId: row.ownerUserId,
+      documentTitle: row.title,
+      ipSummary: summarizeIp(metadata.ipAddress),
+      userAgentSummary: summarizeUserAgent(metadata.userAgent),
+    });
+    if (!updated) throw new ConflictException('سند هم‌زمان تغییر کرده است.');
+    return { data: this.mapDetail(updated, actor.permissions) };
+  }
+
+  async bulk(
+    dto: DocumentBulkActionInputV1,
+    actor: AuthenticatedActor,
+    metadata: DocumentRequestMetadata,
+  ): Promise<DocumentBulkActionResponseV1> {
+    const ids = [...new Set(dto.ids)];
+    const permission =
+      dto.action === 'ARCHIVE'
+        ? 'documents.delete'
+        : dto.action === 'RESTORE'
+          ? 'documents.restore'
+          : 'documents.metadata.update';
+    this.assertPermission(actor.permissions, permission);
+    const rows = await this.repository.findDetails(ids, actor.branchIds);
+    if (rows.length !== ids.length) {
+      throw new NotFoundException('یک یا چند سند انتخاب‌شده پیدا نشد.');
+    }
+    for (const row of rows) {
+      this.assertDomain(row.documentType.domain, actor.permissions);
+      if (dto.action === 'ARCHIVE' && row.archiveStatus !== 'ACTIVE') {
+        throw new ConflictException('همه اسناد انتخاب‌شده باید فعال باشند.');
+      }
+      if (dto.action === 'RESTORE' && row.archiveStatus !== 'ARCHIVED') {
+        throw new ConflictException(
+          'همه اسناد انتخاب‌شده باید آرشیوشده باشند.',
+        );
+      }
+      if (dto.action === 'RESTORE' && row.legalHoldActive) {
+        throw new ConflictException(
+          'یکی از اسناد انتخاب‌شده دارای توقف حقوقی است.',
+        );
+      }
+    }
+    try {
+      const updatedCount = await this.repository.bulkAction({
+        rows,
+        action: dto.action,
+        reason: dto.reason.trim(),
+        actorUserId: actor.userId,
+        ipSummary: summarizeIp(metadata.ipAddress),
+        userAgentSummary: summarizeUserAgent(metadata.userAgent),
+      });
+      return { data: { updatedCount } };
+    } catch (error) {
+      if (
+        error instanceof Error &&
+        error.message === 'DOCUMENT_VERSION_CONFLICT'
+      ) {
+        throw new ConflictException(
+          'یکی از اسناد هم‌زمان تغییر کرده است؛ فهرست را تازه کنید.',
+        );
+      }
+      throw error;
+    }
+  }
+
+  async permanentlyDelete(
+    id: string,
+    dto: DocumentDeleteDto,
+    actor: AuthenticatedActor,
+  ): Promise<void> {
+    this.assertPermission(actor.permissions, 'documents.delete');
+    const row = await this.repository.findDetail(id, actor.branchIds);
+    if (!row) throw new NotFoundException('سند پیدا نشد.');
+    this.assertDomain(row.documentType.domain, actor.permissions);
+    if (row.legalHoldActive) {
+      throw new ConflictException(
+        'سند دارای توقف حقوقی است و حذف دائمی آن مجاز نیست.',
+      );
+    }
+    if (dto.reason.trim().length < 5) {
+      throw new BadRequestException('دلیل حذف دائمی الزامی است.');
+    }
+    if (row.version !== dto.version) {
+      throw new ConflictException(
+        'سند هم‌زمان تغییر کرده است؛ فهرست را تازه کنید.',
+      );
+    }
+    await Promise.all(
+      row.versions.map((version) =>
+        this.storage.removeQuarantined(version.storageObjectKey),
+      ),
+    );
+    const deleted = await this.repository.permanentlyDelete({
+      documentId: id,
+      expectedVersion: dto.version,
+      actorUserId: actor.userId,
+      ownerUserId: row.ownerUserId,
+      documentTitle: row.title,
+    });
+    if (!deleted) {
+      throw new ConflictException(
+        'سند هم‌زمان تغییر کرده است؛ فهرست را تازه کنید.',
+      );
+    }
   }
 
   async upload(
@@ -361,6 +1042,52 @@ export class DocumentsService {
       throw new BadRequestException('مالک در شعبه انتخاب‌شده معتبر نیست.');
     if (!references.branch)
       throw new BadRequestException('شعبه انتخاب‌شده فعال نیست.');
+    const domains = allowedDocumentDomains(actor.permissions);
+    const selectedCase = dto.sourceRelationId
+      ? await this.repository.findCaseReference({
+          relationId: dto.sourceRelationId,
+          branchId: dto.branchId,
+          domains,
+          includeSensitive: actor.permissions.includes(
+            'documents.sensitive.read',
+          ),
+        })
+      : null;
+    if (dto.sourceRelationId && !selectedCase) {
+      throw new BadRequestException(
+        'پرونده انتخاب‌شده معتبر یا در دسترس شما نیست.',
+      );
+    }
+    const sourceReference = selectedCase ?? {
+      sourceModule: dto.sourceModule?.trim() ?? '',
+      sourceEntityType: dto.sourceEntityType?.trim() ?? '',
+      sourceEntityId: dto.sourceEntityId?.trim() ?? '',
+      displayLabel: dto.sourceDisplayLabel?.trim() ?? '',
+    };
+    if (
+      sourceReference.sourceModule === 'HUMAN_RESOURCES' &&
+      sourceReference.sourceEntityType === 'Employee'
+    ) {
+      this.assertDomain('HUMAN_RESOURCES', actor.permissions);
+      if (references.documentType.domain !== 'HUMAN_RESOURCES')
+        throw new BadRequestException(
+          'برای پرونده پرسنلی نوع سند منابع انسانی را انتخاب کنید.',
+        );
+      const employee = await this.hrDirectory.employee(
+        sourceReference.sourceEntityId,
+        dto.branchId,
+        actor,
+      );
+      sourceReference.displayLabel = `${employee.name} · ${employee.personnelCode}`;
+    }
+    if (
+      !sourceReference.sourceModule ||
+      !sourceReference.sourceEntityType ||
+      !sourceReference.sourceEntityId ||
+      !sourceReference.displayLabel
+    ) {
+      throw new BadRequestException('انتخاب پرونده مربوطه الزامی است.');
+    }
     if (references.documentType.requiresExpiry && !dto.validUntil) {
       throw new BadRequestException(
         'تاریخ اعتبار برای این نوع سند الزامی است.',
@@ -369,17 +1096,23 @@ export class DocumentsService {
     const detectedMimeType = detectMimeType(file);
     const sha256 = createHash('sha256').update(file.buffer).digest('hex');
     const openXml = detectedMimeType.includes('openxmlformats');
-    const validation = validateUploadFile({
-      originalFileName: file.originalname,
-      declaredMimeType: file.mimetype,
-      detectedMimeType,
-      sizeBytes: file.size,
-      sha256,
-      magicBytes: [...file.buffer.subarray(0, 16)],
-      ...(openXml
-        ? { archiveEntryCount: 1, archiveUncompressedBytes: file.size }
-        : {}),
-    });
+    const maxDocumentSizeBytes = await this.configuredMaxFileSizeBytes(
+      dto.branchId,
+    );
+    const validation = validateUploadFile(
+      {
+        originalFileName: file.originalname,
+        declaredMimeType: file.mimetype,
+        detectedMimeType,
+        sizeBytes: file.size,
+        sha256,
+        magicBytes: [...file.buffer.subarray(0, 16)],
+        ...(openXml
+          ? { archiveEntryCount: 1, archiveUncompressedBytes: file.size }
+          : {}),
+      },
+      maxDocumentSizeBytes,
+    );
     if (
       !validation.valid ||
       !references.documentType.allowedMimeTypes.includes(detectedMimeType) ||
@@ -406,12 +1139,13 @@ export class DocumentsService {
         categoryId: references.category.id,
         branchId: dto.branchId,
         ownerUserId: dto.ownerUserId,
-        sourceModule: dto.sourceModule.trim(),
-        sourceEntityType: dto.sourceEntityType.trim(),
-        sourceEntityId: dto.sourceEntityId.trim(),
-        sourceDisplayLabel: dto.sourceDisplayLabel.trim(),
+        sourceModule: sourceReference.sourceModule,
+        sourceEntityType: sourceReference.sourceEntityType,
+        sourceEntityId: sourceReference.sourceEntityId,
+        sourceDisplayLabel: sourceReference.displayLabel,
         confidentiality:
           dto.confidentiality ?? references.documentType.defaultConfidentiality,
+        requiresStepUpVerification: dto.requiresStepUpVerification ?? false,
         validUntil: dto.validUntil
           ? new Date(`${dto.validUntil.slice(0, 10)}T23:59:59.999Z`)
           : null,
@@ -444,6 +1178,25 @@ export class DocumentsService {
     }
   }
 
+  private async configuredMaxFileSizeBytes(branchId?: string): Promise<number> {
+    const fallback = MAX_DOCUMENT_SIZE_BYTES;
+    if (!this.settings || !branchId) return fallback;
+    const setting = await this.settings.json<{ size?: unknown }>(
+      'documents',
+      'upload',
+      { branchId },
+      {},
+    );
+    const megabytes =
+      typeof setting.value.size === 'number'
+        ? setting.value.size
+        : typeof setting.value.size === 'string'
+          ? Number(setting.value.size)
+          : Number.NaN;
+    if (!Number.isFinite(megabytes) || megabytes <= 0) return fallback;
+    return Math.min(fallback, Math.max(1, Math.trunc(megabytes)) * 1024 * 1024);
+  }
+
   async audit(id: string, actor: AuthenticatedActor) {
     const row = await this.repository.findDetail(id, actor.branchIds);
     if (!row) throw new NotFoundException('سند پیدا نشد.');
@@ -463,6 +1216,117 @@ export class DocumentsService {
     };
   }
 
+  async organizationActivity(
+    org: string,
+    branch: string,
+    actor: AuthenticatedActor,
+    window: ActivityWindow,
+  ) {
+    if (
+      !actor.permissions.includes('documents.audit.read') ||
+      !actor.branchIds.includes(branch)
+    )
+      throw new ForbiddenException('مجوز تاریخچه اسناد یا شعبه را ندارید.');
+    return this.repository.organizationActivity(
+      org,
+      branch,
+      actor.permissions,
+      window,
+    );
+  }
+
+  async createAccessGrant(
+    id: string,
+    dto: DocumentAccessGrantDto,
+    actor: AuthenticatedActor,
+    metadata: DocumentRequestMetadata,
+  ): Promise<DocumentAccessGrantResponseV1> {
+    const row = await this.repository.findDetail(id, actor.branchIds);
+    if (!row || !row.currentVersion)
+      throw new NotFoundException('سند پیدا نشد.');
+    this.assertDomain(row.documentType.domain, actor.permissions);
+    if (!row.requiresStepUpVerification) {
+      await this.auditAccessGrantFailure(
+        row,
+        actor,
+        metadata,
+        'STEP_UP_NOT_REQUIRED',
+      );
+      throw new ConflictException({
+        code: 'DOCUMENT_STEP_UP_NOT_REQUIRED',
+        message: 'این سند به اعتبارسنجی دومرحله‌ای نیاز ندارد.',
+      });
+    }
+    const sensitive =
+      row.confidentiality === 'CONFIDENTIAL' ||
+      row.confidentiality === 'RESTRICTED';
+    const hasPurposePermission =
+      dto.purpose === 'PREVIEW'
+        ? actor.permissions.includes('documents.file.read') &&
+          (!sensitive || actor.permissions.includes('documents.sensitive.read'))
+        : actor.permissions.includes('documents.file.read') &&
+          actor.permissions.includes('documents.download') &&
+          (!sensitive ||
+            actor.permissions.includes('documents.sensitive.download'));
+    const previewable =
+      dto.purpose !== 'PREVIEW' ||
+      previewableImageMimeTypes.has(row.currentVersion.detectedMimeType);
+    if (
+      !hasPurposePermission ||
+      !previewable ||
+      row.archiveStatus !== 'ACTIVE' ||
+      row.currentVersion.scanStatus !== 'CLEAN'
+    ) {
+      await this.auditAccessGrantFailure(
+        row,
+        actor,
+        metadata,
+        'ACCESS_GRANT_POLICY_DENIED',
+      );
+      throw new ForbiddenException('دریافت مجوز نمایش این سند مجاز نیست.');
+    }
+    try {
+      await this.iamStepUp.verifyStepUp(actor, dto.code, metadata);
+    } catch (error) {
+      await this.repository.appendAudit({
+        documentId: row.id,
+        versionId: row.currentVersion.id,
+        actorUserId: actor.userId,
+        actorBranchId: row.branchId,
+        action: 'documents.access_grant.create',
+        outcome: 'FAILURE',
+        reason: 'STEP_UP_VERIFICATION_FAILED',
+        ipSummary: summarizeIp(metadata.ipAddress),
+        userAgentSummary: summarizeUserAgent(metadata.userAgent),
+      });
+      throw error;
+    }
+    const token = randomBytes(32).toString('base64url');
+    const expiresAt = new Date(Date.now() + 2 * 60_000);
+    await this.repository.createAccessGrant({
+      tokenHash: createHash('sha256').update(token, 'utf8').digest('hex'),
+      documentId: row.id,
+      actorUserId: actor.userId,
+      actorSessionId: actor.sessionId,
+      purpose: dto.purpose,
+      expiresAt,
+    });
+    await this.repository.appendAudit({
+      documentId: row.id,
+      versionId: row.currentVersion.id,
+      actorUserId: actor.userId,
+      actorBranchId: row.branchId,
+      action: 'documents.access_grant.create',
+      outcome: 'SUCCESS',
+      reason: dto.purpose,
+      ipSummary: summarizeIp(metadata.ipAddress),
+      userAgentSummary: summarizeUserAgent(metadata.userAgent),
+    });
+    return {
+      data: { token, purpose: dto.purpose, expiresAt: expiresAt.toISOString() },
+    };
+  }
+
   async download(
     id: string,
     actor: AuthenticatedActor,
@@ -475,7 +1339,7 @@ export class DocumentsService {
     const sensitive =
       row.confidentiality === 'CONFIDENTIAL' ||
       row.confidentiality === 'RESTRICTED';
-    const allowed =
+    const baseAllowed =
       actor.permissions.includes('documents.file.read') &&
       actor.permissions.includes('documents.download') &&
       (!sensitive ||
@@ -483,6 +1347,11 @@ export class DocumentsService {
           (metadata.sensitiveReason?.trim().length ?? 0) >= 5)) &&
       row.archiveStatus === 'ACTIVE' &&
       row.currentVersion.scanStatus === 'CLEAN';
+    const stepUpAllowed =
+      baseAllowed && row.requiresStepUpVerification
+        ? await this.consumeAccessGrant(row.id, actor, 'DOWNLOAD', metadata)
+        : true;
+    const allowed = baseAllowed && stepUpAllowed;
     await this.repository.appendAudit({
       documentId: row.id,
       versionId: row.currentVersion.id,
@@ -492,7 +1361,9 @@ export class DocumentsService {
       outcome: allowed ? 'SUCCESS' : 'FAILURE',
       reason: allowed
         ? metadata.sensitiveReason?.trim() || null
-        : 'DOWNLOAD_POLICY_DENIED',
+        : baseAllowed && row.requiresStepUpVerification
+          ? 'DOWNLOAD_STEP_UP_DENIED'
+          : 'DOWNLOAD_POLICY_DENIED',
       ipSummary: summarizeIp(metadata.ipAddress),
       userAgentSummary: summarizeUserAgent(metadata.userAgent),
     });
@@ -504,6 +1375,50 @@ export class DocumentsService {
       }
       throw new ForbiddenException('دانلود این سند مجاز نیست.');
     }
+    return {
+      stream: await this.storage.openQuarantined(
+        row.currentVersion.storageObjectKey,
+        Number(row.currentVersion.sizeBytes),
+      ),
+      fileName: row.currentVersion.safeDownloadName,
+      mimeType: row.currentVersion.detectedMimeType,
+      sizeBytes: Number(row.currentVersion.sizeBytes),
+    };
+  }
+
+  /** Public module boundary for active, non-sensitive XLSX manifest templates. */
+  async readManifestTemplateReference(
+    id: string,
+    actor: AuthenticatedActor,
+  ): Promise<DocumentFileDelivery> {
+    const row = await this.repository.findDetail(id, actor.branchIds);
+    if (!row || !row.currentVersion)
+      throw new NotFoundException('فایل قالب MANIFEST پیدا نشد.');
+    const allowed =
+      row.documentType.code === 'MANIFEST' &&
+      row.archiveStatus === 'ACTIVE' &&
+      row.confidentiality !== 'CONFIDENTIAL' &&
+      row.confidentiality !== 'RESTRICTED' &&
+      row.currentVersion.scanStatus === 'CLEAN' &&
+      row.currentVersion.detectedMimeType ===
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+    await this.repository.appendAudit({
+      documentId: row.id,
+      versionId: row.currentVersion.id,
+      actorUserId: actor.userId,
+      actorBranchId: row.branchId,
+      action: 'documents.manifest_template.read',
+      outcome: allowed ? 'SUCCESS' : 'FAILURE',
+      reason: allowed
+        ? 'RESERVATION_MANIFEST_EXPORT'
+        : 'TEMPLATE_POLICY_DENIED',
+      ipSummary: '',
+      userAgentSummary: '',
+    });
+    if (!allowed)
+      throw new ConflictException(
+        'فایل قالب MANIFEST باید فعال، غیرمحرمانه، XLSX و اسکن‌شده باشد.',
+      );
     return {
       stream: await this.storage.openQuarantined(
         row.currentVersion.storageObjectKey,
@@ -535,19 +1450,26 @@ export class DocumentsService {
     const previewable = previewableImageMimeTypes.has(
       row.currentVersion.detectedMimeType,
     );
-    const allowed =
+    const baseAllowed =
       actor.permissions.includes('documents.file.read') &&
       sensitiveAllowed &&
       row.archiveStatus === 'ACTIVE' &&
       row.currentVersion.scanStatus === 'CLEAN' &&
       previewable;
+    const stepUpAllowed =
+      baseAllowed && row.requiresStepUpVerification
+        ? await this.consumeAccessGrant(row.id, actor, 'PREVIEW', metadata)
+        : true;
+    const allowed = baseAllowed && stepUpAllowed;
 
     const denialReason =
       row.currentVersion.scanStatus !== 'CLEAN'
         ? 'PREVIEW_SCAN_BLOCKED'
         : !previewable
           ? 'PREVIEW_TYPE_UNSUPPORTED'
-          : 'PREVIEW_POLICY_DENIED';
+          : baseAllowed && row.requiresStepUpVerification
+            ? 'PREVIEW_STEP_UP_DENIED'
+            : 'PREVIEW_POLICY_DENIED';
     await this.repository.appendAudit({
       documentId: row.id,
       versionId: row.currentVersion.id,
@@ -583,5 +1505,42 @@ export class DocumentsService {
       mimeType: row.currentVersion.detectedMimeType,
       sizeBytes: Number(row.currentVersion.sizeBytes),
     };
+  }
+
+  private async consumeAccessGrant(
+    documentId: string,
+    actor: AuthenticatedActor,
+    purpose: DocumentAccessPurposeCode,
+    metadata: DocumentRequestMetadata,
+  ): Promise<boolean> {
+    if (!metadata.accessGrantToken) return false;
+    return this.repository.consumeAccessGrant({
+      tokenHash: createHash('sha256')
+        .update(metadata.accessGrantToken, 'utf8')
+        .digest('hex'),
+      documentId,
+      actorUserId: actor.userId,
+      actorSessionId: actor.sessionId,
+      purpose,
+    });
+  }
+
+  private auditAccessGrantFailure(
+    row: DocumentDetailRow,
+    actor: AuthenticatedActor,
+    metadata: DocumentRequestMetadata,
+    reason: string,
+  ) {
+    return this.repository.appendAudit({
+      documentId: row.id,
+      ...(row.currentVersion ? { versionId: row.currentVersion.id } : {}),
+      actorUserId: actor.userId,
+      actorBranchId: row.branchId,
+      action: 'documents.access_grant.create',
+      outcome: 'FAILURE',
+      reason,
+      ipSummary: summarizeIp(metadata.ipAddress),
+      userAgentSummary: summarizeUserAgent(metadata.userAgent),
+    });
   }
 }

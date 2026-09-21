@@ -15,11 +15,9 @@ export function realisticMasterDataDemoRecords(): DemoRecord[] {
     'service-tour': { ...pair('اجرای تور و گشت', 'Tours and Excursions') },
     'region-1': {
       ...pair('استان استانبول', 'Istanbul Province'),
-      type: 'PROVINCE',
     },
     'region-2': {
       ...pair('استان آنتالیا', 'Antalya Province'),
-      type: 'PROVINCE',
     },
     'city-1': pair('استانبول', 'Istanbul'),
     'city-2': pair('آنتالیا', 'Antalya'),
@@ -35,12 +33,10 @@ export function realisticMasterDataDemoRecords(): DemoRecord[] {
     },
     'organization-1': {
       legalName: 'شرکت گردشگری افق فیروزه',
-      displayName: 'افق فیروزه',
       personType: 'LEGAL',
     },
     'organization-2': {
       legalName: 'شرکت خدمات سفر آبیراه',
-      displayName: 'آبیراه سفر',
       personType: 'LEGAL',
     },
     'contact-1': {
@@ -93,33 +89,27 @@ export function realisticMasterDataDemoRecords(): DemoRecord[] {
     'hotel-1': {
       ...pair('هتل آبیراه بسفر', 'Abirah Bosphorus Hotel'),
       address: 'استانبول، محدوده ساحل بسفر — نشانی نمایشی',
-      latitude: '41.04',
-      longitude: '29.01',
       checkInTime: '14:00',
       checkOutTime: '12:00',
     },
     'hotel-2': {
       ...pair('هتل باغ فیروزه', 'Turquoise Garden Hotel'),
       address: 'استانبول، محدوده مرکزی شهر — نشانی نمایشی',
-      latitude: '41.03',
-      longitude: '28.98',
       checkInTime: '15:00',
       checkOutTime: '12:00',
     },
     'airline-1': pair('هواپیمایی افق فیروزه', 'Turquoise Horizon Airways'),
     'airline-2': pair('هواپیمایی آبیراه', 'Abirah Airways'),
     'aircraft-1': {
-      ...pair('ایرباس ۳۲۰', 'Airbus A320'),
-      manufacturer: 'Airbus',
-      model: 'A320-200',
+      englishName: 'Airbus A320-200',
+      manufacturerModel: 'Airbus / A320-200',
     },
     'aircraft-2': {
-      ...pair('بوئینگ ۷۷۷', 'Boeing 777'),
-      manufacturer: 'Boeing',
-      model: '777-300ER',
+      englishName: 'Boeing 777-300ER',
+      manufacturerModel: 'Boeing / 777-300ER',
     },
-    'cabin-1': { ...pair('اکونومی', 'Economy'), bookingCode: 'Y' },
-    'cabin-2': { ...pair('بیزینس', 'Business'), bookingCode: 'C' },
+    'cabin-1': { englishName: 'Economy', bookingCode: 'Y' },
+    'cabin-2': { englishName: 'Business', bookingCode: 'C' },
     'baggage-1': {
       name: 'بار بزرگسال اکونومی',
       allowance: '20',
@@ -155,13 +145,11 @@ export function realisticMasterDataDemoRecords(): DemoRecord[] {
     'bus-company-2': pair('گشت زمینی افق', 'Horizon Ground Travel'),
     'bus-type-1': {
       ...pair('اسکانیا کلاسیک', 'Scania Classic'),
-      manufacturer: 'Scania',
-      model: 'Classic',
+      manufacturerModel: 'Scania / Classic',
     },
     'bus-type-2': {
       ...pair('ولوو B9R وی‌آی‌پی', 'Volvo B9R VIP'),
-      manufacturer: 'Volvo',
-      model: 'B9R',
+      manufacturerModel: 'Volvo / B9R',
     },
     'insurer-1': pair('پوشش سفر افق', 'Horizon Travel Protection'),
     'insurer-2': pair('پوشش سفر آبیراه', 'Abirah Travel Protection'),
@@ -237,6 +225,9 @@ export function realisticMasterDataDemoRecords(): DemoRecord[] {
   }
   return original.map((fixture) => ({
     ...fixture,
-    values: (id) => ({ ...fixture.values(id), ...overrides[fixture.key] }),
+    values: (reference) => ({
+      ...fixture.values(reference),
+      ...overrides[fixture.key],
+    }),
   }));
 }

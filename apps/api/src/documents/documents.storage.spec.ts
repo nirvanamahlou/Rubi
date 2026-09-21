@@ -15,7 +15,7 @@ describe('LocalDocumentStorage encryption boundary', () => {
   let storage: LocalDocumentStorage;
 
   beforeEach(async () => {
-    root = await mkdtemp(join(tmpdir(), 'rubi-documents-storage-'));
+    root = await mkdtemp(join(tmpdir(), 'nora-documents-storage-'));
     storage = new LocalDocumentStorage(
       new ConfigService({
         DOCUMENTS_STORAGE_ROOT: root,
@@ -50,5 +50,9 @@ describe('LocalDocumentStorage encryption boundary', () => {
     await expect(
       storage.putQuarantined('../../contract.pdf', Buffer.from('unsafe')),
     ).rejects.toThrow(/Invalid document storage key/);
+  });
+
+  it('checks the private storage root without reading a document', async () => {
+    await expect(storage.health()).resolves.toBeUndefined();
   });
 });

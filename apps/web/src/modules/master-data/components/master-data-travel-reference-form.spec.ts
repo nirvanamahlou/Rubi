@@ -1,6 +1,6 @@
 import { createElement, type ReactNode } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import type { MasterDataRecord } from '@rubi/contracts';
+import type { MasterDataRecord } from '@nora/contracts';
 import { describe, expect, it, vi } from 'vitest';
 vi.mock('./master-data-profile-dialog', () => ({
   MasterDataProfileDialog: ({ children }: { children: ReactNode }) => children,
@@ -62,7 +62,6 @@ describe('travel reference form fields', () => {
       'عنوان فارسی',
       'کشور مقصد',
       'نوع ویزا',
-      'Provider',
       'مدت اعتبار مرجع',
       'مدارک راهنما',
       'وضعیت',

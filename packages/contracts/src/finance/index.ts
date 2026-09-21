@@ -304,6 +304,7 @@ export function hasFinancePermission(
 
 export const financeEndpointProposals = {
   dashboard: `${FINANCE_API_PREFIX}/dashboard`,
+  inbox: `${FINANCE_API_PREFIX}/inbox`,
   journals: `${FINANCE_API_PREFIX}/journals`,
   receipts: `${FINANCE_API_PREFIX}/receipts`,
   payments: `${FINANCE_API_PREFIX}/payments`,
@@ -327,6 +328,292 @@ export const financeConsumerCompatibility = {
     'Consumes public customer reference/display snapshots only; no customer PII or table access.',
   hr: 'Consumes only approved aggregate payroll input; no attendance, contract, or evaluation access.',
 } as const;
+
+export const financeWorkflowContracts = {
+  receiptVerificationRequest: 'finance.receipt-verification-request.v1',
+  receiptConfirmed: 'finance.receipt-confirmed.v1',
+  receiptRejected: 'finance.receipt-rejected.v1',
+  paymentRequest: 'finance.payment-request.v1',
+  paymentApproved: 'finance.payment-approved.v1',
+  paymentCompleted: 'finance.payment-completed.v1',
+  paymentRejected: 'finance.payment-rejected.v1',
+  correctionRequested: 'finance.correction-requested.v1',
+  financialReleaseChanged: 'finance.financial-release-changed.v1',
+  accountingSource: 'finance.accounting-source.v1',
+} as const;
+
+export type FinanceRequestStatus =
+  | 'NEW'
+  | 'UNDER_REVIEW'
+  | 'CORRECTION_REQUIRED'
+  | 'APPROVED'
+  | 'READY_FOR_PAYMENT'
+  | 'PAYING'
+  | 'PAID'
+  | 'RECEIPT_CONFIRMED'
+  | 'REJECTED'
+  | 'CANCELLED'
+  | 'RETURNED'
+  | 'REQUIRES_MANUAL_REVIEW';
+
+export type FinanceRequestSourceModule =
+  'SALES' | 'RESERVATIONS' | 'PROCUREMENT' | 'HR' | 'OTHER';
+
+export type FinanceInboxSource = 'SALES' | 'HR' | 'RESERVATIONS' | 'PURCHASES';
+export type FinanceInboxSourceConnection =
+  'CONNECTED' | 'NOT_CONNECTED' | 'UNAVAILABLE';
+
+export interface FinanceInboxSourceStateV1 {
+  source: FinanceInboxSource;
+  connection: FinanceInboxSourceConnection;
+  itemCount: number;
+  message: string;
+}
+
+export interface FinanceInboxItemV1 {
+  version: 1;
+  id: string;
+  source: FinanceInboxSource;
+  kind:
+    | 'RECEIPT_VERIFICATION'
+    | 'PAYMENT_REQUEST'
+    | 'HR_REFERRAL'
+    | 'RETURN_CORRECTION';
+  sourceReference: string;
+  /** Stable reference needed by the owning module to apply an inbox action. */
+  sourceContextReference: string;
+  contractReference: string | null;
+  title: string;
+  partyDisplaySnapshot: string | null;
+  description: string;
+  /** The producer's exact decimal string and registered currency code. */
+  amount: { amount: string; currencyCode: string } | null;
+  settlement: {
+    paidAmount: string;
+    remainingAmount: string;
+  } | null;
+  status: FinanceRequestStatus;
+  dueAt: string | null;
+  createdAt: string;
+  requesterDisplaySnapshot: string | null;
+  branchReference: string;
+  sourceVersion: number;
+  origin: 'PERSISTED_SOURCE';
+}
+
+/** Finance owns these confirmed purchase figures; a catalog estimate is never a cost. */
+export interface FinanceTicketCostCommandV1 {
+  version: 1;
+  adultUnitCost: string;
+  childUnitCost: string;
+  invoiceAmount: string;
+  currencyCode: string;
+  reason: string;
+}
+
+export interface FinanceTicketPaymentCommandV1 {
+  version: 1;
+  costRevisionId: string;
+  accountId: string;
+  paymentMethodId: string;
+  paidAmount: string;
+  exchangeRateToIrr: string;
+  transferAt: string;
+  paymentReference?: string | null;
+  reason: string;
+}
+
+export interface FinancePaidTicketCostV1 {
+  version: 1;
+  requestId: string;
+  offerId: string;
+  offerVersion: number;
+  costRevisionId: string;
+  adultUnitCost: string;
+  childUnitCost: string;
+  invoiceAmount: string;
+  currencyCode: string;
+  paidAt: string;
+}
+
+export type FinanceSettlementAccountKind = 'BANK' | 'CASH' | 'POS' | 'GATEWAY';
+
+export interface FinanceSettlementAccountV1 {
+  version: number;
+  id: string;
+  branchId: string;
+  title: string;
+  kind: FinanceSettlementAccountKind;
+  currencyCode: string;
+  bankId: string | null;
+  bankName: string | null;
+  maskedIdentifier: string | null;
+  isActive: boolean;
+}
+
+export interface FinanceSettlementAccountCreateV1 {
+  version: 1;
+  branchId: string;
+  title: string;
+  kind: FinanceSettlementAccountKind;
+  currencyCode: string;
+  bankId?: string | null;
+  maskedIdentifier?: string | null;
+}
+
+export interface FinancePaymentMethodOptionV1 {
+  id: string;
+  name: string;
+  channel:
+    | 'CASH'
+    | 'POS'
+    | 'BANK_TRANSFER'
+    | 'ONLINE_GATEWAY'
+    | 'CREDIT'
+    | 'WALLET'
+    | 'OTHER';
+}
+
+export interface FinanceBankOptionV1 {
+  id: string;
+  name: string;
+}
+
+export type FinanceCustomerDocumentDeliveryBasisV1 =
+  'AFTER_RECEIPT' | 'FULL_SETTLEMENT' | 'MANAGER_EXCEPTION';
+
+export interface FinanceCustomerDocumentDeliveryAuthorizationV1 {
+  version: number;
+  approved: boolean;
+  basis: FinanceCustomerDocumentDeliveryBasisV1 | null;
+  reason: string;
+  exceptionExpiresAt: string | null;
+  updatedAt: string | null;
+  updatedByUserId: string | null;
+}
+
+export interface FinanceCustomerDocumentDeliveryCandidateV1 {
+  contractId: string;
+  contractNumber: string;
+  branchId: string;
+  customerNameSnapshot: string;
+  settlementStatus: 'UNPAID' | 'PARTIALLY_SETTLED' | 'SETTLED' | 'OVERPAID';
+  hasConfirmedPayment: boolean;
+  delivery: FinanceCustomerDocumentDeliveryAuthorizationV1;
+}
+
+export interface FinanceCustomerDocumentDeliveryCommandV1 {
+  expectedVersion: number;
+  approved: boolean;
+  basis: FinanceCustomerDocumentDeliveryBasisV1;
+  reason: string;
+  secondApproverReference?: string | null;
+  exceptionExpiresAt?: string | null;
+}
+
+export interface FinanceReceiptDecisionCommandV1 {
+  version: 1;
+  accountId?: string | null;
+  contractId: string;
+  action: 'APPROVE' | 'CORRECTION_REQUIRED';
+  reason?: string | null;
+  documentDelivery?: Omit<
+    FinanceCustomerDocumentDeliveryCommandV1,
+    'expectedVersion'
+  > & {
+    expectedVersion?: number;
+  };
+}
+
+export interface FinanceProcurementInvoiceDecisionCommandV1 {
+  version: 1;
+  expectedVersion: number;
+  action: 'APPROVE' | 'CORRECTION_REQUIRED';
+  reason?: string | null;
+}
+
+export interface FinanceProcurementInvoicePaymentCommandV1 {
+  version: 1;
+  expectedVersion: number;
+  accountId: string;
+  paymentMethodId: string;
+  paidAmount: string;
+  exchangeRateToIrr?: string | null;
+  transferAt: string;
+  paymentReference?: string | null;
+  reason?: string | null;
+}
+
+export interface FinanceProcurementCorrectionDecisionCommandV1 {
+  version: 1;
+  expectedVersion: number;
+  action: 'APPROVE' | 'CORRECTION_REQUIRED';
+  reason?: string | null;
+}
+
+export interface FinanceInboxV1 {
+  version: 1;
+  generatedAt: string;
+  items: readonly FinanceInboxItemV1[];
+  sources: readonly FinanceInboxSourceStateV1[];
+}
+
+export interface FinanceRequestBaseV1 {
+  requestReference: string;
+  sourceModule: FinanceRequestSourceModule;
+  sourceReference: FinancePublicReference;
+  contractReference: FinancePublicReference | null;
+  partyReference: FinancePublicReference;
+  partyDisplaySnapshot: string;
+  description: string;
+  amount: MoneyContract;
+  rialEquivalent: MoneyContract | null;
+  exchangeRateReference: string | null;
+  createdAt: string;
+  dueAt: string | null;
+  requestedByReference: string;
+  documentReferences: readonly FinancePublicReference[];
+  branchReference: string;
+  legalEntityReference: string;
+  version: number;
+  idempotencyKey: string;
+}
+
+export type FinanceReceiptVerificationRequestV1 = FinanceEventEnvelope<
+  'finance.receipt-verification-request.v1',
+  FinanceRequestBaseV1 & {
+    declaredPaymentMethod: string;
+    declaredPaidAt: string;
+    declaredTrackingReference: string | null;
+    contractAmount: MoneyContract;
+    previouslyConfirmedAmount: MoneyContract;
+  }
+>;
+
+export type FinancePaymentRequestV1 = FinanceEventEnvelope<
+  'finance.payment-request.v1',
+  FinanceRequestBaseV1 & {
+    serviceReference: FinancePublicReference | null;
+    supplierReference: FinancePublicReference;
+    grossPurchase: MoneyContract;
+    supplierDiscount: MoneyContract;
+    netPurchase: MoneyContract;
+    invoiceReference: string | null;
+    maskedDestinationAccount: string | null;
+  }
+>;
+
+export interface FinanceWorkflowResultV1 {
+  requestReference: string;
+  sourceReference: FinancePublicReference;
+  status: FinanceRequestStatus;
+  financeNote: string;
+  receiptOrPaymentReference: string | null;
+  journalReference: string | null;
+  trackingReference: string | null;
+  occurredAt: string;
+  version: number;
+}
 
 export function normalizeFinanceListQuery(
   input: Partial<FinanceListQuery>,

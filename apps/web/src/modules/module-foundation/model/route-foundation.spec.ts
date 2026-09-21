@@ -22,7 +22,6 @@ const approvedRoutes = [
   'marketing',
   'organizations',
   'human-resources',
-  'tasks',
   'documents',
   'reports',
   'integrations',
@@ -30,21 +29,9 @@ const approvedRoutes = [
   'master-data',
 ] as const;
 
-const foundationRoutes = [
-  'reservations',
-  'sales',
-  'purchases',
-  'marketing',
-  'organizations',
-  'human-resources',
-  'tasks',
-  'documents',
-  'reports',
-  'integrations',
-  'system',
-] as const;
+const foundationRoutes = ['integrations'] as const;
 
-describe('17-route module foundation', () => {
+describe('main-route module foundation', () => {
   it('keeps every approved main route reviewable', () => {
     for (const route of approvedRoutes) {
       expect(() =>
@@ -53,7 +40,12 @@ describe('17-route module foundation', () => {
     }
   });
 
-  it('connects every incomplete route to the shared workspace', () => {
+  it('keeps the retired tasks route pointed to workbench', () => {
+    const page = readFileSync(resolve(crmRoot, 'tasks/page.tsx'), 'utf8');
+    expect(page).toContain("redirect('/workbench')");
+  });
+
+  it('connects the remaining incomplete route to the shared workspace', () => {
     for (const route of foundationRoutes) {
       const page = readFileSync(resolve(crmRoot, route, 'page.tsx'), 'utf8');
       expect(page).toContain('ModuleFoundationWorkspace');
@@ -62,6 +54,21 @@ describe('17-route module foundation', () => {
   });
 
   it('preserves connected workspaces and the Master Data hub-to-section flow', () => {
+    expect(
+      readFileSync(resolve(crmRoot, 'purchases/page.tsx'), 'utf8'),
+    ).toContain('ProcurementWorkspace');
+    expect(
+      readFileSync(resolve(crmRoot, 'reservations/page.tsx'), 'utf8'),
+    ).toContain('LiveReservationQueue');
+    expect(
+      source('src/modules/reservations/foundation/live-workspace.tsx'),
+    ).toContain('initialSection="inbox"');
+    expect(
+      readFileSync(
+        resolve(crmRoot, 'reservations/processing/page.tsx'),
+        'utf8',
+      ),
+    ).toContain('ReservationInbox');
     expect(
       readFileSync(resolve(crmRoot, 'ticket-management/page.tsx'), 'utf8'),
     ).toContain('TicketWorkspace');
@@ -73,7 +80,16 @@ describe('17-route module foundation', () => {
     ).toContain('CustomerAffairsWorkspace');
     expect(
       readFileSync(resolve(crmRoot, 'finance/page.tsx'), 'utf8'),
-    ).toContain('FinanceWorkspace');
+    ).toContain('AccountingNavigationWorkspace');
+    expect(readFileSync(resolve(crmRoot, 'sales/page.tsx'), 'utf8')).toContain(
+      'SalesWorkspace',
+    );
+    expect(
+      readFileSync(resolve(crmRoot, 'reports/page.tsx'), 'utf8'),
+    ).toContain('ReportingWorkspace');
+    expect(
+      readFileSync(resolve(crmRoot, 'organizations/page.tsx'), 'utf8'),
+    ).toContain('OrganizationsWorkspace');
     expect(
       readFileSync(resolve(crmRoot, 'master-data/page.tsx'), 'utf8'),
     ).toContain('MasterDataHub');
@@ -98,6 +114,6 @@ describe('17-route module foundation', () => {
 
     const shell = source('src/components/layout/app-shell.tsx');
     expect(shell).toContain('overflow-x-hidden');
-    expect(shell).toContain('truncate whitespace-nowrap');
+    expect(shell).toContain('min-w-0 whitespace-normal break-words');
   });
 });

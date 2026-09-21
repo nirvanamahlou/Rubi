@@ -12,9 +12,18 @@ describe('IAM login and refresh HTTP contract', () => {
   const service = {
     login: vi.fn(),
     refresh: vi.fn(),
+    authenticate: vi.fn(),
+    changePassword: vi.fn(),
   };
 
   beforeEach(async () => {
+    service.authenticate.mockResolvedValue({
+      userId: 'self',
+      sessionId: 'session',
+      permissions: [],
+      branchIds: [],
+    });
+    service.changePassword.mockResolvedValue(undefined);
     service.login.mockResolvedValue({
       accessToken: 'access.jwt',
       refreshToken: 'session.secret',
@@ -50,19 +59,19 @@ describe('IAM login and refresh HTTP contract', () => {
   it('validates login and writes only HttpOnly cookies', async () => {
     const response = await request(app.getHttpServer())
       .post('/iam/auth/login')
-      .send({ username: 'ramtin', password: 'Rubi-Strong-2026!' })
+      .send({ username: 'ramtin', password: 'Nora-Strong-2026!' })
       .expect(200);
     expect(response.body).toEqual({ user: { id: 'u1' } });
     const cookies = response.headers['set-cookie'] as unknown as string[];
-    expect(cookies.join(';')).toContain('rubi_access=access.jwt');
-    expect(cookies.join(';')).toContain('rubi_refresh=session.secret');
+    expect(cookies.join(';')).toContain('nora_access=access.jwt');
+    expect(cookies.join(';')).toContain('nora_refresh=session.secret');
     expect(cookies.every((cookie) => cookie.includes('HttpOnly'))).toBe(true);
   });
 
   it('passes the opaque refresh cookie to rotation service', async () => {
     await request(app.getHttpServer())
       .post('/iam/auth/refresh')
-      .set('Cookie', 'rubi_refresh=session.secret')
+      .set('Cookie', 'nora_refresh=session.secret')
       .expect(200);
     expect(service.refresh).toHaveBeenCalledWith(
       'session.secret',
@@ -76,5 +85,80 @@ describe('IAM login and refresh HTTP contract', () => {
       .send({ username: '?', password: 'short' })
       .expect(400);
     expect(service.login).not.toHaveBeenCalled();
+  });
+
+  it('requires authentication for password changes', async () => {
+    await request(app.getHttpServer())
+      .post('/iam/auth/change-password')
+      .set('X-Nora-Password-Change', '1')
+      .send({
+        currentPassword: 'Old-Fixture-123!',
+        newPassword: 'New-Fixture-456!',
+      })
+      .expect(401);
+    expect(service.changePassword).not.toHaveBeenCalled();
+  });
+
+  it('exposes password capability only to authenticated clients without collecting credentials', async () => {
+    await request(app.getHttpServer())
+      .get('/iam/auth/password-change/status')
+      .expect(401);
+    const response = await request(app.getHttpServer())
+      .get('/iam/auth/password-change/status')
+      .set('Cookie', 'nora_access=fixture')
+      .expect(200);
+    expect(response.body).toEqual({ available: true });
+    expect(response.headers['cache-control']).toBe('no-store');
+    expect(service.changePassword).not.toHaveBeenCalled();
+  });
+
+  it('rejects requests without the CSRF header and caller-supplied identities', async () => {
+    await request(app.getHttpServer())
+      .post('/iam/auth/change-password')
+      .set('Cookie', 'nora_access=fixture')
+      .send({
+        currentPassword: 'Old-Fixture-123!',
+        newPassword: 'New-Fixture-456!',
+      })
+      .expect(403);
+    await request(app.getHttpServer())
+      .post('/iam/auth/change-password')
+      .set('Cookie', 'nora_access=fixture')
+      .set('X-Nora-Password-Change', '1')
+      .send({
+        currentPassword: 'Old-Fixture-123!',
+        newPassword: 'New-Fixture-456!',
+        userId: 'other',
+      })
+      .expect(400);
+    expect(service.changePassword).not.toHaveBeenCalled();
+  });
+
+  it('uses the authenticated actor and clears both cookies only after successful change', async () => {
+    const response = await request(app.getHttpServer())
+      .post('/iam/auth/change-password')
+      .set('Cookie', 'nora_access=fixture')
+      .set('X-Nora-Password-Change', '1')
+      .send({
+        currentPassword: 'Old-Fixture-123!',
+        newPassword: 'New-Fixture-456!',
+      })
+      .expect(204);
+    expect(service.changePassword).toHaveBeenCalledWith(
+      expect.objectContaining({ userId: 'self' }),
+      'Old-Fixture-123!',
+      'New-Fixture-456!',
+      expect.any(Object),
+    );
+    expect(response.headers['cache-control']).toBe('no-store');
+    const cookies = response.headers['set-cookie'] as unknown as string[];
+    expect(cookies).toHaveLength(2);
+    expect(
+      cookies.every(
+        (cookie) =>
+          cookie.includes('HttpOnly') &&
+          cookie.includes('Expires=Thu, 01 Jan 1970'),
+      ),
+    ).toBe(true);
   });
 });

@@ -31,6 +31,27 @@ const row = {
 };
 
 describe('CustomerRepository', () => {
+  it('restricts registration recovery to exact fingerprint, active unmerged people and actor branches', async () => {
+    const findFirst = vi
+      .fn()
+      .mockResolvedValueOnce({ id: row.id })
+      .mockResolvedValueOnce(row);
+    const repository = new CustomerRepository({
+      client: { customer: { findFirst } },
+    } as unknown as DatabaseService);
+    await repository.findRegistration('fingerprint', [row.ownerBranchId]);
+    expect(findFirst.mock.calls[0]?.[0].where).toEqual({
+      nationalIdFingerprint: 'fingerprint',
+      ownerBranchId: { in: [row.ownerBranchId] },
+      mergedIntoId: null,
+      isActive: true,
+      kind: 'PERSON',
+    });
+    expect(findFirst.mock.calls[1]?.[0].where).toMatchObject({
+      id: row.id,
+      ownerBranchId: { in: [row.ownerBranchId] },
+    });
+  });
   it('allows only one atomic update claim and writes one audit event', async () => {
     let version = 1;
     const customer = {

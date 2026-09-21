@@ -123,7 +123,7 @@ export const foundationModules: Record<
         title: 'استعلام و Hold',
         description: 'بررسی قبل از قرارداد',
         items: [
-          'صف استعلام فروش و بررسی ظرفیت بلیت، هتل و تور',
+          'صف استعلام فروش و بررسی ظرفیت بلیط، هتل و تور',
           'استعلام API و کارگزار، قیمت خرید و شرایط کنسلی',
           'پیشنهاد جایگزین، مهلت اعتبار و Hold ظرفیت',
         ],
@@ -133,16 +133,16 @@ export const foundationModules: Record<
         description: 'Snapshot فقط‌خواندنی فروش',
         items: [
           'قرارداد، مشتری، پرداخت‌کننده و مسافران فقط‌خواندنی',
-          'خدمت، بلیت، هتل، اتاق، بیمه و خدمات جانبی تخصیص‌یافته',
+          'خدمت، بلیط، هتل، اتاق، بیمه و خدمات جانبی تخصیص‌یافته',
           'درخواست اصلاح اطلاعات ناقص یا اشتباه برای فروش',
         ],
       },
       {
-        title: 'صدور و تغییر بلیت',
+        title: 'صدور و تغییر بلیط',
         description: 'عملیات مسافر در رزرواسیون',
         items: [
           'صدور دستی، Provider، API یا تأییدیه ظرفیت شرکت',
-          'PNR، شماره رسمی بلیت، Reissue، Void و تغییر تاریخ',
+          'PNR، شماره رسمی بلیط، Reissue، Void و تغییر تاریخ',
           'کنسلی، استرداد و کنترل عدم صدور تکراری',
         ],
       },
@@ -204,12 +204,12 @@ export const foundationModules: Record<
   },
   'ticket-management': {
     key: 'ticket-management',
-    title: 'مدیریت و تعریف بلیت‌ها',
+    title: 'مدیریت و تعریف بلیط‌ها',
     description:
-      'تعریف محصول بلیت، برنامه، نرخ و ظرفیت قابل فروش بدون صدور سند برای مسافر.',
+      'تعریف محصول بلیط، برنامه، نرخ و ظرفیت قابل فروش بدون صدور سند برای مسافر.',
     boundary:
       'این ماژول فقط محصول و موجودی قابل فروش را منتشر می‌کند؛ صدور مسافر، PNR و Manifest متعلق به رزرواسیون است.',
-    createLabel: 'تعریف بلیت',
+    createLabel: 'تعریف بلیط',
     metrics: metrics([
       'برنامه‌های فعال',
       'ظرفیت قابل فروش',
@@ -279,7 +279,7 @@ export const foundationModules: Record<
         contract: 'settings.effective-pricing.v1 (پیشنهادی)',
       },
     ],
-    rows: sampleRows('برنامه بلیت'),
+    rows: sampleRows('برنامه بلیط'),
     outputFormats: ['ظرفیت Excel', 'برنامه پرواز CSV'],
   },
   sales: {
@@ -310,7 +310,7 @@ export const foundationModules: Record<
         title: 'تخصیص خدمات',
         description: 'Passenger service allocation',
         items: [
-          'بلیت، هتل، اتاق، بیمه، تور و اتوبوس هر مسافر',
+          'بلیط، هتل، اتاق، بیمه، تور و اتوبوس هر مسافر',
           'ویزا، ترانسفر، CIP و خدمات دستی/جانبی',
           'جست‌وجوی محصول، مشاهده ظرفیت/قیمت/قانون و درخواست Hold',
         ],
@@ -358,7 +358,7 @@ export const foundationModules: Record<
         contract: 'customers.v2',
       },
       {
-        label: 'بلیت قابل فروش',
+        label: 'بلیط قابل فروش',
         owner: 'Ticket Catalog',
         contract: 'ticket-catalog.sellable-search.v1 (پیشنهادی)',
       },
@@ -763,7 +763,7 @@ export const foundationModules: Record<
         description: 'Domain-owned generation',
         items: [
           'Sales: تولید قرارداد',
-          'Reservations: تولید بلیت، Manifest، فرم رزرو، واچر و بیمه',
+          'Reservations: تولید بلیط، Manifest، فرم رزرو، واچر و بیمه',
           'Finance: تولید رسید، فاکتور و خروجی مالی خودش',
           'Purchases: تولید سفارش و اسناد خرید؛ HR: تولید اسناد پرسنلی',
         ],
@@ -773,7 +773,7 @@ export const foundationModules: Record<
         description: 'آرشیو همه دامنه‌ها',
         items: [
           'مشتری، پاسپورت، پیشنهاد، قرارداد و پیوست',
-          'بلیت، Manifest، فرم هتل، واچر و بیمه‌نامه',
+          'بلیط، Manifest، فرم هتل، واچر و بیمه‌نامه',
           'فاکتور، رسید، خرید، مالی، سازمانی و منابع انسانی',
         ],
       },
@@ -844,7 +844,7 @@ export const foundationModules: Record<
         description: 'Grainهای جدا',
         items: [
           'مشتری، Lead، قرارداد، فروش و تخصیص مسافر',
-          'رزرواسیون، ظرفیت، صدور بلیت و Manifest',
+          'رزرواسیون، ظرفیت، صدور بلیط و Manifest',
           'هتل، واچر، بیمه و عملیات تغییر/استرداد',
         ],
       },
@@ -1012,7 +1012,7 @@ export const foundationModules: Record<
         title: 'تنظیمات عملیاتی',
         description: 'قواعد Workflow',
         items: [
-          'شماره‌گذاری قرارداد، سفارش، بلیت و واچر',
+          'شماره‌گذاری قرارداد، سفارش، بلیط و واچر',
           'قواعد Hold و زمان‌بندی Manifest',
           'صدور، تحویل، کنسلی و استرداد',
         ],

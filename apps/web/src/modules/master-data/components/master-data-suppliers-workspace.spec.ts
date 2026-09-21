@@ -67,7 +67,8 @@ describe('organizations and suppliers workspace', () => {
     expect(writeGuard).toBeGreaterThan(
       actions.indexOf('<MasterDataPowerButton'),
     );
-    expect(source).toContain('تازه‌سازی وضعیت‌ها');
+    expect(source).not.toContain('تازه‌سازی وضعیت‌ها');
+    expect(source).toContain('onRefresh={() =>');
   });
 
   it('reads both source lists and provides pagination for the collaboration board', () => {

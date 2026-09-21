@@ -77,12 +77,12 @@ const dashboardGroups: Record<
     cards: [
       {
         title: 'استعلام‌های جدید',
-        detail: 'بلیت، هتل، تور و Provider',
+        detail: 'بلیط، هتل، تور و Provider',
         icon: Search,
       },
       {
         title: 'صدورهای در انتظار',
-        detail: 'بلیت، واچر و بیمه سامان',
+        detail: 'بلیط، واچر و بیمه سامان',
         icon: TicketCheck,
       },
       {
@@ -101,7 +101,7 @@ const dashboardGroups: Record<
     title: 'ظرفیت',
     cards: [
       {
-        title: 'ظرفیت بلیت‌های شرکت',
+        title: 'ظرفیت بلیط‌های شرکت',
         detail: 'کل ظرفیت تعریف‌شده',
         icon: Gauge,
       },

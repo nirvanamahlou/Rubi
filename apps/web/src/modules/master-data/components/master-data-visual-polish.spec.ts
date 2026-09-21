@@ -36,7 +36,7 @@ describe('Master Data visual polish contract', () => {
     expect(form).toContain('<DialogTitle>');
     expect(form).toContain("'aria-describedby': undefined");
     expect(form).toContain('validateMasterDataDraft(definition.key, values)');
-    expect(form).toContain('await onPersist(result.values)');
+    expect(form).toContain('await onPersist(result.values, logoChange)');
     expect(form).toContain("record.version.toLocaleString('fa-IR')");
     expect(source('master-data-form.tsx')).toContain(
       'Blocked by Migration Lock',
@@ -79,9 +79,10 @@ describe('Master Data visual polish contract', () => {
       const filtersStart = workspace.indexOf('<FilterBar', kpiStart);
 
       expect(kpiStart, `${fileName}: KPI grid`).toBeGreaterThanOrEqual(0);
-      expect(filtersStart, `${fileName}: filters after KPI grid`).toBeGreaterThan(
-        kpiStart,
-      );
+      expect(
+        filtersStart,
+        `${fileName}: filters after KPI grid`,
+      ).toBeGreaterThan(kpiStart);
 
       const postKpiContent = workspace.slice(kpiStart, filtersStart);
       expect(postKpiContent, fileName).not.toMatch(/<(?:Alert|Card)\b/);
@@ -151,6 +152,33 @@ describe('Master Data visual polish contract', () => {
     expect(hub).not.toContain('group-hover:scale-x-100');
   });
 
+  it('aligns navigation and action button groups to the physical left in RTL sections', () => {
+    const sectionFiles = [
+      'master-data-finance-workspace.tsx',
+      'master-data-geography-workspace.tsx',
+      'master-data-suppliers-workspace.tsx',
+      'master-data-accommodation-workspace.tsx',
+      'master-data-transportation-workspace.tsx',
+      'master-data-insurance-workspace.tsx',
+      'master-data-travel-services-workspace.tsx',
+      'master-data-sales-references-workspace.tsx',
+      'master-data-live-workspace.tsx',
+    ];
+
+    for (const fileName of sectionFiles) {
+      const workspace = source(fileName);
+      expect(workspace, `${fileName}: all-sections action`).toContain(
+        'ms-auto`}',
+      );
+      expect(workspace, `${fileName}: left-aligned actions`).toContain(
+        'justify-end gap-2',
+      );
+      expect(workspace, `${fileName}: unaligned button group`).not.toMatch(
+        /<div className="flex flex-wrap gap-2">\s*<(?:Button|MasterData)/,
+      );
+    }
+  });
+
   it('consolidates currency history and the city/region navigation', () => {
     const finance = source('master-data-finance-workspace.tsx');
     const financeTabs = finance.slice(
@@ -169,6 +197,10 @@ describe('Master Data visual polish contract', () => {
     expect(finance).toContain('toCurrencyId: selectedCurrency.id');
     expect(geographyTabs).toContain("label: 'شهرها و استان‌ها'");
     expect(geographyTabs).not.toContain("resource: 'cities'");
-    expect(geography).toContain("changeResource('cities')");
+    expect(geography).not.toContain("changeResource('cities')");
+    expect(geography).toContain("openCreate('regions')");
+    expect(geography).toContain("openCreate('cities')");
+    expect(geography).toContain("renderLocationTable('regions'");
+    expect(geography).toContain("renderLocationTable('cities'");
   });
 });

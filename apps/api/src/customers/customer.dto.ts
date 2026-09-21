@@ -1,5 +1,5 @@
 import { Transform, Type } from 'class-transformer';
-import { CUSTOMER_STATUS_REASON_CODES } from '@rubi/contracts';
+import { CUSTOMER_STATUS_REASON_CODES } from '@nora/contracts';
 import {
   IsArray,
   IsBoolean,
@@ -16,6 +16,14 @@ import {
   MinLength,
   ValidateIf,
 } from 'class-validator';
+
+export class CustomerRegistrationLookupDto {
+  @IsOptional() @IsBoolean() matchByNationalId?: boolean;
+  @IsString() @MaxLength(16) nationalId!: string;
+  @IsString() @MinLength(1) @MaxLength(120) firstName!: string;
+  @IsString() @MinLength(1) @MaxLength(120) lastName!: string;
+  @IsOptional() @IsDateString({ strict: true }) birthDate?: string;
+}
 
 export class CustomerListQueryDto {
   @IsOptional() @IsString() @MaxLength(100) search = '';
@@ -86,6 +94,49 @@ export class CustomerMutationDto {
   @IsString()
   @Matches(/^\d{10}$/)
   nationalId?: string | null;
+  @IsOptional()
+  @Transform(({ value }) =>
+    typeof value === 'string'
+      ? value.trim().toUpperCase().replace(/\s+/g, '')
+      : value,
+  )
+  @IsString()
+  @Matches(/^[A-Z0-9-]{4,24}$/)
+  passportNumber?: string | null;
+  @IsOptional()
+  @IsDateString({ strict: true })
+  @Matches(/^\d{4}-\d{2}-\d{2}$/)
+  passportExpiryDate?: string | null;
+  @IsOptional()
+  @IsString()
+  @Matches(/^[A-Za-z][A-Za-z '-]{0,119}$/)
+  passportFirstName?: string | null;
+  @IsOptional()
+  @IsString()
+  @Matches(/^[A-Za-z][A-Za-z '-]{0,119}$/)
+  passportLastName?: string | null;
+  @IsOptional() @IsIn(['M', 'F']) gender?: 'M' | 'F' | null;
+  @IsOptional()
+  @Transform(({ value }) =>
+    typeof value === 'string' ? value.trim().toUpperCase() : value,
+  )
+  @IsString()
+  @Matches(/^[A-Z]{3}$/)
+  nationalityCode?: string | null;
+  @IsOptional()
+  @Transform(({ value }) =>
+    typeof value === 'string' ? value.trim().toUpperCase() : value,
+  )
+  @IsString()
+  @Matches(/^[A-Z]{3}$/)
+  passportIssuingCountryCode?: string | null;
+  @IsOptional()
+  @Transform(({ value }) =>
+    typeof value === 'string' ? value.trim().toUpperCase() : value,
+  )
+  @IsString()
+  @Matches(/^[A-Z]{3}$/)
+  birthCountryCode?: string | null;
   @IsArray() @IsIn(['customer', 'passenger'], { each: true }) roles!: (
     'customer' | 'passenger'
   )[];

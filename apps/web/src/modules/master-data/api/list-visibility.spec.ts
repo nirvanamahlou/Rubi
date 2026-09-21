@@ -1,4 +1,4 @@
-import type { MasterDataListQuery } from '@rubi/contracts';
+import type { MasterDataListQuery } from '@nora/contracts';
 import { readFileSync } from 'node:fs';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 

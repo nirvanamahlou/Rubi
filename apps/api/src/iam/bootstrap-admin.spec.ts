@@ -3,6 +3,7 @@ import type { DatabaseService } from '../database/database.service';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { IamService } from './iam.service';
+import type { MfaTotpService } from './mfa-totp';
 
 const { passwordHash } = vi.hoisted(() => ({ passwordHash: vi.fn() }));
 
@@ -37,6 +38,7 @@ describe('administrator bootstrap safety', () => {
     const service = new IamService(
       { client } as unknown as DatabaseService,
       {} as JwtService,
+      {} as MfaTotpService,
     );
 
     await expect(

@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import {
   MASTER_TRANSPORT_FORM_RESOURCES,
   type AuthenticatedActor,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import { transportStatusData } from './transport-form.policy';
 import { MasterDataService } from './master-data.service';
 import { strFromU8, unzipSync } from 'fflate';
@@ -132,20 +132,84 @@ describe('transport forms policy and API compatibility', () => {
       expect(result.attributes.vehicleTypeCount).toBeNull();
     },
   );
-  it('rejects unverified Documents references even when they are valid UUIDs', async () => {
-    const service = new MasterDataService({} as MasterDataRepository);
-    await expect(
-      service.create(
-        'airlines',
-        {
-          code: 'ZZ',
-          name: 'Test airline',
-          organizationId: id,
-          logoFileReference: id,
-        },
-        actor,
-      ),
-    ).rejects.toThrow('اسناد');
+  it('accepts a logo reference uploaded through Documents in the same form', async () => {
+    const repository = {
+      fieldExists: vi.fn().mockResolvedValue(false),
+      create: vi.fn().mockResolvedValue(base),
+    } as unknown as MasterDataRepository;
+    const service = new MasterDataService(repository);
+    await service.create(
+      'airlines',
+      {
+        airlineCodes: 'ZZ / ZZZ',
+        name: 'Test airline',
+        logoFileReference: id,
+      },
+      actor,
+    );
+    expect(repository.create).toHaveBeenCalledWith(
+      'airlines',
+      expect.objectContaining({ logoFileReference: id }),
+      actor.userId,
+      actor.branchIds[0],
+    );
+  });
+  it('normalizes the combined aircraft manufacturer and model while keeping a compatible internal name', async () => {
+    const repository = {
+      codeExists: vi.fn().mockResolvedValue(false),
+      create: vi.fn().mockResolvedValue(base),
+    } as unknown as MasterDataRepository;
+    const service = new MasterDataService(repository);
+
+    await service.create(
+      'aircraft-types',
+      {
+        englishName: 'Airbus A320-200',
+        manufacturerModel: 'Airbus / A320-200',
+      },
+      actor,
+    );
+
+    expect(repository.create).toHaveBeenCalledWith(
+      'aircraft-types',
+      expect.objectContaining({
+        name: 'Airbus A320-200',
+        englishName: 'Airbus A320-200',
+        manufacturer: 'Airbus',
+        model: 'A320-200',
+      }),
+      actor.userId,
+      actor.branchIds[0],
+    );
+    expect(repository.create).not.toHaveBeenCalledWith(
+      'aircraft-types',
+      expect.objectContaining({ manufacturerModel: expect.anything() }),
+      expect.anything(),
+      expect.anything(),
+    );
+  });
+  it('exports aircraft manufacturer and model as one column without a Persian title', () => {
+    const row = toMasterDataRecord('aircraft-types', {
+      ...base,
+      name: 'نام سازگاری داخلی',
+      englishName: 'Airbus A320-200',
+      manufacturer: 'Airbus',
+      model: 'A320-200',
+    });
+    const files = unzipSync(
+      buildMasterDataXlsx({
+        resource: 'aircraft-types',
+        columns: ['code', 'manufacturerModel', 'englishName'],
+        records: [row],
+        locale: 'fa-IR',
+        timezone: 'UTC',
+      }),
+    );
+    const worksheet = strFromU8(files['xl/worksheets/sheet1.xml']!);
+    expect(worksheet).toContain('سازنده و مدل');
+    expect(worksheet).toContain('Airbus / A320-200');
+    expect(worksheet).toContain('Airbus A320-200');
+    expect(worksheet).not.toContain('نام سازگاری داخلی');
   });
   it('validates train facilities and makes replacing/clearing atomic, preserving legacy text', async () => {
     const repository = {

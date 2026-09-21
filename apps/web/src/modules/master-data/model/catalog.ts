@@ -132,14 +132,6 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
     group: 'جغرافیا',
     description: 'ساختار سلسله‌مراتبی استان، ایالت و ناحیه در محدوده یک کشور.',
     fields: [
-      nameField,
-      {
-        key: 'englishName',
-        label: 'عنوان انگلیسی',
-        type: 'text',
-        placeholder: 'Tehran Province',
-        required: true,
-      },
       {
         key: 'countryId',
         label: 'کشور',
@@ -147,24 +139,13 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
         placeholder: '',
         required: true,
       },
+      nameField,
       {
-        key: 'parentRegionId',
-        label: 'ناحیه والد',
+        key: 'englishName',
+        label: 'عنوان انگلیسی',
         type: 'text',
-        placeholder: '',
-      },
-      {
-        key: 'type',
-        label: 'نوع ساختار',
-        type: 'select',
-        placeholder: '',
+        placeholder: 'Tehran Province',
         required: true,
-        options: [
-          { value: 'PROVINCE', label: 'استان' },
-          { value: 'STATE', label: 'ایالت' },
-          { value: 'REGION', label: 'ناحیه' },
-          { value: 'TERRITORY', label: 'قلمرو' },
-        ],
       },
     ],
     preview: { name: 'تهران', englishName: 'Tehran', type: 'PROVINCE' },
@@ -176,14 +157,6 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
     group: 'جغرافیا',
     description: 'شهر وابسته به کشور و در صورت نیاز استان/ناحیه ساختاری.',
     fields: [
-      nameField,
-      {
-        key: 'englishName',
-        label: 'عنوان انگلیسی',
-        type: 'text',
-        placeholder: 'Tehran',
-        required: true,
-      },
       {
         key: 'countryId',
         label: 'کشور',
@@ -193,9 +166,19 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
       },
       {
         key: 'regionId',
-        label: 'استان/ناحیه',
+        label: 'استان',
         type: 'text',
         placeholder: '',
+        required: true,
+        hint: 'ابتدا استان را انتخاب یا همان‌جا ایجاد کنید، سپس مشخصات شهر را وارد کنید.',
+      },
+      nameField,
+      {
+        key: 'englishName',
+        label: 'عنوان انگلیسی',
+        type: 'text',
+        placeholder: 'Tehran',
+        required: true,
       },
     ],
     preview: { name: 'تهران', englishName: 'Tehran', countryId: 'country_ir' },
@@ -206,7 +189,7 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
     singularLabel: 'فرودگاه',
     group: 'جغرافیا',
     description:
-      'فرودگاه با کدهای رسمی، Timezone معتبر IANA و مختصات کنترل‌شده.',
+      'ثبت اولیه فرودگاه با نام، شهر و کد IATA؛ مشخصات تکمیلی در ویرایش قابل ثبت است.',
     fields: [
       nameField,
       {
@@ -242,28 +225,24 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
         label: 'کد ICAO',
         type: 'text',
         placeholder: 'OIII',
-        required: true,
       },
       {
         key: 'ianaTimezone',
         label: 'Timezone IANA',
         type: 'text',
         placeholder: 'Asia/Tehran',
-        required: true,
       },
       {
         key: 'latitude',
         label: 'عرض جغرافیایی',
         type: 'number',
         placeholder: '35.6892',
-        required: true,
       },
       {
         key: 'longitude',
         label: 'طول جغرافیایی',
         type: 'number',
         placeholder: '51.3134',
-        required: true,
       },
     ],
     preview: { iataCode: 'THR', icaoCode: 'OIII', ianaTimezone: 'Asia/Tehran' },
@@ -413,21 +392,7 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
         label: 'منبع نرخ',
         type: 'text',
         placeholder: 'منبع تأییدشده',
-        required: true,
-      },
-      {
-        key: 'observedAt',
-        label: 'زمان مشاهده UTC',
-        type: 'datetime-local',
-        placeholder: '',
-        required: true,
-      },
-      {
-        key: 'validFrom',
-        label: 'شروع اعتبار UTC',
-        type: 'datetime-local',
-        placeholder: '',
-        required: true,
+        hint: 'اختیاری؛ در صورت خالی بودن «ثبت دستی» ذخیره می‌شود.',
       },
       {
         key: 'validTo',
@@ -483,6 +448,13 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
         label: 'کد SWIFT',
         type: 'text',
         placeholder: 'BKMTIRTH',
+      },
+      {
+        key: 'logoFileReference',
+        label: 'لوگوی بانک',
+        type: 'text',
+        placeholder: '',
+        hint: 'تصویر از طریق اسناد امن نورا بارگذاری می‌شود.',
       },
     ],
     preview: {
@@ -791,15 +763,15 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
     label: 'ایرلاین‌ها',
     singularLabel: 'ایرلاین',
     group: 'حمل‌ونقل',
-    description:
-      'مشخصات مرجع ایرلاین با کدهای IATA/ICAO؛ Credential و اتصال Provider خارج از Master Data است.',
+    description: 'مشخصات مرجع ایرلاین با کدهای IATA/ICAO.',
     fields: [
       {
-        key: 'code',
-        label: 'کد IATA',
+        key: 'airlineCodes',
+        label: 'کد ایرلاین',
         type: 'text',
-        placeholder: 'W5',
+        placeholder: 'W5 / IRM',
         required: true,
+        hint: 'کد IATA و در صورت وجود ICAO را در یک فیلد وارد کنید.',
       },
       nameField,
       {
@@ -808,17 +780,15 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
         type: 'text',
         placeholder: 'Airline Name',
       },
-      { key: 'icaoCode', label: 'کد ICAO', type: 'text', placeholder: 'IRM' },
-      {
-        key: 'organizationId',
-        label: 'سازمان ایرلاین',
-        type: 'text',
-        placeholder: 'org_...',
-        required: true,
-      },
       {
         key: 'countryId',
         label: 'کشور مبدأ',
+        type: 'text',
+        placeholder: '',
+      },
+      {
+        key: 'logoFileReference',
+        label: 'لوگوی ایرلاین',
         type: 'text',
         placeholder: '',
       },
@@ -838,46 +808,23 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
     description:
       'کاتالوگ سازنده، مدل و نوع بدنه هواپیما بدون وابستگی به ناوگان عملیاتی.',
     fields: [
-      nameField,
       {
         key: 'englishName',
         label: 'نام انگلیسی',
         type: 'text',
-        placeholder: 'Airbus A320',
+        placeholder: 'Airbus A320-200',
       },
       {
-        key: 'manufacturer',
-        label: 'سازنده',
+        key: 'manufacturerModel',
+        label: 'سازنده و مدل',
         type: 'text',
-        placeholder: 'Airbus',
+        placeholder: 'Airbus / A320-200',
         required: true,
-      },
-      {
-        key: 'model',
-        label: 'مدل',
-        type: 'text',
-        placeholder: 'A320-200',
-        required: true,
-      },
-      {
-        key: 'bodyType',
-        label: 'نوع بدنه',
-        type: 'select',
-        placeholder: '',
-        required: true,
-        options: [
-          { value: 'NARROW_BODY', label: 'بدنه باریک' },
-          { value: 'WIDE_BODY', label: 'بدنه پهن' },
-          { value: 'TURBOPROP', label: 'توربوپراپ' },
-          { value: 'REGIONAL', label: 'منطقه‌ای' },
-          { value: 'OTHER', label: 'سایر' },
-        ],
       },
     ],
     preview: {
-      name: 'ایرباس ۳۲۰',
-      manufacturer: 'Airbus',
-      model: 'A320-200',
+      englishName: 'Airbus A320-200',
+      manufacturerModel: 'Airbus / A320-200',
       bodyType: 'NARROW_BODY',
     },
   },
@@ -889,12 +836,12 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
     description:
       'کد رزرو و Cabin مرجع؛ قیمت و موجودی صندلی در Ticket Catalog/Reservations می‌ماند.',
     fields: [
-      nameField,
       {
         key: 'englishName',
         label: 'نام انگلیسی',
         type: 'text',
         placeholder: 'Economy',
+        required: true,
       },
       {
         key: 'bookingCode',
@@ -904,26 +851,17 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
         required: true,
       },
       {
-        key: 'cabinType',
-        label: 'Cabin',
-        type: 'select',
-        placeholder: '',
-        required: true,
-        options: [
-          { value: 'ECONOMY', label: 'Economy' },
-          { value: 'PREMIUM_ECONOMY', label: 'Premium Economy' },
-          { value: 'BUSINESS', label: 'Business' },
-          { value: 'FIRST', label: 'First' },
-        ],
-      },
-      {
         key: 'displayOrder',
         label: 'ترتیب نمایش',
         type: 'number',
         placeholder: '0',
       },
     ],
-    preview: { name: 'اکونومی', bookingCode: 'Y', cabinType: 'ECONOMY' },
+    preview: {
+      englishName: 'Economy',
+      bookingCode: 'Y',
+      cabinType: 'ECONOMY',
+    },
   },
   {
     key: 'baggage-rules',
@@ -931,9 +869,8 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
     singularLabel: 'قاعده بار',
     group: 'حمل‌ونقل',
     description:
-      'نسخه مستقل قواعد بار براساس ایرلاین، کلاس، مسافر، مسیر و بازه اعتبار.',
+      'قاعده بار براساس ایرلاین، کلاس، نوع مسافر، مسیر، مقدار و تعداد قطعه.',
     fields: [
-      nameField,
       {
         key: 'airlineId',
         label: 'ایرلاین',
@@ -996,19 +933,6 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
         placeholder: '1',
       },
       {
-        key: 'validFrom',
-        label: 'شروع اعتبار',
-        type: 'datetime-local',
-        placeholder: '',
-        required: true,
-      },
-      {
-        key: 'validTo',
-        label: 'پایان اعتبار',
-        type: 'datetime-local',
-        placeholder: '',
-      },
-      {
         key: 'description',
         label: 'توضیحات',
         type: 'text',
@@ -1016,7 +940,7 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
       },
     ],
     preview: {
-      name: 'بار اکونومی',
+      name: 'Baggage Economy',
       passengerType: 'ADT',
       allowance: '20',
       unit: 'KG',
@@ -1028,12 +952,19 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
     singularLabel: 'قالب Manifest',
     group: 'حمل‌ونقل',
     description:
-      'تعریف نسخه و ساختار ستون‌ها؛ فایل واقعی فقط با Reference سرویس Documents متصل می‌شود.',
+      'فایل Excel ایرلاین برای مقصد انتخابی ذخیره و نسخه قالب به‌صورت خودکار ساخته می‌شود.',
     fields: [
       nameField,
       {
         key: 'airlineId',
         label: 'ایرلاین',
+        type: 'text',
+        placeholder: '',
+        required: true,
+      },
+      {
+        key: 'destinationCityId',
+        label: 'مقصد (شهر)',
         type: 'text',
         placeholder: '',
         required: true,
@@ -1157,6 +1088,12 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
         placeholder: '',
         required: true,
       },
+      {
+        key: 'logoFileReference',
+        label: 'لوگوی شرکت ریلی',
+        type: 'text',
+        placeholder: '',
+      },
     ],
     preview: { name: 'شرکت ریلی', organizationId: 'UUID', countryId: 'UUID' },
   },
@@ -1222,7 +1159,7 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
     singularLabel: 'شرکت اتوبوس',
     group: 'حمل‌ونقل',
     description:
-      'شرکت اتوبوس مرجع متصل به یک Organization یا Provider؛ فروش و تسویه در ماژول‌های مالک باقی می‌ماند.',
+      'شرکت اتوبوس مرجع با کشور و لوگو؛ فروش و تسویه در ماژول‌های مالک باقی می‌ماند.',
     fields: [
       nameField,
       {
@@ -1233,15 +1170,10 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
       },
       {
         key: 'organizationId',
-        label: 'سازمان اتوبوس',
+        label: 'سازمان شرکت اتوبوس',
         type: 'text',
         placeholder: '',
-      },
-      {
-        key: 'supplierId',
-        label: 'تأمین‌کننده / Provider',
-        type: 'text',
-        placeholder: '',
+        required: true,
       },
       {
         key: 'countryId',
@@ -1250,11 +1182,16 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
         placeholder: '',
         required: true,
       },
+      {
+        key: 'logoFileReference',
+        label: 'لوگوی شرکت اتوبوس',
+        type: 'text',
+        placeholder: '',
+      },
     ],
     preview: {
       name: 'شرکت اتوبوس',
       organizationId: 'UUID',
-      supplierId: '',
       countryId: 'UUID',
     },
   },
@@ -1273,17 +1210,10 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
         placeholder: 'Bus Type',
       },
       {
-        key: 'manufacturer',
-        label: 'سازنده',
+        key: 'manufacturerModel',
+        label: 'سازنده و مدل',
         type: 'text',
-        placeholder: 'Manufacturer',
-        required: true,
-      },
-      {
-        key: 'model',
-        label: 'مدل',
-        type: 'text',
-        placeholder: 'Model',
+        placeholder: 'Scania Maral',
         required: true,
       },
       {
@@ -1372,18 +1302,6 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
         placeholder: '12:00',
       },
       {
-        key: 'latitude',
-        label: 'عرض جغرافیایی',
-        type: 'number',
-        placeholder: '35.000000',
-      },
-      {
-        key: 'longitude',
-        label: 'طول جغرافیایی',
-        type: 'number',
-        placeholder: '51.000000',
-      },
-      {
         key: 'isSaleableReference',
         label: 'فروش‌پذیری مرجع',
         type: 'select',
@@ -1407,7 +1325,14 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
       },
       {
         key: 'facilityIds',
-        label: 'امکانات',
+        label: 'امکانات هتل',
+        type: 'text',
+        placeholder: '',
+        hint: 'امکانات را همین‌جا انتخاب یا به‌صورت دستی ایجاد کنید؛ کاتالوگ جدا نمایش داده نمی‌شود.',
+      },
+      {
+        key: 'logoFileReference',
+        label: 'لوگوی هتل',
         type: 'text',
         placeholder: '',
       },
@@ -1445,6 +1370,12 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
         label: 'وب‌سایت',
         type: 'text',
         placeholder: 'chain.example',
+      },
+      {
+        key: 'logoFileReference',
+        label: 'لوگوی زنجیره هتل',
+        type: 'text',
+        placeholder: '',
       },
     ],
     preview: { code: 'AUTO', name: 'عنوان زنجیره', countryId: 'UUID' },
@@ -1576,7 +1507,7 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
         label: 'شرط استفاده',
         type: 'text',
         placeholder: 'شرط تخصیص و اطلاع‌رسانی',
-        required: true,
+        hint: 'اختیاری؛ فقط در صورت وجود شرط تخصیص وارد شود.',
       },
       {
         key: 'isSaleableReference',
@@ -1631,11 +1562,11 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
         required: true,
       },
       {
-        key: 'displayName',
-        label: 'نام نمایشی',
+        key: 'nationalId',
+        label: 'شناسه ملی شرکت',
         type: 'text',
-        placeholder: 'نام نمایشی',
-        required: true,
+        placeholder: '۱۱ رقم؛ اختیاری برای شخصیت حقوقی',
+        hint: 'از مدارک ثبتی شرکت وارد کنید. این مقدار خودکار تولید یا استعلام نمی‌شود. برای شخصیت حقیقی خالی بگذارید.',
       },
       {
         key: 'roleCodes',
@@ -1643,6 +1574,12 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
         type: 'text',
         placeholder: 'AGENCY,CORPORATE_CUSTOMER',
         required: true,
+      },
+      {
+        key: 'logoFileReference',
+        label: 'لوگوی سازمان',
+        type: 'text',
+        placeholder: '',
       },
     ],
     preview: {
@@ -1658,46 +1595,35 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
     singularLabel: 'تأمین‌کننده',
     group: 'سازمان‌ها',
     description:
-      'پروفایل مرجع تأمین‌کننده متصل به Organization یکتا؛ قرارداد و بدهی در ماژول مالک باقی می‌ماند.',
+      'پروفایل مستقل تأمین‌کننده برای استفاده در استعلام، سفارش و فاکتور خرید.',
     fields: [
       {
-        key: 'englishName',
-        label: 'نام انگلیسی تأمین‌کننده',
-        type: 'text',
-        placeholder: '',
-      },
-      {
-        key: 'organizationId',
-        label: 'سازمان تأمین‌کننده',
+        key: 'name',
+        label: 'نام تأمین‌کننده',
         type: 'text',
         placeholder: '',
         required: true,
+        hint: 'تأمین‌کننده به‌صورت مستقل در خرید و تأمین ثبت می‌شود.',
       },
       {
-        key: 'countryId',
-        label: 'کشور',
+        key: 'address',
+        label: 'نشانی',
         type: 'text',
-        placeholder: '',
+        placeholder: 'نشانی کامل تأمین‌کننده',
       },
       {
-        key: 'cityId',
-        label: 'شهر',
+        key: 'primaryPhone',
+        label: 'شماره تماس اصلی',
         type: 'text',
-        placeholder: '',
-      },
-      {
-        key: 'externalProviderReference',
-        label: 'شناسه عمومی Provider/API',
-        type: 'text',
-        placeholder: 'PROVIDER-REF',
-        hint: 'Credential یا Secret در این فیلد ذخیره نمی‌شود.',
+        placeholder: '+98912...',
+        hint: 'شماره تماس رمزنگاری می‌شود و در فهرست فقط مقدار ماسک‌شده نمایش داده می‌شود.',
       },
       {
         key: 'collaborationStatus',
         label: 'وضعیت همکاری',
         type: 'select',
         placeholder: '',
-        required: true,
+        hint: 'اختیاری؛ مقدار پیش‌فرض همکاری فعال است.',
         options: [
           { value: 'ACTIVE', label: 'همکاری فعال' },
           { value: 'UNDER_REVIEW', label: 'در حال بررسی' },
@@ -1713,15 +1639,14 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
         hint: 'یک یا چند خدمت از کاتالوگ انتخاب کنید.',
       },
       {
-        key: 'primaryContactId',
-        label: 'تماس اصلی',
+        key: 'logoFileReference',
+        label: 'لوگوی تأمین‌کننده',
         type: 'text',
         placeholder: '',
-        hint: 'از مخاطبان سازمان انتخاب کنید؛ تلفن و ایمیل فقط ماسک‌شده نمایش داده می‌شوند.',
       },
     ],
     preview: {
-      organizationId: 'org_supplier',
+      name: 'تأمین‌کننده نمونه',
       collaborationStatus: 'UNDER_REVIEW',
     },
   },
@@ -1745,7 +1670,7 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
         label: 'سازمان کارگزار',
         type: 'text',
         placeholder: '',
-        required: true,
+        hint: 'اختیاری؛ می‌توانید کارگزار مستقل ثبت کنید.',
       },
       {
         key: 'countryId',
@@ -1764,7 +1689,7 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
         label: 'وضعیت همکاری',
         type: 'select',
         placeholder: '',
-        required: true,
+        hint: 'اختیاری؛ مقدار پیش‌فرض همکاری فعال است.',
         options: [
           { value: 'ACTIVE', label: 'همکاری فعال' },
           { value: 'UNDER_REVIEW', label: 'در حال بررسی' },
@@ -1786,6 +1711,12 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
         placeholder: '',
         hint: 'از مخاطبان سازمان انتخاب کنید؛ تلفن و ایمیل فقط ماسک‌شده نمایش داده می‌شوند.',
       },
+      {
+        key: 'logoFileReference',
+        label: 'لوگوی کارگزار',
+        type: 'text',
+        placeholder: '',
+      },
     ],
     preview: {
       code: 'BROKER_SAMPLE',
@@ -1806,18 +1737,12 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
         key: 'code',
         label: 'کد خدمت',
         type: 'text',
-        placeholder: 'HOTEL',
-        required: true,
+        placeholder: 'خودکار',
+        hint: 'هنگام ذخیره به‌صورت خودکار تولید می‌شود.',
       },
       nameField,
-      {
-        key: 'englishName',
-        label: 'عنوان انگلیسی',
-        type: 'text',
-        placeholder: 'Hotel',
-      },
     ],
-    preview: { code: 'HOTEL', name: 'هتل', englishName: 'Hotel' },
+    preview: { code: 'AUTO', name: 'هتل' },
   },
   {
     key: 'organization-contacts',
@@ -2187,12 +2112,6 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
         required: true,
       },
       {
-        key: 'supplierId',
-        label: 'Provider',
-        type: 'text',
-        placeholder: 'تأمین‌کننده را انتخاب کنید',
-      },
-      {
         key: 'visaType',
         label: 'نوع ویزا',
         type: 'text',
@@ -2204,10 +2123,7 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
         label: 'نوع اعتبار مرجع',
         type: 'select',
         placeholder: '',
-        options: [
-          { value: 'DAYS', label: 'تعداد روز مشخص' },
-          { value: 'PASSPORT_EXPIRY', label: 'تا پایان اعتبار پاسپورت' },
-        ],
+        options: [{ value: 'DAYS', label: 'تعداد روز مشخص' }],
       },
       {
         key: 'referenceValidityDays',

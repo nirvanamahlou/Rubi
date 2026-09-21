@@ -2,15 +2,20 @@
 
 import { CalendarDays, ChevronLeft, ChevronRight, Clock3 } from 'lucide-react';
 import * as React from 'react';
+import { createPortal } from 'react-dom';
 
 import { cn } from '@/lib/utils';
 import {
   calendarMonthDays,
   calendarMonthLabel,
+  calendarMonthName,
+  calendarParts,
   formatCalendarValue,
   joinDateAndTime,
   moveCalendarMonth,
   parseIsoDate,
+  resolveCalendarPopoverPosition,
+  setCalendarMonthYear,
   toIsoDate,
   type CalendarSystem,
 } from './date-picker.utils';
@@ -20,12 +25,25 @@ const weekdayLabels = {
   gregorian: ['ی', 'د', 'س', 'چ', 'پ', 'ج', 'ش'],
 } satisfies Record<CalendarSystem, string[]>;
 
+type CalendarView = 'days' | 'months' | 'years';
+
+function formatCalendarNumber(value: number, system: CalendarSystem): string {
+  return new Intl.NumberFormat(system === 'gregorian' ? 'en-US' : 'fa-IR', {
+    useGrouping: false,
+  }).format(value);
+}
+
 export interface DatePickerProps {
+  calendarSystem?: CalendarSystem;
+  defaultCalendarSystem?: CalendarSystem;
+  withinDialog?: boolean;
+  gregorianEnglish?: boolean;
   id?: string;
   name?: string;
   value?: string;
   defaultValue?: string;
   onChange?: (value: string) => void;
+  onCalendarSystemChange?: (system: CalendarSystem) => void;
   includeTime?: boolean;
   disabled?: boolean;
   readOnly?: boolean;
@@ -33,18 +51,24 @@ export interface DatePickerProps {
   className?: string;
   placeholder?: string;
   variant?: 'default' | 'rubi';
+  'aria-label'?: string | undefined;
   'aria-describedby'?: string | undefined;
   'aria-invalid'?: boolean;
 }
 
 export function DatePicker({
+  calendarSystem: controlledCalendarSystem,
+  withinDialog = false,
   className,
+  gregorianEnglish = false,
+  defaultCalendarSystem = 'persian',
   defaultValue = '',
   disabled,
   id,
   includeTime = false,
   name,
   onChange,
+  onCalendarSystemChange,
   placeholder = 'انتخاب تاریخ',
   readOnly,
   required,
@@ -54,21 +78,61 @@ export function DatePicker({
 }: DatePickerProps) {
   const [internalValue, setInternalValue] = React.useState(defaultValue);
   const currentValue = value ?? internalValue;
-  const [calendarSystem, setCalendarSystem] =
-    React.useState<CalendarSystem>('persian');
+  const [internalCalendarSystem, setInternalCalendarSystem] =
+    React.useState<CalendarSystem>(defaultCalendarSystem);
+  const calendarSystem = controlledCalendarSystem ?? internalCalendarSystem;
+  const english = gregorianEnglish && calendarSystem === 'gregorian';
+  const t = (fa: string, en: string) => (english ? en : fa);
+  const [calendarView, setCalendarView] = React.useState<CalendarView>('days');
+  const [yearGridStart, setYearGridStart] = React.useState(0);
   const [open, setOpen] = React.useState(false);
+  const [modalHost, setModalHost] = React.useState<HTMLElement | null>(null);
+  const [popoverPlacement, setPopoverPlacement] = React.useState<
+    'above' | 'below'
+  >('below');
+  const [popoverPosition, setPopoverPosition] =
+    React.useState<React.CSSProperties | null>(null);
   const [anchor, setAnchor] = React.useState(
     () => parseIsoDate(currentValue) ?? new Date(),
   );
   const rootRef = React.useRef<HTMLDivElement>(null);
+  const popoverRef = React.useRef<HTMLDivElement>(null);
+  const triggerRef = React.useRef<HTMLButtonElement>(null);
+  const popoverId = `${React.useId()}-calendar`;
   const selectedDate = currentValue.slice(0, 10);
   const days = calendarMonthDays(anchor, calendarSystem);
   const rubiCalendar = variant === 'rubi';
+  const anchorParts = calendarParts(anchor, calendarSystem);
+  const yearOptions = React.useMemo(
+    () => Array.from({ length: 12 }, (_, index) => yearGridStart + index),
+    [yearGridStart],
+  );
+  const monthOptions = React.useMemo(
+    () =>
+      Array.from({ length: 12 }, (_, index) => {
+        const month = index + 1;
+        const date = setCalendarMonthYear(
+          anchor,
+          anchorParts.year,
+          month,
+          calendarSystem,
+        );
+        return {
+          month,
+          label: calendarMonthName(date, calendarSystem, gregorianEnglish),
+        };
+      }),
+    [anchor, anchorParts.year, calendarSystem, gregorianEnglish],
+  );
 
   React.useEffect(() => {
     if (!open) return;
     const closeOnOutside = (event: PointerEvent) => {
-      if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
+      if (
+        !rootRef.current?.contains(event.target as Node) &&
+        !popoverRef.current?.contains(event.target as Node)
+      )
+        setOpen(false);
     };
     const closeOnEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') setOpen(false);
@@ -81,6 +145,57 @@ export function DatePicker({
     };
   }, [open]);
 
+  const positionPopover = React.useCallback(() => {
+    const trigger = triggerRef.current?.getBoundingClientRect();
+    const popover = popoverRef.current;
+    if (!trigger || !popover) return;
+
+    const position = resolveCalendarPopoverPosition(
+      {
+        bottom: trigger.bottom,
+        height: trigger.height,
+        left: trigger.left,
+        top: trigger.top,
+        width: trigger.width,
+      },
+      { height: popover.scrollHeight, width: popover.offsetWidth },
+      { height: window.innerHeight, width: window.innerWidth },
+    );
+    setPopoverPlacement(position.top < trigger.top ? 'above' : 'below');
+    setPopoverPosition({
+      left: position.left,
+      maxHeight: position.maxHeight,
+      top: position.top,
+    });
+  }, []);
+
+  React.useLayoutEffect(() => {
+    if (!open) return;
+    if (withinDialog && popoverRef.current?.hasAttribute('popover')) {
+      popoverRef.current.showPopover();
+    }
+    positionPopover();
+    const observer =
+      typeof ResizeObserver === 'undefined'
+        ? null
+        : new ResizeObserver(positionPopover);
+    if (popoverRef.current) observer?.observe(popoverRef.current);
+    window.addEventListener('resize', positionPopover);
+    window.addEventListener('scroll', positionPopover, true);
+    return () => {
+      observer?.disconnect();
+      window.removeEventListener('resize', positionPopover);
+      window.removeEventListener('scroll', positionPopover, true);
+    };
+  }, [
+    calendarSystem,
+    calendarView,
+    includeTime,
+    open,
+    positionPopover,
+    withinDialog,
+  ]);
+
   const emit = (nextValue: string) => {
     if (value === undefined) setInternalValue(nextValue);
     onChange?.(nextValue);
@@ -91,34 +206,109 @@ export function DatePicker({
     if (!includeTime) setOpen(false);
   };
 
+  const changeCalendarSystem = (system: CalendarSystem) => {
+    if (controlledCalendarSystem === undefined) {
+      setInternalCalendarSystem(system);
+    }
+    onCalendarSystemChange?.(system);
+    setCalendarView('days');
+  };
+
+  const navigateBackward = () => {
+    if (calendarView === 'years') {
+      setYearGridStart((current) => current - 12);
+      return;
+    }
+    if (calendarView === 'months') {
+      setAnchor((current) =>
+        setCalendarMonthYear(
+          current,
+          anchorParts.year - 1,
+          anchorParts.month,
+          calendarSystem,
+        ),
+      );
+      return;
+    }
+    setAnchor((current) => moveCalendarMonth(current, -1, calendarSystem));
+  };
+
+  const navigateForward = () => {
+    if (calendarView === 'years') {
+      setYearGridStart((current) => current + 12);
+      return;
+    }
+    if (calendarView === 'months') {
+      setAnchor((current) =>
+        setCalendarMonthYear(
+          current,
+          anchorParts.year + 1,
+          anchorParts.month,
+          calendarSystem,
+        ),
+      );
+      return;
+    }
+    setAnchor((current) => moveCalendarMonth(current, 1, calendarSystem));
+  };
+
+  const previousLabel =
+    calendarView === 'days'
+      ? t('ماه قبل', 'Previous month')
+      : calendarView === 'months'
+        ? t('سال قبل', 'Previous year')
+        : t('۱۲ سال قبل', 'Previous 12 years');
+  const nextLabel =
+    calendarView === 'days'
+      ? t('ماه بعد', 'Next month')
+      : calendarView === 'months'
+        ? t('سال بعد', 'Next year')
+        : t('۱۲ سال بعد', 'Next 12 years');
+
   return (
     <div className={cn('relative w-full', className)} ref={rootRef}>
       <input name={name} type="hidden" value={currentValue} />
       <button
         {...ariaProps}
         aria-expanded={open}
+        aria-controls={open ? popoverId : undefined}
         aria-haspopup="dialog"
         className={cn(
           'flex h-11 w-full items-center justify-between gap-3 rounded-xl border border-input bg-surface px-3 text-sm text-foreground shadow-xs outline-none transition focus:border-primary focus:ring-2 focus:ring-ring/30 disabled:cursor-not-allowed disabled:opacity-50',
           rubiCalendar &&
-            'border-primary/20 bg-gradient-to-l from-surface via-surface to-primary/5 shadow-sm shadow-primary/5 hover:border-primary/45 hover:shadow-md hover:shadow-primary/10 focus-visible:border-primary',
+            'border-primary/20 bg-gradient-to-l from-surface via-surface to-primary/5 shadow-sm shadow-primary/5 hover:border-primary/45 hover:shadow-md hover:shadow-primary/10',
           !currentValue && 'text-muted-foreground',
         )}
         disabled={disabled || readOnly}
         id={id}
         onClick={() => {
           if (!open) {
+            setModalHost(
+              withinDialog && rootRef.current?.closest('[role="dialog"]')
+                ? rootRef.current
+                : null,
+            );
             const parsed = parseIsoDate(currentValue);
             if (parsed) setAnchor(parsed);
+            setCalendarView('days');
+            setPopoverPosition(null);
           }
           setOpen((current) => !current);
         }}
+        ref={triggerRef}
         type="button"
       >
-        <span>
+        <span className="min-w-0 flex-1 truncate text-start" dir="auto">
           {currentValue
-            ? formatCalendarValue(currentValue, calendarSystem, includeTime)
-            : placeholder}
+            ? formatCalendarValue(
+                currentValue,
+                calendarSystem,
+                includeTime,
+                gregorianEnglish,
+              )
+            : english && placeholder === 'انتخاب تاریخ'
+              ? 'Select date'
+              : placeholder}
         </span>
         <span
           className={cn(
@@ -131,174 +321,307 @@ export function DatePicker({
         </span>
       </button>
 
-      {open ? (
-        <div
-          aria-label="انتخاب تاریخ"
-          className={cn(
-            'absolute start-0 top-[calc(100%+0.5rem)] z-[70] w-[min(22rem,calc(100vw-2rem))] rounded-2xl border border-primary/25 bg-popover p-3 text-popover-foreground shadow-2xl shadow-primary/15',
-            rubiCalendar &&
-              'overflow-hidden border-primary/30 bg-gradient-to-b from-popover via-popover to-primary/5 p-0 shadow-[0_22px_55px_-24px_color-mix(in_srgb,var(--primary)_55%,transparent)] ring-1 ring-primary/10 backdrop-blur-xl',
-          )}
-          dir="rtl"
-          role="dialog"
-        >
-          {rubiCalendar ? (
+      {open && typeof document !== 'undefined'
+        ? createPortal(
             <div
-              aria-hidden="true"
-              className="h-1 bg-gradient-to-l from-primary via-sky-500 to-cyan-400"
-            />
-          ) : null}
-          <div className={cn(rubiCalendar && 'p-3')}>
-            <div
-              aria-label="نوع تقویم"
+              popover={modalHost ? 'manual' : undefined}
+              onKeyDown={(event) => {
+                if (event.key === 'Escape') {
+                  event.stopPropagation();
+                  setOpen(false);
+                  triggerRef.current?.focus();
+                }
+              }}
+              aria-label={t('انتخاب تاریخ', 'Select date')}
               className={cn(
-                'mb-3 grid grid-cols-2 rounded-xl bg-secondary p-1',
+                'fixed z-[70] w-[min(22rem,calc(100vw-2rem))] overflow-y-auto overscroll-contain rounded-2xl border border-primary/25 bg-popover p-3 text-popover-foreground shadow-2xl shadow-primary/15',
                 rubiCalendar &&
-                  'border border-primary/15 bg-primary/5 p-1.5 shadow-inner',
+                  'border-primary/30 bg-gradient-to-b from-popover via-popover to-primary/5 shadow-[0_22px_55px_-24px_color-mix(in_srgb,var(--primary)_55%,transparent)] ring-1 ring-primary/10 backdrop-blur-xl',
               )}
-              role="group"
-            >
-              {(['persian', 'gregorian'] as const).map((system) => (
-                <button
-                  aria-pressed={calendarSystem === system}
-                  className={cn(
-                    'min-h-9 rounded-lg px-3 text-sm font-semibold outline-none transition focus-visible:ring-2 focus-visible:ring-ring',
-                    calendarSystem === system
-                      ? rubiCalendar
-                        ? 'bg-primary text-primary-foreground shadow-md shadow-primary/20'
-                        : 'bg-primary text-primary-foreground shadow-sm'
-                      : rubiCalendar
-                        ? 'text-muted-foreground hover:bg-primary/10 hover:text-primary'
-                        : 'text-secondary-foreground hover:bg-primary/10',
-                  )}
-                  key={system}
-                  onClick={() => setCalendarSystem(system)}
-                  type="button"
-                >
-                  {system === 'persian' ? 'شمسی' : 'میلادی'}
-                </button>
-              ))}
-            </div>
-
-            <div
-              className={cn(
-                'mb-3 flex items-center justify-between rounded-xl bg-primary px-2 py-2 text-primary-foreground',
-                rubiCalendar &&
-                  'relative overflow-hidden bg-gradient-to-l from-primary via-primary to-sky-700 shadow-lg shadow-primary/20 dark:to-sky-500',
-              )}
+              dir={english ? 'ltr' : 'rtl'}
+              ref={popoverRef}
+              id={popoverId}
+              data-placement={popoverPlacement}
+              role="dialog"
+              style={{
+                margin: 0,
+                right: 'auto',
+                bottom: 'auto',
+                pointerEvents: 'auto',
+                ...(popoverPosition ?? {
+                  left: '1rem',
+                  top: '1rem',
+                  visibility: 'hidden',
+                }),
+              }}
             >
               {rubiCalendar ? (
-                <span
+                <div
                   aria-hidden="true"
-                  className="absolute -start-6 -top-8 size-24 rounded-full bg-white/15 blur-2xl"
+                  className="-mx-3 -mt-3 mb-3 h-1 bg-gradient-to-l from-primary via-sky-500 to-cyan-400"
                 />
               ) : null}
-              <button
-                aria-label="ماه قبل"
-                className="flex size-9 items-center justify-center rounded-lg outline-none hover:bg-white/15 focus-visible:ring-2 focus-visible:ring-white"
-                onClick={() =>
-                  setAnchor((current) =>
-                    moveCalendarMonth(current, -1, calendarSystem),
-                  )
-                }
-                type="button"
+              <div
+                aria-label={t('نوع تقویم', 'Calendar system')}
+                className="mb-3 grid grid-cols-2 rounded-xl bg-secondary p-1"
+                role="group"
               >
-                <ChevronRight aria-hidden="true" className="size-5" />
-              </button>
-              <strong className="relative text-sm">
-                {calendarMonthLabel(anchor, calendarSystem)}
-              </strong>
-              <button
-                aria-label="ماه بعد"
-                className="flex size-9 items-center justify-center rounded-lg outline-none hover:bg-white/15 focus-visible:ring-2 focus-visible:ring-white"
-                onClick={() =>
-                  setAnchor((current) =>
-                    moveCalendarMonth(current, 1, calendarSystem),
-                  )
-                }
-                type="button"
-              >
-                <ChevronLeft aria-hidden="true" className="size-5" />
-              </button>
-            </div>
-
-            <div className="grid grid-cols-7 gap-1 text-center">
-              {weekdayLabels[calendarSystem].map((label, index) => (
-                <span
-                  className={cn(
-                    'py-1 text-xs font-bold text-primary',
-                    rubiCalendar && 'rounded-md bg-primary/5 py-1.5',
-                  )}
-                  key={`${label}-${index}`}
-                >
-                  {label}
-                </span>
-              ))}
-              {days.map((day) => {
-                const selected = day.isoDate === selectedDate;
-                return (
+                {(['persian', 'gregorian'] as const).map((system) => (
                   <button
-                    aria-label={`${day.year}/${day.month}/${day.day}`}
-                    aria-pressed={selected}
+                    aria-pressed={calendarSystem === system}
                     className={cn(
-                      'flex aspect-square items-center justify-center rounded-lg text-sm outline-none transition focus-visible:ring-2 focus-visible:ring-ring',
-                      rubiCalendar &&
-                        'border border-transparent hover:-translate-y-0.5 hover:border-primary/15 hover:shadow-sm',
-                      day.isCurrentMonth
-                        ? 'text-foreground hover:bg-primary/10'
-                        : 'text-muted-foreground/45',
-                      day.isToday &&
-                        !selected &&
-                        (rubiCalendar
-                          ? 'border-primary/40 bg-primary/5 font-black text-primary ring-1 ring-primary/15'
-                          : 'border border-primary font-bold text-primary'),
-                      selected &&
-                        (rubiCalendar
-                          ? 'border-primary bg-primary font-black text-primary-foreground shadow-md shadow-primary/25 hover:bg-primary/90'
-                          : 'bg-primary font-bold text-primary-foreground shadow-sm hover:bg-primary/90'),
+                      'min-h-9 rounded-lg px-3 text-sm font-semibold outline-none transition focus-visible:ring-2 focus-visible:ring-ring',
+                      calendarSystem === system
+                        ? 'bg-primary text-primary-foreground shadow-sm'
+                        : 'text-secondary-foreground hover:bg-primary/10',
                     )}
-                    key={day.isoDate}
-                    onClick={() => selectDay(day.isoDate)}
+                    key={system}
+                    onClick={() => changeCalendarSystem(system)}
                     type="button"
                   >
-                    {new Intl.NumberFormat('fa-IR').format(day.day)}
+                    {system === 'persian'
+                      ? t('شمسی', 'Persian')
+                      : t('میلادی', 'Gregorian')}
                   </button>
-                );
-              })}
-            </div>
+                ))}
+              </div>
 
-            {includeTime ? (
-              <div className="mt-3 flex items-center gap-2 rounded-xl border border-primary/20 bg-primary/5 p-2">
-                <Clock3 aria-hidden="true" className="size-4 text-primary" />
-                <label className="text-xs font-semibold" htmlFor={`${id}-time`}>
-                  ساعت
-                </label>
-                <input
-                  className="h-9 min-w-0 flex-1 rounded-lg border border-input bg-surface px-2 text-center text-sm outline-none focus:border-primary focus:ring-2 focus:ring-ring/30"
-                  id={`${id}-time`}
-                  onChange={(event) => {
-                    const date = selectedDate || toIsoDate(new Date());
-                    emit(`${date}T${event.target.value}`);
-                  }}
-                  type="time"
-                  value={/T(\d{2}:\d{2})/.exec(currentValue)?.[1] ?? '00:00'}
-                />
+              <div
+                className={cn(
+                  'mb-3 flex items-center justify-between gap-2 rounded-xl bg-primary px-2 py-2 text-primary-foreground',
+                  rubiCalendar &&
+                    'bg-gradient-to-l from-primary via-primary to-sky-700 shadow-lg shadow-primary/20 dark:to-sky-500',
+                )}
+              >
                 <button
-                  className="h-9 rounded-lg bg-primary px-3 text-xs font-semibold text-primary-foreground outline-none hover:bg-primary/90 focus-visible:ring-2 focus-visible:ring-ring"
-                  onClick={() => setOpen(false)}
+                  aria-label={previousLabel}
+                  className="flex size-9 items-center justify-center rounded-lg outline-none hover:bg-white/15 focus-visible:ring-2 focus-visible:ring-white"
+                  onClick={navigateBackward}
                   type="button"
                 >
-                  تأیید
+                  <ChevronRight
+                    aria-hidden="true"
+                    className={`size-5 ${english ? 'rotate-180' : ''}`}
+                  />
+                </button>
+                <div className="flex min-w-0 flex-1 items-center justify-center gap-1">
+                  {calendarView === 'years' ? (
+                    <span className="px-2 text-sm font-bold" dir="ltr">
+                      {formatCalendarNumber(yearGridStart, calendarSystem)} –{' '}
+                      {formatCalendarNumber(yearGridStart + 11, calendarSystem)}
+                    </span>
+                  ) : (
+                    <>
+                      <button
+                        aria-label={t('نمایش شبکه ماه‌ها', 'Choose month')}
+                        aria-pressed={calendarView === 'months'}
+                        className={cn(
+                          'h-9 min-w-0 flex-1 rounded-lg px-2 text-sm font-bold outline-none transition hover:bg-white/15 focus-visible:ring-2 focus-visible:ring-white',
+                          calendarView === 'months' && 'bg-white/20 shadow-sm',
+                        )}
+                        onClick={() => setCalendarView('months')}
+                        type="button"
+                      >
+                        {calendarMonthName(
+                          anchor,
+                          calendarSystem,
+                          gregorianEnglish,
+                        )}
+                      </button>
+                      <button
+                        aria-label={t('نمایش شبکه سال‌ها', 'Choose year')}
+                        className="h-9 min-w-0 flex-1 rounded-lg px-2 text-sm font-bold outline-none transition hover:bg-white/15 focus-visible:ring-2 focus-visible:ring-white"
+                        dir="ltr"
+                        onClick={() => {
+                          setYearGridStart(anchorParts.year - 5);
+                          setCalendarView('years');
+                        }}
+                        type="button"
+                      >
+                        {formatCalendarNumber(anchorParts.year, calendarSystem)}
+                      </button>
+                    </>
+                  )}
+                  <span className="sr-only">
+                    {calendarMonthLabel(
+                      anchor,
+                      calendarSystem,
+                      gregorianEnglish,
+                    )}
+                  </span>
+                </div>
+                <button
+                  aria-label={nextLabel}
+                  className="flex size-9 items-center justify-center rounded-lg outline-none hover:bg-white/15 focus-visible:ring-2 focus-visible:ring-white"
+                  onClick={navigateForward}
+                  type="button"
+                >
+                  <ChevronLeft
+                    aria-hidden="true"
+                    className={`size-5 ${english ? 'rotate-180' : ''}`}
+                  />
                 </button>
               </div>
-            ) : null}
 
-            {required ? (
-              <span className="sr-only">انتخاب تاریخ الزامی است.</span>
-            ) : null}
-          </div>
-        </div>
-      ) : null}
+              {calendarView === 'months' ? (
+                <div
+                  aria-label={t('شبکه انتخاب ماه', 'Choose month')}
+                  className="grid grid-cols-3 gap-2 rounded-xl bg-primary/5 p-2"
+                  role="group"
+                >
+                  {monthOptions.map((option) => (
+                    <button
+                      aria-label={`${t('ماه', 'Month')} ${option.label}`}
+                      aria-pressed={option.month === anchorParts.month}
+                      className={cn(
+                        'min-h-12 rounded-xl border border-primary/15 bg-surface px-2 text-sm font-semibold text-foreground shadow-xs outline-none transition hover:-translate-y-0.5 hover:border-primary/40 hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-ring',
+                        option.month === anchorParts.month &&
+                          'border-primary bg-primary text-primary-foreground shadow-md shadow-primary/20 hover:bg-primary/90',
+                      )}
+                      key={option.month}
+                      onClick={() => {
+                        setAnchor((current) =>
+                          setCalendarMonthYear(
+                            current,
+                            anchorParts.year,
+                            option.month,
+                            calendarSystem,
+                          ),
+                        );
+                        setCalendarView('days');
+                      }}
+                      type="button"
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+              ) : calendarView === 'years' ? (
+                <div
+                  aria-label={t('شبکه انتخاب سال', 'Choose year')}
+                  className="grid grid-cols-3 gap-2 rounded-xl bg-primary/5 p-2"
+                  role="group"
+                >
+                  {yearOptions.map((year) => (
+                    <button
+                      aria-label={`${t('سال', 'Year')} ${formatCalendarNumber(year, calendarSystem)}`}
+                      aria-pressed={year === anchorParts.year}
+                      className={cn(
+                        'min-h-12 rounded-xl border border-primary/15 bg-surface px-2 text-sm font-semibold text-foreground shadow-xs outline-none transition hover:-translate-y-0.5 hover:border-primary/40 hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-ring',
+                        year === anchorParts.year &&
+                          'border-primary bg-primary text-primary-foreground shadow-md shadow-primary/20 hover:bg-primary/90',
+                      )}
+                      dir="ltr"
+                      key={year}
+                      onClick={() => {
+                        setAnchor((current) =>
+                          setCalendarMonthYear(
+                            current,
+                            year,
+                            anchorParts.month,
+                            calendarSystem,
+                          ),
+                        );
+                        setCalendarView('months');
+                      }}
+                      type="button"
+                    >
+                      {formatCalendarNumber(year, calendarSystem)}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <div className="grid grid-cols-7 gap-1 text-center">
+                  {(english
+                    ? ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+                    : weekdayLabels[calendarSystem]
+                  ).map((label, index) => (
+                    <span
+                      className="py-1 text-xs font-bold text-primary"
+                      key={`${label}-${index}`}
+                    >
+                      {label}
+                    </span>
+                  ))}
+                  {days.map((day) => {
+                    const selected = day.isoDate === selectedDate;
+                    return (
+                      <button
+                        aria-label={`${day.year}/${day.month}/${day.day}`}
+                        aria-pressed={selected}
+                        className={cn(
+                          'flex aspect-square items-center justify-center rounded-lg text-sm outline-none transition focus-visible:ring-2 focus-visible:ring-ring',
+                          day.isCurrentMonth
+                            ? 'text-foreground hover:bg-primary/10'
+                            : 'text-muted-foreground/45',
+                          day.isToday &&
+                            !selected &&
+                            'border border-primary font-bold text-primary',
+                          selected &&
+                            'bg-primary font-bold text-primary-foreground shadow-sm hover:bg-primary/90',
+                        )}
+                        key={day.isoDate}
+                        onClick={() => selectDay(day.isoDate)}
+                        type="button"
+                      >
+                        {formatCalendarNumber(day.day, calendarSystem)}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              {includeTime ? (
+                <div className="mt-3 flex items-center gap-2 rounded-xl border border-primary/20 bg-primary/5 p-2">
+                  <Clock3 aria-hidden="true" className="size-4 text-primary" />
+                  <label
+                    className="text-xs font-semibold"
+                    htmlFor={`${id}-time`}
+                  >
+                    {t('ساعت', 'Time')}
+                  </label>
+                  <input
+                    className="h-9 min-w-0 flex-1 rounded-lg border border-input bg-surface px-2 text-center text-sm outline-none focus:border-primary focus:ring-2 focus:ring-ring/30"
+                    id={`${id}-time`}
+                    onChange={(event) => {
+                      const date = selectedDate || toIsoDate(new Date());
+                      emit(`${date}T${event.target.value}`);
+                    }}
+                    type="time"
+                    value={/T(\d{2}:\d{2})/.exec(currentValue)?.[1] ?? '00:00'}
+                  />
+                  <button
+                    className="h-9 rounded-lg bg-primary px-3 text-xs font-semibold text-primary-foreground outline-none hover:bg-primary/90 focus-visible:ring-2 focus-visible:ring-ring"
+                    onClick={() => setOpen(false)}
+                    type="button"
+                  >
+                    {t('تأیید', 'Confirm')}
+                  </button>
+                </div>
+              ) : null}
+
+              {required ? (
+                <span className="sr-only">
+                  {t('انتخاب تاریخ الزامی است.', 'A date is required.')}
+                </span>
+              ) : null}
+              {withinDialog && !required && currentValue ? (
+                <button
+                  type="button"
+                  className="mt-3 w-full rounded-lg border p-2 text-sm"
+                  onClick={() => {
+                    emit('');
+                    setOpen(false);
+                    triggerRef.current?.focus();
+                  }}
+                >
+                  پاک‌کردن تاریخ
+                </button>
+              ) : null}
+            </div>,
+            modalHost ?? document.body,
+          )
+        : null}
     </div>
   );
 }

@@ -1,8 +1,10 @@
-export const LEGAL_ENTITIES_CONTRACT_VERSION = 2 as const;
+export const LEGAL_ENTITIES_CONTRACT_VERSION = 3 as const;
 
 export const LEGAL_ENTITY_CODES = [
   'NIYAYESH_SEIR_SAHAR',
   'JAHAN_BASTAN',
+  'JAHAN_ACADEMIA',
+  'GHESATI_RO',
 ] as const;
 
 export const LEGAL_ENTITY_CONTEXT_ALL = 'ALL' as const;

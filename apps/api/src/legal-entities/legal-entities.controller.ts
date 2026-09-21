@@ -28,7 +28,7 @@ import {
 import { LegalEntitiesService } from './legal-entities.service';
 
 @ApiTags('Legal Entities')
-@ApiCookieAuth('rubi_access')
+@ApiCookieAuth('nora_access')
 @UseGuards(AuthGuard, PermissionGuard)
 @Controller('legal-entities')
 export class LegalEntitiesController {

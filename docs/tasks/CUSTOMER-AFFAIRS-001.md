@@ -38,7 +38,7 @@ Controller، Repository، Persistence، mutation بین‌ماژولی یا اط
 
 ### UI
 
-- Route `/customer-affairs` با طراحی فارسی، RTL، Responsive و هماهنگ با سیستم آبی Rubi
+- Route `/customer-affairs` با طراحی فارسی، RTL، Responsive و هماهنگ با سیستم آبی Nora
 - Dashboard خلاصه Lead/Ticket، دو تب قبل/بعد فروش، Pipeline، فهرست‌ها و Timeline
 - فرم Create/View/Edit با validation محلی و پیام صریح عدم ذخیره
 - stateهای `Preview`، `Loading`، `Empty`، `Error`، `Forbidden` و Success validation
@@ -121,7 +121,7 @@ Controller، Repository، Persistence، mutation بین‌ماژولی یا اط
 
 1. Prisma model، Migration، Seed و Fixture پایدار Customer Affairs
 2. Repository، Controller، REST فعال، Audit و transaction واقعی
-3. انتشار Permissionها و DTOها در `@rubi/contracts`
+3. انتشار Permissionها و DTOها در `@nora/contracts`
 4. resolve واقعی CustomerReference از Customers و SalesRequestReference از Sales
 5. mutation تبدیل Lead به Customer/Sales Request یا ایجاد قرارداد/رزرو
 6. SLA config واقعی از Settings و Task/Notification خودکار برای breach
@@ -154,7 +154,7 @@ PR شماره ۱۸ در ادامه در `origin/develop` Merge شد؛ Source Bra
 ### اتصال مجاز Customers
 
 Customer Affairs فقط typeها، version و endpointهای قرارداد عمومی Customers از
-`@rubi/contracts` را مصرف می‌کند. نسخه جاری Repository برابر
+`@nora/contracts` را مصرف می‌کند. نسخه جاری Repository برابر
 `CUSTOMERS_CONTRACT_VERSION = 2` و prefix عمومی برابر `/api/v1/customers` است؛
 هیچ فایل مشترک یا فایل داخلی Customers تغییر نکرد.
 

@@ -1,4 +1,40 @@
-# برنامه اجرای Rubi
+# برنامه اجرای Nora
+
+## DASHBOARD-REPORTING-LATEST-009 — runtime مشترک
+
+- [x] ترکیب آخرین Dashboard و Reports، اتصال route نهایی Dashboard و اعتبارسنجی
+      مشترک با تست، lint، typecheck و build.
+
+## CUSTOMER-AFFAIRS-002 — برش عملیاتی
+
+- [x] Persistence افزایشی Lead/Ticket/Timeline/Handoff/Referral/SLA/Survey/Corrective Action/Command/Audit
+- [x] API و قرارداد عمومی v1 با idempotency، optimistic concurrency، permission و branch scope
+- [x] اتصال واقعی Customers، Sales، Reservations، Documents، Notifications و Workbench
+- [x] UI واقعی امور مشتریان و فرم عمومی رضایت‌سنجی با stateهای loading/empty/error/forbidden
+- [ ] adapter پیام خارجی، business calendar تنظیمات، retention/RPO/RTO و export سندی پس از قرارداد عمومی مالک مقصد
+
+جزئیات، AC01–AC16 و محدودیت‌های fail-closed در
+`docs/tasks/CUSTOMER-AFFAIRS-002.md` ثبت شده‌اند. این شاخه برای Review است و merge در
+محدوده این Task نیست.
+
+## LOCAL-HR-AGENCIES-009 — اجرای آژانس‌ها کنار منابع انسانی
+
+- نسخه آژانس‌ها از PR #113 در شاخه مستقل بر پایه HR-008 وارد شد تا هر دو مسیر در پورت ۳۱۰۰ از یک Build ارائه شوند. این کار جایگزین‌کردن نسخه منابع انسانی با Checkout آژانس‌ها نیست؛ داده و فرم‌های HR-008 حفظ می‌شوند.
+- تحویل محلی از طریق `docs/tasks/LOCAL-HR-AGENCIES-009.md` انجام می‌شود؛ شاخه فقط برای Review و Push است و مجوز Merge ندارد.
+
+## HR-008 — ساده‌سازی فرم‌ها و خروجی انتخابی
+
+- فرم‌های HR به فهرست‌های ثبت‌شده متصل شدند؛ فیلدهای اضافی/تکراری حذف و ایجاد متقاضی به انتخاب فرصت شغلی متصل شد. جدول‌ها خروجی Excel/PDF را بر اساس رکوردهای انتخاب‌شده تولید می‌کنند و رسید هزینه در اسناد ذخیره می‌شود.
+- نسخه روی همان Runtime مستقل HR-007 در ۳۱۰۰/۴۱۹۰ تحویل می‌شود. شاخه `codex/pc-b-hr-connected-forms` آماده Review است؛ قبل از هر جایگزینی Listener، دستور و محدودیت‌های `docs/tasks/HR-008.md` رعایت شود. Merge انجام نمی‌شود.
+
+## HR-007 — اجرای نسخه جاری منابع انسانی روی ۳۱۰۰
+
+- HR-005/HR-006 در شاخه مستقل مبتنی بر develop فعلی روی پورت ۳۱۰۰ فعال شد؛ هدر چهارشرکتی، پروفایل و قراردادهای جدید حفظ شدند. انتقال Listener با هماهنگی Task «PC-B Uniting» انجام شد.
+- API اختصاصی روی ۴۱۹۰ و دیتابیس/فایل‌های کپی‌شده مستقل‌اند. ورود واقعی از `localhost:3100` و `127.0.0.1:3100`، پروفایل/MFA، زنگوله و هدایت آدرس قدیمی موفق‌اند. برای اجرای مجدد همین نسخه از دستور `docs/tasks/HR-007.md` استفاده شود؛ Merge به main/develop در محدوده این کار نیست.
+
+## SALES-CUSTOMER-PRICING-0907 — completed locally
+
+Delivered explicit per-passenger whole-service agreement totals and saved-data direct PDF download with English monetary digits. Reconciliation preserves existing service pricing and Finance settlement. Local upgrade, rollback-safe rehearsal, tests and production builds passed; user can review on localhost:3100. Historical migration-file differences remain untouched (see DECISIONS). No remote publication or official issuance/archive policy expansion. Scoped locks released.
 
 ## یکپارچه‌سازی مشترک — 2026-08-31
 
@@ -17,6 +53,8 @@
 foundation یا یکپارچگی مالی، `P1` الزامی برای نسخه عملیاتی، `P2` بهبود بعدی.
 
 ## Documents — زنجیره Stacked فعلی
+
+- [x] `CUSTOMER-DOCUMENTS-001`: اتصال واقعی Customer 360 به فهرست و بارگذاری امن Documents با exact source + Branch/Domain scope، بدون Query مستقیم بین ماژول‌ها و بدون Migration. داده semantic پاسپورت/ویزا تا `DEC-OPEN-006` مسدود می‌ماند.
 
 - [x] `DOCUMENTS-001`: Foundation رابط و معماری ماژول روی
       `codex/pc-b-documents-foundation` / Draft PR #61؛ هنوز به `develop` ادغام نشده است.
@@ -37,6 +75,11 @@ foundation یا یکپارچگی مالی، `P1` الزامی برای نسخه 
       راستی‌آزمایی برای ساخت هفت سند آزمایشی روی دیتابیس محلی PC-A/PC-B.
 - [x] `DOCUMENTS-003E-CALENDAR-THEME`: تم آبی–فیروزه‌ای هماهنگ Rubi برای سه تقویم
       Documents با حفظ رفتار شمسی/میلادی و ظاهر پیش‌فرض DatePicker در سایر ماژول‌ها.
+- [x] `DOCUMENTS-003F-RELATED-CASE-PICKER`: جایگزینی چهار ورودی فنی ارتباط سند با
+      Dropdown جست‌وجویی پرونده‌های موجود؛ Scope شعبه/Domain/محرمانگی و resolve امن
+      Relation در Backend، بدون Migration یا دسترسی مستقیم به ماژول دیگر.
+- [x] Follow-up تقویم اسناد: حذف Dropdown ماه/سال و جایگزینی با Gridهای ۱۲تایی
+      هم‌تم Nora با حفظ شمسی/میلادی و مقدار ذخیره‌شده Gregorian ISO.
 - [ ] `DOCUMENTS-003`: Adapter تولیدی S3/MinIO و Antivirus Worker عملیاتی با retry،
       monitoring و recovery؛ پس از تصمیم امنیت/عملیات و رزرو تازه Migration/Dependency.
 - [ ] `DOCUMENTS-004`: اشتراک امن، نسخه‌گذاری تکمیلی، Export، retention نهایی و اتصال
@@ -66,7 +109,7 @@ foundation یا یکپارچگی مالی، `P1` الزامی برای نسخه 
 
 ### مرحله 1 — Bootstrap و طراحی (`P0`)
 
-- [x] بررسی Repository و اتصال به `rubi`
+- [x] بررسی Repository و اتصال به `nora`
 - [x] PRD و محدوده محصول
 - [x] معماری، مرز ماژول‌ها و تصمیم‌های اولیه
 - [x] ERD و Data Dictionary اولیه
@@ -165,7 +208,7 @@ Baseline برنامه: `origin/develop` در Merge Commit
   اطلاعات پایه به‌جز نرخ ارز authoritative مسدودشده با `DEC-OPEN-004`.
 - اولین Migration Owner و Dependency/Lockfile Owner Sprint دوم پس از Merge این برنامه.
 - شروع کدنویسی Backend و Schema فقط پس از Merge و Handoff `IAM-002` مجاز است.
-- قرارداد عمومی IAM از `@rubi/contracts` مصرف می‌شود؛ دسترسی مستقیم به جدول یا Repository
+- قرارداد عمومی IAM از `@nora/contracts` مصرف می‌شود؛ دسترسی مستقیم به جدول یا Repository
   داخلی IAM ممنوع است.
 - Definition of Done شامل Migration deploy/status، Seed/fixture ایمن، CRUD و status action،
   permission/audit، contract/integration tests و اتصال UI است. قرارداد async export پایدار
@@ -404,3 +447,12 @@ Baseline برنامه: `origin/develop` در Merge Commit
 پیاده‌سازی، validation، permission، audit، migration، UI states، تست‌های مرتبط،
 خروجی لازم و مستندات تکمیل شده؛ هیچ Secret وارد Git نشده و وضعیت/تخصیص به‌روز و
 شاخه Push شده است.
+
+# PACKAGE-PRICING-001 handoff
+
+- [x] Package Pricing contract, permissions, schema/migration, Decimal rule engine, API and `/sales/pricing` shell.
+- [x] Immutable published prices, optimistic locking, maker/checker, quote snapshot, render intent and audit.
+- [x] Master Data publishes a versioned hotel base-rate period/grid and resolver owned by Master Data.
+- [ ] Ticket Management must publish a versioned base-fare/capacity resolver and recheck command.
+- [ ] Finance must expose only approved FX snapshots; Renderer/Worker must consume render intents and archive completed files through Documents.
+- [ ] After Ticket/FX/Renderer producers land, extend the adapter beyond hotel-only references, unlock the remaining mixed-package create/price/publish flow, and add end-to-end renderer tests and Excel/PDF exporters.

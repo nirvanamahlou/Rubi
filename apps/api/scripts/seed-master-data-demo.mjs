@@ -3,7 +3,7 @@ import { loadEnvFile } from 'node:process';
 
 if (!process.env.DATABASE_URL)
   loadEnvFile(
-    process.env.RUBI_API_ENV_FILE ?? new URL('../.env', import.meta.url),
+    process.env.NORA_API_ENV_FILE ?? new URL('../.env', import.meta.url),
   );
 
 const require = createRequire(import.meta.url);

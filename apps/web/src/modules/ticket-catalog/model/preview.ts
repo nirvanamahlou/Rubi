@@ -10,7 +10,7 @@ export const statusLabels = {
   draft: 'پیش‌نویس',
   active: 'فعال',
   paused: 'توقف فروش',
-  cancelled: 'لغو بلیت',
+  cancelled: 'لغو بلیط',
 } as const;
 export const supplyLabels = {
   company: 'ظرفیت شرکت',
@@ -34,6 +34,7 @@ export function emptyInput(transport: TransportType = 'flight'): ProductInput {
     title: '',
     transport,
     journeyRole: 'one-way',
+    serviceDate: '',
     segments: [
       {
         airlineId: '',
@@ -87,6 +88,13 @@ type SampleDefinition = {
   durationHours: number;
   capacity: number;
   purchase: string;
+  connection?: {
+    number: string;
+    destination: string;
+    destinationTerminal: string;
+    waitHours: number;
+    durationHours: number;
+  };
 };
 
 export function catalogSamples(now: string): Product[] {
@@ -137,6 +145,13 @@ export function catalogSamples(now: string): Product[] {
       durationHours: 1.5,
       capacity: 45,
       purchase: '7600000',
+      connection: {
+        number: 'EP-610',
+        destination: 'شیراز',
+        destinationTerminal: 'فرودگاه شهید دستغیب',
+        waitHours: 2,
+        durationHours: 1.5,
+      },
     },
     {
       transport: 'train',
@@ -242,24 +257,37 @@ export function catalogSamples(now: string): Product[] {
       Date.parse(departureAt) + sample.durationHours * 3_600_000,
     ).toISOString();
     const input = emptyInput(sample.transport);
+    const connectionDepartureAt = sample.connection
+      ? new Date(
+          Date.parse(arrivalAt) + sample.connection.waitHours * 3_600_000,
+        ).toISOString()
+      : '';
+    const connectionArrivalAt = sample.connection
+      ? new Date(
+          Date.parse(connectionDepartureAt) +
+            sample.connection.durationHours * 3_600_000,
+        ).toISOString()
+      : '';
+    const finalDestination =
+      sample.connection?.destination || sample.destination;
     const product = createProduct(
       `sample-ticket-${index + 1}`,
       {
         ...input,
-        title: `${sample.number} • ${sample.origin} به ${sample.destination}`,
+        title: `${sample.number}${sample.connection ? ' ترکیبی' : ''} • ${sample.origin} به ${finalDestination}`,
         journeyRole: sample.role,
         ...(sample.group ? { tripGroupId: sample.group } : {}),
         display: {
           operator: sample.operator,
           vehicle: sample.vehicle,
           origin: sample.origin,
-          destination: sample.destination,
+          destination: finalDestination,
         },
         totalCapacity: sample.capacity,
         supplyType: index % 3 === 0 ? 'company' : 'supplier',
         companyOwned: index % 3 === 0,
         rules:
-          'نمونه ساختگی برای بررسی فرم؛ قوانین نهایی هنگام تعریف بلیت وارد می‌شود.',
+          'نمونه ساختگی برای بررسی فرم؛ قوانین نهایی هنگام تعریف بلیط وارد می‌شود.',
         segments: [
           {
             ...input.segments[0]!,
@@ -277,6 +305,20 @@ export function catalogSamples(now: string): Product[] {
                 ? 'Europe/Istanbul'
                 : 'Asia/Tehran',
           },
+          ...(sample.connection
+            ? [
+                {
+                  ...input.segments[0]!,
+                  flightNumber: sample.connection.number,
+                  originTerminal: sample.destinationTerminal,
+                  destinationTerminal: sample.connection.destinationTerminal,
+                  departureAt: connectionDepartureAt,
+                  arrivalAt: connectionArrivalAt,
+                  departureZone: 'Asia/Tehran',
+                  arrivalZone: 'Asia/Tehran',
+                },
+              ]
+            : []),
         ],
         fare: {
           ...input.fare,
@@ -309,7 +351,38 @@ export function activateCatalogSample(product: Product, at: string): Product {
         action: 'active',
         at,
         actor: 'سیستم نمونه',
-        reason: 'فعال‌سازی بلیت نمونه برای نمایش کنترل توقف فروش',
+        reason: 'فعال‌سازی بلیط نمونه برای نمایش کنترل توقف فروش',
+      },
+    ],
+  };
+}
+
+export function pauseExpiredCatalogProduct(
+  product: Product,
+  at: string,
+): Product {
+  if (product.status !== 'active') return product;
+  const departureAt = product.definition.segments[0]?.departureAt;
+  const serviceDate = product.definition.serviceDate;
+  const expiresAt = departureAt
+    ? Date.parse(departureAt)
+    : serviceDate
+      ? Date.parse(`${serviceDate}T23:59:59.999Z`)
+      : Number.NaN;
+  if (!Number.isFinite(expiresAt) || expiresAt > Date.parse(at)) return product;
+  const version = product.version + 1;
+  return {
+    ...product,
+    status: 'paused',
+    version,
+    history: [
+      ...product.history,
+      {
+        version,
+        action: 'paused',
+        at,
+        actor: 'سیستم',
+        reason: 'توقف خودکار فروش پس از زمان حرکت بلیط',
       },
     ],
   };
@@ -355,6 +428,8 @@ export interface PreviewQuery {
   supply: string;
   transport: string;
   airline: string;
+  originCityId: string;
+  destinationCityId: string;
   from: string;
   to: string;
   sort: 'departure' | 'title' | 'updated';
@@ -367,6 +442,8 @@ export const initialQuery: PreviewQuery = {
   supply: 'all',
   transport: 'all',
   airline: '',
+  originCityId: 'all',
+  destinationCityId: 'all',
   from: '',
   to: '',
   sort: 'departure',
@@ -381,11 +458,14 @@ export function queryProducts(
   const rows = products
     .filter((product) => {
       const segment = product.definition.segments[0]!;
+      const lastSegment = product.definition.segments.at(-1)!;
       const display = product.definition.display;
+      const serviceDate =
+        product.definition.serviceDate || segment.departureAt.slice(0, 10);
       return (
         [
           product.definition.title,
-          segment.flightNumber,
+          ...product.definition.segments.map((item) => item.flightNumber),
           display?.operator,
           display?.origin,
           display?.destination,
@@ -400,8 +480,12 @@ export function queryProducts(
         (query.transport === 'all' ||
           product.definition.transport === query.transport) &&
         (!query.airline || segment.airlineId === query.airline) &&
-        (!query.from || segment.departureAt.slice(0, 10) >= query.from) &&
-        (!query.to || segment.departureAt.slice(0, 10) <= query.to)
+        (query.originCityId === 'all' ||
+          segment.originCityId === query.originCityId) &&
+        (query.destinationCityId === 'all' ||
+          lastSegment.destinationCityId === query.destinationCityId) &&
+        (!query.from || (Boolean(serviceDate) && serviceDate >= query.from)) &&
+        (!query.to || (Boolean(serviceDate) && serviceDate <= query.to))
       );
     })
     .sort((a, b) => {
@@ -410,7 +494,7 @@ export function queryProducts(
           ? p.definition.title
           : query.sort === 'updated'
             ? p.history.at(-1)!.at
-            : p.definition.segments[0]!.departureAt;
+            : p.definition.serviceDate || p.definition.segments[0]!.departureAt;
       const comparison =
         value(a).localeCompare(value(b), 'fa') || a.id.localeCompare(b.id);
       return query.direction === 'asc' ? comparison : -comparison;
@@ -423,6 +507,43 @@ export function queryProducts(
     page,
     rows: rows.slice((page - 1) * 6, page * 6),
   };
+}
+
+export interface RouteProductCount {
+  key: string;
+  originCityId: string;
+  destinationCityId: string;
+  origin: string;
+  destination: string;
+  count: number;
+}
+
+export function countProductsByRoute(
+  products: readonly Product[],
+): RouteProductCount[] {
+  const routes = new Map<string, RouteProductCount>();
+  for (const product of products) {
+    const segment = product.definition.segments[0]!;
+    const lastSegment = product.definition.segments.at(-1)!;
+    const key = `${segment.originCityId}::${lastSegment.destinationCityId}`;
+    const existing = routes.get(key);
+    if (existing) {
+      existing.count += 1;
+      continue;
+    }
+    routes.set(key, {
+      key,
+      originCityId: segment.originCityId,
+      destinationCityId: lastSegment.destinationCityId,
+      origin: product.definition.display?.origin || 'مبدأ نامشخص',
+      destination: product.definition.display?.destination || 'مقصد نامشخص',
+      count: 1,
+    });
+  }
+  return [...routes.values()].sort(
+    (left, right) =>
+      right.count - left.count || left.key.localeCompare(right.key),
+  );
 }
 export function replacePreview(
   products: readonly Product[],
@@ -454,32 +575,40 @@ function shiftIso(value: string, cadence: RepeatCadence, count: number) {
   }
   return date.toISOString();
 }
+function shiftDate(value: string, cadence: RepeatCadence, count: number) {
+  const shifted = shiftIso(value + 'T00:00:00.000Z', cadence, count);
+  return shifted.slice(0, 10);
+}
 export function moveDefinitionToDate(
   source: ProductInput,
   departureDate: string,
 ): ProductInput {
   if (!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(departureDate))
-    throw new Error('تاریخ اولین بلیت جدید را انتخاب کنید.');
+    throw new Error('تاریخ اولین بلیط جدید را انتخاب کنید.');
   const selectedDay = new Date(departureDate + 'T00:00:00.000Z');
   if (
     Number.isNaN(selectedDay.getTime()) ||
     selectedDay.toISOString().slice(0, 10) !== departureDate
   )
-    throw new Error('تاریخ اولین بلیت جدید معتبر نیست.');
+    throw new Error('تاریخ اولین بلیط جدید معتبر نیست.');
   const firstDeparture = new Date(source.segments[0]?.departureAt ?? '');
-  if (Number.isNaN(firstDeparture.getTime()))
-    throw new Error('زمان حرکت بلیت مبدأ معتبر نیست.');
-  const sourceDay = Date.UTC(
-    firstDeparture.getUTCFullYear(),
-    firstDeparture.getUTCMonth(),
-    firstDeparture.getUTCDate(),
-  );
+  const sourceDate =
+    source.serviceDate ||
+    (Number.isNaN(firstDeparture.getTime())
+      ? ''
+      : firstDeparture.toISOString().slice(0, 10));
+  const sourceDay = sourceDate
+    ? Date.parse(sourceDate + 'T00:00:00.000Z')
+    : selectedDay.getTime();
   const delta = selectedDay.getTime() - sourceDay;
   const shift = (value: string) =>
-    new Date(Date.parse(value) + delta).toISOString();
+    value && Number.isFinite(Date.parse(value))
+      ? new Date(Date.parse(value) + delta).toISOString()
+      : value;
   const next = structuredClone(source);
   next.tripGroupId = undefined;
   next.journeyRole = 'one-way';
+  next.serviceDate = departureDate;
   next.segments = next.segments.map((segment) => ({
     ...segment,
     departureAt: shift(segment.departureAt),
@@ -502,15 +631,25 @@ export function repeatDefinition(
   const next = structuredClone(source);
   next.tripGroupId = undefined;
   next.journeyRole = 'one-way';
+  if (next.serviceDate)
+    next.serviceDate = shiftDate(next.serviceDate, cadence, occurrence);
   next.segments = next.segments.map((segment) => ({
     ...segment,
-    departureAt: shiftIso(segment.departureAt, cadence, occurrence),
-    arrivalAt: shiftIso(segment.arrivalAt, cadence, occurrence),
+    departureAt: segment.departureAt
+      ? shiftIso(segment.departureAt, cadence, occurrence)
+      : '',
+    arrivalAt: segment.arrivalAt
+      ? shiftIso(segment.arrivalAt, cadence, occurrence)
+      : '',
   }));
   next.fare = {
     ...next.fare,
-    validFrom: shiftIso(next.fare.validFrom, cadence, occurrence),
-    validTo: shiftIso(next.fare.validTo, cadence, occurrence),
+    validFrom: next.fare.validFrom
+      ? shiftIso(next.fare.validFrom, cadence, occurrence)
+      : '',
+    validTo: next.fare.validTo
+      ? shiftIso(next.fare.validTo, cadence, occurrence)
+      : '',
   };
   return next;
 }
@@ -519,7 +658,7 @@ export interface CatalogBrowserSnapshot {
   products: Product[];
   references: Reference[];
 }
-export const catalogStorageKey = 'rubi.ticket-catalog.browser.v1';
+export const catalogStorageKey = 'nora.ticket-catalog.browser.v1';
 export function parseCatalogSnapshot(
   raw: string | null,
 ): CatalogBrowserSnapshot | undefined {
@@ -547,9 +686,18 @@ export function parseCatalogSnapshot(
   }
 }
 export function displayTime(value: string, zone = 'Asia/Tehran') {
+  if (!value) return 'بدون زمان‌بندی';
   return new Intl.DateTimeFormat('fa-IR', {
     dateStyle: 'medium',
     timeStyle: 'short',
     timeZone: zone,
   }).format(new Date(value));
+}
+
+export function displayServiceDate(value?: string) {
+  if (!value) return 'بدون تاریخ';
+  return new Intl.DateTimeFormat('fa-IR', {
+    dateStyle: 'medium',
+    timeZone: 'UTC',
+  }).format(new Date(value + 'T00:00:00.000Z'));
 }

@@ -27,7 +27,7 @@ import {
 import { CurrencyRateService } from './currency-rate.service';
 
 @ApiTags('Master Data Currency Rates')
-@ApiCookieAuth('rubi_access')
+@ApiCookieAuth('nora_access')
 @UseGuards(AuthGuard, PermissionGuard)
 @Controller('master-data/currency-rates')
 export class CurrencyRateController {
@@ -99,13 +99,19 @@ export class CurrencyRateController {
 }
 
 @ApiTags('Master Data Audit')
-@ApiCookieAuth('rubi_access')
+@ApiCookieAuth('nora_access')
 @UseGuards(AuthGuard, PermissionGuard)
 @Controller('master-data/audit')
 export class MasterDataAuditController {
   constructor(
     @Inject(CurrencyRateService) private readonly service: CurrencyRateService,
   ) {}
+
+  @Get('notifications')
+  @RequirePermissions('master_data.read')
+  notifications(@Query('limit') limit?: string) {
+    return this.service.notifications(Number(limit) || 25);
+  }
 
   @Get(':resource/:entityId')
   @RequirePermissions('master_data.audit.read')

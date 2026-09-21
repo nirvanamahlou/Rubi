@@ -10,12 +10,11 @@ import type {
   MasterDataRecord,
   MasterDataResource,
   MasterDataStatus,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import {
   ArrowRight,
   CheckCircle2,
   CircleAlert,
-  CircleX,
   Database,
   Eye,
   FilePenLine,
@@ -26,7 +25,6 @@ import {
   Search,
   ShieldCheck,
   Store,
-  Tags,
   UserRoundSearch,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -76,8 +74,6 @@ const tabs = [
     icon: UserRoundSearch,
   },
   { resource: 'sales-channels', label: 'کانال فروش', icon: Store },
-  { resource: 'lost-reasons', label: 'دلیل از دست رفتن', icon: CircleX },
-  { resource: 'tags', label: 'Tag', icon: Tags },
 ] as const satisfies readonly {
   resource: MasterDataResource;
   label: string;
@@ -101,7 +97,7 @@ export function MasterDataSalesReferencesWorkspace() {
   const [allRecords, setAllRecords] = useState<readonly MasterDataRecord[]>([]);
   const [requestState, setRequestState] = useState<RequestState>('loading');
   const [search, setSearch] = useState('');
-  const [status, setStatus] = useState<'all' | MasterDataStatus>('all');
+  const [status, setStatus] = useState<'all' | MasterDataStatus>('active');
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [selected, setSelected] = useState<MasterDataRecord>();
@@ -214,7 +210,7 @@ export function MasterDataSalesReferencesWorkspace() {
     setResource(next);
     setSearch('');
     resetColumnFilters();
-    setStatus('all');
+    setStatus('active');
     setPage(1);
     setSelected(undefined);
     setProfileOpen(false);
@@ -363,16 +359,6 @@ export function MasterDataSalesReferencesWorkspace() {
                     onClick={() => openProfile(record)}
                     type="button"
                   >
-                    {resource === 'tags' &&
-                    /^#[0-9A-F]{6}$/.test(attribute(record, 'colorHex', '')) ? (
-                      <span
-                        aria-hidden="true"
-                        className="size-3 rounded-full border border-border"
-                        style={{
-                          backgroundColor: attribute(record, 'colorHex'),
-                        }}
-                      />
-                    ) : null}
                     {record.name}
                   </button>
                 </td>
@@ -400,7 +386,7 @@ export function MasterDataSalesReferencesWorkspace() {
                   </Badge>
                 </td>
                 <td className="p-4">
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap justify-end gap-2">
                     <Button
                       aria-label={`مشاهده ${record.name}`}
                       onClick={() => openProfile(record)}
@@ -442,7 +428,7 @@ export function MasterDataSalesReferencesWorkspace() {
       <PageHeader
         actions={
           <Link
-            className={buttonVariants({ variant: 'outline' })}
+            className={`${buttonVariants({ variant: 'outline' })} ms-auto`}
             href="/master-data"
           >
             <ArrowRight className="size-4" /> همه بخش‌ها
@@ -451,7 +437,7 @@ export function MasterDataSalesReferencesWorkspace() {
         description={definition.description}
         title={definition.label}
       />
-      <div className="flex flex-wrap gap-2">
+      <div className="flex w-full flex-wrap justify-end gap-2">
         <Button
           loading={exporting}
           onClick={() => void downloadExcel()}
@@ -535,7 +521,7 @@ export function MasterDataSalesReferencesWorkspace() {
             setSearch('');
             resetColumnFilters();
             resetDateRange();
-            setStatus('all');
+            setStatus('active');
             setPage(1);
           }}
           onRefresh={() => void Promise.all([load(), loadSummary()])}
@@ -637,14 +623,6 @@ export function MasterDataSalesReferencesWorkspace() {
                       {attribute(selected, 'displayOrder', '0')}
                     </dd>
                   </div>
-                  {resource === 'tags' ? (
-                    <div className="border-b border-border/70 pb-3">
-                      <dt className="text-xs text-muted-foreground">رنگ</dt>
-                      <dd className="mt-1 font-semibold" dir="ltr">
-                        {attribute(selected, 'colorHex')}
-                      </dd>
-                    </div>
-                  ) : null}
                   <div className="border-b border-border/70 pb-3 sm:col-span-2">
                     <dt className="text-xs text-muted-foreground">توضیحات</dt>
                     <dd className="mt-1 font-semibold">

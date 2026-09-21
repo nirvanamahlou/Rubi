@@ -8,12 +8,12 @@ import {
 } from '@nestjs/common';
 import type { OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import type { AuthenticatedActor } from '@rubi/contracts';
-import { AuditOutcome, MasterHotelImportStatus } from '@rubi/database';
+import type { AuthenticatedActor } from '@nora/contracts';
+import { AuditOutcome, MasterHotelImportStatus } from '@nora/database';
 import type {
   MasterHotelImportDuplicateBehavior,
   Prisma,
-} from '@rubi/database';
+} from '@nora/database';
 import {
   createHash,
   createHmac,
@@ -91,7 +91,7 @@ function branchOf(actor: AuthenticatedActor, requested?: string) {
 export class HotelImportService implements OnModuleDestroy {
   private readonly stagingDirectory = join(
     tmpdir(),
-    'rubi-master-data-imports',
+    'nora-master-data-imports',
   );
   private readonly rateWindows = new Map<string, number[]>();
   private readonly tokenKey: Buffer;

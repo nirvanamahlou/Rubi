@@ -85,6 +85,7 @@ export function sanitizeDownloadFileName(fileName: string): string {
 
 export function validateUploadFile(
   input: UploadValidationInput,
+  maxDocumentSizeBytes = MAX_DOCUMENT_SIZE_BYTES,
 ): UploadValidationResult {
   const errors: string[] = [];
   const safeFileName = sanitizeDownloadFileName(input.originalFileName);
@@ -95,7 +96,7 @@ export function validateUploadFile(
     errors.push('EXECUTABLE_OR_MACRO_BLOCKED');
   if (!Number.isInteger(input.sizeBytes) || input.sizeBytes < 1)
     errors.push('EMPTY_OR_INVALID_SIZE');
-  if (input.sizeBytes > MAX_DOCUMENT_SIZE_BYTES) errors.push('FILE_TOO_LARGE');
+  if (input.sizeBytes > maxDocumentSizeBytes) errors.push('FILE_TOO_LARGE');
   if (!/^[a-f0-9]{64}$/.test(input.sha256)) errors.push('INVALID_SHA256');
   if (input.declaredMimeType !== input.detectedMimeType)
     errors.push('DECLARED_MIME_MISMATCH');

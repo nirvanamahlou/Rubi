@@ -1,12 +1,6 @@
 import type { Metadata } from 'next';
-
-import { ModuleFoundationWorkspace } from '@/modules/module-foundation/components/module-foundation-workspace';
-import { foundationModules } from '@/modules/module-foundation/model/foundation';
-
+import { LiveReservationQueue } from '@/modules/reservations/foundation/live-workspace';
 export const metadata: Metadata = { title: 'رزرواسیون و عملیات سفر' };
-
 export default function Page() {
-  return (
-    <ModuleFoundationWorkspace config={foundationModules['reservations']} />
-  );
+  return <LiveReservationQueue />;
 }

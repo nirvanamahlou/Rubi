@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { UserStatus } from '@rubi/database';
+import { UserStatus } from '@nora/database';
 import { IsEnum } from 'class-validator';
 
 export class UpdateUserStatusDto {

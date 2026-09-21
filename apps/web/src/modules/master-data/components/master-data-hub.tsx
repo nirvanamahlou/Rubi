@@ -82,6 +82,8 @@ const visibleSubsections: Partial<
   ],
   geography: ['کشورها', 'شهرها و استان‌ها', 'فرودگاه‌ها', 'ترمینال‌ها'],
   'organizations-suppliers': ['تأمین‌کنندگان', 'کارگزاران', 'وضعیت همکاری'],
+  accommodation: ['هتل‌ها', 'زنجیره‌های هتل', 'نوع‌های اتاق', 'هتل‌های ترکیبی'],
+  'sales-references': ['نحوه آشنایی', 'کانال فروش'],
 };
 
 export function MasterDataHub() {

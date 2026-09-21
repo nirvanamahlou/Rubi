@@ -1,28 +1,37 @@
 'use client';
 
 import {
-  Bell,
   Check,
+  ChevronDown,
+  ChevronLeft,
   ChevronsLeft,
   ChevronsRight,
   Command,
   Languages,
-  LogOut,
   Menu,
   Moon,
   Search,
   Sun,
-  UserRound,
 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { usePathname, useRouter } from 'next/navigation';
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { usePathname, useSearchParams } from 'next/navigation';
+import {
+  Suspense,
+  useEffect,
+  useId,
+  useMemo,
+  useState,
+  type ReactNode,
+} from 'react';
 
 import {
   getNavigationBreadcrumbs,
+  groupedNavigationItems,
   isNavigationItemActive,
+  MARKETING_SECTION_CHANGE_EVENT,
   navigationItems,
+  salesPricingSubsection,
 } from '@/lib/navigation';
 import { cn } from '@/lib/utils';
 import { faMessages } from '@/messages/fa';
@@ -32,9 +41,19 @@ import {
   useLegalEntityContext,
 } from '@/modules/legal-entities/components/legal-entity-context';
 import { legalEntityBrand } from '@/modules/legal-entities/model/context';
+import { NotificationCenter } from './notification-center';
+import { sidebarIcons } from './sidebar-icons';
+import { UserMenu } from './user-menu';
+import { HeaderToday } from './header-today';
+import {
+  PageBreadcrumbProvider,
+  usePageBreadcrumbOverride,
+  type PageBreadcrumb,
+} from './page-breadcrumbs';
 import { useTheme } from '../theme-provider';
 import { Button } from '../ui/button';
 import { Input } from '../ui/form-controls';
+import { HrConnectionsVisibilityProvider } from '@/modules/hr/hr-connections-visibility';
 import {
   Dialog,
   DialogClose,
@@ -92,67 +111,153 @@ function Navigation({
   mobile?: boolean;
 }) {
   const pathname = usePathname();
+  const groupId = useId();
+  const [closedGroups, setClosedGroups] = useState<string[]>(() =>
+    groupedNavigationItems
+      .filter((group) => group.id !== 'sales')
+      .map((group) => group.id),
+  );
+  const isGroupClosed = (id: string) => closedGroups.includes(id);
+  function toggleGroup(id: string) {
+    setClosedGroups((ids) =>
+      ids.includes(id) ? ids.filter((value) => value !== id) : [...ids, id],
+    );
+  }
+  function renderItem({
+    href,
+    title,
+    secondary = false,
+  }: {
+    href:
+      | (typeof navigationItems)[number]['href']
+      | typeof salesPricingSubsection.href;
+    title: string;
+    secondary?: boolean;
+  }) {
+    const active = secondary
+      ? pathname === href || pathname.startsWith(`${href}/`)
+      : isNavigationItemActive(
+          href as (typeof navigationItems)[number]['href'],
+          pathname,
+        ) &&
+        !(href === '/sales' && pathname.startsWith(salesPricingSubsection.href));
+    const Icon = sidebarIcons[href];
+    const link = (
+      <Link
+        aria-current={active ? 'page' : undefined}
+        className={cn(
+          'group flex min-w-0 items-center gap-2.5 overflow-hidden rounded-[10px] px-[11px] font-semibold outline-none transition focus-visible:ring-2 focus-visible:ring-cyan-300',
+          compact ? 'h-full min-h-8' : 'min-h-10 py-2 text-xs leading-[1.8]',
+          mobile
+            ? active
+              ? 'bg-primary text-primary-foreground shadow-sm'
+              : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+            : active
+              ? 'bg-cyan-300/20 text-white ring-1 ring-inset ring-cyan-100/30 shadow-md shadow-blue-950/20'
+              : 'text-blue-50/75 hover:bg-white/10 hover:text-white',
+          compact && 'justify-center px-0',
+        )}
+        href={href}
+        title={!compact ? title : undefined}
+      >
+        <Icon
+          strokeWidth={1.7}
+          aria-hidden="true"
+          className={cn(
+            'size-[17px] shrink-0',
+            !mobile && (active ? 'text-cyan-100' : 'text-[#adcaed]'),
+          )}
+        />
+        {!compact ? (
+          <span className="min-w-0 whitespace-normal break-words">{title}</span>
+        ) : (
+          <span className="sr-only">{title}</span>
+        )}
+      </Link>
+    );
+    if (mobile)
+      return (
+        <DrawerClose asChild key={href}>
+          {link}
+        </DrawerClose>
+      );
+    if (!compact) return <div key={href}>{link}</div>;
+    return (
+      <Tooltip key={href}>
+        <TooltipTrigger asChild>{link}</TooltipTrigger>
+        <TooltipContent side="left">{title}</TooltipContent>
+      </Tooltip>
+    );
+  }
+  function renderGroupEntries(group: (typeof groupedNavigationItems)[number]) {
+    return group.items.flatMap((item) => [
+      renderItem(item),
+      ...(group.id === 'sales' && item.href === '/sales'
+        ? [renderItem({ ...salesPricingSubsection, secondary: true })]
+        : []),
+    ]);
+  }
   return (
     <nav
       aria-label="منوی اصلی"
       className={cn(
-        'grid min-w-0 content-start gap-0.5 overflow-x-hidden',
-        mobile
-          ? 'auto-rows-[44px]'
-          : 'h-full grid-rows-[repeat(17,minmax(32px,1fr))]',
+        'grid min-w-0 content-start overflow-x-hidden',
+        compact
+          ? 'h-full auto-rows-[minmax(32px,1fr)] gap-0.5'
+          : 'gap-[7px] py-2',
       )}
     >
-      {navigationItems.map(({ href, icon: Icon, title }) => {
-        const active = isNavigationItemActive(href, pathname);
-        const link = (
-          <Link
-            aria-current={active ? 'page' : undefined}
-            className={cn(
-              'group flex min-w-0 items-center gap-3 overflow-hidden rounded-xl px-3 font-bold outline-none transition focus-visible:ring-2 focus-visible:ring-cyan-300',
-              mobile
-                ? 'h-11 text-sm'
-                : 'h-full min-h-8 text-[clamp(12px,1.35vh,15px)]',
-              mobile
-                ? active
-                  ? 'bg-primary text-primary-foreground shadow-sm'
-                  : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                : active
-                  ? 'bg-cyan-300/20 text-white ring-1 ring-inset ring-cyan-100/30 shadow-md shadow-blue-950/20'
-                  : 'text-blue-50/75 hover:bg-white/10 hover:text-white',
-              compact && 'justify-center px-0',
-            )}
-            href={href}
-          >
-            <Icon
-              aria-hidden="true"
-              className={cn(
-                'shrink-0',
-                mobile ? 'size-[18px]' : 'size-[clamp(17px,1.7vh,21px)]',
-              )}
-            />
-            {!compact ? (
-              <span className="min-w-0 truncate whitespace-nowrap">
-                {title}
-              </span>
-            ) : (
-              <span className="sr-only">{title}</span>
-            )}
-          </Link>
-        );
-        if (mobile)
-          return (
-            <DrawerClose asChild key={href}>
-              {link}
-            </DrawerClose>
-          );
-        if (!compact) return <div key={href}>{link}</div>;
-        return (
-          <Tooltip key={href}>
-            <TooltipTrigger asChild>{link}</TooltipTrigger>
-            <TooltipContent side="left">{title}</TooltipContent>
-          </Tooltip>
-        );
-      })}
+      {compact
+        ? groupedNavigationItems.flatMap(renderGroupEntries)
+        : groupedNavigationItems.map((group) => (
+            <section
+              key={group.id}
+              aria-label={group.title}
+              className="min-w-0"
+            >
+              <h2>
+                <button
+                  type="button"
+                  aria-expanded={!isGroupClosed(group.id)}
+                  aria-controls={groupId + group.id}
+                  onClick={() => toggleGroup(group.id)}
+                  className={cn(
+                    'mb-1 flex w-full items-center gap-2 rounded-lg text-start outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 px-[9px] pb-[5px] pt-[9px] text-sm font-semibold leading-6',
+                    mobile ? 'text-muted-foreground' : 'text-blue-200',
+                  )}
+                >
+                  <span
+                    aria-hidden="true"
+                    className={cn(
+                      'size-1.5 shrink-0 rounded-full',
+                      mobile ? 'bg-primary/50' : 'bg-cyan-200/70',
+                    )}
+                  />
+                  {group.title}
+                  {isGroupClosed(group.id) ? (
+                    <ChevronLeft
+                      aria-hidden="true"
+                      className="ms-auto size-3.5 shrink-0"
+                    />
+                  ) : (
+                    <ChevronDown
+                      aria-hidden="true"
+                      className="ms-auto size-3.5 shrink-0"
+                    />
+                  )}
+                </button>
+              </h2>
+              <div
+                id={groupId + group.id}
+                hidden={isGroupClosed(group.id)}
+                className={
+                  isGroupClosed(group.id) ? 'hidden' : 'grid gap-[3px]'
+                }
+              >
+                {renderGroupEntries(group)}
+              </div>
+            </section>
+          ))}
     </nav>
   );
 }
@@ -185,8 +290,11 @@ function SearchDialog() {
         >
           <Search aria-hidden="true" className="size-4" />
           <span className="truncate">{faMessages.common.search}</span>
-          <kbd className="ms-auto hidden rounded-md border border-border bg-surface px-1.5 py-0.5 text-[10px] lg:inline">
-            Ctrl K
+          <kbd
+            dir="ltr"
+            className="ms-auto hidden shrink-0 items-center whitespace-nowrap rounded-md border border-input bg-surface px-2 py-0.5 text-[11px] font-semibold leading-5 text-foreground sm:inline-flex"
+          >
+            Ctrl + K
           </kbd>
         </button>
       </DialogTrigger>
@@ -228,20 +336,8 @@ function SearchDialog() {
 
 function HeaderActions() {
   const { theme, toggleTheme } = useTheme();
-  const router = useRouter();
-  async function signOut() {
-    const api = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, '');
-    if (api) {
-      await fetch(`${api}/iam/auth/logout`, {
-        method: 'POST',
-        credentials: 'include',
-      }).catch(() => undefined);
-    }
-    router.replace('/login');
-    router.refresh();
-  }
   return (
-    <div className="flex items-center gap-1">
+    <div className="flex min-w-0 shrink-0 items-center gap-1">
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button
@@ -278,49 +374,58 @@ function HeaderActions() {
           <Sun aria-hidden="true" className="size-5" />
         )}
       </Button>
-      <Button
-        aria-label={faMessages.shell.notifications}
-        className="relative"
-        size="icon"
-        variant="ghost"
-      >
-        <Bell aria-hidden="true" className="size-5" />
-        <span className="absolute end-2 top-2 size-2 rounded-full bg-destructive ring-2 ring-surface" />
-      </Button>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            aria-label={faMessages.shell.userMenu}
-            className="rounded-full"
-            size="icon"
-            variant="secondary"
-          >
-            <UserRound aria-hidden="true" className="size-5" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuItem>{faMessages.shell.profile}</DropdownMenuItem>
-          <DropdownMenuItem>{faMessages.shell.preferences}</DropdownMenuItem>
-          <DropdownMenuItem
-            className="text-destructive"
-            onSelect={() => void signOut()}
-          >
-            <LogOut aria-hidden="true" className="size-4" />
-            {faMessages.shell.signOut}
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+      <NotificationCenter />
+      <UserMenu />
     </div>
   );
 }
 
 function Breadcrumb() {
   const pathname = usePathname();
-  const breadcrumbs = getNavigationBreadcrumbs(pathname);
+  const pageBreadcrumbs = usePageBreadcrumbOverride(pathname);
+  const searchParams = useSearchParams();
+  const sectionFromRouter =
+    pathname === '/marketing' ? searchParams.get('section') : null;
+  const [marketingSectionKey, setMarketingSectionKey] =
+    useState(sectionFromRouter);
+  useEffect(() => {
+    const syncFromLocation = () => {
+      setMarketingSectionKey(
+        window.location.pathname === '/marketing'
+          ? new URL(window.location.href).searchParams.get('section')
+          : null,
+      );
+    };
+    const syncFromWorkspace = (event: Event) => {
+      setMarketingSectionKey((event as CustomEvent<string | null>).detail);
+    };
+    syncFromLocation();
+    window.addEventListener('popstate', syncFromLocation);
+    window.addEventListener(MARKETING_SECTION_CHANGE_EVENT, syncFromWorkspace);
+    return () => {
+      window.removeEventListener('popstate', syncFromLocation);
+      window.removeEventListener(
+        MARKETING_SECTION_CHANGE_EVENT,
+        syncFromWorkspace,
+      );
+    };
+  }, [pathname, sectionFromRouter]);
+  const breadcrumbs: readonly PageBreadcrumb[] =
+    pageBreadcrumbs ??
+    getNavigationBreadcrumbs(
+      pathname,
+      pathname === '/marketing' ? marketingSectionKey : null,
+      pathname === '/hr'
+        ? {
+            sectionKey: searchParams.get('section'),
+            workspaceKey: searchParams.get('workspace'),
+          }
+        : null,
+    ).map((item) => ({ ...item, key: item.href }));
   return (
     <nav
       aria-label="مسیر صفحه"
-      className="flex items-center gap-2 text-xs text-muted-foreground"
+      className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground"
     >
       <Link className="hover:text-foreground" href="/dashboard">
         {faMessages.shell.workspace}
@@ -329,7 +434,7 @@ function Breadcrumb() {
         breadcrumbs.map((item, index) => {
           const current = index === breadcrumbs.length - 1;
           return (
-            <span className="contents" key={item.href}>
+            <span className="contents" key={item.key}>
               <span aria-hidden="true">/</span>
               {current ? (
                 <span
@@ -338,10 +443,20 @@ function Breadcrumb() {
                 >
                   {item.title}
                 </span>
-              ) : (
+              ) : item.onSelect ? (
+                <button
+                  type="button"
+                  className="rounded-sm text-start hover:text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                  onClick={item.onSelect}
+                >
+                  {item.title}
+                </button>
+              ) : item.href ? (
                 <Link className="hover:text-foreground" href={item.href}>
                   {item.title}
                 </Link>
+              ) : (
+                <span>{item.title}</span>
               )}
             </span>
           );
@@ -363,6 +478,7 @@ function AppShellContent({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-screen bg-background">
       <aside
+        data-nora-sidebar
         className={cn(
           'sticky top-0 hidden h-screen shrink-0 flex-col overflow-hidden bg-[linear-gradient(180deg,#123f8c_0%,#0e2f6e_55%,#092354_100%)] p-2.5 text-white shadow-2xl shadow-blue-950/20 transition-[width] duration-200 lg:flex',
           collapsed ? 'w-[68px]' : 'w-[290px]',
@@ -376,7 +492,7 @@ function AppShellContent({ children }: { children: ReactNode }) {
         >
           <Brand compact={collapsed} />
         </div>
-        <div className="mt-1 min-h-0 flex-1 overflow-hidden">
+        <div className="mt-1 min-h-0 flex-1 overflow-y-auto overflow-x-hidden">
           <Navigation compact={collapsed} />
         </div>
         <div className="mt-1 grid shrink-0 grid-cols-[1fr_auto] gap-1 border-t border-white/10 pt-1">
@@ -415,8 +531,8 @@ function AppShellContent({ children }: { children: ReactNode }) {
       </aside>
 
       <div className="min-w-0 flex-1">
-        <header className="sticky top-0 z-40 border-b border-blue-100/80 bg-surface/90 shadow-sm shadow-blue-900/5 backdrop-blur-xl dark:border-blue-900/50">
-          <div className="flex h-14 items-center gap-3 px-4 sm:px-6">
+        <header className="sticky top-0 z-40 border-b border-blue-100/80 bg-surface/90 shadow-sm shadow-blue-900/5 backdrop-blur-xl dark:border-border">
+          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 px-3 py-2 sm:flex sm:h-14 sm:gap-3 sm:px-6 sm:py-0">
             <Drawer>
               <DrawerTrigger asChild>
                 <Button
@@ -454,14 +570,26 @@ function AppShellContent({ children }: { children: ReactNode }) {
             <div className="min-w-0 flex-1">
               <SearchDialog />
             </div>
-            <HeaderActions />
+            <div
+              className="ms-auto flex shrink-0 items-center gap-1"
+              data-header-utility-group
+            >
+              <div className="hidden shrink-0 whitespace-nowrap lg:flex">
+                <HeaderToday />
+              </div>
+              <HeaderActions />
+            </div>
           </div>
         </header>
         <div className="px-4 pt-3 sm:px-6 lg:px-7">
-          <Breadcrumb />
+          <Suspense fallback={<div aria-hidden="true" className="h-4" />}>
+            <Breadcrumb />
+          </Suspense>
         </div>
         <main className="px-4 pb-6 pt-3 sm:px-6 lg:px-7" id="main-content">
-          {children}
+          <HrConnectionsVisibilityProvider>
+            {children}
+          </HrConnectionsVisibilityProvider>
         </main>
       </div>
     </div>
@@ -471,7 +599,9 @@ function AppShellContent({ children }: { children: ReactNode }) {
 export function AppShell({ children }: { children: ReactNode }) {
   return (
     <LegalEntityProvider>
-      <AppShellContent>{children}</AppShellContent>
+      <PageBreadcrumbProvider>
+        <AppShellContent>{children}</AppShellContent>
+      </PageBreadcrumbProvider>
     </LegalEntityProvider>
   );
 }

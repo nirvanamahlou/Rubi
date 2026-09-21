@@ -7,7 +7,7 @@ if (!['--preview', '--apply'].includes(mode) || unexpected.length)
 
 if (!process.env.DATABASE_URL)
   loadEnvFile(
-    process.env.RUBI_API_ENV_FILE ?? new URL('../.env', import.meta.url),
+    process.env.NORA_API_ENV_FILE ?? new URL('../.env', import.meta.url),
   );
 
 const pnpmCli = process.env.npm_execpath;
@@ -25,7 +25,7 @@ function runPnpm(args) {
 }
 
 runPnpm(['db:generate']);
-runPnpm(['--filter', '@rubi/api...', 'build']);
+runPnpm(['--filter', '@nora/api...', 'build']);
 
 const seedArguments = [
   'apps/api/scripts/seed-master-data-demo.mjs',

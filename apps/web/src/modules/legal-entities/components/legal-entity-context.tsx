@@ -15,6 +15,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react';
@@ -22,7 +23,7 @@ import type {
   LegalEntityContext,
   LegalEntitySelection,
   LegalEntitySummary,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -52,7 +53,7 @@ interface ContextValue {
 }
 
 const LegalEntityContextState = createContext<ContextValue | null>(null);
-const channelName = 'rubi:legal-entity-context:v1';
+const channelName = 'nora:legal-entity-context:v1';
 
 export function LegalEntityProvider({ children }: { children: ReactNode }) {
   const [entities, setEntities] = useState<LegalEntitySummary[]>([]);
@@ -202,8 +203,22 @@ export function LegalEntityContextSelector() {
   const state = useLegalEntityContext();
   const choices = legalEntityChoices(state.entities, state.canAggregate);
   const selection = state.context?.selection;
-  if (state.loading)
-    return (
+  const headerAnchor = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const header = headerAnchor.current?.closest('header');
+    if (!header) return;
+    if (selection) header.dataset.noraActiveCompany = selection;
+    else delete header.dataset.noraActiveCompany;
+    return () => {
+      if (header.dataset.noraActiveCompany === selection)
+        delete header.dataset.noraActiveCompany;
+    };
+  }, [selection]);
+
+  let selector: ReactNode;
+  if (state.loading) {
+    selector = (
       <div
         aria-label="در حال دریافت شرکت فعال"
         className="flex h-11 min-w-36 items-center gap-2 rounded-xl bg-muted/70 px-3 text-xs text-muted-foreground"
@@ -212,8 +227,8 @@ export function LegalEntityContextSelector() {
         شرکت فعال
       </div>
     );
-  if (state.error && !state.context)
-    return (
+  } else if (state.error && !state.context) {
+    selector = (
       <Button
         aria-label="تلاش دوباره برای دریافت شرکت فعال"
         onClick={() => void state.reload()}
@@ -225,67 +240,82 @@ export function LegalEntityContextSelector() {
         <RefreshCw className="size-3" />
       </Button>
     );
-  return (
-    <div className="relative min-w-0 max-w-[210px] sm:min-w-52">
-      <Select
-        disabled={state.switching}
-        onValueChange={(value) =>
-          void state.switchTo(value as LegalEntitySelection)
-        }
-        value={selection ?? ''}
+  } else {
+    selector = (
+      <div
+        className="relative min-w-0 max-w-[210px] sm:min-w-52"
+        data-legal-entity-selector
       >
-        <SelectTrigger
-          aria-label="انتخاب شرکت فعال"
-          className={cn(
-            'border-0 bg-muted/70 px-2.5',
-            state.error && 'ring-1 ring-destructive',
-          )}
+        <Select
+          disabled={state.switching}
+          onValueChange={(value) =>
+            void state.switchTo(value as LegalEntitySelection)
+          }
+          value={selection ?? ''}
         >
-          <span className="flex min-w-0 items-center gap-2">
-            <IssuerMark selection={selection} />
-            <span className="min-w-0 text-start">
-              <span className="block text-[10px] text-muted-foreground">
-                شرکت فعال
+          <SelectTrigger
+            aria-label="انتخاب شرکت فعال"
+            className={cn(
+              'border-0 bg-muted/70 px-2.5',
+              state.error && 'ring-1 ring-destructive',
+            )}
+          >
+            <span className="flex min-w-0 items-center gap-2">
+              <IssuerMark selection={selection} />
+              <span className="min-w-0 text-start">
+                <span className="block text-[10px] text-muted-foreground">
+                  شرکت فعال
+                </span>
+                <span className="block truncate text-xs font-bold sm:text-sm">
+                  {selection
+                    ? legalEntitySelectionLabel(selection, state.entities)
+                    : 'انتخاب شرکت'}
+                </span>
               </span>
-              <span className="block truncate text-xs font-bold sm:text-sm">
-                {selection
-                  ? legalEntitySelectionLabel(selection, state.entities)
-                  : 'انتخاب شرکت'}
-              </span>
+              {selection === 'ALL' ? (
+                <Badge className="hidden bg-violet-100 text-[10px] text-violet-700 sm:inline-flex">
+                  تجمیعی
+                </Badge>
+              ) : null}
             </span>
-            {selection === 'ALL' ? (
-              <Badge className="hidden bg-violet-100 text-[10px] text-violet-700 sm:inline-flex">
-                تجمیعی
-              </Badge>
-            ) : null}
-          </span>
-        </SelectTrigger>
-        <SelectContent>
-          {choices.map((choice) => (
-            <SelectItem key={choice.value} value={choice.value}>
-              <span className="flex items-center gap-2">
-                {choice.aggregate ? (
-                  <Layers3 className="size-4 text-violet-600" />
-                ) : (
-                  <Building2 className="size-4 text-primary" />
-                )}
-                {choice.label}
-              </span>
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-      <span aria-live="polite" className="sr-only">
-        {state.switching
-          ? 'در حال تغییر شرکت فعال'
-          : (state.feedback ?? state.error)}
-      </span>
-      {state.feedback ? (
-        <CheckCircle2
-          aria-hidden="true"
-          className="absolute -start-1 -top-1 size-4 rounded-full bg-surface text-emerald-600"
-        />
-      ) : null}
+          </SelectTrigger>
+          <SelectContent>
+            {choices.map((choice) => (
+              <SelectItem key={choice.value} value={choice.value}>
+                <span className="flex items-center gap-2">
+                  {choice.aggregate ? (
+                    <Layers3 className="size-4 text-violet-600" />
+                  ) : (
+                    <Building2 className="size-4 text-primary" />
+                  )}
+                  {choice.label}
+                </span>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <span aria-live="polite" className="sr-only">
+          {state.switching
+            ? 'در حال تغییر شرکت فعال'
+            : (state.feedback ?? state.error)}
+        </span>
+        {state.feedback ? (
+          <CheckCircle2
+            aria-hidden="true"
+            className="absolute -start-1 -top-1 size-4 rounded-full bg-surface text-emerald-600"
+          />
+        ) : null}
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className="flex shrink-0 items-center"
+      data-legal-entity-header-controls
+      ref={headerAnchor}
+    >
+      {selector}
     </div>
   );
 }

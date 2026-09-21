@@ -1,4 +1,4 @@
-import type { MasterDataRecord } from '@rubi/contracts';
+import type { MasterDataRecord } from '@nora/contracts';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -72,10 +72,17 @@ describe('master data reference field mapping', () => {
     ).toMatchObject({ target: 'hotels', multiple: true });
   });
 
-  it('publishes Provider choice and normalized facilities for buses', () => {
+  it('keeps bus providers out of Master Data and publishes normalized facilities', () => {
     expect(
       getReferenceFieldConfig('bus-companies', 'supplierId'),
-    ).toMatchObject({ target: 'suppliers', optional: true });
+    ).toBeUndefined();
+    expect(
+      getReferenceFieldConfig('bus-companies', 'organizationId'),
+    ).toMatchObject({
+      target: 'organizations',
+      payload: 'id',
+      requiredRole: 'BUS_PROVIDER',
+    });
     expect(getReferenceFieldConfig('bus-types', 'facilityIds')).toMatchObject({
       target: 'facilities',
       multiple: true,

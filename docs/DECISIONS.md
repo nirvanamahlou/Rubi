@@ -1,5 +1,189 @@
 # تصمیم‌های معماری
 
+## TOUR-HOTEL-PRICING-FLOW-0916 — owner-approved workflow
+
+The owner requires Ticket Catalog tour -> outbound/return departure -> hotel
+purchase-rate pack for that departure -> Sales tour/departure pricing. This
+supersedes loose hotel/date matching for new Sales pricing. Selected hotels in
+the linked rate pack are the pricing alternatives; unselected hotels do not
+block publication. Hotel cost is nightly base times room factor, rounded per
+night, times the explicit stay nights; a fixed or percentage change applies once
+to that stay. Adult/child flight sale is the combined round-trip amount per
+traveler; existing room occupancy determines the full-room package amount.
+
+The owner explicitly chose multiple currencies (e.g. EUR + IRR), not implicit
+FX conversion. Sum only like currencies; commission is a percentage expense
+in each sale currency and never increases customer sale amounts. Finance's
+settled purchase costs and the existing independent publication reviewer remain
+required for publication. Family occupancy is entered explicitly and snapshotted.
+Excel and banner generation are deferred by the owner.
+
+
+## ADR-PACKAGE-FLIGHT-FINANCE-COST-0915 — owner clarification / isolated integration
+
+The owner clarified that adult/child flight amounts entered in Sales are sale
+prices. When a ticket is defined, its purchase-price request goes to Finance;
+Finance enters the purchase amount and pays it directly, with no separate
+Procurement approval for this pre-sale ticket request. This is a limited
+owner-approved exception to the older generic Procurement-first purchase flow;
+other contract/service procurement ownership remains unchanged. The latest
+develop has a ProcurementTicketPurchaseRequest envelope and Finance inbox
+projection, but Ticket Catalog currently sends the amount itself and the
+free-form catalogProductReference is not a tour offer FK. That behavior is
+not a confirmed Finance purchase price and must be changed before package
+publication. The current tour departure uses TicketPublishedOffer, which
+stores route/capacity but no purchase fare. Latest develop Finance inbox lists
+pending Purchases requests, but has no Finance price-entry/payment action for
+those requests yet.
+There is no existing public, Finance-paid ticket-cost projection keyed to the
+tour's offer IDs. Package Pricing must consume such a versioned Finance/Ticket
+public contract (branch, offer ID/version, adult/child amounts and currency,
+payment state), never infer cost by route/name/date, read private
+tables or copy a manual purchase amount into Sales. A new pre-sale request
+flow keeps the request envelope in its owning module while Finance owns cost
+entry and settlement. Until that producer and its payment
+policy exist, package publication and total net-profit claims fail closed;
+hotel-only sale previews remain explicitly non-published. No historical
+published snapshot is changed by this clarification.
+
+Implementation on `codex/pc-a-package-pricing` after merging `origin/develop`
+into that task branch: publishing a real TicketPublishedOffer creates an
+amount-free Procurement envelope with a true offer FK/version. The older local
+Ticket product editor is a preview and does not create a duplicate financial
+request. Finance owns append-only adult/child unit purchase costs, invoice
+amount and payment evidence. Recorded partial payments keep the offer cost
+unavailable to Sales; only full settlement atomically marks the Procurement
+envelope PAID and exposes Finance's public paid-cost projection. A recorded
+payment is not an external bank transfer or accounting journal. Old free-form
+requests and catalog estimates remain readable but cannot qualify as a tour
+offer cost. Sales saves one editable draft per TourDeparture and HotelRate
+batch, then a different actor may publish immutable per-hotel/per-room prices
+after source, capacity, branch, version and currency recheck. Commission is
+subtracted from net profit without increasing customer sale. Business uplift
+applies per adult when this tour's offer cabin is BUSINESS. Known occupancy
+codes map to 1/2/3 adults or 2 adults plus 1/2 children; family occupancy is
+undefined in current data, so only its hotel-stay amount is published. Cross-
+currency publication remains fail-closed until an approved FX source exists.
+
+## ADR-PACKAGE-PURCHASE-SOURCE-0915 — owner purchase-cost clarification
+
+The owner now requests package sale pricing to start from the actual hotel
+purchase-rate table for a defined tour/date range, rather than treating Master
+Data's hotel base-sale rate as purchase cost. This supersedes the
+PACKAGE-PRICING-001 prohibition on using Reservations purchase cost for this
+new tour-pricing flow, but does not relabel historical Master Data sale rates
+as purchase costs. The owner confirmed that the existing Ticket Catalog tour
+departure is the package anchor. In the current model, only Reservations'
+group rate register identifies broker purchase base per room/night, so it is
+the producer for this flow. Package Pricing receives a versioned,
+branch/date/hotel-scoped public projection, never queries Reservations tables
+directly. Costs from distinct alternative hotels are priced separately, not
+summed into one source base. Existing immutable published price snapshots
+are not rewritten. If the owner names a different purchase register, switch
+the producer before sale publication rather than silently mixing cost models.
+
+## ADR-PACKAGE-COMMISSION-NET-MARGIN-0915 — owner clarification
+
+For new Package Pricing calculations, commission is a selling expense deducted
+from realized margin, not an amount added to the published customer price.
+The version-1 breakdown adds optional commissionCost; older immutable price
+snapshots without that field remain readable as zero commission. Fixed/percent
+sale adjustments and existing fees retain their own behavior. This decision
+supersedes the prior generic COMMISSION-as-sale-uplift behavior for new versions;
+no historical published price, contract or operational purchase is rewritten.
+Package Pricing API produces the additive field and its Web client consumes it.
+Commission input may be percent or a fixed amount with an explicit currency. Fixed commission is deducted once from the matching currency bucket for each independently priced room package; it never changes sale and no FX conversion is inferred. Historical drafts/publications default to percent.
+
+## PROCUREMENT-BACKEND-CONNECTIONS-0915 — 2026-09-15
+
+مالک محصول اتصال‌های ناقص خرید را فقط در Backend خواسته است. Settings/PC-A مالک
+چرخهٔ تأیید می‌ماند: Procurement فقط artifact سیاست نسخه‌دارِ مصوب را از مسیر
+`SETTINGS_PROCUREMENT_APPROVAL_POLICIES_FILE` می‌خواند و برای هر شعبه/واحد/دسته/ارز
+دقیقاً یک سیاست معتبر لازم دارد؛ نبودن، خرابی یا ابهام، ارسال را مسدود می‌کند.
+شناسه/سقف تأییدکننده هنوز از مالک دریافت نشده و هیچ grant خودکاری انجام نمی‌شود.
+
+Procurement/PC-B producer `procurement.finance-source.v1` را از فاکتور تطبیق‌شده
+و handoff ذخیره‌شده از public service، با محدوده شعبه، برای Finance/PC-A قابل
+خواندن می‌کند. Finance باید consumer/ack نسخه‌دار و تطبیق با پرداخت خود را پس از
+هماهنگی قرارداد اضافه کند؛ فقط ایجاد projection، status پرداخت یا journal را
+تغییر نمی‌دهد. مسیر Reservations/PC-A نیز باید operation/contract/service/supplier
+reference مصوب را منتشر کند؛ تا آن زمان specialized submission gate می‌ماند.
+
+پس از صدور داخلی و تأیید نهایی سفارش، outbox intent نسخه‌دار
+`procurement.supplier-order-intent.v1` با شناسه/نسخه سفارش، شعبه، تأمین‌کننده و
+مبلغ ثبت می‌شود. وضعیت آن `BLOCKED` است تا Integrations/PC-A API و callback
+احراز‌شده و idempotent را فراهم کند؛ هیچ سفارش بیرونی صادر نمی‌شود. رخدادهای
+پیگیری خرید نیز در outbox هستند و تا ایجاد public Tasks consumer/PC-B تحویل
+نمی‌شوند. این مرزها اجازه جعل پاسخ تأمین‌کننده یا پرداخت را نمی‌دهند.
+
+## PROCUREMENT-LIVE-INTEGRATION-0915 — 2026-09-15
+
+در فرم خرید، دستور جدید مالک حذف دلیل خرید مشابه، علت نامشخص بودن مبلغ و معیار
+پذیرش را بر متن قدیمی PRD مقدم می‌کند؛ دلیل اضطرار و محل تحویل اختیاری‌اند.
+درخواست‌کننده از کارمندان فعال ذخیره‌شدهٔ HR انتخاب و با FK شعبه‌ای واقعی به
+درخواست خرید وصل می‌شود؛ IAM actor جداگانه برای مجوز و audit می‌ماند. شش کارمند
+محلی موجود هنوز `userId` مرتبط با IAM ندارند، پس الزام FK به کارمند واقعی بدون
+این تفکیک، فهرست درخواست‌کننده را خالی می‌کرد. ثبت برای نقش کارکنان و تأیید/سفارش
+برای نقش‌های مشخص مستقل تعریف شد؛ grant خودکار اختیار تجاری به مدیر فنی انجام
+نمی‌شود. تا امضای قرارداد producer/consumer با PC-A و استقرار adapter و policy
+مصوب، تحویل مالی، ارجاع رزرواسیون و صدور سفارش در gate صریح باقی می‌مانند.
+قرارداد منتشرشدهٔ بعدی PC-A برای قیمت خرید بلیت از `ProcurementPublicService`
+به Ticket Catalog و کارتابل Finance وصل شده است؛ این intake جدا از سفارش و فاکتور
+درخواست خرید عمومی است و gate آن‌ها را تغییر نمی‌دهد. migration منتشرشدهٔ این
+intake بدون ویرایش حفظ شد و migration افزایشی دیگری FK شعبه و IAM creator را
+اضافه کرد؛ هر دو ابتدا روی کپی داده و سپس پایگاه محلی تمرین/اعمال شدند.
+
+## B2B-DOSSIER-REPORTS-001 — 2026-09-09
+
+The dossier Reports/Audit UI consumes normalized metadata from B2B audit events and public Master Organization/Documents owner projections. It does not read another module's tables, change the central Reporting module or create financial events. Existing branch and source/domain permissions apply to every page. Snapshots stay server-side; the projection exposes changed field labels, action, actor and time, never private contact values, notes, document contents or credential fields. Export contains the same authorized filtered projection. Per-source keyset pages share a fixed upper timestamp, including a deterministic cross-source tie key; Tehran calendar-day filters include both day boundaries.
+
+Inspection found that Documents permanent deletion removed its audit rows. To preserve the requested history without a new schema, deletion now removes versions and payload metadata but retains a minimal DELETED document, case identifiers and audit events. Detail/file/restore and list APIs exclude that tombstone, including explicit DELETED queries. Version references in retained audits are cleared before physical version removal; a deletion event is appended atomically with the tombstone. Already-erased historical events cannot be reconstructed. Existing owner file cleanup behavior remains; no local business record was deleted by this task. Finance preview data is never reported as real transactions.
+
+## B2B-CONTRACT-CREDIT-DEMO-001 — 2026-09-09
+
+Credit/guarantees moves beneath the commercial contract UI; existing credit authorization identifiers and approval rules remain independent. The owner requests synthetic guarantee and financial data. Guarantee drafts and proofs persist through B2B/Documents public services against explicitly synthetic agencies. Finance currently has a Phase A preview foundation and no posting/exposure adapter in this checkout, so the financial scenario is explicitly labelled as a UI preview and never supplied as authoritative exposure, receipt confirmation or ledger state. This satisfies the requested visual sample without crossing Finance ownership or changing account balances.
+
+## B2B-CONTRACT-FORMS-002 — 2026-09-09
+
+Master Data owns payment-method identity; B2B consumes its public directory and persists a nullable revision FK and label snapshot. Settlement mode remains PREPAID/CREDIT/MIXED. Optional v1 fields preserve older client writes and immutable historical revisions. The expanded agreement-type check is additive. Documents owns all inline uploads and file state; pending scans may be linked to drafts, while submission/approval always requires CLEAN and the existing scope/completeness/expiry checks. Removing the editable limit type preserves existing values and the HARD default; it does not silently alter credit enforcement. Shared calendar and selector behavior is opt-in for the affected forms.
+
+## B2B-ORGANIZATION-USERS-001 — 2026-09-09
+
+The owner explicitly limits per-user selection to the same agency's 360 dossier. Provide six view permissions and a standalone agency portal; do not grant global Nora roles, administrative mutations, independent contract/credit approval, or access to other agencies. B2B stores membership and consumes exported IAM provisioning methods. A global B2B interceptor restricts any linked account, including inactive memberships and accounts subsequently granted global IAM roles, to its portal and own authentication/session endpoints. Each portal projection rechecks active membership, organization and selected section and derives organization/branch from the server. Existing staff accounts are never converted. Failed membership creation disables the new IAM account; B2B membership/audit are atomic, while IAM and B2B provisioning are separate public-service operations. Finance remains explicitly unavailable until its owner projection is connected; no fabricated balances. Role labels do not confer IAM privileges.
+
+## B2B-UNIFIED-PROFILE-001 — 2026-09-09
+
+The owner's unified-page request moves all organization profile entry actions into the profile/roles screen. Existing organization tabs become sections on that same page and popup editors preserve current data contracts. National ID remains the existing Master Data company field in step one and edit, not a duplicate identity field.
+
+Implement signatory directory entries against existing Master Data contacts, following FR-PEO-02 document-type, limit/currency, date and proof requirements. Only B2B metadata is stored; public Master Data and Documents methods validate references. An incomplete proof permits saving an inactive entry only. No automatic IAM grant, portal account, independent approval or legal signature verification is implied. This bounded registration feature does not invent a new signatory-approval workflow. Existing cooperation agreement approval remains unchanged.
+
+## B2B-PROFILE-CLARITY-001 — 2026-09-09
+
+- پاسخ مالک محصول: گزینه‌های شعب، شعب آژانس طرف همکاری هستند. منبع آن‌ها آدرس‌های همان MasterOrganization و CRUD عمومی Master Data است. انتخاب نشانی صرفاً نمایش جزئیات است؛ شناسه نشانی به‌جای IAM branchId ارسال نمی‌شود. شعبه داخلی مسئول قرارداد و دسترسی‌ها جدا و روشن نمایش داده می‌شود.
+- شناسه ملی شرکت، فیلد اختیاری `MasterOrganization.nationalId` برای شخصیت حقوقی است؛ ورود دستی ۱۱ رقم با تبدیل ارقام فارسی/عربی به لاتین، یکتا بین سازمان‌ها و قابل اصلاح با مجوز Master Data و version موجود. این ثبت، استعلام یا تأیید اصالت ثبتی نیست. کد ملی شخص حقیقی در این فیلد ذخیره نمی‌شود. رکوردهای قدیمی NULL می‌مانند و درخواست‌های قدیمی که فیلد را نمی‌فرستند مقدار آن را حفظ می‌کنند.
+- تغییر قرارداد عمومی فقط افزودن attribute/value اختیاری است؛ producer اطلاعات پایه و consumer فرم و پرونده سازمان است. Migration افزایشی محدود به همین ستون، unique index و قید قالب/شخصیت است؛ پس از backup و rehearsal روی نسخه بازیابی‌شده اعمال می‌شود. هیچ migration تاریخی یا داده موجود بازنویسی نمی‌شود.
+- مدیر حساب کاربر داخلی مسئول پیگیری آژانس است. وضعیت همکاری از پروفایل واقعی خوانده می‌شود؛ دکمه بررسی به گردش قرارداد موجود می‌رود و تأیید مستقل قرارداد، پروفایل در حال بررسی را فعال می‌کند. قواعد دسترسی و منع خودتأییدی بدون تغییر می‌مانند.
+
+## B2B-AGENCIES-001 — اعتبار چندارزی و حذف هویت استفاده‌شده
+
+- پاسخ صریح مالک در پیگیری PRD: **سقف جدا برای هر ارز؛ بدون تبدیل خودکار**. محاسبه اعتبار فقط Decimalهای هم‌ارز را ترکیب می‌کند؛ currency mismatch نتیجه قابل‌استفاده تولید نمی‌کند. مدل نهایی Policy باید ارز را در scope یکتا لحاظ کند؛ schema فعلی تک‌سیاستی به‌عنوان پیاده‌سازی چندارزی معرفی نمی‌شود.
+- درخواست حذف دائمی داده با FR-ORG-04 چنین جمع می‌شود: رکورد بدون وابستگی از API نسخه‌دار و audited مالک قابل حذف است؛ FK محدودکننده هویت استفاده‌شده و تاریخچه تجاری حفظ می‌شود. هیچ حذف آبشاری قرارداد/سفارش/سند مالی مجاز نشده است.
+- زمان تحقق پورسانت، تعداد مراحل/مجوزهای تأیید، ترکیب Exposure و سایر P0های باز سند با این پاسخ تعیین نشده‌اند. جزئیات و وضعیت واقعی پیاده‌سازی: `tasks/B2B-AGENCIES-001-PRD-COVERAGE.md`.
+
+## SALES-OUTPUT-CLEANUP-0907 — customer copy vs operator guidance
+
+At the user's request, operational issuance/context disclaimers and template generation metadata are removed from the customer-facing printed/PDF page. The same disclosures stay in the operator dialog; this layout-only change does not establish historical issuer binding, official issuance, archive completion, Finance payment confirmation or reservation fulfillment. Existing fail-closed API policies remain unchanged.
+
+## SALES-CUSTOMER-PRICING-0907 — local additive upgrade gate
+
+The operational database has pre-existing file/checksum differences for master_data_foundation (20260823084001), legal_entity_context (20260825123000), and reservation_arrangements (20260906113000), plus LF/CRLF differences elsewhere. This task does not repair/rebaseline/rewrite any historical migration or owner data. Like the previous local rollout, permit only the single reviewed additive Sales passenger-price migration after a fresh backup restore rehearsal. Require every historical migration to be known/finished, reject any other pending migration, and compare all stored historical checksums plus business counts before/after. The new table depends only on the existing Sales passenger UUID key. Broader historical reconciliation remains outside this task.
+
+## HOTEL-SALES-PRICING-0906 — 2026-09-06
+
+- مالک محصول ورود قیمت روز فروش/توافقی هتل به‌صورت هر شب یا کل و ثبت بعدی هزینه خرید در رزرواسیون را تأیید کرد. انتقال محدود قفل Migration نیز صریحاً تأیید شد.
+- هزینه ثبت‌شده در رزرواسیون سابقه عملیاتی خرید است؛ مالکیت تأیید خرید/بدهی در Procurement و Finance حفظ می‌شود. این ثبت هیچ financial release یا پرداخت تأییدشده تولید نمی‌کند.
+- اختلاف روز فروش و توافق «تخفیف فروشنده» است؛ بدون قیمت اولیه کارگزار، هیچ مقدار ساختگی با نام تخفیف کارگزار تولید نمی‌شود. حاشیه هتل فقط در ارز یکسان و بر پایه هزینه ثبت‌شده نمایش داده می‌شود، نه سود قطعی کل قرارداد.
+
 ## اجرای موقت DOCUMENTS-002 — 2026-09-01
 
 - ADR-002 و الزام S3/MinIO برای محیط تولید بدون تغییر باقی می‌ماند. Adapter فعلی Documents
@@ -10,6 +194,11 @@
   آن fail-closed است. تغییر دستی Scan به `CLEAN` یا جعل پاسخ Scanner در Seed/UI ممنوع است.
 - تصمیم `DEC-OPEN-006` درباره retention، residency و key management همچنان باز است؛ این
   Slice حذف دائمی، گردش کلید تولید یا تعهد نگهداری را حدس نمی‌زند.
+- درخواست صریح مالک محصول در 2026-09-05 ورود دستی اختیاری شماره پاسپورت و تصویر
+  اختیاری آن را برای Development/Test مجاز کرد. شماره فقط در مرز Customers با
+  AES-256-GCM، HMAC دامنه‌جدا، Mask و Sensitive-read Audit نگهداری می‌شود و فایل از
+  Public Contract ماژول Documents عبور می‌کند. این مجوز محدود، `DEC-OPEN-006` را برای
+  Production، retention، residency یا گردش کلید حل‌شده اعلام نمی‌کند.
 
 ## Clarifications carried from the approved source tasks — 2026-08-31
 
@@ -67,6 +256,7 @@ develop یا تغییر والدها جزو این کار نیست. فقط قر�
 | ADR-020 | فروش مالک قرارداد و تخصیص passenger/service؛ Ticket Catalog مالک تعریف بلیت؛ Reservations مالک اجرا/صدور/Manifest؛ Procurement مالک خرید؛ Finance مالک release تحویل است | حذف ورود تکراری و جلوگیری از اختلاط فروش/عملیات/خرید/مالی؛ شرح کامل در `TRAVEL_WORKFLOW_ARCHITECTURE.md` |
 | ADR-021 | ماژول تولیدکننده مالک Render و Issue سند است؛ Documents فقط فایل نهایی، نسخه، محرمانگی، دسترسی و Archive را مالک است | ADR-012 را در بخش Render supersede می‌کند؛ Metadata هویت صادرکننده از `legal-entities.v1` گرفته می‌شود و هیچ منوی صدور مستقل یا query مستقیم جدول Legal Entity ایجاد نمی‌شود |
 | ADR-022 | Master Data فایل XLSX گذرای فیلترشده را مستقیم Render و Download می‌کند؛ PDF و آرشیو پایدار همچنان از Documents/Worker عبور می‌کنند | خروجی Excel عملیاتی بدون جعل Artifact فعال می‌شود؛ سقف ۱۰٬۰۰۰ ردیف، Permission، Audit و ایمنی Formula Injection اجباری است |
+| ADR-023 | Snapshot فروش در Reservations تغییرناپذیر می‌ماند؛ رزرواسیون فقط چیدمان اجرایی هتل را برای همان مسافران به‌صورت append-only و versioned اصلاح می‌کند | نیاز عملیات به تغییر اتاق/تخت و اعضای هتل بدون انتقال مالکیت قرارداد؛ تغییر مسافر یا ظرفیت صندلی همچنان اصلاح Sales و کنترل Ticket Catalog است |
 
 ## تصمیم‌های باز
 
@@ -103,3 +293,35 @@ develop یا تغییر والدها جزو این کار نیست. فقط قر�
 FINANCE-001 Phase A هیچ Prisma Schema، Migration، Repository، Persistence، Dependency یا
 Lockfile تغییر نمی‌کند. پس از Merge PR #21، ایجاد Schema و Migration افزایشی مالی فقط در
 Task مستقل Phase B، با رزرو مجدد قفل‌ها و Migration gate کامل، مجاز خواهد بود.
+
+## ADR-TRAVEL-DELIVERY-0909 — confirmed by owner
+Implement the explicit Finance delivery tick as a manual document-delivery authorization, separate from settlement, credit, ledger and payment approval. It never changes financial facts or pretends to satisfy the broader settlement engine. Default blocked, Finance-only permission, mandatory reason, versioned approval/revocation and actor/time audit. Sales document APIs remain blocked until this authorization and operational readiness both hold. Reservations can preview operational documents independently. Supplier confirmation is required for vouchers; insurance absence requires explicit acknowledgement rather than blocking. Operational room/age overrides preserve customer birth dates and commercial allocations; commercial changes require Sales correction. Earlier draft previews in the Sales form must not bypass the delivery gate.
+
+## ADR-CONFIRM-VOUCHER-0909 — owner request
+Supplier confirmation now atomically issues the hotel voucher and notifies the Sales owner. There is no separate confirmed-only stage for new commands. Explicit missing-insurance acknowledgement is still required; the Finance delivery gate remains unchanged. Legacy already-confirmed records retain ISSUE_VOUCHER support. New queue cards use #FFC0C0 only on the identity column, and issued vouchers use dark gray. This refines the prior travel handoff flow without changing stored schema or grants.
+
+## ADR-SUPPLIER-FORM-ISOLATION-0910 — explicit owner choice
+The owner selected: No affects supplier reservation form and purchasing basis only; Yes also affects contract and voucher. Supplier draft settings and sent settings are separate workflow JSON copies. Purchase displays the sent copy, never an unsent draft; explicit re-send records a new copy/version. Sales confirmed commercial records are not edited through updateDraft. The public Sales operational-amendment service records nonfinancial form settings in service metadata, increments the contract version and writes before/after Sales audit within the same transaction as the Reservations revision. Current contract output renders operational hotel amendments and an explicit amendment section; original financial terms, customer/master foreign keys and prior evidence remain intact. Sales update permission/branch scope and optimistic version checks are required for apply-both. Failure rolls back both destinations. No schema migration or new external send channel.
+## B2B-CONTRACT-CREDIT-001 — decisions confirmed by owner
+
+- A single independent reviewer approves contract/credit changes using the corresponding permission; the proposer cannot approve their own request. Confirmed explicitly in this task on the Screenshot527 follow-up.
+- Each currency has a separate credit limit; no implicit FX conversion. Contract/policy drafts have no effective financial authority before approval. Submitted/approved content is versioned and preserved, and edits require a new draft/revision.
+- Evolve existing B2B profile/agreement/credit persistence and public routes. Organization identity remains in Master Data, binary/version storage in Documents, and exposure/payment/deposit balances in Finance. This scope completes the contract/credit wizard and its management workflow, not every independent PRD module.
+# PACKAGE-PRICING-001 — Fail-closed upstream contracts (2026-09-14)
+
+مرزبندی صریح مالک محصول، نرخ پایه هتل را به Master Data و نرخ پایه/ظرفیت بلیت را به Ticket
+Catalog واگذار می‌کند. چون develop فعلی این دو Public Contract نسخه‌دار را ارائه نمی‌کند،
+Package Pricing از adapter صریح fail-closed استفاده می‌کند (`SOURCE_RATE_UNAVAILABLE` و
+`CAPACITY_RECHECK_FAILED`). استفاده از داده ReservationHotelGroupRate به‌جای نرخ پایه ممنوع
+است، چون آن مدل هزینه واقعی خرید Reservations است. Renderer نیز producer مستقل است و نبود آن
+فقط Render Request واقعی `AWAITING_RENDERER` می‌سازد؛ فایل یا success ساختگی ممنوع است.
+
+## ADR-MASTER-HOTEL-BASE-RATES-0914 — versioned period grid
+
+با درخواست صریح مالک محصول، Master Data مالک نرخ پایه فروش هتل در بازه اقامت است: یک شهر،
+check-in/check-out و تعداد شب، همه هتل‌های فعال همان شهر، انتخاب حضور در تور، مبلغ پایه هر
+اتاق/شب و ضرایب رده‌های اقامت. ویرایش رکورد قبلی تاریخچه را بازنویسی نمی‌کند و نسخه immutable
+جدید می‌سازد. Package Pricing فقط Public Contract نسخه‌دار را مصرف می‌کند و reference غیرجاری،
+خارج از شعبه یا با ارز ناسازگار را fail-closed رد می‌کند. مدل خرید واقعی Reservations مستقل
+می‌ماند. این تصمیم blocker هتل را رفع می‌کند و blocker Ticket Catalog یا Renderer را رفع‌شده
+فرض نمی‌کند.

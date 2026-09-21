@@ -71,12 +71,12 @@ export function composePreviewJourney(
     if (!product || product.version !== selection.productVersion)
       throw new CatalogError(
         'CONFLICT',
-        'بلیت انتخابی تغییر کرده است؛ دوباره انتخاب کنید.',
+        'بلیط انتخابی تغییر کرده است؛ دوباره انتخاب کنید.',
       );
     if (!independentCandidate(product))
       throw new CatalogError(
         'TRANSITION',
-        'بلیت متوقف یا لغوشده قابل انتخاب نیست.',
+        'بلیط متوقف یا لغوشده قابل انتخاب نیست.',
       );
     return product;
   }
@@ -97,12 +97,12 @@ export function composePreviewJourney(
   if (type !== 'round-trip' || !inbound)
     throw new CatalogError(
       'VALIDATION',
-      'برای رفت‌وبرگشت بلیت برگشت را انتخاب کنید.',
+      'برای رفت‌وبرگشت بلیط برگشت را انتخاب کنید.',
     );
   if (!compatibleReturn(out, resolve(inbound)))
     throw new CatalogError(
       'VALIDATION',
-      'برگشت باید بلیت مستقلی با مسیر معکوس و حرکت بعد از رسیدن رفت باشد.',
+      'برگشت باید بلیط مستقلی با مسیر معکوس و حرکت بعد از رسیدن رفت باشد.',
     );
   return {
     type,

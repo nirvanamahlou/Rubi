@@ -49,15 +49,15 @@ describe('cleared Master Data selections', () => {
     expect(checked).toBeGreaterThan(30);
   });
 
-  it('preserves an explicit empty optional reference in the update payload', () => {
+  it('requires a city to remain connected to its province', () => {
     const result = validateMasterDataDraft('cities', {
       name: 'شهر آزمایشی',
       englishName: 'Test city',
       countryId: '00000000-0000-4000-8000-000000000001',
       regionId: '',
     });
-    expect(result.success).toBe(true);
-    expect(result.values.regionId).toBe('');
+    expect(result.success).toBe(false);
+    expect(result.errors.regionId).toBeTruthy();
     expect(result.values.countryId).toBe(
       '00000000-0000-4000-8000-000000000001',
     );
@@ -90,23 +90,21 @@ describe('cleared Master Data selections', () => {
     }
   });
 
-  it('requires the quote currency and timestamp, but omits cleared optional dates', () => {
+  it('requires the quote currency without submitting removed date fields', () => {
     expect(
       validateCurrencyQuote('USD', { ...quote, toCurrencyCode: '' }).errors
         .toCurrencyCode,
     ).toBeTruthy();
-    expect(
-      validateCurrencyQuote('USD', { ...quote, observedAt: '' }).errors
-        .observedAt,
-    ).toBeTruthy();
     const result = validateCurrencyQuote('USD', {
       ...quote,
+      observedAt: '',
       validFrom: '',
       validTo: '',
     });
     expect(result.success).toBe(true);
     expect(result.input).not.toHaveProperty('validFrom');
     expect(result.input).not.toHaveProperty('validTo');
+    expect(result.input).not.toHaveProperty('observedAt');
   });
 
   it('wires the shared control into every form entry point and required references', () => {

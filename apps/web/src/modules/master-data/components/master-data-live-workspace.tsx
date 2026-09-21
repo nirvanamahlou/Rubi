@@ -5,7 +5,7 @@ import type {
   MasterDataRecord,
   MasterDataResource,
   MasterDataStatus,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import {
   ArrowRight,
   Ban,
@@ -84,7 +84,7 @@ function GenericMasterDataWorkspace({
   const [records, setRecords] = useState<readonly MasterDataRecord[]>([]);
   const [requestState, setRequestState] = useState<RequestState>('loading');
   const [search, setSearch] = useState('');
-  const [status, setStatus] = useState<'all' | MasterDataStatus>('all');
+  const [status, setStatus] = useState<'all' | MasterDataStatus>('active');
   const [sortBy, setSortBy] = useState<'name' | 'code' | 'updatedAt'>('name');
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
@@ -151,7 +151,7 @@ function GenericMasterDataWorkspace({
     if (!section.resources.includes(next)) return;
     setResource(next);
     setSearch('');
-    setStatus('all');
+    setStatus('active');
     setSortBy('name');
     setPage(1);
     setSelected(undefined);
@@ -286,7 +286,7 @@ function GenericMasterDataWorkspace({
 
   function renderResourceActions() {
     return (
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex w-full flex-wrap items-center justify-end gap-2 sm:w-auto">
         <Button
           loading={exportingExcel}
           onClick={() => void requestExport('xlsx')}
@@ -328,7 +328,7 @@ function GenericMasterDataWorkspace({
       <PageHeader
         actions={
           <Link
-            className={buttonVariants({ variant: 'outline' })}
+            className={`${buttonVariants({ variant: 'outline' })} ms-auto`}
             href="/master-data"
           >
             <ArrowRight aria-hidden="true" className="size-4" />
@@ -398,7 +398,7 @@ function GenericMasterDataWorkspace({
                     : definition.description}
                 </p>
               </div>
-              <div className="flex flex-col gap-3 sm:items-end">
+              <div className="flex flex-col items-end gap-3">
                 {isCountryCity ? (
                   <div
                     aria-label="انتخاب فهرست جغرافیا"
@@ -521,7 +521,7 @@ function GenericMasterDataWorkspace({
               onClear={() => {
                 setSearch('');
                 resetDateRange();
-                setStatus('all');
+                setStatus('active');
                 setSortBy('name');
                 setPage(1);
               }}
@@ -600,7 +600,7 @@ function GenericMasterDataWorkspace({
                         {new Date(record.updatedAt).toLocaleString('fa-IR')}
                       </td>
                       <td className="p-4">
-                        <div className="flex flex-wrap gap-2">
+                        <div className="flex flex-wrap justify-end gap-2">
                           <Button
                             onClick={() => openForm('view', record)}
                             size="sm"

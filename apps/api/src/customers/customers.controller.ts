@@ -13,7 +13,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
-import type { CustomerListQuery } from '@rubi/contracts';
+import type { CustomerListQuery } from '@nora/contracts';
 
 import { AuthGuard } from '../iam/auth.guard';
 import { RequirePermissions } from '../iam/iam.decorators';
@@ -28,6 +28,7 @@ import {
   CustomerContactDto,
   CustomerListQueryDto,
   CustomerMutationDto,
+  CustomerRegistrationLookupDto,
   CustomerStatusDto,
   DuplicateCandidateDto,
   DuplicateReviewDto,
@@ -35,7 +36,7 @@ import {
 import { CustomerService } from './customer.service';
 
 @ApiTags('Customers')
-@ApiCookieAuth('rubi_access')
+@ApiCookieAuth('nora_access')
 @UseGuards(AuthGuard, PermissionGuard)
 @Controller('customers')
 export class CustomersController {
@@ -63,6 +64,18 @@ export class CustomersController {
     @Headers('x-request-id') traceId?: string,
   ) {
     return this.service.create(dto, request.actor, branchId, traceId);
+  }
+
+  @Post('registration-lookup')
+  @Header('Cache-Control', 'private, no-store')
+  @Header('Vary', 'Cookie')
+  @RequirePermissions('customers.read', 'customers.sensitive.read')
+  registrationLookup(
+    @Body() dto: CustomerRegistrationLookupDto,
+    @Req() request: AuthenticatedRequest,
+    @Headers('x-request-id') traceId?: string,
+  ) {
+    return this.service.registrationLookup(dto, request.actor, traceId);
   }
 
   @Post('duplicate-candidates')

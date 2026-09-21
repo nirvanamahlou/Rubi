@@ -45,21 +45,22 @@
 
 .dark {
   color-scheme: dark;
-  --background: #08152d;
-  --foreground: #edf4ff;
-  --surface: #0e2142;
-  --muted: #162c50;
-  --muted-foreground: #a7b7cf;
-  --primary: #66a9ff;
-  --primary-foreground: #071a38;
-  --secondary: #173b6d;
-  --secondary-foreground: #d9eaff;
-  --border: #29476e;
-  --input: #36577e;
-  --ring: #69b6ff;
-  --popover: #0e2142;
-  --popover-foreground: #e8edf5;
-  --destructive: #f87171;
+  --background: #111113;
+  --foreground: #f4f4f5;
+  --surface: #1c1c1f;
+  --muted: #27272b;
+  --muted-foreground: #b4b4bd;
+  --primary: #a8c7f0;
+  --primary-foreground: #111820;
+  --secondary: #303035;
+  --secondary-foreground: #e4e4e7;
+  --border: #45454d;
+  --input: #777782;
+  --ring: #c1d9fa;
+  --popover: #232327;
+  --popover-foreground: #f4f4f5;
+  --destructive: #ff9494;
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.3), 0 14px 34px rgb(0 0 0 / 0.2);
 }
 
 * {
@@ -104,6 +105,71 @@ a {
   text-decoration: none;
 }
 
+header[data-nora-active-company='JAHAN_BASTAN'] {
+  --company-header-background: linear-gradient(
+    110deg,
+    #061a3f 0%,
+    #092b68 58%,
+    #0f438e 100%
+  );
+}
+
+header[data-nora-active-company='NIYAYESH_SEIR_SAHAR'] {
+  --company-header-background: linear-gradient(110deg, #123f8c, #1554ad);
+}
+
+header[data-nora-active-company='GHESATI_RO'] {
+  --company-header-background: linear-gradient(110deg, #064e3b, #087052);
+}
+
+header[data-nora-active-company='JAHAN_ACADEMIA'] {
+  --company-header-background: linear-gradient(110deg, #4c1d75, #702b9c);
+}
+
+header:is(
+  [data-nora-active-company='JAHAN_BASTAN'],
+  [data-nora-active-company='NIYAYESH_SEIR_SAHAR'],
+  [data-nora-active-company='GHESATI_RO'],
+  [data-nora-active-company='JAHAN_ACADEMIA']
+) {
+  border-color: rgb(125 169 234 / 0.38);
+  background: var(--company-header-background);
+  color: #f8fbff;
+  box-shadow: 0 12px 30px rgb(4 20 52 / 0.2);
+}
+
+header[data-nora-active-company]:not([data-nora-active-company='ALL']) button {
+  color: #f8fbff;
+}
+
+header[data-nora-active-company]:not([data-nora-active-company='ALL'])
+  button:hover {
+  background-color: rgb(255 255 255 / 0.12);
+}
+
+header[data-nora-active-company]:not([data-nora-active-company='ALL'])
+  [data-legal-entity-selector]
+  button,
+header[data-nora-active-company]:not([data-nora-active-company='ALL'])
+  #global-search-trigger,
+header[data-nora-active-company]:not([data-nora-active-company='ALL'])
+  [data-header-session-summary] {
+  border-color: rgb(219 234 254 / 0.24);
+  background-color: rgb(255 255 255 / 0.11);
+  color: #ffffff;
+}
+
+header[data-nora-active-company]:not([data-nora-active-company='ALL'])
+  .text-muted-foreground {
+  color: #dbeafe;
+}
+
+header[data-nora-active-company]:not([data-nora-active-company='ALL'])
+  [data-header-session-summary]
+  span {
+  border-color: rgb(219 234 254 / 0.24);
+}
+
 ::selection {
   background: color-mix(in srgb, var(--primary) 25%, transparent);
 }
@@ -134,4 +200,176 @@ a {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+/* Neutral dark shell; status colors and company identity remain as accents. */
+.dark body {
+  background: var(--background);
+}
+.dark [data-nora-sidebar] {
+  background: #18181b;
+  box-shadow: none;
+  border-inline-end: 1px solid var(--border);
+}
+.dark [data-nora-sidebar] :is(a, button) {
+  color: #e4e4e7;
+}
+.dark [data-nora-sidebar] [aria-current='page'] {
+  background: #39393f;
+  color: #ffffff;
+}
+.dark header[data-nora-active-company] {
+  background: var(--surface);
+  color: var(--foreground);
+  border-color: var(--border);
+  box-shadow: 0 2px 10px rgb(0 0 0 / 0.18);
+}
+.dark
+  header[data-nora-active-company]
+  :is(
+    #global-search-trigger,
+    [data-header-session-summary],
+    [data-legal-entity-selector] button
+  ) {
+  background: var(--muted);
+  color: var(--foreground);
+  border-color: var(--input);
+}
+.dark header[data-nora-active-company] .text-muted-foreground {
+  color: var(--muted-foreground);
+}
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: var(--muted-foreground);
+  opacity: 1;
+}
+
+/* Ocean Executive palette is scoped to the dashboard surface. Reports and
+   other modules continue to use the shared application theme. */
+[data-dashboard-workspace] {
+  --background: #f8fafc;
+  --foreground: #0f172a;
+  --surface: #ffffff;
+  --muted: #eef4fb;
+  --muted-foreground: #475569;
+  --primary: #1d4ed8;
+  --primary-foreground: #ffffff;
+  --secondary: #dbeafe;
+  --secondary-foreground: #1e3a8a;
+  --border: #d9e4f2;
+  --input: #bfd0e5;
+  --ring: #2563eb;
+  --popover: #ffffff;
+  --popover-foreground: #0f172a;
+  --destructive: #be123c;
+  background: var(--background);
+  color: var(--foreground);
+  background-image:
+    radial-gradient(circle at 92% 0%, rgb(37 99 235 / 0.06), transparent 24rem),
+    linear-gradient(rgb(148 163 184 / 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(148 163 184 / 0.035) 1px, transparent 1px);
+  background-size: auto, 28px 28px, 28px 28px;
+  border-radius: 1.25rem;
+}
+
+[data-dashboard-kpi] {
+  box-shadow:
+    0 1px 2px rgb(15 23 42 / 0.04),
+    0 10px 28px rgb(30 64 175 / 0.055);
+}
+
+[data-dashboard-kpi]:hover {
+  box-shadow:
+    0 2px 4px rgb(15 23 42 / 0.06),
+    0 16px 34px rgb(30 64 175 / 0.11);
+}
+
+[data-dashboard-visual] {
+  background:
+    linear-gradient(145deg, rgb(255 255 255 / 0.98), rgb(248 250 252 / 0.98));
+  box-shadow:
+    0 1px 2px rgb(15 23 42 / 0.04),
+    0 12px 32px rgb(30 64 175 / 0.055);
+}
+
+[data-dashboard-employee-visual='true'] {
+  border-color: rgb(14 165 233 / 0.28);
+  box-shadow:
+    0 1px 2px rgb(15 23 42 / 0.04),
+    0 14px 34px rgb(8 145 178 / 0.08);
+}
+
+[data-dashboard-sidebar] {
+  --background: #0f2747;
+  --foreground: #f8fbff;
+  --surface: #0f2747;
+  --muted: #173a65;
+  --muted-foreground: #dbeafe;
+  --primary: #2563eb;
+  --primary-foreground: #ffffff;
+  --secondary: #1e4777;
+  --secondary-foreground: #eff6ff;
+  --border: #2c5b8e;
+  --input: #80a6d2;
+  --ring: #93c5fd;
+  background: linear-gradient(180deg, #0f2747 0%, #123661 100%);
+  border-color: #2c5b8e;
+  color: #f8fbff;
+}
+
+[data-dashboard-sidebar] .text-foreground {
+  color: #f8fbff;
+}
+
+[data-dashboard-sidebar] .text-muted-foreground {
+  color: #dbeafe;
+}
+
+[data-dashboard-sidebar] .border-border {
+  border-color: #2c5b8e;
+}
+
+[data-dashboard-sidebar] :is([role='combobox'], [aria-haspopup='dialog']) {
+  color: #0f172a;
+  background: #ffffff;
+}
+
+[data-dashboard-sidebar] :is([role='combobox'], [aria-haspopup='dialog'])
+  .text-muted-foreground {
+  color: #475569;
+}
+
+.dark [data-dashboard-workspace] {
+  --background: #0b1220;
+  --foreground: #f8fafc;
+  --surface: #111c2e;
+  --muted: #17253a;
+  --muted-foreground: #cbd5e1;
+  --primary: #60a5fa;
+  --primary-foreground: #0b1220;
+  --secondary: #203a5f;
+  --secondary-foreground: #dbeafe;
+  --border: #294466;
+  --input: #56779d;
+  --ring: #93c5fd;
+  --popover: #111c2e;
+  --popover-foreground: #f8fafc;
+  --destructive: #fb7185;
+  background-image:
+    radial-gradient(circle at 92% 0%, rgb(96 165 250 / 0.09), transparent 24rem),
+    linear-gradient(rgb(148 163 184 / 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(148 163 184 / 0.03) 1px, transparent 1px);
+}
+
+.dark [data-dashboard-visual] {
+  background:
+    linear-gradient(145deg, rgb(17 28 46 / 0.98), rgb(11 18 32 / 0.98));
+}
+
+.dark [data-dashboard-sidebar] {
+  --background: #081a33;
+  --surface: #081a33;
+  --muted: #102b4e;
+  --border: #245183;
+  background: linear-gradient(180deg, #081a33 0%, #0f2747 100%);
 }

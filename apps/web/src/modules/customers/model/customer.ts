@@ -2,7 +2,7 @@ import type {
   CustomerContact,
   CustomerDetail,
   CustomerMutationRequest,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 
 export function customerDraft(
   customer?: CustomerDetail,
@@ -15,6 +15,9 @@ export function customerDraft(
     displayName: customer?.displayName ?? '',
     ...(!customer?.birthDateMasked
       ? { birthDate: customer?.birthDate ?? null }
+      : {}),
+    ...(customer?.passportNumber
+      ? { passportNumber: customer.passportNumber }
       : {}),
     roles: customer?.roles ?? ['customer'],
     acquaintanceMethodId: customer?.acquaintanceMethodId ?? null,

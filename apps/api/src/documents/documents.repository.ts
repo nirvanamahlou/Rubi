@@ -1,13 +1,31 @@
 import { Inject, Injectable } from '@nestjs/common';
-import type { DocumentDomainCode, DocumentListQueryV1 } from '@rubi/contracts';
-import { AuditOutcome, type Prisma } from '@rubi/database';
+import type {
+  DocumentAccessPurposeCode,
+  DocumentDomainCode,
+  DocumentListQueryV1,
+} from '@nora/contracts';
+import { AuditOutcome, Prisma } from '@nora/database';
+import {
+  activityEvent,
+  activityPredicate,
+  type ActivityRow,
+  type ActivityWindow,
+} from '../common/organization-activity';
 
 import { DatabaseService } from '../database/database.service';
+import { NotificationsService } from '../notifications/notifications.service';
+import type { NotificationTransaction } from '../notifications/notifications.types';
 import type { LocalAntivirusResult } from './documents.antivirus';
 
 export const documentListInclude = {
   documentType: {
-    select: { id: true, code: true, name: true, domain: true },
+    select: {
+      id: true,
+      code: true,
+      name: true,
+      domain: true,
+      requiresExpiry: true,
+    },
   },
   category: { select: { id: true, code: true, name: true } },
   owner: { select: { id: true, displayName: true } },
@@ -75,9 +93,121 @@ function dateAtEndOfDay(value: string): Date {
 
 @Injectable()
 export class DocumentsRepository {
+  async organizationActivity(
+    org: string,
+    branch: string,
+    permissions: readonly string[],
+    window: ActivityWindow,
+  ) {
+    const rows = await this.database.client.$queryRaw<ActivityRow[]>(Prisma.sql`
+      WITH e AS (
+        SELECT a.id, a.action, a.outcome, a.document_id AS "entityId", 'Document'::text AS "entityType",
+          a.actor_user_id AS "actorUserId", a.occurred_at AS "occurredAt", 'DOCUMENT'::text AS category
+        FROM document_audit_events a JOIN documents d ON d.id = a.document_id
+        JOIN document_types t ON t.id = d.document_type_id
+        WHERE d.branch_id = ${branch}::uuid AND a.actor_branch_id = ${branch}::uuid
+          AND t.domain::text IN (${Prisma.join(allowedDocumentDomains(permissions))})
+          ${permissions.includes('documents.sensitive.read') ? Prisma.empty : Prisma.sql`AND d.confidentiality::text NOT IN ('CONFIDENTIAL', 'RESTRICTED')`}
+          AND EXISTS (SELECT 1 FROM document_relations r WHERE r.document_id = d.id
+            AND r.relation_type = 'PRIMARY_CASE' AND r.source_module = 'master-data'
+            AND r.source_entity_type = 'organizations' AND r.source_entity_id = ${org})
+      ) SELECT * FROM e WHERE ${activityPredicate(window, 'DOCUMENTS')}
+      ORDER BY "occurredAt" DESC, id DESC LIMIT 51`);
+    return rows.map((row) => activityEvent(row, 'DOCUMENTS'));
+  }
   constructor(
     @Inject(DatabaseService) private readonly database: DatabaseService,
+    @Inject(NotificationsService)
+    private readonly notifications: NotificationsService,
   ) {}
+
+  private notifyDocumentChange(
+    transaction: NotificationTransaction,
+    input: {
+      action:
+        | 'documents.upload'
+        | 'documents.metadata.update'
+        | 'documents.archive'
+        | 'documents.restore'
+        | 'documents.completion.update'
+        | 'documents.permanently-delete';
+      actorUserId: string;
+      ownerUserId: string;
+      documentId: string;
+      documentTitle: string;
+    },
+  ): Promise<void> {
+    const content = {
+      'documents.upload': {
+        title: 'سند جدید بارگذاری شد',
+        verb: 'بارگذاری شد',
+      },
+      'documents.metadata.update': {
+        title: 'اطلاعات سند ویرایش شد',
+        verb: 'ویرایش شد',
+      },
+      'documents.archive': {
+        title: 'سند آرشیو شد',
+        verb: 'آرشیو شد',
+      },
+      'documents.restore': {
+        title: 'سند بازیابی شد',
+        verb: 'از آرشیو بازیابی شد',
+      },
+      'documents.completion.update': {
+        title: 'وضعیت تکمیل سند تغییر کرد',
+        verb: 'از نظر کامل‌بودن تغییر کرد',
+      },
+      'documents.permanently-delete': {
+        title: 'سند برای همیشه حذف شد',
+        verb: 'برای همیشه حذف شد',
+      },
+    }[input.action];
+    return this.notifications.createWithinTransaction(transaction, {
+      recipientUserIds: [input.actorUserId, input.ownerUserId],
+      actorUserId: input.actorUserId,
+      sourceModule: 'documents',
+      eventType: input.action,
+      title: content.title,
+      message: `سند «${input.documentTitle}» ${content.verb}.`,
+      entityType: 'Document',
+      entityId: input.documentId,
+      href:
+        input.action === 'documents.permanently-delete'
+          ? '/documents'
+          : `/documents?document=${encodeURIComponent(input.documentId)}`,
+    });
+  }
+
+  async organizationVersionReferences(
+    versionIds: readonly string[],
+    organizationId: string,
+    branchId: string,
+  ) {
+    const rows = await this.database.client.documentVersion.findMany({
+      where: {
+        id: { in: [...versionIds] },
+        document: {
+          branchId,
+          archiveStatus: { not: 'DELETED' },
+          documentType: { domain: 'ORGANIZATION' },
+          relations: {
+            some: {
+              relationType: 'PRIMARY_CASE',
+              sourceModule: 'master-data',
+              sourceEntityType: 'organizations',
+              sourceEntityId: organizationId,
+            },
+          },
+        },
+      },
+      select: { id: true, documentId: true },
+    });
+    return rows.map((row) => ({
+      versionId: row.id,
+      documentId: row.documentId,
+    }));
+  }
 
   async list(
     query: Required<
@@ -116,9 +246,12 @@ export class DocumentsRepository {
         ...(query.typeCode ? { code: query.typeCode } : {}),
       },
       ...(query.archiveStatus
-        ? { archiveStatus: query.archiveStatus }
+        ? { archiveStatus: { equals: query.archiveStatus, not: 'DELETED' } }
         : { archiveStatus: { not: 'DELETED' } }),
       ...(query.ownerUserId ? { ownerUserId: query.ownerUserId } : {}),
+      ...(query.completion
+        ? { isIncomplete: query.completion === 'INCOMPLETE' }
+        : {}),
       ...(query.personalView === 'OWNED' ? { ownerUserId: actorUserId } : {}),
       ...(query.personalView === 'UPLOADED'
         ? { createdByUserId: actorUserId }
@@ -135,6 +268,18 @@ export class DocumentsRepository {
           }
         : {}),
       ...(query.categoryId ? { categoryId: query.categoryId } : {}),
+      ...(query.sourceModule && query.sourceEntityType && query.sourceEntityId
+        ? {
+            relations: {
+              some: {
+                relationType: 'PRIMARY_CASE',
+                sourceModule: query.sourceModule,
+                sourceEntityType: query.sourceEntityType,
+                sourceEntityId: query.sourceEntityId,
+              },
+            },
+          }
+        : {}),
       ...(query.confidentiality
         ? { confidentiality: query.confidentiality }
         : {}),
@@ -158,23 +303,32 @@ export class DocumentsRepository {
             },
           }
         : {}),
+      ...(query.attention === 'INCOMPLETE_OR_EXPIRED'
+        ? {
+            OR: [{ isIncomplete: true }, { validUntil: { lt: now } }],
+          }
+        : {}),
       ...(query.search
         ? {
-            OR: [
-              { title: { contains: query.search, mode: 'insensitive' } },
+            AND: [
               {
-                archiveCode: {
-                  contains: query.search,
-                  mode: 'insensitive',
-                },
-              },
-              {
-                currentVersion: {
-                  originalFileName: {
-                    contains: query.search,
-                    mode: 'insensitive',
+                OR: [
+                  { title: { contains: query.search, mode: 'insensitive' } },
+                  {
+                    archiveCode: {
+                      contains: query.search,
+                      mode: 'insensitive',
+                    },
                   },
-                },
+                  {
+                    currentVersion: {
+                      originalFileName: {
+                        contains: query.search,
+                        mode: 'insensitive',
+                      },
+                    },
+                  },
+                ],
               },
             ],
           }
@@ -200,8 +354,95 @@ export class DocumentsRepository {
 
   findDetail(id: string, branchIds: readonly string[]) {
     return this.database.client.document.findFirst({
-      where: { id, branchId: { in: [...branchIds] } },
+      where: {
+        id,
+        branchId: { in: [...branchIds] },
+        archiveStatus: { not: 'DELETED' },
+      },
       include: documentDetailInclude,
+    });
+  }
+
+  feedbackAttachmentIds(input: {
+    documentIds: readonly string[];
+    feedbackId: string;
+    branchId: string;
+    ownerUserId: string;
+  }) {
+    return this.workbenchOwnedAttachmentIds({
+      documentIds: input.documentIds,
+      sourceEntityType: 'WorkbenchFeedback',
+      sourceEntityId: input.feedbackId,
+      branchId: input.branchId,
+      ownerUserId: input.ownerUserId,
+    });
+  }
+
+  workbenchOwnedAttachmentIds(input: {
+    documentIds: readonly string[];
+    sourceEntityType: string;
+    sourceEntityId: string;
+    branchId: string;
+    ownerUserId: string;
+  }) {
+    if (!input.documentIds.length) return Promise.resolve([]);
+    return this.database.client.document.findMany({
+      where: {
+        id: { in: [...input.documentIds] },
+        branchId: input.branchId,
+        ownerUserId: input.ownerUserId,
+        sourceModule: 'WORKBENCH',
+        sourceEntityType: input.sourceEntityType,
+        sourceEntityId: input.sourceEntityId,
+        archiveStatus: 'ACTIVE',
+        deletedAt: null,
+      },
+      select: { id: true, title: true },
+    });
+  }
+
+  favoriteDocuments(
+    userId: string,
+    branchIds: readonly string[],
+    domains: readonly string[],
+  ) {
+    return this.database.client.document.findMany({
+      where: {
+        branchId: { in: [...branchIds] },
+        archiveStatus: { not: 'DELETED' },
+        deletedAt: null,
+        documentType: { domain: { in: [...domains] as never[] } },
+        favorites: { some: { userId } },
+      },
+      include: documentListInclude,
+      orderBy: [{ updatedAt: 'desc' }, { id: 'asc' }],
+      take: 500,
+    });
+  }
+
+  async setFavorite(userId: string, documentId: string, favorite: boolean) {
+    if (favorite) {
+      await this.database.client.documentFavorite.upsert({
+        where: { userId_documentId: { userId, documentId } },
+        create: { userId, documentId },
+        update: {},
+      });
+    } else {
+      await this.database.client.documentFavorite.deleteMany({
+        where: { userId, documentId },
+      });
+    }
+  }
+
+  findDetails(ids: readonly string[], branchIds: readonly string[]) {
+    return this.database.client.document.findMany({
+      where: {
+        id: { in: [...ids] },
+        branchId: { in: [...branchIds] },
+        archiveStatus: { not: 'DELETED' },
+      },
+      include: documentDetailInclude,
+      orderBy: { id: 'asc' },
     });
   }
 
@@ -230,6 +471,102 @@ export class DocumentsRepository {
       }),
     ]);
     return { documentTypes, categories, owners, branches };
+  }
+
+  async caseOptions(input: {
+    branchId: string;
+    domains: readonly DocumentDomainCode[];
+    includeSensitive: boolean;
+    search: string;
+    limit: number;
+  }) {
+    const scanLimit = Math.min(250, (input.limit + 1) * 5);
+    const rows = await this.database.client.documentRelation.findMany({
+      where: {
+        relationType: 'PRIMARY_CASE',
+        document: {
+          branchId: input.branchId,
+          archiveStatus: { not: 'DELETED' },
+          ...(input.includeSensitive
+            ? {}
+            : { confidentiality: { in: ['PUBLIC', 'INTERNAL'] } }),
+          documentType: { domain: { in: [...input.domains] as never[] } },
+        },
+        ...(input.search
+          ? {
+              OR: [
+                {
+                  displayLabel: {
+                    contains: input.search,
+                    mode: 'insensitive' as const,
+                  },
+                },
+                {
+                  sourceModule: {
+                    contains: input.search,
+                    mode: 'insensitive' as const,
+                  },
+                },
+                {
+                  sourceEntityType: {
+                    contains: input.search,
+                    mode: 'insensitive' as const,
+                  },
+                },
+              ],
+            }
+          : {}),
+      },
+      select: {
+        id: true,
+        displayLabel: true,
+        sourceModule: true,
+        sourceEntityType: true,
+        sourceEntityId: true,
+      },
+      orderBy: [{ displayLabel: 'asc' }, { createdAt: 'desc' }, { id: 'asc' }],
+      take: scanLimit,
+    });
+
+    const uniqueRows = new Map<string, (typeof rows)[number]>();
+    for (const row of rows) {
+      const key = `${row.sourceModule}\u0000${row.sourceEntityType}\u0000${row.sourceEntityId}`;
+      if (!uniqueRows.has(key)) uniqueRows.set(key, row);
+      if (uniqueRows.size > input.limit) break;
+    }
+    const values = [...uniqueRows.values()];
+    return {
+      rows: values.slice(0, input.limit),
+      hasMore: values.length > input.limit || rows.length === scanLimit,
+    };
+  }
+
+  findCaseReference(input: {
+    relationId: string;
+    branchId: string;
+    domains: readonly DocumentDomainCode[];
+    includeSensitive: boolean;
+  }) {
+    return this.database.client.documentRelation.findFirst({
+      where: {
+        id: input.relationId,
+        relationType: 'PRIMARY_CASE',
+        document: {
+          branchId: input.branchId,
+          archiveStatus: { not: 'DELETED' },
+          ...(input.includeSensitive
+            ? {}
+            : { confidentiality: { in: ['PUBLIC', 'INTERNAL'] } }),
+          documentType: { domain: { in: [...input.domains] as never[] } },
+        },
+      },
+      select: {
+        sourceModule: true,
+        sourceEntityType: true,
+        sourceEntityId: true,
+        displayLabel: true,
+      },
+    });
   }
 
   async uploadReferences(input: {
@@ -263,6 +600,286 @@ export class DocumentsRepository {
     return { documentType, category, owner, branch };
   }
 
+  async editReferences(input: {
+    categoryId: string;
+    ownerUserId: string;
+    branchId: string;
+  }) {
+    const [category, owner] = await Promise.all([
+      this.database.client.documentCategory.findFirst({
+        where: { id: input.categoryId, isActive: true },
+        select: { id: true },
+      }),
+      this.database.client.user.findFirst({
+        where: {
+          id: input.ownerUserId,
+          status: 'ACTIVE',
+          branches: { some: { branchId: input.branchId } },
+        },
+        select: { id: true },
+      }),
+    ]);
+    return { category, owner };
+  }
+
+  async updateMetadata(input: {
+    documentId: string;
+    expectedVersion: number;
+    title: string;
+    description: string | null;
+    categoryId: string;
+    ownerUserId: string;
+    confidentiality: string;
+    validUntil: Date | null;
+    isIncomplete: boolean;
+    actorUserId: string;
+    actorBranchId: string;
+    ipSummary: string;
+    userAgentSummary: string;
+  }): Promise<DocumentDetailRow | null> {
+    return this.database.client.$transaction(async (transaction) => {
+      const updated = await transaction.document.updateMany({
+        where: { id: input.documentId, version: input.expectedVersion },
+        data: {
+          title: input.title,
+          description: input.description,
+          categoryId: input.categoryId,
+          ownerUserId: input.ownerUserId,
+          confidentiality: input.confidentiality as never,
+          validUntil: input.validUntil,
+          isIncomplete: input.isIncomplete,
+          updatedByUserId: input.actorUserId,
+          version: { increment: 1 },
+        },
+      });
+      if (updated.count !== 1) return null;
+      await transaction.documentAuditEvent.create({
+        data: {
+          documentId: input.documentId,
+          actorUserId: input.actorUserId,
+          actorBranchId: input.actorBranchId,
+          action: 'documents.metadata.update',
+          outcome: AuditOutcome.SUCCESS,
+          reason: input.isIncomplete
+            ? 'DOCUMENT_MARKED_INCOMPLETE'
+            : 'DOCUMENT_METADATA_UPDATED',
+          ipSummary: input.ipSummary,
+          userAgentSummary: input.userAgentSummary,
+        },
+      });
+      await this.notifyDocumentChange(transaction, {
+        action: 'documents.metadata.update',
+        actorUserId: input.actorUserId,
+        ownerUserId: input.ownerUserId,
+        documentId: input.documentId,
+        documentTitle: input.title,
+      });
+      return transaction.document.findUniqueOrThrow({
+        where: { id: input.documentId },
+        include: documentDetailInclude,
+      });
+    });
+  }
+
+  async changeArchiveStatus(input: {
+    documentId: string;
+    expectedVersion: number;
+    expectedStatus: 'ACTIVE' | 'ARCHIVED';
+    nextStatus: 'ACTIVE' | 'ARCHIVED';
+    action: 'documents.archive' | 'documents.restore';
+    reason: string;
+    actorUserId: string;
+    actorBranchId: string;
+    ownerUserId: string;
+    documentTitle: string;
+    ipSummary: string;
+    userAgentSummary: string;
+  }): Promise<DocumentDetailRow | null> {
+    return this.database.client.$transaction(async (transaction) => {
+      const updated = await transaction.document.updateMany({
+        where: {
+          id: input.documentId,
+          version: input.expectedVersion,
+          archiveStatus: input.expectedStatus,
+        },
+        data: {
+          archiveStatus: input.nextStatus,
+          deletedAt: null,
+          updatedByUserId: input.actorUserId,
+          version: { increment: 1 },
+        },
+      });
+      if (updated.count !== 1) return null;
+      await transaction.documentAuditEvent.create({
+        data: {
+          documentId: input.documentId,
+          actorUserId: input.actorUserId,
+          actorBranchId: input.actorBranchId,
+          action: input.action,
+          outcome: AuditOutcome.SUCCESS,
+          reason: input.reason,
+          ipSummary: input.ipSummary,
+          userAgentSummary: input.userAgentSummary,
+        },
+      });
+      await this.notifyDocumentChange(transaction, {
+        action: input.action,
+        actorUserId: input.actorUserId,
+        ownerUserId: input.ownerUserId,
+        documentId: input.documentId,
+        documentTitle: input.documentTitle,
+      });
+      return transaction.document.findUniqueOrThrow({
+        where: { id: input.documentId },
+        include: documentDetailInclude,
+      });
+    });
+  }
+
+  async bulkAction(input: {
+    rows: readonly DocumentDetailRow[];
+    action: 'MARK_INCOMPLETE' | 'MARK_COMPLETE' | 'ARCHIVE' | 'RESTORE';
+    reason: string;
+    actorUserId: string;
+    ipSummary: string;
+    userAgentSummary: string;
+  }): Promise<number> {
+    return this.database.client.$transaction(async (transaction) => {
+      for (const row of input.rows) {
+        const isArchiveAction =
+          input.action === 'ARCHIVE' || input.action === 'RESTORE';
+        const updated = await transaction.document.updateMany({
+          where: { id: row.id, version: row.version },
+          data: {
+            ...(input.action === 'MARK_INCOMPLETE'
+              ? { isIncomplete: true }
+              : input.action === 'MARK_COMPLETE'
+                ? { isIncomplete: false }
+                : input.action === 'ARCHIVE'
+                  ? { archiveStatus: 'ARCHIVED' as const, deletedAt: null }
+                  : { archiveStatus: 'ACTIVE' as const, deletedAt: null }),
+            updatedByUserId: input.actorUserId,
+            version: { increment: 1 },
+          },
+        });
+        if (updated.count !== 1) throw new Error('DOCUMENT_VERSION_CONFLICT');
+        await transaction.documentAuditEvent.create({
+          data: {
+            documentId: row.id,
+            actorUserId: input.actorUserId,
+            actorBranchId: row.branchId,
+            action: isArchiveAction
+              ? input.action === 'ARCHIVE'
+                ? 'documents.archive'
+                : 'documents.restore'
+              : 'documents.completion.update',
+            outcome: AuditOutcome.SUCCESS,
+            reason: input.reason,
+            ipSummary: input.ipSummary,
+            userAgentSummary: input.userAgentSummary,
+          },
+        });
+        await this.notifyDocumentChange(transaction, {
+          action: isArchiveAction
+            ? input.action === 'ARCHIVE'
+              ? 'documents.archive'
+              : 'documents.restore'
+            : 'documents.completion.update',
+          actorUserId: input.actorUserId,
+          ownerUserId: row.ownerUserId,
+          documentId: row.id,
+          documentTitle: row.title,
+        });
+      }
+      return input.rows.length;
+    });
+  }
+
+  async permanentlyDelete(input: {
+    documentId: string;
+    expectedVersion: number;
+    actorUserId: string;
+    ownerUserId: string;
+    documentTitle: string;
+  }): Promise<boolean> {
+    return this.database.client.$transaction(async (transaction) => {
+      const current = await transaction.document.findUnique({
+        where: { id: input.documentId },
+        select: { version: true, branchId: true, archiveStatus: true },
+      });
+      if (
+        !current ||
+        current.version !== input.expectedVersion ||
+        current.archiveStatus === 'DELETED'
+      )
+        return false;
+      const versions = await transaction.documentVersion.findMany({
+        where: { documentId: input.documentId },
+        select: { id: true },
+      });
+      const versionIds = versions.map(({ id }) => id);
+      const claimed = await transaction.document.updateMany({
+        where: {
+          id: input.documentId,
+          version: input.expectedVersion,
+          archiveStatus: { not: 'DELETED' },
+        },
+        data: { currentVersionId: null, version: { increment: 1 } },
+      });
+      if (claimed.count !== 1) return false;
+      await transaction.documentProcessingJob.deleteMany({
+        where: { versionId: { in: versionIds } },
+      });
+      await transaction.documentQuarantine.deleteMany({
+        where: { versionId: { in: versionIds } },
+      });
+      // Keep append-only history; remove references to physically deleted versions.
+      await transaction.documentAuditEvent.updateMany({
+        where: { documentId: input.documentId },
+        data: { versionId: null },
+      });
+      await transaction.documentRelation.updateMany({
+        where: { documentId: input.documentId },
+        data: { displayLabel: 'سند حذف‌شده' },
+      });
+      await transaction.documentVersion.deleteMany({
+        where: { documentId: input.documentId },
+      });
+      // A minimal, inaccessible tombstone retains organization/domain audit scope.
+      await transaction.document.update({
+        where: { id: input.documentId },
+        data: {
+          archiveStatus: 'DELETED',
+          deletedAt: new Date(),
+          title: 'سند حذف‌شده',
+          description: null,
+          currentVersionNumber: 0,
+          validUntil: null,
+          updatedByUserId: input.actorUserId,
+        },
+      });
+      await transaction.documentAuditEvent.create({
+        data: {
+          documentId: input.documentId,
+          actorUserId: input.actorUserId,
+          actorBranchId: current.branchId,
+          action: 'documents.permanently-delete',
+          outcome: AuditOutcome.SUCCESS,
+          ipSummary: '',
+          userAgentSummary: '',
+        },
+      });
+      await this.notifyDocumentChange(transaction, {
+        action: 'documents.permanently-delete',
+        actorUserId: input.actorUserId,
+        ownerUserId: input.ownerUserId,
+        documentId: input.documentId,
+        documentTitle: input.documentTitle,
+      });
+      return true;
+    });
+  }
+
   async createUploaded(input: {
     documentId: string;
     versionId: string;
@@ -278,6 +895,7 @@ export class DocumentsRepository {
     sourceEntityId: string;
     sourceDisplayLabel: string;
     confidentiality: string;
+    requiresStepUpVerification: boolean;
     validUntil: Date | null;
     originalFileName: string;
     safeDownloadName: string;
@@ -305,6 +923,7 @@ export class DocumentsRepository {
           sourceEntityType: input.sourceEntityType,
           sourceEntityId: input.sourceEntityId,
           confidentiality: input.confidentiality as never,
+          requiresStepUpVerification: input.requiresStepUpVerification,
           validUntil: input.validUntil,
           createdByUserId: input.actorUserId,
           updatedByUserId: input.actorUserId,
@@ -363,6 +982,13 @@ export class DocumentsRepository {
           userAgentSummary: input.userAgentSummary,
         },
       });
+      await this.notifyDocumentChange(transaction, {
+        action: 'documents.upload',
+        actorUserId: input.actorUserId,
+        ownerUserId: input.ownerUserId,
+        documentId: input.documentId,
+        documentTitle: input.title,
+      });
       return transaction.document.findUniqueOrThrow({
         where: { id: input.documentId },
         include: documentDetailInclude,
@@ -388,6 +1014,48 @@ export class DocumentsRepository {
         outcome: input.outcome,
       },
     });
+  }
+
+  async createAccessGrant(input: {
+    tokenHash: string;
+    documentId: string;
+    actorUserId: string;
+    actorSessionId: string;
+    purpose: DocumentAccessPurposeCode;
+    expiresAt: Date;
+  }): Promise<void> {
+    await this.database.client.$transaction([
+      this.database.client.documentAccessGrant.deleteMany({
+        where: {
+          expiresAt: { lt: new Date(Date.now() - 24 * 60 * 60 * 1000) },
+        },
+      }),
+      this.database.client.documentAccessGrant.create({
+        data: input,
+      }),
+    ]);
+  }
+
+  async consumeAccessGrant(input: {
+    tokenHash: string;
+    documentId: string;
+    actorUserId: string;
+    actorSessionId: string;
+    purpose: DocumentAccessPurposeCode;
+  }): Promise<boolean> {
+    const claimed = await this.database.client.documentAccessGrant.updateMany({
+      where: {
+        tokenHash: input.tokenHash,
+        documentId: input.documentId,
+        actorUserId: input.actorUserId,
+        actorSessionId: input.actorSessionId,
+        purpose: input.purpose,
+        consumedAt: null,
+        expiresAt: { gt: new Date() },
+      },
+      data: { consumedAt: new Date() },
+    });
+    return claimed.count === 1;
   }
 
   audit(documentId: string) {

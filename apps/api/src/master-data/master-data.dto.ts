@@ -14,6 +14,7 @@ import {
   Matches,
   Min,
 } from 'class-validator';
+import { MASTER_ORGANIZATION_ROLE_CODES } from '@nora/contracts';
 
 export class MasterDataListQueryDto {
   @IsOptional() @IsString() @MaxLength(100) columnFilter1?: string;
@@ -82,6 +83,9 @@ export class MasterDataListQueryDto {
   @IsOptional()
   @IsUUID()
   organizationId?: string;
+  @IsOptional()
+  @IsIn(MASTER_ORGANIZATION_ROLE_CODES)
+  organizationRole?: (typeof MASTER_ORGANIZATION_ROLE_CODES)[number];
   @IsOptional()
   @IsUUID()
   serviceId?: string;
@@ -158,6 +162,62 @@ export class MasterDataListQueryDto {
 export class MasterDataMutationDto {
   @IsObject()
   values!: Record<string, string | number | readonly string[] | null>;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  version?: number;
+}
+
+export class MasterDataLogoUploadDto {
+  @IsString()
+  @MaxLength(240)
+  title!: string;
+
+  @Transform(({ value }) => Number(value))
+  @IsInt()
+  @Min(1)
+  version!: number;
+}
+
+export class MasterDataLogoRemoveDto {
+  @IsInt()
+  @Min(1)
+  version!: number;
+}
+
+export class MasterOrganizationAddressDto {
+  @IsUUID()
+  countryId!: string;
+
+  @IsUUID()
+  cityId!: string;
+
+  @IsString()
+  @MaxLength(80)
+  label!: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(24)
+  postalCode?: string | null;
+
+  @IsString()
+  @MaxLength(500)
+  addressLine!: string;
+
+  @IsOptional()
+  @IsBoolean()
+  isPrimary = false;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  displayOrder = 0;
+
+  @IsOptional()
+  @IsBoolean()
+  isActive = true;
 
   @IsOptional()
   @IsInt()

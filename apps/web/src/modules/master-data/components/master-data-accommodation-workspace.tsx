@@ -11,7 +11,7 @@ import type {
   MasterDataRecord,
   MasterDataResource,
   MasterDataStatus,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import {
   ArrowRight,
   BedDouble,
@@ -32,6 +32,7 @@ import {
   Search,
   ShieldCheck,
   Sparkles,
+  TableProperties,
   Upload,
   Users,
   UtensilsCrossed,
@@ -60,11 +61,18 @@ import {
   PaginationShell,
   Skeleton,
 } from '@/components/ui/surfaces';
-import { masterDataApi, MasterDataApiError } from '../api/client';
+import {
+  masterDataApi,
+  MasterDataApiError,
+  type MasterDataLogoChange,
+} from '../api/client';
 import { MasterDataDeleteButton } from './master-data-delete-button';
 import { MasterDataFilterActions } from './master-data-filter-actions';
 import { getMasterDataDefinition } from '../model/catalog';
-import { HotelImportPanel } from './hotel-import-panel';
+import {
+  HotelImportPanel,
+  type HotelImportCompleted,
+} from './hotel-import-panel';
 import {
   MasterDataLiveForm,
   type MasterDataFormMode,
@@ -246,7 +254,7 @@ export function MasterDataAccommodationWorkspace() {
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<
     'all' | MasterDataStatus | 'under_review'
-  >('all');
+  >('active');
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [countries, setCountries] = useState<readonly MasterDataRecord[]>([]);
@@ -594,7 +602,7 @@ export function MasterDataAccommodationWorkspace() {
     setTab(next);
     setSearch('');
     resetColumnFilters();
-    setStatus('all');
+    setStatus('active');
     setPage(1);
     setCountryFilter('all');
     setCityFilter('all');
@@ -613,24 +621,48 @@ export function MasterDataAccommodationWorkspace() {
     setProfileOpen(true);
   }
 
-  async function persist(values: Record<string, string>) {
+  function handleHotelImportCompleted({
+    result,
+    countryId,
+    cityId,
+  }: HotelImportCompleted) {
+    setSearch('');
+    resetColumnFilters();
+    resetDateRange();
+    setStatus('all');
+    setCountryFilter(countryId);
+    setCityFilter(cityId);
+    setStarFilter('all');
+    setPage(1);
+    setSelected(undefined);
+    setProfileOpen(false);
+    setFormMode(null);
+    setNotice(
+      `ثبت Excel کامل شد: ${result.counts.created.toLocaleString('fa-IR')} هتل جدید، ${result.counts.updated.toLocaleString('fa-IR')} به‌روزرسانی و ${result.counts.skipped.toLocaleString('fa-IR')} مورد رد شد. فهرست مقصد نمایش داده شده است.`,
+    );
+    setTab('hotels');
+    void loadSummary();
+  }
+
+  async function persist(
+    values: Record<string, string>,
+    logoChange?: MasterDataLogoChange,
+  ) {
     try {
-      if (formMode === 'edit' && selected) {
-        await masterDataApi.update(resource, selected.id, {
-          values,
-          version: selected.version,
-        });
-        setNotice(
-          `${definition.singularLabel} با ثبت Audit و نسخه جدید ویرایش شد.`,
-        );
-      } else {
-        await masterDataApi.create(resource, { values });
-        setNotice(
-          resource === 'meal-services'
+      const result = await masterDataApi.persistWithLogo({
+        resource,
+        values,
+        title:
+          `${definition.singularLabel} ${values.name ?? selected?.name ?? ''}`.trim(),
+        ...(formMode === 'edit' && selected ? { existing: selected } : {}),
+        ...(logoChange ? { logoChange } : {}),
+      });
+      setNotice(
+        result.warning ??
+          (resource === 'meal-services'
             ? 'وعده و سرویس ثبت شد.'
-            : `${definition.singularLabel} با کد داخلی خودکار ثبت شد.`,
-        );
-      }
+            : `${definition.singularLabel} با ثبت Audit و نسخه جدید ${formMode === 'edit' ? 'ویرایش' : 'ثبت'} شد.`),
+      );
       setFormMode(null);
       await Promise.all([load(), loadSummary()]);
     } catch (error) {
@@ -702,7 +734,7 @@ export function MasterDataAccommodationWorkspace() {
 
   function actions(record: MasterDataRecord) {
     return (
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap justify-end gap-2">
         <Button
           onClick={() => {
             if (record.resource === 'hotels') selectProfile(record);
@@ -911,7 +943,6 @@ export function MasterDataAccommodationWorkspace() {
             'وب‌سایت',
             'ساعت ورود / خروج',
             'آدرس',
-            'مختصات',
             'آخرین تغییر',
             'عملیات',
           ]
@@ -1031,10 +1062,6 @@ export function MasterDataAccommodationWorkspace() {
                     </td>
                     <td className="p-4 min-w-64">
                       {attribute(record, 'address')}
-                    </td>
-                    <td className="p-4" dir="ltr">
-                      {attribute(record, 'latitude')} /{' '}
-                      {attribute(record, 'longitude')}
                     </td>
                     <td className="p-4">
                       {new Date(record.updatedAt).toLocaleString('fa-IR')}
@@ -1166,7 +1193,7 @@ export function MasterDataAccommodationWorkspace() {
                 {attribute(selected, 'cityName')}،{' '}
                 {attribute(selected, 'regionName')}
               </p>
-              <div className="mt-3 flex flex-wrap gap-2">
+              <div className="mt-3 flex flex-wrap justify-end gap-2">
                 <StatusBadge record={selected} saleable />
                 <Badge>{attribute(selected, 'chainName', 'مستقل')}</Badge>
               </div>
@@ -1227,10 +1254,6 @@ export function MasterDataAccommodationWorkspace() {
               <Detail
                 label="شهر / منطقه"
                 value={`${attribute(selected, 'cityName')} · ${attribute(selected, 'regionName')}`}
-              />
-              <Detail
-                label="مختصات"
-                value={`${attribute(selected, 'latitude')}, ${attribute(selected, 'longitude')}`}
               />
               <Detail label="آدرس" value={attribute(selected, 'address')} />
             </dl>
@@ -1376,9 +1399,7 @@ export function MasterDataAccommodationWorkspace() {
       />
     ) : tab === 'import' ? (
       <div id="accommodation-import-panel">
-        <HotelImportPanel
-          onImported={() => void Promise.all([load(), loadSummary()])}
-        />
+        <HotelImportPanel onImported={handleHotelImportCompleted} />
       </div>
     ) : tab === 'combined' && records.length ? (
       combined()
@@ -1403,17 +1424,25 @@ export function MasterDataAccommodationWorkspace() {
     <div className="space-y-5">
       <PageHeader
         actions={
-          <Link
-            className={buttonVariants({ variant: 'outline' })}
-            href="/master-data"
-          >
-            <ArrowRight className="size-4" /> همه بخش‌ها
-          </Link>
+          <>
+            <Link
+              className={`${buttonVariants({ variant: 'primary' })} ms-auto`}
+              href="/master-data/accommodation/hotel-rates"
+            >
+              <TableProperties className="size-4" /> قیمت‌گذاری هتل‌ها
+            </Link>
+            <Link
+              className={buttonVariants({ variant: 'outline' })}
+              href="/master-data"
+            >
+              <ArrowRight className="size-4" /> همه بخش‌ها
+            </Link>
+          </>
         }
         description={current.description}
         title={current.title}
       />
-      <div className="flex flex-wrap gap-2">
+      <div className="flex w-full flex-wrap justify-end gap-2">
         <Button
           disabled={tab === 'import'}
           loading={exporting}
@@ -1443,21 +1472,23 @@ export function MasterDataAccommodationWorkspace() {
           aria-label="زیرمجموعه‌های اقامت و هتل"
           className="flex min-w-max gap-1"
         >
-          {tabs.map((item) => {
-            const Icon = item.icon;
-            return (
-              <button
-                aria-current={tab === item.id ? 'page' : undefined}
-                className="flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring aria-[current=page]:bg-background aria-[current=page]:text-primary aria-[current=page]:shadow-sm"
-                key={item.id}
-                onClick={() => changeTab(item.id)}
-                type="button"
-              >
-                <Icon className="size-4" />
-                {item.label}
-              </button>
-            );
-          })}
+          {tabs
+            .filter((item) => item.id !== 'meals' && item.id !== 'facilities')
+            .map((item) => {
+              const Icon = item.icon;
+              return (
+                <button
+                  aria-current={tab === item.id ? 'page' : undefined}
+                  className="flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring aria-[current=page]:bg-background aria-[current=page]:text-primary aria-[current=page]:shadow-sm"
+                  key={item.id}
+                  onClick={() => changeTab(item.id)}
+                  type="button"
+                >
+                  <Icon className="size-4" />
+                  {item.label}
+                </button>
+              );
+            })}
         </nav>
       </Card>
       {kpis.length ? (
@@ -1512,7 +1543,7 @@ export function MasterDataAccommodationWorkspace() {
               setSearch('');
               resetColumnFilters();
               resetDateRange();
-              setStatus('all');
+              setStatus('active');
               setCountryFilter('all');
               setCityFilter('all');
               setStarFilter('all');

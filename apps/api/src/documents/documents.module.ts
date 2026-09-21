@@ -1,8 +1,11 @@
 import { Module } from '@nestjs/common';
+import { HrDirectoryModule } from '../hr/hr-directory.module';
 
 import { AuthGuard } from '../iam/auth.guard';
 import { IamModule } from '../iam/iam.module';
 import { PermissionGuard } from '../iam/permission.guard';
+import { NotificationsModule } from '../notifications/notifications.module';
+import { SettingsModule } from '../settings/settings.module';
 import { WindowsDefenderAntivirus } from './documents.antivirus';
 import { DocumentsController } from './documents.controller';
 import { DocumentsRepository } from './documents.repository';
@@ -11,7 +14,7 @@ import { DocumentsService } from './documents.service';
 import { LocalDocumentStorage } from './documents.storage';
 
 @Module({
-  imports: [IamModule],
+  imports: [IamModule, NotificationsModule, HrDirectoryModule, SettingsModule],
   controllers: [DocumentsController],
   providers: [
     AuthGuard,
@@ -22,6 +25,6 @@ import { LocalDocumentStorage } from './documents.storage';
     LocalDocumentStorage,
     WindowsDefenderAntivirus,
   ],
-  exports: [DocumentsService],
+  exports: [DocumentsService, LocalDocumentStorage],
 })
 export class DocumentsModule {}

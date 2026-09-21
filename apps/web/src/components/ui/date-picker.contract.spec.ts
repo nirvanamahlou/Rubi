@@ -21,13 +21,39 @@ function productionTsx(directory: string): string {
 }
 
 describe('shared date picker contract', () => {
-  it('uses the blue theme and exposes the calendar switch above the grid', () => {
+  it('uses the blue theme and exposes grid month and year selection', () => {
+    expect(pickerSource).toContain('calendarSystem?: CalendarSystem');
+    expect(pickerSource).toContain('onCalendarSystemChange?:');
+    expect(pickerSource).toContain(
+      'controlledCalendarSystem ?? internalCalendarSystem',
+    );
     expect(pickerSource).toContain("['persian', 'gregorian']");
     expect(pickerSource).toContain("'شمسی'");
     expect(pickerSource).toContain("'میلادی'");
+    expect(pickerSource).toContain('شبکه انتخاب ماه');
+    expect(pickerSource).toContain('شبکه انتخاب سال');
+    expect(pickerSource).toContain(
+      "type CalendarView = 'days' | 'months' | 'years'",
+    );
+    expect(pickerSource).not.toContain('<select');
+    expect(pickerSource).toContain(
+      "system === 'gregorian' ? 'en-US' : 'fa-IR'",
+    );
     expect(pickerSource).toContain('bg-primary');
+    expect(pickerSource).toContain('createPortal');
+    expect(pickerSource).toContain('data-placement');
     expect(pickerSource.indexOf('نوع تقویم')).toBeLessThan(
-      pickerSource.indexOf('calendarMonthLabel(anchor'),
+      pickerSource.search(/calendarMonthLabel\(\s*anchor/),
+    );
+  });
+
+  it('positions the popup against the viewport instead of an RTL page edge', () => {
+    expect(pickerSource).toContain('resolveCalendarPopoverPosition');
+    expect(pickerSource).toContain('getBoundingClientRect()');
+    expect(pickerSource).toContain("window.addEventListener('scroll'");
+    expect(pickerSource).toContain('className="fixed z-[70]');
+    expect(pickerSource).not.toContain(
+      'absolute start-0 top-[calc(100%+0.5rem)]',
     );
     expect(pickerSource).toContain("variant?: 'default' | 'rubi'");
     expect(pickerSource).toContain("variant === 'rubi'");

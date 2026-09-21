@@ -119,7 +119,7 @@ export function MasterDataStatePanel({
             فعال
           </Badge>
         </div>
-        <div className="flex gap-2">
+        <div className="flex justify-end gap-2">
           <Button onClick={onView} size="sm" variant="outline">
             <Eye aria-hidden="true" className="size-4" />
             مشاهده

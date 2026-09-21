@@ -30,11 +30,11 @@ PC-B — 2026-08-31 — READY_FOR_REVIEW
 
 Prisma format/validate/generate and database package rebuild succeeded. All 25 migrations ran on an empty PostgreSQL 18 database. The inverse SQL was tested **only** in the disposable test database and restores the original schema without deleting country rows. For application rollback retain the additive column; do not run inverse SQL on user data without explicit approval and a verified backup of order values.
 
-The migration was deployed to the existing local `rubi` database only after a fresh verified custom-format backup. Backup dumps and runtime logs stay outside Git in the user's private temporary directory. No reset, general seed or volume deletion was performed.
+The migration was deployed to the existing local `nora` database only after a fresh verified custom-format backup. Backup dumps and runtime logs stay outside Git in the user's private temporary directory. No reset, general seed or volume deletion was performed.
 
 ## Realistic local examples
 
-The opt-in tool now accepts `--preview-realistic` and `--apply-realistic` in addition to the unchanged v1 commands. Apply additionally requires `RUBI_ALLOW_LOCAL_MASTER_DEMO=1`; target must remain the named local development/test database. Build the API and database packages first.
+The opt-in tool now accepts `--preview-realistic` and `--apply-realistic` in addition to the unchanged v1 commands. Apply additionally requires `NORA_ALLOW_LOCAL_MASTER_DEMO=1`; target must remain the named local development/test database. Build the API and database packages first.
 
 - Same 78 fixture IDs in 40 visible catalogs. Public labels include Türkiye/Istanbul/Antalya, Euro, BB/ALL, common aircraft models and natural service/sales-reference names. Business, hotel, bank, insurer and operator examples remain **fictional** and are not operational providers. Demonstration airport keeps its non-production test identifiers and explicit label.
 - No real person's name, phone, account, card, rate, document, integration or credential is introduced. Existing synthetic contacts remain encrypted and masked; audit does not expose contact values.

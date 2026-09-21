@@ -1,4 +1,4 @@
-import type { MasterDataRecord } from '@rubi/contracts';
+import type { MasterDataRecord } from '@nora/contracts';
 import { describe, expect, it } from 'vitest';
 import {
   parseMasterDataListQuery,
@@ -36,6 +36,7 @@ describe('meal/service form state and payload', () => {
       englishName: 'Bed & Breakfast',
       category: 'MEAL_PLAN',
       includedMeals: '["صبحانه"]',
+      displayOrder: '0',
       status: 'under_review',
     });
   });
