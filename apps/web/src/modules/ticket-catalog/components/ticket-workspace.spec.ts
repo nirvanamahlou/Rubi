@@ -78,6 +78,11 @@ describe('ticket workspace entry points', () => {
     expect(source).toContain('backfillStarted.current');
     expect(source).toContain('repeatDefinition(');
     expect(source).toContain('setRepeat(');
+    expect(source).toContain('قیمت فروش تکی هر صندلی');
+    expect(source).toContain('updateStandaloneSalePrice(');
+    expect(source).toContain(
+      'className="block whitespace-nowrap text-right tabular-nums"',
+    );
   });
 
   it('publishes a multi-segment flight as one complete contract offer', () => {
