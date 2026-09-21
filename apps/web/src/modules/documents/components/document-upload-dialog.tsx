@@ -271,6 +271,7 @@ export function DocumentUploadDialog({
                   onChange={(value) => update('validUntil', value)}
                   required={Boolean(selectedType?.requiresExpiry)}
                   value={values.validUntil}
+                  variant="rubi"
                 />
               </FormField>
               <FormField id="version-note" label="یادداشت نسخه">
