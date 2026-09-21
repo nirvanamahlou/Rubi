@@ -209,7 +209,7 @@ export function TicketWorkspace() {
             className="min-h-20 rounded-xl px-4 py-3 font-bold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
             value="tours"
           >
-            تعریف تور و نوبت برگزاری
+            تعریف تور و خدمات
           </TabsTrigger>
         </TabsList>
         <TabsContent value="tours">
