@@ -80,6 +80,9 @@ describe('ticket workspace entry points', () => {
     expect(source).toContain('setRepeat(');
     expect(source).toContain('قیمت فروش تکی هر صندلی');
     expect(source).toContain('updateStandaloneSalePrice(');
+    expect(source).toContain('listActiveCurrencyReferences()');
+    expect(source).toContain('<SelectItem');
+    expect(source).not.toContain('maxLength={3}');
     expect(source).toContain(
       'className="block whitespace-nowrap text-right tabular-nums"',
     );

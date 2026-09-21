@@ -10,6 +10,12 @@
 - شاخه مستقل `codex/pc-a-tour-departure-ticket-range-0921` از `origin/develop@61151717`. محدوده: Ticket Catalog Web API adapter، Tour workspace، تست‌های متمرکز و ثبت وضعیت؛ بدون Backend/Schema/Migration/Permission/Dependency/Lockfile یا داده عملیاتی.
 - نتیجه: هر دو مسیر رفت و برگشت با بازهٔ مشترک و inclusive دریافت می‌شوند و تاریخ حرکت به روز محلی تهران دوباره کنترل می‌شود؛ بازهٔ معکوس پیام معتبر می‌دهد. ۲ تست متمرکز، lint، typecheck و build تولیدی Web با ۵۰ route موفق‌اند؛ Backend و localhost:3100 تغییر نکرده‌اند.
 
+## 2026-09-21 — TICKET-SALE-CURRENCY-SELECT-0921 — PC-A — READY_FOR_REVIEW
+
+- درخواست مالک: ارز قیمت فروش تکی در مدیریت بلیت تایپی نباشد و فقط از dropdown ارزهای فعال اطلاعات پایه انتخاب شود.
+- شاخه مستقل `codex/pc-a-ticket-sale-currency-select-0921` از `origin/develop@7834e3ca`. محدوده: Ticket Catalog Web و adapter/test ارزهای همان ماژول به‌علاوه ثبت وضعیت؛ بدون API/Schema/Migration/Permission/Dependency/Lockfile یا داده عملیاتی.
+- نتیجه: dropdown همهٔ ارزهای فعال اطلاعات پایه را صفحه‌بندی‌شده دریافت می‌کند؛ ارز نامعتبر یا خارج از فهرست قابل ثبت نیست و نبود فهرست به‌صورت fail-closed اعلام می‌شود. ۱۵ تست متمرکز، lint، typecheck و build تولیدی Web با ۵۰ route موفق‌اند؛ Backend و localhost:3100 تغییر نکرده‌اند.
+
 ## 2026-09-21 — PROCUREMENT-DRAFT-FORM-HEADER-CLEANUP-0921 — PC-B — READY_FOR_REVIEW
 
 - درخواست مالک: نشان «ثبت پیش‌نویس» از بالای فرم درخواست خرید حذف شود؛ دکمهٔ عملیاتی ذخیره در پایین فرم حفظ می‌شود.
