@@ -9,6 +9,14 @@
 - درخواست مالک: نشان «ثبت پیش‌نویس» از بالای فرم درخواست خرید حذف شود؛ دکمهٔ عملیاتی ذخیره در پایین فرم حفظ می‌شود.
 - محدوده: فقط هدر و تست متمرکز فرم خرید، همراه ثبت وضعیت همین کار. API، Schema/Migration، Permission، داده و Dependency/Lockfile تغییر نمی‌کنند.
 
+## TICKET-AUTO-ACTIVE-0921 — PC-A — READY_FOR_REVIEW
+
+- درخواست مالک محصول در 2026-09-21: بلیط پس از تعریف بلافاصله برای فروش فعال باشد، تغییر وضعیت از کاربر دلیل نخواهد و تکمیل قیمت خرید توسط مالی مانع فعال‌بودن بلیط نشود.
+- شاخهٔ مستقل `codex/pc-a-ticket-auto-active-0921` از `origin/develop@df5b618e`؛ `COMPUTER_ID=PC-A`.
+- محدودهٔ رزرو: مدل مرورگری و دامنهٔ همسان Ticket Catalog، رابط مدیریت بلیط، تست‌های هدفمند و اسناد همین واحد. بدون Migration، Schema، Dependency/Lockfile، دادهٔ عملیاتی یا تغییر مستقیم مالی.
+- نتیجه: بلیط تازه بلافاصله فعال می‌شود و پیش‌نویس‌های ذخیره‌شدهٔ قبلی نیز هنگام بارگذاری یک‌بار با سابقهٔ سیستمی فعال می‌شوند. فیلد دلیل از پنجرهٔ توقف/فعال‌سازی حذف شد و Audit یک دلیل ثابت سیستمی ثبت می‌کند. ارز پیشنهادی خرید اختیاری است و نبود آن فعال‌سازی را مسدود نمی‌کند؛ درخواست خرید بدون مبلغ و تکمیل قیمت در مالی بدون تغییر باقی مانده است.
+- اعتبارسنجی: ۶۸ تست هدفمند Web و ۴۶ تست دامنهٔ API، lint و typecheck هر دو بخش و build تولیدی Web (۵۰ مسیر) و API موفق‌اند. قفل محدود این واحد با Commit آزاد می‌شود.
+
 ## SALES-TICKET-CLARITY-0921 — PC-A — READY_FOR_REVIEW
 
 - COMPUTER_ID=PC-A; base origin/develop@5f66ef97; branch codex/pc-a-finance-sales-clarity-0921. Scope: Sales ticket card, its tests and this task's status entries only. No API, migration or dependency changes.
