@@ -15,6 +15,7 @@ export function TicketOfferPicker({
   originLabel,
   destinationLabel,
   requiredSeats,
+  requireStandaloneFare = false,
 }: {
   query: TicketOfferSearchV1;
   selectedId: string;
@@ -22,6 +23,7 @@ export function TicketOfferPicker({
   originLabel?: string;
   destinationLabel?: string;
   requiredSeats: number;
+  requireStandaloneFare?: boolean;
 }) {
   const [offers, setOffers] = useState<TicketOfferV1[]>([]);
   const [pagination, setPagination] = useState({ filters: '', page: 1 });
@@ -101,6 +103,7 @@ export function TicketOfferPicker({
             offer={offer}
             selected={selectedId === offer.id}
             requiredSeats={requiredSeats}
+            requireStandaloneFare={requireStandaloneFare}
             onSelect={onSelect}
             {...(originLabel ? { originLabel } : {})}
             {...(destinationLabel ? { destinationLabel } : {})}

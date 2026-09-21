@@ -254,6 +254,10 @@ function TicketCatalogWorkspace() {
     readonly TicketOfferV1[]
   >([]);
   const [publishedProblem, setPublishedProblem] = useState('');
+  const [priceDrafts, setPriceDrafts] = useState<
+    Record<string, { amount: string; currencyCode: string }>
+  >({});
+  const [priceSaving, setPriceSaving] = useState<string>();
   const [capacityHold, setCapacityHold] = useState<{
     offer: TicketOfferV1;
     quantity: number;
@@ -264,10 +268,21 @@ function TicketCatalogWorkspace() {
   const [catalogNow, setCatalogNow] = useState(0);
 
   const refreshPublishedOffers = async () => {
-    setCatalogNow(Date.now());
+    setCatalogNow(new Date().getTime());
     try {
       const result = await toursApi.managedOffers();
       setPublishedOffers(result.data);
+      setPriceDrafts(
+        Object.fromEntries(
+          result.data.map((offer) => [
+            offer.id,
+            {
+              amount: offer.standaloneSalePrice?.amount ?? '',
+              currencyCode: offer.standaloneSalePrice?.currencyCode ?? 'IRR',
+            },
+          ]),
+        ),
+      );
       setPublishedProblem('');
     } catch (error) {
       setPublishedProblem(
@@ -275,6 +290,32 @@ function TicketCatalogWorkspace() {
           ? error.message
           : 'دریافت بلیط‌های قابل فروش ناموفق بود.',
       );
+    }
+  };
+  const saveStandalonePrice = async (offer: TicketOfferV1) => {
+    const draft = priceDrafts[offer.id];
+    try {
+      if (!draft?.amount || !/^[A-Z]{3}$/.test(draft.currencyCode))
+        throw new Error('مبلغ و کد سه‌حرفی ارز را کامل کنید.');
+      setPriceSaving(offer.id);
+      await toursApi.updateStandaloneSalePrice(
+        offer.id,
+        {
+          expectedRevision: offer.standaloneSalePrice?.revision ?? 0,
+          amount: draft.amount,
+          currencyCode: draft.currencyCode,
+        },
+        crypto.randomUUID(),
+      );
+      await refreshPublishedOffers();
+      setPublishedProblem('');
+      setNotice('قیمت فروش تکی این مسیر ثبت شد.');
+    } catch (error) {
+      setPublishedProblem(
+        error instanceof Error ? error.message : 'ثبت قیمت تکی ناموفق بود.',
+      );
+    } finally {
+      setPriceSaving(undefined);
     }
   };
   const submitCapacityHold = async () => {
@@ -695,8 +736,11 @@ function TicketCatalogWorkspace() {
                 <tr>
                   <th className="px-4 py-3 text-start">ایرلاین / پرواز</th>
                   <th className="px-4 py-3 text-start">مسیر</th>
-                  <th className="px-4 py-3 text-start">حرکت</th>
+                  <th className="px-4 py-3 text-right">حرکت</th>
                   <th className="px-4 py-3 text-start">ظرفیت قابل فروش</th>
+                  <th className="min-w-64 px-4 py-3 text-start">
+                    قیمت فروش تکی هر صندلی
+                  </th>
                   <th className="px-4 py-3 text-start">وضعیت</th>
                   <th className="px-4 py-3 text-start">اقدام</th>
                 </tr>
@@ -716,12 +760,70 @@ function TicketCatalogWorkspace() {
                         offer.destinationId,
                       )}
                     </td>
-                    <td className="px-4 py-3" dir="ltr">
-                      {displayTime(offer.departureAt, 'Asia/Tehran')}
+                    <td className="px-4 py-3 text-right">
+                      <time
+                        dateTime={offer.departureAt}
+                        dir="rtl"
+                        lang="fa"
+                        className="block whitespace-nowrap text-right tabular-nums"
+                      >
+                        {displayTime(offer.departureAt, 'Asia/Tehran')}
+                      </time>
                     </td>
                     <td className="px-4 py-3">
                       {offer.remainingCapacity.toLocaleString('fa-IR')} از{' '}
                       {offer.totalCapacity.toLocaleString('fa-IR')}
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex min-w-60 items-end gap-2">
+                        <FormField label="مبلغ">
+                          <Input
+                            dir="ltr"
+                            inputMode="decimal"
+                            className="h-9 min-w-32 text-left tabular-nums"
+                            value={priceDrafts[offer.id]?.amount ?? ''}
+                            onChange={(event) =>
+                              setPriceDrafts((current) => ({
+                                ...current,
+                                [offer.id]: {
+                                  amount: event.target.value,
+                                  currencyCode:
+                                    current[offer.id]?.currencyCode ?? 'IRR',
+                                },
+                              }))
+                            }
+                          />
+                        </FormField>
+                        <FormField label="ارز">
+                          <Input
+                            dir="ltr"
+                            maxLength={3}
+                            className="h-9 w-20 text-left uppercase"
+                            value={priceDrafts[offer.id]?.currencyCode ?? 'IRR'}
+                            onChange={(event) =>
+                              setPriceDrafts((current) => ({
+                                ...current,
+                                [offer.id]: {
+                                  amount: current[offer.id]?.amount ?? '',
+                                  currencyCode:
+                                    event.target.value.toUpperCase(),
+                                },
+                              }))
+                            }
+                          />
+                        </FormField>
+                        <Button
+                          size="sm"
+                          type="button"
+                          disabled={
+                            priceSaving === offer.id ||
+                            !priceDrafts[offer.id]?.amount
+                          }
+                          onClick={() => void saveStandalonePrice(offer)}
+                        >
+                          ثبت
+                        </Button>
+                      </div>
                     </td>
                     <td className="px-4 py-3">
                       {offer.status === 'ACTIVE' ? 'فعال' : offer.status}
