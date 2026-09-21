@@ -3526,6 +3526,12 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 - شاخه `codex/pc-a-ticket-standalone-price-v2-0921` از `origin/develop@bd93b634`. محدوده رزرو: قرارداد عمومی افزایشی Ticket Catalog، migration افزایشی قیمت نسخه‌دار، سرویس/کنترلر Ticket Catalog، جدول مدیریت بلیط، انتخاب Sales و تست‌های هدفمند. `COMPUTER_ID=PC-A` و Migration Owner همین واحد است.
 - تغییر مخرب، Seed، داده عملیاتی، Dependency/Lockfile و تغییر مستقیم develop/localhost در محدوده نیست. قیمت تور از مدیریت قیمت فعلی باقی می‌ماند؛ قیمت تکی هر صندلی فقط برای قرارداد بدون هتل/تور پیش‌فرض می‌شود.
 - اعتبارسنجی: Prisma validate/generate؛ build قراردادها، API و Web؛ lint و typecheck در API/Web/Database؛ ۷۸ تست Database (۱۴ مورد integration بدون DB رد شدند)، ۶ تست API و ۳۱ تست Web موفق شدند.
+## DASHBOARD-TREND-AXIS-LABEL-OVERLAP-0921 — PC-C — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-21: برچسب‌های هم‌پوشان انتهای محور X در نمودارهای روند Dashboard، مانند «شهریور ۲۹» و «شهریور ۳۰»، اصلاح شوند.
+- شاخه `codex/pc-c-dashboard-trend-axis-label-overlap-0921` از شاخهٔ یکپارچه‌شدهٔ Dashboard و `origin/develop@127e4c26`؛ محدودهٔ رزروشده فقط `dashboard-workspace.tsx`، helper/test محور روند و مدخل‌های وضعیت همین Task است. API، Schema/Migration، قرارداد، دادهٔ عملیاتی، Permission، Dependency/Lockfile و runtime خارج از Scope هستند.
+- نتیجه: هنگام نزدیک‌بودن آخرین label دوره‌ای به label آخر، مورد دوره‌ای با label نهایی جایگزین می‌شود تا آخرین تاریخ بدون برخورد باقی بماند. ۳ تست تازهٔ helper و ۱۸ تست موجود Dashboard (با یک skip موجود) پاس شدند؛ `localhost:3000/login` و سلامت API ۴۰۰۰ نیز ۲۰۰ هستند. Typecheck سراسری Web فقط به خطاهای خارج از Scope در Ticket Catalog/Sales (`standaloneSalePrice`/قرارداد منتشرنشده) متوقف است. API، Schema/Migration، قرارداد، دادهٔ عملیاتی، Permission و Dependency/Lockfile تغییر نکردند؛ قفل موقت Central Docs آزاد شد.
+
 ## DASHBOARD-PERCENTAGE-SPARKLINES-0920 — PC-C — READY_FOR_REVIEW
 
 - Scope: add time-bucket trend series to percentage KPI metrics in the Reporting projection; preserve percentage aggregation semantics and existing comparison behavior. CI repair is also reserved for the public hotel-rate projection/test and Dashboard model test: `apps/api/src/reservations/hotel-purchase-rates.public.{ts,spec.ts}` and `apps/web/src/modules/dashboard/model/dashboard.spec.ts`.

@@ -109,6 +109,7 @@ import {
   type DashboardVisualDefinition,
   type DashboardVisualKind,
 } from '../model/registry';
+import { trendAxisLabelIndexes } from '../model/trend-axis';
 
 const rangeOptions: readonly [DashboardRange, string][] = [
   ['today', 'امروز'],
@@ -2391,14 +2392,7 @@ function DashboardChart({
         value,
       })),
     }));
-    const visibleLabelStep =
-      labels.length > 12 ? Math.ceil(labels.length / 8) : 1;
-    const axisLabelIndexes = labels
-      .map((_, index) => index)
-      .filter(
-        (index) =>
-          index % visibleLabelStep === 0 || index === labels.length - 1,
-      );
+    const axisLabelIndexes = trendAxisLabelIndexes(labels.length);
     const temporalGrain = trendTemporalGrain(range, labels);
     return (
       <figure
