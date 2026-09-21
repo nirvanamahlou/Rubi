@@ -294,11 +294,6 @@
   font: inherit;
   font-size: 13px;
 }
-.scopeHint {
-  margin: -10px 0 18px;
-  color: var(--muted-foreground);
-  font-size: 12px;
-}
 .statusBadge {
   display: inline-flex;
   min-height: 38px;

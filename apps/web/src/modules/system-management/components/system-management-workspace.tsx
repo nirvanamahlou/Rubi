@@ -307,7 +307,6 @@ export function SystemManagementWorkspace() {
   const [query, setQuery] = useState('');
   const [scope, setScope] = useState<SettingsScope>(globalScope);
   const [legalEntities, setLegalEntities] = useState<LegalEntitySummary[]>([]);
-  const [scopeLoadError, setScopeLoadError] = useState<string | null>(null);
   const [moduleTab, setModuleTab] = useState<'history' | 'settings'>(
     'settings',
   );
@@ -341,12 +340,8 @@ export function SystemManagementWorkspace() {
       setLegalEntities(
         legalEntitiesResult.value.data.filter((entity) => entity.isActive),
       );
-      setScopeLoadError(null);
     } else {
       setLegalEntities([]);
-      setScopeLoadError(
-        'دامنه‌های حقوقی از API مالک در دسترس نیست؛ فقط دامنه کل مجموعه قابل استفاده است.',
-      );
       setScope(globalScope);
     }
   }, []);
@@ -831,12 +826,6 @@ export function SystemManagementWorkspace() {
             </span>
           </div>
         </div>
-        {scopeLoadError ? (
-          <p className={styles.scopeHint} role="status">
-            {scopeLoadError}
-          </p>
-        ) : null}
-
         {page === 'overview' || page === 'modules' ? renderHub() : null}
         {page === 'module' ? renderModule() : null}
         {page === 'history' ? renderHistory() : null}

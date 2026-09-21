@@ -99,6 +99,9 @@ describe('system management reference implementation', () => {
     expect(workspace).toContain("scope: 'LEGAL_ENTITY'");
     expect(workspace).toContain('scopeId: entity.id');
     expect(workspace).toContain('scopeId: scope.scopeId');
+    expect(workspace).not.toContain(
+      'دامنه‌های حقوقی از API مالک در دسترس نیست',
+    );
   });
 
   it('inherits the shared application theme and remains responsive', () => {
