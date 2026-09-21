@@ -28,6 +28,7 @@ import {
   Skeleton,
 } from '@/components/ui/surfaces';
 import { packagePricingApi } from '../api/client';
+import { TourWorkspace } from '@/modules/ticket-catalog/components/tour-workspace';
 import { previewHotelRoomSale } from './tour-price-math';
 import {
   calculateTourRoom,
@@ -232,21 +233,38 @@ export function TourPricingWorkspace() {
   const stayNights = batch
     ? (Date.parse(batch.checkOut) - Date.parse(batch.checkIn)) / 86400000
     : 0;
+  const activeRoomColumns = useMemo(() => {
+    const columns = new Map<string, string>();
+    for (const row of batch?.rows ?? []) {
+      if (row.roomRates.length) {
+        for (const room of row.roomRates)
+          if (Number(room.factor) > 0)
+            columns.set(room.roomTypeId, room.roomTypeName);
+      } else {
+        for (const [code, title] of roomColumns)
+          if (row.factors[code]) columns.set(code, title);
+      }
+    }
+    return [...columns.entries()];
+  }, [batch]);
   function roomPreview(
     row: PackageTourHotelPurchaseBatchV1['rows'][number],
     roomCode: string,
   ) {
     if (!batch || !grid) return null;
-    const passengers = tourRoomOccupancy(
-      roomCode,
-      Number(familyAdults),
-      Number(familyChildren),
-    );
+    const roomRate = row.roomRates.find((room) => room.roomTypeId === roomCode);
+    const passengers = roomRate
+      ? { adults: roomRate.maxAdults, children: roomRate.maxChildren }
+      : tourRoomOccupancy(
+          roomCode,
+          Number(familyAdults),
+          Number(familyChildren),
+        );
     if (!passengers) return null;
     try {
       return calculateTourRoom({
         basePerNight: row.basePerNight,
-        factor: row.factors[roomCode] ?? '',
+        factor: roomRate?.factor ?? row.factors[roomCode] ?? '',
         nights: stayNights,
         hotelCurrency: row.currencyCode ?? batch.currencyCode,
         adjustment: adjustments[row.id] ?? defaultAdjustment(),
@@ -430,13 +448,15 @@ export function TourPricingWorkspace() {
         ))}
       </div>
 
+      <TourWorkspace mode="departures" />
+
       <Card className="grid gap-4 p-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="text-lg font-black">۱ · انتخاب تور و نوبت</h2>
             <p className="text-sm text-muted-foreground">
-              ابتدا تور را انتخاب کنید؛ سپس فقط نوبت‌های همان تور نمایش داده
-              می‌شوند.
+              نوبت را در بخش بالا بسازید یا یکی از نوبت‌های موجود را انتخاب
+              کنید؛ هتل‌های متصل به همان بازه پایین نمایش داده می‌شوند.
             </p>
           </div>
           <Button
@@ -457,7 +477,7 @@ export function TourPricingWorkspace() {
         {!loadingTours && !error && tours.length === 0 ? (
           <EmptyState
             title="نوبت توری برای قیمت‌گذاری پیدا نشد"
-            description="ابتدا تور، هتل‌ها و نوبت پرواز را در مدیریت بلیت تعریف کنید."
+            description="ابتدا تعریف تور و خدمات را در مدیریت بلیت ثبت کنید، سپس نوبت و بلیت‌های آن را در همین صفحه بسازید."
             icon={Plane}
           />
         ) : null}
@@ -572,7 +592,7 @@ export function TourPricingWorkspace() {
                       هتل / کارگزار
                     </th>
                     <th className="p-3 text-right">خرید پایه / شب</th>
-                    {roomColumns.map(([key, title]) => (
+                    {activeRoomColumns.map(([key, title]) => (
                       <th className="p-3 text-right" key={key}>
                         {title}
                         <span className="block font-normal">
@@ -599,10 +619,13 @@ export function TourPricingWorkspace() {
                           {row.basePerNight}{' '}
                           {row.currencyCode ?? batch.currencyCode}
                         </td>
-                        {roomColumns.map(([key]) => {
+                        {activeRoomColumns.map(([key]) => {
+                          const roomRate = row.roomRates.find(
+                            (room) => room.roomTypeId === key,
+                          );
                           const preview = previewHotelRoomSale(
                             row.basePerNight,
-                            row.factors[key] ?? '',
+                            roomRate?.factor ?? row.factors[key] ?? '',
                             stayNights,
                             row.currencyCode ?? batch.currencyCode,
                             adjustment,
@@ -610,7 +633,7 @@ export function TourPricingWorkspace() {
                           return (
                             <td className="min-w-32 p-3 tabular-nums" key={key}>
                               <span className="block text-xs text-muted-foreground">
-                                × {row.factors[key] ?? '—'}
+                                × {roomRate?.factor ?? row.factors[key] ?? '—'}
                               </span>
                               <span className="block text-xs text-muted-foreground">
                                 {preview?.purchase ?? '—'}
@@ -991,7 +1014,7 @@ export function TourPricingWorkspace() {
                   <thead className="bg-muted/80 text-xs">
                     <tr>
                       <th className="p-3 text-right">گزینهٔ هتل</th>
-                      {roomColumns.map(([code, title]) => (
+                      {activeRoomColumns.map(([code, title]) => (
                         <th key={code} className="p-3 text-right">
                           {title}
                         </th>
@@ -1004,7 +1027,7 @@ export function TourPricingWorkspace() {
                         <td className="p-3 font-bold">
                           {row.hotelName} · {row.brokerName}
                         </td>
-                        {roomColumns.map(([code]) => {
+                        {activeRoomColumns.map(([code]) => {
                           const price = publication.roomPrices.find(
                             (item) =>
                               item.hotelRateId === row.id &&

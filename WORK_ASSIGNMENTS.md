@@ -1,3 +1,63 @@
+## SALES-TICKET-CLARITY-0921 — PC-A — READY_FOR_REVIEW
+
+- COMPUTER_ID=PC-A; base origin/develop@5f66ef97; branch codex/pc-a-finance-sales-clarity-0921. Scope: Sales ticket card, its tests and this task's status entries only. No API, migration or dependency changes.
+- Owner authorized overlap reconciliation. Preserve current @nora contracts and capacity/fare guards; do not import the stale @rubi namespace rename. Old worktrees remain untouched. Finance will ship separately.
+- Validation: 7 focused tests, scoped ESLint, Web TypeScript and production build (50 pages) passed. Scoped reservation released. No merge or runtime change.
+
+## TOUR-DEFINITION-PRICING-HANDOFF-0921 — PC-A — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-21: فرم تعریف تور در مدیریت بلیت فشرده و محدود به مشخصات و خدمات ثابت باشد؛ ساخت نوبت، اتصال بلیت‌های رفت/برگشت و ورود به اتصال هتل‌های همان بازه از مدیریت قیمت پکیج انجام شود.
+- شاخه مستقل `codex/pc-a-tour-definition-compact-pricing-handoff-0921` از `origin/develop@bd93b634`؛ COMPUTER_ID=PC-A. محدوده: Web Ticket Catalog، Tour Pricing و پیش‌انتخاب نوبت در فرم نرخ خرید هتل، آزمون‌های هدفمند و اسناد همین واحد. بدون Schema/Migration/Dependency/Lockfile یا داده عملیاتی.
+- نتیجه: فرم تعریف تور فشرده و بدون قیمت/هتل/تاریخ است؛ فهرست تورها و خدمات ثابت را نشان می‌دهد. ساخت نوبت و انتخاب بلیط در مدیریت قیمت پکیج قرار گرفت و هر نوبت به فرم هتل با مقصد و تاریخ از پیش انتخاب‌شده متصل است. ۸ تست هدفمند، typecheck، lint و build تولیدی Web با ۵۰ route موفق‌اند.
+
+## FINANCE-INBOX-CLARITY-0921 — PC-A — READY_FOR_REVIEW
+
+- COMPUTER_ID=PC-A; base origin/develop@cba76029; branch codex/pc-a-finance-inbox-clarity-0921. Scope: finance-inbox-live-workspace presentation, focused tests and task status entries. No API, schema, dependency, permission or live-runtime changes.
+- Owner authorized overlap reconciliation: retain current develop purchase-cost/payment actions instead of importing their deletion from the old local worktree. The old worktree remains untouched. Sales redesign is a separate branch/PR.
+- Validation: 11 focused tests, scoped lint, Web TypeScript and production build (50 pages) passed. Scoped reservation released; no merge or runtime change.
+
+## TICKET-TIME-REPEAT-0920 — PC-A — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-20: فیلدهای زمان حرکت و رسیدنِ تعریف بلیت دوباره در فرم در دسترس باشند و هنگام تکرار هفتگی/ماهانه همراه بلیت کپی شوند. `COMPUTER_ID=PC-A`؛ شاخه `codex/pc-a-ticket-time-repeat-0920` از آخرین `origin/develop@7e52d309`.
+- محدودهٔ رزروشده: فقط `apps/web/src/modules/ticket-catalog/**` برای فرم، مدل تکرار و تست‌های همان ماژول، به‌علاوهٔ گزارش همین Work Item و مدخل‌های محدود وضعیت. هیچ Schema/Migration، قرارداد عمومی، API، Permission، Dependency/Lockfile، دادهٔ عملیاتی یا runtime محلی تغییر نمی‌کند.
+- سازگاری: تعریف‌های قدیمیِ بدون زمان همچنان معتبر و تکرارپذیر می‌مانند؛ زمان‌ها در صورت ثبت، UTC و zone موجود را نگه می‌دارند و تاریخ اولین بلیت مبنای تکرار است.
+- تحویل: فیلدهای زمان برای بلیت یک‌طرفه، برگشت و همهٔ قطعه‌های ترکیبی بازگشتند؛ انتخاب زمان حرکت `serviceDate` را همگام می‌کند و تکرار، timestampهای ذخیره‌شده را همراه تاریخ جابه‌جا می‌کند. ۱۰ فایل / ۱۰۰ تست Ticket Catalog، lint و typecheck Web موفق‌اند و build تولیدی در Worktree جدا خروجی `BUILD_ID` ساخته است. Schema/Migration/contract/API/runtime/3100 تغییر نکرده‌اند. وضعیت `READY_FOR_REVIEW`؛ رزرو محدود Central Docs با این Commit `RELEASED` می‌شود.
+
+## LOGIN-STATIC-BACKGROUND-0920 — PC-A — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-20: نوشته و طرح ابری `NOORA` از صفحهٔ ورود حذف شود و همان تصویر هواپیما/آسمان به‌صورت پس‌زمینهٔ ثابت باقی بماند. `COMPUTER_ID=PC-A`؛ شاخهٔ مستقل `codex/pc-a-login-brand-cleanup-0920` از `origin/develop@f139266d`.
+- محدودهٔ رزروشده: فقط `apps/web/src/app/login/login-background-story.tsx`، CSS و تست متمرکز همان پس‌زمینه و ثبت محدود وضعیت. فایل تصویری `login-airline-b2.png` بدون تغییر می‌ماند؛ API، احراز هویت، فرم ورود، Schema/Migration، Permission، Dependency/Lockfile، داده و runtime پورت 3100 تغییر نمی‌کنند.
+- بررسی مالکیت: کار قبلی `BRAND-NORA-001` با وضعیت `COMPLETE / VERIFIED` ثبت شده و قفل فعال دیگری برای فایل‌های هدف یافت نشد. رزرو محدود Central Docs این slice با `PC-A/LOGIN-STATIC-BACKGROUND-0920` است.
+- نتیجه: لایه‌های `NOORA`، ابر، باد و انیمیشن ورود حذف شدند و `login-airline-b2.png` بدون تغییر به‌صورت پس‌زمینهٔ ثابت با همان crop واکنش‌گرا و overlay قبلی باقی ماند. ۵ تست صفحه ورود، lint، typecheck و build تولیدی Web موفق‌اند؛ پورت 3100 تغییر نکرد. رزرو محدود Central Docs این slice `RELEASED` است.
+
+## HOTEL-RATE-ROOM-CAPACITY-0920 — PC-A — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-20: نرخ هر هتل باید برای نوع‌های اتاق واقعی آن ثبت شود؛ هر نوع اتاق ضریب و ظرفیت مستقل بزرگسال/کودک دارد، نبود ضریب یعنی اتاق قابل فروش نیست و قرارداد نباید از ظرفیت ثبت‌شده عبور کند. افزودن نوع اتاق از همین جریان فقط با Permissionهای اطلاعات پایه مجاز است.
+- Branch: `codex/pc-a-hotel-rate-room-capacity-0920` از `origin/develop@7e52d309`؛ محدوده شامل Reservations hotel-rate API/Web، Public Projection، کنترل ظرفیت Sales، Master Data public room reference، Prisma/Migration افزایشی، تست‌ها و اسناد همین Task است.
+- قفل‌ها: `Migration Owner = PC-A/HOTEL-RATE-ROOM-CAPACITY-0920`، Reservations/Sales additive shared-contract و Central Docs برای همین Task رزرو هستند. Dependency/Lockfile رزرو نمی‌شود. Query مستقیم جدول ماژول دیگر ممنوع و مراجع نوع اتاق فقط از Public Boundary اطلاعات پایه مصرف می‌شوند.
+- نتیجه: نرخ نسخه‌دار برای نوع اتاق واقعی، ضریب مثبت، ظرفیت مستقل بزرگسال/کودک، فیلتر نوع اتاق قابل‌فروش در قرارداد و کنترل fail-closed ظرفیت در Create/Update/Confirm تکمیل شد. Migration روی PostgreSQL 18.1 خالی، Prisma، lint/typecheck، ۱۰۴ تست هدفمند و Build API/Web پاس شدند. قفل‌ها تا Merge و Handoff رسمی فعال می‌مانند.
+
+## TICKET-CAPACITY-HOLD-0920 — PC-A — IN_PROGRESS
+
+- درخواست مالک در 2026-09-20: از فهرست مدیریت بلیت، کاربر بتواند برای تعداد مشخصی نفر «رزرو موقت ظرفیت» با تاریخ/ساعت انقضا ثبت کند. `COMPUTER_ID=PC-A`؛ شاخه `codex/pc-a-ticket-capacity-hold-0920` از `origin/develop@7e52d309`.
+- محدودهٔ رزروشده: Ticket Catalog API/Web/tests، مدل Prisma و یک Migration افزایشی برای hold موقت، API محلی همان ماژول و اسناد محدود Task/status. `Migration Owner` و رزرو محدود Central Docs برای این slice: `PC-A/TICKET-CAPACITY-HOLD-0920`. Dependency/Lockfile، قرارداد مشترک، Sales/Reservations، Permission و runtime محلی تغییر نمی‌کنند.
+- یکپارچگی: Hold به Ticket Published Offer و Branch/User واقعی FK دارد، تعداد مثبت و زمان UTC آینده می‌گیرد، با قفل ردیفی و idempotency از oversell جلوگیری می‌کند و فقط Holdهای ACTIVE و منقضی‌نشده از ظرفیت قابل فروش کم می‌شوند. انقضا، ظرفیت را بدون حذف history آزاد می‌کند.
+
+## FINANCE-DASHBOARD-REDESIGN-0919 — PC-A — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-19: کارتابل مالی از فهرست ساده به داشبورد مالی عملیاتی و قابل‌خواندن تبدیل شود؛ KPIهای واقعی، اولویت‌های پرداخت/دریافت، تفکیک واحدها، وضعیت حساب‌ها و اقدام سریع در همان صفحه نمایش داده شوند. `COMPUTER_ID=PC-A`؛ شاخه `codex/pc-a-finance-dashboard-redesign-0919` از `origin/develop@47762934`.
+- محدوده: فقط رابط و تست قرارداد صفحه کارتابل مالی و این مدخل؛ داده صرفاً از Finance Inbox و حساب‌های موجود خوانده می‌شود. API، قرارداد، Schema/Migration، داده مالی، Permission، Dependency/Lockfile تغییر نمی‌کنند.
+- نتیجه: کارتابل از فهرست ساده به «مرکز کنترل مالی» تبدیل شد: KPIهای مبتنی بر دادهٔ واقعی، تفکیک صف بر اساس واحد، اولویت‌های نزدیک، وضعیت حساب‌های فعال و فیلترهای اقدام سریع در کنار جست‌وجو و فیلترهای قبلی. تست قرارداد کارتابل، lint، typecheck و build Web موفق‌اند؛ پیش‌نمایش محلی روی پورت 3200 با API 4190 و CORS تأیید شده است.
+
+## FINANCE-OPERATIONAL-CARTABLE-0919 — PC-A — DONE/MERGED
+
+- درخواست مالک در 2026-09-19: کارتابل مالی عملیاتی با تأیید دریافت در حساب مقصد، پرداخت کارگزار از حساب مبدأ، مانده و تاریخ/شماره پیگیری، جست‌وجوی قرارداد و تأیید تحویل مدارک، و KPIهای فیلترپذیر تکمیل شود. شاخه `codex/pc-a-finance-operational-cartable-0919` از `origin/develop@a8c050bd`؛ `COMPUTER_ID=PC-A`.
+- رزرو: Finance/Sales public receipt contract، Finance API/Web، Sales public projection/confirmation، migration افزایشی و سازگار برای ثبت حساب مقصد دریافت، تست‌های هدفمند و این سند. `Migration Owner`، Finance/Sales shared-contract و Central Docs برای این slice: `PC-A/FINANCE-OPERATIONAL-CARTABLE-0919`. Dependency/Lockfile رزرو نمی‌شود.
+- مرز: Finance فقط public service Sales/Reservations را فراخوانی می‌کند؛ مبلغ Decimal/ارز و زمان UTC، مجوز، audit، optimistic/idempotency و FK واقعی اجباری‌اند. هیچ دادهٔ واقعی، پرداخت بیرونی، Grant، حذف/بازنویسی تاریخچه یا تغییر ماژول مالک دیگر انجام نمی‌شود.
+- نتیجه: تأیید دریافت فقط با حساب مقصد فعال، هم‌ارز و هم‌شعبه انجام و FK حساب روی پرداخت Sales ثبت می‌شود؛ UI انتخاب/تعریف حساب، KPI و فیلترها به جریان عملیاتی متصل‌اند. ۱۶ تست هدفمند، Prisma validate، lint/typecheck و build بخش‌های متاثر موفق و migration محلی اعمال شده است.
+- ادامه 2026-09-20: مجوز تحویل مدارک مشتری از پرداخت کارگزار/رزرواسیون جدا شد و سه مبنای «پس از دریافت تأییدشده»، «تسویه کامل» و «استثنای مدیر» با Audit، Optimistic Lock، Branch scope و جست‌وجوی جزئی شماره قرارداد پیاده شد. Migration/Finance contract/Central Docs همین Task تا Merge فعال‌اند؛ جزئیات در `docs/tasks/FINANCE-CUSTOMER-DOCUMENT-DELIVERY-0920.md`.
+- Handoff نهایی: PR #322 با Merge Commit `9c5362333f2a30cd81e0fe63faca16d7a3c0ad47` وارد `develop` شد؛ Migration Owner، Finance/Sales contract lock و Central Docs lock این Task برابر `RELEASED / STABLE` هستند.
+
 ## SYSTEM-MANAGEMENT-NAVIGATION-003 — PC-B — READY_FOR_REVIEW
 
 - درخواست مالک در 2026-09-19: زیر‌بخش‌های دسته‌های «مدیریت سیستم» باید با مسیرهای واقعی Rubi منطبق باشند؛ «فضای کار» نیز صریحاً «میزکار من» و «داشبورد» را داشته باشد. `COMPUTER_ID=PC-B`؛ ادامه روی شاخهٔ `codex/pc-b-system-management`.
@@ -3458,6 +3518,13 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 - build تولیدی Web نیز با ۴۶ route موفق شد؛ خروجی نمونهٔ PDF با Chrome/Poppler یک صفحه A4 دارد. تغییر عمومی API/Database و جابه‌جایی localhost انجام نشد.
 - پیگیری 2026-09-15: سایهٔ روشن شهر پشت نام/کد مبدأ و مقصد برای هر مسیر پویا اضافه شد؛ ۸ تست قالب، lint و نمونه واقعی PDF/PNG موفق‌اند.
 
+## RESERVATION-SERVICE-PURCHASE-PICKER-0919 — PC-A — READY_FOR_REVIEW
+
+- درخواست 2026-09-19: پنجره «خرید» رزرواسیون باید خدمات هتل و ترانسفر قرارداد را برای انتخاب نمایش دهد؛ کارگزار، مبلغ و ارز جداگانه ثبت شوند و ثبت همان نسخهٔ خرید را به صف پرداخت مالی بفرستد.
+- `COMPUTER_ID=PC-A`؛ شاخه `codex/pc-a-reservation-service-purchase-picker-0919` از `origin/develop@d6e1692e`. محدوده رزرو: فرم خرید خدمات رزواسیون، سازگاری API برای snapshot قدیمی دارای hotelSelection، تست‌های هدفمند و اسناد همین Task. Producer رزواسیون و consumer مالی از قرارداد عمومی موجود `ReservationServicePurchaseV1` استفاده می‌کنند؛ قرارداد API افزایشی نمی‌شود. بدون Migration، Dependency/Lockfile، دادهٔ عملیاتی یا تغییر مستقیم Procurement.
+
+- نتیجه: انتخاب‌گر خدمت فقط هتل/ترانسفر قرارداد را نشان می‌دهد. ثبت خرید همان endpoint نسخه‌دار موجود را با کارگزار، مبلغ و ارز صدا می‌زند و نسخهٔ تازه را در صف پرداخت مالی نگه می‌دارد. snapshot قدیمی که فقط hotelSelection دارد نیز سازگار است؛ برای افزودن خدمت جدید، مالک Sales باقی می‌ماند.
+
 ## SALES-TICKET-CATALOG-SYNC-0919 — PC-A — READY_FOR_REVIEW
 
 - درخواست مالک در 2026-09-19: بلیط‌های تعریف‌شده در «مدیریت بلیط» باید همان منبع انتخاب در «قرارداد جدید» باشند؛ پیشنهادهای قدیمی یا محلیِ نامرتبط در فرم قرارداد نمایش داده نشوند و ثبت بلیط جدید قابل انتخاب باشد.
@@ -3468,3 +3535,51 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 
 - درخواست مالک در 2026-09-19: متن Credential و اتصال Provider از توضیحات بخش ایرلاین حذف شود.
 - محدوده: فقط توضیح کاتالوگ ایرلاین در Web و تست مستقیم آن؛ بدون تغییر فرم، API، قرارداد، Schema/Migration، داده یا ماژول دیگر.
+
+## TICKET-EXPIRY-SALES-VISIBILITY-0920 — PC-A — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-20: بلیطی که زمان حرکتش گذشته است در مدیریت بلیط به‌طور خودکار غیرفعال شود و همهٔ پروازهای معتبر تعریف‌شده در مدیریت بلیط در فرم قرارداد جدید قابل انتخاب باشند.
+- `COMPUTER_ID=PC-A`؛ شاخهٔ مستقل `codex/pc-a-ticket-expiry-sales-visibility-0920` از `origin/develop@60d847bb`. محدودهٔ رزرو: سرویس عمومی Ticket Catalog و تست آن، تبدیل تعریف پرواز Web و تست ورودی مدیریت بلیط، حذف دادهٔ نمونهٔ محلیِ گمراه‌کننده و اسناد همین واحد. بدون Schema/Migration/Dependency/Lockfile، Seed، دادهٔ عملیاتی یا تغییر localhost.
+- انقضا با انتقال افزایشی `ACTIVE` به `PAUSED` هنگام خواندن منبع عمومی ثبت می‌شود و نسخه و Audit سیستمی آن حفظ خواهد شد. پرواز چندقطعه‌ای با اولین مبدأ، آخرین مقصد و بازهٔ کامل سفر در همان منبع منتشر می‌شود؛ قطار و اتوبوس به قرارداد نوع پرواز تبدیل نمی‌شوند.
+- تکمیل شد: منبع مدیریت/فروش هنگام خواندن، حداکثر ۵۰۰ پیشنهاد گذشته را با کنترل همزمانی به `PAUSED` می‌برد و Audit نسخه‌دار `ticket.offer.expired` می‌سازد؛ جست‌وجوی قرارداد نیز هرگز زمان گذشته را برنمی‌گرداند. تعریف پرواز چندقطعه‌ای منتشر و backfill می‌شود، داده‌های نمونهٔ صرفاً مرورگری حذف شده‌اند، کارت محلی منقضی هنگام بارگذاری متوقف می‌شود و فهرست منتشرشده هر دقیقه تازه می‌گردد. ۲۳ تست هدفمند API/Web، lint، typecheck کامل API/Web، build API و build تولیدی Web با Webpack و ۵۰ route موفق‌اند. build پیش‌فرض Turbopack فقط به‌دلیل junction خارجی node_modules در worktree قابل اجرا نبود؛ کد، Schema، Migration، Lockfile و دادهٔ عملیاتی تغییری خارج از محدوده ندارند.
+
+## TICKET-FORM-VALIDATION-RESET-0921 — PC-A — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-21: پس از اصلاح ورودی نامعتبر در فرم تعریف/ویرایش بلیط، پیام خطای قبلی فوراً پاک شود؛ همین رفتار برای فرم‌های تکرار، رزرو ظرفیت و تغییر وضعیت برقرار باشد.
+- شاخهٔ مستقل `codex/pc-a-form-validation-reset-0921` از `origin/develop@bd93b634`. محدوده فقط سه فایل Web مدیریت بلیط و تست قراردادی آنهاست؛ بدون API، Schema/Migration، Dependency/Lockfile یا دادهٔ عملیاتی.
+- نتیجه: همهٔ مسیرهای تغییر داده در فرم اصلی و فرم‌های جانبی ابتدا خطای قبلی را پاک می‌کنند؛ اعتبارسنجی نامعتبر در ثبت بعدی دوباره نمایش داده می‌شود. ۱۰۵ تست ماژول، lint، typecheck و build تولیدی Web با ۵۰ route موفق‌اند.
+
+## RESERVATION-ISSUED-TICKETS-REPORT-0921 — PC-A — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-21: صفحهٔ فقط‌خواندنی «بلیط‌های صادرشده مسافران» به دادهٔ واقعی رزرواسیون متصل شود و قرارداد، مسافر، مسیر، PNR و شماره بلیط را بدون fixture یا ذخیرهٔ موازی نمایش دهد.
+- `COMPUTER_ID=PC-A`؛ شاخهٔ مستقل `codex/pc-a-reservation-issued-tickets-report-0921` از `origin/develop@bd93b634`. محدودهٔ رزرو: consumer فقط‌خواندنی Web در Ticket Catalog برای قرارداد عمومی موجود `GET /reservations/requests`، projection/validation کلاینت، UI و تست‌های هدفمند و اسناد همین واحد. بدون API/Schema/Migration/Dependency/Lockfile، دادهٔ عملیاتی، صدور یا استرداد.
+- نام شهر از اطلاعات پایهٔ عمومی خوانده می‌شود. چون قرارداد فعلی رزرواسیون PNR و شماره رسمی بلیط را ذخیره نمی‌کند، این دو مقدار جعل نمی‌شوند و در گزارش به‌صورت «ثبت نشده» نمایش داده خواهند شد.
+- تکمیل شد: صفحه در زمان بازشدن همهٔ صفحات مجاز رزرواسیون را می‌خواند، فقط مسافر/پروازهای واقعاً تخصیص‌یافته را projection می‌کند، ابطال workflow را نمایش می‌دهد، مسیرها را از اطلاعات پایه حل می‌کند و فیلتر/صفحه‌بندی موجود را روی دادهٔ واقعی نگه می‌دارد. ۱۰ تست هدفمند، lint محدوده، typecheck کامل Web و build تولیدی Next/Webpack موفق‌اند.
+
+# TICKET-STANDALONE-SALE-PRICE-0921 — PC-A — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-21: هر پرواز منتشرشده در جدول مدیریت بلیط قیمت فروش تکی قابل ویرایش داشته باشد؛ فروش بدون هتل/تور از همین قیمت استفاده کند، قیمت پکیج مستقل بماند و ظرفیت هر مسیر از منبع مشترک کم شود. رفت و برگشت دو پیشنهاد مستقل و دو قیمت مستقل دارند.
+- شاخه `codex/pc-a-ticket-standalone-price-v2-0921` از `origin/develop@bd93b634`. محدوده رزرو: قرارداد عمومی افزایشی Ticket Catalog، migration افزایشی قیمت نسخه‌دار، سرویس/کنترلر Ticket Catalog، جدول مدیریت بلیط، انتخاب Sales و تست‌های هدفمند. `COMPUTER_ID=PC-A` و Migration Owner همین واحد است.
+- تغییر مخرب، Seed، داده عملیاتی، Dependency/Lockfile و تغییر مستقیم develop/localhost در محدوده نیست. قیمت تور از مدیریت قیمت فعلی باقی می‌ماند؛ قیمت تکی هر صندلی فقط برای قرارداد بدون هتل/تور پیش‌فرض می‌شود.
+- اعتبارسنجی: Prisma validate/generate؛ build قراردادها، API و Web؛ lint و typecheck در API/Web/Database؛ ۷۸ تست Database (۱۴ مورد integration بدون DB رد شدند)، ۶ تست API و ۳۱ تست Web موفق شدند.
+
+## TOUR-SINGLE-SCREEN-0921 — PC-A — READY_FOR_REVIEW
+
+- COMPUTER_ID=PC-A. Branch: codex/pc-a-tour-single-screen-0921 from origin/develop@5f66ef97.
+- Reserved: tour-workspace.tsx and tour-details-form.tsx layout, focused existing tests and task status. Compact same-page sections, visible save action. No API, database, dependencies or runtime changes.
+
+## PROFILE-AVATAR-UPLOAD-0921 — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-21: عکس پروفایل از تنظیمات شخصی واقعاً بارگذاری، ذخیره و در
+  رابط سایت نمایش داده شود. شاخه `codex/pc-b-profile-avatar-upload-0921` از
+  `origin/develop@cba76029` در worktree مستقل ساخته شد.
+- محدوده رزروشده: مرز محدود Workbench/Documents برای فایل عکس مالک حساب، کنترلر و سرویس
+  Workbench، client و فرم Profile، آواتار سربرگ و تست‌های هدفمند. Documents فایل را با
+  reference دقیق Workbench/IamProfile و مالک/شعبه نشست نگه می‌دارد؛ Workbench هیچ جدول Documents
+  را مستقیم نمی‌خواند و IAM فقط از public service موجود برای شناسه عکس استفاده می‌کند.
+- بدون Schema/Migration/Seed، Dependency/Lockfile، Permission grant یا تغییر داده عملیاتی.
+  فرمت‌های مجاز PNG/JPEG و سقف ۵ مگابایت‌اند؛ دسترسی اختصاصی فقط عکس همان کاربر را می‌خواند.
+- نتیجه: بارگذاری از مسیر اختصاصی مالک حساب انجام می‌شود، شناسه فایل با public service موجود
+  IAM در پروفایل ماندگار می‌شود و فرم تنظیمات و آواتار مشترک سربرگ فایل ذخیره‌شده را نمایش
+  می‌دهند. ۱۹ تست هدفمند، lint محدوده، typecheck API/Web و build تولیدی هر دو برنامه موفق‌اند؛
+  Schema/Migration/Seed، Permission و داده عملیاتی تغییر نکرده‌اند.

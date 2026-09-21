@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { TicketOfferCreateV1, TicketOfferV1 } from '@nora/contracts';
 import {
   BusFront,
@@ -9,6 +9,7 @@ import {
   Ticket,
   TicketCheck,
   TrainFront,
+  Trash2,
 } from 'lucide-react';
 import {
   Alert,
@@ -45,7 +46,6 @@ import {
 } from '../model/catalog';
 import {
   activateCatalogSample,
-  catalogSamples,
   catalogStorageKey,
   countProductsByRoute,
   displayTime,
@@ -53,6 +53,7 @@ import {
   groupProductsForCards,
   initialQuery,
   parseCatalogSnapshot,
+  pauseExpiredCatalogProduct,
   queryProducts,
   moveDefinitionToDate,
   repeatDefinition,
@@ -68,7 +69,7 @@ import { TicketDetails } from './ticket-details';
 import { TicketForm } from './ticket-form';
 import formStyles from './ticket-form.module.css';
 import { TicketDatePicker } from './ticket-date-picker';
-import { IssuedTicketsWorkspace } from './issued-tickets-workspace';
+import { ConnectedIssuedTicketsWorkspace } from './issued-tickets-workspace';
 import { TourWorkspace } from './tour-workspace';
 import { toursApi } from '../api/tours';
 import { getPublicApiBaseUrl } from '@/lib/environment';
@@ -89,22 +90,42 @@ function availableInventory(product: Product): Inventory {
   };
 }
 
-function flightOfferInput(
+export function flightOfferInput(
   definition: ProductInput,
   references: readonly Reference[],
 ): TicketOfferCreateV1 | undefined {
   if (definition.transport !== 'flight') return undefined;
-  if (definition.segments.length !== 1)
-    throw new Error('برای فروش، هر بلیط پرواز باید یک مسیر مستقل داشته باشد.');
-  const segment = definition.segments[0]!;
-  if (!segment.departureAt || !segment.arrivalAt)
+  const firstSegment = definition.segments[0];
+  const lastSegment = definition.segments.at(-1);
+  if (!firstSegment || !lastSegment)
+    throw new Error('حداقل یک مسیر برای بلیط قابل فروش الزامی است.');
+  if (
+    definition.segments.some(
+      (segment) => !segment.departureAt || !segment.arrivalAt,
+    )
+  )
     throw new Error('ساعت حرکت و رسیدن برای بلیط قابل فروش الزامی است.');
-  const carrier = references.find(
-    (reference) =>
-      reference.kind === 'airline' && reference.id === segment.airlineId,
+  const carriers = definition.segments.map((segment) =>
+    references.find(
+      (reference) =>
+        reference.kind === 'airline' && reference.id === segment.airlineId,
+    ),
   );
-  if (!carrier?.name || !segment.flightNumber.trim())
+  if (
+    carriers.some((carrier) => !carrier?.name) ||
+    definition.segments.some((segment) => !segment.flightNumber.trim())
+  )
     throw new Error('ایرلاین و شماره پرواز برای بلیط قابل فروش الزامی است.');
+  const carrierName = [
+    ...new Set(carriers.map((carrier) => carrier!.name.trim())),
+  ].join(' / ');
+  const serviceNumber = definition.segments
+    .map((segment) => segment.flightNumber.trim())
+    .join(' / ');
+  if (carrierName.length > 160 || serviceNumber.length > 80)
+    throw new Error(
+      'نام ایرلاین‌ها یا شماره‌های پرواز برای ثبت بیش از حد طولانی است.',
+    );
   const cabin = references.find(
     (reference) =>
       reference.kind === 'flightClass' &&
@@ -117,15 +138,36 @@ function flightOfferInput(
       ? 'BUSINESS'
       : 'ECONOMY';
   return {
-    originId: segment.originCityId,
-    destinationId: segment.destinationCityId,
-    departureAt: segment.departureAt,
-    arrivalAt: segment.arrivalAt,
-    carrierName: carrier.name,
-    serviceNumber: segment.flightNumber.trim(),
+    originId: firstSegment.originCityId,
+    destinationId: lastSegment.destinationCityId,
+    departureAt: firstSegment.departureAt,
+    arrivalAt: lastSegment.arrivalAt,
+    carrierName,
+    serviceNumber,
     cabinClassCode,
     totalCapacity: definition.totalCapacity,
   };
+}
+export function planCatalogPublication(
+  items: readonly Product[],
+  references: readonly Reference[],
+) {
+  const problems: string[] = [];
+  const publishable = items.flatMap((product) => {
+    if (product.id.startsWith('sample-ticket-')) return [];
+    try {
+      const input = flightOfferInput(product.definition, references);
+      if (input && new Date(input.departureAt).getTime() <= Date.now())
+        return [];
+      return input ? [{ product, input }] : [];
+    } catch (error) {
+      problems.push(
+        `${product.definition.title}: ${error instanceof Error ? error.message : 'اطلاعات ناقص است.'}`,
+      );
+      return [];
+    }
+  });
+  return { publishable, problems };
 }
 export function TicketWorkspace() {
   return (
@@ -167,7 +209,7 @@ export function TicketWorkspace() {
             className="min-h-20 rounded-xl px-4 py-3 font-bold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
             value="tours"
           >
-            تعریف تور و نوبت برگزاری
+            تعریف تور و خدمات
           </TabsTrigger>
         </TabsList>
         <TabsContent value="tours">
@@ -177,7 +219,7 @@ export function TicketWorkspace() {
           <TicketCatalogWorkspace />
         </TabsContent>
         <TabsContent value="issued">
-          <IssuedTicketsWorkspace connected={false} tickets={[]} />
+          <ConnectedIssuedTicketsWorkspace />
         </TabsContent>
       </Tabs>
     </>
@@ -212,11 +254,55 @@ function TicketCatalogWorkspace() {
     readonly TicketOfferV1[]
   >([]);
   const [publishedProblem, setPublishedProblem] = useState('');
+  const [priceDrafts, setPriceDrafts] = useState<
+    Record<string, { amount: string; currencyCode: string }>
+  >({});
+  const [priceSaving, setPriceSaving] = useState<string>();
+  const [capacityHold, setCapacityHold] = useState<{
+    offer: TicketOfferV1;
+    quantity: number;
+    expiresAt: string;
+  }>();
+  const [capacityHoldSaving, setCapacityHoldSaving] = useState(false);
+  const backfillStarted = useRef(false);
+  const [catalogNow, setCatalogNow] = useState(0);
+  const updateCapacityHold = (
+    value:
+      | {
+          offer: TicketOfferV1;
+          quantity: number;
+          expiresAt: string;
+        }
+      | undefined,
+  ) => {
+    setProblem('');
+    setCapacityHold(value);
+  };
+  const updateRepeat = (value: typeof repeat) => {
+    setProblem('');
+    setRepeat(value);
+  };
+  const updateReason = (value: string) => {
+    setProblem('');
+    setReason(value);
+  };
 
   const refreshPublishedOffers = async () => {
+    setCatalogNow(new Date().getTime());
     try {
       const result = await toursApi.managedOffers();
       setPublishedOffers(result.data);
+      setPriceDrafts(
+        Object.fromEntries(
+          result.data.map((offer) => [
+            offer.id,
+            {
+              amount: offer.standaloneSalePrice?.amount ?? '',
+              currencyCode: offer.standaloneSalePrice?.currencyCode ?? 'IRR',
+            },
+          ]),
+        ),
+      );
       setPublishedProblem('');
     } catch (error) {
       setPublishedProblem(
@@ -226,10 +312,83 @@ function TicketCatalogWorkspace() {
       );
     }
   };
-  const publishFlights = async (inputs: readonly ProductInput[]) => {
+  const saveStandalonePrice = async (offer: TicketOfferV1) => {
+    const draft = priceDrafts[offer.id];
+    try {
+      if (!draft?.amount || !/^[A-Z]{3}$/.test(draft.currencyCode))
+        throw new Error('مبلغ و کد سه‌حرفی ارز را کامل کنید.');
+      setPriceSaving(offer.id);
+      await toursApi.updateStandaloneSalePrice(
+        offer.id,
+        {
+          expectedRevision: offer.standaloneSalePrice?.revision ?? 0,
+          amount: draft.amount,
+          currencyCode: draft.currencyCode,
+        },
+        crypto.randomUUID(),
+      );
+      await refreshPublishedOffers();
+      setPublishedProblem('');
+      setNotice('قیمت فروش تکی این مسیر ثبت شد.');
+    } catch (error) {
+      setPublishedProblem(
+        error instanceof Error ? error.message : 'ثبت قیمت تکی ناموفق بود.',
+      );
+    } finally {
+      setPriceSaving(undefined);
+    }
+  };
+  const submitCapacityHold = async () => {
+    if (!capacityHold) return;
+    try {
+      if (
+        !Number.isSafeInteger(capacityHold.quantity) ||
+        capacityHold.quantity < 1
+      )
+        throw new Error('تعداد نفرات رزرو باید حداقل ۱ باشد.');
+      if (capacityHold.quantity > capacityHold.offer.remainingCapacity)
+        throw new Error('تعداد واردشده از ظرفیت باقی‌مانده بیشتر است.');
+      const expiresAt = new Date(capacityHold.expiresAt);
+      if (Number.isNaN(expiresAt.getTime()) || expiresAt <= new Date())
+        throw new Error('تاریخ و ساعت انقضا باید در آینده باشد.');
+      setCapacityHoldSaving(true);
+      const base = getPublicApiBaseUrl();
+      if (!base) throw new Error('نشانی سرور تنظیم نشده است.');
+      const session = await refreshAuthenticatedSession(base);
+      const branchId = session?.user.branches[0]?.id;
+      if (!branchId) throw new Error('شعبه مجاز برای رزرو ظرفیت پیدا نشد.');
+      const result = await toursApi.temporaryHold(
+        capacityHold.offer.id,
+        { quantity: capacityHold.quantity, expiresAt: expiresAt.toISOString() },
+        branchId,
+        crypto.randomUUID(),
+      );
+      await refreshPublishedOffers();
+      setNotice(
+        `${result.data.quantity.toLocaleString('fa-IR')} نفر تا ${displayTime(result.data.expiresAt, 'Asia/Tehran')} رزرو شد.`,
+      );
+      setProblem('');
+      updateCapacityHold(undefined);
+    } catch (error) {
+      setProblem(
+        error instanceof Error ? error.message : 'رزرو ظرفیت ناموفق بود.',
+      );
+    } finally {
+      setCapacityHoldSaving(false);
+    }
+  };
+  const publishFlights = async (
+    inputs: readonly ProductInput[],
+    productIds: readonly string[],
+  ) => {
     const publishable = inputs
-      .map((input) => flightOfferInput(input, references))
-      .filter((input): input is TicketOfferCreateV1 => Boolean(input));
+      .map((input, index) => ({
+        input: flightOfferInput(input, references),
+        id: productIds[index]!,
+      }))
+      .filter((item): item is { input: TicketOfferCreateV1; id: string } =>
+        Boolean(item.input),
+      );
     if (!publishable.length) return;
     const base = getPublicApiBaseUrl();
     if (!base) throw new Error('نشانی سرور تنظیم نشده است.');
@@ -237,18 +396,70 @@ function TicketCatalogWorkspace() {
     const branchId = session?.user.branches[0]?.id;
     if (!branchId) throw new Error('شعبه مجاز برای ثبت بلیط پیدا نشد.');
     await Promise.all(
-      publishable.map((input) =>
-        toursApi.publishOffer(input, branchId, crypto.randomUUID()),
+      publishable.map(({ input, id }) =>
+        toursApi.publishOffer(input, branchId, `ticket-catalog:${id}`),
       ),
     );
     await refreshPublishedOffers();
   };
+  const publishExistingFlights = async (
+    items: readonly Product[],
+    itemReferences: readonly Reference[],
+  ) => {
+    const { publishable, problems } = planCatalogPublication(
+      items,
+      itemReferences,
+    );
+    if (!publishable.length) {
+      if (problems.length) setPublishedProblem(problems.join('؛ '));
+      return;
+    }
+    const base = getPublicApiBaseUrl();
+    if (!base) throw new Error('نشانی سرور تنظیم نشده است.');
+    const session = await refreshAuthenticatedSession(base);
+    const branchId = session?.user.branches[0]?.id;
+    if (!branchId) throw new Error('شعبه مجاز برای ثبت بلیط پیدا نشد.');
+    const existing = (await toursApi.managedOffers()).data;
+    const outcomes = await Promise.allSettled(
+      publishable.map(({ product, input }) => {
+        const match = existing.find(
+          (offer) =>
+            offer.branchId === branchId &&
+            (Object.keys(input) as (keyof TicketOfferCreateV1)[]).every(
+              (key) =>
+                key === 'departureAt' || key === 'arrivalAt'
+                  ? new Date(offer[key]).getTime() ===
+                    new Date(input[key]).getTime()
+                  : offer[key] === input[key],
+            ),
+        );
+        return match
+          ? Promise.resolve({ data: { id: match.id } })
+          : toursApi.publishOffer(
+              input,
+              branchId,
+              `ticket-catalog:${product.id}`,
+            );
+      }),
+    );
+    await refreshPublishedOffers();
+    outcomes.forEach((result, index) => {
+      if (result.status === 'rejected')
+        problems.push(
+          `${publishable[index]!.product.definition.title}: ${result.reason instanceof Error ? result.reason.message : 'ثبت ناموفق بود.'}`,
+        );
+    });
+    if (problems.length) setPublishedProblem(problems.join('؛ '));
+  };
 
   useEffect(() => {
-    const timer = window.setTimeout(() => {
-      void refreshPublishedOffers();
-    }, 0);
-    return () => window.clearTimeout(timer);
+    const refresh = () => void refreshPublishedOffers();
+    const timer = window.setTimeout(refresh, 0);
+    const interval = window.setInterval(refresh, 60_000);
+    return () => {
+      window.clearTimeout(timer);
+      window.clearInterval(interval);
+    };
   }, []);
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -256,16 +467,31 @@ function TicketCatalogWorkspace() {
         localStorage.getItem(catalogStorageKey),
       );
       if (stored) {
-        setProducts(
-          stored.products.map((product) =>
-            activateCatalogSample(product, new Date().toISOString()),
-          ),
+        const now = new Date().toISOString();
+        const restoredProducts = stored.products.map((product) =>
+          pauseExpiredCatalogProduct(activateCatalogSample(product, now), now),
         );
+        setProducts(restoredProducts);
         setReferences(stored.references);
-      } else setProducts(catalogSamples(new Date().toISOString()));
+        if (!backfillStarted.current) {
+          backfillStarted.current = true;
+          void publishExistingFlights(
+            restoredProducts,
+            stored.references,
+          ).catch((error) =>
+            setPublishedProblem(
+              error instanceof Error
+                ? error.message
+                : 'اتصال بلیط‌های قبلی به قراردادها ناموفق بود.',
+            ),
+          );
+        }
+      } else setProducts([]);
       setHydrated(true);
     }, 0);
     return () => window.clearTimeout(timer);
+    // Hydration must backfill once; adding the render-scoped helper would loop.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   useEffect(() => {
     if (!hydrated) return;
@@ -274,7 +500,6 @@ function TicketCatalogWorkspace() {
       JSON.stringify({ products, references }),
     );
   }, [hydrated, products, references]);
-
   const result = queryProducts(products, query);
   const routeCounts = countProductsByRoute(products);
   const cardGroups = groupProductsForCards(result.rows);
@@ -298,6 +523,7 @@ function TicketCatalogWorkspace() {
     if (current && inputs.length !== 1)
       throw new Error('ویرایش باید روی همان بلیط انجام شود.');
     let updated = products;
+    const createdIds: string[] = [];
     if (current) {
       const next = reviseProduct(
         current,
@@ -324,9 +550,49 @@ function TicketCatalogWorkspace() {
           actor,
         );
         updated = replacePreview(updated, next);
+        createdIds.push(next.id);
       }
     }
-    if (!current) await publishFlights(inputs);
+    if (!current) await publishFlights(inputs, createdIds);
+    else {
+      const nextInput = flightOfferInput(inputs[0]!, references);
+      if (nextInput) {
+        let previous: TicketOfferCreateV1 | undefined;
+        try {
+          previous = flightOfferInput(current.definition, references);
+        } catch {
+          /* Legacy incomplete definitions have no published offer. */
+        }
+        const offers = (await toursApi.managedOffers()).data;
+        const matches = previous
+          ? offers.filter(
+              (offer) =>
+                offer.originId === previous!.originId &&
+                offer.destinationId === previous!.destinationId &&
+                new Date(offer.departureAt).getTime() ===
+                  new Date(previous!.departureAt).getTime() &&
+                new Date(offer.arrivalAt).getTime() ===
+                  new Date(previous!.arrivalAt).getTime() &&
+                offer.serviceNumber === previous!.serviceNumber &&
+                offer.carrierName === previous!.carrierName &&
+                offer.cabinClassCode === previous!.cabinClassCode &&
+                offer.totalCapacity === previous!.totalCapacity,
+            )
+          : [];
+        if (matches.length > 1)
+          throw new Error(
+            'بیش از یک بلیط مشابه در فروش ثبت شده؛ ابتدا بلیط مرتبط را مشخص کنید.',
+          );
+        if (matches[0])
+          await toursApi.reviseOffer(
+            matches[0].id,
+            matches[0].version,
+            nextInput,
+          );
+        else await publishFlights(inputs, [current.id]);
+        await refreshPublishedOffers();
+      }
+    }
     setProducts(updated);
     setForm(null);
     setProblem('');
@@ -365,11 +631,11 @@ function TicketCatalogWorkspace() {
           now,
           actor,
         );
-        await publishFlights([definition]);
+        await publishFlights([definition], [next.id]);
         updated = replacePreview(updated, next);
       }
       setProducts(updated);
-      setRepeat(undefined);
+      updateRepeat(undefined);
       setProblem('');
       setNotice(
         `${repeat.count.toLocaleString('fa-IR')} بلیط ${repeat.cadence === 'weekly' ? 'هفتگی' : 'ماهانه'} جدید ساخته شد.`,
@@ -489,9 +755,13 @@ function TicketCatalogWorkspace() {
                 <tr>
                   <th className="px-4 py-3 text-start">ایرلاین / پرواز</th>
                   <th className="px-4 py-3 text-start">مسیر</th>
-                  <th className="px-4 py-3 text-start">حرکت</th>
+                  <th className="px-4 py-3 text-right">حرکت</th>
                   <th className="px-4 py-3 text-start">ظرفیت قابل فروش</th>
+                  <th className="min-w-64 px-4 py-3 text-start">
+                    قیمت فروش تکی هر صندلی
+                  </th>
                   <th className="px-4 py-3 text-start">وضعیت</th>
+                  <th className="px-4 py-3 text-start">اقدام</th>
                 </tr>
               </thead>
               <tbody>
@@ -509,15 +779,126 @@ function TicketCatalogWorkspace() {
                         offer.destinationId,
                       )}
                     </td>
-                    <td className="px-4 py-3" dir="ltr">
-                      {displayTime(offer.departureAt, 'Asia/Tehran')}
+                    <td className="px-4 py-3 text-right">
+                      <time
+                        dateTime={offer.departureAt}
+                        dir="rtl"
+                        lang="fa"
+                        className="block whitespace-nowrap text-right tabular-nums"
+                      >
+                        {displayTime(offer.departureAt, 'Asia/Tehran')}
+                      </time>
                     </td>
                     <td className="px-4 py-3">
                       {offer.remainingCapacity.toLocaleString('fa-IR')} از{' '}
                       {offer.totalCapacity.toLocaleString('fa-IR')}
                     </td>
                     <td className="px-4 py-3">
+                      <div className="flex min-w-60 items-end gap-2">
+                        <FormField label="مبلغ">
+                          <Input
+                            dir="ltr"
+                            inputMode="decimal"
+                            className="h-9 min-w-32 text-left tabular-nums"
+                            value={priceDrafts[offer.id]?.amount ?? ''}
+                            onChange={(event) =>
+                              setPriceDrafts((current) => ({
+                                ...current,
+                                [offer.id]: {
+                                  amount: event.target.value,
+                                  currencyCode:
+                                    current[offer.id]?.currencyCode ?? 'IRR',
+                                },
+                              }))
+                            }
+                          />
+                        </FormField>
+                        <FormField label="ارز">
+                          <Input
+                            dir="ltr"
+                            maxLength={3}
+                            className="h-9 w-20 text-left uppercase"
+                            value={priceDrafts[offer.id]?.currencyCode ?? 'IRR'}
+                            onChange={(event) =>
+                              setPriceDrafts((current) => ({
+                                ...current,
+                                [offer.id]: {
+                                  amount: current[offer.id]?.amount ?? '',
+                                  currencyCode:
+                                    event.target.value.toUpperCase(),
+                                },
+                              }))
+                            }
+                          />
+                        </FormField>
+                        <Button
+                          size="sm"
+                          type="button"
+                          disabled={
+                            priceSaving === offer.id ||
+                            !priceDrafts[offer.id]?.amount
+                          }
+                          onClick={() => void saveStandalonePrice(offer)}
+                        >
+                          ثبت
+                        </Button>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
                       {offer.status === 'ACTIVE' ? 'فعال' : offer.status}
+                    </td>
+                    <td className="px-4 py-3">
+                      {new Date(offer.departureAt).getTime() <= catalogNow ? (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          aria-label={`حذف بلیط تاریخ‌گذشته ${offer.serviceNumber}`}
+                          title="حذف بلیط تاریخ‌گذشته"
+                          onClick={async () => {
+                            if (
+                              !window.confirm(
+                                `بلیط ${offer.serviceNumber} از فهرست حذف شود؟ سوابق قرارداد و مالی حفظ می‌شود.`,
+                              )
+                            )
+                              return;
+                            try {
+                              await toursApi.archiveExpiredOffer(
+                                offer.id,
+                                offer.version,
+                              );
+                              await refreshPublishedOffers();
+                            } catch (error) {
+                              setPublishedProblem(
+                                error instanceof Error
+                                  ? error.message
+                                  : 'حذف بلیط ناموفق بود.',
+                              );
+                            }
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      ) : (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={
+                            offer.status !== 'ACTIVE' ||
+                            offer.remainingCapacity < 1
+                          }
+                          onClick={() =>
+                            updateCapacityHold({
+                              offer,
+                              quantity: 1,
+                              expiresAt: new Date(Date.now() + 60 * 60 * 1000)
+                                .toISOString()
+                                .slice(0, 16),
+                            })
+                          }
+                        >
+                          رزرو ظرفیت
+                        </Button>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -781,7 +1162,7 @@ function TicketCatalogWorkspace() {
                     onView={() => setForm({ mode: 'view', product })}
                     onEdit={() => setForm({ mode: 'edit', product })}
                     onRepeat={() =>
-                      setRepeat({
+                      updateRepeat({
                         product,
                         cadence: 'weekly',
                         count: 1,
@@ -791,7 +1172,7 @@ function TicketCatalogWorkspace() {
                     onDelete={() => setDeleteProduct(product)}
                     onStatus={(status) => {
                       setProblem('');
-                      setReason('');
+                      updateReason('');
                       setStatusChange({ product, status });
                     }}
                   />
@@ -891,9 +1272,81 @@ function TicketCatalogWorkspace() {
         </DialogContent>
       </Dialog>
       <Dialog
+        open={Boolean(capacityHold)}
+        onOpenChange={(open) => {
+          if (!open && !capacityHoldSaving) updateCapacityHold(undefined);
+        }}
+      >
+        <DialogContent dir="rtl" className="start-auto! left-1/2!">
+          <DialogTitle>رزرو موقت ظرفیت</DialogTitle>
+          <DialogDescription>
+            ظرفیت تا زمان انقضا برای این بلیت نگه داشته می‌شود و پس از آن خودکار
+            آزاد خواهد شد.
+          </DialogDescription>
+          {problem ? <Alert tone="error" title={problem} /> : null}
+          <p className="rounded-xl bg-muted/50 px-3 py-2 text-sm">
+            {capacityHold?.offer.carrierName} ·{' '}
+            <span dir="ltr">{capacityHold?.offer.serviceNumber}</span> · ظرفیت
+            باقی‌مانده:{' '}
+            {capacityHold?.offer.remainingCapacity.toLocaleString('fa-IR')}
+          </p>
+          <FormField
+            label="تعداد نفرات"
+            id="ticket-capacity-hold-quantity"
+            required
+          >
+            <Input
+              id="ticket-capacity-hold-quantity"
+              type="number"
+              min={1}
+              max={capacityHold?.offer.remainingCapacity ?? 1}
+              value={capacityHold?.quantity ?? 1}
+              onChange={(event) =>
+                capacityHold &&
+                updateCapacityHold({
+                  ...capacityHold,
+                  quantity: Number(event.target.value),
+                })
+              }
+            />
+          </FormField>
+          <FormField
+            label="تاریخ و ساعت انقضا"
+            id="ticket-capacity-hold-expires-at"
+            required
+          >
+            <TicketDatePicker
+              id="ticket-capacity-hold-expires-at"
+              includeTime
+              required
+              value={capacityHold?.expiresAt ?? ''}
+              onChange={(expiresAt) =>
+                capacityHold &&
+                updateCapacityHold({ ...capacityHold, expiresAt })
+              }
+            />
+          </FormField>
+          <div className="mt-2 flex gap-2">
+            <Button
+              disabled={capacityHoldSaving}
+              onClick={() => void submitCapacityHold()}
+            >
+              {capacityHoldSaving ? 'در حال ثبت…' : 'ثبت رزرو موقت'}
+            </Button>
+            <Button
+              disabled={capacityHoldSaving}
+              variant="outline"
+              onClick={() => updateCapacityHold(undefined)}
+            >
+              انصراف
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+      <Dialog
         open={Boolean(repeat)}
         onOpenChange={(open) => {
-          if (!open) setRepeat(undefined);
+          if (!open) updateRepeat(undefined);
         }}
       >
         <DialogContent dir="rtl" className="start-auto! left-1/2!">
@@ -912,7 +1365,7 @@ function TicketCatalogWorkspace() {
               value={repeat?.startDate ?? ''}
               required
               onChange={(startDate) =>
-                repeat && setRepeat({ ...repeat, startDate })
+                repeat && updateRepeat({ ...repeat, startDate })
               }
             />
           </FormField>
@@ -921,7 +1374,10 @@ function TicketCatalogWorkspace() {
               value={repeat?.cadence ?? 'weekly'}
               onValueChange={(cadence) =>
                 repeat &&
-                setRepeat({ ...repeat, cadence: cadence as RepeatCadence })
+                updateRepeat({
+                  ...repeat,
+                  cadence: cadence as RepeatCadence,
+                })
               }
             >
               <SelectTrigger id="ticket-repeat-cadence">
@@ -942,7 +1398,10 @@ function TicketCatalogWorkspace() {
               value={repeat?.count ?? 1}
               onChange={(event) =>
                 repeat &&
-                setRepeat({ ...repeat, count: Number(event.target.value) })
+                updateRepeat({
+                  ...repeat,
+                  count: Number(event.target.value),
+                })
               }
             />
           </FormField>
@@ -1001,7 +1460,7 @@ function TicketCatalogWorkspace() {
             <Input
               id="ticket-status-reason"
               value={reason}
-              onChange={(event) => setReason(event.target.value)}
+              onChange={(event) => updateReason(event.target.value)}
             />
           </FormField>
           <Button className="mt-4" onClick={applyStatus}>

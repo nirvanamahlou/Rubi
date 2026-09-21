@@ -6,6 +6,7 @@ import type {
   TourDepartureInputV1,
   TicketOfferV1,
   TicketOfferCreateV1,
+  TicketStandaloneSalePriceUpdateV1,
 } from '@nora/contracts';
 import { getPublicApiBaseUrl } from '@/lib/environment';
 import { refreshAuthenticatedSession } from '@/lib/auth-session';
@@ -83,6 +84,41 @@ export const toursApi = {
   },
   managedOffers: () =>
     request<{ version: 1; data: TicketOfferV1[] }>('/offers/management'),
+  archiveExpiredOffer: (id: string, expectedVersion: number) =>
+    request<{ data: { id: string } }>(`/offers/${id}`, {
+      method: 'DELETE',
+      body: JSON.stringify({ expectedVersion }),
+    }),
+  reviseOffer: (
+    id: string,
+    expectedVersion: number,
+    offer: TicketOfferCreateV1,
+  ) =>
+    request<{ data: { id: string; version: number } }>(`/offers/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ expectedVersion, offer }),
+    }),
+  updateStandaloneSalePrice: (
+    id: string,
+    input: TicketStandaloneSalePriceUpdateV1,
+    key: string,
+  ) =>
+    request<{
+      data: { revision: number; amount: string; currencyCode: string };
+    }>(`/offers/${id}/standalone-sale-price`, {
+      method: 'PATCH',
+      headers: { 'idempotency-key': key },
+      body: JSON.stringify(input),
+    }),
   publishOffer: (input: TicketOfferCreateV1, branch: string, key: string) =>
     request<{ data: { id: string } }>('/offers', post(input, branch, key)),
+  temporaryHold: (
+    offerId: string,
+    input: { quantity: number; expiresAt: string },
+    branch: string,
+    key: string,
+  ) =>
+    request<{
+      data: { id: string; quantity: number; expiresAt: string; status: string };
+    }>(`/offers/${offerId}/capacity-holds`, post(input, branch, key)),
 };

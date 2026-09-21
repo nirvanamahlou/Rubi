@@ -41,20 +41,10 @@ export function profilePhotoError(
     bytes[6] === 26 &&
     bytes[7] === 10;
   const jpeg = bytes[0] === 255 && bytes[1] === 216 && bytes[2] === 255;
-  const webp =
-    bytes[0] === 82 &&
-    bytes[1] === 73 &&
-    bytes[2] === 70 &&
-    bytes[3] === 70 &&
-    bytes[8] === 87 &&
-    bytes[9] === 69 &&
-    bytes[10] === 66 &&
-    bytes[11] === 80;
   if (
     (file.type === 'image/png' && png) ||
-    (file.type === 'image/jpeg' && jpeg) ||
-    (file.type === 'image/webp' && webp)
+    (file.type === 'image/jpeg' && jpeg)
   )
     return null;
-  return 'یک عکس معتبر PNG، JPG یا WebP انتخاب کنید.';
+  return 'یک عکس معتبر PNG یا JPG انتخاب کنید.';
 }

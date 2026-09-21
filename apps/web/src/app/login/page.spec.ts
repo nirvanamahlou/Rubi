@@ -18,25 +18,27 @@ describe('login background', () => {
     '../../../public/brand/login-airline-b2.png',
   );
 
-  it('uses the selected B2 aviation image as the animated page background', () => {
+  it('keeps the selected B2 aviation image as a fixed page background', () => {
     expect(source).toContain('<LoginBackgroundStory />');
     expect(backgroundStyles).toContain(
       "background-image: url('/brand/login-airline-b2.png')",
     );
-    expect(backgroundStyles).toContain('@keyframes backgroundPlaneArrival');
-    expect(backgroundStyles).toContain('translate3d(34%, 0, 0)');
+    expect(backgroundStyles).toContain('background-size: cover');
+    expect(backgroundStyles).toContain('inset: -3%');
+    expect(backgroundStyles).not.toContain('@keyframes');
+    expect(backgroundStyles).not.toContain('animation:');
     expect(fs.existsSync(asset)).toBe(true);
     expect(fs.statSync(asset).size).toBeGreaterThan(100_000);
   });
 
-  it('reveals persistent cloud-themed NOORA after the background stops', () => {
-    expect(backgroundStory).toContain('NOORA');
-    expect(backgroundStory).not.toContain('<svg');
+  it('does not render the NOORA cloud or decorative wind layers', () => {
     expect(backgroundStory).toContain('aria-hidden="true"');
-    expect(backgroundStyles).toContain('@keyframes revealNooraCloud');
-    expect(backgroundStyles).toContain('2.65s both');
-    expect(backgroundStyles).toContain(
-      '@media (prefers-reduced-motion: reduce)',
-    );
+    expect(backgroundStory).not.toContain('NOORA');
+    expect(backgroundStory).not.toContain('nooraMark');
+    expect(backgroundStory).not.toContain('cloudBody');
+    expect(backgroundStory).not.toContain('windTrail');
+    expect(backgroundStyles).not.toContain('.nooraMark');
+    expect(backgroundStyles).not.toContain('.cloudBody');
+    expect(backgroundStyles).not.toContain('.windTrail');
   });
 });

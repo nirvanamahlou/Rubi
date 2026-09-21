@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { FileCheck2, Route, Search, TicketCheck } from 'lucide-react';
 import {
   Alert,
@@ -25,6 +25,7 @@ import {
   type IssuedTicketReadModel,
   type IssuedTicketStatus,
 } from '../model/issued-tickets';
+import { loadReservationIssuedTickets } from '../api/issued-tickets';
 import { TicketDatePicker } from './ticket-date-picker';
 
 const statusLabels: Record<IssuedTicketStatus, string> = {
@@ -35,11 +36,13 @@ const statusLabels: Record<IssuedTicketStatus, string> = {
 };
 
 export function IssuedTicketsWorkspace({
-  connected,
   tickets,
+  loading = false,
+  error = '',
 }: {
-  connected: boolean;
   tickets: readonly IssuedTicketReadModel[];
+  loading?: boolean;
+  error?: string;
 }) {
   const [query, setQuery] = useState<IssuedTicketQuery>(
     initialIssuedTicketQuery,
@@ -71,11 +74,17 @@ export function IssuedTicketsWorkspace({
         eyebrow="گزارش فقط‌خواندنی رزرواسیون"
         description="پیگیری بلیط صادرشده، قرارداد، مسافر، PNR و مسیر؛ عملیات صدور و استرداد همچنان در رزرواسیون انجام می‌شود."
       />
-      {!connected ? (
+      {loading ? (
+        <Alert
+          title="در حال دریافت اطلاعات رزرواسیون"
+          description="قراردادها، مسافران و مسیرهای ثبت‌شده در حال خواندن هستند."
+        />
+      ) : null}
+      {error ? (
         <Alert
           tone="warning"
-          title="در انتظار اتصال قرارداد عمومی رزرواسیون"
-          description="این صفحه داده ساختگی ذخیره نمی‌کند. پس از انتشار قرارداد عمومی رزرواسیون، بلیط‌های واقعی به‌صورت فقط‌خواندنی اینجا نمایش داده می‌شوند."
+          title="دریافت گزارش انجام نشد"
+          description={error}
         />
       ) : null}
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -272,14 +281,18 @@ export function IssuedTicketsWorkspace({
         <EmptyState
           icon={FileCheck2}
           title={
-            connected
-              ? 'بلیطی با این فیلترها پیدا نشد'
-              : 'هنوز داده رزرواسیون متصل نشده است'
+            loading
+              ? 'در حال دریافت بلیط‌ها'
+              : error
+                ? 'اطلاعات رزرواسیون در دسترس نیست'
+                : 'بلیطی با این فیلترها پیدا نشد'
           }
           description={
-            connected
-              ? 'فیلترها را تغییر دهید یا قرارداد دیگری را جست‌وجو کنید.'
-              : 'پس از اتصال قرارداد عمومی رزرواسیون، اطلاعات واقعی بلیط‌های مسافران در این بخش نمایش داده می‌شود.'
+            loading
+              ? 'کمی صبر کنید.'
+              : error
+                ? 'اتصال سرور و مجوز مشاهده رزرواسیون را بررسی کنید.'
+                : 'فیلترها را تغییر دهید یا قرارداد دیگری را جست‌وجو کنید.'
           }
         />
       ) : (
@@ -299,13 +312,64 @@ export function IssuedTicketsWorkspace({
                 <Badge>{statusLabels[ticket.status]}</Badge>
               </div>
               <p className="text-sm">
-                بلیط: {ticket.ticketNumber} • PNR: {ticket.pnr} •{' '}
-                {ticket.airline}
+                بلیط: {ticket.ticketNumber || 'ثبت نشده'} • PNR:{' '}
+                {ticket.pnr || 'ثبت نشده'} • {ticket.airline}
               </p>
             </Card>
           ))}
         </div>
       )}
+      {result.pages > 1 ? (
+        <div className="flex items-center justify-center gap-3">
+          <Button
+            variant="outline"
+            disabled={result.page <= 1}
+            onClick={() => setQuery({ ...query, page: result.page - 1 })}
+          >
+            قبلی
+          </Button>
+          <span className="text-sm text-muted-foreground">
+            صفحه {result.page.toLocaleString('fa-IR')} از{' '}
+            {result.pages.toLocaleString('fa-IR')}
+          </span>
+          <Button
+            variant="outline"
+            disabled={result.page >= result.pages}
+            onClick={() => setQuery({ ...query, page: result.page + 1 })}
+          >
+            بعدی
+          </Button>
+        </div>
+      ) : null}
     </div>
+  );
+}
+
+export function ConnectedIssuedTicketsWorkspace() {
+  const [tickets, setTickets] = useState<IssuedTicketReadModel[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  useEffect(() => {
+    const controller = new AbortController();
+    void loadReservationIssuedTickets(controller.signal)
+      .then((data) => {
+        setTickets(data);
+        setError('');
+      })
+      .catch((reason: unknown) => {
+        if (controller.signal.aborted) return;
+        setError(
+          reason instanceof Error
+            ? reason.message
+            : 'دریافت گزارش بلیط‌ها انجام نشد.',
+        );
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setLoading(false);
+      });
+    return () => controller.abort();
+  }, []);
+  return (
+    <IssuedTicketsWorkspace tickets={tickets} loading={loading} error={error} />
   );
 }

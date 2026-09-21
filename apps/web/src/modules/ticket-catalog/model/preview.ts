@@ -357,6 +357,37 @@ export function activateCatalogSample(product: Product, at: string): Product {
   };
 }
 
+export function pauseExpiredCatalogProduct(
+  product: Product,
+  at: string,
+): Product {
+  if (product.status !== 'active') return product;
+  const departureAt = product.definition.segments[0]?.departureAt;
+  const serviceDate = product.definition.serviceDate;
+  const expiresAt = departureAt
+    ? Date.parse(departureAt)
+    : serviceDate
+      ? Date.parse(`${serviceDate}T23:59:59.999Z`)
+      : Number.NaN;
+  if (!Number.isFinite(expiresAt) || expiresAt > Date.parse(at)) return product;
+  const version = product.version + 1;
+  return {
+    ...product,
+    status: 'paused',
+    version,
+    history: [
+      ...product.history,
+      {
+        version,
+        action: 'paused',
+        at,
+        actor: 'سیستم',
+        reason: 'توقف خودکار فروش پس از زمان حرکت بلیط',
+      },
+    ],
+  };
+}
+
 export function groupProductsForCards(
   products: readonly Product[],
 ): Product[][] {

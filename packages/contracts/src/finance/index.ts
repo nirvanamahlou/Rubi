@@ -479,11 +479,50 @@ export interface FinanceBankOptionV1 {
   name: string;
 }
 
+export type FinanceCustomerDocumentDeliveryBasisV1 =
+  'AFTER_RECEIPT' | 'FULL_SETTLEMENT' | 'MANAGER_EXCEPTION';
+
+export interface FinanceCustomerDocumentDeliveryAuthorizationV1 {
+  version: number;
+  approved: boolean;
+  basis: FinanceCustomerDocumentDeliveryBasisV1 | null;
+  reason: string;
+  exceptionExpiresAt: string | null;
+  updatedAt: string | null;
+  updatedByUserId: string | null;
+}
+
+export interface FinanceCustomerDocumentDeliveryCandidateV1 {
+  contractId: string;
+  contractNumber: string;
+  branchId: string;
+  customerNameSnapshot: string;
+  settlementStatus: 'UNPAID' | 'PARTIALLY_SETTLED' | 'SETTLED' | 'OVERPAID';
+  hasConfirmedPayment: boolean;
+  delivery: FinanceCustomerDocumentDeliveryAuthorizationV1;
+}
+
+export interface FinanceCustomerDocumentDeliveryCommandV1 {
+  expectedVersion: number;
+  approved: boolean;
+  basis: FinanceCustomerDocumentDeliveryBasisV1;
+  reason: string;
+  secondApproverReference?: string | null;
+  exceptionExpiresAt?: string | null;
+}
+
 export interface FinanceReceiptDecisionCommandV1 {
   version: 1;
+  accountId?: string | null;
   contractId: string;
   action: 'APPROVE' | 'CORRECTION_REQUIRED';
   reason?: string | null;
+  documentDelivery?: Omit<
+    FinanceCustomerDocumentDeliveryCommandV1,
+    'expectedVersion'
+  > & {
+    expectedVersion?: number;
+  };
 }
 
 export interface FinanceProcurementInvoiceDecisionCommandV1 {

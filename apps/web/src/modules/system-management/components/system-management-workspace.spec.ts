@@ -81,7 +81,8 @@ describe('system management reference implementation', () => {
     expect(workspace).toContain("href: '/system/operations'");
     expect(navigation).toContain("hrefs: ['/workbench', '/dashboard']");
     expect(navigation).toContain("hrefs: ['/human-resources']");
-    expect(navigation).toContain("'/ticket-management',\n      '/purchases'");
+    expect(navigation).toContain("'/ticket-management'");
+    expect(navigation).toContain("'/purchases'");
   });
 
   it('persists real versioned JSON settings with reason and optimistic version', () => {

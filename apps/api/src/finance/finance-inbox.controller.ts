@@ -5,6 +5,7 @@ import {
   Header,
   Inject,
   Param,
+  Query,
   ParseUUIDPipe,
   Post,
   Req,
@@ -16,6 +17,7 @@ import type {
   FinanceProcurementInvoicePaymentCommandV1,
   FinanceProcurementCorrectionDecisionCommandV1,
   FinanceSettlementAccountCreateV1,
+  FinanceCustomerDocumentDeliveryCommandV1,
   FinanceSupplierPaymentCommandV1,
 } from '@nora/contracts';
 
@@ -69,6 +71,36 @@ export class FinanceInboxController {
     return { data: await this.inbox.listBanks(request.actor) };
   }
 
+  @Get('customer-document-delivery')
+  @RequirePermissions('finance.financial_release.read')
+  @Header('Cache-Control', 'private, no-store')
+  async customerDocumentDeliveryQueue(
+    @Query('contractNumber') contractNumber: string | undefined,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return {
+      data: await this.inbox.customerDocumentDeliveryQueue(
+        contractNumber,
+        request.actor,
+      ),
+    };
+  }
+
+  @Post('customer-document-delivery/:contractId')
+  @RequirePermissions('finance.financial_release.approve')
+  async customerDocumentDeliveryDecision(
+    @Param('contractId', ParseUUIDPipe) contractId: string,
+    @Body() input: FinanceCustomerDocumentDeliveryCommandV1,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return {
+      data: await this.inbox.decideCustomerDocumentDelivery(
+        contractId,
+        input,
+        request.actor,
+      ),
+    };
+  }
   @Post('inbox/sales/:paymentId/decision')
   @RequirePermissions('finance.receipt.approve')
   async receiptDecision(
