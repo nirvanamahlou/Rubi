@@ -19,6 +19,7 @@ function service(
   client: Record<string, unknown>,
   documents = {},
   customerAffairs = { workbench: vi.fn().mockResolvedValue({ data: [] }) },
+  settings?: unknown,
 ) {
   return new WorkbenchService(
     { client } as never,
@@ -29,6 +30,7 @@ function service(
       updateOwnProfile: vi.fn(),
     } as never,
     customerAffairs as never,
+    settings as never,
   );
 }
 
@@ -105,6 +107,36 @@ describe('WorkbenchService backend boundaries', () => {
       expect.any(String),
       event.branchId,
       actor,
+    );
+  });
+
+  it('uses the published workspace priority when the creator leaves it empty', async () => {
+    const create = vi.fn().mockResolvedValue({
+      id: '66666666-6666-4666-8666-666666666666',
+      userId: actor.userId,
+      ...event,
+      dueAt: new Date(event.dueAt),
+      status: 'PLANNED',
+      priority: 'URGENT',
+      linkUrl: null,
+      imageDocumentId: null,
+      version: 1,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+    const settings = {
+      json: vi.fn().mockResolvedValue({ value: { priority: 'فوری' } }),
+    };
+    await service(
+      { workbenchCalendarEvent: { create } },
+      {},
+      undefined,
+      settings,
+    ).createEvent(event, actor);
+    expect(create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ priority: 'URGENT' }),
+      }),
     );
   });
 

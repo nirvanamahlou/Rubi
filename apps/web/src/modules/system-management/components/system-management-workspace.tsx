@@ -383,7 +383,7 @@ export function SystemManagementWorkspace() {
     settingsModules.find((module) => module.id === selectedModuleId) ??
     settingsModules[0]!;
 
-  const settingFor = (module: SettingModule, group: SettingGroup) =>
+  const ownSettingFor = (module: SettingModule, group: SettingGroup) =>
     settings.find(
       (setting) =>
         setting.namespace === module.id &&
@@ -391,6 +391,18 @@ export function SystemManagementWorkspace() {
         setting.scope === scope.scope &&
         setting.scopeId === scope.scopeId,
     );
+
+  const settingFor = (module: SettingModule, group: SettingGroup) =>
+    ownSettingFor(module, group) ??
+    (scope.scope !== 'GLOBAL'
+      ? settings.find(
+          (setting) =>
+            setting.namespace === module.id &&
+            setting.key === group.id &&
+            setting.scope === 'GLOBAL' &&
+            setting.scopeId === null,
+        )
+      : undefined);
 
   const valuesFor = (module: SettingModule, group: SettingGroup) => {
     const setting = settingFor(module, group);
@@ -439,7 +451,9 @@ export function SystemManagementWorkspace() {
       setSaveError('دلیل تغییر را وارد کنید.');
       return;
     }
-    const current = settingFor(editing.module, editing.group);
+    // Only the value owned by the selected scope supplies expectedVersion.
+    // An inherited global value creates a new scoped override atomically.
+    const current = ownSettingFor(editing.module, editing.group);
     setSaving(true);
     setSaveError(null);
     try {
