@@ -262,6 +262,26 @@ function TicketCatalogWorkspace() {
   const [capacityHoldSaving, setCapacityHoldSaving] = useState(false);
   const backfillStarted = useRef(false);
   const [catalogNow, setCatalogNow] = useState(0);
+  const updateCapacityHold = (
+    value:
+      | {
+          offer: TicketOfferV1;
+          quantity: number;
+          expiresAt: string;
+        }
+      | undefined,
+  ) => {
+    setProblem('');
+    setCapacityHold(value);
+  };
+  const updateRepeat = (value: typeof repeat) => {
+    setProblem('');
+    setRepeat(value);
+  };
+  const updateReason = (value: string) => {
+    setProblem('');
+    setReason(value);
+  };
 
   const refreshPublishedOffers = async () => {
     setCatalogNow(Date.now());
@@ -307,7 +327,7 @@ function TicketCatalogWorkspace() {
         `${result.data.quantity.toLocaleString('fa-IR')} نفر تا ${displayTime(result.data.expiresAt, 'Asia/Tehran')} رزرو شد.`,
       );
       setProblem('');
-      setCapacityHold(undefined);
+      updateCapacityHold(undefined);
     } catch (error) {
       setProblem(
         error instanceof Error ? error.message : 'رزرو ظرفیت ناموفق بود.',
@@ -439,7 +459,6 @@ function TicketCatalogWorkspace() {
       JSON.stringify({ products, references }),
     );
   }, [hydrated, products, references]);
-
   const result = queryProducts(products, query);
   const routeCounts = countProductsByRoute(products);
   const cardGroups = groupProductsForCards(result.rows);
@@ -575,7 +594,7 @@ function TicketCatalogWorkspace() {
         updated = replacePreview(updated, next);
       }
       setProducts(updated);
-      setRepeat(undefined);
+      updateRepeat(undefined);
       setProblem('');
       setNotice(
         `${repeat.count.toLocaleString('fa-IR')} بلیط ${repeat.cadence === 'weekly' ? 'هفتگی' : 'ماهانه'} جدید ساخته شد.`,
@@ -766,7 +785,7 @@ function TicketCatalogWorkspace() {
                             offer.remainingCapacity < 1
                           }
                           onClick={() =>
-                            setCapacityHold({
+                            updateCapacityHold({
                               offer,
                               quantity: 1,
                               expiresAt: new Date(Date.now() + 60 * 60 * 1000)
@@ -1041,7 +1060,7 @@ function TicketCatalogWorkspace() {
                     onView={() => setForm({ mode: 'view', product })}
                     onEdit={() => setForm({ mode: 'edit', product })}
                     onRepeat={() =>
-                      setRepeat({
+                      updateRepeat({
                         product,
                         cadence: 'weekly',
                         count: 1,
@@ -1051,7 +1070,7 @@ function TicketCatalogWorkspace() {
                     onDelete={() => setDeleteProduct(product)}
                     onStatus={(status) => {
                       setProblem('');
-                      setReason('');
+                      updateReason('');
                       setStatusChange({ product, status });
                     }}
                   />
@@ -1153,7 +1172,7 @@ function TicketCatalogWorkspace() {
       <Dialog
         open={Boolean(capacityHold)}
         onOpenChange={(open) => {
-          if (!open && !capacityHoldSaving) setCapacityHold(undefined);
+          if (!open && !capacityHoldSaving) updateCapacityHold(undefined);
         }}
       >
         <DialogContent dir="rtl" className="start-auto! left-1/2!">
@@ -1182,7 +1201,7 @@ function TicketCatalogWorkspace() {
               value={capacityHold?.quantity ?? 1}
               onChange={(event) =>
                 capacityHold &&
-                setCapacityHold({
+                updateCapacityHold({
                   ...capacityHold,
                   quantity: Number(event.target.value),
                 })
@@ -1200,7 +1219,8 @@ function TicketCatalogWorkspace() {
               required
               value={capacityHold?.expiresAt ?? ''}
               onChange={(expiresAt) =>
-                capacityHold && setCapacityHold({ ...capacityHold, expiresAt })
+                capacityHold &&
+                updateCapacityHold({ ...capacityHold, expiresAt })
               }
             />
           </FormField>
@@ -1214,7 +1234,7 @@ function TicketCatalogWorkspace() {
             <Button
               disabled={capacityHoldSaving}
               variant="outline"
-              onClick={() => setCapacityHold(undefined)}
+              onClick={() => updateCapacityHold(undefined)}
             >
               انصراف
             </Button>
@@ -1224,7 +1244,7 @@ function TicketCatalogWorkspace() {
       <Dialog
         open={Boolean(repeat)}
         onOpenChange={(open) => {
-          if (!open) setRepeat(undefined);
+          if (!open) updateRepeat(undefined);
         }}
       >
         <DialogContent dir="rtl" className="start-auto! left-1/2!">
@@ -1243,7 +1263,7 @@ function TicketCatalogWorkspace() {
               value={repeat?.startDate ?? ''}
               required
               onChange={(startDate) =>
-                repeat && setRepeat({ ...repeat, startDate })
+                repeat && updateRepeat({ ...repeat, startDate })
               }
             />
           </FormField>
@@ -1252,7 +1272,10 @@ function TicketCatalogWorkspace() {
               value={repeat?.cadence ?? 'weekly'}
               onValueChange={(cadence) =>
                 repeat &&
-                setRepeat({ ...repeat, cadence: cadence as RepeatCadence })
+                updateRepeat({
+                  ...repeat,
+                  cadence: cadence as RepeatCadence,
+                })
               }
             >
               <SelectTrigger id="ticket-repeat-cadence">
@@ -1273,7 +1296,10 @@ function TicketCatalogWorkspace() {
               value={repeat?.count ?? 1}
               onChange={(event) =>
                 repeat &&
-                setRepeat({ ...repeat, count: Number(event.target.value) })
+                updateRepeat({
+                  ...repeat,
+                  count: Number(event.target.value),
+                })
               }
             />
           </FormField>
@@ -1332,7 +1358,7 @@ function TicketCatalogWorkspace() {
             <Input
               id="ticket-status-reason"
               value={reason}
-              onChange={(event) => setReason(event.target.value)}
+              onChange={(event) => updateReason(event.target.value)}
             />
           </FormField>
           <Button className="mt-4" onClick={applyStatus}>

@@ -1,5 +1,6 @@
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { TicketWorkspace } from './ticket-workspace';
 import { TicketForm } from './ticket-form';
@@ -138,6 +139,28 @@ describe('Rendered ticket UI', () => {
     expect(html).toContain('کشور مبدأ');
     expect(html).toContain('شهر مقصد');
     expect(html).toContain('انتخاب و جست‌وجوی ایرلاین');
+  });
+  it('clears stale validation errors after correcting ticket form values', () => {
+    const formSource = readFileSync(
+      new URL('./ticket-form.tsx', import.meta.url),
+      'utf8',
+    );
+    const workspaceSource = readFileSync(
+      new URL('./ticket-workspace.tsx', import.meta.url),
+      'utf8',
+    );
+    expect(formSource).toMatch(
+      /const updateInput[\s\S]*setError\(''\);[\s\S]*setInput\(value\)/,
+    );
+    expect(formSource).toMatch(
+      /const updateReturnInput[\s\S]*setError\(''\);[\s\S]*setReturnInput\(value\)/,
+    );
+    expect(workspaceSource).toMatch(
+      /const updateCapacityHold[\s\S]*setProblem\(''\);[\s\S]*setCapacityHold\(value\)/,
+    );
+    expect(workspaceSource).toMatch(
+      /const updateRepeat[\s\S]*setProblem\(''\);[\s\S]*setRepeat\(value\)/,
+    );
   });
   it('renders train and bus fields from the same ticket form', () => {
     const train = renderToStaticMarkup(

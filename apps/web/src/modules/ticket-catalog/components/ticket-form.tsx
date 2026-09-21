@@ -652,12 +652,28 @@ export function TicketForm({
   const [reason, setReason] = useState('');
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
+  const updateInput = (value: ProductInput) => {
+    setError('');
+    setInput(value);
+  };
+  const updateReturnInput = (value: ProductInput) => {
+    setError('');
+    setReturnInput(value);
+  };
+  const updateDefinitionMode = (value: TicketDefinitionMode) => {
+    setError('');
+    setDefinitionMode(value);
+  };
+  const updateReason = (value: string) => {
+    setError('');
+    setReason(value);
+  };
   const segment = input.segments[0]!;
   const returnSegment = returnInput.segments[0]!;
   const changeSegment = (patch: Partial<Segment>) =>
-    setInput({ ...input, segments: [{ ...segment, ...patch }] });
+    updateInput({ ...input, segments: [{ ...segment, ...patch }] });
   const changeSegmentAt = (index: number, patch: Partial<Segment>) =>
-    setInput({
+    updateInput({
       ...input,
       segments: input.segments.map((item, itemIndex) =>
         itemIndex === index ? { ...item, ...patch } : item,
@@ -667,7 +683,7 @@ export function TicketForm({
     patch: Partial<Segment>,
     serviceDate?: string,
   ) =>
-    setInput({
+    updateInput({
       ...input,
       ...(serviceDate ? { serviceDate } : {}),
       segments: [{ ...segment, ...patch }],
@@ -677,7 +693,7 @@ export function TicketForm({
     patch: Partial<Segment>,
     serviceDate?: string,
   ) =>
-    setInput({
+    updateInput({
       ...input,
       ...(index === 0 && serviceDate ? { serviceDate } : {}),
       segments: input.segments.map((item, itemIndex) =>
@@ -685,7 +701,7 @@ export function TicketForm({
       ),
     });
   const changeReturnSegment = (patch: Partial<Segment>) =>
-    setReturnInput({
+    updateReturnInput({
       ...returnInput,
       segments: [{ ...returnSegment, ...patch }],
     });
@@ -693,7 +709,7 @@ export function TicketForm({
     patch: Partial<Segment>,
     serviceDate?: string,
   ) =>
-    setReturnInput({
+    updateReturnInput({
       ...returnInput,
       ...(serviceDate ? { serviceDate } : {}),
       segments: [{ ...returnSegment, ...patch }],
@@ -701,7 +717,7 @@ export function TicketForm({
   function chooseTransport(transport: TransportType) {
     const fresh = emptyInput(transport);
     const freshSegment = fresh.segments[0]!;
-    setInput({
+    updateInput({
       ...input,
       transport,
       flightClassId: '',
@@ -709,8 +725,8 @@ export function TicketForm({
       display: undefined,
       segments: [freshSegment],
     });
-    setDefinitionMode('one-way');
-    setReturnInput(
+    updateDefinitionMode('one-way');
+    updateReturnInput(
       createReturnTicketDraft({
         ...input,
         transport,
@@ -719,15 +735,15 @@ export function TicketForm({
     );
   }
   function chooseDefinitionMode(mode: TicketDefinitionMode) {
-    setDefinitionMode(mode);
+    updateDefinitionMode(mode);
     if (mode === 'round-trip') {
       const outbound = { ...input, segments: [{ ...input.segments[0]! }] };
-      setInput(outbound);
-      setReturnInput(createReturnTicketDraft(outbound));
+      updateInput(outbound);
+      updateReturnInput(createReturnTicketDraft(outbound));
     } else if (mode === 'one-way') {
-      setInput({ ...input, segments: [{ ...input.segments[0]! }] });
+      updateInput({ ...input, segments: [{ ...input.segments[0]! }] });
     } else if (input.segments.length === 1) {
-      setInput({
+      updateInput({
         ...input,
         segments: [...input.segments, createConnectedSegment(input)],
       });
@@ -816,7 +832,7 @@ export function TicketForm({
                   ''
                 }
                 onChange={(serviceDate) =>
-                  setInput(changeTicketServiceDate(input, serviceDate))
+                  updateInput(changeTicketServiceDate(input, serviceDate))
                 }
               />
             </FormField>
@@ -919,7 +935,7 @@ export function TicketForm({
                   type="button"
                   variant="outline"
                   onClick={() =>
-                    setInput({
+                    updateInput({
                       ...input,
                       segments: [
                         ...input.segments,
@@ -947,7 +963,7 @@ export function TicketForm({
                       size="sm"
                       variant="outline"
                       onClick={() =>
-                        setInput({
+                        updateInput({
                           ...input,
                           segments: input.segments.filter(
                             (_, itemIndex) => itemIndex !== index,
@@ -1012,7 +1028,7 @@ export function TicketForm({
                   ''
                 }
                 onChange={(serviceDate) =>
-                  setReturnInput(
+                  updateReturnInput(
                     changeTicketServiceDate(returnInput, serviceDate),
                   )
                 }
@@ -1056,7 +1072,7 @@ export function TicketForm({
               type="checkbox"
               checked={input.companyOwned}
               onChange={(event) =>
-                setInput({
+                updateInput({
                   ...input,
                   companyOwned: event.target.checked,
                   supplyType: event.target.checked ? 'company' : 'supplier',
@@ -1070,7 +1086,7 @@ export function TicketForm({
               <Select
                 value={input.supplyType}
                 onValueChange={(supplyType) =>
-                  setInput({
+                  updateInput({
                     ...input,
                     supplyType: supplyType as ProductInput['supplyType'],
                     companyOwned: supplyType === 'company',
@@ -1093,7 +1109,7 @@ export function TicketForm({
               <Select
                 value={input.entryMethod}
                 onValueChange={(entryMethod) =>
-                  setInput({
+                  updateInput({
                     ...input,
                     entryMethod: entryMethod as ProductInput['entryMethod'],
                   })
@@ -1120,7 +1136,7 @@ export function TicketForm({
                   Number.isNaN(input.totalCapacity) ? '' : input.totalCapacity
                 }
                 onChange={(event) =>
-                  setInput({
+                  updateInput({
                     ...input,
                     totalCapacity:
                       event.target.value === ''
@@ -1153,7 +1169,7 @@ export function TicketForm({
               )}
               onSelect={(ref) => {
                 if (ref) onReference?.(ref);
-                setInput({
+                updateInput({
                   ...input,
                   fare: {
                     ...input.fare,
@@ -1176,7 +1192,7 @@ export function TicketForm({
               value={input.rules}
               maxLength={4000}
               onChange={(event) =>
-                setInput({ ...input, rules: event.target.value })
+                updateInput({ ...input, rules: event.target.value })
               }
             />
           </FormField>
@@ -1184,7 +1200,7 @@ export function TicketForm({
             <Input
               id="ticket-reason"
               value={reason}
-              onChange={(event) => setReason(event.target.value)}
+              onChange={(event) => updateReason(event.target.value)}
             />
           </FormField>
         </section>
