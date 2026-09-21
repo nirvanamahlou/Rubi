@@ -23,6 +23,17 @@ describe('header today in Tehran', () => {
     expect(formatHeaderDate('2026-09-09')).not.toMatch(/[0-9]/);
   });
 
+  it('uses the resolved display calendar, digits and timezone', () => {
+    expect(
+      formatHeaderDate('2026-09-09', {
+        calendar: 'gregorian',
+        locale: 'en-US',
+        numberingSystem: 'latn',
+        timezone: 'Asia/Dubai',
+      }),
+    ).toContain('September 9, 2026');
+  });
+
   it('refreshes at midnight, on focus and visibility, and removes all listeners', () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-09-08T20:29:59.500Z'));
