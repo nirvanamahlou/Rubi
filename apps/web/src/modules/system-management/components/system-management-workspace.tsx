@@ -88,14 +88,6 @@ const globalScope: SettingsScope = {
 /** Links retain ownership instead of duplicating an owner's administration UI. */
 const managementAreas: readonly ManagementArea[] = [
   {
-    id: 'legal-entities',
-    title: 'شرکت صادرکننده و برند',
-    description: 'هویت حقوقی، Branding و سربرگ‌ها در ماژول مالک ثبت می‌شوند.',
-    owner: 'Legal Entity',
-    href: '/system/legal-entities',
-    moduleIds: ['general'],
-  },
-  {
     id: 'iam',
     title: 'کاربران، نقش‌ها و دامنه دسترسی',
     description:

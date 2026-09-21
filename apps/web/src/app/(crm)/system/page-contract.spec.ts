@@ -24,10 +24,13 @@ describe('system management access', () => {
     expect(systemPageSource).not.toContain('ModuleFoundationWorkspace');
   });
 
-  it('retains real owner links for IAM and Legal Entity', () => {
+  it('retains navigation links without showing the Legal Entity callout', () => {
     expect(workspaceSource).toContain("href: '/users'");
     expect(workspaceSource).toContain("href: '/system/legal-entities'");
-    expect(workspaceSource).toContain('Legal Entity');
+    expect(workspaceSource).not.toContain("owner: 'Legal Entity'");
+    expect(workspaceSource).not.toContain(
+      'هویت حقوقی، Branding و سربرگ‌ها در ماژول مالک ثبت می‌شوند.',
+    );
   });
 
   it('does not duplicate owner APIs and exposes the live operations panel', () => {
