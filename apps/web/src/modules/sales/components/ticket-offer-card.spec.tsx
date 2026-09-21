@@ -47,7 +47,7 @@ describe('readable sales ticket card', () => {
     expect(priced).toContain('2500000 IRR');
   });
   it.each([true, false])(
-    'shows both dates larger, bold and full-contrast (selected=%s)',
+    'shows travel dates prominently beside the airline (selected=%s)',
     (selected) => {
       const html = renderToStaticMarkup(
         <TicketOfferCard
@@ -56,18 +56,37 @@ describe('readable sales ticket card', () => {
           onSelect={vi.fn()}
         />,
       );
+      const dateGroup = html.match(
+        /<span data-ticket-meta="travel-dates"[^>]*>/,
+      )?.[0];
+      expect(dateGroup).toContain('text-lg');
+      expect(dateGroup).toContain('font-extrabold');
+      expect(dateGroup).toContain('text-primary');
       const dates = html.match(/<time[^>]*>/g) ?? [];
       expect(dates).toHaveLength(2);
-      for (const date of dates) {
-        expect(date).toContain('text-sm font-semibold leading-6');
-        expect(date).toContain('break-words');
-        expect(date).not.toContain('opacity');
-        expect(date).not.toContain('truncate');
-      }
       expect(dates[0]).toContain(offer.departureAt);
       expect(dates[1]).toContain(offer.arrivalAt);
     },
   );
+  it('keeps departure and arrival times smaller at opposite card edges', () => {
+    const html = renderToStaticMarkup(
+      <TicketOfferCard offer={offer} selected={false} onSelect={vi.fn()} />,
+    );
+    const departureTime = html.match(
+      /<strong dir="ltr" data-ticket-time="departure"[^>]*>/,
+    )?.[0];
+    const arrivalTime = html.match(
+      /<strong dir="ltr" data-ticket-time="arrival"[^>]*>/,
+    )?.[0];
+    for (const time of [departureTime, arrivalTime]) {
+      expect(time).toContain('text-base');
+      expect(time).toContain('text-muted-foreground');
+      expect(time).not.toContain('text-2xl');
+    }
+    expect(departureTime).toContain('text-start');
+    expect(arrivalTime).toContain('text-end');
+    expect(html).toContain('grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]');
+  });
   it('separates departure and arrival with the actual route and selected state', () => {
     const html = renderToStaticMarkup(
       <TicketOfferCard

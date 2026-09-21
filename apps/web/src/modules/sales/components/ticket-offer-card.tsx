@@ -64,6 +64,7 @@ export function TicketOfferCard({
   const insufficient = offer.remainingCapacity < requiredSeats;
   const missingFare = requireStandaloneFare && !offer.standaloneSalePrice;
   const arrival = ticketDisplayTime(offer.arrivalAt);
+  const arrivesOnAnotherDay = arrival.date !== departure.date;
   return (
     <button
       type="button"
@@ -73,7 +74,7 @@ export function TicketOfferCard({
       onClick={() => onSelect(offer)}
       className={`w-full min-w-0 disabled:cursor-not-allowed disabled:opacity-60 overflow-hidden rounded-2xl border text-start shadow-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${selected ? 'border-primary bg-primary/5 ring-2 ring-primary/20' : 'border-border bg-surface hover:border-primary/60 hover:shadow-md'}`}
     >
-      <span className="flex items-start justify-between gap-3 border-b border-border/60 px-4 py-4">
+      <span className="flex items-start justify-between gap-3 border-b border-border/60 px-4 py-3">
         <span className="min-w-0">
           <span className="flex items-center gap-2 break-words text-base font-bold text-foreground">
             <Plane
@@ -85,6 +86,20 @@ export function TicketOfferCard({
           <span className="mt-1.5 block text-xs text-muted-foreground">
             شماره پرواز{' '}
             <bdi className="font-semibold">{offer.serviceNumber}</bdi>
+          </span>
+          <span
+            data-ticket-meta="travel-dates"
+            className="mt-2 flex flex-wrap items-center gap-1.5 text-lg font-extrabold leading-7 text-primary"
+          >
+            <time dateTime={offer.departureAt}>{departure.date}</time>
+            {arrivesOnAnotherDay ? (
+              <>
+                <span aria-hidden="true" className="text-muted-foreground">
+                  ←
+                </span>
+                <time dateTime={offer.arrivalAt}>{arrival.date}</time>
+              </>
+            ) : null}
           </span>
         </span>
         <span
@@ -98,24 +113,27 @@ export function TicketOfferCard({
           {selected ? 'انتخاب‌شده' : 'انتخاب'}
         </span>
       </span>
-      <span className="grid grid-cols-2 items-start gap-x-4 gap-y-3 px-4 py-4">
-        <span className="min-w-0">
+      <span className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 px-4 py-3">
+        <span className="min-w-0 text-start">
           <span className="block text-xs text-muted-foreground">حرکت</span>
           <span className="mt-1 block break-words text-lg font-bold text-foreground">
             {originLabel}
           </span>
           <strong
             dir="ltr"
-            className="mt-2 block text-start text-2xl font-bold tabular-nums text-primary"
+            data-ticket-time="departure"
+            className="mt-1.5 block text-start text-base font-semibold tabular-nums text-muted-foreground"
           >
             {departure.time}
           </strong>
-          <time
-            dateTime={offer.departureAt}
-            className="mt-2 block break-words text-sm font-semibold leading-6"
-          >
-            {departure.date}
-          </time>
+        </span>
+        <span className="flex max-w-32 flex-col items-center gap-1 rounded-lg bg-muted/60 px-2 py-2 text-center text-[11px] leading-5 text-muted-foreground">
+          <Plane
+            aria-hidden="true"
+            className="size-4 -rotate-45 text-primary"
+          />
+          <span>مدت پرواز: {ticketDuration(offer)}</span>
+          <span>ساعت‌ها به وقت تهران</span>
         </span>
         <span className="min-w-0 text-end">
           <span className="block text-xs text-muted-foreground">رسیدن</span>
@@ -124,23 +142,11 @@ export function TicketOfferCard({
           </span>
           <strong
             dir="ltr"
-            className="mt-2 block text-end text-2xl font-bold tabular-nums text-primary"
+            data-ticket-time="arrival"
+            className="mt-1.5 block text-end text-base font-semibold tabular-nums text-muted-foreground"
           >
             {arrival.time}
           </strong>
-          <time
-            dateTime={offer.arrivalAt}
-            className="mt-2 block break-words text-sm font-semibold leading-6"
-          >
-            {arrival.date}
-          </time>
-        </span>
-        <span className="col-span-2 flex items-center justify-center gap-2 rounded-lg bg-muted/60 px-2 py-2 text-xs text-muted-foreground">
-          <Plane
-            aria-hidden="true"
-            className="size-4 -rotate-45 text-primary"
-          />
-          مدت پرواز: {ticketDuration(offer)} · ساعت‌ها به وقت تهران
         </span>
       </span>
       <span className="flex flex-wrap items-center justify-between gap-2 border-t border-border bg-muted/40 px-4 py-3 text-xs">
