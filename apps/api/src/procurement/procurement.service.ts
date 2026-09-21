@@ -972,6 +972,7 @@ export class ProcurementService {
     const input = v.object(body);
     const action = v.text(input.action, 'action', 40);
     const permissions: Record<string, ProcurementPermission> = {
+      PUBLISH: 'procurement.request.submit',
       SUBMIT: 'procurement.request.submit',
       CANCEL: 'procurement.request.cancel',
       ASSIGN: 'procurement.assign',
@@ -1009,9 +1010,35 @@ export class ProcurementService {
       async (tx) => {
         const before = await this.claim(tx, id, version);
         const draft = before.data as unknown as ProcurementDraftV1;
-        if (action === 'SUBMIT') {
+        if (action === 'PUBLISH') {
           requireRule(
             ['DRAFT', 'CHANGES_REQUESTED'].includes(before.status),
+            'INVALID_STATE',
+            'درخواست قابل انتشار نیست.',
+          );
+          if (draft.urgent) this.require(actor, 'procurement.emergency');
+          validateSubmission(draft);
+          await this.validateReferences(
+            draft,
+            actor,
+            true,
+            before.requesterUserId,
+            before.requesterEmployeeId,
+          );
+          requireRule(
+            draft.origin.kind === 'GENERAL',
+            'TRAVEL_NOT_CONNECTED',
+            'قرارداد ارجاع تخصصی سفر هنوز متصل نیست.',
+          );
+          await tx.procurementRequest.update({
+            where: { id },
+            data: { status: 'SUBMITTED' },
+          });
+        } else if (action === 'SUBMIT') {
+          requireRule(
+            ['DRAFT', 'CHANGES_REQUESTED', 'SUBMITTED'].includes(
+              before.status,
+            ),
             'INVALID_STATE',
             'درخواست قابل ارسال نیست.',
           );
