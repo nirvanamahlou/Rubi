@@ -181,6 +181,13 @@
 
 # Work Assignments
 
+## LOGIN-BRAND-CLEANUP-RESTORE-0921 — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-21: نسخهٔ جدید صفحهٔ ورود بدون ابر و نوشتهٔ `NOORA` روی localhost:3100 نمایش داده شود و خطای ارتباط با سرور با اجرای Backend درست رفع شود.
+- شاخهٔ مستقل `codex/pc-b-login-brand-cleanup-0921` از `origin/develop@13ea2f39`؛ محدوده فقط سه فایل نمای پس‌زمینه و تست Login، وضعیت همین واحد و Runtime محلی است. Schema/Migration، Permission، Dependency/Lockfile و دادهٔ عملیاتی تغییر نمی‌کنند.
+- نسخهٔ تأییدشدهٔ PR #327 مرجع اصلاح است؛ بازگردانی ناخواستهٔ ابر در mergeهای بعدی حذف می‌شود و تصویر هوانوردی ثابت حفظ خواهد شد.
+- نتیجه: ابر، نوشتهٔ `NOORA` و انیمیشن‌های تزئینی حذف شدند؛ تصویر B2 به‌صورت ثابت باقی ماند. ۲ تست Login، typecheck و lint وب موفق‌اند.
+
 ## DOCUMENTS-003E-CALENDAR-THEME — PC-B — READY_FOR_REVIEW
 
 - درخواست مالک در 2026-09-02: تقویم‌های داخل بخش اسناد با تم بصری Rubi یکدست شوند. `COMPUTER_ID=PC-B`.
