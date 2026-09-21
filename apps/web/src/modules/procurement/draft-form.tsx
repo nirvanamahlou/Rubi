@@ -467,9 +467,6 @@ export function DraftForm({
               {request?.number ?? 'پس از نخستین ثبت، خودکار تعیین می‌شود'}
             </p>
           </div>
-          <span className="rounded-full border border-primary/20 bg-surface/80 px-3 py-1 text-xs font-semibold text-primary">
-            {request ? 'ویرایش پیش‌نویس' : 'ثبت پیش‌نویس'}
-          </span>
         </div>
         {error && (
           <Alert tone="error" title="ذخیره انجام نشد" description={error} />

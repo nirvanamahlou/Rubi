@@ -1,3 +1,8 @@
+## 2026-09-21 — PROCUREMENT-DRAFT-FORM-HEADER-CLEANUP-0921 — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک: نشان «ثبت پیش‌نویس» از بالای فرم درخواست خرید حذف شود؛ دکمهٔ عملیاتی ذخیره در پایین فرم حفظ می‌شود.
+- محدوده: فقط هدر و تست متمرکز فرم خرید، همراه ثبت وضعیت همین کار. API، Schema/Migration، Permission، داده و Dependency/Lockfile تغییر نمی‌کنند.
+
 ## TICKET-TIME-REPEAT-0920 — PC-A — READY_FOR_REVIEW
 
 - درخواست مالک در 2026-09-20: فیلدهای زمان حرکت و رسیدنِ تعریف بلیت دوباره در فرم در دسترس باشند و هنگام تکرار هفتگی/ماهانه همراه بلیت کپی شوند. `COMPUTER_ID=PC-A`؛ شاخه `codex/pc-a-ticket-time-repeat-0920` از آخرین `origin/develop@7e52d309`.

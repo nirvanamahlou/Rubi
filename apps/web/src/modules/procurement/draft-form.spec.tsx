@@ -109,6 +109,8 @@ describe('Purchase draft accessibility and persisted input', () => {
     expect(html).not.toContain('type="date"');
     expect(html).toContain('ذخیره پیش‌نویس');
     expect(html).toContain('تأیید و انتشار');
+    expect(html).not.toContain('>ثبت پیش‌نویس</span>');
+    expect(html).not.toContain('>ویرایش پیش‌نویس</span>');
     expect(html).toContain(
       'شماره درخواست: پس از نخستین ثبت، خودکار تعیین می‌شود',
     );
