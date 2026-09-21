@@ -696,6 +696,14 @@ export function DraftForm({
               </ProcurementSelect>
             </FormField>
           </div>
+          <div
+            role="note"
+            className="rounded-xl border border-sky-200/80 bg-sky-50/80 px-4 py-3 text-sm leading-6 text-sky-900 dark:border-sky-400/25 dark:bg-sky-400/10 dark:text-sky-100"
+          >
+            تأمین‌کننده در درخواست اولیه اختیاری است؛ می‌توانید درخواست را
+            بدون انتخاب یا نوشتن تأمین‌کننده ثبت کنید. تأمین‌کنندهٔ فعلی یا
+            تأمین‌کنندهٔ تازه در مرحلهٔ استعلام و سفارش تعیین می‌شود.
+          </div>
           {text('needReason', 'شرح نیاز و توجیه خرید', true)}
           <label className="flex min-h-11 items-center gap-3 text-sm font-semibold">
             <input

@@ -98,6 +98,9 @@ describe('Purchase draft accessibility and persisted input', () => {
     expect(html).toContain('کاربر جاری');
     expect(html).toContain('شعبه مرکزی');
     expect(html).toContain('انتخاب واحد از منابع انسانی');
+    expect(html).toContain('تأمین‌کننده در درخواست اولیه اختیاری است');
+    expect(html).toContain('بدون انتخاب یا نوشتن تأمین‌کننده');
+    expect(html).not.toContain('id="proc-supplier"');
     expect(html).not.toContain('id="proc-priority"');
     expect(html).toContain('پیوست‌ها و یادداشت‌ها');
     expect(html).not.toContain('نوع منشأ درخواست');

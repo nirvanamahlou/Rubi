@@ -43,6 +43,14 @@
 - اعتبارسنجی: ۲۱ تست هدفمند Web، lint و typecheck Web و build تولیدی Web موفق‌اند. Migration، دادهٔ عملیاتی، Permission، Dependency/Lockfile و Runtime مشترک تغییر نکردند.
 
 # Work Assignments
+## 2026-09-21 — PROCUREMENT-REQUEST-NO-SUPPLIER-0921 — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک: ایجاد درخواست خرید جدید باید در میزکار خرید در دسترس باشد و ثبت پیش‌نویس/درخواست به تأمین‌کنندهٔ فعلی وابسته نباشد؛ تأمین‌کننده در مراحل استعلام و سفارش تعیین می‌شود.
+- شاخه: `codex/pc-b-procurement-request-no-supplier-0921` از وضعیت فعلی PC-B؛ `COMPUTER_ID=PC-B`.
+- محدودهٔ رزروشده: `apps/web/src/modules/procurement/draft-form.tsx`، تست همان فرم و تست قواعد ارسال Procurement، به‌همراه این مدخل و وضعیت پروژه. بدون تغییر Schema/Migration، Permission، قرارداد عملیات سفارش یا دادهٔ عملیاتی.
+- قرارداد جریان: درخواست عمومی می‌تواند بدون تأمین‌کننده ذخیره/ارسال شود؛ ثبت استعلام، سفارش و فاکتور همچنان به طرف تجاری معتبر در مرحلهٔ خود نیاز دارد.
+- نتیجه و اعتبارسنجی: راهنمای اختیاری‌بودن تأمین‌کننده به فرم افزوده شد و تست دامنه تضمین می‌کند درخواست بدون `supplierId` یا `supplierName` معتبر است؛ تست فرم، lint و typecheck Web/API موفق‌اند.
+
 
 ## SYSTEM-REMOVE-MODULE-SETTINGS-0919 — PC-B — READY_FOR_REVIEW
 
