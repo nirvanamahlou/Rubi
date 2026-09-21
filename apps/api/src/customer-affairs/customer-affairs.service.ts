@@ -8,6 +8,7 @@ import {
   Inject,
   Injectable,
   NotFoundException,
+  Optional,
 } from '@nestjs/common';
 import type {
   AuthenticatedActor,
@@ -26,6 +27,7 @@ import { DocumentsService } from '../documents/documents.service';
 import { SalesService } from '../sales/sales.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { ReservationsPublicService } from '../reservations/reservations-public.service';
+import { SettingsRuntimeService } from '../settings/settings-runtime.service';
 import { resolutionPausePatch } from './customer-affairs-sla';
 import {
   canTransitionLead,
@@ -74,6 +76,22 @@ const SLA_MINUTES: Record<string, { first: number; resolution: number }> = {
   URGENT: { first: 30, resolution: 480 },
   CRITICAL: { first: 15, resolution: 240 },
 };
+
+interface CustomerAffairsSlaSetting {
+  urgent?: number;
+  normal?: number;
+  resolution?: number;
+}
+
+function positiveNumber(value: unknown, fallback: number): number {
+  const candidate =
+    typeof value === 'number'
+      ? value
+      : typeof value === 'string'
+        ? Number(value)
+        : Number.NaN;
+  return Number.isFinite(candidate) && candidate > 0 ? candidate : fallback;
+}
 
 function json(value: unknown): Prisma.InputJsonValue {
   return JSON.parse(JSON.stringify(value)) as Prisma.InputJsonValue;
@@ -232,6 +250,9 @@ export class CustomerAffairsService {
     private readonly notifications: NotificationsService,
     @Inject(HrDirectoryService)
     private readonly hrDirectory: HrDirectoryService,
+    @Optional()
+    @Inject(SettingsRuntimeService)
+    private readonly settings?: SettingsRuntimeService,
   ) {}
 
   async dashboard(
@@ -912,7 +933,39 @@ export class CustomerAffairsService {
     this.validateTicket(input);
     const owner = input.customerOwnerUserId ?? actor.userId;
     const now = new Date();
-    const policy = SLA_MINUTES[input.priority] ?? SLA_MINUTES.NORMAL!;
+    const configuredSla: {
+      value: CustomerAffairsSlaSetting;
+      version: number;
+    } = this.settings
+      ? await this.settings.json<CustomerAffairsSlaSetting>(
+          'affairs',
+          'sla',
+          { branchId },
+          {},
+        )
+      : { value: {}, version: 0 };
+    const configuredUrgent = positiveNumber(
+      configuredSla.value.urgent,
+      SLA_MINUTES.URGENT!.first,
+    );
+    const configuredNormal = positiveNumber(
+      configuredSla.value.normal,
+      SLA_MINUTES.NORMAL!.first,
+    );
+    const configuredResolutionHours = positiveNumber(
+      configuredSla.value.resolution,
+      SLA_MINUTES.URGENT!.resolution / 60,
+    );
+    const fallbackPolicy = SLA_MINUTES[input.priority] ?? SLA_MINUTES.NORMAL!;
+    const policy =
+      input.priority === 'URGENT' || input.priority === 'CRITICAL'
+        ? {
+            first: configuredUrgent,
+            resolution: configuredResolutionHours * 60,
+          }
+        : input.priority === 'NORMAL'
+          ? { first: configuredNormal, resolution: fallbackPolicy.resolution }
+          : fallbackPolicy;
     const trackingNumber = `CA-T-${now.getUTCFullYear()}-${randomUUID().slice(0, 8).toUpperCase()}`;
     try {
       const id = await this.repository.transaction(async (tx) => {
@@ -922,7 +975,10 @@ export class CustomerAffairsService {
             branchId,
             trackingNumber,
             customerOwnerUserId: owner,
-            slaPolicyVersion: SLA_POLICY_VERSION,
+            slaPolicyVersion:
+              configuredSla.version > 0
+                ? `${SLA_POLICY_VERSION}:settings-${configuredSla.version}`
+                : SLA_POLICY_VERSION,
             firstResponseDueAt: new Date(now.getTime() + policy.first * 60_000),
             resolutionDueAt: new Date(
               now.getTime() + policy.resolution * 60_000,

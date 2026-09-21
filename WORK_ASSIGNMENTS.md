@@ -93,6 +93,13 @@
 
 - نتیجهٔ ادغام‌شده از `origin/develop`: قرارداد نسخهٔ ۱ مدیریت سامانه، ۳۰ Permission، ۱۲ جدول افزایشی و API کنترل‌شدهٔ تنظیمات/شماره‌گذاری/اعلان/قالب/Feature Flag/Backup/Health/Audit به‌همراه حفاظت IAM برای Self-escalation، آخرین مدیر فعال و بستن نشست جاری اضافه شده است. Migration و تست‌های این Slice در Draft PR #305 تأیید شده‌اند؛ قفل‌های Migration، قرارداد و اسناد مرکزی آزادند.
 
+## SYSTEM-MANAGEMENT-LIVE-CONSUMERS-004 — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک: مقدارهای تنظیم‌شده در مرکز مدیریت سیستم باید در ماژول‌های مالک واقعاً مصرف شوند و فقط در UI ذخیره نشوند.
+- محدودهٔ رزروشده: Resolver عمومی تنظیمات با ارث‌بری `USER > BRANCH > LEGAL_ENTITY > GLOBAL`، اتصال مصرف‌کننده‌های مالک PC-B (SLA امور مشتریان، سیاست فایل Documents، سیاست استعلام خرید، اولویت رویداد میزکار)، تست‌های هدفمند و همین ثبت وضعیت.
+- مرزها: دادهٔ عملیاتی، Secret، Migration، تغییر Permission و تغییر قرارداد عمومی ماژول‌های مالک دیگر خارج از این واحد است. Resolver فقط `system_settings` را می‌خواند و در نبود مقدار فعال، مقدار امن پیش‌فرض را برمی‌گرداند.
+- نتیجه: Resolver و اتصال‌های واقعی SLA امور مشتریان، سقف فایل Documents، Override سیاست خرید و اولویت پیش‌فرض رویداد میزکار پیاده شدند؛ UI نیز مقدار Global را برای Scope شرکت به‌صورت ارثی نمایش می‌دهد. API و Web typecheck/lint/build و کل تست API موفق‌اند. جزئیات در `docs/tasks/SYSTEM-MANAGEMENT-LIVE-CONSUMERS-004.md` ثبت شده است.
+
 ## SYSTEM-MANAGEMENT-001 — PC-B — READY_FOR_REVIEW
 
 - Backend مدیریت سامانه در PR #305 بازبینی و در `develop` ادغام شد. قفل Migration، قرارداد مشترک و اسناد مرکزی آن آزاد است؛ PR #304 فقط مصرف‌کنندهٔ UI همان قراردادهای نسخه‌دار است.

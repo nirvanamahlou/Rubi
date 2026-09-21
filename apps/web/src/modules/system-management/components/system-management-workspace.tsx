@@ -44,14 +44,12 @@ import {
   type FormEvent,
 } from 'react';
 
-import type { LegalEntitySummary, SystemSettingV1 } from '@nora/contracts';
+import type { SystemSettingV1 } from '@nora/contracts';
 import { navigationGroups, navigationItems } from '@/lib/navigation';
-import { legalEntitiesApi } from '@/modules/legal-entities/api/client';
 import {
   systemManagementApi,
   SystemManagementApiError,
   type SystemAuditRecord,
-  type SystemOverview,
 } from '../api/client';
 import {
   settingsModules,
@@ -87,14 +85,6 @@ const globalScope: SettingsScope = {
 
 /** Links retain ownership instead of duplicating an owner's administration UI. */
 const managementAreas: readonly ManagementArea[] = [
-  {
-    id: 'legal-entities',
-    title: 'شرکت صادرکننده و برند',
-    description: 'هویت حقوقی، Branding و سربرگ‌ها در ماژول مالک ثبت می‌شوند.',
-    owner: 'Legal Entity',
-    href: '/system/legal-entities',
-    moduleIds: ['general'],
-  },
   {
     id: 'iam',
     title: 'کاربران، نقش‌ها و دامنه دسترسی',
@@ -313,15 +303,12 @@ export function SystemManagementWorkspace() {
     'all'
   > | null>(null);
   const [query, setQuery] = useState('');
-  const [scope, setScope] = useState<SettingsScope>(globalScope);
-  const [legalEntities, setLegalEntities] = useState<LegalEntitySummary[]>([]);
-  const [scopeLoadError, setScopeLoadError] = useState<string | null>(null);
+  const scope: SettingsScope = globalScope;
   const [moduleTab, setModuleTab] = useState<'history' | 'settings'>(
     'settings',
   );
   const [settings, setSettings] = useState<SystemSettingV1[]>([]);
   const [audit, setAudit] = useState<SystemAuditRecord[]>([]);
-  const [overview, setOverview] = useState<SystemOverview | null>(null);
   const [editing, setEditing] = useState<{
     module: SettingModule;
     group: SettingGroup;
@@ -333,30 +320,13 @@ export function SystemManagementWorkspace() {
   const [toast, setToast] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    const [settingsResult, auditResult, overviewResult, legalEntitiesResult] =
-      await Promise.allSettled([
-        systemManagementApi.settings(),
-        systemManagementApi.audit(),
-        systemManagementApi.overview(),
-        legalEntitiesApi.selectable(),
-      ]);
+    const [settingsResult, auditResult] = await Promise.allSettled([
+      systemManagementApi.settings(),
+      systemManagementApi.audit(),
+    ]);
     if (settingsResult.status === 'fulfilled')
       setSettings(settingsResult.value);
     if (auditResult.status === 'fulfilled') setAudit(auditResult.value);
-    if (overviewResult.status === 'fulfilled')
-      setOverview(overviewResult.value);
-    if (legalEntitiesResult.status === 'fulfilled') {
-      setLegalEntities(
-        legalEntitiesResult.value.data.filter((entity) => entity.isActive),
-      );
-      setScopeLoadError(null);
-    } else {
-      setLegalEntities([]);
-      setScopeLoadError(
-        'دامنه‌های حقوقی از API مالک در دسترس نیست؛ فقط دامنه کل مجموعه قابل استفاده است.',
-      );
-      setScope(globalScope);
-    }
   }, []);
 
   useEffect(() => {
@@ -383,7 +353,7 @@ export function SystemManagementWorkspace() {
     settingsModules.find((module) => module.id === selectedModuleId) ??
     settingsModules[0]!;
 
-  const settingFor = (module: SettingModule, group: SettingGroup) =>
+  const ownSettingFor = (module: SettingModule, group: SettingGroup) =>
     settings.find(
       (setting) =>
         setting.namespace === module.id &&
@@ -391,6 +361,18 @@ export function SystemManagementWorkspace() {
         setting.scope === scope.scope &&
         setting.scopeId === scope.scopeId,
     );
+
+  const settingFor = (module: SettingModule, group: SettingGroup) =>
+    ownSettingFor(module, group) ??
+    (scope.scope !== 'GLOBAL'
+      ? settings.find(
+          (setting) =>
+            setting.namespace === module.id &&
+            setting.key === group.id &&
+            setting.scope === 'GLOBAL' &&
+            setting.scopeId === null,
+        )
+      : undefined);
 
   const valuesFor = (module: SettingModule, group: SettingGroup) => {
     const setting = settingFor(module, group);
@@ -439,7 +421,9 @@ export function SystemManagementWorkspace() {
       setSaveError('دلیل تغییر را وارد کنید.');
       return;
     }
-    const current = settingFor(editing.module, editing.group);
+    // Only the value owned by the selected scope supplies expectedVersion.
+    // An inherited global value creates a new scoped override atomically.
+    const current = ownSettingFor(editing.module, editing.group);
     setSaving(true);
     setSaveError(null);
     try {
@@ -713,7 +697,6 @@ export function SystemManagementWorkspace() {
             {selectedModule.groups.map((group) => {
               const GroupIcon = iconMap[group.icon] ?? Settings;
               const values = valuesFor(selectedModule, group);
-              const current = settingFor(selectedModule, group);
               return (
                 <article
                   className={styles.settingCard}
@@ -756,9 +739,6 @@ export function SystemManagementWorkspace() {
                     </div>
                   ) : null}
                   <div className={styles.cardFoot}>
-                    <span className={styles.pill}>
-                      نسخه {(current?.version ?? 0).toLocaleString('fa-IR')}
-                    </span>
                     <button
                       aria-label={`ویرایش تنظیمات ${group.title}`}
                       className={styles.button}
@@ -791,48 +771,7 @@ export function SystemManagementWorkspace() {
       <div className={styles.main}>
         <div className={styles.heading}>
           <h1>{pageTitle}</h1>
-          <div className={styles.headingActions}>
-            <label className={styles.scopeControl}>
-              <Building2 aria-hidden="true" size={17} />
-              <span className={styles.scopeLabel}>دامنه:</span>
-              <select
-                aria-label="دامنه تنظیمات"
-                onChange={(event) => {
-                  const next = event.target.value;
-                  if (next === 'GLOBAL') {
-                    setScope(globalScope);
-                    return;
-                  }
-                  const entity = legalEntities.find((item) => item.id === next);
-                  if (entity)
-                    setScope({
-                      scope: 'LEGAL_ENTITY',
-                      scopeId: entity.id,
-                      title: entity.persianName,
-                    });
-                }}
-                value={scope.scopeId ?? 'GLOBAL'}
-              >
-                <option value="GLOBAL">کل مجموعه</option>
-                {legalEntities.map((entity) => (
-                  <option key={entity.id} value={entity.id}>
-                    {entity.persianName}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <span className={styles.statusBadge} role="status">
-              <span aria-hidden="true" className={styles.statusDot} />
-              {overview ? 'داده‌های عملیاتی' : 'مقادیر مرجع'}
-            </span>
-          </div>
         </div>
-        {scopeLoadError ? (
-          <p className={styles.scopeHint} role="status">
-            {scopeLoadError}
-          </p>
-        ) : null}
-
         {page === 'overview' ? renderHub() : null}
         {page === 'module' ? renderModule() : null}
         {page === 'history' ? renderHistory() : null}

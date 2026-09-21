@@ -99,11 +99,13 @@ describe('system management reference implementation', () => {
     expect(workspace).not.toContain('Math.random');
   });
 
-  it('uses the Legal Entity public API for a real company scope', () => {
-    expect(workspace).toContain('legalEntitiesApi.selectable');
-    expect(workspace).toContain("scope: 'LEGAL_ENTITY'");
-    expect(workspace).toContain('scopeId: entity.id');
+  it('uses the collection-wide scope without header scope controls', () => {
+    expect(workspace).not.toContain('legalEntitiesApi.selectable');
+    expect(workspace).not.toContain("scope: 'LEGAL_ENTITY'");
+    expect(workspace).toContain("scope: 'GLOBAL'");
     expect(workspace).toContain('scopeId: scope.scopeId');
+    expect(workspace).not.toContain('scopeLoadError');
+    expect(workspace).not.toContain('aria-label="دامنه تنظیمات"');
   });
 
   it('inherits the shared application theme and remains responsive', () => {
@@ -127,8 +129,8 @@ describe('system management reference implementation', () => {
     expect(navigation).toContain('فروش و ارتباط با مشتری');
     expect(workspace).toContain('زیرمجموعه‌های ${systemCategoryGroups.find');
     expect(workspace).toContain('styles.categoryPanel');
-    expect(workspace).toContain('داده‌های عملیاتی');
-    expect(workspace).toContain('مقادیر مرجع');
+    expect(workspace).not.toContain('داده‌های عملیاتی');
+    expect(workspace).not.toContain('مقادیر مرجع');
     expect(workspace).toContain('مشاهده تنظیمات');
     expect(workspace).toContain('ویرایش تنظیمات');
     expect(workspace).not.toContain('styles.hero');

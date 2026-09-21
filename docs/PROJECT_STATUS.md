@@ -3157,6 +3157,17 @@ Permission، دادهٔ عملیاتی و Dependency/Lockfile تغییر نکر�
 داده شوند. تست Dashboard، lint، typecheck و build تولیدی Web موفق‌اند و Web/API
 روی پورت‌های ۳۰۰۰/۴۰۰۰ پاسخ ۲۰۰ دارند.
 
+## 2026-09-21 — SYSTEM-MANAGEMENT-LIVE-CONSUMERS-004 (PC-B)
+
+مرکز مدیریت سیستم اکنون Resolver مشترک دامنه‌محور دارد و تنظیمات منتشرشده را در
+مصرف‌کننده‌های واقعی امور مشتریان، Documents، Procurement و Workbench اعمال می‌کند.
+SLA تیکت با نسخهٔ تنظیم Snapshot می‌شود، سقف فایل Documents در options و upload
+اعمال می‌شود، سیاست فعال خرید Overrideهای مجاز را می‌خواند و اولویت پیش‌فرض رویداد
+میزکار از تنظیمات گرفته می‌شود. UI نیز Global را برای Scope شرکت به‌صورت ارثی نشان
+می‌دهد و Override مستقل ایجاد می‌کند. بدون Migration، Secret، دادهٔ عملیاتی یا
+تغییر قرارداد عمومی PC-A. کل تست API `1535 passed | 168 skipped`، typecheck/lint و
+Build هر دو workspace موفق‌اند.
+
 ## 2026-09-19 — Sales/Ticket Catalog source synchronization (PC-A, in progress)
 
 Ticket Management local-only definitions and Sales offer selection are being unified on the existing Ticket Catalog public source. No schema, migration, dependency lock, operational data, or direct cross-module table access is in scope.

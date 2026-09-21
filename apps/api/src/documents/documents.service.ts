@@ -10,6 +10,7 @@ import {
   Inject,
   Injectable,
   NotFoundException,
+  Optional,
   UnsupportedMediaTypeException,
 } from '@nestjs/common';
 import type {
@@ -47,6 +48,7 @@ import {
 } from './documents.repository';
 import { DocumentsScanProcessor } from './documents.scan-processor';
 import { LocalDocumentStorage } from './documents.storage';
+import { SettingsRuntimeService } from '../settings/settings-runtime.service';
 import {
   MAX_DOCUMENT_SIZE_BYTES,
   validateUploadFile,
@@ -283,6 +285,9 @@ export class DocumentsService {
     private readonly iamStepUp: IamStepUpPort,
     @Inject(HrDirectoryService)
     private readonly hrDirectory: HrDirectoryService,
+    @Optional()
+    @Inject(SettingsRuntimeService)
+    private readonly settings?: SettingsRuntimeService,
   ) {}
 
   /** Public storage-health port; consumers never access Documents storage directly. */
@@ -695,7 +700,7 @@ export class DocumentsService {
         owners: values.owners,
         uploadPolicy: {
           maxFileSizeBytes: Math.min(
-            MAX_DOCUMENT_SIZE_BYTES,
+            await this.configuredMaxFileSizeBytes(actor.branchIds[0]),
             ...documentTypes.map((type) => type.maxFileSizeBytes),
           ),
           allowedMimeTypes: [
@@ -1091,17 +1096,23 @@ export class DocumentsService {
     const detectedMimeType = detectMimeType(file);
     const sha256 = createHash('sha256').update(file.buffer).digest('hex');
     const openXml = detectedMimeType.includes('openxmlformats');
-    const validation = validateUploadFile({
-      originalFileName: file.originalname,
-      declaredMimeType: file.mimetype,
-      detectedMimeType,
-      sizeBytes: file.size,
-      sha256,
-      magicBytes: [...file.buffer.subarray(0, 16)],
-      ...(openXml
-        ? { archiveEntryCount: 1, archiveUncompressedBytes: file.size }
-        : {}),
-    });
+    const maxDocumentSizeBytes = await this.configuredMaxFileSizeBytes(
+      dto.branchId,
+    );
+    const validation = validateUploadFile(
+      {
+        originalFileName: file.originalname,
+        declaredMimeType: file.mimetype,
+        detectedMimeType,
+        sizeBytes: file.size,
+        sha256,
+        magicBytes: [...file.buffer.subarray(0, 16)],
+        ...(openXml
+          ? { archiveEntryCount: 1, archiveUncompressedBytes: file.size }
+          : {}),
+      },
+      maxDocumentSizeBytes,
+    );
     if (
       !validation.valid ||
       !references.documentType.allowedMimeTypes.includes(detectedMimeType) ||
@@ -1165,6 +1176,25 @@ export class DocumentsService {
         .catch(() => undefined);
       throw error;
     }
+  }
+
+  private async configuredMaxFileSizeBytes(branchId?: string): Promise<number> {
+    const fallback = MAX_DOCUMENT_SIZE_BYTES;
+    if (!this.settings || !branchId) return fallback;
+    const setting = await this.settings.json<{ size?: unknown }>(
+      'documents',
+      'upload',
+      { branchId },
+      {},
+    );
+    const megabytes =
+      typeof setting.value.size === 'number'
+        ? setting.value.size
+        : typeof setting.value.size === 'string'
+          ? Number(setting.value.size)
+          : Number.NaN;
+    if (!Number.isFinite(megabytes) || megabytes <= 0) return fallback;
+    return Math.min(fallback, Math.max(1, Math.trunc(megabytes)) * 1024 * 1024);
   }
 
   async audit(id: string, actor: AuthenticatedActor) {
