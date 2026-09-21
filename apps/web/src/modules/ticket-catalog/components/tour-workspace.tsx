@@ -279,7 +279,7 @@ export function TourWorkspace({
     );
 
   return (
-    <div className="space-y-5" dir="rtl">
+    <div className="space-y-3" dir="rtl">
       <Card className="flex flex-wrap items-center justify-between gap-3 p-4">
         <div>
           <h2 className="text-lg font-bold">
@@ -320,9 +320,12 @@ export function TourWorkspace({
         </p>
       )}
       {mode === 'definition' && creating && (
-        <Card className="space-y-3 p-4">
+        <Card className="space-y-2 p-3">
           <h3 className="font-bold">مشخصات و خدمات تور</h3>
-          <fieldset disabled={busy} className="grid gap-3 sm:grid-cols-2">
+          <fieldset
+            disabled={busy}
+            className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4 [&_input:not([type=checkbox])]:h-9 [&_button[role=combobox]]:h-9"
+          >
             <FormField id="tour-name" label="عنوان تور">
               <Input
                 id="tour-name"
@@ -374,7 +377,7 @@ export function TourWorkspace({
                 })
               }
             />
-            <div className="flex flex-wrap items-center gap-4">
+            <div className="flex flex-wrap items-center gap-3 text-xs sm:col-span-2 lg:col-span-3">
               {(
                 [
                   ['transferOutbound', 'ترانسفر رفت'],
@@ -405,6 +408,8 @@ export function TourWorkspace({
               branchId={branch}
             />
             <Button
+              className="col-span-full justify-self-end"
+              size="sm"
               disabled={!branch}
               onClick={() =>
                 void run(async () => {
