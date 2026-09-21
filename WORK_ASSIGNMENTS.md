@@ -119,6 +119,14 @@
 - اعتبارسنجی: ۲۱ تست هدفمند Web، lint و typecheck Web و build تولیدی Web موفق‌اند. Migration، دادهٔ عملیاتی، Permission، Dependency/Lockfile و Runtime مشترک تغییر نکردند.
 
 # Work Assignments
+## 2026-09-21 — PROCUREMENT-DRAFT-SAVE-LOCAL-TASKS-RESILIENCE-0921 — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک: ثبت پیش‌نویس خرید نباید به‌دلیل نبود موقت projection وظایف در دیتابیس محلی با خطای عمومی متوقف شود.
+- شاخه: ادامه روی `codex/pc-b-procurement-request-no-supplier-0921`؛ `COMPUTER_ID=PC-B`.
+- محدودهٔ رزروشده: اتصال داخلی Procurement به Tasks و تست هدفمند آن، همراه با وضعیت و Work Item. Migration/Schema، Dependency/Lockfile، مجوز و دادهٔ عملیاتی تغییر نمی‌کنند.
+- مرز: فقط رویداد `CREATE` که نه مسئول و نه تأییدکننده دارد، task عملیاتی ندارد و نباید به جدول task دست بزند؛ سایر وضعیت‌ها همچنان از projection وظایف استفاده می‌کنند.
+- نتیجه و اعتبارسنجی: ثبت پیش‌نویسِ بدون مسئول دیگر به projection وظایف دسترسی ندارد؛ بنابراین نبود موقت جدول آن projection تراکنش خرید را rollback نمی‌کند. دو تست متمرکز Tasks، lint و typecheck API موفق‌اند. Migration/Schema و دادهٔ عملیاتی تغییر نکردند.
+
 ## 2026-09-21 — PROCUREMENT-CATEGORY-ONLY-REQUEST-FORM-0921 — PC-B — READY_FOR_REVIEW
 
 - درخواست مالک: فرم «درخواست خرید جدید» فقط فیلد انتخابی «دسته خرید» داشته باشد و «نوع خرید» نمایش یا از کاربر دریافت نشود.
