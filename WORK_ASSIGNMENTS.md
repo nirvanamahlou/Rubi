@@ -4,6 +4,12 @@
 - شاخه مستقل `codex/pc-a-tour-definition-compact-pricing-handoff-0921` از `origin/develop@bd93b634`؛ COMPUTER_ID=PC-A. محدوده: Web Ticket Catalog، Tour Pricing و پیش‌انتخاب نوبت در فرم نرخ خرید هتل، آزمون‌های هدفمند و اسناد همین واحد. بدون Schema/Migration/Dependency/Lockfile یا داده عملیاتی.
 - نتیجه: فرم تعریف تور فشرده و بدون قیمت/هتل/تاریخ است؛ فهرست تورها و خدمات ثابت را نشان می‌دهد. ساخت نوبت و انتخاب بلیط در مدیریت قیمت پکیج قرار گرفت و هر نوبت به فرم هتل با مقصد و تاریخ از پیش انتخاب‌شده متصل است. ۸ تست هدفمند، typecheck، lint و build تولیدی Web با ۵۰ route موفق‌اند.
 
+## FINANCE-INBOX-CLARITY-0921 — PC-A — READY_FOR_REVIEW
+
+- COMPUTER_ID=PC-A; base origin/develop@cba76029; branch codex/pc-a-finance-inbox-clarity-0921. Scope: finance-inbox-live-workspace presentation, focused tests and task status entries. No API, schema, dependency, permission or live-runtime changes.
+- Owner authorized overlap reconciliation: retain current develop purchase-cost/payment actions instead of importing their deletion from the old local worktree. The old worktree remains untouched. Sales redesign is a separate branch/PR.
+- Validation: 11 focused tests, scoped lint, Web TypeScript and production build (50 pages) passed. Scoped reservation released; no merge or runtime change.
+
 ## TICKET-TIME-REPEAT-0920 — PC-A — READY_FOR_REVIEW
 
 - درخواست مالک در 2026-09-20: فیلدهای زمان حرکت و رسیدنِ تعریف بلیت دوباره در فرم در دسترس باشند و هنگام تکرار هفتگی/ماهانه همراه بلیت کپی شوند. `COMPUTER_ID=PC-A`؛ شاخه `codex/pc-a-ticket-time-repeat-0920` از آخرین `origin/develop@7e52d309`.

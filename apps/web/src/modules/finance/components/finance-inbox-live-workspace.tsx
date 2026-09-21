@@ -720,13 +720,14 @@ export function FinanceInboxLiveWorkspace() {
             </p>
           </div>
         </div>
-        <div className="grid gap-3 xl:grid-cols-[1fr_12rem_12rem_11rem_11rem_auto]">
+        <div className="grid items-end gap-3 sm:grid-cols-2 xl:grid-cols-3">
           <div className="relative">
             <Search className="absolute end-3 top-3 size-4 text-muted-foreground" />
             <Input
               className="pe-10"
               onChange={(event) => setSearch(event.target.value)}
               placeholder="جست‌وجوی قرارداد، طرف‌حساب، شرح یا شماره درخواست"
+              aria-label="جست‌وجوی درخواست‌های مالی"
               value={search}
             />
           </div>
@@ -803,7 +804,14 @@ export function FinanceInboxLiveWorkspace() {
       ) : null}
       {!loading && !error && items.length ? (
         <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(21rem,0.65fr)]">
-          <div className="space-y-3">
+          <div className="min-w-0 overflow-hidden rounded-2xl border border-border bg-surface">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border bg-muted/40 px-4 py-3">
+              <h3 className="font-bold">فهرست درخواست‌ها</h3>
+              <span className="text-xs text-muted-foreground">
+                {items.length.toLocaleString('fa-IR')} درخواست · برای بررسی، یک
+                مورد را انتخاب کنید
+              </span>
+            </div>
             {items.map((item) => {
               const active = selected?.id === item.id;
               const overdue = Boolean(
@@ -815,9 +823,17 @@ export function FinanceInboxLiveWorkspace() {
               return (
                 <button
                   aria-pressed={active}
-                  className={`w-full rounded-3xl border bg-surface p-4 text-start transition ${active ? 'border-primary shadow-md shadow-primary/10 ring-2 ring-primary/10' : 'border-border hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-sm'}`}
+                  aria-controls="finance-request-details"
+                  className={`w-full border-b border-border border-s-4 p-4 text-start transition last:border-b-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary ${active ? 'border-s-primary bg-primary/5' : 'border-s-transparent hover:bg-muted/40'}`}
                   key={item.id}
-                  onClick={() => setSelectedId(item.id)}
+                  onClick={() => {
+                    setSelectedId(item.id);
+                    if (window.matchMedia('(max-width: 1279px)').matches) {
+                      document
+                        .getElementById('finance-request-details')
+                        ?.scrollIntoView({ block: 'start' });
+                    }
+                  }}
                   type="button"
                 >
                   <div className="flex flex-wrap items-start justify-between gap-3">
@@ -835,32 +851,44 @@ export function FinanceInboxLiveWorkspace() {
                           </Badge>
                         ) : null}
                       </div>
-                      <h3 className="mt-3 truncate font-black">{item.title}</h3>
-                      <p className="mt-1 line-clamp-2 text-sm leading-6 text-muted-foreground">
-                        {item.description}
-                      </p>
+                      <h3 className="mt-2 break-words text-sm font-bold leading-6">
+                        {item.title}
+                      </h3>
                     </div>
-                    <p className="text-lg font-black text-primary" dir="ltr">
+                    <p
+                      className="shrink-0 whitespace-nowrap text-base font-bold tabular-nums text-primary"
+                      dir="ltr"
+                    >
                       {money(item)}
                     </p>
                   </div>
-                  <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-border/70 pt-3 text-xs text-muted-foreground">
-                    <span>
+                  <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted-foreground">
+                    <bdi className="break-all">
                       {item.contractReference ?? item.sourceReference}
-                    </span>
+                    </bdi>
                     <span>
                       {item.partyDisplaySnapshot ?? 'طرف‌حساب درج نشده'}
                     </span>
                     <span>سررسید: {faDate(item.dueAt)}</span>
-                    <ChevronLeft className="ms-auto size-4 text-primary" />
+                    <span className="ms-auto inline-flex items-center gap-1 font-semibold text-primary">
+                      {active ? 'در حال مشاهده' : 'بررسی درخواست'}
+                      <ChevronLeft aria-hidden="true" className="size-4" />
+                    </span>
                   </div>
                 </button>
               );
             })}
           </div>
           {selected ? (
-            <Card className="sticky top-4 overflow-hidden p-0">
-              <div className="bg-gradient-to-l from-primary/15 to-cyan-500/10 p-5">
+            <Card
+              id="finance-request-details"
+              className="scroll-mt-24 overflow-hidden p-0 xl:sticky xl:top-24 xl:max-h-[calc(100dvh-7rem)] xl:overflow-y-auto"
+              aria-label="جزئیات درخواست انتخاب‌شده"
+            >
+              <div className="border-b border-border bg-primary/5 p-5">
+                <p className="mb-3 text-xs font-bold text-primary">
+                  جزئیات درخواست انتخاب‌شده
+                </p>
                 <div className="flex items-center justify-between gap-3">
                   <Badge className={sourceTone(selected.source)}>
                     {sourceLabels[selected.source]}
@@ -907,7 +935,7 @@ export function FinanceInboxLiveWorkspace() {
                     <span className="text-xs text-muted-foreground">
                       {label}
                     </span>
-                    <strong className="max-w-[65%] text-end text-sm">
+                    <strong className="max-w-[65%] break-words text-end text-sm [overflow-wrap:anywhere]">
                       {value}
                     </strong>
                   </div>

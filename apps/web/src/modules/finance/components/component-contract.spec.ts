@@ -95,6 +95,27 @@ const accountingRouteSource = readFileSync(
 );
 
 describe('finance workspace component contract', () => {
+  it('makes selection and details explicit without removing current financial actions', () => {
+    expect(liveInboxSource).toContain('فهرست درخواست‌ها');
+    expect(liveInboxSource).toContain('جزئیات درخواست انتخاب‌شده');
+    expect(liveInboxSource).toContain(
+      'aria-controls="finance-request-details"',
+    );
+    expect(liveInboxSource).toContain('aria-pressed={active}');
+    expect(liveInboxSource).toContain('بررسی درخواست');
+    expect(liveInboxSource).toContain('scrollIntoView');
+    for (const action of [
+      'recordTicketCost',
+      'payTicket',
+      'paySupplier',
+      'decideReceipt',
+    ]) {
+      expect(liveInboxSource).toContain(`financeInboxApi.${action}`);
+    }
+    expect(liveInboxSource).toContain(
+      'expectedVersion: actionItem.sourceVersion',
+    );
+  });
   it('routes the finance page to the dedicated workspace', () => {
     expect(pageSource).toContain('AccountingNavigationWorkspace');
     expect(inboxPageSource).toContain('FinanceRequestInboxWorkspace');
