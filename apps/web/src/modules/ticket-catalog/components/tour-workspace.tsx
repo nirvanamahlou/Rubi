@@ -191,10 +191,21 @@ export function TourWorkspace({
   useEffect(() => {
     let cancelled = false;
     if (!pack || !dates.start || !dates.end) return;
+    if (dates.end < dates.start) return;
     void Promise.all([
-      toursApi.offers(pack.originId, pack.destinationId, dates.start),
+      toursApi.offers(
+        pack.originId,
+        pack.destinationId,
+        dates.start,
+        dates.end,
+      ),
       roundtrip
-        ? toursApi.offers(pack.destinationId, pack.originId, dates.end)
+        ? toursApi.offers(
+            pack.destinationId,
+            pack.originId,
+            dates.start,
+            dates.end,
+          )
         : Promise.resolve([]),
     ])
       .then(([out, back]) => {
@@ -598,7 +609,13 @@ export function TourWorkspace({
                   <TicketDatePicker
                     value={dates.start}
                     onChange={(start) => {
-                      setDates({ ...dates, start });
+                      const next = { ...dates, start };
+                      setDates(next);
+                      setProblem(
+                        next.end && next.end < next.start
+                          ? 'روز پایان باید برابر یا بعد از روز شروع باشد.'
+                          : '',
+                      );
                       resetTickets();
                     }}
                   />
@@ -607,12 +624,22 @@ export function TourWorkspace({
                   <TicketDatePicker
                     value={dates.end}
                     onChange={(end) => {
-                      setDates({ ...dates, end });
+                      const next = { ...dates, end };
+                      setDates(next);
+                      setProblem(
+                        next.start && next.end < next.start
+                          ? 'روز پایان باید برابر یا بعد از روز شروع باشد.'
+                          : '',
+                      );
                       resetTickets();
                     }}
                   />
                 </FormField>
               </div>
+              <p className="text-xs text-muted-foreground">
+                فقط بلیت‌هایی نمایش داده می‌شوند که تاریخ حرکتشان از روز شروع تا
+                روز پایان این نوبت باشد.
+              </p>
               <label className="flex gap-2">
                 <input
                   type="checkbox"
