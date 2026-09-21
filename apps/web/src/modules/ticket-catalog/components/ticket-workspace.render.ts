@@ -161,6 +161,8 @@ describe('Rendered ticket UI', () => {
     expect(workspaceSource).toMatch(
       /const updateRepeat[\s\S]*setProblem\(''\);[\s\S]*setRepeat\(value\)/,
     );
+    expect(workspaceSource).not.toContain('دلیل تغییر وضعیت');
+    expect(workspaceSource).toContain('فعال‌سازی مجدد فروش بلیط');
   });
   it('renders train and bus fields from the same ticket form', () => {
     const train = renderToStaticMarkup(
