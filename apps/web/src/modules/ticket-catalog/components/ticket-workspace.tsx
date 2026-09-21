@@ -69,7 +69,7 @@ import { TicketDetails } from './ticket-details';
 import { TicketForm } from './ticket-form';
 import formStyles from './ticket-form.module.css';
 import { TicketDatePicker } from './ticket-date-picker';
-import { IssuedTicketsWorkspace } from './issued-tickets-workspace';
+import { ConnectedIssuedTicketsWorkspace } from './issued-tickets-workspace';
 import { TourWorkspace } from './tour-workspace';
 import { toursApi } from '../api/tours';
 import { getPublicApiBaseUrl } from '@/lib/environment';
@@ -219,7 +219,7 @@ export function TicketWorkspace() {
           <TicketCatalogWorkspace />
         </TabsContent>
         <TabsContent value="issued">
-          <IssuedTicketsWorkspace connected={false} tickets={[]} />
+          <ConnectedIssuedTicketsWorkspace />
         </TabsContent>
       </Tabs>
     </>
