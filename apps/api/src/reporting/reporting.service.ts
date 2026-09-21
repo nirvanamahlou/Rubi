@@ -970,6 +970,8 @@ export class ReportingService {
     const trendVisualIds = new Set([
       'finalized-sales-trend',
       'executive-lead-acquisition',
+    ]);
+    const acquisitionChannelTrendVisualIds = new Set([
       'customer-acquisition-channel-trend',
     ]);
     const funnelVisualIds = new Set([
@@ -1054,6 +1056,43 @@ export class ReportingService {
     const visuals = Object.fromEntries(
       visualIds.flatMap<[string, DashboardProjectionV1['visuals'][string]]>(
         (id) => {
+          if (acquisitionChannelTrendVisualIds.has(id)) {
+            const customerIdentity = (fact: (typeof facts)[number]) =>
+              fact.customerName?.trim() || fact.orderNumber || fact.id;
+            const knownChannelFacts = facts.filter((fact) =>
+              Boolean(fact.leadSource?.trim()),
+            );
+            const distinctCustomers = (rows: typeof facts) =>
+              new Set(rows.map(customerIdentity)).size;
+            const trend = trendFor(knownChannelFacts, distinctCustomers);
+            const channels = [
+              ...new Set(
+                knownChannelFacts.map((fact) => fact.leadSource!.trim()),
+              ),
+            ].sort((left, right) => left.localeCompare(right, 'fa'));
+            return [
+              [
+                id,
+                {
+                  labels: trend.labels,
+                  values: trend.values,
+                  series: channels.map((channel) => ({
+                    label: channel,
+                    values: trendFor(
+                      knownChannelFacts.filter(
+                        (fact) => fact.leadSource?.trim() === channel,
+                      ),
+                      distinctCustomers,
+                    ).values,
+                  })),
+                  unit: 'مشتری',
+                  metricId: id,
+                  aggregation:
+                    'count distinct customers with a known acquisition channel per time bucket',
+                },
+              ],
+            ];
+          }
           if (employeeVisuals[id] && !employeeVisuals[id].monetary) {
             const entries = by(
               'ownerName',

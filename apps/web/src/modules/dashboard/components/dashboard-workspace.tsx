@@ -2342,6 +2342,7 @@ function DashboardChart({
   kind,
   labels,
   range,
+  series,
   title,
   trendCalendarSystem,
   unit,
@@ -2350,6 +2351,7 @@ function DashboardChart({
   kind: DashboardVisualKind;
   labels: readonly string[];
   range: DashboardRange;
+  series?: DashboardVisualSnapshot['series'];
   title: string;
   trendCalendarSystem: TrendCalendarSystem;
   unit: string | undefined;
@@ -2370,16 +2372,24 @@ function DashboardChart({
     const chartRight = 930;
     const chartTop = 18;
     const chartBottom = 140;
+    const lineSeries = series?.length ? series : [{ label: title, values }];
+    const chartMaximum = Math.max(
+      ...lineSeries.flatMap((item) => item.values),
+      1,
+    );
     const pointFor = (value: number, index: number, totalPoints: number) => ({
       x:
         totalPoints > 1
           ? chartLeft + (index * (chartRight - chartLeft)) / (totalPoints - 1)
           : (chartLeft + chartRight) / 2,
-      y: chartBottom - (value / maximum) * (chartBottom - chartTop),
+      y: chartBottom - (value / chartMaximum) * (chartBottom - chartTop),
     });
-    const points = values.map((value, index) => ({
-      ...pointFor(value, index, values.length),
-      value,
+    const lineSeriesWithPoints = lineSeries.map((seriesItem) => ({
+      ...seriesItem,
+      points: seriesItem.values.map((value, index) => ({
+        ...pointFor(value, index, seriesItem.values.length),
+        value,
+      })),
     }));
     const visibleLabelStep =
       labels.length > 12 ? Math.ceil(labels.length / 8) : 1;
@@ -2404,7 +2414,7 @@ function DashboardChart({
         >
           {[0, 1, 2, 3, 4].map((index) => {
             const y = chartTop + (index * (chartBottom - chartTop)) / 4;
-            const value = maximum * (1 - index / 4);
+            const value = chartMaximum * (1 - index / 4);
             return (
               <g key={y}>
                 <line
@@ -2429,25 +2439,42 @@ function DashboardChart({
               </g>
             );
           })}
-          <polyline
-            fill="none"
-            points={points.map(({ x, y }) => `${x},${y}`).join(' ')}
-            stroke="#172554"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="3"
-          />
-          {points.map(({ x, y, value }, index) => (
-            <circle key={`${x}-${y}`} cx={x} cy={y} fill="#172554" r="3.5">
-              <title>{`${trendTooltipTime(
-                labels[index] ?? '',
-                trendCalendarSystem,
-                temporalGrain,
-              )} — ${formatVisualNumber(value, unit)}`}</title>
-            </circle>
-          ))}
+          {lineSeriesWithPoints.map((seriesItem, seriesIndex) => {
+            const color =
+              trendSeriesPalette[seriesIndex % trendSeriesPalette.length]
+                ?.color ?? '#172554';
+            return (
+              <g key={seriesItem.label}>
+                <polyline
+                  fill="none"
+                  points={seriesItem.points
+                    .map(({ x, y }) => `${x},${y}`)
+                    .join(' ')}
+                  stroke={color}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="3"
+                />
+                {seriesItem.points.map(({ x, y, value }, index) => (
+                  <circle
+                    key={`${seriesItem.label}-${x}-${y}`}
+                    cx={x}
+                    cy={y}
+                    fill={color}
+                    r="3.5"
+                  >
+                    <title>{`${seriesItem.label} — ${trendTooltipTime(
+                      labels[index] ?? '',
+                      trendCalendarSystem,
+                      temporalGrain,
+                    )} — ${formatVisualNumber(value, unit)}`}</title>
+                  </circle>
+                ))}
+              </g>
+            );
+          })}
           {axisLabelIndexes.map((index) => {
-            const point = points[index];
+            const point = lineSeriesWithPoints[0]?.points[index];
             if (!point) return null;
             return (
               <text
@@ -2467,6 +2494,27 @@ function DashboardChart({
             );
           })}
         </svg>
+        {series?.length ? (
+          <div className="mt-2 flex flex-wrap justify-center gap-x-3 gap-y-1 text-[10px] font-bold text-muted-foreground">
+            {lineSeries.map((seriesItem, index) => (
+              <span
+                className="inline-flex items-center gap-1"
+                key={seriesItem.label}
+              >
+                <i
+                  aria-hidden="true"
+                  className="size-2 rounded-full"
+                  style={{
+                    backgroundColor:
+                      trendSeriesPalette[index % trendSeriesPalette.length]
+                        ?.color ?? '#172554',
+                  }}
+                />
+                {seriesItem.label}
+              </span>
+            ))}
+          </div>
+        ) : null}
         <figcaption className="sr-only">{accessibleSummary}</figcaption>
       </figure>
     );
@@ -3289,6 +3337,7 @@ function ProjectionSlot({
                 trendCalendarSystem={trendCalendarSystem}
                 unit={displayUnit}
                 values={displayData.values}
+                series={data?.series}
               />
             )
           ) : (

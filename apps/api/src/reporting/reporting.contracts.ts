@@ -229,6 +229,7 @@ export interface DashboardProjectionV1 {
         aggregation?: string;
         currencyCode?: string;
         currencySeries?: readonly DashboardVisualCurrencySeriesV1[];
+        series?: readonly DashboardVisualSeriesV1[];
         comparison?: DashboardComparisonV1;
         trend?: DashboardTrendV1;
       }
@@ -257,6 +258,12 @@ export interface DashboardVisualCurrencySeriesV1 {
   values: readonly number[];
   comparison?: DashboardComparisonV1;
   trend?: DashboardTrendV1;
+}
+
+/** A labelled non-monetary series for a multi-line dashboard visual. */
+export interface DashboardVisualSeriesV1 {
+  label: string;
+  values: readonly number[];
 }
 
 export interface DashboardTrendV1 {

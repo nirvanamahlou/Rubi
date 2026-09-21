@@ -131,6 +131,65 @@ describe('dashboard travel projection date boundaries', () => {
     });
   });
 
+  it('keeps acquisition-channel trend independent from the sales amount trend', async () => {
+    const facts = vi.fn().mockResolvedValue([
+      {
+        ...demoFact,
+        customerName: 'مشتری الف',
+        leadSource: 'Google',
+        salesAmount: new Prisma.Decimal(90_000_000),
+      },
+      {
+        ...demoFact,
+        id: 'acquisition-duplicate-customer',
+        customerName: 'مشتری الف',
+        leadSource: 'Google',
+        salesAmount: new Prisma.Decimal(10_000_000),
+      },
+      {
+        ...demoFact,
+        id: 'acquisition-second-channel',
+        customerName: 'مشتری ب',
+        leadSource: 'معرفی آژانس',
+        salesAmount: new Prisma.Decimal(1),
+      },
+    ]);
+    const service = new ReportingService({
+      facts,
+    } as unknown as ReportingRepository);
+
+    const result = await service.dashboardProjection(
+      {
+        range: 'month',
+        visualIds: 'customer-acquisition-channel-trend,finalized-sales-trend',
+      },
+      actor,
+    );
+
+    expect(result.visuals['customer-acquisition-channel-trend']).toMatchObject({
+      aggregation:
+        'count distinct customers with a known acquisition channel per time bucket',
+      unit: 'مشتری',
+      values: expect.arrayContaining([2]),
+      series: expect.arrayContaining([
+        expect.objectContaining({
+          label: 'Google',
+          values: expect.arrayContaining([1]),
+        }),
+        expect.objectContaining({
+          label: 'معرفی آژانس',
+          values: expect.arrayContaining([1]),
+        }),
+      ]),
+    });
+    expect(
+      result.visuals['customer-acquisition-channel-trend'],
+    ).not.toHaveProperty('currencySeries');
+    expect(
+      result.visuals['customer-acquisition-channel-trend']?.values,
+    ).not.toEqual(result.visuals['finalized-sales-trend']?.values);
+  });
+
   it('computes KPI and chart growth from the immediately preceding equal-length period', async () => {
     const facts = vi
       .fn()

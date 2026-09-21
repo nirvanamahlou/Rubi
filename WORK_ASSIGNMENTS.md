@@ -3521,3 +3521,9 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 - Request: align the customer-destination KPI implementation with its documented distinct-order rule and rename the card to accurately state the displayed output.
 - Scope reserved: Dashboard Reporting aggregation/test, Dashboard registry/test and task/status documentation. No Schema/Migration, operational data, permission, dependency or lockfile change.
 - Result: the card is renamed to «سفارش‌های دارای مقصد». Its output now counts each valid order with a known destination exactly once, using `orderNumber` (or the fact ID when absent), rather than counting every fact row. The same aggregation feeds the snapshot, comparison and trend data. API tests 7/7, Web tests 18/18 (one existing skip) and API/Web typechecks pass; no migration was created.
+
+## DASHBOARD-ACQUISITION-TREND-FIX-0920 — PC-C — READY_FOR_REVIEW
+
+- Request: make the Dashboard visual «روند جذب مشتری به تفکیک کانال» use its approved acquisition-channel customer series instead of the sales amount/count trend series.
+- Branch: `codex/pc-c-dashboard-acquisition-trend-fix-0920`, based on the current Dashboard correction chain at `2fcc81f0`. Scope reserved: Reporting Dashboard visual aggregation/tests, Dashboard registry/model tests and task/status documentation. No Schema/Migration, operational or demo data, permission, dependency or lockfile change.
+- Result: this visual is no longer sent through the monetary/currency trend producer. It returns one labelled time series per known acquisition channel, with distinct customers counted inside each time bucket; the chart renders those channel lines and their legend with a shared customer-count axis. API tests 8/8, Web registry tests 18/18 (one existing skip) and API/Web typechecks pass; no migration was created.
