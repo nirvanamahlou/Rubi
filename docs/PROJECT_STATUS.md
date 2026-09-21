@@ -1,6 +1,17 @@
+
+## 2026-09-20 — TICKET-TIME-REPEAT-0920 — آماده بازبینی
+
+فیلدهای تاریخ و ساعت حرکت/رسیدنِ Ticket Catalog برای بلیت یک‌طرفه، رفت‌وبرگشت و هر قطعهٔ ترکیبی بازگشتند. زمان ورودی با منطقهٔ زمانی مسیر به UTC تبدیل می‌شود و زمان حرکت، تاریخ اولین بلیت را همگام می‌کند؛ در نتیجه تکرار هفتگی/ماهانه ساعت‌های ثبت‌شده را همراه تاریخ جابه‌جا می‌کند. بلیت قدیمیِ بدون ساعت همچنان تکرارپذیر است. ۱۰۰ تست Ticket Catalog، lint و typecheck Web موفق‌اند و build تولیدی در Worktree جدا خروجی `BUILD_ID` ساخته است. Schema/Migration/API/contract/runtime و Web3100 تغییر نکرده‌اند. جزئیات در [TICKET-TIME-REPEAT-0920](tasks/TICKET-TIME-REPEAT-0920.md) است.
+
+## 2026-09-20 — LOGIN-STATIC-BACKGROUND-0920 — PC-A — READY FOR REVIEW
+
+- طبق درخواست مالک، نوشتهٔ `NOORA` و طرح ابری/باد از صفحهٔ ورود حذف شد. تصویر موجود `login-airline-b2.png` بدون تغییر فایل، حرکت یا تعویض به‌عنوان پس‌زمینهٔ ثابت حفظ شده و crop موبایل و overlay خوانایی قبلی باقی مانده‌اند.
+- اعتبارسنجی: ۵ تست متمرکز صفحه ورود، lint فایل‌های تغییرکرده، typecheck کامل Web و build تولیدی ۵۰ مسیر موفق‌اند. API، احراز هویت، فرم ورود، Schema/Migration، Permission، Dependency/Lockfile، داده و Web3100 تغییر نکردند.
+
 ## 2026-09-20 — HOTEL-RATE-ROOM-CAPACITY-0920 — READY_FOR_REVIEW
 
 مدیریت نرخ هتل از ضرایب ثابت به نرخ نوع اتاق واقعی با ظرفیت مستقل بزرگسال و کودک ارتقا یافت. اتاق بدون ضریب در ارقام پکیج نمایش یا محاسبه نمی‌شود و در فروش قابل انتخاب نیست و Backend فروش ظرفیت هر اتاق را هنگام ایجاد، ویرایش و تأیید قرارداد به‌صورت fail-closed کنترل می‌کند. Migration روی PostgreSQL 18.1 خالی، Prisma، lint/typecheck، تست‌های هدفمند و Build API/Web پاس شدند؛ قفل‌های Migration/Contract/Central Docs تا Merge و Handoff رسمی فعال‌اند.
+
 ## 2026-09-20 — FINANCE-CUSTOMER-DOCUMENT-DELIVERY-0920 — DONE/MERGED
 
 مجوز تحویل مدارک مشتری از خرید و پرداخت کارگزار و اجرای رزرواسیون مستقل شد.
@@ -3082,6 +3093,12 @@ Reservations از API عمومی Master Data برای تطبیق قالب و ا�
 خروجی PDF بلیط، فرم A4 بر اساس نمونه کاربر دارد: نام و لوگوی ایرلاین از رکورد فعال اطلاعات پایه و فایل مجاز Documents، لوگوی شرکت صادرکننده از سربرگ ثبت‌شده، مسیر و ساعت از داده پرواز قرارداد، و عنوان MR/MRS/CHD/INF از رده سن و جنسیت پرونده مسافر. نام لاتین گذرنامه بر نمایش اولویت دارد. هشدار حضور سه ساعت پیش از پرواز به انگلیسی و فارسی درج می‌شود. در نبود لوگوی ایرلاین، نام آن می‌آید و داده ناموجود بار مجاز/QR یا شماره رسمی بلیط ساخته نمی‌شود. خروجی نمونه با دو مسیر، یک صفحه A4 است؛ ۱۵ تست هدفمند، lint و typecheck Web موفق‌اند. PR #283 هنوز باز است و هنگام ادغام باید اشتراک route/model PDF بلیط با این تغییر بررسی شود. localhost یکپارچه تغییر نکرده است.
 - build تولیدی Web نیز با ۴۶ route موفق شد؛ خروجی نمونهٔ PDF با Chrome/Poppler یک صفحه A4 دارد. تغییر عمومی API/Database و جابه‌جایی localhost انجام نشد.
 پیگیری 2026-09-15: نام و کد شهر در هر مسیر رفت/برگشت روی سایهٔ روشن شهری قرار گرفتند. PDF واقعی با Chrome تولید و صفحهٔ A4 به تصویر رندر و بررسی شد.
+
+## 2026-09-19 — RESERVATION-SERVICE-PURCHASE-PICKER-0919 — PC-A — READY_FOR_REVIEW
+
+پنجرهٔ خرید رزرواسیون برای انتخاب خدمت هتل/ترانسفر، ثبت کارگزار و مبلغ/ارز و ارسال نسخهٔ خرید به کارتابل مالی در حال تکمیل است. این واحد از قرارداد عمومی موجود استفاده می‌کند و Migration یا دادهٔ عملیاتی ندارد.
+
+نتیجه: انتخاب خدمت هتل/ترانسفر، کارگزار، مبلغ و ارز به پنجرهٔ خرید افزوده شد. ثبت از قرارداد عمومی نسخه‌دار رزواسیون استفاده می‌کند و وضعیت پرداخت در Finance باقی می‌ماند. قراردادهای قدیمی دارای hotelSelection نیز قابل خرید هستند. تست هدفمند، lint، Prettier و typecheck API/Web موفق‌اند؛ Migration، dependency و دادهٔ عملیاتی تغییر نکرده است.
 ## 2026-09-19 — DASHBOARD-TREND-FILTER-UX-0919 — READY_FOR_REVIEW
 
 کادر انتخاب تقویم محور X نمودار روند از نظر ارتفاع و عرض کمی بزرگ‌تر شد تا آیکون
@@ -3098,78 +3115,36 @@ Permission، دادهٔ عملیاتی و Dependency/Lockfile تغییر نکر�
 
 ## 2026-09-19 — Sales/Ticket Catalog source synchronization (PC-A, in progress)
 
-## 2026-09-19 — Dashboard metric-specific aggregations (PC-C, in progress)
-
-Dashboard Projection now has explicit metric/aggregation metadata. Monetary visuals aggregate
-`salesAmount` only within the selected source currency; count, status and rate visuals use
-their own distinct-order/status/rate functions and no longer inherit the monetary sum. Employee
-comparison visuals therefore no longer render the same sales-amount series under different titles.
-Focused API assertions were added; full typecheck/test execution remains blocked by the checkout's
-pre-existing workspace package-link errors (`@nora/contracts`/`@nora/database` not built).
-
 Ticket Management local-only definitions and Sales offer selection are being unified on the existing Ticket Catalog public source. No schema, migration, dependency lock, operational data, or direct cross-module table access is in scope.
 
 Result: Ticket Management now publishes new flight definitions to the existing Ticket Catalog offer source before closing the form, and exposes the branch-scoped published offer list used by Sales contracts. Round-trip and repetition publish independent flight offers. Focused Web (1) and API (3) tests, lint, Prettier and API/Web typecheck passed. No migration, dependency lock, or operational data changed.
-## 2026-09-19 — DASHBOARD-PERCENTAGE-METRICS-0919 — READY_FOR_REVIEW
 
-تمام KPIها و Visualهای نرخ/تبدیل/سهم که در قرارداد Dashboard قابل محاسبه‌اند،
-واحد صریح `درصد` دارند. نرخ لغو، وصول، استرداد، خطای رزرو، تکمیل ظرفیت، تبدیل،
-رشد لید، نقض SLA و پوشش رضایت در API با صورت و مخرج مشخص محاسبه می‌شوند؛
-نمودارهای نرخ Provider، لغو بلیت، تبدیل منبع لید و سهم کانال/شهر نیز همین قرارداد
-را به UI می‌دهند. کارت، نمودار، tooltip و جدول خلاصه علامت درصد را از قرارداد می‌خوانند.
-۶ تست Reporting، lint و typecheck Web موفق‌اند؛ API روی ۴۰۰۰ و Web روی ۳۰۰۰ با HTTP 200 فعال‌اند.
-# 2026-09-20 — DASHBOARD-PERCENTAGE-SPARKLINES-0920 — READY_FOR_REVIEW
+## 2026-09-20 — انقضای خودکار و تکمیل نمایش بلیط قرارداد — READY_FOR_REVIEW
 
-در Projection گزارش داشبورد، KPIهای درصدیِ مسیر `percentageMetrics` اکنون برای هر
-bucket زمانی روند تولید می‌کنند؛ KPIهای درصدیِ مبتنی بر شمارش نیز روند دورهٔ جاری
-را مستقل از موجود بودن مقایسهٔ دورهٔ قبل دریافت می‌کنند. برای `lead-growth-rate`
-روند bucketها با bucket متناظر دورهٔ قبل مقایسه می‌شود. ۶ تست هدفمند Reporting،
-lint، typecheck و build API موفق‌اند. Schema/Migration، داده، Permission و
-Dependency/Lockfile تغییر نکردند.
+PC-A روی شاخهٔ مستقل `codex/pc-a-ticket-expiry-sales-visibility-0920` منبع عمومی Ticket Catalog را اصلاح می‌کند تا پروازهای گذشته از وضعیت فعال خارج شوند و تعریف‌های معتبر چندقطعه‌ای مدیریت بلیط نیز به انتخاب قرارداد جدید برسند. دادهٔ نمونهٔ صرفاً مرورگری دیگر به‌عنوان بلیط واقعی مدیریت نمایش داده نمی‌شود. این واحد Schema/Migration، Dependency/Lockfile، دادهٔ عملیاتی و localhost را تغییر نمی‌دهد.
 
-## 2026-09-20 — CI-RELIABILITY-0920 — READY_FOR_REVIEW
+پیاده‌سازی کامل است: انقضا به‌صورت `ACTIVE` → `PAUSED` همراه افزایش نسخه و Audit انجام می‌شود، جست‌وجوی فروش از لحظهٔ جاری عقب‌تر نمی‌رود، پرواز چندقطعه‌ای از اولین مبدأ تا آخرین مقصد در منبع مشترک منتشر می‌شود و کارت‌های نمونهٔ محلی از صفحهٔ عملیاتی حذف شدند. کارت‌های ذخیره‌شدهٔ منقضی هنگام بارگذاری متوقف و فهرست Backend هر دقیقه تازه می‌شود. ۲۳ تست هدفمند، lint، typecheck API/Web، build API و build تولیدی Web با ۵۰ route موفق‌اند؛ Webpack برای build این worktree استفاده شد چون Turbopack junction وابستگی بیرون از ریشهٔ worktree را رد می‌کند.
+## 2026-09-21 — قیمت فروش تکی بلیط — READY_FOR_REVIEW
 
-CI failure triage identified two independent regressions: the public hotel-rate projection assumed an
-always-loaded `rows` relation and the Dashboard model test asserted component source strings. The
-hotel projection now treats an unloaded relation as an empty public result with a regression test;
-the Dashboard model test now verifies auditable registry/query contracts while the brittle
-implementation-detail assertion is isolated for replacement by a component test suite. No Schema,
-Migration, Dependency, Lockfile, operational data, Permission or workflow configuration change is
-in scope. Full repository lint, typecheck, test and production build pass with CI-equivalent
-environment variables. The database gate also passed on an isolated PostgreSQL 18 container: all
-84 migrations deployed and reported current, followed by two successful seeds; the temporary
-container was removed afterward.
-## 2026-09-20 — DASHBOARD-REPORT-FILTER-INHERITANCE-0920 — READY_FOR_REVIEW
+هر `TicketPublishedOffer` تاریخچه قیمت فروش تکی مستقل با مبلغ Decimal، ارز و نسخه دارد. جدول مدیریت بلیط مبلغ و ارز هر مسیر را مستقیم ویرایش می‌کند؛ بنابراین دو بلیط رفت و برگشت می‌توانند جداگانه فروخته و جداگانه قیمت‌گذاری شوند. در قرارداد بدون هتل/تور، انتخاب هر مسیر قیمت همان پیشنهاد را برای تعداد مسافران دارای صندلی محاسبه می‌کند و snapshot مبلغ هر مسیر را می‌فرستد. قیمت پکیج/تور از مسیر مدیریت قیمت موجود مستقل است. رزرو قرارداد همچنان از تخصیص ظرفیت مشترک Ticket Catalog استفاده می‌کند. ستون حرکت فارسی، راست‌چین و با ارقام پایدار نمایش داده می‌شود.
 
-بازکردن «گزارش مرتبط» از KPI Card یا نمودار Dashboard اکنون دامنهٔ فعال Dashboard را
-به فرم پیکربندی گزارش منتقل می‌کند: بازهٔ سفارشی یا بازهٔ تقویمی تهران، شرکت، ارز،
-شعبه، کارشناس، کانال فروش، نوع خدمت، آژانس، Provider و وضعیت. فرم گزارش تنها
-فیلترهایی را نگه می‌دارد که در کاتالوگ همان گزارش تعریف شده‌اند؛ بنابراین هیچ فیلتر
-نامرتبطی به Query گزارش افزوده نمی‌شود. ۱۸ تست مدل Dashboard موفق و یک تست قدیمی
-عمداً غیرفعال است؛ TypeScript Web نیز پس از بازتولید Contracts موفق است. API، Schema،
-Migration، Permission، دادهٔ عملیاتی و runtime محلی تغییر نکردند.
-## 2026-09-20 — DASHBOARD-VISUAL-DETAIL-OUTPUT-REMOVAL-0920 — READY_FOR_REVIEW
-
-بخش عمومی «خروجی در بازهٔ انتخابی» از Drawer جزئیات تمام نمودارهای Dashboard حذف شد؛
-بنابراین نشان‌های بازه، نوع نمودار، ارز و شمار دسته‌های نمایشی دیگر در این پنل
-تکرار نمی‌شوند. تعریف و هدف کسب‌وکار، قاعدهٔ نمایش مبتنی بر Projection و فیلترهای
-فعال، lineage فیچرها، محدودیت‌ها و اقدام گزارش مرتبط باقی مانده‌اند. ۱۸ تست مدل
-Dashboard موفق و یک تست قدیمی عمداً غیرفعال است؛ TypeScript Web نیز موفق است. API،
-Schema، Migration، Permission، دادهٔ عملیاتی و runtime محلی تغییر نکردند.
-## 2026-09-20 — DASHBOARD-DESTINATION-ORDER-KPI-ALIGNMENT-0920 — READY_FOR_REVIEW
-
-KPI «مقصدهای مورد تقاضای مشتریان» با خروجی واقعی خود هم‌راستا شد و عنوان آن به
-«سفارش‌های دارای مقصد» تغییر یافت. Backend اکنون فقط سفارش‌های معتبر دارای مقصد را
-به‌صورت یکتا می‌شمارد (`orderNumber` و در نبود آن شناسهٔ fact)؛ بنابراین سطرهای متعدد
-یک سفارش، مقدار KPI، مقایسه و روند آن را تکراری افزایش نمی‌دهند. تست هدفمند API ۷/۷،
-تست Web ۱۸/۱۸ با یک skip موجود و typecheck API/Web موفق‌اند. Schema، Migration، دادهٔ
-عملیاتی، Dependency و Lockfile تغییری نکرده‌اند.
+اعتبارسنجی Prisma، lint، typecheck و build بسته‌های درگیر موفق است؛ تست‌های Database، API و Web نیز موفق‌اند. Migration افزایشی همراه PR ارائه شده و هنوز روی دیتابیس مشترک اجرا نشده است.
 ## 2026-09-21 — DASHBOARD-ACQUISITION-TREND-FIX-0920 — READY_FOR_REVIEW
 
-نمودار «روند جذب مشتری به تفکیک کانال» از مسیر اشتباه نمودارهای مالی جدا شد؛ علت
-تکرار خروجی فروش این بود که شناسهٔ آن در مجموعهٔ trendهای پولی قرار داشت و
-`salesAmount` را بر حسب زمان جمع می‌زد. اکنون برای هر کانال جذبِ مشخص، یک سری زمانی
-مستقل از تعداد مشتری یکتا در هر bucket تولید و با راهنمای کانال‌ها در نمودار چندخطی
-نمایش داده می‌شود. سری ارز برای این Visual تولید نمی‌شود. تست API ۸/۸، تست Web
-۱۸/۱۸ با یک skip موجود و typecheck API/Web موفق‌اند. Schema، Migration، دادهٔ
-عملیاتی، Dependency و Lockfile تغییری نکرده‌اند.
+نمودار «روند جذب مشتری به تفکیک کانال» از مسیر trendهای مالی جدا شد؛ علت تکرار خروجی فروش این بود که شناسهٔ آن `salesAmount` را بر حسب زمان جمع می‌زد. اکنون برای هر کانال جذبِ مشخص، یک سری زمانی مستقل از تعداد مشتری یکتا در هر bucket و راهنمای کانال‌ها نمایش داده می‌شود و سری ارز برای این Visual تولید نمی‌شود. تست API ۸/۸، تست Web ۱۸/۱۸ با یک skip موجود و typecheck API/Web موفق‌اند.
+
+## 2026-09-20 — DASHBOARD-DESTINATION-ORDER-KPI-ALIGNMENT-0920 — READY_FOR_REVIEW
+
+KPI «مقصدهای مورد تقاضای مشتریان» به «سفارش‌های دارای مقصد» تغییر یافت. Backend فقط سفارش‌های معتبر دارای مقصد را به‌صورت یکتا می‌شمارد (`orderNumber` و در نبود آن شناسهٔ fact)؛ بنابراین سطرهای متعدد یک سفارش مقدار KPI، مقایسه و روند را تکراری افزایش نمی‌دهند.
+
+## 2026-09-20 — DASHBOARD-VISUAL-DETAIL-OUTPUT-REMOVAL-0920 — READY_FOR_REVIEW
+
+بخش عمومی «خروجی در بازهٔ انتخابی» از Drawer جزئیات تمام نمودارهای Dashboard حذف شد؛ تعریف کسب‌وکار، قاعدهٔ نمایش مبتنی بر Projection، lineage فیچرها، محدودیت‌ها و اقدام گزارش مرتبط باقی مانده‌اند.
+
+## 2026-09-20 — DASHBOARD-REPORT-FILTER-INHERITANCE-0920 — READY_FOR_REVIEW
+
+بازکردن «گزارش مرتبط» از KPI Card یا نمودار Dashboard دامنهٔ فعال Dashboard را به فرم پیکربندی گزارش منتقل می‌کند و فرم فقط فیلترهای تعریف‌شده در کاتالوگ همان گزارش را نگه می‌دارد.
+
+## 2026-09-20 — DASHBOARD-PERCENTAGE-SPARKLINES-0920 — READY_FOR_REVIEW
+
+KPIهای درصدی Dashboard برای هر bucket زمانی روند دریافت می‌کنند و `lead-growth-rate` bucketهای متناظر دورهٔ قبل را مقایسه می‌کند. Schema/Migration، داده، Permission و Dependency/Lockfile تغییری نکردند.

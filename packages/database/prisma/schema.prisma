@@ -35,6 +35,7 @@ model User {
   tourPricingVersionsPublished                     PackagePricingTourPublishedVersion[]      @relation("TourPricingPublisher")
   financeTicketCostRevisions                       FinanceTicketPurchaseCostRevision[]       @relation("FinanceTicketCostActor")
   ticketCapacityHolds                              TicketOfferCapacityHold[]                 @relation("TicketCapacityHoldCreator")
+  ticketStandaloneSalePricesCreated                TicketOfferStandaloneSalePrice[]          @relation("TicketStandaloneSalePriceActor")
   financeTicketPaymentRevisions                    FinanceTicketPurchasePaymentRevision[]    @relation("FinanceTicketPaymentActor")
   masterHotelRatePeriodsCreated                    MasterHotelRatePeriod[]                   @relation("MasterHotelRatePeriodCreatedBy")
   masterHotelRatePeriodsUpdated                    MasterHotelRatePeriod[]                   @relation("MasterHotelRatePeriodUpdatedBy")
@@ -4090,9 +4091,28 @@ model TicketPublishedOffer {
   capacityHolds          TicketOfferCapacityHold[]
   purchaseRequest        ProcurementTicketPurchaseRequest?
   financeTicketCosts     FinanceTicketPurchaseCostRevision[]
+  standaloneSalePrices   TicketOfferStandaloneSalePrice[]
 
   @@unique([createdByUserId, createKey])
   @@index([branchId, originId, destinationId, departureAt])
+}
+
+model TicketOfferStandaloneSalePrice {
+  id           String               @id @default(uuid()) @db.Uuid
+  offerId      String               @db.Uuid
+  revision     Int
+  amount       Decimal              @db.Decimal(20, 4)
+  currencyCode String               @db.VarChar(3)
+  actorUserId  String               @db.Uuid
+  occurredAt   DateTime             @default(now()) @db.Timestamptz(3)
+  commandKey   String               @db.VarChar(160)
+  fingerprint  String               @db.VarChar(64)
+  offer        TicketPublishedOffer @relation(fields: [offerId], references: [id], onDelete: Restrict)
+  actor        User                 @relation("TicketStandaloneSalePriceActor", fields: [actorUserId], references: [id], onDelete: Restrict)
+
+  @@unique([offerId, revision])
+  @@unique([offerId, commandKey])
+  @@index([offerId, occurredAt])
 }
 
 model TicketOfferAudit {

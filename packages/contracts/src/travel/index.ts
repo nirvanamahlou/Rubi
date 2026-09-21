@@ -2,7 +2,19 @@ import type { SalesReservationRequestV1 } from '../sales';
 
 export const TRAVEL_RUNTIME_VERSION = 1 as const;
 
-/** Catalog owns published schedule and capacity; negotiated sale price belongs to Sales. */
+/** Catalog owns schedule, capacity and the public fare used for ticket-only sales. */
+export interface TicketStandaloneSalePriceV1 {
+  revision: number;
+  amount: string;
+  currencyCode: string;
+}
+
+export interface TicketStandaloneSalePriceUpdateV1 {
+  expectedRevision: number;
+  amount: string;
+  currencyCode: string;
+}
+
 export interface TicketOfferV1 {
   id: string;
   version: number;
@@ -17,11 +29,17 @@ export interface TicketOfferV1 {
   totalCapacity: number;
   remainingCapacity: number;
   status: 'ACTIVE' | 'PAUSED';
+  standaloneSalePrice?: TicketStandaloneSalePriceV1 | null;
 }
 
 export type TicketOfferCreateV1 = Omit<
   TicketOfferV1,
-  'id' | 'version' | 'branchId' | 'remainingCapacity' | 'status'
+  | 'id'
+  | 'version'
+  | 'branchId'
+  | 'remainingCapacity'
+  | 'status'
+  | 'standaloneSalePrice'
 >;
 export interface TicketOfferSearchV1 {
   originId: string;

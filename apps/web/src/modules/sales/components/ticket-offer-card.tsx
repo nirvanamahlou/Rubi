@@ -50,6 +50,7 @@ export function TicketOfferCard({
   originLabel = 'مبدأ',
   destinationLabel = 'مقصد',
   requiredSeats = 1,
+  requireStandaloneFare = false,
 }: {
   offer: TicketOfferV1;
   selected: boolean;
@@ -57,20 +58,22 @@ export function TicketOfferCard({
   originLabel?: string;
   destinationLabel?: string;
   requiredSeats?: number;
+  requireStandaloneFare?: boolean;
 }) {
   const departure = ticketDisplayTime(offer.departureAt);
   const insufficient = offer.remainingCapacity < requiredSeats;
+  const missingFare = requireStandaloneFare && !offer.standaloneSalePrice;
   const arrival = ticketDisplayTime(offer.arrivalAt);
   return (
     <button
       type="button"
       aria-pressed={selected}
-      disabled={insufficient}
+      disabled={insufficient || missingFare}
       aria-label={`${offer.carrierName}، پرواز ${offer.serviceNumber}، ${originLabel} به ${destinationLabel}، ${departure.date} ساعت ${departure.time}${selected ? '، انتخاب‌شده' : ''}`}
       onClick={() => onSelect(offer)}
-      className={`w-full disabled:cursor-not-allowed disabled:opacity-60 overflow-hidden rounded-2xl border text-start shadow-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${selected ? 'border-blue-600 bg-blue-600 text-white' : 'border-border bg-surface hover:border-primary/60 hover:shadow-md'}`}
+      className={`w-full disabled:cursor-not-allowed disabled:opacity-60 overflow-hidden rounded-xl border text-start shadow-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${selected ? 'border-blue-600 bg-blue-600 text-white' : 'border-border bg-surface hover:border-primary/60 hover:shadow-md'}`}
     >
-      <span className="flex items-start justify-between gap-3 px-4 pt-3">
+      <span className="flex items-start justify-between gap-2 px-3 pt-2">
         <span className="min-w-0">
           <span className="block break-words text-sm font-bold">
             {offer.carrierName}
@@ -93,12 +96,12 @@ export function TicketOfferCard({
           {selected ? 'انتخاب‌شده' : 'انتخاب'}
         </span>
       </span>
-      <span className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 px-4 py-4">
+      <span className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 px-3 py-2">
         <span className="min-w-0">
           <span className="block text-[11px] opacity-75">حرکت</span>
           <strong
             dir="ltr"
-            className="block text-start text-2xl font-black tabular-nums"
+            className="block text-start text-lg font-bold tabular-nums"
           >
             {departure.time}
           </strong>
@@ -107,7 +110,7 @@ export function TicketOfferCard({
           </span>
           <time
             dateTime={offer.departureAt}
-            className="mt-2 block break-words text-sm font-bold leading-relaxed sm:text-base"
+            className="mt-1 block break-words text-xs font-semibold leading-5"
           >
             {departure.date}
           </time>
@@ -126,7 +129,7 @@ export function TicketOfferCard({
           <span className="block text-[11px] opacity-75">رسیدن</span>
           <strong
             dir="ltr"
-            className="block text-end text-2xl font-black tabular-nums"
+            className="block text-end text-lg font-bold tabular-nums"
           >
             {arrival.time}
           </strong>
@@ -135,14 +138,14 @@ export function TicketOfferCard({
           </span>
           <time
             dateTime={offer.arrivalAt}
-            className="mt-2 block break-words text-sm font-bold leading-relaxed sm:text-base"
+            className="mt-1 block break-words text-xs font-semibold leading-5"
           >
             {arrival.date}
           </time>
         </span>
       </span>
       <span
-        className={`flex flex-wrap items-center justify-between gap-2 border-t px-4 py-2 text-xs ${selected ? 'border-white/20 bg-white/10' : 'border-border bg-muted/40'}`}
+        className={`flex flex-wrap items-center justify-between gap-2 border-t px-3 py-1 text-[11px] ${selected ? 'border-white/20 bg-white/10' : 'border-border bg-muted/40'}`}
       >
         <span>
           {offer.cabinClassCode === 'BUSINESS'
@@ -152,6 +155,13 @@ export function TicketOfferCard({
               : 'اکونومی'}
         </span>
         <span className="flex flex-wrap gap-x-3 gap-y-1">
+          {requireStandaloneFare ? (
+            <strong className={missingFare ? 'text-rose-600' : ''}>
+              {offer.standaloneSalePrice
+                ? `فروش تکی هر صندلی: ${offer.standaloneSalePrice.amount} ${offer.standaloneSalePrice.currencyCode}`
+                : 'قیمت فروش تکی ثبت نشده'}
+            </strong>
+          ) : null}
           <span>
             ظرفیت کل:{' '}
             {new Intl.NumberFormat('fa-IR').format(offer.totalCapacity)} نفر

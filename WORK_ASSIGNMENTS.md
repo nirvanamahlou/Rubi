@@ -1,8 +1,16 @@
-## DASHBOARD-PERCENTAGE-SPARKLINES-0920 — PC-C — READY_FOR_REVIEW
+## TICKET-TIME-REPEAT-0920 — PC-A — READY_FOR_REVIEW
 
-- Scope: add time-bucket trend series to percentage KPI metrics in the Reporting projection; preserve percentage aggregation semantics and existing comparison behavior. CI repair is also reserved for the public hotel-rate projection/test and Dashboard model test: `apps/api/src/reservations/hotel-purchase-rates.public.{ts,spec.ts}` and `apps/web/src/modules/dashboard/model/dashboard.spec.ts`.
-- No Schema/Migration/Dependency/Lockfile or operational-data changes. API contract change is additive: percentage KPI snapshots may now include `trend`.
-- Result: percentage ratio metrics now emit a time-bucket trend, count-based percentage metrics emit their current-period trend independently of comparison availability, and `lead-growth-rate` emits bucket-aligned growth against the corresponding bucket in the equal previous period. The CI repairs make the public hotel-rate projection safe for an omitted relation and replace the Dashboard source-literal check with registry/query contract coverage. Full repository lint, typecheck, test and production build pass under CI-equivalent environment variables; 84 migrations, status and two repeatable seeds also pass on an isolated PostgreSQL 18 container, which was removed afterward. The shared API4000 process was not restarted because it is owned by the active integrated runtime.
+- درخواست مالک در 2026-09-20: فیلدهای زمان حرکت و رسیدنِ تعریف بلیت دوباره در فرم در دسترس باشند و هنگام تکرار هفتگی/ماهانه همراه بلیت کپی شوند. `COMPUTER_ID=PC-A`؛ شاخه `codex/pc-a-ticket-time-repeat-0920` از آخرین `origin/develop@7e52d309`.
+- محدودهٔ رزروشده: فقط `apps/web/src/modules/ticket-catalog/**` برای فرم، مدل تکرار و تست‌های همان ماژول، به‌علاوهٔ گزارش همین Work Item و مدخل‌های محدود وضعیت. هیچ Schema/Migration، قرارداد عمومی، API، Permission، Dependency/Lockfile، دادهٔ عملیاتی یا runtime محلی تغییر نمی‌کند.
+- سازگاری: تعریف‌های قدیمیِ بدون زمان همچنان معتبر و تکرارپذیر می‌مانند؛ زمان‌ها در صورت ثبت، UTC و zone موجود را نگه می‌دارند و تاریخ اولین بلیت مبنای تکرار است.
+- تحویل: فیلدهای زمان برای بلیت یک‌طرفه، برگشت و همهٔ قطعه‌های ترکیبی بازگشتند؛ انتخاب زمان حرکت `serviceDate` را همگام می‌کند و تکرار، timestampهای ذخیره‌شده را همراه تاریخ جابه‌جا می‌کند. ۱۰ فایل / ۱۰۰ تست Ticket Catalog، lint و typecheck Web موفق‌اند و build تولیدی در Worktree جدا خروجی `BUILD_ID` ساخته است. Schema/Migration/contract/API/runtime/3100 تغییر نکرده‌اند. وضعیت `READY_FOR_REVIEW`؛ رزرو محدود Central Docs با این Commit `RELEASED` می‌شود.
+
+## LOGIN-STATIC-BACKGROUND-0920 — PC-A — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-20: نوشته و طرح ابری `NOORA` از صفحهٔ ورود حذف شود و همان تصویر هواپیما/آسمان به‌صورت پس‌زمینهٔ ثابت باقی بماند. `COMPUTER_ID=PC-A`؛ شاخهٔ مستقل `codex/pc-a-login-brand-cleanup-0920` از `origin/develop@f139266d`.
+- محدودهٔ رزروشده: فقط `apps/web/src/app/login/login-background-story.tsx`، CSS و تست متمرکز همان پس‌زمینه و ثبت محدود وضعیت. فایل تصویری `login-airline-b2.png` بدون تغییر می‌ماند؛ API، احراز هویت، فرم ورود، Schema/Migration، Permission، Dependency/Lockfile، داده و runtime پورت 3100 تغییر نمی‌کنند.
+- بررسی مالکیت: کار قبلی `BRAND-NORA-001` با وضعیت `COMPLETE / VERIFIED` ثبت شده و قفل فعال دیگری برای فایل‌های هدف یافت نشد. رزرو محدود Central Docs این slice با `PC-A/LOGIN-STATIC-BACKGROUND-0920` است.
+- نتیجه: لایه‌های `NOORA`، ابر، باد و انیمیشن ورود حذف شدند و `login-airline-b2.png` بدون تغییر به‌صورت پس‌زمینهٔ ثابت با همان crop واکنش‌گرا و overlay قبلی باقی ماند. ۵ تست صفحه ورود، lint، typecheck و build تولیدی Web موفق‌اند؛ پورت 3100 تغییر نکرد. رزرو محدود Central Docs این slice `RELEASED` است.
 
 ## HOTEL-RATE-ROOM-CAPACITY-0920 — PC-A — READY_FOR_REVIEW
 
@@ -3492,38 +3500,53 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 - build تولیدی Web نیز با ۴۶ route موفق شد؛ خروجی نمونهٔ PDF با Chrome/Poppler یک صفحه A4 دارد. تغییر عمومی API/Database و جابه‌جایی localhost انجام نشد.
 - پیگیری 2026-09-15: سایهٔ روشن شهر پشت نام/کد مبدأ و مقصد برای هر مسیر پویا اضافه شد؛ ۸ تست قالب، lint و نمونه واقعی PDF/PNG موفق‌اند.
 
+## RESERVATION-SERVICE-PURCHASE-PICKER-0919 — PC-A — READY_FOR_REVIEW
+
+- درخواست 2026-09-19: پنجره «خرید» رزرواسیون باید خدمات هتل و ترانسفر قرارداد را برای انتخاب نمایش دهد؛ کارگزار، مبلغ و ارز جداگانه ثبت شوند و ثبت همان نسخهٔ خرید را به صف پرداخت مالی بفرستد.
+- `COMPUTER_ID=PC-A`؛ شاخه `codex/pc-a-reservation-service-purchase-picker-0919` از `origin/develop@d6e1692e`. محدوده رزرو: فرم خرید خدمات رزواسیون، سازگاری API برای snapshot قدیمی دارای hotelSelection، تست‌های هدفمند و اسناد همین Task. Producer رزواسیون و consumer مالی از قرارداد عمومی موجود `ReservationServicePurchaseV1` استفاده می‌کنند؛ قرارداد API افزایشی نمی‌شود. بدون Migration، Dependency/Lockfile، دادهٔ عملیاتی یا تغییر مستقیم Procurement.
+
+- نتیجه: انتخاب‌گر خدمت فقط هتل/ترانسفر قرارداد را نشان می‌دهد. ثبت خرید همان endpoint نسخه‌دار موجود را با کارگزار، مبلغ و ارز صدا می‌زند و نسخهٔ تازه را در صف پرداخت مالی نگه می‌دارد. snapshot قدیمی که فقط hotelSelection دارد نیز سازگار است؛ برای افزودن خدمت جدید، مالک Sales باقی می‌ماند.
+
 ## SALES-TICKET-CATALOG-SYNC-0919 — PC-A — READY_FOR_REVIEW
 
 - درخواست مالک در 2026-09-19: بلیط‌های تعریف‌شده در «مدیریت بلیط» باید همان منبع انتخاب در «قرارداد جدید» باشند؛ پیشنهادهای قدیمی یا محلیِ نامرتبط در فرم قرارداد نمایش داده نشوند و ثبت بلیط جدید قابل انتخاب باشد.
 - `COMPUTER_ID=PC-A`؛ شاخه `codex/pc-a-sales-ticket-catalog-sync-0919` از `origin/develop@5d588cbd`. محدوده: API عمومی موجود Ticket Catalog برای فهرست مدیریت‌شده، ثبت تعریف پرواز در همان منبع `TicketPublishedOffer`، نمایش منبع ثبت‌شده در مدیریت بلیط، انتخاب Sales و تست‌های هدفمند؛ بدون Schema/Migration/Dependency/Lockfile یا داده عملیاتی.
 - نتیجه: تعریف تازهٔ پرواز، از همان فرم مدیریت بلیط، پیش از ذخیرهٔ نمای محلی در `TicketPublishedOffer` منتشر می‌شود و همان لحظه در فهرست «ثبت‌شده برای فروش و قرارداد» و انتخاب قرارداد جدید قابل‌دریافت است. رفت/برگشت و تکرار نیز هر پرواز مستقل را منتشر می‌کنند. فهرست مدیریت‌شده فقط ردیف‌های شعبه‌های مجاز و ظرفیت مانده را می‌خواند. تست Web ۱/۱، تست API ۳/۳، lint، Prettier و typecheck API/Web موفق‌اند؛ بدون Migration، Dependency/Lockfile یا داده عملیاتی.
 
+## TICKET-EXPIRY-SALES-VISIBILITY-0920 — PC-A — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-20: بلیطی که زمان حرکتش گذشته است در مدیریت بلیط به‌طور خودکار غیرفعال شود و همهٔ پروازهای معتبر تعریف‌شده در مدیریت بلیط در فرم قرارداد جدید قابل انتخاب باشند.
+- `COMPUTER_ID=PC-A`؛ شاخهٔ مستقل `codex/pc-a-ticket-expiry-sales-visibility-0920` از `origin/develop@60d847bb`. محدودهٔ رزرو: سرویس عمومی Ticket Catalog و تست آن، تبدیل تعریف پرواز Web و تست ورودی مدیریت بلیط، حذف دادهٔ نمونهٔ محلیِ گمراه‌کننده و اسناد همین واحد. بدون Schema/Migration/Dependency/Lockfile، Seed، دادهٔ عملیاتی یا تغییر localhost.
+- انقضا با انتقال افزایشی `ACTIVE` به `PAUSED` هنگام خواندن منبع عمومی ثبت می‌شود و نسخه و Audit سیستمی آن حفظ خواهد شد. پرواز چندقطعه‌ای با اولین مبدأ، آخرین مقصد و بازهٔ کامل سفر در همان منبع منتشر می‌شود؛ قطار و اتوبوس به قرارداد نوع پرواز تبدیل نمی‌شوند.
+- تکمیل شد: منبع مدیریت/فروش هنگام خواندن، حداکثر ۵۰۰ پیشنهاد گذشته را با کنترل همزمانی به `PAUSED` می‌برد و Audit نسخه‌دار `ticket.offer.expired` می‌سازد؛ جست‌وجوی قرارداد نیز هرگز زمان گذشته را برنمی‌گرداند. تعریف پرواز چندقطعه‌ای منتشر و backfill می‌شود، داده‌های نمونهٔ صرفاً مرورگری حذف شده‌اند، کارت محلی منقضی هنگام بارگذاری متوقف می‌شود و فهرست منتشرشده هر دقیقه تازه می‌گردد. ۲۳ تست هدفمند API/Web، lint، typecheck کامل API/Web، build API و build تولیدی Web با Webpack و ۵۰ route موفق‌اند. build پیش‌فرض Turbopack فقط به‌دلیل junction خارجی node_modules در worktree قابل اجرا نبود؛ کد، Schema، Migration، Lockfile و دادهٔ عملیاتی تغییری خارج از محدوده ندارند.
+
+# TICKET-STANDALONE-SALE-PRICE-0921 — PC-A — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-21: هر پرواز منتشرشده در جدول مدیریت بلیط قیمت فروش تکی قابل ویرایش داشته باشد؛ فروش بدون هتل/تور از همین قیمت استفاده کند، قیمت پکیج مستقل بماند و ظرفیت هر مسیر از منبع مشترک کم شود. رفت و برگشت دو پیشنهاد مستقل و دو قیمت مستقل دارند.
+- شاخه `codex/pc-a-ticket-standalone-price-v2-0921` از `origin/develop@bd93b634`. محدوده رزرو: قرارداد عمومی افزایشی Ticket Catalog، migration افزایشی قیمت نسخه‌دار، سرویس/کنترلر Ticket Catalog، جدول مدیریت بلیط، انتخاب Sales و تست‌های هدفمند. `COMPUTER_ID=PC-A` و Migration Owner همین واحد است.
+- تغییر مخرب، Seed، داده عملیاتی، Dependency/Lockfile و تغییر مستقیم develop/localhost در محدوده نیست. قیمت تور از مدیریت قیمت فعلی باقی می‌ماند؛ قیمت تکی هر صندلی فقط برای قرارداد بدون هتل/تور پیش‌فرض می‌شود.
+- اعتبارسنجی: Prisma validate/generate؛ build قراردادها، API و Web؛ lint و typecheck در API/Web/Database؛ ۷۸ تست Database (۱۴ مورد integration بدون DB رد شدند)، ۶ تست API و ۳۱ تست Web موفق شدند.
+## DASHBOARD-PERCENTAGE-SPARKLINES-0920 — PC-C — READY_FOR_REVIEW
+
+- Scope: add time-bucket trend series to percentage KPI metrics in the Reporting projection; preserve percentage aggregation semantics and existing comparison behavior. CI repair is also reserved for the public hotel-rate projection/test and Dashboard model test: `apps/api/src/reservations/hotel-purchase-rates.public.{ts,spec.ts}` and `apps/web/src/modules/dashboard/model/dashboard.spec.ts`.
+- Result: percentage ratio metrics and count-based percentage metrics now emit their current-period trend; `lead-growth-rate` compares matching buckets against the equal previous period. Full CI-equivalent lint, typecheck, test and production build passed; no Schema/Migration, Dependency/Lockfile or operational-data change.
+
 ## DASHBOARD-METRIC-AGGREGATIONS-0919 — PC-C — READY_FOR_REVIEW
 
-- `COMPUTER_ID=PC-C`; شاخهٔ مستقل `codex/pc-c-dashboard-metrics-0919` برای اصلاح metric/aggregation مستقل KPIها و Visualهای Dashboard رزرو شد.
-- قرارداد و producer Projection گزارش، نمایش واحد درصد در Web و تست هدفمند API تکمیل شد. برای Visualهای مالی، جمع مبلغ فقط در ارز انتخابی انجام می‌شود؛ Visualهای تعدادی/نرخی از count distinct/status/rate خود استفاده می‌کنند و currencySeries دریافت نمی‌کنند. تغییر Schema/Migration، دادهٔ عملیاتی/دمو، Permission و فایل‌های فعال PC-A/PC-B خارج از محدوده است.
+- Dashboard KPI and Visual Projection aggregations are metric-specific: monetary Visuals aggregate per source currency; count/rate Visuals use their own distinct/status/rate measure and do not receive currency series.
 
 ## DASHBOARD-REPORT-FILTER-INHERITANCE-0920 — PC-C — READY_FOR_REVIEW
 
-- Request: when a user opens a related report configuration from a Dashboard KPI or visualization, carry only the matching active Dashboard filters into that report form so the same scope does not need to be selected twice.
-- Scope reserved: `apps/web/src/modules/dashboard/model/query.ts`, `apps/web/src/modules/dashboard/components/dashboard-workspace.tsx`, their focused tests, and this task/status entry. No API, schema, migration, operational data, permission, dependency, lockfile, or Reports-module form changes.
-- Compatibility: the Dashboard owns the mapping. The existing Reports form remains the authority for which filters apply to each report; it discards mapped values for filters absent from its catalog definition.
-- Result: opening a related report now preserves Dashboard custom dates or the selected Tehran calendar-to-date range, selected legal entity, currency, branch, agent, sales channel, service, agency, Provider and status. A report receives only the labels in its own catalog. Dashboard model tests pass (18 passed, 1 intentionally skipped) and Web TypeScript passes after rebuilding the merged Contracts output.
+- Opening a related report carries compatible active Dashboard filters, including Tehran calendar range, entity, currency, branch, agent, channel, service, agency, provider and status. The report catalog remains the authority for accepting only its own filters.
 
 ## DASHBOARD-VISUAL-DETAIL-OUTPUT-REMOVAL-0920 — PC-C — READY_FOR_REVIEW
 
-- Request: remove the “خروجی در بازهٔ انتخابی” section from every Dashboard visual-details drawer while retaining its auditable definition, display rule, feature lineage, constraints and related-report action.
-- Scope reserved: Dashboard visual-details renderer, focused Dashboard test, and task/status documentation. No API, Schema/Migration, data, permission, dependency or Reports-form change.
-- Result: the generic selected-range output heading and its range/type/currency/category badges are removed from every visual-details drawer. The display rule continues to state the approved projection and active-filter context. Dashboard model tests pass (18 passed, 1 intentionally skipped) and Web TypeScript passes.
+- The generic «خروجی در بازهٔ انتخابی» block was removed from all Dashboard visual-detail drawers while their business definition, calculation lineage, limitations and report action remain.
 
 ## DASHBOARD-DESTINATION-ORDER-KPI-ALIGNMENT-0920 — PC-C — READY_FOR_REVIEW
 
-- Request: align the customer-destination KPI implementation with its documented distinct-order rule and rename the card to accurately state the displayed output.
-- Scope reserved: Dashboard Reporting aggregation/test, Dashboard registry/test and task/status documentation. No Schema/Migration, operational data, permission, dependency or lockfile change.
-- Result: the card is renamed to «سفارش‌های دارای مقصد». Its output now counts each valid order with a known destination exactly once, using `orderNumber` (or the fact ID when absent), rather than counting every fact row. The same aggregation feeds the snapshot, comparison and trend data. API tests 7/7, Web tests 18/18 (one existing skip) and API/Web typechecks pass; no migration was created.
+- «مقصدهای مورد تقاضای مشتریان» was renamed «سفارش‌های دارای مقصد» and now counts each valid order with a known destination once by `orderNumber` (or fact ID), consistently across snapshot, comparison and trend.
 
 ## DASHBOARD-ACQUISITION-TREND-FIX-0920 — PC-C — READY_FOR_REVIEW
 
-- Request: make the Dashboard visual «روند جذب مشتری به تفکیک کانال» use its approved acquisition-channel customer series instead of the sales amount/count trend series.
-- Branch: `codex/pc-c-dashboard-acquisition-trend-fix-0920`, based on the current Dashboard correction chain at `2fcc81f0`. Scope reserved: Reporting Dashboard visual aggregation/tests, Dashboard registry/model tests and task/status documentation. No Schema/Migration, operational or demo data, permission, dependency or lockfile change.
-- Result: this visual is no longer sent through the monetary/currency trend producer. It returns one labelled time series per known acquisition channel, with distinct customers counted inside each time bucket; the chart renders those channel lines and their legend with a shared customer-count axis. API tests 8/8, Web registry tests 18/18 (one existing skip) and API/Web typechecks pass; no migration was created.
+- «روند جذب مشتری به تفکیک کانال» now has labelled, non-monetary channel series. Each bucket counts distinct customers for the channel; it no longer uses the sales amount/currency trend producer. API tests 8/8, Web registry tests 18/18 (one existing skip) and API/Web typechecks pass.
