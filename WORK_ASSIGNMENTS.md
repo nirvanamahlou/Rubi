@@ -47,6 +47,11 @@
 - Owner authorized overlap reconciliation: retain current develop purchase-cost/payment actions instead of importing their deletion from the old local worktree. The old worktree remains untouched. Sales redesign is a separate branch/PR.
 - Validation: 11 focused tests, scoped lint, Web TypeScript and production build (50 pages) passed. Scoped reservation released; no merge or runtime change.
 
+## 2026-09-21 — PROCUREMENT-NAVIGATION-HR-CONSISTENCY-0921 — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک: «خرید و تأمین» در تمام نمایش‌ها و نگاشت‌های سامانه زیر «سرمایه انسانی» قرار گیرد و از گروه رزرواسیون خارج شود.
+- محدوده: نگاشت دسته‌بندی مدیریت سیستم، تست ناوبری متناظر و ثبت وضعیت. ناوبری اصلی از قبل `/purchases` را زیر سرمایه انسانی داشت. API، Schema/Migration، Permission، داده و Dependency/Lockfile تغییر نمی‌کنند.
+
 ## TICKET-TIME-REPEAT-0920 — PC-A — READY_FOR_REVIEW
 
 - درخواست مالک در 2026-09-20: فیلدهای زمان حرکت و رسیدنِ تعریف بلیت دوباره در فرم در دسترس باشند و هنگام تکرار هفتگی/ماهانه همراه بلیت کپی شوند. `COMPUTER_ID=PC-A`؛ شاخه `codex/pc-a-ticket-time-repeat-0920` از آخرین `origin/develop@7e52d309`.
