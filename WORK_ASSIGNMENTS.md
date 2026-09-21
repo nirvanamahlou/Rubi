@@ -3562,3 +3562,19 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 
 - COMPUTER_ID=PC-A. Branch: codex/pc-a-tour-single-screen-0921 from origin/develop@5f66ef97.
 - Reserved: tour-workspace.tsx and tour-details-form.tsx layout, focused existing tests and task status. Compact same-page sections, visible save action. No API, database, dependencies or runtime changes.
+
+## PROFILE-AVATAR-UPLOAD-0921 — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-21: عکس پروفایل از تنظیمات شخصی واقعاً بارگذاری، ذخیره و در
+  رابط سایت نمایش داده شود. شاخه `codex/pc-b-profile-avatar-upload-0921` از
+  `origin/develop@cba76029` در worktree مستقل ساخته شد.
+- محدوده رزروشده: مرز محدود Workbench/Documents برای فایل عکس مالک حساب، کنترلر و سرویس
+  Workbench، client و فرم Profile، آواتار سربرگ و تست‌های هدفمند. Documents فایل را با
+  reference دقیق Workbench/IamProfile و مالک/شعبه نشست نگه می‌دارد؛ Workbench هیچ جدول Documents
+  را مستقیم نمی‌خواند و IAM فقط از public service موجود برای شناسه عکس استفاده می‌کند.
+- بدون Schema/Migration/Seed، Dependency/Lockfile، Permission grant یا تغییر داده عملیاتی.
+  فرمت‌های مجاز PNG/JPEG و سقف ۵ مگابایت‌اند؛ دسترسی اختصاصی فقط عکس همان کاربر را می‌خواند.
+- نتیجه: بارگذاری از مسیر اختصاصی مالک حساب انجام می‌شود، شناسه فایل با public service موجود
+  IAM در پروفایل ماندگار می‌شود و فرم تنظیمات و آواتار مشترک سربرگ فایل ذخیره‌شده را نمایش
+  می‌دهند. ۱۹ تست هدفمند، lint محدوده، typecheck API/Web و build تولیدی هر دو برنامه موفق‌اند؛
+  Schema/Migration/Seed، Permission و داده عملیاتی تغییر نکرده‌اند.

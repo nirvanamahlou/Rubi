@@ -59,3 +59,8 @@ export class WorkbenchProfileDto {
   @IsOptional() @IsUUID() photoDocumentId?: string | null;
   @IsOptional() @IsUUID() photoBranchId?: string | null;
 }
+
+export class WorkbenchProfilePhotoDto {
+  @IsUUID() branchId!: string;
+  @IsString() @Length(1, 240) title!: string;
+}

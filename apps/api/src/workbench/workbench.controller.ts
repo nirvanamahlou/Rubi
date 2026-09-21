@@ -11,9 +11,17 @@ import {
   Post,
   Query,
   Req,
+  StreamableFile,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
-import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { ApiBody, ApiConsumes, ApiCookieAuth, ApiTags } from '@nestjs/swagger';
+import type {
+  DocumentRequestMetadata,
+  UploadedDocumentFile,
+} from '../documents/documents.service';
 import type { AuthenticatedRequest } from '../iam/iam.types';
 import { AuthGuard } from '../iam/auth.guard';
 import { IamService } from '../iam/iam.service';
@@ -23,10 +31,23 @@ import {
   WorkbenchCalendarDto,
   WorkbenchFolderDto,
   WorkbenchNoteDto,
+  WorkbenchProfilePhotoDto,
   WorkbenchProfileDto,
 } from './workbench.dto';
 import { WorkbenchService } from './workbench.service';
 import { WorkbenchPerformanceService } from './workbench-performance.service';
+
+function requestMetadata(
+  request: AuthenticatedRequest,
+): DocumentRequestMetadata {
+  const userAgent = request.headers['user-agent'];
+  return {
+    ...(request.ip ? { ipAddress: request.ip } : {}),
+    ...(userAgent
+      ? { userAgent: Array.isArray(userAgent) ? userAgent[0] : userAgent }
+      : {}),
+  };
+}
 
 @ApiTags('Workbench')
 @ApiCookieAuth('nora_access')
@@ -86,6 +107,55 @@ export class WorkbenchController {
     @Req() req: AuthenticatedRequest,
   ) {
     return this.service.updateProfile(dto, req.actor);
+  }
+
+  @Post('profile/photo')
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['file', 'branchId', 'title'],
+      properties: {
+        file: { type: 'string', format: 'binary' },
+        branchId: { type: 'string', format: 'uuid' },
+        title: { type: 'string', maxLength: 240 },
+      },
+    },
+  })
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: { files: 1, fileSize: 5 * 1024 * 1024 },
+    }),
+  )
+  uploadProfilePhoto(
+    @Body() dto: WorkbenchProfilePhotoDto,
+    @UploadedFile()
+    file: UploadedDocumentFile | undefined,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.service.uploadProfilePhoto(
+      dto,
+      file,
+      req.actor,
+      requestMetadata(req),
+    );
+  }
+
+  @Get('profile/photo')
+  @Header('Cache-Control', 'private, no-store')
+  @Header('Vary', 'Cookie')
+  @Header('X-Content-Type-Options', 'nosniff')
+  @Header('Cross-Origin-Resource-Policy', 'same-origin')
+  async profilePhoto(@Req() req: AuthenticatedRequest) {
+    const result = await this.service.profilePhoto(
+      req.actor,
+      requestMetadata(req),
+    );
+    return new StreamableFile(result.stream, {
+      type: result.mimeType,
+      length: result.sizeBytes,
+      disposition: `inline; filename*=UTF-8''${encodeURIComponent(result.fileName)}`,
+    });
   }
 
   @Get('calendar')

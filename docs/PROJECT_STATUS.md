@@ -3154,3 +3154,12 @@ PC-A روی شاخهٔ مستقل `codex/pc-a-ticket-expiry-sales-visibility-092
 ## 2026-09-21 — TOUR-SINGLE-SCREEN-0921 — PC-A
 
 Tour definition uses four-column desktop identity fields and compact controls. Introduction, transport, itinerary and image are same-page tabs with a bounded scrolling content area; the save action remains outside that area. All detail panels remain mounted to preserve in-progress input. Definition only; no pricing, departure, API or database changes.
+
+## 2026-09-21 — PROFILE-AVATAR-UPLOAD-0921 — PC-B — READY_FOR_REVIEW
+
+عکس پروفایل تنظیمات شخصی از مرز اختصاصی Workbench/Documents بارگذاری می‌شود؛ سرور مالک،
+شعبه، نوع سند و reference پروفایل را تعیین می‌کند و دریافت فایل فقط برای صاحب همان حساب
+ممکن است. شناسه عکس با public service موجود IAM ماندگار و تصویر در فرم تنظیمات و آواتار
+مشترک سربرگ نمایش داده می‌شود. فرمت‌ها با پشتیبانی واقعی Documents به PNG/JPEG و سقف
+۵ مگابایت محدود شدند. ۱۹ تست هدفمند، lint محدوده، typecheck API/Web و build تولیدی هر دو
+برنامه موفق‌اند؛ Schema/Migration/Seed، Permission، Dependency و داده عملیاتی تغییر نکرده‌اند.

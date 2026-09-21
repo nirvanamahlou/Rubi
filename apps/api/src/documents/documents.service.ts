@@ -72,6 +72,11 @@ export interface MasterDataLogoDocumentResult {
   scanStatus: DocumentVersionV1['scanStatus'];
 }
 
+export interface ProfilePhotoDocumentResult {
+  id: string;
+  scanStatus: DocumentVersionV1['scanStatus'];
+}
+
 const MASTER_DATA_LOGO_MAX_BYTES = 5 * 1024 * 1024;
 
 function masterDataLogoMarker(file: UploadedDocumentFile): string {
@@ -86,6 +91,21 @@ function masterDataLogoMarker(file: UploadedDocumentFile): string {
 }
 
 function masterDataLogoActor(
+  actor: AuthenticatedActor,
+  ...permissions: AuthenticatedActor['permissions'][number][]
+): AuthenticatedActor {
+  const grants: AuthenticatedActor['permissions'] = [
+    ...actor.permissions,
+    'documents.brand.read',
+    ...permissions,
+  ];
+  return {
+    ...actor,
+    permissions: [...new Set(grants)],
+  };
+}
+
+function profilePhotoActor(
   actor: AuthenticatedActor,
   ...permissions: AuthenticatedActor['permissions'][number][]
 ): AuthenticatedActor {
@@ -319,6 +339,95 @@ export class DocumentsService {
       );
     }
     return matches;
+  }
+
+  /**
+   * Narrow owner-only boundary for an account avatar. The caller cannot choose
+   * a Documents domain, owner or source reference and gains no catalogue access.
+   */
+  async uploadOwnProfilePhoto(
+    input: { branchId: string; title: string },
+    file: UploadedDocumentFile | undefined,
+    actor: AuthenticatedActor,
+    metadata: DocumentRequestMetadata,
+  ): Promise<ProfilePhotoDocumentResult> {
+    if (!actor.branchIds.includes(input.branchId))
+      throw new ForbiddenException('شعبه عکس پروفایل خارج از دسترسی شما است.');
+    if (!file) throw new BadRequestException('انتخاب عکس پروفایل الزامی است.');
+    if (!['image/png', 'image/jpeg'].includes(file.mimetype))
+      throw new UnsupportedMediaTypeException(
+        'عکس پروفایل باید PNG یا JPEG باشد.',
+      );
+    if (file.size < 1 || file.size > 5 * 1024 * 1024)
+      throw new BadRequestException('حجم عکس باید حداکثر ۵ مگابایت باشد.');
+
+    const values = await this.repository.options(actor.branchIds, ['BRAND']);
+    const branch = values.branches.find(({ id }) => id === input.branchId);
+    const owner = values.owners.find(({ id }) => id === actor.userId);
+    const documentType = values.documentTypes.find(
+      ({ code }) => code === 'BRAND_ASSET_TEMPLATE',
+    );
+    const category = values.categories.find(
+      ({ code }) => code === 'BRAND_ASSETS',
+    );
+    if (!branch)
+      throw new ForbiddenException('شعبه مجاز عکس پروفایل پیدا نشد.');
+    if (!owner || !documentType || !category)
+      throw new ConflictException(
+        'پیش‌نیاز ذخیره عکس پروفایل در آرشیو اسناد کامل نیست.',
+      );
+
+    const title = input.title.trim().slice(0, 240) || 'عکس پروفایل';
+    const uploaded = await this.upload(
+      {
+        title,
+        description: 'عکس پروفایل ثبت‌شده در تنظیمات شخصی',
+        documentTypeId: documentType.id,
+        categoryId: category.id,
+        branchId: branch.id,
+        ownerUserId: owner.id,
+        confidentiality: 'INTERNAL',
+        sourceModule: 'WORKBENCH',
+        sourceEntityType: 'IamProfile',
+        sourceEntityId: actor.userId,
+        sourceDisplayLabel: title,
+        versionNote: 'عکس پروفایل',
+      },
+      file,
+      profilePhotoActor(actor),
+      metadata,
+    );
+    return {
+      id: uploaded.data.id,
+      scanStatus: uploaded.data.currentVersion.scanStatus,
+    };
+  }
+
+  async previewOwnProfilePhoto(
+    documentId: string,
+    actor: AuthenticatedActor,
+    metadata: DocumentRequestMetadata,
+  ): Promise<DocumentFileDelivery> {
+    const row = await this.repository.findDetail(documentId, actor.branchIds);
+    const ownsProfileReference = row?.relations.some(
+      (relation) =>
+        relation.relationType === 'PRIMARY_CASE' &&
+        relation.sourceModule === 'WORKBENCH' &&
+        relation.sourceEntityType === 'IamProfile' &&
+        relation.sourceEntityId === actor.userId,
+    );
+    if (
+      !row ||
+      row.ownerUserId !== actor.userId ||
+      row.documentType.domain !== 'BRAND' ||
+      !ownsProfileReference
+    )
+      throw new ForbiddenException('مشاهده این عکس پروفایل مجاز نیست.');
+    return this.preview(
+      documentId,
+      profilePhotoActor(actor, 'documents.file.read'),
+      metadata,
+    );
   }
 
   async favorites(actor: AuthenticatedActor) {
