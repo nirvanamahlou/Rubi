@@ -2,6 +2,23 @@
 
 - درخواست مالک: نشان «ثبت پیش‌نویس» از بالای فرم درخواست خرید حذف شود؛ دکمهٔ عملیاتی ذخیره در پایین فرم حفظ می‌شود.
 - محدوده: فقط هدر و تست متمرکز فرم خرید، همراه ثبت وضعیت همین کار. API، Schema/Migration، Permission، داده و Dependency/Lockfile تغییر نمی‌کنند.
+## SALES-TICKET-CLARITY-0921 — PC-A — READY_FOR_REVIEW
+
+- COMPUTER_ID=PC-A; base origin/develop@5f66ef97; branch codex/pc-a-finance-sales-clarity-0921. Scope: Sales ticket card, its tests and this task's status entries only. No API, migration or dependency changes.
+- Owner authorized overlap reconciliation. Preserve current @nora contracts and capacity/fare guards; do not import the stale @rubi namespace rename. Old worktrees remain untouched. Finance will ship separately.
+- Validation: 7 focused tests, scoped ESLint, Web TypeScript and production build (50 pages) passed. Scoped reservation released. No merge or runtime change.
+
+## TOUR-DEFINITION-PRICING-HANDOFF-0921 — PC-A — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-21: فرم تعریف تور در مدیریت بلیت فشرده و محدود به مشخصات و خدمات ثابت باشد؛ ساخت نوبت، اتصال بلیت‌های رفت/برگشت و ورود به اتصال هتل‌های همان بازه از مدیریت قیمت پکیج انجام شود.
+- شاخه مستقل `codex/pc-a-tour-definition-compact-pricing-handoff-0921` از `origin/develop@bd93b634`؛ COMPUTER_ID=PC-A. محدوده: Web Ticket Catalog، Tour Pricing و پیش‌انتخاب نوبت در فرم نرخ خرید هتل، آزمون‌های هدفمند و اسناد همین واحد. بدون Schema/Migration/Dependency/Lockfile یا داده عملیاتی.
+- نتیجه: فرم تعریف تور فشرده و بدون قیمت/هتل/تاریخ است؛ فهرست تورها و خدمات ثابت را نشان می‌دهد. ساخت نوبت و انتخاب بلیط در مدیریت قیمت پکیج قرار گرفت و هر نوبت به فرم هتل با مقصد و تاریخ از پیش انتخاب‌شده متصل است. ۸ تست هدفمند، typecheck، lint و build تولیدی Web با ۵۰ route موفق‌اند.
+
+## FINANCE-INBOX-CLARITY-0921 — PC-A — READY_FOR_REVIEW
+
+- COMPUTER_ID=PC-A; base origin/develop@cba76029; branch codex/pc-a-finance-inbox-clarity-0921. Scope: finance-inbox-live-workspace presentation, focused tests and task status entries. No API, schema, dependency, permission or live-runtime changes.
+- Owner authorized overlap reconciliation: retain current develop purchase-cost/payment actions instead of importing their deletion from the old local worktree. The old worktree remains untouched. Sales redesign is a separate branch/PR.
+- Validation: 11 focused tests, scoped lint, Web TypeScript and production build (50 pages) passed. Scoped reservation released; no merge or runtime change.
 
 ## TICKET-TIME-REPEAT-0920 — PC-A — READY_FOR_REVIEW
 
@@ -3581,3 +3598,43 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 - شاخه: ادامه روی `codex/pc-b-procurement-request-no-supplier-0921`؛ `COMPUTER_ID=PC-B`.
 - محدودهٔ رزروشده: فرم درخواست و نمای جزئیات Procurement و تست‌های مستقیم آن، به‌علاوهٔ وضعیت همین واحد. اعتبارسنجی و اعمال سیاست تأیید در Backend بدون تغییر و fail-closed باقی می‌ماند؛ Schema/Migration، مجوز، نقش، Dependency/Lockfile و دادهٔ عملیاتی تغییر نمی‌کنند.
 - نتیجه و اعتبارسنجی: درخواست‌کنندهٔ لازم پیش از ثبت در خود فرم دیده می‌شود و در صورت تلاش برای ثبت، کنترل آن به‌طور خودکار در کادر دید و فوکوس قرار می‌گیرد؛ خطای ثبت نیز نزدیک دکمهٔ ثبت نمایش دارد. ارسال برای تأیید دیگر به وضعیت ثابت Bootstrap قفل نیست و Backend فقط در صورت وجود سیاست نسخه‌دار معتبر با تأییدکنندگان مستقل آن را می‌پذیرد. ۸ تست مستقیم فرم، lint و typecheck Web موفق‌اند؛ HTTP 200 روی Web3100 تأیید شد.
+## TICKET-FORM-VALIDATION-RESET-0921 — PC-A — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-21: پس از اصلاح ورودی نامعتبر در فرم تعریف/ویرایش بلیط، پیام خطای قبلی فوراً پاک شود؛ همین رفتار برای فرم‌های تکرار، رزرو ظرفیت و تغییر وضعیت برقرار باشد.
+- شاخهٔ مستقل `codex/pc-a-form-validation-reset-0921` از `origin/develop@bd93b634`. محدوده فقط سه فایل Web مدیریت بلیط و تست قراردادی آنهاست؛ بدون API، Schema/Migration، Dependency/Lockfile یا دادهٔ عملیاتی.
+- نتیجه: همهٔ مسیرهای تغییر داده در فرم اصلی و فرم‌های جانبی ابتدا خطای قبلی را پاک می‌کنند؛ اعتبارسنجی نامعتبر در ثبت بعدی دوباره نمایش داده می‌شود. ۱۰۵ تست ماژول، lint، typecheck و build تولیدی Web با ۵۰ route موفق‌اند.
+
+## RESERVATION-ISSUED-TICKETS-REPORT-0921 — PC-A — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-21: صفحهٔ فقط‌خواندنی «بلیط‌های صادرشده مسافران» به دادهٔ واقعی رزرواسیون متصل شود و قرارداد، مسافر، مسیر، PNR و شماره بلیط را بدون fixture یا ذخیرهٔ موازی نمایش دهد.
+- `COMPUTER_ID=PC-A`؛ شاخهٔ مستقل `codex/pc-a-reservation-issued-tickets-report-0921` از `origin/develop@bd93b634`. محدودهٔ رزرو: consumer فقط‌خواندنی Web در Ticket Catalog برای قرارداد عمومی موجود `GET /reservations/requests`، projection/validation کلاینت، UI و تست‌های هدفمند و اسناد همین واحد. بدون API/Schema/Migration/Dependency/Lockfile، دادهٔ عملیاتی، صدور یا استرداد.
+- نام شهر از اطلاعات پایهٔ عمومی خوانده می‌شود. چون قرارداد فعلی رزرواسیون PNR و شماره رسمی بلیط را ذخیره نمی‌کند، این دو مقدار جعل نمی‌شوند و در گزارش به‌صورت «ثبت نشده» نمایش داده خواهند شد.
+- تکمیل شد: صفحه در زمان بازشدن همهٔ صفحات مجاز رزرواسیون را می‌خواند، فقط مسافر/پروازهای واقعاً تخصیص‌یافته را projection می‌کند، ابطال workflow را نمایش می‌دهد، مسیرها را از اطلاعات پایه حل می‌کند و فیلتر/صفحه‌بندی موجود را روی دادهٔ واقعی نگه می‌دارد. ۱۰ تست هدفمند، lint محدوده، typecheck کامل Web و build تولیدی Next/Webpack موفق‌اند.
+
+# TICKET-STANDALONE-SALE-PRICE-0921 — PC-A — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-21: هر پرواز منتشرشده در جدول مدیریت بلیط قیمت فروش تکی قابل ویرایش داشته باشد؛ فروش بدون هتل/تور از همین قیمت استفاده کند، قیمت پکیج مستقل بماند و ظرفیت هر مسیر از منبع مشترک کم شود. رفت و برگشت دو پیشنهاد مستقل و دو قیمت مستقل دارند.
+- شاخه `codex/pc-a-ticket-standalone-price-v2-0921` از `origin/develop@bd93b634`. محدوده رزرو: قرارداد عمومی افزایشی Ticket Catalog، migration افزایشی قیمت نسخه‌دار، سرویس/کنترلر Ticket Catalog، جدول مدیریت بلیط، انتخاب Sales و تست‌های هدفمند. `COMPUTER_ID=PC-A` و Migration Owner همین واحد است.
+- تغییر مخرب، Seed، داده عملیاتی، Dependency/Lockfile و تغییر مستقیم develop/localhost در محدوده نیست. قیمت تور از مدیریت قیمت فعلی باقی می‌ماند؛ قیمت تکی هر صندلی فقط برای قرارداد بدون هتل/تور پیش‌فرض می‌شود.
+- اعتبارسنجی: Prisma validate/generate؛ build قراردادها، API و Web؛ lint و typecheck در API/Web/Database؛ ۷۸ تست Database (۱۴ مورد integration بدون DB رد شدند)، ۶ تست API و ۳۱ تست Web موفق شدند.
+
+## TOUR-SINGLE-SCREEN-0921 — PC-A — READY_FOR_REVIEW
+
+- COMPUTER_ID=PC-A. Branch: codex/pc-a-tour-single-screen-0921 from origin/develop@5f66ef97.
+- Reserved: tour-workspace.tsx and tour-details-form.tsx layout, focused existing tests and task status. Compact same-page sections, visible save action. No API, database, dependencies or runtime changes.
+
+## PROFILE-AVATAR-UPLOAD-0921 — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-21: عکس پروفایل از تنظیمات شخصی واقعاً بارگذاری، ذخیره و در
+  رابط سایت نمایش داده شود. شاخه `codex/pc-b-profile-avatar-upload-0921` از
+  `origin/develop@cba76029` در worktree مستقل ساخته شد.
+- محدوده رزروشده: مرز محدود Workbench/Documents برای فایل عکس مالک حساب، کنترلر و سرویس
+  Workbench، client و فرم Profile، آواتار سربرگ و تست‌های هدفمند. Documents فایل را با
+  reference دقیق Workbench/IamProfile و مالک/شعبه نشست نگه می‌دارد؛ Workbench هیچ جدول Documents
+  را مستقیم نمی‌خواند و IAM فقط از public service موجود برای شناسه عکس استفاده می‌کند.
+- بدون Schema/Migration/Seed، Dependency/Lockfile، Permission grant یا تغییر داده عملیاتی.
+  فرمت‌های مجاز PNG/JPEG و سقف ۵ مگابایت‌اند؛ دسترسی اختصاصی فقط عکس همان کاربر را می‌خواند.
+- نتیجه: بارگذاری از مسیر اختصاصی مالک حساب انجام می‌شود، شناسه فایل با public service موجود
+  IAM در پروفایل ماندگار می‌شود و فرم تنظیمات و آواتار مشترک سربرگ فایل ذخیره‌شده را نمایش
+  می‌دهند. ۱۹ تست هدفمند، lint محدوده، typecheck API/Web و build تولیدی هر دو برنامه موفق‌اند؛
+  Schema/Migration/Seed، Permission و داده عملیاتی تغییر نکرده‌اند.

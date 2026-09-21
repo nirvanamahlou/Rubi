@@ -69,7 +69,7 @@ import { TicketDetails } from './ticket-details';
 import { TicketForm } from './ticket-form';
 import formStyles from './ticket-form.module.css';
 import { TicketDatePicker } from './ticket-date-picker';
-import { IssuedTicketsWorkspace } from './issued-tickets-workspace';
+import { ConnectedIssuedTicketsWorkspace } from './issued-tickets-workspace';
 import { TourWorkspace } from './tour-workspace';
 import { toursApi } from '../api/tours';
 import { getPublicApiBaseUrl } from '@/lib/environment';
@@ -209,7 +209,7 @@ export function TicketWorkspace() {
             className="min-h-20 rounded-xl px-4 py-3 font-bold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
             value="tours"
           >
-            تعریف تور و نوبت برگزاری
+            تعریف تور و خدمات
           </TabsTrigger>
         </TabsList>
         <TabsContent value="tours">
@@ -219,7 +219,7 @@ export function TicketWorkspace() {
           <TicketCatalogWorkspace />
         </TabsContent>
         <TabsContent value="issued">
-          <IssuedTicketsWorkspace connected={false} tickets={[]} />
+          <ConnectedIssuedTicketsWorkspace />
         </TabsContent>
       </Tabs>
     </>
@@ -254,6 +254,10 @@ function TicketCatalogWorkspace() {
     readonly TicketOfferV1[]
   >([]);
   const [publishedProblem, setPublishedProblem] = useState('');
+  const [priceDrafts, setPriceDrafts] = useState<
+    Record<string, { amount: string; currencyCode: string }>
+  >({});
+  const [priceSaving, setPriceSaving] = useState<string>();
   const [capacityHold, setCapacityHold] = useState<{
     offer: TicketOfferV1;
     quantity: number;
@@ -262,12 +266,43 @@ function TicketCatalogWorkspace() {
   const [capacityHoldSaving, setCapacityHoldSaving] = useState(false);
   const backfillStarted = useRef(false);
   const [catalogNow, setCatalogNow] = useState(0);
+  const updateCapacityHold = (
+    value:
+      | {
+          offer: TicketOfferV1;
+          quantity: number;
+          expiresAt: string;
+        }
+      | undefined,
+  ) => {
+    setProblem('');
+    setCapacityHold(value);
+  };
+  const updateRepeat = (value: typeof repeat) => {
+    setProblem('');
+    setRepeat(value);
+  };
+  const updateReason = (value: string) => {
+    setProblem('');
+    setReason(value);
+  };
 
   const refreshPublishedOffers = async () => {
-    setCatalogNow(Date.now());
+    setCatalogNow(new Date().getTime());
     try {
       const result = await toursApi.managedOffers();
       setPublishedOffers(result.data);
+      setPriceDrafts(
+        Object.fromEntries(
+          result.data.map((offer) => [
+            offer.id,
+            {
+              amount: offer.standaloneSalePrice?.amount ?? '',
+              currencyCode: offer.standaloneSalePrice?.currencyCode ?? 'IRR',
+            },
+          ]),
+        ),
+      );
       setPublishedProblem('');
     } catch (error) {
       setPublishedProblem(
@@ -275,6 +310,32 @@ function TicketCatalogWorkspace() {
           ? error.message
           : 'دریافت بلیط‌های قابل فروش ناموفق بود.',
       );
+    }
+  };
+  const saveStandalonePrice = async (offer: TicketOfferV1) => {
+    const draft = priceDrafts[offer.id];
+    try {
+      if (!draft?.amount || !/^[A-Z]{3}$/.test(draft.currencyCode))
+        throw new Error('مبلغ و کد سه‌حرفی ارز را کامل کنید.');
+      setPriceSaving(offer.id);
+      await toursApi.updateStandaloneSalePrice(
+        offer.id,
+        {
+          expectedRevision: offer.standaloneSalePrice?.revision ?? 0,
+          amount: draft.amount,
+          currencyCode: draft.currencyCode,
+        },
+        crypto.randomUUID(),
+      );
+      await refreshPublishedOffers();
+      setPublishedProblem('');
+      setNotice('قیمت فروش تکی این مسیر ثبت شد.');
+    } catch (error) {
+      setPublishedProblem(
+        error instanceof Error ? error.message : 'ثبت قیمت تکی ناموفق بود.',
+      );
+    } finally {
+      setPriceSaving(undefined);
     }
   };
   const submitCapacityHold = async () => {
@@ -307,7 +368,7 @@ function TicketCatalogWorkspace() {
         `${result.data.quantity.toLocaleString('fa-IR')} نفر تا ${displayTime(result.data.expiresAt, 'Asia/Tehran')} رزرو شد.`,
       );
       setProblem('');
-      setCapacityHold(undefined);
+      updateCapacityHold(undefined);
     } catch (error) {
       setProblem(
         error instanceof Error ? error.message : 'رزرو ظرفیت ناموفق بود.',
@@ -439,7 +500,6 @@ function TicketCatalogWorkspace() {
       JSON.stringify({ products, references }),
     );
   }, [hydrated, products, references]);
-
   const result = queryProducts(products, query);
   const routeCounts = countProductsByRoute(products);
   const cardGroups = groupProductsForCards(result.rows);
@@ -575,7 +635,7 @@ function TicketCatalogWorkspace() {
         updated = replacePreview(updated, next);
       }
       setProducts(updated);
-      setRepeat(undefined);
+      updateRepeat(undefined);
       setProblem('');
       setNotice(
         `${repeat.count.toLocaleString('fa-IR')} بلیط ${repeat.cadence === 'weekly' ? 'هفتگی' : 'ماهانه'} جدید ساخته شد.`,
@@ -695,8 +755,11 @@ function TicketCatalogWorkspace() {
                 <tr>
                   <th className="px-4 py-3 text-start">ایرلاین / پرواز</th>
                   <th className="px-4 py-3 text-start">مسیر</th>
-                  <th className="px-4 py-3 text-start">حرکت</th>
+                  <th className="px-4 py-3 text-right">حرکت</th>
                   <th className="px-4 py-3 text-start">ظرفیت قابل فروش</th>
+                  <th className="min-w-64 px-4 py-3 text-start">
+                    قیمت فروش تکی هر صندلی
+                  </th>
                   <th className="px-4 py-3 text-start">وضعیت</th>
                   <th className="px-4 py-3 text-start">اقدام</th>
                 </tr>
@@ -716,12 +779,70 @@ function TicketCatalogWorkspace() {
                         offer.destinationId,
                       )}
                     </td>
-                    <td className="px-4 py-3" dir="ltr">
-                      {displayTime(offer.departureAt, 'Asia/Tehran')}
+                    <td className="px-4 py-3 text-right">
+                      <time
+                        dateTime={offer.departureAt}
+                        dir="rtl"
+                        lang="fa"
+                        className="block whitespace-nowrap text-right tabular-nums"
+                      >
+                        {displayTime(offer.departureAt, 'Asia/Tehran')}
+                      </time>
                     </td>
                     <td className="px-4 py-3">
                       {offer.remainingCapacity.toLocaleString('fa-IR')} از{' '}
                       {offer.totalCapacity.toLocaleString('fa-IR')}
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex min-w-60 items-end gap-2">
+                        <FormField label="مبلغ">
+                          <Input
+                            dir="ltr"
+                            inputMode="decimal"
+                            className="h-9 min-w-32 text-left tabular-nums"
+                            value={priceDrafts[offer.id]?.amount ?? ''}
+                            onChange={(event) =>
+                              setPriceDrafts((current) => ({
+                                ...current,
+                                [offer.id]: {
+                                  amount: event.target.value,
+                                  currencyCode:
+                                    current[offer.id]?.currencyCode ?? 'IRR',
+                                },
+                              }))
+                            }
+                          />
+                        </FormField>
+                        <FormField label="ارز">
+                          <Input
+                            dir="ltr"
+                            maxLength={3}
+                            className="h-9 w-20 text-left uppercase"
+                            value={priceDrafts[offer.id]?.currencyCode ?? 'IRR'}
+                            onChange={(event) =>
+                              setPriceDrafts((current) => ({
+                                ...current,
+                                [offer.id]: {
+                                  amount: current[offer.id]?.amount ?? '',
+                                  currencyCode:
+                                    event.target.value.toUpperCase(),
+                                },
+                              }))
+                            }
+                          />
+                        </FormField>
+                        <Button
+                          size="sm"
+                          type="button"
+                          disabled={
+                            priceSaving === offer.id ||
+                            !priceDrafts[offer.id]?.amount
+                          }
+                          onClick={() => void saveStandalonePrice(offer)}
+                        >
+                          ثبت
+                        </Button>
+                      </div>
                     </td>
                     <td className="px-4 py-3">
                       {offer.status === 'ACTIVE' ? 'فعال' : offer.status}
@@ -766,7 +887,7 @@ function TicketCatalogWorkspace() {
                             offer.remainingCapacity < 1
                           }
                           onClick={() =>
-                            setCapacityHold({
+                            updateCapacityHold({
                               offer,
                               quantity: 1,
                               expiresAt: new Date(Date.now() + 60 * 60 * 1000)
@@ -1041,7 +1162,7 @@ function TicketCatalogWorkspace() {
                     onView={() => setForm({ mode: 'view', product })}
                     onEdit={() => setForm({ mode: 'edit', product })}
                     onRepeat={() =>
-                      setRepeat({
+                      updateRepeat({
                         product,
                         cadence: 'weekly',
                         count: 1,
@@ -1051,7 +1172,7 @@ function TicketCatalogWorkspace() {
                     onDelete={() => setDeleteProduct(product)}
                     onStatus={(status) => {
                       setProblem('');
-                      setReason('');
+                      updateReason('');
                       setStatusChange({ product, status });
                     }}
                   />
@@ -1153,7 +1274,7 @@ function TicketCatalogWorkspace() {
       <Dialog
         open={Boolean(capacityHold)}
         onOpenChange={(open) => {
-          if (!open && !capacityHoldSaving) setCapacityHold(undefined);
+          if (!open && !capacityHoldSaving) updateCapacityHold(undefined);
         }}
       >
         <DialogContent dir="rtl" className="start-auto! left-1/2!">
@@ -1182,7 +1303,7 @@ function TicketCatalogWorkspace() {
               value={capacityHold?.quantity ?? 1}
               onChange={(event) =>
                 capacityHold &&
-                setCapacityHold({
+                updateCapacityHold({
                   ...capacityHold,
                   quantity: Number(event.target.value),
                 })
@@ -1200,7 +1321,8 @@ function TicketCatalogWorkspace() {
               required
               value={capacityHold?.expiresAt ?? ''}
               onChange={(expiresAt) =>
-                capacityHold && setCapacityHold({ ...capacityHold, expiresAt })
+                capacityHold &&
+                updateCapacityHold({ ...capacityHold, expiresAt })
               }
             />
           </FormField>
@@ -1214,7 +1336,7 @@ function TicketCatalogWorkspace() {
             <Button
               disabled={capacityHoldSaving}
               variant="outline"
-              onClick={() => setCapacityHold(undefined)}
+              onClick={() => updateCapacityHold(undefined)}
             >
               انصراف
             </Button>
@@ -1224,7 +1346,7 @@ function TicketCatalogWorkspace() {
       <Dialog
         open={Boolean(repeat)}
         onOpenChange={(open) => {
-          if (!open) setRepeat(undefined);
+          if (!open) updateRepeat(undefined);
         }}
       >
         <DialogContent dir="rtl" className="start-auto! left-1/2!">
@@ -1243,7 +1365,7 @@ function TicketCatalogWorkspace() {
               value={repeat?.startDate ?? ''}
               required
               onChange={(startDate) =>
-                repeat && setRepeat({ ...repeat, startDate })
+                repeat && updateRepeat({ ...repeat, startDate })
               }
             />
           </FormField>
@@ -1252,7 +1374,10 @@ function TicketCatalogWorkspace() {
               value={repeat?.cadence ?? 'weekly'}
               onValueChange={(cadence) =>
                 repeat &&
-                setRepeat({ ...repeat, cadence: cadence as RepeatCadence })
+                updateRepeat({
+                  ...repeat,
+                  cadence: cadence as RepeatCadence,
+                })
               }
             >
               <SelectTrigger id="ticket-repeat-cadence">
@@ -1273,7 +1398,10 @@ function TicketCatalogWorkspace() {
               value={repeat?.count ?? 1}
               onChange={(event) =>
                 repeat &&
-                setRepeat({ ...repeat, count: Number(event.target.value) })
+                updateRepeat({
+                  ...repeat,
+                  count: Number(event.target.value),
+                })
               }
             />
           </FormField>
@@ -1332,7 +1460,7 @@ function TicketCatalogWorkspace() {
             <Input
               id="ticket-status-reason"
               value={reason}
-              onChange={(event) => setReason(event.target.value)}
+              onChange={(event) => updateReason(event.target.value)}
             />
           </FormField>
           <Button className="mt-4" onClick={applyStatus}>

@@ -28,6 +28,7 @@ import {
   Skeleton,
 } from '@/components/ui/surfaces';
 import { packagePricingApi } from '../api/client';
+import { TourWorkspace } from '@/modules/ticket-catalog/components/tour-workspace';
 import { previewHotelRoomSale } from './tour-price-math';
 import {
   calculateTourRoom,
@@ -447,13 +448,15 @@ export function TourPricingWorkspace() {
         ))}
       </div>
 
+      <TourWorkspace mode="departures" />
+
       <Card className="grid gap-4 p-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="text-lg font-black">۱ · انتخاب تور و نوبت</h2>
             <p className="text-sm text-muted-foreground">
-              ابتدا تور را انتخاب کنید؛ سپس فقط نوبت‌های همان تور نمایش داده
-              می‌شوند.
+              نوبت را در بخش بالا بسازید یا یکی از نوبت‌های موجود را انتخاب
+              کنید؛ هتل‌های متصل به همان بازه پایین نمایش داده می‌شوند.
             </p>
           </div>
           <Button
@@ -474,7 +477,7 @@ export function TourPricingWorkspace() {
         {!loadingTours && !error && tours.length === 0 ? (
           <EmptyState
             title="نوبت توری برای قیمت‌گذاری پیدا نشد"
-            description="ابتدا تور، هتل‌ها و نوبت پرواز را در مدیریت بلیت تعریف کنید."
+            description="ابتدا تعریف تور و خدمات را در مدیریت بلیت ثبت کنید، سپس نوبت و بلیت‌های آن را در همین صفحه بسازید."
             icon={Plane}
           />
         ) : null}

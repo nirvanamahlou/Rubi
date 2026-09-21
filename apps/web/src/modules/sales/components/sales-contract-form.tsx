@@ -33,6 +33,10 @@ import { ContractFlightEditor } from './contract-flight-editor';
 import { SearchableReference } from './searchable-reference';
 import { SalesInsurancePicker } from './sales-insurance-picker';
 import { SalesTourPicker } from './sales-tour-picker';
+import {
+  repriceStandaloneTicketSelections,
+  standaloneTicketPricing,
+} from '../model/standalone-ticket-pricing';
 
 import { SalesPeopleSheet } from './sales-people-sheet';
 import type { SalesPeopleDraft } from '../model/sales-people-sheet';
@@ -451,6 +455,16 @@ export function SalesContractForm() {
     patchState({
       passengerComposition,
       hotel: { ...state.hotel, occupancy: nextCounts.total },
+      ...(!state.tour &&
+      !state.serviceKinds.includes('HOTEL') &&
+      !state.serviceKinds.includes('TOUR')
+        ? {
+            servicePricing: repriceStandaloneTicketSelections(
+              state,
+              nextCounts.seated,
+            ),
+          }
+        : {}),
       ...(!outboundAvailable && state.outboundOffer
         ? {
             outboundOffer: undefined,
@@ -958,12 +972,23 @@ export function SalesContractForm() {
                                 : {}),
                             }}
                             requiredSeats={passengerCounts.seated}
+                            requireStandaloneFare={
+                              !state.tour &&
+                              !state.serviceKinds.includes('HOTEL') &&
+                              !state.serviceKinds.includes('TOUR')
+                            }
                             selectedId={state.ticket.outboundOfferId}
                             onSelect={(offer) =>
                               patchState({
                                 outboundOffer: offer,
                                 returnOffer: undefined,
                                 contractFlights: {},
+                                servicePricing: standaloneTicketPricing(
+                                  state,
+                                  offer,
+                                  'OUTBOUND',
+                                  passengerCounts.seated,
+                                ),
                                 ticket: {
                                   ...state.ticket,
                                   outboundOfferId: offer.id,
@@ -1037,6 +1062,11 @@ export function SalesContractForm() {
                                   : {}),
                               }}
                               requiredSeats={passengerCounts.seated}
+                              requireStandaloneFare={
+                                !state.tour &&
+                                !state.serviceKinds.includes('HOTEL') &&
+                                !state.serviceKinds.includes('TOUR')
+                              }
                               selectedId={state.ticket.returnOfferId}
                               onSelect={(offer) => {
                                 if (
@@ -1055,6 +1085,12 @@ export function SalesContractForm() {
                                 setError('');
                                 patchState({
                                   returnOffer: offer,
+                                  servicePricing: standaloneTicketPricing(
+                                    state,
+                                    offer,
+                                    'RETURN',
+                                    passengerCounts.seated,
+                                  ),
                                   contractFlights: Object.fromEntries(
                                     Object.entries(
                                       state.contractFlights ?? {},

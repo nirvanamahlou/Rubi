@@ -20,7 +20,11 @@ import { randomUUID } from 'node:crypto';
 
 import { DatabaseService } from '../database/database.service';
 import { CustomerAffairsService } from '../customer-affairs/customer-affairs.service';
-import { DocumentsService } from '../documents/documents.service';
+import {
+  DocumentsService,
+  type DocumentRequestMetadata,
+  type UploadedDocumentFile,
+} from '../documents/documents.service';
 import { IamService } from '../iam/iam.service';
 
 const DEFAULT_FOLDERS = ['شخصی', 'جلسات', 'ایده‌ها'] as const;
@@ -163,6 +167,31 @@ export class WorkbenchService {
         updatedAt: identity.profile.updatedAt.toISOString(),
       },
     };
+  }
+
+  async uploadProfilePhoto(
+    input: { branchId: string; title: string },
+    file: UploadedDocumentFile | undefined,
+    actor: AuthenticatedActor,
+    metadata: DocumentRequestMetadata,
+  ) {
+    const result = await this.documents.uploadOwnProfilePhoto(
+      input,
+      file,
+      actor,
+      metadata,
+    );
+    return { data: result };
+  }
+
+  async profilePhoto(
+    actor: AuthenticatedActor,
+    metadata: DocumentRequestMetadata,
+  ) {
+    const identity = await this.iam.personalProfile(actor.userId);
+    const documentId = identity.profile?.photoDocumentId;
+    if (!documentId) throw new NotFoundException('عکس پروفایل ثبت نشده است.');
+    return this.documents.previewOwnProfilePhoto(documentId, actor, metadata);
   }
 
   async createFolder(nameValue: string, actor: AuthenticatedActor) {

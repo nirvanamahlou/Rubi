@@ -81,7 +81,10 @@ describe('system management reference implementation', () => {
     expect(workspace).toContain("href: '/system/legal-entities'");
     expect(workspace).toContain("href: '/system/operations'");
     expect(navigation).toContain("hrefs: ['/workbench', '/dashboard']");
-    expect(navigation).toContain("hrefs: ['/human-resources']");
+    expect(navigation).toContain("hrefs: ['/human-resources', '/purchases']");
+    expect(navigation).toContain(
+      "hrefs: ['/reservations', '/reservations/hotel-rates', '/ticket-management']",
+    );
     expect(navigation).toContain("'/ticket-management'");
     expect(navigation).toContain("'/purchases'");
   });
