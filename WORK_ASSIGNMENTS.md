@@ -3526,6 +3526,12 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 - شاخه `codex/pc-a-ticket-standalone-price-v2-0921` از `origin/develop@bd93b634`. محدوده رزرو: قرارداد عمومی افزایشی Ticket Catalog، migration افزایشی قیمت نسخه‌دار، سرویس/کنترلر Ticket Catalog، جدول مدیریت بلیط، انتخاب Sales و تست‌های هدفمند. `COMPUTER_ID=PC-A` و Migration Owner همین واحد است.
 - تغییر مخرب، Seed، داده عملیاتی، Dependency/Lockfile و تغییر مستقیم develop/localhost در محدوده نیست. قیمت تور از مدیریت قیمت فعلی باقی می‌ماند؛ قیمت تکی هر صندلی فقط برای قرارداد بدون هتل/تور پیش‌فرض می‌شود.
 - اعتبارسنجی: Prisma validate/generate؛ build قراردادها، API و Web؛ lint و typecheck در API/Web/Database؛ ۷۸ تست Database (۱۴ مورد integration بدون DB رد شدند)، ۶ تست API و ۳۱ تست Web موفق شدند.
+## DASHBOARD-FUNNEL-INSIGHT-CLARITY-0921 — PC-C — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-21: عدد افت در پرانتزِ بخش «بینش» همهٔ قیف‌های تصمیم، برای کاربر روشن و تفسیرپذیر شود.
+- شاخه `codex/pc-c-dashboard-funnel-insight-clarity-0921` از آخرین شاخهٔ یکپارچهٔ Dashboard؛ محدودهٔ رزروشده فقط renderer مشترک Funnel و مدخل‌های وضعیت همین Task است. API، Schema/Migration، قرارداد، دادهٔ عملیاتی، Permission، Dependency/Lockfile و منطق محاسبهٔ قیف خارج از Scope هستند.
+- نتیجه: عدد افت در همان جمله به «تعداد موردهایی که از مرحلهٔ اول به مرحلهٔ بعدی نرسیده‌اند» تفسیر می‌شود و یک راهنمای ثابت برای معنی آن افزوده شد. ۲۱ تست Dashboard با یک skip موجود و lint فایل تغییرکرده موفق‌اند. API، Schema/Migration، قرارداد، دادهٔ عملیاتی، Permission و Dependency/Lockfile تغییر نکردند؛ قفل موقت Central Docs آزاد شد.
+
 ## DASHBOARD-TREND-AXIS-LABEL-OVERLAP-0921 — PC-C — READY_FOR_REVIEW
 
 - درخواست مالک در 2026-09-21: برچسب‌های هم‌پوشان انتهای محور X در نمودارهای روند Dashboard، مانند «شهریور ۲۹» و «شهریور ۳۰»، اصلاح شوند.
