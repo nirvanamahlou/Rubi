@@ -188,7 +188,9 @@ export function DraftForm({
   const requesterIsRequired = !baseRequest && !requesterEmployeeId;
 
   function showRequesterRequired() {
-    setError('برای ثبت پیش‌نویس، درخواست‌کننده را از فهرست کارکنان فعال انتخاب کنید.');
+    setError(
+      'برای ثبت پیش‌نویس، درخواست‌کننده را از فهرست کارکنان فعال انتخاب کنید.',
+    );
     requestAnimationFrame(() => {
       const control = document.getElementById('proc-requester');
       control?.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -721,8 +723,8 @@ export function DraftForm({
             role="note"
             className="rounded-xl border border-sky-200/80 bg-sky-50/80 px-4 py-3 text-sm leading-6 text-sky-900 dark:border-sky-400/25 dark:bg-sky-400/10 dark:text-sky-100"
           >
-            تأمین‌کننده در درخواست اولیه اختیاری است؛ می‌توانید درخواست را
-            بدون انتخاب یا نوشتن تأمین‌کننده ثبت کنید. تأمین‌کنندهٔ فعلی یا
+            تأمین‌کننده در درخواست اولیه اختیاری است؛ می‌توانید درخواست را بدون
+            انتخاب یا نوشتن تأمین‌کننده ثبت کنید. تأمین‌کنندهٔ فعلی یا
             تأمین‌کنندهٔ تازه در مرحلهٔ استعلام و سفارش تعیین می‌شود.
           </div>
           {text('needReason', 'شرح نیاز و توجیه خرید', true)}

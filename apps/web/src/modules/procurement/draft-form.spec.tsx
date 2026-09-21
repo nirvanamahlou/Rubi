@@ -126,7 +126,9 @@ describe('Purchase draft accessibility and persisted input', () => {
       </QueryClientProvider>,
     );
 
-    expect(html).toContain('پیش از ثبت پیش‌نویس، یک کارمند فعال را انتخاب کنید.');
+    expect(html).toContain(
+      'پیش از ثبت پیش‌نویس، یک کارمند فعال را انتخاب کنید.',
+    );
     expect(html).toContain('id="proc-requester-error"');
   });
   it('loads HR employees and units immediately from the requester branch', () => {

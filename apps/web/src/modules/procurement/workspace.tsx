@@ -867,9 +867,7 @@ function RequestDetail({
                 </Button>
               )}
             {editable && can('procurement.request.submit') && (
-              <Button
-                onClick={() => void command({ action: 'PUBLISH' })}
-              >
+              <Button onClick={() => void command({ action: 'PUBLISH' })}>
                 تأیید و انتشار
               </Button>
             )}

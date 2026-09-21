@@ -1036,9 +1036,7 @@ export class ProcurementService {
           });
         } else if (action === 'SUBMIT') {
           requireRule(
-            ['DRAFT', 'CHANGES_REQUESTED', 'SUBMITTED'].includes(
-              before.status,
-            ),
+            ['DRAFT', 'CHANGES_REQUESTED', 'SUBMITTED'].includes(before.status),
             'INVALID_STATE',
             'درخواست قابل ارسال نیست.',
           );
