@@ -45,7 +45,7 @@ import {
   type ReferenceResolver,
 } from '../model/catalog';
 import {
-  activateCatalogSample,
+  activateDraftCatalogProduct,
   catalogStorageKey,
   countProductsByRoute,
   displayTime,
@@ -249,7 +249,6 @@ function TicketCatalogWorkspace() {
     count: number;
     startDate: string;
   }>();
-  const [reason, setReason] = useState('');
   const [publishedOffers, setPublishedOffers] = useState<
     readonly TicketOfferV1[]
   >([]);
@@ -281,10 +280,6 @@ function TicketCatalogWorkspace() {
   const updateRepeat = (value: typeof repeat) => {
     setProblem('');
     setRepeat(value);
-  };
-  const updateReason = (value: string) => {
-    setProblem('');
-    setReason(value);
   };
 
   const refreshPublishedOffers = async () => {
@@ -469,7 +464,10 @@ function TicketCatalogWorkspace() {
       if (stored) {
         const now = new Date().toISOString();
         const restoredProducts = stored.products.map((product) =>
-          pauseExpiredCatalogProduct(activateCatalogSample(product, now), now),
+          pauseExpiredCatalogProduct(
+            activateDraftCatalogProduct(product, now),
+            now,
+          ),
         );
         setProducts(restoredProducts);
         setReferences(stored.references);
@@ -542,12 +540,15 @@ function TicketCatalogWorkspace() {
       updated = replacePreview(updated, next, current.version);
     } else {
       for (const input of inputs) {
-        const next = createProduct(
-          `ticket-${crypto.randomUUID()}`,
-          input,
-          resolve,
+        const next = activateDraftCatalogProduct(
+          createProduct(
+            `ticket-${crypto.randomUUID()}`,
+            input,
+            resolve,
+            now,
+            actor,
+          ),
           now,
-          actor,
         );
         updated = replacePreview(updated, next);
         createdIds.push(next.id);
@@ -624,12 +625,15 @@ function TicketCatalogWorkspace() {
           occurrence === 0
             ? anchored
             : repeatDefinition(anchored, repeat.cadence, occurrence);
-        const next = createProduct(
-          `ticket-${crypto.randomUUID()}`,
-          definition,
-          resolve,
+        const next = activateDraftCatalogProduct(
+          createProduct(
+            `ticket-${crypto.randomUUID()}`,
+            definition,
+            resolve,
+            now,
+            actor,
+          ),
           now,
-          actor,
         );
         await publishFlights([definition], [next.id]);
         updated = replacePreview(updated, next);
@@ -664,7 +668,9 @@ function TicketCatalogWorkspace() {
         resolve,
         new Date().toISOString(),
         actor,
-        reason.trim() || 'تغییر وضعیت بلیط',
+        statusChange.status === 'active'
+          ? 'فعال‌سازی مجدد فروش بلیط'
+          : 'توقف فروش بلیط',
         {
           total: current.definition.totalCapacity,
           version: 0,
@@ -1172,7 +1178,6 @@ function TicketCatalogWorkspace() {
                     onDelete={() => setDeleteProduct(product)}
                     onStatus={(status) => {
                       setProblem('');
-                      updateReason('');
                       setStatusChange({ product, status });
                     }}
                   />
@@ -1456,13 +1461,6 @@ function TicketCatalogWorkspace() {
               : 'پس از تأیید، فروش این بلیط متوقف می‌شود و بعداً می‌توانید دوباره آن را فعال کنید.'}
           </DialogDescription>
           {problem ? <Alert tone="error" title={problem} /> : null}
-          <FormField label="دلیل تغییر وضعیت" id="ticket-status-reason">
-            <Input
-              id="ticket-status-reason"
-              value={reason}
-              onChange={(event) => updateReason(event.target.value)}
-            />
-          </FormField>
           <Button className="mt-4" onClick={applyStatus}>
             {statusChange?.status === 'active' ? 'فعال‌کردن فروش' : 'توقف فروش'}
           </Button>

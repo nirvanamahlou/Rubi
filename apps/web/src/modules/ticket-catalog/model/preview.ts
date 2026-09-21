@@ -339,6 +339,14 @@ export function catalogSamples(now: string): Product[] {
 export function activateCatalogSample(product: Product, at: string): Product {
   if (!product.id.startsWith('sample-ticket-') || product.status !== 'draft')
     return product;
+  return activateDraftCatalogProduct(product, at);
+}
+
+export function activateDraftCatalogProduct(
+  product: Product,
+  at: string,
+): Product {
+  if (product.status !== 'draft') return product;
   const version = product.version + 1;
   return {
     ...product,
@@ -350,8 +358,8 @@ export function activateCatalogSample(product: Product, at: string): Product {
         version,
         action: 'active',
         at,
-        actor: 'سیستم نمونه',
-        reason: 'فعال‌سازی بلیط نمونه برای نمایش کنترل توقف فروش',
+        actor: 'سیستم',
+        reason: 'فعال‌سازی خودکار پس از تعریف بلیط',
       },
     ],
   };
