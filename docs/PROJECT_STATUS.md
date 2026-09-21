@@ -3255,3 +3255,6 @@ Tour definition uses four-column desktop identity fields and compact controls. I
 مشترک سربرگ نمایش داده می‌شود. فرمت‌ها با پشتیبانی واقعی Documents به PNG/JPEG و سقف
 ۵ مگابایت محدود شدند. ۱۹ تست هدفمند، lint محدوده، typecheck API/Web و build تولیدی هر دو
 برنامه موفق‌اند؛ Schema/Migration/Seed، Permission، Dependency و داده عملیاتی تغییر نکرده‌اند.
+## 2026-09-21 — TICKET-STATUS-SYNC-0921 — READY_FOR_REVIEW
+
+دکمهٔ وضعیت مدیریت بلیت به رکورد منتشرشدهٔ Backend متصل شد؛ فعال/متوقف‌کردن نسخه‌دار است، جدول پس از ثبت تازه می‌شود و بلیت فعال آینده در قرارداد جدید قابل انتخاب خواهد بود. بلیت گذشته با عنوان «منقضی» نمایش داده می‌شود و قابل فعال‌سازی نیست. ۱۹ تست هدفمند، lint، typecheck و build تولیدی API/Web با ۵۰ route موفق‌اند. شاخه: `codex/pc-a-ticket-status-sync-0921`؛ بدون Migration یا تغییر داده عملیاتی.

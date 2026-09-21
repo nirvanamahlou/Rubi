@@ -426,6 +426,67 @@ export class TicketPublicService {
     }
   }
 
+  async updateStatus(
+    id: string,
+    input: { expectedVersion: number; status: 'ACTIVE' | 'PAUSED' },
+    actor: AuthenticatedActor,
+  ) {
+    this.require(actor, 'ticket_catalog.manage');
+    if (
+      uuid.validate(id).error ||
+      !input ||
+      !Number.isSafeInteger(input.expectedVersion) ||
+      input.expectedVersion < 1 ||
+      !['ACTIVE', 'PAUSED'].includes(input.status)
+    )
+      throw new BadRequestException('شناسه، نسخه یا وضعیت بلیت معتبر نیست.');
+    return this.database.client.$transaction(async (tx) => {
+      await tx.$queryRaw(
+        Prisma.sql`SELECT "id" FROM "TicketPublishedOffer" WHERE "id" = ${id}::uuid FOR UPDATE`,
+      );
+      const row = await tx.ticketPublishedOffer.findFirst({
+        where: {
+          id,
+          branchId: { in: actor.branchIds },
+          audit: { none: { action: 'ticket.offer.archived' } },
+        },
+        select: { id: true, version: true, status: true, departureAt: true },
+      });
+      if (!row) throw new ForbiddenException('بلیت در شعبه مجاز شما نیست.');
+      if (row.version !== input.expectedVersion)
+        throw new ConflictException('بلیت تغییر کرده؛ فهرست را تازه کنید.');
+      if (input.status === 'ACTIVE' && row.departureAt <= new Date())
+        throw new ConflictException(
+          'بلیت تاریخ‌گذشته قابل فعال‌سازی و فروش در قرارداد جدید نیست.',
+        );
+      if (row.status === input.status)
+        return { data: { id, version: row.version, status: input.status } };
+      const updated = await tx.ticketPublishedOffer.update({
+        where: { id },
+        data: { status: input.status, version: { increment: 1 } },
+        select: { version: true, status: true },
+      });
+      await tx.ticketOfferAudit.create({
+        data: {
+          offerId: id,
+          actorUserId: actor.userId,
+          action:
+            input.status === 'ACTIVE'
+              ? 'ticket.offer.activated'
+              : 'ticket.offer.paused',
+          version: updated.version,
+        },
+      });
+      return {
+        data: {
+          id,
+          version: updated.version,
+          status: updated.status as 'ACTIVE' | 'PAUSED',
+        },
+      };
+    });
+  }
+
   async revise(
     id: string,
     input: { expectedVersion: number; offer: TicketOfferCreateV1 },
