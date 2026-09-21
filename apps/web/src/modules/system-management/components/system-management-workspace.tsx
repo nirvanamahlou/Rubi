@@ -727,7 +727,6 @@ export function SystemManagementWorkspace() {
             {selectedModule.groups.map((group) => {
               const GroupIcon = iconMap[group.icon] ?? Settings;
               const values = valuesFor(selectedModule, group);
-              const current = settingFor(selectedModule, group);
               return (
                 <article
                   className={styles.settingCard}
@@ -770,9 +769,6 @@ export function SystemManagementWorkspace() {
                     </div>
                   ) : null}
                   <div className={styles.cardFoot}>
-                    <span className={styles.pill}>
-                      نسخه {(current?.version ?? 0).toLocaleString('fa-IR')}
-                    </span>
                     <button
                       aria-label={`ویرایش تنظیمات ${group.title}`}
                       className={styles.button}
