@@ -46,6 +46,86 @@ function expiryTransaction(
 }
 
 describe('TicketPublicService offer retry', () => {
+  it('persists activation of a future paused offer with a versioned audit', async () => {
+    const offerId = '10000000-0000-4000-8000-000000000010';
+    const tx = {
+      $queryRaw: vi.fn().mockResolvedValue([]),
+      ticketPublishedOffer: {
+        findFirst: vi.fn().mockResolvedValue({
+          id: offerId,
+          version: 3,
+          status: 'PAUSED',
+          departureAt: new Date('2099-11-01T04:30:00.000Z'),
+        }),
+        update: vi.fn().mockResolvedValue({ version: 4, status: 'ACTIVE' }),
+      },
+      ticketOfferAudit: { create: vi.fn().mockResolvedValue(undefined) },
+    };
+    const service = new TicketPublicService(
+      {
+        client: { $transaction: vi.fn((operation) => operation(tx)) },
+      } as unknown as DatabaseService,
+      {} as ProcurementPublicService,
+    );
+
+    await expect(
+      service.updateStatus(
+        offerId,
+        { expectedVersion: 3, status: 'ACTIVE' },
+        actor,
+      ),
+    ).resolves.toEqual({
+      data: { id: offerId, version: 4, status: 'ACTIVE' },
+    });
+    expect(tx.ticketPublishedOffer.update).toHaveBeenCalledWith({
+      where: { id: offerId },
+      data: { status: 'ACTIVE', version: { increment: 1 } },
+      select: { version: true, status: true },
+    });
+    expect(tx.ticketOfferAudit.create).toHaveBeenCalledWith({
+      data: {
+        offerId,
+        actorUserId: 'user-1',
+        action: 'ticket.offer.activated',
+        version: 4,
+      },
+    });
+  });
+
+  it('does not reactivate a departed offer', async () => {
+    const offerId = '10000000-0000-4000-8000-000000000011';
+    const tx = {
+      $queryRaw: vi.fn().mockResolvedValue([]),
+      ticketPublishedOffer: {
+        findFirst: vi.fn().mockResolvedValue({
+          id: offerId,
+          version: 2,
+          status: 'PAUSED',
+          departureAt: new Date('2020-01-01T04:30:00.000Z'),
+        }),
+        update: vi.fn(),
+      },
+      ticketOfferAudit: { create: vi.fn() },
+    };
+    const service = new TicketPublicService(
+      {
+        client: { $transaction: vi.fn((operation) => operation(tx)) },
+      } as unknown as DatabaseService,
+      {} as ProcurementPublicService,
+    );
+
+    await expect(
+      service.updateStatus(
+        offerId,
+        { expectedVersion: 2, status: 'ACTIVE' },
+        actor,
+      ),
+    ).rejects.toThrow(
+      'بلیت تاریخ‌گذشته قابل فعال‌سازی و فروش در قرارداد جدید نیست.',
+    );
+    expect(tx.ticketPublishedOffer.update).not.toHaveBeenCalled();
+  });
+
   it('accepts the same persisted offer despite a legacy order-dependent fingerprint', async () => {
     const upsert = vi.fn().mockResolvedValue(row);
     const ensureOfferPurchaseRequest = vi.fn();

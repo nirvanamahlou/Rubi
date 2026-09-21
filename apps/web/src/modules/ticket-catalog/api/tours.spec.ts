@@ -11,6 +11,27 @@ const offer = (id: string, departureAt: string) =>
   ({ id, departureAt }) as TicketOfferV1;
 
 describe('tour departure ticket range', () => {
+  it('sends a versioned published-offer status change to the backend', async () => {
+    vi.stubEnv('NEXT_PUBLIC_API_BASE_URL', 'http://localhost:4000/api/v1');
+    const fetcher = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        data: { id: 'offer-1', version: 8, status: 'ACTIVE' },
+      }),
+    });
+    vi.stubGlobal('fetch', fetcher);
+
+    await toursApi.updateOfferStatus('offer-1', 7, 'ACTIVE');
+
+    expect(fetcher).toHaveBeenCalledWith(
+      'http://localhost:4000/api/v1/ticket-catalog/offers/offer-1/status',
+      expect.objectContaining({
+        method: 'PATCH',
+        body: JSON.stringify({ expectedVersion: 7, status: 'ACTIVE' }),
+      }),
+    );
+  });
+
   it('requests the selected inclusive range and removes offers outside Tehran days', async () => {
     vi.stubEnv('NEXT_PUBLIC_API_BASE_URL', 'http://localhost:4000/api/v1');
     const fetcher = vi.fn().mockResolvedValue({

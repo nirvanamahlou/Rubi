@@ -103,6 +103,17 @@ export const toursApi = {
       method: 'PATCH',
       body: JSON.stringify({ expectedVersion, offer }),
     }),
+  updateOfferStatus: (
+    id: string,
+    expectedVersion: number,
+    status: 'ACTIVE' | 'PAUSED',
+  ) =>
+    request<{
+      data: { id: string; version: number; status: 'ACTIVE' | 'PAUSED' };
+    }>(`/offers/${id}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ expectedVersion, status }),
+    }),
   updateStandaloneSalePrice: (
     id: string,
     input: TicketStandaloneSalePriceUpdateV1,
