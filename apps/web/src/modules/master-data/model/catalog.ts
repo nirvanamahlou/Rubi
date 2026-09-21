@@ -763,8 +763,7 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
     label: 'ایرلاین‌ها',
     singularLabel: 'ایرلاین',
     group: 'حمل‌ونقل',
-    description:
-      'مشخصات مرجع ایرلاین با کدهای IATA/ICAO؛ Credential و اتصال Provider خارج از Master Data است.',
+    description: 'مشخصات مرجع ایرلاین با کدهای IATA/ICAO.',
     fields: [
       {
         key: 'airlineCodes',

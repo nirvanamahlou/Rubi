@@ -3585,6 +3585,11 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 - `COMPUTER_ID=PC-A`؛ شاخه `codex/pc-a-sales-ticket-catalog-sync-0919` از `origin/develop@5d588cbd`. محدوده: API عمومی موجود Ticket Catalog برای فهرست مدیریت‌شده، ثبت تعریف پرواز در همان منبع `TicketPublishedOffer`، نمایش منبع ثبت‌شده در مدیریت بلیط، انتخاب Sales و تست‌های هدفمند؛ بدون Schema/Migration/Dependency/Lockfile یا داده عملیاتی.
 - نتیجه: تعریف تازهٔ پرواز، از همان فرم مدیریت بلیط، پیش از ذخیرهٔ نمای محلی در `TicketPublishedOffer` منتشر می‌شود و همان لحظه در فهرست «ثبت‌شده برای فروش و قرارداد» و انتخاب قرارداد جدید قابل‌دریافت است. رفت/برگشت و تکرار نیز هر پرواز مستقل را منتشر می‌کنند. فهرست مدیریت‌شده فقط ردیف‌های شعبه‌های مجاز و ظرفیت مانده را می‌خواند. تست Web ۱/۱، تست API ۳/۳، lint، Prettier و typecheck API/Web موفق‌اند؛ بدون Migration، Dependency/Lockfile یا داده عملیاتی.
 
+## MASTER-013-AIRLINE-DESCRIPTION-0919 — PC-B — ACTIVE
+
+- درخواست مالک در 2026-09-19: متن Credential و اتصال Provider از توضیحات بخش ایرلاین حذف شود.
+- محدوده: فقط توضیح کاتالوگ ایرلاین در Web و تست مستقیم آن؛ بدون تغییر فرم، API، قرارداد، Schema/Migration، داده یا ماژول دیگر.
+
 ## TICKET-EXPIRY-SALES-VISIBILITY-0920 — PC-A — READY_FOR_REVIEW
 
 - درخواست مالک در 2026-09-20: بلیطی که زمان حرکتش گذشته است در مدیریت بلیط به‌طور خودکار غیرفعال شود و همهٔ پروازهای معتبر تعریف‌شده در مدیریت بلیط در فرم قرارداد جدید قابل انتخاب باشند.
