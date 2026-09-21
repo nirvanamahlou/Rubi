@@ -8,7 +8,7 @@ import {
   IsUUID,
   Length,
 } from 'class-validator';
-import { WORKBENCH_FEEDBACK_DEPARTMENTS } from '@rubi/contracts';
+import { WORKBENCH_FEEDBACK_DEPARTMENTS } from '@nora/contracts';
 
 export class CreateWorkbenchFeedbackDto {
   @IsUUID()

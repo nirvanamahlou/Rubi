@@ -9,6 +9,8 @@ it('builds the authenticated saved-contract PDF path without mixing request ids'
   const html = renderToStaticMarkup(
     <ContractPdfPreview contractId="contract-1" contractNumber="SC-TEST-001" />,
   );
-  expect(html).toContain('در حال ساخت PDF قرارداد');
-  expect(html).not.toContain('contract-1');
+  expect(html).toContain('در حال ساخت خروجی قرارداد');
+  expect(html).toContain('باز کردن PDF مستقیم');
+  expect(html).toContain('href="/sales/contracts/contract-1/pdf"');
+  expect(html).not.toContain('SC-TEST-001');
 });

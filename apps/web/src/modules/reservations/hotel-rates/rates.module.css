@@ -6,6 +6,69 @@
 .root header {
   margin-bottom: 24px;
 }
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+.branchFilter {
+  display: grid;
+  gap: 6px;
+  min-width: 180px;
+  font-size: 13px;
+}
+.editor {
+  scroll-margin-top: 80px;
+}
+.root .packTable {
+  min-width: 980px;
+}
+.root .packTable td {
+  vertical-align: middle;
+  font-variant-numeric: tabular-nums;
+}
+.root .packTable td:first-child {
+  min-width: 140px;
+}
+.root .packTable td:nth-child(2),
+.root .packTable td:nth-child(3) {
+  min-width: 130px;
+}
+.root .packTable td:last-child {
+  min-width: 160px;
+}
+.root .metaTable {
+  min-width: 1220px;
+}
+.root .metaTable td {
+  vertical-align: top;
+  min-width: 135px;
+}
+.root .metaTable td:nth-child(4),
+.root .metaTable td:nth-child(5) {
+  min-width: 175px;
+}
+.draftRow {
+  background: color-mix(in srgb, var(--primary) 12%, var(--surface));
+}
+.root .activePack {
+  background: color-mix(in srgb, var(--primary) 7%, var(--surface));
+}
+.chip {
+  display: inline-flex;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--muted);
+  color: var(--foreground);
+  font-size: 13px;
+}
+.searchField {
+  display: grid;
+  gap: 8px;
+  width: min(100%, 360px);
+}
 .root h1 {
   font-size: 24px;
   font-weight: 700;
@@ -96,6 +159,27 @@
 .root th {
   background: var(--muted);
 }
+.root .sheet th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+.root .sheet td:first-child {
+  min-width: 68px;
+}
+.root .sheet td:nth-child(2) {
+  min-width: 190px;
+}
+.root .sheet input[type='checkbox'] {
+  width: 19px;
+  height: 19px;
+  min-height: 19px;
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+.selectedRow {
+  background: color-mix(in srgb, var(--primary) 7%, var(--surface));
+}
 .root td:first-child,
 .root td:nth-child(2) {
   min-width: 180px;
@@ -112,11 +196,54 @@
 .root .error {
   color: var(--destructive);
 }
+.root details {
+  margin-bottom: 20px;
+}
+.root summary {
+  cursor: pointer;
+  padding: 12px 4px;
+}
 @media (max-width: 600px) {
   .root section {
     padding: 12px;
   }
   .fields > * {
     width: 100%;
+  }
+}
+
+.roomRateEditor {
+  display: grid;
+  gap: 0.65rem;
+  min-width: 32rem;
+}
+
+.roomRateCard {
+  display: grid;
+  grid-template-columns: minmax(8rem, 1fr) repeat(3, minmax(5rem, 0.7fr)) auto;
+  align-items: end;
+  gap: 0.5rem;
+  border: 1px solid var(--border, #d8e2f1);
+  border-radius: 0.75rem;
+  padding: 0.65rem;
+}
+
+.roomRateCard label {
+  display: grid;
+  gap: 0.25rem;
+  font-size: 0.75rem;
+}
+
+.roomRateCard input {
+  min-width: 4.5rem;
+}
+
+@media (max-width: 900px) {
+  .roomRateEditor {
+    min-width: 20rem;
+  }
+
+  .roomRateCard {
+    grid-template-columns: 1fr 1fr;
   }
 }

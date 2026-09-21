@@ -11,7 +11,7 @@ if (
   !process.env.DOCUMENTS_STORAGE_ENCRYPTION_KEY_BASE64
 ) {
   loadEnvFile(
-    process.env.RUBI_API_ENV_FILE ?? new URL('../.env', import.meta.url),
+    process.env.NORA_API_ENV_FILE ?? new URL('../.env', import.meta.url),
   );
 }
 
@@ -50,7 +50,7 @@ runPnpm(['db:generate']);
 if (mode === '--apply') {
   runPnpm([
     '--filter',
-    '@rubi/database',
+    '@nora/database',
     'exec',
     'prisma',
     'migrate',
@@ -58,9 +58,9 @@ if (mode === '--apply') {
     '--schema',
     'prisma/schema.prisma',
   ]);
-  runPnpmWithRetry(['--filter', '@rubi/database', 'db:seed'], 2);
+  runPnpmWithRetry(['--filter', '@nora/database', 'db:seed'], 2);
 }
-runPnpm(['--filter', '@rubi/api...', 'build']);
+runPnpm(['--filter', '@nora/api...', 'build']);
 
 const seedArguments = ['apps/api/scripts/seed-documents-demo.mjs', mode];
 if (mode === '--apply')

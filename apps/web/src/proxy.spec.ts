@@ -1,7 +1,10 @@
 import { NextRequest } from 'next/server';
 import { describe, expect, it } from 'vitest';
-import { proxy } from './proxy';
+import { config, proxy } from './proxy';
 describe('Reauthentication and local build verification', () => {
+  it('keeps decorative dashboard header artwork publicly reachable', () => {
+    expect(config.matcher[0]).toContain('images/dashboard-headers/');
+  });
   it('redirects the legacy route before mounting a second authenticated shell', () => {
     const request = new NextRequest(
       'http://localhost:3100/human-resources?section=employees&employee=employee-1',
@@ -20,7 +23,7 @@ describe('Reauthentication and local build verification', () => {
   it('allows login even when an invalid or expired access cookie is present', () => {
     const response = proxy(
       new NextRequest('http://localhost:3100/login?next=%2Fhr', {
-        headers: { cookie: 'rubi_access=stale' },
+        headers: { cookie: 'nora_access=stale' },
       }),
     );
     expect(response.headers.get('location')).toBeNull();

@@ -7,7 +7,7 @@ module.exports = async function smoke(env, state) {
   assert.equal(new URL(env.DATABASE_URL).port, '55432');
   assert.equal(
     new URL(env.DATABASE_URL).pathname,
-    '/rubi_customers_completion',
+    '/nora_customers_completion',
   );
   const checks = [];
   let cookie = '';
@@ -55,7 +55,7 @@ module.exports = async function smoke(env, state) {
     .getSetCookie()
     .map((value) => value.split(';')[0])
     .join('; ');
-  assert.ok(cookie.includes('rubi_access='));
+  assert.ok(cookie.includes('nora_access='));
   passed('real session authentication');
   const marker = crypto.randomBytes(4).toString('hex');
   const org = (

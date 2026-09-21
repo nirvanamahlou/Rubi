@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { AuthenticatedActor } from '@rubi/contracts';
+import type { AuthenticatedActor } from '@nora/contracts';
 import type { DatabaseService } from '../database/database.service';
 import type { NotificationsService } from '../notifications/notifications.service';
 import { DocumentsRepository } from './documents.repository';

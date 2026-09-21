@@ -40,7 +40,7 @@ import type {
   DocumentListQueryV1,
   DocumentOptionsResponseV1,
   DocumentUpdateInputV1,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { documentsApi, DocumentsApiError } from '../api/client';
@@ -1766,7 +1766,7 @@ export function DocumentsWorkspace() {
                   id="documents-connections-title"
                 >
                   <Link2 aria-hidden="true" className="size-5" />
-                  ارتباط اسناد با بخش‌های روبی
+                  ارتباط اسناد با بخش‌های نورا
                 </h2>
                 <p className="mt-1 text-sm leading-7 text-muted-foreground">
                   اسناد هر بخش را در آرشیو ببینید یا برای ادامه کار به ماژول

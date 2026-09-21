@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { HrNotificationDto } from '@rubi/contracts';
+import type { HrNotificationDto } from '@nora/contracts';
 import { pendingHrBellNotifications } from './hr-bell-notifications';
 
 const notice: HrNotificationDto = {

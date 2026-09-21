@@ -15,6 +15,10 @@ import {
 import { faMessages } from '@/messages/fa';
 import { logoutAuthenticatedSession } from '@/modules/profile/api/client';
 import {
+  PROFILE_PHOTO_CHANGED_EVENT,
+  workbenchPersonalApi,
+} from '@/modules/workbench/workbench-personal-api';
+import {
   profileInitials,
   PROFILE_USER_FALLBACK,
 } from '@/modules/profile/model/profile';
@@ -27,7 +31,7 @@ import {
 } from '../ui/overlays';
 
 type UserIdentityState =
-  | { status: 'loading'; displayName: 'در حال دریافت کاربر' }
+  | { status: 'loading'; displayName: 'در حال دریافت اطلاعات' }
   | { status: 'ready'; displayName: string; loggedInAt: string }
   | { status: 'error'; displayName: typeof PROFILE_USER_FALLBACK };
 
@@ -35,8 +39,9 @@ export function UserMenu() {
   const router = useRouter();
   const [identity, setIdentity] = useState<UserIdentityState>({
     status: 'loading',
-    displayName: 'در حال دریافت کاربر',
+    displayName: 'در حال دریافت اطلاعات',
   });
+  const [photoUrl, setPhotoUrl] = useState('');
 
   useEffect(() => {
     let active = true;
@@ -64,6 +69,30 @@ export function UserMenu() {
     };
   }, []);
 
+  useEffect(() => {
+    let active = true;
+    let objectUrl = '';
+    const loadPhoto = () => {
+      void workbenchPersonalApi
+        .profilePhoto()
+        .then((blob) => {
+          if (!active) return;
+          const nextUrl = URL.createObjectURL(blob);
+          if (objectUrl) URL.revokeObjectURL(objectUrl);
+          objectUrl = nextUrl;
+          setPhotoUrl(nextUrl);
+        })
+        .catch(() => undefined);
+    };
+    loadPhoto();
+    window.addEventListener(PROFILE_PHOTO_CHANGED_EVENT, loadPhoto);
+    return () => {
+      active = false;
+      window.removeEventListener(PROFILE_PHOTO_CHANGED_EVENT, loadPhoto);
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, []);
+
   async function signOut() {
     await logoutAuthenticatedSession().catch(() => undefined);
     clearHeaderSession();
@@ -71,7 +100,8 @@ export function UserMenu() {
     router.refresh();
   }
 
-  const initials = profileInitials(identity.displayName);
+  const initials =
+    identity.status === 'ready' ? profileInitials(identity.displayName) : null;
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -84,9 +114,18 @@ export function UserMenu() {
         >
           <span
             aria-hidden="true"
-            className="grid size-8 shrink-0 place-items-center rounded-full bg-primary text-xs font-black text-primary-foreground"
+            data-user-avatar-placeholder={
+              !photoUrl && identity.status !== 'ready' ? true : undefined
+            }
+            className="grid size-8 shrink-0 place-items-center overflow-hidden rounded-full bg-primary text-xs font-black text-primary-foreground"
           >
-            {initials}
+            {photoUrl ? (
+              // Authenticated object URLs cannot be rendered through next/image.
+              // eslint-disable-next-line @next/next/no-img-element
+              <img alt="" className="size-full object-cover" src={photoUrl} />
+            ) : (
+              initials
+            )}
           </span>
           <span className="hidden min-w-0 max-w-32 truncate text-start text-xs font-bold lg:block">
             {identity.displayName}

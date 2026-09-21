@@ -5,6 +5,7 @@ import {
   Inject,
   Injectable,
   NotFoundException,
+  Optional,
 } from '@nestjs/common';
 import type {
   AuthenticatedActor,
@@ -14,14 +15,19 @@ import type {
   WorkbenchNoteItemV1,
   WorkbenchNoteV1,
   IamPersonalProfileUpdateInputV1,
-} from '@rubi/contracts';
-import type { Prisma } from '@rubi/database';
+} from '@nora/contracts';
+import type { Prisma } from '@nora/database';
 import { randomUUID } from 'node:crypto';
 
 import { DatabaseService } from '../database/database.service';
 import { CustomerAffairsService } from '../customer-affairs/customer-affairs.service';
-import { DocumentsService } from '../documents/documents.service';
+import {
+  DocumentsService,
+  type DocumentRequestMetadata,
+  type UploadedDocumentFile,
+} from '../documents/documents.service';
 import { IamService } from '../iam/iam.service';
+import { SettingsRuntimeService } from '../settings/settings-runtime.service';
 
 const DEFAULT_FOLDERS = ['شخصی', 'جلسات', 'ایده‌ها'] as const;
 
@@ -99,6 +105,9 @@ export class WorkbenchService {
     @Inject(IamService) private readonly iam: IamService,
     @Inject(CustomerAffairsService)
     private readonly customerAffairs: CustomerAffairsService,
+    @Optional()
+    @Inject(SettingsRuntimeService)
+    private readonly settings?: SettingsRuntimeService,
   ) {}
 
   async notes(actor: AuthenticatedActor) {
@@ -163,6 +172,31 @@ export class WorkbenchService {
         updatedAt: identity.profile.updatedAt.toISOString(),
       },
     };
+  }
+
+  async uploadProfilePhoto(
+    input: { branchId: string; title: string },
+    file: UploadedDocumentFile | undefined,
+    actor: AuthenticatedActor,
+    metadata: DocumentRequestMetadata,
+  ) {
+    const result = await this.documents.uploadOwnProfilePhoto(
+      input,
+      file,
+      actor,
+      metadata,
+    );
+    return { data: result };
+  }
+
+  async profilePhoto(
+    actor: AuthenticatedActor,
+    metadata: DocumentRequestMetadata,
+  ) {
+    const identity = await this.iam.personalProfile(actor.userId);
+    const documentId = identity.profile?.photoDocumentId;
+    if (!documentId) throw new NotFoundException('عکس پروفایل ثبت نشده است.');
+    return this.documents.previewOwnProfilePhoto(documentId, actor, metadata);
   }
 
   async createFolder(nameValue: string, actor: AuthenticatedActor) {
@@ -279,8 +313,21 @@ export class WorkbenchService {
         input.branchId,
         actor,
       );
+    const configured = this.settings
+      ? await this.settings.json<{ priority?: unknown }>(
+          'tasks',
+          'tasks',
+          { branchId: input.branchId },
+          {},
+        )
+      : { value: {} as { priority?: unknown } };
+    const defaultPriority = priorityFromSetting(configured.value.priority);
     const row = await this.database.client.workbenchCalendarEvent.create({
-      data: { ...this.eventData(input), id, userId: actor.userId },
+      data: {
+        ...this.eventData(input, defaultPriority),
+        id,
+        userId: actor.userId,
+      },
     });
     await this.iam.recordSelfActivity(
       actor,
@@ -361,7 +408,10 @@ export class WorkbenchService {
     };
   }
 
-  private eventData(input: WorkbenchCalendarEventInputV1) {
+  private eventData(
+    input: WorkbenchCalendarEventInputV1,
+    defaultPriority: WorkbenchCalendarEventInputV1['priority'] = 'NORMAL',
+  ) {
     const dueAt = new Date(input.dueAt);
     if (Number.isNaN(dueAt.getTime()))
       throw new BadRequestException('تاریخ رویداد معتبر نیست.');
@@ -371,7 +421,7 @@ export class WorkbenchService {
       description: input.description.trim(),
       dueAt,
       status: input.status ?? 'PLANNED',
-      priority: input.priority ?? 'NORMAL',
+      priority: input.priority ?? defaultPriority ?? 'NORMAL',
       linkUrl: input.linkUrl?.trim() || null,
       imageDocumentId: input.imageDocumentId ?? null,
     };
@@ -381,4 +431,16 @@ export class WorkbenchService {
     if (!actor.branchIds.includes(branchId))
       throw new ForbiddenException('شعبه رویداد در محدوده دسترسی شما نیست.');
   }
+}
+
+function priorityFromSetting(
+  value: unknown,
+): WorkbenchCalendarEventInputV1['priority'] | undefined {
+  if (value === 'URGENT' || value === 'HIGH' || value === 'NORMAL')
+    return value;
+  if (typeof value !== 'string') return undefined;
+  if (value.includes('فوری')) return 'URGENT';
+  if (value.includes('بالا')) return 'HIGH';
+  if (value.includes('عادی')) return 'NORMAL';
+  return undefined;
 }

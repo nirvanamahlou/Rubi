@@ -8,8 +8,8 @@ import { join, resolve } from 'node:path';
 import { parseEnv } from 'node:util';
 
 import { ConfigService } from '@nestjs/config';
-import type { AuthenticatedActor } from '@rubi/contracts';
-import { createDatabaseClient, type DatabaseClient } from '@rubi/database';
+import type { AuthenticatedActor } from '@nora/contracts';
+import { createDatabaseClient, type DatabaseClient } from '@nora/database';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import type { DatabaseService } from '../src/database/database.service';
@@ -24,7 +24,7 @@ import { DocumentsService } from '../src/documents/documents.service';
 import { LocalDocumentStorage } from '../src/documents/documents.storage';
 import type { NotificationsService } from '../src/notifications/notifications.service';
 
-const databaseName = `rubi_documents_demo_test_${randomUUID().replaceAll('-', '')}`;
+const databaseName = `nora_documents_demo_test_${randomUUID().replaceAll('-', '')}`;
 const encryptionKey = randomBytes(32).toString('base64');
 const username = 'documents-demo-admin';
 const branchId = 'd003ca00-0000-4000-8000-000000000001';
@@ -55,10 +55,10 @@ function sql(database: string, input: string) {
     [
       'exec',
       '-i',
-      'rubi-postgres-1',
+      'nora-postgres-1',
       'psql',
       '-U',
-      'rubi_local',
+      'nora_local',
       '-d',
       database,
       '-v',
@@ -86,18 +86,18 @@ function run(
   });
 }
 
-describe.skipIf(process.env.RUBI_RUN_DOCUMENTS_DEMO_POSTGRES_TESTS !== '1')(
+describe.skipIf(process.env.NORA_RUN_DOCUMENTS_DEMO_POSTGRES_TESTS !== '1')(
   'Documents demo on isolated PostgreSQL and encrypted local storage',
   () => {
     beforeAll(async () => {
       const envFile =
-        process.env.RUBI_DEMO_TEST_ENV_FILE ?? resolve(process.cwd(), '.env');
+        process.env.NORA_DEMO_TEST_ENV_FILE ?? resolve(process.cwd(), '.env');
       const local = parseEnv(readFileSync(envFile, 'utf8'));
       const url = new URL(local.DATABASE_URL!);
       if (
         !['localhost', '127.0.0.1'].includes(url.hostname) ||
         url.port !== '55432' ||
-        !/^rubi_documents_demo_test_[a-f0-9]{32}$/.test(databaseName)
+        !/^nora_documents_demo_test_[a-f0-9]{32}$/.test(databaseName)
       ) {
         throw new Error('Invalid local Documents demo test target.');
       }
@@ -124,7 +124,7 @@ describe.skipIf(process.env.RUBI_RUN_DOCUMENTS_DEMO_POSTGRES_TESTS !== '1')(
       url.pathname = `/${databaseName}`;
       databaseUrl = url.toString();
       client = createDatabaseClient(databaseUrl);
-      storageRoot = await mkdtemp(join(tmpdir(), 'rubi-documents-demo-test-'));
+      storageRoot = await mkdtemp(join(tmpdir(), 'nora-documents-demo-test-'));
       storage = new LocalDocumentStorage(
         new ConfigService({
           DOCUMENTS_STORAGE_ROOT: storageRoot,
@@ -196,7 +196,7 @@ describe.skipIf(process.env.RUBI_RUN_DOCUMENTS_DEMO_POSTGRES_TESTS !== '1')(
       }
       if (
         createdDatabase &&
-        /^rubi_documents_demo_test_[a-f0-9]{32}$/.test(databaseName)
+        /^nora_documents_demo_test_[a-f0-9]{32}$/.test(databaseName)
       ) {
         sql('postgres', `DROP DATABASE "${databaseName}" WITH (FORCE);`);
       }

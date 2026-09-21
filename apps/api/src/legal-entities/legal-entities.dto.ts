@@ -3,7 +3,7 @@ import {
   LEGAL_ENTITY_CODES,
   LEGAL_ENTITY_CONTEXT_ALL,
   type LegalEntitySelection,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import {
   IsBoolean,
   IsIn,

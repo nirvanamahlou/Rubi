@@ -13,6 +13,7 @@ import {
   HttpStatus,
   Inject,
   Injectable,
+  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -22,8 +23,8 @@ import type {
   IamPermissionCode,
   LoginResponse,
   MessagingContactV1,
-} from '@rubi/contracts';
-import { AuditOutcome, SessionStatus, UserStatus } from '@rubi/database';
+} from '@nora/contracts';
+import { AuditOutcome, SessionStatus, UserStatus } from '@nora/database';
 import { hash, verify } from 'argon2';
 
 import { DatabaseService } from '../database/database.service';
@@ -529,6 +530,124 @@ export class IamService implements IamStepUpPort {
     });
   }
 
+  async listAdministrativeSessions(actor: AuthenticatedActor, userId?: string) {
+    const rows = await this.database.client.session.findMany({
+      ...(userId ? { where: { userId } } : {}),
+      take: 500,
+      orderBy: { lastUsedAt: 'desc' },
+      select: {
+        id: true,
+        status: true,
+        createdAt: true,
+        lastUsedAt: true,
+        expiresAt: true,
+        ipAddress: true,
+        userAgent: true,
+        user: { select: { id: true, username: true, displayName: true } },
+      },
+    });
+    const now = Date.now();
+    return rows.map((row) => ({
+      contract: 'system.session.v1' as const,
+      id: row.id,
+      user: row.user,
+      status:
+        row.status === SessionStatus.ACTIVE && row.expiresAt.getTime() <= now
+          ? ('EXPIRED' as const)
+          : row.status,
+      isCurrent: row.id === actor.sessionId,
+      createdAt: row.createdAt.toISOString(),
+      lastUsedAt: row.lastUsedAt.toISOString(),
+      expiresAt: row.expiresAt.toISOString(),
+      ipAddressMasked: this.maskIp(row.ipAddress),
+      userAgentSummary: this.summarizeUserAgent(row.userAgent),
+    }));
+  }
+
+  async revokeAdministrativeSession(
+    sessionId: string,
+    actor: AuthenticatedActor,
+    reasonInput: string,
+    confirmCurrentSession: boolean,
+    metadata: RequestMetadata,
+  ) {
+    const reason = this.validAdministrativeReason(reasonInput);
+    if (sessionId === actor.sessionId && !confirmCurrentSession)
+      throw new ConflictException(
+        'برای بستن نشست جاری باید تأیید صریح ارسال شود.',
+      );
+    const session = await this.database.client.session.findUnique({
+      where: { id: sessionId },
+      select: { id: true, status: true, userId: true },
+    });
+    if (!session) throw new NotFoundException('نشست پیدا نشد.');
+    if (session.status === SessionStatus.ACTIVE)
+      await this.database.client.session.update({
+        where: { id: sessionId },
+        data: {
+          status: SessionStatus.REVOKED,
+          revokedAt: new Date(),
+          revokedReason: `admin:${reason}`.slice(0, 160),
+        },
+      });
+    await this.audit(
+      actor.userId,
+      'system.session.revoke',
+      'Session',
+      sessionId,
+      AuditOutcome.SUCCESS,
+      metadata,
+      { targetUserId: session.userId, reason },
+    );
+    return { id: sessionId, status: SessionStatus.REVOKED };
+  }
+
+  async revokeAdministrativeUserSessions(
+    userId: string,
+    actor: AuthenticatedActor,
+    reasonInput: string,
+    includeCurrentSession: boolean,
+    confirmCurrentSession: boolean,
+    metadata: RequestMetadata,
+  ) {
+    const reason = this.validAdministrativeReason(reasonInput);
+    if (
+      userId === actor.userId &&
+      includeCurrentSession &&
+      !confirmCurrentSession
+    )
+      throw new ConflictException(
+        'برای بستن نشست جاری باید تأیید صریح ارسال شود.',
+      );
+    const user = await this.database.client.user.findUnique({
+      where: { id: userId },
+      select: { id: true },
+    });
+    if (!user) throw new NotFoundException('کاربر پیدا نشد.');
+    const result = await this.database.client.session.updateMany({
+      where: {
+        userId,
+        status: SessionStatus.ACTIVE,
+        ...(!includeCurrentSession ? { id: { not: actor.sessionId } } : {}),
+      },
+      data: {
+        status: SessionStatus.REVOKED,
+        revokedAt: new Date(),
+        revokedReason: `admin:${reason}`.slice(0, 160),
+      },
+    });
+    await this.audit(
+      actor.userId,
+      'system.user.sessions.revoke',
+      'User',
+      userId,
+      AuditOutcome.SUCCESS,
+      metadata,
+      { reason, revokedCount: String(result.count) },
+    );
+    return { userId, revokedCount: result.count };
+  }
+
   async mfaStatus(actor: AuthenticatedActor) {
     const user = await this.database.client.user.findUniqueOrThrow({
       where: { id: actor.userId },
@@ -789,6 +908,7 @@ export class IamService implements IamStepUpPort {
     actor: AuthenticatedActor,
     metadata: RequestMetadata,
   ) {
+    await this.assertPermissionsAssignable(dto.permissionIds, actor);
     const role = await this.database.client.role.create({
       data: {
         code: dto.code,
@@ -941,6 +1061,7 @@ export class IamService implements IamStepUpPort {
     actor: AuthenticatedActor,
     metadata: RequestMetadata,
   ) {
+    await this.assertRolesAssignable(dto.roleIds, actor);
     assertStrongPassword(dto.password);
     const username = dto.username.trim().toLowerCase();
     const email = dto.email?.trim().toLowerCase() || null;
@@ -997,7 +1118,37 @@ export class IamService implements IamStepUpPort {
     actor: AuthenticatedActor,
     metadata: RequestMetadata,
   ) {
+    await this.assertRolesAssignable(dto.roleIds, actor);
     await this.database.client.$transaction(async (transaction) => {
+      await transaction.$queryRaw`SELECT pg_advisory_xact_lock(hashtext('iam-administrator-membership'))`;
+      const [target, administratorRole] = await Promise.all([
+        transaction.user.findUnique({
+          where: { id: userId },
+          select: { status: true, roles: { select: { roleId: true } } },
+        }),
+        transaction.role.findUnique({
+          where: { code: 'administrator' },
+          select: { id: true },
+        }),
+      ]);
+      if (!target) throw new NotFoundException('کاربر پیدا نشد.');
+      if (
+        administratorRole &&
+        target.status === UserStatus.ACTIVE &&
+        target.roles.some(({ roleId }) => roleId === administratorRole.id) &&
+        !dto.roleIds.includes(administratorRole.id)
+      ) {
+        const activeAdministrators = await transaction.user.count({
+          where: {
+            status: UserStatus.ACTIVE,
+            roles: { some: { roleId: administratorRole.id } },
+          },
+        });
+        if (activeAdministrators <= 1)
+          throw new ConflictException(
+            'حذف نقش آخرین مدیر فعال سامانه مجاز نیست.',
+          );
+      }
       await transaction.userRole.deleteMany({ where: { userId } });
       await transaction.userBranch.deleteMany({ where: { userId } });
       if (dto.roleIds.length)
@@ -1032,11 +1183,34 @@ export class IamService implements IamStepUpPort {
   ) {
     if (userId === actor.userId && status !== UserStatus.ACTIVE)
       throw new ConflictException('غیرفعال‌سازی حساب جاری مجاز نیست.');
-    const user = await this.database.client.user.update({
-      where: { id: userId },
-      data: { status, failedLoginAttempts: 0, lockedUntil: null },
-      select: { id: true, status: true },
-    });
+    const user = await this.database.client.$transaction(
+      async (transaction) => {
+        await transaction.$queryRaw`SELECT pg_advisory_xact_lock(hashtext('iam-administrator-membership'))`;
+        if (status !== UserStatus.ACTIVE) {
+          const targetIsAdministrator = await transaction.userRole.findFirst({
+            where: { userId, role: { code: 'administrator' } },
+            select: { userId: true },
+          });
+          if (targetIsAdministrator) {
+            const activeAdministrators = await transaction.user.count({
+              where: {
+                status: UserStatus.ACTIVE,
+                roles: { some: { role: { code: 'administrator' } } },
+              },
+            });
+            if (activeAdministrators <= 1)
+              throw new ConflictException(
+                'غیرفعال‌سازی آخرین مدیر فعال سامانه مجاز نیست.',
+              );
+          }
+        }
+        return transaction.user.update({
+          where: { id: userId },
+          data: { status, failedLoginAttempts: 0, lockedUntil: null },
+          select: { id: true, status: true },
+        });
+      },
+    );
     if (status !== UserStatus.ACTIVE)
       await this.database.client.session.updateMany({
         where: { userId, status: SessionStatus.ACTIVE },
@@ -1204,6 +1378,71 @@ export class IamService implements IamStepUpPort {
   }
   private tokenHash(value: string) {
     return createHash('sha256').update(value, 'utf8').digest('hex');
+  }
+  private async assertRolesAssignable(
+    roleIds: readonly string[],
+    actor: AuthenticatedActor,
+  ) {
+    const roles = await this.database.client.role.findMany({
+      where: { id: { in: [...roleIds] }, isActive: true },
+      select: {
+        id: true,
+        permissions: { select: { permission: { select: { code: true } } } },
+      },
+    });
+    if (roles.length !== new Set(roleIds).size)
+      throw new BadRequestException('یک یا چند نقش معتبر یا فعال نیست.');
+    const permissionCodes = roles.flatMap((role) =>
+      role.permissions.map(({ permission }) => permission.code),
+    );
+    this.assertPermissionCodesAssignable(permissionCodes, actor);
+  }
+  private async assertPermissionsAssignable(
+    permissionIds: readonly string[],
+    actor: AuthenticatedActor,
+  ) {
+    const permissions = await this.database.client.permission.findMany({
+      where: { id: { in: [...permissionIds] } },
+      select: { id: true, code: true },
+    });
+    if (permissions.length !== new Set(permissionIds).size)
+      throw new BadRequestException('یک یا چند مجوز معتبر نیست.');
+    this.assertPermissionCodesAssignable(
+      permissions.map(({ code }) => code),
+      actor,
+    );
+  }
+  private assertPermissionCodesAssignable(
+    permissionCodes: readonly string[],
+    actor: AuthenticatedActor,
+  ) {
+    const actorPermissions = new Set<string>(actor.permissions);
+    if (permissionCodes.some((code) => !actorPermissions.has(code)))
+      throw new ForbiddenException(
+        'واگذاری مجوزی که خود کاربر جاری ندارد مجاز نیست.',
+      );
+  }
+  private validAdministrativeReason(value: string) {
+    const reason = value?.trim();
+    if (!reason || reason.length < 5 || reason.length > 120)
+      throw new BadRequestException('دلیل باید بین ۵ تا ۱۲۰ نویسه باشد.');
+    return reason;
+  }
+  private maskIp(value: string | null) {
+    if (!value) return null;
+    if (value.includes(':'))
+      return `${value.split(':').slice(0, 3).join(':')}:*`;
+    const parts = value.split('.');
+    return parts.length === 4 ? `${parts[0]}.${parts[1]}.*.*` : 'masked';
+  }
+  private summarizeUserAgent(value: string | null) {
+    if (!value) return null;
+    return (
+      value
+        .replace(/[\r\n\t]+/g, ' ')
+        .trim()
+        .slice(0, 160) || null
+    );
   }
   private revokeFamily(familyId: string, reason: string) {
     return this.database.client.session.updateMany({

@@ -1,5 +1,5 @@
 'use client';
-import { moneyDecimal, moneyUnits, passengerOverSixty } from '@rubi/contracts';
+import { moneyDecimal, moneyUnits, passengerOverSixty } from '@nora/contracts';
 import { PassengerCountField } from './passenger-count-field';
 import { ContractOutputButton } from './contract-output';
 
@@ -9,16 +9,17 @@ import Link from 'next/link';
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 
 import type {
+  HotelRoomRateV1,
   MasterDataRecord,
   MasterDataResource,
   SalesServiceKind,
   SalesAccommodationKind,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 
-import { hotelNights } from '@rubi/contracts';
+import { hotelNights } from '@nora/contracts';
 import { SalesPricingPanel, SalesPricingSummary } from './sales-pricing-panel';
 import { validateSalesCurrencySelection } from './sales-currency-select';
-import { validatePassengerPackagePrices } from '@rubi/contracts';
+import { validatePassengerPackagePrices } from '@nora/contracts';
 import { PassengerPackagePrices } from './passenger-package-prices';
 import { SalesPaymentPlan } from './sales-payment-plan';
 import { Button, buttonVariants } from '@/components/ui/button';
@@ -32,6 +33,10 @@ import { ContractFlightEditor } from './contract-flight-editor';
 import { SearchableReference } from './searchable-reference';
 import { SalesInsurancePicker } from './sales-insurance-picker';
 import { SalesTourPicker } from './sales-tour-picker';
+import {
+  repriceStandaloneTicketSelections,
+  standaloneTicketPricing,
+} from '../model/standalone-ticket-pricing';
 
 import { SalesPeopleSheet } from './sales-people-sheet';
 import type { SalesPeopleDraft } from '../model/sales-people-sheet';
@@ -138,6 +143,9 @@ export function SalesContractForm() {
   const [peopleDraft, setPeopleDraft] = useState<SalesPeopleDraft | null>(null);
   const [peopleDirty, setPeopleDirty] = useState(false);
   const [insuranceReady, setInsuranceReady] = useState(false);
+  const [hotelRoomRates, setHotelRoomRates] = useState<
+    readonly HotelRoomRateV1[]
+  >([]);
   const [references, setReferences] = useState<{
     countries: readonly MasterDataRecord[];
     cities: readonly MasterDataRecord[];
@@ -199,7 +207,7 @@ export function SalesContractForm() {
 
   useEffect(() => {
     const saved = globalThis.localStorage?.getItem(
-      'rubi.sales.contract.draft.v1',
+      'nora.sales.contract.draft.v1',
     );
     const restoreTimer = saved
       ? globalThis.setTimeout(() => {
@@ -223,7 +231,7 @@ export function SalesContractForm() {
               servicePricing: restored.servicePricing ?? {},
             } as SalesFormState);
           } catch {
-            globalThis.localStorage.removeItem('rubi.sales.contract.draft.v1');
+            globalThis.localStorage.removeItem('nora.sales.contract.draft.v1');
           }
         }, 0)
       : undefined;
@@ -286,11 +294,53 @@ export function SalesContractForm() {
   }, []);
   useEffect(() => {
     globalThis.localStorage?.setItem(
-      'rubi.sales.contract.draft.v1',
+      'nora.sales.contract.draft.v1',
       JSON.stringify(state),
     );
   }, [state]);
 
+  useEffect(() => {
+    if (
+      !state.serviceKinds.includes('HOTEL') ||
+      !state.hotel.hotelId ||
+      !state.hotel.checkIn ||
+      !state.hotel.checkOut
+    )
+      return;
+    let cancelled = false;
+    salesApi
+      .availableHotelRoomRates({
+        hotelId: state.hotel.hotelId,
+        checkIn: state.hotel.checkIn,
+        checkOut: state.hotel.checkOut,
+      })
+      .then(({ data }) => {
+        if (cancelled) return;
+        setHotelRoomRates(data);
+        setState((current) =>
+          current.hotel.roomTypeId &&
+          !data.some((room) => room.roomTypeId === current.hotel.roomTypeId)
+            ? { ...current, hotel: { ...current.hotel, roomTypeId: '' } }
+            : current,
+        );
+      })
+      .catch((cause) => {
+        if (!cancelled)
+          setError(
+            cause instanceof Error
+              ? cause.message
+              : 'نرخ نوع اتاق‌های هتل دریافت نشد.',
+          );
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    state.serviceKinds,
+    state.hotel.hotelId,
+    state.hotel.checkIn,
+    state.hotel.checkOut,
+  ]);
   const toggleService = (kind: SalesServiceKind) => {
     setDetailStep(0);
     patchState({
@@ -405,6 +455,16 @@ export function SalesContractForm() {
     patchState({
       passengerComposition,
       hotel: { ...state.hotel, occupancy: nextCounts.total },
+      ...(!state.tour &&
+      !state.serviceKinds.includes('HOTEL') &&
+      !state.serviceKinds.includes('TOUR')
+        ? {
+            servicePricing: repriceStandaloneTicketSelections(
+              state,
+              nextCounts.seated,
+            ),
+          }
+        : {}),
       ...(!outboundAvailable && state.outboundOffer
         ? {
             outboundOffer: undefined,
@@ -520,7 +580,7 @@ export function SalesContractForm() {
       const response = await salesApi.create(payload, submission.current.key);
       if (response.data.status !== 'SENT_TO_RESERVATIONS')
         await salesApi.confirm(response.data.id, response.data.version);
-      globalThis.localStorage?.removeItem('rubi.sales.contract.draft.v1');
+      globalThis.localStorage?.removeItem('nora.sales.contract.draft.v1');
       setSavedNumber(response.data.contractNumber);
       setSavedId(response.data.id);
     } catch (reason) {
@@ -912,12 +972,23 @@ export function SalesContractForm() {
                                 : {}),
                             }}
                             requiredSeats={passengerCounts.seated}
+                            requireStandaloneFare={
+                              !state.tour &&
+                              !state.serviceKinds.includes('HOTEL') &&
+                              !state.serviceKinds.includes('TOUR')
+                            }
                             selectedId={state.ticket.outboundOfferId}
                             onSelect={(offer) =>
                               patchState({
                                 outboundOffer: offer,
                                 returnOffer: undefined,
                                 contractFlights: {},
+                                servicePricing: standaloneTicketPricing(
+                                  state,
+                                  offer,
+                                  'OUTBOUND',
+                                  passengerCounts.seated,
+                                ),
                                 ticket: {
                                   ...state.ticket,
                                   outboundOfferId: offer.id,
@@ -991,6 +1062,11 @@ export function SalesContractForm() {
                                   : {}),
                               }}
                               requiredSeats={passengerCounts.seated}
+                              requireStandaloneFare={
+                                !state.tour &&
+                                !state.serviceKinds.includes('HOTEL') &&
+                                !state.serviceKinds.includes('TOUR')
+                              }
                               selectedId={state.ticket.returnOfferId}
                               onSelect={(offer) => {
                                 if (
@@ -1009,6 +1085,12 @@ export function SalesContractForm() {
                                 setError('');
                                 patchState({
                                   returnOffer: offer,
+                                  servicePricing: standaloneTicketPricing(
+                                    state,
+                                    offer,
+                                    'RETURN',
+                                    passengerCounts.seated,
+                                  ),
                                   contractFlights: Object.fromEntries(
                                     Object.entries(
                                       state.contractFlights ?? {},
@@ -1108,11 +1190,28 @@ export function SalesContractForm() {
                   <ReferenceSelect
                     label="نوع اتاق"
                     value={state.hotel.roomTypeId}
-                    options={references.roomTypes}
+                    options={(state.hotel.hotelId
+                      ? references.roomTypes
+                      : []
+                    ).filter((room) =>
+                      hotelRoomRates.some(
+                        (rate) => rate.roomTypeId === room.id,
+                      ),
+                    )}
                     onChange={(roomTypeId) =>
                       patchState({ hotel: { ...state.hotel, roomTypeId } })
                     }
                   />
+                  <div className="rounded-xl border border-border bg-muted/30 p-3 text-xs text-muted-foreground md:col-span-3">
+                    {hotelRoomRates.length
+                      ? hotelRoomRates
+                          .map(
+                            (room) =>
+                              `${room.roomTypeName}: ${room.maxAdults} بزرگسال + ${room.maxChildren} کودک`,
+                          )
+                          .join(' | ')
+                      : 'برای این هتل و بازه، نوع اتاق دارای ضریب فعال ثبت نشده است.'}
+                  </div>{' '}
                   <FormField label="ورود (چک‌این)" required>
                     <DatePicker
                       value={state.hotel.checkIn}

@@ -1,11 +1,13 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import {
+  hotelNights,
+  moneyDecimal,
   moneyUnits,
   type ReservationIntakeV1,
   type ReservationServicePurchaseV1,
   type TravelWorkflowStateV1,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import { Button } from '@/components/ui/button';
 import { FormField, Input } from '@/components/ui/form-controls';
 import { MoneyInput, formatSalesMoney } from '@/components/ui/money-input';
@@ -27,6 +29,44 @@ const financeLabel = (purchase?: ReservationServicePurchaseV1) => {
 type PurchaseRequest = ReservationIntakeV1 & {
   workflow?: TravelWorkflowStateV1 | null;
 };
+
+type PurchasableService =
+  ReservationIntakeV1['snapshot']['serviceSelections'][number];
+
+export const reservationPurchaseServices = (
+  snapshot: ReservationIntakeV1['snapshot'],
+): PurchasableService[] => {
+  const services = snapshot.serviceSelections.filter(
+    (service) => service.kind === 'HOTEL' || service.kind === 'TRANSFER',
+  );
+  const hotel = snapshot.hotelSelection;
+  if (
+    !hotel ||
+    services.some((service) => service.clientKey === hotel.serviceClientKey)
+  )
+    return services;
+  return [
+    ...services,
+    {
+      clientKey: hotel.serviceClientKey,
+      kind: 'HOTEL',
+      titleSnapshot: hotel.hotelNameSnapshot,
+    },
+  ];
+};
+export function hotelPurchaseTotal(
+  amount: string,
+  basis: 'NIGHT' | 'TOTAL',
+  checkIn: string,
+  checkOut: string,
+) {
+  if (basis === 'TOTAL') return moneyDecimal(moneyUnits(amount));
+  const total = moneyDecimal(
+    moneyUnits(amount) * BigInt(hotelNights(checkIn, checkOut)),
+  );
+  moneyUnits(total);
+  return total;
+}
 
 export function SupplierFormPurchaseContext({
   request,
@@ -76,8 +116,8 @@ function ServicePurchaseCard({
   purchase,
   onSaved,
 }: {
-  request: ReservationIntakeV1;
-  service: ReservationIntakeV1['snapshot']['serviceSelections'][number];
+  request: PurchaseRequest;
+  service: PurchasableService;
   purchase: ReservationServicePurchaseV1 | undefined;
   onSaved: () => void;
 }) {
@@ -90,20 +130,45 @@ function ServicePurchaseCard({
       : null,
   );
   const [amount, setAmount] = useState(purchase?.amount ?? '');
+  const [basis, setBasis] = useState<'NIGHT' | 'TOTAL'>('TOTAL');
   const [code, setCode] = useState(
     purchase?.currencyCode ?? service.pricing?.[0]?.currencyCode ?? 'IRR',
   );
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
   const attempt = useRef<{ payload: string; key: string } | null>(null);
+  const hotel = service.kind === 'HOTEL';
+  const checkIn =
+    request.workflow?.sentSupplierFormSettings?.text.checkIn ||
+    request.snapshot.hotelSelection?.checkInDate ||
+    '';
+  const checkOut =
+    request.workflow?.sentSupplierFormSettings?.text.checkOut ||
+    request.snapshot.hotelSelection?.checkOutDate ||
+    '';
+  let nights: number | null = null;
+  try {
+    if (hotel) nights = hotelNights(checkIn, checkOut);
+  } catch {
+    // A total can still be recorded when the stay dates are incomplete.
+  }
+  let totalPreview = '';
+  try {
+    if (hotel && amount && (basis === 'TOTAL' || nights))
+      totalPreview = hotelPurchaseTotal(amount, basis, checkIn, checkOut);
+  } catch {
+    // The save action reports invalid amount or dates.
+  }
   async function save() {
     if (busy) return;
     setBusy(true);
     setMessage('');
     try {
       if (!supplier) throw new Error('کارگزار این خدمت را انتخاب کنید.');
-      if (moneyUnits(amount) <= 0n)
-        throw new Error('مبلغ خرید باید مثبت باشد.');
+      const total = hotel
+        ? hotelPurchaseTotal(amount, basis, checkIn, checkOut)
+        : amount;
+      if (moneyUnits(total) <= 0n) throw new Error('مبلغ خرید باید مثبت باشد.');
       const base = getPublicApiBaseUrl();
       if (!base) throw new Error('نشانی سرور تنظیم نشده است.');
       const payload = JSON.stringify({
@@ -111,7 +176,7 @@ function ServicePurchaseCard({
         expectedVersion: request.purchaseVersion ?? 0,
         serviceClientKey: service.clientKey,
         supplierOrganizationId: supplier.id,
-        amount,
+        amount: total,
         currencyCode: code,
       });
       if (attempt.current?.payload !== payload)
@@ -171,7 +236,7 @@ function ServicePurchaseCard({
           {formatSalesMoney(purchase.amount)} {purchase.currencyCode}
         </p>
       )}
-      <fieldset disabled={busy} className="grid gap-3 md:grid-cols-4">
+      <fieldset disabled={busy} className="grid min-w-0 gap-4">
         <FormField label="کارگزار خدمت">
           <Lookup
             kind="organizations"
@@ -180,26 +245,64 @@ function ServicePurchaseCard({
             onChange={setSupplier}
           />
         </FormField>
-        <FormField label="مبلغ خرید">
-          <MoneyInput
-            aria-label={`مبلغ خرید ${service.titleSnapshot}`}
-            value={amount}
-            onValueChange={setAmount}
-          />
-        </FormField>
-        <FormField label="ارز خرید">
-          <Input
-            aria-label={`ارز خرید ${service.titleSnapshot}`}
-            dir="ltr"
-            maxLength={3}
-            value={code}
-            onChange={(event) => setCode(event.target.value.toUpperCase())}
-          />
-        </FormField>
+        {hotel && (
+          <fieldset className="flex flex-wrap gap-4 rounded-xl border border-border p-3">
+            <legend className="px-1 text-sm font-semibold">
+              روش ورود قیمت هتل
+            </legend>
+            {(['TOTAL', 'NIGHT'] as const).map((choice) => (
+              <label key={choice} className="flex items-center gap-2 text-sm">
+                <input
+                  type="radio"
+                  name={`hotel-price-${service.clientKey}`}
+                  checked={basis === choice}
+                  disabled={choice === 'NIGHT' && !nights}
+                  onChange={() => {
+                    setBasis(choice);
+                    setAmount('');
+                  }}
+                />
+                {choice === 'NIGHT' ? 'قیمت هر شب' : 'جمع کل اقامت'}
+              </label>
+            ))}
+          </fieldset>
+        )}
+        <div className="grid min-w-0 gap-3 sm:grid-cols-2">
+          <FormField
+            label={hotel && basis === 'NIGHT' ? 'قیمت هر شب' : 'مبلغ خرید'}
+          >
+            <MoneyInput
+              aria-label={`مبلغ خرید ${service.titleSnapshot}`}
+              value={amount}
+              onValueChange={setAmount}
+            />
+          </FormField>
+          <FormField label="ارز خرید">
+            <Input
+              aria-label={`ارز خرید ${service.titleSnapshot}`}
+              dir="ltr"
+              maxLength={3}
+              value={code}
+              onChange={(event) => setCode(event.target.value.toUpperCase())}
+            />
+          </FormField>
+        </div>
+        {hotel && basis === 'NIGHT' && (
+          <p className="text-sm text-muted-foreground">
+            {nights
+              ? `${nights} شب · جمع خرید: ${totalPreview ? formatSalesMoney(totalPreview) : 'مبلغ هر شب را وارد کنید'} ${code}`
+              : 'تاریخ ورود و خروج هتل را تکمیل کنید.'}
+          </p>
+        )}
         <Button
           type="button"
-          className="self-end"
-          disabled={busy || !supplier || !amount}
+          className="w-full sm:w-auto sm:justify-self-end"
+          disabled={
+            busy ||
+            !supplier ||
+            !amount ||
+            (hotel && basis === 'NIGHT' && !nights)
+          }
           onClick={() => void save()}
         >
           {busy
@@ -223,29 +326,58 @@ export function ReservationHotelPurchase({
   request: PurchaseRequest;
   onSaved: () => void;
 }) {
+  const services = reservationPurchaseServices(request.snapshot);
+  const [selectedServiceKey, setSelectedServiceKey] = useState(
+    services[0]?.clientKey ?? '',
+  );
+  const selectedService =
+    services.find((service) => service.clientKey === selectedServiceKey) ??
+    services[0];
+
   return (
     <div className="mt-4 space-y-4 rounded-xl border bg-muted/20 p-4">
       <div>
         <h3 className="font-bold">خرید خدمات و ارسال به مالی</h3>
         <p className="text-xs text-muted-foreground">
-          برای هر خدمت، کارگزار و مبلغ خرید را جدا ثبت کنید. اصلاح خرید یک نسخه
-          تازه می‌سازد و تا پرداخت نسخه تازه، تحویل مدارک به فروش بسته می‌ماند.
+          ابتدا خدمت هتل یا ترانسفر را انتخاب کنید؛ سپس کارگزار، مبلغ و ارز خرید
+          را ثبت کنید. هر ثبت، نسخهٔ خریدِ قابل پرداخت را به کارتابل مالی
+          می‌فرستد.
         </p>
       </div>
       <SupplierFormPurchaseContext request={request} />
-      {request.snapshot.serviceSelections.map((service) => (
-        <ServicePurchaseCard
-          key={service.clientKey}
-          request={request}
-          service={service}
-          purchase={request.servicePurchases?.find(
-            (item) => item.serviceClientKey === service.clientKey,
-          )}
-          onSaved={onSaved}
-        />
-      ))}
-      {!request.snapshot.serviceSelections.length && (
-        <p>برای این قرارداد خدمتی ثبت نشده است.</p>
+      {services.length ? (
+        <>
+          <FormField label="خدمت مورد خرید">
+            <select
+              className="h-11 w-full rounded-xl border border-input bg-surface px-3 text-sm"
+              value={selectedService?.clientKey ?? ''}
+              onChange={(event) => setSelectedServiceKey(event.target.value)}
+            >
+              {services.map((service) => (
+                <option key={service.clientKey} value={service.clientKey}>
+                  {service.kind === 'HOTEL' ? 'هتل' : 'ترانسفر'} ·{' '}
+                  {service.titleSnapshot}
+                </option>
+              ))}
+            </select>
+          </FormField>
+          {selectedService ? (
+            <ServicePurchaseCard
+              key={`${selectedService.clientKey}:${request.purchaseVersion ?? 0}`}
+              request={request}
+              service={selectedService}
+              purchase={request.servicePurchases?.find(
+                (item) => item.serviceClientKey === selectedService.clientKey,
+              )}
+              onSaved={onSaved}
+            />
+          ) : null}
+        </>
+      ) : (
+        <p className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-100">
+          در این قرارداد هتل یا ترانسفر ثبت نشده است. ابتدا خدمت را در قرارداد
+          اضافه کنید؛ قیمت خرید بلیط هنگام تعریف بلیط برای مالی ثبت می‌شود.
+        </p>
       )}
       {!!request.hotelPurchases?.length && (
         <details className="text-xs text-muted-foreground">
@@ -261,7 +393,6 @@ export function ReservationHotelPurchase({
     </div>
   );
 }
-
 export function ReservationPurchaseDialog({ id }: { id: string }) {
   const [request, setRequest] = useState<PurchaseRequest>();
   const [error, setError] = useState('');

@@ -1,4 +1,4 @@
-import type { B2bAgreementTermsV1 } from '@rubi/contracts';
+import type { B2bAgreementTermsV1 } from '@nora/contracts';
 
 export function temporaryCreditIssue(
   policies: B2bAgreementTermsV1['creditPolicies'],

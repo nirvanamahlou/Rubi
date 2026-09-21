@@ -16,7 +16,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
-import type { MasterDataListQuery } from '@rubi/contracts';
+import type { MasterDataListQuery } from '@nora/contracts';
 import type { Response } from 'express';
 
 import { AuthGuard } from '../iam/auth.guard';
@@ -35,7 +35,7 @@ import { assertGenericCurrencyRateMutationAllowed } from './currency-rate.policy
 import { MasterDataService } from './master-data.service';
 
 @ApiTags('Master Data')
-@ApiCookieAuth('rubi_access')
+@ApiCookieAuth('nora_access')
 @UseGuards(AuthGuard, PermissionGuard)
 @Controller('master-data')
 export class MasterDataController {

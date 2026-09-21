@@ -24,6 +24,13 @@ describe('master data catalog', () => {
     ).toBe(false);
   });
 
+  it('keeps the airline description focused on reference codes', () => {
+    const description = getMasterDataDefinition('airlines').description;
+    expect(description).toBe('مشخصات مرجع ایرلاین با کدهای IATA/ICAO.');
+    expect(description).not.toContain('Credential');
+    expect(description).not.toContain('Provider');
+  });
+
   it('defines the complete geography fields and selector options', () => {
     expect(
       getMasterDataDefinition('airports').fields.map((field) => field.key),
@@ -66,9 +73,7 @@ describe('master data catalog', () => {
     ]);
     for (const resource of masterDataResourceKeys) {
       const definition = getMasterDataDefinition(resource);
-      if (resource === 'suppliers')
-        expect(definition.fields.some((field) => field.required)).toBe(false);
-      else expect(definition.fields.some((field) => field.required)).toBe(true);
+      expect(definition.fields.some((field) => field.required)).toBe(true);
       expect(definition.fields.some((field) => field.key === 'code')).toBe(
         explicitCodeResources.has(resource),
       );

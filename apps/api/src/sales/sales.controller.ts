@@ -24,7 +24,7 @@ import type {
   SalesContractListQuery,
   SalesContractUpdateRequest,
   SalesPaymentCreateRequest,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 
 import { AuthGuard } from '../iam/auth.guard';
 import type { AuthenticatedRequest } from '../iam/iam.types';
@@ -33,7 +33,7 @@ import { SalesOutputService } from './sales-output.service';
 import { SALES_XLSX_MIME } from './sales.xlsx';
 
 @ApiTags('Sales')
-@ApiCookieAuth('rubi_access')
+@ApiCookieAuth('nora_access')
 @UseGuards(AuthGuard)
 @Controller('sales')
 export class SalesController {
@@ -54,7 +54,7 @@ export class SalesController {
   ) {
     await this.service.detail(id, req.actor);
     const intake = await this.travel.forContract(id, req.actor.branchIds);
-    const authorization = await this.delivery.read(intake.id);
+    const authorization = await this.delivery.readCustomerContract(id);
     if (
       !authorization.approved ||
       intake.workflow.supplierStatus === 'CANCELLED'
@@ -93,6 +93,19 @@ export class SalesController {
     return this.service.dashboard(request.actor);
   }
 
+  @Get('hotel-room-rates')
+  @Header('Cache-Control', 'private, no-store')
+  hotelRoomRates(
+    @Query('hotelId') hotelId: string,
+    @Query('checkIn') checkIn: string,
+    @Query('checkOut') checkOut: string,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.service.availableHotelRoomRates(
+      { hotelId, checkIn, checkOut },
+      request.actor,
+    );
+  }
   @Get('contracts')
   @Header('Cache-Control', 'private, no-store')
   list(

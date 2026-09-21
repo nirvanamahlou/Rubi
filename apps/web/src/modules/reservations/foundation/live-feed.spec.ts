@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { LoginResponse } from '@rubi/contracts';
+import type { LoginResponse } from '@nora/contracts';
 import {
   decodeIntake,
   loadIntake,

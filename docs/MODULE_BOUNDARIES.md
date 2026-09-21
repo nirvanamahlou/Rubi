@@ -20,6 +20,7 @@
 | Customers         | customer, contact, address, companion, identity ref, consent, merge                                                                                                                | create/update/merge, consent check                                     | Master Data, Documents                                                             |
 | Customer Affairs  | request, lead, activity, qualification, support ticket, SLA/escalation, survey                                                                                                     | qualify/hand off lead, open/assign/escalate/close                      | Customers، Marketing refs و domain reference IDs                                  |
 | Sales Contracts   | sales case, quotation, sales contract/version, contract party/passenger, contract service allocation, contract document intent                                                    | request availability, activate/amend contract, publish execution      | Customers, Ticket Catalog, Master Data, B2B terms                                  |
+| Package Pricing   | travel package/departure, pricing period/rules, immutable price version, passenger price, package quote, banner template/render intent                                             | publish package price snapshot for Sales; request renderer output      | Versioned base rates/capacity from Master Data/Ticket Catalog; approved FX/projections only |
 | Ticket Catalog    | ticket product, flight departure, fare version, inventory capacity and sale window                                                                                                 | search sellable ticket, hold-capacity command port, publish changes    | Master Data airline/airport refs, Settings pricing                                 |
 | Reservations      | availability/hold, execution case, ticket issuance, hotel booking/voucher, insurance policy reference, manifest/version, operational status                                      | check/hold, execute, issue, manifest, change/cancel/refund             | Sales execution snapshot, Ticket Catalog, Integrations                             |
 | Integrations      | connection, credential reference, provider mapping, webhook/sync record                                                                                                            | search/recheck/book/issue/refund                                       | Master Data, Reservations contract                                                 |
@@ -50,6 +51,19 @@ application service آن‌ها را فراخوانی و projection مجاز ر�
 
 ### Sales Contracts در برابر Reservations
 
+### Package Pricing در برابر مالکان نرخ و خروجی
+
+Package Pricing زیر دامنه Sales است، اما نرخ پایه هتل را فقط از Public Contract نسخه‌دار
+Master Data و نرخ/ظرفیت بلیت را فقط از Public Contract نسخه‌دار Ticket Catalog مصرف می‌کند.
+هزینه واقعی خرید هتل در Reservations، خرید/تأمین در Procurement و نرخ ارز تأییدشده در
+Finance باقی می‌مانند. هیچ reference بیرونی FK یا Query مستقیم به جدول مالک ندارد؛ شناسه،
+نسخه و snapshot تأییدشده ذخیره می‌شود. Renderer فایل PNG/JPEG/PDF را می‌سازد و Documents
+فقط آن را نگه می‌دارد. نبود producer یا renderer باید fail-closed یا `AWAITING_RENDERER`
+باشد. Price Version منتشرشده update/delete نمی‌شود؛ توقف فروش فقط وضعیت Package را عوض می‌کند.
+Master Data مالک تعریف بازه و Grid نرخ پایه هتل است و فقط ردیف انتخاب‌شده از نسخه جاری،
+در شعبه و ارز یکسان را resolve/recheck می‌کند. Package Pricing شناسه ردیف، نسخه، مبلغ و
+snapshot ضرایب را مصرف می‌کند و اجازه Query مستقیم یا ویرایش جدول نرخ هتل را ندارد.
+
 Sales Contracts مالک customer/payer/passengerهای قرارداد، service allocation، قیمت فروش،
 quotation و contract version است. Reservations snapshot versioned و فقط‌خواندنی قرارداد را
 اجرا می‌کند. Reservation اجازه ایجاد/تغییر رابطه passenger با ticket/hotel/room/insurance
@@ -61,11 +75,24 @@ Ticket Catalog برنامه، fare و ظرفیت قابل فروش را تعری
 مسافر صادر نمی‌کند. Sales محصول بلیت را به passenger قرارداد تخصیص می‌دهد. Reservations
 Hold/consume و صدور واقعی، PNR، تغییر/استرداد و Manifest را مالک است.
 
+### Ticket Catalog در برابر Procurement و Finance
+
+Ticket Catalog تعریف و زمان‌بندی بلیط را نگه می‌دارد و هنگام ثبت تعریف دارای قیمت خرید، فرمان نسخه‌دار را به API عمومی Procurement می‌فرستد. Procurement مبلغ خرید، ارز، تأمین‌کننده و وضعیت رسیدگی را مالک است. Finance فقط projection عمومی Procurement را در کارتابل مصرف می‌کند و به جدول خرید Query مستقیم ندارد.
+
 ### Reservations در برابر Integrations
 
 Reservations مالک intent و state داخلی رزرو/صدور است. Integrations مالک protocol، credential،
 mapping و response خام redacted است. Adapter اجازه تغییر مستقیم جدول‌های Reservation را
 ندارد؛ نتیجه normalized را برمی‌گرداند و Reservations transition را اعمال می‌کند.
+
+### قالب Manifest در برابر Documents و Reservations
+
+Master Data مالک اتصال معنایی قالب به ایرلاین و مقصد، نسخه قالب و وضعیت انتشار است.
+Documents مالک فایل XLSX، اسکن، دسترسی، آرشیو و تاریخچه نسخه فایل است؛ Master Data فقط
+شناسه سند را از API عمومی Documents دریافت می‌کند و اجازه Query یا ذخیره مستقیم در جدول
+Documents را ندارد. Reservations برای ساخت Manifest مسافر فقط قالب فعال و فایل سالم را از
+قراردادهای عمومی مالکان مصرف می‌کند و مالک رکورد Manifest اجرایی، Snapshot مسافر و تاریخچه
+ارسال باقی می‌ماند.
 
 ### Reservations در برابر Procurement
 
@@ -76,6 +103,18 @@ Purchase Order/Invoice و payable source است. سود از sale snapshot من�
 محاسبه می‌شود و فیلد دستی نیست.
 
 ### Sales/Reservations/Procurement در برابر Finance
+
+Pre-sale tour Ticket purchase exception (owner decision 2026-09-15): Ticket
+Catalog creates a request envelope for each real published offer, but does
+not set its confirmed purchase amount. Finance enters versioned adult/child
+purchase rates and invoice total, records direct settlement and publishes
+only paid cost through its public offer-ID/branch/version boundary. The
+Procurement request envelope is not an independent approval gate for this
+specific pre-sale ticket path; ordinary post-contract purchases remain under
+their existing Procurement/Finance responsibilities. Package Pricing may
+consume this Finance boundary but may not match a free-form ticket product
+reference to a tour offer by text, route or date, or treat an unpaid cost as
+final margin. See ADR-PACKAGE-FLIGHT-FINANCE-COST-0915.
 
 فروش/خرید سند تجاری و رزرواسیون سند عملیاتی را ایجاد می‌کنند؛ Finance invoice/payment/
 journal و `financial_release` را مالک است. هیچ ماژولی journal line را مستقیم درج نمی‌کند.

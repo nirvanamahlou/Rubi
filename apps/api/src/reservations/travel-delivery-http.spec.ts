@@ -14,7 +14,7 @@ describe('finance gate on passenger documents', () => {
   let app: INestApplication;
   const detail = vi.fn();
   const forContract = vi.fn();
-  const read = vi.fn();
+  const readCustomerContract = vi.fn();
   beforeAll(async () => {
     const module = await Test.createTestingModule({
       controllers: [SalesController],
@@ -22,7 +22,7 @@ describe('finance gate on passenger documents', () => {
         { provide: SalesService, useValue: { detail } },
         { provide: SalesOutputService, useValue: {} },
         { provide: TravelWorkflowService, useValue: { forContract } },
-        { provide: FinanceDeliveryService, useValue: { read } },
+        { provide: FinanceDeliveryService, useValue: { readCustomerContract } },
         {
           provide: IamService,
           useValue: {
@@ -44,7 +44,7 @@ describe('finance gate on passenger documents', () => {
   const get = () =>
     request(app.getHttpServer())
       .get(`/sales/contracts/${id}/travel-documents`)
-      .set('Cookie', 'rubi_access=allowed');
+      .set('Cookie', 'nora_access=allowed');
   it('rejects unauthenticated access before loading a snapshot', async () => {
     await request(app.getHttpServer())
       .get(`/sales/contracts/${id}/travel-documents`)
@@ -63,13 +63,13 @@ describe('finance gate on passenger documents', () => {
       snapshot: { secret: 'passenger data' },
       workflow: { supplierStatus: 'CONFIRMED' },
     });
-    read.mockResolvedValue({ approved: false, version: 2 });
+    readCustomerContract.mockResolvedValue({ approved: false, version: 2 });
     const response = await get().expect(403);
     expect(JSON.stringify(response.body)).not.toContain('passenger data');
     expect(forContract).toHaveBeenCalledWith(id, ['allowed-branch']);
   });
   it('blocks cancelled requests even after financial approval', async () => {
-    read.mockResolvedValue({ approved: true });
+    readCustomerContract.mockResolvedValue({ approved: true });
     forContract.mockResolvedValue({
       id,
       workflow: { supplierStatus: 'CANCELLED' },

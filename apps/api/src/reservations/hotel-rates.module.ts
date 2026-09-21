@@ -10,14 +10,17 @@ import {
   Inject,
   Injectable,
   Module,
+  Param,
+  ParseUUIDPipe,
+  Patch,
   Post,
   Query,
   Req,
   UseGuards,
 } from '@nestjs/common';
 import { createHash } from 'node:crypto';
-import type { AuthenticatedActor } from '@rubi/contracts';
-import type { Prisma } from '@rubi/database';
+import type { AuthenticatedActor } from '@nora/contracts';
+import type { Prisma } from '@nora/database';
 import { DatabaseService } from '../database/database.service';
 import { AuthGuard } from '../iam/auth.guard';
 import { IamModule } from '../iam/iam.module';
@@ -29,6 +32,10 @@ import {
   validateRateBatch,
   type RoomKind,
 } from './hotel-rates.validation';
+import { HotelPurchaseRatesPublicService } from './hotel-purchase-rates.public';
+import { HotelRatePacksService } from './hotel-rate-packs.service';
+import { TicketRuntimeModule } from '../ticket-catalog/ticket-runtime.module';
+import { TourPublicService } from '../ticket-catalog/tour-public.service';
 
 @Injectable()
 export class HotelRatesService {
@@ -161,7 +168,7 @@ export class HotelRatesService {
         prices: roomPrices(
           r.base.toString(),
           r.factors as Record<RoomKind, string>,
-          r.batch.currency,
+          r.currency,
         ),
       })),
       total,
@@ -174,9 +181,88 @@ export class HotelRatesService {
 export class HotelRatesController {
   constructor(
     @Inject(HotelRatesService) private readonly rates: HotelRatesService,
+    @Inject(HotelRatePacksService)
+    private readonly packs: HotelRatePacksService,
     @Inject(MasterTravelDirectory)
     private readonly directory: MasterTravelDirectory,
   ) {}
+  @Get('tour-departures')
+  @Header('Cache-Control', 'private, no-store')
+  tourDepartures(@Req() req: AuthenticatedRequest) {
+    this.packs.require(req.actor);
+    return this.tours.pricingDepartures(req.actor.branchIds);
+  }
+
+  @Inject(TourPublicService) private readonly tours!: TourPublicService;
+  @Get('pack-options')
+  @Header('Cache-Control', 'private, no-store')
+  packOptions(
+    @Req() req: AuthenticatedRequest,
+    @Query('kind') kind: string,
+    @Query('search') search = '',
+    @Query('page') page = '1',
+    @Query('cityId') cityId?: string,
+  ) {
+    this.packs.require(req.actor);
+    if (
+      !['cities', 'hotels'].includes(kind) ||
+      search.length > 100 ||
+      !/^\d+$/.test(page) ||
+      Number(page) < 1 ||
+      Number(page) > 10000 ||
+      (cityId &&
+        !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+          cityId,
+        ))
+    )
+      throw new BadRequestException();
+    return this.directory.hotelRatePackChoices(
+      kind as 'cities' | 'hotels',
+      search,
+      Number(page),
+      cityId,
+    );
+  }
+
+  @Get('packs')
+  @Header('Cache-Control', 'private, no-store')
+  packsList(
+    @Req() req: AuthenticatedRequest,
+    @Query('branchId') branchId?: string,
+    @Query('page') page = '1',
+  ) {
+    return this.packs.list(req.actor, branchId, Number(page));
+  }
+
+  @Get('packs/:id')
+  @Header('Cache-Control', 'private, no-store')
+  packDetail(
+    @Req() req: AuthenticatedRequest,
+    @Param('id', new ParseUUIDPipe()) id: string,
+  ) {
+    return this.packs.detail(id, req.actor);
+  }
+
+  @Post('packs')
+  @Header('Cache-Control', 'private, no-store')
+  createPack(
+    @Req() req: AuthenticatedRequest,
+    @Body() body: unknown,
+    @Headers('idempotency-key') key?: string,
+  ) {
+    return this.packs.create(body, key, req.actor);
+  }
+
+  @Patch('packs/:id')
+  @Header('Cache-Control', 'private, no-store')
+  updatePack(
+    @Req() req: AuthenticatedRequest,
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() body: unknown,
+    @Headers('idempotency-key') key?: string,
+  ) {
+    return this.packs.update(id, body, key, req.actor);
+  }
   @Get('options')
   @Header('Cache-Control', 'private, no-store')
   options(
@@ -220,8 +306,14 @@ export class HotelRatesController {
   }
 }
 @Module({
-  imports: [IamModule, MasterDataModule],
+  imports: [IamModule, MasterDataModule, TicketRuntimeModule],
   controllers: [HotelRatesController],
-  providers: [AuthGuard, HotelRatesService],
+  providers: [
+    AuthGuard,
+    HotelRatesService,
+    HotelRatePacksService,
+    HotelPurchaseRatesPublicService,
+  ],
+  exports: [HotelPurchaseRatesPublicService],
 })
 export class HotelRatesModule {}

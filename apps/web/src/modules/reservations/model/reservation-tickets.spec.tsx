@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
-import type { SalesReservationRequestV1 } from '@rubi/contracts';
+import type { SalesReservationRequestV1 } from '@nora/contracts';
 import { FlightTicketSheet } from '@/modules/sales/public/tickets';
 import { reservationTickets } from './reservation-tickets';
 
@@ -109,6 +109,20 @@ describe('saved reservation passenger tickets', () => {
       true,
       false,
     ]);
+  });
+  it('projects a canonical name for an old snapshot without rewriting it', () => {
+    const legacy: SalesReservationRequestV1 = JSON.parse(
+      JSON.stringify(ticketSnapshot),
+    );
+    delete legacy.passengerAssignments?.[0]?.displayNameSnapshot;
+    const before = JSON.stringify(legacy);
+    expect(
+      reservationTickets(legacy, { p1: 'Canonical Passenger' })[0],
+    ).toMatchObject({
+      passengerId: 'p1',
+      passengerName: 'Canonical Passenger',
+    });
+    expect(JSON.stringify(legacy)).toBe(before);
   });
   it.each([
     { passengerAssignments: undefined },

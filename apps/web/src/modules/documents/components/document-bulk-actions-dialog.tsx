@@ -1,6 +1,6 @@
 'use client';
 
-import type { DocumentBulkActionV1 } from '@rubi/contracts';
+import type { DocumentBulkActionV1 } from '@nora/contracts';
 import { ListChecks } from 'lucide-react';
 import { useState } from 'react';
 

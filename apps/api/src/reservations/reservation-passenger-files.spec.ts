@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { randomUUID } from 'node:crypto';
-import type { AuthenticatedActor, CustomerDetail } from '@rubi/contracts';
+import type { AuthenticatedActor, CustomerDetail } from '@nora/contracts';
 import type { CustomerService } from '../customers/customer.service';
 import type { DocumentsService } from '../documents/documents.service';
 import type { TravelWorkflowService } from './travel-workflow.service';
@@ -115,6 +115,7 @@ describe('Reservations passenger and document consumers', () => {
     const s = setup();
     const r = await s.service.passengers(s.id, s.actor);
     expect(r.canEdit).toBe(true);
+    expect(r.canEditIdentity).toBe(false);
     expect(r.data[0]).toEqual({
       id: s.pid,
       firstName: 'Actual',
@@ -152,6 +153,7 @@ describe('Reservations passenger and document consumers', () => {
       permissions: [...s.actor.permissions, 'customers.sensitive.read'],
     } as AuthenticatedActor;
     const r = await s.service.passengers(s.id, actor, 'trace-1');
+    expect(r.canEditIdentity).toBe(true);
     expect(r.data[0]).toMatchObject({
       birthDate: '2001-01-01',
       birthDateMasked: false,
@@ -206,6 +208,48 @@ describe('Reservations passenger and document consumers', () => {
     expect(input).not.toHaveProperty('birthDate');
     expect(input).not.toHaveProperty('nationalId');
     expect(input).not.toHaveProperty('passportNumber');
+  });
+  it('updates identity only with the sensitive-read grant and preserves optimistic versioning', async () => {
+    const s = setup();
+    const actor = {
+      ...s.actor,
+      permissions: [...s.actor.permissions, 'customers.sensitive.read'],
+    } as AuthenticatedActor;
+    await s.service.identity(
+      s.id,
+      s.pid,
+      {
+        firstName: 'Edited',
+        lastName: 'Passenger',
+        passportFirstName: 'EDITED',
+        passportLastName: 'PASSENGER',
+        gender: 'F',
+        birthDate: '2001-01-01',
+        nationalId: '1234567890',
+        passportNumber: 'P1234567',
+        passportExpiryDate: '2031-02-03',
+        passportIssuingCountryCode: 'IRN',
+        nationalityCode: 'IRN',
+        birthCountryCode: 'IRN',
+        version: 4,
+      },
+      actor,
+      'trace-identity',
+    );
+    expect(s.customers.update).toHaveBeenCalledWith(
+      s.pid,
+      expect.objectContaining({
+        gender: 'F',
+        passportNumber: 'P1234567',
+        passportIssuingCountryCode: 'IRN',
+        nationalityCode: 'IRN',
+        birthCountryCode: 'IRN',
+        version: 4,
+      }),
+      actor,
+      s.branch,
+      'trace-identity',
+    );
   });
   it('propagates concurrent customer conflicts without retrying the mutation', async () => {
     const s = setup();

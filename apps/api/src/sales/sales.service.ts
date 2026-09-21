@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import Joi from 'joi';
 import { buildSalesXlsx, SALES_EXPORT_LIMIT } from './sales.xlsx';
-import { validatePassengerPackagePrices } from '@rubi/contracts';
+import { validatePassengerPackagePrices } from '@nora/contracts';
 
 import {
   BadRequestException,
@@ -13,6 +13,7 @@ import {
   Optional,
 } from '@nestjs/common';
 import { TourPublicService } from '../ticket-catalog/tour-public.service';
+import { HotelPurchaseRatesPublicService } from '../reservations/hotel-purchase-rates.public';
 import type {
   SalesServicePricingV1,
   SalesAccommodationKind,
@@ -23,8 +24,10 @@ import type {
   SalesContractSummary,
   SalesPaymentCreateRequest,
   SalesReservationRequestV1,
-} from '@rubi/contracts';
-import type { Prisma } from '@rubi/database';
+  SalesFinanceInboxPaymentV1,
+  FinanceCustomerDocumentDeliveryCandidateV1,
+} from '@nora/contracts';
+import type { Prisma } from '@nora/database';
 
 import {
   SALES_TICKET_AVAILABILITY_PORT,
@@ -33,6 +36,7 @@ import {
 } from './sales.adapters';
 import {
   calculateSalesBalances,
+  passengerAgeCategory,
   SalesDomainError,
   salesFingerprint,
   sumSalesDecimals,
@@ -122,6 +126,7 @@ export function presentSalesContract(
     createdByName: paymentCreatorNames.get(item.createdByUserId) ?? null,
     createdAt: item.createdAt.toISOString(),
     financeConfirmedAt: date(item.financeConfirmedAt),
+    financeDecisionReason: item.financeDecisionReason,
   }));
   return {
     id: row.id,
@@ -296,8 +301,105 @@ export class SalesService {
     @Optional()
     @Inject(TourPublicService)
     private readonly tours?: TourPublicService,
+    @Optional()
+    @Inject(HotelPurchaseRatesPublicService)
+    private readonly hotelRates?: HotelPurchaseRatesPublicService,
   ) {}
 
+  async availableHotelRoomRates(
+    input: { hotelId: string; checkIn: string; checkOut: string },
+    actor: AuthenticatedActor,
+  ) {
+    if (!has(actor, 'sales.contracts.create'))
+      throw new ForbiddenException('مجوز ایجاد قرارداد وجود ندارد.');
+    const branchId = branch(actor);
+    if (!this.hotelRates)
+      throw new BadRequestException('سرویس نرخ اتاق هتل در دسترس نیست.');
+    return {
+      data: await this.hotelRates.availableRoomRates({ branchId, ...input }),
+    };
+  }
+  private async assertHotelRoomCapacity(
+    input: SalesContractCreateRequest,
+    branchId: string,
+  ): Promise<void> {
+    const hotel = input.hotelSelection;
+    if (!hotel) return;
+    if (!this.hotelRates)
+      throw new BadRequestException('سرویس نرخ اتاق هتل در دسترس نیست.');
+    const roomRate = await this.hotelRates.roomAvailability({
+      branchId,
+      hotelId: hotel.hotelId,
+      roomTypeId: hotel.roomTypeId,
+      checkIn: hotel.checkInDate,
+      checkOut: hotel.checkOutDate,
+    });
+    if (!roomRate)
+      throw new BadRequestException({
+        code: 'HOTEL_ROOM_RATE_UNAVAILABLE',
+        message: 'برای نوع اتاق انتخاب‌شده ضریب فعال در بازه سفر وجود ندارد.',
+      });
+    const guests = input.passengers.filter((passenger) =>
+      passenger.serviceClientKeys.includes(hotel.serviceClientKey),
+    );
+    const adults = guests.filter(
+      (passenger) =>
+        passengerAgeCategory(passenger.birthDate, input.departureDate) ===
+        'ADT',
+    ).length;
+    const children = guests.filter(
+      (passenger) =>
+        passengerAgeCategory(passenger.birthDate, input.departureDate) ===
+        'CHD',
+    ).length;
+    const maxAdults = roomRate.maxAdults * hotel.roomCount;
+    const maxChildren = roomRate.maxChildren * hotel.roomCount;
+    if (adults > maxAdults || children > maxChildren)
+      throw new BadRequestException({
+        code: 'HOTEL_ROOM_CAPACITY_EXCEEDED',
+        message: `ظرفیت ${roomRate.roomTypeName} برای ${hotel.roomCount.toLocaleString('fa-IR')} اتاق، حداکثر ${maxAdults.toLocaleString('fa-IR')} بزرگسال و ${maxChildren.toLocaleString('fa-IR')} کودک است.`,
+        capacity: { maxAdults, maxChildren },
+        requested: { adults, children },
+      });
+  }
+  private async assertPresentedHotelRoomCapacity(
+    contract: SalesContractDetail,
+  ): Promise<void> {
+    const hotel = contract.hotelSelection;
+    if (!hotel) return;
+    if (!this.hotelRates)
+      throw new BadRequestException('سرویس نرخ اتاق هتل در دسترس نیست.');
+    const roomRate = await this.hotelRates.roomAvailability({
+      branchId: contract.branchId,
+      hotelId: hotel.hotelId,
+      roomTypeId: hotel.roomTypeId,
+      checkIn: hotel.checkInDate,
+      checkOut: hotel.checkOutDate,
+    });
+    if (!roomRate)
+      throw new BadRequestException({
+        code: 'HOTEL_ROOM_RATE_UNAVAILABLE',
+        message: 'برای نوع اتاق انتخاب‌شده ضریب فعال در بازه سفر وجود ندارد.',
+      });
+    const guests = contract.passengersDetail.filter((passenger) =>
+      passenger.serviceClientKeys.includes(hotel.serviceClientKey),
+    );
+    const adults = guests.filter(
+      ({ ageCategory }) => ageCategory === 'ADT',
+    ).length;
+    const children = guests.filter(
+      ({ ageCategory }) => ageCategory === 'CHD',
+    ).length;
+    const maxAdults = roomRate.maxAdults * hotel.roomCount;
+    const maxChildren = roomRate.maxChildren * hotel.roomCount;
+    if (adults > maxAdults || children > maxChildren)
+      throw new BadRequestException({
+        code: 'HOTEL_ROOM_CAPACITY_EXCEEDED',
+        message: `ظرفیت ${roomRate.roomTypeName} برای تعداد مسافران انتخاب‌شده کافی نیست.`,
+        capacity: { maxAdults, maxChildren },
+        requested: { adults, children },
+      });
+  }
   private async assertTour(
     input: SalesContractCreateRequest,
     branchId: string,
@@ -435,6 +537,91 @@ export class SalesService {
     };
   }
 
+  async financeCustomerDocumentDeliveryCandidates(
+    actor: AuthenticatedActor,
+    contractNumber?: string,
+  ): Promise<
+    readonly Omit<FinanceCustomerDocumentDeliveryCandidateV1, 'delivery'>[]
+  > {
+    if (!has(actor, 'finance.read'))
+      throw new ForbiddenException({
+        code: 'FINANCE_INBOX_FORBIDDEN',
+        message: 'مجوز مشاهده کارتابل مالی وجود ندارد.',
+      });
+    if (
+      contractNumber !== undefined &&
+      (typeof contractNumber !== 'string' || contractNumber.length > 100)
+    )
+      throw new BadRequestException('جست‌وجوی شماره قرارداد معتبر نیست.');
+    const rows = await this.repository.customerDocumentDeliveryCandidates(
+      actor.branchIds,
+      contractNumber,
+    );
+    return rows.map((row) => ({
+      contractId: row.id,
+      contractNumber: row.contractNumber,
+      branchId: row.branchId,
+      customerNameSnapshot: row.customerNameSnapshot,
+      settlementStatus: row.settlementStatus,
+      hasConfirmedPayment: row.payments.length > 0,
+    }));
+  }
+
+  async financeCustomerDocumentDeliveryFacts(
+    contractId: string,
+    branchIds: readonly string[],
+  ) {
+    const row = await this.repository.financeCustomerDocumentDeliveryFacts(
+      contractId,
+      branchIds,
+    );
+    if (!row)
+      throw new NotFoundException('قرارداد در شعب مجاز برای مالی یافت نشد.');
+    return {
+      contractId: row.id,
+      branchId: row.branchId,
+      salesOwnerUserId: row.ownerUserId,
+      hasConfirmedPayment: row.payments.length > 0,
+      fullySettled: ['SETTLED', 'OVERPAID'].includes(row.settlementStatus),
+    };
+  }
+  async financeInbox(
+    actor: AuthenticatedActor,
+  ): Promise<readonly SalesFinanceInboxPaymentV1[]> {
+    if (!has(actor, 'finance.read'))
+      throw new ForbiddenException({
+        code: 'FINANCE_INBOX_FORBIDDEN',
+        message: 'مجوز مشاهده کارتابل مالی وجود ندارد.',
+      });
+    const rows = await this.repository.pendingFinancePayments(actor.branchIds);
+    const names = new Map(
+      (
+        await this.repository.findUserDisplayNames(
+          rows.map(({ createdByUserId }) => createdByUserId),
+        )
+      ).map((user) => [user.id, user.displayName]),
+    );
+    return rows.map((row) => ({
+      version: 1,
+      paymentId: row.id,
+      contractId: row.contract.id,
+      contractNumber: row.contract.contractNumber,
+      customerId: row.contract.customerId,
+      customerNameSnapshot: row.contract.customerNameSnapshot,
+      branchId: row.contract.branchId,
+      amount: row.amount.toString(),
+      currencyCode: row.currencyCode,
+      method: row.method,
+      description: row.description,
+      paymentReference: row.paymentReference,
+      dueAt: row.dueAt.toISOString(),
+      createdAt: row.createdAt.toISOString(),
+      createdByUserId: row.createdByUserId,
+      createdByName: names.get(row.createdByUserId) ?? null,
+      contractVersion: row.contract.version,
+    }));
+  }
+
   async detail(id: string, actor: AuthenticatedActor) {
     const row = await this.repository.findById(id);
     if (!row)
@@ -490,6 +677,7 @@ export class SalesService {
     }
     const branchId = branch(actor, requestedBranch);
     await this.assertTour(input, branchId);
+    await this.assertHotelRoomCapacity(input, branchId);
     const customer = await this.customers.resolveSnapshot(
       input.customerId,
       actor,
@@ -528,6 +716,7 @@ export class SalesService {
       });
     this.assertUpdate(row, actor);
     await this.assertTour(input, row.branchId);
+    await this.assertHotelRoomCapacity(input, row.branchId);
     for (const passenger of row.passengers) {
       const next = input.passengers.find(
         (p) => p.customerId === passenger.customerId,
@@ -664,6 +853,7 @@ export class SalesService {
     await this.customers.resolveSnapshot(row.customerId, actor);
     await this.customers.assertPassengers(row.passengers, actor);
     const presented = presentSalesContract(row);
+    await this.assertPresentedHotelRoomCapacity(presented);
     const seatCount = presented.passengersDetail.filter(
       ({ ageCategory }) => ageCategory !== 'INF',
     ).length;
@@ -685,6 +875,7 @@ export class SalesService {
     const snapshot: SalesReservationRequestV1 = {
       passengerAssignments: presented.passengersDetail.map((passenger) => ({
         customerId: passenger.customerId,
+        displayNameSnapshot: passenger.displayNameSnapshot,
         ageCategory: passenger.ageCategory,
         serviceClientKeys: passenger.serviceClientKeys,
       })),
@@ -880,14 +1071,39 @@ export class SalesService {
     contractId: string;
     paymentId: string;
     financePaymentReference: string;
+    receiptAccountId: string;
     confirmedAt: string;
+    reviewedByUserId?: string;
+    reason?: string;
   }) {
     return this.repository.applyFinanceConfirmation({
       contractId: event.contractId,
       paymentId: event.paymentId,
       financePaymentReference: event.financePaymentReference,
+      receiptAccountId: event.receiptAccountId,
       financeConfirmationId: event.eventId,
       confirmedAt: event.confirmedAt,
+      ...(event.reviewedByUserId
+        ? { reviewedByUserId: event.reviewedByUserId }
+        : {}),
+      ...(event.reason !== undefined ? { reason: event.reason } : {}),
+    });
+  }
+
+  applyFinancePaymentCorrection(event: {
+    contractId: string;
+    paymentId: string;
+    reason: string;
+    reviewedByUserId: string;
+    branchId: string;
+  }) {
+    return this.repository.applyFinanceCorrection({
+      contractId: event.contractId,
+      paymentId: event.paymentId,
+      reason: event.reason,
+      reviewedByUserId: event.reviewedByUserId,
+      reviewedAt: new Date().toISOString(),
+      branchId: event.branchId,
     });
   }
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { HrRecordDto } from '@rubi/contracts';
+import type { HrRecordDto } from '@nora/contracts';
 import { persianDateToIso } from './hr-dates';
 import { hrStatusTone } from './hr-presentation';
 import { sourceForRecord } from './hr-record-source';

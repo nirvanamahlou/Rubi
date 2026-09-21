@@ -1,5 +1,5 @@
 import { hrApi } from '@/modules/hr/hr-api';
-export const HR_WORKBENCH_CHANGED = 'rubi:hr-server-change';
+export const HR_WORKBENCH_CHANGED = 'nora:hr-server-change';
 export function canReadWorkbenchHr(permissions: readonly string[]) {
   return ['hr.read', 'hr.manage', 'hr.self', 'hr.team'].some((permission) =>
     permissions.includes(permission),
@@ -14,12 +14,6 @@ export async function readWorkbenchHrNotification(
   notify();
 }
 export const workbenchDestinations = [
-  {
-    href: '/hr',
-    title: 'درخواست‌های منابع انسانی',
-    description: 'مرخصی، مأموریت و پرونده کارکنان در سامانه منابع انسانی',
-    prefixes: ['hr.'],
-  },
   {
     href: '/sales',
     title: 'فروش و قراردادها',
@@ -53,10 +47,8 @@ export const workbenchDestinations = [
 ] as const;
 export function allowedWorkbenchDestinations(permissions: readonly string[]) {
   return workbenchDestinations.filter((destination) =>
-    destination.href === '/hr'
-      ? canReadWorkbenchHr(permissions)
-      : permissions.some((permission) =>
-          destination.prefixes.some((prefix) => permission.startsWith(prefix)),
-        ),
+    permissions.some((permission) =>
+      destination.prefixes.some((prefix) => permission.startsWith(prefix)),
+    ),
   );
 }

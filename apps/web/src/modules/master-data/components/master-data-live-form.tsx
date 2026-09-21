@@ -3,7 +3,7 @@
 import {
   isMasterTransportFormResource,
   type MasterDataRecord,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import { MasterDataTransportMetadata } from './master-data-transport-metadata';
 import { useState, type FormEvent } from 'react';
 
@@ -30,14 +30,20 @@ import {
   getMasterDataDefinition,
   type MasterDataCatalogItem,
 } from '../model/catalog';
-import { masterDataApi, type MasterDataLogoChange } from '../api/client';
+import {
+  masterDataApi,
+  type MasterDataLogoChange,
+  type MasterDataManifestFileChange,
+} from '../api/client';
 import { getMasterDataFormFields } from '../model/form-fields';
 import { validateMasterDataDraft } from '../model/validation';
 import { getReferenceFieldConfig } from '../model/reference-fields';
 import { MasterDataClearableField } from './master-data-clearable-field';
 import { MasterDataLogoUpload } from './master-data-logo-upload';
 import { MasterDataMealServiceForm } from './master-data-meal-service-form';
+import { MasterDataManifestTemplateForm } from './master-data-manifest-template-form';
 import { MasterDataNumberInput } from './master-data-number-input';
+import { MasterDataAirlineBaggageEditor } from './master-data-airline-baggage-editor';
 import {
   MasterDataReferenceSelector,
   OrganizationRoleSelector,
@@ -109,6 +115,15 @@ export function MasterDataLiveForm(
         {...(props.record ? { record: props.record } : {})}
       />
     ) : null;
+  if (props.definition.key === 'manifest-templates')
+    return props.open ? (
+      <MasterDataManifestTemplateForm
+        mode={props.mode}
+        onOpenChange={props.onOpenChange}
+        onPersist={props.onPersist}
+        {...(props.record ? { record: props.record } : {})}
+      />
+    ) : null;
   return <GenericMasterDataLiveForm {...props} />;
 }
 
@@ -128,6 +143,7 @@ function GenericMasterDataLiveForm({
   onPersist: (
     values: Record<string, string>,
     logoChange?: MasterDataLogoChange,
+    manifestFileChange?: MasterDataManifestFileChange,
   ) => Promise<void>;
   open: boolean;
   record?: MasterDataRecord;
@@ -208,6 +224,12 @@ function GenericMasterDataLiveForm({
             className="mt-6 space-y-5"
             onSubmit={(event) => void submit(event)}
           >
+            {definition.key === 'suppliers' && mode === 'create' ? (
+              <Alert
+                title="شناسه تأمین‌کننده خودکار است"
+                description="پس از ذخیره، سامانه یک شناسه یکتا برای تأمین‌کننده ایجاد می‌کند."
+              />
+            ) : null}
             {isMasterTransportFormResource(definition.key) ? (
               <MasterDataTransportMetadata
                 resource={definition.key}
@@ -262,7 +284,10 @@ function GenericMasterDataLiveForm({
                     : {})}
                   {...(canManage
                     ? {
-                        onManage: (related?: MasterDataRecord) =>
+                        onManage: (
+                          related?: MasterDataRecord,
+                          searchQuery?: string,
+                        ) =>
                           setReferenceForm({
                             field: field.key,
                             definition: getMasterDataDefinition(
@@ -273,7 +298,12 @@ function GenericMasterDataLiveForm({
                               reference.target === 'organizations'
                                 ? related
                                   ? {}
-                                  : { roleCodes: reference.requiredRole ?? '' }
+                                  : {
+                                      roleCodes: reference.requiredRole ?? '',
+                                      ...(searchQuery
+                                        ? { legalName: searchQuery }
+                                        : {}),
+                                    }
                                 : reference.target === 'organization-contacts'
                                   ? {
                                       organizationId:
@@ -288,6 +318,11 @@ function GenericMasterDataLiveForm({
                           }),
                       }
                     : {})}
+                  createOnlyWhenEmpty={
+                    definition.key === 'suppliers' &&
+                    mode === 'create' &&
+                    field.key === 'organizationId'
+                  }
                   id={controlId}
                   label={field.label}
                   onChange={updateValue}
@@ -394,6 +429,13 @@ function GenericMasterDataLiveForm({
                 </FormField>
               );
             })}
+            {definition.key === 'airlines' ? (
+              <MasterDataAirlineBaggageEditor
+                {...(record ? { airline: record } : {})}
+                disabled={saving}
+                readOnly={readonly}
+              />
+            ) : null}
             {errors.form ? (
               <Alert
                 description={errors.form}
@@ -464,7 +506,24 @@ function GenericMasterDataLiveForm({
                 : {}),
             }));
             setReferenceRevision((revision) => revision + 1);
-            setReferenceForm(null);
+            if (
+              definition.key === 'suppliers' &&
+              mode === 'create' &&
+              field === 'organizationId' &&
+              !referenceForm.record
+            ) {
+              setReferenceForm({
+                field: 'primaryContactId',
+                definition: getMasterDataDefinition('organization-contacts'),
+                defaults: {
+                  organizationId: selectedValue,
+                  preferredChannel: 'PHONE',
+                  isPrimary: 'true',
+                },
+              });
+            } else {
+              setReferenceForm(null);
+            }
           }}
         />
       ) : null}

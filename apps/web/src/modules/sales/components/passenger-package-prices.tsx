@@ -4,7 +4,7 @@ import {
   moneyUnits,
   validatePassengerPackagePrices,
   type SalesMoney,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import { MoneyInput, formatSalesMoney } from '@/components/ui/money-input';
 import { salesPayload, type SalesFormState } from '../model/sales-form';
 

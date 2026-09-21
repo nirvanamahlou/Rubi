@@ -70,8 +70,8 @@ Proposed policy, NOT accepted: AES-256-GCM with versioned keys and independent H
 ## Local preview and isolation
 
 - Web: `http://127.0.0.1:3102/customers`; API: `http://127.0.0.1:4002/api/v1`.
-- Synthetic-only PostgreSQL: `127.0.0.1:55432`, database `rubi_customers_completion`, container `rubi-customer002b-completion-pg`.
-- Stable local keys and synthetic account credentials live outside Git in `%LOCALAPPDATA%/Rubi/customer002b-completion/private-runtime.json`. They are never printed. Missing key state with an existing test container fails closed instead of replacing keys. No production-key rotation is implemented or claimed.
+- Synthetic-only PostgreSQL: `127.0.0.1:55432`, database `nora_customers_completion`, container `nora-customer002b-completion-pg`.
+- Stable local keys and synthetic account credentials live outside Git in `%LOCALAPPDATA%/Nora/customer002b-completion/private-runtime.json`. They are never printed. Missing key state with an existing test container fails closed instead of replacing keys. No production-key rotation is implemented or claimed.
 - Reproduce with `node tests/customer002b-local.cjs prepare`, `gates`, `start`, `smoke` and `database-check`. Requires the pinned pnpm/Node toolchain and Docker. Start only after confirming these isolated ports are unused; never stop the main preview to free ports.
 - No main database connection, real customer fixture, main volume removal, main workspace change or existing encryption-key replacement occurred.
 

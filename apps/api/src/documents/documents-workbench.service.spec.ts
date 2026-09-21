@@ -1,5 +1,5 @@
-import { BadRequestException } from '@nestjs/common';
-import type { AuthenticatedActor } from '@rubi/contracts';
+import { BadRequestException, ForbiddenException } from '@nestjs/common';
+import type { AuthenticatedActor } from '@nora/contracts';
 import { describe, expect, it, vi } from 'vitest';
 
 import { DocumentsService } from './documents.service';
@@ -56,5 +56,89 @@ describe('DocumentsService Workbench contracts', () => {
         actor,
       ),
     ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it('uploads a profile photo with a server-owned profile reference', async () => {
+    const branchId = actor.branchIds[0]!;
+    const instance = service({
+      options: vi.fn().mockResolvedValue({
+        branches: [{ id: branchId }],
+        owners: [{ id: actor.userId }],
+        documentTypes: [
+          {
+            id: '55555555-5555-4555-8555-555555555555',
+            code: 'BRAND_ASSET_TEMPLATE',
+          },
+        ],
+        categories: [
+          {
+            id: '66666666-6666-4666-8666-666666666666',
+            code: 'BRAND_ASSETS',
+          },
+        ],
+      }),
+    });
+    const upload = vi.spyOn(instance, 'upload').mockResolvedValue({
+      data: {
+        id: '44444444-4444-4444-8444-444444444444',
+        currentVersion: { scanStatus: 'PENDING_SCAN' },
+      },
+    } as never);
+    const file = {
+      buffer: Buffer.from([137, 80, 78, 71]),
+      mimetype: 'image/png',
+      originalname: 'profile.png',
+      size: 4,
+    };
+
+    const result = await instance.uploadOwnProfilePhoto(
+      { branchId, title: 'عکس پروفایل' },
+      file,
+      actor,
+      {},
+    );
+
+    expect(upload).toHaveBeenCalledWith(
+      expect.objectContaining({
+        ownerUserId: actor.userId,
+        sourceModule: 'WORKBENCH',
+        sourceEntityType: 'IamProfile',
+        sourceEntityId: actor.userId,
+      }),
+      file,
+      expect.objectContaining({
+        permissions: expect.arrayContaining(['documents.brand.read']),
+      }),
+      {},
+    );
+    expect(result).toEqual({
+      id: '44444444-4444-4444-8444-444444444444',
+      scanStatus: 'PENDING_SCAN',
+    });
+  });
+
+  it('does not preview a profile photo owned by another account', async () => {
+    const instance = service({
+      findDetail: vi.fn().mockResolvedValue({
+        ownerUserId: '99999999-9999-4999-8999-999999999999',
+        documentType: { domain: 'BRAND' },
+        relations: [
+          {
+            relationType: 'PRIMARY_CASE',
+            sourceModule: 'WORKBENCH',
+            sourceEntityType: 'IamProfile',
+            sourceEntityId: actor.userId,
+          },
+        ],
+      }),
+    });
+
+    await expect(
+      instance.previewOwnProfilePhoto(
+        '44444444-4444-4444-8444-444444444444',
+        actor,
+        {},
+      ),
+    ).rejects.toBeInstanceOf(ForbiddenException);
   });
 });

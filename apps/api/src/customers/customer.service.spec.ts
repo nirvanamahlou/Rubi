@@ -6,7 +6,7 @@ import {
 import type {
   AuthenticatedActor,
   CustomerMutationRequest,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import { describe, expect, it, vi } from 'vitest';
 import type { CustomerContactCrypto } from './customer-contact.crypto';
 import type { CustomerNationalIdProtector } from './customer-national-id';

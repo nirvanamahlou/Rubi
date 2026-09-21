@@ -7,15 +7,24 @@ import { CustomersModule } from './customers/customers.module';
 import { CustomerAffairsModule } from './customer-affairs/customer-affairs.module';
 import { DatabaseModule } from './database/database.module';
 import { DocumentsModule } from './documents/documents.module';
+import { FinanceModule } from './finance/finance.module';
 import { HealthController } from './health/health.controller';
 import { HealthService } from './health/health.service';
 import { HrModule } from './hr/hr.module';
 import { IamModule } from './iam/iam.module';
+import { IntegrationsModule } from './integrations/integrations.module';
 import { LegalEntitiesModule } from './legal-entities/legal-entities.module';
 import { MasterDataModule } from './master-data/master-data.module';
+import { MasterDataLogoModule } from './master-data/master-data-logo.module';
 import { MessagingModule } from './messaging/messaging.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { PackagePricingModule } from './package-pricing/package-pricing.module';
+import { ReportingModule } from './reporting/reporting.module';
+import { ProcurementModule } from './procurement/procurement.module';
 import { SalesModule } from './sales/sales.module';
+import { SettingsModule } from './settings/settings.module';
+import { TasksModule } from './tasks/tasks.module';
+import { SystemManagementModule } from './system-management/system-management.module';
 import { WorkbenchFeedbackModule } from './workbench-feedback/workbench-feedback.module';
 import { WorkbenchModule } from './workbench/workbench.module';
 
@@ -33,17 +42,26 @@ import { WorkbenchModule } from './workbench/workbench.module';
     DatabaseModule,
     B2bModule,
     DocumentsModule,
+    FinanceModule,
     CustomersModule,
     CustomerAffairsModule,
     MasterDataModule,
+    MasterDataLogoModule,
     MessagingModule,
     IamModule,
+    IntegrationsModule,
     LegalEntitiesModule,
+    PackagePricingModule,
     SalesModule,
+    SettingsModule,
+    SystemManagementModule,
+    TasksModule,
     NotificationsModule,
+    ProcurementModule,
     HrModule,
     WorkbenchFeedbackModule,
     WorkbenchModule,
+    ReportingModule,
   ],
   controllers: [HealthController],
   providers: [HealthService],

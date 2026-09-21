@@ -9,7 +9,7 @@ import { PERMISSION_SEED_DATA } from '../src/permission-seed-data';
 async function main() {
   const env = parseEnv(
     readFileSync(
-      process.env.RUBI_HR_ENV_FILE ??
+      process.env.NORA_HR_ENV_FILE ??
         resolve(process.cwd(), '../../apps/api/.env'),
       'utf8',
     ),

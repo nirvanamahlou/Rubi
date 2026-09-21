@@ -1,7 +1,10 @@
 import { HR_PERMISSION_CODES } from '../hr';
+import { PROCUREMENT_PERMISSION_CODES } from '../procurement';
 import { CUSTOMER_AFFAIRS_PERMISSIONS } from '../customer-affairs';
+import { PACKAGE_PRICING_PERMISSION_CODES } from '../package-pricing';
+import { SYSTEM_PERMISSION_CODES } from '../system-management';
 
-export const IAM_PERMISSION_CONTRACT_VERSION = 10 as const;
+export const IAM_PERMISSION_CONTRACT_VERSION = 11 as const;
 export const IAM_STEP_UP_CONTRACT_VERSION = 1 as const;
 
 export const IAM_CORE_PERMISSION_CODES = [
@@ -113,6 +116,7 @@ export const IAM_SALES_PERMISSION_CODES = [
 ] as const;
 
 export const IAM_PERMISSION_CODES = [
+  ...PROCUREMENT_PERMISSION_CODES,
   ...IAM_CORE_PERMISSION_CODES,
   ...MASTER_DATA_PERMISSION_CODES,
   ...CUSTOMER_PERMISSION_CODES,
@@ -121,11 +125,17 @@ export const IAM_PERMISSION_CODES = [
   ...DOCUMENT_PERMISSION_CODES,
   ...HR_PERMISSION_CODES,
   ...IAM_SALES_PERMISSION_CODES,
+  ...PACKAGE_PRICING_PERMISSION_CODES,
+  ...SYSTEM_PERMISSION_CODES,
   ...Object.values(CUSTOMER_AFFAIRS_PERMISSIONS),
   'ticket_catalog.read',
   'ticket_catalog.manage',
   'reservations.read',
   'reservations.documents.manage',
+  'finance.read',
+  'finance.receipt.approve',
+  'finance.payment.create',
+  'finance.account.manage',
   'finance.financial_release.read',
   'finance.financial_release.approve',
   'reservations.hotel_purchase.write',

@@ -71,12 +71,16 @@ describe('Iran Airtour Antalya MANIFEST', () => {
 describe('MANIFEST financial delivery gate', () => {
   it('stops before reading travel or passenger details while Finance is locked', async () => {
     const workflow = {
-      detail: vi.fn().mockResolvedValue({ snapshot: {} }),
+      detail: vi
+        .fn()
+        .mockResolvedValue({ contractId: 'contract', snapshot: {} }),
     };
     const customers = { detail: vi.fn() };
     const directory = { cityReference: vi.fn() };
     const delivery = {
-      read: vi.fn().mockResolvedValue({ approved: false, version: 0 }),
+      readCustomerContract: vi
+        .fn()
+        .mockResolvedValue({ approved: false, version: 0 }),
     };
     const service = new ReservationManifestService(
       workflow as never,
@@ -96,9 +100,97 @@ describe('MANIFEST financial delivery gate', () => {
         ],
       } as never),
     ).rejects.toThrow('تأیید تحویل مدارک');
-    expect(delivery.read).toHaveBeenCalledWith('request');
+    expect(delivery.readCustomerContract).toHaveBeenCalledWith('contract');
     expect(directory.cityReference).not.toHaveBeenCalled();
     expect(customers.detail).not.toHaveBeenCalled();
+  });
+});
+
+describe('MANIFEST ticket cards', () => {
+  it('lists outbound and return tickets and disables only the ticket without a template', async () => {
+    const snapshot = {
+      contractNumber: 'SC-TEST',
+      passengerIds: ['p1', 'p2'],
+      ticketSelections: [
+        {
+          offerId: 'outbound-offer',
+          direction: 'OUTBOUND',
+          originId: 'tehran',
+          destinationId: 'antalya',
+          departureAt: '2026-09-20T07:00:00.000Z',
+          arrivalAt: '2026-09-20T10:00:00.000Z',
+          carrierNameSnapshot: 'IRAN AIRTOUR',
+          serviceNumberSnapshot: 'B9-9710',
+          cabinClassCode: 'ECONOMY',
+        },
+        {
+          offerId: 'return-offer',
+          direction: 'RETURN',
+          originId: 'antalya',
+          destinationId: 'tehran',
+          departureAt: '2026-09-27T07:00:00.000Z',
+          arrivalAt: '2026-09-27T10:00:00.000Z',
+          carrierNameSnapshot: 'NO TEMPLATE AIR',
+          serviceNumberSnapshot: 'NT-10',
+          cabinClassCode: 'ECONOMY',
+        },
+      ],
+    };
+    const directory = {
+      cityReference: vi.fn(async (id: string) => ({
+        name: id,
+        englishName: id.toUpperCase(),
+      })),
+      manifestTemplate: vi.fn(async (carrier: string) =>
+        carrier === 'IRAN AIRTOUR'
+          ? { id: 'template', name: 'Sparta', versionNumber: 2 }
+          : null,
+      ),
+    };
+    const service = new ReservationManifestService(
+      {} as never,
+      {} as never,
+      directory as never,
+      {} as never,
+      {
+        client: {
+          reservationIntake: {
+            findMany: vi.fn().mockResolvedValue([
+              {
+                id: 'intake',
+                contractId: 'contract',
+                contractVersion: 1,
+                receivedAt: new Date(),
+                snapshot,
+              },
+            ]),
+          },
+        },
+      } as never,
+    );
+
+    const cards = await service.listTickets(
+      { fromDate: '2026-09-20', toDate: '2026-09-27' },
+      {
+        branchIds: ['branch'],
+        permissions: ['reservations.read'],
+      } as never,
+    );
+
+    expect(cards).toHaveLength(2);
+    expect(cards[0]).toMatchObject({
+      offerId: 'outbound-offer',
+      direction: 'OUTBOUND',
+      passengerCount: 2,
+      template: { id: 'template', name: 'Sparta', versionNumber: 2 },
+      unavailableReason: null,
+    });
+    expect(cards[1]).toMatchObject({
+      offerId: 'return-offer',
+      direction: 'RETURN',
+      template: null,
+    });
+    expect(cards[1]?.unavailableReason).toContain('قالب فعال');
   });
 });
 
@@ -204,7 +296,9 @@ describe('MANIFEST date-range history', () => {
           .mockResolvedValue({ name: 'آنتالیا', englishName: 'ANTALYA' }),
       } as never,
       {
-        read: vi.fn().mockResolvedValue({ approved: true, version: 1 }),
+        readCustomerContract: vi
+          .fn()
+          .mockResolvedValue({ approved: true, version: 1 }),
       } as never,
       database as never,
     );

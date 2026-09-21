@@ -5,7 +5,7 @@ import {
 } from './organization-identity.policy';
 import { createHash } from 'node:crypto';
 
-import { isMasterTransportFormResource } from '@rubi/contracts';
+import { isMasterTransportFormResource } from '@nora/contracts';
 import { transportStatusData } from './transport-form.policy';
 import {
   BadRequestException,
@@ -21,7 +21,7 @@ import {
   type MasterDataListQuery,
   type MasterDataResource,
   type MasterDataDeleteResponse,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 
 import { assertGenericCurrencyRateMutationAllowed } from './currency-rate.policy';
 import { buildMasterDataXlsx, MASTER_DATA_XLSX_MIME } from './master-data.xlsx';
@@ -237,6 +237,35 @@ function normalizedWebsite(value: unknown): string | null {
   return website;
 }
 
+function normalizeManufacturerModel(value: unknown): {
+  manufacturer: string;
+  model: string;
+} {
+  if (typeof value !== 'string')
+    throw new BadRequestException('سازنده و مدل باید متن باشد.');
+  const normalized = value.trim().replace(/\s+/g, ' ');
+  if (!normalized || normalized.length > 240)
+    throw new BadRequestException(
+      'سازنده و مدل الزامی و حداکثر ۲۴۰ نویسه است.',
+    );
+  const explicitParts = normalized
+    .split(/\s*[/|،,]\s*/)
+    .map((part) => part.trim())
+    .filter(Boolean);
+  const [manufacturer = '', ...modelParts] =
+    explicitParts.length > 1
+      ? explicitParts
+      : normalized.split(/\s+/).filter(Boolean);
+  const model = modelParts.join(explicitParts.length > 1 ? ' / ' : ' ').trim();
+  if (!manufacturer || !model)
+    throw new BadRequestException(
+      'سازنده و مدل را به صورت «Airbus / A320-200» وارد کنید.',
+    );
+  if (manufacturer.length > 120 || model.length > 120)
+    throw new BadRequestException('سازنده یا مدل بیش از حد مجاز است.');
+  return { manufacturer, model };
+}
+
 const allowedFields: Record<MasterDataResource, readonly string[]> = {
   countries: ['iso2Code', 'name', 'englishName', 'displayOrder'],
   regions: ['code', 'name', 'englishName', 'countryId'],
@@ -351,8 +380,14 @@ const allowedFields: Record<MasterDataResource, readonly string[]> = {
     'countryId',
     'logoFileReference',
   ],
-  'aircraft-types': ['name', 'englishName', 'manufacturer', 'model'],
-  'cabin-classes': ['name', 'englishName', 'bookingCode', 'displayOrder'],
+  'aircraft-types': [
+    'name',
+    'englishName',
+    'manufacturer',
+    'model',
+    'manufacturerModel',
+  ],
+  'cabin-classes': ['englishName', 'bookingCode', 'displayOrder'],
   'baggage-rules': [
     'name',
     'airlineId',
@@ -367,6 +402,7 @@ const allowedFields: Record<MasterDataResource, readonly string[]> = {
   'manifest-templates': [
     'name',
     'airlineId',
+    'destinationCityId',
     'versionNumber',
     'fileFormat',
     'fileReferenceId',
@@ -463,6 +499,8 @@ const allowedFields: Record<MasterDataResource, readonly string[]> = {
   suppliers: [
     'name',
     'englishName',
+    'address',
+    'primaryPhone',
     'primaryContactId',
     'organizationId',
     'countryId',
@@ -574,17 +612,7 @@ const requiredFields: Record<MasterDataResource, readonly string[]> = {
   countries: ['iso2Code', 'name', 'englishName'],
   regions: ['name', 'englishName', 'countryId'],
   cities: ['name', 'englishName', 'countryId', 'regionId'],
-  airports: [
-    'name',
-    'englishName',
-    'countryId',
-    'cityId',
-    'iataCode',
-    'icaoCode',
-    'ianaTimezone',
-    'latitude',
-    'longitude',
-  ],
+  airports: ['name', 'englishName', 'countryId', 'cityId', 'iataCode'],
   terminals: ['name', 'airportId', 'terminalType'],
   currencies: ['code', 'name', 'englishName'],
   'exchange-rates': ['fromCurrencyCode', 'toCurrencyCode', 'rate'],
@@ -602,17 +630,13 @@ const requiredFields: Record<MasterDataResource, readonly string[]> = {
   ],
   'insurance-coverages': ['name', 'currencyId', 'coverageLimit'],
   airlines: ['airlineCodes', 'name'],
-  'aircraft-types': ['name', 'manufacturer', 'model'],
-  'cabin-classes': ['name', 'bookingCode'],
+  // The current UI submits a single manufacturerModel value. Legacy clients may
+  // still submit manufacturer/model separately, so aircraft validation happens
+  // in prepare() after the compatibility payload has been normalized.
+  'aircraft-types': [],
+  'cabin-classes': ['englishName', 'bookingCode'],
   'baggage-rules': ['name', 'airlineId', 'passengerType', 'allowance', 'unit'],
-  'manifest-templates': [
-    'name',
-    'airlineId',
-    'versionNumber',
-    'fileFormat',
-    'validFrom',
-    'publicationStatus',
-  ],
+  'manifest-templates': ['name', 'airlineId', 'destinationCityId'],
   'rail-companies': ['name', 'organizationId', 'countryId'],
   'train-types': ['name', 'manufacturer', 'model', 'category'],
   'bus-companies': ['name', 'organizationId', 'countryId'],
@@ -1474,6 +1498,27 @@ export class MasterDataService {
         throw new BadRequestException(`فیلد الزامی: ${missing.join(', ')}`);
     }
     const data: Record<string, unknown> = { ...values };
+    if (resource === 'aircraft-types') {
+      if (Object.hasOwn(data, 'manufacturerModel')) {
+        const { manufacturer, model } = normalizeManufacturerModel(
+          data.manufacturerModel,
+        );
+        data.manufacturer = manufacturer;
+        data.model = model;
+        delete data.manufacturerModel;
+        if (!String(data.name ?? '').trim())
+          data.name =
+            String(data.englishName ?? '').trim() || `${manufacturer} ${model}`;
+      } else if (!partial) {
+        const manufacturer = String(data.manufacturer ?? '').trim();
+        const model = String(data.model ?? '').trim();
+        if (!manufacturer || !model)
+          throw new BadRequestException('سازنده و مدل الزامی است.');
+        if (!String(data.name ?? '').trim())
+          data.name =
+            String(data.englishName ?? '').trim() || `${manufacturer} ${model}`;
+      }
+    }
     if (
       resource !== 'exchange-rates' &&
       !partial &&
@@ -1568,12 +1613,45 @@ export class MasterDataService {
       if (data.organizationId === '') data.organizationId = null;
       if (resource === 'suppliers' && !partial) {
         const hasName = String(data.name ?? '').trim().length > 0;
-        const hasOrganization = typeof data.organizationId === 'string';
-        if (!hasName && !hasOrganization)
-          throw new BadRequestException(
-            'نام تأمین‌کننده یا سازمان تأمین‌کننده الزامی است.',
-          );
+        if (!hasName)
+          throw new BadRequestException('نام تأمین‌کننده الزامی است.');
         data.name = hasName ? String(data.name).trim() : null;
+        // New suppliers are owned by the supplier catalog itself. Legacy links
+        // remain readable, but creating a supplier must not create an
+        // Organization/contact dependency.
+        data.organizationId = null;
+        data.primaryContactId = null;
+      }
+      if (resource === 'suppliers' && Object.hasOwn(data, 'address')) {
+        const address = String(data.address ?? '').trim();
+        if (address.length > 500)
+          throw new BadRequestException('نشانی حداکثر ۵۰۰ نویسه است.');
+        data.address = address || null;
+      }
+      if (resource === 'suppliers' && Object.hasOwn(data, 'primaryPhone')) {
+        const phone = String(data.primaryPhone ?? '').trim();
+        delete data.primaryPhone;
+        if (phone) {
+          const protectedPhone = this.contactCrypto.protect('phone', phone);
+          Object.assign(data, {
+            primaryPhoneEncrypted: protectedPhone.encrypted,
+            primaryPhoneEncryptionIv: protectedPhone.encryptionIv,
+            primaryPhoneEncryptionAuthTag: protectedPhone.encryptionAuthTag,
+            primaryPhoneEncryptionKeyVersion:
+              protectedPhone.encryptionKeyVersion,
+            primaryPhoneMasked: protectedPhone.masked,
+            primaryPhoneFingerprint: protectedPhone.fingerprint,
+          });
+        } else if (!partial) {
+          Object.assign(data, {
+            primaryPhoneEncrypted: null,
+            primaryPhoneEncryptionIv: null,
+            primaryPhoneEncryptionAuthTag: null,
+            primaryPhoneEncryptionKeyVersion: null,
+            primaryPhoneMasked: null,
+            primaryPhoneFingerprint: null,
+          });
+        }
       }
       if (!partial && !Object.hasOwn(data, 'collaborationStatus'))
         data.collaborationStatus = 'ACTIVE';
@@ -1629,11 +1707,23 @@ export class MasterDataService {
         'logoFileReference',
         'iconFileReference',
         'fileReferenceId',
+        'destinationCityId',
         'cabinClassId',
         'countryId',
       ]) {
         if (data[field] === '') data[field] = null;
       }
+    }
+    if (resource === 'cabin-classes' && Object.hasOwn(data, 'englishName')) {
+      const englishName = String(data.englishName ?? '').trim();
+      if (!englishName)
+        throw new BadRequestException('نام انگلیسی کلاس پروازی الزامی است.');
+      if (englishName.length > 160)
+        throw new BadRequestException(
+          'نام انگلیسی کلاس پروازی حداکثر ۱۶۰ نویسه است.',
+        );
+      data.englishName = englishName;
+      data.name = englishName;
     }
     if (
       (resource === 'payment-methods' || resource === 'meal-services') &&
@@ -1828,6 +1918,7 @@ export class MasterDataService {
       'airlineId',
       'cabinClassId',
       'fileReferenceId',
+      'destinationCityId',
       'insurerId',
       'currencyId',
       'supplierId',
@@ -1939,6 +2030,11 @@ export class MasterDataService {
         throw new BadRequestException('برای واحد قطعه، تعداد قطعه الزامی است.');
     }
     if (resource === 'manifest-templates') {
+      if (!partial) {
+        data.fileFormat ??= 'XLSX';
+        data.publicationStatus ??= 'DRAFT';
+        data.validFrom ??= new Date().toISOString().slice(0, 10);
+      }
       for (const [field, options, label] of [
         ['fileFormat', manifestFileFormats, 'فرمت فایل'],
         ['publicationStatus', manifestStatuses, 'وضعیت انتشار'],
@@ -1965,7 +2061,7 @@ export class MasterDataService {
         )
           .map((value) => value.trim())
           .filter(Boolean);
-        if (!values.length || values.length > 100)
+        if (values.length > 100)
           throw new BadRequestException(
             `${field} باید فهرست معتبر ستون‌ها باشد.`,
           );
@@ -2176,10 +2272,10 @@ export class MasterDataService {
     }
     if (resource === 'baggage-rules' || resource === 'manifest-templates') {
       const current =
-        resource === 'baggage-rules' && partial && entityId
+        partial && entityId
           ? await this.repository.find(resource, entityId)
           : null;
-      if (resource === 'baggage-rules' && partial) {
+      if (partial) {
         if (!Object.hasOwn(data, 'validFrom'))
           data.validFrom = current?.validFrom;
         if (!Object.hasOwn(data, 'validTo')) data.validTo = current?.validTo;
@@ -2203,6 +2299,10 @@ export class MasterDataService {
         ['icaoCode', 4, 'ICAO'],
       ] as const) {
         if (data[field] === undefined) continue;
+        if (data[field] === '' || data[field] === null) {
+          data[field] = null;
+          continue;
+        }
         const code = String(data[field]).trim().toUpperCase();
         if (!new RegExp(`^[A-Z]{${length}}$`).test(code))
           throw new BadRequestException(
@@ -2218,16 +2318,26 @@ export class MasterDataService {
         data[field] = code;
       }
       if (data.ianaTimezone !== undefined) {
-        const timezone = String(data.ianaTimezone).trim();
-        if (!isValidIanaTimezone(timezone))
-          throw new BadRequestException('Timezone باید شناسه معتبر IANA باشد.');
-        data.ianaTimezone = timezone;
+        if (data.ianaTimezone === '' || data.ianaTimezone === null) {
+          data.ianaTimezone = null;
+        } else {
+          const timezone = String(data.ianaTimezone).trim();
+          if (!isValidIanaTimezone(timezone))
+            throw new BadRequestException(
+              'Timezone باید شناسه معتبر IANA باشد.',
+            );
+          data.ianaTimezone = timezone;
+        }
       }
       for (const [field, minimum, maximum] of [
         ['latitude', -90, 90],
         ['longitude', -180, 180],
       ] as const) {
         if (data[field] === undefined) continue;
+        if (data[field] === '' || data[field] === null) {
+          data[field] = null;
+          continue;
+        }
         const coordinate = Number(data[field]);
         if (
           !Number.isFinite(coordinate) ||
@@ -2906,6 +3016,17 @@ export class MasterDataService {
         (check.role && !roles?.some(({ roleCode }) => roleCode === check.role))
       )
         throw new BadRequestException('مرجع فعال با Role موردنیاز یافت نشد.');
+    }
+    if (
+      resource === 'manifest-templates' &&
+      typeof data.destinationCityId === 'string'
+    ) {
+      const destination = await this.repository.find(
+        'cities',
+        data.destinationCityId,
+      );
+      if (!destination?.isActive)
+        throw new BadRequestException('مقصد فعال یافت نشد.');
     }
     if (resource === 'hotels' && typeof data.chainId === 'string') {
       const chain = await this.repository.find('hotel-chains', data.chainId);

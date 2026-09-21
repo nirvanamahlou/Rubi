@@ -1,4 +1,4 @@
-import { isMasterTransportFormResource } from '@rubi/contracts';
+import { isMasterTransportFormResource } from '@nora/contracts';
 import type {
   MasterDataCatalogItem,
   MasterDataFieldDefinition,
@@ -56,6 +56,13 @@ export function getMasterDataFormFields(
         field.key !== 'code' &&
         field.key !== 'englishName' &&
         !(mode === 'create' && field.key === 'channel'),
+    );
+  if (definition.key === 'airports' && mode === 'create')
+    fields = fields.filter(
+      (field) =>
+        !['icaoCode', 'ianaTimezone', 'latitude', 'longitude'].includes(
+          field.key,
+        ),
     );
   if (
     definition.key !== 'exchange-rates' &&

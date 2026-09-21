@@ -17,7 +17,7 @@ import type { AuthenticatedRequest } from '../iam/iam.types';
 import { MessagingService } from './messaging.service';
 
 @ApiTags('Messaging')
-@ApiCookieAuth('rubi_access')
+@ApiCookieAuth('nora_access')
 @UseGuards(AuthGuard)
 @Controller('messaging')
 export class MessagingController {

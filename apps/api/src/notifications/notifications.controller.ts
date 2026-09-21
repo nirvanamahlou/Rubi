@@ -18,7 +18,7 @@ import type { AuthenticatedRequest } from '../iam/iam.types';
 import { NotificationsService } from './notifications.service';
 
 @ApiTags('Notifications')
-@ApiCookieAuth('rubi_access')
+@ApiCookieAuth('nora_access')
 @UseGuards(AuthGuard)
 @Controller('notifications')
 export class NotificationsController {

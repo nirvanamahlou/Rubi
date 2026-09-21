@@ -18,7 +18,7 @@ import { PermissionGuard } from './permission.guard';
 import type { AuthenticatedRequest } from './iam.types';
 
 @ApiTags('IAM / Roles and branches')
-@ApiCookieAuth('rubi_access')
+@ApiCookieAuth('nora_access')
 @UseGuards(AuthGuard, PermissionGuard)
 @Controller('iam/access-options')
 export class RolesController {

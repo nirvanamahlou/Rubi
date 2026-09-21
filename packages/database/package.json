@@ -1,5 +1,5 @@
 {
-  "name": "@rubi/database",
+  "name": "@nora/database",
   "version": "0.0.0",
   "private": true,
   "main": "dist/index.js",
@@ -18,7 +18,13 @@
     "db:format": "prisma format --schema prisma/schema.prisma",
     "db:generate": "prisma generate --schema prisma/schema.prisma",
     "db:validate": "prisma validate --schema prisma/schema.prisma",
-    "db:seed": "prisma db seed"
+    "db:seed": "prisma db seed",
+    "reporting:demo:import": "tsx scripts/import-reporting-demo.ts",
+    "reporting:demo:generate": "node scripts/dashboard-reporting-local-demo.mjs",
+    "reporting:demo:clear": "node scripts/dashboard-reporting-local-demo.mjs --clear",
+    "reporting:demo:verify-clean": "node scripts/dashboard-reporting-local-demo.mjs --verify-clean",
+    "procurement:demo:apply": "node scripts/procurement-local-demo.mjs --apply",
+    "procurement:demo:inspect": "node scripts/procurement-local-demo.mjs --inspect"
   },
   "dependencies": {
     "@prisma/adapter-pg": "7.9.1",
@@ -27,8 +33,8 @@
     "pg": "8.23.0"
   },
   "devDependencies": {
-    "@rubi/eslint-config": "workspace:*",
-    "@rubi/typescript-config": "workspace:*",
+    "@nora/eslint-config": "workspace:*",
+    "@nora/typescript-config": "workspace:*",
     "@types/node": "26.2.0",
     "@types/pg": "8.23.1",
     "eslint": "9.39.5",

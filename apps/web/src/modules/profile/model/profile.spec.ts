@@ -13,7 +13,7 @@ describe('authenticated profile model', () => {
   it('builds initials from the authenticated display name and uses the safe fallback', () => {
     expect(profileInitials('نیروانا مهلوجی')).toBe('نم');
     expect(profileInitials('مدیر')).toBe('م');
-    expect(safeProfileDisplayName('   ')).toBe('کاربر سامانه');
+    expect(safeProfileDisplayName('   ')).toBe('کارمند سامانه');
   });
 
   it('normalizes only supported profile tabs', () => {

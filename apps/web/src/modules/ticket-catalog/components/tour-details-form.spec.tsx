@@ -27,7 +27,6 @@ describe('complete tour definition form', () => {
       'قوانین استرداد تور',
       'برنامه سفر',
       'بارگذاری تصویر تور',
-      'قیمت پایه پکیج',
       'ساعت شروع',
       'بالاتر',
       'پایین‌تر',
@@ -40,7 +39,8 @@ describe('complete tour definition form', () => {
     for (const select of html.match(/<select[^>]*>/g) ?? [])
       expect(select).toContain('aria-hidden="true"');
     expect(html).not.toContain('type="date"');
-    expect(html).toContain('123.50');
+    expect(html).not.toContain('قیمت پایه پکیج');
+    expect(html).not.toContain('123.50');
   });
   it('hides airline and separate flight price for train definitions', () => {
     const html = renderToStaticMarkup(

@@ -1,6 +1,6 @@
 'use client';
 
-import type { DocumentListItemV1, LoginResponse } from '@rubi/contracts';
+import type { DocumentListItemV1, LoginResponse } from '@nora/contracts';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { FileText, RefreshCw, Star } from 'lucide-react';

@@ -7,7 +7,7 @@ import type {
   SalesContractDetail,
   SalesPaymentInput,
   SalesPaymentMethod,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import { Button } from '@/components/ui/button';
 import { SalesDatePicker as DatePicker } from './sales-date-picker';
 import { FormField, Input } from '@/components/ui/form-controls';
@@ -289,6 +289,11 @@ export function ContractPayments({
               سررسید: {new Date(item.dueAt).toLocaleDateString('fa-IR')}
               {item.check ? ` · تاریخ چک: ${item.check.dueDate}` : ''}
             </p>
+            {item.financeDecisionReason ? (
+              <p className="mt-2 rounded-lg bg-amber-50 p-2 text-sm text-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
+                توضیح مالی: {item.financeDecisionReason}
+              </p>
+            ) : null}
             <Button
               type="button"
               variant="outline"

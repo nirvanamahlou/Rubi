@@ -9,7 +9,7 @@ describe('customer phase A boundary', () => {
       .map((file) => readFileSync(join(root, file), 'utf8'))
       .join('\n');
     expect(source).not.toMatch(
-      /@rubi\/database|PrismaClient|RepositoryImpl|\.\.\/iam|master-data/,
+      /@nora\/database|PrismaClient|RepositoryImpl|\.\.\/iam|master-data/,
     );
     expect(source).toContain('CustomerApplicationPort');
   });

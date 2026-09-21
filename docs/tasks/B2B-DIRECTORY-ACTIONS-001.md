@@ -1,6 +1,6 @@
 # B2B-DIRECTORY-ACTIONS-001 — PC-B
 
-The owner requests the registration and Excel action bar from the supplied Customers screenshot on the Agencies landing page. The Organizations workspace now uses the same shared Rubi Card and Button components, colors, typography and RTL action order: filtered Excel export, blank import template, Excel import and the primary registration action. At narrow widths the content stacks and the buttons wrap.
+The owner requests the registration and Excel action bar from the supplied Customers screenshot on the Agencies landing page. The Organizations workspace now uses the same shared Nora Card and Button components, colors, typography and RTL action order: filtered Excel export, blank import template, Excel import and the primary registration action. At narrow widths the content stacks and the buttons wrap.
 
 The previous header buttons move into this bar below the summary cards. Registration opens the existing four-step cooperation popup; import opens the existing validation/preview dialog. Template download uses the existing Organizations XLSX codec and canonical column headers directly, without adding synthetic rows. The separate sample-data template inside the import dialog remains available. Export keeps the current role/search/status/sort filters and existing authorization. No changes to API, schema, migrations, dependencies, IAM grants or operational data.
 

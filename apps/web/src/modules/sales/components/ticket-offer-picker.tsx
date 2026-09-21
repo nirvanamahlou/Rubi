@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import type { TicketOfferSearchV1, TicketOfferV1 } from '@rubi/contracts';
+import type { TicketOfferSearchV1, TicketOfferV1 } from '@nora/contracts';
 import { Button } from '@/components/ui/button';
 import { Alert } from '@/components/ui/surfaces';
 import { getPublicApiBaseUrl } from '@/lib/environment';
@@ -15,6 +15,7 @@ export function TicketOfferPicker({
   originLabel,
   destinationLabel,
   requiredSeats,
+  requireStandaloneFare = false,
 }: {
   query: TicketOfferSearchV1;
   selectedId: string;
@@ -22,13 +23,15 @@ export function TicketOfferPicker({
   originLabel?: string;
   destinationLabel?: string;
   requiredSeats: number;
+  requireStandaloneFare?: boolean;
 }) {
   const [offers, setOffers] = useState<TicketOfferV1[]>([]);
-  const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState({ filters: '', page: 1 });
   const [hasMore, setHasMore] = useState(false);
   const [busy, setBusy] = useState(true);
   const [error, setError] = useState('');
   const filters = JSON.stringify(query);
+  const page = pagination.filters === filters ? pagination.page : 1;
   useEffect(() => {
     const controller = new AbortController();
     const timer = setTimeout(() => {
@@ -61,6 +64,7 @@ export function TicketOfferPicker({
           data: TicketOfferV1[];
           hasMore: boolean;
         };
+        if (controller.signal.aborted) return;
         setOffers(result.data);
         setHasMore(result.hasMore);
       })()
@@ -99,6 +103,7 @@ export function TicketOfferPicker({
             offer={offer}
             selected={selectedId === offer.id}
             requiredSeats={requiredSeats}
+            requireStandaloneFare={requireStandaloneFare}
             onSelect={onSelect}
             {...(originLabel ? { originLabel } : {})}
             {...(destinationLabel ? { destinationLabel } : {})}
@@ -111,7 +116,7 @@ export function TicketOfferPicker({
             type="button"
             variant="outline"
             disabled={busy}
-            onClick={() => setPage(page - 1)}
+            onClick={() => setPagination({ filters, page: page - 1 })}
           >
             صفحه قبل
           </Button>
@@ -121,7 +126,7 @@ export function TicketOfferPicker({
             type="button"
             variant="outline"
             disabled={busy}
-            onClick={() => setPage(page + 1)}
+            onClick={() => setPagination({ filters, page: page + 1 })}
           >
             بلیط‌های بیشتر
           </Button>

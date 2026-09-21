@@ -386,17 +386,17 @@
 }
 
 .operationLayout {
-  display: grid;
-  grid-template-columns: 240px minmax(0, 1fr);
+  display: flex;
+  flex-direction: column;
   gap: 20px;
-  align-items: start;
 }
 .operationMain {
   min-width: 0;
+  width: 100%;
 }
 @media (max-width: 760px) {
-  .operationLayout {
-    grid-template-columns: minmax(0, 1fr);
+  .tableScroll {
+    max-height: 58dvh;
   }
 }
 
@@ -411,9 +411,9 @@
   --tone-text: #ffffff;
 }
 :global(.dark) .workspace [data-tone='darkGray'] {
-  --tone-bg: #1d1d21;
-  --tone-edge: #d4d4d8;
-  --tone-text: #fafafa;
+  --tone-bg: #334b5c;
+  --tone-edge: #8fb4cc;
+  --tone-text: #f3f8fb;
 }
 :global(.dark) .workspace [data-tone='red'] {
   --tone-bg: #482426;
@@ -491,10 +491,13 @@
 
 .tableScroll {
   overflow: auto;
-  max-height: 65vh;
+  max-height: 440px;
   border: 1px solid var(--border);
   border-radius: 10px;
   margin-top: 12px;
+}
+.requestTable tbody tr {
+  height: 54px;
 }
 .requestTable {
   border-collapse: separate;

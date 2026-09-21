@@ -123,6 +123,7 @@ SelectItem.displayName = 'SelectItem';
 interface FormFieldProps {
   id?: string;
   label: string;
+  labelClassName?: string;
   description?: string;
   error?: string;
   required?: boolean;
@@ -135,13 +136,17 @@ export function FormField({
   error,
   id,
   label,
+  labelClassName,
   required,
 }: FormFieldProps) {
   const helpId = id ? `${id}-help` : undefined;
   const errorId = id ? `${id}-error` : undefined;
   return (
     <div className="grid gap-2">
-      <label className="text-sm font-semibold text-foreground" htmlFor={id}>
+      <label
+        className={cn('text-sm font-semibold text-foreground', labelClassName)}
+        htmlFor={id}
+      >
         {label}
         {required ? (
           <span className="ms-1 text-destructive" aria-hidden="true">

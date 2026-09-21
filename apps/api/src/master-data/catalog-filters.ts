@@ -3,7 +3,7 @@ import {
   getMasterDataColumnFilters,
   type MasterDataListQuery,
   type MasterDataResource,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 
 export function columnFilterWhere(
   resource: MasterDataResource,

@@ -4,10 +4,11 @@ import type {
   AuthenticatedActor,
   SalesReservationRequestV1,
   TicketOfferCreateV1,
-} from '@rubi/contracts';
-import { createDatabaseClient } from '@rubi/database';
+} from '@nora/contracts';
+import { createDatabaseClient } from '@nora/database';
 import type { DatabaseService } from '../database/database.service';
 import { ReservationsPublicService } from '../reservations/reservations-public.service';
+import { ProcurementPublicService } from '../procurement/procurement-public.service';
 import {
   TicketPublicService,
   validateTicketOffer,
@@ -49,7 +50,10 @@ describe.skipIf(!process.env.TRAVEL_TEST_DATABASE_URL)(
         'postgresql://unused:unused@localhost/unused',
     );
     const database = { client } as DatabaseService;
-    const tickets = new TicketPublicService(database);
+    const tickets = new TicketPublicService(
+      database,
+      new ProcurementPublicService(database),
+    );
     const reservations = new ReservationsPublicService(database);
     const sales = new SalesRepository(database);
     const branchId = randomUUID();
@@ -429,6 +433,7 @@ describe.skipIf(!process.env.TRAVEL_TEST_DATABASE_URL)(
         contractId: contract.id,
         paymentId: payment.id,
         financePaymentReference: randomUUID(),
+        receiptAccountId: randomUUID(),
         financeConfirmationId: randomUUID(),
         confirmedAt: new Date().toISOString(),
       });
@@ -441,6 +446,7 @@ describe.skipIf(!process.env.TRAVEL_TEST_DATABASE_URL)(
         contractId: contract.id,
         paymentId: usd.id,
         financePaymentReference: randomUUID(),
+        receiptAccountId: randomUUID(),
         financeConfirmationId: randomUUID(),
         confirmedAt: new Date().toISOString(),
       });

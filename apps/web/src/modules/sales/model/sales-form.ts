@@ -2,7 +2,7 @@ import {
   addInsuranceExtra,
   insuranceExtraRials,
   passengerOverSixty,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import {
   servicePriceComponents,
   SALES_ACCOMMODATION_LABELS,
@@ -11,7 +11,7 @@ import {
   salesContractOnlyFlights,
   type SalesFlightSnapshotV1,
   type SalesServicePricingV1,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import type {
   CustomerSummary,
   SalesMoney,
@@ -25,7 +25,7 @@ import type {
   SalesTicketDirection,
   TicketOfferV1,
   TourDepartureV1,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 
 import {
   salesInsuranceService,
@@ -786,14 +786,24 @@ export function salesPayload(
                 cabinClassCode:
                   state.outboundOffer?.cabinClassCode ??
                   state.ticket.cabinClassCode,
-                ...(state.ticket.amount
+                ...(!state.tour &&
+                !state.serviceKinds.includes('HOTEL') &&
+                state.outboundOffer?.standaloneSalePrice
                   ? {
                       quotedPrice: {
-                        amount: state.ticket.amount,
-                        currencyCode: state.ticket.currencyCode,
+                        amount: state.outboundOffer.standaloneSalePrice.amount,
+                        currencyCode:
+                          state.outboundOffer.standaloneSalePrice.currencyCode,
                       },
                     }
-                  : {}),
+                  : state.ticket.amount
+                    ? {
+                        quotedPrice: {
+                          amount: state.ticket.amount,
+                          currencyCode: state.ticket.currencyCode,
+                        },
+                      }
+                    : {}),
               },
             ]
           : []),
@@ -815,14 +825,24 @@ export function salesPayload(
                 cabinClassCode:
                   state.returnOffer?.cabinClassCode ??
                   state.ticket.cabinClassCode,
-                ...(state.ticket.amount
+                ...(!state.tour &&
+                !state.serviceKinds.includes('HOTEL') &&
+                state.returnOffer?.standaloneSalePrice
                   ? {
                       quotedPrice: {
-                        amount: state.ticket.amount,
-                        currencyCode: state.ticket.currencyCode,
+                        amount: state.returnOffer.standaloneSalePrice.amount,
+                        currencyCode:
+                          state.returnOffer.standaloneSalePrice.currencyCode,
                       },
                     }
-                  : {}),
+                  : state.ticket.amount
+                    ? {
+                        quotedPrice: {
+                          amount: state.ticket.amount,
+                          currencyCode: state.ticket.currencyCode,
+                        },
+                      }
+                    : {}),
               },
             ]
           : []),

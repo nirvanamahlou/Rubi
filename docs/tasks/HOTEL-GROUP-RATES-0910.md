@@ -15,7 +15,7 @@ PC-A; branch codex/pc-a-hotel-group-rates-0910; base 14ec087. User supplied hote
 
 User explicitly approved applying the two existing canonical HR migrations and granting all seven HR permissions only to the existing single-member Ramtin dedicated local role. Both migrations rehearsed on a restored copy, applied transactionally and entered into Prisma ledger using exact source SHA256 checksums. Catalog entries inserted idempotently; active role/user/single-member guards checked; IAM grant audit recorded. No HR implementation changed, no other role grants, no passwords or user records modified.
 
-Backups are private ignored files under tmp/hr-enable-0910/pre-hr.dump and pre-rates.dump and corresponding container /tmp files. Rehearsal database rubi_hr_rehearsal_0910 remains separate. Original main target localhost:5432/rubi preserved: 350 customers and 5 sales contracts, zero synthetic rate rows. Main had no HR records and no Master Organizations/BROKER records; users must register real broker reference data. No data imported from separate PC-B databases.
+Backups are private ignored files under tmp/hr-enable-0910/pre-hr.dump and pre-rates.dump and corresponding container /tmp files. Rehearsal database nora_hr_rehearsal_0910 remains separate. Original main target localhost:5432/nora preserved: 350 customers and 5 sales contracts, zero synthetic rate rows. Main had no HR records and no Master Organizations/BROKER records; users must register real broker reference data. No data imported from separate PC-B databases.
 
 ## Validation
 

@@ -5,9 +5,13 @@ import type {
   DocumentOptionsResponseV1,
   MasterDataRecord,
   TourPackageInputV1,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import {
   Button,
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  TabsContent,
   FormField,
   Input,
   Textarea,
@@ -75,7 +79,6 @@ function Menu({
 export function TourDetailsForm({
   value = { version: 1 },
   onChange,
-  currencies,
   airlines,
   airports,
   branches,
@@ -83,7 +86,7 @@ export function TourDetailsForm({
 }: {
   value?: Details;
   onChange: (value: Details) => void;
-  currencies: MasterDataRecord[];
+  currencies?: MasterDataRecord[];
   airlines: MasterDataRecord[];
   airports: MasterDataRecord[];
   branches: BranchReference[];
@@ -136,15 +139,32 @@ export function TourDetailsForm({
   }
   const numberValue = (raw: string) => (raw === '' ? undefined : Number(raw));
   return (
-    <div className="space-y-5 sm:col-span-2">
-      <section className="space-y-4 rounded-xl border p-4">
+    <Tabs
+      defaultValue="intro"
+      dir="rtl"
+      className="col-span-full min-w-0 space-y-2 [&_input:not([type=checkbox])]:h-9 [&_button[role=combobox]]:h-9 [&_textarea]:min-h-16 [&_textarea]:py-2"
+    >
+      <TabsList
+        aria-label="جزئیات تعریف تور"
+        className="grid h-auto w-full grid-cols-2 gap-1 sm:grid-cols-4"
+      >
+        <TabsTrigger value="intro">معرفی و شرایط</TabsTrigger>
+        <TabsTrigger value="transport">مشخصات سفر</TabsTrigger>
+        <TabsTrigger value="itinerary">برنامه سفر</TabsTrigger>
+        <TabsTrigger value="image">تصویر تور</TabsTrigger>
+      </TabsList>
+      <TabsContent
+        forceMount
+        value="intro"
+        className="mt-0 max-h-72 space-y-2 overflow-y-auto overscroll-contain rounded-xl border p-3 data-[state=inactive]:hidden sm:h-64"
+      >
         <h4 className="font-bold">معرفی و شرایط تور</h4>
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {prose.map(([key, label]) => (
             <FormField key={key} label={label}>
               <Textarea
                 aria-label={label}
-                rows={3}
+                rows={2}
                 maxLength={key === 'summary' ? 500 : 5000}
                 value={value[key] ?? ''}
                 onChange={(e) => patch(key, e.target.value)}
@@ -152,10 +172,14 @@ export function TourDetailsForm({
             </FormField>
           ))}
         </div>
-      </section>
-      <section className="space-y-4 rounded-xl border p-4">
-        <h4 className="font-bold">قیمت و حمل‌ونقل</h4>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      </TabsContent>
+      <TabsContent
+        forceMount
+        value="transport"
+        className="mt-0 max-h-72 space-y-2 overflow-y-auto overscroll-contain rounded-xl border p-3 data-[state=inactive]:hidden sm:h-64"
+      >
+        <h4 className="font-bold">مشخصات سفر و حمل‌ونقل</h4>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           <Menu
             label="فرودگاه مبدأ"
             value={value.originAirportCode ?? ''}
@@ -240,65 +264,12 @@ export function TourDetailsForm({
             بلیط در پکیج محاسبه شده است
           </label>
         </div>
-        <p className="text-xs text-muted-foreground">
-          قیمت‌ها معرفی پکیج هستند؛ هزینه خرید و ظرفیت بلیط را تغییر نمی‌دهند.
-          نوبت‌های فعلی با بلیط پرواز منتشرشده ثبت می‌شوند؛ نوع قطار در این بخش
-          فقط مشخصات تعریف تور است.
-        </p>
-        {(
-          [
-            'basePrice',
-            ...(value.transport === 'TRAIN' ? [] : ['flightPrice']),
-          ] as ('basePrice' | 'flightPrice')[]
-        ).map((key) => (
-          <div
-            key={key}
-            className="grid gap-3 rounded-lg bg-primary/5 p-3 sm:grid-cols-2"
-          >
-            <FormField
-              label={
-                key === 'basePrice'
-                  ? 'قیمت پایه پکیج (بدون انتخاب هتل جایگزین)'
-                  : 'هزینه جداگانه پرواز (اختیاری)'
-              }
-            >
-              <Input
-                aria-label={
-                  key === 'basePrice' ? 'قیمت پایه پکیج' : 'هزینه جداگانه پرواز'
-                }
-                dir="ltr"
-                inputMode="decimal"
-                value={value[key]?.amount ?? ''}
-                onChange={(e) => {
-                  const amount = e.target.value
-                    .replace(/[,٬]/g, '')
-                    .replace(/[۰-۹]/g, (c) => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(c)));
-                  patch(
-                    key,
-                    amount
-                      ? { amount, currency: value[key]?.currency ?? 'IRR' }
-                      : undefined,
-                  );
-                }}
-              />
-            </FormField>
-            <Menu
-              label={key === 'basePrice' ? 'ارز پکیج' : 'ارز هزینه پرواز'}
-              value={value[key]?.currency ?? 'IRR'}
-              choices={[
-                ['IRT', 'تومان (ذخیره معادل ریالی)'],
-                ...currencies
-                  .filter((c) => c.code !== 'IRT')
-                  .map((c) => [c.code, `${c.name} (${c.code})`] as const),
-              ]}
-              onChange={(currency) =>
-                patch(key, { amount: value[key]?.amount ?? '', currency })
-              }
-            />
-          </div>
-        ))}
-      </section>
-      <section className="space-y-4 rounded-xl border p-4">
+      </TabsContent>
+      <TabsContent
+        forceMount
+        value="itinerary"
+        className="mt-0 max-h-72 space-y-2 overflow-y-auto overscroll-contain rounded-xl border p-3 data-[state=inactive]:hidden sm:h-64"
+      >
         <div className="flex items-center justify-between gap-3">
           <h4 className="font-bold">برنامه سفر و رویدادهای تور</h4>
           <Button
@@ -415,8 +386,12 @@ export function TourDetailsForm({
             </div>
           </div>
         ))}
-      </section>
-      <section className="space-y-3 rounded-xl border p-4">
+      </TabsContent>
+      <TabsContent
+        forceMount
+        value="image"
+        className="mt-0 max-h-72 space-y-2 overflow-y-auto overscroll-contain rounded-xl border p-3 data-[state=inactive]:hidden sm:h-64"
+      >
         <h4 className="font-bold">تصویر تور</h4>
         <p className="text-xs text-muted-foreground">
           تصویر در آرشیو امن اسناد همین شعبه ذخیره می‌شود؛ فقط PNG یا JPEG
@@ -521,7 +496,7 @@ export function TourDetailsForm({
             }
           }}
         />
-      </section>
-    </div>
+      </TabsContent>
+    </Tabs>
   );
 }

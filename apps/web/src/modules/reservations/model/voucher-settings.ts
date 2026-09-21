@@ -1,7 +1,8 @@
-import type { voucherNumberKeys, voucherFlagKeys } from '@rubi/contracts';
-import { voucherTextKeys, type VoucherSettingsV1 } from '@rubi/contracts';
+import type { voucherNumberKeys, voucherFlagKeys } from '@nora/contracts';
+import { voucherTextKeys, type VoucherSettingsV1 } from '@nora/contracts';
 import {
   reservationFormData,
+  reservationPassengerAgeLabel,
   type ReservationFormIntake,
   type ReservationFormReferences,
 } from './reservation-form';
@@ -9,8 +10,7 @@ export function defaultVoucherSettings(
   intake: ReservationFormIntake,
   refs: ReservationFormReferences,
 ): VoucherSettingsV1 {
-  if (intake.workflow.voucherSettings)
-    return structuredClone(intake.workflow.voucherSettings);
+  const saved = intake.workflow.voucherSettings;
   const d = reservationFormData(intake, refs),
     h = intake.snapshot.hotelSelection;
   const text = Object.fromEntries(
@@ -40,7 +40,7 @@ export function defaultVoucherSettings(
         : '';
       text[`${prefix}Time`] = f.time;
     }
-  return {
+  const defaults: VoucherSettingsV1 = {
     text,
     numbers: {
       singleRooms: Number(d.single) || 0,
@@ -66,13 +66,38 @@ export function defaultVoucherSettings(
       selected: true,
       roomType: text.roomType,
       age: p.age === 'CHD' ? 'CHD' : p.age === 'INF' ? 'INF' : 'ADL',
+      hotelChildAgeBand: '',
+    })),
+  };
+  if (!saved) return defaults;
+  return {
+    text: {
+      ...(Object.fromEntries(
+        voucherTextKeys.map((key) => [key, saved.text?.[key] ?? text[key]]),
+      ) as VoucherSettingsV1['text']),
+      contractPartyName:
+        saved.text.contractPartyName ?? text.contractPartyName ?? '',
+    },
+    numbers: Object.fromEntries(
+      (Object.keys(defaults.numbers) as (keyof typeof defaults.numbers)[]).map(
+        (key) => [key, saved.numbers?.[key] ?? defaults.numbers[key]],
+      ),
+    ) as VoucherSettingsV1['numbers'],
+    flags: Object.fromEntries(
+      (Object.keys(defaults.flags) as (keyof typeof defaults.flags)[]).map(
+        (key) => [key, saved.flags?.[key] ?? defaults.flags[key]],
+      ),
+    ) as VoucherSettingsV1['flags'],
+    passengers: defaults.passengers.map((passenger) => ({
+      ...passenger,
+      ...saved.passengers?.find((item) => item.id === passenger.id),
     })),
   };
 }
-export const voucherTextLabels: Record<
-  (typeof voucherTextKeys)[number],
-  string
-> = {
+export type VoucherTextFieldKey =
+  (typeof voucherTextKeys)[number] | 'contractPartyName';
+export const voucherTextLabels: Record<VoucherTextFieldKey, string> = {
+  contractPartyName: 'نام طرف قرارداد',
   country: 'کشور',
   city: 'شهر',
   hotel: 'نام هتل (انگلیسی)',
@@ -132,16 +157,23 @@ export function voucherFormData(
   if (!v) return d;
   const passengers = d.passengers
     .filter((p) => v.passengers.some((s) => s.id === p.id && s.selected))
-    .map((p) => ({
-      ...p,
-      age: v.passengers.find((s) => s.id === p.id)!.age,
-      sex:
-        v.passengers.find((s) => s.id === p.id)?.sex === 'MALE'
-          ? 'Male'
-          : v.passengers.find((s) => s.id === p.id)?.sex === 'FEMALE'
-            ? 'Female'
-            : '-',
-    }));
+    .map((p) => {
+      const setting = v.passengers.find((s) => s.id === p.id)!;
+      return {
+        ...p,
+        age: reservationPassengerAgeLabel(
+          setting.age,
+          setting.hotelChildAgeBand,
+        ),
+        hotelChildAgeBand: setting.hotelChildAgeBand,
+        sex:
+          setting.sex === 'MALE'
+            ? 'Male'
+            : setting.sex === 'FEMALE'
+              ? 'Female'
+              : '-',
+      };
+    });
   const nights =
     (Date.parse(v.text.checkOut) - Date.parse(v.text.checkIn)) / 86400000;
   return {
@@ -175,7 +207,17 @@ export function voucherFormData(
       .join(' / '),
     passengers,
     adults: passengers.filter((p) => p.age === 'ADL').length,
-    children: passengers.filter((p) => p.age === 'CHD').length,
+    children: passengers.filter((p) => p.age.startsWith('CHD')).length,
+    children2To6: passengers.filter((p) => p.hotelChildAgeBand === 'CHD_2_TO_6')
+      .length,
+    children6To12: passengers.filter(
+      (p) => p.hotelChildAgeBand === 'CHD_6_TO_12',
+    ).length,
+    childrenUnclassified: passengers.filter(
+      (p) =>
+        p.age.startsWith('CHD') &&
+        !['CHD_2_TO_6', 'CHD_6_TO_12'].includes(p.hotelChildAgeBand ?? ''),
+    ).length,
     infants: passengers.filter((p) => p.age === 'INF').length,
     flights: (['arrival', 'departure'] as const).map((prefix) => ({
       leg: prefix === 'arrival' ? 'OUTBOUND' : 'RETURN',

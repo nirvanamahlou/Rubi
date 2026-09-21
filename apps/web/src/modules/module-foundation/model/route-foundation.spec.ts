@@ -29,15 +29,7 @@ const approvedRoutes = [
   'master-data',
 ] as const;
 
-const foundationRoutes = [
-  'purchases',
-  'marketing',
-  'human-resources',
-  'documents',
-  'reports',
-  'integrations',
-  'system',
-] as const;
+const foundationRoutes = ['integrations'] as const;
 
 describe('main-route module foundation', () => {
   it('keeps every approved main route reviewable', () => {
@@ -53,7 +45,7 @@ describe('main-route module foundation', () => {
     expect(page).toContain("redirect('/workbench')");
   });
 
-  it('connects every incomplete route to the shared workspace', () => {
+  it('connects the remaining incomplete route to the shared workspace', () => {
     for (const route of foundationRoutes) {
       const page = readFileSync(resolve(crmRoot, route, 'page.tsx'), 'utf8');
       expect(page).toContain('ModuleFoundationWorkspace');
@@ -62,6 +54,9 @@ describe('main-route module foundation', () => {
   });
 
   it('preserves connected workspaces and the Master Data hub-to-section flow', () => {
+    expect(
+      readFileSync(resolve(crmRoot, 'purchases/page.tsx'), 'utf8'),
+    ).toContain('ProcurementWorkspace');
     expect(
       readFileSync(resolve(crmRoot, 'reservations/page.tsx'), 'utf8'),
     ).toContain('LiveReservationQueue');
@@ -85,10 +80,13 @@ describe('main-route module foundation', () => {
     ).toContain('CustomerAffairsWorkspace');
     expect(
       readFileSync(resolve(crmRoot, 'finance/page.tsx'), 'utf8'),
-    ).toContain('FinanceAccountingWorkspace');
+    ).toContain('AccountingNavigationWorkspace');
     expect(readFileSync(resolve(crmRoot, 'sales/page.tsx'), 'utf8')).toContain(
       'SalesWorkspace',
     );
+    expect(
+      readFileSync(resolve(crmRoot, 'reports/page.tsx'), 'utf8'),
+    ).toContain('ReportingWorkspace');
     expect(
       readFileSync(resolve(crmRoot, 'organizations/page.tsx'), 'utf8'),
     ).toContain('OrganizationsWorkspace');

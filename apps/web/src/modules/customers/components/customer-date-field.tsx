@@ -176,12 +176,12 @@ export function CustomerDateField({
   const today = new Date().toISOString().slice(0, 10);
 
   return (
-    <div
-      className={
-        compact ? 'min-w-40 [&_label]:sr-only [&>div]:gap-0' : undefined
-      }
-    >
-      <FormField id={id} label={label}>
+    <div className={compact ? 'min-w-40 [&>div]:gap-0' : undefined}>
+      <FormField
+        id={id}
+        label={label}
+        {...(compact ? { labelClassName: 'sr-only' } : {})}
+      >
         <div className="relative" ref={rootRef}>
           <div className="flex items-center gap-2">
             <button

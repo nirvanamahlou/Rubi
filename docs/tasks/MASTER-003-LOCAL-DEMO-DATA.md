@@ -41,13 +41,13 @@ restored.
 - Separate opt-in CLI; not imported by AppModule, startup or the general Prisma
   seed. No public endpoint or authentication bypass is added.
 - The target guard accepts only development/test, localhost/127.0.0.1, port
-  55432, database `rubi` or the exact isolated-test naming pattern. Only optional
+  55432, database `nora` or the exact isolated-test naming pattern. Only optional
   `schema=public` is accepted; connection overrides are rejected.
 - Existing MasterDataService validation and repository writes are reused inside
   one enclosing transaction. A PostgreSQL advisory transaction lock serializes
   this fixture batch. Any validation or collision error rolls back everything.
 - New records receive normal create audits plus a separate
-  `master_data.demo.seed` provenance marker keyed by `rubi-master-demo-v1/key`.
+  `master_data.demo.seed` provenance marker keyed by `nora-master-demo-v1/key`.
   Offline fixture actor IDs are reserved synthetic UUIDs, explicitly labeled as
   such. They do not represent an interactive human operation; no IAM user,
   branch, session, permission assignment or login token is created or changed.
@@ -69,7 +69,7 @@ pnpm master-data:demo:apply
 Preview executes the same validation/writes in a transaction and then rolls back
 all data and audits. These repository commands use the realistic synthetic labels
 and the apply command carries an explicit acknowledgement. The lower-level command
-and `RUBI_ALLOW_LOCAL_MASTER_DEMO=1` remain supported for compatibility. Do not
+and `NORA_ALLOW_LOCAL_MASTER_DEMO=1` remain supported for compatibility. Do not
 substitute the general Prisma seed, which has a different scope. Keep the existing
 encryption key unchanged.
 

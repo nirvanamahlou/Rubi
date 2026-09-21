@@ -3,7 +3,7 @@ import {
   ForbiddenException,
   ConflictException,
 } from '@nestjs/common';
-import type { AuthenticatedActor } from '@rubi/contracts';
+import type { AuthenticatedActor } from '@nora/contracts';
 import { plainToInstance } from 'class-transformer';
 import { validateSync } from 'class-validator';
 import { describe, expect, it, vi } from 'vitest';
@@ -45,13 +45,11 @@ function harness() {
     create: vi
       .fn()
       .mockImplementation(async (_resource, data) => ({ ...row, ...data })),
-    update: vi
-      .fn()
-      .mockImplementation(async (_resource, _id, data) => ({
-        ...row,
-        ...data,
-        version: 2,
-      })),
+    update: vi.fn().mockImplementation(async (_resource, _id, data) => ({
+      ...row,
+      ...data,
+      version: 2,
+    })),
   };
   return {
     repository,

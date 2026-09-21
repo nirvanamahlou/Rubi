@@ -1,6 +1,7 @@
 import { Badge, Card } from '@/components/ui';
 import type { Product, Reference, Segment } from '../model/catalog';
 import {
+  displayServiceDate,
   displayTime,
   journeyLabels,
   statusLabels,
@@ -167,7 +168,11 @@ export function TicketDetails({
             />
             <Detail
               label="حرکت"
-              value={displayTime(segment.departureAt, segment.departureZone)}
+              value={
+                segment.departureAt
+                  ? displayTime(segment.departureAt, segment.departureZone)
+                  : displayServiceDate(definition.serviceDate)
+              }
             />
             <Detail
               label="رسیدن"

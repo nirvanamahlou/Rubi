@@ -3,8 +3,8 @@ import type {
   SalesContractCreateRequest,
   SalesContractListQuery,
   SalesPaymentCreateRequest,
-} from '@rubi/contracts';
-import { AuditOutcome, Prisma, type SalesContractStatus } from '@rubi/database';
+} from '@nora/contracts';
+import { AuditOutcome, Prisma, type SalesContractStatus } from '@nora/database';
 
 import { DatabaseService } from '../database/database.service';
 import { calculateSalesBalances, passengerAgeCategory } from './sales.domain';
@@ -72,6 +72,85 @@ export class SalesRepository {
     });
   }
 
+  pendingFinancePayments(branchIds: readonly string[]) {
+    if (!branchIds.length) return Promise.resolve([]);
+    return this.database.client.salesContractPaymentEntry.findMany({
+      where: {
+        status: 'PENDING_FINANCE_CONFIRMATION',
+        contract: { branchId: { in: [...branchIds] } },
+      },
+      include: {
+        contract: {
+          select: {
+            id: true,
+            contractNumber: true,
+            customerId: true,
+            customerNameSnapshot: true,
+            branchId: true,
+            version: true,
+          },
+        },
+      },
+      orderBy: [{ dueAt: 'asc' }, { createdAt: 'asc' }, { id: 'asc' }],
+      take: 200,
+    });
+  }
+
+  customerDocumentDeliveryCandidates(
+    branchIds: readonly string[],
+    contractNumber?: string,
+  ) {
+    if (!branchIds.length) return Promise.resolve([]);
+    const query = contractNumber?.trim();
+    return this.database.client.salesContract.findMany({
+      where: {
+        branchId: { in: [...branchIds] },
+        ...(query
+          ? {
+              contractNumber: {
+                contains: query,
+                mode: 'insensitive' as const,
+              },
+            }
+          : {}),
+      },
+      select: {
+        id: true,
+        contractNumber: true,
+        branchId: true,
+        ownerUserId: true,
+        customerNameSnapshot: true,
+        settlementStatus: true,
+        payments: {
+          where: { status: 'FINANCE_CONFIRMED' },
+          select: { id: true },
+          take: 1,
+        },
+      },
+      orderBy: [{ updatedAt: 'desc' }, { id: 'asc' }],
+      take: 100,
+    });
+  }
+
+  financeCustomerDocumentDeliveryFacts(
+    contractId: string,
+    branchIds: readonly string[],
+  ) {
+    return this.database.client.salesContract.findFirst({
+      where: { id: contractId, branchId: { in: [...branchIds] } },
+      select: {
+        id: true,
+        branchId: true,
+        ownerUserId: true,
+        settlementStatus: true,
+        payments: {
+          where: { status: 'FINANCE_CONFIRMED' },
+          select: { id: true },
+          take: 1,
+        },
+      },
+    });
+  }
   pendingReservationRequests() {
     return this.database.client.salesReservationRequest.findMany({
       where: {
@@ -731,13 +810,17 @@ export class SalesRepository {
     contractId: string;
     paymentId: string;
     financePaymentReference: string;
+    receiptAccountId: string;
     financeConfirmationId: string;
     confirmedAt: string;
+    reviewedByUserId?: string;
+    reason?: string;
   }): Promise<'confirmed' | 'replayed' | 'not-found'> {
     return this.database.client.$transaction(
       async (tx) => {
         const payment = await tx.salesContractPaymentEntry.findFirst({
           where: { id: event.paymentId, contractId: event.contractId },
+          include: { contract: { select: { branchId: true } } },
         });
         if (!payment) return 'not-found';
         if (payment.financeConfirmedByRef) return 'replayed';
@@ -746,8 +829,12 @@ export class SalesRepository {
           data: {
             status: 'FINANCE_CONFIRMED',
             financePaymentReference: event.financePaymentReference,
+            financeReceiptAccountId: event.receiptAccountId,
             financeConfirmedByRef: event.financeConfirmationId,
             financeConfirmedAt: new Date(event.confirmedAt),
+            financeDecisionReason: event.reason?.trim() || null,
+            financeReviewedByUserId: event.reviewedByUserId ?? null,
+            financeReviewedAt: new Date(event.confirmedAt),
           },
         });
         const [components, payments] = await Promise.all([
@@ -794,10 +881,72 @@ export class SalesRepository {
             version: { increment: 1 },
           },
         });
+        if (event.reviewedByUserId)
+          await tx.salesContractAuditEvent.create({
+            data: {
+              contractId: event.contractId,
+              actorUserId: event.reviewedByUserId,
+              actorBranchId: payment.contract.branchId,
+              action: 'sales.payment.finance_confirmed',
+              outcome: 'SUCCESS',
+              reason: event.reason?.trim() || null,
+              afterSnapshot: {
+                paymentId: event.paymentId,
+                financePaymentReference: event.financePaymentReference,
+                receiptAccountId: event.receiptAccountId,
+              },
+            },
+          });
         return 'confirmed';
       },
       { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
     );
+  }
+
+  async applyFinanceCorrection(event: {
+    contractId: string;
+    paymentId: string;
+    reason: string;
+    reviewedByUserId: string;
+    reviewedAt: string;
+    branchId: string;
+    traceId?: string;
+  }): Promise<'corrected' | 'replayed' | 'not-found' | 'conflict'> {
+    return this.database.client.$transaction(async (tx) => {
+      const payment = await tx.salesContractPaymentEntry.findFirst({
+        where: { id: event.paymentId, contractId: event.contractId },
+        include: { contract: { select: { branchId: true } } },
+      });
+      if (!payment || payment.contract.branchId !== event.branchId)
+        return 'not-found';
+      if (payment.status === 'FINANCE_REJECTED') return 'replayed';
+      if (payment.status !== 'PENDING_FINANCE_CONFIRMATION') return 'conflict';
+      await tx.salesContractPaymentEntry.update({
+        where: { id: payment.id },
+        data: {
+          status: 'FINANCE_REJECTED',
+          financeDecisionReason: event.reason.trim(),
+          financeReviewedByUserId: event.reviewedByUserId,
+          financeReviewedAt: new Date(event.reviewedAt),
+        },
+      });
+      await tx.salesContractAuditEvent.create({
+        data: {
+          contractId: event.contractId,
+          actorUserId: event.reviewedByUserId,
+          actorBranchId: event.branchId,
+          action: 'sales.payment.finance_correction_required',
+          outcome: 'SUCCESS',
+          reason: event.reason.trim(),
+          afterSnapshot: {
+            paymentId: event.paymentId,
+            status: 'FINANCE_REJECTED',
+          },
+          traceId: event.traceId ?? null,
+        },
+      });
+      return 'corrected';
+    });
   }
 
   recordOutputPreview(

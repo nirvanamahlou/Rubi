@@ -2,8 +2,8 @@
 import { useEffect, useState } from 'react';
 import { createPortal, flushSync } from 'react-dom';
 import { useTravelLogo } from './travel-document';
-import type { ReservationIntakeV1, TravelBrandingV1 } from '@rubi/contracts';
-import { salesContractFlights } from '@rubi/contracts';
+import type { ReservationIntakeV1, TravelBrandingV1 } from '@nora/contracts';
+import { salesContractFlights } from '@nora/contracts';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -16,6 +16,10 @@ import { FlightTicketSheet } from '@/modules/sales/public/tickets';
 import { reservationTickets } from '../model/reservation-tickets';
 import { getPublicApiBaseUrl } from '@/lib/environment';
 import { refreshAuthenticatedSession } from '@/lib/auth-session';
+import {
+  passengerFilesRequest,
+  type PassengersResponse,
+} from '../passenger-files/client';
 
 export function ReservationTickets({
   request,
@@ -29,7 +33,10 @@ export function ReservationTickets({
   onClose: () => void;
 }) {
   const { logo, error: logoError } = useTravelLogo(branding);
-  const tickets = reservationTickets(request.snapshot);
+  const [passengerNames, setPassengerNames] = useState<Record<string, string>>(
+    {},
+  );
+  const tickets = reservationTickets(request.snapshot, passengerNames);
   const [selected, setSelected] = useState(tickets[0]?.passengerId ?? '');
   const [names, setNames] = useState<Record<string, string>>({});
   const [ready, setReady] = useState(false);
@@ -73,6 +80,22 @@ export function ReservationTickets({
       active = false;
     };
   }, [request]);
+  useEffect(() => {
+    let active = true;
+    void passengerFilesRequest<PassengersResponse>(request.id, 'passengers')
+      .then(({ data }) => {
+        if (!active) return;
+        setPassengerNames(
+          Object.fromEntries(
+            data.map((passenger) => [passenger.id, passenger.displayName]),
+          ),
+        );
+      })
+      .catch(() => undefined);
+    return () => {
+      active = false;
+    };
+  }, [request.id]);
   async function print(all: boolean) {
     if (branding && (!logo || logoError)) {
       setWarning(logoError || 'در حال دریافت لوگو');

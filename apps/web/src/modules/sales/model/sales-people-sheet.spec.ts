@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { CustomerDetail, CustomerMutationRequest } from '@rubi/contracts';
+import type { CustomerDetail, CustomerMutationRequest } from '@nora/contracts';
 import { emptySalesForm, type SalesFormState } from './sales-form';
 import { CustomersApiError } from '@/modules/customers/public/entry';
 import {
@@ -65,6 +65,20 @@ const detail = (id: string, input: Partial<CustomerDetail> = {}) =>
     ...input,
   }) as CustomerDetail;
 describe('fixed Sales people-entry slots', () => {
+  it('defaults new contract passenger country fields to IRN while keeping them editable', () => {
+    expect(emptyPeopleValues()).toMatchObject({
+      nationalityCode: 'IRN',
+      passportIssuingCountryCode: 'IRN',
+      birthCountryCode: 'IRN',
+    });
+    expect(
+      peopleRow(initialSalesPeopleDraft(state), 'p0').values,
+    ).toMatchObject({
+      nationalityCode: 'IRN',
+      passportIssuingCountryCode: 'IRN',
+      birthCountryCode: 'IRN',
+    });
+  });
   it('never seeds an organization record into an empty passenger slot', () => {
     const agency = initialSalesPeopleDraft({
       ...emptySalesForm,

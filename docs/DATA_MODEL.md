@@ -1,5 +1,72 @@
 # مدل داده و ERD اولیه
 
+## TOUR-HOTEL-PRICING-FLOW-0916 — نوبت و مبالغ چندارزی
+
+Reservations rate packs and immutable batches have nullable restrictive
+`tourDepartureId` FKs to Ticket Catalog's `TourDeparture`. New UI packs require
+an explicit departure; legacy packs remain unassigned until the operator saves
+a linked revision. The producer checks branch, destination city and stay dates
+through `TourPublicService`. Sales queries only the exact departure's current
+batches, including the hotels selected in those batches.
+
+Drafts and published versions snapshot optional `familyAdults` and
+`familyChildren`. Published room rows add nullable `currencyAmounts` JSON:
+one object per currency with exact decimal-string purchase, sale, commission
+and profit. Scalar legacy package totals are populated only for a single
+currency; mixed currencies have no fabricated scalar sum. Hotel purchase/sale
+retain the hotel row currency. No historical price is rewritten or FX inferred.
+
+
+## PACKAGE-PRICING-001 — نرخ خرید بلیت مالی و قیمت منتشرشده تور (2026-09-15)
+
+`ProcurementTicketPurchaseRequest` برای درخواست‌های تازه می‌تواند بدون مبلغ/ارز
+ثبت شود و برای آفر واقعی، `offerId` یکتا با FK به `TicketPublishedOffer` و
+`offerVersion` دارد. مبلغ legacy کاتالوگ estimate است، نه خرید تأییدشده مالی.
+`FinanceTicketPurchaseCostRevision` قیمت خرید واحد بزرگسال/کودک، فاکتور، ارز،
+دلیل، actor و version را با FK درخواست/آفر/شعبه به‌صورت append-only ثبت می‌کند.
+`FinanceTicketPurchasePaymentRevision` مبلغ این پرداخت، جمع پرداخت، مانده،
+حساب، روش، نرخ به IRR، معادل ریال، زمان UTC، پیگیری و actor را immutable نگه
+می‌دارد. فقط آخرین revision با مانده صفر و status PAID به قرارداد عمومی فروش
+می‌رسد؛ یک estimate یا پرداخت جزئی به‌جای cost منتشر نمی‌شود.
+
+`PackagePricingTourDraft` با FK نوبت تور، batch خرید Reservations و شعبه، یک
+پیش‌نویس فعلی برای هر `(tourDepartureId,batchId)` و version optimistic دارد.
+مبالغ فروش پرواز و افزایش بیزینس Decimal+currency هستند. کمیسیون با mode صریح percent/fixed ذخیره می‌شود؛ حالت درصدی درصد Decimal و حالت ثابت مبلغ Decimal و ارز مستقل دارد.
+`PackagePricingTourAdjustment` با FK به ردیف نرخ خرید هتل، تغییر درصدی/ثابت
+هر گزینه را جدا ذخیره می‌کند. `PackagePricingTourPublishedVersion` append-only
+با FK پیش‌نویس، نرخ خرید مالی رفت/برگشت، ناشر و fingerprint منبع است؛
+`PackagePricingTourPublishedRoomPrice` با FK نسخه و ردیف هتل، مبلغ خرید/فروش
+اقامت و برای ترکیب‌های occupancy معلوم مبلغ خرید/فروش نهایی، کمیسیون و سود
+خالص Decimal را به ارز نسخه ذخیره می‌کند. نسخه و ردیف‌های منتشرشده UPDATE/DELETE
+نمی‌شوند؛ ویرایش پیش‌نویس فقط برای انتشار نسخهٔ تازه است. Family تا تعریف
+تعداد مسافر، packageSale/netProfit ندارد. مصرف جدول‌های دیگر فقط از سرویس عمومی
+مالک آن‌ها است؛ FKهای پایگاه برای یکپارچگی مرجع‌اند.
+
+## PROCUREMENT-BACKEND-CONNECTIONS-0916
+
+- `settings_procurement_approval_policies` artifact مصوب و نسخه‌دار سیاست خرید را با
+  scope شعبه، واحد، دسته و ارز نگه می‌دارد. هر نسخه مراحل تأیید، سقف‌ها و قواعد
+  استعلام/فوریت را snapshot می‌کند؛ Procurement فقط از سرویس عمومی Settings می‌خواند.
+- `automation_tasks` projection پایدار رخداد workflow است. کلید یکتای
+  source-module/event/assignee ایجاد دوباره را مهار می‌کند و وضعیت بسته‌شدن پرونده،
+  کار باز قبلی را در همان تراکنش تکمیل یا لغو می‌کند.
+- `finance_procurement_invoice_revisions` تصمیم و پرداخت‌های append-only فاکتور خرید
+  را با مبلغ و نرخ Decimal، حساب تسویه، روش پرداخت، Actor و نسخه نگه می‌دارد. Finance
+  مالک این جدول است؛ Procurement فقط contract نتیجه را دریافت و handoff خود را به‌روز
+  می‌کند. `finance_settlement_accounts` نیز چون مدل قبلی migration منتشرشده نداشت، در
+  migration همین واحد کار به‌صورت سازگار با پایگاه‌های قبلاً sync‌شده ایجاد می‌شود.
+- اصلاح مالی مرجوعی در outbox مالک Procurement با contract
+  `procurement.finance-correction.v1` ثبت می‌شود؛ تصمیم Finance در payload و دادهٔ همان
+  مرجوعی audit می‌شود و دسترسی مستقیم میان جدول‌های دو ماژول وجود ندارد.
+- `integration_supplier_messages` inbox پیام‌های امضاشدهٔ تأمین‌کننده را با شناسه
+  بیرونی یکتا نگه می‌دارد. intent خروجی در `procurement_outbox` باقی می‌ماند و adapter
+  با retry/idempotency آن را تحویل می‌دهد. Secret و payload حساس در این جدول ذخیره
+  نمی‌شوند.
+
+## TICKET-REPEAT-PURCHASE-0914
+
+Procurement owns `ProcurementTicketPurchaseRequest`: one current purchase request per branch and Ticket Catalog product reference. It stores a positive `Decimal(20,6)` amount, three-letter currency code, first service date, title and supplier snapshot, creator/idempotency audit, version and `PENDING/PAID/CANCELLED` status. A pending request may be revised in place with an incremented version; after Finance handles it the price is locked. Ticket Catalog and Finance use Procurement's public service and never query this table directly. Branch and creator have additive real FKs; the catalog product reference remains the producer's versioned public identifier. Historical ticket definitions without `serviceDate` remain readable and are not backfilled.
+
 ## WORKBENCH-036 — داده‌های شخصی و ارتباط‌های بک‌اند
 
 - `workbench_note_folders` و `workbench_notes` در مالکیت Workbench و با کلید
@@ -265,6 +332,16 @@ erDiagram
 
 ### Procurement
 
+- درخواست خرید، actor احرازشده را در `requesterUserId` برای scope و audit نگه
+  می‌دارد و کارمند انتخاب‌شده از دایرکتوری عمومی HR را در
+  `requesterEmployeeId` ثبت می‌کند. FK ترکیبی `(requesterEmployeeId, branchId)`
+  به `(HrEmployee.id, branchId)` مانع ارجاع بین‌شعبه‌ای است. رکوردهای قدیمی با
+  مقدار `NULL` سازگارند؛ واحد درخواست هنگام ایجاد/ارسال با واحد فعال کارمند
+  انتخاب‌شده تطبیق داده می‌شود. شعبه و محل تحویل از دایرکتوری عمومی Master Data
+  خوانده می‌شوند.
+- نقش `staff` فقط ثبت، ویرایش، ارسال و لغو درخواست خودش را دارد؛
+  `procurement_approver` و `procurement_buyer` برای تأیید و سفارش جدا هستند و
+  انتساب به افراد به‌صورت صریح انجام می‌شود.
 - Reservation از port عمومی Purchase Request را با contract/service/passenger/supplier و
   operation reference ایجاد می‌کند؛ Procurement مالک state و approval آن است.
 - Purchase Order Item می‌تواند به Contract Service Item متصل باشد؛ خرید عمومی اتصال قرارداد ندارد.
@@ -302,10 +379,24 @@ erDiagram
   Integrations باقی می‌ماند.
 - نوع هواپیما، کلاس پروازی، نوع قطار و نوع اتوبوس کاتالوگ‌های مشترک و مستقل از ناوگان،
   برنامه حرکت، قیمت و موجودی هستند. تخصیص اجرایی در Ticket Catalog/Reservations است.
+- عنوان قابل ورود و نمایش کلاس پروازی فقط `englishName` است و اجباری نگه‌داری می‌شود.
+  ستون غیرتهی `name` تا زمان Migration سازگاری حذف نمی‌شود و سرویس Master Data آن را
+  در هر ایجاد یا ویرایش عنوان، از همان `englishName` همگام می‌کند؛ عنوان فارسی از رابط،
+  ورودی API و خروجی Excel این کاتالوگ کنار گذاشته شده است.
 - قاعده بار تاریخچه مستقل با FK ایرلاین/کلاس، نوع مسافر، دامنه مسیر، Decimal مثبت، واحد،
   تعداد قطعه و بازه اعتبار دارد؛ رکورد استفاده‌شده حذف فیزیکی نمی‌شود.
-- قالب Manifest فقط ساختار و نسخه قالب را نگه می‌دارد. فایل فعال نیازمند UUID واقعی از
-  قرارداد Documents است؛ Manifest مسافر و تاریخچه ارسال در Reservations باقی می‌ماند.
+- `MasterManifestTemplate` قالب ورودی/خروجی Manifest را برای یک ایرلاین و مقصد شهری
+  مشخص می‌کند. هر قالب تازه با FK محدودکننده به `MasterAirline` و `MasterCity`، نسخه
+  افزایشی خودکار در محدوده ایرلاین، فرمت `XLSX` و وضعیت `DRAFT` ساخته می‌شود. فایل
+  اکسل در Master Data ذخیره نمی‌شود؛ باینری و نسخه فایل متعلق به Documents با نوع
+  `MANIFEST` است و Master Data فقط `fileReferenceId` را نگه می‌دارد. رکوردهای قدیمی
+  می‌توانند مقصد نداشته باشند، اما API ایجاد رکورد جدید مقصد فعال را الزامی می‌کند.
+  فعال‌سازی عملیاتی همچنان نیازمند فایل معتبر است؛ Manifest مسافر و تاریخچه ارسال در
+  Reservations باقی می‌ماند.
+- `MasterAirport` برای ایجاد فقط نام فارسی/انگلیسی، کشور، شهر و IATA را لازم دارد.
+  `icaoCode`، `ianaTimezone`، `latitude` و `longitude` مشخصات تکمیلی اختیاری‌اند؛ برای
+  داده موجود قابل نمایش و ویرایش می‌مانند، ولی فرم ایجاد آن‌ها را درخواست نمی‌کند و
+  Backend هیچ مقدار ساختگی برایشان تولید نمی‌کند.
 - مشخصات ایرلاینی مسافر شامل نام لاتین پاسپورت، جنسیت `M/F` و کد سه‌حرفی ملیت،
   کشور صادرکننده پاسپورت و کشور محل تولد در Customer نگه‌داری می‌شود. شماره پاسپورت
   همچنان رمزنگاری است و خواندن آن برای Manifest به مجوز حساس و Audit نیاز دارد.
@@ -425,3 +516,43 @@ Viewهای پیشنهادی: `reporting_sales_contract_facts` (یک ردیف/ق�
 
 واژه‌نامه entityها در [DATA_DICTIONARY.md](DATA_DICTIONARY.md) و KPIها در
 [KPI_DICTIONARY.md](KPI_DICTIONARY.md) است.
+# Package Pricing (PACKAGE-PRICING-001)
+
+`package_pricing_packages` ریشه branch-scoped و صادرکننده‌محور است. هر Package چند
+`package_pricing_departures` دارد و هر departure اجزای referenceشده، چند گزینه هتل/اتاق/خدمت،
+بازه‌های قیمت و نسخه‌های مستقل قیمت دارد. referenceهای بیرونی فقط UUID+version+snapshot هستند؛
+FKهای واقعی صرفاً بین ۱۳ جدول داخلی Package Pricing برقرارند.
+
+قواعد در `package_pricing_rules` با `(period_id, version, sequence)` یکتا می‌شوند. خروجی موتور
+در `package_pricing_price_versions` با Decimal(24,4)، currency، source/rule/fx snapshot و breakdown
+ذخیره می‌شود؛ `package_pricing_passenger_prices` رده‌های مسافر/اتاق را نگه می‌دارد. Trigger
+Migration هر update/delete نسخه `PUBLISHED` را رد می‌کند. Quote به همان Price Version متصل است
+تا تغییر آینده مبلغ قبلی را عوض نکند. Render Request به Package/Departure/Price/Template Version
+و Branding Snapshot وصل و تا حضور Worker در `AWAITING_RENDERER` باقی می‌ماند.
+
+## Reservations group hotel purchase-rate packs (HOTEL-RATE-PACKS-0915)
+
+`reservation_hotel_rate_packs` یک هویت پایدار برای بستهٔ شهر/بازهٔ خرید هتل در هر
+شعبه است؛ `branchId` و `cityId` FK واقعی و `checkIn/checkOut` تاریخ‌های جاری آن
+هستند. `currentVersion` با optimistic compare-and-swap بالا می‌رود. هر ثبت یا
+ویرایش، یک `ReservationHotelRateBatch` تازه با `packId`, `cityId`, `version`
+و snapshot مستقل تاریخ/ارز/مبنا می‌سازد؛ ردیف‌های
+`ReservationHotelGroupRate` قبلی و FKهای Package Pricing به آن‌ها تغییر نمی‌کنند.
+بسته‌های قدیمی بدون `packId/cityId` همچنان در سابقه قابل‌خواندن‌اند. فقط هتل‌های
+تیک‌خورده در نسخه نرخ خرید دارند و مرجع فعال/قابل‌فروش/هم‌شهر هر ردیف از قرارداد
+عمومی Master Data بازبینی می‌شود. تیک حضور در بازه تأیید کاربر است؛ این جدول
+موجودی واقعی اتاق به تفکیک شب یا قیمت فروش پایه Master Data نیست. Projection
+عمومی Reservations فقط نسخهٔ جاری بسته را برای قیمت‌گذاری تازه عرضه می‌کند؛
+snapshot قیمت‌های منتشرشدهٔ قبلی دست‌نخورده می‌ماند.
+
+## Master Data hotel base-rate periods
+
+`master_hotel_rate_periods` بازه جاری branch/city/check-in/check-out و شماره نسخه فعلی را
+نگه می‌دارد. هر ذخیره در `master_hotel_rate_period_versions` یک snapshot append-only از
+شهر، عنوان، تاریخ، تعداد شب، ارز، مبنای `ROOM_PER_NIGHT`، دلیل و actor می‌سازد.
+`master_hotel_base_rate_rows` تمام هتل‌های فعال همان شهر را با FK واقعی هتل، نسخه و نام
+snapshot، انتخاب حضور در تور، `Decimal(24,4)` مبلغ پایه nullable و شش ضریب Decimal-string
+در JSON نگه می‌دارد. هتل انتخاب‌شده باید مبلغ مثبت داشته باشد و هتل انتخاب‌نشده مبلغ ندارد.
+Trigger هر update/delete روی نسخه و ردیف را رد می‌کند؛ اصلاح فقط با نسخه جدید، optimistic
+locking و idempotency انجام می‌شود. این نرخ فروش پایه Master Data است و با نرخ خرید واقعی
+`ReservationHotelGroupRate` یکی نیست.

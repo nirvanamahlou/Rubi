@@ -1,7 +1,14 @@
 'use client';
 
 import type { ReactNode } from 'react';
+import { CircleHelp } from 'lucide-react';
 import { Input } from '@/components/ui/form-controls';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from '@/components/ui/overlays';
+import { cn } from '@/lib/utils';
 import {
   CustomerDateField,
   type CustomerCalendarMode,
@@ -66,13 +73,133 @@ const columns = [
   ['passportExpiryDate', 'انقضای پاسپورت', 'passport-expiry'],
   ['passportFirstName', 'نام لاتین پاسپورت *', 'passport-first-name'],
   ['passportLastName', 'نام خانوادگی لاتین *', 'passport-last-name'],
-  ['gender', 'جنسیت M/F *', 'gender'],
+  ['gender', 'جنسیت *', 'gender'],
   ['nationalityCode', 'ملیت ISO3 *', 'nationality'],
   ['passportIssuingCountryCode', 'کشور صادرکننده ISO3 *', 'passport-country'],
   ['birthCountryCode', 'کشور محل تولد ISO3 *', 'birth-country'],
   ['phone', 'تلفن', 'phone'],
   ['email', 'ایمیل', 'email'],
 ] as const;
+
+const iso3Countries = [
+  ['IRN', 'ایران'],
+  ['TUR', 'ترکیه'],
+  ['ARE', 'امارات متحده عربی'],
+  ['ARM', 'ارمنستان'],
+  ['AZE', 'جمهوری آذربایجان'],
+  ['GEO', 'گرجستان'],
+  ['IRQ', 'عراق'],
+  ['AFG', 'افغانستان'],
+  ['QAT', 'قطر'],
+  ['OMN', 'عمان'],
+  ['SAU', 'عربستان سعودی'],
+  ['KWT', 'کویت'],
+  ['BHR', 'بحرین'],
+  ['JOR', 'اردن'],
+  ['LBN', 'لبنان'],
+  ['SYR', 'سوریه'],
+  ['PAK', 'پاکستان'],
+  ['RUS', 'روسیه'],
+  ['KAZ', 'قزاقستان'],
+  ['UZB', 'ازبکستان'],
+  ['TKM', 'ترکمنستان'],
+  ['TJK', 'تاجیکستان'],
+  ['KGZ', 'قرقیزستان'],
+  ['IND', 'هند'],
+  ['CHN', 'چین'],
+  ['JPN', 'ژاپن'],
+  ['KOR', 'کره جنوبی'],
+  ['THA', 'تایلند'],
+  ['MYS', 'مالزی'],
+  ['SGP', 'سنگاپور'],
+  ['IDN', 'اندونزی'],
+  ['MDV', 'مالدیو'],
+  ['LKA', 'سری‌لانکا'],
+  ['DEU', 'آلمان'],
+  ['FRA', 'فرانسه'],
+  ['ITA', 'ایتالیا'],
+  ['ESP', 'اسپانیا'],
+  ['GRC', 'یونان'],
+  ['NLD', 'هلند'],
+  ['BEL', 'بلژیک'],
+  ['AUT', 'اتریش'],
+  ['CHE', 'سوئیس'],
+  ['SWE', 'سوئد'],
+  ['NOR', 'نروژ'],
+  ['DNK', 'دانمارک'],
+  ['FIN', 'فنلاند'],
+  ['POL', 'لهستان'],
+  ['CZE', 'جمهوری چک'],
+  ['HUN', 'مجارستان'],
+  ['ROU', 'رومانی'],
+  ['BGR', 'بلغارستان'],
+  ['CYP', 'قبرس'],
+  ['PRT', 'پرتغال'],
+  ['GBR', 'بریتانیا'],
+  ['IRL', 'ایرلند'],
+  ['USA', 'ایالات متحده آمریکا'],
+  ['CAN', 'کانادا'],
+  ['MEX', 'مکزیک'],
+  ['BRA', 'برزیل'],
+  ['ARG', 'آرژانتین'],
+  ['AUS', 'استرالیا'],
+  ['NZL', 'نیوزیلند'],
+  ['ZAF', 'آفریقای جنوبی'],
+  ['EGY', 'مصر'],
+  ['MAR', 'مراکش'],
+  ['TUN', 'تونس'],
+  ['KEN', 'کنیا'],
+  ['TZA', 'تانزانیا'],
+] as const;
+
+const iso3Fields: readonly EntryField[] = [
+  'nationalityCode',
+  'passportIssuingCountryCode',
+  'birthCountryCode',
+];
+
+function Iso3CountryGuide({ label }: { label: string }) {
+  const plainLabel = label.replace(' *', '');
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          className="inline-flex size-6 items-center justify-center rounded-md text-primary transition hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          aria-label={`راهنمای کد ISO3 برای ${plainLabel}`}
+          title="راهنمای کد کشورهای پرکاربرد"
+        >
+          <CircleHelp aria-hidden="true" className="size-4" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="w-64 p-0" sideOffset={6}>
+        <div className="border-b px-3 py-2" dir="rtl">
+          <p className="font-bold">راهنمای کد ISO3</p>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            کشورهای پرکاربرد در قراردادهای سفر
+          </p>
+        </div>
+        <div
+          className="max-h-64 overflow-y-auto p-1"
+          role="list"
+          aria-label="فهرست نام کشورها و کد ISO3"
+        >
+          {iso3Countries.map(([code, country]) => (
+            <div
+              key={code}
+              role="listitem"
+              className="flex items-center justify-between gap-3 rounded-lg px-3 py-1.5 odd:bg-muted/45"
+              dir="rtl"
+            >
+              <span>{country}</span>
+              <bdi className="font-mono font-bold text-primary">{code}</bdi>
+            </div>
+          ))}
+        </div>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
 
 export function CustomerEntrySheet({
   rows,
@@ -114,7 +241,12 @@ export function CustomerEntrySheet({
                   className="border-e p-3 text-start whitespace-nowrap"
                   key={field}
                 >
-                  {label}
+                  <span className="inline-flex items-center gap-1">
+                    {label}
+                    {iso3Fields.includes(field) ? (
+                      <Iso3CountryGuide label={label} />
+                    ) : null}
+                  </span>
                 </th>
               ))}
               <th scope="col" className="p-3 text-start">
@@ -137,7 +269,46 @@ export function CustomerEntrySheet({
                 </th>
                 {visibleColumns.map(([field, label, suffix]) => (
                   <td className="border-e p-1.5" key={field}>
-                    {field === 'birthDate' || field === 'passportExpiryDate' ? (
+                    {field === 'gender' ? (
+                      <div
+                        className="grid min-w-32 grid-cols-2 gap-1 rounded-lg bg-muted/60 p-1"
+                        role="radiogroup"
+                        aria-label={`جنسیت ${row.label}`}
+                      >
+                        {(
+                          [
+                            ['M', 'مرد'],
+                            ['F', 'زن'],
+                          ] as const
+                        ).map(([value, optionLabel]) => {
+                          const selected = row.values.gender === value;
+                          const genderDisabled = Boolean(
+                            disabled ||
+                            (row.readOnly &&
+                              !row.editableFields?.includes('gender')),
+                          );
+                          return (
+                            <button
+                              key={value}
+                              type="button"
+                              role="radio"
+                              aria-checked={selected}
+                              disabled={genderDisabled}
+                              className={cn(
+                                'h-8 rounded-md px-2 text-xs font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50',
+                                selected
+                                  ? 'bg-primary text-primary-foreground shadow-sm'
+                                  : 'bg-surface text-muted-foreground hover:text-foreground',
+                              )}
+                              onClick={() => row.onChange('gender', value)}
+                            >
+                              {optionLabel}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    ) : field === 'birthDate' ||
+                      field === 'passportExpiryDate' ? (
                       <CustomerDateField
                         compact
                         id={`${row.key}-${suffix}`}
@@ -167,7 +338,6 @@ export function CustomerEntrySheet({
                             'passportNumber',
                             'phone',
                             'email',
-                            'gender',
                             'nationalityCode',
                             'passportIssuingCountryCode',
                             'birthCountryCode',
@@ -190,15 +360,13 @@ export function CustomerEntrySheet({
                             ? 10
                             : field === 'passportNumber'
                               ? 24
-                              : field === 'gender'
-                                ? 1
-                                : [
-                                      'nationalityCode',
-                                      'passportIssuingCountryCode',
-                                      'birthCountryCode',
-                                    ].includes(field)
-                                  ? 3
-                                  : undefined
+                              : [
+                                    'nationalityCode',
+                                    'passportIssuingCountryCode',
+                                    'birthCountryCode',
+                                  ].includes(field)
+                                ? 3
+                                : undefined
                         }
                         minLength={field === 'nationalId' ? 10 : undefined}
                         onChange={(event) =>
@@ -209,7 +377,6 @@ export function CustomerEntrySheet({
                               : [
                                     'passportFirstName',
                                     'passportLastName',
-                                    'gender',
                                     'nationalityCode',
                                     'passportIssuingCountryCode',
                                     'birthCountryCode',
@@ -223,20 +390,18 @@ export function CustomerEntrySheet({
                             ? '[0-9۰-۹٠-٩]{10}'
                             : field === 'passportNumber'
                               ? '[A-Za-z0-9-]{4,24}'
-                              : field === 'gender'
-                                ? '[MF]'
-                                : [
-                                      'nationalityCode',
-                                      'passportIssuingCountryCode',
-                                      'birthCountryCode',
-                                    ].includes(field)
-                                  ? '[A-Z]{3}'
-                                  : field === 'passportFirstName' ||
-                                      field === 'passportLastName'
-                                    ? "[A-Za-z][A-Za-z '\\-]*"
-                                    : field === 'phone'
-                                      ? '\\+?[0-9]{10,15}'
-                                      : undefined
+                              : [
+                                    'nationalityCode',
+                                    'passportIssuingCountryCode',
+                                    'birthCountryCode',
+                                  ].includes(field)
+                                ? '[A-Z]{3}'
+                                : field === 'passportFirstName' ||
+                                    field === 'passportLastName'
+                                  ? "[A-Za-z][A-Za-z '\\-]*"
+                                  : field === 'phone'
+                                    ? '\\+?[0-9]{10,15}'
+                                    : undefined
                         }
                         required={[
                           'firstName',

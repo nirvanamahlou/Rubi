@@ -6,7 +6,7 @@ import {
   LEGAL_ENTITY_CONTEXT_ALL,
   type IamPermissionCode,
   type LegalEntitySelection,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 
 export type IssueTargetStrategy = 'prompt' | 'separate';
 

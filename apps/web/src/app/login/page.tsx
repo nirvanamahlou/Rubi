@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Image from 'next/image';
 import { Suspense } from 'react';
 
+import { LoginBackgroundStory } from './login-background-story';
 import { LoginForm } from './login-form';
 
 export const metadata: Metadata = { title: 'ورود امن' };
@@ -59,13 +60,10 @@ function CompanyLogos({ compact = false }: { compact?: boolean }) {
 export default function LoginPage() {
   return (
     <main
-      className="relative grid min-h-screen place-items-center bg-[url('/brand/login-airline-b2.png')] bg-cover bg-center px-4 py-10"
+      className="relative grid min-h-screen place-items-center overflow-hidden bg-sky-100 px-4 py-10"
       id="main-content"
     >
-      <div
-        aria-hidden="true"
-        className="absolute inset-0 bg-gradient-to-br from-sky-950/20 via-blue-950/5 to-white/10"
-      />
+      <LoginBackgroundStory />
       <section className="relative z-10 grid w-full max-w-5xl overflow-hidden rounded-3xl border border-white/50 bg-surface/95 shadow-2xl shadow-blue-950/20 backdrop-blur-sm lg:grid-cols-[1.1fr_1fr]">
         <div className="hidden bg-[linear-gradient(145deg,#123f8c,#092354)] p-12 text-white lg:flex lg:flex-col lg:justify-between">
           <CompanyLogos />

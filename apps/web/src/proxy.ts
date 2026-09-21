@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 
-const ACCESS_COOKIE = 'rubi_access';
+const ACCESS_COOKIE = 'nora_access';
 
 export function proxy(request: NextRequest) {
   if (request.nextUrl.pathname === '/human-resources') {
@@ -27,5 +27,7 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|brand/).*)'],
+  matcher: [
+    '/((?!_next/static|_next/image|favicon.ico|brand/|images/dashboard-headers/).*)',
+  ],
 };

@@ -3,7 +3,7 @@ import { useState } from 'react';
 import type {
   ReservationIntakeV1,
   TravelWorkflowStateV1,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -15,7 +15,15 @@ import { travelRequest } from '@/modules/reservations/components/travel-workflow
 import { TravelDocument } from '@/modules/reservations/components/travel-document';
 import { ReservationTickets } from '@/modules/reservations/components/reservation-tickets';
 type Intake = ReservationIntakeV1 & { workflow: TravelWorkflowStateV1 };
-export function SalesTravelDocuments({ contractId }: { contractId: string }) {
+export function SalesTravelDocuments({
+  contractId,
+  className,
+  label = 'مدارک مسافر · تأیید مالی',
+}: {
+  contractId: string;
+  className?: string;
+  label?: string;
+}) {
   const [intake, setIntake] = useState<Intake>();
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
@@ -44,10 +52,11 @@ export function SalesTravelDocuments({ contractId }: { contractId: string }) {
       <Button
         size="sm"
         variant="outline"
+        className={className}
         disabled={busy}
         onClick={() => void load()}
       >
-        مدارک مسافر · تأیید مالی
+        {label}
       </Button>
       {error && (
         <p role="alert" className="text-sm text-destructive">

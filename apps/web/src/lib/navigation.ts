@@ -1,6 +1,5 @@
 import {
   BarChart3,
-  BadgeDollarSign,
   Building2,
   CalendarCheck2,
   CircleDollarSign,
@@ -30,7 +29,7 @@ import { normalizeSection, screenMeta } from '../modules/hr/hr.model';
 import { marketingSections } from '../modules/marketing/model/reference-data';
 import { getMasterDataSection } from '../modules/master-data/model/sections';
 
-export const MARKETING_SECTION_CHANGE_EVENT = 'rubi:marketing-section-change';
+export const MARKETING_SECTION_CHANGE_EVENT = 'nora:marketing-section-change';
 
 export interface HrBreadcrumbLocation {
   sectionKey: string | null;
@@ -46,7 +45,6 @@ const iconByHref: Record<NavigationHref, LucideIcon> = {
   '/reservations/hotel-rates': Building2,
   '/ticket-management': Ticket,
   '/sales': Handshake,
-  '/pricing-management': BadgeDollarSign,
   '/purchases': PackageSearch,
   '/finance': CircleDollarSign,
   '/finance/requests': Inbox,
@@ -79,7 +77,6 @@ export const navigationGroups = [
     title: 'فروش و ارتباط با مشتری',
     hrefs: [
       '/sales',
-      '/pricing-management',
       '/customers',
       '/customer-affairs',
       '/organizations',
@@ -96,13 +93,13 @@ export const navigationGroups = [
     id: 'finance',
     dotClass: 'bg-[#f7d184]',
     title: 'مالی',
-    hrefs: ['/finance', '/finance/requests', '/purchases'],
+    hrefs: ['/finance', '/finance/requests'],
   },
   {
     id: 'hr',
     dotClass: 'bg-[#d4b4fc]',
     title: 'سرمایه انسانی',
-    hrefs: ['/human-resources'],
+    hrefs: ['/human-resources', '/purchases'],
   },
   {
     id: 'resources',
@@ -114,7 +111,7 @@ export const navigationGroups = [
     id: 'system',
     dotClass: 'bg-[#94a3b8]',
     title: 'تنظیمات شرکت',
-    hrefs: ['/master-data', '/integrations', '/system'],
+    hrefs: ['/system', '/master-data', '/integrations'],
   },
 ] as const satisfies readonly {
   id: string;
@@ -132,7 +129,17 @@ export const groupedNavigationItems = navigationGroups.map((group) => ({
   ),
 }));
 
+/** A second-level Sales module, separate from the seventeen primary destinations. */
+export const salesPricingSubsection = {
+  href: '/sales/pricing',
+  title: 'مدیریت قیمت و پکیج‌ها',
+} as const;
+
 export const navigationAliases = {
+  '/sales/pricing': {
+    parentHref: '/sales',
+    title: 'مدیریت قیمت و پکیج‌ها',
+  },
   '/sales/contracts/new': {
     parentHref: '/sales',
     title: 'قرارداد جدید',

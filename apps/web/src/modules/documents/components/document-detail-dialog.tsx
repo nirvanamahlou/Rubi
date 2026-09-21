@@ -15,7 +15,7 @@ import {
   Star,
   Trash2,
 } from 'lucide-react';
-import type { DocumentAuditEventV1, DocumentDetailV1 } from '@rubi/contracts';
+import type { DocumentAuditEventV1, DocumentDetailV1 } from '@nora/contracts';
 import { useState } from 'react';
 
 import {

@@ -30,12 +30,18 @@ export function reservationPdfHtml(
   let first = 0;
   const sheets = pages
     .map((people, index) => {
-      const rows = people.map((p, i) => [
-        String(first + i + 1).padStart(2, '0'),
-        p.name,
-        p.sex,
-        p.age,
-      ]);
+      const rows = people.map((p, i) => {
+        return [
+          String(first + i + 1).padStart(2, '0'),
+          p.name,
+          p.sex,
+          p.age === 'CHD (2-6)'
+            ? 'CHD 2-6'
+            : p.age === 'CHD (6-12)'
+              ? 'CHD 6-12'
+              : p.age,
+        ];
+      });
       first += people.length;
       return `<article class="page" dir="ltr"><header class="header"><div><h1>RESERVATION FORM</h1><p>TRAVEL SERVICES / HOTEL / TRANSFER / TOUR LEADER</p></div><div class="brand"><img class="${intake.workflow.branding?.kind === 'OWN' ? 'logo' : 'agencyLogo'}" src="${logo}" alt=""/></div></header>
     ${fields(
@@ -50,7 +56,11 @@ export function reservationPdfHtml(
     ${heading('01', 'BOOKING SUMMARY', 'Reservation details')}${fields(
       [
         ['ADULTS', data.adults],
-        ['CHILDREN', data.children],
+        ['CHILDREN 6-12', data.children6To12],
+        ['CHILDREN 2-6', data.children2To6],
+        ...(data.childrenUnclassified
+          ? [['CHILDREN (UNSPECIFIED)', data.childrenUnclassified]]
+          : []),
         ['INFANTS', data.infants],
         ['DESTINATION', data.destination],
         ['ROOMS / NIGHTS', `${data.rooms} ROOMS / ${data.nights} NIGHTS`],

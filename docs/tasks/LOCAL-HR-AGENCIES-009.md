@@ -23,7 +23,7 @@ The owner requests the latest Agencies workspace on the same local application a
 From this checkout, after building the API:
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File infrastructure/scripts/start-hr-local.ps1 -Build -Port 3100 -ApiPort 4190 -ApiEnvFile C:/Users/admin/Rubi-hr-foundation/apps/api/.env -DatabaseName rubi_hr_current_20260908 -DocumentStorageRoot C:/Users/admin/AppData/Local/Rubi/hr007-documents
+powershell -NoProfile -ExecutionPolicy Bypass -File infrastructure/scripts/start-hr-local.ps1 -Build -Port 3100 -ApiPort 4190 -ApiEnvFile C:/Users/admin/Nora-hr-foundation/apps/api/.env -DatabaseName nora_hr_current_20260908 -DocumentStorageRoot C:/Users/admin/AppData/Local/Nora/hr007-documents
 ```
 
 Use `http://localhost:3100/organizations` and `http://localhost:3100/hr`. The independent HR-007 database/document snapshot is retained. Other checkouts, API4000, original databases and user passwords are not replaced. Credentials and temporary QA artifacts must remain outside Git.

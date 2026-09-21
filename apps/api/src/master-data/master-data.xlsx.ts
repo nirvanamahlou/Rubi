@@ -1,4 +1,4 @@
-import type { MasterDataRecord, MasterDataResource } from '@rubi/contracts';
+import type { MasterDataRecord, MasterDataResource } from '@nora/contracts';
 import { strToU8, zipSync } from 'fflate';
 
 export const MASTER_DATA_XLSX_MIME =
@@ -36,6 +36,7 @@ const columnLabels: Readonly<Record<string, string>> = {
   icaoCode: 'کد ICAO',
   manufacturer: 'سازنده',
   model: 'مدل',
+  manufacturerModel: 'سازنده و مدل',
   bodyType: 'نوع بدنه',
   bookingCode: 'کد رزرو',
   cabinType: 'کابین',
@@ -211,13 +212,24 @@ function recordValue(
 ): string | number {
   if (column === 'code') return record.code;
   if (column === 'name') return record.name;
+  if (column === 'manufacturerModel')
+    return [record.attributes.manufacturer, record.attributes.model]
+      .filter((value) => value !== null && value !== undefined && value !== '')
+      .join(' / ');
   if (column === 'status')
-    return record.resource === 'meal-services' && record.attributes.isUnderReview === true
+    return record.resource === 'meal-services' &&
+      record.attributes.isUnderReview === true
       ? 'در حال بررسی'
-      : record.status === 'active' ? 'فعال' : 'غیرفعال';
+      : record.status === 'active'
+        ? 'فعال'
+        : 'غیرفعال';
   if (column === 'transportStatus') {
     const status = record.attributes.transportStatus;
-    return status === 'UNDER_REVIEW' ? 'در حال بررسی' : status === 'ACTIVE' ? 'فعال' : 'غیرفعال';
+    return status === 'UNDER_REVIEW'
+      ? 'در حال بررسی'
+      : status === 'ACTIVE'
+        ? 'فعال'
+        : 'غیرفعال';
   }
   if (column === 'updatedAt')
     return formatter.format(new Date(record.updatedAt));

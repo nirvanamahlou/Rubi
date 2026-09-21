@@ -3,7 +3,7 @@ import type {
   AuthenticatedActor,
   WorkbenchCalendarEventInputV1,
   WorkbenchNoteInputV1,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import { describe, expect, it, vi } from 'vitest';
 
 import { WorkbenchService } from './workbench.service';
@@ -19,16 +19,19 @@ function service(
   client: Record<string, unknown>,
   documents = {},
   customerAffairs = { workbench: vi.fn().mockResolvedValue({ data: [] }) },
+  iam = {
+    recordSelfActivity: vi.fn(),
+    personalProfile: vi.fn(),
+    updateOwnProfile: vi.fn(),
+  },
+  settings?: unknown,
 ) {
   return new WorkbenchService(
     { client } as never,
     documents as never,
-    {
-      recordSelfActivity: vi.fn(),
-      personalProfile: vi.fn(),
-      updateOwnProfile: vi.fn(),
-    } as never,
+    iam as never,
     customerAffairs as never,
+    settings as never,
   );
 }
 
@@ -108,6 +111,37 @@ describe('WorkbenchService backend boundaries', () => {
     );
   });
 
+  it('uses the published workspace priority when the creator leaves it empty', async () => {
+    const create = vi.fn().mockResolvedValue({
+      id: '66666666-6666-4666-8666-666666666666',
+      userId: actor.userId,
+      ...event,
+      dueAt: new Date(event.dueAt),
+      status: 'PLANNED',
+      priority: 'URGENT',
+      linkUrl: null,
+      imageDocumentId: null,
+      version: 1,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+    const settings = {
+      json: vi.fn().mockResolvedValue({ value: { priority: 'فوری' } }),
+    };
+    await service(
+      { workbenchCalendarEvent: { create } },
+      {},
+      undefined,
+      undefined,
+      settings,
+    ).createEvent(event, actor);
+    expect(create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ priority: 'URGENT' }),
+      }),
+    );
+  });
+
   it('enforces optimistic concurrency for persisted notes', async () => {
     const note: WorkbenchNoteInputV1 = {
       title: 'یادداشت',
@@ -133,5 +167,51 @@ describe('WorkbenchService backend boundaries', () => {
         actor,
       ),
     ).rejects.toBeInstanceOf(ConflictException);
+  });
+
+  it('routes profile photo uploads through the Documents owner boundary', async () => {
+    const uploadOwnProfilePhoto = vi.fn().mockResolvedValue({
+      id: '44444444-4444-4444-8444-444444444444',
+      scanStatus: 'PENDING_SCAN',
+    });
+    const file = {
+      buffer: Buffer.from([137, 80, 78, 71]),
+      mimetype: 'image/png',
+      originalname: 'profile.png',
+      size: 4,
+    };
+    const result = await service(
+      {},
+      { uploadOwnProfilePhoto },
+    ).uploadProfilePhoto(
+      { branchId: actor.branchIds[0]!, title: 'عکس پروفایل' },
+      file,
+      actor,
+      { ipAddress: '127.0.0.1' },
+    );
+    expect(uploadOwnProfilePhoto).toHaveBeenCalledWith(
+      { branchId: actor.branchIds[0]!, title: 'عکس پروفایل' },
+      file,
+      actor,
+      { ipAddress: '127.0.0.1' },
+    );
+    expect(result.data.id).toBe('44444444-4444-4444-8444-444444444444');
+  });
+
+  it('loads the stored profile photo through the Documents owner boundary', async () => {
+    const documentId = '44444444-4444-4444-8444-444444444444';
+    const previewOwnProfilePhoto = vi
+      .fn()
+      .mockResolvedValue({ stream: 'file' });
+    const personalProfile = vi.fn().mockResolvedValue({
+      profile: { photoDocumentId: documentId },
+    });
+    await service({}, { previewOwnProfilePhoto }, undefined, {
+      recordSelfActivity: vi.fn(),
+      personalProfile,
+      updateOwnProfile: vi.fn(),
+    }).profilePhoto(actor, {});
+    expect(personalProfile).toHaveBeenCalledWith(actor.userId);
+    expect(previewOwnProfilePhoto).toHaveBeenCalledWith(documentId, actor, {});
   });
 });

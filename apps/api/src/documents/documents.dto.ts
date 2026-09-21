@@ -26,7 +26,7 @@ import type {
   DocumentDomainCode,
   DocumentSortCode,
   DocumentValidityFilter,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import {
   DOCUMENT_ARCHIVE_STATUS_CODES,
   DOCUMENT_ACCESS_PURPOSE_CODES,
@@ -34,7 +34,7 @@ import {
   DOCUMENT_DOMAIN_CODES,
   DOCUMENT_PERSONAL_VIEW_CODES,
   DOCUMENT_SCAN_STATUS_CODES,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 
 const emptyToUndefined = ({ value }: { value: unknown }) =>
   typeof value === 'string' && value.trim() === '' ? undefined : value;

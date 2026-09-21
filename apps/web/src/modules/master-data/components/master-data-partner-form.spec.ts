@@ -1,6 +1,6 @@
 import { createElement, type ReactNode } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import type { MasterDataRecord } from '@rubi/contracts';
+import type { MasterDataRecord } from '@nora/contracts';
 import { describe, expect, it, vi } from 'vitest';
 
 // SSR exercises the real fields; only browser-mounted dialog portals are replaced.
@@ -17,40 +17,83 @@ vi.mock('@/components/ui/overlays', () => {
 import { getMasterDataDefinition } from '../model/catalog';
 import { MasterDataLiveForm } from './master-data-live-form';
 
-function render(resource: 'suppliers' | 'brokers' | 'organizations', mode: 'create' | 'edit' | 'view' = 'create') {
+function render(
+  resource: 'suppliers' | 'brokers' | 'organizations',
+  mode: 'create' | 'edit' | 'view' = 'create',
+) {
   const record: MasterDataRecord = {
-    id: 'partner-test', resource, code: 'PARTNER_TEST', name: 'آزمون',
-    version: 2, status: 'active', createdAt: '2026-08-31T00:00:00Z', updatedAt: '2026-08-31T00:00:00Z',
-    attributes: { englishName: 'Test Partner', organizationId: 'test-org', personType: 'LEGAL', serviceCodes: 'HOTEL,FLIGHT' },
+    id: 'partner-test',
+    resource,
+    code: 'PARTNER_TEST',
+    name: 'آزمون',
+    version: 2,
+    status: 'active',
+    createdAt: '2026-08-31T00:00:00Z',
+    updatedAt: '2026-08-31T00:00:00Z',
+    attributes: {
+      englishName: 'Test Partner',
+      organizationId: 'test-org',
+      personType: 'LEGAL',
+      serviceCodes: 'HOTEL,FLIGHT',
+    },
   };
-  return renderToStaticMarkup(createElement(MasterDataLiveForm, {
-    definition: getMasterDataDefinition(resource), mode, open: true,
-    ...(mode !== 'create' ? { record } : {}),
-    onOpenChange: () => undefined, onPersist: async () => undefined,
-  }));
+  return renderToStaticMarkup(
+    createElement(MasterDataLiveForm, {
+      definition: getMasterDataDefinition(resource),
+      mode,
+      open: true,
+      ...(mode !== 'create' ? { record } : {}),
+      onOpenChange: () => undefined,
+      onPersist: async () => undefined,
+    }),
+  );
 }
 
 describe('real partner form fields', () => {
-  it.each(['suppliers', 'brokers'] as const)('renders English name, multi-service selection and scoped contact for %s', (resource) => {
-    const html = render(resource);
-    expect(html).toContain(`id="live-${resource}-englishName"`);
-    expect(html).toContain('خدمات قابل ارائه');
-    expect(html).toContain('aria-multiselectable="true"');
-    expect(html).toContain('تماس اصلی');
-    expect(html).toContain('ابتدا سازمان را انتخاب کنید.');
-    expect(html).toContain('افزودن سازمان');
-    expect(html).toContain('افزودن خدمت');
-    expect(html.match(/<form\b/g)).toHaveLength(1);
-  });
-  it.each(['suppliers', 'brokers'] as const)('keeps saved English name and enables contact popup only after organization selection for %s', (resource) => {
-    const html = render(resource, 'edit');
-    expect(html).toContain('value="Test Partner"');
-    expect(html).toContain('افزودن مخاطب');
-    expect(html).not.toContain('ابتدا سازمان را انتخاب کنید.');
-    expect(html).toContain('پاک‌کردن خدمات قابل ارائه');
-    expect(html).not.toContain('type="tel"');
-    expect(html).not.toContain('purchaseLimit');
-  });
+  it.each(['suppliers', 'brokers'] as const)(
+    'renders partner identity, multi-service selection and scoped contact for %s',
+    (resource) => {
+      const html = render(resource);
+      if (resource === 'suppliers') {
+        expect(html).toContain('id="live-suppliers-name"');
+        expect(html).not.toContain('id="live-suppliers-englishName"');
+        expect(html).not.toContain('id="live-suppliers-countryId"');
+        expect(html).not.toContain('id="live-suppliers-cityId"');
+      } else {
+        expect(html).toContain('id="live-brokers-englishName"');
+      }
+      expect(html).toContain('خدمات قابل ارائه');
+      expect(html).toContain('aria-multiselectable="true"');
+      if (resource === 'suppliers') {
+        expect(html).not.toContain('سازمان تأمین‌کننده');
+        expect(html).toContain('تماس اصلی');
+        expect(html).not.toContain('ثبت سازمان جدید');
+      } else {
+        expect(html).toContain('تماس اصلی');
+        expect(html).toContain('ابتدا سازمان را انتخاب کنید.');
+        expect(html).toContain('>ثبت سازمان جدید</button>');
+      }
+      expect(html).toContain('افزودن خدمت');
+      expect(html.match(/<form\b/g)).toHaveLength(1);
+    },
+  );
+  it.each(['suppliers', 'brokers'] as const)(
+    'keeps saved English name and enables contact popup only after organization selection for %s',
+    (resource) => {
+      const html = render(resource, 'edit');
+      if (resource === 'suppliers') {
+        expect(html).not.toContain('value="Test Partner"');
+        expect(html).not.toContain('افزودن مخاطب');
+      } else {
+        expect(html).toContain('value="Test Partner"');
+        expect(html).toContain('افزودن مخاطب');
+        expect(html).not.toContain('ابتدا سازمان را انتخاب کنید.');
+      }
+      expect(html).toContain('پاک‌کردن خدمات قابل ارائه');
+      expect(html).not.toContain('type="tel"');
+      expect(html).not.toContain('purchaseLimit');
+    },
+  );
   it('keeps the identity selector on the shared organization editor', () => {
     const html = render('organizations', 'edit');
     expect(html).toContain('نوع شخصیت');

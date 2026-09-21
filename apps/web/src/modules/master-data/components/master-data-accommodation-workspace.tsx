@@ -11,7 +11,7 @@ import type {
   MasterDataRecord,
   MasterDataResource,
   MasterDataStatus,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import {
   ArrowRight,
   BedDouble,
@@ -32,6 +32,7 @@ import {
   Search,
   ShieldCheck,
   Sparkles,
+  TableProperties,
   Upload,
   Users,
   UtensilsCrossed,
@@ -1423,12 +1424,20 @@ export function MasterDataAccommodationWorkspace() {
     <div className="space-y-5">
       <PageHeader
         actions={
-          <Link
-            className={`${buttonVariants({ variant: 'outline' })} ms-auto`}
-            href="/master-data"
-          >
-            <ArrowRight className="size-4" /> همه بخش‌ها
-          </Link>
+          <>
+            <Link
+              className={`${buttonVariants({ variant: 'primary' })} ms-auto`}
+              href="/master-data/accommodation/hotel-rates"
+            >
+              <TableProperties className="size-4" /> قیمت‌گذاری هتل‌ها
+            </Link>
+            <Link
+              className={buttonVariants({ variant: 'outline' })}
+              href="/master-data"
+            >
+              <ArrowRight className="size-4" /> همه بخش‌ها
+            </Link>
+          </>
         }
         description={current.description}
         title={current.title}

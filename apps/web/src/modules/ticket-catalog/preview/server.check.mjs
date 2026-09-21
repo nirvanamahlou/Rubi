@@ -27,7 +27,7 @@ const apiPort = await listen(
       body,
     });
     if (req.url === '/api/v1/auth-cookie-test') {
-      // Synthetic transport fixture only, never connected to Rubi or used to authenticate it.
+      // Synthetic transport fixture only, never connected to Nora or used to authenticate it.
       res.setHeader('set-cookie', [
         'transport_a=synthetic; HttpOnly; SameSite=Lax',
         'transport_b=synthetic; HttpOnly',

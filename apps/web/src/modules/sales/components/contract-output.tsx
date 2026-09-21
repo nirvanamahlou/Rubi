@@ -3,7 +3,7 @@ import { useRef, useState } from 'react';
 import type {
   MasterDataResource,
   SalesContractOutputV1,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -70,7 +70,15 @@ export async function loadContractPrint(id: string) {
   return { output, html: contractPrintHtml(output, refs), warnings };
 }
 
-export function ContractOutputButton({ contractId }: { contractId: string }) {
+export function ContractOutputButton({
+  contractId,
+  className,
+  label = 'خروجی قرارداد / PDF',
+}: {
+  contractId: string;
+  className?: string;
+  label?: string;
+}) {
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [ready, setReady] = useState(false);
@@ -159,8 +167,13 @@ export function ContractOutputButton({ contractId }: { contractId: string }) {
   }
   return (
     <>
-      <Button size="sm" variant="outline" onClick={() => void load()}>
-        خروجی قرارداد / PDF
+      <Button
+        size="sm"
+        variant="outline"
+        className={className}
+        onClick={() => void load()}
+      >
+        {label}
       </Button>
       <Dialog
         open={open}

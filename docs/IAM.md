@@ -1,7 +1,7 @@
 # قرارداد IAM
 
 نسخه عمومی جاری Permission Contract برابر `4` است. کدهای IAM، Master Data، Customers و
-Legal Entity از `@rubi/contracts` منتشر می‌شوند. فهرست قطعی در `IAM_PERMISSION_CODES` و
+Legal Entity از `@nora/contracts` منتشر می‌شوند. فهرست قطعی در `IAM_PERMISSION_CODES` و
 گروه‌های دامنه قرار دارد؛ `LEGAL_ENTITY_AUTHENTICATED_BASELINE_PERMISSION_CODES` فقط
 `legal-entity.read/switch` را برای هر کاربر فعال دارای نشست معتبر baseline می‌کند.
 
@@ -9,7 +9,7 @@ Legal Entity از `@rubi/contracts` منتشر می‌شوند. فهرست قط�
 
 IAM تنها مالک هویت کاربر، نشست، نقش، مجوز، نگاشت کاربر به شعبه و Audit امنیتی است.
 مصرف‌کننده‌ها فقط از `AuthenticatedActor`، `IamPermissionCode` و `BranchReference` در
-`@rubi/contracts` و Guardهای عمومی API استفاده می‌کنند؛ import از repository، Prisma model
+`@nora/contracts` و Guardهای عمومی API استفاده می‌کنند؛ import از repository، Prisma model
 یا جدول داخلی IAM ممنوع است.
 
 `Branch` در Migration نخست فقط reference پایه با `id`، `code`، `name` و `isActive` است.
@@ -38,19 +38,19 @@ password یا token خامی در metadata ثبت نمی‌شود.
 
 ## راه‌اندازی امن
 
-1. Migration را deploy و `pnpm --filter @rubi/database db:seed` را اجرا کنید؛ Seed قابل
+1. Migration را deploy و `pnpm --filter @nora/database db:seed` را اجرا کنید؛ Seed قابل
    تکرار فقط permission، نقش سیستمی و reference شعبه مرکزی را می‌سازد.
 2. سه مقدار `IAM_BOOTSTRAP_ADMIN_USERNAME`، `IAM_BOOTSTRAP_ADMIN_PASSWORD` و
    `IAM_BOOTSTRAP_ADMIN_NAME`، ایمیل اختیاری و یک `IAM_ACCESS_TOKEN_SECRET` تصادفی حداقل ۳۲ نویسه‌ای را
    فقط در Environment تنظیم کنید.
-3. `pnpm --filter @rubi/api iam:bootstrap-admin` را یک‌بار اجرا و بلافاصله مقادیر bootstrap
+3. `pnpm --filter @nora/api iam:bootstrap-admin` را یک‌بار اجرا و بلافاصله مقادیر bootstrap
    را از Environment حذف کنید. فرمان idempotent است و هیچ رمز پیش‌فرضی در Git ندارد.
    اجرای دوباره برای نام کاربری موجود، رمز، وضعیت و شمارنده خطای ورود را تغییر نمی‌دهد؛
    تغییر رمز فقط باید از جریان صریح مدیریت کاربر انجام شود.
 
 ## Handoff به PC-B
 
-- Contract عمومی version فعلی: `@rubi/contracts` در همین PR؛ actor شامل `userId`،
+- Contract عمومی version فعلی: `@nora/contracts` در همین PR؛ actor شامل `userId`،
   `sessionId`، `permissions` و `branchIds` است.
 - PC-B می‌تواند `BranchReference` و permission codeهای منتشرشده را مصرف کند، اما جدول‌های
   `iam_*` را مستقیم query نمی‌کند.

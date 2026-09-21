@@ -7,7 +7,7 @@ const require = createRequire(import.meta.url);
 require('reflect-metadata');
 const { ConfigService } = require('@nestjs/config');
 const { JwtService } = require('@nestjs/jwt');
-const { createDatabaseClient } = require('@rubi/database');
+const { createDatabaseClient } = require('@nora/database');
 const {
   MasterDataRepository,
 } = require('../dist/master-data/master-data.repository.js');
@@ -37,7 +37,7 @@ const [mode, databaseName, actorId, branchId] = process.argv.slice(2);
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 if (
   !['--preview', '--apply'].includes(mode) ||
-  !/^rubi_hr_current_\d{8}$/.test(databaseName ?? '') ||
+  !/^nora_hr_current_\d{8}$/.test(databaseName ?? '') ||
   !uuid.test(actorId ?? '') ||
   !uuid.test(branchId ?? '') ||
   process.argv.length !== 6

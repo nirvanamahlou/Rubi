@@ -3,7 +3,7 @@ import {
   voucherNumberKeys,
   voucherFlagKeys,
   type VoucherSettingsV1,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 export function validateVoucherSettings(
   value: unknown,
   passengerIds: readonly string[],
@@ -16,6 +16,12 @@ export function validateVoucherSettings(
   if (!value || typeof value !== 'object') return fail();
   const v = value as VoucherSettingsV1;
   if (!v.text || !v.numbers || !v.flags || !Array.isArray(v.passengers))
+    return fail();
+  if (
+    v.text.contractPartyName !== undefined &&
+    (typeof v.text.contractPartyName !== 'string' ||
+      v.text.contractPartyName.length > 200)
+  )
     return fail();
   for (const key of voucherTextKeys)
     if (
@@ -70,7 +76,14 @@ export function validateVoucherSettings(
         typeof p.selected !== 'boolean' ||
         typeof p.roomType !== 'string' ||
         p.roomType.length > 100 ||
-        !['ADL', 'CHD', 'INF'].includes(p.age),
+        !['ADL', 'CHD', 'INF'].includes(p.age) ||
+        (p.age === 'CHD'
+          ? p.selected
+            ? !['CHD_2_TO_6', 'CHD_6_TO_12'].includes(p.hotelChildAgeBand ?? '')
+            : ![undefined, '', 'CHD_2_TO_6', 'CHD_6_TO_12'].includes(
+                p.hotelChildAgeBand,
+              )
+          : ![undefined, ''].includes(p.hotelChildAgeBand)),
     )
   )
     return fail();
@@ -93,9 +106,14 @@ export function validateVoucherSettings(
       return fail();
   }
   return {
-    text: Object.fromEntries(
-      voucherTextKeys.map((k) => [k, v.text[k].trim()]),
-    ) as VoucherSettingsV1['text'],
+    text: {
+      ...(Object.fromEntries(
+        voucherTextKeys.map((k) => [k, v.text[k].trim()]),
+      ) as VoucherSettingsV1['text']),
+      ...(v.text.contractPartyName !== undefined
+        ? { contractPartyName: v.text.contractPartyName.trim() }
+        : {}),
+    },
     numbers: Object.fromEntries(
       voucherNumberKeys.map((k) => [k, v.numbers[k]]),
     ) as VoucherSettingsV1['numbers'],
@@ -107,6 +125,7 @@ export function validateVoucherSettings(
       selected: p.selected,
       roomType: p.roomType.trim(),
       age: p.age,
+      hotelChildAgeBand: p.hotelChildAgeBand ?? '',
       sex: p.sex ?? '',
       birthDate: p.birthDate ?? '',
       documentNumber: p.documentNumber?.trim() ?? '',

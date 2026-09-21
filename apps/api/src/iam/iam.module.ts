@@ -6,6 +6,7 @@ import { AuthController } from './auth.controller';
 import { AuditController } from './audit.controller';
 import { AuthGuard } from './auth.guard';
 import { IamService } from './iam.service';
+import { IamProcurementDirectory } from './iam-procurement-directory';
 import { IAM_STEP_UP_PORT } from './iam-step-up.port';
 import { MfaTotpService } from './mfa-totp';
 import { PermissionGuard } from './permission.guard';
@@ -18,8 +19,8 @@ import { UsersController } from './users.controller';
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
         secret: config.getOrThrow<string>('IAM_ACCESS_TOKEN_SECRET'),
-        signOptions: { issuer: 'rubi-api', audience: 'rubi-web' },
-        verifyOptions: { issuer: 'rubi-api', audience: 'rubi-web' },
+        signOptions: { issuer: 'nora-api', audience: 'nora-web' },
+        verifyOptions: { issuer: 'nora-api', audience: 'nora-web' },
       }),
     }),
   ],
@@ -30,12 +31,13 @@ import { UsersController } from './users.controller';
     AuditController,
   ],
   providers: [
+    IamProcurementDirectory,
     IamService,
     MfaTotpService,
     AuthGuard,
     PermissionGuard,
     { provide: IAM_STEP_UP_PORT, useExisting: IamService },
   ],
-  exports: [IamService, IAM_STEP_UP_PORT],
+  exports: [IamService, IAM_STEP_UP_PORT, IamProcurementDirectory],
 })
 export class IamModule {}

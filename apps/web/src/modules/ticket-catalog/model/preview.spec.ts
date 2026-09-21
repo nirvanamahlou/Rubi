@@ -8,6 +8,7 @@ import {
   initialQuery,
   moveDefinitionToDate,
   parseCatalogSnapshot,
+  pauseExpiredCatalogProduct,
   previewSamples,
   queryProducts,
   repeatDefinition,
@@ -117,6 +118,26 @@ describe('Ticket catalog browser collection and query', () => {
         Date.parse(source.segments[0]!.departureAt),
     );
   });
+  it('anchors and repeats a ticket that has no departure time', () => {
+    const source = {
+      ...samples[0]!.definition,
+      serviceDate: '',
+      segments: samples[0]!.definition.segments.map((segment) => ({
+        ...segment,
+        departureAt: '',
+        arrivalAt: '',
+      })),
+      fare: {
+        ...samples[0]!.definition.fare,
+        validFrom: '',
+        validTo: '',
+      },
+    };
+    const moved = moveDefinitionToDate(source, '2026-09-22');
+    expect(moved.serviceDate).toBe('2026-09-22');
+    expect(moved.segments[0]!.departureAt).toBe('');
+    expect(repeatDefinition(moved, 'weekly', 1).serviceDate).toBe('2026-09-29');
+  });
   it('shifts all schedule and fare dates for weekly and monthly repeats', () => {
     const source = samples[0]!.definition;
     const weekly = repeatDefinition(source, 'weekly', 2);
@@ -147,6 +168,27 @@ describe('Ticket catalog browser collection and query', () => {
     expect(activateCatalogSample(samples[0]!, '2026-09-02T00:00:00.000Z')).toBe(
       samples[0],
     );
+  });
+  it('automatically pauses an active ticket after its first departure', () => {
+    const active = {
+      ...samples[0]!,
+      status: 'active' as const,
+      version: 7,
+    };
+    const before = pauseExpiredCatalogProduct(
+      active,
+      '2026-08-31T00:00:00.000Z',
+    );
+    const after = pauseExpiredCatalogProduct(
+      active,
+      '2027-01-01T00:00:00.000Z',
+    );
+    expect(before).toBe(active);
+    expect(after).toMatchObject({ status: 'paused', version: 8 });
+    expect(after.history.at(-1)).toMatchObject({
+      action: 'paused',
+      actor: 'سیستم',
+    });
   });
   it('round-trips valid browser storage and rejects malformed data', () => {
     const raw = JSON.stringify({ products: samples, references: [] });

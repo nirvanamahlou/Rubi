@@ -16,7 +16,7 @@ import type {
   WorkbenchCalendarPriorityV1,
   WorkbenchCalendarStatusV1,
   WorkbenchNoteItemV1,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 
 export class WorkbenchNoteDto {
   @IsString() @Length(1, 200) title!: string;
@@ -58,4 +58,9 @@ export class WorkbenchProfileDto {
   @IsOptional() @IsString() @Length(0, 32) phone?: string | null;
   @IsOptional() @IsUUID() photoDocumentId?: string | null;
   @IsOptional() @IsUUID() photoBranchId?: string | null;
+}
+
+export class WorkbenchProfilePhotoDto {
+  @IsUUID() branchId!: string;
+  @IsString() @Length(1, 240) title!: string;
 }

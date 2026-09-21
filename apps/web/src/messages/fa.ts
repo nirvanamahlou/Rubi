@@ -92,9 +92,9 @@ export const navigationMessages = [
     description: 'پرونده و تعاملات مشتریان',
   },
   {
-    title: 'امور مشتریان، سرنخ‌ها و پشتیبانی',
+    title: 'امور مشتریان و پشتیبانی',
     href: '/customer-affairs',
-    description: 'سرنخ‌ها، درخواست‌های قبل از فروش و پشتیبانی پس از سفر',
+    description: 'درخواست‌های مشتریان و پشتیبانی پس از سفر',
   },
   {
     title: 'رزرواسیون و عملیات سفر',
@@ -115,11 +115,6 @@ export const navigationMessages = [
     title: 'قرارداد',
     href: '/sales',
     description: 'قرارداد جدید و تخصیص مسافر به خدمات',
-  },
-  {
-    title: 'مدیریت قیمت',
-    href: '/pricing-management',
-    description: 'قیمت روزانه تورها و بلیت‌های ملکی و خروجی بنر',
   },
   {
     title: 'خرید و تأمین',

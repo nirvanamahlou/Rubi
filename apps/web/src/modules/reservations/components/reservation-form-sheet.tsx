@@ -2,8 +2,8 @@
 import Image from 'next/image';
 import { voucherFormData, supplierFormData } from '../model/voucher-settings';
 import { useEffect, useState } from 'react';
-import type { MasterDataResource } from '@rubi/contracts';
-import { salesContractFlights } from '@rubi/contracts';
+import type { MasterDataResource } from '@nora/contracts';
+import { salesContractFlights } from '@nora/contracts';
 import { masterDataApi } from '@/modules/master-data/api/client';
 import {
   reservationPassengerPages,
@@ -185,7 +185,11 @@ export function ReservationFormSheet({
             <div className={styles.summary}>
               {[
                 ['ADULTS', data.adults],
-                ['CHILDREN', data.children],
+                ['CHILDREN 6-12', data.children6To12],
+                ['CHILDREN 2-6', data.children2To6],
+                ...(data.childrenUnclassified
+                  ? [['CHILDREN (UNSPECIFIED)', data.childrenUnclassified]]
+                  : []),
                 ['INFANTS', data.infants],
                 ['DESTINATION', data.destination],
                 [

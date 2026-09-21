@@ -1,3 +1,153 @@
+## 2026-09-21 — PROCUREMENT-DRAFT-FORM-HEADER-CLEANUP-0921 — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک: نشان «ثبت پیش‌نویس» از بالای فرم درخواست خرید حذف شود؛ دکمهٔ عملیاتی ذخیره در پایین فرم حفظ می‌شود.
+- محدوده: فقط هدر و تست متمرکز فرم خرید، همراه ثبت وضعیت همین کار. API، Schema/Migration، Permission، داده و Dependency/Lockfile تغییر نمی‌کنند.
+
+## SALES-TICKET-CLARITY-0921 — PC-A — READY_FOR_REVIEW
+
+- COMPUTER_ID=PC-A; base origin/develop@5f66ef97; branch codex/pc-a-finance-sales-clarity-0921. Scope: Sales ticket card, its tests and this task's status entries only. No API, migration or dependency changes.
+- Owner authorized overlap reconciliation. Preserve current @nora contracts and capacity/fare guards; do not import the stale @rubi namespace rename. Old worktrees remain untouched. Finance will ship separately.
+- Validation: 7 focused tests, scoped ESLint, Web TypeScript and production build (50 pages) passed. Scoped reservation released. No merge or runtime change.
+
+## TOUR-DEFINITION-PRICING-HANDOFF-0921 — PC-A — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-21: فرم تعریف تور در مدیریت بلیت فشرده و محدود به مشخصات و خدمات ثابت باشد؛ ساخت نوبت، اتصال بلیت‌های رفت/برگشت و ورود به اتصال هتل‌های همان بازه از مدیریت قیمت پکیج انجام شود.
+- شاخه مستقل `codex/pc-a-tour-definition-compact-pricing-handoff-0921` از `origin/develop@bd93b634`؛ COMPUTER_ID=PC-A. محدوده: Web Ticket Catalog، Tour Pricing و پیش‌انتخاب نوبت در فرم نرخ خرید هتل، آزمون‌های هدفمند و اسناد همین واحد. بدون Schema/Migration/Dependency/Lockfile یا داده عملیاتی.
+- نتیجه: فرم تعریف تور فشرده و بدون قیمت/هتل/تاریخ است؛ فهرست تورها و خدمات ثابت را نشان می‌دهد. ساخت نوبت و انتخاب بلیط در مدیریت قیمت پکیج قرار گرفت و هر نوبت به فرم هتل با مقصد و تاریخ از پیش انتخاب‌شده متصل است. ۸ تست هدفمند، typecheck، lint و build تولیدی Web با ۵۰ route موفق‌اند.
+
+## FINANCE-INBOX-CLARITY-0921 — PC-A — READY_FOR_REVIEW
+
+- COMPUTER_ID=PC-A; base origin/develop@cba76029; branch codex/pc-a-finance-inbox-clarity-0921. Scope: finance-inbox-live-workspace presentation, focused tests and task status entries. No API, schema, dependency, permission or live-runtime changes.
+- Owner authorized overlap reconciliation: retain current develop purchase-cost/payment actions instead of importing their deletion from the old local worktree. The old worktree remains untouched. Sales redesign is a separate branch/PR.
+- Validation: 11 focused tests, scoped lint, Web TypeScript and production build (50 pages) passed. Scoped reservation released; no merge or runtime change.
+
+## TICKET-TIME-REPEAT-0920 — PC-A — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-20: فیلدهای زمان حرکت و رسیدنِ تعریف بلیت دوباره در فرم در دسترس باشند و هنگام تکرار هفتگی/ماهانه همراه بلیت کپی شوند. `COMPUTER_ID=PC-A`؛ شاخه `codex/pc-a-ticket-time-repeat-0920` از آخرین `origin/develop@7e52d309`.
+- محدودهٔ رزروشده: فقط `apps/web/src/modules/ticket-catalog/**` برای فرم، مدل تکرار و تست‌های همان ماژول، به‌علاوهٔ گزارش همین Work Item و مدخل‌های محدود وضعیت. هیچ Schema/Migration، قرارداد عمومی، API، Permission، Dependency/Lockfile، دادهٔ عملیاتی یا runtime محلی تغییر نمی‌کند.
+- سازگاری: تعریف‌های قدیمیِ بدون زمان همچنان معتبر و تکرارپذیر می‌مانند؛ زمان‌ها در صورت ثبت، UTC و zone موجود را نگه می‌دارند و تاریخ اولین بلیت مبنای تکرار است.
+- تحویل: فیلدهای زمان برای بلیت یک‌طرفه، برگشت و همهٔ قطعه‌های ترکیبی بازگشتند؛ انتخاب زمان حرکت `serviceDate` را همگام می‌کند و تکرار، timestampهای ذخیره‌شده را همراه تاریخ جابه‌جا می‌کند. ۱۰ فایل / ۱۰۰ تست Ticket Catalog، lint و typecheck Web موفق‌اند و build تولیدی در Worktree جدا خروجی `BUILD_ID` ساخته است. Schema/Migration/contract/API/runtime/3100 تغییر نکرده‌اند. وضعیت `READY_FOR_REVIEW`؛ رزرو محدود Central Docs با این Commit `RELEASED` می‌شود.
+
+## LOGIN-STATIC-BACKGROUND-0920 — PC-A — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-20: نوشته و طرح ابری `NOORA` از صفحهٔ ورود حذف شود و همان تصویر هواپیما/آسمان به‌صورت پس‌زمینهٔ ثابت باقی بماند. `COMPUTER_ID=PC-A`؛ شاخهٔ مستقل `codex/pc-a-login-brand-cleanup-0920` از `origin/develop@f139266d`.
+- محدودهٔ رزروشده: فقط `apps/web/src/app/login/login-background-story.tsx`، CSS و تست متمرکز همان پس‌زمینه و ثبت محدود وضعیت. فایل تصویری `login-airline-b2.png` بدون تغییر می‌ماند؛ API، احراز هویت، فرم ورود، Schema/Migration، Permission، Dependency/Lockfile، داده و runtime پورت 3100 تغییر نمی‌کنند.
+- بررسی مالکیت: کار قبلی `BRAND-NORA-001` با وضعیت `COMPLETE / VERIFIED` ثبت شده و قفل فعال دیگری برای فایل‌های هدف یافت نشد. رزرو محدود Central Docs این slice با `PC-A/LOGIN-STATIC-BACKGROUND-0920` است.
+- نتیجه: لایه‌های `NOORA`، ابر، باد و انیمیشن ورود حذف شدند و `login-airline-b2.png` بدون تغییر به‌صورت پس‌زمینهٔ ثابت با همان crop واکنش‌گرا و overlay قبلی باقی ماند. ۵ تست صفحه ورود، lint، typecheck و build تولیدی Web موفق‌اند؛ پورت 3100 تغییر نکرد. رزرو محدود Central Docs این slice `RELEASED` است.
+
+## HOTEL-RATE-ROOM-CAPACITY-0920 — PC-A — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-20: نرخ هر هتل باید برای نوع‌های اتاق واقعی آن ثبت شود؛ هر نوع اتاق ضریب و ظرفیت مستقل بزرگسال/کودک دارد، نبود ضریب یعنی اتاق قابل فروش نیست و قرارداد نباید از ظرفیت ثبت‌شده عبور کند. افزودن نوع اتاق از همین جریان فقط با Permissionهای اطلاعات پایه مجاز است.
+- Branch: `codex/pc-a-hotel-rate-room-capacity-0920` از `origin/develop@7e52d309`؛ محدوده شامل Reservations hotel-rate API/Web، Public Projection، کنترل ظرفیت Sales، Master Data public room reference، Prisma/Migration افزایشی، تست‌ها و اسناد همین Task است.
+- قفل‌ها: `Migration Owner = PC-A/HOTEL-RATE-ROOM-CAPACITY-0920`، Reservations/Sales additive shared-contract و Central Docs برای همین Task رزرو هستند. Dependency/Lockfile رزرو نمی‌شود. Query مستقیم جدول ماژول دیگر ممنوع و مراجع نوع اتاق فقط از Public Boundary اطلاعات پایه مصرف می‌شوند.
+- نتیجه: نرخ نسخه‌دار برای نوع اتاق واقعی، ضریب مثبت، ظرفیت مستقل بزرگسال/کودک، فیلتر نوع اتاق قابل‌فروش در قرارداد و کنترل fail-closed ظرفیت در Create/Update/Confirm تکمیل شد. Migration روی PostgreSQL 18.1 خالی، Prisma، lint/typecheck، ۱۰۴ تست هدفمند و Build API/Web پاس شدند. قفل‌ها تا Merge و Handoff رسمی فعال می‌مانند.
+
+## TICKET-CAPACITY-HOLD-0920 — PC-A — IN_PROGRESS
+
+- درخواست مالک در 2026-09-20: از فهرست مدیریت بلیت، کاربر بتواند برای تعداد مشخصی نفر «رزرو موقت ظرفیت» با تاریخ/ساعت انقضا ثبت کند. `COMPUTER_ID=PC-A`؛ شاخه `codex/pc-a-ticket-capacity-hold-0920` از `origin/develop@7e52d309`.
+- محدودهٔ رزروشده: Ticket Catalog API/Web/tests، مدل Prisma و یک Migration افزایشی برای hold موقت، API محلی همان ماژول و اسناد محدود Task/status. `Migration Owner` و رزرو محدود Central Docs برای این slice: `PC-A/TICKET-CAPACITY-HOLD-0920`. Dependency/Lockfile، قرارداد مشترک، Sales/Reservations، Permission و runtime محلی تغییر نمی‌کنند.
+- یکپارچگی: Hold به Ticket Published Offer و Branch/User واقعی FK دارد، تعداد مثبت و زمان UTC آینده می‌گیرد، با قفل ردیفی و idempotency از oversell جلوگیری می‌کند و فقط Holdهای ACTIVE و منقضی‌نشده از ظرفیت قابل فروش کم می‌شوند. انقضا، ظرفیت را بدون حذف history آزاد می‌کند.
+
+## FINANCE-DASHBOARD-REDESIGN-0919 — PC-A — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-19: کارتابل مالی از فهرست ساده به داشبورد مالی عملیاتی و قابل‌خواندن تبدیل شود؛ KPIهای واقعی، اولویت‌های پرداخت/دریافت، تفکیک واحدها، وضعیت حساب‌ها و اقدام سریع در همان صفحه نمایش داده شوند. `COMPUTER_ID=PC-A`؛ شاخه `codex/pc-a-finance-dashboard-redesign-0919` از `origin/develop@47762934`.
+- محدوده: فقط رابط و تست قرارداد صفحه کارتابل مالی و این مدخل؛ داده صرفاً از Finance Inbox و حساب‌های موجود خوانده می‌شود. API، قرارداد، Schema/Migration، داده مالی، Permission، Dependency/Lockfile تغییر نمی‌کنند.
+- نتیجه: کارتابل از فهرست ساده به «مرکز کنترل مالی» تبدیل شد: KPIهای مبتنی بر دادهٔ واقعی، تفکیک صف بر اساس واحد، اولویت‌های نزدیک، وضعیت حساب‌های فعال و فیلترهای اقدام سریع در کنار جست‌وجو و فیلترهای قبلی. تست قرارداد کارتابل، lint، typecheck و build Web موفق‌اند؛ پیش‌نمایش محلی روی پورت 3200 با API 4190 و CORS تأیید شده است.
+
+## FINANCE-OPERATIONAL-CARTABLE-0919 — PC-A — DONE/MERGED
+
+- درخواست مالک در 2026-09-19: کارتابل مالی عملیاتی با تأیید دریافت در حساب مقصد، پرداخت کارگزار از حساب مبدأ، مانده و تاریخ/شماره پیگیری، جست‌وجوی قرارداد و تأیید تحویل مدارک، و KPIهای فیلترپذیر تکمیل شود. شاخه `codex/pc-a-finance-operational-cartable-0919` از `origin/develop@a8c050bd`؛ `COMPUTER_ID=PC-A`.
+- رزرو: Finance/Sales public receipt contract، Finance API/Web، Sales public projection/confirmation، migration افزایشی و سازگار برای ثبت حساب مقصد دریافت، تست‌های هدفمند و این سند. `Migration Owner`، Finance/Sales shared-contract و Central Docs برای این slice: `PC-A/FINANCE-OPERATIONAL-CARTABLE-0919`. Dependency/Lockfile رزرو نمی‌شود.
+- مرز: Finance فقط public service Sales/Reservations را فراخوانی می‌کند؛ مبلغ Decimal/ارز و زمان UTC، مجوز، audit، optimistic/idempotency و FK واقعی اجباری‌اند. هیچ دادهٔ واقعی، پرداخت بیرونی، Grant، حذف/بازنویسی تاریخچه یا تغییر ماژول مالک دیگر انجام نمی‌شود.
+- نتیجه: تأیید دریافت فقط با حساب مقصد فعال، هم‌ارز و هم‌شعبه انجام و FK حساب روی پرداخت Sales ثبت می‌شود؛ UI انتخاب/تعریف حساب، KPI و فیلترها به جریان عملیاتی متصل‌اند. ۱۶ تست هدفمند، Prisma validate، lint/typecheck و build بخش‌های متاثر موفق و migration محلی اعمال شده است.
+- ادامه 2026-09-20: مجوز تحویل مدارک مشتری از پرداخت کارگزار/رزرواسیون جدا شد و سه مبنای «پس از دریافت تأییدشده»، «تسویه کامل» و «استثنای مدیر» با Audit، Optimistic Lock، Branch scope و جست‌وجوی جزئی شماره قرارداد پیاده شد. Migration/Finance contract/Central Docs همین Task تا Merge فعال‌اند؛ جزئیات در `docs/tasks/FINANCE-CUSTOMER-DOCUMENT-DELIVERY-0920.md`.
+- Handoff نهایی: PR #322 با Merge Commit `9c5362333f2a30cd81e0fe63faca16d7a3c0ad47` وارد `develop` شد؛ Migration Owner، Finance/Sales contract lock و Central Docs lock این Task برابر `RELEASED / STABLE` هستند.
+
+## SYSTEM-MANAGEMENT-NAVIGATION-003 — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-19: زیر‌بخش‌های دسته‌های «مدیریت سیستم» باید با مسیرهای واقعی Rubi منطبق باشند؛ «فضای کار» نیز صریحاً «میزکار من» و «داشبورد» را داشته باشد. `COMPUTER_ID=PC-B`؛ ادامه روی شاخهٔ `codex/pc-b-system-management`.
+- محدودهٔ رزروشده: مدل گروه‌های ناوبری Web، پنل زیر‌دسته‌های `/system` و تست هدفمند آن‌ها. فقط مسیرهای منتشرشدهٔ همین پروژه نمایش/پیوند می‌شوند؛ API، قرارداد مشترک، Migration، دادهٔ عملیاتی، مجوزها و Dependency/Lockfile خارج از محدوده‌اند.
+- نتیجه: پنل بازشوندهٔ `/system` از گروه‌های canonical سایدبار استفاده می‌کند و هر زیر‌بخش با `Link` به مسیر واقعی خود می‌رود. «فضای کار» شامل `میزکار من` و `داشبورد` است؛ قیمت‌گذاری فروش، عملیات/فرآیند رزرواسیون و کاربران/شرکت‌های حقوقی/سلامت سامانه نیز به‌عنوان زیرمسیرهای واقعی افزوده شدند. خرید و تأمین از گروه نادرست سرمایه انسانی به «رزرواسیون و تأمین سفر» منتقل شد. ۲۰ تست ناوبری و System Management، lint و typecheck وب موفق‌اند. ساخت production به‌دلیل اشتراک `.next` با runtime فعال ۳۱۰۰ بدون پیشرفت ماند و فقط همان فرایند ساخت متوقف شد؛ runtime فعال با HTTP 200 حفظ شد.
+
+## SYSTEM-MANAGEMENT-CONNECTIONS-002 — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-19: پیاده‌سازی اتصال‌های باقی‌ماندهٔ مرکز مدیریت سیستم. `COMPUTER_ID=PC-B`؛ شاخهٔ کاری `codex/pc-b-system-management` است.
+- محدودهٔ رزروشده: قرارداد سلامت Worker، Port عمومی سلامت Worker، Port سلامت Storage در Documents، مصرف‌کنندهٔ عمومی آن‌ها در System Management، Retry کنترل‌شدهٔ Export Reporting و UI/System Workspace شامل Scope شرکت حقوقی و پیوندهای مالک IAM/Legal Entity/Operations. قرارداد مشترک، APIهای محدود همین واحدها، تست‌های هدفمند و مستندات همین Task در این برش‌اند.
+- مرزها: مدیریت سیستم فقط Service/HTTP Port عمومی مالک را مصرف می‌کند؛ به Redis، Queue، Storage یا جدول Reporting/Documents دسترسی مستقیم ندارد. تغییر تنظیماتِ بدون Consumer مالک فعال نمی‌شود و به‌عنوان اتصال موفق نمایش داده نخواهد شد. Migration، دادهٔ عملیاتی، Grant نقش، Dependency/Lockfile و تغییرات ماژول‌های تجاری خارج از محدوده‌اند.
+- نتیجه: `POST /system-management/v1/jobs/reporting-exports/:id/retry` با `system.jobs.retry` فرمان را Audit می‌کند و اجرای واقعی را به Public Service Reporting می‌سپارد؛ Reporting نیز `reporting.export` و وضعیت Export را خودش کنترل می‌کند. Documents یک Port محدود سلامت Storage و Worker یک Port loopback سلامت Redis/Queue/Worker با قرارداد بدون Credential منتشر کردند؛ System Management فقط آن Portها را مصرف می‌کند. Scope شرکت حقوقی از `legal-entities/selectable` با UUID معتبر ذخیره می‌شود، تاریخچهٔ هر بخش فیلتر می‌شود و مسیر `/system/operations` پنل عملیاتی پیشین را واقعاً در دسترس قرار می‌دهد. پیوندهای IAM، Legal Entity، Documents و Reporting مالکیت داده را حفظ می‌کنند. ۱۲ تست API، ۲ تست Worker، ۱۰ تست Web، lint و typecheck هر سه workspace موفق‌اند؛ API ۴۰۰۰، Web ۳۱۰۰ و Worker ۴۱۰۰ در Smoke محلی پاسخ داده‌اند.
+
+## DASHBOARD-KPI-TREND-PRESENTATION-0919 — PC-C — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-19: آیکون فیلتر تقویم محور X نمودار روند در frontend واضح و قابل‌مشاهده شود و خط جداکنندهٔ بالای Sparkline از همهٔ KPI Cardها حذف شود.
+- نتیجه: `CalendarDays` با رنگ اصلی و stroke واضح جایگزین آیکون کم‌کنتراستِ انتخاب تاریخ محور زمان شد؛ جداکنندهٔ `border-t` پیش از Sparkline از همهٔ KPI Cardها حذف شد. ۱۶ تست Dashboard، lint و typecheck Web موفق‌اند؛ API، Schema/Migration، Permission، دادهٔ عملیاتی و Dependency/Lockfile تغییر نکردند.
+
+## FINANCE-INBOX-FILTERS-0919 — PC-A — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-19: کارتابل مالی با فیلتر تاریخ و بخش، و KPIهای مبتنی بر همان فیلترها تکمیل شود. شاخه `codex/pc-a-finance-inbox-filters-0919` از `origin/develop@5d588cbd`؛ `COMPUTER_ID=PC-A`.
+- محدودهٔ رزروشده: فقط `apps/web/src/modules/finance/components/finance-inbox-live-workspace.tsx`، تست هدفمند همان UI و این ثبت وضعیت. فیلترها روی دادهٔ عملیاتی موجود اعمال می‌شوند و API، قرارداد مشترک، Schema/Migration، حسابداری، Permission، Dependency/Lockfile و دادهٔ واقعی تغییر نمی‌کنند.
+- ثبت حساب مقصد برای تأیید دریافت، به‌دلیل نیاز به قرارداد و persistence مشترک Sales↔Finance، خارج از این slice است و نباید به‌صورت نمایشی/غیرقابل‌ثبت اضافه شود.
+- نتیجه: فیلتر بخش، وضعیت، جست‌وجو و بازهٔ تاریخ ثبت درخواست در یک نمای عملیاتی جمع شده‌اند؛ کارت «کل درخواست‌ها» نیز مطابق نتیجهٔ فیلترشده به‌روزرسانی می‌شود. داده یا تصمیم مالی جدیدی ساخته نمی‌شود.
+- اعتبارسنجی: ۸ تست متمرکز رابط مالی، Web TypeScript و lint فایل تغییرکرده موفق‌اند. Migration، API، قرارداد مشترک، Permission، Dependency/Lockfile و دادهٔ عملیاتی تغییر نکرده‌اند.
+
+## SYSTEM-MANAGEMENT-BACKEND-001 — PC-B — READY_FOR_REVIEW
+
+- نتیجهٔ ادغام‌شده از `origin/develop`: قرارداد نسخهٔ ۱ مدیریت سامانه، ۳۰ Permission، ۱۲ جدول افزایشی و API کنترل‌شدهٔ تنظیمات/شماره‌گذاری/اعلان/قالب/Feature Flag/Backup/Health/Audit به‌همراه حفاظت IAM برای Self-escalation، آخرین مدیر فعال و بستن نشست جاری اضافه شده است. Migration و تست‌های این Slice در Draft PR #305 تأیید شده‌اند؛ قفل‌های Migration، قرارداد و اسناد مرکزی آزادند.
+
+## SYSTEM-MANAGEMENT-LIVE-CONSUMERS-004 — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک: مقدارهای تنظیم‌شده در مرکز مدیریت سیستم باید در ماژول‌های مالک واقعاً مصرف شوند و فقط در UI ذخیره نشوند.
+- محدودهٔ رزروشده: Resolver عمومی تنظیمات با ارث‌بری `USER > BRANCH > LEGAL_ENTITY > GLOBAL`، اتصال مصرف‌کننده‌های مالک PC-B (SLA امور مشتریان، سیاست فایل Documents، سیاست استعلام خرید، اولویت رویداد میزکار)، تست‌های هدفمند و همین ثبت وضعیت.
+- مرزها: دادهٔ عملیاتی، Secret، Migration، تغییر Permission و تغییر قرارداد عمومی ماژول‌های مالک دیگر خارج از این واحد است. Resolver فقط `system_settings` را می‌خواند و در نبود مقدار فعال، مقدار امن پیش‌فرض را برمی‌گرداند.
+- نتیجه: Resolver و اتصال‌های واقعی SLA امور مشتریان، سقف فایل Documents، Override سیاست خرید و اولویت پیش‌فرض رویداد میزکار پیاده شدند؛ UI نیز مقدار Global را برای Scope شرکت به‌صورت ارثی نمایش می‌دهد. API و Web typecheck/lint/build و کل تست API موفق‌اند. جزئیات در `docs/tasks/SYSTEM-MANAGEMENT-LIVE-CONSUMERS-004.md` ثبت شده است.
+
+## SYSTEM-MANAGEMENT-001 — PC-B — READY_FOR_REVIEW
+
+- Backend مدیریت سامانه در PR #305 بازبینی و در `develop` ادغام شد. قفل Migration، قرارداد مشترک و اسناد مرکزی آن آزاد است؛ PR #304 فقط مصرف‌کنندهٔ UI همان قراردادهای نسخه‌دار است.
+- محدودهٔ تحویل: صفحه و تست‌های `/system` و client احرازشدهٔ `system-management/v1`. UI APIهای عمومی IAM، Legal Entity و System Management را مصرف می‌کند و مالکیت داده/قرارداد هیچ ماژول دیگری را نمی‌گیرد.
+- نتیجه: طرح مرجع `rubi-settings-fixed.html` با نمای کلی، جست‌وجو، دسته‌بندی، جزئیات و فرم‌های ویرایش به `/system` تبدیل شد. سپس طبق درخواست مالک، پوستهٔ خاص آن حذف و با نوار کناری، هدر، انتخاب شرکت و تم روشن/تاریک سراسری Rubi یکپارچه شد؛ کارت‌ها و پنجره‌ها نیز از توکن‌های مرکزی رنگ/سطح/مرز استفاده می‌کنند. هر ۱۸ بخش و ۷۸ کارت تنظیمات مرجع در کاتالوگ تایپ‌شده حضور دارند و فرم‌ها مقدار را از API نسخه‌دار می‌خوانند و با `expectedVersion`، دلیل تغییر و Scope واقعی ذخیره می‌کنند؛ `localStorage`، تأیید یا موفقیت ساختگی استفاده نشده است. کارت‌های عملیاتی نشست، Backup، Health، Audit و Retry واقعی Reporting Export نیز به endpointهای منتشرشده متصل‌اند. Probe Storage از Public Port مالک Documents و PostgreSQL از query فقط‌خواندنی استفاده می‌کند؛ Redis، Worker و Queue تا انتشار adapter/Port مالک، صادقانه `UNKNOWN` می‌مانند. ۶ تست هدفمند، typecheck، lint، build تولیدی و بازبینی بصری صفحه موفق‌اند.
+- اصلاح بازخورد ۲۰۲۶-۰۹-۱۷: عنوان تکراری، پیام اطلاع‌رسانی اتصال و کارت آماری بزرگ از نمای کلی حذف شدند. دامنه و وضعیت داده اکنون برچسب روشن دارند و کارت‌ها/فرم‌ها اقدام‌های «مشاهده تنظیمات» و «ویرایش تنظیمات» را صریح نشان می‌دهند؛ کنترل تزئینی یا بدون معنای عملی باقی نمانده است.
+- اصلاح دوم رابط ۲۰۲۶-۰۹-۱۷: نوار افقی دسته‌ها حفظ شد، اما نام‌ها با گروه‌های سایدبار یکسان شدند. با انتخاب هر عنوان، زیرمجموعه‌های واقعی همان گروه زیر نوار نمایان می‌شوند. دکمه‌های سکشن بالای صفحه، کادرهای خاکستری و شمارنده‌های تزئینی حذف شدند.
+
+## RESERVATION-UI-AND-CONTRACT-ACTIONS-0917 — PC-A — COMPLETE
+
+- درخواست مالک در 2026-09-17: تغییرهای تاییدشده اما خارج از `develop` در رابط رزواسیون (پنل عملیات قرارداد، فرم کودک هتل، هویت مسافر و Manifest) به نسخهٔ نهایی اضافه شوند؛ همچنین کنترل‌های عملیات سمت راست جدول قراردادهای فروش عرض و چیدمان یکسان داشته باشند. شاخهٔ مستقل `codex/pc-a-reservation-ui-contract-actions-0917` از `develop@50c3e8cd`؛ COMPUTER_ID=PC-A.
+- محدودهٔ رزروشده: فایل‌های UI/API محلی رزواسیون در commitهای تاییدشده، `sales-workspace` و تست‌های هدفمند آن‌ها، همراه با این مدخل وضعیت. Migration، Schema، قرارداد مشترک، دادهٔ عملیاتی و Dependency/Lockfile تغییر نکردند. نقص ادغام قبلی در قرارگرفتن مجوزهای System در فهرست IAM نیز به‌صورت additive اصلاح شد.
+- نتیجه: پنل فشردهٔ عملیات رزواسیون، ظاهر و تب‌های ویرایش قرارداد، نمایش `CHD (2-6)`/`CHD (6-12)` در فرم و واچر، ویرایش کنترل‌شدهٔ هویت مسافر و حذف کارت عمومی از نمای Manifest در نسخه نهایی حاضرند. سه دکمهٔ عملیات هر قرارداد فروش نیز عرض ثابت و کامل دارند. ۳۲ تست Web، ۱۰ تست API، typecheck API/Web و build تولیدی API/Web موفق‌اند؛ بدون migration عملیاتی.
+
+## CONTRACT-PASSENGER-CONTROLS-0917 — PC-A — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-17: در جدول ورود اطلاعات مسافران قرارداد، جنسیت از ورودی آزاد M/F به انتخاب دوگزینه‌ای تبدیل شود و کنار هر ستون کشور نیازمند ISO3 یک راهنمای کوچک بازشونده شامل نام کشور و کد سه‌حرفی نمایش داده شود. COMPUTER_ID=PC-A؛ شاخه مستقل codex/pc-a-contract-passenger-controls-0917 از نسخه ترکیبی محلی d00cc1d4.
+- محدوده رزرو: apps/web/src/modules/customers/components/customer-entry-sheet.tsx، داده/کامپوننت راهنمای ISO3 در همان ماژول، تست‌های هدفمند Web و اسناد همین واحد. قرارداد API، Schema/Migration، Seed/Data، Permission و Dependency/Lockfile تغییر نمی‌کنند؛ مقادیر ذخیره‌شده جنسیت همچنان M یا F و کد کشور همچنان ISO3 uppercase باقی می‌ماند.
+- نتیجه: فیلد جنسیت هر ردیف به انتخاب دوگزینه‌ای مرد/زن با مقادیر قراردادی M/F تبدیل شد. کنار هر سه ستون ملیت، کشور صادرکننده پاسپورت و کشور محل تولد، دکمه راهنمای ISO3 با فهرست اسکرول‌دار کشورهای پرکاربرد قرار گرفت. ردیف‌های تازه، ردیف پاک‌شده یا ردیف افزوده‌شدهٔ فرم قرارداد هر سه کد را به‌صورت قابل‌ویرایش با IRN پیش‌پر می‌کنند؛ دادهٔ پرونده‌های موجود تغییر نمی‌کند. ۳۱ تست مدل و ۱۱ تست رابط، lint، typecheck و build تولیدی Web موفق‌اند؛ Web3100/Web3200 و API4200 سالم‌اند.
+
+## PROCUREMENT-INVOICE-ATTACHMENTS-0916 — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-16: در فرم فاکتور خرید امکان بارگذاری مستقیم فایل فاکتور اضافه شود؛ فایل در ماژول اسناد با دامنهٔ Procurement آرشیو و به فاکتور متصل بماند. `COMPUTER_ID=PC-B`؛ شاخهٔ مستقل `codex/pc-b-procurement-invoice-attachments-0916` از `origin/develop@c441d33a`.
+- محدودهٔ رزروشده: کامپوننت فرم/انتخاب سند Procurement، تست‌های هدفمند Web و اسناد همین واحد. از API عمومی Documents استفاده می‌شود؛ تغییر Schema، Migration، Dependency/Lockfile، Permission یا دسترسی مستقیم به جدول Documents خارج از محدوده است.
+
+## PROCUREMENT-RECORD-ACTIONS-0916 — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-16: برای همهٔ ردیف‌های قابل نمایش خرید و تأمین، کنترل‌های آیکونی ویرایش و حذف دائمیِ عملیاتی افزوده شود. `COMPUTER_ID=PC-B`؛ شاخهٔ مستقل `codex/pc-b-procurement-record-actions-0916` از `origin/develop@f7f52490`.
+- محدودهٔ رزروشده: قرارداد/API/فرم‌های Procurement، تست‌های هدفمند و اسناد همین واحد. حذف فقط با مجوز اختصاصی و تأیید صریح انجام می‌شود؛ وابستگی‌های متعلق به Procurement در همان تراکنش پاک و وظایف باز بسته می‌شوند. پرونده‌ای که ارجاع مالیِ پذیرفته‌شده یا پرداخت‌شده دارد حذف نمی‌شود تا سابقهٔ مالی حفظ شود. بدون Migration، Dependency/Lockfile، Grant، تغییر مستقیم جدول ماژول دیگر یا دست‌زدن به فایل‌های گزارش بیرون از محدوده.
+
+## RESERVATION-PANEL-HORIZONTAL-0916 — PC-A — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-16: پنل عملیات زیر جدول رزواسیون در همان صفحه، کم‌ارتفاع و افقی باشد تا تمام دکمه‌های قرارداد دیده شوند؛ اولین قراردادِ نتایج به‌صورت پیش‌فرض انتخاب شود تا همهٔ عملیات همان قرارداد را هدف بگیرند.
+- Branch مستقل `codex/pc-a-reservation-panel-horizontal-0916` از `origin/develop@f7f52490`؛ `COMPUTER_ID=PC-A`.
+- محدودهٔ رزرو: `apps/web/src/modules/reservations/foundation/workspace.tsx`، `action-panel.module.css`، تست هدفمند workspace و مستندات وضعیت. بدون API، Migration، دادهٔ عملیاتی، Permission، Dependency/Lockfile یا Runtime مشترک.
+- بررسی مالکیت: تخصیص فعال دیگری برای این فایل‌ها در آخرین `origin/develop` ثبت نشده است؛ تغییرهای قبلی table-window حفظ می‌شوند.
+- نتیجه: اولین قراردادِ نتیجهٔ فعلی به‌طور خودکار انتخاب می‌شود و با فیلتر یا تغییر نتایج، پنل فقط همان قراردادِ معتبر را هدف می‌گیرد. پنل زیر جدول با نوار کوتاه قرارداد انتخاب‌شده و سه گروه افقی است: عملیات قرارداد در دو ردیف چهارستونه، اطلاعات قرارداد در دو ردیف دو ستونه و یادداشت‌ها با یک دکمهٔ کوچک. اندازه‌ها نزدیک پنل قدیمی نگه داشته شده‌اند تا جدول و تمام عملیات در یک صفحه دیده شوند.
+- اعتبارسنجی: ۲۸ تست هدفمند workspace/action-panel، lint فایل‌های TypeScript، typecheck Web و build تولیدی Web موفق‌اند.
+
+## RESERVATION-TABLE-WINDOW-LAYOUT-0916 — PC-A — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-16: پنل عملیات قرارداد در رزواسیون زیر جدول قرار گیرد؛ جدول قراردادها با حدود ۶ تا ۷ ردیف قابل‌مشاهده اسکرول داخلی داشته باشد؛ در حالت بدون فیلتر تاریخ فقط قراردادهای سه ماه اخیر نمایش داده شوند و با تعیین بازه تاریخ، محدودیت پیش‌فرض برداشته شود.
+- Branch مستقل `codex/pc-a-reservation-table-window-layout-0916` از `origin/develop@10851d1a`؛ `COMPUTER_ID=PC-A`.
+- محدوده رزرو: `apps/web/src/modules/reservations/foundation/workspace.tsx`، CSS و تست‌های محلی همان workspace و اسناد این واحد. بدون Migration، داده عملیاتی، Permission، API عمومی، Dependency/Lockfile یا Runtime مشترک.
+- بررسی مالکیت: فایل هدف در آخرین تخصیص‌های فعال رزرو نشده است؛ تغییرهای رزواسیونِ در Review در فایل‌های دیگر حفظ می‌شوند.
+- نتیجه: پنل عملیات قرارداد از ستون کناری به زیر جدول منتقل شد و دکمه‌ها در نمایش دسکتاپ چهارستونه‌اند. جدول همهٔ قراردادهای بازه را بدون صفحه‌بندی جداگانه نگه می‌دارد و در ارتفاع نزدیک هفت ردیف اسکرول داخلی دارد. بدون بازهٔ تاریخ، تنها قراردادهای سه ماه تقویمی اخیر بر مبنای تاریخ قرارداد نمایش دارند؛ هر بازهٔ صریح انتخاب‌شده، آن محدودیت را جایگزین می‌کند.
+- اعتبارسنجی: ۲۱ تست هدفمند Web، lint و typecheck Web و build تولیدی Web موفق‌اند. Migration، دادهٔ عملیاتی، Permission، Dependency/Lockfile و Runtime مشترک تغییر نکردند.
+
 # Work Assignments
 
 ## B2B-BACKEND-ONLY-CONNECTIONS-001 — PC-B — READY_FOR_REVIEW
@@ -6,6 +156,525 @@
 - محدوده رزروشده: حذف تب و پنل مستقل از پرونده سازمان، حذف کامپوننت بلااستفاده، تست‌های هدفمند Organizations و مستندات Task روی شاخه `codex/pc-b-b2b-backend-only-connections` از `origin/develop@40d8f1f4`.
 - قرارداد Backend بدون تغییر می‌ماند: Controller/Service مسیر CRM connections، مدل و client وب، مجوز شعبه و مصرف KPI/Finance حفظ می‌شوند. این واحد Migration، Schema، API contract، Dependency/Lockfile، IAM، داده یا Runtime مشترک را تغییر نمی‌دهد و خودکار Merge نمی‌شود.
 - تب/پنل مستقل حذف شد و رزرو فایل‌های اجرایی آزاد است. ۱۳۰ تست Organizations، ۸ تست API، lint و typecheck وب و build تولیدی ۴۶ مسیر موفق‌اند؛ جست‌وجوی منبع نیز حفظ مسیر Backend و حذف کامل ورودی UI مستقل را تایید کرد. PR #243 به `develop` باز است.
+
+## 2026-09-21 — PROCUREMENT-DRAFT-SAVE-LOCAL-TASKS-RESILIENCE-0921 — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک: ثبت پیش‌نویس خرید نباید به‌دلیل نبود موقت projection وظایف در دیتابیس محلی با خطای عمومی متوقف شود.
+- شاخه: ادامه روی `codex/pc-b-procurement-request-no-supplier-0921`؛ `COMPUTER_ID=PC-B`.
+- محدودهٔ رزروشده: اتصال داخلی Procurement به Tasks، فرمان انتشار درخواست، کنترل‌های جزئیات میزکار و تست‌های هدفمند آن‌ها، همراه با وضعیت و Work Item. Migration/Schema، Dependency/Lockfile، مجوز و دادهٔ عملیاتی تغییر نمی‌کنند.
+- مرز: فقط رویداد `CREATE` که نه مسئول و نه تأییدکننده دارد، task عملیاتی ندارد و نباید به جدول task دست بزند؛ سایر وضعیت‌ها همچنان از projection وظایف استفاده می‌کنند.
+- نتیجه و اعتبارسنجی: ثبت پیش‌نویسِ بدون مسئول دیگر به projection وظایف دسترسی ندارد؛ بنابراین نبود موقت جدول آن projection تراکنش خرید را rollback نمی‌کند. دکمهٔ «تأیید و انتشار» داخل خود فرم، کنار «ذخیره پیش‌نویس»، درخواست کامل را با مجوز ثبت به `SUBMITTED` می‌برد و «ارسال برای تأیید» از همان وضعیت، سیاست واقعی را اعمال می‌کند. ۸ تست فرم، تست متمرکز Tasks و تست یکپارچهٔ guardشدهٔ انتشار افزوده شد؛ lint و typecheck API/Web و build API موفق‌اند. Migration/Schema و دادهٔ عملیاتی تغییر نکردند.
+
+## 2026-09-21 — PROCUREMENT-CATEGORY-ONLY-REQUEST-FORM-0921 — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک: فرم «درخواست خرید جدید» فقط فیلد انتخابی «دسته خرید» داشته باشد و «نوع خرید» نمایش یا از کاربر دریافت نشود.
+- شاخه: ادامه روی `codex/pc-b-procurement-request-no-supplier-0921`؛ `COMPUTER_ID=PC-B`.
+- محدودهٔ رزروشده: مدل پیش‌فرضِ فرم خرید، فرم درخواست و تست‌های مستقیم آن، همراه با اسناد وضعیت. نوع خرید برای سازگاری API به‌صورت داخلی `خرید عمومی` باقی می‌ماند؛ API، Schema/Migration، مجوز، نقش، Dependency/Lockfile و دادهٔ عملیاتی تغییر نمی‌کنند.
+- نتیجه و اعتبارسنجی: «نوع خرید» از فرم حذف و فقط «دسته خرید» باقی ماند؛ درخواست تازه نوع داخلی `خرید عمومی` می‌گیرد. ۱۰ تست هدفمند، lint و typecheck Web موفق‌اند.
+
+## 2026-09-21 — PROCUREMENT-NAVIGATION-AND-DRAFT-ROBUSTNESS-0921 — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک: خطای اجرای فرم خرید ناشی از درخواست‌های قدیمی ناقص رفع شود و «خرید و تأمین» در نوار کناری زیرمجموعهٔ «سرمایه انسانی» باشد.
+- شاخه: ادامه روی `codex/pc-b-procurement-request-no-supplier-0921`؛ `COMPUTER_ID=PC-B`.
+- محدودهٔ رزروشده: تحمل دادهٔ ناقص در `draft-form` و تست آن، گروه‌بندی نوار ناوبری و تست آن، و اسناد وضعیت همین واحد. بدون تغییر API، Schema/Migration، مجوز، نقش، Dependency/Lockfile یا دادهٔ عملیاتی.
+- نتیجه و اعتبارسنجی: فرم برای رکوردهای تاریخیِ بدون «نوع خرید» یا «دسته» مقاوم شد و خرید و تأمین زیر گروه «سرمایه انسانی» نمایش می‌یابد. ۲۱ تست هدفمند، lint و typecheck Web موفق‌اند.
+
+## 2026-09-21 — PROCUREMENT-REQUEST-NO-SUPPLIER-0921 — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک: ایجاد درخواست خرید جدید باید در میزکار خرید در دسترس باشد و ثبت پیش‌نویس/درخواست به تأمین‌کنندهٔ فعلی وابسته نباشد؛ تأمین‌کننده در مراحل استعلام و سفارش تعیین می‌شود.
+- شاخه: `codex/pc-b-procurement-request-no-supplier-0921` از وضعیت فعلی PC-B؛ `COMPUTER_ID=PC-B`.
+- محدودهٔ رزروشده: `apps/web/src/modules/procurement/draft-form.tsx`، تست همان فرم و تست قواعد ارسال Procurement، به‌همراه این مدخل و وضعیت پروژه. بدون تغییر Schema/Migration، Permission، قرارداد عملیات سفارش یا دادهٔ عملیاتی.
+- قرارداد جریان: درخواست عمومی می‌تواند بدون تأمین‌کننده ذخیره/ارسال شود؛ ثبت استعلام، سفارش و فاکتور همچنان به طرف تجاری معتبر در مرحلهٔ خود نیاز دارد.
+- نتیجه و اعتبارسنجی: راهنمای اختیاری‌بودن تأمین‌کننده به فرم افزوده شد و تست دامنه تضمین می‌کند درخواست بدون `supplierId` یا `supplierName` معتبر است؛ تست فرم، lint و typecheck Web/API موفق‌اند.
+
+## SYSTEM-REMOVE-MODULE-SETTINGS-0919 — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-19: تب «تنظیمات بخش‌ها» از مدیریت سیستم حذف شود. `COMPUTER_ID=PC-B`؛ شاخهٔ مستقل `codex/pc-b-remove-system-module-settings-0919` از نسخهٔ محلی همگام‌شده ساخته شد.
+- محدودهٔ رزرو: فقط ناوبری داخلی و تست هدفمند مدیریت سیستم، به‌علاوهٔ وضعیت همین واحد. کارت‌های تنظیمات، API، داده، مجوز، Migration، Dependency/Lockfile و ناوبری اصلی تغییر نمی‌کنند.
+- نتیجه: تب و دکمهٔ بازگشتِ تکراری حذف شدند. ناوبری بالای مدیریت سیستم اکنون فقط هفت گروه اصلی «فضای کار»، «فروش و ارتباط با مشتری»، «رزرواسیون و تامین سفر»، «مالی»، «سرمایه انسانی»، «اسناد و گزارش» و «تنظیمات شرکت» را دارد و هر گروه کارت‌های مرتبط خود را نمایش می‌دهد. بررسی و تاریخچهٔ تغییرات در سربرگ حفظ شدند. ۴ تست اختصاصی، ESLint، typecheck و build تولیدی Web موفق‌اند و مرورگر احرازشده همین گروه‌ها را روی localhost:3100 تأیید کرد. تست قراردادی قدیمیِ `/system` برای لینک‌های IAM/Legal Entity از پیش با source حاضر ناسازگار است و تغییری در آن داده نشد.
+
+## LOGIN-NOORA-CLOUD-OUTLINE-0919 — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-19: ابر فعلی صفحهٔ ورود با ابر خطی آبیِ مرجع جایگزین شود و نشان `NOORA` در مرکز آن بماند. COMPUTER_ID=PC-B؛ شاخهٔ مستقل `codex/pc-b-login-noora-cloud-0919` از نسخهٔ محلی همگام‌شده ساخته شد.
+- محدودهٔ رزرو: کامپوننت پس‌زمینهٔ ورود، CSS و تست هدفمند همان صفحه به‌همراه وضعیت این واحد. فرم و منطق احراز هویت، API، Migration، دادهٔ عملیاتی، Permission، Dependency/Lockfile و Runtime مشترک خارج از محدوده‌اند.
+- نتیجه: ابر مه‌آلود قبلی با SVG واکنش‌گرا، خط دور آبی، داخل نیمه‌شفاف و متن `NOORA` در مرکز جایگزین شد. انیمیشن فقط پس از توقف هواپیما اجرا می‌شود و حالت کاهش حرکت همچنان تصویر نهایی را نمایش می‌دهد. ۲ تست هدفمند، typecheck و build تولیدی Web موفق‌اند؛ runtime محلی ۳۱۰۰ با همین build بازراه‌اندازی و مشاهده شد.
+
+## LOGIN-NOORA-ANIMATION-0917 — PC-A — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-17: در صفحهٔ ورود، هواپیما از سمت راست وارد شود و در جای خود بایستد؛ پس از توقف، نام «NOORA» با تم ابری نمایان شود و روی صفحه بماند. COMPUTER_ID=PC-A؛ شاخهٔ مستقل codex/pc-a-login-noora-animation-0917 از origin/develop@33569058.
+- محدودهٔ رزرو: صفحه و کامپوننت و CSS انیمیشن صفحهٔ ورود، تست هدفمند و اسناد همین واحد. فرم و منطق احراز هویت، API، Migration، دادهٔ عملیاتی، Permission، Dependency/Lockfile و Runtime مشترک تغییر نمی‌کنند.
+- بررسی مالکیت: در آخرین تخصیص‌های فعال، فایل‌های صفحهٔ ورود مالک هم‌پوشان ندارند.
+- نتیجه: پس‌زمینهٔ اصلی کاملاً ثابت می‌ماند؛ فقط محدودهٔ هواپیمای واقعی همان عکس با ماسک نرم از راست وارد می‌شود و در جای دقیق اصلی می‌ایستد. سپس «NOORA» بدون کادر و به‌شکل مه ابری نرم در مرکز آسمان ظاهر و ماندگار می‌شود. هیچ هواپیمای SVG یا کارت بصری جداگانه‌ای وجود ندارد و حالت بدون حرکت برای دسترس‌پذیری نیز پوشش داده شد. ۲ تست هدفمند، lint فایل‌های متاثر، typecheck و build تولیدی Web موفق‌اند؛ پیش‌نمایش HTTP روی پورت مستقل ۳۲۰۱ پاسخ ۲۰۰ داد.
+
+## DASHBOARD-VISUAL-DETAILS-DRAWER-0919 — PC-C — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-19: جدول بازشوندهٔ قبلی جزئیات دادهٔ نمودار بازگردد؛ «جزئیات نمودار» به یک Drawer مشابه پنل تعریف KPI تبدیل و دکمه‌اش در نوار پایینِ سمت راست، روبه‌روی دکمهٔ بررسی گزارش مرتبط قرار بگیرد.
+- `COMPUTER_ID=PC-C`؛ ادامهٔ شاخهٔ `codex/pc-c-dashboard-reporting-latest`. محدودهٔ رزروشده: renderer و تست‌های Dashboard Web و اسناد وضعیت. بدون تغییر API، Migration، Schema، دادهٔ عملیاتی/دمو، Permission، Dependency یا Lockfile.
+- نتیجه: `VisualDataSummary` به `<details>` بازشوندهٔ قبلی با عنوان و جدول داده بازگشت. دکمهٔ پایین-راست `جزئیات نمودار` یک Drawer مستقل و قابل‌دسترسی باز می‌کند که هدف، خروجی واقعی، قاعدهٔ نمایش، فیچرهای منبع و مجوز همان visual را نشان می‌دهد؛ گزارش مرتبط در footer Drawer باز می‌شود و Drawer را نمی‌بندد. ۱۶ تست Dashboard، lint، TypeScript و build تولیدی Web موفق‌اند.
+
+## DASHBOARD-KPI-SPARKLINE-SCALE-0919 — PC-C — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-19: نمودار روند زیر KPI Cardها بزرگ‌تر و هم‌تراز نمونهٔ مرجع شود.
+- `COMPUTER_ID=PC-C`؛ ادامهٔ شاخهٔ `codex/pc-c-dashboard-reporting-latest`. محدودهٔ رزروشده: renderer و تست‌های Dashboard Web و اسناد وضعیت. بدون تغییر API، Migration، Schema، دادهٔ عملیاتی/دمو، Permission، Dependency یا Lockfile.
+- نتیجه: canvas روند از `160×58` و ارتفاع `h-14` به `240×84` و `h-20` رسید، تمام عرض Card را با `preserveAspectRatio=none` مصرف می‌کند و ضخامت خط از `2.5` به `3.25` افزایش یافت؛ سایهٔ زیر هر سری همچنان حفظ شد. ۱۶ تست Dashboard، lint، TypeScript و build تولیدی Web موفق‌اند.
+
+## DASHBOARD-VISUAL-DETAILS-CONTROLS-0919 — PC-C — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-19: انتخاب‌گر نوع نمایش تاریخ محور X نمودار روند بدون سرریز متن در یک خط باشد و برای هر نمودار دکمهٔ پایین-راستِ نمایش جزئیات اضافه شود.
+- `COMPUTER_ID=PC-C`؛ ادامهٔ شاخهٔ `codex/pc-c-dashboard-reporting-latest`. محدودهٔ رزروشده: renderer و تست‌های Dashboard Web و اسناد وضعیت. بدون تغییر API، Migration، Schema، دادهٔ عملیاتی/دمو، Permission، Dependency یا Lockfile.
+- نتیجه: کنترل تقویم محور X عرض ثابت `8.5rem`، `shrink-0` و `whitespace-nowrap` دارد و گروه خطی نیز به‌اندازهٔ مجموع دو کنترل فضا می‌گیرد. دکمهٔ `جزئیات نمودار` با `aria-expanded` در پایین-راست هر visual غیرجدولی اضافه شد و خلاصه/جدول دادهٔ همان visual را باز و بسته می‌کند. ۱۶ تست Dashboard، lint، TypeScript و build تولیدی Web موفق‌اند.
+
+## DASHBOARD-RANGE-FILTER-RTL-0919 — PC-C — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-19: گزینه‌های داخل فیلتر «بازه زمانی» Dashboard راست‌چین شوند.
+- `COMPUTER_ID=PC-C`؛ ادامهٔ شاخهٔ `codex/pc-c-dashboard-reporting-latest`. محدودهٔ رزروشده: renderer و تست‌های Dashboard Web و اسناد وضعیت. بدون تغییر API، Migration، Schema، دادهٔ عملیاتی/دمو، Permission، Dependency یا Lockfile.
+- نتیجه: محتوای dropdown بازهٔ زمانی `dir=rtl` و aligned-to-end است؛ هر گزینه با `justify-end text-right` نمایش می‌یابد و رنگ hover دست‌نخورده می‌ماند. ۱۶ تست Dashboard، lint، TypeScript و build تولیدی Web موفق‌اند.
+
+## DASHBOARD-TREND-CONTROL-LAYOUT-0919 — PC-C — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-19: انتخاب‌گر تقویمِ نمودار روند و انتخاب‌گر واحد پول همان نمودار، زیر برچسب نوع نمودار و کنار هم نمایش یابند.
+- `COMPUTER_ID=PC-C`؛ ادامهٔ شاخهٔ `codex/pc-c-dashboard-reporting-latest`. محدودهٔ رزروشده: renderer و تست‌های Dashboard Web و اسناد وضعیت. بدون تغییر API، Migration، Schema، دادهٔ عملیاتی/دمو، Permission، Dependency یا Lockfile.
+- نتیجه: در visualهای `line`، انتخاب ارز با همان اندازهٔ قبلی در سمت راستِ انتخاب تقویم می‌ماند؛ گروه کنترل زیر badge بدون wrap و با حداقل عرض برابر مجموع همان دو کنترل چیده می‌شود. visualهای غیرروند فقط انتخاب‌گر ارزِ قبلی را دارند. ۱۶ تست Dashboard، lint، TypeScript و build تولیدی Web موفق‌اند.
+
+## DASHBOARD-VISUAL-CURRENCY-SELECTOR-0919 — PC-C — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-19: برای هر نمودار مبلغ‌محور Dashboard، dropdown مستقل انتخاب واحد پول نمایش یابد و فقط همان نمودار را از دادهٔ تأییدشدهٔ همان ارز بدون FX تغییر دهد.
+- `COMPUTER_ID=PC-C`؛ ادامهٔ شاخهٔ `codex/pc-c-dashboard-reporting-latest` از `origin/develop@acc35d18`. محدودهٔ رزروشده: قرارداد افزایشی Projection Dashboard و producer آن در Reporting، مصرف‌کننده و تست‌های Dashboard Web/API و اسناد وضعیت. هر سری ارز شامل labels/values/comparison/trend همان ارز است؛ UI حق جمع یا تبدیل بین ارزها ندارد. بدون Migration، Schema، دادهٔ عملیاتی/دمو، Permission، Dependency یا Lockfile.
+- نتیجه: `currencySeries` افزایشی برای visualهای پولی منتشر شد و هر card نمودار dropdown مستقل واحد پول دارد؛ انتخاب محلی فقط labels/values/comparison/trend همان ارز را render می‌کند. برای نمودارهای شمارشی، صف و قیف که مبلغ در خروجی ندارند انتخاب‌گر نمایش داده نمی‌شود. ۶ تست API و ۱۶ تست Web، lint/typecheck API/Web و build تولیدی هر دو سرویس موفق‌اند؛ Web3000 و API4000 پاسخ HTTP ۲۰۰ دارند.
+
+## DASHBOARD-TREND-PLOT-BOUNDS-0919 — PC-C — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-19: حاشیهٔ چپ نمودار روند کاهش یابد و آخرین برچسب محور زمان، از جمله ماهی مانند «شهریور 1405»، داخل کادر قابل مشاهده بماند.
+- `COMPUTER_ID=PC-C`؛ ادامهٔ شاخهٔ `codex/pc-c-dashboard-reporting-latest` از `origin/develop@acc35d18`. محدودهٔ رزروشده: renderer و تست‌های Dashboard Web و اسناد وضعیت. بدون Migration، Schema، دادهٔ عملیاتی/دمو، Permission، Dependency یا Lockfile.
+- نتیجه: plot خطی از x=126 به x=100 منتقل و انتهای آن از x=976 به x=930 محدود شد؛ اعداد y همچنان در gutter چپ مستقل‌اند، اما نمودار به چپ آمده و برای آخرین برچسب محور زمان حاشیهٔ امن داخل SVG دارد. ۱۶ تست Dashboard، lint، typecheck و build تولیدی Web موفق‌اند؛ Web3000 و API4000 پاسخ HTTP ۲۰۰ دارند.
+
+## DASHBOARD-KPI-SEMANTIC-DELTA-0919 — PC-C — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-19: رنگ پس‌زمینهٔ تگ تغییر KPI بر اثر کسب‌وکار باشد، نه صرفاً جهت عدد؛ افزایش KPI زیان‌زا مانند استرداد نسبت به بازهٔ هم‌طول قبل باید قرمز نمایش داده شود.
+- `COMPUTER_ID=PC-C`؛ ادامهٔ شاخهٔ `codex/pc-c-dashboard-reporting-latest` از `origin/develop@acc35d18`. محدودهٔ رزروشده: renderer و تست‌های Dashboard Web و اسناد وضعیت. بدون Migration، Schema، دادهٔ عملیاتی/دمو، Permission، Dependency یا Lockfile.
+- نتیجه: رنگ تگ comparison اکنون semantic است. KPIهای `guardrail` و KPIهای شناخته‌شدهٔ هزینه/استرداد/لغو/تخفیف/تاخیر، در صورت افزایش تگ قرمز با پس‌زمینهٔ واضح و در صورت کاهش تگ سبز می‌گیرند؛ فلش جهت واقعی را حفظ می‌کند. KPIهای عادی افزایش سبز و کاهش قرمز دارند. ۱۶ تست Dashboard، lint، typecheck و build تولیدی Web موفق‌اند؛ Web3000 و API4000 پاسخ HTTP ۲۰۰ دارند.
+
+## DASHBOARD-TREND-POINT-TOOLTIP-0919 — PC-C — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-19: tooltip هر نقطهٔ نمودار روند فقط زمان متناظر با grain نمودار و مقدار همان نقطه را نشان دهد؛ برای روز تاریخ و مقدار، برای ساعت ساعت همان روز و مقدار، و برای هفته/ماه برچسب زمانی متناسب نمایش داده شود.
+- `COMPUTER_ID=PC-C`؛ ادامهٔ شاخهٔ `codex/pc-c-dashboard-reporting-latest` از `origin/develop@acc35d18`. محدودهٔ رزروشده: renderer و تست‌های Dashboard Web و اسناد وضعیت. بدون Migration، Schema، دادهٔ عملیاتی/دمو، Permission، Dependency یا Lockfile.
+- نتیجه: Tooltip بومی هر point line اکنون فقط «زمانِ قالب‌بندی‌شده — مقدار انگلیسی» دارد؛ timestamp خام و عبارت اضافی حذف شدند. زمان با grain مشترک ساعت/روز/هفته/ماه، تقویم انتخاب‌شده و `Asia/Tehran` ساخته می‌شود. ۱۶ تست Dashboard، lint، typecheck و build تولیدی Web موفق‌اند؛ Web3000 و API4000 پاسخ HTTP ۲۰۰ دارند.
+
+## DASHBOARD-TREND-TEXT-SUMMARY-0919 — PC-C — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-19: خلاصهٔ متنی/جدول دادهٔ هر نمودار روند Dashboard نیز دقیقاً با grain زمانی نمودار ساخته و نمایش داده شود: امروز ساعتی، هفته و ماه روزانه، فصل هفتگی و سال ماهانه.
+- `COMPUTER_ID=PC-C`؛ ادامهٔ شاخهٔ `codex/pc-c-dashboard-reporting-latest` از `origin/develop@acc35d18`. محدودهٔ رزروشده: renderer و تست‌های Dashboard Web، در صورت نیاز تست‌های bucket موجود در Reporting و اسناد وضعیت. بدون Migration، Schema، دادهٔ عملیاتی/دمو، Permission، Dependency یا Lockfile.
+- نتیجه: جدول بازشوندهٔ نمودارهای line اکنون عنوان «خلاصهٔ ساعتی/روزانه/هفتگی/ماهانه» و ستون زمانی هم‌راستا با grain دارد؛ ردیف‌ها نیز با همان تقویم شمسی/میلادی انتخاب‌شده برای محور نمودار و زمان `Asia/Tehran` قالب‌بندی می‌شوند. ۱۶ تست هدفمند Dashboard، lint و typecheck و build تولیدی Web موفق‌اند؛ Web3000 و API4000 پاسخ HTTP ۲۰۰ دارند.
+
+## DASHBOARD-TREND-SPARKLINE-AXIS-0919 — PC-C — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-19: Sparklineهای KPI Card بدون نقطهٔ زمانی نمایش یابند و تگ رشد/افت نسبت به بازهٔ هم‌طول قبل با آیکون و درصد خوانا در کنار مقدار KPI باشد. نمودارهای روندِ اصلی عنوان محور نداشته باشند، از عرض کامل canvas استفاده کنند و برچسب‌های مقدار در gutter چپ قرار بگیرند. grain زمانی نیز برای امروز/هفته/ماه/فصل/سال به‌ترتیب ساعت/روز/روز/هفته/ماه باقی بماند و در محور زمان منعکس شود.
+- `COMPUTER_ID=PC-C`؛ ادامهٔ شاخهٔ `codex/pc-c-dashboard-reporting-latest` از `origin/develop@acc35d18`. محدودهٔ رزروشده: dashboard renderer و تست‌های Web، calendar bucketهای Reporting و تست‌های هدفمند و اسناد وضعیت. بدون Migration، Schema، دادهٔ عملیاتی/دمو، Permission، Dependency یا Lockfile.
+- نتیجه: markerهای Sparkline حذف شدند؛ تگ رشد/افت با آیکون جهت، درصد انگلیسی و رنگ مستقیم رشد/افت/ثبات خواناتر شد. خط روند اصلی تمام canvas را با `preserveAspectRatio="none"` مصرف می‌کند، labels مقدار در gutter چپ هستند و عنوان محور ندارد. ساعتِ امروز با `Intl` در `Asia/Tehran` نمایش داده می‌شود و تست ۱۰ رفتار bucket ساعت/روز/هفته/ماه را پوشش می‌دهد. ۱۶ تست Web، lint/typecheck API/Web، build تولیدی Web و healthcheck Web3000/API4000 موفق‌اند.
+
+## DASHBOARD-TREND-AXIS-CALENDAR-0919 — PC-C — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-19: سری «دورهٔ قبل هم‌طول» از نمودارهای روند Dashboard حذف شود؛ محورهای نمودار با gutter مستقل و برچسب‌های بدون تداخل نمایش یابند؛ انتخاب واحد پول بلافاصله پس از بازهٔ زمانی در پنل فیلتر قرار بگیرد؛ و برای برچسب‌های زمانی نمودار روند، انتخاب تقویم شمسی/میلادی در خود نمودار فراهم شود.
+- `COMPUTER_ID=PC-C`؛ ادامهٔ شاخهٔ `codex/pc-c-dashboard-reporting-latest` از `origin/develop@acc35d18`. محدودهٔ رزروشده: قرارداد Projection Dashboard در `apps/api/src/reporting/**`، مصرف‌کننده و تست‌های Dashboard در `apps/web/src/modules/dashboard/**` و اسناد وضعیت همین واحد. این تغییر قرارداد، نسخهٔ V1 را additive نمی‌کند؛ فیلد اختیاریِ استفاده‌نشدهٔ `comparisonValues` حذف می‌شود و API همچنان مقایسهٔ KPI Cardها را منتشر می‌کند.
+- بدون Migration، Schema، دادهٔ عملیاتی/دمو، Permission، Dependency یا Lockfile.
+- نتیجه: نمودارهای خطی فقط روند بازهٔ انتخاب‌شده را دارند؛ برای هر نمودار line انتخاب «تاریخ شمسی/تاریخ میلادی» در UI عرضه شده و labels آن با زمان `Asia/Tehran` ساخته می‌شوند. plot و محورهای نمودار gutter جدا دارند. انتخاب واحد پول در تمام فیلترهای داشبوردی که آن را پشتیبانی می‌کنند، نخستین فیلتر بعد از بازهٔ زمانی است. ۶ تست API و ۱۶ تست Web، lint/typecheck و build تولیدی API/Web موفق‌اند؛ runtime تازه روی `localhost:3000` و API روی ۴۰۰۰ پاسخ HTTP ۲۰۰ می‌دهند.
+
+## DASHBOARD-TREND-COMPARISON-VISUAL-0917 — PC-C — SUPERSEDED
+
+- درخواست مالک در 2026-09-17: نمودارهای روند Dashboard از نظر خروجی با مرجع ارسالی هم‌راستا شوند؛ سری بازهٔ انتخاب‌شده با خط سرمه‌ای و نقطه‌ها، سری دورهٔ قبلِ هم‌طول با خط خاکستریِ خط‌چین، محور مقدار، خطوط راهنمای نقطه‌چین و برچسب‌های زمانی خوانا نمایش یابند.
+- `COMPUTER_ID=PC-C`؛ شاخهٔ کاری `codex/pc-c-dashboard-reporting-latest` پس از دریافت `origin/develop@acc35d18`. محدودهٔ رزروشده: Projection نسخه‌دار Dashboard در `apps/api/src/reporting/**`، مصرف‌کننده و تست‌های Dashboard در `apps/web/src/modules/dashboard/**` و اسناد وضعیت همین واحد.
+- بدون Migration، Schema، دادهٔ عملیاتی/دمو، Permission، Dependency یا Lockfile. سری مقایسه فقط از factهای Projection تأییدشده و بازهٔ قبل هم‌طول تولید می‌شود؛ مقدار فرضی یا تبدیل ارز افزوده نخواهد شد.
+- نتیجه: این طراحی در Work Item `DASHBOARD-TREND-AXIS-CALENDAR-0919` با درخواست جدید مالک جایگزین شد: سری `comparisonValues` از trend حذف شده، اما مقایسهٔ KPI Cardها و visualهای غیرروند باقی مانده است.
+
+## SALES-CONTRACT-TABLE-0919 — PC-A — LOCAL_COMPLETE
+
+Base acc35d18; COMPUTER_ID=PC-A. فهرست `/sales` اکنون سرستون خواناتر، ردیف‌های کم‌ارتفاع راه‌راه، شماره قرارداد برجسته، نام مشتری کوتاه‌شونده و ستون عملیات هم‌ردیف دارد. سه عمل موجود بدون تغییر دسترسی یا رفتار باقی مانده‌اند: پرداخت‌ها، PDF قرارداد و مدارک مسافر. API، داده، مجوز، Migration، وابستگی و ماژول دیگری تغییر نکرد. اعتبارسنجی: build بستهٔ Contracts، ۸ تست هدفمند Sales، lint سه فایل تغییرکرده، typecheck Web و build تولیدی Web موفق. شاخه: `codex/pc-a-sales-contract-table-0919`.
+
+## TOUR-HOTEL-PRICING-FLOW-0916 — PC-A — MERGED WITH DEVELOP / VERIFIED LOCALLY
+
+- 2026-09-16 commission follow-up: product owner clarified that commission may be percent or a fixed amount with its own currency. PC-A reserves the additive Package Pricing contract/schema/migration, API arithmetic/persistence, Sales UI/tests and bounded pricing docs on the existing task branch. Historical rows default to percent; fixed commission remains a profit expense and never changes sale price. Migration and shared-contract locks are held only for this follow-up; dependency/lockfile remains unassigned.
+- Commission follow-up result: additive schema/contract, exact multi-currency arithmetic, API persistence/publication and Sales UI are implemented. Tour demo 1 version 3 uses fixed EUR 15; tour demo 2 remains percent. Prisma validate/generate, targeted Contracts/API/Web tests, affected lint, typechecks and production builds pass; isolated runtime is active on API4200/Web3100/Web3200. Migration/shared-contract/doc locks for this follow-up are RELEASED; no public push or operational database change.
+- Branch `codex/pc-a-tour-hotel-pricing-flow-0916`, based on the owner's local preview `72cfdadf`. Select Ticket Catalog tour/departure, record linked hotel purchase rates, price each hotel/room for the stay plus flights. Excel/banner outputs are deferred by the owner.
+- Reserve Reservations hotel-rate API/Web, Ticket Catalog public departure usage, Package Pricing API/Web/math/tests, additive Prisma migration/FKs, shared pricing contracts and bounded task/status/data/decision docs. Migration and central contract/docs owner: PC-A/TOUR-HOTEL-PRICING-FLOW-0916. No dependency lock. The initial preview-only restriction was superseded on 2026-09-16 by the owner's explicit request to combine this work with the primary development line; `origin/develop@10851d1a` is merged into this task branch without changing port 3100.
+- Ticket Catalog exports branch-scoped departures; Reservations persists the departure FK on immutable rate batches; Sales consumes that departure's current batches through the public projection. Legacy packs remain readable and may be explicitly linked by revision. Matching dates do not assign historical packs to a tour.
+- Result: explicit linkage, exact stay-night pricing, fixed/percent adjustments and multicurrency room-package preview/publications are implemented. The integration retained both Package Pricing and Reporting modules/Prisma relations and both documentation histories. Prisma validate/generate, Contracts/Database/API/Web typechecks, full API tests (1436 passed, 135 skipped), full Web tests (1477 passed), full API/Web lint and production builds pass. Two local demo tours completed Ticket → Finance payment → two-currency hotel grid → maker/checker publication and edit/republication on isolated `rubi_pricing_flow_0916`; the operational database is untouched. Locks release with the merge commit; origin is public so no public push is performed.
+
+## HOTEL-RATE-PACKS-0915 — PC-A — IMPLEMENTED ON ISOLATED 3200 / REVIEW PENDING
+
+- 2026-09-16 follow-up requested by product owner: each selected hotel row in
+  the group purchase-rate table must choose and persist its own currency.
+  Reserved scope is the Reservations rate-row schema/additive migration,
+  validation, pack/public projection, focused tests, workspace table and
+  bounded task/status documentation. Migration and Central Docs owner are
+  PC-A/HOTEL-RATE-PACKS-0915 for this additive slice; no dependency, IAM,
+  Sales, Package Pricing source, Web3100 or operational-data change is in scope.
+  Result: the row `currency` field is populated from historical batch currency,
+  new table rows select EUR/USD/IRR independently, and older clients fall back
+  to their batch currency. Prisma generation, API/Web typechecks and production
+  builds passed; API4200 health and Web3200 login redirect respond. Locks are
+  RELEASED after the scoped commit; browser visual QA remains with the owner.
+
+- 2026-09-15 UX follow-up reservation on the same PC-A task branch/PR #293: owner reports `+ بستهٔ جدید` appears ineffective and requires all hotel-rate management to be tabular. Scope only `apps/web/src/modules/reservations/hotel-rates/packs-workspace.tsx`, its module CSS, focused Web tests and bounded status/task docs. Replace pack cards with a table, expose a visible unsaved draft/edit mode and focus the first city input when creating, and present range metadata as a table above the existing editable hotel-rate sheet. No API, shared contract, Schema/Migration, permission, dependency, Sales/Package Pricing source, Web3100 or shared data change. Central-doc bounded entries reserved to PC-A/HOTEL-RATE-PACKS-0915-UX until scoped commit; all other shared locks remain RELEASED.
+- UX result: `+ بستهٔ جدید` now switches from list to a visible unsaved draft row and opens/focuses the editor; reopening a saved row switches to edit mode. Pack list, branch/city/stay metadata and selectable hotel rates are tables, with responsive horizontal scroll. Six focused Web tests including draft/table markup, Web typecheck, scoped lint and 48-route production build passed. Web3200/API4200 responded 200; Web3100 unchanged. The Central-doc reservation for this bounded UI follow-up is `RELEASED` after scoped commit; PR #293 remains draft, no merge or transfer. Actual click inside the logged-in Codex browser remains product-owner visual QA because Computer Use forbids automating the Codex app/auth UI.
+
+- Owner request: change only Reservations `/reservations/hotel-rates` group purchase-rate capture. Keep Sales `/sales/pricing` and Package Pricing module untouched. City first, then check-in/check-out range, then active saleable hotels of that city as a selectable grid; each city/range is a separately reopenable rate pack. Selected hotels have broker, nightly base and room factors editable; unchecked hotels are not price rows. The tick is the operator's range availability confirmation, not an invented nightly inventory feed.
+- Branch `codex/pc-a-hotel-rate-packs-0915` stacked on the unmerged PC-A Package Pricing branch. Scope: Reservations rate validation/service/controller/public projection/Web workspace/history/tests, MasterTravelDirectory additive public city/hotel choices and reference validation, additive nullable Reservations batch pack/city/version fields with real city FK and a new migration, task/status/data docs. `Migration Owner = PC-A/HOTEL-RATE-PACKS-0915` for only that additive change; `Central Docs Owner = PC-A/HOTEL-RATE-PACKS-0915` for bounded entries. No Dependency/Lockfile, IAM grant, Master Data implementation or Sales Package Pricing change. Immutable older batches and their Sales FKs remain valid; edits create new batch versions, with optimistic version check and idempotency, not in-place row overwrite. Rehearse migration on isolated preview DB before restarting only API4200/Web3200. Web3100/shared DB/develop/main remain untouched.
+- Handoff result: additive migration succeeded on synthetic `nora_hotel_preview`; Prisma validated/generated, API 19 focused tests and Web 4 focused tests passed, scoped lint and API/Web production builds succeeded. Live synthetic Tehran 2027-02-01→06 pack created/reopened, nightly base 100→110 saved as version 2 and reread. Web3200/API4200 health/login/pack detail are 200; Web3100 listener remains untouched. No Package Pricing source file changed. `Migration Owner` and `Central Docs Owner` for this bounded work are now `RELEASED` after scoped implementation; no operational migration, merge/deploy or 3100 transfer is authorized by this result. Review is stacked behind unmerged PR #278.
+
+## PACKAGE-PRICING-001 — PC-A — IMPLEMENTED ON ISOLATED 3200 / REVIEW PENDING
+
+- 2026-09-15 result after owner-authorized branch-only merge `origin/develop`: the direct Finance ticket-price/payment producer, offer-FK Procurement envelope, paid-cost Sales consumer, editable per-tour/per-batch drafts and immutable per-hotel/room publications are implemented on this task branch. No shared/operational DB, Web3100, `develop` or `main` was changed. Migration Owner and Central/Travel/Finance/Package contract locks remain with PC-A until this bounded work is committed and handed off; Dependency/Lockfile remains RELEASED. Preview Web3200/API4200 uses only synthetic data. Fresh isolated PG applied all 67 migrations; live ticket offer created an amount-free Finance request, cost/payment released only after full PAID, draft saved/edited, self-publish returned 403 and second synthetic reviewer published 18 room prices for three hotels. Browser visual QA failed due Windows sandbox ACL; HTTP/API/component QA passed. Cross-currency FX, unknown family occupancy and direct Sales contract quote consumption are explicit follow-ups; no automatic merge/deploy/3100 transfer.
+- Scoped implementation commit `e9f91e6f` completed the reserved migration, central docs and Travel/Finance/Package shared-contract changes; those PC-A locks are now `RELEASED` for a separately reserved next work item. Dependency/Lockfile was never acquired. Draft PR #278 remains unmerged; reviewer must inspect the Finance-direct exception and additive migrations before any develop integration.
+
+- Post-merge implementation reservation (PC-A, same task/branch, 2026-09-15): direct pre-sale Ticket purchase flow is owned by Finance for rate entry and settlement; Procurement keeps only the request envelope and other post-contract procurement policies are unchanged. Ticket Catalog producer creates a pending request linked to a real TicketPublishedOffer ID/version (and keeps older free-form catalog references readable); Procurement public service exports the pending envelope; Finance producer stores versioned adult/child unit costs, invoice total, currency and actual recorded payment revisions with account/method/date/reference, then exports only fully paid costs scoped to offer/branch/version. Package Pricing consumer saves per-hotel tour price drafts and immutable publications from the Finance/Reservations/Ticket public boundaries. Reserve additive shared Travel/Finance/Package Pricing contracts, producer services, module-local UI, targeted tests, `packages/database/prisma/schema.prisma` and a new additive migration only after this integrated baseline validation; `Migration Owner = PC-A/PACKAGE-PRICING-001-FINANCE-TICKET-BRIDGE`, `Central Docs Owner = PC-A/...`, and these three shared-contract Owners = PC-A/... for this bounded slice. Dependency/Lockfile stays RELEASED. No existing payment, published snapshot, Ticket capacity, operational database or Web3100 is rewritten; migrations are rehearsed on isolated PG before any preview upgrade. Producer contracts/API before Web; public source recheck and maker/checker publication remain mandatory.
+- 2026-09-15 continuation approval: owner explicitly permits merging fetched `origin/develop` into this task branch only, to incorporate the newer Ticket purchase request/Finance inbox producer before implementing direct Finance pricing/payment and the package publication bridge. This is not a merge of PR #278 to develop/main, does not touch Web3100 or shared data, and preserves all current Package Pricing/Sales preview work. Reserve merge-conflict resolution, current task docs/ADR and compatibility review here; no new Schema/Migration/Dependency change in this merge-only step. Owner chose Finance direct rate entry and payment, without separate Procurement approval, for pre-sale tour tickets. A new versioned, offer-ID-linked cost producer and Finance settlement flow must be scoped after the integrated baseline is verified.
+- 2026-09-15 owner Finance clarification: Sales adult/child flight fields are sale prices; the purchase request originates at ticket definition and Finance enters purchase price and pays. Current TicketPublishedOffer has no purchase fare and Finance inbox has no pre-sale Ticket source; Purchases is NOT_CONNECTED. Reserve investigation/ADR and the fail-closed Sales UI state on this same Task. New Ticket/Finance/Procurement producer contract, posting, Schema/Migration and publication persistence require a scoped implementation reservation/ownership check before changes; none are claimed in this phase. Web3200 isolated demo has one synthetic tour, three synthetic hotel purchase rows, and a read-only sale preview; Web3100 untouched.
+- بازتعریف صریح مالک در 2026-09-15: ماژول قیمت و پکیج باید زیرگروه واقعی «فروش و ارتباط با مشتری» در sidebar باشد و جریان از قیمت خرید هتل‌های تور در بازه تا تنظیم نرخ‌های فروش پرواز/بیزینس/کمیسیون و انتشار پیش رود. فاز ناوبری روی همین Branch/Task رزرو است: lib/navigation، AppShell Navigation، sidebar-icons، حذف CTA موقت Sales، تست‌ها و اسناد همین Task. شمار ۱۷ آیتم اصلی حفظ می‌شود؛ بدون Schema/Migration/Dependency/API در فاز ناوبری. منبع خرید و اتصال تور در ADR بررسی می‌شود.
+- Producer/consumer تغییر کمیسیون: PC-A Package Pricing API/Domain مقدار commissionCost را به breakdown نسخه ۱ به‌صورت optional/additive برای Web PC-A می‌دهد؛ historical JSON بدون آن همچنان قابل‌خواندن است. کمیسیون نسخه‌های جدید فقط از سود کسر می‌شود و به فروش اضافه نمی‌شود؛ snapshotهای منتشرشده قبلی immutable می‌مانند. قرارداد مشترک Package Pricing، domain/tests و اسناد همین Task برای این تغییر رزرو است؛ API/Contracts قبل از Web، بدون Migration/Dependency و بدون تغییر داده عملیاتی.
+- Producer/consumer نرخ خرید تور: PC-A Ticket Catalog TourDepartureV1 (نوبت، هتل‌ها، تاریخ و ظرفیت) و PC-A Reservations group hotel purchase-rate register (قیمت پایه هر اتاق/شب، ضرایب و کارگزار) projection عمومی خواندنی/نسخه‌دار به PC-A Package Pricing API و Web می‌دهند. Package Pricing فقط این سرویس‌های عمومی را مصرف و branch/date/hotel/currency را بازبینی می‌کند؛ هیچ query مستقیم به جداول Tour/Reservations در ماژول فروش ندارد. محدوده controller/service/module/Contracts/UI/tests همین سه ماژول و اسناد Task رزرو است؛ تغییر مشترک additive، producerها پیش از consumer، بدون Migration در فاز projection و بدون داده عملیاتی.
+- گزارش کاربر در 2026-09-15: بخش مدیریت قیمت در Web3200 پیدا نمی‌شود. رزرو تکمیلی روی همین Branch/Task برای CTA نمایان در داشبورد Sales، تست رگرسیون و اسناد همین Task است؛ route موجود /sales/pricing حفظ می‌شود و آیتم هجدهم منوی اصلی ساخته نمی‌شود. بدون API/Schema/Contract/Dependency یا تغییر Web3100.
+- نتیجه: CTA سرصفحه Sales اضافه شد؛ ۹ تست Sales/Pricing، lint، Web typecheck و Production Build ۴۸ صفحه موفق‌اند. Web3200 با build جدید بالا است و با session واقعی آزمایشی، /sales و /sales/pricing هر دو ۲۰۰ و href دکمه در HTML زنده حاضر است. Scope و قفل مرکزی پس از commit آزادند.
+- Follow-up صریح کاربر در 2026-09-14: ساخت Producer نرخ پایه هتل با انتخاب شهر/بازه، check-in/check-out و شب، Grid اکسل‌مانند همه هتل‌های شهر، تیک حضور در تور، قیمت پایه و ضرایب، ذخیره و ویرایش نسخه‌دار و تحویل Public Contract به Package Pricing. این follow-up روی همان Branch/PR ادامه می‌یابد تا blocker نرخ هتل واقعاً رفع شود.
+- محدوده follow-up رزروشده: `Master Data hotel base-rate periods` در Contracts/API/Web، Migration افزایشی مدل‌های نسخه‌دار، Public resolver و اتصال فقط از مرز عمومی به Package Pricing. `Migration Owner = PC-A/PACKAGE-PRICING-001-HOTEL-RATE-FOLLOWUP`، `Master Data hotel-rate shared contract Owner = PC-A/...` و `Central Docs Owner = PC-A/...`. Dependency/Lockfile رزرو نمی‌شود. قفل قدیمی `HOTEL-GROUP-RATES-0910` طبق final handoff همان Task آزاد است و جدول‌های purchase-rate متعلق به Reservations دست‌نخورده می‌مانند.
+- QA محلی Web3200 در 2026-09-15 روی همان Branch/Task: فقط ترتیب route اختصاصی hotel-rate-periods در Master Data API، تست رگرسیون آن و اسناد همین Task رزرو می‌شود. API4200 و دیتابیس آزمایشی مستقل‌اند؛ Web3100 و API مشترک تغییر نمی‌کنند. بدون Migration، Contract، Dependency/Lockfile یا داده عملیاتی.
+- نتیجه QA: route اختصاصی پیش از wildcard عمومی ثبت شد. Web3200/API4200 هر دو HTTP 200؛ شهر تهران، سه هتل synthetic، ساخت بازه پنج‌شبه با دو هتل منتخب، ویرایش نسخه ۱ به ۲ و بازخوانی نرخ ۱۳۰ در دیتابیس آزمایشی موفق‌اند. ۹ تست هدفمند و build API پاس شدند. کنترل بصری مرورگر به علت reset ابزار انجام نشد؛ Scope source و قفل‌ها پس از commit آزادند و 3100 دست‌نخورده است.
+- نتیجه follow-up: Grid بازه‌ای قیمت هتل، محاسبه شب، مبلغ پایه/شش ضریب Decimal، انتخاب هتل‌های تور، ذخیره و ویرایش نسخه‌دار، Audit و Public resolver پیاده‌سازی شد. ۶۴ migration روی PostgreSQL 16 خالی، seed دوبار، دو trigger immutable، typecheck API/Web و ۲۳ تست هدفمند/بصری موفق‌اند. blocker نرخ هتل Package Pricing رفع شد؛ Ticket Catalog و Renderer همچنان handoff باز هستند. `Migration Owner`، `Master Data hotel-rate shared contract Owner` و `Central Docs Owner` با commit این follow-up `RELEASED` هستند.
+
+- درخواست صریح مالک محصول در 2026-09-14: پیاده‌سازی زیرماژول عملیاتی «مدیریت قیمت و پکیج‌ها» در گروه «فروش و ارتباط با مشتری» و route داخلی `/sales/pricing` بدون افزودن آیتم جدید به منوی اصلی ۱۷‌بخشی. `COMPUTER_ID=PC-A` و Branch مستقل `codex/pc-a-package-pricing` از `origin/develop@19264e2a` است.
+- محدوده رزروشده: Package Pricing API/Web زیر ماژول Sales، مدل‌ها و Migration افزایشی Prisma، قرارداد عمومی نسخه‌دار Package Pricing و root export آن، اتصال حداقلی AppModule/navigation و permission catalog/seed، تست‌ها و اسناد همین Task. `Migration Owner = PC-A/PACKAGE-PRICING-001`، `Package Pricing shared-contract/root export Owner = PC-A/PACKAGE-PRICING-001` و `Central Docs Owner = PC-A/PACKAGE-PRICING-001`.
+- قفل `Dependency/Lockfile Owner` رزرو نمی‌شود و `RELEASED / UNASSIGNED` می‌ماند. هیچ Query مستقیمی به جدول‌های Master Data، Ticket Catalog، Reservations، Finance، Procurement، Sales Contracts، Documents یا Legal Entity انجام نمی‌شود؛ فقط Public Contract، Approved Projection یا Snapshot نسخه‌دار مصرف می‌شود. Renderer غیرمتصل با وضعیت واقعی `AWAITING_RENDERER` ثبت می‌شود و هیچ فایل/موفقیت ساختگی تولید نمی‌شود.
+- بررسی قفل در آخرین `origin/develop` و PRهای باز: Migration و Central Docs در `PROCUREMENT-001` صریحاً آزاد شده‌اند؛ Migration `FINANCE-008` با PR #270 در develop ادغام شده است. شاخه قدیمی `codex/pc-a-pricing-management` در develop حضور دارد و رزرو فعالی ندارد؛ UI نمونه‌ای آن با قابلیت عملیاتی این Task جایگزین/همگرا می‌شود.
+- نتیجه: قرارداد/API/UI/۱۳ مدل و Migration افزایشی، permissions، Decimal engine، immutable publication، maker/checker، quote/template/render/audit و حالت‌های fail-closed تکمیل و validate شدند. producer نرخ پایه هتل اکنون متصل است؛ تولید/انتشار پکیج دارای جزء بلیت تا Public Contract نرخ/ظرفیت Ticket Catalog مسدود است و Renderer نیز هنوز متصل نیست. `Migration Owner`، قراردادهای مشترک و `Central Docs Owner` پس از commit این Task `RELEASED` هستند؛ Dependency/Lockfile هرگز رزرو نشد.
+- Draft PR مستقل به `develop`: `#278`؛ merge نشده است.
+
+## PROCUREMENT-LIFECYCLE-ENTRY-0916 — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-16: تب‌های چرخهٔ پروندهٔ خرید (استعلام، سفارش، رسید، اصلاح، پذیرش خدمت، مغایرت، مرجوعی، فاکتور و ارجاع مالی) فقط نمایشی نباشند؛ ثبت و ویرایش مرحله‌ای داشته باشند و داده‌های محلی واقعی‌نما در همهٔ تب‌ها دیده شوند. `COMPUTER_ID=PC-B`؛ شاخهٔ مستقل `codex/pc-b-procurement-lifecycle-entry` از `origin/develop@20fc2d20`.
+- محدودهٔ رزرو: API و UI ماژول Procurement، قراردادهای افزایشی مرتبط، seed محلیِ قابل‌تکرار با شناسه‌های اختصاصی Procurement، تست‌های هدفمند و مستندات این واحد. داده‌های نمونه هیچ سفارش بیرونی، پرداخت یا سند حسابداری واقعی ایجاد نمی‌کنند؛ اتصال Reservations، فایل‌های گزارش untracked، Dependency/Lockfile و Migration خارج از محدوده‌اند مگر پس از نیاز فنیِ اثبات‌شده.
+- مرزها: Finance و Tasks فقط از public contractهای نسخه‌دار Procurement مصرف می‌کنند؛ هیچ دسترسی مستقیم به جدول ماژول دیگر، انتساب نقش تجاری یا تغییر خودکار policy انجام نمی‌شود.
+- نتیجه: فرم‌های عملیاتیِ موجود برای همهٔ تب‌های چرخه به API اصلی وصل‌اند؛ پیام روشن «ثبت و ویرایش» برای نقش فاقد مجوز، و راهنمای اصلاح نسخه‌دار برای نقش مجاز اضافه شد. شش پروندهٔ محلی واقعی‌نما با استعلام، سفارش، رسید یا پذیرش خدمت، اصلاح/مغایرت/مرجوعی مرتبط، فاکتور و ارجاع مالی وارد PostgreSQL محلی شدند. ابزار idempotent `procurement:demo:apply` فقط روی localhost اجرا می‌شود و به‌دلیل append-only بودن سوابق چرخه، تاریخچه را حذف یا بازنویسی نمی‌کند. هیچ پرداخت، posting مالی یا ارسال تأمین‌کننده ساخته نشده است.
+
+## RESERVATION-SECTION-EDIT-AGE-BANDS-0916 — PC-A — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-16: تب‌های ویرایش قرارداد در رزواسیون برای طرف قرارداد، پرواز، هتل، سایر خدمات و مسافران واقعاً قابل ویرایش و ذخیره باشند؛ ردهٔ کودک هتل نیز در فرم ارسالی به کارگزار به‌صورت ۲ تا ۶ و ۶ تا ۱۲ سال نمایش داده شود.
+- Branch مستقل `codex/pc-a-reservation-section-edit-age-bands-0916` از `origin/develop@4551bca4`؛ `COMPUTER_ID=PC-A`.
+- محدوده رزرو: ویرایشگر قرارداد رزواسیون، تنظیمات/پروجکشن فرم کارگزار و PDF رزواسیون، قرارداد Travel در صورت نیاز، تست‌های هدفمند و اسناد همین واحد. بدون Migration، Seed، دادهٔ عملیاتی، تغییر Permission یا Runtime مشترک تا زمان ادغام تأییدشده.
+- مالک فعال هم‌پوشان برای فایل‌های هدف در آخرین `origin/develop` پیدا نشد؛ تغییرات شاخه‌ها و worktreeهای دیگر حفظ می‌شوند.
+- نتیجه: تب‌های طرف قرارداد، پرواز، هتل، سایر و مسافران به فرم ویرایش نسخه‌دار وصل شدند؛ هتل شامل تاریخ، مشخصات، نوع و تعداد اتاق است و کودک انتخاب‌شده بدون تعیین بازهٔ ۲ تا ۶ یا ۶ تا ۱۲ سال ذخیره نمی‌شود. همان بازه در PDF فرم ارسالی کارگزار و جدول مسافران قرارداد چاپ می‌شود. مشاهدهٔ قرارداد در رزواسیون از همان خروجی HTML موفق فروش استفاده می‌کند و چاپ/ذخیره PDF داخل پنجره ممکن است؛ مسیر PDF مستقیم نیز حفظ شد. داده‌های قدیمی بدون فیلد اختیاری طرف قرارداد همچنان معتبرند.
+- اعتبارسنجی: typecheck بسته‌های Contracts/API/Web، lint فایل‌های متاثر، ۶ تست API و ۱۸ تست Web قابلیت اصلی، ۱۶ تست هدفمند خروجی قرارداد و build تولیدی API/Web موفق‌اند. Migration، Seed و تغییر Runtime مشترک انجام نشد.
+
+## FINANCE-INBOX-TICKET-BRANDING-0915 — PC-A — READY_FOR_REVIEW
+
+- Branch `codex/pc-a-finance-inbox-brand-0915` from `origin/develop@f5c1a159`; COMPUTER_ID=PC-A.
+- Scope: verify the port-3200 financial requests inbox is already present in the integrated port-3100 source, and adjust branding only in the flight-ticket PDF. Reserved files: `apps/web/src/modules/reservations/server/ticket-pdf-html.ts`, `apps/web/src/app/reservations/requests/[id]/tickets/pdf/route.ts`, targeted ticket tests, this assignment and `docs/PROJECT_STATUS.md`.
+- No other section, server checkout, migration, production data, or shared navigation is modified.
+- Result: the integrated /finance/requests route and live inbox already match the port-3200 source; ticket PDF only now enlarges Niayesh's own logo and resolves registered airline logos despite spacing/name variants. Targeted 11 Web tests, affected lint, Web typecheck, affected build, and visual QA of a one-page A4 Chrome PDF passed. No migration.
+
+## RESERVATION-TICKET-PDF-PASSENGER-0914 — PC-A — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-14: رفع خطای دانلود PDF بلیط قرارداد SC-2026-000003 و حذف وضعیت «نام مسافر ثبت نشده» برای Snapshotهای جدید. Branch مستقل `codex/pc-a-ticket-pdf-passenger-0914` از `origin/develop@b62054e3`؛ COMPUTER_ID=PC-A.
+- محدوده رزرو: نگاشت نام مسافر در Snapshot خروجی Sales، Renderer/Route PDF بلیط Reservations، تنظیم tracing دارایی همان Route، تست‌های هدفمند و اسناد Task. فایل‌های تاریخی RESERVATION-TICKET-PDF-0912 و RESERVATION-DIRECT-PDF-0910 آزاد شده‌اند؛ در آخرین `origin/develop` مالک فعال همپوشان پیدا نشد.
+- Renderer فقط Chrome/Edge نصب‌شده و فونت محلی خواندنی را کشف می‌کند؛ فونت اختیاری است و نبود آن صدور را متوقف نمی‌کند. هیچ Migration، Seed، داده عملیاتی، Permission، Dependency/Lockfile یا اجرای مشترک localhost در این شاخه انجام نمی‌شود.
+- نتیجه: نام در Snapshot درخواست‌های جدید حفظ می‌شود و قرارداد قدیمی دارای نام ناقص، نام را برای نمایش/PDF از پرونده اصلی مسافر می‌خواند. Chrome/Edge و فونت محلی بدون فرمان دستی کشف می‌شوند. ۴ تست API، ۱۸ تست Web، lint/typecheck/build API/Web و Smoke واقعی Chrome موفق‌اند؛ رزرو فایل‌ها برای Review آزاد است.
+
+## DASHBOARD-REPORTING-PC-AB-INTEGRATION — PC-C — PR_OPEN / CI_PENDING
+
+- درخواست 2026-09-15: دریافت تغییرات یکپارچه‌شدهٔ PC-A/PC-B از `origin/develop` و حفظ نسخهٔ نهایی Dashboard/Reports در شاخهٔ اجرایی `codex/pc-c-dashboard-reporting-latest`، سپس انتشار و درخواست merge.
+- تغییرات محلی PC-C پیش از ادغام ثبت می‌شوند؛ دادهٔ نمونهٔ PostgreSQL، فایل‌های `.data` و خروجی تولیدشده وارد Git نمی‌شوند.
+- شاخه‌های مستقل و باز PC-A/PC-B بدون تأیید یا merge خودشان به‌عنوان کار تکمیل‌شده تلقی نمی‌شوند؛ ریسک تعارض Schema/Manifest/Docs و تست یکپارچه‌سازی بررسی می‌شود.
+- `origin/develop@ff15c7d3` با حفظ Dashboard/Reports در Worktree مستقل ادغام شد؛ تعارض‌های Docs، AppModule و Prisma additive حل شدند و نام بسته‌های Reports با تغییر `@rubi` به `@nora` هماهنگ شد.
+- Prisma validate، typecheck و build Database/Contracts/Config/API/Web، lint محدوده و ۲۶ تست API + ۶۶ تست Web موفق‌اند. Worktree اجرایی ۳۰۰۰ و دادهٔ نمونهٔ آن دست‌نخورده ماند؛ merge به develop تنها پس از PR/CI انجام می‌شود.
+- پس از احراز هویت Git Credential Manager، Branch به `origin` پوش شد و PR شمارهٔ 289 برای `develop` باز شد. مرج پس از بررسی CI و قابلیت مرج انجام می‌شود.
+
+## REPORTING-AUTHENTICATED-RUNTIME-REPAIR — PC-C — LOCAL_COMPLETE
+
+- درخواست 2026-09-15: رفع خطای مشترک Dashboard/Reports/Favorites و اعتبارسنجی HTTP با احراز هویت، ذخیره و دانلود خروجی.
+- علت بازتولیدشده: جدول `b2b_organization_users` در دیتابیس محلی وجود ندارد و Interceptor سراسری پیش از رسیدن درخواست به Reports خطای P2021 می‌دهد.
+- محدوده: اعمال Migration افزایشی موجود `20260910100000_b2b_organization_users` فقط در دیتابیس localhost پس از بکاپ، اصلاح خطاهای persistence خروجی Reporting و تست‌های مرتبط. بدون ایجاد Migration جدید یا تغییر قاعده دسترسی B2B.
+- نتیجه: Migration موجود اعمال و با Prisma ثبت شد؛ نیازی به اصلاح بیشتر کد persistence نبود. HTTP با ورود واقعی حساب موقت، ۱۱ KPI، ۱۰ نمودار، ۱۲ Preview متصل، ثبت/خواندن/حذف Favorite، ذخیره فیلتر، شمارنده‌ها و دانلود CSV/XLSX/PDF موفق شد. حساب و خروجی‌های آزمایشی پاک شدند؛ ۱۸۰ fact نمونهٔ اصلی حفظ شد. PDF فعلی خلاصهٔ محدود است.
+
+## REPORTING-CATEGORY-FILTER-RTL-ICON — PC-C — LOCAL_COMPLETE
+
+- درخواست 2026-09-15: گزینه‌های فیلتر دستهٔ کاتالوگ گزارش‌ها راست‌چین و با آیکون تک‌رنگ در سمت راست عنوان نمایش داده شوند.
+- محدوده: فقط `reporting-workspace.tsx` و تست هدفمند همان کامپوننت؛ بدون تغییر API، دیتابیس، Migration، ناوبری، Dashboard یا وابستگی.
+- اجرا در شاخهٔ یکپارچهٔ مصوب `codex/pc-c-dashboard-reporting-latest` حفظ شد تا نسخهٔ Dashboard/Reports روی `localhost:3000` جابه‌جا نشود. TypeScript، lint و تست جدید موفق‌اند؛ انتظار قدیمی `RPT-001` در تست کامل فایل از قبل با کاتالوگ فعلی ناسازگار است.
+
+## DASHBOARD-REPORTING-DEMO-PROJECTION-REPAIR — PC-C — LOCAL_COMPLETE
+
+- درخواست 2026-09-15: رفع خطای بارگذاری داشبورد و نمایش خروجی factهای سفر نمونه در Dashboard و Reports.
+- فقط Projection/تست Reporting، وضعیت اتصال کاتالوگ، ابزار inspect خواندنی دمو و مستندات همین واحد اصلاح شدند؛ دادهٔ تولیدشده حذف یا وارد Git نشد.
+- تاریخ ISO بازهٔ پیش‌فرض دیگر دوباره پسوند زمان نمی‌گیرد؛ خروجی مالی بر اساس ارز جداست، و شاخص/گزارش فاقد Producer سفر با عدد ساختگی از fact سفر پر نمی‌شود.
+- API همان Worktree روی پورت ۴۰۰۰ بازساخته و با Web موجود روی ۳۰۰۰ یکپارچه است. اعتبارسنجی عددی و محدودیت نشست احراز شده در گزارش تحویل ثبت می‌شود.
+
+## DASHBOARD-REPORTING-LOCAL-DEMO-DATA — PC-C — LOCAL_COMPLETE / RUNTIME_ACTIVE
+
+- درخواست مالک در 2026-09-15: ایجاد دادهٔ نمونهٔ واقعی‌نما و قابل‌حذف برای
+  Dashboard و تمام گزارش‌های قابل‌اجرای کاتالوگ، بدون ثبت دادهٔ تولیدشده در Git.
+- محدوده: Projection عمومی Dashboard در ماژول Reporting، مصرف‌کنندهٔ Dashboard،
+  generator/cleanup محلی و مستندات اجرای همان داده. داده با شناسهٔ پیشونددار
+  `LOCAL_DEMO_DASHBOARD_REPORTING_` وارد PostgreSQL می‌شود و حذف فقط همان
+  شناسه‌ها را هدف می‌گیرد؛ دادهٔ عملیاتی موجود دست‌نخورده می‌ماند.
+- بدون تغییر Navigation، دادهٔ واقعی مشتری/مسافر یا اجرای migration مخرب.
+- نتیجه: Projection نسخه‌دار `reporting.dashboard.travel.v1` به API و Dashboard
+  متصل شد؛ ۱۸۰ fact دمو با شناسهٔ قابل‌حذف وارد PostgreSQL محلی است و فقط کارت‌های
+  گزارش سفر دارای Projection معتبر به Preview/Export وصل‌اند. Web/API typecheck
+  و ۴۰ تست هدفمند Dashboard/Reporting موفق‌اند؛ Web روی 3000 و API بازساخته‌شده
+  روی 4000 اجرا می‌شوند.
+
+## DASHBOARD-REPORTING-LATEST-009 — PC-C — LOCAL_COMPLETE / RUNTIME_ACTIVE
+
+- درخواست صریح مالک برای اجرای هم‌زمان آخرین نسخه Dashboard و Reports روی
+  `localhost:3000`.
+- شاخه یکپارچه از `codex/pc-c-reporting-remove-scheduling-ui@9d8d985f` ساخته می‌شود
+  و فقط commitهای مستقل Dashboard از `c4dc3c26` تا `af6de805` روی آن اعمال می‌شوند.
+- محدوده رزروشده: `apps/web/src/modules/dashboard/**`، اسناد وضعیت این Task و
+  یکپارچه‌سازی runtime؛ ماژول Reports مبناست و API، Prisma/Migration و dependency
+  تغییر نمی‌کنند.
+- نتیجه: Reports تا `9d8d985f` و Dashboard تا `af6de805` در یک شاخه قرار گرفتند؛
+  route `/dashboard` نیز از Shell اولیه به Workspace نهایی متصل شد. ۵۶ تست، lint،
+  typecheck و build تولیدی ۴۶ route پاس‌اند و runtime مشترک روی پورت ۳۰۰۰ فعال است.
+
+## REPORTING-REMOVE-SCHEDULING — PC-C — READY_FOR_REVIEW / LOCAL_RUNTIME
+
+- درخواست مالک در 2026-09-13: سکشن «زمان‌بندی‌ها» و قابلیت «زمان‌بندی گزارش» از
+  فرم پیکربندی تمام گزارش‌ها، Frontend و Backend حذف شوند.
+- محدوده رزرو: `apps/web/src/modules/reports/**`، `apps/api/src/reporting/**`،
+  تست‌های هدفمند Reports و مستندات همین واحد کار. جدول تاریخی
+  `reporting_schedules` و Migrationهای اعمال‌شده برای جلوگیری از حذف داده دست‌نخورده
+  می‌مانند؛ Endpoint، DTO، Service و Repository اختصاصی زمان‌بندی از API عمومی حذف
+  می‌شوند.
+- Branchهای اجرایی: `codex/pc-c-reporting-remove-scheduling-ui` برای Web و
+  `codex/pc-c-reporting-remove-scheduling-api` برای API موجود در Worktree اجرای
+  Reporting. بدون تغییر Dependency/Lockfile، Seed، مجوز IAM یا ماژول‌های دیگر.
+- نتیجه: ۳۶ تست هدفمند Web و ۲۲ تست هدفمند API، lint و TypeScript هر دو بخش و
+  build تولیدی Web/API موفق‌اند. Smoke محلی Web و health API پاسخ ۲۰۰ و Endpoint
+  حذف‌شده زمان‌بندی پاسخ ۴۰۴ داد؛ Runtime جدید روی پورت‌های ۳۰۰۰ و ۴۰۰۰ فعال است.
+
+## REPORTING-REMOVE-FAVORITES-UI — PC-C — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-13: آیکن ستاره از تمام کارت‌های کاتالوگ حذف شود و
+  کنترل‌های «همه گزارش‌های من / محبوب‌ها» نیز در نمای گزارش‌های من نمایش داده نشوند.
+- محدوده رزرو: فقط کامپوننت Workspace ماژول Reports و تست هدفمند همان نمایش،
+  به‌همراه سند وضعیت این واحد کار. بدون API، Schema/Migration، Seed/Data، قرارداد،
+  Dependency/Lockfile یا تغییر Runtime/API همکاران.
+- نتیجه: کنترل ستاره از همه کارت‌های کاتالوگ و نوار «همه گزارش‌های من / محبوب‌ها»
+  از نمای گزارش‌های من حذف شد. گزارش تازه ذخیره‌شده دیگر Favorite نمی‌شود. ۱۴ تست
+  هدفمند، lint و TypeScript وب موفق‌اند و نسخه همین Worktree روی پورت ۳۰۰۰ فعال است؛
+  قفل فایل‌های پیاده‌سازی آزاد شد.
+
+## REPORTING-OPERATIONS-STAY-IN-VIEW — PC-C — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-13: اجرای گزارش از «گزارش‌های من»،
+  «اشتراک‌گذاری‌شده با من»، «اجراها» و «زمان‌بندی‌ها» باید فرم پیکربندی را در همان
+  نمای فعال باز کند و کاربر را به کاتالوگ منتقل نکند.
+- محدوده رزرو: Navigation و Workspace/Operations View ماژول Reports و تست‌های
+  هدفمند همان رفتار، به‌همراه سند Task و مدخل‌های وضعیت. بدون API، Schema/Migration،
+  Seed/Data، قرارداد، Dependency/Lockfile یا تصرف Runtime همکاران.
+- نتیجه: آدرس اجرای هر ردیف همان View و Filter Snapshot را حفظ می‌کند و Dialog
+  پیکربندی در سطح مشترک Workspace باز می‌شود. 15 تست هدفمند، TypeScript، lint و
+  بررسی Git موفق‌اند؛ قفل فایل‌های این واحد آزاد شد.
+
+## REPORTING-CATALOG-MANAGEMENT-DECISIONS — PC-C — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-13: بازبینی دوباره مدل واقعی CRM، افزودن گزارش‌های
+  اثرگذار بر تصمیم‌گیری مدیریتی، شفاف‌سازی عنوان تمام کارت‌های کاتالوگ و حذف
+  گزارش «اطلاعات پایه».
+- محدوده رزرو: `apps/web/src/modules/reports/model/reporting.ts` و تست همان مدل،
+  به‌همراه `docs/tasks/REPORTING-CATALOG-MANAGEMENT-DECISIONS.md` و مدخل‌های
+  Reporting در اسناد وضعیت/تخصیص. بدون API، Schema/Migration/Seed، داده عملیاتی،
+  مجوز، قرارداد مشترک، Dependency/Lockfile یا تصرف Runtime همکاران.
+- گزارش‌های فاقد Public Projection و Endpoint تأییدشده فقط با وضعیت صادقانه
+  «در انتظار منبع داده» وارد کاتالوگ می‌شوند؛ هیچ عدد یا داده نمونه‌ای وارد Git
+  نخواهد شد.
+- نتیجه: گزارش «اطلاعات پایه» حذف و پنج گزارش تصمیم‌محور با کدهای `RPT-032` تا
+  `RPT-036` اضافه شد؛ عنوان‌های مبهم بازنویسی شدند. آزمون هدفمند 10/10، TypeScript
+  و lint محدوده موفق‌اند. محدودیت دو Suite تاریخی JSX و prerender دو مسیر نامرتبط
+  در سند Task ثبت شده است. قفل فایل‌های پیاده‌سازی آزاد شد.
+
+## RESERVATION-PURCHASE-LAYOUT-0915 — PC-A — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-15: فرم خرید رزرواسیون فقط هزینه خرید هتل و ترانسفر از کارگزار را ثبت کند، هتل قیمت هر شب یا کل اقامت بپذیرد و کنترل‌های فرم روی هم نیفتند. قیمت خرید بلیط هنگام تعریف در Ticket Catalog به صف مالی از مسیر مستقل Procurement می‌رود؛ این بخش با PR #282 وارد develop شده است.
+- Branch مستقل `codex/pc-a-reservation-purchase-layout-0915` از `origin/develop@b62054e3`؛ COMPUTER_ID=PC-A. محدوده رزرو: فرم خرید Web رزرواسیون، انتخاب خدمات واجد خرید، Gate خرید خدمات قرارداد در Finance و تست/اسناد همین واحد. بدون Schema/Migration/Seed، داده عملیاتی، Permission، Dependency/Lockfile یا تغییر Runtime مشترک.
+- مالک فعال همپوشان در آخرین `WORK_ASSIGNMENTS.md` و PRهای باز برای فایل‌های همین واحد پیدا نشد. شاخه‌های دیگر بدون reset/stash/overwrite/force-push باقی می‌مانند.
+- نتیجه: فرم خرید کارگزار هتل/ترانسفر ردیف‌های مستقل دارد؛ هتل مبلغ هر شب یا جمع را به مبلغ نهایی تبدیل می‌کند؛ خرید بلیط از این API رد و Gate مالی این فرم فقط هتل/ترانسفر را مطالبه می‌کند. ۴ تست هدفمند Web و ۶ تست هدفمند API، lint/typecheck محدوده و build تولیدی API/Web (۴۶ مسیر) موفق‌اند. آخرین `origin/develop` همچنان `b62054e3` و فایل مشترک تازه‌ای از آن تغییر نکرده است. Runtime مشترک ۳۱۰۰ تغییر نکرد.
+
+## MASTER-012-AIRLINE-BAGGAGE-FORM — PC-B — READY_FOR_REVIEW
+
+- پیگیری مالک محصول در 2026-09-15: قواعد بار «عنوان فارسی» نمی‌خواهند. تکمیل همان واحد روی PR #285 و Branch موجود، با حفظ تمام تغییرات قبلی و محدوده Catalog/Form/Editor/Fixture/Test اطلاعات پایه، رزرو شد؛ Schema/Contract/API و ماژول دیگر دست‌نخورده می‌مانند.
+- تکمیل پیگیری: فیلد عنوان فارسی از Catalog قواعد بار حذف و `name` لازم برای Backend به‌صورت خودکار و انگلیسی از کدهای موجود ساخته شد؛ Fixture نمایشی و Demo Data هماهنگ شدند. ۳۰ تست مستقیم، typecheck و lint محدوده موفق‌اند.
+- تحویل Merge در 2026-09-15 با تأیید صریح مالک محصول: CI اولیه PR #285 فقط در گیت قالب‌بندی فایل‌های تغییرکرده شکست خورد؛ قالب‌بندی Prettier و تست منبعی حساس به شکست خط اصلاح شد. ۳۳ تست هدفمند، typecheck، lint و قالب‌بندی تغییرات اکنون موفق‌اند؛ منتظر اجرای دوباره CI و Review پیش از Merge.
+- درخواست مالک محصول: قواعد بار در خود فرم ایجاد/ویرایش ایرلاین ثبت و برای بزرگسال، کودک و نوزاد و هر کلاس پروازی جداگانه قابل تنظیم شود.
+- `COMPUTER_ID=PC-B`؛ شاخه مستقل `codex/pc-b-airline-baggage-form` از `origin/develop@b62054e3`.
+- محدوده رزروشده: رابط فرم و Workspace حمل‌ونقل اطلاعات پایه، تست‌های مستقیم آن و اسناد همین واحد. مدل `MasterBaggageRule` و FKهای ایرلاین/کلاس موجود حفظ می‌شوند؛ بدون Schema/Migration، قرارداد مشترک، API جدید، Dependency/Lockfile یا فایل متعلق به PC-A.
+- قواعد هر ایرلاین به‌صورت رکورد مستقل Backend ذخیره می‌شوند؛ فرم ایرلاین فقط مسیر مدیریت این رکوردهای وابسته است. قفل مرکزی دیگری نیاز نیست.
+- نتیجه: زیرناوبری قواعد بار حذف شد؛ فرم ایجاد ایرلاین پس از ذخیره در همان Dialog به ویرایش تبدیل و ویرایشگر قواعد بار را فعال می‌کند. قواعد بزرگسال/کودک/نوزاد برای کلاس عمومی یا کلاس مشخص و مسیر جداگانه، با ویرایش/غیرفعال‌سازی و نمایش فقط‌خواندنی در پروفایل عرضه شدند. ۲۴ تست هدفمند، typecheck، lint محدوده و build تولیدی Web با ۴۶ Route موفق‌اند؛ رزرو فایل‌های اجرایی برای Review آزاد است.
+
+## PROFILE-PLACEHOLDER-AVATAR-001 — PC-B — VERIFIED / LOCAL_ACTIVATION
+
+- درخواست مالک محصول در 2026-09-14: عبارت‌های موقت منوی پروفایل به‌صورت کامل نمایش داده شوند و حروف مخفف «کارمند سامانه» یا «در حال دریافت اطلاعات» داخل آواتار نیاید. `COMPUTER_ID=PC-B`؛ شاخه `codex/pc-b-profile-placeholder-avatar` از `origin/develop@225be9bd`.
+- محدوده رزروشده: `user-menu.tsx`، fallback مدل پروفایل، تست‌های مستقیم و اسناد همین واحد. آواتار حالت loading/error یک دایره با رنگ سالید ساده است و آواتار کاربر احرازشده همچنان حروف نام واقعی را نشان می‌دهد. دو narrowing فقط‌نوعی در خروجی تازه‌مرج‌شده فرم رزرو نیز برای بازیابی build دقیق `develop` ثبت شد؛ رفتار، قرارداد و داده رزرو تغییر نمی‌کند. بدون API، داده، Permission، Schema/Migration، Dependency/Lockfile یا تغییر قرارداد مشترک.
+- نتیجه: متن‌های کامل «در حال دریافت اطلاعات» و «کارمند سامانه» کنار آواتار نمایش داده می‌شوند و آواتار این دو حالت بدون حروف مخفف، با رنگ سالید باقی می‌ماند. ۹ تست هدفمند، lint محدوده، typecheck کامل ۹ Task و build تولیدی ۴۶ Route موفق‌اند؛ رزرو فایل‌های پیاده‌سازی آزاد شد.
+
+## MASTER-011-MISSING-FIXES — PC-B — READY_FOR_REVIEW / MERGE_AUTHORIZED
+
+- درخواست مالک محصول در 2026-09-14: همه اصلاحات قبلی اطلاعات پایه که روی شاخه‌های remote مانده‌اند، از جمله ذخیره لوگو و اعلان تغییرات در زنگوله، بازیابی، Push و با `develop` ادغام شوند. `COMPUTER_ID=PC-B`.
+- Branch مستقل `codex/pc-b-master-data-missing-fixes` از `origin/develop@7a6cc53e`؛ منبع بازیابی فقط commit `4a118fd6` از PR #232 و commitهای `6d54694f`/`f87cd27c` از PR #105 است.
+- محدوده رزروشده: Master Data API/Web، اتصال عمومی Documents برای ذخیره فایل لوگو، Notification Center و تست/اسناد همان دو تحویل. Producerهای Master Data/Documents و مصرف‌کننده Web همگی در مالکیت PC-B هستند؛ دسترسی مستقیم به جدول ماژول دیگر ایجاد نمی‌شود.
+- بدون Schema/Migration/Seed، Contract مشترک، Permission، داده عملیاتی یا Dependency/Lockfile. تغییرات جدید `develop` و runtime فعال 3100 حفظ می‌شوند؛ Force Push و حذف Branch انجام نمی‌شود.
+- تکمیل: سه اصلاح حمل‌ونقلِ جاافتاده پیش‌تر با PR #241 وارد `develop` شدند؛ در این واحد نیز ذخیره واقعی PNG/JPEG لوگوی رکوردهای اطلاعات پایه در Documents و خوراک Audit اطلاعات پایه در زنگوله روی آخرین `develop` بازیابی شد. ناسازگاری تاریخی namespace و Cookie با `Nora` رفع و هم‌زمان اعلان‌های پایدار عمومی و HR حفظ شدند.
+- صحت‌سنجی هدفمند: ۵۹ تست API و ۳۹ تست Web، lint و typecheck هر دو برنامه و build تولیدی API/Web با ۴۶ Route موفق‌اند. هیچ قفل Schema/Migration، Contract، Dependency یا داده‌ای گرفته نشد و رزرو فایل‌های این Task برای Review آزاد است.
+
+## MASTER-010-CABIN-CLASS-TITLE — PC-B — MERGE_AUTHORIZED
+
+- درخواست مالک محصول: در «کلاس پروازی» عنوان فارسی از فرم و نمایش حذف و عنوان انگلیسی اجباری شود.
+- محدوده رزروشده: Catalog/Validation/Workspace حمل‌ونقل Web، آماده‌سازی و اعتبارسنجی Master Data API، Fixtureهای نمایشی کلاس پروازی، تست‌های هدفمند و اسناد Task. ستون پایدار `name` برای سازگاری Schema و مصرف‌کنندگان حفظ و از مقدار اجباری `englishName` در مرز API همگام می‌شود.
+- وابستگی: شاخه `codex/pc-b-cabin-class-title` از HEAD PR #240 (`f7affc37`) ساخته شده و به‌ترتیب به PRهای #240 و #236 وابسته است؛ شاخه‌ها و PRهای والد دست‌نخورده می‌مانند.
+- مرزها: هیچ Schema/Migration، Contract مشترک، Dependency/Lockfile، IAM، داده عملیاتی یا فایل متعلق به PC-A تغییر نمی‌کند. تغییر با حفظ API عمومی و FKهای Ticket Catalog/Baggage تحویل می‌شود و سازنده آن را خودکار Merge نمی‌کند.
+- مالک محصول ادغام مجموعه کامل PR #241 با `develop` را برای بازیابی اصلاحات جاافتاده صریحاً مجاز کرده است؛ همگام‌سازی باید تغییرات جدید `develop` را حفظ کند و بدون Force Push انجام شود.
+
+## MASTER-009-AIRLINE-BAGGAGE — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک محصول: «قواعد بار» از تب مستقل حمل‌ونقل خارج و داخل بخش/فرم ایرلاین مدیریت شود.
+- محدوده رزروشده: Workspace حمل‌ونقل Web در `apps/web/src/modules/master-data/**`، تست‌های هدفمند همین تجربه کاربری و اسناد Task. قواعد بار همچنان رکورد مستقل Master Data با ارتباط واقعی `airlineId` باقی می‌ماند تا مصرف‌کنندگان فعلی، از جمله Ticket Catalog، بدون تغییر قرارداد ادامه دهند.
+- وابستگی: این شاخه از HEAD آماده بازبینی PR #236 (`96b605b7`) ساخته شده و همان اصلاحات انواع هواپیما را حفظ می‌کند؛ PR #236 در طول این کار دست‌نخورده می‌ماند.
+- مرزها: هیچ Schema/Migration، API/Contract مشترک، Seed عملیاتی، Dependency/Lockfile، IAM یا فایل متعلق به PC-A تغییر نمی‌کند. خروجی فقط به PR مستقل علیه `develop` تحویل می‌شود و سازنده آن را خودکار Merge نمی‌کند.
+- تحویل: تب مستقل حذف و «قواعد بار» در زیرناوبری داخلی ایرلاین‌ها قرار گرفت؛ فرم، فیلتر، KPI، جدول و عملیات واقعی همان منبع `baggage-rules` در بخش ایرلاین حفظ شد. ۳۲ تست هدفمند، lint، typecheck، build تولیدی ۴۶مسیره و `git diff --check` موفق‌اند. PR #240 برای Review به `develop` باز است و باید پس از وابستگی #236 بررسی شود. جزئیات در `docs/tasks/MASTER-009-AIRLINE-BAGGAGE.md`.
+
+## MASTER-008-AIRCRAFT-FIELDS — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک محصول: در «انواع هواپیما» عنوان فارسی از فرم، فهرست و پروفایل حذف شود؛ سازنده و مدل به یک ورودی/نمایش واحد تبدیل و داده‌های آزمایشی با آن هم‌راستا شوند.
+- محدوده رزروشده: مدل و Workspace حمل‌ونقل Web در `apps/web/src/modules/master-data/**`، سازگاری ورودی و خروجی Master Data در `apps/api/src/master-data/**`، Fixtureهای آزمایشی همین ماژول، تست‌های هدفمند و اسناد Task. PR #232 لوگو و PRهای تاریخی Master Data بدون تغییر می‌مانند.
+- سازگاری: Schema موجود `manufacturer`، `model` و `name` حفظ می‌شود؛ API ورودی ترکیبی را در مرز Master Data به ستون‌های موجود تبدیل و برای مصرف‌کنندگان قدیمی payload جداگانه را نیز می‌پذیرد. هیچ Schema/Migration/Seed عملیاتی، Dependency/Lockfile، قرارداد مرکزی یا IAM تغییر نمی‌کند.
+- تحویل: عنوان فارسی از فرم، جدول، پروفایل و Excel انواع هواپیما حذف شد؛ ورودی و نمایش «سازنده و مدل» یکپارچه و Fixtureهای ساده/واقع‌نما هماهنگ شدند. ۲۹ تست هدفمند Web، ۲۷ تست هدفمند API، lint محدوده، TypeScript Web/API و build تولیدی هر دو برنامه موفق‌اند. جزئیات در `docs/tasks/MASTER-008-AIRCRAFT-FIELDS.md`.
+
+## WORKBENCH-041-MESSAGING-EMPTY-PARTICIPANT — PC-B — READY_FOR_REVIEW
+
+- User-reported Workbench messaging `INTERNAL_SERVER_ERROR` is reproduced in the shared API logs for conversation listing and direct conversation creation. Scope is limited to the Workbench messaging participant mapping and its regression test: omit the empty forwarded-sender placeholder from IAM UUID queries. No schema, migration, permissions, data or runtime ownership change.
+
+## BRAND-NORA-001 — PC-B — COMPLETE / VERIFIED / LOCAL_RUNTIME_ACTIVE
+
+- درخواست صریح مالک محصول در 2026-09-14: نام محصول و namespace پروژه در تمام بخش‌ها به `Nora/نورا` تغییر کند. `COMPUTER_ID=PC-B`؛ Branch مستقل `codex/pc-b-nora-brand` نسخه یکپارچه قبلی را با `origin/develop@2ad9c613` ترکیب می‌کند تا هیچ تغییر تاییدشده‌ای حذف نشود.
+- محدوده رزروشده: نام‌های نمایشی Web/API/Worker، metadata و Swagger، package scope داخلی، کوکی/هدر/کلیدهای runtime، نام فایل‌های برنددار، تست‌ها و مستندات جاری. `Dependency/Lockfile Owner = PC-B/BRAND-NORA-001` فقط برای rename نام پکیج‌ها و lockfile؛ هیچ نسخه وابستگی عوض نمی‌شود.
+- شناسه‌های رمزنگاری، magic bytes فایل‌های ذخیره‌شده، نام دیتابیس فعال و URL واقعی GitHub فقط در صورت حفظ سازگاری داده/لینک تغییر می‌کنند. این Task هیچ Schema/Migration/Seed، مجوز، نقش یا داده عملیاتی را تغییر نمی‌دهد. تغییرات نام در ماژول‌های دیگر صرفاً مکانیکی است و قرارداد رفتاری آن‌ها را عوض نمی‌کند.
+- اعتبارسنجی کامل موفق است: install frozen، ۹ Task TypeScript، ۶ Task lint، build تولیدی API/Worker/Web با ۴۶ route و تمام تست‌ها شامل ۱۳۷۹ Web، ۱۳۳۳ API و ۱۴۹ تست package. قفل Dependency/Lockfile پس از Commit آزاد است.
+- Runtime یکپارچه با Build `unified-ZyV35vImKKoEtH_BCsmJV` روی Web3100/API4191 فعال است؛ هر دو readiness برابر ۲۰۰ و صفحه ورود پس از reload قابل مشاهده است. همان دیتابیس و document storage قبلی حفظ شده‌اند.
+
+## WORKBENCH-037-REMOVE-HR-DESTINATION-CARD — PC-B — READY_FOR_REVIEW
+
+- درخواست صریح مالک محصول در 2026-09-13: پوسته پایین «درخواست‌های منابع انسانی» از صفحه میزکار حذف شود، اما Backend، مسیر `/hr`، مجوزها و اعلان‌های منابع انسانی باقی بمانند. `COMPUTER_ID=PC-B`.
+- Branch مستقل `codex/pc-b-workbench-remove-hr-link` از `origin/develop@dd177cfd`؛ محدوده فقط مقصدهای نمایشی Workbench، تست همان قرارداد و اسناد وضعیت این Task است.
+- هیچ API، Backend، Schema/Migration/Seed، Shared Contract، Permission، داده، Dependency/Lockfile یا منوی اصلی تغییر نمی‌کند.
+- نتیجه: کارت و لینک پایین «درخواست‌های منابع انسانی» از خانه میزکار حذف شد؛ منطق خواندن اعلان HR و کنترل مجوز آن بدون تغییر باقی ماند. چهار تست هدفمند Workbench، lint فایل‌های متاثر، Web typecheck و Production Build با ۴۶ Route موفق‌اند.
+
+## WORKBENCH-038-RUNTIME — PC-B — ACTIVE / USER_AUTHORIZED
+
+- User explicitly requests activation on 3100. Branch
+  `codex/pc-b-workbench-performance-runtime` combines tested WORKBENCH-038 with the
+  currently running Customer Affairs branch, preserving both public interfaces.
+- Reserve integration conflicts, build artifacts and the Web3100/API4190 runtime
+  replacement. Keep existing database, document storage and authentication settings.
+  No seed, fixture load, destructive migration or remote merge is authorized here.
+- Runtime readiness found two released, additive migrations pending, including the
+  Workbench persistence tables. Reserve the application lock for this deployment;
+  use Prisma's advisory lock, take a full database backup, and apply only the existing
+  approved migration set. No new migration is authored.
+
+## MARKETING-001H-REMOVE-HUB-PREVIEW-SELECT — PC-B — READY_FOR_REVIEW
+
+- درخواست صریح مالک محصول در 2026-09-14 و مرجع Screenshot 602: انتخاب‌گر نمایشی «پیش‌نمایش» از سمت چپ سربرگ Hub مارکتینگ حذف شود. `COMPUTER_ID=PC-B`.
+- Branch مستقل `codex/pc-b-marketing-remove-preview-select` از `origin/develop@2ad9c613`؛ محدوده فقط `apps/web/src/modules/marketing/components/marketing-workspace.tsx`، تست قرارداد همان ماژول و ورودی‌های وضعیت همین Task است.
+- شبیه‌ساز حالت‌های Preview وابسته به همان کنترل حذف می‌شود؛ پیش‌نمایش‌های تخصصی فرم‌ها دست‌نخورده می‌مانند. بدون تغییر Backend، API/Contract، داده، Schema/Migration/Seed، Permission، Dependency/Lockfile یا فایل UI مرکزی.
+- نتیجه: انتخاب‌گر و شبیه‌ساز حالت‌های نمایشی وابسته از Header و مسیر رندر Hub حذف شدند. ۲۱ تست مارکتینگ، lint فایل‌های متاثر، Web typecheck و Production Build با ۴۶ Route موفق‌اند.
+
+## FINANCE-008-INBOX-ACTIONS — PC-A — READY_FOR_REVIEW / ACTIVE LOCAL
+
+Base `eb6af3ff`; COMPUTER_ID=PC-A. عملیاتی‌کردن کارتابل مالی برای تأیید دریافت مسافر یا برگشت برای اصلاح، و ثبت پرداخت خرید خدمات رزرواسیون به کارگزار با حساب مبدأ، روش، مبلغ، ارز، نرخ روز، زمان و مانده. اتصال فقط از قرارداد/سرویس عمومی Sales و Reservations انجام می‌شود و Finance به جدول داخلی ماژول دیگر دسترسی مستقیم ندارد. محدوده Finance API/Web/contracts، Public boundaryهای لازم در Sales/Reservations، Prisma schema و یک Migration افزایشی، seed permission و اسناد همین Task است. بدون داده ساختگی، حذف دسترسی موجود، تغییر Migration تاریخی یا Dependency/Lockfile.
+
+Completed: عملیات تأیید/اصلاح دریافت فروش و پرداخت جزئی/کامل کارگزار با حساب،
+روش پرداخت، نرخ روز و مانده پایدار شد و نتیجه در Sales/Reservations بازتاب دارد.
+Migration و Seed محلی اعمال شد؛ `Ramtin` نقش افزایشی `finance_staff` و شش مجوز
+لازم را دارد. ۱۲۸۳ تست کامل API، ۱۳۴۳ تست کامل Web، typecheck، lint و build
+تولیدی API/Web موفق‌اند. Web3100/API4190 با build نهایی فعال‌اند؛ ادغام نیازمند
+تأیید جداگانه مالک محصول است.
+
+## WORKBENCH-040 — PC-B — VALIDATED / RELEASED
+
+- Reserve Workbench performance UI, HR self-performance projection/tests, additive Workbench contracts and own documentation for screenshot582 summary redesign. Add self-only today check-in/out and total approved leave request count, keep payslip period and shift dates explicit, remove raw activity rows. Producer HR/Workbench; consumer Workbench Web; new response fields are optional for compatibility. No employee reassignment, migration, dependency, permission change or shared runtime replacement.
+
+## WORKBENCH-039-UNIT-CONTRAST — PC-B — VALIDATED / RELEASED
+
+- Reserve message-composer.tsx and this task's status documentation for the screenshot581 selected department contrast fix. Branch codex/pc-b-workbench-unit-contrast from develop@e82d8216. Remove the unconditional surface background from selected unit buttons, retain Nora primary colors, match selected icon contrast and expose pressed state. No API, data, migration, dependency or shared component edits.
+
+## FINANCE-007-INBOX-COMPLETION — PC-A — READY_FOR_REVIEW / RUNTIME PERMISSION PENDING
+
+Base `4a84f844`; COMPUTER_ID=PC-A. مشخصات نقش `finance_staff` با مجوزهای حداقلی کارتابل و تحویل مالی تکمیل شد؛ کارتابل اکنون درخواست‌های واقعی فروش، ارجاع‌های مالی منابع انسانی و خرید خدمات رزرواسیون را از Public Service ماژول‌ها جمع می‌کند. Preview قدیمی، متن‌های فنی، وضعیت اتصال Producer و اقدام نمایشی غیرفعال از `/finance/requests` حذف شد. ماژول خرید مستقل Backend عملیاتی ندارد و تا ایجاد Producer واقعی داده‌ای برای آن جعل نمی‌شود. ۳ تست API، ۸ تست قرارداد Web، ۳ تست Migration، lint محدوده، typecheck و build تولیدی API/Web موفق‌اند و Web3100/API4190 فعال‌اند. انتساب افزایشی نقش `finance_staff` به کاربر `Ramtin` هنوز اجرا نشده و منتظر تأیید صریح مالک است؛ هیچ نقش یا مجوز قبلی حذف نخواهد شد.
+
+## WORKBENCH-038-PUBLISH — PC-B — MERGE_AUTHORIZED
+
+- User explicitly authorizes pushing and merging all changes from this Workbench task.
+- Reserve only integration of PR #259 and its ancestor #239 into current develop; preserve the independently merged HR destination removal. Resolve additive status documentation conflicts and run final CI on the updated head before merge.
+- No new migration, dependency, runtime replacement or unrelated open PR is included. Runtime integration branch remains pushed separately.
+
+## WORKBENCH-038 — PC-B — COMPLETE / TESTED
+
+- User requests a real, self-only My Performance tab: HR leave, shifts and latest
+  payslip, own sales/customer metrics and permission-scoped recent job activity.
+  Branch `codex/pc-b-workbench-my-performance` preserves WORKBENCH-037.
+- Reserve additive HR self-performance service/module export, Workbench aggregation,
+  controller/module, Workbench contracts/UI/tests and task/status documentation.
+  HR and Workbench producers are PC-B-owned; consume existing Sales and IAM public
+  services without changing their contracts, ownership or tables. No Reporting edits.
+- Additive contract producer: HR/Workbench; consumer: Workbench Web. Only the signed-in
+  actor is accepted, never a client-supplied employee/user ID. HR self-service may see
+  only its own released payslip projection; draft payroll and colleagues remain hidden.
+- No migration, schema, dependency, shared runtime or permission seed changes. Existing
+  completed WORKBENCH-037 reservations are released. Push a PR to develop after checks.
+- Delivered the self-only HR/Sales/activity backend and native Performance tab.
+  18 targeted API tests and 49 Workbench Web tests pass, with scoped ESLint,
+  API/Web TypeScript and both production builds (46 Web routes). No migration or
+  operational data/runtime change. Implementation reservations are released.
+
+## FINANCE-007-INBOX-COMPLETION — PC-A — READY_FOR_REVIEW / RUNTIME PERMISSION PENDING
+
+Base `4a84f844`; COMPUTER_ID=PC-A. مشخصات نقش `finance_staff` با مجوزهای حداقلی کارتابل و تحویل مالی تکمیل شد؛ کارتابل اکنون درخواست‌های واقعی فروش، ارجاع‌های مالی منابع انسانی و خرید خدمات رزرواسیون را از Public Service ماژول‌ها جمع می‌کند. Preview قدیمی، متن‌های فنی، وضعیت اتصال Producer و اقدام نمایشی غیرفعال از `/finance/requests` حذف شد. ماژول خرید مستقل Backend عملیاتی ندارد و تا ایجاد Producer واقعی داده‌ای برای آن جعل نمی‌شود. ۳ تست API، ۸ تست قرارداد Web، ۳ تست Migration، lint محدوده، typecheck و build تولیدی API/Web موفق‌اند و Web3100/API4190 فعال‌اند. انتساب افزایشی نقش `finance_staff` به کاربر `Ramtin` هنوز اجرا نشده و منتظر تأیید صریح مالک است؛ هیچ نقش یا مجوز قبلی حذف نخواهد شد.
+
+## WORKBENCH-037-REMOVE-HR-DESTINATION-CARD — PC-B — READY_FOR_REVIEW
+
+- درخواست صریح مالک محصول در 2026-09-13: پوسته پایین «درخواست‌های منابع انسانی» از صفحه میزکار حذف شود، اما Backend، مسیر `/hr`، مجوزها و اعلان‌های منابع انسانی باقی بمانند. `COMPUTER_ID=PC-B`.
+- Branch مستقل `codex/pc-b-workbench-remove-hr-link` از `origin/develop@dd177cfd`؛ محدوده فقط مقصدهای نمایشی Workbench، تست همان قرارداد و اسناد وضعیت این Task است.
+- هیچ API، Backend، Schema/Migration/Seed، Shared Contract، Permission، داده، Dependency/Lockfile یا منوی اصلی تغییر نمی‌کند.
+- نتیجه: کارت و لینک پایین «درخواست‌های منابع انسانی» از خانه میزکار حذف شد؛ منطق خواندن اعلان HR و کنترل مجوز آن بدون تغییر باقی ماند. چهار تست هدفمند Workbench، lint فایل‌های متاثر، Web typecheck و Production Build با ۴۶ Route موفق‌اند.
+
+## APP-SHELL-HEADER-UTILITY-LEFT-001 — PC-A — READY_FOR_REVIEW
+
+Base `dd177cfd`; COMPUTER_ID=PC-A. انتقال یکپارچه گروه تاریخ، زبان، پوسته، اعلان و منوی کاربر به لبه چپ نوار بالای AppShell طبق تصویر کاربر. محدوده فقط `app-shell.tsx`، تست header موجود و اسناد وضعیت است؛ رفتار کنترل‌ها، API، داده، Schema/Migration و وابستگی تغییر نمی‌کنند. PRهای قدیمی #155/#156/#159/#161 این فایل را در شاخه‌های قدیمی لمس کرده‌اند اما مبنای فعلی `develop` است و تغییر فعال تازه‌ای روی این چیدمان ندارند.
+
+Completed: تاریخ و HeaderActions داخل یک بلوک `ms-auto` قرار گرفتند تا در RTL به لبه چپ هدر منتقل شوند. نمایش دسکتاپ تاریخ و رفتار زبان/پوسته/اعلان/کاربر حفظ شد. ۴ تست متمرکز، lint محدوده، Web typecheck و build تولیدی ۴۶ مسیر پاس شدند؛ بدون تغییر API یا داده.
+
+## FINANCE-006-DELIVERY-PANEL-REDESIGN — PC-A — COMPLETE / MERGED / ACTIVE
+
+Base `6026370f`; COMPUTER_ID=PC-A. بازطراحی نمای «پرداخت کارگزاران و تحویل مدارک به فروش» در کارتابل مالی برای تفکیک روشن مراحل، نمایش کارت قرارداد، وضعیت تسویه خدمات و اقدام بعدی. محدوده `finance-delivery-panel.tsx`، انتقال محل نمایش آن از Workspace قدیمی حسابداری به `FinanceRequestInboxWorkspace`، تست متمرکز و اسناد وضعیت است؛ منطق API، مجوزها، داده، Schema/Migration و قراردادهای اشتراکی تغییر نمی‌کنند. PR قدیمی #126 فایل را در گذشته ایجاد کرده اما تغییر فعال تازه‌ای روی این محدوده ندارد؛ پیاده‌سازی فعلی `develop` مبناست.
+
+Completed: هدر راهنما و جریان دو مرحله‌ای، کارت مستقل قرارداد، شمارنده تسویه خدمات، وضعیت و اقدام صریح هر خدمت، علت غیرفعال بودن تحویل و وضعیت نهایی مجوز اضافه شد. کنترل از Workspace قدیمی حسابداری به `/finance/requests` منتقل شد. ۱۳۴۰ تست Web، تست متمرکز ۸ موردی، lint محدوده، typecheck و build تولیدی ۴۶ مسیر موفق بود. بدون تغییر API، داده، مجوز یا Migration.
+
+Merged via PR #254 at `e40878f1`. Web3100 runs the production build `55JsHVl1EIROpWDpoCZuS` from this checkout and API4190 is healthy; unauthenticated route check returns the expected 307 login redirect. Scope released.
+
+## FINANCE-005-ACCOUNTING-DROPDOWN-DEFAULTS — PC-A — COMPLETE / MERGED / ACTIVE
+
+- درخواست مالک محصول در 2026-09-13: هر چهار گروه منوی داخلی حسابداری هنگام ورود بسته
+  باشند و دو گروه «ارتباط با سامانه مودیان مالیاتی» و «حسابداری مالیاتی» نیز بدون
+  زیرگروه فعلی به شکل دراپ‌داون نمایش داده شوند.
+- Branch مستقل `codex/pc-a-accounting-dropdown-defaults` از
+  `origin/develop@f925ccda`؛ `COMPUTER_ID=PC-A`.
+- محدوده رزروشده: مؤلفه و تست قراردادی منوی داخلی حسابداری و اسناد همین Task. بدون
+  API، داده، Permission، Schema/Migration، Seed، Dependency یا تغییر منوی اصلی.
+- Push و PR به `develop` مجاز است؛ ادغام و به‌روزرسانی Web3100 پس از تست در ادامه
+  درخواست جاری مالک محصول انجام می‌شود. Force Push ممنوع است.
+- پیاده‌سازی تکمیل شد: هر چهار عنوان دراپ‌داون‌اند، state اولیه همه را بسته نگه می‌دارد
+  و دو گروه مالیاتی فعلاً هیچ زیرگروهی رندر نمی‌کنند. ۲۵ تست هدفمند، lint، TypeScript
+  و build تولیدی ۴۶ مسیر موفق‌اند؛ ادغام و فعال‌سازی Web3100 مجاز است.
+- هر چهار Gate CI پاس شدند؛ PR #246 با Merge Commit `88d26ebc` وارد `develop` شد.
+  Web3100 با Build ID `60YeidM5vzsZuojUx7D85` فعال و API4190 سالم است؛ رزرو آزاد شد.
 
 ## FINANCE-004-ACCOUNTING-SECONDARY-NAV — PC-A — COMPLETE / MERGED
 
@@ -29,6 +698,37 @@
 - Merge Commit `b5fdbe75` روی `develop` پوش شد؛ رزرو پیاده‌سازی این واحد آزاد است.
 - Web3100 از Worktree همین واحد با Build ID `RAhkQQeixfqHkOKXiubFX` فعال است.
 
+## FINANCE-003-INBOX-REDESIGN-INTEGRATION — PC-A — COMPLETE / MERGED / ACTIVE
+
+- درخواست مالک محصول در 2026-09-13: بازطراحی حرفه‌ای `/finance/requests` و ورود درخواست‌های
+  واقعی بخش‌های دیگر به کارتابل مالی. Branch مستقل
+  `codex/pc-a-finance-inbox-redesign-integration` از `origin/develop@d65d8acc`؛
+  `COMPUTER_ID=PC-A`.
+- محدوده رزروشده: `apps/web/src/modules/finance/**` و route/test مالی،
+  `apps/api/src/finance/**`، projection عمومی و فقط‌خواندنی پرداخت‌های منتظر تأیید در
+  `apps/api/src/sales/{sales.service,sales.repository,sales.controller}.ts` و تست‌های آن،
+  قراردادهای افزایشی Finance/Sales، ثبت `FinanceModule` در AppModule، و permission seed
+  حداقلی `finance.read` و `hr.connections.finance.receive` برای نقش مالی. PC-A مالک هر دو
+  ماژول Sales و Finance است؛ فایل HR تغییر نمی‌کند و فقط سرویس عمومی export‌شده مصرف می‌شود.
+- اتصال فعلی فقط درخواست‌های واقعاً persisted فروش و ارجاع‌های persisted منابع انسانی را
+  از public serviceهای مالک و با branch/permission scope تجمیع می‌کند. Reservations و
+  Purchases تا انتشار producer استاندارد `finance.payment-request.v1` در UI صریحاً
+  «متصل نیست» می‌مانند؛ داده Preview جای درخواست واقعی نمایش داده نمی‌شود.
+- بدون Schema/Migration/Dependency، بدون ثبت/تأیید مالی عملیاتی، بدون Query مستقیم جدول
+  ماژول دیگر از Finance و بدون تغییر runtime مشترک 3100/4190. Web/API این Task فقط روی
+  3200/4200 بررسی می‌شوند. Push و PR به develop مجاز؛ Merge/Force Push ممنوع.
+- پیاده‌سازی کامل شد: endpoint فقط‌خواندنی Finance، projection شعبه‌محور Sales، مصرف
+  سرویس عمومی HR، permission `finance.read` و رابط بازطراحی‌شده با وضعیت اتصال، KPI،
+  جست‌وجو، فیلتر و master-detail. ۸۲ تست هدفمند، lint محدوده، typecheck چهار package و
+  build تولیدی API/Web موفق؛ QA مرورگر ایزوله روی 3201 انجام شد و runtime مشترک تغییر
+  نکرد. Reservations/Purchases همچنان صریحاً `NOT_CONNECTED` و عملیات مالی غیرفعال‌اند.
+- مالک محصول در 2026-09-13 نمایش کارتابل جدید روی Web3100 را مطالبه و ادغام/فعال‌سازی
+  نسخه ترکیبی را مجاز کرد. پس از ادغام با آخرین `develop`، ۵۵ تست هدفمند، lint و
+  typecheck چهار package و build تولیدی API/Web دوباره موفق شدند.
+- هر چهار Gate نهایی CI پاس شدند؛ PR #237 با Merge Commit `2fc5e6d2` وارد `develop`
+  شد. Web3100 با Build ID `H2SQ5Bcvdx249ZC-GP-m1` و API4190 سالم فعال‌اند و رزرو این
+  واحد آزاد است.
+
 ## HR-014-BACKEND-ONLY — PC-B — MERGE_AUTHORIZED
 
 - User explicitly removes the standalone HR connections panel and wants integrations behind the existing forms. Reserve the central AppShell outlet removal, HR record referral link and now-unreachable referral UI/client/tests on `codex/pc-b-hr-backend-only-0912` from `origin/develop@6a4e0410`. Backend services, contracts, persisted records, permissions and the form directory/document/currency integrations stay intact. No migration, dependency or runtime takeover. Existing visibility context is retained for consumer compatibility. Push a review PR to develop; no automatic merge under the updated instructions.
@@ -37,8 +737,8 @@
 ## DASHBOARDS-001 — PC-C — AUTHORIZED / PLANNED
 
 - با دستور صریح مالک محصول در 2026-09-13، اجرای Full-Stack بخش Dashboard به
-  `COMPUTER_ID=PC-C` واگذار شد. Workspace مقصد `F:/Projects/Rubi` و Worktree
-  پیشنهادی `F:/Projects/Rubi/.worktrees/dashboards-001` است؛ PC-C باید وجود،
+  `COMPUTER_ID=PC-C` واگذار شد. Workspace مقصد `F:/Projects/Nora` و Worktree
+  پیشنهادی `F:/Projects/Nora/.worktrees/dashboards-001` است؛ PC-C باید وجود،
   Writable بودن و Remote صحیح را روی دستگاه خودش تایید کند.
 - محدوده انحصاری این واحد: `apps/web/src/modules/dashboard/**`،
   `apps/web/src/app/(crm)/dashboard/**`، Aggregationهای Dashboard در
@@ -89,6 +789,28 @@
   into `develop` as `1707d980`. All temporary reservations are released and the
   dependency/lockfile remained unassigned.
 
+## WORKBENCH-037 — PC-B — COMPLETE / TESTED
+
+- Remove the date and authorized-branch count block from the Workbench greeting card
+  at the user's explicit request. Reserve `workbench-workspace.tsx` and this status
+  entry only on `codex/pc-b-workbench-remove-greeting-meta`. No API, schema,
+  dependency, shared layout or operational-data change.
+- Removed the complete metadata block and its unused `HeaderToday` import. Web lint,
+  Repository typecheck (9 jobs) and the production Web build (46 routes) pass. The
+  initial greeting-card source reservation is released.
+- User follow-up restores the unit-message directory alongside contacts, groups and
+  conversations, while keeping the persisted Messaging/IAM/Documents integration.
+  Extend this work item to reserve `message-composer.tsx`, its focused tests and the
+  Workbench status entry on the same pre-merge branch. No API, schema, dependency or
+  cross-module contract change.
+- Delivered four explicit messenger views for units, contacts, groups and
+  conversations. All seven unit/template collections are visible again; direct/group
+  selection, group creation, persistence, attachments and forwarding keep using the
+  existing backend services. 47 Workbench tests, 42 isolated HR tests, scoped lint,
+  Repository typecheck (9 jobs) and the 46-route production Web build pass. A full
+  Web run passed 1337 tests and hit only the same two HR parallel 5-second timeouts;
+  both passed in the isolated rerun. All scoped reservations are released.
+
 ## B2B-CRM-CONNECTIONS-002 — PC-B — READY_FOR_REVIEW / TESTED
 
 - درخواست مالک محصول: ارتباط پرونده ۳۶۰ آژانس با داده‌های واقعی موجود CRM بررسی و اتصال‌های غایب در محدوده مجاز تکمیل شود. شاخه `codex/pc-b-b2b-crm-connections` از `origin/develop@6a4e041` و Worktree مستقل `C:\Users\admin\Rubi-b2b-crm-connections` استفاده می‌شود.
@@ -111,6 +833,140 @@
   Reservations template `استعلام از کارگزار` to the existing composer. This is
   presentation data only and creates no Finance, Procurement or Reservations
   mutation. The completed source is carried by WORKBENCH-036.
+
+## CA-FORM-LIST-FLOW — PC-B — VERIFIED / LOCAL_RUNTIME_ACTIVE
+
+- 53 tests, scoped lint and production build/TypeScript passed. Web3100 PID16408, build unified-gHKl3GgFbMmPI9-TYA1Qm, implementationeeb8c56b active. Authenticated browser confirms removed inputs and tight special-description spacing; no data saved during QA. API/DB untouched, Draft PR264, reservation released.
+
+- Reserve CA creation forms, post-create callbacks/tests and own docs on codex/pc-b-ca-form-list-flow from3f3f33c4. Remove source/queue inputs, preserve backend-required direct-intake defaults, align fields at start, return successful creations to refreshed row lists instead of auto-opening details. No schema/API/dependency/data changes. Preserve prior report/HR changes; Web-only activation after checks. Existing frontend targets retained. Fetch attempted and still fails on pre-existing internal checkpoint ref; no ref changes.
+
+## CA-REPORT-LAYOUT — PC-B — VERIFIED / LOCAL_RUNTIME_ACTIVE
+
+- 51 tests, scoped lint and production build/TypeScript passed. Web3100 PID8060, build unified-kuRKDyFYTAGyiLhQbOT_w, implementation8332b8e5 activated; HTTP200/runtime identity and authenticated desktop report screenshots verified. API/DB untouched. Draft PR262; reservation released. Responsive CSS implemented; mobile browser audit not claimed.
+
+- Reserve CA report component/CSS/tests and own docs; branch codex/pc-b-ca-report-layout from active1ada1e5f. No API/data/schema/dependency changes. User authorizes Web3100 activation after tests; preserve HR removal and API4190. Fetch/refetch failed on pre-existing internal checkpoint ref; no ref deletion or remote replacement. Nora authenticated desktop/corporate, responsive mobile; WCAG AA owner PC-B; targets p75 LCP2500ms/INP200ms/CLS0.1, JS200KB initial+80KB route, Lighthouse a11y90/perf80 (not measured claims).
+
+## HR-015-RUNTIME — PC-B — VERIFIED / ACTIVATION_BLOCKED
+
+- User authorizes applying merged PR226 UI removal to Web3100. CA owner explicitly handed off runtime at b1da23bd. Reserve AppShell outlet and HR referral UI removal on codex/pc-b-hr-panel-runtime-0913; preserve all CA commits and API4190/PID33612, database and contracts. Isolated build, Web-only cutover after checks. No migration or dependency changes.
+
+## CA-STAFF-PICKER-CLARITY — PC-B — IMPLEMENTED / ACTIVATION_PENDING
+
+- Date visible/accessibility labels simplified. Public HR directory unlinked employees now remain visible as disabled options with explanation, loading/retry and user-ID guard. This does not create identity mappings or make unlinked employees assignable. HR rollout task reports policy-blocked activation; no restart attempted here. Runtime baseline retains earlier build. Details: `docs/tasks/CA-STAFF-PICKER-CLARITY.md`.
+
+- Reserve CA-only date labels/tests, assignee picker and helper tests, own docs on `codex/pc-b-ca-staff-picker-clarity` from b1da23bd. Consume unchanged public HR directory; show unlinked employees explicitly without using employee IDs as user IDs. No IAM/HR mutations, permission expansion, migration or dependency changes. HR task owns current Web rollout; no runtime replacement without handoff. Existing Nora desktop/auth-walled UI targets preserved.
+
+## CUSTOMER-AFFAIRS-REPORT-DATA-E2E — PC-B — VERIFIED / LOCAL_RUNTIME_ACTIVE
+
+- Added 24 synthetic requests, 36 tickets, 20 satisfaction responses and 8 corrective actions; preview rolled back and repeat apply added zero. Existing data preserved. Removed end-date parenthetical and localized DONE/CANCELLED report labels. Web 46 focused tests, scoped lint, typecheck/build passed; date-filter 3 tests rerun passed. Authenticated browser ticket lifecycle, search, same-day date range and month/year grids verified. One API database-connection termination interrupted the first note attempt; runtime recovered and workflow rerun passed, root cause unresolved. Details and runtime handoff: `docs/tasks/CUSTOMER-AFFAIRS-REPORT-DATA-E2E.md`. Reservation released after documentation commit; no HR UI changes included.
+
+- User authorizes additive synthetic report data and E2E on local CA, plus remove parenthetical end-date label. Reserve CA-only repeatable local fixture script (own tables), one UI label/test, own docs and browser QA. Preserve existing rows, no real contacts/customer linkage, no messages/permission/migration changes. Dataset provenance in audit and deterministic IDs; rollback rehearsal before apply, duplicate run must add zero rows. Branch `codex/pc-b-customer-affairs-report-data-e2e` from 0d699946; same Web3100/API4190. Verify workflows only on new synthetic records.
+
+## CUSTOMER-AFFAIRS-DATE-FILTER — PC-B — VERIFIED / LOCAL_RUNTIME_ACTIVE
+
+- API 84 tests and Web 46 tests passed, scoped lint and build TypeScript checks passed. Boundary/branch/pagination and shared-calendar render tests included. Runtime handoff recorded in task doc; no migration or data mutation.
+- Both production builds passed. Combined Web3100/PID22416 and API4190/PID30152 restarted with the existing local configuration after ownership validation, source 758ad5b6. Web identity and HTTP200 verified; unauthenticated filtered API correctly returns401. No authenticated filter-save or visual browser QA claimed. Reservation released.
+
+- Reserve CA API list DTO/service/date validation tests, CA Web list filter/client/tests, own docs. Add optional v1 createdFrom/createdBefore UTC instants (inclusive/exclusive) to both list routes; producer/consumer PC-B, omitted means unfiltered, no schema/dependency changes. UI Gregorian date values from shared Persian/grid DatePicker convert browser-local day boundaries to UTC, including the entire end day. Scope lists including handoffs/followups/queues, not aggregate dashboards/reports. Branch `codex/pc-b-customer-affairs-date-filter`; preserve all data and other modules. Existing frontend/backend planning targets unchanged. Rebuild and activate the verified combined runtime after checks.
+
+## CUSTOMER-AFFAIRS-REQUEST-LABELS — PC-B — CODE VERIFIED / ACTIVATION PENDING
+
+- Removed lead terminology in CA forms, report/metric/tab labels and `apps/web/src/messages/fa.ts` navigation title/description; navigation expectation updated. 56 focused tests, scoped lint and 46-route build/typecheck passed. No stored records removed or workflow changed. Reservation released; existing runtime not restarted.
+
+- User clarified remove only lead terminology, keep customer requests. Reserve CA Web display strings and regression tests, the existing module navigation label and its expectation, own status docs. Branch `codex/pc-b-customer-affairs-request-labels` from `b8a60215`. No workflow/data deletion, API/schema/dependency/permission changes. Preserve technical leads keys for compatibility. Existing UI targets/assumptions unchanged; no runtime replacement.
+
+## CUSTOMER-AFFAIRS-CUSTOMER-PICKER — PC-B — CODE VERIFIED / ACTIVATION PENDING
+
+- Complete: 43 focused tests, scoped ESLint, standalone typecheck and 46-route production build passed. No data/API/schema/permissions changed. Runtime restart not retried; new-build browser QA not claimed. Reservation released; `docs/tasks/CUSTOMER-AFFAIRS-CUSTOMER-PICKER.md` records handoff.
+
+- Reserve only CA Web picker, form consumers and focused tests/docs on `codex/pc-b-customer-affairs-customer-picker` from `7a146dca`. Consume existing Customers public list/detail: include customer and passenger roles, paginate, preserve selection and show existing linked person in edit forms. No Customers producer/schema/contracts/dependency/permission changes; no live business writes or runtime replacement. Prior desktop/corporate, auth-walled Nora UI assumptions remain: p75 LCP2500ms/INP200ms/CLS0.1, 200KB initial +80KB route JS, Lighthouse a11y90/performance80, WCAG AA owner PC-B; planning targets, not measured claims.
+
+## CUSTOMER-AFFAIRS-WORKFLOW-COMPLETION — PC-B — CODE VERIFIED / ACTIVATION PENDING
+
+- Delivered atomic lead-to-person conversion, Sales response popup, persisted manual probability, site filter, opt-in transactional reminder notifications, resolution waiting pause, and opt-in sms.ir sending with durable idempotency and uncertain-outcome handling. API 177 tests / Web 39 tests, scoped ESLint, both typechecks and both builds passed. No migration, dependency change, real SMS or business submissions. Runtime restart remains blocked; no new-runtime visual verification. Reservation released for this slice; remaining backlog and activation runbook: `docs/tasks/CUSTOMER-AFFAIRS-WORKFLOW-COMPLETION.md`.
+
+- User selected sms.ir for messaging. Reserve CA-local outbound SMS API/controller and explicit send popup, using existing timeline/command persistence. Provider endpoint and header verified against IPeCompany/SmsPanelV2.DotNet official SDK. Secret/line/sender allowlist remain environment-only and disabled by default. Network acceptance is not handset delivery; timeout/uncertain outcome is persisted without automatic resend. No real SMS during QA.
+
+- Public Customers contract extension reserved under user's cross-module delegation: transaction-aware person creation through CustomerService, only Customers owns validation/encryption/audit and its tables. CA locks its own lead, invokes public creation, then links customerId atomically. Customers files match fetched develop (no competing diff found); no Sales/Finance producer edits (their newer remote changes are preserved).
+
+- Additive CA contract reservation: optional pausedAt/pausedMinutes read projection for existing stored fields; producer CA API, consumer CA Web, old clients ignore new fields. No schema mutation. WAITING_CUSTOMER pauses resolution only; first-response and unit delays remain counted.
+
+- User requests completion of the audited operational backlog, retaining four tabs. Branch `codex/pc-b-customer-affairs-workflow-completion` from combined `48d3989e` preserves previous CA work. Reserve CA backend/frontend, module-owned scheduler and tests, own docs; consume Notifications/Sales/Customers public services only. No shared schema/dependency locks acquired in this slice. Provisional backend targets retained from BACKEND-ROUTING (internal/PII, shared branch scope, 10:1 read/write, 50QPS, p50/p95/p99 100/300/600ms, SLO99.5%, RPO24h/RTO4h, PC-B); these are unmeasured planning targets. Runtime restart previously blocked; newer PC-A shared Web3100 must not be replaced. Live site/message activation requires external adapters/credentials, never a fabricated connection.
+
+## CUSTOMER-AFFAIRS-THEMED-SELECTS — PC-B — CODE VERIFIED / RUNTIME RESTART BLOCKED
+
+- Reserve only CA Web components/tests and own task/status documentation on `codex/pc-b-customer-affairs-themed-selects` from combined `ac19de0a`. Replace native visible dropdowns with existing Nora Select primitives, preserving form values and HR selection. No shared UI edits, API, schema, dependencies or permissions. Preserve API4190; verify and rebuild owned Web3100. No merge.
+- All four CA form/filter/assignee surfaces now use a module-local adapter over Nora Select primitives (RTL, theme tokens, elevated/scrollable popup). 38 tests and 46-route production build/typecheck passed; scoped lint rerun after correcting unused prop. Attempted owned Web3100 restart was rejected by execution policy before command execution; no runtime replacement or visual QA of the new build is claimed. Module reservation released; activation remains pending.
+
+## CUSTOMER-AFFAIRS-SITE-BRIDGE — PC-B — IMPLEMENTED / LIVE ADAPTERS PENDING
+
+- User explicitly delegates the cross-module connection scope formerly requiring PC-A coordination. Branch `codex/pc-b-customer-affairs-site-bridge` from combined `0b3117ad`; preserve existing local runtime. Reserve CA backend, additive CA site/ticket-origin schema and migration, CA contracts, IAM public authenticate consumption (no IAM implementation change), own docs and tests. Migration owner PC-B for this additive slice after fetched develop shows the latest WORKBENCH-036 migration reservation released; dependency lock not needed. No other active producer implementation is overwritten.
+- Contract v1 producer CA/site bridge, consumers future jahanbastan.ir/nystkt.ir servers: authenticated Bearer IAM session plus explicit server binding to site/user/branch; create minimal ticket and read safe status projection. Existing ticket list gains optional sourceSite filter; existing APIs remain compatible. Credentials/permissions are not generated or granted; unset bindings disable ingress. Reference to the ticket uses an FK and external identity has a unique constraint. No new frontend section, payment/refund execution, migration of existing data or automatic merge.
+- Added CA-side authenticated queues/responses for Sales, Reservations, Finance and Documents with destination permissions and existing response workflow. 64 scoped tests, lint/typechecks/API build pass. Additive migration rehearsed in rollback-only PostgreSQL schema, then applied locally after named DB backup; unrelated newer Workbench migration retained. Migration/schema reservation released. Live adapters, dedicated IAM bindings and public deployment controls remain pending, not silently enabled. See `docs/tasks/CUSTOMER-AFFAIRS-SITE-BRIDGE.md`.
+
+## CUSTOMER-AFFAIRS-BACKEND-ROUTING — PC-B — DONE / READY FOR INTEGRATION
+
+- Backend-only continuation authorized by user with standard pre-production assumptions. Reserve `apps/api/src/customer-affairs/**` and scoped tests plus own task/status entries on `codex/pc-b-customer-affairs-backend-routing` from combined `503c39c`. Complete assignment and Sales-response notification routing through the existing Notifications public service, retaining existing endpoint/schema contracts. No producer/consumer API changes, schema/migration, dependency, IAM grants, or other-owner modules. No shared runtime takeover: newer PC-A Web/API work must be preserved. External websites and new cross-module contracts remain separate owner-coordinated work, not claimed active.
+- Implemented owner/execution-owner and Sales-response notifications, working record deep links and idempotent/concurrency-safe response handling for handoff/referrals. 52 scoped tests, ESLint/typecheck and API build passed. No live business writes. Local process inspection confirmed Web3100 belongs to this combined worktree; vacant API4190 was started with its existing approved local configuration, not another PC's runtime. Module-local reservation released; website and producer-contract backlog remains incomplete. See `docs/tasks/CUSTOMER-AFFAIRS-BACKEND-ROUTING.md` for review/activation limits.
+
+## CUSTOMER-AFFAIRS-INTERNAL-LINKS — PC-B — UI SLICE WITHDRAWN / BACKEND PENDING
+
+- User requests cross-module connections. Reserve Customer Affairs Web public API consumers, reference/handoff forms and tests plus own docs, branch `codex/pc-b-customer-affairs-internal-links` based on live `a1d4cf0`. Consume existing Sales, Reservations and Documents read APIs and CA reference/handoff mutation contracts; do not modify producer modules, shared schema/contracts, credentials or permissions. External ingress/providers remain pending their owner contract and credentials. Existing referrals already feed Workbench. Preserve combined Web3100/API4190; no merge.
+- User clarified backend-only, no separate section. All new consumer UI/client/tests in this work item were withdrawn before commit; previous code/API preserved. Read-only QA found Documents accessible and Sales/Reservations 403 for the current account; no business mutations or permission changes. Frontend reservation released. Backend cross-module callbacks and website integration are not implemented; shared producer contracts/ownership must be coordinated before reserving that scope.
+
+## CUSTOMER-AFFAIRS-OPERATIONAL-FORMS — PC-B — DONE / BACKLOG PARTIAL
+
+- User requests completion of audited gaps. Reserve Customer Affairs Web components/client/tests and own docs on `codex/pc-b-customer-affairs-operational-forms` from live `cc9970b`. Implement existing-contract record editing, source/preferences, scoped HR directory assignment, lead stage/loss and corrective action forms, explicit ticket categories. Shared API/schema/dependency/other-module changes are not reserved; external messaging/site ingress, probability persistence and producer-side customer conversion/sales intake need separate contracts/coordination. Preserve Web3100 combined runtime and API4190. No merge.
+- Existing-contract slice verified: 35 tests, scoped ESLint/typecheck and production build (46 routes) passed. Authenticated browser verified edit fields, retained data/customer lookup, allowed stage/loss controls. The checked branch has no user-linked HR employees; picker shows this rather than inventing recipients. No data submissions; API4190 retained and Web3100 restarted with its configured public API. Own reservation released; larger backlog remains incomplete as documented.
+
+## CUSTOMER-AFFAIRS-FORM-DIALOGS — PC-B — DONE / VERIFIED
+
+- User requests popup forms. Reserve Customer Affairs Web components and scoped tests plus own task/status entries on `codex/pc-b-customer-affairs-form-dialogs`, based on live combined `304953b` to preserve Web3100. Reuse shared overlays without editing shared files. Convert creation, followup, qualification, referral, outcome and communication forms; keep underlying views mounted and API/data unchanged. No schema/dependency locks needed. Verify scoped checks, production build and browser; restart Web3100 only, retain API4190. No merge.
+- Completed seven modal editing surfaces. Scoped ESLint, 30 tests, typecheck and 46-route production build passed. Authenticated QA verified creation/customer lookup, followup/calendar, qualification, communication, Escape/focus return and 390px layout. Final build explicitly targets API4190; Web3100/PID10196 active, API4190/PID12504 unchanged. No business submissions. Reservation released; no merge.
+
+## CUSTOMER-AFFAIRS-WORKFLOW-REDESIGN — PC-B — DONE / VERIFIED
+
+- User authorizes logical restructuring and frontend redesign. Base is the live combined source `87239f4` to preserve unmerged Customer Affairs and shared Web3100 functionality; branch `codex/pc-b-customer-affairs-workflow-redesign`. Reserve Customer Affairs Web components/styles/client and focused tests plus this entry and own status/task documentation. Four primary sections; contextual filters, actionable overview, explicit qualification/communication/result forms using existing APIs. No schema, shared contract or dependency changes. Verify build and authenticated Web3100; API4190 retained. No merge.
+- Completed the four-section interface, overdue worklist, contextual filters, explicit qualification, editable followups and stage-specific support actions. Scoped ESLint, 29 focused tests and production build/typecheck (46 routes) passed; authenticated desktop/mobile QA verified existing records and no horizontal overflow at 390px. Web3100 restarted; API4190/data unchanged. Implementation reservation released; see task document for integration boundaries. No merge.
+
+## CUSTOMER-AFFAIRS-REMOVE-HR-OUTLET — PC-B — DONE / VERIFIED
+
+- User requests removal of the supplementary «درخواست‌های منابع انسانی» card from Customer Affairs only. Reserve the Customer Affairs Nora workspace, its scoped structural test and own status entry on `codex/pc-b-customer-affairs-remove-hr-outlet`; use the existing public HR visibility contract so the HR module and its outlet on all other routes remain unchanged. Rebuild/restart owned Web3100 only and verify in the authenticated browser; API4190, stored data, schema, permissions and dependencies stay untouched. No merge.
+- Activated the existing page-level HR outlet suppression contract only in the Customer Affairs Nora workspace, without changing the HR outlet or its default behavior. Scoped ESLint/formatting and the focused suite passed (5/5); production Web build/typecheck completed across 46 routes. Authenticated browser QA confirmed four retained navigation sections, six open leads, five open tickets, zero visible «درخواست‌های منابع انسانی» headings and no console errors on Web3100/PID15936 from source `010c655`; API4190/PID12504 and stored data remain unchanged. Draft PR #233; no merge.
+
+## CUSTOMER-AFFAIRS-REMOVE-SETTINGS — PC-B — DONE / VERIFIED
+
+- User requests removal of the Customer Affairs settings section. Reserve only the Nora workspace/component CSS, scoped navigation test and own status entry on `codex/pc-b-customer-affairs-remove-settings`; remove the settings tab, route view, read-only panel and dead local styling while preserving the four remaining sections, visual polish, data, API, schema, permissions, dependencies and global system settings. Rebuild/restart owned Web3100 only and verify in the authenticated browser; API4190 stays untouched. No merge.
+- Removed the module-local settings tab, view, read-only policy panel, icon import and dead policy CSS. The remaining four navigation sections are explicitly covered by the updated regression test. Scoped ESLint/formatting and the focused suite passed (4/4); production Web build/typecheck completed across 46 routes. Authenticated browser QA verified exactly the four retained Customer Affairs tabs on Web3100/PID15724 from source `5ebca3d`; the global company-settings navigation, API4190/PID12504 and stored data remain unchanged. No merge.
+
+## CUSTOMER-AFFAIRS-REMOVE-TAGLINE — PC-B — DONE / VERIFIED
+
+- User requests removal of the visible header tagline «همراه مشتری، از اولین درخواست تا آخرین پیگیری». Reserve only the Customer Affairs Nora workspace, its scoped structural test and own status entry on `codex/pc-b-customer-affairs-remove-tagline`, preserving the title, actions, visual polish, data, API, schema, dependencies and all other modules. Rebuild/restart owned Web3100 only and verify in the authenticated browser; API4190 stays untouched. No merge.
+- Removed the tagline only and extended the structural regression assertion. Scoped ESLint and formatting passed, the focused workspace suite passed (4/4), and the production Web build/typecheck completed across 46 routes. Authenticated browser QA verified the populated overview without the tagline on Web3100/PID29056 from source `f894409`; API4190/PID12504 and stored data were unchanged. No merge.
+
+## CUSTOMER-AFFAIRS-VISUAL-POLISH — PC-B — DONE / VERIFIED
+
+- User requests richer visual treatment for the existing Customer Affairs overview. Reserve the module CSS and own status entry on `codex/pc-b-customer-affairs-visual-polish`; preserve content, behavior, data, API, schema, dependencies and all other modules. Use existing Nora/theme tokens with accessible contrast, responsive states and reduced-motion support; verify with scoped checks, production build and authenticated browser QA on Web3100. No merge.
+- Completed with Nora-blue/teal and status-color gradients, accent rails, stronger selected-tab treatment, layered cards, subtle hover depth, richer panels and reduced-motion fallbacks. Scoped workspace tests passed (4/4), CSS formatting and diff checks passed, and the Web production build/typecheck completed across 46 routes. Authenticated desktop browser QA verified the populated overview on Web3100/PID15612 from source `a7a8ab7`; API4190/PID12504 and stored data were unchanged. No merge.
+
+## CUSTOMER-AFFAIRS-REMOVE-INTRO — PC-B — DONE / VERIFIED
+
+- User requests removal of the overview introduction banner and its two texts only. Reserve CA workspace, scoped regression test and own status entry on `codex/pc-b-customer-affairs-remove-intro` from shared runtime `7566d20`. Preserve all modules; Web3100-only rebuild/restart after checks. No API/database/schema/dependency changes.
+- Removed only the overview banner; metrics, hub and reports preserved. Scoped lint and tests passed (21 existing CA tests plus the new regression); production build/typecheck passed. Browser authenticated overview verified on Web3100, runtime source `ac15df6`, Web PID13128; API PID12504 unchanged. Draft PR #225; no merge.
+
+## UNIFIED-CUSTOMER-AFFAIRS-3100 — PC-B — LIVE / VERIFIED
+
+- User explicitly requests combining Excel/current Nora and Customer Affairs on Web3100 with its API. Base `origin/develop@6a4e041`; branch `codex/pc-b-unified-customer-affairs-3100`. Integrate published CA branch `f34166c` without replacing current modules. Reserve integration conflict resolution in schema reverse relations, app/contract wiring and task/status documents; no new domain contract or dependency change. Existing source worktrees remain untouched. Reuse the current local database and document storage; inspect/back up/rehearse the existing additive CA migration before applying it. Runtime cutover is authorized for the verified current Web3100/API4190 only, after build/test gates. No main/develop mutation, credential reset or broad seed.
+- Completed: shared source `09b3b18` is live on Web3100/PID1628 and API4190/PID12504, build `unified-vnpjB6iJEmubY1N0rxXr5`. Backup/rehearsal/additive CA migration succeeded; 38 users, 5 branches and 44 documents preserved. User separately approved 19 CA permissions for administrator only, audited without changing other roles. All 15 lint/typecheck tasks and six builds passed; API 1230 tests passed, Web 1336 plus the separately retried 42-test HR file passed (one original load-related timeout). Browser sign-in, CA overview/report and agency Excel dialog verified. Old preview3102 and rehearsal API4192 stopped. Implementation/central integration reservation released; future runtime replacement requires coordination and must retain this combined source. See `docs/tasks/UNIFIED-CUSTOMER-AFFAIRS-3100.md`.
+
+## MASTER-007-LOGO-UPLOAD — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک محصول: بارگذاری لوگو در ایرلاین‌ها و دیگر فرم‌های دارای لوگوی اطلاعات پایه واقعاً ذخیره شود. شاخه مستقل `codex/pc-b-master-data-logo-upload` از `origin/develop@6a4e0410` و Working Tree آغاز کار تمیز است.
+- محدوده رزروشده: جریان لوگوی `apps/web/src/modules/master-data/**`، endpoint و orchestration محدود `apps/api/src/master-data/**`، public service محدود مالک فایل در `apps/api/src/documents/**`، ثبت افزایشی integration module در `apps/api/src/app.module.ts`، تست‌های هدفمند و اسناد همین Task. تغییر باز PR #105 در زمینه اعلان‌های نرخ ارز حفظ و وارد این واحد نمی‌شود.
+- قرارداد producer/consumer: Documents مالک باینری، اسکن، Audit و شناسه سند باقی می‌ماند و Master Data فقط Reference را نگه می‌دارد. endpoint افزایشی و backward-compatible است؛ ویرایشگر Master Data بدون اعطای دسترسی عمومی آرشیو، فقط برای رکورد مجاز خود لوگو را بارگذاری/جایگزین/حذف می‌کند.
+- بدون Schema/Migration/Seed، Dependency/Lockfile، IAM grant یا تغییر داده عملیاتی. نوع PNG/JPEG، سقف ۵ MB، شعبه مجاز، optimistic version و رابطه دقیق `master-data/resource/id` در Backend کنترل می‌شوند. API p95 هدف موجود `<500ms` بدون Provider است؛ آپلود فایل وابسته به Storage/Scan بوده و endpoint/SLO جدیدی تعریف نمی‌شود.
+- تکمیل: مسیر محدود `POST/DELETE /api/v1/master-data/:resource/:id/logo` جای دسترسی مستقیم Web به آرشیو اسناد را گرفت. ایرلاین، بانک، بیمه، هتل، زنجیره هتل، شرکت ریلی/اتوبوس، سازمان، تأمین‌کننده و کارگزار پوشش دارند؛ جایگزینی و حذف، نسخه خوش‌بینانه و رابطه مالک رکورد را کنترل می‌کنند.
+- صحت‌سنجی: ۵۰۶ تست مرز Master Data/Documents در API، ۳۳۸ تست Master Data در Web، lint محدوده، typecheck و production build هر دو برنامه موفق‌اند. قفل‌های Task آزاد و تحویل آماده Review است؛ جزئیات در `docs/tasks/MASTER-007-LOGO-UPLOAD.md` ثبت شد.
 
 ## WORKBENCH-021 — PC-B — LOCAL_COMPLETE / RUNTIME_ACTIVE
 
@@ -135,12 +991,17 @@
   membership-gated read/send, server-side forwarding and the Workbench contacts,
   group and forward UI are active. All 56 baseline migrations plus Messaging
   passed on an isolated database. The additive migration was backed up and
-  applied to `rubi_hr_current_20260908`; existing 38 users, five branches and 44
+  applied to `nora_hr_current_20260908`; existing 38 users, five branches and 44
   documents were preserved. Combined runtime `05768d7` is healthy on Web3100
   (PID5864) and API4190 (PID22080); authenticated browser QA found three eligible
   contacts and the complete group form without creating real data. 1,222 API and
   1,327 Web tests, lint, typechecks and both production builds passed. Migration,
   central-contract and implementation reservations are RELEASED for review.
+
+## CUSTOMER-AFFAIRS-003 — PC-B — IMPLEMENTED / AWAITING AUTHENTICATED VISUAL QA
+
+- Reserve Customer Affairs Web components, local styles, API client presentation/query support and task documentation for the supplied customer-affairs.html reference. Branch `codex/pc-b-customer-affairs-nora-ui` continues the unmerged operational slice `b39c93d` (PR #221) in its clean worktree. Reuse Nora theme and live API; no schema, migration, dependency or shared shell edits. Central Docs reservation is limited to this entry, project status and own task report. Runtime ownership must be checked before restart.
+- Implementation and automated verification are complete: full Web lint, TypeScript/build (46 routes), 1329 full-suite tests and 3 additional new render tests passed. Preview on 3102 requires API CORS/runtime coordination and user sign-in for visual QA. Existing 3100/4190 runtimes were not changed. Central Docs reservation released for handoff; no migration or dependency lock was acquired. See `docs/tasks/CUSTOMER-AFFAIRS-003.md`.
 
 ## B2B-REMOVE-HR-REQUESTS-001 — PC-B — VALIDATED
 
@@ -153,8 +1014,14 @@
 ## CUSTOMER-AFFAIRS-002 — PC-B — UI_VERIFIED
 
 - `COMPUTER_ID=PC-B`; branch `codex/pc-b-customer-affairs-operational` and worktree
-  `C:/Users/admin/Rubi-customer-affairs-operational` start from
+  `C:/Users/admin/Nora-customer-affairs-operational` start from
   `origin/develop@700168e67cc0a495178946bb44bdd3528d2d49d7`.
+
+## CUSTOMER-AFFAIRS-002 — PC-B — READY_FOR_REVIEW
+
+- `COMPUTER_ID=PC-B`; branch `codex/pc-b-customer-affairs-operational` and worktree
+  `C:/Users/admin/Nora-customer-affairs-operational` are rebased onto
+  `origin/develop@b2098bc76521c35518cbb64ab5337bcaf565f8f0`.
 - Reserve Customer Affairs ownership for the operational vertical slice in
   `apps/api/src/customer-affairs/**`, `apps/web/src/modules/customer-affairs/**`,
   `apps/web/src/app/(crm)/customer-affairs/**`,
@@ -186,6 +1053,9 @@
   authenticated API smoke and desktop/mobile browser QA are complete. Migration, public
   contract and Central Docs locks remain owned by this Task only until its Draft PR is
   opened; final release and handoff are recorded in the follow-up delivery commit.
+  authenticated API smoke and desktop/mobile browser QA are complete. Draft PR #221 is the
+  review handoff. `Migration Owner`, `Customer Affairs public contract/root export Owner`
+  and `Central Docs Owner` are `RELEASED`; Dependency/Lockfile remained unassigned.
 
 ## B2B-EXCEL-IMPORT-EXPORT-001 — PC-B — UI_VERIFIED
 
@@ -201,7 +1071,7 @@
 
 ## WORKBENCH-032 — PC-B — UI_VERIFIED / CALENDAR_SESSION_LOCAL
 
-- Delivered Workbench UI polish: Notes date placeholders are short, the calendar creates session-local events with text/image/link attachments, the profile theme selector is removed, and the messenger has a colorful Rubi presentation without visible unavailable-state copy. Source `623fbb0`; 56 focused tests, scoped lint, TypeScript and 46-route production build passed. Authenticated browser verified all four requests and an event with image/link; no console errors. Web3100 PID14168/buildGhIUre85BIXBxND2PRsp2; API4190 unchanged. Draft PR211. Calendar persistence and message delivery remain outside this UI-only work item.
+- Delivered Workbench UI polish: Notes date placeholders are short, the calendar creates session-local events with text/image/link attachments, the profile theme selector is removed, and the messenger has a colorful Nora presentation without visible unavailable-state copy. Source `623fbb0`; 56 focused tests, scoped lint, TypeScript and 46-route production build passed. Authenticated browser verified all four requests and an event with image/link; no console errors. Web3100 PID14168/buildGhIUre85BIXBxND2PRsp2; API4190 unchanged. Draft PR211. Calendar persistence and message delivery remain outside this UI-only work item.
 
 ## WORKBENCH-031 — PC-B — UI_VERIFIED
 
@@ -249,7 +1119,7 @@
 
 ## WORKBENCH-020 — PC-B — UI_VERIFIED
 
-- Reserve Workbench-only dropdown wrapper and six native select consumers; reuse shared Rubi Select without changing shared components/dependencies. Branch codex/pc-b-workbench-themed-selects, PC-B.
+- Reserve Workbench-only dropdown wrapper and six native select consumers; reuse shared Nora Select without changing shared components/dependencies. Branch codex/pc-b-workbench-themed-selects, PC-B.
 
 ## WORKBENCH-019 — PC-B — UI_VERIFIED
 
@@ -341,13 +1211,13 @@ Source9b1c33c includes scoped corporate-profile boundary copy.111 tests, scoped 
 
 ## WORKBENCH-012-MESSAGE-TEMPLATES — PC-B — UI_READY / LOCAL_RUNTIME_3100
 
-- Reserve message-composer.tsx and module-local message-templates.ts plus own docs. Add Finance, Reservations, AI and Sales recipient choices with editable prepared texts. Branch codex/pc-b-workbench-message-templates, base d8b3e15. No message service, transmission, storage, owner API, schema or dependency changes. Existing authenticated desktop Rubi UI and accessibility conventions retained; runtime build coordinated with B2B.
+- Reserve message-composer.tsx and module-local message-templates.ts plus own docs. Add Finance, Reservations, AI and Sales recipient choices with editable prepared texts. Branch codex/pc-b-workbench-message-templates, base d8b3e15. No message service, transmission, storage, owner API, schema or dependency changes. Existing authenticated desktop Nora UI and accessibility conventions retained; runtime build coordinated with B2B.
 
 ## REPORTING-PC-C-AUTHORIZATION — PC-A → PC-C — AUTHORIZED / P0-04 LOCAL-GATE
 
 - مالک هماهنگی پروژه در 2026-09-10 به `COMPUTER_ID=PC-C` اجازه داد توسعه Reporting
-  را در Workspace اعلام‌شده `F:/Projects/Rubi` و Worktree مستقل
-  `F:/Projects/Rubi/.worktrees/reporting` ادامه دهد. این ثبت، مجوز سیستم‌عامل یا وجود
+  را در Workspace اعلام‌شده `F:/Projects/Nora` و Worktree مستقل
+  `F:/Projects/Nora/.worktrees/reporting` ادامه دهد. این ثبت، مجوز سیستم‌عامل یا وجود
   مسیر روی دستگاه مقصد را از PC-A ادعا نمی‌کند؛ PC-C باید آن‌ها را محلی تأیید کند.
 - محدوده انحصاری Task: `apps/web/src/modules/reports/**`،
   `apps/web/src/app/(crm)/reports/**`، `apps/api/src/reporting/**` و
@@ -372,6 +1242,17 @@ Source9b1c33c includes scoped corporate-profile boundary copy.111 tests, scoped 
   خارج از Scope باید پیش از اجرا با هر دو مالک ثبت شود. Merge، Force Push و تغییر
   مستقیم `main`/`develop` مجاز نیست. مرجع کامل:
   `docs/tasks/REPORTING-PC-C-AUTHORIZATION.md`.
+
+## REPORTING-RESTORE-219-LATEST — PC-C — READY_FOR_REVIEW / LOCAL_RUNTIME
+
+- شاخه `codex/pc-c-reporting-219-latest` از آخرین `origin/develop` ساخته شد تا
+  تغییرات یکپارچه همکاران حفظ شود و فقط UI ماژول Reports به snapshot نهایی
+  `219091bf962ed5ce5a8dfff9ba949e13b0e0b1fd` بازگردد.
+- محدوده این واحد فقط `apps/web/src/modules/reports/**`،
+  `apps/web/src/app/(crm)/reports/page.tsx` و مستندات همین task است. فایل‌های مشترک،
+  schema، migration، seed، dependency و تاریخچه شاخه‌های همکاران تغییر نمی‌کنند.
+- اعتبارسنجی شامل typecheck، تست‌های قابل‌اجرای Reports، production build و smoke
+  محلی روی پورت 3000 است. API موجود روی پورت 4000 دست‌نخورده می‌ماند.
 
 ## SALES-PRICE-MANAGEMENT-0912 — PC-A — READY_FOR_REVIEW / UI_PREVIEW
 
@@ -400,7 +1281,7 @@ Source9b1c33c includes scoped corporate-profile boundary copy.111 tests, scoped 
 - درخواست مالک محصول در 2026-09-12: تکمیل Phase A حسابداری و Vertical Slice کارتابل
   دریافت/پرداخت در فضای مستقل `/finance`. Branch مستقل
   `codex/pc-a-finance-core-accounting` از `origin/develop@4717b13` و Worktree مستقل
-  `C:/Users/niayeshseir-1/Rubi-finance-core-accounting` است؛ `COMPUTER_ID=PC-A`.
+  `C:/Users/niayeshseir-1/Nora-finance-core-accounting` است؛ `COMPUTER_ID=PC-A`.
 - محدوده رزروشده: `apps/api/src/finance/**`، `apps/web/src/modules/finance/**`، route موجود
   `/finance`، `packages/contracts/src/finance/**`، تست‌های Finance و سند
   `docs/tasks/FINANCE-002A-ACCOUNTING-AND-INBOX.md`. تغییرات اسناد مرکزی فقط به ورودی
@@ -503,7 +1384,7 @@ Source9b1c33c includes scoped corporate-profile boundary copy.111 tests, scoped 
 
 ## WORKBENCH-005-NATIVE-SHELL — PC-B — READY_FOR_REVIEW / LOCAL_RUNTIME_3100
 
-- User explicitly rejects the standalone demo and requests alignment with Rubi theme and application structure. Reserve native Workbench module/routes, restoration of original/tasks, compatibility redirect from/workbench/demo, additive Workbench sidebar/user entry via lib/navigation.ts, messages/fa.ts, sidebar-icons.ts, user-menu.tsx and their tests. Keep the seventeen business modules separate; use existing shared UI/theme/provider/auth.
+- User explicitly rejects the standalone demo and requests alignment with Nora theme and application structure. Reserve native Workbench module/routes, restoration of original/tasks, compatibility redirect from/workbench/demo, additive Workbench sidebar/user entry via lib/navigation.ts, messages/fa.ts, sidebar-icons.ts, user-menu.tsx and their tests. Keep the seventeen business modules separate; use existing shared UI/theme/provider/auth.
 - Public consumers only: current identity, recipient-scoped Notifications, personal Documents lists/detail/upload and existing profile. No counterfeit requests/messages/notes/favorites, localStorage or new persistence. No changes to owner service contracts, API, permissions, schema/migration or dependencies. Migration remains with Reservations per active PR153; request storage/messaging/private features cannot be represented as operational without that handoff.
 - UI is functional for existing owner services and explicitly unavailable where services do not exist. Preserve runtime base8bf0446 including B2B date filters. Runtime changes coordinated with existing owners; API4190/data/storage remain untouched. No merge.
 - Shared shell reservation additionally covers the compact sidebar grid row sizing for the added personal entry. No business module is removed. B2B owner supplied c83d530 (KPI colors), authorized for inclusion in the combined build.
@@ -512,7 +1393,7 @@ Source9b1c33c includes scoped corporate-profile boundary copy.111 tests, scoped 
 ## WORKBENCH-004-MENU-CURRENT-RUNTIME — PC-B — READY_FOR_REVIEW / LOCAL_RUNTIME_3100
 
 - User reports Workbench menu opens old `/tasks`. Runtime3100 changed to B2B source56d5d48/PID12500 after prior handoff; preserve the new B2B date filters by basing `codex/pc-b-workbench-menu-current-runtime` on56d5d48. Own worktree only; no edits to B2B checkout.
-- Reserve Workbench demo files, existing task page and own status/report entries. `/tasks` directly redirects to the demo when RUBI_WORKBENCH_DEMO=1; flag-off keeps the original workspace. All isolated demo protections remain. No shared shell/proxy/API/data/schema/dependency changes.
+- Reserve Workbench demo files, existing task page and own status/report entries. `/tasks` directly redirects to the demo when NORA_WORKBENCH_DEMO=1; flag-off keeps the original workspace. All isolated demo protections remain. No shared shell/proxy/API/data/schema/dependency changes.
 - B2B owner notified to coordinate3100 before replacement. Build/test candidate first; verify expected source/PID again. API4190 and all B2B/HR code remain unchanged. No merge.
 
 ## B2B-DOSSIER-DATE-FILTERS-001 — PC-B — IN_PROGRESS
@@ -522,7 +1403,7 @@ Source9b1c33c includes scoped corporate-profile boundary copy.111 tests, scoped 
 ## B2B-NAMED-BRANCHES-001 — PC-B — DONE / LOCAL_RUNTIME_3196
 
 - User explicitly repeats that the four company names must be branches and requests alignment of the contract branch selector. Reserve a local branch-reference provisioning script, agreement header CSS/component, and status docs on `codex/pc-b-b2b-named-branches` from0146c4f. No active IAM implementation lock found; consume public IAM access updates, preserve roles/other users and existing HQ records. Back up before additive reference writes. New branches are distinct from LegalEntity records; no reassignment of existing business rows. No migration/dependency change or merge.
-- Created four references and verified existing operator sees all four plus retained HQ. Public IAM update preserves existing roles and other users; repeated preview has zero missing branches. Backup: C:/Users/admin/Rubi-backups/cooperation-branches/before-1789146731135.dump (SHA25686534a4b44ec8d932a98119d613d0d668e724e1981e3c5c8cf8836d77221af42). Script/Web lint, typecheck, 97 Organizations tests and production build pass. Source7ada379, PR157 draft, no merge.
+- Created four references and verified existing operator sees all four plus retained HQ. Public IAM update preserves existing roles and other users; repeated preview has zero missing branches. Backup: C:/Users/admin/Nora-backups/cooperation-branches/before-1789146731135.dump (SHA25686534a4b44ec8d932a98119d613d0d668e724e1981e3c5c8cf8836d77221af42). Script/Web lint, typecheck, 97 Organizations tests and production build pass. Source7ada379, PR157 draft, no merge.
 - During build, another workbench demo acquired3100 (PID22408, apps/web/src/modules/workbench/demo/preview.mjs); launcher refused to stop it. Preserve that process. Served owned build hr005-a63a90ce0594f86b on3196 with API4191 CORS verified for3196. Release implementation reservations; runtime coordination needed before restoring3100.
 
 ## B2B-FINANCE-DOCUMENTS-EXPORT-001 — PC-B — DONE / LOCAL_RUNTIME_ACTIVE
@@ -582,7 +1463,7 @@ Source9b1c33c includes scoped corporate-profile boundary copy.111 tests, scoped 
 
 ## B2B-ORGANIZATION-USERS-001 — PC-B — DONE / LOCAL_RUNTIME_ACTIVE
 
-- Owner requests users/access forms, synthetic data and per-user section selection; explicitly confirms access is restricted to the same agency's 360 dossier, not the whole Rubi system. Reserve B2B org-user domain/API/portal access enforcement, Organizations UI and new standalone agency portal page, public Master Data reference projection if required, contracts/root export, scoped tests and docs. Clean branch `codex/pc-b-b2b-organization-users` starts from 3a3b9ab and preserves the owned runtime/PR142 stack. Prior implementation locks are released.
+- Owner requests users/access forms, synthetic data and per-user section selection; explicitly confirms access is restricted to the same agency's 360 dossier, not the whole Nora system. Reserve B2B org-user domain/API/portal access enforcement, Organizations UI and new standalone agency portal page, public Master Data reference projection if required, contracts/root export, scoped tests and docs. Clean branch `codex/pc-b-b2b-organization-users` starts from 3a3b9ab and preserves the owned runtime/PR142 stack. Prior implementation locks are released.
 - Migration Owner = PC-B for additive B2bOrganizationUser and FK/index/checks; reserve only its schema relations. No dependency lock. IAM remains owner of credentials, login, sessions and global permissions: consume existing exported IamService methods, with no IAM source/table writes outside that public service. New agency accounts have no global roles or branches. Organization membership/section grants are B2B-owned, rechecked on each portal request, with an additional global interceptor denying these accounts access to non-portal authenticated endpoints. Existing staff accounts are not converted to agency accounts.
 - Forms manage organization role, active status and viewable dossier sections; grants do not authorize contract/credit approval or administrative writes. Portal projections are scoped to the server-side membership and selected internal cooperation branch. No organization/branch supplied by a portal client is trusted. Preserve permissions, optimistic concurrency, atomic B2B audit and separate Master Data/Finance/Documents ownership.
 - Use existing modular monolith/PostgreSQL and synchronous service ports, existing backup/restore and operational targets; no new infrastructure/SLO is introduced. Data is internal identity/contact PII. Synthetic usernames/passwords are isolated from real users, credentials remain outside Git, and loader is idempotent with backup/verification. Rehearse additive migration before local3100/4190 cutover. No merge.
@@ -604,14 +1485,14 @@ Source9b1c33c includes scoped corporate-profile boundary copy.111 tests, scoped 
 ## B2B-PROFILE-CLARITY-001 — PC-B — DONE / LOCAL_RUNTIME_ACTIVE
 
 - Owner clarifies that the requested branch options are the counterparty agency's own branches, and asks where cooperation status, account manager and national ID are determined. Clean branch `codex/pc-b-b2b-profile-clarity` starts from 65042b4, preserving the current combined runtime and fetched develop e07c0c6. Reserve Organizations profile/address presentation, cooperation form/model, scoped tests and documentation.
-- Counterparty branches come from the existing public Master Organization addresses service; never use an address ID as an IAM branch scope. Preserve internal Rubi branch authorization separately. Clarify the responsible employee and provide working navigation to the existing independent contract review flow.
+- Counterparty branches come from the existing public Master Organization addresses service; never use an address ID as an IAM branch scope. Preserve internal Nora branch authorization separately. Clarify the responsible employee and provide working navigation to the existing independent contract review flow.
 - Reserve the Master Data organization identity slice (API allowed fields/validation, form catalog and tests), the additive optional organization national-ID column/migration, and its DATA_MODEL/DECISIONS entries. Migration Owner = PC-B/B2B-PROFILE-CLARITY-001; no other current active migration reservation was found. Producer = Master Data; consumer = Organizations Web through the existing generic values/attributes contract, additive and optional for legacy clients/rows. No dependency/lockfile or IAM changes. Validate and back up/rehearse before applying the additive migration to the owned local runtime.
 - Completed source dbd7329: agency-address selector and CRUD, account-manager explanation/review navigation, optional persisted company national ID in forms/dossier/directory. 90 Web + 479 API + 14 PostgreSQL targeted tests, lint/typecheck/schema/API/Database/Web builds and all four CI gates (34450246803) pass. Migration applied after restore rehearsal and fresh cutover backup; all data across 127 business tables and historical migration checksums preserved. Web3100 PID12100 / hr005-b0658359a760157c and API4190 PID19300 are healthy on the same database/storage. Real React browser checks passed; production browser currently needs login. PR140 is draft against develop, no merge. Release implementation and migration locks; coordinate any subsequent runtime replacement with this task.
 
 ## B2B-DIRECTORY-ACTIONS-001 — PC-B — DONE / LOCAL_RUNTIME_ACTIVE
 
 - Owner requests the Customers registration/Excel action bar shown in Capture.PNG on the Agencies home page. COMPUTER_ID=PC-B; clean `codex/pc-b-b2b-directory-actions` starts from 38203ea, preserving the owned combined runtime and fetched develop e07c0c6. Reserve only Organizations workspace presentation and task/status documentation; prior Organizations implementation locks are released. The Customers component is a read-only visual reference.
-- Reuse Rubi Card/Button styling for registration, Excel import, template download and filtered export. Connect to the existing cooperation wizard and validated import/export implementations, preserving permissions and data boundaries. No API/schema/migration/dependency, IAM or business-data change. Run affected checks and browser verification, then refresh the owned Web3100 runtime while preserving API4190.
+- Reuse Nora Card/Button styling for registration, Excel import, template download and filtered export. Connect to the existing cooperation wizard and validated import/export implementations, preserving permissions and data boundaries. No API/schema/migration/dependency, IAM or business-data change. Run affected checks and browser verification, then refresh the owned Web3100 runtime while preserving API4190.
 - Completed source 963978d: 89 Organizations tests, Web lint/typecheck/format/build (40 routes), all four push CI gates and actual React browser checks pass. Template/export workbooks, registration/import dialogs, permission-disabled actions and final styling match the intended flow. LOCAL3100-LATEST-0909 explicitly handed over its temporary runtime; Web3100 PID13656 / hr005-78e8e205babdeb9f and API4190 PID8236 now serve the combined B2B source with existing database/storage. Temporary API4000 was stopped after 4190 health; no other checkout or data was changed. Release implementation reservation; coordinate subsequent runtime changes with this task.
 
 ## B2B-DOSSIER-SALES-REMOVAL-001 — PC-B — DONE / LOCAL_RUNTIME_ACTIVE
@@ -625,7 +1506,7 @@ Source9b1c33c includes scoped corporate-profile boundary copy.111 tests, scoped 
 - Owner explicitly requests full access to every agency 360 section after the missing commercial-dossier permission error, continuing the concrete Nirvana-account permission question. COMPUTER_ID=PC-B; clean branch `codex/pc-b-b2b-dossier-access` starts from 1369efa, retaining the active runtime aa964d6 and fetched develop e07c0c6. Reserve only this local access administration and task/status documentation; no IAM implementation, schema, migration, dependency or runtime-listener change.
 - Inspect exact public IAM catalog/current role assignments, grant the missing dossier permissions to Nirvana through the existing IAM owner service, preserve all existing roles/branches and other users, and audit the action. Full B2B access may include reviewing another user's proposals; the enforced independent-review rule remains. Verify organization/Documents permissions and the existing branch scope, plus public B2B reads using the resulting permissions. No blanket grant of unrelated module administration.
 - Inspection found only the two B2B approval codes in the local permission catalog; the eight read/manage codes were absent. Reconcile only missing B2B entries from the existing canonical PERMISSION_SEED_DATA, following the repository's targeted permission-seed maintenance pattern. This is local reference-data administration, with no full seed, administrator-role expansion, or IAM source edit.
-- Completed: added the 8 missing canonical B2B permissions and assigned a dedicated `b2b-dossier-manager` role with all 10 B2B permissions only to Nirvana in existing HQ. Catalog repair, owner-service role creation/access update and audits committed in one serializable transaction. Existing roles/branches and other users were verified unchanged. All 21 related Master Data/Documents permissions already existed; four live synthetic dossier workspace/profile/rate/agreement/address reads succeed using the resulting effective permissions. 36 permission/workflow tests and runtime health checks pass; independent self-approval denial remains. Follow-up preview reports no missing catalog entries. No application source/build/migration or listener change; release this administration reservation. Private before/verified evidence is in `C:/Users/admin/Rubi-backups/b2b-dossier-access`.
+- Completed: added the 8 missing canonical B2B permissions and assigned a dedicated `b2b-dossier-manager` role with all 10 B2B permissions only to Nirvana in existing HQ. Catalog repair, owner-service role creation/access update and audits committed in one serializable transaction. Existing roles/branches and other users were verified unchanged. All 21 related Master Data/Documents permissions already existed; four live synthetic dossier workspace/profile/rate/agreement/address reads succeed using the resulting effective permissions. 36 permission/workflow tests and runtime health checks pass; independent self-approval denial remains. Follow-up preview reports no missing catalog entries. No application source/build/migration or listener change; release this administration reservation. Private before/verified evidence is in `C:/Users/admin/Nora-backups/b2b-dossier-access`.
 
 ## B2B-DOSSIER-FORMS-001 — PC-B — DONE / LOCAL_RUNTIME_ACTIVE
 
@@ -653,7 +1534,7 @@ Source9b1c33c includes scoped corporate-profile boundary copy.111 tests, scoped 
 
 ## B2B-FONT-001 — PC-B — DONE / LOCAL_RUNTIME_ACTIVE
 
-- Owner requests the Agencies/Organizations section to use the same font as the rest of Rubi. Continue the clean combined runtime at 2c434c1 on codex/pc-b-b2b-font-alignment; fetch and PC-B module/runtime ownership verified.
+- Owner requests the Agencies/Organizations section to use the same font as the rest of Nora. Continue the clean combined runtime at 2c434c1 on codex/pc-b-b2b-font-alignment; fetch and PC-B module/runtime ownership verified.
 - Reserve only corporate-design.css and this task's status/report entries. Remove the reference-specific Tahoma override so the directory, dossier and popup forms inherit the existing global Vazirmatn font. No new font/dependency, shared theme, API, HR or business-data change.
 - Validate affected Web checks and production build, then refresh only this task's owned Web3100 listener. Keep API4190 and the existing database/Documents configuration. Verify computed fonts and popup appearance in the real browser before handoff.
 - Completed: 87 Organizations tests, Web lint/typecheck, formatting and the 40-route production build passed. Web3100 serves source da1ed41 with the same global Vazirmatn family on the directory, table, dossier and all popup controls; browser font loading and the desktop popup were verified. API4190 PID18812 is unchanged and healthy. No data mutation or migration. Implementation reservation released; shared runtime coordination remains with this task.
@@ -662,9 +1543,9 @@ Source9b1c33c includes scoped corporate-profile boundary copy.111 tests, scoped 
 
 - Owner reports that localhost:3100/organizations still opens the generic organization form instead of the requested four-step B2B popup. Read-only diagnosis: active HR-011 checkout at 13b6f49 predates merged B2B PR113 (develop@7d716af).
 - Reserve this task's documentation and isolated runtime integration only on codex/pc-b-b2b-form-runtime. Combine published HR-010/011 with current develop, retaining both module implementations unchanged; do not modify the source checkouts or merge the HR PRs into develop.
-- HR owner explicitly handed over Web3100/API4190 after confirming no active work. Validate/build before replacing the reverified listeners. Preserve rubi_hr_current_20260908 on 127.0.0.1:55432 and hr007-documents; no schema, migration, seed, credential, permission, dependency or business-data changes.
+- HR owner explicitly handed over Web3100/API4190 after confirming no active work. Validate/build before replacing the reverified listeners. Preserve nora_hr_current_20260908 on 127.0.0.1:55432 and hr007-documents; no schema, migration, seed, credential, permission, dependency or business-data changes.
 - Acceptance: the real organizations entry opens the four-step cooperation popup on port 3100 while retaining current HR and the existing application shell. Record runtime identity and checks before releasing this reservation.
-- Completed: 196 targeted Web tests, 108 API tests, full lint/typecheck and production builds passed. The authenticated localhost:3100 browser now opens all four cooperation steps; existing organization search, seven-card agency profile, logo dialog and HR navigation work. No business form was submitted. Runtime source is f2981b5, fingerprint hr005-2fbd1e21da23276d; final listener/data configuration is recorded outside Git in Rubi-backups/b2b-form-runtime-final.json. Documentation-only follow-up commits do not change the built source. Implementation reservation released; coordinate later runtime changes with this task to preserve combined HR/B2B.
+- Completed: 196 targeted Web tests, 108 API tests, full lint/typecheck and production builds passed. The authenticated localhost:3100 browser now opens all four cooperation steps; existing organization search, seven-card agency profile, logo dialog and HR navigation work. No business form was submitted. Runtime source is f2981b5, fingerprint hr005-2fbd1e21da23276d; final listener/data configuration is recorded outside Git in Nora-backups/b2b-form-runtime-final.json. Documentation-only follow-up commits do not change the built source. Implementation reservation released; coordinate later runtime changes with this task to preserve combined HR/B2B.
 
 ## TOUR-RUNTIME-0910 — PC-A — VALIDATED / STARTUP_POLICY_BLOCKED
 
@@ -689,7 +1570,7 @@ Delivered definition, pricing, ordered relative itinerary and public Documents i
 
 - Owner reports the mission-reference selector in independent expense entry is not connected to recorded missions. Branch `codex/pc-b-hr-expense-mission-link` starts from the clean current HR-010 runtime `40c362e` (PR #125), preserving its operation buttons and develop `0261b91`.
 - Reserve HR-local form/model and related tests, plus HR service/tests only if needed to persist permitted expense-parent edits. Scope mission references for travel/advances/claims to existing canonical or legacy HR missions and matching company/employee; retain independent expenses, approval restrictions, permission checks, audit and optimistic versions. No shared contract/schema/migration, IAM grant, dependency or other module change.
-- PC-B retains the handed-over local runtime at `C:/Users/admin/Rubi-hr115-integration`, Web3100/API4190 with the existing database and document root. Read-only diagnostics only; do not seed or change business data for QA. Build affected services before coordinated local activation, commit/push and open a stacked review PR without merging.
+- PC-B retains the handed-over local runtime at `C:/Users/admin/Nora-hr115-integration`, Web3100/API4190 with the existing database and document root. Read-only diagnostics only; do not seed or change business data for QA. Build affected services before coordinated local activation, commit/push and open a stacked review PR without merging.
 - Result: current/legacy mission choices identify destination/dates and respect company/employee scope; permitted draft expense references now persist on create/edit/clear and link back to their mission. API validation preserves permissions, optimistic versions, approval/final-state guards and audit. All 99 HR Web tests and 80 HR API tests (21 isolated PostgreSQL) passed after resolving initial environment timeouts by rerunning sequentially. Source reservation is released for review; local activation and runtime handoff are recorded with `docs/tasks/HR-011.md` and the PR. No migration or merge.
 
 ## HR-PUBLISH-012 — PC-B — IN_PROGRESS / OWNER_APPROVED_MERGE
@@ -701,9 +1582,9 @@ Delivered definition, pricing, ordered relative itinerary and public Documents i
 
 ## HR-010-OPERATION-BUTTONS — PC-B — READY_FOR_REVIEW
 
-- Owner requests HR record operation buttons to match Master Data. Branch `codex/pc-b-hr-operation-buttons` starts from current runtime and `origin/develop@0261b91`; checkout is `C:/Users/admin/Rubi-hr115-integration`.
+- Owner requests HR record operation buttons to match Master Data. Branch `codex/pc-b-hr-operation-buttons` starts from current runtime and `origin/develop@0261b91`; checkout is `C:/Users/admin/Nora-hr115-integration`.
 - Reserve only the shared HR table controls/styles under `apps/web/src/modules/hr/**` and this task's status/report entries. Reuse the existing public UI Button appearance used by Master Data; keep existing permission checks, edit/detail callbacks, soft-delete confirmation, selection and export behavior. Master Data, app shell, API, IAM, database/schema/migrations and dependencies remain unchanged.
-- PC-B Uniting confirmed no active checkout/listener work and handed over Web3100 for this additive change after validation. Preserve API4190, `rubi_hr_current_20260908`, `hr007-documents` and all current develop changes; recheck listener ownership before restarting Web. Commit/push and open a review PR; no merge is requested for this work item.
+- PC-B Uniting confirmed no active checkout/listener work and handed over Web3100 for this additive change after validation. Preserve API4190, `nora_hr_current_20260908`, `hr007-documents` and all current develop changes; recheck listener ownership before restarting Web. Commit/push and open a review PR; no merge is requested for this work item.
 - HR tables now use direct outlined View/Edit/Delete buttons with Master Data's shared Button sizing/icons, 8px spacing and destructive text color. Existing callbacks, detail visibility, soft-delete confirmation and capability gating remain unchanged; buttons are disabled while the table loads. All 97 existing HR/shared-Button tests, full Web lint and typecheck passed. Browser attachment timed out, so interactive visual QA is not asserted; build/runtime results accompany the review handoff in `docs/tasks/HR-010.md` and PR. Implementation reservation is released; coordinate any later listener replacement.
 
 ## DOCUMENTS-008-BLUE-BUTTON-CONTRAST — PC-B — READY_FOR_APPROVED_MERGE
@@ -751,7 +1632,7 @@ Delivered definition, pricing, ordered relative itinerary and public Documents i
 
 - Owner explicitly approved merging both the date change and PR #115, and receiving latest develop. Integration worktree codex/pc-b-hr115-integration starts from published PR115@628012a and incorporates develop@130606d without modifying source worktrees.
 - Temporary integration-only ownership: conflicting status/plans, IAM permission catalog union and Prisma model union. Preserve HR, Sales, Ticket/Reservations, current company/profile/notifications and both histories; no new domain feature, dependency, migration file or IAM grant.
-- HR owner handed over runtime3100/4190. Keep rubi_hr_current_20260908 and hr007-documents as active data/storage; no reset, seed or password changes. Rehearse existing pending migrations on a restored private backup before live cutover. Historical checksum differences remain unchanged and documented.
+- HR owner handed over runtime3100/4190. Keep nora_hr_current_20260908 and hr007-documents as active data/storage; no reset, seed or password changes. Rehearse existing pending migrations on a restored private backup before live cutover. Historical checksum differences remain unchanged and documented.
 - Combined production build, full lint/typecheck, 61 Contract tests, 150 targeted Web tests and 1001 API tests passed (107 opt-in API tests skipped). Restored-data rehearsal applied all ten pending existing migrations: 45 applied, preserving 6 employees, 144 HR records, 2 customers, 18 documents and 4 companies. Date PR #118 merged as e12c397; PR #115 receives that date before final CI/merge. Integration implementation reservation is released; operational runtime handoff remains with PC-B until cutover verification.
 
 ## LOCAL-HR-AGENCIES-009 — PC-B — READY_FOR_REVIEW
@@ -765,13 +1646,13 @@ Delivered definition, pricing, ordered relative itinerary and public Documents i
 
 - Owner request: simplify HR forms and populated tables, remove duplicate employee/company inputs, use stored reference data in dropdowns, enable selected-row exports and expense-document upload. Preserve current sections, workflow permissions and the active 3100 runtime's database.
 - Branch `codex/pc-b-hr-connected-forms` from HR-007 `54c5ed7`; reserve `apps/web/src/modules/hr/**`, `apps/api/src/hr/**` and the HR-only resource registry/columns slice in `packages/contracts/src/hr/**` if needed for compatible field metadata. Producer/consumer remain HR API/Web; retain stored column positions and current transport contracts for existing records/imports. No shared IAM, Documents, App Shell, dependency, schema or migration changes are planned.
-- Runtime remains the HR-007 checkout on web3100/API4190 with database `rubi_hr_current_20260908`; validate before rebuilding the owned listeners. Commit/push this branch and open a review PR without merging main/develop.
+- Runtime remains the HR-007 checkout on web3100/API4190 with database `nora_hr_current_20260908`; validate before rebuilding the owned listeners. Commit/push this branch and open a review PR without merging main/develop.
 - Result: stored-reference dropdowns and applicant/opening FK, deduplicated forms, selectable chart placement, selected-row XLSX/PDF, real expense receipt archiving and simplified tables/detail header. Retired fields retain stored positions for compatibility; no migration or shared IAM/Documents change. Web/API lint/typecheck/build, 94 HR Web tests, 79 HR API tests (20 PostgreSQL), 22 Contract tests and production browser checks passed. Details: `docs/tasks/HR-008.md`.
 - Implementation reservations are released for review. Operational ownership of web3100/API4190 and its independent data snapshot remains PC-B/HR-008; do not replace its listener with an older checkout. No merge performed.
 
 ## HR-007-LOCAL-CURRENT — PC-B — READY_FOR_REVIEW
 
-- Owner request 2026-09-08: run the current HR experience on port 3100 while retaining the current Rubi application. Branch `codex/pc-b-hr3100-current` starts at `origin/develop@30d67ec`; port 3100 was handed over by Task «PC-B Uniting» after confirming no active work on its listener.
+- Owner request 2026-09-08: run the current HR experience on port 3100 while retaining the current Nora application. Branch `codex/pc-b-hr3100-current` starts at `origin/develop@30d67ec`; port 3100 was handed over by Task «PC-B Uniting» after confirming no active work on its listener.
 - Scope: carry the already reviewed HR-005/HR-006 implementation from `b9b525d` into this isolated checkout, adapting only additive HR registration, HR permission exports/seed, Prisma HR relations and the local launcher. Preserve current IAM/MFA, Documents, four-company header, Profile, Notifications, Master Data and other modules. No merge to main/develop and no edits to other checkouts.
 - Reserve `HR shared-contract/root export`, `IAM HR permission slice`, `AppModule HR registration`, HR proxy/runtime paths and the existing additive HR schema/migrations for this work item. The owner previously transferred the completed PC-A migration lock for HR; no new or destructive migration is planned. Dependency/lockfile and other module contracts remain unchanged.
 - Runtime/data: prepare and validate separately before replacing only the handed-over web listener. Preserve API4000, its integrated database copy and the original HR database; prepare a separate database copy if schema reconciliation is needed. Record the exact runtime/commit and complete authentication, HR and current-shell smoke checks before handoff.
@@ -779,7 +1660,7 @@ Delivered definition, pricing, ordered relative itinerary and public Documents i
 - Compatibility reservation: `Central UI Owner = PC-B/HR-007-LOCAL-CURRENT` only for the existing notification-center/change-notifications integration. Consume the public HR notification client in the common bell and remove the legacy HR listener to avoid two popups; all current non-HR feeds/actions stay intact.
 - Local runtime reserves `apps/web/src/lib/environment.ts` and its focused tests to keep local API/web hostnames aligned (`localhost` or `127.0.0.1`) and prevent host-scoped login cookies from causing another login loop. Remote API addresses retain their existing behavior.
 - Browser compatibility found a 14px overflow in the current shared header at 390px; reserve only the header container layout class in `app-shell.tsx` to arrange the existing controls into two mobile rows. Current desktop layout, company branding, user menu and actions remain present.
-- Result: the current HR production build is active on `localhost:3100`, with API4190 and the isolated `rubi_hr_current_20260908` database/document snapshot. Real browser login, all four companies, Profile/MFA, one notification bell, the legacy HR redirect, six employees and reload passed on both `localhost:3100` and `127.0.0.1:3100`. Lint/typecheck/build and targeted Web/API/Contracts/PostgreSQL checks passed; details and restart command are in `docs/tasks/HR-007.md`.
+- Result: the current HR production build is active on `localhost:3100`, with API4190 and the isolated `nora_hr_current_20260908` database/document snapshot. Real browser login, all four companies, Profile/MFA, one notification bell, the legacy HR redirect, six employees and reload passed on both `localhost:3100` and `127.0.0.1:3100`. Lint/typecheck/build and targeted Web/API/Contracts/PostgreSQL checks passed; details and restart command are in `docs/tasks/HR-007.md`.
 - Implementation reservations are released for review. Operational ownership of web3100/API4190 remains PC-B/HR-007 until an explicit runtime handoff; preserve its database/document snapshot when replacing the listener. No merge to main/develop was performed.
 
 ## HEADER-TODAY-001 — PC-B — DONE / MERGED
@@ -810,7 +1691,7 @@ Reserve Ticket Catalog Web/API/tests, additive travel public contracts/root expo
 
 Additive producer boundary scope: MasterTravelDirectory and its module export only, validating public active city/hotel/insurance references for tours. Existing MasterDataService/repository/controllers/forms remain unchanged; no cross-module direct query. Ticket Catalog provides public immutable departure selection validation to Sales. Expanded services keep the existing pricing model; the tour label adds no second charge.
 
-Delivered in fd325c7, 7844907 and 3949878. Tour definitions, dated departures, hotel/insurance selectors, included transfers/visa, repeat-week prefill with editable flight times, real offer publication and Sales selection are active locally. Shared stock/concurrent reservation, idempotency/replay, branch and reference tests passed. Forty-three migrations applied to an empty isolated DB and restored backup; seed twice passed only on isolated DB. Fresh private backup preceded the one additive migration on rubi; existing business counts and historical checksums unchanged. Web3100/API4000 serve the new build. This task's reservations released; no producer branch, grants, operational seed or public push. Details and exact QA limits are in the task document.
+Delivered in fd325c7, 7844907 and 3949878. Tour definitions, dated departures, hotel/insurance selectors, included transfers/visa, repeat-week prefill with editable flight times, real offer publication and Sales selection are active locally. Shared stock/concurrent reservation, idempotency/replay, branch and reference tests passed. Forty-three migrations applied to an empty isolated DB and restored backup; seed twice passed only on isolated DB. Fresh private backup preceded the one additive migration on nora; existing business counts and historical checksums unchanged. Web3100/API4000 serve the new build. This task's reservations released; no producer branch, grants, operational seed or public push. Details and exact QA limits are in the task document.
 
 ## SIDEBAR-LABELS-DOTS-0908 — PC-A — COMPLETE_LOCAL
 
@@ -859,7 +1740,7 @@ Explicit user follow-up: group headings toggle their own links like3200, whole-s
 - Branch مستقل `codex/pc-b-marketing-remove-section-intro` از آخرین Snapshot محلی `origin/develop@54e5102`؛ `git fetch --prune origin` دو بار اجرا شد اما GitHub موقتاً روی پورت ۴۴۳ در دسترس نبود.
 - محدوده فقط `apps/web/src/modules/marketing/components/marketing-workspace.tsx`، تست قرارداد همان ماژول و ورودی‌های همین Work Item در `WORK_ASSIGNMENTS.md` و `docs/PROJECT_STATUS.md` است. هیچ Schema/Migration/Seed، API/Contract، Dependency/Lockfile، داده یا فایل مرکزی UI تغییر نمی‌کند.
 - نتیجه: عنوان «بخش‌های مارکتینگ» و توضیح «برای ورود به هر بخش، کارت مربوط را انتخاب کنید.» همراه Wrapper فاصله‌ساز حذف شدند؛ Grid کارت‌ها بدون فاصله اضافه از ابتدای Hub نمایش داده می‌شود و Section با نام دسترس‌پذیر غیرنمایشی باقی مانده است.
-- اعتبارسنجی: ۱۸ تست هدفمند مارکتینگ، Contracts build، Web typecheck و lint و Production Build با ۳۴ Route موفق‌اند. نسخه همین Branch جای اجرای قدیمی `Rubi-hr-foundation` روی پورت ۳۱۰۰ فعال شد.
+- اعتبارسنجی: ۱۸ تست هدفمند مارکتینگ، Contracts build، Web typecheck و lint و Production Build با ۳۴ Route موفق‌اند. نسخه همین Branch جای اجرای قدیمی `Nora-hr-foundation` روی پورت ۳۱۰۰ فعال شد.
 
 ## LEGAL-ENTITY-BRAND-HEADER-002 — PC-B — DONE/MERGED
 
@@ -883,11 +1764,23 @@ Explicit user follow-up: group headings toggle their own links like3200, whole-s
 
 - درخواست صریح مالک محصول در 2026-09-07: هر تغییر موفقی که در سامانه انجام می‌شود در بخش زنگوله به‌صورت Notification نمایش داده شود. `COMPUTER_ID=PC-B` بر مبنای مالکیت فعلی این Workspace و ماژول‌های افقی رابط.
 - Branch مستقل `codex/pc-b-global-change-notifications` از `origin/develop@9b9d7a4`. محدوده رزروشده: یک Notification Center مستقل در `apps/web/src/components/layout/**`، اتصال محدود زنگوله موجود در `app-shell.tsx`، تست‌های همان Slice و ورودی‌های همین Task در `WORK_ASSIGNMENTS.md` و `docs/PROJECT_STATUS.md`.
-- نسخه اول بدون Schema/Migration/Seed و بدون تغییر API/Shared Contract/Dependency/Lockfile است: Mutationهای موفق `POST/PUT/PATCH/DELETE` که از Web احراز‌شده Rubi به API تنظیم‌شده ارسال می‌شوند در مرورگر ثبت می‌شوند. Auth/refresh/logout و عملیات غیرتغییردهنده Preview/Search/Export از Feed تغییر حذف‌اند.
+- نسخه اول بدون Schema/Migration/Seed و بدون تغییر API/Shared Contract/Dependency/Lockfile است: Mutationهای موفق `POST/PUT/PATCH/DELETE` که از Web احراز‌شده Nora به API تنظیم‌شده ارسال می‌شوند در مرورگر ثبت می‌شوند. Auth/refresh/logout و عملیات غیرتغییردهنده Preview/Search/Export از Feed تغییر حذف‌اند.
 - اعلان‌ها فاقد PII و Payload درخواست‌اند و فقط نوع عملیات، نام بخش، زمان و مسیر داخلی را نگه می‌دارند. نگهداری محدود، خوانده/خوانده‌نشده، پاک‌سازی اعلان‌های خوانده‌شده، Sync بین Tabها و fallback امن برای LocalStorage الزامی است.
 - این Slice تغییرات عمومی را از همان Browser Profile پوشش می‌دهد. پیگیری DOCUMENTS-007 اعلان تغییرات اسناد را با قرارداد و Persistence مستقل Backend به همین مرکز متصل کرده است؛ بنابراین مسیرهای `documents/**` از رهگیری مرورگری حذف‌اند تا اعلان تکراری ساخته نشود. سایر ماژول‌ها تا پیگیری Backend خود، مرورگرمحور باقی می‌مانند.
 - نتیجه: زنگوله موجود به Notification Center واقعی تبدیل شد؛ Mutation موفق پس از دریافت Response به اعلان فارسیِ بخش و عملیات تبدیل می‌شود. Badge تعداد خوانده‌نشده، Empty State، زمان، Deep Link، خواندن تکی/همه، پاک‌کردن خوانده‌شده‌ها، سقف ۶۰ رکورد و همگام‌سازی Tabها فعال است؛ خطای Storage هرگز نتیجه درخواست اصلی را تغییر نمی‌دهد.
 - اعتبارسنجی: Web lint و typecheck، ۲۲ تست هدفمند و Production Build با ۳۴ Route موفق‌اند؛ Web/API روی ۳۱۰۰/۴۰۰۰ پاسخ ۲۰۰ دارند. Full Web برابر ۶۴۱ تست موفق از ۶۴۲ است و فقط assertion قدیمی و تغییرنیافته Customers درباره LF/CRLF روی Windows شکست دارد؛ فایل Customers خارج Scope دست‌نخورده ماند.
+
+## MASTER-006-AUDIT-NOTIFICATIONS — PC-B — READY_FOR_REVIEW
+
+- درخواست صریح مالک محصول در 2026-09-07: هر تغییر موفق اطلاعات پایه در زنگوله سراسری به‌صورت اعلان قابل مشاهده باشد. `COMPUTER_ID=PC-B`.
+- Branch مستقل `codex/pc-b-master-data-notifications` از `origin/develop@9b9d7a4` در Worktree `C:\Users\admin\Rubi-master-data-notifications`؛ محدوده فقط خواندن امن رویدادهای موجود `MasterDataAuditEvent`، API اعلان، Client و زنگوله Header، تست‌های هدفمند و ثبت همین Work Item است.
+- هیچ Schema/Migration/Seed، Shared Contract، Dependency/Lockfile یا جدول اعلان جدیدی تغییر نمی‌کند. اعلان‌ها metadata-only هستند و Snapshot، PII، Credential و دلیل داخلی Audit را افشا نمی‌کنند؛ وضعیت خوانده‌شدن فقط در مرورگر کاربر نگه‌داری می‌شود.
+- هماهنگی فایل مشترک: مرکز اعلان `NOTIFICATIONS-001` حین اجرا وارد `develop` شد؛ این Task زنگوله دوم نمی‌سازد و Feed پایدار و cross-device اطلاعات پایه را به همان `NotificationCenter` متصل می‌کند. PR #99 نیز `app-shell.tsx` را فقط در محدوده Breadcrumb تغییر می‌دهد و دست‌نخورده می‌ماند.
+- معیار پذیرش: ایجاد، ویرایش، حذف، فعال/غیرفعال‌سازی و تصمیم نرخ موفق از هر کاربر/PC در Feed سراسری دیده شود؛ رویدادهای صرفاً خواندنی و Preview/Export اعلان نسازند؛ شمارنده خوانده‌نشده، تازه‌سازی، Empty/Error/Loading، مسیر بخش مالک و دسترس‌پذیری صفحه‌کلید/Screen Reader کامل باشند.
+- فرض ظرفیت و کیفیت: Master Data مشترک و read-heavy با اوج کمتر از `50 QPS`؛ هدف `p50<150ms`، `p95<300ms`، `p99<600ms`، SLO `99.9%`، `RPO<=24h` و `RTO<=4h`. UI در برنامه داخلی احراز هویت‌شده و با Design System فعلی پیاده می‌شود.
+- نتیجه: Feed امن ۶۰ تغییر اخیر از Audit موجود اضافه شد و همان Notification Center سراسری آن را در شروع، هنگام بازشدن زنگوله، بلافاصله پس از Mutation همین مرورگر و هر ۳۰ ثانیه برای تغییرات PC/کاربر دیگر همگام می‌کند. عنوان رکورد، نوع تغییر و Deep Link بخش مالک نمایش داده می‌شود؛ وضعیت خوانده‌شدن قبلی حفظ و اعلان محلی تکراری Master Data حذف می‌شود.
+- هماهنگی Review: PR #103 یک Notifications Backend آینده و تغییر هم‌پوشان در `notification-center/app-shell` دارد و اکنون `CONFLICTING` است؛ این Task هیچ فایل یا Branch آن را تغییر نمی‌دهد و هنگام Rebase/Review #103 باید Adapter این Feed Audit حفظ یا به قرارداد پایدار همان ماژول منتقل شود.
+- اعتبارسنجی: ۱۴ تست هدفمند API و ۲۷ تست هدفمند Web، lint و typecheck هر دو بسته و Production Build API/Web با ۳۴ Route موفق‌اند. Schema/Migration/Seed، Shared Contract و Lockfile تغییر نکرده‌اند.
 
 ## MARKETING-001F-OFFER-AUDIENCE-TARGETS — PC-B — READY_FOR_REVIEW
 
@@ -1116,7 +2009,7 @@ Explicit user follow-up: group headings toggle their own links like3200, whole-s
 
 - Final approved integration: normal merge e31b8d1 retains parents 43111fd and 3d3095e. Both handoffs and all capacity/arrangement work preserved. Purchase and arrangement versions coexist in the public presenter; nullable legacy room composition is omitted, not fabricated. Producer branch/worktree remains clean at 3d3095e.
 - Combined gates: 15 lint/typecheck tasks, 733 Web tests, 883 API tests (81 optional skipped in the full run), 38 Contracts and 71 Database tests passed. Fresh 37 migrations, seed twice (86 permission definitions), and 46 focused PostgreSQL/domain tests passed, including oversell, independent purchase/arrangement revisions and immutable snapshots. API and 36-route Web production builds passed.
-- Restored-backup upgrade passed, then a fresh backup preceded the single pending additive pricing migration on local rubi. Existing business counts and all historical migration checksums were preserved. Local Web 3100/API 4000 now run the combined build; health, login redirect, served pricing bundle, credentialed CORS and unauthorized-write denial passed. Existing Documents key/storage and Ramtin-only grant preserved; no operational seed or extra grant.
+- Restored-backup upgrade passed, then a fresh backup preceded the single pending additive pricing migration on local nora. Existing business counts and all historical migration checksums were preserved. Local Web 3100/API 4000 now run the combined build; health, login redirect, served pricing bundle, credentialed CORS and unauthorized-write denial passed. Existing Documents key/storage and Ramtin-only grant preserved; no operational seed or extra grant.
 - This task's integration/Migration/shared-contract/central-doc/UI reservations are released on local completion; producer review responsibilities remain unchanged. Public publication is still unapproved. No authenticated browser walkthrough or real-contract creation is claimed. The older rollout blocker below is historical and superseded by this successful integration.
 
 - Follow-up user approval: reconcile the three committed Sales/Reservations changes through 3d3095e into this pricing branch with a normal local merge, retaining both histories. Reserve overlapping Sales/Reservations/Ticket public contracts, schema, UI/API and central documentation for reconciliation; preserve both producer handoffs. No producer worktree edits, main/develop changes, public push, additional grants or dependency changes. Validate combined migrations, restore-copy upgrade, tests/build and activate locally on 3100/4000 only after a fresh backup.
@@ -1140,7 +2033,7 @@ Explicit user follow-up: group headings toggle their own links like3200, whole-s
 - User explicitly authorized isolated local integration of latest module work and preserved passport changes. Branch codex/pc-a-local-integration-0906 starts at local Sales 2cc7a9c, retaining all six local commits. No source branch, main/develop, public push or PR mutation authorized.
 - Reserve integration conflict resolution and additive compatibility fixes in this worktree only, including central docs/contracts/schema consistency. Existing producer locks remain held; no concurrent producer worktree is edited. Merge current develop first; assess current module tips and preservation snapshot separately. No blanket merge of obsolete/demo/recovery branches.
 - Runtime replacement and operational migrations are gated by schema/security review, empty-database migrations, tests and builds. Existing local data and keys must remain intact. Recovery snapshot is not assumed production-ready.
-- Integrated current module tips and recovery with compatibility resolution; full lint/typecheck/tests/build and 34 empty-DB migrations plus seed twice passed. Existing rubi has two unexplained historical migration checksums; operational migration and runtime replacement stopped before mutation. Local backup retained. Details: docs/tasks/LOCAL-INTEGRATION-0906.md.
+- Integrated current module tips and recovery with compatibility resolution; full lint/typecheck/tests/build and 34 empty-DB migrations plus seed twice passed. Existing nora has two unexplained historical migration checksums; operational migration and runtime replacement stopped before mutation. Local backup retained. Details: docs/tasks/LOCAL-INTEGRATION-0906.md.
 - Follow-up authorized: restored-copy upgrade passed, fresh backup retained, only pending additive B2B migration applied without rewriting history. Integrated Web/API activated on 3100/4000; HTTP smoke passed. Historical provenance concern retained; no new IAM grants or public push.
 
 ## RESERVATION-ARRANGEMENT-0906 — PC-A — READY_FOR_REVIEW
@@ -1318,12 +2211,12 @@ Explicit user follow-up: group headings toggle their own links like3200, whole-s
 - ادامه درخواست صریح مالک در 2026-09-05: اصلاح ناوبری Breadcrumb سکشن‌های مارکتینگ، حذف ارتباطات و دکمه بازگشت، تکمیل فرم‌های «مخاطبان کمپین» و «منابع ورود»، حذف منوی سه‌نقطه عملیات، ادغام قواعد استفاده در فرم‌های پیشنهاد/کد تخفیف و اتصال بارگذاری دارایی مارکتینگ به API عمومی موجود «اسناد و فایل‌ها». محدوده افزوده فقط مصرف `apps/web/src/modules/documents/api/client.ts` و Dialog عمومی موجود Documents از Web مارکتینگ است؛ هیچ Query مستقیم Repository، تغییر API، Shared Contract، Schema/Migration/Seed، Dependency/Lockfile یا فایل مرکزی تحت قفل PC-A انجام نمی‌شود.
 - ادامه درخواست صریح مالک در 2026-09-05: تکمیل تجربه عملیاتی همه صفحات مارکتینگ شامل حذف گزارش‌ها/عضویت تبلیغاتی/عملکرد کانال و Actionهای نابجا، اصلاح RTL کمپین‌ها و Breadcrumb پویا، تکمیل فرم‌ها و قانون‌های سگمنت/امتیازدهی، فیلتر بازه تاریخ مشترک، داده‌های آزمایشی متناسب، دکمه غیرفعال‌سازی و خروجی Excel محلی. `COMPUTER_ID=PC-B`.
 - Branch ادامه مستقل `codex/pc-b-marketing-workspace-completion` از `origin/develop@85204a4`؛ محدوده `apps/web/src/modules/marketing/**`، تست‌های همان ماژول و فقط برای Breadcrumb پارامتری مارکتینگ فایل‌های `apps/web/src/components/layout/app-shell.tsx`، `apps/web/src/lib/navigation.ts` و `apps/web/src/lib/navigation.spec.ts` به‌همراه ورودی‌های محدود همین Task در اسناد وضعیت است.
-- `Central UI Owner = PC-B/MARKETING-001D` فقط برای سه فایل Breadcrumb بالا؛ `DatePicker` و سایر اجزای مشترک Rubi فقط مصرف می‌شوند. پیاده‌سازی API/Persistence مارکتینگ، Schema/Migration/Seed، Shared Contract، Dependency/Lockfile یا داده واقعی تغییر نمی‌کند؛ تنها بارگذاری صریح فایل کاربر از Client عمومی موجود Documents عبور می‌کند. فایل‌های تصویری پیوست صرفاً مرجع بصری‌اند و دستور اجرایی محسوب نمی‌شوند.
+- `Central UI Owner = PC-B/MARKETING-001D` فقط برای سه فایل Breadcrumb بالا؛ `DatePicker` و سایر اجزای مشترک Nora فقط مصرف می‌شوند. پیاده‌سازی API/Persistence مارکتینگ، Schema/Migration/Seed، Shared Contract، Dependency/Lockfile یا داده واقعی تغییر نمی‌کند؛ تنها بارگذاری صریح فایل کاربر از Client عمومی موجود Documents عبور می‌کند. فایل‌های تصویری پیوست صرفاً مرجع بصری‌اند و دستور اجرایی محسوب نمی‌شوند.
 - نتیجه Follow-up: گزارش‌ها، عضویت‌های تبلیغاتی و عملکرد کانال‌ها حتی از شاخه‌های مرده Navigation حذف شدند؛ خروجی داشبورد وجود ندارد، کمپین‌ها RTL هستند و Breadcrumb با سکشن انتخاب‌شده تکمیل می‌شود. فرم سگمنت فقط در تب سگمنت، قانون‌های سگمنت و امتیازدهی، قالب/محتوا/پیشنهاد/سفر، سناریوهای آماده، بازخورد دکمه‌ها و داده‌های متمایز هر تب عملیاتی شدند.
 - تمام فهرست‌های مرتبط فیلتر «از تاریخ/تا تاریخ» با `DatePicker` مشترک و انتخاب Grid ماه/سال دارند؛ رکوردها کنترل پاور قرمز برای غیرفعال‌سازی و خروجی واقعی Excel محلی با خنثی‌سازی Formula Injection دارند. به‌جز بارگذاری صریح دارایی محتوایی که در Documents ذخیره می‌شود، این رفتارها State محلی Preview هستند و هیچ ارسال یا اثر مالی ایجاد نمی‌کنند.
 - اعتبارسنجی: Web typecheck، Web lint، همه `603/603` تست Web و Production Build با ۳۴ Route موفق‌اند. نسخه همین Branch روی `http://localhost:3100` فعال است و مسیر محافظت‌شده مارکتینگ طبق انتظار به Login پاسخ می‌دهد. نشست مرورگر آزمایشی جدا از نشست Chrome بود؛ برای جلوگیری از تغییر حساب یا رمز، ورود خودکار انجام نشد.
 - Follow-up تصویر 486: ناوبری سکشن‌ها از History خام به Router رسمی Next منتقل شد و مسیر مستقیم کمپین اکنون Breadcrumb کامل «فضای کاری CRM / مارکتینگ / کمپین‌ها» می‌سازد. فیلد دیداری نسخه مورد انتظار، عبارت انگلیسی کنار ویرایش، کل تب A/B و دکمه تکراری «ایجاد کمپین» حذف شدند؛ فقط «افزودن کمپین جدید» باقی است و Dialog ساخت را باز می‌کند.
-- اعتبارسنجی Follow-up: مسیر مستقیم، پارامتر `section` را در Server Page دریافت می‌کند؛ بنابراین محتوای کمپین و Breadcrumb «فضای کاری CRM / مارکتینگ / کمپین‌ها» از همان پاسخ اولیه هماهنگ‌اند و Back همچنان با `popstate` همگام می‌شود. `603/603` تست Web، lint، typecheck و Production Build ۳۴ Route موفق‌اند. کل زنجیره پردازش قدیمی `Rubi-documents-connections` از پورت ۳۱۰۰ کنار گذاشته و کش ساخت قدیمی ایزوله شد؛ Web/API همین Worktree به‌ترتیب روی ۳۱۰۰/۴۰۰۰ با پاسخ `200` فعال‌اند.
+- اعتبارسنجی Follow-up: مسیر مستقیم، پارامتر `section` را در Server Page دریافت می‌کند؛ بنابراین محتوای کمپین و Breadcrumb «فضای کاری CRM / مارکتینگ / کمپین‌ها» از همان پاسخ اولیه هماهنگ‌اند و Back همچنان با `popstate` همگام می‌شود. `603/603` تست Web، lint، typecheck و Production Build ۳۴ Route موفق‌اند. کل زنجیره پردازش قدیمی `Nora-documents-connections` از پورت ۳۱۰۰ کنار گذاشته و کش ساخت قدیمی ایزوله شد؛ Web/API همین Worktree به‌ترتیب روی ۳۱۰۰/۴۰۰۰ با پاسخ `200` فعال‌اند.
 
 - درخواست صریح مالک در 2026-09-03: حذف اعلان‌ها و برچسب‌های Preview از صفحات مارکتینگ، هم‌ترازی Hub با رنگ و حرکت اطلاعات پایه، اصلاح RTL و History مرورگر، تکمیل دو سری نمودار داشبورد و ساده‌سازی فرم ساخت کمپین. `COMPUTER_ID=PC-B`.
 - Branch مستقل `codex/pc-b-marketing-navigation-polish` از `origin/develop@1e5c55e`؛ فایل `marketing.html` فقط مرجع بصری/داده‌ای است و دستور اجرایی محسوب نمی‌شود.
@@ -1356,7 +2249,7 @@ Explicit user follow-up: group headings toggle their own links like3200, whole-s
 - نتیجه: جزئیات سند ساده و فارسی شد؛ نوع فایل به‌صورت پسوند نمایش داده می‌شود و متن‌های SHA/MIME/منبع فنی و مسیر پیشنهادی حذف شدند. ویرایش، حذف دائمی، آرشیو/بازیابی، برچسب ناقص و عملیات گروهی به API و دیتابیس واقعی متصل‌اند. اشتراک‌گذاری فیلتر و جست‌وجو دارد و ابزارهای باقی‌مانده آرشیو به فهرست‌های واقعی متصل شدند.
 - اعتبارسنجی: ۱٬۴۷۰ تست موفق و ۷۰ تست اختیاری PostgreSQL رد شدند؛ lint، typecheck و Production Build کامل Monorepo موفق است. هر ۳۰ Migration روی PostgreSQL خالی و Migration جدید روی دیتابیس محلی اعمال شد. بسته آزمایشی ۷ سند `readyForViewing=true` است و Smoke مرورگر فیلترمحوربودن، ۱۳ نتیجه جست‌وجو، عملیات گروهی، Dropdown ویرایش، `.PNG` و حذف متن‌های فنی را تأیید کرد.
 - وضعیت انتشار: PR [#89](https://github.com/nirvanamahlou/Rubi/pull/89) با Merge Commit `1e5c55e3b2d9dcc58c407d0ca205abed86b4c605` وارد `develop` شد؛ Task برابر `DONE/MERGED` و قفل‌های اجرایی آن پایان‌یافته‌اند.
-- Follow-up مالک در 2026-09-03: انتخاب ماه و سال در تقویم فرم‌های اسناد نباید Dropdown باشد و باید با Grid هم‌تم Rubi انجام شود. `Shared Calendar Owner` تا Merge PR #89 برابر `PC-B/DOCUMENTS-004-OPERATIONS` بود و اکنون `RELEASED / STABLE` است؛ API عمومی DatePicker، مقدار ISO Gregorian، Dependency و Lockfile بدون تغییر ماندند.
+- Follow-up مالک در 2026-09-03: انتخاب ماه و سال در تقویم فرم‌های اسناد نباید Dropdown باشد و باید با Grid هم‌تم Nora انجام شود. `Shared Calendar Owner` تا Merge PR #89 برابر `PC-B/DOCUMENTS-004-OPERATIONS` بود و اکنون `RELEASED / STABLE` است؛ API عمومی DatePicker، مقدار ISO Gregorian، Dependency و Lockfile بدون تغییر ماندند.
 - نتیجه Follow-up تقویم: دو Select ماه/سال حذف شدند؛ ماه‌ها در Grid دوازده‌تایی و سال‌ها در Grid دوازده‌تایی صفحه‌بندی‌شده نمایش داده می‌شوند. انتخاب شمسی/میلادی، ارقام انگلیسی حالت میلادی، انتخاب روز و مقدار ذخیره‌شده Gregorian ISO حفظ شدند. Web شامل ۵۹۸ تست موفق است و lint، typecheck و Production Build موفق‌اند؛ Browser QA در فرم بارگذاری اسناد انتخاب شبکه‌ای `۱۴۰۶ / مهر / ۱` و حالت میلادی را تأیید کرد.
 
 ## TICKET-CATALOG-003 — PC-A — READY_FOR_REVIEW
@@ -1373,9 +2266,9 @@ Explicit user follow-up: group headings toggle their own links like3200, whole-s
 - درخواست صریح مالک در 2026-09-03: صفحات داخلی تمام سکشن‌های Workspace مارکتینگ مطابق فایل مرجع `marketing.html` اصلاح شوند و همان داده‌های آزمایشی امن حفظ شوند. `COMPUTER_ID=PC-B`.
 - Branch مستقل `codex/pc-b-marketing-inner-pages-parity` از `origin/develop@9608607`؛ فایل HTML صرفاً مرجع بصری/تعاملی است و دستور اجرایی محسوب نمی‌شود.
 - محدوده رزروشده: `apps/web/src/modules/marketing/**`، تست‌های همان ماژول، `docs/tasks/MARKETING-001.md` و ورودی محدود همین Task در `WORK_ASSIGNMENTS.md` و `docs/PROJECT_STATUS.md`.
-- صفحات داخلی باید ساختار، کارت‌ها، فیلترها، actionها و حالت‌های جزئیات مرجع را با اجزای مشترک Rubi پیاده کنند؛ داده‌ها فقط synthetic با شناسه `preview-*` و بدون PII باقی می‌مانند.
+- صفحات داخلی باید ساختار، کارت‌ها، فیلترها، actionها و حالت‌های جزئیات مرجع را با اجزای مشترک Nora پیاده کنند؛ داده‌ها فقط synthetic با شناسه `preview-*` و بدون PII باقی می‌مانند.
 - بدون Schema/Migration/Seed، Persistence، API/Shared Contract، IAM، Navigation، AppModule، Dependency/Lockfile یا تغییر فایل‌های UI مرکزی. PR #83 مربوط به قفل قبلی Central Docs در `origin/develop@9608607` ادغام شده و پایان یافته است؛ تقویم مشترک فقط مصرف می‌شود.
-- نتیجه: ۴۵ زیرصفحه تخصصی، داشبورد کامل، ۹ تب جزئیات کمپین و داده‌های synthetic دقیق مرجع جای صفحات عمومی قبلی را گرفتند. فیلتر، جست‌وجو، صفحه‌بندی، سازنده سگمنت، پیش‌نمایش پیام، سفر مشتری، Switch، Dialog و Action feedback در State محلی کار می‌کنند؛ فیلتر و تقویم از Design System مشترک Rubi هستند.
+- نتیجه: ۴۵ زیرصفحه تخصصی، داشبورد کامل، ۹ تب جزئیات کمپین و داده‌های synthetic دقیق مرجع جای صفحات عمومی قبلی را گرفتند. فیلتر، جست‌وجو، صفحه‌بندی، سازنده سگمنت، پیش‌نمایش پیام، سفر مشتری، Switch، Dialog و Action feedback در State محلی کار می‌کنند؛ فیلتر و تقویم از Design System مشترک Nora هستند.
 - ادغام مبنا: `origin/develop@6ac2dfc` در Branch ادغام شد. Web lint و `599/599` تست موفق؛ Full lint برابر ۶ Task و Full test برابر `1,464` تست موفق با ۷۰ skip اختیاری است. Browser QA تمام تب‌ها/فرم‌ها و Mobile `390×844` را بدون Overflow یا Console error تأیید کرد.
 - Typecheck محلی با غیرفعال‌کردن کش افزایشی موفق شد. CI تمیز PR #86 نیز Full Typecheck، Full Production Build، Full Test و Gate کامل PostgreSQL 18/Migration/Seed را سبز کرد؛ خطای موقت `observedAt` ناشی از کش قدیمی محلی بود و هیچ فایل Master Data در این Task تغییر نکرد.
 - انتشار: PR [#86](https://github.com/nirvanamahlou/Rubi/pull/86) با Merge Commit `4ea7b27` وارد `develop` شد. هر چهار Job اجباری CI پیش از ادغام و اجرای کامل CI پس از ادغام روی خود `develop` موفق‌اند.
@@ -1430,7 +2323,7 @@ Explicit user follow-up: group headings toggle their own links like3200, whole-s
 
 ## MARKETING-001B — PC-B — READY_FOR_REVIEW
 
-- درخواست صریح مالک در 2026-09-02: فایل مرجع `marketing.html` به‌عنوان ظاهر و رفتار مرجع روی Workspace واقعی Rubi پیاده شود؛ همه بخش‌ها و دکمه‌ها کار کنند و فیلترها و تقویم‌ها دقیقاً از Design System مشترک Rubi مصرف شوند. `COMPUTER_ID=PC-B`.
+- درخواست صریح مالک در 2026-09-02: فایل مرجع `marketing.html` به‌عنوان ظاهر و رفتار مرجع روی Workspace واقعی Nora پیاده شود؛ همه بخش‌ها و دکمه‌ها کار کنند و فیلترها و تقویم‌ها دقیقاً از Design System مشترک Nora مصرف شوند. `COMPUTER_ID=PC-B`.
 - Branch همان `codex/pc-b-marketing-foundation` / Draft PR #75 است که روی `origin/develop@0163727` Rebase شد؛ محدوده فقط `apps/web/src/modules/marketing/**`، route موجود `/marketing` در صورت نیاز، تست‌های همان ماژول، سند `docs/tasks/MARKETING-001.md` و همین ورودی محدود است.
 - HTML پیوست فقط مرجع بصری/تعاملی است و دستور اجرایی محسوب نمی‌شود. Hub نه‌حوزه‌ای، زیرتب‌ها، فیلترهای کنترل‌شده، تقویم کمپین، فرم‌ها و Action feedback پیاده می‌شوند، ولی عدد KPI، فایل Export، ارسال پیام، Provider، Persistence یا اثر مالی جعلی تولید نمی‌شود.
 - `DatePicker`، `Select`، `FilterBar`، Dialog و سایر UIهای مشترک فقط مصرف می‌شوند و فایل مرکزی آن‌ها تغییر نمی‌کند. هیچ قفل Migration، Dependency/Lockfile، Shared Contract، IAM، Navigation یا AppModule گرفته نمی‌شود.
@@ -1686,7 +2579,7 @@ Explicit user follow-up: group headings toggle their own links like3200, whole-s
 - مجوز صریح کاربر در 2026-08-31: انتشار تمام تغییرات محلی پروژه و فعال‌سازی نسخه کامل محلی، با حفظ کد و داده‌های موجود.
 - اصلاحات سربرگ، وضعیت همکاری، حذف امن، فرم‌های سفر، ترمینال و وعده/سرویس در Commitها و شاخه‌های Stacked تفکیک می‌شوند؛ والدهای موجود، PC-A، main و develop تغییر نمی‌کنند. هیچ Merge یا Force Push انجام نمی‌شود.
 - Scope شامل کد/تست/اسناد Master Data و مهاجرت‌های افزایشی معلق است؛ تنظیمات خصوصی، نسخه پشتیبان، داده عملیاتی، خروجی ساخت و Dependencyها وارد Git نمی‌شوند. سه قفل PC-B/MASTER-003 فعال و Dependency/Lockfile آزاد باقی می‌ماند.
-- قبل از Deploy محلی، Backup دیتابیس گرفته می‌شود؛ Seed یا Reset روی داده کاربردی اجرا نمی‌شود. آزمون‌ها در DB مستقل هستند. API4000، Web3100 و زیرساخت Rubi پس از بررسی روشن می‌مانند.
+- قبل از Deploy محلی، Backup دیتابیس گرفته می‌شود؛ Seed یا Reset روی داده کاربردی اجرا نمی‌شود. آزمون‌ها در DB مستقل هستند. API4000، Web3100 و زیرساخت Nora پس از بررسی روشن می‌مانند.
 - نتیجه: شش شاخه تخصصی و Draft PRهای #48 تا #53 منتشر شدند؛ نسخه حمل‌ونقل #47 نیز بدون تغییر والدها در شاخه `codex/pc-b-master-data-local-complete` قرار گرفت. اصلاح آزمون ترمینال با Fast-forward به #52 رسید؛ حذف امن امکانات وابسته قطار در نسخه تجمیعی با تست واقعی بررسی شد.
 - هر ۲۴ Migration محلی اعمال شده، داده قبلی محفوظ و API4000/Worker/Web3100 روشن‌اند. ۹۴۶ تست عمومی، Typecheck و Production Build موفق؛ آزمون واقعی ترمینال ۱۵ و حمل‌ونقل ۱۰ موفق. lint محدوده موفق؛ ایراد قبلی DatePicker و نبود Smoke احراز‌شده صریحاً گزارش شده‌اند. جزئیات: `docs/tasks/MASTER-003-LOCAL-PUBLISH.md`.
 
@@ -1704,7 +2597,7 @@ Explicit user follow-up: group headings toggle their own links like3200, whole-s
 ### `MASTER-003R-TRANSPORT-FORMS` — PC-B — `READY_FOR_REVIEW`
 
 - Branch: `codex/pc-b-master-data-transport-forms` از `origin/codex/pc-b-master-data-partner-forms@2088010`؛ Draft stacked روی #45، والدها دست‌نخورده.
-- اجرای مستقل در `C:/Users/admin/Rubi-transport-forms` برای حفظ همه تغییرات ثبت‌نشده و سرورهای Checkout اصلی؛ ادغام محلی تغییرات هم‌زمان نیازمند هماهنگی جداست.
+- اجرای مستقل در `C:/Users/admin/Nora-transport-forms` برای حفظ همه تغییرات ثبت‌نشده و سرورهای Checkout اصلی؛ ادغام محلی تغییرات هم‌زمان نیازمند هماهنگی جداست.
 - محدوده: هفت فرم حمل‌ونقل، API/Repository/Contract ماژول Master Data، Prisma/Migration افزایشی امکانات قطار و وضعیت بررسی، آزمون‌ها و اسناد همین Slice.
 - قفل Migration، Master Data shared-contract و اسناد مرکزی زیر مالکیت فعال `PC-B/MASTER-003`؛ بدون تغییر Dependency/Lockfile، Customers یا جداول ماژول‌های دیگر.
 - Producer/Consumer هر دو PC-B: افزودن اختیاری `values.transportStatus` و `train-types.values.facilityIds`، پاسخ attributes و فیلتر وضعیت حمل‌ونقل؛ قرارداد v12 سازگار، درخواست قدیمی رفتار قبلی را حفظ می‌کند. وضعیت بررسی در قرارداد عمومی قدیمی inactive است.
@@ -1889,7 +2782,7 @@ Explicit user follow-up: group headings toggle their own links like3200, whole-s
 | ------------------------- | --------------- | ---------- | -------------------------------------------------------------------------------- |
 | Migration Owner           | PC-A/IAM-001    | `RELEASED` | 2026-08-23؛ IAM baseline با Merge `50eaccaf` ادغام و Handoff عمومی ثبت شد        |
 | Dependency/Lockfile Owner | PC-A/IAM-001    | `RELEASED` | 2026-08-23؛ Dependencyهای IAM با Merge `50eaccaf` تثبیت و Sprint اول بسته شد     |
-| IAM shared-contract Owner | PC-A/IAM-001    | `RELEASED` | 2026-08-23؛ قرارداد عمومی IAM با Merge `50eaccaf` در `@rubi/contracts` منتشر شد  |
+| IAM shared-contract Owner | PC-A/IAM-001    | `RELEASED` | 2026-08-23؛ قرارداد عمومی IAM با Merge `50eaccaf` در `@nora/contracts` منتشر شد  |
 | Central architecture docs | PC-A/ARCH-001   | `RELEASED` | 2026-08-23؛ معماری تاییدشده با Merge `99dd1cf` وارد `develop` و به PC-B تحویل شد |
 
 آزادشدن این قفل‌ها به معنی مجوز هم‌زمان برای دو Task نبود. وضعیت تاریخی این بخش با
@@ -1899,7 +2792,7 @@ Explicit user follow-up: group headings toggle their own links like3200, whole-s
 
 ## Handoff رسمی IAM به PC-B
 
-- قرارداد عمومی IAM فقط از `@rubi/contracts` مصرف می‌شود.
+- قرارداد عمومی IAM فقط از `@nora/contracts` مصرف می‌شود.
 - `BranchReference`، `AuthenticatedActor` و `IamPermissionCode` (از جمله
   `iam.audit.read`) قراردادهای عمومی قابل مصرف برای `MASTER-002` هستند؛ Audit فقط با
   actor context عمومی ثبت می‌شود و مدل یا Repository داخلی Audit عمومی نیست.
@@ -1958,7 +2851,7 @@ Explicit user follow-up: group headings toggle their own links like3200, whole-s
 - فاز B با این Handoff فقط در دامنه Customers مجاز است: مدل/Repository/Migration، قرارداد
   عمومی، اتصال واقعی UI، permission/audit و تست Migration را تکمیل می‌کند و حق تغییر فایل
   داخلی IAM یا Master Data را ندارد.
-- Master Data فقط از قرارداد عمومی `@rubi/contracts` مصرف می‌شود؛ import یا query مستقیم
+- Master Data فقط از قرارداد عمومی `@nora/contracts` مصرف می‌شود؛ import یا query مستقیم
   از ساختار داخلی Master Data ممنوع است.
 - ذخیره فایل یا مقدار حساس مدارک هویتی تا حل `DEC-OPEN-006` ممنوع است؛ فقط metadata/reference
   غیرحساس طراحی می‌شود. Duplicate auto-merge تا حل `DEC-OPEN-011` ممنوع و فقط candidate
@@ -1979,7 +2872,7 @@ Explicit user follow-up: group headings toggle their own links like3200, whole-s
   `apps/api/src/customer-affairs/**` برای Domain/Application Port و Contract
   ماژول‌محلی بدون Controller فعال/Repository واقعی،
   `docs/tasks/CUSTOMER-AFFAIRS-001.md` و تست‌های هدفمند همین محدوده است.
-- UI فاز A فارسی، RTL، Responsive و هماهنگ با طراحی آبی Rubi است و Loading، Empty،
+- UI فاز A فارسی، RTL، Responsive و هماهنگ با طراحی آبی Nora است و Loading، Empty،
   Error، Forbidden، Preview، جست‌وجو، فیلتر، مرتب‌سازی و صفحه‌بندی را پوشش می‌دهد.
 - Persistence، Prisma، Migration، Seed، Dependency، manifest، Lockfile، قرارداد
   مشترک/root export و داده واقعی مشتری یا PII در فاز A ممنوع است.
@@ -2101,7 +2994,7 @@ Customers، Finance، Procurement، Reservations، Integrations و Documents خ�
 ### قفل تحویلی PC-B/DOCUMENTS-004-OPERATIONS — Calendar follow-up
 
 - محدوده: فقط `apps/web/src/components/ui/date-picker*` برای جایگزینی Dropdown ماه/سال
-  با انتخاب شبکه‌ای هم‌تم Rubi؛ مصرف‌کننده‌های فعلی بدون تغییر API باقی می‌مانند.
+  با انتخاب شبکه‌ای هم‌تم Nora؛ مصرف‌کننده‌های فعلی بدون تغییر API باقی می‌مانند.
 - تغییر Dependency/Lockfile، API، Database، Contract و Migration مجاز نیست.
 - مقدار ذخیره‌شده همچنان ISO Gregorian باقی می‌ماند؛ سوییچ شمسی/میلادی فقط لایه
   نمایش و انتخاب تاریخ است.
@@ -2216,7 +3109,7 @@ PAYMENT-DIALOGS-0909: 10 targeted tests, scoped lint, typecheck, production buil
 
 Reserve Reservations workflow transition/service/tests, Web workflow form/foundation styling/model/tests and docs. New request first column #FFC0C0; confirmation atomically issues voucher with existing insurance acknowledgement and Sales notification; financial release remains mandatory. Retain legacy confirmed-only voucher issue. No migration or live permission grants. Base 8297341 preserves local feature stack.
 
-CONFIRM-VOUCHER-0909: 12 API/34 Web tests, scoped lint, typechecks/builds and both-theme color checks passed; local API4000/Web3100 health 200. Scope released. Push blocked by automatic approval review; GitHub reports origin Rubi is public, contrary to earlier private-repository description. Publication awaits explicit approval.
+CONFIRM-VOUCHER-0909: 12 API/34 Web tests, scoped lint, typechecks/builds and both-theme color checks passed; local API4000/Web3100 health 200. Scope released. Push blocked by automatic approval review; GitHub reports origin Nora is public, contrary to earlier private-repository description. Publication awaits explicit approval.
 
 ## RESERVATION-COMPACT-ENGLISH-0909 — PC-A — LOCAL_COMPLETE_PENDING_PUBLICATION
 
@@ -2438,3 +3331,330 @@ B2B-360-REMOVE-SUBTITLE-001: READY_FOR_REVIEW. Combined runtime1bf840b/PID8604 b
 - درخواست مالک در 2026-09-12: محل بارگذاری سند قرارداد و سند تضمین در فرم مرحله‌ای ثبت آژانس برای سازمان جدید نیز نمایش داده شود و دلیل ثبت/اصلاح قرارداد اختیاری باشد. شاخه `codex/pc-b-restore-agency-document-guarantee` از `origin/develop@b2098bc` ساخته شد.
 - محدوده رزروشده: Organizations Web wizard/editor/model/tests، اعتبارسنجی افزایشی B2B contract/API DTO و اسناد وضعیت همین واحد کار. فایل انتخاب‌شده سازمان جدید پس از ایجاد شناسه پایدار سازمان و پیش از ذخیره پیش‌نویس، فقط از API عمومی Documents بارگذاری و به قرارداد یا تضمین متصل می‌شود. بدون Schema/Migration/Seed، IAM grant، Dependency/Lockfile یا دسترسی مستقیم به جدول ماژول دیگر.
 - پیاده‌سازی و QA کامل شد: کنترل‌های فایل قرارداد و تضمین برای سازمان جدید پس از انتخاب شعبه نمایش داده می‌شوند؛ گزینه‌های نوع/دسته سند از Documents بارگذاری می‌شوند و دلیل ثبت/اصلاح اختیاری است. ۱۲۸ تست Organizations، ۱۲۱ تست B2B API، ۶۷ تست Contracts، lint محدوده، TypeScript و build Web/API موفق بودند. بررسی Web3100 بدون خطای کنسول و بدون ذخیره داده آزمایشی انجام شد. برای دریافت PC-A، نتیجه از طریق PR همین شاخه در `origin/develop` منتشر می‌شود.
+
+# REPORTING-CATALOG-FEATURE-COVERAGE — PC-C — READY_FOR_REVIEW
+
+- مبنا: `origin/develop@40d8f1f4` به‌همراه بازگردانی محلی Workspace گزارش‌ها در `75726407`.
+- محدوده رزروشده: فقط مدل کاتالوگ و تست‌های ماژول Reports در Web و مستندات وضعیت همین واحد کار.
+- هدف: استخراج گزارش‌های قابل ارائه از مدل واقعی Prisma و فیچرهای موجود سفر، فروش، B2B، مشتریان، اسناد، منابع انسانی و میزکار؛ افزودن کارت‌های استاندارد با کد پایدار، Grain، فیلتر، سنجه، Drill-down و وضعیت اتصال صادقانه.
+- بدون تغییر Schema/Migration/Seed، داده عملیاتی، قرارداد مشترک، API، مجوز یا Dependency. گزارش فاقد Approved Projection اجرایی با وضعیت «در انتظار منبع داده» منتشر می‌شود.
+- پیاده‌سازی کامل شد: ۱۳ کارت جدید با کدهای `RPT-020` تا `RPT-032` اضافه شدند. ۲۲ تست هدفمند Reports، lint محدوده، typecheck وب، build قراردادها و build تولیدی ۴۶ مسیر Web موفق‌اند. Scope پیاده‌سازی آزاد شد؛ فعال‌سازی Runtime و Commit نهایی در ادامه همین تحویل انجام می‌شود.
+
+# REPORTING-OPERATIONS-CONFIG-LAUNCH — PC-C — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-13: دکمه اجرای «گزارش‌های من»، «اشتراک‌گذاری‌شده با من»، «اجراها» و «زمان‌بندی‌ها» باید فرم پیکربندی همان گزارش را با Filter Snapshot ذخیره‌شده باز کند.
+- محدوده رزروشده: Route صفحه Reports، مدل navigation، Operations view و تست‌های هدفمند Reports؛ به‌علاوه اسناد وضعیت همین واحد کار.
+- علت فنی تأییدشده: لینک عملیات URL صحیح را تولید می‌کند، اما `ReportingWorkspace` بین تغییر Query remount نمی‌شود و state اولیه `useState` دوباره اعمال نمی‌گردد؛ بنابراین کاتالوگ بدون بازشدن فرم دیده می‌شود.
+- راهکار: کلید پایدار Workspace از View و تنظیمات canonical ساخته می‌شود تا deep-link عملیاتی در تغییر Route یک نمونه تازه با گزارش و فیلترهای بازیابی‌شده بسازد. بدون تغییر API، Schema/Migration/Seed، داده، مجوز یا Dependency.
+- پیاده‌سازی کامل شد: Deep Link هر چهار نمای عملیاتی اکنون فرم همان گزارش را با snapshot قبلی باز می‌کند. ۳۶ تست هدفمند Reports، lint محدوده، typecheck وب و build تولیدی ۴۶ مسیر موفق‌اند؛ Runtime نهایی در ادامه همین تحویل کنترل می‌شود. Scope منبع آزاد شد.
+
+# REPORTING-PREVIEW-EXPORT-COLUMN-PARITY — PC-C — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-13: جدول «نمایش نتیجه» در فرم پیکربندی باید همه ستون‌هایی را نمایش دهد که پاسخ گزارش برای خروجی ارائه می‌کند، نه فقط پنج ستون خلاصه.
+- محدوده رزروشده: فقط adapter پاسخ Reports، پنل نتیجه و تست‌های هدفمند Web و مستندات وضعیت همین واحد کار. هیچ تغییر API، Schema/Migration/Seed، داده عملیاتی، مجوز یا Dependency انجام نمی‌شود.
+- راهکار: فیلدهای موجود Travel projection (سفارش، مسافر، بلیت، فروش، خرید، سود ناخالص، استرداد و مانده تسویه) هنگام normalizing حفظ و در جدول Preview، فقط در صورت موجودبودن در پاسخ، نمایش داده می‌شوند. ستون‌های قابل مرتب‌سازی فعلی بدون تغییر می‌مانند.
+- پیاده‌سازی کامل شد: adapter اکنون تمام سنجه‌های موجود در پاسخ Travel را حفظ می‌کند و جدول Preview ستون‌های متناظر را بدون نمایش فیلد ساختگی نشان می‌دهد. ۱۹ تست هدفمند Reports، lint محدوده و Web typecheck موفق‌اند؛ بدون تغییر API، Schema/Migration/Seed یا داده عملیاتی.
+
+# LOCAL-UNIFIED-RUNTIME — PC-C — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-14: تغییرات Dashboard و Reports باید روی یک نسخهٔ نهایی مشترک در `localhost:3000` نمایش داده شوند و اجرای یک Worktree قدیمی باعث بازگشت ماژول دیگر نشود.
+- محدودهٔ رزروشده: اسکریپت اجرای LocalHost، قرارداد package manager و مستندات وضعیت؛ بدون تغییر API، Schema/Migration/Seed یا دادهٔ نمونه.
+- پیاده‌سازی کامل شد: شاخهٔ canonical `codex/pc-c-dashboard-reporting-latest` (commit پایه `879b84fb`) مالک پورت 3000 است. `pnpm dev:local-unified` از همین Worktree اجرا می‌شود، شاخه/فایل‌های Dashboard و Reports را guard می‌کند، پورت اشغال را بدون `-Restart` نمی‌پذیرد و گزینهٔ پاک‌سازی کش را خارج از repository انجام می‌دهد. وضعیت Web و راهنمای handoff در `docs/tasks/LOCAL-UNIFIED-RUNTIME.md` ثبت شده است.
+
+# DASHBOARD-KPI-AUDIT-DRAWER — PC-C — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-14: «جزئیات تعریف شاخص» هر KPI باید یک پنل بازشونده با تعریف قابل ممیزی نمایش دهد.
+- محدودهٔ رزروشده: فقط Dashboard workspace و تست مدل/قرارداد نمایش آن، به‌همراه اسناد وضعیت همین واحد کار. بدون تغییر API، Schema/Migration/Seed، داده عملیاتی، مجوز یا Dependency.
+- پیاده‌سازی کامل شد: کلیک روی هر KPI یک Drawer کنترل‌شده و قابل‌دسترسی از سمت راست باز می‌کند و عنوان، نام فنی، شناسه پایدار، نقش، تعریف کسب‌وکار، فرمول، منابع داده، Grain، مبنای زمانی، سیاست ارز، مقایسه، حذف‌ها، Permission، تصمیم باز و مسیر فرم گزارش مرتبط را نمایش می‌دهد. ۱۳۸۸ تست Web، lint، typecheck و build تولیدی ۴۶ مسیر موفق‌اند؛ مرورگر داخلی سلامت login و redirect امن Dashboard را تأیید کرد و بررسی بصری Drawer به نشست احرازشده کاربر واگذار شد.
+
+# REPORTING-ALL-COLUMN-SORT-LOCAL-DEMO — PC-C — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-14: همه ستون‌های جدول نتیجه گزارش باید از سرستون فلش مرتب‌سازی داشته باشند و دیتاست نمونه محلی قبلی برای آزمون Preview و خروجی‌ها به API متصل شود.
+- محدوده: مدل و Workspace وب Reports، Backend ماژول Reports، Prisma مدل/مهاجرت افزایشی گزارش، importer محلی و تست‌ها/مستندات همان دامنه؛ Dashboard و سایر ماژول‌ها بازنویسی نشدند.
+- پیاده‌سازی کامل شد: تمام ۱۱ ستون پاسخ Travel Report از سرستون مرتب می‌شوند؛ API Reports و تولید/دانلود CSV، XLSX و PDF به Runtime canonical متصل است. ۴۸ fact و Workspace دمو با importer idempotent در PostgreSQL محلی فعال شد. Prisma validate/generate، TypeScript هر دو برنامه، ۱۲۷۰ تست API و ۱۳۸۹ تست Web موفق‌اند. Web3000/API4000 فعال و مسیر محافظت‌شده Reports پاسخ 401 مورد انتظار بدون نشست می‌دهد؛ fixture در Worktree گزارش قبلی ignored مانده و در Git کپی نشده است.
+- پیگیری 2026-09-14: متن تکراری «جزئیات تعریف شاخص» از همه کارت‌ها حذف می‌شود؛ خود کارت همچنان با `aria-haspopup="dialog"` پنل تعریف قابل ممیزی را باز می‌کند.
+- پیگیری کامل شد: متن راهنمای تکراری از کارت‌ها حذف شد و قرارداد تست، نبودن آن را کنترل می‌کند. تست هدفمند Dashboard، lint محدوده و Web typecheck موفق‌اند.
+- پیگیری 2026-09-14: دو ورودی تاریخ Dashboard اکنون یک تقویم نمایشی مشترک دارند؛ انتخاب شمسی یا میلادی در هر کدام، ورودی دیگر را همگام می‌کند و مقدار ذخیره‌شده همچنان ISO/Gregorian است. ۱۳ تست مرتبط و lint موفق‌اند؛ typecheck سراسری فعلاً فقط به خطای هم‌زمان `reportingClient` در تست Reports متوقف است.
+
+# REPORTING-DIRECT-SHARING — PC-C — READY_FOR_REVIEW / LOCAL_RUNTIME
+
+- دامنه: اشتراک‌گذاری شخص‌به‌شخص گزارش ذخیره‌شده از «گزارش‌های من» و فرم پیکربندی، فهرست گیرندگان مجاز، نمایش در «اشتراک‌گذاری‌شده با من» و اجرای مجدد با Scope/Permission گیرنده.
+- مالک فایل‌ها: `apps/api/src/reporting/**`، `apps/web/src/modules/reports/**`، مدل و Migration افزایشی Reporting و مستندات Reporting. تغییرات موجود Dashboard/Reports حفظ می‌شوند.
+- نتیجه: grant صریح دریافت‌کننده، API مستندشده، UI جست‌وجو/چندانتحخابی، شمارنده زنده و اجرای گزارش اشتراکی تحت Scope گیرنده تکمیل شد. دو Migration محدود Reporting روی دیتابیس محلی اجرا شدند؛ ۳۷ تست هدفمند، TypeScript، Lint و Build هر دو برنامه موفق‌اند.
+
+## MASTER-DATA-MANIFEST-AIRPORT-001 — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-12: قالب Manifest با بارگذاری مستقیم فایل XLSX و فقط انتخاب ایرلاین و مقصد ساخته و ذخیره شود؛ همچنین فیلدهای ICAO، Timezone IANA، طول و عرض جغرافیایی از فرم ایجاد فرودگاه حذف شوند. شاخه `codex/pc-b-manifest-template-airport` از `origin/develop@d1f5c9d9` ساخته شد.
+- محدوده رزروشده: مدل و Migration افزایشی/سازگار Master Data برای مقصد قالب Manifest و nullable شدن مشخصات تکمیلی فرودگاه، API/Repository/DTO همین ماژول، فرم‌ها و client اطلاعات پایه Web، تست‌های هدفمند و اسناد همین واحد. `Migration Owner = PC-B/MASTER-DATA-MANIFEST-AIRPORT-001`؛ قفل Dependency/Lockfile گرفته نمی‌شود.
+- Producer داده مرجع Master Data و مصرف‌کننده فعلی Web است. فایل اصلی فقط از API عمومی Documents با نوع `MANIFEST` ذخیره می‌شود و Master Data فقط شناسه نسخه فایل را نگه می‌دارد؛ هیچ query مستقیم به جدول Documents و هیچ تغییر در Reservations/Sales انجام نمی‌شود. مقصد یک FK واقعی به شهر فعال است. قالب جدید به‌صورت Draft و نسخه خودکار ذخیره می‌شود تا مصرف عملیاتی بدون Review ممکن نباشد.
+- فیلدهای تکمیلی فرودگاه فقط در Create پنهان و در Schema اختیاری می‌شوند؛ ویرایش/نمایش داده‌های موجود حفظ می‌شود و هیچ مقدار ساختگی برای ICAO، timezone یا مختصات تولید نخواهد شد. Migrationهای محلی منتشرنشده PC-A اعمال یا بازنویسی نمی‌شوند.
+- پیاده‌سازی کامل شد: فرم اختصاصی Manifest فقط ایرلاین، مقصد و XLSX را می‌گیرد؛ نام/نسخه/فرمت/Draft در Backend تولید می‌شود و فایل از قرارداد عمومی Documents با نوع `MANIFEST` ثبت و سپس با optimistic version متصل می‌شود. فرم Create فرودگاه چهار مشخصه تکمیلی را نمایش نمی‌دهد و Schema/API آن‌ها را nullable می‌پذیرد. ۳۳ تست هدفمند API، ۳۸ تست Web و ۲ تست Migration، lint محدوده، Prisma validate/format و typecheck/build دیتابیس، API و Web موفق بودند. پس از تحویل، `Migration Owner = RELEASED / UNASSIGNED` و رزرو این واحد آزاد است.
+
+## RESERVATION-ACTION-PANEL-RECOVERY-0914 — PC-A — READY_FOR_REVIEW
+
+- درخواست مالک محصول در 2026-09-14: آخرین چیدمان و عملکرد ثبت‌شدهٔ پنل عملیات قرارداد در رزرواسیون از تاریخچه بازیابی شود. Branch مستقل `codex/pc-a-reservation-action-panel-recovery-0914` پس از بررسی overlap روی `origin/develop@7a6cc53e` یکپارچه شد و Worktree مستقل `reservation-action-panel-recovery-0914` استفاده می‌شود.
+- محدوده رزرو: `apps/web/src/modules/reservations/foundation/action-panel.tsx` و تست آن، فرم کامل اصلاح قرارداد و قراردادهای عمومی/API حداقلی موردنیاز همان فرم، به‌همراه اسناد همین Task. دکمهٔ تکی «دریافت» حذف می‌شود؛ «دریافت‌ها» فقط در عملیات قرارداد می‌ماند و «ویرایش» فرم کامل اصلاح قرارداد را باز می‌کند.
+- فایل ناوبری اصلی `workspace.tsx` متعلق به `RESERVATION-NAVIGATION-0914` خارج از محدوده است. هیچ Migration، Seed، Dependency/Lockfile، تغییر داده یا اجرای مشترک localhost در این شاخه انجام نمی‌شود. هر conflict در فایل مشترک بدون حل متوقف و گزارش می‌شود.
+- تکمیل شد: نسخهٔ جدید `develop` در conflictهای اسناد حفظ، import فرم بازیابی‌شده با namespace فعلی `@nora/contracts` منطبق و فرمان `REOPEN` به قرارداد عمومی فعلی افزوده شد. پنل عملیات اکنون فقط «دریافت‌ها» دارد و «ویرایش» فرم کامل اصلاح قرارداد را باز می‌کند. ۱۰ تست Web و ۷ تست API، lint هدفمند، typecheck Contracts/API/Web و build تولیدی API/Web با ۴۶ route موفق‌اند. بدون Migration یا تغییر داده؛ آمادهٔ PR مستقل به `develop`.
+
+## RESERVATION-CONTRACT-VIEW-AGE-BANDS-0914 — PC-A — READY_FOR_REVIEW
+
+- درخواست مالک محصول در 2026-09-14: در پنل رزواسیون، «مشاهده» باید PDF قرارداد انتخاب‌شده را با خطای قابل‌فهم و امکان تلاش مجدد باز کند. در تنظیمات فرم رزواسیون، کودک برای بلیط همچنان `CHD` باقی می‌ماند، اما برای اسکان هتل باید ردهٔ `۲–۶` یا `۶–۱۲` سال به‌صورت مستقل ثبت و در فرم کارگزار/PDF روشن نمایش داده شود.
+- Branch مستقل `codex/pc-a-reservation-contract-view-age-bands-0914` از `origin/develop@c823f012` و worktree هم‌نام ساخته شد؛ COMPUTER_ID=PC-A. محدوده رزرو: پیش‌نمایش PDF قرارداد و تست آن، قرارداد عمومی تنظیمات رزواسیون، اعتبارسنجی API، مدل/تنظیمات/PDF فرم رزواسیون و تست‌های هدفمند، به‌علاوه همین وضعیت. بدون Migration، Seed، تغییر دادهٔ مسافر، IAM grant، dependency/lockfile یا اجرای localhost.
+- دادهٔ اصلی بلیط و دسته‌بندی Sales تغییر نمی‌کند؛ اطلاعات ردهٔ هتل فقط یک snapshot عملیاتی نسخه‌دار در فرم رزواسیون است. هر تعارض روی فایل مشترک پیش از حل گزارش می‌شود.
+- تکمیل شد: «مشاهده» مسیر بازکردن مستقیم PDF قرارداد انتخاب‌شده را همواره نشان می‌دهد و خطای شبکه را به پیام قابل‌فهم با امکان تلاش دوباره تبدیل می‌کند. در تنظیمات فرم رزواسیون، ردهٔ اصلی بلیط ADL/CHD/INF حفظ شده و برای CHD یک ستون مستقل «رده کودک هتل» با ۲–۶ و ۶–۱۲ سال ثبت می‌شود. این مقدار فقط در snapshot نسخه‌دار فرم کارگزار و PDF آن نمایش دارد؛ خروجی بلیط و پرونده Sales تغییر نمی‌کند. ۷ تست هدفمند Web، ۵ تست هدفمند API، lint تغییرات Web/API/Contracts و typecheck Contracts/Web موفق‌اند. typecheck کامل API به خروجی محلی Prisma وابسته است و بدون DATABASE_URL برای `prisma generate` قابل اجرا نبود؛ هیچ migration یا داده‌ای اجرا نشد.
+
+## LOCAL-ALL-SECTIONS-3100-0913 — PC-B — ACTIVE
+
+User authorizes latest combined local Web3100/API4190 activation. Branch codex/pc-b-all-sections-3100-0913 combines develop 060fc35c, Workbench f174c3fe, Customer Affairs eeb8c56b and Finance 977bfeab. Scope: integration documentation, build checks and local runtime; preserve existing database/storage/authentication. No new schema or dependency changes. Runtime reservation supersedes previous pending local activation under the new user request.
+
+Runtime correction: reserve infrastructure/scripts/start-unified-local.ps1 for a configurable API port, default 4191. The Fetch-standard restricted port 4190 failed browser access despite HTTP health. Rebuild the local Web configuration against API4191; preserve the same database, storage and authentication. No browser security override.
+
+LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runtime and launcher integration reservation released. No merge to develop/main. See docs/tasks/LOCAL-ALL-SECTIONS-3100-0913.md.
+
+## RUNTIME-STABLE-3100-0914 — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-14: نسخهٔ آخر میزکار روی پورت ۳۱۰۰ ثابت بماند و اجرای
+  checkoutهای قدیمی آن را جایگزین نکند. شاخه `codex/pc-b-runtime-stable-3100` از
+  `origin/develop@0c331314` ساخته شد.
+- محدوده رزروشده: `infrastructure/scripts/start-unified-local.ps1`، دروازه و تست runtime
+  محلی و اسناد وضعیت همین واحد. دروازهٔ ثابت پورت عمومی ۳۱۰۰ را نگه می‌دارد و Next
+  تولیدی روی پورت داخلی اجرا می‌شود؛ launcher فقط پردازش‌هایی را متوقف می‌کند که مسیر
+  دقیق آن‌ها در ریشه‌های صریحاً مجاز باشد.
+- بدون Schema/Migration/Seed، تغییر Dependency/Lockfile، API عمومی، داده یا دسترسی کاربر.
+  دیتابیس، storage و نشست‌های موجود حفظ می‌شوند. فایل‌های runtime پس از QA آزاد خواهند شد.
+- تکمیل شد: دروازهٔ ثابت ۳۱۰۰ درخواست‌های HTTP و upgrade را به Next داخلی ۳۱۱۰ عبور
+  می‌دهد و هنگام آماده‌نبودن Web پاسخ ۵۰۲ مشخص برمی‌گرداند. launcher مالکیت هر سه پورت
+  را پیش از توقف کنترل، نسخه و commit سرو‌شده را پیش از تحویل تطبیق و در خطا پردازش‌های
+  تازه را جمع می‌کند. دو تست gateway، parse اسکریپت، build کامل ۴۶ route و سه نمونهٔ
+  متوالی مالکیت/نسخه موفق بودند؛ API4191 سالم است. رزرو source آزاد و runtime محلی فعال است.
+
+## LOCAL-ALL-MODULES-3100-0914 — PC-B — COMPLETE / ACTIVE
+
+- درخواست مالک در 2026-09-14: خرید و تأمین، میزکار، منابع انسانی و سایر بخش‌ها از یک
+  نسخهٔ به‌روز روی Web3100 اجرا شوند. شاخه `codex/pc-b-all-modules-current-3100` از
+  runtime پایدار `7f9897e7` ساخته شد و آخرین شاخهٔ خرید `95eab193` را فقط برای اجرای
+  تجمیعی محلی دریافت می‌کند.
+- محدوده رزروشده: ادغام محلی Web خرید با پایهٔ فعلی `origin/develop@c823f012`، build و
+  راه‌اندازی Gateway3100/Web3110/API4191. داده، Schema/Migration، Seed، Permission و
+  Dependency/Lockfile تغییر نمی‌کنند؛ تغییرات موجود میزکار و منابع انسانی حفظ می‌شوند.
+- تکمیل شد: فقط سه فایل Web خرید از شاخهٔ جدید منتقل شدند و ادغام کامل شاخه به‌دلیل
+  تعارض با Schema و Backend جدید کنار گذاشته شد. lint محدوده، بررسی Syntax ماکاپ و build
+  تولیدی ۴۶ مسیر موفق‌اند. Gateway3100، Web3110 و API4191 از checkout تجمیعی فعال و
+  شناسهٔ runtime با commit کد `8843fe0b` منطبق است؛ رزرو source آزاد شد.
+- پیگیری 2026-09-15: اجرای مستقیم Next از checkout اصلی روی ۳۱۰۰، Gateway تجمیعی را
+  جایگزین کرده بود. پس از احراز PID و مسیر آن، launcher نسخهٔ تجمیعی را برگرداند و دو
+  PR جدید `develop` برای بازهٔ سن کودک هتل و آواتار پیش‌فرض پروفایل نیز بدون تعارض ادغام
+  شدند. ۱۵ تست هدفمند، lint محدوده، typecheck API/Web و build تولیدی API/Web با ۴۶
+  مسیر موفق‌اند. Gateway3100/Web3110/API4191 با commit کد `2433f5e2` و API health ۲۰۰
+  فعال‌اند؛ هیچ Migration، Seed، Grant یا تغییر داده انجام نشد.
+
+## PROCUREMENT-FRAME-3100-0915 — PC-B — COMPLETE / ACTIVE
+
+- درخواست مالک و Screenshot606: پوستهٔ خرید در Web3100 باز می‌شود اما iframe داخلی با
+  «localhost refused to connect» متوقف است. شاخه `codex/pc-b-procurement-frame-3100`
+  از نسخهٔ تجمیعی فعلی ساخته شد.
+- قفل محدود فایل مرکزی `apps/web/next.config.ts` فقط برای هدر مسیر
+  `/procurement-optimized.html` نزد PC-B/PROCUREMENT-FRAME-3100-0915 رزرو است؛
+  `WORK_ASSIGNMENTS.md` و `docs/PROJECT_STATUS.md` فقط همین واحد را ثبت می‌کنند.
+  احراز هویت و DENY پیش‌فرض سایر مسیرها حفظ می‌شوند. بدون Migration، Dependency،
+  API، داده یا تغییر قرارداد مشترک.
+- مسیر خرید اکنون فقط از origin خودش قابل frame شدن است. پاسخ واقعی سرور برای ماکاپ
+  دارای `SAMEORIGIN` و `frame-ancestors 'self'` است؛ Login همچنان `DENY` و
+  `frame-ancestors 'none'` می‌ماند. درخواست بدون cookie به Login هدایت می‌شود و درخواست
+  دارای cookie در مسیر فایل ماکاپ پاسخ ۲۰۰ می‌گیرد. build Web با ۴۶ route، lint فایل
+  تغییرکرده و API health موفق‌اند. Gateway3100/Web3110/API4191 روی build
+  `unified-6hqFsF7hJGMHGO-KmtfIL` فعال است؛ قفل فایل مرکزی آزاد شد.
+
+## PROCUREMENT-HUMAN-CAPITAL-NAV-0915 — PC-B — COMPLETE / ACTIVE
+
+- درخواست صریح مالک: خرید و تأمین زیر «سرمایه انسانی» در منوی اصلی باشد. شاخه
+  `codex/pc-b-procurement-under-human-capital` از نسخهٔ تجمیعی فعال ساخته شد.
+- قفل محدود Central Navigation برای `apps/web/src/lib/navigation.ts` و تست همان فایل
+  نزد PC-B/PROCUREMENT-HUMAN-CAPITAL-NAV-0915 رزرو است. مسیر `/purchases`، مالکیت
+  داده، Permission و منطق ماژول تغییر نمی‌کنند؛ فقط گروه ارائهٔ سایدبار عوض می‌شود.
+  بدون Migration، Dependency، API یا تغییر فایل سایر ماژول‌ها.
+- خرید از `finance` خارج و پس از منابع انسانی در `hr` قرار گرفت. ۱۵ تست ناوبری،
+  lint محدوده و build تولیدی ۴۶ route موفق‌اند. Web3100 با build
+  `unified-Tez666Z13yqJ-047yCo9T`، API4191 health۲۰۰ و فایل خرید پاسخ۲۰۰ فعال‌اند؛
+  قفل Central Navigation آزاد شد.
+
+## PROCUREMENT-LIVE-INTEGRATION-0915 — PC-B — IMPLEMENTED / REVIEW
+
+- درخواست مالک: کمبودهای نسخهٔ ۳۱۰۰ خرید و تأمین برطرف و جریان عملیاتی موجود
+  PROCUREMENT-001 در نسخهٔ یکپارچه فعال شود؛ کنترل‌های پاسخ مالی و تأیید آزمایشی حذف شوند.
+- اصلاح تکمیلی ۱۴۰۵/۰۶/۲۵: ذخیره و بازیابی فوری گزینه‌های «ثبت مورد جدید» در
+  فرم درخواست خرید، متن راهنمای ذخیره، تست هدفمند Web و استقرار نسخهٔ اصلاح‌شده
+  روی ۳۱۰۰ در همین واحد رزرو شد؛ Schema، Migration و قرارداد API تغییر نمی‌کند.
+- اصلاح تکمیلی فرم: کنترل‌های منشأ درخواست از UI حذف و بخش مستقل پیوست‌ها و
+  یادداشت‌ها حفظ می‌شود؛ قرارداد داخلی origin برای سازگاری درخواست‌های موجود بدون
+  تغییر باقی می‌ماند.
+- توسعه تکمیلی تأمین‌کننده مستقل: نشانی و تلفن اصلی رمزنگاری‌شده، تولید خودکار
+  شناسه، فرم و تست‌های Master Data/Procurement و Migration افزایشی همین مدل در
+  محدوده PC-B رزرو شد. Migration Owner این Slice نزد PC-B است و Dependency/Lockfile
+  تغییر نمی‌کند.
+- اصلاح فرم تو در توی خدمت مرجع: ورودی نام انگلیسی از Create UI حذف و نام فارسی
+  تنها ورودی نام باقی می‌ماند؛ Backend و داده‌های تاریخی تغییر نمی‌کنند.
+- مبنا: `codex/pc-b-procurement-under-human-capital@52f7d7d1`؛ شاخهٔ یکتا
+  `codex/pc-b-procurement-live-integration`. COMPUTER_ID=PC-B، مالک Procurement و
+  HR/Master Data/Documents طبق `docs/MODULE_OWNERSHIP.md`.
+- رزرو محدوده: فایل‌های اختصاصی Procurement در API/Web، public projectionهای
+  HR/IAM/Master Data، ثبت ماژول در AppModule، قرارداد additive Procurement،
+  permission catalog/seed، Prisma schema، چهار migration منتشرشدهٔ PROCUREMENT-001
+  و migration افزایشی اتصال درخواست‌کننده به کارمند HR،
+  route خرید، فایل public ماکاپ قدیمی و دارایی‌های فونت وزیرمتن آن، تست مرکزی وضعیت routeها و مستندات همین واحد. Migration Owner و قفل فایل‌های مرکزی این محدوده
+  نزد PC-B/PROCUREMENT-LIVE-INTEGRATION-0915 هستند؛ Dependency/Lockfile تغییر نمی‌کند.
+- Prisma deploy در پایگاه محلی، migration افزایشی و منتشرشدهٔ
+  `20260913163000_finance_inbox_actions` متعلق به PC-A را نیز به‌ترتیب پس از چهار
+  migration خرید اعمال می‌کند؛ فقط اجرای همان فایل بدون ویرایش Source در این واحد
+  ثبت است. Finance-008 در شاخهٔ منتشرشده کامل/آزموده شده و روی کپی دیتابیس فعلی
+  همراه چهار migration خرید تمرین شد؛ صفر رکورد `PAID` مشمول به‌روزرسانی تاریخی آن است.
+- Producer قرارداد Finance همچنان Procurement و consumer آن PC-A/Finance است؛
+  بدون inbox/ack مصوب، Finance `NOT_CONNECTED` می‌ماند. Reservations/PC-A نیز تا
+  adapter مصوب، ارجاع سفر را نمی‌پذیرد. قراردادهای additive قبلی حفظ و سازگاری مسیر
+  `/purchases` با نسخهٔ فعلی Web کنترل می‌شود. Migration مخرب، پرداخت، سفارش خارجی،
+  تغییر دادهٔ واقعی یا grant خودکار اختیارات تجاری در محدوده نیست.
+- پنج migration خرید (چهار مورد عملیاتی و FK کارمند HR) و migration منتشرشدهٔ
+  Finance روی کپی پایگاه و سپس پایگاه محلی با backup قبلی اعمال شدند؛ ۲۶ مجوز
+  افزایشی، دسترسی ثبت روی `staff` و نقش‌های مستقل `procurement_approver` و
+  `procurement_buyer` ثبت شده‌اند. دو نقش تجاری بدون انتساب فردی می‌مانند تا
+  مالک حساب‌های مجاز را مشخص کند؛ کارمندان HR موجود هنوز پیوند IAM ندارند.
+- پس از انتشار `develop@ff15c7d3`، سرویس عمومی خرید بلیت PC-A در همان
+  `ProcurementModule` کنار workspace عملیاتی حفظ شد. migration منتشرشدهٔ
+  `20260914173000_procurement_ticket_purchase_requests` فقط اجرا و بدون ویرایش
+  Source جذب شد؛ migration افزایشی `20260915110000_procurement_ticket_purchase_fks`
+  رابطهٔ واقعی شعبه و IAM creator را می‌بندد. هر دو روی کپی DB و سپس پایگاه محلی
+  با backup تازه اعمال شدند. Finance فقط intake قیمت خرید بلیت را از public port
+  می‌خواند؛ gate فاکتور/سفارش خرید عمومی همچنان باقی است.
+- lint/typecheck API، Web، Database و Contracts و build تولیدی API/Web با ۴۶
+  مسیر موفق‌اند؛ ۴۸ تست قواعد، ۳۰ تست عملیاتی روی پایگاه اختصاصی و ۹ تست Web
+  هدفمند پاس شدند. نسخهٔ یکپارچه روی Gateway3100/Web3110/API4191 با commit
+  `ff56c883` پس از جذب `origin/develop@ff15c7d3` و اصلاح قالب‌بندی PR فعال بودند و
+  health API/Web برابر ۲۰۰ بود. تست‌های تغییرات تازهٔ Manifest/قواعد بار و build
+  ۴۶مسیره نیز پاس شدند.
+  تب مرورگر بدون نشست به login
+  هدایت می‌شود؛ grant فردی و smoke داخل حساب پس از معرفی حساب‌های مجاز پیگیری می‌شود.
+- پیگیری فونت مالک: صفحهٔ عملیاتی خرید فونت سراسری `font-sans` را صریحاً به ارث می‌برد. فایل public نمای قدیمی از مسیر `/fonts/vazirmatn-arabic-wght-normal.woff2` استفاده می‌کرد اما آن دارایی وجود نداشت و به Tahoma برمی‌گشت؛ فایل‌های فارسی و لاتین وزیرمتن از همان dependency موجود همراه مجوز OFL در public قرار گرفتند. بدون تغییر Dependency/Lockfile، API، Schema یا داده.
+  build Web با ۴۶ مسیر، lint/typecheck و Prettier موفق‌اند. Gateway3100/Web3110/API4191 از commit کد `a851e493` و build `unified-TsYKnysEo6ejcMcyC9wuF` فعال‌اند؛ API پس از تکمیل startup پاسخ health۲۰۰ داد. تب فعلی مرورگر بدون نشست است و خرید را به login هدایت می‌کند.
+- پیگیری دسترسی ۴۰۳ مالک: دیتابیس عملیاتی launcher، `rubi_hr_current_20260908`، نقش `staff` را بدون عضو داشت و نشست اخیر `nirvana` فقط `administrator` و `nirvana_full_access` را داشت؛ هیچ‌یک مجوز Procurement نداشتند. نقش `staff` با پنج مجوز محدود به درخواست خود، به همان حساب فعال و دارای پنج شعبه به‌صورت افزایشی و همراه Audit محلی واگذار شد. نقش‌ها/شعب قبلی حفظ و نقش‌های تأییدکننده/سفارش‌دهنده همچنان صفر عضو دارند؛ grant سایر کارکنان تا تعیین حساب‌ها و پیوند IAM/HR انجام نمی‌شود. Authenticated browser smoke در تب بدون نشست قابل انجام نیست.
+- پیگیری طراحی مالک: چیدمان محتوای workspace عملیاتی خرید از فایل مرجع `procurement-optimized.html` به بنر، کارت‌های چهار مسیر، شمارنده‌های واقعی صفحهٔ صف و جدول پیگیری بازگردانده شد. منوی مستقل/گزارش نمایشی/دادهٔ ساختگی مرجع بازنگشتند. فقط فایل frontend خرید و مستندات همین واحد تغییر کردند؛ بدون API، Migration یا Dependency. typecheck، سه تست هدفمند و build ۴۶مسیره موفق‌اند؛ lint نیز موفق است.
+- اصلاح بعدی مالک: نوار همهٔ بخش‌ها و بنر راهنمای مسیر خرید حذف شدند. کارت‌های میزکار و پیوندهای محلی راه دسترسی به همان بخش‌ها را حفظ می‌کنند. پنج نمونهٔ خواندنی در صف خالی شخصی و درخواست‌ها فقط در browser ساخته می‌شوند و هیچ فرمان/ثبت/API ندارند؛ دادهٔ واقعی همیشه مقدم است. frontend خرید، fixture و مستندات همین Work Item تغییر کرده‌اند؛ Schema/API/Dependency و دادهٔ عملیاتی دست‌نخورده‌اند.
+- اصلاح نمای بعدی مالک: هشدار سیاست تأیید، متن معرفی نمونه و نوار نه صف کاری از frontend خرید حذف شدند. صف میزکار به‌صورت ثابت `own` و بخش تصمیم به‌صورت ثابت `approvals` است؛ محدودیت backend و فرم ارسال برقرارند. مالک PC-B، همان branch و محدودهٔ frontend/docs همین Work Item؛ بدون Migration/Dependency/API.
+- پیگیری breadcrumb مالک: مسیر بالای خرید فقط «روبی / خرید و تأمین» است؛ تکرار عنوان بخش جاری حذف شد. پیوند بازگشت به میزکار در بخش‌های فرعی و URL/History باقی‌اند. تغییر محدود به frontend خرید و مستندات همین Work Item؛ بدون API/Migration/Dependency.
+- پیگیری فرم‌ها و منوها: selectهای frontend خرید به کنترل مشترک Radix روبی تبدیل شدند؛ درخواست‌کننده/مسئول/تأمین‌کننده/مرجع عملیات از API واقعی، شعبه/ارز از اطلاعات پایه و دسته/نوع/واحد/دوره از درخواست‌های ذخیره‌شدهٔ خود کاربر در همان شعبه پیشنهاد می‌شوند. فیلدهای بدون کاتالوگ مستقل راه ثبت مقدار تازه دارند. مالک PC-B، همان branch و محدودهٔ frontend/tests/docs؛ بدون API/Schema/Migration/Dependency.
+- پیگیری 2026-09-15 اتصال‌های Backend: مالک خواست سیاست تأیید، ارجاع رزرواسیون، تحویل فاکتور عمومی به Finance، پیگیری Tasks و صف ارتباط بیرونی تکمیل شوند؛ هیچ سکشن Web جدیدی ایجاد نمی‌شود. PC-B در همین شاخه، کد و تست اختصاصی Procurement، قرارداد producer و اسناد تصمیم را رزرو می‌کند. Settings/Reservations/Finance/Integrations تحت مالکیت PC-A هستند و تغییر consumer/adapter آنها پس از هماهنگی producer/consumer و برنامهٔ سازگاری انجام می‌شود. مالک فعلاً حساب/سقف تأیید و API تأمین‌کننده را تعیین نمی‌کند؛ زیرساخت باید deny-by-default باشد و سفارش بیرونی/پرداخت واقعی از QA انجام نشود. Migration/Dependency/Lockfile و فایل‌های فعال PC-A در این گام رزرو یا تغییر نمی‌شوند.
+- پیگیری مالک برای فرم‌های سکشن و مالی: فرم‌های عملیاتی Web خرید، fixtureهای صرفاً نمایشی هر سکشن و خواندن فاکتور عمومی از `ProcurementPublicService` در کارتابل `FinanceInboxService` رزرو شد. Producer=Procurement/PC-B و consumer=Finance/PC-A؛ قرارداد `procurement.finance-source.v1` افزایشی و نسخه‌دار است و ورودی خرید بلیت موجود حفظ می‌شود. PR مالی بنیادین #153 قبلاً Merge شده، Finance target در این checkout تغییر محلی ندارد و Work Item فعال دیگری برای همان فایل دیده نشد؛ تغییر consumer در PR خرید برای بازبینی مالک PC-A می‌ماند. Finance فقط projection فاکتور ذخیره‌شده را نشان می‌دهد و پرداخت/Posting/Journal نمی‌سازد. بدون Schema/Migration/Dependency/Grant یا ویرایش فایل‌های دیگر PC-A.
+- پیگیری بازطراحی همهٔ سکشن‌های داخلی خرید در 2026-09-15: `workspace.tsx` و کامپوننت‌های اختصاصی Procurement، فیلتر افزایشی و سازگار `section` در فهرست API خرید، آزمون هدفمند و اسناد وضعیت نزد PC-B رزرو شد. فرم تأمین‌کننده از فرم عمومی Master Data متعلق به همین مالک استفاده می‌کند و مالکیت رکورد مرجع را جابه‌جا نمی‌کند. ساختار و متن‌های داخلی Web بازنویسی می‌شود؛ Finance و سایر consumerها، Schema/Migration، Dependency/Lockfile، Grant و دادهٔ واقعی خارج از محدوده‌اند. دو فایل گزارش untracked موجود در checkout متعلق به این واحد نیستند و دست‌نخورده می‌مانند.
+- پیگیری بصری مالک: رنگ کارت‌های میزکار و هفت سکشن داخلی خرید با همان توکن‌های رنگی/تیرهٔ Cardهای HR و Master Data بازتنظیم می‌شود. فقط frontend Procurement و docs این Work Item نزد PC-B رزرو است؛ هیچ API، داده، Schema/Migration، Dependency/Lockfile، Grant یا فایل مرکزی متعلق به مالک دیگر تغییر نمی‌کند. فایل‌های گزارش untracked همان‌طور دست‌نخورده می‌مانند.
+- پیگیری آزمون E2E خرید در 2026-09-15: مالک اجرای فرم‌های هفت سکشن با حساب موجود روی نسخهٔ محلی ۳۱۰۰ و رفع خطاهای مشاهده‌شده را خواست. PC-B فقط `draft-form.tsx`، آزمون هدفمند آن و اسناد همین Work Item را برای رفع مقدار انتخاب‌شدهٔ فرم پس از بازخوانی رزرو می‌کند؛ دادهٔ آزمون جدید با عنوان مشخص در پایگاه محلی باقی می‌ماند و سفارش بیرونی/پرداخت واقعی، Grant، Schema/Migration، Dependency/Lockfile و فایل‌های مالک دیگر خارج از محدوده‌اند. دو فایل گزارش untracked دست‌نخورده می‌مانند.
+- پیگیری طراحی فرم درخواست در 2026-09-15: مالک بهبود هدرهای فرم و حذف بخش «دوره ارائه خدمت» را خواست. `draft-form.tsx`، آزمون همان فرم و اسناد همین Work Item نزد PC-B در شاخهٔ جاری رزرو شدند؛ مدل/قرارداد و مقدار period در رکوردهای قدیمی برای سازگاری حفظ می‌شود، فقط کنترل نمایشی حذف است. API، Schema/Migration، Dependency/Lockfile، Grant، داده و فایل‌های گزارش untracked تغییر نمی‌کنند.
+- پیگیری شناسه و کد خودکار در 2026-09-15: `COMPUTER_ID=PC-B`؛ نمایش خواندنی شمارهٔ درخواست و شمارهٔ مرجع سفارش/رسید در فرم‌های Procurement و آزمون هدفمند Web در شاخهٔ جاری رزرو شد. تولید شمارهٔ داخلی همچنان فقط در API و هنگام ثبت است؛ شمارهٔ فاکتور صادرشدهٔ تأمین‌کننده و شناسهٔ بیرونی رزرواسیون خودکار جعل نمی‌شوند. API، Schema/Migration، Dependency/Lockfile، Grant و دو فایل گزارش untracked خارج از محدوده‌اند.
+- پیگیری فیلتر تاریخ همهٔ سکشن‌ها در 2026-09-15: `COMPUTER_ID=PC-B`؛ UI فیلترهای Procurement، بازهٔ UTC تاریخ ثبت در فهرست Request API، فیلتر تاریخ تأمین‌کننده از projection عمومی Master Data متعلق به PC-B، آزمون‌های هدفمند و اسناد همین واحد رزرو شدند. قرارداد query افزایشی با `createdFrom/createdTo` است؛ producer و consumer در همین PC-B هماهنگ‌اند و پارامترهای قدیمی حفظ می‌شوند. Migration، Dependency/Lockfile، فایل‌های مرکزی مالک دیگر و دو فایل گزارش untracked تغییر نمی‌کنند.
+- پیگیری مسیر بالای سکشن‌های خرید در 2026-09-15: `COMPUTER_ID=PC-B`؛ `workspace.tsx` و `internal-sections.tsx`، آزمون مسیر/History و اسناد همین Work Item رزرو شدند. خرید فقط از hook موجود breadcrumb پوسته استفاده می‌کند و فایل مرکزی `app-shell.tsx` تغییر ندارد؛ عنوان بخش فعال و شمارهٔ پروندهٔ بازشده افزوده می‌شوند و مسیرهای تکراری محلی حذف می‌شوند. API، Schema/Migration، Dependency/Lockfile، Grant و دو فایل گزارش untracked خارج از محدوده‌اند.
+- پیگیری دادهٔ نمایشی مالک در 2026-09-16: `COMPUTER_ID=PC-B`؛ برای سکشن‌های تأیید، پیشنهاد، سفارش، دریافت و فاکتور چهار پروندهٔ خواندنی تازه در fixture اختصاصی Procurement رزرو شد تا همهٔ نماهای خالی دادهٔ واقعی‌نما داشته باشند. داده‌ها فرمان، سفارش خارجی یا پرداخت ایجاد نمی‌کنند. نام ۳۱ تأمین‌کنندهٔ محلی و عنوان درخواست قدیمی نیز از عبارت «آزمایشی/آزمون E2E» پاک شدند و ۱۰ پیش‌نویس خرید واقعی‌نما از مسیر رسمی UI/API ثبت شد. Schema/Migration، Dependency/Lockfile، Grant و دو فایل گزارش untracked تغییر نمی‌کنند.
+- پیگیری فرم درخواست مالک در 2026-09-16: `COMPUTER_ID=PC-B`؛ درخواست‌کننده همچنان از projection کارکنان فعال HR انتخاب می‌شود و واحد سازمانی به فهرست واحدهای فعال ساختار سازمانی/پرونده کارکنان HR همان شعبه متصل می‌شود. انتخاب واحد، فهرست کارکنان را محدود می‌کند و کنترل سازگاری کارمند/واحد در سرور باقی می‌ماند. کنترل نمایشی اولویت حذف و مقدار قراردادی پیش‌فرض برای سازگاری حفظ می‌شود؛ عنوان‌های منشأ و پیوست نیز شفاف می‌شوند. محدوده شامل public projection اختصاصی HR برای Procurement، API/Web Procurement، آزمون هدفمند و اسناد همین Work Item است؛ بدون Schema/Migration/Dependency/Lockfile/Grant و بدون تغییر دو فایل گزارش untracked.
+- پیگیری فرم تأمین‌کننده مالک در 2026-09-16: `COMPUTER_ID=PC-B`؛ فرم Supplier عمومی Master Data در محدوده همین مالک با یک فیلد «نام تأمین‌کننده» و بدون کشور/شهر ساده می‌شود. انتخاب سازمان موجود مقدم است و اقدام ثبت سازمان تازه فقط وقتی فهرست جست‌وجوشده نتیجه ندارد ظاهر می‌شود؛ پس از ایجاد سازمان تازه، فرم تماس اصلی همان سازمان خودکار باز می‌شود تا شماره تماس رمزنگاری‌شده ثبت و به Supplier متصل شود. قرارداد ذخیره قدیمی برای خواندن رکوردهای موجود حفظ می‌شود؛ بدون Schema/Migration/Dependency/Lockfile و بدون تغییر دو فایل گزارش untracked.
+- پیگیری فرم سفارش نمایشی مالک در 2026-09-16: `COMPUTER_ID=PC-B`؛ پرونده‌های خواندنی سکشن سفارش که هنگام خالی‌بودن API نشان داده می‌شوند باید از همان ردیف و انتخاب‌گر قابل بازشدن باشند. فرم سفارش مخصوص آن‌ها پیشنهاد منتخب، موعد تحویل با تقویم مشترک، شعبه تحویل و شرایط پرداخت را می‌گیرد و پیش‌نویس را فقط در نشست مرورگر نگه می‌دارد؛ پرونده واقعی همچنان فقط از API و مجوزهای سفارش عبور می‌کند و هیچ سفارش بیرونی ساخته نمی‌شود. محدوده فقط frontend/tests/docs همین Work Item است؛ بدون API/Schema/Migration/Dependency/Grant و بدون تغییر دو فایل گزارش untracked.
+- پیگیری اتصال HR و فرم مستقل تأمین‌کننده در 2026-09-16: `COMPUTER_ID=PC-B`؛ فرم درخواست خرید باید شعبهٔ مجاز کارمند جاری را از bootstrap انتخاب کند و در نبود اتصال حساب HR، اولین شعبهٔ مجاز را پیش‌فرض بگیرد تا projection عمومی کارکنان فعال و واحدهای سازمانی HR واقعاً بارگذاری شود. فرم Supplier در Master Data متعلق به PC-B به ثبت مستقل در خود کاتالوگ تغییر می‌کند؛ ایجاد رکورد تازه فقط نام تأمین‌کننده و اطلاعات عملیاتی خودش را می‌گیرد و دیگر Organization یا مخاطب Organization را درخواست نمی‌کند. ارتباط‌های قدیمی برای خواندن رکوردهای موجود در دیتابیس حفظ می‌شوند. محدوده شامل Web/API projection موجود، آزمون هدفمند و اسناد همین Work Item است؛ بدون Schema/Migration/Dependency/Lockfile/Grant و بدون تغییر دو فایل گزارش untracked.
+- در بازبینی زندهٔ همان پیگیری مشخص شد کاربر ممکن است به چند شعبه مجاز باشد ولی فقط یکی از آن‌ها دایرکتوری فعال HR داشته باشد. projection عمومی HR شناسهٔ اولین شعبهٔ مجازِ دارای کارمند فعال را به bootstrap خرید می‌دهد و UI آن را قبل از ترتیب نامعین فهرست شعبه‌ها ترجیح می‌دهد؛ این انتخاب فقط پیش‌فرض فرم است و محدودیت دسترسی شعبه را تغییر نمی‌دهد.
+- پیگیری فاکتور و ارتباط مالی در 2026-09-16: `COMPUTER_ID=PC-B`؛ ردیف‌های خواندنی سکشن فاکتور باید مانند سفارش از همان ردیف و انتخاب‌گر، فرم مرحله‌ای فاکتور/تطبیق/ارجاع مالی را باز کنند و پیشرفت را فقط در نشست مرورگر نگه دارند. مسیر واقعی همچنان از `INVOICE`، `MATCH_INVOICE` و `SUBMIT_FINANCE` و projection نسخه‌دار `procurement.finance-source.v1` به کارتابل مالی عبور می‌کند؛ نمونه‌ها هیچ فاکتور، پرداخت یا سند حسابداری واقعی ایجاد نمی‌کنند. محدوده کد فقط frontend/tests/docs خرید است؛ بدون Schema/Migration/Dependency/Lockfile و بدون تغییر دو فایل گزارش untracked. در runtime محلی، کاتالوگ مجوزهای تعریف‌شدهٔ نقش موجود `finance_staff` ناقص بود؛ همان هفت مجوز مصوب Seed به‌صورت افزایشی upsert و نقش فقط به حساب `nirvana` متصل شد و دو Audit محلی ثبت شد. هیچ نقش یا مجوز قبلی حذف نشد.
+
+- پیگیری اتصال‌های عملیاتی غیررزرواسیونی در 2026-09-16: مالک صریحاً اجرای همهٔ اتصال‌های باقی‌مانده به‌جز Reservations را خواست و ایجاد UI تازه را ممنوع کرد. `COMPUTER_ID=PC-B`؛ همان شاخه و Work Item، با `Migration Owner = PC-B/PROCUREMENT-LIVE-INTEGRATION-0915` برای یک migration افزایشی. محدوده رزرو شامل Settings policy عمومی خرید، Tasks projection، چرخه پذیرش/پرداخت فاکتور Procurement در Finance، outbox/adapter امن تأمین‌کننده، projection گزارش و قراردادهای additive نسخه‌دار آنهاست. Producer/consumerهای Procurement↔Settings/Tasks/Finance/Integrations صریح‌اند، هیچ Query مستقیم بین جدول‌های مالک‌ها انجام نمی‌شود و قراردادهای قدیمی حفظ می‌شوند. اتصال Reservations، فایل‌های Web گزارش untracked، Dependency/Lockfile، انتساب خودکار نقش تجاری، پرداخت واقعی و ارسال واقعی تأمین‌کننده خارج از محدوده‌اند. Adapter بیرونی تا تنظیم URL/Secret فقط صف امن و retry را نگه می‌دارد.
+- پیگیری بالا در 2026-09-16 تکمیل شد: policy نسخه‌دار Settings، task projection تراکنشی، تصمیم/پرداخت فاکتور و اصلاح مالی مرجوعی، صف و inbox امضاشدهٔ تأمین‌کننده و وضعیت مالی گزارش پیاده شدند. Migration اتمیک روی PostgreSQL 18 تمرین شد و نبود migration حساب تسویهٔ موجود را idempotent جبران می‌کند. ۳۰ تست عملیاتی Procurement، ۲۱ تست هدفمند، Prisma validate/generate، lint، typecheck و build Contracts/Database/API موفق‌اند. UI تازه و اتصال Reservations اضافه نشد؛ URL/Secret بیرونی و حساب‌های سیاست بعداً تنظیم می‌شوند. `Migration Owner` این پیگیری آزاد است.
+
+## TICKET-REPEAT-PURCHASE-0914 — PC-A — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-14: رفع خطای تکرار بلیط‌های بدون ساعت، افزودن تاریخ اولین بلیط به فرم تعریف، و ارسال قیمت خرید ثبت‌شده به کارتابل مالی. COMPUTER_ID=PC-A.
+- Branch مستقل codex/pc-a-ticket-repeat-purchase-0914 از origin/develop@b62054e3؛ main/develop و Branchهای دیگر دست‌نخورده می‌مانند و خروجی فقط با PR جدا به develop تحویل می‌شود.
+- محدوده رزروشده: Ticket Catalog Web/model/tests، اتصال عمومی Procurement و Finance inbox، قرارداد افزایشی Travel، مدل و Migration افزایشی Procurement، و اسناد همین Work Item. Migration Owner = PC-A/TICKET-REPEAT-PURCHASE-0914 و Travel contract/Central Docs فقط برای همین تغییر رزرو است؛ Dependency/Lockfile و Permission تغییر نمی‌کند.
+- تحویل: فرم تعریف بلیط تاریخ اولین اجرا را مستقل از ساعت می‌گیرد؛ تکرار هفتگی/ماهانه بلیط قدیمی بدون ساعت نیز کار می‌کند. قیمت خرید مثبت با Decimal و ارز در Procurement ثبت و تا پیش از رسیدگی مالی قابل ویرایش است؛ Finance آن را از سرویس عمومی Procurement در کارتابل نشان می‌دهد. ۱۹ تست Web، ۸ تست API، lint، typecheck و build کامل API/Web و اعتبارسنجی Prisma موفق‌اند.
+
+## RESERVATION-MANIFEST-TICKET-CARDS-0914 - PC-A - READY_FOR_REVIEW
+
+- Product request 2026-09-14: after choosing a MANIFEST date range, show each matching outbound or return ticket as a Ticket Management style card. Show whether an active airline/destination template is available and generate only through that template.
+- Independent branch codex/pc-a-manifest-ticket-cards-0914 from origin/develop@b62054e3; COMPUTER_ID=PC-A.
+- Reserved scope: public Manifest list/export contracts, Reservations Manifest service/controller, public Master Data template lookup, controlled Documents referenced-file read, Manifest card UI and focused tests, plus this task status. No migration, seed, passenger data, dependency/lockfile, or localhost runtime changes.
+- Reservations consumes public Master Data and Documents services only. A template must be active, XLSX, destination-matched, and CLEAN. If a shared file changes on refreshed origin/develop, stop before resolving and report the overlap.
+- Implementation complete: the date-range search returns outbound and return ticket cards, resolves the active airline/destination template, disables unsupported cards with an explicit reason, and downloads only the selected ticket through its stored XLSX document. Contract-level export history remains idempotent and is separated by the selected flight departure. Eight focused API tests and one Web render test, scoped lint, Contracts/API/Web typecheck, and API/Web production builds passed. No migration, seed, dependency, passenger data, or localhost runtime change.
+
+## FLIGHT-TICKET-THEME-0915 — PC-A — IN_PROGRESS
+
+- درخواست 2026-09-15: خروجی PDF بلیط با چیدمان نمونه، لوگوی واقعی ایرلاین و نیایش، عنوان MR/MRS/CHD/INF بر پایه سن و جنسیت، مسیر پویا و هشدار دو زبانه سه ساعت پیش از پرواز.
+- Branch مستقل `codex/pc-a-flight-ticket-theme-0915` از `origin/develop@ff15c7d3`؛ COMPUTER_ID=PC-A. محدوده رزرو: مدل نمایش بلیط رزرواسیون، مسیر PDF بلیط، HTML/PDF قالب و تست‌های هدفمند، به‌همراه اسناد همین Task. بدون Migration، Seed، داده مسافر، IAM grant، lockfile یا تغییر localhost.
+- PR #283 در Review است و با route/model PDF اشتراک فایل دارد. تغییرات این واحد جدا تحویل می‌شوند؛ هنگام ادغام بعدی باید اختلاف آن PR بررسی و هر دو رفتار حفظ شوند. لوگو از قرارداد عمومی Master Data/Documents خوانده می‌شود؛ مقدار ساختگی برای QR، بار مجاز یا شماره بلیط تولید نمی‌شود.
+- پیاده‌سازی تکمیل شد: قالب A4 با لوگوی نیایش و لوگوی ایرلاین ثبت‌شده، مسیر و زمان پویا، عنوان مسافر از رده سن/جنسیت، نام لاتین گذرنامه و هشدار دو زبانه ساخته می‌شود. برای ایرلاین بدون لوگو، نام ثبت‌شده نمایش دارد. ۱۵ تست هدفمند، lint و typecheck Web موفق‌اند؛ یک PDF مصنوعی رفت/برگشت در یک صفحه A4 رندر شد. بدون داده واقعی، Migration، Seed، تغییر localhost یا ادغام PR #283. وضعیت: READY_FOR_REVIEW؛ قفل‌های فایل آزادند.
+- build تولیدی Web نیز با ۴۶ route موفق شد؛ خروجی نمونهٔ PDF با Chrome/Poppler یک صفحه A4 دارد. تغییر عمومی API/Database و جابه‌جایی localhost انجام نشد.
+- پیگیری 2026-09-15: سایهٔ روشن شهر پشت نام/کد مبدأ و مقصد برای هر مسیر پویا اضافه شد؛ ۸ تست قالب، lint و نمونه واقعی PDF/PNG موفق‌اند.
+
+## RESERVATION-SERVICE-PURCHASE-PICKER-0919 — PC-A — READY_FOR_REVIEW
+
+- درخواست 2026-09-19: پنجره «خرید» رزرواسیون باید خدمات هتل و ترانسفر قرارداد را برای انتخاب نمایش دهد؛ کارگزار، مبلغ و ارز جداگانه ثبت شوند و ثبت همان نسخهٔ خرید را به صف پرداخت مالی بفرستد.
+- `COMPUTER_ID=PC-A`؛ شاخه `codex/pc-a-reservation-service-purchase-picker-0919` از `origin/develop@d6e1692e`. محدوده رزرو: فرم خرید خدمات رزواسیون، سازگاری API برای snapshot قدیمی دارای hotelSelection، تست‌های هدفمند و اسناد همین Task. Producer رزواسیون و consumer مالی از قرارداد عمومی موجود `ReservationServicePurchaseV1` استفاده می‌کنند؛ قرارداد API افزایشی نمی‌شود. بدون Migration، Dependency/Lockfile، دادهٔ عملیاتی یا تغییر مستقیم Procurement.
+
+- نتیجه: انتخاب‌گر خدمت فقط هتل/ترانسفر قرارداد را نشان می‌دهد. ثبت خرید همان endpoint نسخه‌دار موجود را با کارگزار، مبلغ و ارز صدا می‌زند و نسخهٔ تازه را در صف پرداخت مالی نگه می‌دارد. snapshot قدیمی که فقط hotelSelection دارد نیز سازگار است؛ برای افزودن خدمت جدید، مالک Sales باقی می‌ماند.
+
+## SALES-TICKET-CATALOG-SYNC-0919 — PC-A — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-19: بلیط‌های تعریف‌شده در «مدیریت بلیط» باید همان منبع انتخاب در «قرارداد جدید» باشند؛ پیشنهادهای قدیمی یا محلیِ نامرتبط در فرم قرارداد نمایش داده نشوند و ثبت بلیط جدید قابل انتخاب باشد.
+- `COMPUTER_ID=PC-A`؛ شاخه `codex/pc-a-sales-ticket-catalog-sync-0919` از `origin/develop@5d588cbd`. محدوده: API عمومی موجود Ticket Catalog برای فهرست مدیریت‌شده، ثبت تعریف پرواز در همان منبع `TicketPublishedOffer`، نمایش منبع ثبت‌شده در مدیریت بلیط، انتخاب Sales و تست‌های هدفمند؛ بدون Schema/Migration/Dependency/Lockfile یا داده عملیاتی.
+- نتیجه: تعریف تازهٔ پرواز، از همان فرم مدیریت بلیط، پیش از ذخیرهٔ نمای محلی در `TicketPublishedOffer` منتشر می‌شود و همان لحظه در فهرست «ثبت‌شده برای فروش و قرارداد» و انتخاب قرارداد جدید قابل‌دریافت است. رفت/برگشت و تکرار نیز هر پرواز مستقل را منتشر می‌کنند. فهرست مدیریت‌شده فقط ردیف‌های شعبه‌های مجاز و ظرفیت مانده را می‌خواند. تست Web ۱/۱، تست API ۳/۳، lint، Prettier و typecheck API/Web موفق‌اند؛ بدون Migration، Dependency/Lockfile یا داده عملیاتی.
+
+## MASTER-013-AIRLINE-DESCRIPTION-0919 — PC-B — ACTIVE
+
+- درخواست مالک در 2026-09-19: متن Credential و اتصال Provider از توضیحات بخش ایرلاین حذف شود.
+- محدوده: فقط توضیح کاتالوگ ایرلاین در Web و تست مستقیم آن؛ بدون تغییر فرم، API، قرارداد، Schema/Migration، داده یا ماژول دیگر.
+
+## TICKET-EXPIRY-SALES-VISIBILITY-0920 — PC-A — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-20: بلیطی که زمان حرکتش گذشته است در مدیریت بلیط به‌طور خودکار غیرفعال شود و همهٔ پروازهای معتبر تعریف‌شده در مدیریت بلیط در فرم قرارداد جدید قابل انتخاب باشند.
+- `COMPUTER_ID=PC-A`؛ شاخهٔ مستقل `codex/pc-a-ticket-expiry-sales-visibility-0920` از `origin/develop@60d847bb`. محدودهٔ رزرو: سرویس عمومی Ticket Catalog و تست آن، تبدیل تعریف پرواز Web و تست ورودی مدیریت بلیط، حذف دادهٔ نمونهٔ محلیِ گمراه‌کننده و اسناد همین واحد. بدون Schema/Migration/Dependency/Lockfile، Seed، دادهٔ عملیاتی یا تغییر localhost.
+- انقضا با انتقال افزایشی `ACTIVE` به `PAUSED` هنگام خواندن منبع عمومی ثبت می‌شود و نسخه و Audit سیستمی آن حفظ خواهد شد. پرواز چندقطعه‌ای با اولین مبدأ، آخرین مقصد و بازهٔ کامل سفر در همان منبع منتشر می‌شود؛ قطار و اتوبوس به قرارداد نوع پرواز تبدیل نمی‌شوند.
+- تکمیل شد: منبع مدیریت/فروش هنگام خواندن، حداکثر ۵۰۰ پیشنهاد گذشته را با کنترل همزمانی به `PAUSED` می‌برد و Audit نسخه‌دار `ticket.offer.expired` می‌سازد؛ جست‌وجوی قرارداد نیز هرگز زمان گذشته را برنمی‌گرداند. تعریف پرواز چندقطعه‌ای منتشر و backfill می‌شود، داده‌های نمونهٔ صرفاً مرورگری حذف شده‌اند، کارت محلی منقضی هنگام بارگذاری متوقف می‌شود و فهرست منتشرشده هر دقیقه تازه می‌گردد. ۲۳ تست هدفمند API/Web، lint، typecheck کامل API/Web، build API و build تولیدی Web با Webpack و ۵۰ route موفق‌اند. build پیش‌فرض Turbopack فقط به‌دلیل junction خارجی node_modules در worktree قابل اجرا نبود؛ کد، Schema، Migration، Lockfile و دادهٔ عملیاتی تغییری خارج از محدوده ندارند.
+
+## 2026-09-21 — PROCUREMENT-DRAFT-SAVE-AND-SUBMISSION-0921 — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک: ثبت پیش‌نویس درخواست خرید قابل فهم و قابل اتکا باشد و ارسال آن برای تأیید به‌دلیل وضعیت ایستای نادرست در رابط مسدود نشود.
+- شاخه: ادامه روی `codex/pc-b-procurement-request-no-supplier-0921`؛ `COMPUTER_ID=PC-B`.
+- محدودهٔ رزروشده: فرم درخواست و نمای جزئیات Procurement و تست‌های مستقیم آن، به‌علاوهٔ وضعیت همین واحد. اعتبارسنجی و اعمال سیاست تأیید در Backend بدون تغییر و fail-closed باقی می‌ماند؛ Schema/Migration، مجوز، نقش، Dependency/Lockfile و دادهٔ عملیاتی تغییر نمی‌کنند.
+- نتیجه و اعتبارسنجی: درخواست‌کنندهٔ لازم پیش از ثبت در خود فرم دیده می‌شود و در صورت تلاش برای ثبت، کنترل آن به‌طور خودکار در کادر دید و فوکوس قرار می‌گیرد؛ خطای ثبت نیز نزدیک دکمهٔ ثبت نمایش دارد. ارسال برای تأیید دیگر به وضعیت ثابت Bootstrap قفل نیست و Backend فقط در صورت وجود سیاست نسخه‌دار معتبر با تأییدکنندگان مستقل آن را می‌پذیرد. ۸ تست مستقیم فرم، lint و typecheck Web موفق‌اند؛ HTTP 200 روی Web3100 تأیید شد.
+
+## TICKET-FORM-VALIDATION-RESET-0921 — PC-A — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-21: پس از اصلاح ورودی نامعتبر در فرم تعریف/ویرایش بلیط، پیام خطای قبلی فوراً پاک شود؛ همین رفتار برای فرم‌های تکرار، رزرو ظرفیت و تغییر وضعیت برقرار باشد.
+- شاخهٔ مستقل `codex/pc-a-form-validation-reset-0921` از `origin/develop@bd93b634`. محدوده فقط سه فایل Web مدیریت بلیط و تست قراردادی آنهاست؛ بدون API، Schema/Migration، Dependency/Lockfile یا دادهٔ عملیاتی.
+- نتیجه: همهٔ مسیرهای تغییر داده در فرم اصلی و فرم‌های جانبی ابتدا خطای قبلی را پاک می‌کنند؛ اعتبارسنجی نامعتبر در ثبت بعدی دوباره نمایش داده می‌شود. ۱۰۵ تست ماژول، lint، typecheck و build تولیدی Web با ۵۰ route موفق‌اند.
+
+## RESERVATION-ISSUED-TICKETS-REPORT-0921 — PC-A — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-21: صفحهٔ فقط‌خواندنی «بلیط‌های صادرشده مسافران» به دادهٔ واقعی رزرواسیون متصل شود و قرارداد، مسافر، مسیر، PNR و شماره بلیط را بدون fixture یا ذخیرهٔ موازی نمایش دهد.
+- `COMPUTER_ID=PC-A`؛ شاخهٔ مستقل `codex/pc-a-reservation-issued-tickets-report-0921` از `origin/develop@bd93b634`. محدودهٔ رزرو: consumer فقط‌خواندنی Web در Ticket Catalog برای قرارداد عمومی موجود `GET /reservations/requests`، projection/validation کلاینت، UI و تست‌های هدفمند و اسناد همین واحد. بدون API/Schema/Migration/Dependency/Lockfile، دادهٔ عملیاتی، صدور یا استرداد.
+- نام شهر از اطلاعات پایهٔ عمومی خوانده می‌شود. چون قرارداد فعلی رزرواسیون PNR و شماره رسمی بلیط را ذخیره نمی‌کند، این دو مقدار جعل نمی‌شوند و در گزارش به‌صورت «ثبت نشده» نمایش داده خواهند شد.
+- تکمیل شد: صفحه در زمان بازشدن همهٔ صفحات مجاز رزرواسیون را می‌خواند، فقط مسافر/پروازهای واقعاً تخصیص‌یافته را projection می‌کند، ابطال workflow را نمایش می‌دهد، مسیرها را از اطلاعات پایه حل می‌کند و فیلتر/صفحه‌بندی موجود را روی دادهٔ واقعی نگه می‌دارد. ۱۰ تست هدفمند، lint محدوده، typecheck کامل Web و build تولیدی Next/Webpack موفق‌اند.
+
+# TICKET-STANDALONE-SALE-PRICE-0921 — PC-A — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-21: هر پرواز منتشرشده در جدول مدیریت بلیط قیمت فروش تکی قابل ویرایش داشته باشد؛ فروش بدون هتل/تور از همین قیمت استفاده کند، قیمت پکیج مستقل بماند و ظرفیت هر مسیر از منبع مشترک کم شود. رفت و برگشت دو پیشنهاد مستقل و دو قیمت مستقل دارند.
+- شاخه `codex/pc-a-ticket-standalone-price-v2-0921` از `origin/develop@bd93b634`. محدوده رزرو: قرارداد عمومی افزایشی Ticket Catalog، migration افزایشی قیمت نسخه‌دار، سرویس/کنترلر Ticket Catalog، جدول مدیریت بلیط، انتخاب Sales و تست‌های هدفمند. `COMPUTER_ID=PC-A` و Migration Owner همین واحد است.
+- تغییر مخرب، Seed، داده عملیاتی، Dependency/Lockfile و تغییر مستقیم develop/localhost در محدوده نیست. قیمت تور از مدیریت قیمت فعلی باقی می‌ماند؛ قیمت تکی هر صندلی فقط برای قرارداد بدون هتل/تور پیش‌فرض می‌شود.
+- اعتبارسنجی: Prisma validate/generate؛ build قراردادها، API و Web؛ lint و typecheck در API/Web/Database؛ ۷۸ تست Database (۱۴ مورد integration بدون DB رد شدند)، ۶ تست API و ۳۱ تست Web موفق شدند.
+
+## TOUR-SINGLE-SCREEN-0921 — PC-A — READY_FOR_REVIEW
+
+- COMPUTER_ID=PC-A. Branch: codex/pc-a-tour-single-screen-0921 from origin/develop@5f66ef97.
+- Reserved: tour-workspace.tsx and tour-details-form.tsx layout, focused existing tests and task status. Compact same-page sections, visible save action. No API, database, dependencies or runtime changes.
+
+## PROFILE-AVATAR-UPLOAD-0921 — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-21: عکس پروفایل از تنظیمات شخصی واقعاً بارگذاری، ذخیره و در
+  رابط سایت نمایش داده شود. شاخه `codex/pc-b-profile-avatar-upload-0921` از
+  `origin/develop@cba76029` در worktree مستقل ساخته شد.
+- محدوده رزروشده: مرز محدود Workbench/Documents برای فایل عکس مالک حساب، کنترلر و سرویس
+  Workbench، client و فرم Profile، آواتار سربرگ و تست‌های هدفمند. Documents فایل را با
+  reference دقیق Workbench/IamProfile و مالک/شعبه نشست نگه می‌دارد؛ Workbench هیچ جدول Documents
+  را مستقیم نمی‌خواند و IAM فقط از public service موجود برای شناسه عکس استفاده می‌کند.
+- بدون Schema/Migration/Seed، Dependency/Lockfile، Permission grant یا تغییر داده عملیاتی.
+  فرمت‌های مجاز PNG/JPEG و سقف ۵ مگابایت‌اند؛ دسترسی اختصاصی فقط عکس همان کاربر را می‌خواند.
+- نتیجه: بارگذاری از مسیر اختصاصی مالک حساب انجام می‌شود، شناسه فایل با public service موجود
+  IAM در پروفایل ماندگار می‌شود و فرم تنظیمات و آواتار مشترک سربرگ فایل ذخیره‌شده را نمایش
+  می‌دهند. ۱۹ تست هدفمند، lint محدوده، typecheck API/Web و build تولیدی هر دو برنامه موفق‌اند؛
+  Schema/Migration/Seed، Permission و داده عملیاتی تغییر نکرده‌اند.

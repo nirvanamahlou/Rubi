@@ -1,4 +1,4 @@
-import type { IamPermissionCode, MasterDataRecord } from '@rubi/contracts';
+import type { IamPermissionCode, MasterDataRecord } from '@nora/contracts';
 import type { MasterDataLogoChange } from '@/modules/master-data/api/client';
 import { documentsApi } from '@/modules/documents/api/client';
 import { saveOrganizationChanges } from './record-mutations';

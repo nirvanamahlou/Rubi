@@ -14,12 +14,13 @@ import type {
   TourPackageV1,
   TourPackageInputV1,
   SalesContractCreateRequest,
-} from '@rubi/contracts';
-import type { Prisma } from '@rubi/database';
+} from '@nora/contracts';
+import type { Prisma } from '@nora/database';
 import { DatabaseService } from '../database/database.service';
 import { MasterTravelDirectory } from '../master-data/master-travel-directory';
 import { validateTourDeparture, validateTourPackage } from './tour-policy';
 import { DocumentsService } from '../documents/documents.service';
+import { ProcurementPublicService } from '../procurement/procurement-public.service';
 
 const included = {
   package: true,
@@ -106,6 +107,8 @@ export class TourPublicService {
     @Inject(MasterTravelDirectory)
     private readonly references: MasterTravelDirectory,
     @Inject(DocumentsService) private readonly documents?: DocumentsService,
+    @Inject(ProcurementPublicService)
+    private readonly purchases?: ProcurementPublicService,
   ) {}
 
   private authorize(
@@ -238,6 +241,29 @@ export class TourPublicService {
       take: 200,
     });
     return { version: 1 as const, data: rows.map(departureView) };
+  }
+  /** Public pricing boundary; the consumer authorizes its own permission and branches. */
+  async pricingDepartures(branchIds: readonly string[]) {
+    if (!branchIds.length) return { version: 1 as const, data: [] };
+    const rows = await this.database.client.tourDeparture.findMany({
+      where: {
+        branchId: { in: [...branchIds] },
+        endsOn: { gte: new Date(new Date().toISOString().slice(0, 10)) },
+      },
+      include: included,
+      orderBy: [{ startsOn: 'asc' }, { id: 'asc' }],
+      take: 200,
+    });
+    return { version: 1 as const, data: rows.map(departureView) };
+  }
+
+  async pricingDeparture(id: string, branchIds: readonly string[]) {
+    const row = await this.database.client.tourDeparture.findFirst({
+      where: { id, branchId: { in: [...branchIds] } },
+      include: included,
+    });
+    if (!row) throw new NotFoundException('نوبت تور در شعبه مجاز پیدا نشد.');
+    return departureView(row);
   }
   async createPackage(
     raw: unknown,
@@ -415,6 +441,12 @@ export class TourPublicService {
       throw new ConflictException(
         'شناسه درخواست با اطلاعات متفاوت تکرار شده است.',
       );
+    // Existing offers (created before this bridge) acquire typed Finance requests on tour creation.
+    if (!this.purchases)
+      throw new ConflictException('مرز عمومی درخواست خرید بلیت متصل نیست.');
+    await this.purchases.ensureOfferPurchaseRequest(row.outboundOffer);
+    if (row.returnOffer)
+      await this.purchases.ensureOfferPurchaseRequest(row.returnOffer);
     return { data: departureView(row) };
   }
 }

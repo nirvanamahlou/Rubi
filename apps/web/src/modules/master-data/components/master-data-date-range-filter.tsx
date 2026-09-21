@@ -1,6 +1,6 @@
 'use client';
 
-import type { MasterDataListQuery } from '@rubi/contracts';
+import type { MasterDataListQuery } from '@nora/contracts';
 import { CalendarRange, X } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
 
@@ -15,6 +15,7 @@ interface MasterDataDateRangeFilterProps {
   onReset: () => void;
   onToDateChange: (value: string) => void;
   toDate: string;
+  title?: string;
 }
 
 function dateOnly(value: string) {
@@ -76,6 +77,7 @@ export function MasterDataDateRangeFilter({
   onReset,
   onToDateChange,
   toDate,
+  title = 'بازه تاریخ',
 }: MasterDataDateRangeFilterProps) {
   const hasValue = Boolean(fromDate || toDate);
 
@@ -84,7 +86,7 @@ export function MasterDataDateRangeFilter({
       <legend className="px-1">
         <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-foreground">
           <CalendarRange aria-hidden="true" className="size-3.5 text-primary" />
-          بازه تاریخ
+          {title}
           <span className="rounded-md bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
             شمسی / میلادی
           </span>

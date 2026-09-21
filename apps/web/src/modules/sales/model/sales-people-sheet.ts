@@ -1,4 +1,4 @@
-import type { CustomerDetail, CustomerMutationRequest } from '@rubi/contracts';
+import type { CustomerDetail, CustomerMutationRequest } from '@nora/contracts';
 import {
   customersApi,
   CustomersApiError,
@@ -47,9 +47,9 @@ export const emptyPeopleValues = (): PeopleValues => ({
   passportFirstName: '',
   passportLastName: '',
   gender: '',
-  nationalityCode: '',
-  passportIssuingCountryCode: '',
-  birthCountryCode: '',
+  nationalityCode: 'IRN',
+  passportIssuingCountryCode: 'IRN',
+  birthCountryCode: 'IRN',
   phone: '',
   email: '',
   acquaintanceMethodId: '',

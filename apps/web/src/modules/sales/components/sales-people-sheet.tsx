@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import { Plus, Check, Search } from 'lucide-react';
-import type { CustomerSummary, MasterDataRecord } from '@rubi/contracts';
+import type { CustomerSummary, MasterDataRecord } from '@nora/contracts';
 import { Button } from '@/components/ui/button';
 import { FormField } from '@/components/ui/form-controls';
 import { Alert } from '@/components/ui/surfaces';

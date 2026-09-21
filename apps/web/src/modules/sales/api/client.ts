@@ -1,6 +1,7 @@
 'use client';
 
 import type {
+  HotelRoomRateV1,
   SalesContractCreateRequest,
   SalesContractOutputV1,
   SalesContractDetail,
@@ -8,7 +9,7 @@ import type {
   SalesContractPage,
   SalesDashboard,
   SalesPaymentCreateRequest,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 
 import { refreshAuthenticatedSession } from '@/lib/auth-session';
 import { getPublicApiBaseUrl } from '@/lib/environment';
@@ -116,6 +117,16 @@ export const salesApi = {
       `/contracts/${encodeURIComponent(id)}/output`,
     ),
   dashboard: () => request<SalesDashboard>('/dashboard'),
+  availableHotelRoomRates: (input: {
+    hotelId: string;
+    checkIn: string;
+    checkOut: string;
+  }) => {
+    const query = new URLSearchParams(input).toString();
+    return request<{ data: readonly HotelRoomRateV1[] }>(
+      `/hotel-room-rates?${query}`,
+    );
+  },
   addPayment: (id: string, input: SalesPaymentCreateRequest, key: string) =>
     request<{ data: SalesContractDetail }>(
       `/contracts/${encodeURIComponent(id)}/payments`,

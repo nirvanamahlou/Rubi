@@ -4,7 +4,7 @@ import {
   voucherNumberKeys,
   voucherFlagKeys,
   type VoucherSettingsV1,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import { validateVoucherSettings } from './voucher-settings';
 import {
   initialTravelWorkflow,
@@ -23,9 +23,11 @@ const settings = (): VoucherSettingsV1 => ({
   passengers: [{ id: 'p', selected: true, roomType: 'DBL', age: 'ADL' }],
 });
 it('validates settings and rejects foreign passengers, invalid dates and unselected groups', () => {
-  expect(
-    validateVoucherSettings(settings(), ['p']).passengers[0]?.roomType,
-  ).toBe('DBL');
+  const valid = settings();
+  valid.text.contractPartyName = '  شرکت آزمایشی  ';
+  const normalized = validateVoucherSettings(valid, ['p']);
+  expect(normalized.passengers[0]?.roomType).toBe('DBL');
+  expect(normalized.text.contractPartyName).toBe('شرکت آزمایشی');
   const bad = settings();
   bad.passengers[0]!.id = 'foreign';
   expect(() => validateVoucherSettings(bad, ['p'])).toThrow();
@@ -38,6 +40,34 @@ it('validates settings and rejects foreign passengers, invalid dates and unselec
   const fraction = settings();
   fraction.numbers.doubleRooms = 1.5;
   expect(() => validateVoucherSettings(fraction, ['p'])).toThrow();
+});
+
+it('requires a hotel age band for every selected child', () => {
+  const value = settings();
+  value.passengers[0] = {
+    ...value.passengers[0]!,
+    age: 'CHD',
+    hotelChildAgeBand: '',
+  };
+  expect(() => validateVoucherSettings(value, ['p'])).toThrow();
+
+  value.passengers[0]!.hotelChildAgeBand = 'CHD_6_TO_12';
+  expect(validateVoucherSettings(value, ['p']).passengers[0]).toMatchObject({
+    age: 'CHD',
+    hotelChildAgeBand: 'CHD_6_TO_12',
+  });
+});
+it('keeps hotel child age bands in the reservation snapshot without changing ticket age', () => {
+  const value = settings();
+  value.passengers[0] = {
+    ...value.passengers[0]!,
+    age: 'CHD',
+    hotelChildAgeBand: 'CHD_2_TO_6',
+  };
+  expect(validateVoucherSettings(value, ['p']).passengers[0]).toMatchObject({
+    age: 'CHD',
+    hotelChildAgeBand: 'CHD_2_TO_6',
+  });
 });
 it('creates a new issued settings revision without rewriting the prior settings or bypassing issue gates', () => {
   const state = {

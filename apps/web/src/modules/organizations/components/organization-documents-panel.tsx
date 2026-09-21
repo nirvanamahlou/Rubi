@@ -5,7 +5,7 @@ import type {
   DocumentValidityFilter,
   IamPermissionCode,
   MasterDataRecord,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 import {
   Download,
   ExternalLink,

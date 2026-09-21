@@ -10,7 +10,7 @@ import type {
   MessagingConversationV1,
   MessagingMessageV1,
   MessagingParticipantV1,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 
 import { IamService } from '../iam/iam.service';
 import { DocumentsService } from '../documents/documents.service';
@@ -197,7 +197,7 @@ export class MessagingService {
     const names = await this.descriptions(
       rows.flatMap((row) => [
         row.senderUserId,
-        row.forwardedFrom?.senderUserId ?? '',
+        ...(row.forwardedFrom ? [row.forwardedFrom.senderUserId] : []),
       ]),
     );
     return rows.map((row) => {

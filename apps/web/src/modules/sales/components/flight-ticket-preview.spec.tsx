@@ -2,7 +2,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import { FlightTicketDocument } from './flight-ticket-preview';
 import { emptySalesForm } from '../model/sales-form';
-import type { TicketOfferV1 } from '@rubi/contracts';
+import type { TicketOfferV1 } from '@nora/contracts';
 
 const demoOffer: TicketOfferV1 = {
   id: 'demo',

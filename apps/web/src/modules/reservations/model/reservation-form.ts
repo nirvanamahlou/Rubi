@@ -1,15 +1,26 @@
-import { salesContractFlights } from '@rubi/contracts';
+import { salesContractFlights } from '@nora/contracts';
 import type {
   MasterDataRecord,
   ReservationIntakeV1,
   TravelWorkflowStateV1,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 export type ReservationFormIntake = ReservationIntakeV1 & {
   workflow: TravelWorkflowStateV1;
 };
 export type ReservationFormReferences = Record<string, MasterDataRecord>;
 const text = (value: unknown) =>
   typeof value === 'string' && value.trim() ? value.trim() : '-';
+
+export function reservationPassengerAgeLabel(
+  age: string,
+  hotelChildAgeBand?: string,
+) {
+  if (age !== 'CHD') return age;
+  if (hotelChildAgeBand === 'CHD_2_TO_6') return 'CHD (2-6)';
+  if (hotelChildAgeBand === 'CHD_6_TO_12') return 'CHD (6-12)';
+  return 'CHD';
+}
+
 export function reservationFormDate(value?: string, timeZone = 'UTC') {
   if (!value || !Number.isFinite(Date.parse(value))) return '-';
   return new Intl.DateTimeFormat('en-GB', {
@@ -45,7 +56,13 @@ export function reservationFormData(
   const ids = [
     ...new Set([...workflow.roomOrder, ...snapshot.passengerIds]),
   ].filter((id) => snapshot.passengerIds.includes(id));
-  const passengers = ids.map((id) => {
+  const passengers: Array<{
+    id: string;
+    name: string;
+    sex: string;
+    age: string;
+    hotelChildAgeBand?: string | undefined;
+  }> = ids.map((id) => {
     const person = snapshot.passengerAssignments?.find(
       (p) => p.customerId === id,
     );
@@ -58,6 +75,7 @@ export function reservationFormData(
       id,
       name: text(person?.displayNameSnapshot),
       sex: '-',
+      hotelChildAgeBand: undefined,
       age:
         !person && !workflow.ageOverrides[id]
           ? '-'
@@ -103,6 +121,9 @@ export function reservationFormData(
     destination: name(city),
     adults: passengers.filter((p) => p.age === 'ADL').length,
     children: passengers.filter((p) => p.age === 'CHD').length,
+    children2To6: 0,
+    children6To12: 0,
+    childrenUnclassified: passengers.filter((p) => p.age === 'CHD').length,
     infants: passengers.filter((p) => p.age === 'INF').length,
     rooms: intake.arrangement?.roomCount ?? hotel?.roomCount ?? '-',
     nights: Number.isInteger(nights) && nights > 0 ? nights : '-',

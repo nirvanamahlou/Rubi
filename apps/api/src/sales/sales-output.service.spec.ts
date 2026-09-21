@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { ForbiddenException } from '@nestjs/common';
-import type { AuthenticatedActor, SalesContractDetail } from '@rubi/contracts';
+import type { AuthenticatedActor, SalesContractDetail } from '@nora/contracts';
 import { SalesOutputService } from './sales-output.service';
 import { SalesService } from './sales.service';
 import type { SalesRepository } from './sales.repository';

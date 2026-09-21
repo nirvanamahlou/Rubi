@@ -32,10 +32,10 @@ export function parseLocalDemoCli(
   if (
     apply &&
     acknowledgement !== LOCAL_DEMO_ACKNOWLEDGEMENT &&
-    environment.RUBI_ALLOW_LOCAL_MASTER_DEMO !== '1'
+    environment.NORA_ALLOW_LOCAL_MASTER_DEMO !== '1'
   )
     throw new Error(
-      `Pass ${LOCAL_DEMO_ACKNOWLEDGEMENT} or set RUBI_ALLOW_LOCAL_MASTER_DEMO=1 to acknowledge local synthetic data creation.`,
+      `Pass ${LOCAL_DEMO_ACKNOWLEDGEMENT} or set NORA_ALLOW_LOCAL_MASTER_DEMO=1 to acknowledge local synthetic data creation.`,
     );
 
   return {

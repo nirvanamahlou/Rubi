@@ -20,8 +20,8 @@ describe('IAM password policy', () => {
   );
 
   it('accepts a sufficiently strong password', () => {
-    expect(passwordPolicyErrors('Rubi-Strong-2026!')).toEqual([]);
-    expect(() => assertStrongPassword('Rubi-Strong-2026!')).not.toThrow();
+    expect(passwordPolicyErrors('Nora-Strong-2026!')).toEqual([]);
+    expect(() => assertStrongPassword('Nora-Strong-2026!')).not.toThrow();
   });
 
   it('rejects short and single-class passwords', () => {

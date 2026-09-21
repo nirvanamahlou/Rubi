@@ -12,13 +12,30 @@ import {
   type AuthenticatedActor,
   type ReservationServicePurchaseInputV1,
   type SalesReservationRequestV1,
-} from '@rubi/contracts';
-import { Prisma } from '@rubi/database';
+} from '@nora/contracts';
+import { Prisma } from '@nora/database';
 import { DatabaseService } from '../database/database.service';
 import { MasterTravelDirectory } from '../master-data/master-travel-directory';
 
 const UUID =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+export function purchasableReservationService(
+  snapshot: SalesReservationRequestV1,
+  serviceClientKey: string,
+) {
+  const selected = snapshot.serviceSelections.find(
+    ({ clientKey }) => clientKey === serviceClientKey,
+  );
+  if (selected) return selected;
+  const hotel = snapshot.hotelSelection;
+  if (hotel?.serviceClientKey !== serviceClientKey) return undefined;
+  return {
+    clientKey: hotel.serviceClientKey,
+    kind: 'HOTEL' as const,
+    titleSnapshot: hotel.hotelNameSnapshot,
+  } as SalesReservationRequestV1['serviceSelections'][number];
+}
 
 export function validateServicePurchase(
   input: ReservationServicePurchaseInputV1,
@@ -85,12 +102,17 @@ export class ReservationServicePurchaseService {
     if (!intake || !actor.branchIds.includes(intake.branchId))
       throw new NotFoundException('درخواست رزرواسیون در دسترس نیست.');
     const snapshot = intake.snapshot as unknown as SalesReservationRequestV1;
-    const service = snapshot.serviceSelections.find(
-      ({ clientKey }) => clientKey === input.serviceClientKey,
+    const service = purchasableReservationService(
+      snapshot,
+      input.serviceClientKey,
     );
     if (!service)
       throw new BadRequestException(
         'خدمت انتخاب‌شده متعلق به این قرارداد نیست.',
+      );
+    if (service.kind !== 'HOTEL' && service.kind !== 'TRANSFER')
+      throw new BadRequestException(
+        'قیمت خرید بلیط هنگام تعریف بلیط در مدیریت بلیط ثبت و برای مالی ارسال می‌شود.',
       );
     if (
       service.pricing?.length &&

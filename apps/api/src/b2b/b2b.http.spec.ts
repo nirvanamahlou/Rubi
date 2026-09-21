@@ -1,6 +1,6 @@
 import { ValidationPipe, type INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import type { AuthenticatedActor } from '@rubi/contracts';
+import type { AuthenticatedActor } from '@nora/contracts';
 import request from 'supertest';
 import {
   afterAll,
@@ -84,19 +84,19 @@ describe('B2B authenticated runtime boundary', () => {
     };
     await request(app.getHttpServer())
       .post(endpoint)
-      .set('Cookie', 'rubi_access=test-only')
+      .set('Cookie', 'nora_access=test-only')
       .send(body)
       .expect(403);
     actor.permissions = ['b2b.agency.manage'];
     await request(app.getHttpServer())
       .post(endpoint)
-      .set('Cookie', 'rubi_access=test-only')
+      .set('Cookie', 'nora_access=test-only')
       .send({ ...body, authorityLimit: 123 })
       .expect(400);
     expect(signatories.save).not.toHaveBeenCalled();
     await request(app.getHttpServer())
       .post(endpoint)
-      .set('Cookie', 'rubi_access=test-only')
+      .set('Cookie', 'nora_access=test-only')
       .send(body)
       .expect(201);
     expect(signatories.save).toHaveBeenCalledWith(
@@ -106,7 +106,7 @@ describe('B2B authenticated runtime boundary', () => {
     );
     await request(app.getHttpServer())
       .delete(`${endpoint}/${id}`)
-      .set('Cookie', 'rubi_access=test-only')
+      .set('Cookie', 'nora_access=test-only')
       .send({ branchId: id, version: 0, reason: 'Invalid version' })
       .expect(400);
     expect(signatories.remove).not.toHaveBeenCalled();
@@ -125,7 +125,7 @@ describe('B2B authenticated runtime boundary', () => {
     const endpoint = `/b2b/agencies/${id}/agreed-rates/${id}`;
     await request(app.getHttpServer())
       .put(endpoint)
-      .set('Cookie', 'rubi_access=test-only')
+      .set('Cookie', 'nora_access=test-only')
       .send(body)
       .expect(403);
     actor.permissions = ['b2b.rate.manage'];
@@ -136,13 +136,13 @@ describe('B2B authenticated runtime boundary', () => {
     ])
       await request(app.getHttpServer())
         .put(endpoint)
-        .set('Cookie', 'rubi_access=test-only')
+        .set('Cookie', 'nora_access=test-only')
         .send(invalid)
         .expect(400);
     expect(service.updateRate).not.toHaveBeenCalled();
     await request(app.getHttpServer())
       .put(endpoint)
-      .set('Cookie', 'rubi_access=test-only')
+      .set('Cookie', 'nora_access=test-only')
       .send(body)
       .expect(200);
     expect(service.updateRate).toHaveBeenCalledWith(
@@ -153,13 +153,13 @@ describe('B2B authenticated runtime boundary', () => {
     );
     await request(app.getHttpServer())
       .delete(endpoint)
-      .set('Cookie', 'rubi_access=test-only')
+      .set('Cookie', 'nora_access=test-only')
       .send({ branchId: id, version: 1 })
       .expect(400);
     expect(service.deleteRate).not.toHaveBeenCalled();
     await request(app.getHttpServer())
       .delete(endpoint)
-      .set('Cookie', 'rubi_access=test-only')
+      .set('Cookie', 'nora_access=test-only')
       .send({ branchId: id, version: 1, reason: 'Synthetic deletion' })
       .expect(200);
     expect(service.deleteRate).toHaveBeenCalledOnce();
@@ -168,14 +168,14 @@ describe('B2B authenticated runtime boundary', () => {
     actor.permissions = ['b2b.agreement.manage'];
     await request(app.getHttpServer())
       .post(`/b2b/agencies/${id}/agreements/drafts`)
-      .set('Cookie', 'rubi_access=test-only')
+      .set('Cookie', 'nora_access=test-only')
       .send({ branchId: id, role: 'CORPORATE_CUSTOMER', requestId: id })
       .expect(400);
     expect(workflow.save).not.toHaveBeenCalled();
     workflow.save.mockResolvedValue({ id });
     await request(app.getHttpServer())
       .post(`/b2b/agencies/${id}/agreements/drafts`)
-      .set('Cookie', 'rubi_access=test-only')
+      .set('Cookie', 'nora_access=test-only')
       .send({
         branchId: id,
         role: 'CORPORATE_CUSTOMER',
@@ -191,7 +191,7 @@ describe('B2B authenticated runtime boundary', () => {
     );
     await request(app.getHttpServer())
       .post(`/b2b/agencies/${id}/agreements/${id}/review`)
-      .set('Cookie', 'rubi_access=test-only')
+      .set('Cookie', 'nora_access=test-only')
       .send({
         branchId: id,
         role: 'AGENCY',
@@ -207,7 +207,7 @@ describe('B2B authenticated runtime boundary', () => {
     actor.permissions = ['b2b.agency.read'];
     await request(app.getHttpServer())
       .get(`/b2b/agencies/${id}`)
-      .set('Cookie', 'rubi_access=test-only')
+      .set('Cookie', 'nora_access=test-only')
       .expect(403);
     expect(service.agencyWorkspace).not.toHaveBeenCalled();
   });
@@ -221,7 +221,7 @@ describe('B2B authenticated runtime boundary', () => {
     service.agencyWorkspace.mockResolvedValue({ data: null });
     await request(app.getHttpServer())
       .get(`/b2b/agencies/${id}`)
-      .set('Cookie', 'rubi_access=test-only')
+      .set('Cookie', 'nora_access=test-only')
       .set('x-branch-id', id)
       .expect(200);
     expect(service.agencyWorkspace).toHaveBeenCalledWith(id, actor, id);
@@ -230,7 +230,7 @@ describe('B2B authenticated runtime boundary', () => {
     actor.permissions = ['b2b.agreement.manage'];
     await request(app.getHttpServer())
       .post(`/b2b/agencies/${id}/agreements`)
-      .set('Cookie', 'rubi_access=test-only')
+      .set('Cookie', 'nora_access=test-only')
       .send({
         branchId: id,
         title: 'Synthetic agreement',
@@ -243,7 +243,7 @@ describe('B2B authenticated runtime boundary', () => {
     actor.permissions = ['b2b.agency.manage'];
     await request(app.getHttpServer())
       .put('/b2b/agencies/invalid/profile')
-      .set('Cookie', 'rubi_access=test-only')
+      .set('Cookie', 'nora_access=test-only')
       .send({ branchId: id })
       .expect(400);
     expect(service.upsertProfile).not.toHaveBeenCalled();

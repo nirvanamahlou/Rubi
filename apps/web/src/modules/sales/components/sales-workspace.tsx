@@ -4,6 +4,9 @@ import {
   Banknote,
   CalendarCheck,
   FilePlus2,
+  FileText,
+  ReceiptText,
+  UsersRound,
   RefreshCw,
   WalletCards,
   Search,
@@ -20,7 +23,7 @@ import type {
   SalesContractListQuery,
   SalesContractPage,
   SalesDashboard,
-} from '@rubi/contracts';
+} from '@nora/contracts';
 
 import { Button, buttonVariants } from '@/components/ui/button';
 import {
@@ -257,10 +260,13 @@ export function SalesWorkspace() {
       <section
         ref={contractsSearchPanel}
         aria-label="جست‌وجو و فهرست قراردادها"
-        className="rounded-2xl border border-border bg-surface p-4 sm:p-5"
+        className="relative overflow-hidden rounded-3xl border border-primary/15 bg-gradient-to-br from-surface via-surface to-primary/5 p-4 shadow-sm sm:p-5"
       >
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-          <h2 className="font-bold">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-border/70 pb-4">
+          <h2 className="flex items-center gap-2 text-base font-black text-foreground">
+            <span className="grid size-9 place-items-center rounded-xl bg-primary text-primary-foreground shadow-sm">
+              <FileText className="size-4" />
+            </span>
             قراردادها{' '}
             <span className="mr-2 text-xs font-normal text-muted-foreground">
               {!loading && !error
@@ -294,7 +300,7 @@ export function SalesWorkspace() {
           </p>
         ) : null}
         <form
-          className="flex flex-wrap gap-2"
+          className="grid gap-2 rounded-2xl border border-border/70 bg-muted/25 p-2 sm:grid-cols-[minmax(0,1fr)_14rem_auto_auto] sm:items-center"
           onSubmit={(event) => {
             event.preventDefault();
             setQuery((current) => ({
@@ -304,7 +310,7 @@ export function SalesWorkspace() {
             }));
           }}
         >
-          <div className="flex min-w-48 flex-1 items-center gap-2 rounded-xl border border-border px-3 focus-within:ring-2 focus-within:ring-primary/30">
+          <div className="flex min-w-48 items-center gap-2 rounded-xl border border-border bg-surface px-3 shadow-sm focus-within:ring-2 focus-within:ring-primary/30">
             <Search className="size-4 shrink-0 text-muted-foreground" />
             <input
               aria-label="جست‌وجوی قرارداد"
@@ -391,10 +397,13 @@ export function SalesWorkspace() {
         />
       ) : null}
       {contracts.length && !loading ? (
-        <Card className="overflow-hidden">
+        <Card className="overflow-hidden rounded-2xl border border-border/80 bg-surface shadow-md shadow-primary/[0.035]">
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-muted/60 text-muted-foreground">
+            <table className="w-full min-w-[71rem] text-sm">
+              <caption className="sr-only">
+                فهرست قراردادهای فروش؛ عملیات هر قرارداد در ستون آخر قرار دارد.
+              </caption>
+              <thead className="bg-gradient-to-l from-primary/[0.10] via-muted/70 to-surface text-xs font-bold text-muted-foreground">
                 <tr>
                   {[
                     'شماره',
@@ -404,9 +413,12 @@ export function SalesWorkspace() {
                     'تسویه',
                     'مانده',
                     'آخرین تغییر',
-                    'پرداخت‌ها',
+                    'عملیات',
                   ].map((label) => (
-                    <th className="px-4 py-3 text-start" key={label}>
+                    <th
+                      className="px-4 py-3 text-start whitespace-nowrap first:pr-5 last:pl-5"
+                      key={label}
+                    >
                       {label}
                     </th>
                   ))}
@@ -414,19 +426,37 @@ export function SalesWorkspace() {
               </thead>
               <tbody>
                 {contracts.map((contract) => (
-                  <tr className="border-t border-border" key={contract.id}>
-                    <td className="px-4 py-3 font-bold">
-                      {contract.contractNumber}
+                  <tr
+                    className="group border-t border-border/70 transition-colors odd:bg-muted/[0.12] hover:bg-primary/[0.055]"
+                    key={contract.id}
+                  >
+                    <td className="px-4 py-3 font-bold first:pr-5">
+                      <div className="inline-flex items-center gap-2 rounded-lg border border-primary/15 bg-primary/[0.055] px-2.5 py-1.5 text-primary shadow-sm">
+                        <FileText className="size-3.5" />
+                        <span dir="ltr">{contract.contractNumber}</span>
+                      </div>
                     </td>
                     <td className="px-4 py-3">
-                      {contract.customerNameSnapshot}
+                      <div className="flex items-center gap-2">
+                        <span className="grid size-8 shrink-0 place-items-center rounded-full border border-sky-500/10 bg-sky-500/10 text-xs font-black text-sky-700 dark:text-sky-300">
+                          {contract.customerNameSnapshot.slice(0, 1)}
+                        </span>
+                        <span className="max-w-40 truncate font-semibold text-foreground">
+                          {contract.customerNameSnapshot}
+                        </span>
+                      </div>
                     </td>
                     <td className="px-4 py-3">
-                      <p>
-                        {contract.passengerNames.length.toLocaleString('fa-IR')}{' '}
-                        مسافر
-                      </p>
-                      <p className="mt-1 text-xs text-muted-foreground">
+                      <div className="flex items-center gap-1.5 font-semibold text-foreground">
+                        <UsersRound className="size-4 text-primary" />
+                        <p>
+                          {contract.passengerNames.length.toLocaleString(
+                            'fa-IR',
+                          )}{' '}
+                          مسافر
+                        </p>
+                      </div>
+                      <p className="mt-1 max-w-52 text-xs leading-5 text-muted-foreground">
                         {contract.services
                           .map(
                             (kind) =>
@@ -447,7 +477,7 @@ export function SalesWorkspace() {
                       </p>
                     </td>
                     <td className="px-4 py-3">
-                      <Badge>
+                      <Badge className="rounded-full border border-primary/10 bg-primary/[0.07] px-2.5 py-1 text-primary shadow-sm">
                         {
                           {
                             DRAFT: 'پیش‌نویس',
@@ -483,30 +513,42 @@ export function SalesWorkspace() {
                           contract.settlementStatus}
                       </Badge>
                     </td>
-                    <td className="px-4 py-3">
-                      {contract.balances
-                        .map((balance) =>
-                          formatMoney(
-                            balance.outstanding,
-                            balance.currencyCode,
-                          ),
-                        )
-                        .join(' + ')}
+                    <td className="px-4 py-3 font-semibold text-foreground">
+                      <div className="max-w-44 text-xs leading-5">
+                        {contract.balances
+                          .map((balance) =>
+                            formatMoney(
+                              balance.outstanding,
+                              balance.currencyCode,
+                            ),
+                          )
+                          .join(' + ')}
+                      </div>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 text-xs text-muted-foreground">
                       {new Date(contract.updatedAt).toLocaleDateString('fa-IR')}
                     </td>
-                    <td className="px-4 py-3">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => setPaymentContractId(contract.id)}
-                      >
-                        پرداخت‌ها و اقساط
-                      </Button>
-                      <div className="mt-2">
-                        <ContractOutputButton contractId={contract.id} />
-                        <SalesTravelDocuments contractId={contract.id} />
+                    <td className="px-4 py-3 last:pl-5">
+                      <div className="grid min-w-72 grid-cols-3 gap-1.5">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-8 min-w-0 bg-surface px-2 text-xs shadow-sm"
+                          onClick={() => setPaymentContractId(contract.id)}
+                        >
+                          <ReceiptText className="size-3.5" />
+                          پرداخت‌ها
+                        </Button>
+                        <ContractOutputButton
+                          contractId={contract.id}
+                          label="PDF قرارداد"
+                          className="h-8 min-w-0 px-2 text-xs shadow-sm"
+                        />
+                        <SalesTravelDocuments
+                          contractId={contract.id}
+                          label="مدارک"
+                          className="h-8 min-w-0 px-2 text-xs shadow-sm"
+                        />
                       </div>
                     </td>
                   </tr>

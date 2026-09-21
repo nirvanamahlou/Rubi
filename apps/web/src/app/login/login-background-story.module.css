@@ -1,0 +1,207 @@
+.story {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  background: #72b5e8;
+  pointer-events: none;
+}
+
+.staticBackground,
+.airplaneLayer {
+  position: absolute;
+  inset: 0;
+  background-image: url('/brand/login-airline-b2.png');
+  background-position: center;
+  background-size: cover;
+}
+
+.staticBackground {
+  z-index: 0;
+}
+
+.skyPatch {
+  position: absolute;
+  inset: -2px;
+  z-index: 1;
+  background: linear-gradient(180deg, #4598dc 0%, #55a3e6 38%, #72b5e8 100%);
+  filter: blur(3px);
+  mask-image: radial-gradient(
+    ellipse 6.8% 4.8% at 85.5% 16%,
+    #000 44%,
+    rgb(0 0 0 / 94%) 65%,
+    transparent 100%
+  );
+  mask-repeat: no-repeat;
+  -webkit-mask-image: radial-gradient(
+    ellipse 6.8% 4.8% at 85.5% 16%,
+    #000 44%,
+    rgb(0 0 0 / 94%) 65%,
+    transparent 100%
+  );
+  -webkit-mask-repeat: no-repeat;
+}
+
+.airplaneLayer {
+  z-index: 2;
+  opacity: 0;
+  transform: translate3d(28%, -1.5%, 0);
+  will-change: transform, opacity;
+  mask-image: radial-gradient(
+    ellipse 7.2% 5.2% at 85.5% 16%,
+    #000 52%,
+    rgb(0 0 0 / 92%) 72%,
+    transparent 100%
+  );
+  mask-repeat: no-repeat;
+  -webkit-mask-image: radial-gradient(
+    ellipse 7.2% 5.2% at 85.5% 16%,
+    #000 52%,
+    rgb(0 0 0 / 92%) 72%,
+    transparent 100%
+  );
+  -webkit-mask-repeat: no-repeat;
+  animation: airplaneArrival 2.55s cubic-bezier(0.16, 0.84, 0.22, 1) 0.18s both;
+}
+
+.nooraCloud {
+  position: absolute;
+  top: clamp(46px, 6.4vh, 96px);
+  left: clamp(30px, 4.8vw, 92px);
+  z-index: 5;
+  display: grid;
+  width: clamp(250px, 26vw, 410px);
+  aspect-ratio: 640 / 300;
+  place-items: center;
+  opacity: 0;
+  transform: translate3d(-12px, 8px, 0) scale(0.9);
+  filter: blur(7px);
+  animation: revealNooraCloud 1.2s ease-out 2.65s both;
+}
+
+.nooraCloudOutline {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  filter: drop-shadow(0 8px 14px rgb(11 91 156 / 18%));
+}
+
+.nooraCloudOutline path {
+  fill: rgb(244 252 255 / 40%);
+  stroke: #23a7e5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 10;
+}
+
+.nooraCloud span {
+  position: relative;
+  z-index: 1;
+  color: #158fce;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: clamp(1.6rem, 3.1vw, 3.2rem);
+  font-weight: 900;
+  letter-spacing: 0.24em;
+  line-height: 1;
+  text-indent: 0.24em;
+  text-shadow:
+    0 1px 0 rgb(255 255 255 / 74%),
+    0 5px 14px rgb(9 82 143 / 18%);
+}
+
+.story::after {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  background: linear-gradient(
+    135deg,
+    rgb(8 47 94 / 16%),
+    rgb(13 79 135 / 2%) 46%,
+    rgb(255 255 255 / 6%)
+  );
+  content: '';
+}
+
+@keyframes airplaneArrival {
+  0% {
+    opacity: 0;
+    transform: translate3d(28%, -1.5%, 0);
+  }
+
+  14% {
+    opacity: 1;
+  }
+
+  78% {
+    transform: translate3d(-0.9%, 0.2%, 0);
+  }
+
+  90% {
+    transform: translate3d(0.3%, -0.08%, 0);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes revealNooraCloud {
+  from {
+    opacity: 0;
+    transform: translate3d(-12px, 8px, 0) scale(0.9);
+    filter: blur(7px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+    filter: blur(0);
+  }
+}
+
+@media (max-width: 900px) {
+  .skyPatch,
+  .airplaneLayer {
+    mask-image: none;
+    -webkit-mask-image: none;
+  }
+
+  .skyPatch {
+    display: none;
+  }
+
+  .airplaneLayer {
+    display: none;
+  }
+
+  .nooraCloud {
+    top: 18px;
+    left: 18px;
+    width: min(228px, calc(100vw - 36px));
+  }
+
+  .nooraCloud span {
+    font-size: 1.45rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .airplaneLayer,
+  .nooraCloud {
+    animation: none;
+  }
+
+  .airplaneLayer {
+    opacity: 1;
+    transform: none;
+  }
+
+  .nooraCloud {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}

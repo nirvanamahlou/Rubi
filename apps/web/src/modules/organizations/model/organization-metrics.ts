@@ -1,4 +1,4 @@
-import type { MasterDataRecord } from '@rubi/contracts';
+import type { MasterDataRecord } from '@nora/contracts';
 import type { AgencyListQuery } from '../api/agency-client';
 import { agencyClient } from '../api/agency-client';
 

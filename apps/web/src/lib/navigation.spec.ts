@@ -6,6 +6,7 @@ import {
   getNavigationItem,
   isNavigationItemActive,
   navigationItems,
+  salesPricingSubsection,
 } from './navigation';
 
 const expectedRoutes = [
@@ -17,7 +18,6 @@ const expectedRoutes = [
   '/reservations/hotel-rates',
   '/ticket-management',
   '/sales',
-  '/pricing-management',
   '/purchases',
   '/finance',
   '/finance/requests',
@@ -35,12 +35,11 @@ const expectedTitles = [
   'میزکار من',
   'داشبورد',
   'مشتریان و مسافران',
-  'امور مشتریان، سرنخ‌ها و پشتیبانی',
+  'امور مشتریان و پشتیبانی',
   'رزرواسیون و عملیات سفر',
   'مدیریت گروهی نرخ‌های هتل‌ها',
   'مدیریت و تعریف بلیط‌ها',
   'قرارداد',
-  'مدیریت قیمت',
   'خرید و تأمین',
   'حسابداری',
   'کارتابل درخواست‌ها',
@@ -74,7 +73,6 @@ describe('CRM navigation', () => {
         ?.items.map((item) => item.href),
     ).toEqual([
       '/sales',
-      '/pricing-management',
       '/customers',
       '/customer-affairs',
       '/organizations',
@@ -84,7 +82,7 @@ describe('CRM navigation', () => {
       groupedNavigationItems
         .find((group) => group.id === 'finance')
         ?.items.map((item) => item.href),
-    ).toEqual(['/finance', '/finance/requests', '/purchases']);
+    ).toEqual(['/finance', '/finance/requests']);
     expect(
       groupedNavigationItems.find((group) => group.id === 'finance')?.title,
     ).toBe('مالی');
@@ -94,19 +92,28 @@ describe('CRM navigation', () => {
     );
     expect(
       groupedNavigationItems
+        .find((group) => group.id === 'operations')
+        ?.items.map((item) => item.href),
+    ).toEqual([
+      '/reservations',
+      '/reservations/hotel-rates',
+      '/ticket-management',
+    ]);
+    expect(
+      groupedNavigationItems
         .find((group) => group.id === 'hr')
         ?.items.map((item) => item.href),
-    ).toEqual(['/human-resources']);
+    ).toEqual(['/human-resources', '/purchases']);
   });
   it('contains the approved routes plus the separate finance inbox in order', () => {
     expect(navigationItems.map((item) => item.href)).toEqual(expectedRoutes);
-    expect(new Set(navigationItems.map((item) => item.href)).size).toBe(20);
+    expect(new Set(navigationItems.map((item) => item.href)).size).toBe(19);
   });
 
   it('uses distinct Persian titles for all navigation items', () => {
-    expect(navigationItems).toHaveLength(20);
+    expect(navigationItems).toHaveLength(19);
     expect(navigationItems.map((item) => item.title)).toEqual(expectedTitles);
-    expect(new Set(navigationItems.map((item) => item.title)).size).toBe(20);
+    expect(new Set(navigationItems.map((item) => item.title)).size).toBe(19);
   });
 
   it('resolves the Human Resources owner route', () => {
@@ -161,6 +168,23 @@ describe('CRM navigation', () => {
     expect(getNavigationItem('/sales')?.title).toBe('قرارداد');
     expect(getNavigationItem('/reservations')?.title).toContain('رزرواسیون');
     expect(getNavigationItem('/ticket-management')?.title).toContain('بلیط');
+  });
+
+  it('keeps package pricing beneath sales instead of adding a main item', () => {
+    expect(
+      navigationItems.some(
+        (item) => (item.href as string) === '/sales/pricing',
+      ),
+    ).toBe(false);
+    expect(salesPricingSubsection).toEqual({
+      href: '/sales/pricing',
+      title: 'مدیریت قیمت و پکیج‌ها',
+    });
+    expect(getNavigationItem('/sales/pricing')?.href).toBe('/sales');
+    expect(getNavigationBreadcrumbs('/sales/pricing')).toEqual([
+      { href: '/sales', title: 'قرارداد' },
+      { href: '/sales/pricing', title: 'مدیریت قیمت و پکیج‌ها' },
+    ]);
   });
 
   it('combines user administration and settings only at navigation level', () => {

@@ -61,7 +61,7 @@ export async function scanBufferWithWindowsDefender(
   },
   runner: DefenderCommandRunner = runDefenderCommand,
 ): Promise<LocalAntivirusResult> {
-  const scanRoot = await mkdtemp(join(tmpdir(), 'rubi-document-scan-'));
+  const scanRoot = await mkdtemp(join(tmpdir(), 'nora-document-scan-'));
   const extension = extname(input.safeFileName)
     .replace(/[^.A-Za-z0-9]/g, '')
     .slice(0, 12);
