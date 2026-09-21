@@ -868,7 +868,6 @@ function RequestDetail({
               )}
             {editable && can('procurement.request.submit') && (
               <Button
-                disabled={bootstrap.policy !== 'CONFIGURED'}
                 onClick={() => void command({ action: 'SUBMIT' })}
               >
                 ارسال برای تأیید

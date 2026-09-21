@@ -112,6 +112,20 @@ describe('Purchase draft accessibility and persisted input', () => {
       'شماره درخواست: پس از نخستین ثبت، خودکار تعیین می‌شود',
     );
   });
+  it('makes the requester requirement visible before saving a new draft', () => {
+    const html = renderToStaticMarkup(
+      <QueryClientProvider client={new QueryClient()}>
+        <DraftForm
+          bootstrap={{ ...bootstrap, requester: null }}
+          onClose={() => undefined}
+          onSaved={() => undefined}
+        />
+      </QueryClientProvider>,
+    );
+
+    expect(html).toContain('پیش از ثبت پیش‌نویس، یک کارمند فعال را انتخاب کنید.');
+    expect(html).toContain('id="proc-requester-error"');
+  });
   it('loads HR employees and units immediately from the requester branch', () => {
     const client = new QueryClient();
     const hrBootstrap: Bootstrap = {

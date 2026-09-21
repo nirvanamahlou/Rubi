@@ -185,6 +185,17 @@ export function DraftForm({
   const [documentsLoaded, setDocumentsLoaded] = useState(false);
   const [documentsBusy, setDocumentsBusy] = useState(false);
   const identity = useRef<ReturnType<typeof retryIdentity> | null>(null);
+  const requesterIsRequired = !baseRequest && !requesterEmployeeId;
+
+  function showRequesterRequired() {
+    setError('برای ثبت پیش‌نویس، درخواست‌کننده را از فهرست کارکنان فعال انتخاب کنید.');
+    requestAnimationFrame(() => {
+      const control = document.getElementById('proc-requester');
+      control?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      control?.focus();
+    });
+  }
+
   function update<K extends keyof ProcurementDraftV1>(
     key: K,
     value: ProcurementDraftV1[K],
@@ -349,8 +360,8 @@ export function DraftForm({
     );
   };
   async function save() {
-    if (!baseRequest && !requesterEmployeeId) {
-      setError('درخواست‌کننده را از فهرست کارکنان انتخاب کنید.');
+    if (requesterIsRequired) {
+      showRequesterRequired();
       return;
     }
     setBusy(true);
@@ -544,7 +555,17 @@ export function DraftForm({
           </legend>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {text('title', 'عنوان درخواست')}
-            <FormField id="proc-requester" label="درخواست‌کننده">
+            <FormField
+              id="proc-requester"
+              label="درخواست‌کننده"
+              required={!request}
+              {...(requesterIsRequired
+                ? {
+                    error:
+                      'پیش از ثبت پیش‌نویس، یک کارمند فعال را انتخاب کنید.',
+                  }
+                : {})}
+            >
               {request ? (
                 <Input
                   id="proc-requester"
@@ -1015,6 +1036,13 @@ export function DraftForm({
             بستن فرم
           </Button>
         </div>
+        {error && (
+          <Alert
+            tone="error"
+            title="ثبت پیش‌نویس انجام نشد"
+            description={error}
+          />
+        )}
       </form>
     </Card>
   );
