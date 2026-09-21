@@ -1,3 +1,9 @@
+## 2026-09-21 — CUSTOMER-HIDE-TECH-BADGES-0921 — PC-A — READY_FOR_REVIEW
+
+- درخواست مالک: کارت توضیحات فنی Backend، City FK و Audit/Optimistic Version از پایین فضای مشتریان و مسافران حذف شود؛ کنترل‌های اجرایی مربوط در Backend بدون تغییر باقی می‌مانند.
+- شاخه مستقل `codex/pc-a-customer-hide-tech-badges-0921` از `origin/develop@fc54eb84`. محدوده فقط Customer workspace، تست متمرکز و ثبت وضعیت همین کار است؛ API، Schema/Migration، Permission، داده و Dependency/Lockfile تغییر نمی‌کنند.
+- نتیجه: کارت فنی و آیکن‌های بدون‌استفاده حذف شدند. ۴۱ تست Customers، lint متمرکز، typecheck و build تولیدی Web با ۵۰ route موفق‌اند؛ Backend و localhost:3100 تغییر نکرده‌اند.
+
 ## 2026-09-21 — PROCUREMENT-DRAFT-FORM-HEADER-CLEANUP-0921 — PC-B — READY_FOR_REVIEW
 
 - درخواست مالک: نشان «ثبت پیش‌نویس» از بالای فرم درخواست خرید حذف شود؛ دکمهٔ عملیاتی ذخیره در پایین فرم حفظ می‌شود.

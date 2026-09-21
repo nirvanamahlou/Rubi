@@ -1,3 +1,7 @@
+## 2026-09-21 — CUSTOMER-HIDE-TECH-BADGES-0921 — READY_FOR_REVIEW
+
+کارت سه‌ردیفیِ توضیحات فنی از پایین فضای مشتریان و مسافران حذف شد؛ اجرای دسترسی حساس، City FK، Audit و کنترل نسخه در Backend دست‌نخورده ماند. ۴۱ تست Customers، lint متمرکز، typecheck و build تولیدی Web با ۵۰ route موفق‌اند.
+
 ## 2026-09-21 — SALES-TICKET-CLARITY-0921 — READY_FOR_REVIEW
 
 Airline, route, departure/arrival dates and times are clearer in the contract ticket selector; selected cards use a restrained themed border. Capacity/fare guards and Tehran timezone preserved. Owner-authorized overlap reconciliation excludes stale namespace changes without modifying old worktrees. 7 tests, lint, TypeScript and production build (50 pages) passed. No migration or 3100 changes. Branch: codex/pc-a-finance-sales-clarity-0921. Details: [task](tasks/SALES-TICKET-CLARITY-0921.md).
