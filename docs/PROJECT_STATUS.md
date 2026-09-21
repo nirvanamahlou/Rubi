@@ -3142,3 +3142,7 @@ PC-A روی شاخهٔ مستقل `codex/pc-a-ticket-expiry-sales-visibility-092
 هر `TicketPublishedOffer` تاریخچه قیمت فروش تکی مستقل با مبلغ Decimal، ارز و نسخه دارد. جدول مدیریت بلیط مبلغ و ارز هر مسیر را مستقیم ویرایش می‌کند؛ بنابراین دو بلیط رفت و برگشت می‌توانند جداگانه فروخته و جداگانه قیمت‌گذاری شوند. در قرارداد بدون هتل/تور، انتخاب هر مسیر قیمت همان پیشنهاد را برای تعداد مسافران دارای صندلی محاسبه می‌کند و snapshot مبلغ هر مسیر را می‌فرستد. قیمت پکیج/تور از مسیر مدیریت قیمت موجود مستقل است. رزرو قرارداد همچنان از تخصیص ظرفیت مشترک Ticket Catalog استفاده می‌کند. ستون حرکت فارسی، راست‌چین و با ارقام پایدار نمایش داده می‌شود.
 
 اعتبارسنجی Prisma، lint، typecheck و build بسته‌های درگیر موفق است؛ تست‌های Database، API و Web نیز موفق‌اند. Migration افزایشی همراه PR ارائه شده و هنوز روی دیتابیس مشترک اجرا نشده است.
+
+## 2026-09-21 — TOUR-SINGLE-SCREEN-0921 — PC-A
+
+Tour definition uses four-column desktop identity fields and compact controls. Introduction, transport, itinerary and image are same-page tabs with a bounded scrolling content area; the save action remains outside that area. All detail panels remain mounted to preserve in-progress input. Definition only; no pricing, departure, API or database changes.

@@ -8,6 +8,10 @@ import type {
 } from '@nora/contracts';
 import {
   Button,
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  TabsContent,
   FormField,
   Input,
   Textarea,
@@ -135,8 +139,25 @@ export function TourDetailsForm({
   }
   const numberValue = (raw: string) => (raw === '' ? undefined : Number(raw));
   return (
-    <div className="space-y-3 sm:col-span-2 [&_input]:h-9 [&_button]:min-h-9">
-      <section className="space-y-3 rounded-xl border p-3">
+    <Tabs
+      defaultValue="intro"
+      dir="rtl"
+      className="col-span-full min-w-0 space-y-2 [&_input:not([type=checkbox])]:h-9 [&_button[role=combobox]]:h-9 [&_textarea]:min-h-16 [&_textarea]:py-2"
+    >
+      <TabsList
+        aria-label="جزئیات تعریف تور"
+        className="grid h-auto w-full grid-cols-2 gap-1 sm:grid-cols-4"
+      >
+        <TabsTrigger value="intro">معرفی و شرایط</TabsTrigger>
+        <TabsTrigger value="transport">مشخصات سفر</TabsTrigger>
+        <TabsTrigger value="itinerary">برنامه سفر</TabsTrigger>
+        <TabsTrigger value="image">تصویر تور</TabsTrigger>
+      </TabsList>
+      <TabsContent
+        forceMount
+        value="intro"
+        className="mt-0 max-h-72 space-y-2 overflow-y-auto overscroll-contain rounded-xl border p-3 data-[state=inactive]:hidden sm:h-64"
+      >
         <h4 className="font-bold">معرفی و شرایط تور</h4>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {prose.map(([key, label]) => (
@@ -151,8 +172,12 @@ export function TourDetailsForm({
             </FormField>
           ))}
         </div>
-      </section>
-      <section className="space-y-4 rounded-xl border p-4">
+      </TabsContent>
+      <TabsContent
+        forceMount
+        value="transport"
+        className="mt-0 max-h-72 space-y-2 overflow-y-auto overscroll-contain rounded-xl border p-3 data-[state=inactive]:hidden sm:h-64"
+      >
         <h4 className="font-bold">مشخصات سفر و حمل‌ونقل</h4>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           <Menu
@@ -239,8 +264,12 @@ export function TourDetailsForm({
             بلیط در پکیج محاسبه شده است
           </label>
         </div>
-      </section>
-      <section className="space-y-3 rounded-xl border p-3">
+      </TabsContent>
+      <TabsContent
+        forceMount
+        value="itinerary"
+        className="mt-0 max-h-72 space-y-2 overflow-y-auto overscroll-contain rounded-xl border p-3 data-[state=inactive]:hidden sm:h-64"
+      >
         <div className="flex items-center justify-between gap-3">
           <h4 className="font-bold">برنامه سفر و رویدادهای تور</h4>
           <Button
@@ -357,8 +386,12 @@ export function TourDetailsForm({
             </div>
           </div>
         ))}
-      </section>
-      <section className="space-y-3 rounded-xl border p-3">
+      </TabsContent>
+      <TabsContent
+        forceMount
+        value="image"
+        className="mt-0 max-h-72 space-y-2 overflow-y-auto overscroll-contain rounded-xl border p-3 data-[state=inactive]:hidden sm:h-64"
+      >
         <h4 className="font-bold">تصویر تور</h4>
         <p className="text-xs text-muted-foreground">
           تصویر در آرشیو امن اسناد همین شعبه ذخیره می‌شود؛ فقط PNG یا JPEG
@@ -463,7 +496,7 @@ export function TourDetailsForm({
             }
           }}
         />
-      </section>
-    </div>
+      </TabsContent>
+    </Tabs>
   );
 }

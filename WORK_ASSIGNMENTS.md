@@ -3545,3 +3545,8 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 - شاخه `codex/pc-a-ticket-standalone-price-v2-0921` از `origin/develop@bd93b634`. محدوده رزرو: قرارداد عمومی افزایشی Ticket Catalog، migration افزایشی قیمت نسخه‌دار، سرویس/کنترلر Ticket Catalog، جدول مدیریت بلیط، انتخاب Sales و تست‌های هدفمند. `COMPUTER_ID=PC-A` و Migration Owner همین واحد است.
 - تغییر مخرب، Seed، داده عملیاتی، Dependency/Lockfile و تغییر مستقیم develop/localhost در محدوده نیست. قیمت تور از مدیریت قیمت فعلی باقی می‌ماند؛ قیمت تکی هر صندلی فقط برای قرارداد بدون هتل/تور پیش‌فرض می‌شود.
 - اعتبارسنجی: Prisma validate/generate؛ build قراردادها، API و Web؛ lint و typecheck در API/Web/Database؛ ۷۸ تست Database (۱۴ مورد integration بدون DB رد شدند)، ۶ تست API و ۳۱ تست Web موفق شدند.
+
+## TOUR-SINGLE-SCREEN-0921 — PC-A — READY_FOR_REVIEW
+
+- COMPUTER_ID=PC-A. Branch: codex/pc-a-tour-single-screen-0921 from origin/develop@5f66ef97.
+- Reserved: tour-workspace.tsx and tour-details-form.tsx layout, focused existing tests and task status. Compact same-page sections, visible save action. No API, database, dependencies or runtime changes.
