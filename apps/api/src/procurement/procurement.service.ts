@@ -972,7 +972,7 @@ export class ProcurementService {
     const input = v.object(body);
     const action = v.text(input.action, 'action', 40);
     const permissions: Record<string, ProcurementPermission> = {
-      PUBLISH: 'procurement.request.submit',
+      PUBLISH: 'procurement.request.create',
       SUBMIT: 'procurement.request.submit',
       CANCEL: 'procurement.request.cancel',
       ASSIGN: 'procurement.assign',

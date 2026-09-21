@@ -359,7 +359,7 @@ export function DraftForm({
       </FormField>
     );
   };
-  async function save() {
+  async function save(mode: 'DRAFT' | 'PUBLISH' = 'DRAFT') {
     if (requesterIsRequired) {
       showRequesterRequired();
       return;
@@ -373,12 +373,18 @@ export function DraftForm({
       version: baseRequest?.version,
     });
     try {
-      const saved = await procurementApi.save(
+      let saved = await procurementApi.save(
         draft,
         identity.current.key,
         baseRequest,
         requesterEmployeeId,
       );
+      if (mode === 'PUBLISH')
+        saved = await procurementApi.command(
+          saved,
+          { action: 'PUBLISH' },
+          crypto.randomUUID(),
+        );
       rememberSavedRequestFieldOptions(queryClient, saved);
       onSaved(saved);
     } catch (caught) {
@@ -1010,6 +1016,13 @@ export function DraftForm({
         <div className="flex flex-wrap gap-3 border-t border-border pt-5">
           <Button type="submit" loading={busy}>
             ذخیره پیش‌نویس
+          </Button>
+          <Button
+            type="button"
+            loading={busy}
+            onClick={() => void save('PUBLISH')}
+          >
+            تأیید و انتشار
           </Button>
           <Button
             type="button"
