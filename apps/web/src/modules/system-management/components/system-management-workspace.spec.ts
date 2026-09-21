@@ -87,6 +87,13 @@ describe('system management reference implementation', () => {
     );
     expect(navigation).toContain("'/ticket-management'");
     expect(navigation).toContain("'/purchases'");
+    expect(workspace).toContain(
+      "'reservations-supply': ['catalog', 'operations']",
+    );
+    expect(workspace).toContain("'human-resources': ['hr', 'procurement']");
+    expect(workspace).not.toContain(
+      "'reservations-supply': ['catalog', 'operations', 'procurement']",
+    );
   });
 
   it('persists real versioned JSON settings with reason and optimistic version', () => {

@@ -27,6 +27,10 @@ Airline, route, departure/arrival dates and times are clearer in the contract ti
 
 Compact request list with explicit selection, responsive filters and a labelled sticky details panel. Current receipt, supplier-payment and ticket-cost workflows preserved during owner-authorized reconciliation of stale local changes. 11 focused tests, lint, Web TypeScript and production build (50 pages) passed. No migration, dependency, operational data or 3100 changes. Branch: codex/pc-a-finance-inbox-clarity-0921; review before merge. Details: [task](tasks/FINANCE-INBOX-CLARITY-0921.md).
 
+## 2026-09-21 — PROCUREMENT-NAVIGATION-HR-CONSISTENCY-0921 — PC-B — READY_FOR_REVIEW
+
+نگاشت ثانویهٔ مدیریت سیستم با منوی اصلی یکسان شد: «خرید و تأمین» فقط زیر «سرمایه انسانی» قرار دارد و از «رزرواسیون و تأمین سفر» حذف شده است. تست متمرکز هر دو نگاشت را کنترل می‌کند. اصلاح امن‌سازی فرم برای رکوردهای قدیمی نیز در `develop` موجود است؛ runtime پورت 3100 باید از آخرین `develop` اجرا شود.
+
 ## 2026-09-21 — PROCUREMENT-DRAFT-FORM-HEADER-CLEANUP-0921 — PC-B — READY_FOR_REVIEW
 
 نشان تکراری «ثبت پیش‌نویس» از بالای فرم درخواست خرید حذف شد و دکمهٔ «ذخیره پیش‌نویس» در پایین فرم برای انجام عملیات باقی ماند. تست متمرکز فرم این تفکیک را کنترل می‌کند؛ API، Schema/Migration، Permission و داده تغییری ندارند.

@@ -197,9 +197,9 @@ const moduleIdsBySystemCategory: Record<
 > = {
   workspace: ['tasks', 'messages'],
   'sales-customers': ['customers', 'affairs', 'sales', 'marketing'],
-  'reservations-supply': ['catalog', 'operations', 'procurement'],
+  'reservations-supply': ['catalog', 'operations'],
   finance: ['finance', 'b2b'],
-  'human-resources': ['hr'],
+  'human-resources': ['hr', 'procurement'],
   'documents-reports': ['documents', 'reports'],
   'company-settings': ['general', 'access', 'integrations', 'master'],
 };
