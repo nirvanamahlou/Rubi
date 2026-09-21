@@ -160,6 +160,11 @@ Schema/Migration، Permission، دادهٔ عملیاتی و Dependency/Lockfile
   Dependency/Lockfile یا داده کاربردی را تغییر نمی‌دهد. جزئیات در
   `docs/tasks/DOCUMENTS-003E-CALENDAR-THEME.md` ثبت شده است.
 
+## B2B-BACKEND-ONLY-CONNECTIONS-001 — حذف نمایش مستقل ارتباطات CRM
+
+- تب و پنل مستقل «ارتباطات CRM» از پرونده سازمان/آژانس حذف شد. ارتباط واقعی Backend، قرارداد و client آن حفظ شده و همان داده‌ها همچنان در KPIهای پرونده و نمای مالی مصرف می‌شوند.
+- بدون Migration، تغییر Schema/API/Permission/Dependency یا دست‌کاری داده. ۱۳۰ تست Organizations، ۸ تست API، lint و typecheck وب و build تولیدی ۴۶ مسیر موفق‌اند. شاخه `codex/pc-b-b2b-backend-only-connections` برای Review به `develop` تحویل می‌شود؛ جزئیات در `docs/tasks/B2B-BACKEND-ONLY-CONNECTIONS-001.md` ثبت شده است.
+
 ## MASTER-013-AIRLINE-DESCRIPTION-0919 — PC-B — READY_FOR_REVIEW
 
 - اشارهٔ Credential و اتصال Provider از توضیح کاتالوگ ایرلاین حذف شد؛ کدهای IATA/ICAO و سایر رفتارها بدون تغییر باقی ماندند. تست مستقیم کاتالوگ اضافه شد.

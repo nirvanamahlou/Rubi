@@ -161,6 +161,13 @@
 - Validation: lint و typecheck کامل Web، هر ۵۷۰ تست Web و Production Build موفق؛ پیش‌نمایش زنده شمسی/میلادی، انتخاب روز و بستن با `Escape` نیز در مرورگر محلی بررسی شد.
 - Final lock state: `RELEASED — PC-B/DOCUMENTS-003E-CALENDAR-THEME ready for review`. هیچ قفل Migration، Dependency/Lockfile، Contract، Permission، Database یا Branch گرفته نشد.
 
+## B2B-BACKEND-ONLY-CONNECTIONS-001 — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک محصول: «ارتباطات CRM» نباید تب یا سکشن مستقل در پرونده سازمان/آژانس باشد؛ ارتباط‌ها باید در Backend برقرار بمانند و فقط در بخش‌های طبیعی مصرف‌کننده نمایش داده شوند.
+- محدوده رزروشده: حذف تب و پنل مستقل از پرونده سازمان، حذف کامپوننت بلااستفاده، تست‌های هدفمند Organizations و مستندات Task روی شاخه `codex/pc-b-b2b-backend-only-connections` از `origin/develop@40d8f1f4`.
+- قرارداد Backend بدون تغییر می‌ماند: Controller/Service مسیر CRM connections، مدل و client وب، مجوز شعبه و مصرف KPI/Finance حفظ می‌شوند. این واحد Migration، Schema، API contract، Dependency/Lockfile، IAM، داده یا Runtime مشترک را تغییر نمی‌دهد و خودکار Merge نمی‌شود.
+- تب/پنل مستقل حذف شد و رزرو فایل‌های اجرایی آزاد است. ۱۳۰ تست Organizations، ۸ تست API، lint و typecheck وب و build تولیدی ۴۶ مسیر موفق‌اند؛ جست‌وجوی منبع نیز حفظ مسیر Backend و حذف کامل ورودی UI مستقل را تایید کرد. PR #243 به `develop` باز است.
+
 ## 2026-09-21 — PROCUREMENT-DRAFT-SAVE-LOCAL-TASKS-RESILIENCE-0921 — PC-B — READY_FOR_REVIEW
 
 - درخواست مالک: ثبت پیش‌نویس خرید نباید به‌دلیل نبود موقت projection وظایف در دیتابیس محلی با خطای عمومی متوقف شود.

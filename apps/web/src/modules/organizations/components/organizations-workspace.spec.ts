@@ -83,4 +83,13 @@ describe('agency to Master Organization integration', () => {
     expect(source).toContain('phoneMasked');
     expect(source).toContain('emailMasked');
   });
+
+  it('keeps CRM relationships backend-backed without exposing a standalone connections section', () => {
+    expect(profile).not.toContain("['connections', 'ارتباطات CRM']");
+    expect(profile).not.toContain('OrganizationCrmConnectionsPanel');
+    expect(client).toContain('crmConnections(');
+    expect(client).toContain('/crm-connections');
+    expect(profile).toContain('<OrganizationCrmKpis');
+    expect(profile).toContain('<OrganizationFinancePreview');
+  });
 });
