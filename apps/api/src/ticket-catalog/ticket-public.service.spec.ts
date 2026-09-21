@@ -1,4 +1,5 @@
 import { ConflictException } from '@nestjs/common';
+import { Prisma } from '@nora/database';
 import { describe, expect, it, vi } from 'vitest';
 import type { DatabaseService } from '../database/database.service';
 import type { ProcurementPublicService } from '../procurement/procurement-public.service';
@@ -67,6 +68,13 @@ describe('TicketPublicService offer retry', () => {
         status: 'ACTIVE',
         capacityAllocations: [{ quantity: 1 }],
         capacityHolds: [{ quantity: 1 }],
+        standaloneSalePrices: [
+          {
+            revision: 2,
+            amount: new Prisma.Decimal('3500000'),
+            currencyCode: 'IRR',
+          },
+        ],
       },
     ]);
     const expiry = expiryTransaction();
@@ -86,6 +94,11 @@ describe('TicketPublicService offer retry', () => {
           id: row.id,
           remainingCapacity: 0,
           totalCapacity: 2,
+          standaloneSalePrice: {
+            revision: 2,
+            amount: '3500000',
+            currencyCode: 'IRR',
+          },
         }),
       ],
     });
@@ -97,6 +110,55 @@ describe('TicketPublicService offer retry', () => {
         },
       }),
     );
+  });
+
+  it('adds an independent versioned fare for one offer and replays the same command', async () => {
+    const offerId = '10000000-0000-4000-8000-000000000010';
+    const saved = new Map<string, Record<string, unknown>>();
+    const tx = {
+      $queryRaw: vi.fn().mockResolvedValue([]),
+      ticketPublishedOffer: {
+        findFirst: vi.fn().mockResolvedValue({ id: offerId }),
+      },
+      ticketOfferStandaloneSalePrice: {
+        findUnique: vi.fn(({ where }) =>
+          Promise.resolve(saved.get(where.offerId_commandKey.commandKey)),
+        ),
+        findFirst: vi.fn().mockResolvedValue(null),
+        create: vi.fn(({ data }) => {
+          const value = {
+            ...data,
+            amount: new Prisma.Decimal(data.amount),
+          };
+          saved.set(data.commandKey, value);
+          return Promise.resolve(value);
+        }),
+      },
+    };
+    const service = new TicketPublicService(
+      {
+        client: {
+          $transaction: vi.fn((operation) => operation(tx)),
+        },
+      } as unknown as DatabaseService,
+      {} as ProcurementPublicService,
+    );
+    const price = {
+      expectedRevision: 0,
+      amount: '2500000',
+      currencyCode: 'IRR',
+    };
+    await expect(
+      service.updateStandaloneSalePrice(offerId, price, actor, 'price-key'),
+    ).resolves.toEqual({
+      data: { revision: 1, amount: '2500000', currencyCode: 'IRR' },
+    });
+    await expect(
+      service.updateStandaloneSalePrice(offerId, price, actor, 'price-key'),
+    ).resolves.toEqual({
+      data: { revision: 1, amount: '2500000', currencyCode: 'IRR' },
+    });
+    expect(tx.ticketOfferStandaloneSalePrice.create).toHaveBeenCalledTimes(1);
   });
 
   it('automatically pauses departed offers with a versioned audit', async () => {

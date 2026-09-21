@@ -86,7 +86,6 @@ describe('Rendered ticket UI', () => {
     );
     const issued = renderToStaticMarkup(
       createElement(IssuedTicketsWorkspace, {
-        connected: false,
         tickets: [],
       }),
     );
@@ -110,7 +109,8 @@ describe('Rendered ticket UI', () => {
     expect(issued).toContain('شماره بلیط یا PNR');
     expect(issued).toContain('مبدأ');
     expect(issued).toContain('مقصد');
-    expect(issued).toContain('در انتظار اتصال قرارداد عمومی رزرواسیون');
+    expect(issued).not.toContain('در انتظار اتصال قرارداد عمومی رزرواسیون');
+    expect(issued).toContain('بلیطی با این فیلترها پیدا نشد');
   });
   it('renders flight fields and browser-backed save without Hold editor', () => {
     const html = renderToStaticMarkup(

@@ -183,29 +183,19 @@ export function HotelRatePackTable({
 }
 
 export function HotelRatePacksWorkspace() {
+  const requestedTourDepartureId =
+    typeof window === 'undefined'
+      ? ''
+      : (new URLSearchParams(globalThis.location.search).get(
+          'tourDepartureId',
+        ) ?? '');
+  const preselectedDeparture = useRef(false);
   const [departures, setDepartures] = useState<readonly TourDepartureV1[]>([]);
   const [tourPackageId, setTourPackageId] = useState('');
   const [tourDepartureId, setTourDepartureId] = useState('');
   const [session, setSession] = useState<LoginResponse | null>(null);
   const [ready, setReady] = useState(false);
   const [error, setError] = useState('');
-  useEffect(() => {
-    if (!session) return;
-    let active = true;
-    rateRequest<{ data: TourDepartureV1[] }>('/tour-departures')
-      .then((result) => {
-        if (active) setDepartures(result.data);
-      })
-      .catch((cause) => {
-        if (active)
-          setError(
-            cause instanceof Error ? cause.message : 'دریافت تورها ناموفق بود.',
-          );
-      });
-    return () => {
-      active = false;
-    };
-  }, [session]);
   const [branch, setBranch] = useState('');
   const [cities, setCities] = useState<HotelOption[]>([]);
   const [citySearch, setCitySearch] = useState('');
@@ -234,6 +224,52 @@ export function HotelRatePacksWorkspace() {
   const pending = useRef<{ route: string; body: string; key: string } | null>(
     null,
   );
+
+  useEffect(() => {
+    if (!session) return;
+    let active = true;
+    rateRequest<{ data: TourDepartureV1[] }>('/tour-departures')
+      .then((result) => {
+        if (!active) return;
+        setDepartures(result.data);
+        const tour = result.data.find(
+          (item) => item.id === requestedTourDepartureId,
+        );
+        if (!tour || preselectedDeparture.current) return;
+        preselectedDeparture.current = true;
+        setEditorMode('new');
+        setTourPackageId(tour.package.id);
+        setTourDepartureId(tour.id);
+        setRows([]);
+        setCityId(tour.package.destinationId);
+        setCheckIn(tour.startsOn);
+        setCheckOut(tour.endsOn);
+        setBranch(tour.branchId);
+        setCities((old) =>
+          old.some((city) => city.id === tour.package.destinationId)
+            ? old
+            : [
+                ...old,
+                {
+                  id: tour.package.destinationId,
+                  name: `مقصد ${tour.package.name}`,
+                },
+              ],
+        );
+        setMessage(
+          'هتل‌های مقصد و بازهٔ این نوبت آماده‌اند؛ هتل، کارگزار و نرخ خرید را انتخاب کنید.',
+        );
+      })
+      .catch((cause) => {
+        if (active)
+          setError(
+            cause instanceof Error ? cause.message : 'دریافت تورها ناموفق بود.',
+          );
+      });
+    return () => {
+      active = false;
+    };
+  }, [session, requestedTourDepartureId]);
 
   useEffect(() => {
     if (editorMode === 'list') return;
@@ -688,9 +724,10 @@ export function HotelRatePacksWorkspace() {
                 {!departures.some((tour) => tour.branchId === branch) && (
                   <p role="status">
                     برای این شعبه نوبت تور فعالی وجود ندارد. ابتدا در{' '}
-                    <Link href="/ticket-management">مدیریت بلیت</Link> تور و
-                    نوبتِ متصل به بلیت رفت‌وبرگشت را ثبت کنید، سپس این صفحه را
-                    تازه‌سازی کنید.
+                    <Link href="/ticket-management">مدیریت بلیت</Link> تعریف تور
+                    را ثبت کنید و نوبتِ متصل به بلیت رفت‌وبرگشت را در{' '}
+                    <Link href="/sales/pricing">مدیریت قیمت پکیج</Link> بسازید،
+                    سپس این صفحه را تازه‌سازی کنید.
                   </p>
                 )}
                 <div className={styles.toolbar}>
