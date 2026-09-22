@@ -3273,6 +3273,10 @@ Tour definition uses four-column desktop identity fields and compact controls. I
 ## 2026-09-22 — SALES-FRIENDLY-REFERENCE-LABELS-0922 — READY_FOR_REVIEW
 
 انتخاب‌گرهای اطلاعات پایه در قرارداد و مدیریت بلیت اکنون فقط نام انسانی گزینه را نمایش می‌دهند و شناسه/کد فنی را برای جست‌وجو و ذخیرهٔ داخلی نگه می‌دارند. هتل، نوع اتاق، بیمه و قاعدهٔ بار پوشش داده شدند؛ کدهای عملیاتی ارز، شماره پرواز و مسیر حفظ شده‌اند. ۳۲۶ تست هدفمند، lint، typecheck کامل و build تولیدی Web با ۵۰ route موفق‌اند؛ API، داده، Migration و localhost تغییر نکرده‌اند. شاخه: `codex/pc-a-sales-friendly-labels-0922`.
+## 2026-09-22 — MASTER-HOTEL-INLINE-ROOM-TYPES-0922 — PC-B — READY_FOR_REVIEW
+
+نوع اتاق دیگر سکشن یا فرم مستقل اطلاعات پایه نیست. در فرم هتل، نام هر نوع اتاق با یک ورودی ساده ایجاد و همان‌جا به انتخاب چندگانه هتل اضافه می‌شود؛ فیلدهای عنوان فارسی، ظرفیت استاندارد و توضیح استفاده از جریان ایجاد حذف شدند. مرجع داخلی و Public Boundary موجود حفظ شده‌اند تا Sales و Reservations بدون تغییر Schema/Contract همچنان شناسه و نام نوع اتاق را مصرف کنند. ۳۵۸ تست Master Data Web، ۵ تست API اقامت، lint، typecheck و build تولیدی Web با ۵۰ مسیر موفق‌اند.
+
 ## HOTEL-RATE-OCCUPANCY-COEFFICIENTS-0922 — PC-A — READY_FOR_REVIEW
 
 - درخواست مالک در 2026-09-22: نوع اتاق و ظرفیت در جدول نرخ خرید هتل باقی بماند و شش ضریب چیدمان مسافر قبلی در یک ردیف برگردد؛ ضریب خالی به معنی نبود آن چیدمان است. شاخهٔ مستقل `codex/pc-a-hotel-rate-occupancy-coefficients-0922` از `origin/develop@910d1273`؛ محدوده فقط Web نرخ هتل، تست هدفمند و اسناد همین واحد است.
