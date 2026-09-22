@@ -1322,6 +1322,7 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
         label: 'نوع‌های اتاق',
         type: 'text',
         placeholder: '',
+        hint: 'نام هر نوع اتاق را همین‌جا بنویسید و اضافه کنید؛ برای هر هتل می‌توان چند نوع اتاق ثبت کرد.',
       },
       {
         key: 'facilityIds',
@@ -1385,30 +1386,17 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
     label: 'نوع‌های اتاق',
     singularLabel: 'نوع اتاق',
     group: 'اقامت',
-    description:
-      'کاتالوگ استاندارد نوع اتاق؛ موجودی و تخصیص مسافر در Reservations است.',
+    description: 'مرجع داخلی نوع اتاق که مستقیماً از فرم هتل مدیریت می‌شود.',
     fields: [
-      nameField,
       {
-        key: 'englishName',
-        label: 'عنوان انگلیسی',
+        key: 'name',
+        label: 'نوع اتاق',
         type: 'text',
-        placeholder: 'Room Type',
-      },
-      {
-        key: 'referenceCapacity',
-        label: 'ظرفیت استاندارد',
-        type: 'number',
-        placeholder: '1 تا 20',
-      },
-      {
-        key: 'usageDescription',
-        label: 'توضیح استفاده',
-        type: 'text',
-        placeholder: 'توضیح مرجع و غیرعملیاتی',
+        placeholder: 'مثلاً Double Room یا Suite',
+        required: true,
       },
     ],
-    preview: { code: 'AUTO', name: 'نوع اتاق', referenceCapacity: '2' },
+    preview: { code: 'AUTO', name: 'Double Room' },
   },
   {
     key: 'meal-services',
