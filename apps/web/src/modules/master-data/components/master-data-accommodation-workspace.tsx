@@ -913,7 +913,10 @@ export function MasterDataAccommodationWorkspace() {
         <div className="border-b border-border p-4 text-lg font-black">
           فهرست {current.title}
         </div>
-        <table className="w-full min-w-[76rem] text-sm">
+        <table
+          aria-label={`فهرست ${current.title}`}
+          className="w-full min-w-[76rem] text-sm"
+        >
           <thead className="bg-muted/50 text-muted-foreground">
             <tr>
               {headers.map((header) => (
@@ -1227,7 +1230,10 @@ export function MasterDataAccommodationWorkspace() {
                 شرط استفاده: {attribute(record, 'usageCondition')}
               </p>
               <div className="overflow-x-auto px-5 pb-5">
-                <table className="w-full min-w-[44rem] text-sm">
+                <table
+                  aria-label="تاریخچه تغییرات هتل"
+                  className="w-full min-w-[44rem] text-sm"
+                >
                   <thead className="bg-muted/50 text-muted-foreground">
                     <tr>
                       {[

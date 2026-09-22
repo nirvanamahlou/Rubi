@@ -20,6 +20,7 @@ import {
 } from '../model/reference-fields';
 
 export function MasterDataReferenceSelector({
+  ariaDescribedby,
   config,
   disabled,
   id,
@@ -32,7 +33,9 @@ export function MasterDataReferenceSelector({
   onManage,
   createOnlyWhenEmpty = false,
   closeOnSelect = false,
+  invalid = false,
 }: {
+  ariaDescribedby?: string;
   config: ReferenceFieldConfig;
   disabled: boolean;
   id: string;
@@ -45,6 +48,7 @@ export function MasterDataReferenceSelector({
   onManage?: (record?: MasterDataRecord, query?: string) => void;
   createOnlyWhenEmpty?: boolean;
   closeOnSelect?: boolean;
+  invalid?: boolean;
 }) {
   const [expanded, setExpanded] = useState(true);
   const [query, setQuery] = useState('');
@@ -283,9 +287,11 @@ export function MasterDataReferenceSelector({
           className="absolute end-3 top-3.5 size-4 text-muted-foreground"
         />
         <Input
+          aria-describedby={ariaDescribedby}
           aria-autocomplete="list"
           aria-controls={`${id}-options`}
           aria-expanded={(!closeOnSelect || expanded) && state === 'ready'}
+          aria-invalid={invalid}
           aria-required={required || undefined}
           className="pe-10"
           id={id}
@@ -378,21 +384,27 @@ export function MasterDataReferenceSelector({
 }
 
 export function OrganizationRoleSelector({
+  ariaDescribedby,
   disabled,
   id,
   onChange,
   required,
+  invalid,
   value,
 }: {
+  ariaDescribedby?: string;
   disabled: boolean;
   id: string;
   onChange: (value: string) => void;
   required?: boolean;
+  invalid?: boolean;
   value: string;
 }) {
   const selected = new Set(value.split(',').filter(Boolean));
   return (
     <fieldset
+      aria-describedby={ariaDescribedby}
+      aria-invalid={invalid}
       aria-required={required || undefined}
       className="grid gap-2 rounded-xl border border-border p-3"
     >
