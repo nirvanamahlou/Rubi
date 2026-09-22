@@ -3247,7 +3247,37 @@ PC-A روی شاخهٔ مستقل `codex/pc-a-ticket-expiry-sales-visibility-092
 هر `TicketPublishedOffer` تاریخچه قیمت فروش تکی مستقل با مبلغ Decimal، ارز و نسخه دارد. جدول مدیریت بلیط مبلغ و ارز هر مسیر را مستقیم ویرایش می‌کند؛ بنابراین دو بلیط رفت و برگشت می‌توانند جداگانه فروخته و جداگانه قیمت‌گذاری شوند. در قرارداد بدون هتل/تور، انتخاب هر مسیر قیمت همان پیشنهاد را برای تعداد مسافران دارای صندلی محاسبه می‌کند و snapshot مبلغ هر مسیر را می‌فرستد. قیمت پکیج/تور از مسیر مدیریت قیمت موجود مستقل است. رزرو قرارداد همچنان از تخصیص ظرفیت مشترک Ticket Catalog استفاده می‌کند. ستون حرکت فارسی، راست‌چین و با ارقام پایدار نمایش داده می‌شود.
 
 اعتبارسنجی Prisma، lint، typecheck و build بسته‌های درگیر موفق است؛ تست‌های Database، API و Web نیز موفق‌اند. Migration افزایشی همراه PR ارائه شده و هنوز روی دیتابیس مشترک اجرا نشده است.
+## 2026-09-21 — DASHBOARD-SCROLL-STABILITY-0921 — READY_FOR_REVIEW
 
+پرش اسکرول Dashboard برطرف شد. ریشه، ورود و خروج یک ردیف Skeleton سراسری بالای صفحه در هر page/filter query و focus پیش‌فرض ورودی جست‌وجوی فیلتر بود. Loading اکنون با ارتفاع ثابت در خود KPI Cardها و Visualها نمایش داده می‌شود؛ موقعیت viewport در تغییر URL، refetch و پایان دریافت داده حفظ می‌شود، browser scroll anchoring برای workspace خاموش است و focus فیلتر با `preventScroll` انجام می‌شود. ۲۴ تست Dashboard با یک skip موجود، lint و typecheck Web موفق‌اند و Web3000/API4000 پاسخ ۲۰۰ دارند. بررسی تعاملی احرازشده در مرورگر داخلی به‌دلیل redirect به login در دسترس نبود. API، Schema/Migration، داده، Permission و Dependency/Lockfile تغییر نکردند.
+
+## 2026-09-21 — DASHBOARD-FUNNEL-INSIGHT-CLARITY-0921 — READY_FOR_REVIEW
+
+معنای عدد افتِ بخش «بینش» برای همهٔ قیف‌های تصمیم روشن شد: این عدد تعداد موردهایی را نشان می‌دهد که در گذار میان دو مرحله از قیف به مرحلهٔ بعدی نرسیده‌اند، نه یک امتیاز یا درصد مبهم. متن بینش اکنون همان تفسیر را کنار مقدار می‌آورد و یک راهنمای ثابت نیز دارد. ۲۱ تست Dashboard با یک skip موجود و lint فایل تغییرکرده موفق‌اند. API، Schema/Migration، داده، Permission، Dependency/Lockfile و منطق محاسبه تغییر نکردند.
+
+## 2026-09-21 — DASHBOARD-TREND-AXIS-LABEL-OVERLAP-0921 — READY_FOR_REVIEW
+
+هم‌پوشانی انتهای محور X نمودار روند اصلاح شد. علت، نمایش هم‌زمان برچسب دوره‌ای و برچسب اجباری آخرین نقطه با فاصلهٔ ناکافی بود؛ helper مستقل اکنون در این حالت برچسب نزدیکِ قبلی را با آخرین تاریخ جایگزین می‌کند. بنابراین برای روند ۳۰روزه، «شهریور ۳۰» نمایش داده می‌شود و «شهریور ۲۹» که با آن برخورد داشت حذف می‌شود. ۳ تست helper و ۱۸ تست Dashboard با یک skip موجود موفق‌اند و Web3000/API4000 پاسخ ۲۰۰ دارند. Typecheck کامل Web فقط به خطاهای خارج از این Scope در Ticket Catalog/Sales برای قرارداد منتشرنشدهٔ `standaloneSalePrice` متوقف است. API، Schema/Migration، داده، Permission و Dependency/Lockfile تغییر نکردند.
+
+## 2026-09-21 — DASHBOARD-ACQUISITION-TREND-FIX-0920 — READY_FOR_REVIEW
+
+نمودار «روند جذب مشتری به تفکیک کانال» از مسیر trendهای مالی جدا شد؛ علت تکرار خروجی فروش این بود که شناسهٔ آن `salesAmount` را بر حسب زمان جمع می‌زد. اکنون برای هر کانال جذبِ مشخص، یک سری زمانی مستقل از تعداد مشتری یکتا در هر bucket و راهنمای کانال‌ها نمایش داده می‌شود و سری ارز برای این Visual تولید نمی‌شود. تست API ۸/۸، تست Web ۱۸/۱۸ با یک skip موجود و typecheck API/Web موفق‌اند.
+
+## 2026-09-20 — DASHBOARD-DESTINATION-ORDER-KPI-ALIGNMENT-0920 — READY_FOR_REVIEW
+
+KPI «مقصدهای مورد تقاضای مشتریان» به «سفارش‌های دارای مقصد» تغییر یافت. Backend فقط سفارش‌های معتبر دارای مقصد را به‌صورت یکتا می‌شمارد (`orderNumber` و در نبود آن شناسهٔ fact)؛ بنابراین سطرهای متعدد یک سفارش مقدار KPI، مقایسه و روند را تکراری افزایش نمی‌دهند.
+
+## 2026-09-20 — DASHBOARD-VISUAL-DETAIL-OUTPUT-REMOVAL-0920 — READY_FOR_REVIEW
+
+بخش عمومی «خروجی در بازهٔ انتخابی» از Drawer جزئیات تمام نمودارهای Dashboard حذف شد؛ تعریف کسب‌وکار، قاعدهٔ نمایش مبتنی بر Projection، lineage فیچرها، محدودیت‌ها و اقدام گزارش مرتبط باقی مانده‌اند.
+
+## 2026-09-20 — DASHBOARD-REPORT-FILTER-INHERITANCE-0920 — READY_FOR_REVIEW
+
+بازکردن «گزارش مرتبط» از KPI Card یا نمودار Dashboard دامنهٔ فعال Dashboard را به فرم پیکربندی گزارش منتقل می‌کند و فرم فقط فیلترهای تعریف‌شده در کاتالوگ همان گزارش را نگه می‌دارد.
+
+## 2026-09-20 — DASHBOARD-PERCENTAGE-SPARKLINES-0920 — READY_FOR_REVIEW
+
+KPIهای درصدی Dashboard برای هر bucket زمانی روند دریافت می‌کنند و `lead-growth-rate` bucketهای متناظر دورهٔ قبل را مقایسه می‌کند. Schema/Migration، داده، Permission و Dependency/Lockfile تغییری نکردند.
 ## 2026-09-21 — TOUR-SINGLE-SCREEN-0921 — PC-A
 
 Tour definition uses four-column desktop identity fields and compact controls. Introduction, transport, itinerary and image are same-page tabs with a bounded scrolling content area; the save action remains outside that area. All detail panels remain mounted to preserve in-progress input. Definition only; no pricing, departure, API or database changes.

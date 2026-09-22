@@ -79,7 +79,9 @@ export class HotelPurchaseRatesPublicService {
         method: batch.method as 'CHECK_IN' | 'STAY',
         currencyCode: batch.currency,
         observedAt: batch.createdAt.toISOString(),
-        rows: batch.rows.map((row) => ({
+        // Prisma loads this relation as an array, but a public projection must
+        // also tolerate a minimal fixture or consumer response that omits it.
+        rows: (batch.rows ?? []).map((row) => ({
           id: row.id,
           version: 1,
           batchId: row.batchId,

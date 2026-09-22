@@ -46,14 +46,12 @@ describe('system management reference implementation', () => {
   it('includes every settings module and its reference card catalog', () => {
     for (const title of [
       'سازمان و نمایش',
-      'کاربران و امنیت',
       'مشتریان و مسافران',
       'امور مشتریان و پشتیبانی',
       'فروش، قرارداد و قیمت‌گذاری',
       'بلیت و برنامه سفر',
       'رزرواسیون و خدمات سفر',
       'خرید و تأمین',
-      'مالی و خزانه‌داری',
       'بازاریابی',
       'آژانس‌ها و مشتریان سازمانی',
       'منابع انسانی',
@@ -65,6 +63,13 @@ describe('system management reference implementation', () => {
     ])
       expect(catalog).toContain(title);
 
+    expect(catalog).not.toContain('مالی و خزانه‌داری');
+    expect(catalog).not.toContain("m('finance'");
+    expect(catalog).not.toContain('کاربران و امنیت');
+    expect(catalog).not.toContain("m('access'");
+    expect(workspace).not.toContain("['general', 'access', 'master']");
+    expect(workspace).toContain("group.id !== 'finance'");
+    expect(workspace).not.toContain("finance: ['finance', 'b2b']");
     expect(catalog).toContain('شماره‌گذاری اسناد');
     expect(catalog).not.toContain('اتصال‌ها و دو سایت');
     expect(catalog).not.toContain("m('integrations'");

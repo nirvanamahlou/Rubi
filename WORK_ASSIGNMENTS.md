@@ -3692,7 +3692,48 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 - شاخه `codex/pc-a-ticket-standalone-price-v2-0921` از `origin/develop@bd93b634`. محدوده رزرو: قرارداد عمومی افزایشی Ticket Catalog، migration افزایشی قیمت نسخه‌دار، سرویس/کنترلر Ticket Catalog، جدول مدیریت بلیط، انتخاب Sales و تست‌های هدفمند. `COMPUTER_ID=PC-A` و Migration Owner همین واحد است.
 - تغییر مخرب، Seed، داده عملیاتی، Dependency/Lockfile و تغییر مستقیم develop/localhost در محدوده نیست. قیمت تور از مدیریت قیمت فعلی باقی می‌ماند؛ قیمت تکی هر صندلی فقط برای قرارداد بدون هتل/تور پیش‌فرض می‌شود.
 - اعتبارسنجی: Prisma validate/generate؛ build قراردادها، API و Web؛ lint و typecheck در API/Web/Database؛ ۷۸ تست Database (۱۴ مورد integration بدون DB رد شدند)، ۶ تست API و ۳۱ تست Web موفق شدند.
+## DASHBOARD-SCROLL-STABILITY-0921 — PC-C — READY_FOR_REVIEW
 
+- درخواست مالک در 2026-09-21: تغییر صفحهٔ Dashboard، دریافت داده و اعمال هر فیلتر نباید موقعیت اسکرول صفحه را جابه‌جا کند.
+- شاخه `codex/pc-c-dashboard-scroll-stability-0921` از شاخهٔ یکپارچهٔ Dashboard؛ محدودهٔ رزروشده فقط Dashboard workspace، تست رفتار اسکرول و مدخل‌های وضعیت همین Task است. API، Schema/Migration، قرارداد، دادهٔ عملیاتی، Permission و Dependency/Lockfile خارج از Scope هستند.
+- نتیجه: loader سراسریِ جابه‌جاکننده حذف و loading با ارتفاع ثابت داخل KPI/Visual نگه داشته شد؛ viewport پیش از navigation/refetch ثبت و بعد از تغییر URL و پایان fetch بازگردانی می‌شود؛ scroll anchoring خاموش و focus جست‌وجوی فیلتر با `preventScroll` انجام می‌شود. ۲۴ تست Dashboard با یک skip موجود، lint محدوده و typecheck کامل Web موفق‌اند؛ Web3000/API4000 پاسخ ۲۰۰ دارند. پیش‌نمایش مرورگر داخلی به‌علت نداشتن نشست احراز‌شده فقط redirect امن login را تأیید کرد. API، Schema/Migration، قرارداد، دادهٔ عملیاتی، Permission و Dependency/Lockfile تغییر نکردند؛ قفل موقت Central Docs آزاد شد.
+
+## DASHBOARD-FUNNEL-INSIGHT-CLARITY-0921 — PC-C — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-21: عدد افت در پرانتزِ بخش «بینش» همهٔ قیف‌های تصمیم، برای کاربر روشن و تفسیرپذیر شود.
+- شاخه `codex/pc-c-dashboard-funnel-insight-clarity-0921` از آخرین شاخهٔ یکپارچهٔ Dashboard؛ محدودهٔ رزروشده فقط renderer مشترک Funnel و مدخل‌های وضعیت همین Task است. API، Schema/Migration، قرارداد، دادهٔ عملیاتی، Permission، Dependency/Lockfile و منطق محاسبهٔ قیف خارج از Scope هستند.
+- نتیجه: عدد افت در همان جمله به «تعداد موردهایی که از مرحلهٔ اول به مرحلهٔ بعدی نرسیده‌اند» تفسیر می‌شود و یک راهنمای ثابت برای معنی آن افزوده شد. ۲۱ تست Dashboard با یک skip موجود و lint فایل تغییرکرده موفق‌اند. API، Schema/Migration، قرارداد، دادهٔ عملیاتی، Permission و Dependency/Lockfile تغییر نکردند؛ قفل موقت Central Docs آزاد شد.
+
+## DASHBOARD-TREND-AXIS-LABEL-OVERLAP-0921 — PC-C — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-21: برچسب‌های هم‌پوشان انتهای محور X در نمودارهای روند Dashboard، مانند «شهریور ۲۹» و «شهریور ۳۰»، اصلاح شوند.
+- شاخه `codex/pc-c-dashboard-trend-axis-label-overlap-0921` از شاخهٔ یکپارچه‌شدهٔ Dashboard و `origin/develop@127e4c26`؛ محدودهٔ رزروشده فقط `dashboard-workspace.tsx`، helper/test محور روند و مدخل‌های وضعیت همین Task است. API، Schema/Migration، قرارداد، دادهٔ عملیاتی، Permission، Dependency/Lockfile و runtime خارج از Scope هستند.
+- نتیجه: هنگام نزدیک‌بودن آخرین label دوره‌ای به label آخر، مورد دوره‌ای با label نهایی جایگزین می‌شود تا آخرین تاریخ بدون برخورد باقی بماند. ۳ تست تازهٔ helper و ۱۸ تست موجود Dashboard (با یک skip موجود) پاس شدند؛ `localhost:3000/login` و سلامت API ۴۰۰۰ نیز ۲۰۰ هستند. Typecheck سراسری Web فقط به خطاهای خارج از Scope در Ticket Catalog/Sales (`standaloneSalePrice`/قرارداد منتشرنشده) متوقف است. API، Schema/Migration، قرارداد، دادهٔ عملیاتی، Permission و Dependency/Lockfile تغییر نکردند؛ قفل موقت Central Docs آزاد شد.
+
+## DASHBOARD-PERCENTAGE-SPARKLINES-0920 — PC-C — READY_FOR_REVIEW
+
+- Scope: add time-bucket trend series to percentage KPI metrics in the Reporting projection; preserve percentage aggregation semantics and existing comparison behavior. CI repair is also reserved for the public hotel-rate projection/test and Dashboard model test: `apps/api/src/reservations/hotel-purchase-rates.public.{ts,spec.ts}` and `apps/web/src/modules/dashboard/model/dashboard.spec.ts`.
+- Result: percentage ratio metrics and count-based percentage metrics now emit their current-period trend; `lead-growth-rate` compares matching buckets against the equal previous period. Full CI-equivalent lint, typecheck, test and production build passed; no Schema/Migration, Dependency/Lockfile or operational-data change.
+
+## DASHBOARD-METRIC-AGGREGATIONS-0919 — PC-C — READY_FOR_REVIEW
+
+- Dashboard KPI and Visual Projection aggregations are metric-specific: monetary Visuals aggregate per source currency; count/rate Visuals use their own distinct/status/rate measure and do not receive currency series.
+
+## DASHBOARD-REPORT-FILTER-INHERITANCE-0920 — PC-C — READY_FOR_REVIEW
+
+- Opening a related report carries compatible active Dashboard filters, including Tehran calendar range, entity, currency, branch, agent, channel, service, agency, provider and status. The report catalog remains the authority for accepting only its own filters.
+
+## DASHBOARD-VISUAL-DETAIL-OUTPUT-REMOVAL-0920 — PC-C — READY_FOR_REVIEW
+
+- The generic «خروجی در بازهٔ انتخابی» block was removed from all Dashboard visual-detail drawers while their business definition, calculation lineage, limitations and report action remain.
+
+## DASHBOARD-DESTINATION-ORDER-KPI-ALIGNMENT-0920 — PC-C — READY_FOR_REVIEW
+
+- «مقصدهای مورد تقاضای مشتریان» was renamed «سفارش‌های دارای مقصد» and now counts each valid order with a known destination once by `orderNumber` (or fact ID), consistently across snapshot, comparison and trend.
+
+## DASHBOARD-ACQUISITION-TREND-FIX-0920 — PC-C — READY_FOR_REVIEW
+
+- «روند جذب مشتری به تفکیک کانال» now has labelled, non-monetary channel series. Each bucket counts distinct customers for the channel; it no longer uses the sales amount/currency trend producer. API tests 8/8, Web registry tests 18/18 (one existing skip) and API/Web typechecks pass.
 ## TOUR-SINGLE-SCREEN-0921 — PC-A — READY_FOR_REVIEW
 
 - COMPUTER_ID=PC-A. Branch: codex/pc-a-tour-single-screen-0921 from origin/develop@5f66ef97.

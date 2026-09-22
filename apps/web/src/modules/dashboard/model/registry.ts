@@ -522,8 +522,8 @@ export const dashboardKpis: readonly DashboardKpiDefinition[] = [
   },
   {
     id: 'customer-destination-demand',
-    title: 'مقصدهای مورد تقاضای مشتریان',
-    technicalName: 'Customer Destination Demand',
+    title: 'سفارش‌های دارای مقصد',
+    technicalName: 'Orders With Destination',
     grain: 'یک سفارش یا رزرو معتبر و مقصد',
     source: [travelFacts],
     rule: 'تعداد سفارش‌های یکتای معتبر دارای مقصد در بازه انتخابی؛ تعداد مسافر به‌عنوان اندازه تقاضای مکمل و جداگانه نمایش داده می‌شود',

@@ -480,6 +480,25 @@ export class ReportingService {
         series,
       };
     };
+    const leadGrowthTrend = previousFacts
+      ? (() => {
+          const leadCount = (rows: typeof facts) =>
+            rows.filter((fact) => Boolean(fact.leadSource)).length;
+          const current = trendFor(facts, leadCount);
+          const previous = trendFor(previousFacts, leadCount);
+          return {
+            labels: current.labels,
+            values: current.values.map((value, index) => {
+              const previousValue = previous.values[index] ?? 0;
+              return previousValue === 0
+                ? 0
+                : Math.round(
+                    ((value - previousValue) / Math.abs(previousValue)) * 100,
+                  );
+            }),
+          };
+        })()
+      : undefined;
     const metricIds = (input.kpiIds ?? '').split(',').filter(Boolean);
     const countMetrics: Record<string, (rows: typeof facts) => number> = {
       'cancelled-reservations': (rows) =>
@@ -493,7 +512,121 @@ export class ReportingService {
             )
           : 0,
       'customer-destination-demand': (rows) =>
-        rows.filter((fact) => Boolean(fact.destinationCity)).length,
+        new Set(
+          rows
+            .filter((fact) => Boolean(fact.destinationCity))
+            .map((fact) => fact.orderNumber ?? fact.id),
+        ).size,
+      // Employee activity is not present in the travel fact grain yet. Until
+      // the employee-activity projection is wired, these measures use the
+      // approved travel/order grain and explicitly count distinct orders (or
+      // status events) instead of summing a monetary column.
+      'employee-lead-count': (rows) =>
+        new Set(rows.map((fact) => fact.orderNumber ?? fact.id)).size,
+      'employee-call-count': (rows) => rows.length,
+      'employee-followup-count': (rows) =>
+        rows.filter(
+          (fact) =>
+            fact.reservationStatus === 'PENDING' ||
+            fact.paymentStatus === 'PENDING' ||
+            fact.issueStatus === 'PENDING',
+        ).length,
+      'employee-finalized-sales-count': (rows) =>
+        new Set(
+          rows
+            .filter(
+              (fact) =>
+                fact.orderStatus === 'CONFIRMED' &&
+                fact.reservationStatus !== 'CANCELLED',
+            )
+            .map((fact) => fact.orderNumber ?? fact.id),
+        ).size,
+      'employee-lead-conversion': (rows) => {
+        const eligible = new Set(
+          rows.map((fact) => fact.orderNumber ?? fact.id),
+        );
+        const converted = new Set(
+          rows
+            .filter(
+              (fact) =>
+                fact.issueStatus === 'ISSUED' &&
+                fact.reservationStatus !== 'CANCELLED',
+            )
+            .map((fact) => fact.orderNumber ?? fact.id),
+        );
+        return eligible.size
+          ? Math.round((converted.size / eligible.size) * 100)
+          : 0;
+      },
+      'employee-contract-count': (rows) =>
+        new Set(rows.map((fact) => fact.orderNumber ?? fact.id)).size,
+      'employee-cancellation-count': (rows) =>
+        new Set(
+          rows
+            .filter((fact) => fact.reservationStatus === 'CANCELLED')
+            .map((fact) => fact.orderNumber ?? fact.id),
+        ).size,
+    };
+    const ratio = (numerator: number, denominator: number) =>
+      denominator > 0 ? Math.round((numerator / denominator) * 100) : 0;
+    const percentageMetrics: Record<string, (rows: typeof facts) => number> = {
+      'ticket-cancellation-rate': (rows) =>
+        ratio(
+          rows.filter((fact) => fact.reservationStatus === 'CANCELLED').length,
+          rows.length,
+        ),
+      'collection-rate': (rows) =>
+        ratio(
+          sum(rows, (fact) => Number(fact.settledAmount)),
+          sum(rows, (fact) => Number(fact.salesAmount)),
+        ),
+      'refund-rate': (rows) =>
+        ratio(
+          sum(rows, (fact) => Number(fact.refundAmount)),
+          sum(rows, (fact) => Number(fact.salesAmount)),
+        ),
+      'reservation-failure-rate': (rows) =>
+        ratio(
+          rows.filter((fact) => fact.issueStatus === 'FAILED').length,
+          rows.length,
+        ),
+      'sell-through-rate': (rows) =>
+        ratio(
+          rows.filter((fact) => fact.reservationStatus === 'CONFIRMED').length,
+          rows.length,
+        ),
+      'tour-sell-through-rate': (rows) =>
+        ratio(
+          rows.filter((fact) => fact.reservationStatus === 'CONFIRMED').length,
+          rows.length,
+        ),
+      'customer-interest-coverage': (rows) =>
+        ratio(rows.filter((fact) => Boolean(fact.destinationCity)).length, rows.length),
+      'lead-conversion-rate': (rows) =>
+        ratio(
+          rows.filter(
+            (fact) =>
+              fact.issueStatus === 'ISSUED' &&
+              fact.reservationStatus !== 'CANCELLED',
+          ).length,
+          rows.length,
+        ),
+      'sla-breach-rate': (rows) =>
+        ratio(
+          rows.filter((fact) => fact.issueStatus === 'FAILED').length,
+          rows.length,
+        ),
+      'campaign-conversion': (rows) =>
+        ratio(
+          rows.filter(
+            (fact) =>
+              fact.issueStatus === 'ISSUED' &&
+              fact.reservationStatus !== 'CANCELLED',
+          ).length,
+          rows.length,
+        ),
+      'consent-coverage': (rows) =>
+        ratio(rows.filter((fact) => Boolean(fact.leadSource)).length, rows.length),
     };
     const amountMetrics: Record<string, (rows: typeof facts) => number> = {
       'gross-sales': (rows) => sum(rows, (fact) => Number(fact.salesAmount)),
@@ -531,6 +664,12 @@ export class ReportingService {
             Number(fact.purchaseAmount) +
             Number(fact.commissionAmount),
         ),
+      'employee-average-sale': (rows) => {
+        const orders = new Set(rows.map((fact) => fact.orderNumber ?? fact.id));
+        return orders.size
+          ? sum(rows, (fact) => Number(fact.salesAmount)) / orders.size
+          : 0;
+      },
     };
     const currencies = [
       ...new Set(facts.map((fact) => fact.currencyCode)),
@@ -572,6 +711,8 @@ export class ReportingService {
                   .join(' · '),
                 unit: 'ارزها مستقل',
                 detail: `${facts.length.toLocaleString('fa-IR')} قلم سفر دمو، بدون تبدیل ارز یا تکثیر مبلغ`,
+                metricId: id,
+                aggregation: 'sum source-currency amount per currency',
                 ...(comparison ? { comparison } : {}),
                 ...(comparisonSeries.length ? { comparisonSeries } : {}),
                 ...(trend ? { trend } : {}),
@@ -586,30 +727,182 @@ export class ReportingService {
               id,
               {
                 value: count(facts).toLocaleString('fa-IR'),
-                unit: id.endsWith('rate') ? 'درصد' : 'قلم سفر',
-                detail: 'فقط دادهٔ سفر موجود در Projection دمو',
+                unit:
+                  id === 'issue-success-rate' || id.includes('conversion')
+                    ? 'درصد'
+                    : 'قلم',
+                detail: 'محاسبه از grain مصوب fact سفر؛ بدون جمع‌زدن مبلغ',
+                metricId: id,
+                aggregation: id === 'customer-destination-demand'
+                  ? 'count distinct valid orders with a destination'
+                  : id.includes('conversion')
+                    ? 'distinct converted orders / distinct eligible orders × 100'
+                    : id.includes('cancellation')
+                      ? 'count distinct cancelled orders'
+                      : 'count distinct orders at approved fact grain',
                 ...(previousFacts
                   ? {
                       comparison: comparisonFor(
                         count(facts),
                         count(previousFacts),
                       ),
-                      trend: trendFor(facts, count),
                     }
+                  : {}),
+                ...(periodStart && periodDuration > 0
+                  ? { trend: trendFor(facts, count) }
                   : {}),
               },
             ],
           ];
+        const percentage = percentageMetrics[id];
+        if (percentage || id === 'lead-growth-rate') {
+          const current = percentage
+            ? percentage(facts)
+            : (() => {
+                const currentLeads = facts.filter((fact) => Boolean(fact.leadSource)).length;
+                const previousLeads = previousFacts?.filter((fact) => Boolean(fact.leadSource)).length ?? 0;
+                return previousLeads > 0
+                  ? Math.round(((currentLeads - previousLeads) / previousLeads) * 100)
+                  : 0;
+              })();
+          return [
+            [
+              id,
+              {
+                value: String(current),
+                unit: 'درصد',
+                detail: 'نسبت مصوب شاخص به‌صورت درصدی از grain فکت سفر محاسبه شده است.',
+                metricId: id,
+                aggregation: id === 'lead-growth-rate'
+                  ? 'change in lead count versus equal previous period × 100'
+                  : 'numerator / denominator × 100',
+                ...(previousFacts
+                  ? {
+                      comparison: comparisonFor(
+                        current,
+                        percentage ? percentage(previousFacts) : 0,
+                      ),
+                    }
+                  : {}),
+                ...(periodStart && periodDuration > 0 && percentage
+                  ? { trend: trendFor(facts, percentage) }
+                  : id === 'lead-growth-rate' && leadGrowthTrend
+                    ? { trend: leadGrowthTrend }
+                    : {}),
+              },
+            ],
+          ];
+        }
         return [];
       }),
     );
-    const by = (field: keyof (typeof facts)[number], rows: typeof facts) => {
-      const groups = new Map<string, number>();
+    const by = (
+      field: keyof (typeof facts)[number],
+      rows: typeof facts,
+      aggregate: (groupRows: typeof facts) => number,
+    ) => {
+      const grouped = new Map<string, typeof facts>();
       for (const fact of rows) {
         const label = String(fact[field] ?? 'نامشخص');
-        groups.set(label, (groups.get(label) ?? 0) + Number(fact.salesAmount));
+        const group = grouped.get(label) ?? [];
+        group.push(fact);
+        grouped.set(label, group);
       }
-      return [...groups.entries()].sort((a, b) => b[1] - a[1]).slice(0, 6);
+      return [...grouped.entries()]
+        .map(([label, groupRows]) => [label, aggregate(groupRows)] as const)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 6);
+    };
+    const distinctOrders = (rows: typeof facts) =>
+      new Set(rows.map((fact) => fact.orderNumber ?? fact.id)).size;
+    const employeeVisuals: Record<
+      string,
+      {
+        aggregation: string;
+        aggregate: (rows: typeof facts) => number;
+        monetary?: boolean;
+      }
+    > = {
+      'employee-leads-by-agent': {
+        aggregation: 'count distinct order grain',
+        aggregate: distinctOrders,
+      },
+      'employee-calls-by-agent': {
+        aggregation: 'count fact rows',
+        aggregate: (rows) => rows.length,
+      },
+      'employee-followups-by-agent': {
+        aggregation: 'count pending workflow actions',
+        aggregate: (rows) =>
+          rows.filter(
+            (fact) =>
+              fact.reservationStatus === 'PENDING' ||
+              fact.paymentStatus === 'PENDING' ||
+              fact.issueStatus === 'PENDING',
+          ).length,
+      },
+      'employee-sales-count-by-agent': {
+        aggregation: 'count distinct confirmed non-cancelled orders',
+        aggregate: (rows) =>
+          new Set(
+            rows
+              .filter(
+                (fact) =>
+                  fact.orderStatus === 'CONFIRMED' &&
+                  fact.reservationStatus !== 'CANCELLED',
+              )
+              .map((fact) => fact.orderNumber ?? fact.id),
+          ).size,
+      },
+      'employee-sales-amount-by-agent': {
+        aggregation: 'sum salesAmount at order-item-currency grain',
+        aggregate: (rows) => sum(rows, (fact) => Number(fact.salesAmount)),
+        monetary: true,
+      },
+      'employee-conversion-by-agent': {
+        aggregation: 'distinct issued orders / distinct eligible orders × 100',
+        aggregate: (rows) => {
+          const eligible = distinctOrders(rows);
+          const converted = new Set(
+            rows
+              .filter(
+                (fact) =>
+                  fact.issueStatus === 'ISSUED' &&
+                  fact.reservationStatus !== 'CANCELLED',
+              )
+              .map((fact) => fact.orderNumber ?? fact.id),
+          ).size;
+          return eligible ? Math.round((converted / eligible) * 100) : 0;
+        },
+      },
+      'employee-average-sale-by-agent': {
+        aggregation: 'sum salesAmount / count distinct orders',
+        aggregate: (rows) => {
+          const orders = distinctOrders(rows);
+          return orders
+            ? sum(rows, (fact) => Number(fact.salesAmount)) / orders
+            : 0;
+        },
+        monetary: true,
+      },
+      'employee-contracts-by-agent': {
+        aggregation: 'count distinct orders by contract status',
+        aggregate: distinctOrders,
+      },
+      'employee-cancellations-by-agent': {
+        aggregation: 'count distinct cancelled orders',
+        aggregate: (rows) =>
+          new Set(
+            rows
+              .filter((fact) => fact.reservationStatus === 'CANCELLED')
+              .map((fact) => fact.orderNumber ?? fact.id),
+          ).size,
+      },
+      'employee-performance-ranking': {
+        aggregation: 'rank by sum salesAmount in selected currency',
+        aggregate: (rows) => sum(rows, (fact) => Number(fact.salesAmount)),
+        monetary: true,
+      },
     };
     const visualIds = (input.visualIds ?? '').split(',').filter(Boolean);
     const visualFields: Record<string, keyof (typeof facts)[number]> = {
@@ -634,9 +927,55 @@ export class ReportingService {
       'employee-cancellations-by-agent': 'ownerName',
       'employee-performance-ranking': 'ownerName',
     };
+    const percentageVisuals: Record<
+      string,
+      {
+        field: keyof (typeof facts)[number];
+        numerator: (rows: typeof facts) => number;
+        denominator?: (rows: typeof facts) => number;
+        aggregation: string;
+      }
+    > = {
+      'provider-failure-rate': {
+        field: 'providerName',
+        numerator: (rows) =>
+          rows.filter((fact) => fact.issueStatus === 'FAILED').length,
+        aggregation: 'failed operations / provider operations × 100',
+      },
+      'ticket-cancellation-analysis': {
+        field: 'airlineName',
+        numerator: (rows) =>
+          rows.filter((fact) => fact.reservationStatus === 'CANCELLED').length,
+        aggregation: 'cancelled tickets / eligible tickets × 100',
+      },
+      'lead-source-conversion': {
+        field: 'leadSource',
+        numerator: (rows) =>
+          rows.filter(
+            (fact) =>
+              fact.issueStatus === 'ISSUED' &&
+              fact.reservationStatus !== 'CANCELLED',
+          ).length,
+        aggregation: 'converted leads / eligible leads × 100',
+      },
+      'popular-hotel-cities': {
+        field: 'destinationCity',
+        numerator: (rows) => rows.length,
+        denominator: () => visualFacts.length,
+        aggregation: 'hotel reservations in city / all hotel reservations × 100',
+      },
+      'customer-acquisition-channel-mix': {
+        field: 'leadSource',
+        numerator: (rows) => rows.length,
+        denominator: () => visualFacts.length,
+        aggregation: 'customers in channel / all customers × 100',
+      },
+    };
     const trendVisualIds = new Set([
       'finalized-sales-trend',
       'executive-lead-acquisition',
+    ]);
+    const acquisitionChannelTrendVisualIds = new Set([
       'customer-acquisition-channel-trend',
     ]);
     const funnelVisualIds = new Set([
@@ -670,15 +1009,43 @@ export class ReportingService {
           labels: trend.labels,
           values: trend.values,
           currencyCode,
+          metricId: id,
+          aggregation: 'sum salesAmount per time bucket',
+        };
+      }
+      const employeeVisual = employeeVisuals[id];
+      if (employeeVisual) {
+        if (!employeeVisual.monetary) return undefined;
+        const entries = by(
+          'ownerName',
+          currencyFacts,
+          employeeVisual.aggregate,
+        );
+        return {
+          labels: entries.map(([label]) => label),
+          values: entries.map(([, value]) => Math.round(value)),
+          currencyCode,
+          metricId: id,
+          aggregation: employeeVisual.aggregation,
+          ...(previousFacts
+            ? {
+                comparison: comparisonFor(
+                  employeeVisual.aggregate(currencyFacts),
+                  employeeVisual.aggregate(previousCurrencyFacts),
+                ),
+              }
+            : {}),
         };
       }
       const field = visualFields[id];
       if (!field) return undefined;
-      const entries = by(field, currencyFacts);
+      const entries = by(field, currencyFacts, visualAmount);
       return {
         labels: entries.map(([label]) => label),
         values: entries.map(([, value]) => Math.round(value)),
         currencyCode,
+        metricId: id,
+        aggregation: 'sum salesAmount by selected dimension',
         ...(previousFacts
           ? {
               comparison: comparisonFor(
@@ -693,6 +1060,96 @@ export class ReportingService {
     const visuals = Object.fromEntries(
       visualIds.flatMap<[string, DashboardProjectionV1['visuals'][string]]>(
         (id) => {
+          if (acquisitionChannelTrendVisualIds.has(id)) {
+            const customerIdentity = (fact: (typeof facts)[number]) =>
+              fact.customerName?.trim() || fact.orderNumber || fact.id;
+            const knownChannelFacts = facts.filter((fact) =>
+              Boolean(fact.leadSource?.trim()),
+            );
+            const distinctCustomers = (rows: typeof facts) =>
+              new Set(rows.map(customerIdentity)).size;
+            const trend = trendFor(knownChannelFacts, distinctCustomers);
+            const channels = [
+              ...new Set(
+                knownChannelFacts.map((fact) => fact.leadSource!.trim()),
+              ),
+            ].sort((left, right) => left.localeCompare(right, 'fa'));
+            return [
+              [
+                id,
+                {
+                  labels: trend.labels,
+                  values: trend.values,
+                  series: channels.map((channel) => ({
+                    label: channel,
+                    values: trendFor(
+                      knownChannelFacts.filter(
+                        (fact) => fact.leadSource?.trim() === channel,
+                      ),
+                      distinctCustomers,
+                    ).values,
+                  })),
+                  unit: 'مشتری',
+                  metricId: id,
+                  aggregation:
+                    'count distinct customers with a known acquisition channel per time bucket',
+                },
+              ],
+            ];
+          }
+          if (employeeVisuals[id] && !employeeVisuals[id].monetary) {
+            const entries = by(
+              'ownerName',
+              facts,
+              employeeVisuals[id].aggregate,
+            );
+            return [
+              [
+                id,
+                {
+                  labels: entries.map(([label]) => label),
+                  values: entries.map(([, value]) => Math.round(value)),
+                  ...(id === 'employee-conversion-by-agent'
+                    ? { unit: 'درصد' }
+                    : {}),
+                  metricId: id,
+                  aggregation: employeeVisuals[id].aggregation,
+                  ...(previousFacts
+                    ? {
+                        comparison: comparisonFor(
+                          employeeVisuals[id].aggregate(facts),
+                          employeeVisuals[id].aggregate(previousFacts),
+                        ),
+                      }
+                    : {}),
+                },
+              ],
+            ];
+          }
+          const percentageVisual = percentageVisuals[id];
+          if (percentageVisual) {
+            const entries = by(
+              percentageVisual.field,
+              visualFacts,
+              (rows) =>
+                ratio(
+                  percentageVisual.numerator(rows),
+                  percentageVisual.denominator?.(rows) ?? rows.length,
+                ),
+            );
+            return [
+              [
+                id,
+                {
+                  labels: entries.map(([label]) => label),
+                  values: entries.map(([, value]) => value),
+                  unit: 'درصد',
+                  metricId: id,
+                  aggregation: percentageVisual.aggregation,
+                },
+              ],
+            ];
+          }
           if (trendVisualIds.has(id) || visualFields[id]) {
             const selectedCurrencyVisual = monetaryVisualFor(
               id,
@@ -742,6 +1199,8 @@ export class ReportingService {
                 {
                   labels: stages.map(([label]) => label),
                   values: stages.map(([, value]) => value),
+                  metricId: id,
+                  aggregation: 'count rows by reservation/payment/issue stage',
                 },
               ],
             ];
@@ -777,6 +1236,8 @@ export class ReportingService {
                 {
                   labels: queue.map(([label]) => label),
                   values: queue.map(([, value]) => value),
+                  metricId: id,
+                  aggregation: 'count rows by pending workflow state',
                 },
               ],
             ];
