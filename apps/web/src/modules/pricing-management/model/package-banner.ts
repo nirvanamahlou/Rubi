@@ -78,7 +78,7 @@ export function packageBannerHref(input: {
   const bannerQuery = new URLSearchParams({
     batchId: input.batchId,
     publicationId: input.publicationId,
-    returnTo: `/sales/pricing?${returnQuery.toString()}`,
+    returnTo: `/sales/pricing/management?${returnQuery.toString()}`,
   });
   return `/sales/pricing/packages/${encodeURIComponent(input.packageId)}/banner?${bannerQuery.toString()}`;
 }

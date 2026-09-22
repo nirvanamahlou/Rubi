@@ -9,9 +9,13 @@ import type {
 import {
   ArrowRight,
   CalendarDays,
+  Eye,
   FileImage,
   Hotel,
+  LayoutTemplate,
+  LockKeyhole,
   Plane,
+  Type,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -39,6 +43,7 @@ import {
   type PackageBannerViewModel,
 } from '../model/package-banner';
 import { packageBannerDocumentsAdapter } from '../model/package-banner-output';
+import { PackagePricingBreadcrumbs } from './package-pricing-breadcrumbs';
 
 type BannerApi = Pick<
   typeof packagePricingApi,
@@ -93,15 +98,17 @@ export async function loadPackageBanner(
 }
 
 export function safePricingReturnTo(value?: string) {
-  if (!value) return '/sales/pricing';
+  if (!value) return '/sales/pricing/management';
   try {
     const url = new URL(value, 'https://rubi.local');
     return url.origin === 'https://rubi.local' &&
-      url.pathname === '/sales/pricing'
+      ['/sales/pricing/management', '/sales/pricing/generator'].includes(
+        url.pathname,
+      )
       ? `${url.pathname}${url.search}`
-      : '/sales/pricing';
+      : '/sales/pricing/management';
   } catch {
-    return '/sales/pricing';
+    return '/sales/pricing/management';
   }
 }
 
@@ -251,11 +258,13 @@ export function PackageBannerWorkspace({
   batchId,
   publicationId,
   returnTo,
+  embedded = false,
 }: {
   packageId: string;
   batchId?: string | undefined;
   publicationId?: string | undefined;
   returnTo?: string | undefined;
+  embedded?: boolean | undefined;
 }) {
   const [result, setResult] = useState<PackageBannerLoadResult | null>(null);
   const [loading, setLoading] = useState(true);
@@ -307,20 +316,28 @@ export function PackageBannerWorkspace({
   );
 
   return (
-    <main className="mx-auto grid w-full max-w-7xl gap-5">
-      <PageHeader
-        eyebrow="مدیریت قیمت و پکیج‌ها"
-        title="ساخت بنر پکیج"
-        description="پیش‌نمایش بنر از نسخه منتشرشده قیمت و آیتم‌های قابل‌فروش همین پکیج ساخته می‌شود."
-        actions={
-          <Link
-            className={buttonVariants({ variant: 'outline', size: 'sm' })}
-            href={backHref}
-          >
-            <ArrowRight className="size-4" /> بازگشت به همان پکیج
-          </Link>
-        }
-      />
+    <div className="mx-auto grid w-full max-w-7xl gap-5">
+      {!embedded ? (
+        <PackagePricingBreadcrumbs
+          currentTitle="ساخت بنر پکیج"
+          pathname={`/sales/pricing/packages/${encodeURIComponent(packageId)}/banner`}
+        />
+      ) : null}
+      {!embedded ? (
+        <PageHeader
+          eyebrow="مدیریت قیمت و پکیج‌ها"
+          title="ساخت بنر پکیج"
+          description="پیش‌نمایش بنر از نسخه منتشرشده قیمت و آیتم‌های قابل‌فروش همین پکیج ساخته می‌شود."
+          actions={
+            <Link
+              className={buttonVariants({ variant: 'outline', size: 'sm' })}
+              href={backHref}
+            >
+              <ArrowRight className="size-4" /> بازگشت به همان پکیج
+            </Link>
+          }
+        />
+      ) : null}
       {loading ? (
         <div className="grid gap-4 lg:grid-cols-[20rem_1fr]">
           <Skeleton className="h-[32rem]" />
@@ -388,92 +405,251 @@ export function PackageBannerWorkspace({
             title="پیش‌نمایش آماده است"
             description="فقط قیمت فروش منتشرشده نمایش داده می‌شود؛ نرخ خرید، کمیسیون و سود داخلی وارد بنر نشده‌اند."
           />
-          <div className="grid items-start gap-5 lg:grid-cols-[20rem_minmax(0,1fr)]">
-            <Card className="grid gap-4 p-5 lg:sticky lg:top-4">
-              <h2 className="font-black">تنظیمات نمایشی</h2>
-              <label className="grid gap-2 text-sm font-bold">
-                قالب
-                <select
-                  className="h-11 rounded-xl border border-input bg-surface px-3"
-                  onChange={(event) => setTemplateId(event.target.value)}
-                  value={templateId}
+          <div className="grid items-start gap-5 lg:grid-cols-[21rem_minmax(0,1fr)]">
+            <Card className="overflow-hidden p-0 lg:sticky lg:top-4 lg:max-h-[calc(100vh-2rem)] lg:overflow-y-auto">
+              <div className="border-b border-border bg-muted/35 p-5">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <h2 className="font-black">ویرایشگر پک</h2>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      تغییرات هم‌زمان در پیش‌نمایش اعمال می‌شوند.
+                    </p>
+                  </div>
+                  <Badge className="gap-1.5 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">
+                    <span className="size-1.5 rounded-full bg-emerald-500" />
+                    آماده
+                  </Badge>
+                </div>
+                <nav
+                  aria-label="دسترسی سریع به تنظیمات پک جنریتور"
+                  className="mt-4 grid grid-cols-4 gap-1 rounded-xl bg-background/80 p-1"
                 >
-                  {result.templates.map((item) => (
-                    <option key={item.id} value={item.id}>
-                      {item.title} · {item.width}×{item.height}
-                    </option>
+                  {[
+                    ['#generator-template', 'قالب'],
+                    ['#generator-copy', 'متن'],
+                    ['#generator-display', 'نمایش'],
+                    ['#generator-output', 'خروجی'],
+                  ].map(([href, label]) => (
+                    <a
+                      className="rounded-lg px-2 py-2 text-center text-[11px] font-bold text-muted-foreground transition hover:bg-muted hover:text-foreground"
+                      href={href}
+                      key={href}
+                    >
+                      {label}
+                    </a>
                   ))}
-                </select>
-              </label>
-              <label className="grid gap-2 text-sm font-bold">
-                عنوان تبلیغاتی
-                <Input
-                  maxLength={90}
-                  onChange={(event) => setTitle(event.target.value)}
-                  value={title}
-                />
-              </label>
-              <label className="grid gap-2 text-sm font-bold">
-                متن کوتاه
-                <textarea
-                  className="min-h-24 rounded-xl border border-input bg-surface p-3 text-sm"
-                  maxLength={180}
-                  onChange={(event) => setSummary(event.target.value)}
-                  value={summary}
-                />
-              </label>
-              <label className="grid gap-2 text-sm font-bold">
-                دعوت به اقدام
-                <select
-                  className="h-11 rounded-xl border border-input bg-surface px-3"
-                  onChange={(event) => setCta(event.target.value)}
-                  value={cta}
+                </nav>
+              </div>
+
+              <div className="grid gap-3 p-4">
+                <details
+                  className="group rounded-2xl border border-border bg-background"
+                  id="generator-template"
+                  open
                 >
-                  <option>رزرو تور</option>
-                  <option>تماس با ما</option>
-                  <option>مشاهده جزئیات</option>
-                </select>
-              </label>
-              {[
-                ['نمایش قیمت', showPrice, setShowPrice],
-                ['نمایش تاریخ', showDate, setShowDate],
-                ['نمایش نام هتل', showHotel, setShowHotel],
-              ].map(([label, checked, setter]) => (
-                <label
-                  className="flex items-center gap-2 text-sm font-bold"
-                  key={String(label)}
+                  <summary className="flex cursor-pointer list-none items-center gap-3 p-4">
+                    <span className="grid size-9 place-items-center rounded-xl bg-violet-500/10 font-black text-violet-700 dark:text-violet-300">
+                      ۰۱
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <strong className="block text-sm">دسته و قالب</strong>
+                      <small className="text-xs text-muted-foreground">
+                        انتخاب نوع و ابعاد طرح
+                      </small>
+                    </span>
+                    <LayoutTemplate className="size-4 text-muted-foreground" />
+                  </summary>
+                  <div className="grid gap-3 border-t border-border p-4">
+                    <label className="grid gap-2 text-sm font-bold">
+                      قالب فعال شعبه
+                      <select
+                        className="h-11 rounded-xl border border-input bg-surface px-3"
+                        onChange={(event) => setTemplateId(event.target.value)}
+                        value={templateId}
+                      >
+                        {result.templates.map((item) => (
+                          <option key={item.id} value={item.id}>
+                            {item.title} · {item.width}×{item.height}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <div
+                      aria-label="گالری قالب‌های بنر"
+                      className="grid grid-cols-2 gap-2"
+                      role="group"
+                    >
+                      {result.templates.map((item) => (
+                        <button
+                          aria-pressed={item.id === templateId}
+                          className={cn(
+                            'grid min-h-20 place-items-center rounded-xl border p-2 text-center transition',
+                            item.id === templateId
+                              ? 'border-primary bg-primary/5 text-primary'
+                              : 'border-border bg-muted/30 text-muted-foreground hover:border-primary/40',
+                          )}
+                          key={item.id}
+                          onClick={() => setTemplateId(item.id)}
+                          type="button"
+                        >
+                          <span className="text-xs font-black">
+                            {item.title}
+                          </span>
+                          <span className="text-[10px]">
+                            {item.width}×{item.height}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </details>
+
+                <details
+                  className="group rounded-2xl border border-border bg-background"
+                  id="generator-copy"
+                  open
                 >
-                  <input
-                    checked={Boolean(checked)}
-                    className="size-4 accent-primary"
-                    onChange={(event) =>
-                      (setter as (value: boolean) => void)(event.target.checked)
-                    }
-                    type="checkbox"
-                  />
-                  {String(label)}
-                </label>
-              ))}
-              <div className="border-t border-border pt-4">
-                <Button className="w-full" disabled type="button">
-                  {output.label}
-                </Button>
-                <p className="mt-2 text-xs leading-5 text-muted-foreground">
-                  {output.reason}
-                </p>
+                  <summary className="flex cursor-pointer list-none items-center gap-3 p-4">
+                    <span className="grid size-9 place-items-center rounded-xl bg-sky-500/10 font-black text-sky-700 dark:text-sky-300">
+                      ۰۲
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <strong className="block text-sm">متن و توضیحات</strong>
+                      <small className="text-xs text-muted-foreground">
+                        عنوان، پیام کوتاه و دعوت
+                      </small>
+                    </span>
+                    <Type className="size-4 text-muted-foreground" />
+                  </summary>
+                  <div className="grid gap-4 border-t border-border p-4">
+                    <label className="grid gap-2 text-sm font-bold">
+                      عنوان تبلیغاتی
+                      <Input
+                        maxLength={90}
+                        onChange={(event) => setTitle(event.target.value)}
+                        value={title}
+                      />
+                    </label>
+                    <label className="grid gap-2 text-sm font-bold">
+                      متن کوتاه
+                      <textarea
+                        className="min-h-24 rounded-xl border border-input bg-surface p-3 text-sm"
+                        maxLength={180}
+                        onChange={(event) => setSummary(event.target.value)}
+                        placeholder="یک پیام کوتاه برای معرفی این سفر"
+                        value={summary}
+                      />
+                    </label>
+                    <label className="grid gap-2 text-sm font-bold">
+                      دعوت به اقدام
+                      <select
+                        className="h-11 rounded-xl border border-input bg-surface px-3"
+                        onChange={(event) => setCta(event.target.value)}
+                        value={cta}
+                      >
+                        <option>رزرو تور</option>
+                        <option>تماس با ما</option>
+                        <option>مشاهده جزئیات</option>
+                      </select>
+                    </label>
+                  </div>
+                </details>
+
+                <details
+                  className="group rounded-2xl border border-border bg-background"
+                  id="generator-display"
+                  open
+                >
+                  <summary className="flex cursor-pointer list-none items-center gap-3 p-4">
+                    <span className="grid size-9 place-items-center rounded-xl bg-amber-500/10 font-black text-amber-700 dark:text-amber-300">
+                      ۰۳
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <strong className="block text-sm">تنظیمات نمایش</strong>
+                      <small className="text-xs text-muted-foreground">
+                        کنترل اجزای قابل‌نمایش
+                      </small>
+                    </span>
+                    <Eye className="size-4 text-muted-foreground" />
+                  </summary>
+                  <div className="grid gap-3 border-t border-border p-4">
+                    {[
+                      ['نمایش قیمت', showPrice, setShowPrice],
+                      ['نمایش تاریخ', showDate, setShowDate],
+                      ['نمایش نام هتل', showHotel, setShowHotel],
+                    ].map(([label, checked, setter]) => (
+                      <label
+                        className="flex min-h-11 items-center justify-between gap-3 rounded-xl bg-muted/50 px-3 text-sm font-bold"
+                        key={String(label)}
+                      >
+                        {String(label)}
+                        <input
+                          checked={Boolean(checked)}
+                          className="size-4 accent-primary"
+                          onChange={(event) =>
+                            (setter as (value: boolean) => void)(
+                              event.target.checked,
+                            )
+                          }
+                          type="checkbox"
+                        />
+                      </label>
+                    ))}
+                  </div>
+                </details>
+
+                <details
+                  className="group rounded-2xl border border-border bg-background"
+                  id="generator-output"
+                  open
+                >
+                  <summary className="flex cursor-pointer list-none items-center gap-3 p-4">
+                    <span className="grid size-9 place-items-center rounded-xl bg-rose-500/10 font-black text-rose-700 dark:text-rose-300">
+                      ۰۴
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <strong className="block text-sm">خروجی طرح</strong>
+                      <small className="text-xs text-muted-foreground">
+                        اتصال کنترل‌شده به Documents
+                      </small>
+                    </span>
+                    <LockKeyhole className="size-4 text-muted-foreground" />
+                  </summary>
+                  <div className="border-t border-border p-4">
+                    <Button className="w-full" disabled type="button">
+                      {output.label}
+                    </Button>
+                    <p className="mt-2 text-xs leading-5 text-muted-foreground">
+                      {output.reason}
+                    </p>
+                  </div>
+                </details>
               </div>
             </Card>
             <div className="grid min-w-0 gap-4">
-              <BannerPreview
-                cta={cta}
-                model={validation.value}
-                showDate={showDate}
-                showHotel={showHotel}
-                showPrice={showPrice}
-                summary={summary}
-                template={template}
-                title={title}
-              />
+              <Card className="overflow-hidden p-0">
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-muted/35 px-5 py-3">
+                  <div>
+                    <h2 className="text-sm font-black">پیش‌نمایش زنده</h2>
+                    <p className="text-xs text-muted-foreground">
+                      {template.title} · {template.width}×{template.height}
+                    </p>
+                  </div>
+                  <Badge>RTL · HTML/CSS</Badge>
+                </div>
+                <div className="bg-muted/25 p-4 sm:p-6">
+                  <BannerPreview
+                    cta={cta}
+                    model={validation.value}
+                    showDate={showDate}
+                    showHotel={showHotel}
+                    showPrice={showPrice}
+                    summary={summary}
+                    template={template}
+                    title={title}
+                  />
+                </div>
+              </Card>
               <Card className="grid gap-3 p-5 sm:grid-cols-2 lg:grid-cols-4">
                 <div>
                   <p className="text-xs text-muted-foreground">مقصد</p>
@@ -516,6 +692,6 @@ export function PackageBannerWorkspace({
           </div>
         </>
       ) : null}
-    </main>
+    </div>
   );
 }

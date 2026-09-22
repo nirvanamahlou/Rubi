@@ -235,7 +235,7 @@ describe('package banner view model', () => {
     expect(query.get('batchId')).toBe('batch-1');
     expect(query.get('publicationId')).toBe('publication-1');
     expect(query.get('returnTo')).toContain(
-      '/sales/pricing?package=tour-1&departure=departure%2F1&batch=batch-1&publication=publication-1',
+      '/sales/pricing/management?package=tour-1&departure=departure%2F1&batch=batch-1&publication=publication-1',
     );
   });
 });

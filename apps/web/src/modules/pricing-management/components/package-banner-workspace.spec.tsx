@@ -77,11 +77,18 @@ describe('package banner workspace', () => {
 
   it('only accepts return links to the pricing management page', () => {
     expect(
-      safePricingReturnTo('/sales/pricing?departure=departure-1&batch=batch-1'),
-    ).toBe('/sales/pricing?departure=departure-1&batch=batch-1');
+      safePricingReturnTo(
+        '/sales/pricing/management?departure=departure-1&batch=batch-1',
+      ),
+    ).toBe('/sales/pricing/management?departure=departure-1&batch=batch-1');
+    expect(
+      safePricingReturnTo(
+        '/sales/pricing/generator?package=package-1&departure=departure-1',
+      ),
+    ).toBe('/sales/pricing/generator?package=package-1&departure=departure-1');
     expect(safePricingReturnTo('https://evil.example/phishing')).toBe(
-      '/sales/pricing',
+      '/sales/pricing/management',
     );
-    expect(safePricingReturnTo('/finance')).toBe('/sales/pricing');
+    expect(safePricingReturnTo('/finance')).toBe('/sales/pricing/management');
   });
 });

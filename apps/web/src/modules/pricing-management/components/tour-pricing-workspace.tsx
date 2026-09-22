@@ -9,6 +9,7 @@ import type {
   TourDepartureV1,
 } from '@nora/contracts';
 import {
+  ArrowRight,
   Banknote,
   ClipboardCheck,
   Hotel,
@@ -17,7 +18,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/form-controls';
 import {
   Alert,
@@ -32,6 +33,7 @@ import { packagePricingApi } from '../api/client';
 import { TourWorkspace } from '@/modules/ticket-catalog/components/tour-workspace';
 import { previewHotelRoomSale } from './tour-price-math';
 import { packageBannerHref } from '../model/package-banner';
+import { PackagePricingBreadcrumbs } from './package-pricing-breadcrumbs';
 import {
   calculateTourRoom,
   tourRoomOccupancy,
@@ -480,7 +482,19 @@ export function TourPricingWorkspace() {
 
   return (
     <main className="mx-auto grid w-full max-w-7xl gap-6">
+      <PackagePricingBreadcrumbs
+        currentTitle="مدیریت قیمت"
+        pathname="/sales/pricing/management"
+      />
       <PageHeader
+        actions={
+          <Link
+            className={buttonVariants({ variant: 'outline', size: 'sm' })}
+            href="/sales/pricing"
+          >
+            <ArrowRight className="size-4" /> بازگشت به بخش‌ها
+          </Link>
+        }
         eyebrow="فروش و ارتباط با مشتری · ماژول مدیریت قیمت"
         title="مدیریت قیمت و پکیج تور"
         description="قیمت خرید هتل‌های همان نوبت تور را ببینید، قیمت فروش هر گزینه هتل و پرواز را تنظیم کنید و نسخه قیمت را برای انتشار آماده کنید."
