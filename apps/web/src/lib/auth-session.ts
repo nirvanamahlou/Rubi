@@ -2,6 +2,7 @@ import type { LoginResponse } from '@nora/contracts';
 
 const REFRESH_LOCK_NAME = 'nora-auth-refresh';
 const CONFLICT_RETRY_DELAY_MS = 150;
+export const AUTH_SESSION_RECOVERED_EVENT = 'nora:auth-session-recovered';
 
 let refreshInFlight: Promise<LoginResponse | null> | null = null;
 
@@ -14,7 +15,14 @@ async function requestRefresh(baseUrl: string): Promise<LoginResponse | null> {
       headers: { accept: 'application/json' },
     }).catch(() => null);
     if (response?.ok) {
-      return (await response.json()) as LoginResponse;
+      const session = (await response.json()) as LoginResponse;
+      if (typeof window !== 'undefined')
+        window.dispatchEvent(
+          new CustomEvent<LoginResponse>(AUTH_SESSION_RECOVERED_EVENT, {
+            detail: session,
+          }),
+        );
+      return session;
     }
     if (response?.status !== 409 || attempt === 1) return null;
     await new Promise((resolve) =>

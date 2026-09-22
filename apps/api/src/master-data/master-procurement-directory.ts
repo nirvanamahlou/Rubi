@@ -88,4 +88,18 @@ export class MasterProcurementDirectory {
       );
     return { id: row.id, version: row.version, label: row.name ?? row.code };
   }
+  async supplierLabels(ids: readonly string[]) {
+    if (!ids.length) return new Map<string, string>();
+    const rows = await this.database.client.masterSupplier.findMany({
+      where: { id: { in: [...new Set(ids)] } },
+      select: { id: true, name: true, code: true },
+      take: 100,
+    });
+    return new Map(
+      rows.map((row) => [
+        row.id,
+        row.name?.trim() || `تأمین‌کننده ${row.code}`,
+      ]),
+    );
+  }
 }

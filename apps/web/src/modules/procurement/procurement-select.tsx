@@ -17,6 +17,7 @@ export function ProcurementSelect({
   id,
   value,
   disabled,
+  required,
   className,
   children,
   onChange,
@@ -24,6 +25,7 @@ export function ProcurementSelect({
   id: string;
   value: string | undefined;
   disabled?: boolean;
+  required?: boolean;
   className?: string;
   children: React.ReactNode;
   onChange: (event: { target: { value: string } }) => void;
@@ -45,7 +47,11 @@ export function ProcurementSelect({
         onChange({ target: { value: next === emptyValue ? '' : next } })
       }
     >
-      <SelectTrigger id={id} className={className}>
+      <SelectTrigger
+        id={id}
+        className={className}
+        aria-required={required || undefined}
+      >
         <SelectValue
           placeholder={
             options.find((option) => option.props.value === '')?.props

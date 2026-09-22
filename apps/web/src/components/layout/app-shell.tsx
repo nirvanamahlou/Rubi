@@ -586,7 +586,11 @@ function AppShellContent({ children }: { children: ReactNode }) {
             <Breadcrumb />
           </Suspense>
         </div>
-        <main className="px-4 pb-6 pt-3 sm:px-6 lg:px-7" id="main-content">
+        <main
+          className="px-4 pb-6 pt-3 outline-none sm:px-6 lg:px-7"
+          id="main-content"
+          tabIndex={-1}
+        >
           <HrConnectionsVisibilityProvider>
             {children}
           </HrConnectionsVisibilityProvider>

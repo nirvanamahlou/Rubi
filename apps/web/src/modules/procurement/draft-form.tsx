@@ -49,6 +49,54 @@ export const savedRequestFieldOptionsKey = [
   'procurement',
   'saved-request-field-options',
 ] as const;
+export type PublishDraftIssue = { controlId: string; message: string };
+
+/** Mirrors the API submission rules so publish never creates a hidden draft. */
+export function validatePublishDraft(
+  draft: ProcurementDraftV1,
+): PublishDraftIssue | null {
+  const required: readonly [string | null | undefined, string, string][] = [
+    [draft.title, 'proc-title', 'عنوان درخواست را وارد کنید.'],
+    [draft.unitId, 'proc-unit', 'واحد سازمانی را انتخاب کنید.'],
+    [draft.category, 'proc-category', 'دسته خرید را انتخاب کنید.'],
+    [draft.needReason, 'proc-needReason', 'شرح نیاز را وارد کنید.'],
+    [draft.requiredAt, 'proc-requiredAt', 'تاریخ نیاز را انتخاب کنید.'],
+    [draft.currencyCode, 'proc-currency', 'ارز را انتخاب کنید.'],
+  ];
+  for (const [value, controlId, message] of required)
+    if (!value?.trim()) return { controlId, message };
+  if (draft.title.length > 300)
+    return {
+      controlId: 'proc-title',
+      message: 'عنوان درخواست حداکثر ۳۰۰ نویسه است.',
+    };
+  if (!draft.items.length)
+    return {
+      controlId: 'proc-add-item',
+      message: 'حداقل یک کالا یا خدمت اضافه کنید.',
+    };
+  for (const item of draft.items) {
+    if (!item.description.trim())
+      return {
+        controlId: `${item.id}-description`,
+        message: 'شرح همهٔ اقلام و خدمات را وارد کنید.',
+      };
+    if (!item.unit.trim())
+      return {
+        controlId: `${item.id}-unit`,
+        message: 'واحد سنجش همهٔ اقلام و خدمات را انتخاب کنید.',
+      };
+    if (
+      !/^\d+(?:\.\d+)?$/.test(item.quantity) ||
+      Number(item.quantity) <= 0
+    )
+      return {
+        controlId: `${item.id}-quantity`,
+        message: 'مقدار هر قلم باید عددی مثبت باشد.',
+      };
+  }
+  return null;
+}
 export function rememberSavedRequestFieldOptions(
   client: ReturnType<typeof useQueryClient>,
   request: ProcurementRequestV1,
@@ -179,29 +227,44 @@ export function DraftForm({
     Partial<Record<keyof ProcurementDraftV1, 'mine' | 'latest'>>
   >({});
   const [error, setError] = useState('');
+  const [errorTitle, setErrorTitle] = useState('ذخیره انجام نشد');
   const [documents, setDocuments] = useState<readonly DocumentListItemV1[]>([]);
   const [documentError, setDocumentError] = useState('');
   const [documentSearch, setDocumentSearch] = useState('');
   const [documentsLoaded, setDocumentsLoaded] = useState(false);
   const [documentsBusy, setDocumentsBusy] = useState(false);
   const identity = useRef<ReturnType<typeof retryIdentity> | null>(null);
+  const busyRef = useRef(false);
   const requesterIsRequired = !baseRequest && !requesterEmployeeId;
 
-  function showRequesterRequired() {
-    setError(
-      'برای ثبت پیش‌نویس، درخواست‌کننده را از فهرست کارکنان فعال انتخاب کنید.',
-    );
+  function focusControl(controlId: string) {
     requestAnimationFrame(() => {
-      const control = document.getElementById('proc-requester');
+      const control = document.getElementById(controlId);
       control?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       control?.focus();
     });
+  }
+
+  function showRequesterRequired(mode: 'DRAFT' | 'PUBLISH') {
+    setErrorTitle(
+      mode === 'PUBLISH'
+        ? 'تأیید و انتشار انجام نشد'
+        : 'ذخیره پیش‌نویس انجام نشد',
+    );
+    setError(
+      mode === 'PUBLISH'
+        ? 'برای انتشار، درخواست‌کننده را از فهرست کارکنان فعال انتخاب کنید.'
+        : 'برای ثبت پیش‌نویس، درخواست‌کننده را از فهرست کارکنان فعال انتخاب کنید.',
+    );
+    focusControl('proc-requester');
   }
 
   function update<K extends keyof ProcurementDraftV1>(
     key: K,
     value: ProcurementDraftV1[K],
   ) {
+    setError('');
+    setConflict(false);
     setDraft((previous) => ({ ...previous, [key]: value }));
   }
   const text = (
@@ -215,24 +278,34 @@ export function DraftForm({
       | 'notes',
     label: string,
     multiline = false,
+    required = false,
+    maxLength?: number,
   ) => (
-    <FormField id={`proc-${key}`} label={label}>
+    <FormField id={`proc-${key}`} label={label} required={required}>
       {multiline ? (
         <Textarea
           id={`proc-${key}`}
+          aria-required={required}
+          maxLength={maxLength}
           value={draft[key]}
           onChange={(event) => update(key, event.target.value)}
         />
       ) : (
         <Input
           id={`proc-${key}`}
+          aria-required={required}
+          maxLength={maxLength}
           value={draft[key]}
           onChange={(event) => update(key, event.target.value)}
         />
       )}
     </FormField>
   );
-  const savedChoice = (key: 'category', label: string) => {
+  const savedChoice = (
+    key: 'category',
+    label: string,
+    required = false,
+  ) => {
     const existing = [
       ...new Set(
         [
@@ -250,10 +323,11 @@ export function DraftForm({
       customFields[key] ||
       (draft[key] !== '' && !existing.includes(draft[key]));
     return (
-      <FormField id={`proc-${key}`} label={label}>
+      <FormField id={`proc-${key}`} label={label} required={required}>
         <div className="space-y-2">
           <ProcurementSelect
             id={`proc-${key}`}
+            required={required}
             value={custom ? '__new__' : draft[key]}
             onChange={(event) => {
               const selected = event.target.value;
@@ -276,6 +350,7 @@ export function DraftForm({
             <div className="space-y-1.5">
               <Input
                 aria-label={`مقدار تازهٔ ${label}`}
+                aria-required={required}
                 value={draft[key]}
                 onChange={(event) => update(key, event.target.value)}
                 placeholder="مقدار تازه را وارد کنید"
@@ -323,10 +398,11 @@ export function DraftForm({
         ),
       );
     return (
-      <FormField id={fieldId} label={label}>
+      <FormField id={fieldId} label={label} required>
         <div className="space-y-2">
           <ProcurementSelect
             id={fieldId}
+            required
             value={custom ? '__new__' : item[key]}
             onChange={(event) => {
               const isNew = event.target.value === '__new__';
@@ -349,6 +425,7 @@ export function DraftForm({
             <div className="space-y-1.5">
               <Input
                 aria-label={`مقدار تازهٔ ${label}`}
+                aria-required="true"
                 value={item[key]}
                 onChange={(event) => change(event.target.value)}
               />
@@ -362,31 +439,43 @@ export function DraftForm({
     );
   };
   async function save(mode: 'DRAFT' | 'PUBLISH' = 'DRAFT') {
+    if (busyRef.current) return;
     if (requesterIsRequired) {
-      showRequesterRequired();
+      showRequesterRequired(mode);
       return;
     }
+    if (mode === 'PUBLISH') {
+      const issue = validatePublishDraft(draft);
+      if (issue) {
+        setErrorTitle('تأیید و انتشار انجام نشد');
+        setError(issue.message);
+        focusControl(issue.controlId);
+        return;
+      }
+    }
+    busyRef.current = true;
     setBusy(true);
     setError('');
+    setErrorTitle(
+      mode === 'PUBLISH'
+        ? 'تأیید و انتشار انجام نشد'
+        : 'ذخیره پیش‌نویس انجام نشد',
+    );
     identity.current = retryIdentity(identity.current, {
       draft,
       requesterEmployeeId,
       id: baseRequest?.id,
       version: baseRequest?.version,
+      mode,
     });
     try {
-      let saved = await procurementApi.save(
+      const saved = await procurementApi.save(
         draft,
         identity.current.key,
         baseRequest,
         requesterEmployeeId,
+        mode === 'PUBLISH',
       );
-      if (mode === 'PUBLISH')
-        saved = await procurementApi.command(
-          saved,
-          { action: 'PUBLISH' },
-          crypto.randomUUID(),
-        );
       rememberSavedRequestFieldOptions(queryClient, saved);
       onSaved(saved);
     } catch (caught) {
@@ -395,6 +484,7 @@ export function DraftForm({
         caught instanceof ProcurementApiError && caught.status === 409,
       );
     } finally {
+      busyRef.current = false;
       setBusy(false);
     }
   }
@@ -471,7 +561,7 @@ export function DraftForm({
           </div>
         </div>
         {error && (
-          <Alert tone="error" title="ذخیره انجام نشد" description={error} />
+          <Alert tone="error" title={errorTitle} description={error} />
         )}
         {conflict && baseRequest && (
           <div className="space-y-4 rounded-xl border border-border p-4">
@@ -559,15 +649,14 @@ export function DraftForm({
             </span>
           </legend>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {text('title', 'عنوان درخواست')}
+            {text('title', 'عنوان درخواست', false, true, 300)}
             <FormField
               id="proc-requester"
               label="درخواست‌کننده"
               required={!request}
               {...(requesterIsRequired
                 ? {
-                    error:
-                      'پیش از ثبت پیش‌نویس، یک کارمند فعال را انتخاب کنید.',
+                    error: 'یک کارمند فعال را انتخاب کنید.',
                   }
                 : {})}
             >
@@ -593,6 +682,7 @@ export function DraftForm({
                     className={selectClass}
                     value={requesterEmployeeId}
                     onChange={(event) => {
+                      setError('');
                       const candidate = requesters.data?.items.find(
                         (item) => item.id === event.target.value,
                       );
@@ -656,10 +746,11 @@ export function DraftForm({
                 ))}
               </ProcurementSelect>
             </FormField>
-            <FormField id="proc-unit" label="واحد سازمانی">
+            <FormField id="proc-unit" label="واحد سازمانی" required>
               <ProcurementSelect
                 id="proc-unit"
                 className={selectClass}
+                required
                 value={draft.unitId ?? ''}
                 onChange={(event) => {
                   const nextUnit = event.target.value || null;
@@ -691,10 +782,11 @@ export function DraftForm({
                 </p>
               )}
             </FormField>
-            {savedChoice('category', 'دسته خرید')}
-            <FormField id="proc-requiredAt" label="تاریخ نیاز">
+            {savedChoice('category', 'دسته خرید', true)}
+            <FormField id="proc-requiredAt" label="تاریخ نیاز" required>
               <DatePicker
                 id="proc-requiredAt"
+                aria-required
                 value={draft.requiredAt?.slice(0, 10) ?? ''}
                 onChange={(value) =>
                   update('requiredAt', value ? `${value}T00:00:00.000Z` : null)
@@ -727,7 +819,7 @@ export function DraftForm({
             انتخاب یا نوشتن تأمین‌کننده ثبت کنید. تأمین‌کنندهٔ فعلی یا
             تأمین‌کنندهٔ تازه در مرحلهٔ استعلام و سفارش تعیین می‌شود.
           </div>
-          {text('needReason', 'شرح نیاز و توجیه خرید', true)}
+          {text('needReason', 'شرح نیاز و توجیه خرید', true, true, 4000)}
           <label className="flex min-h-11 items-center gap-3 text-sm font-semibold">
             <input
               type="checkbox"
@@ -736,7 +828,8 @@ export function DraftForm({
             />
             خرید اضطراری است
           </label>
-          {draft.urgent && text('urgencyReason', 'دلیل اضطرار', true)}
+          {draft.urgent &&
+            text('urgencyReason', 'دلیل اضطرار', true, true, 1000)}
           <div className="grid gap-4 sm:grid-cols-2">
             <FormField id="proc-estimate" label="مبلغ">
               <Input
@@ -752,10 +845,11 @@ export function DraftForm({
                 }
               />
             </FormField>
-            <FormField id="proc-currency" label="ارز">
+            <FormField id="proc-currency" label="ارز" required>
               <ProcurementSelect
                 id="proc-currency"
                 className={selectClass}
+                required
                 value={draft.currencyCode ?? ''}
                 onChange={(event) =>
                   update('currencyCode', event.target.value || null)
@@ -848,9 +942,19 @@ export function DraftForm({
                   key === 'unit' ? (
                     <div key={key}>{savedItemChoice(item, key, label)}</div>
                   ) : (
-                    <FormField key={key} id={`${item.id}-${key}`} label={label}>
+                    <FormField
+                      key={key}
+                      id={`${item.id}-${key}`}
+                      label={label}
+                      required={
+                        key === 'description' || key === 'quantity'
+                      }
+                    >
                       <Input
                         id={`${item.id}-${key}`}
+                        aria-required={
+                          key === 'description' || key === 'quantity'
+                        }
                         value={item[key]}
                         onChange={(event) =>
                           update(
@@ -876,6 +980,7 @@ export function DraftForm({
             </div>
           ))}
           <Button
+            id="proc-add-item"
             type="button"
             variant="outline"
             onClick={() =>
@@ -1048,13 +1153,6 @@ export function DraftForm({
             بستن فرم
           </Button>
         </div>
-        {error && (
-          <Alert
-            tone="error"
-            title="ثبت پیش‌نویس انجام نشد"
-            description={error}
-          />
-        )}
       </form>
     </Card>
   );

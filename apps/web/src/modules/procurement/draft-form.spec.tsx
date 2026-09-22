@@ -5,6 +5,7 @@ import {
   DraftForm,
   rememberSavedRequestFieldOptions,
   savedRequestFieldOptionsKey,
+  validatePublishDraft,
 } from './draft-form';
 import type { Bootstrap } from './api';
 import { emptyDraft } from './model';
@@ -92,6 +93,8 @@ describe('Purchase draft accessibility and persisted input', () => {
     );
     expect(html).toContain('for="proc-title"');
     expect(html).toContain('id="proc-title"');
+    expect(html).toContain('maxLength="300"');
+    expect(html).toContain('aria-required="true"');
     expect(html).not.toContain('علت نامشخص بودن برآورد');
     expect(html).toContain('انتخاب محل تحویل (اختیاری)');
     expect(html).toContain('سرویس اسناد در دسترس نیست');
@@ -115,6 +118,35 @@ describe('Purchase draft accessibility and persisted input', () => {
       'شماره درخواست: پس از نخستین ثبت، خودکار تعیین می‌شود',
     );
   });
+  it('blocks publish before persistence when required or line values are invalid', () => {
+    const draft = {
+      ...emptyDraft('unit-a', 'branch-1'),
+      title: 'درخواست معتبر',
+      category: 'تجهیزات',
+      needReason: 'نیاز عملیاتی',
+      requiredAt: '2026-10-01T00:00:00.000Z',
+      currencyCode: 'IRR',
+      items: [
+        {
+          id: 'line-1',
+          kind: 'GOODS' as const,
+          description: 'رایانه',
+          specification: '',
+          quantity: '0',
+          unit: 'عدد',
+          acceptanceCriteria: '',
+          period: '',
+        },
+      ],
+    };
+
+    expect(validatePublishDraft(draft)).toEqual({
+      controlId: 'line-1-quantity',
+      message: 'مقدار هر قلم باید عددی مثبت باشد.',
+    });
+    draft.items[0]!.quantity = '2';
+    expect(validatePublishDraft(draft)).toBeNull();
+  });
   it('makes the requester requirement visible before saving a new draft', () => {
     const html = renderToStaticMarkup(
       <QueryClientProvider client={new QueryClient()}>
@@ -126,9 +158,7 @@ describe('Purchase draft accessibility and persisted input', () => {
       </QueryClientProvider>,
     );
 
-    expect(html).toContain(
-      'پیش از ثبت پیش‌نویس، یک کارمند فعال را انتخاب کنید.',
-    );
+    expect(html).toContain('یک کارمند فعال را انتخاب کنید.');
     expect(html).toContain('id="proc-requester-error"');
   });
   it('loads HR employees and units immediately from the requester branch', () => {

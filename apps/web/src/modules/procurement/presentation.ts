@@ -30,6 +30,30 @@ const timeFormatter = new Intl.DateTimeFormat('fa-IR', {
   minute: '2-digit',
   hour12: false,
 });
+const actionLabels: Record<string, string> = {
+  CREATE: 'ایجاد درخواست',
+  UPDATE: 'ویرایش درخواست',
+  PUBLISH: 'انتشار درخواست',
+  APPROVE: 'تأیید درخواست',
+  REJECT: 'رد درخواست',
+  RETURN: 'بازگشت برای اصلاح',
+  CANCEL: 'لغو درخواست',
+  ASSIGN: 'تخصیص مسئول',
+};
+const statusLabels: Record<string, string> = {
+  DRAFT: 'پیش‌نویس',
+  SUBMITTED: 'ارسال‌شده',
+  IN_REVIEW: 'در بررسی',
+  APPROVED: 'تأییدشده',
+  REJECTED: 'ردشده',
+  RETURNED: 'نیازمند اصلاح',
+  SOURCING: 'در حال تأمین',
+  ORDERED: 'سفارش‌شده',
+  PARTIALLY_RECEIVED: 'دریافت ناقص',
+  RECEIVED: 'دریافت‌شده',
+  CLOSED: 'بسته‌شده',
+  CANCELLED: 'لغوشده',
+};
 
 export function formatProcurementDate(
   value: unknown,
@@ -57,9 +81,12 @@ export function formatProcurementRecordValue(
   key: string,
   value: unknown,
 ): string {
-  return timestampFields.has(key) || dateFields.has(key)
-    ? formatProcurementDate(value, timestampFields.has(key))
-    : String(value);
+  if (timestampFields.has(key) || dateFields.has(key))
+    return formatProcurementDate(value, timestampFields.has(key));
+  const text = String(value);
+  if (key === 'action') return actionLabels[text] ?? text;
+  if (key === 'status') return statusLabels[text] ?? text;
+  return text;
 }
 
 export function exportScanSnapshotText(scanStatus: string): string {
