@@ -1,0 +1,203 @@
+import { createElement } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
+import { readFileSync } from 'node:fs';
+import { describe, expect, it } from 'vitest';
+import { TicketWorkspace } from './ticket-workspace';
+import { TicketForm } from './ticket-form';
+import { TicketCatalogCard } from './ticket-catalog-card';
+import { IssuedTicketsWorkspace } from './issued-tickets-workspace';
+import { emptyInput, previewSamples } from '../model/preview';
+
+describe('Rendered ticket UI', () => {
+  it('exposes direct ticket management without preview controls', () => {
+    const html = renderToStaticMarkup(createElement(TicketWorkspace));
+    expect(html).toContain('dir="rtl"');
+    expect(html).toContain('تعریف بلیط جدید');
+    expect(html).not.toContain('افزودن نمونه‌ها');
+    expect(html).toContain('هواپیما • قطار • اتوبوس');
+    expect(html).toContain('تعریف بلیط قابل فروش');
+    expect(html).toContain('مسیر، برنامه حرکت و ظرفیت');
+    expect(html).toContain('بلیط‌های صادرشده مسافران');
+    expect(html).toContain('گزارش صدور، PNR و قرارداد');
+    expect(html).not.toContain('شروع پیش‌نمایش');
+    expect(html).not.toContain('حالت شبیه‌سازی');
+  });
+  it('renders route filters, icon-only sale controls and issued filters', () => {
+    const sample = previewSamples('2026-08-31T00:00:00.000Z')[0]!;
+    const inventory = {
+      total: sample.definition.totalCapacity,
+      version: sample.version,
+      allocations: [
+        { id: 'held', quantity: 2, state: 'held' as const },
+        { id: 'confirmed', quantity: 3, state: 'confirmed' as const },
+      ],
+    };
+    const card = renderToStaticMarkup(
+      createElement(TicketCatalogCard, {
+        product: { ...sample, status: 'active' },
+        inventory,
+        referenceLabel: (_kind: string, _id: string, fallback: string) =>
+          fallback,
+        onView: () => {},
+        onEdit: () => {},
+        onRepeat: () => {},
+        onDelete: () => {},
+        onStatus: () => {},
+      }),
+    );
+    const pausedCard = renderToStaticMarkup(
+      createElement(TicketCatalogCard, {
+        product: { ...sample, status: 'paused' },
+        inventory,
+        referenceLabel: (_kind: string, _id: string, fallback: string) =>
+          fallback,
+        onView: () => {},
+        onEdit: () => {},
+        onRepeat: () => {},
+        onDelete: () => {},
+        onStatus: () => {},
+      }),
+    );
+    const draftCard = renderToStaticMarkup(
+      createElement(TicketCatalogCard, {
+        product: { ...sample, status: 'draft' },
+        inventory,
+        referenceLabel: (_kind: string, _id: string, fallback: string) =>
+          fallback,
+        onView: () => {},
+        onEdit: () => {},
+        onRepeat: () => {},
+        onDelete: () => {},
+        onStatus: () => {},
+      }),
+    );
+    const cancelledCard = renderToStaticMarkup(
+      createElement(TicketCatalogCard, {
+        product: { ...sample, status: 'cancelled' },
+        inventory,
+        referenceLabel: (_kind: string, _id: string, fallback: string) =>
+          fallback,
+        onView: () => {},
+        onEdit: () => {},
+        onRepeat: () => {},
+        onDelete: () => {},
+        onStatus: () => {},
+      }),
+    );
+    const issued = renderToStaticMarkup(
+      createElement(IssuedTicketsWorkspace, {
+        tickets: [],
+      }),
+    );
+    expect(card).toContain('ظرفیت کل');
+    expect(card).toContain('مانده');
+    expect(card).toContain(
+      `${(sample.definition.totalCapacity - 5).toLocaleString('fa-IR')} نفر`,
+    );
+    expect(card).toContain('aria-label="توقف فروش بلیط"');
+    expect(card).not.toContain('disabled=""');
+    expect(pausedCard).toContain('aria-label="فعال‌کردن دوباره فروش بلیط"');
+    expect(pausedCard).not.toContain('disabled=""');
+    expect(draftCard).toContain('aria-label="فعال‌کردن دوباره فروش بلیط"');
+    expect(draftCard).not.toContain('disabled=""');
+    expect(card).not.toContain('</svg>توقف فروش');
+    expect(pausedCard).not.toContain('</svg>فعال‌کردن فروش');
+    expect(cancelledCard).toContain('ویرایش');
+    expect(cancelledCard).toContain('aria-label="فروش این بلیط متوقف است"');
+    expect(cancelledCard).toContain('disabled=""');
+    expect(issued).toContain('شماره قرارداد');
+    expect(issued).toContain('شماره بلیط یا PNR');
+    expect(issued).toContain('مبدأ');
+    expect(issued).toContain('مقصد');
+    expect(issued).not.toContain('در انتظار اتصال قرارداد عمومی رزرواسیون');
+    expect(issued).toContain('بلیطی با این فیلترها پیدا نشد');
+  });
+  it('renders flight fields and browser-backed save without Hold editor', () => {
+    const html = renderToStaticMarkup(
+      createElement(TicketForm, {
+        initial: emptyInput(),
+        references: [],
+        onSave: () => {},
+        onCancel: () => {},
+      }),
+    );
+    expect(html).toContain('نوع وسیله سفر');
+    expect(html).toContain('ظرفیت متعلق به شرکت است');
+    expect(html).toContain('انتخاب و جست‌وجوی نوع هواپیما');
+    expect(html).toContain('فرودگاه مبدأ');
+    expect(html).toContain('ابتدا شهر را انتخاب کنید');
+    expect(html).toContain('ذخیره بلیط');
+    expect(html).not.toContain('پیش‌نمایش');
+    expect(html).not.toMatch(/name="(held|confirmed)"/);
+    expect(html).not.toContain('type="datetime-local"');
+    expect(html).toContain('ساعت حرکت');
+    expect(html).toContain('ساعت رسیدن');
+    expect(html).not.toContain('شروع اعتبار نرخ');
+    expect(html).not.toContain('پایان اعتبار نرخ');
+    expect(html).not.toContain('id="ticket-sale"');
+    expect(html).toContain('قیمت فروش در ماژول فروش تعیین می‌شود');
+    expect(html).toContain('کشور مبدأ');
+    expect(html).toContain('شهر مقصد');
+    expect(html).toContain('انتخاب و جست‌وجوی ایرلاین');
+  });
+  it('clears stale validation errors after correcting ticket form values', () => {
+    const formSource = readFileSync(
+      new URL('./ticket-form.tsx', import.meta.url),
+      'utf8',
+    );
+    const workspaceSource = readFileSync(
+      new URL('./ticket-workspace.tsx', import.meta.url),
+      'utf8',
+    );
+    expect(formSource).toMatch(
+      /const updateInput[\s\S]*setError\(''\);[\s\S]*setInput\(value\)/,
+    );
+    expect(formSource).toMatch(
+      /const updateReturnInput[\s\S]*setError\(''\);[\s\S]*setReturnInput\(value\)/,
+    );
+    expect(workspaceSource).toMatch(
+      /const updateCapacityHold[\s\S]*setProblem\(''\);[\s\S]*setCapacityHold\(value\)/,
+    );
+    expect(workspaceSource).toMatch(
+      /const updateRepeat[\s\S]*setProblem\(''\);[\s\S]*setRepeat\(value\)/,
+    );
+    expect(workspaceSource).not.toContain('دلیل تغییر وضعیت');
+    expect(workspaceSource).toContain('فعال‌سازی مجدد فروش بلیط');
+  });
+  it('renders train and bus fields from the same ticket form', () => {
+    const train = renderToStaticMarkup(
+      createElement(TicketForm, {
+        initial: emptyInput('train'),
+        references: [],
+        onSave: () => {},
+        onCancel: () => {},
+      }),
+    );
+    const bus = renderToStaticMarkup(
+      createElement(TicketForm, {
+        initial: emptyInput('bus'),
+        references: [],
+        onSave: () => {},
+        onCancel: () => {},
+      }),
+    );
+    expect(train).toContain('انتخاب و جست‌وجوی شرکت ریلی');
+    expect(train).toContain('ایستگاه مبدأ');
+    expect(bus).toContain('انتخاب و جست‌وجوی شرکت اتوبوس‌رانی');
+    expect(bus).toContain('پایانه مقصد');
+  });
+  it('renders view mode disabled without a submit operation', () => {
+    const initial = previewSamples('2026-08-31T00:00:00.000Z')[0]!.definition;
+    const html = renderToStaticMarkup(
+      createElement(TicketForm, {
+        initial,
+        references: [],
+        onSave: () => {},
+        onCancel: () => {},
+        readOnly: true,
+      }),
+    );
+    expect(html).toContain('<fieldset disabled');
+    expect(html).not.toContain('type="submit"');
+  });
+});
