@@ -57,6 +57,7 @@ import {
   salesPassengerCompositionMatches,
   salesPassengerCounts,
   salesHotelGuestIds,
+  salesHotelCapacityError,
   salesHotelRoomTypes,
   salesOfferHasCapacity,
   salesDirections,
@@ -449,6 +450,7 @@ export function SalesContractForm() {
     /* No valid stay selected yet. */
   }
   const passengerCounts = salesPassengerCounts(state);
+  const hotelCapacityError = salesHotelCapacityError(state, hotelRoomRates);
   const hotelGuestIds = salesHotelGuestIds(state);
   const updatePassengerCount = (
     kind: keyof SalesFormState['passengerComposition'],
@@ -517,9 +519,11 @@ export function SalesContractForm() {
       if (activeDetail === 'FLIGHT')
         return (
           salesFlightsValid(state) &&
-          (!state.serviceKinds.includes('HOTEL') || salesHotelValid(state))
+          (!state.serviceKinds.includes('HOTEL') ||
+            (salesHotelValid(state) && !hotelCapacityError))
         );
-      if (activeDetail === 'HOTEL') return salesHotelValid(state);
+      if (activeDetail === 'HOTEL')
+        return salesHotelValid(state) && !hotelCapacityError;
       if (activeDetail === 'VISA') return Boolean(state.visaReferenceId);
       if (activeDetail === 'INSURANCE')
         return Boolean(state.insurancePlan) && insuranceReady;
@@ -573,6 +577,7 @@ export function SalesContractForm() {
     references.currencies,
     passengerCounts,
     hotelGuestIds,
+    hotelCapacityError,
   ]);
   const submit = async (event: FormEvent) => {
     event.preventDefault();
@@ -1220,9 +1225,14 @@ export function SalesContractForm() {
                           )
                           .join(' | ')
                       : selectableHotelRoomTypes.length
-                        ? 'نوع اتاق‌های متصل به هتل قابل انتخاب‌اند؛ برای این بازه هنوز ضریب فعال ثبت نشده است.'
+                        ? 'نوع اتاق‌های متصل به هتل قابل انتخاب‌اند؛ نبود ضریب فعال مانع ثبت قرارداد نیست.'
                         : 'نوع اتاقی در اطلاعات پایه به این هتل متصل نشده است.'}
                   </div>{' '}
+                  {hotelCapacityError ? (
+                    <div className="md:col-span-3">
+                      <Alert tone="error" title={hotelCapacityError} />
+                    </div>
+                  ) : null}
                   <FormField label="ورود (چک‌این)" required>
                     <DatePicker
                       value={state.hotel.checkIn}
