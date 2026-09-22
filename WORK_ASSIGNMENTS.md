@@ -3692,6 +3692,7 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 - شاخه `codex/pc-a-ticket-standalone-price-v2-0921` از `origin/develop@bd93b634`. محدوده رزرو: قرارداد عمومی افزایشی Ticket Catalog، migration افزایشی قیمت نسخه‌دار، سرویس/کنترلر Ticket Catalog، جدول مدیریت بلیط، انتخاب Sales و تست‌های هدفمند. `COMPUTER_ID=PC-A` و Migration Owner همین واحد است.
 - تغییر مخرب، Seed، داده عملیاتی، Dependency/Lockfile و تغییر مستقیم develop/localhost در محدوده نیست. قیمت تور از مدیریت قیمت فعلی باقی می‌ماند؛ قیمت تکی هر صندلی فقط برای قرارداد بدون هتل/تور پیش‌فرض می‌شود.
 - اعتبارسنجی: Prisma validate/generate؛ build قراردادها، API و Web؛ lint و typecheck در API/Web/Database؛ ۷۸ تست Database (۱۴ مورد integration بدون DB رد شدند)، ۶ تست API و ۳۱ تست Web موفق شدند.
+
 ## DASHBOARD-SCROLL-STABILITY-0921 — PC-C — READY_FOR_REVIEW
 
 - درخواست مالک در 2026-09-21: تغییر صفحهٔ Dashboard، دریافت داده و اعمال هر فیلتر نباید موقعیت اسکرول صفحه را جابه‌جا کند.
@@ -3734,6 +3735,7 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 ## DASHBOARD-ACQUISITION-TREND-FIX-0920 — PC-C — READY_FOR_REVIEW
 
 - «روند جذب مشتری به تفکیک کانال» now has labelled, non-monetary channel series. Each bucket counts distinct customers for the channel; it no longer uses the sales amount/currency trend producer. API tests 8/8, Web registry tests 18/18 (one existing skip) and API/Web typechecks pass.
+
 ## TOUR-SINGLE-SCREEN-0921 — PC-A — READY_FOR_REVIEW
 
 - COMPUTER_ID=PC-A. Branch: codex/pc-a-tour-single-screen-0921 from origin/develop@5f66ef97.
