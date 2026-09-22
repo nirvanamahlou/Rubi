@@ -61,13 +61,18 @@ describe('system management reference implementation', () => {
       'پیام و اعلان',
       'اسناد و فایل‌ها',
       'گزارش و نمای مدیریتی',
-      'اتصال‌ها و دو سایت',
       'اطلاعات پایه',
     ])
       expect(catalog).toContain(title);
 
     expect(catalog).toContain('شماره‌گذاری اسناد');
-    expect(catalog).toContain('سلامت و هشدار سرویس');
+    expect(catalog).not.toContain('اتصال‌ها و دو سایت');
+    expect(catalog).not.toContain("m('integrations'");
+    expect(catalog).not.toContain('پاسخ و بازیابی اتصال');
+    expect(catalog).not.toContain('Webhook و همگام‌سازی');
+    expect(catalog).not.toContain('پیش‌فرض دو وب‌سایت');
+    expect(catalog).not.toContain('سلامت و هشدار سرویس');
+    expect(workspace).not.toContain("moduleIds: ['integrations']");
     expect(catalog).toContain('خروجی و فایل گزارش');
     expect(catalog).not.toContain('برند و اسناد صادره');
     expect(catalog).not.toContain("'branding'");
@@ -145,6 +150,11 @@ describe('system management reference implementation', () => {
     expect(catalog).not.toContain('قالب فیش');
     expect(catalog).not.toContain('فیش استاندارد فارسی');
     expect(catalog).not.toContain('فیش دوزبانه');
+    expect(catalog).not.toContain('پرداخت و استرداد');
+    expect(catalog).not.toContain('آزادسازی مدارک سفر');
+    expect(catalog).not.toContain('چک و یادآوری سررسید');
+    expect(catalog).not.toContain('تطبیق بانکی و تسویه');
+    expect(catalog).not.toContain('نرخ ارز و دریافت‌ها');
     expect(catalog).toContain("t('templateName', 'نام قالب'");
     expect(catalog).toContain("'templateFile'");
     expect(catalog).toContain("type: 'file'");

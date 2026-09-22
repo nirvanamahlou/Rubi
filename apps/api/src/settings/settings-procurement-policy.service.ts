@@ -48,43 +48,16 @@ export class SettingsProcurementPolicyService {
     const policy = this.present(row);
     if (!this.runtime) return policy;
 
-    const [approval, quotations, emergency] = await Promise.all([
-      this.runtime.json<{ ceiling?: unknown; currency?: unknown }>(
-        'procurement',
-        'approval',
-        { branchId: draft.branchId },
-        {},
-      ),
-      this.runtime.json<{ minimum?: unknown; single?: unknown }>(
-        'procurement',
-        'quotations',
-        { branchId: draft.branchId },
-        {},
-      ),
-      this.runtime.json<{ urgent?: unknown; unknown?: unknown }>(
-        'procurement',
-        'emergency',
-        { branchId: draft.branchId },
-        {},
-      ),
-    ]);
+    const approval = await this.runtime.json<{
+      ceiling?: unknown;
+      currency?: unknown;
+    }>('procurement', 'approval', { branchId: draft.branchId }, {});
     const currency = String(approval.value.currency ?? '').trim();
     const ceiling = decimalOrNull(approval.value.ceiling);
-    const minimum = integerOrNull(quotations.value.minimum, 1, 10);
     return {
       ...policy,
       ...(currency === draft.currencyCode && ceiling
         ? { maximumAmount: ceiling }
-        : {}),
-      ...(minimum !== null ? { minimumQuotations: minimum } : {}),
-      ...(typeof quotations.value.single === 'boolean'
-        ? { singleSourceAllowed: quotations.value.single }
-        : {}),
-      ...(typeof emergency.value.urgent === 'boolean'
-        ? { emergencyAllowed: emergency.value.urgent }
-        : {}),
-      ...(typeof emergency.value.unknown === 'boolean'
-        ? { allowUnknownEstimate: emergency.value.unknown }
         : {}),
     };
   }
@@ -260,16 +233,4 @@ function decimalOrNull(value: unknown): string | null {
   const candidate =
     typeof value === 'string' ? value.trim() : String(value ?? '');
   return amountPattern.test(candidate) ? candidate : null;
-}
-
-function integerOrNull(
-  value: unknown,
-  min: number,
-  max: number,
-): number | null {
-  const candidate =
-    typeof value === 'number' ? value : Number(String(value ?? '').trim());
-  return Number.isSafeInteger(candidate) && candidate >= min && candidate <= max
-    ? candidate
-    : null;
 }

@@ -68,13 +68,9 @@ describe('SettingsProcurementPolicyService', () => {
       isActive: true,
     };
     const runtime = {
-      json: vi
-        .fn()
-        .mockResolvedValueOnce({
-          value: { ceiling: '2500', currency: 'IRR' },
-        })
-        .mockResolvedValueOnce({ value: { minimum: '4', single: true } })
-        .mockResolvedValueOnce({ value: { urgent: true, unknown: true } }),
+      json: vi.fn().mockResolvedValue({
+        value: { ceiling: '2500', currency: 'IRR' },
+      }),
     };
     const service = new SettingsProcurementPolicyService(
       {
@@ -96,11 +92,11 @@ describe('SettingsProcurementPolicyService', () => {
       } as never),
     ).resolves.toMatchObject({
       maximumAmount: '2500',
-      minimumQuotations: 4,
-      singleSourceAllowed: true,
-      emergencyAllowed: true,
-      allowUnknownEstimate: true,
+      minimumQuotations: 2,
+      singleSourceAllowed: false,
+      emergencyAllowed: false,
+      allowUnknownEstimate: false,
     });
-    expect(runtime.json).toHaveBeenCalledTimes(3);
+    expect(runtime.json).toHaveBeenCalledOnce();
   });
 });

@@ -8,6 +8,7 @@ import {
   Optional,
 } from '@nestjs/common';
 import { ReportingExportService } from './reporting-export.service';
+import { SettingsRuntimeService } from '../settings/settings-runtime.service';
 import {
   dashboardCalendarRangeStart,
   dashboardTrendBucketStarts,
@@ -94,6 +95,9 @@ export class ReportingService {
     @Optional()
     @Inject(ReportingExportService)
     private readonly exportFiles?: ReportingExportService,
+    @Optional()
+    @Inject(SettingsRuntimeService)
+    private readonly settings?: SettingsRuntimeService,
   ) {}
 
   private hasSalesRead(actor: ReportingActor): boolean {
@@ -1006,6 +1010,31 @@ export class ReportingService {
       );
       throw error;
     }
+    const exportSetting = this.settings
+      ? await this.settings.json<{ limit?: unknown; expiry?: unknown }>(
+          'reports',
+          'export',
+          actor.branchIds[0] ? { branchId: actor.branchIds[0] } : {},
+          {},
+        )
+      : { value: {} as { limit?: unknown; expiry?: unknown } };
+    const configuredLimit = boundedInteger(
+      exportSetting.value.limit,
+      1_000,
+      500_000,
+      100_000,
+    );
+    const expiryDays = boundedInteger(exportSetting.value.expiry, 1, 30, 7);
+    if (result.total > configuredLimit) {
+      await this.repository.failRun(
+        String(run.id),
+        `تعداد ردیف‌های خروجی از سقف ${configuredLimit} بیشتر است.`,
+        Date.now() - started,
+      );
+      throw new BadRequestException(
+        `حداکثر ${configuredLimit} ردیف را می‌توان در یک خروجی دریافت کرد.`,
+      );
+    }
     const date = new Date().toISOString().slice(0, 10);
     const safeCode = code.replace(/[^a-z0-9_-]/g, '_');
     const extension = input.format.toLowerCase();
@@ -1060,6 +1089,7 @@ export class ReportingService {
         objectKey,
         file.buffer.length,
         file.checksum,
+        expiryDays,
       );
       await this.repository.finishRun(
         String(run.id),
@@ -1151,4 +1181,16 @@ export class ReportingService {
       actor,
     );
   }
+}
+
+function boundedInteger(
+  value: unknown,
+  minimum: number,
+  maximum: number,
+  fallback: number,
+): number {
+  const parsed = typeof value === 'number' ? value : Number(value);
+  return Number.isSafeInteger(parsed) && parsed >= minimum && parsed <= maximum
+    ? parsed
+    : fallback;
 }

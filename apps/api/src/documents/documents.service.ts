@@ -234,6 +234,22 @@ function canReadSensitive(
 
 const previewableImageMimeTypes = new Set(['image/jpeg', 'image/png']);
 
+const configuredMimeTypes: Readonly<Record<string, readonly string[]>> = {
+  PDF: ['application/pdf'],
+  JPG: ['image/jpeg'],
+  PNG: ['image/png'],
+  XLSX: ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'],
+};
+
+function confidentialityFromSetting(
+  value: unknown,
+): DocumentConfidentialityCode | undefined {
+  if (value === 'INTERNAL' || value === 'داخلی') return 'INTERNAL';
+  if (value === 'CONFIDENTIAL' || value === 'محرمانه') return 'CONFIDENTIAL';
+  if (value === 'RESTRICTED' || value === 'محدود') return 'RESTRICTED';
+  return undefined;
+}
+
 export interface DocumentFileDelivery {
   stream: Readable;
   fileName: string;
@@ -763,6 +779,7 @@ export class DocumentsService {
       maxFileSizeBytes: Number(type.maxFileSizeBytes),
       requiresExpiry: type.requiresExpiry,
     }));
+    const uploadPolicy = await this.configuredUploadPolicy(actor.branchIds[0]);
     return {
       data: {
         currentUserId: actor.userId,
@@ -776,12 +793,12 @@ export class DocumentsService {
         owners: values.owners,
         uploadPolicy: {
           maxFileSizeBytes: Math.min(
-            await this.configuredMaxFileSizeBytes(actor.branchIds[0]),
+            uploadPolicy.maxFileSizeBytes,
             ...documentTypes.map((type) => type.maxFileSizeBytes),
           ),
           allowedMimeTypes: [
             ...new Set(documentTypes.flatMap((type) => type.allowedMimeTypes)),
-          ],
+          ].filter((mimeType) => uploadPolicy.allowedMimeTypes.has(mimeType)),
           antivirusAvailable: this.scanProcessor.available,
         },
       },
@@ -1172,9 +1189,8 @@ export class DocumentsService {
     const detectedMimeType = detectMimeType(file);
     const sha256 = createHash('sha256').update(file.buffer).digest('hex');
     const openXml = detectedMimeType.includes('openxmlformats');
-    const maxDocumentSizeBytes = await this.configuredMaxFileSizeBytes(
-      dto.branchId,
-    );
+    const uploadPolicy = await this.configuredUploadPolicy(dto.branchId);
+    const maxDocumentSizeBytes = uploadPolicy.maxFileSizeBytes;
     const validation = validateUploadFile(
       {
         originalFileName: file.originalname,
@@ -1191,6 +1207,7 @@ export class DocumentsService {
     );
     if (
       !validation.valid ||
+      !uploadPolicy.allowedMimeTypes.has(detectedMimeType) ||
       !references.documentType.allowedMimeTypes.includes(detectedMimeType) ||
       file.size > Number(references.documentType.maxFileSizeBytes)
     ) {
@@ -1203,6 +1220,14 @@ export class DocumentsService {
     const documentId = randomUUID();
     const versionId = randomUUID();
     const storageObjectKey = `documents/${documentId}/v1/${randomUUID()}.bin`;
+    const configuredAccess = this.settings
+      ? await this.settings.json<{ classification?: unknown }>(
+          'documents',
+          'access',
+          { branchId: dto.branchId },
+          {},
+        )
+      : { value: {} as { classification?: unknown } };
     await this.storage.putQuarantined(storageObjectKey, file.buffer);
     try {
       const row = await this.repository.createUploaded({
@@ -1220,7 +1245,9 @@ export class DocumentsService {
         sourceEntityId: sourceReference.sourceEntityId,
         sourceDisplayLabel: sourceReference.displayLabel,
         confidentiality:
-          dto.confidentiality ?? references.documentType.defaultConfidentiality,
+          dto.confidentiality ??
+          confidentialityFromSetting(configuredAccess.value.classification) ??
+          references.documentType.defaultConfidentiality,
         requiresStepUpVerification: dto.requiresStepUpVerification ?? false,
         validUntil: dto.validUntil
           ? new Date(`${dto.validUntil.slice(0, 10)}T23:59:59.999Z`)
@@ -1255,22 +1282,52 @@ export class DocumentsService {
   }
 
   private async configuredMaxFileSizeBytes(branchId?: string): Promise<number> {
-    const fallback = MAX_DOCUMENT_SIZE_BYTES;
-    if (!this.settings || !branchId) return fallback;
-    const setting = await this.settings.json<{ size?: unknown }>(
-      'documents',
-      'upload',
-      { branchId },
-      {},
+    return (await this.configuredUploadPolicy(branchId)).maxFileSizeBytes;
+  }
+
+  private async configuredUploadPolicy(branchId?: string): Promise<{
+    maxFileSizeBytes: number;
+    allowedMimeTypes: ReadonlySet<string>;
+  }> {
+    const fallbackMimeTypes = new Set(
+      Object.values(configuredMimeTypes).flat(),
     );
+    if (!this.settings || !branchId)
+      return {
+        maxFileSizeBytes: MAX_DOCUMENT_SIZE_BYTES,
+        allowedMimeTypes: fallbackMimeTypes,
+      };
+    const setting = await this.settings.json<{
+      size?: unknown;
+      types?: unknown;
+    }>('documents', 'upload', { branchId }, {});
     const megabytes =
       typeof setting.value.size === 'number'
         ? setting.value.size
         : typeof setting.value.size === 'string'
           ? Number(setting.value.size)
           : Number.NaN;
-    if (!Number.isFinite(megabytes) || megabytes <= 0) return fallback;
-    return Math.min(fallback, Math.max(1, Math.trunc(megabytes)) * 1024 * 1024);
+    const maxFileSizeBytes =
+      Number.isFinite(megabytes) && megabytes > 0
+        ? Math.min(
+            MAX_DOCUMENT_SIZE_BYTES,
+            Math.max(1, Math.trunc(megabytes)) * 1024 * 1024,
+          )
+        : MAX_DOCUMENT_SIZE_BYTES;
+    const tokens =
+      typeof setting.value.types === 'string'
+        ? setting.value.types
+            .split(/[،,|]/u)
+            .map((value) => value.trim().toUpperCase())
+            .filter(Boolean)
+        : [];
+    const selected = tokens.flatMap(
+      (token) => configuredMimeTypes[token] ?? [],
+    );
+    return {
+      maxFileSizeBytes,
+      allowedMimeTypes: new Set(selected.length ? selected : fallbackMimeTypes),
+    };
   }
 
   async audit(id: string, actor: AuthenticatedActor) {
@@ -1378,7 +1435,20 @@ export class DocumentsService {
       throw error;
     }
     const token = randomBytes(32).toString('base64url');
-    const expiresAt = new Date(Date.now() + 2 * 60_000);
+    const configuredAccess = this.settings
+      ? await this.settings.json<{ link?: unknown }>(
+          'documents',
+          'access',
+          { branchId: row.branchId },
+          {},
+        )
+      : { value: {} as { link?: unknown } };
+    const requestedMinutes = Number(configuredAccess.value.link);
+    const accessMinutes =
+      Number.isFinite(requestedMinutes) && requestedMinutes >= 1
+        ? Math.min(30, Math.trunc(requestedMinutes))
+        : 5;
+    const expiresAt = new Date(Date.now() + accessMinutes * 60_000);
     await this.repository.createAccessGrant({
       tokenHash: createHash('sha256').update(token, 'utf8').digest('hex'),
       documentId: row.id,

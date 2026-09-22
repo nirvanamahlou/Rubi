@@ -20,7 +20,6 @@ import {
   LockKeyhole,
   Megaphone,
   Plane,
-  Plug,
   Save,
   Search,
   Settings,
@@ -115,15 +114,6 @@ const managementAreas: readonly ManagementArea[] = [
     href: '/documents',
     moduleIds: ['documents'],
   },
-  {
-    id: 'operations',
-    title: 'عملیات، سلامت و پشتیبان',
-    description:
-      'عملیات نسخه‌دار System Management و Probeهای مالک در این صفحه‌اند.',
-    owner: 'System Management',
-    href: '/system/operations',
-    moduleIds: ['integrations'],
-  },
 ];
 
 const iconMap: Record<string, LucideIcon> = {
@@ -143,7 +133,6 @@ const iconMap: Record<string, LucideIcon> = {
   megaphone: Megaphone,
   money: Banknote,
   plane: Plane,
-  plug: Plug,
   settings: Settings,
   shield: ShieldCheck,
   task: ListTodo,
@@ -200,7 +189,7 @@ const moduleIdsBySystemCategory: Record<
   finance: ['finance', 'b2b'],
   'human-resources': ['hr', 'procurement'],
   'documents-reports': ['documents', 'reports'],
-  'company-settings': ['general', 'access', 'integrations', 'master'],
+  'company-settings': ['general', 'access', 'master'],
 };
 
 const systemCategoryGroups: readonly SystemCategoryGroup[] =
