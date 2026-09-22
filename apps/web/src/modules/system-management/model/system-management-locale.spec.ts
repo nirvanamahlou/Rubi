@@ -54,10 +54,49 @@ describe('system management English localization', () => {
     );
   });
 
-  it('localizes consent methods and numeric units with meaningful English labels', () => {
-    expect(localizeOption('پیامک و کد تأیید', 0)).toBe('SMS verification code');
-    expect(localizeOption('امضای الکترونیکی', 0)).toBe('Electronic signature');
+  it('localizes role options and numeric units with meaningful English labels', () => {
     expect(englishText('روز', 'units')).toBe('days');
     expect(englishText('دقیقه', 'units')).toBe('minutes');
+    expect(localizeOption('در انتظار تکمیل مدارک', 0)).toBe(
+      'Awaiting documents',
+    );
+    expect(localizeOption('کمیته ارزیابی تأمین‌کنندگان', 0)).toBe(
+      'Supplier evaluation committee',
+    );
+    expect(localizeOption('سرپرست خزانه‌داری', 0)).toBe('Treasury supervisor');
+    expect(localizeOption('کمیته نرخ ارز', 0)).toBe('Exchange-rate committee');
+  });
+
+  it('offers several relevant recipients for every role-routing selector', () => {
+    const roleSelector =
+      /گیرنده|مسئول|مرجع|بازبین فایل|مراحل تأیید|تأیید الحاقیه|تأیید نرخ جدید|تأیید مرحله دوم|تأیید کاربر سازمان|تأیید مرخصی|تأیید اضافه‌کاری|تأیید مبانی پرداخت/;
+    const fields = settingsModules.flatMap((settingsModule) =>
+      settingsModule.groups.flatMap((group) =>
+        group.fields.filter(
+          (field) => field.type === 'select' && roleSelector.test(field.label),
+        ),
+      ),
+    );
+
+    expect(fields.length).toBeGreaterThanOrEqual(20);
+    fields.forEach((field) =>
+      expect(field.options?.length).toBeGreaterThanOrEqual(5),
+    );
+  });
+
+  it('offers messaging apps as travel-document delivery channels', () => {
+    const field = settingsModules
+      .flatMap((settingsModule) => settingsModule.groups)
+      .flatMap((group) => group.fields)
+      .find((item) => item.label === 'کانال پیش‌فرض تحویل');
+
+    expect(field?.options).toEqual([
+      'داخل سامانه',
+      'ایمیل',
+      'واتساپ',
+      'تلگرام',
+    ]);
+    expect(localizeOption('واتساپ', 0)).toBe('WhatsApp');
+    expect(localizeOption('تلگرام', 0)).toBe('Telegram');
   });
 });

@@ -120,3 +120,34 @@ describe('Reservations hotel purchase public projection', () => {
     expect(result.map((item) => item.id)).toEqual(['new-batch']);
   });
 });
+
+it('finds independent city rates for a departure without restricting to its id', async () => {
+  const findMany = vi.fn().mockResolvedValue([]);
+  const service = new HotelPurchaseRatesPublicService({
+    client: { reservationHotelRateBatch: { findMany } },
+  } as unknown as DatabaseService);
+  await service.forTour(
+    'branch-1',
+    [],
+    '2026-10-01',
+    '2026-10-06',
+    'departure-1',
+    'city-1',
+  );
+  const query = findMany.mock.calls[0]![0];
+  expect(query.where.cityId).toBe('city-1');
+  expect(query.where.branchId).toBe('branch-1');
+  expect(query.where.tourDepartureId).toBeUndefined();
+  expect(query.where.OR).toEqual([
+    {
+      method: 'CHECK_IN',
+      checkIn: { lte: new Date('2026-10-01T00:00:00Z') },
+      checkOut: { gt: new Date('2026-10-01T00:00:00Z') },
+    },
+    {
+      method: 'STAY',
+      checkIn: { lte: new Date('2026-10-01T00:00:00Z') },
+      checkOut: { gte: new Date('2026-10-06T00:00:00Z') },
+    },
+  ]);
+});

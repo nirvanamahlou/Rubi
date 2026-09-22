@@ -84,6 +84,32 @@ describe('SystemManagementService', () => {
     ).rejects.toBeInstanceOf(ConflictException);
   });
 
+  it('stores a contract template through the Documents owner boundary', async () => {
+    const uploaded = {
+      id: '00000000-0000-4000-8000-000000000006',
+      originalFileName: 'contract.docx',
+      scanStatus: 'PENDING',
+      sizeBytes: 1200,
+    };
+    const uploadSystemContractTemplate = vi.fn().mockResolvedValue(uploaded);
+    const service = new SystemManagementService(
+      {} as never,
+      {} as never,
+      { uploadSystemContractTemplate } as never,
+    );
+    const file = { originalname: 'contract.docx' } as never;
+
+    await expect(
+      service.uploadContractTemplate('قالب قرارداد فروش', file, actor, {}),
+    ).resolves.toEqual(uploaded);
+    expect(uploadSystemContractTemplate).toHaveBeenCalledWith(
+      { title: 'قالب قرارداد فروش' },
+      file,
+      actor,
+      {},
+    );
+  });
+
   it('returns an already-issued number for a repeated idempotency key', async () => {
     const issued = {
       issuedValue: 'SC-1405-000001',
