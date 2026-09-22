@@ -151,6 +151,12 @@
 - محدوده رزرو: apps/web/src/modules/customers/components/customer-entry-sheet.tsx، داده/کامپوننت راهنمای ISO3 در همان ماژول، تست‌های هدفمند Web و اسناد همین واحد. قرارداد API، Schema/Migration، Seed/Data، Permission و Dependency/Lockfile تغییر نمی‌کنند؛ مقادیر ذخیره‌شده جنسیت همچنان M یا F و کد کشور همچنان ISO3 uppercase باقی می‌ماند.
 - نتیجه: فیلد جنسیت هر ردیف به انتخاب دوگزینه‌ای مرد/زن با مقادیر قراردادی M/F تبدیل شد. کنار هر سه ستون ملیت، کشور صادرکننده پاسپورت و کشور محل تولد، دکمه راهنمای ISO3 با فهرست اسکرول‌دار کشورهای پرکاربرد قرار گرفت. ردیف‌های تازه، ردیف پاک‌شده یا ردیف افزوده‌شدهٔ فرم قرارداد هر سه کد را به‌صورت قابل‌ویرایش با IRN پیش‌پر می‌کنند؛ دادهٔ پرونده‌های موجود تغییر نمی‌کند. ۳۱ تست مدل و ۱۱ تست رابط، lint، typecheck و build تولیدی Web موفق‌اند؛ Web3100/Web3200 و API4200 سالم‌اند.
 
+## SALES-COMPACT-TICKET-OFFER-CARDS-0922 — PC-A — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-22: کارت‌های انتخاب بلیط در قرارداد جدید کوتاه‌تر شوند، ساعت‌ها کوچک‌تر و تاریخ رفت و رسیدن برجسته‌تر و خواناتر نمایش داده شوند.
+- Branch مستقل `codex/pc-a-compact-ticket-offer-cards-0922` از `origin/develop@fdbd65d3`؛ محدوده رزرو فقط `apps/web/src/modules/sales/components/ticket-offer-card.tsx`، تست همان کامپوننت و اسناد محدود این واحد است. بدون تغییر API، Schema/Migration، داده، Permission، Dependency/Lockfile یا منطق انتخاب و ظرفیت.
+- نتیجه: padding سربرگ، بدنه، مدت پرواز و نوار ظرفیت کاهش یافت؛ تاریخ‌های حرکت و رسیدن با `text-base` و وزن bold در اولویت دید قرار گرفتند و ساعت‌ها با `text-sm` کنار تاریخ نمایش داده می‌شوند. ۷ تست هدفمند، lint محدوده، Web typecheck و build تولیدی Web با ۵۰ route موفق‌اند. build با Webpack اجرا شد چون Junction وابستگی‌های Worktree خارج از filesystem root توسط Turbopack رد می‌شود؛ کامپایل و TypeScript کامل موفق‌اند.
+
 ## PROCUREMENT-INVOICE-ATTACHMENTS-0916 — PC-B — READY_FOR_REVIEW
 
 - درخواست مالک در 2026-09-16: در فرم فاکتور خرید امکان بارگذاری مستقیم فایل فاکتور اضافه شود؛ فایل در ماژول اسناد با دامنهٔ Procurement آرشیو و به فاکتور متصل بماند. `COMPUTER_ID=PC-B`؛ شاخهٔ مستقل `codex/pc-b-procurement-invoice-attachments-0916` از `origin/develop@c441d33a`.

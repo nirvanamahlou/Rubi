@@ -57,8 +57,8 @@ describe('ticket workspace entry points', () => {
         flightNumber: 'B9-100',
         originCityId: 'tehran',
         destinationCityId: 'antalya',
-        departureAt: '2026-09-22T04:00:00.000Z',
-        arrivalAt: '2026-09-22T07:00:00.000Z',
+        departureAt: '2099-09-22T04:00:00.000Z',
+        arrivalAt: '2099-09-22T07:00:00.000Z',
       },
     ];
     const product: Product = {
@@ -86,8 +86,8 @@ describe('ticket workspace entry points', () => {
             ...definition.segments[0]!,
             originCityId: 'antalya',
             destinationCityId: 'tehran',
-            departureAt: '2026-09-29T04:00:00.000Z',
-            arrivalAt: '2026-09-29T07:00:00.000Z',
+            departureAt: '2099-09-29T04:00:00.000Z',
+            arrivalAt: '2099-09-29T07:00:00.000Z',
           },
         ],
       },
