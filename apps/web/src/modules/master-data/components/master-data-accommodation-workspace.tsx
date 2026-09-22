@@ -14,7 +14,6 @@ import type {
 } from '@nora/contracts';
 import {
   ArrowRight,
-  BedDouble,
   CheckCircle2,
   CircleAlert,
   Clock3,
@@ -34,7 +33,6 @@ import {
   Sparkles,
   TableProperties,
   Upload,
-  Users,
   UtensilsCrossed,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -84,19 +82,12 @@ import {
 import { MasterDataProfileDialog } from './master-data-profile-dialog';
 
 type AccommodationTab =
-  | 'hotels'
-  | 'chains'
-  | 'room-types'
-  | 'meals'
-  | 'facilities'
-  | 'import'
-  | 'combined';
+  'hotels' | 'chains' | 'meals' | 'facilities' | 'import' | 'combined';
 type RequestState = 'loading' | 'ready' | 'error' | 'forbidden';
 
 const tabs = [
   { id: 'hotels', label: 'هتل‌ها', icon: Hotel },
   { id: 'chains', label: 'زنجیره هتل', icon: Link2 },
-  { id: 'room-types', label: 'نوع اتاق', icon: BedDouble },
   { id: 'meals', label: 'وعده و سرویس', icon: UtensilsCrossed },
   { id: 'facilities', label: 'امکانات', icon: Sparkles },
   { id: 'import', label: 'ورود گروهی Excel', icon: Upload },
@@ -116,11 +107,6 @@ const copy: Record<
     title: 'زنجیره هتل',
     description: 'گروه‌بندی هتل‌های یک برند با کشور مبدأ و اطلاعات مرجع',
     action: 'افزودن زنجیره',
-  },
-  'room-types': {
-    title: 'نوع اتاق',
-    description: 'کاتالوگ استاندارد نوع اتاق با عنوان دوزبانه، ظرفیت و وضعیت',
-    action: 'افزودن نوع اتاق',
   },
   meals: {
     title: 'وعده غذایی و سرویس',
@@ -168,7 +154,6 @@ const emptySummary: MasterAccommodationSummary = {
 
 function resourceFor(tab: AccommodationTab): MasterDataResource {
   if (tab === 'chains') return 'hotel-chains';
-  if (tab === 'room-types') return 'room-types';
   if (tab === 'meals') return 'meal-services';
   if (tab === 'facilities') return 'facilities';
   if (tab === 'combined') return 'composite-hotels';
@@ -265,7 +250,6 @@ export function MasterDataAccommodationWorkspace() {
   const [countryFilter, setCountryFilter] = useState('all');
   const [cityFilter, setCityFilter] = useState('all');
   const [starFilter, setStarFilter] = useState('all');
-  const [capacityFilter, setCapacityFilter] = useState('all');
   const [mealCategoryFilter, setMealCategoryFilter] = useState('all');
   const [facilityCategoryFilter, setFacilityCategoryFilter] = useState('all');
   const [selected, setSelected] = useState<MasterDataRecord>();
@@ -296,9 +280,6 @@ export function MasterDataAccommodationWorkspace() {
       ...(tab === 'hotels' && starFilter !== 'all'
         ? { starRating: Number(starFilter) }
         : {}),
-      ...(tab === 'room-types' && capacityFilter !== 'all'
-        ? { referenceCapacity: Number(capacityFilter) }
-        : {}),
       ...(tab === 'meals' && mealCategoryFilter !== 'all'
         ? {
             mealServiceCategory: mealCategoryFilter as 'MEAL_PLAN' | 'SERVICE',
@@ -312,7 +293,6 @@ export function MasterDataAccommodationWorkspace() {
         : {}),
     }),
     [
-      capacityFilter,
       cityFilter,
       countryFilter,
       facilityCategoryFilter,
@@ -487,33 +467,6 @@ export function MasterDataAccommodationWorkspace() {
           tone: 'amber',
         },
       ];
-    if (tab === 'room-types')
-      return [
-        {
-          label: 'انواع اتاق',
-          value: summary.roomTypes.total,
-          icon: BedDouble,
-          tone: 'sky',
-        },
-        {
-          label: 'نوع فعال',
-          value: summary.roomTypes.active,
-          icon: CheckCircle2,
-          tone: 'emerald',
-        },
-        {
-          label: 'دارای ظرفیت استاندارد',
-          value: summary.roomTypes.standardCapacity,
-          icon: Users,
-          tone: 'violet',
-        },
-        {
-          label: 'نیازمند تأیید دامنه',
-          value: summary.roomTypes.pendingDomainApproval,
-          icon: CircleAlert,
-          tone: 'amber',
-        },
-      ];
     if (tab === 'meals')
       return [
         {
@@ -607,7 +560,6 @@ export function MasterDataAccommodationWorkspace() {
     setCountryFilter('all');
     setCityFilter('all');
     setStarFilter('all');
-    setCapacityFilter('all');
     setMealCategoryFilter('all');
     setFacilityCategoryFilter('all');
     setSelected(undefined);
@@ -854,30 +806,6 @@ export function MasterDataAccommodationWorkspace() {
       );
     if (tab === 'chains') return countrySelect;
     if (tab === 'combined') return citySelect;
-    if (tab === 'room-types')
-      return (
-        <FormField label="ظرفیت استاندارد">
-          <Select
-            onValueChange={(value) => {
-              setCapacityFilter(value);
-              setPage(1);
-            }}
-            value={capacityFilter}
-          >
-            <SelectTrigger aria-label="فیلتر ظرفیت اتاق">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">همه ظرفیت‌ها</SelectItem>
-              {[1, 2, 3, 4].map((capacity) => (
-                <SelectItem key={capacity} value={String(capacity)}>
-                  {capacity.toLocaleString('fa-IR')} نفر
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </FormField>
-      );
     if (tab === 'meals')
       return (
         <FormField label="دسته">
@@ -958,45 +886,37 @@ export function MasterDataAccommodationWorkspace() {
               'وضعیت',
               'عملیات',
             ]
-          : tab === 'room-types'
+          : tab === 'meals'
             ? [
                 'کد',
                 'عنوان فارسی',
                 'عنوان انگلیسی',
-                'ظرفیت استاندارد',
-                'توضیح استفاده',
-                'مرتبط با رزرو',
+                'دسته',
+                'وعده‌های شامل‌شده',
+                'تعداد هتل مرتبط',
                 'وضعیت',
                 'عملیات',
               ]
-            : tab === 'meals'
-              ? [
-                  'کد',
-                  'عنوان فارسی',
-                  'عنوان انگلیسی',
-                  'دسته',
-                  'وعده‌های شامل‌شده',
-                  'تعداد هتل مرتبط',
-                  'وضعیت',
-                  'عملیات',
-                ]
-              : [
-                  'کد',
-                  'آیکن',
-                  'عنوان فارسی',
-                  'عنوان انگلیسی',
-                  'دسته',
-                  'تعداد هتل مرتبط',
-                  'ترتیب نمایش',
-                  'وضعیت',
-                  'عملیات',
-                ];
+            : [
+                'کد',
+                'آیکن',
+                'عنوان فارسی',
+                'عنوان انگلیسی',
+                'دسته',
+                'تعداد هتل مرتبط',
+                'ترتیب نمایش',
+                'وضعیت',
+                'عملیات',
+              ];
     return (
       <Card className="overflow-x-auto">
         <div className="border-b border-border p-4 text-lg font-black">
           فهرست {current.title}
         </div>
-        <table className="w-full min-w-[76rem] text-sm">
+        <table
+          aria-label={`فهرست ${current.title}`}
+          className="w-full min-w-[76rem] text-sm"
+        >
           <thead className="bg-muted/50 text-muted-foreground">
             <tr>
               {headers.map((header) => (
@@ -1087,23 +1007,6 @@ export function MasterDataAccommodationWorkspace() {
                         new Date(record.updatedAt),
                       )}
                     </td>
-                    <td className="p-4">
-                      <StatusBadge record={record} />
-                    </td>
-                  </>
-                ) : tab === 'room-types' ? (
-                  <>
-                    <td className="p-4 font-semibold">{record.name}</td>
-                    <td className="p-4" dir="ltr">
-                      {attribute(record, 'englishName')}
-                    </td>
-                    <td className="p-4">
-                      {attribute(record, 'referenceCapacity')} نفر
-                    </td>
-                    <td className="p-4">
-                      {attribute(record, 'usageDescription')}
-                    </td>
-                    <td className="p-4 text-primary">Reservations</td>
                     <td className="p-4">
                       <StatusBadge record={record} />
                     </td>
@@ -1327,7 +1230,10 @@ export function MasterDataAccommodationWorkspace() {
                 شرط استفاده: {attribute(record, 'usageCondition')}
               </p>
               <div className="overflow-x-auto px-5 pb-5">
-                <table className="w-full min-w-[44rem] text-sm">
+                <table
+                  aria-label="تاریخچه تغییرات هتل"
+                  className="w-full min-w-[44rem] text-sm"
+                >
                   <thead className="bg-muted/50 text-muted-foreground">
                     <tr>
                       {[
@@ -1547,7 +1453,6 @@ export function MasterDataAccommodationWorkspace() {
               setCountryFilter('all');
               setCityFilter('all');
               setStarFilter('all');
-              setCapacityFilter('all');
               setMealCategoryFilter('all');
               setFacilityCategoryFilter('all');
               setPage(1);

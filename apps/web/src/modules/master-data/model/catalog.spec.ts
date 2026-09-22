@@ -24,9 +24,10 @@ describe('master data catalog', () => {
     ).toBe(false);
   });
 
-  it('keeps the airline description focused on reference codes', () => {
+  it('keeps the airline description free of removed technical wording', () => {
     const description = getMasterDataDefinition('airlines').description;
-    expect(description).toBe('مشخصات مرجع ایرلاین با کدهای IATA/ICAO.');
+    expect(description).toBe('ایرلاین‌ها و قواعد بار مرجع.');
+    expect(description).not.toContain('مشخصات مرجع');
     expect(description).not.toContain('Credential');
     expect(description).not.toContain('Provider');
   });
@@ -141,5 +142,21 @@ describe('master data catalog', () => {
       expect(
         hotel.fields.find((item) => item.key === field)?.required,
       ).not.toBe(true);
+  });
+
+  it('keeps room type as one inline hotel value without legacy form fields', () => {
+    const roomType = getMasterDataDefinition('room-types');
+    expect(roomType.fields.map((field) => field.key)).toEqual(['name']);
+    expect(roomType.fields[0]).toMatchObject({
+      label: 'نوع اتاق',
+      required: true,
+    });
+    expect(roomType.fields.map((field) => field.label)).not.toEqual(
+      expect.arrayContaining([
+        'عنوان فارسی',
+        'ظرفیت استاندارد',
+        'توضیح استفاده',
+      ]),
+    );
   });
 });

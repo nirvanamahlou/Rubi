@@ -558,7 +558,10 @@ export function HotelBaseRateWorkspace() {
 
             {rows.length ? (
               <div className="max-h-[620px] overflow-auto">
-                <table className="w-full min-w-[1500px] border-separate border-spacing-0 text-xs">
+                <table
+                  aria-label="فهرست نرخ‌های پایه هتل"
+                  className="w-full min-w-[1500px] border-separate border-spacing-0 text-xs"
+                >
                   <thead className="sticky top-0 z-20 bg-muted">
                     <tr>
                       <th className="sticky right-0 z-30 min-w-16 border-b border-l border-border bg-muted p-3">

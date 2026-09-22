@@ -34,5 +34,6 @@ describe('MasterDataHub contract', () => {
     expect(hubSource).toContain("'ارزها و تاریخچه نرخ'");
     expect(hubSource).toContain("'شهرها و استان‌ها'");
     expect(hubSource).not.toContain("'اطلاعات تماس'");
+    expect(hubSource).not.toContain("'نوع‌های اتاق'");
   });
 });

@@ -297,7 +297,10 @@ export function HotelImportPanel({
           )}
 
           <div className="max-h-72 overflow-auto rounded-md border bg-white">
-            <table className="w-full text-right text-sm">
+            <table
+              aria-label="پیش‌نمایش ورود اطلاعات هتل"
+              className="w-full text-right text-sm"
+            >
               <thead className="sticky top-0 bg-slate-100">
                 <tr>
                   <th className="p-2">ردیف</th>
