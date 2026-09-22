@@ -3692,6 +3692,7 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 - شاخه `codex/pc-a-ticket-standalone-price-v2-0921` از `origin/develop@bd93b634`. محدوده رزرو: قرارداد عمومی افزایشی Ticket Catalog، migration افزایشی قیمت نسخه‌دار، سرویس/کنترلر Ticket Catalog، جدول مدیریت بلیط، انتخاب Sales و تست‌های هدفمند. `COMPUTER_ID=PC-A` و Migration Owner همین واحد است.
 - تغییر مخرب، Seed، داده عملیاتی، Dependency/Lockfile و تغییر مستقیم develop/localhost در محدوده نیست. قیمت تور از مدیریت قیمت فعلی باقی می‌ماند؛ قیمت تکی هر صندلی فقط برای قرارداد بدون هتل/تور پیش‌فرض می‌شود.
 - اعتبارسنجی: Prisma validate/generate؛ build قراردادها، API و Web؛ lint و typecheck در API/Web/Database؛ ۷۸ تست Database (۱۴ مورد integration بدون DB رد شدند)، ۶ تست API و ۳۱ تست Web موفق شدند.
+
 ## DASHBOARD-SCROLL-STABILITY-0921 — PC-C — READY_FOR_REVIEW
 
 - درخواست مالک در 2026-09-21: تغییر صفحهٔ Dashboard، دریافت داده و اعمال هر فیلتر نباید موقعیت اسکرول صفحه را جابه‌جا کند.
@@ -3734,6 +3735,7 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 ## DASHBOARD-ACQUISITION-TREND-FIX-0920 — PC-C — READY_FOR_REVIEW
 
 - «روند جذب مشتری به تفکیک کانال» now has labelled, non-monetary channel series. Each bucket counts distinct customers for the channel; it no longer uses the sales amount/currency trend producer. API tests 8/8, Web registry tests 18/18 (one existing skip) and API/Web typechecks pass.
+
 ## TOUR-SINGLE-SCREEN-0921 — PC-A — READY_FOR_REVIEW
 
 - COMPUTER_ID=PC-A. Branch: codex/pc-a-tour-single-screen-0921 from origin/develop@5f66ef97.
@@ -3798,3 +3800,10 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 - شاخه مستقل `codex/pc-a-sales-optional-hotel-rate-0922` از `origin/develop@9fe47c3d`. محدوده: کنترل ظرفیت هتل در Sales، متن راهنمای فرم، تست هدفمند و اسناد همین واحد؛ بدون Schema/Migration، Permission، Dependency/Lockfile یا داده عملیاتی.
 - قاعده: نبود نرخ فعال به‌صورت سازگار پذیرفته می‌شود؛ هرگاه ظرفیت معتبر نرخ موجود باشد، سقف بزرگسال و کودک همچنان در Backend کنترل می‌شود.
 - نتیجه: ایجاد، ویرایش و تأیید قرارداد بدون ضریب فعال مجاز شد؛ ظرفیت نرخ‌های موجود همچنان fail-closed است. هشدار عبور از ظرفیت، همان مرحلهٔ انتخاب نوع اتاق نمایش داده می‌شود و ادامه فرم را تا اصلاح نوع/تعداد اتاق متوقف می‌کند. تست‌های هدفمند، lint فایل‌های متاثر، typecheck کامل API/Web و build تولیدی API/Web با ۵۰ route موفق‌اند.
+
+## TICKET-OUTPUT-DESIGN-UNIFY-0922 — PC-A — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-22: ظاهر جدید بلیط صادرشده که در PDF وجود دارد در پیش‌نمایش و چاپ رزرواسیون نیز دیده شود و خروجی قدیمیِ جدولی باعث تصور حذف طراحی نشود.
+- شاخهٔ مستقل `codex/pc-a-ticket-output-design-unify-0922` از `origin/develop@ebd8fddd`. محدوده: کامپوننت و CSS عمومی پیش‌نمایش بلیط، تست هدفمند و ثبت وضعیت همین واحد؛ بدون API، Schema/Migration، Permission، داده، Dependency/Lockfile یا تغییر منطق صدور.
+- قالب مستقیم PDF مرجع قطعی است؛ پیش‌نمایش و چاپ مرورگر باید همان سلسله‌مراتب سربرگ، مسافر/قرارداد، کارت مسیر رفت/برگشت، زمان‌ها و هشدار سه‌ساعته را بازتاب دهند.
+- نتیجه: خروجی جدولی قدیمی از پیش‌نمایش/چاپ حذف و با فرم برنددار PDF یکسان شد؛ MR/MRS/CHD/INF، کارت‌های مسیر، سایه شهرها، ساعت حرکت/رسیدن و هشدار فارسی/انگلیسی حفظ شدند. بارکد واقعی Code 39 شماره قرارداد نیز پایین PDF، پیش‌نمایش و چاپ افزوده شد. ۲۱ تست هدفمند، lint، typecheck و build تولیدی Web با ۵۰ route موفق‌اند. PDF ساختگی رفت‌وبرگشت روی یک صفحه A4 با Chrome/Poppler رندر و بصری بررسی شد.

@@ -294,6 +294,8 @@ describe('reservation ticket PDF', () => {
     expect(html).not.toContain('<Passenger>');
     expect(html).toContain('@page{size:A4 portrait');
     expect(html).toContain('TEST-01');
+    expect(html).toContain('aria-label="Barcode SC-TEST-01"');
+    expect(html).toContain('<figcaption>SC-TEST-01</figcaption>');
     expect(html).toContain('ISSUED');
     expect(html).not.toContain('DRAFT');
     expect(html).not.toContain('NOTICE');
