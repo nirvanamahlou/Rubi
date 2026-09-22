@@ -120,6 +120,16 @@ describe('system management reference implementation', () => {
     expect(catalog).not.toContain('درخواست و تأیید داخلی');
     expect(catalog).not.toContain("g('approval'");
     expect(catalog).not.toContain('مهلت پاسخ مدیر');
+    expect(catalog).not.toContain('انتساب و رهگیری');
+    expect(catalog).not.toContain("g('attribution'");
+    expect(catalog).not.toContain('الزام UTM برای لینک کمپین');
+    expect(catalog).not.toContain('کاربران و همکاری');
+    expect(catalog).not.toContain("g('portal'");
+    expect(catalog).not.toContain('تأیید کاربر سازمان');
+    expect(catalog).not.toContain('استعلام و تأمین‌کننده');
+    expect(catalog).not.toContain("g('quotations'");
+    expect(catalog).not.toContain('خرید اضطراری و برآورد');
+    expect(catalog).not.toContain("g('emergency'");
     expect(catalog).toContain("t('templateName', 'نام قالب'");
     expect(catalog).toContain("'templateFile'");
     expect(catalog).toContain("type: 'file'");
