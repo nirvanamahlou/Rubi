@@ -8,7 +8,7 @@ import { refreshAuthenticatedSession } from '@/lib/auth-session';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Choice, Lookup, rateRequest, type Option } from './controls';
 import { RateHistory } from './history';
-import { initialFactors, type Factors } from './model';
+import { kinds, labels, price, type Factors } from './model';
 import styles from './rates.module.css';
 
 type RoomTypeOption = Option & { code?: string };
@@ -61,17 +61,63 @@ type PackDetail = Omit<PackSummary, 'hotelCount' | 'updatedAt'> & {
     roomRates: RoomRateDraft[];
   }[];
 };
+const blankFactors = (): Factors =>
+  Object.fromEntries(kinds.map((kind) => [kind, ''])) as Factors;
+
+export const availableFactors = (factors: Factors) =>
+  Object.fromEntries(
+    kinds
+      .filter((kind) => factors[kind].trim())
+      .map((kind) => [kind, factors[kind].trim()]),
+  );
+
+export function OccupancyFactorFields({
+  hotelName,
+  base,
+  currency,
+  factors,
+  onChange,
+}: {
+  hotelName: string;
+  base: string;
+  currency: string;
+  factors: Factors;
+  onChange: (factors: Factors) => void;
+}) {
+  return (
+    <div className={styles.occupancyFactors}>
+      {kinds.map((kind, index) => (
+        <label key={kind}>
+          {labels[index]}
+          <input
+            aria-label={`ضریب ${labels[index]} ${hotelName}`}
+            type="number"
+            min="0.001"
+            max="999.999"
+            step="0.001"
+            value={factors[kind]}
+            placeholder="ندارد"
+            onChange={(event) =>
+              onChange({ ...factors, [kind]: event.target.value })
+            }
+          />
+          <output dir="ltr">{price(base, factors[kind], currency)}</output>
+        </label>
+      ))}
+    </div>
+  );
+}
 const blankRow = (hotel: HotelOption, currency: string): GridRow => ({
   hotel,
   selected: false,
   broker: null,
   base: '',
   currency,
-  factors: { ...initialFactors },
+  factors: blankFactors(),
   roomRates: (hotel.roomTypes ?? []).map((room) => ({
     roomTypeId: room.id,
     roomTypeName: room.name,
-    factor: '',
+    factor: '1',
     maxAdults: '2',
     maxChildren: '0',
   })),
@@ -521,7 +567,7 @@ export function HotelRatePacksWorkspace() {
           broker: { id: row.brokerId, name: row.brokerName },
           base: row.base,
           currency: row.currency ?? item.currency,
-          factors: row.factors,
+          factors: { ...blankFactors(), ...row.factors },
           roomRates: row.roomRates ?? [],
           inCityList: true,
         })),
@@ -574,7 +620,7 @@ export function HotelRatePacksWorkspace() {
         brokerId: row.broker!.id,
         base: row.base,
         currency: row.currency,
-        factors: row.factors,
+        factors: availableFactors(row.factors),
         roomRates: row.roomRates
           .filter((room) => Number(room.factor) > 0)
           .map((room) => ({
@@ -927,7 +973,8 @@ export function HotelRatePacksWorkspace() {
                             <th>کارگزار</th>
                             <th>ارز</th>
                             <th>قیمت پایه / شب</th>
-                            <th>نوع اتاق، ضریب و ظرفیت</th>
+                            <th>نوع اتاق و ظرفیت</th>
+                            <th>ضرایب چیدمان مسافر</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -1038,7 +1085,7 @@ export function HotelRatePacksWorkspace() {
                                         ) ?? {
                                           roomTypeId: roomType.id,
                                           roomTypeName: roomType.name,
-                                          factor: '',
+                                          factor: '1',
                                           maxAdults: '2',
                                           maxChildren: '0',
                                         };
@@ -1062,24 +1109,7 @@ export function HotelRatePacksWorkspace() {
                                           >
                                             <legend>{roomType.name}</legend>
                                             <label>
-                                              ضریب
-                                              <input
-                                                aria-label={`ضریب ${roomType.name} ${row.hotel.name}`}
-                                                type="number"
-                                                min="0"
-                                                max="999.999"
-                                                step="0.001"
-                                                value={value.factor}
-                                                placeholder="ندارد"
-                                                onChange={(event) =>
-                                                  update({
-                                                    factor: event.target.value,
-                                                  })
-                                                }
-                                              />
-                                            </label>
-                                            <label>
-                                              بزرگسال
+                                              ظرفیت بزرگسال
                                               <input
                                                 aria-label={`ظرفیت بزرگسال ${roomType.name}`}
                                                 type="number"
@@ -1095,7 +1125,7 @@ export function HotelRatePacksWorkspace() {
                                               />
                                             </label>
                                             <label>
-                                              کودک
+                                              ظرفیت کودک
                                               <input
                                                 aria-label={`ظرفیت کودک ${roomType.name}`}
                                                 type="number"
@@ -1127,11 +1157,28 @@ export function HotelRatePacksWorkspace() {
                                     <Link href="/master-data/accommodation?tab=room-types">
                                       افزودن نوع اتاق و اتصال به هتل
                                     </Link>
-                                    <small>
-                                      نوع اتاق بدون ضریب در قرارداد فروش نمایش
-                                      داده نمی‌شود.
-                                    </small>
+                                    <small>ظرفیت هر نوع اتاق در قرارداد کنترل می‌شود.</small>
                                   </div>
+                                ) : (
+                                  '—'
+                                )}
+                              </td>
+                              <td>
+                                {row.selected ? (
+                                  <>
+                                    <OccupancyFactorFields
+                                      hotelName={row.hotel.name}
+                                      base={row.base}
+                                      currency={row.currency}
+                                      factors={row.factors}
+                                      onChange={(factors) =>
+                                        changeRow(row.hotel.id, { factors })
+                                      }
+                                    />
+                                    <small>
+                                      ضریب خالی یعنی این چیدمان برای هتل وجود ندارد.
+                                    </small>
+                                  </>
                                 ) : (
                                   '—'
                                 )}

@@ -220,7 +220,7 @@
 
 .roomRateCard {
   display: grid;
-  grid-template-columns: minmax(8rem, 1fr) repeat(3, minmax(5rem, 0.7fr)) auto;
+  grid-template-columns: minmax(8rem, 1fr) repeat(2, minmax(6rem, 0.8fr)) auto;
   align-items: end;
   gap: 0.5rem;
   border: 1px solid var(--border, #d8e2f1);
@@ -238,6 +238,23 @@
   min-width: 4.5rem;
 }
 
+.occupancyFactors {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(6.5rem, 1fr));
+  gap: 0.5rem;
+  min-width: 46rem;
+}
+
+.occupancyFactors label {
+  display: grid;
+  gap: 0.25rem;
+  font-size: 0.75rem;
+}
+
+.occupancyFactors input {
+  min-width: 0;
+}
+
 @media (max-width: 900px) {
   .roomRateEditor {
     min-width: 20rem;
@@ -245,5 +262,10 @@
 
   .roomRateCard {
     grid-template-columns: 1fr 1fr;
+  }
+
+  .occupancyFactors {
+    grid-template-columns: repeat(3, minmax(6rem, 1fr));
+    min-width: 22rem;
   }
 }
