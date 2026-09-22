@@ -230,13 +230,11 @@ export function TourPricingWorkspace() {
 
   const batch: PackageTourHotelPurchaseBatchV1 | undefined =
     grid?.purchaseBatches.find((item) => item.id === batchId);
-  const stayNights = batch
-    ? (Date.parse(batch.checkOut) - Date.parse(batch.checkIn)) / 86400000
-    : 0;
+  const stayNights = grid?.nights ?? 0;
   const activeRoomColumns = useMemo(() => {
     const columns = new Map<string, string>();
     for (const row of batch?.rows ?? []) {
-      if (row.roomRates.length) {
+      if (!Object.values(row.factors).some(Boolean) && row.roomRates.length) {
         for (const room of row.roomRates)
           if (Number(room.factor) > 0)
             columns.set(room.roomTypeId, room.roomTypeName);
@@ -301,7 +299,12 @@ export function TourPricingWorkspace() {
   }
   const invalidSale =
     batch?.rows.some((row) =>
-      roomColumns.some(([key]) => !roomPreview(row, key)),
+      activeRoomColumns.some(
+        ([key]) =>
+          (row.factors[key] ||
+            row.roomRates.some((room) => room.roomTypeId === key)) &&
+          !roomPreview(row, key),
+      ),
     ) ?? false;
   const publication =
     publications.find((item) => item.id === publicationId) ?? publications[0];
@@ -550,8 +553,8 @@ export function TourPricingWorkspace() {
         ) : null}
         {grid && grid.purchaseBatches.length === 0 ? (
           <EmptyState
-            title="برای این تور نرخ خرید هتل ثبت نشده است"
-            description="در رزرواسیون، نرخ خرید هتل‌های این تور را برای بازه اقامت ثبت کنید؛ قیمت پکیج بدون منبع خرید ساخته یا منتشر نمی‌شود."
+            title="برای مقصد و تاریخ این سفر نرخ هتل پیدا نشد"
+            description="در رزرواسیون، نرخ هتل‌های شهر مقصد را برای بازهٔ اقامت ثبت کنید؛ قیمت پکیج بدون منبع خرید ساخته یا منتشر نمی‌شود."
             icon={Hotel}
           />
         ) : null}

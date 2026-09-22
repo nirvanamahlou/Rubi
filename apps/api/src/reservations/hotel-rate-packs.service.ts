@@ -219,7 +219,11 @@ export class HotelRatePacksService {
     });
     if (!pack) throw new NotFoundException('بستهٔ نرخ پیدا نشد.');
     if (pack.branchId !== input.branchId) throw new ForbiddenException();
-    if (pack.tourDepartureId && pack.tourDepartureId !== input.tourDepartureId)
+    if (
+      input.tourDepartureId &&
+      pack.tourDepartureId &&
+      pack.tourDepartureId !== input.tourDepartureId
+    )
       throw new BadRequestException(
         'نوبت تور بسته ثبت‌شده قابل تغییر نیست؛ بسته جدید بسازید.',
       );

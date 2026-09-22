@@ -91,7 +91,9 @@ const packRow = Joi.object({
   brokerId: Joi.string().uuid().required(),
   base: money,
   currency: Joi.string().valid('EUR', 'USD', 'IRR').optional(),
-  factors: legacyFactors.optional(),
+  factors: Joi.object(
+    Object.fromEntries(roomKinds.map((kind) => [kind, factor.optional()])),
+  ).optional(),
   roomRates: Joi.array().items(roomRate).min(1).max(30).optional(),
 })
   .or('factors', 'roomRates')
