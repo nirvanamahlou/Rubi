@@ -583,6 +583,26 @@ export function withSalesHotelDates(
   return { ...next, hotel };
 }
 
+export function salesHotelRoomTypes(
+  hotelId: string,
+  hotels: readonly MasterDataRecord[],
+  roomTypes: readonly MasterDataRecord[],
+  ratedRoomTypeIds: readonly string[] = [],
+) {
+  if (!hotelId) return [];
+  const hotel = hotels.find((item) => item.id === hotelId);
+  if (!hotel) return [];
+  const linkedRoomTypeIds = String(hotel.attributes.roomTypeIds ?? '')
+    .split(',')
+    .map((id) => id.trim())
+    .filter(Boolean);
+  const availableIds = new Set([
+    ...linkedRoomTypeIds,
+    ...ratedRoomTypeIds.filter(Boolean),
+  ]);
+  return roomTypes.filter((roomType) => availableIds.has(roomType.id));
+}
+
 export function salesHotelValid(state: SalesFormState): boolean {
   return Boolean(
     state.hotel.hotelId &&

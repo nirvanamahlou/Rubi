@@ -57,6 +57,7 @@ import {
   salesPassengerCompositionMatches,
   salesPassengerCounts,
   salesHotelGuestIds,
+  salesHotelRoomTypes,
   salesOfferHasCapacity,
   salesDirections,
   salesTravelDate,
@@ -168,6 +169,21 @@ export function SalesContractForm() {
   const [savedNumber, setSavedNumber] = useState('');
   const [savedId, setSavedId] = useState('');
   const submission = useRef({ fingerprint: '', key: '' });
+  const selectableHotelRoomTypes = useMemo(
+    () =>
+      salesHotelRoomTypes(
+        state.hotel.hotelId,
+        references.hotels,
+        references.roomTypes,
+        hotelRoomRates.map((rate) => rate.roomTypeId),
+      ),
+    [
+      hotelRoomRates,
+      references.hotels,
+      references.roomTypes,
+      state.hotel.hotelId,
+    ],
+  );
   const patchState = (patch: Partial<SalesFormState>) =>
     setState((current) => {
       const changedRoute = [
@@ -197,7 +213,12 @@ export function SalesContractForm() {
                   outboundOfferId: '',
                   returnOfferId: '',
                 },
-                hotel: { ...current.hotel, hotelId: '', name: '' },
+                hotel: {
+                  ...current.hotel,
+                  hotelId: '',
+                  name: '',
+                  roomTypeId: '',
+                },
                 visaReferenceId: '',
               }
             : {}),
@@ -317,12 +338,6 @@ export function SalesContractForm() {
       .then(({ data }) => {
         if (cancelled) return;
         setHotelRoomRates(data);
-        setState((current) =>
-          current.hotel.roomTypeId &&
-          !data.some((room) => room.roomTypeId === current.hotel.roomTypeId)
-            ? { ...current, hotel: { ...current.hotel, roomTypeId: '' } }
-            : current,
-        );
       })
       .catch((cause) => {
         if (!cancelled)
@@ -1180,6 +1195,7 @@ export function SalesContractForm() {
                         hotel: {
                           ...state.hotel,
                           hotelId,
+                          roomTypeId: '',
                           name:
                             references.hotels.find(({ id }) => id === hotelId)
                               ?.name ?? '',
@@ -1190,14 +1206,7 @@ export function SalesContractForm() {
                   <ReferenceSelect
                     label="نوع اتاق"
                     value={state.hotel.roomTypeId}
-                    options={(state.hotel.hotelId
-                      ? references.roomTypes
-                      : []
-                    ).filter((room) =>
-                      hotelRoomRates.some(
-                        (rate) => rate.roomTypeId === room.id,
-                      ),
-                    )}
+                    options={selectableHotelRoomTypes}
                     onChange={(roomTypeId) =>
                       patchState({ hotel: { ...state.hotel, roomTypeId } })
                     }
@@ -1210,7 +1219,9 @@ export function SalesContractForm() {
                               `${room.roomTypeName}: ${room.maxAdults} بزرگسال + ${room.maxChildren} کودک`,
                           )
                           .join(' | ')
-                      : 'برای این هتل و بازه، نوع اتاق دارای ضریب فعال ثبت نشده است.'}
+                      : selectableHotelRoomTypes.length
+                        ? 'نوع اتاق‌های متصل به هتل قابل انتخاب‌اند؛ برای این بازه هنوز ضریب فعال ثبت نشده است.'
+                        : 'نوع اتاقی در اطلاعات پایه به این هتل متصل نشده است.'}
                   </div>{' '}
                   <FormField label="ورود (چک‌این)" required>
                     <DatePicker
