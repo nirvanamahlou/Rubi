@@ -31,6 +31,7 @@ export const unlistedMasterDataResources = [
   'campaign-types',
   'meal-services',
   'facilities',
+  'room-types',
   'lost-reasons',
   'tags',
 ] as const satisfies readonly MasterDataResourceKey[];
@@ -75,7 +76,7 @@ export const masterDataSections: readonly MasterDataSectionDefinition[] = [
     slug: 'accommodation',
     title: 'اقامت',
     description: 'هتل‌ها و اطلاعات مرجع خدمات اقامتی',
-    resources: ['hotels', 'hotel-chains', 'room-types', 'composite-hotels'],
+    resources: ['hotels', 'hotel-chains', 'composite-hotels'],
     tone: 'orange',
   },
   {
