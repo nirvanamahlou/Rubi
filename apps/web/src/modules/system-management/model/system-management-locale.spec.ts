@@ -9,10 +9,12 @@ import {
 } from './system-management-locale';
 
 describe('system management English localization', () => {
-  it('keeps the finance module visible without any settings', () => {
+  it('does not expose removed finance or user-security settings modules', () => {
     expect(
-      settingsModules.find((module) => module.id === 'finance')?.groups,
-    ).toEqual([]);
+      settingsModules.some((module) =>
+        ['finance', 'access'].includes(module.id),
+      ),
+    ).toBe(false);
   });
 
   it('does not expose Persian catalog text when English is active', () => {

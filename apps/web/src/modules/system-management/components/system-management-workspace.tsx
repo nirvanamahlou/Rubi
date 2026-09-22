@@ -154,7 +154,6 @@ type SystemCategoryId =
   | 'all'
   | 'company-settings'
   | 'documents-reports'
-  | 'finance'
   | 'human-resources'
   | 'reservations-supply'
   | 'sales-customers'
@@ -170,12 +169,11 @@ const systemCategoryIdByNavigationGroup = {
   work: 'workspace',
   sales: 'sales-customers',
   operations: 'reservations-supply',
-  finance: 'finance',
   hr: 'human-resources',
   resources: 'documents-reports',
   system: 'company-settings',
 } as const satisfies Record<
-  (typeof navigationGroups)[number]['id'],
+  Exclude<(typeof navigationGroups)[number]['id'], 'finance'>,
   Exclude<SystemCategoryId, 'all'>
 >;
 
@@ -184,16 +182,21 @@ const moduleIdsBySystemCategory: Record<
   readonly string[]
 > = {
   workspace: ['tasks', 'messages'],
-  'sales-customers': ['customers', 'affairs', 'sales', 'marketing'],
+  'sales-customers': ['customers', 'affairs', 'sales', 'marketing', 'b2b'],
   'reservations-supply': ['catalog', 'operations'],
-  finance: ['finance', 'b2b'],
   'human-resources': ['hr', 'procurement'],
   'documents-reports': ['documents', 'reports'],
-  'company-settings': ['general', 'access', 'master'],
+  'company-settings': ['general', 'master'],
 };
 
-const systemCategoryGroups: readonly SystemCategoryGroup[] =
-  navigationGroups.map((group) => {
+const systemCategoryGroups: readonly SystemCategoryGroup[] = navigationGroups
+  .filter(
+    (
+      group,
+    ): group is Exclude<(typeof navigationGroups)[number], { id: 'finance' }> =>
+      group.id !== 'finance',
+  )
+  .map((group) => {
     const id = systemCategoryIdByNavigationGroup[group.id];
     return {
       id,
