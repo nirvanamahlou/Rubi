@@ -3270,6 +3270,6 @@ Tour definition uses four-column desktop identity fields and compact controls. I
 
 اعتبارسنجی: ۹ تست هدفمند Sales، lint فایل‌های تغییرکرده، typecheck کامل Web و build تولیدی ۵۰ route موفق‌اند.
 
-## 2026-09-22 — SALES-FRIENDLY-REFERENCE-LABELS-0922 — IN_PROGRESS
+## 2026-09-22 — SALES-FRIENDLY-REFERENCE-LABELS-0922 — READY_FOR_REVIEW
 
-PC-A روی شاخهٔ مستقل `codex/pc-a-sales-friendly-labels-0922` نمایش انتخاب‌گرهای اطلاعات پایه در قرارداد و مدیریت بلیت را اصلاح می‌کند تا نام انسانی گزینه دیده شود و شناسه/کد فنی فقط به‌صورت داخلی برای ذخیره و جست‌وجو باقی بماند. کدهای عملیاتی ارز و شماره پرواز خارج از این حذف‌اند؛ API، داده، Migration و localhost تغییر نمی‌کنند.
+انتخاب‌گرهای اطلاعات پایه در قرارداد و مدیریت بلیت اکنون فقط نام انسانی گزینه را نمایش می‌دهند و شناسه/کد فنی را برای جست‌وجو و ذخیرهٔ داخلی نگه می‌دارند. هتل، نوع اتاق، بیمه و قاعدهٔ بار پوشش داده شدند؛ کدهای عملیاتی ارز، شماره پرواز و مسیر حفظ شده‌اند. ۳۲۵ تست هدفمند، lint، typecheck کامل و build تولیدی Web با ۵۰ route موفق‌اند؛ API، داده، Migration و localhost تغییر نکرده‌اند. شاخه: `codex/pc-a-sales-friendly-labels-0922`.
