@@ -5,7 +5,7 @@ import { FileDown } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/form-controls';
+import { DatePicker } from '@/components/ui/date-picker';
 import { Alert, Card } from '@/components/ui/surfaces';
 import { cn } from '@/lib/utils';
 
@@ -67,15 +67,18 @@ export function PackageStickerWorkspace({ tour }: { tour: TourDepartureV1 }) {
           </select>
         </label>
 
-        <label className="grid gap-2 text-sm font-bold">
-          تاریخ شمسی یا شروع بازه
-          <Input
-            dir="ltr"
-            onChange={(event) => setStartDate(event.target.value)}
-            type="date"
+        <div className="grid gap-2 text-sm font-bold">
+          <label htmlFor="package-sticker-start-date">
+            تاریخ شمسی یا شروع بازه
+          </label>
+          <DatePicker
+            aria-label="تاریخ شمسی یا شروع بازه"
+            id="package-sticker-start-date"
+            onChange={setStartDate}
             value={startDate}
+            variant="rubi"
           />
-        </label>
+        </div>
 
         <label className="flex items-center justify-between gap-3 rounded-xl bg-muted/50 p-3 text-sm font-bold">
           تولید استیکر برای بازه تاریخ
@@ -88,16 +91,16 @@ export function PackageStickerWorkspace({ tour }: { tour: TourDepartureV1 }) {
         </label>
 
         {range ? (
-          <label className="grid gap-2 text-sm font-bold">
-            تاریخ پایان بازه
-            <Input
-              dir="ltr"
-              min={startDate}
-              onChange={(event) => setEndDate(event.target.value)}
-              type="date"
+          <div className="grid gap-2 text-sm font-bold">
+            <label htmlFor="package-sticker-end-date">تاریخ پایان بازه</label>
+            <DatePicker
+              aria-label="تاریخ پایان بازه"
+              id="package-sticker-end-date"
+              onChange={setEndDate}
               value={endDate}
+              variant="rubi"
             />
-          </label>
+          </div>
         ) : null}
 
         <div className="grid gap-2 rounded-xl border border-border p-3 text-sm">
