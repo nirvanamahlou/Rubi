@@ -36,9 +36,9 @@ describe('package generator workspace', () => {
 
   it('defines package, banner and sticker as separate generator sections', () => {
     expect(Object.values(packageGeneratorSectionLabels)).toEqual([
-      'تولید پکیج',
-      'بنر',
-      'استیکر',
+      'پکیج جدولی / ترکیبی',
+      'بنر تصویری',
+      'تولید استیکر',
     ]);
   });
 

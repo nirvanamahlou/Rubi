@@ -1,172 +1,182 @@
 'use client';
 
 import type { TourDepartureV1 } from '@nora/contracts';
-import { CalendarDays, FileDown, Plane, Sticker } from 'lucide-react';
+import { FileDown } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/form-controls';
-import { Alert, Badge, Card } from '@/components/ui/surfaces';
+import { Alert, Card } from '@/components/ui/surfaces';
 import { cn } from '@/lib/utils';
 
-const themes = [
-  { id: 'violet', title: 'بنفش', className: 'from-violet-700 to-fuchsia-500' },
-  { id: 'blue', title: 'آبی', className: 'from-blue-700 to-cyan-500' },
-  { id: 'orange', title: 'نارنجی', className: 'from-orange-600 to-amber-400' },
-] as const;
+type StickerBrand = 'jahan' | 'niayesh';
 
-function faDate(value: string) {
+function persianDate(value: string) {
   return new Intl.DateTimeFormat('fa-IR-u-ca-persian', {
-    month: 'long',
-    day: 'numeric',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
     timeZone: 'UTC',
   }).format(new Date(`${value.slice(0, 10)}T00:00:00Z`));
 }
 
-function route(tour: TourDepartureV1) {
-  const locations = (tour.package.details?.itinerary ?? [])
-    .map((item) => item.location?.trim())
-    .filter((item): item is string => Boolean(item));
-  const origin =
-    locations[0] ??
-    tour.package.details?.originAirportCode ??
-    tour.outbound.originId;
-  const destination = locations.at(-1) ?? tour.package.name;
-  return `${origin} ← ${destination}`;
+function dateDetails(value: string) {
+  const date = new Date(`${value.slice(0, 10)}T00:00:00Z`);
+  return {
+    weekday: new Intl.DateTimeFormat('fa-IR', {
+      weekday: 'long',
+      timeZone: 'UTC',
+    }).format(date),
+    gregorian: new Intl.DateTimeFormat('en-GB', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      timeZone: 'UTC',
+    }).format(date),
+  };
 }
 
 export function PackageStickerWorkspace({ tour }: { tour: TourDepartureV1 }) {
-  const [label, setLabel] = useState('پیشنهاد ویژه');
-  const [themeId, setThemeId] =
-    useState<(typeof themes)[number]['id']>('violet');
-  const [showDate, setShowDate] = useState(true);
-  const [showFlight, setShowFlight] = useState(true);
-  const theme = useMemo(
-    () => themes.find((item) => item.id === themeId) ?? themes[0],
-    [themeId],
-  );
+  const [brand, setBrand] = useState<StickerBrand>('jahan');
+  const [startDate, setStartDate] = useState(tour.startsOn.slice(0, 10));
+  const [range, setRange] = useState(false);
+  const [endDate, setEndDate] = useState(tour.endsOn.slice(0, 10));
+  const detail = useMemo(() => dateDetails(startDate), [startDate]);
+  const isJahan = brand === 'jahan';
 
   return (
-    <div className="grid gap-5 lg:grid-cols-[20rem_minmax(0,1fr)]">
-      <Card className="h-fit space-y-5 p-5">
+    <div className="grid items-start gap-5 lg:grid-cols-[21rem_minmax(0,1fr)]">
+      <Card className="space-y-5 p-5 lg:sticky lg:top-4">
         <div>
-          <h2 className="font-black">تنظیمات استیکر</h2>
+          <h2 className="text-lg font-black">استیکر تاریخ روز</h2>
           <p className="mt-1 text-sm leading-6 text-muted-foreground">
-            متن و ظاهر استیکر را تنظیم کنید؛ اطلاعات سفر از پکیج انتخاب‌شده
-            خوانده می‌شود.
+            برند و تاریخ را انتخاب کنید؛ روز هفته و تاریخ میلادی خودکار محاسبه
+            می‌شوند.
           </p>
         </div>
 
         <label className="grid gap-2 text-sm font-bold">
-          متن استیکر
+          برند
+          <select
+            className="h-11 rounded-xl border border-input bg-surface px-3"
+            onChange={(event) => setBrand(event.target.value as StickerBrand)}
+            value={brand}
+          >
+            <option value="jahan">جهان باستان</option>
+            <option value="niayesh">نیایش سیر</option>
+          </select>
+        </label>
+
+        <label className="grid gap-2 text-sm font-bold">
+          تاریخ شمسی یا شروع بازه
           <Input
-            maxLength={32}
-            onChange={(event) => setLabel(event.target.value)}
-            value={label}
+            dir="ltr"
+            onChange={(event) => setStartDate(event.target.value)}
+            type="date"
+            value={startDate}
           />
         </label>
 
-        <fieldset className="grid gap-2">
-          <legend className="mb-1 text-sm font-bold">رنگ‌بندی</legend>
-          <div className="grid grid-cols-3 gap-2">
-            {themes.map((item) => (
-              <button
-                aria-pressed={themeId === item.id}
-                className={cn(
-                  'rounded-xl border p-2 text-xs font-bold outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                  themeId === item.id
-                    ? 'border-primary bg-primary/10 text-primary'
-                    : 'border-border text-muted-foreground',
-                )}
-                key={item.id}
-                onClick={() => setThemeId(item.id)}
-                type="button"
-              >
-                <span
-                  aria-hidden="true"
-                  className={cn(
-                    'mx-auto mb-2 block h-5 rounded-md bg-gradient-to-l',
-                    item.className,
-                  )}
-                />
-                {item.title}
-              </button>
-            ))}
+        <label className="flex items-center justify-between gap-3 rounded-xl bg-muted/50 p-3 text-sm font-bold">
+          تولید استیکر برای بازه تاریخ
+          <input
+            checked={range}
+            className="size-4 accent-primary"
+            onChange={(event) => setRange(event.target.checked)}
+            type="checkbox"
+          />
+        </label>
+
+        {range ? (
+          <label className="grid gap-2 text-sm font-bold">
+            تاریخ پایان بازه
+            <Input
+              dir="ltr"
+              min={startDate}
+              onChange={(event) => setEndDate(event.target.value)}
+              type="date"
+              value={endDate}
+            />
+          </label>
+        ) : null}
+
+        <div className="grid gap-2 rounded-xl border border-border p-3 text-sm">
+          <div className="flex justify-between gap-3">
+            <span className="text-muted-foreground">تاریخ شمسی</span>
+            <strong>{persianDate(startDate)}</strong>
           </div>
-        </fieldset>
-
-        <label className="flex items-center justify-between gap-3 text-sm font-bold">
-          نمایش تاریخ
-          <input
-            checked={showDate}
-            className="size-4 accent-primary"
-            onChange={(event) => setShowDate(event.target.checked)}
-            type="checkbox"
-          />
-        </label>
-        <label className="flex items-center justify-between gap-3 text-sm font-bold">
-          نمایش پرواز
-          <input
-            checked={showFlight}
-            className="size-4 accent-primary"
-            onChange={(event) => setShowFlight(event.target.checked)}
-            type="checkbox"
-          />
-        </label>
+          <div className="flex justify-between gap-3">
+            <span className="text-muted-foreground">روز هفته</span>
+            <strong>{detail.weekday}</strong>
+          </div>
+          <div className="flex justify-between gap-3">
+            <span className="text-muted-foreground">تاریخ میلادی</span>
+            <strong dir="ltr">{detail.gregorian}</strong>
+          </div>
+          {range ? (
+            <div className="flex justify-between gap-3 border-t pt-2">
+              <span className="text-muted-foreground">پایان بازه</span>
+              <strong>{persianDate(endDate)}</strong>
+            </div>
+          ) : null}
+        </div>
 
         <Button className="w-full" disabled type="button">
-          <FileDown className="size-4" /> خروجی استیکر
+          <FileDown className="size-4" /> دانلود PNG شفاف
         </Button>
         <p className="text-center text-xs text-muted-foreground">
           در انتظار سرویس خروجی اسناد
         </p>
       </Card>
 
-      <Card className="grid min-h-[32rem] place-items-center overflow-hidden bg-muted/40 p-6">
-        <div className="w-full max-w-xl text-center">
-          <Badge className="mb-4">پیش‌نمایش زنده</Badge>
+      <section>
+        <Card className="mb-4 p-4">
+          <h2 className="font-black">پیش‌نمایش استیکر</h2>
+          <p className="mt-1 text-xs text-muted-foreground">
+            پیش‌نمایش مربوط به اولین روز است · PNG شفاف · ۲۵۰۸ × ۲۵۰۸ پیکسل
+          </p>
+        </Card>
+        <Card className="grid min-h-[42rem] place-items-center overflow-hidden bg-[linear-gradient(45deg,#d9e1ea_25%,transparent_25%),linear-gradient(-45deg,#d9e1ea_25%,transparent_25%),linear-gradient(45deg,transparent_75%,#d9e1ea_75%),linear-gradient(-45deg,transparent_75%,#d9e1ea_75%)] bg-[length:28px_28px] bg-[position:0_0,0_14px,14px_-14px,-14px_0] p-7">
           <article
-            aria-label="پیش‌نمایش واقعی استیکر پکیج"
+            aria-label="پیش‌نمایش واقعی استیکر تاریخ"
             className={cn(
-              'relative isolate mx-auto grid aspect-square w-full max-w-md place-items-center overflow-hidden rounded-[4rem] bg-gradient-to-br p-10 text-white shadow-2xl',
-              theme.className,
+              'relative grid aspect-square w-full max-w-lg place-items-center overflow-hidden p-12 text-center text-white shadow-2xl',
+              isJahan
+                ? 'rounded-[18%] bg-gradient-to-br from-[#071b51] via-[#0a347c] to-[#dfb74e]'
+                : 'rounded-full border-[14px] border-white bg-gradient-to-br from-[#7d123b] via-[#b31956] to-[#f3bdce]',
             )}
             dir="rtl"
           >
-            <span className="absolute -start-16 -top-16 -z-10 size-56 rounded-full bg-white/20 blur-2xl" />
-            <span className="absolute -bottom-20 -end-12 -z-10 size-64 rounded-full bg-slate-950/20 blur-2xl" />
-            <div>
-              <Sticker className="mx-auto size-12 text-white/80" />
-              <p className="mt-5 text-sm font-bold text-white/75">
-                {route(tour)}
-              </p>
-              <h3 className="mt-3 text-4xl font-black leading-tight">
-                {label || tour.package.name}
-              </h3>
-              <p className="mt-3 text-xl font-black">{tour.package.name}</p>
-              <div className="mt-6 flex flex-wrap justify-center gap-2 text-xs font-bold">
-                {showDate ? (
-                  <span className="rounded-full bg-white/15 px-3 py-2 backdrop-blur-sm">
-                    <CalendarDays className="ms-1 inline size-4" />
-                    {faDate(tour.startsOn)} تا {faDate(tour.endsOn)}
-                  </span>
-                ) : null}
-                {showFlight ? (
-                  <span className="rounded-full bg-white/15 px-3 py-2 backdrop-blur-sm">
-                    <Plane className="ms-1 inline size-4" />
-                    {tour.outbound.carrierName} · {tour.outbound.serviceNumber}
-                  </span>
-                ) : null}
+            <span className="absolute -start-20 -top-20 size-64 rounded-full bg-white/15 blur-2xl" />
+            <span className="absolute -bottom-20 -end-16 size-72 rounded-full bg-black/20 blur-2xl" />
+            <div className="relative">
+              <div className="mx-auto grid size-24 place-items-center rounded-full border-4 border-white/80 text-lg font-black">
+                {isJahan ? 'جهان باستان' : 'نیایش سیر'}
               </div>
+              <p className="mt-7 text-2xl font-black">{detail.weekday}</p>
+              <p className="mt-2 text-6xl font-black tracking-tight">
+                {persianDate(startDate)}
+              </p>
+              <p
+                className="mt-4 text-lg font-bold uppercase tracking-wider text-white/80"
+                dir="ltr"
+              >
+                {detail.gregorian}
+              </p>
+              {range ? (
+                <p className="mt-5 rounded-full bg-white/15 px-5 py-2 text-sm font-bold">
+                  تا {persianDate(endDate)}
+                </p>
+              ) : null}
             </div>
           </article>
-          <Alert
-            className="mt-5 text-start"
-            description="این پیش‌نمایش HTML/CSS است و خروجی تصویر ساختگی تولید نمی‌شود."
-            title="پیش‌نمایش امن"
-          />
-        </div>
-      </Card>
+        </Card>
+        <Alert
+          className="mt-4"
+          description="طرح شطرنجی فقط نمایش شفافیت است و داخل خروجی نخواهد بود. در این Phase خروجی ساختگی تولید نمی‌شود."
+          title="پیش‌نمایش شفاف"
+        />
+      </section>
     </div>
   );
 }

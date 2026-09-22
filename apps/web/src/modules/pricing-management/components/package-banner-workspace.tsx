@@ -153,6 +153,7 @@ function BannerPreview({
   showPrice,
   showDate,
   showHotel,
+  showBrand,
 }: {
   model: PackageBannerViewModel;
   template: PackageBannerTemplateV1;
@@ -162,6 +163,7 @@ function BannerPreview({
   showPrice: boolean;
   showDate: boolean;
   showHotel: boolean;
+  showBrand: boolean;
 }) {
   const hotels = Array.from(new Set(model.rooms.map((room) => room.hotelName)));
   return (
@@ -189,10 +191,17 @@ function BannerPreview({
               </p>
             ) : null}
           </div>
-          <Badge className="border-white/25 bg-white/15 text-white">
-            {model.publicationStatus} · نسخه{' '}
-            {model.priceVersion.toLocaleString('fa-IR')}
-          </Badge>
+          <div className="grid justify-items-end gap-2">
+            {showBrand ? (
+              <span className="grid size-14 place-items-center rounded-full border-2 border-white/70 text-xs font-black">
+                RUBI
+              </span>
+            ) : null}
+            <Badge className="border-white/25 bg-white/15 text-white">
+              {model.publicationStatus} · نسخه{' '}
+              {model.priceVersion.toLocaleString('fa-IR')}
+            </Badge>
+          </div>
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="rounded-2xl border border-white/20 bg-black/15 p-4 backdrop-blur-sm">
@@ -276,6 +285,7 @@ export function PackageBannerWorkspace({
   const [showPrice, setShowPrice] = useState(true);
   const [showDate, setShowDate] = useState(true);
   const [showHotel, setShowHotel] = useState(true);
+  const [showBrand, setShowBrand] = useState(true);
   const output = packageBannerDocumentsAdapter.availability();
   const backHref = safePricingReturnTo(returnTo);
   const load = useCallback(async () => {
@@ -426,9 +436,10 @@ export function PackageBannerWorkspace({
                 >
                   {[
                     ['#generator-template', 'قالب'],
-                    ['#generator-copy', 'متن'],
-                    ['#generator-display', 'نمایش'],
-                    ['#generator-output', 'خروجی'],
+                    ['#generator-copy', 'سفر'],
+                    ['#generator-hotels', 'موارد'],
+                    ['#generator-contact', 'تماس'],
+                    ['#generator-display', 'ظاهر'],
                   ].map(([href, label]) => (
                     <a
                       className="rounded-lg px-2 py-2 text-center text-[11px] font-bold text-muted-foreground transition hover:bg-muted hover:text-foreground"
@@ -514,9 +525,9 @@ export function PackageBannerWorkspace({
                       ۰۲
                     </span>
                     <span className="min-w-0 flex-1">
-                      <strong className="block text-sm">متن و توضیحات</strong>
+                      <strong className="block text-sm">شهر و سفر</strong>
                       <small className="text-xs text-muted-foreground">
-                        عنوان، پیام کوتاه و دعوت
+                        عنوان، مسیر و تاریخ حرکت
                       </small>
                     </span>
                     <Type className="size-4 text-muted-foreground" />
@@ -530,28 +541,92 @@ export function PackageBannerWorkspace({
                         value={title}
                       />
                     </label>
-                    <label className="grid gap-2 text-sm font-bold">
-                      متن کوتاه
-                      <textarea
-                        className="min-h-24 rounded-xl border border-input bg-surface p-3 text-sm"
-                        maxLength={180}
-                        onChange={(event) => setSummary(event.target.value)}
-                        placeholder="یک پیام کوتاه برای معرفی این سفر"
-                        value={summary}
+                    <div className="rounded-xl bg-muted/50 p-3 text-xs leading-6 text-muted-foreground">
+                      <strong className="block text-foreground">
+                        {validation.value.route}
+                      </strong>
+                      {faDate(validation.value.startsOn)} تا{' '}
+                      {faDate(validation.value.endsOn)}
+                    </div>
+                  </div>
+                </details>
+
+                <details
+                  className="group rounded-2xl border border-border bg-background"
+                  id="generator-hotels"
+                  open
+                >
+                  <summary className="flex cursor-pointer list-none items-center gap-3 p-4">
+                    <span className="grid size-9 place-items-center rounded-xl bg-amber-500/10 font-black text-amber-700 dark:text-amber-300">
+                      ۰۳
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <strong className="block text-sm">هتل‌ها</strong>
+                      <small className="text-xs text-muted-foreground">
+                        موارد قابل‌فروش بنر
+                      </small>
+                    </span>
+                    <Eye className="size-4 text-muted-foreground" />
+                  </summary>
+                  <div className="grid gap-3 border-t border-border p-4">
+                    <label className="flex min-h-11 items-center justify-between gap-3 rounded-xl bg-muted/50 px-3 text-sm font-bold">
+                      نمایش نام هتل‌ها
+                      <input
+                        checked={showHotel}
+                        className="size-4 accent-primary"
+                        onChange={(event) => setShowHotel(event.target.checked)}
+                        type="checkbox"
                       />
                     </label>
-                    <label className="grid gap-2 text-sm font-bold">
-                      دعوت به اقدام
-                      <select
-                        className="h-11 rounded-xl border border-input bg-surface px-3"
-                        onChange={(event) => setCta(event.target.value)}
-                        value={cta}
-                      >
-                        <option>رزرو تور</option>
-                        <option>تماس با ما</option>
-                        <option>مشاهده جزئیات</option>
-                      </select>
+                    <div className="grid gap-2 text-xs text-muted-foreground">
+                      {Array.from(
+                        new Set(
+                          validation.value.rooms.map((room) => room.hotelName),
+                        ),
+                      ).map((hotel) => (
+                        <span
+                          className="rounded-lg border border-border p-2"
+                          key={hotel}
+                        >
+                          {hotel}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </details>
+
+                <details
+                  className="group rounded-2xl border border-border bg-background"
+                  id="generator-assets"
+                  open
+                >
+                  <summary className="flex cursor-pointer list-none items-center gap-3 p-4">
+                    <span className="grid size-9 place-items-center rounded-xl bg-emerald-500/10 font-black text-emerald-700 dark:text-emerald-300">
+                      ۰۴
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <strong className="block text-sm">
+                        عکس زمینه و لوگوها
+                      </strong>
+                      <small className="text-xs text-muted-foreground">
+                        دارایی‌های امن قالب
+                      </small>
+                    </span>
+                    <LockKeyhole className="size-4 text-muted-foreground" />
+                  </summary>
+                  <div className="grid gap-3 border-t border-border p-4">
+                    <label className="flex min-h-11 items-center justify-between gap-3 rounded-xl bg-muted/50 px-3 text-sm font-bold">
+                      نمایش نشان Rubi
+                      <input
+                        checked={showBrand}
+                        className="size-4 accent-primary"
+                        onChange={(event) => setShowBrand(event.target.checked)}
+                        type="checkbox"
+                      />
                     </label>
+                    <p className="text-xs leading-5 text-muted-foreground">
+                      پس‌زمینه و نسبت تصویر از قالب فعال شعبه خوانده می‌شوند.
+                    </p>
                   </div>
                 </details>
 
@@ -562,12 +637,14 @@ export function PackageBannerWorkspace({
                 >
                   <summary className="flex cursor-pointer list-none items-center gap-3 p-4">
                     <span className="grid size-9 place-items-center rounded-xl bg-amber-500/10 font-black text-amber-700 dark:text-amber-300">
-                      ۰۳
+                      ۰۵
                     </span>
                     <span className="min-w-0 flex-1">
-                      <strong className="block text-sm">تنظیمات نمایش</strong>
+                      <strong className="block text-sm">
+                        متن، فونت و چینش
+                      </strong>
                       <small className="text-xs text-muted-foreground">
-                        کنترل اجزای قابل‌نمایش
+                        اجزای قابل نمایش بنر
                       </small>
                     </span>
                     <Eye className="size-4 text-muted-foreground" />
@@ -576,7 +653,6 @@ export function PackageBannerWorkspace({
                     {[
                       ['نمایش قیمت', showPrice, setShowPrice],
                       ['نمایش تاریخ', showDate, setShowDate],
-                      ['نمایش نام هتل', showHotel, setShowHotel],
                     ].map(([label, checked, setter]) => (
                       <label
                         className="flex min-h-11 items-center justify-between gap-3 rounded-xl bg-muted/50 px-3 text-sm font-bold"
@@ -600,26 +676,48 @@ export function PackageBannerWorkspace({
 
                 <details
                   className="group rounded-2xl border border-border bg-background"
-                  id="generator-output"
+                  id="generator-contact"
                   open
                 >
                   <summary className="flex cursor-pointer list-none items-center gap-3 p-4">
                     <span className="grid size-9 place-items-center rounded-xl bg-rose-500/10 font-black text-rose-700 dark:text-rose-300">
-                      ۰۴
+                      ۰۶
                     </span>
                     <span className="min-w-0 flex-1">
-                      <strong className="block text-sm">خروجی طرح</strong>
+                      <strong className="block text-sm">تماس و خدمات</strong>
                       <small className="text-xs text-muted-foreground">
-                        اتصال کنترل‌شده به Documents
+                        متن کوتاه و دعوت به اقدام
                       </small>
                     </span>
-                    <LockKeyhole className="size-4 text-muted-foreground" />
+                    <Type className="size-4 text-muted-foreground" />
                   </summary>
-                  <div className="border-t border-border p-4">
+                  <div className="grid gap-4 border-t border-border p-4">
+                    <label className="grid gap-2 text-sm font-bold">
+                      متن کوتاه
+                      <textarea
+                        className="min-h-24 rounded-xl border border-input bg-surface p-3 text-sm"
+                        maxLength={180}
+                        onChange={(event) => setSummary(event.target.value)}
+                        placeholder="یک پیام کوتاه برای معرفی این سفر"
+                        value={summary}
+                      />
+                    </label>
+                    <label className="grid gap-2 text-sm font-bold">
+                      دعوت به اقدام
+                      <select
+                        className="h-11 rounded-xl border border-input bg-surface px-3"
+                        onChange={(event) => setCta(event.target.value)}
+                        value={cta}
+                      >
+                        <option>رزرو تور</option>
+                        <option>تماس با ما</option>
+                        <option>مشاهده جزئیات</option>
+                      </select>
+                    </label>
                     <Button className="w-full" disabled type="button">
                       {output.label}
                     </Button>
-                    <p className="mt-2 text-xs leading-5 text-muted-foreground">
+                    <p className="text-xs leading-5 text-muted-foreground">
                       {output.reason}
                     </p>
                   </div>
@@ -641,6 +739,7 @@ export function PackageBannerWorkspace({
                   <BannerPreview
                     cta={cta}
                     model={validation.value}
+                    showBrand={showBrand}
                     showDate={showDate}
                     showHotel={showHotel}
                     showPrice={showPrice}

@@ -2,7 +2,6 @@
 
 import type { LoginResponse, TourDepartureV1 } from '@nora/contracts';
 import {
-  ArrowLeft,
   ArrowRight,
   Image as ImageIcon,
   PackageOpen,
@@ -19,7 +18,6 @@ import {
   TabsTrigger,
 } from '@/components/ui/overlays';
 import {
-  Badge,
   Card,
   EmptyState,
   ErrorState,
@@ -31,13 +29,14 @@ import { canViewPackageBanner } from '../model/package-banner';
 import { PackageBannerWorkspace } from './package-banner-workspace';
 import { PackagePricingBreadcrumbs } from './package-pricing-breadcrumbs';
 import { PackageStickerWorkspace } from './package-sticker-workspace';
+import { PackageTableWorkspace } from './package-table-workspace';
 
 type GeneratorSection = 'package' | 'banner' | 'sticker';
 
 export const packageGeneratorSectionLabels: Record<GeneratorSection, string> = {
-  package: 'تولید پکیج',
-  banner: 'بنر',
-  sticker: 'استیکر',
+  package: 'پکیج جدولی / ترکیبی',
+  banner: 'بنر تصویری',
+  sticker: 'تولید استیکر',
 };
 
 type GeneratorApi = Pick<typeof packagePricingApi, 'session' | 'tours'>;
@@ -294,69 +293,10 @@ export function PackageGeneratorWorkspace() {
 
             <TabsContent className="mt-5 outline-none" value="package">
               {selectedTour ? (
-                <Card className="overflow-hidden p-0">
-                  <div className="grid gap-6 p-6 lg:grid-cols-[minmax(0,1fr)_18rem] lg:p-8">
-                    <div>
-                      <Badge>پکیج انتخاب‌شده</Badge>
-                      <h2 className="mt-4 text-2xl font-black">
-                        {selectedTour.package.name}
-                      </h2>
-                      <p className="mt-2 text-sm leading-7 text-muted-foreground">
-                        نسخه{' '}
-                        {selectedTour.package.version.toLocaleString('fa-IR')} ·
-                        ظرفیت باقی‌مانده{' '}
-                        {selectedTour.remainingCapacity.toLocaleString('fa-IR')}{' '}
-                        نفر
-                      </p>
-                      <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                        <div className="rounded-2xl bg-muted p-4">
-                          <p className="text-xs text-muted-foreground">
-                            بازه سفر
-                          </p>
-                          <p className="mt-2 font-black">
-                            {new Date(selectedTour.startsOn).toLocaleDateString(
-                              'fa-IR',
-                            )}{' '}
-                            تا{' '}
-                            {new Date(selectedTour.endsOn).toLocaleDateString(
-                              'fa-IR',
-                            )}
-                          </p>
-                        </div>
-                        <div className="rounded-2xl bg-muted p-4">
-                          <p className="text-xs text-muted-foreground">
-                            پرواز رفت
-                          </p>
-                          <p className="mt-2 font-black">
-                            {selectedTour.outbound.carrierName} ·{' '}
-                            {selectedTour.outbound.serviceNumber}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="grid content-center gap-3 rounded-2xl border border-border bg-surface p-5">
-                      <p className="text-sm font-black">مرحله بعد</p>
-                      <p className="text-xs leading-6 text-muted-foreground">
-                        برای طراحی محتوای تبلیغاتی همین پکیج، وارد بنر یا استیکر
-                        شوید.
-                      </p>
-                      <button
-                        className={buttonVariants({ variant: 'primary' })}
-                        onClick={() => selectSection('banner')}
-                        type="button"
-                      >
-                        ساخت بنر <ArrowLeft className="size-4" />
-                      </button>
-                      <button
-                        className={buttonVariants({ variant: 'outline' })}
-                        onClick={() => selectSection('sticker')}
-                        type="button"
-                      >
-                        ساخت استیکر <Sticker className="size-4" />
-                      </button>
-                    </div>
-                  </div>
-                </Card>
+                <PackageTableWorkspace
+                  key={selectedTour.id}
+                  packageId={selectedTour.id}
+                />
               ) : (
                 <EmptyState
                   description={

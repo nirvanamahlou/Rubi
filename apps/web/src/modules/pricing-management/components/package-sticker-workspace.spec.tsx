@@ -19,9 +19,9 @@ describe('package sticker workspace', () => {
 
     const html = renderToStaticMarkup(<PackageStickerWorkspace tour={tour} />);
 
-    expect(html).toContain('پیش‌نمایش واقعی استیکر پکیج');
-    expect(html).toContain('تور آنتالیا');
-    expect(html).toContain('ماهان');
+    expect(html).toContain('پیش‌نمایش واقعی استیکر تاریخ');
+    expect(html).toContain('جهان باستان');
+    expect(html).toContain('دانلود PNG شفاف');
     expect(html).toContain('در انتظار سرویس خروجی اسناد');
   });
 });
