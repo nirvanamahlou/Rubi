@@ -79,6 +79,13 @@ export interface ProfilePhotoDocumentResult {
   scanStatus: DocumentVersionV1['scanStatus'];
 }
 
+export interface SystemContractTemplateDocumentResult {
+  id: string;
+  originalFileName: string;
+  scanStatus: DocumentVersionV1['scanStatus'];
+  sizeBytes: number;
+}
+
 const MASTER_DATA_LOGO_MAX_BYTES = 5 * 1024 * 1024;
 
 function masterDataLogoMarker(file: UploadedDocumentFile): string {
@@ -115,6 +122,19 @@ function profilePhotoActor(
     ...actor.permissions,
     'documents.brand.read',
     ...permissions,
+  ];
+  return {
+    ...actor,
+    permissions: [...new Set(grants)],
+  };
+}
+
+function systemContractTemplateActor(
+  actor: AuthenticatedActor,
+): AuthenticatedActor {
+  const grants: AuthenticatedActor['permissions'] = [
+    ...actor.permissions,
+    'documents.brand.read',
   ];
   return {
     ...actor,
@@ -547,6 +567,62 @@ export class DocumentsService {
       id: uploaded.data.id,
       reused: false,
       scanStatus: uploaded.data.currentVersion.scanStatus,
+    };
+  }
+
+  async uploadSystemContractTemplate(
+    input: { title: string },
+    file: UploadedDocumentFile | undefined,
+    actor: AuthenticatedActor,
+    metadata: DocumentRequestMetadata,
+  ): Promise<SystemContractTemplateDocumentResult> {
+    this.assertPermission(actor.permissions, 'system.settings.manage');
+    if (!file) throw new BadRequestException('انتخاب فایل قالب الزامی است.');
+    const title = input.title?.trim();
+    if (!title || title.length < 2 || title.length > 240)
+      throw new BadRequestException('نام قالب باید بین ۲ تا ۲۴۰ نویسه باشد.');
+
+    const scopedActor = systemContractTemplateActor(actor);
+    const values = await this.repository.options(actor.branchIds, ['BRAND']);
+    const branch = values.branches[0];
+    const owner = values.owners.find((item) => item.id === actor.userId);
+    const documentType = values.documentTypes.find(
+      (item) => item.code === 'BRAND_ASSET_TEMPLATE',
+    );
+    const category = values.categories.find(
+      (item) => item.code === 'BRAND_ASSETS',
+    );
+    if (!branch)
+      throw new ForbiddenException('شعبه مجاز برای بارگذاری قالب مشخص نیست.');
+    if (!owner || !documentType || !category)
+      throw new ConflictException(
+        'پیش‌نیاز ذخیره قالب قرارداد در آرشیو اسناد کامل نیست.',
+      );
+
+    const uploaded = await this.upload(
+      {
+        title,
+        description: 'قالب قرارداد ثبت‌شده در مدیریت سیستم',
+        documentTypeId: documentType.id,
+        categoryId: category.id,
+        branchId: branch.id,
+        ownerUserId: owner.id,
+        confidentiality: 'INTERNAL',
+        sourceModule: 'SYSTEM_MANAGEMENT',
+        sourceEntityType: 'SalesContractTemplate',
+        sourceEntityId: randomUUID(),
+        sourceDisplayLabel: title,
+        versionNote: 'قالب قرارداد و الحاقیه',
+      },
+      file,
+      scopedActor,
+      metadata,
+    );
+    return {
+      id: uploaded.data.id,
+      originalFileName: uploaded.data.currentVersion.originalFileName,
+      scanStatus: uploaded.data.currentVersion.scanStatus,
+      sizeBytes: uploaded.data.currentVersion.sizeBytes,
     };
   }
 

@@ -57,7 +57,7 @@ describe('system management reference implementation', () => {
       'بازاریابی',
       'آژانس‌ها و مشتریان سازمانی',
       'منابع انسانی',
-      'میزکار و اتوماسیون',
+      'میزکار',
       'پیام و اعلان',
       'اسناد و فایل‌ها',
       'گزارش و نمای مدیریتی',
@@ -75,17 +75,57 @@ describe('system management reference implementation', () => {
     expect(catalog).not.toContain('سربرگ پیش‌فرض');
     expect(catalog).not.toContain('پیگیری و تحویل سرنخ');
     expect(catalog).not.toContain("'leads'");
+    expect(catalog).not.toContain("g('contact', 'ارتباط با مشتری'");
+    expect(catalog).not.toContain('کانال ترجیحی');
+    expect(catalog).not.toContain('یادآوری تکمیل پرونده');
     expect(catalog).not.toContain('مرجع تأیید ادغام');
     expect(catalog).not.toContain('زبان ارتباط');
     expect(catalog).not.toContain('هشدار مصرف مهلت');
     expect(catalog).not.toContain('بستن و رضایت‌سنجی');
     expect(catalog).not.toContain('ارسال نظرسنجی پس از حل');
     expect(catalog).not.toContain('فاصله ارسال نظرسنجی');
+    expect(catalog).not.toContain('نمایش کاتالوگ‌ها');
+    expect(catalog).not.toContain('میزکار و اتوماسیون');
+    expect(catalog).not.toContain("g('catalog', 'نمایش کاتالوگ‌ها'");
+    expect(catalog).toContain(
+      'در حال بررسی|در انتظار تکمیل مدارک|تأیید مشروط|فعال|معلق|غیرفعال|ردشده',
+    );
+    expect(catalog).toContain(
+      'مدیر تأمین|سرپرست اطلاعات پایه|مدیر عملیات|مدیر مالی|مدیر ارشد اجرایی|کمیته ارزیابی تأمین‌کنندگان',
+    );
+    expect(catalog).toContain(
+      'مدیر مالی|مسئول نرخ ارز|سرپرست خزانه‌داری|مدیر حسابداری|مدیر ارشد مالی|کمیته نرخ ارز',
+    );
     expect(catalog).toContain('بستن درخواست');
-    expect(catalog).toContain('پیامک و کد تأیید');
-    expect(catalog).toContain('ایمیل و لینک تأیید');
-    expect(catalog).toContain('امضای الکترونیکی');
-    expect(catalog).toContain('ضبط مکالمه با اعلام رضایت');
+    expect(catalog).not.toContain('رضایت و حریم خصوصی');
+    expect(catalog).not.toContain("'consentChannel'");
+    expect(catalog).not.toContain('ثبت رضایت از طریق');
+    expect(catalog).not.toContain('اعلان خروجی حساس به مسئول');
+    expect(catalog).not.toContain('قیمت کانال‌های فروش');
+    expect(catalog).not.toContain("g('channels'");
+    expect(catalog).not.toContain('کانال مشمول');
+    expect(catalog).not.toContain('درصد افزایش قیمت');
+    expect(catalog).not.toContain('هوایی، قطار و اتوبوس');
+    expect(catalog).not.toContain("g('transport'");
+    expect(catalog).not.toContain('حمل‌ونقل پیش‌فرض');
+    expect(catalog).not.toContain('هشدار اتصال کوتاه سفر');
+    expect(catalog).not.toContain('پکیج و نوبت تور');
+    expect(catalog).not.toContain("g('tour'");
+    expect(catalog).not.toContain('الگوی برنامه سفر');
+    expect(catalog).not.toContain('اجرای خودکار');
+    expect(catalog).not.toContain("g('execution'");
+    expect(catalog).not.toContain('گیرنده خطای اجرا');
+    expect(catalog).not.toContain('چیدمان پیش‌فرض');
+    expect(catalog).not.toContain("'layout'");
+    expect(catalog).not.toContain('درخواست و تأیید داخلی');
+    expect(catalog).not.toContain("g('approval'");
+    expect(catalog).not.toContain('مهلت پاسخ مدیر');
+    expect(catalog).toContain("t('templateName', 'نام قالب'");
+    expect(catalog).toContain("'templateFile'");
+    expect(catalog).toContain("type: 'file'");
+    expect(catalog).not.toContain(
+      "s(\n          'template',\n          'قالب قرارداد'",
+    );
   });
 
   it('uses the real application navigation labels without a duplicated child-link row', () => {
@@ -201,8 +241,16 @@ describe('system management reference implementation', () => {
     expect(workspace).not.toContain('copy.version');
     expect(workspace).not.toContain('styles.pillBlue');
     expect(styles).not.toContain('.pillBlue');
+    expect(workspace).not.toContain(
+      'کاتالوگ و چرخهٔ خروجی گزارش را Reporting مالک است.',
+    );
+    expect(workspace).not.toContain('ادامه در Reporting: گزارش‌ها و خروجی‌ها');
     expect(workspace).toContain('styles.fieldLabel');
     expect(workspace).toContain('styles.fieldUnit');
     expect(styles).toContain('.fieldUnit');
+    expect(workspace).toContain('systemManagementApi.uploadContractTemplate');
+    expect(workspace).toContain("form.set('file', pendingFile)");
+    expect(workspace).toContain('type="file"');
+    expect(styles).toContain("input[type='file']::file-selector-button");
   });
 });

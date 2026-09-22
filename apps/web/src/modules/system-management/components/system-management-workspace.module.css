@@ -717,6 +717,25 @@
   min-height: 78px;
   resize: vertical;
 }
+.field input[type='file'] {
+  cursor: pointer;
+}
+.field input[type='file']::file-selector-button {
+  margin-inline-end: 10px;
+  padding: 6px 10px;
+  border: 0;
+  border-radius: 8px;
+  color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 10%, var(--surface));
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+}
+.fileStatus {
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 500;
+}
 .wide {
   grid-column: 1 / -1;
 }

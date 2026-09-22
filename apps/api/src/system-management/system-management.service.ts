@@ -6,6 +6,7 @@ import {
   Injectable,
   NotFoundException,
   Optional,
+  ServiceUnavailableException,
 } from '@nestjs/common';
 import type {
   AuthenticatedActor,
@@ -33,7 +34,10 @@ import type {
 } from '@nora/database';
 
 import { DatabaseService } from '../database/database.service';
-import { DocumentsService } from '../documents/documents.service';
+import {
+  DocumentsService,
+  type UploadedDocumentFile,
+} from '../documents/documents.service';
 import { IamService } from '../iam/iam.service';
 import { ReportingService } from '../reporting/reporting.service';
 import {
@@ -156,6 +160,24 @@ export class SystemManagementService {
       take: 500,
     });
     return rows.map((row) => this.presentSetting(row, row.versions[0]));
+  }
+
+  uploadContractTemplate(
+    title: string,
+    file: UploadedDocumentFile | undefined,
+    actor: AuthenticatedActor,
+    metadata: AuditMetadata,
+  ) {
+    if (!this.documents)
+      throw new ServiceUnavailableException(
+        'سرویس آرشیو اسناد برای بارگذاری قالب در دسترس نیست.',
+      );
+    return this.documents.uploadSystemContractTemplate(
+      { title },
+      file,
+      actor,
+      metadata,
+    );
   }
 
   async writeSetting(

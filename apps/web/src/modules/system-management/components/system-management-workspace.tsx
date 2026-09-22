@@ -116,14 +116,6 @@ const managementAreas: readonly ManagementArea[] = [
     moduleIds: ['documents'],
   },
   {
-    id: 'reporting',
-    title: 'گزارش‌ها و خروجی‌ها',
-    description: 'کاتالوگ و چرخهٔ خروجی گزارش را Reporting مالک است.',
-    owner: 'Reporting',
-    href: '/reports',
-    moduleIds: ['reports'],
-  },
-  {
     id: 'operations',
     title: 'عملیات، سلامت و پشتیبان',
     description:
@@ -378,6 +370,7 @@ export function SystemManagementWorkspace() {
     group: SettingGroup;
   } | null>(null);
   const [draft, setDraft] = useState<Values>({});
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
@@ -538,18 +531,55 @@ export function SystemManagementWorkspace() {
   const openEditor = (module: SettingModule, group: SettingGroup) => {
     setEditing({ module, group });
     setDraft(valuesFor(module, group));
+    setPendingFile(null);
     setSaveError(null);
   };
 
   const saveGroup = async (event: FormEvent) => {
     event.preventDefault();
     if (!editing) return;
+    const editingContractTemplate =
+      editing.module.id === 'sales' && editing.group.id === 'contracts';
+    const templateName = String(draft.templateName ?? '').trim();
+    if (editingContractTemplate && templateName.length < 2) {
+      setSaveError(
+        english
+          ? 'Enter a template name with at least two characters.'
+          : 'نام قالب باید حداقل دو نویسه داشته باشد.',
+      );
+      return;
+    }
+    if (
+      editingContractTemplate &&
+      !pendingFile &&
+      !String(draft.templateDocumentId ?? '').trim()
+    ) {
+      setSaveError(
+        english
+          ? 'Select the contract template file.'
+          : 'فایل قالب قرارداد را انتخاب کنید.',
+      );
+      return;
+    }
     // Only the value owned by the selected scope supplies expectedVersion.
     // An inherited global value creates a new scoped override atomically.
     const current = ownSettingFor(editing.module, editing.group);
     setSaving(true);
     setSaveError(null);
     try {
+      const nextDraft = { ...draft };
+      if (editingContractTemplate) delete nextDraft.template;
+      if (editingContractTemplate && pendingFile) {
+        const form = new FormData();
+        form.set('title', templateName);
+        form.set('file', pendingFile);
+        const uploaded = await systemManagementApi.uploadContractTemplate(form);
+        nextDraft.templateName = templateName;
+        nextDraft.templateFile = uploaded.originalFileName;
+        nextDraft.templateDocumentId = uploaded.id;
+        nextDraft.templateScanStatus = uploaded.scanStatus;
+        nextDraft.templateSizeBytes = String(uploaded.sizeBytes);
+      }
       const saved = await systemManagementApi.writeSetting({
         ...(current ? { expectedVersion: current.version } : {}),
         key: editing.group.id,
@@ -560,7 +590,7 @@ export function SystemManagementWorkspace() {
         scope: scope.scope,
         scopeId: scope.scopeId,
         status: 'ACTIVE',
-        value: draft,
+        value: nextDraft,
         valueType: 'JSON',
       });
       setSettings((items) => [
@@ -569,6 +599,8 @@ export function SystemManagementWorkspace() {
       ]);
       if (editing.module.id === 'general')
         window.dispatchEvent(new Event(systemPreferencesChangedEvent));
+      setDraft(nextDraft);
+      setPendingFile(null);
       setEditing(null);
       setToast(editing.group.sensitive ? copy.sensitiveSaved : copy.saved);
       void load();
@@ -969,6 +1001,21 @@ export function SystemManagementWorkspace() {
                               </option>
                             ))}
                           </select>
+                        ) : field.type === 'file' ? (
+                          <>
+                            <input
+                              accept={field.accept}
+                              onChange={(event) =>
+                                setPendingFile(event.target.files?.[0] ?? null)
+                              }
+                              required={!draft.templateDocumentId}
+                              type="file"
+                            />
+                            <small className={styles.fileStatus}>
+                              {pendingFile?.name ??
+                                String(draft[field.key] ?? field.value)}
+                            </small>
+                          </>
                         ) : (
                           <input
                             max={field.max}
@@ -1009,6 +1056,7 @@ export function SystemManagementWorkspace() {
                   disabled={saving}
                   onClick={() => {
                     setDraft(defaults(editing.group));
+                    setPendingFile(null);
                     setSaveError(null);
                   }}
                   type="button"
