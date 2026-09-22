@@ -39,6 +39,8 @@ import { ProcurementSelect } from './procurement-select';
 import {
   sampleRequests,
   sampleSuppliers,
+  filterSampleRequests,
+  filterSampleSuppliers,
   type ProcurementListRow,
 } from './sample-requests';
 
@@ -311,23 +313,45 @@ export function InternalSections({
     enabled: group === 3,
     retry: false,
   });
+  const baselineList = useQuery({
+    queryKey: ['procurement', 'section-list', group, 1, '', '', '', ''],
+    queryFn: () =>
+      procurementApi.list(
+        new URLSearchParams({
+          page: '1',
+          search: '',
+          status: '',
+          queue: group === 2 ? 'approvals' : '',
+          section: sectionQuery[group] ?? '',
+          createdFrom: '',
+          createdTo: '',
+        }),
+      ),
+    enabled: group !== 3,
+    retry: false,
+  });
+  const baselineSuppliers = useQuery({
+    queryKey: ['procurement', 'suppliers', 1, '', '', ''],
+    queryFn: () =>
+      procurementApi.suppliers(1, '', { createdFrom: '', createdTo: '' }),
+    enabled: group === 3,
+    retry: false,
+  });
   const showSamples =
     group !== 3 &&
     page === 1 &&
-    !search &&
-    !querySearch &&
-    !status &&
-    !createdFrom &&
-    !createdTo &&
     list.isSuccess &&
-    !list.data.items.length;
+    baselineList.isSuccess &&
+    baselineList.data.items.length === 0;
   const rows: ProcurementListRow[] = (
     showSamples
-      ? sampleRequests.filter((item) =>
-          group === 1
-            ? item.section === undefined || item.section === 1
-            : item.section === group,
-        )
+      ? filterSampleRequests(sampleRequests, {
+          section: group,
+          search: querySearch,
+          status,
+          createdFrom,
+          createdTo,
+        })
       : (list.data?.items ?? [])
   ).filter((row) => !hiddenSamples.includes(row.id));
   const openedSample = rows.find(
@@ -336,8 +360,14 @@ export function InternalSections({
   const supplierRows = (
     suppliers.data?.items.length
       ? suppliers.data.items
-      : page === 1 && !search && !querySearch && !createdFrom && !createdTo
-        ? sampleSuppliers
+      : page === 1 &&
+          baselineSuppliers.isSuccess &&
+          baselineSuppliers.data.items.length === 0
+        ? filterSampleSuppliers(sampleSuppliers, {
+            search: querySearch,
+            createdFrom,
+            createdTo,
+          })
         : []
   ).filter((row) => !hiddenSamples.includes(row.id));
   const title = sections[group];
@@ -558,7 +588,9 @@ export function InternalSections({
                         )}
                       >
                         <div>
-                          <p className="font-semibold">{supplier.name}</p>
+                          <p className="font-semibold">
+                            {supplier.name?.trim() || 'تأمین‌کننده بدون نام'}
+                          </p>
                           <p
                             className="mt-1 text-xs text-muted-foreground"
                             dir="ltr"
@@ -570,11 +602,11 @@ export function InternalSections({
                           <Badge>
                             {supplier.isActive ? 'فعال' : 'غیرفعال'}
                           </Badge>
-                          {'sample' in supplier && supplier.sample ? (
-                            <Badge className={tone.chip}>نمونه</Badge>
-                          ) : null}
                           <ProcurementRecordActions
-                            label={supplier.name}
+                            label={
+                              supplier.name?.trim() ||
+                              'تأمین‌کننده بدون نام'
+                            }
                             onEdit={() => {
                               if ('sample' in supplier && supplier.sample)
                                 return;
@@ -636,9 +668,6 @@ export function InternalSections({
                       </div>
                       <div className="flex flex-wrap items-center gap-2">
                         <Badge>{statusLabels[row.status]}</Badge>
-                        {row.sample ? (
-                          <Badge className={tone.chip}>نمونه</Badge>
-                        ) : null}
                         <ProcurementRecordActions
                           label={row.draft.title || row.number}
                           onEdit={() => {

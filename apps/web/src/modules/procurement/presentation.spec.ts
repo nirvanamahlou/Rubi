@@ -28,6 +28,14 @@ describe('Procurement record presentation', () => {
     );
     expect(formatProcurementDate('2026-02-30')).toBe('—');
   });
+  it('uses Persian labels for workflow actions and statuses', () => {
+    expect(formatProcurementRecordValue('action', 'PUBLISH')).toBe(
+      'انتشار درخواست',
+    );
+    expect(formatProcurementRecordValue('status', 'SUBMITTED')).toBe(
+      'ارسال‌شده',
+    );
+  });
   it('describes archived scan snapshots without asserting the current scan state', () => {
     for (const status of ['PENDING', 'CLEAN']) {
       const text = exportScanSnapshotText(status);

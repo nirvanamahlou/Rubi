@@ -1642,6 +1642,19 @@ export class ProcurementOperations {
     else {
       requireRule(false, 'VALIDATION_ERROR', 'نوع فهرست معتبر نیست.');
     }
+    const supplierIds = rows.flatMap((row) => {
+      if (!row || typeof row !== 'object') return [];
+      const supplierId = (row as { supplierId?: unknown }).supplierId;
+      return typeof supplierId === 'string' ? [supplierId] : [];
+    });
+    const supplierLabels = await this.master.supplierLabels(supplierIds);
+    rows = rows.map((row) => {
+      if (!row || typeof row !== 'object') return row;
+      const supplierId = (row as { supplierId?: unknown }).supplierId;
+      const supplierName =
+        typeof supplierId === 'string' ? supplierLabels.get(supplierId) : null;
+      return supplierName ? { ...row, supplierName } : row;
+    });
     return {
       items: rows.slice(0, 50),
       page,
