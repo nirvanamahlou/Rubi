@@ -217,6 +217,52 @@ describe('DocumentsService security and persistence flow', () => {
     });
   });
 
+  it('applies the published file size and format policy to document options', async () => {
+    repository.options.mockResolvedValue({
+      documentTypes: [
+        {
+          id: '55555555-5555-4555-8555-555555555555',
+          code: 'SALES_CONTRACT',
+          name: 'قرارداد فروش',
+          domain: 'SALES',
+          defaultConfidentiality: 'INTERNAL',
+          allowedMimeTypes: ['application/pdf', 'image/png'],
+          maxFileSizeBytes: 20 * 1024 * 1024,
+          requiresExpiry: false,
+        },
+      ],
+      categories: [],
+      owners: [],
+      branches: [{ id: branchId, code: 'TEH', name: 'شعبه تهران' }],
+    });
+    const settings = {
+      json: vi.fn().mockResolvedValue({
+        value: { size: 8, types: 'PDF' },
+      }),
+    };
+    const configured = new DocumentsService(
+      repository as unknown as DocumentsRepository,
+      storage as unknown as LocalDocumentStorage,
+      scanProcessor as unknown as DocumentsScanProcessor,
+      iamStepUp as unknown as IamStepUpPort,
+      hrDirectory as unknown as HrDirectoryService,
+      settings as never,
+    );
+
+    const result = await configured.options(actor);
+
+    expect(result.data.uploadPolicy).toMatchObject({
+      maxFileSizeBytes: 8 * 1024 * 1024,
+      allowedMimeTypes: ['application/pdf'],
+    });
+    expect(settings.json).toHaveBeenCalledWith(
+      'documents',
+      'upload',
+      { branchId },
+      {},
+    );
+  });
+
   it('uploads a Master Data logo without granting general Documents access to the editor', async () => {
     const masterDataEditor: AuthenticatedActor = {
       ...actor,
@@ -523,6 +569,58 @@ describe('DocumentsService security and persistence flow', () => {
     );
   });
 
+  it('uses the configured document-link lifetime for access grants', async () => {
+    const protectedActor: AuthenticatedActor = {
+      ...actor,
+      permissions: [
+        ...actor.permissions,
+        'documents.file.read',
+        'documents.sensitive.read',
+      ],
+    };
+    repository.findDetail.mockResolvedValue(
+      row({
+        mimeType: 'image/jpeg',
+        scanStatus: 'CLEAN',
+        requiresStepUpVerification: true,
+      }),
+    );
+    repository.createAccessGrant.mockResolvedValue(undefined);
+    repository.appendAudit.mockResolvedValue({});
+    iamStepUp.verifyStepUp.mockResolvedValue(undefined);
+    const settings = {
+      json: vi.fn().mockResolvedValue({ value: { link: 12 } }),
+    };
+    const configured = new DocumentsService(
+      repository as unknown as DocumentsRepository,
+      storage as unknown as LocalDocumentStorage,
+      scanProcessor as unknown as DocumentsScanProcessor,
+      iamStepUp as unknown as IamStepUpPort,
+      hrDirectory as unknown as HrDirectoryService,
+      settings as never,
+    );
+    const before = Date.now();
+
+    await configured.createAccessGrant(
+      row().id,
+      { code: '123456', purpose: 'PREVIEW' },
+      protectedActor,
+      {},
+    );
+
+    const expiresAt = repository.createAccessGrant.mock.calls[0]?.[0]
+      .expiresAt as Date;
+    expect(expiresAt.getTime() - before).toBeGreaterThanOrEqual(
+      12 * 60_000 - 1_000,
+    );
+    expect(settings.json).toHaveBeenCalledWith(
+      'documents',
+      'access',
+      { branchId },
+      {},
+    );
+  });
+
   it('fails closed when a protected preview has no one-time grant', async () => {
     const protectedActor: AuthenticatedActor = {
       ...actor,
@@ -626,8 +724,26 @@ describe('DocumentsService security and persistence flow', () => {
       sourceRelationId: '99999999-9999-4999-8999-999999999999',
     } satisfies DocumentUploadDto;
     const buffer = Buffer.from('%PDF-1.7\nreal synthetic test bytes');
+    const settings = {
+      json: vi.fn().mockImplementation((namespace: string, key: string) =>
+        Promise.resolve({
+          value:
+            namespace === 'documents' && key === 'upload'
+              ? { size: 8, types: 'PDF' }
+              : { classification: 'محرمانه' },
+        }),
+      ),
+    };
+    const configured = new DocumentsService(
+      repository as unknown as DocumentsRepository,
+      storage as unknown as LocalDocumentStorage,
+      scanProcessor as unknown as DocumentsScanProcessor,
+      iamStepUp as unknown as IamStepUpPort,
+      hrDirectory as unknown as HrDirectoryService,
+      settings as never,
+    );
 
-    const result = await service.upload(
+    const result = await configured.upload(
       dto,
       {
         buffer,
@@ -649,6 +765,7 @@ describe('DocumentsService security and persistence flow', () => {
       expect.objectContaining({
         title: 'قرارداد واقعی',
         detectedMimeType: 'application/pdf',
+        confidentiality: 'CONFIDENTIAL',
         ipSummary: '192.0.2.x',
         sourceModule: 'sales',
         sourceEntityType: 'contract',

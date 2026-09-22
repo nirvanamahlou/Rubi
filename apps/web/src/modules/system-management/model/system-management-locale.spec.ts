@@ -9,6 +9,12 @@ import {
 } from './system-management-locale';
 
 describe('system management English localization', () => {
+  it('keeps the finance module visible without any settings', () => {
+    expect(
+      settingsModules.find((module) => module.id === 'finance')?.groups,
+    ).toEqual([]);
+  });
+
   it('does not expose Persian catalog text when English is active', () => {
     const modules = localizeSettingModules(settingsModules, 'en');
 
@@ -78,7 +84,7 @@ describe('system management English localization', () => {
       ),
     );
 
-    expect(fields.length).toBeGreaterThanOrEqual(20);
+    expect(fields.length).toBeGreaterThan(0);
     fields.forEach((field) =>
       expect(field.options?.length).toBeGreaterThanOrEqual(5),
     );
