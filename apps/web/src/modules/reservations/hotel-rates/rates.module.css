@@ -269,3 +269,39 @@
     min-width: 22rem;
   }
 }
+
+.hotelRateDetails {
+  display: grid;
+  grid-template-columns: minmax(16rem, 1fr) 2fr;
+  gap: 1.25rem;
+  padding: 0.5rem 0 1rem;
+  align-items: start;
+}
+.hotelRateDetails .roomRateEditor {
+  min-width: 0;
+}
+.hotelRateDetails .roomRateCard {
+  grid-template-columns: 1fr 1fr auto;
+  padding: 0.5rem;
+}
+.hotelRateDetails .occupancyFactors {
+  min-width: 0;
+  grid-template-columns: repeat(6, minmax(5rem, 1fr));
+}
+.root .sheet {
+  min-width: 1050px;
+}
+.root .sheet input {
+  min-height: 36px;
+}
+.root .sheet td:nth-child(2) {
+  min-width: 150px;
+}
+.root .sheet th {
+  white-space: nowrap;
+}
+@media (max-width: 900px) {
+  .hotelRateDetails {
+    grid-template-columns: 1fr;
+  }
+}

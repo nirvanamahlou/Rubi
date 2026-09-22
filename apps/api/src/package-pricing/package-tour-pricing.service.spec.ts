@@ -28,7 +28,7 @@ const grid = {
 };
 
 describe('PackageTourPricingService', () => {
-  it('publishes six-night hotel choices with separate EUR and IRR amounts and rereads them', async () => {
+  it('uses six travel nights within a month-long independent hotel rate window', async () => {
     const draft = {
       id: 'draft-1',
       version: 1,
@@ -56,11 +56,12 @@ describe('PackageTourPricingService', () => {
     };
     const fullGrid = {
       ...grid,
-      nights: 7,
+      nights: 6,
       missingFlightOfferIds: [],
       tour: {
         ...grid.tour,
         version: 1,
+        startsOn: '2026-10-02',
         endsOn: '2026-10-08',
         outboundOfferId: 'out',
         returnOfferId: 'back',
@@ -71,24 +72,16 @@ describe('PackageTourPricingService', () => {
         {
           id: 'batch-1',
           currencyCode: 'EUR',
-          checkIn: '2026-10-02',
-          checkOut: '2026-10-08',
+          checkIn: '2026-10-01',
+          checkOut: '2026-11-01',
+          method: 'STAY',
           rows: [
             {
               id: 'rate-1',
               hotelId: 'hotel-1',
               basePerNight: '100',
               currencyCode: 'EUR',
-              factors: Object.fromEntries(
-                [
-                  'single',
-                  'double',
-                  'triple',
-                  'doubleChild',
-                  'doubleTwoChildren',
-                  'family',
-                ].map((code) => [code, '1']),
-              ),
+              factors: { double: '1' },
               roomRates: [
                 {
                   roomTypeId: 'double',
