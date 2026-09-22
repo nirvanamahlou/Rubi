@@ -194,6 +194,46 @@ function GenericMasterDataLiveForm({
     }
   }
 
+  async function createHotelRoomType(field: string, input = '') {
+    const name = input.trim();
+    if (!name) {
+      setErrors((current) => ({
+        ...current,
+        [field]: 'نام نوع اتاق را وارد کنید.',
+      }));
+      return;
+    }
+    setSaving(true);
+    try {
+      const response = await masterDataApi.create('room-types', {
+        values: { name },
+      });
+      setValues((current) => ({
+        ...current,
+        [field]: [
+          ...new Set([
+            ...(current[field] ?? '').split(',').filter(Boolean),
+            response.data.id,
+          ]),
+        ].join(','),
+      }));
+      setErrors((current) => {
+        const next = { ...current };
+        delete next[field];
+        return next;
+      });
+      setReferenceRevision((revision) => revision + 1);
+    } catch (error) {
+      setErrors((current) => ({
+        ...current,
+        [field]:
+          error instanceof Error ? error.message : 'افزودن نوع اتاق انجام نشد.',
+      }));
+    } finally {
+      setSaving(false);
+    }
+  }
+
   return (
     <>
       <Dialog onOpenChange={onOpenChange} open={open}>
@@ -287,7 +327,18 @@ function GenericMasterDataLiveForm({
                         onManage: (
                           related?: MasterDataRecord,
                           searchQuery?: string,
-                        ) =>
+                        ) => {
+                          if (
+                            definition.key === 'hotels' &&
+                            field.key === 'roomTypeIds' &&
+                            !related
+                          ) {
+                            void createHotelRoomType(
+                              field.key,
+                              searchQuery ?? '',
+                            );
+                            return;
+                          }
                           setReferenceForm({
                             field: field.key,
                             definition: getMasterDataDefinition(
@@ -315,13 +366,15 @@ function GenericMasterDataLiveForm({
                                   : reference.target === 'regions'
                                     ? { countryId: values.countryId ?? '' }
                                     : {},
-                          }),
+                          });
+                        },
                       }
                     : {})}
                   createOnlyWhenEmpty={
-                    definition.key === 'suppliers' &&
-                    mode === 'create' &&
-                    field.key === 'organizationId'
+                    (definition.key === 'suppliers' &&
+                      mode === 'create' &&
+                      field.key === 'organizationId') ||
+                    (definition.key === 'hotels' && field.key === 'roomTypeIds')
                   }
                   id={controlId}
                   label={field.label}

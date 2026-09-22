@@ -212,7 +212,9 @@ export function MasterDataReferenceSelector({
                 ? 'ثبت سازمان جدید'
                 : config.target === 'organization-contacts'
                   ? 'افزودن مخاطب'
-                  : 'افزودن خدمت'}
+                  : config.target === 'room-types'
+                    ? 'افزودن نوع اتاق'
+                    : 'افزودن خدمت'}
             </Button>
           ) : null}
           {!config.multiple && selected ? (
@@ -298,7 +300,11 @@ export function MasterDataReferenceSelector({
             setQuery(event.target.value);
             setExpanded(true);
           }}
-          placeholder="جست‌وجوی عنوان یا کد"
+          placeholder={
+            config.target === 'room-types'
+              ? 'نام نوع اتاق را بنویسید'
+              : 'جست‌وجوی عنوان یا کد'
+          }
           role="combobox"
           value={query}
         />

@@ -3290,3 +3290,7 @@ Tour definition uses four-column desktop identity fields and compact controls. I
 # SALES-OPTIONAL-HOTEL-RATE-0922 — READY_FOR_REVIEW
 
 نبود ضریب فعال برای نوع اتاق انتخاب‌شده دیگر مانع ایجاد، ویرایش یا تأیید قرارداد نیست. کنترل ظرفیت برای نرخ‌هایی که ظرفیت معتبر دارند حفظ می‌شود و هشدار عبور از ظرفیت همان موقع انتخاب اتاق نمایش داده می‌شود. Schema، Migration، مجوز و داده عملیاتی تغییر نمی‌کنند؛ تست‌های هدفمند، lint، typecheck و build تولیدی API/Web موفق‌اند.
+
+## 2026-09-22 — MASTER-HOTEL-INLINE-ROOM-TYPES-0922 — PC-B — READY_FOR_REVIEW
+
+نوع اتاق دیگر سکشن یا فرم مستقل اطلاعات پایه نیست. در فرم هتل، نام هر نوع اتاق با یک ورودی ساده ایجاد و همان‌جا به انتخاب چندگانه هتل اضافه می‌شود؛ فیلدهای عنوان فارسی، ظرفیت استاندارد و توضیح استفاده از جریان ایجاد حذف شدند. مرجع داخلی و Public Boundary موجود حفظ شده‌اند تا Sales و Reservations بدون تغییر Schema/Contract همچنان شناسه و نام نوع اتاق را مصرف کنند. ۳۵۸ تست Master Data Web، ۵ تست API اقامت، lint، typecheck و build تولیدی Web با ۵۰ مسیر موفق‌اند.

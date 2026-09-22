@@ -142,4 +142,20 @@ describe('master data catalog', () => {
         hotel.fields.find((item) => item.key === field)?.required,
       ).not.toBe(true);
   });
+
+  it('keeps room type as one inline hotel value without legacy form fields', () => {
+    const roomType = getMasterDataDefinition('room-types');
+    expect(roomType.fields.map((field) => field.key)).toEqual(['name']);
+    expect(roomType.fields[0]).toMatchObject({
+      label: 'نوع اتاق',
+      required: true,
+    });
+    expect(roomType.fields.map((field) => field.label)).not.toEqual(
+      expect.arrayContaining([
+        'عنوان فارسی',
+        'ظرفیت استاندارد',
+        'توضیح استفاده',
+      ]),
+    );
+  });
 });
