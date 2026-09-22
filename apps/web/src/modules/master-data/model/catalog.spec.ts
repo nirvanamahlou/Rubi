@@ -24,9 +24,10 @@ describe('master data catalog', () => {
     ).toBe(false);
   });
 
-  it('keeps the airline description focused on reference codes', () => {
+  it('keeps the airline description free of removed technical wording', () => {
     const description = getMasterDataDefinition('airlines').description;
-    expect(description).toBe('مشخصات مرجع ایرلاین با کدهای IATA/ICAO.');
+    expect(description).toBe('ایرلاین‌ها و قواعد بار مرجع.');
+    expect(description).not.toContain('مشخصات مرجع');
     expect(description).not.toContain('Credential');
     expect(description).not.toContain('Provider');
   });

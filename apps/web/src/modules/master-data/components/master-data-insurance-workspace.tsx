@@ -495,7 +495,10 @@ export function MasterDataInsuranceWorkspace() {
 
   const table = records.length ? (
     <Card className="overflow-x-auto">
-      <table className="w-full min-w-[72rem] text-sm">
+      <table
+        aria-label={`فهرست ${definition.label}`}
+        className="w-full min-w-[72rem] text-sm"
+      >
         <thead className="bg-muted/50 text-muted-foreground">
           {resource === 'insurers' ? (
             <tr>

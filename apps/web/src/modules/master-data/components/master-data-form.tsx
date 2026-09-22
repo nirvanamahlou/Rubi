@@ -25,6 +25,7 @@ import type { MasterDataCatalogItem } from '../model/catalog';
 import { getMasterDataFormFields } from '../model/form-fields';
 import { validateMasterDataDraft } from '../model/validation';
 import { MasterDataClearableField } from './master-data-clearable-field';
+import { useMasterDataDialogFocusRestore } from './use-master-data-dialog-focus-restore';
 
 export type MasterDataFormMode = 'create' | 'view' | 'edit';
 
@@ -75,6 +76,7 @@ export function MasterDataForm({
     initialValues(definition, mode),
   );
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const focusRestore = useMasterDataDialogFocusRestore();
 
   const readonly = mode === 'view';
 
@@ -93,7 +95,10 @@ export function MasterDataForm({
 
   return (
     <Dialog onOpenChange={onOpenChange} open={open}>
-      <DialogContent className="start-auto left-1/2 max-h-[calc(100dvh-2rem)] max-w-2xl overflow-y-auto p-6">
+      <DialogContent
+        {...focusRestore}
+        className="start-auto left-1/2 max-h-[calc(100dvh-2rem)] max-w-2xl overflow-y-auto p-6"
+      >
         <DialogTitle>
           {modeLabels[mode]} {definition.singularLabel}
         </DialogTitle>
@@ -109,7 +114,7 @@ export function MasterDataForm({
           </Badge>
         </div>
 
-        <form className="mt-6 space-y-5" onSubmit={handleSubmit}>
+        <form className="mt-6 space-y-5" noValidate onSubmit={handleSubmit}>
           {getMasterDataFormFields(definition, mode).map((field) => {
             const error = errors[field.key];
             const helpId = `${definition.key}-${field.key}-help`;
