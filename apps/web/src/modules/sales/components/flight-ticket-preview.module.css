@@ -463,6 +463,22 @@
   font-family: Vazirmatn, Arial, sans-serif;
   font-size: 14px;
 }
+.barcode {
+  width: 190px;
+  margin: 0 0 12px 36px;
+  color: #102750;
+  text-align: center;
+}
+.barcode svg {
+  display: block;
+  width: 100%;
+  height: 46px;
+}
+.barcode figcaption {
+  margin-top: 2px;
+  font-size: 9px;
+  letter-spacing: 1.5px;
+}
 .paper .footer {
   display: flex;
   align-items: center;

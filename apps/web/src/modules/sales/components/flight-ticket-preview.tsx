@@ -9,6 +9,7 @@ import type { MasterDataRecord, TicketOfferV1 } from '@nora/contracts';
 import { Button } from '@/components/ui/button';
 import type { SalesFormState } from '../model/sales-form';
 import { salesDirections, salesFlightSelection } from '../model/sales-form';
+import { ticketBarcode } from '../public/ticket-barcode';
 import styles from './flight-ticket-preview.module.css';
 
 export interface FlightTicketSheetData {
@@ -109,6 +110,9 @@ export function FlightTicketSheet({
   const passengerLabel = [passengerPrefix, passengerName]
     .filter(Boolean)
     .join(' ');
+  const barcode = data.contractNumber
+    ? ticketBarcode(data.contractNumber)
+    : null;
   const formatDate = (value: string) =>
     new Intl.DateTimeFormat('en-GB', {
       timeZone: 'Asia/Tehran',
@@ -283,6 +287,28 @@ export function FlightTicketSheet({
           حضور در فرودگاه ۳ ساعت قبل از پرواز الزامی است.
         </strong>
       </div>
+      {barcode ? (
+        <figure className={styles.barcode}>
+          <svg
+            viewBox={`0 0 ${barcode.width} 54`}
+            role="img"
+            aria-label={`Barcode ${barcode.value}`}
+            preserveAspectRatio="none"
+          >
+            {barcode.bars.map((bar) => (
+              <rect
+                key={`${bar.x}-${bar.width}`}
+                x={bar.x}
+                y="0"
+                width={bar.width}
+                height="42"
+                fill="currentColor"
+              />
+            ))}
+          </svg>
+          <figcaption>{barcode.value}</figcaption>
+        </figure>
+      ) : null}
       <footer className={styles.footer}>
         <span>FLY FURTHER TOGETHER</span>
         <span>{data.branding?.name ?? 'NIYAYESH SEIR SAHAR'}</span>

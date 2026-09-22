@@ -1,6 +1,9 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
-import { FlightTicketDocument } from './flight-ticket-preview';
+import {
+  FlightTicketDocument,
+  FlightTicketSheet,
+} from './flight-ticket-preview';
 import { emptySalesForm } from '../model/sales-form';
 import type { TicketOfferV1 } from '@nora/contracts';
 
@@ -130,5 +133,21 @@ describe('flight ticket output template', () => {
     expect(html).toContain('TEST AIRLINE');
     expect(html).toContain('PRESENCE 03:00 BEFORE FLIGHT TIME');
     expect(html).not.toContain('<table');
+  });
+  it('prints a scannable contract barcode at the bottom of an issued ticket', () => {
+    const html = renderToStaticMarkup(
+      <FlightTicketSheet
+        data={{
+          passengerName: 'Synthetic Passenger',
+          contractNumber: 'SC-2026-000003',
+          offers: [],
+          transferDirections: [],
+        }}
+        cityName={() => '—'}
+      />,
+    );
+    expect(html).toContain('aria-label="Barcode SC-2026-000003"');
+    expect(html).toContain('<figcaption>SC-2026-000003</figcaption>');
+    expect(html).toContain('<rect');
   });
 });
