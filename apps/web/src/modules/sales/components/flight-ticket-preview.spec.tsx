@@ -112,4 +112,23 @@ describe('flight ticket output template', () => {
     expect(html).toContain('BUSINESS');
     expect(html).toContain('NOT VALID FOR TRAVEL');
   });
+  it('uses the branded route-card hierarchy for issued ticket preview and print', () => {
+    const html = renderToStaticMarkup(
+      <FlightTicketDocument
+        state={{
+          ...emptySalesForm,
+          serviceKinds: ['FLIGHT'],
+          serviceDirections: { FLIGHT: ['OUTBOUND'] },
+          outboundOffer: demoOffer,
+        }}
+        cities={[]}
+        passengerName="Synthetic Passenger"
+      />,
+    );
+    expect(html).toContain('ELECTRONIC TICKET / ITINERARY');
+    expect(html).toContain('OUTBOUND');
+    expect(html).toContain('TEST AIRLINE');
+    expect(html).toContain('PRESENCE 03:00 BEFORE FLIGHT TIME');
+    expect(html).not.toContain('<table');
+  });
 });
