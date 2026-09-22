@@ -4,7 +4,7 @@ import type { LoginResponse, TourDepartureV1 } from '@nora/contracts';
 import {
   ArrowLeft,
   ArrowRight,
-  Image,
+  Image as ImageIcon,
   PackageOpen,
   Sticker,
 } from 'lucide-react';
@@ -280,7 +280,7 @@ export function PackageGeneratorWorkspace() {
                 {packageGeneratorSectionLabels.package}
               </TabsTrigger>
               <TabsTrigger className="min-h-14 gap-2 font-black" value="banner">
-                <Image className="size-5" />
+                <ImageIcon className="size-5" />
                 {packageGeneratorSectionLabels.banner}
               </TabsTrigger>
               <TabsTrigger
@@ -385,7 +385,7 @@ export function PackageGeneratorWorkspace() {
               ) : (
                 <EmptyState
                   description="پس از انتخاب نوبت، قالب‌ها و کنترل‌های بنر نمایش داده می‌شوند."
-                  icon={Image}
+                  icon={ImageIcon}
                   title="برای ساخت بنر، یک نوبت سفر انتخاب کنید"
                 />
               )}
