@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import type { TicketOfferV1 } from '@nora/contracts';
+import type { HotelRoomRateV1, TicketOfferV1 } from '@nora/contracts';
 import {
   emptySalesForm,
   salesDetailSteps,
   salesHotelDate,
+  salesHotelCapacityError,
   salesHotelRoomTypes,
   salesHotelValid,
   salesPayload,
@@ -179,5 +180,35 @@ describe('combined flight and hotel details', () => {
       extraBedCount: 0,
     });
     expect(payload.hotelSelection).not.toHaveProperty('checkInManual');
+  });
+  it('reports known room capacity immediately and ignores missing rate factors', () => {
+    const state = selected();
+    state.passengerComposition = { adults: 3, children: 1, infants: 0 };
+    state.hotel = {
+      ...state.hotel,
+      hotelId: 'hotel',
+      roomTypeId: 'double',
+      roomCount: 1,
+    };
+    const rates: HotelRoomRateV1[] = [
+      {
+        roomTypeId: 'double',
+        roomTypeName: 'دوتخته',
+        factor: '1',
+        maxAdults: 2,
+        maxChildren: 1,
+      },
+    ];
+
+    expect(salesHotelCapacityError(state, rates)).toContain(
+      'حداکثر ۲ بزرگسال و ۱ کودک',
+    );
+    expect(salesHotelCapacityError(state, [])).toBeNull();
+    expect(
+      salesHotelCapacityError(
+        { ...state, hotel: { ...state.hotel, roomCount: 2 } },
+        rates,
+      ),
+    ).toBeNull();
   });
 });

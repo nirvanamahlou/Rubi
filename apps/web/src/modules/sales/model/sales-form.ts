@@ -17,6 +17,7 @@ import type {
   SalesMoney,
   SalesAccommodationKind,
   MasterDataRecord,
+  HotelRoomRateV1,
   SalesContractCreateRequest,
   SalesPaymentInput,
   SalesPriceComponentInput,
@@ -342,6 +343,23 @@ export function salesPassengerCounts(state: SalesFormState) {
     seated: adults + children,
     total: adults + children + infants,
   };
+}
+
+export function salesHotelCapacityError(
+  state: SalesFormState,
+  roomRates: readonly HotelRoomRateV1[],
+): string | null {
+  if (!state.hotel.roomTypeId) return null;
+  const roomRate = roomRates.find(
+    ({ roomTypeId }) => roomTypeId === state.hotel.roomTypeId,
+  );
+  if (!roomRate) return null;
+  const rooms = Math.max(1, state.hotel.roomCount);
+  const counts = salesPassengerCounts(state);
+  const maxAdults = roomRate.maxAdults * rooms;
+  const maxChildren = roomRate.maxChildren * rooms;
+  if (counts.adults <= maxAdults && counts.children <= maxChildren) return null;
+  return `ظرفیت ${roomRate.roomTypeName} برای ${rooms.toLocaleString('fa-IR')} اتاق، حداکثر ${maxAdults.toLocaleString('fa-IR')} بزرگسال و ${maxChildren.toLocaleString('fa-IR')} کودک است؛ تعداد اتاق یا نوع اتاق را تغییر دهید.`;
 }
 
 export function salesPassengerCompositionMatches(state: SalesFormState) {
