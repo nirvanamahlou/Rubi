@@ -12,7 +12,12 @@ import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { buttonVariants } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/overlays';
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '@/components/ui/overlays';
 import {
   Badge,
   Card,
@@ -267,7 +272,10 @@ export function PackageGeneratorWorkspace() {
               aria-label="بخش‌های پک جنریتور"
               className="grid h-auto w-full grid-cols-3 gap-2 rounded-2xl p-2"
             >
-              <TabsTrigger className="min-h-14 gap-2 font-black" value="package">
+              <TabsTrigger
+                className="min-h-14 gap-2 font-black"
+                value="package"
+              >
                 <PackageOpen className="size-5" />
                 {packageGeneratorSectionLabels.package}
               </TabsTrigger>
@@ -275,7 +283,10 @@ export function PackageGeneratorWorkspace() {
                 <Image className="size-5" />
                 {packageGeneratorSectionLabels.banner}
               </TabsTrigger>
-              <TabsTrigger className="min-h-14 gap-2 font-black" value="sticker">
+              <TabsTrigger
+                className="min-h-14 gap-2 font-black"
+                value="sticker"
+              >
                 <Sticker className="size-5" />
                 {packageGeneratorSectionLabels.sticker}
               </TabsTrigger>
@@ -303,9 +314,9 @@ export function PackageGeneratorWorkspace() {
                             بازه سفر
                           </p>
                           <p className="mt-2 font-black">
-                            {new Date(
-                              selectedTour.startsOn,
-                            ).toLocaleDateString('fa-IR')}{' '}
+                            {new Date(selectedTour.startsOn).toLocaleDateString(
+                              'fa-IR',
+                            )}{' '}
                             تا{' '}
                             {new Date(selectedTour.endsOn).toLocaleDateString(
                               'fa-IR',
@@ -326,8 +337,8 @@ export function PackageGeneratorWorkspace() {
                     <div className="grid content-center gap-3 rounded-2xl border border-border bg-surface p-5">
                       <p className="text-sm font-black">مرحله بعد</p>
                       <p className="text-xs leading-6 text-muted-foreground">
-                        برای طراحی محتوای تبلیغاتی همین پکیج، وارد بنر یا
-                        استیکر شوید.
+                        برای طراحی محتوای تبلیغاتی همین پکیج، وارد بنر یا استیکر
+                        شوید.
                       </p>
                       <button
                         className={buttonVariants({ variant: 'primary' })}

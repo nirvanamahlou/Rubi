@@ -37,9 +37,8 @@ function route(tour: TourDepartureV1) {
 
 export function PackageStickerWorkspace({ tour }: { tour: TourDepartureV1 }) {
   const [label, setLabel] = useState('پیشنهاد ویژه');
-  const [themeId, setThemeId] = useState<(typeof themes)[number]['id']>(
-    'violet',
-  );
+  const [themeId, setThemeId] =
+    useState<(typeof themes)[number]['id']>('violet');
   const [showDate, setShowDate] = useState(true);
   const [showFlight, setShowFlight] = useState(true);
   const theme = useMemo(
