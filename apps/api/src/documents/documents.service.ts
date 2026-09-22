@@ -10,6 +10,7 @@ import {
   Inject,
   Injectable,
   NotFoundException,
+  Optional,
   UnsupportedMediaTypeException,
 } from '@nestjs/common';
 import type {
@@ -47,6 +48,7 @@ import {
 } from './documents.repository';
 import { DocumentsScanProcessor } from './documents.scan-processor';
 import { LocalDocumentStorage } from './documents.storage';
+import { SettingsRuntimeService } from '../settings/settings-runtime.service';
 import {
   MAX_DOCUMENT_SIZE_BYTES,
   validateUploadFile,
@@ -72,6 +74,18 @@ export interface MasterDataLogoDocumentResult {
   scanStatus: DocumentVersionV1['scanStatus'];
 }
 
+export interface ProfilePhotoDocumentResult {
+  id: string;
+  scanStatus: DocumentVersionV1['scanStatus'];
+}
+
+export interface SystemContractTemplateDocumentResult {
+  id: string;
+  originalFileName: string;
+  scanStatus: DocumentVersionV1['scanStatus'];
+  sizeBytes: number;
+}
+
 const MASTER_DATA_LOGO_MAX_BYTES = 5 * 1024 * 1024;
 
 function masterDataLogoMarker(file: UploadedDocumentFile): string {
@@ -93,6 +107,34 @@ function masterDataLogoActor(
     ...actor.permissions,
     'documents.brand.read',
     ...permissions,
+  ];
+  return {
+    ...actor,
+    permissions: [...new Set(grants)],
+  };
+}
+
+function profilePhotoActor(
+  actor: AuthenticatedActor,
+  ...permissions: AuthenticatedActor['permissions'][number][]
+): AuthenticatedActor {
+  const grants: AuthenticatedActor['permissions'] = [
+    ...actor.permissions,
+    'documents.brand.read',
+    ...permissions,
+  ];
+  return {
+    ...actor,
+    permissions: [...new Set(grants)],
+  };
+}
+
+function systemContractTemplateActor(
+  actor: AuthenticatedActor,
+): AuthenticatedActor {
+  const grants: AuthenticatedActor['permissions'] = [
+    ...actor.permissions,
+    'documents.brand.read',
   ];
   return {
     ...actor,
@@ -192,6 +234,22 @@ function canReadSensitive(
 
 const previewableImageMimeTypes = new Set(['image/jpeg', 'image/png']);
 
+const configuredMimeTypes: Readonly<Record<string, readonly string[]>> = {
+  PDF: ['application/pdf'],
+  JPG: ['image/jpeg'],
+  PNG: ['image/png'],
+  XLSX: ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'],
+};
+
+function confidentialityFromSetting(
+  value: unknown,
+): DocumentConfidentialityCode | undefined {
+  if (value === 'INTERNAL' || value === 'داخلی') return 'INTERNAL';
+  if (value === 'CONFIDENTIAL' || value === 'محرمانه') return 'CONFIDENTIAL';
+  if (value === 'RESTRICTED' || value === 'محدود') return 'RESTRICTED';
+  return undefined;
+}
+
 export interface DocumentFileDelivery {
   stream: Readable;
   fileName: string;
@@ -263,6 +321,9 @@ export class DocumentsService {
     private readonly iamStepUp: IamStepUpPort,
     @Inject(HrDirectoryService)
     private readonly hrDirectory: HrDirectoryService,
+    @Optional()
+    @Inject(SettingsRuntimeService)
+    private readonly settings?: SettingsRuntimeService,
   ) {}
 
   /** Public storage-health port; consumers never access Documents storage directly. */
@@ -319,6 +380,95 @@ export class DocumentsService {
       );
     }
     return matches;
+  }
+
+  /**
+   * Narrow owner-only boundary for an account avatar. The caller cannot choose
+   * a Documents domain, owner or source reference and gains no catalogue access.
+   */
+  async uploadOwnProfilePhoto(
+    input: { branchId: string; title: string },
+    file: UploadedDocumentFile | undefined,
+    actor: AuthenticatedActor,
+    metadata: DocumentRequestMetadata,
+  ): Promise<ProfilePhotoDocumentResult> {
+    if (!actor.branchIds.includes(input.branchId))
+      throw new ForbiddenException('شعبه عکس پروفایل خارج از دسترسی شما است.');
+    if (!file) throw new BadRequestException('انتخاب عکس پروفایل الزامی است.');
+    if (!['image/png', 'image/jpeg'].includes(file.mimetype))
+      throw new UnsupportedMediaTypeException(
+        'عکس پروفایل باید PNG یا JPEG باشد.',
+      );
+    if (file.size < 1 || file.size > 5 * 1024 * 1024)
+      throw new BadRequestException('حجم عکس باید حداکثر ۵ مگابایت باشد.');
+
+    const values = await this.repository.options(actor.branchIds, ['BRAND']);
+    const branch = values.branches.find(({ id }) => id === input.branchId);
+    const owner = values.owners.find(({ id }) => id === actor.userId);
+    const documentType = values.documentTypes.find(
+      ({ code }) => code === 'BRAND_ASSET_TEMPLATE',
+    );
+    const category = values.categories.find(
+      ({ code }) => code === 'BRAND_ASSETS',
+    );
+    if (!branch)
+      throw new ForbiddenException('شعبه مجاز عکس پروفایل پیدا نشد.');
+    if (!owner || !documentType || !category)
+      throw new ConflictException(
+        'پیش‌نیاز ذخیره عکس پروفایل در آرشیو اسناد کامل نیست.',
+      );
+
+    const title = input.title.trim().slice(0, 240) || 'عکس پروفایل';
+    const uploaded = await this.upload(
+      {
+        title,
+        description: 'عکس پروفایل ثبت‌شده در تنظیمات شخصی',
+        documentTypeId: documentType.id,
+        categoryId: category.id,
+        branchId: branch.id,
+        ownerUserId: owner.id,
+        confidentiality: 'INTERNAL',
+        sourceModule: 'WORKBENCH',
+        sourceEntityType: 'IamProfile',
+        sourceEntityId: actor.userId,
+        sourceDisplayLabel: title,
+        versionNote: 'عکس پروفایل',
+      },
+      file,
+      profilePhotoActor(actor),
+      metadata,
+    );
+    return {
+      id: uploaded.data.id,
+      scanStatus: uploaded.data.currentVersion.scanStatus,
+    };
+  }
+
+  async previewOwnProfilePhoto(
+    documentId: string,
+    actor: AuthenticatedActor,
+    metadata: DocumentRequestMetadata,
+  ): Promise<DocumentFileDelivery> {
+    const row = await this.repository.findDetail(documentId, actor.branchIds);
+    const ownsProfileReference = row?.relations.some(
+      (relation) =>
+        relation.relationType === 'PRIMARY_CASE' &&
+        relation.sourceModule === 'WORKBENCH' &&
+        relation.sourceEntityType === 'IamProfile' &&
+        relation.sourceEntityId === actor.userId,
+    );
+    if (
+      !row ||
+      row.ownerUserId !== actor.userId ||
+      row.documentType.domain !== 'BRAND' ||
+      !ownsProfileReference
+    )
+      throw new ForbiddenException('مشاهده این عکس پروفایل مجاز نیست.');
+    return this.preview(
+      documentId,
+      profilePhotoActor(actor, 'documents.file.read'),
+      metadata,
+    );
   }
 
   async favorites(actor: AuthenticatedActor) {
@@ -433,6 +583,62 @@ export class DocumentsService {
       id: uploaded.data.id,
       reused: false,
       scanStatus: uploaded.data.currentVersion.scanStatus,
+    };
+  }
+
+  async uploadSystemContractTemplate(
+    input: { title: string },
+    file: UploadedDocumentFile | undefined,
+    actor: AuthenticatedActor,
+    metadata: DocumentRequestMetadata,
+  ): Promise<SystemContractTemplateDocumentResult> {
+    this.assertPermission(actor.permissions, 'system.settings.manage');
+    if (!file) throw new BadRequestException('انتخاب فایل قالب الزامی است.');
+    const title = input.title?.trim();
+    if (!title || title.length < 2 || title.length > 240)
+      throw new BadRequestException('نام قالب باید بین ۲ تا ۲۴۰ نویسه باشد.');
+
+    const scopedActor = systemContractTemplateActor(actor);
+    const values = await this.repository.options(actor.branchIds, ['BRAND']);
+    const branch = values.branches[0];
+    const owner = values.owners.find((item) => item.id === actor.userId);
+    const documentType = values.documentTypes.find(
+      (item) => item.code === 'BRAND_ASSET_TEMPLATE',
+    );
+    const category = values.categories.find(
+      (item) => item.code === 'BRAND_ASSETS',
+    );
+    if (!branch)
+      throw new ForbiddenException('شعبه مجاز برای بارگذاری قالب مشخص نیست.');
+    if (!owner || !documentType || !category)
+      throw new ConflictException(
+        'پیش‌نیاز ذخیره قالب قرارداد در آرشیو اسناد کامل نیست.',
+      );
+
+    const uploaded = await this.upload(
+      {
+        title,
+        description: 'قالب قرارداد ثبت‌شده در مدیریت سیستم',
+        documentTypeId: documentType.id,
+        categoryId: category.id,
+        branchId: branch.id,
+        ownerUserId: owner.id,
+        confidentiality: 'INTERNAL',
+        sourceModule: 'SYSTEM_MANAGEMENT',
+        sourceEntityType: 'SalesContractTemplate',
+        sourceEntityId: randomUUID(),
+        sourceDisplayLabel: title,
+        versionNote: 'قالب قرارداد و الحاقیه',
+      },
+      file,
+      scopedActor,
+      metadata,
+    );
+    return {
+      id: uploaded.data.id,
+      originalFileName: uploaded.data.currentVersion.originalFileName,
+      scanStatus: uploaded.data.currentVersion.scanStatus,
+      sizeBytes: uploaded.data.currentVersion.sizeBytes,
     };
   }
 
@@ -573,6 +779,7 @@ export class DocumentsService {
       maxFileSizeBytes: Number(type.maxFileSizeBytes),
       requiresExpiry: type.requiresExpiry,
     }));
+    const uploadPolicy = await this.configuredUploadPolicy(actor.branchIds[0]);
     return {
       data: {
         currentUserId: actor.userId,
@@ -586,12 +793,12 @@ export class DocumentsService {
         owners: values.owners,
         uploadPolicy: {
           maxFileSizeBytes: Math.min(
-            MAX_DOCUMENT_SIZE_BYTES,
+            uploadPolicy.maxFileSizeBytes,
             ...documentTypes.map((type) => type.maxFileSizeBytes),
           ),
           allowedMimeTypes: [
             ...new Set(documentTypes.flatMap((type) => type.allowedMimeTypes)),
-          ],
+          ].filter((mimeType) => uploadPolicy.allowedMimeTypes.has(mimeType)),
           antivirusAvailable: this.scanProcessor.available,
         },
       },
@@ -982,19 +1189,25 @@ export class DocumentsService {
     const detectedMimeType = detectMimeType(file);
     const sha256 = createHash('sha256').update(file.buffer).digest('hex');
     const openXml = detectedMimeType.includes('openxmlformats');
-    const validation = validateUploadFile({
-      originalFileName: file.originalname,
-      declaredMimeType: file.mimetype,
-      detectedMimeType,
-      sizeBytes: file.size,
-      sha256,
-      magicBytes: [...file.buffer.subarray(0, 16)],
-      ...(openXml
-        ? { archiveEntryCount: 1, archiveUncompressedBytes: file.size }
-        : {}),
-    });
+    const uploadPolicy = await this.configuredUploadPolicy(dto.branchId);
+    const maxDocumentSizeBytes = uploadPolicy.maxFileSizeBytes;
+    const validation = validateUploadFile(
+      {
+        originalFileName: file.originalname,
+        declaredMimeType: file.mimetype,
+        detectedMimeType,
+        sizeBytes: file.size,
+        sha256,
+        magicBytes: [...file.buffer.subarray(0, 16)],
+        ...(openXml
+          ? { archiveEntryCount: 1, archiveUncompressedBytes: file.size }
+          : {}),
+      },
+      maxDocumentSizeBytes,
+    );
     if (
       !validation.valid ||
+      !uploadPolicy.allowedMimeTypes.has(detectedMimeType) ||
       !references.documentType.allowedMimeTypes.includes(detectedMimeType) ||
       file.size > Number(references.documentType.maxFileSizeBytes)
     ) {
@@ -1007,6 +1220,14 @@ export class DocumentsService {
     const documentId = randomUUID();
     const versionId = randomUUID();
     const storageObjectKey = `documents/${documentId}/v1/${randomUUID()}.bin`;
+    const configuredAccess = this.settings
+      ? await this.settings.json<{ classification?: unknown }>(
+          'documents',
+          'access',
+          { branchId: dto.branchId },
+          {},
+        )
+      : { value: {} as { classification?: unknown } };
     await this.storage.putQuarantined(storageObjectKey, file.buffer);
     try {
       const row = await this.repository.createUploaded({
@@ -1024,7 +1245,9 @@ export class DocumentsService {
         sourceEntityId: sourceReference.sourceEntityId,
         sourceDisplayLabel: sourceReference.displayLabel,
         confidentiality:
-          dto.confidentiality ?? references.documentType.defaultConfidentiality,
+          dto.confidentiality ??
+          confidentialityFromSetting(configuredAccess.value.classification) ??
+          references.documentType.defaultConfidentiality,
         requiresStepUpVerification: dto.requiresStepUpVerification ?? false,
         validUntil: dto.validUntil
           ? new Date(`${dto.validUntil.slice(0, 10)}T23:59:59.999Z`)
@@ -1056,6 +1279,55 @@ export class DocumentsService {
         .catch(() => undefined);
       throw error;
     }
+  }
+
+  private async configuredMaxFileSizeBytes(branchId?: string): Promise<number> {
+    return (await this.configuredUploadPolicy(branchId)).maxFileSizeBytes;
+  }
+
+  private async configuredUploadPolicy(branchId?: string): Promise<{
+    maxFileSizeBytes: number;
+    allowedMimeTypes: ReadonlySet<string>;
+  }> {
+    const fallbackMimeTypes = new Set(
+      Object.values(configuredMimeTypes).flat(),
+    );
+    if (!this.settings || !branchId)
+      return {
+        maxFileSizeBytes: MAX_DOCUMENT_SIZE_BYTES,
+        allowedMimeTypes: fallbackMimeTypes,
+      };
+    const setting = await this.settings.json<{
+      size?: unknown;
+      types?: unknown;
+    }>('documents', 'upload', { branchId }, {});
+    const megabytes =
+      typeof setting.value.size === 'number'
+        ? setting.value.size
+        : typeof setting.value.size === 'string'
+          ? Number(setting.value.size)
+          : Number.NaN;
+    const maxFileSizeBytes =
+      Number.isFinite(megabytes) && megabytes > 0
+        ? Math.min(
+            MAX_DOCUMENT_SIZE_BYTES,
+            Math.max(1, Math.trunc(megabytes)) * 1024 * 1024,
+          )
+        : MAX_DOCUMENT_SIZE_BYTES;
+    const tokens =
+      typeof setting.value.types === 'string'
+        ? setting.value.types
+            .split(/[،,|]/u)
+            .map((value) => value.trim().toUpperCase())
+            .filter(Boolean)
+        : [];
+    const selected = tokens.flatMap(
+      (token) => configuredMimeTypes[token] ?? [],
+    );
+    return {
+      maxFileSizeBytes,
+      allowedMimeTypes: new Set(selected.length ? selected : fallbackMimeTypes),
+    };
   }
 
   async audit(id: string, actor: AuthenticatedActor) {
@@ -1163,7 +1435,20 @@ export class DocumentsService {
       throw error;
     }
     const token = randomBytes(32).toString('base64url');
-    const expiresAt = new Date(Date.now() + 2 * 60_000);
+    const configuredAccess = this.settings
+      ? await this.settings.json<{ link?: unknown }>(
+          'documents',
+          'access',
+          { branchId: row.branchId },
+          {},
+        )
+      : { value: {} as { link?: unknown } };
+    const requestedMinutes = Number(configuredAccess.value.link);
+    const accessMinutes =
+      Number.isFinite(requestedMinutes) && requestedMinutes >= 1
+        ? Math.min(30, Math.trunc(requestedMinutes))
+        : 5;
+    const expiresAt = new Date(Date.now() + accessMinutes * 60_000);
     await this.repository.createAccessGrant({
       tokenHash: createHash('sha256').update(token, 'utf8').digest('hex'),
       documentId: row.id,

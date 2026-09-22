@@ -23,8 +23,31 @@ const offer: TicketOfferV1 = {
   status: 'ACTIVE',
 };
 describe('readable sales ticket card', () => {
+  it('keeps standalone fare validation and shows an available fare', () => {
+    const render = (value: TicketOfferV1) =>
+      renderToStaticMarkup(
+        <TicketOfferCard
+          offer={value}
+          selected={false}
+          requireStandaloneFare
+          onSelect={vi.fn()}
+        />,
+      );
+    expect(render(offer)).toContain('disabled=""');
+    expect(render(offer)).toContain('قیمت فروش تکی ثبت نشده');
+    const priced = render({
+      ...offer,
+      standaloneSalePrice: {
+        amount: '2500000',
+        currencyCode: 'IRR',
+        revision: 1,
+      },
+    });
+    expect(priced).not.toContain('disabled=""');
+    expect(priced).toContain('2500000 IRR');
+  });
   it.each([true, false])(
-    'shows both dates larger, bold and full-contrast (selected=%s)',
+    'shows both dates prominently while keeping times compact (selected=%s)',
     (selected) => {
       const html = renderToStaticMarkup(
         <TicketOfferCard
@@ -36,10 +59,16 @@ describe('readable sales ticket card', () => {
       const dates = html.match(/<time[^>]*>/g) ?? [];
       expect(dates).toHaveLength(2);
       for (const date of dates) {
-        expect(date).toContain('text-xs font-semibold leading-5');
+        expect(date).toContain('text-base font-bold leading-5 text-foreground');
         expect(date).toContain('break-words');
         expect(date).not.toContain('opacity');
         expect(date).not.toContain('truncate');
+      }
+      const times = html.match(/<strong dir="ltr"[^>]*>/g) ?? [];
+      expect(times).toHaveLength(2);
+      for (const time of times) {
+        expect(time).toContain('text-sm font-semibold');
+        expect(time).not.toContain('text-2xl');
       }
       expect(dates[0]).toContain(offer.departureAt);
       expect(dates[1]).toContain(offer.arrivalAt);
@@ -65,7 +94,9 @@ describe('readable sales ticket card', () => {
       'انتخاب‌شده',
       'ظرفیت کل',
       'aria-pressed="true"',
-      'bg-blue-600',
+      'ring-primary/20',
+      'مدت پرواز:',
+      'ساعت‌ها به وقت تهران',
     ])
       expect(html).toContain(text);
     expect(html).toContain('مانده');

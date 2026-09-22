@@ -61,23 +61,28 @@ export const toursApi = {
       '/tours/departures',
       post(input, branch, key),
     ),
-  offers: async (originId: string, destinationId: string, day: string) => {
+  offers: async (
+    originId: string,
+    destinationId: string,
+    startsOn: string,
+    endsOn = startsOn,
+  ) => {
     const data: TicketOfferV1[] = [];
-    const departureFrom = new Date(`${day}T00:00:00+03:30`).toISOString();
+    const departureFrom = new Date(`${startsOn}T00:00:00+03:30`).toISOString();
     for (let page = 1; ; page++) {
       const result = await request<{ data: TicketOfferV1[]; hasMore: boolean }>(
-        `/offers?${new URLSearchParams({ originId, destinationId, departureFrom, departureTo: day, page: String(page) })}`,
+        `/offers?${new URLSearchParams({ originId, destinationId, departureFrom, departureTo: endsOn, page: String(page) })}`,
       );
       data.push(
-        ...result.data.filter(
-          (offer) =>
-            new Intl.DateTimeFormat('en-CA', {
-              timeZone: 'Asia/Tehran',
-              year: 'numeric',
-              month: '2-digit',
-              day: '2-digit',
-            }).format(new Date(offer.departureAt)) === day,
-        ),
+        ...result.data.filter((offer) => {
+          const localDay = new Intl.DateTimeFormat('en-CA', {
+            timeZone: 'Asia/Tehran',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+          }).format(new Date(offer.departureAt));
+          return localDay >= startsOn && localDay <= endsOn;
+        }),
       );
       if (!result.hasMore) return data;
     }
@@ -97,6 +102,17 @@ export const toursApi = {
     request<{ data: { id: string; version: number } }>(`/offers/${id}`, {
       method: 'PATCH',
       body: JSON.stringify({ expectedVersion, offer }),
+    }),
+  updateOfferStatus: (
+    id: string,
+    expectedVersion: number,
+    status: 'ACTIVE' | 'PAUSED',
+  ) =>
+    request<{
+      data: { id: string; version: number; status: 'ACTIVE' | 'PAUSED' };
+    }>(`/offers/${id}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ expectedVersion, status }),
     }),
   updateStandaloneSalePrice: (
     id: string,

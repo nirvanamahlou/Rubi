@@ -1,14 +1,14 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { Fragment, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import type { LoginResponse, TourDepartureV1 } from '@nora/contracts';
+import type { LoginResponse } from '@nora/contracts';
 import { getPublicApiBaseUrl } from '@/lib/environment';
 import { refreshAuthenticatedSession } from '@/lib/auth-session';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Choice, Lookup, rateRequest, type Option } from './controls';
 import { RateHistory } from './history';
-import { initialFactors, type Factors } from './model';
+import { kinds, labels, price, type Factors } from './model';
 import styles from './rates.module.css';
 
 type RoomTypeOption = Option & { code?: string };
@@ -61,17 +61,63 @@ type PackDetail = Omit<PackSummary, 'hotelCount' | 'updatedAt'> & {
     roomRates: RoomRateDraft[];
   }[];
 };
+const blankFactors = (): Factors =>
+  Object.fromEntries(kinds.map((kind) => [kind, ''])) as Factors;
+
+export const availableFactors = (factors: Factors) =>
+  Object.fromEntries(
+    kinds
+      .filter((kind) => factors[kind].trim())
+      .map((kind) => [kind, factors[kind].trim()]),
+  );
+
+export function OccupancyFactorFields({
+  hotelName,
+  base,
+  currency,
+  factors,
+  onChange,
+}: {
+  hotelName: string;
+  base: string;
+  currency: string;
+  factors: Factors;
+  onChange: (factors: Factors) => void;
+}) {
+  return (
+    <div className={styles.occupancyFactors}>
+      {kinds.map((kind, index) => (
+        <label key={kind}>
+          {labels[index]}
+          <input
+            aria-label={`ضریب ${labels[index]} ${hotelName}`}
+            type="number"
+            min="0.001"
+            max="999.999"
+            step="0.001"
+            value={factors[kind]}
+            placeholder="ندارد"
+            onChange={(event) =>
+              onChange({ ...factors, [kind]: event.target.value })
+            }
+          />
+          <output dir="ltr">{price(base, factors[kind], currency)}</output>
+        </label>
+      ))}
+    </div>
+  );
+}
 const blankRow = (hotel: HotelOption, currency: string): GridRow => ({
   hotel,
   selected: false,
   broker: null,
   base: '',
   currency,
-  factors: { ...initialFactors },
+  factors: blankFactors(),
   roomRates: (hotel.roomTypes ?? []).map((room) => ({
     roomTypeId: room.id,
     roomTypeName: room.name,
-    factor: '',
+    factor: '1',
     maxAdults: '2',
     maxChildren: '0',
   })),
@@ -108,7 +154,6 @@ export function HotelRatePackTable({
     <table aria-label="جدول بسته‌های نرخ هتل" className={styles.packTable}>
       <thead>
         <tr>
-          <th scope="col">تور و نوبت</th>
           <th scope="col">شهر</th>
           <th scope="col">ورود</th>
           <th scope="col">خروج</th>
@@ -122,7 +167,6 @@ export function HotelRatePackTable({
       <tbody>
         {draft && (
           <tr className={styles.draftRow}>
-            <td>بستهٔ جدید</td>
             <td>{draft.cityName}</td>
             <td dir="ltr">{draft.checkIn || '—'}</td>
             <td dir="ltr">{draft.checkOut || '—'}</td>
@@ -144,12 +188,8 @@ export function HotelRatePackTable({
             key={pack.id}
             className={activeId === pack.id ? styles.activePack : ''}
           >
-            <td>{pack.tourLabel ?? '—'}</td>
             <td>
               <strong>{pack.cityName}</strong>
-              <small>
-                {pack.tourDepartureId ? '' : ' · نیازمند اتصال به نوبت تور'}
-              </small>
             </td>
             <td dir="ltr">{pack.checkIn}</td>
             <td dir="ltr">{pack.checkOut}</td>
@@ -172,7 +212,7 @@ export function HotelRatePackTable({
         ))}
         {!packs.length && !draft && (
           <tr>
-            <td colSpan={9}>
+            <td colSpan={8}>
               هنوز بسته‌ای ثبت نشده است؛ «بستهٔ جدید» را بزنید.
             </td>
           </tr>
@@ -183,29 +223,9 @@ export function HotelRatePackTable({
 }
 
 export function HotelRatePacksWorkspace() {
-  const [departures, setDepartures] = useState<readonly TourDepartureV1[]>([]);
-  const [tourPackageId, setTourPackageId] = useState('');
-  const [tourDepartureId, setTourDepartureId] = useState('');
   const [session, setSession] = useState<LoginResponse | null>(null);
   const [ready, setReady] = useState(false);
   const [error, setError] = useState('');
-  useEffect(() => {
-    if (!session) return;
-    let active = true;
-    rateRequest<{ data: TourDepartureV1[] }>('/tour-departures')
-      .then((result) => {
-        if (active) setDepartures(result.data);
-      })
-      .catch((cause) => {
-        if (active)
-          setError(
-            cause instanceof Error ? cause.message : 'دریافت تورها ناموفق بود.',
-          );
-      });
-    return () => {
-      active = false;
-    };
-  }, [session]);
   const [branch, setBranch] = useState('');
   const [cities, setCities] = useState<HotelOption[]>([]);
   const [citySearch, setCitySearch] = useState('');
@@ -335,6 +355,18 @@ export function HotelRatePacksWorkspace() {
         const available = hotels.map((hotel) => ({
           ...(saved.get(hotel.id) ?? blankRow(hotel, currency)),
           hotel,
+          roomRates: (hotel.roomTypes ?? []).map(
+            (room) =>
+              saved
+                .get(hotel.id)
+                ?.roomRates.find((rate) => rate.roomTypeId === room.id) ?? {
+                roomTypeId: room.id,
+                roomTypeName: room.name,
+                factor: '1',
+                maxAdults: '2',
+                maxChildren: '0',
+              },
+          ),
           inCityList: true,
         }));
         return [
@@ -366,7 +398,7 @@ export function HotelRatePacksWorkspace() {
     return () => {
       active = false;
     };
-  }, [session, cityId, currency, tourDepartureId]);
+  }, [session, cityId, currency]);
 
   const nights = dayCount(checkIn, checkOut);
   const selected = rows.filter((row) => row.selected);
@@ -384,8 +416,6 @@ export function HotelRatePacksWorkspace() {
     false;
 
   function newPack() {
-    setTourPackageId('');
-    setTourDepartureId('');
     setEditing(null);
     setEditorMode('new');
     setCityId('');
@@ -398,7 +428,7 @@ export function HotelRatePacksWorkspace() {
     setMethod('CHECK_IN');
     setError('');
     setMessage(
-      'ابتدا تور و نوبت بلیت را انتخاب کنید، سپس بازه اقامت و نرخ هتل‌ها را وارد کنید.',
+      'شهر و بازهٔ اقامت را انتخاب کنید، سپس نرخ و ظرفیت اتاق‌های هتل‌ها را وارد کنید.',
     );
     pending.current = null;
   }
@@ -428,30 +458,6 @@ export function HotelRatePacksWorkspace() {
     setHotelSearch('');
     pending.current = null;
   }
-  function chooseDeparture(id: string) {
-    const tour = departures.find((item) => item.id === id);
-    setTourDepartureId(id);
-    setRows([]);
-    setCityId(tour?.package.destinationId ?? '');
-    setCheckIn(tour?.startsOn ?? '');
-    setCheckOut(tour?.endsOn ?? '');
-    if (tour) {
-      setBranch(tour.branchId);
-      setCityId(tour.package.destinationId);
-      setCities((old) =>
-        old.some((city) => city.id === tour.package.destinationId)
-          ? old
-          : [
-              ...old,
-              {
-                id: tour.package.destinationId,
-                name: `مقصد ${tour.package.name}`,
-              },
-            ],
-      );
-    }
-    pending.current = null;
-  }
   async function openPack(id: string) {
     setOpening(true);
     setError('');
@@ -462,11 +468,6 @@ export function HotelRatePacksWorkspace() {
       setEditing({ id: item.id, version: item.version });
       setEditorMode('edit');
       setBranch(item.branchId);
-      setTourDepartureId(item.tourDepartureId ?? '');
-      setTourPackageId(
-        departures.find((tour) => tour.id === item.tourDepartureId)?.package
-          .id ?? '',
-      );
       setCityId(item.cityId);
       setCitySearch('');
       setCities((old) =>
@@ -485,7 +486,7 @@ export function HotelRatePacksWorkspace() {
           broker: { id: row.brokerId, name: row.brokerName },
           base: row.base,
           currency: row.currency ?? item.currency,
-          factors: row.factors,
+          factors: { ...blankFactors(), ...row.factors },
           roomRates: row.roomRates ?? [],
           inCityList: true,
         })),
@@ -505,7 +506,6 @@ export function HotelRatePacksWorkspace() {
     setMessage('');
     if (
       !branch ||
-      !tourDepartureId ||
       !cityId ||
       nights <= 0 ||
       !selected.length ||
@@ -514,19 +514,19 @@ export function HotelRatePacksWorkspace() {
         (row) =>
           !row.broker ||
           !row.base ||
+          !Object.values(row.factors).some((value) => Number(value) > 0) ||
           !row.inCityList ||
           !row.roomRates.some((room) => Number(room.factor) > 0),
       )
     ) {
       setError(
-        'تور و نوبت بلیت، شهر و بازهٔ معتبر را مشخص کنید و برای هر هتل منتخب، کارگزار و قیمت را وارد کنید.',
+        'شهر و بازهٔ معتبر را مشخص کنید و برای هر هتل منتخب، کارگزار، قیمت، ظرفیت و حداقل یک ضریب چیدمان را وارد کنید.',
       );
       return;
     }
     const route = editing ? `/packs/${editing.id}` : '/packs';
     const body = JSON.stringify({
       branchId: branch,
-      tourDepartureId,
       cityId,
       checkIn,
       checkOut,
@@ -538,7 +538,7 @@ export function HotelRatePacksWorkspace() {
         brokerId: row.broker!.id,
         base: row.base,
         currency: row.currency,
-        factors: row.factors,
+        factors: availableFactors(row.factors),
         roomRates: row.roomRates
           .filter((room) => Number(room.factor) > 0)
           .map((room) => ({
@@ -591,8 +591,8 @@ export function HotelRatePacksWorkspace() {
           <p>رزرواسیون / نرخ خرید هتل</p>
           <h1>مدیریت گروهی نرخ‌های هتل‌ها</h1>
           <p>
-            تور و نوبت بلیت را انتخاب کنید؛ نرخ خرید هتل‌های بازه اقامت را ثبت و
-            بعداً از همان بسته اصلاح کنید.
+            نرخ هتل‌های یک شهر را برای بازهٔ اقامت ثبت کنید. ترکیب تور، بلیط و
+            نرخ هتل در مدیریت پکیج انجام می‌شود.
           </p>
         </div>
         <button type="button" onClick={() => newPack()} disabled={!canWrite}>
@@ -618,17 +618,7 @@ export function HotelRatePacksWorkspace() {
         </div>
         <div className={styles.scroll}>
           <HotelRatePackTable
-            packs={packs.map((pack) => {
-              const tour = departures.find(
-                (item) => item.id === pack.tourDepartureId,
-              );
-              return {
-                ...pack,
-                tourLabel: tour
-                  ? `${tour.package.name} · ${tour.startsOn} · ${tour.outbound.serviceNumber}`
-                  : 'بدون نوبت فعال',
-              };
-            })}
+            packs={packs}
             draft={
               editorMode === 'new'
                 ? {
@@ -684,68 +674,7 @@ export function HotelRatePacksWorkspace() {
           <form onSubmit={(event) => void save(event)}>
             <fieldset disabled={busy || !canWrite}>
               <section>
-                <h2>۱ · انتخاب تور و نوبت بلیت</h2>
-                {!departures.some((tour) => tour.branchId === branch) && (
-                  <p role="status">
-                    برای این شعبه نوبت تور فعالی وجود ندارد. ابتدا در{' '}
-                    <Link href="/ticket-management">مدیریت بلیت</Link> تور و
-                    نوبتِ متصل به بلیت رفت‌وبرگشت را ثبت کنید، سپس این صفحه را
-                    تازه‌سازی کنید.
-                  </p>
-                )}
-                <div className={styles.toolbar}>
-                  <label>
-                    تور
-                    <Choice
-                      label="تور نرخ خرید هتل"
-                      value={tourPackageId}
-                      onChange={(id) => {
-                        setTourPackageId(id);
-                        chooseDeparture('');
-                      }}
-                      options={[
-                        ...Array.from(
-                          new Map(
-                            departures
-                              .filter((tour) => tour.branchId === branch)
-                              .map((tour) => [
-                                tour.package.id,
-                                {
-                                  id: tour.package.id,
-                                  name: tour.package.name,
-                                },
-                              ]),
-                          ).values(),
-                        ),
-                      ]}
-                    />
-                  </label>
-                  <label>
-                    نوبت و بلیت رفت‌وبرگشت
-                    <Choice
-                      label="نوبت تور نرخ خرید هتل"
-                      value={tourDepartureId}
-                      onChange={chooseDeparture}
-                      options={[
-                        ...departures
-                          .filter((tour) => tour.package.id === tourPackageId)
-                          .map((tour) => ({
-                            id: tour.id,
-                            name: `${tour.startsOn} تا ${tour.endsOn} · ${tour.outbound.serviceNumber} / ${tour.returning?.serviceNumber ?? 'بدون برگشت'}`,
-                          })),
-                      ]}
-                    />
-                  </label>
-                </div>
-                {tourDepartureId && (
-                  <p>
-                    بازه اقامت از تاریخ نوبت پر شده است؛ هتل‌های منتخب این بسته
-                    به همین نوبت و بلیت‌ها متصل می‌شوند.
-                  </p>
-                )}
-              </section>
-              <section>
-                <h2>۲ · جدول شهر و بازهٔ اقامت</h2>
+                <h2>۱ · شهر و بازهٔ اقامت</h2>
                 <p>
                   شهر را انتخاب کنید، سپس ورود و خروج را در همان ردیف تعیین
                   کنید.
@@ -890,216 +819,239 @@ export function HotelRatePacksWorkspace() {
                             <th>کارگزار</th>
                             <th>ارز</th>
                             <th>قیمت پایه / شب</th>
-                            <th>نوع اتاق، ضریب و ظرفیت</th>
                           </tr>
                         </thead>
                         <tbody>
                           {visibleRows.map((row) => (
-                            <tr
-                              key={row.hotel.id}
-                              className={row.selected ? styles.selectedRow : ''}
-                            >
-                              <td>
-                                <input
-                                  type="checkbox"
-                                  aria-label={`انتخاب هتل ${row.hotel.name}`}
-                                  checked={row.selected}
-                                  disabled={
-                                    !row.inCityList ||
-                                    (!row.selected && selected.length >= 50)
-                                  }
-                                  onChange={(event) =>
-                                    changeRow(row.hotel.id, {
-                                      selected: event.target.checked,
-                                    })
-                                  }
-                                />
-                              </td>
-                              <td>
-                                <strong>{row.hotel.name}</strong>
-                                {row.hotel.englishName && (
-                                  <small dir="ltr">
-                                    {row.hotel.englishName}
-                                  </small>
-                                )}
-                                {!row.inCityList && (
-                                  <small role="alert">
-                                    هتل دیگر فعال/قابل‌فروش نیست؛ تیک آن را
-                                    بردارید.
-                                  </small>
-                                )}
-                              </td>
-                              <td>
-                                {row.selected ? (
-                                  <Lookup
-                                    kind="organizations"
-                                    label={`کارگزار ${row.hotel.name}`}
-                                    value={row.broker}
-                                    onChange={(broker) =>
-                                      changeRow(row.hotel.id, { broker })
+                            <Fragment key={row.hotel.id}>
+                              <tr
+                                key={row.hotel.id}
+                                className={
+                                  row.selected ? styles.selectedRow : ''
+                                }
+                              >
+                                <td>
+                                  <input
+                                    type="checkbox"
+                                    aria-label={`انتخاب هتل ${row.hotel.name}`}
+                                    checked={row.selected}
+                                    disabled={
+                                      !row.inCityList ||
+                                      (!row.selected && selected.length >= 50)
                                     }
-                                  />
-                                ) : (
-                                  '—'
-                                )}
-                              </td>
-                              <td>
-                                {row.selected ? (
-                                  <Choice
-                                    label={`ارز نرخ ${row.hotel.name}`}
-                                    value={row.currency}
-                                    onChange={(value) =>
+                                    onChange={(event) =>
                                       changeRow(row.hotel.id, {
-                                        currency: value,
+                                        selected: event.target.checked,
                                       })
                                     }
-                                    options={[
-                                      { id: 'EUR', name: 'یورو · EUR' },
-                                      { id: 'USD', name: 'دلار · USD' },
-                                      { id: 'IRR', name: 'ریال · IRR' },
-                                    ]}
                                   />
-                                ) : (
-                                  '—'
-                                )}
-                              </td>
-                              <td>
-                                {row.selected ? (
-                                  <>
-                                    <input
-                                      aria-label={`قیمت پایه ${row.hotel.name}`}
-                                      type="number"
-                                      min={
-                                        row.currency === 'IRR' ? '1' : '0.01'
-                                      }
-                                      step={
-                                        row.currency === 'IRR' ? '1' : '0.01'
-                                      }
-                                      max="999999999999"
-                                      required
-                                      value={row.base}
-                                      onChange={(event) =>
-                                        changeRow(row.hotel.id, {
-                                          base: event.target.value,
-                                        })
+                                </td>
+                                <td>
+                                  <strong>{row.hotel.name}</strong>
+                                  {row.hotel.englishName && (
+                                    <small dir="ltr">
+                                      {row.hotel.englishName}
+                                    </small>
+                                  )}
+                                  {!row.inCityList && (
+                                    <small role="alert">
+                                      هتل دیگر فعال/قابل‌فروش نیست؛ تیک آن را
+                                      بردارید.
+                                    </small>
+                                  )}
+                                </td>
+                                <td>
+                                  {row.selected ? (
+                                    <Lookup
+                                      kind="organizations"
+                                      label={`کارگزار ${row.hotel.name}`}
+                                      value={row.broker}
+                                      onChange={(broker) =>
+                                        changeRow(row.hotel.id, { broker })
                                       }
                                     />
-                                    <small>{row.currency}</small>
-                                  </>
-                                ) : (
-                                  '—'
-                                )}
-                              </td>
-                              <td>
-                                {row.selected ? (
-                                  <div className={styles.roomRateEditor}>
-                                    {(row.hotel.roomTypes ?? []).map(
-                                      (roomType) => {
-                                        const value = row.roomRates.find(
-                                          (room) =>
-                                            room.roomTypeId === roomType.id,
-                                        ) ?? {
-                                          roomTypeId: roomType.id,
-                                          roomTypeName: roomType.name,
-                                          factor: '',
-                                          maxAdults: '2',
-                                          maxChildren: '0',
-                                        };
-                                        const update = (
-                                          patch: Partial<RoomRateDraft>,
-                                        ) =>
+                                  ) : (
+                                    '—'
+                                  )}
+                                </td>
+                                <td>
+                                  {row.selected ? (
+                                    <Choice
+                                      label={`ارز نرخ ${row.hotel.name}`}
+                                      value={row.currency}
+                                      onChange={(value) =>
+                                        changeRow(row.hotel.id, {
+                                          currency: value,
+                                        })
+                                      }
+                                      options={[
+                                        { id: 'EUR', name: 'یورو · EUR' },
+                                        { id: 'USD', name: 'دلار · USD' },
+                                        { id: 'IRR', name: 'ریال · IRR' },
+                                      ]}
+                                    />
+                                  ) : (
+                                    '—'
+                                  )}
+                                </td>
+                                <td>
+                                  {row.selected ? (
+                                    <>
+                                      <input
+                                        aria-label={`قیمت پایه ${row.hotel.name}`}
+                                        type="number"
+                                        min={
+                                          row.currency === 'IRR' ? '1' : '0.01'
+                                        }
+                                        step={
+                                          row.currency === 'IRR' ? '1' : '0.01'
+                                        }
+                                        max="999999999999"
+                                        required
+                                        value={row.base}
+                                        onChange={(event) =>
                                           changeRow(row.hotel.id, {
-                                            roomRates: [
-                                              ...row.roomRates.filter(
+                                            base: event.target.value,
+                                          })
+                                        }
+                                      />
+                                      <small>{row.currency}</small>
+                                    </>
+                                  ) : (
+                                    '—'
+                                  )}
+                                </td>
+                              </tr>
+                              {row.selected && (
+                                <tr className={styles.selectedRow}>
+                                  <td colSpan={5}>
+                                    <div className={styles.hotelRateDetails}>
+                                      {row.selected ? (
+                                        <div className={styles.roomRateEditor}>
+                                          {(row.hotel.roomTypes ?? []).map(
+                                            (roomType) => {
+                                              const value = row.roomRates.find(
                                                 (room) =>
-                                                  room.roomTypeId !==
+                                                  room.roomTypeId ===
                                                   roomType.id,
-                                              ),
-                                              { ...value, ...patch },
-                                            ],
-                                          });
-                                        return (
-                                          <fieldset
-                                            key={roomType.id}
-                                            className={styles.roomRateCard}
-                                          >
-                                            <legend>{roomType.name}</legend>
-                                            <label>
-                                              ضریب
-                                              <input
-                                                aria-label={`ضریب ${roomType.name} ${row.hotel.name}`}
-                                                type="number"
-                                                min="0"
-                                                max="999.999"
-                                                step="0.001"
-                                                value={value.factor}
-                                                placeholder="ندارد"
-                                                onChange={(event) =>
-                                                  update({
-                                                    factor: event.target.value,
-                                                  })
-                                                }
-                                              />
-                                            </label>
-                                            <label>
-                                              بزرگسال
-                                              <input
-                                                aria-label={`ظرفیت بزرگسال ${roomType.name}`}
-                                                type="number"
-                                                min="1"
-                                                max="20"
-                                                value={value.maxAdults}
-                                                onChange={(event) =>
-                                                  update({
-                                                    maxAdults:
-                                                      event.target.value,
-                                                  })
-                                                }
-                                              />
-                                            </label>
-                                            <label>
-                                              کودک
-                                              <input
-                                                aria-label={`ظرفیت کودک ${roomType.name}`}
-                                                type="number"
-                                                min="0"
-                                                max="20"
-                                                value={value.maxChildren}
-                                                onChange={(event) =>
-                                                  update({
-                                                    maxChildren:
-                                                      event.target.value,
-                                                  })
-                                                }
-                                              />
-                                            </label>
-                                            <small dir="ltr">
-                                              {value.maxAdults || '0'} +{' '}
-                                              {value.maxChildren || '0'}
+                                              ) ?? {
+                                                roomTypeId: roomType.id,
+                                                roomTypeName: roomType.name,
+                                                factor: '1',
+                                                maxAdults: '2',
+                                                maxChildren: '0',
+                                              };
+                                              const update = (
+                                                patch: Partial<RoomRateDraft>,
+                                              ) =>
+                                                changeRow(row.hotel.id, {
+                                                  roomRates: [
+                                                    ...row.roomRates.filter(
+                                                      (room) =>
+                                                        room.roomTypeId !==
+                                                        roomType.id,
+                                                    ),
+                                                    { ...value, ...patch },
+                                                  ],
+                                                });
+                                              return (
+                                                <fieldset
+                                                  key={roomType.id}
+                                                  className={
+                                                    styles.roomRateCard
+                                                  }
+                                                >
+                                                  <legend>
+                                                    {roomType.name}
+                                                  </legend>
+                                                  <label>
+                                                    ظرفیت بزرگسال
+                                                    <input
+                                                      aria-label={`ظرفیت بزرگسال ${roomType.name}`}
+                                                      type="number"
+                                                      required
+                                                      min="1"
+                                                      max="20"
+                                                      value={value.maxAdults}
+                                                      onChange={(event) =>
+                                                        update({
+                                                          maxAdults:
+                                                            event.target.value,
+                                                        })
+                                                      }
+                                                    />
+                                                  </label>
+                                                  <label>
+                                                    ظرفیت کودک
+                                                    <input
+                                                      aria-label={`ظرفیت کودک ${roomType.name}`}
+                                                      type="number"
+                                                      required
+                                                      min="0"
+                                                      max="20"
+                                                      value={value.maxChildren}
+                                                      onChange={(event) =>
+                                                        update({
+                                                          maxChildren:
+                                                            event.target.value,
+                                                        })
+                                                      }
+                                                    />
+                                                  </label>
+                                                  <small dir="ltr">
+                                                    {value.maxAdults || '0'} +{' '}
+                                                    {value.maxChildren || '0'}
+                                                  </small>
+                                                </fieldset>
+                                              );
+                                            },
+                                          )}
+                                          {!(row.hotel.roomTypes ?? [])
+                                            .length && (
+                                            <small role="alert">
+                                              ابتدا نوع اتاق را برای این هتل در
+                                              اطلاعات پایه تعریف کنید.
                                             </small>
-                                          </fieldset>
-                                        );
-                                      },
-                                    )}
-                                    {!(row.hotel.roomTypes ?? []).length && (
-                                      <small role="alert">
-                                        ابتدا نوع اتاق را برای این هتل در
-                                        اطلاعات پایه تعریف کنید.
-                                      </small>
-                                    )}
-                                    <Link href="/master-data/accommodation?tab=room-types">
-                                      افزودن نوع اتاق و اتصال به هتل
-                                    </Link>
-                                    <small>
-                                      نوع اتاق بدون ضریب در قرارداد فروش نمایش
-                                      داده نمی‌شود.
-                                    </small>
-                                  </div>
-                                ) : (
-                                  '—'
-                                )}
-                              </td>
-                            </tr>
+                                          )}
+                                          <Link href="/master-data/accommodation?tab=room-types">
+                                            افزودن نوع اتاق و اتصال به هتل
+                                          </Link>
+                                          <small>
+                                            ظرفیت هر نوع اتاق در قرارداد کنترل
+                                            می‌شود.
+                                          </small>
+                                        </div>
+                                      ) : (
+                                        '—'
+                                      )}
+                                      <div>
+                                        {row.selected ? (
+                                          <>
+                                            <OccupancyFactorFields
+                                              hotelName={row.hotel.name}
+                                              base={row.base}
+                                              currency={row.currency}
+                                              factors={row.factors}
+                                              onChange={(factors) =>
+                                                changeRow(row.hotel.id, {
+                                                  factors,
+                                                })
+                                              }
+                                            />
+                                            <small>
+                                              ضریب خالی یعنی این چیدمان برای هتل
+                                              وجود ندارد.
+                                            </small>
+                                          </>
+                                        ) : (
+                                          '—'
+                                        )}
+                                      </div>
+                                    </div>
+                                  </td>
+                                </tr>
+                              )}
+                            </Fragment>
                           ))}
                         </tbody>
                       </table>

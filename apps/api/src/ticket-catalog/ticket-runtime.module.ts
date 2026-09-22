@@ -65,6 +65,14 @@ class TicketOffersController {
       key,
     );
   }
+  @Patch(':offerId/status') updateStatus(
+    @Param('offerId') offerId: string,
+    @Body()
+    input: { expectedVersion: number; status: 'ACTIVE' | 'PAUSED' },
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.service.updateStatus(offerId, input, req.actor);
+  }
   @Patch(':offerId') revise(
     @Param('offerId') offerId: string,
     @Body() input: { expectedVersion: number; offer: TicketOfferCreateV1 },

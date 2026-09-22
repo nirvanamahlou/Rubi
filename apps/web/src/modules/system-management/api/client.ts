@@ -95,6 +95,13 @@ export interface SystemAuditRecord {
   createdAt: string;
 }
 
+export interface ContractTemplateUploadResult {
+  id: string;
+  originalFileName: string;
+  scanStatus: string;
+  sizeBytes: number;
+}
+
 async function request<T>(
   path: string,
   init?: RequestInit,
@@ -143,8 +150,17 @@ function json(body: unknown): RequestInit {
 export const systemManagementApi = {
   overview: () => request<SystemOverview>('/overview'),
   settings: () => request<SystemSettingV1[]>('/settings'),
+  resolveSetting: (namespace: string, key: string) =>
+    request<SystemSettingV1 | null>(
+      `/settings/resolve?namespace=${encodeURIComponent(namespace)}&key=${encodeURIComponent(key)}`,
+    ),
   writeSetting: (input: SystemSettingWriteV1) =>
     request<SystemSettingV1>('/settings', json(input)),
+  uploadContractTemplate: (form: FormData) =>
+    request<ContractTemplateUploadResult>('/contract-templates', {
+      body: form,
+      method: 'POST',
+    }),
   numberingSchemes: () =>
     request<SystemNumberingSchemeV1[]>('/numbering-schemes'),
   writeNumberingScheme: (input: SystemNumberingSchemeWriteV1) =>

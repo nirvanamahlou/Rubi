@@ -9,6 +9,7 @@ import { PermissionGuard } from '../iam/permission.guard';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { ReservationsRuntimeModule } from '../reservations/reservations-runtime.module';
 import { SalesModule } from '../sales/sales.module';
+import { SettingsModule } from '../settings/settings.module';
 import {
   CustomerAffairsController,
   CustomerAffairsPublicController,
@@ -33,6 +34,7 @@ import { CustomerAffairsSmsController } from './customer-affairs-sms.controller'
     SalesModule,
     ReservationsRuntimeModule,
     NotificationsModule,
+    SettingsModule,
   ],
   controllers: [
     CustomerAffairsController,

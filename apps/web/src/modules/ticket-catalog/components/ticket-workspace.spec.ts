@@ -1,10 +1,52 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { planCatalogPublication, flightOfferInput } from './ticket-workspace';
+import {
+  findPublishedOffer,
+  planCatalogPublication,
+  flightOfferInput,
+} from './ticket-workspace';
 import { emptyInput } from '../model/preview';
 import type { Product, ProductInput, Reference } from '../model/catalog';
 
 describe('ticket workspace entry points', () => {
+  it('matches the browser card to the authoritative published offer', () => {
+    const definition = emptyInput();
+    definition.totalCapacity = 50;
+    definition.flightClassId = 'class';
+    definition.segments = [
+      {
+        ...definition.segments[0]!,
+        airlineId: 'airline',
+        flightNumber: '4512',
+        originCityId: 'origin',
+        destinationCityId: 'destination',
+        departureAt: '2099-09-02T17:50:00.000Z',
+        arrivalAt: '2099-09-02T20:50:00.000Z',
+      },
+    ];
+    const references: Reference[] = [
+      { id: 'airline', kind: 'airline', name: 'ایران ایرتور', active: true },
+      { id: 'class', kind: 'flightClass', name: 'Economy', active: true },
+    ];
+    const offer = {
+      id: 'offer-4512',
+      version: 2,
+      branchId: 'branch',
+      originId: 'origin',
+      destinationId: 'destination',
+      departureAt: '2099-09-02T17:50:00.000Z',
+      arrivalAt: '2099-09-02T20:50:00.000Z',
+      carrierName: 'ایران ایرتور',
+      serviceNumber: '4512',
+      cabinClassCode: 'ECONOMY',
+      totalCapacity: 50,
+      remainingCapacity: 50,
+      status: 'PAUSED',
+    } as const;
+
+    expect(findPublishedOffer(definition, references, [offer])).toBe(offer);
+  });
+
   it('keeps valid outbound and return flights even when an earlier legacy ticket has no times', () => {
     const definition = emptyInput();
     definition.title = 'Valid flight';
@@ -15,8 +57,8 @@ describe('ticket workspace entry points', () => {
         flightNumber: 'B9-100',
         originCityId: 'tehran',
         destinationCityId: 'antalya',
-        departureAt: '2026-09-22T04:00:00.000Z',
-        arrivalAt: '2026-09-22T07:00:00.000Z',
+        departureAt: '2099-09-22T04:00:00.000Z',
+        arrivalAt: '2099-09-22T07:00:00.000Z',
       },
     ];
     const product: Product = {
@@ -44,8 +86,8 @@ describe('ticket workspace entry points', () => {
             ...definition.segments[0]!,
             originCityId: 'antalya',
             destinationCityId: 'tehran',
-            departureAt: '2026-09-29T04:00:00.000Z',
-            arrivalAt: '2026-09-29T07:00:00.000Z',
+            departureAt: '2099-09-29T04:00:00.000Z',
+            arrivalAt: '2099-09-29T07:00:00.000Z',
           },
         ],
       },
@@ -80,6 +122,11 @@ describe('ticket workspace entry points', () => {
     expect(source).toContain('setRepeat(');
     expect(source).toContain('قیمت فروش تکی هر صندلی');
     expect(source).toContain('updateStandaloneSalePrice(');
+    expect(source).toContain('updateOfferStatus(');
+    expect(source).toContain("? 'منقضی'");
+    expect(source).toContain('listActiveCurrencyReferences()');
+    expect(source).toContain('<SelectItem');
+    expect(source).not.toContain('maxLength={3}');
     expect(source).toContain(
       'className="block whitespace-nowrap text-right tabular-nums"',
     );

@@ -136,7 +136,10 @@ export class ReportingRepository {
           ...new Set(
             rows
               .map(pick)
-              .filter((value): value is string => typeof value === 'string' && value.length > 0),
+              .filter(
+                (value): value is string =>
+                  typeof value === 'string' && value.length > 0,
+              ),
           ),
         ].sort((a, b) => a.localeCompare(b, 'fa')),
       );
@@ -388,9 +391,10 @@ export class ReportingRepository {
     objectKey: string,
     sizeBytes: number,
     checksumSha256: string,
+    expiryDays = 7,
   ) {
     return this.database.client.$executeRaw(
-      Prisma.sql`UPDATE "reporting_export_artifacts" SET status='READY', "objectKey"=${objectKey}, "sizeBytes"=${sizeBytes}, "checksumSha256"=${checksumSha256}, "expiresAt"=NOW()+INTERVAL '7 days', "updatedAt"=NOW() WHERE id=${id}::uuid`,
+      Prisma.sql`UPDATE "reporting_export_artifacts" SET status='READY', "objectKey"=${objectKey}, "sizeBytes"=${sizeBytes}, "checksumSha256"=${checksumSha256}, "expiresAt"=NOW()+(${expiryDays} * INTERVAL '1 day'), "updatedAt"=NOW() WHERE id=${id}::uuid`,
     );
   }
 

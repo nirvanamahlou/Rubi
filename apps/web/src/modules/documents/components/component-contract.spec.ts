@@ -136,6 +136,7 @@ describe('documents workspace contract', () => {
     expect(source).not.toContain('label="ماژول مبدأ"');
     expect(source).not.toContain('label="شناسه رکورد مبدأ"');
     expect(source).toContain('z-[70] max-h-72');
+    expect(source.match(/variant="rubi"/g)).toHaveLength(3);
     expect(source).not.toContain('documentsApi.sessionContext');
     expect(source).not.toContain('dangerouslySetInnerHTML');
   });

@@ -150,3 +150,32 @@ describe('group hotel rate integrity', () => {
     ).rejects.toThrow();
   });
 });
+
+it('saves independent hotel rates with only available occupancy coefficients and room capacity', () => {
+  const data = input();
+  const result = validateRatePack({
+    ...data,
+    cityId: randomUUID(),
+    rows: [
+      {
+        ...data.rows[0],
+        factors: { double: '1', family: '2' },
+        roomRates: [
+          {
+            roomTypeId: randomUUID(),
+            factor: '1',
+            maxAdults: 2,
+            maxChildren: 2,
+          },
+        ],
+      },
+    ],
+  });
+  expect(result.tourDepartureId).toBeUndefined();
+  expect(result.rows[0]?.factors).toEqual({ double: '1', family: '2' });
+  expect(result.rows[0]?.roomRates[0]).toMatchObject({
+    maxAdults: 2,
+    maxChildren: 2,
+  });
+  expect(roomPrices('100', result.rows[0]!.factors, 'USD').single).toBeNull();
+});

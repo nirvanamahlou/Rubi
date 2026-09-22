@@ -4,6 +4,7 @@ import { CalendarDays, ChevronLeft, ChevronRight, Clock3 } from 'lucide-react';
 import * as React from 'react';
 import { createPortal } from 'react-dom';
 
+import { useSystemPreferences } from '@/components/system-preferences-provider';
 import { cn } from '@/lib/utils';
 import {
   calendarMonthDays,
@@ -50,6 +51,7 @@ export interface DatePickerProps {
   required?: boolean;
   className?: string;
   placeholder?: string;
+  variant?: 'default' | 'rubi';
   'aria-label'?: string | undefined;
   'aria-describedby'?: string | undefined;
   'aria-invalid'?: boolean;
@@ -60,7 +62,7 @@ export function DatePicker({
   withinDialog = false,
   className,
   gregorianEnglish = false,
-  defaultCalendarSystem = 'persian',
+  defaultCalendarSystem,
   defaultValue = '',
   disabled,
   id,
@@ -72,14 +74,20 @@ export function DatePicker({
   readOnly,
   required,
   value,
+  variant = 'default',
   ...ariaProps
 }: DatePickerProps) {
+  const systemPreferences = useSystemPreferences();
   const [internalValue, setInternalValue] = React.useState(defaultValue);
   const currentValue = value ?? internalValue;
   const [internalCalendarSystem, setInternalCalendarSystem] =
-    React.useState<CalendarSystem>(defaultCalendarSystem);
+    React.useState<CalendarSystem>(
+      defaultCalendarSystem ?? systemPreferences.calendar,
+    );
   const calendarSystem = controlledCalendarSystem ?? internalCalendarSystem;
-  const english = gregorianEnglish && calendarSystem === 'gregorian';
+  const english =
+    (gregorianEnglish || systemPreferences.language === 'en') &&
+    calendarSystem === 'gregorian';
   const t = (fa: string, en: string) => (english ? en : fa);
   const [calendarView, setCalendarView] = React.useState<CalendarView>('days');
   const [yearGridStart, setYearGridStart] = React.useState(0);
@@ -98,7 +106,9 @@ export function DatePicker({
   const triggerRef = React.useRef<HTMLButtonElement>(null);
   const popoverId = `${React.useId()}-calendar`;
   const selectedDate = currentValue.slice(0, 10);
+
   const days = calendarMonthDays(anchor, calendarSystem);
+  const rubiCalendar = variant === 'rubi';
   const anchorParts = calendarParts(anchor, calendarSystem);
   const yearOptions = React.useMemo(
     () => Array.from({ length: 12 }, (_, index) => yearGridStart + index),
@@ -116,10 +126,10 @@ export function DatePicker({
         );
         return {
           month,
-          label: calendarMonthName(date, calendarSystem, gregorianEnglish),
+          label: calendarMonthName(date, calendarSystem, english),
         };
       }),
-    [anchor, anchorParts.year, calendarSystem, gregorianEnglish],
+    [anchor, anchorParts.year, calendarSystem, english],
   );
 
   React.useEffect(() => {
@@ -272,6 +282,8 @@ export function DatePicker({
         aria-haspopup="dialog"
         className={cn(
           'flex h-11 w-full items-center justify-between gap-3 rounded-xl border border-input bg-surface px-3 text-sm text-foreground shadow-xs outline-none transition focus:border-primary focus:ring-2 focus:ring-ring/30 disabled:cursor-not-allowed disabled:opacity-50',
+          rubiCalendar &&
+            'border-primary/20 bg-gradient-to-l from-surface via-surface to-primary/5 shadow-sm shadow-primary/5 hover:border-primary/45 hover:shadow-md hover:shadow-primary/10',
           !currentValue && 'text-muted-foreground',
         )}
         disabled={disabled || readOnly}
@@ -305,10 +317,15 @@ export function DatePicker({
               ? 'Select date'
               : placeholder}
         </span>
-        <CalendarDays
-          aria-hidden="true"
-          className="size-5 shrink-0 text-primary"
-        />
+        <span
+          className={cn(
+            'shrink-0',
+            rubiCalendar &&
+              'grid size-8 place-items-center rounded-lg border border-primary/15 bg-primary/10 shadow-inner',
+          )}
+        >
+          <CalendarDays aria-hidden="true" className="size-5 text-primary" />
+        </span>
       </button>
 
       {open && typeof document !== 'undefined'
@@ -323,7 +340,7 @@ export function DatePicker({
                 }
               }}
               aria-label={t('انتخاب تاریخ', 'Select date')}
-              className="fixed z-[70] w-[min(22rem,calc(100vw-2rem))] overflow-y-auto overscroll-contain rounded-2xl border border-primary/25 bg-popover p-3 text-popover-foreground shadow-2xl shadow-primary/15"
+              className="fixed z-[70] w-[min(22rem,calc(100vw-2rem))] overflow-y-auto overscroll-contain rounded-2xl border border-primary/25 bg-popover p-3 text-popover-foreground shadow-2xl shadow-primary/15 backdrop-blur-xl"
               dir={english ? 'ltr' : 'rtl'}
               ref={popoverRef}
               id={popoverId}
@@ -341,6 +358,12 @@ export function DatePicker({
                 }),
               }}
             >
+              {rubiCalendar ? (
+                <div
+                  aria-hidden="true"
+                  className="-mx-3 -mt-3 mb-3 h-1 bg-gradient-to-l from-primary via-sky-500 to-cyan-400"
+                />
+              ) : null}
               <div
                 aria-label={t('نوع تقویم', 'Calendar system')}
                 className="mb-3 grid grid-cols-2 rounded-xl bg-secondary p-1"
@@ -366,7 +389,13 @@ export function DatePicker({
                 ))}
               </div>
 
-              <div className="mb-3 flex items-center justify-between gap-2 rounded-xl bg-primary px-2 py-2 text-primary-foreground">
+              <div
+                className={cn(
+                  'mb-3 flex items-center justify-between gap-2 rounded-xl bg-primary px-2 py-2 text-primary-foreground',
+                  rubiCalendar &&
+                    'bg-gradient-to-l from-primary via-primary to-sky-700 shadow-lg shadow-primary/20 dark:to-sky-500',
+                )}
+              >
                 <button
                   aria-label={previousLabel}
                   className="flex size-9 items-center justify-center rounded-lg outline-none hover:bg-white/15 focus-visible:ring-2 focus-visible:ring-white"
@@ -396,11 +425,7 @@ export function DatePicker({
                         onClick={() => setCalendarView('months')}
                         type="button"
                       >
-                        {calendarMonthName(
-                          anchor,
-                          calendarSystem,
-                          gregorianEnglish,
-                        )}
+                        {calendarMonthName(anchor, calendarSystem, english)}
                       </button>
                       <button
                         aria-label={t('نمایش شبکه سال‌ها', 'Choose year')}
@@ -417,11 +442,7 @@ export function DatePicker({
                     </>
                   )}
                   <span className="sr-only">
-                    {calendarMonthLabel(
-                      anchor,
-                      calendarSystem,
-                      gregorianEnglish,
-                    )}
+                    {calendarMonthLabel(anchor, calendarSystem, english)}
                   </span>
                 </div>
                 <button

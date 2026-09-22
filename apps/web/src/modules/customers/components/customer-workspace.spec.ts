@@ -23,6 +23,12 @@ const customerDocumentsPanelSource = readFileSync(
 );
 
 describe('Customer Operations workspace boundaries', () => {
+  it('keeps backend implementation details out of the passenger workspace', () => {
+    expect(source).not.toContain('دسترسی حساس Backend-enforced');
+    expect(source).not.toContain('نشانی غیرحساس + City FK');
+    expect(source).not.toContain('Audit و Optimistic Version');
+  });
+
   it('reveals the phone inline through the existing audited sensitive flow', () => {
     expect(source).not.toContain('مشاهده تماس‌ها');
     expect(source).toContain('revealListPrimaryContact(record)');

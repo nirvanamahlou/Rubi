@@ -17,6 +17,7 @@ import type {
   SalesMoney,
   SalesAccommodationKind,
   MasterDataRecord,
+  HotelRoomRateV1,
   SalesContractCreateRequest,
   SalesPaymentInput,
   SalesPriceComponentInput,
@@ -344,6 +345,23 @@ export function salesPassengerCounts(state: SalesFormState) {
   };
 }
 
+export function salesHotelCapacityError(
+  state: SalesFormState,
+  roomRates: readonly HotelRoomRateV1[],
+): string | null {
+  if (!state.hotel.roomTypeId) return null;
+  const roomRate = roomRates.find(
+    ({ roomTypeId }) => roomTypeId === state.hotel.roomTypeId,
+  );
+  if (!roomRate) return null;
+  const rooms = Math.max(1, state.hotel.roomCount);
+  const counts = salesPassengerCounts(state);
+  const maxAdults = roomRate.maxAdults * rooms;
+  const maxChildren = roomRate.maxChildren * rooms;
+  if (counts.adults <= maxAdults && counts.children <= maxChildren) return null;
+  return `ظرفیت ${roomRate.roomTypeName} برای ${rooms.toLocaleString('fa-IR')} اتاق، حداکثر ${maxAdults.toLocaleString('fa-IR')} بزرگسال و ${maxChildren.toLocaleString('fa-IR')} کودک است؛ تعداد اتاق یا نوع اتاق را تغییر دهید.`;
+}
+
 export function salesPassengerCompositionMatches(state: SalesFormState) {
   const expected = salesPassengerCounts(state);
   const actual = { adults: 0, children: 0, infants: 0 };
@@ -581,6 +599,26 @@ export function withSalesHotelDates(
     if (!manual) hotel[field] = suggestion(next, field);
   }
   return { ...next, hotel };
+}
+
+export function salesHotelRoomTypes(
+  hotelId: string,
+  hotels: readonly MasterDataRecord[],
+  roomTypes: readonly MasterDataRecord[],
+  ratedRoomTypeIds: readonly string[] = [],
+) {
+  if (!hotelId) return [];
+  const hotel = hotels.find((item) => item.id === hotelId);
+  if (!hotel) return [];
+  const linkedRoomTypeIds = String(hotel.attributes.roomTypeIds ?? '')
+    .split(',')
+    .map((id) => id.trim())
+    .filter(Boolean);
+  const availableIds = new Set([
+    ...linkedRoomTypeIds,
+    ...ratedRoomTypeIds.filter(Boolean),
+  ]);
+  return roomTypes.filter((roomType) => availableIds.has(roomType.id));
 }
 
 export function salesHotelValid(state: SalesFormState): boolean {

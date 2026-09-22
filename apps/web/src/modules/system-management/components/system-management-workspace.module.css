@@ -2,7 +2,7 @@
   --navy: var(--foreground);
   --blue: var(--primary);
   --ink: var(--foreground);
-  --muted: var(--muted-foreground);
+  --text-muted: var(--muted-foreground);
   --line: var(--border);
   --canvas: var(--background);
   min-width: 0;
@@ -53,7 +53,7 @@
 .brand small,
 .sideFoot small {
   display: block;
-  color: var(--muted);
+  color: var(--text-muted);
   font-size: 13px;
 }
 .sideCap {
@@ -166,7 +166,7 @@
   align-items: center;
   gap: 9px;
   margin-bottom: 17px;
-  color: var(--muted);
+  color: var(--text-muted);
   font-size: 13px;
 }
 .crumb button {
@@ -192,7 +192,7 @@
 }
 .subtitle {
   margin-top: 6px;
-  color: var(--muted);
+  color: var(--text-muted);
   font-size: 13px;
 }
 .pill {
@@ -209,17 +209,6 @@
 .pillAmber {
   color: #97601a;
   background: color-mix(in srgb, #e6a12d 13%, var(--surface));
-}
-.pillBlue {
-  color: var(--primary);
-  background: color-mix(in srgb, var(--primary) 10%, var(--surface));
-}
-.headingActions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 8px;
 }
 .managementAreas {
   display: grid;
@@ -269,56 +258,6 @@
   background: var(--muted);
   font-size: 12px;
 }
-.scopeControl {
-  display: inline-flex;
-  min-height: 38px;
-  align-items: center;
-  gap: 8px;
-  padding: 0 10px;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  color: var(--primary);
-  background: var(--surface);
-}
-.scopeLabel {
-  color: var(--muted-foreground);
-  font-size: 12px;
-  font-weight: 650;
-}
-.scopeControl select {
-  min-width: 0;
-  border: 0;
-  outline: 0;
-  color: var(--foreground);
-  background: transparent;
-  font: inherit;
-  font-size: 13px;
-}
-.scopeHint {
-  margin: -10px 0 18px;
-  color: var(--muted-foreground);
-  font-size: 12px;
-}
-.statusBadge {
-  display: inline-flex;
-  min-height: 38px;
-  align-items: center;
-  gap: 7px;
-  padding: 0 11px;
-  border: 1px solid color-mix(in srgb, var(--primary) 25%, var(--border));
-  border-radius: 10px;
-  color: var(--primary);
-  background: color-mix(in srgb, var(--primary) 7%, var(--surface));
-  font-size: 13px;
-  font-weight: 650;
-  white-space: nowrap;
-}
-.statusDot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--primary);
-}
 .searchbar {
   display: flex;
   align-items: center;
@@ -347,18 +286,20 @@
 .filters {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 7px;
   margin-bottom: 20px;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface);
 }
 .filter {
   display: inline-flex;
-  min-height: 32px;
+  min-height: 34px;
   align-items: center;
-  gap: 9px;
-  padding: 5px 4px;
-  border: 0;
-  border-bottom: 2px solid transparent;
-  border-radius: 0;
+  padding: 6px 12px;
+  border: 1px solid transparent;
+  border-radius: 9px;
   color: var(--muted-foreground);
   background: transparent;
   text-align: start;
@@ -370,104 +311,85 @@
 }
 .filter:hover {
   color: var(--foreground);
-  background: transparent;
+  background: color-mix(in srgb, var(--primary) 5%, var(--surface));
 }
 .filterActive {
-  border-bottom-color: var(--primary);
+  border-color: color-mix(in srgb, var(--primary) 45%, var(--line));
   color: var(--primary);
-}
-.categoryDot {
-  width: 6px;
-  height: 6px;
-  flex: none;
-  border-radius: 50%;
-  background: color-mix(in srgb, var(--primary) 72%, var(--muted-foreground));
-}
-.categoryChevron {
-  width: 16px;
-  height: 16px;
-  flex: none;
-}
-.categoryPanel {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 7px;
-  margin: -8px 0 20px;
-  padding: 8px 0;
-  border-bottom: 1px solid var(--border);
-}
-.categoryChild {
-  display: inline-flex;
-  min-height: 36px;
-  align-items: center;
-  gap: 7px;
-  padding: 6px 3px;
-  border: 0;
-  border-radius: 0;
-  color: var(--muted-foreground);
-  background: transparent;
-  text-align: start;
-  font-size: 13px;
-}
-.categoryChild:hover {
-  color: var(--primary);
-  background: transparent;
-}
-.categoryChild svg {
-  margin-inline-start: 2px;
+  background: color-mix(in srgb, var(--primary) 9%, var(--surface));
 }
 .hubGrid,
 .settingsGrid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 17px;
+  gap: 16px;
 }
 .hubCard,
 .settingCard {
-  border: 1px solid var(--line);
-  border-radius: 15px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface);
+  box-shadow: 0 1px 2px rgb(15 23 42 / 5%);
   transition:
-    transform 0.16s,
-    box-shadow 0.16s;
+    transform 0.2s,
+    border-color 0.2s,
+    box-shadow 0.2s;
 }
 .hubCard {
   display: flex;
-  min-height: 217px;
+  min-height: 208px;
   flex-direction: column;
-  padding: 21px;
+  padding: 20px;
   color: inherit;
-  background: linear-gradient(
-    160deg,
-    color-mix(in srgb, var(--accent) 9%, var(--surface)),
-    var(--surface) 72%
-  );
   text-align: start;
+}
+.hubCard::before {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 96px;
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--accent) 14%, transparent),
+    transparent
+  );
+  content: '';
+  opacity: 0.8;
+  pointer-events: none;
+}
+.hubCard > * {
+  position: relative;
 }
 .hubCard:hover,
 .settingCard:hover {
-  transform: translateY(-2px);
-  border-color: color-mix(in srgb, var(--primary) 45%, var(--border));
+  transform: translateY(-4px);
+  border-color: color-mix(in srgb, var(--primary) 35%, var(--border));
   box-shadow: var(--shadow-card);
 }
 .cardTop {
   display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 15px;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 20px;
 }
 .cardIcon {
   display: grid;
-  width: 47px;
-  height: 47px;
+  width: 56px;
+  height: 56px;
   flex: none;
   place-items: center;
-  border-radius: 14px;
+  border-radius: 16px;
   color: var(--accent);
   background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+  transition: transform 0.2s;
+}
+.hubCard:hover .cardIcon {
+  transform: scale(1.05);
 }
 .cardIcon svg {
-  width: 25px;
-  height: 25px;
+  width: 28px;
+  height: 28px;
 }
 .grow {
   min-width: 0;
@@ -476,6 +398,8 @@
 .cardTop h3 {
   margin: 0;
   font-size: 16px;
+  font-weight: 900;
+  line-height: 1.75;
 }
 .tags {
   display: flex;
@@ -485,28 +409,39 @@
   gap: 6px;
 }
 .tag {
-  padding: 2px 8px;
-  border: 1px solid color-mix(in srgb, var(--border) 68%, transparent);
-  border-radius: 7px;
+  padding: 4px 10px;
+  border: 0;
+  border-radius: 999px;
   color: var(--muted-foreground);
-  background: color-mix(in srgb, var(--surface) 82%, transparent);
-  font-size: 13px;
+  background: var(--muted);
+  font-size: 11px;
+  font-weight: 650;
+  line-height: 1.5;
 }
 .cardFoot {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  margin-top: 18px;
-  padding-top: 12px;
-  border-top: 1px solid var(--border);
-  font-size: 13px;
+  margin-top: auto;
+  padding-top: 16px;
+  border-top: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+  color: var(--muted-foreground);
+  font-size: 14px;
+  font-weight: 650;
 }
 .enter {
   display: flex;
   align-items: center;
-  gap: 5px;
-  color: var(--blue);
+  gap: 8px;
+  color: var(--primary);
+  font-weight: 700;
+}
+.enter svg {
+  transition: transform 0.2s;
+}
+.hubCard:hover .enter svg {
+  transform: translateX(-4px);
 }
 .moduleHead {
   display: flex;
@@ -524,15 +459,22 @@
   justify-content: center;
   gap: 7px;
   padding: 8px 13px;
-  border: 1px solid var(--line);
+  border: 1px solid color-mix(in srgb, var(--primary) 55%, var(--border));
   border-radius: 10px;
-  color: var(--foreground);
-  background: var(--surface);
+  color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 6%, var(--surface));
   font-weight: 650;
+  transition:
+    border-color 150ms ease,
+    background 150ms ease,
+    color 150ms ease,
+    box-shadow 150ms ease;
 }
 .button:hover {
-  border-color: color-mix(in srgb, var(--primary) 52%, var(--border));
-  background: var(--muted);
+  border-color: var(--primary);
+  color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 12%, var(--surface));
+  box-shadow: 0 3px 10px color-mix(in srgb, var(--primary) 16%, transparent);
 }
 .primary {
   border-color: var(--primary);
@@ -540,6 +482,7 @@
   background: var(--primary);
 }
 .primary:hover {
+  color: var(--primary-foreground);
   background: color-mix(in srgb, var(--primary) 88%, var(--foreground));
 }
 .danger {
@@ -547,8 +490,13 @@
 }
 .quiet {
   border: 0;
-  color: var(--blue);
+  color: var(--primary);
   background: transparent;
+}
+.quiet:hover {
+  color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 8%, transparent);
+  box-shadow: none;
 }
 .sectionbar {
   display: flex;
@@ -597,7 +545,9 @@
   min-height: 310px;
   flex-direction: column;
   padding: 20px;
-  background: var(--surface);
+}
+.settingCard .cardFoot {
+  justify-content: flex-end;
 }
 .previewValues {
   display: flex;
@@ -614,7 +564,7 @@
 }
 .kv span {
   flex: 1;
-  color: var(--muted);
+  color: var(--text-muted);
 }
 .kv b {
   max-width: 54%;
@@ -650,7 +600,7 @@
 }
 .auditItem p {
   margin: 5px 0 0;
-  color: var(--muted);
+  color: var(--text-muted);
   font-size: 13px;
 }
 .empty {
@@ -658,7 +608,7 @@
   padding: 45px;
   border: 1px dashed var(--border);
   border-radius: 15px;
-  color: var(--muted);
+  color: var(--text-muted);
   text-align: center;
 }
 .dialogBackdrop {
@@ -687,23 +637,27 @@
   gap: 13px;
   padding: 22px 25px;
   border-bottom: 1px solid var(--line);
-  background: color-mix(in srgb, var(--muted) 62%, var(--surface));
+  background: color-mix(in srgb, var(--primary) 4%, var(--surface));
 }
 .modalHead h2 {
   margin: 0;
   font-size: 18px;
 }
 .modalHead small {
-  color: var(--muted);
+  color: var(--text-muted);
 }
 .close {
   display: grid;
   width: 35px;
   height: 35px;
   place-items: center;
+  border: 1px solid color-mix(in srgb, var(--primary) 28%, var(--line));
   border-radius: 10px;
-  color: var(--foreground);
-  background: var(--muted);
+  color: var(--primary);
+  background: var(--surface);
+}
+.close:hover {
+  background: color-mix(in srgb, var(--primary) 8%, var(--surface));
 }
 .modalBody {
   max-height: 65vh;
@@ -719,9 +673,6 @@
   border-bottom: 1px solid var(--line);
   font-size: 13px;
 }
-.saveMeta .pill {
-  margin-inline-start: auto;
-}
 .formGrid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -733,6 +684,22 @@
   gap: 7px;
   font-size: 13px;
   font-weight: 550;
+}
+.fieldLabel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.fieldUnit {
+  padding: 2px 7px;
+  border: 1px solid color-mix(in srgb, var(--primary) 24%, var(--line));
+  border-radius: 999px;
+  color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 6%, var(--surface));
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.4;
 }
 .field input,
 .field select,
@@ -749,6 +716,25 @@
 .field textarea {
   min-height: 78px;
   resize: vertical;
+}
+.field input[type='file'] {
+  cursor: pointer;
+}
+.field input[type='file']::file-selector-button {
+  margin-inline-end: 10px;
+  padding: 6px 10px;
+  border: 0;
+  border-radius: 8px;
+  color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 10%, var(--surface));
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+}
+.fileStatus {
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 500;
 }
 .wide {
   grid-column: 1 / -1;
@@ -772,12 +758,17 @@
   gap: 7px;
   margin-top: 20px;
   padding: 13px 15px;
-  border: 1px solid var(--line);
+  border: 1px solid color-mix(in srgb, var(--primary) 22%, var(--line));
+  border-inline-start: 4px solid var(--primary);
   border-radius: 11px;
-  background: var(--muted);
+  background: color-mix(in srgb, var(--primary) 5%, var(--surface));
 }
 .rules .locked {
   margin: 0;
+  color: var(--foreground);
+}
+.rules .locked svg {
+  color: var(--primary);
 }
 .error {
   margin-top: 12px;
@@ -791,7 +782,7 @@
   gap: 10px;
   padding: 17px 25px;
   border-top: 1px solid var(--line);
-  background: color-mix(in srgb, var(--muted) 45%, var(--surface));
+  background: var(--surface);
 }
 .tools {
   display: flex;
@@ -820,10 +811,11 @@
 }
 .workspace button:disabled {
   cursor: default;
-  opacity: 0.55;
+  opacity: 0.62;
+  filter: saturate(0.8);
 }
 
-@media (min-width: 1550px) {
+@media (min-width: 1280px) {
   .hubGrid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }

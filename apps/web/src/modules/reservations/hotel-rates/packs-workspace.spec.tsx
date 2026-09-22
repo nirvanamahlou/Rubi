@@ -1,6 +1,10 @@
 import { expect, it, vi } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { HotelRatePackTable } from './packs-workspace';
+import {
+  availableFactors,
+  HotelRatePackTable,
+  OccupancyFactorFields,
+} from './packs-workspace';
 
 const callbacks = {
   opening: false,
@@ -59,4 +63,41 @@ it('lists city, dates, nights, selected hotels and a reopen action in columns', 
   expect(html).toContain('2027-02-06');
   expect(html).toContain('بازکردن و ویرایش');
   expect(html).toContain('هتل منتخب');
+});
+
+it('shows all occupancy coefficients in one optional row and keeps blank values unavailable', () => {
+  const factors = {
+    double: '1',
+    single: '',
+    triple: '1.3',
+    doubleChild: '',
+    doubleTwoChildren: '1.4',
+    family: '',
+  };
+  const html = renderToStaticMarkup(
+    <OccupancyFactorFields
+      hotelName="رویال وینگز"
+      base="250"
+      currency="USD"
+      factors={factors}
+      onChange={vi.fn()}
+    />,
+  );
+
+  for (const label of [
+    'دبل',
+    'سینگل',
+    'تریپل',
+    'دبل + ۱ بچه',
+    'دبل + ۲ بچه',
+    'فمیلی',
+  ])
+    expect(html).toContain(label);
+  expect(html).toContain('placeholder="ندارد"');
+  expect(html).not.toContain('required=""');
+  expect(availableFactors(factors)).toEqual({
+    double: '1',
+    triple: '1.3',
+    doubleTwoChildren: '1.4',
+  });
 });

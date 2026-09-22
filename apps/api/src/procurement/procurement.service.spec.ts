@@ -592,6 +592,19 @@ describe.skipIf(process.env.PROCUREMENT_API_DATABASE_TEST !== '1')(
       );
       expect(await service.detail(row.id, maker)).toEqual(row);
     });
+    it('publishes a complete draft without inventing an approval policy', async () => {
+      approvedPolicy = await new ProcurementPolicyPort().resolve(fixture());
+      const row = await create();
+
+      const published = await command(row, 'PUBLISH');
+
+      expect(published.status).toBe('SUBMITTED');
+      expect(
+        await database.client.procurementApprovalSnapshot.count({
+          where: { requestId: row.id },
+        }),
+      ).toBe(0);
+    });
     it('preserves zero/incomplete quantities, full HR unit identifiers and prevents cross-request item theft', async () => {
       const person = identities.get(maker.userId)!;
       const oldUnit = person.unit;

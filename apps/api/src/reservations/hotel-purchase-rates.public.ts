@@ -20,18 +20,21 @@ export class HotelPurchaseRatesPublicService {
     startsOn: string,
     endsOn: string,
     tourDepartureId?: string,
+    cityId?: string,
   ): Promise<readonly PackageTourHotelPurchaseBatchV1[]> {
-    if (!hotelIds.length && !tourDepartureId) return [];
+    if (!hotelIds.length && !tourDepartureId && !cityId) return [];
     const start = new Date(`${startsOn}T00:00:00.000Z`);
     const end = new Date(`${endsOn}T00:00:00.000Z`);
     const batches =
       await this.database.client.reservationHotelRateBatch.findMany({
         where: {
           branchId,
-          ...(tourDepartureId
-            ? { tourDepartureId }
-            : { rows: { some: { hotelId: { in: [...hotelIds] } } } }),
-          ...(tourDepartureId
+          ...(cityId
+            ? { cityId }
+            : tourDepartureId
+              ? { tourDepartureId }
+              : { rows: { some: { hotelId: { in: [...hotelIds] } } } }),
+          ...(!cityId && tourDepartureId
             ? {}
             : {
                 OR: [
@@ -52,7 +55,7 @@ export class HotelPurchaseRatesPublicService {
           pack: { select: { currentVersion: true } },
           rows: {
             include: { roomRates: { orderBy: { roomTypeName: 'asc' } } },
-            ...(tourDepartureId
+            ...(cityId || tourDepartureId
               ? {}
               : { where: { hotelId: { in: [...hotelIds] } } }),
             orderBy: [{ hotelName: 'asc' }, { brokerName: 'asc' }],

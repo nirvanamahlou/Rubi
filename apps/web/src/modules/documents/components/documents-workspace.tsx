@@ -1399,6 +1399,7 @@ export function DocumentsWorkspace() {
             }
             required={false}
             value={query.createdFrom ?? ''}
+            variant="rubi"
           />
         </FormField>
         <FormField id="documents-created-to" label="ثبت تا تاریخ">
@@ -1411,6 +1412,7 @@ export function DocumentsWorkspace() {
             }
             required={false}
             value={query.createdTo ?? ''}
+            variant="rubi"
           />
         </FormField>
         <FormField label="مرتب‌سازی">

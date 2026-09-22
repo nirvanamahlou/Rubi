@@ -1,6 +1,9 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
-import { SearchableReference } from './searchable-reference';
+import {
+  salesReferenceDisplayName,
+  SearchableReference,
+} from './searchable-reference';
 
 describe('Sales searchable country/city reference', () => {
   it('renders a labelled themed combobox with the selected reference', () => {
@@ -43,5 +46,11 @@ describe('Sales searchable country/city reference', () => {
     );
     expect(markup).toContain('disabled=""');
     expect(markup).toContain('ابتدا کشور را انتخاب کنید');
+  });
+
+  it('keeps technical reference codes out of customer-facing labels', () => {
+    expect(salesReferenceDisplayName({ name: 'رویال وینگز' })).toBe(
+      'رویال وینگز',
+    );
   });
 });

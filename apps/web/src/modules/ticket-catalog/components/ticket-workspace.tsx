@@ -45,7 +45,7 @@ import {
   type ReferenceResolver,
 } from '../model/catalog';
 import {
-  activateCatalogSample,
+  activateDraftCatalogProduct,
   catalogStorageKey,
   countProductsByRoute,
   displayTime,
@@ -69,9 +69,10 @@ import { TicketDetails } from './ticket-details';
 import { TicketForm } from './ticket-form';
 import formStyles from './ticket-form.module.css';
 import { TicketDatePicker } from './ticket-date-picker';
-import { IssuedTicketsWorkspace } from './issued-tickets-workspace';
+import { ConnectedIssuedTicketsWorkspace } from './issued-tickets-workspace';
 import { TourWorkspace } from './tour-workspace';
 import { toursApi } from '../api/tours';
+import { listActiveCurrencyReferences } from '../api/references';
 import { getPublicApiBaseUrl } from '@/lib/environment';
 import { refreshAuthenticatedSession } from '@/lib/auth-session';
 
@@ -169,6 +170,33 @@ export function planCatalogPublication(
   });
   return { publishable, problems };
 }
+
+export function findPublishedOffer(
+  definition: ProductInput,
+  references: readonly Reference[],
+  offers: readonly TicketOfferV1[],
+) {
+  const input = flightOfferInput(definition, references);
+  if (!input) return undefined;
+  const matches = offers.filter(
+    (offer) =>
+      offer.originId === input.originId &&
+      offer.destinationId === input.destinationId &&
+      new Date(offer.departureAt).getTime() ===
+        new Date(input.departureAt).getTime() &&
+      new Date(offer.arrivalAt).getTime() ===
+        new Date(input.arrivalAt).getTime() &&
+      offer.serviceNumber === input.serviceNumber &&
+      offer.carrierName === input.carrierName &&
+      offer.cabinClassCode === input.cabinClassCode &&
+      offer.totalCapacity === input.totalCapacity,
+  );
+  if (matches.length > 1)
+    throw new Error(
+      'بیش از یک بلیت مشابه در فهرست فروش ثبت شده است؛ فهرست را بررسی کنید.',
+    );
+  return matches[0];
+}
 export function TicketWorkspace() {
   return (
     <>
@@ -209,7 +237,7 @@ export function TicketWorkspace() {
             className="min-h-20 rounded-xl px-4 py-3 font-bold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
             value="tours"
           >
-            تعریف تور و نوبت برگزاری
+            تعریف تور و خدمات
           </TabsTrigger>
         </TabsList>
         <TabsContent value="tours">
@@ -219,7 +247,7 @@ export function TicketWorkspace() {
           <TicketCatalogWorkspace />
         </TabsContent>
         <TabsContent value="issued">
-          <IssuedTicketsWorkspace connected={false} tickets={[]} />
+          <ConnectedIssuedTicketsWorkspace />
         </TabsContent>
       </Tabs>
     </>
@@ -249,15 +277,22 @@ function TicketCatalogWorkspace() {
     count: number;
     startDate: string;
   }>();
-  const [reason, setReason] = useState('');
   const [publishedOffers, setPublishedOffers] = useState<
     readonly TicketOfferV1[]
   >([]);
   const [publishedProblem, setPublishedProblem] = useState('');
+  const [publishedNotice, setPublishedNotice] = useState('');
+  const [publishedRefreshing, setPublishedRefreshing] = useState(false);
+  const [statusSaving, setStatusSaving] = useState<string>();
   const [priceDrafts, setPriceDrafts] = useState<
     Record<string, { amount: string; currencyCode: string }>
   >({});
   const [priceSaving, setPriceSaving] = useState<string>();
+  const [saleCurrencies, setSaleCurrencies] = useState<readonly Reference[]>(
+    [],
+  );
+  const [saleCurrencyLoading, setSaleCurrencyLoading] = useState(true);
+  const [saleCurrencyProblem, setSaleCurrencyProblem] = useState('');
   const [capacityHold, setCapacityHold] = useState<{
     offer: TicketOfferV1;
     quantity: number;
@@ -266,9 +301,26 @@ function TicketCatalogWorkspace() {
   const [capacityHoldSaving, setCapacityHoldSaving] = useState(false);
   const backfillStarted = useRef(false);
   const [catalogNow, setCatalogNow] = useState(0);
+  const updateCapacityHold = (
+    value:
+      | {
+          offer: TicketOfferV1;
+          quantity: number;
+          expiresAt: string;
+        }
+      | undefined,
+  ) => {
+    setProblem('');
+    setCapacityHold(value);
+  };
+  const updateRepeat = (value: typeof repeat) => {
+    setProblem('');
+    setRepeat(value);
+  };
 
-  const refreshPublishedOffers = async () => {
+  const refreshPublishedOffers = async (announce = false) => {
     setCatalogNow(new Date().getTime());
+    if (announce) setPublishedRefreshing(true);
     try {
       const result = await toursApi.managedOffers();
       setPublishedOffers(result.data);
@@ -284,19 +336,50 @@ function TicketCatalogWorkspace() {
         ),
       );
       setPublishedProblem('');
+      if (announce) setPublishedNotice('فهرست بلیت‌ها به‌روز شد.');
     } catch (error) {
+      setPublishedNotice('');
       setPublishedProblem(
         error instanceof Error
           ? error.message
           : 'دریافت بلیط‌های قابل فروش ناموفق بود.',
       );
+    } finally {
+      if (announce) setPublishedRefreshing(false);
+    }
+  };
+  const updatePublishedStatus = async (
+    offer: TicketOfferV1,
+    status: 'ACTIVE' | 'PAUSED',
+  ) => {
+    setStatusSaving(offer.id);
+    setPublishedProblem('');
+    setPublishedNotice('');
+    try {
+      await toursApi.updateOfferStatus(offer.id, offer.version, status);
+      await refreshPublishedOffers();
+      setPublishedNotice(
+        status === 'ACTIVE'
+          ? 'بلیت فعال شد و در قرارداد جدید قابل انتخاب است.'
+          : 'فروش بلیت متوقف شد.',
+      );
+    } catch (error) {
+      setPublishedProblem(
+        error instanceof Error ? error.message : 'تغییر وضعیت بلیت ناموفق بود.',
+      );
+      throw error;
+    } finally {
+      setStatusSaving(undefined);
     }
   };
   const saveStandalonePrice = async (offer: TicketOfferV1) => {
     const draft = priceDrafts[offer.id];
     try {
-      if (!draft?.amount || !/^[A-Z]{3}$/.test(draft.currencyCode))
-        throw new Error('مبلغ و کد سه‌حرفی ارز را کامل کنید.');
+      if (
+        !draft?.amount ||
+        !saleCurrencies.some((currency) => currency.code === draft.currencyCode)
+      )
+        throw new Error('مبلغ و ارز را از فهرست ارزهای فعال کامل کنید.');
       setPriceSaving(offer.id);
       await toursApi.updateStandaloneSalePrice(
         offer.id,
@@ -348,7 +431,7 @@ function TicketCatalogWorkspace() {
         `${result.data.quantity.toLocaleString('fa-IR')} نفر تا ${displayTime(result.data.expiresAt, 'Asia/Tehran')} رزرو شد.`,
       );
       setProblem('');
-      setCapacityHold(undefined);
+      updateCapacityHold(undefined);
     } catch (error) {
       setProblem(
         error instanceof Error ? error.message : 'رزرو ظرفیت ناموفق بود.',
@@ -442,6 +525,32 @@ function TicketCatalogWorkspace() {
     };
   }, []);
   useEffect(() => {
+    let active = true;
+    void listActiveCurrencyReferences()
+      .then((currencies) => {
+        if (!active) return;
+        setSaleCurrencies(currencies);
+        setSaleCurrencyProblem(
+          currencies.length ? '' : 'ارز فعالی در اطلاعات پایه تعریف نشده است.',
+        );
+      })
+      .catch((error) => {
+        if (!active) return;
+        setSaleCurrencies([]);
+        setSaleCurrencyProblem(
+          error instanceof Error
+            ? error.message
+            : 'دریافت فهرست ارزهای فعال ناموفق بود.',
+        );
+      })
+      .finally(() => {
+        if (active) setSaleCurrencyLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+  useEffect(() => {
     const timer = window.setTimeout(() => {
       const stored = parseCatalogSnapshot(
         localStorage.getItem(catalogStorageKey),
@@ -449,7 +558,10 @@ function TicketCatalogWorkspace() {
       if (stored) {
         const now = new Date().toISOString();
         const restoredProducts = stored.products.map((product) =>
-          pauseExpiredCatalogProduct(activateCatalogSample(product, now), now),
+          pauseExpiredCatalogProduct(
+            activateDraftCatalogProduct(product, now),
+            now,
+          ),
         );
         setProducts(restoredProducts);
         setReferences(stored.references);
@@ -480,7 +592,6 @@ function TicketCatalogWorkspace() {
       JSON.stringify({ products, references }),
     );
   }, [hydrated, products, references]);
-
   const result = queryProducts(products, query);
   const routeCounts = countProductsByRoute(products);
   const cardGroups = groupProductsForCards(result.rows);
@@ -523,12 +634,15 @@ function TicketCatalogWorkspace() {
       updated = replacePreview(updated, next, current.version);
     } else {
       for (const input of inputs) {
-        const next = createProduct(
-          `ticket-${crypto.randomUUID()}`,
-          input,
-          resolve,
+        const next = activateDraftCatalogProduct(
+          createProduct(
+            `ticket-${crypto.randomUUID()}`,
+            input,
+            resolve,
+            now,
+            actor,
+          ),
           now,
-          actor,
         );
         updated = replacePreview(updated, next);
         createdIds.push(next.id);
@@ -605,18 +719,21 @@ function TicketCatalogWorkspace() {
           occurrence === 0
             ? anchored
             : repeatDefinition(anchored, repeat.cadence, occurrence);
-        const next = createProduct(
-          `ticket-${crypto.randomUUID()}`,
-          definition,
-          resolve,
+        const next = activateDraftCatalogProduct(
+          createProduct(
+            `ticket-${crypto.randomUUID()}`,
+            definition,
+            resolve,
+            now,
+            actor,
+          ),
           now,
-          actor,
         );
         await publishFlights([definition], [next.id]);
         updated = replacePreview(updated, next);
       }
       setProducts(updated);
-      setRepeat(undefined);
+      updateRepeat(undefined);
       setProblem('');
       setNotice(
         `${repeat.count.toLocaleString('fa-IR')} بلیط ${repeat.cadence === 'weekly' ? 'هفتگی' : 'ماهانه'} جدید ساخته شد.`,
@@ -634,7 +751,7 @@ function TicketCatalogWorkspace() {
     setNotice('بلیط از فهرست این مرورگر حذف شد.');
     setProblem('');
   }
-  function applyStatus() {
+  async function applyStatus() {
     if (!statusChange) return;
     try {
       const current = statusChange.product;
@@ -645,14 +762,36 @@ function TicketCatalogWorkspace() {
         resolve,
         new Date().toISOString(),
         actor,
-        reason.trim() || 'تغییر وضعیت بلیط',
+        statusChange.status === 'active'
+          ? 'فعال‌سازی مجدد فروش بلیط'
+          : 'توقف فروش بلیط',
         {
           total: current.definition.totalCapacity,
           version: 0,
           allocations: [],
         },
       );
-      setProducts(replacePreview(products, next, current.version));
+      if (current.definition.transport === 'flight') {
+        let offer = findPublishedOffer(
+          current.definition,
+          references,
+          publishedOffers,
+        );
+        if (!offer) {
+          await publishExistingFlights([current], references);
+          const refreshed = (await toursApi.managedOffers()).data;
+          offer = findPublishedOffer(current.definition, references, refreshed);
+        }
+        if (!offer)
+          throw new Error(
+            'رکورد قابل فروش این بلیت در سرور پیدا نشد؛ فهرست را به‌روز کنید.',
+          );
+        await updatePublishedStatus(
+          offer,
+          statusChange.status === 'active' ? 'ACTIVE' : 'PAUSED',
+        );
+      }
+      setProducts((rows) => replacePreview(rows, next, current.version));
       setStatusChange(null);
       setProblem('');
       setNotice(`وضعیت بلیط به «${statusLabels[next.status]}» تغییر کرد.`);
@@ -722,11 +861,18 @@ function TicketCatalogWorkspace() {
             type="button"
             size="sm"
             variant="outline"
-            onClick={() => void refreshPublishedOffers()}
+            disabled={publishedRefreshing}
+            onClick={() => void refreshPublishedOffers(true)}
           >
-            به‌روزرسانی فهرست
+            {publishedRefreshing ? 'در حال به‌روزرسانی…' : 'به‌روزرسانی فهرست'}
           </Button>
         </div>
+        {saleCurrencyProblem ? (
+          <Alert className="m-4" tone="error" title={saleCurrencyProblem} />
+        ) : null}
+        {publishedNotice ? (
+          <Alert className="m-4" title={publishedNotice} />
+        ) : null}
         {publishedProblem ? (
           <Alert className="m-4" tone="error" title={publishedProblem} />
         ) : publishedOffers.length ? (
@@ -795,29 +941,61 @@ function TicketCatalogWorkspace() {
                           />
                         </FormField>
                         <FormField label="ارز">
-                          <Input
-                            dir="ltr"
-                            maxLength={3}
-                            className="h-9 w-20 text-left uppercase"
-                            value={priceDrafts[offer.id]?.currencyCode ?? 'IRR'}
-                            onChange={(event) =>
+                          <Select
+                            value={
+                              saleCurrencies.some(
+                                (currency) =>
+                                  currency.code ===
+                                  priceDrafts[offer.id]?.currencyCode,
+                              )
+                                ? (priceDrafts[offer.id]?.currencyCode ?? '')
+                                : ''
+                            }
+                            disabled={
+                              saleCurrencyLoading || !saleCurrencies.length
+                            }
+                            onValueChange={(currencyCode) =>
                               setPriceDrafts((current) => ({
                                 ...current,
                                 [offer.id]: {
                                   amount: current[offer.id]?.amount ?? '',
-                                  currencyCode:
-                                    event.target.value.toUpperCase(),
+                                  currencyCode,
                                 },
                               }))
                             }
-                          />
+                          >
+                            <SelectTrigger className="h-9 min-w-32" dir="rtl">
+                              <SelectValue
+                                placeholder={
+                                  saleCurrencyLoading
+                                    ? 'در حال دریافت…'
+                                    : 'انتخاب ارز'
+                                }
+                              />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {saleCurrencies.map((currency) => (
+                                <SelectItem
+                                  key={currency.id}
+                                  value={currency.code!}
+                                >
+                                  {currency.name} ({currency.code})
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </FormField>
                         <Button
                           size="sm"
                           type="button"
                           disabled={
                             priceSaving === offer.id ||
-                            !priceDrafts[offer.id]?.amount
+                            !priceDrafts[offer.id]?.amount ||
+                            !saleCurrencies.some(
+                              (currency) =>
+                                currency.code ===
+                                priceDrafts[offer.id]?.currencyCode,
+                            )
                           }
                           onClick={() => void saveStandalonePrice(offer)}
                         >
@@ -826,7 +1004,11 @@ function TicketCatalogWorkspace() {
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      {offer.status === 'ACTIVE' ? 'فعال' : offer.status}
+                      {new Date(offer.departureAt).getTime() <= catalogNow
+                        ? 'منقضی'
+                        : offer.status === 'ACTIVE'
+                          ? 'فعال'
+                          : 'غیرفعال'}
                     </td>
                     <td className="px-4 py-3">
                       {new Date(offer.departureAt).getTime() <= catalogNow ? (
@@ -860,25 +1042,45 @@ function TicketCatalogWorkspace() {
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       ) : (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          disabled={
-                            offer.status !== 'ACTIVE' ||
-                            offer.remainingCapacity < 1
-                          }
-                          onClick={() =>
-                            setCapacityHold({
-                              offer,
-                              quantity: 1,
-                              expiresAt: new Date(Date.now() + 60 * 60 * 1000)
-                                .toISOString()
-                                .slice(0, 16),
-                            })
-                          }
-                        >
-                          رزرو ظرفیت
-                        </Button>
+                        <div className="flex flex-wrap gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={statusSaving === offer.id}
+                            onClick={() =>
+                              void updatePublishedStatus(
+                                offer,
+                                offer.status === 'ACTIVE' ? 'PAUSED' : 'ACTIVE',
+                              ).catch(() => undefined)
+                            }
+                          >
+                            {statusSaving === offer.id
+                              ? 'در حال ثبت…'
+                              : offer.status === 'ACTIVE'
+                                ? 'توقف فروش'
+                                : 'فعال‌کردن'}
+                          </Button>
+                          {offer.status === 'ACTIVE' ? (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              disabled={offer.remainingCapacity < 1}
+                              onClick={() =>
+                                updateCapacityHold({
+                                  offer,
+                                  quantity: 1,
+                                  expiresAt: new Date(
+                                    Date.now() + 60 * 60 * 1000,
+                                  )
+                                    .toISOString()
+                                    .slice(0, 16),
+                                })
+                              }
+                            >
+                              رزرو ظرفیت
+                            </Button>
+                          ) : null}
+                        </div>
                       )}
                     </td>
                   </tr>
@@ -1143,7 +1345,7 @@ function TicketCatalogWorkspace() {
                     onView={() => setForm({ mode: 'view', product })}
                     onEdit={() => setForm({ mode: 'edit', product })}
                     onRepeat={() =>
-                      setRepeat({
+                      updateRepeat({
                         product,
                         cadence: 'weekly',
                         count: 1,
@@ -1153,7 +1355,6 @@ function TicketCatalogWorkspace() {
                     onDelete={() => setDeleteProduct(product)}
                     onStatus={(status) => {
                       setProblem('');
-                      setReason('');
                       setStatusChange({ product, status });
                     }}
                   />
@@ -1255,7 +1456,7 @@ function TicketCatalogWorkspace() {
       <Dialog
         open={Boolean(capacityHold)}
         onOpenChange={(open) => {
-          if (!open && !capacityHoldSaving) setCapacityHold(undefined);
+          if (!open && !capacityHoldSaving) updateCapacityHold(undefined);
         }}
       >
         <DialogContent dir="rtl" className="start-auto! left-1/2!">
@@ -1284,7 +1485,7 @@ function TicketCatalogWorkspace() {
               value={capacityHold?.quantity ?? 1}
               onChange={(event) =>
                 capacityHold &&
-                setCapacityHold({
+                updateCapacityHold({
                   ...capacityHold,
                   quantity: Number(event.target.value),
                 })
@@ -1302,7 +1503,8 @@ function TicketCatalogWorkspace() {
               required
               value={capacityHold?.expiresAt ?? ''}
               onChange={(expiresAt) =>
-                capacityHold && setCapacityHold({ ...capacityHold, expiresAt })
+                capacityHold &&
+                updateCapacityHold({ ...capacityHold, expiresAt })
               }
             />
           </FormField>
@@ -1316,7 +1518,7 @@ function TicketCatalogWorkspace() {
             <Button
               disabled={capacityHoldSaving}
               variant="outline"
-              onClick={() => setCapacityHold(undefined)}
+              onClick={() => updateCapacityHold(undefined)}
             >
               انصراف
             </Button>
@@ -1326,7 +1528,7 @@ function TicketCatalogWorkspace() {
       <Dialog
         open={Boolean(repeat)}
         onOpenChange={(open) => {
-          if (!open) setRepeat(undefined);
+          if (!open) updateRepeat(undefined);
         }}
       >
         <DialogContent dir="rtl" className="start-auto! left-1/2!">
@@ -1345,7 +1547,7 @@ function TicketCatalogWorkspace() {
               value={repeat?.startDate ?? ''}
               required
               onChange={(startDate) =>
-                repeat && setRepeat({ ...repeat, startDate })
+                repeat && updateRepeat({ ...repeat, startDate })
               }
             />
           </FormField>
@@ -1354,7 +1556,10 @@ function TicketCatalogWorkspace() {
               value={repeat?.cadence ?? 'weekly'}
               onValueChange={(cadence) =>
                 repeat &&
-                setRepeat({ ...repeat, cadence: cadence as RepeatCadence })
+                updateRepeat({
+                  ...repeat,
+                  cadence: cadence as RepeatCadence,
+                })
               }
             >
               <SelectTrigger id="ticket-repeat-cadence">
@@ -1375,7 +1580,10 @@ function TicketCatalogWorkspace() {
               value={repeat?.count ?? 1}
               onChange={(event) =>
                 repeat &&
-                setRepeat({ ...repeat, count: Number(event.target.value) })
+                updateRepeat({
+                  ...repeat,
+                  count: Number(event.target.value),
+                })
               }
             />
           </FormField>
@@ -1430,14 +1638,11 @@ function TicketCatalogWorkspace() {
               : 'پس از تأیید، فروش این بلیط متوقف می‌شود و بعداً می‌توانید دوباره آن را فعال کنید.'}
           </DialogDescription>
           {problem ? <Alert tone="error" title={problem} /> : null}
-          <FormField label="دلیل تغییر وضعیت" id="ticket-status-reason">
-            <Input
-              id="ticket-status-reason"
-              value={reason}
-              onChange={(event) => setReason(event.target.value)}
-            />
-          </FormField>
-          <Button className="mt-4" onClick={applyStatus}>
+          <Button
+            className="mt-4"
+            disabled={Boolean(statusSaving)}
+            onClick={() => void applyStatus()}
+          >
             {statusChange?.status === 'active' ? 'فعال‌کردن فروش' : 'توقف فروش'}
           </Button>
         </DialogContent>

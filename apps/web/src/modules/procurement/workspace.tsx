@@ -867,13 +867,16 @@ function RequestDetail({
                 </Button>
               )}
             {editable && can('procurement.request.submit') && (
-              <Button
-                disabled={bootstrap.policy !== 'CONFIGURED'}
-                onClick={() => void command({ action: 'SUBMIT' })}
-              >
-                ارسال برای تأیید
+              <Button onClick={() => void command({ action: 'PUBLISH' })}>
+                تأیید و انتشار
               </Button>
             )}
+            {request.status === 'SUBMITTED' &&
+              can('procurement.request.submit') && (
+                <Button onClick={() => void command({ action: 'SUBMIT' })}>
+                  ارسال برای تأیید
+                </Button>
+              )}
             {['SUBMITTED', 'IN_REVIEW'].includes(request.status) &&
               can('procurement.approve') && (
                 <>

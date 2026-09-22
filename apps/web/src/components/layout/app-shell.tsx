@@ -36,6 +36,13 @@ import {
 import { cn } from '@/lib/utils';
 import { faMessages } from '@/messages/fa';
 import {
+  enMessages,
+  englishNavigation,
+  englishNavigationGroups,
+  englishNavigationTitle,
+} from '@/messages/en';
+import { useSystemPreferences } from '@/components/system-preferences-provider';
+import {
   LegalEntityContextSelector,
   LegalEntityProvider,
   useLegalEntityContext,
@@ -75,8 +82,17 @@ import {
 } from '../ui/overlays';
 
 function Brand({ compact = false }: { compact?: boolean }) {
+  const { language } = useSystemPreferences();
   const { context } = useLegalEntityContext();
   const brand = legalEntityBrand(context?.selection);
+  const englishLabel =
+    context?.selection === 'JAHAN_BASTAN'
+      ? 'Jahan Bastan CRM'
+      : context?.selection === 'JAHAN_ACADEMIA'
+        ? 'Jahan Academia CRM'
+        : context?.selection === 'GHESATI_RO'
+          ? 'Ghesati Ro CRM'
+          : 'Niyayesh Seir Sahar CRM';
   return (
     <Link
       className={cn(
@@ -96,7 +112,7 @@ function Brand({ compact = false }: { compact?: boolean }) {
       />
       {!compact ? (
         <span className="block truncate px-2 pb-1 text-center text-[10px] font-black text-[#25247f]">
-          {brand.label}
+          {language === 'en' ? englishLabel : brand.label}
         </span>
       ) : null}
     </Link>
@@ -110,6 +126,8 @@ function Navigation({
   compact?: boolean;
   mobile?: boolean;
 }) {
+  const { language } = useSystemPreferences();
+  const english = language === 'en';
   const pathname = usePathname();
   const groupId = useId();
   const [closedGroups, setClosedGroups] = useState<string[]>(() =>
@@ -134,13 +152,16 @@ function Navigation({
     title: string;
     secondary?: boolean;
   }) {
+    const displayTitle = english ? englishNavigationTitle(href, title) : title;
     const active = secondary
       ? pathname === href || pathname.startsWith(`${href}/`)
       : isNavigationItemActive(
           href as (typeof navigationItems)[number]['href'],
           pathname,
         ) &&
-        !(href === '/sales' && pathname.startsWith(salesPricingSubsection.href));
+        !(
+          href === '/sales' && pathname.startsWith(salesPricingSubsection.href)
+        );
     const Icon = sidebarIcons[href];
     const link = (
       <Link
@@ -158,7 +179,7 @@ function Navigation({
           compact && 'justify-center px-0',
         )}
         href={href}
-        title={!compact ? title : undefined}
+        title={!compact ? displayTitle : undefined}
       >
         <Icon
           strokeWidth={1.7}
@@ -169,9 +190,11 @@ function Navigation({
           )}
         />
         {!compact ? (
-          <span className="min-w-0 whitespace-normal break-words">{title}</span>
+          <span className="min-w-0 whitespace-normal break-words">
+            {displayTitle}
+          </span>
         ) : (
-          <span className="sr-only">{title}</span>
+          <span className="sr-only">{displayTitle}</span>
         )}
       </Link>
     );
@@ -185,7 +208,7 @@ function Navigation({
     return (
       <Tooltip key={href}>
         <TooltipTrigger asChild>{link}</TooltipTrigger>
-        <TooltipContent side="left">{title}</TooltipContent>
+        <TooltipContent side="left">{displayTitle}</TooltipContent>
       </Tooltip>
     );
   }
@@ -199,7 +222,7 @@ function Navigation({
   }
   return (
     <nav
-      aria-label="منوی اصلی"
+      aria-label={english ? 'Main navigation' : 'منوی اصلی'}
       className={cn(
         'grid min-w-0 content-start overflow-x-hidden',
         compact
@@ -212,7 +235,11 @@ function Navigation({
         : groupedNavigationItems.map((group) => (
             <section
               key={group.id}
-              aria-label={group.title}
+              aria-label={
+                english
+                  ? (englishNavigationGroups[group.id] ?? group.title)
+                  : group.title
+              }
               className="min-w-0"
             >
               <h2>
@@ -233,7 +260,9 @@ function Navigation({
                       mobile ? 'bg-primary/50' : 'bg-cyan-200/70',
                     )}
                   />
-                  {group.title}
+                  {english
+                    ? (englishNavigationGroups[group.id] ?? group.title)
+                    : group.title}
                   {isGroupClosed(group.id) ? (
                     <ChevronLeft
                       aria-hidden="true"
@@ -263,10 +292,19 @@ function Navigation({
 }
 
 function SearchDialog() {
+  const { language } = useSystemPreferences();
+  const english = language === 'en';
+  const messages = english ? enMessages : faMessages;
   const [query, setQuery] = useState('');
   const results = useMemo(
-    () => navigationItems.filter((item) => item.title.includes(query.trim())),
-    [query],
+    () =>
+      navigationItems.filter((item) => {
+        const title = english ? englishNavigation[item.href].title : item.title;
+        return title
+          .toLocaleLowerCase()
+          .includes(query.trim().toLocaleLowerCase());
+      }),
+    [english, query],
   );
 
   useEffect(() => {
@@ -289,7 +327,7 @@ function SearchDialog() {
           type="button"
         >
           <Search aria-hidden="true" className="size-4" />
-          <span className="truncate">{faMessages.common.search}</span>
+          <span className="truncate">{messages.common.search}</span>
           <kbd
             dir="ltr"
             className="ms-auto hidden shrink-0 items-center whitespace-nowrap rounded-md border border-input bg-surface px-2 py-0.5 text-[11px] font-semibold leading-5 text-foreground sm:inline-flex"
@@ -299,14 +337,14 @@ function SearchDialog() {
         </button>
       </DialogTrigger>
       <DialogContent>
-        <DialogTitle>{faMessages.common.search}</DialogTitle>
-        <DialogDescription>{faMessages.common.searchHint}</DialogDescription>
+        <DialogTitle>{messages.common.search}</DialogTitle>
+        <DialogDescription>{messages.common.searchHint}</DialogDescription>
         <Input
-          aria-label={faMessages.common.search}
+          aria-label={messages.common.search}
           autoFocus
           className="mt-4"
           onChange={(event) => setQuery(event.target.value)}
-          placeholder={faMessages.common.searchHint}
+          placeholder={messages.common.searchHint}
           value={query}
         />
         <div className="mt-3 max-h-72 space-y-1 overflow-y-auto">
@@ -320,9 +358,13 @@ function SearchDialog() {
                   <Icon aria-hidden="true" className="size-4" />
                 </span>
                 <span>
-                  <strong className="block text-sm">{title}</strong>
+                  <strong className="block text-sm">
+                    {english ? englishNavigation[href].title : title}
+                  </strong>
                   <span className="text-xs text-muted-foreground">
-                    {description}
+                    {english
+                      ? englishNavigation[href].description
+                      : description}
                   </span>
                 </span>
               </Link>
@@ -335,13 +377,15 @@ function SearchDialog() {
 }
 
 function HeaderActions() {
+  const { language } = useSystemPreferences();
+  const messages = language === 'en' ? enMessages : faMessages;
   const { theme, toggleTheme } = useTheme();
   return (
     <div className="flex min-w-0 shrink-0 items-center gap-1">
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button
-            aria-label={faMessages.shell.language}
+            aria-label={messages.shell.language}
             size="icon"
             variant="ghost"
           >
@@ -350,19 +394,28 @@ function HeaderActions() {
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           <DropdownMenuItem>
-            <Check aria-hidden="true" className="size-4 text-primary" />
-            {faMessages.shell.persian}
+            {language === 'fa' ? (
+              <Check aria-hidden="true" className="size-4 text-primary" />
+            ) : (
+              <span aria-hidden="true" className="size-4" />
+            )}
+            {messages.shell.persian}
           </DropdownMenuItem>
           <DropdownMenuItem disabled>
-            {faMessages.shell.englishSoon}
+            {language === 'en' ? (
+              <Check aria-hidden="true" className="size-4 text-primary" />
+            ) : null}
+            {language === 'en'
+              ? enMessages.shell.english
+              : faMessages.shell.englishSoon}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
       <Button
         aria-label={
           theme === 'light'
-            ? faMessages.shell.darkTheme
-            : faMessages.shell.lightTheme
+            ? messages.shell.darkTheme
+            : messages.shell.lightTheme
         }
         onClick={toggleTheme}
         size="icon"
@@ -381,6 +434,9 @@ function HeaderActions() {
 }
 
 function Breadcrumb() {
+  const { language } = useSystemPreferences();
+  const english = language === 'en';
+  const messages = english ? enMessages : faMessages;
   const pathname = usePathname();
   const pageBreadcrumbs = usePageBreadcrumbOverride(pathname);
   const searchParams = useSearchParams();
@@ -424,11 +480,11 @@ function Breadcrumb() {
     ).map((item) => ({ ...item, key: item.href }));
   return (
     <nav
-      aria-label="مسیر صفحه"
+      aria-label={english ? 'Breadcrumb' : 'مسیر صفحه'}
       className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground"
     >
       <Link className="hover:text-foreground" href="/dashboard">
-        {faMessages.shell.workspace}
+        {messages.shell.workspace}
       </Link>
       {breadcrumbs.length ? (
         breadcrumbs.map((item, index) => {
@@ -441,7 +497,9 @@ function Breadcrumb() {
                   aria-current="page"
                   className="font-semibold text-foreground"
                 >
-                  {item.title}
+                  {english && item.href
+                    ? englishNavigationTitle(item.href, item.title)
+                    : item.title}
                 </span>
               ) : item.onSelect ? (
                 <button
@@ -449,11 +507,15 @@ function Breadcrumb() {
                   className="rounded-sm text-start hover:text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                   onClick={item.onSelect}
                 >
-                  {item.title}
+                  {english && item.href
+                    ? englishNavigationTitle(item.href, item.title)
+                    : item.title}
                 </button>
               ) : item.href ? (
                 <Link className="hover:text-foreground" href={item.href}>
-                  {item.title}
+                  {english
+                    ? englishNavigationTitle(item.href, item.title)
+                    : item.title}
                 </Link>
               ) : (
                 <span>{item.title}</span>
@@ -465,7 +527,7 @@ function Breadcrumb() {
         <>
           <span aria-hidden="true">/</span>
           <span aria-current="page" className="font-semibold text-foreground">
-            {faMessages.common.unavailable}
+            {messages.common.unavailable}
           </span>
         </>
       )}
@@ -474,6 +536,9 @@ function Breadcrumb() {
 }
 
 function AppShellContent({ children }: { children: ReactNode }) {
+  const { language } = useSystemPreferences();
+  const english = language === 'en';
+  const messages = english ? enMessages : faMessages;
   const [collapsed, setCollapsed] = useState(false);
   return (
     <div className="flex min-h-screen bg-background">
@@ -505,16 +570,22 @@ function AppShellContent({ children }: { children: ReactNode }) {
           >
             <Command aria-hidden="true" className="size-3.5" />
             {!collapsed ? (
-              'وضعیت سامانه'
+              english ? (
+                'System status'
+              ) : (
+                'وضعیت سامانه'
+              )
             ) : (
-              <span className="sr-only">وضعیت سامانه</span>
+              <span className="sr-only">
+                {english ? 'System status' : 'وضعیت سامانه'}
+              </span>
             )}
           </Link>
           <Button
             aria-label={
               collapsed
-                ? faMessages.shell.expandSidebar
-                : faMessages.shell.collapseSidebar
+                ? messages.shell.expandSidebar
+                : messages.shell.collapseSidebar
             }
             className="size-8 min-h-8 p-0 text-blue-100 hover:bg-white/10 hover:text-white"
             onClick={() => setCollapsed((value) => !value)}
@@ -536,7 +607,7 @@ function AppShellContent({ children }: { children: ReactNode }) {
             <Drawer>
               <DrawerTrigger asChild>
                 <Button
-                  aria-label={faMessages.shell.openNavigation}
+                  aria-label={messages.shell.openNavigation}
                   className="lg:hidden"
                   size="icon"
                   variant="ghost"
@@ -546,16 +617,18 @@ function AppShellContent({ children }: { children: ReactNode }) {
               </DrawerTrigger>
               <DrawerContent>
                 <DialogTitle className="sr-only">
-                  {faMessages.shell.openNavigation}
+                  {messages.shell.openNavigation}
                 </DialogTitle>
                 <DialogDescription className="sr-only">
-                  منوی ناوبری اصلی سامانه
+                  {english
+                    ? 'Main application navigation'
+                    : 'منوی ناوبری اصلی سامانه'}
                 </DialogDescription>
                 <div className="mb-6 flex items-center justify-between">
                   <Brand />
                   <DrawerClose asChild>
                     <Button
-                      aria-label={faMessages.common.close}
+                      aria-label={messages.common.close}
                       size="icon"
                       variant="ghost"
                     >

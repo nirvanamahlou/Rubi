@@ -9,8 +9,6 @@ import {
   CalendarDays,
   ChartNoAxesColumnIncreasing,
   Check,
-  ChevronDown,
-  ChevronLeft,
   Clock3,
   Eye,
   FileText,
@@ -18,12 +16,10 @@ import {
   Headphones,
   History,
   Home,
-  LayoutGrid,
   ListTodo,
   LockKeyhole,
   Megaphone,
   Plane,
-  Plug,
   Save,
   Search,
   Settings,
@@ -44,14 +40,20 @@ import {
   type FormEvent,
 } from 'react';
 
-import type { LegalEntitySummary, SystemSettingV1 } from '@nora/contracts';
-import { navigationGroups, navigationItems } from '@/lib/navigation';
-import { legalEntitiesApi } from '@/modules/legal-entities/api/client';
+import type { SystemSettingV1 } from '@nora/contracts';
+import {
+  systemPreferencesChangedEvent,
+  useSystemPreferences,
+} from '@/components/system-preferences-provider';
+import {
+  usePageBreadcrumbs,
+  type PageBreadcrumb,
+} from '@/components/layout/page-breadcrumbs';
+import { navigationGroups } from '@/lib/navigation';
 import {
   systemManagementApi,
   SystemManagementApiError,
   type SystemAuditRecord,
-  type SystemOverview,
 } from '../api/client';
 import {
   settingsModules,
@@ -60,9 +62,17 @@ import {
   type SettingModule,
   type SettingTone,
 } from '../model/settings-catalog';
+import {
+  containsPersian,
+  englishText,
+  localizeCategory,
+  localizeOption,
+  localizeSettingModules,
+  type SystemManagementLanguage,
+} from '../model/system-management-locale';
 import styles from './system-management-workspace.module.css';
 
-type Page = 'history' | 'module' | 'modules' | 'overview' | 'reviews';
+type Page = 'history' | 'module' | 'overview' | 'reviews';
 type Values = Record<string, boolean | string>;
 type SettingsScope = {
   scope: 'GLOBAL' | 'LEGAL_ENTITY';
@@ -88,14 +98,6 @@ const globalScope: SettingsScope = {
 /** Links retain ownership instead of duplicating an owner's administration UI. */
 const managementAreas: readonly ManagementArea[] = [
   {
-    id: 'legal-entities',
-    title: 'شرکت صادرکننده و برند',
-    description: 'هویت حقوقی، Branding و سربرگ‌ها در ماژول مالک ثبت می‌شوند.',
-    owner: 'Legal Entity',
-    href: '/system/legal-entities',
-    moduleIds: ['general'],
-  },
-  {
     id: 'iam',
     title: 'کاربران، نقش‌ها و دامنه دسترسی',
     description:
@@ -111,23 +113,6 @@ const managementAreas: readonly ManagementArea[] = [
     owner: 'Documents',
     href: '/documents',
     moduleIds: ['documents'],
-  },
-  {
-    id: 'reporting',
-    title: 'گزارش‌ها و خروجی‌ها',
-    description: 'کاتالوگ و چرخهٔ خروجی گزارش را Reporting مالک است.',
-    owner: 'Reporting',
-    href: '/reports',
-    moduleIds: ['reports'],
-  },
-  {
-    id: 'operations',
-    title: 'عملیات، سلامت و پشتیبان',
-    description:
-      'عملیات نسخه‌دار System Management و Probeهای مالک در این صفحه‌اند.',
-    owner: 'System Management',
-    href: '/system/operations',
-    moduleIds: ['integrations'],
   },
 ];
 
@@ -148,7 +133,6 @@ const iconMap: Record<string, LucideIcon> = {
   megaphone: Megaphone,
   money: Banknote,
   plane: Plane,
-  plug: Plug,
   settings: Settings,
   shield: ShieldCheck,
   task: ListTodo,
@@ -170,20 +154,13 @@ type SystemCategoryId =
   | 'all'
   | 'company-settings'
   | 'documents-reports'
-  | 'finance'
   | 'human-resources'
   | 'reservations-supply'
   | 'sales-customers'
   | 'workspace';
 
-interface SystemCategoryLink {
-  href: string;
-  title: string;
-}
-
 interface SystemCategoryGroup {
   id: Exclude<SystemCategoryId, 'all'>;
-  links: readonly SystemCategoryLink[];
   moduleIds: readonly string[];
   title: string;
 }
@@ -192,12 +169,11 @@ const systemCategoryIdByNavigationGroup = {
   work: 'workspace',
   sales: 'sales-customers',
   operations: 'reservations-supply',
-  finance: 'finance',
   hr: 'human-resources',
   resources: 'documents-reports',
   system: 'company-settings',
 } as const satisfies Record<
-  (typeof navigationGroups)[number]['id'],
+  Exclude<(typeof navigationGroups)[number]['id'], 'finance'>,
   Exclude<SystemCategoryId, 'all'>
 >;
 
@@ -206,53 +182,26 @@ const moduleIdsBySystemCategory: Record<
   readonly string[]
 > = {
   workspace: ['tasks', 'messages'],
-  'sales-customers': ['customers', 'affairs', 'sales', 'marketing'],
-  'reservations-supply': ['catalog', 'operations', 'procurement'],
-  finance: ['finance', 'b2b'],
-  'human-resources': ['hr'],
+  'sales-customers': ['customers', 'affairs', 'sales', 'marketing', 'b2b'],
+  'reservations-supply': ['catalog', 'operations'],
+  'human-resources': ['hr', 'procurement'],
   'documents-reports': ['documents', 'reports'],
-  'company-settings': ['general', 'access', 'integrations', 'master'],
+  'company-settings': ['general', 'master'],
 };
 
-/** Actual routes that live below a primary navigation destination. */
-const categoryExtraLinks: Record<
-  Exclude<SystemCategoryId, 'all'>,
-  readonly SystemCategoryLink[]
-> = {
-  workspace: [],
-  'sales-customers': [
-    { href: '/sales/pricing', title: 'مدیریت قیمت و پکیج‌ها' },
-  ],
-  'reservations-supply': [
-    { href: '/reservations/operations', title: 'عملیات رزرواسیون' },
-    { href: '/reservations/processing', title: 'فرآیند رزرواسیون' },
-  ],
-  finance: [],
-  'human-resources': [],
-  'documents-reports': [],
-  'company-settings': [
-    { href: '/users', title: 'کاربران، نقش‌ها و دسترسی‌ها' },
-    { href: '/system/legal-entities', title: 'شرکت‌های حقوقی و برندها' },
-    { href: '/system/operations', title: 'عملیات و سلامت سامانه' },
-  ],
-};
-
-const systemCategoryGroups: readonly SystemCategoryGroup[] =
-  navigationGroups.map((group) => {
+const systemCategoryGroups: readonly SystemCategoryGroup[] = navigationGroups
+  .filter(
+    (
+      group,
+    ): group is Exclude<(typeof navigationGroups)[number], { id: 'finance' }> =>
+      group.id !== 'finance',
+  )
+  .map((group) => {
     const id = systemCategoryIdByNavigationGroup[group.id];
     return {
       id,
       title: group.title,
       moduleIds: moduleIdsBySystemCategory[id],
-      links: [
-        ...group.hrefs.map((href) => {
-          const item = navigationItems.find(
-            (navigationItem) => navigationItem.href === href,
-          );
-          return { href, title: item?.title ?? href };
-        }),
-        ...categoryExtraLinks[id],
-      ],
     };
   });
 
@@ -279,90 +228,180 @@ function isValues(value: unknown): value is Values {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 }
 
-function displayValue(field: SettingField, value: boolean | string) {
-  if (typeof value === 'boolean') return value ? 'فعال' : 'غیرفعال';
+function displayValue(
+  field: SettingField,
+  value: boolean | string,
+  language: SystemManagementLanguage,
+) {
+  if (typeof value === 'boolean')
+    return language === 'en'
+      ? value
+        ? 'Active'
+        : 'Inactive'
+      : value
+        ? 'فعال'
+        : 'غیرفعال';
   if (field.type === 'number') {
-    const formatted = Number(value).toLocaleString('fa-IR');
+    const formatted = Number(value).toLocaleString(
+      language === 'en' ? 'en-US' : 'fa-IR',
+    );
     return field.unit ? `${formatted} ${field.unit}` : formatted;
   }
-  return value;
+  return language === 'en' ? englishText(String(value)) : value;
 }
 
-function formatDate(value: string) {
+function formatDate(value: string, language: SystemManagementLanguage) {
   const date = new Date(value);
-  return Number.isNaN(date.valueOf()) ? '—' : date.toLocaleString('fa-IR');
+  return Number.isNaN(date.valueOf())
+    ? '—'
+    : date.toLocaleString(language === 'en' ? 'en-US' : 'fa-IR');
 }
 
-function apiMessage(error: unknown) {
+function apiMessage(error: unknown, language: SystemManagementLanguage) {
   if (error instanceof SystemManagementApiError) {
-    if (error.status === 401) return 'برای ادامه باید وارد سامانه شوید.';
-    if (error.status === 403) return 'مجوز تغییر این تنظیم را ندارید.';
+    if (error.status === 401)
+      return language === 'en'
+        ? 'Sign in to continue.'
+        : 'برای ادامه باید وارد سامانه شوید.';
+    if (error.status === 403)
+      return language === 'en'
+        ? 'You do not have permission to change this setting.'
+        : 'مجوز تغییر این تنظیم را ندارید.';
     if (error.status === 409)
-      return 'نسخه تنظیم تغییر کرده است؛ صفحه را تازه کنید.';
-    return error.message;
+      return language === 'en'
+        ? 'This setting has changed. Refresh the page and try again.'
+        : 'نسخه تنظیم تغییر کرده است؛ صفحه را تازه کنید.';
+    return language === 'en' && containsPersian(error.message)
+      ? 'The system-management request failed.'
+      : error.message;
   }
-  return 'ارتباط با مدیریت سامانه برقرار نشد.';
+  return language === 'en'
+    ? 'Could not connect to system management.'
+    : 'ارتباط با مدیریت سامانه برقرار نشد.';
 }
 
 export function SystemManagementWorkspace() {
+  const preferences = useSystemPreferences();
+  const language = preferences.language;
+  const english = language === 'en';
+  const copy = english
+    ? {
+        allSections: 'All sections',
+        auditDirect: 'Saved directly',
+        auditSensitive: 'Automatically audited',
+        cancel: 'Cancel',
+        card: 'settings card',
+        cards: 'settings cards',
+        close: 'Close',
+        edit: 'Edit settings',
+        empty: 'No settings found.',
+        history: 'History',
+        noChanges: 'No changes have been recorded in this section.',
+        noReviews:
+          'There are no real changes awaiting review. This page does not create synthetic status.',
+        overview: 'Settings overview',
+        requiredRule: 'required rule',
+        requiredRules: 'required rules',
+        reset: 'Reset form',
+        reviewChanges: 'Review changes',
+        save: 'Save changes',
+        saved: 'Settings saved.',
+        saving: 'Saving…',
+        search: 'Search settings',
+        searchPlaceholder: 'Search section, card, or setting…',
+        sectionFilters: 'Section filters',
+        sensitiveSaved: 'Sensitive change saved with an audit record.',
+        settings: 'Settings',
+        view: 'View settings',
+      }
+    : {
+        allSections: 'همه بخش‌ها',
+        auditDirect: 'ذخیره مستقیم',
+        auditSensitive: 'با ثبت خودکار Audit',
+        cancel: 'انصراف',
+        card: 'کارت تنظیمات',
+        cards: 'کارت تنظیمات',
+        close: 'بستن',
+        edit: 'ویرایش تنظیمات',
+        empty: 'تنظیمی پیدا نشد.',
+        history: 'تاریخچه',
+        noChanges: 'تغییری در این بخش ثبت نشده است.',
+        noReviews:
+          'تغییر واقعیِ منتظر بررسی وجود ندارد. این صفحه وضعیت ساختگی ایجاد نمی‌کند.',
+        overview: 'نمای کلی تنظیمات',
+        requiredRule: 'قاعده الزامی',
+        requiredRules: 'قاعده الزامی',
+        reset: 'بازگردانی فرم',
+        reviewChanges: 'بررسی تغییرات',
+        save: 'ذخیره تغییرات',
+        saved: 'تنظیمات ذخیره شد.',
+        saving: 'در حال ذخیره…',
+        search: 'جست‌وجوی تنظیمات',
+        searchPlaceholder: 'جست‌وجوی بخش، کارت یا تنظیم…',
+        sectionFilters: 'فیلتر بخش‌ها',
+        sensitiveSaved: 'تغییر حساس همراه با Audit ثبت شد.',
+        settings: 'تنظیمات',
+        view: 'مشاهده تنظیمات',
+      };
+  const localizedModules = useMemo(
+    () => localizeSettingModules(settingsModules, language),
+    [language],
+  );
   const [page, setPage] = useState<Page>('overview');
   const [selectedModuleId, setSelectedModuleId] = useState('general');
   const [category, setCategory] = useState<SystemCategoryId>('all');
-  const [expandedCategory, setExpandedCategory] = useState<Exclude<
-    SystemCategoryId,
-    'all'
-  > | null>(null);
   const [query, setQuery] = useState('');
-  const [scope, setScope] = useState<SettingsScope>(globalScope);
-  const [legalEntities, setLegalEntities] = useState<LegalEntitySummary[]>([]);
-  const [scopeLoadError, setScopeLoadError] = useState<string | null>(null);
+  const scope: SettingsScope = globalScope;
   const [moduleTab, setModuleTab] = useState<'history' | 'settings'>(
     'settings',
   );
   const [settings, setSettings] = useState<SystemSettingV1[]>([]);
   const [audit, setAudit] = useState<SystemAuditRecord[]>([]);
-  const [overview, setOverview] = useState<SystemOverview | null>(null);
   const [editing, setEditing] = useState<{
     module: SettingModule;
     group: SettingGroup;
   } | null>(null);
   const [draft, setDraft] = useState<Values>({});
-  const [reason, setReason] = useState('');
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    const [settingsResult, auditResult, overviewResult, legalEntitiesResult] =
-      await Promise.allSettled([
-        systemManagementApi.settings(),
-        systemManagementApi.audit(),
-        systemManagementApi.overview(),
-        legalEntitiesApi.selectable(),
-      ]);
+    const [settingsResult, auditResult] = await Promise.allSettled([
+      systemManagementApi.settings(),
+      systemManagementApi.audit(),
+    ]);
     if (settingsResult.status === 'fulfilled')
       setSettings(settingsResult.value);
     if (auditResult.status === 'fulfilled') setAudit(auditResult.value);
-    if (overviewResult.status === 'fulfilled')
-      setOverview(overviewResult.value);
-    if (legalEntitiesResult.status === 'fulfilled') {
-      setLegalEntities(
-        legalEntitiesResult.value.data.filter((entity) => entity.isActive),
-      );
-      setScopeLoadError(null);
-    } else {
-      setLegalEntities([]);
-      setScopeLoadError(
-        'دامنه‌های حقوقی از API مالک در دسترس نیست؛ فقط دامنه کل مجموعه قابل استفاده است.',
-      );
-      setScope(globalScope);
-    }
   }, []);
 
   useEffect(() => {
     const timer = window.setTimeout(() => void load(), 0);
     return () => window.clearTimeout(timer);
   }, [load]);
+
+  useEffect(() => {
+    const syncViewFromLocation = () => {
+      const moduleId = new URL(window.location.href).searchParams.get('module');
+      const moduleExists = settingsModules.some(
+        (settingsModule) => settingsModule.id === moduleId,
+      );
+      if (moduleId && moduleExists) {
+        setSelectedModuleId(moduleId);
+        setModuleTab('settings');
+        setPage('module');
+      } else {
+        setPage('overview');
+      }
+      setEditing(null);
+    };
+
+    syncViewFromLocation();
+    window.addEventListener('popstate', syncViewFromLocation);
+    return () => window.removeEventListener('popstate', syncViewFromLocation);
+  }, []);
 
   useEffect(() => {
     if (!toast) return;
@@ -380,10 +419,47 @@ export function SystemManagementWorkspace() {
   }, [editing, saving]);
 
   const selectedModule =
-    settingsModules.find((module) => module.id === selectedModuleId) ??
-    settingsModules[0]!;
+    localizedModules.find((module) => module.id === selectedModuleId) ??
+    localizedModules[0]!;
 
-  const settingFor = (module: SettingModule, group: SettingGroup) =>
+  const openOverview = useCallback(() => {
+    setPage('overview');
+    setEditing(null);
+    const url = new URL(window.location.href);
+    url.searchParams.delete('module');
+    window.history.pushState(
+      { ...window.history.state, noraSystemModule: null },
+      '',
+      url,
+    );
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
+
+  const breadcrumbs = useMemo<readonly PageBreadcrumb[]>(
+    () =>
+      page === 'module'
+        ? [
+            {
+              key: 'system-management',
+              title: english ? 'System management' : 'مدیریت سیستم',
+              onSelect: openOverview,
+            },
+            {
+              key: `system-module-${selectedModule.id}`,
+              title: selectedModule.title,
+            },
+          ]
+        : [
+            {
+              key: 'system-management',
+              title: english ? 'System management' : 'مدیریت سیستم',
+            },
+          ],
+    [english, openOverview, page, selectedModule.id, selectedModule.title],
+  );
+  usePageBreadcrumbs('/system', breadcrumbs);
+
+  const ownSettingFor = (module: SettingModule, group: SettingGroup) =>
     settings.find(
       (setting) =>
         setting.namespace === module.id &&
@@ -391,6 +467,18 @@ export function SystemManagementWorkspace() {
         setting.scope === scope.scope &&
         setting.scopeId === scope.scopeId,
     );
+
+  const settingFor = (module: SettingModule, group: SettingGroup) =>
+    ownSettingFor(module, group) ??
+    (scope.scope !== 'GLOBAL'
+      ? settings.find(
+          (setting) =>
+            setting.namespace === module.id &&
+            setting.key === group.id &&
+            setting.scope === 'GLOBAL' &&
+            setting.scopeId === null,
+        )
+      : undefined);
 
   const valuesFor = (module: SettingModule, group: SettingGroup) => {
     const setting = settingFor(module, group);
@@ -404,7 +492,7 @@ export function SystemManagementWorkspace() {
     const selectedCategory = systemCategoryGroups.find(
       (group) => group.id === category,
     );
-    return settingsModules.filter(
+    return localizedModules.filter(
       (module) =>
         (!selectedCategory || selectedCategory.moduleIds.includes(module.id)) &&
         (!normalized ||
@@ -416,65 +504,103 @@ export function SystemManagementWorkspace() {
             ]),
           ].some((text) => text.includes(normalized))),
     );
-  }, [category, query]);
+  }, [category, localizedModules, query]);
 
   const openModule = (module: SettingModule) => {
     setSelectedModuleId(module.id);
     setModuleTab('settings');
     setPage('module');
+    const url = new URL(window.location.href);
+    url.searchParams.set('module', module.id);
+    window.history.pushState(
+      { ...window.history.state, noraSystemModule: module.id },
+      '',
+      url,
+    );
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const openEditor = (module: SettingModule, group: SettingGroup) => {
     setEditing({ module, group });
     setDraft(valuesFor(module, group));
-    setReason('');
+    setPendingFile(null);
     setSaveError(null);
   };
 
   const saveGroup = async (event: FormEvent) => {
     event.preventDefault();
     if (!editing) return;
-    if (!reason.trim()) {
-      setSaveError('دلیل تغییر را وارد کنید.');
+    const editingContractTemplate =
+      editing.module.id === 'sales' && editing.group.id === 'contracts';
+    const templateName = String(draft.templateName ?? '').trim();
+    if (editingContractTemplate && templateName.length < 2) {
+      setSaveError(
+        english
+          ? 'Enter a template name with at least two characters.'
+          : 'نام قالب باید حداقل دو نویسه داشته باشد.',
+      );
       return;
     }
-    const current = settingFor(editing.module, editing.group);
+    if (
+      editingContractTemplate &&
+      !pendingFile &&
+      !String(draft.templateDocumentId ?? '').trim()
+    ) {
+      setSaveError(
+        english
+          ? 'Select the contract template file.'
+          : 'فایل قالب قرارداد را انتخاب کنید.',
+      );
+      return;
+    }
+    // Only the value owned by the selected scope supplies expectedVersion.
+    // An inherited global value creates a new scoped override atomically.
+    const current = ownSettingFor(editing.module, editing.group);
     setSaving(true);
     setSaveError(null);
     try {
+      const nextDraft = { ...draft };
+      if (editingContractTemplate) delete nextDraft.template;
+      if (editingContractTemplate && pendingFile) {
+        const form = new FormData();
+        form.set('title', templateName);
+        form.set('file', pendingFile);
+        const uploaded = await systemManagementApi.uploadContractTemplate(form);
+        nextDraft.templateName = templateName;
+        nextDraft.templateFile = uploaded.originalFileName;
+        nextDraft.templateDocumentId = uploaded.id;
+        nextDraft.templateScanStatus = uploaded.scanStatus;
+        nextDraft.templateSizeBytes = String(uploaded.sizeBytes);
+      }
       const saved = await systemManagementApi.writeSetting({
         ...(current ? { expectedVersion: current.version } : {}),
         key: editing.group.id,
         namespace: editing.module.id,
-        reason: reason.trim(),
+        reason: english
+          ? `Updated ${editing.module.title}: ${editing.group.title}`
+          : `ویرایش تنظیمات ${editing.module.title}؛ ${editing.group.title}`,
         scope: scope.scope,
         scopeId: scope.scopeId,
         status: 'ACTIVE',
-        value: draft,
+        value: nextDraft,
         valueType: 'JSON',
       });
       setSettings((items) => [
         saved,
         ...items.filter((item) => item.id !== saved.id),
       ]);
+      if (editing.module.id === 'general')
+        window.dispatchEvent(new Event(systemPreferencesChangedEvent));
+      setDraft(nextDraft);
+      setPendingFile(null);
       setEditing(null);
-      setToast(
-        editing.group.sensitive
-          ? 'تغییر حساس با دلیل و Audit ثبت شد.'
-          : 'تنظیمات ذخیره شد.',
-      );
+      setToast(editing.group.sensitive ? copy.sensitiveSaved : copy.saved);
       void load();
     } catch (error) {
-      setSaveError(apiMessage(error));
+      setSaveError(apiMessage(error, language));
     } finally {
       setSaving(false);
     }
-  };
-
-  const navigate = (next: Page) => {
-    setPage(next);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const renderHistory = (items = audit) => (
@@ -488,7 +614,10 @@ export function SystemManagementWorkspace() {
                 {event.entityType} • {event.entityId}
               </p>
               <p>
-                {event.reason} • {formatDate(event.createdAt)}
+                {english && containsPersian(event.reason)
+                  ? 'Recorded system change'
+                  : event.reason}{' '}
+                • {formatDate(event.createdAt, language)}
               </p>
             </div>
             <div className={styles.tools}>
@@ -497,7 +626,7 @@ export function SystemManagementWorkspace() {
           </article>
         ))
       ) : (
-        <div className={styles.empty}>تغییری در این بخش ثبت نشده است.</div>
+        <div className={styles.empty}>{copy.noChanges}</div>
       )}
     </div>
   );
@@ -507,91 +636,47 @@ export function SystemManagementWorkspace() {
       <div className={styles.searchbar}>
         <label className={styles.search}>
           <Search aria-hidden="true" size={21} />
-          <span className="sr-only">جست‌وجوی تنظیمات</span>
+          <span className="sr-only">{copy.search}</span>
           <input
-            aria-label="جست‌وجوی تنظیمات"
+            aria-label={copy.search}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="جست‌وجوی بخش، کارت یا تنظیم…"
+            placeholder={copy.searchPlaceholder}
             value={query}
           />
         </label>
       </div>
-      <nav aria-label="دسته‌بندی تنظیمات" className={styles.filters}>
+      <nav aria-label={copy.sectionFilters} className={styles.filters}>
         <button
           aria-pressed={category === 'all'}
           className={`${styles.filter} ${category === 'all' ? styles.filterActive : ''}`}
           onClick={() => {
             setCategory('all');
-            setExpandedCategory(null);
           }}
           type="button"
         >
-          <span aria-hidden="true" className={styles.categoryDot} />
-          همه بخش‌ها
+          {copy.allSections}
         </button>
         {systemCategoryGroups.map((group) => {
-          const expanded = expandedCategory === group.id;
-          const panelId = `system-category-${group.id}`;
           return (
             <button
-              aria-controls={panelId}
-              aria-expanded={expanded}
               aria-pressed={category === group.id}
               className={`${styles.filter} ${category === group.id ? styles.filterActive : ''}`}
               key={group.id}
-              onClick={() => {
-                setCategory(group.id);
-                setExpandedCategory((current) =>
-                  current === group.id ? null : group.id,
-                );
-              }}
+              onClick={() => setCategory(group.id)}
               type="button"
             >
-              <span aria-hidden="true" className={styles.categoryDot} />
-              {group.title}
-              {expanded ? (
-                <ChevronDown
-                  aria-hidden="true"
-                  className={styles.categoryChevron}
-                />
-              ) : (
-                <ChevronLeft
-                  aria-hidden="true"
-                  className={styles.categoryChevron}
-                />
-              )}
+              {localizeCategory(group.title, language)}
             </button>
           );
         })}
       </nav>
-      {expandedCategory ? (
-        <div
-          aria-label={`زیرمجموعه‌های ${systemCategoryGroups.find((group) => group.id === expandedCategory)?.title ?? ''}`}
-          className={styles.categoryPanel}
-          id={`system-category-${expandedCategory}`}
-        >
-          {systemCategoryGroups
-            .find((group) => group.id === expandedCategory)
-            ?.links.map((link) => (
-              <Link
-                aria-label={`رفتن به ${link.title}`}
-                className={styles.categoryChild}
-                href={link.href}
-                key={link.href}
-              >
-                {link.title}
-                <ArrowLeft aria-hidden="true" size={16} />
-              </Link>
-            ))}
-        </div>
-      ) : null}
       <div className={styles.hubGrid}>
         {filteredModules.length ? (
           filteredModules.map((module) => {
             const Icon = iconMap[module.icon] ?? Settings;
             return (
               <button
-                aria-label={`مشاهده تنظیمات ${module.title}`}
+                aria-label={`${copy.view}: ${module.title}`}
                 className={styles.hubCard}
                 key={module.id}
                 onClick={() => openModule(module)}
@@ -605,7 +690,10 @@ export function SystemManagementWorkspace() {
                   <div className={styles.grow}>
                     <h3>{module.title}</h3>
                     <p className={styles.subtitle}>
-                      {systemCategoryFor(module)?.title ?? module.category}
+                      {localizeCategory(
+                        systemCategoryFor(module)?.title ?? module.category,
+                        language,
+                      )}
                     </p>
                   </div>
                 </div>
@@ -618,17 +706,20 @@ export function SystemManagementWorkspace() {
                 </div>
                 <div className={styles.cardFoot}>
                   <span>
-                    {module.groups.length.toLocaleString('fa-IR')} کارت تنظیمات
+                    {module.groups.length.toLocaleString(
+                      english ? 'en-US' : 'fa-IR',
+                    )}{' '}
+                    {module.groups.length === 1 ? copy.card : copy.cards}
                   </span>
                   <span className={styles.enter}>
-                    مشاهده تنظیمات <ArrowLeft aria-hidden="true" size={18} />
+                    {copy.view} <ArrowLeft aria-hidden="true" size={18} />
                   </span>
                 </div>
               </button>
             );
           })
         ) : (
-          <div className={styles.empty}>تنظیمی پیدا نشد.</div>
+          <div className={styles.empty}>{copy.empty}</div>
         )}
       </div>
     </>
@@ -664,26 +755,28 @@ export function SystemManagementWorkspace() {
             <div>
               <h1>{selectedModule.title}</h1>
               <p className={styles.subtitle}>
-                {selectedModule.groups.length.toLocaleString('fa-IR')} کارت
-                تنظیمات • {scope.title}
+                {selectedModule.groups.length.toLocaleString(
+                  english ? 'en-US' : 'fa-IR',
+                )}{' '}
+                {selectedModule.groups.length === 1 ? copy.card : copy.cards} •{' '}
+                {english ? 'Entire organization' : scope.title}
               </p>
             </div>
           </div>
-          <button
-            className={styles.button}
-            onClick={() => navigate('modules')}
-            type="button"
-          >
-            <LayoutGrid aria-hidden="true" size={18} /> همه بخش‌ها
-          </button>
         </div>
         {ownerAreas.length ? (
           <div className={styles.ownerLinks}>
             {ownerAreas.map((area) => (
               <p key={area.id}>
-                <span>{area.description}</span>
+                <span>
+                  {english
+                    ? 'This capability is managed in its owning module.'
+                    : area.description}
+                </span>
                 <Link href={area.href}>
-                  ادامه در {area.owner}: {area.title}
+                  {english
+                    ? `Continue in ${area.owner}: ${area.id === 'iam' ? 'Users, roles & permissions' : area.id === 'documents' ? 'Documents & files' : area.id === 'reports' ? 'Reports & exports' : 'Operations & service health'}`
+                    : `ادامه در ${area.owner}: ${area.title}`}
                   <ArrowLeft aria-hidden="true" size={16} />
                 </Link>
               </p>
@@ -696,14 +789,14 @@ export function SystemManagementWorkspace() {
             onClick={() => setModuleTab('settings')}
             type="button"
           >
-            تنظیمات
+            {copy.settings}
           </button>
           <button
             className={`${styles.tab} ${moduleTab === 'history' ? styles.tabActive : ''}`}
             onClick={() => setModuleTab('history')}
             type="button"
           >
-            تاریخچه این بخش
+            {copy.history}
           </button>
         </div>
         {moduleTab === 'history' ? (
@@ -713,7 +806,6 @@ export function SystemManagementWorkspace() {
             {selectedModule.groups.map((group) => {
               const GroupIcon = iconMap[group.icon] ?? Settings;
               const values = valuesFor(selectedModule, group);
-              const current = settingFor(selectedModule, group);
               return (
                 <article
                   className={styles.settingCard}
@@ -728,8 +820,8 @@ export function SystemManagementWorkspace() {
                       <h3>{group.title}</h3>
                       <p className={styles.subtitle}>
                         {group.sensitive
-                          ? 'با ثبت دلیل و Audit'
-                          : 'ذخیره مستقیم'}
+                          ? copy.auditSensitive
+                          : copy.auditDirect}
                       </p>
                     </div>
                   </div>
@@ -741,6 +833,7 @@ export function SystemManagementWorkspace() {
                           {displayValue(
                             field,
                             values[field.key] ?? field.value,
+                            language,
                           )}
                         </b>
                       </div>
@@ -750,22 +843,23 @@ export function SystemManagementWorkspace() {
                     <div className={styles.locked}>
                       <LockKeyhole aria-hidden="true" />
                       <span>
-                        {group.rules.length.toLocaleString('fa-IR')} قاعده
-                        الزامی
+                        {group.rules.length.toLocaleString(
+                          english ? 'en-US' : 'fa-IR',
+                        )}{' '}
+                        {group.rules.length === 1
+                          ? copy.requiredRule
+                          : copy.requiredRules}
                       </span>
                     </div>
                   ) : null}
                   <div className={styles.cardFoot}>
-                    <span className={styles.pill}>
-                      نسخه {(current?.version ?? 0).toLocaleString('fa-IR')}
-                    </span>
                     <button
-                      aria-label={`ویرایش تنظیمات ${group.title}`}
+                      aria-label={`${copy.edit}: ${group.title}`}
                       className={styles.button}
                       onClick={() => openEditor(selectedModule, group)}
                       type="button"
                     >
-                      <Settings aria-hidden="true" size={17} /> ویرایش تنظیمات
+                      <Settings aria-hidden="true" size={17} /> {copy.edit}
                     </button>
                   </div>
                 </article>
@@ -781,61 +875,22 @@ export function SystemManagementWorkspace() {
     page === 'module'
       ? selectedModule.title
       : page === 'reviews'
-        ? 'بررسی تغییرات'
+        ? copy.reviewChanges
         : page === 'history'
-          ? 'تاریخچه تغییرات'
-          : page === 'modules'
-            ? 'تنظیمات بخش‌ها'
-            : 'نمای کلی تنظیمات';
+          ? english
+            ? 'Change history'
+            : 'تاریخچه تغییرات'
+          : copy.overview;
 
   return (
-    <section className={styles.workspace} dir="rtl">
+    <section className={styles.workspace} dir={preferences.direction}>
       <div className={styles.main}>
-        <div className={styles.heading}>
-          <h1>{pageTitle}</h1>
-          <div className={styles.headingActions}>
-            <label className={styles.scopeControl}>
-              <Building2 aria-hidden="true" size={17} />
-              <span className={styles.scopeLabel}>دامنه:</span>
-              <select
-                aria-label="دامنه تنظیمات"
-                onChange={(event) => {
-                  const next = event.target.value;
-                  if (next === 'GLOBAL') {
-                    setScope(globalScope);
-                    return;
-                  }
-                  const entity = legalEntities.find((item) => item.id === next);
-                  if (entity)
-                    setScope({
-                      scope: 'LEGAL_ENTITY',
-                      scopeId: entity.id,
-                      title: entity.persianName,
-                    });
-                }}
-                value={scope.scopeId ?? 'GLOBAL'}
-              >
-                <option value="GLOBAL">کل مجموعه</option>
-                {legalEntities.map((entity) => (
-                  <option key={entity.id} value={entity.id}>
-                    {entity.persianName}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <span className={styles.statusBadge} role="status">
-              <span aria-hidden="true" className={styles.statusDot} />
-              {overview ? 'داده‌های عملیاتی' : 'مقادیر مرجع'}
-            </span>
+        {page !== 'module' ? (
+          <div className={styles.heading}>
+            <h1>{pageTitle}</h1>
           </div>
-        </div>
-        {scopeLoadError ? (
-          <p className={styles.scopeHint} role="status">
-            {scopeLoadError}
-          </p>
         ) : null}
-
-        {page === 'overview' || page === 'modules' ? renderHub() : null}
+        {page === 'overview' ? renderHub() : null}
         {page === 'module' ? renderModule() : null}
         {page === 'history' ? renderHistory() : null}
         {page === 'reviews' ? (
@@ -845,8 +900,7 @@ export function SystemManagementWorkspace() {
               className="mx-auto mb-3"
               size={30}
             />
-            تغییر واقعیِ منتظر بررسی وجود ندارد. این صفحه وضعیت ساختگی ایجاد
-            نمی‌کند.
+            {copy.noReviews}
           </div>
         ) : null}
       </div>
@@ -877,7 +931,7 @@ export function SystemManagementWorkspace() {
                 <small>{editing.module.title}</small>
               </div>
               <button
-                aria-label="بستن"
+                aria-label={copy.close}
                 className={styles.close}
                 disabled={saving}
                 onClick={() => setEditing(null)}
@@ -889,14 +943,7 @@ export function SystemManagementWorkspace() {
             <form onSubmit={saveGroup}>
               <div className={styles.modalBody}>
                 <div className={styles.saveMeta}>
-                  <span>{scope.title}</span>
-                  <span className={`${styles.pill} ${styles.pillBlue}`}>
-                    نسخه{' '}
-                    {settingFor(
-                      editing.module,
-                      editing.group,
-                    )?.version.toLocaleString('fa-IR') ?? '۰'}
-                  </span>
+                  <span>{english ? 'Entire organization' : scope.title}</span>
                 </div>
                 <div className={styles.formGrid}>
                   {editing.group.fields.map((field) =>
@@ -920,7 +967,14 @@ export function SystemManagementWorkspace() {
                       </label>
                     ) : (
                       <label className={styles.field} key={field.key}>
-                        <span>{field.label}</span>
+                        <span className={styles.fieldLabel}>
+                          <span>{field.label}</span>
+                          {field.unit ? (
+                            <small className={styles.fieldUnit}>
+                              {field.unit}
+                            </small>
+                          ) : null}
+                        </span>
                         {field.type === 'select' ? (
                           <select
                             onChange={(event) =>
@@ -931,10 +985,29 @@ export function SystemManagementWorkspace() {
                             }
                             value={String(draft[field.key] ?? '')}
                           >
-                            {field.options?.map((option) => (
-                              <option key={option}>{option}</option>
+                            {field.options?.map((option, index) => (
+                              <option key={option} value={option}>
+                                {english
+                                  ? localizeOption(option, index)
+                                  : option}
+                              </option>
                             ))}
                           </select>
+                        ) : field.type === 'file' ? (
+                          <>
+                            <input
+                              accept={field.accept}
+                              onChange={(event) =>
+                                setPendingFile(event.target.files?.[0] ?? null)
+                              }
+                              required={!draft.templateDocumentId}
+                              type="file"
+                            />
+                            <small className={styles.fileStatus}>
+                              {pendingFile?.name ??
+                                String(draft[field.key] ?? field.value)}
+                            </small>
+                          </>
                         ) : (
                           <input
                             max={field.max}
@@ -952,15 +1025,6 @@ export function SystemManagementWorkspace() {
                       </label>
                     ),
                   )}
-                  <label className={`${styles.field} ${styles.wide}`}>
-                    <span>دلیل تغییر</span>
-                    <textarea
-                      maxLength={300}
-                      onChange={(event) => setReason(event.target.value)}
-                      placeholder="دلیل اصلاح این تنظیمات"
-                      value={reason}
-                    />
-                  </label>
                 </div>
                 {editing.group.rules.length ? (
                   <div className={styles.rules}>
@@ -984,12 +1048,12 @@ export function SystemManagementWorkspace() {
                   disabled={saving}
                   onClick={() => {
                     setDraft(defaults(editing.group));
-                    setReason('');
+                    setPendingFile(null);
                     setSaveError(null);
                   }}
                   type="button"
                 >
-                  بازگردانی فرم
+                  {copy.reset}
                 </button>
                 <div className={styles.tools}>
                   <button
@@ -998,7 +1062,7 @@ export function SystemManagementWorkspace() {
                     onClick={() => setEditing(null)}
                     type="button"
                   >
-                    انصراف
+                    {copy.cancel}
                   </button>
                   <button
                     className={`${styles.button} ${styles.primary}`}
@@ -1006,7 +1070,7 @@ export function SystemManagementWorkspace() {
                     type="submit"
                   >
                     <Save aria-hidden="true" size={18} />
-                    {saving ? 'در حال ذخیره…' : 'ذخیره تغییرات'}
+                    {saving ? copy.saving : copy.save}
                   </button>
                 </div>
               </div>
