@@ -4,6 +4,7 @@ import {
   emptySalesForm,
   salesDetailSteps,
   salesHotelDate,
+  salesHotelRoomTypes,
   salesHotelValid,
   salesPayload,
   withSalesHotelDates,
@@ -38,6 +39,42 @@ const selected = (): SalesFormState =>
   });
 
 describe('combined flight and hotel details', () => {
+  it('shows room types linked to the selected hotel before a dated rate exists', () => {
+    const record = (
+      id: string,
+      resource: 'hotels' | 'room-types',
+      roomTypeIds = '',
+    ) => ({
+      id,
+      resource,
+      code: id,
+      name: id,
+      status: 'active' as const,
+      attributes: roomTypeIds ? { roomTypeIds } : {},
+      version: 1,
+      createdAt: '2026-01-01T00:00:00.000Z',
+      updatedAt: '2026-01-01T00:00:00.000Z',
+    });
+    const rooms = [
+      record('single', 'room-types'),
+      record('double', 'room-types'),
+      record('suite', 'room-types'),
+    ];
+
+    expect(
+      salesHotelRoomTypes(
+        'hotel',
+        [record('hotel', 'hotels', ' single, double ')],
+        rooms,
+      ).map((room) => room.id),
+    ).toEqual(['single', 'double']);
+    expect(
+      salesHotelRoomTypes('hotel', [record('hotel', 'hotels')], rooms, [
+        'suite',
+      ]).map((room) => room.id),
+    ).toEqual(['suite']);
+  });
+
   it('combines hotel into the flight step regardless of service selection order', () => {
     expect(salesDetailSteps(base)).toEqual(['FLIGHT']);
     expect(
