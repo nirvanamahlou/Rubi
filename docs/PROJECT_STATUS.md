@@ -3122,6 +3122,11 @@ The Web Reporting adapter now preserves all existing Travel projection measures 
 ## 2026-09-14 — All-column report sorting and local demo data (PC-C)
 
 تمام ستون‌های قابل‌نمایش جدول نتیجه Reports، شامل ابعاد، ارز، تعداد سفارش/مسافر/بلیت و مبالغ فروش، خرید، سود ناخالص، استرداد و مانده تسویه، اکنون فلش مرتب‌سازی سرستون دارند و Sort پیش از Pagination در API اجرا می‌شود. ماژول Backend گزارش با endpointهای Preview، Workspace و CSV/XLSX/PDF به Runtime نهایی افزوده شد. ۴۸ fact واقعی‌نمای قبلی از fixture ignored خارج از Worktree، به‌صورت idempotent فقط در PostgreSQL محلی وارد شدند؛ فایل داده، PII واقعی و Seed عمومی وارد Git نشده‌اند. Prisma validate/generate، API و Web typecheck و مجموعه کامل تست‌ها موفق‌اند؛ Web روی 3000 و API روی 4000 از Worktree canonical فعال‌اند.
+# وضعیت 2026-09-22 — کارت فشردهٔ انتخاب بلیط در فروش
+
+- PC-A روی Branch مستقل `codex/pc-a-compact-ticket-offer-cards-0922` از `origin/develop@fdbd65d3` فقط چیدمان کارت انتخاب بلیط قرارداد جدید را فشرده می‌کند: فاصله‌های عمودی و اندازه ساعت کاهش می‌یابد و تاریخ حرکت/رسیدن با وزن و اندازه بیشتر نمایش داده می‌شود. منطق زمان، ظرفیت، قیمت، انتخاب، API و داده تغییر نمی‌کند.
+- پیاده‌سازی آمادهٔ Review است: تاریخ‌ها در هر دو حالت انتخاب‌شده و عادی برجسته‌اند، ساعت‌ها کوچک و هم‌ردیف تاریخ‌اند و ارتفاع کلی کارت با کاهش فاصله‌های عمودی کم شده است. ۷ تست کامپوننت، lint محدوده، typecheck و build تولیدی ۵۰ route موفق‌اند.
+
 # وضعیت 2026-09-14 — اشتراک‌گذاری مستقیم گزارش‌ها
 
 - 2026-09-16 Package Pricing commission follow-up: drafts/publications now support percent or fixed commission with an explicit currency. Fixed commission is deducted once from the matching currency profit bucket and never changes sale; historical rows default to percent. Additive migration was applied only to isolated `rubi_pricing_flow_0916`. Tour demo 1 published version 3 with fixed EUR 15 while tour demo 2 remains percent.

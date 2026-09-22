@@ -71,79 +71,83 @@ export function TicketOfferCard({
       disabled={insufficient || missingFare}
       aria-label={`${offer.carrierName}، پرواز ${offer.serviceNumber}، ${originLabel} به ${destinationLabel}، ${departure.date} ساعت ${departure.time}${selected ? '، انتخاب‌شده' : ''}`}
       onClick={() => onSelect(offer)}
-      className={`w-full min-w-0 disabled:cursor-not-allowed disabled:opacity-60 overflow-hidden rounded-2xl border text-start shadow-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${selected ? 'border-primary bg-primary/5 ring-2 ring-primary/20' : 'border-border bg-surface hover:border-primary/60 hover:shadow-md'}`}
+      className={`w-full min-w-0 disabled:cursor-not-allowed disabled:opacity-60 overflow-hidden rounded-xl border text-start shadow-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${selected ? 'border-primary bg-primary/5 ring-2 ring-primary/20' : 'border-border bg-surface hover:border-primary/60 hover:shadow-md'}`}
     >
-      <span className="flex items-start justify-between gap-3 border-b border-border/60 px-4 py-4">
+      <span className="flex items-start justify-between gap-3 border-b border-border/60 px-3 py-2.5">
         <span className="min-w-0">
-          <span className="flex items-center gap-2 break-words text-base font-bold text-foreground">
+          <span className="flex items-center gap-2 break-words text-sm font-bold text-foreground">
             <Plane
               aria-hidden="true"
-              className="size-5 shrink-0 text-primary"
+              className="size-4 shrink-0 text-primary"
             />
             {offer.carrierName}
           </span>
-          <span className="mt-1.5 block text-xs text-muted-foreground">
+          <span className="mt-1 block text-[11px] text-muted-foreground">
             شماره پرواز{' '}
             <bdi className="font-semibold">{offer.serviceNumber}</bdi>
           </span>
         </span>
         <span
-          className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1.5 text-xs font-bold ${selected ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}
+          className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-1 text-[11px] font-bold ${selected ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}
         >
           {selected ? (
-            <CheckCircle2 className="size-4" />
+            <CheckCircle2 className="size-3.5" />
           ) : (
-            <Circle className="size-4" />
+            <Circle className="size-3.5" />
           )}
           {selected ? 'انتخاب‌شده' : 'انتخاب'}
         </span>
       </span>
-      <span className="grid grid-cols-2 items-start gap-x-4 gap-y-3 px-4 py-4">
+      <span className="grid grid-cols-2 items-start gap-x-4 gap-y-2 px-3 py-2.5">
         <span className="min-w-0">
-          <span className="block text-xs text-muted-foreground">حرکت</span>
-          <span className="mt-1 block break-words text-lg font-bold text-foreground">
+          <span className="block text-[11px] text-muted-foreground">حرکت</span>
+          <span className="mt-0.5 block break-words text-base font-bold text-foreground">
             {originLabel}
           </span>
-          <strong
-            dir="ltr"
-            className="mt-2 block text-start text-2xl font-bold tabular-nums text-primary"
-          >
-            {departure.time}
-          </strong>
-          <time
-            dateTime={offer.departureAt}
-            className="mt-2 block break-words text-sm font-semibold leading-6"
-          >
-            {departure.date}
-          </time>
+          <span className="mt-1.5 flex flex-wrap items-baseline gap-x-2 gap-y-1">
+            <time
+              dateTime={offer.departureAt}
+              className="break-words text-base font-bold leading-5 text-foreground"
+            >
+              {departure.date}
+            </time>
+            <strong
+              dir="ltr"
+              className="text-sm font-semibold tabular-nums text-primary"
+            >
+              {departure.time}
+            </strong>
+          </span>
         </span>
         <span className="min-w-0 text-end">
-          <span className="block text-xs text-muted-foreground">رسیدن</span>
-          <span className="mt-1 block break-words text-lg font-bold text-foreground">
+          <span className="block text-[11px] text-muted-foreground">رسیدن</span>
+          <span className="mt-0.5 block break-words text-base font-bold text-foreground">
             {destinationLabel}
           </span>
-          <strong
-            dir="ltr"
-            className="mt-2 block text-end text-2xl font-bold tabular-nums text-primary"
-          >
-            {arrival.time}
-          </strong>
-          <time
-            dateTime={offer.arrivalAt}
-            className="mt-2 block break-words text-sm font-semibold leading-6"
-          >
-            {arrival.date}
-          </time>
+          <span className="mt-1.5 flex flex-wrap items-baseline justify-end gap-x-2 gap-y-1">
+            <time
+              dateTime={offer.arrivalAt}
+              className="break-words text-base font-bold leading-5 text-foreground"
+            >
+              {arrival.date}
+            </time>
+            <strong
+              dir="ltr"
+              className="text-sm font-semibold tabular-nums text-primary"
+            >
+              {arrival.time}
+            </strong>
+          </span>
         </span>
-        <span className="col-span-2 flex items-center justify-center gap-2 rounded-lg bg-muted/60 px-2 py-2 text-xs text-muted-foreground">
+        <span className="col-span-2 flex items-center justify-center gap-1.5 rounded-md bg-muted/60 px-2 py-1.5 text-[11px] text-muted-foreground">
           <Plane
             aria-hidden="true"
-            className="size-4 -rotate-45 text-primary"
+            className="size-3.5 -rotate-45 text-primary"
           />
           مدت پرواز: {ticketDuration(offer)} · ساعت‌ها به وقت تهران
         </span>
       </span>
-      <span className="flex flex-wrap items-center justify-between gap-2 border-t border-border bg-muted/40 px-4 py-3 text-xs">
+      <span className="flex flex-wrap items-center justify-between gap-2 border-t border-border bg-muted/40 px-3 py-2 text-[11px]">
         <span>
           {offer.cabinClassCode === 'BUSINESS'
             ? 'بیزینس'

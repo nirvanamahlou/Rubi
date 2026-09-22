@@ -47,7 +47,7 @@ describe('readable sales ticket card', () => {
     expect(priced).toContain('2500000 IRR');
   });
   it.each([true, false])(
-    'shows both dates larger, bold and full-contrast (selected=%s)',
+    'shows both dates prominently while keeping times compact (selected=%s)',
     (selected) => {
       const html = renderToStaticMarkup(
         <TicketOfferCard
@@ -59,10 +59,16 @@ describe('readable sales ticket card', () => {
       const dates = html.match(/<time[^>]*>/g) ?? [];
       expect(dates).toHaveLength(2);
       for (const date of dates) {
-        expect(date).toContain('text-sm font-semibold leading-6');
+        expect(date).toContain('text-base font-bold leading-5 text-foreground');
         expect(date).toContain('break-words');
         expect(date).not.toContain('opacity');
         expect(date).not.toContain('truncate');
+      }
+      const times = html.match(/<strong dir="ltr"[^>]*>/g) ?? [];
+      expect(times).toHaveLength(2);
+      for (const time of times) {
+        expect(time).toContain('text-sm font-semibold');
+        expect(time).not.toContain('text-2xl');
       }
       expect(dates[0]).toContain(offer.departureAt);
       expect(dates[1]).toContain(offer.arrivalAt);
