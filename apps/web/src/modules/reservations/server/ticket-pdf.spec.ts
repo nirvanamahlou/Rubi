@@ -7,16 +7,18 @@ import type {
 const renderer = vi.hoisted(() =>
   vi.fn().mockResolvedValue(Buffer.from('%PDF-1.4 synthetic')),
 );
+const brandAssetReader = vi.hoisted(() =>
+  vi.fn().mockResolvedValue(Buffer.from('safe')),
+);
 vi.mock('@/modules/reservations/server/ticket-pdf', () => ({
   renderTicketPdf: renderer,
+}));
+vi.mock('@/modules/reservations/server/ticket-pdf-assets', () => ({
+  readTicketBrandAsset: brandAssetReader,
 }));
 vi.mock('@/lib/environment', () => ({
   getPublicApiBaseUrl: () => 'http://api.test/api/v1',
 }));
-vi.mock('node:fs/promises', () => ({
-  readFile: vi.fn().mockResolvedValue(Buffer.from('safe')),
-}));
-
 import { GET } from '@/app/reservations/requests/[id]/tickets/pdf/route';
 import { ticketPdfHtml } from './ticket-pdf-html';
 import { reservationTickets } from '../model/reservation-tickets';
@@ -116,6 +118,30 @@ describe('reservation ticket PDF', () => {
       headers: { cookie: 'test-session' },
       redirect: 'error',
     });
+  });
+
+  it('still renders when optional city metadata is unavailable', async () => {
+    const fetcher = vi.fn().mockImplementation((url: string) => {
+      if (url.endsWith(`/reservations/requests/${id}/workflow`))
+        return Promise.resolve(Response.json({ data: intake }));
+      if (url.includes('/master-data/cities/'))
+        return Promise.reject(new Error('city service unavailable'));
+      if (url.includes('/master-data/airlines?'))
+        return Promise.resolve(
+          Response.json({
+            data: [],
+            meta: { page: 1, pageSize: 25, total: 0 },
+          }),
+        );
+      return Promise.resolve(new Response('{}', { status: 404 }));
+    });
+    vi.stubGlobal('fetch', fetcher);
+
+    const response = await GET(request(), { params: Promise.resolve({ id }) });
+
+    expect(response.status).toBe(200);
+    expect(renderer).toHaveBeenCalledOnce();
+    expect(renderer.mock.calls[0]?.[0]).toContain('—');
   });
 
   it('uses the passenger passport spelling and the matching airline logo through public APIs', async () => {

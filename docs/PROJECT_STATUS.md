@@ -1,3 +1,7 @@
+## 2026-09-22 — TICKET-PDF-DOWNLOAD-RESILIENCE-0922 — READY_FOR_REVIEW
+
+دانلود PDF بلیط دیگر به پوشهٔ شروع process وابسته نیست: لوگوی ثابت شرکت هم از اجرای مستقیم Web و هم از اجرای یکپارچهٔ ریشه Repository پیدا می‌شود. شکست یا پاسخ نامعتبر اطلاعات جانبی شهر نیز با fallback امن ادامه پیدا می‌کند و دادهٔ اصلی بلیط همچنان PDF می‌شود. ۱۸ تست PDF (۱۷ عادی و یک smoke واقعی)، lint، typecheck و build تولیدی Web با ۵۰ route موفق‌اند؛ Chrome نصب‌شده یک PDF معتبر ساخت. بدون API، Schema/Migration، Permission، داده یا Dependency/Lockfile.
+
 ## 2026-09-21 — CUSTOMER-HIDE-TECH-BADGES-0921 — READY_FOR_REVIEW
 
 کارت سه‌ردیفیِ توضیحات فنی از پایین فضای مشتریان و مسافران حذف شد؛ اجرای دسترسی حساس، City FK، Audit و کنترل نسخه در Backend دست‌نخورده ماند. ۴۱ تست Customers، lint متمرکز، typecheck و build تولیدی Web با ۵۰ route موفق‌اند.
