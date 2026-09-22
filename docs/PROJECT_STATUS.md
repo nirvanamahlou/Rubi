@@ -3287,3 +3287,6 @@ Tour definition uses four-column desktop identity fields and compact controls. I
 ### HOTEL-RATE-INDEPENDENT-CITY-WINDOW-0922 — READY_FOR_REVIEW
 - نرخ هتل بدون انتخاب تور/بلیط و با شهر/بازه ثبت می‌شود؛ مدیریت پکیج نرخ‌های مقصد و بازهٔ معتبر را از Public Port رزرواسیون دریافت می‌کند. محاسبه با تعداد شب سفر انجام می‌شود. ضرایب موجود در قیمت پکیج اعمال و چیدمان بدون ضریب حذف می‌شود؛ ظرفیت اتاق حفظ شده است.
 - بررسی: ۲۸ تست هدفمند API، ۸ تست Web، lint و typecheck هر دو بخش، build API و build تولیدی Web با ۵۰ مسیر موفق‌اند. Schema/Migration و دادهٔ عملیاتی تغییر ندارند. رابط در مرورگر واردشده بررسی نشده است.
+# SALES-OPTIONAL-HOTEL-RATE-0922 — READY_FOR_REVIEW
+
+نبود ضریب فعال برای نوع اتاق انتخاب‌شده دیگر مانع ایجاد، ویرایش یا تأیید قرارداد نیست. کنترل ظرفیت برای نرخ‌هایی که ظرفیت معتبر دارند حفظ می‌شود؛ Schema، Migration، مجوز و داده عملیاتی تغییر نمی‌کنند. ۳ تست هدفمند، lint، typecheck و build تولیدی API/Web موفق‌اند.

@@ -334,11 +334,7 @@ export class SalesService {
       checkIn: hotel.checkInDate,
       checkOut: hotel.checkOutDate,
     });
-    if (!roomRate)
-      throw new BadRequestException({
-        code: 'HOTEL_ROOM_RATE_UNAVAILABLE',
-        message: 'برای نوع اتاق انتخاب‌شده ضریب فعال در بازه سفر وجود ندارد.',
-      });
+    if (!roomRate) return;
     const guests = input.passengers.filter((passenger) =>
       passenger.serviceClientKeys.includes(hotel.serviceClientKey),
     );
@@ -376,11 +372,7 @@ export class SalesService {
       checkIn: hotel.checkInDate,
       checkOut: hotel.checkOutDate,
     });
-    if (!roomRate)
-      throw new BadRequestException({
-        code: 'HOTEL_ROOM_RATE_UNAVAILABLE',
-        message: 'برای نوع اتاق انتخاب‌شده ضریب فعال در بازه سفر وجود ندارد.',
-      });
+    if (!roomRate) return;
     const guests = contract.passengersDetail.filter((passenger) =>
       passenger.serviceClientKeys.includes(hotel.serviceClientKey),
     );
