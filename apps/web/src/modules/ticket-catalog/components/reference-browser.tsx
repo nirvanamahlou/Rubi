@@ -19,6 +19,7 @@ import {
   ReferenceApiError,
   type PublishedResource,
 } from '../api/references';
+import { ticketReferenceDisplayName } from './reference-picker';
 
 const resourceLabels: Record<PublishedResource, string> = {
   airlines: 'ایرلاین',
@@ -155,10 +156,7 @@ export function ReferenceBrowser({
                   disabled={resource === 'countries' || resource === 'cities'}
                   onClick={() => onSelect(record)}
                 >
-                  {record.name}{' '}
-                  <span dir="ltr" className="text-xs text-muted-foreground">
-                    {record.code}
-                  </span>
+                  {ticketReferenceDisplayName(record)}
                 </Button>
               ))
             ) : (

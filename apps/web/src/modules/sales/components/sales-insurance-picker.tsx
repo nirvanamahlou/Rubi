@@ -9,6 +9,13 @@ import {
   type SalesInsuranceSelection,
 } from '../model/sales-insurance';
 
+export function salesInsuranceDisplayName(
+  plan: Pick<MasterDataRecord, 'name' | 'attributes'>,
+) {
+  const insurerName = String(plan.attributes.insurerName ?? '').trim();
+  return `${plan.name.trim()}${insurerName ? ` — ${insurerName}` : ''}`;
+}
+
 export function SalesInsurancePicker({
   value,
   onChange,
@@ -57,7 +64,7 @@ export function SalesInsurancePicker({
         disabled={loading || Boolean(error) || !plans.length}
         options={plans.map((plan) => ({
           value: plan.id,
-          label: `${plan.name}${plan.attributes.insurerName ? ` — ${plan.attributes.insurerName}` : ''} (${plan.code})`,
+          label: salesInsuranceDisplayName(plan),
         }))}
         onValueChange={(id) => {
           const plan = plans.find((item) => item.id === id);

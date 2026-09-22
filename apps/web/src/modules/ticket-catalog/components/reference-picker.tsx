@@ -10,6 +10,10 @@ import {
 } from '../api/references';
 import type { Reference } from '../model/catalog';
 
+export function ticketReferenceDisplayName(reference: Pick<Reference, 'name'>) {
+  return reference.name.trim();
+}
+
 export function ReferencePicker({
   id,
   label,
@@ -116,7 +120,7 @@ export function ReferencePicker({
           }}
         >
           {value
-            ? `${value.name} (${value.code ?? ''})`
+            ? ticketReferenceDisplayName(value)
             : resource === 'cities' && !countryId
               ? 'ابتدا کشور را انتخاب کنید'
               : resource === 'airports' && !cityId
@@ -184,7 +188,7 @@ export function ReferencePicker({
                         setOpen(false);
                       }}
                     >
-                      {row.name} ({row.code})
+                      {ticketReferenceDisplayName(row)}
                     </Button>
                   ))
                 ) : (

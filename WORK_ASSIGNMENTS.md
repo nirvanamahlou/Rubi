@@ -3726,3 +3726,9 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 - شاخه مستقل `codex/pc-a-sales-hotel-room-types-0922` از `origin/develop@88e5eba8`. محدوده: Sales Web form/model/tests و ثبت وضعیت همین کار؛ بدون API، Schema/Migration، Permission، داده یا Dependency/Lockfile.
 - منبع نوع اتاق، ارتباط عمومی هتل در Master Data است؛ نرخ‌های فعال بازه همچنان جدا نمایش داده می‌شوند و کنترل ظرفیت Backend تغییر نمی‌کند.
 - نتیجه: dropdown نوع اتاق از ارتباط هتل و Master Data پر می‌شود و نبود ضریب همان بازه آن را خالی نمی‌کند؛ با تعویض هتل یا مسیر، انتخاب قبلی پاک می‌شود. ۹ تست هدفمند، lint، typecheck و build تولیدی Web با ۵۰ route موفق‌اند.
+
+## SALES-FRIENDLY-REFERENCE-LABELS-0922 — PC-A — IN_PROGRESS
+
+- درخواست مالک در 2026-09-22: در فرم قرارداد و انتخاب‌گرهای مرتبط، شناسه‌ها و کدهای فنی اطلاعات پایه به کاربر نمایش داده نشوند و فقط نام قابل‌فهم گزینه دیده شود؛ شناسهٔ canonical همچنان در مقدار داخلی فرم و API حفظ می‌شود.
+- شاخهٔ مستقل `codex/pc-a-sales-friendly-labels-0922` از `origin/develop@fdbd65d3`؛ محدودهٔ رزروشده: انتخاب‌گرهای مرجع Sales و Ticket Catalog، تست‌های متمرکز و ثبت وضعیت همین واحد. کدهای عملیاتی لازم مثل ارز و شمارهٔ پرواز تغییر نمی‌کنند و هیچ API، Schema/Migration، Permission، داده، Dependency/Lockfile یا runtime محلی تغییر نمی‌کند.
+- بررسی هم‌پوشانی: شاخهٔ قدیمی ظرفیت بلیت ancestor آخرین `origin/develop` است؛ PRهای باز #347 و #352 فقط کارت پیشنهاد بلیت را تغییر می‌دهند و فایل اجرایی مشترکی با این واحد ندارند. مدخل اسناد در انتهای فایل ثبت می‌شود تا با ورودی آن PRها برخورد متنی نداشته باشد.
