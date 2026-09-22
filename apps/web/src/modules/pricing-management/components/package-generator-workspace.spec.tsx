@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { PackagePricingApiError } from '../api/client';
 import {
   loadPackageGeneratorTours,
+  packageGeneratorSectionLabels,
   PackageGeneratorWorkspace,
 } from './package-generator-workspace';
 
@@ -31,6 +32,14 @@ describe('package generator workspace', () => {
     expect(html).toContain('Package Generator');
     expect(html).toContain('بازگشت به بخش‌ها');
     expect(html).toContain('animate-pulse');
+  });
+
+  it('defines package, banner and sticker as separate generator sections', () => {
+    expect(Object.values(packageGeneratorSectionLabels)).toEqual([
+      'تولید پکیج',
+      'بنر',
+      'استیکر',
+    ]);
   });
 
   it('denies loading tours unless both pricing permissions exist', async () => {
