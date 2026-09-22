@@ -3829,3 +3829,10 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 - شاخهٔ مستقل `codex/pc-a-contract-pdf-download-0922` از `origin/develop@8e16eace`. محدوده فقط runtime سمت سرور PDF قرارداد فروش، تست متمرکز و ثبت وضعیت همین واحد است؛ API، Schema/Migration، Permission، داده، Dependency/Lockfile و قالب قرارداد تغییر نمی‌کنند.
 - قاعده: مسیر صریح محیطی اولویت دارد و در نبود آن، Chrome/Edge و B Nazanin فقط از مسیرهای نصب استاندارد سیستم پیدا می‌شوند؛ HTML یا URL ورودی کاربر به renderer داده نمی‌شود.
 - نتیجه: موتور قرارداد مسیر Chrome/Edge و B Nazanin را مانند موتور بلیط از نصب استاندارد سیستم پیدا می‌کند، نبود فونت اختیاری مانع ساخت PDF نیست و پس از خروج Chrome تا پایدارشدن فایل منتظر می‌ماند. ۲۶ تست هدفمند، lint، typecheck و build تولیدی Web با ۵۰ route موفق‌اند؛ smoke واقعی با Chrome و فونت نصب‌شده یک PDF معتبر ساخت.
+
+## TICKET-PDF-DOWNLOAD-RESILIENCE-0922 — PC-A — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-22: دانلود بلیط با پیام «PDF بلیط آماده نشد؛ دوباره تلاش کنید» متوقف می‌شود.
+- شاخهٔ مستقل `codex/pc-a-ticket-pdf-fix-0922` از `origin/develop@1e2a6298`. محدوده فقط route و runtime سمت سرور PDF بلیط، تست متمرکز و ثبت وضعیت همین واحد است؛ API، Schema/Migration، Permission، داده، Dependency/Lockfile و قالب بصری بلیط تغییر نمی‌کنند.
+- هدف: مسیر فایل برند به پوشهٔ اجرای Web وابسته نباشد و شکست اطلاعات جانبی شهر/ایرلاین مانع ساخت PDF از دادهٔ اصلی بلیط نشود. `COMPUTER_ID=PC-A`؛ فایل‌های اجرایی هدف در PR باز دیگری تغییر نکرده‌اند.
+- نتیجه: resolver محدود لوگوی ثابت هر دو cwd متداول را پوشش می‌دهد؛ نبود/خرابی پاسخ شهر اختیاری است و خطای نبود فایل برند پیام مشخص دارد. ۱۷ تست عادی و smoke واقعی Chrome موفق‌اند؛ lint، typecheck و build تولیدی Web با ۵۰ route نیز عبور کردند. قفل فایل‌های اجرایی آزاد است.
