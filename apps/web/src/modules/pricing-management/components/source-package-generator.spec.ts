@@ -58,6 +58,29 @@ describe('source package generator archive', () => {
     ).toBe(false);
   });
 
+  it('fits Malaysia and Thailand data to each corrected poster layout', () => {
+    const templates = readFileSync(
+      resolve(sourceRoot, 'malaysia-templates.js'),
+      'utf8',
+    );
+    const app = readFileSync(resolve(sourceRoot, 'app.js'), 'utf8');
+    const cards = readFileSync(resolve(sourceRoot, 'cards.js'), 'utf8');
+    const parser = readFileSync(resolve(sourceRoot, 'pkj.js'), 'utf8');
+    const html = readFileSync(resolve(sourceRoot, 'index.html'), 'utf8');
+
+    expect(templates).toContain('fixedCardSlots:true');
+    expect(templates).toContain('tableColumns:2');
+    expect(templates).toContain(
+      'bodyColumns:[[140,195,281,593],[423,195,282,593]]',
+    );
+    expect(app).toContain("p.rows*(p.tableColumns||1)");
+    expect(app).toContain('splitTableColumns(ids,p.tableColumns||1)');
+    expect(cards).toContain('base().fixedCardSlots');
+    expect(parser).toContain("'phuket','thailand','bangkok','pattaya','hkt','bkk'");
+    expect(parser).toContain("template==='thailand-bangkok-phuket'");
+    expect(html).toContain('خودکار · مطابق ظرفیت قالب');
+  });
+
   it('loads the complete offline editor dependency graph', () => {
     const html = readFileSync(resolve(sourceRoot, 'index.html'), 'utf8');
     const loader = readFileSync(resolve(sourceRoot, 'mode-loader.js'), 'utf8');

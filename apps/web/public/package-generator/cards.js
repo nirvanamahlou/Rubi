@@ -63,7 +63,7 @@ window.PackageCards=(()=>{
  function reset(){if(state.busy)return;delete models[base().style];refresh();}
  function includeSource(source){
   const m=model();for(const [key,c] of Object.entries(source)){
-   if(key==='infant'&&base().style==='combined'||m.slots.some(s=>s.key===key))continue;
+   if(key==='infant'&&base().style==='combined'||m.slots.some(s=>s.key===key)||base().fixedCardSlots)continue;
    m.slots.push({key,label:c.label||key});m.dirty=true;
   }
  }

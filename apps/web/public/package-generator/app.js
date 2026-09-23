@@ -82,21 +82,25 @@ function staticArt(){
 }
 function place(cls,box,html){const [x,y,w,h]=box;return `<div class="${cls}" style="left:${x}px;top:${y}px;width:${w}px;height:${h}px">${html}</div>`;}
 function edit(t,a){return `<span class="editable" contenteditable="true" role="textbox" tabindex="0" spellcheck="false" ${a}>${esc(t)}</span>`;}
-function hotelLimit(){return $('perPage').value==='auto'?50:Math.max(1,Math.min(50,Number($('perPage').value)||50));}
-function rowsHTML(ids){
+function hotelLimit(){const p=profile();return $('perPage').value==='auto'?p.rows*(p.tableColumns||1):Math.max(1,Math.min(100,Number($('perPage').value)||50));}
+function splitTableColumns(ids,count){
+ if(count<=1)return [ids];const total=ids.reduce((sum,i)=>sum+state.data.groups[i].hotels.length,0),target=Math.ceil(total/count),parts=[];let part=[],rows=0;
+ for(const i of ids){const size=state.data.groups[i].hotels.length;if(part.length&&rows+size>target&&parts.length<count-1){parts.push(part);part=[];rows=0;}part.push(i);rows+=size;}parts.push(part);while(parts.length<count)parts.push([]);return parts;
+}
+function rowsHTML(ids,minimumRows=profile().rows){
  const cols=columns();let html='';for(const i of ids){const g=state.data.groups[i];g.hotels.forEach((h,hi)=>{html+='<tr class="data-row">';for(const c of cols){
   if(state.data.priceKeys.includes(c.key)){if(hi===0)html+=`<td class="price" rowspan="${g.hotels.length}">${edit(priceText(g.prices[c.key]),`data-group="${i}" data-price="${c.key}" aria-label="${esc(c.label)}"`)}</td>`;}
   else if(c.key==='service')html+=`<td class="service">${edit((h.stars&&profile().style!=='spain-combined'?h.stars+(h.service?' / ':''):'')+h.service,`data-group="${i}" data-hotel="${hi}" data-key="service" aria-label="خدمات هتل"`)}</td>`;
   else if(c.key==='hotel'&&profile().style.startsWith('spain-')){const p=profile(),box=p.thumbnailBoxes?.[i]||p.thumbnailBoxes?.at(-1),photo=box?`<span class="hotel-thumb" style="width:${box[2]}px;height:${box[3]}px;background-image:url('${p.image}');background-size:${p.width}px ${p.height}px;background-position:-${box[0]}px -${box[1]}px"></span>`:'';html+=`<td class="hotel"><div class="hotel-wrap">${photo}${edit(h.hotel||'—',`data-group="${i}" data-hotel="${hi}" data-key="hotel" aria-label="نام هتل"`)}</div></td>`;}
   else html+=`<td class="${c.key}">${edit(h[c.key]||'—',`data-group="${i}" data-hotel="${hi}" data-key="${c.key}" aria-label="${esc(c.label)}"`)}${c.key==='hotel'&&g.hotels.length>1&&profile().style!=='combined'?`<small class="city-note">${esc(h.city)}</small>`:''}</td>`;
  }html+='</tr>';});}
- const count=ids.reduce((s,i)=>s+state.data.groups[i].hotels.length,0);for(let n=count;n<Math.min(profile().rows,hotelLimit());n++)html+='<tr class="empty-row" aria-hidden="true">'+cols.map(()=>'<td></td>').join('')+'</tr>';return html;
+ const count=ids.reduce((s,i)=>s+state.data.groups[i].hotels.length,0);for(let n=count;n<minimumRows;n++)html+='<tr class="empty-row" aria-hidden="true">'+cols.map(()=>'<td></td>').join('')+'</tr>';return html;
 }
 function makePage(ids,num,total){
- const p=profile(),cols=state.data?columns():[],page=document.createElement('article');page.className='package-page '+p.style;page.style.width=p.width+'px';page.style.height=p.height+'px';page.style.setProperty('--table-color',$('tableColor').value);
- if(state.data&&ids.reduce((n,i)=>n+state.data.groups[i].hotels.length,0)>p.rows)page.classList.add('dense-table');
+ const p=profile(),cols=state.data?columns():[],tableGroups=state.data?splitTableColumns(ids,p.tableColumns||1):[],page=document.createElement('article');page.className='package-page '+p.style;page.style.width=p.width+'px';page.style.height=p.height+'px';page.style.setProperty('--table-color',$('tableColor').value);
+ if(state.data&&Math.max(...tableGroups.map(group=>group.reduce((n,i)=>n+state.data.groups[i].hotels.length,0)))>p.rows)page.classList.add('dense-table');
  let html=staticArt().map(layer=>{const [x,y,w,h]=layer.box;return `<img class="template-art" data-layer="${layer.key}" style="left:${x}px;top:${y}px;width:${w}px;height:${h}px" src="${layer.src}" alt="${layer.label}">`;}).join('');
- if(state.data)html+=place('data-region',p.body,`<table class="data-table" style="font-size:${$('fontSize').value}px" aria-label="قیمت هتل‌ها"><colgroup>${cols.map(c=>`<col style="width:${c.width}%">`).join('')}</colgroup><tbody>${rowsHTML(ids)}</tbody></table>`);
+ if(state.data){const boxes=p.bodyColumns||[p.body];html+=tableGroups.map((group,index)=>place(`data-region data-region-${index+1}`,boxes[index],`<table class="data-table" style="font-size:${$('fontSize').value}px" aria-label="قیمت هتل‌ها${tableGroups.length>1?'، ستون '+fa(index+1):''}"><colgroup>${cols.map(c=>`<col style="width:${c.width}%">`).join('')}</colgroup><tbody>${rowsHTML(group,p.rows)}</tbody></table>`)).join('');}
  if(state.data||window.PackageEditor?.needs('date'))html+=place('date-slot',p.date,esc(prettyFa($('date').value)||(window.PackageEditor?.hasText('date')?'':'—')));if(p.durationBox&&(state.data||window.PackageEditor?.needs('duration')))html+=place('duration-slot',p.durationBox,esc(prettyFa($('duration').value).replace(/[()]/g,'')));if(hasCustomTitle())html+=place('title-slot',p.titleBox,esc($('title').value));
  if(p.style==='combined'&&(state.data||$('stays').value||['stays','infant','infantLabel','infantValue','infantUnit'].some(k=>window.PackageEditor?.needs(k)))){html+=place('stays-slot',p.staysBox,esc(prettyFa($('stays').value)));html+=place('infant-slot',p.infantBox,`<span>${esc($('infantLabel').value)}:</span> <b>${esc(moneyText($('infantValue').value))}</b> <small>${esc($('infantValue').value?$('infantUnit').value:'')}</small>`);}
  html+=window.PackageCards?.artwork()||'';
@@ -104,22 +108,22 @@ function makePage(ids,num,total){
  if(servicesText())html+=place('services-slot',p.servicesBox,esc(servicesText()));
  if(p.notesBox&&state.data)html+=place('notes-slot',p.notesBox,esc($('notes').value||'—'));
  if(p.adjustmentsBox&&state.data)html+=place('adjustments-slot',p.adjustmentsBox,esc(prettyFa($('adjustments').value)||'—'));
- if(state.data&&(cols.length!==p.columns.length||window.PackageEditor?.customHeader()))html+=place('custom-header',headerBox(),cols.map(c=>`<span data-section="header_${c.key}" style="width:${c.width}%">${esc(window.PackageEditor?.text('header_'+c.key,c.label)??c.label)}</span>`).join(''));
+ if(state.data&&(cols.length!==p.columns.length||window.PackageEditor?.customHeader()))html+=(p.headerBoxes||[headerBox()]).map(box=>place('custom-header',box,cols.map(c=>`<span data-section="header_${c.key}" style="width:${c.width}%">${esc(window.PackageEditor?.text('header_'+c.key,c.label)??c.label)}</span>`).join(''))).join('');
  if(total>1)html+=`<div class="page-stamp">${fa(num)} / ${fa(total)}</div>`;page.innerHTML=html+(window.PackageEditor?.overlays()||'');window.PackageEditor?.decorate(page);return page;
 }
 function fitText(page){
  const region=page.querySelector('.data-region'),table=region?.querySelector('table');
  const rowCount=table?.rows.length||1,tableStyle=table&&getComputedStyle(table),spacing=tableStyle?.borderCollapse==='collapse'?0:parseFloat(tableStyle?.borderSpacing.split(' ').at(-1)||0);
- const rowHeight=region?(region.clientHeight-spacing*(rowCount+1))/rowCount:0;
+ const rowHeight=region?(region.clientHeight-spacing*(rowCount+1))/rowCount:0,minSize=profile().minFont||8;
  for(const el of page.querySelectorAll('.data-table [contenteditable]')){
   let size=Number(el.dataset.editorSize||$('fontSize').value);if(el.closest('.room')&&!el.dataset.editorSize)size=Math.min(size,12);el.style.fontSize=size+'px';
   const cell=el.closest('td'),style=getComputedStyle(cell),lineRatio=parseFloat(getComputedStyle(el).lineHeight)/size||1.16,note=cell.querySelector('.city-note');
   const available=rowHeight*cell.rowSpan-parseFloat(style.paddingTop)-parseFloat(style.paddingBottom)-parseFloat(style.borderTopWidth)-parseFloat(style.borderBottomWidth)-(note?.offsetHeight||0);
-  size=Math.max(8,Math.min(size,Math.floor(available/lineRatio*4)/4));el.style.fontSize=size+'px';
-  for(let n=0;n<160&&el.scrollWidth>el.clientWidth+1&&size>8;n++){size=Math.max(8,size-.25);el.style.fontSize=size+'px';}
+  size=Math.max(minSize,Math.min(size,Math.floor(available/lineRatio*4)/4));el.style.fontSize=size+'px';
+  for(let n=0;n<160&&el.scrollWidth>el.clientWidth+1&&size>minSize;n++){size=Math.max(minSize,size-.25);el.style.fontSize=size+'px';}
  }
  for(const el of page.querySelectorAll('.title-slot,.date-slot,.duration-slot,.stays-slot,.infant-slot,.services-slot,.notes-slot,.adjustments-slot,.value-slot b,.value-slot small,.editor-text,.custom-header span')){let size=parseFloat(getComputedStyle(el).fontSize);for(let n=0;n<65&&(el.scrollWidth>el.clientWidth+2||el.scrollHeight>el.clientHeight+2)&&size>11;n++){size-=1;el.style.fontSize=size+'px';}}
- return (!table||table.getBoundingClientRect().height<=region.getBoundingClientRect().height+2)&&[...page.querySelectorAll('.date-slot,.title-slot,.stays-slot,.infant-slot,.services-slot,.notes-slot,.adjustments-slot,.value-slot,.editor-text,.custom-header span')].every(e=>e.scrollWidth<=e.clientWidth+2&&e.scrollHeight<=e.clientHeight+2);
+ return [...page.querySelectorAll('.data-region')].every(item=>item.querySelector('table').getBoundingClientRect().height<=item.getBoundingClientRect().height+2)&&[...page.querySelectorAll('.date-slot,.title-slot,.stays-slot,.infant-slot,.services-slot,.notes-slot,.adjustments-slot,.value-slot,.editor-text,.custom-header span')].every(e=>e.scrollWidth<=e.clientWidth+2&&e.scrollHeight<=e.clientHeight+2);
 }
 function unmarkedPrices(){return state.data?.groups.some(g=>Object.values(g.prices).some(c=>!unavailable(c.value)&&!c.currency&&!/€|\$|تومان|ریال|یورو|دلار/.test(String(c.value))))||false;}
 function updateDownloadNotice(){
