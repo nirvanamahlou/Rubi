@@ -93,6 +93,21 @@ describe('Nora Customer Affairs navigation', () => {
     expect(source).toContain('useSuppressHrConnections(true)');
   });
 
+  it('handles partial permissions and expired sessions explicitly', () => {
+    const source = readFileSync(
+      new URL('./customer-affairs-nora-workspace.tsx', import.meta.url),
+      'utf8',
+    );
+    expect(source).toContain('e.status === 401');
+    expect(source).toContain("'unauthorized'");
+    expect(source).toContain('/login?next=%2Fcustomer-affairs');
+    expect(source).toContain('capabilities.leadsRead');
+    expect(source).toContain('capabilities.ticketsRead');
+    expect(source).toContain('access?.leadCreate');
+    expect(source).toContain('access?.ticketCreate');
+    expect(source).toContain('با موفقیت ثبت شد');
+  });
+
   it('retains the legacy ticket URL and support subnavigation', () => {
     route.query = 'tab=tickets';
     const html = renderToStaticMarkup(<CustomerAffairsNoraWorkspace />);

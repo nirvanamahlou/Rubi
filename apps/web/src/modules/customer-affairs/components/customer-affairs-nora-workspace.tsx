@@ -26,7 +26,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState, type CSSProperties } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/form-controls';
-import { ErrorState } from '@/components/ui/surfaces';
+import { Alert, ErrorState } from '@/components/ui/surfaces';
 import { useSuppressHrConnections } from '@/modules/hr/hr-connections-visibility';
 import {
   customerAffairsApi as api,
@@ -165,10 +165,14 @@ export function CustomerAffairsNoraWorkspace() {
     total: 0,
   });
   const [attention, setAttention] = useState<CustomerAffairsLeadView[]>([]);
+  const [access, setAccess] = useState<
+    CustomerAffairsDashboard['access'] | null
+  >(null);
   const [state, setState] = useState<
-    'loading' | 'ready' | 'error' | 'forbidden'
+    'loading' | 'ready' | 'error' | 'forbidden' | 'unauthorized'
   >('loading');
   const [message, setMessage] = useState('');
+  const [notice, setNotice] = useState('');
   const [revision, setRevision] = useState(0);
   const navigate = (next: View, detailId?: string) => {
     setForm(null);
@@ -186,24 +190,49 @@ export function CustomerAffairsNoraWorkspace() {
     let current = true;
     async function load() {
       const result: Loaded = { leads: [], tickets: [], total: 0 };
-      if (id)
+      const dashboard = await api.dashboard();
+      const capabilities = dashboard.data.access;
+      result.dashboard = dashboard.data;
+      if (current) setAccess(capabilities);
+      if (id) {
+        const canRead =
+          tab === 'tickets' ? capabilities.ticketsRead : capabilities.leadsRead;
+        if (!canRead)
+          throw new CustomerAffairsApiError(
+            'مجوز مشاهده این نوع پرونده برای نقش فعلی فعال نیست.',
+            403,
+          );
         result.detail = (
           await (tab === 'tickets' ? api.ticket(id) : api.lead(id))
         ).data as Detail;
-      else if (view === 'overview') {
-        const [dashboard, leads, tickets, overdue] = await Promise.all([
-          api.dashboard(),
-          api.leads('', { stage: 'HANDOFF_PROPOSED', pageSize: 5 }),
-          api.tickets('', 'ALL', { pageSize: 5 }),
-          api.leads('', { overdueOnly: true, pageSize: 5 }),
+      } else if (view === 'overview') {
+        const [leads, tickets, overdue] = await Promise.all([
+          capabilities.leadsRead
+            ? api.leads('', { stage: 'HANDOFF_PROPOSED', pageSize: 5 })
+            : Promise.resolve({ data: [] as CustomerAffairsLeadView[] }),
+          capabilities.ticketsRead
+            ? api.tickets('', 'ALL', { pageSize: 5 })
+            : Promise.resolve({ data: [] as CustomerAffairsTicketView[] }),
+          capabilities.leadsRead
+            ? api.leads('', { overdueOnly: true, pageSize: 5 })
+            : Promise.resolve({ data: [] as CustomerAffairsLeadView[] }),
         ]);
         if (current) setAttention(overdue.data);
-        result.dashboard = dashboard.data;
         result.leads = leads.data;
         result.tickets = tickets.data;
-      } else if (view === 'reports' || view === 'satisfaction')
+      } else if (view === 'reports' || view === 'satisfaction') {
+        if (!capabilities.reportsRead)
+          throw new CustomerAffairsApiError(
+            'گزارش‌ها به مجوز مشاهده درخواست‌ها و تیکت‌ها نیاز دارند.',
+            403,
+          );
         result.report = (await api.report()).data;
-      else if (family === 'leads') {
+      } else if (family === 'leads') {
+        if (!capabilities.leadsRead)
+          throw new CustomerAffairsApiError(
+            'مجوز مشاهده درخواست‌های مشتریان برای نقش فعلی فعال نیست.',
+            403,
+          );
         const rows = await api.leads(search, {
           createdFrom,
           createdTo,
@@ -218,6 +247,11 @@ export function CustomerAffairsNoraWorkspace() {
         result.leads = rows.data;
         result.total = rows.meta.total;
       } else if (family === 'tickets') {
+        if (!capabilities.ticketsRead)
+          throw new CustomerAffairsApiError(
+            'مجوز مشاهده تیکت‌های پشتیبانی برای نقش فعلی فعال نیست.',
+            403,
+          );
         const rows = await api.tickets(search, filter, {
           createdFrom,
           createdTo,
@@ -243,9 +277,11 @@ export function CustomerAffairsNoraWorkspace() {
       .catch((e: unknown) => {
         if (current) {
           setState(
-            e instanceof CustomerAffairsApiError && e.status === 403
-              ? 'forbidden'
-              : 'error',
+            e instanceof CustomerAffairsApiError && e.status === 401
+              ? 'unauthorized'
+              : e instanceof CustomerAffairsApiError && e.status === 403
+                ? 'forbidden'
+                : 'error',
           );
           setMessage(
             e instanceof Error ? e.message : 'دریافت اطلاعات انجام نشد.',
@@ -287,34 +323,60 @@ export function CustomerAffairsNoraWorkspace() {
           <h1>امور مشتریان</h1>
         </div>
         <div className={s.actions}>
-          <Button variant="outline" onClick={() => setForm('tickets')}>
-            <Plus size={16} />
-            تیکت جدید
-          </Button>
-          <Button onClick={() => setForm('leads')}>
-            <Plus size={16} />
-            ثبت درخواست سفر
-          </Button>
+          {access?.ticketCreate ? (
+            <Button
+              variant="outline"
+              onClick={() => {
+                setNotice('');
+                setForm('tickets');
+              }}
+            >
+              <Plus size={16} />
+              تیکت جدید
+            </Button>
+          ) : null}
+          {access?.leadCreate ? (
+            <Button
+              onClick={() => {
+                setNotice('');
+                setForm('leads');
+              }}
+            >
+              <Plus size={16} />
+              ثبت درخواست سفر
+            </Button>
+          ) : null}
         </div>
       </header>
       <nav className={s.tabs} aria-label="بخش‌های امور مشتریان">
-        {sections.map(({ view: v, title: t, icon: Icon }) => (
-          <button
-            key={v}
-            className={s.tab}
-            aria-current={family === v ? 'page' : undefined}
-            onClick={() => navigate(v)}
-          >
-            <Icon aria-hidden="true" />
-            {t}
-          </button>
-        ))}
+        {sections
+          .filter(({ view: section }) =>
+            section === 'overview'
+              ? true
+              : section === 'leads'
+                ? access === null || access.leadsRead
+                : section === 'tickets'
+                  ? access === null || access.ticketsRead
+                  : access === null || access.reportsRead,
+          )
+          .map(({ view: v, title: t, icon: Icon }) => (
+            <button
+              key={v}
+              className={s.tab}
+              aria-current={family === v ? 'page' : undefined}
+              onClick={() => navigate(v)}
+            >
+              <Icon aria-hidden="true" />
+              {t}
+            </button>
+          ))}
       </nav>
       {form ? (
         form === 'leads' ? (
           <LeadForm
             onCancel={() => setForm(null)}
-            onCreated={() => {
+            onCreated={(row) => {
+              setNotice(`درخواست ${row.trackingNumber} با موفقیت ثبت شد.`);
               setRevision((value) => value + 1);
               navigate('leads');
             }}
@@ -322,12 +384,16 @@ export function CustomerAffairsNoraWorkspace() {
         ) : (
           <TicketForm
             onCancel={() => setForm(null)}
-            onCreated={() => {
+            onCreated={(row) => {
+              setNotice(`تیکت ${row.trackingNumber} با موفقیت ثبت شد.`);
               setRevision((value) => value + 1);
               navigate('tickets');
             }}
           />
         )
+      ) : null}
+      {notice ? (
+        <Alert className="mb-4" title={notice} aria-live="polite" />
       ) : null}
       <>
         {(family === 'leads' || family === 'tickets') && !id && (
@@ -356,20 +422,28 @@ export function CustomerAffairsNoraWorkspace() {
           <div className={s.empty} role="status">
             در حال دریافت اطلاعات…
           </div>
-        ) : state === 'error' || state === 'forbidden' ? (
+        ) : state === 'error' ||
+          state === 'forbidden' ||
+          state === 'unauthorized' ? (
           <ErrorState
             title={
-              state === 'forbidden'
-                ? 'دسترسی به این بخش مجاز نیست'
-                : 'اطلاعات دریافت نشد'
+              state === 'unauthorized'
+                ? 'نشست شما منقضی شده است'
+                : state === 'forbidden'
+                  ? 'دسترسی به این بخش مجاز نیست'
+                  : 'اطلاعات دریافت نشد'
             }
             description={message}
             action={
               <Button
                 variant="outline"
-                onClick={() => setRevision((x) => x + 1)}
+                onClick={() =>
+                  state === 'unauthorized'
+                    ? router.push('/login?next=%2Fcustomer-affairs')
+                    : setRevision((x) => x + 1)
+                }
               >
-                تلاش دوباره
+                {state === 'unauthorized' ? 'ورود دوباره' : 'تلاش دوباره'}
               </Button>
             }
           />
@@ -415,116 +489,132 @@ export function CustomerAffairsNoraWorkspace() {
                       icon: ShieldCheck,
                       color: 'red',
                     },
-                  ].map((x) => (
-                    <button
-                      key={x.view}
-                      className={s.metric}
-                      onClick={() => navigate(x.view as View)}
-                      style={accent(x.color)}
-                    >
-                      <span className={s.icon}>
-                        <x.icon />
-                      </span>
-                      <div>
-                        <strong>
-                          {x.value === undefined ? '—' : number(x.value)}
-                        </strong>
-                        <p>{x.label}</p>
-                        <small>مشاهده پرونده‌ها</small>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-                <section className={s.attention}>
-                  <div className={s.panelHead}>
-                    <div>
-                      <h2>
-                        <Clock3 aria-hidden="true" />
-                        نیازمند پیگیری
-                      </h2>
-                      <p className={s.muted}>
-                        درخواست‌هایی که موعد اقدام بعدی آن‌ها گذشته است
-                      </p>
-                    </div>
-                    <Button
-                      variant="outline"
-                      onClick={() => navigate('followups')}
-                    >
-                      مشاهده همه پیگیری‌ها <ArrowLeft size={16} />
-                    </Button>
-                  </div>
-                  {attention.length ? (
-                    attention.map((row) => (
-                      <div className={s.listItem} key={row.id}>
-                        <span className={s.icon} style={accent('amber')}>
-                          <Clock3 aria-hidden="true" />
+                  ]
+                    .filter((x) =>
+                      ['leads', 'followups'].includes(x.view)
+                        ? access?.leadsRead
+                        : access?.ticketsRead,
+                    )
+                    .map((x) => (
+                      <button
+                        key={x.view}
+                        className={s.metric}
+                        onClick={() => navigate(x.view as View)}
+                        style={accent(x.color)}
+                      >
+                        <span className={s.icon}>
+                          <x.icon />
                         </span>
-                        <div className={s.grow}>
-                          <button
-                            className={s.titleButton}
+                        <div>
+                          <strong>
+                            {x.value === undefined ? '—' : number(x.value)}
+                          </strong>
+                          <p>{x.label}</p>
+                          <small>مشاهده پرونده‌ها</small>
+                        </div>
+                      </button>
+                    ))}
+                </div>
+                {access?.leadsRead ? (
+                  <section className={s.attention}>
+                    <div className={s.panelHead}>
+                      <div>
+                        <h2>
+                          <Clock3 aria-hidden="true" />
+                          نیازمند پیگیری
+                        </h2>
+                        <p className={s.muted}>
+                          درخواست‌هایی که موعد اقدام بعدی آن‌ها گذشته است
+                        </p>
+                      </div>
+                      <Button
+                        variant="outline"
+                        onClick={() => navigate('followups')}
+                      >
+                        مشاهده همه پیگیری‌ها <ArrowLeft size={16} />
+                      </Button>
+                    </div>
+                    {attention.length ? (
+                      attention.map((row) => (
+                        <div className={s.listItem} key={row.id}>
+                          <span className={s.icon} style={accent('amber')}>
+                            <Clock3 aria-hidden="true" />
+                          </span>
+                          <div className={s.grow}>
+                            <button
+                              className={s.titleButton}
+                              onClick={() => navigate('leads', row.id)}
+                            >
+                              {row.title}
+                            </button>
+                            <p className={s.muted}>{row.nextAction}</p>
+                          </div>
+                          <time className={s.due}>
+                            {date(row.nextActionAt)}
+                          </time>
+                          <Button
+                            variant="ghost"
                             onClick={() => navigate('leads', row.id)}
                           >
-                            {row.title}
-                          </button>
-                          <p className={s.muted}>{row.nextAction}</p>
+                            پیگیری <ArrowLeft size={15} />
+                          </Button>
                         </div>
-                        <time className={s.due}>{date(row.nextActionAt)}</time>
-                        <Button
-                          variant="ghost"
-                          onClick={() => navigate('leads', row.id)}
-                        >
-                          پیگیری <ArrowLeft size={15} />
-                        </Button>
-                      </div>
-                    ))
-                  ) : (
-                    <p className={s.empty}>پیگیری عقب‌افتاده‌ای ندارید.</p>
-                  )}
-                </section>
+                      ))
+                    ) : (
+                      <p className={s.empty}>پیگیری عقب‌افتاده‌ای ندارید.</p>
+                    )}
+                  </section>
+                ) : null}
                 <div className={s.columns}>
-                  {(['tickets', 'leads'] as const).map((kind) => (
-                    <section className={s.panel} key={kind}>
-                      <div className={s.panelHead}>
-                        <h2>
-                          {kind === 'tickets'
-                            ? 'آخرین تیکت‌ها'
-                            : 'منتظر پذیرش فروش'}
-                        </h2>
-                        <Button
-                          variant="ghost"
-                          onClick={() =>
-                            navigate(
-                              kind === 'tickets' ? 'tickets' : 'handoffs',
-                            )
-                          }
-                        >
-                          مشاهده همه
-                        </Button>
-                      </div>
-                      {loaded[kind].length ? (
-                        loaded[kind].map((row) => (
-                          <div key={row.id} className={s.listItem}>
-                            <div className={s.grow}>
-                              <button
-                                className={s.titleButton}
-                                onClick={() => navigate(kind, row.id)}
-                              >
-                                {'subject' in row ? row.subject : row.title}
-                              </button>
-                              <p className={s.muted}>{row.trackingNumber}</p>
+                  {(['tickets', 'leads'] as const)
+                    .filter((kind) =>
+                      kind === 'tickets'
+                        ? access?.ticketsRead
+                        : access?.leadsRead,
+                    )
+                    .map((kind) => (
+                      <section className={s.panel} key={kind}>
+                        <div className={s.panelHead}>
+                          <h2>
+                            {kind === 'tickets'
+                              ? 'آخرین تیکت‌ها'
+                              : 'منتظر پذیرش فروش'}
+                          </h2>
+                          <Button
+                            variant="ghost"
+                            onClick={() =>
+                              navigate(
+                                kind === 'tickets' ? 'tickets' : 'handoffs',
+                              )
+                            }
+                          >
+                            مشاهده همه
+                          </Button>
+                        </div>
+                        {loaded[kind].length ? (
+                          loaded[kind].map((row) => (
+                            <div key={row.id} className={s.listItem}>
+                              <div className={s.grow}>
+                                <button
+                                  className={s.titleButton}
+                                  onClick={() => navigate(kind, row.id)}
+                                >
+                                  {'subject' in row ? row.subject : row.title}
+                                </button>
+                                <p className={s.muted}>{row.trackingNumber}</p>
+                              </div>
+                              {badge(
+                                'status' in row
+                                  ? statusLabel[row.status]
+                                  : stageLabel[row.stage],
+                              )}
                             </div>
-                            {badge(
-                              'status' in row
-                                ? statusLabel[row.status]
-                                : stageLabel[row.stage],
-                            )}
-                          </div>
-                        ))
-                      ) : (
-                        <p className={s.empty}>پرونده‌ای وجود ندارد.</p>
-                      )}
-                    </section>
-                  ))}
+                          ))
+                        ) : (
+                          <p className={s.empty}>پرونده‌ای وجود ندارد.</p>
+                        )}
+                      </section>
+                    ))}
                 </div>
               </>
             )}

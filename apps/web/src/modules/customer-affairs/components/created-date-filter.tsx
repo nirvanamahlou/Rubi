@@ -4,6 +4,9 @@ import { DatePicker } from '@/components/ui/date-picker';
 import { Button } from '@/components/ui/button';
 import { FormField } from '@/components/ui/form-controls';
 
+export const isCreatedDateRangeInvalid = (start: string, end: string) =>
+  Boolean(start && end && start > end);
+
 export function CreatedDateFilter({
   from,
   to,
@@ -15,7 +18,7 @@ export function CreatedDateFilter({
 }) {
   const [start, setStart] = useState(from);
   const [end, setEnd] = useState(to);
-  const invalid = Boolean(start && end && start > end);
+  const invalid = isCreatedDateRangeInvalid(start, end);
   return (
     <form
       className="flex flex-wrap items-end gap-3 border-b border-border p-4"

@@ -215,7 +215,10 @@ export class CustomerAffairsRepository {
     });
   }
 
-  async dashboard(branchIds: string[]) {
+  async dashboard(
+    branchIds: string[],
+    access: { leadsRead: boolean; ticketsRead: boolean },
+  ) {
     const now = new Date();
     const [
       openLeads,
@@ -226,55 +229,73 @@ export class CustomerAffairsRepository {
       breached,
       correctiveActions,
     ] = await Promise.all([
-      this.database.client.customerAffairsLead.count({
-        where: {
-          branchId: { in: branchIds },
-          stage: { notIn: ['LOST', 'HANDED_OFF'] },
-        },
-      }),
-      this.database.client.customerAffairsLead.count({
-        where: {
-          branchId: { in: branchIds },
-          stage: { notIn: ['LOST', 'HANDED_OFF'] },
-          nextActionAt: { lt: now },
-        },
-      }),
-      this.database.client.customerAffairsHandoff.count({
-        where: {
-          lead: { branchId: { in: branchIds } },
-          status: 'WAITING_SALES',
-        },
-      }),
-      this.database.client.customerAffairsTicket.count({
-        where: {
-          branchId: { in: branchIds },
-          status: { notIn: ['CLOSED', 'CANCELLED'] },
-        },
-      }),
-      this.database.client.customerAffairsTicket.count({
-        where: {
-          branchId: { in: branchIds },
-          status: { notIn: ['CLOSED', 'CANCELLED'] },
-          nextActionAt: { lt: now },
-        },
-      }),
-      this.database.client.customerAffairsTicket.count({
-        where: {
-          branchId: { in: branchIds },
-          OR: [
-            { firstResponseBreachedAt: { not: null } },
-            { resolutionBreachedAt: { not: null } },
-            { firstRespondedAt: null, firstResponseDueAt: { lt: now } },
-            { pausedAt: null, resolvedAt: null, resolutionDueAt: { lt: now } },
-          ],
-        },
-      }),
-      this.database.client.customerAffairsCorrectiveAction.count({
-        where: {
-          ticket: { branchId: { in: branchIds } },
-          status: { in: ['OPEN', 'IN_PROGRESS'] },
-        },
-      }),
+      access.leadsRead
+        ? this.database.client.customerAffairsLead.count({
+            where: {
+              branchId: { in: branchIds },
+              stage: { notIn: ['LOST', 'HANDED_OFF'] },
+            },
+          })
+        : Promise.resolve(0),
+      access.leadsRead
+        ? this.database.client.customerAffairsLead.count({
+            where: {
+              branchId: { in: branchIds },
+              stage: { notIn: ['LOST', 'HANDED_OFF'] },
+              nextActionAt: { lt: now },
+            },
+          })
+        : Promise.resolve(0),
+      access.leadsRead
+        ? this.database.client.customerAffairsHandoff.count({
+            where: {
+              lead: { branchId: { in: branchIds } },
+              status: 'WAITING_SALES',
+            },
+          })
+        : Promise.resolve(0),
+      access.ticketsRead
+        ? this.database.client.customerAffairsTicket.count({
+            where: {
+              branchId: { in: branchIds },
+              status: { notIn: ['CLOSED', 'CANCELLED'] },
+            },
+          })
+        : Promise.resolve(0),
+      access.ticketsRead
+        ? this.database.client.customerAffairsTicket.count({
+            where: {
+              branchId: { in: branchIds },
+              status: { notIn: ['CLOSED', 'CANCELLED'] },
+              nextActionAt: { lt: now },
+            },
+          })
+        : Promise.resolve(0),
+      access.ticketsRead
+        ? this.database.client.customerAffairsTicket.count({
+            where: {
+              branchId: { in: branchIds },
+              OR: [
+                { firstResponseBreachedAt: { not: null } },
+                { resolutionBreachedAt: { not: null } },
+                { firstRespondedAt: null, firstResponseDueAt: { lt: now } },
+                {
+                  pausedAt: null,
+                  resolvedAt: null,
+                  resolutionDueAt: { lt: now },
+                },
+              ],
+            },
+          })
+        : Promise.resolve(0),
+      access.ticketsRead
+        ? this.database.client.customerAffairsCorrectiveAction.count({
+            where: {
+              ticket: { branchId: { in: branchIds } },
+              status: { in: ['OPEN', 'IN_PROGRESS'] },
+            },
+          })
+        : Promise.resolve(0),
     ]);
     return {
       leads: { open: openLeads, overdue: overdueLeads, waitingSales },
