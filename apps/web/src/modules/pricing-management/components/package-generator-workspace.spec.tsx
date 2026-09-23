@@ -1,10 +1,12 @@
-import type { LoginResponse, TourDepartureV1 } from '@nora/contracts';
+import type { LoginResponse } from '@nora/contracts';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 
 import type { PackagePricingApiError } from '../api/client';
 import {
-  loadPackageGeneratorTours,
+  loadPackageGeneratorAccess,
   packageGeneratorSectionLabels,
   PackageGeneratorWorkspace,
 } from './package-generator-workspace';
@@ -47,41 +49,48 @@ describe('package generator workspace', () => {
 
   it('mounts the complete source package generator in the package section', () => {
     expect(sourcePackageGeneratorPath).toBe(
-      '/package-generator/index.html?v=rubi-vazirmatn',
+      '/package-generator/index.html?v=rubi-lazy-modes',
     );
   });
 
   it('denies loading tours unless both pricing permissions exist', async () => {
     const api = {
       session: vi.fn().mockResolvedValue(session(['package_pricing.read'])),
-      tours: vi.fn(),
     };
 
-    await expect(loadPackageGeneratorTours(api)).rejects.toEqual(
+    await expect(loadPackageGeneratorAccess(api)).rejects.toEqual(
       expect.objectContaining<Partial<PackagePricingApiError>>({
         status: 403,
         code: 'PACKAGE_GENERATOR_FORBIDDEN',
       }),
     );
-    expect(api.tours).not.toHaveBeenCalled();
   });
 
-  it('loads visible departures after the deny-by-default permission check', async () => {
-    const tours = [
-      { id: 'departure-1' },
-    ] as unknown as readonly TourDepartureV1[];
+  it('opens the generator after the deny-by-default permission check', async () => {
     const activeSession = session([
       'package_pricing.read',
       'package_pricing.render',
     ]);
     const api = {
       session: vi.fn().mockResolvedValue(activeSession),
-      tours: vi.fn().mockResolvedValue({ version: 1, data: tours }),
+      tours: vi.fn(),
     };
 
-    await expect(loadPackageGeneratorTours(api)).resolves.toEqual({
+    await expect(loadPackageGeneratorAccess(api)).resolves.toEqual({
       session: activeSession,
-      tours,
     });
+    expect(api.tours).not.toHaveBeenCalled();
+  });
+
+  it('defers the heavy banner and sticker bundles until their tabs are selected', () => {
+    const publicRoot = resolve(process.cwd(), 'public/package-generator');
+    const html = readFileSync(resolve(publicRoot, 'index.html'), 'utf8');
+    const loader = readFileSync(resolve(publicRoot, 'mode-loader.js'), 'utf8');
+
+    expect(html).toContain('<script defer src="mode-loader.js"></script>');
+    expect(html).not.toContain('<script defer src="installment-assets.js">');
+    expect(html).not.toContain('<script defer src="sticker-assets.js">');
+    expect(loader).toContain("'installment-assets.js'");
+    expect(loader).toContain("'sticker-assets.js'");
   });
 });

@@ -34,3 +34,4 @@
 .reference-banner.bodrum_gold .reference-hotel-photo,.reference-banner.antalya_turquoise .reference-hotel-photo{border-radius:12px}
 .reference-banner .banner-page-number{bottom:2px;font-size:10px}
 .reference-clean-overlay{position:absolute;inset:0;width:100%;height:100%;z-index:1;pointer-events:none}
+.mode-load-status{margin-right:auto;color:#526787;font-size:11px}.mode-load-status.error{color:#ad372d}

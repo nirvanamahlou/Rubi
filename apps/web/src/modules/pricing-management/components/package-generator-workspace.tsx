@@ -19,9 +19,9 @@ export const packageGeneratorSectionLabels: Record<GeneratorSection, string> = {
   sticker: 'تولید استیکر',
 };
 
-type GeneratorApi = Pick<typeof packagePricingApi, 'session' | 'tours'>;
+type GeneratorApi = Pick<typeof packagePricingApi, 'session'>;
 
-export async function loadPackageGeneratorTours(
+export async function loadPackageGeneratorAccess(
   api: GeneratorApi = packagePricingApi,
 ) {
   const session = await api.session();
@@ -31,8 +31,7 @@ export async function loadPackageGeneratorTours(
       403,
       'PACKAGE_GENERATOR_FORBIDDEN',
     );
-  const result = await api.tours(session);
-  return { session, tours: result.data };
+  return { session };
 }
 
 export function PackageGeneratorWorkspace() {
@@ -43,7 +42,7 @@ export function PackageGeneratorWorkspace() {
     setLoading(true);
     setError(null);
     try {
-      await loadPackageGeneratorTours();
+      await loadPackageGeneratorAccess();
     } catch (cause) {
       setError(cause);
     } finally {
