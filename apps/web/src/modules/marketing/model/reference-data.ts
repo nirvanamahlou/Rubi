@@ -1,4 +1,5 @@
 export type MarketingSectionKey =
+  | 'process'
   | 'dashboard'
   | 'campaigns'
   | 'audiences'
@@ -24,7 +25,7 @@ export interface MarketingSubtabDefinition {
 
 export interface MarketingPreviewItem {
   id: `preview-${string}`;
-  section: Exclude<MarketingSectionKey, 'dashboard'>;
+  section: Exclude<MarketingSectionKey, 'dashboard' | 'process'>;
   tab: string;
   title: string;
   description: string;
@@ -34,6 +35,13 @@ export interface MarketingPreviewItem {
 }
 
 export const marketingSections: readonly MarketingSectionDefinition[] = [
+  {
+    key: 'process',
+    title: 'فرایند یکپارچه',
+    description: 'پیگیری مسیر استراتژی، سرنخ، CRM، فروش، سفر و تحلیل عملکرد',
+    highlights: ['استراتژی', 'CRM', 'فروش', 'خدمات سفر'],
+    tone: 'blue',
+  },
   {
     key: 'dashboard',
     title: 'داشبورد',
@@ -144,7 +152,7 @@ export const marketingSectionTabs = {
     ['logs', 'لاگ‌ها و خطاها', 'Trace ID امن و بدون داده حساس'],
   ],
 } satisfies Record<
-  Exclude<MarketingSectionKey, 'dashboard'>,
+  Exclude<MarketingSectionKey, 'dashboard' | 'process'>,
   readonly (readonly [string, string, string])[]
 >;
 

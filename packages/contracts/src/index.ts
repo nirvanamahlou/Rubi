@@ -9,6 +9,7 @@ export * from './health';
 export * from './hr';
 export * from './iam';
 export * from './legal-entities';
+export * from './marketing';
 export * from './master-data';
 export * from './messaging';
 export * from './sales';

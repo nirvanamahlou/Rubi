@@ -3417,3 +3417,7 @@ Tour definition uses four-column desktop identity fields and compact controls. I
 ## 2026-09-22 — رفع دانلود PDF قرارداد — READY_FOR_REVIEW
 
 دانلود PDF قرارداد دیگر به تعریف دستی مسیر Chrome و B Nazanin وابسته نیست: runtime مسیر صریح را در اولویت نگه می‌دارد و در نبود آن Chrome/Edge و فونت را از مسیرهای استاندارد ویندوز پیدا می‌کند. نبود فونت اختیاری باعث توقف دانلود نمی‌شود و renderer پس از پایان Chrome تا نوشته‌شدن کامل فایل منتظر می‌ماند. ۲۶ تست هدفمند، lint، typecheck و build تولیدی Web موفق‌اند؛ smoke واقعی روی Windows یک فایل PDF معتبر ساخت. API، قالب قرارداد، Schema/Migration، Permission و داده عملیاتی تغییر نکردند.
+
+## 2026-09-23 — MARKETING-PROCESS-TRACKING-0923 — READY_FOR_REVIEW
+
+فرایند بازاریابی از استراتژی، جذب و بخش‌بندی تا CRM، فروش، اجرای سفر، وفاداری و تحلیل به سکشن «فرایند یکپارچه» اضافه شد. endpoint مجوزدار `GET /marketing/process` مالک، داده قابل پیگیری، وضعیت واقعی و کمبود هر مرحله را بدون PII یا داده ساختگی برمی‌گرداند و رابط RTL فقط مرحله‌های دارای مسیر موجود را فعال می‌کند. Contracts، permission seed و Roleهای اختصاصی Marketing افزوده شدند؛ Seed اجرا نشده و Schema/Migration به‌علت قفل فعال تغییر نکرده است. فهرست هفت زیرساخت باقی‌مانده و علت آن در `docs/tasks/MARKETING-PROCESS-TRACKING-0923.md` ثبت شده است. Typecheck Contracts/Database/API/Web، lint محدوده، ۳۹ تست API، ۲۳ تست Web و Build تولیدی API/Web با ۵۲ مسیر موفق‌اند.
