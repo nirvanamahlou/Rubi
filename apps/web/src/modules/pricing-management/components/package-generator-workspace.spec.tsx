@@ -67,8 +67,28 @@ describe('package generator workspace', () => {
 
   it('mounts the complete source package generator in the package section', () => {
     expect(sourcePackageGeneratorPath).toBe(
-      '/package-generator/index.html?v=rubi-visual-polish',
+      '/package-generator/index.html?v=rubi-country-filter',
     );
+  });
+
+  it('asks for the destination country before listing its package designs', () => {
+    const publicRoot = resolve(process.cwd(), 'public/package-generator');
+    const html = readFileSync(resolve(publicRoot, 'index.html'), 'utf8');
+    const app = readFileSync(resolve(publicRoot, 'app.js'), 'utf8');
+
+    expect(html.indexOf('id="templateCountry"')).toBeLessThan(
+      html.indexOf('id="template"'),
+    );
+    expect(html).toContain('<option value="turkey" selected>ترکیه</option>');
+    expect(html).toContain('<option value="thailand">تایلند</option>');
+    expect(app).toContain("turkey:['combined','kus','antalya','bodrum','nss']");
+    expect(app).toContain(
+      "malaysia:['malaysia-kuala','malaysia-penang','malaysia-singapore','malaysia-langkawi']",
+    );
+    expect(app).toContain(
+      "thailand:['thailand-phuket','thailand-bangkok-phuket','thailand-pattaya']",
+    );
+    expect(app).toContain('syncTemplateCountry(d.template)');
   });
 
   it('denies loading tours unless both pricing permissions exist', async () => {

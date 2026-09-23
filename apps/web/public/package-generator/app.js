@@ -2,6 +2,21 @@
 const $=id=>document.getElementById(id),state={data:null,bytes:null,fileName:'',cards:{},reference:false,busy:false,importId:0,layoutError:false,templatePinned:false},artworkCache=new Map();
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fa=n=>new Intl.NumberFormat('fa-IR').format(n),latin=s=>String(s).replace(/[۰-۹]/g,c=>'۰۱۲۳۴۵۶۷۸۹'.indexOf(c)).replace(/[٠-٩]/g,c=>'٠١٢٣٤٥٦٧٨٩'.indexOf(c)),profile=()=>window.PackageCards?.profile(TEMPLATES[$('template').value])||TEMPLATES[$('template').value];
+const TEMPLATE_COUNTRIES={
+ turkey:['combined','kus','antalya','bodrum','nss'],
+ malaysia:['malaysia-kuala','malaysia-penang','malaysia-singapore','malaysia-langkawi'],
+ spain:['spain-barcelona','spain-madrid','spain-combined'],
+ thailand:['thailand-phuket','thailand-bangkok-phuket','thailand-pattaya']
+};
+function countryForTemplate(templateId){return Object.entries(TEMPLATE_COUNTRIES).find(([,templateIds])=>templateIds.includes(templateId))?.[0];}
+function syncTemplateOptions(country,preferredTemplate){
+ const templateIds=(TEMPLATE_COUNTRIES[country]||TEMPLATE_COUNTRIES.turkey).filter(templateId=>TEMPLATES[templateId]);
+ $('template').replaceChildren(...templateIds.map(templateId=>new Option(TEMPLATES[templateId].label,templateId)));
+ const selectedTemplate=templateIds.includes(preferredTemplate)?preferredTemplate:templateIds[0];$('template').value=selectedTemplate;return selectedTemplate;
+}
+function syncTemplateCountry(templateId){
+ const country=countryForTemplate(templateId)||$('templateCountry').value;$('templateCountry').value=country;return syncTemplateOptions(country,templateId);
+}
 function message(t,error=false){
  $('status').textContent=t;$('status').className=error?'error':'';state.lastError=error?t:'';
  const output=$('downloadStatus');if(output){output.textContent=t;output.classList.toggle('error',error);output.hidden=!error&&!state.busy;}
@@ -162,7 +177,7 @@ function render(){return ScrollPosition.keep(()=>renderContents());}
  $('summary').textContent=`${fa(state.data.groups.length)} گزینه • ${fa(chunks.length)} صفحه • منبع: ${state.data.sheetName}`;window.PackageEditor?.sync();updateWarnings();
 }
 function selectTemplate(value){$('template').value=value;const alignScope=document.getElementById('packageAlignAll');if(alignScope)alignScope.checked=false;if(state.data)window.PackageCards?.includeSource(state.data.cards);else $('title').value=profile().title;$('fontSize').value=profile().font;$('tableColor').value=profile().color;drawCards();render();}
-function applyData(d){state.data=d;state.cards=window.PackageCards?.dataForImport(d.cards)||structuredClone(d.cards);state.reference=false;$('reference').textContent='نمایش مرجع';if(d.template&&!state.templatePinned)$('template').value=d.template;window.PackageCards?.includeSource(d.cards);$('title').value=d.title||profile().title;$('date').value=d.date;$('duration').value=d.duration;$('stays').value=d.stays||'';$('infantValue').value=d.cards.infant?.value??'';$('infantUnit').value=d.cards.infant?.unit??'';$('notes').value=d.notes;$('adjustments').value=d.adjustments||'';$('services').value=d.services||'';$('unit').value=d.template?.startsWith('malaysia-')||d.template?.startsWith('thailand-')?'$':d.template?.startsWith('spain-')?'€':'';$('fontSize').value=profile().font;$('tableColor').value=profile().color;drawCards();render();message(`${fa(d.groups.length)} گزینه و ${fa(Object.values(d.cards).filter(c=>!unavailable(c.value)).length)} کادرِ پایین صفحه از «${d.sheetName}» وارد شد؛ متن‌ها و نرخ‌ها قابل ویرایش‌اند.`);}
+function applyData(d){state.data=d;state.cards=window.PackageCards?.dataForImport(d.cards)||structuredClone(d.cards);state.reference=false;$('reference').textContent='نمایش مرجع';if(d.template&&!state.templatePinned)syncTemplateCountry(d.template);window.PackageCards?.includeSource(d.cards);$('title').value=d.title||profile().title;$('date').value=d.date;$('duration').value=d.duration;$('stays').value=d.stays||'';$('infantValue').value=d.cards.infant?.value??'';$('infantUnit').value=d.cards.infant?.unit??'';$('notes').value=d.notes;$('adjustments').value=d.adjustments||'';$('services').value=d.services||'';$('unit').value=d.template?.startsWith('malaysia-')||d.template?.startsWith('thailand-')?'$':d.template?.startsWith('spain-')?'€':'';$('fontSize').value=profile().font;$('tableColor').value=profile().color;drawCards();render();message(`${fa(d.groups.length)} گزینه و ${fa(Object.values(d.cards).filter(c=>!unavailable(c.value)).length)} کادرِ پایین صفحه از «${d.sheetName}» وارد شد؛ متن‌ها و نرخ‌ها قابل ویرایش‌اند.`);}
 async function importFile(file){
  if(!file||state.busy)return;if(!/\.(xlsx|docx)$/i.test(file.name)){message('فایل XLSX یا DOCX انتخاب کن.',true);return;}state.lastError='';const id=++state.importId;window.PackageCards?.rememberCustom();state.data=null;state.reference=false;state.cards={};updateWarnings();message('در حال خواندن فایل…');
  try{const bytes=new Uint8Array(await file.arrayBuffer());if(id!==state.importId)return;state.bytes=bytes;state.fileName=file.name;
@@ -181,7 +196,7 @@ $('cards').addEventListener('input',e=>{
  else{const key=e.target.dataset.card||e.target.dataset.cardUnit;if(!key)return;const field=e.target.dataset.card?'value':'unit';state.cards[key]||={value:'',unit:'تومان'};state.cards[key][field]=e.target.value;window.PackageEditor?.setCardText(field+'_'+key,e.target.value);}
  state.reference=false;$('reference').textContent='نمایش مرجع';render();
 });
-$('excel').addEventListener('change',e=>importFile(e.target.files[0]));$('sheet').addEventListener('change',()=>{if(/\.docx$/i.test(state.fileName))return;try{applyData(PKJ.parse(state.bytes,{sheetName:$('sheet').value,fileName:state.fileName}));}catch(e){state.data=null;message(e.message,true);render();}});$('template').addEventListener('change',()=>{state.templatePinned=true;selectTemplate($('template').value);});
+$('excel').addEventListener('change',e=>importFile(e.target.files[0]));$('sheet').addEventListener('change',()=>{if(/\.docx$/i.test(state.fileName))return;try{applyData(PKJ.parse(state.bytes,{sheetName:$('sheet').value,fileName:state.fileName}));}catch(e){state.data=null;message(e.message,true);render();}});$('templateCountry').addEventListener('change',()=>{state.templatePinned=true;selectTemplate(syncTemplateOptions($('templateCountry').value));});$('template').addEventListener('change',()=>{state.templatePinned=true;selectTemplate($('template').value);});
 for(const t of ['dragover','dragenter'])$('dropzone').addEventListener(t,e=>{e.preventDefault();$('dropzone').classList.add('drag');});for(const t of ['dragleave','drop'])$('dropzone').addEventListener(t,e=>{e.preventDefault();$('dropzone').classList.remove('drag');if(t==='drop')importFile(e.dataTransfer.files[0]);});
 for(const key of ['title','date','duration','stays','infantLabel','infantValue','infantUnit','unit','perPage','notes','adjustments','services','fontSize','tableColor'])$(key).addEventListener('input',render);$('showLayers').addEventListener('change',render);$('resetStyle').addEventListener('click',()=>selectTemplate($('template').value));$('reference').addEventListener('click',()=>{state.reference=!state.reference;$('reference').textContent=state.reference?'بازگشت به پکیج':'نمایش مرجع';render();});let resizeTimer;window.addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(render,150);});
 function download(blob,name){const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);}
@@ -198,4 +213,4 @@ async function exportPackage(type){
  }catch(e){message('خروجی ساخته نشد: '+e.message,true);}finally{stage.remove();state.busy=false;controls.forEach((c,i)=>c.disabled=disabledBefore[i]);updateWarnings();}
 }
 $('downloadUnit').addEventListener('change',()=>{if(state.busy)return;$('unit').value=$('downloadUnit').value;render();});$('downloadFixLayout').addEventListener('click',showLayoutIssue);
-$('png').addEventListener('click',()=>exportPackage('png'));$('pdf').addEventListener('click',()=>exportPackage('pdf'));drawCards();render();
+$('png').addEventListener('click',()=>exportPackage('png'));$('pdf').addEventListener('click',()=>exportPackage('pdf'));syncTemplateOptions($('templateCountry').value,$('template').value);drawCards();render();
