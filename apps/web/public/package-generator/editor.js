@@ -9,10 +9,13 @@ window.PackageEditor=(()=>{
   antalya:{subtitle:[491,178,422,37],phone:[124,1340,220,45],address:[443,1340,651,45],serviceLabel:[999,1281,86,30],duration:[451,163,429,16],labelOffset:30},
   bodrum:{subtitle:[620,220,361,39],phone:[132,1461,196,47],address:[425,1460,566,51],serviceLabel:[884,1378,94,30],duration:[480,224,105,33],labelOffset:34},
   nss:{subtitle:[616,222,383,37],phone:[129,1424,196,49],address:[427,1423,590,48],serviceLabel:[925,1285,73,35],duration:[488,178,344,29],labelOffset:31},
-  'malaysia-kuala':{subtitle:[662,240,328,35],phone:[108,1445,203,52],address:[420,1445,584,52],serviceLabel:[851,1326,71,27],duration:[487,129,326,54],labelOffset:30},
-  'malaysia-penang':{subtitle:[662,244,328,35],phone:[108,1445,203,52],address:[420,1445,584,52],serviceLabel:[849,1274,74,30],duration:[433,129,370,52],labelOffset:30},
-  'malaysia-singapore':{subtitle:[758,231,333,34],phone:[112,1300,245,61],address:[445,1300,648,61],serviceLabel:[923,1155,77,32],duration:[489,116,346,55],labelOffset:30},
-  'malaysia-langkawi':{subtitle:[662,248,328,30],phone:[110,1417,203,52],address:[410,1417,584,52],serviceLabel:[847,1265,75,30],duration:[453,142,283,39],labelOffset:30},
+  'malaysia-kuala':{subtitle:[421,207,408,25],phone:[41,1215,236,42],address:[323,1215,500,42],serviceLabel:[758,1077,70,25],duration:[418,87,332,51],labelOffset:30},
+  'malaysia-penang':{subtitle:[426,204,555,26],phone:[48,1215,275,42],address:[351,1215,632,42],serviceLabel:[908,1077,71,25],duration:[428,66,365,57],labelOffset:30},
+  'malaysia-singapore':{subtitle:[421,207,513,25],phone:[43,1215,247,42],address:[319,1215,615,42],serviceLabel:[864,1076,70,25],duration:[438,77,350,50],labelOffset:30},
+  'malaysia-langkawi':{subtitle:[329,176,376,23],phone:[35,1025,194,38],address:[250,1025,441,38],serviceLabel:[634,884,67,24],duration:[313,78,249,41],labelOffset:26},
+  'thailand-phuket':{subtitle:[332,128,405,27],phone:[48,1027,194,40],address:[285,1027,453,40],serviceLabel:[674,884,72,26],duration:[344,79,230,42],labelOffset:26},
+  'thailand-bangkok-phuket':{subtitle:[326,132,408,27],phone:[48,1027,194,40],address:[284,1027,448,40],serviceLabel:[660,918,74,26],duration:[349,80,251,40],labelOffset:25},
+  'thailand-pattaya':{subtitle:[315,130,386,27],phone:[47,1028,183,38],address:[274,1028,428,38],serviceLabel:[632,972,68,25],duration:[317,78,286,41],labelOffset:25},
   'spain-barcelona':{subtitle:[558,402,375,42],phone:[199,1561,210,52],address:[486,1560,440,55],serviceLabel:[800,1246,123,37],duration:[406,271,319,67],labelOffset:30},
   'spain-madrid':{subtitle:[583,391,345,41],phone:[207,1562,204,52],address:[485,1562,440,55],serviceLabel:[808,1240,120,38],duration:[412,258,319,65],labelOffset:30},
   'spain-combined':{subtitle:[558,441,369,42],phone:[202,1562,206,52],address:[487,1562,439,55],serviceLabel:[806,1232,120,40],duration:[408,289,267,78],labelOffset:30}
@@ -29,8 +32,8 @@ window.PackageEditor=(()=>{
   return '';
  }
  function definitions(){
-  const p=profile(),geo=geometry[p.style],m=model(),cols=state.data?columns():p.columns.map((width,i)=>({key:(p.style==='combined'?['hotel','city','service','double','single','child','small']:p.style==='antalya'?['hotel','room','service','double','single','child']:p.style.startsWith('malaysia-')?['hotel','service','double','single','extra','child','small']:p.style==='spain-combined'?['hotel','stars','service','double','single','child','small']:p.style.startsWith('spain-')?['hotel','service','double','single','child','small']:['hotel','service','double','single','child'])[i],width}));
-  const titles={city:'شهر',hotel:'نام هتل',stars:'ستاره',room:'نوع اتاق',service:'خدمات',double:'دوتخته',single:'یک تخت',extra:'اضافه',child:'کودک با تخت',small:p.style.startsWith('malaysia-')?'کودک بدون تخت':'کودک ۲–۶ سال'};
+  const p=profile(),geo=geometry[p.style],m=model(),cols=state.data?columns():p.columns.map((width,i)=>({key:(p.style==='combined'?['hotel','city','service','double','single','child','small']:p.style==='antalya'?['hotel','room','service','double','single','child']:p.style.startsWith('malaysia-')?['hotel','service','double','single','extra','child','small']:p.style.startsWith('thailand-')?['hotel','service','double','single','child','small']:p.style==='spain-combined'?['hotel','stars','service','double','single','child','small']:p.style.startsWith('spain-')?['hotel','service','double','single','child','small']:['hotel','service','double','single','child'])[i],width}));
+  const titles={city:'شهر',hotel:'نام هتل',stars:'ستاره',room:'نوع اتاق',service:'خدمات',double:'دوتخته',single:'یک تخت',extra:'اضافه',child:'کودک با تخت',small:p.style.startsWith('malaysia-')||p.style.startsWith('thailand-')?'کودک بدون تخت':'کودک ۲–۶ سال'};
   const list=[
    {id:'title',label:'عنوان شهر',box:p.titleBox,kind:'core',size:({combined:66,kus:108,antalya:120,bodrum:92,nss:120})[p.style]||86},
    {id:'date',label:'تاریخ حرکت',box:p.date,kind:'core',size:26,color:'#ffffff'},

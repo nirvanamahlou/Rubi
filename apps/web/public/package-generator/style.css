@@ -41,13 +41,13 @@
 .package-page[class*="thailand-"] .data-table .hotel{text-align:left;font-weight:600;direction:ltr}
 .package-page[class*="thailand-"] .data-table .service{text-align:center;font-weight:600;white-space:nowrap}
 .package-page[class*="thailand-"] .data-table .price{text-align:center;font-weight:600;direction:ltr;white-space:nowrap}
-.package-page[class*="thailand-"] .date-slot{border-radius:25px;background:#062b7d;font-size:25px}
-.package-page[class*="thailand-"] .title-slot{background:#fff;font-size:66px}
-.package-page[class*="thailand-"] .duration-slot{background:#fff;font-size:24px}
-.package-page[class*="thailand-"] .value-slot{background:#fff;color:#05256d;font-family:Tahoma,Arial,sans-serif;font-size:15px;line-height:1.18}
-.package-page[class*="thailand-"] .value-slot b{font-size:27px}
-.package-page[class*="thailand-"] .value-slot small{font-size:15px!important}
-.package-page[class*="thailand-"] .services-slot,.package-page[class*="thailand-"] .adjustments-slot{background:#fff;color:#06256e;font-family:Tahoma,Arial,sans-serif;font-size:17px;line-height:1.6;text-align:center;white-space:pre-wrap;padding:7px}
+.package-page[class*="thailand-"] .date-slot{border-radius:25px;background:#062b7d;font-size:18px}
+.package-page[class*="thailand-"] .title-slot{background:#fff;font-size:48px}
+.package-page[class*="thailand-"] .duration-slot{background:#fff;font-size:18px}
+.package-page[class*="thailand-"] .value-slot{background:#fff;color:#05256d;font-family:Tahoma,Arial,sans-serif;font-size:12px;line-height:1.18}
+.package-page[class*="thailand-"] .value-slot b{font-size:19px}
+.package-page[class*="thailand-"] .value-slot small{font-size:11px!important}
+.package-page[class*="thailand-"] .services-slot,.package-page[class*="thailand-"] .adjustments-slot{background:#fff;color:#06256e;font-family:Tahoma,Arial,sans-serif;font-size:13px;line-height:1.5;text-align:center;white-space:pre-wrap;padding:5px}
 
 /* A continuous table background removes the cell grid, including gaps between rounded cells. */
 .package-page .data-region,.package-page .data-table{background:#fff}
