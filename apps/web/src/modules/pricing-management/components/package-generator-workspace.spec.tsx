@@ -67,7 +67,7 @@ describe('package generator workspace', () => {
 
   it('mounts the complete source package generator in the package section', () => {
     expect(sourcePackageGeneratorPath).toBe(
-      '/package-generator/index.html?v=rubi-country-filter',
+      '/package-generator/index.html?v=rubi-template-refresh',
     );
   });
 

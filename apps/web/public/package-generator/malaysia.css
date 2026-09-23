@@ -3,15 +3,17 @@
 .package-page[class*="malaysia-"] .data-table td{border:0;border-radius:0;background:#fff;padding:0 3px}
 .package-page[class*="malaysia-"] .data-table .hotel{font-weight:500}
 .package-page[class*="malaysia-"] .data-table .service{font-weight:500}
-.package-page[class*="malaysia-"] .date-slot{border-radius:28px;background:#06265d;font-size:24px;padding:0 9px}
-.package-page[class*="malaysia-"] .duration-slot{font-size:25px;white-space:normal;text-align:center;line-height:1.2}
+.package-page[class*="malaysia-"] .date-slot{border-radius:28px;background:#06265d;font-size:20px;padding:0 9px}
+.package-page[class*="malaysia-"] .duration-slot{font-size:21px;white-space:normal;text-align:center;line-height:1.2}
 .package-page[class*="malaysia-"] .value-slot{font-family:Tahoma,Arial,sans-serif}
-.package-page[class*="malaysia-"] .value-slot b{font-size:27px}
-.package-page[class*="malaysia-"] .value-slot small{font-size:16px!important}
+.package-page[class*="malaysia-"] .value-slot b{font-size:21px}
+.package-page[class*="malaysia-"] .value-slot small{font-size:13px!important}
 .package-page[class*="malaysia-"] .adjustments-slot{position:absolute;z-index:1;background:#fff;color:#06245b;white-space:pre-wrap;text-align:right;display:flex;align-items:center;justify-content:center;font-family:Tahoma,Arial,sans-serif;font-size:15px;font-weight:700;line-height:1.65;padding:4px}
 .package-page.malaysia-singapore .data-table td{padding:0 2px}
 .package-page.malaysia-singapore .date-slot{font-size:27px}
 .package-page.malaysia-penang .duration-slot{font-size:21px}
 .package-page.malaysia-penang .adjustments-slot{font-size:13px}
-.package-page.malaysia-langkawi .duration-slot{font-size:23px}
+.package-page.malaysia-langkawi .duration-slot{font-size:18px}
+.package-page.malaysia-langkawi .value-slot b{font-size:18px}
+.package-page.malaysia-langkawi .value-slot small{font-size:11px!important}
 .package-page.malaysia-langkawi .adjustments-slot{font-size:14px;line-height:1.6}
