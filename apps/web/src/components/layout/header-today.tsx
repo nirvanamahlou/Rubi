@@ -33,14 +33,17 @@ export function HeaderToday() {
   return (
     <time
       aria-label={label}
-      className="flex min-h-5 min-w-0 max-w-full items-center gap-1.5 text-xs font-medium text-current"
+      className="flex min-h-5 min-w-0 max-w-full items-center gap-1.5 text-right text-xs font-medium text-current"
       data-header-today
       dateTime={instant?.toISOString()}
       dir={preferences.direction}
       title={`${preferences.language === 'en' ? 'Current date and time' : 'تاریخ و ساعت فعلی'} — ${preferences.timezone}`}
     >
       <CalendarDays aria-hidden="true" className="size-3.5 shrink-0" />
-      <span className="min-w-0 truncate">{label}</span>
+      <span className="min-w-0 truncate" dir={preferences.direction}>
+        {dateLabel} <span aria-hidden="true">·</span>{' '}
+        <bdi dir="ltr">{timeLabel}</bdi>
+      </span>
     </time>
   );
 }

@@ -36,9 +36,20 @@ describe('header today in Tehran', () => {
   });
 
   it('shows a Persian date and digits, including Nowruz rollover', () => {
-    expect(formatHeaderDate('2026-03-21')).toContain('۱ فروردین ۱۴۰۵');
-    expect(formatHeaderDate('2026-09-09')).toContain('۱۸ شهریور ۱۴۰۵');
+    expect(formatHeaderDate('2026-03-21')).toBe('شنبه ۱ فروردین ۱۴۰۵');
+    expect(formatHeaderDate('2026-09-09')).toBe('چهارشنبه ۱۸ شهریور ۱۴۰۵');
     expect(formatHeaderDate('2026-09-09')).not.toMatch(/[0-9]/);
+  });
+
+  it('keeps the Persian date in natural RTL order with resolved preferences', () => {
+    expect(
+      formatHeaderDate('2026-09-23', {
+        calendar: 'persian',
+        locale: 'fa-IR',
+        numberingSystem: 'arabext',
+        timezone: 'Asia/Tehran',
+      }),
+    ).toBe('چهارشنبه ۱ مهر ۱۴۰۵');
   });
 
   it('uses the resolved display calendar, digits and timezone', () => {

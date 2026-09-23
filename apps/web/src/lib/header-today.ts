@@ -81,11 +81,11 @@ export function formatHeaderDate(
       })
     : fullDateFormatter;
   const date = new Date(`${day}T12:00:00Z`);
-  if (options) return formatter.format(date);
+  if (options?.locale === 'en-US') return formatter.format(date);
   const parts = formatter.formatToParts(date);
   const value = (type: string) =>
     parts.find((part) => part.type === type)?.value;
-  return `${value('weekday')}، ${value('day')} ${value('month')} ${value('year')}`;
+  return `${value('weekday')} ${value('day')} ${value('month')} ${value('year')}`;
 }
 
 // Refresh at minute boundaries so the header clock stays current without seconds.
