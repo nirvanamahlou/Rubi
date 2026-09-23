@@ -46,6 +46,17 @@ const nextConfig: NextConfig = {
           },
         ],
       },
+      {
+        source: '/package-generator/:path*',
+        headers: [
+          { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
+          {
+            key: 'Content-Security-Policy',
+            value:
+              "object-src 'none'; base-uri 'self'; frame-ancestors 'self'; form-action 'self'",
+          },
+        ],
+      },
     ];
   },
 };

@@ -1,0 +1,49 @@
+/* Compact, scannable package editor. Other app workspaces keep their own styles. */
+:is(#packageWorkspace,#bannerWorkspace) .controls{background:#f4f7fb;padding:12px 12px 24px}
+:is(#packageWorkspace,#bannerWorkspace) .editor-nav{position:sticky;top:-12px;z-index:7;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px;padding:8px 0 10px;background:#f4f7fb}
+:is(#packageWorkspace,#bannerWorkspace) .editor-nav button{padding:8px 2px;border-color:#dce4ef;border-radius:7px;background:#fff;font-size:10px;white-space:nowrap;min-width:0}
+:is(#packageWorkspace,#bannerWorkspace) .editor-nav button:hover{background:#e8f0fc;border-color:#afc2db}
+:is(#packageWorkspace,#bannerWorkspace) .editor-group{margin:0 0 9px;border:1px solid #dfe6ef;border-radius:11px;background:#fff;box-shadow:0 1px 3px #142b5010;overflow:hidden}
+:is(#packageWorkspace,#bannerWorkspace) .editor-group[open]{border-color:#b9cbe3;box-shadow:0 2px 9px #142b5012}
+:is(#packageWorkspace,#bannerWorkspace) .editor-group>summary{display:flex;align-items:center;gap:9px;min-height:54px;padding:9px 12px;list-style:none;line-height:1.3}
+:is(#packageWorkspace,#bannerWorkspace) .editor-group>summary::-webkit-details-marker{display:none}
+:is(#packageWorkspace,#bannerWorkspace) .editor-group[open]>summary{border-bottom:1px solid #e8edf5;background:#f9fbfe}
+:is(#packageWorkspace,#bannerWorkspace) .editor-group-number{flex:none;display:grid;place-items:center;width:29px;height:29px;border-radius:8px;background:#e9f0fa;color:#1b467b;font:700 10px Arial,sans-serif}
+:is(#packageWorkspace,#bannerWorkspace) .editor-group-label{display:flex;flex:1;min-width:0;flex-direction:column;gap:3px}
+:is(#packageWorkspace,#bannerWorkspace) .editor-group-label strong{font-size:12px;color:#142e53}
+:is(#packageWorkspace,#bannerWorkspace) .editor-group-label small{font-size:9px;font-weight:400;color:#718198}
+:is(#packageWorkspace,#bannerWorkspace) .editor-group-arrow{font-size:19px;color:#758ba6;line-height:1;transition:transform .15s ease}
+:is(#packageWorkspace,#bannerWorkspace) .editor-group[open] .editor-group-arrow{transform:rotate(180deg)}
+:is(#packageWorkspace,#bannerWorkspace) .editor-group>section{padding:3px 12px 14px;border:0}
+#bannerWorkspace .editor-group>section.editor-base-section>h2{display:none}
+:is(#packageWorkspace,#bannerWorkspace) .editor-group>section>label:first-child{margin-top:9px}
+:is(#packageWorkspace,#bannerWorkspace) .editor-group label{margin-top:11px;font-size:10px;color:#2c4161}
+:is(#packageWorkspace,#bannerWorkspace) .editor-group input,:is(#packageWorkspace,#bannerWorkspace) .editor-group select,:is(#packageWorkspace,#bannerWorkspace) .editor-group textarea{margin-top:5px;padding:8px 9px}
+:is(#packageWorkspace,#bannerWorkspace) .editor-group textarea{line-height:1.65}
+:is(#packageWorkspace,#bannerWorkspace) .editor-group .muted{font-size:9px;line-height:1.65;margin:7px 0;color:#748399}
+:is(#packageWorkspace,#bannerWorkspace) .editor-group .upload{min-height:84px;margin-top:13px;gap:5px}
+:is(#packageWorkspace,#bannerWorkspace) .editor-group .upload b{font-size:11px}
+:is(#packageWorkspace,#bannerWorkspace) .editor-group .card-edit{padding:8px;margin-bottom:7px;background:#fafcff}
+:is(#packageWorkspace,#bannerWorkspace) .editor-group .card-edit>input[data-card-title]{margin:4px 0 2px}
+:is(#packageWorkspace,#bannerWorkspace) .editor-group .card-actions{margin-top:8px}
+:is(#packageWorkspace,#bannerWorkspace) .editor-group .card-actions button{padding:8px 3px}
+:is(#packageWorkspace,#bannerWorkspace) .editor-group .wide-button{margin-top:9px}
+:is(#packageWorkspace,#bannerWorkspace) .editor-group .layer-switch input{padding:0}
+#bannerWorkspace .banner-gallery-details{margin:10px 0 0;padding:7px 9px;border:1px dashed #cfddec;border-radius:8px;background:#fbfcff}
+#bannerWorkspace .banner-gallery-details>summary{font-size:10px;font-weight:500;color:#31577f;line-height:1.6}
+#bannerWorkspace .banner-gallery-details .banner-template-choices{margin:10px 0 2px}
+#bannerWorkspace .banner-optional-fields{margin:9px 0;padding:7px 9px;border:1px dashed #cfddec;border-radius:8px;background:#fbfcff}
+#bannerWorkspace .banner-optional-fields>summary{font-size:10px;font-weight:500;color:#31577f;line-height:1.6}
+#bannerWorkspace .banner-optional-fields[open]{padding-bottom:12px}
+:is(#packageWorkspace,#bannerWorkspace) .global-alignment-option{display:none}
+:is(#packageWorkspace,#bannerWorkspace) .editor-align-scope{margin:7px 0 0;padding:6px 8px;border-radius:7px;background:#f3f7fc;font-size:10px;font-weight:500}
+:is(#packageWorkspace,#bannerWorkspace) .editor-align-scope input{width:16px;height:16px;padding:0;margin:0}
+:is(#packageWorkspace,#bannerWorkspace) .editor-secondary-fields{margin:10px 0 0;padding:7px 9px;border:1px dashed #cfddec;border-radius:8px;background:#fbfcff}
+:is(#packageWorkspace,#bannerWorkspace) .editor-secondary-fields>summary{font-size:10px;font-weight:500;color:#31577f;line-height:1.6}
+:is(#packageWorkspace,#bannerWorkspace) .editor-secondary-fields[open]{padding-bottom:12px}
+#hotelForm .hotel-align-more{margin:9px 0;padding:9px;border:1px dashed #cfddec;border-radius:8px;background:#fbfcff}
+#hotelForm .hotel-align-more>summary{font-size:11px;font-weight:500;color:#31577f}
+#visaCountryDialog .visa-align-details{margin:8px 0;padding:8px;border:1px dashed #cfddec;border-radius:8px;background:#fbfcff}
+#visaCountryDialog .visa-align-details>summary{font-size:10px;font-weight:500;color:#31577f}
+@media(max-width:680px){:is(#packageWorkspace,#bannerWorkspace) .controls{padding:12px 14px 18px}:is(#packageWorkspace,#bannerWorkspace) .editor-nav{top:0}:is(#packageWorkspace,#bannerWorkspace) .editor-group{scroll-margin-top:60px}}
+@media print{:is(#packageWorkspace,#bannerWorkspace) .editor-nav{display:none!important}}

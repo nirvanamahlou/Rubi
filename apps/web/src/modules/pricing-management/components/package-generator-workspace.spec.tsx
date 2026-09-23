@@ -8,6 +8,7 @@ import {
   packageGeneratorSectionLabels,
   PackageGeneratorWorkspace,
 } from './package-generator-workspace';
+import { sourcePackageGeneratorPath } from './source-package-generator';
 
 function session(
   permissions: LoginResponse['user']['permissions'],
@@ -29,7 +30,7 @@ describe('package generator workspace', () => {
     const html = renderToStaticMarkup(<PackageGeneratorWorkspace />);
 
     expect(html).toContain('پک جنریتور');
-    expect(html).toContain('Package Generator');
+    expect(html).toContain('نسخه کامل فایل مرجع');
     expect(html).toContain('بازگشت به بخش‌ها');
     expect(html).toContain('animate-pulse');
   });
@@ -40,6 +41,10 @@ describe('package generator workspace', () => {
       'بنر تصویری',
       'تولید استیکر',
     ]);
+  });
+
+  it('mounts the complete source package generator in the package section', () => {
+    expect(sourcePackageGeneratorPath).toBe('/package-generator/index.html');
   });
 
   it('denies loading tours unless both pricing permissions exist', async () => {
