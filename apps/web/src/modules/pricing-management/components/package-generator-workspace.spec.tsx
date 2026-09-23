@@ -2,7 +2,15 @@ import type { LoginResponse } from '@nora/contracts';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+const { usePageBreadcrumbsMock } = vi.hoisted(() => ({
+  usePageBreadcrumbsMock: vi.fn(),
+}));
+
+vi.mock('@/components/layout/page-breadcrumbs', () => ({
+  usePageBreadcrumbs: usePageBreadcrumbsMock,
+}));
 
 import type { PackagePricingApiError } from '../api/client';
 import {
@@ -28,15 +36,25 @@ function session(
 }
 
 describe('package generator workspace', () => {
-  it('renders the themed generator shell and loading state', () => {
+  beforeEach(() => {
+    usePageBreadcrumbsMock.mockReset();
+  });
+
+  it('keeps the generator title only in its breadcrumb', () => {
     const html = renderToStaticMarkup(<PackageGeneratorWorkspace />);
 
-    expect(html).toContain('پک جنریتور');
+    expect(html).not.toContain('پک جنریتور');
     expect(html).not.toContain('مدیریت قیمت و پکیج‌ها');
     expect(html).not.toContain('پنل طراحی پکیج');
     expect(html).not.toContain('نسخه کامل فایل مرجع');
-    expect(html).toContain('بازگشت به بخش‌ها');
+    expect(html).not.toContain('بازگشت به بخش‌ها');
     expect(html).toContain('animate-pulse');
+    expect(usePageBreadcrumbsMock).toHaveBeenCalledWith(
+      '/sales/pricing/generator',
+      expect.arrayContaining([
+        expect.objectContaining({ title: 'پک جنریتور' }),
+      ]),
+    );
   });
 
   it('defines package, banner and sticker as separate generator sections', () => {

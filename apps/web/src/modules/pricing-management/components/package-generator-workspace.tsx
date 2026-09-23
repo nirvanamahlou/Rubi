@@ -1,11 +1,9 @@
 'use client';
 
-import { ArrowRight } from 'lucide-react';
-import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 
 import { buttonVariants } from '@/components/ui/button';
-import { ErrorState, PageHeader, Skeleton } from '@/components/ui/surfaces';
+import { ErrorState, Skeleton } from '@/components/ui/surfaces';
 import { packagePricingApi, PackagePricingApiError } from '../api/client';
 import { canViewPackageBanner } from '../model/package-banner';
 import { PackagePricingBreadcrumbs } from './package-pricing-breadcrumbs';
@@ -61,18 +59,6 @@ export function PackageGeneratorWorkspace() {
         currentTitle="پک جنریتور"
         pathname="/sales/pricing/generator"
       />
-      <PageHeader
-        actions={
-          <Link
-            className={buttonVariants({ variant: 'outline', size: 'sm' })}
-            href="/sales/pricing"
-          >
-            <ArrowRight className="size-4" /> بازگشت به بخش‌ها
-          </Link>
-        }
-        title="پک جنریتور"
-      />
-
       {loading ? <Skeleton className="h-[52rem]" /> : null}
 
       {!loading && error ? (
