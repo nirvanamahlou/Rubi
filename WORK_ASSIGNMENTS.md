@@ -3849,3 +3849,8 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 - شاخهٔ مستقل `codex/pc-a-contract-pdf-download-0922` از `origin/develop@8e16eace`. محدوده فقط runtime سمت سرور PDF قرارداد فروش، تست متمرکز و ثبت وضعیت همین واحد است؛ API، Schema/Migration، Permission، داده، Dependency/Lockfile و قالب قرارداد تغییر نمی‌کنند.
 - قاعده: مسیر صریح محیطی اولویت دارد و در نبود آن، Chrome/Edge و B Nazanin فقط از مسیرهای نصب استاندارد سیستم پیدا می‌شوند؛ HTML یا URL ورودی کاربر به renderer داده نمی‌شود.
 - نتیجه: موتور قرارداد مسیر Chrome/Edge و B Nazanin را مانند موتور بلیط از نصب استاندارد سیستم پیدا می‌کند، نبود فونت اختیاری مانع ساخت PDF نیست و پس از خروج Chrome تا پایدارشدن فایل منتظر می‌ماند. ۲۶ تست هدفمند، lint، typecheck و build تولیدی Web با ۵۰ route موفق‌اند؛ smoke واقعی با Chrome و فونت نصب‌شده یک PDF معتبر ساخت.
+## 2026-09-23 — WORKBENCH-QA-FIXES-0923 — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک: ایرادهای قطعی QA میزکار رفع شوند. شاخهٔ مستقل `codex/pc-b-workbench-runtime-fixes-0923` از source واقعی Web3100 یعنی `379859bc` ساخته شد تا قابلیت‌های فعلی میزکار حفظ شوند.
+- محدودهٔ رزرو: قفل تک‌اجرایی فرم یادداشت، تست هدفمند همان رفتار، ثبت وضعیت و بازیابی runtime محلی Web3100/API4000. بدون Schema/Migration، قرارداد مشترک، Permission، Dependency/Lockfile یا دادهٔ عملیاتی؛ پیام واقعی و عملیات مخرب انجام نمی‌شود.
+- نتیجه: ثبت دوبارهٔ یادداشت حین ذخیره مسدود شد و UI تا پایان عملیات وضعیت انتظار قابل‌دسترسی نشان می‌دهد. ۵۲ تست Workbench، lint متمرکز، typecheck و build تولیدی Web با ۵۲ route موفق‌اند؛ Web3100 و API4000 فعال و پاسخ خطای اعتبارنامهٔ آزمایشی در رابط واقعی تأیید شد.
