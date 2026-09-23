@@ -71,7 +71,6 @@ export function PackageGeneratorWorkspace() {
             <ArrowRight className="size-4" /> بازگشت به بخش‌ها
           </Link>
         }
-        eyebrow="مدیریت قیمت و پکیج‌ها"
         title="پک جنریتور"
       />
 
