@@ -925,8 +925,8 @@ Merged via PR #254 at `e40878f1`. Web3100 runs the production build `55JsHVl1EIR
 - نتیجه: اصلاحات مجوز، قابلیت‌های نقش جزئی، 401، دسترس‌پذیری فرم، پیام موفقیت،
   سربرگ گزارش، timeout تاریخ و fixture سایت تکمیل شد. ۹۰ تست API و ۵۶ تست Web،
   lint/typecheck و build تولیدی API/Web موفق‌اند. ۱۲ اتصال synthetic وب‌سایت با
-  backup قبلی و اجرای دوم idempotent اعمال شد. runtime آزمایشی 3101/4001 تا صفحه
-  ورود smoke شد؛ runtime اصلی تغییر نکرد. جزئیات در
+  backup قبلی و اجرای دوم idempotent اعمال شد. runtime آزمایشی 3101/4001 و سپس
+  build نهایی روی Web3100/API4000 تا صفحه ورود smoke شد. جزئیات در
   `docs/tasks/CUSTOMER-AFFAIRS-QA-FIXES-0923.md` است. قفل‌های فایل و قرارداد این
   واحد برای بازبینی آزاد هستند.
 
