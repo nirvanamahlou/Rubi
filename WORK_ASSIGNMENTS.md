@@ -194,6 +194,13 @@
 
 # Work Assignments
 
+## LAN-API-DISCOVERY-0923 — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-23: آخرین اصلاح دسترسی کامپیوترهای شبکه Push و Merge شود و ورود از آدرس شبکه پس از Build/Restart دوباره به خطای «آدرس API تعریف نشده» برنگردد.
+- شاخه مستقل `codex/pc-b-lan-api-discovery` از آخرین `origin/develop`. محدوده رزرو فقط helper محیط Web، تست‌های همان helper و همین مدخل است؛ API، Permission، Schema/Migration، Contracts، Dependency/Lockfile و داده عملیاتی تغییر نمی‌کنند.
+- رفتار مورد انتظار: در نبود آدرس تزریق‌شده، مرورگر روی IPv4 خصوصی API را از همان hostname و پورت ۴۰۰۰ پیدا کند؛ اگر Build با API محلی ساخته شده باشد نیز hostname به IP خصوصی مرورگر هم‌تراز شود. محیط Server و دامنه عمومی بدون تنظیم صریح همچنان fail-closed می‌مانند.
+- نتیجه: کشف API برای بازه‌های خصوصی `10/8`، `172.16/12` و `192.168/16` پایدار شد و Build محلی با hostname مرورگر شبکه هم‌تراز می‌شود. ۱۰ تست هدفمند، lint، typecheck و Production Build بدون تزریق دستی API با ۵۲ مسیر موفق‌اند؛ `git diff --check` و Scope/Secret/PII scan پاک‌اند.
+
 ## PACKAGE-GENERATOR-VIEW-ACCESS-0923 — PC-B — READY_FOR_REVIEW
 
 - درخواست مالک در 2026-09-23: مشاهده مسیر پک جنریتور روی همه کامپیوترها برای همه کاربران واردشده مجاز باشد.
