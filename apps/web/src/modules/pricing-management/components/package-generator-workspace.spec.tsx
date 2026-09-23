@@ -49,7 +49,7 @@ describe('package generator workspace', () => {
 
   it('mounts the complete source package generator in the package section', () => {
     expect(sourcePackageGeneratorPath).toBe(
-      '/package-generator/index.html?v=rubi-lazy-modes',
+      '/package-generator/index.html?v=rubi-accordion-icons',
     );
   });
 

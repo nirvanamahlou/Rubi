@@ -12,8 +12,10 @@
 :is(#packageWorkspace,#bannerWorkspace) .editor-group-label{display:flex;flex:1;min-width:0;flex-direction:column;gap:3px}
 :is(#packageWorkspace,#bannerWorkspace) .editor-group-label strong{font-size:12px;color:#142e53}
 :is(#packageWorkspace,#bannerWorkspace) .editor-group-label small{font-size:9px;font-weight:400;color:#718198}
-:is(#packageWorkspace,#bannerWorkspace) .editor-group-arrow{font-size:19px;color:#758ba6;line-height:1;transition:transform .15s ease}
-:is(#packageWorkspace,#bannerWorkspace) .editor-group[open] .editor-group-arrow{transform:rotate(180deg)}
+:is(#packageWorkspace,#bannerWorkspace) .editor-group-arrow{display:inline-flex;width:24px;height:24px;flex:0 0 24px;align-items:center;justify-content:center;border:1px solid #d5e2f1;border-radius:8px;background:#eff5fc;color:#24517d;line-height:1;transition:background-color .15s ease,color .15s ease}
+:is(#packageWorkspace,#bannerWorkspace) .editor-group-arrow::before{content:'+';font-size:18px;font-weight:600;transform:translateY(-1px)}
+:is(#packageWorkspace,#bannerWorkspace) .editor-group[open] .editor-group-arrow{background:#e0ebf8;color:#0b3265}
+:is(#packageWorkspace,#bannerWorkspace) .editor-group[open] .editor-group-arrow::before{content:'−'}
 :is(#packageWorkspace,#bannerWorkspace) .editor-group>section{padding:3px 12px 14px;border:0}
 #bannerWorkspace .editor-group>section.editor-base-section>h2{display:none}
 :is(#packageWorkspace,#bannerWorkspace) .editor-group>section>label:first-child{margin-top:9px}

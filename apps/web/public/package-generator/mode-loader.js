@@ -102,7 +102,7 @@ window.PackageGeneratorModeLoader = (() => {
     if (window.BannerEditor) return finish('banner');
     announce('در حال بارگذاری ابزار بنر…');
     bannerLoad ||= loadSequence(bannerSources).then(() =>
-      loadScript('editor-ui.js?mode=banner'),
+      loadScript('editor-ui.js?v=plus-minus&mode=banner'),
     );
     try {
       await bannerLoad;

@@ -136,7 +136,6 @@
     const arrow = document.createElement('span');
     arrow.className = 'editor-group-arrow';
     arrow.setAttribute('aria-hidden', 'true');
-    arrow.textContent = '⌄';
     summary.append(number, label, arrow);
     section.before(group);
     group.append(summary, section);
@@ -364,7 +363,6 @@
     const arrow = document.createElement('span');
     arrow.className = 'editor-group-arrow';
     arrow.setAttribute('aria-hidden', 'true');
-    arrow.textContent = '⌄';
     summary.append(number, title, arrow);
     section.before(group);
     group.append(summary, section);
