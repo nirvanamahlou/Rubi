@@ -12,6 +12,8 @@ describe('header date integration', () => {
     expect(markup).toContain('تاریخ امروز · --:--');
     expect(markup).toContain('data-header-today');
     expect(markup).toContain('dir="rtl"');
+    expect(markup).toContain('text-right');
+    expect(markup).toContain('<bdi dir="ltr">--:--</bdi>');
     expect(markup).not.toContain('dateTime=');
     expect(markup).not.toContain('datetime=');
     expect(markup).toContain('truncate');
