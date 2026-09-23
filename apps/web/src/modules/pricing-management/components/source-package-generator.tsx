@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { Skeleton } from '@/components/ui/surfaces';
 
 export const sourcePackageGeneratorPath =
-  '/package-generator/index.html?v=rubi-accordion-icons';
+  '/package-generator/index.html?v=rubi-visual-polish';
 
 export function SourcePackageGenerator() {
   const [loaded, setLoaded] = useState(false);
@@ -13,7 +13,7 @@ export function SourcePackageGenerator() {
   return (
     <section
       aria-label="پکیج‌ساز کامل"
-      className="relative min-h-[52rem] overflow-hidden rounded-2xl border border-border bg-[#edf1f5] shadow-sm"
+      className="relative min-h-[52rem] overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/5 via-[#edf3fa] to-amber-50/70 shadow-xl shadow-primary/10"
     >
       {!loaded ? (
         <div className="absolute inset-0 z-10 grid gap-4 bg-background p-5">
