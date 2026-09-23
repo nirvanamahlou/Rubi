@@ -15,11 +15,47 @@ describe('source package generator archive', () => {
   it('keeps every file from the supplied archive', () => {
     const files = sourceFiles();
 
-    expect(files).toHaveLength(119);
+    expect(files).toHaveLength(121);
     expect(files.some((path) => path.endsWith('iran air.png'))).toBe(false);
     expect(
       statSync(resolve(sourceRoot, 'installment-assets.js')).size,
     ).toBeGreaterThan(60 * 1024 * 1024);
+  });
+
+  it('uses the seven corrected Malaysia and Thailand city templates', () => {
+    const templates = readFileSync(
+      resolve(sourceRoot, 'malaysia-templates.js'),
+      'utf8',
+    );
+    const app = readFileSync(resolve(sourceRoot, 'app.js'), 'utf8');
+    const cards = readFileSync(resolve(sourceRoot, 'cards.js'), 'utf8');
+    const editor = readFileSync(resolve(sourceRoot, 'editor.js'), 'utf8');
+    const correctedTemplates = [
+      ['malaysia-kuala', 'malaysia-kuala.jpg'],
+      ['malaysia-penang', 'malaysia-penang.jpg'],
+      ['malaysia-singapore', 'malaysia-singapore.jpg'],
+      ['malaysia-langkawi', 'malaysia-langkawi.jpg'],
+      ['thailand-phuket', 'thailand-phuket.jpg'],
+      ['thailand-bangkok-phuket', 'thailand-bangkok-phuket.jpg'],
+      ['thailand-pattaya', 'thailand-pattaya.jpg'],
+    ] as const;
+
+    for (const [templateId, fileName] of correctedTemplates) {
+      expect(templates).toContain(`image:'${fileName}'`);
+      expect(statSync(resolve(sourceRoot, fileName)).size).toBeGreaterThan(
+        100 * 1024,
+      );
+      expect(app).toContain(`'${templateId}':{left:`);
+      expect(cards).toContain(`'${templateId}':{band:`);
+      expect(editor).toContain(`'${templateId}':{subtitle:`);
+    }
+    expect(templates).toContain('externalImage:true');
+    expect(
+      sourceFiles().some((path) => path.endsWith('malaysia-assets.js')),
+    ).toBe(false);
+    expect(
+      sourceFiles().some((path) => path.endsWith('thailand-phuket.png')),
+    ).toBe(false);
   });
 
   it('loads the complete offline editor dependency graph', () => {
