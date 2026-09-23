@@ -33,7 +33,7 @@ import {
 
 import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
-import { FormField, Input, Textarea } from '@/components/ui/form-controls';
+import { Input, Textarea } from '@/components/ui/form-controls';
 import {
   Alert,
   Badge,
@@ -54,6 +54,7 @@ import { RecordOperations, ticketCategories } from './record-operations';
 import { SalesHandoffResponse } from './sales-handoff-response';
 import { LeadCustomerConversion } from './lead-customer-conversion';
 import { TicketSms } from './ticket-sms';
+import { AffairsFormField as FormField } from './affairs-form-field';
 import s from './customer-affairs-nora.module.css';
 
 type Tab = 'leads' | 'tickets';

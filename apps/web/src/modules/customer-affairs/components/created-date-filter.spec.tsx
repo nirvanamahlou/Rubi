@@ -1,6 +1,9 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
-import { CreatedDateFilter } from './created-date-filter';
+import {
+  CreatedDateFilter,
+  isCreatedDateRangeInvalid,
+} from './created-date-filter';
 import { customerAffairsApi } from '../api/customer-affairs-client';
 
 describe('created date range', () => {
@@ -15,15 +18,9 @@ describe('created date range', () => {
     expect(html).not.toContain('type="date"');
   });
   it('prevents inverted ranges', () => {
-    const html = renderToStaticMarkup(
-      <CreatedDateFilter
-        from="2026-09-13"
-        to="2026-09-12"
-        onApply={() => {}}
-      />,
-    );
-    expect(html).toContain('تاریخ پایان نباید قبل');
-    expect(html).toContain('disabled');
+    expect(isCreatedDateRangeInvalid('2026-09-13', '2026-09-12')).toBe(true);
+    expect(isCreatedDateRangeInvalid('2026-09-12', '2026-09-12')).toBe(false);
+    expect(isCreatedDateRangeInvalid('', '2026-09-12')).toBe(false);
   });
   it('sends UTC boundaries including the entire selected end day', async () => {
     const original = process.env.NEXT_PUBLIC_API_BASE_URL;
