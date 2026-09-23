@@ -194,6 +194,13 @@
 
 # Work Assignments
 
+## PACKAGE-GENERATOR-VIEW-ACCESS-0923 — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-23: مشاهده مسیر پک جنریتور روی همه کامپیوترها برای همه کاربران واردشده مجاز باشد.
+- شاخه مستقل `codex/pc-b-package-generator-view-access` از آخرین `origin/develop`. محدوده رزرو فقط Workspace و تست محلی مسیر `/sales/pricing/generator` و همین مدخل است؛ APIهای قیمت‌گذاری، صفحه مدیریت قیمت، Permission catalog/seed، Contracts، Migration، Dependency/Lockfile و داده عملیاتی تغییر نمی‌کنند.
+- ابزار Generator منبع استاتیک هم‌مبدأ است و هیچ داده قیمت‌گذاری را از API دریافت نمی‌کند؛ بنابراین کنترل دو مجوز `package_pricing.read` و `package_pricing.render` فقط از همین مسیر برداشته می‌شود و احراز هویت عمومی CRM و کنترل دسترسی APIهای قیمت‌گذاری حفظ می‌شوند.
+- نتیجه: Workspace بدون درخواست Session/API مستقیماً ابزار را نمایش می‌دهد؛ در نتیجه کاربران واردشده بدون مجوز قیمت‌گذاری نیز روی هر کامپیوتر به Generator دسترسی دارند و بارگذاری اولیه یک درخواست شبکه کمتر دارد. ۶ تست هدفمند، lint، typecheck و Production Build با Webpack و ۵۲ مسیر موفق‌اند؛ Build پیش‌فرض Turbopack فقط به محدودیت symlink محیط worktree برخورد کرد.
+
 ## PACKAGE-GENERATOR-TEMPLATE-REFRESH-0923 — PC-B — READY_FOR_REVIEW
 
 - درخواست مالک در 2026-09-23: هفت تصویر اصلاح‌شدهٔ قالب‌های مالزی و تایلند جایگزین نسخه‌های قدیمی همان شهرها شوند.
