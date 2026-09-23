@@ -80,6 +80,7 @@ import {
 import { downloadRowsAsExcel } from '../utils/excel-export';
 import { CampaignCalendar } from './campaign-calendar';
 import { CampaignForm, type CampaignFormMode } from './campaign-form';
+import { MarketingProcessTracker } from './marketing-process-tracker';
 import {
   CampaignDetailReference,
   MarketingDashboardReference,
@@ -100,6 +101,7 @@ const companyOptions = Object.entries(executionCompanyLabels) as [
 ][];
 
 const sectionIcons: Record<MarketingSectionKey, LucideIcon> = {
+  process: Route,
   dashboard: Gauge,
   campaigns: Megaphone,
   audiences: UsersRound,
@@ -877,7 +879,7 @@ function CampaignsPanel({
 
 type GenericSectionKey = Exclude<
   MarketingSectionKey,
-  'dashboard' | 'campaigns'
+  'process' | 'dashboard' | 'campaigns'
 >;
 
 function resolveMarketingSection(
@@ -946,7 +948,7 @@ export function MarketingWorkspace({
     (item) => item.key === section,
   );
   const genericSection =
-    section && !['dashboard', 'campaigns'].includes(section)
+    section && !['process', 'dashboard', 'campaigns'].includes(section)
       ? (section as GenericSectionKey)
       : null;
   return (
@@ -969,7 +971,9 @@ export function MarketingWorkspace({
         />
       ) : (
         <section className="grid gap-5">
-          {section === 'dashboard' ? (
+          {section === 'process' ? (
+            <MarketingProcessTracker />
+          ) : section === 'dashboard' ? (
             <MarketingDashboardReference
               onNotice={setNotice}
               onOpen={setDetailItem}
