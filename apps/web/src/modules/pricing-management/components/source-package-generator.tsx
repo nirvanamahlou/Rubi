@@ -4,7 +4,8 @@ import { useState } from 'react';
 
 import { Skeleton } from '@/components/ui/surfaces';
 
-export const sourcePackageGeneratorPath = '/package-generator/index.html';
+export const sourcePackageGeneratorPath =
+  '/package-generator/index.html?v=rubi-vazirmatn';
 
 export function SourcePackageGenerator() {
   const [loaded, setLoaded] = useState(false);

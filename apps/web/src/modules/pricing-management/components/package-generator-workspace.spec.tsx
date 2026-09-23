@@ -45,7 +45,9 @@ describe('package generator workspace', () => {
   });
 
   it('mounts the complete source package generator in the package section', () => {
-    expect(sourcePackageGeneratorPath).toBe('/package-generator/index.html');
+    expect(sourcePackageGeneratorPath).toBe(
+      '/package-generator/index.html?v=rubi-vazirmatn',
+    );
   });
 
   it('denies loading tours unless both pricing permissions exist', async () => {
