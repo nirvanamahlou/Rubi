@@ -9,7 +9,7 @@ import { HeaderToday } from './header-today';
 describe('header date integration', () => {
   it('uses a stable server placeholder instead of freezing the build date', () => {
     const markup = renderToStaticMarkup(createElement(HeaderToday));
-    expect(markup).toContain('تاریخ امروز');
+    expect(markup).toContain('تاریخ امروز · --:--');
     expect(markup).toContain('data-header-today');
     expect(markup).toContain('dir="rtl"');
     expect(markup).not.toContain('dateTime=');

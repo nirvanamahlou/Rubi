@@ -2,7 +2,9 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {
   formatHeaderDate,
+  formatHeaderTime,
   headerDateKey,
+  headerMinuteKey,
   subscribeHeaderDate,
 } from './header-today';
 
@@ -15,6 +17,22 @@ describe('header today in Tehran', () => {
   it('uses the Tehran day across UTC midnight boundaries', () => {
     expect(headerDateKey(new Date('2026-09-08T20:29:59Z'))).toBe('2026-09-08');
     expect(headerDateKey(new Date('2026-09-08T20:30:00Z'))).toBe('2026-09-09');
+  });
+
+  it('uses a minute snapshot without seconds', () => {
+    expect(headerMinuteKey(new Date('2026-09-09T05:35:42.987Z'))).toBe(
+      '2026-09-09T05:35',
+    );
+  });
+
+  it('formats only hour and minute in the resolved timezone', () => {
+    expect(
+      formatHeaderTime(new Date('2026-09-09T05:35:42Z'), {
+        locale: 'en-US',
+        numberingSystem: 'latn',
+        timezone: 'Asia/Tehran',
+      }),
+    ).toBe('09:05');
   });
 
   it('shows a Persian date and digits, including Nowruz rollover', () => {
