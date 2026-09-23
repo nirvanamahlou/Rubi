@@ -30,7 +30,8 @@ describe('package generator workspace', () => {
     const html = renderToStaticMarkup(<PackageGeneratorWorkspace />);
 
     expect(html).toContain('پک جنریتور');
-    expect(html).toContain('نسخه کامل فایل مرجع');
+    expect(html).not.toContain('پنل طراحی پکیج');
+    expect(html).not.toContain('نسخه کامل فایل مرجع');
     expect(html).toContain('بازگشت به بخش‌ها');
     expect(html).toContain('animate-pulse');
   });

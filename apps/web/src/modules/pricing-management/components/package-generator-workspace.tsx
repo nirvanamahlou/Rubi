@@ -71,7 +71,6 @@ export function PackageGeneratorWorkspace() {
             <ArrowRight className="size-4" /> بازگشت به بخش‌ها
           </Link>
         }
-        description="نسخه کامل فایل مرجع شامل تولید پکیج، بنر تصویری و استیکر، همه قالب‌ها، ورود XLSX/DOCX و خروجی PNG/PDF."
         eyebrow="مدیریت قیمت و پکیج‌ها"
         title="پک جنریتور"
       />
