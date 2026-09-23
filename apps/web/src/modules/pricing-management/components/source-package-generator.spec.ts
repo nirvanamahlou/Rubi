@@ -73,10 +73,12 @@ describe('source package generator archive', () => {
     expect(templates).toContain(
       'bodyColumns:[[140,195,281,593],[423,195,282,593]]',
     );
-    expect(app).toContain("p.rows*(p.tableColumns||1)");
+    expect(app).toContain('p.rows*(p.tableColumns||1)');
     expect(app).toContain('splitTableColumns(ids,p.tableColumns||1)');
     expect(cards).toContain('base().fixedCardSlots');
-    expect(parser).toContain("'phuket','thailand','bangkok','pattaya','hkt','bkk'");
+    expect(parser).toContain(
+      "'phuket','thailand','bangkok','pattaya','hkt','bkk'",
+    );
     expect(parser).toContain("template==='thailand-bangkok-phuket'");
     expect(html).toContain('خودکار · مطابق ظرفیت قالب');
   });
