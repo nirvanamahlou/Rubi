@@ -1,7 +1,7 @@
 'use client';
 import { WorkbenchSelect } from './workbench-select';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { LockKeyhole, Save } from 'lucide-react';
 import {
   Alert,
@@ -14,6 +14,7 @@ import {
   Textarea,
 } from '@/components/ui';
 import type { NoteDraft } from './note-drafts';
+import { createSubmissionLock } from './submission-lock';
 
 export function NoteEditor({
   open,
@@ -33,12 +34,15 @@ export function NoteEditor({
   const [folder, setFolder] = useState(initial?.folder ?? 'شخصی');
   const [tags, setTags] = useState(initial?.tags ?? '');
   const [discard, setDiscard] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const submissionLock = useRef(createSubmissionLock());
   const [items, setItems] = useState<{ text: string; done: boolean }[]>(
     initial?.items ?? [],
   );
   const [itemText, setItemText] = useState('');
   const dirty = Boolean(title || body || items.length || itemText);
   function close() {
+    if (submissionLock.current.locked) return;
     if (dirty) setDiscard(true);
     else onOpenChange(false);
   }
@@ -49,6 +53,35 @@ export function NoteEditor({
     setItemText('');
     setDiscard(false);
     onOpenChange(false);
+  }
+  async function submitNote() {
+    if (
+      submissionLock.current.locked ||
+      !onApply ||
+      !title.trim() ||
+      (!body.trim() && !items.length) ||
+      itemText.trim()
+    )
+      return;
+
+    setSubmitting(true);
+    try {
+      await submissionLock.current.run(() => {
+        return onApply({
+          id: initial?.id ?? crypto.randomUUID(),
+          title: title.trim(),
+          body,
+          folder,
+          tags,
+          items,
+          pinned: initial?.pinned ?? false,
+          updatedAt: new Date().toISOString(),
+          template: false,
+        });
+      });
+    } finally {
+      setSubmitting(false);
+    }
   }
   return (
     <Dialog
@@ -85,25 +118,10 @@ export function NoteEditor({
         ) : (
           <form
             className="mt-5 space-y-5"
+            aria-busy={submitting}
             onSubmit={(event) => {
               event.preventDefault();
-              if (
-                !title.trim() ||
-                (!body.trim() && !items.length) ||
-                itemText.trim()
-              )
-                return;
-              void onApply?.({
-                id: initial?.id ?? crypto.randomUUID(),
-                title: title.trim(),
-                body,
-                folder,
-                tags,
-                items,
-                pinned: initial?.pinned ?? false,
-                updatedAt: new Date().toISOString(),
-                template: false,
-              });
+              void submitNote();
             }}
           >
             <div className="space-y-2">
@@ -314,6 +332,7 @@ export function NoteEditor({
               <Button
                 type="submit"
                 disabled={
+                  submitting ||
                   !onApply ||
                   !title.trim() ||
                   (!body.trim() && !items.length) ||
@@ -322,9 +341,14 @@ export function NoteEditor({
                 aria-describedby="workbench-note-save-status"
               >
                 <Save className="size-4" aria-hidden="true" />
-                ذخیره یادداشت
+                {submitting ? 'در حال ذخیره…' : 'ذخیره یادداشت'}
               </Button>
-              <Button type="button" variant="outline" onClick={close}>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={submitting}
+                onClick={close}
+              >
                 انصراف
               </Button>
               <span
