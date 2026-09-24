@@ -1,3 +1,24 @@
+## 2026-09-23 — HEADER-DATE-RTL-0923 — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک: ترتیب و راست‌چینی تاریخ فارسی سربرگ اصلاح شود تا سال، ماه، روز و علائم در نمایش RTL جابه‌جا نشوند.
+- شاخه مستقل `codex/pc-b-header-date-rtl-0923` از `origin/develop@f25862ae`؛ `COMPUTER_ID=PC-B`.
+- محدوده رزرو: formatter تاریخ سربرگ، markup مستقیم تاریخ/ساعت، تست‌های هدفمند و ثبت وضعیت همین واحد. بدون API، Schema/Migration، Permission، داده یا Dependency/Lockfile.
+- نتیجه: تاریخ فارسی با ترتیب طبیعی «روزهفته روز ماه سال» و راست‌چینی صریح نمایش داده می‌شود و ساعت در محدودهٔ مستقل LTR قرار گرفت. ۹ تست هدفمند، lint، typecheck، build تولیدی Web با ۵۲ مسیر و QA واقعی داشبورد روی `3100` موفق‌اند.
+
+## 2026-09-22 — MASTER-HOTEL-INLINE-ROOM-TYPES-0922 — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک: سکشن و فرم مستقل «نوع‌های اتاق» از اطلاعات پایه اقامت حذف شود؛ هتل بتواند چند نوع اتاق را مستقیماً در فرم خود دریافت و ذخیره کند و فیلدهای «عنوان فارسی»، «ظرفیت استاندارد» و «توضیح استفاده» دیگر از کاربر خواسته نشوند.
+- شاخه مستقل `codex/pc-b-hotel-inline-room-types-0922` از `origin/develop@c2bde18e`. محدوده رزرو: کاتالوگ و Workspace اقامت در Web، مسیر ثبت وابستگی نوع اتاق در Master Data API، تست‌های هدفمند و اسناد همین واحد.
+- سازگاری: Public Boundary نوع اتاق که Sales و Reservations مصرف می‌کنند حفظ می‌شود؛ Schema/Migration، قرارداد مشترک، Dependency/Lockfile و داده عملیاتی تغییر نمی‌کنند. نوع اتاق واردشده در فرم هتل با کد سیستمی ایجاد و به همان هتل متصل می‌شود و در UI سکشن مستقل ندارد.
+- نتیجه: تب، جدول، KPI و فیلتر مستقل نوع اتاق حذف شدند. فرم هتل نام نوع اتاق را مستقیم ایجاد می‌کند، انتخاب چندگانه را نگه می‌دارد و Backend اتصال چند نوع اتاق به یک هتل را ثبت می‌کند. ۳۵۸ تست Web اطلاعات پایه، ۵ تست API اقامت، lint محدوده، typecheck کامل Web و build تولیدی ۵۰ مسیر موفق‌اند؛ قفل محدود این واحد با Commit آزاد می‌شود.
+
+## 2026-09-23 — HEADER-DATE-CLOCK-0923 — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک: کنار تاریخ سربرگ، ساعت جاری فقط با ساعت و دقیقه و قالب `--:--` نمایش داده شود.
+- شاخه مستقل `codex/pc-b-header-clock-0923` از `origin/develop@8fc7f7eb`؛ `COMPUTER_ID=PC-B`.
+- محدوده رزرو: `header-today` و helper/testهای مستقیم آن، همراه ثبت وضعیت همین واحد. زمان از timezone و ارقام تنظیم‌شده سامانه خوانده می‌شود و در مرز هر دقیقه تازه می‌شود. بدون API، Schema/Migration، Permission، داده یا Dependency/Lockfile.
+- نتیجه: ساعت با قالب ساعت و دقیقه کنار تاریخ نمایش داده می‌شود، SSR تا hydration جای‌نگهدار `--:--` دارد و زمان هر دقیقه تازه می‌شود. ۸ تست هدفمند، lint، typecheck و build تولیدی Web با ۵۲ مسیر موفق‌اند؛ Web روی `3100` و API روی `4191` با پاسخ سلامت `200` اجرا شدند.
+
 ## 2026-09-21 — CUSTOMER-HIDE-TECH-BADGES-0921 — PC-A — READY_FOR_REVIEW
 
 - درخواست مالک: کارت توضیحات فنی Backend، City FK و Audit/Optimistic Version از پایین فضای مشتریان و مسافران حذف شود؛ کنترل‌های اجرایی مربوط در Backend بدون تغییر باقی می‌مانند.
@@ -186,6 +207,27 @@
 - اعتبارسنجی: ۲۱ تست هدفمند Web، lint و typecheck Web و build تولیدی Web موفق‌اند. Migration، دادهٔ عملیاتی، Permission، Dependency/Lockfile و Runtime مشترک تغییر نکردند.
 
 # Work Assignments
+
+## LAN-API-DISCOVERY-0923 — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-23: آخرین اصلاح دسترسی کامپیوترهای شبکه Push و Merge شود و ورود از آدرس شبکه پس از Build/Restart دوباره به خطای «آدرس API تعریف نشده» برنگردد.
+- شاخه مستقل `codex/pc-b-lan-api-discovery` از آخرین `origin/develop`. محدوده رزرو فقط helper محیط Web، تست‌های همان helper و همین مدخل است؛ API، Permission، Schema/Migration، Contracts، Dependency/Lockfile و داده عملیاتی تغییر نمی‌کنند.
+- رفتار مورد انتظار: در نبود آدرس تزریق‌شده، مرورگر روی IPv4 خصوصی API را از همان hostname و پورت ۴۰۰۰ پیدا کند؛ اگر Build با API محلی ساخته شده باشد نیز hostname به IP خصوصی مرورگر هم‌تراز شود. محیط Server و دامنه عمومی بدون تنظیم صریح همچنان fail-closed می‌مانند.
+- نتیجه: کشف API برای بازه‌های خصوصی `10/8`، `172.16/12` و `192.168/16` پایدار شد و Build محلی با hostname مرورگر شبکه هم‌تراز می‌شود. ۱۰ تست هدفمند، lint، typecheck و Production Build بدون تزریق دستی API با ۵۲ مسیر موفق‌اند؛ `git diff --check` و Scope/Secret/PII scan پاک‌اند.
+
+## PACKAGE-GENERATOR-VIEW-ACCESS-0923 — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-23: مشاهده مسیر پک جنریتور روی همه کامپیوترها برای همه کاربران واردشده مجاز باشد.
+- شاخه مستقل `codex/pc-b-package-generator-view-access` از آخرین `origin/develop`. محدوده رزرو فقط Workspace و تست محلی مسیر `/sales/pricing/generator` و همین مدخل است؛ APIهای قیمت‌گذاری، صفحه مدیریت قیمت، Permission catalog/seed، Contracts، Migration، Dependency/Lockfile و داده عملیاتی تغییر نمی‌کنند.
+- ابزار Generator منبع استاتیک هم‌مبدأ است و هیچ داده قیمت‌گذاری را از API دریافت نمی‌کند؛ بنابراین کنترل دو مجوز `package_pricing.read` و `package_pricing.render` فقط از همین مسیر برداشته می‌شود و احراز هویت عمومی CRM و کنترل دسترسی APIهای قیمت‌گذاری حفظ می‌شوند.
+- نتیجه: Workspace بدون درخواست Session/API مستقیماً ابزار را نمایش می‌دهد؛ در نتیجه کاربران واردشده بدون مجوز قیمت‌گذاری نیز روی هر کامپیوتر به Generator دسترسی دارند و بارگذاری اولیه یک درخواست شبکه کمتر دارد. ۶ تست هدفمند، lint، typecheck و Production Build با Webpack و ۵۲ مسیر موفق‌اند؛ Build پیش‌فرض Turbopack فقط به محدودیت symlink محیط worktree برخورد کرد.
+
+## PACKAGE-GENERATOR-TEMPLATE-REFRESH-0923 — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-23: هفت تصویر اصلاح‌شدهٔ قالب‌های مالزی و تایلند جایگزین نسخه‌های قدیمی همان شهرها شوند.
+- شاخه مستقل `codex/pc-b-package-generator-template-refresh` از `origin/develop@7ce2484d`. محدوده رزرو: Assetهای استاتیک Package Generator، نگاشت و مختصات قالب‌های مالزی/تایلند، تست‌های همان ماژول و این مدخل وضعیت. بدون API، قرارداد مشترک، Migration، Dependency/Lockfile یا داده عملیاتی.
+- نگاشت تصاویر فقط از عنوان قابل‌مشاهدهٔ خود فایل‌ها انجام می‌شود: کوالالامپور، کوالالامپور+پنانگ، کوالالامپور+سنگاپور، کوالالامپور+لنگکاوی، پوکت، پاتایا و بانکوک+پوکت.
+- نتیجه: هر هفت تصویر اصلاح‌شده جایگزین Asset قبلی شد و مختصات جدول، تاریخ، عنوان، کادرهای قیمت و خدمات با ابعاد جدید هماهنگ شدند. سه قالب تایلند به هندسهٔ کارت‌ها و ویرایشگر متصل شدند تا تغییر کشور پیش‌نمایش را خالی نکند. ۱۱ تست هدفمند، lint، typecheck و Build تولیدی Web با Webpack و ۵۲ مسیر موفق‌اند؛ QA مرورگر هر هفت انتخاب را بدون خطای Console تأیید کرد.
 
 ## LOGIN-BRAND-CLEANUP-RESTORE-0921 — PC-B — READY_FOR_REVIEW
 
@@ -3814,3 +3856,38 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 - محدوده رزرو: Ticket Catalog API/contract/schema و Migration افزایشی قیمت جفت، Sales pricing UI/model، ناوبری Web، تست‌های هدفمند و اسناد همین واحد. `Migration Owner`، قرارداد مشترک Ticket Catalog/Sales و قفل محدود Central Navigation/Docs برای این واحد: `PC-A/SALES-TICKET-PRICES-0922`. Dependency/Lockfile رزرو نمی‌شود.
 - سازگاری: قیمت تکی نسخه‌دار موجود reuse می‌شود؛ قیمت رفت‌وبرگشت نسخه‌دار و branch-scoped است و فقط برای دو آفر معکوس معتبر ثبت می‌شود. قراردادهای قبلی immutable می‌مانند و قرارداد جدید قیمت روز را به‌صورت snapshot در Sales نگه می‌دارد.
 - نتیجه: زیرماژول «قیمت بلیط» با نرخ تکی و نرخ واحد جفت، projection عمومی و اتصال fail-closed قرارداد تکمیل شد؛ ویرایش نرخ از مدیریت بلیط خارج و نمایش آن خواندنی شد. Prisma validate/generate، typecheck و lint هر دو برنامه، ۵۲ تست هدفمند و build تولیدی Web (۵۱ route) و API موفق‌اند. قفل‌ها با Commit این واحد برای review آزاد می‌شوند؛ Migration پیش از merge باید روی دیتابیس staging اعمال شود.
+
+## PACKAGE-PRICING-BANNER-001 — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-22: از مدیریت قیمت و پکیج‌ها برای هر پکیج معتبر مسیر اختصاصی ساخت بنر با پیش‌نمایش واقعی RTL، تنظیمات نمایشی و بازگشت با حفظ فیلترها ساخته شود.
+- شاخه مستقل `codex/pc-b-package-pricing-banner` از `origin/develop@8e16eace`؛ محدوده رزرو فقط `apps/web/src/modules/pricing-management/**`، route محلی `/sales/pricing/packages/[packageId]/banner`، تست‌های همان ماژول و سند Task است.
+- این Phase هیچ Schema/Migration، قرارداد مشترک، API عمومی، Dependency/Lockfile، داده عملیاتی یا فایل Documents را تغییر نمی‌دهد. اتصال آینده خروجی از Adapter ماژول‌محلی و وضعیت صریح `در انتظار سرویس خروجی اسناد` ارائه می‌شود؛ تصویر یا PDF ساختگی تولید نمی‌شود.
+- PR هم‌پوشان #292 بسته و Merge نشده است؛ رزروهای آن تصاحب نمی‌شوند. `Central Docs Owner = PC-B/PACKAGE-PRICING-BANNER-001` فقط برای همین مدخل، `docs/PROJECT_STATUS.md` و سند Task؛ Migration/Shared Contract/Dependency locks رزرو نمی‌شوند.
+- نتیجه: دکمه «ساخت بنر» کنار نسخه منتشرشده به مسیر اختصاصی `/sales/pricing/packages/[packageId]/banner` می‌رود. صفحه، نوبت تور، بازه نرخ، نسخه قیمت و قالب‌های فعال را از API موجود می‌خواند؛ اطلاعات مقصد/مسیر/تاریخ/پرواز/هتل/اتاق/قیمت فروش/ارز/انتشار را نشان می‌دهد و اتاق بدون ضریب مثبت یا قیمت فروش معتبر را حذف می‌کند. نرخ خرید، کارگزار، کمیسیون و سود داخلی وارد View Model بنر نمی‌شوند. بازگشت، تور/نوبت/batch/publication را از URL بازیابی می‌کند.
+- خروجی HTML/CSS RTL واقعی است؛ Adapter محلی Documents به‌صورت fail-closed وضعیت `در انتظار سرویس خروجی اسناد` می‌دهد و دکمه تصویر/PDF غیرفعال است. ۱۷ تست کل ماژول، lint محدوده، Web typecheck و Production Build با ۵۰ مسیر موفق‌اند. `git diff --check`، Scope scan و Secret/PII scan پاک‌اند. رزرو محدود Central Docs با Commit تحویل `RELEASED` می‌شود.
+- توسعه تکمیلی مالک در 2026-09-22: صفحه اصلی مدیریت قیمت و پکیج‌ها مانند Hub اطلاعات پایه به دو کارت «مدیریت قیمت» و «پک جنریتور» تقسیم شود و پنل مرجع محلی `Package_Template/Package-Generator` با اجزای بومی Rubi بازطراحی شود. رزرو فقط `apps/web/src/app/(crm)/sales/pricing/**`، `apps/web/src/modules/pricing-management/**` و سند همین Task است؛ فایل مرجع فقط خوانده می‌شود و Assetهای حجیم/Vendor آن، Dependency/Lockfile، Documents، API/Contract مشترک و Migration وارد محدوده نیستند.
+- نتیجه تکمیلی: Hub دوکارتی، مسیرهای مستقل `/sales/pricing/management` و `/sales/pricing/generator`، انتخاب پکیج/نوبت با مجوز deny-by-default و ویرایشگر گروه‌بندی‌شده مشابه مرجع با گالری قالب و Preview زنده تحویل شد. بازگشت‌ها و Breadcrumbها با مسیر جدید هماهنگ‌اند. ۲۱ تست ماژول، Prettier، lint، typecheck کامل و build تولیدی با ۵۲ مسیر موفق‌اند؛ QA مرورگر در دسکتاپ/موبایل Hub و state خطای Generator انجام شد. رزرو محدود این توسعه با Commit تحویل `RELEASED` می‌شود.
+- اصلاح صریح مالک در 2026-09-23: بازطراحی تقریبی پذیرفته نیست و همه کدها و فایل‌های `Package_Template/1.rar` باید عیناً پیاده‌سازی شوند. این دستور جدید، استثنای ثبت‌شده برای ورود Assetها و Vendorهای خود آرشیو به محدوده ماژول Pricing است؛ Dependency/Lockfile، Documents، API/Contract مشترک و Migration همچنان خارج از محدوده‌اند.
+- نتیجه اصلاح: تمام ۱۱۸ فایل آرشیو با مجموع ۳۳۰٬۴۹۴٬۹۴۰ بایت و تطبیق SHA-256 در مسیر استاتیک ماژول قرار گرفتند. صفحه Generator پس از کنترل هر دو مجوز، برنامه اصلی را هم‌مبدأ نمایش می‌دهد؛ سه حالت واقعی پکیج، بنر و استیکر، همه قالب‌ها، ورود XLSX/DOCX و خروجی PNG/PDF/ZIP حفظ شده‌اند. ۲۷ تست ماژول، lint، typecheck، build تولیدی ۵۲ مسیر و QA بصری هر سه حالت موفق‌اند.
+
+## 2026-09-22 — MASTER-DATA-QA-REMEDIATION-0922 — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک: ایرادهای قطعی گزارش QA عملی سکشن اطلاعات پایه رفع و همان سناریوها دوباره اجرا شوند.
+- شاخه تحویلی `codex/pc-b-masterdata-qa-remediation-0922-v2` از `origin/develop@8e16eace`؛ `COMPUTER_ID=PC-B`. شاخه نخست به‌علت جلو رفتن هم‌زمان `develop` جایگزین شد و این نسخه بدون Force Push روی آخرین مبنا ساخته شد.
+- محدوده رزروشده: فقط رابط و تست‌های Master Data برای جلوگیری از overflow افقی جغرافیا، بازگردانی فوکوس Dialog، اتصال پیام اعتبارسنجی به فیلدها، بومی‌سازی اعتبارسنجی، نام دسترس‌پذیر جدول‌ها و همگام‌سازی اصلاح inline نوع اتاق هتل. تغییر قدیمی توضیح ایرلاین ابتدا از `develop` راستی‌آزمایی می‌شود و در صورت موجودبودن دوباره پیاده‌سازی نمی‌شود.
+- بدون Schema/Migration، API/Contract مشترک، Dependency/Lockfile، Permission، Seed یا داده عملیاتی. Worktreeها و تغییرات محلی دیگر دست‌نخورده می‌مانند؛ اسناد مرکزی فقط برای ثبت همین واحد رزرو شده‌اند.
+- نتیجه: نوع اتاق مستقل اقامت حذف و ایجاد چندگانه آن داخل فرم هتل قرار گرفت؛ overflow جغرافیا، بازگردانی فوکوس Dialog، ارتباط خطا و راهنما با کنترل‌ها، پیام اعتبارسنجی فارسی، نام دسترس‌پذیر همه جدول‌های اطلاعات پایه و ستون/توضیح منسوخ ایرلاین اصلاح شدند. ۳۶۲ تست Web و ۴۴۶ تست API، lint، typecheck و build تولیدی ۵۰ مسیر Web موفق‌اند. Smoke نسخه جدید روی 3101 تا Login موفق بود؛ بازآزمایی احراز‌شده به‌دلیل انتقال‌نیافتن نشست و منع استفاده/تغییر رمز واقعی اجرا نشد. هیچ داده‌ای تغییر نکرد و رزرو فایل‌های اجرایی/اسناد با Commit تحویل آزاد می‌شود.
+
+## CONTRACT-PDF-DOWNLOAD-RUNTIME-0922 — PC-A — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-22: پیش‌نمایش قرارداد ساخته می‌شود اما دکمهٔ دانلود PDF با خطای موتور PDF/فونت فایل تحویل نمی‌دهد.
+- شاخهٔ مستقل `codex/pc-a-contract-pdf-download-0922` از `origin/develop@8e16eace`. محدوده فقط runtime سمت سرور PDF قرارداد فروش، تست متمرکز و ثبت وضعیت همین واحد است؛ API، Schema/Migration، Permission، داده، Dependency/Lockfile و قالب قرارداد تغییر نمی‌کنند.
+- قاعده: مسیر صریح محیطی اولویت دارد و در نبود آن، Chrome/Edge و B Nazanin فقط از مسیرهای نصب استاندارد سیستم پیدا می‌شوند؛ HTML یا URL ورودی کاربر به renderer داده نمی‌شود.
+- نتیجه: موتور قرارداد مسیر Chrome/Edge و B Nazanin را مانند موتور بلیط از نصب استاندارد سیستم پیدا می‌کند، نبود فونت اختیاری مانع ساخت PDF نیست و پس از خروج Chrome تا پایدارشدن فایل منتظر می‌ماند. ۲۶ تست هدفمند، lint، typecheck و build تولیدی Web با ۵۰ route موفق‌اند؛ smoke واقعی با Chrome و فونت نصب‌شده یک PDF معتبر ساخت.
+
+## SALES-PAYMENT-SHARE-SUMMARY-0922 — PC-A — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-22: پنجره «افزودن پرداخت» مبلغ کل قرارداد را نشان دهد و هم‌زمان مشخص کند مبلغ واردشده چه سهمی از کل و چه مانده‌ای پس از تأیید ایجاد می‌کند.
+- شاخهٔ مستقل `codex/pc-a-sales-payment-share-0922` از `origin/develop@1e2a6298`. محدوده فقط UI و مدل محاسباتی نمایش خلاصه پرداخت در Sales، تست هدفمند و اسناد همین واحد است؛ API، Finance، Schema/Migration، Permission، داده و Dependency/Lockfile تغییر نمی‌کنند.
+- محاسبات مبلغ با Decimal/BigInt انجام می‌شوند و برای هر ارز مستقل‌اند. `COMPUTER_ID=PC-A`؛ فایل اجرایی هدف در PR باز دیگری تغییر نکرده است.
+- نتیجه: خلاصه چهارکارتِ کل قرارداد، تأییدشده/در انتظار مالی، مبلغ جاری با درصد کل و مانده پس از تأیید به modal افزوده شد؛ ارزها مستقل‌اند و مازاد بر مانده هشدار دارد. ۹ تست هدفمند، lint، typecheck و build تولیدی Web با ۵۰ route موفق‌اند. قفل فایل اجرایی آزاد است.

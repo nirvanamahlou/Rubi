@@ -64,6 +64,7 @@ describe('master data sections', () => {
       'campaign-types',
       'meal-services',
       'facilities',
+      'room-types',
       'lost-reasons',
       'tags',
     ]);
@@ -71,6 +72,15 @@ describe('master data sections', () => {
       expect(masterDataResourceKeys).toContain(resource);
       expect(getMasterDataSectionForResource(resource)).toBeUndefined();
     }
+  });
+
+  it('keeps room types as an internal hotel reference instead of a section', () => {
+    expect(getMasterDataSection('accommodation')?.resources).toEqual([
+      'hotels',
+      'hotel-chains',
+      'composite-hotels',
+    ]);
+    expect(getMasterDataSectionForResource('room-types')).toBeUndefined();
   });
 
   it('resolves section routes and reverse resource ownership', () => {

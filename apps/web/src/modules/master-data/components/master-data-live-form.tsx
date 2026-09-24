@@ -48,6 +48,7 @@ import {
   MasterDataReferenceSelector,
   OrganizationRoleSelector,
 } from './master-data-reference-selector';
+import { useMasterDataDialogFocusRestore } from './use-master-data-dialog-focus-restore';
 
 export type MasterDataFormMode = 'create' | 'view' | 'edit';
 
@@ -165,6 +166,7 @@ function GenericMasterDataLiveForm({
   const [logoChange, setLogoChange] = useState<MasterDataLogoChange>();
   const [saving, setSaving] = useState(false);
   const readonly = mode === 'view';
+  const focusRestore = useMasterDataDialogFocusRestore();
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -194,10 +196,51 @@ function GenericMasterDataLiveForm({
     }
   }
 
+  async function createHotelRoomType(field: string, input = '') {
+    const name = input.trim();
+    if (!name) {
+      setErrors((current) => ({
+        ...current,
+        [field]: 'نام نوع اتاق را وارد کنید.',
+      }));
+      return;
+    }
+    setSaving(true);
+    try {
+      const response = await masterDataApi.create('room-types', {
+        values: { name },
+      });
+      setValues((current) => ({
+        ...current,
+        [field]: [
+          ...new Set([
+            ...(current[field] ?? '').split(',').filter(Boolean),
+            response.data.id,
+          ]),
+        ].join(','),
+      }));
+      setErrors((current) => {
+        const next = { ...current };
+        delete next[field];
+        return next;
+      });
+      setReferenceRevision((revision) => revision + 1);
+    } catch (error) {
+      setErrors((current) => ({
+        ...current,
+        [field]:
+          error instanceof Error ? error.message : 'افزودن نوع اتاق انجام نشد.',
+      }));
+    } finally {
+      setSaving(false);
+    }
+  }
+
   return (
     <>
       <Dialog onOpenChange={onOpenChange} open={open}>
         <DialogContent
+          {...focusRestore}
           {...(!readonly ? { 'aria-describedby': undefined } : {})}
           className="start-auto left-1/2 max-h-[calc(100dvh-2rem)] max-w-2xl overflow-y-auto p-6"
         >
@@ -222,6 +265,7 @@ function GenericMasterDataLiveForm({
 
           <form
             className="mt-6 space-y-5"
+            noValidate
             onSubmit={(event) => void submit(event)}
           >
             {definition.key === 'suppliers' && mode === 'create' ? (
@@ -239,6 +283,13 @@ function GenericMasterDataLiveForm({
             {getMasterDataFormFields(definition, mode).map((field) => {
               const error = errors[field.key];
               const controlId = `live-${definition.key}-${field.key}`;
+              const helpId = `${controlId}-help`;
+              const errorId = `${controlId}-error`;
+              const describedBy = error
+                ? errorId
+                : field.hint
+                  ? helpId
+                  : undefined;
               const reference = getReferenceFieldConfig(
                 definition.key,
                 field.key,
@@ -287,7 +338,18 @@ function GenericMasterDataLiveForm({
                         onManage: (
                           related?: MasterDataRecord,
                           searchQuery?: string,
-                        ) =>
+                        ) => {
+                          if (
+                            definition.key === 'hotels' &&
+                            field.key === 'roomTypeIds' &&
+                            !related
+                          ) {
+                            void createHotelRoomType(
+                              field.key,
+                              searchQuery ?? '',
+                            );
+                            return;
+                          }
                           setReferenceForm({
                             field: field.key,
                             definition: getMasterDataDefinition(
@@ -315,15 +377,19 @@ function GenericMasterDataLiveForm({
                                   : reference.target === 'regions'
                                     ? { countryId: values.countryId ?? '' }
                                     : {},
-                          }),
+                          });
+                        },
                       }
                     : {})}
                   createOnlyWhenEmpty={
-                    definition.key === 'suppliers' &&
-                    mode === 'create' &&
-                    field.key === 'organizationId'
+                    (definition.key === 'suppliers' &&
+                      mode === 'create' &&
+                      field.key === 'organizationId') ||
+                    (definition.key === 'hotels' && field.key === 'roomTypeIds')
                   }
                   id={controlId}
+                  {...(describedBy ? { ariaDescribedby: describedBy } : {})}
+                  invalid={Boolean(error)}
                   label={field.label}
                   onChange={updateValue}
                   required={Boolean(field.required)}
@@ -331,8 +397,10 @@ function GenericMasterDataLiveForm({
                 />
               ) : field.key === 'roleCodes' ? (
                 <OrganizationRoleSelector
+                  {...(describedBy ? { ariaDescribedby: describedBy } : {})}
                   disabled={readonly || saving}
                   id={controlId}
+                  invalid={Boolean(error)}
                   onChange={updateValue}
                   required={Boolean(field.required)}
                   value={values[field.key] ?? ''}
@@ -352,7 +420,11 @@ function GenericMasterDataLiveForm({
                   required={Boolean(field.required)}
                   value={values[field.key] ?? ''}
                 >
-                  <SelectTrigger aria-invalid={Boolean(error)} id={controlId}>
+                  <SelectTrigger
+                    aria-describedby={describedBy}
+                    aria-invalid={Boolean(error)}
+                    id={controlId}
+                  >
                     <SelectValue placeholder="انتخاب کنید" />
                   </SelectTrigger>
                   <SelectContent>
@@ -365,6 +437,7 @@ function GenericMasterDataLiveForm({
                 </Select>
               ) : field.type === 'datetime-local' ? (
                 <DatePicker
+                  aria-describedby={describedBy}
                   aria-invalid={Boolean(error)}
                   disabled={readonly || saving}
                   id={controlId}
@@ -377,6 +450,7 @@ function GenericMasterDataLiveForm({
                 />
               ) : field.type === 'number' ? (
                 <MasterDataNumberInput
+                  aria-describedby={describedBy}
                   aria-invalid={Boolean(error)}
                   disabled={readonly || saving}
                   id={controlId}
@@ -388,6 +462,7 @@ function GenericMasterDataLiveForm({
                 />
               ) : (
                 <Input
+                  aria-describedby={describedBy}
                   aria-invalid={Boolean(error)}
                   disabled={readonly || saving}
                   dir={

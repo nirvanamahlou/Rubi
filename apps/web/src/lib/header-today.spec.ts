@@ -2,7 +2,9 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {
   formatHeaderDate,
+  formatHeaderTime,
   headerDateKey,
+  headerMinuteKey,
   subscribeHeaderDate,
 } from './header-today';
 
@@ -17,10 +19,37 @@ describe('header today in Tehran', () => {
     expect(headerDateKey(new Date('2026-09-08T20:30:00Z'))).toBe('2026-09-09');
   });
 
+  it('uses a minute snapshot without seconds', () => {
+    expect(headerMinuteKey(new Date('2026-09-09T05:35:42.987Z'))).toBe(
+      '2026-09-09T05:35',
+    );
+  });
+
+  it('formats only hour and minute in the resolved timezone', () => {
+    expect(
+      formatHeaderTime(new Date('2026-09-09T05:35:42Z'), {
+        locale: 'en-US',
+        numberingSystem: 'latn',
+        timezone: 'Asia/Tehran',
+      }),
+    ).toBe('09:05');
+  });
+
   it('shows a Persian date and digits, including Nowruz rollover', () => {
-    expect(formatHeaderDate('2026-03-21')).toContain('۱ فروردین ۱۴۰۵');
-    expect(formatHeaderDate('2026-09-09')).toContain('۱۸ شهریور ۱۴۰۵');
+    expect(formatHeaderDate('2026-03-21')).toBe('شنبه ۱ فروردین ۱۴۰۵');
+    expect(formatHeaderDate('2026-09-09')).toBe('چهارشنبه ۱۸ شهریور ۱۴۰۵');
     expect(formatHeaderDate('2026-09-09')).not.toMatch(/[0-9]/);
+  });
+
+  it('keeps the Persian date in natural RTL order with resolved preferences', () => {
+    expect(
+      formatHeaderDate('2026-09-23', {
+        calendar: 'persian',
+        locale: 'fa-IR',
+        numberingSystem: 'arabext',
+        timezone: 'Asia/Tehran',
+      }),
+    ).toBe('چهارشنبه ۱ مهر ۱۴۰۵');
   });
 
   it('uses the resolved display calendar, digits and timezone', () => {

@@ -1,7 +1,14 @@
 import { execFile } from 'node:child_process';
-import { mkdtemp, readFile, writeFile, rm, access } from 'node:fs/promises';
+import {
+  access,
+  mkdtemp,
+  readFile,
+  rm,
+  stat,
+  writeFile,
+} from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join, isAbsolute, dirname } from 'node:path';
+import { dirname, isAbsolute, join, win32 } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { promisify } from 'node:util';
 import type { SalesContractOutputV1 } from '@nora/contracts';
@@ -12,29 +19,108 @@ import {
 
 const run = promisify(execFile);
 let active = 0;
+
+const uniqueAbsolute = (values: Array<string | undefined>) => [
+  ...new Set(
+    values.filter(
+      (value): value is string =>
+        typeof value === 'string' &&
+        (isAbsolute(value) || win32.isAbsolute(value)),
+    ),
+  ),
+];
+
+const joinRuntimePath = (base: string, ...parts: string[]) =>
+  win32.isAbsolute(base) ? win32.join(base, ...parts) : join(base, ...parts);
+
+export async function resolveContractPdfRuntime(
+  env: Readonly<Record<string, string | undefined>> = process.env,
+  readable: (path: string) => Promise<boolean> = async (path) =>
+    access(path)
+      .then(() => true)
+      .catch(() => false),
+): Promise<{ chromePath: string | null; fontPath: string | null }> {
+  const chromeCandidates = uniqueAbsolute([
+    env.SALES_PDF_CHROME_PATH,
+    env.ProgramFiles &&
+      joinRuntimePath(env.ProgramFiles, 'Google/Chrome/Application/chrome.exe'),
+    env['ProgramFiles(x86)'] &&
+      joinRuntimePath(
+        env['ProgramFiles(x86)'],
+        'Google/Chrome/Application/chrome.exe',
+      ),
+    env.LOCALAPPDATA &&
+      joinRuntimePath(env.LOCALAPPDATA, 'Google/Chrome/Application/chrome.exe'),
+    env.ProgramFiles &&
+      joinRuntimePath(
+        env.ProgramFiles,
+        'Microsoft/Edge/Application/msedge.exe',
+      ),
+    env['ProgramFiles(x86)'] &&
+      joinRuntimePath(
+        env['ProgramFiles(x86)'],
+        'Microsoft/Edge/Application/msedge.exe',
+      ),
+    env.LOCALAPPDATA &&
+      joinRuntimePath(
+        env.LOCALAPPDATA,
+        'Microsoft/Edge/Application/msedge.exe',
+      ),
+  ]);
+  const fontCandidates = uniqueAbsolute([
+    env.SALES_PDF_NAZANIN_PATH,
+    env.LOCALAPPDATA &&
+      joinRuntimePath(env.LOCALAPPDATA, 'Microsoft/Windows/Fonts/BNazanin.ttf'),
+    env.WINDIR && joinRuntimePath(env.WINDIR, 'Fonts/BNazanin.ttf'),
+  ]);
+  const firstReadable = async (candidates: readonly string[]) => {
+    for (const candidate of candidates)
+      if (await readable(candidate)) return candidate;
+    return null;
+  };
+  return {
+    chromePath: await firstReadable(chromeCandidates),
+    fontPath: await firstReadable(fontCandidates),
+  };
+}
+
+async function waitForPdf(path: string): Promise<void> {
+  const deadline = Date.now() + 10_000;
+  let previousSize = -1;
+  while (Date.now() < deadline) {
+    const size = await stat(path)
+      .then((entry) => entry.size)
+      .catch(() => 0);
+    if (size > 0 && size === previousSize) return;
+    previousSize = size;
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+  throw new Error('PDF_NOT_CREATED');
+}
+
 /** Renderer accepts saved, permission-scoped output only, never client HTML or URLs. */
 export async function renderContractPdf(
   output: SalesContractOutputV1,
   refs: ContractPrintReferences,
 ): Promise<Buffer> {
-  const chrome = process.env.SALES_PDF_CHROME_PATH;
-  const font = process.env.SALES_PDF_NAZANIN_PATH;
-  if (!chrome || !font || !isAbsolute(chrome) || !isAbsolute(font))
-    throw new Error('PDF_RUNTIME_UNAVAILABLE');
+  const { chromePath: chrome, fontPath: font } =
+    await resolveContractPdfRuntime();
+  if (!chrome) throw new Error('PDF_RUNTIME_UNAVAILABLE');
   if (active >= 2) throw new Error('PDF_BUSY');
   active++;
   let directory: string | undefined;
   try {
-    await access(chrome);
-    const fontBytes = await readFile(font);
-    if (!fontBytes.length || fontBytes.length > 5_000_000)
-      throw new Error('PDF_FONT_INVALID');
-    const html = contractPrintHtml(output, refs).replace(
-      '</style>',
-      '@font-face{font-family:ContractNazanin;src:url(data:font/ttf;base64,' +
-        fontBytes.toString('base64') +
-        ') format("truetype");font-weight:normal}</style>',
-    );
+    let html = contractPrintHtml(output, refs);
+    if (font) {
+      const fontBytes = await readFile(/* turbopackIgnore: true */ font);
+      if (fontBytes.length && fontBytes.length <= 5_000_000)
+        html = html.replace(
+          '</style>',
+          '@font-face{font-family:ContractNazanin;src:url(data:font/ttf;base64,' +
+            fontBytes.toString('base64') +
+            ') format("truetype");font-weight:normal}</style>',
+        );
+    }
     if (Buffer.byteLength(html) > 10_000_000) throw new Error('PDF_TOO_LARGE');
     directory = await mkdtemp(join(tmpdir(), 'nora-contract-pdf-'));
     const input = join(directory, 'contract.html');
@@ -70,6 +156,8 @@ export async function renderContractPdf(
       ],
       { env, windowsHide: true, timeout: 30000, maxBuffer: 1024 * 1024 },
     );
+    // Chrome on Windows can return before its headless process flushes the file.
+    await waitForPdf(result);
     const bytes = await readFile(result);
     if (
       bytes.subarray(0, 5).toString() !== '%PDF-' ||
