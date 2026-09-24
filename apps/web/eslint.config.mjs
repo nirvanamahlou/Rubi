@@ -1,3 +1,10 @@
-import nextConfig from '@rubi/eslint-config/next';
+import nextConfig from '@nora/eslint-config/next';
 
-export default nextConfig;
+const config = [
+  {
+    ignores: ['public/package-generator/**'],
+  },
+  ...nextConfig,
+];
+
+export default config;

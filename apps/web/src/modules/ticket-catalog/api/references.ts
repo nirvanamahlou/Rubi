@@ -1,0 +1,164 @@
+import {
+  MASTER_DATA_API_PREFIX,
+  masterDataEndpoints,
+  type MasterDataListResponse,
+  type MasterDataRecord,
+} from '@nora/contracts';
+import { getPublicApiBaseUrl } from '../../../lib/environment';
+import type { Reference } from '../model/catalog';
+
+export type PublishedResource =
+  | 'airlines'
+  | 'airports'
+  | 'aircraft-types'
+  | 'cabin-classes'
+  | 'baggage-rules'
+  | 'currencies'
+  | 'countries'
+  | 'cities'
+  | 'rail-companies'
+  | 'train-types'
+  | 'bus-companies'
+  | 'bus-types';
+export interface ReferenceFilters {
+  countryId?: string;
+  cityId?: string;
+}
+export class ReferenceApiError extends Error {
+  constructor(
+    readonly state:
+      'unavailable' | 'unauthorized' | 'forbidden' | 'conflict' | 'error',
+    message: string,
+  ) {
+    super(message);
+  }
+}
+export function referenceState(status: number): ReferenceApiError['state'] {
+  return status === 401
+    ? 'unauthorized'
+    : status === 403
+      ? 'forbidden'
+      : status === 409
+        ? 'conflict'
+        : 'error';
+}
+export async function listReferences(
+  resource: PublishedResource,
+  search: string,
+  page: number,
+  signal?: AbortSignal,
+  filters: ReferenceFilters = {},
+): Promise<MasterDataListResponse> {
+  const base = getPublicApiBaseUrl();
+  if (!base)
+    throw new ReferenceApiError('unavailable', 'نشانی API پیکربندی نشده است.');
+  const query = new URLSearchParams({
+    search,
+    status: 'active',
+    sortBy: 'name',
+    sortDirection: 'asc',
+    page: String(page),
+    pageSize: '25',
+  });
+  if (filters.countryId) query.set('countryId', filters.countryId);
+  if (filters.cityId) query.set('cityId', filters.cityId);
+  const path = masterDataEndpoints
+    .list(resource)
+    .slice(MASTER_DATA_API_PREFIX.length);
+  const response = await fetch(`${base}/master-data${path}?${query}`, {
+    method: 'GET',
+    credentials: 'include',
+    headers: { accept: 'application/json' },
+    ...(signal ? { signal } : {}),
+  });
+  if (!response.ok)
+    throw new ReferenceApiError(
+      referenceState(response.status),
+      'دریافت مرجع اطلاعات پایه ممکن نشد.',
+    );
+  const body = (await response.json()) as MasterDataListResponse;
+  if (
+    !body ||
+    !Array.isArray(body.data) ||
+    !body.meta ||
+    !Number.isSafeInteger(body.meta.total) ||
+    body.meta.total < 0 ||
+    body.meta.page !== page ||
+    body.meta.pageSize !== 25 ||
+    body.data.some(
+      (item) =>
+        !item.id ||
+        item.resource !== resource ||
+        !['active', 'inactive'].includes(item.status) ||
+        typeof item.name !== 'string' ||
+        typeof item.code !== 'string',
+    )
+  ) {
+    throw new ReferenceApiError(
+      'error',
+      'پاسخ اطلاعات پایه با قرارداد منتشرشده سازگار نیست.',
+    );
+  }
+  return {
+    ...body,
+    data: body.data.filter((item) => item.status === 'active'),
+  };
+}
+
+export async function listActiveCurrencyReferences(): Promise<
+  readonly Reference[]
+> {
+  const records: MasterDataRecord[] = [];
+  for (let page = 1; page <= 100; page += 1) {
+    const response = await listReferences('currencies', '', page);
+    records.push(...response.data);
+    if (page * response.meta.pageSize >= response.meta.total) {
+      const seen = new Set<string>();
+      return records.flatMap((record) => {
+        const reference = asReference(record);
+        const code = reference?.code?.trim().toUpperCase() ?? '';
+        if (!reference || !/^[A-Z]{3}$/.test(code) || seen.has(code)) return [];
+        seen.add(code);
+        return [{ ...reference, code }];
+      });
+    }
+    if (!response.data.length) break;
+  }
+  throw new ReferenceApiError(
+    'error',
+    'دریافت کامل فهرست ارزهای فعال ممکن نشد.',
+  );
+}
+export function asReference(record: MasterDataRecord): Reference | undefined {
+  const kinds = {
+    airlines: 'airline',
+    airports: 'airport',
+    'aircraft-types': 'aircraft',
+    'cabin-classes': 'flightClass',
+    'baggage-rules': 'baggage',
+    currencies: 'currency',
+    countries: 'country',
+    cities: 'city',
+    'rail-companies': 'railCompany',
+    'train-types': 'trainType',
+    'bus-companies': 'busCompany',
+    'bus-types': 'busType',
+  } as const;
+  if (!(record.resource in kinds)) return undefined;
+  return {
+    id: record.id,
+    name: record.name,
+    active: record.status === 'active',
+    kind: kinds[record.resource as PublishedResource],
+    ...(typeof record.attributes.countryId === 'string'
+      ? { countryId: record.attributes.countryId }
+      : {}),
+    ...(typeof record.attributes.cityId === 'string'
+      ? { cityId: record.attributes.cityId }
+      : {}),
+    ...(typeof record.attributes.ianaTimezone === 'string'
+      ? { timezone: record.attributes.ianaTimezone }
+      : {}),
+    code: record.code,
+  };
+}

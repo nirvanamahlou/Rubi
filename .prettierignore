@@ -1,5 +1,6 @@
 .next
 .turbo
+apps/web/public/package-generator
 coverage
 dist
 docs

@@ -1,5 +1,150 @@
 # مدل داده و ERD اولیه
 
+## SALES-TICKET-PRICES-0922 — نرخ فروش عمومی بلیت
+
+`TicketOfferStandaloneSalePrice` نسخه‌های append-only مبلغ و ارز فروش یک‌طرفه
+هر `TicketPublishedOffer` را نگه می‌دارد. `TicketOfferRoundTripSalePrice` مبلغ
+واحد هر مسافر برای جفت دقیق `outboundOfferId` و `returnOfferId` را با FK محدود،
+revision، actor، زمان UTC، idempotency key و fingerprint نگه می‌دارد. هر دو مبلغ
+`Decimal(20,4)` مثبت و ارز سه‌حرفی‌اند. جفت باید هم‌شعبه، مسیر معکوس و دارای حرکت
+برگشت پس از رفت باشد. Sales از projection عمومی آخرین revision استفاده و سهم دو
+خدمت را با حفظ دقیق مجموع، داخل قرارداد snapshot می‌کند؛ تاریخچه قراردادهای قبلی
+بازنویسی نمی‌شود.
+
+
+## TOUR-HOTEL-PRICING-FLOW-0916 — نوبت و مبالغ چندارزی
+
+Reservations rate packs and immutable batches have nullable restrictive
+`tourDepartureId` FKs to Ticket Catalog's `TourDeparture`. New UI packs require
+an explicit departure; legacy packs remain unassigned until the operator saves
+a linked revision. The producer checks branch, destination city and stay dates
+through `TourPublicService`. Sales queries only the exact departure's current
+batches, including the hotels selected in those batches.
+
+Drafts and published versions snapshot optional `familyAdults` and
+`familyChildren`. Published room rows add nullable `currencyAmounts` JSON:
+one object per currency with exact decimal-string purchase, sale, commission
+and profit. Scalar legacy package totals are populated only for a single
+currency; mixed currencies have no fabricated scalar sum. Hotel purchase/sale
+retain the hotel row currency. No historical price is rewritten or FX inferred.
+
+
+## PACKAGE-PRICING-001 — نرخ خرید بلیت مالی و قیمت منتشرشده تور (2026-09-15)
+
+`ProcurementTicketPurchaseRequest` برای درخواست‌های تازه می‌تواند بدون مبلغ/ارز
+ثبت شود و برای آفر واقعی، `offerId` یکتا با FK به `TicketPublishedOffer` و
+`offerVersion` دارد. مبلغ legacy کاتالوگ estimate است، نه خرید تأییدشده مالی.
+`FinanceTicketPurchaseCostRevision` قیمت خرید واحد بزرگسال/کودک، فاکتور، ارز،
+دلیل، actor و version را با FK درخواست/آفر/شعبه به‌صورت append-only ثبت می‌کند.
+`FinanceTicketPurchasePaymentRevision` مبلغ این پرداخت، جمع پرداخت، مانده،
+حساب، روش، نرخ به IRR، معادل ریال، زمان UTC، پیگیری و actor را immutable نگه
+می‌دارد. فقط آخرین revision با مانده صفر و status PAID به قرارداد عمومی فروش
+می‌رسد؛ یک estimate یا پرداخت جزئی به‌جای cost منتشر نمی‌شود.
+
+`PackagePricingTourDraft` با FK نوبت تور، batch خرید Reservations و شعبه، یک
+پیش‌نویس فعلی برای هر `(tourDepartureId,batchId)` و version optimistic دارد.
+مبالغ فروش پرواز و افزایش بیزینس Decimal+currency هستند. کمیسیون با mode صریح percent/fixed ذخیره می‌شود؛ حالت درصدی درصد Decimal و حالت ثابت مبلغ Decimal و ارز مستقل دارد.
+`PackagePricingTourAdjustment` با FK به ردیف نرخ خرید هتل، تغییر درصدی/ثابت
+هر گزینه را جدا ذخیره می‌کند. `PackagePricingTourPublishedVersion` append-only
+با FK پیش‌نویس، نرخ خرید مالی رفت/برگشت، ناشر و fingerprint منبع است؛
+`PackagePricingTourPublishedRoomPrice` با FK نسخه و ردیف هتل، مبلغ خرید/فروش
+اقامت و برای ترکیب‌های occupancy معلوم مبلغ خرید/فروش نهایی، کمیسیون و سود
+خالص Decimal را به ارز نسخه ذخیره می‌کند. نسخه و ردیف‌های منتشرشده UPDATE/DELETE
+نمی‌شوند؛ ویرایش پیش‌نویس فقط برای انتشار نسخهٔ تازه است. Family تا تعریف
+تعداد مسافر، packageSale/netProfit ندارد. مصرف جدول‌های دیگر فقط از سرویس عمومی
+مالک آن‌ها است؛ FKهای پایگاه برای یکپارچگی مرجع‌اند.
+
+## PROCUREMENT-BACKEND-CONNECTIONS-0916
+
+- `settings_procurement_approval_policies` artifact مصوب و نسخه‌دار سیاست خرید را با
+  scope شعبه، واحد، دسته و ارز نگه می‌دارد. هر نسخه مراحل تأیید، سقف‌ها و قواعد
+  استعلام/فوریت را snapshot می‌کند؛ Procurement فقط از سرویس عمومی Settings می‌خواند.
+- `automation_tasks` projection پایدار رخداد workflow است. کلید یکتای
+  source-module/event/assignee ایجاد دوباره را مهار می‌کند و وضعیت بسته‌شدن پرونده،
+  کار باز قبلی را در همان تراکنش تکمیل یا لغو می‌کند.
+- `finance_procurement_invoice_revisions` تصمیم و پرداخت‌های append-only فاکتور خرید
+  را با مبلغ و نرخ Decimal، حساب تسویه، روش پرداخت، Actor و نسخه نگه می‌دارد. Finance
+  مالک این جدول است؛ Procurement فقط contract نتیجه را دریافت و handoff خود را به‌روز
+  می‌کند. `finance_settlement_accounts` نیز چون مدل قبلی migration منتشرشده نداشت، در
+  migration همین واحد کار به‌صورت سازگار با پایگاه‌های قبلاً sync‌شده ایجاد می‌شود.
+- اصلاح مالی مرجوعی در outbox مالک Procurement با contract
+  `procurement.finance-correction.v1` ثبت می‌شود؛ تصمیم Finance در payload و دادهٔ همان
+  مرجوعی audit می‌شود و دسترسی مستقیم میان جدول‌های دو ماژول وجود ندارد.
+- `integration_supplier_messages` inbox پیام‌های امضاشدهٔ تأمین‌کننده را با شناسه
+  بیرونی یکتا نگه می‌دارد. intent خروجی در `procurement_outbox` باقی می‌ماند و adapter
+  با retry/idempotency آن را تحویل می‌دهد. Secret و payload حساس در این جدول ذخیره
+  نمی‌شوند.
+
+## TICKET-REPEAT-PURCHASE-0914
+
+Procurement owns `ProcurementTicketPurchaseRequest`: one current purchase request per branch and Ticket Catalog product reference. It stores a positive `Decimal(20,6)` amount, three-letter currency code, first service date, title and supplier snapshot, creator/idempotency audit, version and `PENDING/PAID/CANCELLED` status. A pending request may be revised in place with an incremented version; after Finance handles it the price is locked. Ticket Catalog and Finance use Procurement's public service and never query this table directly. Branch and creator have additive real FKs; the catalog product reference remains the producer's versioned public identifier. Historical ticket definitions without `serviceDate` remain readable and are not backfilled.
+
+## WORKBENCH-036 — داده‌های شخصی و ارتباط‌های بک‌اند
+
+- `workbench_note_folders` و `workbench_notes` در مالکیت Workbench و با کلید
+  کاربر IAM هستند. FK مرکب پوشه مانع انتساب یادداشت به پوشه کاربر دیگر می‌شود؛
+  JSON چک‌لیست باید آرایه باشد و `version` برای optimistic concurrency است.
+- `workbench_calendar_events` رویداد کاربر را در شعبه مجاز نگه می‌دارد. کاربر،
+  شعبه و تصویر Documents FK واقعی‌اند؛ لینک فقط metadata رویداد است. ارجاع‌های
+  Customer Affairs کپی نمی‌شوند و در query service تقویم از مالک دریافت می‌شوند.
+- `iam_user_profiles` افزونه یک‌به‌یک User برای تلفن و مرجع عکس است. تغییر هویت
+  و این رکورد در سرویس IAM و یک تراکنش همراه Audit انجام می‌شود.
+- `document_favorites` رابطه چندبه‌چند شخصی User/Document است. Documents مالک
+  ایجاد/حذف و projection دسترسی آن است؛ Workbench جدول را مستقیم نمی‌خواند.
+- `messaging_message_attachments` مرجع پیام/سند و عنوان snapshot را نگه می‌دارد.
+  `messaging_members.last_read_at` مبنای شمارش خوانده‌نشده همان عضو است.
+  Documents مالک فایل و Messaging مالک رابطه پیوست است.
+
+جزئیات قرارداد، مجوز و QA در [WORKBENCH-036](tasks/WORKBENCH-036.md) آمده است.
+
+## WORKBENCH-034 — نظرسنجی و پیشنهادها
+
+Workbench مالک `workbench_feedback` است. هر رکورد UUID و کد پیگیری یکتا، FK واقعی شعبه و فرستنده، واحد مقصد محدودشده، موضوع و متن، انتخاب ناشناس، تعداد پیوست و زمان UTC دارد. `request_hash` همراه UUID ارسالی از ایجاد دوباره یا استفاده متفاوت از همان شناسه جلوگیری می‌کند. شناسه فرستنده برای Audit ذخیره می‌شود و در اعلان ناشناس Actor تهی است؛ projection گیرنده نباید فرستنده ناشناس را بازگرداند.
+
+فایل داخل این جدول ذخیره نمی‌شود. هر پیوست یک Document با `sourceModule=WORKBENCH`، `sourceEntityType=WorkbenchFeedback` و `sourceEntityId` برابر UUID نظرسنجی است. Workbench فقط از سرویس عمومی Documents برای احراز مالک/شعبه/مرجع پیوست استفاده می‌کند و اسکن، دسترسی، نگهداری باینری و تاریخچه نسخه در مالکیت Documents می‌ماند. HR فقط شناسه حساب‌های متصل به واحد مقصد را برمی‌گرداند و Notifications اعلان گیرنده را داخل همان Transaction ثبت می‌کند.
+
+## B2B-ORGANIZATION-USERS-001 — agency portal membership
+
+B2B owns B2bOrganizationUser with restrictive organization, unique IAM user and internal branch foreign keys. It stores roleName, selected section identifiers (organization/access/contracts/credit/finance/audit), active status, optimistic version and UTC actor/timestamps. A database check restricts section identifiers and requires at least one section for active membership. Membership writes and B2bAuditEvent snapshots are atomic; credentials are never sent to that repository. IAM public services alone create/hash credentials; dedicated agency users receive no global roles or branches. The membership is not a contact, signatory or approval authority. Its branch is the internal cooperation scope, not the agency's street address. Deactivation keeps membership and history, and the portal boundary still applies.
+
+## B2B-UNIFIED-PROFILE-001 — organization signatories
+
+B2B owns `B2bOrganizationSignatory`: organization/contact composite restrictive FK to the Master Organization contact, authorized internal branch FK, document types, optional Decimal(24,4) authority limit with currency FK, UTC validity dates, optional pinned Documents version FK, active flag, optimistic version and actor/timestamps. B2bAuditEvent records mutations atomically. Contact identity and encrypted communication data remain in Master Data; proof contents/access/scan remain in Documents. Inactive entries can be completed without proof; activation requires a valid exact-source organization/branch document through the public owner service. Directory registration does not grant IAM permissions, independent approval rights or signature execution. Existing contacts and records are not reclassified or backfilled.
+
+## B2B-PROFILE-CLARITY-001 — organization identity
+
+`MasterOrganization.nationalId` is an optional, unique varchar(11) company identifier. Master Data normalizes Persian/Arabic digits and accepts only 11 ASCII digits for LEGAL organizations; a database check enforces the same format/person-type rule. Legacy rows stay NULL. Omitted updates preserve the identifier; explicit blank/null clears it, with existing optimistic version and audit semantics. Personal national IDs stay outside this field. It is manually supplied identity data, without a registry verification claim. The public generic record exposes `attributes.nationalId`; legacy consumers may ignore it.
+
+The agency branch selector reads existing `MasterOrganizationAddress` records for the selected organization. Selecting an address does not change IAM branch scope or the agency operational profile; existing public Master Data address CRUD persists additions/edits. IAM branch remains the internal organizational scope of the agreement and account manager.
+
+
+## B2B-CONTRACT-FORMS-002 — payment reference
+
+`B2bAgreementRevision.paymentMethodId` is an optional FK to `MasterPaymentMethod.id` with RESTRICT deletion. `paymentMethodName` snapshots the owner-validated label at revision write. Existing `paymentMethod` retains settlement semantics. Legacy omitted references are preserved, explicit null clears the optional reference, and historical revisions remain immutable. See [B2B-CONTRACT-FORMS-002](tasks/B2B-CONTRACT-FORMS-002.md).
+## TOUR-PACKAGES-0908
+
+Ticket Catalog owns immutable TourPackage definitions and TourDeparture dated occurrences. Each departure has real restrictive foreign keys to its package and outbound/optional return TicketPublishedOffer. Definition JSON contains versioned public reference IDs and included services, not pricing or inventory. Branch, actor, UTC creation time, idempotency key and fingerprint form the append-only creation audit. Package version is checked on occurrence creation. No update/delete API is exposed. Capacity is always derived from existing active TicketOfferCapacityAllocation rows; no separate tour stock is created. Repeating must create new dated ticket occurrences or explicitly link existing ones, never change prior offers.
+
+## SALES-OUTPUT-HOTEL-CURRENCY-0907
+
+Add nullable SalesContractPassenger.accommodationKind (varchar24, constrained to DBL/SINGLE/INFANT/CHILD_WITH_BED/CHILD_WITHOUT_BED). It describes that passenger's hotel occupancy category, not a room inventory reservation. New Sales hotel guests select an age-compatible value; legacy values remain null. Existing room counts/allocations, supplier prices, Finance balances and no-cost transfers remain unchanged. Print sums explicit passenger agreedPrices per currency; never converts currencies or fabricates legacy allocation.
+
+## SALES-CUSTOMER-PRICING-0907 — individual package amounts
+
+Sales owns additive `sales_contract_passenger_prices`: passenger FK (cascade), currency code, non-negative Decimal(24,4), unique passenger/currency. Entered values cover all allocated services for that person, not purchase cost or inferred age discounts. When supplied, every passenger has explicit prices and their currency totals equal final service-agreed contract amounts. Legacy rows have no invented backfill. Finance-confirmed payments remain the sole settlement source.
+
+## HOTEL-SALES-PRICING-0906 — مدل افزایشی
+
+- SalesContractService.pricing: JSON نسخه‌دار اختیاری شامل ارز، قیمت روز فروش و قیمت توافقی، هر کدام با مبنای NIGHT یا TOTAL. مبنای هر شب فقط برای هتل است و همه اتاق‌های انتخاب‌شده را پوشش می‌دهد؛ کلِ واردشده مرجع دقیق می‌ماند. قیمت‌های نسخه‌های قدیمی بدون تغییر باقی می‌مانند.
+- ReservationIntake.purchaseVersion کنترل هم‌زمانی ثبت خرید هتل است؛ snapshot اولیه تغییر نمی‌کند. ReservationHotelPurchase تاریخچه افزایشی مبلغ Decimal(24,4)، ارز، نسخه، ثبت‌کننده و زمان UTC است، با FK به intake، یکتایی intake/version و actor/idempotencyKey و fingerprint.
+- رکورد خرید رزرواسیون ورودی عملیاتی است، نه تأیید Procurement یا پرداخت Finance. جمع چند ارز یا ادعای سود نهایی بدون هزینه‌های مرجع ممنوع است.
+
+## SUPPLIER-PURCHASE-FINANCE-0912 — خرید هر خدمت و پرداخت کارگزار
+
+- Reservations برای هر `serviceClientKey` قرارداد یک زنجیرهٔ اصلاحات خرید نگه می‌دارد: نوع/عنوان خدمت، FK کارگزار، نام snapshot، مبلغ Decimal و ارز. آخرین نسخهٔ هر خدمت مبنای مالی است؛ اصلاح مبلغ یا کارگزار یک نسخهٔ تازه و در انتظار پرداخت می‌سازد.
+- Finance برای هر نسخهٔ خرید، سابقهٔ جداگانهٔ تصمیم/پرداخت نگه می‌دارد. پرداخت شامل FK بانک، تاریخ انتقال، شماره پیگیری، دلیل، actor و UTC است؛ تغییر خرید پرداخت‌شده، پرداخت قبلی را بازنویسی نمی‌کند.
+- تأیید تحویل مدارک تنها وقتی مجاز است که همهٔ خدمات snapshot قرارداد خرید ثبت‌شده داشته باشند و آخرین خرید هر خدمت در Finance پرداخت شده باشد. هیچ تبدیل ارز ضمنی یا جمع چندارزی انجام نمی‌شود.
+
 وضعیت: Conceptual/Logical v0.1؛ این سند Migration نیست. نام نهایی field، enum و index
 در Foundation با ADR و Prisma schema تثبیت می‌شود.
 
@@ -22,7 +167,7 @@ erDiagram
   ROLES ||--o{ USER_ROLES : grants
   ROLES ||--o{ ROLE_PERMISSIONS : contains
   PERMISSIONS ||--o{ ROLE_PERMISSIONS : defines
-  BRANCHES ||--o{ USERS : assigned_to
+  BRANCHES ||--o{ USERS : access_scope
   ORGANIZATIONS ||--o{ ORGANIZATION_ROLES : has
   ORGANIZATIONS ||--o{ ORGANIZATION_CONTACTS : has
   CUSTOMERS ||--o{ CUSTOMER_CONTACTS : has
@@ -36,25 +181,64 @@ erDiagram
   CAMPAIGNS o|--o{ LEADS : attributes
 ```
 
-## ERD سفارش، Provider و خرید
+## ERD منابع انسانی
+
+این مدل صرفاً مفهومی است و ایجاد Prisma model یا Migration را مجاز نمی‌کند. Employee
+aggregate مستقل است و FK جایگزین به Customer/Passenger ندارد.
 
 ```mermaid
 erDiagram
-  CUSTOMERS ||--o{ TRAVEL_ORDERS : places
-  SALES_CHANNELS ||--o{ TRAVEL_ORDERS : receives
-  USERS ||--o{ TRAVEL_ORDERS : owns
-  ORGANIZATIONS o|--o{ TRAVEL_ORDERS : agency
-  TRAVEL_ORDERS ||--|{ ORDER_ITEMS : contains
-  TRAVEL_ORDERS ||--|{ ORDER_PASSENGERS : includes
-  CUSTOMERS o|--o{ ORDER_PASSENGERS : references
-  ORDER_ITEMS ||--o{ RESERVATIONS : fulfills
-  RESERVATIONS ||--o{ TRAVEL_SEGMENTS : contains
-  RESERVATIONS ||--o{ ISSUED_DOCUMENTS : issues
-  ORDER_PASSENGERS ||--o{ ISSUED_DOCUMENTS : holder
+  USERS o|--o| EMPLOYEES : optional_login
+  BRANCHES ||--o{ EMPLOYEE_ASSIGNMENTS : assigns
+  EMPLOYEES ||--o{ EMPLOYEE_ASSIGNMENTS : has
+  EMPLOYEES o|--o{ EMPLOYEE_ASSIGNMENTS : manages
+  EMPLOYEES ||--o{ EMPLOYMENT_CONTRACTS : signs
+  EMPLOYEES ||--o{ EMPLOYEE_CONTACTS : has
+  EMPLOYEES ||--o{ EMERGENCY_CONTACTS : has
+  EMPLOYEES ||--o{ ATTENDANCE_RECORDS : records
+  EMPLOYEES ||--o{ SHIFT_ASSIGNMENTS : works
+  EMPLOYEES ||--o{ LEAVE_REQUESTS : requests
+  EMPLOYEES ||--o{ MISSION_REQUESTS : requests
+  EMPLOYEES ||--o{ OVERTIME_RECORDS : records
+  EMPLOYEES ||--o{ PERFORMANCE_REVIEWS : receives
+  EMPLOYEES ||--o{ EMPLOYEE_CERTIFICATES : earns
+  EMPLOYEES ||--o{ EMPLOYEE_ASSETS : receives
+  EMPLOYEES ||--o{ HR_DOCUMENT_LINKS : owns
+  EMPLOYEES ||--o{ PAYROLL_INPUT_BATCH_ITEMS : contributes
+  PAYROLL_INPUT_BATCHES ||--|{ PAYROLL_INPUT_BATCH_ITEMS : contains
+```
+
+## ERD فروش، تخصیص خدمات، رزرواسیون و خرید
+
+```mermaid
+erDiagram
+  CUSTOMERS ||--o{ SALES_CONTRACT_PARTIES : party
+  SALES_CONTRACTS ||--|{ SALES_CONTRACT_PARTIES : has
+  SALES_CONTRACTS ||--|{ CONTRACT_PASSENGERS : includes
+  CUSTOMERS o|--o{ CONTRACT_PASSENGERS : references
+  SALES_CONTRACTS ||--|{ CONTRACT_SERVICE_ITEMS : sells
+  CONTRACT_PASSENGERS ||--o{ PASSENGER_SERVICE_ALLOCATIONS : receives
+  CONTRACT_SERVICE_ITEMS ||--o{ PASSENGER_SERVICE_ALLOCATIONS : allocated_to
+  TICKET_PRODUCTS ||--o{ FLIGHT_DEPARTURES : schedules
+  FLIGHT_DEPARTURES ||--|| TICKET_INVENTORIES : owns
+  CONTRACT_SERVICE_ITEMS o|--o| FLIGHT_DEPARTURES : selects
+  SALES_CONTRACTS ||--o{ AVAILABILITY_REQUESTS : requests
+  AVAILABILITY_REQUESTS ||--o{ CAPACITY_HOLDS : creates
+  SALES_CONTRACTS ||--o{ RESERVATION_EXECUTIONS : publishes_snapshot
+  CONTRACT_SERVICE_ITEMS ||--o{ RESERVATION_OPERATIONS : fulfills
+  RESERVATION_EXECUTIONS ||--|{ RESERVATION_OPERATIONS : contains
+  RESERVATION_OPERATIONS ||--o{ ISSUED_TRAVEL_DOCUMENTS : issues
+  CONTRACT_PASSENGERS ||--o{ ISSUED_TRAVEL_DOCUMENTS : holder
+  RESERVATION_OPERATIONS ||--o{ MANIFEST_PASSENGERS : queues
+  MANIFESTS ||--|{ MANIFEST_PASSENGERS : contains
+  MANIFESTS ||--o{ MANIFEST_VERSIONS : versions
   ORGANIZATIONS ||--o{ PROVIDER_CONNECTIONS : provider
   PROVIDER_CONNECTIONS ||--o{ EXTERNAL_MAPPINGS : maps
-  ORDER_ITEMS ||--o{ PROVIDER_OPERATIONS : attempts
-  ORDER_ITEMS ||--o{ PURCHASE_ORDER_ITEMS : procured_by
+  RESERVATION_OPERATIONS ||--o{ PROVIDER_OPERATIONS : attempts
+  RESERVATION_OPERATIONS ||--o{ PURCHASE_REQUESTS : requests
+  CONTRACT_SERVICE_ITEMS ||--o{ PURCHASE_REQUESTS : procures
+  PURCHASE_REQUESTS ||--o{ PURCHASE_PRICE_VERSIONS : prices
+  PURCHASE_REQUESTS ||--o{ PURCHASE_ORDER_ITEMS : approved_as
   PURCHASE_ORDERS ||--|{ PURCHASE_ORDER_ITEMS : contains
   ORGANIZATIONS ||--o{ PURCHASE_ORDERS : supplier
   PURCHASE_ORDER_ITEMS ||--o{ PURCHASE_INVOICE_ITEMS : billed_as
@@ -65,9 +249,9 @@ erDiagram
 
 ```mermaid
 erDiagram
-  TRAVEL_ORDERS ||--o{ SALES_INVOICES : billed_by
+  SALES_CONTRACTS ||--o{ SALES_INVOICES : billed_by
   SALES_INVOICES ||--|{ SALES_INVOICE_ITEMS : contains
-  ORDER_ITEMS ||--o{ SALES_INVOICE_ITEMS : charges
+  CONTRACT_SERVICE_ITEMS ||--o{ SALES_INVOICE_ITEMS : charges
   SALES_INVOICES ||--o{ PAYMENT_ALLOCATIONS : receives
   PAYMENTS ||--o{ PAYMENT_ALLOCATIONS : allocates
   PAYMENTS ||--o{ REFUNDS : refunded_by
@@ -77,8 +261,10 @@ erDiagram
   PAYMENTS ||--o{ JOURNAL_ENTRIES : source
   REFUNDS ||--o{ JOURNAL_ENTRIES : source
   CHECKS o|--o{ PAYMENTS : settles
+  SALES_CONTRACTS ||--o{ FINANCIAL_RELEASES : controls
+  ISSUED_TRAVEL_DOCUMENTS ||--o{ FINANCIAL_RELEASES : releases
   CUSTOMERS ||--o{ SUPPORT_TICKETS : opens
-  TRAVEL_ORDERS o|--o{ SUPPORT_TICKETS : concerns
+  SALES_CONTRACTS o|--o{ SUPPORT_TICKETS : concerns
   SUPPORT_TICKETS ||--o{ TICKET_MESSAGES : contains
   TASKS o|--o{ AUTOMATION_RUNS : generated_by
   FILE_OBJECTS ||--o{ FILE_LINKS : linked_as
@@ -88,24 +274,91 @@ erDiagram
 
 ## Aggregateها و invariantهای اصلی
 
-### Travel Order
+### Identity and Access
 
-- حداقل یک Order Item و یک ordering customer دارد.
-- مجموع‌ها از item snapshotها با rounding policy سند محاسبه می‌شوند.
-- payment، booking و issue سه state مستقل‌اند؛ یک status مرکب جایگزین آن‌ها نمی‌شود.
-- passenger/segment افزایش‌دهنده grain هستند و amount سفارش را duplicate نمی‌کنند.
-- cancellation/refund transition نیازمند history، reason، actor و optimistic version است.
+- User چند Role و چند Branch دارد؛ joinها FK واقعی دارند و Role/Branch حذف‌شده تاریخچه
+  User را cascade نمی‌کنند.
+- password و refresh token فقط Hash هستند؛ Session با family، status و expiry UTC نگهداری
+  و rotation/revoke به‌صورت صریح ثبت می‌شود.
+- Audit رخداد امنیتی append-only و دارای actor اختیاری، outcome و زمان UTC است؛ payload
+  حساس، password و token خام وارد metadata نمی‌شود.
+- reference پایه `Branch` قرارداد مشترک IAM/Master Data است؛ توسعه چرخه عمر آن در مالکیت
+  Master Data و مصرف access mapping در مالکیت IAM باقی می‌ماند.
+
+### Notifications
+
+- `notifications` رکورد پایدار اعلان را با FK گیرنده، Actor اختیاری، source/event، مرجع
+  موجودیت، Deep Link داخلی، `read_at` و `occurred_at` در UTC نگه می‌دارد.
+- Query و تغییر `read_at` همیشه با `recipient_user_id` کاربر احراز‌شده محدود می‌شود؛ اعلان
+  کاربر دیگر حتی با دانستن UUID قابل خواندن یا تغییر نیست.
+- مرجع موجودیت عمداً FK دامنه‌ای نیست تا اعلان حذف دائمی باقی بماند. ماژول تولیدکننده فقط
+  Service عمومی Notifications را در transaction خود فراخوانی می‌کند و مالک جدول اعلان نیست.
+
+### Legal Entity و Issuer Context
+
+- `legal_entities` دو شرکت صادرکننده واقعی با `code` یکتا، وضعیت فعال، Version خوش‌بینانه
+  و فیلدهای حقوقی/تماس nullable را نگه می‌دارد؛ `ALL` هرگز در این جدول ذخیره نمی‌شود.
+- `user_legal_entity_contexts` انتخاب امن هر User را با mode، issuer اختیاری و Version نگه
+  می‌دارد؛ mode تجمیعی فقط پس از کنترل `legal-entity.aggregate.read` معتبر است.
+- `legal_entity_branding_versions` Snapshot append-only لوگو/سربرگ/پابرگ، اطلاعات حقوقی و
+  رنگ‌ها را version می‌کند؛ Trigger پایگاه داده UPDATE/DELETE هر نسخه را رد می‌کند.
+- `legal_entity_document_issues` علاوه بر issuer id/code/name، با FK مرکب واقعی روی
+  `(brandingSnapshotId, issuerLegalEntityId, brandingSnapshotVersion)` دقیقاً به همان Snapshot متصل است؛
+  `templateId/version` و `templatePolicyId/version` trusted، actor، UTC، reference، hash، status
+  و reason canonical صدور مجدد نیز ذخیره می‌شوند.
+- `legal_entity_audit_events` تغییر Context، مشخصات، Branding، وضعیت و Issue/Reissue را
+  append-only ثبت می‌کند؛ شناسه asset مهر/امضا فقط برای Permission مجاز برگردانده می‌شود.
+- هیچ FK یا scope از Customer/Contract/Reservation/Procurement/Finance به Context فعال
+  کاربر اضافه نمی‌شود؛ مصرف‌کنندگان فقط قرارداد عمومی نسخه‌دار را صدا می‌زنند.
+
+### Sales Contract and Service Allocation
+
+- Sales Contract حداقل یک party و یک service item دارد؛ payer/customer و passenger role
+  صریح هستند و لزوماً یک شخص نیستند.
+- `contract_passenger` و `passenger_service_allocation` فقط از command عمومی Sales تغییر
+  می‌کنند؛ Reservations روی این روابط write access ندارد.
+- هر service allocation به passenger و contract service item FK واقعی دارد؛ برای HOTEL
+  room/occupancy snapshot و برای FLIGHT flight departure reference لازم است.
+- قیمت فروش، تخفیف، currency و FX snapshot در contract version immutable می‌شوند.
+- amendment نسخه جدید می‌سازد و executionهای قبلی را بازنویسی نمی‌کند.
+
+### Ticket Catalog and Capacity
+
+- Ticket Catalog مالک محصول/برنامه/fare و capacity است، ولی passenger document صادر نمی‌کند.
+- Hold، confirm و release ظرفیت transaction و idempotency key دارند؛ موجودی منفی و oversell
+  ممنوع است.
+- تغییر زمان/قیمت/ظرفیت پس از فروش versioned است و عملیات متاثر برای Reservations task می‌سازد.
 
 ### Reservation/Issue
 
+- Reservation Execution از contract version تاییدشده snapshot فقط‌خواندنی دارد.
+- اصلاح چیدمان اجرایی هتل در Reservation append-only و versioned است و فقط به passenger IDهای همان Snapshot اجازه می‌دهد؛ Snapshot و تخصیص Sales بازنویسی نمی‌شوند.
+- هر عملیات صدور به contract service item و passenger allocation معتبر متصل است.
 - هر Provider operation یک `idempotency_key`، request fingerprint، attempt و status دارد.
 - official document number در صورت وجود با source Provider و external reference ذخیره می‌شود.
-- issue success به document version و passenger/order item معتبر متصل است.
+- issue success به document version، contract passenger و contract service item معتبر متصل است.
 - issue failure payment را حذف یا void نمی‌کند.
+- Manifest در Reservations مالکیت می‌شود و `(flight_departure_id, version)` یکتا، snapshot
+  passenger immutable و history ارسال/acknowledgement دارد.
+- صدور عملیاتی، release مالی و delivery state مستقل هستند.
 
 ### Procurement
 
-- Purchase Order Item می‌تواند به Order Item متصل باشد؛ خرید عمومی اتصال order ندارد.
+- درخواست خرید، actor احرازشده را در `requesterUserId` برای scope و audit نگه
+  می‌دارد و کارمند انتخاب‌شده از دایرکتوری عمومی HR را در
+  `requesterEmployeeId` ثبت می‌کند. FK ترکیبی `(requesterEmployeeId, branchId)`
+  به `(HrEmployee.id, branchId)` مانع ارجاع بین‌شعبه‌ای است. رکوردهای قدیمی با
+  مقدار `NULL` سازگارند؛ واحد درخواست هنگام ایجاد/ارسال با واحد فعال کارمند
+  انتخاب‌شده تطبیق داده می‌شود. شعبه و محل تحویل از دایرکتوری عمومی Master Data
+  خوانده می‌شوند.
+- نقش `staff` فقط ثبت، ویرایش، ارسال و لغو درخواست خودش را دارد؛
+  `procurement_approver` و `procurement_buyer` برای تأیید و سفارش جدا هستند و
+  انتساب به افراد به‌صورت صریح انجام می‌شود.
+- Reservation از port عمومی Purchase Request را با contract/service/passenger/supplier و
+  operation reference ایجاد می‌کند؛ Procurement مالک state و approval آن است.
+- Purchase Order Item می‌تواند به Contract Service Item متصل باشد؛ خرید عمومی اتصال قرارداد ندارد.
+- قیمت اولیه، supplier discount، fee/tax و net purchase در نسخه immutable نگه‌داری می‌شوند.
+- net purchase از اجزای approved محاسبه می‌شود و margin فیلد قابل ویرایش نیست.
 - Purchase Invoice پس از approval به payable و journal source یکتا تبدیل می‌شود.
 - یک source document بیش از یک posting فعال ندارد؛ correction با reversal است.
 
@@ -116,31 +369,147 @@ erDiagram
 - balance ذخیره قابل ویرایش نیست و از posted lines به‌دست می‌آید.
 - Payment callback با gateway transaction و merchant scope unique و idempotent است.
 - Allocation جمعاً از مبلغ قابل تخصیص payment/refund تجاوز نمی‌کند.
+- Financial Release به contract/document و policy snapshot متصل است؛ release/revoke نیازمند
+  permission، reason و history است و فایل پیش از release برای Sales/Customer قابل دانلود نیست.
 
 ### Organization
 
 - profile واحد است و roleها چندگانه؛ Agency/Supplier duplicate organization نمی‌سازند.
 - external mapping بر `(connection_id, entity_type, external_id)` یکتا است.
+- Supplier و Broker پروفایل‌های role-specific با FK محدودکننده به همان Organization هستند؛
+  خدمت قابل ارائه از کاتالوگ مرجع و رابطه چندبه‌چند نگه‌داری می‌شود.
+- هر Organization می‌تواند چند Contact داشته باشد. تلفن و ایمیل فقط به‌صورت
+  AES-256-GCM، Mask و Fingerprint ذخیره می‌شوند؛ plaintext در List، Export یا Audit نیست
+  و Unmask مجاز رویداد Audit مستقل ایجاد می‌کند.
+- وضعیت همکاری Supplier/Broker مرجع Master Data است؛ Contract، Purchase، Settlement و
+  Provider credential در مالکیت Procurement، Finance و Integrations باقی می‌مانند.
+
+### Master Data حمل‌ونقل
+
+- `master_airlines` کد عمومی IATA یکتا و Uppercase، کد ICAO اختیاری یکتا، نام دوزبانه،
+  کشور و Organization دارای Role ایرلاین را نگه می‌دارد؛ Credential و Connection در
+  Integrations باقی می‌ماند.
+- نوع هواپیما، کلاس پروازی، نوع قطار و نوع اتوبوس کاتالوگ‌های مشترک و مستقل از ناوگان،
+  برنامه حرکت، قیمت و موجودی هستند. تخصیص اجرایی در Ticket Catalog/Reservations است.
+- عنوان قابل ورود و نمایش کلاس پروازی فقط `englishName` است و اجباری نگه‌داری می‌شود.
+  ستون غیرتهی `name` تا زمان Migration سازگاری حذف نمی‌شود و سرویس Master Data آن را
+  در هر ایجاد یا ویرایش عنوان، از همان `englishName` همگام می‌کند؛ عنوان فارسی از رابط،
+  ورودی API و خروجی Excel این کاتالوگ کنار گذاشته شده است.
+- قاعده بار تاریخچه مستقل با FK ایرلاین/کلاس، نوع مسافر، دامنه مسیر، Decimal مثبت، واحد،
+  تعداد قطعه و بازه اعتبار دارد؛ رکورد استفاده‌شده حذف فیزیکی نمی‌شود.
+- `MasterManifestTemplate` قالب ورودی/خروجی Manifest را برای یک ایرلاین و مقصد شهری
+  مشخص می‌کند. هر قالب تازه با FK محدودکننده به `MasterAirline` و `MasterCity`، نسخه
+  افزایشی خودکار در محدوده ایرلاین، فرمت `XLSX` و وضعیت `DRAFT` ساخته می‌شود. فایل
+  اکسل در Master Data ذخیره نمی‌شود؛ باینری و نسخه فایل متعلق به Documents با نوع
+  `MANIFEST` است و Master Data فقط `fileReferenceId` را نگه می‌دارد. رکوردهای قدیمی
+  می‌توانند مقصد نداشته باشند، اما API ایجاد رکورد جدید مقصد فعال را الزامی می‌کند.
+  فعال‌سازی عملیاتی همچنان نیازمند فایل معتبر است؛ Manifest مسافر و تاریخچه ارسال در
+  Reservations باقی می‌ماند.
+- `MasterAirport` برای ایجاد فقط نام فارسی/انگلیسی، کشور، شهر و IATA را لازم دارد.
+  `icaoCode`، `ianaTimezone`، `latitude` و `longitude` مشخصات تکمیلی اختیاری‌اند؛ برای
+  داده موجود قابل نمایش و ویرایش می‌مانند، ولی فرم ایجاد آن‌ها را درخواست نمی‌کند و
+  Backend هیچ مقدار ساختگی برایشان تولید نمی‌کند.
+- مشخصات ایرلاینی مسافر شامل نام لاتین پاسپورت، جنسیت `M/F` و کد سه‌حرفی ملیت،
+  کشور صادرکننده پاسپورت و کشور محل تولد در Customer نگه‌داری می‌شود. شماره پاسپورت
+  همچنان رمزنگاری است و خواندن آن برای Manifest به مجوز حساس و Audit نیاز دارد.
+- فایل ایران ایرتور آنتالیا از Snapshot سفر و پرونده Customer ساخته می‌شود؛ نوع مسافر
+  از رده سنی قرارداد/اصلاح عملیاتی و کلاس از پرواز رفت می‌آید. فایل ناقص یا بیش از
+  ظرفیت ۶۱ ردیف قالب تولید نمی‌شود.
+- شرکت ریلی و اتوبوس هرکدام به Organization و Country فعال FK محدودکننده دارند. قرارداد،
+  فروش، تسویه و Provider operation در ماژول‌های مالک نگه‌داری می‌شوند.
+- همه رکوردها global و مشترک دو شرکت هستند؛ Legal Entity Selector آن‌ها را فیلتر نمی‌کند
+  و Branch فقط در Audit actor scope ثبت می‌شود.
+
+### Master Data مراجع فروش
+
+- نحوه آشنایی، منبع سرنخ، کانال فروش، دلیل از دست رفتن، نوع مشتری، Tag و نوع کمپین
+  هفت کاتالوگ مستقل هستند و نباید به‌جای یکدیگر یا به‌صورت یک enum مشترک استفاده شوند.
+- هر مرجع کد داخلی یکتا، نام فارسی، نام انگلیسی اختیاری، توضیح، ترتیب نمایش، وضعیت
+  فعال/غیرفعال، Version خوش‌بینانه و Audit actor/time دارد. رنگ Tag فقط Hex استاندارد
+  Uppercase است و ترتیب نمایش در سطح دیتابیس نامنفی کنترل می‌شود.
+- اتصال Lead/Customer/Campaign/Contract به این Referenceها و شمارش مصرف آن‌ها در مالکیت
+  ماژول مصرف‌کننده است. Master Data به جدول Customers یا Sales Query مستقیم نمی‌زند و
+  شمارنده مصرف فقط پس از انتشار Public Aggregate Contract نمایش داده می‌شود.
+- رابطه چندبه‌چند Tag با رکوردهای عملیاتی در Aggregate مصرف‌کننده نگه‌داری می‌شود؛
+  Master Data فقط تعریف Tag را مالک است. رکورد استفاده‌شده حذف فیزیکی نمی‌شود و فقط
+  غیرفعال می‌شود.
+- همه این Referenceها global و مشترک هر دو Legal Entity هستند و selector شرکت آن‌ها را
+  فیلتر نمی‌کند؛ Branch فقط در Audit actor scope ثبت می‌شود.
+
+### Accommodation Master Data
+
+- Hotel یک Reference مشترک میان Legal Entityها است و به City واقعی و در صورت وجود
+  Hotel Chain و Organization دارای Role `HOTEL_PROVIDER` متصل می‌شود؛ selector شرکت
+  روی این کاتالوگ فیلتر مالکیتی اعمال نمی‌کند.
+- زمان ورود/خروج با قالب `HH:mm`، مختصات به‌صورت جفت Decimal و درجه هتل با بازه
+  کنترل‌شده ذخیره می‌شوند. رکورد مصرف‌شده حذف فیزیکی نمی‌شود و Active/Saleable و
+  Version خوش‌بینانه دارد.
+- Meal/Service، Room Type و Facility رکوردهای مستقل کاتالوگ‌اند. اتصال آن‌ها به Hotel
+  در `master_hotel_meal_services`، `master_hotel_room_types` و
+  `master_hotel_facilities` نگه‌داری می‌شود و ستون Checkbox ثابت ساخته نمی‌شود.
+- Composite Hotel یک Reference نمایشی فروش در یک City است؛ اعضا فقط Hotel فعال،
+  فروش‌پذیر و هم‌شهر هستند، اولویت مثبت و یکتا دارند و عضو پشتیبان نیز باید عضو همان
+  ترکیب باشد.
+- موجودی اتاق، تخصیص مسافر و Voucher در Reservations و قرارداد و نرخ خرید در
+  Procurement باقی می‌مانند. Logo/Image فقط شناسه عمومی Documents است و تا انتشار
+  قرارداد واقعی فایل، باینری یا reference ساختگی ذخیره نمی‌شود.
+
+### Human Resources
+
+- Employee یک هویت دامنه مستقل است؛ Customer، Passenger یا Organization Contact به‌عنوان
+  پرونده کارمند reuse نمی‌شود.
+- اتصال `user_id` اختیاری و یکتا است و فقط حساب ورود را پیوند می‌دهد؛ حذف/غیرفعال‌سازی
+  User تاریخچه استخدام را حذف نمی‌کند.
+- assignment شعبه/واحد/سمت/مدیر و قرارداد کاری بازه زمانی و history دارند؛ هم‌پوشانی
+  فقط مطابق policy مصوب مجاز است.
+- حضور، شیفت، مرخصی، مأموریت و اضافه‌کاری رکورد منبع و approval history دارند و نتیجه
+  تاییدشده با تغییر خام جایگزین نمی‌شود.
+- Payroll Input فقط snapshot حداقلی تاییدشده برای Finance است؛ محاسبه حقوق قانونی، مالیات
+  و لیست قانونی در نسخه اولیه مدل نمی‌شود.
+- مشاهده، تغییر و export اطلاعات تماس اضطراری، قرارداد، ارزیابی و مدارک باید permission
+  جدا و audit داشته باشد.
 
 ## تاریخچه و Audit
 
-جداول state history برای order، reservation، payment، issue، purchase، invoice، check،
-ticket و task شامل `from_status`, `to_status`, `reason_code`, `note`, `changed_by`,
-`changed_at`, `trace_id` هستند. Audit عمومی مکمل history است و جایگزین آن نیست.
+### Customer Affairs operational aggregate
+
+- `customer_affairs_leads` منبع درخواست، نیاز سفر، Customer اختیاری، owner/queue، اقدام
+  بعدی و optimistic version را مالک است؛ `(branch_id, source_reference)` یکتا است.
+- `customer_affairs_handoffs` بسته نسخه‌دار و پاسخ Sales را نگه می‌دارد؛ تنها شناسه
+  قرارداد Sales پس از تایید سرویس عمومی ذخیره می‌شود.
+- `customer_affairs_tickets` مالک Ticket، SLA snapshot، مسئول پاسخ مشتری، مجری، reference
+  snapshot و state حل/بستن/بازگشایی است. ارجاع در `customer_affairs_referrals` مسئولیت
+  پاسخ به مشتری را منتقل نمی‌کند.
+- `customer_affairs_timeline` ارتباطات و delivery state،
+  `customer_affairs_satisfactions` دعوت هش‌شده و پاسخ واقعی مشتری، و
+  `customer_affairs_corrective_actions` پیگیری رضایت پایین را نگه می‌دارند.
+- `customer_affairs_commands` مرز idempotency و `customer_affairs_audit_events` ممیزی
+  branch/entity/version را نگه می‌دارند. actor رویداد survey عمومی nullable است؛ سایر
+  عملیات authenticated actor دارند.
+- Customer، User، Branch FK واقعی‌اند. Contract/Reservation/Document با سرویس عمومی
+  اعتبارسنجی می‌شوند و Customer Affairs جدول ماژول دیگر را مستقیم query نمی‌کند.
+
+جداول state history برای sales contract، service allocation، capacity hold، reservation،
+issue، manifest، financial release، purchase request/price، invoice، payment، check،
+support ticket، task، employment contract، leave/mission، overtime و payroll input شامل
+`from_status`, `to_status`, `reason_code`, `note`, `changed_by`, `changed_at`, `trace_id`
+هستند. Audit عمومی مکمل history است و جایگزین آن نیست.
 
 ## ایندکس و Constraint اولیه
 
 - unique: normalized customer contact در scope تاییدشده؛ provider mapping؛ payment gateway
   reference؛ idempotency key در client/scope؛ document number در issuer scope
-- index: status+created_at، due_date+status، customer/order foreign keys، external reference،
-  sales_channel+order date، provider+service date
+- index: status+created_at، due_date+status، customer/contract foreign keys، external reference،
+  sales_channel+contract date، provider+service date
 - partial index برای queue-like stateهای active و checkهای نزدیک سررسید
 - check constraint برای amount غیرمنفی در اسناد؛ journal line فقط یک جهت debit/credit
 - exclusion/unique متناسب برای جلوگیری از active duplicate posting/settlement
 
 ## مرز تراکنش
 
-- create order + totals + initial history در یک transaction
+- activate sales contract + immutable version + allocations + outbox در یک transaction
+- hold/confirm/release ticket capacity با optimistic lock در یک transaction
+- create purchase request + initial price version + history در یک transaction
 - verify callback + payment record + allocation intent + outbox در یک transaction
 - posting journal entry + lines + source posting marker در یک transaction
 - merge customer با mapping/history و بدون حذف trace در transaction کنترل‌شده
@@ -148,10 +517,54 @@ ticket و task شامل `from_status`, `to_status`, `reason_code`, `note`, `chan
 
 ## Reporting model
 
-Viewهای پیشنهادی: `reporting_order_facts` (یک ردیف/order)،
-`reporting_order_item_facts`, `reporting_reservation_facts`, `reporting_passenger_facts`,
-`reporting_segment_facts`, `reporting_ticket_facts`, `reporting_payment_facts`,
-`reporting_journal_balance_facts`. measureها قبل از join به dimension چندتایی aggregate می‌شوند.
+Viewهای پیشنهادی: `reporting_sales_contract_facts` (یک ردیف/قرارداد)،
+`reporting_contract_service_facts`, `reporting_reservation_facts`,
+`reporting_contract_passenger_facts`, `reporting_ticket_inventory_facts`,
+`reporting_manifest_facts`, `reporting_purchase_request_facts`,
+`reporting_supplier_discount_facts`, `reporting_payment_facts`,
+`reporting_journal_balance_facts`, `reporting_hr_headcount_facts` و
+`reporting_hr_time_facts`. measureهای فروش/خرید پیش از join به passenger/manifest aggregate
+می‌شوند تا مبلغ و margin تکثیر نشود.
 
 واژه‌نامه entityها در [DATA_DICTIONARY.md](DATA_DICTIONARY.md) و KPIها در
 [KPI_DICTIONARY.md](KPI_DICTIONARY.md) است.
+# Package Pricing (PACKAGE-PRICING-001)
+
+`package_pricing_packages` ریشه branch-scoped و صادرکننده‌محور است. هر Package چند
+`package_pricing_departures` دارد و هر departure اجزای referenceشده، چند گزینه هتل/اتاق/خدمت،
+بازه‌های قیمت و نسخه‌های مستقل قیمت دارد. referenceهای بیرونی فقط UUID+version+snapshot هستند؛
+FKهای واقعی صرفاً بین ۱۳ جدول داخلی Package Pricing برقرارند.
+
+قواعد در `package_pricing_rules` با `(period_id, version, sequence)` یکتا می‌شوند. خروجی موتور
+در `package_pricing_price_versions` با Decimal(24,4)، currency، source/rule/fx snapshot و breakdown
+ذخیره می‌شود؛ `package_pricing_passenger_prices` رده‌های مسافر/اتاق را نگه می‌دارد. Trigger
+Migration هر update/delete نسخه `PUBLISHED` را رد می‌کند. Quote به همان Price Version متصل است
+تا تغییر آینده مبلغ قبلی را عوض نکند. Render Request به Package/Departure/Price/Template Version
+و Branding Snapshot وصل و تا حضور Worker در `AWAITING_RENDERER` باقی می‌ماند.
+
+## Reservations group hotel purchase-rate packs (HOTEL-RATE-PACKS-0915)
+
+`reservation_hotel_rate_packs` یک هویت پایدار برای بستهٔ شهر/بازهٔ خرید هتل در هر
+شعبه است؛ `branchId` و `cityId` FK واقعی و `checkIn/checkOut` تاریخ‌های جاری آن
+هستند. `currentVersion` با optimistic compare-and-swap بالا می‌رود. هر ثبت یا
+ویرایش، یک `ReservationHotelRateBatch` تازه با `packId`, `cityId`, `version`
+و snapshot مستقل تاریخ/ارز/مبنا می‌سازد؛ ردیف‌های
+`ReservationHotelGroupRate` قبلی و FKهای Package Pricing به آن‌ها تغییر نمی‌کنند.
+بسته‌های قدیمی بدون `packId/cityId` همچنان در سابقه قابل‌خواندن‌اند. فقط هتل‌های
+تیک‌خورده در نسخه نرخ خرید دارند و مرجع فعال/قابل‌فروش/هم‌شهر هر ردیف از قرارداد
+عمومی Master Data بازبینی می‌شود. تیک حضور در بازه تأیید کاربر است؛ این جدول
+موجودی واقعی اتاق به تفکیک شب یا قیمت فروش پایه Master Data نیست. Projection
+عمومی Reservations فقط نسخهٔ جاری بسته را برای قیمت‌گذاری تازه عرضه می‌کند؛
+snapshot قیمت‌های منتشرشدهٔ قبلی دست‌نخورده می‌ماند.
+
+## Master Data hotel base-rate periods
+
+`master_hotel_rate_periods` بازه جاری branch/city/check-in/check-out و شماره نسخه فعلی را
+نگه می‌دارد. هر ذخیره در `master_hotel_rate_period_versions` یک snapshot append-only از
+شهر، عنوان، تاریخ، تعداد شب، ارز، مبنای `ROOM_PER_NIGHT`، دلیل و actor می‌سازد.
+`master_hotel_base_rate_rows` تمام هتل‌های فعال همان شهر را با FK واقعی هتل، نسخه و نام
+snapshot، انتخاب حضور در تور، `Decimal(24,4)` مبلغ پایه nullable و شش ضریب Decimal-string
+در JSON نگه می‌دارد. هتل انتخاب‌شده باید مبلغ مثبت داشته باشد و هتل انتخاب‌نشده مبلغ ندارد.
+Trigger هر update/delete روی نسخه و ردیف را رد می‌کند؛ اصلاح فقط با نسخه جدید، optimistic
+locking و idempotency انجام می‌شود. این نرخ فروش پایه Master Data است و با نرخ خرید واقعی
+`ReservationHotelGroupRate` یکی نیست.

@@ -1,0 +1,12 @@
+# Customer connections integration — PC-A
+
+- User authorized integrating Customer Documents PR #85 and the existing master-data retry, isolated from the actively modified Sales worktree.
+- Branch: `codex/pc-a-customer-connections-0905`, base Sales `5ea2b32`; merge `7359670` incorporates Documents integration and `87b828e` incorporates the targeted reference retry.
+- Customer 360 lists/uploads Documents through the canonical customer source filter and existing branch/domain permissions. A 401 during master-data reference loading refreshes the shared session once and retries; other failures remain visible.
+- Historical headings from merged documentation are retained. No migration, permission seed, schema, dependency or lockfile change is part of this integration.
+- Validation: 91 Customer Web tests, 69 Documents API tests, 3 Documents Contract tests passed; affected lint/typecheck/build completed successfully (12 Turbo tasks, 35 Web routes). A source-based test now normalizes Windows CRLF.
+- Local runtime: `scripts/start-customer-connections.ps1 -Service api` uses port 4101; `-Service web` uses port 3101. It loads the existing local base environment. Existing Sales ports/services are not stopped.
+- The configured local database on localhost:5432 had zero Documents records when inspected. No persisted Documents key was found in workspace configuration. The owner authorized replacement; the launcher creates a persistent random key protected with Windows DPAPI via SecureString/CLIXML in ignored `tmp/customer-connections` and stores new files there. Preserve this directory and Windows account: losing the key loses access to its encrypted files. No key is committed or printed.
+- Structured passport/visa fields are outside this integration. Download still requires existing Documents scan/permission rules.
+- Runtime discovery: localhost:5432 was missing `20260902173500_master_data_form_alignment`, `20260903110000_documents_incomplete_status` and `20260903123000_sales_contracts_vertical_slice`. Existing non-destructive migrations were applied with `prisma migrate deploy`; database now has all 31 migrations. This corrects missing fields used by Master Data/Documents. No reset or seed ran.
+- Live smoke: login page and API health returned 200; Documents CORS preflight returned 204 for localhost:3101. Local database has 19 document types and 9 categories. User-session upload/download remains to be exercised; no real document was uploaded by this task.
