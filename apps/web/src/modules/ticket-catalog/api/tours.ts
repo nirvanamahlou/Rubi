@@ -6,6 +6,7 @@ import type {
   TourDepartureInputV1,
   TicketOfferV1,
   TicketOfferCreateV1,
+  TicketRoundTripSalePriceUpdateV1,
   TicketStandaloneSalePriceUpdateV1,
 } from '@nora/contracts';
 import { getPublicApiBaseUrl } from '@/lib/environment';
@@ -122,6 +123,19 @@ export const toursApi = {
     request<{
       data: { revision: number; amount: string; currencyCode: string };
     }>(`/offers/${id}/standalone-sale-price`, {
+      method: 'PATCH',
+      headers: { 'idempotency-key': key },
+      body: JSON.stringify(input),
+    }),
+  updateRoundTripSalePrice: (
+    outboundOfferId: string,
+    returnOfferId: string,
+    input: TicketRoundTripSalePriceUpdateV1,
+    key: string,
+  ) =>
+    request<{
+      data: { revision: number; amount: string; currencyCode: string };
+    }>(`/offers/${outboundOfferId}/round-trip-sale-price/${returnOfferId}`, {
       method: 'PATCH',
       headers: { 'idempotency-key': key },
       body: JSON.stringify(input),

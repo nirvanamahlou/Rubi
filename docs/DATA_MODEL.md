@@ -1,5 +1,17 @@
 # مدل داده و ERD اولیه
 
+## SALES-TICKET-PRICES-0922 — نرخ فروش عمومی بلیت
+
+`TicketOfferStandaloneSalePrice` نسخه‌های append-only مبلغ و ارز فروش یک‌طرفه
+هر `TicketPublishedOffer` را نگه می‌دارد. `TicketOfferRoundTripSalePrice` مبلغ
+واحد هر مسافر برای جفت دقیق `outboundOfferId` و `returnOfferId` را با FK محدود،
+revision، actor، زمان UTC، idempotency key و fingerprint نگه می‌دارد. هر دو مبلغ
+`Decimal(20,4)` مثبت و ارز سه‌حرفی‌اند. جفت باید هم‌شعبه، مسیر معکوس و دارای حرکت
+برگشت پس از رفت باشد. Sales از projection عمومی آخرین revision استفاده و سهم دو
+خدمت را با حفظ دقیق مجموع، داخل قرارداد snapshot می‌کند؛ تاریخچه قراردادهای قبلی
+بازنویسی نمی‌شود.
+
+
 ## TOUR-HOTEL-PRICING-FLOW-0916 — نوبت و مبالغ چندارزی
 
 Reservations rate packs and immutable batches have nullable restrictive

@@ -120,11 +120,12 @@ describe('ticket workspace entry points', () => {
     expect(source).toContain('backfillStarted.current');
     expect(source).toContain('repeatDefinition(');
     expect(source).toContain('setRepeat(');
-    expect(source).toContain('قیمت فروش تکی هر صندلی');
-    expect(source).toContain('updateStandaloneSalePrice(');
+    expect(source).toContain('قیمت فروش یک‌طرفه');
+    expect(source).toContain('در فروش قیمت‌گذاری نشده');
+    expect(source).not.toContain('updateStandaloneSalePrice(');
     expect(source).toContain('updateOfferStatus(');
     expect(source).toContain("? 'منقضی'");
-    expect(source).toContain('listActiveCurrencyReferences()');
+    expect(source).not.toContain('listActiveCurrencyReferences()');
     expect(source).toContain('<SelectItem');
     expect(source).not.toContain('maxLength={3}');
     expect(source).toContain(

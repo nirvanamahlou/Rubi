@@ -32,6 +32,7 @@ import {
   salesInsuranceService,
   type SalesInsuranceSelection,
 } from './sales-insurance';
+import { roundTripPerLegFares } from './standalone-ticket-pricing';
 
 export function selectSalesPerson(
   state: SalesFormState,
@@ -805,6 +806,10 @@ export function salesPayload(
       ],
     });
   }
+  const pairedTicketFares =
+    state.outboundOffer && state.returnOffer
+      ? roundTripPerLegFares(state.outboundOffer, state.returnOffer)
+      : undefined;
   const ticketSelections = state.serviceKinds.includes('FLIGHT')
     ? [
         ...(salesDirections(state, 'FLIGHT').includes('OUTBOUND') &&
@@ -826,12 +831,16 @@ export function salesPayload(
                   state.ticket.cabinClassCode,
                 ...(!state.tour &&
                 !state.serviceKinds.includes('HOTEL') &&
-                state.outboundOffer?.standaloneSalePrice
+                (pairedTicketFares || state.outboundOffer?.standaloneSalePrice)
                   ? {
                       quotedPrice: {
-                        amount: state.outboundOffer.standaloneSalePrice.amount,
+                        amount: pairedTicketFares
+                          ? pairedTicketFares.outboundAmount
+                          : state.outboundOffer!.standaloneSalePrice!.amount,
                         currencyCode:
-                          state.outboundOffer.standaloneSalePrice.currencyCode,
+                          pairedTicketFares?.currencyCode ??
+                          state.outboundOffer!.standaloneSalePrice!
+                            .currencyCode,
                       },
                     }
                   : state.ticket.amount
@@ -865,12 +874,15 @@ export function salesPayload(
                   state.ticket.cabinClassCode,
                 ...(!state.tour &&
                 !state.serviceKinds.includes('HOTEL') &&
-                state.returnOffer?.standaloneSalePrice
+                (pairedTicketFares || state.returnOffer?.standaloneSalePrice)
                   ? {
                       quotedPrice: {
-                        amount: state.returnOffer.standaloneSalePrice.amount,
+                        amount: pairedTicketFares
+                          ? pairedTicketFares.returnAmount
+                          : state.returnOffer!.standaloneSalePrice!.amount,
                         currencyCode:
-                          state.returnOffer.standaloneSalePrice.currencyCode,
+                          pairedTicketFares?.currencyCode ??
+                          state.returnOffer!.standaloneSalePrice!.currencyCode,
                       },
                     }
                   : state.ticket.amount

@@ -1,5 +1,17 @@
 # تصمیم‌های معماری
 
+## SALES-TICKET-PRICES-0922 — owner-approved ticket sale basis
+
+مالک محصول قیمت فروش عملیاتی بلیت را در زیرماژول مستقل «قیمت بلیط» زیر فروش
+تأیید کرد. Ticket Catalog همچنان آفر و تاریخچهٔ نسخه‌دار نرخ را مالک است و Sales
+فقط public projection آن را مصرف و مبلغ انتخاب‌شده را در قرارداد immutable
+snapshot می‌کند. نرخ یک‌طرفه برای یک آفر و نرخ رفت‌وبرگشت برای جفت دقیقِ مسیر
+معکوس ثبت می‌شود؛ در قرارداد رفت‌وبرگشت، نرخ جفت بر جمع نرخ‌های یک‌طرفه اولویت
+دارد و نبود نرخ جفت fail-closed است. این تصمیم، منع قبلی نگهداری نرخ فروش ثابت در
+Catalog را برای این نرخ عمومی نسخه‌دار جایگزین می‌کند؛ تخفیف و توافق خاص مشتری
+همچنان فقط در snapshot قرارداد Sales است.
+
+
 ## TOUR-HOTEL-PRICING-FLOW-0916 — owner-approved workflow
 
 The owner requires Ticket Catalog tour -> outbound/return departure -> hotel

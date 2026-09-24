@@ -15,6 +15,19 @@ export interface TicketStandaloneSalePriceUpdateV1 {
   currencyCode: string;
 }
 
+export interface TicketRoundTripSalePriceV1 {
+  returnOfferId: string;
+  revision: number;
+  amount: string;
+  currencyCode: string;
+}
+
+export interface TicketRoundTripSalePriceUpdateV1 {
+  expectedRevision: number;
+  amount: string;
+  currencyCode: string;
+}
+
 export interface TicketOfferV1 {
   id: string;
   version: number;
@@ -30,6 +43,8 @@ export interface TicketOfferV1 {
   remainingCapacity: number;
   status: 'ACTIVE' | 'PAUSED';
   standaloneSalePrice?: TicketStandaloneSalePriceV1 | null;
+  /** Latest combined per-passenger fares keyed by the reverse-leg offer. */
+  roundTripSalePrices?: readonly TicketRoundTripSalePriceV1[];
 }
 
 export type TicketOfferCreateV1 = Omit<
@@ -40,6 +55,7 @@ export type TicketOfferCreateV1 = Omit<
   | 'remainingCapacity'
   | 'status'
   | 'standaloneSalePrice'
+  | 'roundTripSalePrices'
 >;
 export interface TicketOfferSearchV1 {
   originId: string;

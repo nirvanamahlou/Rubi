@@ -72,7 +72,6 @@ import { TicketDatePicker } from './ticket-date-picker';
 import { ConnectedIssuedTicketsWorkspace } from './issued-tickets-workspace';
 import { TourWorkspace } from './tour-workspace';
 import { toursApi } from '../api/tours';
-import { listActiveCurrencyReferences } from '../api/references';
 import { getPublicApiBaseUrl } from '@/lib/environment';
 import { refreshAuthenticatedSession } from '@/lib/auth-session';
 
@@ -284,15 +283,6 @@ function TicketCatalogWorkspace() {
   const [publishedNotice, setPublishedNotice] = useState('');
   const [publishedRefreshing, setPublishedRefreshing] = useState(false);
   const [statusSaving, setStatusSaving] = useState<string>();
-  const [priceDrafts, setPriceDrafts] = useState<
-    Record<string, { amount: string; currencyCode: string }>
-  >({});
-  const [priceSaving, setPriceSaving] = useState<string>();
-  const [saleCurrencies, setSaleCurrencies] = useState<readonly Reference[]>(
-    [],
-  );
-  const [saleCurrencyLoading, setSaleCurrencyLoading] = useState(true);
-  const [saleCurrencyProblem, setSaleCurrencyProblem] = useState('');
   const [capacityHold, setCapacityHold] = useState<{
     offer: TicketOfferV1;
     quantity: number;
@@ -324,17 +314,6 @@ function TicketCatalogWorkspace() {
     try {
       const result = await toursApi.managedOffers();
       setPublishedOffers(result.data);
-      setPriceDrafts(
-        Object.fromEntries(
-          result.data.map((offer) => [
-            offer.id,
-            {
-              amount: offer.standaloneSalePrice?.amount ?? '',
-              currencyCode: offer.standaloneSalePrice?.currencyCode ?? 'IRR',
-            },
-          ]),
-        ),
-      );
       setPublishedProblem('');
       if (announce) setPublishedNotice('فهرست بلیت‌ها به‌روز شد.');
     } catch (error) {
@@ -370,35 +349,6 @@ function TicketCatalogWorkspace() {
       throw error;
     } finally {
       setStatusSaving(undefined);
-    }
-  };
-  const saveStandalonePrice = async (offer: TicketOfferV1) => {
-    const draft = priceDrafts[offer.id];
-    try {
-      if (
-        !draft?.amount ||
-        !saleCurrencies.some((currency) => currency.code === draft.currencyCode)
-      )
-        throw new Error('مبلغ و ارز را از فهرست ارزهای فعال کامل کنید.');
-      setPriceSaving(offer.id);
-      await toursApi.updateStandaloneSalePrice(
-        offer.id,
-        {
-          expectedRevision: offer.standaloneSalePrice?.revision ?? 0,
-          amount: draft.amount,
-          currencyCode: draft.currencyCode,
-        },
-        crypto.randomUUID(),
-      );
-      await refreshPublishedOffers();
-      setPublishedProblem('');
-      setNotice('قیمت فروش تکی این مسیر ثبت شد.');
-    } catch (error) {
-      setPublishedProblem(
-        error instanceof Error ? error.message : 'ثبت قیمت تکی ناموفق بود.',
-      );
-    } finally {
-      setPriceSaving(undefined);
     }
   };
   const submitCapacityHold = async () => {
@@ -522,32 +472,6 @@ function TicketCatalogWorkspace() {
     return () => {
       window.clearTimeout(timer);
       window.clearInterval(interval);
-    };
-  }, []);
-  useEffect(() => {
-    let active = true;
-    void listActiveCurrencyReferences()
-      .then((currencies) => {
-        if (!active) return;
-        setSaleCurrencies(currencies);
-        setSaleCurrencyProblem(
-          currencies.length ? '' : 'ارز فعالی در اطلاعات پایه تعریف نشده است.',
-        );
-      })
-      .catch((error) => {
-        if (!active) return;
-        setSaleCurrencies([]);
-        setSaleCurrencyProblem(
-          error instanceof Error
-            ? error.message
-            : 'دریافت فهرست ارزهای فعال ناموفق بود.',
-        );
-      })
-      .finally(() => {
-        if (active) setSaleCurrencyLoading(false);
-      });
-    return () => {
-      active = false;
     };
   }, []);
   useEffect(() => {
@@ -867,9 +791,6 @@ function TicketCatalogWorkspace() {
             {publishedRefreshing ? 'در حال به‌روزرسانی…' : 'به‌روزرسانی فهرست'}
           </Button>
         </div>
-        {saleCurrencyProblem ? (
-          <Alert className="m-4" tone="error" title={saleCurrencyProblem} />
-        ) : null}
         {publishedNotice ? (
           <Alert className="m-4" title={publishedNotice} />
         ) : null}
@@ -884,9 +805,7 @@ function TicketCatalogWorkspace() {
                   <th className="px-4 py-3 text-start">مسیر</th>
                   <th className="px-4 py-3 text-right">حرکت</th>
                   <th className="px-4 py-3 text-start">ظرفیت قابل فروش</th>
-                  <th className="min-w-64 px-4 py-3 text-start">
-                    قیمت فروش تکی هر صندلی
-                  </th>
+                  <th className="px-4 py-3 text-start">قیمت فروش یک‌طرفه</th>
                   <th className="px-4 py-3 text-start">وضعیت</th>
                   <th className="px-4 py-3 text-start">اقدام</th>
                 </tr>
@@ -920,88 +839,10 @@ function TicketCatalogWorkspace() {
                       {offer.remainingCapacity.toLocaleString('fa-IR')} از{' '}
                       {offer.totalCapacity.toLocaleString('fa-IR')}
                     </td>
-                    <td className="px-4 py-3">
-                      <div className="flex min-w-60 items-end gap-2">
-                        <FormField label="مبلغ">
-                          <Input
-                            dir="ltr"
-                            inputMode="decimal"
-                            className="h-9 min-w-32 text-left tabular-nums"
-                            value={priceDrafts[offer.id]?.amount ?? ''}
-                            onChange={(event) =>
-                              setPriceDrafts((current) => ({
-                                ...current,
-                                [offer.id]: {
-                                  amount: event.target.value,
-                                  currencyCode:
-                                    current[offer.id]?.currencyCode ?? 'IRR',
-                                },
-                              }))
-                            }
-                          />
-                        </FormField>
-                        <FormField label="ارز">
-                          <Select
-                            value={
-                              saleCurrencies.some(
-                                (currency) =>
-                                  currency.code ===
-                                  priceDrafts[offer.id]?.currencyCode,
-                              )
-                                ? (priceDrafts[offer.id]?.currencyCode ?? '')
-                                : ''
-                            }
-                            disabled={
-                              saleCurrencyLoading || !saleCurrencies.length
-                            }
-                            onValueChange={(currencyCode) =>
-                              setPriceDrafts((current) => ({
-                                ...current,
-                                [offer.id]: {
-                                  amount: current[offer.id]?.amount ?? '',
-                                  currencyCode,
-                                },
-                              }))
-                            }
-                          >
-                            <SelectTrigger className="h-9 min-w-32" dir="rtl">
-                              <SelectValue
-                                placeholder={
-                                  saleCurrencyLoading
-                                    ? 'در حال دریافت…'
-                                    : 'انتخاب ارز'
-                                }
-                              />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {saleCurrencies.map((currency) => (
-                                <SelectItem
-                                  key={currency.id}
-                                  value={currency.code!}
-                                >
-                                  {currency.name} ({currency.code})
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </FormField>
-                        <Button
-                          size="sm"
-                          type="button"
-                          disabled={
-                            priceSaving === offer.id ||
-                            !priceDrafts[offer.id]?.amount ||
-                            !saleCurrencies.some(
-                              (currency) =>
-                                currency.code ===
-                                priceDrafts[offer.id]?.currencyCode,
-                            )
-                          }
-                          onClick={() => void saveStandalonePrice(offer)}
-                        >
-                          ثبت
-                        </Button>
-                      </div>
+                    <td className="px-4 py-3 tabular-nums">
+                      {offer.standaloneSalePrice
+                        ? `${Number(offer.standaloneSalePrice.amount).toLocaleString('fa-IR')} ${offer.standaloneSalePrice.currencyCode}`
+                        : 'در فروش قیمت‌گذاری نشده'}
                     </td>
                     <td className="px-4 py-3">
                       {new Date(offer.departureAt).getTime() <= catalogNow

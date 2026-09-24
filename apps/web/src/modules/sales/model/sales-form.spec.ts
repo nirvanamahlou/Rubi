@@ -153,6 +153,70 @@ describe('sales contract form payload', () => {
       'FLIGHT',
     ]);
   });
+  it('snapshots a combined round-trip fare even when neither leg has a one-way fare', () => {
+    const baseOffer = {
+      version: 1,
+      branchId: 'branch',
+      originId: 'teh',
+      destinationId: 'ant',
+      departureAt: '2026-10-01T08:00:00Z',
+      arrivalAt: '2026-10-01T11:00:00Z',
+      carrierName: 'Sample',
+      cabinClassCode: 'ECONOMY' as const,
+      totalCapacity: 20,
+      remainingCapacity: 20,
+      status: 'ACTIVE' as const,
+      standaloneSalePrice: null,
+    };
+    const outboundOffer = {
+      ...baseOffer,
+      id: 'out',
+      serviceNumber: 'OUT',
+      roundTripSalePrices: [
+        {
+          returnOfferId: 'ret',
+          revision: 1,
+          amount: '5000001',
+          currencyCode: 'IRR',
+        },
+      ],
+    };
+    const returnOffer = {
+      ...baseOffer,
+      id: 'ret',
+      originId: 'ant',
+      destinationId: 'teh',
+      departureAt: '2026-10-08T08:00:00Z',
+      arrivalAt: '2026-10-08T11:00:00Z',
+      serviceNumber: 'RET',
+    };
+    const payload = salesPayload({
+      ...emptySalesForm,
+      originId: 'teh',
+      destinationId: 'ant',
+      tripType: 'ROUND_TRIP',
+      serviceKinds: ['FLIGHT'],
+      serviceDirections: { FLIGHT: ['OUTBOUND', 'RETURN'] },
+      outboundOffer,
+      returnOffer,
+      ticket: {
+        ...emptySalesForm.ticket,
+        outboundOfferId: 'out',
+        outboundDepartureAt: outboundOffer.departureAt,
+        outboundArrivalAt: outboundOffer.arrivalAt,
+        outboundNumber: 'OUT',
+        returnOfferId: 'ret',
+        returnDepartureAt: returnOffer.departureAt,
+        returnArrivalAt: returnOffer.arrivalAt,
+        returnNumber: 'RET',
+        carrier: 'Sample',
+      },
+    });
+    expect(payload.ticketSelections?.map((item) => item.quotedPrice)).toEqual([
+      { amount: '2500000.5', currencyCode: 'IRR' },
+      { amount: '2500000.5', currencyCode: 'IRR' },
+    ]);
+  });
   it.each(['FLIGHT', 'TRANSFER'] as const)(
     'selects both directions when enabling %s and clears them when disabling it',
     (kind) => {

@@ -16,6 +16,7 @@ import {
 import type {
   TicketOfferCreateV1,
   TicketOfferSearchV1,
+  TicketRoundTripSalePriceUpdateV1,
   TicketStandaloneSalePriceUpdateV1,
 } from '@nora/contracts';
 import { IamModule } from '../iam/iam.module';
@@ -36,6 +37,22 @@ class TicketOffersController {
   ) {}
   @Get('management') managed(@Req() req: AuthenticatedRequest) {
     return this.service.managed(req.actor);
+  }
+  @Patch(':outboundOfferId/round-trip-sale-price/:returnOfferId')
+  updateRoundTripSalePrice(
+    @Param('outboundOfferId') outboundOfferId: string,
+    @Param('returnOfferId') returnOfferId: string,
+    @Body() input: TicketRoundTripSalePriceUpdateV1,
+    @Req() req: AuthenticatedRequest,
+    @Headers('idempotency-key') key?: string,
+  ) {
+    return this.service.updateRoundTripSalePrice(
+      outboundOfferId,
+      returnOfferId,
+      input,
+      req.actor,
+      key,
+    );
   }
   @Get() search(
     @Query() query: TicketOfferSearchV1,
