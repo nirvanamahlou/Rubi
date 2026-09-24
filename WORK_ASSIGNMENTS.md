@@ -908,6 +908,28 @@ Merged via PR #254 at `e40878f1`. Web3100 runs the production build `55JsHVl1EIR
   Web run passed 1337 tests and hit only the same two HR parallel 5-second timeouts;
   both passed in the isolated rerun. All scoped reservations are released.
 
+## CUSTOMER-AFFAIRS-QA-FIXES-0923 — PC-B — READY_FOR_REVIEW / TESTED
+
+- درخواست مالک در 2026-09-23: ایرادهای گزارش QA امور مشتریان و پشتیبانی رفع و
+  سناریوهای خودکار و عملی دوباره اجرا شوند. شاخه مستقل
+  `codex/pc-b-customer-affairs-qa-fixes-0923` از `origin/develop@d8d18cbe` و
+  Worktree `C:\Users\admin\Rubi-customer-affairs-qa-fixes-0923` استفاده می‌شود.
+- محدوده رزرو: `apps/web/src/modules/customer-affairs/**`، کنترلر و تست‌های
+  `apps/api/src/customer-affairs/**`، قرارداد افزایشی
+  `packages/contracts/src/customer-affairs/**`، fixture تکرارپذیر اختصاصی امور مشتریان و اسناد
+  همین Work Item. هدف‌ها: دسترسی گزارش خواندنی بدون مجوز export، نمای پیش‌فرض سازگار
+  با مجوز جزئی، بازیابی نشست 401، برچسب‌گذاری WCAG فرم‌ها، پیام موفقیت ثبت، اتصال
+  fixtureهای سایت، حذف سربرگ گزارش و پایدارسازی تست تاریخ. بدون Schema/Migration،
+  Dependency/Lockfile، ارسال SMS، پرداخت، داده واقعی مشتری یا تغییر مستقیم runtime.
+  قراردادهای موجود سازگار می‌مانند و مجوز export فقط برای خروجی فایل حفظ می‌شود.
+- نتیجه: اصلاحات مجوز، قابلیت‌های نقش جزئی، 401، دسترس‌پذیری فرم، پیام موفقیت،
+  سربرگ گزارش، timeout تاریخ و fixture سایت تکمیل شد. ۹۰ تست API و ۵۶ تست Web،
+  lint/typecheck و build تولیدی API/Web موفق‌اند. ۱۲ اتصال synthetic وب‌سایت با
+  backup قبلی و اجرای دوم idempotent اعمال شد. runtime آزمایشی 3101/4001 و سپس
+  build نهایی روی Web3100/API4000 تا صفحه ورود smoke شد. جزئیات در
+  `docs/tasks/CUSTOMER-AFFAIRS-QA-FIXES-0923.md` است. قفل‌های فایل و قرارداد این
+  واحد برای بازبینی آزاد هستند.
+
 ## B2B-CRM-CONNECTIONS-002 — PC-B — READY_FOR_REVIEW / TESTED
 
 - درخواست مالک محصول: ارتباط پرونده ۳۶۰ آژانس با داده‌های واقعی موجود CRM بررسی و اتصال‌های غایب در محدوده مجاز تکمیل شود. شاخه `codex/pc-b-b2b-crm-connections` از `origin/develop@6a4e041` و Worktree مستقل `C:\Users\admin\Rubi-b2b-crm-connections` استفاده می‌شود.

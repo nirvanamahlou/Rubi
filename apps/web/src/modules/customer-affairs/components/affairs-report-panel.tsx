@@ -194,10 +194,6 @@ export function AffairsReportPanel({
   return (
     <div className={s.report}>
       <header className={s.heading}>
-        <div>
-          <h2>{showRequests ? 'گزارش امور مشتریان' : 'رضایت مشتری'}</h2>
-          <p>نمای وضعیت درخواست‌ها، رسیدگی و بازخورد مشتریان</p>
-        </div>
         <p className={s.timestamp}>
           آخرین دریافت: {new Date(report.generatedAt).toLocaleString('fa-IR')}
           <br />

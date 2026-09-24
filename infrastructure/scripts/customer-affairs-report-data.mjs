@@ -14,7 +14,6 @@ if (
 const url = new URL(process.env.DATABASE_URL);
 if (!['localhost', '127.0.0.1'].includes(url.hostname) || url.port !== '55432')
   throw new Error('Local Nora database only.');
-url.pathname = '/nora_hr_current_20260908';
 const db = createDatabaseClient(url.toString());
 const dataset = 'ca-report-synthetic-20260913-v1';
 const hash = (value) => createHash('sha256').update(value).digest('hex');
@@ -31,6 +30,7 @@ const result = {
   tickets: 0,
   surveys: 0,
   correctiveActions: 0,
+  siteLinks: 0,
 };
 try {
   await db.$transaction(
@@ -41,6 +41,33 @@ try {
       });
       const branchId = anchor.branchId,
         userId = anchor.createdByUserId;
+      const sites = await tx.customerAffairsSite.findMany({
+        where: { code: { in: ['jahanbastan', 'nystkt'] } },
+      });
+      if (sites.length !== 2)
+        throw new Error(
+          'Both jahanbastan and nystkt Customer Affairs sites are required.',
+        );
+      const siteByCode = new Map(sites.map((site) => [site.code, site]));
+      const ensureSiteLink = async (index, ticketId) => {
+        if (index % 3 !== 2) return;
+        const existing = await tx.customerAffairsSiteTicket.findUnique({
+          where: { ticketId },
+          select: { id: true },
+        });
+        if (existing) return;
+        const code = index % 2 === 0 ? 'jahanbastan' : 'nystkt';
+        await tx.customerAffairsSiteTicket.create({
+          data: {
+            id: uuid(`site-ticket:${index}`),
+            siteId: siteByCode.get(code).id,
+            ticketId,
+            externalId: `${code}-CA-${String(index + 1).padStart(3, '0')}`,
+            fingerprint: hash(`${dataset}:site-ticket:${ticketId}`),
+          },
+        });
+        result.siteLinks++;
+      };
       const audit = (entityType, entityId) =>
         tx.customerAffairsAuditEvent.create({
           data: {
@@ -192,8 +219,10 @@ try {
             where: { id },
             select: { id: true },
           })
-        )
+        ) {
+          await ensureSiteLink(i, id);
           continue;
+        }
         const createdAt = new Date(Date.UTC(2026, 7, 1 + i, 10));
         const status =
           i < 12 ? 'CLOSED' : i < 20 ? 'RESOLVED' : statuses[(i - 20) % 7];
@@ -302,6 +331,7 @@ try {
           }
         }
         await audit('TICKET', id);
+        await ensureSiteLink(i, id);
         result.tickets++;
       }
       if (mode === 'preview') throw rollback;

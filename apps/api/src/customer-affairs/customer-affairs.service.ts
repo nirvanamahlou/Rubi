@@ -258,7 +258,23 @@ export class CustomerAffairsService {
   async dashboard(
     actor: AuthenticatedActor,
   ): Promise<{ data: CustomerAffairsDashboard }> {
-    return { data: await this.repository.dashboard(actor.branchIds) };
+    const access = {
+      leadsRead: actor.permissions.includes('customer_affairs.lead.read'),
+      leadCreate: actor.permissions.includes('customer_affairs.lead.create'),
+      ticketsRead: actor.permissions.includes('customer_affairs.ticket.read'),
+      ticketCreate: actor.permissions.includes(
+        'customer_affairs.ticket.create',
+      ),
+      reportsRead:
+        actor.permissions.includes('customer_affairs.lead.read') &&
+        actor.permissions.includes('customer_affairs.ticket.read'),
+    };
+    return {
+      data: {
+        access,
+        ...(await this.repository.dashboard(actor.branchIds, access)),
+      },
+    };
   }
 
   async report(actor: AuthenticatedActor) {
