@@ -3877,3 +3877,10 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 - شاخهٔ مستقل `codex/pc-a-contract-pdf-download-0922` از `origin/develop@8e16eace`. محدوده فقط runtime سمت سرور PDF قرارداد فروش، تست متمرکز و ثبت وضعیت همین واحد است؛ API، Schema/Migration، Permission، داده، Dependency/Lockfile و قالب قرارداد تغییر نمی‌کنند.
 - قاعده: مسیر صریح محیطی اولویت دارد و در نبود آن، Chrome/Edge و B Nazanin فقط از مسیرهای نصب استاندارد سیستم پیدا می‌شوند؛ HTML یا URL ورودی کاربر به renderer داده نمی‌شود.
 - نتیجه: موتور قرارداد مسیر Chrome/Edge و B Nazanin را مانند موتور بلیط از نصب استاندارد سیستم پیدا می‌کند، نبود فونت اختیاری مانع ساخت PDF نیست و پس از خروج Chrome تا پایدارشدن فایل منتظر می‌ماند. ۲۶ تست هدفمند، lint، typecheck و build تولیدی Web با ۵۰ route موفق‌اند؛ smoke واقعی با Chrome و فونت نصب‌شده یک PDF معتبر ساخت.
+
+## SALES-PAYMENT-SHARE-SUMMARY-0922 — PC-A — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-22: پنجره «افزودن پرداخت» مبلغ کل قرارداد را نشان دهد و هم‌زمان مشخص کند مبلغ واردشده چه سهمی از کل و چه مانده‌ای پس از تأیید ایجاد می‌کند.
+- شاخهٔ مستقل `codex/pc-a-sales-payment-share-0922` از `origin/develop@1e2a6298`. محدوده فقط UI و مدل محاسباتی نمایش خلاصه پرداخت در Sales، تست هدفمند و اسناد همین واحد است؛ API، Finance، Schema/Migration، Permission، داده و Dependency/Lockfile تغییر نمی‌کنند.
+- محاسبات مبلغ با Decimal/BigInt انجام می‌شوند و برای هر ارز مستقل‌اند. `COMPUTER_ID=PC-A`؛ فایل اجرایی هدف در PR باز دیگری تغییر نکرده است.
+- نتیجه: خلاصه چهارکارتِ کل قرارداد، تأییدشده/در انتظار مالی، مبلغ جاری با درصد کل و مانده پس از تأیید به modal افزوده شد؛ ارزها مستقل‌اند و مازاد بر مانده هشدار دارد. ۹ تست هدفمند، lint، typecheck و build تولیدی Web با ۵۰ route موفق‌اند. قفل فایل اجرایی آزاد است.
