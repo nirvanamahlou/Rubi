@@ -66,7 +66,7 @@ describe('standalone ticket pricing', () => {
     ).toBe(current);
   });
 
-  it('recalculates both legs after the passenger count changes', () => {
+  it('fails closed when a round trip has no combined fare', () => {
     const prices = repriceStandaloneTicketSelections(
       {
         ...emptySalesForm,
@@ -75,7 +75,31 @@ describe('standalone ticket pricing', () => {
       },
       4,
     );
-    expect(prices['flight-outbound']?.[0]?.agreed.amount).toBe('4000000');
-    expect(prices['flight-return']?.[0]?.agreed.amount).toBe('3200000');
+    expect(prices['flight-outbound']).toBeUndefined();
+    expect(prices['flight-return']).toBeUndefined();
+  });
+
+  it('uses the combined round-trip fare as the contract basis', () => {
+    const outbound = {
+      ...offer('OUT', '1000000'),
+      roundTripSalePrices: [
+        {
+          returnOfferId: 'RET',
+          revision: 2,
+          amount: '1500001',
+          currencyCode: 'IRR',
+        },
+      ],
+    };
+    const prices = repriceStandaloneTicketSelections(
+      {
+        ...emptySalesForm,
+        outboundOffer: outbound,
+        returnOffer: offer('RET', '800000'),
+      },
+      2,
+    );
+    expect(prices['flight-outbound']?.[0]?.agreed.amount).toBe('1500001');
+    expect(prices['flight-return']?.[0]?.agreed.amount).toBe('1500001');
   });
 });

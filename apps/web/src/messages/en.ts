@@ -89,6 +89,7 @@ export const englishNavigationGroups: Record<string, string> = {
 };
 
 export function englishNavigationTitle(href: string, fallback: string) {
+  if (href === '/sales/ticket-prices') return 'Ticket prices';
   if (href === '/sales/pricing') return 'Pricing & packages';
   return englishNavigation[href as NavigationHref]?.title ?? fallback;
 }

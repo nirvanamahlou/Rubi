@@ -22,11 +22,15 @@ import {
 import type { NavigationHref } from '@/messages/fa';
 
 /** Sidebar-only icons matching the approved compact navigation reference. */
-export const sidebarIcons: Record<NavigationHref | '/sales/pricing', LucideIcon> = {
+export const sidebarIcons: Record<
+  NavigationHref | '/sales/pricing' | '/sales/ticket-prices',
+  LucideIcon
+> = {
   '/workbench': House,
   '/dashboard': LayoutGrid,
   '/sales': FileText,
   '/sales/pricing': Banknote,
+  '/sales/ticket-prices': Ticket,
   '/customers': UsersRound,
   '/customer-affairs': Headphones,
   '/organizations': Building2,

@@ -36,6 +36,7 @@ model User {
   financeTicketCostRevisions                       FinanceTicketPurchaseCostRevision[]       @relation("FinanceTicketCostActor")
   ticketCapacityHolds                              TicketOfferCapacityHold[]                 @relation("TicketCapacityHoldCreator")
   ticketStandaloneSalePricesCreated                TicketOfferStandaloneSalePrice[]          @relation("TicketStandaloneSalePriceActor")
+  ticketRoundTripSalePricesCreated                 TicketOfferRoundTripSalePrice[]           @relation("TicketRoundTripSalePriceActor")
   financeTicketPaymentRevisions                    FinanceTicketPurchasePaymentRevision[]    @relation("FinanceTicketPaymentActor")
   masterHotelRatePeriodsCreated                    MasterHotelRatePeriod[]                   @relation("MasterHotelRatePeriodCreatedBy")
   masterHotelRatePeriodsUpdated                    MasterHotelRatePeriod[]                   @relation("MasterHotelRatePeriodUpdatedBy")
@@ -4068,30 +4069,32 @@ model TourDeparture {
 }
 
 model TicketPublishedOffer {
-  tourOutboundDepartures TourDeparture[]                     @relation("TourOutbound")
-  tourReturnDepartures   TourDeparture[]                     @relation("TourReturn")
-  id                     String                              @id @default(uuid()) @db.Uuid
-  version                Int                                 @default(1)
-  branchId               String                              @db.Uuid
-  originId               String                              @db.Uuid
-  destinationId          String                              @db.Uuid
-  departureAt            DateTime                            @db.Timestamptz(3)
-  arrivalAt              DateTime                            @db.Timestamptz(3)
-  carrierName            String                              @db.VarChar(160)
-  serviceNumber          String                              @db.VarChar(80)
-  cabinClassCode         String                              @db.VarChar(20)
-  totalCapacity          Int
-  status                 String                              @default("ACTIVE") @db.VarChar(20)
-  createdByUserId        String                              @db.Uuid
-  createKey              String                              @db.VarChar(160)
-  fingerprint            String                              @db.VarChar(64)
-  createdAt              DateTime                            @default(now()) @db.Timestamptz(3)
-  audit                  TicketOfferAudit[]
-  capacityAllocations    TicketOfferCapacityAllocation[]
-  capacityHolds          TicketOfferCapacityHold[]
-  purchaseRequest        ProcurementTicketPurchaseRequest?
-  financeTicketCosts     FinanceTicketPurchaseCostRevision[]
-  standaloneSalePrices   TicketOfferStandaloneSalePrice[]
+  tourOutboundDepartures      TourDeparture[]                     @relation("TourOutbound")
+  tourReturnDepartures        TourDeparture[]                     @relation("TourReturn")
+  id                          String                              @id @default(uuid()) @db.Uuid
+  version                     Int                                 @default(1)
+  branchId                    String                              @db.Uuid
+  originId                    String                              @db.Uuid
+  destinationId               String                              @db.Uuid
+  departureAt                 DateTime                            @db.Timestamptz(3)
+  arrivalAt                   DateTime                            @db.Timestamptz(3)
+  carrierName                 String                              @db.VarChar(160)
+  serviceNumber               String                              @db.VarChar(80)
+  cabinClassCode              String                              @db.VarChar(20)
+  totalCapacity               Int
+  status                      String                              @default("ACTIVE") @db.VarChar(20)
+  createdByUserId             String                              @db.Uuid
+  createKey                   String                              @db.VarChar(160)
+  fingerprint                 String                              @db.VarChar(64)
+  createdAt                   DateTime                            @default(now()) @db.Timestamptz(3)
+  audit                       TicketOfferAudit[]
+  capacityAllocations         TicketOfferCapacityAllocation[]
+  capacityHolds               TicketOfferCapacityHold[]
+  purchaseRequest             ProcurementTicketPurchaseRequest?
+  financeTicketCosts          FinanceTicketPurchaseCostRevision[]
+  standaloneSalePrices        TicketOfferStandaloneSalePrice[]
+  outboundRoundTripSalePrices TicketOfferRoundTripSalePrice[]     @relation("TicketRoundTripOutbound")
+  returnRoundTripSalePrices   TicketOfferRoundTripSalePrice[]     @relation("TicketRoundTripReturn")
 
   @@unique([createdByUserId, createKey])
   @@index([branchId, originId, destinationId, departureAt])
@@ -4113,6 +4116,27 @@ model TicketOfferStandaloneSalePrice {
   @@unique([offerId, revision])
   @@unique([offerId, commandKey])
   @@index([offerId, occurredAt])
+}
+
+model TicketOfferRoundTripSalePrice {
+  id              String               @id @default(uuid()) @db.Uuid
+  outboundOfferId String               @db.Uuid
+  returnOfferId   String               @db.Uuid
+  revision        Int
+  amount          Decimal              @db.Decimal(20, 4)
+  currencyCode    String               @db.VarChar(3)
+  actorUserId     String               @db.Uuid
+  occurredAt      DateTime             @default(now()) @db.Timestamptz(3)
+  commandKey      String               @db.VarChar(160)
+  fingerprint     String               @db.VarChar(64)
+  outboundOffer   TicketPublishedOffer @relation("TicketRoundTripOutbound", fields: [outboundOfferId], references: [id], onDelete: Restrict)
+  returnOffer     TicketPublishedOffer @relation("TicketRoundTripReturn", fields: [returnOfferId], references: [id], onDelete: Restrict)
+  actor           User                 @relation("TicketRoundTripSalePriceActor", fields: [actorUserId], references: [id], onDelete: Restrict)
+
+  @@unique([outboundOfferId, returnOfferId, revision], map: "TicketRoundTripPrice_pair_revision_key")
+  @@unique([outboundOfferId, returnOfferId, commandKey], map: "TicketRoundTripPrice_pair_command_key")
+  @@index([outboundOfferId, returnOfferId, occurredAt])
+  @@index([returnOfferId])
 }
 
 model TicketOfferAudit {

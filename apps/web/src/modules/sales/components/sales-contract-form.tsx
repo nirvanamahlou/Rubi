@@ -35,6 +35,7 @@ import { SalesInsurancePicker } from './sales-insurance-picker';
 import { SalesTourPicker } from './sales-tour-picker';
 import {
   repriceStandaloneTicketSelections,
+  roundTripTicketPricing,
   standaloneTicketPricing,
 } from '../model/standalone-ticket-pricing';
 
@@ -997,6 +998,9 @@ export function SalesContractForm() {
                               !state.serviceKinds.includes('HOTEL') &&
                               !state.serviceKinds.includes('TOUR')
                             }
+                            acceptAnyRoundTripFare={flightDirections.includes(
+                              'RETURN',
+                            )}
                             selectedId={state.ticket.outboundOfferId}
                             onSelect={(offer) =>
                               patchState({
@@ -1087,6 +1091,9 @@ export function SalesContractForm() {
                                 !state.serviceKinds.includes('HOTEL') &&
                                 !state.serviceKinds.includes('TOUR')
                               }
+                              {...(state.outboundOffer
+                                ? { roundTripOutbound: state.outboundOffer }
+                                : {})}
                               selectedId={state.ticket.returnOfferId}
                               onSelect={(offer) => {
                                 if (
@@ -1105,12 +1112,14 @@ export function SalesContractForm() {
                                 setError('');
                                 patchState({
                                   returnOffer: offer,
-                                  servicePricing: standaloneTicketPricing(
-                                    state,
-                                    offer,
-                                    'RETURN',
-                                    passengerCounts.seated,
-                                  ),
+                                  servicePricing: state.outboundOffer
+                                    ? roundTripTicketPricing(
+                                        state,
+                                        state.outboundOffer,
+                                        offer,
+                                        passengerCounts.seated,
+                                      )
+                                    : (state.servicePricing ?? {}),
                                   contractFlights: Object.fromEntries(
                                     Object.entries(
                                       state.contractFlights ?? {},
