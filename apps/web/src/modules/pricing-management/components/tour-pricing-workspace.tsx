@@ -9,14 +9,16 @@ import type {
   TourDepartureV1,
 } from '@nora/contracts';
 import {
+  ArrowRight,
   Banknote,
   ClipboardCheck,
   Hotel,
   Plane,
   RefreshCw,
 } from 'lucide-react';
+import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/form-controls';
 import {
   Alert,
@@ -30,6 +32,8 @@ import {
 import { packagePricingApi } from '../api/client';
 import { TourWorkspace } from '@/modules/ticket-catalog/components/tour-workspace';
 import { previewHotelRoomSale } from './tour-price-math';
+import { packageBannerHref } from '../model/package-banner';
+import { PackagePricingBreadcrumbs } from './package-pricing-breadcrumbs';
 import {
   calculateTourRoom,
   tourRoomOccupancy,
@@ -110,6 +114,20 @@ export function TourPricingWorkspace() {
       const result = await packagePricingApi.tours(currentSession);
       setSession(currentSession);
       setTours(result.data);
+      const requested = new URL(globalThis.location.href).searchParams;
+      const requestedDepartureId = requested.get('departure');
+      const requestedDeparture = result.data.find(
+        (item) => item.id === requestedDepartureId,
+      );
+      if (requestedDeparture) {
+        setTourPackageId(requestedDeparture.package.id);
+        await selectDeparture(
+          requestedDeparture.id,
+          currentSession,
+          requested.get('batch') ?? undefined,
+          requested.get('publication') ?? undefined,
+        );
+      }
     } catch (cause) {
       setSession(null);
       setTours([]);
@@ -121,6 +139,9 @@ export function TourPricingWorkspace() {
     } finally {
       setLoadingTours(false);
     }
+    // The initial URL selection is restored once with the same authenticated
+    // session used to load tours; later selections use the interactive handler.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -156,20 +177,33 @@ export function TourPricingWorkspace() {
     setFamilyChildren(String(value?.familyChildren ?? 0));
   }
 
-  async function loadDraft(tourDepartureId: string, purchaseBatchId: string) {
-    if (!session || !purchaseBatchId) return;
+  async function loadDraft(
+    tourDepartureId: string,
+    purchaseBatchId: string,
+    activeSession = session,
+    requestedPublicationId?: string,
+  ) {
+    if (!activeSession || !purchaseBatchId) return;
     try {
       const [saved, versions] = await Promise.all([
-        packagePricingApi.tourDraft(tourDepartureId, purchaseBatchId, session),
+        packagePricingApi.tourDraft(
+          tourDepartureId,
+          purchaseBatchId,
+          activeSession,
+        ),
         packagePricingApi.tourPublications(
           tourDepartureId,
           purchaseBatchId,
-          session,
+          activeSession,
         ),
       ]);
       applyDraft(saved);
       setPublications(versions);
-      setPublicationId(versions[0]?.id ?? '');
+      setPublicationId(
+        versions.some((item) => item.id === requestedPublicationId)
+          ? requestedPublicationId!
+          : (versions[0]?.id ?? ''),
+      );
       setNotice(
         saved
           ? 'پیش‌نویس قبلی این بازه بارگذاری شد.'
@@ -187,7 +221,12 @@ export function TourPricingWorkspace() {
     void selectDeparture('');
   }
 
-  async function selectDeparture(id: string) {
+  async function selectDeparture(
+    id: string,
+    activeSession = session,
+    requestedBatchId?: string,
+    requestedPublicationId?: string,
+  ) {
     applyDraft(null);
     setTourId(id);
     setGrid(null);
@@ -198,14 +237,24 @@ export function TourPricingWorkspace() {
     setPublications([]);
     setPublicationId('');
     setNotice('');
-    if (!id || !session) return;
+    if (!id || !activeSession) return;
     setLoadingCosts(true);
     try {
-      const result = await packagePricingApi.tourCosts(id, session);
+      const result = await packagePricingApi.tourCosts(id, activeSession);
       setGrid(result);
-      const firstBatchId = result.purchaseBatches[0]?.id ?? '';
-      setBatchId(firstBatchId);
-      if (firstBatchId) await loadDraft(id, firstBatchId);
+      const selectedBatchId = result.purchaseBatches.some(
+        (item) => item.id === requestedBatchId,
+      )
+        ? requestedBatchId!
+        : (result.purchaseBatches[0]?.id ?? '');
+      setBatchId(selectedBatchId);
+      if (selectedBatchId)
+        await loadDraft(
+          id,
+          selectedBatchId,
+          activeSession,
+          requestedPublicationId,
+        );
     } catch (cause) {
       setCostError(
         cause instanceof Error
@@ -308,6 +357,15 @@ export function TourPricingWorkspace() {
     ) ?? false;
   const publication =
     publications.find((item) => item.id === publicationId) ?? publications[0];
+  const bannerHref = (() => {
+    if (!grid || !batch || !publication) return '';
+    return packageBannerHref({
+      packageId: grid.tour.id,
+      tourPackageId: grid.tour.package.id,
+      batchId: batch.id,
+      publicationId: publication.id,
+    });
+  })();
   const unsaved =
     !draft ||
     Number(familyAdults) !== draft.familyAdults ||
@@ -424,7 +482,19 @@ export function TourPricingWorkspace() {
 
   return (
     <main className="mx-auto grid w-full max-w-7xl gap-6">
+      <PackagePricingBreadcrumbs
+        currentTitle="مدیریت قیمت"
+        pathname="/sales/pricing/management"
+      />
       <PageHeader
+        actions={
+          <Link
+            className={buttonVariants({ variant: 'outline', size: 'sm' })}
+            href="/sales/pricing"
+          >
+            <ArrowRight className="size-4" /> بازگشت به بخش‌ها
+          </Link>
+        }
         eyebrow="فروش و ارتباط با مشتری · ماژول مدیریت قیمت"
         title="مدیریت قیمت و پکیج تور"
         description="قیمت خرید هتل‌های همان نوبت تور را ببینید، قیمت فروش هر گزینه هتل و پرواز را تنظیم کنید و نسخه قیمت را برای انتشار آماده کنید."
@@ -971,7 +1041,23 @@ export function TourPricingWorkspace() {
       </Card>
       {publications.length > 0 && batch ? (
         <Card className="grid gap-4 p-5">
-          <h2 className="text-lg font-black">قیمت‌های منتشرشدهٔ همین بازه</h2>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 className="text-lg font-black">قیمت‌های منتشرشدهٔ همین بازه</h2>
+            {bannerHref &&
+            session?.user.permissions.includes('package_pricing.read') &&
+            session.user.permissions.includes('package_pricing.render') ? (
+              <Link
+                className="inline-flex min-h-10 items-center justify-center rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground"
+                href={bannerHref}
+              >
+                ساخت بنر
+              </Link>
+            ) : (
+              <Button disabled type="button">
+                ساخت بنر · بدون مجوز
+              </Button>
+            )}
+          </div>
           <label className="grid max-w-xl gap-2 text-sm font-bold">
             نسخهٔ قیمت
             <select
