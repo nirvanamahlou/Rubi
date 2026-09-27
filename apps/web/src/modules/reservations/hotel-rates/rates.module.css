@@ -316,10 +316,9 @@
 }
 .newRoomRow {
   display: grid;
-  grid-template-columns: minmax(10rem, 1.4fr) repeat(
-      3,
-      minmax(5.5rem, 0.7fr)
-    ) auto;
+  grid-template-columns:
+    minmax(10rem, 1.4fr) repeat(3, minmax(5.5rem, 0.7fr))
+    auto;
   gap: 0.5rem;
   align-items: end;
   border: 1px dashed color-mix(in srgb, var(--primary) 55%, var(--border));
