@@ -14,6 +14,10 @@ import type {
 
 import { IamService } from '../iam/iam.service';
 import { DocumentsService } from '../documents/documents.service';
+import type {
+  DocumentRequestMetadata,
+  UploadedDocumentFile,
+} from '../documents/documents.service';
 import { MessagingRepository } from './messaging.repository';
 import * as validate from './messaging.validation';
 
@@ -135,6 +139,33 @@ export class MessagingService {
         .filter((userId) => userId !== actor.userId),
     });
     return { data: await this.mapMessage(row) };
+  }
+
+  async uploadAttachment(
+    id: string,
+    body: unknown,
+    file: UploadedDocumentFile | undefined,
+    actor: AuthenticatedActor,
+    metadata: DocumentRequestMetadata,
+  ) {
+    const conversationId = validate.uuid(id, 'گفت‌وگو');
+    const conversation = await this.assertConversation(conversationId, actor);
+    const input = validate.attachment(body);
+    return {
+      data: await this.documents.uploadOwnMessagingAttachment(
+        {
+          branchId: conversation.branchId,
+          clientRequestId: input.clientRequestId,
+          conversationTitle:
+            conversation.type === 'GROUP'
+              ? (conversation.title ?? 'گفت‌وگوی گروهی')
+              : 'گفت‌وگوی داخلی',
+        },
+        file,
+        actor,
+        metadata,
+      ),
+    };
   }
 
   async forward(id: string, body: unknown, actor: AuthenticatedActor) {

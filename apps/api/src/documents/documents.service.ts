@@ -84,6 +84,11 @@ export interface WorkbenchFeedbackAttachmentDocumentResult {
   scanStatus: DocumentVersionV1['scanStatus'];
 }
 
+export interface MessagingAttachmentDocumentResult {
+  id: string;
+  scanStatus: DocumentVersionV1['scanStatus'];
+}
+
 export interface SystemContractTemplateDocumentResult {
   id: string;
   originalFileName: string;
@@ -505,6 +510,72 @@ export class DocumentsService {
         sourceEntityId: input.feedbackId,
         sourceDisplayLabel: input.subject.trim().slice(0, 240),
         versionNote: 'پیوست نظرسنجی',
+      },
+      file,
+      actor,
+      metadata,
+    );
+    return {
+      id: uploaded.data.id,
+      scanStatus: uploaded.data.currentVersion.scanStatus,
+    };
+  }
+
+  /**
+   * Narrow owner-only boundary for an internal message attachment. The caller
+   * cannot choose the document type, category, owner or source reference.
+   */
+  async uploadOwnMessagingAttachment(
+    input: {
+      branchId: string;
+      clientRequestId: string;
+      conversationTitle: string;
+    },
+    file: UploadedDocumentFile | undefined,
+    actor: AuthenticatedActor,
+    metadata: DocumentRequestMetadata,
+  ): Promise<MessagingAttachmentDocumentResult> {
+    if (!actor.branchIds.includes(input.branchId))
+      throw new ForbiddenException('شعبه پیوست خارج از دسترسی شما است.');
+    if (!file) throw new BadRequestException('انتخاب فایل پیوست الزامی است.');
+    if (!['application/pdf', 'image/png', 'image/jpeg'].includes(file.mimetype))
+      throw new UnsupportedMediaTypeException(
+        'پیوست پیام باید PDF، PNG یا JPEG باشد.',
+      );
+    if (file.size < 1 || file.size > 10 * 1024 * 1024)
+      throw new BadRequestException('حجم هر پیوست حداکثر ۱۰ مگابایت است.');
+
+    const values = await this.repository.options(actor.branchIds, ['GENERAL']);
+    const branch = values.branches.find(({ id }) => id === input.branchId);
+    const owner = values.owners.find(({ id }) => id === actor.userId);
+    const documentType = values.documentTypes.find(
+      ({ code }) => code === 'WORKBENCH_FEEDBACK_ATTACHMENT',
+    );
+    const category = values.categories.find(
+      ({ code }) => code === 'GENERAL_ARCHIVE',
+    );
+    if (!branch)
+      throw new ForbiddenException('شعبه مجاز برای پیوست پیام پیدا نشد.');
+    if (!owner || !documentType || !category)
+      throw new ConflictException(
+        'پیش‌نیاز ذخیره پیوست پیام در آرشیو اسناد کامل نیست.',
+      );
+
+    const title = `پیوست پیام: ${input.conversationTitle.trim()}`.slice(0, 240);
+    const uploaded = await this.upload(
+      {
+        title,
+        description: 'پیوست ثبت‌شده از پیام‌رسان داخلی میزکار',
+        documentTypeId: documentType.id,
+        categoryId: category.id,
+        branchId: branch.id,
+        ownerUserId: owner.id,
+        confidentiality: 'INTERNAL',
+        sourceModule: 'MESSAGING',
+        sourceEntityType: 'MessagingMessage',
+        sourceEntityId: input.clientRequestId,
+        sourceDisplayLabel: input.conversationTitle.trim().slice(0, 240),
+        versionNote: 'پیوست پیام داخلی',
       },
       file,
       actor,

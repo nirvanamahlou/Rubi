@@ -3849,11 +3849,13 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 - شاخهٔ مستقل `codex/pc-a-contract-pdf-download-0922` از `origin/develop@8e16eace`. محدوده فقط runtime سمت سرور PDF قرارداد فروش، تست متمرکز و ثبت وضعیت همین واحد است؛ API، Schema/Migration، Permission، داده، Dependency/Lockfile و قالب قرارداد تغییر نمی‌کنند.
 - قاعده: مسیر صریح محیطی اولویت دارد و در نبود آن، Chrome/Edge و B Nazanin فقط از مسیرهای نصب استاندارد سیستم پیدا می‌شوند؛ HTML یا URL ورودی کاربر به renderer داده نمی‌شود.
 - نتیجه: موتور قرارداد مسیر Chrome/Edge و B Nazanin را مانند موتور بلیط از نصب استاندارد سیستم پیدا می‌کند، نبود فونت اختیاری مانع ساخت PDF نیست و پس از خروج Chrome تا پایدارشدن فایل منتظر می‌ماند. ۲۶ تست هدفمند، lint، typecheck و build تولیدی Web با ۵۰ route موفق‌اند؛ smoke واقعی با Chrome و فونت نصب‌شده یک PDF معتبر ساخت.
+
 ## 2026-09-23 — WORKBENCH-QA-FIXES-0923 — PC-B — READY_FOR_REVIEW
 
 - درخواست مالک: ایرادهای قطعی QA میزکار رفع شوند. شاخهٔ مستقل `codex/pc-b-workbench-runtime-fixes-0923` از source واقعی Web3100 یعنی `379859bc` ساخته شد تا قابلیت‌های فعلی میزکار حفظ شوند.
 - محدودهٔ رزرو: قفل تک‌اجرایی فرم یادداشت، تست هدفمند همان رفتار، ثبت وضعیت و بازیابی runtime محلی Web3100/API4000. بدون Schema/Migration، قرارداد مشترک، Permission، Dependency/Lockfile یا دادهٔ عملیاتی؛ پیام واقعی و عملیات مخرب انجام نمی‌شود.
 - نتیجه: ثبت دوبارهٔ یادداشت حین ذخیره مسدود شد و UI تا پایان عملیات وضعیت انتظار قابل‌دسترسی نشان می‌دهد. ۵۲ تست Workbench، lint متمرکز، typecheck و build تولیدی Web با ۵۲ route موفق‌اند؛ Web3100 و API4000 فعال و پاسخ خطای اعتبارنامهٔ آزمایشی در رابط واقعی تأیید شد.
+
 ## 2026-09-27 — WORKBENCH-REQUEST-ROUTE-REDESIGN-0927 — PC-B — READY_FOR_REVIEW
 
 - درخواست مالک: فرم «درخواست جدید» میزکار بازطراحی شود و مشاهدهٔ درخواست کاربر را به صفحهٔ امور مشتریان منتقل نکند.
@@ -3878,3 +3880,9 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 - درخواست مالک: متن قالب‌های پیام پس از ارسال باید کامل، چندخطی و درون حباب گفت‌وگو نمایش داده شود؛ هیچ متن بلند یا واژهٔ بدون فاصله نباید از کارت پیام بیرون بزند.
 - محدوده رزرو: فقط `message-composer.tsx`، آزمون متمرکز رفتار قالب/نمایش و ثبت وضعیت. بدون API، Schema/Migration، Permission، Dependency/Lockfile یا دادهٔ عملیاتی.
 - نتیجه: حباب گفت‌وگو `min-width: 0` و `overflow: hidden` دارد؛ متن پیام با حفظ خط‌های قالب و `overflow-wrap: anywhere` درون همان حباب می‌شکند. نام فرستنده truncate و زمان ثابت شده‌اند تا هیچ بخش بالای پیام نیز عرض کارت را نشکند. ESLint و typecheck Web و ۳ آزمون متمرکز client پیام‌رسان موفق‌اند.
+
+## 2026-09-27 — WORKBENCH-MESSAGING-ATTACHMENTS-0927 — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک: کاربر مجاز میزکار بتواند فایل و عکس مجاز را در گفت‌وگوی داخلی انتخاب، بارگذاری و همراه پیام ارسال کند؛ این مسیر نباید به مجوز عمومی `documents.upload` وابسته باشد.
+- محدودهٔ رزرو: controller/service پیام‌رسان، port محدود owner-only در Documents، client و آزمون‌های متمرکز پیام‌رسان و ثبت وضعیت. قرارداد افزایشی `POST /messaging/conversations/:id/attachments` با producer پیام‌رسان و consumer میزکار، هر دو در همین واحد PC-B، ثبت می‌شود و endpointهای قبلی بدون تغییر می‌مانند. بدون Schema/Migration، Permission grant، Dependency/Lockfile یا دادهٔ عملیاتی؛ ارسال پیام واقعی در این واحد انجام نمی‌شود.
+- نتیجه: کلاینت هر پیوست را به endpoint محدود همان گفت‌وگو می‌فرستد و سپس فقط شناسه‌های بازگشتی را همراه پیام ثبت می‌کند. سرور عضویت کاربر در گفت‌وگو، شعبه، مالک و reference ثابت `MESSAGING/MessagingMessage/<clientRequestId>` را کنترل می‌کند؛ فقط PDF/JPEG/PNG تا ۱۰ مگابایت پذیرفته می‌شوند. ۱۳ آزمون متمرکز API و ۴ آزمون Web، lint API/Web، typecheck API/Web و build API موفق‌اند. build این واحد نیاز به Migration یا Permission grant ندارد.

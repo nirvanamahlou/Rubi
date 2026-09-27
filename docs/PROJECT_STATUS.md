@@ -3392,6 +3392,16 @@ Tour definition uses four-column desktop identity fields and compact controls. I
 Dependency و دادهٔ عملیاتی تغییر نکرده‌اند. ESLint و typecheck Web و ۳ آزمون متمرکز client
 پیام‌رسان موفق‌اند.
 
+## 2026-09-27 — WORKBENCH-MESSAGING-ATTACHMENTS-0927 — PC-B — READY_FOR_REVIEW
+
+پیوست‌های PDF، JPEG و PNG پیام‌رسان داخلی میزکار از endpoint محدود گفت‌وگو بارگذاری
+می‌شوند و دیگر به مجوز عمومی `documents.upload` وابسته نیستند. Backend پیش از ذخیره، عضویت
+فرستنده در گفت‌وگو و شعبه را کنترل می‌کند و سند را فقط با مالک نشست و reference ثابت
+`MESSAGING/MessagingMessage/<clientRequestId>` ثبت می‌کند؛ شناسه‌های همین reference هنگام
+ارسال پیام دوباره کنترل می‌شوند. حداکثر حجم هر فایل ۱۰ مگابایت است. ۱۳ آزمون متمرکز API و
+۴ آزمون Web، lint و typecheck API/Web و build API موفق‌اند؛ Schema/Migration، Permission،
+Dependency و دادهٔ عملیاتی تغییری نکرده‌اند.
+
 ## 2026-09-21 — TICKET-STATUS-SYNC-0921 — READY_FOR_REVIEW
 
 دکمهٔ وضعیت مدیریت بلیت به رکورد منتشرشدهٔ Backend متصل شد؛ فعال/متوقف‌کردن نسخه‌دار است، جدول پس از ثبت تازه می‌شود و بلیت فعال آینده در قرارداد جدید قابل انتخاب خواهد بود. بلیت گذشته با عنوان «منقضی» نمایش داده می‌شود و قابل فعال‌سازی نیست. ۱۹ تست هدفمند، lint، typecheck و build تولیدی API/Web با ۵۰ route موفق‌اند. شاخه: `codex/pc-a-ticket-status-sync-0921`؛ بدون Migration یا تغییر داده عملیاتی.

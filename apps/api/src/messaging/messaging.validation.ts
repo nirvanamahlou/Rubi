@@ -31,6 +31,11 @@ function requestId(value: unknown): string {
   return value;
 }
 
+export function attachment(value: unknown): { clientRequestId: string } {
+  const input = record(value, ['clientRequestId']);
+  return { clientRequestId: requestId(input.clientRequestId) };
+}
+
 export function direct(value: unknown): CreateDirectConversationInputV1 {
   const input = record(value, ['recipientId', 'clientRequestId']);
   return {

@@ -41,7 +41,6 @@ import {
 import { MessageUnitIcon } from './message-unit-icon';
 import { messagingApi, messagingRequestId } from './messaging-api';
 import { messageUnits } from './message-templates';
-import { uploadWorkbenchAttachments } from './workbench-attachments';
 
 type SidebarMode = 'units' | 'contacts' | 'groups' | 'conversations';
 const initials = (name: string) => name.trim().slice(0, 2) || 'ر';
@@ -257,14 +256,15 @@ export function MessageComposer({
       const clientRequestId =
         messageSubmissionId.current || messagingRequestId('message');
       messageSubmissionId.current = clientRequestId;
-      const attachmentDocumentIds = await uploadWorkbenchAttachments({
-        entityType: 'MessagingMessage',
-        entityId: clientRequestId,
-        title: `پیوست پیام: ${active.title}`,
-        description: 'پیوست ثبت‌شده از پیام‌رسان داخلی میزکار',
-        branchId: active.branchId,
-        files: attachments,
-      });
+      const attachmentDocumentIds: string[] = [];
+      for (const file of attachments) {
+        const response = await messagingApi.uploadAttachment(
+          active.id,
+          clientRequestId,
+          file,
+        );
+        attachmentDocumentIds.push(response.data.id);
+      }
       const response = await messagingApi.send(active.id, {
         body: text,
         clientRequestId,
@@ -723,7 +723,7 @@ export function MessageComposer({
                   id="workbench-message-files"
                   type="file"
                   multiple
-                  accept=".pdf,.jpg,.jpeg,.png,.webp"
+                  accept=".pdf,.jpg,.jpeg,.png"
                   onChange={(event) => {
                     const picked = Array.from(event.target.files ?? []);
                     event.target.value = '';
@@ -732,7 +732,7 @@ export function MessageComposer({
                       picked.some(
                         (file) =>
                           file.size > 10 * 1024 * 1024 ||
-                          !/\.(pdf|jpe?g|png|webp)$/i.test(file.name),
+                          !/\.(pdf|jpe?g|png)$/i.test(file.name),
                       )
                     )
                       return setError(

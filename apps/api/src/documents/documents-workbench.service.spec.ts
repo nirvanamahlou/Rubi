@@ -1,4 +1,8 @@
-import { BadRequestException, ForbiddenException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  UnsupportedMediaTypeException,
+} from '@nestjs/common';
 import type { AuthenticatedActor } from '@nora/contracts';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -182,6 +186,81 @@ describe('DocumentsService Workbench contracts', () => {
       id: '88888888-8888-4888-8888-888888888888',
       scanStatus: 'PENDING_SCAN',
     });
+  });
+
+  it('uploads a message attachment with a server-owned message reference', async () => {
+    const branchId = actor.branchIds[0]!;
+    const clientRequestId = 'message:request-0001';
+    const options = vi.fn().mockResolvedValue({
+      branches: [{ id: branchId }],
+      owners: [{ id: actor.userId }],
+      documentTypes: [
+        {
+          id: '66666666-6666-4666-8666-666666666666',
+          code: 'WORKBENCH_FEEDBACK_ATTACHMENT',
+        },
+      ],
+      categories: [
+        {
+          id: '77777777-7777-4777-8777-777777777777',
+          code: 'GENERAL_ARCHIVE',
+        },
+      ],
+    });
+    const instance = service({ options });
+    const upload = vi.spyOn(instance, 'upload').mockResolvedValue({
+      data: {
+        id: '88888888-8888-4888-8888-888888888888',
+        currentVersion: { scanStatus: 'PENDING_SCAN' },
+      },
+    } as never);
+    const file = {
+      buffer: Buffer.from([137, 80, 78, 71]),
+      mimetype: 'image/png',
+      originalname: 'receipt.png',
+      size: 4,
+    };
+
+    await instance.uploadOwnMessagingAttachment(
+      { branchId, clientRequestId, conversationTitle: 'گفت‌وگو با مالی' },
+      file,
+      actor,
+      {},
+    );
+
+    expect(upload).toHaveBeenCalledWith(
+      expect.objectContaining({
+        branchId,
+        ownerUserId: actor.userId,
+        sourceModule: 'MESSAGING',
+        sourceEntityType: 'MessagingMessage',
+        sourceEntityId: clientRequestId,
+      }),
+      file,
+      actor,
+      {},
+    );
+    expect(actor.permissions).not.toContain('documents.upload');
+  });
+
+  it('rejects unsupported message attachment media on the server', async () => {
+    await expect(
+      service({}).uploadOwnMessagingAttachment(
+        {
+          branchId: actor.branchIds[0]!,
+          clientRequestId: 'message:request-0001',
+          conversationTitle: 'گفت‌وگو با مالی',
+        },
+        {
+          buffer: Buffer.from('<svg/>'),
+          mimetype: 'image/svg+xml',
+          originalname: 'unsafe.svg',
+          size: 6,
+        },
+        actor,
+        {},
+      ),
+    ).rejects.toBeInstanceOf(UnsupportedMediaTypeException);
   });
 
   it('does not preview a profile photo owned by another account', async () => {
