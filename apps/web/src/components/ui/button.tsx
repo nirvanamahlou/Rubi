@@ -49,17 +49,38 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       loading,
       size,
       variant,
+      'aria-label': ariaLabel,
+      title,
       ...props
     },
     ref,
   ) => {
     const Component = asChild ? Slot : 'button';
+    const operationIconOnly =
+      typeof ariaLabel === 'string' &&
+      /^(مشاهده|ویرایش|حذف|پیش‌نمایش)(?:\s|$)/.test(ariaLabel);
+    const resolvedVariant = operationIconOnly
+      ? ariaLabel.startsWith('حذف')
+        ? 'destructive'
+        : 'outline'
+      : variant;
     return (
       <Component
-        className={cn(buttonVariants({ className, size, variant }))}
+        className={cn(
+          buttonVariants({
+            className: cn(
+              className,
+              operationIconOnly && 'size-10 min-h-10 p-0 text-[0px]',
+            ),
+            size: operationIconOnly ? 'icon' : size,
+            variant: resolvedVariant,
+          }),
+        )}
         disabled={disabled || loading}
         ref={ref}
         aria-busy={loading || undefined}
+        aria-label={ariaLabel}
+        title={title ?? (operationIconOnly ? ariaLabel : undefined)}
         {...props}
       >
         {loading ? (
