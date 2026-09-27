@@ -3915,3 +3915,9 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 
 - مبنا: `origin/develop@a17ef9c3`؛ شاخهٔ مستقل `codex/pc-a-ticket-db-reconciliation-0927`. Scope: بازگردانی فقط چهار Migration تاریخیِ موجود در جدول Prisma اما حذف‌شده از درخت مخزن، آزمون همگام‌سازی و ثبت وضعیت. Migration Owner = `PC-A/TICKET-DB-MIGRATION-RECONCILIATION-0927` تا ورود PR؛ Dependency/Lockfile، Seed و تغییر دادهٔ عملیاتی خارج از محدوده‌اند.
 - سازگاری و عملیات محلی: چهار فایل دقیقاً با blobهای تاریخی Git بازگردانده شدند (`d348de4c`، `3d891279`، `12e71d67` و `220cccfd`) و قبل از هر اجرای schema یک backup کامل PostgreSQL ساخته شد. سپس فقط Migrationهای معوق و افزایشی 20260921144500، 20260922130000، 20260927120000 و 20260927140000 با موفقیت اعمال شدند؛ Prisma اکنون دیتابیس را up-to-date گزارش می‌کند. هیچ رکورد بلیت، قرارداد یا پرداخت حذف یا reset نشده است.
+
+## LOGIN-TAB-TITLE-0927 — PC-B — DONE
+
+- درخواست مالک: عنوان تب صفحه ورود از نام شرکت به «ورود امن نورا» تغییر کند.
+- محدوده: فقط metadata مسیر `apps/web/src/app/login/page.tsx` و ثبت این وضعیت؛ بدون API، داده، Migration، Permission یا Dependency/Lockfile.
+- نتیجه: عنوان مستقل صفحهٔ ورود «ورود امن نورا» است و دیگر الگوی نام شرکت را به انتهای عنوان تب اضافه نمی‌کند. ESLint فایل و پاسخ HTTP محلی ۳۱۰۰ موفق‌اند.

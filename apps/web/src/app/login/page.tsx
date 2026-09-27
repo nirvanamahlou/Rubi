@@ -5,7 +5,7 @@ import { Suspense } from 'react';
 import { LoginBackgroundStory } from './login-background-story';
 import { LoginForm } from './login-form';
 
-export const metadata: Metadata = { title: 'ورود امن' };
+export const metadata: Metadata = { title: { absolute: 'ورود امن نورا' } };
 
 function CompanyLogos({ compact = false }: { compact?: boolean }) {
   return (
