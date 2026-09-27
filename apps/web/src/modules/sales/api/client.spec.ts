@@ -23,12 +23,14 @@ describe('sales API dashboard connection', () => {
     const blob = await salesApi.exportXlsx({
       search: 'TRACK',
       settlementStatus: 'UNPAID',
+      createdFrom: '2026-09-01',
+      createdTo: '2026-09-30',
       page: 3,
       pageSize: 20,
     });
     expect(await blob.text()).toBe('PK-test');
     expect(fetch).toHaveBeenCalledWith(
-      'http://localhost:4000/api/v1/sales/contracts/export.xlsx?search=TRACK&settlementStatus=UNPAID&sortBy=updatedAt&sortDirection=desc',
+      'http://localhost:4000/api/v1/sales/contracts/export.xlsx?search=TRACK&settlementStatus=UNPAID&createdFrom=2026-09-01&createdTo=2026-09-30&sortBy=updatedAt&sortDirection=desc',
       expect.objectContaining({ credentials: 'include', cache: 'no-store' }),
     );
   });

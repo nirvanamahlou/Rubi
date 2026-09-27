@@ -26,6 +26,7 @@ import type {
 } from '@nora/contracts';
 
 import { Button, buttonVariants } from '@/components/ui/button';
+import { DatePicker } from '@/components/ui/date-picker';
 import {
   Badge,
   Card,
@@ -39,6 +40,13 @@ import { ContractPayments } from './contract-payments';
 import { SalesTravelDocuments } from './sales-travel-documents';
 import { ContractOutputButton } from './contract-output';
 
+export const DEFAULT_CONTRACT_PAGE_SIZE = 20;
+export const DATE_FILTERED_CONTRACT_PAGE_SIZE = 10_000;
+
+export function hasContractDateFilter(query: SalesContractListQuery): boolean {
+  return Boolean(query.createdFrom || query.createdTo);
+}
+
 export async function loadSalesWorkspace(
   api: Pick<typeof salesApi, 'dashboard' | 'list'> = salesApi,
   query: SalesContractListQuery = {},
@@ -46,11 +54,13 @@ export async function loadSalesWorkspace(
   const [dashboard, contracts] = await Promise.allSettled([
     api.dashboard(),
     api.list({
-      page: 1,
-      pageSize: 20,
-      sortBy: 'updatedAt',
-      sortDirection: 'desc',
       ...query,
+      page: query.page ?? 1,
+      pageSize: hasContractDateFilter(query)
+        ? DATE_FILTERED_CONTRACT_PAGE_SIZE
+        : DEFAULT_CONTRACT_PAGE_SIZE,
+      sortBy: query.sortBy ?? 'updatedAt',
+      sortDirection: query.sortDirection ?? 'desc',
     }),
   ]);
   return { dashboard, contracts };
@@ -88,6 +98,8 @@ export function SalesWorkspace() {
   const [contracts, setContracts] = useState<SalesContractPage['data']>([]);
   const [query, setQuery] = useState<SalesContractListQuery>({});
   const [search, setSearch] = useState('');
+  const [createdFrom, setCreatedFrom] = useState('');
+  const [createdTo, setCreatedTo] = useState('');
   const [total, setTotal] = useState(0);
   const requestVersion = useRef(0);
   const [loading, setLoading] = useState(true);
@@ -96,6 +108,13 @@ export function SalesWorkspace() {
   const [exporting, setExporting] = useState(false);
   const [exportError, setExportError] = useState('');
   const [exportNotice, setExportNotice] = useState('');
+  const dateRangeInvalid = Boolean(
+    createdFrom && createdTo && createdFrom > createdTo,
+  );
+  const dateFilterApplied = hasContractDateFilter(query);
+  const filtersApplied = Boolean(
+    query.search || query.settlementStatus || dateFilterApplied,
+  );
   async function downloadExcel() {
     setExporting(true);
     setExportError('');
@@ -300,12 +319,15 @@ export function SalesWorkspace() {
           </p>
         ) : null}
         <form
-          className="grid gap-2 rounded-2xl border border-border/70 bg-muted/25 p-2 sm:grid-cols-[minmax(0,1fr)_14rem_auto_auto] sm:items-center"
+          className="grid gap-2 rounded-2xl border border-border/70 bg-muted/25 p-2 sm:grid-cols-[minmax(16rem,1fr)_11rem_11rem_14rem_auto_auto] sm:items-end"
           onSubmit={(event) => {
             event.preventDefault();
+            if (dateRangeInvalid) return;
             setQuery((current) => ({
               ...current,
               search: search.trim(),
+              ...(createdFrom ? { createdFrom } : { createdFrom: undefined }),
+              ...(createdTo ? { createdTo } : { createdTo: undefined }),
               page: 1,
             }));
           }}
@@ -343,41 +365,74 @@ export function SalesWorkspace() {
               { value: 'OVERPAID', label: 'بستانکار' },
             ]}
           />
-          <Button type="submit" variant="outline" disabled={loading}>
+          <DatePicker
+            aria-label="از تاریخ ثبت قرارداد"
+            value={createdFrom}
+            onChange={setCreatedFrom}
+            placeholder="از تاریخ ثبت"
+          />
+          <DatePicker
+            aria-label="تا تاریخ ثبت قرارداد"
+            value={createdTo}
+            onChange={setCreatedTo}
+            placeholder="تا تاریخ ثبت"
+          />
+          <Button
+            type="submit"
+            variant="outline"
+            disabled={loading || dateRangeInvalid}
+          >
             جست‌وجو
           </Button>
-          {query.search || query.settlementStatus ? (
+          {filtersApplied ? (
             <Button
               type="button"
               variant="ghost"
               onClick={() => {
                 setSearch('');
+                setCreatedFrom('');
+                setCreatedTo('');
                 setQuery({});
               }}
             >
               پاک کردن فیلترها
             </Button>
           ) : null}
+          {dateRangeInvalid ? (
+            <p
+              role="alert"
+              className="sm:col-span-full text-xs text-destructive"
+            >
+              تاریخ پایان نباید قبل از تاریخ شروع باشد.
+            </p>
+          ) : null}
         </form>
+        <p className="mt-3 text-xs text-muted-foreground">
+          {dateFilterApplied
+            ? 'همهٔ قراردادهای بازهٔ تاریخ ثبت انتخاب‌شده نمایش داده می‌شوند.'
+            : 'بدون فیلتر تاریخ، فقط ۲۰ قراردادِ آخر نمایش داده می‌شود.'}
+        </p>
       </section>
       {!loading && !error && contracts.length === 0 ? (
         <EmptyState
           title={
-            query.search || query.settlementStatus
+            filtersApplied
               ? 'قراردادی با این فیلترها پیدا نشد'
               : 'اولین قرارداد سفر را ثبت کنید'
           }
           description={
-            query.search || query.settlementStatus
+            filtersApplied
               ? 'عبارت جست‌وجو یا وضعیت تسویه را تغییر دهید.'
               : 'مشتری و خدمات سفر را انتخاب کنید؛ قرارداد و پیگیری پرداخت‌ها از همین‌جا در دسترس خواهند بود.'
           }
           action={
-            query.search || query.settlementStatus ? (
+            filtersApplied ? (
               <Button
                 variant="outline"
                 onClick={() => {
                   setSearch('');
+                  setCreatedFrom('');
+                  setCreatedTo('');
                   setQuery({});
                 }}
               >
@@ -558,7 +613,10 @@ export function SalesWorkspace() {
           </div>
         </Card>
       ) : null}
-      {!loading && !error && total > 20 ? (
+      {!loading &&
+      !error &&
+      !dateFilterApplied &&
+      total > DEFAULT_CONTRACT_PAGE_SIZE ? (
         <nav
           aria-label="صفحه‌بندی قراردادها"
           className="flex items-center justify-between"
@@ -577,11 +635,13 @@ export function SalesWorkspace() {
           </Button>
           <span className="text-sm text-muted-foreground">
             صفحه {(query.page ?? 1).toLocaleString('fa-IR')} از{' '}
-            {Math.ceil(total / 20).toLocaleString('fa-IR')}
+            {Math.ceil(total / DEFAULT_CONTRACT_PAGE_SIZE).toLocaleString(
+              'fa-IR',
+            )}
           </span>
           <Button
             variant="outline"
-            disabled={(query.page ?? 1) * 20 >= total}
+            disabled={(query.page ?? 1) * DEFAULT_CONTRACT_PAGE_SIZE >= total}
             onClick={() =>
               setQuery((current) => ({
                 ...current,
@@ -601,6 +661,8 @@ export function SalesWorkspace() {
           onSaved={() => void load()}
           onSearchContracts={(reference) => {
             setSearch(reference);
+            setCreatedFrom('');
+            setCreatedTo('');
             setQuery(paymentReferenceSearchQuery(reference));
             setPaymentContractId(null);
             contractsSearchPanel.current?.scrollIntoView({
