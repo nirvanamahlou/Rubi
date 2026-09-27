@@ -96,7 +96,13 @@ function parseSessions(value: unknown): AuthenticatedSessionSummary[] {
         typeof session.expiresAt !== 'string'
       )
         return [];
-      return [session as AuthenticatedSessionSummary];
+      return [
+        {
+          ...session,
+          ipAddress:
+            typeof session.ipAddress === 'string' ? session.ipAddress : null,
+        } as AuthenticatedSessionSummary,
+      ];
     })
     .slice(0, PROFILE_SESSION_LOG_LIMIT);
 }

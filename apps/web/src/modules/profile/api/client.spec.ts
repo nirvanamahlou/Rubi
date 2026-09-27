@@ -33,6 +33,7 @@ describe('authenticated profile API client', () => {
               createdAt: '2026-09-08T06:00:00.000Z',
               lastUsedAt: '2026-09-08T06:10:00.000Z',
               expiresAt: '2026-09-15T06:00:00.000Z',
+              ipAddress: '127.0.0.1',
             },
           ]),
           { status: 200 },
@@ -56,6 +57,7 @@ describe('authenticated profile API client', () => {
 
     expect(result?.user.displayName).toBe('کاربر احرازشده');
     expect(result?.sessions).toHaveLength(1);
+    expect(result?.sessions[0]?.ipAddress).toBe('127.0.0.1');
     expect(result?.mfa.enabled).toBe(true);
     expect(fetchMock).toHaveBeenNthCalledWith(
       1,

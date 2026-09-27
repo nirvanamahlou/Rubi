@@ -3409,6 +3409,13 @@ Dependency و دادهٔ عملیاتی تغییری نکرده‌اند.
 پس از اعتبارسنجی به همین سقف محدود می‌سازد. ۳ تست API و ۹ تست Web، lint و typecheck
 API/Web موفق‌اند؛ Schema/Migration، Permission، Dependency و دادهٔ عملیاتی تغییر نکرده‌اند.
 
+## 2026-09-27 — PROFILE-SESSION-IP-0927 — PC-B — READY_FOR_REVIEW
+
+ستون «IP نشست» کنار وضعیت و زمان‌های هر نشست در Profile نمایش داده می‌شود. فقط IP ثبت‌شده
+برای نشست‌های خود کاربر از endpoint موجود IAM استفاده می‌شود و مقدار غایب «ثبت نشده» است.
+۹ تست Web، lint و typecheck Web موفق‌اند؛ API، Schema/Migration، Permission، Dependency و
+دادهٔ عملیاتی تغییر نکرده‌اند.
+
 ## 2026-09-21 — TICKET-STATUS-SYNC-0921 — READY_FOR_REVIEW
 
 دکمهٔ وضعیت مدیریت بلیت به رکورد منتشرشدهٔ Backend متصل شد؛ فعال/متوقف‌کردن نسخه‌دار است، جدول پس از ثبت تازه می‌شود و بلیت فعال آینده در قرارداد جدید قابل انتخاب خواهد بود. بلیت گذشته با عنوان «منقضی» نمایش داده می‌شود و قابل فعال‌سازی نیست. ۱۹ تست هدفمند، lint، typecheck و build تولیدی API/Web با ۵۰ route موفق‌اند. شاخه: `codex/pc-a-ticket-status-sync-0921`؛ بدون Migration یا تغییر داده عملیاتی.

@@ -11,6 +11,7 @@ export interface AuthenticatedSessionSummary {
   createdAt: string;
   lastUsedAt: string;
   expiresAt: string;
+  ipAddress?: string | null;
 }
 
 export interface AuthenticatedProfile {
