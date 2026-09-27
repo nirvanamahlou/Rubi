@@ -186,6 +186,16 @@ export function SalesContractForm() {
       state.hotel.hotelId,
     ],
   );
+  const selectableHotels = useMemo(() => {
+    const hotelsAtDestination = references.hotels.filter(
+      (hotel) =>
+        hotel.attributes.cityId === state.destinationId &&
+        (!state.tour || state.tour.package.hotelIds.includes(hotel.id)),
+    );
+    return [...hotelsAtDestination].sort((left, right) =>
+      left.name.localeCompare(right.name, 'fa'),
+    );
+  }, [references.hotels, state.destinationId, state.tour]);
   const patchState = (patch: Partial<SalesFormState>) =>
     setState((current) => {
       const changedRoute = [
@@ -277,7 +287,7 @@ export function SalesContractForm() {
           return { data };
       }
     };
-    void Promise.all([
+    void Promise.allSettled([
       loadReferences('countries'),
       loadReferences('cities'),
       loadReferences('hotels'),
@@ -285,34 +295,36 @@ export function SalesContractForm() {
       loadReferences('visa-services'),
       loadReferences('banks'),
       loadReferences('currencies'),
-    ])
-      .then(
-        ([
-          countries,
-          cities,
-          hotels,
-          roomTypes,
-          visaServices,
-          banks,
-          currencies,
-        ]) => {
-          setReferences({
-            countries: countries.data,
-            cities: cities.data,
-            hotels: hotels.data,
-            roomTypes: roomTypes.data,
-            visaServices: visaServices.data,
-            banks: banks.data,
-            currencies: currencies.data,
-          });
-          setState((current) =>
-            withSalesRouteDefaults(current, countries.data, cities.data),
-          );
-        },
-      )
-      .catch(() =>
-        setError('بخشی از Public Contract اطلاعات پایه در دسترس نیست.'),
-      );
+    ]).then((results) => {
+      const dataAt = (index: number): readonly MasterDataRecord[] => {
+        const result = results[index];
+        if (result?.status === 'fulfilled') return result.value.data ?? [];
+        return [];
+      };
+      const [
+        countries = [],
+        cities = [],
+        hotels = [],
+        roomTypes = [],
+        visaServices = [],
+        banks = [],
+        currencies = [],
+      ] = [0, 1, 2, 3, 4, 5, 6].map(dataAt);
+      setReferences({
+        countries,
+        cities,
+        hotels,
+        roomTypes,
+        visaServices,
+        banks,
+        currencies,
+      });
+      setState((current) => withSalesRouteDefaults(current, countries, cities));
+      if (results.some((result) => result.status === 'rejected'))
+        setError(
+          'بخشی از اطلاعات پایه دریافت نشد؛ گزینه‌های دریافت‌شده، از جمله هتل‌های فعال، همچنان قابل استفاده‌اند.',
+        );
+    });
     return () => {
       if (restoreTimer !== undefined) globalThis.clearTimeout(restoreTimer);
     };
@@ -1260,12 +1272,7 @@ export function SalesContractForm() {
                   <SearchableReference
                     label="هتل"
                     value={state.hotel.hotelId}
-                    options={references.hotels.filter(
-                      (hotel) =>
-                        hotel.attributes.cityId === state.destinationId &&
-                        (!state.tour ||
-                          state.tour.package.hotelIds.includes(hotel.id)),
-                    )}
+                    options={selectableHotels}
                     onChange={(hotelId) =>
                       patchState({
                         hotel: {
