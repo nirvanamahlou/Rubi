@@ -3932,3 +3932,7 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 
 - درخواست مالک: جملهٔ توضیحی زیر عنوان تمام بخش‌های سامانه حذف شود.
 - نتیجه: `PageHeader` مرکزی فقط عنوان، برچسب بالایی و اقدام‌ها را نمایش می‌دهد؛ prop توضیح برای سازگاری مصرف‌کننده‌ها باقی مانده، اما در رابط رندر نمی‌شود. API، داده، Migration، Permission و Dependency/Lockfile تغییری ندارند.
+
+## LOGIN-ACTIVE-COMPANY-NAMES-RESOLVED-0927 — PC-B — DONE
+
+- نام‌های «نیایش سیر سحر» و «جهان باستان» روی کارت لوگوی شرکت فعال در صفحهٔ ورود نمایش داده می‌شوند. API، داده، Migration، Permission و Dependency/Lockfile تغییری ندارند.
