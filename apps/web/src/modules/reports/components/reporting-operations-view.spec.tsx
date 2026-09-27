@@ -4,7 +4,6 @@ import {
   REPORTING_OPERATIONS_LIMIT,
   reportingOperationsShowOwnerExecutor,
   reportingRunActionLabel,
-  reportingRunSavedReportId,
 } from './reporting-operations-view';
 
 describe('Reporting run action labels', () => {
@@ -26,13 +25,4 @@ describe('Reporting run action labels', () => {
     expect(reportingOperationsShowOwnerExecutor('downloads')).toBe(false);
   });
 
-  it('only enables deleting a saved report from an execution with a saved-report link', () => {
-    expect(
-      reportingRunSavedReportId({
-        id: 'run-1',
-        savedReportId: 'saved-1',
-      }),
-    ).toBe('saved-1');
-    expect(reportingRunSavedReportId({ id: 'run-2' })).toBeUndefined();
-  });
 });

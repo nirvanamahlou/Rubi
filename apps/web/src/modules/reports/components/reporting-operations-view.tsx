@@ -56,20 +56,6 @@ export function reportingOperationsShowOwnerExecutor(view: ReportingView) {
   return view === 'shared';
 }
 
-/** A run can manage a saved report only when it is linked by the API. */
-export function reportingRunSavedReportId(row: Row): string | undefined {
-  const savedReportId = row.savedReportId;
-  return typeof savedReportId === 'string' && savedReportId.trim()
-    ? savedReportId
-    : undefined;
-}
-
-function record(value: unknown): Record<string, unknown> | undefined {
-  return value && typeof value === 'object' && !Array.isArray(value)
-    ? (value as Record<string, unknown>)
-    : undefined;
-}
-
 function resource(view: ReportingView) {
   if (view === 'saved' || view === 'shared') return 'saved' as const;
   if (view === 'recent') return 'runs' as const;
@@ -194,10 +180,7 @@ export function ReportingOperationsView({
                     ? row.filterSnapshot
                     : (row.savedFilterState ?? row.filterState),
                 );
-                const savedReportId =
-                  view === 'saved' ? row.id : reportingRunSavedReportId(row);
-                const runFilterState =
-                  view === 'recent' ? record(row.filterSnapshot) : undefined;
+                const savedReportId = view === 'saved' ? row.id : undefined;
                 return (
                   <tr className="border-t align-top" key={row.id}>
                     <td className="p-3">
@@ -329,7 +312,7 @@ export function ReportingOperationsView({
                             <Trash2 className="size-4" /> حذف
                           </Button>
                         ) : null}
-                        {view === 'saved' || view === 'recent' ? (
+                        {view === 'saved' ? (
                           <ReportSharingDialog
                             reportCode={reportCode}
                             reportName={String(
@@ -338,8 +321,7 @@ export function ReportingOperationsView({
                                 row.reportName ??
                                 reportCode,
                             )}
-                            {...(savedReportId ? { savedReportId } : {})}
-                            {...(runFilterState ? { filterState: runFilterState } : {})}
+                            savedReportId={row.id}
                             onShared={async () => {
                               setFeedback(
                                 'دسترسی دریافت‌کنندگان گزارش به‌روزرسانی شد.',
