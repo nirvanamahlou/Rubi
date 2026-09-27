@@ -10,7 +10,44 @@ export type ProcurementListRow = Pick<
   >;
   sample?: true;
   section?: number;
+  createdAt?: string;
 };
+
+export function filterSampleRequests(
+  rows: readonly ProcurementListRow[],
+  filters: {
+    section?: number;
+    search?: string;
+    status?: string;
+    createdFrom?: string;
+    createdTo?: string;
+  },
+): ProcurementListRow[] {
+  const search = filters.search?.trim().toLocaleLowerCase('fa-IR') ?? '';
+  return rows.filter((row) => {
+    const sectionMatches =
+      filters.section === undefined
+        ? row.section === undefined
+        : filters.section === 1
+          ? row.section === undefined || row.section === 1
+          : row.section === filters.section;
+    if (!sectionMatches) return false;
+    if (filters.status && row.status !== filters.status) return false;
+    if (
+      search &&
+      !`${row.number} ${row.draft.title}`
+        .toLocaleLowerCase('fa-IR')
+        .includes(search)
+    )
+      return false;
+    const createdDay = row.createdAt?.slice(0, 10);
+    if (filters.createdFrom && (!createdDay || createdDay < filters.createdFrom))
+      return false;
+    if (filters.createdTo && (!createdDay || createdDay > filters.createdTo))
+      return false;
+    return true;
+  });
+}
 
 // Read-only examples for an empty local workspace. Never sent to the API.
 export const sampleRequests: ProcurementListRow[] = [
@@ -24,6 +61,7 @@ export const sampleRequests: ProcurementListRow[] = [
       currencyCode: 'IRR',
     },
     sample: true,
+    createdAt: '2026-09-26T08:00:00.000Z',
   },
   {
     id: 'sample-network-renewal',
@@ -35,6 +73,7 @@ export const sampleRequests: ProcurementListRow[] = [
       currencyCode: 'IRR',
     },
     sample: true,
+    createdAt: '2026-09-27T08:00:00.000Z',
   },
   {
     id: 'sample-field-supplies',
@@ -46,6 +85,7 @@ export const sampleRequests: ProcurementListRow[] = [
       currencyCode: 'IRR',
     },
     sample: true,
+    createdAt: '2026-09-28T08:00:00.000Z',
   },
   {
     id: 'sample-service-contract',
@@ -57,6 +97,7 @@ export const sampleRequests: ProcurementListRow[] = [
       currencyCode: 'IRR',
     },
     sample: true,
+    createdAt: '2026-09-29T08:00:00.000Z',
   },
   {
     id: 'sample-signage',
@@ -68,6 +109,7 @@ export const sampleRequests: ProcurementListRow[] = [
       currencyCode: 'IRR',
     },
     sample: true,
+    createdAt: '2026-09-30T08:00:00.000Z',
   },
   ...(
     [
@@ -312,13 +354,14 @@ export const sampleRequests: ProcurementListRow[] = [
         7,
       ],
     ] as const
-  ).map(([id, number, status, title, estimatedAmount, section]) => ({
+  ).map(([id, number, status, title, estimatedAmount, section], index) => ({
     id,
     number,
     status,
     draft: { title, estimatedAmount, currencyCode: 'IRR' },
     section,
     sample: true as const,
+    createdAt: new Date(Date.UTC(2026, 8, index + 1, 8)).toISOString(),
   })),
 ];
 
@@ -330,6 +373,7 @@ export const sampleSuppliers = [
     isActive: true,
     collaborationStatus: 'آماده همکاری',
     sample: true,
+    createdAt: '2026-09-24T08:00:00.000Z',
   },
   {
     id: 'sample-supplier-2',
@@ -338,6 +382,7 @@ export const sampleSuppliers = [
     isActive: true,
     collaborationStatus: 'در حال ارزیابی',
     sample: true,
+    createdAt: '2026-09-25T08:00:00.000Z',
   },
   {
     id: 'sample-supplier-3',
@@ -346,5 +391,25 @@ export const sampleSuppliers = [
     isActive: true,
     collaborationStatus: 'آماده همکاری',
     sample: true,
+    createdAt: '2026-09-26T08:00:00.000Z',
   },
 ];
+
+export function filterSampleSuppliers(
+  rows: typeof sampleSuppliers,
+  filters: { search?: string; createdFrom?: string; createdTo?: string },
+) {
+  const search = filters.search?.trim().toLocaleLowerCase('fa-IR') ?? '';
+  return rows.filter((row) => {
+    if (
+      search &&
+      !`${row.name} ${row.code}`.toLocaleLowerCase('fa-IR').includes(search)
+    )
+      return false;
+    const createdDay = row.createdAt.slice(0, 10);
+    return (
+      (!filters.createdFrom || createdDay >= filters.createdFrom) &&
+      (!filters.createdTo || createdDay <= filters.createdTo)
+    );
+  });
+}

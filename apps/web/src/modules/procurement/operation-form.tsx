@@ -155,15 +155,28 @@ const makeLine = (itemId: string): Line => ({
   acceptedQuantity: '',
   rejectedQuantity: '0',
 });
+const operationStatusLabels: Record<string, string> = {
+  VALID: 'معتبر',
+  SELECTED: 'انتخاب‌شده',
+  PENDING_APPROVAL: 'در انتظار تأیید',
+  APPROVED: 'تأییدشده',
+  ISSUED: 'صادرشده',
+  MATCHED: 'تطبیق‌شده',
+  MISMATCH: 'دارای مغایرت',
+  WAITING_FINANCE: 'منتظر مالی',
+};
 const recordLabel = (row: Row) =>
   [
-    row.number ?? row.invoiceNumber ?? row.name ?? row.id,
-    row.status,
-    row.currencyCode,
-    row.totalAmount,
+    row.name || row.supplierName || row.number || row.invoiceNumber,
+    row.status
+      ? (operationStatusLabels[String(row.status)] ?? String(row.status))
+      : null,
+    row.currencyCode && row.totalAmount
+      ? `${String(row.totalAmount)} ${String(row.currencyCode)}`
+      : null,
   ]
     .filter(Boolean)
-    .join(' · ');
+    .join(' · ') || 'رکورد ثبت‌شده';
 export function OperationForm({
   request,
   bootstrap,
@@ -282,8 +295,11 @@ function OperationFields({
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const identity = useRef<ReturnType<typeof commandAttempt> | null>(null);
-  const set = (key: string, value: string) =>
+  const set = (key: string, value: string) => {
+    setError('');
+    setSuccess('');
     setFields((previous) => ({ ...previous, [key]: value }));
+  };
   const date = (key: string, title: string) => (
     <FormField id={`operation-${key}`} label={title}>
       <DatePicker

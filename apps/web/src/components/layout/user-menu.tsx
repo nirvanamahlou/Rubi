@@ -5,7 +5,11 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
-import { refreshAuthenticatedSession } from '@/lib/auth-session';
+import {
+  AUTH_SESSION_RECOVERED_EVENT,
+  refreshAuthenticatedSession,
+} from '@/lib/auth-session';
+import type { LoginResponse } from '@nora/contracts';
 import { getPublicApiBaseUrl } from '@/lib/environment';
 import {
   clearHeaderSession,
@@ -45,15 +49,9 @@ export function UserMenu() {
 
   useEffect(() => {
     let active = true;
-    void Promise.resolve().then(async () => {
-      const cached = readHeaderSession();
-      const api = getPublicApiBaseUrl();
-      const response = api ? await refreshAuthenticatedSession(api) : null;
+    const applySession = (response: LoginResponse) => {
       if (!active) return;
-      if (!response) {
-        setIdentity({ status: 'error', displayName: PROFILE_USER_FALLBACK });
-        return;
-      }
+      const cached = readHeaderSession();
       const remembered = rememberHeaderSession(
         response.user,
         cached?.loggedInAt,
@@ -63,9 +61,23 @@ export function UserMenu() {
         displayName: remembered.displayName,
         loggedInAt: remembered.loggedInAt,
       });
+    };
+    const recovered = (event: Event) =>
+      applySession((event as CustomEvent<LoginResponse>).detail);
+    window.addEventListener(AUTH_SESSION_RECOVERED_EVENT, recovered);
+    void Promise.resolve().then(async () => {
+      const api = getPublicApiBaseUrl();
+      const response = api ? await refreshAuthenticatedSession(api) : null;
+      if (!active) return;
+      if (!response) {
+        setIdentity({ status: 'error', displayName: PROFILE_USER_FALLBACK });
+        return;
+      }
+      applySession(response);
     });
     return () => {
       active = false;
+      window.removeEventListener(AUTH_SESSION_RECOVERED_EVENT, recovered);
     };
   }, []);
 

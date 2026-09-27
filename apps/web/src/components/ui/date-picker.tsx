@@ -55,6 +55,7 @@ export interface DatePickerProps {
   'aria-label'?: string | undefined;
   'aria-describedby'?: string | undefined;
   'aria-invalid'?: boolean;
+  'aria-required'?: boolean;
 }
 
 export function DatePicker({

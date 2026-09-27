@@ -643,16 +643,32 @@ export class ProcurementService {
     this.require(actor, 'procurement.request.create');
     const input =
       body && typeof body === 'object' && 'draft' in body
-        ? v.object(body, ['draft', 'requesterEmployeeId'])
+        ? v.object(body, ['draft', 'requesterEmployeeId', 'publish'])
         : null;
     const draft = v.draft(input ? input.draft : body);
+    requireRule(
+      input?.publish === undefined || typeof input.publish === 'boolean',
+      'VALIDATION_ERROR',
+      'وضعیت انتشار معتبر نیست.',
+      'publish',
+    );
+    const publish = input?.publish === true;
     const requesterEmployeeId = input?.requesterEmployeeId
       ? v.uuid(input.requesterEmployeeId)
       : null;
+    if (publish) {
+      if (draft.urgent) this.require(actor, 'procurement.emergency');
+      validateSubmission(draft);
+      requireRule(
+        draft.origin.kind === 'GENERAL',
+        'TRAVEL_NOT_CONNECTED',
+        'قرارداد ارجاع تخصصی سفر هنوز متصل نیست.',
+      );
+    }
     await this.validateReferences(
       draft,
       actor,
-      false,
+      publish,
       actor.userId,
       requesterEmployeeId,
     );
@@ -661,7 +677,7 @@ export class ProcurementService {
       draft.branchId,
       'CREATE',
       key,
-      { draft, requesterEmployeeId },
+      { draft, requesterEmployeeId, publish },
       async (tx) => {
         const id = randomUUID();
         const row = await tx.procurementRequest.create({
@@ -684,7 +700,13 @@ export class ProcurementService {
           },
         });
         await this.audit(tx, row, actor, 'CREATE');
-        return requestDto(row);
+        if (!publish) return requestDto(row);
+        const published = await tx.procurementRequest.update({
+          where: { id },
+          data: { status: 'SUBMITTED', version: { increment: 1 } },
+        });
+        await this.audit(tx, published, actor, 'PUBLISH');
+        return requestDto(published);
       },
     );
   }
@@ -695,9 +717,21 @@ export class ProcurementService {
     actor: AuthenticatedActor,
   ) {
     this.require(actor, 'procurement.request.update');
-    const input = v.object(body, ['expectedVersion', 'draft', 'reason']);
+    const input = v.object(body, [
+      'expectedVersion',
+      'draft',
+      'reason',
+      'publish',
+    ]);
     const version = v.integer(input.expectedVersion);
     const draft = v.draft(input.draft);
+    requireRule(
+      input.publish === undefined || typeof input.publish === 'boolean',
+      'VALIDATION_ERROR',
+      'وضعیت انتشار معتبر نیست.',
+      'publish',
+    );
+    const publish = input.publish === true;
     const existing = await this.detail(id, actor);
     requireRule(
       existing.requesterUserId === actor.userId ||
@@ -711,10 +745,19 @@ export class ProcurementService {
       'انتقال شعبه درخواست مجاز نیست.',
     );
     const reason = v.text(input.reason, 'reason', 1000, true);
+    if (publish) {
+      if (draft.urgent) this.require(actor, 'procurement.emergency');
+      validateSubmission(draft);
+      requireRule(
+        draft.origin.kind === 'GENERAL',
+        'TRAVEL_NOT_CONNECTED',
+        'قرارداد ارجاع تخصصی سفر هنوز متصل نیست.',
+      );
+    }
     await this.validateReferences(
       draft,
       actor,
-      false,
+      publish,
       existing.requesterUserId,
       existing.requesterEmployeeId,
     );
@@ -723,7 +766,7 @@ export class ProcurementService {
       draft.branchId,
       `UPDATE:${id}`,
       key,
-      { version, draft, reason },
+      { version, draft, reason, publish },
       async (tx) => {
         const before = await this.claim(tx, id, version);
         requireRule(
@@ -758,7 +801,13 @@ export class ProcurementService {
           },
         });
         await this.audit(tx, row, actor, 'UPDATE', reason);
-        return requestDto(row);
+        if (!publish) return requestDto(row);
+        const published = await tx.procurementRequest.update({
+          where: { id },
+          data: { status: 'SUBMITTED', version: { increment: 1 } },
+        });
+        await this.audit(tx, published, actor, 'PUBLISH');
+        return requestDto(published);
       },
     );
   }
