@@ -143,6 +143,325 @@ export function OccupancyFactorFields({
     </div>
   );
 }
+
+export function HotelRoomRatesTable({
+  row,
+  activeFactorKinds,
+  canManageRooms,
+  newRoom,
+  onChangeRoom,
+  onChangeFactors,
+  onChangeNewRoom,
+  onAddRoom,
+}: {
+  row: GridRow;
+  activeFactorKinds: readonly FactorKind[];
+  canManageRooms: boolean;
+  newRoom: NewRoomDraft | undefined;
+  onChangeRoom: (roomTypeId: string, patch: Partial<RoomRateDraft>) => void;
+  onChangeFactors: (factors: Factors) => void;
+  onChangeNewRoom: (patch: Partial<NewRoomDraft>) => void;
+  onAddRoom: () => void;
+}) {
+  const roomTypes = row.hotel.roomTypes ?? [];
+  const draft = {
+    name: '',
+    maxAdults: '2',
+    maxChildren2To6: '0',
+    maxChildren6To12: '0',
+    maxInfants: '0',
+    factor: '1',
+    ...newRoom,
+  };
+
+  return (
+    <div className={styles.roomRatesPanel}>
+      <div className={styles.roomTableIntro}>
+        <div>
+          <strong>جدول اتاق، ظرفیت و ضریب‌های {row.hotel.name}</strong>
+          <p>
+            قیمت پایه هر نفر / هر شب است. ظرفیت‌ها در قرارداد کنترل می‌شوند و
+            نوع اتاق بدون ضریب قیمت نیز همچنان در جدول نمایش داده می‌شود.
+          </p>
+        </div>
+        <span className={styles.chip}>{row.currency}</span>
+      </div>
+      <div className={styles.roomTableScroll}>
+        <table className={styles.roomRatesTable}>
+          <thead>
+            <tr>
+              <th>هتل</th>
+              <th>نوع اتاق</th>
+              <th>بزرگسال</th>
+              <th>کودک ۲–۶</th>
+              <th>کودک ۶–۱۲</th>
+              <th>نوزاد</th>
+              <th>ظرفیت کل</th>
+              <th>ضریب اتاق</th>
+              <th>قیمت اتاق / شب</th>
+            </tr>
+          </thead>
+          <tbody>
+            {roomTypes.map((roomType) => {
+              const value = row.roomRates.find(
+                (room) => room.roomTypeId === roomType.id,
+              ) ?? {
+                roomTypeId: roomType.id,
+                roomTypeName: roomType.name,
+                factor: '1',
+                maxAdults: '2',
+                maxChildren2To6: '0',
+                maxChildren6To12: '0',
+                maxInfants: '0',
+              };
+              const capacity = [
+                value.maxAdults,
+                value.maxChildren2To6,
+                value.maxChildren6To12,
+                value.maxInfants,
+              ].reduce((total, item) => total + (Number(item) || 0), 0);
+
+              return (
+                <tr key={roomType.id}>
+                  <td>
+                    <strong>{row.hotel.name}</strong>
+                    <small dir="ltr">{row.currency}</small>
+                  </td>
+                  <td>
+                    <strong>{roomType.name}</strong>
+                  </td>
+                  <td>
+                    <input
+                      aria-label={`ظرفیت بزرگسال ${roomType.name}`}
+                      type="number"
+                      required
+                      min="1"
+                      max="20"
+                      value={value.maxAdults}
+                      onChange={(event) =>
+                        onChangeRoom(roomType.id, {
+                          maxAdults: event.target.value,
+                        })
+                      }
+                    />
+                  </td>
+                  <td>
+                    <input
+                      aria-label={`ظرفیت کودک ۲ تا ۶ سال ${roomType.name}`}
+                      type="number"
+                      required
+                      min="0"
+                      max="20"
+                      value={value.maxChildren2To6}
+                      onChange={(event) =>
+                        onChangeRoom(roomType.id, {
+                          maxChildren2To6: event.target.value,
+                        })
+                      }
+                    />
+                  </td>
+                  <td>
+                    <input
+                      aria-label={`ظرفیت کودک ۶ تا ۱۲ سال ${roomType.name}`}
+                      type="number"
+                      required
+                      min="0"
+                      max="20"
+                      value={value.maxChildren6To12}
+                      onChange={(event) =>
+                        onChangeRoom(roomType.id, {
+                          maxChildren6To12: event.target.value,
+                        })
+                      }
+                    />
+                  </td>
+                  <td>
+                    <input
+                      aria-label={`ظرفیت نوزاد ${roomType.name}`}
+                      type="number"
+                      required
+                      min="0"
+                      max="20"
+                      value={value.maxInfants}
+                      onChange={(event) =>
+                        onChangeRoom(roomType.id, {
+                          maxInfants: event.target.value,
+                        })
+                      }
+                    />
+                  </td>
+                  <td>
+                    <output dir="ltr">
+                      {value.maxAdults || '0'} + {value.maxChildren2To6 || '0'}{' '}
+                      + {value.maxChildren6To12 || '0'} +{' '}
+                      {value.maxInfants || '0'} = {capacity}
+                    </output>
+                  </td>
+                  <td>
+                    <input
+                      aria-label={`ضریب نوع اتاق ${roomType.name}`}
+                      type="number"
+                      min="0.001"
+                      max="999.999"
+                      step="0.001"
+                      value={value.factor}
+                      onChange={(event) =>
+                        onChangeRoom(roomType.id, {
+                          factor: event.target.value,
+                        })
+                      }
+                    />
+                  </td>
+                  <td>
+                    <output dir="ltr">
+                      {price(row.base, value.factor, row.currency)}
+                    </output>
+                  </td>
+                </tr>
+              );
+            })}
+            {!roomTypes.length && (
+              <tr>
+                <td colSpan={9} role="alert">
+                  ابتدا نوع اتاق را برای این هتل در اطلاعات پایه تعریف کنید.
+                </td>
+              </tr>
+            )}
+          </tbody>
+          <tfoot>
+            <tr className={styles.hotelFactorRow}>
+              <th colSpan={3}>ضریب‌های چیدمان پکیجِ هتل</th>
+              <td colSpan={6}>
+                <div
+                  className={styles.factorColumns}
+                  style={
+                    {
+                      '--factor-columns': activeFactorKinds.length,
+                    } as React.CSSProperties
+                  }
+                >
+                  {activeFactorKinds.map((kind) => (
+                    <label key={kind}>
+                      <span>{factorLabel(kind)}</span>
+                      <input
+                        aria-label={`ضریب ${factorLabel(kind)} ${row.hotel.name}`}
+                        type="number"
+                        min="0.001"
+                        max="999.999"
+                        step="0.001"
+                        value={row.factors[kind]}
+                        placeholder="ندارد"
+                        onChange={(event) =>
+                          onChangeFactors({
+                            ...row.factors,
+                            [kind]: event.target.value,
+                          })
+                        }
+                      />
+                      <output dir="ltr">
+                        {price(row.base, row.factors[kind], row.currency)}
+                      </output>
+                    </label>
+                  ))}
+                </div>
+                <small>ضریب خالی یعنی این چیدمان برای هتل وجود ندارد.</small>
+              </td>
+            </tr>
+            {canManageRooms ? (
+              <tr className={styles.newRoomTableRow}>
+                <th colSpan={2}>افزودن نوع اتاق به همین هتل</th>
+                <td>
+                  <input
+                    aria-label={`نام نوع اتاق جدید ${row.hotel.name}`}
+                    placeholder="نام اتاق"
+                    value={draft.name}
+                    onChange={(event) =>
+                      onChangeNewRoom({ name: event.target.value })
+                    }
+                  />
+                </td>
+                <td>
+                  <input
+                    aria-label={`ظرفیت بزرگسال اتاق جدید ${row.hotel.name}`}
+                    type="number"
+                    min="1"
+                    max="20"
+                    value={draft.maxAdults}
+                    onChange={(event) =>
+                      onChangeNewRoom({ maxAdults: event.target.value })
+                    }
+                  />
+                </td>
+                <td>
+                  <input
+                    aria-label={`ظرفیت کودک ۲ تا ۶ سال اتاق جدید ${row.hotel.name}`}
+                    type="number"
+                    min="0"
+                    max="20"
+                    value={draft.maxChildren2To6}
+                    onChange={(event) =>
+                      onChangeNewRoom({ maxChildren2To6: event.target.value })
+                    }
+                  />
+                </td>
+                <td>
+                  <input
+                    aria-label={`ظرفیت کودک ۶ تا ۱۲ سال اتاق جدید ${row.hotel.name}`}
+                    type="number"
+                    min="0"
+                    max="20"
+                    value={draft.maxChildren6To12}
+                    onChange={(event) =>
+                      onChangeNewRoom({ maxChildren6To12: event.target.value })
+                    }
+                  />
+                </td>
+                <td>
+                  <input
+                    aria-label={`ظرفیت نوزاد اتاق جدید ${row.hotel.name}`}
+                    type="number"
+                    min="0"
+                    max="20"
+                    value={draft.maxInfants}
+                    onChange={(event) =>
+                      onChangeNewRoom({ maxInfants: event.target.value })
+                    }
+                  />
+                </td>
+                <td>
+                  <input
+                    aria-label={`ضریب اتاق جدید ${row.hotel.name}`}
+                    type="number"
+                    min="0.001"
+                    max="999.999"
+                    step="0.001"
+                    value={draft.factor}
+                    onChange={(event) =>
+                      onChangeNewRoom({ factor: event.target.value })
+                    }
+                  />
+                </td>
+                <td>
+                  <button type="button" onClick={onAddRoom}>
+                    + ساخت و اتصال
+                  </button>
+                </td>
+              </tr>
+            ) : (
+              <tr>
+                <td colSpan={9}>
+                  <Link href="/master-data/accommodation">
+                    مدیریت نوع اتاق در اطلاعات پایه
+                  </Link>
+                </td>
+              </tr>
+            )}
+          </tfoot>
+        </table>
+      </div>
+    </div>
+  );
+}
 const blankRow = (hotel: HotelOption, currency: string): GridRow => ({
   hotel,
   selected: false,
@@ -1181,375 +1500,59 @@ export function HotelRatePacksWorkspace() {
                                 <tr className={styles.selectedRow}>
                                   <td colSpan={5}>
                                     <div className={styles.hotelRateDetails}>
-                                      {row.selected ? (
-                                        <div className={styles.roomRateEditor}>
-                                          <div
-                                            className={styles.roomRateHeader}
-                                          >
-                                            <span>نوع اتاق</span>
-                                            <span>بزرگسال</span>
-                                            <span>کودک ۲–۶</span>
-                                            <span>کودک ۶–۱۲</span>
-                                            <span>نوزاد</span>
-                                            <span>ظرفیت</span>
-                                            <span>ضریب</span>
-                                            <span>قیمت پکیج</span>
-                                          </div>
-                                          {(row.hotel.roomTypes ?? []).map(
-                                            (roomType) => {
-                                              const value = row.roomRates.find(
-                                                (room) =>
-                                                  room.roomTypeId ===
-                                                  roomType.id,
-                                              ) ?? {
-                                                roomTypeId: roomType.id,
-                                                roomTypeName: roomType.name,
-                                                factor: '1',
-                                                maxAdults: '2',
-                                                maxChildren2To6: '0',
-                                                maxChildren6To12: '0',
-                                                maxInfants: '0',
-                                              };
-                                              const update = (
-                                                patch: Partial<RoomRateDraft>,
-                                              ) =>
-                                                changeRow(row.hotel.id, {
-                                                  roomRates: [
-                                                    ...row.roomRates.filter(
-                                                      (room) =>
-                                                        room.roomTypeId !==
-                                                        roomType.id,
-                                                    ),
-                                                    { ...value, ...patch },
-                                                  ],
-                                                });
-                                              return (
-                                                <fieldset
-                                                  key={roomType.id}
-                                                  className={
-                                                    styles.roomRateCard
-                                                  }
-                                                >
-                                                  <legend>
-                                                    {roomType.name}
-                                                  </legend>
-                                                  <label aria-label="ظرفیت بزرگسال">
-                                                    <span
-                                                      className={
-                                                        styles.mobileLabel
-                                                      }
-                                                    >
-                                                      بزرگسال
-                                                    </span>
-                                                    <input
-                                                      aria-label={`ظرفیت بزرگسال ${roomType.name}`}
-                                                      type="number"
-                                                      required
-                                                      min="1"
-                                                      max="20"
-                                                      value={value.maxAdults}
-                                                      onChange={(event) =>
-                                                        update({
-                                                          maxAdults:
-                                                            event.target.value,
-                                                        })
-                                                      }
-                                                    />
-                                                  </label>
-                                                  <label aria-label="ظرفیت کودک ۲ تا ۶ سال">
-                                                    <span
-                                                      className={
-                                                        styles.mobileLabel
-                                                      }
-                                                    >
-                                                      کودک ۲–۶
-                                                    </span>
-                                                    <input
-                                                      aria-label={`ظرفیت کودک ۲ تا ۶ سال ${roomType.name}`}
-                                                      type="number"
-                                                      required
-                                                      min="0"
-                                                      max="20"
-                                                      value={
-                                                        value.maxChildren2To6
-                                                      }
-                                                      onChange={(event) =>
-                                                        update({
-                                                          maxChildren2To6:
-                                                            event.target.value,
-                                                        })
-                                                      }
-                                                    />
-                                                  </label>
-                                                  <label aria-label="ظرفیت کودک ۶ تا ۱۲ سال">
-                                                    <span
-                                                      className={
-                                                        styles.mobileLabel
-                                                      }
-                                                    >
-                                                      کودک ۶–۱۲
-                                                    </span>
-                                                    <input
-                                                      aria-label={`ظرفیت کودک ۶ تا ۱۲ سال ${roomType.name}`}
-                                                      type="number"
-                                                      required
-                                                      min="0"
-                                                      max="20"
-                                                      value={
-                                                        value.maxChildren6To12
-                                                      }
-                                                      onChange={(event) =>
-                                                        update({
-                                                          maxChildren6To12:
-                                                            event.target.value,
-                                                        })
-                                                      }
-                                                    />
-                                                  </label>
-                                                  <label aria-label="ظرفیت نوزاد">
-                                                    <span
-                                                      className={
-                                                        styles.mobileLabel
-                                                      }
-                                                    >
-                                                      نوزاد
-                                                    </span>
-                                                    <input
-                                                      aria-label={`ظرفیت نوزاد ${roomType.name}`}
-                                                      type="number"
-                                                      required
-                                                      min="0"
-                                                      max="20"
-                                                      value={value.maxInfants}
-                                                      onChange={(event) =>
-                                                        update({
-                                                          maxInfants:
-                                                            event.target.value,
-                                                        })
-                                                      }
-                                                    />
-                                                  </label>
-                                                  <small dir="ltr">
-                                                    {value.maxAdults || '0'} +{' '}
-                                                    {value.maxChildren2To6 ||
-                                                      '0'}{' '}
-                                                    +{' '}
-                                                    {value.maxChildren6To12 ||
-                                                      '0'}{' '}
-                                                    + {value.maxInfants || '0'}
-                                                  </small>
-                                                  <label aria-label="ضریب نوع اتاق">
-                                                    <span
-                                                      className={
-                                                        styles.mobileLabel
-                                                      }
-                                                    >
-                                                      ضریب
-                                                    </span>
-                                                    <input
-                                                      aria-label={`ضریب نوع اتاق ${roomType.name}`}
-                                                      type="number"
-                                                      min="0.001"
-                                                      max="999.999"
-                                                      step="0.001"
-                                                      value={value.factor}
-                                                      onChange={(event) =>
-                                                        update({
-                                                          factor:
-                                                            event.target.value,
-                                                        })
-                                                      }
-                                                    />
-                                                  </label>
-                                                  <output dir="ltr">
-                                                    {price(
-                                                      row.base,
-                                                      value.factor,
-                                                      row.currency,
-                                                    )}{' '}
-                                                    {row.currency}
-                                                  </output>
-                                                </fieldset>
-                                              );
-                                            },
-                                          )}
-                                          {!(row.hotel.roomTypes ?? [])
-                                            .length && (
-                                            <small role="alert">
-                                              ابتدا نوع اتاق را برای این هتل در
-                                              اطلاعات پایه تعریف کنید.
-                                            </small>
-                                          )}
-                                          {session.user.permissions.includes(
+                                      <HotelRoomRatesTable
+                                        row={row}
+                                        activeFactorKinds={activeFactorKinds}
+                                        canManageRooms={
+                                          session.user.permissions.includes(
                                             'master_data.create',
                                           ) &&
                                           session.user.permissions.includes(
                                             'master_data.update',
-                                          ) ? (
-                                            <fieldset
-                                              className={styles.newRoomRow}
-                                            >
-                                              <legend>
-                                                افزودن نوع اتاق به همین هتل
-                                              </legend>
-                                              <input
-                                                aria-label={`نام نوع اتاق جدید ${row.hotel.name}`}
-                                                placeholder="نام نوع اتاق"
-                                                value={
-                                                  newRoomDrafts[row.hotel.id]
-                                                    ?.name ?? ''
-                                                }
-                                                onChange={(event) =>
-                                                  changeNewRoomDraft(
-                                                    row.hotel.id,
-                                                    {
-                                                      name: event.target.value,
-                                                    },
-                                                  )
-                                                }
-                                              />
-                                              <input
-                                                aria-label={`ظرفیت بزرگسال اتاق جدید ${row.hotel.name}`}
-                                                type="number"
-                                                min="1"
-                                                max="20"
-                                                value={
-                                                  newRoomDrafts[row.hotel.id]
-                                                    ?.maxAdults ?? '2'
-                                                }
-                                                onChange={(event) =>
-                                                  changeNewRoomDraft(
-                                                    row.hotel.id,
-                                                    {
-                                                      maxAdults:
-                                                        event.target.value,
-                                                    },
-                                                  )
-                                                }
-                                              />
-                                              <input
-                                                aria-label={`ظرفیت کودک ۲ تا ۶ سال اتاق جدید ${row.hotel.name}`}
-                                                type="number"
-                                                min="0"
-                                                max="20"
-                                                value={
-                                                  newRoomDrafts[row.hotel.id]
-                                                    ?.maxChildren2To6 ?? '0'
-                                                }
-                                                onChange={(event) =>
-                                                  changeNewRoomDraft(
-                                                    row.hotel.id,
-                                                    {
-                                                      maxChildren2To6:
-                                                        event.target.value,
-                                                    },
-                                                  )
-                                                }
-                                              />
-                                              <input
-                                                aria-label={`ظرفیت کودک ۶ تا ۱۲ سال اتاق جدید ${row.hotel.name}`}
-                                                type="number"
-                                                min="0"
-                                                max="20"
-                                                value={
-                                                  newRoomDrafts[row.hotel.id]
-                                                    ?.maxChildren6To12 ?? '0'
-                                                }
-                                                onChange={(event) =>
-                                                  changeNewRoomDraft(
-                                                    row.hotel.id,
-                                                    {
-                                                      maxChildren6To12:
-                                                        event.target.value,
-                                                    },
-                                                  )
-                                                }
-                                              />
-                                              <input
-                                                aria-label={`ظرفیت نوزاد اتاق جدید ${row.hotel.name}`}
-                                                type="number"
-                                                min="0"
-                                                max="20"
-                                                value={
-                                                  newRoomDrafts[row.hotel.id]
-                                                    ?.maxInfants ?? '0'
-                                                }
-                                                onChange={(event) =>
-                                                  changeNewRoomDraft(
-                                                    row.hotel.id,
-                                                    {
-                                                      maxInfants:
-                                                        event.target.value,
-                                                    },
-                                                  )
-                                                }
-                                              />
-                                              <input
-                                                aria-label={`ضریب اتاق جدید ${row.hotel.name}`}
-                                                type="number"
-                                                min="0.001"
-                                                max="999.999"
-                                                step="0.001"
-                                                value={
-                                                  newRoomDrafts[row.hotel.id]
-                                                    ?.factor ?? '1'
-                                                }
-                                                onChange={(event) =>
-                                                  changeNewRoomDraft(
-                                                    row.hotel.id,
-                                                    {
-                                                      factor:
-                                                        event.target.value,
-                                                    },
-                                                  )
-                                                }
-                                              />
-                                              <button
-                                                type="button"
-                                                onClick={() =>
-                                                  void addRoomTypeToHotel(row)
-                                                }
-                                              >
-                                                + ساخت و اتصال
-                                              </button>
-                                            </fieldset>
-                                          ) : (
-                                            <Link href="/master-data/accommodation">
-                                              مدیریت نوع اتاق در اطلاعات پایه
-                                            </Link>
-                                          )}
-                                          <small>
-                                            ظرفیت هر نوع اتاق در قرارداد کنترل
-                                            می‌شود.
-                                          </small>
-                                        </div>
-                                      ) : (
-                                        '—'
-                                      )}
-                                      <div>
-                                        {row.selected ? (
-                                          <>
-                                            <OccupancyFactorFields
-                                              hotelName={row.hotel.name}
-                                              base={row.base}
-                                              currency={row.currency}
-                                              factors={row.factors}
-                                              visibleKinds={activeFactorKinds}
-                                              onChange={(factors) =>
-                                                changeRow(row.hotel.id, {
-                                                  factors,
-                                                })
-                                              }
-                                            />
-                                            <small>
-                                              ضریب خالی یعنی این چیدمان برای هتل
-                                              وجود ندارد.
-                                            </small>
-                                          </>
-                                        ) : (
-                                          '—'
-                                        )}
-                                      </div>
+                                          )
+                                        }
+                                        newRoom={newRoomDrafts[row.hotel.id]}
+                                        onChangeRoom={(roomTypeId, patch) => {
+                                          const current = row.roomRates.find(
+                                            (room) =>
+                                              room.roomTypeId === roomTypeId,
+                                          ) ?? {
+                                            roomTypeId,
+                                            roomTypeName:
+                                              (row.hotel.roomTypes ?? []).find(
+                                                (room) =>
+                                                  room.id === roomTypeId,
+                                              )?.name ?? 'اتاق',
+                                            factor: '1',
+                                            maxAdults: '2',
+                                            maxChildren2To6: '0',
+                                            maxChildren6To12: '0',
+                                            maxInfants: '0',
+                                          };
+                                          changeRow(row.hotel.id, {
+                                            roomRates: [
+                                              ...row.roomRates.filter(
+                                                (room) =>
+                                                  room.roomTypeId !==
+                                                  roomTypeId,
+                                              ),
+                                              { ...current, ...patch },
+                                            ],
+                                          });
+                                        }}
+                                        onChangeFactors={(factors) =>
+                                          changeRow(row.hotel.id, { factors })
+                                        }
+                                        onChangeNewRoom={(patch) =>
+                                          changeNewRoomDraft(
+                                            row.hotel.id,
+                                            patch,
+                                          )
+                                        }
+                                        onAddRoom={() =>
+                                          void addRoomTypeToHotel(row)
+                                        }
+                                      />
                                     </div>
                                   </td>
                                 </tr>
