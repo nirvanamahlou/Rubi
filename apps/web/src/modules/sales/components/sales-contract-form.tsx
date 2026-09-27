@@ -298,16 +298,17 @@ export function SalesContractForm() {
     ]).then((results) => {
       const dataAt = (index: number): readonly MasterDataRecord[] => {
         const result = results[index];
-        return result?.status === 'fulfilled' ? result.value.data : [];
+        if (result?.status === 'fulfilled') return result.value.data ?? [];
+        return [];
       };
       const [
-        countries,
-        cities,
-        hotels,
-        roomTypes,
-        visaServices,
-        banks,
-        currencies,
+        countries = [],
+        cities = [],
+        hotels = [],
+        roomTypes = [],
+        visaServices = [],
+        banks = [],
+        currencies = [],
       ] = [0, 1, 2, 3, 4, 5, 6].map(dataAt);
       setReferences({
         countries,

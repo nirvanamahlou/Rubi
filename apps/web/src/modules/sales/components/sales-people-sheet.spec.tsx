@@ -65,6 +65,7 @@ describe('Sales uses the Customers entry spreadsheet', () => {
           originCountryCode: 'IR',
           destinationCountryId: 'turkey',
           destinationCountryCode: 'TR',
+          serviceKinds: ['FLIGHT'] as typeof emptySalesForm.serviceKinds,
           passengerComposition: { adults: 1, children: 0, infants: 0 },
         }}
         draft={null}

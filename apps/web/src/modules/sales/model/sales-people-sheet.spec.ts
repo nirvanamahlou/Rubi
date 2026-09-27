@@ -858,6 +858,7 @@ describe('fixed Sales people-entry slots', () => {
   it('requires airline identity for every passenger on an international contract', () => {
     const international = {
       ...state,
+      serviceKinds: ['FLIGHT'] as SalesFormState['serviceKinds'],
       originCountryId: 'origin-country',
       destinationCountryId: 'destination-country',
     };
@@ -882,6 +883,7 @@ describe('fixed Sales people-entry slots', () => {
   it('treats a route as domestic only when both country codes are Iran', () => {
     const domestic = {
       ...state,
+      serviceKinds: ['FLIGHT'] as SalesFormState['serviceKinds'],
       originCountryId: 'iran-a',
       destinationCountryId: 'iran-b',
       originCountryCode: 'IR',
