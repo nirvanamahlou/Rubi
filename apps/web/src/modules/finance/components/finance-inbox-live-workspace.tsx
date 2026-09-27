@@ -33,6 +33,7 @@ import type {
 
 import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
+import { MoneyInput } from '@/components/ui/money-input';
 import {
   Input,
   Select,
@@ -1123,16 +1124,10 @@ export function FinanceInboxLiveWorkspace() {
                   </label>
                   <label className="grid gap-2">
                     <span>قیمت خرید هر صندلی</span>
-                    <Input
+                    <MoneyInput
                       required
-                      dir="ltr"
-                      inputMode="decimal"
                       value={ticketUnitCost}
-                      onChange={(event) =>
-                        setTicketUnitCost(
-                          event.target.value.replace(/[^0-9.]/g, ''),
-                        )
-                      }
+                      onValueChange={setTicketUnitCost}
                     />
                   </label>
                   <div className="sm:col-span-2 rounded-xl bg-background/80 p-3 text-sm">
@@ -1214,12 +1209,10 @@ export function FinanceInboxLiveWorkspace() {
                 </label>
                 <label className="grid gap-2">
                   <span>مبلغ این پرداخت</span>
-                  <Input
+                  <MoneyInput
                     required
-                    dir="ltr"
-                    inputMode="decimal"
                     value={paidAmount}
-                    onChange={(event) => setPaidAmount(event.target.value)}
+                    onValueChange={setPaidAmount}
                   />
                   <small className="text-muted-foreground">
                     مانده فعلی: {actionItem?.settlement?.remainingAmount ?? '—'}{' '}
@@ -1229,12 +1222,10 @@ export function FinanceInboxLiveWorkspace() {
                 {actionItem?.amount?.currencyCode !== 'IRR' ? (
                   <label className="grid gap-2">
                     <span>نرخ روز ارز به ریال</span>
-                    <Input
+                    <MoneyInput
                       required
-                      dir="ltr"
-                      inputMode="decimal"
                       value={exchangeRate}
-                      onChange={(event) => setExchangeRate(event.target.value)}
+                      onValueChange={setExchangeRate}
                     />
                   </label>
                 ) : null}

@@ -20,6 +20,7 @@ import {
 import { useMemo, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
+import { MoneyInput } from '@/components/ui/money-input';
 import {
   FormField,
   Input,
@@ -395,10 +396,10 @@ function ActionDialog({
             </FormField>
             {isReceipt ? (
               <FormField label="مبلغ واقعی دریافت‌شده" required>
-                <Input
-                  dir="ltr"
-                  inputMode="decimal"
-                  onChange={(e) => update('actualAmount', e.target.value)}
+                <MoneyInput
+                  onValueChange={(actualAmount) =>
+                    update('actualAmount', actualAmount)
+                  }
                   value={draft.actualAmount}
                 />
               </FormField>
@@ -415,10 +416,10 @@ function ActionDialog({
                 label={`نرخ روز هر ۱ ${request.currencyCode} به ریال`}
                 required
               >
-                <Input
-                  dir="ltr"
-                  inputMode="decimal"
-                  onChange={(e) => update('exchangeRateToIrr', e.target.value)}
+                <MoneyInput
+                  onValueChange={(exchangeRateToIrr) =>
+                    update('exchangeRateToIrr', exchangeRateToIrr)
+                  }
                   value={draft.exchangeRateToIrr}
                 />
                 <p className="mt-1 text-xs text-muted-foreground">
@@ -443,9 +444,8 @@ function ActionDialog({
               </FormField>
             ) : null}
             <FormField label="کارمزد">
-              <Input
-                dir="ltr"
-                onChange={(e) => update('feeAmount', e.target.value)}
+              <MoneyInput
+                onValueChange={(feeAmount) => update('feeAmount', feeAmount)}
                 value={draft.feeAmount}
               />
             </FormField>
@@ -488,11 +488,9 @@ function ActionDialog({
                 >
                   <Badge>پرداخت {index + 1}</Badge>
                   <FormField label="مبلغ پرداخت">
-                    <Input
-                      dir="ltr"
-                      inputMode="decimal"
-                      onChange={(event) =>
-                        updatePaymentPart(part.id, 'amount', event.target.value)
+                    <MoneyInput
+                      onValueChange={(amount) =>
+                        updatePaymentPart(part.id, 'amount', amount)
                       }
                       value={part.amount}
                     />

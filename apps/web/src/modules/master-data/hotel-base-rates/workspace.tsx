@@ -26,6 +26,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Input } from '@/components/ui/form-controls';
+import { MoneyInput } from '@/components/ui/money-input';
 import {
   Alert,
   Badge,
@@ -618,18 +619,16 @@ export function HotelBaseRateWorkspace() {
                           </div>
                         </td>
                         <td className="border-b border-l border-border p-2">
-                          <Input
+                          <MoneyInput
                             aria-label={`قیمت پایه ${row.hotelName}`}
                             className="h-10 bg-background font-mono"
-                            dir="ltr"
                             disabled={!row.included}
-                            inputMode="decimal"
                             placeholder="0.00"
                             value={row.baseAmount ?? ''}
                             onFocus={(event) => event.currentTarget.select()}
-                            onChange={(event) =>
+                            onValueChange={(baseAmount) =>
                               updateRow(row.hotelId, {
-                                baseAmount: event.target.value || null,
+                                baseAmount: baseAmount || null,
                               })
                             }
                           />

@@ -62,6 +62,19 @@ async function responseError(response: Response, fallback: string) {
       : fallback;
 }
 
+function downloadFile(file: Blob, fileName: string) {
+  const url = URL.createObjectURL(file);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = fileName;
+  document.body.appendChild(anchor);
+  anchor.click();
+  setTimeout(() => {
+    anchor.remove();
+    URL.revokeObjectURL(url);
+  }, 30000);
+}
+
 export function ManifestExport() {
   const today = todayInTehran();
   const [fromDate, setFromDate] = useState(today);
@@ -179,21 +192,14 @@ export function ManifestExport() {
       const file = await response.blob();
       if (!file.size)
         throw new Error('فایل MANIFEST خالی است؛ دوباره تلاش کنید.');
-      const url = URL.createObjectURL(file);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download =
+      downloadFile(
+        file,
         'manifest-' +
-        ticket.serviceNumber.replace(/[^A-Za-z0-9_-]/g, '_') +
-        '-' +
-        fromDate +
-        '.xlsx';
-      document.body.appendChild(link);
-      link.click();
-      setTimeout(() => {
-        link.remove();
-        URL.revokeObjectURL(url);
-      }, 30000);
+          ticket.serviceNumber.replace(/[^A-Za-z0-9_-]/g, '_') +
+          '-' +
+          fromDate +
+          '.xlsx',
+      );
       setResult(
         contracts +
           ' قرارداد و ' +

@@ -121,7 +121,7 @@ export function CustomerPicker({
       window.clearTimeout(timer);
       controller.abort();
     };
-  }, [load, retry]);
+  }, [load, retry, search]);
 
   return (
     <section

@@ -14,6 +14,7 @@ import { HrDirectoryPicker } from '@/modules/hr/hr-directory-picker';
 
 import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
+import { MoneyInput } from '@/components/ui/money-input';
 import {
   FormField,
   Input,
@@ -247,15 +248,13 @@ export function FinancePreviewForm({
               required
             >
               <div className="grid grid-cols-[1fr_6rem] gap-2">
-                <Input
+                <MoneyInput
                   disabled={readOnly}
-                  dir="ltr"
                   id="finance-amount"
-                  inputMode="decimal"
-                  onChange={(event) =>
+                  onValueChange={(amount) =>
                     setDraft((current) => ({
                       ...current,
-                      amount: event.target.value,
+                      amount,
                     }))
                   }
                   placeholder="125000000"

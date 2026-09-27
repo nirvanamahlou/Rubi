@@ -208,6 +208,18 @@
 
 # Work Assignments
 
+## MONEY-INPUT-FORMAT-0927 — PC-A — READY_FOR_REVIEW
+
+- دامنه: یکپارچه‌سازی ورودی‌های مبلغ در Web تا مبلغ هنگام ورود با جداکنندهٔ
+  سه‌رقمی نمایش داده شود، درحالی‌که مقدار خام Decimal برای API حفظ می‌شود.
+  فرم‌های قیمت بلیت، فروش، مالی، خرید، نرخ هتل و بودجهٔ کمپین در این واحد
+  پوشش داده می‌شوند. ظرفیت، درصد، تاریخ و نرخ تبدیل خارج از دامنه‌اند.
+- شاخه: `codex/pc-a-money-input-format-0927` از
+  `origin/develop@ddf042b0`. بدون Migration، قرارداد API، Dependency/Lockfile
+  یا تغییر دادهٔ عملیاتی. Prettier و بررسی diff موفق‌اند؛ اجرای کامل lint،
+  typecheck و test در worktree به‌دلیل ناتوانی محیط در دریافت بسته‌های قفل‌شده
+  از registry (EACCES) نیازمند CI است.
+
 ## LAN-API-DISCOVERY-0923 — PC-B — READY_FOR_REVIEW
 
 - درخواست مالک در 2026-09-23: آخرین اصلاح دسترسی کامپیوترهای شبکه Push و Merge شود و ورود از آدرس شبکه پس از Build/Restart دوباره به خطای «آدرس API تعریف نشده» برنگردد.
