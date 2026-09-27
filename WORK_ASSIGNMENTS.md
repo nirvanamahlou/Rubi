@@ -3898,3 +3898,9 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 - درخواست مالک: آدرس IP ثبت‌شده برای هر نشست، کنار دیگر ستون‌های لاگ نشست خود کاربر نمایش داده شود.
 - محدوده: مدل و parser پاسخ نشست، جدول Profile، آزمون متمرکز client و اسناد همین واحد. endpoint فعلی IAM از قبل فقط `ipAddress` نشست خود actor را برمی‌گرداند؛ بدون تغییر API، Schema/Migration، Permission، Dependency/Lockfile یا دادهٔ عملیاتی.
 - نتیجه: ستون «IP نشست» با جهت LTR به جدول افزوده شد؛ IP موجود نمایش داده می‌شود و نشست‌های قدیمی/بدون IP با «ثبت نشده» باقی می‌مانند. ۹ تست Web، lint و typecheck Web برای این scope موفق‌اند.
+
+## 2026-09-27 — WORKBENCH-REQUEST-PRIORITY-FA-0927 — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک: مقدارهای داخلی اولویت درخواست در کارتابل و پنجرهٔ جزئیات میزکار به فارسی نمایش داده شوند.
+- محدوده: فقط نمایش Web در `workbench-own-requests.tsx`، آزمون متمرکز و اسناد همین واحد. مقدارهای قراردادی API و داده‌های ثبت‌شده بدون تغییر باقی می‌مانند؛ بدون API، Schema/Migration، Permission، Dependency/Lockfile یا دادهٔ عملیاتی.
+- نتیجه: `LOW`، `NORMAL`، `HIGH` و `URGENT` به‌ترتیب «پایین»، «عادی»، «بالا» و «فوری» نمایش داده می‌شوند؛ مقدار ناشناخته «تعیین نشده» است. ۵ آزمون متمرکز، lint و typecheck Web موفق‌اند.

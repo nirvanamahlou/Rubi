@@ -17,6 +17,7 @@ import {
 } from '@/components/ui';
 import { customerAffairsApi } from '@/modules/customer-affairs/api/customer-affairs-client';
 import { workbenchDate } from './model';
+import { workbenchRequestPriorityLabel } from './workbench-request-priority';
 
 type WorkbenchRequest = Awaited<
   ReturnType<typeof customerAffairsApi.workbenchRequests>
@@ -100,7 +101,10 @@ export function WorkbenchOwnRequests() {
           </Card>
         ))}
       </div>
-      <Dialog open={Boolean(selected)} onOpenChange={(open) => !open && setSelected(null)}>
+      <Dialog
+        open={Boolean(selected)}
+        onOpenChange={(open) => !open && setSelected(null)}
+      >
         <DialogContent dir="rtl" className="max-w-lg">
           <DialogTitle>جزئیات درخواست</DialogTitle>
           <DialogDescription>
@@ -109,14 +113,31 @@ export function WorkbenchOwnRequests() {
           {selected ? (
             <div className="mt-4 space-y-4 rounded-xl border bg-muted/30 p-4 text-sm">
               <div className="flex items-center justify-between gap-3">
-                <span className="font-mono text-xs text-muted-foreground">{selected.trackingNumber}</span>
+                <span className="font-mono text-xs text-muted-foreground">
+                  {selected.trackingNumber}
+                </span>
                 <Badge>{selected.status}</Badge>
               </div>
               <h3 className="font-black">{selected.subject}</h3>
               <dl className="grid grid-cols-2 gap-4 text-muted-foreground">
-                <div><dt className="text-xs">واحد مقصد</dt><dd className="mt-1 font-semibold text-foreground">{selected.destinationUnit ?? 'تعیین نشده'}</dd></div>
-                <div><dt className="text-xs">اولویت</dt><dd className="mt-1 font-semibold text-foreground">{selected.priority}</dd></div>
-                <div className="col-span-2"><dt className="text-xs">موعد اقدام</dt><dd className="mt-1 font-semibold text-foreground">{workbenchDate(selected.nextActionAt)}</dd></div>
+                <div>
+                  <dt className="text-xs">واحد مقصد</dt>
+                  <dd className="mt-1 font-semibold text-foreground">
+                    {selected.destinationUnit ?? 'تعیین نشده'}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-xs">اولویت</dt>
+                  <dd className="mt-1 font-semibold text-foreground">
+                    {workbenchRequestPriorityLabel(selected.priority)}
+                  </dd>
+                </div>
+                <div className="col-span-2">
+                  <dt className="text-xs">موعد اقدام</dt>
+                  <dd className="mt-1 font-semibold text-foreground">
+                    {workbenchDate(selected.nextActionAt)}
+                  </dd>
+                </div>
               </dl>
             </div>
           ) : null}
