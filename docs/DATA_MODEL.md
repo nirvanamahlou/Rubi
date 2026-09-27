@@ -1,5 +1,26 @@
 # مدل داده و ERD اولیه
 
+## TICKET-PROCUREMENT-FINANCE-PAYMENT-0927 — مقصد قیمت و خرید صندلی بلیت
+
+`TicketSalePriceTarget` مالکیت Ticket Catalog دارد و «مقصد انتشار قیمت» مانند
+فروش مستقیم مجموعه یا علی‌بابا را از کانال قرارداد Sales جدا نگه می‌دارد. هر مقصد
+به یک شعبه، کد یکتای پایدار و actor ایجادکننده FK محدود دارد. بنابراین API آینده
+می‌تواند آخرین قیمت همان مقصد را مصرف کند، بی‌آنکه Ticket Catalog به Master Data
+یا Sales Query مستقیم بزند.
+
+هر `TicketOfferStandaloneSalePrice` اکنون می‌تواند `salePriceTargetId` nullable
+داشته باشد. مقدار null همان نرخ فروش مستقیمِ سازگار با قراردادهای قدیمی است؛ نرخ
+هر مقصد با `(offerId,salePriceTargetId,revision)` append-only و مستقل version می‌شود.
+
+`ProcurementTicketPurchaseRequest.seatCount` تعداد صندلی خرید را برای envelope
+بلیط نگه می‌دارد. Finance در `FinanceTicketPurchaseCostRevision`، `seatCount` و
+`unitCost` را همراه snapshot سازگار بزرگسال/کودک ثبت می‌کند و `invoiceAmount` را
+در backend به‌صورت قطعی از `seatCount × unitCost` می‌سازد. پرداخت‌های متعددِ
+`FinanceTicketPurchasePaymentRevision` append-only می‌مانند و رسید پرداخت فایل
+محلی نیست: Documents آن را با مرجع `FINANCE/FinanceTicketPurchasePayment` نگه
+می‌دارد. توضیح آزاد در فرمان جدید خرید/پرداخت بلیط ذخیره نمی‌شود؛ دلیل‌های
+تاریخی بدون بازنویسی باقی می‌مانند.
+
 ## SALES-TICKET-PRICES-0922 — نرخ فروش عمومی بلیت
 
 `TicketOfferStandaloneSalePrice` نسخه‌های append-only مبلغ و ارز فروش یک‌طرفه
@@ -34,8 +55,10 @@ retain the hotel row currency. No historical price is rewritten or FX inferred.
 `ProcurementTicketPurchaseRequest` برای درخواست‌های تازه می‌تواند بدون مبلغ/ارز
 ثبت شود و برای آفر واقعی، `offerId` یکتا با FK به `TicketPublishedOffer` و
 `offerVersion` دارد. مبلغ legacy کاتالوگ estimate است، نه خرید تأییدشده مالی.
-`FinanceTicketPurchaseCostRevision` قیمت خرید واحد بزرگسال/کودک، فاکتور، ارز،
-دلیل، actor و version را با FK درخواست/آفر/شعبه به‌صورت append-only ثبت می‌کند.
+`FinanceTicketPurchaseCostRevision` برای رکوردهای تاریخی قیمت خرید واحد بزرگسال/کودک
+و فاکتور را نگه می‌دارد؛ درخواست جدید بلیط از تعداد صندلی و قیمت هر صندلی استفاده
+می‌کند و فاکتور را در backend محاسبه می‌کند. actor و version با FK درخواست/آفر/شعبه
+به‌صورت append-only ثبت می‌شوند.
 `FinanceTicketPurchasePaymentRevision` مبلغ این پرداخت، جمع پرداخت، مانده،
 حساب، روش، نرخ به IRR، معادل ریال، زمان UTC، پیگیری و actor را immutable نگه
 می‌دارد. فقط آخرین revision با مانده صفر و status PAID به قرارداد عمومی فروش

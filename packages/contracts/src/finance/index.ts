@@ -399,6 +399,12 @@ export interface FinanceInboxItemV1 {
   branchReference: string;
   sourceVersion: number;
   origin: 'PERSISTED_SOURCE';
+  /** Present only for the Ticket Catalog purchase envelope. */
+  ticketPurchase?: {
+    seatCount: number | null;
+    unitCost: string | null;
+    paymentCount: number;
+  } | null;
 }
 
 /** Finance owns these confirmed purchase figures; a catalog estimate is never a cost. */

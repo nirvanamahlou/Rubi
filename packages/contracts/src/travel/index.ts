@@ -27,8 +27,7 @@ export interface TicketSalePriceTargetCreateV1 {
   code?: string | null;
 }
 
-export interface TicketTargetedStandaloneSalePriceV1
-  extends TicketStandaloneSalePriceV1 {
+export interface TicketTargetedStandaloneSalePriceV1 extends TicketStandaloneSalePriceV1 {
   salePriceTarget: TicketSalePriceTargetV1;
 }
 
@@ -82,6 +81,7 @@ export type TicketOfferCreateV1 = Omit<
   | 'remainingCapacity'
   | 'status'
   | 'standaloneSalePrice'
+  | 'targetedStandaloneSalePrices'
   | 'roundTripSalePrices'
 >;
 export interface TicketOfferSearchV1 {

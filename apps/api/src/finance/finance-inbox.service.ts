@@ -228,6 +228,12 @@ export class FinanceInboxService {
         branchReference: purchase.branchId,
         sourceVersion: purchase.requestVersion,
         origin: 'PERSISTED_SOURCE',
+        ticketPurchase: {
+          seatCount:
+            ticketStates.get(purchase.id)?.seatCount ?? purchase.seatCount,
+          unitCost: ticketStates.get(purchase.id)?.unitCost ?? null,
+          paymentCount: ticketStates.get(purchase.id)?.paymentCount ?? 0,
+        },
       })),
       ...invoiceItems.map((invoice): FinanceInboxItemV1 => {
         const finance = financeBySource.get(invoice.sourceId);

@@ -4103,19 +4103,19 @@ model TicketPublishedOffer {
 }
 
 model TicketOfferStandaloneSalePrice {
-  id           String               @id @default(uuid()) @db.Uuid
-  offerId      String               @db.Uuid
-  salePriceTargetId String?         @db.Uuid
-  revision     Int
-  amount       Decimal              @db.Decimal(20, 4)
-  currencyCode String               @db.VarChar(3)
-  actorUserId  String               @db.Uuid
-  occurredAt   DateTime             @default(now()) @db.Timestamptz(3)
-  commandKey   String               @db.VarChar(160)
-  fingerprint  String               @db.VarChar(64)
-  offer        TicketPublishedOffer @relation(fields: [offerId], references: [id], onDelete: Restrict)
-  salePriceTarget TicketSalePriceTarget? @relation(fields: [salePriceTargetId], references: [id], onDelete: Restrict)
-  actor        User                 @relation("TicketStandaloneSalePriceActor", fields: [actorUserId], references: [id], onDelete: Restrict)
+  id                String                 @id @default(uuid()) @db.Uuid
+  offerId           String                 @db.Uuid
+  salePriceTargetId String?                @db.Uuid
+  revision          Int
+  amount            Decimal                @db.Decimal(20, 4)
+  currencyCode      String                 @db.VarChar(3)
+  actorUserId       String                 @db.Uuid
+  occurredAt        DateTime               @default(now()) @db.Timestamptz(3)
+  commandKey        String                 @db.VarChar(160)
+  fingerprint       String                 @db.VarChar(64)
+  offer             TicketPublishedOffer   @relation(fields: [offerId], references: [id], onDelete: Restrict)
+  salePriceTarget   TicketSalePriceTarget? @relation(fields: [salePriceTargetId], references: [id], onDelete: Restrict)
+  actor             User                   @relation("TicketStandaloneSalePriceActor", fields: [actorUserId], references: [id], onDelete: Restrict)
 
   @@unique([offerId, salePriceTargetId, revision], map: "TicketStandaloneSalePrice_offer_target_revision_key")
   @@unique([offerId, commandKey])
