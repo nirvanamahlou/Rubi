@@ -3886,3 +3886,9 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 - درخواست مالک: کاربر مجاز میزکار بتواند فایل و عکس مجاز را در گفت‌وگوی داخلی انتخاب، بارگذاری و همراه پیام ارسال کند؛ این مسیر نباید به مجوز عمومی `documents.upload` وابسته باشد.
 - محدودهٔ رزرو: controller/service پیام‌رسان، port محدود owner-only در Documents، client و آزمون‌های متمرکز پیام‌رسان و ثبت وضعیت. قرارداد افزایشی `POST /messaging/conversations/:id/attachments` با producer پیام‌رسان و consumer میزکار، هر دو در همین واحد PC-B، ثبت می‌شود و endpointهای قبلی بدون تغییر می‌مانند. بدون Schema/Migration، Permission grant، Dependency/Lockfile یا دادهٔ عملیاتی؛ ارسال پیام واقعی در این واحد انجام نمی‌شود.
 - نتیجه: کلاینت هر پیوست را به endpoint محدود همان گفت‌وگو می‌فرستد و سپس فقط شناسه‌های بازگشتی را همراه پیام ثبت می‌کند. سرور عضویت کاربر در گفت‌وگو، شعبه، مالک و reference ثابت `MESSAGING/MessagingMessage/<clientRequestId>` را کنترل می‌کند؛ فقط PDF/JPEG/PNG تا ۱۰ مگابایت پذیرفته می‌شوند. ۱۳ آزمون متمرکز API و ۴ آزمون Web، lint API/Web، typecheck API/Web و build API موفق‌اند. build این واحد نیاز به Migration یا Permission grant ندارد.
+
+## 2026-09-27 — PROFILE-SESSION-LOG-LIMIT-0927 — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک: در بخش «نشست‌ها» فقط حداکثر ۱۰۰ لاگ اخیر همان حساب نمایش داده شود.
+- محدودهٔ محدود و تأییدشده: endpoint خواندنی نشست‌های خود کاربر در IAM، client/مدل Profile و آزمون‌های متمرکز و اسناد همین واحد. API موجود به‌صورت سازگار همان آرایه را با سقف افزایشی/محافظتی ۱۰۰ مورد برمی‌گرداند؛ بدون Schema/Migration، Permission، Dependency/Lockfile یا دادهٔ عملیاتی.
+- نتیجه: query مالک حساب با `take: 100` و ترتیب جدیدترین نشست اعمال می‌شود؛ client نیز پاسخ‌های قدیمی یا نامحدود را پس از اعتبارسنجی به ۱۰۰ مورد محدود می‌کند. ۳ تست API و ۹ تست Web، lint و typecheck API/Web برای این scope موفق‌اند.

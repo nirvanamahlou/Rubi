@@ -16,6 +16,20 @@ function service(client: Record<string, unknown>) {
 }
 
 describe('IamService personal profile owner boundary', () => {
+  it('reads at most the 100 newest session logs for the current account', async () => {
+    const findMany = vi.fn().mockResolvedValue([]);
+
+    await service({ session: { findMany } }).listSessions(actor);
+
+    expect(findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { userId: actor.userId },
+        take: 100,
+        orderBy: { createdAt: 'desc' },
+      }),
+    );
+  });
+
   it('updates identity, profile extension and audit atomically', async () => {
     const now = new Date('2026-09-12T18:00:00.000Z');
     const transaction = {

@@ -3402,6 +3402,13 @@ Dependency و دادهٔ عملیاتی تغییر نکرده‌اند. ESLint �
 ۴ آزمون Web، lint و typecheck API/Web و build API موفق‌اند؛ Schema/Migration، Permission،
 Dependency و دادهٔ عملیاتی تغییری نکرده‌اند.
 
+## 2026-09-27 — PROFILE-SESSION-LOG-LIMIT-0927 — PC-B — READY_FOR_REVIEW
+
+بخش «لاگ نشست‌ها» حداکثر ۱۰۰ نشست جدیدتر همان حساب را نشان می‌دهد. IAM query را با
+ترتیب ایجاد نزولی و `take: 100` اجرا می‌کند؛ client نیز پاسخ‌های قدیمی یا نامحدود را
+پس از اعتبارسنجی به همین سقف محدود می‌سازد. ۳ تست API و ۹ تست Web، lint و typecheck
+API/Web موفق‌اند؛ Schema/Migration، Permission، Dependency و دادهٔ عملیاتی تغییر نکرده‌اند.
+
 ## 2026-09-21 — TICKET-STATUS-SYNC-0921 — READY_FOR_REVIEW
 
 دکمهٔ وضعیت مدیریت بلیت به رکورد منتشرشدهٔ Backend متصل شد؛ فعال/متوقف‌کردن نسخه‌دار است، جدول پس از ثبت تازه می‌شود و بلیت فعال آینده در قرارداد جدید قابل انتخاب خواهد بود. بلیت گذشته با عنوان «منقضی» نمایش داده می‌شود و قابل فعال‌سازی نیست. ۱۹ تست هدفمند، lint، typecheck و build تولیدی API/Web با ۵۰ route موفق‌اند. شاخه: `codex/pc-a-ticket-status-sync-0921`؛ بدون Migration یا تغییر داده عملیاتی.
