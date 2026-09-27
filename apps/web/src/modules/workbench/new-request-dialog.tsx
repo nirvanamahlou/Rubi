@@ -2,7 +2,14 @@
 import { WorkbenchSelect } from './workbench-select';
 
 import { useState } from 'react';
-import { Building2, ClipboardList, FileText, Flag, Link2, Send } from 'lucide-react';
+import {
+  Building2,
+  ClipboardList,
+  FileText,
+  Flag,
+  Link2,
+  Send,
+} from 'lucide-react';
 import {
   Alert,
   Button,
@@ -49,7 +56,8 @@ export function NewRequestDialog({
             <div className="space-y-1">
               <DialogTitle>درخواست جدید</DialogTitle>
               <DialogDescription>
-                درخواست خود را برای واحد مقصد ثبت کنید؛ پیگیری آن از کارتابل درخواست‌های میزکار انجام می‌شود.
+                درخواست خود را برای واحد مقصد ثبت کنید؛ پیگیری آن از کارتابل
+                درخواست‌های میزکار انجام می‌شود.
               </DialogDescription>
             </div>
           </div>
@@ -112,7 +120,10 @@ export function NewRequestDialog({
           }}
         >
           <label className="space-y-2 text-sm font-semibold">
-            <span className="flex items-center gap-2"><FileText className="size-4 text-primary" aria-hidden="true" />عنوان درخواست *</span>
+            <span className="flex items-center gap-2">
+              <FileText className="size-4 text-primary" aria-hidden="true" />
+              عنوان درخواست *
+            </span>
             <Input
               required
               maxLength={200}
@@ -122,7 +133,10 @@ export function NewRequestDialog({
             />
           </label>
           <label className="space-y-2 text-sm font-semibold">
-            <span className="flex items-center gap-2"><Building2 className="size-4 text-primary" aria-hidden="true" />واحد مقصد *</span>
+            <span className="flex items-center gap-2">
+              <Building2 className="size-4 text-primary" aria-hidden="true" />
+              واحد مقصد *
+            </span>
             <WorkbenchSelect
               label="واحد مقصد"
               value={unit}
@@ -134,7 +148,13 @@ export function NewRequestDialog({
             />
           </label>
           <label className="space-y-2 text-sm font-semibold sm:col-span-2">
-            <span className="flex items-center gap-2"><ClipboardList className="size-4 text-primary" aria-hidden="true" />شرح درخواست *</span>
+            <span className="flex items-center gap-2">
+              <ClipboardList
+                className="size-4 text-primary"
+                aria-hidden="true"
+              />
+              شرح درخواست *
+            </span>
             <Textarea
               required
               rows={5}
@@ -145,7 +165,10 @@ export function NewRequestDialog({
             />
           </label>
           <label className="space-y-2 text-sm font-semibold">
-            <span className="flex items-center gap-2"><Flag className="size-4 text-primary" aria-hidden="true" />اولویت</span>
+            <span className="flex items-center gap-2">
+              <Flag className="size-4 text-primary" aria-hidden="true" />
+              اولویت
+            </span>
             <WorkbenchSelect
               label="اولویت"
               value={priority}
@@ -158,7 +181,10 @@ export function NewRequestDialog({
             />
           </label>
           <label className="space-y-2 text-sm font-semibold">
-            <span className="flex items-center gap-2"><Link2 className="size-4 text-primary" aria-hidden="true" />مرجع پرونده مرتبط</span>
+            <span className="flex items-center gap-2">
+              <Link2 className="size-4 text-primary" aria-hidden="true" />
+              مرجع پرونده مرتبط
+            </span>
             <Input
               maxLength={200}
               placeholder="اختیاری؛ شماره پرونده یا قرارداد"

@@ -553,7 +553,9 @@ export function MessageComposer({
             <div className="min-w-0 space-y-5">
               <header className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-primary/15 bg-surface/85 p-4 shadow-sm">
                 <div className="min-w-0">
-                  <h3 className="truncate text-lg font-black">{active.title}</h3>
+                  <h3 className="truncate text-lg font-black">
+                    {active.title}
+                  </h3>
                   <p className="mt-1 truncate text-xs text-muted-foreground">
                     {active.type === 'GROUP'
                       ? `${active.participants.length.toLocaleString('fa-IR')} عضو`
