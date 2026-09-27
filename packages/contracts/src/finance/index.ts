@@ -399,16 +399,25 @@ export interface FinanceInboxItemV1 {
   branchReference: string;
   sourceVersion: number;
   origin: 'PERSISTED_SOURCE';
+  /** Present only for the Ticket Catalog purchase envelope. */
+  ticketPurchase?: {
+    seatCount: number | null;
+    unitCost: string | null;
+    paymentCount: number;
+  } | null;
 }
 
 /** Finance owns these confirmed purchase figures; a catalog estimate is never a cost. */
 export interface FinanceTicketCostCommandV1 {
   version: 1;
-  adultUnitCost: string;
-  childUnitCost: string;
-  invoiceAmount: string;
+  /** New ticket purchase flow: the server calculates the invoice from these values. */
+  seatCount?: number;
+  unitCost?: string;
+  /** Legacy values remain accepted only for existing callers. */
+  adultUnitCost?: string;
+  childUnitCost?: string;
+  invoiceAmount?: string;
   currencyCode: string;
-  reason: string;
 }
 
 export interface FinanceTicketPaymentCommandV1 {
@@ -420,7 +429,6 @@ export interface FinanceTicketPaymentCommandV1 {
   exchangeRateToIrr: string;
   transferAt: string;
   paymentReference?: string | null;
-  reason: string;
 }
 
 export interface FinancePaidTicketCostV1 {
@@ -431,6 +439,8 @@ export interface FinancePaidTicketCostV1 {
   costRevisionId: string;
   adultUnitCost: string;
   childUnitCost: string;
+  seatCount?: number | null;
+  unitCost?: string | null;
   invoiceAmount: string;
   currencyCode: string;
   paidAt: string;

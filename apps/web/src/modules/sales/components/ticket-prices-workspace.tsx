@@ -8,7 +8,7 @@ import {
   Search,
   TicketCheck,
 } from 'lucide-react';
-import type { TicketOfferV1 } from '@nora/contracts';
+import type { TicketOfferV1, TicketSalePriceTargetV1 } from '@nora/contracts';
 import { Button } from '@/components/ui/button';
 import {
   FormField,
@@ -27,12 +27,15 @@ import {
   PageHeader,
 } from '@/components/ui/surfaces';
 import { toursApi } from '@/modules/ticket-catalog/api/tours';
+import { refreshAuthenticatedSession } from '@/lib/auth-session';
+import { getPublicApiBaseUrl } from '@/lib/environment';
 import {
   listActiveCurrencyReferences,
   listReferences,
 } from '@/modules/ticket-catalog/api/references';
 
 type Draft = { amount: string; currencyCode: string };
+const DIRECT_TARGET = '__DIRECT__';
 const faDate = new Intl.DateTimeFormat('fa-IR', {
   dateStyle: 'medium',
   timeStyle: 'short',
@@ -41,6 +44,9 @@ const faDate = new Intl.DateTimeFormat('fa-IR', {
 
 export function TicketPricesWorkspace() {
   const [offers, setOffers] = useState<TicketOfferV1[]>([]);
+  const [targets, setTargets] = useState<TicketSalePriceTargetV1[]>([]);
+  const [targetId, setTargetId] = useState(DIRECT_TARGET);
+  const [newTargetName, setNewTargetName] = useState('');
   const [drafts, setDrafts] = useState<Record<string, Draft>>({});
   const [currencies, setCurrencies] = useState<string[]>(['IRR']);
   const [cities, setCities] = useState<Record<string, string>>({});
@@ -60,9 +66,10 @@ export function TicketPricesWorkspace() {
     setBusy(true);
     setError('');
     try {
-      const [offerResult, currencyRows] = await Promise.all([
+      const [offerResult, currencyRows, targetResult] = await Promise.all([
         toursApi.managedOffers(),
         listActiveCurrencyReferences(),
+        toursApi.salePriceTargets(),
       ]);
       const cityRows = [];
       for (let page = 1; page <= 100; page += 1) {
@@ -71,17 +78,26 @@ export function TicketPricesWorkspace() {
         if (page * result.meta.pageSize >= result.meta.total) break;
       }
       setOffers(offerResult.data);
+      setTargets(targetResult.data);
       setCurrencies(currencyRows.map((row) => row.code!).filter(Boolean));
       setCities(Object.fromEntries(cityRows.map((row) => [row.id, row.name])));
       setDrafts(
         Object.fromEntries(
-          offerResult.data.map((offer) => [
-            offer.id,
-            {
-              amount: offer.standaloneSalePrice?.amount ?? '',
-              currencyCode: offer.standaloneSalePrice?.currencyCode ?? 'IRR',
-            },
-          ]),
+          offerResult.data.map((offer) => {
+            const price =
+              targetId === DIRECT_TARGET
+                ? offer.standaloneSalePrice
+                : offer.targetedStandaloneSalePrices?.find(
+                    (item) => item.salePriceTarget.id === targetId,
+                  );
+            return [
+              `${offer.id}:${targetId}`,
+              {
+                amount: price?.amount ?? '',
+                currencyCode: price?.currencyCode ?? 'IRR',
+              },
+            ];
+          }),
         ),
       );
     } catch (reason) {
@@ -93,7 +109,7 @@ export function TicketPricesWorkspace() {
     } finally {
       setBusy(false);
     }
-  }, []);
+  }, [targetId]);
   useEffect(() => {
     const timer = window.setTimeout(() => void load(), 0);
     return () => window.clearTimeout(timer);
@@ -124,8 +140,47 @@ export function TicketPricesWorkspace() {
     (price) => price.returnOfferId === returnId,
   );
 
+  const priceForTarget = useCallback(
+    (offer: TicketOfferV1) =>
+      targetId === DIRECT_TARGET
+        ? offer.standaloneSalePrice
+        : offer.targetedStandaloneSalePrices?.find(
+            (price) => price.salePriceTarget.id === targetId,
+          ),
+    [targetId],
+  );
+
+  async function addTarget() {
+    if (!newTargetName.trim()) return setError('نام مقصد قیمت را وارد کنید.');
+    const base = getPublicApiBaseUrl();
+    if (!base) return setError('نشانی سرور تنظیم نشده است.');
+    setSaving('target');
+    setError('');
+    try {
+      const session = await refreshAuthenticatedSession(base);
+      const branchId = session?.user.branches[0]?.id;
+      if (!branchId) throw new Error('شعبه مجاز برای مقصد قیمت یافت نشد.');
+      const result = await toursApi.createSalePriceTarget(
+        { version: 1, branchId, name: newTargetName.trim() },
+        branchId,
+      );
+      setTargets((current) => [...current, result.data]);
+      setTargetId(result.data.id);
+      setNewTargetName('');
+      setNotice(`مقصد «${result.data.name}» اضافه شد.`);
+    } catch (reason) {
+      setError(
+        reason instanceof Error
+          ? reason.message
+          : 'افزودن مقصد قیمت ناموفق بود.',
+      );
+    } finally {
+      setSaving('');
+    }
+  }
+
   async function saveOneWay(offer: TicketOfferV1) {
-    const draft = drafts[offer.id];
+    const draft = drafts[`${offer.id}:${targetId}`];
     if (!draft?.amount) return setError('مبلغ قیمت یک‌طرفه را وارد کنید.');
     setSaving(offer.id);
     setError('');
@@ -133,7 +188,8 @@ export function TicketPricesWorkspace() {
       await toursApi.updateStandaloneSalePrice(
         offer.id,
         {
-          expectedRevision: offer.standaloneSalePrice?.revision ?? 0,
+          expectedRevision: priceForTarget(offer)?.revision ?? 0,
+          salePriceTargetId: targetId === DIRECT_TARGET ? null : targetId,
           ...draft,
         },
         crypto.randomUUID(),
@@ -221,6 +277,48 @@ export function TicketPricesWorkspace() {
           </strong>
         </Card>
       </div>
+      <Card className="p-5">
+        <div className="grid gap-4 lg:grid-cols-[minmax(14rem,1fr)_minmax(14rem,1fr)_auto] lg:items-end">
+          <div>
+            <h2 className="text-lg font-black">مقصد قیمت فروش</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              برای هر مقصد، نسخهٔ مستقل قیمت ثبت می‌شود؛ نمونه: فروش مجموعه یا
+              علی‌بابا.
+            </p>
+          </div>
+          <FormField label="این قیمت برای کجاست؟">
+            <Select value={targetId} onValueChange={setTargetId}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={DIRECT_TARGET}>
+                  فروش مستقیم مجموعه
+                </SelectItem>
+                {targets.map((target) => (
+                  <SelectItem key={target.id} value={target.id}>
+                    {target.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </FormField>
+          <div className="flex gap-2">
+            <Input
+              value={newTargetName}
+              onChange={(event) => setNewTargetName(event.target.value)}
+              placeholder="افزودن مقصد، مثلاً علی‌بابا"
+            />
+            <Button
+              variant="outline"
+              onClick={() => void addTarget()}
+              loading={saving === 'target'}
+            >
+              افزودن
+            </Button>
+          </div>
+        </div>
+      </Card>
       <Card className="p-5">
         <div className="mb-5">
           <h2 className="text-lg font-black">قیمت فروش رفت‌وبرگشت</h2>
@@ -361,13 +459,15 @@ export function TicketPricesWorkspace() {
                 <FormField label="قیمت یک‌طرفه">
                   <Input
                     inputMode="decimal"
-                    value={drafts[offer.id]?.amount ?? ''}
+                    value={drafts[`${offer.id}:${targetId}`]?.amount ?? ''}
                     onChange={(e) =>
                       setDrafts({
                         ...drafts,
-                        [offer.id]: {
+                        [`${offer.id}:${targetId}`]: {
                           amount: e.target.value.replace(/[^0-9.]/g, ''),
-                          currencyCode: drafts[offer.id]?.currencyCode ?? 'IRR',
+                          currencyCode:
+                            drafts[`${offer.id}:${targetId}`]?.currencyCode ??
+                            'IRR',
                         },
                       })
                     }
@@ -375,13 +475,16 @@ export function TicketPricesWorkspace() {
                 </FormField>
                 <FormField label="ارز">
                   <CurrencySelect
-                    value={drafts[offer.id]?.currencyCode ?? 'IRR'}
+                    value={
+                      drafts[`${offer.id}:${targetId}`]?.currencyCode ?? 'IRR'
+                    }
                     values={currencies}
                     onChange={(currencyCode) =>
                       setDrafts({
                         ...drafts,
-                        [offer.id]: {
-                          amount: drafts[offer.id]?.amount ?? '',
+                        [`${offer.id}:${targetId}`]: {
+                          amount:
+                            drafts[`${offer.id}:${targetId}`]?.amount ?? '',
                           currencyCode,
                         },
                       })

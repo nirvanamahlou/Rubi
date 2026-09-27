@@ -36,6 +36,7 @@ model User {
   financeTicketCostRevisions                       FinanceTicketPurchaseCostRevision[]       @relation("FinanceTicketCostActor")
   ticketCapacityHolds                              TicketOfferCapacityHold[]                 @relation("TicketCapacityHoldCreator")
   ticketStandaloneSalePricesCreated                TicketOfferStandaloneSalePrice[]          @relation("TicketStandaloneSalePriceActor")
+  ticketSalePriceTargetsCreated                    TicketSalePriceTarget[]                   @relation("TicketSalePriceTargetActor")
   ticketRoundTripSalePricesCreated                 TicketOfferRoundTripSalePrice[]           @relation("TicketRoundTripSalePriceActor")
   financeTicketPaymentRevisions                    FinanceTicketPurchasePaymentRevision[]    @relation("FinanceTicketPaymentActor")
   masterHotelRatePeriodsCreated                    MasterHotelRatePeriod[]                   @relation("MasterHotelRatePeriodCreatedBy")
@@ -220,6 +221,7 @@ model RolePermission {
 model Branch {
   tourPricingDrafts                   PackagePricingTourDraft[]
   financeTicketCostRevisions          FinanceTicketPurchaseCostRevision[]
+  ticketSalePriceTargets              TicketSalePriceTarget[]
   ticketCapacityHolds                 TicketOfferCapacityHold[]           @relation("TicketCapacityHoldBranch")
   hotelRatePacks                      ReservationHotelRatePack[]
   masterHotelRatePeriods              MasterHotelRatePeriod[]
@@ -4101,21 +4103,45 @@ model TicketPublishedOffer {
 }
 
 model TicketOfferStandaloneSalePrice {
-  id           String               @id @default(uuid()) @db.Uuid
-  offerId      String               @db.Uuid
-  revision     Int
-  amount       Decimal              @db.Decimal(20, 4)
-  currencyCode String               @db.VarChar(3)
-  actorUserId  String               @db.Uuid
-  occurredAt   DateTime             @default(now()) @db.Timestamptz(3)
-  commandKey   String               @db.VarChar(160)
-  fingerprint  String               @db.VarChar(64)
-  offer        TicketPublishedOffer @relation(fields: [offerId], references: [id], onDelete: Restrict)
-  actor        User                 @relation("TicketStandaloneSalePriceActor", fields: [actorUserId], references: [id], onDelete: Restrict)
+  id                String                 @id @default(uuid()) @db.Uuid
+  offerId           String                 @db.Uuid
+  salePriceTargetId String?                @db.Uuid
+  revision          Int
+  amount            Decimal                @db.Decimal(20, 4)
+  currencyCode      String                 @db.VarChar(3)
+  actorUserId       String                 @db.Uuid
+  occurredAt        DateTime               @default(now()) @db.Timestamptz(3)
+  commandKey        String                 @db.VarChar(160)
+  fingerprint       String                 @db.VarChar(64)
+  offer             TicketPublishedOffer   @relation(fields: [offerId], references: [id], onDelete: Restrict)
+  salePriceTarget   TicketSalePriceTarget? @relation(fields: [salePriceTargetId], references: [id], onDelete: Restrict)
+  actor             User                   @relation("TicketStandaloneSalePriceActor", fields: [actorUserId], references: [id], onDelete: Restrict)
 
-  @@unique([offerId, revision])
+  @@unique([offerId, salePriceTargetId, revision], map: "TicketStandaloneSalePrice_offer_target_revision_key")
   @@unique([offerId, commandKey])
-  @@index([offerId, occurredAt])
+  @@index([offerId, salePriceTargetId, occurredAt])
+}
+
+/**
+ * Ticket Catalog-owned commercial destinations. They are distinct from a Sales
+ * contract channel and let future external APIs consume an explicit price target.
+ */
+model TicketSalePriceTarget {
+  id              String                           @id @default(uuid()) @db.Uuid
+  branchId        String                           @db.Uuid
+  name            String                           @db.VarChar(160)
+  code            String                           @db.VarChar(80)
+  isActive        Boolean                          @default(true)
+  version         Int                              @default(1)
+  createdByUserId String                           @db.Uuid
+  createdAt       DateTime                         @default(now()) @db.Timestamptz(3)
+  updatedAt       DateTime                         @updatedAt @db.Timestamptz(3)
+  branch          Branch                           @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  createdBy       User                             @relation("TicketSalePriceTargetActor", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  prices          TicketOfferStandaloneSalePrice[]
+
+  @@unique([branchId, code])
+  @@index([branchId, isActive, name])
 }
 
 model TicketOfferRoundTripSalePrice {
@@ -4196,6 +4222,7 @@ model ProcurementTicketPurchaseRequest {
   title                   String                              @db.VarChar(160)
   serviceDate             DateTime?                           @db.Date
   supplierDisplaySnapshot String?                             @db.VarChar(160)
+  seatCount               Int?
   amount                  Decimal?                            @db.Decimal(20, 6)
   currencyCode            String?                             @db.VarChar(3)
   offerId                 String?                             @unique @db.Uuid
@@ -4230,9 +4257,11 @@ model FinanceTicketPurchaseCostRevision {
   version                  Int
   adultUnitCost            Decimal                                @db.Decimal(24, 4)
   childUnitCost            Decimal                                @db.Decimal(24, 4)
+  seatCount                Int?
+  unitCost                 Decimal?                               @db.Decimal(24, 4)
   invoiceAmount            Decimal                                @db.Decimal(24, 4)
   currencyCode             String                                 @db.VarChar(3)
-  reason                   String                                 @db.VarChar(500)
+  reason                   String                                 @default("") @db.VarChar(500)
   actorUserId              String                                 @db.Uuid
   createdAt                DateTime                               @default(now()) @db.Timestamptz(3)
   request                  ProcurementTicketPurchaseRequest       @relation(fields: [requestId], references: [id], onDelete: Restrict)
@@ -4262,7 +4291,7 @@ model FinanceTicketPurchasePaymentRevision {
   rialEquivalent    Decimal                           @db.Decimal(24, 4)
   transferAt        DateTime                          @db.Timestamptz(3)
   paymentReference  String?                           @db.VarChar(160)
-  reason            String                            @db.VarChar(500)
+  reason            String                            @default("") @db.VarChar(500)
   actorUserId       String                            @db.Uuid
   createdAt         DateTime                          @default(now()) @db.Timestamptz(3)
   cost              FinanceTicketPurchaseCostRevision @relation(fields: [costRevisionId], references: [id], onDelete: Restrict)
