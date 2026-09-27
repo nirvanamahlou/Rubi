@@ -3946,7 +3946,7 @@ export function DashboardWorkspace() {
                 />
                 <span
                   aria-hidden="true"
-                  className="pointer-events-none absolute inset-0 bg-gradient-to-l from-surface/55 via-surface/25 to-transparent dark:from-surface/45 dark:via-surface/20 dark:to-surface/5"
+                  className="pointer-events-none absolute inset-0 bg-gradient-to-l from-surface/25 via-surface/10 to-transparent dark:from-surface/45 dark:via-surface/20 dark:to-surface/5"
                 />
                 <span
                   aria-hidden="true"
