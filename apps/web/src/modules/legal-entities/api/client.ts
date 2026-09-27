@@ -7,6 +7,7 @@ import type {
 } from '@nora/contracts';
 
 import { getPublicApiBaseUrl } from '@/lib/environment';
+import { refreshAuthenticatedSession } from '@/lib/auth-session';
 
 export class LegalEntitiesApiError extends Error {
   constructor(
@@ -18,7 +19,11 @@ export class LegalEntitiesApiError extends Error {
   }
 }
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
+async function request<T>(
+  path: string,
+  init?: RequestInit,
+  retriedAfterRefresh = false,
+): Promise<T> {
   const baseUrl = getPublicApiBaseUrl();
   if (!baseUrl)
     throw new LegalEntitiesApiError('نشانی API پیکربندی نشده است.', 0);
@@ -31,6 +36,12 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
       ...init?.headers,
     },
   });
+  if (
+    response.status === 401 &&
+    !retriedAfterRefresh &&
+    (await refreshAuthenticatedSession(baseUrl))
+  )
+    return request<T>(path, init, true);
   if (!response.ok) {
     const envelope = (await response.json().catch(() => null)) as {
       code?: string;
