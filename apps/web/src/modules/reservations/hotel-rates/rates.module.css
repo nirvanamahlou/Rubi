@@ -397,11 +397,8 @@
 }
 
 .hotelRateDetails {
-  display: grid;
-  grid-template-columns: minmax(16rem, 1fr) 2fr;
-  gap: 1.25rem;
+  display: block;
   padding: 0.5rem 0 1rem;
-  align-items: start;
 }
 .hotelRateDetails .roomRateEditor {
   min-width: 0;
@@ -426,6 +423,122 @@
 .root .sheet th {
   white-space: nowrap;
 }
+
+.roomTableIntro {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid color-mix(in srgb, var(--primary) 20%, var(--border));
+  border-radius: 0.75rem 0.75rem 0 0;
+  background: color-mix(in srgb, var(--primary) 5%, var(--card));
+}
+
+.roomTableIntro p {
+  margin: 0.3rem 0 0;
+  color: var(--muted-foreground);
+  font-size: 0.82rem;
+}
+
+.roomTableScroll {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-top: 0;
+  border-radius: 0 0 0.75rem 0.75rem;
+}
+
+.roomRatesTable {
+  width: 100%;
+  min-width: 1030px;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: var(--card);
+}
+
+.roomRatesTable th,
+.roomRatesTable td {
+  padding: 0.55rem;
+  vertical-align: middle;
+  border-bottom: 1px solid var(--border);
+  border-inline-start: 1px solid var(--border);
+  text-align: right;
+}
+
+.roomRatesTable tr > :first-child {
+  border-inline-start: 0;
+}
+
+.roomRatesTable thead th {
+  color: var(--muted-foreground);
+  background: color-mix(in srgb, var(--muted) 58%, var(--card));
+  font-size: 0.76rem;
+  white-space: nowrap;
+}
+
+.roomRatesTable tbody tr:nth-child(even) td {
+  background: color-mix(in srgb, var(--muted) 22%, var(--card));
+}
+
+.roomRatesTable tbody tr:last-child td,
+.roomRatesTable tfoot tr:last-child > * {
+  border-bottom: 0;
+}
+
+.roomRatesTable input {
+  width: 100%;
+  min-width: 4.8rem;
+  min-height: 2.25rem;
+}
+
+.roomRatesTable output {
+  min-width: 6.5rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.hotelFactorRow > * {
+  background: color-mix(in srgb, var(--primary) 7%, var(--card));
+}
+
+.factorColumns {
+  display: grid;
+  grid-template-columns: repeat(var(--factor-columns, 3), minmax(7rem, 1fr));
+  gap: 0.5rem;
+}
+
+.factorColumns label {
+  display: grid;
+  gap: 0.2rem;
+  min-width: 0;
+  color: var(--muted-foreground);
+  font-size: 0.75rem;
+}
+
+.factorColumns output {
+  color: var(--foreground);
+  font-size: 0.78rem;
+}
+
+.newRoomTableRow > * {
+  background: color-mix(in srgb, var(--primary) 3%, var(--card));
+}
+
+.newRoomTableRow th {
+  color: var(--primary);
+}
+
+@media (max-width: 700px) {
+  .roomTableIntro {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .roomRatesTable {
+    min-width: 960px;
+  }
+}
+
 @media (max-width: 900px) {
   .hotelRateDetails {
     grid-template-columns: 1fr;

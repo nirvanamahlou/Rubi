@@ -3,6 +3,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import {
   automaticCheckOut,
   availableFactors,
+  HotelRoomRatesTable,
   HotelRatePackTable,
   OccupancyFactorFields,
 } from './packs-workspace';
@@ -97,6 +98,71 @@ it('shows double, single and child-with-bed as the default optional columns', ()
     triple: '1.3',
     doubleTwoChildren: '1.4',
   });
+});
+
+it('shows each room type in one table with the separate child age bands and hotel factor columns', () => {
+  const html = renderToStaticMarkup(
+    <HotelRoomRatesTable
+      row={{
+        hotel: {
+          id: 'hotel-1',
+          name: 'رویال وینگز',
+          roomTypes: [
+            { id: 'standard', name: 'استاندارد' },
+            { id: 'family', name: 'فمیلی' },
+          ],
+        },
+        selected: true,
+        broker: null,
+        base: '250',
+        currency: 'USD',
+        factors: {
+          double: '1',
+          single: '1.5',
+          triple: '',
+          doubleChild: '1.2',
+          doubleTwoChildren: '',
+          family: '',
+        },
+        roomRates: [
+          {
+            roomTypeId: 'standard',
+            roomTypeName: 'استاندارد',
+            factor: '1',
+            maxAdults: '2',
+            maxChildren2To6: '1',
+            maxChildren6To12: '1',
+            maxInfants: '0',
+          },
+          {
+            roomTypeId: 'family',
+            roomTypeName: 'فمیلی',
+            factor: '',
+            maxAdults: '2',
+            maxChildren2To6: '2',
+            maxChildren6To12: '0',
+            maxInfants: '1',
+          },
+        ],
+        inCityList: true,
+      }}
+      activeFactorKinds={['double', 'single', 'doubleChild']}
+      canManageRooms={false}
+      newRoom={undefined}
+      onChangeRoom={vi.fn()}
+      onChangeFactors={vi.fn()}
+      onChangeNewRoom={vi.fn()}
+      onAddRoom={vi.fn()}
+    />,
+  );
+
+  expect(html).toContain('<table');
+  for (const label of ['هتل', 'نوع اتاق', 'کودک ۲–۶', 'کودک ۶–۱۲', 'نوزاد'])
+    expect(html).toContain(label);
+  expect(html).toContain('استاندارد');
+  expect(html).toContain('فمیلی');
+  expect(html).toContain('ضریب‌های چیدمان پکیجِ هتل');
+  expect(html).toContain('دبل + ۱ بچه');
 });
 
 it('calculates checkout from check-in and the number of nights', () => {
