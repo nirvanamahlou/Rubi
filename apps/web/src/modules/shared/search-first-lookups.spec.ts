@@ -11,7 +11,10 @@ const guardedLookupSources = [
   'organizations/components/cooperation-wizard.tsx',
   'procurement/document-picker.tsx',
   'procurement/owner-picker.tsx',
+  'marketing/components/offer-audience-target-selector.tsx',
+  'sales/components/sales-tour-picker.tsx',
   'ticket-catalog/components/reference-picker.tsx',
+  'ticket-catalog/components/reference-browser.tsx',
 ] as const;
 
 describe('search-first form lookups', () => {

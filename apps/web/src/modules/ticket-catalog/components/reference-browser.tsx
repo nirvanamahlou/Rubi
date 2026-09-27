@@ -48,8 +48,9 @@ export function ReferenceBrowser({
     state: string;
     rows: readonly MasterDataRecord[];
     total: number;
-  }>({ state: 'loading', rows: [], total: 0 });
+  }>({ state: 'idle', rows: [], total: 0 });
   useEffect(() => {
+    if (!search.trim()) return;
     const abort = new AbortController();
     const timer = setTimeout(() => {
       setResult({ state: 'loading', rows: [], total: 0 });
@@ -92,7 +93,11 @@ export function ReferenceBrowser({
           onValueChange={(nextResource) => {
             setResource(nextResource as PublishedResource);
             setPage(1);
-            setResult({ state: 'loading', rows: [], total: 0 });
+            setResult({
+              state: search.trim() ? 'loading' : 'idle',
+              rows: [],
+              total: 0,
+            });
           }}
         >
           <SelectTrigger aria-label="نوع مرجع" className="w-44">
@@ -112,13 +117,19 @@ export function ReferenceBrowser({
           placeholder="جست‌وجو در اطلاعات پایه…"
           value={search}
           onChange={(event) => {
-            setSearch(event.target.value);
+            const nextSearch = event.target.value;
+            setSearch(nextSearch);
             setPage(1);
-            setResult({ state: 'loading', rows: [], total: 0 });
+            setResult({
+              state: nextSearch.trim() ? 'loading' : 'idle',
+              rows: [],
+              total: 0,
+            });
           }}
         />
         <Button
           variant="outline"
+          disabled={!search.trim()}
           onClick={() => {
             setResult({ state: 'loading', rows: [], total: 0 });
             setReload((v) => v + 1);
@@ -127,7 +138,11 @@ export function ReferenceBrowser({
           دریافت دوباره
         </Button>
       </div>
-      {result.state === 'loading' ? (
+      {!search.trim() ? (
+        <p role="status" className="text-sm text-muted-foreground">
+          برای نمایش مراجع، نام یا کد را جست‌وجو کنید.
+        </p>
+      ) : result.state === 'loading' ? (
         <p role="status">در حال دریافت مراجع…</p>
       ) : result.state !== 'ready' ? (
         <Alert
