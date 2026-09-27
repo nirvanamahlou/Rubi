@@ -9,15 +9,37 @@ import {
   Post,
   Req,
   UseGuards,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
-import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { ApiBody, ApiConsumes, ApiCookieAuth, ApiTags } from '@nestjs/swagger';
 
+import type {
+  DocumentRequestMetadata,
+  UploadedDocumentFile,
+} from '../documents/documents.service';
 import { AuthGuard } from '../iam/auth.guard';
 import type { AuthenticatedRequest } from '../iam/iam.types';
 // Runtime import is required for Nest validation metadata.
 // eslint-disable-next-line @typescript-eslint/consistent-type-imports
-import { CreateWorkbenchFeedbackDto } from './workbench-feedback.dto';
+import {
+  CreateWorkbenchFeedbackDto,
+  UploadWorkbenchFeedbackAttachmentDto,
+} from './workbench-feedback.dto';
 import { WorkbenchFeedbackService } from './workbench-feedback.service';
+
+function requestMetadata(
+  request: AuthenticatedRequest,
+): DocumentRequestMetadata {
+  const userAgent = request.headers['user-agent'];
+  return {
+    ...(request.ip ? { ipAddress: request.ip } : {}),
+    ...(userAgent
+      ? { userAgent: Array.isArray(userAgent) ? userAgent[0] : userAgent }
+      : {}),
+  };
+}
 
 @ApiTags('Workbench feedback')
 @ApiCookieAuth('nora_access')
@@ -36,6 +58,39 @@ export class WorkbenchFeedbackController {
     @Req() request: AuthenticatedRequest,
   ) {
     return this.service.create(input, request.actor);
+  }
+
+  @Post(':id/attachments')
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['file', 'branchId', 'subject', 'anonymous'],
+      properties: {
+        file: { type: 'string', format: 'binary' },
+        branchId: { type: 'string', format: 'uuid' },
+        subject: { type: 'string', maxLength: 200 },
+        anonymous: { type: 'boolean' },
+      },
+    },
+  })
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: { files: 1, fileSize: 10 * 1024 * 1024 },
+    }),
+  )
+  uploadAttachment(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() input: UploadWorkbenchFeedbackAttachmentDto,
+    @UploadedFile() file: UploadedDocumentFile | undefined,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.service.uploadAttachment(
+      { ...input, feedbackId: id },
+      file,
+      request.actor,
+      requestMetadata(request),
+    );
   }
 
   @Get(':id')

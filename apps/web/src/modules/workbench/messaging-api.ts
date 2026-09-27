@@ -89,6 +89,19 @@ export const messagingApi = {
       json(input),
     );
   },
+  uploadAttachment(
+    conversationId: string,
+    clientRequestId: string,
+    file: File,
+  ) {
+    const form = new FormData();
+    form.set('file', file);
+    form.set('clientRequestId', clientRequestId);
+    return request<{ data: { id: string; scanStatus: string } }>(
+      `/conversations/${encodeURIComponent(conversationId)}/attachments`,
+      { method: 'POST', body: form },
+    );
+  },
   forward(conversationId: string, input: ForwardMessagingMessageInputV1) {
     return request<MessagingMessageResponseV1>(
       `/conversations/${encodeURIComponent(conversationId)}/forwards`,

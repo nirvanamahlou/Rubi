@@ -517,6 +517,7 @@ export class IamService implements IamStepUpPort {
   listSessions(actor: AuthenticatedActor) {
     return this.database.client.session.findMany({
       where: { userId: actor.userId },
+      take: 100,
       orderBy: { createdAt: 'desc' },
       select: {
         id: true,

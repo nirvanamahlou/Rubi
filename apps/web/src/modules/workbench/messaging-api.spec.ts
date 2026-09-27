@@ -59,6 +59,24 @@ describe('Workbench messaging API client', () => {
     );
   });
 
+  it('uploads one message attachment as multipart form data', async () => {
+    const file = new File(['test'], 'receipt.png', { type: 'image/png' });
+
+    await messagingApi.uploadAttachment(
+      '22222222-2222-4222-8222-222222222222',
+      'message:request-0001',
+      file,
+    );
+
+    const [, options] = vi.mocked(fetch).mock.calls[0]!;
+    expect(options).toEqual(
+      expect.objectContaining({ method: 'POST', body: expect.any(FormData) }),
+    );
+    expect((options!.body as FormData).get('clientRequestId')).toBe(
+      'message:request-0001',
+    );
+  });
+
   it('generates stable-format unique request identifiers', () => {
     vi.stubGlobal('crypto', {
       randomUUID: () => '44444444-4444-4444-8444-444444444444',

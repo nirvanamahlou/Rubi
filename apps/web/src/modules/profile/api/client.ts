@@ -9,6 +9,7 @@ import { getPublicApiBaseUrl } from '@/lib/environment';
 import { readHeaderSession } from '@/lib/header-session';
 import {
   isAuthenticatedProfileUser,
+  PROFILE_SESSION_LOG_LIMIT,
   type AuthenticatedProfile,
   type AuthenticatedSessionSummary,
 } from '../model/profile';
@@ -83,19 +84,27 @@ function authenticatedGet(): RequestInit {
 
 function parseSessions(value: unknown): AuthenticatedSessionSummary[] {
   if (!Array.isArray(value)) return [];
-  return value.flatMap((candidate) => {
-    if (!candidate || typeof candidate !== 'object') return [];
-    const session = candidate as Partial<AuthenticatedSessionSummary>;
-    if (
-      typeof session.id !== 'string' ||
-      typeof session.status !== 'string' ||
-      typeof session.createdAt !== 'string' ||
-      typeof session.lastUsedAt !== 'string' ||
-      typeof session.expiresAt !== 'string'
-    )
-      return [];
-    return [session as AuthenticatedSessionSummary];
-  });
+  return value
+    .flatMap((candidate) => {
+      if (!candidate || typeof candidate !== 'object') return [];
+      const session = candidate as Partial<AuthenticatedSessionSummary>;
+      if (
+        typeof session.id !== 'string' ||
+        typeof session.status !== 'string' ||
+        typeof session.createdAt !== 'string' ||
+        typeof session.lastUsedAt !== 'string' ||
+        typeof session.expiresAt !== 'string'
+      )
+        return [];
+      return [
+        {
+          ...session,
+          ipAddress:
+            typeof session.ipAddress === 'string' ? session.ipAddress : null,
+        } as AuthenticatedSessionSummary,
+      ];
+    })
+    .slice(0, PROFILE_SESSION_LOG_LIMIT);
 }
 
 function parseMfaStatus(value: unknown): IamMfaStatusV1 {

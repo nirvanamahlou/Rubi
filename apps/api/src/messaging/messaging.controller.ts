@@ -8,13 +8,32 @@ import {
   Post,
   Query,
   Req,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
-import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { ApiBody, ApiConsumes, ApiCookieAuth, ApiTags } from '@nestjs/swagger';
 
+import type {
+  DocumentRequestMetadata,
+  UploadedDocumentFile,
+} from '../documents/documents.service';
 import { AuthGuard } from '../iam/auth.guard';
 import type { AuthenticatedRequest } from '../iam/iam.types';
 import { MessagingService } from './messaging.service';
+
+function requestMetadata(
+  request: AuthenticatedRequest,
+): DocumentRequestMetadata {
+  const userAgent = request.headers['user-agent'];
+  return {
+    ...(request.ip ? { ipAddress: request.ip } : {}),
+    ...(userAgent
+      ? { userAgent: Array.isArray(userAgent) ? userAgent[0] : userAgent }
+      : {}),
+  };
+}
 
 @ApiTags('Messaging')
 @ApiCookieAuth('nora_access')
@@ -67,6 +86,38 @@ export class MessagingController {
     @Req() request: AuthenticatedRequest,
   ) {
     return this.service.send(id, body, request.actor);
+  }
+
+  @Post('conversations/:id/attachments')
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['file', 'clientRequestId'],
+      properties: {
+        file: { type: 'string', format: 'binary' },
+        clientRequestId: { type: 'string', minLength: 16, maxLength: 80 },
+      },
+    },
+  })
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: { files: 1, fileSize: 10 * 1024 * 1024 },
+    }),
+  )
+  uploadAttachment(
+    @Param('id') id: string,
+    @Body() body: unknown,
+    @UploadedFile() file: UploadedDocumentFile | undefined,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.service.uploadAttachment(
+      id,
+      body,
+      file,
+      request.actor,
+      requestMetadata(request),
+    );
   }
 
   @Post('conversations/:id/forwards')

@@ -464,6 +464,7 @@ async function seed(): Promise<void> {
           ['HR_DOCUMENT', 'اسناد منابع انسانی', 'HUMAN_RESOURCES', true],
           ['REPORT_EXPORT', 'گزارش و خروجی', 'REPORTING', false],
           ['BRAND_ASSET_TEMPLATE', 'دارایی برند و قالب', 'BRAND', false],
+          ['WORKBENCH_FEEDBACK_ATTACHMENT', 'پیوست نظرسنجی', 'GENERAL', false],
         ] as const;
         for (const [code, name, domain, requiresExpiry] of documentTypes) {
           await transaction.documentType.upsert({

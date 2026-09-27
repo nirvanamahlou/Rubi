@@ -417,6 +417,7 @@ function SessionLogs({
                   {[
                     'ردیف',
                     'وضعیت',
+                    'IP نشست',
                     'ایجاد نشست',
                     'آخرین استفاده',
                     'انقضا',
@@ -437,6 +438,9 @@ function SessionLogs({
                       </td>
                       <td className="px-4 py-4">
                         <Badge>{statuses[status] ?? 'نامشخص'}</Badge>
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-4" dir="ltr">
+                        {session.ipAddress ?? 'ثبت نشده'}
                       </td>
                       {[
                         session.createdAt,

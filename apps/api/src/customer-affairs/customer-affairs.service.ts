@@ -2083,6 +2083,7 @@ export class CustomerAffairsService {
         id: row.id,
         trackingNumber: row.trackingNumber,
         subject: row.subject,
+        description: row.description,
         destinationUnit: row.executionUnit,
         status: row.status,
         priority: row.priority,

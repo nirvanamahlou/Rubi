@@ -6,6 +6,7 @@ import {
   logoutAuthenticatedSession,
   ProfileUnauthorizedError,
 } from './client';
+import { PROFILE_SESSION_LOG_LIMIT } from '../model/profile';
 
 const baseUrl = 'http://localhost:4000/api/v1';
 const login: LoginResponse = {
@@ -32,6 +33,7 @@ describe('authenticated profile API client', () => {
               createdAt: '2026-09-08T06:00:00.000Z',
               lastUsedAt: '2026-09-08T06:10:00.000Z',
               expiresAt: '2026-09-15T06:00:00.000Z',
+              ipAddress: '127.0.0.1',
             },
           ]),
           { status: 200 },
@@ -55,6 +57,7 @@ describe('authenticated profile API client', () => {
 
     expect(result?.user.displayName).toBe('کاربر احرازشده');
     expect(result?.sessions).toHaveLength(1);
+    expect(result?.sessions[0]?.ipAddress).toBe('127.0.0.1');
     expect(result?.mfa.enabled).toBe(true);
     expect(fetchMock).toHaveBeenNthCalledWith(
       1,
@@ -75,6 +78,48 @@ describe('authenticated profile API client', () => {
         refresh: vi.fn().mockResolvedValue(null),
       }),
     ).rejects.toBeInstanceOf(ProfileUnauthorizedError);
+  });
+
+  it('keeps no more than 100 valid session logs if an older API returns extra rows', async () => {
+    const session = {
+      status: 'ACTIVE',
+      createdAt: '2026-09-08T06:00:00.000Z',
+      lastUsedAt: '2026-09-08T06:10:00.000Z',
+      expiresAt: '2026-09-15T06:00:00.000Z',
+    };
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify(
+            Array.from(
+              { length: PROFILE_SESSION_LOG_LIMIT + 1 },
+              (_, index) => ({
+                ...session,
+                id: `session-${index}`,
+              }),
+            ),
+          ),
+          { status: 200 },
+        ),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            data: { enabled: false, setupPending: false, lockedUntil: null },
+          }),
+          { status: 200 },
+        ),
+      );
+
+    const result = await loadAuthenticatedProfile({
+      baseUrl,
+      fetchImpl: fetchMock as unknown as typeof fetch,
+      refresh: vi.fn().mockResolvedValue(login),
+    });
+
+    expect(result?.sessions).toHaveLength(PROFILE_SESSION_LOG_LIMIT);
+    expect(result?.sessions.at(-1)?.id).toBe('session-99');
   });
 
   it('returns the empty state for a malformed identity response', async () => {

@@ -5,7 +5,6 @@ import type {
 } from '@nora/contracts';
 import { refreshAuthenticatedSession } from '@/lib/auth-session';
 import { getPublicApiBaseUrl } from '@/lib/environment';
-import { documentsApi } from '@/modules/documents/api/client';
 import { notifyNotificationFeedChanged } from '@/modules/notifications/api/client';
 
 export class WorkbenchFeedbackApiError extends Error {
@@ -88,11 +87,54 @@ async function detailRequest(
   return response.json() as Promise<WorkbenchFeedbackDetailResponseV1>;
 }
 
-function mimeType(file: File): string {
-  if (/\.pdf$/i.test(file.name)) return 'application/pdf';
-  if (/\.png$/i.test(file.name)) return 'image/png';
-  if (/\.jpe?g$/i.test(file.name)) return 'image/jpeg';
-  return file.type;
+async function uploadAttachmentRequest(
+  input: {
+    feedbackId: string;
+    subject: string;
+    branchId: string;
+    anonymous: boolean;
+    file: File;
+  },
+  retriedAfterRefresh = false,
+): Promise<{ data: { id: string } }> {
+  const baseUrl = getPublicApiBaseUrl();
+  if (!baseUrl)
+    throw new WorkbenchFeedbackApiError('نشانی API پیکربندی نشده است.', 0);
+  const form = new FormData();
+  form.set('file', input.file);
+  form.set('branchId', input.branchId);
+  form.set('subject', input.subject);
+  form.set('anonymous', String(input.anonymous));
+  const response = await fetch(
+    `${baseUrl}/workbench/feedback/${encodeURIComponent(input.feedbackId)}/attachments`,
+    {
+      method: 'POST',
+      credentials: 'include',
+      cache: 'no-store',
+      headers: { accept: 'application/json' },
+      body: form,
+    },
+  );
+  if (
+    response.status === 401 &&
+    !retriedAfterRefresh &&
+    (await refreshAuthenticatedSession(baseUrl))
+  ) {
+    return uploadAttachmentRequest(input, true);
+  }
+  if (!response.ok) {
+    const envelope = (await response.json().catch(() => null)) as {
+      message?: string;
+      error?: { message?: string };
+    } | null;
+    throw new WorkbenchFeedbackApiError(
+      envelope?.error?.message ??
+        envelope?.message ??
+        'بارگذاری پیوست نظرسنجی انجام نشد.',
+      response.status,
+    );
+  }
+  return response.json() as Promise<{ data: { id: string } }>;
 }
 
 export async function uploadWorkbenchFeedbackFiles(input: {
@@ -103,50 +145,15 @@ export async function uploadWorkbenchFeedbackFiles(input: {
   files: readonly File[];
 }): Promise<string[]> {
   if (!input.files.length) return [];
-  const options = (await documentsApi.options()).data;
-  if (!options.branches.some(({ id }) => id === input.branchId)) {
-    throw new WorkbenchFeedbackApiError(
-      'شعبه انتخاب‌شده برای بارگذاری فایل در دسترس نیست.',
-      403,
-    );
-  }
-  const category = options.categories[0];
-  if (!category) {
-    throw new WorkbenchFeedbackApiError(
-      'دسته‌بندی فعال برای ذخیره فایل پیدا نشد.',
-      409,
-    );
-  }
   const uploaded: string[] = [];
   for (const file of input.files) {
-    const detected = mimeType(file);
-    const documentType = options.documentTypes.find(
-      (candidate) =>
-        candidate.domain === 'GENERAL' &&
-        !candidate.requiresExpiry &&
-        candidate.allowedMimeTypes.includes(detected) &&
-        file.size <= candidate.maxFileSizeBytes,
-    );
-    if (!documentType) {
-      throw new WorkbenchFeedbackApiError(
-        `نوع سند مناسب برای فایل «${file.name}» پیدا نشد.`,
-        409,
-      );
-    }
-    const form = new FormData();
-    form.set('file', file);
-    form.set('title', `پیوست نظرسنجی: ${input.subject}`.slice(0, 240));
-    form.set('description', 'پیوست ثبت‌شده از بخش نظرسنجی میزکار');
-    form.set('documentTypeId', documentType.id);
-    form.set('categoryId', category.id);
-    form.set('branchId', input.branchId);
-    form.set('ownerUserId', options.currentUserId);
-    form.set('sourceModule', 'WORKBENCH');
-    form.set('sourceEntityType', 'WorkbenchFeedback');
-    form.set('sourceEntityId', input.feedbackId);
-    form.set('sourceDisplayLabel', input.subject.slice(0, 240));
-    form.set('confidentiality', input.anonymous ? 'RESTRICTED' : 'INTERNAL');
-    const result = await documentsApi.upload(form);
+    const result = await uploadAttachmentRequest({
+      feedbackId: input.feedbackId,
+      subject: input.subject,
+      branchId: input.branchId,
+      anonymous: input.anonymous,
+      file,
+    });
     uploaded.push(result.data.id);
   }
   return uploaded;
