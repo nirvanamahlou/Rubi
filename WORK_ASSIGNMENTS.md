@@ -3921,3 +3921,8 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 - درخواست مالک: عنوان تب صفحه ورود از نام شرکت به «ورود امن نورا» تغییر کند.
 - محدوده: فقط metadata مسیر `apps/web/src/app/login/page.tsx` و ثبت این وضعیت؛ بدون API، داده، Migration، Permission یا Dependency/Lockfile.
 - نتیجه: عنوان مستقل صفحهٔ ورود «ورود امن نورا» است و دیگر الگوی نام شرکت را به انتهای عنوان تب اضافه نمی‌کند. ESLint فایل و پاسخ HTTP محلی ۳۱۰۰ موفق‌اند.
+
+## LOGIN-ACTIVE-COMPANY-NAMES-0927 — PC-B — DONE
+
+- درخواست مالک: نام شرکت‌های فعال روی کارت‌های صفحهٔ ورود روشن باشد.
+- نتیجه: نام‌های «نیایش سیر سحر» و «جهان باستان» روی کارت لوگوی همان شرکت نمایش داده می‌شوند؛ API، داده، Migration، Permission و Dependency/Lockfile تغییری ندارند.
