@@ -117,6 +117,73 @@ describe('DocumentsService Workbench contracts', () => {
     });
   });
 
+  it('uploads a feedback attachment without granting generic document upload', async () => {
+    const branchId = actor.branchIds[0]!;
+    const feedbackId = '55555555-5555-4555-8555-555555555555';
+    const options = vi.fn().mockResolvedValue({
+      branches: [{ id: branchId }],
+      owners: [{ id: actor.userId }],
+      documentTypes: [
+        {
+          id: '66666666-6666-4666-8666-666666666666',
+          code: 'WORKBENCH_FEEDBACK_ATTACHMENT',
+        },
+      ],
+      categories: [
+        {
+          id: '77777777-7777-4777-8777-777777777777',
+          code: 'GENERAL_ARCHIVE',
+        },
+      ],
+    });
+    const instance = service({
+      options,
+    });
+    const upload = vi.spyOn(instance, 'upload').mockResolvedValue({
+      data: {
+        id: '88888888-8888-4888-8888-888888888888',
+        currentVersion: { scanStatus: 'PENDING_SCAN' },
+      },
+    } as never);
+    const file = {
+      buffer: Buffer.from('%PDF-test'),
+      mimetype: 'application/pdf',
+      originalname: 'feedback.pdf',
+      size: 9,
+    };
+
+    const result = await instance.uploadOwnWorkbenchFeedbackAttachment(
+      {
+        feedbackId,
+        branchId,
+        subject: 'پیشنهاد کارکنان',
+        anonymous: false,
+      },
+      file,
+      actor,
+      {},
+    );
+
+    expect(options).toHaveBeenCalledWith([branchId], ['GENERAL']);
+    expect(upload).toHaveBeenCalledWith(
+      expect.objectContaining({
+        branchId,
+        ownerUserId: actor.userId,
+        sourceModule: 'WORKBENCH',
+        sourceEntityType: 'WorkbenchFeedback',
+        sourceEntityId: feedbackId,
+      }),
+      file,
+      actor,
+      {},
+    );
+    expect(actor.permissions).not.toContain('documents.upload');
+    expect(result).toEqual({
+      id: '88888888-8888-4888-8888-888888888888',
+      scanStatus: 'PENDING_SCAN',
+    });
+  });
+
   it('does not preview a profile photo owned by another account', async () => {
     const instance = service({
       findDetail: vi.fn().mockResolvedValue({
