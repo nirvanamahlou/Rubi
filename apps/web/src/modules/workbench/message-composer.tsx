@@ -56,9 +56,11 @@ const messageTime = (value: string) =>
 export function MessageComposer({
   currentUserId,
   initialUnit = 'finance',
+  initialSidebarMode = 'units',
 }: {
   currentUserId: string;
   initialUnit?: string;
+  initialSidebarMode?: SidebarMode;
 }) {
   const [text, setText] = useState('');
   const [unitId, setUnitId] = useState<string>(
@@ -67,7 +69,8 @@ export function MessageComposer({
       : 'finance',
   );
   const unit = messageUnits.find((item) => item.id === unitId)!;
-  const [sidebarMode, setSidebarMode] = useState<SidebarMode>('units');
+  const [sidebarMode, setSidebarMode] =
+    useState<SidebarMode>(initialSidebarMode);
   const [contacts, setContacts] = useState<MessagingContactV1[]>([]);
   const [conversations, setConversations] = useState<MessagingConversationV1[]>(
     [],
@@ -415,7 +418,7 @@ export function MessageComposer({
                 value={contactSearch}
                 onChange={(event) => setContactSearch(event.target.value)}
               />
-              <div className="grid gap-2" aria-label="مخاطبان CRM">
+              <div className="grid gap-2" aria-label="کاربران CRM">
                 {contacts.map((contact) => (
                   <Button
                     key={contact.id}
@@ -432,9 +435,8 @@ export function MessageComposer({
                         {contact.displayName}
                       </span>
                       <span className="block truncate text-xs font-normal opacity-70">
-                        {contact.branches
-                          .map((branch) => branch.name)
-                          .join('، ')}
+                        @{contact.username} ·{' '}
+                        {contact.branches.map((branch) => branch.name).join('، ')}
                       </span>
                     </span>
                   </Button>

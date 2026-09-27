@@ -3376,6 +3376,14 @@ Tour definition uses four-column desktop identity fields and compact controls. I
 ۵ مگابایت محدود شدند. ۱۹ تست هدفمند، lint محدوده، typecheck API/Web و build تولیدی هر دو
 برنامه موفق‌اند؛ Schema/Migration/Seed، Permission، Dependency و داده عملیاتی تغییر نکرده‌اند.
 
+## 2026-09-27 — WORKBENCH-CRM-CONTACTS-0927 — PC-B — READY_FOR_REVIEW
+
+دکمهٔ «پیام جدید» میزکار، پیام‌رسان را مستقیم با تب «مخاطبان» باز می‌کند؛ modal انتخاب
+واحد به‌عنوان گیرنده حذف شده است. مخاطبان فقط از projection موجود IAM برای حساب‌های فعال
+داخلی CRM با شعبهٔ مشترک خوانده می‌شوند و نام کاربری و شعبهٔ هر حساب در رابط نمایش دارد.
+واحدها تنها برای قالب متن هستند. هیچ API، Schema/Migration، Permission، Dependency یا دادهٔ
+عملیاتی تغییر نکرده است. typecheck و ESLint Web و آزمون‌های متمرکز API/Web پیام‌رسان موفق‌اند.
+
 ## 2026-09-21 — TICKET-STATUS-SYNC-0921 — READY_FOR_REVIEW
 
 دکمهٔ وضعیت مدیریت بلیت به رکورد منتشرشدهٔ Backend متصل شد؛ فعال/متوقف‌کردن نسخه‌دار است، جدول پس از ثبت تازه می‌شود و بلیت فعال آینده در قرارداد جدید قابل انتخاب خواهد بود. بلیت گذشته با عنوان «منقضی» نمایش داده می‌شود و قابل فعال‌سازی نیست. ۱۹ تست هدفمند، lint، typecheck و build تولیدی API/Web با ۵۰ route موفق‌اند. شاخه: `codex/pc-a-ticket-status-sync-0921`؛ بدون Migration یا تغییر داده عملیاتی.

@@ -1,7 +1,6 @@
 'use client';
 import { WorkbenchFeedback } from './workbench-feedback';
 import { WorkbenchFeedbackDetail } from './workbench-feedback-detail';
-import { WorkbenchSelect } from './workbench-select';
 
 import type { NotificationItemV1, WorkbenchActivityV1 } from '@nora/contracts';
 import {
@@ -66,7 +65,6 @@ import { PasswordChange } from './password-change';
 import { WorkbenchHrNotifications } from './workbench-hr-notifications';
 import { WorkbenchOwnRequests } from './workbench-own-requests';
 import { NewRequestDialog } from './new-request-dialog';
-import { messageUnits } from './message-templates';
 
 const tabIcons = [
   Home,
@@ -95,9 +93,8 @@ export function WorkbenchWorkspace() {
   const [actionError, setActionError] = useState('');
   const [noteOpen, setNoteOpen] = useState(false);
   const [requestOpen, setRequestOpen] = useState(false);
-  const [messageOpen, setMessageOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
-  const [messageUnit, setMessageUnit] = useState('finance');
+  const [messageLaunch, setMessageLaunch] = useState(0);
   const [passwordOpen, setPasswordOpen] = useState(false);
   const generation = useRef(0);
   const invalidate = useCallback(() => {
@@ -136,7 +133,6 @@ export function WorkbenchWorkspace() {
         !noteOpen &&
         !passwordOpen &&
         !requestOpen &&
-        !messageOpen &&
         tab !== 'notes' &&
         tab !== 'messages'
       )
@@ -146,7 +142,7 @@ export function WorkbenchWorkspace() {
     return () => {
       window.removeEventListener(NOTIFICATIONS_CHANGED_EVENT, refresh);
     };
-  }, [load, noteOpen, passwordOpen, requestOpen, messageOpen, tab]);
+  }, [load, noteOpen, passwordOpen, requestOpen, tab]);
   function selectTab(value: string) {
     const query = new URLSearchParams(params.toString());
     query.set('tab', normalizeWorkbenchTab(value));
@@ -185,7 +181,7 @@ export function WorkbenchWorkspace() {
               disabled={!home || loading}
               onClick={() => {
                 selectTab('messages');
-                setMessageOpen(true);
+                setMessageLaunch((current) => current + 1);
               }}
             >
               <MessageSquare className="size-4" aria-hidden="true" />
@@ -448,9 +444,9 @@ export function WorkbenchWorkspace() {
               </TabsContent>
               <TabsContent value="messages">
                 <MessageComposer
-                  key={`${home.user.id}-${messageUnit}`}
+                  key={`${home.user.id}-${messageLaunch}`}
                   currentUserId={home.user.id}
-                  initialUnit={messageUnit}
+                  initialSidebarMode={messageLaunch ? 'contacts' : 'units'}
                 />
               </TabsContent>
               <TabsContent value="stars">
@@ -597,32 +593,6 @@ export function WorkbenchWorkspace() {
             router.replace(query ? `/workbench?${query}` : '/workbench');
           }}
         />
-      )}
-      {home && (
-        <Dialog open={messageOpen} onOpenChange={setMessageOpen}>
-          <DialogContent dir="rtl" className="max-w-xl">
-            <DialogTitle>پیام جدید</DialogTitle>
-            <DialogDescription>
-              واحد مخاطب را از فهرست پیام‌رسان انتخاب کنید و با قالب آماده یا
-              متن دلخواه شروع کنید.
-            </DialogDescription>
-            <label className="mt-4 block space-y-2 text-sm font-semibold">
-              واحد مخاطب
-              <WorkbenchSelect
-                label="واحد مخاطب"
-                value={messageUnit}
-                onValueChange={setMessageUnit}
-                options={messageUnits.map((item) => ({
-                  value: item.id,
-                  label: item.label,
-                }))}
-              />
-            </label>
-            <Button className="mt-4" onClick={() => setMessageOpen(false)}>
-              نوشتن پیام
-            </Button>
-          </DialogContent>
-        </Dialog>
       )}
       {home && (
         <NewRequestDialog
