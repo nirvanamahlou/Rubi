@@ -244,40 +244,77 @@ export function TicketPricesWorkspace() {
       />
       {error ? <Alert tone="error" title={error} /> : null}
       {notice ? <Alert title={notice} /> : null}
-      <div className="grid gap-3 sm:grid-cols-3">
-        <Card className="p-4">
-          <TicketCheck className="size-5 text-primary" />
-          <p className="mt-3 text-sm text-muted-foreground">
-            بلیط‌های بارگذاری‌شده
-          </p>
-          <strong className="text-2xl">
-            {offers.length.toLocaleString('fa-IR')}
-          </strong>
+      <section
+        aria-label="خلاصه قیمت‌گذاری بلیط‌ها"
+        className="grid gap-3 sm:grid-cols-3"
+      >
+        <Card className="relative overflow-hidden border-sky-200/80 bg-gradient-to-br from-sky-500/20 via-sky-50 to-surface p-5 shadow-sm dark:border-sky-400/20 dark:from-sky-950/55 dark:via-sky-950/20">
+          <div className="absolute -start-5 -top-6 size-24 rounded-full bg-sky-400/15" />
+          <div className="relative flex items-start justify-between gap-3">
+            <div>
+              <p className="text-sm font-medium text-sky-900/75 dark:text-sky-100/75">
+                بلیط‌های بارگذاری‌شده
+              </p>
+              <strong className="mt-2 block text-3xl font-black tabular-nums text-sky-950 dark:text-sky-50">
+                {offers.length.toLocaleString('fa-IR')}
+              </strong>
+              <p className="mt-2 text-xs text-muted-foreground">
+                آماده برای قیمت‌گذاری و قرارداد
+              </p>
+            </div>
+            <span className="grid size-11 place-items-center rounded-2xl bg-sky-600 text-white shadow-lg shadow-sky-600/20">
+              <TicketCheck className="size-5" />
+            </span>
+          </div>
         </Card>
-        <Card className="p-4">
-          <CircleDollarSign className="size-5 text-emerald-600" />
-          <p className="mt-3 text-sm text-muted-foreground">
-            دارای قیمت یک‌طرفه
-          </p>
-          <strong className="text-2xl">
-            {offers
-              .filter((o) => o.standaloneSalePrice)
-              .length.toLocaleString('fa-IR')}
-          </strong>
+        <Card className="relative overflow-hidden border-emerald-200/80 bg-gradient-to-br from-emerald-500/20 via-emerald-50 to-surface p-5 shadow-sm dark:border-emerald-400/20 dark:from-emerald-950/55 dark:via-emerald-950/20">
+          <div className="absolute -start-5 -top-6 size-24 rounded-full bg-emerald-400/15" />
+          <div className="relative flex items-start justify-between gap-3">
+            <div>
+              <p className="text-sm font-medium text-emerald-900/75 dark:text-emerald-100/75">
+                دارای قیمت یک‌طرفه
+              </p>
+              <strong className="mt-2 block text-3xl font-black tabular-nums text-emerald-950 dark:text-emerald-50">
+                {offers
+                  .filter((offer) => priceForTarget(offer))
+                  .length.toLocaleString('fa-IR')}
+              </strong>
+              <p className="mt-2 text-xs text-muted-foreground">
+                برای مقصد قیمت انتخاب‌شده
+              </p>
+            </div>
+            <span className="grid size-11 place-items-center rounded-2xl bg-emerald-600 text-white shadow-lg shadow-emerald-600/20">
+              <CircleDollarSign className="size-5" />
+            </span>
+          </div>
         </Card>
-        <Card className="p-4">
-          <ArrowLeftRight className="size-5 text-violet-600" />
-          <p className="mt-3 text-sm text-muted-foreground">
-            جفت‌های قیمت‌گذاری‌شده
-          </p>
-          <strong className="text-2xl">
-            {offers
-              .reduce((sum, o) => sum + (o.roundTripSalePrices?.length ?? 0), 0)
-              .toLocaleString('fa-IR')}
-          </strong>
+        <Card className="relative overflow-hidden border-violet-200/80 bg-gradient-to-br from-violet-500/20 via-violet-50 to-surface p-5 shadow-sm dark:border-violet-400/20 dark:from-violet-950/55 dark:via-violet-950/20">
+          <div className="absolute -start-5 -top-6 size-24 rounded-full bg-violet-400/15" />
+          <div className="relative flex items-start justify-between gap-3">
+            <div>
+              <p className="text-sm font-medium text-violet-900/75 dark:text-violet-100/75">
+                جفت‌های قیمت‌گذاری‌شده
+              </p>
+              <strong className="mt-2 block text-3xl font-black tabular-nums text-violet-950 dark:text-violet-50">
+                {offers
+                  .reduce(
+                    (sum, offer) =>
+                      sum + (offer.roundTripSalePrices?.length ?? 0),
+                    0,
+                  )
+                  .toLocaleString('fa-IR')}
+              </strong>
+              <p className="mt-2 text-xs text-muted-foreground">
+                قیمت واحد برای مسیر رفت و برگشت
+              </p>
+            </div>
+            <span className="grid size-11 place-items-center rounded-2xl bg-violet-600 text-white shadow-lg shadow-violet-600/20">
+              <ArrowLeftRight className="size-5" />
+            </span>
+          </div>
         </Card>
-      </div>
-      <Card className="p-5">
+      </section>
+      <Card className="border-violet-200/80 bg-gradient-to-br from-violet-50/80 via-surface to-indigo-50/70 p-5 shadow-sm dark:border-violet-400/20 dark:from-violet-950/35 dark:via-surface dark:to-indigo-950/25">
         <div className="grid gap-4 lg:grid-cols-[minmax(14rem,1fr)_minmax(14rem,1fr)_auto] lg:items-end">
           <div>
             <h2 className="text-lg font-black">مقصد قیمت فروش</h2>
@@ -405,10 +442,13 @@ export function TicketPricesWorkspace() {
           </div>
         </div>
       </Card>
-      <Card className="overflow-hidden">
-        <div className="flex flex-col gap-3 border-b p-5 sm:flex-row sm:items-center sm:justify-between">
+      <Card className="overflow-hidden border-sky-200/80 bg-gradient-to-br from-sky-50/70 via-surface to-blue-50/50 shadow-sm dark:border-sky-400/20 dark:from-sky-950/25 dark:via-surface dark:to-blue-950/20">
+        <div className="flex flex-col gap-3 border-b border-sky-200/70 bg-sky-50/45 p-5 sm:flex-row sm:items-center sm:justify-between dark:border-sky-400/15 dark:bg-sky-950/15">
           <div>
-            <h2 className="text-lg font-black">قیمت فروش یک‌طرفه</h2>
+            <p className="text-xs font-bold tracking-wide text-sky-700 dark:text-sky-300">
+              فهرست قیمت‌گذاری
+            </p>
+            <h2 className="mt-1 text-lg font-black">قیمت فروش یک‌طرفه</h2>
             <p className="text-sm text-muted-foreground">
               هر ردیف یک بلیط منتشرشده و قیمت فروش مستقل آن است.
             </p>
@@ -431,15 +471,15 @@ export function TicketPricesWorkspace() {
             description="ابتدا بلیط را در مدیریت بلیط‌ها منتشر کنید یا عبارت جست‌وجو را تغییر دهید."
           />
         ) : (
-          <div className="divide-y">
+          <div className="space-y-3 p-3 sm:p-4">
             {filtered.map((offer) => (
               <div
                 key={offer.id}
-                className="grid gap-4 p-5 xl:grid-cols-[minmax(18rem,2fr)_10rem_10rem_auto] xl:items-end"
+                className="grid gap-4 rounded-2xl border border-sky-100 bg-surface/90 p-4 shadow-sm transition hover:border-sky-300 hover:shadow-md dark:border-sky-400/15 xl:grid-cols-[minmax(18rem,2fr)_10rem_10rem_auto] xl:items-end"
               >
-                <div>
+                <div className="rounded-xl bg-sky-50/70 p-3 dark:bg-sky-950/25">
                   <div className="flex flex-wrap items-center gap-2">
-                    <strong>
+                    <strong className="text-base">
                       {offer.carrierName} ·{' '}
                       <span dir="ltr">{offer.serviceNumber}</span>
                     </strong>
@@ -447,7 +487,7 @@ export function TicketPricesWorkspace() {
                       {offer.status === 'ACTIVE' ? 'فعال' : 'متوقف'}
                     </Badge>
                   </div>
-                  <p className="mt-2 text-sm">
+                  <p className="mt-3 text-sm font-medium">
                     {cities[offer.originId] ?? offer.originId} ←{' '}
                     {cities[offer.destinationId] ?? offer.destinationId}
                   </p>
@@ -491,12 +531,24 @@ export function TicketPricesWorkspace() {
                     }
                   />
                 </FormField>
-                <Button
-                  onClick={() => void saveOneWay(offer)}
-                  loading={saving === offer.id}
-                >
-                  ثبت نسخه جدید
-                </Button>
+                <div className="flex flex-col gap-2">
+                  {priceForTarget(offer) ? (
+                    <span className="text-xs text-muted-foreground">
+                      نسخه فعلی{' '}
+                      {priceForTarget(offer)!.revision.toLocaleString('fa-IR')}
+                    </span>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">
+                      هنوز قیمت ثبت نشده است
+                    </span>
+                  )}
+                  <Button
+                    onClick={() => void saveOneWay(offer)}
+                    loading={saving === offer.id}
+                  >
+                    ثبت نسخه جدید
+                  </Button>
+                </div>
               </div>
             ))}
           </div>

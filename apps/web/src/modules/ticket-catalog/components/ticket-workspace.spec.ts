@@ -121,6 +121,9 @@ describe('ticket workspace entry points', () => {
     expect(source).toContain('repeatDefinition(');
     expect(source).toContain('setRepeat(');
     expect(source).toContain('قیمت فروش یک‌طرفه');
+    expect(source).toContain('قیمت فروش رفت‌وبرگشت');
+    expect(source).toContain('roundTripPriceByOfferId');
+    expect(source).toContain('removedPriceRevisions');
     expect(source).toContain('در فروش قیمت‌گذاری نشده');
     expect(source).not.toContain('updateStandaloneSalePrice(');
     expect(source).toContain('updateOfferStatus(');
