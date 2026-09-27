@@ -436,7 +436,9 @@ export function MessageComposer({
                       </span>
                       <span className="block truncate text-xs font-normal opacity-70">
                         @{contact.username} ·{' '}
-                        {contact.branches.map((branch) => branch.name).join('، ')}
+                        {contact.branches
+                          .map((branch) => branch.name)
+                          .join('، ')}
                       </span>
                     </span>
                   </Button>
@@ -575,18 +577,22 @@ export function MessageComposer({
                   return (
                     <article
                       key={message.id}
-                      className={`max-w-[85%] rounded-2xl p-3 shadow-sm ${mine ? 'me-auto bg-primary text-primary-foreground' : 'ms-auto bg-violet-100 text-violet-950 dark:bg-violet-950 dark:text-violet-50'}`}
+                      className={`min-w-0 max-w-[85%] overflow-hidden rounded-2xl p-3 shadow-sm ${mine ? 'me-auto bg-primary text-primary-foreground' : 'ms-auto bg-violet-100 text-violet-950 dark:bg-violet-950 dark:text-violet-50'}`}
                     >
-                      <div className="flex items-center justify-between gap-4 text-xs opacity-80">
-                        <strong>{message.sender.displayName}</strong>
-                        <time>{messageTime(message.createdAt)}</time>
+                      <div className="flex min-w-0 items-center justify-between gap-4 text-xs opacity-80">
+                        <strong className="truncate">
+                          {message.sender.displayName}
+                        </strong>
+                        <time className="shrink-0">
+                          {messageTime(message.createdAt)}
+                        </time>
                       </div>
                       {message.forwardedFrom && (
                         <p className="mt-2 border-s-2 border-current/30 ps-2 text-xs opacity-80">
                           فوروارد از {message.forwardedFrom.senderDisplayName}
                         </p>
                       )}
-                      <p className="mt-2 whitespace-pre-wrap break-words leading-7">
+                      <p className="mt-2 max-w-full whitespace-pre-wrap break-words [overflow-wrap:anywhere] leading-7">
                         {message.body}
                       </p>
                       {message.attachments.length ? (

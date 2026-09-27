@@ -3384,6 +3384,14 @@ Tour definition uses four-column desktop identity fields and compact controls. I
 واحدها تنها برای قالب متن هستند. هیچ API، Schema/Migration، Permission، Dependency یا دادهٔ
 عملیاتی تغییر نکرده است. typecheck و ESLint Web و آزمون‌های متمرکز API/Web پیام‌رسان موفق‌اند.
 
+## 2026-09-27 — WORKBENCH-MESSAGE-TEMPLATE-OVERFLOW-0927 — PC-B — READY_FOR_REVIEW
+
+پیام‌های بلند و قالب‌های چندخطی در حباب گفت‌وگو باقی می‌مانند. حباب حداقل عرض صفر و
+سرریز پنهان دارد؛ متن با حفظ line breakهای قالب و شکستن عبارت‌های بدون فاصله نمایش داده
+می‌شود. نام فرستنده در صورت نیاز کوتاه و زمان ثابت می‌ماند. API، Schema/Migration، مجوز،
+Dependency و دادهٔ عملیاتی تغییر نکرده‌اند. ESLint و typecheck Web و ۳ آزمون متمرکز client
+پیام‌رسان موفق‌اند.
+
 ## 2026-09-21 — TICKET-STATUS-SYNC-0921 — READY_FOR_REVIEW
 
 دکمهٔ وضعیت مدیریت بلیت به رکورد منتشرشدهٔ Backend متصل شد؛ فعال/متوقف‌کردن نسخه‌دار است، جدول پس از ثبت تازه می‌شود و بلیت فعال آینده در قرارداد جدید قابل انتخاب خواهد بود. بلیت گذشته با عنوان «منقضی» نمایش داده می‌شود و قابل فعال‌سازی نیست. ۱۹ تست هدفمند، lint، typecheck و build تولیدی API/Web با ۵۰ route موفق‌اند. شاخه: `codex/pc-a-ticket-status-sync-0921`؛ بدون Migration یا تغییر داده عملیاتی.
