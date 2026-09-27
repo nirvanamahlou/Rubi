@@ -3432,3 +3432,7 @@ Tour definition uses four-column desktop identity fields and compact controls. I
 ## 2026-09-22 — رفع دانلود PDF قرارداد — READY_FOR_REVIEW
 
 دانلود PDF قرارداد دیگر به تعریف دستی مسیر Chrome و B Nazanin وابسته نیست: runtime مسیر صریح را در اولویت نگه می‌دارد و در نبود آن Chrome/Edge و فونت را از مسیرهای استاندارد ویندوز پیدا می‌کند. نبود فونت اختیاری باعث توقف دانلود نمی‌شود و renderer پس از پایان Chrome تا نوشته‌شدن کامل فایل منتظر می‌ماند. ۲۶ تست هدفمند، lint، typecheck و build تولیدی Web موفق‌اند؛ smoke واقعی روی Windows یک فایل PDF معتبر ساخت. API، قالب قرارداد، Schema/Migration، Permission و داده عملیاتی تغییر نکردند.
+## Search-first form lookups — 2026-09-27
+
+- انتخاب‌گرهای جست‌وجوییِ فرم‌ها در Customer Affairs، Documents، HR، Master Data، Organizations، Procurement، Sales و Ticket Catalog پیش از واردکردن عبارت، گزینه یا فراخوانی فهرست ندارند. با اولین عبارت جست‌وجو، همان فیلتر، صفحه‌بندی و انتخاب قبلی حفظ می‌شود.
+- این تغییر فهرست‌های ثابتِ فرم و جست‌وجوی صفحه‌های مدیریتی را تغییر نمی‌دهد. هیچ API، داده، سطح دسترسی، Migration، وابستگی یا runtime محلی تغییر نکرده است.

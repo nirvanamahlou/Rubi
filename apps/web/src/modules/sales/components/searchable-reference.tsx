@@ -32,11 +32,14 @@ export function SearchableReference({
   const [search, setSearch] = useState('');
   const [active, setActive] = useState(0);
   const selected = options.find((item) => item.id === value);
-  const matches = options.filter((item) =>
-    normalizeRouteSearch(
-      `${item.name} ${item.code} ${item.attributes?.englishName ?? ''}`,
-    ).includes(normalizeRouteSearch(search)),
-  );
+  const hasSearch = Boolean(search.trim());
+  const matches = hasSearch
+    ? options.filter((item) =>
+        normalizeRouteSearch(
+          `${item.name} ${item.code} ${item.attributes?.englishName ?? ''}`,
+        ).includes(normalizeRouteSearch(search)),
+      )
+    : [];
   const choose = (next: string) => {
     onChange(next);
     setOpen(false);
@@ -149,7 +152,11 @@ export function SearchableReference({
                 </li>
               ))}
             </ul>
-            {!matches.length ? (
+            {!hasSearch ? (
+              <p role="status" className="p-3 text-sm text-muted-foreground">
+                برای نمایش گزینه‌ها، نام یا کد را جست‌وجو کنید.
+              </p>
+            ) : !matches.length ? (
               <p role="status" className="p-3 text-sm text-muted-foreground">
                 موردی پیدا نشد.
               </p>

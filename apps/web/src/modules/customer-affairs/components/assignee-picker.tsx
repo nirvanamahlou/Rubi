@@ -22,9 +22,10 @@ export function AssigneePicker({
   const [page, setPage] = useState(1);
   const [response, setResponse] = useState<HrDirectoryResponse | null>(null);
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [retry, setRetry] = useState(0);
   useEffect(() => {
+    if (!search.trim()) return;
     const controller = new AbortController();
     const timer = setTimeout(async () => {
       setLoading(true);
@@ -109,10 +110,18 @@ export function AssigneePicker({
           {error}
         </p>
       )}
-      {!loading && response && response.employees.length === 0 && (
-        <p className="text-xs text-muted-foreground">
-          کارمند فعالی مطابق جست‌وجو در محدوده دسترسی شما پیدا نشد.
+      {!search.trim() ? (
+        <p className="text-xs text-muted-foreground" role="status">
+          برای نمایش کارکنان، نام، کد پرسنلی یا واحد را جست‌وجو کنید.
         </p>
+      ) : (
+        !loading &&
+        response &&
+        response.employees.length === 0 && (
+          <p className="text-xs text-muted-foreground">
+            کارمند فعالی مطابق جست‌وجو در محدوده دسترسی شما پیدا نشد.
+          </p>
+        )
       )}
       {!loading && response?.employees.some((employee) => !employee.userId) && (
         <p className="text-xs text-muted-foreground">
@@ -134,7 +143,7 @@ export function AssigneePicker({
         <Button
           type="button"
           variant="ghost"
-          disabled={loading || page === 1}
+          disabled={loading || !search.trim() || page === 1}
           onClick={() => setPage(page - 1)}
         >
           قبلی
@@ -142,7 +151,7 @@ export function AssigneePicker({
         <Button
           type="button"
           variant="ghost"
-          disabled={loading || !response?.hasMore}
+          disabled={loading || !search.trim() || !response?.hasMore}
           onClick={() => setPage(page + 1)}
         >
           بعدی

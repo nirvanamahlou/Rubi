@@ -56,7 +56,8 @@ export function MasterDataReferenceSelector({
   const [savedSelection, setSavedSelection] = useState<MasterDataRecord | null>(
     null,
   );
-  const [state, setState] = useState<ReferenceSelectorState>('loading');
+  const [state, setState] = useState<ReferenceSelectorState>('idle');
+  const lookupState = query.trim() ? state : 'idle';
 
   useEffect(() => {
     if (config.multiple || config.payload !== 'id' || !value) return;
@@ -90,6 +91,7 @@ export function MasterDataReferenceSelector({
 
   useEffect(() => {
     if (config.scopeField === 'organizationId' && !scopeValue) return;
+    if (!query.trim()) return;
     let active = true;
     const timer = window.setTimeout(async () => {
       setState(resolveReferenceSelectorState({ loading: true }));
@@ -159,7 +161,9 @@ export function MasterDataReferenceSelector({
     [config, options, selectedValues],
   );
   const canCreateReference =
-    Boolean(onManage) && (!createOnlyWhenEmpty || state === 'empty');
+    Boolean(query.trim()) &&
+    Boolean(onManage) &&
+    (!createOnlyWhenEmpty || lookupState === 'empty');
 
   function choose(optionValue: string) {
     if (!config.multiple) {
@@ -322,24 +326,28 @@ export function MasterDataReferenceSelector({
         id={`${id}-options`}
         role="listbox"
       >
-        {state === 'loading' ? (
+        {lookupState === 'idle' ? (
+          <p className="px-3 py-4 text-sm text-muted-foreground" role="status">
+            برای نمایش گزینه‌ها، عنوان یا کد را جست‌وجو کنید.
+          </p>
+        ) : lookupState === 'loading' ? (
           <div aria-label="در حال بارگذاری گزینه‌ها" className="space-y-2">
             <Skeleton className="h-9 w-full" />
             <Skeleton className="h-9 w-full" />
           </div>
-        ) : state === 'forbidden' ? (
+        ) : lookupState === 'forbidden' ? (
           <Alert
             description="مجوز master_data.read برای دریافت گزینه‌های این فیلد لازم است."
             title="دسترسی انتخاب مرجع وجود ندارد"
             tone="error"
           />
-        ) : state === 'error' ? (
+        ) : lookupState === 'error' ? (
           <Alert
             description="دریافت گزینه‌ها از Backend ناموفق بود؛ جست‌وجو را دوباره تغییر دهید."
             title="خطای دریافت مرجع"
             tone="error"
           />
-        ) : state === 'empty' ? (
+        ) : lookupState === 'empty' ? (
           <EmptyState
             description="مرجع فعال و سازگار با این فیلد پیدا نشد."
             title="گزینه‌ای وجود ندارد"
