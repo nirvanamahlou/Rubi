@@ -11,6 +11,9 @@ describe('ticket prices workspace', () => {
     expect(source).toContain('updateStandaloneSalePrice(');
     expect(source).toContain('updateRoundTripSalePrice(');
     expect(source).toContain('قیمت کل رفت‌وبرگشت');
+    expect(source).toContain('قیمت‌های جفت ثبت‌شده');
+    expect(source).toContain('ثبت نسخه جدید');
+    expect(source).toContain('editPair(pair)');
     expect(source).toContain('مبنای قراردادهای جدید');
     expect(source).toContain('خلاصه قیمت‌گذاری بلیط‌ها');
     expect(source).toContain('فهرست قیمت‌گذاری');
