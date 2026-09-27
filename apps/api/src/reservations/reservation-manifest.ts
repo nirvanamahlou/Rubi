@@ -457,9 +457,11 @@ export class ReservationManifestService {
     }
     if (!selected.length)
       throw new BadRequestException(
-        input.includePreviouslyExported
-          ? 'برای این بلیط قرارداد قابل خروجی با تأیید مالی وجود ندارد.'
-          : 'برای این بلیط قرارداد جدید قابل خروجی وجود ندارد.',
+        skippedFinanceCount
+          ? 'تأیید مالی تحویل مدارک برای قراردادهای این بلیط انجام نشده است.'
+          : input.includePreviouslyExported
+            ? 'برای این بلیط قرارداد قابل خروجی وجود ندارد.'
+            : 'برای این بلیط قرارداد جدید قابل خروجی وجود ندارد.',
       );
 
     const rows: IranAirtourManifestRow[] = [];
@@ -658,9 +660,11 @@ export class ReservationManifestService {
 
     if (!selectedIds.length)
       throw new BadRequestException(
-        input.includePreviouslyExported
-          ? 'در این بازه قرارداد قابل خروجی با تأیید مالی وجود ندارد.'
-          : 'در این بازه قرارداد جدید قابل خروجی وجود ندارد.',
+        skippedFinanceCount
+          ? 'تأیید مالی تحویل مدارک قراردادهای این بازه انجام نشده است.'
+          : input.includePreviouslyExported
+            ? 'در این بازه قرارداد قابل خروجی وجود ندارد.'
+            : 'در این بازه قرارداد جدید قابل خروجی وجود ندارد.',
       );
 
     const rows: IranAirtourManifestRow[] = [];
