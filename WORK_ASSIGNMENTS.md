@@ -3854,3 +3854,8 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 - درخواست مالک: ایرادهای قطعی QA میزکار رفع شوند. شاخهٔ مستقل `codex/pc-b-workbench-runtime-fixes-0923` از source واقعی Web3100 یعنی `379859bc` ساخته شد تا قابلیت‌های فعلی میزکار حفظ شوند.
 - محدودهٔ رزرو: قفل تک‌اجرایی فرم یادداشت، تست هدفمند همان رفتار، ثبت وضعیت و بازیابی runtime محلی Web3100/API4000. بدون Schema/Migration، قرارداد مشترک، Permission، Dependency/Lockfile یا دادهٔ عملیاتی؛ پیام واقعی و عملیات مخرب انجام نمی‌شود.
 - نتیجه: ثبت دوبارهٔ یادداشت حین ذخیره مسدود شد و UI تا پایان عملیات وضعیت انتظار قابل‌دسترسی نشان می‌دهد. ۵۲ تست Workbench، lint متمرکز، typecheck و build تولیدی Web با ۵۲ route موفق‌اند؛ Web3100 و API4000 فعال و پاسخ خطای اعتبارنامهٔ آزمایشی در رابط واقعی تأیید شد.
+## 2026-09-27 — WORKBENCH-REQUEST-ROUTE-REDESIGN-0927 — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک: فرم «درخواست جدید» میزکار بازطراحی شود و مشاهدهٔ درخواست کاربر را به صفحهٔ امور مشتریان منتقل نکند.
+- محدوده: `new-request-dialog.tsx` و `workbench-own-requests.tsx`، آزمون‌های همان UI و ثبت وضعیت؛ درخواست همچنان با قرارداد عمومی مالک Customer Affairs ساخته می‌شود، اما جزئیات آن در میزکار نمایش داده خواهد شد. بدون API، Schema/Migration، قرارداد، Permission، Dependency/Lockfile یا دادهٔ عملیاتی.
+- نتیجه: فرم با سربرگ، راهنمای ورودی‌ها و اکشن واضح بازطراحی شد. هر درخواست ثبت‌شده در modal جزئیات میزکار باز می‌شود و دیگر هیچ لینک یا navigation به `/customer-affairs` ندارد. ESLint متمرکز، typecheck Web و ۵۲ تست Workbench موفق‌اند.
