@@ -749,10 +749,14 @@ describe('dashboard permission and data states', () => {
     expect(source).toContain('activePageHeaderTheme');
     expect(source).toContain('dashboardHeaderArtworkByPageId');
     expect(source).toContain('activePageHeaderArtwork');
+    expect(source).toContain('activePageHeaderDarkArtwork');
     expect(source).toContain(
       "'/images/dashboard-headers/executive-overview.png'",
     );
+    expect(source).toContain("'-dark.png'");
     expect(source).toContain('quality={45}');
+    expect(source).toContain('data-dashboard-dark-header-artwork');
+    expect(source).toContain('dark:block dark:opacity-95');
     expect(source).toContain('pointer-events-none absolute -bottom-10 -end-2');
     expect(source).toContain('size-44 stroke-[1.15] sm:size-52');
     expect(source).toContain("'tour-hotel-performance': Hotel");

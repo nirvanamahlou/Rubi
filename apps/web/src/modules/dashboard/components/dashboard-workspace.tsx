@@ -3773,6 +3773,10 @@ export function DashboardWorkspace() {
     dashboardHeaderArtworkByPageId[activePage.id] ??
     dashboardHeaderArtworkByPageId['executive-overview'] ??
     '/images/dashboard-headers/executive-overview.png';
+  const activePageHeaderDarkArtwork = activePageHeaderArtwork.replace(
+    /\.png$/,
+    '-dark.png',
+  );
   const activePageKpis = dashboardKpis
     .filter((kpi) => activePage.kpiIds.includes(kpi.id))
     .map((kpi) =>
@@ -3924,15 +3928,25 @@ export function DashboardWorkspace() {
                 <Image
                   alt=""
                   aria-hidden="true"
-                  className="pointer-events-none object-cover object-right opacity-100 dark:opacity-55"
+                  className="pointer-events-none object-cover object-right opacity-100 dark:hidden"
                   fill
                   quality={45}
                   sizes="(min-width: 1024px) 72vw, 100vw"
                   src={activePageHeaderArtwork}
                 />
+                <Image
+                  alt=""
+                  aria-hidden="true"
+                  className="pointer-events-none hidden object-cover object-right dark:block dark:opacity-95"
+                  data-dashboard-dark-header-artwork
+                  fill
+                  quality={55}
+                  sizes="(min-width: 1024px) 72vw, 100vw"
+                  src={activePageHeaderDarkArtwork}
+                />
                 <span
                   aria-hidden="true"
-                  className="pointer-events-none absolute inset-0 bg-gradient-to-l from-surface/55 via-surface/25 to-transparent dark:from-surface/80 dark:via-surface/45 dark:to-surface/10"
+                  className="pointer-events-none absolute inset-0 bg-gradient-to-l from-surface/55 via-surface/25 to-transparent dark:from-surface/45 dark:via-surface/20 dark:to-surface/5"
                 />
                 <span
                   aria-hidden="true"
