@@ -191,7 +191,9 @@ export function SalesContractForm() {
       const changedRoute = [
         'originId',
         'originCountryId',
+        'originCountryCode',
         'destinationCountryId',
+        'destinationCountryCode',
         'destinationId',
         'departureDate',
         'tripType',
@@ -736,7 +738,19 @@ export function SalesContractForm() {
                   value={state.originCountryId}
                   options={references.countries}
                   onChange={(originCountryId) =>
-                    patchState({ originCountryId, originId: '' })
+                    patchState({
+                      originCountryId,
+                      originCountryCode: String(
+                        references.countries.find(
+                          (country) => country.id === originCountryId,
+                        )?.attributes.iso2Code ??
+                          references.countries.find(
+                            (country) => country.id === originCountryId,
+                          )?.code ??
+                          '',
+                      ),
+                      originId: '',
+                    })
                   }
                 />
                 <SearchableReference
@@ -756,7 +770,19 @@ export function SalesContractForm() {
                   value={state.destinationCountryId}
                   options={references.countries}
                   onChange={(destinationCountryId) =>
-                    patchState({ destinationCountryId, destinationId: '' })
+                    patchState({
+                      destinationCountryId,
+                      destinationCountryCode: String(
+                        references.countries.find(
+                          (country) => country.id === destinationCountryId,
+                        )?.attributes.iso2Code ??
+                          references.countries.find(
+                            (country) => country.id === destinationCountryId,
+                          )?.code ??
+                          '',
+                      ),
+                      destinationId: '',
+                    })
                   }
                 />
                 <SearchableReference
@@ -947,6 +973,7 @@ export function SalesContractForm() {
             {activeDetail === 'TOUR' && (
               <SalesTourPicker
                 state={state}
+                countries={references.countries}
                 cities={references.cities}
                 hotels={references.hotels}
                 onChange={(next) => {

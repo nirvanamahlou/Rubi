@@ -9,6 +9,7 @@ import {
 import {
   salesPassengerCompositionMatches,
   salesPassengerCounts,
+  salesRequiresPassportIdentity,
   salesTravelDate,
   type SalesFormState,
 } from './sales-form';
@@ -28,6 +29,8 @@ export interface PeopleRow {
 }
 export interface SalesPeopleDraft {
   mode: 'person' | 'first-passenger' | 'organization';
+  /** Chosen once for this contract, then saved on every person created/updated from it. */
+  acquaintanceMethodId?: string;
   rows: Record<string, PeopleRow>;
   displacedFirst?: PeopleRow;
   previousSeparateCustomer?: PeopleRow;
@@ -166,12 +169,20 @@ export function refreshPeopleRow(
   }
   return next;
 }
-function validateExistingPerson(row: PeopleRow) {
+function validateExistingPerson(row: PeopleRow, passportIdentity: boolean) {
   if (!row.profile) return;
   const baseline = existingPeopleBaseline(row),
     values = row.values;
-  if (!values.firstName.trim() || !values.lastName.trim())
+  if (
+    !passportIdentity &&
+    (!values.firstName.trim() || !values.lastName.trim())
+  )
     throw new Error('نام و نام خانوادگی پرونده موجود را کامل کنید.');
+  if (
+    passportIdentity &&
+    (!values.passportFirstName.trim() || !values.passportLastName.trim())
+  )
+    throw new Error('نام و نام خانوادگی لاتین پاسپورت را کامل کنید.');
   if (baseline.birthDate && !values.birthDate)
     throw new Error('برای اصلاح تاریخ تولد، تاریخ جدید را وارد کنید.');
   if (values.nationalId !== baseline.nationalId) {
@@ -239,6 +250,22 @@ export function editPeopleRow(
   }
   return { ...draft, rows };
 }
+
+export function setSalesPeopleAcquaintanceMethod(
+  draft: SalesPeopleDraft,
+  acquaintanceMethodId: string,
+): SalesPeopleDraft {
+  const rows = Object.fromEntries(
+    Object.entries(draft.rows).map(([key, row]) => [
+      key,
+      {
+        ...row,
+        values: { ...row.values, acquaintanceMethodId },
+      },
+    ]),
+  ) as Record<string, PeopleRow>;
+  return { ...draft, acquaintanceMethodId, rows };
+}
 function validatePassport(row: PeopleRow) {
   const expiry = row.values.passportExpiryDate;
   if (
@@ -264,11 +291,18 @@ export function peopleCreateInput(
   row: PeopleRow,
   customer: boolean,
   passenger: boolean,
+  passportIdentity = false,
 ): CustomerMutationRequest {
   validatePassport(row);
   const v = row.values;
-  if (!v.firstName.trim() || !v.lastName.trim())
+  if (!passportIdentity && (!v.firstName.trim() || !v.lastName.trim()))
     throw new Error('نام و نام خانوادگی را کامل کنید.');
+  if (
+    passportIdentity &&
+    (!/^[A-Za-z][A-Za-z '-]*$/.test(v.passportFirstName.trim()) ||
+      !/^[A-Za-z][A-Za-z '-]*$/.test(v.passportLastName.trim()))
+  )
+    throw new Error('نام و نام خانوادگی لاتین پاسپورت را کامل کنید.');
   const nationalId = normalizeNationalId(v.nationalId);
   if (!/^\d{10}$/.test(nationalId) || !isValidIranianNationalId(nationalId))
     throw new Error('کد ملی معتبر ۱۰رقمی وارد کنید.');
@@ -280,15 +314,23 @@ export function peopleCreateInput(
     .replace(/\s+/g, '');
   if (passportNumber && !/^[A-Z0-9-]{4,24}$/.test(passportNumber))
     throw new Error('شماره پاسپورت معتبر نیست.');
+  if (passportIdentity && (!passportNumber || !v.passportExpiryDate))
+    throw new Error('شماره و انقضای پاسپورت برای سفر خارجی الزامی است.');
   if (v.phone.trim() && !/^\+?[0-9]{10,15}$/.test(v.phone.trim()))
     throw new Error('شماره تلفن معتبر وارد کنید.');
   if (v.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.email.trim()))
     throw new Error('ایمیل معتبر وارد کنید.');
   return {
     kind: 'person',
-    firstName: v.firstName.trim(),
-    lastName: v.lastName.trim(),
-    displayName: `${v.firstName.trim()} ${v.lastName.trim()}`,
+    firstName: passportIdentity
+      ? v.passportFirstName.trim().toUpperCase()
+      : v.firstName.trim(),
+    lastName: passportIdentity
+      ? v.passportLastName.trim().toUpperCase()
+      : v.lastName.trim(),
+    displayName: passportIdentity
+      ? `${v.passportFirstName.trim().toUpperCase()} ${v.passportLastName.trim().toUpperCase()}`
+      : `${v.firstName.trim()} ${v.lastName.trim()}`,
     nationalId,
     ...(v.acquaintanceMethodId
       ? { acquaintanceMethodId: v.acquaintanceMethodId }
@@ -303,7 +345,7 @@ export function peopleCreateInput(
     ...(v.passportExpiryDate
       ? { passportExpiryDate: v.passportExpiryDate }
       : {}),
-    ...(passenger && v.passportFirstName.trim()
+    ...(passportIdentity || (passenger && v.passportFirstName.trim())
       ? {
           passportFirstName: v.passportFirstName.trim().toUpperCase(),
           passportLastName: v.passportLastName.trim().toUpperCase(),
@@ -325,11 +367,7 @@ export function validateSalesPeopleDraft(
   if (!keys.length) throw new Error('تعداد مسافران را در مرحله اول مشخص کنید.');
   if (draft.mode === 'organization' && !draft.organization)
     throw new Error('مشتری حقوقی / آژانس را انتخاب کنید.');
-  const international = Boolean(
-    state.originCountryId &&
-    state.destinationCountryId &&
-    state.originCountryId !== state.destinationCountryId,
-  );
+  const international = salesRequiresPassportIdentity(state);
   const ids = new Set<string>(),
     nationalIds = new Set<string>();
   for (const key of [
@@ -344,7 +382,7 @@ export function validateSalesPeopleDraft(
         `${label}: نتیجه ثبت قبلی نیازمند بررسی است؛ پرونده موجود را انتخاب کنید.`,
       );
     validatePassport(row);
-    if (key !== 'primary' && international) {
+    if (international) {
       const v = row.values;
       if (
         !/^[A-Za-z][A-Za-z '-]*$/.test(v.passportFirstName.trim()) ||
@@ -352,6 +390,10 @@ export function validateSalesPeopleDraft(
       )
         throw new Error(
           `${label}: نام و نام خانوادگی لاتین پاسپورت الزامی است.`,
+        );
+      if (!v.passportNumber.trim() || !v.passportExpiryDate)
+        throw new Error(
+          `${label}: شماره و انقضای پاسپورت برای سفر خارجی الزامی است.`,
         );
       if (!['M', 'F'].includes(v.gender))
         throw new Error(`${label}: جنسیت را با M یا F ثبت کنید.`);
@@ -365,13 +407,9 @@ export function validateSalesPeopleDraft(
         throw new Error(
           `${label}: ملیت، کشور صادرکننده و کشور محل تولد را با کد سه‌حرفی ISO ثبت کنید.`,
         );
-      if (!v.passportNumber.trim() || !v.passportExpiryDate)
-        throw new Error(
-          `${label}: شماره و انقضای پاسپورت برای سفر خارجی الزامی است.`,
-        );
     }
     if (row.person) {
-      validateExistingPerson(row);
+      validateExistingPerson(row, international);
       if (ids.has(row.person.id))
         throw new Error(
           'یک شخص دوبار انتخاب شده؛ مشتری حقیقی همان مسافر اول است و ردیف جدا نمی‌خواهد.',
@@ -384,6 +422,7 @@ export function validateSalesPeopleDraft(
           key === 'primary' ||
             (draft.mode === 'first-passenger' && key === 'p0'),
           key !== 'primary',
+          international,
         );
       } catch (reason) {
         throw new Error(
@@ -443,8 +482,17 @@ export async function saveSalesPeopleDraft(
     > = customersApi,
 ) {
   draft = normalizeSalesPeopleDraft(draft);
+  const contractAcquaintanceMethodId =
+    draft.acquaintanceMethodId ??
+    peopleRow(draft, 'p0').values.acquaintanceMethodId;
+  if (contractAcquaintanceMethodId)
+    draft = setSalesPeopleAcquaintanceMethod(
+      draft,
+      contractAcquaintanceMethodId,
+    );
   let current = { ...draft, rows: { ...draft.rows } };
   const keys = passengerSlotKeys(state);
+  const passportIdentity = salesRequiresPassportIdentity(state);
   for (const key of [
     ...(draft.mode === 'person' ? ['primary'] : []),
     ...keys,
@@ -654,6 +702,7 @@ export async function saveSalesPeopleDraft(
             key === 'primary' ||
               (draft.mode === 'first-passenger' && key === 'p0'),
             key !== 'primary',
+            passportIdentity,
           ),
         )
       ).data;
@@ -663,7 +712,9 @@ export async function saveSalesPeopleDraft(
         ...row,
         reviewRequired: uncertain,
         ...(uncertain
-          ? { pendingNationalId: normalizeNationalId(row.values.nationalId) }
+          ? {
+              pendingNationalId: normalizeNationalId(row.values.nationalId),
+            }
           : {}),
       });
       onProgress(current);

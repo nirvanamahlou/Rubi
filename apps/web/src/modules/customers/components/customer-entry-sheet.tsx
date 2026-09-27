@@ -207,15 +207,22 @@ export function CustomerEntrySheet({
   onCalendarModeChange,
   disabled = false,
   showPassportExpiry = false,
+  visibleFields,
+  columnLabels,
 }: {
   rows: readonly CustomerEntryRow[];
   calendarMode: CustomerCalendarMode;
   onCalendarModeChange: (mode: CustomerCalendarMode) => void;
   disabled?: boolean;
   showPassportExpiry?: boolean;
+  /** Lets a host show the identity fields required for its workflow. */
+  visibleFields?: readonly EntryField[];
+  columnLabels?: Partial<Record<EntryField, string>>;
 }) {
   const visibleColumns = columns.filter(
-    ([field]) => field !== 'passportExpiryDate' || showPassportExpiry,
+    ([field]) =>
+      (field !== 'passportExpiryDate' || showPassportExpiry) &&
+      (!visibleFields || visibleFields.includes(field)),
   );
   return (
     <>
@@ -235,20 +242,23 @@ export function CustomerEntrySheet({
               <th scope="col" className="w-40 border-e p-3 text-start">
                 پرونده / نقش
               </th>
-              {visibleColumns.map(([field, label]) => (
-                <th
-                  scope="col"
-                  className="border-e p-3 text-start whitespace-nowrap"
-                  key={field}
-                >
-                  <span className="inline-flex items-center gap-1">
-                    {label}
-                    {iso3Fields.includes(field) ? (
-                      <Iso3CountryGuide label={label} />
-                    ) : null}
-                  </span>
-                </th>
-              ))}
+              {visibleColumns.map(([field, defaultLabel]) => {
+                const label = columnLabels?.[field] ?? defaultLabel;
+                return (
+                  <th
+                    scope="col"
+                    className="border-e p-3 text-start whitespace-nowrap"
+                    key={field}
+                  >
+                    <span className="inline-flex items-center gap-1">
+                      {label}
+                      {iso3Fields.includes(field) ? (
+                        <Iso3CountryGuide label={label} />
+                      ) : null}
+                    </span>
+                  </th>
+                );
+              })}
               <th scope="col" className="p-3 text-start">
                 جزئیات
               </th>
@@ -267,159 +277,165 @@ export function CustomerEntrySheet({
                   <p className="mb-2 font-bold">{row.label}</p>
                   {row.role}
                 </th>
-                {visibleColumns.map(([field, label, suffix]) => (
-                  <td className="border-e p-1.5" key={field}>
-                    {field === 'gender' ? (
-                      <div
-                        className="grid min-w-32 grid-cols-2 gap-1 rounded-lg bg-muted/60 p-1"
-                        role="radiogroup"
-                        aria-label={`جنسیت ${row.label}`}
-                      >
-                        {(
-                          [
-                            ['M', 'مرد'],
-                            ['F', 'زن'],
-                          ] as const
-                        ).map(([value, optionLabel]) => {
-                          const selected = row.values.gender === value;
-                          const genderDisabled = Boolean(
+                {visibleColumns.map(([field, defaultLabel, suffix]) => {
+                  const label = columnLabels?.[field] ?? defaultLabel;
+                  return (
+                    <td className="border-e p-1.5" key={field}>
+                      {field === 'gender' ? (
+                        <div
+                          className="grid min-w-32 grid-cols-2 gap-1 rounded-lg bg-muted/60 p-1"
+                          role="radiogroup"
+                          aria-label={`جنسیت ${row.label}`}
+                        >
+                          {(
+                            [
+                              ['M', 'مرد'],
+                              ['F', 'زن'],
+                            ] as const
+                          ).map(([value, optionLabel]) => {
+                            const selected = row.values.gender === value;
+                            const genderDisabled = Boolean(
+                              disabled ||
+                              (row.readOnly &&
+                                !row.editableFields?.includes('gender')),
+                            );
+                            return (
+                              <button
+                                key={value}
+                                type="button"
+                                role="radio"
+                                aria-checked={selected}
+                                disabled={genderDisabled}
+                                className={cn(
+                                  'h-8 rounded-md px-2 text-xs font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50',
+                                  selected
+                                    ? 'bg-primary text-primary-foreground shadow-sm'
+                                    : 'bg-surface text-muted-foreground hover:text-foreground',
+                                )}
+                                onClick={() => row.onChange('gender', value)}
+                              >
+                                {optionLabel}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      ) : field === 'birthDate' ||
+                        field === 'passportExpiryDate' ? (
+                        <CustomerDateField
+                          compact
+                          id={`${row.key}-${suffix}`}
+                          label={`${field === 'birthDate' ? 'تاریخ تولد' : 'انقضای پاسپورت'} ${row.label}`}
+                          mode={calendarMode}
+                          onModeChange={onCalendarModeChange}
+                          value={row.values[field] ?? ''}
+                          onChange={(value) => row.onChange(field, value)}
+                          disabled={Boolean(
                             disabled ||
                             (row.readOnly &&
-                              !row.editableFields?.includes('gender')),
-                          );
-                          return (
-                            <button
-                              key={value}
-                              type="button"
-                              role="radio"
-                              aria-checked={selected}
-                              disabled={genderDisabled}
-                              className={cn(
-                                'h-8 rounded-md px-2 text-xs font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50',
-                                selected
-                                  ? 'bg-primary text-primary-foreground shadow-sm'
-                                  : 'bg-surface text-muted-foreground hover:text-foreground',
-                              )}
-                              onClick={() => row.onChange('gender', value)}
-                            >
-                              {optionLabel}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    ) : field === 'birthDate' ||
-                      field === 'passportExpiryDate' ? (
-                      <CustomerDateField
-                        compact
-                        id={`${row.key}-${suffix}`}
-                        label={`${field === 'birthDate' ? 'تاریخ تولد' : 'انقضای پاسپورت'} ${row.label}`}
-                        mode={calendarMode}
-                        onModeChange={onCalendarModeChange}
-                        value={row.values[field] ?? ''}
-                        onChange={(value) => row.onChange(field, value)}
-                        disabled={Boolean(
-                          disabled ||
-                          (row.readOnly &&
-                            !row.editableFields?.includes(field)),
-                        )}
-                      />
-                    ) : (
-                      <Input
-                        aria-label={`${label.replace(' *', '')} ${row.label}`}
-                        autoComplete="off"
-                        className="h-10 min-w-28 rounded-md border-transparent bg-transparent px-2 shadow-none focus:border-primary"
-                        disabled={
-                          disabled ||
-                          (row.readOnly && !row.editableFields?.includes(field))
-                        }
-                        dir={
-                          [
-                            'nationalId',
-                            'passportNumber',
-                            'phone',
-                            'email',
-                            'nationalityCode',
-                            'passportIssuingCountryCode',
-                            'birthCountryCode',
-                          ].includes(field)
-                            ? 'ltr'
-                            : 'rtl'
-                        }
-                        id={`${row.key}-${suffix}`}
-                        inputMode={
-                          field === 'nationalId'
-                            ? 'numeric'
-                            : field === 'phone'
-                              ? 'tel'
-                              : field === 'email'
-                                ? 'email'
-                                : 'text'
-                        }
-                        maxLength={
-                          field === 'nationalId'
-                            ? 10
-                            : field === 'passportNumber'
-                              ? 24
-                              : [
-                                    'nationalityCode',
-                                    'passportIssuingCountryCode',
-                                    'birthCountryCode',
-                                  ].includes(field)
-                                ? 3
-                                : undefined
-                        }
-                        minLength={field === 'nationalId' ? 10 : undefined}
-                        onChange={(event) =>
-                          row.onChange(
-                            field,
-                            field === 'passportNumber'
-                              ? event.target.value.toUpperCase()
-                              : [
-                                    'passportFirstName',
-                                    'passportLastName',
-                                    'nationalityCode',
-                                    'passportIssuingCountryCode',
-                                    'birthCountryCode',
-                                  ].includes(field)
+                              !row.editableFields?.includes(field)),
+                          )}
+                        />
+                      ) : (
+                        <Input
+                          aria-label={`${label.replace(' *', '')} ${row.label}`}
+                          autoComplete="off"
+                          className="h-10 min-w-28 rounded-md border-transparent bg-transparent px-2 shadow-none focus:border-primary"
+                          disabled={
+                            disabled ||
+                            (row.readOnly &&
+                              !row.editableFields?.includes(field))
+                          }
+                          dir={
+                            [
+                              'nationalId',
+                              'passportNumber',
+                              'passportFirstName',
+                              'passportLastName',
+                              'phone',
+                              'email',
+                              'nationalityCode',
+                              'passportIssuingCountryCode',
+                              'birthCountryCode',
+                            ].includes(field)
+                              ? 'ltr'
+                              : 'rtl'
+                          }
+                          id={`${row.key}-${suffix}`}
+                          inputMode={
+                            field === 'nationalId'
+                              ? 'numeric'
+                              : field === 'phone'
+                                ? 'tel'
+                                : field === 'email'
+                                  ? 'email'
+                                  : 'text'
+                          }
+                          maxLength={
+                            field === 'nationalId'
+                              ? 10
+                              : field === 'passportNumber'
+                                ? 24
+                                : [
+                                      'nationalityCode',
+                                      'passportIssuingCountryCode',
+                                      'birthCountryCode',
+                                    ].includes(field)
+                                  ? 3
+                                  : undefined
+                          }
+                          minLength={field === 'nationalId' ? 10 : undefined}
+                          onChange={(event) =>
+                            row.onChange(
+                              field,
+                              field === 'passportNumber'
                                 ? event.target.value.toUpperCase()
-                                : event.target.value,
-                          )
-                        }
-                        pattern={
-                          field === 'nationalId'
-                            ? '[0-9۰-۹٠-٩]{10}'
-                            : field === 'passportNumber'
-                              ? '[A-Za-z0-9-]{4,24}'
-                              : [
-                                    'nationalityCode',
-                                    'passportIssuingCountryCode',
-                                    'birthCountryCode',
-                                  ].includes(field)
-                                ? '[A-Z]{3}'
-                                : field === 'passportFirstName' ||
-                                    field === 'passportLastName'
-                                  ? "[A-Za-z][A-Za-z '\\-]*"
-                                  : field === 'phone'
-                                    ? '\\+?[0-9]{10,15}'
-                                    : undefined
-                        }
-                        required={[
-                          'firstName',
-                          'lastName',
-                          'nationalId',
-                        ].includes(field)}
-                        type={
-                          field === 'email'
-                            ? 'email'
-                            : field === 'phone'
-                              ? 'tel'
-                              : 'text'
-                        }
-                        value={row.values[field] ?? ''}
-                      />
-                    )}
-                  </td>
-                ))}
+                                : [
+                                      'passportFirstName',
+                                      'passportLastName',
+                                      'nationalityCode',
+                                      'passportIssuingCountryCode',
+                                      'birthCountryCode',
+                                    ].includes(field)
+                                  ? event.target.value.toUpperCase()
+                                  : event.target.value,
+                            )
+                          }
+                          pattern={
+                            field === 'nationalId'
+                              ? '[0-9۰-۹٠-٩]{10}'
+                              : field === 'passportNumber'
+                                ? '[A-Za-z0-9-]{4,24}'
+                                : [
+                                      'nationalityCode',
+                                      'passportIssuingCountryCode',
+                                      'birthCountryCode',
+                                    ].includes(field)
+                                  ? '[A-Z]{3}'
+                                  : field === 'passportFirstName' ||
+                                      field === 'passportLastName'
+                                    ? "[A-Za-z][A-Za-z '\\-]*"
+                                    : field === 'phone'
+                                      ? '\\+?[0-9]{10,15}'
+                                      : undefined
+                          }
+                          required={[
+                            'firstName',
+                            'lastName',
+                            'nationalId',
+                          ].includes(field)}
+                          type={
+                            field === 'email'
+                              ? 'email'
+                              : field === 'phone'
+                                ? 'tel'
+                                : 'text'
+                          }
+                          value={row.values[field] ?? ''}
+                        />
+                      )}
+                    </td>
+                  );
+                })}
                 <td className="min-w-28 p-2">{row.actions}</td>
               </tr>
             ))}

@@ -104,6 +104,9 @@ export interface SalesFormState {
   tripType: 'ONE_WAY' | 'ROUND_TRIP';
   originCountryId: string;
   destinationCountryId: string;
+  /** ISO country codes are kept with the draft so identity fields remain correct for UUID-backed countries. */
+  originCountryCode?: string;
+  destinationCountryCode?: string;
   serviceDirections?: Partial<
     Record<'FLIGHT' | 'TRANSFER', SalesTicketDirection[]>
   >;
@@ -276,6 +279,8 @@ export const emptySalesForm: SalesFormState = {
   passengerComposition: { adults: 1, children: 0, infants: 0 },
   originCountryId: '',
   destinationCountryId: '',
+  originCountryCode: '',
+  destinationCountryCode: '',
   originId: '',
   destinationId: '',
   departureDate: '',
@@ -532,7 +537,11 @@ export function withSalesRouteDefaults(
               aliases.includes(normalizeRouteSearch(item.name)),
           )
         : undefined);
-    return { countryId: country?.id ?? countryId, cityId: city?.id ?? cityId };
+    return {
+      countryId: country?.id ?? countryId,
+      cityId: city?.id ?? cityId,
+      countryCode: String(country?.attributes.iso2Code ?? country?.code ?? ''),
+    };
   };
   const origin = resolveSide(state.originCountryId, state.originId, 'IR', [
     'تهران',
@@ -547,10 +556,34 @@ export function withSalesRouteDefaults(
   return {
     ...state,
     originCountryId: origin.countryId,
+    originCountryCode: origin.countryCode,
     originId: origin.cityId,
     destinationCountryId: destination.countryId,
+    destinationCountryCode: destination.countryCode,
     destinationId: destination.cityId,
   };
+}
+
+function salesIranCountry(
+  countryId: string | undefined,
+  countryCode: string | undefined,
+): boolean {
+  const value = `${countryCode ?? ''} ${countryId ?? ''}`.trim().toUpperCase();
+  return /(^|\s)(IR|IRN|IRAN)(\s|$)/.test(value);
+}
+
+/** A route is domestic only when both endpoints are inside Iran. */
+export function salesDomesticIranRoute(state: SalesFormState): boolean {
+  return (
+    salesIranCountry(state.originCountryId, state.originCountryCode) &&
+    salesIranCountry(state.destinationCountryId, state.destinationCountryCode)
+  );
+}
+
+/** Empty routes keep the domestic entry layout until the user picks a route. */
+export function salesRequiresPassportIdentity(state: SalesFormState): boolean {
+  if (!state.originCountryId && !state.destinationCountryId) return false;
+  return !salesDomesticIranRoute(state);
 }
 
 export function salesDetailSteps(state: SalesFormState): string[] {

@@ -21,9 +21,11 @@ describe('Sales uses the Customers entry spreadsheet', () => {
     expect(html).toContain('جدول ورود اطلاعات مشتری و مسافران');
     expect(html.match(/id="sales-entry-p\d+-first-name"/g)).toHaveLength(4);
     expect(html).not.toContain('sales-entry-primary-first-name');
-    expect(html.match(/aria-label="نحوه آشنایی مسافر/g)).toHaveLength(4);
+    expect(
+      html.match(/aria-label="نحوه آشنایی برای کل قرارداد"/g),
+    ).toHaveLength(1);
     expect(html).not.toContain('type="checkbox"');
-    expect(html).toContain('پاسپورت');
+    expect(html).not.toContain('شماره پاسپورت');
     expect(html).toContain('تلفن');
     expect(html).toContain('ایمیل');
     expect(html).toContain('افزودن نوزاد');
@@ -49,9 +51,37 @@ describe('Sales uses the Customers entry spreadsheet', () => {
     );
     expect(html).toContain('مشتری و مسافر اول');
     expect(html).not.toContain('sales-entry-primary-first-name');
-    expect(html).toContain('انقضای پاسپورت');
+    expect(html).not.toContain('انقضای پاسپورت');
     expect(html).toContain('قرارداد به نام مسافر اول ثبت می‌شود');
     expect(html).not.toContain('این مشتری مسافر اول هم هست');
     expect(html.match(/id="sales-entry-p\d+-first-name"/g)).toHaveLength(1);
+  });
+  it('uses passport identity instead of Persian names for every international passenger', () => {
+    const html = renderToStaticMarkup(
+      <SalesPeopleSheet
+        state={{
+          ...emptySalesForm,
+          originCountryId: 'iran',
+          originCountryCode: 'IR',
+          destinationCountryId: 'turkey',
+          destinationCountryCode: 'TR',
+          passengerComposition: { adults: 1, children: 0, infants: 0 },
+        }}
+        draft={null}
+        onDraftChange={vi.fn()}
+        onConfirmed={vi.fn()}
+        onBusyChange={vi.fn()}
+        onAddInfant={vi.fn()}
+        onTravelDateChange={vi.fn()}
+      />,
+    );
+    expect(html).toContain('نام انگلیسی مطابق پاسپورت');
+    expect(html).toContain('نام خانوادگی انگلیسی مطابق پاسپورت');
+    expect(html).toContain('شماره پاسپورت');
+    expect(html).toContain('انقضای پاسپورت');
+    expect(html).not.toContain('نام *');
+    expect(html).not.toContain('نام خانوادگی *');
+    expect(html).toContain('کد ملی *');
+    expect(html).toContain('جنسیت *');
   });
 });

@@ -9,11 +9,13 @@ import { withSalesHotelDates, type SalesFormState } from '../model/sales-form';
 
 export function SalesTourPicker({
   state,
+  countries,
   cities,
   hotels,
   onChange,
 }: {
   state: SalesFormState;
+  countries: readonly MasterDataRecord[];
   cities: readonly MasterDataRecord[];
   hotels: readonly MasterDataRecord[];
   onChange: (state: SalesFormState) => void;
@@ -57,19 +59,29 @@ export function SalesTourPicker({
         tour.package.hotelIds.length === 1
           ? hotels.find((item) => item.id === tour.package.hotelIds[0])
           : undefined;
+      const originCountryId = String(
+        cities.find((city) => city.id === tour.package.originId)?.attributes
+          .countryId ?? '',
+      );
+      const destinationCountryId = String(
+        cities.find((city) => city.id === tour.package.destinationId)
+          ?.attributes.countryId ?? '',
+      );
       onChange(
         withSalesHotelDates(state, {
           ...state,
           tour,
           originId: tour.package.originId,
           destinationId: tour.package.destinationId,
-          originCountryId: String(
-            cities.find((city) => city.id === tour.package.originId)?.attributes
-              .countryId ?? '',
+          originCountryId,
+          originCountryCode: String(
+            countries.find((country) => country.id === originCountryId)
+              ?.attributes.iso2Code ?? '',
           ),
-          destinationCountryId: String(
-            cities.find((city) => city.id === tour.package.destinationId)
-              ?.attributes.countryId ?? '',
+          destinationCountryId,
+          destinationCountryCode: String(
+            countries.find((country) => country.id === destinationCountryId)
+              ?.attributes.iso2Code ?? '',
           ),
           serviceKinds: [
             'FLIGHT',
