@@ -323,13 +323,18 @@ export function SalesWorkspace() {
           onSubmit={(event) => {
             event.preventDefault();
             if (dateRangeInvalid) return;
-            setQuery((current) => ({
-              ...current,
-              search: search.trim(),
-              ...(createdFrom ? { createdFrom } : { createdFrom: undefined }),
-              ...(createdTo ? { createdTo } : { createdTo: undefined }),
-              page: 1,
-            }));
+            setQuery((current) => {
+              const next: SalesContractListQuery = {
+                ...current,
+                search: search.trim(),
+                page: 1,
+              };
+              if (createdFrom) next.createdFrom = createdFrom;
+              else delete next.createdFrom;
+              if (createdTo) next.createdTo = createdTo;
+              else delete next.createdTo;
+              return next;
+            });
           }}
         >
           <div className="flex min-w-48 items-center gap-2 rounded-xl border border-border bg-surface px-3 shadow-sm focus-within:ring-2 focus-within:ring-primary/30">
