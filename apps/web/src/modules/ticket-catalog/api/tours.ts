@@ -7,6 +7,8 @@ import type {
   TicketOfferV1,
   TicketOfferCreateV1,
   TicketRoundTripSalePriceUpdateV1,
+  TicketSalePriceTargetCreateV1,
+  TicketSalePriceTargetV1,
   TicketStandaloneSalePriceUpdateV1,
 } from '@nora/contracts';
 import { getPublicApiBaseUrl } from '@/lib/environment';
@@ -50,6 +52,18 @@ const post = (body: unknown, branch: string, key: string): RequestInit => ({
   body: JSON.stringify(body),
 });
 export const toursApi = {
+  salePriceTargets: () =>
+    request<{ version: 1; data: TicketSalePriceTargetV1[] }>(
+      '/sale-price-targets',
+    ),
+  createSalePriceTarget: (
+    input: TicketSalePriceTargetCreateV1,
+    branch: string,
+  ) =>
+    request<{ data: TicketSalePriceTargetV1 }>(
+      '/sale-price-targets',
+      post(input, branch, crypto.randomUUID()),
+    ),
   packages: () => request<{ data: TourPackageV1[] }>('/tours/packages'),
   departures: () => request<{ data: TourDepartureV1[] }>('/tours/departures'),
   createPackage: (input: TourPackageInputV1, branch: string, key: string) =>

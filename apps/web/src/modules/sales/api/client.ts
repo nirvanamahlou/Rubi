@@ -102,6 +102,8 @@ export const salesApi = {
       ...(query.settlementStatus
         ? { settlementStatus: query.settlementStatus }
         : {}),
+      ...(query.createdFrom ? { createdFrom: query.createdFrom } : {}),
+      ...(query.createdTo ? { createdTo: query.createdTo } : {}),
       sortBy: query.sortBy ?? 'updatedAt',
       sortDirection: query.sortDirection ?? 'desc',
     };

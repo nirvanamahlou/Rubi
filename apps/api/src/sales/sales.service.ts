@@ -504,6 +504,8 @@ export class SalesService {
         'SETTLED',
         'OVERPAID',
       ),
+      createdFrom: Joi.string().isoDate(),
+      createdTo: Joi.string().isoDate(),
       sortBy: Joi.string().valid(
         'createdAt',
         'updatedAt',

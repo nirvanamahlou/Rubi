@@ -281,7 +281,12 @@ export class SalesRepository {
       ],
     };
     const page = Math.max(1, query.page ?? 1);
-    const pageSize = Math.min(100, Math.max(1, query.pageSize ?? 20));
+    // Date-filtered contract lists are intentionally expanded for operational review.
+    // The regular list remains capped to keep the default dashboard responsive.
+    const pageSize = Math.min(
+      query.createdFrom || query.createdTo ? 10_000 : 100,
+      Math.max(1, query.pageSize ?? 20),
+    );
     const sortBy = query.sortBy ?? 'updatedAt';
     const sortDirection = query.sortDirection ?? 'desc';
     if (exportLimit) {
