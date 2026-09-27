@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import type { TicketOfferV1, TicketSalePriceTargetV1 } from '@nora/contracts';
 import { Button } from '@/components/ui/button';
+import { MoneyInput } from '@/components/ui/money-input';
 import {
   FormField,
   Input,
@@ -414,13 +415,12 @@ export function TicketPricesWorkspace() {
             </Select>
           </FormField>
           <FormField label="قیمت کل رفت‌وبرگشت">
-            <Input
-              inputMode="decimal"
+            <MoneyInput
               value={pairDraft.amount}
-              onChange={(e) =>
+              onValueChange={(amount) =>
                 setPairDraft({
                   ...pairDraft,
-                  amount: e.target.value.replace(/[^0-9.]/g, ''),
+                  amount,
                 })
               }
               placeholder="مثلاً ۲۵۰۰۰۰۰۰"
@@ -497,14 +497,13 @@ export function TicketPricesWorkspace() {
                   </p>
                 </div>
                 <FormField label="قیمت یک‌طرفه">
-                  <Input
-                    inputMode="decimal"
+                  <MoneyInput
                     value={drafts[`${offer.id}:${targetId}`]?.amount ?? ''}
-                    onChange={(e) =>
+                    onValueChange={(amount) =>
                       setDrafts({
                         ...drafts,
                         [`${offer.id}:${targetId}`]: {
-                          amount: e.target.value.replace(/[^0-9.]/g, ''),
+                          amount,
                           currencyCode:
                             drafts[`${offer.id}:${targetId}`]?.currencyCode ??
                             'IRR',

@@ -20,6 +20,7 @@ import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/form-controls';
+import { MoneyInput } from '@/components/ui/money-input';
 import {
   Alert,
   Badge,
@@ -766,21 +767,35 @@ export function TourPricingWorkspace() {
                                 {row.currencyCode ?? batch.currencyCode}
                               </option>
                             </select>
-                            <Input
-                              aria-label={'مقدار تغییر قیمت ' + row.hotelName}
-                              className="h-9 min-w-20"
-                              inputMode="decimal"
-                              onChange={(event) =>
-                                setAdjustments((current) => ({
-                                  ...current,
-                                  [row.id]: {
-                                    ...adjustment,
-                                    value: event.target.value,
-                                  },
-                                }))
-                              }
-                              value={adjustment.value}
-                            />
+                            {adjustment.mode === 'fixed' ? (
+                              <MoneyInput
+                                aria-label={'مقدار تغییر قیمت ' + row.hotelName}
+                                className="h-9 min-w-20"
+                                onValueChange={(value) =>
+                                  setAdjustments((current) => ({
+                                    ...current,
+                                    [row.id]: { ...adjustment, value },
+                                  }))
+                                }
+                                value={adjustment.value}
+                              />
+                            ) : (
+                              <Input
+                                aria-label={'درصد تغییر قیمت ' + row.hotelName}
+                                className="h-9 min-w-20"
+                                inputMode="decimal"
+                                onChange={(event) =>
+                                  setAdjustments((current) => ({
+                                    ...current,
+                                    [row.id]: {
+                                      ...adjustment,
+                                      value: event.target.value,
+                                    },
+                                  }))
+                                }
+                                value={adjustment.value}
+                              />
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -854,10 +869,9 @@ export function TourPricingWorkspace() {
           <label className="grid gap-2 text-sm font-bold">
             قیمت فروش پرواز بزرگسال
             <div className="flex gap-2">
-              <Input
+              <MoneyInput
                 className="min-w-0 flex-1"
-                inputMode="decimal"
-                onChange={(event) => setAdultFlight(event.target.value)}
+                onValueChange={setAdultFlight}
                 placeholder="0"
                 value={adultFlight}
               />
@@ -876,10 +890,9 @@ export function TourPricingWorkspace() {
           <label className="grid gap-2 text-sm font-bold">
             قیمت فروش پرواز کودک
             <div className="flex gap-2">
-              <Input
+              <MoneyInput
                 className="min-w-0 flex-1"
-                inputMode="decimal"
-                onChange={(event) => setChildFlight(event.target.value)}
+                onValueChange={setChildFlight}
                 placeholder="0"
                 value={childFlight}
               />
@@ -898,10 +911,9 @@ export function TourPricingWorkspace() {
           <label className="grid gap-2 text-sm font-bold">
             افزایش نرخ بیزینس
             <div className="flex gap-2">
-              <Input
+              <MoneyInput
                 className="min-w-0 flex-1"
-                inputMode="decimal"
-                onChange={(event) => setBusinessIncrease(event.target.value)}
+                onValueChange={setBusinessIncrease}
                 placeholder="0"
                 value={businessIncrease}
               />
@@ -932,18 +944,24 @@ export function TourPricingWorkspace() {
                 <option value="percent">درصدی</option>
                 <option value="fixed">مبلغ ثابت</option>
               </select>
-              <Input
-                aria-label={
-                  commissionMode === 'percent'
-                    ? 'درصد کمیسیون'
-                    : 'مبلغ ثابت کمیسیون'
-                }
-                className="min-w-0 flex-1"
-                inputMode="decimal"
-                onChange={(event) => setCommission(event.target.value)}
-                placeholder="0"
-                value={commission}
-              />
+              {commissionMode === 'fixed' ? (
+                <MoneyInput
+                  aria-label="مبلغ ثابت کمیسیون"
+                  className="min-w-0 flex-1"
+                  onValueChange={setCommission}
+                  placeholder="0"
+                  value={commission}
+                />
+              ) : (
+                <Input
+                  aria-label="درصد کمیسیون"
+                  className="min-w-0 flex-1"
+                  inputMode="decimal"
+                  onChange={(event) => setCommission(event.target.value)}
+                  placeholder="0"
+                  value={commission}
+                />
+              )}
               {commissionMode === 'fixed' ? (
                 <select
                   aria-label="ارز مبلغ ثابت کمیسیون"

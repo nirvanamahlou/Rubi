@@ -160,7 +160,8 @@ describe('dashboard travel projection date boundaries', () => {
 
     const result = await service.dashboardProjection(
       {
-        range: 'month',
+        from: '2026-09-01',
+        to: '2026-09-30',
         visualIds: 'customer-acquisition-channel-trend,finalized-sales-trend',
       },
       actor,
@@ -209,7 +210,8 @@ describe('dashboard travel projection date boundaries', () => {
 
     const result = await service.dashboardProjection(
       {
-        range: 'month',
+        from: '2026-09-01',
+        to: '2026-09-30',
         currency: 'IRR',
         kpiIds: 'gross-sales',
         visualIds: 'executive-sales-by-service,finalized-sales-trend',
@@ -333,13 +335,13 @@ describe('dashboard travel projection date boundaries', () => {
       facts,
     } as unknown as ReportingRepository);
 
-      const result = await service.dashboardProjection(
-        {
-          range: 'month',
-          currency: 'IRR',
-          kpiIds:
-            'issue-success-rate,collection-rate,refund-rate,lead-conversion-rate',
-          visualIds:
+    const result = await service.dashboardProjection(
+      {
+        range: 'month',
+        currency: 'IRR',
+        kpiIds:
+          'issue-success-rate,collection-rate,refund-rate,lead-conversion-rate',
+        visualIds:
           'finalized-sales-trend,crm-followup-queue,commercial-pipeline,employee-performance-ranking,employee-sales-count-by-agent,employee-sales-amount-by-agent,employee-conversion-by-agent,employee-cancellations-by-agent',
       },
       actor,
@@ -381,15 +383,23 @@ describe('dashboard travel projection date boundaries', () => {
       unit: 'درصد',
       value: '۶۷',
     });
-    expect(result.metrics['issue-success-rate']?.trend?.values.length).toBeGreaterThan(0);
+    expect(
+      result.metrics['issue-success-rate']?.trend?.values.length,
+    ).toBeGreaterThan(0);
     expect(result.metrics['issue-success-rate']?.trend?.values).toEqual(
       expect.arrayContaining([expect.any(Number)]),
     );
     expect(result.metrics['collection-rate']?.unit).toBe('درصد');
-    expect(result.metrics['collection-rate']?.trend?.values.length).toBeGreaterThan(0);
+    expect(
+      result.metrics['collection-rate']?.trend?.values.length,
+    ).toBeGreaterThan(0);
     expect(result.metrics['refund-rate']?.unit).toBe('درصد');
-    expect(result.metrics['refund-rate']?.trend?.values.length).toBeGreaterThan(0);
+    expect(result.metrics['refund-rate']?.trend?.values.length).toBeGreaterThan(
+      0,
+    );
     expect(result.metrics['lead-conversion-rate']?.unit).toBe('درصد');
-    expect(result.metrics['lead-conversion-rate']?.trend?.values.length).toBeGreaterThan(0);
+    expect(
+      result.metrics['lead-conversion-rate']?.trend?.values.length,
+    ).toBeGreaterThan(0);
   });
 });

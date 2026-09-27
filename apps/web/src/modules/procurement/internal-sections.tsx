@@ -16,7 +16,7 @@ import type { MasterDataRecord, ProcurementRequestV1 } from '@nora/contracts';
 import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
 import { FormField, Input, Textarea } from '@/components/ui/form-controls';
-import { cleanSalesMoney } from '@/components/ui/money-input';
+import { MoneyInput } from '@/components/ui/money-input';
 import {
   Alert,
   Badge,
@@ -1081,14 +1081,10 @@ export function SampleInvoiceForm({
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
           <FormField id="sample-invoice-amount" label="مبلغ فاکتور">
-            <Input
+            <MoneyInput
               id="sample-invoice-amount"
-              dir="ltr"
-              inputMode="decimal"
               value={draft.amount}
-              onChange={(event) =>
-                update('amount', cleanSalesMoney(event.target.value))
-              }
+              onValueChange={(amount) => update('amount', amount)}
             />
           </FormField>
           <FormField id="sample-invoice-currency" label="ارز">

@@ -10,6 +10,7 @@ import { Pencil, Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input, Textarea } from '@/components/ui/form-controls';
 import { DatePicker } from '@/components/ui/date-picker';
+import { MoneyInput } from '@/components/ui/money-input';
 import { MasterDataReferenceSelector } from '@/modules/master-data/components/master-data-reference-selector';
 import { agencyClient } from '../api/agency-client';
 import { moneyLabel } from '../model/presentation';
@@ -324,14 +325,22 @@ export function AgencyRatesPanel({
           </label>
           <label className="field">
             {kind === 'FIXED_AMOUNT' ? 'مبلغ توافقی' : 'درصد'}
-            <Input
-              required
-              dir="ltr"
-              inputMode="decimal"
-              pattern="[0-9]{1,16}(\.[0-9]{1,4})?"
-              value={editor.values.value}
-              onChange={(e) => change({ value: e.target.value })}
-            />
+            {kind === 'FIXED_AMOUNT' ? (
+              <MoneyInput
+                required
+                value={editor.values.value}
+                onValueChange={(value) => change({ value })}
+              />
+            ) : (
+              <Input
+                required
+                dir="ltr"
+                inputMode="decimal"
+                pattern="[0-9]{1,16}(\.[0-9]{1,4})?"
+                value={editor.values.value}
+                onChange={(e) => change({ value: e.target.value })}
+              />
+            )}
           </label>
           {kind === 'FIXED_AMOUNT' ? (
             <div className="field">
