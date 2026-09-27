@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { shouldShowWorkbenchRequestStatus } from './workbench-request-status';
+import {
+  shouldShowWorkbenchRequestStatus,
+  workbenchRequestStatusLabel,
+} from './workbench-request-status';
 
 describe('shouldShowWorkbenchRequestStatus', () => {
   it('keeps NEW only on the latest request', () => {
@@ -11,5 +14,11 @@ describe('shouldShowWorkbenchRequestStatus', () => {
   it('keeps other statuses visible on every request', () => {
     expect(shouldShowWorkbenchRequestStatus('IN_PROGRESS', false)).toBe(true);
     expect(shouldShowWorkbenchRequestStatus('DONE', false)).toBe(true);
+  });
+
+  it('renders request statuses in Persian', () => {
+    expect(workbenchRequestStatusLabel('NEW')).toBe('جدید');
+    expect(workbenchRequestStatusLabel('in_progress')).toBe('در حال پیگیری');
+    expect(workbenchRequestStatusLabel('UNKNOWN')).toBe('تعیین نشده');
   });
 });
