@@ -117,4 +117,42 @@ describe('Sales hotel room capacity validation', () => {
       response: { code: 'HOTEL_ROOM_CAPACITY_EXCEEDED' },
     });
   });
+
+  it('enforces the separate hotel age bands, including infant capacity', async () => {
+    const roomAvailability = vi.fn().mockResolvedValue({
+      roomTypeName: 'فمیلی',
+      maxAdults: 2,
+      maxChildren: 2,
+      maxChildren2To6: 1,
+      maxChildren6To12: 1,
+      maxInfants: 0,
+    });
+    const service = serviceWithRoomAvailability(roomAvailability);
+    const input = {
+      departureDate: '2026-10-01',
+      hotelSelection: {
+        hotelId: 'hotel-1',
+        roomTypeId: 'room-1',
+        checkInDate: '2026-10-01',
+        checkOutDate: '2026-10-05',
+        roomCount: 1,
+        serviceClientKey: 'hotel-service',
+      },
+      passengers: [
+        {
+          birthDate: '2025-01-01',
+          serviceClientKeys: ['hotel-service'],
+        },
+      ],
+    } as unknown as SalesContractCreateRequest;
+
+    await expect(
+      service.assertHotelRoomCapacity(input, 'branch-1'),
+    ).rejects.toMatchObject({
+      response: {
+        code: 'HOTEL_ROOM_CAPACITY_EXCEEDED',
+        requested: { infants: 1 },
+      },
+    });
+  });
 });

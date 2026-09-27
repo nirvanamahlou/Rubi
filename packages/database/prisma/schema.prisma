@@ -4946,15 +4946,19 @@ model ReservationHotelGroupRate {
  * Sales-owned, editable per-tour and per-hotel source batch.
  */
 model ReservationHotelRoomRate {
-  id           String                    @id @default(uuid()) @db.Uuid
-  groupRateId  String                    @db.Uuid
-  roomTypeId   String                    @db.Uuid
-  roomTypeName String                    @db.VarChar(160)
-  factor       Decimal                   @db.Decimal(12, 3)
-  maxAdults    Int
-  maxChildren  Int
-  groupRate    ReservationHotelGroupRate @relation(fields: [groupRateId], references: [id], onDelete: Restrict)
-  roomType     MasterRoomType            @relation(fields: [roomTypeId], references: [id], onDelete: Restrict)
+  id               String                    @id @default(uuid()) @db.Uuid
+  groupRateId      String                    @db.Uuid
+  roomTypeId       String                    @db.Uuid
+  roomTypeName     String                    @db.VarChar(160)
+  factor           Decimal                   @db.Decimal(12, 3)
+  maxAdults        Int
+  /// Legacy aggregate retained for older public consumers; equals the two child bands combined.
+  maxChildren      Int
+  maxChildren2To6  Int                       @default(0)
+  maxChildren6To12 Int                       @default(0)
+  maxInfants       Int                       @default(0)
+  groupRate        ReservationHotelGroupRate @relation(fields: [groupRateId], references: [id], onDelete: Restrict)
+  roomType         MasterRoomType            @relation(fields: [roomTypeId], references: [id], onDelete: Restrict)
 
   @@unique([groupRateId, roomTypeId])
   @@index([roomTypeId, groupRateId])

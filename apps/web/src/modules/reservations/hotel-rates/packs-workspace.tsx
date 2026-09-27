@@ -22,12 +22,27 @@ type RoomRateDraft = {
   roomTypeName: string;
   factor: string;
   maxAdults: string;
-  maxChildren: string;
+  maxChildren2To6: string;
+  maxChildren6To12: string;
+  maxInfants: string;
+};
+type SavedRoomRate = Omit<
+  RoomRateDraft,
+  'maxAdults' | 'maxChildren2To6' | 'maxChildren6To12' | 'maxInfants'
+> & {
+  maxAdults: number;
+  /** Legacy aggregate stored by rate packs created before age bands existed. */
+  maxChildren: number;
+  maxChildren2To6?: number;
+  maxChildren6To12?: number;
+  maxInfants?: number;
 };
 type NewRoomDraft = {
   name: string;
   maxAdults: string;
-  maxChildren: string;
+  maxChildren2To6: string;
+  maxChildren6To12: string;
+  maxInfants: string;
   factor: string;
 };
 type GridRow = {
@@ -65,7 +80,7 @@ type PackDetail = Omit<PackSummary, 'hotelCount' | 'updatedAt'> & {
     base: string;
     currency: string;
     factors: Factors;
-    roomRates: RoomRateDraft[];
+    roomRates: SavedRoomRate[];
   }[];
 };
 const blankFactors = (): Factors =>
@@ -140,7 +155,9 @@ const blankRow = (hotel: HotelOption, currency: string): GridRow => ({
     roomTypeName: room.name,
     factor: '1',
     maxAdults: '2',
-    maxChildren: '0',
+    maxChildren2To6: '0',
+    maxChildren6To12: '0',
+    maxInfants: '0',
   })),
   inCityList: true,
 });
@@ -390,7 +407,9 @@ export function HotelRatePacksWorkspace() {
                 roomTypeName: room.name,
                 factor: '1',
                 maxAdults: '2',
-                maxChildren: '0',
+                maxChildren2To6: '0',
+                maxChildren6To12: '0',
+                maxInfants: '0',
               },
           ),
           inCityList: true,
@@ -528,7 +547,15 @@ export function HotelRatePacksWorkspace() {
           base: row.base,
           currency: row.currency ?? item.currency,
           factors: { ...blankFactors(), ...row.factors },
-          roomRates: row.roomRates ?? [],
+          roomRates: (row.roomRates ?? []).map((room) => ({
+            ...room,
+            maxAdults: String(room.maxAdults),
+            maxChildren2To6: String(
+              room.maxChildren2To6 ?? room.maxChildren ?? 0,
+            ),
+            maxChildren6To12: String(room.maxChildren6To12 ?? 0),
+            maxInfants: String(room.maxInfants ?? 0),
+          })),
           inCityList: true,
         })),
       );
@@ -586,7 +613,11 @@ export function HotelRatePacksWorkspace() {
             roomTypeId: room.roomTypeId,
             factor: room.factor,
             maxAdults: Number(room.maxAdults),
-            maxChildren: Number(room.maxChildren),
+            maxChildren:
+              Number(room.maxChildren2To6) + Number(room.maxChildren6To12),
+            maxChildren2To6: Number(room.maxChildren2To6),
+            maxChildren6To12: Number(room.maxChildren6To12),
+            maxInfants: Number(room.maxInfants),
           })),
       })),
     });
@@ -652,7 +683,9 @@ export function HotelRatePacksWorkspace() {
       [hotelId]: {
         name: '',
         maxAdults: '2',
-        maxChildren: '0',
+        maxChildren2To6: '0',
+        maxChildren6To12: '0',
+        maxInfants: '0',
         factor: '1',
         ...current[hotelId],
         ...patch,
@@ -664,19 +697,29 @@ export function HotelRatePacksWorkspace() {
     const draft = newRoomDrafts[row.hotel.id] ?? {
       name: '',
       maxAdults: '2',
-      maxChildren: '0',
+      maxChildren2To6: '0',
+      maxChildren6To12: '0',
+      maxInfants: '0',
       factor: '1',
     };
     const maxAdults = Number(draft.maxAdults);
-    const maxChildren = Number(draft.maxChildren);
+    const maxChildren2To6 = Number(draft.maxChildren2To6);
+    const maxChildren6To12 = Number(draft.maxChildren6To12);
+    const maxInfants = Number(draft.maxInfants);
     if (
       !draft.name.trim() ||
       !Number.isSafeInteger(maxAdults) ||
       maxAdults < 1 ||
       maxAdults > 20 ||
-      !Number.isSafeInteger(maxChildren) ||
-      maxChildren < 0 ||
-      maxChildren > 20 ||
+      !Number.isSafeInteger(maxChildren2To6) ||
+      maxChildren2To6 < 0 ||
+      maxChildren2To6 > 20 ||
+      !Number.isSafeInteger(maxChildren6To12) ||
+      maxChildren6To12 < 0 ||
+      maxChildren6To12 > 20 ||
+      !Number.isSafeInteger(maxInfants) ||
+      maxInfants < 0 ||
+      maxInfants > 20 ||
       !/^\d{1,3}(?:\.\d{1,3})?$/.test(draft.factor) ||
       Number(draft.factor) <= 0
     ) {
@@ -691,7 +734,9 @@ export function HotelRatePacksWorkspace() {
       const room = await masterDataApi.create('room-types', {
         values: {
           name: draft.name.trim(),
-          referenceCapacity: String(maxAdults + maxChildren),
+          referenceCapacity: String(
+            maxAdults + maxChildren2To6 + maxChildren6To12 + maxInfants,
+          ),
         },
       });
       const currentRoomIds = String(hotel.data.attributes.roomTypeIds ?? '')
@@ -723,7 +768,9 @@ export function HotelRatePacksWorkspace() {
                     roomTypeName: roomType.name,
                     factor: draft.factor,
                     maxAdults: draft.maxAdults,
-                    maxChildren: draft.maxChildren,
+                    maxChildren2To6: draft.maxChildren2To6,
+                    maxChildren6To12: draft.maxChildren6To12,
+                    maxInfants: draft.maxInfants,
                   },
                 ],
               }
@@ -1141,7 +1188,9 @@ export function HotelRatePacksWorkspace() {
                                           >
                                             <span>نوع اتاق</span>
                                             <span>بزرگسال</span>
-                                            <span>کودک</span>
+                                            <span>کودک ۲–۶</span>
+                                            <span>کودک ۶–۱۲</span>
+                                            <span>نوزاد</span>
                                             <span>ظرفیت</span>
                                             <span>ضریب</span>
                                             <span>قیمت پکیج</span>
@@ -1157,7 +1206,9 @@ export function HotelRatePacksWorkspace() {
                                                 roomTypeName: roomType.name,
                                                 factor: '1',
                                                 maxAdults: '2',
-                                                maxChildren: '0',
+                                                maxChildren2To6: '0',
+                                                maxChildren6To12: '0',
+                                                maxInfants: '0',
                                               };
                                               const update = (
                                                 patch: Partial<RoomRateDraft>,
@@ -1205,24 +1256,74 @@ export function HotelRatePacksWorkspace() {
                                                       }
                                                     />
                                                   </label>
-                                                  <label aria-label="ظرفیت کودک">
+                                                  <label aria-label="ظرفیت کودک ۲ تا ۶ سال">
                                                     <span
                                                       className={
                                                         styles.mobileLabel
                                                       }
                                                     >
-                                                      کودک
+                                                      کودک ۲–۶
                                                     </span>
                                                     <input
-                                                      aria-label={`ظرفیت کودک ${roomType.name}`}
+                                                      aria-label={`ظرفیت کودک ۲ تا ۶ سال ${roomType.name}`}
                                                       type="number"
                                                       required
                                                       min="0"
                                                       max="20"
-                                                      value={value.maxChildren}
+                                                      value={
+                                                        value.maxChildren2To6
+                                                      }
                                                       onChange={(event) =>
                                                         update({
-                                                          maxChildren:
+                                                          maxChildren2To6:
+                                                            event.target.value,
+                                                        })
+                                                      }
+                                                    />
+                                                  </label>
+                                                  <label aria-label="ظرفیت کودک ۶ تا ۱۲ سال">
+                                                    <span
+                                                      className={
+                                                        styles.mobileLabel
+                                                      }
+                                                    >
+                                                      کودک ۶–۱۲
+                                                    </span>
+                                                    <input
+                                                      aria-label={`ظرفیت کودک ۶ تا ۱۲ سال ${roomType.name}`}
+                                                      type="number"
+                                                      required
+                                                      min="0"
+                                                      max="20"
+                                                      value={
+                                                        value.maxChildren6To12
+                                                      }
+                                                      onChange={(event) =>
+                                                        update({
+                                                          maxChildren6To12:
+                                                            event.target.value,
+                                                        })
+                                                      }
+                                                    />
+                                                  </label>
+                                                  <label aria-label="ظرفیت نوزاد">
+                                                    <span
+                                                      className={
+                                                        styles.mobileLabel
+                                                      }
+                                                    >
+                                                      نوزاد
+                                                    </span>
+                                                    <input
+                                                      aria-label={`ظرفیت نوزاد ${roomType.name}`}
+                                                      type="number"
+                                                      required
+                                                      min="0"
+                                                      max="20"
+                                                      value={value.maxInfants}
+                                                      onChange={(event) =>
+                                                        update({
+                                                          maxInfants:
                                                             event.target.value,
                                                         })
                                                       }
@@ -1230,7 +1331,12 @@ export function HotelRatePacksWorkspace() {
                                                   </label>
                                                   <small dir="ltr">
                                                     {value.maxAdults || '0'} +{' '}
-                                                    {value.maxChildren || '0'}
+                                                    {value.maxChildren2To6 ||
+                                                      '0'}{' '}
+                                                    +{' '}
+                                                    {value.maxChildren6To12 ||
+                                                      '0'}{' '}
+                                                    + {value.maxInfants || '0'}
                                                   </small>
                                                   <label aria-label="ضریب نوع اتاق">
                                                     <span
@@ -1322,19 +1428,57 @@ export function HotelRatePacksWorkspace() {
                                                 }
                                               />
                                               <input
-                                                aria-label={`ظرفیت کودک اتاق جدید ${row.hotel.name}`}
+                                                aria-label={`ظرفیت کودک ۲ تا ۶ سال اتاق جدید ${row.hotel.name}`}
                                                 type="number"
                                                 min="0"
                                                 max="20"
                                                 value={
                                                   newRoomDrafts[row.hotel.id]
-                                                    ?.maxChildren ?? '0'
+                                                    ?.maxChildren2To6 ?? '0'
                                                 }
                                                 onChange={(event) =>
                                                   changeNewRoomDraft(
                                                     row.hotel.id,
                                                     {
-                                                      maxChildren:
+                                                      maxChildren2To6:
+                                                        event.target.value,
+                                                    },
+                                                  )
+                                                }
+                                              />
+                                              <input
+                                                aria-label={`ظرفیت کودک ۶ تا ۱۲ سال اتاق جدید ${row.hotel.name}`}
+                                                type="number"
+                                                min="0"
+                                                max="20"
+                                                value={
+                                                  newRoomDrafts[row.hotel.id]
+                                                    ?.maxChildren6To12 ?? '0'
+                                                }
+                                                onChange={(event) =>
+                                                  changeNewRoomDraft(
+                                                    row.hotel.id,
+                                                    {
+                                                      maxChildren6To12:
+                                                        event.target.value,
+                                                    },
+                                                  )
+                                                }
+                                              />
+                                              <input
+                                                aria-label={`ظرفیت نوزاد اتاق جدید ${row.hotel.name}`}
+                                                type="number"
+                                                min="0"
+                                                max="20"
+                                                value={
+                                                  newRoomDrafts[row.hotel.id]
+                                                    ?.maxInfants ?? '0'
+                                                }
+                                                onChange={(event) =>
+                                                  changeNewRoomDraft(
+                                                    row.hotel.id,
+                                                    {
+                                                      maxInfants:
                                                         event.target.value,
                                                     },
                                                   )

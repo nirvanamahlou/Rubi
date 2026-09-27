@@ -36,7 +36,7 @@ import {
 } from './sales.adapters';
 import {
   calculateSalesBalances,
-  passengerAgeCategory,
+  passengerAgeYears,
   SalesDomainError,
   salesFingerprint,
   sumSalesDecimals,
@@ -106,6 +106,64 @@ function paymentInput(row: SalesContractRow['payments'][number]) {
     paymentReference: row.paymentReference,
     check,
   };
+}
+
+type HotelCapacityBands = {
+  adults: number;
+  children2To6: number;
+  children6To12: number;
+  infants: number;
+};
+
+function hotelCapacity(
+  roomRate: {
+    maxAdults: number;
+    maxChildren: number;
+    maxChildren2To6?: number;
+    maxChildren6To12?: number;
+    maxInfants?: number;
+  },
+  rooms: number,
+): HotelCapacityBands {
+  // Older rate packs only have maxChildren; consider that a 2–6 capacity until
+  // the rate is edited. This avoids making an existing hotel unavailable.
+  const children2To6 = roomRate.maxChildren2To6 ?? roomRate.maxChildren;
+  const children6To12 = roomRate.maxChildren6To12 ?? 0;
+  return {
+    adults: roomRate.maxAdults * rooms,
+    children2To6: children2To6 * rooms,
+    children6To12: children6To12 * rooms,
+    infants: (roomRate.maxInfants ?? 0) * rooms,
+  };
+}
+
+function passengerCapacityBands(
+  passengers: readonly { birthDate: string }[],
+  departureDate: string,
+): HotelCapacityBands {
+  return passengers.reduce<HotelCapacityBands>(
+    (counts, passenger) => {
+      const age = passengerAgeYears(passenger.birthDate, departureDate);
+      if (age < 2) counts.infants += 1;
+      else if (age < 6) counts.children2To6 += 1;
+      else if (age < 12) counts.children6To12 += 1;
+      else counts.adults += 1;
+      return counts;
+    },
+    { adults: 0, children2To6: 0, children6To12: 0, infants: 0 },
+  );
+}
+
+function capacityExceeded(
+  requested: HotelCapacityBands,
+  capacity: HotelCapacityBands,
+): boolean {
+  return (
+    requested.adults > capacity.adults ||
+    requested.children2To6 > capacity.children2To6 ||
+    requested.children6To12 > capacity.children6To12 ||
+    requested.infants > capacity.infants
+  );
 }
 
 export function presentSalesContract(
@@ -338,24 +396,14 @@ export class SalesService {
     const guests = input.passengers.filter((passenger) =>
       passenger.serviceClientKeys.includes(hotel.serviceClientKey),
     );
-    const adults = guests.filter(
-      (passenger) =>
-        passengerAgeCategory(passenger.birthDate, input.departureDate) ===
-        'ADT',
-    ).length;
-    const children = guests.filter(
-      (passenger) =>
-        passengerAgeCategory(passenger.birthDate, input.departureDate) ===
-        'CHD',
-    ).length;
-    const maxAdults = roomRate.maxAdults * hotel.roomCount;
-    const maxChildren = roomRate.maxChildren * hotel.roomCount;
-    if (adults > maxAdults || children > maxChildren)
+    const requested = passengerCapacityBands(guests, input.departureDate);
+    const capacity = hotelCapacity(roomRate, hotel.roomCount);
+    if (capacityExceeded(requested, capacity))
       throw new BadRequestException({
         code: 'HOTEL_ROOM_CAPACITY_EXCEEDED',
-        message: `ظرفیت ${roomRate.roomTypeName} برای ${hotel.roomCount.toLocaleString('fa-IR')} اتاق، حداکثر ${maxAdults.toLocaleString('fa-IR')} بزرگسال و ${maxChildren.toLocaleString('fa-IR')} کودک است.`,
-        capacity: { maxAdults, maxChildren },
-        requested: { adults, children },
+        message: `ظرفیت ${roomRate.roomTypeName} برای ${hotel.roomCount.toLocaleString('fa-IR')} اتاق کافی نیست: ${capacity.adults.toLocaleString('fa-IR')} بزرگسال، ${capacity.children2To6.toLocaleString('fa-IR')} کودک ۲–۶، ${capacity.children6To12.toLocaleString('fa-IR')} کودک ۶–۱۲ و ${capacity.infants.toLocaleString('fa-IR')} نوزاد.`,
+        capacity,
+        requested,
       });
   }
   private async assertPresentedHotelRoomCapacity(
@@ -376,20 +424,14 @@ export class SalesService {
     const guests = contract.passengersDetail.filter((passenger) =>
       passenger.serviceClientKeys.includes(hotel.serviceClientKey),
     );
-    const adults = guests.filter(
-      ({ ageCategory }) => ageCategory === 'ADT',
-    ).length;
-    const children = guests.filter(
-      ({ ageCategory }) => ageCategory === 'CHD',
-    ).length;
-    const maxAdults = roomRate.maxAdults * hotel.roomCount;
-    const maxChildren = roomRate.maxChildren * hotel.roomCount;
-    if (adults > maxAdults || children > maxChildren)
+    const requested = passengerCapacityBands(guests, contract.departureDate);
+    const capacity = hotelCapacity(roomRate, hotel.roomCount);
+    if (capacityExceeded(requested, capacity))
       throw new BadRequestException({
         code: 'HOTEL_ROOM_CAPACITY_EXCEEDED',
         message: `ظرفیت ${roomRate.roomTypeName} برای تعداد مسافران انتخاب‌شده کافی نیست.`,
-        capacity: { maxAdults, maxChildren },
-        requested: { adults, children },
+        capacity,
+        requested,
       });
   }
   private async assertTour(
