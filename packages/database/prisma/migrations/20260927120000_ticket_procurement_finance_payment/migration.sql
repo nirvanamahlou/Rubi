@@ -15,9 +15,9 @@ CREATE TABLE "TicketSalePriceTarget" (
   CONSTRAINT "TicketSalePriceTarget_pkey" PRIMARY KEY ("id"),
   CONSTRAINT "TicketSalePriceTarget_version_check" CHECK ("version" > 0),
   CONSTRAINT "TicketSalePriceTarget_branchId_fkey"
-    FOREIGN KEY ("branchId") REFERENCES "Branch"("id") ON DELETE RESTRICT ON UPDATE CASCADE,
+    FOREIGN KEY ("branchId") REFERENCES "branches"("id") ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT "TicketSalePriceTarget_createdByUserId_fkey"
-    FOREIGN KEY ("createdByUserId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE
+    FOREIGN KEY ("createdByUserId") REFERENCES "iam_users"("id") ON DELETE RESTRICT ON UPDATE CASCADE
 );
 
 CREATE UNIQUE INDEX "TicketSalePriceTarget_branchId_code_key"

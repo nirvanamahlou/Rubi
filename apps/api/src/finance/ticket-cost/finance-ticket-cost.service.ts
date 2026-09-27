@@ -56,7 +56,11 @@ export class FinanceTicketCostService {
     let invoice: Prisma.Decimal;
     let unitCost: Prisma.Decimal | null = null;
     if (isSeatPricing) {
-      if (!Number.isSafeInteger(seatCount) || seatCount < 1)
+      if (
+        seatCount === null ||
+        !Number.isSafeInteger(seatCount) ||
+        seatCount < 1
+      )
         throw new BadRequestException(
           'تعداد صندلی خریداری‌شده معتبر لازم است.',
         );
