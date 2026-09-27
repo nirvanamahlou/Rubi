@@ -105,10 +105,13 @@ export const toursApi = {
   managedOffers: () =>
     request<{ version: 1; data: TicketOfferV1[] }>('/offers/management'),
   archiveExpiredOffer: (id: string, expectedVersion: number) =>
-    request<{ data: { id: string } }>(`/offers/${id}`, {
-      method: 'DELETE',
-      body: JSON.stringify({ expectedVersion }),
-    }),
+    request<{ data: { id: string; removedPriceRevisions: number } }>(
+      `/offers/${id}`,
+      {
+        method: 'DELETE',
+        body: JSON.stringify({ expectedVersion }),
+      },
+    ),
   reviseOffer: (
     id: string,
     expectedVersion: number,

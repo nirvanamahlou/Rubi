@@ -526,6 +526,21 @@ function TicketCatalogWorkspace() {
     id: string,
     fallback: string,
   ) => resolve(kind, id)?.name ?? fallback;
+  const roundTripPriceByOfferId = new Map<
+    string,
+    { amount: string; currencyCode: string; revision: number }
+  >();
+  for (const outboundOffer of publishedOffers) {
+    for (const price of outboundOffer.roundTripSalePrices ?? []) {
+      const current = {
+        amount: price.amount,
+        currencyCode: price.currencyCode,
+        revision: price.revision,
+      };
+      roundTripPriceByOfferId.set(outboundOffer.id, current);
+      roundTripPriceByOfferId.set(price.returnOfferId, current);
+    }
+  }
   function rememberReference(value: Reference) {
     setReferences((rows) => [
       ...rows.filter((r) => r.id !== value.id || r.kind !== value.kind),
@@ -806,6 +821,7 @@ function TicketCatalogWorkspace() {
                   <th className="px-4 py-3 text-right">حرکت</th>
                   <th className="px-4 py-3 text-start">ظرفیت قابل فروش</th>
                   <th className="px-4 py-3 text-start">قیمت فروش یک‌طرفه</th>
+                  <th className="px-4 py-3 text-start">قیمت فروش رفت‌وبرگشت</th>
                   <th className="px-4 py-3 text-start">وضعیت</th>
                   <th className="px-4 py-3 text-start">اقدام</th>
                 </tr>
@@ -844,6 +860,11 @@ function TicketCatalogWorkspace() {
                         ? `${Number(offer.standaloneSalePrice.amount).toLocaleString('fa-IR')} ${offer.standaloneSalePrice.currencyCode}`
                         : 'در فروش قیمت‌گذاری نشده'}
                     </td>
+                    <td className="px-4 py-3 tabular-nums">
+                      {roundTripPriceByOfferId.get(offer.id)
+                        ? `${Number(roundTripPriceByOfferId.get(offer.id)!.amount).toLocaleString('fa-IR')} ${roundTripPriceByOfferId.get(offer.id)!.currencyCode}`
+                        : '—'}
+                    </td>
                     <td className="px-4 py-3">
                       {new Date(offer.departureAt).getTime() <= catalogNow
                         ? 'منقضی'
@@ -866,11 +887,15 @@ function TicketCatalogWorkspace() {
                             )
                               return;
                             try {
-                              await toursApi.archiveExpiredOffer(
+                              const result = await toursApi.archiveExpiredOffer(
                                 offer.id,
                                 offer.version,
                               );
                               await refreshPublishedOffers();
+                              if (result.data.removedPriceRevisions)
+                                setPublishedNotice(
+                                  `${result.data.removedPriceRevisions.toLocaleString('fa-IR')} نسخه قیمت مرتبط نیز حذف شد.`,
+                                );
                             } catch (error) {
                               setPublishedProblem(
                                 error instanceof Error

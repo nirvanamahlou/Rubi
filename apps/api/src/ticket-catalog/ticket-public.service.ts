@@ -389,6 +389,16 @@ export class TicketPublicService {
         throw new ConflictException(
           'فقط بلیط تاریخ‌گذشتهٔ مجاز و بدون تغییر هم‌زمان قابل حذف است.',
         );
+      const [standalonePrices, roundTripPrices] = await Promise.all([
+        tx.ticketOfferStandaloneSalePrice.deleteMany({
+          where: { offerId: id },
+        }),
+        tx.ticketOfferRoundTripSalePrice.deleteMany({
+          where: {
+            OR: [{ outboundOfferId: id }, { returnOfferId: id }],
+          },
+        }),
+      ]);
       await tx.ticketOfferAudit.create({
         data: {
           offerId: id,
@@ -397,7 +407,12 @@ export class TicketPublicService {
           version: expectedVersion + 1,
         },
       });
-      return { data: { id } };
+      return {
+        data: {
+          id,
+          removedPriceRevisions: standalonePrices.count + roundTripPrices.count,
+        },
+      };
     });
   }
 

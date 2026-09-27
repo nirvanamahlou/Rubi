@@ -3921,3 +3921,9 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 - درخواست مالک: عنوان تب صفحه ورود از نام شرکت به «ورود امن نورا» تغییر کند.
 - محدوده: فقط metadata مسیر `apps/web/src/app/login/page.tsx` و ثبت این وضعیت؛ بدون API، داده، Migration، Permission یا Dependency/Lockfile.
 - نتیجه: عنوان مستقل صفحهٔ ورود «ورود امن نورا» است و دیگر الگوی نام شرکت را به انتهای عنوان تب اضافه نمی‌کند. ESLint فایل و پاسخ HTTP محلی ۳۱۰۰ موفق‌اند.
+
+## TICKET-ROUNDTRIP-PRICE-CLEANUP-0927 — PC-A — READY_FOR_REVIEW
+
+- COMPUTER_ID=PC-A؛ مبنا `origin/develop@ddf042b0`؛ شاخه `codex/pc-a-ticket-roundtrip-price-cleanup-0927`. محدوده: Ticket Catalog API/Web برای نمایش قیمت نسخه‌دار جفت رفت‌وبرگشت در فهرست مدیریت بلیت و حذف کنترل‌شدهٔ نرخ‌های وابسته هنگام حذف آفر بلیت؛ و UI مستقل قیمت بلیت در Sales (کارت‌های KPI رنگی و بهبود فهرست پایین صفحه)، همراه با تست‌های متمرکز و ثبت وضعیت.
+- ابتدا فقط روابط و حذف فعلی بررسی می‌شوند. Schema/Migration، Dependency/Lockfile و دادهٔ عملیاتی خارج از محدوده‌اند؛ در صورت نیاز واقعی به تغییر schema، کار پیش از آن متوقف و قفل Migration جداگانه ثبت می‌شود.
+- نتیجه: جدول مدیریت بلیط برای هر دو پای رفت و برگشت، آخرین قیمت جفت را نشان می‌دهد. حذف امن بلیط منقضی، قیمت‌های یک‌طرفه و همه revisionهای قیمت جفت مرتبط را در همان تراکنش حذف می‌کند و آفر، قرارداد، مالی، ظرفیت و audit را نگه می‌دارد. UI مستقل قیمت بلیط با KPIهای رنگی و ردیف‌های کارت‌مانند با نسخهٔ فعلی بازطراحی شد. تست متمرکز API (۹ مورد) و Web (۱ مورد) موفق‌اند؛ lint همهٔ فایل‌های تغییرکرده به‌جز یک disable rule قدیمی و ناموجود در فایل Ticket Workspace پاک است. API build و Web production build موفق‌اند؛ Schema/Migration/Dependency/Lockfile و دادهٔ عملیاتی تغییر نکرده‌اند.

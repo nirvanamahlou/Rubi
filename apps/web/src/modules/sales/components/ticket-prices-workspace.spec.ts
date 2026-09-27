@@ -12,5 +12,8 @@ describe('ticket prices workspace', () => {
     expect(source).toContain('updateRoundTripSalePrice(');
     expect(source).toContain('قیمت کل رفت‌وبرگشت');
     expect(source).toContain('مبنای قراردادهای جدید');
+    expect(source).toContain('خلاصه قیمت‌گذاری بلیط‌ها');
+    expect(source).toContain('فهرست قیمت‌گذاری');
+    expect(source).toContain('bg-gradient-to-br from-sky-500/20');
   });
 });
