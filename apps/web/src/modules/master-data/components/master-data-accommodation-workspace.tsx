@@ -688,6 +688,7 @@ export function MasterDataAccommodationWorkspace() {
     return (
       <div className="flex flex-wrap justify-end gap-2">
         <Button
+          aria-label={`مشاهده ${record.name}`}
           onClick={() => {
             if (record.resource === 'hotels') selectProfile(record);
             else {
@@ -695,20 +696,23 @@ export function MasterDataAccommodationWorkspace() {
               setFormMode('view');
             }
           }}
-          size="sm"
+          size="icon"
+          title={`مشاهده ${record.name}`}
           variant="outline"
         >
-          <Eye className="size-4" /> مشاهده
+          <Eye aria-hidden="true" className="size-4" />
         </Button>
         <Button
+          aria-label={`ویرایش ${record.name}`}
           onClick={() => {
             setSelected(record);
             setFormMode('edit');
           }}
-          size="sm"
+          size="icon"
+          title={`ویرایش ${record.name}`}
           variant="outline"
         >
-          <FilePenLine className="size-4" /> ویرایش
+          <FilePenLine aria-hidden="true" className="size-4" />
         </Button>
         <MasterDataDeleteButton record={record} onDeleted={afterDelete} />
         <MasterDataPowerButton record={record} onChanged={afterStatusChange} />

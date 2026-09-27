@@ -1067,14 +1067,16 @@ export function MasterDataFinanceWorkspace({
                     <td className="p-4">
                       <div className="flex flex-wrap justify-end gap-2">
                         <Button
+                          aria-label={`مشاهده ${row.fromCurrencyCode}/${row.toCurrencyCode}`}
                           onClick={() => {
                             setSelected(rateRecord(row));
                             setFormMode('view');
                           }}
-                          size="sm"
+                          size="icon"
+                          title={`مشاهده ${row.fromCurrencyCode}/${row.toCurrencyCode}`}
                           variant="outline"
                         >
-                          <Eye className="size-4" /> مشاهده
+                          <Eye aria-hidden="true" className="size-4" />
                         </Button>
                         {row.status === 'DRAFT' ? (
                           <>
@@ -1145,24 +1147,28 @@ export function MasterDataFinanceWorkspace({
                 </p>
                 <div className="mt-4 flex flex-wrap justify-end gap-2 border-t border-border pt-4">
                   <Button
+                    aria-label={`مشاهده ${record.name}`}
                     onClick={() => {
                       setSelected(record);
                       setFormMode('view');
                     }}
-                    size="sm"
+                    size="icon"
+                    title={`مشاهده ${record.name}`}
                     variant="outline"
                   >
-                    <Eye className="size-4" /> مشاهده
+                    <Eye aria-hidden="true" className="size-4" />
                   </Button>
                   <Button
+                    aria-label={`ویرایش ${record.name}`}
                     onClick={() => {
                       setSelected(record);
                       setFormMode('edit');
                     }}
-                    size="sm"
+                    size="icon"
+                    title={`ویرایش ${record.name}`}
                     variant="outline"
                   >
-                    <FilePenLine className="size-4" /> ویرایش
+                    <FilePenLine aria-hidden="true" className="size-4" />
                   </Button>
                   <MasterDataDeleteButton
                     record={record}
@@ -1233,6 +1239,7 @@ export function MasterDataFinanceWorkspace({
                     <td className="p-4">
                       <div className="flex flex-wrap justify-end gap-2">
                         <Button
+                          aria-label={`مشاهده ${record.name}`}
                           onClick={() => {
                             if (tab === 'currencies')
                               openCurrencyProfile(record);
@@ -1241,20 +1248,23 @@ export function MasterDataFinanceWorkspace({
                               setFormMode('view');
                             }
                           }}
-                          size="sm"
+                          size="icon"
+                          title={`مشاهده ${record.name}`}
                           variant="outline"
                         >
-                          <Eye className="size-4" /> مشاهده
+                          <Eye aria-hidden="true" className="size-4" />
                         </Button>
                         <Button
+                          aria-label={`ویرایش ${record.name}`}
                           onClick={() => {
                             setSelected(record);
                             setFormMode('edit');
                           }}
-                          size="sm"
+                          size="icon"
+                          title={`ویرایش ${record.name}`}
                           variant="outline"
                         >
-                          <FilePenLine className="size-4" /> ویرایش
+                          <FilePenLine aria-hidden="true" className="size-4" />
                         </Button>
                         <MasterDataDeleteButton
                           record={record}
@@ -1534,11 +1544,13 @@ export function MasterDataFinanceWorkspace({
                               />
                             ) : null}
                             <Button
+                              aria-label="مشاهده جزئیات رخداد"
                               onClick={() => void showAudit(row)}
-                              size="sm"
+                              size="icon"
+                              title="مشاهده جزئیات رخداد"
                               variant="ghost"
                             >
-                              مشاهده
+                              <Eye aria-hidden="true" className="size-4" />
                             </Button>
                           </td>
                         </tr>

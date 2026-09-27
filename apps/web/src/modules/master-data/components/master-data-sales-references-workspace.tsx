@@ -394,6 +394,7 @@ export function MasterDataSalesReferencesWorkspace() {
                       aria-label={`مشاهده ${record.name}`}
                       onClick={() => openProfile(record)}
                       size="icon"
+                      title={`مشاهده ${record.name}`}
                       variant="outline"
                     >
                       <Eye className="size-4" />
@@ -405,6 +406,7 @@ export function MasterDataSalesReferencesWorkspace() {
                         setFormMode('edit');
                       }}
                       size="icon"
+                      title={`ویرایش ${record.name}`}
                       variant="outline"
                     >
                       <FilePenLine className="size-4" />

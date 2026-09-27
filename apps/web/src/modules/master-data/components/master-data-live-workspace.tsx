@@ -605,23 +605,25 @@ function GenericMasterDataWorkspace({
                       <td className="p-4">
                         <div className="flex flex-wrap justify-end gap-2">
                           <Button
+                            aria-label={`مشاهده ${record.name}`}
                             onClick={() => openForm('view', record)}
-                            size="sm"
+                            size="icon"
+                            title={`مشاهده ${record.name}`}
                             variant="outline"
                           >
                             <Eye aria-hidden="true" className="size-4" />
-                            مشاهده
                           </Button>
                           <Button
+                            aria-label={`ویرایش ${record.name}`}
                             onClick={() => openForm('edit', record)}
-                            size="sm"
+                            size="icon"
+                            title={`ویرایش ${record.name}`}
                             variant="outline"
                           >
                             <FilePenLine
                               aria-hidden="true"
                               className="size-4"
                             />
-                            ویرایش
                           </Button>
                           <MasterDataDeleteButton
                             record={record}
