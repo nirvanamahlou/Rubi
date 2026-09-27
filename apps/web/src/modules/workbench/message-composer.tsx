@@ -322,8 +322,8 @@ export function MessageComposer({
           پیام‌رسان داخلی
         </h2>
       </div>
-      <div className="grid min-h-[680px] lg:grid-cols-[320px_minmax(0,1fr)]">
-        <aside className="space-y-4 border-b border-primary/15 bg-gradient-to-b from-primary/10 via-sky-100/60 to-violet-100/50 p-4 dark:via-sky-950/20 dark:to-violet-950/20 lg:border-b-0 lg:border-e">
+      <div className="grid min-h-[680px] min-w-0 lg:grid-cols-[320px_minmax(0,1fr)]">
+        <aside className="min-w-0 space-y-4 border-b border-primary/15 bg-gradient-to-b from-primary/10 via-sky-100/60 to-violet-100/50 p-4 dark:via-sky-950/20 dark:to-violet-950/20 lg:border-b-0 lg:border-e">
           <div
             className="grid grid-cols-2 gap-2"
             aria-label="بخش‌های پیام‌رسان"
@@ -540,7 +540,7 @@ export function MessageComposer({
             </div>
           )}
         </aside>
-        <main className="min-w-0 p-5">
+        <main className="min-w-0 overflow-x-hidden p-5">
           {!active ? (
             <div className="grid min-h-[560px] place-items-center">
               <EmptyState
@@ -550,7 +550,7 @@ export function MessageComposer({
               />
             </div>
           ) : (
-            <div className="space-y-5">
+            <div className="min-w-0 space-y-5">
               <header className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-primary/15 bg-surface/85 p-4 shadow-sm">
                 <div>
                   <h3 className="text-lg font-black">{active.title}</h3>
@@ -569,7 +569,7 @@ export function MessageComposer({
                 )}
               </header>
               <section
-                className="max-h-80 min-h-52 space-y-3 overflow-y-auto rounded-2xl border border-sky-200/70 bg-surface/80 p-4 dark:border-sky-800/60"
+                className="isolate max-h-80 min-h-52 min-w-0 space-y-3 overflow-x-hidden overflow-y-auto rounded-2xl border border-sky-200/70 bg-surface/80 p-4 dark:border-sky-800/60"
                 aria-label="پیام‌های گفت‌وگو"
               >
                 {messages.map((message) => {
@@ -577,7 +577,7 @@ export function MessageComposer({
                   return (
                     <article
                       key={message.id}
-                      className={`min-w-0 max-w-[85%] overflow-hidden rounded-2xl p-3 shadow-sm ${mine ? 'me-auto bg-primary text-primary-foreground' : 'ms-auto bg-violet-100 text-violet-950 dark:bg-violet-950 dark:text-violet-50'}`}
+                      className={`relative min-w-0 max-w-[min(85%,42rem)] overflow-hidden rounded-2xl p-3 shadow-sm ${mine ? 'me-auto bg-primary text-primary-foreground' : 'ms-auto bg-violet-100 text-violet-950 dark:bg-violet-950 dark:text-violet-50'}`}
                     >
                       <div className="flex min-w-0 items-center justify-between gap-4 text-xs opacity-80">
                         <strong className="truncate">
@@ -592,7 +592,7 @@ export function MessageComposer({
                           فوروارد از {message.forwardedFrom.senderDisplayName}
                         </p>
                       )}
-                      <p className="mt-2 max-w-full whitespace-pre-wrap break-words [overflow-wrap:anywhere] leading-7">
+                      <p className="mt-2 max-h-64 min-w-0 max-w-full overflow-y-auto whitespace-pre-wrap break-words pe-2 [overflow-wrap:anywhere] leading-7">
                         {message.body}
                       </p>
                       {message.attachments.length ? (
