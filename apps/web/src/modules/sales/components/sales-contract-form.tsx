@@ -1261,12 +1261,13 @@ export function SalesContractForm() {
               <section className="grid gap-4 rounded-xl border p-4">
                 <h3 className="font-bold">هتل مقصد</h3>
                 <p className="text-xs text-muted-foreground">
-                  هتل‌های شهر{' '}
+                  فقط هتل‌های فعالِ ثبت‌شده برای شهر{' '}
                   {references.cities.find(
                     (city) => city.id === state.destinationId,
-                  )?.name ?? 'مقصد'}
-                  ؛ نام هتل را جست‌وجو کنید. ورود پیشنهادی روز بعد از پرواز رفت
-                  و خروج روز قبل از پرواز برگشت است؛ هر دو تاریخ قابل تغییرند.
+                  )?.name ?? 'مقصد'}{' '}
+                  قابل جست‌وجو هستند. نام هتل را جست‌وجو کنید. ورود پیشنهادی روز
+                  بعد از پرواز رفت و خروج روز قبل از پرواز برگشت است؛ هر دو
+                  تاریخ قابل تغییرند.
                 </p>
                 <div className="grid gap-4 md:grid-cols-3">
                   <SearchableReference

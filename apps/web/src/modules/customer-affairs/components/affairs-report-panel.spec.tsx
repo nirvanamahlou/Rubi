@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import { AffairsReportPanel } from './affairs-report-panel';
@@ -25,6 +26,7 @@ const render = (value = report, showRequests = true) =>
       onTickets={() => {}}
     />,
   );
+
 describe('Customer Affairs report layout', () => {
   it('shows real totals, part-of-total bars, counts and localized corrective statuses', () => {
     const html = render();
@@ -51,5 +53,16 @@ describe('Customer Affairs report layout', () => {
   });
   it('keeps the legacy satisfaction view without request distribution', () => {
     expect(render(report, false)).not.toContain('وضعیت درخواست‌های مشتریان');
+  });
+  it('removes the redundant report heading while retaining freshness context', () => {
+    const source = readFileSync(
+      new URL('./affairs-report-panel.tsx', import.meta.url),
+      'utf8',
+    );
+    expect(source).not.toContain('گزارش امور مشتریان');
+    expect(source).not.toContain(
+      'نمای وضعیت درخواست‌ها، رسیدگی و بازخورد مشتریان',
+    );
+    expect(source).toContain('آخرین دریافت');
   });
 });

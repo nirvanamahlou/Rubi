@@ -15,6 +15,7 @@ import {
   salesDirections,
   salesDetailSteps,
   salesReturnSearchFrom,
+  salesRequiresPassportIdentity,
   withSalesRouteDefaults,
   normalizeRouteSearch,
   toggleSalesDirectionalService,
@@ -302,6 +303,33 @@ describe('sales contract form payload', () => {
     expect(normalizeRouteSearch('آنتاليا')).toBe(
       normalizeRouteSearch('انتالیا'),
     );
+  });
+  it('requires passport identity only for an international flight, not a hotel stay', () => {
+    const internationalRoute = {
+      ...emptySalesForm,
+      originCountryCode: 'IRN',
+      destinationCountryCode: 'TUR',
+    };
+    expect(
+      salesRequiresPassportIdentity({
+        ...internationalRoute,
+        serviceKinds: ['HOTEL'],
+      }),
+    ).toBe(false);
+    expect(
+      salesRequiresPassportIdentity({
+        ...internationalRoute,
+        serviceKinds: ['FLIGHT'],
+      }),
+    ).toBe(true);
+    expect(
+      salesRequiresPassportIdentity({
+        ...internationalRoute,
+        originCountryCode: 'IRN',
+        destinationCountryCode: 'IRN',
+        serviceKinds: ['FLIGHT'],
+      }),
+    ).toBe(false);
   });
   it('sends outbound flight and independent return transfer with distinct passenger assignments', () => {
     const state = {

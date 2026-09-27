@@ -42,7 +42,11 @@ import {
   formatProcurementDate,
   formatProcurementRecordValue,
 } from './presentation';
-import { sampleRequests, type ProcurementListRow } from './sample-requests';
+import {
+  filterSampleRequests,
+  sampleRequests,
+  type ProcurementListRow,
+} from './sample-requests';
 import { ProcurementSelect } from './procurement-select';
 import { ProcurementRecordActions } from './record-actions';
 import { MasterDataDateRangeFilter } from '@/modules/master-data/components/master-data-date-range-filter';
@@ -308,6 +312,31 @@ function WorkspaceState({
     enabled: group === 0,
     retry: false,
   });
+  const baselineList = useQuery({
+    queryKey: [
+      'procurement',
+      'requests',
+      1,
+      '',
+      '',
+      queryQueue,
+      '',
+      '',
+    ],
+    queryFn: () =>
+      procurementApi.list(
+        new URLSearchParams({
+          page: '1',
+          search: '',
+          status: '',
+          queue: queryQueue,
+          createdFrom: '',
+          createdTo: '',
+        }),
+      ),
+    enabled: group === 0,
+    retry: false,
+  });
   const detail = useQuery({
     queryKey: ['procurement', 'request', selectedId],
     queryFn: () => procurementApi.get(selectedId!),
@@ -342,15 +371,16 @@ function WorkspaceState({
   const showSamples =
     group === 0 &&
     page === 1 &&
-    !status &&
-    !createdFrom &&
-    !createdTo &&
-    !search &&
-    !querySearch &&
     list.isSuccess &&
-    list.data.items.length === 0;
+    baselineList.isSuccess &&
+    baselineList.data.items.length === 0;
   const rows: ProcurementListRow[] = showSamples
-    ? sampleRequests.filter((item) => item.section === undefined)
+    ? filterSampleRequests(sampleRequests, {
+        search: querySearch,
+        status,
+        createdFrom,
+        createdTo,
+      })
     : (list.data?.items ?? []);
   function saved(request: ProcurementRequestV1) {
     setCreating(false);
@@ -670,7 +700,6 @@ function WorkspaceState({
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
                       <Badge>{statusLabels[row.status]}</Badge>
-                      {row.sample ? <Badge>نمونه</Badge> : null}
                       <ProcurementRecordActions
                         label={row.draft.title || row.number}
                         onEdit={() => {
@@ -1047,6 +1076,7 @@ const recordLabels: Record<string, string> = {
   totalAmount: 'مبلغ کل',
   currencyCode: 'ارز',
   supplierId: 'تأمین‌کننده',
+  supplierName: 'نام تأمین‌کننده',
   orderId: 'سفارش',
   invoiceNumber: 'شماره فاکتور',
   dueAt: 'سررسید',
@@ -1087,7 +1117,10 @@ function recordData(record: Record<string, unknown>) {
 function RecordCard({ record }: { record: Record<string, unknown> }) {
   const entries = Object.entries(recordData(record)).filter(
     ([key, value]) =>
-      key in recordLabels && value !== null && typeof value !== 'object',
+      key in recordLabels &&
+      !(key === 'supplierId' && recordData(record).supplierName) &&
+      value !== null &&
+      typeof value !== 'object',
   );
   return (
     <div className="rounded-xl border border-border p-4">
@@ -1115,9 +1148,6 @@ function RecordCard({ record }: { record: Record<string, unknown> }) {
           </div>
         </details>
       )}
-      <p className="mt-3 break-all text-xs text-muted-foreground">
-        شناسه: {String(record.id ?? '—')}
-      </p>
     </div>
   );
 }

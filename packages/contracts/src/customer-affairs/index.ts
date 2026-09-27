@@ -218,6 +218,13 @@ export interface CustomerAffairsListResponse<T> {
 }
 
 export interface CustomerAffairsDashboard {
+  access: {
+    leadsRead: boolean;
+    leadCreate: boolean;
+    ticketsRead: boolean;
+    ticketCreate: boolean;
+    reportsRead: boolean;
+  };
   leads: { open: number; overdue: number; waitingSales: number };
   tickets: {
     open: number;
