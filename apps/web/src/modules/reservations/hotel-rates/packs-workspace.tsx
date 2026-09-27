@@ -6,9 +6,10 @@ import type { LoginResponse } from '@nora/contracts';
 import { getPublicApiBaseUrl } from '@/lib/environment';
 import { refreshAuthenticatedSession } from '@/lib/auth-session';
 import { DatePicker } from '@/components/ui/date-picker';
+import { masterDataApi } from '@/modules/master-data/api/client';
 import { Choice, Lookup, rateRequest, type Option } from './controls';
 import { RateHistory } from './history';
-import { kinds, labels, price, type Factors } from './model';
+import { kinds, labels, price, type FactorKind, type Factors } from './model';
 import styles from './rates.module.css';
 
 type RoomTypeOption = Option & { code?: string };
@@ -22,6 +23,12 @@ type RoomRateDraft = {
   factor: string;
   maxAdults: string;
   maxChildren: string;
+};
+type NewRoomDraft = {
+  name: string;
+  maxAdults: string;
+  maxChildren: string;
+  factor: string;
 };
 type GridRow = {
   hotel: HotelOption;
@@ -63,6 +70,15 @@ type PackDetail = Omit<PackSummary, 'hotelCount' | 'updatedAt'> & {
 };
 const blankFactors = (): Factors =>
   Object.fromEntries(kinds.map((kind) => [kind, ''])) as Factors;
+const defaultFactorKinds: FactorKind[] = ['double', 'single', 'doubleChild'];
+const factorLabel = (kind: FactorKind) => labels[kinds.indexOf(kind)]!;
+export const automaticCheckOut = (value: string, days: number) => {
+  if (!value || !Number.isSafeInteger(days) || days < 1) return '';
+  const date = new Date(`${value}T00:00:00.000Z`);
+  if (!Number.isFinite(date.getTime())) return '';
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().slice(0, 10);
+};
 
 export const availableFactors = (factors: Factors) =>
   Object.fromEntries(
@@ -76,21 +92,26 @@ export function OccupancyFactorFields({
   base,
   currency,
   factors,
+  visibleKinds = defaultFactorKinds,
   onChange,
 }: {
   hotelName: string;
   base: string;
   currency: string;
   factors: Factors;
+  visibleKinds?: readonly FactorKind[];
   onChange: (factors: Factors) => void;
 }) {
   return (
-    <div className={styles.occupancyFactors}>
-      {kinds.map((kind, index) => (
+    <div
+      className={styles.occupancyFactors}
+      style={{ '--factor-columns': visibleKinds.length } as React.CSSProperties}
+    >
+      {visibleKinds.map((kind) => (
         <label key={kind}>
-          {labels[index]}
+          {factorLabel(kind)}
           <input
-            aria-label={`ضریب ${labels[index]} ${hotelName}`}
+            aria-label={`ضریب ${factorLabel(kind)} ${hotelName}`}
             type="number"
             min="0.001"
             max="999.999"
@@ -235,8 +256,13 @@ export function HotelRatePacksWorkspace() {
   const [rows, setRows] = useState<GridRow[]>([]);
   const [checkIn, setCheckIn] = useState('');
   const [checkOut, setCheckOut] = useState('');
+  const [stayNights, setStayNights] = useState('');
   const [currency, setCurrency] = useState('EUR');
-  const [method, setMethod] = useState('CHECK_IN');
+  const [activeFactorKinds, setActiveFactorKinds] =
+    useState<FactorKind[]>(defaultFactorKinds);
+  const [newRoomDrafts, setNewRoomDrafts] = useState<
+    Record<string, NewRoomDraft>
+  >({});
   const [editing, setEditing] = useState<{
     id: string;
     version: number;
@@ -423,9 +449,11 @@ export function HotelRatePacksWorkspace() {
     setHotelSearch('');
     setCheckIn('');
     setCheckOut('');
+    setStayNights('');
     setRows([]);
     setCurrency('EUR');
-    setMethod('CHECK_IN');
+    setActiveFactorKinds(defaultFactorKinds);
+    setNewRoomDrafts({});
     setError('');
     setMessage(
       'شهر و بازهٔ اقامت را انتخاب کنید، سپس نرخ و ظرفیت اتاق‌های هتل‌ها را وارد کنید.',
@@ -477,11 +505,24 @@ export function HotelRatePacksWorkspace() {
       );
       setCheckIn(item.checkIn);
       setCheckOut(item.checkOut);
+      setStayNights(String(dayCount(item.checkIn, item.checkOut)));
       setCurrency(item.currency);
-      setMethod(item.method);
+      const savedFactorKinds = kinds.filter((kind) =>
+        item.rows.some((row) => Boolean(row.factors[kind]?.trim())),
+      );
+      setActiveFactorKinds(
+        savedFactorKinds.length ? savedFactorKinds : defaultFactorKinds,
+      );
       setRows(
         item.rows.map((row) => ({
-          hotel: { id: row.hotelId, name: row.hotelName },
+          hotel: {
+            id: row.hotelId,
+            name: row.hotelName,
+            roomTypes: (row.roomRates ?? []).map((room) => ({
+              id: room.roomTypeId,
+              name: room.roomTypeName,
+            })),
+          },
           selected: true,
           broker: { id: row.brokerId, name: row.brokerName },
           base: row.base,
@@ -531,7 +572,7 @@ export function HotelRatePacksWorkspace() {
       checkIn,
       checkOut,
       currency,
-      method,
+      method: 'STAY',
       ...(editing ? { expectedVersion: editing.version } : {}),
       rows: selected.map((row) => ({
         hotelId: row.hotel.id,
@@ -573,6 +614,139 @@ export function HotelRatePacksWorkspace() {
     }
   }
 
+  function changeCheckIn(value: string) {
+    setCheckIn(value);
+    setCheckOut(automaticCheckOut(value, Number(stayNights)));
+    pending.current = null;
+  }
+
+  function changeStayNights(value: string) {
+    setStayNights(value);
+    setCheckOut(automaticCheckOut(checkIn, Number(value)));
+    pending.current = null;
+  }
+
+  function toggleFactorColumn(kind: FactorKind) {
+    setActiveFactorKinds((current) => {
+      if (current.includes(kind)) {
+        if (current.length === 1) {
+          setError('حداقل یک ستون ضریب باید فعال بماند.');
+          return current;
+        }
+        setRows((currentRows) =>
+          currentRows.map((row) => ({
+            ...row,
+            factors: { ...row.factors, [kind]: '' },
+          })),
+        );
+        return current.filter((item) => item !== kind);
+      }
+      return kinds.filter((item) => [...current, kind].includes(item));
+    });
+    pending.current = null;
+  }
+
+  function changeNewRoomDraft(hotelId: string, patch: Partial<NewRoomDraft>) {
+    setNewRoomDrafts((current) => ({
+      ...current,
+      [hotelId]: {
+        name: '',
+        maxAdults: '2',
+        maxChildren: '0',
+        factor: '1',
+        ...current[hotelId],
+        ...patch,
+      },
+    }));
+  }
+
+  async function addRoomTypeToHotel(row: GridRow) {
+    const draft = newRoomDrafts[row.hotel.id] ?? {
+      name: '',
+      maxAdults: '2',
+      maxChildren: '0',
+      factor: '1',
+    };
+    const maxAdults = Number(draft.maxAdults);
+    const maxChildren = Number(draft.maxChildren);
+    if (
+      !draft.name.trim() ||
+      !Number.isSafeInteger(maxAdults) ||
+      maxAdults < 1 ||
+      maxAdults > 20 ||
+      !Number.isSafeInteger(maxChildren) ||
+      maxChildren < 0 ||
+      maxChildren > 20 ||
+      !/^\d{1,3}(?:\.\d{1,3})?$/.test(draft.factor) ||
+      Number(draft.factor) <= 0
+    ) {
+      setError('نام، ظرفیت و ضریب نوع اتاق جدید را معتبر وارد کنید.');
+      return;
+    }
+    setBusy(true);
+    setError('');
+    setMessage('');
+    try {
+      const hotel = await masterDataApi.detail('hotels', row.hotel.id);
+      const room = await masterDataApi.create('room-types', {
+        values: {
+          name: draft.name.trim(),
+          referenceCapacity: String(maxAdults + maxChildren),
+        },
+      });
+      const currentRoomIds = String(hotel.data.attributes.roomTypeIds ?? '')
+        .split(',')
+        .map((item) => item.trim())
+        .filter(Boolean);
+      await masterDataApi.update('hotels', row.hotel.id, {
+        values: {
+          roomTypeIds: [...new Set([...currentRoomIds, room.data.id])].join(
+            ',',
+          ),
+        },
+        version: hotel.data.version,
+      });
+      const roomType = { id: room.data.id, name: draft.name.trim() };
+      setRows((current) =>
+        current.map((item) =>
+          item.hotel.id === row.hotel.id
+            ? {
+                ...item,
+                hotel: {
+                  ...item.hotel,
+                  roomTypes: [...(item.hotel.roomTypes ?? []), roomType],
+                },
+                roomRates: [
+                  ...item.roomRates,
+                  {
+                    roomTypeId: room.data.id,
+                    roomTypeName: roomType.name,
+                    factor: draft.factor,
+                    maxAdults: draft.maxAdults,
+                    maxChildren: draft.maxChildren,
+                  },
+                ],
+              }
+            : item,
+        ),
+      );
+      setNewRoomDrafts((current) => {
+        const next = { ...current };
+        delete next[row.hotel.id];
+        return next;
+      });
+      setMessage(
+        `نوع اتاق «${roomType.name}» ساخته و به هتل ${row.hotel.name} متصل شد.`,
+      );
+    } catch (e) {
+      setError(
+        e instanceof Error ? e.message : 'ساخت یا اتصال نوع اتاق انجام نشد.',
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+
   if (!ready) return <p>در حال بارگذاری…</p>;
   if (!session)
     return (
@@ -599,6 +773,28 @@ export function HotelRatePacksWorkspace() {
           + بستهٔ جدید
         </button>
       </header>
+      <div className={styles.dashboard} aria-label="داشبورد نرخ هتل">
+        <article className={styles.dashboardPrimary}>
+          <span>بسته‌های ثبت‌شده</span>
+          <strong>{packTotal.toLocaleString('fa-IR')}</strong>
+          <small>نسخه‌دار و قابل بازگشایی</small>
+        </article>
+        <article className={styles.dashboardBlue}>
+          <span>هتل‌های بستهٔ باز</span>
+          <strong>{selected.length.toLocaleString('fa-IR')}</strong>
+          <small>برای شهر و بازهٔ انتخاب‌شده</small>
+        </article>
+        <article className={styles.dashboardAmber}>
+          <span>شب‌های اقامت</span>
+          <strong>{nights > 0 ? nights.toLocaleString('fa-IR') : '—'}</strong>
+          <small>خروج به‌صورت خودکار محاسبه می‌شود</small>
+        </article>
+        <article className={styles.dashboardGreen}>
+          <span>مبنای نرخ</span>
+          <strong>هر نفر / هر شب</strong>
+          <small>ثابت برای تمام ردیف‌های این بخش</small>
+        </article>
+      </div>
       <section aria-labelledby="packs-title">
         <div className={styles.toolbar}>
           <h2 id="packs-title">جدول بسته‌های نرخ هتل</h2>
@@ -676,19 +872,18 @@ export function HotelRatePacksWorkspace() {
               <section>
                 <h2>۱ · شهر و بازهٔ اقامت</h2>
                 <p>
-                  شهر را انتخاب کنید، سپس ورود و خروج را در همان ردیف تعیین
-                  کنید.
+                  شهر و روز ورود را انتخاب کنید و تعداد شب را بنویسید؛ تاریخ
+                  خروج خودکار محاسبه می‌شود.
                 </p>
                 <div className={styles.scroll}>
                   <table className={styles.metaTable}>
                     <thead>
                       <tr>
                         <th scope="col">شعبه</th>
-                        <th scope="col">جست‌وجوی شهر</th>
                         <th scope="col">شهر</th>
                         <th scope="col">ورود</th>
-                        <th scope="col">خروج</th>
-                        <th scope="col">شب</th>
+                        <th scope="col">تعداد شب</th>
+                        <th scope="col">خروج خودکار</th>
                         <th scope="col">ارز پیش‌فرض ردیف جدید</th>
                         <th scope="col">مبنای نرخ</th>
                       </tr>
@@ -708,10 +903,8 @@ export function HotelRatePacksWorkspace() {
                             onChange={(event) =>
                               setCitySearch(event.target.value)
                             }
-                            placeholder="نام شهر"
+                            placeholder="جست‌وجوی نام شهر"
                           />
-                        </td>
-                        <td>
                           <Choice
                             label="شهر"
                             value={cityId}
@@ -727,28 +920,26 @@ export function HotelRatePacksWorkspace() {
                             name="checkIn"
                             required
                             value={checkIn}
-                            onChange={setCheckIn}
+                            onChange={changeCheckIn}
                             aria-label="ورود به هتل"
                             aria-describedby="hotel-rate-date-help"
                           />
                         </td>
                         <td>
-                          <DatePicker
-                            defaultCalendarSystem="gregorian"
-                            gregorianEnglish
-                            id="hotel-rate-check-out"
-                            name="checkOut"
+                          <input
+                            aria-label="تعداد شب اقامت"
+                            type="number"
+                            min="1"
+                            max="365"
                             required
-                            value={checkOut}
-                            onChange={setCheckOut}
-                            aria-label="خروج از هتل"
-                            aria-describedby="hotel-rate-date-help"
+                            value={stayNights}
+                            onChange={(event) =>
+                              changeStayNights(event.target.value)
+                            }
                           />
                         </td>
-                        <td>
-                          <strong>
-                            {nights > 0 ? nights.toLocaleString('fa-IR') : '—'}
-                          </strong>
+                        <td dir="ltr">
+                          <strong>{checkOut || '—'}</strong>
                         </td>
                         <td>
                           <Choice
@@ -763,15 +954,7 @@ export function HotelRatePacksWorkspace() {
                           />
                         </td>
                         <td>
-                          <Choice
-                            label="مبنای نرخ"
-                            value={method}
-                            onChange={setMethod}
-                            options={[
-                              { id: 'CHECK_IN', name: 'تاریخ ورود' },
-                              { id: 'STAY', name: 'شب‌های اقامت' },
-                            ]}
-                          />
+                          <strong>هر نفر / هر شب</strong>
                         </td>
                       </tr>
                     </tbody>
@@ -779,8 +962,8 @@ export function HotelRatePacksWorkspace() {
                 </div>
                 <p id="hotel-rate-date-help">
                   {nights > 0
-                    ? `${nights.toLocaleString('fa-IR')} شب اقامت؛ روز خروج شمرده نمی‌شود.`
-                    : 'ورود و خروج را انتخاب کنید.'}
+                    ? `${nights.toLocaleString('fa-IR')} شب اقامت؛ خروج ${checkOut} و روز خروج در تعداد شب محاسبه نمی‌شود.`
+                    : 'روز ورود و تعداد شب را وارد کنید.'}
                 </p>
               </section>
               <section>
@@ -795,6 +978,31 @@ export function HotelRatePacksWorkspace() {
                   <span className={styles.chip}>
                     {selected.length.toLocaleString('fa-IR')} هتل منتخب
                   </span>
+                </div>
+                <div className={styles.factorManager}>
+                  <div>
+                    <strong>ستون‌های ضریب قیمت پکیج</strong>
+                    <p>
+                      پیش‌فرض: دبل، سینگل و بچه با تخت. ستون حذف‌شده برای
+                      قرارداد و قیمت‌گذاری قابل استفاده نیست.
+                    </p>
+                  </div>
+                  <div className={styles.factorButtons}>
+                    {kinds.map((kind) => {
+                      const active = activeFactorKinds.includes(kind);
+                      return (
+                        <button
+                          key={kind}
+                          type="button"
+                          aria-pressed={active}
+                          className={active ? styles.factorActive : ''}
+                          onClick={() => toggleFactorColumn(kind)}
+                        >
+                          {active ? '−' : '+'} {factorLabel(kind)}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
                 {!cityId || nights <= 0 ? (
                   <p>برای دیدن هتل‌ها، شهر و بازهٔ معتبر را مشخص کنید.</p>
@@ -928,6 +1136,16 @@ export function HotelRatePacksWorkspace() {
                                     <div className={styles.hotelRateDetails}>
                                       {row.selected ? (
                                         <div className={styles.roomRateEditor}>
+                                          <div
+                                            className={styles.roomRateHeader}
+                                          >
+                                            <span>نوع اتاق</span>
+                                            <span>بزرگسال</span>
+                                            <span>کودک</span>
+                                            <span>ظرفیت</span>
+                                            <span>ضریب</span>
+                                            <span>قیمت پکیج</span>
+                                          </div>
                                           {(row.hotel.roomTypes ?? []).map(
                                             (roomType) => {
                                               const value = row.roomRates.find(
@@ -964,8 +1182,14 @@ export function HotelRatePacksWorkspace() {
                                                   <legend>
                                                     {roomType.name}
                                                   </legend>
-                                                  <label>
-                                                    ظرفیت بزرگسال
+                                                  <label aria-label="ظرفیت بزرگسال">
+                                                    <span
+                                                      className={
+                                                        styles.mobileLabel
+                                                      }
+                                                    >
+                                                      بزرگسال
+                                                    </span>
                                                     <input
                                                       aria-label={`ظرفیت بزرگسال ${roomType.name}`}
                                                       type="number"
@@ -981,8 +1205,14 @@ export function HotelRatePacksWorkspace() {
                                                       }
                                                     />
                                                   </label>
-                                                  <label>
-                                                    ظرفیت کودک
+                                                  <label aria-label="ظرفیت کودک">
+                                                    <span
+                                                      className={
+                                                        styles.mobileLabel
+                                                      }
+                                                    >
+                                                      کودک
+                                                    </span>
                                                     <input
                                                       aria-label={`ظرفیت کودک ${roomType.name}`}
                                                       type="number"
@@ -1002,6 +1232,37 @@ export function HotelRatePacksWorkspace() {
                                                     {value.maxAdults || '0'} +{' '}
                                                     {value.maxChildren || '0'}
                                                   </small>
+                                                  <label aria-label="ضریب نوع اتاق">
+                                                    <span
+                                                      className={
+                                                        styles.mobileLabel
+                                                      }
+                                                    >
+                                                      ضریب
+                                                    </span>
+                                                    <input
+                                                      aria-label={`ضریب نوع اتاق ${roomType.name}`}
+                                                      type="number"
+                                                      min="0.001"
+                                                      max="999.999"
+                                                      step="0.001"
+                                                      value={value.factor}
+                                                      onChange={(event) =>
+                                                        update({
+                                                          factor:
+                                                            event.target.value,
+                                                        })
+                                                      }
+                                                    />
+                                                  </label>
+                                                  <output dir="ltr">
+                                                    {price(
+                                                      row.base,
+                                                      value.factor,
+                                                      row.currency,
+                                                    )}{' '}
+                                                    {row.currency}
+                                                  </output>
                                                 </fieldset>
                                               );
                                             },
@@ -1013,9 +1274,106 @@ export function HotelRatePacksWorkspace() {
                                               اطلاعات پایه تعریف کنید.
                                             </small>
                                           )}
-                                          <Link href="/master-data/accommodation?tab=room-types">
-                                            افزودن نوع اتاق و اتصال به هتل
-                                          </Link>
+                                          {session.user.permissions.includes(
+                                            'master_data.create',
+                                          ) &&
+                                          session.user.permissions.includes(
+                                            'master_data.update',
+                                          ) ? (
+                                            <fieldset
+                                              className={styles.newRoomRow}
+                                            >
+                                              <legend>
+                                                افزودن نوع اتاق به همین هتل
+                                              </legend>
+                                              <input
+                                                aria-label={`نام نوع اتاق جدید ${row.hotel.name}`}
+                                                placeholder="نام نوع اتاق"
+                                                value={
+                                                  newRoomDrafts[row.hotel.id]
+                                                    ?.name ?? ''
+                                                }
+                                                onChange={(event) =>
+                                                  changeNewRoomDraft(
+                                                    row.hotel.id,
+                                                    {
+                                                      name: event.target.value,
+                                                    },
+                                                  )
+                                                }
+                                              />
+                                              <input
+                                                aria-label={`ظرفیت بزرگسال اتاق جدید ${row.hotel.name}`}
+                                                type="number"
+                                                min="1"
+                                                max="20"
+                                                value={
+                                                  newRoomDrafts[row.hotel.id]
+                                                    ?.maxAdults ?? '2'
+                                                }
+                                                onChange={(event) =>
+                                                  changeNewRoomDraft(
+                                                    row.hotel.id,
+                                                    {
+                                                      maxAdults:
+                                                        event.target.value,
+                                                    },
+                                                  )
+                                                }
+                                              />
+                                              <input
+                                                aria-label={`ظرفیت کودک اتاق جدید ${row.hotel.name}`}
+                                                type="number"
+                                                min="0"
+                                                max="20"
+                                                value={
+                                                  newRoomDrafts[row.hotel.id]
+                                                    ?.maxChildren ?? '0'
+                                                }
+                                                onChange={(event) =>
+                                                  changeNewRoomDraft(
+                                                    row.hotel.id,
+                                                    {
+                                                      maxChildren:
+                                                        event.target.value,
+                                                    },
+                                                  )
+                                                }
+                                              />
+                                              <input
+                                                aria-label={`ضریب اتاق جدید ${row.hotel.name}`}
+                                                type="number"
+                                                min="0.001"
+                                                max="999.999"
+                                                step="0.001"
+                                                value={
+                                                  newRoomDrafts[row.hotel.id]
+                                                    ?.factor ?? '1'
+                                                }
+                                                onChange={(event) =>
+                                                  changeNewRoomDraft(
+                                                    row.hotel.id,
+                                                    {
+                                                      factor:
+                                                        event.target.value,
+                                                    },
+                                                  )
+                                                }
+                                              />
+                                              <button
+                                                type="button"
+                                                onClick={() =>
+                                                  void addRoomTypeToHotel(row)
+                                                }
+                                              >
+                                                + ساخت و اتصال
+                                              </button>
+                                            </fieldset>
+                                          ) : (
+                                            <Link href="/master-data/accommodation">
+                                              مدیریت نوع اتاق در اطلاعات پایه
+                                            </Link>
+                                          )}
                                           <small>
                                             ظرفیت هر نوع اتاق در قرارداد کنترل
                                             می‌شود.
@@ -1032,6 +1390,7 @@ export function HotelRatePacksWorkspace() {
                                               base={row.base}
                                               currency={row.currency}
                                               factors={row.factors}
+                                              visibleKinds={activeFactorKinds}
                                               onChange={(factors) =>
                                                 changeRow(row.hotel.id, {
                                                   factors,
