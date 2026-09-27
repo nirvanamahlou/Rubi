@@ -187,17 +187,14 @@ export function SalesContractForm() {
     ],
   );
   const selectableHotels = useMemo(() => {
-    const hotelsAllowedByTour = references.hotels.filter(
-      (hotel) => !state.tour || state.tour.package.hotelIds.includes(hotel.id),
+    const hotelsAtDestination = references.hotels.filter(
+      (hotel) =>
+        hotel.attributes.cityId === state.destinationId &&
+        (!state.tour || state.tour.package.hotelIds.includes(hotel.id)),
     );
-    const destinationId = state.destinationId;
-    return [...hotelsAllowedByTour].sort((left, right) => {
-      const leftMatchesDestination = left.attributes.cityId === destinationId;
-      const rightMatchesDestination = right.attributes.cityId === destinationId;
-      if (leftMatchesDestination !== rightMatchesDestination)
-        return leftMatchesDestination ? -1 : 1;
-      return left.name.localeCompare(right.name, 'fa');
-    });
+    return [...hotelsAtDestination].sort((left, right) =>
+      left.name.localeCompare(right.name, 'fa'),
+    );
   }, [references.hotels, state.destinationId, state.tour]);
   const patchState = (patch: Partial<SalesFormState>) =>
     setState((current) => {
@@ -1263,13 +1260,13 @@ export function SalesContractForm() {
               <section className="grid gap-4 rounded-xl border p-4">
                 <h3 className="font-bold">هتل مقصد</h3>
                 <p className="text-xs text-muted-foreground">
-                  هتل‌های فعال اطلاعات پایه قابل جست‌وجو هستند؛ هتل‌های شهر{' '}
+                  فقط هتل‌های فعالِ ثبت‌شده برای شهر{' '}
                   {references.cities.find(
                     (city) => city.id === state.destinationId,
                   )?.name ?? 'مقصد'}{' '}
-                  در اولویت نمایش قرار می‌گیرند. نام هتل را جست‌وجو کنید. ورود
-                  پیشنهادی روز بعد از پرواز رفت و خروج روز قبل از پرواز برگشت
-                  است؛ هر دو تاریخ قابل تغییرند.
+                  قابل جست‌وجو هستند. نام هتل را جست‌وجو کنید. ورود پیشنهادی روز
+                  بعد از پرواز رفت و خروج روز قبل از پرواز برگشت است؛ هر دو
+                  تاریخ قابل تغییرند.
                 </p>
                 <div className="grid gap-4 md:grid-cols-3">
                   <SearchableReference
