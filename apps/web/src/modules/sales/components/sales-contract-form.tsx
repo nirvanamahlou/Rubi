@@ -397,9 +397,10 @@ export function SalesContractForm() {
         : {}),
     });
   };
-  const detailSteps = state.serviceKinds.includes('TOUR')
-    ? ['TOUR']
-    : salesDetailSteps(state);
+  const detailSteps =
+    state.tour || state.serviceKinds.includes('TOUR')
+      ? ['TOUR']
+      : salesDetailSteps(state);
   const activeDetail = detailSteps[detailStep];
   const serviceDetail = activeDetail
     ? (state.serviceDetails?.[activeDetail] ?? {})
@@ -775,78 +776,98 @@ export function SalesContractForm() {
         {step === 0 ? (
           <div className="mt-5 grid gap-3 border-t border-border pt-4">
             <h2 className="text-sm font-bold">خدمات قرارداد</h2>
-            <p className="text-xs text-muted-foreground">
-              با انتخاب پرواز، قطار و اتوبوس قابل انتخاب نیستند. ترانسفر فقط روی
-              خروجی بلیط درج می‌شود.
-            </p>
-            <div className="grid gap-3 sm:grid-cols-2">
-              {(['FLIGHT', 'TRANSFER'] as const).map((kind) => (
-                <fieldset
-                  key={kind}
-                  className="rounded-xl border border-border p-3 text-sm"
-                >
-                  <label className="flex cursor-pointer items-center justify-between gap-3 font-bold">
-                    <span>{kind === 'FLIGHT' ? 'بلیط پرواز' : 'ترانسفر'}</span>
-                    <input
-                      type="checkbox"
-                      className="size-4 accent-primary"
-                      checked={state.serviceKinds.includes(kind)}
-                      aria-controls={`sales-directions-${kind}`}
-                      aria-expanded={state.serviceKinds.includes(kind)}
-                      onChange={() =>
-                        patchState(toggleSalesDirectionalService(state, kind))
-                      }
-                    />
-                  </label>
-                  {state.serviceKinds.includes(kind) ? (
-                    <div
-                      id={`sales-directions-${kind}`}
-                      className="mt-2 flex gap-2 border-t border-border pt-2"
+            {state.tour ? (
+              <p className="rounded-lg bg-primary/10 px-3 py-2 text-xs text-primary">
+                خدمات این قرارداد از پکیج تور انتخاب‌شده می‌آیند و بلیط، هتل،
+                ترانسفر یا خدمت اضافه به‌صورت جداگانه قابل تغییر نیست.
+              </p>
+            ) : (
+              <>
+                <p className="text-xs text-muted-foreground">
+                  با انتخاب پرواز، قطار و اتوبوس قابل انتخاب نیستند. ترانسفر فقط
+                  روی خروجی بلیط درج می‌شود.
+                </p>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {(['FLIGHT', 'TRANSFER'] as const).map((kind) => (
+                    <fieldset
+                      key={kind}
+                      className="rounded-xl border border-border p-3 text-sm"
                     >
-                      {(['OUTBOUND', 'RETURN'] as const).map((direction) => (
-                        <label
-                          key={direction}
-                          className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-1.5 ${salesDirections(state, kind).includes(direction) ? 'border-primary bg-primary/10 text-primary' : 'border-border'}`}
+                      <label className="flex cursor-pointer items-center justify-between gap-3 font-bold">
+                        <span>
+                          {kind === 'FLIGHT' ? 'بلیط پرواز' : 'ترانسفر'}
+                        </span>
+                        <input
+                          type="checkbox"
+                          className="size-4 accent-primary"
+                          checked={state.serviceKinds.includes(kind)}
+                          aria-controls={`sales-directions-${kind}`}
+                          aria-expanded={state.serviceKinds.includes(kind)}
+                          onChange={() =>
+                            patchState(
+                              toggleSalesDirectionalService(state, kind),
+                            )
+                          }
+                        />
+                      </label>
+                      {state.serviceKinds.includes(kind) ? (
+                        <div
+                          id={`sales-directions-${kind}`}
+                          className="mt-2 flex gap-2 border-t border-border pt-2"
                         >
-                          <input
-                            type="checkbox"
-                            className="size-4 accent-primary"
-                            checked={salesDirections(state, kind).includes(
-                              direction,
-                            )}
-                            onChange={() => toggleDirection(kind, direction)}
-                          />
-                          {direction === 'OUTBOUND' ? 'رفت' : 'برگشت'}
-                        </label>
-                      ))}
-                    </div>
-                  ) : null}
-                </fieldset>
-              ))}
-            </div>
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-              {serviceOptions
-                .filter(([kind]) => kind !== 'FLIGHT' && kind !== 'TRANSFER')
-                .map(([kind, label]) => (
-                  <button
-                    className={`flex min-h-10 items-center justify-between gap-2 rounded-lg border px-3 py-2 text-start text-sm disabled:cursor-not-allowed disabled:opacity-40 ${state.serviceKinds.includes(kind) ? 'border-primary bg-primary/5' : 'border-border'}`}
-                    key={kind}
-                    role="checkbox"
-                    aria-checked={state.serviceKinds.includes(kind)}
-                    onClick={() => toggleService(kind)}
-                    disabled={
-                      state.serviceKinds.includes('FLIGHT') &&
-                      (kind === 'BUS' || kind === 'TRAIN')
-                    }
-                    type="button"
-                  >
-                    <span>{label}</span>
-                    {state.serviceKinds.includes(kind) ? (
-                      <Check className="size-4 text-primary" />
-                    ) : null}
-                  </button>
-                ))}
-            </div>
+                          {(['OUTBOUND', 'RETURN'] as const).map(
+                            (direction) => (
+                              <label
+                                key={direction}
+                                className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-1.5 ${salesDirections(state, kind).includes(direction) ? 'border-primary bg-primary/10 text-primary' : 'border-border'}`}
+                              >
+                                <input
+                                  type="checkbox"
+                                  className="size-4 accent-primary"
+                                  checked={salesDirections(
+                                    state,
+                                    kind,
+                                  ).includes(direction)}
+                                  onChange={() =>
+                                    toggleDirection(kind, direction)
+                                  }
+                                />
+                                {direction === 'OUTBOUND' ? 'رفت' : 'برگشت'}
+                              </label>
+                            ),
+                          )}
+                        </div>
+                      ) : null}
+                    </fieldset>
+                  ))}
+                </div>
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                  {serviceOptions
+                    .filter(
+                      ([kind]) => kind !== 'FLIGHT' && kind !== 'TRANSFER',
+                    )
+                    .map(([kind, label]) => (
+                      <button
+                        className={`flex min-h-10 items-center justify-between gap-2 rounded-lg border px-3 py-2 text-start text-sm disabled:cursor-not-allowed disabled:opacity-40 ${state.serviceKinds.includes(kind) ? 'border-primary bg-primary/5' : 'border-border'}`}
+                        key={kind}
+                        role="checkbox"
+                        aria-checked={state.serviceKinds.includes(kind)}
+                        onClick={() => toggleService(kind)}
+                        disabled={
+                          state.serviceKinds.includes('FLIGHT') &&
+                          (kind === 'BUS' || kind === 'TRAIN')
+                        }
+                        type="button"
+                      >
+                        <span>{label}</span>
+                        {state.serviceKinds.includes(kind) ? (
+                          <Check className="size-4 text-primary" />
+                        ) : null}
+                      </button>
+                    ))}
+                </div>
+              </>
+            )}
           </div>
         ) : null}
         {step === 0 ? (
@@ -903,9 +924,23 @@ export function SalesContractForm() {
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => patchState({ tour: undefined })}
+                  onClick={() =>
+                    patchState({
+                      tour: undefined,
+                      serviceKinds: [],
+                      serviceDirections: {},
+                      outboundOffer: undefined,
+                      returnOffer: undefined,
+                      contractFlights: {},
+                      ticket: {
+                        ...state.ticket,
+                        outboundOfferId: '',
+                        returnOfferId: '',
+                      },
+                    })
+                  }
                 >
-                  تبدیل به خدمات مستقل
+                  حذف تور
                 </Button>
               </div>
             )}
