@@ -119,6 +119,12 @@ export function WorkbenchOwnRequests() {
                 <Badge>{selected.status}</Badge>
               </div>
               <h3 className="font-black">{selected.subject}</h3>
+              <div>
+                <dt className="text-xs text-muted-foreground">شرح درخواست</dt>
+                <dd className="mt-1 whitespace-pre-wrap break-words leading-7 text-foreground">
+                  {selected.description}
+                </dd>
+              </div>
               <dl className="grid grid-cols-2 gap-4 text-muted-foreground">
                 <div>
                   <dt className="text-xs">واحد مقصد</dt>

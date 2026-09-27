@@ -3902,5 +3902,6 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 ## 2026-09-27 — WORKBENCH-REQUEST-PRIORITY-FA-0927 — PC-B — READY_FOR_REVIEW
 
 - درخواست مالک: مقدارهای داخلی اولویت درخواست در کارتابل و پنجرهٔ جزئیات میزکار به فارسی نمایش داده شوند.
-- محدوده: فقط نمایش Web در `workbench-own-requests.tsx`، آزمون متمرکز و اسناد همین واحد. مقدارهای قراردادی API و داده‌های ثبت‌شده بدون تغییر باقی می‌مانند؛ بدون API، Schema/Migration، Permission، Dependency/Lockfile یا دادهٔ عملیاتی.
+- محدوده: نمایش Web و افزودن فیلد read-only شرح به پاسخ endpoint مالک Customer Affairs، آزمون متمرکز و اسناد همین واحد. قرارداد افزایشی است و داده‌های ثبت‌شده یا مقدارهای قراردادی موجود تغییر نمی‌کنند؛ بدون Schema/Migration، Permission، Dependency/Lockfile یا دادهٔ عملیاتی.
 - نتیجه: `LOW`، `NORMAL`، `HIGH` و `URGENT` به‌ترتیب «پایین»، «عادی»، «بالا» و «فوری» نمایش داده می‌شوند؛ مقدار ناشناخته «تعیین نشده» است. ۵ آزمون متمرکز، lint و typecheck Web موفق‌اند.
+- تکمیل: شرح ذخیره‌شدهٔ درخواست نیز به پاسخ کارتابل افزوده و در modal جزئیات با حفظ شکست خط‌ها نمایش داده می‌شود. یک آزمون API برای ایزولاسیون مالک/شعبه و ۵ آزمون Web، lint و typecheck API/Web موفق‌اند.

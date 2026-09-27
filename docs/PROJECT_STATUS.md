@@ -3420,7 +3420,9 @@ API/Web موفق‌اند؛ Schema/Migration، Permission، Dependency و داد
 
 نمایش اولویت درخواست‌های کارتابل میزکار فارسی شد: «پایین»، «عادی»، «بالا» و «فوری».
 مقدار داخلی API تغییر نمی‌کند و مقدار ناشناخته «تعیین نشده» است. ۵ آزمون متمرکز، lint و
-typecheck Web موفق‌اند.
+typecheck Web موفق‌اند. شرح ذخیره‌شدهٔ هر درخواست نیز از endpoint کارتابل بازمی‌گردد و
+در modal جزئیات با حفظ خط‌ها نمایش داده می‌شود؛ یک آزمون API، ۵ آزمون Web، lint و typecheck
+API/Web موفق‌اند.
 
 ## 2026-09-21 — TICKET-STATUS-SYNC-0921 — READY_FOR_REVIEW
 
