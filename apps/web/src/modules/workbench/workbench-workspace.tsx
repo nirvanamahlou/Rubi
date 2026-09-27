@@ -63,9 +63,7 @@ import { WorkbenchNotes } from './workbench-notes';
 import { WorkbenchFavorites } from './workbench-favorites';
 import { MessageComposer } from './message-composer';
 import { PasswordChange } from './password-change';
-import { allowedWorkbenchDestinations } from './connections';
 import { WorkbenchHrNotifications } from './workbench-hr-notifications';
-import { WorkbenchCustomerAffairsReferrals } from './workbench-customer-affairs-referrals';
 import { WorkbenchOwnRequests } from './workbench-own-requests';
 import { NewRequestDialog } from './new-request-dialog';
 import { messageUnits } from './message-templates';
@@ -447,39 +445,6 @@ export function WorkbenchWorkspace() {
                 <WorkbenchOwnRequests
                   key={`${home.user.id}-${requestsVersion}`}
                 />
-                <WorkbenchCustomerAffairsReferrals
-                  enabled={home.user.permissions.includes(
-                    'customer_affairs.ticket.read',
-                  )}
-                  canRespond={home.user.permissions.includes(
-                    'customer_affairs.ticket.update',
-                  )}
-                />
-                <WorkbenchHrNotifications
-                  key={home.user.id}
-                  permissions={home.user.permissions}
-                />
-                <div className="grid gap-4 md:grid-cols-3">
-                  {allowedWorkbenchDestinations(home.user.permissions).map(
-                    (destination) => (
-                      <Card key={destination.href} className="p-5">
-                        <h2 className="font-bold">{destination.title}</h2>
-                        <p className="text-sm text-muted-foreground my-3 leading-7">
-                          {destination.description}
-                        </p>
-                        <Button asChild variant="outline">
-                          <Link href={destination.href}>
-                            رفتن به بخش مربوط
-                            <ArrowUpLeft
-                              className="size-4"
-                              aria-hidden="true"
-                            />
-                          </Link>
-                        </Button>
-                      </Card>
-                    ),
-                  )}
-                </div>
               </TabsContent>
               <TabsContent value="messages">
                 <MessageComposer
