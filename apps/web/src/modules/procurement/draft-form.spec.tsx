@@ -204,7 +204,7 @@ describe('Purchase draft accessibility and persisted input', () => {
         />
       </QueryClientProvider>,
     );
-    expect(html).toContain('9007199254740993.1234');
+    expect(html).toContain('9,007,199,254,740,993.1234');
     expect(html).toContain('شماره درخواست: PR-1');
     expect(html).toContain('اختلال در عملیات');
     expect(html).toContain('1.5000');

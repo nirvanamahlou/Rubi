@@ -52,8 +52,12 @@ describe('published ticket revision', () => {
   it('archives an expired offer without deleting its contract or finance records', async () => {
     const updateMany = vi.fn().mockResolvedValue({ count: 1 });
     const create = vi.fn();
+    const deleteStandalonePrices = vi.fn().mockResolvedValue({ count: 2 });
+    const deleteRoundTripPrices = vi.fn().mockResolvedValue({ count: 3 });
     const tx = {
       ticketPublishedOffer: { updateMany },
+      ticketOfferStandaloneSalePrice: { deleteMany: deleteStandalonePrices },
+      ticketOfferRoundTripSalePrice: { deleteMany: deleteRoundTripPrices },
       ticketOfferAudit: { create },
     };
     const service = new TicketPublicService(
@@ -64,7 +68,9 @@ describe('published ticket revision', () => {
       } as unknown as DatabaseService,
       {} as ProcurementPublicService,
     );
-    await service.archiveExpired(id, 1, actor);
+    await expect(service.archiveExpired(id, 1, actor)).resolves.toEqual({
+      data: { id, removedPriceRevisions: 5 },
+    });
     expect(updateMany).toHaveBeenCalledWith({
       where: {
         id,
@@ -75,12 +81,22 @@ describe('published ticket revision', () => {
       },
       data: { status: 'PAUSED', version: { increment: 1 } },
     });
+    expect(deleteStandalonePrices).toHaveBeenCalledWith({
+      where: { offerId: id },
+    });
+    expect(deleteRoundTripPrices).toHaveBeenCalledWith({
+      where: {
+        OR: [{ outboundOfferId: id }, { returnOfferId: id }],
+      },
+    });
     expect(create).toHaveBeenCalledOnce();
     updateMany.mockResolvedValue({ count: 0 });
     await expect(service.archiveExpired(id, 1, actor)).rejects.toThrow(
       'فقط بلیط تاریخ‌گذشته',
     );
     expect(create).toHaveBeenCalledTimes(1);
+    expect(deleteStandalonePrices).toHaveBeenCalledTimes(1);
+    expect(deleteRoundTripPrices).toHaveBeenCalledTimes(1);
   });
   it('reactivates an automatically expired flight moved into the future', async () => {
     const { tx, service } = setup({

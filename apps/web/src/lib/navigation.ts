@@ -130,12 +130,17 @@ export const groupedNavigationItems = navigationGroups.map((group) => ({
 }));
 
 /** A second-level Sales module, separate from the seventeen primary destinations. */
-export const salesPricingSubsection = {
-  href: '/sales/pricing',
-  title: 'مدیریت قیمت و پکیج‌ها',
-} as const;
+export const salesSubsections = [
+  { href: '/sales/ticket-prices', title: 'قیمت بلیط' },
+  { href: '/sales/pricing', title: 'مدیریت قیمت و پکیج‌ها' },
+] as const;
+export const salesPricingSubsection = salesSubsections[1];
 
 export const navigationAliases = {
+  '/sales/ticket-prices': {
+    parentHref: '/sales',
+    title: 'قیمت بلیط',
+  },
   '/sales/pricing': {
     parentHref: '/sales',
     title: 'مدیریت قیمت و پکیج‌ها',

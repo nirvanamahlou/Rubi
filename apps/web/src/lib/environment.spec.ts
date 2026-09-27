@@ -38,4 +38,17 @@ describe('web environment', () => {
     expect(getPublicApiBaseUrl()).toBe('http://localhost:4000/api/v1');
     expect(getHealthEndpoint()).toBe('http://localhost:4000/api/v1/health');
   });
+
+  it('discovers the API on the same private network host', () => {
+    delete process.env.NEXT_PUBLIC_API_BASE_URL;
+    vi.stubGlobal('window', {
+      location: {
+        hostname: '192.168.8.108',
+        origin: 'http://192.168.8.108:3100',
+      },
+    });
+
+    expect(getPublicApiBaseUrl()).toBe('http://192.168.8.108:4000/api/v1');
+    expect(getHealthEndpoint()).toBe('http://192.168.8.108:4000/api/v1/health');
+  });
 });

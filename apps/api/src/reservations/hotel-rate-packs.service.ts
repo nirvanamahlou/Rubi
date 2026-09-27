@@ -91,6 +91,9 @@ export class HotelRatePacksService {
               factor: room.factor,
               maxAdults: room.maxAdults,
               maxChildren: room.maxChildren,
+              maxChildren2To6: room.maxChildren2To6,
+              maxChildren6To12: room.maxChildren6To12,
+              maxInfants: room.maxInfants,
             })),
           },
         };
@@ -392,6 +395,9 @@ export class HotelRatePacksService {
           factor: room.factor.toString(),
           maxAdults: room.maxAdults,
           maxChildren: room.maxChildren,
+          maxChildren2To6: room.maxChildren2To6,
+          maxChildren6To12: room.maxChildren6To12,
+          maxInfants: room.maxInfants,
         })),
         prices: roomPrices(
           row.base.toString(),

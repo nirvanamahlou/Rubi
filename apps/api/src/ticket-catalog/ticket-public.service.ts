@@ -1,4 +1,4 @@
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import {
   BadRequestException,
   ConflictException,
@@ -14,6 +14,9 @@ import type {
   TicketOfferCreateV1,
   TicketOfferSearchV1,
   TicketOfferV1,
+  TicketRoundTripSalePriceUpdateV1,
+  TicketSalePriceTargetCreateV1,
+  TicketSalePriceTargetV1,
   TicketStandaloneSalePriceUpdateV1,
 } from '@nora/contracts';
 import { DatabaseService } from '../database/database.service';
@@ -34,6 +37,16 @@ const createSchema = Joi.object({
   serviceNumber: Joi.string().trim().max(80).required(),
   cabinClassCode: Joi.string().valid('ECONOMY', 'BUSINESS', 'FIRST').required(),
   totalCapacity: Joi.number().integer().min(0).max(100000).required(),
+});
+const salePriceTargetSchema = Joi.object({
+  version: Joi.number().valid(1).required(),
+  branchId: uuid.required(),
+  name: Joi.string().trim().min(2).max(160).required(),
+  code: Joi.string()
+    .trim()
+    .pattern(/^[A-Za-z0-9][A-Za-z0-9_-]{1,79}$/)
+    .allow(null, '')
+    .optional(),
 });
 
 export function validateTicketOffer(input: unknown): TicketOfferCreateV1 {
@@ -77,11 +90,29 @@ export class TicketPublicService {
     capacityAllocations: readonly { quantity: number }[];
     capacityHolds: readonly { quantity: number }[];
     standaloneSalePrices: readonly {
+      salePriceTargetId: string | null;
+      revision: number;
+      amount: Prisma.Decimal;
+      currencyCode: string;
+      salePriceTarget: {
+        id: string;
+        branchId: string;
+        name: string;
+        code: string;
+        version: number;
+        isActive: boolean;
+      } | null;
+    }[];
+    outboundRoundTripSalePrices: readonly {
+      returnOfferId: string;
       revision: number;
       amount: Prisma.Decimal;
       currencyCode: string;
     }[];
   }): TicketOfferV1 {
+    const directSalePrice = row.standaloneSalePrices.find(
+      (price) => !price.salePriceTargetId,
+    );
     return {
       id: row.id,
       version: row.version,
@@ -102,13 +133,41 @@ export class TicketPublicService {
         ) -
         row.capacityHolds.reduce((sum, hold) => sum + hold.quantity, 0),
       status: row.status as TicketOfferV1['status'],
-      standaloneSalePrice: row.standaloneSalePrices[0]
+      standaloneSalePrice: directSalePrice
         ? {
-            revision: row.standaloneSalePrices[0].revision,
-            amount: row.standaloneSalePrices[0].amount.toString(),
-            currencyCode: row.standaloneSalePrices[0].currencyCode,
+            revision: directSalePrice.revision,
+            amount: directSalePrice.amount.toString(),
+            currencyCode: directSalePrice.currencyCode,
           }
         : null,
+      targetedStandaloneSalePrices: [
+        ...new Map(
+          row.standaloneSalePrices
+            .filter((price) => price.salePriceTarget)
+            .map((price) => [
+              price.salePriceTargetId!,
+              {
+                revision: price.revision,
+                amount: price.amount.toString(),
+                currencyCode: price.currencyCode,
+                salePriceTarget: price.salePriceTarget!,
+              },
+            ]),
+        ).values(),
+      ],
+      roundTripSalePrices: [
+        ...new Map(
+          (row.outboundRoundTripSalePrices ?? []).map((price) => [
+            price.returnOfferId,
+            {
+              returnOfferId: price.returnOfferId,
+              revision: price.revision,
+              amount: price.amount.toString(),
+              currencyCode: price.currencyCode,
+            },
+          ]),
+        ).values(),
+      ],
     };
   }
 
@@ -167,7 +226,11 @@ export class TicketPublicService {
           where: { status: 'ACTIVE', expiresAt: { gt: new Date() } },
           select: { quantity: true },
         },
-        standaloneSalePrices: { orderBy: { revision: 'desc' }, take: 1 },
+        standaloneSalePrices: {
+          include: { salePriceTarget: true },
+          orderBy: { revision: 'desc' },
+        },
+        outboundRoundTripSalePrices: { orderBy: { revision: 'desc' } },
       },
       orderBy: [{ departureAt: 'asc' }, { id: 'asc' }],
       take: 500,
@@ -221,7 +284,11 @@ export class TicketPublicService {
           where: { status: 'ACTIVE', expiresAt: { gt: new Date() } },
           select: { quantity: true },
         },
-        standaloneSalePrices: { orderBy: { revision: 'desc' }, take: 1 },
+        standaloneSalePrices: {
+          include: { salePriceTarget: true },
+          orderBy: { revision: 'desc' },
+        },
+        outboundRoundTripSalePrices: { orderBy: { revision: 'desc' } },
       },
       orderBy: [{ departureAt: 'asc' }, { id: 'asc' }],
       skip: ((query.page ?? 1) - 1) * 50,
@@ -322,6 +389,16 @@ export class TicketPublicService {
         throw new ConflictException(
           'فقط بلیط تاریخ‌گذشتهٔ مجاز و بدون تغییر هم‌زمان قابل حذف است.',
         );
+      const [standalonePrices, roundTripPrices] = await Promise.all([
+        tx.ticketOfferStandaloneSalePrice.deleteMany({
+          where: { offerId: id },
+        }),
+        tx.ticketOfferRoundTripSalePrice.deleteMany({
+          where: {
+            OR: [{ outboundOfferId: id }, { returnOfferId: id }],
+          },
+        }),
+      ]);
       await tx.ticketOfferAudit.create({
         data: {
           offerId: id,
@@ -330,8 +407,78 @@ export class TicketPublicService {
           version: expectedVersion + 1,
         },
       });
-      return { data: { id } };
+      return {
+        data: {
+          id,
+          removedPriceRevisions: standalonePrices.count + roundTripPrices.count,
+        },
+      };
     });
+  }
+
+  async salePriceTargets(actor: AuthenticatedActor) {
+    this.require(actor, 'ticket_catalog.manage');
+    const rows = await this.database.client.ticketSalePriceTarget.findMany({
+      where: { branchId: { in: actor.branchIds }, isActive: true },
+      orderBy: [{ name: 'asc' }, { id: 'asc' }],
+      take: 500,
+    });
+    return {
+      version: 1 as const,
+      data: rows.map((row): TicketSalePriceTargetV1 => ({
+        id: row.id,
+        branchId: row.branchId,
+        name: row.name,
+        code: row.code,
+        version: row.version,
+        isActive: row.isActive,
+      })),
+    };
+  }
+
+  async createSalePriceTarget(
+    input: TicketSalePriceTargetCreateV1,
+    actor: AuthenticatedActor,
+    branchId?: string,
+  ) {
+    this.require(actor, 'ticket_catalog.manage');
+    const validation = salePriceTargetSchema.validate(input, {
+      convert: false,
+    });
+    if (validation.error || !branchId || input.branchId !== branchId)
+      throw new BadRequestException('مقصد قیمت یا شعبه معتبر نیست.');
+    if (!actor.branchIds.includes(branchId))
+      throw new ForbiddenException('شعبه مجاز لازم است.');
+    const code = (
+      input.code?.trim() || `TARGET-${randomUUID().slice(0, 8)}`
+    ).toUpperCase();
+    try {
+      const row = await this.database.client.ticketSalePriceTarget.create({
+        data: {
+          branchId,
+          name: input.name.trim(),
+          code,
+          createdByUserId: actor.userId,
+        },
+      });
+      return {
+        data: {
+          id: row.id,
+          branchId: row.branchId,
+          name: row.name,
+          code: row.code,
+          version: row.version,
+          isActive: row.isActive,
+        } satisfies TicketSalePriceTargetV1,
+      };
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      )
+        throw new ConflictException('این کد مقصد قیمت قبلاً ثبت شده است.');
+      throw error;
+    }
   }
 
   async updateStandaloneSalePrice(
@@ -351,6 +498,7 @@ export class TicketPublicService {
       currencyCode: Joi.string()
         .pattern(/^[A-Z]{3}$/)
         .required(),
+      salePriceTargetId: uuid.allow(null).optional(),
     }).validate(input, { convert: false });
     if (validation.error || new Prisma.Decimal(input.amount).lte(0))
       throw new BadRequestException('قیمت فروش تکی یا ارز آن معتبر نیست.');
@@ -365,10 +513,25 @@ export class TicketPublicService {
           );
           const offer = await tx.ticketPublishedOffer.findFirst({
             where: { id: offerId, branchId: { in: actor.branchIds } },
-            select: { id: true },
+            select: { id: true, branchId: true },
           });
           if (!offer)
             throw new ForbiddenException('بلیط در شعبه مجاز یافت نشد.');
+          const salePriceTargetId = input.salePriceTargetId ?? null;
+          if (salePriceTargetId) {
+            const target = await tx.ticketSalePriceTarget.findFirst({
+              where: {
+                id: salePriceTargetId,
+                branchId: offer.branchId,
+                isActive: true,
+              },
+              select: { id: true },
+            });
+            if (!target)
+              throw new BadRequestException(
+                'مقصد قیمت فعالِ همان شعبه لازم است.',
+              );
+          }
           const replay = await tx.ticketOfferStandaloneSalePrice.findUnique({
             where: { offerId_commandKey: { offerId, commandKey: key } },
           });
@@ -386,7 +549,7 @@ export class TicketPublicService {
             };
           }
           const latest = await tx.ticketOfferStandaloneSalePrice.findFirst({
-            where: { offerId },
+            where: { offerId, salePriceTargetId },
             orderBy: { revision: 'desc' },
           });
           if ((latest?.revision ?? 0) !== input.expectedRevision)
@@ -396,6 +559,7 @@ export class TicketPublicService {
           const price = await tx.ticketOfferStandaloneSalePrice.create({
             data: {
               offerId,
+              salePriceTargetId,
               revision: input.expectedRevision + 1,
               amount: new Prisma.Decimal(input.amount),
               currencyCode: input.currencyCode,
@@ -421,6 +585,137 @@ export class TicketPublicService {
       )
         throw new ConflictException(
           'قیمت بلیط هم‌زمان تغییر کرده است؛ فهرست را تازه کنید.',
+        );
+      throw error;
+    }
+  }
+
+  async updateRoundTripSalePrice(
+    outboundOfferId: string,
+    returnOfferId: string,
+    input: TicketRoundTripSalePriceUpdateV1,
+    actor: AuthenticatedActor,
+    key?: string,
+  ) {
+    this.require(actor, 'ticket_catalog.manage');
+    if (
+      uuid.validate(outboundOfferId).error ||
+      uuid.validate(returnOfferId).error ||
+      outboundOfferId === returnOfferId ||
+      !key?.trim() ||
+      key.length > 160
+    )
+      throw new BadRequestException(
+        'شناسه جفت بلیط یا کلید درخواست معتبر نیست.',
+      );
+    const validation = Joi.object({
+      expectedRevision: Joi.number().integer().min(0).required(),
+      amount: Joi.string()
+        .pattern(/^(?:0|[1-9]\d{0,15})(?:\.\d{1,4})?$/)
+        .required(),
+      currencyCode: Joi.string()
+        .pattern(/^[A-Z]{3}$/)
+        .required(),
+    }).validate(input, { convert: false });
+    if (validation.error || new Prisma.Decimal(input.amount).lte(0))
+      throw new BadRequestException(
+        'قیمت فروش رفت‌وبرگشت یا ارز آن معتبر نیست.',
+      );
+    const fingerprint = createHash('sha256')
+      .update(JSON.stringify({ outboundOfferId, returnOfferId, ...input }))
+      .digest('hex');
+    try {
+      return await this.database.client.$transaction(
+        async (tx) => {
+          const ids = [outboundOfferId, returnOfferId].sort();
+          await tx.$queryRaw(
+            Prisma.sql`SELECT "id" FROM "TicketPublishedOffer" WHERE "id" IN (${Prisma.join(ids.map((id) => Prisma.sql`${id}::uuid`))}) ORDER BY "id" FOR UPDATE`,
+          );
+          const offers = await tx.ticketPublishedOffer.findMany({
+            where: { id: { in: ids }, branchId: { in: actor.branchIds } },
+            select: {
+              id: true,
+              branchId: true,
+              originId: true,
+              destinationId: true,
+              departureAt: true,
+            },
+          });
+          const outbound = offers.find((offer) => offer.id === outboundOfferId);
+          const returning = offers.find((offer) => offer.id === returnOfferId);
+          if (
+            !outbound ||
+            !returning ||
+            outbound.branchId !== returning.branchId
+          )
+            throw new ForbiddenException('جفت بلیط در شعبه مجاز یافت نشد.');
+          if (
+            outbound.originId !== returning.destinationId ||
+            outbound.destinationId !== returning.originId ||
+            returning.departureAt <= outbound.departureAt
+          )
+            throw new BadRequestException(
+              'بلیط برگشت باید مسیر معکوس و حرکت پس از بلیط رفت داشته باشد.',
+            );
+          const replay = await tx.ticketOfferRoundTripSalePrice.findUnique({
+            where: {
+              outboundOfferId_returnOfferId_commandKey: {
+                outboundOfferId,
+                returnOfferId,
+                commandKey: key,
+              },
+            },
+          });
+          if (replay) {
+            if (replay.fingerprint !== fingerprint)
+              throw new ConflictException(
+                'کلید قبلاً با قیمت متفاوت استفاده شده است.',
+              );
+            return {
+              data: {
+                revision: replay.revision,
+                amount: replay.amount.toString(),
+                currencyCode: replay.currencyCode,
+              },
+            };
+          }
+          const latest = await tx.ticketOfferRoundTripSalePrice.findFirst({
+            where: { outboundOfferId, returnOfferId },
+            orderBy: { revision: 'desc' },
+          });
+          if ((latest?.revision ?? 0) !== input.expectedRevision)
+            throw new ConflictException(
+              'قیمت رفت‌وبرگشت تغییر کرده است؛ فهرست را تازه کنید.',
+            );
+          const price = await tx.ticketOfferRoundTripSalePrice.create({
+            data: {
+              outboundOfferId,
+              returnOfferId,
+              revision: input.expectedRevision + 1,
+              amount: new Prisma.Decimal(input.amount),
+              currencyCode: input.currencyCode,
+              actorUserId: actor.userId,
+              commandKey: key,
+              fingerprint,
+            },
+          });
+          return {
+            data: {
+              revision: price.revision,
+              amount: price.amount.toString(),
+              currencyCode: price.currencyCode,
+            },
+          };
+        },
+        { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
+      );
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        ['P2002', 'P2034'].includes(error.code)
+      )
+        throw new ConflictException(
+          'قیمت رفت‌وبرگشت هم‌زمان تغییر کرده است؛ فهرست را تازه کنید.',
         );
       throw error;
     }

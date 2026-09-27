@@ -140,8 +140,17 @@ export const financeInboxApi = {
       { method: 'POST', body: JSON.stringify(input) },
     ),
   payTicket: (requestId: string, input: FinanceTicketPaymentCommandV1) =>
-    apiRequest<{ data: unknown }>(
-      `/finance/ticket-purchases/${encodeURIComponent(requestId)}/payments`,
-      { method: 'POST', body: JSON.stringify(input) },
-    ),
+    apiRequest<{
+      data: {
+        id: string;
+        costRevisionId: string;
+        version: number;
+        status: 'PAID' | 'PARTIALLY_PAID';
+        cumulativePaid: string;
+        remainingAmount: string;
+      };
+    }>(`/finance/ticket-purchases/${encodeURIComponent(requestId)}/payments`, {
+      method: 'POST',
+      body: JSON.stringify(input),
+    }).then((response) => response.data),
 };

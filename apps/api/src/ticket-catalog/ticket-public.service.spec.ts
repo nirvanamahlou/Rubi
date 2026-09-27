@@ -241,6 +241,66 @@ describe('TicketPublicService offer retry', () => {
     expect(tx.ticketOfferStandaloneSalePrice.create).toHaveBeenCalledTimes(1);
   });
 
+  it('stores a versioned combined fare only for a valid reverse pair', async () => {
+    const outboundOfferId = '10000000-0000-4000-8000-000000000020';
+    const returnOfferId = '10000000-0000-4000-8000-000000000021';
+    const create = vi.fn(({ data }) =>
+      Promise.resolve({ ...data, amount: new Prisma.Decimal(data.amount) }),
+    );
+    const tx = {
+      $queryRaw: vi.fn().mockResolvedValue([]),
+      ticketPublishedOffer: {
+        findMany: vi.fn().mockResolvedValue([
+          {
+            id: outboundOfferId,
+            branchId: 'branch-1',
+            originId: input.originId,
+            destinationId: input.destinationId,
+            departureAt: new Date('2026-11-01T04:30:00.000Z'),
+          },
+          {
+            id: returnOfferId,
+            branchId: 'branch-1',
+            originId: input.destinationId,
+            destinationId: input.originId,
+            departureAt: new Date('2026-11-08T04:30:00.000Z'),
+          },
+        ]),
+      },
+      ticketOfferRoundTripSalePrice: {
+        findUnique: vi.fn().mockResolvedValue(null),
+        findFirst: vi.fn().mockResolvedValue(null),
+        create,
+      },
+    };
+    const service = new TicketPublicService(
+      {
+        client: { $transaction: vi.fn((operation) => operation(tx)) },
+      } as unknown as DatabaseService,
+      {} as ProcurementPublicService,
+    );
+
+    await expect(
+      service.updateRoundTripSalePrice(
+        outboundOfferId,
+        returnOfferId,
+        { expectedRevision: 0, amount: '4500000', currencyCode: 'IRR' },
+        actor,
+        'pair-price-key',
+      ),
+    ).resolves.toEqual({
+      data: { revision: 1, amount: '4500000', currencyCode: 'IRR' },
+    });
+    expect(create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        outboundOfferId,
+        returnOfferId,
+        revision: 1,
+        actorUserId: 'user-1',
+      }),
+    });
+  });
+
   it('automatically pauses departed offers with a versioned audit', async () => {
     const expiry = expiryTransaction([{ id: 'expired-offer', version: 4 }]);
     const list = vi.fn().mockResolvedValue([]);

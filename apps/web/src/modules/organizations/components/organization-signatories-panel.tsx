@@ -10,8 +10,9 @@ import {
 } from '@nora/contracts';
 import { FileSignature, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input, Textarea } from '@/components/ui/form-controls';
+import { Textarea } from '@/components/ui/form-controls';
 import { DatePicker } from '@/components/ui/date-picker';
+import { MoneyInput } from '@/components/ui/money-input';
 import { DossierDateFilters } from './dossier-date-filters';
 import { inDossierDateRange } from '../model/dossier-date-range';
 import { MasterDataReferenceSelector } from '@/modules/master-data/components/master-data-reference-selector';
@@ -152,15 +153,13 @@ function SignatoryFields({
       </fieldset>
       <label className="field">
         سقف مبلغ اختیار (اختیاری)
-        <Input
-          dir="ltr"
-          inputMode="decimal"
+        <MoneyInput
           maxLength={25}
           value={value.authorityLimit ?? ''}
-          onChange={(event) =>
+          onValueChange={(authorityLimit) =>
             set({
-              authorityLimit: event.target.value || null,
-              ...(event.target.value ? {} : { currencyCode: null }),
+              authorityLimit: authorityLimit || null,
+              ...(authorityLimit ? {} : { currencyCode: null }),
             })
           }
         />

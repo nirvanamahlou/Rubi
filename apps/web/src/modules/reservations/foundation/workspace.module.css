@@ -497,7 +497,7 @@
   margin-top: 12px;
 }
 .requestTable tbody tr {
-  height: 54px;
+  height: 46px;
 }
 .requestTable {
   border-collapse: separate;
@@ -517,8 +517,8 @@
   white-space: nowrap;
 }
 .requestTable td {
-  padding: 4px 6px;
-  height: 36px;
+  padding: 3px 6px;
+  height: 32px;
   text-align: center;
   border-bottom: 1px solid var(--border);
   border-inline-end: 1px solid var(--border);
@@ -558,6 +558,11 @@
   overflow: hidden;
   text-overflow: ellipsis;
   text-align: left;
+}
+.requestTable th:nth-child(2),
+.requestTable td:nth-child(2) {
+  min-width: 118px;
+  font-weight: 700;
 }
 .exportBar {
   display: flex;

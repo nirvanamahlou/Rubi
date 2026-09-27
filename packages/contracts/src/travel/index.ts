@@ -9,7 +9,44 @@ export interface TicketStandaloneSalePriceV1 {
   currencyCode: string;
 }
 
+/** A named destination for a ticket fare, suitable for a future partner API. */
+export interface TicketSalePriceTargetV1 {
+  id: string;
+  branchId: string;
+  name: string;
+  code: string;
+  version: number;
+  isActive: boolean;
+}
+
+export interface TicketSalePriceTargetCreateV1 {
+  version: 1;
+  branchId: string;
+  name: string;
+  /** Stable external key; the UI can leave it empty and the server assigns one. */
+  code?: string | null;
+}
+
+export interface TicketTargetedStandaloneSalePriceV1 extends TicketStandaloneSalePriceV1 {
+  salePriceTarget: TicketSalePriceTargetV1;
+}
+
 export interface TicketStandaloneSalePriceUpdateV1 {
+  expectedRevision: number;
+  amount: string;
+  currencyCode: string;
+  /** Omitted/null is the internal direct-sale default used by existing Sales flows. */
+  salePriceTargetId?: string | null;
+}
+
+export interface TicketRoundTripSalePriceV1 {
+  returnOfferId: string;
+  revision: number;
+  amount: string;
+  currencyCode: string;
+}
+
+export interface TicketRoundTripSalePriceUpdateV1 {
   expectedRevision: number;
   amount: string;
   currencyCode: string;
@@ -30,6 +67,10 @@ export interface TicketOfferV1 {
   remainingCapacity: number;
   status: 'ACTIVE' | 'PAUSED';
   standaloneSalePrice?: TicketStandaloneSalePriceV1 | null;
+  /** Versioned partner/channel prices; direct-sale price remains above for compatibility. */
+  targetedStandaloneSalePrices?: readonly TicketTargetedStandaloneSalePriceV1[];
+  /** Latest combined per-passenger fares keyed by the reverse-leg offer. */
+  roundTripSalePrices?: readonly TicketRoundTripSalePriceV1[];
 }
 
 export type TicketOfferCreateV1 = Omit<
@@ -40,6 +81,8 @@ export type TicketOfferCreateV1 = Omit<
   | 'remainingCapacity'
   | 'status'
   | 'standaloneSalePrice'
+  | 'targetedStandaloneSalePrices'
+  | 'roundTripSalePrices'
 >;
 export interface TicketOfferSearchV1 {
   originId: string;
@@ -59,6 +102,8 @@ export interface TicketCatalogPurchaseCreateV1 {
   /** Legacy unconfirmed catalog estimate; new requests omit it for Finance pricing. */
   amount?: string | null;
   currencyCode?: string | null;
+  /** Optional for legacy catalog records; persisted offers publish their capacity here. */
+  seatCount?: number | null;
 }
 
 export interface TicketCatalogPurchaseV1 extends TicketCatalogPurchaseCreateV1 {
@@ -67,6 +112,7 @@ export interface TicketCatalogPurchaseV1 extends TicketCatalogPurchaseCreateV1 {
   serviceDate: string | null;
   amount: string | null;
   currencyCode: string | null;
+  seatCount: number | null;
   /** Real runtime offer linkage; null for legacy local catalog definitions. */
   offerId: string | null;
   offerVersion: number | null;

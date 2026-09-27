@@ -11,7 +11,7 @@ import type {
 import { Button } from '@/components/ui/button';
 import { FormField, Input, Textarea } from '@/components/ui/form-controls';
 import { DatePicker } from '@/components/ui/date-picker';
-import { cleanSalesMoney } from '@/components/ui/money-input';
+import { cleanSalesMoney, MoneyInput } from '@/components/ui/money-input';
 import { Alert, Card } from '@/components/ui/surfaces';
 import { documentsApi } from '@/modules/documents/api/client';
 import {
@@ -739,16 +739,11 @@ export function DraftForm({
           {draft.urgent && text('urgencyReason', 'دلیل اضطرار', true)}
           <div className="grid gap-4 sm:grid-cols-2">
             <FormField id="proc-estimate" label="مبلغ">
-              <Input
+              <MoneyInput
                 id="proc-estimate"
-                dir="ltr"
-                inputMode="decimal"
                 value={draft.estimatedAmount ?? ''}
-                onChange={(event) =>
-                  update(
-                    'estimatedAmount',
-                    cleanSalesMoney(event.target.value) || null,
-                  )
+                onValueChange={(estimatedAmount) =>
+                  update('estimatedAmount', estimatedAmount || null)
                 }
               />
             </FormField>

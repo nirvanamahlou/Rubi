@@ -35,6 +35,12 @@ const jahanBastanBrand: LegalEntityBrand = {
   height: 768,
 };
 
+const activeSelectorCodes: LegalEntitySelection[] = [
+  'GHESATI_RO',
+  'NIYAYESH_SEIR_SAHAR',
+  'JAHAN_BASTAN',
+];
+
 const placeholderBrand = (name: string): LegalEntityBrand => ({
   alt: `نشان عمومی شرکت ${name}`,
   label: `CRM شرکت ${name}`,
@@ -57,12 +63,19 @@ export function legalEntityChoices(
   canAggregate: boolean,
 ): LegalEntityChoice[] {
   return [
-    ...entities.map((entity) => ({
-      value: entity.code,
-      label: entity.persianName.replace(/^شرکت\s+/, ''),
-      aggregate: false,
-      entity,
-    })),
+    ...entities
+      .filter(({ code }) => activeSelectorCodes.includes(code))
+      .sort(
+        (left, right) =>
+          activeSelectorCodes.indexOf(left.code) -
+          activeSelectorCodes.indexOf(right.code),
+      )
+      .map((entity) => ({
+        value: entity.code,
+        label: entity.persianName.replace(/^شرکت\s+/, ''),
+        aggregate: false,
+        entity,
+      })),
     ...(canAggregate
       ? [
           {

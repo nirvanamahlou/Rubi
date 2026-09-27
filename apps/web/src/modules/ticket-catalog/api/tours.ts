@@ -6,6 +6,9 @@ import type {
   TourDepartureInputV1,
   TicketOfferV1,
   TicketOfferCreateV1,
+  TicketRoundTripSalePriceUpdateV1,
+  TicketSalePriceTargetCreateV1,
+  TicketSalePriceTargetV1,
   TicketStandaloneSalePriceUpdateV1,
 } from '@nora/contracts';
 import { getPublicApiBaseUrl } from '@/lib/environment';
@@ -49,6 +52,18 @@ const post = (body: unknown, branch: string, key: string): RequestInit => ({
   body: JSON.stringify(body),
 });
 export const toursApi = {
+  salePriceTargets: () =>
+    request<{ version: 1; data: TicketSalePriceTargetV1[] }>(
+      '/sale-price-targets',
+    ),
+  createSalePriceTarget: (
+    input: TicketSalePriceTargetCreateV1,
+    branch: string,
+  ) =>
+    request<{ data: TicketSalePriceTargetV1 }>(
+      '/sale-price-targets',
+      post(input, branch, crypto.randomUUID()),
+    ),
   packages: () => request<{ data: TourPackageV1[] }>('/tours/packages'),
   departures: () => request<{ data: TourDepartureV1[] }>('/tours/departures'),
   createPackage: (input: TourPackageInputV1, branch: string, key: string) =>
@@ -90,10 +105,13 @@ export const toursApi = {
   managedOffers: () =>
     request<{ version: 1; data: TicketOfferV1[] }>('/offers/management'),
   archiveExpiredOffer: (id: string, expectedVersion: number) =>
-    request<{ data: { id: string } }>(`/offers/${id}`, {
-      method: 'DELETE',
-      body: JSON.stringify({ expectedVersion }),
-    }),
+    request<{ data: { id: string; removedPriceRevisions: number } }>(
+      `/offers/${id}`,
+      {
+        method: 'DELETE',
+        body: JSON.stringify({ expectedVersion }),
+      },
+    ),
   reviseOffer: (
     id: string,
     expectedVersion: number,
@@ -122,6 +140,19 @@ export const toursApi = {
     request<{
       data: { revision: number; amount: string; currencyCode: string };
     }>(`/offers/${id}/standalone-sale-price`, {
+      method: 'PATCH',
+      headers: { 'idempotency-key': key },
+      body: JSON.stringify(input),
+    }),
+  updateRoundTripSalePrice: (
+    outboundOfferId: string,
+    returnOfferId: string,
+    input: TicketRoundTripSalePriceUpdateV1,
+    key: string,
+  ) =>
+    request<{
+      data: { revision: number; amount: string; currencyCode: string };
+    }>(`/offers/${outboundOfferId}/round-trip-sale-price/${returnOfferId}`, {
       method: 'PATCH',
       headers: { 'idempotency-key': key },
       body: JSON.stringify(input),

@@ -9,11 +9,13 @@ import { withSalesHotelDates, type SalesFormState } from '../model/sales-form';
 
 export function SalesTourPicker({
   state,
+  countries,
   cities,
   hotels,
   onChange,
 }: {
   state: SalesFormState;
+  countries: readonly MasterDataRecord[];
   cities: readonly MasterDataRecord[];
   hotels: readonly MasterDataRecord[];
   onChange: (state: SalesFormState) => void;
@@ -22,7 +24,16 @@ export function SalesTourPicker({
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
   const [busy, setBusy] = useState(false);
+  const hasSearch = Boolean(search.trim());
+  const matchingRows = hasSearch
+    ? rows.filter((row) =>
+        row.package.name
+          .toLocaleLowerCase('fa-IR')
+          .includes(search.trim().toLocaleLowerCase('fa-IR')),
+      )
+    : [];
   useEffect(() => {
+    if (!search.trim()) return;
     let alive = true;
     void toursApi
       .departures()
@@ -38,7 +49,7 @@ export function SalesTourPicker({
     return () => {
       alive = false;
     };
-  }, []);
+  }, [search]);
   const select = async (tour: TourDepartureV1) => {
     setBusy(true);
     setError('');
@@ -57,19 +68,29 @@ export function SalesTourPicker({
         tour.package.hotelIds.length === 1
           ? hotels.find((item) => item.id === tour.package.hotelIds[0])
           : undefined;
+      const originCountryId = String(
+        cities.find((city) => city.id === tour.package.originId)?.attributes
+          .countryId ?? '',
+      );
+      const destinationCountryId = String(
+        cities.find((city) => city.id === tour.package.destinationId)
+          ?.attributes.countryId ?? '',
+      );
       onChange(
         withSalesHotelDates(state, {
           ...state,
           tour,
           originId: tour.package.originId,
           destinationId: tour.package.destinationId,
-          originCountryId: String(
-            cities.find((city) => city.id === tour.package.originId)?.attributes
-              .countryId ?? '',
+          originCountryId,
+          originCountryCode: String(
+            countries.find((country) => country.id === originCountryId)
+              ?.attributes.iso2Code ?? '',
           ),
-          destinationCountryId: String(
-            cities.find((city) => city.id === tour.package.destinationId)
-              ?.attributes.countryId ?? '',
+          destinationCountryId,
+          destinationCountryCode: String(
+            countries.find((country) => country.id === destinationCountryId)
+              ?.attributes.iso2Code ?? '',
           ),
           serviceKinds: [
             'FLIGHT',
@@ -135,10 +156,13 @@ export function SalesTourPicker({
         value={search}
         onChange={(event) => setSearch(event.target.value)}
       />
-      {error && <p role="alert">{error}</p>}
-      {rows
-        .filter((row) => row.package.name.includes(search))
-        .map((row) => (
+      {hasSearch && error ? <p role="alert">{error}</p> : null}
+      {!hasSearch ? (
+        <p className="text-sm text-muted-foreground" role="status">
+          برای نمایش نوبت‌ها، نام تور را جست‌وجو کنید.
+        </p>
+      ) : (
+        matchingRows.map((row) => (
           <div
             key={row.id}
             className="flex flex-wrap items-center justify-between gap-3 rounded-xl border p-3"
@@ -162,8 +186,9 @@ export function SalesTourPicker({
               انتخاب تور
             </Button>
           </div>
-        ))}
-      {!rows.length && !error && (
+        ))
+      )}
+      {hasSearch && !matchingRows.length && !error && (
         <p>نوبت توری برای فروش یافت نشد؛ ابتدا در مدیریت بلیط تعریف کنید.</p>
       )}
     </section>

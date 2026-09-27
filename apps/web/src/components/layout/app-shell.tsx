@@ -31,7 +31,7 @@ import {
   isNavigationItemActive,
   MARKETING_SECTION_CHANGE_EVENT,
   navigationItems,
-  salesPricingSubsection,
+  salesSubsections,
 } from '@/lib/navigation';
 import { cn } from '@/lib/utils';
 import { faMessages } from '@/messages/fa';
@@ -148,7 +148,7 @@ function Navigation({
   }: {
     href:
       | (typeof navigationItems)[number]['href']
-      | typeof salesPricingSubsection.href;
+      | (typeof salesSubsections)[number]['href'];
     title: string;
     secondary?: boolean;
   }) {
@@ -160,7 +160,8 @@ function Navigation({
           pathname,
         ) &&
         !(
-          href === '/sales' && pathname.startsWith(salesPricingSubsection.href)
+          href === '/sales' &&
+          salesSubsections.some((section) => pathname.startsWith(section.href))
         );
     const Icon = sidebarIcons[href];
     const link = (
@@ -216,7 +217,9 @@ function Navigation({
     return group.items.flatMap((item) => [
       renderItem(item),
       ...(group.id === 'sales' && item.href === '/sales'
-        ? [renderItem({ ...salesPricingSubsection, secondary: true })]
+        ? salesSubsections.map((section) =>
+            renderItem({ ...section, secondary: true }),
+          )
         : []),
     ]);
   }

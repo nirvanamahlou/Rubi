@@ -70,6 +70,7 @@ export function HrDirectoryPicker({
     error?: string;
   }>();
   useEffect(() => {
+    if (!search.trim()) return;
     let active = true;
     const timer = window.setTimeout(() => {
       const query = new URLSearchParams({
@@ -137,7 +138,9 @@ export function HrDirectoryPicker({
           </option>
         ))}
       </select>
-      {error ? (
+      {!search.trim() ? (
+        <p role="status">برای نمایش کارکنان، جست‌وجو کنید.</p>
+      ) : error ? (
         <p role="alert">
           {error}{' '}
           <button type="button" onClick={() => setAttempt((a) => a + 1)}>
@@ -152,14 +155,14 @@ export function HrDirectoryPicker({
       <div className="flex gap-3 text-sm">
         <button
           type="button"
-          disabled={disabled || page === 1 || !data}
+          disabled={disabled || !search.trim() || page === 1 || !data}
           onClick={() => setPage((p) => p - 1)}
         >
           قبلی
         </button>
         <button
           type="button"
-          disabled={disabled || !data?.hasMore}
+          disabled={disabled || !search.trim() || !data?.hasMore}
           onClick={() => setPage((p) => p + 1)}
         >
           بعدی

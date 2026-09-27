@@ -260,6 +260,12 @@ export interface HotelRoomRateV1 {
   factor: string;
   maxAdults: number;
   maxChildren: number;
+  /** Capacity for children aged 2 (inclusive) to 6 (exclusive). */
+  maxChildren2To6?: number;
+  /** Capacity for children aged 6 (inclusive) to 12 (exclusive). */
+  maxChildren6To12?: number;
+  /** Capacity for infants under 2 years old. */
+  maxInfants?: number;
 }
 
 export interface PackageTourHotelPurchaseRowV1 {

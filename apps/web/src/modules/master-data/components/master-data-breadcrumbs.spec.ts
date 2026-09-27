@@ -31,7 +31,7 @@ describe('Master Data page navigation', () => {
     expect(source).toContain('href="/master-data"');
   });
 
-  it('retains the title, description and navigation action without the blue caption', () => {
+  it('retains the title and navigation action without a page description', () => {
     const html = renderToStaticMarkup(
       createElement(PageHeader, {
         title: 'ترمینال‌ها',
@@ -40,7 +40,7 @@ describe('Master Data page navigation', () => {
       }),
     );
     expect(html).toMatch(/<h1\b[^>]*>ترمینال‌ها<\/h1>/);
-    expect(html).toContain('تعریف ترمینال‌های فرودگاه');
+    expect(html).not.toContain('تعریف ترمینال‌های فرودگاه');
     expect(html).toContain('<a href="/master-data">همه بخش‌ها</a>');
     expect(html).not.toContain('text-primary');
   });

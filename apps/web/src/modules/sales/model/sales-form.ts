@@ -32,6 +32,7 @@ import {
   salesInsuranceService,
   type SalesInsuranceSelection,
 } from './sales-insurance';
+import { roundTripPerLegFares } from './standalone-ticket-pricing';
 
 export function selectSalesPerson(
   state: SalesFormState,
@@ -103,6 +104,9 @@ export interface SalesFormState {
   tripType: 'ONE_WAY' | 'ROUND_TRIP';
   originCountryId: string;
   destinationCountryId: string;
+  /** ISO country codes are kept with the draft so identity fields remain correct for UUID-backed countries. */
+  originCountryCode?: string;
+  destinationCountryCode?: string;
   serviceDirections?: Partial<
     Record<'FLIGHT' | 'TRANSFER', SalesTicketDirection[]>
   >;
@@ -275,6 +279,8 @@ export const emptySalesForm: SalesFormState = {
   passengerComposition: { adults: 1, children: 0, infants: 0 },
   originCountryId: '',
   destinationCountryId: '',
+  originCountryCode: '',
+  destinationCountryCode: '',
   originId: '',
   destinationId: '',
   departureDate: '',
@@ -357,9 +363,18 @@ export function salesHotelCapacityError(
   const rooms = Math.max(1, state.hotel.roomCount);
   const counts = salesPassengerCounts(state);
   const maxAdults = roomRate.maxAdults * rooms;
-  const maxChildren = roomRate.maxChildren * rooms;
-  if (counts.adults <= maxAdults && counts.children <= maxChildren) return null;
-  return `ظرفیت ${roomRate.roomTypeName} برای ${rooms.toLocaleString('fa-IR')} اتاق، حداکثر ${maxAdults.toLocaleString('fa-IR')} بزرگسال و ${maxChildren.toLocaleString('fa-IR')} کودک است؛ تعداد اتاق یا نوع اتاق را تغییر دهید.`;
+  const maxChildren2To6 =
+    (roomRate.maxChildren2To6 ?? roomRate.maxChildren) * rooms;
+  const maxChildren6To12 = (roomRate.maxChildren6To12 ?? 0) * rooms;
+  const maxInfants = (roomRate.maxInfants ?? 0) * rooms;
+  const maxChildren = maxChildren2To6 + maxChildren6To12;
+  if (
+    counts.adults <= maxAdults &&
+    counts.children <= maxChildren &&
+    counts.infants <= maxInfants
+  )
+    return null;
+  return `ظرفیت ${roomRate.roomTypeName} برای ${rooms.toLocaleString('fa-IR')} اتاق، حداکثر ${maxAdults.toLocaleString('fa-IR')} بزرگسال، ${maxChildren2To6.toLocaleString('fa-IR')} کودک ۲–۶، ${maxChildren6To12.toLocaleString('fa-IR')} کودک ۶–۱۲ و ${maxInfants.toLocaleString('fa-IR')} نوزاد است؛ تعداد اتاق یا نوع اتاق را تغییر دهید.`;
 }
 
 export function salesPassengerCompositionMatches(state: SalesFormState) {
@@ -522,7 +537,11 @@ export function withSalesRouteDefaults(
               aliases.includes(normalizeRouteSearch(item.name)),
           )
         : undefined);
-    return { countryId: country?.id ?? countryId, cityId: city?.id ?? cityId };
+    return {
+      countryId: country?.id ?? countryId,
+      cityId: city?.id ?? cityId,
+      countryCode: String(country?.attributes.iso2Code ?? country?.code ?? ''),
+    };
   };
   const origin = resolveSide(state.originCountryId, state.originId, 'IR', [
     'تهران',
@@ -537,10 +556,34 @@ export function withSalesRouteDefaults(
   return {
     ...state,
     originCountryId: origin.countryId,
+    originCountryCode: origin.countryCode,
     originId: origin.cityId,
     destinationCountryId: destination.countryId,
+    destinationCountryCode: destination.countryCode,
     destinationId: destination.cityId,
   };
+}
+
+function salesIranCountry(
+  countryId: string | undefined,
+  countryCode: string | undefined,
+): boolean {
+  const value = `${countryCode ?? ''} ${countryId ?? ''}`.trim().toUpperCase();
+  return /(^|\s)(IR|IRN|IRAN)(\s|$)/.test(value);
+}
+
+/** A route is domestic only when both endpoints are inside Iran. */
+export function salesDomesticIranRoute(state: SalesFormState): boolean {
+  return (
+    salesIranCountry(state.originCountryId, state.originCountryCode) &&
+    salesIranCountry(state.destinationCountryId, state.destinationCountryCode)
+  );
+}
+
+/** Empty routes keep the domestic entry layout until the user picks a route. */
+export function salesRequiresPassportIdentity(state: SalesFormState): boolean {
+  if (!state.originCountryId && !state.destinationCountryId) return false;
+  return !salesDomesticIranRoute(state);
 }
 
 export function salesDetailSteps(state: SalesFormState): string[] {
@@ -805,6 +848,10 @@ export function salesPayload(
       ],
     });
   }
+  const pairedTicketFares =
+    state.outboundOffer && state.returnOffer
+      ? roundTripPerLegFares(state.outboundOffer, state.returnOffer)
+      : undefined;
   const ticketSelections = state.serviceKinds.includes('FLIGHT')
     ? [
         ...(salesDirections(state, 'FLIGHT').includes('OUTBOUND') &&
@@ -826,12 +873,16 @@ export function salesPayload(
                   state.ticket.cabinClassCode,
                 ...(!state.tour &&
                 !state.serviceKinds.includes('HOTEL') &&
-                state.outboundOffer?.standaloneSalePrice
+                (pairedTicketFares || state.outboundOffer?.standaloneSalePrice)
                   ? {
                       quotedPrice: {
-                        amount: state.outboundOffer.standaloneSalePrice.amount,
+                        amount: pairedTicketFares
+                          ? pairedTicketFares.outboundAmount
+                          : state.outboundOffer!.standaloneSalePrice!.amount,
                         currencyCode:
-                          state.outboundOffer.standaloneSalePrice.currencyCode,
+                          pairedTicketFares?.currencyCode ??
+                          state.outboundOffer!.standaloneSalePrice!
+                            .currencyCode,
                       },
                     }
                   : state.ticket.amount
@@ -865,12 +916,15 @@ export function salesPayload(
                   state.ticket.cabinClassCode,
                 ...(!state.tour &&
                 !state.serviceKinds.includes('HOTEL') &&
-                state.returnOffer?.standaloneSalePrice
+                (pairedTicketFares || state.returnOffer?.standaloneSalePrice)
                   ? {
                       quotedPrice: {
-                        amount: state.returnOffer.standaloneSalePrice.amount,
+                        amount: pairedTicketFares
+                          ? pairedTicketFares.returnAmount
+                          : state.returnOffer!.standaloneSalePrice!.amount,
                         currencyCode:
-                          state.returnOffer.standaloneSalePrice.currencyCode,
+                          pairedTicketFares?.currencyCode ??
+                          state.returnOffer!.standaloneSalePrice!.currencyCode,
                       },
                     }
                   : state.ticket.amount

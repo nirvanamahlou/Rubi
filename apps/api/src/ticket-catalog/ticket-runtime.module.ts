@@ -16,6 +16,8 @@ import {
 import type {
   TicketOfferCreateV1,
   TicketOfferSearchV1,
+  TicketRoundTripSalePriceUpdateV1,
+  TicketSalePriceTargetCreateV1,
   TicketStandaloneSalePriceUpdateV1,
 } from '@nora/contracts';
 import { IamModule } from '../iam/iam.module';
@@ -28,6 +30,28 @@ import { TourController } from './tour.controller';
 import { DocumentsModule } from '../documents/documents.module';
 import { ProcurementModule } from '../procurement/procurement.module';
 
+@Controller('ticket-catalog/sale-price-targets')
+@UseGuards(AuthGuard)
+class TicketSalePriceTargetsController {
+  constructor(
+    @Inject(TicketPublicService) private readonly service: TicketPublicService,
+  ) {}
+
+  @Get()
+  list(@Req() req: AuthenticatedRequest) {
+    return this.service.salePriceTargets(req.actor);
+  }
+
+  @Post()
+  create(
+    @Body() input: TicketSalePriceTargetCreateV1,
+    @Req() req: AuthenticatedRequest,
+    @Headers('x-branch-id') branchId?: string,
+  ) {
+    return this.service.createSalePriceTarget(input, req.actor, branchId);
+  }
+}
+
 @Controller('ticket-catalog/offers')
 @UseGuards(AuthGuard)
 class TicketOffersController {
@@ -36,6 +60,22 @@ class TicketOffersController {
   ) {}
   @Get('management') managed(@Req() req: AuthenticatedRequest) {
     return this.service.managed(req.actor);
+  }
+  @Patch(':outboundOfferId/round-trip-sale-price/:returnOfferId')
+  updateRoundTripSalePrice(
+    @Param('outboundOfferId') outboundOfferId: string,
+    @Param('returnOfferId') returnOfferId: string,
+    @Body() input: TicketRoundTripSalePriceUpdateV1,
+    @Req() req: AuthenticatedRequest,
+    @Headers('idempotency-key') key?: string,
+  ) {
+    return this.service.updateRoundTripSalePrice(
+      outboundOfferId,
+      returnOfferId,
+      input,
+      req.actor,
+      key,
+    );
   }
   @Get() search(
     @Query() query: TicketOfferSearchV1,
@@ -103,7 +143,11 @@ class TicketOffersController {
 
 @Module({
   imports: [IamModule, MasterDataModule, DocumentsModule, ProcurementModule],
-  controllers: [TicketOffersController, TourController],
+  controllers: [
+    TicketOffersController,
+    TicketSalePriceTargetsController,
+    TourController,
+  ],
   providers: [AuthGuard, TicketPublicService, TourPublicService],
   exports: [TicketPublicService, TourPublicService],
 })

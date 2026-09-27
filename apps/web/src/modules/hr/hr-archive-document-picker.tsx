@@ -24,6 +24,7 @@ export function HrArchiveDocumentPicker({
   }>();
   useEffect(() => {
     if (!open) return;
+    if (!search.trim()) return;
     let active = true;
     const timer = window.setTimeout(() => {
       void documentsApi
@@ -90,7 +91,11 @@ export function HrArchiveDocumentPicker({
               </option>
             ))}
           </select>
-          {current?.error ? (
+          {!search.trim() ? (
+            <span role="status">
+              برای نمایش اسناد، عنوان یا کد را جست‌وجو کنید.
+            </span>
+          ) : current?.error ? (
             <span role="alert">{current.error}</span>
           ) : !current?.documents ? (
             <span role="status">در حال دریافت اسناد…</span>
@@ -99,14 +104,14 @@ export function HrArchiveDocumentPicker({
           ) : null}
           <button
             type="button"
-            disabled={page === 1 || !current?.documents}
+            disabled={!search.trim() || page === 1 || !current?.documents}
             onClick={() => setPage((p) => p - 1)}
           >
             اسناد قبلی
           </button>
           <button
             type="button"
-            disabled={!current?.hasMore}
+            disabled={!search.trim() || !current?.hasMore}
             onClick={() => setPage((p) => p + 1)}
           >
             اسناد بعدی

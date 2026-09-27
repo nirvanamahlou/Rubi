@@ -17,6 +17,9 @@ export interface HotelRoomRateInput {
   factor: string;
   maxAdults: number;
   maxChildren: number;
+  maxChildren2To6: number;
+  maxChildren6To12: number;
+  maxInfants: number;
 }
 
 export interface RateBatchInput {
@@ -84,8 +87,13 @@ const roomRate = Joi.object({
   roomTypeId: Joi.string().uuid().required(),
   factor,
   maxAdults: Joi.number().integer().min(1).max(20).required(),
-  maxChildren: Joi.number().integer().min(0).max(20).required(),
-}).unknown(false);
+  maxChildren: Joi.number().integer().min(0).max(20).optional(),
+  maxChildren2To6: Joi.number().integer().min(0).max(20).optional(),
+  maxChildren6To12: Joi.number().integer().min(0).max(20).optional(),
+  maxInfants: Joi.number().integer().min(0).max(20).optional(),
+})
+  .or('maxChildren', 'maxChildren2To6', 'maxChildren6To12', 'maxInfants')
+  .unknown(false);
 const packRow = Joi.object({
   hotelId: Joi.string().uuid().required(),
   brokerId: Joi.string().uuid().required(),
@@ -184,7 +192,19 @@ export function validateRatePack(raw: unknown): RatePackInput {
       ...row,
       currency: row.currency ?? parsed.currency,
       factors: row.factors ?? {},
-      roomRates: row.roomRates ?? [],
+      roomRates: (row.roomRates ?? []).map((room) => {
+        // A legacy payload only has the aggregate child capacity. Preserve it
+        // safely as the younger band until the rate is edited with age bands.
+        const maxChildren2To6 = room.maxChildren2To6 ?? room.maxChildren ?? 0;
+        const maxChildren6To12 = room.maxChildren6To12 ?? 0;
+        return {
+          ...room,
+          maxChildren: maxChildren2To6 + maxChildren6To12,
+          maxChildren2To6,
+          maxChildren6To12,
+          maxInfants: room.maxInfants ?? 0,
+        };
+      }),
     })),
   };
   assertDates(input);

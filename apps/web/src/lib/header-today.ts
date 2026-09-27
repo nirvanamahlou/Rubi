@@ -18,11 +18,46 @@ const fullDateFormatter = new Intl.DateTimeFormat('fa-IR', {
   day: 'numeric',
 });
 
-export function headerDateKey(now = new Date()): string {
-  const parts = dayKeyFormatter.formatToParts(now);
+export function headerDateKey(
+  now = new Date(),
+  timeZone = HEADER_DATE_TIME_ZONE,
+): string {
+  const formatter =
+    timeZone === HEADER_DATE_TIME_ZONE
+      ? dayKeyFormatter
+      : new Intl.DateTimeFormat('en-CA', {
+          timeZone,
+          calendar: 'gregory',
+          numberingSystem: 'latn',
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+        });
+  const parts = formatter.formatToParts(now);
   const value = (type: string) =>
     parts.find((part) => part.type === type)?.value;
   return `${value('year')}-${value('month')}-${value('day')}`;
+}
+
+export function headerMinuteKey(now = new Date()): string {
+  return now.toISOString().slice(0, 16);
+}
+
+export function formatHeaderTime(
+  instant: Date,
+  options?: {
+    locale: 'en-US' | 'fa-IR';
+    numberingSystem: 'arabext' | 'latn';
+    timezone: string;
+  },
+): string {
+  return new Intl.DateTimeFormat(options?.locale ?? 'fa-IR', {
+    timeZone: options?.timezone ?? HEADER_DATE_TIME_ZONE,
+    numberingSystem: options?.numberingSystem ?? 'arabext',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+  }).format(instant);
 }
 
 export function formatHeaderDate(
@@ -46,14 +81,14 @@ export function formatHeaderDate(
       })
     : fullDateFormatter;
   const date = new Date(`${day}T12:00:00Z`);
-  if (options) return formatter.format(date);
+  if (options?.locale === 'en-US') return formatter.format(date);
   const parts = formatter.formatToParts(date);
   const value = (type: string) =>
     parts.find((part) => part.type === type)?.value;
-  return `${value('weekday')}، ${value('day')} ${value('month')} ${value('year')}`;
+  return `${value('weekday')} ${value('day')} ${value('month')} ${value('year')}`;
 }
 
-// A day-string snapshot avoids re-rendering the shell on every clock tick.
+// Refresh at minute boundaries so the header clock stays current without seconds.
 export function subscribeHeaderDate(onChange: () => void): () => void {
   let timer: ReturnType<typeof setTimeout>;
   const refresh = () => {

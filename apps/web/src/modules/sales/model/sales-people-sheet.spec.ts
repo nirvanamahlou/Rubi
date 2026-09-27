@@ -14,6 +14,7 @@ import {
   linkCustomerAsFirst,
   editPeopleRow,
   refreshPeopleRow,
+  setSalesPeopleAcquaintanceMethod,
   type SalesPeopleDraft,
 } from './sales-people-sheet';
 const state: SalesFormState = {
@@ -150,6 +151,15 @@ describe('fixed Sales people-entry slots', () => {
       result.patch.passengers[0]?.customerId,
     );
     expect(result.patch.firstPassengerIsCustomer).toBe(true);
+  });
+  it('applies the one contract-level acquaintance method to every person row', () => {
+    const draft = setSalesPeopleAcquaintanceMethod(filled(), 'social-media');
+    expect(draft.acquaintanceMethodId).toBe('social-media');
+    expect(
+      Object.values(draft.rows).every(
+        (row) => row.values.acquaintanceMethodId === 'social-media',
+      ),
+    ).toBe(true);
   });
   it('updates only an explicitly changed acquaintance method through the versioned customer API and preserves it on retry', async () => {
     const profile = {
@@ -868,5 +878,23 @@ describe('fixed Sales people-entry slots', () => {
         passportExpiryDate: '2030-01-01',
       };
     expect(() => validateSalesPeopleDraft(international, draft)).not.toThrow();
+  });
+  it('treats a route as domestic only when both country codes are Iran', () => {
+    const domestic = {
+      ...state,
+      originCountryId: 'iran-a',
+      destinationCountryId: 'iran-b',
+      originCountryCode: 'IR',
+      destinationCountryCode: 'IR',
+    };
+    expect(() => validateSalesPeopleDraft(domestic, filled())).not.toThrow();
+    const foreign = {
+      ...domestic,
+      originCountryCode: 'TR',
+      destinationCountryCode: 'TR',
+    };
+    expect(() => validateSalesPeopleDraft(foreign, filled())).toThrow(
+      'نام و نام خانوادگی لاتین پاسپورت الزامی است',
+    );
   });
 });

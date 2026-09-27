@@ -7,7 +7,7 @@ import type {
 } from '@nora/contracts';
 import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
-import { cleanSalesMoney } from '@/components/ui/money-input';
+import { cleanSalesMoney, MoneyInput } from '@/components/ui/money-input';
 import { FormField, Input, Textarea } from '@/components/ui/form-controls';
 import { Alert, Card } from '@/components/ui/surfaces';
 import { procurementApi, commandAttempt, type Bootstrap } from './api';
@@ -708,24 +708,42 @@ function OperationFields({
                     id={`op-line-${index}-${key}`}
                     label={title!}
                   >
-                    <Input
-                      id={`op-line-${index}-${key}`}
-                      dir="ltr"
-                      inputMode="decimal"
-                      value={line[key as keyof Line]}
-                      onChange={(event) =>
-                        setLines((previous) =>
-                          previous.map((value, at) =>
-                            at === index
-                              ? {
-                                  ...value,
-                                  [key!]: cleanSalesMoney(event.target.value),
-                                }
-                              : value,
-                          ),
-                        )
-                      }
-                    />
+                    {['unitPrice', 'discount', 'tax', 'extraCost'].includes(
+                      key!,
+                    ) ? (
+                      <MoneyInput
+                        id={`op-line-${index}-${key}`}
+                        value={line[key as keyof Line]}
+                        onValueChange={(amount) =>
+                          setLines((previous) =>
+                            previous.map((value, at) =>
+                              at === index
+                                ? { ...value, [key!]: amount }
+                                : value,
+                            ),
+                          )
+                        }
+                      />
+                    ) : (
+                      <Input
+                        id={`op-line-${index}-${key}`}
+                        dir="ltr"
+                        inputMode="decimal"
+                        value={line[key as keyof Line]}
+                        onChange={(event) =>
+                          setLines((previous) =>
+                            previous.map((value, at) =>
+                              at === index
+                                ? {
+                                    ...value,
+                                    [key!]: cleanSalesMoney(event.target.value),
+                                  }
+                                : value,
+                            ),
+                          )
+                        }
+                      />
+                    )}
                   </FormField>
                 ))}
                 <Button

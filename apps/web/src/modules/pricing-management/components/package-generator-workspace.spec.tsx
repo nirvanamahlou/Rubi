@@ -1,4 +1,3 @@
-import type { LoginResponse } from '@nora/contracts';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { renderToStaticMarkup } from 'react-dom/server';
@@ -12,28 +11,11 @@ vi.mock('@/components/layout/page-breadcrumbs', () => ({
   usePageBreadcrumbs: usePageBreadcrumbsMock,
 }));
 
-import type { PackagePricingApiError } from '../api/client';
 import {
-  loadPackageGeneratorAccess,
   packageGeneratorSectionLabels,
   PackageGeneratorWorkspace,
 } from './package-generator-workspace';
 import { sourcePackageGeneratorPath } from './source-package-generator';
-
-function session(
-  permissions: LoginResponse['user']['permissions'],
-): LoginResponse {
-  return {
-    user: {
-      id: 'user-1',
-      username: 'seller',
-      email: null,
-      displayName: 'فروشنده',
-      permissions,
-      branches: [{ id: 'branch-1', code: 'THR', name: 'تهران' }],
-    },
-  };
-}
 
 describe('package generator workspace', () => {
   beforeEach(() => {
@@ -48,7 +30,7 @@ describe('package generator workspace', () => {
     expect(html).not.toContain('پنل طراحی پکیج');
     expect(html).not.toContain('نسخه کامل فایل مرجع');
     expect(html).not.toContain('بازگشت به بخش‌ها');
-    expect(html).toContain('animate-pulse');
+    expect(html).toContain('title="پکیج‌ساز کامل سفر"');
     expect(usePageBreadcrumbsMock).toHaveBeenCalledWith(
       '/sales/pricing/generator',
       expect.arrayContaining([
@@ -91,33 +73,21 @@ describe('package generator workspace', () => {
     expect(app).toContain('syncTemplateCountry(d.template)');
   });
 
-  it('denies loading tours unless both pricing permissions exist', async () => {
-    const api = {
-      session: vi.fn().mockResolvedValue(session(['package_pricing.read'])),
-    };
-
-    await expect(loadPackageGeneratorAccess(api)).rejects.toEqual(
-      expect.objectContaining<Partial<PackagePricingApiError>>({
-        status: 403,
-        code: 'PACKAGE_GENERATOR_FORBIDDEN',
-      }),
+  it('opens the static generator without requesting pricing permissions', () => {
+    const source = readFileSync(
+      resolve(
+        process.cwd(),
+        'src/modules/pricing-management/components/package-generator-workspace.tsx',
+      ),
+      'utf8',
     );
-  });
 
-  it('opens the generator after the deny-by-default permission check', async () => {
-    const activeSession = session([
-      'package_pricing.read',
-      'package_pricing.render',
-    ]);
-    const api = {
-      session: vi.fn().mockResolvedValue(activeSession),
-      tours: vi.fn(),
-    };
-
-    await expect(loadPackageGeneratorAccess(api)).resolves.toEqual({
-      session: activeSession,
-    });
-    expect(api.tours).not.toHaveBeenCalled();
+    expect(source).not.toContain('packagePricingApi.session');
+    expect(source).not.toContain('canViewPackageBanner');
+    expect(source).not.toContain('PACKAGE_GENERATOR_FORBIDDEN');
+    expect(renderToStaticMarkup(<PackageGeneratorWorkspace />)).toContain(
+      'src="/package-generator/index.html?v=rubi-template-refresh"',
+    );
   });
 
   it('defers the heavy banner and sticker bundles until their tabs are selected', () => {

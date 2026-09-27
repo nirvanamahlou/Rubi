@@ -46,5 +46,9 @@ describe('Customers and passengers picker', () => {
     expect(source).toContain('page * 10 >= total');
     expect(source).toContain('if (signal?.aborted) return;');
     expect(source).toContain('setPage(1)');
+    expect(source).toContain('if (!search.trim())');
+    expect(source).toContain(
+      'برای نمایش مشتریان و مسافران، نام را جست‌وجو کنید.',
+    );
   });
 });

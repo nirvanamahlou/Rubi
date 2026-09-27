@@ -4,6 +4,7 @@ import { PaymentDocuments } from './payment-documents';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import type {
   MasterDataRecord,
+  SalesBalance,
   SalesContractDetail,
   SalesPaymentInput,
   SalesPaymentMethod,
@@ -11,6 +12,7 @@ import type {
 import { Button } from '@/components/ui/button';
 import { SalesDatePicker as DatePicker } from './sales-date-picker';
 import { FormField, Input } from '@/components/ui/form-controls';
+import { MoneyInput, formatSalesMoney } from '@/components/ui/money-input';
 import { Alert } from '@/components/ui/surfaces';
 import {
   Dialog,
@@ -27,6 +29,7 @@ import {
   salesCurrencyOptions,
   validateSalesCurrencySelection,
 } from './sales-currency-select';
+import { calculateContractPaymentShare } from '../model/contract-payment-share';
 
 const empty: SalesPaymentInput = {
   amount: '',
@@ -68,6 +71,96 @@ export function ContractPaymentCurrencySelect({
     </FormField>
   );
 }
+
+const paymentMoney = (amount: string, currencyCode: string) =>
+  `${formatSalesMoney(amount)} ${currencyCode}`;
+
+export function ContractPaymentShareSummary({
+  balances,
+  currencyCode,
+  amount,
+}: {
+  balances: readonly SalesBalance[];
+  currencyCode: string;
+  amount: string;
+}) {
+  const balance = balances.find((item) => item.currencyCode === currencyCode);
+  if (!currencyCode)
+    return (
+      <p className="md:col-span-2 text-sm text-muted-foreground">
+        برای مشاهده سهم پرداخت، ابتدا ارز را انتخاب کنید.
+      </p>
+    );
+  if (!balance)
+    return (
+      <Alert
+        tone="warning"
+        title={`برای ارز ${currencyCode} مبلغی در قرارداد ثبت نشده است.`}
+        className="md:col-span-2"
+      />
+    );
+  const share = calculateContractPaymentShare(balance, amount);
+  return (
+    <section
+      aria-label="خلاصه مبلغ پرداخت"
+      className="md:col-span-2 rounded-2xl border border-primary/20 bg-primary/5 p-4"
+    >
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <strong>خلاصه مبلغ این پرداخت</strong>
+        <span className="text-xs text-muted-foreground">
+          همه مبالغ به {currencyCode}
+        </span>
+      </div>
+      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="rounded-xl bg-background p-3 shadow-sm">
+          <span className="text-xs text-muted-foreground">مبلغ کل قرارداد</span>
+          <p className="mt-1 font-semibold">
+            {paymentMoney(balance.amount, currencyCode)}
+          </p>
+        </div>
+        <div className="rounded-xl bg-background p-3 shadow-sm">
+          <span className="text-xs text-muted-foreground">تأییدشده مالی</span>
+          <p className="mt-1 font-semibold">
+            {paymentMoney(balance.confirmedPaid, currencyCode)}
+          </p>
+          {balance.pendingFinance !== '0' ? (
+            <p className="mt-1 text-xs text-amber-700 dark:text-amber-300">
+              در انتظار مالی:{' '}
+              {paymentMoney(balance.pendingFinance, currencyCode)}
+            </p>
+          ) : null}
+        </div>
+        <div className="rounded-xl bg-background p-3 shadow-sm">
+          <span className="text-xs text-muted-foreground">مبلغ این پرداخت</span>
+          <p className="mt-1 font-semibold">
+            {share.entered === null
+              ? '—'
+              : paymentMoney(share.entered, currencyCode)}
+          </p>
+          <p className="mt-1 text-xs text-primary">
+            {share.percentOfTotal === null
+              ? 'مبلغ را وارد کنید'
+              : `${share.percentOfTotal}٪ از کل قرارداد`}
+          </p>
+        </div>
+        <div className="rounded-xl bg-background p-3 shadow-sm">
+          <span className="text-xs text-muted-foreground">
+            مانده پس از تأیید این پرداخت
+          </span>
+          <p className="mt-1 font-semibold">
+            {paymentMoney(share.remainingAfterConfirmation, currencyCode)}
+          </p>
+          {share.overpayment !== '0' ? (
+            <p role="alert" className="mt-1 text-xs text-destructive">
+              مازاد بر مانده: {paymentMoney(share.overpayment, currencyCode)}
+            </p>
+          ) : null}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export function ContractPayments({
   id,
   onClose,
@@ -357,16 +450,21 @@ export function ContractPayments({
               className="grid gap-4 md:grid-cols-2"
               onSubmit={(event) => void submit(event)}
             >
+              <ContractPaymentShareSummary
+                balances={contract?.balances ?? []}
+                currencyCode={payment.currencyCode}
+                amount={payment.amount}
+              />
               <fieldset
                 disabled={busy || !!savedPaymentId}
                 className="contents"
               >
                 <FormField label="مبلغ" required>
-                  <Input
+                  <MoneyInput
                     required
                     value={payment.amount}
-                    onChange={(event) =>
-                      setPayment({ ...payment, amount: event.target.value })
+                    onValueChange={(amount) =>
+                      setPayment({ ...payment, amount })
                     }
                   />
                 </FormField>

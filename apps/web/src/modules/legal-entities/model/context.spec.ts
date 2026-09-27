@@ -55,26 +55,15 @@ const entities: LegalEntitySummary[] = [
 ];
 
 describe('legal entity context UI model', () => {
-  it('shows all four real companies to a normal user', () => {
+  it('shows the three approved active companies to a normal user', () => {
     expect(
       legalEntityChoices(entities, false).map(({ value }) => value),
-    ).toEqual([
-      'NIYAYESH_SEIR_SAHAR',
-      'JAHAN_BASTAN',
-      'JAHAN_ACADEMIA',
-      'GHESATI_RO',
-    ]);
+    ).toEqual(['GHESATI_RO', 'NIYAYESH_SEIR_SAHAR', 'JAHAN_BASTAN']);
   });
   it('adds the virtual combined option only for an authorized manager', () => {
     expect(
       legalEntityChoices(entities, true).map(({ value }) => value),
-    ).toEqual([
-      'NIYAYESH_SEIR_SAHAR',
-      'JAHAN_BASTAN',
-      'JAHAN_ACADEMIA',
-      'GHESATI_RO',
-      'ALL',
-    ]);
+    ).toEqual(['GHESATI_RO', 'NIYAYESH_SEIR_SAHAR', 'JAHAN_BASTAN', 'ALL']);
     expect(legalEntityChoices(entities, true).at(-1)?.label).toBe(
       'همه شرکت‌ها — ویژه مدیران',
     );

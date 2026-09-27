@@ -62,6 +62,19 @@ async function responseError(response: Response, fallback: string) {
       : fallback;
 }
 
+function downloadFile(file: Blob, fileName: string) {
+  const url = URL.createObjectURL(file);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = fileName;
+  document.body.appendChild(anchor);
+  anchor.click();
+  setTimeout(() => {
+    anchor.remove();
+    URL.revokeObjectURL(url);
+  }, 30000);
+}
+
 export function ManifestExport() {
   const today = todayInTehran();
   const [fromDate, setFromDate] = useState(today);
@@ -75,6 +88,7 @@ export function ManifestExport() {
   const [busy, setBusy] = useState('');
   const [error, setError] = useState('');
   const [result, setResult] = useState('');
+  const [downloadKeys, setDownloadKeys] = useState<Record<string, string>>({});
 
   function validate() {
     if (!fromDate || !toDate) return 'بازه تاریخ را کامل کنید.';
@@ -124,51 +138,76 @@ export function ManifestExport() {
     setError('');
     setResult('');
     try {
-      const response = await authenticatedFetch(
-        base,
-        '/reservations/manifests/tickets/' +
-          encodeURIComponent(ticket.offerId) +
-          '.xlsx',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Idempotency-Key': crypto.randomUUID(),
+      const requestScope = [
+        ticket.offerId,
+        fromDate,
+        toDate,
+        includePreviouslyExported ? 'all' : 'new',
+      ].join(':');
+      const idempotencyKey = downloadKeys[requestScope] ?? crypto.randomUUID();
+      if (!downloadKeys[requestScope])
+        setDownloadKeys((current) => ({
+          ...current,
+          [requestScope]: idempotencyKey,
+        }));
+      const exportTicket = (includeAll: boolean) =>
+        authenticatedFetch(
+          base,
+          '/reservations/manifests/tickets/' +
+            encodeURIComponent(ticket.offerId) +
+            '.xlsx',
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Idempotency-Key': idempotencyKey,
+            },
+            body: JSON.stringify({
+              fromDate,
+              toDate,
+              includePreviouslyExported: includeAll,
+            }),
           },
-          body: JSON.stringify({ fromDate, toDate, includePreviouslyExported }),
-        },
-      );
+        );
+      let response = await exportTicket(includePreviouslyExported);
+      let retriedWithAll = false;
+      if (!response.ok) {
+        const message = await responseError(response, 'MANIFEST آماده نشد.');
+        if (
+          !includePreviouslyExported &&
+          message.includes('قرارداد جدید قابل خروجی')
+        ) {
+          response = await exportTicket(true);
+          retriedWithAll = true;
+        } else {
+          throw new Error(message);
+        }
+      }
       if (!response.ok)
         throw new Error(await responseError(response, 'MANIFEST آماده نشد.'));
       const contracts =
         response.headers.get('X-Nora-Manifest-Contracts') ?? '—';
       const passengers =
         response.headers.get('X-Nora-Manifest-Passengers') ?? '—';
-      const skipped =
-        response.headers.get('X-Nora-Manifest-Skipped-Finance') ?? '0';
-      const url = URL.createObjectURL(await response.blob());
-      const link = document.createElement('a');
-      link.href = url;
-      link.download =
+      const file = await response.blob();
+      if (!file.size)
+        throw new Error('فایل MANIFEST خالی است؛ دوباره تلاش کنید.');
+      downloadFile(
+        file,
         'manifest-' +
-        ticket.serviceNumber.replace(/[^A-Za-z0-9_-]/g, '_') +
-        '-' +
-        fromDate +
-        '.xlsx';
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 30000);
+          ticket.serviceNumber.replace(/[^A-Za-z0-9_-]/g, '_') +
+          '-' +
+          fromDate +
+          '.xlsx',
+      );
       setResult(
         contracts +
           ' قرارداد و ' +
           passengers +
           ' مسافر در قالب «' +
           ticket.template.name +
-          '» قرار گرفت' +
-          (skipped === '0'
-            ? '.'
-            : '؛ ' + skipped + ' قرارداد در انتظار تأیید مالی کنار گذاشته شد.'),
+          '» دانلود شد' +
+          (retriedWithAll ? '؛ خروجی قبلی نیز بازیابی شد.' : '.'),
       );
     } catch (reason) {
       setError(
@@ -180,7 +219,7 @@ export function ManifestExport() {
   }
 
   return (
-    <div className="grid gap-5 rounded-xl border border-border p-4">
+    <div className="grid gap-4 rounded-xl border border-border p-4">
       <div>
         <strong>MANIFEST بلیط‌ها</strong>
         <p className="mt-1 text-sm text-muted-foreground">
@@ -254,16 +293,16 @@ export function ManifestExport() {
               </span>
             </label>
           </fieldset>
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             {tickets.map((ticket) => (
               <article
                 key={ticket.offerId}
                 className="overflow-hidden rounded-xl border border-s-4 border-s-cyan-500 bg-card shadow-sm"
               >
-                <header className="flex items-start justify-between gap-3 border-b bg-muted/35 p-4">
-                  <div className="flex min-w-0 items-center gap-3">
-                    <span className="rounded-lg bg-cyan-100 p-2 text-cyan-800 dark:bg-cyan-950 dark:text-cyan-200">
-                      <Plane className="size-5" />
+                <header className="flex items-start justify-between gap-2 border-b bg-muted/35 px-3 py-2">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <span className="rounded-lg bg-cyan-100 p-1.5 text-cyan-800 dark:bg-cyan-950 dark:text-cyan-200">
+                      <Plane className="size-4" />
                     </span>
                     <div className="min-w-0">
                       <h3 className="truncate font-bold">
@@ -281,7 +320,7 @@ export function ManifestExport() {
                     {ticket.direction === 'OUTBOUND' ? 'رفت' : 'برگشت'}
                   </span>
                 </header>
-                <div className="grid gap-4 p-4">
+                <div className="grid gap-2 p-3">
                   <div
                     className="flex items-center justify-between gap-3"
                     dir="ltr"
@@ -291,32 +330,32 @@ export function ManifestExport() {
                     <strong>{ticket.destinationName}</strong>
                   </div>
                   <div className="grid grid-cols-2 gap-2 text-sm">
-                    <div className="rounded-lg bg-muted/50 p-2">
+                    <div className="rounded-lg bg-muted/50 px-2 py-1.5">
                       <span className="block text-xs text-muted-foreground">
                         حرکت
                       </span>
                       {dateTime(ticket.departureAt)}
                     </div>
-                    <div className="rounded-lg bg-muted/50 p-2">
+                    <div className="rounded-lg bg-muted/50 px-2 py-1.5">
                       <span className="block text-xs text-muted-foreground">
                         رسیدن
                       </span>
                       {dateTime(ticket.arrivalAt)}
                     </div>
                   </div>
-                  <p className="text-sm">
+                  <p className="text-xs">
                     {ticket.contractCount} قرارداد · {ticket.passengerCount}{' '}
                     مسافر
                   </p>
                   {ticket.template ? (
-                    <p className="rounded-lg bg-emerald-50 p-2 text-sm text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-200">
+                    <p className="rounded-lg bg-emerald-50 px-2 py-1.5 text-xs text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-200">
                       قالب فعال: {ticket.template.name} · نسخه{' '}
                       {ticket.template.versionNumber}
                     </p>
                   ) : (
                     <p
                       role="status"
-                      className="rounded-lg bg-destructive/10 p-2 text-sm text-destructive"
+                      className="rounded-lg bg-destructive/10 px-2 py-1.5 text-xs text-destructive"
                     >
                       {ticket.unavailableReason}
                     </p>

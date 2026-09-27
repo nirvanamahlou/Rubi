@@ -16,6 +16,8 @@ export function TicketOfferPicker({
   destinationLabel,
   requiredSeats,
   requireStandaloneFare = false,
+  roundTripOutbound,
+  acceptAnyRoundTripFare = false,
 }: {
   query: TicketOfferSearchV1;
   selectedId: string;
@@ -24,6 +26,8 @@ export function TicketOfferPicker({
   destinationLabel?: string;
   requiredSeats: number;
   requireStandaloneFare?: boolean;
+  roundTripOutbound?: TicketOfferV1;
+  acceptAnyRoundTripFare?: boolean;
 }) {
   const [offers, setOffers] = useState<TicketOfferV1[]>([]);
   const [pagination, setPagination] = useState({ filters: '', page: 1 });
@@ -103,7 +107,13 @@ export function TicketOfferPicker({
             offer={offer}
             selected={selectedId === offer.id}
             requiredSeats={requiredSeats}
-            requireStandaloneFare={requireStandaloneFare}
+            requireStandaloneFare={
+              requireStandaloneFare &&
+              !(acceptAnyRoundTripFare && offer.roundTripSalePrices?.length) &&
+              !roundTripOutbound?.roundTripSalePrices?.some(
+                (price) => price.returnOfferId === offer.id,
+              )
+            }
             onSelect={onSelect}
             {...(originLabel ? { originLabel } : {})}
             {...(destinationLabel ? { destinationLabel } : {})}
