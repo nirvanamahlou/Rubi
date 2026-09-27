@@ -44,10 +44,27 @@ const statusClass = (status: unknown) =>
       ? 'bg-red-500/10 text-red-700'
       : 'bg-amber-500/10 text-amber-800';
 
-export function reportingRunActionLabel(action: unknown): string {
+export function reportingRunActionLabel(
+  action: unknown,
+  filterSnapshot?: unknown,
+): string {
   if (action === 'PREVIEW') return 'نمایش نتیجه';
   if (action === 'SAVE') return 'ذخیره گزارش';
   if (action === 'EXPORT') return 'خروجی گرفتن نتیجه';
+  if (action === 'DELETE_SAVED') return 'حذف گزارش من';
+  if (action === 'SHARE') {
+    const recipientName =
+      filterSnapshot &&
+      typeof filterSnapshot === 'object' &&
+      !Array.isArray(filterSnapshot) &&
+      typeof (filterSnapshot as Record<string, unknown>).recipientName ===
+        'string'
+        ? (filterSnapshot as Record<string, unknown>).recipientName
+        : '';
+    return recipientName
+      ? `اشتراک‌گذاری شده با «${recipientName}»`
+      : 'اشتراک‌گذاری گزارش';
+  }
   return 'اجرای پیشین';
 }
 
@@ -202,7 +219,12 @@ export function ReportingOperationsView({
                     </td>
                     {view === 'recent' ? (
                       <td className="p-3">
-                        <Badge>{reportingRunActionLabel(row.actionType)}</Badge>
+                        <Badge>
+                          {reportingRunActionLabel(
+                            row.actionType,
+                            row.filterSnapshot,
+                          )}
+                        </Badge>
                       </td>
                     ) : null}
                     {reportingOperationsShowOwnerExecutor(view) ? (

@@ -883,6 +883,7 @@ export class ReportingService {
     if (!savedReport || savedReport.ownerUserId !== actor.userId)
       throw new NotFoundException('گزارش ذخیره‌شده پیدا نشد.');
     const reportCode = String(savedReport.reportCode);
+    const report = this.metadata(reportCode, actor);
     const eligible = await this.sharingRecipients(reportCode, actor);
     const allowedIds = new Set(eligible.map((candidate) => candidate.id));
     const uniqueRecipientIds = [...new Set(recipientUserIds)];
@@ -892,17 +893,52 @@ export class ReportingService {
       throw new ForbiddenException(
         'یک یا چند گیرنده، مجوز مشاهده این گزارش را ندارند.',
       );
+    const existingRecipientIds = new Set(
+      await this.repository.sharedRecipientIds(id),
+    );
+    const filterState =
+      savedReport.filterState &&
+      typeof savedReport.filterState === 'object' &&
+      !Array.isArray(savedReport.filterState)
+        ? (savedReport.filterState as Record<string, unknown>)
+        : {};
+    const actionRuns = eligible
+      .filter(
+        (recipient) =>
+          uniqueRecipientIds.includes(recipient.id) &&
+          !existingRecipientIds.has(recipient.id),
+      )
+      .map((recipient) => ({
+        reportCode,
+        filterSnapshot: {
+          ...filterState,
+          actionType: 'SHARE',
+          recipientName: recipient.displayName,
+          recipientUserId: recipient.id,
+          reportName: String(savedReport.name ?? report.title),
+        },
+        viewName: report.approvedView,
+        viewVersion: report.version,
+      }));
     return this.repository.replaceSavedReportShares(
       id,
       actor.userId,
       uniqueRecipientIds,
+      actionRuns,
     );
   }
 
   async deleteSavedReport(id: string, actor: ReportingActor) {
     if (!this.repository)
       throw new ConflictException('Persistence گزارش در دسترس نیست.');
-    const count = await this.repository.deleteSaved(id, actor.userId);
+    const savedReport = await this.repository.savedReportById(id);
+    if (!savedReport || savedReport.ownerUserId !== actor.userId)
+      throw new NotFoundException('گزارش ذخیره‌شده پیدا نشد.');
+    const report = this.metadata(String(savedReport.reportCode), actor);
+    const count = await this.repository.deleteSavedWithHistory(id, actor.userId, {
+      viewName: report.approvedView,
+      viewVersion: report.version,
+    });
     if (!count) throw new NotFoundException('گزارش ذخیره‌شده پیدا نشد.');
     return { deleted: true };
   }

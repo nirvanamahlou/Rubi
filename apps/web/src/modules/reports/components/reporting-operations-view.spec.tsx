@@ -15,6 +15,10 @@ describe('Reporting run action labels', () => {
     expect(reportingRunActionLabel('PREVIEW')).toBe('نمایش نتیجه');
     expect(reportingRunActionLabel('SAVE')).toBe('ذخیره گزارش');
     expect(reportingRunActionLabel('EXPORT')).toBe('خروجی گرفتن نتیجه');
+    expect(reportingRunActionLabel('DELETE_SAVED')).toBe('حذف گزارش من');
+    expect(
+      reportingRunActionLabel('SHARE', { recipientName: 'کاربر مجاز' }),
+    ).toBe('اشتراک‌گذاری شده با «کاربر مجاز»');
     expect(reportingRunActionLabel(null)).toBe('اجرای پیشین');
   });
 
