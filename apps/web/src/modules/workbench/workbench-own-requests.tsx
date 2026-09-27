@@ -18,6 +18,7 @@ import {
 import { customerAffairsApi } from '@/modules/customer-affairs/api/customer-affairs-client';
 import { workbenchDate } from './model';
 import { workbenchRequestPriorityLabel } from './workbench-request-priority';
+import { shouldShowWorkbenchRequestStatus } from './workbench-request-status';
 
 type WorkbenchRequest = Awaited<
   ReturnType<typeof customerAffairsApi.workbenchRequests>
@@ -77,7 +78,7 @@ export function WorkbenchOwnRequests() {
         <Badge>{rows.length.toLocaleString('fa-IR')} مورد</Badge>
       </div>
       <div className="grid gap-3 lg:grid-cols-2">
-        {rows.map((row) => (
+        {rows.map((row, index) => (
           <Card className="p-4" key={row.id}>
             <div className="flex items-start justify-between gap-3">
               <div>
@@ -86,7 +87,9 @@ export function WorkbenchOwnRequests() {
                 </p>
                 <h3 className="mt-1 font-bold">{row.subject}</h3>
               </div>
-              <Badge>{row.status}</Badge>
+              {shouldShowWorkbenchRequestStatus(row.status, index === 0) ? (
+                <Badge>{row.status}</Badge>
+              ) : null}
             </div>
             <div className="mt-4 flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
               <span>موعد اقدام: {workbenchDate(row.nextActionAt)}</span>
@@ -116,7 +119,12 @@ export function WorkbenchOwnRequests() {
                 <span className="font-mono text-xs text-muted-foreground">
                   {selected.trackingNumber}
                 </span>
-                <Badge>{selected.status}</Badge>
+                {shouldShowWorkbenchRequestStatus(
+                  selected.status,
+                  selected.id === rows[0]?.id,
+                ) ? (
+                  <Badge>{selected.status}</Badge>
+                ) : null}
               </div>
               <h3 className="font-black">{selected.subject}</h3>
               <div>
