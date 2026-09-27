@@ -2,11 +2,12 @@
 import { useEffect, useState } from 'react';
 import type { SalesContractSummary } from '@nora/contracts';
 import { Button } from '@/components/ui/button';
-import { FormField, Input, Textarea } from '@/components/ui/form-controls';
+import { Input, Textarea } from '@/components/ui/form-controls';
 import { salesApi } from '@/modules/sales/api/client';
 import { customerAffairsApi } from '../api/customer-affairs-client';
 import { AffairsSelect } from './affairs-select';
 import { CustomerAffairsFormDialog } from './customer-affairs-form-dialog';
+import { AffairsFormField as FormField } from './affairs-form-field';
 
 export function SalesHandoffResponse({
   id,
