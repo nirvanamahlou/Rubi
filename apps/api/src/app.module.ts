@@ -16,6 +16,7 @@ import { IntegrationsModule } from './integrations/integrations.module';
 import { LegalEntitiesModule } from './legal-entities/legal-entities.module';
 import { MasterDataModule } from './master-data/master-data.module';
 import { MasterDataLogoModule } from './master-data/master-data-logo.module';
+import { MarketingModule } from './marketing/marketing.module';
 import { MessagingModule } from './messaging/messaging.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { PackagePricingModule } from './package-pricing/package-pricing.module';
@@ -47,6 +48,7 @@ import { WorkbenchModule } from './workbench/workbench.module';
     CustomerAffairsModule,
     MasterDataModule,
     MasterDataLogoModule,
+    MarketingModule,
     MessagingModule,
     IamModule,
     IntegrationsModule,
