@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { salesApi } from '../api/client';
 import {
   formatMoney,
+  hasContractDateFilter,
   loadSalesWorkspace,
   paymentReferenceSearchQuery,
   SalesWorkspace,
@@ -57,6 +58,31 @@ describe('sales dashboard loading', () => {
     });
     expect(api.dashboard).toHaveBeenCalledWith();
   });
+  it('shows all contracts in an applied registration-date range while keeping the default list compact', async () => {
+    const api = {
+      dashboard: vi.fn().mockResolvedValue({ data: {} }),
+      list: vi.fn().mockResolvedValue({ data: [], meta: { total: 0 } }),
+    } satisfies Pick<typeof salesApi, 'dashboard' | 'list'>;
+    expect(hasContractDateFilter({})).toBe(false);
+    expect(
+      hasContractDateFilter({
+        createdFrom: '2026-09-01',
+        createdTo: '2026-09-30',
+      }),
+    ).toBe(true);
+    await loadSalesWorkspace(api, {
+      createdFrom: '2026-09-01',
+      createdTo: '2026-09-30',
+    });
+    expect(api.list).toHaveBeenCalledWith({
+      createdFrom: '2026-09-01',
+      createdTo: '2026-09-30',
+      page: 1,
+      pageSize: 10_000,
+      sortBy: 'updatedAt',
+      sortDirection: 'desc',
+    });
+  });
   it('formats money without lossy floating point conversion or mixing currencies', () => {
     expect(formatMoney('9007199254740993.25', 'IRR')).toBe(
       '۹٬۰۰۷٬۱۹۹٬۲۵۴٬۷۴۰٬۹۹۳٫۲۵ ریال',
@@ -69,6 +95,11 @@ describe('sales dashboard loading', () => {
     expect(html).toContain('جست‌وجوی قرارداد');
     expect(html).toContain('وضعیت تسویه');
     expect(html).toContain('شماره قرارداد، نام مشتری یا شماره پیگیری پرداخت');
+    expect(html).toContain('از تاریخ ثبت');
+    expect(html).toContain('تا تاریخ ثبت');
+    expect(html).toContain(
+      'بدون فیلتر تاریخ، فقط ۲۰ قراردادِ آخر نمایش داده می‌شود.',
+    );
     expect(html).not.toContain('اولین قرارداد سفر را ثبت کنید');
   });
   it('keeps an empty successful contract list separate from unavailable statistics', async () => {
