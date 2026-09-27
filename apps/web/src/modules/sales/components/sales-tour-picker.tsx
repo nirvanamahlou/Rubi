@@ -24,7 +24,16 @@ export function SalesTourPicker({
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
   const [busy, setBusy] = useState(false);
+  const hasSearch = Boolean(search.trim());
+  const matchingRows = hasSearch
+    ? rows.filter((row) =>
+        row.package.name
+          .toLocaleLowerCase('fa-IR')
+          .includes(search.trim().toLocaleLowerCase('fa-IR')),
+      )
+    : [];
   useEffect(() => {
+    if (!search.trim()) return;
     let alive = true;
     void toursApi
       .departures()
@@ -40,7 +49,7 @@ export function SalesTourPicker({
     return () => {
       alive = false;
     };
-  }, []);
+  }, [search]);
   const select = async (tour: TourDepartureV1) => {
     setBusy(true);
     setError('');
@@ -147,10 +156,13 @@ export function SalesTourPicker({
         value={search}
         onChange={(event) => setSearch(event.target.value)}
       />
-      {error && <p role="alert">{error}</p>}
-      {rows
-        .filter((row) => row.package.name.includes(search))
-        .map((row) => (
+      {hasSearch && error ? <p role="alert">{error}</p> : null}
+      {!hasSearch ? (
+        <p className="text-sm text-muted-foreground" role="status">
+          برای نمایش نوبت‌ها، نام تور را جست‌وجو کنید.
+        </p>
+      ) : (
+        matchingRows.map((row) => (
           <div
             key={row.id}
             className="flex flex-wrap items-center justify-between gap-3 rounded-xl border p-3"
@@ -174,8 +186,9 @@ export function SalesTourPicker({
               انتخاب تور
             </Button>
           </div>
-        ))}
-      {!rows.length && !error && (
+        ))
+      )}
+      {hasSearch && !matchingRows.length && !error && (
         <p>نوبت توری برای فروش یافت نشد؛ ابتدا در مدیریت بلیط تعریف کنید.</p>
       )}
     </section>
