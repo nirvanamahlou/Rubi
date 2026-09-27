@@ -4,6 +4,7 @@ import {
   REPORTING_OPERATIONS_CELL_CLASS,
   REPORTING_OPERATIONS_LIMIT,
   reportingOperationsShowOwnerExecutor,
+  reportingOperationsShowRunMetrics,
   reportingRunActionLabel,
 } from './reporting-operations-view';
 
@@ -14,6 +15,13 @@ describe('Reporting run action labels', () => {
 
   it('vertically centers every cell in the reporting operation tables', () => {
     expect(REPORTING_OPERATIONS_CELL_CLASS).toContain('align-middle');
+  });
+
+  it('hides output count and duration only from execution rows', () => {
+    expect(reportingOperationsShowRunMetrics('recent')).toBe(false);
+    expect(reportingOperationsShowRunMetrics('saved')).toBe(true);
+    expect(reportingOperationsShowRunMetrics('shared')).toBe(true);
+    expect(reportingOperationsShowRunMetrics('downloads')).toBe(true);
   });
 
   it('explains each persisted form action and keeps legacy rows understandable', () => {

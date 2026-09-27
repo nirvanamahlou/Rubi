@@ -18,6 +18,8 @@ import { ReportSharingDialog } from './report-sharing-dialog';
 type Row = Record<string, unknown> & { id: string };
 export const REPORTING_OPERATIONS_LIMIT = 30;
 export const REPORTING_OPERATIONS_CELL_CLASS = 'p-3 align-middle';
+export const reportingOperationsShowRunMetrics = (view: ReportingView) =>
+  view !== 'recent';
 
 const faDate = (value: unknown) =>
   value
@@ -225,12 +227,6 @@ export function ReportingOperationsView({
                             reportCode,
                         )}
                       </strong>
-                      <p
-                        className="mt-1 text-xs text-muted-foreground"
-                        dir="ltr"
-                      >
-                        {reportCode}
-                      </p>
                     </td>
                     {view === 'recent' ? (
                       <td className={REPORTING_OPERATIONS_CELL_CLASS}>
@@ -252,7 +248,8 @@ export function ReportingOperationsView({
                         {statusLabel[status] ??
                           (row.sharingScope === 'TEAM' ? 'تیمی' : 'شخصی')}
                       </Badge>
-                      {row.recordCount !== undefined &&
+                      {reportingOperationsShowRunMetrics(view) &&
+                      row.recordCount !== undefined &&
                       row.recordCount !== null ? (
                         <p className="mt-2 text-xs">
                           {Number(row.recordCount).toLocaleString('fa-IR')}{' '}
