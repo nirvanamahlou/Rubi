@@ -3773,6 +3773,10 @@ export function DashboardWorkspace() {
     dashboardHeaderArtworkByPageId[activePage.id] ??
     dashboardHeaderArtworkByPageId['executive-overview'] ??
     '/images/dashboard-headers/executive-overview.png';
+  const activePageHeaderLightArtwork = activePageHeaderArtwork.replace(
+    /\.png$/,
+    '-light-v2.png',
+  );
   const activePageHeaderDarkArtwork = activePageHeaderArtwork.replace(
     /\.png$/,
     '-dark.png',
@@ -3932,7 +3936,7 @@ export function DashboardWorkspace() {
                   fill
                   quality={45}
                   sizes="(min-width: 1024px) 72vw, 100vw"
-                  src={activePageHeaderArtwork}
+                  src={activePageHeaderLightArtwork}
                 />
                 <Image
                   alt=""
