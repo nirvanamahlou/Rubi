@@ -3892,3 +3892,9 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 - شاخهٔ مستقل `codex/pc-a-sales-payment-share-0922` از `origin/develop@1e2a6298`. محدوده فقط UI و مدل محاسباتی نمایش خلاصه پرداخت در Sales، تست هدفمند و اسناد همین واحد است؛ API، Finance، Schema/Migration، Permission، داده و Dependency/Lockfile تغییر نمی‌کنند.
 - محاسبات مبلغ با Decimal/BigInt انجام می‌شوند و برای هر ارز مستقل‌اند. `COMPUTER_ID=PC-A`؛ فایل اجرایی هدف در PR باز دیگری تغییر نکرده است.
 - نتیجه: خلاصه چهارکارتِ کل قرارداد، تأییدشده/در انتظار مالی، مبلغ جاری با درصد کل و مانده پس از تأیید به modal افزوده شد؛ ارزها مستقل‌اند و مازاد بر مانده هشدار دارد. ۹ تست هدفمند، lint، typecheck و build تولیدی Web با ۵۰ route موفق‌اند. قفل فایل اجرایی آزاد است.
+
+## SEARCH-FIRST-FORM-LOOKUPS-0927 — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک محصول: انتخاب‌گرهای دارای جست‌وجوی داده در فرم‌ها پیش از واردکردن عبارت هیچ گزینه‌ای نمایش ندهند و هیچ درخواست فهرستی نفرستند؛ پس از جست‌وجو، نتایج و صفحه‌بندی موجود فعال شوند. فهرست‌های ثابت و کوچک مانند وضعیت و نوع، خارج از این تغییر هستند.
+- شاخهٔ مستقل `codex/pc-b-search-first-lookups-0927` از `origin/develop@48c1b6f3`. محدوده: انتخاب‌گرهای مرجع Web در Customer Affairs، Documents، HR، Master Data، Organizations، Procurement، Sales و Ticket Catalog، آزمون‌های هدفمند و همین ثبت وضعیت. API، قرارداد، Schema/Migration، داده، Permission، Dependency/Lockfile و runtime محلی تغییر نمی‌کنند.
+- سازگاری: انتخاب ثبت‌شده حفظ می‌شود، دادهٔ انتخاب‌گر فقط پس از عبارت غیرخالی واکشی می‌گردد و پیام قابل‌خواندن برای آغاز جست‌وجو نمایش داده می‌شود. رزرو محدود Central Docs با این Commit آزاد می‌شود.

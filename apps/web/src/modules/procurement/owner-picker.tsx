@@ -33,6 +33,7 @@ export function ProcurementOwnerPicker({
   const query = useQuery({
     queryKey: ['procurement', 'owners', branchId, debounced, page],
     queryFn: () => procurementApi.owners(branchId, debounced, page),
+    enabled: Boolean(branchId && debounced.trim()),
     retry: false,
   });
   return (
@@ -49,7 +50,9 @@ export function ProcurementOwnerPicker({
           id="proc-owner"
           className={selectClass}
           value={value}
-          disabled={query.isPending || query.isError}
+          disabled={
+            Boolean(debounced.trim()) && (query.isPending || query.isError)
+          }
           onChange={(event) => {
             const row = query.data?.items.find(
               (item) => item.id === event.target.value,
@@ -87,16 +90,23 @@ export function ProcurementOwnerPicker({
           </Button>
         </Alert>
       )}
-      {query.data && !query.data.items.length && (
-        <p className="text-xs text-muted-foreground">
-          مسئول واجد شرایطی در این صفحه پیدا نشد.
+      {!debounced.trim() ? (
+        <p className="text-xs text-muted-foreground" role="status">
+          برای نمایش مسئولان، نام یا کد را جست‌وجو کنید.
         </p>
+      ) : (
+        query.data &&
+        !query.data.items.length && (
+          <p className="text-xs text-muted-foreground">
+            مسئول واجد شرایطی در این صفحه پیدا نشد.
+          </p>
+        )
       )}
       <div className="flex gap-2">
         <Button
           variant="ghost"
           size="sm"
-          disabled={page <= 1}
+          disabled={!debounced.trim() || page <= 1}
           onClick={() => setPage(page - 1)}
         >
           قبلی
@@ -107,7 +117,7 @@ export function ProcurementOwnerPicker({
         <Button
           variant="ghost"
           size="sm"
-          disabled={!query.data?.hasMore}
+          disabled={!debounced.trim() || !query.data?.hasMore}
           onClick={() => setPage(page + 1)}
         >
           بعدی

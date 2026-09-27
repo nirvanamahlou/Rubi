@@ -59,6 +59,12 @@ export function ProcurementDocumentPicker({
     };
   }, [available, invoiceRequestId]);
   async function load(targetPage: number) {
+    if (!search.trim()) {
+      setRows([]);
+      setHasMore(false);
+      setLoaded(false);
+      return;
+    }
     setBusy(true);
     setError('');
     try {
@@ -211,6 +217,7 @@ export function ProcurementDocumentPicker({
               type="button"
               variant="outline"
               loading={busy}
+              disabled={!search.trim()}
               onClick={() => void load(1)}
             >
               جست‌وجوی مدرک

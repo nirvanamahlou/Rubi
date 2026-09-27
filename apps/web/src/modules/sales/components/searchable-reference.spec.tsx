@@ -1,4 +1,5 @@
 import { renderToStaticMarkup } from 'react-dom/server';
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
   salesReferenceDisplayName,
@@ -52,5 +53,14 @@ describe('Sales searchable country/city reference', () => {
     expect(salesReferenceDisplayName({ name: 'رویال وینگز' })).toBe(
       'رویال وینگز',
     );
+  });
+
+  it('does not populate the menu until the operator enters a search term', () => {
+    const source = readFileSync(
+      new URL('./searchable-reference.tsx', import.meta.url),
+      'utf8',
+    );
+    expect(source).toContain('const hasSearch = Boolean(search.trim());');
+    expect(source).toContain('برای نمایش گزینه‌ها، نام یا کد را جست‌وجو کنید.');
   });
 });

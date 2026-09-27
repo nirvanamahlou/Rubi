@@ -57,6 +57,7 @@ export function ReferencePicker({
   ]);
   useEffect(() => {
     if (!open || !enabled) return;
+    if (!search.trim()) return;
     const abort = new AbortController();
     const timer = setTimeout(() => {
       void listReferences(resource, search, page, abort.signal, {
@@ -155,7 +156,11 @@ export function ReferencePicker({
               setPage(1);
             }}
           />
-          {!current ? (
+          {!search.trim() ? (
+            <p role="status" className="text-xs text-muted-foreground">
+              برای نمایش گزینه‌ها، نام یا کد را جست‌وجو کنید.
+            </p>
+          ) : !current ? (
             <p role="status" className="text-xs">
               در حال جست‌وجو…
             </p>

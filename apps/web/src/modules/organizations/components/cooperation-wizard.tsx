@@ -85,8 +85,8 @@ export function CooperationWizard({
   }, []);
   useEffect(() => {
     let active = true;
+    if (!query.trim() || mode !== 'existing') return;
     const timer = window.setTimeout(() => {
-      if (mode !== 'existing') return;
       setSearching(true);
       void masterDataApi
         .list('organizations', {
@@ -114,6 +114,7 @@ export function CooperationWizard({
   }, [query, mode]);
   useEffect(() => {
     let active = true;
+    if (!countryQuery.trim()) return;
     const timer = window.setTimeout(() => {
       void masterDataApi
         .list('countries', {
@@ -138,7 +139,7 @@ export function CooperationWizard({
   }, [countryQuery]);
   useEffect(() => {
     let active = true;
-    if (!draft.countryId) return;
+    if (!draft.countryId || !cityQuery.trim()) return;
     const timer = window.setTimeout(() => {
       void masterDataApi
         .list('cities', {
@@ -320,7 +321,9 @@ export function CooperationWizard({
                       />
                     </div>
                     <div className="organization-matches" aria-live="polite">
-                      {searching ? (
+                      {!query.trim() ? (
+                        <p>برای نمایش سازمان‌ها، نام یا کد را جست‌وجو کنید.</p>
+                      ) : searching ? (
                         <p>در حال جست‌وجو…</p>
                       ) : matches.length ? (
                         matches.map((record) => (
@@ -443,11 +446,17 @@ export function CooperationWizard({
                       }}
                     >
                       <option value="">انتخاب نشده</option>
-                      {countries.map((country) => (
-                        <option key={country.id} value={country.id}>
-                          {country.name}
+                      {!countryQuery.trim() ? (
+                        <option disabled value="__search-country__">
+                          برای نمایش کشورها، جست‌وجو کنید
                         </option>
-                      ))}
+                      ) : null}
+                      {countryQuery.trim() &&
+                        countries.map((country) => (
+                          <option key={country.id} value={country.id}>
+                            {country.name}
+                          </option>
+                        ))}
                     </select>
                   </label>
                   <label className="field">
@@ -510,11 +519,17 @@ export function CooperationWizard({
                           }
                         >
                           <option value="">انتخاب شهر</option>
-                          {cities.map((city) => (
-                            <option key={city.id} value={city.id}>
-                              {city.name}
+                          {!cityQuery.trim() ? (
+                            <option disabled value="__search-city__">
+                              برای نمایش شهرها، جست‌وجو کنید
                             </option>
-                          ))}
+                          ) : null}
+                          {cityQuery.trim() &&
+                            cities.map((city) => (
+                              <option key={city.id} value={city.id}>
+                                {city.name}
+                              </option>
+                            ))}
                         </select>
                       </label>
                       {field('addressLine', 'نشانی کامل', 500)}
