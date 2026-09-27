@@ -1230,7 +1230,7 @@ export function SalesContractForm() {
                       ? hotelRoomRates
                           .map(
                             (room) =>
-                              `${room.roomTypeName}: ${room.maxAdults} بزرگسال + ${room.maxChildren} کودک`,
+                              `${room.roomTypeName}: ${room.maxAdults} بزرگسال + ${room.maxChildren2To6 ?? room.maxChildren} کودک ۲–۶ + ${room.maxChildren6To12 ?? 0} کودک ۶–۱۲ + ${room.maxInfants ?? 0} نوزاد`,
                           )
                           .join(' | ')
                       : selectableHotelRoomTypes.length

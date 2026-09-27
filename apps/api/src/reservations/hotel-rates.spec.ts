@@ -117,6 +117,36 @@ describe('group hotel rate integrity', () => {
       }),
     ).toThrow();
   });
+  it('persists separate 2–6, 6–12 and infant capacities while retaining legacy child total', () => {
+    const data = input();
+    const result = validateRatePack({
+      ...data,
+      cityId: randomUUID(),
+      rows: [
+        {
+          ...data.rows[0],
+          factors: undefined,
+          roomRates: [
+            {
+              roomTypeId: randomUUID(),
+              factor: '1.25',
+              maxAdults: 2,
+              maxChildren2To6: 1,
+              maxChildren6To12: 2,
+              maxInfants: 1,
+            },
+          ],
+        },
+      ],
+    });
+    expect(result.rows[0]?.roomRates[0]).toMatchObject({
+      maxAdults: 2,
+      maxChildren: 3,
+      maxChildren2To6: 1,
+      maxChildren6To12: 2,
+      maxInfants: 1,
+    });
+  });
   it('denies unauthorized branch before reference lookup or writes', async () => {
     const directory = { hotelRateReference: vi.fn() };
     const db = {

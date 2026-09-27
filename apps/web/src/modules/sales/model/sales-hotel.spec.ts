@@ -201,7 +201,7 @@ describe('combined flight and hotel details', () => {
     ];
 
     expect(salesHotelCapacityError(state, rates)).toContain(
-      'حداکثر ۲ بزرگسال و ۱ کودک',
+      'حداکثر ۲ بزرگسال، ۱ کودک ۲–۶، ۰ کودک ۶–۱۲ و ۰ نوزاد',
     );
     expect(salesHotelCapacityError(state, [])).toBeNull();
     expect(

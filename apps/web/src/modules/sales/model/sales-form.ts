@@ -358,9 +358,18 @@ export function salesHotelCapacityError(
   const rooms = Math.max(1, state.hotel.roomCount);
   const counts = salesPassengerCounts(state);
   const maxAdults = roomRate.maxAdults * rooms;
-  const maxChildren = roomRate.maxChildren * rooms;
-  if (counts.adults <= maxAdults && counts.children <= maxChildren) return null;
-  return `ظرفیت ${roomRate.roomTypeName} برای ${rooms.toLocaleString('fa-IR')} اتاق، حداکثر ${maxAdults.toLocaleString('fa-IR')} بزرگسال و ${maxChildren.toLocaleString('fa-IR')} کودک است؛ تعداد اتاق یا نوع اتاق را تغییر دهید.`;
+  const maxChildren2To6 =
+    (roomRate.maxChildren2To6 ?? roomRate.maxChildren) * rooms;
+  const maxChildren6To12 = (roomRate.maxChildren6To12 ?? 0) * rooms;
+  const maxInfants = (roomRate.maxInfants ?? 0) * rooms;
+  const maxChildren = maxChildren2To6 + maxChildren6To12;
+  if (
+    counts.adults <= maxAdults &&
+    counts.children <= maxChildren &&
+    counts.infants <= maxInfants
+  )
+    return null;
+  return `ظرفیت ${roomRate.roomTypeName} برای ${rooms.toLocaleString('fa-IR')} اتاق، حداکثر ${maxAdults.toLocaleString('fa-IR')} بزرگسال، ${maxChildren2To6.toLocaleString('fa-IR')} کودک ۲–۶، ${maxChildren6To12.toLocaleString('fa-IR')} کودک ۶–۱۲ و ${maxInfants.toLocaleString('fa-IR')} نوزاد است؛ تعداد اتاق یا نوع اتاق را تغییر دهید.`;
 }
 
 export function salesPassengerCompositionMatches(state: SalesFormState) {
