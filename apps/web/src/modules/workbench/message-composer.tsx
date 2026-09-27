@@ -552,9 +552,9 @@ export function MessageComposer({
           ) : (
             <div className="min-w-0 space-y-5">
               <header className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-primary/15 bg-surface/85 p-4 shadow-sm">
-                <div>
-                  <h3 className="text-lg font-black">{active.title}</h3>
-                  <p className="mt-1 text-xs text-muted-foreground">
+                <div className="min-w-0">
+                  <h3 className="truncate text-lg font-black">{active.title}</h3>
+                  <p className="mt-1 truncate text-xs text-muted-foreground">
                     {active.type === 'GROUP'
                       ? `${active.participants.length.toLocaleString('fa-IR')} عضو`
                       : active.participants
@@ -569,7 +569,7 @@ export function MessageComposer({
                 )}
               </header>
               <section
-                className="isolate max-h-80 min-h-52 min-w-0 space-y-3 overflow-x-hidden overflow-y-auto rounded-2xl border border-sky-200/70 bg-surface/80 p-4 dark:border-sky-800/60"
+                className="relative isolate h-[22rem] min-h-0 min-w-0 space-y-3 overflow-x-hidden overflow-y-auto rounded-2xl border border-sky-200/70 bg-surface/80 p-4 dark:border-sky-800/60"
                 aria-label="پیام‌های گفت‌وگو"
               >
                 {messages.map((message) => {
@@ -577,7 +577,7 @@ export function MessageComposer({
                   return (
                     <article
                       key={message.id}
-                      className={`relative min-w-0 max-w-[min(85%,42rem)] overflow-hidden rounded-2xl p-3 shadow-sm ${mine ? 'me-auto bg-primary text-primary-foreground' : 'ms-auto bg-violet-100 text-violet-950 dark:bg-violet-950 dark:text-violet-50'}`}
+                      className={`relative z-0 w-fit min-w-0 max-w-full overflow-hidden rounded-2xl p-3 shadow-sm lg:max-w-[75%] ${mine ? 'me-auto bg-primary text-primary-foreground' : 'ms-auto bg-violet-100 text-violet-950 dark:bg-violet-950 dark:text-violet-50'}`}
                     >
                       <div className="flex min-w-0 items-center justify-between gap-4 text-xs opacity-80">
                         <strong className="truncate">
@@ -592,22 +592,24 @@ export function MessageComposer({
                           فوروارد از {message.forwardedFrom.senderDisplayName}
                         </p>
                       )}
-                      <p className="mt-2 max-h-64 min-w-0 max-w-full overflow-y-auto whitespace-pre-wrap break-words pe-2 [overflow-wrap:anywhere] leading-7">
+                      <p className="mt-2 max-h-28 min-w-0 max-w-full overflow-y-auto whitespace-pre-wrap break-words pe-2 [overflow-wrap:anywhere] leading-7">
                         {message.body}
                       </p>
                       {message.attachments.length ? (
-                        <ul className="mt-2 space-y-1">
+                        <ul className="mt-2 max-w-full space-y-1">
                           {message.attachments.map((attachment) => (
                             <li key={attachment.documentId}>
                               <Link
-                                className="inline-flex items-center gap-2 rounded-lg bg-white/15 px-2 py-1 text-xs hover:underline"
+                                className="inline-flex max-w-full items-center gap-2 rounded-lg bg-white/15 px-2 py-1 text-xs hover:underline"
                                 href={`/documents?document=${encodeURIComponent(attachment.documentId)}`}
                               >
                                 <Paperclip
                                   className="size-3"
                                   aria-hidden="true"
                                 />
-                                {attachment.title}
+                                <span className="truncate">
+                                  {attachment.title}
+                                </span>
                               </Link>
                             </li>
                           ))}
