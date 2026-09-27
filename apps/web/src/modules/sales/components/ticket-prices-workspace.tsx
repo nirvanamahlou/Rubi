@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ArrowLeftRight,
   CircleDollarSign,
+  PencilLine,
   RefreshCw,
   Search,
   TicketCheck,
@@ -140,6 +141,17 @@ export function TicketPricesWorkspace() {
   const currentPair = outbound?.roundTripSalePrices?.find(
     (price) => price.returnOfferId === returnId,
   );
+  const savedPairs = useMemo(
+    () =>
+      offers.flatMap((outboundOffer) =>
+        (outboundOffer.roundTripSalePrices ?? []).map((price) => ({
+          outbound: outboundOffer,
+          returning: offers.find((offer) => offer.id === price.returnOfferId),
+          price,
+        })),
+      ),
+    [offers],
+  );
 
   const priceForTarget = useCallback(
     (offer: TicketOfferV1) =>
@@ -228,6 +240,21 @@ export function TicketPricesWorkspace() {
     } finally {
       setSaving('');
     }
+  }
+
+  function editPair(pair: (typeof savedPairs)[number]) {
+    if (!pair.returning) {
+      setError('بلیط برگشت این قیمت دیگر در فهرست مدیریت بلیط‌ها موجود نیست.');
+      return;
+    }
+    setOutboundId(pair.outbound.id);
+    setReturnId(pair.returning.id);
+    setPairDraft({
+      amount: pair.price.amount,
+      currencyCode: pair.price.currencyCode,
+    });
+    setNotice('قیمت جفت انتخاب شد؛ مبلغ را اصلاح کنید و «ثبت نسخه جدید» را بزنید.');
+    setError('');
   }
 
   return (
@@ -437,9 +464,85 @@ export function TicketPricesWorkspace() {
               />
             </FormField>
             <Button onClick={() => void savePair()} loading={saving === 'pair'}>
-              ثبت قیمت جفت
+              {currentPair ? 'ثبت نسخه جدید' : 'ثبت قیمت جفت'}
             </Button>
           </div>
+        </div>
+        {outbound && returnId ? (
+          <div className="mt-4 rounded-xl border border-violet-200 bg-violet-50/70 px-4 py-3 text-sm dark:border-violet-400/20 dark:bg-violet-950/25">
+            {currentPair ? (
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span>
+                  قیمت ثبت‌شدهٔ این جفت:{' '}
+                  <strong dir="ltr" className="font-black">
+                    {currentPair.amount} {currentPair.currencyCode}
+                  </strong>
+                </span>
+                <Badge>نسخه {currentPair.revision.toLocaleString('fa-IR')}</Badge>
+              </div>
+            ) : (
+              <span className="text-muted-foreground">
+                برای این جفت هنوز قیمت ثبت نشده است.
+              </span>
+            )}
+          </div>
+        ) : null}
+        <div className="mt-5 border-t border-violet-200/80 pt-5 dark:border-violet-400/20">
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h3 className="font-black">قیمت‌های جفت ثبت‌شده</h3>
+              <p className="mt-1 text-xs text-muted-foreground">
+                هر ردیف را انتخاب کنید تا مبلغ قبلی در فرم بالا باز شود و بتوانید آن را ویرایش کنید.
+              </p>
+            </div>
+            <Badge>{savedPairs.length.toLocaleString('fa-IR')} جفت</Badge>
+          </div>
+          {savedPairs.length ? (
+            <div className="grid gap-3 xl:grid-cols-2">
+              {savedPairs.map((pair) => (
+                <div
+                  key={`${pair.outbound.id}:${pair.price.returnOfferId}`}
+                  className="flex flex-col gap-3 rounded-xl border border-violet-100 bg-surface/90 p-4 shadow-sm dark:border-violet-400/15 sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <div className="min-w-0">
+                    <p className="text-sm font-bold">
+                      {cities[pair.outbound.originId] ?? 'مبدأ'} ←{' '}
+                      {cities[pair.outbound.destinationId] ?? 'مقصد'}
+                    </p>
+                    <p className="mt-1 truncate text-xs text-muted-foreground">
+                      رفت: {label(pair.outbound)}
+                    </p>
+                    <p className="mt-1 truncate text-xs text-muted-foreground">
+                      برگشت:{' '}
+                      {pair.returning ? label(pair.returning) : 'در دسترس نیست'}
+                    </p>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-3 sm:text-end">
+                    <div>
+                      <p dir="ltr" className="font-black tabular-nums">
+                        {pair.price.amount} {pair.price.currencyCode}
+                      </p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        نسخه {pair.price.revision.toLocaleString('fa-IR')}
+                      </p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      onClick={() => editPair(pair)}
+                      disabled={!pair.returning}
+                    >
+                      <PencilLine className="size-4" />
+                      ویرایش
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="rounded-xl border border-dashed border-violet-200 px-4 py-5 text-center text-sm text-muted-foreground dark:border-violet-400/20">
+              هنوز برای هیچ جفت رفت‌وبرگشت قیمت ثبت نشده است.
+            </p>
+          )}
         </div>
       </Card>
       <Card className="overflow-hidden border-sky-200/80 bg-gradient-to-br from-sky-50/70 via-surface to-blue-50/50 shadow-sm dark:border-sky-400/20 dark:from-sky-950/25 dark:via-surface dark:to-blue-950/20">
