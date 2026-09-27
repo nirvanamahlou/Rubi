@@ -17,6 +17,7 @@ import { ReportSharingDialog } from './report-sharing-dialog';
 
 type Row = Record<string, unknown> & { id: string };
 export const REPORTING_OPERATIONS_LIMIT = 30;
+export const REPORTING_OPERATIONS_CELL_CLASS = 'p-3 align-middle';
 
 const faDate = (value: unknown) =>
   value
@@ -169,18 +170,32 @@ export function ReportingOperationsView({
           >
             <thead className="bg-muted/60">
               <tr>
-                <th className="p-3 text-start">عنوان</th>
+                <th className={`${REPORTING_OPERATIONS_CELL_CLASS} text-start`}>
+                  عنوان
+                </th>
                 {view === 'recent' ? (
-                  <th className="p-3 text-start">اقدام کاربر</th>
+                  <th
+                    className={`${REPORTING_OPERATIONS_CELL_CLASS} text-start`}
+                  >
+                    اقدام کاربر
+                  </th>
                 ) : null}
                 {reportingOperationsShowOwnerExecutor(view) ? (
-                  <th className="p-3 text-start">مالک / اجراکننده</th>
+                  <th
+                    className={`${REPORTING_OPERATIONS_CELL_CLASS} text-start`}
+                  >
+                    مالک / اجراکننده
+                  </th>
                 ) : null}
-                <th className="p-3 text-start">وضعیت و تنظیمات</th>
-                <th className="p-3 text-start">
+                <th className={`${REPORTING_OPERATIONS_CELL_CLASS} text-start`}>
+                  وضعیت و تنظیمات
+                </th>
+                <th className={`${REPORTING_OPERATIONS_CELL_CLASS} text-start`}>
                   {view === 'recent' ? 'زمان اقدام' : 'زمان'}
                 </th>
-                <th className="p-3 text-start">عملیات</th>
+                <th className={`${REPORTING_OPERATIONS_CELL_CLASS} text-start`}>
+                  عملیات
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -199,8 +214,8 @@ export function ReportingOperationsView({
                 );
                 const savedReportId = view === 'saved' ? row.id : undefined;
                 return (
-                  <tr className="border-t align-top" key={row.id}>
-                    <td className="p-3">
+                  <tr className="border-t" key={row.id}>
+                    <td className={REPORTING_OPERATIONS_CELL_CLASS}>
                       <strong>
                         {String(
                           row.name ??
@@ -218,7 +233,7 @@ export function ReportingOperationsView({
                       </p>
                     </td>
                     {view === 'recent' ? (
-                      <td className="p-3">
+                      <td className={REPORTING_OPERATIONS_CELL_CLASS}>
                         <Badge>
                           {reportingRunActionLabel(
                             row.actionType,
@@ -228,11 +243,11 @@ export function ReportingOperationsView({
                       </td>
                     ) : null}
                     {reportingOperationsShowOwnerExecutor(view) ? (
-                      <td className="p-3">
+                      <td className={REPORTING_OPERATIONS_CELL_CLASS}>
                         {String(row.ownerName ?? 'کاربر جاری')}
                       </td>
                     ) : null}
-                    <td className="p-3">
+                    <td className={REPORTING_OPERATIONS_CELL_CLASS}>
                       <Badge className={statusClass(status)}>
                         {statusLabel[status] ??
                           (row.sharingScope === 'TEAM' ? 'تیمی' : 'شخصی')}
@@ -254,14 +269,14 @@ export function ReportingOperationsView({
                         </p>
                       ) : null}
                     </td>
-                    <td className="p-3">
+                    <td className={REPORTING_OPERATIONS_CELL_CLASS}>
                       {faDate(
                         view === 'recent'
                           ? (row.startedAt ?? row.createdAt)
                           : (row.updatedAt ?? row.createdAt ?? row.nextRunAt),
                       )}
                     </td>
-                    <td className="p-3">
+                    <td className={REPORTING_OPERATIONS_CELL_CLASS}>
                       <div className="flex flex-wrap gap-2">
                         {view === 'downloads' && status === 'READY' ? (
                           <Button

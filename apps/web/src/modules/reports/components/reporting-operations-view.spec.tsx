@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  REPORTING_OPERATIONS_CELL_CLASS,
   REPORTING_OPERATIONS_LIMIT,
   reportingOperationsShowOwnerExecutor,
   reportingRunActionLabel,
@@ -9,6 +10,10 @@ import {
 describe('Reporting run action labels', () => {
   it('keeps operational history bounded to the 30 most recent records', () => {
     expect(REPORTING_OPERATIONS_LIMIT).toBe(30);
+  });
+
+  it('vertically centers every cell in the reporting operation tables', () => {
+    expect(REPORTING_OPERATIONS_CELL_CLASS).toContain('align-middle');
   });
 
   it('explains each persisted form action and keeps legacy rows understandable', () => {
