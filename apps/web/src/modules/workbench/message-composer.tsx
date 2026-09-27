@@ -323,7 +323,7 @@ export function MessageComposer({
         </h2>
       </div>
       <div className="grid min-h-[680px] min-w-0 lg:grid-cols-[320px_minmax(0,1fr)]">
-        <aside className="min-w-0 space-y-4 border-b border-primary/15 bg-gradient-to-b from-primary/10 via-sky-100/60 to-violet-100/50 p-4 dark:via-sky-950/20 dark:to-violet-950/20 lg:border-b-0 lg:border-e">
+        <aside className="min-w-0 space-y-4 overflow-hidden border-b border-primary/15 bg-gradient-to-b from-primary/10 via-sky-100/60 to-violet-100/50 p-4 dark:via-sky-950/20 dark:to-violet-950/20 lg:border-b-0 lg:border-e">
           <div
             className="grid grid-cols-2 gap-2"
             aria-label="بخش‌های پیام‌رسان"
@@ -365,7 +365,10 @@ export function MessageComposer({
                 value={unitSearch}
                 onChange={(event) => setUnitSearch(event.target.value)}
               />
-              <div className="grid gap-2" aria-label="واحدهای پیام‌رسان">
+              <div
+                className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-2"
+                aria-label="واحدهای پیام‌رسان"
+              >
                 {messageUnits
                   .filter((item) =>
                     item.label
@@ -377,7 +380,7 @@ export function MessageComposer({
                       key={item.id}
                       variant={unitId === item.id ? 'primary' : 'ghost'}
                       aria-pressed={unitId === item.id}
-                      className={`h-auto min-h-16 justify-start border p-3 text-start ${
+                      className={`h-auto min-h-16 w-full min-w-0 justify-start overflow-hidden border p-3 text-start ${
                         unitId === item.id
                           ? 'border-primary'
                           : 'border-white/70 bg-surface/80 text-foreground dark:border-white/10'
@@ -393,7 +396,7 @@ export function MessageComposer({
                       >
                         <MessageUnitIcon id={item.id} />
                       </span>
-                      <span className="min-w-0">
+                      <span className="min-w-0 flex-1 overflow-hidden">
                         <span className="block truncate font-bold">
                           {item.label}
                         </span>
@@ -418,19 +421,22 @@ export function MessageComposer({
                 value={contactSearch}
                 onChange={(event) => setContactSearch(event.target.value)}
               />
-              <div className="grid gap-2" aria-label="کاربران CRM">
+              <div
+                className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-2"
+                aria-label="کاربران CRM"
+              >
                 {contacts.map((contact) => (
                   <Button
                     key={contact.id}
                     variant="ghost"
-                    className="h-auto justify-start border border-white/70 bg-surface/80 p-3 text-start dark:border-white/10"
+                    className="h-auto w-full min-w-0 justify-start overflow-hidden border border-white/70 bg-surface/80 p-3 text-start dark:border-white/10"
                     onClick={() => void openContact(contact)}
                     disabled={busy}
                   >
                     <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary/10 font-black text-primary">
                       {initials(contact.displayName)}
                     </span>
-                    <span className="min-w-0">
+                    <span className="min-w-0 flex-1 overflow-hidden">
                       <span className="block truncate font-bold">
                         {contact.displayName}
                       </span>
@@ -461,7 +467,10 @@ export function MessageComposer({
                 <UserPlus className="size-4" aria-hidden="true" />
                 ایجاد گروه جدید
               </Button>
-              <div className="grid gap-2" aria-label="گروه‌های من">
+              <div
+                className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-2"
+                aria-label="گروه‌های من"
+              >
                 {conversations
                   .filter((conversation) => conversation.type === 'GROUP')
                   .map((conversation) => (
@@ -470,13 +479,13 @@ export function MessageComposer({
                       variant={
                         activeId === conversation.id ? 'primary' : 'ghost'
                       }
-                      className="h-auto min-h-20 justify-start border border-white/70 p-3 text-start dark:border-white/10"
+                      className="h-auto min-h-20 w-full min-w-0 justify-start overflow-hidden border border-white/70 p-3 text-start dark:border-white/10"
                       onClick={() => setActiveId(conversation.id)}
                     >
                       <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-surface/20">
                         <Users className="size-5" aria-hidden="true" />
                       </span>
-                      <span className="min-w-0">
+                      <span className="min-w-0 flex-1 overflow-hidden">
                         <span className="block truncate font-bold">
                           {conversation.title}
                         </span>
@@ -505,18 +514,21 @@ export function MessageComposer({
               </div>
             </>
           ) : (
-            <div className="grid gap-2" aria-label="گفت‌وگوهای من">
+            <div
+              className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-2"
+              aria-label="گفت‌وگوهای من"
+            >
               {conversations.map((conversation) => (
                 <Button
                   key={conversation.id}
                   variant={activeId === conversation.id ? 'primary' : 'ghost'}
-                  className="h-auto min-h-20 justify-start border border-white/70 p-3 text-start dark:border-white/10"
+                  className="h-auto min-h-20 w-full min-w-0 justify-start overflow-hidden border border-white/70 p-3 text-start dark:border-white/10"
                   onClick={() => setActiveId(conversation.id)}
                 >
                   <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-surface/20">
                     <MessageCircleMore className="size-5" aria-hidden="true" />
                   </span>
-                  <span className="min-w-0">
+                  <span className="min-w-0 flex-1 overflow-hidden">
                     <span className="block truncate font-bold">
                       {conversation.title}
                     </span>
@@ -571,7 +583,7 @@ export function MessageComposer({
                 )}
               </header>
               <section
-                className="relative isolate h-[22rem] min-h-0 min-w-0 space-y-3 overflow-x-hidden overflow-y-auto rounded-2xl border border-sky-200/70 bg-surface/80 p-4 dark:border-sky-800/60"
+                className="relative isolate flex h-[22rem] min-h-0 min-w-0 flex-col gap-3 overflow-x-hidden overflow-y-auto rounded-2xl border border-sky-200/70 bg-surface/80 p-4 dark:border-sky-800/60"
                 aria-label="پیام‌های گفت‌وگو"
               >
                 {messages.map((message) => {
@@ -579,7 +591,7 @@ export function MessageComposer({
                   return (
                     <article
                       key={message.id}
-                      className={`relative z-0 w-fit min-w-0 max-w-full overflow-hidden rounded-2xl p-3 shadow-sm lg:max-w-[75%] ${mine ? 'me-auto bg-primary text-primary-foreground' : 'ms-auto bg-violet-100 text-violet-950 dark:bg-violet-950 dark:text-violet-50'}`}
+                      className={`relative box-border w-full min-w-0 shrink-0 overflow-hidden rounded-2xl p-3 shadow-sm sm:w-auto sm:max-w-[75%] ${mine ? 'self-start bg-primary text-primary-foreground' : 'self-end bg-violet-100 text-violet-950 dark:bg-violet-950 dark:text-violet-50'}`}
                     >
                       <div className="flex min-w-0 items-center justify-between gap-4 text-xs opacity-80">
                         <strong className="truncate">
@@ -594,22 +606,22 @@ export function MessageComposer({
                           فوروارد از {message.forwardedFrom.senderDisplayName}
                         </p>
                       )}
-                      <p className="mt-2 max-h-28 min-w-0 max-w-full overflow-y-auto whitespace-pre-wrap break-words pe-2 [overflow-wrap:anywhere] leading-7">
+                      <p className="mt-2 min-w-0 max-w-full whitespace-pre-wrap break-words [overflow-wrap:anywhere] leading-7">
                         {message.body}
                       </p>
                       {message.attachments.length ? (
-                        <ul className="mt-2 max-w-full space-y-1">
+                        <ul className="mt-2 min-w-0 max-w-full space-y-1">
                           {message.attachments.map((attachment) => (
                             <li key={attachment.documentId}>
                               <Link
-                                className="inline-flex max-w-full items-center gap-2 rounded-lg bg-white/15 px-2 py-1 text-xs hover:underline"
+                                className="inline-flex min-w-0 max-w-full items-center gap-2 rounded-lg bg-white/15 px-2 py-1 text-xs hover:underline"
                                 href={`/documents?document=${encodeURIComponent(attachment.documentId)}`}
                               >
                                 <Paperclip
                                   className="size-3"
                                   aria-hidden="true"
                                 />
-                                <span className="truncate">
+                                <span className="min-w-0 truncate">
                                   {attachment.title}
                                 </span>
                               </Link>
