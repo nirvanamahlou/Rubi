@@ -5,6 +5,7 @@ import {
   REPORTING_OPERATIONS_LIMIT,
   reportingOperationsShowOwnerExecutor,
   reportingOperationsShowRunMetrics,
+  reportingOperationTitle,
   reportingRunActionLabel,
 } from './reporting-operations-view';
 
@@ -22,6 +23,12 @@ describe('Reporting run action labels', () => {
     expect(reportingOperationsShowRunMetrics('saved')).toBe(true);
     expect(reportingOperationsShowRunMetrics('shared')).toBe(true);
     expect(reportingOperationsShowRunMetrics('downloads')).toBe(true);
+  });
+
+  it('uses the Persian catalog title instead of an English report code', () => {
+    expect(reportingOperationTitle({ id: 'row-1' }, 'sales_by_service_route')).toBe(
+      'کدام خدمت، مسیر یا شهر مقصد بیشترین فروش را ایجاد کرده است؟',
+    );
   });
 
   it('explains each persisted form action and keeps legacy rows understandable', () => {

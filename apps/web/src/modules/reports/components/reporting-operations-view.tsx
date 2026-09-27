@@ -13,6 +13,7 @@ import {
   type SavedReportFilter,
 } from '../model/navigation';
 import { reportingApi } from '../model/client';
+import { reportCatalog } from '../model/reporting';
 import { ReportSharingDialog } from './report-sharing-dialog';
 
 type Row = Record<string, unknown> & { id: string };
@@ -20,6 +21,14 @@ export const REPORTING_OPERATIONS_LIMIT = 30;
 export const REPORTING_OPERATIONS_CELL_CLASS = 'p-3 align-middle';
 export const reportingOperationsShowRunMetrics = (view: ReportingView) =>
   view !== 'recent';
+
+export function reportingOperationTitle(row: Row, reportCode: string) {
+  const title = row.name ?? row.savedReportName ?? row.reportName;
+  if (typeof title === 'string' && title.trim()) return title;
+  return (
+    reportCatalog.find((report) => report.code === reportCode)?.title ?? 'گزارش'
+  );
+}
 
 const faDate = (value: unknown) =>
   value
@@ -215,18 +224,11 @@ export function ReportingOperationsView({
                     : (row.savedFilterState ?? row.filterState),
                 );
                 const savedReportId = view === 'saved' ? row.id : undefined;
+                const reportTitle = reportingOperationTitle(row, reportCode);
                 return (
                   <tr className="border-t" key={row.id}>
                     <td className={REPORTING_OPERATIONS_CELL_CLASS}>
-                      <strong>
-                        {String(
-                          row.name ??
-                            row.savedReportName ??
-                            row.reportName ??
-                            row.fileName ??
-                            reportCode,
-                        )}
-                      </strong>
+                      <strong>{reportTitle}</strong>
                     </td>
                     {view === 'recent' ? (
                       <td className={REPORTING_OPERATIONS_CELL_CLASS}>
@@ -349,12 +351,7 @@ export function ReportingOperationsView({
                         {view === 'saved' ? (
                           <ReportSharingDialog
                             reportCode={reportCode}
-                            reportName={String(
-                              row.name ??
-                                row.savedReportName ??
-                                row.reportName ??
-                                reportCode,
-                            )}
+                            reportName={reportTitle}
                             savedReportId={row.id}
                             onShared={async () => {
                               setFeedback(
