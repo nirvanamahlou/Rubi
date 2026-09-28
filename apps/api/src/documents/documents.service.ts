@@ -908,10 +908,13 @@ export class DocumentsService {
   }
 
   async options(actor: AuthenticatedActor): Promise<DocumentOptionsResponseV1> {
-    const values = await this.repository.options(
-      actor.branchIds,
-      allowedDocumentDomains(actor.permissions),
-    );
+    const [values, hrBranchNames] = await Promise.all([
+      this.repository.options(
+        actor.branchIds,
+        allowedDocumentDomains(actor.permissions),
+      ),
+      this.hrDirectory.documentBranchNames(actor),
+    ]);
     const documentTypes = values.documentTypes.map((type) => ({
       id: type.id,
       code: type.code,
@@ -926,7 +929,10 @@ export class DocumentsService {
     return {
       data: {
         currentUserId: actor.userId,
-        branches: values.branches,
+        branches: values.branches.map((branch) => ({
+          ...branch,
+          name: hrBranchNames.get(branch.id) ?? branch.name,
+        })),
         documentTypes,
         categories: values.categories.map(({ id, code, name }) => ({
           id,

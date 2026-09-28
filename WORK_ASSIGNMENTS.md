@@ -4086,3 +4086,10 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 - `COMPUTER_ID=PC-B`؛ شاخه `codex/pc-b-workbench-optional-document-case-0928` از `origin/develop@c8b04d6f`. محدوده: فرم بارگذاری مشترک با حالت اختصاصی میزکار، اعتبارسنجی بارگذاری Documents برای مرجع شخصیِ بدون پرونده، تست‌های هدفمند و ثبت وضعیت. قرارداد endpoint موجود حفظ می‌شود؛ Schema/Migration، Permission، Dependency/Lockfile و داده عملیاتی تغییر نمی‌کنند.
 - قرارداد موجود `POST /documents/upload` با همان فیلدهای source fallback مصرف می‌شود. در حالت میزکارِ بدون پرونده، source ثابت `WORKBENCH/WorkbenchPersonalDocument/<actor.userId>` با مالک همان کاربر ثبت می‌شود؛ backend شناسه و مالک را با نشست تطبیق می‌دهد. پرونده انتخاب‌شده همچنان از مسیر معتبر `sourceRelationId` بررسی می‌شود.
 - اعتبارسنجی: ۴ تست وب و ۲۸ تست API، lint فایل‌های تغییرکرده، typecheck و build وب/API موفق. بدون Migration؛ فرم اصلی اسناد همچنان پرونده را اجباری می‌داند.
+
+## 2026-09-28 — WORKBENCH-HR-DOCUMENT-BRANCHES-0928 — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک: در فرم بارگذاری سند میزکار، فهرست شعبه‌ها از شعبه‌های ثبت‌شده در منابع انسانی نمایش داده شود.
+- ادامهٔ شاخهٔ بازبینی `codex/pc-b-workbench-optional-document-case-0928` و PR #413؛ محدوده: public service فهرست شعب HR، گزینه‌های بارگذاری Documents، فرم مشترک بارگذاری و تست‌های هدفمند. هر سه ماژول در مالکیت PC-B هستند. شناسهٔ IAM شعبه برای FK و کنترل دسترسی حفظ می‌شود و فقط نام شعبه از رکورد فعال HR می‌آید؛ در نبود رکورد HR نام اصلی شعبه نمایش داده می‌شود.
+- بدون Schema/Migration، Permission grant، Dependency/Lockfile یا تغییر شکل قرارداد API.
+- اعتبارسنجی: ۲۹ تست هدفمند API، lint فایل‌های متاثر، typecheck و build تولیدی API/Web موفق‌اند. UI همان گزینه‌های API را مصرف می‌کند؛ نمایش نام HR برای رکوردهای فعال و fallback به نام شعبهٔ اصلی پوشش داده شد.

@@ -66,7 +66,7 @@ export function DocumentUploadDialog({
             ...(personalUpload ? { ownerUserId: options.currentUserId } : {}),
           },
           options,
-          branches,
+          options.branches,
         )
       : { ...emptyDocumentUploadValues },
   );
@@ -85,6 +85,7 @@ export function DocumentUploadDialog({
   const availableOwners = personalUpload
     ? options?.owners.filter((owner) => owner.id === options.currentUserId)
     : options?.owners;
+  const uploadBranches = options?.branches ?? branches;
 
   function update<K extends keyof DocumentUploadValues>(
     name: K,
@@ -370,7 +371,7 @@ export function DocumentUploadDialog({
             <div className="mt-4 grid gap-4 md:grid-cols-2">
               <FormField id="document-branch" label="شعبه" required>
                 <Select
-                  disabled={!branches.length || submitting}
+                  disabled={!uploadBranches.length || submitting}
                   onValueChange={(value) => {
                     if (value !== values.branchId) {
                       setSelectedCase(null);
@@ -390,7 +391,7 @@ export function DocumentUploadDialog({
                     <SelectValue placeholder="انتخاب شعبه" />
                   </SelectTrigger>
                   <SelectContent className="z-[70] max-h-72">
-                    {branches.map((branch) => (
+                    {uploadBranches.map((branch) => (
                       <SelectItem key={branch.id} value={branch.id}>
                         {branch.name}
                       </SelectItem>
