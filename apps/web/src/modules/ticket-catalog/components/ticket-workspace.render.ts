@@ -161,7 +161,9 @@ describe('Rendered ticket UI', () => {
       }),
     );
     expect(html).toContain('نوع وسیله سفر');
-    expect(html).toContain('ظرفیت متعلق به شرکت است');
+    expect(html).toContain('نوع تأمین');
+    expect(html).toContain('id="ticket-supply"');
+    expect(html).not.toContain('ظرفیت متعلق به شرکت است');
     expect(html).toContain('انتخاب و جست‌وجوی نوع هواپیما');
     expect(html).toContain('فرودگاه مبدأ');
     expect(html).toContain('ابتدا شهر را انتخاب کنید');

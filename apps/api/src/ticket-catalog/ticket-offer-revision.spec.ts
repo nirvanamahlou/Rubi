@@ -125,6 +125,7 @@ describe('published ticket revision', () => {
     const deleteStandalonePrices = vi.fn().mockResolvedValue({ count: 2 });
     const deleteRoundTripPrices = vi.fn().mockResolvedValue({ count: 3 });
     const tx = {
+      $queryRaw: vi.fn(),
       ticketPublishedOffer: { updateMany },
       ticketOfferStandaloneSalePrice: { deleteMany: deleteStandalonePrices },
       ticketOfferRoundTripSalePrice: { deleteMany: deleteRoundTripPrices },
@@ -147,7 +148,17 @@ describe('published ticket revision', () => {
         branchId: { in: ['branch'] },
         version: 1,
         audit: { none: { action: 'ticket.offer.archived' } },
-        departureAt: { lte: expect.any(Date) },
+        OR: [
+          { departureAt: { lte: expect.any(Date) } },
+          {
+            capacityAllocations: { none: { status: 'ACTIVE' } },
+            capacityHolds: {
+              none: { status: 'ACTIVE', expiresAt: { gt: expect.any(Date) } },
+            },
+            tourOutboundDepartures: { none: {} },
+            tourReturnDepartures: { none: {} },
+          },
+        ],
       },
       data: { status: 'PAUSED', version: { increment: 1 } },
     });
@@ -159,10 +170,11 @@ describe('published ticket revision', () => {
         OR: [{ outboundOfferId: id }, { returnOfferId: id }],
       },
     });
+    expect(tx.$queryRaw).toHaveBeenCalledOnce();
     expect(create).toHaveBeenCalledOnce();
     updateMany.mockResolvedValue({ count: 0 });
     await expect(service.archiveExpired(id, 1, actor)).rejects.toThrow(
-      'فقط بلیط تاریخ‌گذشته',
+      'به قرارداد، رزرو ظرفیت یا تور متصل',
     );
     expect(create).toHaveBeenCalledTimes(1);
     expect(deleteStandalonePrices).toHaveBeenCalledTimes(1);
