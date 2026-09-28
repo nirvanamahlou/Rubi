@@ -531,8 +531,21 @@ export interface RouteProductCount {
   count: number;
 }
 
+export function readableCityName(
+  currentName: string | undefined,
+  snapshotName: string | undefined,
+): string {
+  const isInternalCode = (name: string) =>
+    /^(?:CITY_[A-Z0-9_]+|[A-Z][A-Z0-9_]{2,})$/.test(name.trim());
+  for (const name of [currentName, snapshotName]) {
+    if (name?.trim() && !isInternalCode(name)) return name.trim();
+  }
+  return 'نام شهر نامشخص';
+}
+
 export function countProductsByRoute(
   products: readonly Product[],
+  resolveCity?: (id: string) => string | undefined,
 ): RouteProductCount[] {
   const routes = new Map<string, RouteProductCount>();
   for (const product of products) {
@@ -548,8 +561,14 @@ export function countProductsByRoute(
       key,
       originCityId: segment.originCityId,
       destinationCityId: lastSegment.destinationCityId,
-      origin: product.definition.display?.origin || 'مبدأ نامشخص',
-      destination: product.definition.display?.destination || 'مقصد نامشخص',
+      origin: readableCityName(
+        resolveCity?.(segment.originCityId),
+        product.definition.display?.origin,
+      ),
+      destination: readableCityName(
+        resolveCity?.(lastSegment.destinationCityId),
+        product.definition.display?.destination,
+      ),
       count: 1,
     });
   }

@@ -5,6 +5,7 @@ import {
   activateDraftCatalogProduct,
   catalogStorageKey,
   countProductsByRoute,
+  readableCityName,
   groupProductsForCards,
   initialQuery,
   isExpiredCatalogProduct,
@@ -103,6 +104,39 @@ describe('Ticket catalog browser collection and query', () => {
     );
     expect(routes.every((route) => route.origin && route.destination)).toBe(
       true,
+    );
+  });
+  it('shows a resolved city name instead of an internal city code', () => {
+    const source = samples[0]!;
+    const originId = 'city-tehran';
+    const destinationId = 'city-antalya';
+    const technical = {
+      ...source,
+      definition: {
+        ...source.definition,
+        segments: source.definition.segments.map((segment) => ({
+          ...segment,
+          originCityId: originId,
+          destinationCityId: destinationId,
+        })),
+        display: {
+          ...source.definition.display!,
+          origin: 'TEHRAN',
+          destination: 'CITY_E6X7D1HHNXC',
+        },
+      },
+    };
+    expect(
+      countProductsByRoute([technical], (id) =>
+        id === originId
+          ? 'تهران'
+          : id === destinationId
+            ? 'آنتالیا'
+            : undefined,
+      )[0],
+    ).toMatchObject({ origin: 'تهران', destination: 'آنتالیا' });
+    expect(readableCityName(undefined, 'CITY_E6X7D1HHNXC')).toBe(
+      'نام شهر نامشخص',
     );
   });
   it('anchors the first repeated ticket on the selected date and keeps times', () => {

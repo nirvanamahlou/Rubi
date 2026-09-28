@@ -48,6 +48,7 @@ import {
   activateDraftCatalogProduct,
   catalogStorageKey,
   countProductsByRoute,
+  readableCityName,
   displayTime,
   emptyInput,
   groupProductsForCards,
@@ -72,6 +73,7 @@ import { TicketDatePicker } from './ticket-date-picker';
 import { ConnectedIssuedTicketsWorkspace } from './issued-tickets-workspace';
 import { TourWorkspace } from './tour-workspace';
 import { toursApi } from '../api/tours';
+import { getActiveCityReference } from '../api/references';
 import { getPublicApiBaseUrl } from '@/lib/environment';
 import { refreshAuthenticatedSession } from '@/lib/auth-session';
 
@@ -290,6 +292,7 @@ function TicketCatalogWorkspace() {
   }>();
   const [capacityHoldSaving, setCapacityHoldSaving] = useState(false);
   const backfillStarted = useRef(false);
+  const requestedCityNames = useRef(new Set<string>());
   const [catalogNow, setCatalogNow] = useState(0);
   const updateCapacityHold = (
     value:
@@ -522,8 +525,46 @@ function TicketCatalogWorkspace() {
       JSON.stringify({ products, references }),
     );
   }, [hydrated, products, references]);
+  useEffect(() => {
+    if (!hydrated) return;
+    const cityIds = new Set(
+      products.flatMap((product) =>
+        product.definition.segments.flatMap((segment) => [
+          segment.originCityId,
+          segment.destinationCityId,
+        ]),
+      ),
+    );
+    for (const id of cityIds) {
+      if (!id || requestedCityNames.current.has(id)) continue;
+      const current = references.find(
+        (reference) => reference.kind === 'city' && reference.id === id,
+      );
+      if (
+        current &&
+        readableCityName(current.name, undefined) !== 'نام شهر نامشخص'
+      )
+        continue;
+      requestedCityNames.current.add(id);
+      void getActiveCityReference(id)
+        .then((reference) => {
+          if (!reference) return;
+          setReferences((rows) => [
+            ...rows.filter((item) => item.kind !== 'city' || item.id !== id),
+            reference,
+          ]);
+        })
+        .catch(() => {
+          // Keep the route readable even if master data is temporarily unavailable.
+        });
+    }
+  }, [hydrated, products, references]);
   const result = queryProducts(products, query);
-  const routeCounts = countProductsByRoute(products);
+  const routeCounts = countProductsByRoute(
+    products,
+    (id) =>
+      references.find((item) => item.kind === 'city' && item.id === id)?.name,
+  );
   const cardGroups = groupProductsForCards(result.rows);
   const resolve: ReferenceResolver = (kind, id) =>
     references.find((r) => r.kind === kind && r.id === id);
@@ -531,7 +572,10 @@ function TicketCatalogWorkspace() {
     kind: Reference['kind'],
     id: string,
     fallback: string,
-  ) => resolve(kind, id)?.name ?? fallback;
+  ) =>
+    kind === 'city'
+      ? readableCityName(resolve(kind, id)?.name, fallback)
+      : (resolve(kind, id)?.name ?? fallback);
   const roundTripPriceByOfferId = new Map<
     string,
     { amount: string; currencyCode: string; revision: number }

@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   asReference,
+  getActiveCityReference,
   listActiveCurrencyReferences,
   listReferences,
 } from './references';
@@ -9,6 +10,32 @@ afterEach(() => {
   vi.unstubAllEnvs();
 });
 describe('Published read-only Master Data adapter', () => {
+  it('resolves a saved city id to its current human-readable name', async () => {
+    vi.stubEnv('NEXT_PUBLIC_API_BASE_URL', 'http://localhost:4000/api/v1');
+    const fetcher = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        data: {
+          id: 'city-1',
+          resource: 'cities',
+          code: 'CITY_TEST',
+          name: 'آنتالیا',
+          status: 'active',
+          attributes: {},
+          version: 1,
+          createdAt: '',
+          updatedAt: '',
+        },
+      }),
+    });
+    vi.stubGlobal('fetch', fetcher);
+    await expect(getActiveCityReference('city-1')).resolves.toMatchObject({
+      id: 'city-1',
+      kind: 'city',
+      name: 'آنتالیا',
+    });
+    expect(fetcher.mock.calls[0]![0]).toContain('/master-data/cities/city-1');
+  });
   it('fails closed without configuration', async () => {
     vi.stubEnv('NEXT_PUBLIC_API_BASE_URL', '');
     await expect(listReferences('airlines', '', 1)).rejects.toMatchObject({
