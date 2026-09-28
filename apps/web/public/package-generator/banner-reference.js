@@ -36,6 +36,7 @@ window.ReferenceBanners=(()=>{
    let content=displayText(m.fields[key]||'');
    if(key==='date')content=displayText(prettyFa(m.fields.date)||'—');
    if(key==='commission')content=displayText(price(m.fields.commission,m.fields.commissionUnit));
+   if(key==='child')content=displayText(price(m.fields.child,m.fields.childUnit));
    if(key==='airline')content=displayText('پرواز '+m.fields.airline)+(m.fields.flight?`<small>${displayText(m.fields.flightLabel+': '+price(m.fields.flight,m.fields.flightUnit))}</small>`:'');
    const color=s.tone==='gold'?'var(--banner-accent)':s.color||'var(--banner-primary)';
    html+=rect('reference-field '+(s.tone?'tone-'+s.tone:'')+(s.italic?' reference-italic':''),s.rect,`<span data-fit style="${typeStyle(groupFor(key,s),s.size)}">${content}</span>`,`data-banner-section="${key}"`,`background:${backed(s)?'transparent':s.fill};border-radius:${s.radius||0}px;color:${color};`);
@@ -47,6 +48,10 @@ window.ReferenceBanners=(()=>{
   for(let j=0;j<p.capacity;j++){
    const c=p.cards[j],h=j<count?m.hotels[start+j]:null,[x,y,w,height]=c.frame,local=r=>[r[0]-x,r[1]-y,r[2],r[3]];
    if(!h){html+=rect('reference-empty-card',[x+6,y+5,w-12,height-10],'','','border-radius:16px;background:'+c.emptyFill+';');continue;}
+   if(p.preserveOriginalCards&&!h.dirty&&!m.layoutDirty&&!m.background&&!m.fonts.all&&!m.fonts.hotel&&!m.fonts.price&&m.primary===p.primary&&m.accent===p.accent){
+    html+=rect('reference-hotel',c.frame,'',`data-banner-hotel="${start+j}" role="button" tabindex="0" aria-label="ویرایش ${esc(h.name)}"`);
+    continue;
+   }
    let pieces='';
    if(p.cardStyle==='gold')pieces+=rect('reference-piece',local([c.name[0]-2,y+8,c.name[2]+4,70]),'','','background:'+c.nameFill+';');
    if(c.clear)pieces+=rect('reference-piece',local(c.clear),'','','background:'+c.priceFill+';');
@@ -54,7 +59,7 @@ window.ReferenceBanners=(()=>{
    pieces+=label('hotelName',c.name,displayText(h.name),p.cardStyle==='postcard'?23:27,c.nameFill,c.nameColor);
    const star=h.stars?`<b class="reference-stars">${'★'.repeat(Math.max(0,Math.min(5,Number(h.stars)||0)))}</b>`:'';
    pieces+=label('hotelService',c.service,star+(h.service?' '+displayText(h.service):''),p.cardStyle==='sun'?23:16,c.nameFill,c.nameColor);
-   pieces+=label('hotelPrice',c.price,displayText(price(h.price,h.unit)),p.cardStyle==='bodrum'?25:28,c.priceFill);
+   pieces+=label('hotelPrice',c.price,displayText(price(h.price,h.unit)),p.cardStyle==='bodrum'?25:28,c.priceFill,c.priceColor);
    if(h.photo)pieces+=rect('reference-hotel-photo',local(c.photo),`<img src="${h.photo}" alt="عکس ${esc(h.name)}" style="object-position:${h.photoX??50}% ${h.photoY??50}%">`);
    else if(!c.noSamplePhoto)pieces+=rect('reference-hotel-photo reference-photo-empty',local(c.photo),icon('hotel'));
    html+=rect('reference-hotel',c.frame,pieces,`data-banner-hotel="${start+j}" role="button" tabindex="0" aria-label="ویرایش ${esc(h.name)}"`);
