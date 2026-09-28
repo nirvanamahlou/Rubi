@@ -3715,3 +3715,7 @@ Calendar event creation now uses an authorized branch from the authenticated Wor
 ## 2026-09-28 — WORKBENCH-HIDE-VERSION-NOTE-0928 — READY_FOR_REVIEW
 
 فیلد «یادداشت نسخه» از فرم بارگذاری شخصی در «فایل‌های من» پنهان شد و در فرم اصلی اسناد باقی ماند. lint، typecheck و build Web موفق‌اند.
+
+## 2026-09-28 — WORKBENCH-DOCUMENT-RETURN-0928 — READY_FOR_REVIEW
+
+بازکردن سند از خانه، فایل‌های من، ستاره‌دارها یا تقویم میزکار و بستن جزئیات آن اکنون کاربر را به همان تب میزکار برمی‌گرداند. بازگشت به چهار مقصد مجاز محدود است. ۹ آزمون هدفمند، lint، typecheck و build Web موفق‌اند.

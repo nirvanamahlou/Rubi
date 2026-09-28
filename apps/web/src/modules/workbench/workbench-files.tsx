@@ -236,7 +236,7 @@ export function WorkbenchFiles({
                     )}
                     <Button asChild variant="outline" size="sm">
                       <Link
-                        href={`/documents?document=${encodeURIComponent(item.id)}`}
+                        href={`/documents?document=${encodeURIComponent(item.id)}&returnTo=workbench-files`}
                       >
                         مشاهده و دریافت
                       </Link>

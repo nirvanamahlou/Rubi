@@ -354,7 +354,7 @@ export function WorkbenchCalendar({
                 {entry.imageDocumentId ? (
                   <Button asChild size="sm" variant="outline">
                     <Link
-                      href={`/documents?document=${encodeURIComponent(entry.imageDocumentId)}`}
+                      href={`/documents?document=${encodeURIComponent(entry.imageDocumentId)}&returnTo=workbench-calendar`}
                     >
                       مشاهده پیوست
                     </Link>
