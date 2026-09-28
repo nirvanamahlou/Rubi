@@ -446,6 +446,7 @@ export function WorkbenchWorkspace() {
                 <MessageComposer
                   key={`${home.user.id}-${messageLaunch}`}
                   currentUserId={home.user.id}
+                  initialConversationId={params.get('conversation')}
                   initialSidebarMode={messageLaunch ? 'contacts' : 'units'}
                 />
               </TabsContent>

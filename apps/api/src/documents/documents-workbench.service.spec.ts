@@ -26,6 +26,58 @@ function service(repository: Record<string, unknown>) {
 }
 
 describe('DocumentsService Workbench contracts', () => {
+  it('lets a conversation member receive only a clean linked message file', async () => {
+    const documentId = '44444444-4444-4444-8444-444444444444';
+    const branchId = actor.branchIds[0]!;
+    const row = {
+      id: documentId,
+      branchId,
+      sourceModule: 'MESSAGING',
+      sourceEntityType: 'MessagingMessage',
+      sourceEntityId: 'message:request-0001',
+      documentType: { domain: 'GENERAL' },
+      confidentiality: 'INTERNAL',
+      archiveStatus: 'ACTIVE',
+      deletedAt: null,
+      requiresStepUpVerification: false,
+      currentVersion: {
+        id: '55555555-5555-4555-8555-555555555555',
+        scanStatus: 'CLEAN',
+        storageObjectKey: 'test-object',
+        sizeBytes: 4n,
+        safeDownloadName: 'receipt.png',
+        detectedMimeType: 'image/png',
+      },
+    };
+    const appendAudit = vi.fn();
+    const openQuarantined = vi.fn().mockResolvedValue('test-stream');
+    const instance = new DocumentsService(
+      { findDetail: vi.fn().mockResolvedValue(row), appendAudit } as never,
+      { openQuarantined } as never,
+      {} as never,
+      {} as never,
+      {} as never,
+    );
+
+    const delivered = await instance.downloadMessagingAttachment(
+      documentId,
+      branchId,
+      { ...actor, userId: '66666666-6666-4666-8666-666666666666' },
+      {},
+    );
+    expect(delivered.fileName).toBe('receipt.png');
+    expect(openQuarantined).toHaveBeenCalledWith('test-object', 4);
+    expect(appendAudit).toHaveBeenCalledWith(
+      expect.objectContaining({ outcome: 'SUCCESS' }),
+    );
+
+    row.sourceModule = 'WORKBENCH';
+    await expect(
+      instance.downloadMessagingAttachment(documentId, branchId, actor, {}),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    expect(openQuarantined).toHaveBeenCalledOnce();
+  });
+
   it('accepts only attachments owned by the Workbench record and user', async () => {
     const id = '44444444-4444-4444-8444-444444444444';
     const lookup = vi.fn().mockResolvedValue([{ id, title: 'پیوست' }]);
@@ -41,6 +93,7 @@ describe('DocumentsService Workbench contracts', () => {
     expect(result).toEqual([{ id, title: 'پیوست' }]);
     expect(lookup).toHaveBeenCalledWith({
       documentIds: [id],
+      sourceModule: 'MESSAGING',
       sourceEntityType: 'MessagingMessage',
       sourceEntityId: 'message:request-1',
       branchId: actor.branchIds[0],

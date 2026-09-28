@@ -47,6 +47,38 @@ async function request<T>(
   return response.json() as Promise<T>;
 }
 
+async function downloadAttachment(
+  conversationId: string,
+  documentId: string,
+  retried = false,
+): Promise<Blob> {
+  const base = getPublicApiBaseUrl();
+  if (!base) throw new Error('نشانی API پیکربندی نشده است.');
+  const response = await fetch(
+    `${base}/messaging/conversations/${encodeURIComponent(conversationId)}/attachments/${encodeURIComponent(documentId)}`,
+    { credentials: 'include', cache: 'no-store' },
+  );
+  if (
+    response.status === 401 &&
+    !retried &&
+    (await refreshAuthenticatedSession(base))
+  )
+    return downloadAttachment(conversationId, documentId, true);
+  if (!response.ok) {
+    const envelope = (await response.json().catch(() => null)) as {
+      message?: string | string[];
+      error?: { message?: string };
+    } | null;
+    const message = envelope?.error?.message ?? envelope?.message;
+    throw new Error(
+      Array.isArray(message)
+        ? message.join(' ')
+        : (message ?? 'دریافت پیوست پیام انجام نشد.'),
+    );
+  }
+  return response.blob();
+}
+
 function json<T>(body: T): RequestInit {
   return {
     method: 'POST',
@@ -56,6 +88,7 @@ function json<T>(body: T): RequestInit {
 }
 
 export const messagingApi = {
+  downloadAttachment,
   contacts(search = '') {
     const query = new URLSearchParams({ limit: '50' });
     if (search.trim()) query.set('search', search.trim());

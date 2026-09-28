@@ -4073,3 +4073,10 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 - درخواست مالک: کارت‌های پیام‌رسان در گفت‌وگوی بلند روی فهرست و بخش‌های دیگر نیفتند و متن از مرز کارت بیرون نزند.
 - شاخهٔ مستقل `codex/pc-b-workbench-message-card-layout-0927` از `origin/develop@0c99c7cd`؛ محدودهٔ رزرو فقط چیدمان پیام‌ها در `message-composer.tsx` و ثبت وضعیت همین واحد است. بدون API، Schema/Migration، قرارداد، Permission، Dependency/Lockfile یا دادهٔ عملیاتی.
 - نتیجه: ستون کناری و کارت‌های فهرست گفت‌وگو عرض ثابت و برش متن بلند دارند؛ کارت‌های خود پیام نیز در یک ستون مجزا با اسکرول واحد قرار گرفتند. lint و typecheck وب موفق‌اند؛ بررسی تصویری با حساب واقعی به‌دلیل نشست منقضی‌شدهٔ مرورگر خودکار اجرا نشد.
+
+## 2026-09-28 — MESSAGING-DELIVERY-ATTACHMENTS-0928 — PC-B — READY_FOR_REVIEW
+
+- شاخه `codex/pc-b-messaging-delivery-attachments-0928` از `origin/develop@7639f2f7`؛ محدوده: تطبیق مرجع پیوست پیام در Documents، دریافت محدود پیوست برای اعضای گفت‌وگو در Messaging، تازه‌سازی پیام‌ها در Workbench، آزمون‌ها و ثبت وضعیت. بدون Schema/Migration، Dependency/Lockfile، Permission grant یا دادهٔ عملیاتی.
+- قرارداد افزایشی `GET /messaging/conversations/:id/attachments/:documentId` توسط Messaging تولید و Workbench مصرف می‌شود؛ مسیرهای قبلی و دادهٔ پیام‌های موجود حفظ می‌شوند.
+- علت خطا: upload مرجع `MESSAGING/MessagingMessage` می‌نوشت اما lookup پیوست فقط `WORKBENCH` را جست‌وجو می‌کرد. lookup اکنون source module متناظر را بررسی می‌کند و نام فایل اصلی را به پیام می‌دهد. دریافت فایل تنها پس از تأیید عضویت در گفت‌وگو و اتصال فایل به همان پیام انجام می‌شود؛ اسکن امنیتی و audit اسناد حفظ‌اند.
+- رابط گیرنده پیام‌ها و گفت‌وگوها را هر ۱۰ ثانیه در تب فعال تازه می‌کند و لینک اعلان را روی گفت‌وگوی درست باز می‌کند. ۲۲ آزمون هدفمند API و ۵ آزمون Web، lint/typecheck و build API/Web موفق‌اند؛ آزمون زنده با دو حساب واقعی اجرا نشده است.
