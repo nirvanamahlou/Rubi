@@ -1,3 +1,7 @@
+## MANIFEST-DOWNLOAD-FINANCE-0928 — PC-A — READY_FOR_REVIEW
+
+- COMPUTER_ID=PC-A; branch codex/pc-a-manifest-download-finance-0928 from origin/develop; clean isolated manifest worktree reused. Reserve Reservations ticket download component/helper and manifest service/tests, bounded status/task docs. User reports silent download and requires only financially approved contracts. Preserve Finance public delivery approval, permissions, passenger assignment, airline workbook rules and other computer/user edits. No schema/migration/dependency/lockfile/shared contract changes. Bounded Central Docs owner PC-A for this unit; previous manifest locks are released. Existing manifest merge/local-update authorization remains applicable to this corrective follow-up. Result: HTTP-compatible downloads, visible per-ticket errors and direct link, approved-only card counts/export and expiry gate. 28 API and 6 Web tests, builds and scoped lint passed. Bounded docs/implementation locks RELEASED with commit; no migration.
+
 ## FINANCE-TICKET-PAYMENT-0928 — PC-A — READY_FOR_REVIEW
 
 - COMPUTER_ID=PC-A; base origin/develop@e4eb048c; branch codex/pc-a-finance-ticket-payment-0928. Reserve Finance inbox component, module-local exact total helper/tests and bounded entries in WORK_ASSIGNMENTS/PROJECT_STATUS. Previous Finance presentation reservations are released. Preserve original checkout edits.
