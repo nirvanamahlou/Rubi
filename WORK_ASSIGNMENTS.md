@@ -4341,3 +4341,7 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 
 - درخواست مالک: دکمه‌های عملیات همه رکوردهای اطلاعات پایه مطابق نمونه، فقط آیکون باشند؛ حذف قرمز پُر و مشاهده/ویرایش کادر روشن. برچسب دسترس‌پذیر، رفتار و تأیید حذف حفظ می‌شود.
 - شاخه `codex/pc-b-master-data-record-icon-actions-0928` از شاخه فیلترهای فشردهٔ PC-B؛ محدوده رزرو: `apps/web/src/modules/master-data/components/*`، تست‌های همین UI و مدخل محدود اسناد. PR به‌صورت وابسته به PR #444 تحویل می‌شود. بدون API، Migration، قرارداد، داده، Dependency/Lockfile یا تغییر runtime.
+## 2026-09-28 — MASTER-DATA-FINANCE-HEADING-SPACING-0928 — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک: متن توضیحی زیر عنوان ارزها حذف و فاصلهٔ عنوان تا فیلترهای جست‌وجو کمتر شود.
+- شاخه `codex/pc-b-finance-heading-spacing-0928` از شاخهٔ عملیات آیکونی PC-B؛ فقط Workspace مالی و پولی، تست مرتبط و مدخل محدود اسناد رزرو است. وابسته به PR #445 و #444؛ بدون API، Migration، قرارداد، داده، Dependency/Lockfile یا تغییر runtime.

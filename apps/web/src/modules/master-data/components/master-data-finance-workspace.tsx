@@ -138,8 +138,7 @@ const tabs: readonly {
 const tabCopy: Record<FinanceTab, { title: string; description: string }> = {
   currencies: {
     title: 'ارزها',
-    description:
-      'تعریف ارزهای ISO-4217؛ با انتخاب هر ارز، نرخ جاری و تاریخچه واقعی آن نمایش داده می‌شود.',
+    description: '',
   },
   approvals: {
     title: 'گردش تأیید نرخ',
@@ -871,7 +870,7 @@ export function MasterDataFinanceWorkspace({
   ];
 
   return (
-    <div className="space-y-5" dir="rtl">
+    <div className={tab === 'currencies' ? 'space-y-3' : 'space-y-5'} dir="rtl">
       <PageHeader
         actions={
           <Link
@@ -914,9 +913,11 @@ export function MasterDataFinanceWorkspace({
         </div>
       </div>
 
-      <p className="text-sm leading-7 text-muted-foreground">
-        {copy.description}
-      </p>
+      {copy.description ? (
+        <p className="text-sm leading-7 text-muted-foreground">
+          {copy.description}
+        </p>
+      ) : null}
 
       <Card className="overflow-x-auto p-2">
         <nav

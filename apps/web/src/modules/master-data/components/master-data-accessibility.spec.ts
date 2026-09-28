@@ -81,4 +81,13 @@ describe('Master Data accessibility regressions', () => {
       expect(component, fileName).toContain('title={`');
     }
   });
+
+  it('keeps the currencies header compact without the redundant description', () => {
+    const finance = source('master-data-finance-workspace.tsx');
+    expect(finance).not.toContain(
+      'تعریف ارزهای ISO-4217؛ با انتخاب هر ارز، نرخ جاری و تاریخچه واقعی آن نمایش داده می‌شود.',
+    );
+    expect(finance).toContain("tab === 'currencies' ? 'space-y-3' : 'space-y-5'");
+    expect(finance).toContain('{copy.description ? (');
+  });
 });
