@@ -771,6 +771,9 @@ describe('dashboard permission and data states', () => {
     );
     expect(source).toContain('lg:sticky lg:top-20');
     expect(source).toContain('lg:overflow-y-auto');
+    expect(source).toContain('ناوبری داشبورد');
+    expect(source).toContain('text-sm font-black text-white');
+    expect(source).toContain('whitespace-nowrap rounded-xl px-2 text-[11px]');
     expect(source).toContain('صفحه‌های داشبورد');
     expect(source).toContain('فیلترهای این صفحه');
     expect(source).toContain('فیلترهای ${activePage.title}');

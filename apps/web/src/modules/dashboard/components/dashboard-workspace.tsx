@@ -3364,9 +3364,11 @@ function DashboardSidebar({
         )}
       >
         <div className={cn('min-w-0', collapsed && 'sr-only')}>
-          <p className="text-xs font-bold text-primary">ناوبری</p>
-          <h2 id="dashboard-pages-title" className="font-black">
-            صفحه‌های داشبورد
+          <h2
+            id="dashboard-pages-title"
+            className="whitespace-nowrap text-sm font-black text-white"
+          >
+            ناوبری داشبورد
           </h2>
         </div>
         <Button
@@ -3424,7 +3426,7 @@ function DashboardSidebar({
           <button
             aria-selected={activePanel === 'workspace'}
             className={cn(
-              'min-h-10 rounded-xl px-2 text-xs font-black outline-none transition focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+              'min-h-10 whitespace-nowrap rounded-xl px-2 text-[11px] font-black leading-5 tracking-tight outline-none transition focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background',
               activePanel === 'workspace'
                 ? 'bg-primary text-primary-foreground shadow-sm'
                 : 'text-muted-foreground hover:bg-muted hover:text-foreground',
@@ -3438,7 +3440,7 @@ function DashboardSidebar({
           <button
             aria-selected={activePanel === 'filters'}
             className={cn(
-              'min-h-10 rounded-xl px-2 text-xs font-black outline-none transition focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+              'min-h-10 whitespace-nowrap rounded-xl px-2 text-[11px] font-black leading-5 tracking-tight outline-none transition focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background',
               activePanel === 'filters'
                 ? 'bg-primary text-primary-foreground shadow-sm'
                 : 'text-muted-foreground hover:bg-muted hover:text-foreground',
