@@ -12,3 +12,8 @@ Validation and publication results are recorded after final checks.
 
 
 Validation: 34 targeted API tests passed (default flight/ground XLSX, passenger scope, finance gate, age/birthday/override, grouping and actual Sales handoff); Web manifest test passed. Scoped API/Web ESLint, API/Web typechecks, Contracts build and API/Web production builds (53 Web routes) passed. Format check and git diff --check passed. No migrations or dependency changes. Unit contract/documentation locks RELEASED after commit. Local rollout follows the user's existing manifest merge/update authorization.
+
+
+## Approved merge and local activation
+
+PR #432 merged into develop@1129406e919df5154c7f97255febb9ba90205a4f after every GitHub production-build, quality, full-test and PostgreSQL gate passed. Existing manifest merge/local-update authorization was retained for this follow-up. Runtime develop-finance-integration fast-forwarded; prior API dist backed up locally and the validated API/Contracts build installed. API 4000 PID14304 and Web3100 parent PID33708 restarted with existing environment/database/document storage. Runtime-generated FLIGHT/BUS/TRAIN synthetic workbooks passed blue/LTR/destination/title checks. API health/login 200, protected templates 401, Reservations redirects unauthenticated requests to login, database SELECT 1 succeeded. No new migrations or data changes. Original dirty checkout preserved; generated next-env and runtime logs/backups remain local. The previous API had stopped with Connection terminated unexpectedly; restoring the same configuration and final activation recovered service. Final rollout/documentation locks RELEASED.
