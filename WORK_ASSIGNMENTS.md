@@ -1,3 +1,7 @@
+## MANIFEST-BLUE-CENTER-0928 — PC-A — READY_FOR_REVIEW
+
+- COMPUTER_ID=PC-A; branch codex/pc-a-manifest-blue-center-0928 from origin/develop@6bb03f73. Reserve only Reservations default XLSX styles, existing focused style assertion and bounded task/status docs. Default flight/bus/train headers use Office Blue Accent 1 Darker 25% (#2F5496); header and body cells are centered horizontally/vertically. User explicitly excludes all supplied airline templates. No migration/dependency/shared contract/finance or passenger data changes. Bounded docs owner PC-A; previous manifest locks released; original checkout edits preserved. Existing manifest merge/local update authorization applies. Result: only the default XLSX styles changed; all 28 manifest tests passed. Bounded locks RELEASED with commit.
+
 ## TICKET-CHANNEL-PRICES-0928 — PC-A — READY_FOR_REVIEW
 
 - User requests a unified compact one-way/round-trip list, origin/destination/trip filters and per-ticket per-sales-target commission percentages with copy to all priced tickets for that target. COMPUTER_ID=PC-A; branch codex/pc-a-ticket-channel-prices-0928; base origin/develop@e4eb048c.

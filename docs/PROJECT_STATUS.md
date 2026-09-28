@@ -1,3 +1,7 @@
+## 2026-09-28 — MANIFEST-BLUE-CENTER-0928 — PC-A
+
+فقط قالب دیفالت هوایی، اتوبوس و قطار: رنگ هدر Blue Accent 1 Darker 25% (#2F5496)، متن سفید و تراز افقی/عمودی وسط برای همهٔ سلول‌ها. قالب‌های اختصاصی ارسالی کاربر عیناً حفظ شده‌اند. ۲۸ تست منیفست موفق؛ بدون تغییر داده، Migration، Dependency یا منطق مالی. قفل محدود آزاد است؛ کنترل‌های CI و rollout در سند واحد ثبت می‌شوند.
+
 ## 2026-09-28 — TICKET-CHANNEL-PRICES-0928 — PC-A — READY_FOR_REVIEW
 
 Unified one-way/round-trip pricing list, combined origin/destination/trip/date/search filters and per-ticket target commission fields are implemented. Copy is atomic and applies only that target to priced future tickets/pairs of the same branch; exact Decimal net fares recalculate after base changes. Additive optional contracts preserve older clients and legacy absolute partner fares. All 100 migrations passed in a fresh isolated database. Validation: 21 API tests (including 4 real PostgreSQL regressions), 11 Web tests, scoped lint, API/Web strict typechecks and production builds (53 Web routes) passed. Populated rendering verifies the pair/single list, saved percentages and target net values. The browser preview could not attach, so authenticated interactive visual QA is not claimed. The owner-authorized develop merge follows integration of current Manifest/Finance changes. Operational data and running localhost remain unchanged. See [task handoff](tasks/TICKET-CHANNEL-PRICES-0928.md).
