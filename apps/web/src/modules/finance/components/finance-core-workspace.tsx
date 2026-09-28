@@ -45,6 +45,7 @@ import {
   PageHeader,
 } from '@/components/ui/surfaces';
 import { FinanceWorkspace } from './finance-workspace';
+import { FinanceHistoryPanel } from './finance-history-panel';
 import { FinanceInboxLiveWorkspace } from './finance-inbox-live-workspace';
 import { FinanceDeliveryPanel } from './finance-delivery-panel';
 import {
@@ -977,6 +978,7 @@ export function FinanceRequestInboxWorkspace() {
       <PageHeader title="کارتابل درخواست‌ها" />
       <FinanceInboxLiveWorkspace />
       <FinanceDeliveryPanel />
+      <FinanceHistoryPanel />
     </main>
   );
 }

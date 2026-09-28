@@ -43,6 +43,19 @@ class TicketSalePriceTargetsController {
     return this.service.salePriceTargets(req.actor);
   }
 
+  @Delete(':id')
+  remove(
+    @Param('id') id: string,
+    @Body() input: { expectedVersion: number },
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.service.removeSalePriceTarget(
+      id,
+      input?.expectedVersion,
+      req.actor,
+    );
+  }
+
   @Post()
   create(
     @Body() input: TicketSalePriceTargetCreateV1,

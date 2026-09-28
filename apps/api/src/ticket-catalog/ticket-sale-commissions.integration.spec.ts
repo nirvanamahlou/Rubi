@@ -284,4 +284,36 @@ describe.skipIf(!url)('ticket sale commissions PostgreSQL', () => {
       }),
     ).rejects.toThrow();
   }, 60000);
+  it('copies company percent from a lower pair to all priced singles and pairs and reopens as the same percent', async () => {
+    await service.updateSaleCommission(
+      {
+        ...input,
+        returnOfferId: returnId,
+        salePriceTargetId: null,
+        expectedRevision: 0,
+        percent: '4',
+      },
+      actor,
+      'qa-company-copy-' + userId,
+    );
+    const result = await service.managed(actor);
+    const out = result.data.find((o) => o.id === offerId)!;
+    const second = result.data.find((o) => o.id === secondId)!;
+    expect(
+      out.saleCommissions?.find(
+        (c) => c.returnOfferId === null && c.salePriceTargetId === null,
+      )?.percent,
+    ).toBe('4');
+    expect(
+      out.saleCommissions?.find(
+        (c) => c.returnOfferId === returnId && c.salePriceTargetId === null,
+      )?.percent,
+    ).toBe('4');
+    expect(
+      second.saleCommissions?.find(
+        (c) => c.returnOfferId === null && c.salePriceTargetId === null,
+      )?.percent,
+    ).toBe('4');
+    expect(out.standaloneSalePrice?.amount).toBe('192');
+  }, 60000);
 });

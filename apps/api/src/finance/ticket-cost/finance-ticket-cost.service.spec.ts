@@ -1,4 +1,8 @@
-import { BadRequestException, ForbiddenException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { Prisma } from '@nora/database';
 import type { AuthenticatedActor } from '@nora/contracts';
 import { describe, expect, it, vi } from 'vitest';
@@ -141,7 +145,7 @@ describe('FinanceTicketCostService', () => {
     ).rejects.toBeInstanceOf(BadRequestException);
   });
 
-  it('calculates a ticket invoice from purchased seats and unit cost', async () => {
+  it('completes legacy invoice pricing with seats and exact unit cost before payment', async () => {
     const create = vi.fn().mockImplementation(({ data }) =>
       Promise.resolve({
         id: 'cost-1',
@@ -205,5 +209,33 @@ describe('FinanceTicketCostService', () => {
         }),
       }),
     );
+  });
+  it('preserves pricing after an installment has already been paid', async () => {
+    const create = vi.fn();
+    const tx = {
+      $queryRaw: vi.fn(),
+      financeTicketPurchaseCostRevision: {
+        findFirst: vi
+          .fn()
+          .mockResolvedValue({ version: 1, payments: [{ id: 'payment-1' }] }),
+        create,
+      },
+    };
+    const service = new FinanceTicketCostService(
+      {
+        client: { $transaction: (work: (tx: unknown) => unknown) => work(tx) },
+      } as unknown as DatabaseService,
+      {
+        forFinance: vi.fn().mockResolvedValue({ branchId: 'branch-a' }),
+      } as unknown as ProcurementPublicService,
+    );
+    await expect(
+      service.recordCost(
+        'request-1',
+        { version: 1, seatCount: 2, unitCost: '12.125', currencyCode: 'IRR' },
+        actor,
+      ),
+    ).rejects.toThrow(ConflictException);
+    expect(create).not.toHaveBeenCalled();
   });
 });

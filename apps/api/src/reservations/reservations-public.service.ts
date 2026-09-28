@@ -210,6 +210,25 @@ export class ReservationsPublicService {
     if (!row) throw new NotFoundException('درخواست در دسترس نیست.');
     return present(row);
   }
+  /** Branch-scoped descriptors, including replaced purchases with payment evidence. */
+  async financeHistoryPurchases(
+    branchIds: readonly string[],
+    requestId?: string,
+  ) {
+    return this.database.client.reservationServicePurchase.findMany({
+      where: {
+        intake: { branchId: { in: [...branchIds] } },
+        ...(requestId ? { id: requestId } : {}),
+      },
+      select: {
+        id: true,
+        currencyCode: true,
+        serviceTitleSnapshot: true,
+        supplierNameSnapshot: true,
+      },
+    });
+  }
+
   async list(
     branchIds: readonly string[],
     options: {

@@ -1,3 +1,7 @@
+## 2026-09-28 — TICKET-PRICES-COMPACT-0928 — PC-A
+
+Ticket pricing rows now place compact flight summaries, base price/currency/save controls and per-target commission cards side by side on desktop. Smaller screens wrap into readable rows; short copy labels retain full accessible names and bulk-copy semantics. Follow-up includes sale target removal via branch-scoped expectedVersion deactivation, retained price history, visible inline feedback and a focused commission refresh that removes stale drafts only for the copied target and branch. Actual PostgreSQL regression confirms company 4% copied from a lower pair reopens on all priced singles/pairs. No schema/migration/dependency change. Owner authorizes merge and updating the existing local runtime. Validation: 13 API unit tests, 5 isolated PostgreSQL tests, 8 Web tests, scoped lint, strict API/Web typechecks and production API/Web builds passed.
+
 ## 2026-09-28 — MANIFEST-BLUE-CENTER-0928 — PC-A
 
 فقط قالب دیفالت هوایی، اتوبوس و قطار: رنگ هدر Blue Accent 1 Darker 25% (#2F5496)، متن سفید و تراز افقی/عمودی وسط برای همهٔ سلول‌ها. قالب‌های اختصاصی ارسالی کاربر عیناً حفظ شده‌اند. ۲۸ تست منیفست موفق؛ بدون تغییر داده، Migration، Dependency یا منطق مالی. قفل محدود آزاد است؛ کنترل‌های CI و rollout در سند واحد ثبت می‌شوند.
@@ -3736,3 +3740,7 @@ Calendar event creation now uses an authorized branch from the authenticated Wor
 ## 2026-09-28 — MASTER-DATA-COMPACT-FILTERS-0928 — PC-B — READY_FOR_REVIEW
 
 چیدمان فیلترهای تمام صفحات اطلاعات پایه با یک نوار مشترک، کنترل‌های کوتاه‌تر و عرض منعطف یکدست شد. فیلدها در دسکتاپ در یک ردیف و در عرض‌های کوچک‌تر بدون سرریز بازچینی می‌شوند؛ دکمه‌های پاک‌کردن و تازه‌سازی در ردیف پایین باقی می‌مانند. ۳۶۲ تست اطلاعات پایه، lint، typecheck و build تولیدی Web با ۵۳ مسیر موفق‌اند. بدون Migration، API/Contract یا تغییر داده.
+
+## 2026-09-28 — FINANCE-HISTORY-SEAT-PRICING-0928 — PC-A
+
+Existing unpaid ticket invoices retain the seat/unit-price editor; count, unit cost and automatic total are visible. Persistent branch-scoped receipt/payment history shows each structured installment, transfer date, account/method/reference and remaining amount, including settled requests, with cursor pagination. Request details and the bottom inbox panel refresh after Finance actions. 23 API and 29 Web tests, strict typechecks, scoped lint and API/Web production builds (53 routes) passed. No migration/data/dependency change. See [handoff](tasks/FINANCE-HISTORY-SEAT-PRICING-0928.md). Bounded Finance contract/docs locks released; owner authorizes develop merge.
