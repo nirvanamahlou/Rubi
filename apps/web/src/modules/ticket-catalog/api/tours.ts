@@ -5,6 +5,7 @@ import type {
   TourPackageInputV1,
   TourDepartureInputV1,
   TicketOfferV1,
+  TicketSaleCommissionUpdateV1,
   TicketOfferCreateV1,
   TicketRoundTripSalePriceUpdateV1,
   TicketSalePriceTargetCreateV1,
@@ -121,6 +122,15 @@ export const toursApi = {
       if (!result.hasMore) return data;
     }
   },
+  updateSaleCommission: (input: TicketSaleCommissionUpdateV1, key: string) =>
+    request<{ data: { count: number; revision: number } }>(
+      '/offers/sale-commissions',
+      {
+        method: 'PATCH',
+        headers: { 'idempotency-key': key },
+        body: JSON.stringify(input),
+      },
+    ),
   managedOffers: () =>
     request<{ version: 1; data: TicketOfferV1[] }>('/offers/management'),
   archiveExpiredOffer: (id: string, expectedVersion: number) =>

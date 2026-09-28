@@ -30,6 +30,7 @@ enum AuditOutcome {
 }
 
 model User {
+  ticketSaleCommissions                            TicketSaleCommissionRevision[]
   tourPricingDraftsCreated                         PackagePricingTourDraft[]                 @relation("TourPricingDraftCreator")
   tourPricingDraftsUpdated                         PackagePricingTourDraft[]                 @relation("TourPricingDraftUpdater")
   tourPricingVersionsPublished                     PackagePricingTourPublishedVersion[]      @relation("TourPricingPublisher")
@@ -4072,6 +4073,8 @@ model TourDeparture {
 }
 
 model TicketPublishedOffer {
+  saleCommissions             TicketSaleCommissionRevision[]      @relation("TicketCommissionOutbound")
+  returnSaleCommissions       TicketSaleCommissionRevision[]      @relation("TicketCommissionReturn")
   manifestTemplateId          String?                             @db.Uuid
   manifestTemplate            MasterManifestTemplate?             @relation(fields: [manifestTemplateId], references: [id], onDelete: Restrict)
   tourOutboundDepartures      TourDeparture[]                     @relation("TourOutbound")
@@ -4106,6 +4109,30 @@ model TicketPublishedOffer {
   @@index([manifestTemplateId])
 }
 
+model TicketSaleCommissionRevision {
+  id                String                 @id @default(uuid()) @db.Uuid
+  offerId           String                 @db.Uuid
+  returnOfferId     String?                @db.Uuid
+  salePriceTargetId String?                @db.Uuid
+  scopeKey          String                 @db.VarChar(130)
+  revision          Int
+  percent           Decimal                @db.Decimal(7, 4)
+  actorUserId       String                 @db.Uuid
+  occurredAt        DateTime               @default(now()) @db.Timestamptz(3)
+  commandKey        String                 @db.VarChar(160)
+  fingerprint       String                 @db.VarChar(64)
+  offer             TicketPublishedOffer   @relation("TicketCommissionOutbound", fields: [offerId], references: [id], onDelete: Restrict)
+  returning         TicketPublishedOffer?  @relation("TicketCommissionReturn", fields: [returnOfferId], references: [id], onDelete: Restrict)
+  target            TicketSalePriceTarget? @relation(fields: [salePriceTargetId], references: [id], onDelete: Restrict)
+  actor             User                   @relation(fields: [actorUserId], references: [id], onDelete: Restrict)
+
+  @@unique([scopeKey, revision])
+  @@unique([scopeKey, commandKey])
+  @@index([offerId, revision])
+  @@index([returnOfferId])
+  @@index([salePriceTargetId])
+}
+
 model TicketOfferStandaloneSalePrice {
   id                String                 @id @default(uuid()) @db.Uuid
   offerId           String                 @db.Uuid
@@ -4131,6 +4158,7 @@ model TicketOfferStandaloneSalePrice {
  * contract channel and let future external APIs consume an explicit price target.
  */
 model TicketSalePriceTarget {
+  commissions     TicketSaleCommissionRevision[]
   id              String                           @id @default(uuid()) @db.Uuid
   branchId        String                           @db.Uuid
   name            String                           @db.VarChar(160)
