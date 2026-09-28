@@ -97,7 +97,7 @@ describe('package generator workspace', () => {
     const html = readFileSync(resolve(publicRoot, 'index.html'), 'utf8');
     const loader = readFileSync(resolve(publicRoot, 'mode-loader.js'), 'utf8');
 
-    expect(html).toContain('<script defer src="mode-loader.js"></script>');
+    expect(html).toContain('<script defer src="mode-loader.js?v=20260928b"></script>');
     expect(html).not.toContain('<script defer src="installment-assets.js">');
     expect(html).not.toContain('<script defer src="sticker-assets.js">');
     expect(loader).toContain("'installment-assets.js'");
