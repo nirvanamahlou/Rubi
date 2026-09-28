@@ -4180,23 +4180,27 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 - درخواست مالک: تب «اسناد من» در فایل‌های میزکار حذف شود و «بارگذاری‌های من» باقی بماند.
 - ادامهٔ شاخهٔ بازبینی `codex/pc-b-workbench-optional-document-case-0928` و PR #413؛ محدوده `apps/web/src/modules/workbench/workbench-files.tsx` و ثبت وضعیت. فهرست اسناد اصلی، داده و API تغییر نمی‌کنند.
 - تب «اسناد من» حذف و «بارگذاری‌های من» پیش‌فرض شد. lint، typecheck و build تولیدی Web موفق‌اند.
+
 ## 2026-09-28 — WORKBENCH-NOTE-STARS-0928 — PC-B — READY_FOR_REVIEW
 
 - درخواست مالک: یادداشت‌های شخصی قابلیت ستاره‌دار شدن داشته باشند و در تب «ستاره‌دارها» دیده شوند.
 - شاخهٔ مستقل `codex/pc-b-workbench-note-stars-0928` از `origin/develop@f52a567b`. محدوده: `note-drafts.ts`، `workbench-notes.tsx`، `workbench-favorites.tsx`، آزمون‌های هدفمند و ثبت وضعیت. مالک Workbench، PC-B است.
 - از فیلد پایدار موجود `WorkbenchNote.pinned` برای وضعیت ستاره و مرتب‌سازی استفاده می‌شود؛ API و قرارداد فعلی حفظ می‌شوند. بدون Schema/Migration، Permission، قفل Dependency/Lockfile، تغییر فایل‌های مرکزی دیگر یا دادهٔ عملیاتی.
 - دکمهٔ ستاره در کارت یادداشت‌های ذخیره‌شده فعال است و فهرست یادداشت‌های ستاره‌دار مستقل از دسترسی اسناد در تب «ستاره‌دارها» بارگذاری می‌شود. قالب‌های آماده، تا وقتی توسط کاربر ذخیره نشده‌اند، وضعیت ستارهٔ دائمی ندارند. ۱۳ تست هدفمند Web، lint، typecheck و build تولیدی Web با ۵۳ مسیر موفق‌اند.
+
 ## 2026-09-28 — WORKBENCH-CALENDAR-FILTER-0928 — PC-B — READY_FOR_REVIEW
 
 - درخواست مالک: انتخاب‌گر فیلتر اولویت از «تقویم من» حذف شود.
 - شاخهٔ مستقل `codex/pc-b-workbench-calendar-filter-0928` از `origin/develop@f52a567b`؛ محدوده فقط مدل فیلتر تقویم، رابط تقویم، آزمون متمرکز و ثبت وضعیت است. مالک Workbench، PC-B است.
 - اولویت خود رویداد و فرم افزودن/ویرایش حفظ می‌شود؛ تنها محدودکردن فهرست بر اساس اولویت حذف می‌شود. بدون API، Schema/Migration، قرارداد، Permission، داده یا Dependency/Lockfile.
 - اعتبارسنجی: ۷ آزمون هدفمند تقویم، lint، typecheck و build تولیدی Web با ۵۳ مسیر موفق‌اند.
+
 ## 2026-09-28 — TICKET-ROUTE-TIME-FUTURE-0928 — PC-A — READY_FOR_REVIEW
 
 - درخواست مالک: کد داخلی شهر در مسیر بلیط دیده نشود و ویرایش زمان بلیط فروخته‌شده، قراردادهای قبلی را تغییر ندهد. شاخهٔ مستقل `codex/pc-a-ticket-route-time-future-0928` از `origin/develop@f52a567b`؛ COMPUTER_ID=PC-A.
 - محدودهٔ رزرو: فقط نمایش و بازیابی نام شهر در Ticket Catalog Web، ویرایش زمان Published Offer در API همان ماژول و تست‌های مستقیم؛ بدون Schema/Migration، قرارداد عمومی، Sales، رزرو ظرفیت/تور، Permission، Dependency/Lockfile یا دادهٔ عملیاتی. قرارداد قبلی Snapshot مسیر و زمان خود را حفظ می‌کند؛ ظرفیت کل، مسیر، ایرلاین، شماره و کلاس بلیطِ فروخته‌شده همچنان قفل‌اند و رزرو موقت/تور نیز همچنان ویرایش را مسدود می‌کند.
 - نتیجه: نام شهر از اطلاعات پایه بازخوانی می‌شود و کد فنی در کارت، فیلتر و جمع مسیر نمایش داده نمی‌شود. زمان Published Offer دارای تخصیص قرارداد برای فروش‌های بعدی نسخه‌دار اصلاح می‌شود؛ تخصیص قبلی همان بلیط/ظرفیت را نگه می‌دارد. ۴۶ تست هدفمند، lint و typecheck Web/API و build تولیدی هر دو موفق‌اند. قفل محدود این واحد با Commit آزاد می‌شود؛ بدون تغییر runtime پورت ۳۱۰۰.
+
 ## 2026-09-28 — WORKBENCH-CALENDAR-ATTACHMENT-0928 — PC-B — READY_FOR_REVIEW
 
 - درخواست مالک: ثبت رویداد تقویم عملی شود و سند PDF یا تصویر به رویداد پیوست شود.
