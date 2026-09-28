@@ -2451,7 +2451,7 @@ function DashboardChart({
                   x={chartLeft - 34}
                   y={y + 3}
                 >
-                {compactVisualNumber(value, unit)}
+                  {compactVisualNumber(value, unit)}
                 </text>
               </g>
             );
@@ -2480,7 +2480,7 @@ function DashboardChart({
                     fill={color}
                     r="3.5"
                   >
-                    <title>{`${seriesItem.label} — ${trendTooltipTime(
+                    <title>{`${trendTooltipTime(
                       labels[index] ?? '',
                       trendCalendarSystem,
                       temporalGrain,
@@ -2897,14 +2897,14 @@ function DashboardChart({
           </span>
           <div className="space-y-1 text-sm text-muted-foreground">
             <p>
-            {largestDrop
-              ? `بیشترین افت بین «${stages[largestDrop.index]?.label}» و «${stages[largestDrop.index + 1]?.label}» رخ داده است؛ یعنی ${formatDashboardNumber(largestDrop.drop)} مورد از مرحلهٔ اول به مرحلهٔ بعدی نرسیده‌اند.`
-              : 'برای محاسبهٔ افت مراحل، دادهٔ کافی در دسترس نیست.'}
+              {largestDrop
+                ? `بیشترین افت بین «${stages[largestDrop.index]?.label}» و «${stages[largestDrop.index + 1]?.label}» رخ داده است؛ یعنی ${formatDashboardNumber(largestDrop.drop)} مورد از مرحلهٔ اول به مرحلهٔ بعدی نرسیده‌اند.`
+                : 'برای محاسبهٔ افت مراحل، دادهٔ کافی در دسترس نیست.'}
             </p>
             {largestDrop ? (
               <p className="text-xs leading-5 text-muted-foreground/90">
-                راهنما: این عدد تعداد موردهایی است که در گذار بین این دو مرحله از
-                قیف خارج شده‌اند.
+                راهنما: این عدد تعداد موردهایی است که در گذار بین این دو مرحله
+                از قیف خارج شده‌اند.
               </p>
             ) : null}
           </div>
@@ -3276,24 +3276,26 @@ function ProjectionSlot({
                 >
                   <SelectTrigger
                     aria-label={`واحد پول نمودار ${title}`}
-                    className="h-7 min-w-28 border-border/80 bg-background px-2 text-[10px] font-bold"
+                    className="h-7 min-w-28 border-border/80 bg-background px-2 text-[9px] font-bold"
                     data-dashboard-visual-currency-selector
                   >
                     <CircleDollarSign aria-hidden="true" className="size-3.5" />
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent align="end" className="text-right" dir="rtl">
                     {currencySeries.map((series) => {
                       const symbol =
                         currencySymbols[series.currencyCode] ??
                         series.currencyCode;
                       return (
                         <SelectItem
-                          className="data-[highlighted]:bg-primary data-[highlighted]:text-primary-foreground"
+                          className="w-full justify-end text-right text-sm [&>span:first-child]:block [&>span:first-child]:w-full [&>span:first-child]:text-right data-[highlighted]:bg-primary data-[highlighted]:text-primary-foreground"
                           key={series.currencyCode}
                           value={series.currencyCode}
                         >
-                          <bdi dir="ltr">{`${symbol} ${series.currencyCode}`}</bdi>
+                          <span className="block w-full text-right">
+                            <bdi dir="ltr">{`${symbol} ${series.currencyCode}`}</bdi>
+                          </span>
                         </SelectItem>
                       );
                     })}
@@ -3309,7 +3311,7 @@ function ProjectionSlot({
                 >
                   <SelectTrigger
                     aria-label="تقویم برچسب‌های محور زمان"
-                    className="h-8 w-[9.5rem] shrink-0 whitespace-nowrap border-border/80 bg-background px-2.5 text-[10px] font-bold"
+                    className="h-8 w-[9.5rem] shrink-0 whitespace-nowrap border-border/80 bg-background px-2.5 text-[9px] font-bold"
                   >
                     <CalendarDays
                       aria-hidden="true"
@@ -3318,14 +3320,14 @@ function ProjectionSlot({
                     />
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent align="end" className="text-right" dir="rtl">
                     {trendCalendarOptions.map(([value, label]) => (
                       <SelectItem
-                        className="data-[highlighted]:bg-primary data-[highlighted]:text-primary-foreground"
+                        className="w-full justify-end text-right text-sm [&>span:first-child]:block [&>span:first-child]:w-full [&>span:first-child]:text-right data-[highlighted]:bg-primary data-[highlighted]:text-primary-foreground"
                         key={value}
                         value={value}
                       >
-                        {label}
+                        <span className="block w-full text-right">{label}</span>
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -3517,9 +3519,11 @@ function DashboardSidebar({
         )}
       >
         <div className={cn('min-w-0', collapsed && 'sr-only')}>
-          <p className="text-xs font-bold text-primary">ناوبری</p>
-          <h2 id="dashboard-pages-title" className="font-black">
-            صفحه‌های داشبورد
+          <h2
+            id="dashboard-pages-title"
+            className="whitespace-nowrap text-base font-black text-white"
+          >
+            ناوبری داشبورد
           </h2>
         </div>
         <Button
@@ -3549,21 +3553,21 @@ function DashboardSidebar({
       {collapsed ? (
         <div className="space-y-2 border-b border-border p-2">
           <Button
-            aria-label="نمایش صفحه‌های داشبورد"
+            aria-label="نمایش صفحه‌ها"
             className="size-10 w-full p-0"
             onClick={() => onPanelChange('workspace')}
             size="icon"
-            title="صفحه‌های داشبورد"
+            title="صفحه‌ها"
             variant="ghost"
           >
             <LayoutDashboard aria-hidden="true" className="size-4" />
           </Button>
           <Button
-            aria-label="نمایش فیلترهای این صفحه"
+            aria-label="نمایش فیلترها"
             className="size-10 w-full p-0"
             onClick={() => onPanelChange('filters')}
             size="icon"
-            title="فیلترهای این صفحه"
+            title="فیلترها"
             variant="ghost"
           >
             <Filter aria-hidden="true" className="size-4" />
@@ -3577,7 +3581,7 @@ function DashboardSidebar({
           <button
             aria-selected={activePanel === 'workspace'}
             className={cn(
-              'min-h-10 rounded-xl px-2 text-xs font-black outline-none transition focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+              'min-h-10 whitespace-nowrap rounded-xl px-2 text-[11px] font-black leading-5 tracking-tight outline-none transition focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background',
               activePanel === 'workspace'
                 ? 'bg-primary text-primary-foreground shadow-sm'
                 : 'text-muted-foreground hover:bg-muted hover:text-foreground',
@@ -3586,12 +3590,12 @@ function DashboardSidebar({
             role="tab"
             type="button"
           >
-            صفحه‌های داشبورد
+            صفحه‌ها
           </button>
           <button
             aria-selected={activePanel === 'filters'}
             className={cn(
-              'min-h-10 rounded-xl px-2 text-xs font-black outline-none transition focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+              'min-h-10 whitespace-nowrap rounded-xl px-2 text-[11px] font-black leading-5 tracking-tight outline-none transition focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background',
               activePanel === 'filters'
                 ? 'bg-primary text-primary-foreground shadow-sm'
                 : 'text-muted-foreground hover:bg-muted hover:text-foreground',
@@ -3600,7 +3604,7 @@ function DashboardSidebar({
             role="tab"
             type="button"
           >
-            فیلترهای این صفحه
+            فیلترها
           </button>
         </div>
       )}
@@ -3932,6 +3936,14 @@ export function DashboardWorkspace() {
     dashboardHeaderArtworkByPageId[activePage.id] ??
     dashboardHeaderArtworkByPageId['executive-overview'] ??
     '/images/dashboard-headers/executive-overview.png';
+  const activePageHeaderLightArtwork = activePageHeaderArtwork.replace(
+    /\.png$/,
+    '-light-v2.png',
+  );
+  const activePageHeaderDarkArtwork = activePageHeaderArtwork.replace(
+    /\.png$/,
+    '-dark.png',
+  );
   const activePageKpis = dashboardKpis
     .filter((kpi) => activePage.kpiIds.includes(kpi.id))
     .map((kpi) =>
@@ -4130,15 +4142,25 @@ export function DashboardWorkspace() {
                 <Image
                   alt=""
                   aria-hidden="true"
-                  className="pointer-events-none object-cover object-right opacity-100 dark:opacity-55"
+                  className="pointer-events-none object-cover object-right opacity-100 dark:hidden"
                   fill
                   quality={45}
                   sizes="(min-width: 1024px) 72vw, 100vw"
-                  src={activePageHeaderArtwork}
+                  src={activePageHeaderLightArtwork}
+                />
+                <Image
+                  alt=""
+                  aria-hidden="true"
+                  className="pointer-events-none hidden object-cover object-right dark:block dark:opacity-95"
+                  data-dashboard-dark-header-artwork
+                  fill
+                  quality={55}
+                  sizes="(min-width: 1024px) 72vw, 100vw"
+                  src={activePageHeaderDarkArtwork}
                 />
                 <span
                   aria-hidden="true"
-                  className="pointer-events-none absolute inset-0 bg-gradient-to-l from-surface/55 via-surface/25 to-transparent dark:from-surface/80 dark:via-surface/45 dark:to-surface/10"
+                  className="pointer-events-none absolute inset-0 bg-gradient-to-l from-surface/25 via-surface/10 to-transparent dark:from-surface/45 dark:via-surface/20 dark:to-surface/5"
                 />
                 <span
                   aria-hidden="true"

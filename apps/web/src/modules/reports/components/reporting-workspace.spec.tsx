@@ -13,6 +13,7 @@ import {
   ReportingWorkspace,
   nextReportSort,
   reportResultPageSize,
+  reportUsesPendingReservationActions,
   reportingAllFilterLabel,
   reportingDateRangeError,
   reportingLegalEntityLabel,
@@ -383,7 +384,7 @@ describe('ReportingWorkspace', () => {
     expect(table).not.toContain('id="report-result-sort"');
     expect(table).toContain('مرتب‌سازی براساس مبلغ قرارداد');
     expect(table).toContain('aria-sort="descending"');
-    expect(table.match(/aria-sort=/g)).toHaveLength(12);
+    expect(table.match(/aria-sort=/g)).toHaveLength(11);
     expect(table).toContain('مرتب‌سازی براساس تعداد مسافر');
     expect(table).toContain('مرتب‌سازی براساس تعداد بلیت');
     expect(table).toContain('مرتب‌سازی براساس مبلغ خرید');
@@ -399,13 +400,30 @@ describe('ReportingWorkspace', () => {
     expect(table).toContain('سود ناخالص');
     expect(table).toContain('مبلغ استرداد');
     expect(table).toContain('مانده تسویه');
-    expect(table).toContain('اقدام رزرو در انتظار');
-    expect(table).toContain('۱ مورد');
+    expect(table).not.toContain('اقدام رزرو در انتظار');
+    expect(table).not.toContain('۱ مورد');
     expect(table).toContain('900000');
     expect(table).toContain('350000');
     expect(table).toContain('صفحه');
     expect(table).toContain('۵ رکورد در هر صفحه');
     expect(table).toContain('تطبیق مبلغ با نمای مرجع: تأییدشده');
+
+    expect(reportUsesPendingReservationActions('paid_not_issued')).toBe(true);
+    expect(reportUsesPendingReservationActions('sales_by_service_route')).toBe(
+      false,
+    );
+
+    const paidNotIssued = reportCatalog.find(
+      (item) => item.code === 'paid_not_issued',
+    );
+    const reservationTable = renderResultPanel({
+      report: paidNotIssued!,
+      started: true,
+      result: reportResult,
+    });
+    expect(reservationTable.match(/aria-sort=/g)).toHaveLength(12);
+    expect(reservationTable).toContain('اقدام رزرو در انتظار');
+    expect(reservationTable).toContain('۱ مورد');
 
     const chart = renderResultPanel({
       mode: 'chart',
@@ -477,7 +495,7 @@ describe('ReportingWorkspace', () => {
     ).toEqual({ column: 'grossProfit', direction: 'DESC' });
   });
 
-  it('removes result summary cards and highlights pending reservation actions in the table', () => {
+  it('removes result summary cards without adding reservation actions to unrelated reports', () => {
     const groupedResult = {
       ...reportResult,
       contractCount: reportResult.total,
@@ -491,8 +509,8 @@ describe('ReportingWorkspace', () => {
     expect(html).not.toContain('در کل محدوده فیلترشده');
     expect(html).not.toContain('جمع مستقل در هر ارز');
     expect(html).not.toContain('نیازمند پیگیری عملیاتی');
-    expect(html).toContain('اقدام رزرو در انتظار');
-    expect(html).toContain('۱ مورد');
+    expect(html).not.toContain('اقدام رزرو در انتظار');
+    expect(html).not.toContain('۱ مورد');
   });
 
   it('uses five rows only for table pages and the full preview cap for charts', () => {

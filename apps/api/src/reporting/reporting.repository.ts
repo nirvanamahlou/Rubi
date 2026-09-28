@@ -55,6 +55,13 @@ export interface DashboardFilterOptions {
 
 type RecordRow = Record<string, unknown>;
 
+interface ReportingSavedReportActionRun {
+  reportCode: string;
+  filterSnapshot: unknown;
+  viewName: string;
+  viewVersion: number;
+}
+
 function json(value: unknown): Prisma.InputJsonValue {
   return JSON.parse(JSON.stringify(value)) as Prisma.InputJsonValue;
 }
@@ -289,6 +296,7 @@ export class ReportingRepository {
     savedReportId: string,
     actorUserId: string,
     recipientUserIds: readonly string[],
+    actionRuns: readonly ReportingSavedReportActionRun[] = [],
   ) {
     return this.database.client.$transaction(async (transaction) => {
       await transaction.$executeRaw(Prisma.sql`
@@ -309,7 +317,47 @@ export class ReportingRepository {
             "updatedAt" = NOW()
         WHERE id = ${savedReportId}::uuid
       `);
+      for (const actionRun of actionRuns) {
+        await transaction.$executeRaw(Prisma.sql`
+          INSERT INTO "reporting_runs" ("reportCode", "savedReportId", "actorUserId", status, "filterSnapshot", "viewName", "viewVersion", "startedAt", "finishedAt")
+          VALUES (${actionRun.reportCode}, ${savedReportId}::uuid, ${actorUserId}::uuid, 'SUCCEEDED',
+            ${json(actionRun.filterSnapshot)}, ${actionRun.viewName}, ${actionRun.viewVersion}, NOW(), NOW())
+        `);
+      }
       return { savedReportId, recipientUserIds: [...recipientUserIds] };
+    });
+  }
+
+  async deleteSavedWithHistory(
+    id: string,
+    actorUserId: string,
+    action: Pick<ReportingSavedReportActionRun, 'viewName' | 'viewVersion'>,
+  ) {
+    return this.database.client.$transaction(async (transaction) => {
+      const rows = await transaction.$queryRaw<RecordRow[]>(Prisma.sql`
+        DELETE FROM "reporting_saved_reports"
+        WHERE id = ${id}::uuid AND "ownerUserId" = ${actorUserId}::uuid
+        RETURNING "reportCode", name, "filterState"
+      `);
+      const deleted = rows[0];
+      if (!deleted) return 0;
+      const filterState =
+        deleted.filterState &&
+        typeof deleted.filterState === 'object' &&
+        !Array.isArray(deleted.filterState)
+          ? (deleted.filterState as Record<string, unknown>)
+          : {};
+      await transaction.$executeRaw(Prisma.sql`
+        INSERT INTO "reporting_runs" ("reportCode", "actorUserId", status, "filterSnapshot", "viewName", "viewVersion", "startedAt", "finishedAt")
+        VALUES (${String(deleted.reportCode)}, ${actorUserId}::uuid, 'SUCCEEDED',
+          ${json({
+            ...filterState,
+            actionType: 'DELETE_SAVED',
+            reportName: String(deleted.name ?? deleted.reportCode),
+          })},
+          ${action.viewName}, ${action.viewVersion}, NOW(), NOW())
+      `);
+      return 1;
     });
   }
 

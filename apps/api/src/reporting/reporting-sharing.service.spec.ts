@@ -29,6 +29,7 @@ function repository(overrides: Record<string, unknown> = {}) {
       savedReportId: '22222222-2222-4222-8222-222222222222',
       recipientUserIds: ['33333333-3333-4333-8333-333333333333'],
     }),
+    deleteSavedWithHistory: vi.fn().mockResolvedValue(1),
     ...overrides,
   };
 }
@@ -51,6 +52,29 @@ describe('reporting direct sharing', () => {
       '22222222-2222-4222-8222-222222222222',
       actor.userId,
       ['33333333-3333-4333-8333-333333333333'],
+      [
+        expect.objectContaining({
+          filterSnapshot: expect.objectContaining({
+            actionType: 'SHARE',
+            recipientName: 'کاربر مجاز',
+          }),
+        }),
+      ],
+    );
+  });
+
+  it('records a deletion in the same report-run history used by executions', async () => {
+    const repo = repository();
+    const service = new ReportingService(repo as never);
+
+    await expect(
+      service.deleteSavedReport('22222222-2222-4222-8222-222222222222', actor),
+    ).resolves.toEqual({ deleted: true });
+
+    expect(repo.deleteSavedWithHistory).toHaveBeenCalledWith(
+      '22222222-2222-4222-8222-222222222222',
+      actor.userId,
+      expect.objectContaining({ viewVersion: 1 }),
     );
   });
 

@@ -13,10 +13,22 @@ import {
   type SavedReportFilter,
 } from '../model/navigation';
 import { reportingApi } from '../model/client';
+import { reportCatalog } from '../model/reporting';
 import { ReportSharingDialog } from './report-sharing-dialog';
 
 type Row = Record<string, unknown> & { id: string };
 export const REPORTING_OPERATIONS_LIMIT = 30;
+export const REPORTING_OPERATIONS_CELL_CLASS = 'p-3 align-middle';
+export const reportingOperationsShowRunMetrics = (view: ReportingView) =>
+  view !== 'recent';
+
+export function reportingOperationTitle(row: Row, reportCode: string) {
+  const title = row.name ?? row.savedReportName ?? row.reportName;
+  if (typeof title === 'string' && title.trim()) return title;
+  return (
+    reportCatalog.find((report) => report.code === reportCode)?.title ?? 'گزارش'
+  );
+}
 
 const faDate = (value: unknown) =>
   value
@@ -44,11 +56,33 @@ const statusClass = (status: unknown) =>
       ? 'bg-red-500/10 text-red-700'
       : 'bg-amber-500/10 text-amber-800';
 
-export function reportingRunActionLabel(action: unknown): string {
+export function reportingRunActionLabel(
+  action: unknown,
+  filterSnapshot?: unknown,
+): string {
   if (action === 'PREVIEW') return 'نمایش نتیجه';
   if (action === 'SAVE') return 'ذخیره گزارش';
   if (action === 'EXPORT') return 'خروجی گرفتن نتیجه';
+  if (action === 'DELETE_SAVED') return 'حذف گزارش من';
+  if (action === 'SHARE') {
+    const recipientName =
+      filterSnapshot &&
+      typeof filterSnapshot === 'object' &&
+      !Array.isArray(filterSnapshot) &&
+      typeof (filterSnapshot as Record<string, unknown>).recipientName ===
+        'string'
+        ? (filterSnapshot as Record<string, unknown>).recipientName
+        : '';
+    return recipientName
+      ? `اشتراک‌گذاری شده با «${recipientName}»`
+      : 'اشتراک‌گذاری گزارش';
+  }
   return 'اجرای پیشین';
+}
+
+/** The recipient needs to see who shared a report; other lists are personal. */
+export function reportingOperationsShowOwnerExecutor(view: ReportingView) {
+  return view === 'shared';
 }
 
 function resource(view: ReportingView) {
@@ -138,19 +172,41 @@ export function ReportingOperationsView({
         />
       ) : (
         <div className="overflow-x-auto rounded-2xl border">
-          <table className="w-full min-w-[58rem] text-sm">
+          <table
+            className={`w-full text-sm ${
+              reportingOperationsShowOwnerExecutor(view)
+                ? 'min-w-[58rem]'
+                : 'min-w-[48rem]'
+            }`}
+          >
             <thead className="bg-muted/60">
               <tr>
-                <th className="p-3 text-start">عنوان</th>
+                <th className={`${REPORTING_OPERATIONS_CELL_CLASS} text-start`}>
+                  عنوان
+                </th>
                 {view === 'recent' ? (
-                  <th className="p-3 text-start">اقدام کاربر</th>
+                  <th
+                    className={`${REPORTING_OPERATIONS_CELL_CLASS} text-start`}
+                  >
+                    اقدام کاربر
+                  </th>
                 ) : null}
-                <th className="p-3 text-start">مالک / اجراکننده</th>
-                <th className="p-3 text-start">وضعیت و تنظیمات</th>
-                <th className="p-3 text-start">
+                {reportingOperationsShowOwnerExecutor(view) ? (
+                  <th
+                    className={`${REPORTING_OPERATIONS_CELL_CLASS} text-start`}
+                  >
+                    مالک / اجراکننده
+                  </th>
+                ) : null}
+                <th className={`${REPORTING_OPERATIONS_CELL_CLASS} text-start`}>
+                  وضعیت و تنظیمات
+                </th>
+                <th className={`${REPORTING_OPERATIONS_CELL_CLASS} text-start`}>
                   {view === 'recent' ? 'زمان اقدام' : 'زمان'}
                 </th>
-                <th className="p-3 text-start">عملیات</th>
+                <th className={`${REPORTING_OPERATIONS_CELL_CLASS} text-start`}>
+                  عملیات
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -167,44 +223,35 @@ export function ReportingOperationsView({
                     ? row.filterSnapshot
                     : (row.savedFilterState ?? row.filterState),
                 );
+                const savedReportId = view === 'saved' ? row.id : undefined;
+                const reportTitle = reportingOperationTitle(row, reportCode);
                 return (
-                  <tr className="border-t align-top" key={row.id}>
-                    <td className="p-3">
-                      <strong>
-                        {String(
-                          row.name ??
-                            row.savedReportName ??
-                            row.reportName ??
-                            row.fileName ??
-                            reportCode,
-                        )}
-                      </strong>
-                      <p
-                        className="mt-1 text-xs text-muted-foreground"
-                        dir="ltr"
-                      >
-                        {reportCode}
-                      </p>
+                  <tr className="border-t" key={row.id}>
+                    <td className={REPORTING_OPERATIONS_CELL_CLASS}>
+                      <strong>{reportTitle}</strong>
                     </td>
                     {view === 'recent' ? (
-                      <td className="p-3">
-                        <Badge>{reportingRunActionLabel(row.actionType)}</Badge>
+                      <td className={REPORTING_OPERATIONS_CELL_CLASS}>
+                        <Badge>
+                          {reportingRunActionLabel(
+                            row.actionType,
+                            row.filterSnapshot,
+                          )}
+                        </Badge>
                       </td>
                     ) : null}
-                    <td className="p-3">
-                      {String(
-                        row.ownerName ??
-                          row.actorName ??
-                          row.creatorName ??
-                          'کاربر جاری',
-                      )}
-                    </td>
-                    <td className="p-3">
+                    {reportingOperationsShowOwnerExecutor(view) ? (
+                      <td className={REPORTING_OPERATIONS_CELL_CLASS}>
+                        {String(row.ownerName ?? 'کاربر جاری')}
+                      </td>
+                    ) : null}
+                    <td className={REPORTING_OPERATIONS_CELL_CLASS}>
                       <Badge className={statusClass(status)}>
                         {statusLabel[status] ??
                           (row.sharingScope === 'TEAM' ? 'تیمی' : 'شخصی')}
                       </Badge>
-                      {row.recordCount !== undefined &&
+                      {reportingOperationsShowRunMetrics(view) &&
+                      row.recordCount !== undefined &&
                       row.recordCount !== null ? (
                         <p className="mt-2 text-xs">
                           {Number(row.recordCount).toLocaleString('fa-IR')}{' '}
@@ -221,14 +268,14 @@ export function ReportingOperationsView({
                         </p>
                       ) : null}
                     </td>
-                    <td className="p-3">
+                    <td className={REPORTING_OPERATIONS_CELL_CLASS}>
                       {faDate(
                         view === 'recent'
                           ? (row.startedAt ?? row.createdAt)
                           : (row.updatedAt ?? row.createdAt ?? row.nextRunAt),
                       )}
                     </td>
-                    <td className="p-3">
+                    <td className={REPORTING_OPERATIONS_CELL_CLASS}>
                       <div className="flex flex-wrap gap-2">
                         {view === 'downloads' && status === 'READY' ? (
                           <Button
@@ -279,7 +326,7 @@ export function ReportingOperationsView({
                             </Link>
                           </Button>
                         )}
-                        {view === 'saved' ? (
+                        {savedReportId ? (
                           <Button
                             size="sm"
                             variant="ghost"
@@ -288,8 +335,12 @@ export function ReportingOperationsView({
                                 !window.confirm('این گزارش ذخیره‌شده حذف شود؟')
                               )
                                 return;
-                              await reportingApi.deleteSaved(row.id);
-                              setFeedback('گزارش حذف شد.');
+                              await reportingApi.deleteSaved(savedReportId);
+                              setFeedback(
+                                view === 'recent'
+                                  ? 'گزارش ذخیره‌شده از گزارش‌های من حذف شد.'
+                                  : 'گزارش حذف شد.',
+                              );
                               await load();
                               await onMutation?.();
                             }}
@@ -300,7 +351,7 @@ export function ReportingOperationsView({
                         {view === 'saved' ? (
                           <ReportSharingDialog
                             reportCode={reportCode}
-                            reportName={String(row.name ?? reportCode)}
+                            reportName={reportTitle}
                             savedReportId={row.id}
                             onShared={async () => {
                               setFeedback(
