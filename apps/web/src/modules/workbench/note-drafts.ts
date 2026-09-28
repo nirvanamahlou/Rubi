@@ -12,6 +12,9 @@ export interface NoteDraft {
   reminderAt?: string | null;
 }
 
+export const WORKBENCH_NOTE_FAVORITES_CHANGED =
+  'nora:workbench:note-favorites-changed';
+
 export const noteTemplates: NoteDraft[] = [
   {
     id: 'template-meeting',
@@ -20,7 +23,7 @@ export const noteTemplates: NoteDraft[] = [
     folder: 'جلسات',
     tags: 'فروش، پیگیری',
     items: [],
-    pinned: true,
+    pinned: false,
     updatedAt: null,
     template: true,
   },

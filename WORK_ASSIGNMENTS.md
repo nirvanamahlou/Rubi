@@ -4087,3 +4087,9 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 - Departed tickets must disappear automatically from operational management and Sales lists without deleting contract, Finance or capacity history. Fix the red delete control's icon contrast. No migration, shared contract, permission, dependency or lockfile changes.
 - No merge or localhost:3100 change in this work item; PR to develop after checks.
 - Outcome: expired browser-defined tickets are removed from the operational cards on hydration and every minute; management API lists only future offers and continues to pause departed offers. Contracts, Finance and audit history remain intact. Delete icon is now legible on its red button. Focused Web/API tests (20/8), targeted lint, Web/API typechecks and production builds passed.
+## 2026-09-28 — WORKBENCH-NOTE-STARS-0928 — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک: یادداشت‌های شخصی قابلیت ستاره‌دار شدن داشته باشند و در تب «ستاره‌دارها» دیده شوند.
+- شاخهٔ مستقل `codex/pc-b-workbench-note-stars-0928` از `origin/develop@f52a567b`. محدوده: `note-drafts.ts`، `workbench-notes.tsx`، `workbench-favorites.tsx`، آزمون‌های هدفمند و ثبت وضعیت. مالک Workbench، PC-B است.
+- از فیلد پایدار موجود `WorkbenchNote.pinned` برای وضعیت ستاره و مرتب‌سازی استفاده می‌شود؛ API و قرارداد فعلی حفظ می‌شوند. بدون Schema/Migration، Permission، قفل Dependency/Lockfile، تغییر فایل‌های مرکزی دیگر یا دادهٔ عملیاتی.
+- دکمهٔ ستاره در کارت یادداشت‌های ذخیره‌شده فعال است و فهرست یادداشت‌های ستاره‌دار مستقل از دسترسی اسناد در تب «ستاره‌دارها» بارگذاری می‌شود. قالب‌های آماده، تا وقتی توسط کاربر ذخیره نشده‌اند، وضعیت ستارهٔ دائمی ندارند. ۱۳ تست هدفمند Web، lint، typecheck و build تولیدی Web با ۵۳ مسیر موفق‌اند.
