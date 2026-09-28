@@ -1,3 +1,7 @@
+## 2026-09-28 — MASTER-DATA-RECORD-ICON-ACTIONS-0928 — PC-B — READY_FOR_REVIEW
+
+کنترل‌های عملیات رکورد در تمام workspaceهای اطلاعات پایه با الگوی فقط‌آیکون یکسان شدند؛ مشاهده و ویرایش outline و حذف قرمز. نام دسترس‌پذیر و تأیید حذف محفوظ است. ۳۶۴ تست Master Data، lint محدوده، typecheck و build تولیدی Web با ۵۳ مسیر موفق‌اند. این تغییر فقط Web و تست‌های مربوط را در بر می‌گیرد؛ بدون API، داده یا Migration.
+
 ## 2026-09-28 — TICKET-PRICES-COMPACT-0928 — PC-A
 
 Ticket pricing rows now place compact flight summaries, base price/currency/save controls and per-target commission cards side by side on desktop. Smaller screens wrap into readable rows; short copy labels retain full accessible names and bulk-copy semantics. Follow-up includes sale target removal via branch-scoped expectedVersion deactivation, retained price history, visible inline feedback and a focused commission refresh that removes stale drafts only for the copied target and branch. Actual PostgreSQL regression confirms company 4% copied from a lower pair reopens on all priced singles/pairs. No schema/migration/dependency change. Owner authorizes merge and updating the existing local runtime. Validation: 13 API unit tests, 5 isolated PostgreSQL tests, 8 Web tests, scoped lint, strict API/Web typechecks and production API/Web builds passed.

@@ -503,21 +503,29 @@ export function MasterDataSuppliersWorkspace() {
 
   const rowActions = (record: MasterDataRecord) => (
     <div className="flex flex-wrap justify-end gap-2">
-      <Button onClick={() => openProfile(record)} size="sm" variant="outline">
-        <Eye className="size-4" /> مشاهده
+      <Button
+        aria-label={`مشاهده ${record.name}`}
+        onClick={() => openProfile(record)}
+        size="icon"
+        title={`مشاهده ${record.name}`}
+        variant="outline"
+      >
+        <Eye aria-hidden="true" className="size-4" />
       </Button>
       <MasterDataPowerButton record={record} onChanged={afterStatusChange} />
       {tab !== 'collaboration' ? (
         <>
           <Button
+            aria-label={`ویرایش ${record.name}`}
             onClick={() => {
               setSelected(record);
               setFormMode('edit');
             }}
-            size="sm"
+            size="icon"
+            title={`ویرایش ${record.name}`}
             variant="outline"
           >
-            <FilePenLine className="size-4" /> ویرایش
+            <FilePenLine aria-hidden="true" className="size-4" />
           </Button>
           <MasterDataDeleteButton record={record} onDeleted={afterDelete} />
         </>
