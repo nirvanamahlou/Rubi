@@ -4279,3 +4279,8 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 ## 2026-09-28 — WORKBENCH-FILES-COPY-0928 — PC-B — READY_FOR_REVIEW
 
 - `COMPUTER_ID=PC-B`؛ شاخهٔ `codex/pc-b-workbench-files-copy-0928` از `origin/develop`. توضیح زیر عنوان «فایل‌های من» به درخواست کاربر حذف شد؛ رفتار و دادهٔ اسناد، API، Schema/Migration، Permission و Dependency/Lockfile تغییری ندارند.
+
+## 2026-09-28 — WORKBENCH-HIDE-VERSION-NOTE-0928 — PC-B — READY_FOR_REVIEW
+
+- `COMPUTER_ID=PC-B`؛ شاخهٔ `codex/pc-b-workbench-hide-version-note-0928` از `origin/develop`. محدوده: حذف فیلد «یادداشت نسخه» فقط از فرم بارگذاری شخصی فایل‌های میزکار و ثبت وضعیت. مالک هر دو بخش Workbench و Documents، PC-B است؛ بدون API، Schema/Migration، Permission، Dependency/Lockfile یا تغییر داده.
+- lint، typecheck و build تولیدی Web موفق‌اند. فیلد در فرم اصلی آرشیو اسناد همچنان موجود است.

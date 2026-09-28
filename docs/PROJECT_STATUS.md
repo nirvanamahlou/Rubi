@@ -3711,3 +3711,7 @@ Calendar event creation now uses an authorized branch from the authenticated Wor
 ## 2026-09-28 — WORKBENCH-FILES-COPY-0928 — READY_FOR_REVIEW
 
 متن توضیحی زیر عنوان «فایل‌های من» حذف شد. نمایش و بارگذاری فایل‌ها بدون تغییر است.
+
+## 2026-09-28 — WORKBENCH-HIDE-VERSION-NOTE-0928 — READY_FOR_REVIEW
+
+فیلد «یادداشت نسخه» از فرم بارگذاری شخصی در «فایل‌های من» پنهان شد و در فرم اصلی اسناد باقی ماند. lint، typecheck و build Web موفق‌اند.
