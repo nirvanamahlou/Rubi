@@ -63,7 +63,9 @@ describe('package generator workspace', () => {
     );
     expect(html).toContain('<option value="turkey" selected>ترکیه</option>');
     expect(html).toContain('<option value="thailand">تایلند</option>');
-    expect(app).toContain("turkey:['combined','kus','antalya','bodrum','nss']");
+    expect(app).toContain(
+      "turkey:['combined','kus','antalya','bodrum','nss','istanbul-3','istanbul-4']",
+    );
     expect(app).toContain(
       "malaysia:['malaysia-kuala','malaysia-penang','malaysia-singapore','malaysia-langkawi']",
     );
@@ -95,7 +97,9 @@ describe('package generator workspace', () => {
     const html = readFileSync(resolve(publicRoot, 'index.html'), 'utf8');
     const loader = readFileSync(resolve(publicRoot, 'mode-loader.js'), 'utf8');
 
-    expect(html).toContain('<script defer src="mode-loader.js"></script>');
+    expect(html).toContain(
+      '<script defer src="mode-loader.js?v=20260928b"></script>',
+    );
     expect(html).not.toContain('<script defer src="installment-assets.js">');
     expect(html).not.toContain('<script defer src="sticker-assets.js">');
     expect(loader).toContain("'installment-assets.js'");
