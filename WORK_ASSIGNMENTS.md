@@ -4254,3 +4254,10 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 
 - نتیجه: تامین سه‌گزینه‌ای، نوبت‌های مستقل با تعداد شامل تاریخ شروع، checkpoint ثبت و عملیات ویرایش/حذف امن؛ ۴۴ تست، lint/typecheck و build Web/API موفق. قفل محدود اسناد با Commit آزاد می‌شود؛ بدون Migration یا تغییر runtime ۳۱۰۰.
 - بررسی پیش از merge با تأیید مالک: انتظار تست رندر چک‌باکس حذف‌شده با انتخاب نوع تامین جایگزین شد؛ کل Web با ۱۶۸۷ تست موفق و ۳ skip پاس شد. build و کیفیت CI قبلی موفق بودند.
+
+
+## FINANCE-HISTORY-SEAT-PRICING-0928 — PC-A — READY_FOR_REVIEW
+
+- COMPUTER_ID=PC-A; branch codex/pc-a-finance-history-seat-pricing-0928, isolated clean Finance worktree from origin/develop@099dc40e. Reserve Finance API/Web/history tests, additive Sales public receipt-history and Reservations purchase-descriptor projections, Finance v1 additive history contract and bounded status/task docs. Producer Sales/Finance and consumer Finance API/Web owned PC-A; public boundaries and existing v1 clients preserved. No Procurement implementation, migration/schema/dependency/lockfile/IAM or operational data changes. Bounded Finance contract/Central Docs owner PC-A for this unit; prior Finance locks released. User explicitly authorizes implementation and merge. Preserve unrelated local edits.
+
+- Validation: 23 targeted API and 29 Web tests, scoped lint, API/Web strict typechecks and production builds (53 routes) passed. No migration or data change. Finance contract/bounded docs locks RELEASED with commit. Explicit owner merge authorization; authenticated browser clicks remain unverified.
