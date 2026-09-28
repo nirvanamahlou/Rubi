@@ -3673,3 +3673,6 @@ Calendar event creation now uses an authorized branch from the authenticated Wor
 ## 2026-09-28 — TICKET-PAIR-DESTINATION-DATE-0928 — READY_FOR_REVIEW
 
 مقصد سفر رفت‌وبرگشت هنگام تعریف بلیط و در فهرست قیمت‌های جفتی به‌روشنی نمایش داده می‌شود؛ تاریخ رفت و برگشت هر جفت نیز مشخص است. تاریخ و ساعت هر بلیط در کارت قیمت یک‌طرفه، در ستون چپ با اندازهٔ خواناتر قرار گرفت. تغییر صرفاً Web است و بر داده یا قراردادهای قبلی اثر ندارد.
+## 2026-09-28 — PACKAGE-GENERATOR-THAILAND-XLSX-0928 — READY_FOR_REVIEW
+
+Thailand Package Generator maps display-rate columns, hotel room/grade and footer details into the three Thailand layouts. The attached Pattaya workbook was read only; its 67 hotel rows fit without overflow on Pattaya (one page), Phuket (two) and Bangkok+Phuket (three). Eleven affected tests, Web typecheck and production build (53 routes) passed. No API, schema, dependency, permission or operational data changed. See `docs/tasks/PACKAGE-GENERATOR-THAILAND-XLSX-0928.md`.
