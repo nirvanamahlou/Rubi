@@ -170,6 +170,10 @@ export interface ReservationManifestTicketTemplateV1 {
 }
 
 export interface ReservationManifestTicketCardV1 {
+  /** Absent in older v1 responses means FLIGHT. */
+  transportType?: 'FLIGHT' | 'BUS' | 'TRAIN';
+  /** False for a ground service that supplies a travel day without a departure time. */
+  departureTimeKnown?: boolean;
   offerId: string;
   direction: 'OUTBOUND' | 'RETURN';
   carrierName: string;

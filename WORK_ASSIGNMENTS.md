@@ -1,3 +1,13 @@
+## FINANCE-TICKET-PAYMENT-0928 — PC-A — READY_FOR_REVIEW
+
+- COMPUTER_ID=PC-A; base origin/develop@e4eb048c; branch codex/pc-a-finance-ticket-payment-0928. Reserve Finance inbox component, module-local exact total helper/tests and bounded entries in WORK_ASSIGNMENTS/PROJECT_STATUS. Previous Finance presentation reservations are released. Preserve original checkout edits.
+- Validation: 11 targeted tests, scoped ESLint, Web typecheck and production build (53 routes) passed. Bounded implementation/docs locks RELEASED after commit. Authenticated browser click remains unverified; runtime update needs owner approval.
+- Fix payment-method interaction and surface option errors/retry; retain existing persisted seat/unit pricing and partial-payment API. No migration, dependency, shared contract, permission, operational data or runtime replacement. Bounded Central Docs Owner: PC-A/FINANCE-TICKET-PAYMENT-0928.
+
+## MANIFEST-TRANSPORT-FORMAT-0928 — PC-A — READY_FOR_REVIEW
+
+- COMPUTER_ID=PC-A; base origin/develop@e4eb048c; branch codex/pc-a-manifest-transport-format-0928, reuse clean isolated manifest worktree. Reserve Reservations default XLSX/service and Web cards, Sales reservation handoff ground-service metadata and focused tests, bounded status/task docs and additive optional transportType in Travel card contract. Producer Reservations and consumer Web owned PC-A; missing transportType stays FLIGHT for v1 compatibility. Ground services use existing BUS/TRAIN Sales snapshots, assigned passengers and existing finance/permission/history gates. No migration/schema/dependency/lockfile changes; no active overlapping owner in this scope. Bounded Central Docs/Travel contract owner PC-A for this unit. Original dirty checkout and current runtime preserved during implementation. Result: blue/LTR/destination/mr-mrs flight default and BUS/TRAIN contract-backed exports complete. 34 API tests and Web test, scoped lint/typechecks and production builds passed; bounded docs/Travel contract locks RELEASED. No migration.
+
 ## MANIFEST-DEFAULT-TEMPLATE-0928 — PC-A — READY_FOR_REVIEW
 
 - Owner request: every ticket without an assigned manifest template exports a default XLSX with contract, separate passenger names, flight date/ticket/airline, age, nationality, birth date, gender, cabin and national ID; international routes additionally include passport number/expiry. Ticket management ends with a searchable template selector, defaulting to «پیش‌فرض»; named options use airline and destination.
@@ -4232,3 +4242,10 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 - Central docs lock: PC-A/TOUR-MANAGEMENT-0928 for this entry and bounded status entry only. Migration/Dependency locks not acquired.
 - Result: four KPI cards, current/upcoming departure cards, Persian dates, live per-departure capacity, search/status filters and prefilled package editor connected to additive PATCH are implemented. Preserve latest definition/departure mode split, pricing navigation, hotel-rate links and existing client tests. 53 API + 11 Web tests, scoped lint and full API/Web typechecks pass. API and Web production builds passed (53 Web routes). Synthetic desktop/mobile/browser QA passed; no operational database writes or Web3100 changes. Bounded central-doc locks RELEASED on final commit; no migration/dependency locks acquired. Review via PR to develop; no automatic merge.
 - بررسی پیش از merge با تأیید مالک: تست متن محدوده تاریخ مستقل از فاصله‌گذاری JSX شد و Router برای رندر قیمت‌گذاری تور در تست mock شد؛ دو تست مربوطه و lint موفق‌اند. اصلاح فقط محیط/انتظار تست است.
+## 2026-09-28 — TICKET-SUPPLY-REPEAT-0928 — PC-A — READY_FOR_REVIEW
+
+- شاخه `codex/pc-a-ticket-supply-repeat-0928` از `origin/develop@e4eb048c`؛ محدوده: گزینه‌های تامین فرم/فیلتر، ثبت قابل بازیابی نوبت‌های تکرارشونده و عملیات مستقل در Web، محدوده تابع archiveExpired در ticket-public.service.ts و تست مستقیم آن، و وضعیت.
+- رزرو محدود `WORK_ASSIGNMENTS.md` و `docs/PROJECT_STATUS.md` برای همین ورودی؛ DELETE موجود برای نوبت آینده بدون تخصیص فعال، رزرو فعال یا تور متصل به‌صورت سازگار توسعه می‌یابد؛ producer/consumer هر دو Ticket Catalog و PC-A هستند. بدون قرارداد مشترک، Migration، Dependency/Lockfile، قیمت Sales یا داده عملیاتی. runtime پورت ۳۱۰۰ جداست و تغییر نمی‌کند.
+
+- نتیجه: تامین سه‌گزینه‌ای، نوبت‌های مستقل با تعداد شامل تاریخ شروع، checkpoint ثبت و عملیات ویرایش/حذف امن؛ ۴۴ تست، lint/typecheck و build Web/API موفق. قفل محدود اسناد با Commit آزاد می‌شود؛ بدون Migration یا تغییر runtime ۳۱۰۰.
+- بررسی پیش از merge با تأیید مالک: انتظار تست رندر چک‌باکس حذف‌شده با انتخاب نوع تامین جایگزین شد؛ کل Web با ۱۶۸۷ تست موفق و ۳ skip پاس شد. build و کیفیت CI قبلی موفق بودند.

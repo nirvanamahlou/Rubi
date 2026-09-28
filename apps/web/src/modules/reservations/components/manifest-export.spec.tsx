@@ -4,10 +4,11 @@ import { ManifestExport } from './manifest-export';
 
 it('starts with a date-range ticket search before showing manifest cards', () => {
   const html = renderToStaticMarkup(<ManifestExport />);
-  expect(html).toContain('از تاریخ پرواز');
-  expect(html).toContain('تا تاریخ پرواز');
+  expect(html).toContain('از تاریخ حرکت');
+  expect(html).toContain('تا تاریخ حرکت');
   expect(html).toContain('نمایش بلیط‌های بازه');
   expect(html).toContain('پیش‌فرض');
+  expect(html).toContain('اتوبوس یا قطار');
   expect(html).toContain('قالب انتخاب‌شده');
   expect(html).not.toContain('MANIFEST ایران ایرتور');
 });
