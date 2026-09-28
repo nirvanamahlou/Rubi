@@ -4242,6 +4242,7 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 - Central docs lock: PC-A/TOUR-MANAGEMENT-0928 for this entry and bounded status entry only. Migration/Dependency locks not acquired.
 - Result: four KPI cards, current/upcoming departure cards, Persian dates, live per-departure capacity, search/status filters and prefilled package editor connected to additive PATCH are implemented. Preserve latest definition/departure mode split, pricing navigation, hotel-rate links and existing client tests. 53 API + 11 Web tests, scoped lint and full API/Web typechecks pass. API and Web production builds passed (53 Web routes). Synthetic desktop/mobile/browser QA passed; no operational database writes or Web3100 changes. Bounded central-doc locks RELEASED on final commit; no migration/dependency locks acquired. Review via PR to develop; no automatic merge.
 - بررسی پیش از merge با تأیید مالک: تست متن محدوده تاریخ مستقل از فاصله‌گذاری JSX شد و Router برای رندر قیمت‌گذاری تور در تست mock شد؛ دو تست مربوطه و lint موفق‌اند. اصلاح فقط محیط/انتظار تست است.
+
 ## 2026-09-28 — TICKET-SUPPLY-REPEAT-0928 — PC-A — READY_FOR_REVIEW
 
 - شاخه `codex/pc-a-ticket-supply-repeat-0928` از `origin/develop@e4eb048c`؛ محدوده: گزینه‌های تامین فرم/فیلتر، ثبت قابل بازیابی نوبت‌های تکرارشونده و عملیات مستقل در Web، محدوده تابع archiveExpired در ticket-public.service.ts و تست مستقیم آن، و وضعیت.
