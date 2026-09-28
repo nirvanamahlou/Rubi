@@ -4260,3 +4260,8 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 - درخواست مالک: ستاره‌دارکردن کارت‌های اولیهٔ یادداشت نیز عملی و پایدار باشد.
 - شاخهٔ `codex/pc-b-workbench-template-stars-0928` از `origin/develop`؛ محدودهٔ رزرو: فقط فهرست و رفتار کارت‌های یادداشت میزکار، آزمون متمرکز و اسناد وضعیت. مالک Workbench، PC-B است؛ بدون API، Schema/Migration، Permission یا Dependency/Lockfile.
 - نتیجه: دکمهٔ ستاره روی قالب‌های اولیه نیز نمایش داده می‌شود؛ کلیک، نسخهٔ واقعی و ستاره‌دار را در حساب ذخیره می‌کند و کارت قالب تکراری را پس از بارگذاری دوباره پنهان می‌سازد. آزمون متمرکز، lint و typecheck وب موفق‌اند.
+
+## 2026-09-28 — WORKBENCH-CALENDAR-EDIT-0928 — PC-B — READY_FOR_REVIEW
+
+- `COMPUTER_ID=PC-B`؛ شاخهٔ `codex/pc-b-workbench-calendar-edit-0928` از `origin/develop`. محدوده: ویرایش رویدادهای شخصی تقویم میزکار، انتخاب وضعیت یکسان با فیلتر، آزمون و ثبت وضعیت. بدون Schema/Migration، قرارداد API، Permission، Dependency/Lockfile یا تغییر دادهٔ عملیاتی.
+- آزمون‌های تقویم (۷ مورد)، lint فایل‌های تغییرکرده، typecheck و build تولیدی Web موفق‌اند. ویرایش فقط برای رویدادهای شخصی مجاز است؛ ارجاع‌های متصل به کارتابل از این فرم ویرایش نمی‌شوند.
