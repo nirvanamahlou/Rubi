@@ -4335,3 +4335,11 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 - COMPUTER_ID=PC-A; branch codex/pc-a-finance-history-seat-pricing-0928, isolated clean Finance worktree from origin/develop@099dc40e. Reserve Finance API/Web/history tests, additive Sales public receipt-history and Reservations purchase-descriptor projections, Finance v1 additive history contract and bounded status/task docs. Producer Sales/Finance and consumer Finance API/Web owned PC-A; public boundaries and existing v1 clients preserved. No Procurement implementation, migration/schema/dependency/lockfile/IAM or operational data changes. Bounded Finance contract/Central Docs owner PC-A for this unit; prior Finance locks released. User explicitly authorizes implementation and merge. Preserve unrelated local edits.
 
 - Validation: 23 targeted API and 29 Web tests, scoped lint, API/Web strict typechecks and production builds (53 routes) passed. No migration or data change. Finance contract/bounded docs locks RELEASED with commit. Explicit owner merge authorization; authenticated browser clicks remain unverified.
+
+## B2B-API-FUNCTIONAL-QA-0928 — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک: اجرای آزمون‌های API و سناریوهای مرزی، به‌ویژه ثبت فرم‌ها، و اصلاح باگ‌های قطعی Backend.
+- `COMPUTER_ID=PC-B`؛ شاخه مستقل `codex/pc-b-b2b-api-qa-0928` از `origin/develop@4013211f`. Worktreeهای فعال Marketing، Customer Affairs و Workbench دست‌نخورده‌اند.
+- دامنه رزرو: ممیزی سراسری API و اجرای تست‌های موجود؛ اصلاح و تست در Backend B2B و مسیرهای فرم آژانس با مالکیت PC-B. ایرادهای مالک PC-A/PC-C برای هماهنگی گزارش می‌شوند.
+- بدون Schema/Migration، Dependency/Lockfile، قرارداد مشترک، مجوز، داده عملیاتی یا جابه‌جایی runtime مشترک. در صورت نیاز واقعی، قفل و قرارداد مربوط جداگانه رزرو می‌شود.
+- نتیجه روی آخرین `develop`: ۱۶۹۲ تست معمول API موفق و ۱۷۵ تست محیطی skip شدند؛ ۱۲۷ تست B2B پس از اصلاح موفق و ۱۹ تست PostgreSQL آن به‌دلیل توقف سرویس Docker اجرا نشدند. بازپخش requestId قدیمی پس از ایجاد نسخه جدید قرارداد اکنون به‌جای پاسخ موفقِ گمراه‌کننده، تعارض نسخه مشخص برمی‌گرداند. lint، typecheck و build API موفق؛ جزئیات در `docs/tasks/B2B-API-FUNCTIONAL-QA-0928.md`. قفل فایل‌های این واحد با Commit آزاد می‌شود.
