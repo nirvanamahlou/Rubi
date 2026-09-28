@@ -21,6 +21,15 @@ interface CreateFeedbackRecord {
   recipientUserIds: readonly string[];
 }
 
+function isUniqueConstraintError(error: unknown): boolean {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'code' in error &&
+    error.code === 'P2002'
+  );
+}
+
 @Injectable()
 export class WorkbenchFeedbackRepository {
   constructor(
@@ -63,71 +72,88 @@ export class WorkbenchFeedbackRepository {
   async create(
     input: CreateFeedbackRecord,
   ): Promise<WorkbenchFeedbackReceiptV1> {
-    return this.database.client.$transaction(async (transaction) => {
-      const existing = await transaction.workbenchFeedback.findUnique({
+    const receipt = (row: {
+      id: string;
+      trackingNumber: string;
+      branchId: string;
+      subject: string;
+      isAnonymous: boolean;
+      attachmentCount: number;
+      submittedAt: Date;
+    }): WorkbenchFeedbackReceiptV1 => ({
+      id: row.id,
+      trackingNumber: row.trackingNumber,
+      branchId: row.branchId,
+      department: input.departmentCode,
+      subject: row.subject,
+      anonymous: row.isAnonymous,
+      attachmentCount: row.attachmentCount,
+      recipientCount: input.recipientUserIds.length,
+      submittedAt: row.submittedAt.toISOString(),
+    });
+    const verifyReplay = (row: {
+      submittedByUserId: string;
+      requestHash: string;
+    }) => {
+      if (
+        row.submittedByUserId !== input.submittedByUserId ||
+        row.requestHash !== input.requestHash
+      ) {
+        throw new ConflictException(
+          'شناسه این ارسال قبلاً برای نظرسنجی دیگری استفاده شده است.',
+        );
+      }
+    };
+    try {
+      return await this.database.client.$transaction(async (transaction) => {
+        const existing = await transaction.workbenchFeedback.findUnique({
+          where: { id: input.id },
+        });
+        if (existing) {
+          verifyReplay(existing);
+          return receipt(existing);
+        }
+
+        const created = await transaction.workbenchFeedback.create({
+          data: {
+            id: input.id,
+            trackingNumber: input.trackingNumber,
+            requestHash: input.requestHash,
+            branchId: input.branchId,
+            department: input.department as never,
+            subject: input.subject,
+            body: input.body,
+            isAnonymous: input.anonymous,
+            attachmentCount: input.attachmentCount,
+            submittedByUserId: input.submittedByUserId,
+          },
+        });
+        await this.notifications.createWithinTransaction(
+          transaction as Prisma.TransactionClient,
+          {
+            recipientUserIds: input.recipientUserIds,
+            actorUserId: input.anonymous ? null : input.submittedByUserId,
+            sourceModule: 'workbench',
+            eventType: 'FEEDBACK_SUBMITTED',
+            title: `نظرسنجی جدید برای ${input.departmentLabel}`,
+            message: `${input.subject} — ${input.body}`,
+            entityType: 'workbench_feedback',
+            entityId: input.id,
+            href: `/workbench?tab=today&feedback=${encodeURIComponent(input.id)}#workbench-feedback`,
+          },
+        );
+        return receipt(created);
+      });
+    } catch (error) {
+      if (!isUniqueConstraintError(error)) throw error;
+      // A concurrent request may have committed the same id while this
+      // transaction was creating it. Read only after rollback/commit.
+      const existing = await this.database.client.workbenchFeedback.findUnique({
         where: { id: input.id },
       });
-      if (existing) {
-        if (
-          existing.submittedByUserId !== input.submittedByUserId ||
-          existing.requestHash !== input.requestHash
-        ) {
-          throw new ConflictException(
-            'شناسه این ارسال قبلاً برای نظرسنجی دیگری استفاده شده است.',
-          );
-        }
-        return {
-          id: existing.id,
-          trackingNumber: existing.trackingNumber,
-          branchId: existing.branchId,
-          department: input.departmentCode,
-          subject: existing.subject,
-          anonymous: existing.isAnonymous,
-          attachmentCount: existing.attachmentCount,
-          recipientCount: input.recipientUserIds.length,
-          submittedAt: existing.submittedAt.toISOString(),
-        };
-      }
-
-      const created = await transaction.workbenchFeedback.create({
-        data: {
-          id: input.id,
-          trackingNumber: input.trackingNumber,
-          requestHash: input.requestHash,
-          branchId: input.branchId,
-          department: input.department as never,
-          subject: input.subject,
-          body: input.body,
-          isAnonymous: input.anonymous,
-          attachmentCount: input.attachmentCount,
-          submittedByUserId: input.submittedByUserId,
-        },
-      });
-      await this.notifications.createWithinTransaction(
-        transaction as Prisma.TransactionClient,
-        {
-          recipientUserIds: input.recipientUserIds,
-          actorUserId: input.anonymous ? null : input.submittedByUserId,
-          sourceModule: 'workbench',
-          eventType: 'FEEDBACK_SUBMITTED',
-          title: `نظرسنجی جدید برای ${input.departmentLabel}`,
-          message: `${input.subject} — ${input.body}`,
-          entityType: 'workbench_feedback',
-          entityId: input.id,
-          href: `/workbench?tab=today&feedback=${encodeURIComponent(input.id)}#workbench-feedback`,
-        },
-      );
-      return {
-        id: created.id,
-        trackingNumber: created.trackingNumber,
-        branchId: created.branchId,
-        department: input.departmentCode,
-        subject: created.subject,
-        anonymous: created.isAnonymous,
-        attachmentCount: created.attachmentCount,
-        recipientCount: input.recipientUserIds.length,
-        submittedAt: created.submittedAt.toISOString(),
-      };
-    });
+      if (!existing) throw error;
+      verifyReplay(existing);
+      return receipt(existing);
+    }
   }
 }

@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import type {
   DocumentAccessPurposeCode,
+  DocumentConfidentialityCode,
   DocumentDomainCode,
   DocumentListQueryV1,
 } from '@nora/contracts';
@@ -220,11 +221,19 @@ export class DocumentsRepository {
     branchIds: readonly string[],
     domains: readonly DocumentDomainCode[],
     actorUserId: string,
+    includeSensitive = false,
   ) {
     if (query.domain && !domains.includes(query.domain)) {
       return { rows: [] as DocumentListRow[], total: 0 };
     }
     if (query.branchId && !branchIds.includes(query.branchId)) {
+      return { rows: [] as DocumentListRow[], total: 0 };
+    }
+    if (
+      !includeSensitive &&
+      (query.confidentiality === 'CONFIDENTIAL' ||
+        query.confidentiality === 'RESTRICTED')
+    ) {
       return { rows: [] as DocumentListRow[], total: 0 };
     }
     const now = new Date();
@@ -241,6 +250,13 @@ export class DocumentsRepository {
               : undefined;
     const where: Prisma.DocumentWhereInput = {
       branchId: query.branchId ?? { in: [...branchIds] },
+      // Feedback attachments are visible in the catalogue only to their
+      // owner. This includes older records with inconsistent confidentiality.
+      NOT: {
+        sourceModule: 'WORKBENCH',
+        sourceEntityType: 'WorkbenchFeedback',
+        ownerUserId: { not: actorUserId },
+      },
       documentType: {
         domain: { in: query.domain ? [query.domain] : [...domains] },
         ...(query.typeCode ? { code: query.typeCode } : {}),
@@ -334,6 +350,15 @@ export class DocumentsRepository {
           }
         : {}),
     };
+    if (
+      !includeSensitive &&
+      (query.search ||
+        (query.ownerUserId && query.ownerUserId !== actorUserId) ||
+        query.sourceModule) &&
+      !query.confidentiality
+    ) {
+      where.confidentiality = { notIn: ['CONFIDENTIAL', 'RESTRICTED'] };
+    }
     const direction = query.sortDirection;
     const orderBy: Prisma.DocumentOrderByWithRelationInput =
       query.sortBy === 'sizeBytes'
@@ -386,6 +411,7 @@ export class DocumentsRepository {
     sourceEntityId: string;
     branchId: string;
     ownerUserId: string;
+    confidentiality?: DocumentConfidentialityCode;
   }) {
     if (!input.documentIds.length) return Promise.resolve([]);
     return this.database.client.document.findMany({
@@ -393,6 +419,9 @@ export class DocumentsRepository {
         id: { in: [...input.documentIds] },
         branchId: input.branchId,
         ownerUserId: input.ownerUserId,
+        ...(input.confidentiality
+          ? { confidentiality: input.confidentiality }
+          : {}),
         sourceModule: input.sourceModule,
         sourceEntityType: input.sourceEntityType,
         sourceEntityId: input.sourceEntityId,

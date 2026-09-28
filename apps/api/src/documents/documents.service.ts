@@ -215,19 +215,23 @@ function summarizeUserAgent(value?: string): string {
 
 function mapVersion(
   row: DocumentDetailRow['versions'][number],
+  revealMetadata = true,
+  revealIdentity = true,
 ): DocumentVersionV1 {
   return {
     id: row.id,
     versionNumber: row.versionNumber,
-    originalFileName: row.originalFileName,
-    safeDownloadName: row.safeDownloadName,
+    originalFileName: revealMetadata ? row.originalFileName : 'سند محرمانه',
+    safeDownloadName: revealMetadata ? row.safeDownloadName : 'سند محرمانه',
     detectedMimeType: row.detectedMimeType,
     extension: row.extension,
     sizeBytes: Number(row.sizeBytes),
     sha256Masked: maskHash(row.sha256),
     scanStatus: row.scanStatus,
-    versionNote: row.versionNote,
-    createdBy: row.createdBy,
+    versionNote: revealMetadata ? row.versionNote : 'محرمانه',
+    createdBy: revealIdentity
+      ? row.createdBy
+      : { id: '00000000-0000-0000-0000-000000000000', displayName: 'محرمانه' },
     createdAt: row.createdAt.toISOString(),
   };
 }
@@ -239,6 +243,23 @@ function canReadSensitive(
   return (
     (confidentiality !== 'CONFIDENTIAL' && confidentiality !== 'RESTRICTED') ||
     permissions.includes('documents.sensitive.read')
+  );
+}
+
+function canRevealDocumentMetadata(
+  row: DocumentListRow,
+  actor: AuthenticatedActor,
+): boolean {
+  return (
+    canReadSensitive(row.confidentiality, actor.permissions) &&
+    !(isWorkbenchFeedbackAttachment(row) && row.ownerUserId !== actor.userId)
+  );
+}
+
+function isWorkbenchFeedbackAttachment(row: DocumentListRow): boolean {
+  return (
+    row.sourceModule === 'WORKBENCH' &&
+    row.sourceEntityType === 'WorkbenchFeedback'
   );
 }
 
@@ -269,20 +290,28 @@ export interface DocumentFileDelivery {
 
 function mapListItem(
   row: DocumentListRow,
-  permissions: readonly string[],
+  actor: AuthenticatedActor,
 ): DocumentListItemV1 {
   if (!row.currentVersion) {
     throw new ConflictException('نسخه جاری سند نامعتبر است.');
   }
-  const sensitiveAllowed = canReadSensitive(row.confidentiality, permissions);
+  const permissions = actor.permissions;
+  const sensitiveAllowed =
+    canReadSensitive(row.confidentiality, permissions) &&
+    (!isWorkbenchFeedbackAttachment(row) ||
+      row.ownerUserId === actor.userId ||
+      permissions.includes('documents.sensitive.read'));
+  const revealMetadata = canRevealDocumentMetadata(row, actor);
   return {
     id: row.id,
     archiveCode: row.archiveCode,
-    title: sensitiveAllowed ? row.title : 'سند محرمانه ••••••',
-    description: sensitiveAllowed ? row.description : null,
+    title: revealMetadata ? row.title : 'سند محرمانه ••••••',
+    description: revealMetadata ? row.description : null,
     type: row.documentType,
     category: row.category,
-    owner: row.owner,
+    owner: revealMetadata
+      ? row.owner
+      : { id: '00000000-0000-0000-0000-000000000000', displayName: 'محرمانه' },
     branchId: row.branchId,
     confidentiality: row.confidentiality,
     archiveStatus: row.archiveStatus,
@@ -292,6 +321,8 @@ function mapListItem(
     version: row.version,
     currentVersion: mapVersion(
       row.currentVersion as DocumentDetailRow['versions'][number],
+      revealMetadata,
+      revealMetadata,
     ),
     capabilities: {
       viewFile: permissions.includes('documents.file.read') && sensitiveAllowed,
@@ -300,7 +331,12 @@ function mapListItem(
         permissions.includes('documents.download') &&
         sensitiveAllowed,
       uploadVersion: permissions.includes('documents.version.create'),
-      editMetadata: permissions.includes('documents.metadata.update'),
+      editMetadata:
+        permissions.includes('documents.metadata.update') &&
+        !(
+          row.sourceModule === 'WORKBENCH' &&
+          row.sourceEntityType === 'WorkbenchFeedback'
+        ),
       viewAudit: permissions.includes('documents.audit.read'),
       archive:
         permissions.includes('documents.delete') &&
@@ -355,6 +391,7 @@ export class DocumentsService {
     documentIds: readonly string[],
     feedbackId: string,
     branchId: string,
+    anonymous: boolean,
     actor: AuthenticatedActor,
   ): Promise<void> {
     await this.assertWorkbenchOwnedAttachments(
@@ -363,6 +400,7 @@ export class DocumentsService {
       feedbackId,
       branchId,
       actor,
+      anonymous ? 'RESTRICTED' : 'INTERNAL',
     );
   }
 
@@ -372,6 +410,7 @@ export class DocumentsService {
     sourceEntityId: string,
     branchId: string,
     actor: AuthenticatedActor,
+    confidentiality?: DocumentConfidentialityCode,
   ): Promise<Array<{ id: string; title: string }>> {
     if (!documentIds.length) return [];
     if (!actor.branchIds.includes(branchId))
@@ -385,6 +424,7 @@ export class DocumentsService {
       sourceEntityId,
       branchId,
       ownerUserId: actor.userId,
+      ...(confidentiality ? { confidentiality } : {}),
     });
     if (matches.length !== uniqueIds.length) {
       throw new BadRequestException(
@@ -733,7 +773,7 @@ export class DocumentsService {
       actor.branchIds,
       allowedDocumentDomains(actor.permissions),
     );
-    return { data: rows.map((row) => mapListItem(row, actor.permissions)) };
+    return { data: rows.map((row) => mapListItem(row, actor)) };
   }
 
   async setFavorite(id: string, favorite: boolean, actor: AuthenticatedActor) {
@@ -1008,9 +1048,10 @@ export class DocumentsService {
       actor.branchIds,
       allowedDocumentDomains(actor.permissions),
       actor.userId,
+      actor.permissions.includes('documents.sensitive.read'),
     );
     return {
-      data: rows.map((row) => mapListItem(row, actor.permissions)),
+      data: rows.map((row) => mapListItem(row, actor)),
       meta: {
         page,
         pageSize,
@@ -1103,42 +1144,46 @@ export class DocumentsService {
       actorBranchId: row.branchId,
       action: 'documents.metadata.view',
       outcome: 'SUCCESS',
-      reason: canReadSensitive(row.confidentiality, actor.permissions)
+      reason: canRevealDocumentMetadata(row, actor)
         ? metadata.sensitiveReason?.trim() || null
         : 'SENSITIVE_METADATA_MASKED',
       ipSummary: summarizeIp(metadata.ipAddress),
       userAgentSummary: summarizeUserAgent(metadata.userAgent),
     });
-    return { data: this.mapDetail(row, actor.permissions) };
+    return { data: this.mapDetail(row, actor) };
   }
 
   private mapDetail(
     row: DocumentDetailRow,
-    permissions: readonly string[],
+    actor: AuthenticatedActor,
   ): DocumentDetailV1 {
-    const base = mapListItem(row, permissions);
+    const permissions = actor.permissions;
+    const base = mapListItem(row, actor);
     const sensitive =
       row.confidentiality === 'CONFIDENTIAL' ||
-      row.confidentiality === 'RESTRICTED';
-    const sensitiveAllowed = canReadSensitive(row.confidentiality, permissions);
+      row.confidentiality === 'RESTRICTED' ||
+      (isWorkbenchFeedbackAttachment(row) && row.ownerUserId !== actor.userId);
+    const revealMetadata = canRevealDocumentMetadata(row, actor);
     return {
       ...base,
       sourceModule: row.sourceModule,
       sourceEntityType: row.sourceEntityType,
-      sourceEntityIdMasked: sensitiveAllowed
+      sourceEntityIdMasked: revealMetadata
         ? maskReference(row.sourceEntityId)
         : '••••',
       legalHoldActive: row.legalHoldActive,
-      versions: row.versions.map(mapVersion),
+      versions: row.versions.map((version) =>
+        mapVersion(version, revealMetadata, revealMetadata),
+      ),
       relations: row.relations.map((relation) => ({
         id: relation.id,
         relationType: relation.relationType,
         sourceModule: relation.sourceModule,
         sourceEntityType: relation.sourceEntityType,
-        sourceEntityIdMasked: maskReference(relation.sourceEntityId) ?? '••••',
-        displayLabel: sensitiveAllowed
-          ? relation.displayLabel
-          : 'پرونده محرمانه',
+        sourceEntityIdMasked: revealMetadata
+          ? (maskReference(relation.sourceEntityId) ?? '••••')
+          : '••••',
+        displayLabel: revealMetadata ? relation.displayLabel : 'پرونده محرمانه',
       })),
       capabilities: {
         ...base.capabilities,
@@ -1168,6 +1213,12 @@ export class DocumentsService {
     const row = await this.repository.findDetail(id, actor.branchIds);
     if (!row) throw new NotFoundException('سند پیدا نشد.');
     this.assertDomain(row.documentType.domain, actor.permissions);
+    if (
+      row.sourceModule === 'WORKBENCH' &&
+      row.sourceEntityType === 'WorkbenchFeedback'
+    ) {
+      throw new ForbiddenException('ویرایش پیوست نظرسنجی مجاز نیست.');
+    }
     if (row.archiveStatus === 'DELETED') {
       throw new ConflictException('سند حذف‌شده قابل ویرایش نیست.');
     }
@@ -1207,7 +1258,7 @@ export class DocumentsService {
         'سند هم‌زمان تغییر کرده است؛ اطلاعات را دوباره باز کنید.',
       );
     }
-    return { data: this.mapDetail(updated, actor.permissions) };
+    return { data: this.mapDetail(updated, actor) };
   }
 
   async archive(
@@ -1238,7 +1289,7 @@ export class DocumentsService {
       userAgentSummary: summarizeUserAgent(metadata.userAgent),
     });
     if (!updated) throw new ConflictException('سند هم‌زمان تغییر کرده است.');
-    return { data: this.mapDetail(updated, actor.permissions) };
+    return { data: this.mapDetail(updated, actor) };
   }
 
   async restore(
@@ -1272,7 +1323,7 @@ export class DocumentsService {
       userAgentSummary: summarizeUserAgent(metadata.userAgent),
     });
     if (!updated) throw new ConflictException('سند هم‌زمان تغییر کرده است.');
-    return { data: this.mapDetail(updated, actor.permissions) };
+    return { data: this.mapDetail(updated, actor) };
   }
 
   async bulk(
@@ -1552,10 +1603,9 @@ export class DocumentsService {
           documentId,
           actor.branchIds,
         );
-        if (scanned)
-          return { data: this.mapDetail(scanned, actor.permissions) };
+        if (scanned) return { data: this.mapDetail(scanned, actor) };
       }
-      return { data: this.mapDetail(row, actor.permissions) };
+      return { data: this.mapDetail(row, actor) };
     } catch (error) {
       await this.storage
         .removeQuarantined(storageObjectKey)
@@ -1617,6 +1667,8 @@ export class DocumentsService {
     const row = await this.repository.findDetail(id, actor.branchIds);
     if (!row) throw new NotFoundException('سند پیدا نشد.');
     this.assertDomain(row.documentType.domain, actor.permissions);
+    if (isWorkbenchFeedbackAttachment(row) && row.ownerUserId !== actor.userId)
+      throw new NotFoundException('سند پیدا نشد.');
     const events = await this.repository.audit(id);
     return {
       data: events.map((event): DocumentAuditEventV1 => ({
@@ -1767,7 +1819,8 @@ export class DocumentsService {
     this.assertDomain(row.documentType.domain, actor.permissions);
     const sensitive =
       row.confidentiality === 'CONFIDENTIAL' ||
-      row.confidentiality === 'RESTRICTED';
+      row.confidentiality === 'RESTRICTED' ||
+      (isWorkbenchFeedbackAttachment(row) && row.ownerUserId !== actor.userId);
     const baseAllowed =
       actor.permissions.includes('documents.file.read') &&
       actor.permissions.includes('documents.download') &&
@@ -1809,7 +1862,9 @@ export class DocumentsService {
         row.currentVersion.storageObjectKey,
         Number(row.currentVersion.sizeBytes),
       ),
-      fileName: row.currentVersion.safeDownloadName,
+      fileName: canRevealDocumentMetadata(row, actor)
+        ? row.currentVersion.safeDownloadName
+        : `protected-file.${row.currentVersion.extension}`,
       mimeType: row.currentVersion.detectedMimeType,
       sizeBytes: Number(row.currentVersion.sizeBytes),
     };
@@ -1871,7 +1926,8 @@ export class DocumentsService {
 
     const sensitive =
       row.confidentiality === 'CONFIDENTIAL' ||
-      row.confidentiality === 'RESTRICTED';
+      row.confidentiality === 'RESTRICTED' ||
+      (isWorkbenchFeedbackAttachment(row) && row.ownerUserId !== actor.userId);
     const sensitiveAllowed =
       !sensitive ||
       (actor.permissions.includes('documents.sensitive.read') &&
@@ -1930,7 +1986,9 @@ export class DocumentsService {
         row.currentVersion.storageObjectKey,
         Number(row.currentVersion.sizeBytes),
       ),
-      fileName: row.currentVersion.safeDownloadName,
+      fileName: canRevealDocumentMetadata(row, actor)
+        ? row.currentVersion.safeDownloadName
+        : `protected-file.${row.currentVersion.extension}`,
       mimeType: row.currentVersion.detectedMimeType,
       sizeBytes: Number(row.currentVersion.sizeBytes),
     };
