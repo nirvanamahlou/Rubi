@@ -39,7 +39,7 @@ export function WorkbenchFiles({
   user: LoginResponse['user'];
   onChange: () => void;
 }) {
-  const [view, setView] = useState<DocumentPersonalViewCode>('OWNED');
+  const [view, setView] = useState<DocumentPersonalViewCode>('UPLOADED');
   const [search, setSearch] = useState('');
   const [query, setQuery] = useState({ search: '', page: 1 });
   const [data, setData] = useState<DocumentListResponseV1 | null>(null);
@@ -116,7 +116,7 @@ export function WorkbenchFiles({
       await documentsApi.upload(form);
       setUploadOpen(false);
       setFeedback(
-        'سند ثبت شد. وضعیت بررسی فایل در پرونده سند قابل پیگیری است.',
+        'سند ثبت شد. وضعیت بررسی فایل در جزئیات سند قابل پیگیری است.',
       );
       await load();
       onChange();
@@ -144,7 +144,7 @@ export function WorkbenchFiles({
           <h2 className="font-bold text-lg">فایل‌های من</h2>
           <p className="mt-1 text-sm text-muted-foreground">
             فایل‌های این بخش در آرشیو اصلی «اسناد و فایل‌ها» ثبت می‌شوند و از
-            همان پرونده قابل مشاهده و دریافت هستند.
+            همین فهرست یا آرشیو قابل مشاهده و دریافت هستند.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -174,7 +174,6 @@ export function WorkbenchFiles({
           dir="rtl"
         >
           <TabsList className="flex flex-wrap h-auto">
-            <TabsTrigger value="OWNED">اسناد من</TabsTrigger>
             <TabsTrigger value="UPLOADED">بارگذاری‌های من</TabsTrigger>
             <TabsTrigger value="RECENTLY_VIEWED">اخیراً دیده‌شده</TabsTrigger>
           </TabsList>
@@ -296,6 +295,7 @@ export function WorkbenchFiles({
       )}
       {uploadOpen && (
         <DocumentUploadDialog
+          personalUpload
           open
           options={options}
           branches={user.branches}

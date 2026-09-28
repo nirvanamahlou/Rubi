@@ -4118,3 +4118,29 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 - `COMPUTER_ID=PC-B`؛ شاخه مستقل `codex/pc-b-workbench-chat-draft-reset-0928` از `origin/develop@7639f2f7`. محدوده: فقط state رابط پیام‌رسان میزکار، بررسی هدفمند و ثبت وضعیت. API، Schema/Migration، Permission، Dependency/Lockfile و داده عملیاتی تغییر نمی‌کنند.
 - انتخاب گفت‌وگوی متفاوت متن پیش‌نویس، پیوست‌های انتخاب‌شده، شناسه تلاش ارسال و پیام‌های گفت‌وگوی قبلی را پاک می‌کند تا داده چت قبلی به مقصد جدید منتقل یا تا بارگذاری پیام‌ها نمایش داده نشود.
 - چهار آزمون موجود پیام‌رسان، lint فایل تغییرکرده، typecheck و build تولیدی وب موفق‌اند. تعویض گفت‌وگو هنگام ارسال تا پایان همان عملیات غیرفعال است.
+
+## 2026-09-28 — WORKBENCH-OPTIONAL-DOCUMENT-CASE-0928 — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک: ارتباط با پرونده در بارگذاری سندِ میزکار اختیاری باشد.
+- `COMPUTER_ID=PC-B`؛ شاخه `codex/pc-b-workbench-optional-document-case-0928` از `origin/develop@c8b04d6f`. محدوده: فرم بارگذاری مشترک با حالت اختصاصی میزکار، اعتبارسنجی بارگذاری Documents برای مرجع شخصیِ بدون پرونده، تست‌های هدفمند و ثبت وضعیت. قرارداد endpoint موجود حفظ می‌شود؛ Schema/Migration، Permission، Dependency/Lockfile و داده عملیاتی تغییر نمی‌کنند.
+- قرارداد موجود `POST /documents/upload` با همان فیلدهای source fallback مصرف می‌شود. در حالت میزکارِ بدون پرونده، source ثابت `WORKBENCH/WorkbenchPersonalDocument/<actor.userId>` با مالک همان کاربر ثبت می‌شود؛ backend شناسه و مالک را با نشست تطبیق می‌دهد. پرونده انتخاب‌شده همچنان از مسیر معتبر `sourceRelationId` بررسی می‌شود.
+- اعتبارسنجی: ۴ تست وب و ۲۸ تست API، lint فایل‌های تغییرکرده، typecheck و build وب/API موفق. بدون Migration؛ فرم اصلی اسناد همچنان پرونده را اجباری می‌داند.
+
+## 2026-09-28 — WORKBENCH-HR-DOCUMENT-BRANCHES-0928 — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک: در فرم بارگذاری سند میزکار، فهرست شعبه‌ها از شعبه‌های ثبت‌شده در منابع انسانی نمایش داده شود.
+- ادامهٔ شاخهٔ بازبینی `codex/pc-b-workbench-optional-document-case-0928` و PR #413؛ محدوده: public service فهرست شعب HR، گزینه‌های بارگذاری Documents، فرم مشترک بارگذاری و تست‌های هدفمند. هر سه ماژول در مالکیت PC-B هستند. شناسهٔ IAM شعبه برای FK و کنترل دسترسی حفظ می‌شود و فقط نام شعبه از رکورد فعال HR می‌آید؛ در نبود رکورد HR نام اصلی شعبه نمایش داده می‌شود.
+- بدون Schema/Migration، Permission grant، Dependency/Lockfile یا تغییر شکل قرارداد API.
+- اعتبارسنجی: ۲۹ تست هدفمند API، lint فایل‌های متاثر، typecheck و build تولیدی API/Web موفق‌اند. UI همان گزینه‌های API را مصرف می‌کند؛ نمایش نام HR برای رکوردهای فعال و fallback به نام شعبهٔ اصلی پوشش داده شد.
+
+## 2026-09-28 — DOCUMENT-DETAIL-HIDE-RELATIONS-VERSIONS-0928 — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک: بخش‌های «ارتباطات» و «نسخه‌ها» از پنجره مشاهده سند حذف شوند.
+- ادامهٔ شاخهٔ بازبینی `codex/pc-b-workbench-optional-document-case-0928` و PR #413؛ محدوده فقط `apps/web/src/modules/documents/components/document-detail-dialog.tsx` و ثبت وضعیت است. مالک ماژول اسناد PC-B است؛ داده، API، مجوز و امکان دریافت فایل تغییر نمی‌کند.
+- تب‌ها و محتوای «ارتباطات» و «نسخه‌ها» حذف شدند. lint، typecheck و build تولیدی Web با ۵۳ صفحه موفق‌اند.
+
+## 2026-09-28 — WORKBENCH-FILES-UPLOADED-ONLY-0928 — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک: تب «اسناد من» در فایل‌های میزکار حذف شود و «بارگذاری‌های من» باقی بماند.
+- ادامهٔ شاخهٔ بازبینی `codex/pc-b-workbench-optional-document-case-0928` و PR #413؛ محدوده `apps/web/src/modules/workbench/workbench-files.tsx` و ثبت وضعیت. فهرست اسناد اصلی، داده و API تغییر نمی‌کنند.
+- تب «اسناد من» حذف و «بارگذاری‌های من» پیش‌فرض شد. lint، typecheck و build تولیدی Web موفق‌اند.

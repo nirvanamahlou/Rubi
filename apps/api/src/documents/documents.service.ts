@@ -965,10 +965,13 @@ export class DocumentsService {
   }
 
   async options(actor: AuthenticatedActor): Promise<DocumentOptionsResponseV1> {
-    const values = await this.repository.options(
-      actor.branchIds,
-      allowedDocumentDomains(actor.permissions),
-    );
+    const [values, hrBranchNames] = await Promise.all([
+      this.repository.options(
+        actor.branchIds,
+        allowedDocumentDomains(actor.permissions),
+      ),
+      this.hrDirectory.documentBranchNames(actor),
+    ]);
     const documentTypes = values.documentTypes.map((type) => ({
       id: type.id,
       code: type.code,
@@ -983,7 +986,10 @@ export class DocumentsService {
     return {
       data: {
         currentUserId: actor.userId,
-        branches: values.branches,
+        branches: values.branches.map((branch) => ({
+          ...branch,
+          name: hrBranchNames.get(branch.id) ?? branch.name,
+        })),
         documentTypes,
         categories: values.categories.map(({ id, code, name }) => ({
           id,
@@ -1320,6 +1326,18 @@ export class DocumentsService {
     if (!actor.branchIds.includes(dto.branchId)) {
       throw new ForbiddenException('شعبه انتخاب‌شده خارج از دسترسی کاربر است.');
     }
+    const personalWorkbenchUpload =
+      !dto.sourceRelationId &&
+      dto.sourceModule === 'WORKBENCH' &&
+      dto.sourceEntityType === 'WorkbenchPersonalDocument';
+    if (
+      personalWorkbenchUpload &&
+      (dto.sourceEntityId !== actor.userId || dto.ownerUserId !== actor.userId)
+    ) {
+      throw new ForbiddenException(
+        'سند شخصی باید به حساب خودتان تعلق داشته باشد.',
+      );
+    }
     const references = await this.repository.uploadReferences({
       documentTypeId: dto.documentTypeId,
       categoryId: dto.categoryId,
@@ -1351,12 +1369,21 @@ export class DocumentsService {
         'پرونده انتخاب‌شده معتبر یا در دسترس شما نیست.',
       );
     }
-    const sourceReference = selectedCase ?? {
-      sourceModule: dto.sourceModule?.trim() ?? '',
-      sourceEntityType: dto.sourceEntityType?.trim() ?? '',
-      sourceEntityId: dto.sourceEntityId?.trim() ?? '',
-      displayLabel: dto.sourceDisplayLabel?.trim() ?? '',
-    };
+    const sourceReference =
+      selectedCase ??
+      (personalWorkbenchUpload
+        ? {
+            sourceModule: 'WORKBENCH',
+            sourceEntityType: 'WorkbenchPersonalDocument',
+            sourceEntityId: actor.userId,
+            displayLabel: dto.title.trim(),
+          }
+        : {
+            sourceModule: dto.sourceModule?.trim() ?? '',
+            sourceEntityType: dto.sourceEntityType?.trim() ?? '',
+            sourceEntityId: dto.sourceEntityId?.trim() ?? '',
+            displayLabel: dto.sourceDisplayLabel?.trim() ?? '',
+          });
     if (
       sourceReference.sourceModule === 'HUMAN_RESOURCES' &&
       sourceReference.sourceEntityType === 'Employee'
