@@ -1,3 +1,7 @@
+## 2026-09-28 — Manifest merged and local updated (PC-A)
+
+PR #422 merged into develop@e4eb048c with all CI gates successful, by explicit user approval. Local Web 3100/API 4000 now run this version; additive migrations applied, all 99 current, backup retained outside Git. Health/login 200, protected routes preserved. Original checkout edits preserved. See docs/tasks/MANIFEST-DEFAULT-TEMPLATE-0928.md for validation and rollout details.
+
 ## 2026-09-28 — قالب پیش‌فرض و انتخاب قالب منیفست (PC-A)
 
 - در شاخه مستقل codex/pc-a-manifest-default-template-0928 از origin/develop@1de70e5c، انتهای فرم بلیت انتخاب‌گر جست‌وجوپذیر قالب افزوده شد؛ نام گزینه‌ها از ایرلاین و مقصد است و انتخاب nullable روی Published Offer با FK واقعی ذخیره می‌شود. بلیت‌های قدیمی و گزینهٔ «پیش‌فرض» از XLSX عمومی استفاده می‌کنند.

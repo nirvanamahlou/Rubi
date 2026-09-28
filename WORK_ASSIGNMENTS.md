@@ -1,3 +1,7 @@
+## MANIFEST-LOCAL-ROLLOUT-0928 — PC-A — COMPLETED
+
+- User explicitly approved merging PR #422 and updating local runtime. PR merged into develop@e4eb048cf9a6cb83e68eb9f8c65a60a77aabd6d9 after all CI gates passed. Reserve additive manifest migration rollout, clean develop-finance-integration fast-forward, API 4000/Web 3100 restart and bounded result documentation. Result: local API/Web restarted successfully, all 99 migrations current; backup retained, health/login 200. Locks RELEASED. Original dirty checkout is preserved. Migration Owner and bounded Central Docs Owner = PC-A for this rollout only; no dependency/lockfile changes. Local database backup is retained outside Git in .runtime.
+
 ## MANIFEST-DEFAULT-TEMPLATE-0928 — PC-A — READY_FOR_REVIEW
 
 - Owner request: every ticket without an assigned manifest template exports a default XLSX with contract, separate passenger names, flight date/ticket/airline, age, nationality, birth date, gender, cabin and national ID; international routes additionally include passport number/expiry. Ticket management ends with a searchable template selector, defaulting to «پیش‌فرض»; named options use airline and destination.

@@ -17,3 +17,8 @@
 - Rollout order: apply additive migration, then deploy Contracts/Database/API/Web together after review. Browser interaction against authenticated operational data remains deployment QA. The current running app has not been replaced.
 
 Final checks: scoped API/Web lint and typechecks pass; API production build and Web production build (53 routes) pass. All migration/contract/bounded documentation reservations are RELEASED with the scoped commit. No dependency or lockfile changes.
+
+
+## Approved local rollout — 2026-09-28
+
+User explicitly approved merge and local update. PR #422 merged into develop at e4eb048cf9a6cb83e68eb9f8c65a60a77aabd6d9 after all production-build, quality, test and PostgreSQL migration/seed gates passed. Clean develop-finance-integration runtime was fast-forwarded; the original dirty checkout was preserved. A local pg_dump backup was retained outside Git. Additive pending workbench attachment and ticket manifest migrations were deployed; Prisma reports all 99 migrations up to date. Prisma generation, Database/Contracts/Config/API builds passed. Final merged verification: API 124 passed/8 skipped; Web 247 passed/1 skipped, typechecks and 53-route production build passed. Web dev restarted on 3100 (parent PID 30884), API on 4000 (PID 26168), using existing .env, database and document storage. Login returns 200; protected Ticket/Reservations pages redirect to login; API health returns 200 and unauthenticated manifest choices return 401. No authenticated operational passenger export was performed. Runtime-only next-env regeneration and .runtime logs remain local. Migration and bounded documentation locks RELEASED.
