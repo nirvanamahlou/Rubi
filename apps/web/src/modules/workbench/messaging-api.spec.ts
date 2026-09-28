@@ -77,6 +77,27 @@ describe('Workbench messaging API client', () => {
     );
   });
 
+  it('downloads an attachment through its authenticated conversation', async () => {
+    const blob = new Blob(['file'], { type: 'image/png' });
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        blob: async () => blob,
+      }),
+    );
+    const received = await messagingApi.downloadAttachment(
+      '22222222-2222-4222-8222-222222222222',
+      '33333333-3333-4333-8333-333333333333',
+    );
+    expect(received).toBe(blob);
+    expect(fetch).toHaveBeenCalledWith(
+      'http://api.local/api/v1/messaging/conversations/22222222-2222-4222-8222-222222222222/attachments/33333333-3333-4333-8333-333333333333',
+      { credentials: 'include', cache: 'no-store' },
+    );
+  });
+
   it('generates stable-format unique request identifiers', () => {
     vi.stubGlobal('crypto', {
       randomUUID: () => '44444444-4444-4444-8444-444444444444',

@@ -4097,3 +4097,10 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 - شاخه `codex/pc-b-workbench-feedback-hr-layout-0928` از `origin/develop@7639f2f7`؛ محدوده: فرم نظرسنجی میزکار، محدودیت مقصد منابع انسانی در API، آزمون‌های هدفمند و ثبت وضعیت. بدون Schema/Migration، Dependency/Lockfile یا تغییر دادهٔ عملیاتی.
 - سازگاری: خواندن نظرسنجی‌های قدیمی برای مقصدهای قبلی حفظ می‌شود؛ فقط ارسال جدید به HR محدود خواهد شد.
 - نتیجه: انتخاب مقصد از فرم حذف و «منابع انسانی» ثابت شد؛ API ارسال جدید به مقصد دیگر را رد می‌کند. دکمه حذف پیوست و فاصله آن از نام فایل اصلاح شد. ۶ آزمون سرویس، lint/typecheck و build وب و API موفق‌اند.
+
+## 2026-09-28 — MESSAGING-DELIVERY-ATTACHMENTS-0928 — PC-B — READY_FOR_REVIEW
+
+- شاخه `codex/pc-b-messaging-delivery-attachments-0928` از `origin/develop@7639f2f7`؛ محدوده: تطبیق مرجع پیوست پیام در Documents، دریافت محدود پیوست برای اعضای گفت‌وگو در Messaging، تازه‌سازی پیام‌ها در Workbench، آزمون‌ها و ثبت وضعیت. بدون Schema/Migration، Dependency/Lockfile، Permission grant یا دادهٔ عملیاتی.
+- قرارداد افزایشی `GET /messaging/conversations/:id/attachments/:documentId` توسط Messaging تولید و Workbench مصرف می‌شود؛ مسیرهای قبلی و دادهٔ پیام‌های موجود حفظ می‌شوند.
+- علت خطا: upload مرجع `MESSAGING/MessagingMessage` می‌نوشت اما lookup پیوست فقط `WORKBENCH` را جست‌وجو می‌کرد. lookup اکنون source module متناظر را بررسی می‌کند و نام فایل اصلی را به پیام می‌دهد. دریافت فایل تنها پس از تأیید عضویت در گفت‌وگو و اتصال فایل به همان پیام انجام می‌شود؛ اسکن امنیتی و audit اسناد حفظ‌اند.
+- رابط گیرنده پیام‌ها و گفت‌وگوها را هر ۱۰ ثانیه در تب فعال تازه می‌کند و لینک اعلان را روی گفت‌وگوی درست باز می‌کند. ۲۲ آزمون هدفمند API و ۵ آزمون Web، lint/typecheck و build API/Web موفق‌اند؛ آزمون زنده با دو حساب واقعی اجرا نشده است.

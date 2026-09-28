@@ -371,6 +371,7 @@ export class DocumentsRepository {
   }) {
     return this.workbenchOwnedAttachmentIds({
       documentIds: input.documentIds,
+      sourceModule: 'WORKBENCH',
       sourceEntityType: 'WorkbenchFeedback',
       sourceEntityId: input.feedbackId,
       branchId: input.branchId,
@@ -380,6 +381,7 @@ export class DocumentsRepository {
 
   workbenchOwnedAttachmentIds(input: {
     documentIds: readonly string[];
+    sourceModule: 'WORKBENCH' | 'MESSAGING';
     sourceEntityType: string;
     sourceEntityId: string;
     branchId: string;
@@ -391,13 +393,17 @@ export class DocumentsRepository {
         id: { in: [...input.documentIds] },
         branchId: input.branchId,
         ownerUserId: input.ownerUserId,
-        sourceModule: 'WORKBENCH',
+        sourceModule: input.sourceModule,
         sourceEntityType: input.sourceEntityType,
         sourceEntityId: input.sourceEntityId,
         archiveStatus: 'ACTIVE',
         deletedAt: null,
       },
-      select: { id: true, title: true },
+      select: {
+        id: true,
+        title: true,
+        currentVersion: { select: { originalFileName: true } },
+      },
     });
   }
 

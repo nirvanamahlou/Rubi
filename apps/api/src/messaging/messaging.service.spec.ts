@@ -49,6 +49,7 @@ describe('MessagingService', () => {
       messages: vi.fn(),
       createMessage: vi.fn(),
       sourceMessage: vi.fn(),
+      attachmentReference: vi.fn(),
       unreadCount: vi.fn().mockResolvedValue(0),
       markRead: vi.fn(),
     };
@@ -68,6 +69,7 @@ describe('MessagingService', () => {
         id: '88888888-8888-4888-8888-888888888888',
         scanStatus: 'PENDING_SCAN',
       }),
+      downloadMessagingAttachment: vi.fn(),
     };
     service = new MessagingService(
       repository as unknown as MessagingRepository,
@@ -199,6 +201,83 @@ describe('MessagingService', () => {
       { ipAddress: '127.0.0.1' },
     );
     expect(response.data.id).toBe('88888888-8888-4888-8888-888888888888');
+  });
+
+  it('delivers a linked file to a conversation member', async () => {
+    const documentId = '88888888-8888-4888-8888-888888888888';
+    repository.attachmentReference!.mockResolvedValue({ messageId });
+    documents.downloadMessagingAttachment!.mockResolvedValue({
+      fileName: 'receipt.png',
+    });
+
+    const result = await service.downloadAttachment(
+      conversationId,
+      documentId,
+      { ...actor, userId: recipientId },
+      { ipAddress: '127.0.0.1' },
+    );
+
+    expect(result.fileName).toBe('receipt.png');
+    expect(documents.downloadMessagingAttachment).toHaveBeenCalledWith(
+      documentId,
+      actor.branchIds[0],
+      expect.objectContaining({ userId: recipientId }),
+      { ipAddress: '127.0.0.1' },
+    );
+  });
+
+  it('returns the same saved text and attachment to the recipient', async () => {
+    const documentId = '88888888-8888-4888-8888-888888888888';
+    repository.messages!.mockResolvedValue([
+      {
+        id: messageId,
+        conversationId,
+        senderUserId: actor.userId,
+        body: 'متن ارسالی',
+        createdAt: now,
+        forwardedFrom: null,
+        attachments: [{ documentId, title: 'receipt.png' }],
+      },
+    ]);
+    const response = await service.messages(
+      conversationId,
+      { limit: 50 },
+      { ...actor, userId: recipientId },
+    );
+    expect(response.data[0]).toMatchObject({
+      body: 'متن ارسالی',
+      attachments: [{ documentId, title: 'receipt.png' }],
+    });
+    expect(repository.markRead).toHaveBeenCalledWith(
+      conversationId,
+      recipientId,
+    );
+  });
+
+  it('does not expose an attachment to a non-member', async () => {
+    repository.conversation!.mockResolvedValue(null);
+    await expect(
+      service.downloadAttachment(
+        conversationId,
+        '88888888-8888-4888-8888-888888888888',
+        actor,
+        {},
+      ),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    expect(repository.attachmentReference).not.toHaveBeenCalled();
+  });
+
+  it('denies a file outside the member conversation', async () => {
+    repository.attachmentReference!.mockResolvedValue(null);
+    await expect(
+      service.downloadAttachment(
+        conversationId,
+        '88888888-8888-4888-8888-888888888888',
+        actor,
+        {},
+      ),
+    ).rejects.toBeInstanceOf(NotFoundException);
+    expect(documents.downloadMessagingAttachment).not.toHaveBeenCalled();
   });
 
   it('forwards the server copy of an accessible source message', async () => {

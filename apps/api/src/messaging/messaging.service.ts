@@ -168,6 +168,28 @@ export class MessagingService {
     };
   }
 
+  async downloadAttachment(
+    id: string,
+    documentId: string,
+    actor: AuthenticatedActor,
+    metadata: DocumentRequestMetadata,
+  ) {
+    const conversationId = validate.uuid(id, 'گفت‌وگو');
+    const attachmentId = validate.uuid(documentId, 'پیوست پیام');
+    const conversation = await this.assertConversation(conversationId, actor);
+    const reference = await this.repository.attachmentReference(
+      conversationId,
+      attachmentId,
+    );
+    if (!reference) throw new NotFoundException('پیوست پیام پیدا نشد.');
+    return this.documents.downloadMessagingAttachment(
+      attachmentId,
+      conversation.branchId,
+      actor,
+      metadata,
+    );
+  }
+
   async forward(id: string, body: unknown, actor: AuthenticatedActor) {
     const conversationId = validate.uuid(id, 'گفت‌وگوی مقصد');
     const conversation = await this.assertConversation(conversationId, actor);

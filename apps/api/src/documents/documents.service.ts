@@ -379,6 +379,8 @@ export class DocumentsService {
     const uniqueIds = [...new Set(documentIds)];
     const matches = await this.repository.workbenchOwnedAttachmentIds({
       documentIds: uniqueIds,
+      sourceModule:
+        sourceEntityType === 'MessagingMessage' ? 'MESSAGING' : 'WORKBENCH',
       sourceEntityType,
       sourceEntityId,
       branchId,
@@ -389,7 +391,10 @@ export class DocumentsService {
         'یک یا چند فایل پیوست متعلق به این رکورد میزکار نیست.',
       );
     }
-    return matches;
+    return matches.map(({ id, title, currentVersion }) => ({
+      id,
+      title: currentVersion?.originalFileName || title,
+    }));
   }
 
   /**
@@ -584,6 +589,58 @@ export class DocumentsService {
     return {
       id: uploaded.data.id,
       scanStatus: uploaded.data.currentVersion.scanStatus,
+    };
+  }
+
+  /** Messaging verifies conversation membership and message linkage before this narrow read. */
+  async downloadMessagingAttachment(
+    documentId: string,
+    branchId: string,
+    actor: AuthenticatedActor,
+    metadata: DocumentRequestMetadata,
+  ): Promise<DocumentFileDelivery> {
+    if (!actor.branchIds.includes(branchId))
+      throw new ForbiddenException('شعبه پیوست خارج از دسترسی شما است.');
+    const row = await this.repository.findDetail(documentId, [branchId]);
+    if (!row || !row.currentVersion)
+      throw new NotFoundException('پیوست پیام پیدا نشد.');
+    const allowed =
+      row.branchId === branchId &&
+      row.sourceModule === 'MESSAGING' &&
+      row.sourceEntityType === 'MessagingMessage' &&
+      Boolean(row.sourceEntityId) &&
+      row.documentType.domain === 'GENERAL' &&
+      row.confidentiality === 'INTERNAL' &&
+      row.archiveStatus === 'ACTIVE' &&
+      row.deletedAt === null &&
+      !row.requiresStepUpVerification &&
+      row.currentVersion.scanStatus === 'CLEAN';
+    await this.repository.appendAudit({
+      documentId: row.id,
+      versionId: row.currentVersion.id,
+      actorUserId: actor.userId,
+      actorBranchId: branchId,
+      action: 'documents.messaging.download',
+      outcome: allowed ? 'SUCCESS' : 'FAILURE',
+      reason: allowed ? null : 'MESSAGING_ATTACHMENT_POLICY_DENIED',
+      ipSummary: summarizeIp(metadata.ipAddress),
+      userAgentSummary: summarizeUserAgent(metadata.userAgent),
+    });
+    if (!allowed) {
+      if (row.currentVersion.scanStatus !== 'CLEAN')
+        throw new ConflictException(
+          'فایل تا پایان اسکن امنیتی قابل دریافت نیست.',
+        );
+      throw new ForbiddenException('دریافت این پیوست مجاز نیست.');
+    }
+    return {
+      stream: await this.storage.openQuarantined(
+        row.currentVersion.storageObjectKey,
+        Number(row.currentVersion.sizeBytes),
+      ),
+      fileName: row.currentVersion.safeDownloadName,
+      mimeType: row.currentVersion.detectedMimeType,
+      sizeBytes: Number(row.currentVersion.sizeBytes),
     };
   }
 

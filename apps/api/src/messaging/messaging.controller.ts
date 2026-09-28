@@ -8,6 +8,7 @@ import {
   Post,
   Query,
   Req,
+  StreamableFile,
   UploadedFile,
   UseGuards,
   UseInterceptors,
@@ -118,6 +119,27 @@ export class MessagingController {
       request.actor,
       requestMetadata(request),
     );
+  }
+
+  @Get('conversations/:id/attachments/:documentId')
+  @Header('Cache-Control', 'private, no-store')
+  @Header('X-Content-Type-Options', 'nosniff')
+  async downloadAttachment(
+    @Param('id') id: string,
+    @Param('documentId') documentId: string,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    const result = await this.service.downloadAttachment(
+      id,
+      documentId,
+      request.actor,
+      requestMetadata(request),
+    );
+    return new StreamableFile(result.stream, {
+      type: result.mimeType,
+      length: result.sizeBytes,
+      disposition: `attachment; filename*=UTF-8''${encodeURIComponent(result.fileName)}`,
+    });
   }
 
   @Post('conversations/:id/forwards')
