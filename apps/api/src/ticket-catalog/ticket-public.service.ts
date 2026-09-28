@@ -21,6 +21,7 @@ import type {
 } from '@nora/contracts';
 import { DatabaseService } from '../database/database.service';
 import { ProcurementPublicService } from '../procurement/procurement-public.service';
+import { MasterTravelDirectory } from '../master-data/master-travel-directory';
 
 const uuid = Joi.string().guid();
 const capacityHoldSchema = Joi.object({
@@ -29,6 +30,7 @@ const capacityHoldSchema = Joi.object({
 });
 type CapacityHoldInput = { quantity: number; expiresAt: string };
 const createSchema = Joi.object({
+  manifestTemplateId: uuid.allow(null).optional(),
   originId: uuid.required(),
   destinationId: uuid.invalid(Joi.ref('originId')).required(),
   departureAt: Joi.string().isoDate().required(),
@@ -64,7 +66,52 @@ export class TicketPublicService {
     @Inject(DatabaseService) private readonly database: DatabaseService,
     @Inject(ProcurementPublicService)
     private readonly purchases: ProcurementPublicService,
+    @Inject(MasterTravelDirectory)
+    private readonly directory?: MasterTravelDirectory,
   ) {}
+
+  async manifestSelection(offerId: string, branchIds: readonly string[]) {
+    const row = await this.database.client.ticketPublishedOffer.findFirst({
+      where: { id: offerId, branchId: { in: [...branchIds] } },
+      select: { manifestTemplateId: true },
+    });
+    if (!row) throw new ForbiddenException('بلیط در شعبه مجاز شما نیست.');
+    return row.manifestTemplateId ?? null;
+  }
+
+  async manifestTemplateChoices(
+    search: string,
+    page: number,
+    actor: AuthenticatedActor,
+  ) {
+    this.require(actor, 'ticket_catalog.manage');
+    if (
+      !Number.isSafeInteger(page) ||
+      page < 1 ||
+      page > 10000 ||
+      typeof search !== 'string' ||
+      search.length > 160
+    )
+      throw new BadRequestException('فیلتر قالب منیفست معتبر نیست.');
+    if (!this.directory)
+      throw new BadRequestException('فهرست قالب منیفست آماده نیست.');
+    return this.directory.manifestTemplateChoices(search.trim(), page);
+  }
+
+  private async validateManifest(value: TicketOfferCreateV1) {
+    if (!value.manifestTemplateId) return;
+    if (!this.directory)
+      throw new BadRequestException('فهرست قالب منیفست آماده نیست.');
+    await this.directory.manifestTemplateById(
+      value.manifestTemplateId,
+      new Intl.DateTimeFormat('sv-SE', {
+        timeZone: 'Asia/Tehran',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      }).format(new Date(value.departureAt)),
+    );
+  }
 
   private require(
     actor: AuthenticatedActor,
@@ -76,6 +123,7 @@ export class TicketPublicService {
 
   private offerView(row: {
     id: string;
+    manifestTemplateId?: string | null;
     version: number;
     branchId: string;
     originId: string;
@@ -115,6 +163,7 @@ export class TicketPublicService {
     );
     return {
       id: row.id,
+      manifestTemplateId: row.manifestTemplateId ?? null,
       version: row.version,
       branchId: row.branchId,
       originId: row.originId,
@@ -315,6 +364,7 @@ export class TicketPublicService {
     if (!key?.trim() || key.length > 160)
       throw new BadRequestException('کلید درخواست معتبر لازم است.');
     const value = validateTicketOffer(input);
+    await this.validateManifest(value);
     const fingerprint = createHash('sha256')
       .update(JSON.stringify({ branchId, ...value }))
       .digest('hex');
@@ -354,7 +404,8 @@ export class TicketPublicService {
       row.carrierName === value.carrierName &&
       row.serviceNumber === value.serviceNumber &&
       row.cabinClassCode === value.cabinClassCode &&
-      row.totalCapacity === value.totalCapacity;
+      row.totalCapacity === value.totalCapacity &&
+      (row.manifestTemplateId ?? null) === (value.manifestTemplateId ?? null);
     if (row.fingerprint !== fingerprint && !sameOffer)
       throw new ConflictException(
         'کلید درخواست قبلاً با اطلاعات متفاوت استفاده شده است.',
@@ -798,6 +849,7 @@ export class TicketPublicService {
     )
       throw new BadRequestException('شناسه یا نسخه بلیط معتبر نیست.');
     const value = validateTicketOffer(input.offer);
+    await this.validateManifest(value);
     return this.database.client.$transaction(async (tx) => {
       await tx.$queryRaw(
         Prisma.sql`SELECT "id" FROM "TicketPublishedOffer" WHERE "id" = ${id}::uuid FOR UPDATE`,
@@ -829,11 +881,19 @@ export class TicketPublicService {
         row.serviceNumber === value.serviceNumber &&
         row.cabinClassCode === value.cabinClassCode &&
         row.totalCapacity === value.totalCapacity;
+      const templateOnlyRevision =
+        scheduleOnlyRevision &&
+        value.manifestTemplateId !== undefined &&
+        (value.manifestTemplateId ?? null) !==
+          (row.manifestTemplateId ?? null) &&
+        row.departureAt.getTime() === new Date(value.departureAt).getTime() &&
+        row.arrivalAt.getTime() === new Date(value.arrivalAt).getTime();
       if (
-        (linkedSale && !scheduleOnlyRevision) ||
-        row.capacityHolds.length ||
-        row.tourOutboundDepartures.length ||
-        row.tourReturnDepartures.length
+        !templateOnlyRevision &&
+        ((linkedSale && !scheduleOnlyRevision) ||
+          row.capacityHolds.length ||
+          row.tourOutboundDepartures.length ||
+          row.tourReturnDepartures.length)
       )
         throw new ConflictException(
           'برای بلیط متصل به قرارداد فقط ساعت حرکت و رسیدن قابل ویرایش است؛ رزرو ظرفیت یا تور متصل باید ابتدا تعیین تکلیف شود.',
@@ -842,6 +902,10 @@ export class TicketPublicService {
         where: { id },
         data: {
           ...value,
+          manifestTemplateId:
+            value.manifestTemplateId === undefined
+              ? row.manifestTemplateId
+              : value.manifestTemplateId,
           departureAt: new Date(value.departureAt),
           arrivalAt: new Date(value.arrivalAt),
           fingerprint: createHash('sha256')

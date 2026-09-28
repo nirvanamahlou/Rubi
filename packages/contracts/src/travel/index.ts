@@ -53,6 +53,8 @@ export interface TicketRoundTripSalePriceUpdateV1 {
 }
 
 export interface TicketOfferV1 {
+  /** Null/absent uses the built-in default manifest. */
+  manifestTemplateId?: string | null;
   id: string;
   version: number;
   branchId: string;

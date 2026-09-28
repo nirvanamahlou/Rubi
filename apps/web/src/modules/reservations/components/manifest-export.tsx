@@ -223,8 +223,9 @@ export function ManifestExport() {
       <div>
         <strong>MANIFEST بلیط‌ها</strong>
         <p className="mt-1 text-sm text-muted-foreground">
-          بازه را انتخاب کنید، سپس روی بلیط موردنظر بزنید. خروجی با قالب فعال
-          همان ایرلاین و مقصد ساخته می‌شود.
+          بازه را انتخاب کنید، سپس روی بلیط موردنظر بزنید. خروجی با قالب
+          انتخاب‌شدهٔ بلیط ساخته می‌شود؛ بلیط‌های بدون قالب از «پیش‌فرض» استفاده
+          می‌کنند.
         </p>
       </div>
       <div className="grid gap-3 sm:grid-cols-2">

@@ -58,6 +58,18 @@ class TicketOffersController {
   constructor(
     @Inject(TicketPublicService) private readonly service: TicketPublicService,
   ) {}
+  @Get('manifest-templates') templates(
+    @Query('search') search = '',
+    @Query('page') page = '1',
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.service.manifestTemplateChoices(
+      search,
+      Number(page),
+      req.actor,
+    );
+  }
+
   @Get('management') managed(@Req() req: AuthenticatedRequest) {
     return this.service.managed(req.actor);
   }

@@ -2,6 +2,94 @@ import { describe, expect, it, vi } from 'vitest';
 import { MasterTravelDirectory } from './master-travel-directory';
 import type { MasterDataService } from './master-data.service';
 
+describe('explicit manifest template public boundary', () => {
+  const record = {
+    id: 'template',
+    name: 'Stored template',
+    status: 'active',
+    attributes: {
+      publicationStatus: 'ACTIVE',
+      fileFormat: 'XLSX',
+      fileReferenceId: 'file',
+      airlineName: 'Synthetic Air',
+      destinationCityName: 'Destination',
+      versionNumber: 2,
+      validFrom: '2026-10-01',
+      validTo: '2026-10-31',
+    },
+  };
+
+  it('uses airline/destination labels and paginates without returning draft files', async () => {
+    const list = vi.fn().mockResolvedValue({
+      data: [
+        record,
+        {
+          ...record,
+          id: 'draft',
+          attributes: { ...record.attributes, publicationStatus: 'DRAFT' },
+        },
+      ],
+      meta: { total: 2 },
+    });
+    const directory = new MasterTravelDirectory({ list } as never);
+    expect(await directory.manifestTemplateChoices('Synthetic', 1)).toEqual({
+      data: [{ id: 'template', name: 'Synthetic Air — Destination' }],
+      hasMore: false,
+    });
+    expect(list).toHaveBeenCalledWith(
+      'manifest-templates',
+      expect.objectContaining({
+        search: '',
+        page: 1,
+        status: 'active',
+      }),
+    );
+  });
+
+  it('searches destination labels across source pages and paginates eligible choices', async () => {
+    const rows = Array.from({ length: 26 }, (_, i) => ({
+      ...record,
+      id: `template-${i}`,
+    }));
+    const list = vi.fn().mockImplementation(async (_resource, query) => ({
+      data: query.page === 1 ? rows.slice(0, 20) : rows.slice(20),
+      meta: { total: 26 },
+    }));
+    const directory = new MasterTravelDirectory({ list } as never);
+    const first = await directory.manifestTemplateChoices('Destination', 1);
+    expect(first.data).toHaveLength(25);
+    expect(first.hasMore).toBe(true);
+    const second = await directory.manifestTemplateChoices('Destination', 2);
+    expect(second).toEqual({
+      data: [{ id: 'template-25', name: 'Synthetic Air — Destination' }],
+      hasMore: false,
+    });
+    expect(
+      (await directory.manifestTemplateChoices('missing', 1)).data,
+    ).toEqual([]);
+  });
+
+  it('checks inclusive validity dates and rejects expired/draft selections', async () => {
+    const detail = vi.fn().mockResolvedValue({ data: record });
+    const directory = new MasterTravelDirectory({ detail } as never);
+    expect(
+      await directory.manifestTemplateById('template', '2026-10-01'),
+    ).toMatchObject({ id: 'template', fileReferenceId: 'file' });
+    await expect(
+      directory.manifestTemplateById('template', '2026-11-01'),
+    ).rejects.toThrow('معتبر');
+    detail.mockResolvedValue({
+      data: {
+        ...record,
+        attributes: { ...record.attributes, publicationStatus: 'DRAFT' },
+      },
+    });
+    await expect(
+      directory.manifestTemplateById('template', '2026-10-01'),
+    ).rejects.toThrow('فعال');
+  });
+});
+
 describe('public travel reference boundary', () => {
   const input = {
     originId: 'origin',

@@ -159,6 +159,7 @@ export class MasterTravelDirectory {
       id: data.id,
       name: data.name,
       englishName: String(data.attributes.englishName ?? ''),
+      countryId: String(data.attributes.countryId ?? ''),
     };
   }
 
@@ -230,6 +231,87 @@ export class MasterTravelDirectory {
       name: record.name,
       versionNumber: Number(record.attributes.versionNumber ?? 1),
       fileReferenceId: String(record.attributes.fileReferenceId),
+    };
+  }
+
+  /** Explicit selection: validate through Master Data, never its tables. */
+  async manifestTemplateById(id: string, travelDay?: string) {
+    const { data } = await this.master.detail('manifest-templates', id);
+    const a = data.attributes;
+    if (
+      data.status !== 'active' ||
+      String(a.publicationStatus).toUpperCase() !== 'ACTIVE' ||
+      String(a.fileFormat).toUpperCase() !== 'XLSX' ||
+      !a.fileReferenceId ||
+      (travelDay &&
+        ((a.validFrom && String(a.validFrom) > travelDay) ||
+          (a.validTo && String(a.validTo) < travelDay)))
+    )
+      throw new BadRequestException(
+        'قالب منیفست انتخاب‌شده فعال یا معتبر نیست.',
+      );
+    return {
+      id: data.id,
+      name:
+        [a.airlineName, a.destinationCityName].filter(Boolean).join(' — ') ||
+        data.name,
+      versionNumber: Number(a.versionNumber ?? 1),
+      fileReferenceId: String(a.fileReferenceId),
+    };
+  }
+
+  async manifestTemplateChoices(search: string, page: number) {
+    // Search the public labels as well as stored names; uploaded file names may not contain the route.
+    const rows = [];
+    for (let sourcePage = 1; ; sourcePage++) {
+      const result = await this.master.list('manifest-templates', {
+        page: sourcePage,
+        pageSize: 100,
+        sortBy: 'name',
+        sortDirection: 'asc',
+        search: '',
+        status: 'active',
+      });
+      rows.push(...result.data);
+      if (rows.length >= result.meta.total || !result.data.length) break;
+    }
+    const normalize = (value: string) =>
+      value
+        .normalize('NFKC')
+        .replace(/[يى]/g, 'ی')
+        .replace(/ك/g, 'ک')
+        .toLocaleLowerCase();
+    const terms = normalize(search).trim().split(/\s+/).filter(Boolean);
+    const choices = rows
+      .filter(
+        (row) =>
+          Boolean(row.attributes.fileReferenceId) &&
+          String(row.attributes.publicationStatus).toUpperCase() === 'ACTIVE' &&
+          String(row.attributes.fileFormat).toUpperCase() === 'XLSX',
+      )
+      .map((row) => ({
+        id: row.id,
+        name:
+          [row.attributes.airlineName, row.attributes.destinationCityName]
+            .filter(Boolean)
+            .join(' — ') || row.name,
+        searchText: normalize(
+          [
+            row.name,
+            row.code,
+            row.attributes.airlineName,
+            row.attributes.airlineCode,
+            row.attributes.destinationCityName,
+          ].join(' '),
+        ),
+      }))
+      .filter((row) => terms.every((term) => row.searchText.includes(term)));
+    const offset = (page - 1) * 25;
+    return {
+      data: choices
+        .slice(offset, offset + 25)
+        .map(({ id, name }) => ({ id, name })),
+      hasMore: offset + 25 < choices.length,
     };
   }
 

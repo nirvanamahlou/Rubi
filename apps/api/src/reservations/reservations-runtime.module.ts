@@ -12,6 +12,7 @@ import {
 import { HotelRatesModule } from './hotel-rates.module';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { LegalEntitiesModule } from '../legal-entities/legal-entities.module';
+import { TicketRuntimeModule } from '../ticket-catalog/ticket-runtime.module';
 import { MasterDataModule } from '../master-data/master-data.module';
 import { TravelWorkflowService } from './travel-workflow.service';
 import {
@@ -290,6 +291,7 @@ export class ReservationRequestsController {
     FinanceDeliveryModule,
     LegalEntitiesModule,
     MasterDataModule,
+    TicketRuntimeModule,
   ],
   controllers: [
     ReservationRequestsController,

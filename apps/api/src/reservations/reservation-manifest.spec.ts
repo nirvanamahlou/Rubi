@@ -107,7 +107,7 @@ describe('MANIFEST financial delivery gate', () => {
 });
 
 describe('MANIFEST ticket cards', () => {
-  it('lists outbound and return tickets and disables only the ticket without a template', async () => {
+  it('lists outbound and return tickets with the default when no template is assigned', async () => {
     const snapshot = {
       contractNumber: 'SC-TEST',
       passengerIds: ['p1', 'p2'],
@@ -182,15 +182,16 @@ describe('MANIFEST ticket cards', () => {
       offerId: 'outbound-offer',
       direction: 'OUTBOUND',
       passengerCount: 2,
-      template: { id: 'template', name: 'Sparta', versionNumber: 2 },
+      template: { id: 'default', name: 'پیش‌فرض', versionNumber: 1 },
       unavailableReason: null,
     });
     expect(cards[1]).toMatchObject({
       offerId: 'return-offer',
       direction: 'RETURN',
-      template: null,
+      template: { id: 'default', name: 'پیش‌فرض', versionNumber: 1 },
     });
-    expect(cards[1]?.unavailableReason).toContain('قالب فعال');
+    expect(cards[1]?.unavailableReason).toBeNull();
+    expect(directory.manifestTemplate).not.toHaveBeenCalled();
   });
 });
 
