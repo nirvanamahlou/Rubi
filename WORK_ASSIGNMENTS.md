@@ -4275,3 +4275,7 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 
 - `COMPUTER_ID=PC-B`؛ شاخهٔ `codex/pc-b-workbench-password-visibility-0928` از `origin/develop`. محدوده: فقط فرم تغییر رمز میزکار و نمایش/پنهان‌سازی سه فیلد رمز، بررسی و ثبت وضعیت. بدون API/IAM، Schema/Migration، Permission، Dependency/Lockfile یا تغییر دادهٔ عملیاتی.
 - هر دکمهٔ چشم مستقل، از نوع `button` و دارای برچسب و حالت قابل‌خواندن برای صفحه‌خوان است. lint، typecheck و build تولیدی Web موفق‌اند.
+
+## 2026-09-28 — WORKBENCH-FILES-COPY-0928 — PC-B — READY_FOR_REVIEW
+
+- `COMPUTER_ID=PC-B`؛ شاخهٔ `codex/pc-b-workbench-files-copy-0928` از `origin/develop`. توضیح زیر عنوان «فایل‌های من» به درخواست کاربر حذف شد؛ رفتار و دادهٔ اسناد، API، Schema/Migration، Permission و Dependency/Lockfile تغییری ندارند.
