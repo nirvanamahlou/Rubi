@@ -16,6 +16,7 @@ import {
   FileSpreadsheet,
   FileText,
   Plus,
+  Power,
   RefreshCw,
   Search,
   XCircle,
@@ -605,65 +606,69 @@ function GenericMasterDataWorkspace({
                       <td className="p-4">
                         <div className="flex flex-wrap justify-end gap-2">
                           <Button
+                            aria-label={`مشاهده ${record.name}`}
                             onClick={() => openForm('view', record)}
-                            size="sm"
+                            size="icon"
+                            title={`مشاهده ${record.name}`}
                             variant="outline"
                           >
                             <Eye aria-hidden="true" className="size-4" />
-                            مشاهده
                           </Button>
                           <Button
+                            aria-label={`ویرایش ${record.name}`}
                             onClick={() => openForm('edit', record)}
-                            size="sm"
+                            size="icon"
+                            title={`ویرایش ${record.name}`}
                             variant="outline"
                           >
                             <FilePenLine
                               aria-hidden="true"
                               className="size-4"
                             />
-                            ویرایش
                           </Button>
                           <MasterDataDeleteButton
                             record={record}
                             onDeleted={afterDelete}
                           />
                           <Button
+                            aria-label={`${record.status === 'active' ? 'غیرفعال‌سازی' : 'فعال‌سازی'} ${record.name}`}
                             onClick={() => void toggle(record)}
-                            size="sm"
-                            variant="ghost"
+                            size="icon"
+                            title={`${record.status === 'active' ? 'غیرفعال‌سازی' : 'فعال‌سازی'} ${record.name}`}
+                            variant="outline"
                           >
-                            {record.status === 'active'
-                              ? 'غیرفعال‌سازی'
-                              : 'فعال‌سازی'}
+                            <Power aria-hidden="true" className="size-4" />
                           </Button>{' '}
                           {resource === 'exchange-rates' &&
                           record.attributes.status === 'DRAFT' ? (
                             <>
                               <Button
+                                aria-label={`تأیید ${record.name}`}
                                 onClick={() =>
                                   void decideRate(record, 'approve')
                                 }
-                                size="sm"
+                                size="icon"
+                                title={`تأیید ${record.name}`}
                                 variant="outline"
                               >
                                 <CheckCircle2
                                   aria-hidden="true"
                                   className="size-4"
                                 />
-                                تأیید
                               </Button>
                               <Button
+                                aria-label={`رد ${record.name}`}
                                 onClick={() =>
                                   void decideRate(record, 'reject')
                                 }
-                                size="sm"
-                                variant="ghost"
+                                size="icon"
+                                title={`رد ${record.name}`}
+                                variant="outline"
                               >
                                 <XCircle
                                   aria-hidden="true"
                                   className="size-4"
                                 />
-                                رد
                               </Button>
                             </>
                           ) : null}

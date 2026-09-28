@@ -75,11 +75,11 @@ export function MasterDataDeleteButton({
       <DialogTrigger asChild>
         <Button
           aria-label={`حذف ${record.name}`}
-          className="text-destructive hover:text-destructive"
-          size="sm"
-          variant="outline"
+          size="icon"
+          title={`حذف ${record.name}`}
+          variant="destructive"
         >
-          <Trash2 aria-hidden="true" className="size-4" /> حذف
+          <Trash2 aria-hidden="true" className="size-4" />
         </Button>
       </DialogTrigger>
       <DialogContent

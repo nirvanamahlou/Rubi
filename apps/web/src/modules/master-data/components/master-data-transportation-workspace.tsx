@@ -626,6 +626,7 @@ export function MasterDataTransportationWorkspace() {
                       aria-label={`مشاهده ${transportDisplayName(record)}`}
                       onClick={() => openProfile(record)}
                       size="icon"
+                      title={`مشاهده ${transportDisplayName(record)}`}
                       variant="outline"
                     >
                       <Eye className="size-4" />
@@ -637,6 +638,7 @@ export function MasterDataTransportationWorkspace() {
                         setFormMode('edit');
                       }}
                       size="icon"
+                      title={`ویرایش ${transportDisplayName(record)}`}
                       variant="outline"
                     >
                       <FilePenLine className="size-4" />
