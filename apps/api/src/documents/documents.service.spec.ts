@@ -157,7 +157,7 @@ describe('DocumentsService security and persistence flow', () => {
   const iamStepUp = { verifyStepUp: vi.fn() };
   const hrDirectory = {
     employee: vi.fn(),
-    documentBranchNames: vi.fn().mockResolvedValue(new Map()),
+    documentBranches: vi.fn().mockResolvedValue([]),
   };
   let service: DocumentsService;
 
@@ -184,9 +184,10 @@ describe('DocumentsService security and persistence flow', () => {
   });
 
   it('returns upload options with the authenticated user and allowed branches', async () => {
-    hrDirectory.documentBranchNames.mockResolvedValueOnce(
-      new Map([[branchId, 'نیایش سیر']]),
-    );
+    hrDirectory.documentBranches.mockResolvedValueOnce([
+      { id: 'hr-a', branchId, name: 'نیایش سیر' },
+      { id: 'hr-b', branchId, name: 'جهان باستان' },
+    ]);
     repository.options.mockResolvedValue({
       documentTypes: [
         {
@@ -219,9 +220,13 @@ describe('DocumentsService security and persistence flow', () => {
     );
     expect(result.data).toMatchObject({
       currentUserId: actor.userId,
-      branches: [{ id: branchId, code: 'TEH', name: 'نیایش سیر' }],
+      branches: [{ id: branchId, code: 'TEH', name: 'شعبه تهران' }],
+      organizationBranches: [
+        { id: 'hr-a', branchId, name: 'نیایش سیر' },
+        { id: 'hr-b', branchId, name: 'جهان باستان' },
+      ],
     });
-    expect(hrDirectory.documentBranchNames).toHaveBeenCalledWith(actor);
+    expect(hrDirectory.documentBranches).toHaveBeenCalledWith(actor);
   });
 
   it('applies the published file size and format policy to document options', async () => {

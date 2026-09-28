@@ -6,10 +6,11 @@ import type {
   DocumentCaseOptionV1,
   DocumentOptionsResponseV1,
 } from '@nora/contracts';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import {
   emptyDocumentUploadValues,
+  documentUploadBranchChoices,
   hydrateDocumentUploadDefaults,
   type DocumentUploadValues,
   validateDocumentUpload,
@@ -85,7 +86,25 @@ export function DocumentUploadDialog({
   const availableOwners = personalUpload
     ? options?.owners.filter((owner) => owner.id === options.currentUserId)
     : options?.owners;
-  const uploadBranches = options?.branches ?? branches;
+  const uploadBranches = useMemo(
+    () => documentUploadBranchChoices(options, branches),
+    [options, branches],
+  );
+  const [selectedBranchChoiceId, setSelectedBranchChoiceId] = useState(
+    () =>
+      documentUploadBranchChoices(options, branches).find(
+        (branch) =>
+          branch.branchId === (options?.branches[0]?.id ?? branches[0]?.id),
+      )?.id ?? '',
+  );
+  useEffect(() => {
+    if (!selectedBranchChoiceId && uploadBranches.length) {
+      setSelectedBranchChoiceId(
+        uploadBranches.find((branch) => branch.branchId === values.branchId)
+          ?.id ?? uploadBranches[0]!.id,
+      );
+    }
+  }, [selectedBranchChoiceId, uploadBranches, values.branchId]);
 
   function update<K extends keyof DocumentUploadValues>(
     name: K,
@@ -373,11 +392,15 @@ export function DocumentUploadDialog({
                 <Select
                   disabled={!uploadBranches.length || submitting}
                   onValueChange={(value) => {
-                    if (value !== values.branchId) {
+                    const branchId = uploadBranches.find(
+                      (branch) => branch.id === value,
+                    )?.branchId;
+                    if (branchId && value !== selectedBranchChoiceId) {
+                      setSelectedBranchChoiceId(value);
                       setSelectedCase(null);
                       setValues((current) => ({
                         ...current,
-                        branchId: value,
+                        branchId,
                         sourceRelationId: '',
                         employeeId: '',
                       }));
@@ -385,7 +408,7 @@ export function DocumentUploadDialog({
                       setEmployee(null);
                     }
                   }}
-                  value={values.branchId}
+                  value={selectedBranchChoiceId}
                 >
                   <SelectTrigger aria-label="شعبه" id="document-branch">
                     <SelectValue placeholder="انتخاب شعبه" />

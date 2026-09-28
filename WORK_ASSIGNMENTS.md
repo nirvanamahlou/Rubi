@@ -4133,6 +4133,12 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 - بدون Schema/Migration، Permission grant، Dependency/Lockfile یا تغییر شکل قرارداد API.
 - اعتبارسنجی: ۲۹ تست هدفمند API، lint فایل‌های متاثر، typecheck و build تولیدی API/Web موفق‌اند. UI همان گزینه‌های API را مصرف می‌کند؛ نمایش نام HR برای رکوردهای فعال و fallback به نام شعبهٔ اصلی پوشش داده شد.
 
+### اصلاح فهرست شعب مشترک
+
+- دو شعبهٔ فعال «جهان باستان» و «نیایش سیر» در دادهٔ منابع انسانی یک IAM branchId مشترک دارند؛ نگاشت قبلیِ `branchId → name` یکی را حذف می‌کرد.
+- API اکنون رکوردهای سازمانی را با شناسهٔ مستقل و `branchId` معتبر به‌صورت فیلد افزوده و اختیاری `organizationBranches` برمی‌گرداند. قرارداد قدیمی `branches` برای مصرف‌کننده‌های فعلی حفظ شده است. فرم، شناسهٔ HR را برای انتخاب یکتا و شناسهٔ IAM را برای مجوز و FK بارگذاری مصرف می‌کند؛ شعبهٔ IAM فاقد رکورد HR همچنان نمایش داده می‌شود.
+- بدون Migration، قفل Dependency یا تغییر داده. Producer و consumer هر دو در همین واحد کار PC-B به‌روزرسانی شده‌اند.
+
 ## 2026-09-28 — DOCUMENT-DETAIL-HIDE-RELATIONS-VERSIONS-0928 — PC-B — READY_FOR_REVIEW
 
 - درخواست مالک: بخش‌های «ارتباطات» و «نسخه‌ها» از پنجره مشاهده سند حذف شوند.
