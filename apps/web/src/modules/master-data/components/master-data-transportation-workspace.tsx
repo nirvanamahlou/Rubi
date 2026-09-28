@@ -71,6 +71,7 @@ import {
 } from '../api/client';
 import { MasterDataDeleteButton } from './master-data-delete-button';
 import { MasterDataFilterActions } from './master-data-filter-actions';
+import { MasterDataLogoImage } from './master-data-logo-image';
 import { MasterDataFilterBar } from './master-data-filter-bar';
 import { getMasterDataDefinition } from '../model/catalog';
 import { getMasterDataFormFields } from '../model/form-fields';
@@ -576,6 +577,13 @@ export function MasterDataTransportationWorkspace() {
                     (resource === 'aircraft-types' &&
                       key === 'manufacturerModel') ? (
                       <>
+                        {[
+                          'airlines',
+                          'rail-companies',
+                          'bus-companies',
+                        ].includes(resource) ? (
+                          <MasterDataLogoImage record={record} />
+                        ) : null}
                         <button
                           type="button"
                           className="text-start font-bold text-primary focus-visible:ring-2 focus-visible:ring-ring"
@@ -847,8 +855,12 @@ export function MasterDataTransportationWorkspace() {
             ) : null}
             <Card className="overflow-hidden">
               <div className="grid gap-5 bg-gradient-to-l from-blue-50 via-background to-cyan-50 p-6 dark:from-blue-950/30 dark:to-cyan-950/30 md:grid-cols-[6rem_1fr_auto]">
-                <span className="grid size-24 place-items-center rounded-3xl bg-blue-100 text-blue-700 dark:bg-blue-400/15 dark:text-blue-300">
+                <span className="relative grid size-24 place-items-center rounded-3xl bg-blue-100 text-blue-700 dark:bg-blue-400/15 dark:text-blue-300">
                   <CurrentIcon className="size-11" />
+                  <MasterDataLogoImage
+                    className="absolute inset-0 size-24"
+                    record={selected}
+                  />
                 </span>
                 <div>
                   <h2 className="text-2xl font-black">

@@ -411,6 +411,7 @@ function GenericMasterDataLiveForm({
                   label={field.label}
                   onChange={setLogoChange}
                   {...(logoChange ? { pending: logoChange } : {})}
+                  {...(record ? { record } : {})}
                   value={values[field.key] ?? ''}
                 />
               ) : field.type === 'select' ? (

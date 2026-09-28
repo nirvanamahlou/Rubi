@@ -76,6 +76,7 @@ import {
 } from './master-data-live-form';
 import { MasterDataKpiGrid } from './master-data-kpi-grid';
 import { MasterDataProfileDialog } from './master-data-profile-dialog';
+import { MasterDataLogoImage } from './master-data-logo-image';
 
 type SupplierTab = 'suppliers' | 'brokers' | 'collaboration';
 type RequestState = 'loading' | 'ready' | 'error' | 'forbidden';
@@ -541,12 +542,16 @@ export function MasterDataSuppliersWorkspace() {
     return (
       <div className="space-y-4">
         <Card className="flex flex-col gap-5 p-5 lg:flex-row lg:items-center">
-          <span className="grid size-16 shrink-0 place-items-center rounded-2xl bg-violet-500/10 text-violet-700">
+          <span className="relative grid size-16 shrink-0 place-items-center rounded-2xl bg-violet-500/10 text-violet-700">
             {kind === 'supplier' ? (
               <Building2 className="size-8" />
             ) : (
               <Users className="size-8" />
             )}
+            <MasterDataLogoImage
+              className="absolute inset-0 size-16"
+              record={record}
+            />
           </span>
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
@@ -699,6 +704,7 @@ export function MasterDataSuppliersWorkspace() {
                     {record.code}
                   </td>
                   <td className="p-4 font-semibold">
+                    <MasterDataLogoImage record={record} />
                     <button
                       className="text-start font-semibold text-foreground hover:text-primary focus-visible:rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       onClick={() => openProfile(record)}
@@ -773,6 +779,7 @@ export function MasterDataSuppliersWorkspace() {
                     {record.code}
                   </td>
                   <td className="p-4 font-semibold">
+                    <MasterDataLogoImage record={record} />
                     <button
                       className="text-start font-semibold text-foreground hover:text-primary focus-visible:rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       onClick={() => openProfile(record)}
@@ -869,6 +876,7 @@ export function MasterDataSuppliersWorkspace() {
                       >
                         <div className="flex items-start justify-between gap-2">
                           <div>
+                            <MasterDataLogoImage record={record} />
                             <button
                               className="text-start font-bold text-foreground hover:text-primary focus-visible:rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                               onClick={() => openProfile(record)}

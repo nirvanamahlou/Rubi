@@ -61,6 +61,7 @@ import {
   type MasterDataLogoChange,
 } from '../api/client';
 import { MasterDataDeleteButton } from './master-data-delete-button';
+import { MasterDataLogoImage } from './master-data-logo-image';
 import { MasterDataFilterActions } from './master-data-filter-actions';
 import { MasterDataFilterBar } from './master-data-filter-bar';
 import { getMasterDataDefinition } from '../model/catalog';
@@ -577,13 +578,16 @@ export function MasterDataInsuranceWorkspace() {
                     </span>
                   </td>
                   <td className="p-4">
-                    <button
-                      className="font-bold text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                      onClick={() => openProfile(record)}
-                      type="button"
-                    >
-                      {record.name}
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <MasterDataLogoImage record={record} />
+                      <button
+                        className="font-bold text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        onClick={() => openProfile(record)}
+                        type="button"
+                      >
+                        {record.name}
+                      </button>
+                    </div>
                   </td>
                   <td className="p-4" dir="ltr">
                     {attribute(record, 'englishName')}
@@ -882,8 +886,12 @@ export function MasterDataInsuranceWorkspace() {
           <div className="space-y-4">
             <Card className="overflow-hidden">
               <div className="grid gap-5 bg-gradient-to-l from-cyan-50 via-background to-sky-50 p-6 dark:from-cyan-950/30 dark:to-sky-950/30 md:grid-cols-[6rem_1fr_auto]">
-                <span className="grid size-24 place-items-center rounded-3xl bg-cyan-100 text-cyan-700 dark:bg-cyan-400/15 dark:text-cyan-300">
+                <span className="relative grid size-24 place-items-center rounded-3xl bg-cyan-100 text-cyan-700 dark:bg-cyan-400/15 dark:text-cyan-300">
                   <CurrentIcon className="size-11" />
+                  <MasterDataLogoImage
+                    className="absolute inset-0 size-24"
+                    record={selected}
+                  />
                 </span>
                 <div>
                   <h2 className="text-2xl font-black">{selected.name}</h2>

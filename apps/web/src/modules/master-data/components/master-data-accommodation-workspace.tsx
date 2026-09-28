@@ -80,6 +80,7 @@ import {
   type MasterDataKpiItem,
 } from './master-data-kpi-grid';
 import { MasterDataProfileDialog } from './master-data-profile-dialog';
+import { MasterDataLogoImage } from './master-data-logo-image';
 
 type AccommodationTab =
   'hotels' | 'chains' | 'meals' | 'facilities' | 'import' | 'combined';
@@ -939,6 +940,7 @@ export function MasterDataAccommodationWorkspace() {
                 {tab === 'hotels' ? (
                   <>
                     <td className="p-4">
+                      <MasterDataLogoImage record={record} />
                       <button
                         className="text-start font-bold text-foreground hover:text-primary focus-visible:rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                         onClick={() => selectProfile(record)}
@@ -993,7 +995,10 @@ export function MasterDataAccommodationWorkspace() {
                   </>
                 ) : tab === 'chains' ? (
                   <>
-                    <td className="p-4 font-semibold">{record.name}</td>
+                    <td className="p-4 font-semibold">
+                      <MasterDataLogoImage record={record} />
+                      {record.name}
+                    </td>
                     <td className="p-4" dir="ltr">
                       {attribute(record, 'englishName')}
                     </td>
@@ -1086,8 +1091,12 @@ export function MasterDataAccommodationWorkspace() {
       <div className="space-y-4">
         <Card className="overflow-hidden">
           <div className="grid gap-5 bg-gradient-to-l from-orange-50 via-background to-sky-50 p-6 dark:from-orange-950/30 dark:to-sky-950/30 md:grid-cols-[7rem_1fr_auto]">
-            <div className="grid size-28 place-items-center rounded-3xl bg-orange-100 text-orange-700 dark:bg-orange-400/15 dark:text-orange-300">
+            <div className="relative grid size-28 place-items-center rounded-3xl bg-orange-100 text-orange-700 dark:bg-orange-400/15 dark:text-orange-300">
               <Hotel className="size-12" />
+              <MasterDataLogoImage
+                className="absolute inset-0 size-28"
+                record={selected}
+              />
             </div>
             <div>
               <h2 className="text-2xl font-black">{selected.name}</h2>

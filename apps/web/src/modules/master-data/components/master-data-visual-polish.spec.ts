@@ -11,6 +11,20 @@ function source(fileName: string) {
 }
 
 describe('Master Data visual polish contract', () => {
+  it('shows saved logos in the form and every logo-bearing Master Data workspace', () => {
+    expect(source('master-data-logo-upload.tsx')).toContain(
+      '<MasterDataLogoImage',
+    );
+    for (const file of [
+      'master-data-finance-workspace.tsx',
+      'master-data-insurance-workspace.tsx',
+      'master-data-transportation-workspace.tsx',
+      'master-data-accommodation-workspace.tsx',
+      'master-data-suppliers-workspace.tsx',
+    ]) {
+      expect(source(file), file).toContain('<MasterDataLogoImage');
+    }
+  });
   it('omits technical contract and backend badges throughout the Master Data UI', () => {
     const directory = resolve(
       process.cwd(),

@@ -3757,3 +3757,6 @@ Existing unpaid ticket invoices retain the seat/unit-price editor; count, unit c
 ## 2026-09-28 — Master Data English titles (PC-B)
 
 All English title fields in Master Data forms are optional. API required-field checks match the forms, cabin classes fall back to their booking code for the internal display name, and country/region/city/airport English-name columns become nullable through an additive migration. No live database migration or localhost runtime change was applied by this task.
+## 2026-09-28 — Master Data logo display (PC-B)
+
+The uploaded logo ID is now resolved through a narrow authenticated Master Data image endpoint, backed by Documents source-link, active-state, branch and clean-scan checks. Saved logos appear in Master Data forms, relevant lists and profiles; pending scans retry automatically. No live runtime or operational data was changed in this task.

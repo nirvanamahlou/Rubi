@@ -64,6 +64,7 @@ import {
   type MasterDataLogoChange,
 } from '../api/client';
 import { MasterDataDeleteButton } from './master-data-delete-button';
+import { MasterDataLogoImage } from './master-data-logo-image';
 import { MasterDataFilterActions } from './master-data-filter-actions';
 import { MasterDataFilterBar } from './master-data-filter-bar';
 import {
@@ -1206,6 +1207,9 @@ export function MasterDataFinanceWorkspace({
                       {record.code}
                     </td>
                     <td className="p-4 font-semibold">
+                      {tab === 'banks' ? (
+                        <MasterDataLogoImage record={record} />
+                      ) : null}
                       {tab === 'currencies' ? (
                         <button
                           className="text-start font-semibold text-foreground hover:text-primary focus-visible:rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"

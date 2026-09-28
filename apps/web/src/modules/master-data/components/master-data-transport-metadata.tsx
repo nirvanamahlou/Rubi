@@ -26,8 +26,8 @@ export function transportMetadata(
       [
         'لوگوی مرجع',
         record?.attributes.logoFileReference
-          ? String(record.attributes.logoFileReference)
-          : 'اتصال اسناد هنوز آماده نیست',
+          ? 'لوگوی ذخیره‌شده در پروفایل نمایش داده می‌شود'
+          : 'لوگویی ثبت نشده است',
       ],
       ['اتصال سرویس', 'اتصال یکپارچه‌سازی هنوز آماده نیست'],
     );

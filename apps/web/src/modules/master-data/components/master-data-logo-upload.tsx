@@ -2,23 +2,27 @@
 
 import { ImageUp, Trash2 } from 'lucide-react';
 import type { ChangeEvent } from 'react';
+import type { MasterDataRecord } from '@nora/contracts';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/form-controls';
 import { Badge } from '@/components/ui/surfaces';
 import type { MasterDataLogoChange } from '../api/client';
+import { MasterDataLogoImage } from './master-data-logo-image';
 
 export function MasterDataLogoUpload({
   disabled,
   label,
   onChange,
   pending,
+  record,
   value,
 }: {
   disabled?: boolean;
   label: string;
   onChange: (change: MasterDataLogoChange | undefined) => void;
   pending?: MasterDataLogoChange;
+  record?: MasterDataRecord;
   value: string;
 }) {
   const selectedFile = pending?.kind === 'replace' ? pending.file : undefined;
@@ -44,6 +48,11 @@ export function MasterDataLogoUpload({
           <Badge>حذف پس از ذخیره</Badge>
         ) : null}
       </div>
+      <MasterDataLogoImage
+        {...(pending ? { pending } : {})}
+        {...(record ? { record } : {})}
+        showError
+      />
       <Input
         accept="image/png,image/jpeg"
         aria-label={label}
