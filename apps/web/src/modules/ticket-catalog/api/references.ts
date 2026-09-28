@@ -129,6 +129,24 @@ export async function listActiveCurrencyReferences(): Promise<
     'دریافت کامل فهرست ارزهای فعال ممکن نشد.',
   );
 }
+export async function getActiveCityReference(
+  id: string,
+): Promise<Reference | undefined> {
+  const base = getPublicApiBaseUrl();
+  if (!base || !id) return undefined;
+  const path = masterDataEndpoints
+    .detail('cities', id)
+    .slice(MASTER_DATA_API_PREFIX.length);
+  const response = await fetch(`${base}/master-data${path}`, {
+    credentials: 'include',
+    headers: { accept: 'application/json' },
+  });
+  if (!response.ok) return undefined;
+  const body = (await response.json()) as { data?: MasterDataRecord };
+  if (body.data?.id !== id || body.data.resource !== 'cities') return undefined;
+  const reference = asReference(body.data);
+  return reference?.active ? reference : undefined;
+}
 export function asReference(record: MasterDataRecord): Reference | undefined {
   const kinds = {
     airlines: 'airline',

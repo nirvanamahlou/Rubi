@@ -67,6 +67,28 @@ export function TicketCatalogCard({
   const lastSegment = product.definition.segments.at(-1)!;
   const isCombined = product.definition.segments.length > 1;
   const display = product.definition.display;
+  const originName = referenceLabel(
+    'city',
+    segment.originCityId,
+    display?.origin || 'مبدأ',
+  );
+  const destinationName = referenceLabel(
+    'city',
+    lastSegment.destinationCityId,
+    display?.destination || 'مقصد',
+  );
+  const title = [
+    [display?.origin, originName],
+    [display?.destination, destinationName],
+  ]
+    .reduce(
+      (value, [snapshot, name]) =>
+        snapshot && name && snapshot !== name
+          ? value.replaceAll(snapshot, name)
+          : value,
+      product.definition.title,
+    )
+    .replace(/CITY_[A-Z0-9_]+/g, 'نام شهر نامشخص');
   const TransportIcon = transportIcons[product.definition.transport];
   const operatorKind =
     product.definition.transport === 'flight'
@@ -92,7 +114,7 @@ export function TicketCatalogCard({
               <TransportIcon className="size-5" aria-hidden />
             </span>
             <div className="min-w-0">
-              <p className="truncate font-black">{product.definition.title}</p>
+              <p className="truncate font-black">{title}</p>
               <p className="mt-1 text-xs">
                 <span className="font-bold text-primary">
                   {product.definition.transport === 'flight'
@@ -125,21 +147,9 @@ export function TicketCatalogCard({
       <div className="space-y-2.5 p-3">
         <div className="flex items-center gap-2 font-black">
           <MapPin className="size-5 text-primary" aria-hidden />
-          <span>
-            {referenceLabel(
-              'city',
-              segment.originCityId,
-              display?.origin || 'مبدأ',
-            )}
-          </span>
+          <span>{originName}</span>
           <span className="text-primary">←</span>
-          <span>
-            {referenceLabel(
-              'city',
-              lastSegment.destinationCityId,
-              display?.destination || 'مقصد',
-            )}
-          </span>
+          <span>{destinationName}</span>
         </div>
         <p className="text-xs text-muted-foreground">
           {product.definition.transport === 'flight'

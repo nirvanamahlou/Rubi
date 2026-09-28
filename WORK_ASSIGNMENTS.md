@@ -4087,3 +4087,9 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 - Departed tickets must disappear automatically from operational management and Sales lists without deleting contract, Finance or capacity history. Fix the red delete control's icon contrast. No migration, shared contract, permission, dependency or lockfile changes.
 - No merge or localhost:3100 change in this work item; PR to develop after checks.
 - Outcome: expired browser-defined tickets are removed from the operational cards on hydration and every minute; management API lists only future offers and continues to pause departed offers. Contracts, Finance and audit history remain intact. Delete icon is now legible on its red button. Focused Web/API tests (20/8), targeted lint, Web/API typechecks and production builds passed.
+
+## 2026-09-28 — TICKET-ROUTE-TIME-FUTURE-0928 — PC-A — READY_FOR_REVIEW
+
+- درخواست مالک: کد داخلی شهر در مسیر بلیط دیده نشود و ویرایش زمان بلیط فروخته‌شده، قراردادهای قبلی را تغییر ندهد. شاخهٔ مستقل `codex/pc-a-ticket-route-time-future-0928` از `origin/develop@f52a567b`؛ COMPUTER_ID=PC-A.
+- محدودهٔ رزرو: فقط نمایش و بازیابی نام شهر در Ticket Catalog Web، ویرایش زمان Published Offer در API همان ماژول و تست‌های مستقیم؛ بدون Schema/Migration، قرارداد عمومی، Sales، رزرو ظرفیت/تور، Permission، Dependency/Lockfile یا دادهٔ عملیاتی. قرارداد قبلی Snapshot مسیر و زمان خود را حفظ می‌کند؛ ظرفیت کل، مسیر، ایرلاین، شماره و کلاس بلیطِ فروخته‌شده همچنان قفل‌اند و رزرو موقت/تور نیز همچنان ویرایش را مسدود می‌کند.
+- نتیجه: نام شهر از اطلاعات پایه بازخوانی می‌شود و کد فنی در کارت، فیلتر و جمع مسیر نمایش داده نمی‌شود. زمان Published Offer دارای تخصیص قرارداد برای فروش‌های بعدی نسخه‌دار اصلاح می‌شود؛ تخصیص قبلی همان بلیط/ظرفیت را نگه می‌دارد. ۴۶ تست هدفمند، lint و typecheck Web/API و build تولیدی هر دو موفق‌اند. قفل محدود این واحد با Commit آزاد می‌شود؛ بدون تغییر runtime پورت ۳۱۰۰.
