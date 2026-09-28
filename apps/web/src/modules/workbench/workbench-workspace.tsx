@@ -65,6 +65,10 @@ import { PasswordChange } from './password-change';
 import { WorkbenchHrNotifications } from './workbench-hr-notifications';
 import { WorkbenchOwnRequests } from './workbench-own-requests';
 import { NewRequestDialog } from './new-request-dialog';
+import {
+  PROFILE_PHOTO_CHANGED_EVENT,
+  workbenchPersonalApi,
+} from './workbench-personal-api';
 
 const tabIcons = [
   Home,
@@ -85,6 +89,7 @@ export function WorkbenchWorkspace() {
   const feedbackId = params.get('feedback');
   const company = useLegalEntityContext();
   const [home, setHome] = useState<WorkbenchHome | null>(null);
+  const [profilePhotoUrl, setProfilePhotoUrl] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [requestsVersion, setRequestsVersion] = useState(0);
@@ -127,6 +132,35 @@ export function WorkbenchWorkspace() {
       invalidate();
     };
   }, [load, invalidate]);
+  useEffect(() => {
+    if (!home?.user.id) return;
+    let active = true;
+    let objectUrl = '';
+    const loadPhoto = () => {
+      void workbenchPersonalApi
+        .profilePhoto()
+        .then((blob) => {
+          if (!active) return;
+          const nextUrl = URL.createObjectURL(blob);
+          if (objectUrl) URL.revokeObjectURL(objectUrl);
+          objectUrl = nextUrl;
+          setProfilePhotoUrl(nextUrl);
+        })
+        .catch(() => {
+          if (!active) return;
+          if (objectUrl) URL.revokeObjectURL(objectUrl);
+          objectUrl = '';
+          setProfilePhotoUrl('');
+        });
+    };
+    loadPhoto();
+    window.addEventListener(PROFILE_PHOTO_CHANGED_EVENT, loadPhoto);
+    return () => {
+      active = false;
+      window.removeEventListener(PROFILE_PHOTO_CHANGED_EVENT, loadPhoto);
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [home?.user.id]);
   useEffect(() => {
     const refresh = () => {
       if (
@@ -237,8 +271,18 @@ export function WorkbenchWorkspace() {
           <>
             <Card className="flex flex-wrap items-center justify-between gap-4 p-5 bg-gradient-to-l from-primary/10 to-surface">
               <div className="flex min-w-0 items-center gap-4">
-                <span className="grid size-14 shrink-0 place-items-center rounded-2xl bg-primary text-lg font-black text-primary-foreground">
-                  {profileInitials(home.user.displayName)}
+                <span className="grid size-14 shrink-0 place-items-center overflow-hidden rounded-2xl bg-primary text-lg font-black text-primary-foreground">
+                  {profilePhotoUrl ? (
+                    // Authenticated object URLs cannot be rendered through next/image.
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      alt=""
+                      className="size-full object-cover"
+                      src={profilePhotoUrl}
+                    />
+                  ) : (
+                    profileInitials(home.user.displayName)
+                  )}
                 </span>
                 <div className="min-w-0">
                   <h2 className="text-xl font-bold break-words">
