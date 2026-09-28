@@ -9,6 +9,7 @@ import {
   ChevronRight,
   ExternalLink,
   FileText,
+  Pencil,
   Search,
 } from 'lucide-react';
 import {
@@ -32,6 +33,7 @@ import { cn } from '@/lib/utils';
 import { safeWorkbenchHref } from './model';
 import {
   calendarDays,
+  calendarStatusOptions,
   calendarToday,
   entriesInView,
   filterCalendar,
@@ -56,10 +58,7 @@ const views = [
 const statuses = [
   ['open', 'باز'],
   ['all', 'همه'],
-  ['planned', 'برنامه‌ریزی‌شده'],
-  ['active', 'فعال'],
-  ['completed', 'تکمیل‌شده'],
-  ['cancelled', 'لغوشده'],
+  ...calendarStatusOptions.map(({ value, label }) => [value, label] as const),
 ] as const;
 const weekdays = [
   'شنبه',
@@ -86,6 +85,7 @@ export function WorkbenchCalendar({
   const [selected, setSelected] = useState(() => toIsoDate(calendarToday()));
   const [view, setView] = useState<CalendarView>('month');
   const [eventDialogOpen, setEventDialogOpen] = useState(false);
+  const [editingEvent, setEditingEvent] = useState<CalendarEntry | null>(null);
   const [localEntries, setLocalEntries] = useState<CalendarEntry[]>([]);
   const [availableBranchId, setAvailableBranchId] = useState<
     string | undefined
@@ -120,6 +120,8 @@ export function WorkbenchCalendar({
           dueAt: row.dueAt,
           status: row.status.toLowerCase() as CalendarEntry['status'],
           priority: row.priority.toLowerCase() as CalendarEntry['priority'],
+          branchId: row.branchId,
+          version: row.version,
           ...(row.description ? { description: row.description } : {}),
           ...(row.linkUrl ? { linkUrl: row.linkUrl } : {}),
           ...(row.imageDocumentId
@@ -179,14 +181,18 @@ export function WorkbenchCalendar({
       dueAt: `${draft.date}T12:00:00+03:30`,
       linkUrl: draft.linkUrl || null,
       imageDocumentId: attachment?.data.id ?? null,
+      status: draft.status.toUpperCase() as
+        'PLANNED' | 'ACTIVE' | 'COMPLETED' | 'CANCELLED',
     });
     const row = response.data;
     const entry: CalendarEntry = {
       id: row.id,
       title: row.title,
       dueAt: row.dueAt,
-      status: 'planned',
-      priority: 'normal',
+      status: row.status.toLowerCase() as CalendarEntry['status'],
+      priority: row.priority.toLowerCase() as CalendarEntry['priority'],
+      branchId: row.branchId,
+      version: row.version,
       ...(row.description ? { description: row.description } : {}),
       ...(row.imageDocumentId
         ? {
@@ -201,7 +207,77 @@ export function WorkbenchCalendar({
     if (nextDate) setAnchor(nextDate);
     setSelected(draft.date);
     setView('month');
-    setFilter((current) => ({ ...current, status: 'open' }));
+    setFilter((current) => ({
+      ...current,
+      status:
+        draft.status === 'completed' || draft.status === 'cancelled'
+          ? 'all'
+          : 'open',
+    }));
+  }
+  async function updateEvent(draft: CalendarEventDraft) {
+    if (!editingEvent?.branchId || !editingEvent.version)
+      throw new Error('این رویداد قابل ویرایش نیست.');
+    const current = editingEvent;
+    const eventBranchId = current.branchId!;
+    const expectedVersion = current.version!;
+    const attachment = draft.attachment
+      ? await workbenchPersonalApi.uploadCalendarAttachment({
+          eventId: current.id,
+          branchId: eventBranchId,
+          title: draft.title,
+          file: draft.attachment,
+        })
+      : null;
+    const response = await workbenchPersonalApi.updateEvent(current.id, {
+      branchId: eventBranchId,
+      title: draft.title,
+      description: draft.description,
+      dueAt:
+        tehranDay(current.dueAt ?? '') === draft.date && current.dueAt
+          ? current.dueAt
+          : `${draft.date}T12:00:00+03:30`,
+      status: draft.status.toUpperCase() as
+        'PLANNED' | 'ACTIVE' | 'COMPLETED' | 'CANCELLED',
+      priority: current.priority.toUpperCase() as 'NORMAL' | 'HIGH' | 'URGENT',
+      linkUrl: draft.linkUrl || null,
+      imageDocumentId: attachment?.data.id ?? current.imageDocumentId ?? null,
+      expectedVersion,
+    });
+    const row = response.data;
+    setLocalEntries((items) =>
+      items.map((item) =>
+        item.id === row.id
+          ? {
+              ...item,
+              title: row.title,
+              description: row.description,
+              dueAt: row.dueAt,
+              status: row.status.toLowerCase() as CalendarEntry['status'],
+              priority: row.priority.toLowerCase() as CalendarEntry['priority'],
+              linkUrl: row.linkUrl ?? '',
+              ...(row.imageDocumentId
+                ? {
+                    imageDocumentId: row.imageDocumentId,
+                    imageName:
+                      draft.attachment?.name ??
+                      item.imageName ??
+                      'پیوست رویداد',
+                  }
+                : {}),
+              version: row.version,
+            }
+          : item,
+      ),
+    );
+    const nextDate = parseIsoDate(draft.date);
+    if (nextDate) setAnchor(nextDate);
+    setSelected(draft.date);
+    if (
+      (draft.status === 'completed' || draft.status === 'cancelled') &&
+      filter.status === 'open'
+    )
+      setFilter((currentFilter) => ({ ...currentFilter, status: 'all' }));
   }
   function move(direction: -1 | 1) {
     setAnchor((current) =>
@@ -278,10 +354,23 @@ export function WorkbenchCalendar({
                 {entry.imageDocumentId ? (
                   <Button asChild size="sm" variant="outline">
                     <Link
-                      href={`/documents?document=${encodeURIComponent(entry.imageDocumentId)}`}
+                      href={`/documents?document=${encodeURIComponent(entry.imageDocumentId)}&returnTo=workbench-calendar`}
                     >
                       مشاهده پیوست
                     </Link>
+                  </Button>
+                ) : null}
+                {entry.branchId && entry.version ? (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      setEditingEvent(entry);
+                      setEventDialogOpen(true);
+                    }}
+                  >
+                    <Pencil aria-hidden="true" className="size-4" />
+                    ویرایش
                   </Button>
                 ) : null}
               </div>
@@ -313,7 +402,12 @@ export function WorkbenchCalendar({
         </h2>
         <div className="flex flex-wrap items-center gap-2">
           <Badge>محدوده: من</Badge>
-          <Button onClick={() => setEventDialogOpen(true)}>
+          <Button
+            onClick={() => {
+              setEditingEvent(null);
+              setEventDialogOpen(true);
+            }}
+          >
             <CalendarPlus aria-hidden="true" className="size-4" />
             افزودن رویداد
           </Button>
@@ -497,11 +591,15 @@ export function WorkbenchCalendar({
         </Card>
       ) : null}
       <CalendarEventDialog
-        key={`${selected}-${eventDialogOpen ? 'open' : 'closed'}`}
+        key={`${editingEvent?.id ?? 'new'}-${selected}-${eventDialogOpen ? 'open' : 'closed'}`}
         open={eventDialogOpen}
         initialDate={selected}
-        onOpenChange={setEventDialogOpen}
-        onCreate={createEvent}
+        editingEvent={editingEvent}
+        onOpenChange={(next) => {
+          setEventDialogOpen(next);
+          if (!next) setEditingEvent(null);
+        }}
+        onSave={editingEvent ? updateEvent : createEvent}
       />
     </section>
   );

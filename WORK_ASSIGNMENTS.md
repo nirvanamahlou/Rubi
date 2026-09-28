@@ -4262,3 +4262,42 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 
 - نتیجه: تامین سه‌گزینه‌ای، نوبت‌های مستقل با تعداد شامل تاریخ شروع، checkpoint ثبت و عملیات ویرایش/حذف امن؛ ۴۴ تست، lint/typecheck و build Web/API موفق. قفل محدود اسناد با Commit آزاد می‌شود؛ بدون Migration یا تغییر runtime ۳۱۰۰.
 - بررسی پیش از merge با تأیید مالک: انتظار تست رندر چک‌باکس حذف‌شده با انتخاب نوع تامین جایگزین شد؛ کل Web با ۱۶۸۷ تست موفق و ۳ skip پاس شد. build و کیفیت CI قبلی موفق بودند.
+
+## 2026-09-28 — WORKBENCH-TEMPLATE-STARS-0928 — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک: ستاره‌دارکردن کارت‌های اولیهٔ یادداشت نیز عملی و پایدار باشد.
+- شاخهٔ `codex/pc-b-workbench-template-stars-0928` از `origin/develop`؛ محدودهٔ رزرو: فقط فهرست و رفتار کارت‌های یادداشت میزکار، آزمون متمرکز و اسناد وضعیت. مالک Workbench، PC-B است؛ بدون API، Schema/Migration، Permission یا Dependency/Lockfile.
+- نتیجه: دکمهٔ ستاره روی قالب‌های اولیه نیز نمایش داده می‌شود؛ کلیک، نسخهٔ واقعی و ستاره‌دار را در حساب ذخیره می‌کند و کارت قالب تکراری را پس از بارگذاری دوباره پنهان می‌سازد. آزمون متمرکز، lint و typecheck وب موفق‌اند.
+
+## 2026-09-28 — WORKBENCH-CALENDAR-EDIT-0928 — PC-B — READY_FOR_REVIEW
+
+- `COMPUTER_ID=PC-B`؛ شاخهٔ `codex/pc-b-workbench-calendar-edit-0928` از `origin/develop`. محدوده: ویرایش رویدادهای شخصی تقویم میزکار، انتخاب وضعیت یکسان با فیلتر، آزمون و ثبت وضعیت. بدون Schema/Migration، قرارداد API، Permission، Dependency/Lockfile یا تغییر دادهٔ عملیاتی.
+- آزمون‌های تقویم (۷ مورد)، lint فایل‌های تغییرکرده، typecheck و build تولیدی Web موفق‌اند. ویرایش فقط برای رویدادهای شخصی مجاز است؛ ارجاع‌های متصل به کارتابل از این فرم ویرایش نمی‌شوند.
+
+## 2026-09-28 — WORKBENCH-HOME-AVATAR-0928 — PC-B — READY_FOR_REVIEW
+
+- `COMPUTER_ID=PC-B`؛ شاخهٔ `codex/pc-b-workbench-home-avatar-0928` از `origin/develop`. محدوده: نمایش عکس پروفایل در قاب مربعی خانهٔ میزکار و تازه‌سازی پس از تغییر عکس، بررسی و ثبت وضعیت. بدون API، Schema/Migration، Permission، Dependency/Lockfile یا تغییر دادهٔ عملیاتی.
+- نمایش از endpoint محافظت‌شدهٔ موجود و Object URL استفاده می‌کند؛ هنگام تغییر تصویر دوباره خوانده می‌شود و URL قبلی آزاد می‌شود. typecheck، lint فایل تغییرکرده و build تولیدی Web موفق‌اند.
+
+## 2026-09-28 — WORKBENCH-PASSWORD-VISIBILITY-0928 — PC-B — READY_FOR_REVIEW
+
+- `COMPUTER_ID=PC-B`؛ شاخهٔ `codex/pc-b-workbench-password-visibility-0928` از `origin/develop`. محدوده: فقط فرم تغییر رمز میزکار و نمایش/پنهان‌سازی سه فیلد رمز، بررسی و ثبت وضعیت. بدون API/IAM، Schema/Migration، Permission، Dependency/Lockfile یا تغییر دادهٔ عملیاتی.
+- هر دکمهٔ چشم مستقل، از نوع `button` و دارای برچسب و حالت قابل‌خواندن برای صفحه‌خوان است. lint، typecheck و build تولیدی Web موفق‌اند.
+
+## 2026-09-28 — WORKBENCH-FILES-COPY-0928 — PC-B — READY_FOR_REVIEW
+
+- `COMPUTER_ID=PC-B`؛ شاخهٔ `codex/pc-b-workbench-files-copy-0928` از `origin/develop`. توضیح زیر عنوان «فایل‌های من» به درخواست کاربر حذف شد؛ رفتار و دادهٔ اسناد، API، Schema/Migration، Permission و Dependency/Lockfile تغییری ندارند.
+
+## 2026-09-28 — WORKBENCH-HIDE-VERSION-NOTE-0928 — PC-B — READY_FOR_REVIEW
+
+- `COMPUTER_ID=PC-B`؛ شاخهٔ `codex/pc-b-workbench-hide-version-note-0928` از `origin/develop`. محدوده: حذف فیلد «یادداشت نسخه» فقط از فرم بارگذاری شخصی فایل‌های میزکار و ثبت وضعیت. مالک هر دو بخش Workbench و Documents، PC-B است؛ بدون API، Schema/Migration، Permission، Dependency/Lockfile یا تغییر داده.
+- lint، typecheck و build تولیدی Web موفق‌اند. فیلد در فرم اصلی آرشیو اسناد همچنان موجود است.
+
+## 2026-09-28 — WORKBENCH-DOCUMENT-RETURN-0928 — PC-B — READY_FOR_REVIEW
+
+- `COMPUTER_ID=PC-B`؛ شاخهٔ `codex/pc-b-workbench-document-return-0928` از `origin/develop`. محدوده: لینک مشاهده اسناد از خانه، فایل‌ها، ستاره‌دارها و تقویم میزکار و بازگشت پس از بستن جزئیات سند به همان تب. مالک Workbench و Documents، PC-B است؛ بدون API، Schema/Migration، Permission، Dependency/Lockfile یا تغییر داده.
+- پارامتر بازگشت فقط به چهار تب مجاز میزکار نگاشت می‌شود و مسیر دلخواه را نمی‌پذیرد. ۹ آزمون هدفمند، lint، typecheck و build تولیدی Web موفق‌اند.
+
+## 2026-09-28 — WORKBENCH-SEPTEMBER-INTEGRATION-0928 — PC-B — IN_PROGRESS
+
+- `COMPUTER_ID=PC-B`؛ شاخهٔ `codex/pc-b-workbench-september-integration` از `origin/develop`. محدوده: یکپارچه‌سازی هفت تغییر اخیر میزکار و اسناد متعلق به PC-B، رفع تعارض اسناد وضعیت و تحویل در یک PR به `develop`. بدون Migration، قرارداد API، Dependency/Lockfile یا تغییر دادهٔ عملیاتی.

@@ -55,6 +55,19 @@ export const noteTemplates: NoteDraft[] = [
   },
 ];
 
+export function notesWithTemplates(saved: NoteDraft[]): NoteDraft[] {
+  return [
+    ...structuredClone(noteTemplates).filter(
+      (template) =>
+        !saved.some(
+          (note) =>
+            note.title === template.title && note.folder === template.folder,
+        ),
+    ),
+    ...saved,
+  ];
+}
+
 export function filterNoteDrafts(
   notes: NoteDraft[],
   search: string,
