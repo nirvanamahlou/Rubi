@@ -4223,3 +4223,7 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 
 - شاخهٔ مستقل `codex/pc-a-ticket-pair-destination-date-0928` از `origin/develop@36453e1c`؛ محدودهٔ رزرو فقط فرم تعریف بلیط رفت‌وبرگشت و کارت‌های قیمت بلیط در Web و آزمون‌های مستقیم است.
 - مقصد رفت‌وبرگشت کنار مشخصات مسیر برجسته می‌شود؛ در قیمت‌های جفتی نیز مقصد و تاریخ دو پا مشخص است. تاریخ و ساعت در کارت قیمت یک‌طرفه بزرگ‌تر و در ستون چپ نمایش داده می‌شوند. بدون تغییر API، دیتابیس، قراردادهای قبلی، مجوز یا وابستگی.
+## 2026-09-28 — WORKBENCH-HOME-AVATAR-0928 — PC-B — READY_FOR_REVIEW
+
+- `COMPUTER_ID=PC-B`؛ شاخهٔ `codex/pc-b-workbench-home-avatar-0928` از `origin/develop`. محدوده: نمایش عکس پروفایل در قاب مربعی خانهٔ میزکار و تازه‌سازی پس از تغییر عکس، بررسی و ثبت وضعیت. بدون API، Schema/Migration، Permission، Dependency/Lockfile یا تغییر دادهٔ عملیاتی.
+- نمایش از endpoint محافظت‌شدهٔ موجود و Object URL استفاده می‌کند؛ هنگام تغییر تصویر دوباره خوانده می‌شود و URL قبلی آزاد می‌شود. typecheck، lint فایل تغییرکرده و build تولیدی Web موفق‌اند.
