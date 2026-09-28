@@ -409,9 +409,9 @@ describe('ReportingWorkspace', () => {
     expect(table).toContain('تطبیق مبلغ با نمای مرجع: تأییدشده');
 
     expect(reportUsesPendingReservationActions('paid_not_issued')).toBe(true);
-    expect(
-      reportUsesPendingReservationActions('sales_by_service_route'),
-    ).toBe(false);
+    expect(reportUsesPendingReservationActions('sales_by_service_route')).toBe(
+      false,
+    );
 
     const paidNotIssued = reportCatalog.find(
       (item) => item.code === 'paid_not_issued',

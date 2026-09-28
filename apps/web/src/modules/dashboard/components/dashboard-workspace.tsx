@@ -2451,7 +2451,7 @@ function DashboardChart({
                   x={chartLeft - 34}
                   y={y + 3}
                 >
-                {compactVisualNumber(value, unit)}
+                  {compactVisualNumber(value, unit)}
                 </text>
               </g>
             );
@@ -2897,14 +2897,14 @@ function DashboardChart({
           </span>
           <div className="space-y-1 text-sm text-muted-foreground">
             <p>
-            {largestDrop
-              ? `بیشترین افت بین «${stages[largestDrop.index]?.label}» و «${stages[largestDrop.index + 1]?.label}» رخ داده است؛ یعنی ${formatDashboardNumber(largestDrop.drop)} مورد از مرحلهٔ اول به مرحلهٔ بعدی نرسیده‌اند.`
-              : 'برای محاسبهٔ افت مراحل، دادهٔ کافی در دسترس نیست.'}
+              {largestDrop
+                ? `بیشترین افت بین «${stages[largestDrop.index]?.label}» و «${stages[largestDrop.index + 1]?.label}» رخ داده است؛ یعنی ${formatDashboardNumber(largestDrop.drop)} مورد از مرحلهٔ اول به مرحلهٔ بعدی نرسیده‌اند.`
+                : 'برای محاسبهٔ افت مراحل، دادهٔ کافی در دسترس نیست.'}
             </p>
             {largestDrop ? (
               <p className="text-xs leading-5 text-muted-foreground/90">
-                راهنما: این عدد تعداد موردهایی است که در گذار بین این دو مرحله از
-                قیف خارج شده‌اند.
+                راهنما: این عدد تعداد موردهایی است که در گذار بین این دو مرحله
+                از قیف خارج شده‌اند.
               </p>
             ) : null}
           </div>

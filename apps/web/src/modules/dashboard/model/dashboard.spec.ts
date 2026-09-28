@@ -658,9 +658,7 @@ describe('dashboard permission and data states', () => {
     expect(source).toContain('trendDateLabel');
     expect(source).toContain('trendTooltipTime');
     expect(source).not.toContain('بازه انتخاب‌شده — ${labels[index]}');
-    expect(source).toContain(
-      '<title>{`${trendTooltipTime(',
-    );
+    expect(source).toContain('<title>{`${trendTooltipTime(');
     expect(source).not.toContain(
       '<title>{`${seriesItem.label} — ${trendTooltipTime(',
     );

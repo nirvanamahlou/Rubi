@@ -2088,220 +2088,229 @@ export function ReportingWorkspace({
         <>
           <PageHeader title="گزارش‌ها و خروجی‌های مدیریتی" />
           <nav
-        aria-label="نماهای گزارش"
-        className="flex gap-2 overflow-x-auto pb-1"
-      >
-        {workspaceViews.map(({ icon: Icon, id, label }) => {
-          const count = workspaceCountForView(id, workspaceCounts);
-          return (
-            <Button
-              asChild
-              aria-current={view === id ? 'page' : undefined}
-              className={
-                view === id ? `shrink-0 ${darkSurfaceContentClass}` : 'shrink-0'
-              }
-              key={id}
-              variant={view === id ? 'primary' : 'outline'}
-            >
-              <Link href={reportingViewHref(id)} scroll={false}>
-                <Icon aria-hidden="true" className="size-4" />
-                {label}
-                <span
-                  className="rounded-md bg-current/10 px-1.5 text-xs tabular-nums"
-                  aria-label={
-                    count === undefined
-                      ? `در حال دریافت تعداد ${label}`
-                      : `${count.toLocaleString('fa-IR')} مورد در ${label}`
+            aria-label="نماهای گزارش"
+            className="flex gap-2 overflow-x-auto pb-1"
+          >
+            {workspaceViews.map(({ icon: Icon, id, label }) => {
+              const count = workspaceCountForView(id, workspaceCounts);
+              return (
+                <Button
+                  asChild
+                  aria-current={view === id ? 'page' : undefined}
+                  className={
+                    view === id
+                      ? `shrink-0 ${darkSurfaceContentClass}`
+                      : 'shrink-0'
                   }
-                  title={
-                    count === undefined
-                      ? 'در حال دریافت تعداد از سرور'
-                      : `تعداد به‌روز ${label}`
-                  }
+                  key={id}
+                  variant={view === id ? 'primary' : 'outline'}
                 >
-                  {count === undefined ? '…' : count.toLocaleString('fa-IR')}
-                </span>
-              </Link>
-            </Button>
-          );
-        })}
+                  <Link href={reportingViewHref(id)} scroll={false}>
+                    <Icon aria-hidden="true" className="size-4" />
+                    {label}
+                    <span
+                      className="rounded-md bg-current/10 px-1.5 text-xs tabular-nums"
+                      aria-label={
+                        count === undefined
+                          ? `در حال دریافت تعداد ${label}`
+                          : `${count.toLocaleString('fa-IR')} مورد در ${label}`
+                      }
+                      title={
+                        count === undefined
+                          ? 'در حال دریافت تعداد از سرور'
+                          : `تعداد به‌روز ${label}`
+                      }
+                    >
+                      {count === undefined
+                        ? '…'
+                        : count.toLocaleString('fa-IR')}
+                    </span>
+                  </Link>
+                </Button>
+              );
+            })}
           </nav>
           {view === 'catalog' ? (
-        <section>
-          <div className="space-y-4">
-            <Card className="p-4">
-              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[minmax(20rem,1fr)_repeat(2,minmax(13rem,auto))]">
-                <label className="relative md:col-span-2 xl:col-span-1">
-                  <Search className="absolute end-3 top-3 size-4 text-muted-foreground" />
-                  <Input
-                    aria-label="جست‌وجوی گزارش"
-                    className="pe-10"
-                    onChange={(event) => setQuery(event.target.value)}
-                    placeholder="جست‌وجو در عنوان یا دسته گزارش"
-                    value={query}
-                  />
-                </label>
-                <Select onValueChange={setCategory} value={category}>
-                  <SelectTrigger aria-label="دسته گزارش">
-                    <Filter className="size-4" />
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="text-right" dir="rtl">
-                    <SelectItem className="text-right" value="all">
-                      <ReportCategorySelectOption category="all" />
-                    </SelectItem>
-                    {categories.map((item) => (
-                      <SelectItem
-                        className="text-right"
-                        key={item}
-                        value={item}
+            <section>
+              <div className="space-y-4">
+                <Card className="p-4">
+                  <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[minmax(20rem,1fr)_repeat(2,minmax(13rem,auto))]">
+                    <label className="relative md:col-span-2 xl:col-span-1">
+                      <Search className="absolute end-3 top-3 size-4 text-muted-foreground" />
+                      <Input
+                        aria-label="جست‌وجوی گزارش"
+                        className="pe-10"
+                        onChange={(event) => setQuery(event.target.value)}
+                        placeholder="جست‌وجو در عنوان یا دسته گزارش"
+                        value={query}
+                      />
+                    </label>
+                    <Select onValueChange={setCategory} value={category}>
+                      <SelectTrigger aria-label="دسته گزارش">
+                        <Filter className="size-4" />
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="text-right" dir="rtl">
+                        <SelectItem className="text-right" value="all">
+                          <ReportCategorySelectOption category="all" />
+                        </SelectItem>
+                        {categories.map((item) => (
+                          <SelectItem
+                            className="text-right"
+                            key={item}
+                            value={item}
+                          >
+                            <ReportCategorySelectOption category={item} />
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Select
+                      onValueChange={(value) =>
+                        setAvailability(value as ReportAvailability | 'all')
+                      }
+                      value={availability}
+                    >
+                      <SelectTrigger
+                        aria-label="وضعیت اتصال گزارش"
+                        className="whitespace-nowrap [&>span]:whitespace-nowrap"
                       >
-                        <ReportCategorySelectOption category={item} />
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Select
-                  onValueChange={(value) =>
-                    setAvailability(value as ReportAvailability | 'all')
-                  }
-                  value={availability}
-                >
-                  <SelectTrigger
-                    aria-label="وضعیت اتصال گزارش"
-                    className="whitespace-nowrap [&>span]:whitespace-nowrap"
-                  >
-                    <ShieldCheck className="size-4" />
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent dir="rtl" className="text-right">
-                    <SelectItem className="text-right" value="all">
-                      <ReportAvailabilitySelectOption availability="all" />
-                    </SelectItem>
-                    <SelectItem className="text-right" value="READY">
-                      <ReportAvailabilitySelectOption availability="READY" />
-                    </SelectItem>
-                    <SelectItem
-                      className="text-right"
-                      value="PENDING_CONNECTION"
-                    >
-                      <ReportAvailabilitySelectOption availability="PENDING_CONNECTION" />
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="mt-3 text-xs text-muted-foreground">
-                <span aria-live="polite">
-                  نمایش {visible.length.toLocaleString('fa-IR')} از{' '}
-                  {reportCatalog.length.toLocaleString('fa-IR')} گزارش
-                </span>
-              </div>
-            </Card>
-            <section
-              aria-labelledby="catalog-favorites-title"
-              className="space-y-3"
-            >
-              <div className="flex flex-wrap items-center gap-2">
-                <Star
-                  aria-hidden="true"
-                  className="size-5 fill-amber-400 text-amber-500"
-                />
-                <h2 id="catalog-favorites-title" className="text-lg font-bold">
-                  گزارش‌های مورد علاقه من
-                </h2>
-                <Badge className="tabular-nums">
-                  {favoriteReports.length.toLocaleString('fa-IR')}
-                </Badge>
-              </div>
-              {favoriteFeedback ? (
-                <p
-                  aria-live="polite"
-                  className="rounded-xl border border-border bg-surface px-3 py-2 text-xs"
-                  role="status"
-                >
-                  {favoriteFeedback}
-                </p>
-              ) : null}
-              {favoritesLoading ? (
-                <Skeleton className="h-24 w-full rounded-2xl" />
-              ) : favoriteReports.length ? (
-                <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-                  {favoriteReports.map((report) => (
-                    <ReportCard
-                      favoriteBusy={favoriteBusyCode !== null}
-                      isFavorite
-                      key={report.code}
-                      onSelect={selectCatalogReport}
-                      onToggleFavorite={(item) =>
-                        void toggleCatalogFavorite(item)
-                      }
-                      report={report}
-                      selected={selected.code === report.code}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <Card className="border-dashed px-4 py-5 text-sm text-muted-foreground">
-                  {Object.keys(favoriteIds).length
-                    ? 'با جست‌وجو و فیلترهای فعلی، گزارشی از علاقه‌مندی‌ها نمایش داده نمی‌شود.'
-                    : 'برای دسترسی سریع به گزارش‌های مهم، ستارهٔ کارت هر گزارش را انتخاب کنید.'}
+                        <ShieldCheck className="size-4" />
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent dir="rtl" className="text-right">
+                        <SelectItem className="text-right" value="all">
+                          <ReportAvailabilitySelectOption availability="all" />
+                        </SelectItem>
+                        <SelectItem className="text-right" value="READY">
+                          <ReportAvailabilitySelectOption availability="READY" />
+                        </SelectItem>
+                        <SelectItem
+                          className="text-right"
+                          value="PENDING_CONNECTION"
+                        >
+                          <ReportAvailabilitySelectOption availability="PENDING_CONNECTION" />
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="mt-3 text-xs text-muted-foreground">
+                    <span aria-live="polite">
+                      نمایش {visible.length.toLocaleString('fa-IR')} از{' '}
+                      {reportCatalog.length.toLocaleString('fa-IR')} گزارش
+                    </span>
+                  </div>
                 </Card>
-              )}
-            </section>
-            <section className="space-y-3">
-              {otherReports.length ? (
-                <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-                  {otherReports.map((report) => (
-                    <ReportCard
-                      favoriteBusy={favoriteBusyCode !== null}
-                      isFavorite={false}
-                      key={report.code}
-                      onSelect={selectCatalogReport}
-                      onToggleFavorite={(item) =>
-                        void toggleCatalogFavorite(item)
-                      }
-                      report={report}
-                      selected={selected.code === report.code}
+                <section
+                  aria-labelledby="catalog-favorites-title"
+                  className="space-y-3"
+                >
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Star
+                      aria-hidden="true"
+                      className="size-5 fill-amber-400 text-amber-500"
                     />
-                  ))}
-                </div>
-              ) : visible.length ? (
-                <p className="rounded-xl border border-dashed border-border p-4 text-sm text-muted-foreground">
-                  همهٔ گزارش‌های مطابق فیلتر در علاقه‌مندی‌ها هستند.
-                </p>
-              ) : (
-                <EmptyState
-                  action={
-                    <Button
-                      onClick={resetCatalogFilters}
-                      type="button"
-                      variant="outline"
+                    <h2
+                      id="catalog-favorites-title"
+                      className="text-lg font-bold"
                     >
-                      پاک‌کردن جست‌وجو و فیلترها
-                    </Button>
-                  }
-                  description="عبارت جست‌وجو یا فیلترهای دسته و اتصال را تغییر دهید."
-                  title="گزارشی پیدا نشد"
-                />
-              )}
+                      گزارش‌های مورد علاقه من
+                    </h2>
+                    <Badge className="tabular-nums">
+                      {favoriteReports.length.toLocaleString('fa-IR')}
+                    </Badge>
+                  </div>
+                  {favoriteFeedback ? (
+                    <p
+                      aria-live="polite"
+                      className="rounded-xl border border-border bg-surface px-3 py-2 text-xs"
+                      role="status"
+                    >
+                      {favoriteFeedback}
+                    </p>
+                  ) : null}
+                  {favoritesLoading ? (
+                    <Skeleton className="h-24 w-full rounded-2xl" />
+                  ) : favoriteReports.length ? (
+                    <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+                      {favoriteReports.map((report) => (
+                        <ReportCard
+                          favoriteBusy={favoriteBusyCode !== null}
+                          isFavorite
+                          key={report.code}
+                          onSelect={selectCatalogReport}
+                          onToggleFavorite={(item) =>
+                            void toggleCatalogFavorite(item)
+                          }
+                          report={report}
+                          selected={selected.code === report.code}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <Card className="border-dashed px-4 py-5 text-sm text-muted-foreground">
+                      {Object.keys(favoriteIds).length
+                        ? 'با جست‌وجو و فیلترهای فعلی، گزارشی از علاقه‌مندی‌ها نمایش داده نمی‌شود.'
+                        : 'برای دسترسی سریع به گزارش‌های مهم، ستارهٔ کارت هر گزارش را انتخاب کنید.'}
+                    </Card>
+                  )}
+                </section>
+                <section className="space-y-3">
+                  {otherReports.length ? (
+                    <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+                      {otherReports.map((report) => (
+                        <ReportCard
+                          favoriteBusy={favoriteBusyCode !== null}
+                          isFavorite={false}
+                          key={report.code}
+                          onSelect={selectCatalogReport}
+                          onToggleFavorite={(item) =>
+                            void toggleCatalogFavorite(item)
+                          }
+                          report={report}
+                          selected={selected.code === report.code}
+                        />
+                      ))}
+                    </div>
+                  ) : visible.length ? (
+                    <p className="rounded-xl border border-dashed border-border p-4 text-sm text-muted-foreground">
+                      همهٔ گزارش‌های مطابق فیلتر در علاقه‌مندی‌ها هستند.
+                    </p>
+                  ) : (
+                    <EmptyState
+                      action={
+                        <Button
+                          onClick={resetCatalogFilters}
+                          type="button"
+                          variant="outline"
+                        >
+                          پاک‌کردن جست‌وجو و فیلترها
+                        </Button>
+                      }
+                      description="عبارت جست‌وجو یا فیلترهای دسته و اتصال را تغییر دهید."
+                      title="گزارشی پیدا نشد"
+                    />
+                  )}
+                </section>
+              </div>
             </section>
-          </div>
-        </section>
           ) : (
-        <Card
-          className="space-y-4 p-6"
-          aria-label={workspaceViews.find((item) => item.id === view)?.label}
-        >
-          <h2 className="text-lg font-bold">
-            {workspaceViews.find((item) => item.id === view)?.label}
-          </h2>
-          <ReportingOperationsView
-            onMutation={refreshWorkspaceCounts}
-            mutationRevision={runHistoryRevision}
-            view={view}
-            savedFilter={savedFilter}
-          />
-        </Card>
+            <Card
+              className="space-y-4 p-6"
+              aria-label={
+                workspaceViews.find((item) => item.id === view)?.label
+              }
+            >
+              <h2 className="text-lg font-bold">
+                {workspaceViews.find((item) => item.id === view)?.label}
+              </h2>
+              <ReportingOperationsView
+                onMutation={refreshWorkspaceCounts}
+                mutationRevision={runHistoryRevision}
+                view={view}
+                savedFilter={savedFilter}
+              />
+            </Card>
           )}
         </>
       ) : null}

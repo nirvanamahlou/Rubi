@@ -50,7 +50,9 @@ describe('ReportingExportService storage boundary', () => {
 
     expect(sheet).toContain('<row r="1">');
     expect(sheet).toContain('سود قرارداد و خدمت');
-    expect(sheet).toContain('<c r="A1" s="5" t="inlineStr"><is><t>سود قرارداد و خدمت</t></is></c>');
+    expect(sheet).toContain(
+      '<c r="A1" s="5" t="inlineStr"><is><t>سود قرارداد و خدمت</t></is></c>',
+    );
     expect(sheet).toContain('زمان تولید گزارش');
     expect(sheet).toContain('تاریخ شمسی');
     expect(sheet).toContain('ساعت خروجی گرفتن');
@@ -77,12 +79,16 @@ describe('ReportingExportService storage boundary', () => {
     expect(sheet).toContain('<mergeCell ref="A1:C1"/>');
     expect(sheet).toContain('<mergeCell ref="A2:B2"/>');
     expect(sheet).toContain('ySplit="7" topLeftCell="A8"');
-    expect(sheet).toContain('<tableParts count="1"><tablePart r:id="rId1"/></tableParts>');
+    expect(sheet).toContain(
+      '<tableParts count="1"><tablePart r:id="rId1"/></tableParts>',
+    );
     expect(table).toContain('ref="A7:C9"');
     expect(table).toContain('<autoFilter ref="A7:C9"/>');
     expect(table).toContain('name="TableStyleMedium2"');
     expect(table).toContain('showRowStripes="1"');
-    expect(relationships).toContain('relationships/table" Target="../tables/table1.xml"');
+    expect(relationships).toContain(
+      'relationships/table" Target="../tables/table1.xml"',
+    );
     expect(contentTypes).toContain('/xl/tables/table1.xml');
   });
 

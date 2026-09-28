@@ -125,8 +125,7 @@ export function buildTravelReportResult(input: {
     if (pendingReservationStatuses.has(fact.reservationStatus))
       current.pendingReservationOrderIds.add(fact.orderNumber);
     current.orderCount = current.orderIds.size;
-    current.pendingReservationActions =
-      current.pendingReservationOrderIds.size;
+    current.pendingReservationActions = current.pendingReservationOrderIds.size;
     current.passengerCount += fact.passengerCount;
     current.ticketCount += fact.ticketCount;
     current.salesAmount = amount(current.salesAmount)

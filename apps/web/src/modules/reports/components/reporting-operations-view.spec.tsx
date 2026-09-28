@@ -26,9 +26,9 @@ describe('Reporting run action labels', () => {
   });
 
   it('uses the Persian catalog title instead of an English report code', () => {
-    expect(reportingOperationTitle({ id: 'row-1' }, 'sales_by_service_route')).toBe(
-      'کدام خدمت، مسیر یا شهر مقصد بیشترین فروش را ایجاد کرده است؟',
-    );
+    expect(
+      reportingOperationTitle({ id: 'row-1' }, 'sales_by_service_route'),
+    ).toBe('کدام خدمت، مسیر یا شهر مقصد بیشترین فروش را ایجاد کرده است؟');
   });
 
   it('explains each persisted form action and keeps legacy rows understandable', () => {
@@ -48,5 +48,4 @@ describe('Reporting run action labels', () => {
     expect(reportingOperationsShowOwnerExecutor('recent')).toBe(false);
     expect(reportingOperationsShowOwnerExecutor('downloads')).toBe(false);
   });
-
 });
