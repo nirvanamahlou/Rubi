@@ -4073,6 +4073,7 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 - درخواست مالک: کارت‌های پیام‌رسان در گفت‌وگوی بلند روی فهرست و بخش‌های دیگر نیفتند و متن از مرز کارت بیرون نزند.
 - شاخهٔ مستقل `codex/pc-b-workbench-message-card-layout-0927` از `origin/develop@0c99c7cd`؛ محدودهٔ رزرو فقط چیدمان پیام‌ها در `message-composer.tsx` و ثبت وضعیت همین واحد است. بدون API، Schema/Migration، قرارداد، Permission، Dependency/Lockfile یا دادهٔ عملیاتی.
 - نتیجه: ستون کناری و کارت‌های فهرست گفت‌وگو عرض ثابت و برش متن بلند دارند؛ کارت‌های خود پیام نیز در یک ستون مجزا با اسکرول واحد قرار گرفتند. lint و typecheck وب موفق‌اند؛ بررسی تصویری با حساب واقعی به‌دلیل نشست منقضی‌شدهٔ مرورگر خودکار اجرا نشد.
+
 ## 2026-09-28 — TICKET-PAIR-PRICE-VISIBILITY-0928 — PC-A — READY_FOR_REVIEW
 
 - Branch `codex/pc-a-ticket-pair-contract-pricing-0928` from `origin/develop@7639f2f7`.
