@@ -185,11 +185,10 @@ export function DocumentDetailDialog({
                 </Button>
                 <Button
                   aria-label="حذف دائمی سند"
-                  className="text-red-600 hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-950/30"
                   disabled={!document.capabilities.permanentDelete}
                   onClick={() => onDelete(document)}
                   size="icon"
-                  variant="ghost"
+                  variant="destructive"
                 >
                   <Trash2 aria-hidden="true" className="size-4" />
                 </Button>
