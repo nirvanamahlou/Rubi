@@ -1,7 +1,7 @@
 'use client';
 import { WorkbenchSelect } from './workbench-select';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Plus, RefreshCw, Search, Star, StickyNote } from 'lucide-react';
 import {
   Alert,
@@ -18,6 +18,7 @@ import { NoteEditor } from './note-editor';
 import {
   filterNoteDrafts,
   noteTemplates,
+  notesWithTemplates,
   WORKBENCH_NOTE_FAVORITES_CHANGED,
   type NoteDraft,
 } from './note-drafts';
@@ -52,6 +53,7 @@ export function WorkbenchNotes({
   const [notes, setNotes] = useState<NoteDraft[]>(() =>
     structuredClone(noteTemplates),
   );
+  const pendingNotes = useRef(new Set<string>());
   const [folders, setFolders] = useState(['شخصی', 'جلسات', 'ایده‌ها']);
   const [search, setSearch] = useState('');
   const [folder, setFolder] = useState('');
@@ -69,10 +71,7 @@ export function WorkbenchNotes({
     setError('');
     try {
       const response = await workbenchPersonalApi.notes();
-      setNotes([
-        ...structuredClone(noteTemplates),
-        ...response.data.map(storedNote),
-      ]);
+      setNotes(notesWithTemplates(response.data.map(storedNote)));
       setFolders(response.folders);
     } catch (reason) {
       setError(
@@ -83,7 +82,7 @@ export function WorkbenchNotes({
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [setError, setFolders, setLoading, setNotes]);
   useEffect(() => {
     const timer = window.setTimeout(() => void load(), 0);
     return () => window.clearTimeout(timer);
@@ -95,18 +94,19 @@ export function WorkbenchNotes({
     onOpenChange(true);
   }
   async function update(id: string, change: Partial<NoteDraft>) {
+    if (pendingNotes.current.has(id)) return;
     const previous = notes.find((note) => note.id === id);
     if (!previous) return;
     const next = { ...previous, ...change };
+    pendingNotes.current.add(id);
     setNotes((current) =>
       current.map((note) => (note.id === id ? { ...note, ...change } : note)),
     );
-    if (previous.template) return;
     try {
-      const response = await workbenchPersonalApi.updateNote(
-        id,
-        noteInput(next),
-      );
+      if (previous.template && change.pinned === undefined) return;
+      const response = previous.template
+        ? await workbenchPersonalApi.createNote(noteInput(next))
+        : await workbenchPersonalApi.updateNote(id, noteInput(next));
       setNotes((current) =>
         current.map((note) =>
           note.id === id ? storedNote(response.data) : note,
@@ -119,6 +119,8 @@ export function WorkbenchNotes({
         reason instanceof Error ? reason.message : 'ذخیره یادداشت انجام نشد.',
       );
       await load();
+    } finally {
+      pendingNotes.current.delete(id);
     }
   }
   function closeEditor(value: boolean) {
@@ -227,32 +229,28 @@ export function WorkbenchNotes({
                 <span className="rounded-md bg-amber-100/70 px-2 py-1 text-xs text-amber-900 dark:bg-amber-900/40 dark:text-amber-100">
                   • {note.folder}
                 </span>
-                {!note.template && (
-                  <Button
-                    aria-label={
-                      note.pinned
-                        ? 'برداشتن ستاره یادداشت'
-                        : 'ستاره‌دار کردن یادداشت'
-                    }
-                    aria-pressed={note.pinned}
-                    className={
-                      note.pinned
-                        ? 'text-amber-600 hover:text-amber-700'
-                        : 'text-muted-foreground hover:text-amber-600'
-                    }
-                    onClick={() =>
-                      void update(note.id, { pinned: !note.pinned })
-                    }
-                    size="icon"
-                    title={note.pinned ? 'برداشتن ستاره' : 'ستاره‌دار کردن'}
-                    variant="ghost"
-                  >
-                    <Star
-                      aria-hidden="true"
-                      className={note.pinned ? 'size-5 fill-current' : 'size-5'}
-                    />
-                  </Button>
-                )}
+                <Button
+                  aria-label={
+                    note.pinned
+                      ? 'برداشتن ستاره یادداشت'
+                      : 'ستاره‌دار کردن یادداشت'
+                  }
+                  aria-pressed={note.pinned}
+                  className={
+                    note.pinned
+                      ? 'text-amber-600 hover:text-amber-700'
+                      : 'text-muted-foreground hover:text-amber-600'
+                  }
+                  onClick={() => void update(note.id, { pinned: !note.pinned })}
+                  size="icon"
+                  title={note.pinned ? 'برداشتن ستاره' : 'ستاره‌دار کردن'}
+                  variant="ghost"
+                >
+                  <Star
+                    aria-hidden="true"
+                    className={note.pinned ? 'size-5 fill-current' : 'size-5'}
+                  />
+                </Button>
               </div>
               <h3 className="mt-5 text-base font-bold">{note.title}</h3>
               {note.body && (
