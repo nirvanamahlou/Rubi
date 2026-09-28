@@ -8,6 +8,14 @@ import { getMasterDataFormFields } from './form-fields';
 import { validateMasterDataDraft } from './validation';
 
 describe('payment-method form fields', () => {
+  it('keeps every English title optional across Master Data forms', () => {
+    for (const definition of masterDataCatalog) {
+      for (const field of getMasterDataFormFields(definition)) {
+        if (field.key !== 'englishName') continue;
+        expect(field.required, definition.key).not.toBe(true);
+      }
+    }
+  });
   it('keeps airport enrichment out of create while preserving it for later editing', () => {
     const definition = getMasterDataDefinition('airports');
     const createFields = getMasterDataFormFields(definition, 'create').map(
@@ -150,16 +158,16 @@ describe('payment-method form fields', () => {
     }
   });
 
-  it('uses a required English-only title for cabin classes', () => {
+  it('allows an omitted English-only title for cabin classes', () => {
     const definition = getMasterDataDefinition('cabin-classes');
     const fields = getMasterDataFormFields(definition);
     const englishName = fields.find((field) => field.key === 'englishName');
 
     expect(fields.map((field) => field.key)).not.toContain('name');
-    expect(englishName).toMatchObject({ required: true });
+    expect(englishName?.required).not.toBe(true);
     expect(
       validateMasterDataDraft('cabin-classes', { bookingCode: 'Y' }).errors,
-    ).toHaveProperty('englishName');
+    ).not.toHaveProperty('englishName');
     expect(
       validateMasterDataDraft('cabin-classes', {
         englishName: 'Economy',

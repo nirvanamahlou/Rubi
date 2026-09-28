@@ -115,7 +115,13 @@ const resourceCodePrefixes: Record<MasterDataResource, string> = {
 function autoCodeSource(
   values: Record<string, string | number | readonly string[] | null>,
 ): string {
-  for (const field of ['displayName', 'name', 'legalName', 'englishName']) {
+  for (const field of [
+    'displayName',
+    'name',
+    'legalName',
+    'englishName',
+    'bookingCode',
+  ]) {
     const value = values[field];
     if (typeof value === 'string' && value.trim()) return value.trim();
   }
@@ -609,17 +615,17 @@ for (const resource of MASTER_DATA_RESOURCES) {
 }
 
 const requiredFields: Record<MasterDataResource, readonly string[]> = {
-  countries: ['iso2Code', 'name', 'englishName'],
-  regions: ['name', 'englishName', 'countryId'],
-  cities: ['name', 'englishName', 'countryId', 'regionId'],
-  airports: ['name', 'englishName', 'countryId', 'cityId', 'iataCode'],
+  countries: ['iso2Code', 'name'],
+  regions: ['name', 'countryId'],
+  cities: ['name', 'countryId', 'regionId'],
+  airports: ['name', 'countryId', 'cityId', 'iataCode'],
   terminals: ['name', 'airportId', 'terminalType'],
-  currencies: ['code', 'name', 'englishName'],
+  currencies: ['code', 'name'],
   'exchange-rates': ['fromCurrencyCode', 'toCurrencyCode', 'rate'],
-  banks: ['code', 'name', 'englishName', 'countryId'],
+  banks: ['code', 'name', 'countryId'],
   'bank-branches': ['code', 'name', 'bankId', 'cityId'],
   'payment-methods': ['name', 'channel', 'direction'],
-  insurers: ['name', 'englishName', 'organizationId', 'countryId'],
+  insurers: ['name', 'organizationId', 'countryId'],
   'insurance-plans': [
     'name',
     'insurerId',
@@ -634,7 +640,7 @@ const requiredFields: Record<MasterDataResource, readonly string[]> = {
   // still submit manufacturer/model separately, so aircraft validation happens
   // in prepare() after the compatibility payload has been normalized.
   'aircraft-types': [],
-  'cabin-classes': ['englishName', 'bookingCode'],
+  'cabin-classes': ['bookingCode'],
   'baggage-rules': ['name', 'airlineId', 'passengerType', 'allowance', 'unit'],
   'manifest-templates': ['name', 'airlineId', 'destinationCityId'],
   'rail-companies': ['name', 'organizationId', 'countryId'],
@@ -1716,14 +1722,12 @@ export class MasterDataService {
     }
     if (resource === 'cabin-classes' && Object.hasOwn(data, 'englishName')) {
       const englishName = String(data.englishName ?? '').trim();
-      if (!englishName)
-        throw new BadRequestException('نام انگلیسی کلاس پروازی الزامی است.');
       if (englishName.length > 160)
         throw new BadRequestException(
           'نام انگلیسی کلاس پروازی حداکثر ۱۶۰ نویسه است.',
         );
-      data.englishName = englishName;
-      data.name = englishName;
+      data.englishName = englishName || null;
+      if (englishName) data.name = englishName;
     }
     if (
       (resource === 'payment-methods' || resource === 'meal-services') &&
@@ -1967,6 +1971,13 @@ export class MasterDataService {
           });
         data.bookingCode = bookingCode;
       }
+      if (!partial && !data.name) data.name = data.bookingCode;
+      if (partial && data.englishName === null) {
+        const existing = entityId
+          ? await this.repository.find('cabin-classes', entityId)
+          : null;
+        data.name = data.bookingCode ?? existing?.bookingCode ?? existing?.name;
+      }
       if (data.cabinType !== undefined) {
         const cabinType = String(data.cabinType).trim().toUpperCase();
         if (!cabinTypes.has(cabinType))
@@ -2134,8 +2145,6 @@ export class MasterDataService {
     if (resource === 'insurers') {
       if (data.countryId === null)
         throw new BadRequestException('کشور شرکت بیمه الزامی است.');
-      if (data.englishName === null)
-        throw new BadRequestException('نام انگلیسی شرکت بیمه الزامی است.');
     }
     if (resource === 'insurance-plans') {
       if (data.destinationRegion === null)

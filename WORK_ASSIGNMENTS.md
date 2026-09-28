@@ -4337,15 +4337,23 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 - COMPUTER_ID=PC-A; branch codex/pc-a-finance-history-seat-pricing-0928, isolated clean Finance worktree from origin/develop@099dc40e. Reserve Finance API/Web/history tests, additive Sales public receipt-history and Reservations purchase-descriptor projections, Finance v1 additive history contract and bounded status/task docs. Producer Sales/Finance and consumer Finance API/Web owned PC-A; public boundaries and existing v1 clients preserved. No Procurement implementation, migration/schema/dependency/lockfile/IAM or operational data changes. Bounded Finance contract/Central Docs owner PC-A for this unit; prior Finance locks released. User explicitly authorizes implementation and merge. Preserve unrelated local edits.
 
 - Validation: 23 targeted API and 29 Web tests, scoped lint, API/Web strict typechecks and production builds (53 routes) passed. No migration or data change. Finance contract/bounded docs locks RELEASED with commit. Explicit owner merge authorization; authenticated browser clicks remain unverified.
+
 ## 2026-09-28 — MASTER-DATA-RECORD-ICON-ACTIONS-0928 — PC-B — READY_FOR_REVIEW
 
 - درخواست مالک: دکمه‌های عملیات همه رکوردهای اطلاعات پایه مطابق نمونه، فقط آیکون باشند؛ حذف قرمز پُر و مشاهده/ویرایش کادر روشن. برچسب دسترس‌پذیر، رفتار و تأیید حذف حفظ می‌شود.
 - شاخه `codex/pc-b-master-data-record-icon-actions-0928` از شاخه فیلترهای فشردهٔ PC-B؛ محدوده رزرو: `apps/web/src/modules/master-data/components/*`، تست‌های همین UI و مدخل محدود اسناد. PR به‌صورت وابسته به PR #444 تحویل می‌شود. بدون API، Migration، قرارداد، داده، Dependency/Lockfile یا تغییر runtime.
+
 ## 2026-09-28 — MASTER-DATA-FINANCE-HEADING-SPACING-0928 — PC-B — READY_FOR_REVIEW
 
 - درخواست مالک: متن توضیحی زیر عنوان ارزها حذف و فاصلهٔ عنوان تا فیلترهای جست‌وجو کمتر شود.
 - شاخه `codex/pc-b-finance-heading-spacing-0928` از شاخهٔ عملیات آیکونی PC-B؛ فقط Workspace مالی و پولی، تست مرتبط و مدخل محدود اسناد رزرو است. وابسته به PR #445 و #444؛ بدون API، Migration، قرارداد، داده، Dependency/Lockfile یا تغییر runtime.
+
 ## 2026-09-28 — MASTER-DATA-CURRENCY-CREATE-NO-QUOTE-0928 — PC-B — READY_FOR_REVIEW
 
 - درخواست مالک: بخش «ثبت نرخ خرید و فروش» در فرم تعریف ارز جدید نمایش داده نشود؛ ثبت نرخ در ویرایش ارز موجود و تاریخچه فعلی محفوظ بماند.
 - شاخه `codex/pc-b-currency-create-no-quote-0928` از `codex/pc-b-finance-heading-spacing-0928`؛ محدوده فقط کامپوننت فرم ارز، تست مستقیم و مدخل محدود اسناد است. وابسته به PR #446، #445 و #444؛ بدون API، Migration، قرارداد، داده، Dependency/Lockfile یا تغییر runtime.
+
+## MASTER-DATA-OPTIONAL-ENGLISH-0928 — PC-B — READY_FOR_REVIEW
+
+- COMPUTER_ID=PC-B; branch `codex/pc-b-master-data-optional-english-0928` based on the unmerged Master Data UI stack. Reserve only Master Data form metadata, validation, API, the four nullable geography columns, one additive migration, focused tests, and bounded task/status docs. Migration Owner = PC-B for this unit; prior PC-A ticket-pricing migration lock is RELEASED. No dependency/lockfile, shared API contract, operational data, or runtime change. Preserve other branches and uncommitted edits.
+- Result: 24 focused API tests and 29 Web tests pass; Prisma validate, API/Web lint, typecheck and production build pass. Additive migration is committed for review but not applied to any live database. Migration and bounded docs locks RELEASED after this scoped delivery.
