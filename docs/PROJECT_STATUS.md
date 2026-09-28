@@ -1,3 +1,23 @@
+# 2026-09-28 — MANIFEST-DOWNLOAD-FINANCE-0928 — PC-A
+
+رفع دانلود خاموش منیفست روی HTTP شبکه با fallback شناسه درخواست، کلید مستقل برای بازیابی خروجی قبلی، نمایش خطا کنار بلیط و لینک مستقیم دریافت فایل. شمارش کارت و خروجی فقط قراردادهای دارای تأیید مالی معتبر را شامل می‌شوند و تأیید هنگام خروجی مجدداً کنترل می‌شود. ۲۸ تست API شامل مسیر واقعی HTTP و فایل باینری، ۶ تست Web، build هر دو بخش و lint موفق‌اند؛ بدون Migration یا Dependency. جزئیات: docs/tasks/MANIFEST-DOWNLOAD-FINANCE-0928.md. تغییرات اصلی کاربر محفوظ‌اند؛ نشست مرورگر روی صفحه ورود است و کلیک احراز‌شدهٔ کاربر بررسی نشده است.
+
+## TICKET-SUPPLY-REPEAT-0928 — PC-A — 2026-09-28
+
+- سه گزینه تامین قابل انتخاب: شناوری، ظرفیت شرکت و API. مقادیر ذخیره‌شده قدیمی allotment/charter حفظ و در رابط با عنوان شناوری خوانده می‌شوند؛ قرارداد دامنه تغییر نمی‌کند. انتخاب API نوع تامین است و اتصال خودکار به تامین‌کننده خارجی ایجاد نمی‌کند.
+- تعداد نوبت شامل تاریخ شروع است؛ هفتگی با فاصله دقیق هفت روز و ساعت/مدت سفر قبلی. هر نوبت پس از ثبت سرور مستقل به مجموعه مرورگر اضافه، فهرست رسمی تازه و فیلتر کارت‌ها برای نمایش تازه‌ترین‌ها بازنشانی می‌شود. موفقیت‌های قبل از خطای شبکه حفظ و تلاش مجدد در همان پنجره از شناسه‌های ثابت و checkpoint استفاده می‌کند.
+- فهرست رسمی ویرایش مستقل تعریف موجود در مرورگر و حذف را دارد. DELETE موجود علاوه بر بلیط تاریخ‌گذشته، بلیط آینده فاقد تخصیص فعال، رزرو ظرفیت فعال و تور متصل را آرشیو می‌کند؛ قفل ردیف، شعبه، نسخه و audit حفظ می‌شوند. FK و سوابق قرارداد/مالی حذف نمی‌شوند. محدودیت ۵۰۰ رکورد فهرست مدیریت و ذخیره محلی تعریف بلیط از قبل برقرار است.
+- بدون Migration، قرارداد مشترک، وابستگی یا داده عملیاتی. runtime ۳۱۰۰ و PR قبلی تورها دست‌نخورده‌اند. ۳۳ آزمون Web و ۱۱ آزمون API، lint فایل‌های متاثر، typecheck Web/API و build تولیدی Web/API با ۵۳ مسیر Web موفق‌اند.
+
+
+## 2026-09-28 — FINANCE-TICKET-PAYMENT-0928 — PC-A — READY_FOR_REVIEW
+
+Payment-method selection uses a native accessible control with explicit failed/empty-list feedback and retry. Existing seat-count × unit-cost capture remains persisted; the invoice preview now uses exact four-decimal arithmetic. The payment dialog explains repeated partial payments and shows the invoice amount as initial remaining balance. Eleven targeted Web tests, scoped lint, Web typecheck and production build (53 routes) passed. No new migration, shared contract, dependency, permissions or operational data changes. Branch: codex/pc-a-finance-ticket-payment-0928 from origin/develop@e4eb048c. Original edits and Web3100/API4000 are unchanged; reviewed integration/runtime update remains subject to approval. See docs/tasks/FINANCE-TICKET-PAYMENT-0928.md.
+
+## 2026-09-28 — MANIFEST-TRANSPORT-FORMAT-0928 — PC-A
+
+خروجی دیفالت منیفست هدر آبی FF1D4ED8 با متن سفید، جهت چپ‌به‌راست، ستون مقصد و جنسیت mr/mrs دارد. ردهٔ سنی تخصیص و override حفظ و fallback سن در تاریخ سفر برای دادهٔ قدیمی افزوده شد. اتوبوس و قطار از snapshot خدمات تأییدشدهٔ فروش و با همان گیت مالی/مجوز/تخصیص مسافر، کارت و XLSX دیفالت مناسب دارند. ۳۴ تست API، تست Web، lint، typecheck و build هر دو بخش (۵۳ مسیر) موفق‌اند؛ بدون Migration یا Dependency. جزئیات و محدودیت snapshotهای قدیمی در docs/tasks/MANIFEST-TRANSPORT-FORMAT-0928.md. قفل محدود اسناد/قرارداد آزاد است.
+
 ## 2026-09-28 — قالب پیش‌فرض و انتخاب قالب منیفست (PC-A)
 
 - در شاخه مستقل codex/pc-a-manifest-default-template-0928 از origin/develop@1de70e5c، انتهای فرم بلیت انتخاب‌گر جست‌وجوپذیر قالب افزوده شد؛ نام گزینه‌ها از ایرلاین و مقصد است و انتخاب nullable روی Published Offer با FK واقعی ذخیره می‌شود. بلیت‌های قدیمی و گزینهٔ «پیش‌فرض» از XLSX عمومی استفاده می‌کنند.
@@ -3671,3 +3691,8 @@ Calendar event creation now uses an authorized branch from the authenticated Wor
 رابط پک‌جنریتور در حالت‌های پکیج، بنر و استیکر با فونت و کنترل‌های بزرگ‌تر و پنل پهن‌تر خواناتر شد. طرح‌های پیش‌نمایش و خروجی‌ها دست‌نخورده‌اند. QA دسکتاپ و موبایل، ۱۱ تست هدفمند، lint، typecheck و build تولیدی Web با ۵۳ مسیر موفق‌اند. تغییر فقط CSS رابط و نسخهٔ کش آن است؛ بدون API، داده، مجوز یا Migration.
 
 پیگیری اسکرین‌شات مالک در همان شاخه و PR: نوشته‌های کمکی و کنترل‌های باقی‌مانده در هر سه حالت بزرگ‌تر شدند و چینش میانبرهای پنل برای جا گرفتن متن اصلاح شد. خروجی و تصویر قالب‌ها تغییری ندارند.
+## 2026-09-28 — TOUR-MANAGEMENT-0928 — PC-A — READY_FOR_REVIEW
+
+مدیریت تورها اکنون چهار KPI بر اساس فهرست قابل مشاهده، کارت‌های نوبت جاری/آینده با مسیر و تاریخ شمسی، ظرفیت باقی‌مانده واقعی بلیت، جست‌وجوی نام/مقصد و فیلتر وضعیت دارد. تورهای تعریف‌شده فرم ویرایش پیش‌پرشده دارند و PATCH نسخه‌دار تعریف را ذخیره می‌کند. مجوز و شعبه کنترل می‌شود و تغییر هم‌زمان پاسخ 409 دارد. مسیر، هتل‌های تعریف و خدمات مرتبطِ تور دارای هر نوبت ثبت‌شده تغییر نمی‌کند؛ نام و مشخصات توصیفی قابل اصلاح‌اند. ساخت نوبت و ویرایش تعریف برای جلوگیری از race روی همان ردیف تور قفل می‌گیرند؛ موجودی و قراردادهای قبلی حفظ می‌شوند.
+
+تفکیک تعریف تور از مدیریت نوبت/قیمت پکیج و پیوند هتل‌های بازه در آخرین develop حفظ شد. شاخه مستقل `codex/pc-a-tour-management-0928` روی `origin/develop@e4eb048c`؛ checkout اصلی و runtime 3100 دست‌نخورده‌اند. ۵۳ تست API و ۱۱ تست Web، lint محدوده و typecheck کامل API/Web موفق‌اند. build تولیدی API و Web با ۵۳ route موفق‌اند. QA بصری/تعاملی با fixture مصنوعی در دسکتاپ و عرض موبایل انجام شد و overflow افقی ندارد؛ ذخیره واقعی روی دیتابیس عملیاتی آزمایش نشد. بدون Schema/Migration، Dependency/Lockfile، Seed، Permission یا تغییر داده عملیاتی. قفل محدود اسناد با commit نهایی آزاد می‌شود؛ PR به develop و بدون merge خودکار تحویل می‌شود.

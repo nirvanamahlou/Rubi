@@ -1,3 +1,8 @@
+import type { ExecutionContext } from '@nestjs/common';
+import { Test } from '@nestjs/testing';
+import request, { type Response as SupertestResponse } from 'supertest';
+import { AuthGuard } from '../iam/auth.guard';
+import type { SalesServiceInput } from '@nora/contracts';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { Readable } from 'node:stream';
@@ -5,9 +10,13 @@ import { strFromU8, unzipSync } from 'fflate';
 import { describe, expect, it, vi } from 'vitest';
 import {
   buildDefaultManifest,
+  defaultManifestAge,
   type DefaultManifestRow,
 } from './default-manifest';
-import { ReservationManifestService } from './reservation-manifest';
+import {
+  ReservationManifestBatchController,
+  ReservationManifestService,
+} from './reservation-manifest';
 
 const actor = {
   userId: 'user',
@@ -32,7 +41,9 @@ function fixture(
   selectedTemplate: string | null = null,
 ) {
   const snapshot = {
+    contractId: 'contract',
     contractNumber: 'SC-SYNTHETIC',
+    serviceSelections: [] as SalesServiceInput[],
     passengerIds: ['p1', 'hotel-only'],
     passengerAssignments: [
       { customerId: 'p1', ageCategory: 'ADT', serviceClientKeys: ['flight'] },
@@ -135,6 +146,7 @@ function fixture(
   );
   return {
     service,
+    snapshot,
     workflow,
     customers,
     directory,
@@ -146,6 +158,55 @@ function fixture(
 }
 
 describe('default ticket manifest', () => {
+  it('serves a downloadable binary workbook through the real HTTP ticket route', async () => {
+    const f = fixture();
+    const module = await Test.createTestingModule({
+      controllers: [ReservationManifestBatchController],
+      providers: [{ provide: ReservationManifestService, useValue: f.service }],
+    })
+      .overrideGuard(AuthGuard)
+      .useValue({
+        canActivate(context: ExecutionContext) {
+          context.switchToHttp().getRequest().actor = actor;
+          return true;
+        },
+      })
+      .compile();
+    const app = module.createNestApplication();
+    app.setGlobalPrefix('api/v1');
+    await app.init();
+    try {
+      const response = await request(app.getHttpServer())
+        .post('/api/v1/reservations/manifests/tickets/offer.xlsx')
+        .set('Idempotency-Key', 'synthetic-http-download')
+        .send(range)
+        .buffer(true)
+        .parse(
+          (
+            stream: SupertestResponse,
+            done: (error: Error | null, body?: Buffer) => void,
+          ) => {
+            const chunks: Buffer[] = [];
+            stream.on('data', (chunk: Buffer) => chunks.push(chunk));
+            stream.on('end', () => done(null, Buffer.concat(chunks)));
+            stream.on('error', done);
+          },
+        )
+        .expect(201);
+      expect(response.headers['content-type']).toContain(
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      );
+      expect(response.headers['content-disposition']).toMatch(
+        /^attachment; filename=".*\.xlsx"$/,
+      );
+      expect(response.headers['x-nora-manifest-contracts']).toBe('1');
+      expect(response.headers['x-nora-manifest-passengers']).toBe('1');
+      expect(Buffer.isBuffer(response.body)).toBe(true);
+      expect(sheet(response.body)).toContain('SC-SYNTHETIC');
+    } finally {
+      await app.close();
+    }
+  }, 30000);
   it('exports domestic names and national ID without requiring passport details, and only assigned passengers', async () => {
     const f = fixture();
     const result = await f.service.exportTicket('offer', range, 'key', actor);
@@ -163,14 +224,15 @@ describe('default ticket manifest', () => {
       'بزرگسال',
       'IRN',
       '1990-01-01',
-      'مرد',
+      'mr',
+      'destination',
       'BUSINESS',
       '0012345678',
     ]) {
       expect(xml).toContain(value);
     }
     expect(xml).not.toContain('شماره پاسپورت');
-    expect(xml).toContain('A1:L2');
+    expect(xml).toContain('A1:M2');
     expect(f.customers.detail).toHaveBeenCalledExactlyOnceWith(
       'p1',
       actor,
@@ -187,6 +249,149 @@ describe('default ticket manifest', () => {
     );
   });
 
+  it('uses the established blue header with white text and a left-to-right sheet', async () => {
+    const result = await fixture().service.exportTicket(
+      'offer',
+      range,
+      'key',
+      actor,
+    );
+    const files = unzipSync(result.bytes);
+    const styles = strFromU8(files['xl/styles.xml']!);
+    expect(styles).toContain('fgColor rgb="FF1D4ED8"');
+    expect(styles).toContain('color rgb="FFFFFFFF"');
+    expect(styles).toContain('fontId="1" fillId="2"');
+    expect(sheet(result.bytes)).toContain('rightToLeft="0"');
+    expect(sheet(result.bytes)).toContain('s="1" t="inlineStr"');
+  });
+
+  it.each(['CHD', 'INF'])(
+    'exports the assigned %s age and female title',
+    async (age) => {
+      const f = fixture();
+      f.snapshot.passengerAssignments[0]!.ageCategory = age;
+      const customer = (await f.customers.detail()).data;
+      f.customers.detail.mockResolvedValue({
+        data: { ...customer, gender: 'F' },
+      });
+      const result = await f.service.exportTicket('offer', range, 'key', actor);
+      expect(sheet(result.bytes)).toContain(age === 'CHD' ? 'کودک' : 'نوزاد');
+      expect(sheet(result.bytes)).toContain('>mrs<');
+    },
+  );
+
+  it('keeps the operational age override ahead of the contract age', async () => {
+    const f = fixture();
+    const intake = await f.workflow.detail();
+    f.workflow.detail.mockResolvedValue({
+      ...intake,
+      workflow: { ...intake.workflow, ageOverrides: { p1: 'CHILD' } },
+    });
+    expect(
+      sheet((await f.service.exportTicket('offer', range, 'key', actor)).bytes),
+    ).toContain('کودک');
+  });
+
+  it.each([
+    ['2024-10-02', 'نوزاد'],
+    ['2024-10-01', 'کودک'],
+    ['2014-10-02', 'کودک'],
+    ['2014-10-01', 'بزرگسال'],
+  ])('derives legacy age on the actual travel day for %s', (birth, label) => {
+    expect(defaultManifestAge(undefined, birth, '2026-10-01')).toBe(label);
+  });
+
+  it.each(['BUS', 'TRAIN'] as const)(
+    'lists and exports %s with the proper columns and only assigned passengers',
+    async (kind) => {
+      const f = fixture();
+      f.snapshot.ticketSelections = [];
+      f.snapshot.serviceSelections = [
+        {
+          clientKey: 'ground',
+          kind,
+          titleSnapshot: 'Synthetic Transport',
+          metadata: {
+            date: '2026-10-01',
+            pickup: 'تهران',
+            dropoff: 'شیراز',
+            carrierName: 'Synthetic Operator',
+            serviceNumber: 'GROUND-1',
+            cabinClass: 'VIP',
+          },
+        },
+      ];
+      f.snapshot.passengerAssignments[0]!.serviceClientKeys = ['ground'];
+      f.snapshot.passengerAssignments[0]!.ageCategory = 'CHD';
+      const cards = await f.service.listTickets(range, actor);
+      expect(cards).toHaveLength(1);
+      expect(cards[0]).toMatchObject({
+        transportType: kind,
+        originName: 'تهران',
+        destinationName: 'شیراز',
+        passengerCount: 1,
+        template: { id: 'default' },
+      });
+      const result = await f.service.exportTicket(
+        cards[0]!.offerId,
+        { ...range, includePreviouslyExported: false },
+        'key',
+        actor,
+      );
+      const xml = sheet(result.bytes);
+      for (const value of [
+        'مقصد',
+        'شیراز',
+        'تاریخ حرکت',
+        'GROUND-1',
+        'Synthetic Operator',
+        'کودک',
+        'mr',
+        '0012345678',
+      ])
+        expect(xml).toContain(value);
+      expect(xml).toContain(kind === 'BUS' ? 'شرکت اتوبوسرانی' : 'شرکت ریلی');
+      expect(xml).toContain(kind === 'BUS' ? 'کلاس اتوبوس' : 'کلاس قطار');
+      expect(xml).not.toContain('ایرلاین');
+      expect(xml).not.toContain('کلاس پروازی');
+      expect(f.tickets.manifestSelection).not.toHaveBeenCalled();
+      expect(f.directory.cityReference).not.toHaveBeenCalled();
+      expect(
+        f.database.client.reservationManifestExportItem.findMany,
+      ).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            export: {
+              idempotencyKey: {
+                startsWith: 'ticket:' + cards[0]!.offerId + ':',
+              },
+            },
+          }),
+        }),
+      );
+      expect(result.passengerCount).toBe(1);
+    },
+  );
+
+  it('keeps ground financial approval before passenger reads', async () => {
+    const f = fixture();
+    f.snapshot.ticketSelections = [];
+    f.snapshot.serviceSelections = [
+      {
+        clientKey: 'ground',
+        kind: 'BUS',
+        titleSnapshot: 'Bus',
+        metadata: { date: '2026-10-01', pickup: 'A', dropoff: 'B' },
+      },
+    ];
+    f.finance.readCustomerContract.mockResolvedValue({ approved: false });
+    const [card] = await f.service.listTickets(range, actor);
+    await expect(
+      f.service.exportTicket(card!.offerId, range, 'key', actor),
+    ).rejects.toThrow('تأیید مالی');
+    expect(f.customers.detail).not.toHaveBeenCalled();
+  });
+
   it('adds passport columns for international routes', async () => {
     const result = await fixture(true).service.exportTicket(
       'offer',
@@ -195,7 +400,7 @@ describe('default ticket manifest', () => {
       actor,
     );
     const xml = sheet(result.bytes);
-    expect(xml).toContain('A1:N2');
+    expect(xml).toContain('A1:O2');
     for (const value of [
       'شماره پاسپورت',
       'تاریخ انقضای پاسپورت',
@@ -228,6 +433,61 @@ describe('default ticket manifest', () => {
     ).rejects.toThrow('تأیید مالی');
     expect(f.customers.detail).not.toHaveBeenCalled();
     expect(f.documents.readManifestTemplateReference).not.toHaveBeenCalled();
+  });
+
+  it('counts only financially approved contracts and exports only their passengers', async () => {
+    const f = fixture();
+    const first = await f.workflow.detail();
+    const pending = {
+      ...first,
+      id: 'pending-intake',
+      contractId: 'pending-contract',
+      snapshot: { ...first.snapshot, contractNumber: 'PENDING-CONTRACT' },
+    };
+    f.database.client.reservationIntake.findMany.mockResolvedValue([
+      first,
+      pending,
+    ] as never);
+    f.finance.readCustomerContract.mockImplementation(async (id: string) => ({
+      approved: id === 'contract',
+    }));
+    const [card] = await f.service.listTickets(range, actor);
+    expect(card).toMatchObject({ contractCount: 1, passengerCount: 1 });
+    const result = await f.service.exportTicket(
+      'offer',
+      range,
+      'mixed-finance',
+      actor,
+    );
+    expect(result).toMatchObject({
+      contractCount: 1,
+      passengerCount: 1,
+      skippedFinanceCount: 1,
+    });
+    expect(sheet(result.bytes)).not.toContain('PENDING-CONTRACT');
+    expect(f.workflow.detail).toHaveBeenCalledWith('intake', ['branch']);
+    expect(f.workflow.detail).not.toHaveBeenCalledWith('pending-intake', [
+      'branch',
+    ]);
+  });
+
+  it('disables a ticket with no approved contracts and excludes expired approvals', async () => {
+    const f = fixture();
+    f.finance.readCustomerContract.mockResolvedValue({ approved: false });
+    expect((await f.service.listTickets(range, actor))[0]).toMatchObject({
+      contractCount: 0,
+      passengerCount: 0,
+      template: null,
+      unavailableReason: expect.stringContaining('تأیید مالی'),
+    });
+    f.finance.readCustomerContract.mockResolvedValue({
+      approved: true,
+      exceptionExpiresAt: '2000-01-01T00:00:00Z',
+    } as never);
+    await expect(
+      f.service.exportTicket('offer', range, 'expired', actor),
+    ).rejects.toThrow('تأیید مالی');
+    expect(f.customers.detail).not.toHaveBeenCalled();
   });
 
   it('uses the explicitly chosen clean workbook through Documents', async () => {
@@ -302,6 +562,7 @@ describe('default ticket manifest', () => {
   it('preserves zero-prefixed identifiers and escapes formula-like text in a large workbook', () => {
     const row: DefaultManifestRow = {
       contractName: '=HYPERLINK("x")',
+      destination: 'Synthetic Destination',
       firstName: '<&>',
       lastName: 'EXAMPLE',
       flightDate: '2026-10-01',
@@ -322,7 +583,7 @@ describe('default ticket manifest', () => {
         false,
       ),
     );
-    expect(xml).toContain('A1:L101');
+    expect(xml).toContain('A1:M101');
     expect(xml).toContain('0012345678');
     expect(xml).toContain('&lt;&amp;&gt;');
     expect(xml).toContain('=HYPERLINK(&quot;x&quot;)');

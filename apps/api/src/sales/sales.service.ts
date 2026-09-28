@@ -923,7 +923,20 @@ export class SalesService {
       contractVersion: version + 1,
       customerId: row.customerId,
       passengerIds: row.passengers.map(({ customerId }) => customerId),
-      serviceSelections: presented.servicesDetail,
+      serviceSelections: presented.servicesDetail.map((service) =>
+        service.kind === 'BUS' || service.kind === 'TRAIN'
+          ? {
+              ...service,
+              metadata: {
+                ...service.metadata,
+                originId: service.metadata?.originId || presented.originId,
+                destinationId:
+                  service.metadata?.destinationId || presented.destinationId,
+                date: service.metadata?.date || presented.departureDate,
+              },
+            }
+          : service,
+      ),
       selectedTicketOfferIds: row.ticketSelections.map(
         ({ offerId }) => offerId,
       ),
