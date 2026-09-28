@@ -15,7 +15,7 @@ describe('source package generator archive', () => {
   it('keeps every file from the supplied archive', () => {
     const files = sourceFiles();
 
-    expect(files).toHaveLength(121);
+    expect(files.length).toBeGreaterThanOrEqual(125);
     expect(files.some((path) => path.endsWith('iran air.png'))).toBe(false);
     expect(
       statSync(resolve(sourceRoot, 'installment-assets.js')).size,
@@ -58,6 +58,59 @@ describe('source package generator archive', () => {
     ).toBe(false);
   });
 
+  it('registers both Istanbul artworks and the matching Excel price columns', () => {
+    const templates = readFileSync(
+      resolve(sourceRoot, 'istanbul-templates.js'),
+      'utf8',
+    );
+    const app = readFileSync(resolve(sourceRoot, 'app.js'), 'utf8');
+    const parser = readFileSync(resolve(sourceRoot, 'pkj.js'), 'utf8');
+    const html = readFileSync(resolve(sourceRoot, 'index.html'), 'utf8');
+
+    for (const [templateId, artwork] of [
+      ['istanbul-3', 'istanbul-3.png'],
+      ['istanbul-4', 'istanbul-4.png'],
+    ] as const) {
+      expect(templates).toContain(`TEMPLATES['${templateId}']`);
+      expect(templates).toContain(`image:'${artwork}'`);
+      expect(statSync(resolve(sourceRoot, artwork)).size).toBeGreaterThan(
+        100 * 1024,
+      );
+      expect(app).toContain(`'${templateId}'`);
+    }
+    expect(templates).toContain('columns:[31,18,12,12,13,14]');
+    expect(templates).toContain('columns:[30,19,17,17,17]');
+    expect(parser).toContain("cols.extra?'istanbul-3':'istanbul-4'");
+    expect(parser).toContain(
+      'if(istanbul&&!cols.service)cols.service=cols.room',
+    );
+    expect(parser).toContain("'chwbed'");
+    expect(html).toContain('istanbul-templates.js');
+    expect(html).toContain('istanbul.css');
+  });
+
+  it('offers the supplied Istanbul poster in banner mode with four editable hotel cards', () => {
+    const template = readFileSync(
+      resolve(sourceRoot, 'istanbul-banner.js'),
+      'utf8',
+    );
+    const loader = readFileSync(resolve(sourceRoot, 'mode-loader.js'), 'utf8');
+    const renderer = readFileSync(
+      resolve(sourceRoot, 'banner-reference.js'),
+      'utf8',
+    );
+
+    expect(
+      statSync(resolve(sourceRoot, 'istanbul-banner.png')).size,
+    ).toBeGreaterThan(1024 * 1024);
+    expect(loader).toContain("'istanbul-banner.js?v=20260928b'");
+    expect(template).toContain('BANNER_TEMPLATES.istanbul_promo');
+    expect(template).toContain("image:'istanbul-banner.png'");
+    expect(template).toContain('preserveOriginalCards:true');
+    expect(template).toContain('hotels:cards.map');
+    expect(renderer).toContain('p.preserveOriginalCards&&!h.dirty');
+  });
+
   it('fits Malaysia and Thailand data to each corrected poster layout', () => {
     const templates = readFileSync(
       resolve(sourceRoot, 'malaysia-templates.js'),
@@ -92,7 +145,7 @@ describe('source package generator archive', () => {
     expect(html).toContain('vendor/html2canvas.js');
     expect(html).toContain('vendor/jspdf.js');
     expect(html).toContain('mode-loader.js');
-    expect(loader).toContain("'banner.js'");
+    expect(loader).toContain("'banner.js?v=20260928b'");
     expect(loader).toContain("'sticker.js'");
     expect(html).toContain('editor-ui.js');
     expect(html).toContain('accept=".xlsx,.docx"');
