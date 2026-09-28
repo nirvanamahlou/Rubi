@@ -9,6 +9,44 @@ import { IssuedTicketsWorkspace } from './issued-tickets-workspace';
 import { emptyInput, previewSamples } from '../model/preview';
 
 describe('Rendered ticket UI', () => {
+  it('replaces a legacy city code in the ticket title and route', () => {
+    const sample = previewSamples('2026-08-31T00:00:00.000Z')[0]!;
+    const product = {
+      ...sample,
+      definition: {
+        ...sample.definition,
+        title: '4512 • TEHRAN به CITY_E6X7D1HHNXC',
+        display: {
+          ...sample.definition.display!,
+          origin: 'TEHRAN',
+          destination: 'CITY_E6X7D1HHNXC',
+        },
+      },
+    };
+    const html = renderToStaticMarkup(
+      createElement(TicketCatalogCard, {
+        product,
+        inventory: {
+          total: product.definition.totalCapacity,
+          version: product.version,
+          allocations: [],
+        },
+        referenceLabel: (kind: string, _id: string, fallback: string) =>
+          kind === 'city'
+            ? fallback === 'TEHRAN'
+              ? 'تهران'
+              : 'آنتالیا'
+            : fallback,
+        onView: () => {},
+        onEdit: () => {},
+        onRepeat: () => {},
+        onDelete: () => {},
+        onStatus: () => {},
+      }),
+    );
+    expect(html).toContain('4512 • تهران به آنتالیا');
+    expect(html).not.toContain('CITY_E6X7D1HHNXC');
+  });
   it('exposes direct ticket management without preview controls', () => {
     const html = renderToStaticMarkup(createElement(TicketWorkspace));
     expect(html).toContain('dir="rtl"');

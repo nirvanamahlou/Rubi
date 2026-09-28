@@ -24,6 +24,12 @@ function setup(patch = {}) {
     id,
     version: 1,
     branchId: 'branch',
+    originId: offer.originId,
+    destinationId: offer.destinationId,
+    carrierName: offer.carrierName,
+    serviceNumber: offer.serviceNumber,
+    cabinClassCode: offer.cabinClassCode,
+    totalCapacity: offer.totalCapacity,
     capacityAllocations: [],
     capacityHolds: [],
     tourOutboundDepartures: [],
@@ -49,6 +55,70 @@ function setup(patch = {}) {
   return { tx, service };
 }
 describe('published ticket revision', () => {
+  it('keeps an existing contract allocation valid after only the offer time changes', async () => {
+    const branchId = '10000000-0000-4000-8000-000000000003';
+    const contractId = '10000000-0000-4000-8000-000000000004';
+    const allocation = {
+      offerId: id,
+      contractId,
+      direction: 'OUTBOUND',
+      quantity: 1,
+      status: 'ACTIVE',
+    };
+    const tx = {
+      $queryRaw: vi.fn(),
+      ticketPublishedOffer: {
+        findMany: vi.fn().mockResolvedValue([
+          {
+            id,
+            ...offer,
+            departureAt: new Date('2099-09-22T05:00:00Z'),
+            arrivalAt: new Date('2099-09-22T08:00:00Z'),
+            capacityAllocations: [allocation],
+            capacityHolds: [],
+          },
+        ]),
+      },
+      ticketOfferCapacityAllocation: {
+        findMany: vi.fn().mockResolvedValue([allocation]),
+        create: vi.fn(),
+      },
+    };
+    const service = new TicketPublicService(
+      {
+        client: {
+          $transaction: async (fn: (value: typeof tx) => unknown) => fn(tx),
+        },
+      } as unknown as DatabaseService,
+      {} as ProcurementPublicService,
+    );
+    await expect(
+      service.reserve(
+        [
+          {
+            serviceClientKey: 'flight',
+            direction: 'OUTBOUND',
+            offerId: id,
+            originId: offer.originId,
+            destinationId: offer.destinationId,
+            departureAt: offer.departureAt,
+            arrivalAt: offer.arrivalAt,
+            carrierNameSnapshot: offer.carrierName,
+            serviceNumberSnapshot: offer.serviceNumber,
+            cabinClassCode: offer.cabinClassCode,
+          },
+        ],
+        branchId,
+        contractId,
+        1,
+      ),
+    ).resolves.toEqual({
+      available: true,
+      unavailableOfferIds: [],
+      createdAllocationIds: [],
+    });
+    expect(tx.ticketOfferCapacityAllocation.create).not.toHaveBeenCalled();
+  });
   it('archives an expired offer without deleting its contract or finance records', async () => {
     const updateMany = vi.fn().mockResolvedValue({ count: 1 });
     const create = vi.fn();
@@ -156,16 +226,43 @@ describe('published ticket revision', () => {
     ).rejects.toThrow('بلیط تغییر کرده');
     expect(tx.ticketPublishedOffer.update).not.toHaveBeenCalled();
   });
-  it.each([
-    'capacityAllocations',
-    'capacityHolds',
-    'tourOutboundDepartures',
-    'tourReturnDepartures',
-  ])('protects existing %s', async (key) => {
-    const { tx, service } = setup({ [key]: [{ id: 'linked' }] });
+  it('allows a schedule-only revision after a contract reserved seats', async () => {
+    const { tx, service } = setup({ capacityAllocations: [{ id: 'linked' }] });
     await expect(
-      service.revise(id, { expectedVersion: 1, offer }, actor),
-    ).rejects.toThrow('متصل است');
+      service.revise(
+        id,
+        {
+          expectedVersion: 1,
+          offer: {
+            ...offer,
+            departureAt: '2099-09-22T04:00:00Z',
+            arrivalAt: '2099-09-22T07:00:00Z',
+          },
+        },
+        actor,
+      ),
+    ).resolves.toEqual({ data: { id, version: 2 } });
+    expect(tx.ticketPublishedOffer.update).toHaveBeenCalledOnce();
+  });
+  it('still rejects changing the route or capacity of a sold offer', async () => {
+    const { tx, service } = setup({ capacityAllocations: [{ id: 'linked' }] });
+    await expect(
+      service.revise(
+        id,
+        { expectedVersion: 1, offer: { ...offer, totalCapacity: 41 } },
+        actor,
+      ),
+    ).rejects.toThrow('فقط ساعت حرکت و رسیدن');
     expect(tx.ticketPublishedOffer.update).not.toHaveBeenCalled();
   });
+  it.each(['capacityHolds', 'tourOutboundDepartures', 'tourReturnDepartures'])(
+    'protects existing %s',
+    async (key) => {
+      const { tx, service } = setup({ [key]: [{ id: 'linked' }] });
+      await expect(
+        service.revise(id, { expectedVersion: 1, offer }, actor),
+      ).rejects.toThrow('تعیین تکلیف');
+      expect(tx.ticketPublishedOffer.update).not.toHaveBeenCalled();
+    },
+  );
 });

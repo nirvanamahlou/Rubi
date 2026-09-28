@@ -821,14 +821,22 @@ export class TicketPublicService {
       if (!row) throw new ForbiddenException('بلیط در شعبه مجاز شما نیست.');
       if (row.version !== input.expectedVersion)
         throw new ConflictException('بلیط تغییر کرده؛ فهرست را تازه کنید.');
+      const linkedSale = row.capacityAllocations.length > 0;
+      const scheduleOnlyRevision =
+        row.originId === value.originId &&
+        row.destinationId === value.destinationId &&
+        row.carrierName === value.carrierName &&
+        row.serviceNumber === value.serviceNumber &&
+        row.cabinClassCode === value.cabinClassCode &&
+        row.totalCapacity === value.totalCapacity;
       if (
-        row.capacityAllocations.length ||
+        (linkedSale && !scheduleOnlyRevision) ||
         row.capacityHolds.length ||
         row.tourOutboundDepartures.length ||
         row.tourReturnDepartures.length
       )
         throw new ConflictException(
-          'بلیط به قرارداد، رزرو ظرفیت یا تور متصل است؛ ابتدا وابستگی آن را تعیین تکلیف کنید.',
+          'برای بلیط متصل به قرارداد فقط ساعت حرکت و رسیدن قابل ویرایش است؛ رزرو ظرفیت یا تور متصل باید ابتدا تعیین تکلیف شود.',
         );
       const updated = await tx.ticketPublishedOffer.update({
         where: { id },
@@ -978,8 +986,19 @@ export class TicketPublicService {
         .filter((selection) => {
           const offer = byId.get(selection.offerId);
           const replay = existingByDirection.get(selection.direction);
+          if (!offer) return true;
+          if (replay)
+            return (
+              replay.status !== 'ACTIVE' ||
+              replay.offerId !== offer.id ||
+              replay.quantity !== seatCount ||
+              selection.originId !== offer.originId ||
+              selection.destinationId !== offer.destinationId ||
+              selection.cabinClassCode !== offer.cabinClassCode ||
+              selection.carrierNameSnapshot !== offer.carrierName ||
+              selection.serviceNumberSnapshot !== offer.serviceNumber
+            );
           if (
-            !offer ||
             selection.originId !== offer.originId ||
             selection.destinationId !== offer.destinationId ||
             new Date(selection.departureAt).getTime() !==
@@ -991,12 +1010,6 @@ export class TicketPublicService {
             selection.serviceNumberSnapshot !== offer.serviceNumber
           )
             return true;
-          if (replay)
-            return (
-              replay.status !== 'ACTIVE' ||
-              replay.offerId !== offer.id ||
-              replay.quantity !== seatCount
-            );
           const allocated =
             offer.capacityAllocations.reduce(
               (sum, allocation) => sum + allocation.quantity,

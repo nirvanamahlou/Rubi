@@ -241,6 +241,61 @@ describe('DocumentsService Workbench contracts', () => {
     });
   });
 
+  it('uploads a PDF to the exact calendar event without generic upload permission', async () => {
+    const branchId = actor.branchIds[0]!;
+    const eventId = '55555555-5555-4555-8555-555555555555';
+    const instance = service({
+      options: vi.fn().mockResolvedValue({
+        branches: [{ id: branchId }],
+        owners: [{ id: actor.userId }],
+        documentTypes: [
+          {
+            id: '66666666-6666-4666-8666-666666666666',
+            code: 'WORKBENCH_FEEDBACK_ATTACHMENT',
+          },
+        ],
+        categories: [
+          {
+            id: '77777777-7777-4777-8777-777777777777',
+            code: 'GENERAL_ARCHIVE',
+          },
+        ],
+      }),
+    });
+    const upload = vi.spyOn(instance, 'upload').mockResolvedValue({
+      data: {
+        id: '88888888-8888-4888-8888-888888888888',
+        currentVersion: { scanStatus: 'PENDING_SCAN' },
+      },
+    } as never);
+    const file = {
+      buffer: Buffer.from('%PDF-test'),
+      mimetype: 'application/pdf',
+      originalname: 'agenda.pdf',
+      size: 9,
+    };
+    const result = await instance.uploadOwnWorkbenchCalendarAttachment(
+      { eventId, branchId, title: 'جلسه آزمایشی' },
+      file,
+      actor,
+      {},
+    );
+    expect(upload).toHaveBeenCalledWith(
+      expect.objectContaining({
+        sourceModule: 'WORKBENCH',
+        sourceEntityType: 'WorkbenchCalendarEvent',
+        sourceEntityId: eventId,
+        ownerUserId: actor.userId,
+        branchId,
+      }),
+      file,
+      actor,
+      {},
+    );
+    expect(result.id).toBe('88888888-8888-4888-8888-888888888888');
+    expect(actor.permissions).not.toContain('documents.upload');
+  });
+
   it('uploads a message attachment with a server-owned message reference', async () => {
     const branchId = actor.branchIds[0]!;
     const clientRequestId = 'message:request-0001';
