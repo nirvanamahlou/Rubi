@@ -52,9 +52,7 @@ describe('customer affairs create HTTP contract', () => {
     vi.clearAllMocks();
     const module = await Test.createTestingModule({
       controllers: [CustomerAffairsController],
-      providers: [
-        { provide: CustomerAffairsService, useValue: service },
-      ],
+      providers: [{ provide: CustomerAffairsService, useValue: service }],
     })
       .overrideGuard(AuthGuard)
       .useValue({
