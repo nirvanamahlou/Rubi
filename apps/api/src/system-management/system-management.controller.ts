@@ -7,18 +7,24 @@ import {
   Post,
   Query,
   Req,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
-import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { ApiBody, ApiConsumes, ApiCookieAuth, ApiTags } from '@nestjs/swagger';
 import type {
   SystemNumberingSchemeWriteV1,
   SystemNumberIssueInputV1,
+  SystemReportingExportRetryInputV1,
   SystemSessionRevokeInputV1,
   SystemUserSessionsRevokeInputV1,
   SystemSettingWriteV1,
 } from '@nora/contracts';
 
 import { getRequestId } from '../common/request-id.middleware';
+import type { UploadedDocumentFile } from '../documents/documents.service';
+import { MAX_DOCUMENT_SIZE_BYTES } from '../documents/documents.validation';
 import { AuthGuard } from '../iam/auth.guard';
 import { RequirePermissions } from '../iam/iam.decorators';
 import type { AuthenticatedRequest } from '../iam/iam.types';
@@ -55,6 +61,37 @@ export class SystemManagementController {
   ) {
     return this.system.writeSetting(
       input,
+      request.actor,
+      this.metadata(request),
+    );
+  }
+
+  @Post('contract-templates')
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['file', 'title'],
+      properties: {
+        file: { type: 'string', format: 'binary' },
+        title: { type: 'string', minLength: 2, maxLength: 240 },
+      },
+    },
+  })
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: { files: 1, fileSize: MAX_DOCUMENT_SIZE_BYTES },
+    }),
+  )
+  @RequirePermissions('system.settings.manage')
+  uploadContractTemplate(
+    @Body('title') title: string,
+    @UploadedFile() file: UploadedDocumentFile | undefined,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.system.uploadContractTemplate(
+      title,
+      file,
       request.actor,
       this.metadata(request),
     );
@@ -231,6 +268,21 @@ export class SystemManagementController {
     @Req() request: AuthenticatedRequest,
   ) {
     return this.system.requestBackup(
+      input,
+      request.actor,
+      this.metadata(request),
+    );
+  }
+
+  @Post('jobs/reporting-exports/:id/retry')
+  @RequirePermissions('system.jobs.retry')
+  retryReportingExport(
+    @Param('id') id: string,
+    @Body() input: SystemReportingExportRetryInputV1,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.system.retryReportingExport(
+      id,
       input,
       request.actor,
       this.metadata(request),

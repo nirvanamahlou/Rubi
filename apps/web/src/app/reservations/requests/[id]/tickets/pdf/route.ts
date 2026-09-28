@@ -1,5 +1,3 @@
-import { readFile } from 'node:fs/promises';
-import { join } from 'node:path';
 import type {
   MasterDataListResponse,
   MasterDataRecord,
@@ -8,6 +6,7 @@ import type {
 } from '@nora/contracts';
 import { getPublicApiBaseUrl } from '@/lib/environment';
 import { reservationTickets } from '@/modules/reservations/model/reservation-tickets';
+import { readTicketBrandAsset } from '@/modules/reservations/server/ticket-pdf-assets';
 import { ticketPdfHtml } from '@/modules/reservations/server/ticket-pdf-html';
 import { renderTicketPdf } from '@/modules/reservations/server/ticket-pdf';
 
@@ -151,9 +150,13 @@ export async function GET(
       cityIds.map(async (cityId) => {
         const response = await get(
           `/master-data/cities/${encodeURIComponent(cityId)}`,
-        );
-        if (!response.ok) return;
-        const { data } = (await response.json()) as { data: MasterDataRecord };
+        ).catch(() => null);
+        if (!response?.ok) return;
+        const body = (await response.json().catch(() => null)) as {
+          data: MasterDataRecord;
+        } | null;
+        const data = body?.data;
+        if (!data) return;
         cityNames[cityId] = {
           name: String(data.attributes.englishName || data.name || '—'),
           code: /^[A-Z]{3}$/.test(data.code || '') ? data.code : '',
@@ -254,9 +257,7 @@ export async function GET(
       if (!asset) return fail('لوگوی سربرگ انتخاب‌شده ثبت نشده است.', 400);
       logoDataUrl =
         'data:image/png;base64,' +
-        (await readFile(join(process.cwd(), 'public/brand', asset))).toString(
-          'base64',
-        );
+        (await readTicketBrandAsset(asset)).toString('base64');
     }
     const html = ticketPdfHtml(
       tickets,
@@ -281,12 +282,15 @@ export async function GET(
     const code = error instanceof Error ? error.message : '';
     const busy = code === 'PDF_BUSY';
     const runtimeUnavailable = code === 'PDF_RUNTIME_UNAVAILABLE';
+    const brandAssetUnavailable = code === 'PDF_BRAND_ASSET_UNAVAILABLE';
     return fail(
       busy
         ? 'خروجی دیگری در حال آماده‌سازی است؛ دوباره تلاش کنید.'
         : runtimeUnavailable
           ? 'مرورگر Chrome یا Edge برای ساخت PDF پیدا نشد.'
-          : 'PDF بلیط آماده نشد؛ دوباره تلاش کنید.',
+          : brandAssetUnavailable
+            ? 'لوگوی سربرگ بلیط پیدا نشد؛ تنظیمات برند را بررسی کنید.'
+            : 'PDF بلیط آماده نشد؛ دوباره تلاش کنید.',
       busy ? 429 : 503,
     );
   }

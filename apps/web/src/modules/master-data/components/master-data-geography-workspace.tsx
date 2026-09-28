@@ -797,7 +797,10 @@ export function MasterDataGeographyWorkspace() {
           <Badge>{rows.length.toLocaleString('fa-IR')} رکورد</Badge>
         </div>
         {rows.length ? (
-          <table className="w-full min-w-[64rem] text-sm">
+          <table
+            aria-label={`فهرست ${label}`}
+            className="w-full min-w-[64rem] text-sm"
+          >
             <thead className="bg-muted/50 text-muted-foreground">
               <tr>
                 {tableColumns.map((column) => (
@@ -863,7 +866,7 @@ export function MasterDataGeographyWorkspace() {
   }
 
   return (
-    <div className="space-y-5" dir="rtl">
+    <div className="min-w-0 max-w-full space-y-5" dir="rtl">
       <PageHeader
         actions={
           <Link
@@ -947,7 +950,7 @@ export function MasterDataGeographyWorkspace() {
         label={`شاخص‌های ${isLocationView ? 'شهرها و استان‌ها' : definition.label}`}
       />
 
-      <FilterBar className="grid sm:grid-cols-2 xl:grid-cols-[minmax(13rem,1fr)_10rem_10rem_repeat(2,minmax(10rem,12rem))_auto]">
+      <FilterBar className="grid min-w-0 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-[minmax(13rem,1fr)_10rem_10rem_repeat(2,minmax(10rem,12rem))_auto]">
         {columnFilterControls}
         <MasterDataDateRangeFilter
           idPrefix="geography-created"
@@ -1196,7 +1199,10 @@ export function MasterDataGeographyWorkspace() {
             </div>
             <Badge>{total.toLocaleString('fa-IR')} رکورد</Badge>
           </div>
-          <table className="w-full min-w-[64rem] text-sm">
+          <table
+            aria-label={`فهرست ${definition.label}`}
+            className="w-full min-w-[64rem] text-sm"
+          >
             <thead className="bg-muted/50 text-muted-foreground">
               <tr>
                 {columns.map((column) => (

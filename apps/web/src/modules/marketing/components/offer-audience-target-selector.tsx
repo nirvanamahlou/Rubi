@@ -109,6 +109,7 @@ export function OfferAudienceTargetSelector({
   const [options, setOptions] = useState<AudienceOption[]>([]);
   const [state, setState] = useState<LookupState>('idle');
   const [error, setError] = useState('');
+  const hasSearch = Boolean(search.trim());
 
   const load = useCallback(async () => {
     if (kind === 'none') {
@@ -164,15 +165,16 @@ export function OfferAudienceTargetSelector({
   }, [kind, search]);
 
   useEffect(() => {
-    if (kind === 'none') return;
+    if (kind === 'none' || !search.trim()) return;
     const timer = window.setTimeout(() => void load(), 300);
     return () => window.clearTimeout(timer);
-  }, [kind, load]);
+  }, [kind, load, search]);
 
+  const searchedOptions = hasSearch ? options : [];
   const visibleOptions =
-    value && !options.some((option) => option.id === value.id)
-      ? [{ id: value.id, label: value.label }, ...options]
-      : options;
+    value && !searchedOptions.some((option) => option.id === value.id)
+      ? [{ id: value.id, label: value.label }, ...searchedOptions]
+      : searchedOptions;
   const targetOptions: readonly (readonly [string, string])[] = [
     ['unselected', kind === 'customer' ? 'انتخاب مشتری' : 'انتخاب آژانس'],
     ...visibleOptions.map((option) => [option.id, option.label] as const),
@@ -190,7 +192,7 @@ export function OfferAudienceTargetSelector({
             const normalized = nextKind as OfferAudienceTargetKind;
             setSearch('');
             setOptions([]);
-            setState(normalized === 'none' ? 'idle' : 'loading');
+            setState('idle');
             onChange(null);
             onKindChange(normalized);
           }}
@@ -242,7 +244,11 @@ export function OfferAudienceTargetSelector({
             />
           </FormField>
           <div className="flex min-h-10 items-center gap-2 text-sm sm:self-end">
-            {state === 'loading' ? (
+            {!hasSearch ? (
+              <span aria-live="polite" className="text-muted-foreground">
+                برای نمایش مخاطبان، نام یا کد را جست‌وجو کنید.
+              </span>
+            ) : state === 'loading' ? (
               <span aria-live="polite" className="text-muted-foreground">
                 در حال دریافت مخاطبان…
               </span>

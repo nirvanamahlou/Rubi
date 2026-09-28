@@ -39,6 +39,7 @@ const purchaseSchema = Joi.object({
     .pattern(/^[A-Z]{3}$/)
     .allow(null)
     .optional(),
+  seatCount: Joi.number().integer().min(1).max(100000).allow(null).optional(),
 });
 
 @Injectable()
@@ -68,10 +69,11 @@ export class ProcurementPublicService {
     const serviceDate = value.serviceDate
       ? new Date(value.serviceDate + 'T00:00:00.000Z')
       : null;
-    if (serviceDate && (
-      Number.isNaN(serviceDate.getTime()) ||
-      serviceDate.toISOString().slice(0, 10) !== value.serviceDate
-    ))
+    if (
+      serviceDate &&
+      (Number.isNaN(serviceDate.getTime()) ||
+        serviceDate.toISOString().slice(0, 10) !== value.serviceDate)
+    )
       throw new BadRequestException('تاریخ اولین بلیط معتبر نیست.');
     const fingerprint = createHash('sha256')
       .update(JSON.stringify({ branchId, ...value }))
@@ -88,7 +90,9 @@ export class ProcurementPublicService {
         });
       if (existing?.fingerprint === fingerprint) return existing;
       if (existing?.offerId)
-        throw new ConflictException('درخواست بلیت تور از تعریف پرواز مدیریت می‌شود.');
+        throw new ConflictException(
+          'درخواست بلیت تور از تعریف پرواز مدیریت می‌شود.',
+        );
       if (existing && existing.status !== 'PENDING')
         throw new ConflictException(
           'قیمت خرید پس از رسیدگی مالی قابل ویرایش نیست.',
@@ -101,8 +105,11 @@ export class ProcurementPublicService {
             title: value.title,
             serviceDate,
             supplierDisplaySnapshot: value.supplierDisplaySnapshot,
-            amount: value.amount ? new Prisma.Decimal(value.amount) : existing.amount,
+            amount: value.amount
+              ? new Prisma.Decimal(value.amount)
+              : existing.amount,
             currencyCode: value.currencyCode ?? existing.currencyCode,
+            seatCount: value.seatCount ?? existing.seatCount,
             createKey: key,
             fingerprint,
           },
@@ -116,6 +123,7 @@ export class ProcurementPublicService {
           supplierDisplaySnapshot: value.supplierDisplaySnapshot,
           amount: value.amount ? new Prisma.Decimal(value.amount) : null,
           currencyCode: value.currencyCode ?? null,
+          seatCount: value.seatCount ?? null,
           createdByUserId: actor.userId,
           createKey: key,
           fingerprint,
@@ -133,40 +141,52 @@ export class ProcurementPublicService {
     departureAt: Date;
     carrierName: string;
     serviceNumber: string;
+    totalCapacity: number;
     createdByUserId: string;
   }): Promise<TicketCatalogPurchaseV1> {
     const serviceDate = new Intl.DateTimeFormat('en-CA', {
-      timeZone: 'Asia/Tehran', year: 'numeric', month: '2-digit', day: '2-digit',
+      timeZone: 'Asia/Tehran',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
     }).format(input.departureAt);
     const reference = 'offer:' + input.id;
-    const row = await this.database.client.procurementTicketPurchaseRequest.upsert({
-      where: { offerId: input.id },
-      update: {},
-      create: {
-        branchId: input.branchId,
-        catalogProductReference: reference,
-        title: (input.carrierName + ' ' + input.serviceNumber).slice(0, 160),
-        serviceDate: new Date(serviceDate + 'T00:00:00.000Z'),
-        supplierDisplaySnapshot: input.carrierName,
-        amount: null,
-        currencyCode: null,
-        offerId: input.id,
-        offerVersion: input.version,
-        createdByUserId: input.createdByUserId,
-        createKey: reference,
-        fingerprint: createHash('sha256').update(reference).digest('hex'),
-      },
-    });
+    const row =
+      await this.database.client.procurementTicketPurchaseRequest.upsert({
+        where: { offerId: input.id },
+        update: {},
+        create: {
+          branchId: input.branchId,
+          catalogProductReference: reference,
+          title: (input.carrierName + ' ' + input.serviceNumber).slice(0, 160),
+          serviceDate: new Date(serviceDate + 'T00:00:00.000Z'),
+          supplierDisplaySnapshot: input.carrierName,
+          amount: null,
+          currencyCode: null,
+          seatCount: input.totalCapacity > 0 ? input.totalCapacity : null,
+          offerId: input.id,
+          offerVersion: input.version,
+          createdByUserId: input.createdByUserId,
+          createKey: reference,
+          fingerprint: createHash('sha256').update(reference).digest('hex'),
+        },
+      });
     if (row.branchId !== input.branchId || row.offerVersion !== input.version)
       throw new ConflictException('مرجع درخواست خرید پرواز تغییر کرده است.');
     return this.toTicketPurchase(row);
   }
 
   async forFinance(requestId: string, branchIds: readonly string[]) {
-    const row = await this.database.client.procurementTicketPurchaseRequest.findFirst({
-      where: { id: requestId, branchId: { in: [...branchIds] }, status: 'PENDING' },
-    });
-    if (!row) throw new NotFoundException('درخواست خرید بلیت در شعب مجاز یافت نشد.');
+    const row =
+      await this.database.client.procurementTicketPurchaseRequest.findFirst({
+        where: {
+          id: requestId,
+          branchId: { in: [...branchIds] },
+          status: 'PENDING',
+        },
+      });
+    if (!row)
+      throw new NotFoundException('درخواست خرید بلیت در شعب مجاز یافت نشد.');
     return this.toTicketPurchase(row);
   }
 
@@ -177,10 +197,16 @@ export class ProcurementPublicService {
     branchId: string,
     expectedVersion: number,
   ) {
-    const changed = await transaction.procurementTicketPurchaseRequest.updateMany({
-      where: { id: requestId, branchId, version: expectedVersion, status: 'PENDING' },
-      data: { status: 'PAID', version: { increment: 1 } },
-    });
+    const changed =
+      await transaction.procurementTicketPurchaseRequest.updateMany({
+        where: {
+          id: requestId,
+          branchId,
+          version: expectedVersion,
+          status: 'PENDING',
+        },
+        data: { status: 'PAID', version: { increment: 1 } },
+      });
     if (changed.count !== 1)
       throw new ConflictException('نسخه درخواست خرید بلیت تغییر کرده است.');
   }
@@ -504,6 +530,7 @@ export class ProcurementPublicService {
     supplierDisplaySnapshot: string | null;
     amount: Prisma.Decimal | null;
     currencyCode: string | null;
+    seatCount: number | null;
     offerId: string | null;
     offerVersion: number | null;
     status: string;
@@ -521,6 +548,7 @@ export class ProcurementPublicService {
       supplierDisplaySnapshot: row.supplierDisplaySnapshot,
       amount: row.amount?.toString() ?? null,
       currencyCode: row.currencyCode,
+      seatCount: row.seatCount,
       offerId: row.offerId,
       offerVersion: row.offerVersion,
       requestVersion: row.version,

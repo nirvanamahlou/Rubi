@@ -17,6 +17,7 @@ import type {
   SalesMoney,
   SalesAccommodationKind,
   MasterDataRecord,
+  HotelRoomRateV1,
   SalesContractCreateRequest,
   SalesPaymentInput,
   SalesPriceComponentInput,
@@ -31,6 +32,7 @@ import {
   salesInsuranceService,
   type SalesInsuranceSelection,
 } from './sales-insurance';
+import { roundTripPerLegFares } from './standalone-ticket-pricing';
 
 export function selectSalesPerson(
   state: SalesFormState,
@@ -102,6 +104,9 @@ export interface SalesFormState {
   tripType: 'ONE_WAY' | 'ROUND_TRIP';
   originCountryId: string;
   destinationCountryId: string;
+  /** ISO country codes are kept with the draft so identity fields remain correct for UUID-backed countries. */
+  originCountryCode?: string;
+  destinationCountryCode?: string;
   serviceDirections?: Partial<
     Record<'FLIGHT' | 'TRANSFER', SalesTicketDirection[]>
   >;
@@ -274,6 +279,8 @@ export const emptySalesForm: SalesFormState = {
   passengerComposition: { adults: 1, children: 0, infants: 0 },
   originCountryId: '',
   destinationCountryId: '',
+  originCountryCode: '',
+  destinationCountryCode: '',
   originId: '',
   destinationId: '',
   departureDate: '',
@@ -342,6 +349,32 @@ export function salesPassengerCounts(state: SalesFormState) {
     seated: adults + children,
     total: adults + children + infants,
   };
+}
+
+export function salesHotelCapacityError(
+  state: SalesFormState,
+  roomRates: readonly HotelRoomRateV1[],
+): string | null {
+  if (!state.hotel.roomTypeId) return null;
+  const roomRate = roomRates.find(
+    ({ roomTypeId }) => roomTypeId === state.hotel.roomTypeId,
+  );
+  if (!roomRate) return null;
+  const rooms = Math.max(1, state.hotel.roomCount);
+  const counts = salesPassengerCounts(state);
+  const maxAdults = roomRate.maxAdults * rooms;
+  const maxChildren2To6 =
+    (roomRate.maxChildren2To6 ?? roomRate.maxChildren) * rooms;
+  const maxChildren6To12 = (roomRate.maxChildren6To12 ?? 0) * rooms;
+  const maxInfants = (roomRate.maxInfants ?? 0) * rooms;
+  const maxChildren = maxChildren2To6 + maxChildren6To12;
+  if (
+    counts.adults <= maxAdults &&
+    counts.children <= maxChildren &&
+    counts.infants <= maxInfants
+  )
+    return null;
+  return `ظرفیت ${roomRate.roomTypeName} برای ${rooms.toLocaleString('fa-IR')} اتاق، حداکثر ${maxAdults.toLocaleString('fa-IR')} بزرگسال، ${maxChildren2To6.toLocaleString('fa-IR')} کودک ۲–۶، ${maxChildren6To12.toLocaleString('fa-IR')} کودک ۶–۱۲ و ${maxInfants.toLocaleString('fa-IR')} نوزاد است؛ تعداد اتاق یا نوع اتاق را تغییر دهید.`;
 }
 
 export function salesPassengerCompositionMatches(state: SalesFormState) {
@@ -504,7 +537,11 @@ export function withSalesRouteDefaults(
               aliases.includes(normalizeRouteSearch(item.name)),
           )
         : undefined);
-    return { countryId: country?.id ?? countryId, cityId: city?.id ?? cityId };
+    return {
+      countryId: country?.id ?? countryId,
+      cityId: city?.id ?? cityId,
+      countryCode: String(country?.attributes.iso2Code ?? country?.code ?? ''),
+    };
   };
   const origin = resolveSide(state.originCountryId, state.originId, 'IR', [
     'تهران',
@@ -519,10 +556,45 @@ export function withSalesRouteDefaults(
   return {
     ...state,
     originCountryId: origin.countryId,
+    originCountryCode: origin.countryCode,
     originId: origin.cityId,
     destinationCountryId: destination.countryId,
+    destinationCountryCode: destination.countryCode,
     destinationId: destination.cityId,
   };
+}
+
+function salesIranCountry(
+  countryId: string | undefined,
+  countryCode: string | undefined,
+): boolean {
+  const value = `${countryCode ?? ''} ${countryId ?? ''}`.trim().toUpperCase();
+  return /(^|\s)(IR|IRN|IRAN)(\s|$)/.test(value);
+}
+
+/** A route is domestic only when both endpoints are inside Iran. */
+export function salesDomesticIranRoute(state: SalesFormState): boolean {
+  return (
+    salesIranCountry(state.originCountryId, state.originCountryCode) &&
+    salesIranCountry(state.destinationCountryId, state.destinationCountryCode)
+  );
+}
+
+/**
+ * Passport data belongs to an international flight, not to the destination
+ * itself. A foreign hotel-only contract must remain usable with the domestic
+ * customer identity fields.
+ */
+export function salesRequiresPassportIdentity(state: SalesFormState): boolean {
+  if (!state.serviceKinds.includes('FLIGHT')) return false;
+  if (
+    !state.originCountryId &&
+    !state.destinationCountryId &&
+    !state.originCountryCode &&
+    !state.destinationCountryCode
+  )
+    return false;
+  return !salesDomesticIranRoute(state);
 }
 
 export function salesDetailSteps(state: SalesFormState): string[] {
@@ -581,6 +653,26 @@ export function withSalesHotelDates(
     if (!manual) hotel[field] = suggestion(next, field);
   }
   return { ...next, hotel };
+}
+
+export function salesHotelRoomTypes(
+  hotelId: string,
+  hotels: readonly MasterDataRecord[],
+  roomTypes: readonly MasterDataRecord[],
+  ratedRoomTypeIds: readonly string[] = [],
+) {
+  if (!hotelId) return [];
+  const hotel = hotels.find((item) => item.id === hotelId);
+  if (!hotel) return [];
+  const linkedRoomTypeIds = String(hotel.attributes.roomTypeIds ?? '')
+    .split(',')
+    .map((id) => id.trim())
+    .filter(Boolean);
+  const availableIds = new Set([
+    ...linkedRoomTypeIds,
+    ...ratedRoomTypeIds.filter(Boolean),
+  ]);
+  return roomTypes.filter((roomType) => availableIds.has(roomType.id));
 }
 
 export function salesHotelValid(state: SalesFormState): boolean {
@@ -767,6 +859,10 @@ export function salesPayload(
       ],
     });
   }
+  const pairedTicketFares =
+    state.outboundOffer && state.returnOffer
+      ? roundTripPerLegFares(state.outboundOffer, state.returnOffer)
+      : undefined;
   const ticketSelections = state.serviceKinds.includes('FLIGHT')
     ? [
         ...(salesDirections(state, 'FLIGHT').includes('OUTBOUND') &&
@@ -786,14 +882,28 @@ export function salesPayload(
                 cabinClassCode:
                   state.outboundOffer?.cabinClassCode ??
                   state.ticket.cabinClassCode,
-                ...(state.ticket.amount
+                ...(!state.tour &&
+                !state.serviceKinds.includes('HOTEL') &&
+                (pairedTicketFares || state.outboundOffer?.standaloneSalePrice)
                   ? {
                       quotedPrice: {
-                        amount: state.ticket.amount,
-                        currencyCode: state.ticket.currencyCode,
+                        amount: pairedTicketFares
+                          ? pairedTicketFares.outboundAmount
+                          : state.outboundOffer!.standaloneSalePrice!.amount,
+                        currencyCode:
+                          pairedTicketFares?.currencyCode ??
+                          state.outboundOffer!.standaloneSalePrice!
+                            .currencyCode,
                       },
                     }
-                  : {}),
+                  : state.ticket.amount
+                    ? {
+                        quotedPrice: {
+                          amount: state.ticket.amount,
+                          currencyCode: state.ticket.currencyCode,
+                        },
+                      }
+                    : {}),
               },
             ]
           : []),
@@ -815,14 +925,27 @@ export function salesPayload(
                 cabinClassCode:
                   state.returnOffer?.cabinClassCode ??
                   state.ticket.cabinClassCode,
-                ...(state.ticket.amount
+                ...(!state.tour &&
+                !state.serviceKinds.includes('HOTEL') &&
+                (pairedTicketFares || state.returnOffer?.standaloneSalePrice)
                   ? {
                       quotedPrice: {
-                        amount: state.ticket.amount,
-                        currencyCode: state.ticket.currencyCode,
+                        amount: pairedTicketFares
+                          ? pairedTicketFares.returnAmount
+                          : state.returnOffer!.standaloneSalePrice!.amount,
+                        currencyCode:
+                          pairedTicketFares?.currencyCode ??
+                          state.returnOffer!.standaloneSalePrice!.currencyCode,
                       },
                     }
-                  : {}),
+                  : state.ticket.amount
+                    ? {
+                        quotedPrice: {
+                          amount: state.ticket.amount,
+                          currencyCode: state.ticket.currencyCode,
+                        },
+                      }
+                    : {}),
               },
             ]
           : []),

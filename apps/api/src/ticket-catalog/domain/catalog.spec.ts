@@ -657,6 +657,13 @@ describe('Versioning and lifecycle', () => {
 });
 
 describe('Sales-owned pricing and geography', () => {
+  it('does not require a purchase currency before activating sale', () => {
+    const value = {
+      ...input(),
+      fare: { ...input().fare, currencyId: '', currencyCode: '' },
+    };
+    expect(() => validateProduct(value, resolve, true)).not.toThrow();
+  });
   it('accepts purchase-only fares and rejects a legacy fixed sale price', () => {
     expect(() => validateProduct(input(), resolve)).not.toThrow();
     const legacy = { ...input(), fare: { ...input().fare, sale: '123' } };

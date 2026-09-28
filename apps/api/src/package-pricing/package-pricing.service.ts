@@ -187,6 +187,7 @@ export class PackagePricingService {
         tour.startsOn,
         tour.endsOn,
         tour.id,
+        tour.package.destinationId,
       ),
       this.flightCosts.paidCostsForOffers(offerIds, tour.branchId),
     ]);

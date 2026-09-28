@@ -2,6 +2,7 @@
 
 import type {
   LoginResponse,
+  PackageBannerFormat,
   PackageListQueryV1,
   PackagePageV1,
   PackageTourCostGridV1,
@@ -22,6 +23,20 @@ export class PackagePricingApiError extends Error {
   ) {
     super(message);
   }
+}
+
+export interface PackageBannerTemplateV1 {
+  id: string;
+  branchId: string;
+  issuerLegalEntityId: string;
+  code: string;
+  title: string;
+  format: PackageBannerFormat;
+  version: number;
+  width: number;
+  height: number;
+  templateDefinition: Readonly<Record<string, unknown>>;
+  isActive: boolean;
 }
 
 async function session(): Promise<LoginResponse> {
@@ -109,13 +124,48 @@ export const packagePricingApi = {
       `/tour-costs/${encodeURIComponent(tourDepartureId)}`,
       activeSession,
     ),
-  tourDraft: (tourId: string, batchId: string, activeSession: LoginResponse): Promise<PackageTourDraftV1 | null> =>
-    request(`/tour-drafts?tourDepartureId=${encodeURIComponent(tourId)}&batchId=${encodeURIComponent(batchId)}`, activeSession),
-  saveTourDraft: (input: PackageTourDraftSaveV1, activeSession: LoginResponse): Promise<PackageTourDraftV1> =>
-    request('/tour-drafts', activeSession, { method: 'POST', body: JSON.stringify(input) }),
-  tourPublications: (tourId: string, batchId: string, activeSession: LoginResponse): Promise<readonly PackageTourPublicationV1[]> =>
-    request(`/tour-drafts/publications?tourDepartureId=${encodeURIComponent(tourId)}&batchId=${encodeURIComponent(batchId)}`, activeSession),
-  publishTourDraft: (draftId: string, input: PackageTourPublishV1, activeSession: LoginResponse): Promise<PackageTourPublicationV1> =>
-    request(`/tour-drafts/${encodeURIComponent(draftId)}/publish`, activeSession,
-      { method: 'POST', body: JSON.stringify(input) }),
+  tourDraft: (
+    tourId: string,
+    batchId: string,
+    activeSession: LoginResponse,
+  ): Promise<PackageTourDraftV1 | null> =>
+    request(
+      `/tour-drafts?tourDepartureId=${encodeURIComponent(tourId)}&batchId=${encodeURIComponent(batchId)}`,
+      activeSession,
+    ),
+  saveTourDraft: (
+    input: PackageTourDraftSaveV1,
+    activeSession: LoginResponse,
+  ): Promise<PackageTourDraftV1> =>
+    request('/tour-drafts', activeSession, {
+      method: 'POST',
+      body: JSON.stringify(input),
+    }),
+  tourPublications: (
+    tourId: string,
+    batchId: string,
+    activeSession: LoginResponse,
+  ): Promise<readonly PackageTourPublicationV1[]> =>
+    request(
+      `/tour-drafts/publications?tourDepartureId=${encodeURIComponent(tourId)}&batchId=${encodeURIComponent(batchId)}`,
+      activeSession,
+    ),
+  bannerTemplates: (
+    branchId: string,
+    activeSession: LoginResponse,
+  ): Promise<{ version: 1; data: readonly PackageBannerTemplateV1[] }> =>
+    request(
+      `/banner-templates?branchId=${encodeURIComponent(branchId)}`,
+      activeSession,
+    ),
+  publishTourDraft: (
+    draftId: string,
+    input: PackageTourPublishV1,
+    activeSession: LoginResponse,
+  ): Promise<PackageTourPublicationV1> =>
+    request(
+      `/tour-drafts/${encodeURIComponent(draftId)}/publish`,
+      activeSession,
+      { method: 'POST', body: JSON.stringify(input) },
+    ),
 };

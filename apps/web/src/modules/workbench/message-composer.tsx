@@ -41,7 +41,6 @@ import {
 import { MessageUnitIcon } from './message-unit-icon';
 import { messagingApi, messagingRequestId } from './messaging-api';
 import { messageUnits } from './message-templates';
-import { uploadWorkbenchAttachments } from './workbench-attachments';
 
 type SidebarMode = 'units' | 'contacts' | 'groups' | 'conversations';
 const initials = (name: string) => name.trim().slice(0, 2) || 'ر';
@@ -56,9 +55,11 @@ const messageTime = (value: string) =>
 export function MessageComposer({
   currentUserId,
   initialUnit = 'finance',
+  initialSidebarMode = 'units',
 }: {
   currentUserId: string;
   initialUnit?: string;
+  initialSidebarMode?: SidebarMode;
 }) {
   const [text, setText] = useState('');
   const [unitId, setUnitId] = useState<string>(
@@ -67,7 +68,8 @@ export function MessageComposer({
       : 'finance',
   );
   const unit = messageUnits.find((item) => item.id === unitId)!;
-  const [sidebarMode, setSidebarMode] = useState<SidebarMode>('units');
+  const [sidebarMode, setSidebarMode] =
+    useState<SidebarMode>(initialSidebarMode);
   const [contacts, setContacts] = useState<MessagingContactV1[]>([]);
   const [conversations, setConversations] = useState<MessagingConversationV1[]>(
     [],
@@ -254,14 +256,15 @@ export function MessageComposer({
       const clientRequestId =
         messageSubmissionId.current || messagingRequestId('message');
       messageSubmissionId.current = clientRequestId;
-      const attachmentDocumentIds = await uploadWorkbenchAttachments({
-        entityType: 'MessagingMessage',
-        entityId: clientRequestId,
-        title: `پیوست پیام: ${active.title}`,
-        description: 'پیوست ثبت‌شده از پیام‌رسان داخلی میزکار',
-        branchId: active.branchId,
-        files: attachments,
-      });
+      const attachmentDocumentIds: string[] = [];
+      for (const file of attachments) {
+        const response = await messagingApi.uploadAttachment(
+          active.id,
+          clientRequestId,
+          file,
+        );
+        attachmentDocumentIds.push(response.data.id);
+      }
       const response = await messagingApi.send(active.id, {
         body: text,
         clientRequestId,
@@ -319,8 +322,8 @@ export function MessageComposer({
           پیام‌رسان داخلی
         </h2>
       </div>
-      <div className="grid min-h-[680px] lg:grid-cols-[320px_minmax(0,1fr)]">
-        <aside className="space-y-4 border-b border-primary/15 bg-gradient-to-b from-primary/10 via-sky-100/60 to-violet-100/50 p-4 dark:via-sky-950/20 dark:to-violet-950/20 lg:border-b-0 lg:border-e">
+      <div className="grid min-h-[680px] min-w-0 lg:grid-cols-[320px_minmax(0,1fr)]">
+        <aside className="min-w-0 space-y-4 overflow-hidden border-b border-primary/15 bg-gradient-to-b from-primary/10 via-sky-100/60 to-violet-100/50 p-4 dark:via-sky-950/20 dark:to-violet-950/20 lg:border-b-0 lg:border-e">
           <div
             className="grid grid-cols-2 gap-2"
             aria-label="بخش‌های پیام‌رسان"
@@ -362,7 +365,10 @@ export function MessageComposer({
                 value={unitSearch}
                 onChange={(event) => setUnitSearch(event.target.value)}
               />
-              <div className="grid gap-2" aria-label="واحدهای پیام‌رسان">
+              <div
+                className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-2"
+                aria-label="واحدهای پیام‌رسان"
+              >
                 {messageUnits
                   .filter((item) =>
                     item.label
@@ -374,7 +380,7 @@ export function MessageComposer({
                       key={item.id}
                       variant={unitId === item.id ? 'primary' : 'ghost'}
                       aria-pressed={unitId === item.id}
-                      className={`h-auto min-h-16 justify-start border p-3 text-start ${
+                      className={`h-auto min-h-16 w-full min-w-0 justify-start overflow-hidden border p-3 text-start ${
                         unitId === item.id
                           ? 'border-primary'
                           : 'border-white/70 bg-surface/80 text-foreground dark:border-white/10'
@@ -390,7 +396,7 @@ export function MessageComposer({
                       >
                         <MessageUnitIcon id={item.id} />
                       </span>
-                      <span className="min-w-0">
+                      <span className="min-w-0 flex-1 overflow-hidden">
                         <span className="block truncate font-bold">
                           {item.label}
                         </span>
@@ -415,23 +421,27 @@ export function MessageComposer({
                 value={contactSearch}
                 onChange={(event) => setContactSearch(event.target.value)}
               />
-              <div className="grid gap-2" aria-label="مخاطبان CRM">
+              <div
+                className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-2"
+                aria-label="کاربران CRM"
+              >
                 {contacts.map((contact) => (
                   <Button
                     key={contact.id}
                     variant="ghost"
-                    className="h-auto justify-start border border-white/70 bg-surface/80 p-3 text-start dark:border-white/10"
+                    className="h-auto w-full min-w-0 justify-start overflow-hidden border border-white/70 bg-surface/80 p-3 text-start dark:border-white/10"
                     onClick={() => void openContact(contact)}
                     disabled={busy}
                   >
                     <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary/10 font-black text-primary">
                       {initials(contact.displayName)}
                     </span>
-                    <span className="min-w-0">
+                    <span className="min-w-0 flex-1 overflow-hidden">
                       <span className="block truncate font-bold">
                         {contact.displayName}
                       </span>
                       <span className="block truncate text-xs font-normal opacity-70">
+                        @{contact.username} ·{' '}
                         {contact.branches
                           .map((branch) => branch.name)
                           .join('، ')}
@@ -457,7 +467,10 @@ export function MessageComposer({
                 <UserPlus className="size-4" aria-hidden="true" />
                 ایجاد گروه جدید
               </Button>
-              <div className="grid gap-2" aria-label="گروه‌های من">
+              <div
+                className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-2"
+                aria-label="گروه‌های من"
+              >
                 {conversations
                   .filter((conversation) => conversation.type === 'GROUP')
                   .map((conversation) => (
@@ -466,13 +479,13 @@ export function MessageComposer({
                       variant={
                         activeId === conversation.id ? 'primary' : 'ghost'
                       }
-                      className="h-auto min-h-20 justify-start border border-white/70 p-3 text-start dark:border-white/10"
+                      className="h-auto min-h-20 w-full min-w-0 justify-start overflow-hidden border border-white/70 p-3 text-start dark:border-white/10"
                       onClick={() => setActiveId(conversation.id)}
                     >
                       <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-surface/20">
                         <Users className="size-5" aria-hidden="true" />
                       </span>
-                      <span className="min-w-0">
+                      <span className="min-w-0 flex-1 overflow-hidden">
                         <span className="block truncate font-bold">
                           {conversation.title}
                         </span>
@@ -501,18 +514,21 @@ export function MessageComposer({
               </div>
             </>
           ) : (
-            <div className="grid gap-2" aria-label="گفت‌وگوهای من">
+            <div
+              className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-2"
+              aria-label="گفت‌وگوهای من"
+            >
               {conversations.map((conversation) => (
                 <Button
                   key={conversation.id}
                   variant={activeId === conversation.id ? 'primary' : 'ghost'}
-                  className="h-auto min-h-20 justify-start border border-white/70 p-3 text-start dark:border-white/10"
+                  className="h-auto min-h-20 w-full min-w-0 justify-start overflow-hidden border border-white/70 p-3 text-start dark:border-white/10"
                   onClick={() => setActiveId(conversation.id)}
                 >
                   <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-surface/20">
                     <MessageCircleMore className="size-5" aria-hidden="true" />
                   </span>
-                  <span className="min-w-0">
+                  <span className="min-w-0 flex-1 overflow-hidden">
                     <span className="block truncate font-bold">
                       {conversation.title}
                     </span>
@@ -536,7 +552,7 @@ export function MessageComposer({
             </div>
           )}
         </aside>
-        <main className="min-w-0 p-5">
+        <main className="min-w-0 overflow-x-hidden p-5">
           {!active ? (
             <div className="grid min-h-[560px] place-items-center">
               <EmptyState
@@ -546,11 +562,13 @@ export function MessageComposer({
               />
             </div>
           ) : (
-            <div className="space-y-5">
+            <div className="min-w-0 space-y-5">
               <header className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-primary/15 bg-surface/85 p-4 shadow-sm">
-                <div>
-                  <h3 className="text-lg font-black">{active.title}</h3>
-                  <p className="mt-1 text-xs text-muted-foreground">
+                <div className="min-w-0">
+                  <h3 className="truncate text-lg font-black">
+                    {active.title}
+                  </h3>
+                  <p className="mt-1 truncate text-xs text-muted-foreground">
                     {active.type === 'GROUP'
                       ? `${active.participants.length.toLocaleString('fa-IR')} عضو`
                       : active.participants
@@ -565,7 +583,7 @@ export function MessageComposer({
                 )}
               </header>
               <section
-                className="max-h-80 min-h-52 space-y-3 overflow-y-auto rounded-2xl border border-sky-200/70 bg-surface/80 p-4 dark:border-sky-800/60"
+                className="relative isolate flex h-[22rem] min-h-0 min-w-0 flex-col gap-3 overflow-x-hidden overflow-y-auto rounded-2xl border border-sky-200/70 bg-surface/80 p-4 dark:border-sky-800/60"
                 aria-label="پیام‌های گفت‌وگو"
               >
                 {messages.map((message) => {
@@ -573,33 +591,39 @@ export function MessageComposer({
                   return (
                     <article
                       key={message.id}
-                      className={`max-w-[85%] rounded-2xl p-3 shadow-sm ${mine ? 'me-auto bg-primary text-primary-foreground' : 'ms-auto bg-violet-100 text-violet-950 dark:bg-violet-950 dark:text-violet-50'}`}
+                      className={`relative box-border w-full min-w-0 shrink-0 overflow-hidden rounded-2xl p-3 shadow-sm sm:w-auto sm:max-w-[75%] ${mine ? 'self-start bg-primary text-primary-foreground' : 'self-end bg-violet-100 text-violet-950 dark:bg-violet-950 dark:text-violet-50'}`}
                     >
-                      <div className="flex items-center justify-between gap-4 text-xs opacity-80">
-                        <strong>{message.sender.displayName}</strong>
-                        <time>{messageTime(message.createdAt)}</time>
+                      <div className="flex min-w-0 items-center justify-between gap-4 text-xs opacity-80">
+                        <strong className="truncate">
+                          {message.sender.displayName}
+                        </strong>
+                        <time className="shrink-0">
+                          {messageTime(message.createdAt)}
+                        </time>
                       </div>
                       {message.forwardedFrom && (
                         <p className="mt-2 border-s-2 border-current/30 ps-2 text-xs opacity-80">
                           فوروارد از {message.forwardedFrom.senderDisplayName}
                         </p>
                       )}
-                      <p className="mt-2 whitespace-pre-wrap break-words leading-7">
+                      <p className="mt-2 min-w-0 max-w-full whitespace-pre-wrap break-words [overflow-wrap:anywhere] leading-7">
                         {message.body}
                       </p>
                       {message.attachments.length ? (
-                        <ul className="mt-2 space-y-1">
+                        <ul className="mt-2 min-w-0 max-w-full space-y-1">
                           {message.attachments.map((attachment) => (
                             <li key={attachment.documentId}>
                               <Link
-                                className="inline-flex items-center gap-2 rounded-lg bg-white/15 px-2 py-1 text-xs hover:underline"
+                                className="inline-flex min-w-0 max-w-full items-center gap-2 rounded-lg bg-white/15 px-2 py-1 text-xs hover:underline"
                                 href={`/documents?document=${encodeURIComponent(attachment.documentId)}`}
                               >
                                 <Paperclip
                                   className="size-3"
                                   aria-hidden="true"
                                 />
-                                {attachment.title}
+                                <span className="min-w-0 truncate">
+                                  {attachment.title}
+                                </span>
                               </Link>
                             </li>
                           ))}
@@ -715,7 +739,7 @@ export function MessageComposer({
                   id="workbench-message-files"
                   type="file"
                   multiple
-                  accept=".pdf,.jpg,.jpeg,.png,.webp"
+                  accept=".pdf,.jpg,.jpeg,.png"
                   onChange={(event) => {
                     const picked = Array.from(event.target.files ?? []);
                     event.target.value = '';
@@ -724,7 +748,7 @@ export function MessageComposer({
                       picked.some(
                         (file) =>
                           file.size > 10 * 1024 * 1024 ||
-                          !/\.(pdf|jpe?g|png|webp)$/i.test(file.name),
+                          !/\.(pdf|jpe?g|png)$/i.test(file.name),
                       )
                     )
                       return setError(

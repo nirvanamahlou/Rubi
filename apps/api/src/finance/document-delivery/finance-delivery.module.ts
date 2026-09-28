@@ -10,6 +10,8 @@ import {
 } from '@nestjs/common';
 import type {
   FinanceSupplierPaymentCommandV1,
+  FinanceCustomerDocumentDeliveryAuthorizationV1,
+  FinanceCustomerDocumentDeliveryCommandV1,
   ReservationServicePurchaseV1,
   SalesReservationRequestV1,
   SupplierPurchaseGateV1,
@@ -17,6 +19,7 @@ import type {
 } from '@nora/contracts';
 import { Prisma } from '@nora/database';
 import { DatabaseService } from '../../database/database.service';
+import { evaluateFinancialRelease } from '../finance.domain';
 
 const brokerPurchaseServices = (snapshot: SalesReservationRequestV1) =>
   snapshot.serviceSelections.filter(
@@ -323,6 +326,164 @@ export class FinanceDeliveryService {
         transferAt: row.transferAt?.toISOString() ?? null,
         paymentReference: row.paymentReference,
         reason: row.reason,
+        updatedAt: row.createdAt.toISOString(),
+        updatedByUserId: row.actorUserId,
+      };
+    });
+  }
+  async readCustomerContract(
+    contractId: string,
+  ): Promise<FinanceCustomerDocumentDeliveryAuthorizationV1> {
+    const row =
+      await this.database.client.financeCustomerDocumentDeliveryRevision.findFirst(
+        {
+          where: { contractId },
+          orderBy: { version: 'desc' },
+        },
+      );
+    return row
+      ? {
+          version: row.version,
+          approved: row.approved,
+          basis:
+            row.basis as FinanceCustomerDocumentDeliveryAuthorizationV1['basis'],
+          reason: row.reason,
+          exceptionExpiresAt: row.exceptionExpiresAt?.toISOString() ?? null,
+          updatedAt: row.createdAt.toISOString(),
+          updatedByUserId: row.actorUserId,
+        }
+      : {
+          version: 0,
+          approved: false,
+          basis: null,
+          reason: '',
+          exceptionExpiresAt: null,
+          updatedAt: null,
+          updatedByUserId: null,
+        };
+  }
+
+  async updateCustomerContract(
+    command: FinanceCustomerDocumentDeliveryCommandV1,
+    facts: {
+      contractId: string;
+      branchId: string;
+      salesOwnerUserId: string;
+      hasConfirmedPayment: boolean;
+      fullySettled: boolean;
+    },
+    actor: { userId: string; permissions: readonly string[] },
+  ): Promise<FinanceCustomerDocumentDeliveryAuthorizationV1> {
+    const reason = command?.reason?.trim() ?? '';
+    const basis = command?.basis;
+    const isUuid = (value: string | null | undefined) =>
+      !!value &&
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+        value,
+      );
+    if (
+      !command ||
+      !Number.isSafeInteger(command.expectedVersion) ||
+      command.expectedVersion < 0 ||
+      typeof command.approved !== 'boolean' ||
+      !['AFTER_RECEIPT', 'FULL_SETTLEMENT', 'MANAGER_EXCEPTION'].includes(
+        basis,
+      ) ||
+      !reason ||
+      reason.length > 500
+    )
+      throw new BadRequestException('مجوز تحویل مدارک مشتری معتبر نیست.');
+    if (
+      command.approved &&
+      basis === 'AFTER_RECEIPT' &&
+      !facts.hasConfirmedPayment
+    )
+      throw new BadRequestException(
+        'ابتدا حداقل یک پرداخت مشتری باید توسط مالی تأیید شود.',
+      );
+    if (command.approved && basis === 'FULL_SETTLEMENT' && !facts.fullySettled)
+      throw new BadRequestException(
+        'صدور مجوز بر مبنای تسویه کامل فقط پس از تسویه کامل قرارداد ممکن است.',
+      );
+    if (command.approved && basis === 'MANAGER_EXCEPTION') {
+      if (!isUuid(command.secondApproverReference))
+        throw new BadRequestException('تأییدکننده دوم استثنا معتبر نیست.');
+      const evaluation = evaluateFinancialRelease(
+        {
+          fullySettled: facts.fullySettled,
+          approvedCreditAvailable: false,
+          approvedPaymentPlanActive: false,
+          validCheckAvailable: false,
+        },
+        {
+          requestedStatus: 'CONDITIONAL',
+          basis: 'MANAGER_EXCEPTION',
+          reason,
+          makerReference: actor.userId,
+          secondApproverReference: command.secondApproverReference ?? null,
+          exceptionExpiresAt: command.exceptionExpiresAt ?? null,
+          now: new Date().toISOString(),
+          makerPermissions: actor.permissions,
+        },
+      );
+      if (!evaluation.allowed)
+        throw new BadRequestException(
+          'مجوز استثنایی مدیر معتبر نیست: ' + evaluation.reasons.join(' '),
+        );
+    }
+    return this.database.client.$transaction(async (tx) => {
+      await tx.$queryRaw(
+        Prisma.sql`SELECT 1 AS locked FROM pg_advisory_xact_lock(hashtextextended(${facts.contractId}, 0))`,
+      );
+      const current =
+        await tx.financeCustomerDocumentDeliveryRevision.findFirst({
+          where: { contractId: facts.contractId },
+          orderBy: { version: 'desc' },
+        });
+      if ((current?.version ?? 0) !== command.expectedVersion)
+        throw new ConflictException('مجوز تحویل مدارک هم‌زمان تغییر کرده است.');
+      const expiry =
+        basis === 'MANAGER_EXCEPTION' && command.exceptionExpiresAt
+          ? new Date(command.exceptionExpiresAt)
+          : null;
+      const row = await tx.financeCustomerDocumentDeliveryRevision.create({
+        data: {
+          contractId: facts.contractId,
+          branchId: facts.branchId,
+          version: command.expectedVersion + 1,
+          approved: command.approved,
+          basis,
+          reason,
+          secondApproverRef:
+            basis === 'MANAGER_EXCEPTION'
+              ? (command.secondApproverReference ?? null)
+              : null,
+          exceptionExpiresAt: expiry,
+          actorUserId: actor.userId,
+        },
+      });
+      await this.notifications.createWithinTransaction(tx, {
+        recipientUserIds: [facts.salesOwnerUserId],
+        actorUserId: actor.userId,
+        sourceModule: 'finance',
+        eventType: command.approved
+          ? 'CUSTOMER_DOCUMENT_DELIVERY_APPROVED'
+          : 'CUSTOMER_DOCUMENT_DELIVERY_REVOKED',
+        title: command.approved
+          ? 'مجوز تحویل مدارک مشتری صادر شد'
+          : 'مجوز تحویل مدارک مشتری لغو شد',
+        message: reason,
+        entityType: 'sales_contract',
+        entityId: facts.contractId,
+        href: '/sales',
+      });
+      return {
+        version: row.version,
+        approved: row.approved,
+        basis:
+          row.basis as FinanceCustomerDocumentDeliveryAuthorizationV1['basis'],
+        reason: row.reason,
+        exceptionExpiresAt: row.exceptionExpiresAt?.toISOString() ?? null,
         updatedAt: row.createdAt.toISOString(),
         updatedByUserId: row.actorUserId,
       };

@@ -5,6 +5,7 @@ import { useMemo, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
+import { MoneyInput } from '@/components/ui/money-input';
 import {
   Checkbox,
   FormField,
@@ -326,13 +327,13 @@ export function CampaignForm({ campaign, mode }: CampaignFormProps) {
         {step === 5 ? (
           <div className="grid gap-4 md:grid-cols-2">
             <FormField id="campaign-budget" label="بودجه مصوب" required>
-              <Input
+              <MoneyInput
                 id="campaign-budget"
-                dir="ltr"
-                inputMode="decimal"
                 readOnly={readOnly}
                 value={draft.budgetAmount}
-                onChange={(event) => update('budgetAmount', event.target.value)}
+                onValueChange={(budgetAmount) =>
+                  update('budgetAmount', budgetAmount)
+                }
               />
             </FormField>
             <FormField id="campaign-currency" label="کد ارز" required>

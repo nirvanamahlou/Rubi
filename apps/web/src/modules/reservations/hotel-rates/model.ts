@@ -6,6 +6,7 @@ export const kinds = [
   'doubleTwoChildren',
   'family',
 ] as const;
+export type FactorKind = (typeof kinds)[number];
 export const labels = [
   'دبل',
   'سینگل',
@@ -14,7 +15,7 @@ export const labels = [
   'دبل + ۲ بچه',
   'فمیلی',
 ];
-export type Factors = Record<(typeof kinds)[number], string>;
+export type Factors = Record<FactorKind, string>;
 export const initialFactors: Factors = {
   double: '1',
   single: '1.5',

@@ -67,6 +67,86 @@ describe('group hotel rate integrity', () => {
       }),
     ).toThrow();
   });
+  it('accepts 2+1 and 2+3 capacities and rejects unavailable or duplicate room rates', () => {
+    const data = input();
+    const roomTypeA = randomUUID();
+    const roomTypeB = randomUUID();
+    const pack = {
+      ...data,
+      cityId: randomUUID(),
+      rows: [
+        {
+          ...data.rows[0],
+          factors: undefined,
+          roomRates: [
+            {
+              roomTypeId: roomTypeA,
+              factor: '1.2',
+              maxAdults: 2,
+              maxChildren: 1,
+            },
+            {
+              roomTypeId: roomTypeB,
+              factor: '1.8',
+              maxAdults: 2,
+              maxChildren: 3,
+            },
+          ],
+        },
+      ],
+    };
+    expect(validateRatePack(pack).rows[0]?.roomRates).toMatchObject([
+      { maxAdults: 2, maxChildren: 1 },
+      { maxAdults: 2, maxChildren: 3 },
+    ]);
+    expect(() =>
+      validateRatePack({ ...pack, rows: [{ ...pack.rows[0], roomRates: [] }] }),
+    ).toThrow();
+    expect(() =>
+      validateRatePack({
+        ...pack,
+        rows: [
+          {
+            ...pack.rows[0],
+            roomRates: [
+              pack.rows[0]!.roomRates[0],
+              { ...pack.rows[0]!.roomRates[1], roomTypeId: roomTypeA },
+            ],
+          },
+        ],
+      }),
+    ).toThrow();
+  });
+  it('persists separate 2–6, 6–12 and infant capacities while retaining legacy child total', () => {
+    const data = input();
+    const result = validateRatePack({
+      ...data,
+      cityId: randomUUID(),
+      rows: [
+        {
+          ...data.rows[0],
+          factors: undefined,
+          roomRates: [
+            {
+              roomTypeId: randomUUID(),
+              factor: '1.25',
+              maxAdults: 2,
+              maxChildren2To6: 1,
+              maxChildren6To12: 2,
+              maxInfants: 1,
+            },
+          ],
+        },
+      ],
+    });
+    expect(result.rows[0]?.roomRates[0]).toMatchObject({
+      maxAdults: 2,
+      maxChildren: 3,
+      maxChildren2To6: 1,
+      maxChildren6To12: 2,
+      maxInfants: 1,
+    });
+  });
   it('denies unauthorized branch before reference lookup or writes', async () => {
     const directory = { hotelRateReference: vi.fn() };
     const db = {
@@ -99,4 +179,33 @@ describe('group hotel rate integrity', () => {
       } as unknown as AuthenticatedActor),
     ).rejects.toThrow();
   });
+});
+
+it('saves independent hotel rates with only available occupancy coefficients and room capacity', () => {
+  const data = input();
+  const result = validateRatePack({
+    ...data,
+    cityId: randomUUID(),
+    rows: [
+      {
+        ...data.rows[0],
+        factors: { double: '1', family: '2' },
+        roomRates: [
+          {
+            roomTypeId: randomUUID(),
+            factor: '1',
+            maxAdults: 2,
+            maxChildren: 2,
+          },
+        ],
+      },
+    ],
+  });
+  expect(result.tourDepartureId).toBeUndefined();
+  expect(result.rows[0]?.factors).toEqual({ double: '1', family: '2' });
+  expect(result.rows[0]?.roomRates[0]).toMatchObject({
+    maxAdults: 2,
+    maxChildren: 2,
+  });
+  expect(roomPrices('100', result.rows[0]!.factors, 'USD').single).toBeNull();
 });

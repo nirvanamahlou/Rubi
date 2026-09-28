@@ -41,12 +41,6 @@ describe('profile photo validation', () => {
         new Uint8Array([255, 216, 255]),
       ),
     ).toBeNull();
-    expect(
-      profilePhotoError(
-        { type: 'image/webp', size: 200 },
-        new Uint8Array([82, 73, 70, 70, 0, 0, 0, 0, 87, 69, 66, 80]),
-      ),
-    ).toBeNull();
   });
   it('rejects disguised files, SVG, empty and oversized uploads', () => {
     expect(
@@ -54,6 +48,12 @@ describe('profile photo validation', () => {
     ).not.toBeNull();
     expect(
       profilePhotoError({ type: 'image/svg+xml', size: 200 }, png),
+    ).not.toBeNull();
+    expect(
+      profilePhotoError(
+        { type: 'image/webp', size: 200 },
+        new Uint8Array([82, 73, 70, 70, 0, 0, 0, 0, 87, 69, 66, 80]),
+      ),
     ).not.toBeNull();
     expect(
       profilePhotoError({ type: 'image/png', size: 200 }, new Uint8Array()),

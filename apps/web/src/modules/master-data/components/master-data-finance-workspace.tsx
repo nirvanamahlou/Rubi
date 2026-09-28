@@ -1032,7 +1032,10 @@ export function MasterDataFinanceWorkspace({
       ) : isRateTab(tab) ? (
         rates.length ? (
           <Card className="overflow-x-auto">
-            <table className="w-full min-w-[62rem] text-sm">
+            <table
+              aria-label="تاریخچه نرخ ارز"
+              className="w-full min-w-[62rem] text-sm"
+            >
               <thead className="bg-muted/50 text-muted-foreground">
                 <tr>
                   <th className="p-4 text-start">جفت ارز</th>
@@ -1175,7 +1178,10 @@ export function MasterDataFinanceWorkspace({
           </div>
         ) : (
           <Card className="overflow-x-auto">
-            <table className="w-full min-w-[54rem] text-sm">
+            <table
+              aria-label="درخواست‌های گردش تأیید نرخ"
+              className="w-full min-w-[54rem] text-sm"
+            >
               <thead className="bg-muted/50 text-muted-foreground">
                 <tr>
                   <th className="p-4 text-start">کد</th>
@@ -1486,7 +1492,10 @@ export function MasterDataFinanceWorkspace({
                 />
                 <FinanceChart rates={selectedCurrencyRates} />
                 <Card className="overflow-x-auto">
-                  <table className="w-full min-w-[62rem] text-sm">
+                  <table
+                    aria-label="تاریخچه نرخ ارز انتخاب‌شده"
+                    className="w-full min-w-[62rem] text-sm"
+                  >
                     <thead className="bg-muted/50 text-muted-foreground">
                       <tr>
                         <th className="p-4 text-start">جفت ارز</th>

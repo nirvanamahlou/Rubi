@@ -15,6 +15,10 @@ import type {
 } from '@nora/contracts';
 
 import { DocumentsService } from '../documents/documents.service';
+import type {
+  DocumentRequestMetadata,
+  UploadedDocumentFile,
+} from '../documents/documents.service';
 import { HrDirectoryService } from '../hr/hr-directory.service';
 import { WorkbenchFeedbackRepository } from './workbench-feedback.repository';
 
@@ -121,6 +125,26 @@ export class WorkbenchFeedbackService {
       submittedByUserId: actor.userId,
       recipientUserIds,
     });
+    return { data };
+  }
+
+  async uploadAttachment(
+    input: {
+      feedbackId: string;
+      branchId: string;
+      subject: string;
+      anonymous: boolean;
+    },
+    file: UploadedDocumentFile | undefined,
+    actor: AuthenticatedActor,
+    metadata: DocumentRequestMetadata,
+  ) {
+    const data = await this.documents.uploadOwnWorkbenchFeedbackAttachment(
+      input,
+      file,
+      actor,
+      metadata,
+    );
     return { data };
   }
 

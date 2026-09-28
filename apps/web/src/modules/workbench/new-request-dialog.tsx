@@ -3,6 +3,14 @@ import { WorkbenchSelect } from './workbench-select';
 
 import { useState } from 'react';
 import {
+  Building2,
+  ClipboardList,
+  FileText,
+  Flag,
+  Link2,
+  Send,
+} from 'lucide-react';
+import {
   Alert,
   Button,
   Dialog,
@@ -38,14 +46,24 @@ export function NewRequestDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         dir="rtl"
-        className="max-w-3xl max-h-[90dvh] overflow-y-auto"
+        className="max-h-[90dvh] max-w-3xl overflow-y-auto p-0"
       >
-        <DialogTitle>درخواست جدید</DialogTitle>
-        <DialogDescription>
-          عنوان، شرح و واحد مقصد را مشخص کنید؛ درخواست در کارتابل ثبت می‌شود.
-        </DialogDescription>
+        <div className="border-b bg-gradient-to-l from-primary/15 via-primary/5 to-background px-6 py-6">
+          <div className="flex items-start gap-3">
+            <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-primary text-primary-foreground shadow-sm">
+              <ClipboardList className="size-5" aria-hidden="true" />
+            </span>
+            <div className="space-y-1">
+              <DialogTitle>درخواست جدید</DialogTitle>
+              <DialogDescription>
+                درخواست خود را برای واحد مقصد ثبت کنید؛ پیگیری آن از کارتابل
+                درخواست‌های میزکار انجام می‌شود.
+              </DialogDescription>
+            </div>
+          </div>
+        </div>
         <form
-          className="mt-5 grid gap-5 sm:grid-cols-2"
+          className="grid gap-5 bg-muted/20 p-6 sm:grid-cols-2"
           onSubmit={(event) => {
             event.preventDefault();
             if (!branchId || pending) return;
@@ -102,16 +120,23 @@ export function NewRequestDialog({
           }}
         >
           <label className="space-y-2 text-sm font-semibold">
-            <span>عنوان درخواست *</span>
+            <span className="flex items-center gap-2">
+              <FileText className="size-4 text-primary" aria-hidden="true" />
+              عنوان درخواست *
+            </span>
             <Input
               required
               maxLength={200}
+              placeholder="مثلاً: بررسی وضعیت پرونده ویزا"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
             />
           </label>
           <label className="space-y-2 text-sm font-semibold">
-            <span>واحد مقصد *</span>
+            <span className="flex items-center gap-2">
+              <Building2 className="size-4 text-primary" aria-hidden="true" />
+              واحد مقصد *
+            </span>
             <WorkbenchSelect
               label="واحد مقصد"
               value={unit}
@@ -123,17 +148,27 @@ export function NewRequestDialog({
             />
           </label>
           <label className="space-y-2 text-sm font-semibold sm:col-span-2">
-            <span>شرح درخواست *</span>
+            <span className="flex items-center gap-2">
+              <ClipboardList
+                className="size-4 text-primary"
+                aria-hidden="true"
+              />
+              شرح درخواست *
+            </span>
             <Textarea
               required
               rows={5}
               maxLength={10000}
+              placeholder="جزئیات مورد نیاز، زمان‌بندی و اطلاعات لازم برای رسیدگی را بنویسید."
               value={body}
               onChange={(e) => setBody(e.target.value)}
             />
           </label>
           <label className="space-y-2 text-sm font-semibold">
-            <span>اولویت</span>
+            <span className="flex items-center gap-2">
+              <Flag className="size-4 text-primary" aria-hidden="true" />
+              اولویت
+            </span>
             <WorkbenchSelect
               label="اولویت"
               value={priority}
@@ -146,9 +181,13 @@ export function NewRequestDialog({
             />
           </label>
           <label className="space-y-2 text-sm font-semibold">
-            <span>مرجع پرونده مرتبط</span>
+            <span className="flex items-center gap-2">
+              <Link2 className="size-4 text-primary" aria-hidden="true" />
+              مرجع پرونده مرتبط
+            </span>
             <Input
               maxLength={200}
+              placeholder="اختیاری؛ شماره پرونده یا قرارداد"
               value={reference}
               onChange={(e) => setReference(e.target.value)}
             />
@@ -163,17 +202,24 @@ export function NewRequestDialog({
               <Alert title={success} />
             </div>
           ) : null}
-          <div className="flex gap-3 sm:col-span-2">
-            <Button type="submit" disabled={pending || !branchId}>
-              {pending ? 'در حال ثبت…' : 'ثبت درخواست'}
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-            >
-              بستن فرم
-            </Button>
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-5 sm:col-span-2">
+            <p className="text-xs text-muted-foreground">
+              پس از ثبت، کد پیگیری در همین میزکار نمایش داده می‌شود.
+            </p>
+            <div className="flex gap-3">
+              <Button type="submit" disabled={pending || !branchId}>
+                <Send className="size-4" aria-hidden="true" />
+                {pending ? 'در حال ثبت…' : 'ثبت و پیگیری درخواست'}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={pending}
+                onClick={() => onOpenChange(false)}
+              >
+                انصراف
+              </Button>
+            </div>
           </div>
         </form>
       </DialogContent>

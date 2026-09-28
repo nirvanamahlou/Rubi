@@ -1,5 +1,6 @@
 import { createCipheriv, createDecipheriv, randomBytes } from 'node:crypto';
-import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { constants } from 'node:fs';
+import { access, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { dirname, resolve, sep } from 'node:path';
 import { Readable } from 'node:stream';
 
@@ -36,6 +37,15 @@ export class LocalDocumentStorage {
       throw new Error('Document storage path escapes its private root.');
     }
     return fullPath;
+  }
+
+  /**
+   * Public module port for liveness consumers. It validates only the private
+   * storage root; no file, object key, or document metadata is disclosed.
+   */
+  async health(): Promise<void> {
+    await mkdir(this.quarantineRoot, { recursive: true, mode: 0o700 });
+    await access(this.quarantineRoot, constants.R_OK | constants.W_OK);
   }
 
   async putQuarantined(objectKey: string, contents: Buffer): Promise<void> {

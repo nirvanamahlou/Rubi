@@ -71,9 +71,9 @@ describe('real partner form fields', () => {
       } else {
         expect(html).toContain('تماس اصلی');
         expect(html).toContain('ابتدا سازمان را انتخاب کنید.');
-        expect(html).toContain('>ثبت سازمان جدید</button>');
+        expect(html).toContain('id="live-brokers-organizationId"');
       }
-      expect(html).toContain('افزودن خدمت');
+      expect(html).toContain(`id="live-${resource}-serviceCodes"`);
       expect(html.match(/<form\b/g)).toHaveLength(1);
     },
   );
@@ -86,7 +86,7 @@ describe('real partner form fields', () => {
         expect(html).not.toContain('افزودن مخاطب');
       } else {
         expect(html).toContain('value="Test Partner"');
-        expect(html).toContain('افزودن مخاطب');
+        expect(html).toContain('id="live-brokers-primaryContactId"');
         expect(html).not.toContain('ابتدا سازمان را انتخاب کنید.');
       }
       expect(html).toContain('پاک‌کردن خدمات قابل ارائه');

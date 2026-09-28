@@ -20,6 +20,23 @@ import { MasterTravelDirectory } from '../master-data/master-travel-directory';
 const UUID =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
+export function purchasableReservationService(
+  snapshot: SalesReservationRequestV1,
+  serviceClientKey: string,
+) {
+  const selected = snapshot.serviceSelections.find(
+    ({ clientKey }) => clientKey === serviceClientKey,
+  );
+  if (selected) return selected;
+  const hotel = snapshot.hotelSelection;
+  if (hotel?.serviceClientKey !== serviceClientKey) return undefined;
+  return {
+    clientKey: hotel.serviceClientKey,
+    kind: 'HOTEL' as const,
+    titleSnapshot: hotel.hotelNameSnapshot,
+  } as SalesReservationRequestV1['serviceSelections'][number];
+}
+
 export function validateServicePurchase(
   input: ReservationServicePurchaseInputV1,
 ) {
@@ -85,8 +102,9 @@ export class ReservationServicePurchaseService {
     if (!intake || !actor.branchIds.includes(intake.branchId))
       throw new NotFoundException('درخواست رزرواسیون در دسترس نیست.');
     const snapshot = intake.snapshot as unknown as SalesReservationRequestV1;
-    const service = snapshot.serviceSelections.find(
-      ({ clientKey }) => clientKey === input.serviceClientKey,
+    const service = purchasableReservationService(
+      snapshot,
+      input.serviceClientKey,
     );
     if (!service)
       throw new BadRequestException(

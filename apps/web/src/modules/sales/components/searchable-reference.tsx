@@ -6,6 +6,12 @@ import type { MasterDataRecord } from '@nora/contracts';
 import { FormField, Input } from '@/components/ui/form-controls';
 import { normalizeRouteSearch } from '../model/sales-form';
 
+export function salesReferenceDisplayName(
+  item: Pick<MasterDataRecord, 'name'>,
+) {
+  return item.name.trim();
+}
+
 export function SearchableReference({
   label,
   value,
@@ -26,11 +32,14 @@ export function SearchableReference({
   const [search, setSearch] = useState('');
   const [active, setActive] = useState(0);
   const selected = options.find((item) => item.id === value);
-  const matches = options.filter((item) =>
-    normalizeRouteSearch(
-      `${item.name} ${item.code} ${item.attributes?.englishName ?? ''}`,
-    ).includes(normalizeRouteSearch(search)),
-  );
+  const hasSearch = Boolean(search.trim());
+  const matches = hasSearch
+    ? options.filter((item) =>
+        normalizeRouteSearch(
+          `${item.name} ${item.code} ${item.attributes?.englishName ?? ''}`,
+        ).includes(normalizeRouteSearch(search)),
+      )
+    : [];
   const choose = (next: string) => {
     onChange(next);
     setOpen(false);
@@ -65,7 +74,13 @@ export function SearchableReference({
               disabled ? 'ابتدا کشور را انتخاب کنید' : 'جست‌وجو و انتخاب…'
             }
             className="h-10 rounded-xl pe-9 ps-9 text-sm"
-            value={open ? search : (selected?.name ?? '')}
+            value={
+              open
+                ? search
+                : selected
+                  ? salesReferenceDisplayName(selected)
+                  : ''
+            }
             onFocus={() => {
               setOpen(true);
               setSearch('');
@@ -130,19 +145,18 @@ export function SearchableReference({
                   onMouseDown={(event) => event.preventDefault()}
                   onClick={() => choose(item.id)}
                 >
-                  <span>
-                    {item.name}{' '}
-                    <span className="text-xs text-muted-foreground">
-                      {item.code}
-                    </span>
-                  </span>
+                  <span>{salesReferenceDisplayName(item)}</span>
                   {item.id === value ? (
                     <Check aria-hidden="true" className="size-4" />
                   ) : null}
                 </li>
               ))}
             </ul>
-            {!matches.length ? (
+            {!hasSearch ? (
+              <p role="status" className="p-3 text-sm text-muted-foreground">
+                برای نمایش گزینه‌ها، نام یا کد را جست‌وجو کنید.
+              </p>
+            ) : !matches.length ? (
               <p role="status" className="p-3 text-sm text-muted-foreground">
                 موردی پیدا نشد.
               </p>

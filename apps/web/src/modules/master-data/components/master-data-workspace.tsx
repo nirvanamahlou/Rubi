@@ -299,7 +299,10 @@ export function MasterDataWorkspace({
                 </p>
               </div>
               <div className="overflow-x-auto p-4">
-                <table className="w-full min-w-[32rem] text-sm">
+                <table
+                  aria-label={`پیش‌نمایش ${definition.label}`}
+                  className="w-full min-w-[32rem] text-sm"
+                >
                   <thead>
                     <tr>
                       <th className="p-2 text-start">نقش</th>

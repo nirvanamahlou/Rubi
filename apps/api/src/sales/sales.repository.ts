@@ -96,6 +96,61 @@ export class SalesRepository {
     });
   }
 
+  customerDocumentDeliveryCandidates(
+    branchIds: readonly string[],
+    contractNumber?: string,
+  ) {
+    if (!branchIds.length) return Promise.resolve([]);
+    const query = contractNumber?.trim();
+    return this.database.client.salesContract.findMany({
+      where: {
+        branchId: { in: [...branchIds] },
+        ...(query
+          ? {
+              contractNumber: {
+                contains: query,
+                mode: 'insensitive' as const,
+              },
+            }
+          : {}),
+      },
+      select: {
+        id: true,
+        contractNumber: true,
+        branchId: true,
+        ownerUserId: true,
+        customerNameSnapshot: true,
+        settlementStatus: true,
+        payments: {
+          where: { status: 'FINANCE_CONFIRMED' },
+          select: { id: true },
+          take: 1,
+        },
+      },
+      orderBy: [{ updatedAt: 'desc' }, { id: 'asc' }],
+      take: 100,
+    });
+  }
+
+  financeCustomerDocumentDeliveryFacts(
+    contractId: string,
+    branchIds: readonly string[],
+  ) {
+    return this.database.client.salesContract.findFirst({
+      where: { id: contractId, branchId: { in: [...branchIds] } },
+      select: {
+        id: true,
+        branchId: true,
+        ownerUserId: true,
+        settlementStatus: true,
+        payments: {
+          where: { status: 'FINANCE_CONFIRMED' },
+          select: { id: true },
+          take: 1,
+        },
+      },
+    });
+  }
   pendingReservationRequests() {
     return this.database.client.salesReservationRequest.findMany({
       where: {
@@ -226,7 +281,12 @@ export class SalesRepository {
       ],
     };
     const page = Math.max(1, query.page ?? 1);
-    const pageSize = Math.min(100, Math.max(1, query.pageSize ?? 20));
+    // Date-filtered contract lists are intentionally expanded for operational review.
+    // The regular list remains capped to keep the default dashboard responsive.
+    const pageSize = Math.min(
+      query.createdFrom || query.createdTo ? 10_000 : 100,
+      Math.max(1, query.pageSize ?? 20),
+    );
     const sortBy = query.sortBy ?? 'updatedAt';
     const sortDirection = query.sortDirection ?? 'desc';
     if (exportLimit) {
@@ -755,6 +815,7 @@ export class SalesRepository {
     contractId: string;
     paymentId: string;
     financePaymentReference: string;
+    receiptAccountId: string;
     financeConfirmationId: string;
     confirmedAt: string;
     reviewedByUserId?: string;
@@ -773,6 +834,7 @@ export class SalesRepository {
           data: {
             status: 'FINANCE_CONFIRMED',
             financePaymentReference: event.financePaymentReference,
+            financeReceiptAccountId: event.receiptAccountId,
             financeConfirmedByRef: event.financeConfirmationId,
             financeConfirmedAt: new Date(event.confirmedAt),
             financeDecisionReason: event.reason?.trim() || null,
@@ -836,6 +898,7 @@ export class SalesRepository {
               afterSnapshot: {
                 paymentId: event.paymentId,
                 financePaymentReference: event.financePaymentReference,
+                receiptAccountId: event.receiptAccountId,
               },
             },
           });

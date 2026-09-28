@@ -26,6 +26,7 @@ import type {
 } from '@nora/contracts';
 
 import { Button } from '@/components/ui/button';
+import { useSystemPreferences } from '@/components/system-preferences-provider';
 import {
   Select,
   SelectContent,
@@ -200,6 +201,8 @@ function IssuerMark({
 }
 
 export function LegalEntityContextSelector() {
+  const { language } = useSystemPreferences();
+  const english = language === 'en';
   const state = useLegalEntityContext();
   const choices = legalEntityChoices(state.entities, state.canAggregate);
   const selection = state.context?.selection;
@@ -220,23 +223,29 @@ export function LegalEntityContextSelector() {
   if (state.loading) {
     selector = (
       <div
-        aria-label="در حال دریافت شرکت فعال"
+        aria-label={
+          english ? 'Loading active company' : 'در حال دریافت شرکت فعال'
+        }
         className="flex h-11 min-w-36 items-center gap-2 rounded-xl bg-muted/70 px-3 text-xs text-muted-foreground"
       >
         <LoaderCircle className="size-4 animate-spin" />
-        شرکت فعال
+        {english ? 'Active company' : 'شرکت فعال'}
       </div>
     );
   } else if (state.error && !state.context) {
     selector = (
       <Button
-        aria-label="تلاش دوباره برای دریافت شرکت فعال"
+        aria-label={
+          english
+            ? 'Retry loading the active company'
+            : 'تلاش دوباره برای دریافت شرکت فعال'
+        }
         onClick={() => void state.reload()}
         size="sm"
         variant="outline"
       >
         <AlertCircle className="size-4 text-destructive" />
-        شرکت فعال
+        {english ? 'Active company' : 'شرکت فعال'}
         <RefreshCw className="size-3" />
       </Button>
     );
@@ -254,7 +263,7 @@ export function LegalEntityContextSelector() {
           value={selection ?? ''}
         >
           <SelectTrigger
-            aria-label="انتخاب شرکت فعال"
+            aria-label={english ? 'Select active company' : 'انتخاب شرکت فعال'}
             className={cn(
               'border-0 bg-muted/70 px-2.5',
               state.error && 'ring-1 ring-destructive',
@@ -264,17 +273,24 @@ export function LegalEntityContextSelector() {
               <IssuerMark selection={selection} />
               <span className="min-w-0 text-start">
                 <span className="block text-[10px] text-muted-foreground">
-                  شرکت فعال
+                  {english ? 'Active company' : 'شرکت فعال'}
                 </span>
                 <span className="block truncate text-xs font-bold sm:text-sm">
                   {selection
-                    ? legalEntitySelectionLabel(selection, state.entities)
-                    : 'انتخاب شرکت'}
+                    ? english
+                      ? selection === 'ALL'
+                        ? 'All companies'
+                        : (state.entities.find(({ code }) => code === selection)
+                            ?.latinName ?? selection.replaceAll('_', ' '))
+                      : legalEntitySelectionLabel(selection, state.entities)
+                    : english
+                      ? 'Select company'
+                      : 'انتخاب شرکت'}
                 </span>
               </span>
               {selection === 'ALL' ? (
                 <Badge className="hidden bg-violet-100 text-[10px] text-violet-700 sm:inline-flex">
-                  تجمیعی
+                  {english ? 'Combined' : 'تجمیعی'}
                 </Badge>
               ) : null}
             </span>
@@ -288,7 +304,12 @@ export function LegalEntityContextSelector() {
                   ) : (
                     <Building2 className="size-4 text-primary" />
                   )}
-                  {choice.label}
+                  {english
+                    ? choice.aggregate
+                      ? 'All companies — administrators'
+                      : (choice.entity?.latinName ??
+                        choice.value.replaceAll('_', ' '))
+                    : choice.label}
                 </span>
               </SelectItem>
             ))}
@@ -296,7 +317,9 @@ export function LegalEntityContextSelector() {
         </Select>
         <span aria-live="polite" className="sr-only">
           {state.switching
-            ? 'در حال تغییر شرکت فعال'
+            ? english
+              ? 'Changing active company'
+              : 'در حال تغییر شرکت فعال'
             : (state.feedback ?? state.error)}
         </span>
         {state.feedback ? (

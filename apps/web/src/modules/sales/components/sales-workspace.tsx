@@ -26,6 +26,7 @@ import type {
 } from '@nora/contracts';
 
 import { Button, buttonVariants } from '@/components/ui/button';
+import { DatePicker } from '@/components/ui/date-picker';
 import {
   Badge,
   Card,
@@ -39,6 +40,13 @@ import { ContractPayments } from './contract-payments';
 import { SalesTravelDocuments } from './sales-travel-documents';
 import { ContractOutputButton } from './contract-output';
 
+export const DEFAULT_CONTRACT_PAGE_SIZE = 20;
+export const DATE_FILTERED_CONTRACT_PAGE_SIZE = 10_000;
+
+export function hasContractDateFilter(query: SalesContractListQuery): boolean {
+  return Boolean(query.createdFrom || query.createdTo);
+}
+
 export async function loadSalesWorkspace(
   api: Pick<typeof salesApi, 'dashboard' | 'list'> = salesApi,
   query: SalesContractListQuery = {},
@@ -46,11 +54,13 @@ export async function loadSalesWorkspace(
   const [dashboard, contracts] = await Promise.allSettled([
     api.dashboard(),
     api.list({
-      page: 1,
-      pageSize: 20,
-      sortBy: 'updatedAt',
-      sortDirection: 'desc',
       ...query,
+      page: query.page ?? 1,
+      pageSize: hasContractDateFilter(query)
+        ? DATE_FILTERED_CONTRACT_PAGE_SIZE
+        : DEFAULT_CONTRACT_PAGE_SIZE,
+      sortBy: query.sortBy ?? 'updatedAt',
+      sortDirection: query.sortDirection ?? 'desc',
     }),
   ]);
   return { dashboard, contracts };
@@ -88,6 +98,8 @@ export function SalesWorkspace() {
   const [contracts, setContracts] = useState<SalesContractPage['data']>([]);
   const [query, setQuery] = useState<SalesContractListQuery>({});
   const [search, setSearch] = useState('');
+  const [createdFrom, setCreatedFrom] = useState('');
+  const [createdTo, setCreatedTo] = useState('');
   const [total, setTotal] = useState(0);
   const requestVersion = useRef(0);
   const [loading, setLoading] = useState(true);
@@ -96,6 +108,13 @@ export function SalesWorkspace() {
   const [exporting, setExporting] = useState(false);
   const [exportError, setExportError] = useState('');
   const [exportNotice, setExportNotice] = useState('');
+  const dateRangeInvalid = Boolean(
+    createdFrom && createdTo && createdFrom > createdTo,
+  );
+  const dateFilterApplied = hasContractDateFilter(query);
+  const filtersApplied = Boolean(
+    query.search || query.settlementStatus || dateFilterApplied,
+  );
   async function downloadExcel() {
     setExporting(true);
     setExportError('');
@@ -300,14 +319,22 @@ export function SalesWorkspace() {
           </p>
         ) : null}
         <form
-          className="grid gap-2 rounded-2xl border border-border/70 bg-muted/25 p-2 sm:grid-cols-[minmax(0,1fr)_14rem_auto_auto] sm:items-center"
+          className="grid gap-2 rounded-2xl border border-border/70 bg-muted/25 p-2 sm:grid-cols-[minmax(16rem,1fr)_11rem_11rem_14rem_auto_auto] sm:items-end"
           onSubmit={(event) => {
             event.preventDefault();
-            setQuery((current) => ({
-              ...current,
-              search: search.trim(),
-              page: 1,
-            }));
+            if (dateRangeInvalid) return;
+            setQuery((current) => {
+              const next: SalesContractListQuery = {
+                ...current,
+                search: search.trim(),
+                page: 1,
+              };
+              if (createdFrom) next.createdFrom = createdFrom;
+              else delete next.createdFrom;
+              if (createdTo) next.createdTo = createdTo;
+              else delete next.createdTo;
+              return next;
+            });
           }}
         >
           <div className="flex min-w-48 items-center gap-2 rounded-xl border border-border bg-surface px-3 shadow-sm focus-within:ring-2 focus-within:ring-primary/30">
@@ -343,41 +370,74 @@ export function SalesWorkspace() {
               { value: 'OVERPAID', label: 'بستانکار' },
             ]}
           />
-          <Button type="submit" variant="outline" disabled={loading}>
+          <DatePicker
+            aria-label="از تاریخ ثبت قرارداد"
+            value={createdFrom}
+            onChange={setCreatedFrom}
+            placeholder="از تاریخ ثبت"
+          />
+          <DatePicker
+            aria-label="تا تاریخ ثبت قرارداد"
+            value={createdTo}
+            onChange={setCreatedTo}
+            placeholder="تا تاریخ ثبت"
+          />
+          <Button
+            type="submit"
+            variant="outline"
+            disabled={loading || dateRangeInvalid}
+          >
             جست‌وجو
           </Button>
-          {query.search || query.settlementStatus ? (
+          {filtersApplied ? (
             <Button
               type="button"
               variant="ghost"
               onClick={() => {
                 setSearch('');
+                setCreatedFrom('');
+                setCreatedTo('');
                 setQuery({});
               }}
             >
               پاک کردن فیلترها
             </Button>
           ) : null}
+          {dateRangeInvalid ? (
+            <p
+              role="alert"
+              className="sm:col-span-full text-xs text-destructive"
+            >
+              تاریخ پایان نباید قبل از تاریخ شروع باشد.
+            </p>
+          ) : null}
         </form>
+        <p className="mt-3 text-xs text-muted-foreground">
+          {dateFilterApplied
+            ? 'همهٔ قراردادهای بازهٔ تاریخ ثبت انتخاب‌شده نمایش داده می‌شوند.'
+            : 'بدون فیلتر تاریخ، فقط ۲۰ قراردادِ آخر نمایش داده می‌شود.'}
+        </p>
       </section>
       {!loading && !error && contracts.length === 0 ? (
         <EmptyState
           title={
-            query.search || query.settlementStatus
+            filtersApplied
               ? 'قراردادی با این فیلترها پیدا نشد'
               : 'اولین قرارداد سفر را ثبت کنید'
           }
           description={
-            query.search || query.settlementStatus
+            filtersApplied
               ? 'عبارت جست‌وجو یا وضعیت تسویه را تغییر دهید.'
               : 'مشتری و خدمات سفر را انتخاب کنید؛ قرارداد و پیگیری پرداخت‌ها از همین‌جا در دسترس خواهند بود.'
           }
           action={
-            query.search || query.settlementStatus ? (
+            filtersApplied ? (
               <Button
                 variant="outline"
                 onClick={() => {
                   setSearch('');
+                  setCreatedFrom('');
+                  setCreatedTo('');
                   setQuery({});
                 }}
               >
@@ -397,10 +457,13 @@ export function SalesWorkspace() {
         />
       ) : null}
       {contracts.length && !loading ? (
-        <Card className="overflow-hidden rounded-3xl border border-border/80 bg-surface shadow-sm">
+        <Card className="overflow-hidden rounded-2xl border border-border/80 bg-surface shadow-md shadow-primary/[0.035]">
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[66rem] text-sm">
-              <thead className="bg-gradient-to-l from-muted/80 via-muted/45 to-transparent text-xs font-bold text-muted-foreground">
+            <table className="w-full min-w-[71rem] text-sm">
+              <caption className="sr-only">
+                فهرست قراردادهای فروش؛ عملیات هر قرارداد در ستون آخر قرار دارد.
+              </caption>
+              <thead className="bg-gradient-to-l from-primary/[0.10] via-muted/70 to-surface text-xs font-bold text-muted-foreground">
                 <tr>
                   {[
                     'شماره',
@@ -410,10 +473,10 @@ export function SalesWorkspace() {
                     'تسویه',
                     'مانده',
                     'آخرین تغییر',
-                    'پرداخت‌ها',
+                    'عملیات',
                   ].map((label) => (
                     <th
-                      className="px-5 py-3.5 text-start whitespace-nowrap"
+                      className="px-4 py-3 text-start whitespace-nowrap first:pr-5 last:pl-5"
                       key={label}
                     >
                       {label}
@@ -424,26 +487,26 @@ export function SalesWorkspace() {
               <tbody>
                 {contracts.map((contract) => (
                   <tr
-                    className="group border-t border-border/70 transition-colors hover:bg-primary/[0.035]"
+                    className="group border-t border-border/70 transition-colors odd:bg-muted/[0.12] hover:bg-primary/[0.055]"
                     key={contract.id}
                   >
-                    <td className="px-5 py-4 font-bold">
-                      <div className="inline-flex items-center gap-2 rounded-xl border border-primary/15 bg-primary/[0.055] px-2.5 py-1.5 text-primary">
-                        <FileText className="size-4" />
+                    <td className="px-4 py-3 font-bold first:pr-5">
+                      <div className="inline-flex items-center gap-2 rounded-lg border border-primary/15 bg-primary/[0.055] px-2.5 py-1.5 text-primary shadow-sm">
+                        <FileText className="size-3.5" />
                         <span dir="ltr">{contract.contractNumber}</span>
                       </div>
                     </td>
-                    <td className="px-5 py-4">
+                    <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
-                        <span className="grid size-8 shrink-0 place-items-center rounded-full bg-sky-500/10 text-xs font-black text-sky-700 dark:text-sky-300">
+                        <span className="grid size-8 shrink-0 place-items-center rounded-full border border-sky-500/10 bg-sky-500/10 text-xs font-black text-sky-700 dark:text-sky-300">
                           {contract.customerNameSnapshot.slice(0, 1)}
                         </span>
-                        <span className="font-semibold text-foreground">
+                        <span className="max-w-40 truncate font-semibold text-foreground">
                           {contract.customerNameSnapshot}
                         </span>
                       </div>
                     </td>
-                    <td className="px-5 py-4">
+                    <td className="px-4 py-3">
                       <div className="flex items-center gap-1.5 font-semibold text-foreground">
                         <UsersRound className="size-4 text-primary" />
                         <p>
@@ -453,7 +516,7 @@ export function SalesWorkspace() {
                           مسافر
                         </p>
                       </div>
-                      <p className="mt-1.5 max-w-52 text-xs leading-5 text-muted-foreground">
+                      <p className="mt-1 max-w-52 text-xs leading-5 text-muted-foreground">
                         {contract.services
                           .map(
                             (kind) =>
@@ -473,8 +536,8 @@ export function SalesWorkspace() {
                           .join('، ')}
                       </p>
                     </td>
-                    <td className="px-5 py-4">
-                      <Badge className="rounded-full border border-primary/10 bg-primary/[0.07] px-2.5 py-1 text-primary">
+                    <td className="px-4 py-3">
+                      <Badge className="rounded-full border border-primary/10 bg-primary/[0.07] px-2.5 py-1 text-primary shadow-sm">
                         {
                           {
                             DRAFT: 'پیش‌نویس',
@@ -488,7 +551,7 @@ export function SalesWorkspace() {
                         }
                       </Badge>
                     </td>
-                    <td className="px-5 py-4">
+                    <td className="px-4 py-3">
                       <Badge
                         className={
                           contract.settlementStatus === 'SETTLED'
@@ -510,40 +573,42 @@ export function SalesWorkspace() {
                           contract.settlementStatus}
                       </Badge>
                     </td>
-                    <td className="px-5 py-4 font-semibold text-foreground">
-                      {contract.balances
-                        .map((balance) =>
-                          formatMoney(
-                            balance.outstanding,
-                            balance.currencyCode,
-                          ),
-                        )
-                        .join(' + ')}
+                    <td className="px-4 py-3 font-semibold text-foreground">
+                      <div className="max-w-44 text-xs leading-5">
+                        {contract.balances
+                          .map((balance) =>
+                            formatMoney(
+                              balance.outstanding,
+                              balance.currencyCode,
+                            ),
+                          )
+                          .join(' + ')}
+                      </div>
                     </td>
-                    <td className="px-5 py-4 text-muted-foreground">
+                    <td className="px-4 py-3 text-xs text-muted-foreground">
                       {new Date(contract.updatedAt).toLocaleDateString('fa-IR')}
                     </td>
-                    <td className="px-5 py-4">
-                      <div className="flex w-60 min-w-60 flex-col gap-1.5">
+                    <td className="px-4 py-3 last:pl-5">
+                      <div className="grid min-w-72 grid-cols-3 gap-1.5">
                         <Button
                           size="sm"
                           variant="outline"
-                          className="w-full justify-start bg-surface"
+                          className="h-8 min-w-0 bg-surface px-2 text-xs shadow-sm"
                           onClick={() => setPaymentContractId(contract.id)}
                         >
                           <ReceiptText className="size-3.5" />
-                          پرداخت‌ها و اقساط
+                          پرداخت‌ها
                         </Button>
-                        <div className="flex flex-col gap-1.5">
-                          <ContractOutputButton
-                            contractId={contract.id}
-                            className="w-full justify-start"
-                          />
-                          <SalesTravelDocuments
-                            contractId={contract.id}
-                            className="w-full justify-start"
-                          />
-                        </div>
+                        <ContractOutputButton
+                          contractId={contract.id}
+                          label="PDF قرارداد"
+                          className="h-8 min-w-0 px-2 text-xs shadow-sm"
+                        />
+                        <SalesTravelDocuments
+                          contractId={contract.id}
+                          label="مدارک"
+                          className="h-8 min-w-0 px-2 text-xs shadow-sm"
+                        />
                       </div>
                     </td>
                   </tr>
@@ -553,7 +618,10 @@ export function SalesWorkspace() {
           </div>
         </Card>
       ) : null}
-      {!loading && !error && total > 20 ? (
+      {!loading &&
+      !error &&
+      !dateFilterApplied &&
+      total > DEFAULT_CONTRACT_PAGE_SIZE ? (
         <nav
           aria-label="صفحه‌بندی قراردادها"
           className="flex items-center justify-between"
@@ -572,11 +640,13 @@ export function SalesWorkspace() {
           </Button>
           <span className="text-sm text-muted-foreground">
             صفحه {(query.page ?? 1).toLocaleString('fa-IR')} از{' '}
-            {Math.ceil(total / 20).toLocaleString('fa-IR')}
+            {Math.ceil(total / DEFAULT_CONTRACT_PAGE_SIZE).toLocaleString(
+              'fa-IR',
+            )}
           </span>
           <Button
             variant="outline"
-            disabled={(query.page ?? 1) * 20 >= total}
+            disabled={(query.page ?? 1) * DEFAULT_CONTRACT_PAGE_SIZE >= total}
             onClick={() =>
               setQuery((current) => ({
                 ...current,
@@ -596,6 +666,8 @@ export function SalesWorkspace() {
           onSaved={() => void load()}
           onSearchContracts={(reference) => {
             setSearch(reference);
+            setCreatedFrom('');
+            setCreatedTo('');
             setQuery(paymentReferenceSearchQuery(reference));
             setPaymentContractId(null);
             contractsSearchPanel.current?.scrollIntoView({

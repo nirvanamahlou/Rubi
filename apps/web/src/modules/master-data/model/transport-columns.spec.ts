@@ -29,11 +29,13 @@ describe('mockup column coverage', () => {
       'ICAO',
       'ایرلاین',
       'کشور',
-      'سازمان',
       'لوگو Reference',
       'Integration Connection',
       'Version / Audit',
     ]);
+    expect(
+      transportColumns('airlines').map(([, label]) => label),
+    ).not.toContain('سازمان');
     expect(
       transportColumns('aircraft-types').map(([, label]) => label),
     ).toEqual([

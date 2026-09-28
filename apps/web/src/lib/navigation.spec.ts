@@ -7,6 +7,7 @@ import {
   isNavigationItemActive,
   navigationItems,
   salesPricingSubsection,
+  salesSubsections,
 } from './navigation';
 
 const expectedRoutes = [
@@ -92,6 +93,15 @@ describe('CRM navigation', () => {
     );
     expect(
       groupedNavigationItems
+        .find((group) => group.id === 'operations')
+        ?.items.map((item) => item.href),
+    ).toEqual([
+      '/reservations',
+      '/reservations/hotel-rates',
+      '/ticket-management',
+    ]);
+    expect(
+      groupedNavigationItems
         .find((group) => group.id === 'hr')
         ?.items.map((item) => item.href),
     ).toEqual(['/human-resources', '/purchases']);
@@ -175,6 +185,14 @@ describe('CRM navigation', () => {
     expect(getNavigationBreadcrumbs('/sales/pricing')).toEqual([
       { href: '/sales', title: 'قرارداد' },
       { href: '/sales/pricing', title: 'مدیریت قیمت و پکیج‌ها' },
+    ]);
+    expect(salesSubsections[0]).toEqual({
+      href: '/sales/ticket-prices',
+      title: 'قیمت بلیط',
+    });
+    expect(getNavigationBreadcrumbs('/sales/ticket-prices')).toEqual([
+      { href: '/sales', title: 'قرارداد' },
+      { href: '/sales/ticket-prices', title: 'قیمت بلیط' },
     ]);
   });
 

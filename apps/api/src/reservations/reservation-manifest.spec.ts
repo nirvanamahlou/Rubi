@@ -71,12 +71,16 @@ describe('Iran Airtour Antalya MANIFEST', () => {
 describe('MANIFEST financial delivery gate', () => {
   it('stops before reading travel or passenger details while Finance is locked', async () => {
     const workflow = {
-      detail: vi.fn().mockResolvedValue({ snapshot: {} }),
+      detail: vi
+        .fn()
+        .mockResolvedValue({ contractId: 'contract', snapshot: {} }),
     };
     const customers = { detail: vi.fn() };
     const directory = { cityReference: vi.fn() };
     const delivery = {
-      read: vi.fn().mockResolvedValue({ approved: false, version: 0 }),
+      readCustomerContract: vi
+        .fn()
+        .mockResolvedValue({ approved: false, version: 0 }),
     };
     const service = new ReservationManifestService(
       workflow as never,
@@ -96,7 +100,7 @@ describe('MANIFEST financial delivery gate', () => {
         ],
       } as never),
     ).rejects.toThrow('تأیید تحویل مدارک');
-    expect(delivery.read).toHaveBeenCalledWith('request');
+    expect(delivery.readCustomerContract).toHaveBeenCalledWith('contract');
     expect(directory.cityReference).not.toHaveBeenCalled();
     expect(customers.detail).not.toHaveBeenCalled();
   });
@@ -292,7 +296,9 @@ describe('MANIFEST date-range history', () => {
           .mockResolvedValue({ name: 'آنتالیا', englishName: 'ANTALYA' }),
       } as never,
       {
-        read: vi.fn().mockResolvedValue({ approved: true, version: 1 }),
+        readCustomerContract: vi
+          .fn()
+          .mockResolvedValue({ approved: true, version: 1 }),
       } as never,
       database as never,
     );

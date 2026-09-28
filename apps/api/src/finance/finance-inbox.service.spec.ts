@@ -233,9 +233,143 @@ describe('FinanceInboxService', () => {
           paymentId: 'payment-1',
           contractId: 'contract-1',
           branchId: 'branch-a',
+          currencyCode: 'IRR',
         },
       ]),
       applyFinancePaymentConfirmed: vi.fn().mockResolvedValue('confirmed'),
+    };
+    const accountLookup = vi.fn().mockResolvedValue({ id: 'account-1' });
+    const service = new FinanceInboxService(
+      sales as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      {
+        client: {
+          financeSettlementAccount: { findFirst: accountLookup },
+        },
+      } as never,
+      emptyTicketPurchases() as never,
+      emptyTicketCosts() as never,
+    );
+    await expect(
+      service.decideReceipt(
+        'payment-1',
+        {
+          version: 1,
+          contractId: 'contract-1',
+          action: 'APPROVE',
+          accountId: 'account-1',
+        },
+        actor,
+      ),
+    ).resolves.toEqual({ status: 'RECEIPT_CONFIRMED' });
+    expect(accountLookup).toHaveBeenCalledWith({
+      where: {
+        id: 'account-1',
+        branchId: 'branch-a',
+        currencyCode: 'IRR',
+        isActive: true,
+      },
+      select: { id: true },
+    });
+    expect(sales.applyFinancePaymentConfirmed).toHaveBeenCalledWith(
+      expect.objectContaining({
+        contractId: 'contract-1',
+        paymentId: 'payment-1',
+        receiptAccountId: 'account-1',
+        reviewedByUserId: 'finance-user',
+      }),
+    );
+  });
+
+  it('issues customer document delivery after a confirmed receipt without checking supplier purchases', async () => {
+    const sales = {
+      financeInbox: vi.fn().mockResolvedValue([
+        {
+          paymentId: 'payment-1',
+          contractId: 'contract-1',
+          branchId: 'branch-a',
+          currencyCode: 'IRR',
+        },
+      ]),
+      applyFinancePaymentConfirmed: vi.fn().mockResolvedValue('confirmed'),
+      financeCustomerDocumentDeliveryFacts: vi.fn().mockResolvedValue({
+        contractId: 'contract-1',
+        branchId: 'branch-a',
+        salesOwnerUserId: 'sales-owner',
+        hasConfirmedPayment: true,
+        fullySettled: false,
+      }),
+    };
+    const updateCustomerContract = vi.fn().mockResolvedValue({
+      version: 1,
+      approved: true,
+      basis: 'AFTER_RECEIPT',
+      reason: 'تأیید دریافت مشتری',
+      exceptionExpiresAt: null,
+      updatedAt: '2026-09-20T00:00:00.000Z',
+      updatedByUserId: 'finance-user',
+    });
+    const service = new FinanceInboxService(
+      sales as never,
+      {} as never,
+      {} as never,
+      {
+        readCustomerContract: vi.fn().mockResolvedValue({ version: 0 }),
+        updateCustomerContract,
+      } as never,
+      {
+        client: {
+          financeSettlementAccount: {
+            findFirst: vi.fn().mockResolvedValue({ id: 'account-1' }),
+          },
+        },
+      } as never,
+      emptyTicketPurchases() as never,
+      emptyTicketCosts() as never,
+    );
+
+    await expect(
+      service.decideReceipt(
+        'payment-1',
+        {
+          version: 1,
+          contractId: 'contract-1',
+          action: 'APPROVE',
+          accountId: 'account-1',
+          documentDelivery: {
+            approved: true,
+            basis: 'AFTER_RECEIPT',
+            reason: 'تأیید دریافت مشتری',
+          },
+        },
+        actor,
+      ),
+    ).resolves.toMatchObject({
+      status: 'RECEIPT_CONFIRMED',
+      documentDelivery: { approved: true, basis: 'AFTER_RECEIPT' },
+    });
+    expect(updateCustomerContract).toHaveBeenCalledWith(
+      expect.objectContaining({ expectedVersion: 0, basis: 'AFTER_RECEIPT' }),
+      expect.objectContaining({
+        contractId: 'contract-1',
+        hasConfirmedPayment: true,
+      }),
+      actor,
+    );
+  });
+  it('rejects a Sales receipt approval without a destination account', async () => {
+    const sales = {
+      financeInbox: vi.fn().mockResolvedValue([
+        {
+          paymentId: 'payment-1',
+          contractId: 'contract-1',
+          branchId: 'branch-a',
+          currencyCode: 'IRR',
+        },
+      ]),
+      applyFinancePaymentConfirmed: vi.fn(),
     };
     const service = new FinanceInboxService(
       sales as never,
@@ -252,14 +386,8 @@ describe('FinanceInboxService', () => {
         { version: 1, contractId: 'contract-1', action: 'APPROVE' },
         actor,
       ),
-    ).resolves.toEqual({ status: 'RECEIPT_CONFIRMED' });
-    expect(sales.applyFinancePaymentConfirmed).toHaveBeenCalledWith(
-      expect.objectContaining({
-        contractId: 'contract-1',
-        paymentId: 'payment-1',
-        reviewedByUserId: 'finance-user',
-      }),
-    );
+    ).rejects.toThrow();
+    expect(sales.applyFinancePaymentConfirmed).not.toHaveBeenCalled();
   });
 
   it('sends a Sales receipt back for correction with the required reason', async () => {

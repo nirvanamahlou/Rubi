@@ -488,7 +488,9 @@ export function validateProduct(
     reference(resolve, 'flightClass', input.flightClassId, ready);
     reference(resolve, 'baggage', input.baggageId, ready);
   }
-  const currency = reference(resolve, 'currency', input.fare.currencyId, ready);
+  // Purchase pricing is completed later by Finance. A suggested currency may
+  // be validated when supplied, but it must never block ticket sale status.
+  const currency = reference(resolve, 'currency', input.fare.currencyId, false);
   ensure(
     !input.fare.currencyCode || /^[A-Z]{3}$/.test(input.fare.currencyCode),
     'کد ارز باید سه حرف بزرگ باشد.',

@@ -27,6 +27,12 @@ describe('documents upload validation', () => {
     });
   });
 
+  it('honours the active system-management upload ceiling below the platform cap', () => {
+    expect(
+      validateUploadFile({ ...validPdf, sizeBytes: 2_048 }, 1_024).errors,
+    ).toContain('FILE_TOO_LARGE');
+  });
+
   it('rejects executable, fake MIME, oversized and malformed checksum inputs', () => {
     const result = validateUploadFile({
       ...validPdf,

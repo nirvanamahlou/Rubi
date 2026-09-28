@@ -661,7 +661,10 @@ export function MasterDataSuppliersWorkspace() {
     if (tab === 'suppliers')
       return (
         <Card className="overflow-x-auto">
-          <table className="w-full min-w-[78rem] text-sm">
+          <table
+            aria-label="فهرست تأمین‌کنندگان"
+            className="w-full min-w-[78rem] text-sm"
+          >
             <thead className="bg-muted/50 text-muted-foreground">
               <tr>
                 {[
@@ -732,7 +735,10 @@ export function MasterDataSuppliersWorkspace() {
     if (tab === 'brokers')
       return (
         <Card className="overflow-x-auto">
-          <table className="w-full min-w-[78rem] text-sm">
+          <table
+            aria-label="فهرست کارگزاران"
+            className="w-full min-w-[78rem] text-sm"
+          >
             <thead className="bg-muted/50 text-muted-foreground">
               <tr>
                 {[

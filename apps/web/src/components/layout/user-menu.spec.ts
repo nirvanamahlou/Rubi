@@ -48,6 +48,17 @@ describe('authenticated user menu integration', () => {
     expect(shellSource).toContain('<UserMenu />');
   });
 
+  it('loads and refreshes the persisted profile photo in the shared header', () => {
+    expect(menuSource).toContain('.profilePhoto()');
+    expect(menuSource).toContain('PROFILE_PHOTO_CHANGED_EVENT');
+    expect(menuSource).toContain('URL.createObjectURL(blob)');
+    expect(menuSource).toContain('className="size-full object-cover"');
+    expect(profileSource).toContain('uploadProfilePhoto({');
+    expect(profileSource).toContain(
+      'window.dispatchEvent(new Event(PROFILE_PHOTO_CHANGED_EVENT))',
+    );
+  });
+
   it('keeps access details read-only and separates personal preferences from session logs', () => {
     expect(profileSource).toContain('شعب مجاز');
     expect(profileSource).toContain('خلاصه دسترسی‌ها');

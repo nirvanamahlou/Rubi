@@ -6,6 +6,10 @@ import type {
   TourDepartureInputV1,
   TicketOfferV1,
   TicketOfferCreateV1,
+  TicketRoundTripSalePriceUpdateV1,
+  TicketSalePriceTargetCreateV1,
+  TicketSalePriceTargetV1,
+  TicketStandaloneSalePriceUpdateV1,
 } from '@nora/contracts';
 import { getPublicApiBaseUrl } from '@/lib/environment';
 import { refreshAuthenticatedSession } from '@/lib/auth-session';
@@ -48,6 +52,18 @@ const post = (body: unknown, branch: string, key: string): RequestInit => ({
   body: JSON.stringify(body),
 });
 export const toursApi = {
+  salePriceTargets: () =>
+    request<{ version: 1; data: TicketSalePriceTargetV1[] }>(
+      '/sale-price-targets',
+    ),
+  createSalePriceTarget: (
+    input: TicketSalePriceTargetCreateV1,
+    branch: string,
+  ) =>
+    request<{ data: TicketSalePriceTargetV1 }>(
+      '/sale-price-targets',
+      post(input, branch, crypto.randomUUID()),
+    ),
   packages: () => request<{ data: TourPackageV1[] }>('/tours/packages'),
   departures: () => request<{ data: TourDepartureV1[] }>('/tours/departures'),
   createPackage: (input: TourPackageInputV1, branch: string, key: string) =>
@@ -60,27 +76,96 @@ export const toursApi = {
       '/tours/departures',
       post(input, branch, key),
     ),
-  offers: async (originId: string, destinationId: string, day: string) => {
+  offers: async (
+    originId: string,
+    destinationId: string,
+    startsOn: string,
+    endsOn = startsOn,
+  ) => {
     const data: TicketOfferV1[] = [];
-    const departureFrom = new Date(`${day}T00:00:00+03:30`).toISOString();
+    const departureFrom = new Date(`${startsOn}T00:00:00+03:30`).toISOString();
     for (let page = 1; ; page++) {
       const result = await request<{ data: TicketOfferV1[]; hasMore: boolean }>(
-        `/offers?${new URLSearchParams({ originId, destinationId, departureFrom, departureTo: day, page: String(page) })}`,
+        `/offers?${new URLSearchParams({ originId, destinationId, departureFrom, departureTo: endsOn, page: String(page) })}`,
       );
       data.push(
-        ...result.data.filter(
-          (offer) =>
-            new Intl.DateTimeFormat('en-CA', {
-              timeZone: 'Asia/Tehran',
-              year: 'numeric',
-              month: '2-digit',
-              day: '2-digit',
-            }).format(new Date(offer.departureAt)) === day,
-        ),
+        ...result.data.filter((offer) => {
+          const localDay = new Intl.DateTimeFormat('en-CA', {
+            timeZone: 'Asia/Tehran',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+          }).format(new Date(offer.departureAt));
+          return localDay >= startsOn && localDay <= endsOn;
+        }),
       );
       if (!result.hasMore) return data;
     }
   },
+  managedOffers: () =>
+    request<{ version: 1; data: TicketOfferV1[] }>('/offers/management'),
+  archiveExpiredOffer: (id: string, expectedVersion: number) =>
+    request<{ data: { id: string; removedPriceRevisions: number } }>(
+      `/offers/${id}`,
+      {
+        method: 'DELETE',
+        body: JSON.stringify({ expectedVersion }),
+      },
+    ),
+  reviseOffer: (
+    id: string,
+    expectedVersion: number,
+    offer: TicketOfferCreateV1,
+  ) =>
+    request<{ data: { id: string; version: number } }>(`/offers/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ expectedVersion, offer }),
+    }),
+  updateOfferStatus: (
+    id: string,
+    expectedVersion: number,
+    status: 'ACTIVE' | 'PAUSED',
+  ) =>
+    request<{
+      data: { id: string; version: number; status: 'ACTIVE' | 'PAUSED' };
+    }>(`/offers/${id}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ expectedVersion, status }),
+    }),
+  updateStandaloneSalePrice: (
+    id: string,
+    input: TicketStandaloneSalePriceUpdateV1,
+    key: string,
+  ) =>
+    request<{
+      data: { revision: number; amount: string; currencyCode: string };
+    }>(`/offers/${id}/standalone-sale-price`, {
+      method: 'PATCH',
+      headers: { 'idempotency-key': key },
+      body: JSON.stringify(input),
+    }),
+  updateRoundTripSalePrice: (
+    outboundOfferId: string,
+    returnOfferId: string,
+    input: TicketRoundTripSalePriceUpdateV1,
+    key: string,
+  ) =>
+    request<{
+      data: { revision: number; amount: string; currencyCode: string };
+    }>(`/offers/${outboundOfferId}/round-trip-sale-price/${returnOfferId}`, {
+      method: 'PATCH',
+      headers: { 'idempotency-key': key },
+      body: JSON.stringify(input),
+    }),
   publishOffer: (input: TicketOfferCreateV1, branch: string, key: string) =>
     request<{ data: { id: string } }>('/offers', post(input, branch, key)),
+  temporaryHold: (
+    offerId: string,
+    input: { quantity: number; expiresAt: string },
+    branch: string,
+    key: string,
+  ) =>
+    request<{
+      data: { id: string; quantity: number; expiresAt: string; status: string };
+    }>(`/offers/${offerId}/capacity-holds`, post(input, branch, key)),
 };

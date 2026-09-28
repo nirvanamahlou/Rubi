@@ -132,6 +132,9 @@ describe('reservation PDF route', () => {
     );
     expect(html).toContain('CHD 2-6');
     expect(html).toContain('CHD 6-12');
+    expect(html).toContain('CHILDREN 2-6');
+    expect(html).toContain('CHILDREN 6-12');
+    expect(html).not.toContain('HOTEL CHILD AGE');
     expect(html).toContain('YOUNGER CHILD');
     expect(html).toContain('OLDER CHILD');
   });

@@ -11,10 +11,28 @@ export class ProcurementApiError extends Error {
   constructor(
     message: string,
     readonly status: number,
+    readonly field?: string,
   ) {
     super(message);
   }
 }
+const procurementFieldLabels: Record<string, string> = {
+  title: 'عنوان درخواست',
+  branchId: 'شعبه',
+  unitId: 'واحد سازمانی',
+  category: 'دسته خرید',
+  needReason: 'شرح نیاز',
+  requiredAt: 'تاریخ نیاز',
+  currencyCode: 'ارز',
+  items: 'اقلام و خدمات',
+  quantity: 'مقدار',
+  supplierId: 'تأمین‌کننده',
+  quotationId: 'پیشنهاد منتخب',
+  orderId: 'سفارش مرجع',
+  quotedAt: 'تاریخ پیشنهاد',
+  validUntil: 'اعتبار پیشنهاد',
+  deliveryAt: 'موعد تحویل',
+};
 export async function procurementRequest<T>(
   path: string,
   init?: RequestInit,
@@ -42,20 +60,27 @@ export async function procurementRequest<T>(
   if (!response.ok) {
     const data = (await response.json().catch(() => null)) as {
       message?: string | string[];
-      error?: { message?: string };
+      field?: string;
+      error?: { message?: string; field?: string };
     } | null;
+    const field = data?.field ?? data?.error?.field;
     const detail =
       data?.error?.message ??
       (Array.isArray(data?.message) ? data.message.join('، ') : data?.message);
+    const labelledDetail =
+      field && procurementFieldLabels[field]
+        ? `${procurementFieldLabels[field]}: ${detail ?? 'مقدار معتبر نیست.'}`
+        : detail;
     throw new ProcurementApiError(
       response.status === 401
         ? 'نشست پایان یافته است. دوباره وارد شوید؛ فرم را باز نگه دارید.'
         : response.status === 403
           ? 'اجازه انجام این عملیات را ندارید.'
           : response.status === 409
-            ? `اطلاعات هم‌زمان تغییر کرده است. ورودی شما حفظ شد؛ نسخه جدید را بررسی کنید. ${detail ?? ''}`
-            : (detail ?? 'عملیات انجام نشد؛ دوباره تلاش کنید.'),
+            ? `اطلاعات هم‌زمان تغییر کرده است. ورودی شما حفظ شد؛ نسخه جدید را بررسی کنید. ${labelledDetail ?? ''}`
+            : (labelledDetail ?? 'عملیات انجام نشد؛ دوباره تلاش کنید.'),
       response.status,
+      field,
     );
   }
   return response.json() as Promise<T>;
@@ -177,6 +202,7 @@ export const procurementApi = {
     key: string,
     request?: ProcurementRequestV1,
     requesterEmployeeId?: string,
+    publish = false,
   ) =>
     procurementRequest<ProcurementRequestV1>(
       request ? `/requests/${encodeURIComponent(request.id)}` : '/requests',
@@ -185,8 +211,16 @@ export const procurementApi = {
         headers: { 'Content-Type': 'application/json', 'Idempotency-Key': key },
         body: JSON.stringify(
           request
-            ? { expectedVersion: request.version, draft }
-            : { draft, requesterEmployeeId },
+            ? {
+                expectedVersion: request.version,
+                draft,
+                ...(publish ? { publish: true } : {}),
+              }
+            : {
+                draft,
+                requesterEmployeeId,
+                ...(publish ? { publish: true } : {}),
+              },
         ),
       },
     ),

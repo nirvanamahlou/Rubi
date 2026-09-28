@@ -4,8 +4,8 @@ export interface IssuedTicketReadModel {
   id: string;
   contractNumber: string;
   passengerDisplayName: string;
-  ticketNumber: string;
-  pnr: string;
+  ticketNumber: string | null;
+  pnr: string | null;
   originCityId: string;
   origin: string;
   destinationCityId: string;
@@ -62,8 +62,8 @@ export function queryIssuedTickets(
             [
               ticket.contractNumber,
               ticket.passengerDisplayName,
-              ticket.ticketNumber,
-              ticket.pnr,
+              ticket.ticketNumber ?? '',
+              ticket.pnr ?? '',
               ticket.origin,
               ticket.destination,
               ticket.airline,
@@ -76,7 +76,7 @@ export function queryIssuedTickets(
           includes(ticket.passengerDisplayName, query.passenger)) &&
         (!query.documentNumber ||
           includes(
-            `${ticket.ticketNumber} ${ticket.pnr}`,
+            `${ticket.ticketNumber ?? ''} ${ticket.pnr ?? ''}`,
             query.documentNumber,
           )) &&
         (query.originCityId === 'all' ||

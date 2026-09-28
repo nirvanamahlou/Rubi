@@ -2,12 +2,15 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
   activateCatalogSample,
+  activateDraftCatalogProduct,
   catalogStorageKey,
   countProductsByRoute,
   groupProductsForCards,
   initialQuery,
+  isExpiredCatalogProduct,
   moveDefinitionToDate,
   parseCatalogSnapshot,
+  pauseExpiredCatalogProduct,
   previewSamples,
   queryProducts,
   repeatDefinition,
@@ -167,6 +170,58 @@ describe('Ticket catalog browser collection and query', () => {
     expect(activateCatalogSample(samples[0]!, '2026-09-02T00:00:00.000Z')).toBe(
       samples[0],
     );
+  });
+  it('activates previously saved drafts without asking for purchase pricing', () => {
+    const draft = { ...samples[0]!, status: 'draft' as const, version: 1 };
+    const active = activateDraftCatalogProduct(
+      draft,
+      '2026-09-02T00:00:00.000Z',
+    );
+    expect(active).toMatchObject({ status: 'active', version: 2 });
+    expect(active.history.at(-1)).toMatchObject({
+      action: 'active',
+      actor: 'سیستم',
+      reason: 'فعال‌سازی خودکار پس از تعریف بلیط',
+    });
+    expect(
+      activateDraftCatalogProduct(active, '2026-09-02T00:00:00.000Z'),
+    ).toBe(active);
+  });
+  it('automatically pauses an active ticket after its first departure', () => {
+    const active = {
+      ...samples[0]!,
+      status: 'active' as const,
+      version: 7,
+    };
+    const before = pauseExpiredCatalogProduct(
+      active,
+      '2026-08-31T00:00:00.000Z',
+    );
+    const after = pauseExpiredCatalogProduct(
+      active,
+      '2027-01-01T00:00:00.000Z',
+    );
+    expect(before).toBe(active);
+    expect(after).toMatchObject({ status: 'paused', version: 8 });
+    expect(after.history.at(-1)).toMatchObject({
+      action: 'paused',
+      actor: 'سیستم',
+    });
+  });
+  it('removes departed tickets from the operational list even if already paused', () => {
+    const ticket = samples[0]!;
+    expect(isExpiredCatalogProduct(ticket, '2026-08-31T00:00:00.000Z')).toBe(
+      false,
+    );
+    expect(isExpiredCatalogProduct(ticket, '2027-01-01T00:00:00.000Z')).toBe(
+      true,
+    );
+    expect(
+      isExpiredCatalogProduct(
+        { ...ticket, status: 'paused' },
+        '2027-01-01T00:00:00.000Z',
+      ),
+    ).toBe(true);
   });
   it('round-trips valid browser storage and rejects malformed data', () => {
     const raw = JSON.stringify({ products: samples, references: [] });

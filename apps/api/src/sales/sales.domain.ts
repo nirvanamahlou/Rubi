@@ -94,10 +94,10 @@ function validDate(value: string, label: string): number {
   return timestamp;
 }
 
-export function passengerAgeCategory(
+export function passengerAgeYears(
   birthDate: string,
   departureDate: string,
-): SalesPassengerAgeCategory {
+): number {
   const birth = new Date(`${birthDate.slice(0, 10)}T00:00:00.000Z`);
   const departure = new Date(`${departureDate.slice(0, 10)}T00:00:00.000Z`);
   if (birth > departure || Number.isNaN(birth.getTime()))
@@ -111,6 +111,14 @@ export function passengerAgeCategory(
     (departure.getUTCMonth() === birth.getUTCMonth() &&
       departure.getUTCDate() < birth.getUTCDate());
   if (beforeBirthday) age -= 1;
+  return age;
+}
+
+export function passengerAgeCategory(
+  birthDate: string,
+  departureDate: string,
+): SalesPassengerAgeCategory {
+  const age = passengerAgeYears(birthDate, departureDate);
   return age < 2 ? 'INF' : age < 12 ? 'CHD' : 'ADT';
 }
 

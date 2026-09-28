@@ -134,6 +134,34 @@ describe('Procurement failure and retry contract', () => {
       draft,
     });
   });
+  it('asks the API to publish in the same request that persists the draft', async () => {
+    process.env.NEXT_PUBLIC_API_BASE_URL = 'http://localhost:4000/api/v1';
+    const draft = { ...emptyDraft(), title: 'درخواست آماده انتشار' };
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          id: 'published-request',
+          number: 'PR-1405-902',
+          version: 2,
+          status: 'SUBMITTED',
+          requesterUserId: 'user',
+          ownerUserId: null,
+          createdAt: '',
+          updatedAt: '',
+          draft,
+        }),
+        { status: 200 },
+      ),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    await procurementApi.save(draft, 'publish-key', undefined, undefined, true);
+
+    expect(JSON.parse(fetchMock.mock.calls[0]?.[1].body as string)).toEqual({
+      draft,
+      publish: true,
+    });
+  });
   it('distinguishes forbidden access from an empty successful list', async () => {
     process.env.NEXT_PUBLIC_API_BASE_URL = 'http://localhost:4000/api/v1';
     vi.stubGlobal(

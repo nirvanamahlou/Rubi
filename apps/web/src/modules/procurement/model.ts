@@ -21,7 +21,7 @@ export function emptyDraft(
     title: '',
     branchId,
     unitId,
-    purchaseType: '',
+    purchaseType: 'خرید عمومی',
     category: '',
     needReason: '',
     requiredAt: null,

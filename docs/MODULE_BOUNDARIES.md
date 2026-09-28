@@ -77,7 +77,13 @@ Hold/consume و صدور واقعی، PNR، تغییر/استرداد و Manifes
 
 ### Ticket Catalog در برابر Procurement و Finance
 
-Ticket Catalog تعریف و زمان‌بندی بلیط را نگه می‌دارد و هنگام ثبت تعریف دارای قیمت خرید، فرمان نسخه‌دار را به API عمومی Procurement می‌فرستد. Procurement مبلغ خرید، ارز، تأمین‌کننده و وضعیت رسیدگی را مالک است. Finance فقط projection عمومی Procurement را در کارتابل مصرف می‌کند و به جدول خرید Query مستقیم ندارد.
+Ticket Catalog تعریف، زمان‌بندی بلیط و مقصد تجاری نرخ فروش (مانند فروش مستقیم یا
+یک partner API) را نگه می‌دارد. مقصد قیمت، کانال قرارداد Sales نیست و به جدول
+Master Data یا Sales Query مستقیم ندارد. Ticket Catalog هنگام ثبت تعریف، envelope
+نسخه‌دار خرید را به API عمومی Procurement می‌فرستد. Procurement تعداد صندلی و
+وضعیت envelope را مالک است؛ Finance فقط projection عمومی Procurement را در کارتابل
+مصرف می‌کند، نرخ هر صندلی و جمع فاکتور را قطعی می‌سازد، و به جدول خرید Query مستقیم
+ندارد. رسید پرداخت از API عمومی Documents و با مرجع payment مالی ذخیره می‌شود.
 
 ### Reservations در برابر Integrations
 

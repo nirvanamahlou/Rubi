@@ -64,6 +64,10 @@ describe('MessagingService', () => {
     };
     documents = {
       assertWorkbenchOwnedAttachments: vi.fn().mockResolvedValue([]),
+      uploadOwnMessagingAttachment: vi.fn().mockResolvedValue({
+        id: '88888888-8888-4888-8888-888888888888',
+        scanStatus: 'PENDING_SCAN',
+      }),
     };
     service = new MessagingService(
       repository as unknown as MessagingRepository,
@@ -166,6 +170,35 @@ describe('MessagingService', () => {
         recipientUserIds: [recipientId],
       }),
     );
+  });
+
+  it('uploads an attachment only after confirming conversation membership', async () => {
+    const file = {
+      buffer: Buffer.from([137, 80, 78, 71]),
+      mimetype: 'image/png',
+      originalname: 'receipt.png',
+      size: 4,
+    };
+
+    const response = await service.uploadAttachment(
+      conversationId,
+      { clientRequestId: 'message:request-0003' },
+      file,
+      actor,
+      { ipAddress: '127.0.0.1' },
+    );
+
+    expect(documents.uploadOwnMessagingAttachment).toHaveBeenCalledWith(
+      {
+        branchId: actor.branchIds[0],
+        clientRequestId: 'message:request-0003',
+        conversationTitle: 'گفت‌وگوی داخلی',
+      },
+      file,
+      actor,
+      { ipAddress: '127.0.0.1' },
+    );
+    expect(response.data.id).toBe('88888888-8888-4888-8888-888888888888');
   });
 
   it('forwards the server copy of an accessible source message', async () => {

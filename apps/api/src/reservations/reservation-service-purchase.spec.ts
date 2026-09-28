@@ -2,6 +2,7 @@ import { BadRequestException } from '@nestjs/common';
 import { describe, expect, it, vi } from 'vitest';
 import {
   ReservationServicePurchaseService,
+  purchasableReservationService,
   validateServicePurchase,
 } from './reservation-service-purchase.service';
 
@@ -69,4 +70,23 @@ it('rejects a ticket purchase from the Reservations broker route', async () => {
     ),
   ).rejects.toBeInstanceOf(BadRequestException);
   expect(directory.brokerReference).not.toHaveBeenCalled();
+});
+
+it('accepts the hotel embedded in a legacy reservation snapshot', () => {
+  expect(
+    purchasableReservationService(
+      {
+        serviceSelections: [],
+        hotelSelection: {
+          serviceClientKey: 'hotel-legacy',
+          hotelNameSnapshot: 'Royal Wings',
+        },
+      } as never,
+      'hotel-legacy',
+    ),
+  ).toMatchObject({
+    clientKey: 'hotel-legacy',
+    kind: 'HOTEL',
+    titleSnapshot: 'Royal Wings',
+  });
 });

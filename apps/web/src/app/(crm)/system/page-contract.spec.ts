@@ -13,6 +13,10 @@ const workspaceSource = readFileSync(
   ),
   'utf8',
 );
+const operationsPageSource = readFileSync(
+  new URL('./operations/page.tsx', import.meta.url),
+  'utf8',
+);
 
 describe('system management access', () => {
   it('uses the dedicated management center rather than a placeholder workspace', () => {
@@ -20,16 +24,21 @@ describe('system management access', () => {
     expect(systemPageSource).not.toContain('ModuleFoundationWorkspace');
   });
 
-  it('retains real owner links for IAM and Legal Entity', () => {
+  it('retains user management navigation without the Legal Entity callout', () => {
     expect(workspaceSource).toContain("href: '/users'");
-    expect(workspaceSource).toContain("href: '/system/legal-entities'");
-    expect(workspaceSource).toContain('Legal Entity');
+    expect(workspaceSource).not.toContain("href: '/system/legal-entities'");
+    expect(workspaceSource).not.toContain("owner: 'Legal Entity'");
+    expect(workspaceSource).not.toContain(
+      'هویت حقوقی، Branding و سربرگ‌ها در ماژول مالک ثبت می‌شوند.',
+    );
   });
 
-  it('does not add a navigation item or bypass owner APIs', () => {
-    expect(workspaceSource).toContain(
-      'هر عملیات حساس در API ماژول مالک دوباره مجوزسنجی می‌شود',
+  it('does not duplicate owner APIs and exposes the live operations panel', () => {
+    expect(operationsPageSource).toContain(
+      'عملیات حساس در API مالک دوباره مجوزسنجی و ثبت Audit می‌شود',
     );
     expect(workspaceSource).toContain('managementAreas');
+    expect(workspaceSource).not.toContain('legalEntitiesApi.selectable');
+    expect(workspaceSource).toContain("scope: 'GLOBAL'");
   });
 });

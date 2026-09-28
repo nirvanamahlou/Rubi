@@ -69,14 +69,35 @@ export class HotelRatePacksService {
     }
     await this.directory.cityReference(input.cityId);
     return Promise.all(
-      input.rows.map(async (row) => ({
-        ...row,
-        ...(await this.directory.hotelRatePackReference(
+      input.rows.map(async (row) => {
+        const reference = await this.directory.hotelRatePackReference(
           input.cityId,
           row.hotelId,
           row.brokerId,
-        )),
-      })),
+          row.roomRates.map((room) => room.roomTypeId),
+        );
+        const roomNames = new Map(
+          (reference.roomTypes ?? []).map((room) => [room.id, room.name]),
+        );
+        const { roomRates, ...rate } = row;
+        return {
+          ...rate,
+          hotelName: reference.hotelName,
+          brokerName: reference.brokerName,
+          roomRates: {
+            create: (roomRates ?? []).map((room) => ({
+              roomTypeId: room.roomTypeId,
+              roomTypeName: roomNames.get(room.roomTypeId)!,
+              factor: room.factor,
+              maxAdults: room.maxAdults,
+              maxChildren: room.maxChildren,
+              maxChildren2To6: room.maxChildren2To6,
+              maxChildren6To12: room.maxChildren6To12,
+              maxInfants: room.maxInfants,
+            })),
+          },
+        };
+      }),
     );
   }
 
@@ -201,7 +222,11 @@ export class HotelRatePacksService {
     });
     if (!pack) throw new NotFoundException('بستهٔ نرخ پیدا نشد.');
     if (pack.branchId !== input.branchId) throw new ForbiddenException();
-    if (pack.tourDepartureId && pack.tourDepartureId !== input.tourDepartureId)
+    if (
+      input.tourDepartureId &&
+      pack.tourDepartureId &&
+      pack.tourDepartureId !== input.tourDepartureId
+    )
       throw new BadRequestException(
         'نوبت تور بسته ثبت‌شده قابل تغییر نیست؛ بسته جدید بسازید.',
       );
@@ -330,7 +355,12 @@ export class HotelRatePacksService {
         versions: {
           orderBy: { version: 'desc' },
           take: 1,
-          include: { rows: { orderBy: { hotelName: 'asc' } } },
+          include: {
+            rows: {
+              orderBy: { hotelName: 'asc' },
+              include: { roomRates: { orderBy: { roomTypeName: 'asc' } } },
+            },
+          },
         },
       },
     });
@@ -358,10 +388,20 @@ export class HotelRatePacksService {
         brokerName: row.brokerName,
         base: row.base.toString(),
         currency: row.currency,
-        factors: row.factors as Record<RoomKind, string>,
+        factors: row.factors as Partial<Record<RoomKind, string>>,
+        roomRates: row.roomRates.map((room) => ({
+          roomTypeId: room.roomTypeId,
+          roomTypeName: room.roomTypeName,
+          factor: room.factor.toString(),
+          maxAdults: room.maxAdults,
+          maxChildren: room.maxChildren,
+          maxChildren2To6: room.maxChildren2To6,
+          maxChildren6To12: room.maxChildren6To12,
+          maxInfants: room.maxInfants,
+        })),
         prices: roomPrices(
           row.base.toString(),
-          row.factors as Record<RoomKind, string>,
+          row.factors as Partial<Record<RoomKind, string>>,
           row.currency,
         ),
       })),

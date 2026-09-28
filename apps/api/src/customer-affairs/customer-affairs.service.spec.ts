@@ -41,6 +41,36 @@ const lead: CustomerAffairsLeadInput = {
 };
 
 describe('CustomerAffairsService safety invariants', () => {
+  it('builds a permission-aware dashboard without querying forbidden domains', async () => {
+    const repository = {
+      dashboard: vi.fn().mockResolvedValue({
+        leads: { open: 2, overdue: 1, waitingSales: 0 },
+        tickets: { open: 0, overdue: 0, breached: 0, correctiveActions: 0 },
+      }),
+    };
+    const result = await service(repository).dashboard({
+      ...actor,
+      permissions: [
+        'customer_affairs.lead.read',
+        'customer_affairs.lead.create',
+      ],
+    });
+    expect(result.data.access).toEqual({
+      leadsRead: true,
+      leadCreate: true,
+      ticketsRead: false,
+      ticketCreate: false,
+      reportsRead: false,
+    });
+    expect(repository.dashboard).toHaveBeenCalledWith(actor.branchIds, {
+      leadsRead: true,
+      leadCreate: true,
+      ticketsRead: false,
+      ticketCreate: false,
+      reportsRead: false,
+    });
+  });
+
   it('rejects a lead without an owner or queue before persistence', async () => {
     const repository = { findLeadCommand: vi.fn().mockResolvedValue(null) };
     await expect(

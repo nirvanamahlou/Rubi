@@ -79,4 +79,36 @@ describe('public travel reference boundary', () => {
       fileReferenceId: 'manifest-file',
     });
   });
+
+  it('matches a Persian airline template through the flight-number airline code', async () => {
+    const list = vi.fn().mockResolvedValue({
+      data: [
+        {
+          id: 'active-b9',
+          name: 'Iran Airtour Antalya',
+          attributes: {
+            airlineName: 'ایران ایرتور',
+            airlineCode: 'B9',
+            destinationCityId: 'antalya',
+            publicationStatus: 'ACTIVE',
+            fileFormat: 'XLSX',
+            fileReferenceId: 'manifest-file',
+            versionNumber: 4,
+            validFrom: '2026-09-01',
+          },
+        },
+      ],
+      meta: { page: 1, pageSize: 100, total: 1 },
+    });
+    const directory = new MasterTravelDirectory({ list } as never);
+
+    await expect(
+      directory.manifestTemplate(
+        'IRAN AIRTOUR',
+        'antalya',
+        '2026-09-27',
+        'B9-9103',
+      ),
+    ).resolves.toMatchObject({ id: 'active-b9', versionNumber: 4 });
+  });
 });

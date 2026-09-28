@@ -55,6 +55,10 @@ describe('shared date picker contract', () => {
     expect(pickerSource).not.toContain(
       'absolute start-0 top-[calc(100%+0.5rem)]',
     );
+    expect(pickerSource).toContain("variant?: 'default' | 'rubi'");
+    expect(pickerSource).toContain("variant === 'rubi'");
+    expect(pickerSource).toContain('from-primary via-sky-500 to-cyan-400');
+    expect(pickerSource).toContain('backdrop-blur-xl');
   });
 
   it('prevents raw browser calendars from returning to application forms', () => {

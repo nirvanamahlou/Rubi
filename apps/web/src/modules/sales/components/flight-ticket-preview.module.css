@@ -201,3 +201,309 @@
   border-radius: 6px;
   padding: 8px;
 }
+
+/* Keep the in-app preview and browser print aligned with the branded PDF. */
+.paper {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  color: #102e52;
+  box-shadow: 0 18px 50px rgb(16 46 82 / 12%);
+}
+.header {
+  align-items: flex-start;
+  padding: 26px 42px 0;
+}
+.header h1 {
+  color: #102750;
+  font-size: 38px;
+  letter-spacing: 5px;
+  line-height: 1;
+}
+.header p {
+  margin: 12px 0 0;
+  color: #3e5876;
+  font-size: 12px;
+  letter-spacing: 5px;
+}
+.header img {
+  width: 160px;
+  height: 100px;
+}
+.draft {
+  margin: 12px 42px 0;
+}
+.airlineBrand {
+  justify-content: flex-start;
+  min-height: 64px;
+  margin: 0;
+  padding: 0 46px 8px;
+}
+.airline {
+  margin: 0;
+  color: #143257;
+  font-size: 23px;
+}
+.airlineLogo {
+  width: 70px;
+  height: 70px;
+}
+.sample {
+  margin: 0 42px 12px;
+  padding: 7px;
+}
+.identity {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0;
+  margin: 0 26px 14px;
+  padding: 18px 30px;
+  border-radius: 22px;
+  background: linear-gradient(105deg, #edf5fd, #f9fcff 68%, #e8f2fb);
+}
+.identity > div {
+  min-width: 0;
+}
+.identity > div + div {
+  padding-left: 34px;
+  border-left: 1px solid #bfd0df;
+}
+.identity span,
+.place span,
+.legFoot span {
+  display: block;
+  margin-bottom: 5px;
+  color: #54708d;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.8px;
+}
+.identity strong {
+  display: block;
+  overflow-wrap: anywhere;
+  color: #102750;
+  font-size: 21px;
+}
+.identity .draftMeta {
+  grid-column: 1 / -1;
+  margin-top: 14px;
+  padding: 12px 0 0;
+  border-top: 1px solid #bfd0df;
+  border-left: 0;
+}
+.outputFlags,
+.passenger {
+  margin: 0 42px 12px;
+  font-size: 13px;
+}
+.business {
+  display: inline-flex;
+  margin: 0;
+  padding: 5px 10px;
+  border-radius: 6px;
+}
+.legs {
+  display: grid;
+  gap: 12px;
+  padding: 0 26px;
+}
+.leg {
+  overflow: hidden;
+  border: 1px solid #d4e1eb;
+  border-radius: 22px;
+  break-inside: avoid;
+  box-shadow: 0 6px 18px rgb(16 46 82 / 7%);
+}
+.legHead {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  min-height: 40px;
+  padding: 0 28px;
+  color: #fff;
+  background: #12375d;
+  font-size: 15px;
+}
+.returnLeg .legHead {
+  background: #0b8c9a;
+}
+.legHead span:last-child {
+  margin-left: auto;
+  font-size: 11px;
+  letter-spacing: 1px;
+}
+.route {
+  display: grid;
+  grid-template-columns: 1fr 1.15fr 1fr;
+  gap: 12px;
+  align-items: center;
+  min-height: 124px;
+  padding: 16px 34px;
+}
+.place {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 82px;
+}
+.place::before {
+  position: absolute;
+  z-index: -1;
+  inset: 0 -6px;
+  background: #d8e5f1;
+  opacity: 0.45;
+  content: '';
+  clip-path: polygon(
+    0 100%,
+    0 82%,
+    8% 82%,
+    8% 63%,
+    15% 63%,
+    15% 81%,
+    22% 81%,
+    22% 73%,
+    29% 73%,
+    29% 53%,
+    34% 53%,
+    34% 17%,
+    37% 0,
+    40% 17%,
+    40% 53%,
+    45% 53%,
+    45% 78%,
+    54% 78%,
+    54% 66%,
+    61% 66%,
+    61% 84%,
+    69% 84%,
+    69% 57%,
+    77% 57%,
+    77% 71%,
+    85% 71%,
+    85% 48%,
+    93% 48%,
+    93% 79%,
+    100% 79%,
+    100% 100%
+  );
+}
+.place strong {
+  max-width: 190px;
+  overflow-wrap: anywhere;
+  color: #102750;
+  font-size: 24px;
+  line-height: 1.05;
+}
+.place b {
+  margin-top: 10px;
+  font-size: 16px;
+}
+.destination {
+  align-items: flex-end;
+  text-align: right;
+}
+.destination::before {
+  transform: scaleX(-1);
+}
+.flightPath {
+  color: #1397aa;
+  text-align: center;
+}
+.flightPath svg {
+  margin: auto;
+}
+.flightPath i {
+  display: block;
+  margin: 8px 0;
+  border-top: 1px dashed #638aa4;
+}
+.flightPath small {
+  display: block;
+  overflow-wrap: anywhere;
+  color: #415d77;
+  font-size: 10px;
+}
+.legFoot {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  padding: 10px 28px;
+  border-top: 1px solid #dae5ee;
+  background: #f0f7fc;
+}
+.legFoot > div + div {
+  padding-left: 24px;
+  border-left: 1px solid #ccdae5;
+}
+.legFoot strong {
+  font-size: 13px;
+}
+.notice {
+  margin: 16px 42px 0;
+  color: #64748b;
+  font-size: 11px;
+  line-height: 1.6;
+}
+.warning {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin: 12px 26px;
+  padding: 9px 18px;
+  border: 1px solid #b5d7df;
+  border-radius: 9px;
+  color: #143c5c;
+  font-size: 12px;
+  text-align: center;
+}
+.warning strong[dir='rtl'] {
+  font-family: Vazirmatn, Arial, sans-serif;
+  font-size: 14px;
+}
+.barcode {
+  width: 190px;
+  margin: 0 0 12px 36px;
+  color: #102750;
+  text-align: center;
+}
+.barcode svg {
+  display: block;
+  width: 100%;
+  height: 46px;
+}
+.barcode figcaption {
+  margin-top: 2px;
+  font-size: 9px;
+  letter-spacing: 1.5px;
+}
+.paper .footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 48px;
+  margin-top: auto;
+  padding: 0 42px;
+  color: #fff;
+  background: #12375d;
+  font-size: 11px;
+  letter-spacing: 2px;
+}
+@media (max-width: 900px) {
+  .viewport {
+    padding: 12px;
+  }
+  .paper {
+    width: 100%;
+    min-width: 680px;
+  }
+}
+@media print {
+  .paper {
+    height: 297mm;
+    min-width: 0;
+    min-height: 0;
+  }
+}

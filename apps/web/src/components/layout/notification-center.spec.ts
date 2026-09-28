@@ -46,6 +46,26 @@ const auditEvent: MasterDataNotification = {
 };
 
 describe('NotificationCenter Master Data feed', () => {
+  it('does not recreate cleared audit notifications after a poll or browser reload', () => {
+    const storedDismissals = JSON.stringify(['master-data:audit-1']);
+    const dismissed = new Set<string>(JSON.parse(storedDismissals));
+    expect(mergeMasterDataFeed([], [auditEvent], dismissed)).toEqual([]);
+    const stale = mergeMasterDataFeed([], [auditEvent]);
+    expect(mergeMasterDataFeed(stale, [auditEvent], dismissed)).toEqual([]);
+  });
+
+  it('continues to show new changes to the same record after older notifications are cleared', () => {
+    const nextEvent = { ...auditEvent, id: 'audit-2', entityVersion: 3 };
+    expect(
+      mergeMasterDataFeed(
+        [],
+        [auditEvent, nextEvent],
+        new Set(['master-data:audit-1']),
+      ),
+    ).toEqual([
+      expect.objectContaining({ id: 'master-data:audit-2', readAt: null }),
+    ]);
+  });
   it('adds a backend Audit event with its owning section link', () => {
     expect(mergeMasterDataFeed([], [auditEvent])).toEqual([
       {

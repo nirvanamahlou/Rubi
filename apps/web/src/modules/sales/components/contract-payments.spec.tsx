@@ -19,6 +19,7 @@ vi.mock('@/components/ui/overlays', () => ({
 import type { MasterDataRecord } from '@nora/contracts';
 import {
   ContractPaymentCurrencySelect,
+  ContractPaymentShareSummary,
   ContractPayments,
 } from './contract-payments';
 import { PaymentDocuments } from './payment-documents';
@@ -84,5 +85,36 @@ describe('saved contract payment currency control', () => {
     );
     expect(html).toContain('disabled');
     expect(html).toContain('فهرست ارزهای فعال در دسترس نیست');
+  });
+  it('shows total, entered share, pending amount and projected remainder for the selected currency', () => {
+    const html = renderToStaticMarkup(
+      <ContractPaymentShareSummary
+        balances={[
+          {
+            amount: '192000000',
+            currencyCode: 'IRR',
+            confirmedPaid: '32000000',
+            pendingFinance: '10000000',
+            outstanding: '160000000',
+          },
+          {
+            amount: '1000',
+            currencyCode: 'USD',
+            confirmedPaid: '0',
+            pendingFinance: '0',
+            outstanding: '1000',
+          },
+        ]}
+        currencyCode="IRR"
+        amount="48000000"
+      />,
+    );
+    expect(html).toContain('مبلغ کل قرارداد');
+    expect(html).toContain('192,000,000 IRR');
+    expect(html).toContain('48,000,000 IRR');
+    expect(html).toContain('25٪ از کل قرارداد');
+    expect(html).toContain('در انتظار مالی: 10,000,000 IRR');
+    expect(html).toContain('112,000,000 IRR');
+    expect(html).not.toContain('1,000 USD');
   });
 });

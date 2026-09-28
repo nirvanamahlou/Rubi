@@ -2,11 +2,12 @@
 import { useEffect, useState } from 'react';
 import type { SalesContractSummary } from '@nora/contracts';
 import { Button } from '@/components/ui/button';
-import { FormField, Input, Textarea } from '@/components/ui/form-controls';
+import { Input, Textarea } from '@/components/ui/form-controls';
 import { salesApi } from '@/modules/sales/api/client';
 import { customerAffairsApi } from '../api/customer-affairs-client';
 import { AffairsSelect } from './affairs-select';
 import { CustomerAffairsFormDialog } from './customer-affairs-form-dialog';
+import { AffairsFormField as FormField } from './affairs-form-field';
 
 export function SalesHandoffResponse({
   id,
@@ -33,6 +34,7 @@ export function SalesHandoffResponse({
   const [error, setError] = useState('');
   useEffect(() => {
     if (!open || status !== 'ACCEPTED') return;
+    if (!search.trim()) return;
     let current = true;
     const timer = setTimeout(() => {
       setLoading(true);
@@ -156,17 +158,19 @@ export function SalesHandoffResponse({
                   ))}
                 </AffairsSelect>
                 <p className="text-xs text-muted-foreground">
-                  {loading
-                    ? 'در حال دریافت قراردادها…'
-                    : !contracts.length
-                      ? 'در این صفحه قرارداد منطبق یافت نشد؛ جست‌وجو یا صفحه بعد را بررسی کنید.'
-                      : 'پذیرش، قرارداد جدید ایجاد نمی‌کند؛ درخواست به قرارداد انتخاب‌شده متصل می‌شود.'}
+                  {!search.trim()
+                    ? 'برای نمایش قراردادها، شماره قرارداد یا نام مشتری را جست‌وجو کنید.'
+                    : loading
+                      ? 'در حال دریافت قراردادها…'
+                      : !contracts.length
+                        ? 'در این صفحه قرارداد منطبق یافت نشد؛ جست‌وجو یا صفحه بعد را بررسی کنید.'
+                        : 'پذیرش، قرارداد جدید ایجاد نمی‌کند؛ درخواست به قرارداد انتخاب‌شده متصل می‌شود.'}
                 </p>
                 <div className="flex gap-2">
                   <Button
                     type="button"
                     variant="ghost"
-                    disabled={loading || page === 1}
+                    disabled={loading || !search.trim() || page === 1}
                     onClick={() => setPage(page - 1)}
                   >
                     قبلی
@@ -174,7 +178,7 @@ export function SalesHandoffResponse({
                   <Button
                     type="button"
                     variant="ghost"
-                    disabled={loading || !hasMore}
+                    disabled={loading || !search.trim() || !hasMore}
                     onClick={() => setPage(page + 1)}
                   >
                     بعدی

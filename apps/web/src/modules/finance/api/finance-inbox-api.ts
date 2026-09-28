@@ -5,6 +5,9 @@ import type {
   FinanceInboxV1,
   FinancePaymentMethodOptionV1,
   FinanceReceiptDecisionCommandV1,
+  FinanceCustomerDocumentDeliveryCandidateV1,
+  FinanceCustomerDocumentDeliveryAuthorizationV1,
+  FinanceCustomerDocumentDeliveryCommandV1,
   FinanceSettlementAccountCreateV1,
   FinanceSettlementAccountV1,
   FinanceSupplierPaymentCommandV1,
@@ -101,6 +104,22 @@ export const financeInboxApi = {
         { method: 'POST', body: JSON.stringify(input) },
       )
     ).data,
+  customerDocumentDeliveries: async (contractNumber = '') =>
+    (
+      await apiRequest<{
+        data: readonly FinanceCustomerDocumentDeliveryCandidateV1[];
+      }>(
+        `/finance/customer-document-delivery?contractNumber=${encodeURIComponent(contractNumber)}`,
+      )
+    ).data,
+  decideCustomerDocumentDelivery: (
+    contractId: string,
+    input: FinanceCustomerDocumentDeliveryCommandV1,
+  ) =>
+    apiRequest<{ data: FinanceCustomerDocumentDeliveryAuthorizationV1 }>(
+      `/finance/customer-document-delivery/${encodeURIComponent(contractId)}`,
+      { method: 'POST', body: JSON.stringify(input) },
+    ),
   decideReceipt: (paymentId: string, input: FinanceReceiptDecisionCommandV1) =>
     apiRequest<{ data: { status: string } }>(
       `/finance/inbox/sales/${encodeURIComponent(paymentId)}/decision`,
@@ -121,8 +140,17 @@ export const financeInboxApi = {
       { method: 'POST', body: JSON.stringify(input) },
     ),
   payTicket: (requestId: string, input: FinanceTicketPaymentCommandV1) =>
-    apiRequest<{ data: unknown }>(
-      `/finance/ticket-purchases/${encodeURIComponent(requestId)}/payments`,
-      { method: 'POST', body: JSON.stringify(input) },
-    ),
+    apiRequest<{
+      data: {
+        id: string;
+        costRevisionId: string;
+        version: number;
+        status: 'PAID' | 'PARTIALLY_PAID';
+        cumulativePaid: string;
+        remainingAmount: string;
+      };
+    }>(`/finance/ticket-purchases/${encodeURIComponent(requestId)}/payments`, {
+      method: 'POST',
+      body: JSON.stringify(input),
+    }).then((response) => response.data),
 };

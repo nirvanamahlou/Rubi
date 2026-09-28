@@ -104,6 +104,31 @@ export async function listReferences(
     data: body.data.filter((item) => item.status === 'active'),
   };
 }
+
+export async function listActiveCurrencyReferences(): Promise<
+  readonly Reference[]
+> {
+  const records: MasterDataRecord[] = [];
+  for (let page = 1; page <= 100; page += 1) {
+    const response = await listReferences('currencies', '', page);
+    records.push(...response.data);
+    if (page * response.meta.pageSize >= response.meta.total) {
+      const seen = new Set<string>();
+      return records.flatMap((record) => {
+        const reference = asReference(record);
+        const code = reference?.code?.trim().toUpperCase() ?? '';
+        if (!reference || !/^[A-Z]{3}$/.test(code) || seen.has(code)) return [];
+        seen.add(code);
+        return [{ ...reference, code }];
+      });
+    }
+    if (!response.data.length) break;
+  }
+  throw new ReferenceApiError(
+    'error',
+    'دریافت کامل فهرست ارزهای فعال ممکن نشد.',
+  );
+}
 export function asReference(record: MasterDataRecord): Reference | undefined {
   const kinds = {
     airlines: 'airline',

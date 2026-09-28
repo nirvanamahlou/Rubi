@@ -5,7 +5,11 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
-import { refreshAuthenticatedSession } from '@/lib/auth-session';
+import {
+  AUTH_SESSION_RECOVERED_EVENT,
+  refreshAuthenticatedSession,
+} from '@/lib/auth-session';
+import type { LoginResponse } from '@nora/contracts';
 import { getPublicApiBaseUrl } from '@/lib/environment';
 import {
   clearHeaderSession,
@@ -14,6 +18,10 @@ import {
 } from '@/lib/header-session';
 import { faMessages } from '@/messages/fa';
 import { logoutAuthenticatedSession } from '@/modules/profile/api/client';
+import {
+  PROFILE_PHOTO_CHANGED_EVENT,
+  workbenchPersonalApi,
+} from '@/modules/workbench/workbench-personal-api';
 import {
   profileInitials,
   PROFILE_USER_FALLBACK,
@@ -37,18 +45,13 @@ export function UserMenu() {
     status: 'loading',
     displayName: 'در حال دریافت اطلاعات',
   });
+  const [photoUrl, setPhotoUrl] = useState('');
 
   useEffect(() => {
     let active = true;
-    void Promise.resolve().then(async () => {
-      const cached = readHeaderSession();
-      const api = getPublicApiBaseUrl();
-      const response = api ? await refreshAuthenticatedSession(api) : null;
+    const applySession = (response: LoginResponse) => {
       if (!active) return;
-      if (!response) {
-        setIdentity({ status: 'error', displayName: PROFILE_USER_FALLBACK });
-        return;
-      }
+      const cached = readHeaderSession();
       const remembered = rememberHeaderSession(
         response.user,
         cached?.loggedInAt,
@@ -58,9 +61,47 @@ export function UserMenu() {
         displayName: remembered.displayName,
         loggedInAt: remembered.loggedInAt,
       });
+    };
+    const recovered = (event: Event) =>
+      applySession((event as CustomEvent<LoginResponse>).detail);
+    window.addEventListener(AUTH_SESSION_RECOVERED_EVENT, recovered);
+    void Promise.resolve().then(async () => {
+      const api = getPublicApiBaseUrl();
+      const response = api ? await refreshAuthenticatedSession(api) : null;
+      if (!active) return;
+      if (!response) {
+        setIdentity({ status: 'error', displayName: PROFILE_USER_FALLBACK });
+        return;
+      }
+      applySession(response);
     });
     return () => {
       active = false;
+      window.removeEventListener(AUTH_SESSION_RECOVERED_EVENT, recovered);
+    };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    let objectUrl = '';
+    const loadPhoto = () => {
+      void workbenchPersonalApi
+        .profilePhoto()
+        .then((blob) => {
+          if (!active) return;
+          const nextUrl = URL.createObjectURL(blob);
+          if (objectUrl) URL.revokeObjectURL(objectUrl);
+          objectUrl = nextUrl;
+          setPhotoUrl(nextUrl);
+        })
+        .catch(() => undefined);
+    };
+    loadPhoto();
+    window.addEventListener(PROFILE_PHOTO_CHANGED_EVENT, loadPhoto);
+    return () => {
+      active = false;
+      window.removeEventListener(PROFILE_PHOTO_CHANGED_EVENT, loadPhoto);
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
   }, []);
 
@@ -86,11 +127,17 @@ export function UserMenu() {
           <span
             aria-hidden="true"
             data-user-avatar-placeholder={
-              identity.status !== 'ready' || undefined
+              !photoUrl && identity.status !== 'ready' ? true : undefined
             }
-            className="grid size-8 shrink-0 place-items-center rounded-full bg-primary text-xs font-black text-primary-foreground"
+            className="grid size-8 shrink-0 place-items-center overflow-hidden rounded-full bg-primary text-xs font-black text-primary-foreground"
           >
-            {initials}
+            {photoUrl ? (
+              // Authenticated object URLs cannot be rendered through next/image.
+              // eslint-disable-next-line @next/next/no-img-element
+              <img alt="" className="size-full object-cover" src={photoUrl} />
+            ) : (
+              initials
+            )}
           </span>
           <span className="hidden min-w-0 max-w-32 truncate text-start text-xs font-bold lg:block">
             {identity.displayName}

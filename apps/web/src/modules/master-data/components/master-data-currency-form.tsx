@@ -398,7 +398,10 @@ export function MasterDataCurrencyForm({
           {submittedRates.length ? (
             <div className="mt-5 overflow-x-auto">
               <h3 className="mb-3 font-bold">نرخ‌های ثبت‌شده در این فرم</h3>
-              <table className="w-full min-w-[40rem] text-sm">
+              <table
+                aria-label="نرخ‌های ثبت‌شده ارز"
+                className="w-full min-w-[40rem] text-sm"
+              >
                 <thead>
                   <tr>
                     {['ارز', 'نوع', 'نرخ', 'منبع', 'ثبت‌کننده', 'وضعیت'].map(

@@ -73,6 +73,8 @@ foundation یا یکپارچگی مالی، `P1` الزامی برای نسخه 
 - [x] `DOCUMENTS-003D-LOCAL-INTERACTIONS`: کارت‌های عملیاتی آرشیو، فرم بارگذاری و
       Dropdownهای پایدار با Options یکپارچه Documents، و Apply یک‌مرحله‌ای و قابل
       راستی‌آزمایی برای ساخت هفت سند آزمایشی روی دیتابیس محلی PC-A/PC-B.
+- [x] `DOCUMENTS-003E-CALENDAR-THEME`: تم آبی–فیروزه‌ای هماهنگ Rubi برای سه تقویم
+      Documents با حفظ رفتار شمسی/میلادی و ظاهر پیش‌فرض DatePicker در سایر ماژول‌ها.
 - [x] `DOCUMENTS-003F-RELATED-CASE-PICKER`: جایگزینی چهار ورودی فنی ارتباط سند با
       Dropdown جست‌وجویی پرونده‌های موجود؛ Scope شعبه/Domain/محرمانگی و resolve امن
       Relation در Backend، بدون Migration یا دسترسی مستقیم به ماژول دیگر.

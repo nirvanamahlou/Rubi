@@ -9,12 +9,15 @@ import type { MasterDataRecord, TicketOfferV1 } from '@nora/contracts';
 import { Button } from '@/components/ui/button';
 import type { SalesFormState } from '../model/sales-form';
 import { salesDirections, salesFlightSelection } from '../model/sales-form';
+import { ticketBarcode } from '../public/ticket-barcode';
 import styles from './flight-ticket-preview.module.css';
 
 export interface FlightTicketSheetData {
   branding?: { name: string; logo: string };
   issued?: boolean;
   passengerName: string;
+  ageCategory?: 'ADT' | 'CHD' | 'INF';
+  gender?: 'M' | 'F' | null;
   businessOutput?: boolean;
   contractNumber?: string;
   offers: readonly (Pick<
@@ -23,12 +26,14 @@ export interface FlightTicketSheetData {
     | 'originId'
     | 'destinationId'
     | 'departureAt'
+    | 'arrivalAt'
     | 'carrierName'
     | 'serviceNumber'
   > & {
     cabinClassCode: string;
     businessOutput?: boolean;
     contractOnly?: boolean;
+    direction?: 'OUTBOUND' | 'RETURN';
   })[];
   transferDirections: readonly string[];
 }
@@ -55,6 +60,8 @@ export function FlightTicketDocument({
             originId: flight.originId,
             destinationId: flight.destinationId,
             departureAt: flight.departureAt,
+            arrivalAt: flight.arrivalAt,
+            direction,
             carrierName: flight.carrierNameSnapshot,
             serviceNumber: flight.serviceNumberSnapshot,
             cabinClassCode: flight.cabinClassCode,
@@ -90,6 +97,39 @@ export function FlightTicketSheet({
   cityName: (id: string) => string;
 }) {
   const { offers, passengerName } = data;
+  const passengerPrefix =
+    data.ageCategory === 'INF'
+      ? 'INF'
+      : data.ageCategory === 'CHD'
+        ? 'CHD'
+        : data.gender === 'F'
+          ? 'MRS'
+          : data.gender === 'M'
+            ? 'MR'
+            : '';
+  const passengerLabel = [passengerPrefix, passengerName]
+    .filter(Boolean)
+    .join(' ');
+  const barcode = data.contractNumber
+    ? ticketBarcode(data.contractNumber)
+    : null;
+  const formatDate = (value: string) =>
+    new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'Asia/Tehran',
+      weekday: 'short',
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    })
+      .format(new Date(value))
+      .toUpperCase();
+  const formatTime = (value: string) =>
+    new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'Asia/Tehran',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    }).format(new Date(value));
   const demo =
     offers.length > 0 &&
     offers.every(
@@ -103,7 +143,7 @@ export function FlightTicketSheet({
       <header className={styles.header}>
         <div>
           <h1>FLIGHT TICKET</h1>
-          <div className={styles.rule} />
+          <p>ELECTRONIC TICKET / ITINERARY</p>
         </div>
         {(!data.branding || data.branding.logo) && (
           <Image
@@ -141,133 +181,138 @@ export function FlightTicketSheet({
           SAMPLE DATA — نمونهٔ نمایشی؛ شماره‌ها واقعی و صادرشده نیستند.
         </p>
       ) : null}
-      <div className={styles.identity}>
+      <section className={styles.identity}>
         <div>
-          <p>
-            Agency Name
-            <strong>{data.branding?.name ?? 'NIYAYESH SEIR SAHAR'}</strong>
-          </p>
-          <p>
-            Airline Name<strong>{offers[0]?.carrierName || '—'}</strong>
-          </p>
+          <span>PASSENGER</span>
+          <strong>{passengerLabel || '—'}</strong>
+        </div>
+        <div>
+          <span>BOOKING REFERENCE / RLOC</span>
+          <strong>{data.contractNumber || (demo ? 'DEMO01' : '—')}</strong>
         </div>
         {!data.issued ? (
-          <div>
-            <p>
-              Date Of Issue<strong>—</strong>
-            </p>
-            <p>
-              RLOC<strong>{demo ? 'DEMO01' : '—'}</strong>
-            </p>
-            <p>
-              E-Ticket No<strong>{demo ? '7143' : '—'}</strong>
-            </p>
+          <div className={styles.draftMeta}>
+            <span>E-Ticket No</span>
+            <strong>{demo ? '7143' : '—'}</strong>
           </div>
         ) : null}
-      </div>
-      <p className={styles.passenger}>
-        Passenger Name <strong>{passengerName || '—'}</strong>
+      </section>
+      <p className={styles.outputFlags}>
         {data.businessOutput || offers.some((offer) => offer.businessOutput) ? (
           <b className={styles.business}>BUSINESS</b>
         ) : null}
       </p>
-      {data.contractNumber ? (
-        <p className={styles.passenger}>
-          Contract <strong>{data.contractNumber}</strong>
-        </p>
-      ) : null}
       {data.transferDirections.length ? (
         <p className={styles.passenger}>
           TRANSFER INCLUDED:{' '}
           <strong>{data.transferDirections.join(' / ')}</strong>
         </p>
       ) : null}
-      <section className={styles.section}>
-        <h3>
-          <i>1</i> FLIGHT INFORMATION
-        </h3>
-        <div className={styles.tableWrap}>
-          <table>
-            <thead>
-              <tr>
-                {[
-                  'Date',
-                  'Flight No',
-                  'Departure',
-                  'Arrival',
-                  'Time (UTC)',
-                  'Class',
-                  'Status',
-                  'Bag',
-                ].map((label) => (
-                  <th key={label}>{label}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {offers.map((offer) => (
-                <tr key={offer.id}>
-                  <td>
-                    {new Intl.DateTimeFormat('en-CA', {
-                      timeZone: 'Asia/Tehran',
-                      year: 'numeric',
-                      month: '2-digit',
-                      day: '2-digit',
-                    }).format(new Date(offer.departureAt))}
-                  </td>
-                  <td>{offer.serviceNumber}</td>
-                  <td>{cityName(offer.originId)}</td>
-                  <td>{cityName(offer.destinationId)}</td>
-                  <td>
-                    {new Intl.DateTimeFormat('en-GB', {
-                      timeZone: 'Asia/Tehran',
-                      hour: '2-digit',
-                      minute: '2-digit',
-                      hour12: false,
-                    }).format(new Date(offer.departureAt))}
-                  </td>
-                  <td>
-                    {offer.businessOutput ? 'BUSINESS' : offer.cabinClassCode}
-                  </td>
-                  <td>
+      <div className={styles.legs}>
+        {offers.map((offer, index) => {
+          const direction =
+            offer.direction === 'RETURN'
+              ? 'RETURN'
+              : index === 0
+                ? 'OUTBOUND'
+                : 'FLIGHT';
+          const cabin = offer.businessOutput
+            ? 'BUSINESS'
+            : offer.cabinClassCode;
+          return (
+            <section
+              key={offer.id}
+              className={`${styles.leg} ${direction === 'RETURN' ? styles.returnLeg : ''}`}
+            >
+              <div className={styles.legHead}>
+                <strong>✈ &nbsp; {direction}</strong>
+                <span>{formatDate(offer.departureAt)}</span>
+                <span>{cabin} CLASS</span>
+              </div>
+              <div className={styles.route}>
+                <div className={styles.place}>
+                  <span>FROM</span>
+                  <strong>{cityName(offer.originId)}</strong>
+                  <b>{formatTime(offer.departureAt)}</b>
+                </div>
+                <div className={styles.flightPath}>
+                  <Plane size={32} strokeWidth={1.7} />
+                  <i />
+                  <small>
+                    {offer.carrierName} · {offer.serviceNumber || '—'}
+                  </small>
+                </div>
+                <div className={`${styles.place} ${styles.destination}`}>
+                  <span>TO</span>
+                  <strong>{cityName(offer.destinationId)}</strong>
+                  <b>{offer.arrivalAt ? formatTime(offer.arrivalAt) : '—'}</b>
+                </div>
+              </div>
+              <div className={styles.legFoot}>
+                <div>
+                  <span>CLASS</span>
+                  <strong>{cabin}</strong>
+                </div>
+                <div>
+                  <span>STATUS</span>
+                  <strong>
                     {data.issued
                       ? 'ISSUED'
                       : offer.contractOnly
                         ? 'PENDING RESERVATION'
                         : 'DRAFT'}
-                  </td>
-                  <td>—</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
+                  </strong>
+                </div>
+                <div>
+                  <span>FLIGHT NO.</span>
+                  <strong>{offer.serviceNumber || '—'}</strong>
+                </div>
+              </div>
+            </section>
+          );
+        })}
+      </div>
       {!data.issued ? (
-        <>
-          <section className={styles.section}>
-            <h3>
-              <i>2</i> NOTICE
-            </h3>
-            <p>
-              All times are shown in Tehran time. NOTICE 1: This preview is not
-              an issued ticket. Reservation confirmation, ticket number, airport
-              codes and baggage must come from the issuing system.
-            </p>
-            <p dir="rtl">
-              اطلاعات صدور در این پیش‌نمایش تأیید نشده‌اند. درج بیزینس فقط برچسب
-              خروجی انتخاب‌شده است.
-            </p>
-          </section>
-          <footer>
-            حضور در فرودگاه ۳ ساعت قبل از پرواز الزامی است.
-            <br />
-            <strong>
-              PRESENCE 03:00 BEFORE FLIGHT TIME AT THE AIRPORT IS MANDATORY
-            </strong>
-          </footer>
-        </>
+        <p className={styles.notice}>
+          FLIGHT INFORMATION / NOTICE — All times are shown in Tehran time.
+          Reservation confirmation, ticket number, airport codes and baggage
+          must come from the issuing system.
+        </p>
       ) : null}
+      <div className={styles.warning}>
+        <strong>
+          PRESENCE 03:00 BEFORE FLIGHT TIME AT THE AIRPORT IS MANDATORY
+        </strong>
+        <strong dir="rtl">
+          حضور در فرودگاه ۳ ساعت قبل از پرواز الزامی است.
+        </strong>
+      </div>
+      {barcode ? (
+        <figure className={styles.barcode}>
+          <svg
+            viewBox={`0 0 ${barcode.width} 54`}
+            role="img"
+            aria-label={`Barcode ${barcode.value}`}
+            preserveAspectRatio="none"
+          >
+            {barcode.bars.map((bar) => (
+              <rect
+                key={`${bar.x}-${bar.width}`}
+                x={bar.x}
+                y="0"
+                width={bar.width}
+                height="42"
+                fill="currentColor"
+              />
+            ))}
+          </svg>
+          <figcaption>{barcode.value}</figcaption>
+        </figure>
+      ) : null}
+      <footer className={styles.footer}>
+        <span>FLY FURTHER TOGETHER</span>
+        <span>{data.branding?.name ?? 'NIYAYESH SEIR SAHAR'}</span>
+      </footer>
     </article>
   );
 }

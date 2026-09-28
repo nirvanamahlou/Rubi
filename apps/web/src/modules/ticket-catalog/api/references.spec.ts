@@ -1,5 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { asReference, listReferences } from './references';
+import {
+  asReference,
+  listActiveCurrencyReferences,
+  listReferences,
+} from './references';
 afterEach(() => {
   vi.unstubAllGlobals();
   vi.unstubAllEnvs();
@@ -73,6 +77,47 @@ describe('Published read-only Master Data adapter', () => {
         updatedAt: '',
       })?.active,
     ).toBe(false);
+  });
+
+  it('loads every active currency page and returns unique ISO options', async () => {
+    vi.stubEnv('NEXT_PUBLIC_API_BASE_URL', 'http://localhost:4000/api/v1');
+    const currency = (id: string, code: string, name: string) => ({
+      id,
+      resource: 'currencies' as const,
+      code,
+      name,
+      status: 'active' as const,
+      attributes: {},
+      version: 1,
+      createdAt: '',
+      updatedAt: '',
+    });
+    const fetcher = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          data: [currency('irr', 'IRR', 'ریال')],
+          meta: { total: 26, page: 1, pageSize: 25 },
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          data: [
+            currency('usd', 'usd', 'دلار'),
+            currency('usd-duplicate', 'USD', 'دلار تکراری'),
+          ],
+          meta: { total: 26, page: 2, pageSize: 25 },
+        }),
+      });
+    vi.stubGlobal('fetch', fetcher);
+
+    await expect(listActiveCurrencyReferences()).resolves.toEqual([
+      expect.objectContaining({ code: 'IRR', name: 'ریال' }),
+      expect.objectContaining({ code: 'USD', name: 'دلار' }),
+    ]);
+    expect(fetcher).toHaveBeenCalledTimes(2);
   });
 });
 

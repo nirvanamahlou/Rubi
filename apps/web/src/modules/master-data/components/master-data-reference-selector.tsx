@@ -20,6 +20,7 @@ import {
 } from '../model/reference-fields';
 
 export function MasterDataReferenceSelector({
+  ariaDescribedby,
   config,
   disabled,
   id,
@@ -32,7 +33,9 @@ export function MasterDataReferenceSelector({
   onManage,
   createOnlyWhenEmpty = false,
   closeOnSelect = false,
+  invalid = false,
 }: {
+  ariaDescribedby?: string;
   config: ReferenceFieldConfig;
   disabled: boolean;
   id: string;
@@ -45,6 +48,7 @@ export function MasterDataReferenceSelector({
   onManage?: (record?: MasterDataRecord, query?: string) => void;
   createOnlyWhenEmpty?: boolean;
   closeOnSelect?: boolean;
+  invalid?: boolean;
 }) {
   const [expanded, setExpanded] = useState(true);
   const [query, setQuery] = useState('');
@@ -52,7 +56,8 @@ export function MasterDataReferenceSelector({
   const [savedSelection, setSavedSelection] = useState<MasterDataRecord | null>(
     null,
   );
-  const [state, setState] = useState<ReferenceSelectorState>('loading');
+  const [state, setState] = useState<ReferenceSelectorState>('idle');
+  const lookupState = query.trim() ? state : 'idle';
 
   useEffect(() => {
     if (config.multiple || config.payload !== 'id' || !value) return;
@@ -86,6 +91,7 @@ export function MasterDataReferenceSelector({
 
   useEffect(() => {
     if (config.scopeField === 'organizationId' && !scopeValue) return;
+    if (!query.trim()) return;
     let active = true;
     const timer = window.setTimeout(async () => {
       setState(resolveReferenceSelectorState({ loading: true }));
@@ -155,7 +161,9 @@ export function MasterDataReferenceSelector({
     [config, options, selectedValues],
   );
   const canCreateReference =
-    Boolean(onManage) && (!createOnlyWhenEmpty || state === 'empty');
+    Boolean(query.trim()) &&
+    Boolean(onManage) &&
+    (!createOnlyWhenEmpty || lookupState === 'empty');
 
   function choose(optionValue: string) {
     if (!config.multiple) {
@@ -212,7 +220,9 @@ export function MasterDataReferenceSelector({
                 ? 'ثبت سازمان جدید'
                 : config.target === 'organization-contacts'
                   ? 'افزودن مخاطب'
-                  : 'افزودن خدمت'}
+                  : config.target === 'room-types'
+                    ? 'افزودن نوع اتاق'
+                    : 'افزودن خدمت'}
             </Button>
           ) : null}
           {!config.multiple && selected ? (
@@ -281,9 +291,11 @@ export function MasterDataReferenceSelector({
           className="absolute end-3 top-3.5 size-4 text-muted-foreground"
         />
         <Input
+          aria-describedby={ariaDescribedby}
           aria-autocomplete="list"
           aria-controls={`${id}-options`}
           aria-expanded={(!closeOnSelect || expanded) && state === 'ready'}
+          aria-invalid={invalid}
           aria-required={required || undefined}
           className="pe-10"
           id={id}
@@ -298,7 +310,11 @@ export function MasterDataReferenceSelector({
             setQuery(event.target.value);
             setExpanded(true);
           }}
-          placeholder="جست‌وجوی عنوان یا کد"
+          placeholder={
+            config.target === 'room-types'
+              ? 'نام نوع اتاق را بنویسید'
+              : 'جست‌وجوی عنوان یا کد'
+          }
           role="combobox"
           value={query}
         />
@@ -310,24 +326,28 @@ export function MasterDataReferenceSelector({
         id={`${id}-options`}
         role="listbox"
       >
-        {state === 'loading' ? (
+        {lookupState === 'idle' ? (
+          <p className="px-3 py-4 text-sm text-muted-foreground" role="status">
+            برای نمایش گزینه‌ها، عنوان یا کد را جست‌وجو کنید.
+          </p>
+        ) : lookupState === 'loading' ? (
           <div aria-label="در حال بارگذاری گزینه‌ها" className="space-y-2">
             <Skeleton className="h-9 w-full" />
             <Skeleton className="h-9 w-full" />
           </div>
-        ) : state === 'forbidden' ? (
+        ) : lookupState === 'forbidden' ? (
           <Alert
             description="مجوز master_data.read برای دریافت گزینه‌های این فیلد لازم است."
             title="دسترسی انتخاب مرجع وجود ندارد"
             tone="error"
           />
-        ) : state === 'error' ? (
+        ) : lookupState === 'error' ? (
           <Alert
             description="دریافت گزینه‌ها از Backend ناموفق بود؛ جست‌وجو را دوباره تغییر دهید."
             title="خطای دریافت مرجع"
             tone="error"
           />
-        ) : state === 'empty' ? (
+        ) : lookupState === 'empty' ? (
           <EmptyState
             description="مرجع فعال و سازگار با این فیلد پیدا نشد."
             title="گزینه‌ای وجود ندارد"
@@ -372,21 +392,27 @@ export function MasterDataReferenceSelector({
 }
 
 export function OrganizationRoleSelector({
+  ariaDescribedby,
   disabled,
   id,
   onChange,
   required,
+  invalid,
   value,
 }: {
+  ariaDescribedby?: string;
   disabled: boolean;
   id: string;
   onChange: (value: string) => void;
   required?: boolean;
+  invalid?: boolean;
   value: string;
 }) {
   const selected = new Set(value.split(',').filter(Boolean));
   return (
     <fieldset
+      aria-describedby={ariaDescribedby}
+      aria-invalid={invalid}
       aria-required={required || undefined}
       className="grid gap-2 rounded-xl border border-border p-3"
     >

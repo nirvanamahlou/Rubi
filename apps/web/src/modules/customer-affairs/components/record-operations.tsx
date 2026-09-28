@@ -5,13 +5,14 @@ import { useState, type FormEvent } from 'react';
 import type { CustomerSummary } from '@nora/contracts';
 import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
-import { FormField, Input, Textarea } from '@/components/ui/form-controls';
+import { Input, Textarea } from '@/components/ui/form-controls';
 import { Alert, Card } from '@/components/ui/surfaces';
 import { customerAffairsApi } from '../api/customer-affairs-client';
 import { CustomerAffairsFormDialog } from './customer-affairs-form-dialog';
 import { CustomerPicker } from './customer-picker';
 import { AssigneePicker } from './assignee-picker';
 import type { Detail } from './customer-affairs-workspace';
+import { AffairsFormField as FormField } from './affairs-form-field';
 
 export const editableLeadTransitions: Record<string, string[]> = {
   NEW: ['CONTACTED', 'LOST'],

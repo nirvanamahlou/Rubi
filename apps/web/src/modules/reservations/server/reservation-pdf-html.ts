@@ -31,18 +31,15 @@ export function reservationPdfHtml(
   const sheets = pages
     .map((people, index) => {
       const rows = people.map((p, i) => {
-        const hotelChildAgeBand =
-          'hotelChildAgeBand' in p ? p.hotelChildAgeBand : undefined;
         return [
           String(first + i + 1).padStart(2, '0'),
           p.name,
           p.sex,
-          p.age,
-          hotelChildAgeBand === 'CHD_2_TO_6'
+          p.age === 'CHD (2-6)'
             ? 'CHD 2-6'
-            : hotelChildAgeBand === 'CHD_6_TO_12'
+            : p.age === 'CHD (6-12)'
               ? 'CHD 6-12'
-              : '-',
+              : p.age,
         ];
       });
       first += people.length;
@@ -59,7 +56,11 @@ export function reservationPdfHtml(
     ${heading('01', 'BOOKING SUMMARY', 'Reservation details')}${fields(
       [
         ['ADULTS', data.adults],
-        ['CHILDREN', data.children],
+        ['CHILDREN 6-12', data.children6To12],
+        ['CHILDREN 2-6', data.children2To6],
+        ...(data.childrenUnclassified
+          ? [['CHILDREN (UNSPECIFIED)', data.childrenUnclassified]]
+          : []),
         ['INFANTS', data.infants],
         ['DESTINATION', data.destination],
         ['ROOMS / NIGHTS', `${data.rooms} ROOMS / ${data.nights} NIGHTS`],
@@ -77,7 +78,7 @@ export function reservationPdfHtml(
       ${table(['DBL · DOUBLE', 'SGL · SINGLE', 'EXT · EXTRA BED'], [[data.double, data.single, data.extra]], 'roomCounts').replace('<thead>', '<caption>ROOM QUANTITIES BY TYPE</caption><thead>')}
     </div>
     ${heading('04', 'TOUR SERVICES', 'Leader & excursion')}${table(['TOUR LEADER', 'EXCURSION'], [[data.leader, data.excursion]])}
-    ${heading('05', 'PASSENGERS', 'Passenger MANIFEST')}${table(['#', 'SURNAME / NAME', 'SEX', 'TICKET AGE', 'HOTEL CHILD AGE'], rows.length ? rows : [['-', '-', '-', '-', '-']], 'passengers')}
+    ${heading('05', 'PASSENGERS', 'Passenger MANIFEST')}${table(['#', 'SURNAME / NAME', 'SEX', 'AGE RATE'], rows.length ? rows : [['-', '-', '-', '-']], 'passengers')}
     ${heading('06', 'NOTICE', 'Notes & confirmation')}<div class="notice"><span>SPECIAL REQUESTS / REMARKS</span><p dir="auto">${escape(data.notes) || '&nbsp;'}</p><div></div></div>
     <footer class="footer"><div><strong dir="auto">${escape(data.brand)}</strong><span>Reservation request - subject to supplier confirmation.</span></div><b>${index + 1} / ${pages.length}</b></footer></article>`;
     })

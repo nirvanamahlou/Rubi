@@ -155,12 +155,12 @@ export function PersonalDetailsForm({
             <div className="space-y-2">
               <p className="font-bold">عکس پروفایل</p>
               <p className="text-xs text-muted-foreground">
-                PNG، JPG یا WebP؛ حداکثر ۵ مگابایت
+                PNG یا JPG؛ حداکثر ۵ مگابایت
               </p>
               <input
                 ref={upload}
                 type="file"
-                accept="image/png,image/jpeg,image/webp"
+                accept="image/png,image/jpeg"
                 aria-label="انتخاب عکس پروفایل"
                 className="sr-only"
                 tabIndex={-1}

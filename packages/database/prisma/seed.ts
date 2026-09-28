@@ -274,6 +274,48 @@ async function seed(): Promise<void> {
               'customer_affairs.export',
             ],
           },
+          {
+            code: 'marketing_staff',
+            name: 'کارشناس مارکتینگ',
+            permissions: [
+              'marketing.read',
+              'marketing.process.read',
+              'marketing.campaign.create',
+              'marketing.campaign.update',
+              'marketing.campaign.schedule',
+              'marketing.audience.read',
+              'marketing.audience.manage',
+              'marketing.offer.manage',
+              'marketing.budget.read',
+              'marketing.attribution.read',
+              'marketing.analytics.read',
+            ],
+          },
+          {
+            code: 'marketing_manager',
+            name: 'مدیر مارکتینگ',
+            permissions: [
+              'marketing.read',
+              'marketing.process.read',
+              'marketing.campaign.create',
+              'marketing.campaign.update',
+              'marketing.campaign.approve',
+              'marketing.campaign.schedule',
+              'marketing.campaign.execute',
+              'marketing.campaign.pause',
+              'marketing.campaign.cancel',
+              'marketing.audience.read',
+              'marketing.audience.manage',
+              'marketing.offer.manage',
+              'marketing.budget.read',
+              'marketing.budget.manage',
+              'marketing.cost.record',
+              'marketing.attribution.read',
+              'marketing.analytics.read',
+              'marketing.audit.read',
+              'marketing.sensitive_summary.read',
+            ],
+          },
         ] as const;
         await Promise.all(
           seededPermissions
@@ -422,6 +464,7 @@ async function seed(): Promise<void> {
           ['HR_DOCUMENT', 'اسناد منابع انسانی', 'HUMAN_RESOURCES', true],
           ['REPORT_EXPORT', 'گزارش و خروجی', 'REPORTING', false],
           ['BRAND_ASSET_TEMPLATE', 'دارایی برند و قالب', 'BRAND', false],
+          ['WORKBENCH_FEEDBACK_ATTACHMENT', 'پیوست نظرسنجی', 'GENERAL', false],
         ] as const;
         for (const [code, name, domain, requiresExpiry] of documentTypes) {
           await transaction.documentType.upsert({

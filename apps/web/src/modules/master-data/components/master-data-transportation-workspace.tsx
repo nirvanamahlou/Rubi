@@ -544,7 +544,10 @@ export function MasterDataTransportationWorkspace() {
       />
     ) : (
       <Card className="overflow-x-auto">
-        <table className="w-full min-w-[52rem] text-sm">
+        <table
+          aria-label={`فهرست ${pageDefinition.label}`}
+          className="w-full min-w-[52rem] text-sm"
+        >
           <thead className="bg-muted/50 text-muted-foreground">
             <tr>
               <th className="p-4 text-start">ردیف</th>

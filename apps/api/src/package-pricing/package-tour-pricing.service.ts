@@ -280,8 +280,10 @@ export class PackageTourPricingService {
     if (
       !batch ||
       batch.currencyCode !== draft.currencyCode ||
-      batch.checkIn < grid.tour.startsOn ||
-      batch.checkOut > grid.tour.endsOn ||
+      batch.checkIn > grid.tour.startsOn ||
+      (batch.method === 'STAY'
+        ? batch.checkOut < grid.tour.endsOn
+        : batch.checkOut <= grid.tour.startsOn) ||
       dateSpan(grid.tour.startsOn, grid.tour.endsOn) !== grid.nights
     )
       throw new UnprocessableEntityException(
@@ -314,20 +316,36 @@ export class PackageTourPricingService {
       throw new UnprocessableEntityException(
         'قیمت خرید پرواز یا پرداخت آن کامل نشده است.',
       );
-    const nights = dateSpan(batch.checkIn, batch.checkOut);
+    const nights = grid.nights;
     const businessCabin =
       grid.tour.outbound.cabinClassCode === 'BUSINESS' ||
       grid.tour.returning?.cabinClassCode === 'BUSINESS';
     const byRow = new Map(
       draft.adjustments.map((item) => [item.hotelRateId, item]),
     );
-    const prices = batch.rows.flatMap((row) =>
-      roomCodes.map((roomCode) => {
-        const passengers = tourRoomOccupancy(
-          roomCode,
-          draft.familyAdults ?? undefined,
-          draft.familyChildren ?? undefined,
-        );
+    const prices = batch.rows.flatMap((row) => {
+      const sellableRooms =
+        !Object.values(row.factors).some(Boolean) && row.roomRates.length
+          ? row.roomRates.map((room) => ({
+              roomCode: room.roomTypeId,
+              factor: room.factor,
+              passengers: {
+                adults: room.maxAdults,
+                children: room.maxChildren,
+              },
+            }))
+          : roomCodes
+              .filter((roomCode) => Boolean(row.factors[roomCode]))
+              .map((roomCode) => ({
+                roomCode,
+                factor: row.factors[roomCode]!,
+                passengers: tourRoomOccupancy(
+                  roomCode,
+                  draft.familyAdults ?? undefined,
+                  draft.familyChildren ?? undefined,
+                ),
+              }));
+      return sellableRooms.map(({ roomCode, factor, passengers }) => {
         if (!passengers)
           throw new UnprocessableEntityException(
             'تعداد بزرگسال و کودک اتاق خانوادگی را مشخص کنید.',
@@ -336,7 +354,7 @@ export class PackageTourPricingService {
         try {
           const calculated = calculateTourRoom({
             basePerNight: row.basePerNight,
-            factor: row.factors[roomCode] ?? '',
+            factor,
             nights,
             hotelCurrency: row.currencyCode ?? batch.currencyCode,
             adjustment: {
@@ -362,12 +380,10 @@ export class PackageTourPricingService {
             businessCabin,
             commissionPercent: draft.commissionPercent.toString(),
             commissionMode: (draft.commissionMode ?? 'percent') as
-              | 'percent'
-              | 'fixed',
+              'percent' | 'fixed',
             commissionAmount: {
               amount: draft.commissionAmount?.toString() ?? '0',
-              currencyCode:
-                draft.commissionCurrencyCode ?? draft.currencyCode,
+              currencyCode: draft.commissionCurrencyCode ?? draft.currencyCode,
             },
             flightCosts: [outbound, ...(returning ? [returning] : [])],
           });
@@ -393,8 +409,8 @@ export class PackageTourPricingService {
             error instanceof Error ? error.message : 'محاسبه قیمت معتبر نیست.',
           );
         }
-      }),
-    );
+      });
+    });
     const fingerprint = sourceHash({
       tour: grid.tour,
       batch,
@@ -505,9 +521,7 @@ export class PackageTourPricingService {
       businessUplift: row.businessUplift.toString(),
       businessUpliftCurrencyCode: row.businessUpliftCurrencyCode,
       commissionPercent: row.commissionPercent.toString(),
-      commissionMode: (row.commissionMode ?? 'percent') as
-        | 'percent'
-        | 'fixed',
+      commissionMode: (row.commissionMode ?? 'percent') as 'percent' | 'fixed',
       commissionAmount: row.commissionAmount?.toString() ?? '0',
       commissionCurrencyCode: row.commissionCurrencyCode ?? row.currencyCode,
       ...(row.familyAdults != null ? { familyAdults: row.familyAdults } : {}),
@@ -546,9 +560,7 @@ export class PackageTourPricingService {
       businessUplift: row.businessUplift.toString(),
       businessUpliftCurrencyCode: row.businessUpliftCurrencyCode,
       commissionPercent: row.commissionPercent.toString(),
-      commissionMode: (row.commissionMode ?? 'percent') as
-        | 'percent'
-        | 'fixed',
+      commissionMode: (row.commissionMode ?? 'percent') as 'percent' | 'fixed',
       commissionAmount: row.commissionAmount?.toString() ?? '0',
       commissionCurrencyCode: row.commissionCurrencyCode ?? row.currencyCode,
       ...(row.familyAdults != null ? { familyAdults: row.familyAdults } : {}),

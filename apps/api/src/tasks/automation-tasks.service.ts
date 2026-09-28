@@ -20,6 +20,10 @@ export class AutomationTasksService {
   ) {
     const terminal = ['REJECTED', 'CANCELLED', 'CLOSED'].includes(input.status);
     const assigneeUserId = input.approverUserId ?? input.ownerUserId;
+    // A freshly saved, unassigned draft has no actionable task. Skipping the
+    // projection is also important while a local database is being upgraded:
+    // its absence must not roll back the Procurement request itself.
+    if (input.action === 'CREATE' && !terminal && !assigneeUserId) return null;
     await tx.automationTask.updateMany({
       where: {
         sourceModule: 'PROCUREMENT',

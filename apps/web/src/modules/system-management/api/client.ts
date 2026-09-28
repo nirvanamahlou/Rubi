@@ -3,6 +3,7 @@ import type {
   SystemFeatureFlagV1,
   SystemNumberingSchemeV1,
   SystemNumberingSchemeWriteV1,
+  SystemReportingExportRetryInputV1,
   SystemSessionRevokeInputV1,
   SystemSessionV1,
   SystemSettingV1,
@@ -94,6 +95,13 @@ export interface SystemAuditRecord {
   createdAt: string;
 }
 
+export interface ContractTemplateUploadResult {
+  id: string;
+  originalFileName: string;
+  scanStatus: string;
+  sizeBytes: number;
+}
+
 async function request<T>(
   path: string,
   init?: RequestInit,
@@ -142,8 +150,17 @@ function json(body: unknown): RequestInit {
 export const systemManagementApi = {
   overview: () => request<SystemOverview>('/overview'),
   settings: () => request<SystemSettingV1[]>('/settings'),
+  resolveSetting: (namespace: string, key: string) =>
+    request<SystemSettingV1 | null>(
+      `/settings/resolve?namespace=${encodeURIComponent(namespace)}&key=${encodeURIComponent(key)}`,
+    ),
   writeSetting: (input: SystemSettingWriteV1) =>
     request<SystemSettingV1>('/settings', json(input)),
+  uploadContractTemplate: (form: FormData) =>
+    request<ContractTemplateUploadResult>('/contract-templates', {
+      body: form,
+      method: 'POST',
+    }),
   numberingSchemes: () =>
     request<SystemNumberingSchemeV1[]>('/numbering-schemes'),
   writeNumberingScheme: (input: SystemNumberingSchemeWriteV1) =>
@@ -170,8 +187,10 @@ export const systemManagementApi = {
   backupRequests: () => request<SystemBackupRequestV1[]>('/backup-requests'),
   requestBackup: (input: BackupRequestWrite) =>
     request<SystemBackupRequestV1>('/backup-requests', json(input)),
-  retryReportingExport: (id: string, input: { reason: string }) =>
-    request(`/jobs/reporting-exports/${id}/retry`, json(input)),
+  retryReportingExport: (
+    id: string,
+    input: SystemReportingExportRetryInputV1,
+  ) => request(`/jobs/reporting-exports/${id}/retry`, json(input)),
   health: () => request<SystemOverview['health']>('/health'),
   audit: () => request<SystemAuditRecord[]>('/audit'),
 };

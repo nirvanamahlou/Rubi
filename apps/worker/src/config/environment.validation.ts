@@ -8,4 +8,5 @@ export const environmentValidationSchema = Joi.object({
     .uri({ scheme: ['redis', 'rediss'] })
     .required(),
   WORKER_QUEUE_NAME: Joi.string().trim().min(1).default('nora-system-health'),
+  WORKER_HEALTH_PORT: Joi.number().port().default(4100),
 });

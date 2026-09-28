@@ -3,7 +3,7 @@ export function getPublicApiBaseUrl(): string | null {
   if (configuredValue) {
     if (
       typeof window !== 'undefined' &&
-      isLocalHostname(window.location.hostname)
+      isLocalRuntimeHostname(window.location.hostname)
     ) {
       try {
         const localApiUrl = new URL(configuredValue);
@@ -20,7 +20,7 @@ export function getPublicApiBaseUrl(): string | null {
 
   if (
     typeof window !== 'undefined' &&
-    isLocalHostname(window.location.hostname)
+    isLocalRuntimeHostname(window.location.hostname)
   ) {
     const localApiUrl = new URL(window.location.origin);
     localApiUrl.port = '4000';
@@ -38,4 +38,23 @@ export function getHealthEndpoint(): string | null {
 
 function isLocalHostname(hostname: string): boolean {
   return ['localhost', '127.0.0.1', '::1', '[::1]'].includes(hostname);
+}
+
+function isLocalRuntimeHostname(hostname: string): boolean {
+  if (isLocalHostname(hostname)) return true;
+
+  const octets = hostname.split('.').map(Number);
+  if (
+    octets.length !== 4 ||
+    octets.some((octet) => !Number.isInteger(octet) || octet < 0 || octet > 255)
+  )
+    return false;
+
+  const firstOctet = octets[0]!;
+  const secondOctet = octets[1]!;
+  return (
+    firstOctet === 10 ||
+    (firstOctet === 172 && secondOctet >= 16 && secondOctet <= 31) ||
+    (firstOctet === 192 && secondOctet === 168)
+  );
 }

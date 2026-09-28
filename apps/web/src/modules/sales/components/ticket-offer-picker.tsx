@@ -15,6 +15,9 @@ export function TicketOfferPicker({
   originLabel,
   destinationLabel,
   requiredSeats,
+  requireStandaloneFare = false,
+  roundTripOutbound,
+  acceptAnyRoundTripFare = false,
 }: {
   query: TicketOfferSearchV1;
   selectedId: string;
@@ -22,13 +25,17 @@ export function TicketOfferPicker({
   originLabel?: string;
   destinationLabel?: string;
   requiredSeats: number;
+  requireStandaloneFare?: boolean;
+  roundTripOutbound?: TicketOfferV1;
+  acceptAnyRoundTripFare?: boolean;
 }) {
   const [offers, setOffers] = useState<TicketOfferV1[]>([]);
-  const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState({ filters: '', page: 1 });
   const [hasMore, setHasMore] = useState(false);
   const [busy, setBusy] = useState(true);
   const [error, setError] = useState('');
   const filters = JSON.stringify(query);
+  const page = pagination.filters === filters ? pagination.page : 1;
   useEffect(() => {
     const controller = new AbortController();
     const timer = setTimeout(() => {
@@ -61,6 +68,7 @@ export function TicketOfferPicker({
           data: TicketOfferV1[];
           hasMore: boolean;
         };
+        if (controller.signal.aborted) return;
         setOffers(result.data);
         setHasMore(result.hasMore);
       })()
@@ -99,6 +107,13 @@ export function TicketOfferPicker({
             offer={offer}
             selected={selectedId === offer.id}
             requiredSeats={requiredSeats}
+            requireStandaloneFare={
+              requireStandaloneFare &&
+              !(acceptAnyRoundTripFare && offer.roundTripSalePrices?.length) &&
+              !roundTripOutbound?.roundTripSalePrices?.some(
+                (price) => price.returnOfferId === offer.id,
+              )
+            }
             onSelect={onSelect}
             {...(originLabel ? { originLabel } : {})}
             {...(destinationLabel ? { destinationLabel } : {})}
@@ -111,7 +126,7 @@ export function TicketOfferPicker({
             type="button"
             variant="outline"
             disabled={busy}
-            onClick={() => setPage(page - 1)}
+            onClick={() => setPagination({ filters, page: page - 1 })}
           >
             صفحه قبل
           </Button>
@@ -121,7 +136,7 @@ export function TicketOfferPicker({
             type="button"
             variant="outline"
             disabled={busy}
-            onClick={() => setPage(page + 1)}
+            onClick={() => setPagination({ filters, page: page + 1 })}
           >
             بلیط‌های بیشتر
           </Button>

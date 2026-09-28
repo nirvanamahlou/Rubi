@@ -13,6 +13,8 @@ import type {
 import { refreshAuthenticatedSession } from '@/lib/auth-session';
 import { getPublicApiBaseUrl } from '@/lib/environment';
 
+export const PROFILE_PHOTO_CHANGED_EVENT = 'rubi:profile-photo-changed';
+
 async function request<T>(
   path: string,
   init?: RequestInit,
@@ -47,6 +49,40 @@ async function request<T>(
   if (response.status === 204) return undefined as T;
   const text = await response.text();
   return (text ? JSON.parse(text) : undefined) as T;
+}
+
+async function requestBlob(
+  path: string,
+  init?: RequestInit,
+  retried = false,
+): Promise<Blob> {
+  const base = getPublicApiBaseUrl();
+  if (!base) throw new Error('نشانی API پیکربندی نشده است.');
+  const response = await fetch(`${base}/workbench${path}`, {
+    credentials: 'include',
+    cache: 'no-store',
+    ...init,
+    headers: { accept: '*/*', ...init?.headers },
+  });
+  if (
+    response.status === 401 &&
+    !retried &&
+    (await refreshAuthenticatedSession(base))
+  )
+    return requestBlob(path, init, true);
+  if (!response.ok) {
+    const payload = (await response.json().catch(() => null)) as {
+      message?: string | string[];
+      error?: { message?: string };
+    } | null;
+    const message = payload?.error?.message ?? payload?.message;
+    throw new Error(
+      Array.isArray(message)
+        ? message.join(' ')
+        : (message ?? 'دریافت عکس پروفایل انجام نشد.'),
+    );
+  }
+  return response.blob();
 }
 
 const json = (method: 'POST' | 'PATCH', value: unknown): RequestInit => ({
@@ -89,6 +125,21 @@ export const workbenchPersonalApi = {
   deleteEvent: (id: string) =>
     request<void>(`/calendar/${encodeURIComponent(id)}`, { method: 'DELETE' }),
   profile: () => request<IamPersonalProfileResponseV1>('/profile'),
+  profilePhoto: () => requestBlob('/profile/photo'),
+  uploadProfilePhoto: (input: {
+    branchId: string;
+    title: string;
+    file: File;
+  }) => {
+    const form = new FormData();
+    form.set('branchId', input.branchId);
+    form.set('title', input.title);
+    form.set('file', input.file);
+    return request<{ data: { id: string; scanStatus: string } }>(
+      '/profile/photo',
+      { method: 'POST', body: form },
+    );
+  },
   updateProfile: (input: IamPersonalProfileUpdateInputV1) =>
     request<IamPersonalProfileResponseV1>('/profile', json('PATCH', input)),
   activity: () => request<WorkbenchActivityResponseV1>('/activity'),

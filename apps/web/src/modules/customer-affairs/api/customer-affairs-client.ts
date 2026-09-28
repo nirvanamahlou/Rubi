@@ -120,6 +120,7 @@ export const customerAffairsApi = {
         id: string;
         trackingNumber: string;
         subject: string;
+        description: string;
         destinationUnit: string | null;
         status: string;
         priority: string;

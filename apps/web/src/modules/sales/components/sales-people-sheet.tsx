@@ -11,6 +11,7 @@ import {
   customersApi,
   type CustomerCalendarMode,
   type CustomerEntryRow,
+  type EntryField,
 } from '@/modules/customers/public/entry';
 import { SalesOrganizationCustomer } from './sales-organization-customer';
 import { SalesPersonSearch } from './sales-person-search';
@@ -20,6 +21,7 @@ import { loadSalesAcquaintanceMethods } from '../api/acquaintance-methods';
 import {
   salesPassengerAgeLabel,
   salesPassengerCounts,
+  salesRequiresPassportIdentity,
   salesTravelDate,
   type SalesFormState,
 } from '../model/sales-form';
@@ -33,6 +35,7 @@ import {
   saveSalesPeopleDraft,
   normalizeSalesPeopleDraft,
   editPeopleRow,
+  setSalesPeopleAcquaintanceMethod,
   type SalesPeopleDraft,
 } from '../model/sales-people-sheet';
 
@@ -88,6 +91,23 @@ export function SalesPeopleSheet({
   const inFlight = useRef(false);
   const slots = passengerSlotKeys(state);
   const counts = salesPassengerCounts(state);
+  const passportIdentity = salesRequiresPassportIdentity(state);
+  const visibleEntryFields: readonly EntryField[] = passportIdentity
+    ? [
+        'nationalId',
+        'passportFirstName',
+        'passportLastName',
+        'birthDate',
+        'passportNumber',
+        'passportExpiryDate',
+        'gender',
+        'nationalityCode',
+        'passportIssuingCountryCode',
+        'birthCountryCode',
+        'phone',
+        'email',
+      ]
+    : ['firstName', 'lastName', 'nationalId', 'birthDate', 'phone', 'email'];
   const change = (next: SalesPeopleDraft) => {
     setConfirmed(false);
     setError('');
@@ -236,46 +256,6 @@ export function SalesPeopleSheet({
               ملی فعلی ادامه می‌یابد.
             </p>
           ) : null}
-          <div className="mt-3 space-y-1">
-            <span className="text-xs font-semibold">نحوه آشنایی</span>
-            <SalesThemedSelect
-              label={`نحوه آشنایی ${label}`}
-              value={row.values.acquaintanceMethodId ?? ''}
-              disabled={
-                busy ||
-                methodsLoading ||
-                Boolean(methodsError) ||
-                !acquaintanceMethods.length ||
-                Boolean(row.person && !row.profile)
-              }
-              options={[
-                { value: '', label: 'انتخاب نحوه آشنایی' },
-                ...acquaintanceMethods.map((item) => ({
-                  value: item.id,
-                  label: item.name,
-                })),
-                ...(row.values.acquaintanceMethodId &&
-                !acquaintanceMethods.some(
-                  (item) => item.id === row.values.acquaintanceMethodId,
-                )
-                  ? [
-                      {
-                        value: row.values.acquaintanceMethodId,
-                        label: 'نحوه آشنایی ثبت‌شده در پرونده',
-                      },
-                    ]
-                  : []),
-              ]}
-              onValueChange={(acquaintanceMethodId) =>
-                change(
-                  editPeopleRow(draft, key, {
-                    ...row,
-                    values: { ...row.values, acquaintanceMethodId },
-                  }),
-                )
-              }
-            />
-          </div>
         </div>
       ),
       onChange: (field, value) =>
@@ -371,6 +351,41 @@ export function SalesPeopleSheet({
           </p>
         ) : null}
       </div>
+      <div className="grid gap-2 rounded-xl border border-primary/15 bg-primary/[0.03] p-3 sm:grid-cols-[minmax(0,1fr)_minmax(16rem,22rem)] sm:items-end">
+        <div>
+          <p className="font-bold">نحوه آشنایی با آژانس</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            یک‌بار برای این قرارداد انتخاب می‌شود و برای همه افراد همین قرارداد
+            ثبت خواهد شد.
+          </p>
+        </div>
+        <SalesThemedSelect
+          label="نحوه آشنایی برای کل قرارداد"
+          value={
+            draft.acquaintanceMethodId ??
+            peopleRow(draft, 'p0').values.acquaintanceMethodId ??
+            ''
+          }
+          disabled={
+            busy ||
+            methodsLoading ||
+            Boolean(methodsError) ||
+            !acquaintanceMethods.length
+          }
+          options={[
+            { value: '', label: 'انتخاب نحوه آشنایی' },
+            ...acquaintanceMethods.map((item) => ({
+              value: item.id,
+              label: item.name,
+            })),
+          ]}
+          onValueChange={(acquaintanceMethodId) =>
+            change(
+              setSalesPeopleAcquaintanceMethod(draft, acquaintanceMethodId),
+            )
+          }
+        />
+      </div>
       {draft.mode === 'organization' ? (
         draft.organization ? (
           <div className="flex items-center justify-between rounded-xl border p-3">
@@ -429,6 +444,11 @@ export function SalesPeopleSheet({
       <p className="text-xs text-muted-foreground">
         ردیف‌ها به تعداد مرحله اول باز شده‌اند. برای تغییر تعداد بزرگسال یا کودک
         به مرحله اول برگردید؛ نوزاد صندلی بلیط کم نمی‌کند.
+      </p>
+      <p className="rounded-xl bg-muted/60 px-3 py-2 text-xs text-muted-foreground">
+        {passportIdentity
+          ? 'بلیط خارجی انتخاب شده است: نام لاتین مطابق پاسپورت جای نام فارسی را می‌گیرد؛ سایر مشخصات اجباری فعلی قرارداد حفظ می‌شوند.'
+          : 'برای قرارداد بدون بلیط خارجی، نام، نام خانوادگی و کد ملی فارسی ثبت می‌شود و اطلاعات پاسپورت لازم نیست.'}
       </p>
       {!salesTravelDate(state) ||
       (!state.serviceKinds.includes('FLIGHT') &&
@@ -521,7 +541,19 @@ export function SalesPeopleSheet({
       ) : null}
       <CustomerEntrySheet
         rows={rows}
-        showPassportExpiry
+        showPassportExpiry={passportIdentity}
+        visibleFields={visibleEntryFields}
+        columnLabels={
+          passportIdentity
+            ? {
+                passportFirstName: 'نام انگلیسی مطابق پاسپورت *',
+                passportLastName: 'نام خانوادگی انگلیسی مطابق پاسپورت *',
+                birthDate: 'تاریخ تولد *',
+                passportNumber: 'شماره پاسپورت *',
+                passportExpiryDate: 'انقضای پاسپورت *',
+              }
+            : { birthDate: 'تاریخ تولد *' }
+        }
         calendarMode={calendar}
         onCalendarModeChange={setCalendar}
         disabled={busy}

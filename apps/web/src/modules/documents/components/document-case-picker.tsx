@@ -38,6 +38,7 @@ export function DocumentCasePicker({
 
   useEffect(() => {
     if (!open || !branchId) return;
+    if (!search.trim()) return;
     const controller = new AbortController();
     const timer = window.setTimeout(() => {
       setLoading(true);
@@ -104,7 +105,7 @@ export function DocumentCasePicker({
         id="source-relation"
         onClick={() => {
           if (!open) {
-            setLoading(true);
+            setLoading(false);
             setError('');
             setOptions([]);
           }
@@ -154,8 +155,9 @@ export function DocumentCasePicker({
                 autoFocus
                 className="pe-10"
                 onChange={(event) => {
-                  setLoading(true);
-                  setSearch(event.target.value);
+                  const nextSearch = event.target.value;
+                  setLoading(Boolean(nextSearch.trim()));
+                  setSearch(nextSearch);
                 }}
                 placeholder="نام قرارداد، رزرو یا پرونده…"
                 value={search}
@@ -168,7 +170,12 @@ export function DocumentCasePicker({
             id={listboxId}
             role="listbox"
           >
-            {loading ? (
+            {!search.trim() ? (
+              <div className="px-3 py-8 text-center text-sm text-muted-foreground">
+                برای نمایش پرونده‌ها، نام قرارداد، رزرو یا پرونده را جست‌وجو
+                کنید.
+              </div>
+            ) : loading ? (
               <div className="flex items-center justify-center gap-2 px-3 py-8 text-sm text-muted-foreground">
                 <LoaderCircle
                   aria-hidden="true"

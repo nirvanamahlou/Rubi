@@ -311,6 +311,7 @@ export class ReservationRequestsController {
     ReservationsPublicService,
     TravelWorkflowService,
     FinanceDeliveryModule,
+    HotelRatesModule,
   ],
 })
 export class ReservationsRuntimeModule {}

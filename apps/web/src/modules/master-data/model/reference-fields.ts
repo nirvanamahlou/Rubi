@@ -11,7 +11,7 @@ export interface ReferenceFieldConfig {
   scopeField?: 'organizationId' | 'countryId';
 }
 export type ReferenceSelectorState =
-  'loading' | 'ready' | 'empty' | 'error' | 'forbidden';
+  'idle' | 'loading' | 'ready' | 'empty' | 'error' | 'forbidden';
 
 export function resolveReferenceSelectorState(input: {
   loading?: boolean;

@@ -57,17 +57,17 @@ export class CustomerAffairsController {
 
   @Get('dashboard')
   @Header('Cache-Control', 'private, no-store')
-  @RequirePermissions(
-    'customer_affairs.lead.read',
-    'customer_affairs.ticket.read',
-  )
+  @RequirePermissions()
   dashboard(@Req() req: AuthenticatedRequest) {
     return this.service.dashboard(req.actor);
   }
 
   @Get('reports/summary')
   @Header('Cache-Control', 'private, no-store')
-  @RequirePermissions('customer_affairs.export')
+  @RequirePermissions(
+    'customer_affairs.lead.read',
+    'customer_affairs.ticket.read',
+  )
   report(@Req() req: AuthenticatedRequest) {
     return this.service.report(req.actor);
   }

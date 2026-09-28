@@ -24,7 +24,10 @@ const input = {
 describe('WorkbenchFeedbackService', () => {
   const repository = { create: vi.fn(), findById: vi.fn() };
   const hrDirectory = { workbenchFeedbackRecipientUserIds: vi.fn() };
-  const documents = { assertWorkbenchFeedbackAttachments: vi.fn() };
+  const documents = {
+    assertWorkbenchFeedbackAttachments: vi.fn(),
+    uploadOwnWorkbenchFeedbackAttachment: vi.fn(),
+  };
   const service = new WorkbenchFeedbackService(
     repository as never,
     hrDirectory as never,
@@ -37,6 +40,10 @@ describe('WorkbenchFeedbackService', () => {
       '66666666-6666-4666-8666-666666666666',
     ]);
     documents.assertWorkbenchFeedbackAttachments.mockResolvedValue(undefined);
+    documents.uploadOwnWorkbenchFeedbackAttachment.mockResolvedValue({
+      id: '88888888-8888-4888-8888-888888888888',
+      scanStatus: 'PENDING_SCAN',
+    });
     repository.create.mockImplementation(async (value) => ({
       ...value,
       submittedAt: '2026-09-12T10:00:00.000Z',
@@ -80,6 +87,34 @@ describe('WorkbenchFeedbackService', () => {
       ),
     ).rejects.toBeInstanceOf(ForbiddenException);
     expect(repository.create).not.toHaveBeenCalled();
+  });
+
+  it('routes an attachment through the narrow Documents owner boundary', async () => {
+    const file = {
+      buffer: Buffer.from('%PDF-test'),
+      mimetype: 'application/pdf',
+      originalname: 'feedback.pdf',
+      size: 9,
+    };
+    const result = await service.uploadAttachment(
+      {
+        feedbackId: input.id,
+        branchId: input.branchId,
+        subject: input.subject,
+        anonymous: input.anonymous,
+      },
+      file,
+      actor,
+      { ipAddress: '127.0.0.1' },
+    );
+
+    expect(documents.uploadOwnWorkbenchFeedbackAttachment).toHaveBeenCalledWith(
+      expect.objectContaining({ feedbackId: input.id }),
+      file,
+      actor,
+      { ipAddress: '127.0.0.1' },
+    );
+    expect(result.data.id).toBe('88888888-8888-4888-8888-888888888888');
   });
 
   it('hides the sender from an authorized recipient of anonymous feedback', async () => {

@@ -18,9 +18,11 @@ type Intake = ReservationIntakeV1 & { workflow: TravelWorkflowStateV1 };
 export function SalesTravelDocuments({
   contractId,
   className,
+  label = 'مدارک مسافر · تأیید مالی',
 }: {
   contractId: string;
   className?: string;
+  label?: string;
 }) {
   const [intake, setIntake] = useState<Intake>();
   const [error, setError] = useState('');
@@ -54,7 +56,7 @@ export function SalesTravelDocuments({
         disabled={busy}
         onClick={() => void load()}
       >
-        مدارک مسافر · تأیید مالی
+        {label}
       </Button>
       {error && (
         <p role="alert" className="text-sm text-destructive">

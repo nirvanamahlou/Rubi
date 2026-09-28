@@ -13,6 +13,7 @@ import {
   Optional,
 } from '@nestjs/common';
 import { TourPublicService } from '../ticket-catalog/tour-public.service';
+import { HotelPurchaseRatesPublicService } from '../reservations/hotel-purchase-rates.public';
 import type {
   SalesServicePricingV1,
   SalesAccommodationKind,
@@ -24,6 +25,7 @@ import type {
   SalesPaymentCreateRequest,
   SalesReservationRequestV1,
   SalesFinanceInboxPaymentV1,
+  FinanceCustomerDocumentDeliveryCandidateV1,
 } from '@nora/contracts';
 import type { Prisma } from '@nora/database';
 
@@ -34,6 +36,7 @@ import {
 } from './sales.adapters';
 import {
   calculateSalesBalances,
+  passengerAgeYears,
   SalesDomainError,
   salesFingerprint,
   sumSalesDecimals,
@@ -103,6 +106,64 @@ function paymentInput(row: SalesContractRow['payments'][number]) {
     paymentReference: row.paymentReference,
     check,
   };
+}
+
+type HotelCapacityBands = {
+  adults: number;
+  children2To6: number;
+  children6To12: number;
+  infants: number;
+};
+
+function hotelCapacity(
+  roomRate: {
+    maxAdults: number;
+    maxChildren: number;
+    maxChildren2To6?: number;
+    maxChildren6To12?: number;
+    maxInfants?: number;
+  },
+  rooms: number,
+): HotelCapacityBands {
+  // Older rate packs only have maxChildren; consider that a 2–6 capacity until
+  // the rate is edited. This avoids making an existing hotel unavailable.
+  const children2To6 = roomRate.maxChildren2To6 ?? roomRate.maxChildren;
+  const children6To12 = roomRate.maxChildren6To12 ?? 0;
+  return {
+    adults: roomRate.maxAdults * rooms,
+    children2To6: children2To6 * rooms,
+    children6To12: children6To12 * rooms,
+    infants: (roomRate.maxInfants ?? 0) * rooms,
+  };
+}
+
+function passengerCapacityBands(
+  passengers: readonly { birthDate: string }[],
+  departureDate: string,
+): HotelCapacityBands {
+  return passengers.reduce<HotelCapacityBands>(
+    (counts, passenger) => {
+      const age = passengerAgeYears(passenger.birthDate, departureDate);
+      if (age < 2) counts.infants += 1;
+      else if (age < 6) counts.children2To6 += 1;
+      else if (age < 12) counts.children6To12 += 1;
+      else counts.adults += 1;
+      return counts;
+    },
+    { adults: 0, children2To6: 0, children6To12: 0, infants: 0 },
+  );
+}
+
+function capacityExceeded(
+  requested: HotelCapacityBands,
+  capacity: HotelCapacityBands,
+): boolean {
+  return (
+    requested.adults > capacity.adults ||
+    requested.children2To6 > capacity.children2To6 ||
+    requested.children6To12 > capacity.children6To12 ||
+    requested.infants > capacity.infants
+  );
 }
 
 export function presentSalesContract(
@@ -298,8 +359,81 @@ export class SalesService {
     @Optional()
     @Inject(TourPublicService)
     private readonly tours?: TourPublicService,
+    @Optional()
+    @Inject(HotelPurchaseRatesPublicService)
+    private readonly hotelRates?: HotelPurchaseRatesPublicService,
   ) {}
 
+  async availableHotelRoomRates(
+    input: { hotelId: string; checkIn: string; checkOut: string },
+    actor: AuthenticatedActor,
+  ) {
+    if (!has(actor, 'sales.contracts.create'))
+      throw new ForbiddenException('مجوز ایجاد قرارداد وجود ندارد.');
+    const branchId = branch(actor);
+    if (!this.hotelRates)
+      throw new BadRequestException('سرویس نرخ اتاق هتل در دسترس نیست.');
+    return {
+      data: await this.hotelRates.availableRoomRates({ branchId, ...input }),
+    };
+  }
+  private async assertHotelRoomCapacity(
+    input: SalesContractCreateRequest,
+    branchId: string,
+  ): Promise<void> {
+    const hotel = input.hotelSelection;
+    if (!hotel) return;
+    if (!this.hotelRates)
+      throw new BadRequestException('سرویس نرخ اتاق هتل در دسترس نیست.');
+    const roomRate = await this.hotelRates.roomAvailability({
+      branchId,
+      hotelId: hotel.hotelId,
+      roomTypeId: hotel.roomTypeId,
+      checkIn: hotel.checkInDate,
+      checkOut: hotel.checkOutDate,
+    });
+    if (!roomRate) return;
+    const guests = input.passengers.filter((passenger) =>
+      passenger.serviceClientKeys.includes(hotel.serviceClientKey),
+    );
+    const requested = passengerCapacityBands(guests, input.departureDate);
+    const capacity = hotelCapacity(roomRate, hotel.roomCount);
+    if (capacityExceeded(requested, capacity))
+      throw new BadRequestException({
+        code: 'HOTEL_ROOM_CAPACITY_EXCEEDED',
+        message: `ظرفیت ${roomRate.roomTypeName} برای ${hotel.roomCount.toLocaleString('fa-IR')} اتاق کافی نیست: ${capacity.adults.toLocaleString('fa-IR')} بزرگسال، ${capacity.children2To6.toLocaleString('fa-IR')} کودک ۲–۶، ${capacity.children6To12.toLocaleString('fa-IR')} کودک ۶–۱۲ و ${capacity.infants.toLocaleString('fa-IR')} نوزاد.`,
+        capacity,
+        requested,
+      });
+  }
+  private async assertPresentedHotelRoomCapacity(
+    contract: SalesContractDetail,
+  ): Promise<void> {
+    const hotel = contract.hotelSelection;
+    if (!hotel) return;
+    if (!this.hotelRates)
+      throw new BadRequestException('سرویس نرخ اتاق هتل در دسترس نیست.');
+    const roomRate = await this.hotelRates.roomAvailability({
+      branchId: contract.branchId,
+      hotelId: hotel.hotelId,
+      roomTypeId: hotel.roomTypeId,
+      checkIn: hotel.checkInDate,
+      checkOut: hotel.checkOutDate,
+    });
+    if (!roomRate) return;
+    const guests = contract.passengersDetail.filter((passenger) =>
+      passenger.serviceClientKeys.includes(hotel.serviceClientKey),
+    );
+    const requested = passengerCapacityBands(guests, contract.departureDate);
+    const capacity = hotelCapacity(roomRate, hotel.roomCount);
+    if (capacityExceeded(requested, capacity))
+      throw new BadRequestException({
+        code: 'HOTEL_ROOM_CAPACITY_EXCEEDED',
+        message: `ظرفیت ${roomRate.roomTypeName} برای تعداد مسافران انتخاب‌شده کافی نیست.`,
+        capacity,
+        requested,
+      });
+  }
   private async assertTour(
     input: SalesContractCreateRequest,
     branchId: string,
@@ -370,6 +504,8 @@ export class SalesService {
         'SETTLED',
         'OVERPAID',
       ),
+      createdFrom: Joi.string().isoDate(),
+      createdTo: Joi.string().isoDate(),
       sortBy: Joi.string().valid(
         'createdAt',
         'updatedAt',
@@ -437,6 +573,54 @@ export class SalesService {
     };
   }
 
+  async financeCustomerDocumentDeliveryCandidates(
+    actor: AuthenticatedActor,
+    contractNumber?: string,
+  ): Promise<
+    readonly Omit<FinanceCustomerDocumentDeliveryCandidateV1, 'delivery'>[]
+  > {
+    if (!has(actor, 'finance.read'))
+      throw new ForbiddenException({
+        code: 'FINANCE_INBOX_FORBIDDEN',
+        message: 'مجوز مشاهده کارتابل مالی وجود ندارد.',
+      });
+    if (
+      contractNumber !== undefined &&
+      (typeof contractNumber !== 'string' || contractNumber.length > 100)
+    )
+      throw new BadRequestException('جست‌وجوی شماره قرارداد معتبر نیست.');
+    const rows = await this.repository.customerDocumentDeliveryCandidates(
+      actor.branchIds,
+      contractNumber,
+    );
+    return rows.map((row) => ({
+      contractId: row.id,
+      contractNumber: row.contractNumber,
+      branchId: row.branchId,
+      customerNameSnapshot: row.customerNameSnapshot,
+      settlementStatus: row.settlementStatus,
+      hasConfirmedPayment: row.payments.length > 0,
+    }));
+  }
+
+  async financeCustomerDocumentDeliveryFacts(
+    contractId: string,
+    branchIds: readonly string[],
+  ) {
+    const row = await this.repository.financeCustomerDocumentDeliveryFacts(
+      contractId,
+      branchIds,
+    );
+    if (!row)
+      throw new NotFoundException('قرارداد در شعب مجاز برای مالی یافت نشد.');
+    return {
+      contractId: row.id,
+      branchId: row.branchId,
+      salesOwnerUserId: row.ownerUserId,
+      hasConfirmedPayment: row.payments.length > 0,
+      fullySettled: ['SETTLED', 'OVERPAID'].includes(row.settlementStatus),
+    };
+  }
   async financeInbox(
     actor: AuthenticatedActor,
   ): Promise<readonly SalesFinanceInboxPaymentV1[]> {
@@ -529,6 +713,7 @@ export class SalesService {
     }
     const branchId = branch(actor, requestedBranch);
     await this.assertTour(input, branchId);
+    await this.assertHotelRoomCapacity(input, branchId);
     const customer = await this.customers.resolveSnapshot(
       input.customerId,
       actor,
@@ -567,6 +752,7 @@ export class SalesService {
       });
     this.assertUpdate(row, actor);
     await this.assertTour(input, row.branchId);
+    await this.assertHotelRoomCapacity(input, row.branchId);
     for (const passenger of row.passengers) {
       const next = input.passengers.find(
         (p) => p.customerId === passenger.customerId,
@@ -703,6 +889,7 @@ export class SalesService {
     await this.customers.resolveSnapshot(row.customerId, actor);
     await this.customers.assertPassengers(row.passengers, actor);
     const presented = presentSalesContract(row);
+    await this.assertPresentedHotelRoomCapacity(presented);
     const seatCount = presented.passengersDetail.filter(
       ({ ageCategory }) => ageCategory !== 'INF',
     ).length;
@@ -920,6 +1107,7 @@ export class SalesService {
     contractId: string;
     paymentId: string;
     financePaymentReference: string;
+    receiptAccountId: string;
     confirmedAt: string;
     reviewedByUserId?: string;
     reason?: string;
@@ -928,6 +1116,7 @@ export class SalesService {
       contractId: event.contractId,
       paymentId: event.paymentId,
       financePaymentReference: event.financePaymentReference,
+      receiptAccountId: event.receiptAccountId,
       financeConfirmationId: event.eventId,
       confirmedAt: event.confirmedAt,
       ...(event.reviewedByUserId

@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { emptyDraft, reconcileDraft } from './model';
 describe('Concurrent draft reconciliation', () => {
+  it('uses the general purchase type internally for a new request', () => {
+    expect(emptyDraft().purchaseType).toBe('خرید عمومی');
+  });
+
   it('merges independent edits without overwriting another writer and surfaces true conflicts', () => {
     const base = {
       ...emptyDraft(),

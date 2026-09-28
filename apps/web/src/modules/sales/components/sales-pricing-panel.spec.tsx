@@ -3,6 +3,28 @@ import { describe, expect, it, vi } from 'vitest';
 import { SalesPricingPanel, SalesPricingSummary } from './sales-pricing-panel';
 import { cleanSalesMoney, formatSalesMoney } from '@/components/ui/money-input';
 describe('sales pricing entry', () => {
+  it('locks catalog ticket sale price while keeping the agreed amount editable', () => {
+    const fare = {
+      version: 1 as const,
+      currencyCode: 'IRR',
+      daySale: { basis: 'TOTAL' as const, amount: '250000000' },
+      agreed: { basis: 'TOTAL' as const, amount: '240000000' },
+    };
+    const html = renderToStaticMarkup(
+      <SalesPricingPanel
+        currencies={[{ code: 'IRR', name: 'ریال', status: 'active' }]}
+        services={[{ key: 'flight-outbound', title: 'بلیط رفت', hotel: false }]}
+        nights={0}
+        values={{ 'flight-outbound': [fare] }}
+        fixedSalePrices={{ 'flight-outbound': [fare] }}
+        onChange={vi.fn()}
+      />,
+    );
+    expect(html).toContain('نرخ فروش از قیمت بلیط ثبت‌شده می‌آید');
+    expect(html).toMatch(/قیمت روز فروش بلیط رفت کل[^>]*readOnly=""/);
+    expect(html).toContain('aria-label="مبلغ توافق‌شده با مشتری بلیط رفت کل"');
+    expect(html).not.toContain('افزودن ارز');
+  });
   it('reviews exact agreed totals separately for each currency', () => {
     const html = renderToStaticMarkup(
       <SalesPricingSummary

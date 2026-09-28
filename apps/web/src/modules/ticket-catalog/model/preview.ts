@@ -339,6 +339,14 @@ export function catalogSamples(now: string): Product[] {
 export function activateCatalogSample(product: Product, at: string): Product {
   if (!product.id.startsWith('sample-ticket-') || product.status !== 'draft')
     return product;
+  return activateDraftCatalogProduct(product, at);
+}
+
+export function activateDraftCatalogProduct(
+  product: Product,
+  at: string,
+): Product {
+  if (product.status !== 'draft') return product;
   const version = product.version + 1;
   return {
     ...product,
@@ -350,11 +358,47 @@ export function activateCatalogSample(product: Product, at: string): Product {
         version,
         action: 'active',
         at,
-        actor: 'سیستم نمونه',
-        reason: 'فعال‌سازی بلیط نمونه برای نمایش کنترل توقف فروش',
+        actor: 'سیستم',
+        reason: 'فعال‌سازی خودکار پس از تعریف بلیط',
       },
     ],
   };
+}
+
+export function pauseExpiredCatalogProduct(
+  product: Product,
+  at: string,
+): Product {
+  if (product.status !== 'active') return product;
+  if (!isExpiredCatalogProduct(product, at)) return product;
+  const version = product.version + 1;
+  return {
+    ...product,
+    status: 'paused',
+    version,
+    history: [
+      ...product.history,
+      {
+        version,
+        action: 'paused',
+        at,
+        actor: 'سیستم',
+        reason: 'توقف خودکار فروش پس از زمان حرکت بلیط',
+      },
+    ],
+  };
+}
+
+/** Expired definitions leave the operational catalog; persisted sales stay intact. */
+export function isExpiredCatalogProduct(product: Product, at: string): boolean {
+  const departureAt = product.definition.segments[0]?.departureAt;
+  const serviceDate = product.definition.serviceDate;
+  const expiresAt = departureAt
+    ? Date.parse(departureAt)
+    : serviceDate
+      ? Date.parse(`${serviceDate}T23:59:59.999Z`)
+      : Number.NaN;
+  return Number.isFinite(expiresAt) && expiresAt <= Date.parse(at);
 }
 
 export function groupProductsForCards(

@@ -1,6 +1,7 @@
 import type { IamMfaStatusV1, LoginResponse } from '@nora/contracts';
 
 export const PROFILE_USER_FALLBACK = 'کارمند سامانه';
+export const PROFILE_SESSION_LOG_LIMIT = 100;
 
 export type AuthenticatedProfileUser = LoginResponse['user'];
 
@@ -10,6 +11,7 @@ export interface AuthenticatedSessionSummary {
   createdAt: string;
   lastUsedAt: string;
   expiresAt: string;
+  ipAddress?: string | null;
 }
 
 export interface AuthenticatedProfile {

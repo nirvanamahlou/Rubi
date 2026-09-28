@@ -31,7 +31,6 @@ import {
   readDossierHistory,
 } from '../model/dossier-history';
 import { OrganizationActivityPanel } from './organization-activity-panel';
-import { OrganizationCrmConnectionsPanel } from './organization-crm-connections-panel';
 import { OrganizationCrmKpis } from './organization-crm-kpis';
 import {
   usePageBreadcrumbs,
@@ -108,7 +107,6 @@ const sections = [
       ['reports', 'گزارش‌ها'],
       ['audit', 'Audit'],
       ['export', 'خروجی'],
-      ['connections', 'ارتباطات CRM'],
     ],
   },
 ] as const;
@@ -592,8 +590,6 @@ export function CorporateProfile({
             </section>
           ) : screen === 'access' && access ? (
             access(tab)
-          ) : screen === 'reports' && tab === 'connections' ? (
-            <OrganizationCrmConnectionsPanel organizationId={organization.id} />
           ) : screen === 'reports' ? (
             <OrganizationActivityPanel
               key={organization.id}

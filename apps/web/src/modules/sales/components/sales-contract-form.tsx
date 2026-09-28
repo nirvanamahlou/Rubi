@@ -9,6 +9,7 @@ import Link from 'next/link';
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 
 import type {
+  HotelRoomRateV1,
   MasterDataRecord,
   MasterDataResource,
   SalesServiceKind,
@@ -32,6 +33,11 @@ import { ContractFlightEditor } from './contract-flight-editor';
 import { SearchableReference } from './searchable-reference';
 import { SalesInsurancePicker } from './sales-insurance-picker';
 import { SalesTourPicker } from './sales-tour-picker';
+import {
+  repriceStandaloneTicketSelections,
+  roundTripTicketPricing,
+  standaloneTicketPricing,
+} from '../model/standalone-ticket-pricing';
 
 import { SalesPeopleSheet } from './sales-people-sheet';
 import type { SalesPeopleDraft } from '../model/sales-people-sheet';
@@ -52,6 +58,8 @@ import {
   salesPassengerCompositionMatches,
   salesPassengerCounts,
   salesHotelGuestIds,
+  salesHotelCapacityError,
+  salesHotelRoomTypes,
   salesOfferHasCapacity,
   salesDirections,
   salesTravelDate,
@@ -138,6 +146,9 @@ export function SalesContractForm() {
   const [peopleDraft, setPeopleDraft] = useState<SalesPeopleDraft | null>(null);
   const [peopleDirty, setPeopleDirty] = useState(false);
   const [insuranceReady, setInsuranceReady] = useState(false);
+  const [hotelRoomRates, setHotelRoomRates] = useState<
+    readonly HotelRoomRateV1[]
+  >([]);
   const [references, setReferences] = useState<{
     countries: readonly MasterDataRecord[];
     cities: readonly MasterDataRecord[];
@@ -160,12 +171,39 @@ export function SalesContractForm() {
   const [savedNumber, setSavedNumber] = useState('');
   const [savedId, setSavedId] = useState('');
   const submission = useRef({ fingerprint: '', key: '' });
+  const selectableHotelRoomTypes = useMemo(
+    () =>
+      salesHotelRoomTypes(
+        state.hotel.hotelId,
+        references.hotels,
+        references.roomTypes,
+        hotelRoomRates.map((rate) => rate.roomTypeId),
+      ),
+    [
+      hotelRoomRates,
+      references.hotels,
+      references.roomTypes,
+      state.hotel.hotelId,
+    ],
+  );
+  const selectableHotels = useMemo(() => {
+    const hotelsAtDestination = references.hotels.filter(
+      (hotel) =>
+        hotel.attributes.cityId === state.destinationId &&
+        (!state.tour || state.tour.package.hotelIds.includes(hotel.id)),
+    );
+    return [...hotelsAtDestination].sort((left, right) =>
+      left.name.localeCompare(right.name, 'fa'),
+    );
+  }, [references.hotels, state.destinationId, state.tour]);
   const patchState = (patch: Partial<SalesFormState>) =>
     setState((current) => {
       const changedRoute = [
         'originId',
         'originCountryId',
+        'originCountryCode',
         'destinationCountryId',
+        'destinationCountryCode',
         'destinationId',
         'departureDate',
         'tripType',
@@ -189,7 +227,12 @@ export function SalesContractForm() {
                   outboundOfferId: '',
                   returnOfferId: '',
                 },
-                hotel: { ...current.hotel, hotelId: '', name: '' },
+                hotel: {
+                  ...current.hotel,
+                  hotelId: '',
+                  name: '',
+                  roomTypeId: '',
+                },
                 visaReferenceId: '',
               }
             : {}),
@@ -244,7 +287,7 @@ export function SalesContractForm() {
           return { data };
       }
     };
-    void Promise.all([
+    void Promise.allSettled([
       loadReferences('countries'),
       loadReferences('cities'),
       loadReferences('hotels'),
@@ -252,34 +295,36 @@ export function SalesContractForm() {
       loadReferences('visa-services'),
       loadReferences('banks'),
       loadReferences('currencies'),
-    ])
-      .then(
-        ([
-          countries,
-          cities,
-          hotels,
-          roomTypes,
-          visaServices,
-          banks,
-          currencies,
-        ]) => {
-          setReferences({
-            countries: countries.data,
-            cities: cities.data,
-            hotels: hotels.data,
-            roomTypes: roomTypes.data,
-            visaServices: visaServices.data,
-            banks: banks.data,
-            currencies: currencies.data,
-          });
-          setState((current) =>
-            withSalesRouteDefaults(current, countries.data, cities.data),
-          );
-        },
-      )
-      .catch(() =>
-        setError('بخشی از Public Contract اطلاعات پایه در دسترس نیست.'),
-      );
+    ]).then((results) => {
+      const dataAt = (index: number): readonly MasterDataRecord[] => {
+        const result = results[index];
+        if (result?.status === 'fulfilled') return result.value.data ?? [];
+        return [];
+      };
+      const [
+        countries = [],
+        cities = [],
+        hotels = [],
+        roomTypes = [],
+        visaServices = [],
+        banks = [],
+        currencies = [],
+      ] = [0, 1, 2, 3, 4, 5, 6].map(dataAt);
+      setReferences({
+        countries,
+        cities,
+        hotels,
+        roomTypes,
+        visaServices,
+        banks,
+        currencies,
+      });
+      setState((current) => withSalesRouteDefaults(current, countries, cities));
+      if (results.some((result) => result.status === 'rejected'))
+        setError(
+          'بخشی از اطلاعات پایه دریافت نشد؛ گزینه‌های دریافت‌شده، از جمله هتل‌های فعال، همچنان قابل استفاده‌اند.',
+        );
+    });
     return () => {
       if (restoreTimer !== undefined) globalThis.clearTimeout(restoreTimer);
     };
@@ -291,6 +336,42 @@ export function SalesContractForm() {
     );
   }, [state]);
 
+  useEffect(() => {
+    if (
+      !state.serviceKinds.includes('HOTEL') ||
+      !state.hotel.hotelId ||
+      !state.hotel.checkIn ||
+      !state.hotel.checkOut
+    )
+      return;
+    let cancelled = false;
+    salesApi
+      .availableHotelRoomRates({
+        hotelId: state.hotel.hotelId,
+        checkIn: state.hotel.checkIn,
+        checkOut: state.hotel.checkOut,
+      })
+      .then(({ data }) => {
+        if (cancelled) return;
+        setHotelRoomRates(data);
+      })
+      .catch((cause) => {
+        if (!cancelled)
+          setError(
+            cause instanceof Error
+              ? cause.message
+              : 'نرخ نوع اتاق‌های هتل دریافت نشد.',
+          );
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    state.serviceKinds,
+    state.hotel.hotelId,
+    state.hotel.checkIn,
+    state.hotel.checkOut,
+  ]);
   const toggleService = (kind: SalesServiceKind) => {
     setDetailStep(0);
     patchState({
@@ -330,9 +411,10 @@ export function SalesContractForm() {
         : {}),
     });
   };
-  const detailSteps = state.serviceKinds.includes('TOUR')
-    ? ['TOUR']
-    : salesDetailSteps(state);
+  const detailSteps =
+    state.tour || state.serviceKinds.includes('TOUR')
+      ? ['TOUR']
+      : salesDetailSteps(state);
   const activeDetail = detailSteps[detailStep];
   const serviceDetail = activeDetail
     ? (state.serviceDetails?.[activeDetail] ?? {})
@@ -384,6 +466,16 @@ export function SalesContractForm() {
     /* No valid stay selected yet. */
   }
   const passengerCounts = salesPassengerCounts(state);
+  const fixedTicketSalePrices =
+    !state.tour &&
+    !state.serviceKinds.includes('HOTEL') &&
+    !state.serviceKinds.includes('TOUR')
+      ? repriceStandaloneTicketSelections(
+          { ...state, servicePricing: {} },
+          passengerCounts.seated,
+        )
+      : undefined;
+  const hotelCapacityError = salesHotelCapacityError(state, hotelRoomRates);
   const hotelGuestIds = salesHotelGuestIds(state);
   const updatePassengerCount = (
     kind: keyof SalesFormState['passengerComposition'],
@@ -405,6 +497,16 @@ export function SalesContractForm() {
     patchState({
       passengerComposition,
       hotel: { ...state.hotel, occupancy: nextCounts.total },
+      ...(!state.tour &&
+      !state.serviceKinds.includes('HOTEL') &&
+      !state.serviceKinds.includes('TOUR')
+        ? {
+            servicePricing: repriceStandaloneTicketSelections(
+              state,
+              nextCounts.seated,
+            ),
+          }
+        : {}),
       ...(!outboundAvailable && state.outboundOffer
         ? {
             outboundOffer: undefined,
@@ -442,9 +544,11 @@ export function SalesContractForm() {
       if (activeDetail === 'FLIGHT')
         return (
           salesFlightsValid(state) &&
-          (!state.serviceKinds.includes('HOTEL') || salesHotelValid(state))
+          (!state.serviceKinds.includes('HOTEL') ||
+            (salesHotelValid(state) && !hotelCapacityError))
         );
-      if (activeDetail === 'HOTEL') return salesHotelValid(state);
+      if (activeDetail === 'HOTEL')
+        return salesHotelValid(state) && !hotelCapacityError;
       if (activeDetail === 'VISA') return Boolean(state.visaReferenceId);
       if (activeDetail === 'INSURANCE')
         return Boolean(state.insurancePlan) && insuranceReady;
@@ -498,6 +602,7 @@ export function SalesContractForm() {
     references.currencies,
     passengerCounts,
     hotelGuestIds,
+    hotelCapacityError,
   ]);
   const submit = async (event: FormEvent) => {
     event.preventDefault();
@@ -654,7 +759,19 @@ export function SalesContractForm() {
                   value={state.originCountryId}
                   options={references.countries}
                   onChange={(originCountryId) =>
-                    patchState({ originCountryId, originId: '' })
+                    patchState({
+                      originCountryId,
+                      originCountryCode: String(
+                        references.countries.find(
+                          (country) => country.id === originCountryId,
+                        )?.attributes.iso2Code ??
+                          references.countries.find(
+                            (country) => country.id === originCountryId,
+                          )?.code ??
+                          '',
+                      ),
+                      originId: '',
+                    })
                   }
                 />
                 <SearchableReference
@@ -674,7 +791,19 @@ export function SalesContractForm() {
                   value={state.destinationCountryId}
                   options={references.countries}
                   onChange={(destinationCountryId) =>
-                    patchState({ destinationCountryId, destinationId: '' })
+                    patchState({
+                      destinationCountryId,
+                      destinationCountryCode: String(
+                        references.countries.find(
+                          (country) => country.id === destinationCountryId,
+                        )?.attributes.iso2Code ??
+                          references.countries.find(
+                            (country) => country.id === destinationCountryId,
+                          )?.code ??
+                          '',
+                      ),
+                      destinationId: '',
+                    })
                   }
                 />
                 <SearchableReference
@@ -694,78 +823,98 @@ export function SalesContractForm() {
         {step === 0 ? (
           <div className="mt-5 grid gap-3 border-t border-border pt-4">
             <h2 className="text-sm font-bold">خدمات قرارداد</h2>
-            <p className="text-xs text-muted-foreground">
-              با انتخاب پرواز، قطار و اتوبوس قابل انتخاب نیستند. ترانسفر فقط روی
-              خروجی بلیط درج می‌شود.
-            </p>
-            <div className="grid gap-3 sm:grid-cols-2">
-              {(['FLIGHT', 'TRANSFER'] as const).map((kind) => (
-                <fieldset
-                  key={kind}
-                  className="rounded-xl border border-border p-3 text-sm"
-                >
-                  <label className="flex cursor-pointer items-center justify-between gap-3 font-bold">
-                    <span>{kind === 'FLIGHT' ? 'بلیط پرواز' : 'ترانسفر'}</span>
-                    <input
-                      type="checkbox"
-                      className="size-4 accent-primary"
-                      checked={state.serviceKinds.includes(kind)}
-                      aria-controls={`sales-directions-${kind}`}
-                      aria-expanded={state.serviceKinds.includes(kind)}
-                      onChange={() =>
-                        patchState(toggleSalesDirectionalService(state, kind))
-                      }
-                    />
-                  </label>
-                  {state.serviceKinds.includes(kind) ? (
-                    <div
-                      id={`sales-directions-${kind}`}
-                      className="mt-2 flex gap-2 border-t border-border pt-2"
+            {state.tour ? (
+              <p className="rounded-lg bg-primary/10 px-3 py-2 text-xs text-primary">
+                خدمات این قرارداد از پکیج تور انتخاب‌شده می‌آیند و بلیط، هتل،
+                ترانسفر یا خدمت اضافه به‌صورت جداگانه قابل تغییر نیست.
+              </p>
+            ) : (
+              <>
+                <p className="text-xs text-muted-foreground">
+                  با انتخاب پرواز، قطار و اتوبوس قابل انتخاب نیستند. ترانسفر فقط
+                  روی خروجی بلیط درج می‌شود.
+                </p>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {(['FLIGHT', 'TRANSFER'] as const).map((kind) => (
+                    <fieldset
+                      key={kind}
+                      className="rounded-xl border border-border p-3 text-sm"
                     >
-                      {(['OUTBOUND', 'RETURN'] as const).map((direction) => (
-                        <label
-                          key={direction}
-                          className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-1.5 ${salesDirections(state, kind).includes(direction) ? 'border-primary bg-primary/10 text-primary' : 'border-border'}`}
+                      <label className="flex cursor-pointer items-center justify-between gap-3 font-bold">
+                        <span>
+                          {kind === 'FLIGHT' ? 'بلیط پرواز' : 'ترانسفر'}
+                        </span>
+                        <input
+                          type="checkbox"
+                          className="size-4 accent-primary"
+                          checked={state.serviceKinds.includes(kind)}
+                          aria-controls={`sales-directions-${kind}`}
+                          aria-expanded={state.serviceKinds.includes(kind)}
+                          onChange={() =>
+                            patchState(
+                              toggleSalesDirectionalService(state, kind),
+                            )
+                          }
+                        />
+                      </label>
+                      {state.serviceKinds.includes(kind) ? (
+                        <div
+                          id={`sales-directions-${kind}`}
+                          className="mt-2 flex gap-2 border-t border-border pt-2"
                         >
-                          <input
-                            type="checkbox"
-                            className="size-4 accent-primary"
-                            checked={salesDirections(state, kind).includes(
-                              direction,
-                            )}
-                            onChange={() => toggleDirection(kind, direction)}
-                          />
-                          {direction === 'OUTBOUND' ? 'رفت' : 'برگشت'}
-                        </label>
-                      ))}
-                    </div>
-                  ) : null}
-                </fieldset>
-              ))}
-            </div>
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-              {serviceOptions
-                .filter(([kind]) => kind !== 'FLIGHT' && kind !== 'TRANSFER')
-                .map(([kind, label]) => (
-                  <button
-                    className={`flex min-h-10 items-center justify-between gap-2 rounded-lg border px-3 py-2 text-start text-sm disabled:cursor-not-allowed disabled:opacity-40 ${state.serviceKinds.includes(kind) ? 'border-primary bg-primary/5' : 'border-border'}`}
-                    key={kind}
-                    role="checkbox"
-                    aria-checked={state.serviceKinds.includes(kind)}
-                    onClick={() => toggleService(kind)}
-                    disabled={
-                      state.serviceKinds.includes('FLIGHT') &&
-                      (kind === 'BUS' || kind === 'TRAIN')
-                    }
-                    type="button"
-                  >
-                    <span>{label}</span>
-                    {state.serviceKinds.includes(kind) ? (
-                      <Check className="size-4 text-primary" />
-                    ) : null}
-                  </button>
-                ))}
-            </div>
+                          {(['OUTBOUND', 'RETURN'] as const).map(
+                            (direction) => (
+                              <label
+                                key={direction}
+                                className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-1.5 ${salesDirections(state, kind).includes(direction) ? 'border-primary bg-primary/10 text-primary' : 'border-border'}`}
+                              >
+                                <input
+                                  type="checkbox"
+                                  className="size-4 accent-primary"
+                                  checked={salesDirections(
+                                    state,
+                                    kind,
+                                  ).includes(direction)}
+                                  onChange={() =>
+                                    toggleDirection(kind, direction)
+                                  }
+                                />
+                                {direction === 'OUTBOUND' ? 'رفت' : 'برگشت'}
+                              </label>
+                            ),
+                          )}
+                        </div>
+                      ) : null}
+                    </fieldset>
+                  ))}
+                </div>
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                  {serviceOptions
+                    .filter(
+                      ([kind]) => kind !== 'FLIGHT' && kind !== 'TRANSFER',
+                    )
+                    .map(([kind, label]) => (
+                      <button
+                        className={`flex min-h-10 items-center justify-between gap-2 rounded-lg border px-3 py-2 text-start text-sm disabled:cursor-not-allowed disabled:opacity-40 ${state.serviceKinds.includes(kind) ? 'border-primary bg-primary/5' : 'border-border'}`}
+                        key={kind}
+                        role="checkbox"
+                        aria-checked={state.serviceKinds.includes(kind)}
+                        onClick={() => toggleService(kind)}
+                        disabled={
+                          state.serviceKinds.includes('FLIGHT') &&
+                          (kind === 'BUS' || kind === 'TRAIN')
+                        }
+                        type="button"
+                      >
+                        <span>{label}</span>
+                        {state.serviceKinds.includes(kind) ? (
+                          <Check className="size-4 text-primary" />
+                        ) : null}
+                      </button>
+                    ))}
+                </div>
+              </>
+            )}
           </div>
         ) : null}
         {step === 0 ? (
@@ -822,15 +971,30 @@ export function SalesContractForm() {
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => patchState({ tour: undefined })}
+                  onClick={() =>
+                    patchState({
+                      tour: undefined,
+                      serviceKinds: [],
+                      serviceDirections: {},
+                      outboundOffer: undefined,
+                      returnOffer: undefined,
+                      contractFlights: {},
+                      ticket: {
+                        ...state.ticket,
+                        outboundOfferId: '',
+                        returnOfferId: '',
+                      },
+                    })
+                  }
                 >
-                  تبدیل به خدمات مستقل
+                  حذف تور
                 </Button>
               </div>
             )}
             {activeDetail === 'TOUR' && (
               <SalesTourPicker
                 state={state}
+                countries={references.countries}
                 cities={references.cities}
                 hotels={references.hotels}
                 onChange={(next) => {
@@ -912,12 +1076,26 @@ export function SalesContractForm() {
                                 : {}),
                             }}
                             requiredSeats={passengerCounts.seated}
+                            requireStandaloneFare={
+                              !state.tour &&
+                              !state.serviceKinds.includes('HOTEL') &&
+                              !state.serviceKinds.includes('TOUR')
+                            }
+                            acceptAnyRoundTripFare={flightDirections.includes(
+                              'RETURN',
+                            )}
                             selectedId={state.ticket.outboundOfferId}
                             onSelect={(offer) =>
                               patchState({
                                 outboundOffer: offer,
                                 returnOffer: undefined,
                                 contractFlights: {},
+                                servicePricing: standaloneTicketPricing(
+                                  state,
+                                  offer,
+                                  'OUTBOUND',
+                                  passengerCounts.seated,
+                                ),
                                 ticket: {
                                   ...state.ticket,
                                   outboundOfferId: offer.id,
@@ -991,6 +1169,14 @@ export function SalesContractForm() {
                                   : {}),
                               }}
                               requiredSeats={passengerCounts.seated}
+                              requireStandaloneFare={
+                                !state.tour &&
+                                !state.serviceKinds.includes('HOTEL') &&
+                                !state.serviceKinds.includes('TOUR')
+                              }
+                              {...(state.outboundOffer
+                                ? { roundTripOutbound: state.outboundOffer }
+                                : {})}
                               selectedId={state.ticket.returnOfferId}
                               onSelect={(offer) => {
                                 if (
@@ -1009,6 +1195,14 @@ export function SalesContractForm() {
                                 setError('');
                                 patchState({
                                   returnOffer: offer,
+                                  servicePricing: state.outboundOffer
+                                    ? roundTripTicketPricing(
+                                        state,
+                                        state.outboundOffer,
+                                        offer,
+                                        passengerCounts.seated,
+                                      )
+                                    : (state.servicePricing ?? {}),
                                   contractFlights: Object.fromEntries(
                                     Object.entries(
                                       state.contractFlights ?? {},
@@ -1076,28 +1270,25 @@ export function SalesContractForm() {
               <section className="grid gap-4 rounded-xl border p-4">
                 <h3 className="font-bold">هتل مقصد</h3>
                 <p className="text-xs text-muted-foreground">
-                  هتل‌های شهر{' '}
+                  فقط هتل‌های فعالِ ثبت‌شده برای شهر{' '}
                   {references.cities.find(
                     (city) => city.id === state.destinationId,
-                  )?.name ?? 'مقصد'}
-                  ؛ نام هتل را جست‌وجو کنید. ورود پیشنهادی روز بعد از پرواز رفت
-                  و خروج روز قبل از پرواز برگشت است؛ هر دو تاریخ قابل تغییرند.
+                  )?.name ?? 'مقصد'}{' '}
+                  قابل جست‌وجو هستند. نام هتل را جست‌وجو کنید. ورود پیشنهادی روز
+                  بعد از پرواز رفت و خروج روز قبل از پرواز برگشت است؛ هر دو
+                  تاریخ قابل تغییرند.
                 </p>
                 <div className="grid gap-4 md:grid-cols-3">
                   <SearchableReference
                     label="هتل"
                     value={state.hotel.hotelId}
-                    options={references.hotels.filter(
-                      (hotel) =>
-                        hotel.attributes.cityId === state.destinationId &&
-                        (!state.tour ||
-                          state.tour.package.hotelIds.includes(hotel.id)),
-                    )}
+                    options={selectableHotels}
                     onChange={(hotelId) =>
                       patchState({
                         hotel: {
                           ...state.hotel,
                           hotelId,
+                          roomTypeId: '',
                           name:
                             references.hotels.find(({ id }) => id === hotelId)
                               ?.name ?? '',
@@ -1108,11 +1299,28 @@ export function SalesContractForm() {
                   <ReferenceSelect
                     label="نوع اتاق"
                     value={state.hotel.roomTypeId}
-                    options={references.roomTypes}
+                    options={selectableHotelRoomTypes}
                     onChange={(roomTypeId) =>
                       patchState({ hotel: { ...state.hotel, roomTypeId } })
                     }
                   />
+                  <div className="rounded-xl border border-border bg-muted/30 p-3 text-xs text-muted-foreground md:col-span-3">
+                    {hotelRoomRates.length
+                      ? hotelRoomRates
+                          .map(
+                            (room) =>
+                              `${room.roomTypeName}: ${room.maxAdults} بزرگسال + ${room.maxChildren2To6 ?? room.maxChildren} کودک ۲–۶ + ${room.maxChildren6To12 ?? 0} کودک ۶–۱۲ + ${room.maxInfants ?? 0} نوزاد`,
+                          )
+                          .join(' | ')
+                      : selectableHotelRoomTypes.length
+                        ? 'نوع اتاق‌های متصل به هتل قابل انتخاب‌اند؛ نبود ضریب فعال مانع ثبت قرارداد نیست.'
+                        : 'نوع اتاقی در اطلاعات پایه به این هتل متصل نشده است.'}
+                  </div>{' '}
+                  {hotelCapacityError ? (
+                    <div className="md:col-span-3">
+                      <Alert tone="error" title={hotelCapacityError} />
+                    </div>
+                  ) : null}
                   <FormField label="ورود (چک‌این)" required>
                     <DatePicker
                       value={state.hotel.checkIn}
@@ -1469,6 +1677,7 @@ export function SalesContractForm() {
               services={pricingServices}
               nights={pricingNights}
               values={state.servicePricing ?? {}}
+              fixedSalePrices={fixedTicketSalePrices}
               onChange={(key, prices) =>
                 patchState({
                   servicePricing: { ...state.servicePricing, [key]: prices },

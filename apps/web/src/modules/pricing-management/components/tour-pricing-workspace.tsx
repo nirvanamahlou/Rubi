@@ -9,15 +9,18 @@ import type {
   TourDepartureV1,
 } from '@nora/contracts';
 import {
+  ArrowRight,
   Banknote,
   ClipboardCheck,
   Hotel,
   Plane,
   RefreshCw,
 } from 'lucide-react';
+import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/form-controls';
+import { MoneyInput } from '@/components/ui/money-input';
 import {
   Alert,
   Badge,
@@ -28,7 +31,10 @@ import {
   Skeleton,
 } from '@/components/ui/surfaces';
 import { packagePricingApi } from '../api/client';
+import { TourWorkspace } from '@/modules/ticket-catalog/components/tour-workspace';
 import { previewHotelRoomSale } from './tour-price-math';
+import { packageBannerHref } from '../model/package-banner';
+import { PackagePricingBreadcrumbs } from './package-pricing-breadcrumbs';
 import {
   calculateTourRoom,
   tourRoomOccupancy,
@@ -109,6 +115,20 @@ export function TourPricingWorkspace() {
       const result = await packagePricingApi.tours(currentSession);
       setSession(currentSession);
       setTours(result.data);
+      const requested = new URL(globalThis.location.href).searchParams;
+      const requestedDepartureId = requested.get('departure');
+      const requestedDeparture = result.data.find(
+        (item) => item.id === requestedDepartureId,
+      );
+      if (requestedDeparture) {
+        setTourPackageId(requestedDeparture.package.id);
+        await selectDeparture(
+          requestedDeparture.id,
+          currentSession,
+          requested.get('batch') ?? undefined,
+          requested.get('publication') ?? undefined,
+        );
+      }
     } catch (cause) {
       setSession(null);
       setTours([]);
@@ -120,6 +140,9 @@ export function TourPricingWorkspace() {
     } finally {
       setLoadingTours(false);
     }
+    // The initial URL selection is restored once with the same authenticated
+    // session used to load tours; later selections use the interactive handler.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -155,20 +178,33 @@ export function TourPricingWorkspace() {
     setFamilyChildren(String(value?.familyChildren ?? 0));
   }
 
-  async function loadDraft(tourDepartureId: string, purchaseBatchId: string) {
-    if (!session || !purchaseBatchId) return;
+  async function loadDraft(
+    tourDepartureId: string,
+    purchaseBatchId: string,
+    activeSession = session,
+    requestedPublicationId?: string,
+  ) {
+    if (!activeSession || !purchaseBatchId) return;
     try {
       const [saved, versions] = await Promise.all([
-        packagePricingApi.tourDraft(tourDepartureId, purchaseBatchId, session),
+        packagePricingApi.tourDraft(
+          tourDepartureId,
+          purchaseBatchId,
+          activeSession,
+        ),
         packagePricingApi.tourPublications(
           tourDepartureId,
           purchaseBatchId,
-          session,
+          activeSession,
         ),
       ]);
       applyDraft(saved);
       setPublications(versions);
-      setPublicationId(versions[0]?.id ?? '');
+      setPublicationId(
+        versions.some((item) => item.id === requestedPublicationId)
+          ? requestedPublicationId!
+          : (versions[0]?.id ?? ''),
+      );
       setNotice(
         saved
           ? 'پیش‌نویس قبلی این بازه بارگذاری شد.'
@@ -186,7 +222,12 @@ export function TourPricingWorkspace() {
     void selectDeparture('');
   }
 
-  async function selectDeparture(id: string) {
+  async function selectDeparture(
+    id: string,
+    activeSession = session,
+    requestedBatchId?: string,
+    requestedPublicationId?: string,
+  ) {
     applyDraft(null);
     setTourId(id);
     setGrid(null);
@@ -197,14 +238,24 @@ export function TourPricingWorkspace() {
     setPublications([]);
     setPublicationId('');
     setNotice('');
-    if (!id || !session) return;
+    if (!id || !activeSession) return;
     setLoadingCosts(true);
     try {
-      const result = await packagePricingApi.tourCosts(id, session);
+      const result = await packagePricingApi.tourCosts(id, activeSession);
       setGrid(result);
-      const firstBatchId = result.purchaseBatches[0]?.id ?? '';
-      setBatchId(firstBatchId);
-      if (firstBatchId) await loadDraft(id, firstBatchId);
+      const selectedBatchId = result.purchaseBatches.some(
+        (item) => item.id === requestedBatchId,
+      )
+        ? requestedBatchId!
+        : (result.purchaseBatches[0]?.id ?? '');
+      setBatchId(selectedBatchId);
+      if (selectedBatchId)
+        await loadDraft(
+          id,
+          selectedBatchId,
+          activeSession,
+          requestedPublicationId,
+        );
     } catch (cause) {
       setCostError(
         cause instanceof Error
@@ -229,24 +280,39 @@ export function TourPricingWorkspace() {
 
   const batch: PackageTourHotelPurchaseBatchV1 | undefined =
     grid?.purchaseBatches.find((item) => item.id === batchId);
-  const stayNights = batch
-    ? (Date.parse(batch.checkOut) - Date.parse(batch.checkIn)) / 86400000
-    : 0;
+  const stayNights = grid?.nights ?? 0;
+  const activeRoomColumns = useMemo(() => {
+    const columns = new Map<string, string>();
+    for (const row of batch?.rows ?? []) {
+      if (!Object.values(row.factors).some(Boolean) && row.roomRates.length) {
+        for (const room of row.roomRates)
+          if (Number(room.factor) > 0)
+            columns.set(room.roomTypeId, room.roomTypeName);
+      } else {
+        for (const [code, title] of roomColumns)
+          if (row.factors[code]) columns.set(code, title);
+      }
+    }
+    return [...columns.entries()];
+  }, [batch]);
   function roomPreview(
     row: PackageTourHotelPurchaseBatchV1['rows'][number],
     roomCode: string,
   ) {
     if (!batch || !grid) return null;
-    const passengers = tourRoomOccupancy(
-      roomCode,
-      Number(familyAdults),
-      Number(familyChildren),
-    );
+    const roomRate = row.roomRates.find((room) => room.roomTypeId === roomCode);
+    const passengers = roomRate
+      ? { adults: roomRate.maxAdults, children: roomRate.maxChildren }
+      : tourRoomOccupancy(
+          roomCode,
+          Number(familyAdults),
+          Number(familyChildren),
+        );
     if (!passengers) return null;
     try {
       return calculateTourRoom({
         basePerNight: row.basePerNight,
-        factor: row.factors[roomCode] ?? '',
+        factor: roomRate?.factor ?? row.factors[roomCode] ?? '',
         nights: stayNights,
         hotelCurrency: row.currencyCode ?? batch.currencyCode,
         adjustment: adjustments[row.id] ?? defaultAdjustment(),
@@ -283,10 +349,24 @@ export function TourPricingWorkspace() {
   }
   const invalidSale =
     batch?.rows.some((row) =>
-      roomColumns.some(([key]) => !roomPreview(row, key)),
+      activeRoomColumns.some(
+        ([key]) =>
+          (row.factors[key] ||
+            row.roomRates.some((room) => room.roomTypeId === key)) &&
+          !roomPreview(row, key),
+      ),
     ) ?? false;
   const publication =
     publications.find((item) => item.id === publicationId) ?? publications[0];
+  const bannerHref = (() => {
+    if (!grid || !batch || !publication) return '';
+    return packageBannerHref({
+      packageId: grid.tour.id,
+      tourPackageId: grid.tour.package.id,
+      batchId: batch.id,
+      publicationId: publication.id,
+    });
+  })();
   const unsaved =
     !draft ||
     Number(familyAdults) !== draft.familyAdults ||
@@ -403,7 +483,19 @@ export function TourPricingWorkspace() {
 
   return (
     <main className="mx-auto grid w-full max-w-7xl gap-6">
+      <PackagePricingBreadcrumbs
+        currentTitle="مدیریت قیمت"
+        pathname="/sales/pricing/management"
+      />
       <PageHeader
+        actions={
+          <Link
+            className={buttonVariants({ variant: 'outline', size: 'sm' })}
+            href="/sales/pricing"
+          >
+            <ArrowRight className="size-4" /> بازگشت به بخش‌ها
+          </Link>
+        }
         eyebrow="فروش و ارتباط با مشتری · ماژول مدیریت قیمت"
         title="مدیریت قیمت و پکیج تور"
         description="قیمت خرید هتل‌های همان نوبت تور را ببینید، قیمت فروش هر گزینه هتل و پرواز را تنظیم کنید و نسخه قیمت را برای انتشار آماده کنید."
@@ -430,13 +522,15 @@ export function TourPricingWorkspace() {
         ))}
       </div>
 
+      <TourWorkspace mode="departures" />
+
       <Card className="grid gap-4 p-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="text-lg font-black">۱ · انتخاب تور و نوبت</h2>
             <p className="text-sm text-muted-foreground">
-              ابتدا تور را انتخاب کنید؛ سپس فقط نوبت‌های همان تور نمایش داده
-              می‌شوند.
+              نوبت را در بخش بالا بسازید یا یکی از نوبت‌های موجود را انتخاب
+              کنید؛ هتل‌های متصل به همان بازه پایین نمایش داده می‌شوند.
             </p>
           </div>
           <Button
@@ -457,7 +551,7 @@ export function TourPricingWorkspace() {
         {!loadingTours && !error && tours.length === 0 ? (
           <EmptyState
             title="نوبت توری برای قیمت‌گذاری پیدا نشد"
-            description="ابتدا تور، هتل‌ها و نوبت پرواز را در مدیریت بلیت تعریف کنید."
+            description="ابتدا تعریف تور و خدمات را در مدیریت بلیت ثبت کنید، سپس نوبت و بلیت‌های آن را در همین صفحه بسازید."
             icon={Plane}
           />
         ) : null}
@@ -530,8 +624,8 @@ export function TourPricingWorkspace() {
         ) : null}
         {grid && grid.purchaseBatches.length === 0 ? (
           <EmptyState
-            title="برای این تور نرخ خرید هتل ثبت نشده است"
-            description="در رزرواسیون، نرخ خرید هتل‌های این تور را برای بازه اقامت ثبت کنید؛ قیمت پکیج بدون منبع خرید ساخته یا منتشر نمی‌شود."
+            title="برای مقصد و تاریخ این سفر نرخ هتل پیدا نشد"
+            description="در رزرواسیون، نرخ هتل‌های شهر مقصد را برای بازهٔ اقامت ثبت کنید؛ قیمت پکیج بدون منبع خرید ساخته یا منتشر نمی‌شود."
             icon={Hotel}
           />
         ) : null}
@@ -572,7 +666,7 @@ export function TourPricingWorkspace() {
                       هتل / کارگزار
                     </th>
                     <th className="p-3 text-right">خرید پایه / شب</th>
-                    {roomColumns.map(([key, title]) => (
+                    {activeRoomColumns.map(([key, title]) => (
                       <th className="p-3 text-right" key={key}>
                         {title}
                         <span className="block font-normal">
@@ -599,10 +693,13 @@ export function TourPricingWorkspace() {
                           {row.basePerNight}{' '}
                           {row.currencyCode ?? batch.currencyCode}
                         </td>
-                        {roomColumns.map(([key]) => {
+                        {activeRoomColumns.map(([key]) => {
+                          const roomRate = row.roomRates.find(
+                            (room) => room.roomTypeId === key,
+                          );
                           const preview = previewHotelRoomSale(
                             row.basePerNight,
-                            row.factors[key] ?? '',
+                            roomRate?.factor ?? row.factors[key] ?? '',
                             stayNights,
                             row.currencyCode ?? batch.currencyCode,
                             adjustment,
@@ -610,7 +707,7 @@ export function TourPricingWorkspace() {
                           return (
                             <td className="min-w-32 p-3 tabular-nums" key={key}>
                               <span className="block text-xs text-muted-foreground">
-                                × {row.factors[key] ?? '—'}
+                                × {roomRate?.factor ?? row.factors[key] ?? '—'}
                               </span>
                               <span className="block text-xs text-muted-foreground">
                                 {preview?.purchase ?? '—'}
@@ -670,21 +767,35 @@ export function TourPricingWorkspace() {
                                 {row.currencyCode ?? batch.currencyCode}
                               </option>
                             </select>
-                            <Input
-                              aria-label={'مقدار تغییر قیمت ' + row.hotelName}
-                              className="h-9 min-w-20"
-                              inputMode="decimal"
-                              onChange={(event) =>
-                                setAdjustments((current) => ({
-                                  ...current,
-                                  [row.id]: {
-                                    ...adjustment,
-                                    value: event.target.value,
-                                  },
-                                }))
-                              }
-                              value={adjustment.value}
-                            />
+                            {adjustment.mode === 'fixed' ? (
+                              <MoneyInput
+                                aria-label={'مقدار تغییر قیمت ' + row.hotelName}
+                                className="h-9 min-w-20"
+                                onValueChange={(value) =>
+                                  setAdjustments((current) => ({
+                                    ...current,
+                                    [row.id]: { ...adjustment, value },
+                                  }))
+                                }
+                                value={adjustment.value}
+                              />
+                            ) : (
+                              <Input
+                                aria-label={'درصد تغییر قیمت ' + row.hotelName}
+                                className="h-9 min-w-20"
+                                inputMode="decimal"
+                                onChange={(event) =>
+                                  setAdjustments((current) => ({
+                                    ...current,
+                                    [row.id]: {
+                                      ...adjustment,
+                                      value: event.target.value,
+                                    },
+                                  }))
+                                }
+                                value={adjustment.value}
+                              />
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -758,10 +869,9 @@ export function TourPricingWorkspace() {
           <label className="grid gap-2 text-sm font-bold">
             قیمت فروش پرواز بزرگسال
             <div className="flex gap-2">
-              <Input
+              <MoneyInput
                 className="min-w-0 flex-1"
-                inputMode="decimal"
-                onChange={(event) => setAdultFlight(event.target.value)}
+                onValueChange={setAdultFlight}
                 placeholder="0"
                 value={adultFlight}
               />
@@ -780,10 +890,9 @@ export function TourPricingWorkspace() {
           <label className="grid gap-2 text-sm font-bold">
             قیمت فروش پرواز کودک
             <div className="flex gap-2">
-              <Input
+              <MoneyInput
                 className="min-w-0 flex-1"
-                inputMode="decimal"
-                onChange={(event) => setChildFlight(event.target.value)}
+                onValueChange={setChildFlight}
                 placeholder="0"
                 value={childFlight}
               />
@@ -802,10 +911,9 @@ export function TourPricingWorkspace() {
           <label className="grid gap-2 text-sm font-bold">
             افزایش نرخ بیزینس
             <div className="flex gap-2">
-              <Input
+              <MoneyInput
                 className="min-w-0 flex-1"
-                inputMode="decimal"
-                onChange={(event) => setBusinessIncrease(event.target.value)}
+                onValueChange={setBusinessIncrease}
                 placeholder="0"
                 value={businessIncrease}
               />
@@ -836,18 +944,24 @@ export function TourPricingWorkspace() {
                 <option value="percent">درصدی</option>
                 <option value="fixed">مبلغ ثابت</option>
               </select>
-              <Input
-                aria-label={
-                  commissionMode === 'percent'
-                    ? 'درصد کمیسیون'
-                    : 'مبلغ ثابت کمیسیون'
-                }
-                className="min-w-0 flex-1"
-                inputMode="decimal"
-                onChange={(event) => setCommission(event.target.value)}
-                placeholder="0"
-                value={commission}
-              />
+              {commissionMode === 'fixed' ? (
+                <MoneyInput
+                  aria-label="مبلغ ثابت کمیسیون"
+                  className="min-w-0 flex-1"
+                  onValueChange={setCommission}
+                  placeholder="0"
+                  value={commission}
+                />
+              ) : (
+                <Input
+                  aria-label="درصد کمیسیون"
+                  className="min-w-0 flex-1"
+                  inputMode="decimal"
+                  onChange={(event) => setCommission(event.target.value)}
+                  placeholder="0"
+                  value={commission}
+                />
+              )}
               {commissionMode === 'fixed' ? (
                 <select
                   aria-label="ارز مبلغ ثابت کمیسیون"
@@ -945,7 +1059,23 @@ export function TourPricingWorkspace() {
       </Card>
       {publications.length > 0 && batch ? (
         <Card className="grid gap-4 p-5">
-          <h2 className="text-lg font-black">قیمت‌های منتشرشدهٔ همین بازه</h2>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 className="text-lg font-black">قیمت‌های منتشرشدهٔ همین بازه</h2>
+            {bannerHref &&
+            session?.user.permissions.includes('package_pricing.read') &&
+            session.user.permissions.includes('package_pricing.render') ? (
+              <Link
+                className="inline-flex min-h-10 items-center justify-center rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground"
+                href={bannerHref}
+              >
+                ساخت بنر
+              </Link>
+            ) : (
+              <Button disabled type="button">
+                ساخت بنر · بدون مجوز
+              </Button>
+            )}
+          </div>
           <label className="grid max-w-xl gap-2 text-sm font-bold">
             نسخهٔ قیمت
             <select
@@ -991,7 +1121,7 @@ export function TourPricingWorkspace() {
                   <thead className="bg-muted/80 text-xs">
                     <tr>
                       <th className="p-3 text-right">گزینهٔ هتل</th>
-                      {roomColumns.map(([code, title]) => (
+                      {activeRoomColumns.map(([code, title]) => (
                         <th key={code} className="p-3 text-right">
                           {title}
                         </th>
@@ -1004,7 +1134,7 @@ export function TourPricingWorkspace() {
                         <td className="p-3 font-bold">
                           {row.hotelName} · {row.brokerName}
                         </td>
-                        {roomColumns.map(([code]) => {
+                        {activeRoomColumns.map(([code]) => {
                           const price = publication.roomPrices.find(
                             (item) =>
                               item.hotelRateId === row.id &&

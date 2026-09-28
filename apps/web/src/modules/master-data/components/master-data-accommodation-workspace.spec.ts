@@ -10,13 +10,26 @@ const source = readFileSync(
   ),
   'utf8',
 );
+const liveFormSource = readFileSync(
+  resolve(
+    process.cwd(),
+    'src/modules/master-data/components/master-data-live-form.tsx',
+  ),
+  'utf8',
+);
+const referenceSelectorSource = readFileSync(
+  resolve(
+    process.cwd(),
+    'src/modules/master-data/components/master-data-reference-selector.tsx',
+  ),
+  'utf8',
+);
 
 describe('accommodation workspace', () => {
   it('implements the catalog tabs and opens hotel profiles from the list', () => {
     for (const label of [
       'هتل‌ها',
       'زنجیره هتل',
-      'نوع اتاق',
       'وعده و سرویس',
       'امکانات',
       'ورود گروهی Excel',
@@ -29,6 +42,8 @@ describe('accommodation workspace', () => {
       source.indexOf('const copy'),
     );
     expect(tabs).not.toContain("id: 'hotel-profile'");
+    expect(tabs).not.toContain("id: 'room-types'");
+    expect(source).not.toContain("tab === 'room-types'");
     expect(source).toContain('<MasterDataProfileDialog');
     expect(source).toContain('setProfileOpen(true)');
   });
@@ -42,10 +57,6 @@ describe('accommodation workspace', () => {
       'کل زنجیره‌ها',
       'زنجیره فعال',
       'هتل‌های عضو',
-      'انواع اتاق',
-      'نوع فعال',
-      'دارای ظرفیت استاندارد',
-      'نیازمند تأیید دامنه',
       'کدهای سرویس',
       'Meal Plan',
       'نیازمند بازبینی',
@@ -87,16 +98,18 @@ describe('accommodation workspace', () => {
   });
 
   it('implements the contextual filters shown in every catalog mockup', () => {
-    for (const label of [
-      'همه کشورها',
-      'همه شهرها',
-      'همه درجات',
-      'همه ظرفیت‌ها',
-      'همه دسته‌ها',
-    ])
+    for (const label of ['همه کشورها', 'همه شهرها', 'همه درجات', 'همه دسته‌ها'])
       expect(source).toContain(label);
-    expect(source).toContain('referenceCapacity');
     expect(source).toContain('mealServiceCategory');
     expect(source).toContain('facilityCategory');
+  });
+
+  it('creates multiple room types inline from the hotel form without a nested form', () => {
+    expect(liveFormSource).toContain("masterDataApi.create('room-types'");
+    expect(liveFormSource).toContain('values: { name }');
+    expect(liveFormSource).toContain("field.key === 'roomTypeIds'");
+    expect(liveFormSource).toContain('createHotelRoomType');
+    expect(referenceSelectorSource).toContain('افزودن نوع اتاق');
+    expect(referenceSelectorSource).toContain('نام نوع اتاق را بنویسید');
   });
 });

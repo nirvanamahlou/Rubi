@@ -86,23 +86,23 @@ const shiftWeek = (value: string) => {
 const timeLabel = (offer: TicketOfferV1) =>
   `${offer.carrierName} · ${offer.serviceNumber} · ${new Date(offer.departureAt).toLocaleTimeString('fa-IR', { timeZone: 'Asia/Tehran', hour: '2-digit', minute: '2-digit' })} · ${offer.remainingCapacity} صندلی`;
 
-export function TourWorkspace() {
+export function TourWorkspace({
+  mode = 'definition',
+}: {
+  mode?: 'definition' | 'departures';
+}) {
   const [packages, setPackages] = useState<TourPackageV1[]>([]);
   const [departures, setDepartures] = useState<TourDepartureV1[]>([]);
   const [branches, setBranches] = useState<BranchReference[]>([]);
   const [branch, setBranch] = useState('');
   const [references, setReferences] = useState<{
     cities: MasterDataRecord[];
-    hotels: MasterDataRecord[];
     insurance: MasterDataRecord[];
-    currencies: MasterDataRecord[];
     airlines: MasterDataRecord[];
     airports: MasterDataRecord[];
   }>({
     cities: [],
-    hotels: [],
     insurance: [],
-    currencies: [],
     airlines: [],
     airports: [],
   });
@@ -122,7 +122,6 @@ export function TourWorkspace() {
     direction: 'out' | 'back';
     draft: TicketOfferCreateV1;
   }>();
-  const [hotelSearch, setHotelSearch] = useState('');
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState('');
   const [notice, setNotice] = useState('');
@@ -158,25 +157,20 @@ export function TourWorkspace() {
       if (!base) throw new Error('نشانی سرور تنظیم نشده است.');
       const session = await refreshAuthenticatedSession(base);
       if (!session) throw new Error('برای مدیریت تور وارد حساب شوید.');
-      const [p, d, cities, hotels, insurance, currencies, airlines, airports] =
-        await Promise.all([
-          toursApi.packages(),
-          toursApi.departures(),
-          loadRefs('cities'),
-          loadRefs('hotels'),
-          loadRefs('insurance-plans'),
-          loadRefs('currencies'),
-          loadRefs('airlines'),
-          loadRefs('airports'),
-        ]);
+      const [p, d, cities, insurance, airlines, airports] = await Promise.all([
+        toursApi.packages(),
+        toursApi.departures(),
+        loadRefs('cities'),
+        loadRefs('insurance-plans'),
+        loadRefs('airlines'),
+        loadRefs('airports'),
+      ]);
       if (cancelled) return;
       setPackages(p.data);
       setDepartures(d.data);
       setReferences({
         cities,
-        hotels,
         insurance,
-        currencies,
         airlines,
         airports,
       });
@@ -197,10 +191,21 @@ export function TourWorkspace() {
   useEffect(() => {
     let cancelled = false;
     if (!pack || !dates.start || !dates.end) return;
+    if (dates.end < dates.start) return;
     void Promise.all([
-      toursApi.offers(pack.originId, pack.destinationId, dates.start),
+      toursApi.offers(
+        pack.originId,
+        pack.destinationId,
+        dates.start,
+        dates.end,
+      ),
       roundtrip
-        ? toursApi.offers(pack.destinationId, pack.originId, dates.end)
+        ? toursApi.offers(
+            pack.destinationId,
+            pack.originId,
+            dates.start,
+            dates.end,
+          )
         : Promise.resolve([]),
     ])
       .then(([out, back]) => {
@@ -285,16 +290,25 @@ export function TourWorkspace() {
     );
 
   return (
-    <div className="space-y-5" dir="rtl">
-      <Card className="flex flex-wrap items-center justify-between gap-3 p-5">
+    <div className="space-y-3" dir="rtl">
+      <Card className="flex flex-wrap items-center justify-between gap-3 p-4">
         <div>
-          <h2 className="text-xl font-bold">تورهای قابل فروش</h2>
-          <p className="mt-2 text-sm text-muted-foreground">
-            بستهٔ خدمات را یک‌بار تعریف کنید؛ برای هر سفر یک نوبت با بلیط واقعی
-            بسازید.
+          <h2 className="text-lg font-bold">
+            {mode === 'definition'
+              ? 'تعریف تور و خدمات'
+              : 'نوبت برگزاری تور و بلیط‌ها'}
+          </h2>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {mode === 'definition'
+              ? 'اینجا فقط مشخصات ثابت و خدمات تور ثبت می‌شود. تاریخ، بلیط و هتل هر نوبت در مدیریت قیمت پکیج تعیین می‌شوند.'
+              : 'تاریخ هر نوبت و بلیط‌های واقعی رفت‌وبرگشت را انتخاب کنید؛ سپس هتل‌های همان بازه را متصل کنید.'}
           </p>
         </div>
-        <Button onClick={() => setCreating(!creating)}>تعریف تور جدید</Button>
+        {mode === 'definition' ? (
+          <Button size="sm" onClick={() => setCreating(!creating)}>
+            {creating ? 'بستن فرم' : 'تعریف تور جدید'}
+          </Button>
+        ) : null}
         <Button
           variant="outline"
           disabled={busy}
@@ -316,10 +330,13 @@ export function TourWorkspace() {
           {notice}
         </p>
       )}
-      {creating && (
-        <Card className="space-y-4 p-5">
-          <h3 className="font-bold">۱. تعریف بستهٔ تور</h3>
-          <fieldset disabled={busy} className="grid gap-4 sm:grid-cols-2">
+      {mode === 'definition' && creating && (
+        <Card className="space-y-2 p-3">
+          <h3 className="font-bold">مشخصات و خدمات تور</h3>
+          <fieldset
+            disabled={busy}
+            className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4 [&_input:not([type=checkbox])]:h-9 [&_button[role=combobox]]:h-9"
+          >
             <FormField id="tour-name" label="عنوان تور">
               <Input
                 id="tour-name"
@@ -355,46 +372,6 @@ export function TourWorkspace() {
                 setDraft({ ...draft, destinationId, hotelIds: [] })
               }
             />
-            <div className="space-y-2 sm:col-span-2">
-              <h4 className="font-semibold">هتل‌های قابل انتخاب این تور</h4>
-              <Input
-                aria-label="جست‌وجوی هتل تور"
-                placeholder="جست‌وجوی هتل مقصد…"
-                value={hotelSearch}
-                onChange={(event) => setHotelSearch(event.target.value)}
-              />
-              <div className="grid max-h-44 gap-2 overflow-auto sm:grid-cols-2">
-                {references.hotels
-                  .filter(
-                    (hotel) =>
-                      hotel.attributes.cityId === draft.destinationId &&
-                      hotel.name.includes(hotelSearch),
-                  )
-                  .map((hotel) => (
-                    <label
-                      key={hotel.id}
-                      className="flex gap-2 rounded-lg border p-2"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={draft.hotelIds.includes(hotel.id)}
-                        onChange={(event) =>
-                          setDraft({
-                            ...draft,
-                            hotelIds: event.target.checked
-                              ? [...draft.hotelIds, hotel.id]
-                              : draft.hotelIds.filter((id) => id !== hotel.id),
-                          })
-                        }
-                      />
-                      {hotel.name}
-                    </label>
-                  ))}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                انتخاب هتل اختیاری است؛ فقط هتل‌های شهر مقصد نمایش داده می‌شوند.
-              </p>
-            </div>
             <Choice
               label="بیمه همراه تور"
               value={draft.insuranceId ?? 'none'}
@@ -411,7 +388,7 @@ export function TourWorkspace() {
                 })
               }
             />
-            <div className="flex flex-wrap items-center gap-4">
+            <div className="flex flex-wrap items-center gap-3 text-xs sm:col-span-2 lg:col-span-3">
               {(
                 [
                   ['transferOutbound', 'ترانسفر رفت'],
@@ -434,7 +411,6 @@ export function TourWorkspace() {
             <TourDetailsForm
               value={draft.details ?? { version: 1 }}
               onChange={(details) => setDraft({ ...draft, details })}
-              currencies={references.currencies}
               airlines={references.airlines}
               airports={references.airports.filter(
                 (airport) => airport.attributes.cityId === draft.originId,
@@ -443,6 +419,8 @@ export function TourWorkspace() {
               branchId={branch}
             />
             <Button
+              className="col-span-full justify-self-end"
+              size="sm"
               disabled={!branch}
               onClick={() =>
                 void run(async () => {
@@ -456,7 +434,7 @@ export function TourWorkspace() {
                   setDraft(emptyPackage);
                   resetTickets();
                   setNotice(
-                    'تعریف تور ذخیره شد؛ اکنون نوبت برگزاری را تعیین کنید.',
+                    'تور و خدمات آن ذخیره شد. نوبت برگزاری، بلیط‌ها و هتل‌های بازه را در مدیریت قیمت پکیج ثبت کنید.',
                   );
                 })
               }
@@ -466,8 +444,69 @@ export function TourWorkspace() {
           </fieldset>
         </Card>
       )}
-      <Card className="space-y-4 p-5">
-        <h3 className="font-bold">۲. نوبت برگزاری و بلیط‌ها</h3>
+      {mode === 'definition' ? (
+        <Card className="space-y-3 p-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h3 className="font-bold">تورهای تعریف‌شده</h3>
+              <p className="text-xs text-muted-foreground">
+                برای ساخت تاریخ برگزاری و اتصال بلیط و هتل، وارد مدیریت قیمت
+                پکیج شوید.
+              </p>
+            </div>
+            <Button asChild size="sm" variant="outline">
+              <a href="/sales/pricing">مدیریت نوبت و قیمت پکیج</a>
+            </Button>
+          </div>
+          <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+            {packages.map((item) => (
+              <article
+                className="rounded-xl border bg-muted/20 p-3"
+                key={item.id}
+              >
+                <strong className="text-sm">{item.name}</strong>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {references.cities.find((city) => city.id === item.originId)
+                    ?.name ?? 'مبدأ'}{' '}
+                  ←{' '}
+                  {references.cities.find(
+                    (city) => city.id === item.destinationId,
+                  )?.name ?? 'مقصد'}
+                </p>
+                <div className="mt-2 flex flex-wrap gap-1 text-[11px]">
+                  {item.transferOutbound ? (
+                    <span className="rounded-full bg-primary/10 px-2 py-1">
+                      ترانسفر رفت
+                    </span>
+                  ) : null}
+                  {item.transferReturn ? (
+                    <span className="rounded-full bg-primary/10 px-2 py-1">
+                      ترانسفر برگشت
+                    </span>
+                  ) : null}
+                  {item.visa ? (
+                    <span className="rounded-full bg-primary/10 px-2 py-1">
+                      ویزا
+                    </span>
+                  ) : null}
+                  {item.insuranceId ? (
+                    <span className="rounded-full bg-primary/10 px-2 py-1">
+                      بیمه
+                    </span>
+                  ) : null}
+                </div>
+              </article>
+            ))}
+            {!packages.length ? (
+              <p className="text-sm text-muted-foreground">
+                هنوز توری تعریف نشده است.
+              </p>
+            ) : null}
+          </div>
+        </Card>
+      ) : null}
+      <Card className={mode === 'departures' ? 'space-y-4 p-5' : 'hidden'}>
+        <h3 className="font-bold">نوبت برگزاری و بلیط‌ها</h3>
         <fieldset disabled={busy} className="space-y-4">
           <Choice
             label="تور"
@@ -570,7 +609,13 @@ export function TourWorkspace() {
                   <TicketDatePicker
                     value={dates.start}
                     onChange={(start) => {
-                      setDates({ ...dates, start });
+                      const next = { ...dates, start };
+                      setDates(next);
+                      setProblem(
+                        next.end && next.end < next.start
+                          ? 'روز پایان باید برابر یا بعد از روز شروع باشد.'
+                          : '',
+                      );
                       resetTickets();
                     }}
                   />
@@ -579,12 +624,22 @@ export function TourWorkspace() {
                   <TicketDatePicker
                     value={dates.end}
                     onChange={(end) => {
-                      setDates({ ...dates, end });
+                      const next = { ...dates, end };
+                      setDates(next);
+                      setProblem(
+                        next.start && next.end < next.start
+                          ? 'روز پایان باید برابر یا بعد از روز شروع باشد.'
+                          : '',
+                      );
                       resetTickets();
                     }}
                   />
                 </FormField>
               </div>
+              <p className="text-xs text-muted-foreground">
+                فقط بلیت‌هایی نمایش داده می‌شوند که تاریخ حرکتشان از روز شروع تا
+                روز پایان این نوبت باشد.
+              </p>
               <label className="flex gap-2">
                 <input
                   type="checkbox"
@@ -764,7 +819,7 @@ export function TourWorkspace() {
           )}
         </fieldset>
       </Card>
-      <Card className="space-y-3 p-5">
+      <Card className={mode === 'departures' ? 'space-y-3 p-5' : 'hidden'}>
         <h3 className="font-bold">نوبت‌های آینده</h3>
         {departures.map((item) => (
           <div
@@ -782,25 +837,34 @@ export function TourWorkspace() {
                 {item.returning ? ` / ${item.returning.serviceNumber}` : ''}
               </p>
             </div>
-            <Button
-              variant="outline"
-              disabled={busy}
-              onClick={() => {
-                setSelected(item.packageId);
-                setRepeatSource(item);
-                setDates({
-                  start: shiftWeek(item.startsOn),
-                  end: shiftWeek(item.endsOn),
-                });
-                setRoundtrip(Boolean(item.returning));
-                resetTickets();
-                setNotice(
-                  'تاریخ‌ها یک هفته جلو رفتند؛ بلیط‌های همین تاریخ را انتخاب یا با ساعت دلخواه تعریف کنید. نوبت قبلی تغییر نکرده است.',
-                );
-              }}
-            >
-              تکرار برای هفتهٔ بعد
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant="outline"
+                disabled={busy}
+                onClick={() => {
+                  setSelected(item.packageId);
+                  setRepeatSource(item);
+                  setDates({
+                    start: shiftWeek(item.startsOn),
+                    end: shiftWeek(item.endsOn),
+                  });
+                  setRoundtrip(Boolean(item.returning));
+                  resetTickets();
+                  setNotice(
+                    'تاریخ‌ها یک هفته جلو رفتند؛ بلیط‌های همین تاریخ را انتخاب یا با ساعت دلخواه تعریف کنید. نوبت قبلی تغییر نکرده است.',
+                  );
+                }}
+              >
+                تکرار برای هفتهٔ بعد
+              </Button>
+              <Button asChild size="sm">
+                <a
+                  href={`/reservations/hotel-rates?tourDepartureId=${encodeURIComponent(item.id)}`}
+                >
+                  اتصال هتل‌های این بازه
+                </a>
+              </Button>
+            </div>
           </div>
         ))}
         {!departures.length && (

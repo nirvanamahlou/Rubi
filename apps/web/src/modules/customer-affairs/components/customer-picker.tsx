@@ -28,7 +28,13 @@ import {
 } from '../api/customers-client';
 
 type LookupState =
-  'loading' | 'ready' | 'empty' | 'error' | 'unauthorized' | 'forbidden';
+  | 'idle'
+  | 'loading'
+  | 'ready'
+  | 'empty'
+  | 'error'
+  | 'unauthorized'
+  | 'forbidden';
 
 export function CustomerPicker({
   disabled = false,
@@ -49,7 +55,8 @@ export function CustomerPicker({
   const [current, setCurrent] = useState<CustomerSummary | null>(null);
   const [currentError, setCurrentError] = useState(false);
   const [records, setRecords] = useState<readonly CustomerSummary[]>([]);
-  const [state, setState] = useState<LookupState>('loading');
+  const [state, setState] = useState<LookupState>('idle');
+  const lookupState = search.trim() ? state : 'idle';
   const chosen =
     selected ?? (current?.id === initialCustomerId ? current : null);
 
@@ -107,13 +114,14 @@ export function CustomerPicker({
   );
 
   useEffect(() => {
+    if (!search.trim()) return;
     const controller = new AbortController();
     const timer = window.setTimeout(() => void load(controller.signal), 300);
     return () => {
       window.clearTimeout(timer);
       controller.abort();
     };
-  }, [load, retry]);
+  }, [load, retry, search]);
 
   return (
     <section
@@ -158,25 +166,29 @@ export function CustomerPicker({
           />
         </div>
       </FormField>
-      <div aria-busy={state === 'loading'} aria-live="polite">
-        {state === 'loading' ? (
+      <div aria-busy={lookupState === 'loading'} aria-live="polite">
+        {lookupState === 'idle' ? (
+          <p className="text-sm text-muted-foreground" role="status">
+            برای نمایش مشتریان و مسافران، نام را جست‌وجو کنید.
+          </p>
+        ) : lookupState === 'loading' ? (
           <div aria-label="در حال جست‌وجوی مشتریان" className="space-y-2">
             <Skeleton className="h-14 w-full" />
             <Skeleton className="h-14 w-full" />
           </div>
-        ) : state === 'unauthorized' ? (
+        ) : lookupState === 'unauthorized' ? (
           <EmptyState
             description="نشست معتبر نیست؛ برای جست‌وجوی مشتریان دوباره وارد شوید."
             icon={LogIn}
             title="نیاز به ورود"
           />
-        ) : state === 'forbidden' ? (
+        ) : lookupState === 'forbidden' ? (
           <EmptyState
             description="مجوز customers.read برای این عملیات لازم است."
             icon={Ban}
             title="دسترسی به مشتریان و مسافران مجاز نیست"
           />
-        ) : state === 'error' ? (
+        ) : lookupState === 'error' ? (
           <ErrorState
             action={
               <Button
@@ -192,7 +204,7 @@ export function CustomerPicker({
             description="فهرست مشتریان دریافت نشد؛ دوباره تلاش کنید. انتخاب قبلی حفظ می‌شود."
             title="جست‌وجوی مشتری ناموفق بود"
           />
-        ) : state === 'empty' ? (
+        ) : lookupState === 'empty' ? (
           <EmptyState
             description="با عبارت فعلی مشتری یا مسافر فعالی پیدا نشد."
             title="نتیجه‌ای وجود ندارد"
@@ -255,36 +267,38 @@ export function CustomerPicker({
           </div>
         )}
       </div>
-      <div className="flex items-center justify-between gap-2">
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          disabled={disabled || state === 'loading' || page === 1}
-          onClick={() => {
-            setPage((value) => value - 1);
-            setState('loading');
-          }}
-        >
-          قبلی
-        </Button>
-        <span className="text-xs text-muted-foreground">
-          صفحه {page.toLocaleString('fa-IR')} · {total.toLocaleString('fa-IR')}{' '}
-          نتیجه
-        </span>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          disabled={disabled || state !== 'ready' || page * 10 >= total}
-          onClick={() => {
-            setPage((value) => value + 1);
-            setState('loading');
-          }}
-        >
-          بعدی
-        </Button>
-      </div>
+      {lookupState !== 'idle' ? (
+        <div className="flex items-center justify-between gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={disabled || lookupState === 'loading' || page === 1}
+            onClick={() => {
+              setPage((value) => value - 1);
+              setState('loading');
+            }}
+          >
+            قبلی
+          </Button>
+          <span className="text-xs text-muted-foreground">
+            صفحه {page.toLocaleString('fa-IR')} ·{' '}
+            {total.toLocaleString('fa-IR')} نتیجه
+          </span>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={disabled || lookupState !== 'ready' || page * 10 >= total}
+            onClick={() => {
+              setPage((value) => value + 1);
+              setState('loading');
+            }}
+          >
+            بعدی
+          </Button>
+        </div>
+      ) : null}
       {chosen ? (
         <Alert
           description={`${chosen.displayName} · ${chosen.maskedPrimaryContact ?? 'بدون تماس'}`}

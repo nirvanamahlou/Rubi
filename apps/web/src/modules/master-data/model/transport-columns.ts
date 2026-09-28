@@ -16,7 +16,9 @@ export function transportColumns(
         ['code', 'IATA'],
         ['icaoCode', 'ICAO'],
         ['name', 'ایرلاین'],
-        ...operator,
+        ['countryName', 'کشور'],
+        ['logoFileReference', 'لوگو Reference'],
+        ['integrationConnectionReference', 'Integration Connection'],
         ['versionAudit', 'Version / Audit'],
       ];
     case 'aircraft-types':

@@ -436,6 +436,8 @@ describe.skipIf(process.env.PROCUREMENT_API_DATABASE_TEST !== '1')(
           expect(id).toBe(supplier);
           return { id, version: 1, label: 'Synthetic Supplier' };
         },
+        supplierLabels: async (ids: readonly string[]) =>
+          new Map(ids.map((id) => [id, 'Synthetic Supplier'])),
       } as unknown as MasterProcurementDirectory;
       const hr = {
         self: async (actor: AuthenticatedActor, requestedBranch?: string) => {
@@ -591,6 +593,51 @@ describe.skipIf(process.env.PROCUREMENT_API_DATABASE_TEST !== '1')(
         'POLICY_NOT_CONFIGURED',
       );
       expect(await service.detail(row.id, maker)).toEqual(row);
+    });
+    it('publishes a complete draft without inventing an approval policy', async () => {
+      approvedPolicy = await new ProcurementPolicyPort().resolve(fixture());
+      const row = await create();
+
+      const published = await command(row, 'PUBLISH');
+
+      expect(published.status).toBe('SUBMITTED');
+      expect(
+        await database.client.procurementApprovalSnapshot.count({
+          where: { requestId: row.id },
+        }),
+      ).toBe(0);
+    });
+    it('creates and publishes atomically and leaves no draft when validation fails', async () => {
+      const complete = fixture();
+      const published = await procurementBoundary(() =>
+        service.create(
+          { draft: complete, publish: true },
+          randomUUID(),
+          maker,
+        ),
+      );
+      expect(published.status).toBe('SUBMITTED');
+      expect(published.version).toBe(2);
+
+      const invalid = fixture();
+      invalid.items[0]!.quantity = '0';
+      await rejected(
+        () =>
+          procurementBoundary(() =>
+            service.create(
+              { draft: invalid, publish: true },
+              randomUUID(),
+              maker,
+            ),
+          ),
+        422,
+        'VALIDATION_ERROR',
+      );
+      expect(
+        await database.client.procurementRequest.count({
+          where: { title: invalid.title },
+        }),
+      ).toBe(0);
     });
     it('preserves zero/incomplete quantities, full HR unit identifiers and prevents cross-request item theft', async () => {
       const person = identities.get(maker.userId)!;

@@ -145,4 +145,42 @@ describe('Reporting form action history', () => {
       expect.any(Number),
     );
   });
+
+  it('uses the published report export retention when the file is completed', async () => {
+    const repo = repository();
+    const files = {
+      build: vi.fn().mockReturnValue({
+        extension: 'csv',
+        buffer: Buffer.from('report'),
+        checksum: 'checksum',
+      }),
+      store: vi.fn().mockResolvedValue('reports/export.bin'),
+      read: vi.fn(),
+    };
+    const settings = {
+      json: vi.fn().mockResolvedValue({
+        value: { limit: 5_000, expiry: 14 },
+      }),
+    };
+    const service = new ReportingService(
+      repo as never,
+      files as never,
+      settings as never,
+    );
+
+    await service.createExport(
+      'sales_by_service_route',
+      { format: 'CSV', query },
+      actor,
+    );
+
+    expect(repo.finishExport).toHaveBeenCalledWith(
+      '44444444-4444-4444-8444-444444444444',
+      'reports/export.bin',
+      6,
+      'checksum',
+      14,
+    );
+    expect(settings.json).toHaveBeenCalledWith('reports', 'export', {}, {});
+  });
 });

@@ -17,6 +17,7 @@ const ids = {
   chain: '44444444-4444-4444-8444-444444444444',
   meal: '55555555-5555-4555-8555-555555555555',
   room: '66666666-6666-4666-8666-666666666666',
+  roomSuite: '68888888-6888-4888-8888-688888888888',
   facility: '77777777-7777-4777-8777-777777777777',
 };
 
@@ -96,7 +97,7 @@ describe('MasterDataService accommodation', () => {
         cityId: ids.city,
         chainId: ids.chain,
         mealServiceIds: ids.meal,
-        roomTypeIds: ids.room,
+        roomTypeIds: `${ids.room},${ids.roomSuite}`,
         facilityIds: ids.facility,
         isSaleableReference: 'true',
       },
@@ -115,7 +116,10 @@ describe('MasterDataService accommodation', () => {
         create: [{ mealServiceId: ids.meal, assignedByUserId: actor.userId }],
       },
       roomTypes: {
-        create: [{ roomTypeId: ids.room, assignedByUserId: actor.userId }],
+        create: [
+          { roomTypeId: ids.room, assignedByUserId: actor.userId },
+          { roomTypeId: ids.roomSuite, assignedByUserId: actor.userId },
+        ],
       },
       facilities: {
         create: [{ facilityId: ids.facility, assignedByUserId: actor.userId }],
