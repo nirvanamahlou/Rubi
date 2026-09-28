@@ -1,3 +1,7 @@
+## 2026-09-28 — FINANCE-TICKET-PAYMENT-0928 — PC-A — READY_FOR_REVIEW
+
+Payment-method selection uses a native accessible control with explicit failed/empty-list feedback and retry. Existing seat-count × unit-cost capture remains persisted; the invoice preview now uses exact four-decimal arithmetic. The payment dialog explains repeated partial payments and shows the invoice amount as initial remaining balance. Eleven targeted Web tests, scoped lint, Web typecheck and production build (53 routes) passed. No new migration, shared contract, dependency, permissions or operational data changes. Branch: codex/pc-a-finance-ticket-payment-0928 from origin/develop@e4eb048c. Original edits and Web3100/API4000 are unchanged; reviewed integration/runtime update remains subject to approval. See docs/tasks/FINANCE-TICKET-PAYMENT-0928.md.
+
 ## 2026-09-28 — قالب پیش‌فرض و انتخاب قالب منیفست (PC-A)
 
 - در شاخه مستقل codex/pc-a-manifest-default-template-0928 از origin/develop@1de70e5c، انتهای فرم بلیت انتخاب‌گر جست‌وجوپذیر قالب افزوده شد؛ نام گزینه‌ها از ایرلاین و مقصد است و انتخاب nullable روی Published Offer با FK واقعی ذخیره می‌شود. بلیت‌های قدیمی و گزینهٔ «پیش‌فرض» از XLSX عمومی استفاده می‌کنند.

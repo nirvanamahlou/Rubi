@@ -1,3 +1,9 @@
+## FINANCE-TICKET-PAYMENT-0928 — PC-A — READY_FOR_REVIEW
+
+- COMPUTER_ID=PC-A; base origin/develop@e4eb048c; branch codex/pc-a-finance-ticket-payment-0928. Reserve Finance inbox component, module-local exact total helper/tests and bounded entries in WORK_ASSIGNMENTS/PROJECT_STATUS. Previous Finance presentation reservations are released. Preserve original checkout edits.
+- Validation: 11 targeted tests, scoped ESLint, Web typecheck and production build (53 routes) passed. Bounded implementation/docs locks RELEASED after commit. Authenticated browser click remains unverified; runtime update needs owner approval.
+- Fix payment-method interaction and surface option errors/retry; retain existing persisted seat/unit pricing and partial-payment API. No migration, dependency, shared contract, permission, operational data or runtime replacement. Bounded Central Docs Owner: PC-A/FINANCE-TICKET-PAYMENT-0928.
+
 ## MANIFEST-DEFAULT-TEMPLATE-0928 — PC-A — READY_FOR_REVIEW
 
 - Owner request: every ticket without an assigned manifest template exports a default XLSX with contract, separate passenger names, flight date/ticket/airline, age, nationality, birth date, gender, cabin and national ID; international routes additionally include passport number/expiry. Ticket management ends with a searchable template selector, defaulting to «پیش‌فرض»; named options use airline and destination.
