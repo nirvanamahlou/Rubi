@@ -176,7 +176,7 @@ describe('MasterDataService', () => {
     );
   });
 
-  it('requires an English cabin title and mirrors it to the internal name', async () => {
+  it('allows an omitted English cabin title and uses the booking code as its internal name', async () => {
     const repository = {
       codeExists: vi.fn().mockResolvedValue(false),
       fieldExists: vi.fn().mockResolvedValue(false),
@@ -209,9 +209,36 @@ describe('MasterDataService', () => {
       actor.branchIds[0],
     );
 
-    await expect(
-      service.create('cabin-classes', { bookingCode: 'Y' }, actor),
-    ).rejects.toMatchObject({ status: 400 });
+    await service.create('cabin-classes', { bookingCode: 'J' }, actor);
+    expect(repository.create).toHaveBeenLastCalledWith(
+      'cabin-classes',
+      expect.objectContaining({ name: 'J', bookingCode: 'J' }),
+      actor.userId,
+      actor.branchIds[0],
+    );
+  });
+
+  it('accepts a country without an English title', async () => {
+    const repository = {
+      fieldExists: vi.fn().mockResolvedValue(false),
+      create: vi
+        .fn()
+        .mockImplementation(
+          async (_resource: string, data: Record<string, unknown>) => ({
+            ...row,
+            ...data,
+          }),
+        ),
+    } as unknown as MasterDataRepository;
+    const service = new MasterDataService(repository);
+
+    await service.create('countries', { iso2Code: 'IR', name: 'ایران' }, actor);
+    expect(repository.create).toHaveBeenCalledWith(
+      'countries',
+      expect.not.objectContaining({ englishName: expect.anything() }),
+      actor.userId,
+      actor.branchIds[0],
+    );
   });
 
   it('rejects a non-positive baggage allowance before persistence', async () => {
