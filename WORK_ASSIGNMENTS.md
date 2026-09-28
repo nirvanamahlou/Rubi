@@ -4099,3 +4099,9 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 - درخواست مالک: بخش‌های «ارتباطات» و «نسخه‌ها» از پنجره مشاهده سند حذف شوند.
 - ادامهٔ شاخهٔ بازبینی `codex/pc-b-workbench-optional-document-case-0928` و PR #413؛ محدوده فقط `apps/web/src/modules/documents/components/document-detail-dialog.tsx` و ثبت وضعیت است. مالک ماژول اسناد PC-B است؛ داده، API، مجوز و امکان دریافت فایل تغییر نمی‌کند.
 - تب‌ها و محتوای «ارتباطات» و «نسخه‌ها» حذف شدند. lint، typecheck و build تولیدی Web با ۵۳ صفحه موفق‌اند.
+
+## 2026-09-28 — WORKBENCH-FILES-UPLOADED-ONLY-0928 — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک: تب «اسناد من» در فایل‌های میزکار حذف شود و «بارگذاری‌های من» باقی بماند.
+- ادامهٔ شاخهٔ بازبینی `codex/pc-b-workbench-optional-document-case-0928` و PR #413؛ محدوده `apps/web/src/modules/workbench/workbench-files.tsx` و ثبت وضعیت. فهرست اسناد اصلی، داده و API تغییر نمی‌کنند.
+- تب «اسناد من» حذف و «بارگذاری‌های من» پیش‌فرض شد. lint، typecheck و build تولیدی Web موفق‌اند.

@@ -39,7 +39,7 @@ export function WorkbenchFiles({
   user: LoginResponse['user'];
   onChange: () => void;
 }) {
-  const [view, setView] = useState<DocumentPersonalViewCode>('OWNED');
+  const [view, setView] = useState<DocumentPersonalViewCode>('UPLOADED');
   const [search, setSearch] = useState('');
   const [query, setQuery] = useState({ search: '', page: 1 });
   const [data, setData] = useState<DocumentListResponseV1 | null>(null);
@@ -174,7 +174,6 @@ export function WorkbenchFiles({
           dir="rtl"
         >
           <TabsList className="flex flex-wrap h-auto">
-            <TabsTrigger value="OWNED">اسناد من</TabsTrigger>
             <TabsTrigger value="UPLOADED">بارگذاری‌های من</TabsTrigger>
             <TabsTrigger value="RECENTLY_VIEWED">اخیراً دیده‌شده</TabsTrigger>
           </TabsList>
