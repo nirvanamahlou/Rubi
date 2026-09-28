@@ -112,6 +112,28 @@ describe('IAM login and refresh HTTP contract', () => {
     expect(service.changePassword).not.toHaveBeenCalled();
   });
 
+  it('returns only authenticated caller permissions without caching or password data', async () => {
+    await request(app.getHttpServer()).get('/iam/auth/access').expect(401);
+    service.authenticate.mockResolvedValue({
+      userId: 'self',
+      sessionId: 'session',
+      permissions: ['ui.profile', 'ui.screen.system.users'],
+      branchIds: ['branch'],
+    });
+    const response = await request(app.getHttpServer())
+      .get('/iam/auth/access?userId=other')
+      .set('Cookie', 'nora_access=fixture')
+      .expect(200);
+    expect(response.body).toEqual({
+      userId: 'self',
+      sessionId: 'session',
+      permissions: ['ui.profile', 'ui.screen.system.users'],
+      branchIds: ['branch'],
+    });
+    expect(response.headers['cache-control']).toBe('private, no-store');
+    expect(service.changePassword).not.toHaveBeenCalled();
+  });
+
   it('rejects requests without the CSRF header and caller-supplied identities', async () => {
     await request(app.getHttpServer())
       .post('/iam/auth/change-password')

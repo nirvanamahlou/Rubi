@@ -23,3 +23,7 @@ Visibility applies to sidebar groups/items, search results, direct routes, share
 - Tests use synthetic fixtures; interactive authenticated browser QA and shared runtime deployment are not claimed. No operational user was created or modified.
 - PC-B Istanbul generator updates are preserved when incorporating newer develop. Remaining module owners should fetch develop and register any new navigation in the shared screen catalog.
 - Bounded IAM/central UI/docs locks are released with the scoped commit; no migration/dependency locks acquired.
+
+## CI follow-up
+
+Initial full CI found the existing System source contract still expecting `/users` and an AuthGuard decorator attached to the inserted access method rather than the following password-capability method. The original password-capability guard is restored, the new access endpoint remains authenticated/no-cache, and HTTP regression covers unauthenticated access, current actor identity and ignored caller-supplied userId. The source contract now expects nested `/system/users`; the old route remains supported. Full checks rerun before merge.
