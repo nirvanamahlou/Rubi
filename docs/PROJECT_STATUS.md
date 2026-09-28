@@ -1,3 +1,11 @@
+## TICKET-SUPPLY-REPEAT-0928 — PC-A — 2026-09-28
+
+- سه گزینه تامین قابل انتخاب: شناوری، ظرفیت شرکت و API. مقادیر ذخیره‌شده قدیمی allotment/charter حفظ و در رابط با عنوان شناوری خوانده می‌شوند؛ قرارداد دامنه تغییر نمی‌کند. انتخاب API نوع تامین است و اتصال خودکار به تامین‌کننده خارجی ایجاد نمی‌کند.
+- تعداد نوبت شامل تاریخ شروع است؛ هفتگی با فاصله دقیق هفت روز و ساعت/مدت سفر قبلی. هر نوبت پس از ثبت سرور مستقل به مجموعه مرورگر اضافه، فهرست رسمی تازه و فیلتر کارت‌ها برای نمایش تازه‌ترین‌ها بازنشانی می‌شود. موفقیت‌های قبل از خطای شبکه حفظ و تلاش مجدد در همان پنجره از شناسه‌های ثابت و checkpoint استفاده می‌کند.
+- فهرست رسمی ویرایش مستقل تعریف موجود در مرورگر و حذف را دارد. DELETE موجود علاوه بر بلیط تاریخ‌گذشته، بلیط آینده فاقد تخصیص فعال، رزرو ظرفیت فعال و تور متصل را آرشیو می‌کند؛ قفل ردیف، شعبه، نسخه و audit حفظ می‌شوند. FK و سوابق قرارداد/مالی حذف نمی‌شوند. محدودیت ۵۰۰ رکورد فهرست مدیریت و ذخیره محلی تعریف بلیط از قبل برقرار است.
+- بدون Migration، قرارداد مشترک، وابستگی یا داده عملیاتی. runtime ۳۱۰۰ و PR قبلی تورها دست‌نخورده‌اند. ۳۳ آزمون Web و ۱۱ آزمون API، lint فایل‌های متاثر، typecheck Web/API و build تولیدی Web/API با ۵۳ مسیر Web موفق‌اند.
+
+
 ## 2026-09-28 — FINANCE-TICKET-PAYMENT-0928 — PC-A — READY_FOR_REVIEW
 
 Payment-method selection uses a native accessible control with explicit failed/empty-list feedback and retry. Existing seat-count × unit-cost capture remains persisted; the invoice preview now uses exact four-decimal arithmetic. The payment dialog explains repeated partial payments and shows the invoice amount as initial remaining balance. Eleven targeted Web tests, scoped lint, Web typecheck and production build (53 routes) passed. No new migration, shared contract, dependency, permissions or operational data changes. Branch: codex/pc-a-finance-ticket-payment-0928 from origin/develop@e4eb048c. Original edits and Web3100/API4000 are unchanged; reviewed integration/runtime update remains subject to approval. See docs/tasks/FINANCE-TICKET-PAYMENT-0928.md.
