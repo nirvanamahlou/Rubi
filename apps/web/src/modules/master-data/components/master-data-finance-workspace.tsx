@@ -25,7 +25,6 @@ import {
   FilePenLine,
   FileSpreadsheet,
   Landmark,
-  MapPin,
   Plus,
   RefreshCw,
   Search,
@@ -81,9 +80,9 @@ import {
 } from './master-data-kpi-grid';
 import { MasterDataProfileDialog } from './master-data-profile-dialog';
 import { MasterDataCurrencyForm } from './master-data-currency-form';
+import { MasterDataBankProfile } from './master-data-bank-profile';
 
-type FinanceTab =
-  'currencies' | 'approvals' | 'banks' | 'branches' | 'payments';
+type FinanceTab = 'currencies' | 'approvals' | 'banks' | 'payments';
 type RequestState = 'loading' | 'ready' | 'error' | 'forbidden';
 type RateStatus = 'DRAFT' | 'APPROVED' | 'REJECTED' | 'EXPIRED';
 
@@ -122,12 +121,6 @@ const tabs: readonly {
   },
   { key: 'banks', label: 'بانک‌ها', resource: 'banks', icon: Landmark },
   {
-    key: 'branches',
-    label: 'شعب بانک',
-    resource: 'bank-branches',
-    icon: Building2,
-  },
-  {
     key: 'payments',
     label: 'روش پرداخت',
     resource: 'payment-methods',
@@ -149,11 +142,6 @@ const tabCopy: Record<FinanceTab, { title: string; description: string }> = {
     title: 'بانک‌ها',
     description:
       'بانک‌های مرجع مشترک بین شرکت‌ها؛ حساب، مانده و شبا متعلق به Finance است.',
-  },
-  branches: {
-    title: 'شعب بانک',
-    description:
-      'تعریف مستقل شعبه با بانک، شهر، نشانی و تلفن عمومی بدون اطلاعات حساب.',
   },
   payments: {
     title: 'روش‌های پرداخت',
@@ -305,6 +293,7 @@ export function MasterDataFinanceWorkspace() {
   const [selectedCurrency, setSelectedCurrency] = useState<
     MasterDataRecord | undefined
   >();
+  const [selectedBank, setSelectedBank] = useState<MasterDataRecord>();
   const [currencyProfileOpen, setCurrencyProfileOpen] = useState(false);
   const [currencyHistoryState, setCurrencyHistoryState] =
     useState<RequestState>('ready');
@@ -518,6 +507,7 @@ export function MasterDataFinanceWorkspace() {
     setPage(1);
     setSelected(undefined);
     setSelectedCurrency(undefined);
+    setSelectedBank(undefined);
     setCurrencyProfileOpen(false);
     setAudit([]);
     setAuditRateId(null);
@@ -659,11 +649,6 @@ export function MasterDataFinanceWorkspace() {
       tab === 'banks' &&
       (!row.attributes.englishName || !row.attributes.swiftCode),
   ).length;
-  const coveredCities = new Set(
-    records
-      .map((row) => row.attributes.cityName)
-      .filter((value): value is string => typeof value === 'string' && !!value),
-  ).size;
   const kpis: readonly MasterDataKpiItem[] =
     tab === 'currencies'
       ? [
@@ -750,64 +735,35 @@ export function MasterDataFinanceWorkspace() {
                 hint: 'در صفحه جاری',
               },
             ]
-          : tab === 'branches'
-            ? [
-                {
-                  label: 'کل شعب ثبت‌شده',
-                  value: total,
-                  icon: Building2,
-                  tone: 'sky',
-                },
-                {
-                  label: 'شعب فعال',
-                  value: activeTotal,
-                  icon: CheckCircle2,
-                  tone: 'emerald',
-                },
-                {
-                  label: 'شهرهای تحت پوشش',
-                  value: coveredCities,
-                  icon: MapPin,
-                  tone: 'violet',
-                  hint: 'در صفحه جاری',
-                },
-                {
-                  label: 'شعب بدون حساب متصل',
-                  value: '—',
-                  icon: WalletCards,
-                  tone: 'amber',
-                  hint: 'پس از اتصال قرارداد Finance',
-                },
-              ]
-            : [
-                {
-                  label: 'روش‌های فعال',
-                  value: activeTotal,
-                  icon: WalletCards,
-                  tone: 'emerald',
-                },
-                {
-                  label: 'تراکنش‌های امروز',
-                  value: '—',
-                  icon: RefreshCw,
-                  tone: 'sky',
-                  hint: 'در مالکیت Finance',
-                },
-                {
-                  label: 'درگاه‌های متصل',
-                  value: '—',
-                  icon: CreditCard,
-                  tone: 'violet',
-                  hint: 'در مالکیت Finance',
-                },
-                {
-                  label: 'نیازمند پیکربندی',
-                  value: '—',
-                  icon: Settings2,
-                  tone: 'amber',
-                  hint: 'پس از اتصال قرارداد Finance',
-                },
-              ];
+          : [
+              {
+                label: 'روش‌های فعال',
+                value: activeTotal,
+                icon: WalletCards,
+                tone: 'emerald',
+              },
+              {
+                label: 'تراکنش‌های امروز',
+                value: '—',
+                icon: RefreshCw,
+                tone: 'sky',
+                hint: 'در مالکیت Finance',
+              },
+              {
+                label: 'درگاه‌های متصل',
+                value: '—',
+                icon: CreditCard,
+                tone: 'violet',
+                hint: 'در مالکیت Finance',
+              },
+              {
+                label: 'نیازمند پیکربندی',
+                value: '—',
+                icon: Settings2,
+                tone: 'amber',
+                hint: 'پس از اتصال قرارداد Finance',
+              },
+            ];
 
   const approvedCurrencyRates = [...selectedCurrencyRates]
     .filter((row) => row.status === 'APPROVED')
@@ -904,7 +860,6 @@ export function MasterDataFinanceWorkspace() {
           ) : null}
         </div>
       </div>
-
 
       <Card className="overflow-x-auto p-2">
         <nav
@@ -1196,10 +1151,13 @@ export function MasterDataFinanceWorkspace() {
                       {tab === 'banks' ? (
                         <MasterDataLogoImage record={record} />
                       ) : null}
-                      {tab === 'currencies' ? (
+                      {tab === 'currencies' || tab === 'banks' ? (
                         <button
                           className="text-start font-semibold text-foreground hover:text-primary focus-visible:rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                          onClick={() => openCurrencyProfile(record)}
+                          onClick={() => {
+                            if (tab === 'banks') setSelectedBank(record);
+                            else openCurrencyProfile(record);
+                          }}
                           type="button"
                         >
                           {record.name}
@@ -1234,6 +1192,7 @@ export function MasterDataFinanceWorkspace() {
                           onClick={() => {
                             if (tab === 'currencies')
                               openCurrencyProfile(record);
+                            else if (tab === 'banks') setSelectedBank(record);
                             else {
                               setSelected(record);
                               setFormMode('view');
@@ -1366,6 +1325,15 @@ export function MasterDataFinanceWorkspace() {
           onPersist={persist}
           open
           {...(selected ? { record: selected } : {})}
+        />
+      ) : null}
+      {selectedBank ? (
+        <MasterDataBankProfile
+          bank={selectedBank}
+          key={selectedBank.id}
+          onOpenChange={(open) => {
+            if (!open) setSelectedBank(undefined);
+          }}
         />
       ) : null}
       {selectedCurrency ? (

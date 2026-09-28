@@ -73,13 +73,7 @@ const toneClasses: Record<
 const visibleSubsections: Partial<
   Record<MasterDataSectionSlug, readonly string[]>
 > = {
-  finance: [
-    'ارزها و تاریخچه نرخ',
-    'گردش تأیید نرخ',
-    'بانک‌ها',
-    'شعب بانک',
-    'روش پرداخت',
-  ],
+  finance: ['ارزها و تاریخچه نرخ', 'گردش تأیید نرخ', 'بانک‌ها', 'روش پرداخت'],
   geography: ['کشورها', 'شهرها و استان‌ها', 'فرودگاه‌ها', 'ترمینال‌ها'],
   'organizations-suppliers': ['تأمین‌کنندگان', 'کارگزاران', 'وضعیت همکاری'],
   accommodation: ['هتل‌ها', 'زنجیره‌های هتل', 'هتل‌های ترکیبی'],
@@ -89,9 +83,7 @@ const visibleSubsections: Partial<
 export function MasterDataHub() {
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="اطلاعات پایه"
-      />
+      <PageHeader title="اطلاعات پایه" />
 
       <section aria-labelledby="master-data-sections-title">
         <h2 className="sr-only" id="master-data-sections-title">

@@ -166,10 +166,6 @@ describe('Master Data visual polish contract', () => {
       'بانک فعال',
       'حساب‌های متصل',
       'نیازمند تکمیل اطلاعات',
-      'کل شعب ثبت‌شده',
-      'شعب فعال',
-      'شهرهای تحت پوشش',
-      'شعب بدون حساب متصل',
       'روش‌های فعال',
       'تراکنش‌های امروز',
       'درگاه‌های متصل',
@@ -177,6 +173,8 @@ describe('Master Data visual polish contract', () => {
     ]) {
       expect(finance).toContain(label);
     }
+    expect(finance).toContain('<MasterDataBankProfile');
+    expect(finance).not.toContain("key: 'branches'");
   });
 
   it('does not draw an underline on section-card hover', () => {

@@ -3764,3 +3764,6 @@ The uploaded logo ID is now resolved through a narrow authenticated Master Data 
 ## 2026-09-28 — Master Data heading helper copy (PC-B)
 
 Static guidance immediately beneath titles was removed from the Master Data hub cards, workspace headings, form/profile dialogs and relevant rate/hotel panels. Record metadata, field labels, validation and actionable status messages remain. All 370 Master Data Web tests, scoped lint, Web typecheck and the 53-route production build pass. No API, migration, data or localhost runtime change.
+## 2026-09-28 — MASTER-DATA-BANK-BRANCHES-IN-PROFILE-0928 — PC-B — READY_FOR_REVIEW
+
+Bank branches now live in each bank's profile rather than a separate Finance tab. The profile reads branches by the selected bank's real `bankId`, pages results, and provides add/view/edit through the existing branch form with its bank fixed. Existing API/relations and operational records are unchanged. 373 Master Data Web tests, scoped lint, Web typecheck and a 53-route production build passed. No migration, contract, dependency or localhost update.
