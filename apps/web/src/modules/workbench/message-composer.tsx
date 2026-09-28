@@ -39,6 +39,7 @@ import {
   MESSAGE_DRAFT_LIMIT,
 } from './emoji';
 import { MessageUnitIcon } from './message-unit-icon';
+import { canAddGroupMember } from './group-members';
 import { messagingApi, messagingRequestId } from './messaging-api';
 import { messageUnits } from './message-templates';
 
@@ -87,6 +88,7 @@ export function MessageComposer({
   const [groupOpen, setGroupOpen] = useState(false);
   const [groupTitle, setGroupTitle] = useState('');
   const [groupMembers, setGroupMembers] = useState<string[]>([]);
+  const [groupError, setGroupError] = useState('');
   const [forwarding, setForwarding] = useState<MessagingMessageV1 | null>(null);
   const [attachments, setAttachments] = useState<File[]>([]);
   const input = useRef<HTMLTextAreaElement>(null);
@@ -227,7 +229,7 @@ export function MessageComposer({
   async function createGroup() {
     if (busy) return;
     setBusy(true);
-    setError('');
+    setGroupError('');
     try {
       const response = await messagingApi.createGroup({
         title: groupTitle,
@@ -240,7 +242,7 @@ export function MessageComposer({
       setGroupMembers([]);
       setSidebarMode('conversations');
     } catch (reason) {
-      setError(
+      setGroupError(
         reason instanceof Error ? reason.message : 'ساخت گروه انجام نشد.',
       );
     } finally {
@@ -461,7 +463,10 @@ export function MessageComposer({
               <Button
                 className="w-full"
                 variant="outline"
-                onClick={() => setGroupOpen(true)}
+                onClick={() => {
+                  setGroupError('');
+                  setGroupOpen(true);
+                }}
                 disabled={!contacts.length}
               >
                 <UserPlus className="size-4" aria-hidden="true" />
@@ -862,30 +867,44 @@ export function MessageComposer({
             className="mt-4 max-h-72 space-y-2 overflow-y-auto rounded-xl border border-border p-3"
             aria-label="انتخاب اعضای گروه"
           >
-            {contacts.map((contact) => (
-              <label
-                key={contact.id}
-                className="flex cursor-pointer items-center gap-3 rounded-xl p-2 hover:bg-muted"
-              >
-                <Checkbox
-                  checked={groupMembers.includes(contact.id)}
-                  onCheckedChange={(checked) =>
-                    setGroupMembers((current) =>
-                      checked
-                        ? [...current, contact.id]
-                        : current.filter((id) => id !== contact.id),
-                    )
-                  }
-                />
-                <span>
-                  <strong className="block">{contact.displayName}</strong>
-                  <span className="text-xs text-muted-foreground">
-                    {contact.branches.map((branch) => branch.name).join('، ')}
+            {contacts.map((contact) => {
+              const selected = groupMembers.includes(contact.id);
+              const selectedContacts = contacts.filter((item) =>
+                groupMembers.includes(item.id),
+              );
+              const compatible =
+                selected || canAddGroupMember(selectedContacts, contact);
+              return (
+                <label
+                  key={contact.id}
+                  className={`flex items-center gap-3 rounded-xl p-2 ${compatible ? 'cursor-pointer hover:bg-muted' : 'cursor-not-allowed opacity-50'}`}
+                >
+                  <Checkbox
+                    checked={selected}
+                    disabled={!compatible}
+                    onCheckedChange={(checked) =>
+                      setGroupMembers((current) =>
+                        checked
+                          ? [...new Set([...current, contact.id])]
+                          : current.filter((id) => id !== contact.id),
+                      )
+                    }
+                  />
+                  <span>
+                    <strong className="block">{contact.displayName}</strong>
+                    <span className="text-xs text-muted-foreground">
+                      {contact.branches.map((branch) => branch.name).join('، ')}
+                    </span>
                   </span>
-                </span>
-              </label>
-            ))}
+                </label>
+              );
+            })}
           </div>
+          {groupError && (
+            <div className="mt-3" role="alert">
+              <Alert tone="error" title={groupError} />
+            </div>
+          )}
           <Button
             className="mt-4"
             disabled={
