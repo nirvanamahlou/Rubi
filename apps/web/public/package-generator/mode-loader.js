@@ -7,8 +7,9 @@ window.PackageGeneratorModeLoader = (() => {
     'banner-reference-images.js',
     'banner-reference-crops.js',
     'banner-reference-layouts.js',
+    'istanbul-banner.js?v=20260928b',
     'banner-reference-backgrounds.js',
-    'banner-reference.js',
+    'banner-reference.js?v=20260928b',
     'visa-assets.js',
     'visa-clean.js',
     'visa.js',
@@ -19,7 +20,7 @@ window.PackageGeneratorModeLoader = (() => {
     'installment-assets.js',
     'installment-layouts.js',
     'installment.js',
-    'banner.js',
+    'banner.js?v=20260928b',
   ];
   const stickerSources = ['sticker-assets.js', 'sticker.js'];
   const header = document.querySelector('.app-header');

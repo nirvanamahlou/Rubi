@@ -15,6 +15,8 @@ window.PackageCards=(()=>{
   'thailand-phuket':{band:[161,700,591,78],panel:[159,195,595,499],gap:6,rowGap:8,radius:12,color:'#0b4c91',tableColor:'#b8c8d8'},
   'thailand-bangkok-phuket':{band:[154,739,585,72],panel:[153,200,586,531],gap:6,rowGap:8,radius:12,color:'#0b4c91',tableColor:'#b8c8d8'},
   'thailand-pattaya':{band:[141,793,563,73],panel:[140,195,565,593],gap:6,rowGap:8,radius:12,color:'#0b4c91',tableColor:'#b8c8d8'},
+  'istanbul-3':{band:[216,1113,851,109],panel:[216,301,851,804],gap:6,rowGap:9,radius:12,color:'#1683ff',tableColor:'#c6d6e8'},
+  'istanbul-4':{band:[209,1060,891,111],panel:[209,280,891,773],gap:6,rowGap:9,radius:12,color:'#1683ff',tableColor:'#c6d6e8'},
   'spain-barcelona':{band:[154,1073,781,153],panel:[162,451,773,605],gap:7,rowGap:9,radius:14,color:'#478aff',tableColor:'#c2d1e9'},
   'spain-madrid':{band:[170,1080,765,153],panel:[177,432,759,630],gap:7,rowGap:9,radius:14,color:'#478aff',tableColor:'#c2d1e9'},
   'spain-combined':{band:[153,960,783,165],panel:[155,490,782,451],gap:7,rowGap:9,radius:14,color:'#478aff',tableColor:'#c2d1e9'}
