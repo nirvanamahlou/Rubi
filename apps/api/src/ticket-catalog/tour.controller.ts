@@ -5,6 +5,8 @@ import {
   Headers,
   Inject,
   Post,
+  Patch,
+  Param,
   Req,
   UseGuards,
 } from '@nestjs/common';
@@ -31,6 +33,14 @@ export class TourController {
     @Headers('idempotency-key') key?: string,
   ) {
     return this.service.createPackage(body, req.actor, branch, key);
+  }
+  @Patch('packages/:id') updatePackage(
+    @Param('id') id: string,
+    @Body() body: unknown,
+    @Req() req: AuthenticatedRequest,
+    @Headers('x-branch-id') branch?: string,
+  ) {
+    return this.service.updatePackage(id, body, req.actor, branch);
   }
   @Post('departures') createDeparture(
     @Body() body: unknown,

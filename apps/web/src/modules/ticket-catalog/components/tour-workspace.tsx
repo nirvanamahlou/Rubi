@@ -27,6 +27,7 @@ import { masterDataApi } from '@/modules/master-data/api/client';
 import { toursApi } from '../api/tours';
 import { TicketDatePicker } from './ticket-date-picker';
 import { TourDetailsForm } from './tour-details-form';
+import { TourOverview } from './tour-overview';
 
 const emptyPackage: TourPackageInputV1 = {
   name: '',
@@ -108,6 +109,10 @@ export function TourWorkspace({
   });
   const [draft, setDraft] = useState<TourPackageInputV1>(emptyPackage);
   const [creating, setCreating] = useState(false);
+  const [editing, setEditing] = useState<TourPackageV1>();
+  const [loading, setLoading] = useState(true);
+  const editorRef = useRef<HTMLDivElement>(null);
+  const departureRef = useRef<HTMLDivElement>(null);
   const [selected, setSelected] = useState('');
   const [repeatSource, setRepeatSource] = useState<TourDepartureV1>();
   const [dates, setDates] = useState({ start: '', end: '' });
@@ -182,7 +187,7 @@ export function TourWorkspace({
         setProblem(
           error instanceof Error ? error.message : 'بارگذاری ناموفق بود.',
         );
-    });
+    }).finally(() => { if (!cancelled) setLoading(false); });
     return () => {
       cancelled = true;
     };
@@ -231,6 +236,7 @@ export function TourWorkspace({
     setNotice('');
     try {
       await action();
+      setLoading(true);
       setReload((value) => value + 1);
     } catch (error) {
       setProblem(error instanceof Error ? error.message : 'ثبت ناموفق بود.');
@@ -289,13 +295,38 @@ export function TourWorkspace({
       current ? { ...current, draft: { ...current.draft, ...patch } } : current,
     );
 
+  const showEditor = (item?: TourPackageV1) => {
+    setEditing(item);
+    setDraft(item ? { name: item.name, originId: item.originId, destinationId: item.destinationId,
+      hotelIds: [...item.hotelIds], transferOutbound: item.transferOutbound,
+      transferReturn: item.transferReturn, visa: item.visa,
+      ...(item.insuranceId ? { insuranceId: item.insuranceId } : {}),
+      ...(item.details ? { details: structuredClone(item.details) } : {}) } : { ...emptyPackage, hotelIds: [] });
+    if (item) setBranch(item.branchId);
+    setCreating(true);
+    requestAnimationFrame(() => editorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+  };
+  const selectTour = (item: TourPackageV1) => {
+    if (mode === 'definition') { window.location.assign('/sales/pricing'); return; }
+    setSelected(item.id);
+    resetTickets();
+    requestAnimationFrame(() => departureRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+  };
+  const repeatTour = (item: TourDepartureV1) => {
+    if (mode === 'definition') { window.location.assign('/sales/pricing'); return; }
+    selectTour(item.package);
+    setRepeatSource(item);
+    setDates({ start: shiftWeek(item.startsOn), end: shiftWeek(item.endsOn) });
+    setRoundtrip(Boolean(item.returning));
+    setNotice('تاریخ‌ها یک هفته جلو رفتند؛ بلیت‌های تاریخ جدید را انتخاب کنید.');
+  };
   return (
-    <div className="space-y-3" dir="rtl">
+    <div className="space-y-5" dir="rtl">
       <Card className="flex flex-wrap items-center justify-between gap-3 p-4">
         <div>
           <h2 className="text-lg font-bold">
             {mode === 'definition'
-              ? 'تعریف تور و خدمات'
+              ? 'مدیریت تورها'
               : 'نوبت برگزاری تور و بلیط‌ها'}
           </h2>
           <p className="mt-1 text-xs text-muted-foreground">
@@ -305,14 +336,12 @@ export function TourWorkspace({
           </p>
         </div>
         {mode === 'definition' ? (
-          <Button size="sm" onClick={() => setCreating(!creating)}>
-            {creating ? 'بستن فرم' : 'تعریف تور جدید'}
-          </Button>
+          <Button size="sm" disabled={busy || loading} onClick={() => showEditor()}>تعریف تور جدید</Button>
         ) : null}
         <Button
           variant="outline"
           disabled={busy}
-          onClick={() => setReload((value) => value + 1)}
+          onClick={() => { setLoading(true); setReload((value) => value + 1); }}
         >
           به‌روزرسانی
         </Button>
@@ -330,9 +359,12 @@ export function TourWorkspace({
           {notice}
         </p>
       )}
-      {mode === 'definition' && creating && (
-        <Card className="space-y-2 p-3">
-          <h3 className="font-bold">مشخصات و خدمات تور</h3>
+      <TourOverview packages={packages} departures={departures} cities={references.cities}
+        loading={loading} busy={busy || loading} onEdit={showEditor} onSelect={selectTour} onRepeat={repeatTour} definitionMode={mode === 'definition'} />
+      {creating && (
+        <div ref={editorRef} className="scroll-mt-6"><Card className="space-y-4 p-5">
+          <div className="flex items-center justify-between gap-3"><h3 className="font-bold">{editing ? `ویرایش تور: ${editing.name}` : 'تعریف تور جدید'}</h3><Button variant="outline" disabled={busy} onClick={() => { setCreating(false); setEditing(undefined); }}>انصراف</Button></div>
+          {editing && <p className="text-sm text-muted-foreground">نام و مشخصات تور قابل ویرایش است؛ تغییر مسیر و خدمات تور دارای نوبت ثبت‌شده نیازمند تعریف تور جدید است.</p>}
           <fieldset
             disabled={busy}
             className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4 [&_input:not([type=checkbox])]:h-9 [&_button[role=combobox]]:h-9"
@@ -350,7 +382,7 @@ export function TourWorkspace({
               label="شعبه"
               value={branch}
               options={branches}
-              onChange={setBranch}
+              onChange={(value) => { if (!editing) setBranch(value); }}
             />
             <Choice
               label="شهر مبدأ"
@@ -424,88 +456,26 @@ export function TourWorkspace({
               disabled={!branch}
               onClick={() =>
                 void run(async () => {
-                  const result = await toursApi.createPackage(
-                    draft,
-                    branch,
-                    keyFor('package', draft),
-                  );
+                  const result = editing
+                    ? await toursApi.updatePackage(editing.id, draft, editing.version, editing.branchId)
+                    : await toursApi.createPackage(draft, branch, keyFor('package', draft));
                   setSelected(result.data.id);
                   setCreating(false);
                   setDraft(emptyPackage);
+                  setEditing(undefined);
                   resetTickets();
                   setNotice(
-                    'تور و خدمات آن ذخیره شد. نوبت برگزاری، بلیط‌ها و هتل‌های بازه را در مدیریت قیمت پکیج ثبت کنید.',
+                    editing ? 'تغییرات تور ذخیره شد.' : 'تور و خدمات آن ذخیره شد. نوبت برگزاری، بلیط‌ها و هتل‌های بازه را در مدیریت قیمت پکیج ثبت کنید.',
                   );
                 })
               }
             >
-              ذخیره تعریف تور
+              {editing ? 'ذخیره تغییرات تور' : 'ذخیره تعریف تور'}
             </Button>
           </fieldset>
-        </Card>
+        </Card></div>
       )}
-      {mode === 'definition' ? (
-        <Card className="space-y-3 p-4">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div>
-              <h3 className="font-bold">تورهای تعریف‌شده</h3>
-              <p className="text-xs text-muted-foreground">
-                برای ساخت تاریخ برگزاری و اتصال بلیط و هتل، وارد مدیریت قیمت
-                پکیج شوید.
-              </p>
-            </div>
-            <Button asChild size="sm" variant="outline">
-              <a href="/sales/pricing">مدیریت نوبت و قیمت پکیج</a>
-            </Button>
-          </div>
-          <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
-            {packages.map((item) => (
-              <article
-                className="rounded-xl border bg-muted/20 p-3"
-                key={item.id}
-              >
-                <strong className="text-sm">{item.name}</strong>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {references.cities.find((city) => city.id === item.originId)
-                    ?.name ?? 'مبدأ'}{' '}
-                  ←{' '}
-                  {references.cities.find(
-                    (city) => city.id === item.destinationId,
-                  )?.name ?? 'مقصد'}
-                </p>
-                <div className="mt-2 flex flex-wrap gap-1 text-[11px]">
-                  {item.transferOutbound ? (
-                    <span className="rounded-full bg-primary/10 px-2 py-1">
-                      ترانسفر رفت
-                    </span>
-                  ) : null}
-                  {item.transferReturn ? (
-                    <span className="rounded-full bg-primary/10 px-2 py-1">
-                      ترانسفر برگشت
-                    </span>
-                  ) : null}
-                  {item.visa ? (
-                    <span className="rounded-full bg-primary/10 px-2 py-1">
-                      ویزا
-                    </span>
-                  ) : null}
-                  {item.insuranceId ? (
-                    <span className="rounded-full bg-primary/10 px-2 py-1">
-                      بیمه
-                    </span>
-                  ) : null}
-                </div>
-              </article>
-            ))}
-            {!packages.length ? (
-              <p className="text-sm text-muted-foreground">
-                هنوز توری تعریف نشده است.
-              </p>
-            ) : null}
-          </div>
-        </Card>
-      ) : null}
-      <Card className={mode === 'departures' ? 'space-y-4 p-5' : 'hidden'}>
+      {mode === 'departures' && <div ref={departureRef} className="scroll-mt-6"><Card className="space-y-4 p-5">
         <h3 className="font-bold">نوبت برگزاری و بلیط‌ها</h3>
         <fieldset disabled={busy} className="space-y-4">
           <Choice
@@ -818,61 +788,7 @@ export function TourWorkspace({
             </p>
           )}
         </fieldset>
-      </Card>
-      <Card className={mode === 'departures' ? 'space-y-3 p-5' : 'hidden'}>
-        <h3 className="font-bold">نوبت‌های آینده</h3>
-        {departures.map((item) => (
-          <div
-            key={item.id}
-            className="flex flex-wrap items-center justify-between gap-3 rounded-xl border p-4"
-          >
-            <div>
-              <strong>{item.package.name}</strong>
-              <p className="text-sm">
-                <bdi>{item.startsOn}</bdi> تا <bdi>{item.endsOn}</bdi> ·{' '}
-                {item.remainingCapacity} صندلی باقی‌مانده
-              </p>
-              <p className="text-xs text-muted-foreground">
-                {item.outbound.serviceNumber}
-                {item.returning ? ` / ${item.returning.serviceNumber}` : ''}
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <Button
-                variant="outline"
-                disabled={busy}
-                onClick={() => {
-                  setSelected(item.packageId);
-                  setRepeatSource(item);
-                  setDates({
-                    start: shiftWeek(item.startsOn),
-                    end: shiftWeek(item.endsOn),
-                  });
-                  setRoundtrip(Boolean(item.returning));
-                  resetTickets();
-                  setNotice(
-                    'تاریخ‌ها یک هفته جلو رفتند؛ بلیط‌های همین تاریخ را انتخاب یا با ساعت دلخواه تعریف کنید. نوبت قبلی تغییر نکرده است.',
-                  );
-                }}
-              >
-                تکرار برای هفتهٔ بعد
-              </Button>
-              <Button asChild size="sm">
-                <a
-                  href={`/reservations/hotel-rates?tourDepartureId=${encodeURIComponent(item.id)}`}
-                >
-                  اتصال هتل‌های این بازه
-                </a>
-              </Button>
-            </div>
-          </div>
-        ))}
-        {!departures.length && (
-          <p className="text-sm text-muted-foreground">
-            هنوز نوبتی ثبت نشده است.
-          </p>
-        )}
-      </Card>
+      </Card></div>}
     </div>
   );
 }
