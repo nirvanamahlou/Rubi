@@ -1,3 +1,7 @@
+## 2026-09-28 — HR-WORKBENCH-SURVEYS-0928 — READY_FOR_REVIEW
+
+نظرسنجی‌های ارسال‌شده از میزکار با مقصد منابع انسانی از سرویس عمومی Workbench در بخش جدید HR نمایش داده می‌شوند. دسترسی شعبه و گیرنده، ناشناس‌ماندن فرستنده و صفحه‌بندی در API اعمال می‌شوند. بدون Migration یا تغییر داده. ۱۰ تست API و ۵۴ تست HR Web، lint، typecheck و build هر دو بخش موفق‌اند. اجرای مشترک ۳۱۰۰ تغییر نکرده است. جزئیات: docs/tasks/HR-WORKBENCH-SURVEYS-0928.md.
+
 ## 2026-09-27 — WORKBENCH-FEEDBACK-ATTACHMENT-0927 — PC-B — READY_FOR_REVIEW
 
 پیوست نظرسنجی میزکار دیگر از API عمومی اسناد استفاده نمی‌کند؛ endpoint محدود و احراز‌شدهٔ Workbench Feedback فقط PDF/JPEG/PNG تا ۱۰ مگابایت را با مالک، شعبه و reference ثابت همان نظرسنجی ثبت می‌کند. این مسیر هیچ مجوز عمومی اسناد به کاربر اضافه نمی‌کند. Migration افزایشی و idempotent نوع سند «پیوست نظرسنجی» و دستهٔ آرشیو عمومی را برای پایگاه‌های موجود ایجاد می‌کند. lint و typecheck API/Web، Prisma validate، build API، ۱۱ تست API و یک تست Web موفق‌اند. build تولیدی Web به‌دلیل فرآیند build هم‌زمان اجرا نشد و باید در CI یا محیط آزاد تکرار شود؛ Schema و دادهٔ عملیاتی تغییر نکرده‌اند. Migration در پایگاه‌دادهٔ محلی سرویس ۴۰۰۰ اعمال شد و نوع سند و دستهٔ آرشیو فعال‌اند؛ migration status، Prisma validate و تست‌های هدفمند API موفق‌اند.

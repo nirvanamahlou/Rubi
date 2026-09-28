@@ -36,6 +36,9 @@ const HrOrganization = dynamic(() =>
 const HrInbox = dynamic(() =>
   import('./hr-inbox').then((module) => module.HrInbox),
 );
+const HrSurveys = dynamic(() =>
+  import('./hr-surveys').then((module) => module.HrSurveys),
+);
 const HrRecordForm = dynamic(() =>
   import('./hr-record-form').then((module) => module.HrRecordForm),
 );
@@ -205,6 +208,8 @@ export function HrLiveWorkspace({
       ) : null}
       {section === 'reports' ? (
         <HrReports store={store} />
+      ) : section === 'surveys' ? (
+        <HrSurveys />
       ) : section === 'home' ? (
         <HrHub data={data} />
       ) : section === 'dashboard' ? (
