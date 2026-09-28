@@ -4154,3 +4154,9 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 - درخواست مالک: تب «اسناد من» در فایل‌های میزکار حذف شود و «بارگذاری‌های من» باقی بماند.
 - ادامهٔ شاخهٔ بازبینی `codex/pc-b-workbench-optional-document-case-0928` و PR #413؛ محدوده `apps/web/src/modules/workbench/workbench-files.tsx` و ثبت وضعیت. فهرست اسناد اصلی، داده و API تغییر نمی‌کنند.
 - تب «اسناد من» حذف و «بارگذاری‌های من» پیش‌فرض شد. lint، typecheck و build تولیدی Web موفق‌اند.
+## 2026-09-28 — WORKBENCH-NOTE-STARS-0928 — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک: یادداشت‌های شخصی قابلیت ستاره‌دار شدن داشته باشند و در تب «ستاره‌دارها» دیده شوند.
+- شاخهٔ مستقل `codex/pc-b-workbench-note-stars-0928` از `origin/develop@f52a567b`. محدوده: `note-drafts.ts`، `workbench-notes.tsx`، `workbench-favorites.tsx`، آزمون‌های هدفمند و ثبت وضعیت. مالک Workbench، PC-B است.
+- از فیلد پایدار موجود `WorkbenchNote.pinned` برای وضعیت ستاره و مرتب‌سازی استفاده می‌شود؛ API و قرارداد فعلی حفظ می‌شوند. بدون Schema/Migration، Permission، قفل Dependency/Lockfile، تغییر فایل‌های مرکزی دیگر یا دادهٔ عملیاتی.
+- دکمهٔ ستاره در کارت یادداشت‌های ذخیره‌شده فعال است و فهرست یادداشت‌های ستاره‌دار مستقل از دسترسی اسناد در تب «ستاره‌دارها» بارگذاری می‌شود. قالب‌های آماده، تا وقتی توسط کاربر ذخیره نشده‌اند، وضعیت ستارهٔ دائمی ندارند. ۱۳ تست هدفمند Web، lint، typecheck و build تولیدی Web با ۵۳ مسیر موفق‌اند.
