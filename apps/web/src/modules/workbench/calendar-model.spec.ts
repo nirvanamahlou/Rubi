@@ -73,19 +73,17 @@ describe('Workbench Persian calendar', () => {
     expect(calendarMonthLabel(next, 'persian')).toContain('فروردین');
     expect(calendarDays(next, 'month')).toHaveLength(42);
   });
-  it('combines open status, priority and normalized Persian search', () => {
+  it('combines open status and normalized Persian search without hiding priorities', () => {
     expect(
       filterCalendar(entries, {
         query: 'پيگيري',
         status: 'open',
-        priority: 'urgent',
       }).map((x) => x.id),
     ).toEqual(['a']);
     expect(
       filterCalendar(entries, {
         query: '',
         status: 'open',
-        priority: 'all',
       }).map((x) => x.id),
     ).toEqual(['a', 'b']);
   });

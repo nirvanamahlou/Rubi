@@ -1,5 +1,4 @@
 'use client';
-import { WorkbenchSelect } from './workbench-select';
 
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
@@ -95,7 +94,6 @@ export function WorkbenchCalendar({
   const [filter, setFilter] = useState<CalendarFilter>({
     query: '',
     status: 'open',
-    priority: 'all',
   });
   const allEntries = [...entries, ...connectedEntries, ...localEntries];
   const filtered = filterCalendar(allEntries, filter);
@@ -353,25 +351,6 @@ export function WorkbenchCalendar({
             ))}
           </div>
         </div>
-        <label className="flex flex-wrap items-center gap-3 text-sm font-semibold">
-          اولویت
-          <WorkbenchSelect
-            label="اولویت برنامه‌ها"
-            value={filter.priority}
-            onValueChange={(priority) =>
-              setFilter({
-                ...filter,
-                priority: priority as CalendarFilter['priority'],
-              })
-            }
-            options={[
-              { value: 'all', label: 'همه اولویت‌ها' },
-              { value: 'normal', label: 'عادی' },
-              { value: 'high', label: 'مهم' },
-              { value: 'urgent', label: 'فوری' },
-            ]}
-          />
-        </label>
       </Card>
       {error ? (
         <Alert tone="error" title="تقویم دریافت نشد" description={error} />

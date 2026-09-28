@@ -4087,3 +4087,9 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 - Departed tickets must disappear automatically from operational management and Sales lists without deleting contract, Finance or capacity history. Fix the red delete control's icon contrast. No migration, shared contract, permission, dependency or lockfile changes.
 - No merge or localhost:3100 change in this work item; PR to develop after checks.
 - Outcome: expired browser-defined tickets are removed from the operational cards on hydration and every minute; management API lists only future offers and continues to pause departed offers. Contracts, Finance and audit history remain intact. Delete icon is now legible on its red button. Focused Web/API tests (20/8), targeted lint, Web/API typechecks and production builds passed.
+## 2026-09-28 — WORKBENCH-CALENDAR-FILTER-0928 — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک: انتخاب‌گر فیلتر اولویت از «تقویم من» حذف شود.
+- شاخهٔ مستقل `codex/pc-b-workbench-calendar-filter-0928` از `origin/develop@f52a567b`؛ محدوده فقط مدل فیلتر تقویم، رابط تقویم، آزمون متمرکز و ثبت وضعیت است. مالک Workbench، PC-B است.
+- اولویت خود رویداد و فرم افزودن/ویرایش حفظ می‌شود؛ تنها محدودکردن فهرست بر اساس اولویت حذف می‌شود. بدون API، Schema/Migration، قرارداد، Permission، داده یا Dependency/Lockfile.
+- اعتبارسنجی: ۷ آزمون هدفمند تقویم، lint، typecheck و build تولیدی Web با ۵۳ مسیر موفق‌اند.

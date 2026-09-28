@@ -22,7 +22,6 @@ export interface CalendarEntry {
 export interface CalendarFilter {
   query: string;
   status: CalendarStatus | 'all' | 'open';
-  priority: CalendarEntry['priority'] | 'all';
 }
 
 export function normalizeCalendarLink(value: string): string | null {
@@ -95,7 +94,6 @@ export function filterCalendar(
         normalize(`${entry.title} ${entry.description ?? ''}`).includes(
           normalize(filter.query),
         )) &&
-      (filter.priority === 'all' || entry.priority === filter.priority) &&
       (filter.status === 'all' ||
         (filter.status === 'open'
           ? entry.status !== 'completed' && entry.status !== 'cancelled'
