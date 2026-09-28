@@ -4093,3 +4093,9 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 - ادامهٔ شاخهٔ بازبینی `codex/pc-b-workbench-optional-document-case-0928` و PR #413؛ محدوده: public service فهرست شعب HR، گزینه‌های بارگذاری Documents، فرم مشترک بارگذاری و تست‌های هدفمند. هر سه ماژول در مالکیت PC-B هستند. شناسهٔ IAM شعبه برای FK و کنترل دسترسی حفظ می‌شود و فقط نام شعبه از رکورد فعال HR می‌آید؛ در نبود رکورد HR نام اصلی شعبه نمایش داده می‌شود.
 - بدون Schema/Migration، Permission grant، Dependency/Lockfile یا تغییر شکل قرارداد API.
 - اعتبارسنجی: ۲۹ تست هدفمند API، lint فایل‌های متاثر، typecheck و build تولیدی API/Web موفق‌اند. UI همان گزینه‌های API را مصرف می‌کند؛ نمایش نام HR برای رکوردهای فعال و fallback به نام شعبهٔ اصلی پوشش داده شد.
+
+## 2026-09-28 — DOCUMENT-DETAIL-HIDE-RELATIONS-VERSIONS-0928 — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک: بخش‌های «ارتباطات» و «نسخه‌ها» از پنجره مشاهده سند حذف شوند.
+- ادامهٔ شاخهٔ بازبینی `codex/pc-b-workbench-optional-document-case-0928` و PR #413؛ محدوده فقط `apps/web/src/modules/documents/components/document-detail-dialog.tsx` و ثبت وضعیت است. مالک ماژول اسناد PC-B است؛ داده، API، مجوز و امکان دریافت فایل تغییر نمی‌کند.
+- تب‌ها و محتوای «ارتباطات» و «نسخه‌ها» حذف شدند. lint، typecheck و build تولیدی Web با ۵۳ صفحه موفق‌اند.
