@@ -1,3 +1,7 @@
+## MANIFEST-DEFAULT-TEMPLATE-0928 (2026-09-28)
+
+Ticket Catalog owns nullable TicketPublishedOffer.manifestTemplateId with a restrictive FK to master_manifest_templates and an index. Historical offers stay null and use the built-in default; no rows are backfilled or operational passenger data changed. Reservations reads only the branch-scoped public Ticket selection and the public Master Data template/country projection; it never queries their tables. The existing offer optimistic revision/audit protects selector updates. An omitted field in old update clients preserves the prior selection; null clears it. Explicit file reads continue through Documents' CLEAN/audit boundary. Default XLSX is generated from authorized passenger details and carries string cells for identifiers.
+
 # مدل داده و ERD اولیه
 
 ## TICKET-PROCUREMENT-FINANCE-PAYMENT-0927 — مقصد قیمت و خرید صندلی بلیت

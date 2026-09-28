@@ -36,6 +36,11 @@ import { DocumentsService } from '../documents/documents.service';
 import { FinanceDeliveryService } from '../finance/document-delivery/finance-delivery.module';
 import { MasterTravelDirectory } from '../master-data/master-travel-directory';
 import { TravelWorkflowService } from './travel-workflow.service';
+import { TicketPublicService } from '../ticket-catalog/ticket-public.service';
+import {
+  buildDefaultManifest,
+  type DefaultManifestRow,
+} from './default-manifest';
 
 export const MANIFEST_XLSX_MIME =
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
@@ -188,7 +193,37 @@ export class ReservationManifestService {
     @Optional()
     @Inject(DocumentsService)
     private readonly documents?: DocumentsService,
+    @Inject(TicketPublicService) private readonly tickets?: TicketPublicService,
   ) {}
+
+  private async selectedTemplate(
+    offerId: string,
+    actor: AuthenticatedActor,
+    day: string,
+  ) {
+    const id = this.tickets
+      ? await this.tickets.manifestSelection(offerId, actor.branchIds)
+      : null;
+    return id ? this.directory.manifestTemplateById(id, day) : null;
+  }
+
+  private ticketPassengerIds(
+    snapshot: ReservationIntakeV1['snapshot'],
+    offerId: string,
+  ) {
+    const flight = snapshot.ticketSelections?.find(
+      (ticket) => ticket.offerId === offerId,
+    );
+    const assignments = snapshot.passengerAssignments ?? [];
+    if (!assignments.length) return [...snapshot.passengerIds];
+    return snapshot.passengerIds.filter((id) =>
+      assignments.some(
+        (a) =>
+          a.customerId === id &&
+          a.serviceClientKeys.includes(flight?.serviceClientKey ?? ''),
+      ),
+    );
+  }
 
   private validateRange(input: { fromDate: string; toDate: string }) {
     if (!validIsoDay(input.fromDate) || !validIsoDay(input.toDate))
@@ -247,16 +282,24 @@ export class ReservationManifestService {
     const cards: ReservationManifestTicketCardV1[] = [];
     for (const group of await this.ticketGroups(input, actor)) {
       const ticket = group.ticket;
-      const [origin, destination, template] = await Promise.all([
+      const [origin, destination, selection] = await Promise.all([
         this.directory.cityReference(ticket.originId),
         this.directory.cityReference(ticket.destinationId),
-        this.directory.manifestTemplate(
-          ticket.carrierNameSnapshot,
-          ticket.destinationId,
+        this.selectedTemplate(
+          ticket.offerId,
+          actor,
           tehranDay(ticket.departureAt),
-          ticket.serviceNumberSnapshot,
-        ),
+        )
+          .then((template) => ({ template, reason: null }))
+          .catch((error: unknown) => ({
+            template: null,
+            reason:
+              error instanceof Error
+                ? error.message
+                : 'قالب منیفست انتخاب‌شده در دسترس نیست.',
+          })),
       ]);
+      const template = selection.template;
       cards.push({
         offerId: ticket.offerId,
         direction: ticket.direction,
@@ -270,7 +313,7 @@ export class ReservationManifestService {
         passengerCount: group.rows.reduce((sum, row) => {
           const snapshot =
             row.snapshot as unknown as ReservationIntakeV1['snapshot'];
-          return sum + snapshot.passengerIds.length;
+          return sum + this.ticketPassengerIds(snapshot, ticket.offerId).length;
         }, 0),
         template: template
           ? {
@@ -278,10 +321,10 @@ export class ReservationManifestService {
               name: template.name,
               versionNumber: template.versionNumber,
             }
-          : null,
-        unavailableReason: template
-          ? null
-          : 'برای این ایرلاین و مقصد قالب فعال MANIFEST تعریف نشده است.',
+          : selection.reason
+            ? null
+            : { id: 'default', name: 'پیش‌فرض', versionNumber: 1 },
+        unavailableReason: selection.reason,
       });
     }
     return cards;
@@ -320,11 +363,23 @@ export class ReservationManifestService {
         item,
       ]),
     );
-    const order = intake.workflow.roomOrder.length
-      ? intake.workflow.roomOrder
-      : intake.snapshot.passengerIds;
+    const order = offerId
+      ? [
+          ...new Set([
+            ...intake.workflow.roomOrder,
+            ...intake.snapshot.passengerIds,
+          ]),
+        ]
+      : intake.workflow.roomOrder.length
+        ? intake.workflow.roomOrder
+        : intake.snapshot.passengerIds;
     const passengers: IranAirtourManifestRow[] = [];
-    for (const customerId of order) {
+    const selectedIds = new Set(
+      offerId
+        ? this.ticketPassengerIds(intake.snapshot, offerId)
+        : intake.snapshot.passengerIds,
+    );
+    for (const customerId of order.filter((id) => selectedIds.has(id))) {
       const customer = (
         await this.customers.detail(
           customerId,
@@ -374,6 +429,79 @@ export class ReservationManifestService {
     return passengers;
   }
 
+  private async defaultPassengerRows(
+    intake: Awaited<ReturnType<TravelWorkflowService['detail']>>,
+    actor: AuthenticatedActor,
+    offerId: string,
+    international: boolean,
+    traceId?: string,
+  ): Promise<DefaultManifestRow[]> {
+    const flight = intake.snapshot.ticketSelections?.find(
+      (ticket) => ticket.offerId === offerId,
+    );
+    if (!flight) throw new BadRequestException('بلیط در قرارداد ثبت نشده است.');
+    const allowed = new Set(this.ticketPassengerIds(intake.snapshot, offerId));
+    const order = [
+      ...new Set([
+        ...intake.workflow.roomOrder,
+        ...intake.snapshot.passengerIds,
+      ]),
+    ].filter((id) => allowed.has(id));
+    const rows: DefaultManifestRow[] = [];
+    for (const customerId of order) {
+      const customer = (
+        await this.customers.detail(
+          customerId,
+          actor,
+          traceId,
+          'customer-verification',
+        )
+      ).data;
+      const assignment = intake.snapshot.passengerAssignments?.find(
+        (item) => item.customerId === customerId,
+      );
+      const age =
+        intake.workflow.ageOverrides[customerId] ?? assignment?.ageCategory;
+      rows.push({
+        contractName: intake.snapshot.contractNumber,
+        firstName: international
+          ? required(customer, 'passportFirstName', 'نام لاتین پاسپورت')
+          : customer.firstName?.trim() ||
+            customer.passportFirstName?.trim() ||
+            '',
+        lastName: international
+          ? required(customer, 'passportLastName', 'نام خانوادگی لاتین پاسپورت')
+          : customer.lastName?.trim() ||
+            customer.passportLastName?.trim() ||
+            '',
+        flightDate: tehranDay(flight.departureAt),
+        ticket: flight.serviceNumberSnapshot,
+        airline: flight.carrierNameSnapshot,
+        ageCategory:
+          age === 'INF' || age === 'INFANT'
+            ? 'نوزاد'
+            : age === 'CHD' || age === 'CHILD'
+              ? 'کودک'
+              : age === 'ADT' || age === 'ADULT'
+                ? 'بزرگسال'
+                : '',
+        nationality: customer.nationalityCode?.trim() ?? '',
+        birthDate: customer.birthDate ?? '',
+        gender:
+          customer.gender === 'M' ? 'مرد' : customer.gender === 'F' ? 'زن' : '',
+        cabinClass: flight.cabinClassCode,
+        nationalId: customer.nationalId?.trim() ?? '',
+        passportNumber: international
+          ? required(customer, 'passportNumber', 'شماره پاسپورت')
+          : '',
+        passportExpiryDate: international
+          ? required(customer, 'passportExpiryDate', 'تاریخ انقضای پاسپورت')
+          : '',
+      });
+    }
+    return rows;
+  }
+
   async exportTicket(
     offerId: string,
     input: ReservationManifestTicketExportInputV1,
@@ -391,17 +519,12 @@ export class ReservationManifestService {
     if (!group)
       throw new BadRequestException('بلیط انتخاب‌شده در این بازه وجود ندارد.');
     const ticket = group.ticket;
-    const template = await this.directory.manifestTemplate(
-      ticket.carrierNameSnapshot,
-      ticket.destinationId,
+    const template = await this.selectedTemplate(
+      offerId,
+      actor,
       tehranDay(ticket.departureAt),
-      ticket.serviceNumberSnapshot,
     );
-    if (!template)
-      throw new BadRequestException(
-        'برای این ایرلاین و مقصد قالب فعال MANIFEST تعریف نشده است.',
-      );
-    if (!this.documents)
+    if (template && !this.documents)
       throw new BadRequestException('سرویس فایل قالب MANIFEST آماده نیست.');
 
     const persistedKey = 'ticket:' + offerId + ':' + idempotencyKey.trim();
@@ -464,19 +587,51 @@ export class ReservationManifestService {
             : 'برای این بلیط قرارداد جدید قابل خروجی وجود ندارد.',
       );
 
-    const rows: IranAirtourManifestRow[] = [];
-    for (const row of selected) {
-      const intake = await this.workflow.detail(row.id, actor.branchIds);
-      rows.push(...(await this.passengerRows(intake, actor, traceId, offerId)));
+    let bytes: Uint8Array;
+    let passengerCount: number;
+    if (template) {
+      const rows: IranAirtourManifestRow[] = [];
+      for (const row of selected) {
+        const intake = await this.workflow.detail(row.id, actor.branchIds);
+        rows.push(
+          ...(await this.passengerRows(intake, actor, traceId, offerId)),
+        );
+      }
+      const file = await this.documents!.readManifestTemplateReference(
+        template.fileReferenceId,
+        actor,
+      );
+      const chunks: Buffer[] = [];
+      for await (const chunk of file.stream)
+        chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+      bytes = buildIranAirtourManifest(Buffer.concat(chunks), rows);
+      passengerCount = rows.length;
+    } else {
+      const [origin, destination] = await Promise.all([
+        this.directory.cityReference(ticket.originId),
+        this.directory.cityReference(ticket.destinationId),
+      ]);
+      if (!origin.countryId || !destination.countryId)
+        throw new BadRequestException(
+          'کشور مبدأ و مقصد برای تهیه منیفست مشخص نیست.',
+        );
+      const international = origin.countryId !== destination.countryId;
+      const rows: DefaultManifestRow[] = [];
+      for (const row of selected) {
+        const intake = await this.workflow.detail(row.id, actor.branchIds);
+        rows.push(
+          ...(await this.defaultPassengerRows(
+            intake,
+            actor,
+            offerId,
+            international,
+            traceId,
+          )),
+        );
+      }
+      bytes = buildDefaultManifest(rows, international);
+      passengerCount = rows.length;
     }
-    const delivery = await this.documents.readManifestTemplateReference(
-      template.fileReferenceId,
-      actor,
-    );
-    const chunks: Buffer[] = [];
-    for await (const chunk of delivery.stream)
-      chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
-    const bytes = buildIranAirtourManifest(Buffer.concat(chunks), rows);
 
     if (!existing) {
       await this.database.client.reservationManifestExport.create({
@@ -487,7 +642,7 @@ export class ReservationManifestService {
           toDate: new Date(input.toDate + 'T00:00:00.000Z'),
           includePreviouslyExported: Boolean(input.includePreviouslyExported),
           contractCount: selected.length,
-          passengerCount: rows.length,
+          passengerCount,
           skippedFinanceCount,
           items: {
             create: selected.map((row) => ({
@@ -503,7 +658,7 @@ export class ReservationManifestService {
     return {
       bytes,
       contractCount: selected.length,
-      passengerCount: rows.length,
+      passengerCount,
       skippedFinanceCount,
       fileName: (
         ticket.carrierNameSnapshot +

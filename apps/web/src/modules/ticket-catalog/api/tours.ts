@@ -52,6 +52,11 @@ const post = (body: unknown, branch: string, key: string): RequestInit => ({
   body: JSON.stringify(body),
 });
 export const toursApi = {
+  manifestTemplates: (search: string, page: number) =>
+    request<{ data: { id: string; name: string }[]; hasMore: boolean }>(
+      '/offers/manifest-templates?' +
+        new URLSearchParams({ search, page: String(page) }),
+    ),
   salePriceTargets: () =>
     request<{ version: 1; data: TicketSalePriceTargetV1[] }>(
       '/sale-price-targets',

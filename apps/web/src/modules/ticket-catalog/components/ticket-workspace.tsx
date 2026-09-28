@@ -148,6 +148,7 @@ export function flightOfferInput(
     serviceNumber,
     cabinClassCode,
     totalCapacity: definition.totalCapacity,
+    manifestTemplateId: definition.manifestTemplateId ?? null,
   };
 }
 export function planCatalogPublication(

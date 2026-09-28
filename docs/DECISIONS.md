@@ -1,3 +1,11 @@
+## MANIFEST-DEFAULT-TEMPLATE-0928 — owner clarification (2026-09-28)
+
+The owner replaces the earlier automatic airline/destination matching and disabled-card fallback for ticket-card exports with an explicit per-ticket template choice. Null/absent selection uses a built-in default XLSX. An explicitly selected published XLSX is revalidated for the Tehran flight day and read through the audited Documents boundary; invalid explicit selections produce an error instead of silently changing format. Legacy per-contract/range Iran Airtour exports remain compatible.
+
+The Sales intake has a contractNumber and no distinct contract-title field. The requested «نام قرارداد» column therefore contains the authoritative contractNumber, rather than an invented label. Ticket uses the recorded flight/service number; dates use the Tehran flight day and stored Gregorian birth/passport dates. Domestic means equal Master Data country IDs at the route endpoints; different IDs mean international. National ID is retained as text in both; passport number/expiry are added to international defaults. Missing optional identity fields remain blank; international passport identity is required. Ticket-specific passenger assignments, existing room order/age overrides, sensitive-data authorization, Finance delivery approval and new-only export history remain authoritative.
+
+Migration and API contract changes are additive; legacy revisions omitting manifestTemplateId preserve an existing explicit selection, while null explicitly restores the default. Template-only changes may revise sold/held/tour-linked offers without altering their route, dates, capacity or fares. Master Data remains template owner and Documents remains file owner.
+
 # تصمیم‌های معماری
 
 ## SALES-TICKET-PRICES-0922 — owner-approved ticket sale basis

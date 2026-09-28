@@ -1896,6 +1896,7 @@ model MasterBaggageRule {
 }
 
 model MasterManifestTemplate {
+  ticketOffers        TicketPublishedOffer[]
   id                  String                       @id @default(uuid()) @db.Uuid
   airlineId           String                       @db.Uuid
   destinationCityId   String?                      @db.Uuid
@@ -4071,6 +4072,8 @@ model TourDeparture {
 }
 
 model TicketPublishedOffer {
+  manifestTemplateId          String?                             @db.Uuid
+  manifestTemplate            MasterManifestTemplate?             @relation(fields: [manifestTemplateId], references: [id], onDelete: Restrict)
   tourOutboundDepartures      TourDeparture[]                     @relation("TourOutbound")
   tourReturnDepartures        TourDeparture[]                     @relation("TourReturn")
   id                          String                              @id @default(uuid()) @db.Uuid
@@ -4100,6 +4103,7 @@ model TicketPublishedOffer {
 
   @@unique([createdByUserId, createKey])
   @@index([branchId, originId, destinationId, departureAt])
+  @@index([manifestTemplateId])
 }
 
 model TicketOfferStandaloneSalePrice {

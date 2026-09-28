@@ -24,6 +24,7 @@ import { emptyInput, supplyLabels, transportLabels } from '../model/preview';
 import styles from './ticket-form.module.css';
 import { ReferencePicker } from './reference-picker';
 import { TicketDatePicker } from './ticket-date-picker';
+import { ManifestTemplatePicker } from './manifest-template-picker';
 import type { PublishedResource } from '../api/references';
 
 type TicketDefinitionMode = 'one-way' | 'round-trip' | 'combined';
@@ -794,6 +795,8 @@ export function TicketForm({
           entryMethod: definition.entryMethod,
           totalCapacity: definition.totalCapacity,
           rules: definition.rules,
+          manifestTemplateId: definition.manifestTemplateId ?? null,
+          manifestTemplateName: definition.manifestTemplateName,
           fare: { ...definition.fare },
           segments: [{ ...returnSegment }],
         };
@@ -1222,6 +1225,23 @@ export function TicketForm({
             />
           </FormField>
         </section>
+        {input.transport === 'flight' ? (
+          <section className="space-y-4">
+            <h3 className="font-bold text-primary">۷. قالب منیفست</h3>
+            <ManifestTemplatePicker
+              value={input.manifestTemplateId ?? null}
+              name={input.manifestTemplateName}
+              readOnly={readOnly}
+              onChange={(id, name) =>
+                updateInput({
+                  ...input,
+                  manifestTemplateId: id,
+                  manifestTemplateName: name,
+                })
+              }
+            />
+          </section>
+        ) : null}
       </fieldset>
       <div
         className={`${styles.actions} sticky bottom-0 flex flex-wrap gap-3 border-t bg-surface py-4`}

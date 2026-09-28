@@ -64,6 +64,9 @@ export interface ProductDisplaySnapshot {
   destination: string;
 }
 export interface ProductInput {
+  /** Null/absent selects the built-in default manifest. */
+  manifestTemplateId?: string | null;
+  manifestTemplateName?: string | undefined;
   title: string;
   transport: TransportType;
   journeyRole: JourneyRole;
