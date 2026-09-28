@@ -778,6 +778,74 @@ describe('DocumentsService security and persistence flow', () => {
     );
   });
 
+  it('stores an unlinked workbench document for its signed-in owner only', async () => {
+    const dto: DocumentUploadDto = {
+      title: 'فایل شخصی',
+      documentTypeId: row().documentTypeId,
+      categoryId: row().categoryId!,
+      branchId,
+      ownerUserId: actor.userId,
+      sourceModule: 'WORKBENCH',
+      sourceEntityType: 'WorkbenchPersonalDocument',
+      sourceEntityId: actor.userId,
+      sourceDisplayLabel: 'برچسب دلخواه کاربر',
+    };
+    const buffer = Buffer.from('%PDF-1.7\nsynthetic personal document');
+    const file = {
+      buffer,
+      mimetype: 'application/pdf',
+      originalname: 'personal.pdf',
+      size: buffer.length,
+    };
+    repository.uploadReferences.mockResolvedValue({
+      documentType: {
+        id: dto.documentTypeId,
+        domain: 'SALES',
+        defaultConfidentiality: 'INTERNAL',
+        allowedMimeTypes: ['application/pdf'],
+        maxFileSizeBytes: 25 * 1024 * 1024,
+        requiresExpiry: false,
+      },
+      category: { id: dto.categoryId },
+      owner: { id: actor.userId },
+      branch: { id: branchId },
+    });
+    repository.createUploaded.mockResolvedValue(
+      row({ confidentiality: 'INTERNAL' }),
+    );
+
+    await service.upload(dto, file, actor, {});
+    expect(repository.findCaseReference).not.toHaveBeenCalled();
+    expect(repository.createUploaded).toHaveBeenCalledWith(
+      expect.objectContaining({
+        ownerUserId: actor.userId,
+        sourceModule: 'WORKBENCH',
+        sourceEntityType: 'WorkbenchPersonalDocument',
+        sourceEntityId: actor.userId,
+        sourceDisplayLabel: 'فایل شخصی',
+      }),
+    );
+
+    repository.createUploaded.mockClear();
+    await expect(
+      service.upload(
+        { ...dto, ownerUserId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa' },
+        file,
+        actor,
+        {},
+      ),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    await expect(
+      service.upload(
+        { ...dto, sourceEntityId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa' },
+        file,
+        actor,
+        {},
+      ),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    expect(repository.createUploaded).not.toHaveBeenCalled();
+  });
+
   it('resolves an HR employee through its public service and rejects stale or cross-branch source references before storage', async () => {
     const hrActor: AuthenticatedActor = {
       ...actor,

@@ -81,4 +81,19 @@ describe('Documents upload form state', () => {
       ),
     ).toBeNull();
   });
+
+  it('allows an unlinked document only in the personal workbench upload mode', () => {
+    const values = {
+      ...hydrateDocumentUploadDefaults(
+        { ...emptyDocumentUploadValues },
+        options,
+        options.branches,
+      ),
+      title: 'یادداشت شخصی',
+    };
+    expect(validateDocumentUpload(values, true, false)).toBe(
+      'پرونده مربوطه را انتخاب کنید.',
+    );
+    expect(validateDocumentUpload(values, true, false, true)).toBeNull();
+  });
 });

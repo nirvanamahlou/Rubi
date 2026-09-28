@@ -47,6 +47,7 @@ export function DocumentUploadDialog({
   open,
   options,
   submitting,
+  personalUpload = false,
 }: {
   branches: readonly BranchReference[];
   error: string;
@@ -55,11 +56,15 @@ export function DocumentUploadDialog({
   open: boolean;
   options: Options | null;
   submitting: boolean;
+  personalUpload?: boolean;
 }) {
   const [values, setValues] = useState<DocumentUploadValues>(() =>
     options
       ? hydrateDocumentUploadDefaults(
-          { ...emptyDocumentUploadValues },
+          {
+            ...emptyDocumentUploadValues,
+            ...(personalUpload ? { ownerUserId: options.currentUserId } : {}),
+          },
           options,
           branches,
         )
@@ -77,6 +82,9 @@ export function DocumentUploadDialog({
       options?.documentTypes.find((type) => type.id === values.documentTypeId),
     [options, values.documentTypeId],
   );
+  const availableOwners = personalUpload
+    ? options?.owners.filter((owner) => owner.id === options.currentUserId)
+    : options?.owners;
 
   function update<K extends keyof DocumentUploadValues>(
     name: K,
@@ -92,6 +100,7 @@ export function DocumentUploadDialog({
       values,
       Boolean(file),
       Boolean(selectedType?.requiresExpiry),
+      personalUpload,
     );
     if (invalid) {
       setValidationError(invalid);
@@ -112,6 +121,11 @@ export function DocumentUploadDialog({
       form.set('sourceEntityType', 'Employee');
       form.set('sourceEntityId', employee.id);
       form.set('sourceDisplayLabel', hrDirectoryLabel(employee));
+    } else if (personalUpload && !values.sourceRelationId) {
+      form.set('sourceModule', 'WORKBENCH');
+      form.set('sourceEntityType', 'WorkbenchPersonalDocument');
+      form.set('sourceEntityId', options!.currentUserId);
+      form.set('sourceDisplayLabel', values.title.trim());
     }
     if (await onSubmit(form)) {
       setValues({ ...emptyDocumentUploadValues });
@@ -302,15 +316,16 @@ export function DocumentUploadDialog({
               </h3>
             </div>
             <p className="mt-2 text-sm text-muted-foreground">
-              پرونده موجود در آرشیو را انتخاب کنید؛ برای اسناد پرسنلی، انتخاب
-              مستقیم کارمند از منابع انسانی هم ممکن است.
+              {personalUpload
+                ? 'انتخاب پرونده اختیاری است. سند بدون پرونده در فایل‌های شما ذخیره می‌شود.'
+                : 'پرونده موجود در آرشیو را انتخاب کنید؛ برای اسناد پرسنلی، انتخاب مستقیم کارمند از منابع انسانی هم ممکن است.'}
             </p>
             <div className="mt-4">
               <FormField
                 description="فقط پرونده‌های قابل‌دسترسی در شعبه انتخاب‌شده نمایش داده می‌شوند."
                 id="source-relation"
                 label="پرونده مربوطه"
-                required
+                required={!personalUpload}
               >
                 <DocumentCasePicker
                   branchId={values.branchId}
@@ -385,7 +400,9 @@ export function DocumentUploadDialog({
               </FormField>
               <FormField id="document-owner" label="مالک فایل" required>
                 <Select
-                  disabled={!options?.owners.length || submitting}
+                  disabled={
+                    !availableOwners?.length || submitting || personalUpload
+                  }
                   onValueChange={(value) => update('ownerUserId', value)}
                   value={values.ownerUserId}
                 >
@@ -393,7 +410,7 @@ export function DocumentUploadDialog({
                     <SelectValue placeholder="انتخاب مالک" />
                   </SelectTrigger>
                   <SelectContent className="z-[70] max-h-72">
-                    {options?.owners.map((owner) => (
+                    {availableOwners?.map((owner) => (
                       <SelectItem key={owner.id} value={owner.id}>
                         {owner.displayName}
                       </SelectItem>

@@ -4080,3 +4080,9 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 - Scope: Sales ticket-price workspace, Sales contract pricing panel and focused tests. Saved round-trip prices move above entry forms with flight/date filters; ticket-only contracts lock catalog sale fares and keep agreed amounts editable. No API, database, permissions, dependencies or lockfile changes.
 - Separate PR to develop; no merge before conflict review. Port 3100 remains reserved for the integrated develop checkout.
 - Validation: 8 focused tests, Web typecheck, targeted ESLint and production build (53 pages) passed.
+## 2026-09-28 — WORKBENCH-OPTIONAL-DOCUMENT-CASE-0928 — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک: ارتباط با پرونده در بارگذاری سندِ میزکار اختیاری باشد.
+- `COMPUTER_ID=PC-B`؛ شاخه `codex/pc-b-workbench-optional-document-case-0928` از `origin/develop@c8b04d6f`. محدوده: فرم بارگذاری مشترک با حالت اختصاصی میزکار، اعتبارسنجی بارگذاری Documents برای مرجع شخصیِ بدون پرونده، تست‌های هدفمند و ثبت وضعیت. قرارداد endpoint موجود حفظ می‌شود؛ Schema/Migration، Permission، Dependency/Lockfile و داده عملیاتی تغییر نمی‌کنند.
+- قرارداد موجود `POST /documents/upload` با همان فیلدهای source fallback مصرف می‌شود. در حالت میزکارِ بدون پرونده، source ثابت `WORKBENCH/WorkbenchPersonalDocument/<actor.userId>` با مالک همان کاربر ثبت می‌شود؛ backend شناسه و مالک را با نشست تطبیق می‌دهد. پرونده انتخاب‌شده همچنان از مسیر معتبر `sourceRelationId` بررسی می‌شود.
+- اعتبارسنجی: ۴ تست وب و ۲۸ تست API، lint فایل‌های تغییرکرده، typecheck و build وب/API موفق. بدون Migration؛ فرم اصلی اسناد همچنان پرونده را اجباری می‌داند.
