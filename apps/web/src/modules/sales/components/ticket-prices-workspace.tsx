@@ -29,6 +29,7 @@ import {
   PageHeader,
 } from '@/components/ui/surfaces';
 import { toursApi } from '@/modules/ticket-catalog/api/tours';
+import { SalesDatePicker } from './sales-date-picker';
 import { refreshAuthenticatedSession } from '@/lib/auth-session';
 import { getPublicApiBaseUrl } from '@/lib/environment';
 import {
@@ -43,6 +44,20 @@ const faDate = new Intl.DateTimeFormat('fa-IR', {
   timeStyle: 'short',
   timeZone: 'Asia/Tehran',
 });
+const tehranDay = new Intl.DateTimeFormat('en-CA', {
+  timeZone: 'Asia/Tehran',
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+});
+function departureDay(iso: string) {
+  const parts = Object.fromEntries(
+    tehranDay
+      .formatToParts(new Date(iso))
+      .map(({ type, value }) => [type, value]),
+  );
+  return `${parts.year}-${parts.month}-${parts.day}`;
+}
 
 export function TicketPricesWorkspace() {
   const [offers, setOffers] = useState<TicketOfferV1[]>([]);
@@ -53,6 +68,9 @@ export function TicketPricesWorkspace() {
   const [currencies, setCurrencies] = useState<string[]>(['IRR']);
   const [cities, setCities] = useState<Record<string, string>>({});
   const [query, setQuery] = useState('');
+  const [pairQuery, setPairQuery] = useState('');
+  const [pairDateFrom, setPairDateFrom] = useState('');
+  const [pairDateTo, setPairDateTo] = useState('');
   const [outboundId, setOutboundId] = useState('');
   const [returnId, setReturnId] = useState('');
   const [pairDraft, setPairDraft] = useState<Draft>({
@@ -152,6 +170,24 @@ export function TicketPricesWorkspace() {
       ),
     [offers],
   );
+  const filteredPairs = useMemo(() => {
+    const search = pairQuery.trim().toLocaleLowerCase();
+    return savedPairs.filter((pair) => {
+      const day = departureDay(pair.outbound.departureAt);
+      if (pairDateFrom && day < pairDateFrom) return false;
+      if (pairDateTo && day > pairDateTo) return false;
+      if (!search) return true;
+      return [
+        label(pair.outbound),
+        pair.returning ? label(pair.returning) : '',
+        pair.price.amount,
+        pair.price.currencyCode,
+      ]
+        .join(' ')
+        .toLocaleLowerCase()
+        .includes(search);
+    });
+  }, [savedPairs, pairQuery, pairDateFrom, pairDateTo, label]);
 
   const priceForTarget = useCallback(
     (offer: TicketOfferV1) =>
@@ -253,8 +289,15 @@ export function TicketPricesWorkspace() {
       amount: pair.price.amount,
       currencyCode: pair.price.currencyCode,
     });
-    setNotice('قیمت جفت انتخاب شد؛ مبلغ را اصلاح کنید و «ثبت نسخه جدید» را بزنید.');
+    setNotice(
+      'قیمت جفت انتخاب شد؛ مبلغ را اصلاح کنید و «ثبت نسخه جدید» را بزنید.',
+    );
     setError('');
+    window.requestAnimationFrame(() =>
+      document
+        .getElementById('round-trip-price-editor')
+        ?.scrollIntoView({ behavior: 'smooth', block: 'start' }),
+    );
   }
 
   return (
@@ -342,6 +385,123 @@ export function TicketPricesWorkspace() {
           </div>
         </Card>
       </section>
+      <Card className="border-violet-200/80 p-5 shadow-sm dark:border-violet-400/20">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <p className="text-xs font-bold text-violet-700 dark:text-violet-300">
+              فهرست قیمت‌گذاری
+            </p>
+            <h2 className="mt-1 text-lg font-black">
+              قیمت‌های رفت‌وبرگشت ثبت‌شده
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              رفت، برگشت و قیمت کل هر جفت را ببینید و برای اصلاح انتخاب کنید.
+            </p>
+          </div>
+          <Badge>
+            {filteredPairs.length.toLocaleString('fa-IR')} از{' '}
+            {savedPairs.length.toLocaleString('fa-IR')} جفت
+          </Badge>
+        </div>
+        <div className="mt-4 grid gap-3 md:grid-cols-[minmax(14rem,2fr)_minmax(10rem,1fr)_minmax(10rem,1fr)_auto] md:items-end">
+          <FormField label="مسیر، ایرلاین یا شماره پرواز">
+            <Input
+              value={pairQuery}
+              onChange={(event) => setPairQuery(event.target.value)}
+              placeholder="جست‌وجوی رفت یا برگشت"
+            />
+          </FormField>
+          <FormField label="تاریخ رفت از">
+            <SalesDatePicker value={pairDateFrom} onChange={setPairDateFrom} />
+          </FormField>
+          <FormField label="تاریخ رفت تا">
+            <SalesDatePicker value={pairDateTo} onChange={setPairDateTo} />
+          </FormField>
+          <Button
+            variant="outline"
+            onClick={() => {
+              setPairQuery('');
+              setPairDateFrom('');
+              setPairDateTo('');
+            }}
+          >
+            پاک‌کردن فیلتر
+          </Button>
+        </div>
+        {busy ? (
+          <p className="mt-4 text-sm text-muted-foreground">
+            در حال دریافت قیمت‌ها…
+          </p>
+        ) : filteredPairs.length ? (
+          <div className="mt-4 grid gap-3 xl:grid-cols-2">
+            {filteredPairs.map((pair) => (
+              <div
+                key={`${pair.outbound.id}:${pair.price.returnOfferId}`}
+                className="rounded-xl border border-violet-100 bg-muted/15 p-4 dark:border-violet-400/15"
+              >
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <span className="text-xs font-bold text-violet-700 dark:text-violet-300">
+                      رفت
+                    </span>
+                    <p className="mt-1 text-sm font-semibold">
+                      {label(pair.outbound)}
+                    </p>
+                    <strong className="mt-1 block text-base tabular-nums">
+                      ظرفیت باقی‌مانده:{' '}
+                      {pair.outbound.remainingCapacity.toLocaleString('fa-IR')}
+                    </strong>
+                  </div>
+                  <div>
+                    <span className="text-xs font-bold text-violet-700 dark:text-violet-300">
+                      برگشت
+                    </span>
+                    <p className="mt-1 text-sm font-semibold">
+                      {pair.returning
+                        ? label(pair.returning)
+                        : 'بلیط برگشت در دسترس نیست'}
+                    </p>
+                    {pair.returning ? (
+                      <strong className="mt-1 block text-base tabular-nums">
+                        ظرفیت باقی‌مانده:{' '}
+                        {pair.returning.remainingCapacity.toLocaleString(
+                          'fa-IR',
+                        )}
+                      </strong>
+                    ) : null}
+                  </div>
+                </div>
+                <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t pt-3">
+                  <div>
+                    <strong
+                      dir="ltr"
+                      className="block text-lg font-black tabular-nums"
+                    >
+                      {pair.price.amount} {pair.price.currencyCode}
+                    </strong>
+                    <span className="text-xs text-muted-foreground">
+                      نسخه {pair.price.revision.toLocaleString('fa-IR')}
+                    </span>
+                  </div>
+                  <Button
+                    variant="outline"
+                    onClick={() => editPair(pair)}
+                    disabled={!pair.returning}
+                  >
+                    <PencilLine className="size-4" /> ویرایش قیمت
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="mt-4 rounded-xl border border-dashed p-5 text-center text-sm text-muted-foreground">
+            {savedPairs.length
+              ? 'برای این فیلتر قیمت جفتی پیدا نشد.'
+              : 'هنوز قیمت رفت‌وبرگشت ثبت نشده است.'}
+          </p>
+        )}
+      </Card>
       <Card className="border-violet-200/80 bg-gradient-to-br from-violet-50/80 via-surface to-indigo-50/70 p-5 shadow-sm dark:border-violet-400/20 dark:from-violet-950/35 dark:via-surface dark:to-indigo-950/25">
         <div className="grid gap-4 lg:grid-cols-[minmax(14rem,1fr)_minmax(14rem,1fr)_auto] lg:items-end">
           <div>
@@ -384,7 +544,7 @@ export function TicketPricesWorkspace() {
           </div>
         </div>
       </Card>
-      <Card className="p-5">
+      <Card id="round-trip-price-editor" className="scroll-mt-24 p-5">
         <div className="mb-5">
           <h2 className="text-lg font-black">قیمت فروش رفت‌وبرگشت</h2>
           <p className="mt-1 text-sm text-muted-foreground">
@@ -478,7 +638,9 @@ export function TicketPricesWorkspace() {
                     {currentPair.amount} {currentPair.currencyCode}
                   </strong>
                 </span>
-                <Badge>نسخه {currentPair.revision.toLocaleString('fa-IR')}</Badge>
+                <Badge>
+                  نسخه {currentPair.revision.toLocaleString('fa-IR')}
+                </Badge>
               </div>
             ) : (
               <span className="text-muted-foreground">
@@ -487,63 +649,6 @@ export function TicketPricesWorkspace() {
             )}
           </div>
         ) : null}
-        <div className="mt-5 border-t border-violet-200/80 pt-5 dark:border-violet-400/20">
-          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-            <div>
-              <h3 className="font-black">قیمت‌های جفت ثبت‌شده</h3>
-              <p className="mt-1 text-xs text-muted-foreground">
-                هر ردیف را انتخاب کنید تا مبلغ قبلی در فرم بالا باز شود و بتوانید آن را ویرایش کنید.
-              </p>
-            </div>
-            <Badge>{savedPairs.length.toLocaleString('fa-IR')} جفت</Badge>
-          </div>
-          {savedPairs.length ? (
-            <div className="grid gap-3 xl:grid-cols-2">
-              {savedPairs.map((pair) => (
-                <div
-                  key={`${pair.outbound.id}:${pair.price.returnOfferId}`}
-                  className="flex flex-col gap-3 rounded-xl border border-violet-100 bg-surface/90 p-4 shadow-sm dark:border-violet-400/15 sm:flex-row sm:items-center sm:justify-between"
-                >
-                  <div className="min-w-0">
-                    <p className="text-sm font-bold">
-                      {cities[pair.outbound.originId] ?? 'مبدأ'} ←{' '}
-                      {cities[pair.outbound.destinationId] ?? 'مقصد'}
-                    </p>
-                    <p className="mt-1 truncate text-xs text-muted-foreground">
-                      رفت: {label(pair.outbound)}
-                    </p>
-                    <p className="mt-1 truncate text-xs text-muted-foreground">
-                      برگشت:{' '}
-                      {pair.returning ? label(pair.returning) : 'در دسترس نیست'}
-                    </p>
-                  </div>
-                  <div className="flex shrink-0 items-center gap-3 sm:text-end">
-                    <div>
-                      <p dir="ltr" className="font-black tabular-nums">
-                        {pair.price.amount} {pair.price.currencyCode}
-                      </p>
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        نسخه {pair.price.revision.toLocaleString('fa-IR')}
-                      </p>
-                    </div>
-                    <Button
-                      variant="outline"
-                      onClick={() => editPair(pair)}
-                      disabled={!pair.returning}
-                    >
-                      <PencilLine className="size-4" />
-                      ویرایش
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="rounded-xl border border-dashed border-violet-200 px-4 py-5 text-center text-sm text-muted-foreground dark:border-violet-400/20">
-              هنوز برای هیچ جفت رفت‌وبرگشت قیمت ثبت نشده است.
-            </p>
-          )}
-        </div>
       </Card>
       <Card className="overflow-hidden border-sky-200/80 bg-gradient-to-br from-sky-50/70 via-surface to-blue-50/50 shadow-sm dark:border-sky-400/20 dark:from-sky-950/25 dark:via-surface dark:to-blue-950/20">
         <div className="flex flex-col gap-3 border-b border-sky-200/70 bg-sky-50/45 p-5 sm:flex-row sm:items-center sm:justify-between dark:border-sky-400/15 dark:bg-sky-950/15">
@@ -595,9 +700,12 @@ export function TicketPricesWorkspace() {
                     {cities[offer.destinationId] ?? offer.destinationId}
                   </p>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    حرکت {faDate.format(new Date(offer.departureAt))} · ظرفیت
-                    فروش {offer.remainingCapacity.toLocaleString('fa-IR')}
+                    حرکت {faDate.format(new Date(offer.departureAt))}
                   </p>
+                  <strong className="mt-2 block text-base font-black tabular-nums text-sky-800 dark:text-sky-200">
+                    ظرفیت فروش:{' '}
+                    {offer.remainingCapacity.toLocaleString('fa-IR')}
+                  </strong>
                 </div>
                 <FormField label="قیمت یک‌طرفه">
                   <MoneyInput
