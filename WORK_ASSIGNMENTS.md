@@ -1,3 +1,7 @@
+## HR-WORKBENCH-SURVEYS-0928 — PC-B — READY_FOR_REVIEW
+
+- User requests a Human Resources survey inbox showing submissions from the Workbench survey form. Reserve the Workbench feedback public read contract/service/repository/controller and focused tests, HR section navigation and inbox UI, own docs. Base origin/develop@7639f2f7 on codex/pc-b-hr-workbench-surveys-0928. Preserve anonymous sender masking, branch scope and existing recipient rule; no schema/migration/dependency or runtime takeover.
+
 ## 2026-09-23 — HEADER-DATE-RTL-0923 — PC-B — READY_FOR_REVIEW
 
 - درخواست مالک: ترتیب و راست‌چینی تاریخ فارسی سربرگ اصلاح شود تا سال، ماه، روز و علائم در نمایش RTL جابه‌جا نشوند.

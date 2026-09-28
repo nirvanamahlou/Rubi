@@ -1,12 +1,15 @@
 import {
   Body,
   Controller,
+  DefaultValuePipe,
   Get,
   Header,
   Inject,
   Param,
+  ParseIntPipe,
   ParseUUIDPipe,
   Post,
+  Query,
   Req,
   UseGuards,
   UseInterceptors,
@@ -100,5 +103,15 @@ export class WorkbenchFeedbackController {
     @Req() request: AuthenticatedRequest,
   ) {
     return this.service.detail(id, request.actor);
+  }
+
+  @Get('hr/inbox')
+  @Header('Cache-Control', 'private, no-store')
+  hrInbox(
+    @Req() request: AuthenticatedRequest,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('pageSize', new DefaultValuePipe(20), ParseIntPipe) pageSize: number,
+  ) {
+    return this.service.hrInbox(request.actor, page, pageSize);
   }
 }

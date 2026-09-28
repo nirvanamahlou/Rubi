@@ -47,6 +47,7 @@ const sectionLabels: Partial<Record<HrSectionId, readonly string[]>> = {
   employees: employeeGroups.map((group) => group.label),
   organization: ['چارت سازمانی', 'شعبه‌ها', 'واحدها', 'شغل و سمت', 'رده شغلی'],
   requests: ['کارتابل', 'درخواست‌ها', 'تأییدها'],
+  surveys: ['نظرسنجی‌های میزکار', 'پیشنهادها'],
   reports: ['گزارش کارکنان', 'گزارش بخش‌ها', 'تاریخچه تغییرات'],
   hrSettings: [
     'گردش‌کار',
@@ -141,9 +142,12 @@ export function HrHub({ data }: { data: HrBootstrapDto }) {
                       <div className="mt-auto flex items-center justify-between border-t border-border/70 pt-4 text-sm">
                         <span className="font-semibold text-muted-foreground">
                           {labels.length.toLocaleString('fa-IR')} زیرمجموعه
-                          {!['dashboard', 'reports', 'hrSettings'].includes(
-                            card.id,
-                          ) ? (
+                          {![
+                            'dashboard',
+                            'reports',
+                            'surveys',
+                            'hrSettings',
+                          ].includes(card.id) ? (
                             <span className="mt-1 block text-[11px] font-normal">
                               {count.toLocaleString('fa-IR')} رکورد
                             </span>

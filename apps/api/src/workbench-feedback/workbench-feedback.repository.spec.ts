@@ -19,6 +19,29 @@ const record = {
 };
 
 describe('WorkbenchFeedbackRepository', () => {
+  it('queries only HR submissions from authorized branches', async () => {
+    const findMany = vi.fn().mockResolvedValue([]);
+    const count = vi.fn().mockResolvedValue(0);
+    const repository = new WorkbenchFeedbackRepository(
+      {
+        client: { workbenchFeedback: { findMany, count } },
+      } as never,
+      {} as never,
+    );
+    const branches = [record.branchId];
+    await repository.listHr(branches, 2, 20);
+    await repository.countHr(branches);
+    expect(findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { branchId: { in: branches }, department: 'HUMAN_RESOURCES' },
+        skip: 20,
+        take: 20,
+      }),
+    );
+    expect(count).toHaveBeenCalledWith({
+      where: { branchId: { in: branches }, department: 'HUMAN_RESOURCES' },
+    });
+  });
   it('persists once and creates an actor-free notification for anonymous feedback', async () => {
     const submittedAt = new Date('2026-09-12T10:00:00.000Z');
     const transaction = {
