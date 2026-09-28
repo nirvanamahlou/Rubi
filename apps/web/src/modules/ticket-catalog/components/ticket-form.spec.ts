@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { readFileSync } from 'node:fs';
 import type { Reference } from '../model/catalog';
 import { emptyInput } from '../model/preview';
 import {
@@ -11,6 +12,15 @@ import {
 } from './ticket-form';
 
 describe('Round-trip ticket definition', () => {
+  it('keeps the selected destination visible while defining both legs', () => {
+    const source = readFileSync(
+      new URL('./ticket-form.tsx', import.meta.url),
+      'utf8',
+    );
+    expect(source).toContain('مقصد این بلیط رفت‌وبرگشت');
+    expect(source).toContain('roundTripDestination');
+    expect(source).toContain('مسیر برگشت از همین مقصد');
+  });
   it('moves actual flight timestamps to 31 Shahrivar while preserving local times and return role', () => {
     const input = emptyInput();
     input.serviceDate = '2026-09-25';

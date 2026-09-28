@@ -21,5 +21,11 @@ describe('ticket prices workspace', () => {
     expect(source).toContain('خلاصه قیمت‌گذاری بلیط‌ها');
     expect(source).toContain('فهرست قیمت‌گذاری');
     expect(source).toContain('bg-gradient-to-br from-sky-500/20');
+    expect(source).toContain('مقصد سفر:');
+    expect(source).toContain(
+      'faDay.format(new Date(pair.outbound.departureAt))',
+    );
+    expect(source).toContain('تاریخ بلیط');
+    expect(source).toContain('faDay.format(new Date(offer.departureAt))');
   });
 });

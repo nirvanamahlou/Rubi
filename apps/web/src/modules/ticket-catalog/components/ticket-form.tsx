@@ -670,6 +670,10 @@ export function TicketForm({
   };
   const segment = input.segments[0]!;
   const returnSegment = returnInput.segments[0]!;
+  const roundTripDestination = references.find(
+    (reference) =>
+      reference.kind === 'city' && reference.id === segment.destinationCityId,
+  )?.name;
   const changeSegment = (patch: Partial<Segment>) =>
     updateInput({ ...input, segments: [{ ...segment, ...patch }] });
   const changeSegmentAt = (index: number, patch: Partial<Segment>) =>
@@ -887,6 +891,20 @@ export function TicketForm({
             <h3 className="font-bold text-primary">
               ۲. مشخصات حرکت {definitionMode === 'round-trip' ? 'رفت' : ''}
             </h3>
+            {definitionMode === 'round-trip' && allowRoundTrip ? (
+              <div className="rounded-2xl border border-primary/25 bg-primary/5 px-4 py-3">
+                <p className="text-xs font-semibold text-muted-foreground">
+                  مقصد این بلیط رفت‌وبرگشت
+                </p>
+                <p className="mt-1 text-lg font-black text-primary">
+                  {roundTripDestination ??
+                    'مقصد رفت را در بخش مسیر انتخاب کنید'}
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  مسیر برگشت از همین مقصد به مبدأ رفت ساخته می‌شود.
+                </p>
+              </div>
+            ) : null}
             <TransportFields
               prefix="ticket"
               suffix=""

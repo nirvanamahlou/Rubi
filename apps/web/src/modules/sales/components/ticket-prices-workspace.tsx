@@ -44,6 +44,17 @@ const faDate = new Intl.DateTimeFormat('fa-IR', {
   timeStyle: 'short',
   timeZone: 'Asia/Tehran',
 });
+const faDay = new Intl.DateTimeFormat('fa-IR', {
+  day: 'numeric',
+  month: 'long',
+  year: 'numeric',
+  timeZone: 'Asia/Tehran',
+});
+const faTime = new Intl.DateTimeFormat('fa-IR', {
+  hour: '2-digit',
+  minute: '2-digit',
+  timeZone: 'Asia/Tehran',
+});
 const tehranDay = new Intl.DateTimeFormat('en-CA', {
   timeZone: 'Asia/Tehran',
   year: 'numeric',
@@ -471,6 +482,18 @@ export function TicketPricesWorkspace() {
                     ) : null}
                   </div>
                 </div>
+                <div className="mt-3 rounded-xl border border-violet-200 bg-surface px-3 py-2 dark:border-violet-400/20">
+                  <p className="text-xs font-bold text-violet-700 dark:text-violet-300">
+                    مقصد سفر:{' '}
+                    {cities[pair.outbound.destinationId] ?? 'مقصد نامشخص'}
+                  </p>
+                  <p className="mt-1 text-sm font-semibold tabular-nums">
+                    رفت {faDay.format(new Date(pair.outbound.departureAt))}
+                    {pair.returning
+                      ? ` · برگشت ${faDay.format(new Date(pair.returning.departureAt))}`
+                      : ''}
+                  </p>
+                </div>
                 <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t pt-3">
                   <div>
                     <strong
@@ -683,7 +706,7 @@ export function TicketPricesWorkspace() {
             {filtered.map((offer) => (
               <div
                 key={offer.id}
-                className="grid gap-4 rounded-2xl border border-sky-100 bg-surface/90 p-4 shadow-sm transition hover:border-sky-300 hover:shadow-md dark:border-sky-400/15 xl:grid-cols-[minmax(18rem,2fr)_10rem_10rem_auto] xl:items-end"
+                className="grid gap-4 rounded-2xl border border-sky-100 bg-surface/90 p-4 shadow-sm transition hover:border-sky-300 hover:shadow-md dark:border-sky-400/15 xl:grid-cols-[minmax(17rem,2fr)_10rem_10rem_auto_minmax(10rem,1fr)] xl:items-end"
               >
                 <div className="rounded-xl bg-sky-50/70 p-3 dark:bg-sky-950/25">
                   <div className="flex flex-wrap items-center gap-2">
@@ -698,9 +721,6 @@ export function TicketPricesWorkspace() {
                   <p className="mt-3 text-sm font-medium">
                     {cities[offer.originId] ?? offer.originId} ←{' '}
                     {cities[offer.destinationId] ?? offer.destinationId}
-                  </p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    حرکت {faDate.format(new Date(offer.departureAt))}
                   </p>
                   <strong className="mt-2 block text-base font-black tabular-nums text-sky-800 dark:text-sky-200">
                     ظرفیت فروش:{' '}
@@ -758,6 +778,17 @@ export function TicketPricesWorkspace() {
                   >
                     ثبت نسخه جدید
                   </Button>
+                </div>
+                <div className="rounded-xl border border-sky-200 bg-sky-50/70 p-3 text-left dark:border-sky-400/20 dark:bg-sky-950/25">
+                  <span className="block text-xs font-bold text-muted-foreground">
+                    تاریخ بلیط
+                  </span>
+                  <strong className="mt-1 block text-lg font-black tabular-nums text-primary">
+                    {faDay.format(new Date(offer.departureAt))}
+                  </strong>
+                  <span className="mt-1 block text-sm font-semibold tabular-nums">
+                    ساعت {faTime.format(new Date(offer.departureAt))}
+                  </span>
                 </div>
               </div>
             ))}
