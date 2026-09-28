@@ -4270,3 +4270,8 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 
 - `COMPUTER_ID=PC-B`؛ شاخهٔ `codex/pc-b-workbench-home-avatar-0928` از `origin/develop`. محدوده: نمایش عکس پروفایل در قاب مربعی خانهٔ میزکار و تازه‌سازی پس از تغییر عکس، بررسی و ثبت وضعیت. بدون API، Schema/Migration، Permission، Dependency/Lockfile یا تغییر دادهٔ عملیاتی.
 - نمایش از endpoint محافظت‌شدهٔ موجود و Object URL استفاده می‌کند؛ هنگام تغییر تصویر دوباره خوانده می‌شود و URL قبلی آزاد می‌شود. typecheck، lint فایل تغییرکرده و build تولیدی Web موفق‌اند.
+
+## 2026-09-28 — WORKBENCH-PASSWORD-VISIBILITY-0928 — PC-B — READY_FOR_REVIEW
+
+- `COMPUTER_ID=PC-B`؛ شاخهٔ `codex/pc-b-workbench-password-visibility-0928` از `origin/develop`. محدوده: فقط فرم تغییر رمز میزکار و نمایش/پنهان‌سازی سه فیلد رمز، بررسی و ثبت وضعیت. بدون API/IAM، Schema/Migration، Permission، Dependency/Lockfile یا تغییر دادهٔ عملیاتی.
+- هر دکمهٔ چشم مستقل، از نوع `button` و دارای برچسب و حالت قابل‌خواندن برای صفحه‌خوان است. lint، typecheck و build تولیدی Web موفق‌اند.

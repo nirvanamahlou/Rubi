@@ -3703,3 +3703,7 @@ Calendar event creation now uses an authorized branch from the authenticated Wor
 ## 2026-09-28 — WORKBENCH-HOME-AVATAR-0928 — READY_FOR_REVIEW
 
 قاب مربعی خوشامدگویی خانهٔ میزکار عکس پروفایل ذخیره‌شدهٔ کاربر را نمایش می‌دهد و پس از تغییر عکس در تنظیمات شخصی تازه می‌شود. در نبود عکس، حروف نام نمایش داده می‌شوند. typecheck، lint و build تولیدی Web موفق‌اند؛ API یا داده تغییر نکرده است.
+
+## 2026-09-28 — WORKBENCH-PASSWORD-VISIBILITY-0928 — READY_FOR_REVIEW
+
+فرم تغییر رمز میزکار برای رمز فعلی، رمز جدید و تکرار آن دکمهٔ مستقل نمایش/پنهان‌سازی دارد. مقدار فیلد با تغییر حالت حفظ می‌شود؛ API و قواعد رمز دست‌نخورده‌اند. lint، typecheck و build Web موفق‌اند.
