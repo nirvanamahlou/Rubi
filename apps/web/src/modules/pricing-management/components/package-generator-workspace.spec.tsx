@@ -63,7 +63,9 @@ describe('package generator workspace', () => {
     );
     expect(html).toContain('<option value="turkey" selected>ترکیه</option>');
     expect(html).toContain('<option value="thailand">تایلند</option>');
-    expect(app).toContain("turkey:['combined','kus','antalya','bodrum','nss']");
+    expect(app).toContain(
+      "turkey:['combined','kus','antalya','bodrum','nss','istanbul-3','istanbul-4']",
+    );
     expect(app).toContain(
       "malaysia:['malaysia-kuala','malaysia-penang','malaysia-singapore','malaysia-langkawi']",
     );
