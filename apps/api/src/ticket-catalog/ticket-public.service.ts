@@ -570,6 +570,34 @@ export class TicketPublicService {
     }
   }
 
+  async removeSalePriceTarget(
+    id: string,
+    expectedVersion: number,
+    actor: AuthenticatedActor,
+  ) {
+    this.require(actor, 'ticket_catalog.manage');
+    if (
+      uuid.validate(id).error ||
+      !Number.isSafeInteger(expectedVersion) ||
+      expectedVersion < 1
+    )
+      throw new BadRequestException('شناسه مقصد یا نسخه معتبر نیست.');
+    const result = await this.database.client.ticketSalePriceTarget.updateMany({
+      where: {
+        id,
+        branchId: { in: actor.branchIds },
+        isActive: true,
+        version: expectedVersion,
+      },
+      data: { isActive: false, version: { increment: 1 } },
+    });
+    if (!result.count)
+      throw new ConflictException(
+        'مقصد تغییر کرده یا در شعبه مجاز نیست؛ فهرست را به‌روزرسانی کنید.',
+      );
+    return { data: { id, isActive: false, version: expectedVersion + 1 } };
+  }
+
   async updateSaleCommission(
     input: TicketSaleCommissionUpdateV1,
     actor: AuthenticatedActor,
