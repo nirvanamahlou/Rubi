@@ -601,7 +601,10 @@ export class ReportingService {
           rows.length,
         ),
       'customer-interest-coverage': (rows) =>
-        ratio(rows.filter((fact) => Boolean(fact.destinationCity)).length, rows.length),
+        ratio(
+          rows.filter((fact) => Boolean(fact.destinationCity)).length,
+          rows.length,
+        ),
       'lead-conversion-rate': (rows) =>
         ratio(
           rows.filter(
@@ -626,7 +629,10 @@ export class ReportingService {
           rows.length,
         ),
       'consent-coverage': (rows) =>
-        ratio(rows.filter((fact) => Boolean(fact.leadSource)).length, rows.length),
+        ratio(
+          rows.filter((fact) => Boolean(fact.leadSource)).length,
+          rows.length,
+        ),
     };
     const amountMetrics: Record<string, (rows: typeof facts) => number> = {
       'gross-sales': (rows) => sum(rows, (fact) => Number(fact.salesAmount)),
@@ -733,13 +739,14 @@ export class ReportingService {
                     : 'قلم',
                 detail: 'محاسبه از grain مصوب fact سفر؛ بدون جمع‌زدن مبلغ',
                 metricId: id,
-                aggregation: id === 'customer-destination-demand'
-                  ? 'count distinct valid orders with a destination'
-                  : id.includes('conversion')
-                    ? 'distinct converted orders / distinct eligible orders × 100'
-                    : id.includes('cancellation')
-                      ? 'count distinct cancelled orders'
-                      : 'count distinct orders at approved fact grain',
+                aggregation:
+                  id === 'customer-destination-demand'
+                    ? 'count distinct valid orders with a destination'
+                    : id.includes('conversion')
+                      ? 'distinct converted orders / distinct eligible orders × 100'
+                      : id.includes('cancellation')
+                        ? 'count distinct cancelled orders'
+                        : 'count distinct orders at approved fact grain',
                 ...(previousFacts
                   ? {
                       comparison: comparisonFor(
@@ -759,10 +766,16 @@ export class ReportingService {
           const current = percentage
             ? percentage(facts)
             : (() => {
-                const currentLeads = facts.filter((fact) => Boolean(fact.leadSource)).length;
-                const previousLeads = previousFacts?.filter((fact) => Boolean(fact.leadSource)).length ?? 0;
+                const currentLeads = facts.filter((fact) =>
+                  Boolean(fact.leadSource),
+                ).length;
+                const previousLeads =
+                  previousFacts?.filter((fact) => Boolean(fact.leadSource))
+                    .length ?? 0;
                 return previousLeads > 0
-                  ? Math.round(((currentLeads - previousLeads) / previousLeads) * 100)
+                  ? Math.round(
+                      ((currentLeads - previousLeads) / previousLeads) * 100,
+                    )
                   : 0;
               })();
           return [
@@ -771,11 +784,13 @@ export class ReportingService {
               {
                 value: String(current),
                 unit: 'درصد',
-                detail: 'نسبت مصوب شاخص به‌صورت درصدی از grain فکت سفر محاسبه شده است.',
+                detail:
+                  'نسبت مصوب شاخص به‌صورت درصدی از grain فکت سفر محاسبه شده است.',
                 metricId: id,
-                aggregation: id === 'lead-growth-rate'
-                  ? 'change in lead count versus equal previous period × 100'
-                  : 'numerator / denominator × 100',
+                aggregation:
+                  id === 'lead-growth-rate'
+                    ? 'change in lead count versus equal previous period × 100'
+                    : 'numerator / denominator × 100',
                 ...(previousFacts
                   ? {
                       comparison: comparisonFor(
@@ -962,7 +977,8 @@ export class ReportingService {
         field: 'destinationCity',
         numerator: (rows) => rows.length,
         denominator: () => visualFacts.length,
-        aggregation: 'hotel reservations in city / all hotel reservations × 100',
+        aggregation:
+          'hotel reservations in city / all hotel reservations × 100',
       },
       'customer-acquisition-channel-mix': {
         field: 'leadSource',
@@ -1128,14 +1144,11 @@ export class ReportingService {
           }
           const percentageVisual = percentageVisuals[id];
           if (percentageVisual) {
-            const entries = by(
-              percentageVisual.field,
-              visualFacts,
-              (rows) =>
-                ratio(
-                  percentageVisual.numerator(rows),
-                  percentageVisual.denominator?.(rows) ?? rows.length,
-                ),
+            const entries = by(percentageVisual.field, visualFacts, (rows) =>
+              ratio(
+                percentageVisual.numerator(rows),
+                percentageVisual.denominator?.(rows) ?? rows.length,
+              ),
             );
             return [
               [
@@ -1351,6 +1364,7 @@ export class ReportingService {
     if (!savedReport || savedReport.ownerUserId !== actor.userId)
       throw new NotFoundException('گزارش ذخیره‌شده پیدا نشد.');
     const reportCode = String(savedReport.reportCode);
+    const report = this.metadata(reportCode, actor);
     const eligible = await this.sharingRecipients(reportCode, actor);
     const allowedIds = new Set(eligible.map((candidate) => candidate.id));
     const uniqueRecipientIds = [...new Set(recipientUserIds)];
@@ -1360,17 +1374,56 @@ export class ReportingService {
       throw new ForbiddenException(
         'یک یا چند گیرنده، مجوز مشاهده این گزارش را ندارند.',
       );
+    const existingRecipientIds = new Set(
+      await this.repository.sharedRecipientIds(id),
+    );
+    const filterState =
+      savedReport.filterState &&
+      typeof savedReport.filterState === 'object' &&
+      !Array.isArray(savedReport.filterState)
+        ? (savedReport.filterState as Record<string, unknown>)
+        : {};
+    const actionRuns = eligible
+      .filter(
+        (recipient) =>
+          uniqueRecipientIds.includes(recipient.id) &&
+          !existingRecipientIds.has(recipient.id),
+      )
+      .map((recipient) => ({
+        reportCode,
+        filterSnapshot: {
+          ...filterState,
+          actionType: 'SHARE',
+          recipientName: recipient.displayName,
+          recipientUserId: recipient.id,
+          reportName: String(savedReport.name ?? report.title),
+        },
+        viewName: report.approvedView,
+        viewVersion: report.version,
+      }));
     return this.repository.replaceSavedReportShares(
       id,
       actor.userId,
       uniqueRecipientIds,
+      actionRuns,
     );
   }
 
   async deleteSavedReport(id: string, actor: ReportingActor) {
     if (!this.repository)
       throw new ConflictException('Persistence گزارش در دسترس نیست.');
-    const count = await this.repository.deleteSaved(id, actor.userId);
+    const savedReport = await this.repository.savedReportById(id);
+    if (!savedReport || savedReport.ownerUserId !== actor.userId)
+      throw new NotFoundException('گزارش ذخیره‌شده پیدا نشد.');
+    const report = this.metadata(String(savedReport.reportCode), actor);
+    const count = await this.repository.deleteSavedWithHistory(
+      id,
+      actor.userId,
+      {
+        viewName: report.approvedView,
+        viewVersion: report.version,
+      },
+    );
     if (!count) throw new NotFoundException('گزارش ذخیره‌شده پیدا نشد.');
     return { deleted: true };
   }

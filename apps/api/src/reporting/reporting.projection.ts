@@ -72,6 +72,10 @@ const pendingReservationStatuses = new Set([
   'PARTIALLY_FULFILLED',
 ]);
 
+function exposesPendingReservationActions(reportCode: string) {
+  return reportCode === 'paid_not_issued';
+}
+
 function amount(value: Prisma.Decimal | string) {
   return new Prisma.Decimal(value);
 }
@@ -121,8 +125,7 @@ export function buildTravelReportResult(input: {
     if (pendingReservationStatuses.has(fact.reservationStatus))
       current.pendingReservationOrderIds.add(fact.orderNumber);
     current.orderCount = current.orderIds.size;
-    current.pendingReservationActions =
-      current.pendingReservationOrderIds.size;
+    current.pendingReservationActions = current.pendingReservationOrderIds.size;
     current.passengerCount += fact.passengerCount;
     current.ticketCount += fact.ticketCount;
     current.salesAmount = amount(current.salesAmount)
@@ -158,8 +161,9 @@ export function buildTravelReportResult(input: {
     'grossProfit',
     'refundAmount',
     'settlementBalance',
-    'pendingReservationActions',
   ]);
+  if (exposesPendingReservationActions(input.code))
+    sortable.add('pendingReservationActions');
   const sort = input.query.sort ?? {
     column: 'salesAmount',
     direction: 'DESC' as const,
@@ -253,11 +257,15 @@ export function buildTravelReportResult(input: {
       { key: 'grossProfit', label: 'سود ناخالص', kind: 'MONEY' },
       { key: 'refundAmount', label: 'استرداد', kind: 'MONEY' },
       { key: 'settlementBalance', label: 'مانده تسویه', kind: 'MONEY' },
-      {
-        key: 'pendingReservationActions',
-        label: 'اقدام رزرو در انتظار',
-        kind: 'NUMBER',
-      },
+      ...(exposesPendingReservationActions(input.code)
+        ? [
+            {
+              key: 'pendingReservationActions' as const,
+              label: 'اقدام رزرو در انتظار',
+              kind: 'NUMBER' as const,
+            },
+          ]
+        : []),
     ],
     rows: input.includeAllRows
       ? rows

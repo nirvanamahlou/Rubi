@@ -96,7 +96,7 @@ describe('travel reporting approved projection', () => {
 
   it('marks grouped rows with pending reservation actions without duplicating an order', () => {
     const result = buildTravelReportResult({
-      code: 'contract_service_profit',
+      code: 'paid_not_issued',
       query: { filters: {}, page: 1, pageSize: 20, timezone: 'Asia/Tehran' },
       facts: [
         fact({ reservationStatus: 'QUEUED' }),
@@ -117,15 +117,35 @@ describe('travel reporting approved projection', () => {
     });
   });
 
+  it('does not expose pending reservation actions outside its operational report', () => {
+    const result = buildTravelReportResult({
+      code: 'sales_by_service_route',
+      query: { filters: {}, page: 1, pageSize: 20, timezone: 'Asia/Tehran' },
+      facts: [fact({ reservationStatus: 'QUEUED' })],
+      now: new Date('2026-09-12T08:00:00Z'),
+    });
+
+    expect(result.columns).not.toContainEqual(
+      expect.objectContaining({ key: 'pendingReservationActions' }),
+    );
+  });
+
   it('includes every matching dataset row for export while preview remains paginated', () => {
     const input = {
       code: 'sales_by_service_route',
-      query: { filters: {}, page: 1, pageSize: 1, timezone: 'Asia/Tehran' as const },
+      query: {
+        filters: {},
+        page: 1,
+        pageSize: 1,
+        timezone: 'Asia/Tehran' as const,
+      },
       facts: [fact(), fact({ id: 'fact-2', serviceType: 'HOTEL' })],
       now: new Date('2026-09-12T08:00:00Z'),
     };
 
     expect(buildTravelReportResult(input).rows).toHaveLength(1);
-    expect(buildTravelReportResult({ ...input, includeAllRows: true }).rows).toHaveLength(2);
+    expect(
+      buildTravelReportResult({ ...input, includeAllRows: true }).rows,
+    ).toHaveLength(2);
   });
 });
