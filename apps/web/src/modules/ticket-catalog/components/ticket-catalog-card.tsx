@@ -195,8 +195,7 @@ export function TicketCatalogCard({
           </Button>
           <Button
             size="icon"
-            variant="outline"
-            className="text-destructive"
+            variant="destructive"
             title="حذف بلیط"
             aria-label="حذف بلیط"
             onClick={onDelete}

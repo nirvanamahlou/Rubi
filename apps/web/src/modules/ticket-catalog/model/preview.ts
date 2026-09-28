@@ -370,14 +370,7 @@ export function pauseExpiredCatalogProduct(
   at: string,
 ): Product {
   if (product.status !== 'active') return product;
-  const departureAt = product.definition.segments[0]?.departureAt;
-  const serviceDate = product.definition.serviceDate;
-  const expiresAt = departureAt
-    ? Date.parse(departureAt)
-    : serviceDate
-      ? Date.parse(`${serviceDate}T23:59:59.999Z`)
-      : Number.NaN;
-  if (!Number.isFinite(expiresAt) || expiresAt > Date.parse(at)) return product;
+  if (!isExpiredCatalogProduct(product, at)) return product;
   const version = product.version + 1;
   return {
     ...product,
@@ -394,6 +387,18 @@ export function pauseExpiredCatalogProduct(
       },
     ],
   };
+}
+
+/** Expired definitions leave the operational catalog; persisted sales stay intact. */
+export function isExpiredCatalogProduct(product: Product, at: string): boolean {
+  const departureAt = product.definition.segments[0]?.departureAt;
+  const serviceDate = product.definition.serviceDate;
+  const expiresAt = departureAt
+    ? Date.parse(departureAt)
+    : serviceDate
+      ? Date.parse(`${serviceDate}T23:59:59.999Z`)
+      : Number.NaN;
+  return Number.isFinite(expiresAt) && expiresAt <= Date.parse(at);
 }
 
 export function groupProductsForCards(

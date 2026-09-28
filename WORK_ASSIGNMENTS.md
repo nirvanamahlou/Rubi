@@ -4080,3 +4080,10 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 - Scope: Sales ticket-price workspace, Sales contract pricing panel and focused tests. Saved round-trip prices move above entry forms with flight/date filters; ticket-only contracts lock catalog sale fares and keep agreed amounts editable. No API, database, permissions, dependencies or lockfile changes.
 - Separate PR to develop; no merge before conflict review. Port 3100 remains reserved for the integrated develop checkout.
 - Validation: 8 focused tests, Web typecheck, targeted ESLint and production build (53 pages) passed.
+
+## 2026-09-28 — EXPIRED-TICKET-CARDS-0928 — PC-A — READY_FOR_REVIEW
+
+- Branch `codex/pc-a-expired-ticket-cards-0928` from `origin/develop@c8b04d6f`. Scope: Ticket Catalog management UI, preview expiry logic, Ticket Catalog managed-offer read filter and focused tests.
+- Departed tickets must disappear automatically from operational management and Sales lists without deleting contract, Finance or capacity history. Fix the red delete control's icon contrast. No migration, shared contract, permission, dependency or lockfile changes.
+- No merge or localhost:3100 change in this work item; PR to develop after checks.
+- Outcome: expired browser-defined tickets are removed from the operational cards on hydration and every minute; management API lists only future offers and continues to pause departed offers. Contracts, Finance and audit history remain intact. Delete icon is now legible on its red button. Focused Web/API tests (20/8), targeted lint, Web/API typechecks and production builds passed.

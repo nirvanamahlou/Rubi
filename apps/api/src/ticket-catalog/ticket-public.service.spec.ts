@@ -187,6 +187,7 @@ describe('TicketPublicService offer retry', () => {
         where: {
           branchId: { in: ['branch-1'] },
           audit: { none: { action: 'ticket.offer.archived' } },
+          departureAt: { gt: expect.any(Date) },
         },
       }),
     );

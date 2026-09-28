@@ -52,8 +52,8 @@ import {
   emptyInput,
   groupProductsForCards,
   initialQuery,
+  isExpiredCatalogProduct,
   parseCatalogSnapshot,
-  pauseExpiredCatalogProduct,
   queryProducts,
   moveDefinitionToDate,
   repeatDefinition,
@@ -466,7 +466,16 @@ function TicketCatalogWorkspace() {
   };
 
   useEffect(() => {
-    const refresh = () => void refreshPublishedOffers();
+    const refresh = () => {
+      void refreshPublishedOffers();
+      const now = new Date().toISOString();
+      setProducts((current) => {
+        const available = current.filter(
+          (product) => !isExpiredCatalogProduct(product, now),
+        );
+        return available.length === current.length ? current : available;
+      });
+    };
     const timer = window.setTimeout(refresh, 0);
     const interval = window.setInterval(refresh, 60_000);
     return () => {
@@ -481,12 +490,9 @@ function TicketCatalogWorkspace() {
       );
       if (stored) {
         const now = new Date().toISOString();
-        const restoredProducts = stored.products.map((product) =>
-          pauseExpiredCatalogProduct(
-            activateDraftCatalogProduct(product, now),
-            now,
-          ),
-        );
+        const restoredProducts = stored.products
+          .filter((product) => !isExpiredCatalogProduct(product, now))
+          .map((product) => activateDraftCatalogProduct(product, now));
         setProducts(restoredProducts);
         setReferences(stored.references);
         if (!backfillStarted.current) {
