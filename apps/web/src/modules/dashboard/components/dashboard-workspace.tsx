@@ -2480,7 +2480,7 @@ function DashboardChart({
                     fill={color}
                     r="3.5"
                   >
-                    <title>{`${seriesItem.label} — ${trendTooltipTime(
+                    <title>{`${trendTooltipTime(
                       labels[index] ?? '',
                       trendCalendarSystem,
                       temporalGrain,
@@ -3276,20 +3276,20 @@ function ProjectionSlot({
                 >
                   <SelectTrigger
                     aria-label={`واحد پول نمودار ${title}`}
-                    className="h-7 min-w-28 border-border/80 bg-background px-2 text-[10px] font-bold"
+                    className="h-7 min-w-28 border-border/80 bg-background px-2 text-[9px] font-bold"
                     data-dashboard-visual-currency-selector
                   >
                     <CircleDollarSign aria-hidden="true" className="size-3.5" />
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent align="end" className="text-right" dir="rtl">
                     {currencySeries.map((series) => {
                       const symbol =
                         currencySymbols[series.currencyCode] ??
                         series.currencyCode;
                       return (
                         <SelectItem
-                          className="data-[highlighted]:bg-primary data-[highlighted]:text-primary-foreground"
+                          className="justify-end text-right text-[9px] data-[highlighted]:bg-primary data-[highlighted]:text-primary-foreground"
                           key={series.currencyCode}
                           value={series.currencyCode}
                         >
@@ -3309,7 +3309,7 @@ function ProjectionSlot({
                 >
                   <SelectTrigger
                     aria-label="تقویم برچسب‌های محور زمان"
-                    className="h-8 w-[9.5rem] shrink-0 whitespace-nowrap border-border/80 bg-background px-2.5 text-[10px] font-bold"
+                    className="h-8 w-[9.5rem] shrink-0 whitespace-nowrap border-border/80 bg-background px-2.5 text-[9px] font-bold"
                   >
                     <CalendarDays
                       aria-hidden="true"
@@ -3318,10 +3318,10 @@ function ProjectionSlot({
                     />
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent align="end" className="text-right" dir="rtl">
                     {trendCalendarOptions.map(([value, label]) => (
                       <SelectItem
-                        className="data-[highlighted]:bg-primary data-[highlighted]:text-primary-foreground"
+                        className="justify-end text-right text-[9px] data-[highlighted]:bg-primary data-[highlighted]:text-primary-foreground"
                         key={value}
                         value={value}
                       >

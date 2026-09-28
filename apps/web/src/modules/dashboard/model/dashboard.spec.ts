@@ -658,6 +658,12 @@ describe('dashboard permission and data states', () => {
     expect(source).toContain('trendDateLabel');
     expect(source).toContain('trendTooltipTime');
     expect(source).not.toContain('بازه انتخاب‌شده — ${labels[index]}');
+    expect(source).toContain(
+      '<title>{`${trendTooltipTime(',
+    );
+    expect(source).not.toContain(
+      '<title>{`${seriesItem.label} — ${trendTooltipTime(',
+    );
     expect(source).toContain('data-dashboard-visual-currency-selector');
     expect(source).toContain('data-dashboard-trend-controls');
     expect(source).toContain(
