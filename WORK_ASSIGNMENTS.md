@@ -4244,6 +4244,7 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 - شاخهٔ مستقل `codex/pc-b-generator-readable-ui-0928` از `origin/develop@e4eb048c`. محدودهٔ رزرو: فقط CSS رابط `apps/web/public/package-generator`، ثبت وضعیت و آزمون مستقیم در صورت نیاز. تصویر/خروجی قالب‌ها، Package Pricing API، قرارداد مشترک، Migration، Prisma و Dependency/Lockfile خارج از محدوده‌اند. PR باز #424 متعلق به همین PC-B است و هیچ فایل CSS این واحد را تغییر نمی‌دهد.
 - نتیجه: فونت عنوان‌ها، برچسب‌ها، فرم‌ها، راهنماها، تب‌ها و پنجره‌ها در هر سه حالت خواناتر شد؛ عرض پنل و فاصلهٔ کنترل‌ها نیز برای متن بزرگ‌تر تنظیم شد. پیش‌نمایش ثابت و خروجی قالب‌ها تغییر نکرد. QA دسکتاپ و موبایل، ۱۱ تست هدفمند، lint، typecheck و build تولیدی Web با ۵۳ مسیر موفق‌اند.
 - پیگیری 2026-09-28 بر اساس اسکرین‌شات مالک: متن‌های کوچک باقی‌مانده در راهنمای گروه‌ها، تب‌های دسترسی، برچسب‌ها، فرم‌ها و وضعیت پیش‌نمایش دوباره بزرگ شدند. میانبرهای پنل به دو ردیف سه‌ستونه رفتند تا متن خوانا بماند. هر سه حالت پکیج، بنر و استیکر در مرورگر بررسی شدند؛ تغییر فقط CSS کنترل‌ها و نسخهٔ کش آن است.
+
 ## TOUR-MANAGEMENT-0928 — PC-A — READY_FOR_REVIEW
 
 - Owner requests current-tour presentation, KPI summary and persisted package editing. COMPUTER_ID=PC-A; branch codex/pc-a-tour-management-0928 in managed isolated worktree; task commit rebased onto origin/develop@e4eb048c after preserving newer module and assignment changes. Existing primary checkout changes remain untouched.
