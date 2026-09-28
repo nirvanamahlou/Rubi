@@ -46,4 +46,11 @@ describe('currency popup form', () => {
     expect(source).toContain('قرارداد آن هنوز متصل نیست');
     expect(source).not.toContain('masterDataApi.decideCurrencyRate');
   });
+  it('shows quote registration only when editing an existing currency', () => {
+    expect(source).toMatch(/\{record \? \(\s*<Card className="p-5">/);
+    expect(source).toContain('مشخصات ارز جدید را ثبت کنید.');
+    expect(source).not.toContain(
+      'نرخ جدید را می‌توانید در بخش پایین همین فرم ثبت کنید.',
+    );
+  });
 });

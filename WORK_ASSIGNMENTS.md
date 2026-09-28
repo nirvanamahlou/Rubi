@@ -4345,3 +4345,7 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 
 - درخواست مالک: متن توضیحی زیر عنوان ارزها حذف و فاصلهٔ عنوان تا فیلترهای جست‌وجو کمتر شود.
 - شاخه `codex/pc-b-finance-heading-spacing-0928` از شاخهٔ عملیات آیکونی PC-B؛ فقط Workspace مالی و پولی، تست مرتبط و مدخل محدود اسناد رزرو است. وابسته به PR #445 و #444؛ بدون API، Migration، قرارداد، داده، Dependency/Lockfile یا تغییر runtime.
+## 2026-09-28 — MASTER-DATA-CURRENCY-CREATE-NO-QUOTE-0928 — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک: بخش «ثبت نرخ خرید و فروش» در فرم تعریف ارز جدید نمایش داده نشود؛ ثبت نرخ در ویرایش ارز موجود و تاریخچه فعلی محفوظ بماند.
+- شاخه `codex/pc-b-currency-create-no-quote-0928` از `codex/pc-b-finance-heading-spacing-0928`؛ محدوده فقط کامپوننت فرم ارز، تست مستقیم و مدخل محدود اسناد است. وابسته به PR #446، #445 و #444؛ بدون API، Migration، قرارداد، داده، Dependency/Lockfile یا تغییر runtime.

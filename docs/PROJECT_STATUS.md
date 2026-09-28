@@ -3751,3 +3751,6 @@ Existing unpaid ticket invoices retain the seat/unit-price editor; count, unit c
 ## 2026-09-28 — MASTER-DATA-FINANCE-HEADING-SPACING-0928 — PC-B — READY_FOR_REVIEW
 
 متن توضیحی زیر عنوان ارزها حذف و فاصلهٔ عمودی عنوان تا فیلترهای جست‌وجو فشرده شد. شش تست متمرکز، lint، typecheck و build تولیدی Web با ۵۳ مسیر موفق‌اند؛ محدوده فقط Web و تست‌های مربوط است.
+## 2026-09-28 — MASTER-DATA-CURRENCY-CREATE-NO-QUOTE-0928 — PC-B — READY_FOR_REVIEW
+
+بخش ثبت نرخ خرید و فروش از فرم تعریف ارز جدید حذف شد؛ فرم ویرایش ارز موجود و ثبت نرخ آن دست‌نخورده می‌ماند. ۱۷ تست مرتبط، lint، typecheck و build تولیدی Web با ۵۳ مسیر موفق‌اند؛ بدون تغییر API، داده یا Migration.
