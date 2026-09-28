@@ -7,6 +7,7 @@ import {
   countProductsByRoute,
   groupProductsForCards,
   initialQuery,
+  isExpiredCatalogProduct,
   moveDefinitionToDate,
   parseCatalogSnapshot,
   pauseExpiredCatalogProduct,
@@ -206,6 +207,21 @@ describe('Ticket catalog browser collection and query', () => {
       action: 'paused',
       actor: 'سیستم',
     });
+  });
+  it('removes departed tickets from the operational list even if already paused', () => {
+    const ticket = samples[0]!;
+    expect(isExpiredCatalogProduct(ticket, '2026-08-31T00:00:00.000Z')).toBe(
+      false,
+    );
+    expect(isExpiredCatalogProduct(ticket, '2027-01-01T00:00:00.000Z')).toBe(
+      true,
+    );
+    expect(
+      isExpiredCatalogProduct(
+        { ...ticket, status: 'paused' },
+        '2027-01-01T00:00:00.000Z',
+      ),
+    ).toBe(true);
   });
   it('round-trips valid browser storage and rejects malformed data', () => {
     const raw = JSON.stringify({ products: samples, references: [] });

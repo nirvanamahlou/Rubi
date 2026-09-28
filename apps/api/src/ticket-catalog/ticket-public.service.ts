@@ -211,11 +211,13 @@ export class TicketPublicService {
   /** Management and Sales deliberately read the same published offer rows. */
   async managed(actor: AuthenticatedActor) {
     this.require(actor, 'ticket_catalog.manage');
-    await this.pauseExpiredOffers(actor);
+    const now = new Date();
+    await this.pauseExpiredOffers(actor, now);
     const rows = await this.database.client.ticketPublishedOffer.findMany({
       where: {
         branchId: { in: actor.branchIds },
         audit: { none: { action: 'ticket.offer.archived' } },
+        departureAt: { gt: now },
       },
       include: {
         capacityAllocations: {

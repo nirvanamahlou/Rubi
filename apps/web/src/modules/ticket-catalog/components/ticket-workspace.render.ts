@@ -90,6 +90,7 @@ describe('Rendered ticket UI', () => {
       }),
     );
     expect(card).toContain('ظرفیت کل');
+    expect(card).toContain('bg-destructive text-white');
     expect(card).toContain('مانده');
     expect(card).toContain(
       `${(sample.definition.totalCapacity - 5).toLocaleString('fa-IR')} نفر`,
