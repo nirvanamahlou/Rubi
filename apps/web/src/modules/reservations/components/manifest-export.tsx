@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { requestManifestDownload } from './manifest-download';
 import type {
   ReservationManifestTicketCardV1,
   ReservationManifestTicketListV1,
@@ -61,19 +62,6 @@ async function responseError(response: Response, fallback: string) {
       : fallback;
 }
 
-function downloadFile(file: Blob, fileName: string) {
-  const url = URL.createObjectURL(file);
-  const anchor = document.createElement('a');
-  anchor.href = url;
-  anchor.download = fileName;
-  document.body.appendChild(anchor);
-  anchor.click();
-  setTimeout(() => {
-    anchor.remove();
-    URL.revokeObjectURL(url);
-  }, 30000);
-}
-
 export function ManifestExport() {
   const today = todayInTehran();
   const [fromDate, setFromDate] = useState(today);
@@ -87,7 +75,20 @@ export function ManifestExport() {
   const [busy, setBusy] = useState('');
   const [error, setError] = useState('');
   const [result, setResult] = useState('');
-  const [downloadKeys, setDownloadKeys] = useState<Record<string, string>>({});
+  const downloadKeys = useRef(new Map<string, string>());
+  const downloading = useRef(false);
+  const [errorOfferId, setErrorOfferId] = useState('');
+  const [downloadLink, setDownloadLink] = useState<{
+    offerId: string;
+    url: string;
+    fileName: string;
+  } | null>(null);
+  useEffect(
+    () => () => {
+      if (downloadLink) URL.revokeObjectURL(downloadLink.url);
+    },
+    [downloadLink],
+  );
 
   function validate() {
     if (!fromDate || !toDate) return 'بازه تاریخ را کامل کنید.';
@@ -96,6 +97,7 @@ export function ManifestExport() {
   }
 
   async function loadTickets() {
+    setErrorOfferId('');
     const validation = validate();
     const base = getPublicApiBaseUrl();
     if (validation || !base) {
@@ -127,95 +129,65 @@ export function ManifestExport() {
   }
 
   async function download(ticket: ReservationManifestTicketCardV1) {
-    if (!ticket.template || busy) return;
+    if (!ticket.template || busy || downloading.current) return;
+    setErrorOfferId(ticket.offerId);
     const base = getPublicApiBaseUrl();
     if (!base) {
       setError('نشانی سرور تنظیم نشده است.');
       return;
     }
+    downloading.current = true;
+    setErrorOfferId(ticket.offerId);
     setBusy(ticket.offerId);
     setError('');
     setResult('');
     try {
-      const requestScope = [
-        ticket.offerId,
-        fromDate,
-        toDate,
-        includePreviouslyExported ? 'all' : 'new',
-      ].join(':');
-      const idempotencyKey = downloadKeys[requestScope] ?? crypto.randomUUID();
-      if (!downloadKeys[requestScope])
-        setDownloadKeys((current) => ({
-          ...current,
-          [requestScope]: idempotencyKey,
-        }));
-      const exportTicket = (includeAll: boolean) =>
-        authenticatedFetch(
-          base,
-          '/reservations/manifests/tickets/' +
-            encodeURIComponent(ticket.offerId) +
-            '.xlsx',
+      const { file, contracts, passengers, skippedFinance, retriedWithAll } =
+        await requestManifestDownload(
           {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Idempotency-Key': idempotencyKey,
-            },
-            body: JSON.stringify({
-              fromDate,
-              toDate,
-              includePreviouslyExported: includeAll,
-            }),
+            offerId: ticket.offerId,
+            fromDate,
+            toDate,
+            includePreviouslyExported,
           },
+          (path, init) => authenticatedFetch(base, path, init),
+          downloadKeys.current,
         );
-      let response = await exportTicket(includePreviouslyExported);
-      let retriedWithAll = false;
-      if (!response.ok) {
-        const message = await responseError(response, 'MANIFEST آماده نشد.');
-        if (
-          !includePreviouslyExported &&
-          message.includes('قرارداد جدید قابل خروجی')
-        ) {
-          response = await exportTicket(true);
-          retriedWithAll = true;
-        } else {
-          throw new Error(message);
-        }
-      }
-      if (!response.ok)
-        throw new Error(await responseError(response, 'MANIFEST آماده نشد.'));
-      const contracts =
-        response.headers.get('X-Nora-Manifest-Contracts') ?? '—';
-      const passengers =
-        response.headers.get('X-Nora-Manifest-Passengers') ?? '—';
-      const file = await response.blob();
-      if (!file.size)
-        throw new Error('فایل MANIFEST خالی است؛ دوباره تلاش کنید.');
-      downloadFile(
-        file,
+      const fileName =
         'manifest-' +
-          (ticket.serviceNumber || ticket.transportType || 'FLIGHT').replace(
-            /[^A-Za-z0-9_-]/g,
-            '_',
-          ) +
-          '-' +
-          fromDate +
-          '.xlsx',
-      );
+        (ticket.serviceNumber || ticket.transportType || 'FLIGHT').replace(
+          /[^A-Za-z0-9_-]/g,
+          '_',
+        ) +
+        '-' +
+        fromDate +
+        '.xlsx';
+      const url = URL.createObjectURL(file);
+      setDownloadLink({ offerId: ticket.offerId, url, fileName });
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = fileName;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
       setResult(
         contracts +
           ' قرارداد و ' +
           passengers +
           ' مسافر در قالب «' +
           ticket.template.name +
-          '» دانلود شد' +
-          (retriedWithAll ? '؛ خروجی قبلی نیز بازیابی شد.' : '.'),
+          '» آماده شد' +
+          (retriedWithAll ? '؛ خروجی قبلی نیز بازیابی شد.' : '.') +
+          (Number(skippedFinance) > 0
+            ? ' قراردادهای بدون تأیید مالی از فایل حذف شدند.'
+            : ''),
       );
     } catch (reason) {
       setError(
         reason instanceof Error ? reason.message : 'MANIFEST آماده نشد.',
       );
     } finally {
+      downloading.current = false;
       setBusy('');
     }
   }
@@ -251,6 +223,7 @@ export function ManifestExport() {
         </label>
       </div>
       <Button
+        type="button"
         disabled={!fromDate || !toDate || Boolean(busy)}
         onClick={() => void loadTickets()}
       >
@@ -365,8 +338,8 @@ export function ManifestExport() {
                     </div>
                   </div>
                   <p className="text-xs">
-                    {ticket.contractCount} قرارداد · {ticket.passengerCount}{' '}
-                    مسافر
+                    {ticket.contractCount} قرارداد با تأیید مالی ·{' '}
+                    {ticket.passengerCount} مسافر
                   </p>
                   {ticket.template ? (
                     <p className="rounded-lg bg-emerald-50 px-2 py-1.5 text-xs text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-200">
@@ -382,6 +355,7 @@ export function ManifestExport() {
                     </p>
                   )}
                   <Button
+                    type="button"
                     disabled={!ticket.template || Boolean(busy)}
                     onClick={() => void download(ticket)}
                   >
@@ -391,6 +365,20 @@ export function ManifestExport() {
                         ? 'دانلود MANIFEST این بلیط'
                         : 'خروجی ممکن نیست'}
                   </Button>
+                  {error && errorOfferId === ticket.offerId && (
+                    <p role="alert" className="text-sm text-destructive">
+                      {error}
+                    </p>
+                  )}
+                  {downloadLink?.offerId === ticket.offerId && (
+                    <a
+                      href={downloadLink.url}
+                      download={downloadLink.fileName}
+                      className="text-sm font-semibold text-primary underline"
+                    >
+                      اگر دانلود خودکار شروع نشد، فایل منیفست را دریافت کنید
+                    </a>
+                  )}
                 </div>
               </article>
             ))}
@@ -405,7 +393,7 @@ export function ManifestExport() {
           {result}
         </p>
       )}
-      {error && (
+      {error && !errorOfferId && (
         <p role="alert" className="text-destructive">
           {error}
         </p>
