@@ -4234,3 +4234,8 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 
 - `COMPUTER_ID=PC-B`؛ شاخهٔ `codex/pc-b-workbench-home-avatar-0928` از `origin/develop`. محدوده: نمایش عکس پروفایل در قاب مربعی خانهٔ میزکار و تازه‌سازی پس از تغییر عکس، بررسی و ثبت وضعیت. بدون API، Schema/Migration، Permission، Dependency/Lockfile یا تغییر دادهٔ عملیاتی.
 - نمایش از endpoint محافظت‌شدهٔ موجود و Object URL استفاده می‌کند؛ هنگام تغییر تصویر دوباره خوانده می‌شود و URL قبلی آزاد می‌شود. typecheck، lint فایل تغییرکرده و build تولیدی Web موفق‌اند.
+
+## 2026-09-28 — WORKBENCH-CALENDAR-EDIT-0928 — PC-B — READY_FOR_REVIEW
+
+- `COMPUTER_ID=PC-B`؛ شاخهٔ `codex/pc-b-workbench-calendar-edit-0928` از `origin/develop`. محدوده: ویرایش رویدادهای شخصی تقویم میزکار، انتخاب وضعیت یکسان با فیلتر، آزمون و ثبت وضعیت. بدون Schema/Migration، قرارداد API، Permission، Dependency/Lockfile یا تغییر دادهٔ عملیاتی.
+- آزمون‌های تقویم (۷ مورد)، lint فایل‌های تغییرکرده، typecheck و build تولیدی Web موفق‌اند. ویرایش فقط برای رویدادهای شخصی مجاز است؛ ارجاع‌های متصل به کارتابل از این فرم ویرایش نمی‌شوند.
