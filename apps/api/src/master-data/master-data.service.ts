@@ -1648,7 +1648,7 @@ export class MasterDataService {
             primaryPhoneMasked: protectedPhone.masked,
             primaryPhoneFingerprint: protectedPhone.fingerprint,
           });
-        } else if (!partial) {
+        } else {
           Object.assign(data, {
             primaryPhoneEncrypted: null,
             primaryPhoneEncryptionIv: null,

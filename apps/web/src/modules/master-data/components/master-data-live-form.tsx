@@ -35,6 +35,7 @@ import {
   type MasterDataManifestFileChange,
 } from '../api/client';
 import { getMasterDataFormFields } from '../model/form-fields';
+import { supplierEditValues } from '../model/supplier-phone-draft';
 import { validateMasterDataDraft } from '../model/validation';
 import { getReferenceFieldConfig } from '../model/reference-fields';
 import { MasterDataClearableField } from './master-data-clearable-field';
@@ -164,6 +165,7 @@ function GenericMasterDataLiveForm({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [logoChange, setLogoChange] = useState<MasterDataLogoChange>();
   const [saving, setSaving] = useState(false);
+  const [supplierPhoneTouched, setSupplierPhoneTouched] = useState(false);
   const readonly = mode === 'view';
   const focusRestore = useMasterDataDialogFocusRestore();
 
@@ -184,7 +186,12 @@ function GenericMasterDataLiveForm({
     }
     setSaving(true);
     try {
-      await onPersist(result.values, logoChange);
+      await onPersist(
+        definition.key === 'suppliers' && mode === 'edit'
+          ? supplierEditValues(result.values, supplierPhoneTouched)
+          : result.values,
+        logoChange,
+      );
     } catch (error) {
       setErrors({
         form:
@@ -288,7 +295,12 @@ function GenericMasterDataLiveForm({
                 definition.key,
                 field.key,
               );
-              const updateValue = (value: string) =>
+              const updateValue = (value: string) => {
+                if (
+                  definition.key === 'suppliers' &&
+                  field.key === 'primaryPhone'
+                )
+                  setSupplierPhoneTouched(true);
                 setValues((current) => ({
                   ...current,
                   [field.key]: value,
@@ -302,6 +314,7 @@ function GenericMasterDataLiveForm({
                         : {}
                     : {}),
                 }));
+              };
               const canManage =
                 (((definition.key === 'suppliers' ||
                   definition.key === 'brokers') &&
@@ -496,6 +509,34 @@ function GenericMasterDataLiveForm({
                   ) : (
                     control
                   )}
+                  {definition.key === 'suppliers' &&
+                  field.key === 'primaryPhone' &&
+                  mode === 'edit' &&
+                  record?.attributes.primaryPhoneMasked ? (
+                    <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                      {supplierPhoneTouched ? (
+                        <span>
+                          {values.primaryPhone
+                            ? 'شمارهٔ جدید پس از ذخیره جایگزین می‌شود.'
+                            : 'شمارهٔ فعلی پس از ذخیره پاک می‌شود.'}
+                        </span>
+                      ) : (
+                        <>
+                          <span>
+                            شمارهٔ فعلی:{' '}
+                            {String(record.attributes.primaryPhoneMasked)}
+                          </span>
+                          <Button
+                            onClick={() => updateValue('')}
+                            type="button"
+                            variant="outline"
+                          >
+                            پاک‌کردن شمارهٔ ثبت‌شده
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  ) : null}
                 </FormField>
               );
             })}
