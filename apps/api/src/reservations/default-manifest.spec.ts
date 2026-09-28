@@ -1,3 +1,7 @@
+import type { ExecutionContext } from '@nestjs/common';
+import { Test } from '@nestjs/testing';
+import request, { type Response as SupertestResponse } from 'supertest';
+import { AuthGuard } from '../iam/auth.guard';
 import type { SalesServiceInput } from '@nora/contracts';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -9,7 +13,10 @@ import {
   defaultManifestAge,
   type DefaultManifestRow,
 } from './default-manifest';
-import { ReservationManifestService } from './reservation-manifest';
+import {
+  ReservationManifestBatchController,
+  ReservationManifestService,
+} from './reservation-manifest';
 
 const actor = {
   userId: 'user',
@@ -151,6 +158,55 @@ function fixture(
 }
 
 describe('default ticket manifest', () => {
+  it('serves a downloadable binary workbook through the real HTTP ticket route', async () => {
+    const f = fixture();
+    const module = await Test.createTestingModule({
+      controllers: [ReservationManifestBatchController],
+      providers: [{ provide: ReservationManifestService, useValue: f.service }],
+    })
+      .overrideGuard(AuthGuard)
+      .useValue({
+        canActivate(context: ExecutionContext) {
+          context.switchToHttp().getRequest().actor = actor;
+          return true;
+        },
+      })
+      .compile();
+    const app = module.createNestApplication();
+    app.setGlobalPrefix('api/v1');
+    await app.init();
+    try {
+      const response = await request(app.getHttpServer())
+        .post('/api/v1/reservations/manifests/tickets/offer.xlsx')
+        .set('Idempotency-Key', 'synthetic-http-download')
+        .send(range)
+        .buffer(true)
+        .parse(
+          (
+            stream: SupertestResponse,
+            done: (error: Error | null, body?: Buffer) => void,
+          ) => {
+            const chunks: Buffer[] = [];
+            stream.on('data', (chunk: Buffer) => chunks.push(chunk));
+            stream.on('end', () => done(null, Buffer.concat(chunks)));
+            stream.on('error', done);
+          },
+        )
+        .expect(201);
+      expect(response.headers['content-type']).toContain(
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      );
+      expect(response.headers['content-disposition']).toMatch(
+        /^attachment; filename=".*\.xlsx"$/,
+      );
+      expect(response.headers['x-nora-manifest-contracts']).toBe('1');
+      expect(response.headers['x-nora-manifest-passengers']).toBe('1');
+      expect(Buffer.isBuffer(response.body)).toBe(true);
+      expect(sheet(response.body)).toContain('SC-SYNTHETIC');
+    } finally {
+      await app.close();
+    }
+  }, 30000);
   it('exports domestic names and national ID without requiring passport details, and only assigned passengers', async () => {
     const f = fixture();
     const result = await f.service.exportTicket('offer', range, 'key', actor);
@@ -377,6 +433,61 @@ describe('default ticket manifest', () => {
     ).rejects.toThrow('تأیید مالی');
     expect(f.customers.detail).not.toHaveBeenCalled();
     expect(f.documents.readManifestTemplateReference).not.toHaveBeenCalled();
+  });
+
+  it('counts only financially approved contracts and exports only their passengers', async () => {
+    const f = fixture();
+    const first = await f.workflow.detail();
+    const pending = {
+      ...first,
+      id: 'pending-intake',
+      contractId: 'pending-contract',
+      snapshot: { ...first.snapshot, contractNumber: 'PENDING-CONTRACT' },
+    };
+    f.database.client.reservationIntake.findMany.mockResolvedValue([
+      first,
+      pending,
+    ] as never);
+    f.finance.readCustomerContract.mockImplementation(async (id: string) => ({
+      approved: id === 'contract',
+    }));
+    const [card] = await f.service.listTickets(range, actor);
+    expect(card).toMatchObject({ contractCount: 1, passengerCount: 1 });
+    const result = await f.service.exportTicket(
+      'offer',
+      range,
+      'mixed-finance',
+      actor,
+    );
+    expect(result).toMatchObject({
+      contractCount: 1,
+      passengerCount: 1,
+      skippedFinanceCount: 1,
+    });
+    expect(sheet(result.bytes)).not.toContain('PENDING-CONTRACT');
+    expect(f.workflow.detail).toHaveBeenCalledWith('intake', ['branch']);
+    expect(f.workflow.detail).not.toHaveBeenCalledWith('pending-intake', [
+      'branch',
+    ]);
+  });
+
+  it('disables a ticket with no approved contracts and excludes expired approvals', async () => {
+    const f = fixture();
+    f.finance.readCustomerContract.mockResolvedValue({ approved: false });
+    expect((await f.service.listTickets(range, actor))[0]).toMatchObject({
+      contractCount: 0,
+      passengerCount: 0,
+      template: null,
+      unavailableReason: expect.stringContaining('تأیید مالی'),
+    });
+    f.finance.readCustomerContract.mockResolvedValue({
+      approved: true,
+      exceptionExpiresAt: '2000-01-01T00:00:00Z',
+    } as never);
+    await expect(
+      f.service.exportTicket('offer', range, 'expired', actor),
+    ).rejects.toThrow('تأیید مالی');
+    expect(f.customers.detail).not.toHaveBeenCalled();
   });
 
   it('uses the explicitly chosen clean workbook through Documents', async () => {

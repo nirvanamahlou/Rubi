@@ -2,6 +2,10 @@
 
 Unified one-way/round-trip pricing list, combined origin/destination/trip/date/search filters and per-ticket target commission fields are implemented. Copy is atomic and applies only that target to priced future tickets/pairs of the same branch; exact Decimal net fares recalculate after base changes. Additive optional contracts preserve older clients and legacy absolute partner fares. All 100 migrations passed in a fresh isolated database. Validation: 21 API tests (including 4 real PostgreSQL regressions), 11 Web tests, scoped lint, API/Web strict typechecks and production builds (53 Web routes) passed. Populated rendering verifies the pair/single list, saved percentages and target net values. The browser preview could not attach, so authenticated interactive visual QA is not claimed. The owner-authorized develop merge follows integration of current Manifest/Finance changes. Operational data and running localhost remain unchanged. See [task handoff](tasks/TICKET-CHANNEL-PRICES-0928.md).
 
+# 2026-09-28 — MANIFEST-DOWNLOAD-FINANCE-0928 — PC-A
+
+رفع دانلود خاموش منیفست روی HTTP شبکه با fallback شناسه درخواست، کلید مستقل برای بازیابی خروجی قبلی، نمایش خطا کنار بلیط و لینک مستقیم دریافت فایل. شمارش کارت و خروجی فقط قراردادهای دارای تأیید مالی معتبر را شامل می‌شوند و تأیید هنگام خروجی مجدداً کنترل می‌شود. ۲۸ تست API شامل مسیر واقعی HTTP و فایل باینری، ۶ تست Web، build هر دو بخش و lint موفق‌اند؛ بدون Migration یا Dependency. جزئیات: docs/tasks/MANIFEST-DOWNLOAD-FINANCE-0928.md. تغییرات اصلی کاربر محفوظ‌اند؛ نشست مرورگر روی صفحه ورود است و کلیک احراز‌شدهٔ کاربر بررسی نشده است.
+
 ## TICKET-SUPPLY-REPEAT-0928 — PC-A — 2026-09-28
 
 - سه گزینه تامین قابل انتخاب: شناوری، ظرفیت شرکت و API. مقادیر ذخیره‌شده قدیمی allotment/charter حفظ و در رابط با عنوان شناوری خوانده می‌شوند؛ قرارداد دامنه تغییر نمی‌کند. انتخاب API نوع تامین است و اتصال خودکار به تامین‌کننده خارجی ایجاد نمی‌کند.
