@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { useRouteAccess } from '@/modules/iam/access-context';
 import dynamic from 'next/dynamic';
 import { Plus, RefreshCw } from 'lucide-react';
 import { getHrResource, type HrRecordDto } from '@nora/contracts';
@@ -37,14 +38,16 @@ import { parseSavedHrFilter } from './hr-filters';
 
 export { sourceForRecord } from './hr-record-source';
 
-export function HrUnifiedSection({
+function AccessibleHrSection({
   section,
   initialTab,
   store,
   onForm,
   onSelect,
   embedded = false,
+  permittedGroups,
 }: {
+  permittedGroups: HrGroup[];
   embedded?: boolean;
   section: HrSectionId;
   initialTab?: string | undefined;
@@ -52,19 +55,7 @@ export function HrUnifiedSection({
   onForm: (target: HrFormTarget) => void;
   onSelect: (record: HrRecordDto, source: HrSource) => void;
 }) {
-  const fallback: HrGroup[] = [
-    {
-      id: 'records',
-      label: screenMeta[section].title,
-      sources: (sectionTabs[section] ?? []).map((tab) => ({
-        section,
-        tab: tab.id,
-        label: tab.label,
-        action: `افزودن ${tab.label}`,
-      })),
-    },
-  ];
-  const groups = hrGroups[section] ?? fallback;
+  const groups = permittedGroups;
   const first = resolveHrGroup(
     groups,
     initialTab === 'roster' ? 'shift' : initialTab,
@@ -615,5 +606,47 @@ export function HrUnifiedSection({
         />
       ) : null}
     </div>
+  );
+}
+
+export function HrUnifiedSection(
+  props: Omit<Parameters<typeof AccessibleHrSection>[0], 'permittedGroups'>,
+) {
+  const allowed = useRouteAccess();
+  const section = props.section;
+  const fallback: HrGroup[] = [
+    {
+      id: 'records',
+      label: screenMeta[section].title,
+      sources: (sectionTabs[section] ?? []).map((tab) => ({
+        section,
+        tab: tab.id,
+        label: tab.label,
+        action: `افزودن ${tab.label}`,
+      })),
+    },
+  ];
+  const groups = (hrGroups[section] ?? fallback)
+    .map((group) => ({
+      ...group,
+      sources: group.sources.filter((source) =>
+        allowed(`/hr?section=${source.section}&tab=${source.tab}`),
+      ),
+    }))
+    .filter((group) => group.sources.length > 0);
+  if (!groups.length)
+    return <p role="alert">دسترسی به زیربخش‌های این صفحه فعال نیست.</p>;
+  return (
+    <AccessibleHrSection
+      key={groups
+        .map((group) =>
+          group.sources
+            .map((source) => source.section + '.' + source.tab)
+            .join(','),
+        )
+        .join('|')}
+      {...props}
+      permittedGroups={groups}
+    />
   );
 }

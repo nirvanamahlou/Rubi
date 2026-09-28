@@ -16,7 +16,7 @@ import {
   LoaderCircle,
   type LucideIcon,
 } from 'lucide-react';
-import Link from 'next/link';
+import Link from '@/components/access-link';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import type {

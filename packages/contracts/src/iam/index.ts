@@ -1,3 +1,4 @@
+export * from './user-access';
 import { HR_PERMISSION_CODES } from '../hr';
 import { PROCUREMENT_PERMISSION_CODES } from '../procurement';
 import { CUSTOMER_AFFAIRS_PERMISSIONS } from '../customer-affairs';
@@ -5,7 +6,7 @@ import { PACKAGE_PRICING_PERMISSION_CODES } from '../package-pricing';
 import { MARKETING_PERMISSION_CODES } from '../marketing';
 import { SYSTEM_PERMISSION_CODES } from '../system-management';
 
-export const IAM_PERMISSION_CONTRACT_VERSION = 11 as const;
+export const IAM_PERMISSION_CONTRACT_VERSION = 12 as const;
 export const IAM_STEP_UP_CONTRACT_VERSION = 1 as const;
 
 export const IAM_CORE_PERMISSION_CODES = [
@@ -145,7 +146,8 @@ export const IAM_PERMISSION_CODES = [
   'reservations.arrangements.update',
 ] as const;
 
-export type IamPermissionCode = (typeof IAM_PERMISSION_CODES)[number];
+export type IamPermissionCode =
+  (typeof IAM_PERMISSION_CODES)[number] | 'ui.profile' | `ui.screen.${string}`;
 
 export interface AuthenticatedActor {
   userId: string;
