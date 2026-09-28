@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import type {
   BranchReference,
   MasterDataRecord,
@@ -92,6 +93,7 @@ export function TourWorkspace({
 }: {
   mode?: 'definition' | 'departures';
 }) {
+  const router = useRouter();
   const [packages, setPackages] = useState<TourPackageV1[]>([]);
   const [departures, setDepartures] = useState<TourDepartureV1[]>([]);
   const [branches, setBranches] = useState<BranchReference[]>([]);
@@ -182,12 +184,16 @@ export function TourWorkspace({
       setBranches(session.user.branches);
       if (session.user.branches.length === 1)
         setBranch(session.user.branches[0]!.id);
-    })().catch((error: unknown) => {
-      if (!cancelled)
-        setProblem(
-          error instanceof Error ? error.message : 'بارگذاری ناموفق بود.',
-        );
-    }).finally(() => { if (!cancelled) setLoading(false); });
+    })()
+      .catch((error: unknown) => {
+        if (!cancelled)
+          setProblem(
+            error instanceof Error ? error.message : 'بارگذاری ناموفق بود.',
+          );
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
     return () => {
       cancelled = true;
     };
@@ -297,28 +303,53 @@ export function TourWorkspace({
 
   const showEditor = (item?: TourPackageV1) => {
     setEditing(item);
-    setDraft(item ? { name: item.name, originId: item.originId, destinationId: item.destinationId,
-      hotelIds: [...item.hotelIds], transferOutbound: item.transferOutbound,
-      transferReturn: item.transferReturn, visa: item.visa,
-      ...(item.insuranceId ? { insuranceId: item.insuranceId } : {}),
-      ...(item.details ? { details: structuredClone(item.details) } : {}) } : { ...emptyPackage, hotelIds: [] });
+    setDraft(
+      item
+        ? {
+            name: item.name,
+            originId: item.originId,
+            destinationId: item.destinationId,
+            hotelIds: [...item.hotelIds],
+            transferOutbound: item.transferOutbound,
+            transferReturn: item.transferReturn,
+            visa: item.visa,
+            ...(item.insuranceId ? { insuranceId: item.insuranceId } : {}),
+            ...(item.details ? { details: structuredClone(item.details) } : {}),
+          }
+        : { ...emptyPackage, hotelIds: [] },
+    );
     if (item) setBranch(item.branchId);
     setCreating(true);
-    requestAnimationFrame(() => editorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+    requestAnimationFrame(() =>
+      editorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }),
+    );
   };
   const selectTour = (item: TourPackageV1) => {
-    if (mode === 'definition') { window.location.assign('/sales/pricing'); return; }
+    if (mode === 'definition') {
+      router.push('/sales/pricing');
+      return;
+    }
     setSelected(item.id);
     resetTickets();
-    requestAnimationFrame(() => departureRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+    requestAnimationFrame(() =>
+      departureRef.current?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      }),
+    );
   };
   const repeatTour = (item: TourDepartureV1) => {
-    if (mode === 'definition') { window.location.assign('/sales/pricing'); return; }
+    if (mode === 'definition') {
+      router.push('/sales/pricing');
+      return;
+    }
     selectTour(item.package);
     setRepeatSource(item);
     setDates({ start: shiftWeek(item.startsOn), end: shiftWeek(item.endsOn) });
     setRoundtrip(Boolean(item.returning));
-    setNotice('تاریخ‌ها یک هفته جلو رفتند؛ بلیت‌های تاریخ جدید را انتخاب کنید.');
+    setNotice(
+      'تاریخ‌ها یک هفته جلو رفتند؛ بلیت‌های تاریخ جدید را انتخاب کنید.',
+    );
   };
   return (
     <div className="space-y-5" dir="rtl">
@@ -336,12 +367,21 @@ export function TourWorkspace({
           </p>
         </div>
         {mode === 'definition' ? (
-          <Button size="sm" disabled={busy || loading} onClick={() => showEditor()}>تعریف تور جدید</Button>
+          <Button
+            size="sm"
+            disabled={busy || loading}
+            onClick={() => showEditor()}
+          >
+            تعریف تور جدید
+          </Button>
         ) : null}
         <Button
           variant="outline"
           disabled={busy}
-          onClick={() => { setLoading(true); setReload((value) => value + 1); }}
+          onClick={() => {
+            setLoading(true);
+            setReload((value) => value + 1);
+          }}
         >
           به‌روزرسانی
         </Button>
@@ -359,436 +399,492 @@ export function TourWorkspace({
           {notice}
         </p>
       )}
-      <TourOverview packages={packages} departures={departures} cities={references.cities}
-        loading={loading} busy={busy || loading} onEdit={showEditor} onSelect={selectTour} onRepeat={repeatTour} definitionMode={mode === 'definition'} />
+      <TourOverview
+        packages={packages}
+        departures={departures}
+        cities={references.cities}
+        loading={loading}
+        busy={busy || loading}
+        onEdit={showEditor}
+        onSelect={selectTour}
+        onRepeat={repeatTour}
+        definitionMode={mode === 'definition'}
+      />
       {creating && (
-        <div ref={editorRef} className="scroll-mt-6"><Card className="space-y-4 p-5">
-          <div className="flex items-center justify-between gap-3"><h3 className="font-bold">{editing ? `ویرایش تور: ${editing.name}` : 'تعریف تور جدید'}</h3><Button variant="outline" disabled={busy} onClick={() => { setCreating(false); setEditing(undefined); }}>انصراف</Button></div>
-          {editing && <p className="text-sm text-muted-foreground">نام و مشخصات تور قابل ویرایش است؛ تغییر مسیر و خدمات تور دارای نوبت ثبت‌شده نیازمند تعریف تور جدید است.</p>}
-          <fieldset
-            disabled={busy}
-            className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4 [&_input:not([type=checkbox])]:h-9 [&_button[role=combobox]]:h-9"
-          >
-            <FormField id="tour-name" label="عنوان تور">
-              <Input
-                id="tour-name"
-                value={draft.name}
-                onChange={(event) =>
-                  setDraft({ ...draft, name: event.target.value })
+        <div ref={editorRef} className="scroll-mt-6">
+          <Card className="space-y-4 p-5">
+            <div className="flex items-center justify-between gap-3">
+              <h3 className="font-bold">
+                {editing ? `ویرایش تور: ${editing.name}` : 'تعریف تور جدید'}
+              </h3>
+              <Button
+                variant="outline"
+                disabled={busy}
+                onClick={() => {
+                  setCreating(false);
+                  setEditing(undefined);
+                }}
+              >
+                انصراف
+              </Button>
+            </div>
+            {editing && (
+              <p className="text-sm text-muted-foreground">
+                نام و مشخصات تور قابل ویرایش است؛ تغییر مسیر و خدمات تور دارای
+                نوبت ثبت‌شده نیازمند تعریف تور جدید است.
+              </p>
+            )}
+            <fieldset
+              disabled={busy}
+              className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4 [&_input:not([type=checkbox])]:h-9 [&_button[role=combobox]]:h-9"
+            >
+              <FormField id="tour-name" label="عنوان تور">
+                <Input
+                  id="tour-name"
+                  value={draft.name}
+                  onChange={(event) =>
+                    setDraft({ ...draft, name: event.target.value })
+                  }
+                />
+              </FormField>
+              <Choice
+                label="شعبه"
+                value={branch}
+                options={branches}
+                onChange={(value) => {
+                  if (!editing) setBranch(value);
+                }}
+              />
+              <Choice
+                label="شهر مبدأ"
+                value={draft.originId}
+                options={references.cities}
+                onChange={(originId) => {
+                  const details = {
+                    ...(draft.details ?? { version: 1 as const }),
+                  };
+                  delete details.originAirportCode;
+                  setDraft({ ...draft, originId, details });
+                }}
+              />
+              <Choice
+                label="شهر مقصد"
+                value={draft.destinationId}
+                options={references.cities}
+                onChange={(destinationId) =>
+                  setDraft({ ...draft, destinationId, hotelIds: [] })
                 }
               />
-            </FormField>
-            <Choice
-              label="شعبه"
-              value={branch}
-              options={branches}
-              onChange={(value) => { if (!editing) setBranch(value); }}
-            />
-            <Choice
-              label="شهر مبدأ"
-              value={draft.originId}
-              options={references.cities}
-              onChange={(originId) => {
-                const details = {
-                  ...(draft.details ?? { version: 1 as const }),
-                };
-                delete details.originAirportCode;
-                setDraft({ ...draft, originId, details });
-              }}
-            />
-            <Choice
-              label="شهر مقصد"
-              value={draft.destinationId}
-              options={references.cities}
-              onChange={(destinationId) =>
-                setDraft({ ...draft, destinationId, hotelIds: [] })
-              }
-            />
-            <Choice
-              label="بیمه همراه تور"
-              value={draft.insuranceId ?? 'none'}
-              options={[
-                { id: 'none', name: 'بدون بیمه' },
-                ...references.insurance,
-              ]}
-              onChange={(insuranceId) =>
-                setDraft((current) => {
-                  const next = { ...current };
-                  if (insuranceId === 'none') delete next.insuranceId;
-                  else next.insuranceId = insuranceId;
-                  return next;
-                })
-              }
-            />
-            <div className="flex flex-wrap items-center gap-3 text-xs sm:col-span-2 lg:col-span-3">
-              {(
-                [
-                  ['transferOutbound', 'ترانسفر رفت'],
-                  ['transferReturn', 'ترانسفر برگشت'],
-                  ['visa', 'ویزا'],
-                ] as const
-              ).map(([key, label]) => (
-                <label key={key} className="flex gap-2">
-                  <input
-                    type="checkbox"
-                    checked={draft[key]}
-                    onChange={(event) =>
-                      setDraft({ ...draft, [key]: event.target.checked })
-                    }
-                  />
-                  {label}
-                </label>
-              ))}
-            </div>
-            <TourDetailsForm
-              value={draft.details ?? { version: 1 }}
-              onChange={(details) => setDraft({ ...draft, details })}
-              airlines={references.airlines}
-              airports={references.airports.filter(
-                (airport) => airport.attributes.cityId === draft.originId,
-              )}
-              branches={branches}
-              branchId={branch}
-            />
-            <Button
-              className="col-span-full justify-self-end"
-              size="sm"
-              disabled={!branch}
-              onClick={() =>
-                void run(async () => {
-                  const result = editing
-                    ? await toursApi.updatePackage(editing.id, draft, editing.version, editing.branchId)
-                    : await toursApi.createPackage(draft, branch, keyFor('package', draft));
-                  setSelected(result.data.id);
-                  setCreating(false);
-                  setDraft(emptyPackage);
-                  setEditing(undefined);
-                  resetTickets();
-                  setNotice(
-                    editing ? 'تغییرات تور ذخیره شد.' : 'تور و خدمات آن ذخیره شد. نوبت برگزاری، بلیط‌ها و هتل‌های بازه را در مدیریت قیمت پکیج ثبت کنید.',
-                  );
-                })
-              }
-            >
-              {editing ? 'ذخیره تغییرات تور' : 'ذخیره تعریف تور'}
-            </Button>
-          </fieldset>
-        </Card></div>
-      )}
-      {mode === 'departures' && <div ref={departureRef} className="scroll-mt-6"><Card className="space-y-4 p-5">
-        <h3 className="font-bold">نوبت برگزاری و بلیط‌ها</h3>
-        <fieldset disabled={busy} className="space-y-4">
-          <Choice
-            label="تور"
-            value={selected}
-            options={packages}
-            onChange={(id) => {
-              setSelected(id);
-              resetTickets();
-            }}
-          />
-          {pack && (
-            <>
-              {pack.details && (
-                <details className="rounded-xl border bg-primary/5 p-4">
-                  <summary className="cursor-pointer font-semibold">
-                    مشخصات و برنامه سفر {pack.name}
-                  </summary>
-                  <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                    {[
-                      ['خلاصه', pack.details.summary],
-                      ['معرفی', pack.details.description],
-                      ['مدارک لازم', pack.details.requiredDocuments],
-                      ['خدمات', pack.details.services],
-                      ['شرایط اقساط', pack.details.installmentTerms],
-                      ['قوانین استرداد', pack.details.refundRules],
-                      ['مدت سفر (روز)', pack.details.durationDays],
-                      ['امتیاز', pack.details.rating],
-                      ['مبدأ فرودگاهی', pack.details.originAirportCode],
-                      ['ایرلاین', pack.details.airlineName],
-                      [
-                        'قیمت پایه',
-                        pack.details.basePrice
-                          ? `${pack.details.basePrice.amount} ${pack.details.basePrice.currency}`
-                          : undefined,
-                      ],
-                      [
-                        'هزینه جداگانه پرواز',
-                        pack.details.flightPrice
-                          ? `${pack.details.flightPrice.amount} ${pack.details.flightPrice.currency}`
-                          : undefined,
-                      ],
-                    ].map(
-                      ([label, value]) =>
-                        value !== undefined && (
-                          <div key={String(label)}>
-                            <b>{label}: </b>
-                            <span className="whitespace-pre-wrap">{value}</span>
-                          </div>
-                        ),
-                    )}
-                  </div>
-                  <ol className="mt-4 space-y-2">
-                    {pack.details.itinerary?.map((step, index) => (
-                      <li
-                        key={index}
-                        className="rounded-lg border bg-surface p-3"
-                      >
-                        <b>
-                          مرحله {index + 1}: {step.title}
-                        </b>
-                        <div className="flex flex-wrap gap-3 text-sm">
-                          <span>{step.location}</span>
-                          {step.startTime && (
-                            <span>
-                              شروع: <bdi>{step.startTime}</bdi>
-                            </span>
-                          )}
-                          {step.stayDays !== undefined && (
-                            <span>اقامت: {step.stayDays} روز</span>
-                          )}
-                          {step.durationMinutes !== undefined && (
-                            <span>{step.durationMinutes} دقیقه</span>
-                          )}
-                          <span>{step.transport}</span>
-                          <span>{step.cabinClass}</span>
-                          {step.baggageKg !== undefined && (
-                            <span>بار: {step.baggageKg} کیلوگرم</span>
-                          )}
-                        </div>
-                        <p className="whitespace-pre-wrap text-sm">
-                          {step.description}
-                        </p>
-                      </li>
-                    ))}
-                  </ol>
-                  {pack.details.imageDocumentId && (
-                    <a
-                      className="mt-3 block text-primary underline"
-                      target="_blank"
-                      rel="noreferrer"
-                      href={`/documents?document=${encodeURIComponent(pack.details.imageDocumentId)}`}
-                    >
-                      مشاهده تصویر تور در آرشیو
-                    </a>
-                  )}
-                </details>
-              )}
-              <div className="grid gap-4 sm:grid-cols-2">
-                <FormField label="روز شروع">
-                  <TicketDatePicker
-                    value={dates.start}
-                    onChange={(start) => {
-                      const next = { ...dates, start };
-                      setDates(next);
-                      setProblem(
-                        next.end && next.end < next.start
-                          ? 'روز پایان باید برابر یا بعد از روز شروع باشد.'
-                          : '',
-                      );
-                      resetTickets();
-                    }}
-                  />
-                </FormField>
-                <FormField label="روز پایان">
-                  <TicketDatePicker
-                    value={dates.end}
-                    onChange={(end) => {
-                      const next = { ...dates, end };
-                      setDates(next);
-                      setProblem(
-                        next.start && next.end < next.start
-                          ? 'روز پایان باید برابر یا بعد از روز شروع باشد.'
-                          : '',
-                      );
-                      resetTickets();
-                    }}
-                  />
-                </FormField>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                فقط بلیت‌هایی نمایش داده می‌شوند که تاریخ حرکتشان از روز شروع تا
-                روز پایان این نوبت باشد.
-              </p>
-              <label className="flex gap-2">
-                <input
-                  type="checkbox"
-                  checked={roundtrip}
-                  onChange={(event) => {
-                    setRoundtrip(event.target.checked);
-                    resetTickets();
-                  }}
-                />
-                تور بلیط برگشت هم دارد
-              </label>
-              <div className="grid gap-4 sm:grid-cols-2">
+              <Choice
+                label="بیمه همراه تور"
+                value={draft.insuranceId ?? 'none'}
+                options={[
+                  { id: 'none', name: 'بدون بیمه' },
+                  ...references.insurance,
+                ]}
+                onChange={(insuranceId) =>
+                  setDraft((current) => {
+                    const next = { ...current };
+                    if (insuranceId === 'none') delete next.insuranceId;
+                    else next.insuranceId = insuranceId;
+                    return next;
+                  })
+                }
+              />
+              <div className="flex flex-wrap items-center gap-3 text-xs sm:col-span-2 lg:col-span-3">
                 {(
-                  ['out', ...(roundtrip ? ['back'] : [])] as ('out' | 'back')[]
-                ).map((direction) => (
-                  <div
-                    key={direction}
-                    className="space-y-3 rounded-xl border p-4"
-                  >
-                    <Choice
-                      label={direction === 'out' ? 'بلیط رفت' : 'بلیط برگشت'}
-                      value={direction === 'out' ? outbound : returning}
-                      options={offers[direction].map((offer) => ({
-                        id: offer.id,
-                        name: timeLabel(offer),
-                      }))}
-                      onChange={
-                        direction === 'out' ? setOutbound : setReturning
+                  [
+                    ['transferOutbound', 'ترانسفر رفت'],
+                    ['transferReturn', 'ترانسفر برگشت'],
+                    ['visa', 'ویزا'],
+                  ] as const
+                ).map(([key, label]) => (
+                  <label key={key} className="flex gap-2">
+                    <input
+                      type="checkbox"
+                      checked={draft[key]}
+                      onChange={(event) =>
+                        setDraft({ ...draft, [key]: event.target.checked })
                       }
                     />
-                    <Button
-                      variant="outline"
-                      onClick={() => newFlight(direction)}
-                    >
-                      تعریف بلیط برای این روز
-                    </Button>
-                    <p className="text-xs text-muted-foreground">
-                      بلیط جدید در فروش تکی هم قابل انتخاب است و ظرفیت مشترک
-                      دارد.
-                    </p>
-                  </div>
+                    {label}
+                  </label>
                 ))}
               </div>
-              {flight && (
-                <div className="space-y-3 rounded-xl bg-primary/5 p-4">
-                  <h4 className="font-bold">
-                    بلیط واقعی {flight.direction === 'out' ? 'رفت' : 'برگشت'} —
-                    زمان‌ها به وقت تهران
-                  </h4>
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <FormField id="tour-airline" label="نام ایرلاین">
-                      <Input
-                        id="tour-airline"
-                        value={flight.draft.carrierName}
-                        onChange={(event) =>
-                          patchFlight({ carrierName: event.target.value })
-                        }
-                      />
-                    </FormField>
-                    <FormField id="tour-flight-number" label="شماره پرواز">
-                      <Input
-                        id="tour-flight-number"
-                        value={flight.draft.serviceNumber}
-                        onChange={(event) =>
-                          patchFlight({ serviceNumber: event.target.value })
-                        }
-                      />
-                    </FormField>
-                    <FormField label="حرکت">
-                      <TicketDatePicker
-                        includeTime
-                        value={flight.draft.departureAt}
-                        onChange={(departureAt) => patchFlight({ departureAt })}
-                      />
-                    </FormField>
-                    <FormField label="رسیدن">
-                      <TicketDatePicker
-                        includeTime
-                        value={flight.draft.arrivalAt}
-                        onChange={(arrivalAt) => patchFlight({ arrivalAt })}
-                      />
-                    </FormField>
-                    <FormField
-                      id="tour-flight-capacity"
-                      label="ظرفیت خریداری‌شده"
-                    >
-                      <Input
-                        id="tour-flight-capacity"
-                        type="number"
-                        min={0}
-                        step={1}
-                        value={flight.draft.totalCapacity}
-                        onChange={(event) =>
-                          patchFlight({
-                            totalCapacity: Number(event.target.value),
-                          })
-                        }
-                      />
-                    </FormField>
-                    <Choice
-                      label="کلاس پرواز"
-                      value={flight.draft.cabinClassCode}
-                      options={[
-                        { id: 'ECONOMY', name: 'اکونومی' },
-                        { id: 'BUSINESS', name: 'بیزینس' },
-                        { id: 'FIRST', name: 'فرست' },
-                      ]}
-                      onChange={(value) =>
-                        patchFlight({
-                          cabinClassCode:
-                            value as TicketOfferCreateV1['cabinClassCode'],
-                        })
-                      }
-                    />
-                  </div>
-                  <Button
-                    onClick={() =>
-                      void run(async () => {
-                        const result = await toursApi.publishOffer(
-                          flight.draft,
-                          pack.branchId,
-                          keyFor('offer', flight.draft),
-                        );
-                        if (flight.direction === 'out')
-                          setOutbound(result.data.id);
-                        else setReturning(result.data.id);
-                        setFlight(undefined);
-                        setNotice(
-                          'بلیط واقعی ثبت شد؛ برای ذخیره نوبت تور تأیید نهایی را بزنید.',
-                        );
-                      })
-                    }
-                  >
-                    ثبت بلیط قابل فروش
-                  </Button>
-                </div>
-              )}
-              <p className="rounded-lg bg-primary/5 p-3 text-sm">
-                ظرفیت تور از بلیط‌ها محاسبه می‌شود؛ ثبت نوبت به‌تنهایی صندلی را
-                رزرو نمی‌کند. فروش تکی و تور از همان موجودی کم می‌شوند.
-              </p>
+              <TourDetailsForm
+                value={draft.details ?? { version: 1 }}
+                onChange={(details) => setDraft({ ...draft, details })}
+                airlines={references.airlines}
+                airports={references.airports.filter(
+                  (airport) => airport.attributes.cityId === draft.originId,
+                )}
+                branches={branches}
+                branchId={branch}
+              />
               <Button
-                disabled={
-                  !outbound ||
-                  (roundtrip && !returning) ||
-                  !dates.start ||
-                  !dates.end
-                }
+                className="col-span-full justify-self-end"
+                size="sm"
+                disabled={!branch}
                 onClick={() =>
                   void run(async () => {
-                    const input = {
-                      packageId: pack.id,
-                      packageVersion: pack.version,
-                      startsOn: dates.start,
-                      endsOn: dates.end,
-                      outboundOfferId: outbound,
-                      ...(roundtrip ? { returnOfferId: returning } : {}),
-                    };
-                    await toursApi.createDeparture(
-                      input,
-                      pack.branchId,
-                      keyFor('departure', input),
-                    );
-                    setNotice('نوبت تور ثبت شد.');
+                    const result = editing
+                      ? await toursApi.updatePackage(
+                          editing.id,
+                          draft,
+                          editing.version,
+                          editing.branchId,
+                        )
+                      : await toursApi.createPackage(
+                          draft,
+                          branch,
+                          keyFor('package', draft),
+                        );
+                    setSelected(result.data.id);
+                    setCreating(false);
+                    setDraft(emptyPackage);
+                    setEditing(undefined);
                     resetTickets();
+                    setNotice(
+                      editing
+                        ? 'تغییرات تور ذخیره شد.'
+                        : 'تور و خدمات آن ذخیره شد. نوبت برگزاری، بلیط‌ها و هتل‌های بازه را در مدیریت قیمت پکیج ثبت کنید.',
+                    );
                   })
                 }
               >
-                ثبت نوبت برگزاری
+                {editing ? 'ذخیره تغییرات تور' : 'ذخیره تعریف تور'}
               </Button>
-            </>
-          )}
-          {!packages.length && (
-            <p className="text-sm text-muted-foreground">
-              برای شروع، یک تعریف تور بسازید.
-            </p>
-          )}
-        </fieldset>
-      </Card></div>}
+            </fieldset>
+          </Card>
+        </div>
+      )}
+      {mode === 'departures' && (
+        <div ref={departureRef} className="scroll-mt-6">
+          <Card className="space-y-4 p-5">
+            <h3 className="font-bold">نوبت برگزاری و بلیط‌ها</h3>
+            <fieldset disabled={busy} className="space-y-4">
+              <Choice
+                label="تور"
+                value={selected}
+                options={packages}
+                onChange={(id) => {
+                  setSelected(id);
+                  resetTickets();
+                }}
+              />
+              {pack && (
+                <>
+                  {pack.details && (
+                    <details className="rounded-xl border bg-primary/5 p-4">
+                      <summary className="cursor-pointer font-semibold">
+                        مشخصات و برنامه سفر {pack.name}
+                      </summary>
+                      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                        {[
+                          ['خلاصه', pack.details.summary],
+                          ['معرفی', pack.details.description],
+                          ['مدارک لازم', pack.details.requiredDocuments],
+                          ['خدمات', pack.details.services],
+                          ['شرایط اقساط', pack.details.installmentTerms],
+                          ['قوانین استرداد', pack.details.refundRules],
+                          ['مدت سفر (روز)', pack.details.durationDays],
+                          ['امتیاز', pack.details.rating],
+                          ['مبدأ فرودگاهی', pack.details.originAirportCode],
+                          ['ایرلاین', pack.details.airlineName],
+                          [
+                            'قیمت پایه',
+                            pack.details.basePrice
+                              ? `${pack.details.basePrice.amount} ${pack.details.basePrice.currency}`
+                              : undefined,
+                          ],
+                          [
+                            'هزینه جداگانه پرواز',
+                            pack.details.flightPrice
+                              ? `${pack.details.flightPrice.amount} ${pack.details.flightPrice.currency}`
+                              : undefined,
+                          ],
+                        ].map(
+                          ([label, value]) =>
+                            value !== undefined && (
+                              <div key={String(label)}>
+                                <b>{label}: </b>
+                                <span className="whitespace-pre-wrap">
+                                  {value}
+                                </span>
+                              </div>
+                            ),
+                        )}
+                      </div>
+                      <ol className="mt-4 space-y-2">
+                        {pack.details.itinerary?.map((step, index) => (
+                          <li
+                            key={index}
+                            className="rounded-lg border bg-surface p-3"
+                          >
+                            <b>
+                              مرحله {index + 1}: {step.title}
+                            </b>
+                            <div className="flex flex-wrap gap-3 text-sm">
+                              <span>{step.location}</span>
+                              {step.startTime && (
+                                <span>
+                                  شروع: <bdi>{step.startTime}</bdi>
+                                </span>
+                              )}
+                              {step.stayDays !== undefined && (
+                                <span>اقامت: {step.stayDays} روز</span>
+                              )}
+                              {step.durationMinutes !== undefined && (
+                                <span>{step.durationMinutes} دقیقه</span>
+                              )}
+                              <span>{step.transport}</span>
+                              <span>{step.cabinClass}</span>
+                              {step.baggageKg !== undefined && (
+                                <span>بار: {step.baggageKg} کیلوگرم</span>
+                              )}
+                            </div>
+                            <p className="whitespace-pre-wrap text-sm">
+                              {step.description}
+                            </p>
+                          </li>
+                        ))}
+                      </ol>
+                      {pack.details.imageDocumentId && (
+                        <a
+                          className="mt-3 block text-primary underline"
+                          target="_blank"
+                          rel="noreferrer"
+                          href={`/documents?document=${encodeURIComponent(pack.details.imageDocumentId)}`}
+                        >
+                          مشاهده تصویر تور در آرشیو
+                        </a>
+                      )}
+                    </details>
+                  )}
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <FormField label="روز شروع">
+                      <TicketDatePicker
+                        value={dates.start}
+                        onChange={(start) => {
+                          const next = { ...dates, start };
+                          setDates(next);
+                          setProblem(
+                            next.end && next.end < next.start
+                              ? 'روز پایان باید برابر یا بعد از روز شروع باشد.'
+                              : '',
+                          );
+                          resetTickets();
+                        }}
+                      />
+                    </FormField>
+                    <FormField label="روز پایان">
+                      <TicketDatePicker
+                        value={dates.end}
+                        onChange={(end) => {
+                          const next = { ...dates, end };
+                          setDates(next);
+                          setProblem(
+                            next.start && next.end < next.start
+                              ? 'روز پایان باید برابر یا بعد از روز شروع باشد.'
+                              : '',
+                          );
+                          resetTickets();
+                        }}
+                      />
+                    </FormField>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    فقط بلیت‌هایی نمایش داده می‌شوند که تاریخ حرکتشان از روز
+                    شروع تا روز پایان این نوبت باشد.
+                  </p>
+                  <label className="flex gap-2">
+                    <input
+                      type="checkbox"
+                      checked={roundtrip}
+                      onChange={(event) => {
+                        setRoundtrip(event.target.checked);
+                        resetTickets();
+                      }}
+                    />
+                    تور بلیط برگشت هم دارد
+                  </label>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    {(
+                      ['out', ...(roundtrip ? ['back'] : [])] as (
+                        'out' | 'back'
+                      )[]
+                    ).map((direction) => (
+                      <div
+                        key={direction}
+                        className="space-y-3 rounded-xl border p-4"
+                      >
+                        <Choice
+                          label={
+                            direction === 'out' ? 'بلیط رفت' : 'بلیط برگشت'
+                          }
+                          value={direction === 'out' ? outbound : returning}
+                          options={offers[direction].map((offer) => ({
+                            id: offer.id,
+                            name: timeLabel(offer),
+                          }))}
+                          onChange={
+                            direction === 'out' ? setOutbound : setReturning
+                          }
+                        />
+                        <Button
+                          variant="outline"
+                          onClick={() => newFlight(direction)}
+                        >
+                          تعریف بلیط برای این روز
+                        </Button>
+                        <p className="text-xs text-muted-foreground">
+                          بلیط جدید در فروش تکی هم قابل انتخاب است و ظرفیت مشترک
+                          دارد.
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                  {flight && (
+                    <div className="space-y-3 rounded-xl bg-primary/5 p-4">
+                      <h4 className="font-bold">
+                        بلیط واقعی{' '}
+                        {flight.direction === 'out' ? 'رفت' : 'برگشت'} — زمان‌ها
+                        به وقت تهران
+                      </h4>
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <FormField id="tour-airline" label="نام ایرلاین">
+                          <Input
+                            id="tour-airline"
+                            value={flight.draft.carrierName}
+                            onChange={(event) =>
+                              patchFlight({ carrierName: event.target.value })
+                            }
+                          />
+                        </FormField>
+                        <FormField id="tour-flight-number" label="شماره پرواز">
+                          <Input
+                            id="tour-flight-number"
+                            value={flight.draft.serviceNumber}
+                            onChange={(event) =>
+                              patchFlight({ serviceNumber: event.target.value })
+                            }
+                          />
+                        </FormField>
+                        <FormField label="حرکت">
+                          <TicketDatePicker
+                            includeTime
+                            value={flight.draft.departureAt}
+                            onChange={(departureAt) =>
+                              patchFlight({ departureAt })
+                            }
+                          />
+                        </FormField>
+                        <FormField label="رسیدن">
+                          <TicketDatePicker
+                            includeTime
+                            value={flight.draft.arrivalAt}
+                            onChange={(arrivalAt) => patchFlight({ arrivalAt })}
+                          />
+                        </FormField>
+                        <FormField
+                          id="tour-flight-capacity"
+                          label="ظرفیت خریداری‌شده"
+                        >
+                          <Input
+                            id="tour-flight-capacity"
+                            type="number"
+                            min={0}
+                            step={1}
+                            value={flight.draft.totalCapacity}
+                            onChange={(event) =>
+                              patchFlight({
+                                totalCapacity: Number(event.target.value),
+                              })
+                            }
+                          />
+                        </FormField>
+                        <Choice
+                          label="کلاس پرواز"
+                          value={flight.draft.cabinClassCode}
+                          options={[
+                            { id: 'ECONOMY', name: 'اکونومی' },
+                            { id: 'BUSINESS', name: 'بیزینس' },
+                            { id: 'FIRST', name: 'فرست' },
+                          ]}
+                          onChange={(value) =>
+                            patchFlight({
+                              cabinClassCode:
+                                value as TicketOfferCreateV1['cabinClassCode'],
+                            })
+                          }
+                        />
+                      </div>
+                      <Button
+                        onClick={() =>
+                          void run(async () => {
+                            const result = await toursApi.publishOffer(
+                              flight.draft,
+                              pack.branchId,
+                              keyFor('offer', flight.draft),
+                            );
+                            if (flight.direction === 'out')
+                              setOutbound(result.data.id);
+                            else setReturning(result.data.id);
+                            setFlight(undefined);
+                            setNotice(
+                              'بلیط واقعی ثبت شد؛ برای ذخیره نوبت تور تأیید نهایی را بزنید.',
+                            );
+                          })
+                        }
+                      >
+                        ثبت بلیط قابل فروش
+                      </Button>
+                    </div>
+                  )}
+                  <p className="rounded-lg bg-primary/5 p-3 text-sm">
+                    ظرفیت تور از بلیط‌ها محاسبه می‌شود؛ ثبت نوبت به‌تنهایی صندلی
+                    را رزرو نمی‌کند. فروش تکی و تور از همان موجودی کم می‌شوند.
+                  </p>
+                  <Button
+                    disabled={
+                      !outbound ||
+                      (roundtrip && !returning) ||
+                      !dates.start ||
+                      !dates.end
+                    }
+                    onClick={() =>
+                      void run(async () => {
+                        const input = {
+                          packageId: pack.id,
+                          packageVersion: pack.version,
+                          startsOn: dates.start,
+                          endsOn: dates.end,
+                          outboundOfferId: outbound,
+                          ...(roundtrip ? { returnOfferId: returning } : {}),
+                        };
+                        await toursApi.createDeparture(
+                          input,
+                          pack.branchId,
+                          keyFor('departure', input),
+                        );
+                        setNotice('نوبت تور ثبت شد.');
+                        resetTickets();
+                      })
+                    }
+                  >
+                    ثبت نوبت برگزاری
+                  </Button>
+                </>
+              )}
+              {!packages.length && (
+                <p className="text-sm text-muted-foreground">
+                  برای شروع، یک تعریف تور بسازید.
+                </p>
+              )}
+            </fieldset>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }

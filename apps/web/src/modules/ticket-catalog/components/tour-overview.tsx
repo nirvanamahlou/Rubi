@@ -155,7 +155,7 @@ export function TourOverview({
           ).map(([key, label]) => (
             <Button
               key={key}
-              variant={view === key ? 'default' : 'outline'}
+              variant={view === key ? 'primary' : 'outline'}
               aria-pressed={view === key}
               onClick={() => setView(key)}
             >
@@ -247,9 +247,17 @@ export function TourOverview({
                     disabled={busy}
                     onClick={() => onRepeat(item)}
                   >
-                    {definitionMode ? 'مدیریت نوبت و قیمت' : 'تکرار برای هفته بعد'}
+                    {definitionMode
+                      ? 'مدیریت نوبت و قیمت'
+                      : 'تکرار برای هفته بعد'}
                   </Button>
-                  <Button asChild variant="outline"><a href={`/reservations/hotel-rates?tourDepartureId=${encodeURIComponent(item.id)}`}>هتل‌های این بازه</a></Button>
+                  <Button asChild variant="outline">
+                    <a
+                      href={`/reservations/hotel-rates?tourDepartureId=${encodeURIComponent(item.id)}`}
+                    >
+                      هتل‌های این بازه
+                    </a>
+                  </Button>
                 </div>
               </article>
             );
@@ -290,7 +298,10 @@ export function TourOverview({
                   {city(item.originId)} ← {city(item.destinationId)}
                 </p>
                 <p className="mt-2 text-xs text-muted-foreground">
-                  {number(item.hotelIds.length)} هتل{item.visa ? ' · ویزا' : ''}
+                  {item.hotelIds.length
+                    ? `${number(item.hotelIds.length)} هتل`
+                    : 'خدمات تور'}
+                  {item.visa ? ' · ویزا' : ''}
                   {item.insuranceId ? ' · بیمه' : ''}
                   {item.transferOutbound || item.transferReturn
                     ? ' · ترانسفر'
