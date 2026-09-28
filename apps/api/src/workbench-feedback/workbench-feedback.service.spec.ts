@@ -1,4 +1,8 @@
-import { ForbiddenException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
 import type { AuthenticatedActor } from '@nora/contracts';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -87,6 +91,16 @@ describe('WorkbenchFeedbackService', () => {
       ),
     ).rejects.toBeInstanceOf(ForbiddenException);
     expect(repository.create).not.toHaveBeenCalled();
+  });
+
+  it('rejects new feedback addressed outside human resources', async () => {
+    await expect(
+      service.create({ ...input, department: 'management' }, actor),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    expect(repository.create).not.toHaveBeenCalled();
+    expect(
+      hrDirectory.workbenchFeedbackRecipientUserIds,
+    ).not.toHaveBeenCalled();
   });
 
   it('routes an attachment through the narrow Documents owner boundary', async () => {

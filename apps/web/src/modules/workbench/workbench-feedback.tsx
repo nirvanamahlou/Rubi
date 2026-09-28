@@ -1,7 +1,6 @@
 'use client';
 import { useRef, useState } from 'react';
 import { MessageSquareText, Paperclip, Send, X } from 'lucide-react';
-import type { WorkbenchFeedbackDepartment } from '@nora/contracts';
 import {
   Alert,
   Button,
@@ -10,8 +9,6 @@ import {
   Input,
   Textarea,
 } from '@/components/ui';
-import { WorkbenchSelect } from './workbench-select';
-import { messageUnits } from './message-templates';
 import {
   uploadWorkbenchFeedbackFiles,
   workbenchFeedbackApi,
@@ -24,8 +21,6 @@ export function WorkbenchFeedback({
 }) {
   const [subject, setSubject] = useState('');
   const [body, setBody] = useState('');
-  const [department, setDepartment] =
-    useState<WorkbenchFeedbackDepartment>('management');
   const [anonymous, setAnonymous] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
   const [error, setError] = useState('');
@@ -36,7 +31,6 @@ export function WorkbenchFeedback({
   const reset = () => {
     setSubject('');
     setBody('');
-    setDepartment('management');
     setAnonymous(false);
     setFiles([]);
     setError('');
@@ -54,7 +48,7 @@ export function WorkbenchFeedback({
         <h2 className="font-bold">نظرسنجی و پیشنهادها</h2>
       </div>
       <p className="text-sm text-muted-foreground">
-        نظر، پیشنهاد یا موضوع موردنظر خود را برای واحد مربوط آماده کنید.
+        نظر، پیشنهاد یا موضوع موردنظر خود را برای منابع انسانی ارسال کنید.
       </p>
       <form
         className="space-y-4"
@@ -86,7 +80,7 @@ export function WorkbenchFeedback({
             const result = await workbenchFeedbackApi.send({
               id,
               branchId,
-              department,
+              department: 'hr',
               subject: normalizedSubject,
               body: normalizedBody,
               anonymous,
@@ -94,7 +88,7 @@ export function WorkbenchFeedback({
             });
             reset();
             setSuccess(
-              `نظر شما ثبت و برای واحد مقصد ارسال شد. کد پیگیری: ${result.data.trackingNumber}`,
+              `نظر شما ثبت و برای منابع انسانی ارسال شد. کد پیگیری: ${result.data.trackingNumber}`,
             );
           } catch (reason) {
             setError(
@@ -117,20 +111,12 @@ export function WorkbenchFeedback({
             placeholder="موضوع نظر یا پیشنهاد"
           />
         </label>
-        <label className="block space-y-2 text-sm font-semibold">
-          <span>واحد یا دپارتمان مقصد *</span>
-          <WorkbenchSelect
-            label="واحد مقصد نظرسنجی"
-            required
-            value={department}
-            onValueChange={(value) =>
-              setDepartment(value as WorkbenchFeedbackDepartment)
-            }
-            options={messageUnits
-              .filter((unit) => unit.id !== 'ai')
-              .map((unit) => ({ value: unit.id, label: unit.label }))}
-          />
-        </label>
+        <div className="space-y-2 text-sm font-semibold">
+          <span>واحد مقصد</span>
+          <div className="rounded-lg border border-border bg-background px-3 py-2 text-foreground">
+            منابع انسانی
+          </div>
+        </div>
         <label className="block space-y-2 text-sm font-semibold">
           <span>متن *</span>
           <Textarea
@@ -185,13 +171,24 @@ export function WorkbenchFeedback({
             {files.map((file, index) => (
               <li
                 key={`${file.name}-${index}`}
-                className="flex items-center justify-between gap-2 rounded-lg bg-muted/40 p-2 text-sm"
+                className="flex min-w-0 items-center gap-3 rounded-xl border border-border/70 bg-background/80 px-3 py-2 text-sm"
               >
-                <span className="min-w-0 break-all">{file.name}</span>
+                <Paperclip
+                  className="size-4 shrink-0 text-muted-foreground"
+                  aria-hidden="true"
+                />
+                <span
+                  className="min-w-0 flex-1 truncate text-start"
+                  title={file.name}
+                  dir="auto"
+                >
+                  {file.name}
+                </span>
                 <Button
                   type="button"
-                  variant="ghost"
+                  variant="outline"
                   size="sm"
+                  className="h-8 shrink-0 gap-1.5 border-destructive/30 px-2.5 text-destructive hover:bg-destructive/10 hover:text-destructive"
                   aria-label={`حذف فایل ${file.name}`}
                   onClick={() =>
                     setFiles((current) => current.filter((_, i) => i !== index))
