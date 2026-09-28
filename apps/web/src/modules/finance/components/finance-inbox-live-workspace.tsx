@@ -19,6 +19,7 @@ import {
   WalletCards,
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
+import { ticketPurchaseTotal } from '../model/ticket-purchase-total';
 import type {
   FinanceInboxItemV1,
   FinanceInboxSource,
@@ -127,6 +128,7 @@ export function FinanceInboxLiveWorkspace() {
   const [methods, setMethods] = useState<
     readonly FinancePaymentMethodOptionV1[]
   >([]);
+  const [methodsError, setMethodsError] = useState('');
   const [banks, setBanks] = useState<readonly FinanceBankOptionV1[]>([]);
   const [actionItem, setActionItem] = useState<FinanceInboxItemV1 | null>(null);
   const [actionKind, setActionKind] = useState<
@@ -163,18 +165,7 @@ export function FinanceInboxLiveWorkspace() {
   const loading = state?.revision !== revision;
   const data = loading ? null : state.data;
   const error = loading ? '' : state.error;
-  const ticketInvoice = useMemo(() => {
-    const seats = Number(ticketSeatCount);
-    const unit = Number(ticketUnitCost);
-    if (
-      !Number.isFinite(seats) ||
-      !Number.isFinite(unit) ||
-      seats < 1 ||
-      unit <= 0
-    )
-      return null;
-    return (seats * unit).toFixed(4).replace(/\.0+$/, '');
-  }, [ticketSeatCount, ticketUnitCost]);
+  const ticketInvoice = ticketPurchaseTotal(ticketSeatCount, ticketUnitCost);
 
   useEffect(() => {
     let active = true;
@@ -202,7 +193,21 @@ export function FinanceInboxLiveWorkspace() {
       if (!active) return;
       if (accountResult.status === 'fulfilled')
         setAccounts(accountResult.value);
-      if (methodResult.status === 'fulfilled') setMethods(methodResult.value);
+      if (methodResult.status === 'fulfilled') {
+        setMethods(methodResult.value);
+        setMethodsError(
+          methodResult.value.length
+            ? ''
+            : 'روش پرداخت خروجی فعالی تعریف نشده است؛ در اطلاعات پایه روش پرداخت را فعال کنید.',
+        );
+      } else {
+        setMethods([]);
+        setMethodsError(
+          methodResult.reason instanceof FinanceInboxApiError
+            ? methodResult.reason.message
+            : 'دریافت روش‌های پرداخت ناموفق بود.',
+        );
+      }
       if (bankResult.status === 'fulfilled') setBanks(bankResult.value);
     });
     return () => {
@@ -1191,21 +1196,37 @@ export function FinanceInboxLiveWorkspace() {
                 </label>
                 <label className="grid gap-2">
                   <span>روش پرداخت</span>
-                  <Select
+                  <select
+                    aria-label="روش پرداخت"
+                    required
+                    className="h-11 w-full rounded-xl border border-border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-primary/30"
                     value={paymentMethodId}
-                    onValueChange={setPaymentMethodId}
+                    onChange={(event) => setPaymentMethodId(event.target.value)}
                   >
-                    <SelectTrigger>
-                      <SelectValue placeholder="حواله، چک، نقد، پوز یا…" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {methods.map((method) => (
-                        <SelectItem key={method.id} value={method.id}>
-                          {method.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    <option value="" disabled>
+                      انتخاب روش پرداخت
+                    </option>
+                    {methods.map((method) => (
+                      <option key={method.id} value={method.id}>
+                        {method.name}
+                      </option>
+                    ))}
+                  </select>
+                  {methodsError ? (
+                    <span role="alert" className="text-sm text-destructive">
+                      {methodsError}
+                    </span>
+                  ) : null}
+                  {methodsError ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setRevision((value) => value + 1)}
+                    >
+                      دریافت مجدد روش‌های پرداخت
+                    </Button>
+                  ) : null}
                 </label>
                 <label className="grid gap-2">
                   <span>مبلغ این پرداخت</span>
@@ -1215,10 +1236,17 @@ export function FinanceInboxLiveWorkspace() {
                     onValueChange={setPaidAmount}
                   />
                   <small className="text-muted-foreground">
-                    مانده فعلی: {actionItem?.settlement?.remainingAmount ?? '—'}{' '}
+                    مانده فعلی:{' '}
+                    {actionItem?.settlement?.remainingAmount ??
+                      actionItem?.amount?.amount ??
+                      '—'}{' '}
                     {actionItem?.amount?.currencyCode}
                   </small>
                 </label>
+                <p className="text-sm text-muted-foreground">
+                  می‌توانید بخشی از مبلغ را پرداخت کنید و مانده را در پرداخت‌های
+                  بعدی ثبت کنید؛ پس از هر ثبت، مانده به‌روز می‌شود.
+                </p>
                 {actionItem?.amount?.currencyCode !== 'IRR' ? (
                   <label className="grid gap-2">
                     <span>نرخ روز ارز به ریال</span>

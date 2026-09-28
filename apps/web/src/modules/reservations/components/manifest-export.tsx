@@ -5,7 +5,7 @@ import type {
   ReservationManifestTicketCardV1,
   ReservationManifestTicketListV1,
 } from '@nora/contracts';
-import { ArrowLeft, Plane } from 'lucide-react';
+import { ArrowLeft, Plane, Bus, TrainFront } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
 import { refreshAuthenticatedSession } from '@/lib/auth-session';
@@ -23,14 +23,13 @@ function todayInTehran() {
   return part('year') + '-' + part('month') + '-' + part('day');
 }
 
-function dateTime(value: string) {
+function dateTime(value: string, timeKnown = true) {
   return new Intl.DateTimeFormat('fa-IR', {
     timeZone: 'Asia/Tehran',
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
+    ...(timeKnown ? ({ hour: '2-digit', minute: '2-digit' } as const) : {}),
   }).format(new Date(value));
 }
 
@@ -195,7 +194,10 @@ export function ManifestExport() {
       downloadFile(
         file,
         'manifest-' +
-          ticket.serviceNumber.replace(/[^A-Za-z0-9_-]/g, '_') +
+          (ticket.serviceNumber || ticket.transportType || 'FLIGHT').replace(
+            /[^A-Za-z0-9_-]/g,
+            '_',
+          ) +
           '-' +
           fromDate +
           '.xlsx',
@@ -223,14 +225,14 @@ export function ManifestExport() {
       <div>
         <strong>MANIFEST بلیط‌ها</strong>
         <p className="mt-1 text-sm text-muted-foreground">
-          بازه را انتخاب کنید، سپس روی بلیط موردنظر بزنید. خروجی با قالب
-          انتخاب‌شدهٔ بلیط ساخته می‌شود؛ بلیط‌های بدون قالب از «پیش‌فرض» استفاده
-          می‌کنند.
+          بازه را انتخاب کنید، سپس روی بلیط هوایی، اتوبوس یا قطار موردنظر بزنید.
+          خروجی با قالب انتخاب‌شدهٔ بلیط ساخته می‌شود؛ بلیط‌های بدون قالب از
+          «پیش‌فرض» استفاده می‌کنند.
         </p>
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="grid gap-2 text-sm font-medium">
-          از تاریخ پرواز
+          از تاریخ حرکت
           <DatePicker
             value={fromDate}
             onChange={setFromDate}
@@ -239,7 +241,7 @@ export function ManifestExport() {
           />
         </label>
         <label className="grid gap-2 text-sm font-medium">
-          تا تاریخ پرواز
+          تا تاریخ حرکت
           <DatePicker
             value={toDate}
             onChange={setToDate}
@@ -303,7 +305,13 @@ export function ManifestExport() {
                 <header className="flex items-start justify-between gap-2 border-b bg-muted/35 px-3 py-2">
                   <div className="flex min-w-0 items-center gap-2">
                     <span className="rounded-lg bg-cyan-100 p-1.5 text-cyan-800 dark:bg-cyan-950 dark:text-cyan-200">
-                      <Plane className="size-4" />
+                      {ticket.transportType === 'BUS' ? (
+                        <Bus className="size-4" />
+                      ) : ticket.transportType === 'TRAIN' ? (
+                        <TrainFront className="size-4" />
+                      ) : (
+                        <Plane className="size-4" />
+                      )}
                     </span>
                     <div className="min-w-0">
                       <h3 className="truncate font-bold">
@@ -313,7 +321,12 @@ export function ManifestExport() {
                         dir="ltr"
                         className="text-sm font-semibold text-muted-foreground"
                       >
-                        {ticket.serviceNumber}
+                        {ticket.serviceNumber ||
+                          (ticket.transportType === 'BUS'
+                            ? 'اتوبوس'
+                            : ticket.transportType === 'TRAIN'
+                              ? 'قطار'
+                              : '')}
                       </p>
                     </div>
                   </div>
@@ -335,13 +348,20 @@ export function ManifestExport() {
                       <span className="block text-xs text-muted-foreground">
                         حرکت
                       </span>
-                      {dateTime(ticket.departureAt)}
+                      {dateTime(
+                        ticket.departureAt,
+                        ticket.departureTimeKnown !== false,
+                      )}
                     </div>
                     <div className="rounded-lg bg-muted/50 px-2 py-1.5">
                       <span className="block text-xs text-muted-foreground">
                         رسیدن
                       </span>
-                      {dateTime(ticket.arrivalAt)}
+                      {ticket.transportType &&
+                      ticket.transportType !== 'FLIGHT' &&
+                      ticket.arrivalAt === ticket.departureAt
+                        ? 'ثبت نشده'
+                        : dateTime(ticket.arrivalAt)}
                     </div>
                   </div>
                   <p className="text-xs">
