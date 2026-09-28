@@ -3366,7 +3366,7 @@ function DashboardSidebar({
         <div className={cn('min-w-0', collapsed && 'sr-only')}>
           <h2
             id="dashboard-pages-title"
-            className="whitespace-nowrap text-sm font-black text-white"
+            className="whitespace-nowrap text-base font-black text-white"
           >
             ناوبری داشبورد
           </h2>
@@ -3398,21 +3398,21 @@ function DashboardSidebar({
       {collapsed ? (
         <div className="space-y-2 border-b border-border p-2">
           <Button
-            aria-label="نمایش صفحه‌های داشبورد"
+            aria-label="نمایش صفحه‌ها"
             className="size-10 w-full p-0"
             onClick={() => onPanelChange('workspace')}
             size="icon"
-            title="صفحه‌های داشبورد"
+            title="صفحه‌ها"
             variant="ghost"
           >
             <LayoutDashboard aria-hidden="true" className="size-4" />
           </Button>
           <Button
-            aria-label="نمایش فیلترهای این صفحه"
+            aria-label="نمایش فیلترها"
             className="size-10 w-full p-0"
             onClick={() => onPanelChange('filters')}
             size="icon"
-            title="فیلترهای این صفحه"
+            title="فیلترها"
             variant="ghost"
           >
             <Filter aria-hidden="true" className="size-4" />
@@ -3435,7 +3435,7 @@ function DashboardSidebar({
             role="tab"
             type="button"
           >
-            صفحه‌های داشبورد
+            صفحه‌ها
           </button>
           <button
             aria-selected={activePanel === 'filters'}
@@ -3449,7 +3449,7 @@ function DashboardSidebar({
             role="tab"
             type="button"
           >
-            فیلترهای این صفحه
+            فیلترها
           </button>
         </div>
       )}
