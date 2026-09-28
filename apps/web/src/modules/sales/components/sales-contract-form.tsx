@@ -466,6 +466,15 @@ export function SalesContractForm() {
     /* No valid stay selected yet. */
   }
   const passengerCounts = salesPassengerCounts(state);
+  const fixedTicketSalePrices =
+    !state.tour &&
+    !state.serviceKinds.includes('HOTEL') &&
+    !state.serviceKinds.includes('TOUR')
+      ? repriceStandaloneTicketSelections(
+          { ...state, servicePricing: {} },
+          passengerCounts.seated,
+        )
+      : undefined;
   const hotelCapacityError = salesHotelCapacityError(state, hotelRoomRates);
   const hotelGuestIds = salesHotelGuestIds(state);
   const updatePassengerCount = (
@@ -1668,6 +1677,7 @@ export function SalesContractForm() {
               services={pricingServices}
               nights={pricingNights}
               values={state.servicePricing ?? {}}
+              fixedSalePrices={fixedTicketSalePrices}
               onChange={(key, prices) =>
                 patchState({
                   servicePricing: { ...state.servicePricing, [key]: prices },

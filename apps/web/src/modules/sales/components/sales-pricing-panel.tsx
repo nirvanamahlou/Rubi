@@ -21,12 +21,14 @@ export function SalesPricingPanel({
   nights,
   values,
   currencies,
+  fixedSalePrices,
   onChange,
 }: {
   services: readonly { key: string; title: string; hotel: boolean }[];
   nights: number;
   values: Record<string, SalesServicePricingV1[]>;
   currencies: readonly SalesCurrency[];
+  fixedSalePrices?: Record<string, SalesServicePricingV1[]> | undefined;
   onChange: (key: string, prices: SalesServicePricingV1[]) => void;
 }) {
   const [editingBasis, setEditingBasis] = useState<
@@ -40,13 +42,25 @@ export function SalesPricingPanel({
         محاسبه می‌شود.
       </p>
       {services.map((service) => {
+        const fixedSale = fixedSalePrices?.[service.key]?.[0];
+        const currentAgreed = values[service.key]?.[0];
         const defaults: SalesServicePricingV1 = {
           version: 1,
           currencyCode: defaultSalesCurrency(currencies),
           daySale: { basis: service.hotel ? 'NIGHT' : 'TOTAL', amount: '' },
           agreed: { basis: service.hotel ? 'NIGHT' : 'TOTAL', amount: '' },
         };
-        const prices = values[service.key] ?? [defaults];
+        const prices = fixedSale
+          ? [
+              {
+                ...fixedSale,
+                agreed:
+                  currentAgreed?.currencyCode === fixedSale.currencyCode
+                    ? currentAgreed.agreed
+                    : fixedSale.agreed,
+              },
+            ]
+          : (values[service.key] ?? [defaults]);
         return (
           <div className="space-y-3 rounded-xl border p-4" key={service.key}>
             <div className="flex flex-wrap items-center justify-between gap-2">
@@ -54,20 +68,26 @@ export function SalesPricingPanel({
                 {service.title}
                 {service.hotel ? ` · ${nights.toLocaleString('fa-IR')} شب` : ''}
               </h3>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                disabled={prices.length >= 10}
-                onClick={() =>
-                  onChange(service.key, [
-                    ...prices,
-                    { ...defaults, currencyCode: '' },
-                  ])
-                }
-              >
-                افزودن ارز
-              </Button>
+              {!fixedSale ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={prices.length >= 10}
+                  onClick={() =>
+                    onChange(service.key, [
+                      ...prices,
+                      { ...defaults, currencyCode: '' },
+                    ])
+                  }
+                >
+                  افزودن ارز
+                </Button>
+              ) : (
+                <span className="text-xs font-semibold text-primary">
+                  نرخ فروش از قیمت بلیط ثبت‌شده می‌آید
+                </span>
+              )}
             </div>
             {service.hotel ? (
               <p className="text-xs text-muted-foreground">
@@ -97,21 +117,30 @@ export function SalesPricingPanel({
                   className="space-y-3 rounded-lg bg-muted/20 p-3"
                 >
                   <div className="flex items-end gap-2">
-                    <SalesCurrencySelect
-                      label={`ارز ${service.title} ${index + 1}`}
-                      currencies={currencies.filter(
-                        (currency) =>
-                          currency.code === price.currencyCode ||
-                          !prices.some(
-                            (other) => other.currencyCode === currency.code,
-                          ),
-                      )}
-                      value={price.currencyCode}
-                      onChange={(currencyCode) =>
-                        change({ ...price, currencyCode })
-                      }
-                    />
-                    {prices.length > 1 ? (
+                    {fixedSale ? (
+                      <div
+                        className="rounded-lg border bg-background px-3 py-2 text-sm font-semibold"
+                        aria-label={`ارز ${service.title}`}
+                      >
+                        {price.currencyCode}
+                      </div>
+                    ) : (
+                      <SalesCurrencySelect
+                        label={`ارز ${service.title} ${index + 1}`}
+                        currencies={currencies.filter(
+                          (currency) =>
+                            currency.code === price.currencyCode ||
+                            !prices.some(
+                              (other) => other.currencyCode === currency.code,
+                            ),
+                        )}
+                        value={price.currencyCode}
+                        onChange={(currencyCode) =>
+                          change({ ...price, currencyCode })
+                        }
+                      />
+                    )}
+                    {!fixedSale && prices.length > 1 ? (
                       <Button
                         type="button"
                         size="sm"
@@ -197,11 +226,14 @@ export function SalesPricingPanel({
                               entryBasis === 'NIGHT' ? 'مبلغ هر شب' : 'مبلغ کل'
                             }
                             value={displayAmount}
+                            readOnly={Boolean(fixedSale && field === 'daySale')}
                             onValueChange={(amount) =>
-                              change({
-                                ...price,
-                                [field]: { basis: entryBasis, amount },
-                              })
+                              fixedSale && field === 'daySale'
+                                ? undefined
+                                : change({
+                                    ...price,
+                                    [field]: { basis: entryBasis, amount },
+                                  })
                             }
                           />
                           {service.hotel && partTotals ? (
