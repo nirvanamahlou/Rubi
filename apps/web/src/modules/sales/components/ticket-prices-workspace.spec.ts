@@ -11,7 +11,10 @@ describe('ticket prices workspace', () => {
     expect(source).toContain('updateStandaloneSalePrice(');
     expect(source).toContain('updateRoundTripSalePrice(');
     expect(source).toContain('قیمت کل رفت‌وبرگشت');
-    expect(source).toContain('قیمت‌های جفت ثبت‌شده');
+    expect(source).toContain('قیمت‌های رفت‌وبرگشت ثبت‌شده');
+    expect(source).toContain('filteredPairs.map((pair)');
+    expect(source).toContain('تاریخ رفت از');
+    expect(source).toContain('تاریخ رفت تا');
     expect(source).toContain('ثبت نسخه جدید');
     expect(source).toContain('editPair(pair)');
     expect(source).toContain('مبنای قراردادهای جدید');
