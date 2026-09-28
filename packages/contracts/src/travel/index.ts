@@ -40,6 +40,8 @@ export interface TicketStandaloneSalePriceUpdateV1 {
 }
 
 export interface TicketRoundTripSalePriceV1 {
+  /** Original pair base before direct-sale commission. */
+  baseAmount?: string;
   returnOfferId: string;
   revision: number;
   amount: string;
@@ -52,7 +54,30 @@ export interface TicketRoundTripSalePriceUpdateV1 {
   currencyCode: string;
 }
 
+/** Commission rules are versioned independently from the base fare. */
+export interface TicketSaleCommissionV1 {
+  returnOfferId: string | null;
+  salePriceTargetId: string | null;
+  revision: number;
+  percent: string;
+  amount: string;
+  currencyCode: string;
+}
+export interface TicketSaleCommissionUpdateV1 {
+  offerId: string;
+  returnOfferId?: string | null;
+  salePriceTargetId?: string | null;
+  percent: string;
+  expectedRevision: number;
+  expectedBaseRevision: number;
+  copyToAll?: boolean;
+}
+
 export interface TicketOfferV1 {
+  /** Original direct base, before any direct-sale commission. */
+  baseStandaloneSalePrice?: TicketStandaloneSalePriceV1 | null;
+  saleCommissions?: readonly TicketSaleCommissionV1[];
+
   /** Null/absent uses the built-in default manifest. */
   manifestTemplateId?: string | null;
   id: string;
@@ -82,6 +107,8 @@ export type TicketOfferCreateV1 = Omit<
   | 'branchId'
   | 'remainingCapacity'
   | 'status'
+  | 'baseStandaloneSalePrice'
+  | 'saleCommissions'
   | 'standaloneSalePrice'
   | 'targetedStandaloneSalePrices'
   | 'roundTripSalePrices'

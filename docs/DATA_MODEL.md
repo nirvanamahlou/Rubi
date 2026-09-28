@@ -595,3 +595,7 @@ snapshot، انتخاب حضور در تور، `Decimal(24,4)` مبلغ پایه
 Trigger هر update/delete روی نسخه و ردیف را رد می‌کند؛ اصلاح فقط با نسخه جدید، optimistic
 locking و idempotency انجام می‌شود. این نرخ فروش پایه Master Data است و با نرخ خرید واقعی
 `ReservationHotelGroupRate` یکی نیست.
+
+## Ticket sale target commissions (TICKET-CHANNEL-PRICES-0928)
+
+Ticket Catalog owns TicketSaleCommissionRevision: offerId, optional returnOfferId, optional salePriceTargetId (null = direct company sales), scopeKey, revision, percent Decimal(7,4), actor and UTC occurrence time. Real restrictive FKs and unique scope/revision and scope/idempotency keys retain revision history; an append-only trigger rejects update/delete. Net fare is computed from the current direct standalone/pair base with exact Decimal arithmetic, rounded half-up to four decimal places. Bulk copy changes only this target's priced future unarchived offers/pairs in the source branch in one serializable transaction. Historical Sales price snapshots and legacy absolute target revisions remain unchanged.

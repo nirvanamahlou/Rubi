@@ -222,7 +222,7 @@ export function WorkbenchFavorites({ user }: { user: LoginResponse['user'] }) {
                     />
                     <Button asChild variant="outline" size="sm">
                       <Link
-                        href={`/documents?document=${encodeURIComponent(item.id)}`}
+                        href={`/documents?document=${encodeURIComponent(item.id)}&returnTo=workbench-stars`}
                       >
                         مشاهده و دریافت
                       </Link>

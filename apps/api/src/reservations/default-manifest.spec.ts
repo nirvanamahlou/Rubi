@@ -249,7 +249,7 @@ describe('default ticket manifest', () => {
     );
   });
 
-  it('uses the established blue header with white text and a left-to-right sheet', async () => {
+  it('uses Blue Accent 1 Darker 25% headers and centers default cells in a left-to-right sheet', async () => {
     const result = await fixture().service.exportTicket(
       'offer',
       range,
@@ -258,9 +258,12 @@ describe('default ticket manifest', () => {
     );
     const files = unzipSync(result.bytes);
     const styles = strFromU8(files['xl/styles.xml']!);
-    expect(styles).toContain('fgColor rgb="FF1D4ED8"');
+    expect(styles).toContain('fgColor rgb="FF2F5496"');
     expect(styles).toContain('color rgb="FFFFFFFF"');
     expect(styles).toContain('fontId="1" fillId="2"');
+    expect(
+      styles.match(/<alignment horizontal="center" vertical="center"\/>/g),
+    ).toHaveLength(2);
     expect(sheet(result.bytes)).toContain('rightToLeft="0"');
     expect(sheet(result.bytes)).toContain('s="1" t="inlineStr"');
   });

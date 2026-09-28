@@ -1,3 +1,11 @@
+## 2026-09-28 — MANIFEST-BLUE-CENTER-0928 — PC-A
+
+فقط قالب دیفالت هوایی، اتوبوس و قطار: رنگ هدر Blue Accent 1 Darker 25% (#2F5496)، متن سفید و تراز افقی/عمودی وسط برای همهٔ سلول‌ها. قالب‌های اختصاصی ارسالی کاربر عیناً حفظ شده‌اند. ۲۸ تست منیفست موفق؛ بدون تغییر داده، Migration، Dependency یا منطق مالی. قفل محدود آزاد است؛ کنترل‌های CI و rollout در سند واحد ثبت می‌شوند.
+
+## 2026-09-28 — TICKET-CHANNEL-PRICES-0928 — PC-A — READY_FOR_REVIEW
+
+Unified one-way/round-trip pricing list, combined origin/destination/trip/date/search filters and per-ticket target commission fields are implemented. Copy is atomic and applies only that target to priced future tickets/pairs of the same branch; exact Decimal net fares recalculate after base changes. Additive optional contracts preserve older clients and legacy absolute partner fares. All 100 migrations passed in a fresh isolated database. Validation: 21 API tests (including 4 real PostgreSQL regressions), 11 Web tests, scoped lint, API/Web strict typechecks and production builds (53 Web routes) passed. Populated rendering verifies the pair/single list, saved percentages and target net values. The browser preview could not attach, so authenticated interactive visual QA is not claimed. The owner-authorized develop merge follows integration of current Manifest/Finance changes. Operational data and running localhost remain unchanged. See [task handoff](tasks/TICKET-CHANNEL-PRICES-0928.md).
+
 # 2026-09-28 — MANIFEST-DOWNLOAD-FINANCE-0928 — PC-A
 
 رفع دانلود خاموش منیفست روی HTTP شبکه با fallback شناسه درخواست، کلید مستقل برای بازیابی خروجی قبلی، نمایش خطا کنار بلیط و لینک مستقیم دریافت فایل. شمارش کارت و خروجی فقط قراردادهای دارای تأیید مالی معتبر را شامل می‌شوند و تأیید هنگام خروجی مجدداً کنترل می‌شود. ۲۸ تست API شامل مسیر واقعی HTTP و فایل باینری، ۶ تست Web، build هر دو بخش و lint موفق‌اند؛ بدون Migration یا Dependency. جزئیات: docs/tasks/MANIFEST-DOWNLOAD-FINANCE-0928.md. تغییرات اصلی کاربر محفوظ‌اند؛ نشست مرورگر روی صفحه ورود است و کلیک احراز‌شدهٔ کاربر بررسی نشده است.
@@ -3686,12 +3694,44 @@ Calendar event creation now uses an authorized branch from the authenticated Wor
 
 مقصد سفر رفت‌وبرگشت هنگام تعریف بلیط و در فهرست قیمت‌های جفتی به‌روشنی نمایش داده می‌شود؛ تاریخ رفت و برگشت هر جفت نیز مشخص است. تاریخ و ساعت هر بلیط در کارت قیمت یک‌طرفه، در ستون چپ با اندازهٔ خواناتر قرار گرفت. تغییر صرفاً Web است و بر داده یا قراردادهای قبلی اثر ندارد.
 
+## 2026-09-28 — PACKAGE-GENERATOR-READABLE-UI-0928 — READY_FOR_REVIEW
+
+رابط پک‌جنریتور در حالت‌های پکیج، بنر و استیکر با فونت و کنترل‌های بزرگ‌تر و پنل پهن‌تر خواناتر شد. طرح‌های پیش‌نمایش و خروجی‌ها دست‌نخورده‌اند. QA دسکتاپ و موبایل، ۱۱ تست هدفمند، lint، typecheck و build تولیدی Web با ۵۳ مسیر موفق‌اند. تغییر فقط CSS رابط و نسخهٔ کش آن است؛ بدون API، داده، مجوز یا Migration.
+
+پیگیری اسکرین‌شات مالک در همان شاخه و PR: نوشته‌های کمکی و کنترل‌های باقی‌مانده در هر سه حالت بزرگ‌تر شدند و چینش میانبرهای پنل برای جا گرفتن متن اصلاح شد. خروجی و تصویر قالب‌ها تغییری ندارند.
 ## 2026-09-28 — TOUR-MANAGEMENT-0928 — PC-A — READY_FOR_REVIEW
 
 مدیریت تورها اکنون چهار KPI بر اساس فهرست قابل مشاهده، کارت‌های نوبت جاری/آینده با مسیر و تاریخ شمسی، ظرفیت باقی‌مانده واقعی بلیت، جست‌وجوی نام/مقصد و فیلتر وضعیت دارد. تورهای تعریف‌شده فرم ویرایش پیش‌پرشده دارند و PATCH نسخه‌دار تعریف را ذخیره می‌کند. مجوز و شعبه کنترل می‌شود و تغییر هم‌زمان پاسخ 409 دارد. مسیر، هتل‌های تعریف و خدمات مرتبطِ تور دارای هر نوبت ثبت‌شده تغییر نمی‌کند؛ نام و مشخصات توصیفی قابل اصلاح‌اند. ساخت نوبت و ویرایش تعریف برای جلوگیری از race روی همان ردیف تور قفل می‌گیرند؛ موجودی و قراردادهای قبلی حفظ می‌شوند.
 
 تفکیک تعریف تور از مدیریت نوبت/قیمت پکیج و پیوند هتل‌های بازه در آخرین develop حفظ شد. شاخه مستقل `codex/pc-a-tour-management-0928` روی `origin/develop@e4eb048c`؛ checkout اصلی و runtime 3100 دست‌نخورده‌اند. ۵۳ تست API و ۱۱ تست Web، lint محدوده و typecheck کامل API/Web موفق‌اند. build تولیدی API و Web با ۵۳ route موفق‌اند. QA بصری/تعاملی با fixture مصنوعی در دسکتاپ و عرض موبایل انجام شد و overflow افقی ندارد؛ ذخیره واقعی روی دیتابیس عملیاتی آزمایش نشد. بدون Schema/Migration، Dependency/Lockfile، Seed، Permission یا تغییر داده عملیاتی. قفل محدود اسناد با commit نهایی آزاد می‌شود؛ PR به develop و بدون merge خودکار تحویل می‌شود.
 
+## 2026-09-28 — WORKBENCH-TEMPLATE-STARS-0928 — READY_FOR_REVIEW
+
+قالب‌های اولیهٔ یادداشت نیز دکمهٔ ستاره دارند. ستاره‌زدن، یک نسخهٔ پایدار از قالب در حساب کاربر ذخیره می‌کند و آن را در «ستاره‌دارها» نشان می‌دهد؛ قالب تکراری بعد از بارگذاری مجدد حذف می‌شود. API و دیتابیس تغییر نکرده‌اند.
+
+## 2026-09-28 — WORKBENCH-CALENDAR-EDIT-0928 — READY_FOR_REVIEW
+
+رویدادهای شخصی تقویم میزکار اکنون با فرم قابل ویرایش‌اند و وضعیت آن‌ها با گزینه‌های «برنامه‌ریزی‌شده»، «فعال»، «تکمیل‌شده» و «لغوشده» تغییر می‌کند. گزینه‌ها با فیلتر تقویم همسان‌اند؛ ذخیره با کنترل نسخهٔ موجود API انجام می‌شود. ۷ آزمون تقویم، lint، typecheck و build Web موفق‌اند؛ Migration یا تغییر قرارداد لازم نیست.
+
+## 2026-09-28 — WORKBENCH-HOME-AVATAR-0928 — READY_FOR_REVIEW
+
+قاب مربعی خوشامدگویی خانهٔ میزکار عکس پروفایل ذخیره‌شدهٔ کاربر را نمایش می‌دهد و پس از تغییر عکس در تنظیمات شخصی تازه می‌شود. در نبود عکس، حروف نام نمایش داده می‌شوند. typecheck، lint و build تولیدی Web موفق‌اند؛ API یا داده تغییر نکرده است.
+
+## 2026-09-28 — WORKBENCH-PASSWORD-VISIBILITY-0928 — READY_FOR_REVIEW
+
+فرم تغییر رمز میزکار برای رمز فعلی، رمز جدید و تکرار آن دکمهٔ مستقل نمایش/پنهان‌سازی دارد. مقدار فیلد با تغییر حالت حفظ می‌شود؛ API و قواعد رمز دست‌نخورده‌اند. lint، typecheck و build Web موفق‌اند.
+
+## 2026-09-28 — WORKBENCH-FILES-COPY-0928 — READY_FOR_REVIEW
+
+متن توضیحی زیر عنوان «فایل‌های من» حذف شد. نمایش و بارگذاری فایل‌ها بدون تغییر است.
+
+## 2026-09-28 — WORKBENCH-HIDE-VERSION-NOTE-0928 — READY_FOR_REVIEW
+
+فیلد «یادداشت نسخه» از فرم بارگذاری شخصی در «فایل‌های من» پنهان شد و در فرم اصلی اسناد باقی ماند. lint، typecheck و build Web موفق‌اند.
+
+## 2026-09-28 — WORKBENCH-DOCUMENT-RETURN-0928 — READY_FOR_REVIEW
+
+بازکردن سند از خانه، فایل‌های من، ستاره‌دارها یا تقویم میزکار و بستن جزئیات آن اکنون کاربر را به همان تب میزکار برمی‌گرداند. بازگشت به چهار مقصد مجاز محدود است. ۹ آزمون هدفمند، lint، typecheck و build Web موفق‌اند.
 
 ## 2026-09-28 — FINANCE-HISTORY-SEAT-PRICING-0928 — PC-A
 

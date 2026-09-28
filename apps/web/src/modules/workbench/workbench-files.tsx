@@ -140,13 +140,7 @@ export function WorkbenchFiles({
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h2 className="font-bold text-lg">فایل‌های من</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            فایل‌های این بخش در آرشیو اصلی «اسناد و فایل‌ها» ثبت می‌شوند و از
-            همین فهرست یا آرشیو قابل مشاهده و دریافت هستند.
-          </p>
-        </div>
+        <h2 className="font-bold text-lg">فایل‌های من</h2>
         <div className="flex flex-wrap gap-2">
           {user.permissions.includes('documents.upload') && (
             <Button disabled={uploadBusy} onClick={() => void openUpload()}>
@@ -242,7 +236,7 @@ export function WorkbenchFiles({
                     )}
                     <Button asChild variant="outline" size="sm">
                       <Link
-                        href={`/documents?document=${encodeURIComponent(item.id)}`}
+                        href={`/documents?document=${encodeURIComponent(item.id)}&returnTo=workbench-files`}
                       >
                         مشاهده و دریافت
                       </Link>

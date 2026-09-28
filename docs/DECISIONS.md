@@ -345,3 +345,7 @@ check-in/check-out و تعداد شب، همه هتل‌های فعال همان
 خارج از شعبه یا با ارز ناسازگار را fail-closed رد می‌کند. مدل خرید واقعی Reservations مستقل
 می‌ماند. این تصمیم blocker هتل را رفع می‌کند و blocker Ticket Catalog یا Renderer را رفع‌شده
 فرض نمی‌کند.
+
+## ADR-TICKET-TARGET-COMMISSION-0928 — accepted by explicit product-owner request
+
+Standalone ticket target pricing changes from manually entered independent absolute amounts to a shared base with a separately saved commission percentage per ticket/round-trip and sales target. The owner explicitly requires net = base minus target commission and copying one percentage to all priced tickets for that target. This applies to standalone ticket sales only; Package Pricing's profit commission rules remain separate. Legacy absolute target prices remain readable until an explicit commission is saved, optional public fields preserve v1 consumers, new contracts use the current effective direct fare and old contract snapshots are immutable. Copy is atomic, branch-scoped, includes both one-way/pair fares regardless of UI filters and excludes unpriced/archived/departed offers. User authorized overlap management and merge to develop on 2026-09-28; preserve Manifest transportType and unrelated Finance work during integration.
