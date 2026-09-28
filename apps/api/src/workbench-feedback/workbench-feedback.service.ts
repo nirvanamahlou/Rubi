@@ -95,6 +95,11 @@ export class WorkbenchFeedbackService {
     if (!subject || !body) {
       throw new BadRequestException('موضوع و متن نظرسنجی الزامی است.');
     }
+    if (input.department !== 'hr') {
+      throw new BadRequestException(
+        'نظرسنجی فقط برای منابع انسانی ارسال می‌شود.',
+      );
+    }
     const configuration = departmentConfiguration[input.department];
     if (!configuration) {
       throw new BadRequestException('واحد مقصد معتبر نیست.');

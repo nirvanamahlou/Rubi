@@ -4087,3 +4087,9 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 - Departed tickets must disappear automatically from operational management and Sales lists without deleting contract, Finance or capacity history. Fix the red delete control's icon contrast. No migration, shared contract, permission, dependency or lockfile changes.
 - No merge or localhost:3100 change in this work item; PR to develop after checks.
 - Outcome: expired browser-defined tickets are removed from the operational cards on hydration and every minute; management API lists only future offers and continues to pause departed offers. Contracts, Finance and audit history remain intact. Delete icon is now legible on its red button. Focused Web/API tests (20/8), targeted lint, Web/API typechecks and production builds passed.
+
+## 2026-09-28 — WORKBENCH-FEEDBACK-HR-LAYOUT-0928 — PC-B — READY_FOR_REVIEW
+
+- شاخه `codex/pc-b-workbench-feedback-hr-layout-0928` از `origin/develop@7639f2f7`؛ محدوده: فرم نظرسنجی میزکار، محدودیت مقصد منابع انسانی در API، آزمون‌های هدفمند و ثبت وضعیت. بدون Schema/Migration، Dependency/Lockfile یا تغییر دادهٔ عملیاتی.
+- سازگاری: خواندن نظرسنجی‌های قدیمی برای مقصدهای قبلی حفظ می‌شود؛ فقط ارسال جدید به HR محدود خواهد شد.
+- نتیجه: انتخاب مقصد از فرم حذف و «منابع انسانی» ثابت شد؛ API ارسال جدید به مقصد دیگر را رد می‌کند. دکمه حذف پیوست و فاصله آن از نام فایل اصلاح شد. ۶ آزمون سرویس، lint/typecheck و build وب و API موفق‌اند.
