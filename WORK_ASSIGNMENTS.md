@@ -1,3 +1,33 @@
+## TICKET-PRICES-COMPACT-0928 — PC-A — READY_FOR_REVIEW
+
+- COMPUTER_ID=PC-A; branch codex/pc-a-ticket-prices-compact-0928 from origin/develop. Reserve Sales ticket-prices workspace/API/helper tests, Ticket Catalog commission copy regressions and target deactivation service/controller/tests, bounded task/status docs. Scope extended by owner to fix copy and add/remove targets. Existing target isActive/version support soft removal with retained fare history; additive DELETE contract producer Ticket Catalog/consumer Sales uses expectedVersion and existing permission. No shared type change. User explicitly requests compact inline base/commission panels, merge to develop and local runtime update. Previous ticket pricing locks RELEASED; no active overlap or local target edits. No schema/migration/dependency/shared type changes. DELETE /ticket-catalog/sale-price-targets/:id deactivates the authorized current version and preserves FK history. Commission save refreshes only current managed prices and discards drafts for the saved target/source branch. Tests cover lower-pair company copy to upper singles with explicit nulls and stale/unauthorized target removal. Bounded locks RELEASED with scoped commit. Preserve all other work.
+
+## MANIFEST-BLUE-CENTER-0928 — PC-A — READY_FOR_REVIEW
+
+- COMPUTER_ID=PC-A; branch codex/pc-a-manifest-blue-center-0928 from origin/develop@6bb03f73. Reserve only Reservations default XLSX styles, existing focused style assertion and bounded task/status docs. Default flight/bus/train headers use Office Blue Accent 1 Darker 25% (#2F5496); header and body cells are centered horizontally/vertically. User explicitly excludes all supplied airline templates. No migration/dependency/shared contract/finance or passenger data changes. Bounded docs owner PC-A; previous manifest locks released; original checkout edits preserved. Existing manifest merge/local update authorization applies. Result: only the default XLSX styles changed; all 28 manifest tests passed. Bounded locks RELEASED with commit.
+
+## TICKET-CHANNEL-PRICES-0928 — PC-A — READY_FOR_REVIEW
+
+- User requests a unified compact one-way/round-trip list, origin/destination/trip filters and per-ticket per-sales-target commission percentages with copy to all priced tickets for that target. COMPUTER_ID=PC-A; branch codex/pc-a-ticket-channel-prices-0928; base origin/develop@e4eb048c.
+- User explicitly authorizes overlap management and merge to develop on 2026-09-28. Manifest transport work has released its Travel contract lock; preserve its optional transportType addition during integration. Original checkout and all other worktrees remain untouched.
+- Reserve Sales ticket-prices UI/helpers/tests, Ticket Catalog public price projection and commission controller/service/tests, additive optional Travel price contracts, Prisma commission revision model and one additive migration, bounded task/data/decision/status documentation. Migration Owner and Travel contract Owner = PC-A/TICKET-CHANNEL-PRICES-0928. No Dependency/Lockfile ownership or changes.
+- Producer Ticket Catalog computes Decimal net = current base * (100 - percent)/100; consumer Sales consumes optional base/commission projections. Legacy targeted absolute fares remain readable until an explicit commission is saved. Bulk copy updates only priced tickets of the same target branch in one transaction with optimistic revision checks and idempotency; filters do not limit the copy. Existing Sales snapshots stay immutable. No real partner transmission or operational payment occurs.
+- Result: 21 API tests including 4 PostgreSQL regressions and 11 Web tests passed; scoped lint, strict typechecks and production API/Web builds passed. All 100 migrations succeeded on a fresh isolated database. Migration/Travel contract/bounded docs locks RELEASED with this scoped implementation commit. Owner-authorized merge to develop follows preserving current Manifest and Finance changes. Browser preview attach was unavailable; populated rendering is verified. No runtime or operational-data change.
+
+## MANIFEST-DOWNLOAD-FINANCE-0928 — PC-A — READY_FOR_REVIEW
+
+- COMPUTER_ID=PC-A; branch codex/pc-a-manifest-download-finance-0928 from origin/develop; clean isolated manifest worktree reused. Reserve Reservations ticket download component/helper and manifest service/tests, bounded status/task docs. User reports silent download and requires only financially approved contracts. Preserve Finance public delivery approval, permissions, passenger assignment, airline workbook rules and other computer/user edits. No schema/migration/dependency/lockfile/shared contract changes. Bounded Central Docs owner PC-A for this unit; previous manifest locks are released. Existing manifest merge/local-update authorization remains applicable to this corrective follow-up. Result: HTTP-compatible downloads, visible per-ticket errors and direct link, approved-only card counts/export and expiry gate. 28 API and 6 Web tests, builds and scoped lint passed. Bounded docs/implementation locks RELEASED with commit; no migration.
+
+## FINANCE-TICKET-PAYMENT-0928 — PC-A — READY_FOR_REVIEW
+
+- COMPUTER_ID=PC-A; base origin/develop@e4eb048c; branch codex/pc-a-finance-ticket-payment-0928. Reserve Finance inbox component, module-local exact total helper/tests and bounded entries in WORK_ASSIGNMENTS/PROJECT_STATUS. Previous Finance presentation reservations are released. Preserve original checkout edits.
+- Validation: 11 targeted tests, scoped ESLint, Web typecheck and production build (53 routes) passed. Bounded implementation/docs locks RELEASED after commit. Authenticated browser click remains unverified; runtime update needs owner approval.
+- Fix payment-method interaction and surface option errors/retry; retain existing persisted seat/unit pricing and partial-payment API. No migration, dependency, shared contract, permission, operational data or runtime replacement. Bounded Central Docs Owner: PC-A/FINANCE-TICKET-PAYMENT-0928.
+
+## MANIFEST-TRANSPORT-FORMAT-0928 — PC-A — READY_FOR_REVIEW
+
+- COMPUTER_ID=PC-A; base origin/develop@e4eb048c; branch codex/pc-a-manifest-transport-format-0928, reuse clean isolated manifest worktree. Reserve Reservations default XLSX/service and Web cards, Sales reservation handoff ground-service metadata and focused tests, bounded status/task docs and additive optional transportType in Travel card contract. Producer Reservations and consumer Web owned PC-A; missing transportType stays FLIGHT for v1 compatibility. Ground services use existing BUS/TRAIN Sales snapshots, assigned passengers and existing finance/permission/history gates. No migration/schema/dependency/lockfile changes; no active overlapping owner in this scope. Bounded Central Docs/Travel contract owner PC-A for this unit. Original dirty checkout and current runtime preserved during implementation. Result: blue/LTR/destination/mr-mrs flight default and BUS/TRAIN contract-backed exports complete. 34 API tests and Web test, scoped lint/typechecks and production builds passed; bounded docs/Travel contract locks RELEASED. No migration.
+
 ## MANIFEST-DEFAULT-TEMPLATE-0928 — PC-A — READY_FOR_REVIEW
 
 - Owner request: every ticket without an assigned manifest template exports a default XLSX with contract, separate passenger names, flight date/ticket/airline, age, nationality, birth date, gender, cabin and national ID; international routes additionally include passport number/expiry. Ticket management ends with a searchable template selector, defaulting to «پیش‌فرض»; named options use airline and destination.
@@ -4230,3 +4260,72 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 - شاخهٔ مستقل `codex/pc-b-istanbul-generator-0928` از `origin/develop@1de70e5c` و پیش از Push روی `origin/develop@e4eb048c` بازچینی شد؛ `COMPUTER_ID=PC-B`.
 - محدودهٔ رزرو: فقط `apps/web/public/package-generator` (اکنون طرح بنر استانبول و لایهٔ آن نیز)، تست‌های مستقیم `source-package-generator.spec.ts` و `package-generator-workspace.spec.tsx`، سند اختصاصی Task و همین ردیف تخصیص. فایل‌های Package Pricing API، قرارداد مشترک، Migration، Prisma، Dependency/Lockfile و اسناد مرکزی دیگر رزرو نمی‌شوند. PRهای باز با همین فایل‌ها دیده نشدند؛ قفل PC-A/PACKAGE-PRICING-001 طبق handoff پیشین `RELEASED` است.
 - نتیجه: هر دو فایل اکسل در مرورگر به قالب درست نگاشت شدند؛ جدول ۲۹/۲۸ ردیفی، ارز هر سلول، سه مبلغ پایین صفحه و ساعت پرواز از فایل خوانده شد. طرح بنر تصویری استانبول نیز با چهار هتل، نرخ کودک و ساعت رفت‌وبرگشت به فهرست بنرها افزوده شد. تصویر مرجع در پیش‌نمایش اولیه حفظ می‌شود و فیلدهای ویرایشی در HTML قرار می‌گیرند. خروجی PNG بنر در مرورگر ساخته شد. ۱۳ تست هدفمند، lint، typecheck و build تولیدی Web با ۵۳ مسیر موفق‌اند (build با webpack برای رفع محدودیت symlink محلی Turbopack). قفل محدود این واحد با Commit آزاد می‌شود.
+
+## 2026-09-28 — PACKAGE-GENERATOR-READABLE-UI-0928 — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک: فونت و کنترل‌های پنل پک‌جنریتور در هر سه حالت پکیج، بنر و استیکر بزرگ‌تر و خواناتر شوند.
+- شاخهٔ مستقل `codex/pc-b-generator-readable-ui-0928` از `origin/develop@e4eb048c`. محدودهٔ رزرو: فقط CSS رابط `apps/web/public/package-generator`، ثبت وضعیت و آزمون مستقیم در صورت نیاز. تصویر/خروجی قالب‌ها، Package Pricing API، قرارداد مشترک، Migration، Prisma و Dependency/Lockfile خارج از محدوده‌اند. PR باز #424 متعلق به همین PC-B است و هیچ فایل CSS این واحد را تغییر نمی‌دهد.
+- نتیجه: فونت عنوان‌ها، برچسب‌ها، فرم‌ها، راهنماها، تب‌ها و پنجره‌ها در هر سه حالت خواناتر شد؛ عرض پنل و فاصلهٔ کنترل‌ها نیز برای متن بزرگ‌تر تنظیم شد. پیش‌نمایش ثابت و خروجی قالب‌ها تغییر نکرد. QA دسکتاپ و موبایل، ۱۱ تست هدفمند، lint، typecheck و build تولیدی Web با ۵۳ مسیر موفق‌اند.
+- پیگیری 2026-09-28 بر اساس اسکرین‌شات مالک: متن‌های کوچک باقی‌مانده در راهنمای گروه‌ها، تب‌های دسترسی، برچسب‌ها، فرم‌ها و وضعیت پیش‌نمایش دوباره بزرگ شدند. میانبرهای پنل به دو ردیف سه‌ستونه رفتند تا متن خوانا بماند. هر سه حالت پکیج، بنر و استیکر در مرورگر بررسی شدند؛ تغییر فقط CSS کنترل‌ها و نسخهٔ کش آن است.
+
+## TOUR-MANAGEMENT-0928 — PC-A — READY_FOR_REVIEW
+
+- Owner requests current-tour presentation, KPI summary and persisted package editing. COMPUTER_ID=PC-A; branch codex/pc-a-tour-management-0928 in managed isolated worktree; task commit rebased onto origin/develop@e4eb048c after preserving newer module and assignment changes. Existing primary checkout changes remain untouched.
+- Reserve Ticket Catalog TourWorkspace/new module-local list/model/tests, tours client, TourController/TourPublicService/tests and bounded entries in WORK_ASSIGNMENTS.md / docs/PROJECT_STATUS.md. No schema/migration/dependency lock, shared contracts or other module changes.
+- Additive PATCH package API is produced and consumed by PC-A Ticket Catalog only: existing input plus expectedVersion; existing create/list clients remain compatible. Branch authorization and optimistic concurrency required. Core route and attached services cannot change after a departure exists; existing capacity and bookings are retained.
+- Central docs lock: PC-A/TOUR-MANAGEMENT-0928 for this entry and bounded status entry only. Migration/Dependency locks not acquired.
+- Result: four KPI cards, current/upcoming departure cards, Persian dates, live per-departure capacity, search/status filters and prefilled package editor connected to additive PATCH are implemented. Preserve latest definition/departure mode split, pricing navigation, hotel-rate links and existing client tests. 53 API + 11 Web tests, scoped lint and full API/Web typechecks pass. API and Web production builds passed (53 Web routes). Synthetic desktop/mobile/browser QA passed; no operational database writes or Web3100 changes. Bounded central-doc locks RELEASED on final commit; no migration/dependency locks acquired. Review via PR to develop; no automatic merge.
+- بررسی پیش از merge با تأیید مالک: تست متن محدوده تاریخ مستقل از فاصله‌گذاری JSX شد و Router برای رندر قیمت‌گذاری تور در تست mock شد؛ دو تست مربوطه و lint موفق‌اند. اصلاح فقط محیط/انتظار تست است.
+
+## 2026-09-28 — TICKET-SUPPLY-REPEAT-0928 — PC-A — READY_FOR_REVIEW
+
+- شاخه `codex/pc-a-ticket-supply-repeat-0928` از `origin/develop@e4eb048c`؛ محدوده: گزینه‌های تامین فرم/فیلتر، ثبت قابل بازیابی نوبت‌های تکرارشونده و عملیات مستقل در Web، محدوده تابع archiveExpired در ticket-public.service.ts و تست مستقیم آن، و وضعیت.
+- رزرو محدود `WORK_ASSIGNMENTS.md` و `docs/PROJECT_STATUS.md` برای همین ورودی؛ DELETE موجود برای نوبت آینده بدون تخصیص فعال، رزرو فعال یا تور متصل به‌صورت سازگار توسعه می‌یابد؛ producer/consumer هر دو Ticket Catalog و PC-A هستند. بدون قرارداد مشترک، Migration، Dependency/Lockfile، قیمت Sales یا داده عملیاتی. runtime پورت ۳۱۰۰ جداست و تغییر نمی‌کند.
+
+- نتیجه: تامین سه‌گزینه‌ای، نوبت‌های مستقل با تعداد شامل تاریخ شروع، checkpoint ثبت و عملیات ویرایش/حذف امن؛ ۴۴ تست، lint/typecheck و build Web/API موفق. قفل محدود اسناد با Commit آزاد می‌شود؛ بدون Migration یا تغییر runtime ۳۱۰۰.
+- بررسی پیش از merge با تأیید مالک: انتظار تست رندر چک‌باکس حذف‌شده با انتخاب نوع تامین جایگزین شد؛ کل Web با ۱۶۸۷ تست موفق و ۳ skip پاس شد. build و کیفیت CI قبلی موفق بودند.
+
+## 2026-09-28 — WORKBENCH-TEMPLATE-STARS-0928 — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک: ستاره‌دارکردن کارت‌های اولیهٔ یادداشت نیز عملی و پایدار باشد.
+- شاخهٔ `codex/pc-b-workbench-template-stars-0928` از `origin/develop`؛ محدودهٔ رزرو: فقط فهرست و رفتار کارت‌های یادداشت میزکار، آزمون متمرکز و اسناد وضعیت. مالک Workbench، PC-B است؛ بدون API، Schema/Migration، Permission یا Dependency/Lockfile.
+- نتیجه: دکمهٔ ستاره روی قالب‌های اولیه نیز نمایش داده می‌شود؛ کلیک، نسخهٔ واقعی و ستاره‌دار را در حساب ذخیره می‌کند و کارت قالب تکراری را پس از بارگذاری دوباره پنهان می‌سازد. آزمون متمرکز، lint و typecheck وب موفق‌اند.
+
+## 2026-09-28 — WORKBENCH-CALENDAR-EDIT-0928 — PC-B — READY_FOR_REVIEW
+
+- `COMPUTER_ID=PC-B`؛ شاخهٔ `codex/pc-b-workbench-calendar-edit-0928` از `origin/develop`. محدوده: ویرایش رویدادهای شخصی تقویم میزکار، انتخاب وضعیت یکسان با فیلتر، آزمون و ثبت وضعیت. بدون Schema/Migration، قرارداد API، Permission، Dependency/Lockfile یا تغییر دادهٔ عملیاتی.
+- آزمون‌های تقویم (۷ مورد)، lint فایل‌های تغییرکرده، typecheck و build تولیدی Web موفق‌اند. ویرایش فقط برای رویدادهای شخصی مجاز است؛ ارجاع‌های متصل به کارتابل از این فرم ویرایش نمی‌شوند.
+
+## 2026-09-28 — WORKBENCH-HOME-AVATAR-0928 — PC-B — READY_FOR_REVIEW
+
+- `COMPUTER_ID=PC-B`؛ شاخهٔ `codex/pc-b-workbench-home-avatar-0928` از `origin/develop`. محدوده: نمایش عکس پروفایل در قاب مربعی خانهٔ میزکار و تازه‌سازی پس از تغییر عکس، بررسی و ثبت وضعیت. بدون API، Schema/Migration، Permission، Dependency/Lockfile یا تغییر دادهٔ عملیاتی.
+- نمایش از endpoint محافظت‌شدهٔ موجود و Object URL استفاده می‌کند؛ هنگام تغییر تصویر دوباره خوانده می‌شود و URL قبلی آزاد می‌شود. typecheck، lint فایل تغییرکرده و build تولیدی Web موفق‌اند.
+
+## 2026-09-28 — WORKBENCH-PASSWORD-VISIBILITY-0928 — PC-B — READY_FOR_REVIEW
+
+- `COMPUTER_ID=PC-B`؛ شاخهٔ `codex/pc-b-workbench-password-visibility-0928` از `origin/develop`. محدوده: فقط فرم تغییر رمز میزکار و نمایش/پنهان‌سازی سه فیلد رمز، بررسی و ثبت وضعیت. بدون API/IAM، Schema/Migration، Permission، Dependency/Lockfile یا تغییر دادهٔ عملیاتی.
+- هر دکمهٔ چشم مستقل، از نوع `button` و دارای برچسب و حالت قابل‌خواندن برای صفحه‌خوان است. lint، typecheck و build تولیدی Web موفق‌اند.
+
+## 2026-09-28 — WORKBENCH-FILES-COPY-0928 — PC-B — READY_FOR_REVIEW
+
+- `COMPUTER_ID=PC-B`؛ شاخهٔ `codex/pc-b-workbench-files-copy-0928` از `origin/develop`. توضیح زیر عنوان «فایل‌های من» به درخواست کاربر حذف شد؛ رفتار و دادهٔ اسناد، API، Schema/Migration، Permission و Dependency/Lockfile تغییری ندارند.
+
+## 2026-09-28 — WORKBENCH-HIDE-VERSION-NOTE-0928 — PC-B — READY_FOR_REVIEW
+
+- `COMPUTER_ID=PC-B`؛ شاخهٔ `codex/pc-b-workbench-hide-version-note-0928` از `origin/develop`. محدوده: حذف فیلد «یادداشت نسخه» فقط از فرم بارگذاری شخصی فایل‌های میزکار و ثبت وضعیت. مالک هر دو بخش Workbench و Documents، PC-B است؛ بدون API، Schema/Migration، Permission، Dependency/Lockfile یا تغییر داده.
+- lint، typecheck و build تولیدی Web موفق‌اند. فیلد در فرم اصلی آرشیو اسناد همچنان موجود است.
+
+## 2026-09-28 — WORKBENCH-DOCUMENT-RETURN-0928 — PC-B — READY_FOR_REVIEW
+
+- `COMPUTER_ID=PC-B`؛ شاخهٔ `codex/pc-b-workbench-document-return-0928` از `origin/develop`. محدوده: لینک مشاهده اسناد از خانه، فایل‌ها، ستاره‌دارها و تقویم میزکار و بازگشت پس از بستن جزئیات سند به همان تب. مالک Workbench و Documents، PC-B است؛ بدون API، Schema/Migration، Permission، Dependency/Lockfile یا تغییر داده.
+- پارامتر بازگشت فقط به چهار تب مجاز میزکار نگاشت می‌شود و مسیر دلخواه را نمی‌پذیرد. ۹ آزمون هدفمند، lint، typecheck و build تولیدی Web موفق‌اند.
+
+## 2026-09-28 — WORKBENCH-SEPTEMBER-INTEGRATION-0928 — PC-B — IN_PROGRESS
+
+- `COMPUTER_ID=PC-B`؛ شاخهٔ `codex/pc-b-workbench-september-integration` از `origin/develop`. محدوده: یکپارچه‌سازی هفت تغییر اخیر میزکار و اسناد متعلق به PC-B، رفع تعارض اسناد وضعیت و تحویل در یک PR به `develop`. بدون Migration، قرارداد API، Dependency/Lockfile یا تغییر دادهٔ عملیاتی.
+
+## FINANCE-HISTORY-SEAT-PRICING-0928 — PC-A — READY_FOR_REVIEW
+
+- COMPUTER_ID=PC-A; branch codex/pc-a-finance-history-seat-pricing-0928, isolated clean Finance worktree from origin/develop@099dc40e. Reserve Finance API/Web/history tests, additive Sales public receipt-history and Reservations purchase-descriptor projections, Finance v1 additive history contract and bounded status/task docs. Producer Sales/Finance and consumer Finance API/Web owned PC-A; public boundaries and existing v1 clients preserved. No Procurement implementation, migration/schema/dependency/lockfile/IAM or operational data changes. Bounded Finance contract/Central Docs owner PC-A for this unit; prior Finance locks released. User explicitly authorizes implementation and merge. Preserve unrelated local edits.
+
+- Validation: 23 targeted API and 29 Web tests, scoped lint, API/Web strict typechecks and production builds (53 routes) passed. No migration or data change. Finance contract/bounded docs locks RELEASED with commit. Explicit owner merge authorization; authenticated browser clicks remain unverified.

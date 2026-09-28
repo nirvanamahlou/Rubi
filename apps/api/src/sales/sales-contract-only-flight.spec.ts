@@ -87,6 +87,51 @@ function row(): SalesContractRow {
   } as unknown as SalesContractRow;
 }
 describe('Contract-only flights remain outside ticket inventory', () => {
+  it.each(['BUS', 'TRAIN'] as const)(
+    'hands %s route/day to Reservations without inventing a catalog offer',
+    async (kind) => {
+      const saved = row();
+      saved.services = [
+        {
+          ...saved.services[0]!,
+          clientKey: kind.toLowerCase(),
+          kind,
+          titleSnapshot: 'Ground service',
+          metadata: { carrierName: 'Synthetic Operator' },
+        },
+      ];
+      const repository = {
+        findById: vi.fn().mockResolvedValue(saved),
+        transition: vi.fn().mockResolvedValue(true),
+      };
+      const reserve = vi.fn();
+      const service = new SalesService(
+        repository as unknown as SalesRepository,
+        {
+          resolveSnapshot: vi.fn(),
+          assertPassengers: vi.fn(),
+        } as unknown as SalesCustomersPublicAdapter,
+        { reserve, release: vi.fn() } as unknown as SalesTicketAvailabilityPort,
+      );
+      await service.confirm('contract', 1, null, actor, 'ground-key');
+      const snapshot = repository.transition.mock.calls[0]![8];
+      expect(snapshot.serviceSelections[0]).toMatchObject({
+        kind,
+        metadata: {
+          originId,
+          destinationId,
+          date: '2026-10-01',
+          carrierName: 'Synthetic Operator',
+        },
+      });
+      expect(saved.services[0]!.metadata).toEqual({
+        carrierName: 'Synthetic Operator',
+      });
+      expect(snapshot.selectedTicketOfferIds).toEqual([]);
+      expect(reserve).not.toHaveBeenCalled();
+    },
+  );
+
   it('validates manual-only and mixed direction contracts but rejects duplicates or wrong routes', () => {
     expect(() => validateSalesContract(input)).not.toThrow();
     expect(() =>

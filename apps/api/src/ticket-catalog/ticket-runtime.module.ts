@@ -15,6 +15,7 @@ import {
 } from '@nestjs/common';
 import type {
   TicketOfferCreateV1,
+  TicketSaleCommissionUpdateV1,
   TicketOfferSearchV1,
   TicketRoundTripSalePriceUpdateV1,
   TicketSalePriceTargetCreateV1,
@@ -40,6 +41,19 @@ class TicketSalePriceTargetsController {
   @Get()
   list(@Req() req: AuthenticatedRequest) {
     return this.service.salePriceTargets(req.actor);
+  }
+
+  @Delete(':id')
+  remove(
+    @Param('id') id: string,
+    @Body() input: { expectedVersion: number },
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.service.removeSalePriceTarget(
+      id,
+      input?.expectedVersion,
+      req.actor,
+    );
   }
 
   @Post()
@@ -70,6 +84,14 @@ class TicketOffersController {
     );
   }
 
+  @Patch('sale-commissions')
+  updateSaleCommission(
+    @Body() input: TicketSaleCommissionUpdateV1,
+    @Req() req: AuthenticatedRequest,
+    @Headers('idempotency-key') key?: string,
+  ) {
+    return this.service.updateSaleCommission(input, req.actor, key);
+  }
   @Get('management') managed(@Req() req: AuthenticatedRequest) {
     return this.service.managed(req.actor);
   }

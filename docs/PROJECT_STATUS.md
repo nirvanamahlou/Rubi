@@ -1,3 +1,35 @@
+## 2026-09-28 — TICKET-PRICES-COMPACT-0928 — PC-A
+
+Ticket pricing rows now place compact flight summaries, base price/currency/save controls and per-target commission cards side by side on desktop. Smaller screens wrap into readable rows; short copy labels retain full accessible names and bulk-copy semantics. Follow-up includes sale target removal via branch-scoped expectedVersion deactivation, retained price history, visible inline feedback and a focused commission refresh that removes stale drafts only for the copied target and branch. Actual PostgreSQL regression confirms company 4% copied from a lower pair reopens on all priced singles/pairs. No schema/migration/dependency change. Owner authorizes merge and updating the existing local runtime. Validation: 13 API unit tests, 5 isolated PostgreSQL tests, 8 Web tests, scoped lint, strict API/Web typechecks and production API/Web builds passed.
+
+## 2026-09-28 — MANIFEST-BLUE-CENTER-0928 — PC-A
+
+فقط قالب دیفالت هوایی، اتوبوس و قطار: رنگ هدر Blue Accent 1 Darker 25% (#2F5496)، متن سفید و تراز افقی/عمودی وسط برای همهٔ سلول‌ها. قالب‌های اختصاصی ارسالی کاربر عیناً حفظ شده‌اند. ۲۸ تست منیفست موفق؛ بدون تغییر داده، Migration، Dependency یا منطق مالی. قفل محدود آزاد است؛ کنترل‌های CI و rollout در سند واحد ثبت می‌شوند.
+
+## 2026-09-28 — TICKET-CHANNEL-PRICES-0928 — PC-A — READY_FOR_REVIEW
+
+Unified one-way/round-trip pricing list, combined origin/destination/trip/date/search filters and per-ticket target commission fields are implemented. Copy is atomic and applies only that target to priced future tickets/pairs of the same branch; exact Decimal net fares recalculate after base changes. Additive optional contracts preserve older clients and legacy absolute partner fares. All 100 migrations passed in a fresh isolated database. Validation: 21 API tests (including 4 real PostgreSQL regressions), 11 Web tests, scoped lint, API/Web strict typechecks and production builds (53 Web routes) passed. Populated rendering verifies the pair/single list, saved percentages and target net values. The browser preview could not attach, so authenticated interactive visual QA is not claimed. The owner-authorized develop merge follows integration of current Manifest/Finance changes. Operational data and running localhost remain unchanged. See [task handoff](tasks/TICKET-CHANNEL-PRICES-0928.md).
+
+# 2026-09-28 — MANIFEST-DOWNLOAD-FINANCE-0928 — PC-A
+
+رفع دانلود خاموش منیفست روی HTTP شبکه با fallback شناسه درخواست، کلید مستقل برای بازیابی خروجی قبلی، نمایش خطا کنار بلیط و لینک مستقیم دریافت فایل. شمارش کارت و خروجی فقط قراردادهای دارای تأیید مالی معتبر را شامل می‌شوند و تأیید هنگام خروجی مجدداً کنترل می‌شود. ۲۸ تست API شامل مسیر واقعی HTTP و فایل باینری، ۶ تست Web، build هر دو بخش و lint موفق‌اند؛ بدون Migration یا Dependency. جزئیات: docs/tasks/MANIFEST-DOWNLOAD-FINANCE-0928.md. تغییرات اصلی کاربر محفوظ‌اند؛ نشست مرورگر روی صفحه ورود است و کلیک احراز‌شدهٔ کاربر بررسی نشده است.
+
+## TICKET-SUPPLY-REPEAT-0928 — PC-A — 2026-09-28
+
+- سه گزینه تامین قابل انتخاب: شناوری، ظرفیت شرکت و API. مقادیر ذخیره‌شده قدیمی allotment/charter حفظ و در رابط با عنوان شناوری خوانده می‌شوند؛ قرارداد دامنه تغییر نمی‌کند. انتخاب API نوع تامین است و اتصال خودکار به تامین‌کننده خارجی ایجاد نمی‌کند.
+- تعداد نوبت شامل تاریخ شروع است؛ هفتگی با فاصله دقیق هفت روز و ساعت/مدت سفر قبلی. هر نوبت پس از ثبت سرور مستقل به مجموعه مرورگر اضافه، فهرست رسمی تازه و فیلتر کارت‌ها برای نمایش تازه‌ترین‌ها بازنشانی می‌شود. موفقیت‌های قبل از خطای شبکه حفظ و تلاش مجدد در همان پنجره از شناسه‌های ثابت و checkpoint استفاده می‌کند.
+- فهرست رسمی ویرایش مستقل تعریف موجود در مرورگر و حذف را دارد. DELETE موجود علاوه بر بلیط تاریخ‌گذشته، بلیط آینده فاقد تخصیص فعال، رزرو ظرفیت فعال و تور متصل را آرشیو می‌کند؛ قفل ردیف، شعبه، نسخه و audit حفظ می‌شوند. FK و سوابق قرارداد/مالی حذف نمی‌شوند. محدودیت ۵۰۰ رکورد فهرست مدیریت و ذخیره محلی تعریف بلیط از قبل برقرار است.
+- بدون Migration، قرارداد مشترک، وابستگی یا داده عملیاتی. runtime ۳۱۰۰ و PR قبلی تورها دست‌نخورده‌اند. ۳۳ آزمون Web و ۱۱ آزمون API، lint فایل‌های متاثر، typecheck Web/API و build تولیدی Web/API با ۵۳ مسیر Web موفق‌اند.
+
+
+## 2026-09-28 — FINANCE-TICKET-PAYMENT-0928 — PC-A — READY_FOR_REVIEW
+
+Payment-method selection uses a native accessible control with explicit failed/empty-list feedback and retry. Existing seat-count × unit-cost capture remains persisted; the invoice preview now uses exact four-decimal arithmetic. The payment dialog explains repeated partial payments and shows the invoice amount as initial remaining balance. Eleven targeted Web tests, scoped lint, Web typecheck and production build (53 routes) passed. No new migration, shared contract, dependency, permissions or operational data changes. Branch: codex/pc-a-finance-ticket-payment-0928 from origin/develop@e4eb048c. Original edits and Web3100/API4000 are unchanged; reviewed integration/runtime update remains subject to approval. See docs/tasks/FINANCE-TICKET-PAYMENT-0928.md.
+
+## 2026-09-28 — MANIFEST-TRANSPORT-FORMAT-0928 — PC-A
+
+خروجی دیفالت منیفست هدر آبی FF1D4ED8 با متن سفید، جهت چپ‌به‌راست، ستون مقصد و جنسیت mr/mrs دارد. ردهٔ سنی تخصیص و override حفظ و fallback سن در تاریخ سفر برای دادهٔ قدیمی افزوده شد. اتوبوس و قطار از snapshot خدمات تأییدشدهٔ فروش و با همان گیت مالی/مجوز/تخصیص مسافر، کارت و XLSX دیفالت مناسب دارند. ۳۴ تست API، تست Web، lint، typecheck و build هر دو بخش (۵۳ مسیر) موفق‌اند؛ بدون Migration یا Dependency. جزئیات و محدودیت snapshotهای قدیمی در docs/tasks/MANIFEST-TRANSPORT-FORMAT-0928.md. قفل محدود اسناد/قرارداد آزاد است.
+
 ## 2026-09-28 — قالب پیش‌فرض و انتخاب قالب منیفست (PC-A)
 
 - در شاخه مستقل codex/pc-a-manifest-default-template-0928 از origin/develop@1de70e5c، انتهای فرم بلیت انتخاب‌گر جست‌وجوپذیر قالب افزوده شد؛ نام گزینه‌ها از ایرلاین و مقصد است و انتخاب nullable روی Published Offer با FK واقعی ذخیره می‌شود. بلیت‌های قدیمی و گزینهٔ «پیش‌فرض» از XLSX عمومی استفاده می‌کنند.
@@ -3665,3 +3697,46 @@ Calendar event creation now uses an authorized branch from the authenticated Wor
 ## 2026-09-28 — TICKET-PAIR-DESTINATION-DATE-0928 — READY_FOR_REVIEW
 
 مقصد سفر رفت‌وبرگشت هنگام تعریف بلیط و در فهرست قیمت‌های جفتی به‌روشنی نمایش داده می‌شود؛ تاریخ رفت و برگشت هر جفت نیز مشخص است. تاریخ و ساعت هر بلیط در کارت قیمت یک‌طرفه، در ستون چپ با اندازهٔ خواناتر قرار گرفت. تغییر صرفاً Web است و بر داده یا قراردادهای قبلی اثر ندارد.
+
+## 2026-09-28 — PACKAGE-GENERATOR-READABLE-UI-0928 — READY_FOR_REVIEW
+
+رابط پک‌جنریتور در حالت‌های پکیج، بنر و استیکر با فونت و کنترل‌های بزرگ‌تر و پنل پهن‌تر خواناتر شد. طرح‌های پیش‌نمایش و خروجی‌ها دست‌نخورده‌اند. QA دسکتاپ و موبایل، ۱۱ تست هدفمند، lint، typecheck و build تولیدی Web با ۵۳ مسیر موفق‌اند. تغییر فقط CSS رابط و نسخهٔ کش آن است؛ بدون API، داده، مجوز یا Migration.
+
+پیگیری اسکرین‌شات مالک در همان شاخه و PR: نوشته‌های کمکی و کنترل‌های باقی‌مانده در هر سه حالت بزرگ‌تر شدند و چینش میانبرهای پنل برای جا گرفتن متن اصلاح شد. خروجی و تصویر قالب‌ها تغییری ندارند.
+## 2026-09-28 — TOUR-MANAGEMENT-0928 — PC-A — READY_FOR_REVIEW
+
+مدیریت تورها اکنون چهار KPI بر اساس فهرست قابل مشاهده، کارت‌های نوبت جاری/آینده با مسیر و تاریخ شمسی، ظرفیت باقی‌مانده واقعی بلیت، جست‌وجوی نام/مقصد و فیلتر وضعیت دارد. تورهای تعریف‌شده فرم ویرایش پیش‌پرشده دارند و PATCH نسخه‌دار تعریف را ذخیره می‌کند. مجوز و شعبه کنترل می‌شود و تغییر هم‌زمان پاسخ 409 دارد. مسیر، هتل‌های تعریف و خدمات مرتبطِ تور دارای هر نوبت ثبت‌شده تغییر نمی‌کند؛ نام و مشخصات توصیفی قابل اصلاح‌اند. ساخت نوبت و ویرایش تعریف برای جلوگیری از race روی همان ردیف تور قفل می‌گیرند؛ موجودی و قراردادهای قبلی حفظ می‌شوند.
+
+تفکیک تعریف تور از مدیریت نوبت/قیمت پکیج و پیوند هتل‌های بازه در آخرین develop حفظ شد. شاخه مستقل `codex/pc-a-tour-management-0928` روی `origin/develop@e4eb048c`؛ checkout اصلی و runtime 3100 دست‌نخورده‌اند. ۵۳ تست API و ۱۱ تست Web، lint محدوده و typecheck کامل API/Web موفق‌اند. build تولیدی API و Web با ۵۳ route موفق‌اند. QA بصری/تعاملی با fixture مصنوعی در دسکتاپ و عرض موبایل انجام شد و overflow افقی ندارد؛ ذخیره واقعی روی دیتابیس عملیاتی آزمایش نشد. بدون Schema/Migration، Dependency/Lockfile، Seed، Permission یا تغییر داده عملیاتی. قفل محدود اسناد با commit نهایی آزاد می‌شود؛ PR به develop و بدون merge خودکار تحویل می‌شود.
+
+## 2026-09-28 — WORKBENCH-TEMPLATE-STARS-0928 — READY_FOR_REVIEW
+
+قالب‌های اولیهٔ یادداشت نیز دکمهٔ ستاره دارند. ستاره‌زدن، یک نسخهٔ پایدار از قالب در حساب کاربر ذخیره می‌کند و آن را در «ستاره‌دارها» نشان می‌دهد؛ قالب تکراری بعد از بارگذاری مجدد حذف می‌شود. API و دیتابیس تغییر نکرده‌اند.
+
+## 2026-09-28 — WORKBENCH-CALENDAR-EDIT-0928 — READY_FOR_REVIEW
+
+رویدادهای شخصی تقویم میزکار اکنون با فرم قابل ویرایش‌اند و وضعیت آن‌ها با گزینه‌های «برنامه‌ریزی‌شده»، «فعال»، «تکمیل‌شده» و «لغوشده» تغییر می‌کند. گزینه‌ها با فیلتر تقویم همسان‌اند؛ ذخیره با کنترل نسخهٔ موجود API انجام می‌شود. ۷ آزمون تقویم، lint، typecheck و build Web موفق‌اند؛ Migration یا تغییر قرارداد لازم نیست.
+
+## 2026-09-28 — WORKBENCH-HOME-AVATAR-0928 — READY_FOR_REVIEW
+
+قاب مربعی خوشامدگویی خانهٔ میزکار عکس پروفایل ذخیره‌شدهٔ کاربر را نمایش می‌دهد و پس از تغییر عکس در تنظیمات شخصی تازه می‌شود. در نبود عکس، حروف نام نمایش داده می‌شوند. typecheck، lint و build تولیدی Web موفق‌اند؛ API یا داده تغییر نکرده است.
+
+## 2026-09-28 — WORKBENCH-PASSWORD-VISIBILITY-0928 — READY_FOR_REVIEW
+
+فرم تغییر رمز میزکار برای رمز فعلی، رمز جدید و تکرار آن دکمهٔ مستقل نمایش/پنهان‌سازی دارد. مقدار فیلد با تغییر حالت حفظ می‌شود؛ API و قواعد رمز دست‌نخورده‌اند. lint، typecheck و build Web موفق‌اند.
+
+## 2026-09-28 — WORKBENCH-FILES-COPY-0928 — READY_FOR_REVIEW
+
+متن توضیحی زیر عنوان «فایل‌های من» حذف شد. نمایش و بارگذاری فایل‌ها بدون تغییر است.
+
+## 2026-09-28 — WORKBENCH-HIDE-VERSION-NOTE-0928 — READY_FOR_REVIEW
+
+فیلد «یادداشت نسخه» از فرم بارگذاری شخصی در «فایل‌های من» پنهان شد و در فرم اصلی اسناد باقی ماند. lint، typecheck و build Web موفق‌اند.
+
+## 2026-09-28 — WORKBENCH-DOCUMENT-RETURN-0928 — READY_FOR_REVIEW
+
+بازکردن سند از خانه، فایل‌های من، ستاره‌دارها یا تقویم میزکار و بستن جزئیات آن اکنون کاربر را به همان تب میزکار برمی‌گرداند. بازگشت به چهار مقصد مجاز محدود است. ۹ آزمون هدفمند، lint، typecheck و build Web موفق‌اند.
+
+## 2026-09-28 — FINANCE-HISTORY-SEAT-PRICING-0928 — PC-A
+
+Existing unpaid ticket invoices retain the seat/unit-price editor; count, unit cost and automatic total are visible. Persistent branch-scoped receipt/payment history shows each structured installment, transfer date, account/method/reference and remaining amount, including settled requests, with cursor pagination. Request details and the bottom inbox panel refresh after Finance actions. 23 API and 29 Web tests, strict typechecks, scoped lint and API/Web production builds (53 routes) passed. No migration/data/dependency change. See [handoff](tasks/FINANCE-HISTORY-SEAT-PRICING-0928.md). Bounded Finance contract/docs locks released; owner authorizes develop merge.

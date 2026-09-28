@@ -32,6 +32,8 @@ import { SalesService } from '../sales/sales.service';
 import { ProcurementPublicService } from '../procurement/procurement-public.service';
 import { FinanceDeliveryService } from './document-delivery/finance-delivery.module';
 import { FinanceTicketCostService } from './ticket-cost/finance-ticket-cost.service';
+import { readFinanceHistory } from './finance-history';
+import type { FinanceHistoryQueryV1 } from '@nora/contracts';
 import { DecimalValue } from './finance.money';
 
 const hrStatus: Record<HrConnectionStatus, FinanceRequestStatus> = {
@@ -57,6 +59,16 @@ export class FinanceInboxService {
     @Inject(FinanceTicketCostService)
     private readonly ticketCosts: FinanceTicketCostService,
   ) {}
+
+  history(query: FinanceHistoryQueryV1, actor: AuthenticatedActor) {
+    return readFinanceHistory(
+      this.database,
+      this.sales,
+      this.reservations,
+      query,
+      actor,
+    );
+  }
 
   async list(actor: AuthenticatedActor): Promise<FinanceInboxV1> {
     if (!actor.permissions.includes('finance.read'))

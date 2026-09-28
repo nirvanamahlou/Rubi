@@ -304,16 +304,18 @@ export function DocumentUploadDialog({
                   variant="rubi"
                 />
               </FormField>
-              <FormField id="version-note" label="یادداشت نسخه">
-                <Input
-                  id="version-note"
-                  onChange={(event) =>
-                    update('versionNote', event.target.value)
-                  }
-                  placeholder="مثلاً بارگذاری اولیه"
-                  value={values.versionNote}
-                />
-              </FormField>
+              {!personalUpload && (
+                <FormField id="version-note" label="یادداشت نسخه">
+                  <Input
+                    id="version-note"
+                    onChange={(event) =>
+                      update('versionNote', event.target.value)
+                    }
+                    placeholder="مثلاً بارگذاری اولیه"
+                    value={values.versionNote}
+                  />
+                </FormField>
+              )}
             </div>
             <FormField id="document-description" label="توضیحات">
               <Textarea

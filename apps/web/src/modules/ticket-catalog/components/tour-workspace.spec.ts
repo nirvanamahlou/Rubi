@@ -9,7 +9,7 @@ const source = readFileSync(
 describe('tour departure ticket selection', () => {
   it('loads outbound and return tickets across the selected date range', () => {
     expect(source.match(/dates\.start,\n\s+dates\.end,/g)).toHaveLength(2);
-    expect(source).toContain(
+    expect(source.replace(/\s+/g, ' ')).toContain(
       'فقط بلیت‌هایی نمایش داده می‌شوند که تاریخ حرکتشان از روز شروع',
     );
     expect(source).toContain('dates.end < dates.start');
