@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   Archive,
   ArchiveRestore,
@@ -45,6 +46,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { documentsApi, DocumentsApiError } from '../api/client';
 import { DOCUMENT_FAVORITES_CHANGED } from '../model/favorites';
+import { documentReturnPath } from '../model/document-return';
 import {
   archiveTools,
   type ArchiveToolDefinition,
@@ -296,6 +298,7 @@ function Metric({
 }
 
 export function DocumentsWorkspace() {
+  const router = useRouter();
   const [section, setSection] = useState<SectionKey>('overview');
   const [sectionDomain, setSectionDomain] = useState<DocumentDomainCode | null>(
     null,
@@ -559,6 +562,11 @@ export function DocumentsWorkspace() {
     setDetailOpen(open);
     if (!open && typeof window !== 'undefined') {
       const url = new URL(window.location.href);
+      const returnPath = documentReturnPath(url.searchParams.get('returnTo'));
+      if (returnPath && url.searchParams.has('document')) {
+        router.replace(returnPath);
+        return;
+      }
       if (url.searchParams.has('document')) {
         url.searchParams.delete('document');
         window.history.replaceState({}, '', url);
