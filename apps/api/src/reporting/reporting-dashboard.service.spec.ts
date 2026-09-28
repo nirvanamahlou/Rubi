@@ -94,6 +94,103 @@ describe('dashboard travel projection date boundaries', () => {
     expect(dashboardPersianDateParts(new Date(fromUtc)).day).toBe(1);
   });
 
+  it('counts distinct valid orders with a destination for the customer destination KPI', async () => {
+    const facts = vi.fn().mockResolvedValue([
+      { ...demoFact, id: 'destination-line-1', orderNumber: 'ORD-1' },
+      { ...demoFact, id: 'destination-line-2', orderNumber: 'ORD-1' },
+      {
+        ...demoFact,
+        id: 'destination-line-3',
+        orderNumber: 'ORD-2',
+        destinationCity: 'استانبول',
+      },
+      {
+        ...demoFact,
+        id: 'without-destination',
+        orderNumber: 'ORD-3',
+        destinationCity: null,
+      },
+    ]);
+    const service = new ReportingService({
+      facts,
+    } as unknown as ReportingRepository);
+
+    const result = await service.dashboardProjection(
+      {
+        from: '2026-09-01',
+        kpiIds: 'customer-destination-demand',
+        to: '2026-09-30',
+      },
+      actor,
+    );
+
+    expect(result.metrics['customer-destination-demand']).toMatchObject({
+      aggregation: 'count distinct valid orders with a destination',
+      unit: 'قلم',
+      value: '۲',
+    });
+  });
+
+  it('keeps acquisition-channel trend independent from the sales amount trend', async () => {
+    const facts = vi.fn().mockResolvedValue([
+      {
+        ...demoFact,
+        customerName: 'مشتری الف',
+        leadSource: 'Google',
+        salesAmount: new Prisma.Decimal(90_000_000),
+      },
+      {
+        ...demoFact,
+        id: 'acquisition-duplicate-customer',
+        customerName: 'مشتری الف',
+        leadSource: 'Google',
+        salesAmount: new Prisma.Decimal(10_000_000),
+      },
+      {
+        ...demoFact,
+        id: 'acquisition-second-channel',
+        customerName: 'مشتری ب',
+        leadSource: 'معرفی آژانس',
+        salesAmount: new Prisma.Decimal(1),
+      },
+    ]);
+    const service = new ReportingService({
+      facts,
+    } as unknown as ReportingRepository);
+
+    const result = await service.dashboardProjection(
+      {
+        from: '2026-09-01',
+        to: '2026-09-30',
+        visualIds: 'customer-acquisition-channel-trend,finalized-sales-trend',
+      },
+      actor,
+    );
+
+    expect(result.visuals['customer-acquisition-channel-trend']).toMatchObject({
+      aggregation:
+        'count distinct customers with a known acquisition channel per time bucket',
+      unit: 'مشتری',
+      values: expect.arrayContaining([2]),
+      series: expect.arrayContaining([
+        expect.objectContaining({
+          label: 'Google',
+          values: expect.arrayContaining([1]),
+        }),
+        expect.objectContaining({
+          label: 'معرفی آژانس',
+          values: expect.arrayContaining([1]),
+        }),
+      ]),
+    });
+    expect(
+      result.visuals['customer-acquisition-channel-trend'],
+    ).not.toHaveProperty('currencySeries');
+    expect(
+      result.visuals['customer-acquisition-channel-trend']?.values,
+    ).not.toEqual(result.visuals['finalized-sales-trend']?.values);
+  });
+
   it('computes KPI and chart growth from the immediately preceding equal-length period', async () => {
     const facts = vi
       .fn()
@@ -113,7 +210,8 @@ describe('dashboard travel projection date boundaries', () => {
 
     const result = await service.dashboardProjection(
       {
-        range: 'month',
+        from: '2026-09-01',
+        to: '2026-09-30',
         currency: 'IRR',
         kpiIds: 'gross-sales',
         visualIds: 'executive-sales-by-service,finalized-sales-trend',
@@ -241,8 +339,10 @@ describe('dashboard travel projection date boundaries', () => {
       {
         range: 'month',
         currency: 'IRR',
+        kpiIds:
+          'issue-success-rate,collection-rate,refund-rate,lead-conversion-rate',
         visualIds:
-          'finalized-sales-trend,crm-followup-queue,commercial-pipeline,employee-performance-ranking',
+          'finalized-sales-trend,crm-followup-queue,commercial-pipeline,employee-performance-ranking,employee-sales-count-by-agent,employee-sales-amount-by-agent,employee-conversion-by-agent,employee-cancellations-by-agent',
       },
       actor,
     );
@@ -260,5 +360,46 @@ describe('dashboard travel projection date boundaries', () => {
     expect(result.visuals['employee-performance-ranking']).toMatchObject({
       labels: expect.arrayContaining(['کارشناس دمو آریا', 'کارشناس دمو پارسا']),
     });
+    expect(result.visuals['employee-sales-count-by-agent']).toMatchObject({
+      metricId: 'employee-sales-count-by-agent',
+      aggregation: 'count distinct confirmed non-cancelled orders',
+      values: [1, 1, 1],
+    });
+    expect(result.visuals['employee-sales-count-by-agent']).not.toHaveProperty(
+      'currencySeries',
+    );
+    expect(result.visuals['employee-sales-amount-by-agent']).toMatchObject({
+      metricId: 'employee-sales-amount-by-agent',
+      aggregation: 'sum salesAmount at order-item-currency grain',
+      values: [12_000_000, 12_000_000, 12_000_000],
+    });
+    expect(result.visuals['employee-conversion-by-agent']?.values).toEqual([
+      100, 100, 0,
+    ]);
+    expect(result.visuals['employee-cancellations-by-agent']?.values).toEqual([
+      0, 0, 0,
+    ]);
+    expect(result.metrics['issue-success-rate']).toMatchObject({
+      unit: 'درصد',
+      value: '۶۷',
+    });
+    expect(
+      result.metrics['issue-success-rate']?.trend?.values.length,
+    ).toBeGreaterThan(0);
+    expect(result.metrics['issue-success-rate']?.trend?.values).toEqual(
+      expect.arrayContaining([expect.any(Number)]),
+    );
+    expect(result.metrics['collection-rate']?.unit).toBe('درصد');
+    expect(
+      result.metrics['collection-rate']?.trend?.values.length,
+    ).toBeGreaterThan(0);
+    expect(result.metrics['refund-rate']?.unit).toBe('درصد');
+    expect(result.metrics['refund-rate']?.trend?.values.length).toBeGreaterThan(
+      0,
+    );
+    expect(result.metrics['lead-conversion-rate']?.unit).toBe('درصد');
+    expect(
+      result.metrics['lead-conversion-rate']?.trend?.values.length,
+    ).toBeGreaterThan(0);
   });
 });

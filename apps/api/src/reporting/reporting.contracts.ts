@@ -210,6 +210,8 @@ export interface DashboardProjectionV1 {
         value: string;
         unit: string;
         detail: string;
+        metricId?: string;
+        aggregation?: string;
         comparison?: DashboardComparisonV1;
         comparisonSeries?: readonly DashboardCurrencyComparisonV1[];
         trend?: DashboardTrendV1;
@@ -222,8 +224,12 @@ export interface DashboardProjectionV1 {
       {
         labels: readonly string[];
         values: readonly number[];
+        unit?: string;
+        metricId?: string;
+        aggregation?: string;
         currencyCode?: string;
         currencySeries?: readonly DashboardVisualCurrencySeriesV1[];
+        series?: readonly DashboardVisualSeriesV1[];
         comparison?: DashboardComparisonV1;
         trend?: DashboardTrendV1;
       }
@@ -252,6 +258,12 @@ export interface DashboardVisualCurrencySeriesV1 {
   values: readonly number[];
   comparison?: DashboardComparisonV1;
   trend?: DashboardTrendV1;
+}
+
+/** A labelled non-monetary series for a multi-line dashboard visual. */
+export interface DashboardVisualSeriesV1 {
+  label: string;
+  values: readonly number[];
 }
 
 export interface DashboardTrendV1 {

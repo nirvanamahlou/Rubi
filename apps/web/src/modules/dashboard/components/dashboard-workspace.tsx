@@ -50,7 +50,14 @@ import {
 } from 'lucide-react';
 import Image from 'next/image';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useId, useMemo, useRef, useState } from 'react';
+import {
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 
 import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
@@ -95,6 +102,7 @@ import {
 import {
   dashboardDateRangeError,
   dashboardFiltersFromSearchParams,
+  dashboardFiltersToReportFilterState,
   dashboardFiltersToSearchParams,
   defaultDashboardFilters,
   type DashboardFilters,
@@ -108,6 +116,7 @@ import {
   type DashboardVisualDefinition,
   type DashboardVisualKind,
 } from '../model/registry';
+import { trendAxisLabelIndexes } from '../model/trend-axis';
 
 const rangeOptions: readonly [DashboardRange, string][] = [
   ['today', 'امروز'],
@@ -687,7 +696,8 @@ function trendTemporalGrain(
 
   const firstInterval =
     labels.length > 1
-      ? new Date(labels[1] ?? '').getTime() - new Date(labels[0] ?? '').getTime()
+      ? new Date(labels[1] ?? '').getTime() -
+        new Date(labels[0] ?? '').getTime()
       : Number.NaN;
   if (!Number.isFinite(firstInterval)) return 'day';
   if (firstInterval <= 60 * 60 * 1000) return 'hour';
@@ -756,6 +766,20 @@ function formatDashboardNumber(
   options?: Intl.NumberFormatOptions,
 ) {
   return value.toLocaleString('en-US', options);
+}
+
+function formatVisualNumber(
+  value: number,
+  unit?: string,
+  options?: Intl.NumberFormatOptions,
+) {
+  const formatted = formatDashboardNumber(value, options);
+  return unit === 'درصد' ? `${formatted}%` : formatted;
+}
+
+function compactVisualNumber(value: number, unit?: string) {
+  const formatted = compactChartValue(value);
+  return unit === 'درصد' ? `${formatted}%` : formatted;
 }
 
 function latinizeDashboardNumericText(value: string) {
@@ -1118,6 +1142,25 @@ function Metric({
   definition?: DashboardKpiDefinition | undefined;
   metric?: DashboardMetricSnapshot | undefined;
 }) {
+  const percentageKpiIds = new Set([
+    'ticket-cancellation-rate',
+    'collection-rate',
+    'refund-rate',
+    'reservation-failure-rate',
+    'issue-success-rate',
+    'sell-through-rate',
+    'tour-sell-through-rate',
+    'customer-interest-coverage',
+    'lead-growth-rate',
+    'lead-conversion-rate',
+    'sla-breach-rate',
+    'campaign-conversion',
+    'consent-coverage',
+    'employee-lead-conversion',
+  ]);
+  const isPercentageMetric =
+    (definition?.id ? percentageKpiIds.has(definition.id) : false) ||
+    metric?.unit === 'درصد';
   const currencyValues = currency && metric ? metric.value.split(' · ') : null;
   const comparisonFor = (index: number) => {
     const currencyCode =
@@ -1207,7 +1250,9 @@ function Metric({
               compact ? 'text-xl' : 'text-2xl',
             )}
           >
-            {metric ? latinizeDashboardNumericText(metric.value) : '—'}
+            {metric
+              ? `${latinizeDashboardNumericText(metric.value)}${isPercentageMetric ? '%' : ''}`
+              : '—'}
           </span>
           <span aria-hidden="true" />
         </span>
@@ -1421,8 +1466,8 @@ function GrowthIndicator({
   const direction = comparison?.direction ?? 'flat';
   const isAdverseKpi = Boolean(
     definition &&
-      (definition.role === 'guardrail' ||
-        adverseKpiIdPattern.test(definition.id)),
+    (definition.role === 'guardrail' ||
+      adverseKpiIdPattern.test(definition.id)),
   );
   const semanticTone =
     direction === 'flat'
@@ -1474,12 +1519,14 @@ function GrowthIndicator({
 
 function KpiCard({
   definition,
+  loading = false,
   selected,
   onSelect,
   featured = false,
   metric,
 }: {
   definition: DashboardKpiDefinition;
+  loading?: boolean;
   selected: boolean;
   onSelect(): void;
   featured?: boolean;
@@ -1531,21 +1578,35 @@ function KpiCard({
           </span>
         </span>
       </span>
-      <span className="relative block text-center">
-        <Metric
-          compact
-          currency={definition.currency === 'required'}
-          definition={definition}
-          metric={metric}
-        />
-      </span>
-      {metric ? (
-        <span className="relative mt-3 flex min-h-24 flex-col pt-0">
-          {metric.trend ? (
-            <MiniTrend title={definition.title} trend={metric.trend} />
-          ) : null}
+      {loading ? (
+        <span
+          aria-label="در حال دریافت مقدار شاخص"
+          className="relative mt-4 block"
+        >
+          <Skeleton className="mx-auto h-7 w-24" />
+          <span className="mt-3 flex min-h-24 flex-col">
+            <Skeleton className="h-20 w-full" />
+          </span>
         </span>
-      ) : null}
+      ) : (
+        <>
+          <span className="relative block text-center">
+            <Metric
+              compact
+              currency={definition.currency === 'required'}
+              definition={definition}
+              metric={metric}
+            />
+          </span>
+          {metric ? (
+            <span className="relative mt-3 flex min-h-24 flex-col pt-0">
+              {metric.trend ? (
+                <MiniTrend title={definition.title} trend={metric.trend} />
+              ) : null}
+            </span>
+          ) : null}
+        </>
+      )}
     </button>
   );
 }
@@ -1761,7 +1822,7 @@ function DimensionFilter({
 
   useEffect(() => {
     if (!open) return;
-    searchRef.current?.focus();
+    searchRef.current?.focus({ preventScroll: true });
     function closeOnOutside(event: MouseEvent) {
       if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
     }
@@ -1947,14 +2008,18 @@ function VisualDataSummary({
   labels,
   title,
   trend,
+  unit,
   values,
 }: {
   labels: readonly string[];
   title: string;
-  trend?: {
-    calendarSystem: TrendCalendarSystem;
-    grain: TrendTemporalGrain;
-  } | undefined;
+  unit: string | undefined;
+  trend?:
+    | {
+        calendarSystem: TrendCalendarSystem;
+        grain: TrendTemporalGrain;
+      }
+    | undefined;
   values: readonly number[];
 }) {
   const temporalLabel = trend ? trendTemporalLabels[trend.grain] : null;
@@ -1977,7 +2042,8 @@ function VisualDataSummary({
       <div className="overflow-x-auto border-t border-border">
         {temporalLabel ? (
           <p className="border-b border-border/70 bg-muted/30 px-3 py-2 text-[11px] text-muted-foreground">
-            تفکیک زمانی: <strong className="text-foreground">{temporalLabel}</strong>
+            تفکیک زمانی:{' '}
+            <strong className="text-foreground">{temporalLabel}</strong>
           </p>
         ) : null}
         <table className="w-full min-w-72 text-xs">
@@ -2009,7 +2075,7 @@ function VisualDataSummary({
                     : (labels[index] ?? `دسته ${index + 1}`)}
                 </th>
                 <td className="px-3 py-2 text-end font-bold tabular-nums">
-                  {formatDashboardNumber(value)}
+                  {formatVisualNumber(value, unit)}
                 </td>
               </tr>
             ))}
@@ -2076,13 +2142,20 @@ function ActionQueue({
               key={`${row.label}-${row.index}`}
             >
               <th className="px-3 py-3 text-start" scope="row">
-                <span className="block font-bold text-foreground">{row.label}</span>
+                <span className="block font-bold text-foreground">
+                  {row.label}
+                </span>
                 <span className="mt-1 block text-[11px] font-semibold tabular-nums text-muted-foreground">
                   {formatDashboardNumber(row.value)}
                 </span>
               </th>
               <td className="px-3 py-3">
-                <span className={cn('inline-flex min-w-12 justify-center rounded-full px-2 py-1 font-bold', row.tone)}>
+                <span
+                  className={cn(
+                    'inline-flex min-w-12 justify-center rounded-full px-2 py-1 font-bold',
+                    row.tone,
+                  )}
+                >
                   {row.priority}
                 </span>
               </td>
@@ -2220,17 +2293,19 @@ function OperationalDataTable({
 function EmployeePerformanceBars({
   labels,
   title,
+  unit,
   values,
 }: {
   labels: readonly string[];
   title: string;
+  unit: string | undefined;
   values: readonly number[];
 }) {
   const maximum = Math.max(...values, 1);
   const accessibleSummary = values
     .map(
       (value, index) =>
-        `${labels[index] ?? `کارشناس ${index + 1}`}: ${formatDashboardNumber(value)}`,
+        `${labels[index] ?? `کارشناس ${index + 1}`}: ${formatVisualNumber(value, unit)}`,
     )
     .join('، ');
 
@@ -2276,7 +2351,7 @@ function EmployeePerformanceBars({
                 </span>
               </span>
               <strong className="min-w-12 text-end text-xs tabular-nums text-foreground">
-                {formatDashboardNumber(value)}
+                {formatVisualNumber(value, unit)}
               </strong>
             </div>
           );
@@ -2291,15 +2366,19 @@ function DashboardChart({
   kind,
   labels,
   range,
+  series,
   title,
   trendCalendarSystem,
+  unit,
   values,
 }: {
   kind: DashboardVisualKind;
   labels: readonly string[];
   range: DashboardRange;
+  series?: DashboardVisualSnapshot['series'];
   title: string;
   trendCalendarSystem: TrendCalendarSystem;
+  unit: string | undefined;
   values: readonly number[];
 }) {
   const resolvedKind = dashboardVisualKindForData(kind, values);
@@ -2308,7 +2387,7 @@ function DashboardChart({
   const accessibleSummary = values
     .map(
       (value, index) =>
-        `${labels[index] ?? `دسته ${index + 1}`}: ${formatDashboardNumber(value)}`,
+        `${labels[index] ?? `دسته ${index + 1}`}: ${formatVisualNumber(value, unit)}`,
     )
     .join('، ');
 
@@ -2317,25 +2396,26 @@ function DashboardChart({
     const chartRight = 930;
     const chartTop = 18;
     const chartBottom = 140;
+    const lineSeries = series?.length ? series : [{ label: title, values }];
+    const chartMaximum = Math.max(
+      ...lineSeries.flatMap((item) => item.values),
+      1,
+    );
     const pointFor = (value: number, index: number, totalPoints: number) => ({
       x:
         totalPoints > 1
           ? chartLeft + (index * (chartRight - chartLeft)) / (totalPoints - 1)
           : (chartLeft + chartRight) / 2,
-      y: chartBottom - (value / maximum) * (chartBottom - chartTop),
+      y: chartBottom - (value / chartMaximum) * (chartBottom - chartTop),
     });
-    const points = values.map((value, index) => ({
-      ...pointFor(value, index, values.length),
-      value,
+    const lineSeriesWithPoints = lineSeries.map((seriesItem) => ({
+      ...seriesItem,
+      points: seriesItem.values.map((value, index) => ({
+        ...pointFor(value, index, seriesItem.values.length),
+        value,
+      })),
     }));
-    const visibleLabelStep =
-      labels.length > 12 ? Math.ceil(labels.length / 8) : 1;
-    const axisLabelIndexes = labels
-      .map((_, index) => index)
-      .filter(
-        (index) =>
-          index % visibleLabelStep === 0 || index === labels.length - 1,
-      );
+    const axisLabelIndexes = trendAxisLabelIndexes(labels.length);
     const temporalGrain = trendTemporalGrain(range, labels);
     return (
       <figure
@@ -2351,7 +2431,7 @@ function DashboardChart({
         >
           {[0, 1, 2, 3, 4].map((index) => {
             const y = chartTop + (index * (chartBottom - chartTop)) / 4;
-            const value = maximum * (1 - index / 4);
+            const value = chartMaximum * (1 - index / 4);
             return (
               <g key={y}>
                 <line
@@ -2371,30 +2451,47 @@ function DashboardChart({
                   x={chartLeft - 34}
                   y={y + 3}
                 >
-                  {compactChartValue(value)}
+                {compactVisualNumber(value, unit)}
                 </text>
               </g>
             );
           })}
-          <polyline
-            fill="none"
-            points={points.map(({ x, y }) => `${x},${y}`).join(' ')}
-            stroke="#172554"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="3"
-          />
-          {points.map(({ x, y, value }, index) => (
-            <circle key={`${x}-${y}`} cx={x} cy={y} fill="#172554" r="3.5">
-              <title>{`${trendTooltipTime(
-                labels[index] ?? '',
-                trendCalendarSystem,
-                temporalGrain,
-              )} — ${formatDashboardNumber(value)}`}</title>
-            </circle>
-          ))}
+          {lineSeriesWithPoints.map((seriesItem, seriesIndex) => {
+            const color =
+              trendSeriesPalette[seriesIndex % trendSeriesPalette.length]
+                ?.color ?? '#172554';
+            return (
+              <g key={seriesItem.label}>
+                <polyline
+                  fill="none"
+                  points={seriesItem.points
+                    .map(({ x, y }) => `${x},${y}`)
+                    .join(' ')}
+                  stroke={color}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="3"
+                />
+                {seriesItem.points.map(({ x, y, value }, index) => (
+                  <circle
+                    key={`${seriesItem.label}-${x}-${y}`}
+                    cx={x}
+                    cy={y}
+                    fill={color}
+                    r="3.5"
+                  >
+                    <title>{`${seriesItem.label} — ${trendTooltipTime(
+                      labels[index] ?? '',
+                      trendCalendarSystem,
+                      temporalGrain,
+                    )} — ${formatVisualNumber(value, unit)}`}</title>
+                  </circle>
+                ))}
+              </g>
+            );
+          })}
           {axisLabelIndexes.map((index) => {
-            const point = points[index];
+            const point = lineSeriesWithPoints[0]?.points[index];
             if (!point) return null;
             return (
               <text
@@ -2414,6 +2511,27 @@ function DashboardChart({
             );
           })}
         </svg>
+        {series?.length ? (
+          <div className="mt-2 flex flex-wrap justify-center gap-x-3 gap-y-1 text-[10px] font-bold text-muted-foreground">
+            {lineSeries.map((seriesItem, index) => (
+              <span
+                className="inline-flex items-center gap-1"
+                key={seriesItem.label}
+              >
+                <i
+                  aria-hidden="true"
+                  className="size-2 rounded-full"
+                  style={{
+                    backgroundColor:
+                      trendSeriesPalette[index % trendSeriesPalette.length]
+                        ?.color ?? '#172554',
+                  }}
+                />
+                {seriesItem.label}
+              </span>
+            ))}
+          </div>
+        ) : null}
         <figcaption className="sr-only">{accessibleSummary}</figcaption>
       </figure>
     );
@@ -2471,7 +2589,7 @@ function DashboardChart({
                 y={y + 3}
                 textAnchor="end"
               >
-                {compactChartValue(comboMaximum * (1 - index / 3))}
+                {compactVisualNumber(comboMaximum * (1 - index / 3), unit)}
               </text>
             </g>
           ))}
@@ -2489,7 +2607,7 @@ function DashboardChart({
                   x={x}
                   y={154 - height}
                 >
-                  <title>{`${visibleLabels[index]}: ${formatDashboardNumber(value)}`}</title>
+                  <title>{`${visibleLabels[index]}: ${formatVisualNumber(value, unit)}`}</title>
                 </rect>
                 <text
                   className="fill-muted-foreground text-[9px]"
@@ -2520,7 +2638,7 @@ function DashboardChart({
               stroke="#d97706"
               strokeWidth="2"
             >
-              <title>{`میانگین روند: ${formatDashboardNumber(rollingAverage[index] ?? 0, { maximumFractionDigits: 1 })}`}</title>
+              <title>{`میانگین روند: ${formatVisualNumber(rollingAverage[index] ?? 0, unit, { maximumFractionDigits: 1 })}`}</title>
             </circle>
           ))}
         </svg>
@@ -2667,7 +2785,7 @@ function DashboardChart({
                       x={item.labelX}
                       dy="18"
                     >
-                      {`${compactChartValue(item.value)} (${percent}%)`}
+                      {`${compactVisualNumber(item.value, unit)} (${percent}%)`}
                     </tspan>
                   </text>
                 </g>
@@ -2697,12 +2815,32 @@ function DashboardChart({
       }))
       .sort((left, right) => right.drop - left.drop);
     const largestDrop = drops[0];
-    const funnelColors = [
-      'from-blue-100 to-blue-50 text-slate-900 dark:from-blue-950/60 dark:to-blue-950/20 dark:text-blue-100',
-      'from-blue-500 to-blue-600 text-white',
-      'from-blue-600 to-blue-700 text-white',
-      'from-blue-700 to-blue-800 text-white',
-      'from-slate-800 to-slate-950 text-white',
+    // The stages run RTL: the light "source" stage is at the right and the
+    // final outcome becomes progressively darker toward the left. Each stage
+    // has its own deliberately asymmetric trapezoid, rather than a generic
+    // rounded card, to preserve the decision-flow affordance at every width.
+    const funnelStageDesigns = [
+      {
+        className:
+          'from-[#edf4ff] via-[#dceaff] to-[#c7dcff] text-[#14275a] dark:from-blue-950/60 dark:via-blue-900/55 dark:to-blue-900/45 dark:text-blue-50',
+        clipPath: 'polygon(4% 5%, 100% 0, 96% 100%, 0 94%)',
+      },
+      {
+        className: 'from-[#5c98ff] via-[#3f7df2] to-[#2d69dc] text-white',
+        clipPath: 'polygon(2% 0, 100% 4%, 96% 100%, 0 96%)',
+      },
+      {
+        className: 'from-[#3d7eef] via-[#2d68da] to-[#2355bd] text-white',
+        clipPath: 'polygon(0 4%, 100% 0, 97% 96%, 3% 100%)',
+      },
+      {
+        className: 'from-[#2a5fc7] via-[#17438f] to-[#0d285c] text-white',
+        clipPath: 'polygon(0 0, 96% 6%, 92% 100%, 5% 96%)',
+      },
+      {
+        className: 'from-[#183d82] via-[#0e285d] to-[#071a40] text-white',
+        clipPath: 'polygon(4% 0, 100% 5%, 94% 100%, 0 95%)',
+      },
     ];
     return (
       <figure
@@ -2710,20 +2848,30 @@ function DashboardChart({
         className="space-y-4 rounded-xl border border-border/80 bg-surface p-4"
         role="img"
       >
-        <div className="flex flex-col gap-2 lg:flex-row lg:items-center" dir="rtl">
+        <div
+          className="flex flex-col gap-2 lg:flex-row lg:items-center"
+          dir="rtl"
+        >
           {stages.map((stage, index) => (
             <div className="contents" key={`${stage.label}-${index}`}>
               <div className="min-w-0 flex-1">
                 <div
                   className={cn(
-                    'grid min-h-28 place-items-center px-3 text-center shadow-sm',
+                    'grid min-h-32 place-items-center px-3 text-center shadow-[0_12px_24px_-18px_rgba(20,63,145,0.85)] transition-transform duration-200 hover:-translate-y-0.5',
                     'bg-gradient-to-bl',
-                    funnelColors[index] ?? funnelColors.at(-1),
+                    funnelStageDesigns[index]?.className ??
+                      funnelStageDesigns.at(-1)?.className,
                   )}
-                  style={{ clipPath: 'polygon(7% 0, 100% 7%, 93% 100%, 0 93%)' }}
+                  style={{
+                    clipPath:
+                      funnelStageDesigns[index]?.clipPath ??
+                      funnelStageDesigns.at(-1)?.clipPath,
+                  }}
                 >
                   <span className="min-w-0">
-                    <span className="block truncate text-sm font-black">{stage.label}</span>
+                    <span className="block truncate text-sm font-black">
+                      {stage.label}
+                    </span>
                     <strong className="mt-1 block text-xl tabular-nums">
                       {formatDashboardNumber(stage.value)}
                     </strong>
@@ -2734,7 +2882,9 @@ function DashboardChart({
                 <div className="flex shrink-0 items-center justify-center gap-1.5 px-1 text-primary lg:flex-col">
                   <ArrowLeft aria-hidden="true" className="size-4" />
                   <strong className="text-sm tabular-nums">{`${stage.conversion}%`}</strong>
-                  <span className="text-[10px] text-muted-foreground">نرخ تبدیل</span>
+                  <span className="text-[10px] text-muted-foreground">
+                    نرخ تبدیل
+                  </span>
                 </div>
               ) : null}
             </div>
@@ -2745,11 +2895,19 @@ function DashboardChart({
             <Lightbulb aria-hidden="true" className="size-5" />
             بینش
           </span>
-          <p className="text-sm text-muted-foreground">
+          <div className="space-y-1 text-sm text-muted-foreground">
+            <p>
             {largestDrop
-              ? `بیشترین افت بین «${stages[largestDrop.index]?.label}» و «${stages[largestDrop.index + 1]?.label}» رخ داده است (${formatDashboardNumber(largestDrop.drop)}).`
+              ? `بیشترین افت بین «${stages[largestDrop.index]?.label}» و «${stages[largestDrop.index + 1]?.label}» رخ داده است؛ یعنی ${formatDashboardNumber(largestDrop.drop)} مورد از مرحلهٔ اول به مرحلهٔ بعدی نرسیده‌اند.`
               : 'برای محاسبهٔ افت مراحل، دادهٔ کافی در دسترس نیست.'}
-          </p>
+            </p>
+            {largestDrop ? (
+              <p className="text-xs leading-5 text-muted-foreground/90">
+                راهنما: این عدد تعداد موردهایی است که در گذار بین این دو مرحله از
+                قیف خارج شده‌اند.
+              </p>
+            ) : null}
+          </div>
         </div>
         <figcaption className="sr-only">{accessibleSummary}</figcaption>
       </figure>
@@ -2845,8 +3003,6 @@ function VisualDetailsPanel({
   trendCalendarSystem: TrendCalendarSystem;
   visualId: string;
 }) {
-  const rangeLabel =
-    rangeOptions.find(([value]) => value === range)?.[1] ?? 'بازه انتخابی';
   const temporalGrain =
     kind === 'line' && data
       ? trendTemporalGrain(range, data.labels)
@@ -2909,26 +3065,6 @@ function VisualDetailsPanel({
                   </span>
                 </p>
               ) : null}
-            </section>
-
-            <section aria-labelledby={`visual-current-output-${visualId}`}>
-              <h3
-                className="text-sm font-black text-foreground"
-                id={`visual-current-output-${visualId}`}
-              >
-                خروجی در بازهٔ انتخابی
-              </h3>
-              <div className="mt-2 flex flex-wrap gap-2">
-                <Badge>{rangeLabel}</Badge>
-                <Badge>{visualLabels[kind]}</Badge>
-                {data?.currencyCode ? (
-                  <Badge dir="ltr">
-                    {currencySymbols[data.currencyCode] ?? data.currencyCode}{' '}
-                    {data.currencyCode}
-                  </Badge>
-                ) : null}
-                <Badge>{`${data?.values.length ?? 0} دسته نمایش‌داده‌شده`}</Badge>
-              </div>
             </section>
 
             <section
@@ -3037,6 +3173,7 @@ function ProjectionSlot({
   onTrendCalendarSystemChange,
   permission,
   range,
+  loading = false,
   source,
   trendCalendarSystem,
   wide = false,
@@ -3052,6 +3189,7 @@ function ProjectionSlot({
   onTrendCalendarSystemChange(value: TrendCalendarSystem): void;
   permission: string;
   range: DashboardRange;
+  loading?: boolean;
   source: DashboardVisualDefinition['source'];
   trendCalendarSystem: TrendCalendarSystem;
   wide?: boolean;
@@ -3072,6 +3210,7 @@ function ProjectionSlot({
         (series) => series.currencyCode === activeCurrencyCode,
       ) ?? data)
     : data;
+  const displayUnit = displayData?.unit ?? data?.unit;
   const resolvedKind = displayData?.values.length
     ? dashboardVisualKindForData(kind, displayData.values)
     : kind;
@@ -3093,200 +3232,214 @@ function ProjectionSlot({
   return (
     <>
       <Card
-      data-dashboard-visual
-      data-dashboard-employee-visual={isEmployeeComparison || undefined}
-      className={cn(
-        'flex h-full min-w-0 flex-col overflow-hidden p-0 shadow-sm',
-        wide && 'xl:col-span-2',
-      )}
-    >
-      <div className="flex items-start justify-between gap-3 border-b border-border/70 bg-gradient-to-l from-blue-50/70 via-surface to-surface p-3.5 dark:from-blue-950/20">
-        <div className="flex min-w-0 items-start gap-3">
-          <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-blue-50 text-blue-700 ring-1 ring-blue-100 dark:bg-blue-950/50 dark:text-blue-300 dark:ring-blue-900">
-            <Icon aria-hidden="true" className="size-5" />
-          </span>
-          <div className="min-w-0">
-            <h3 className="font-black text-foreground">{title}</h3>
-            <p className="mt-1 text-xs leading-6 text-muted-foreground">
-              {description}
-            </p>
+        data-dashboard-visual
+        data-dashboard-employee-visual={isEmployeeComparison || undefined}
+        className={cn(
+          'flex h-full min-w-0 flex-col overflow-hidden p-0 shadow-sm',
+          wide && 'xl:col-span-2',
+        )}
+      >
+        <div className="flex items-start justify-between gap-3 border-b border-border/70 bg-gradient-to-l from-blue-50/70 via-surface to-surface p-3.5 dark:from-blue-950/20">
+          <div className="flex min-w-0 items-start gap-3">
+            <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-blue-50 text-blue-700 ring-1 ring-blue-100 dark:bg-blue-950/50 dark:text-blue-300 dark:ring-blue-900">
+              <Icon aria-hidden="true" className="size-5" />
+            </span>
+            <div className="min-w-0">
+              <h3 className="font-black text-foreground">{title}</h3>
+              <p className="mt-1 text-xs leading-6 text-muted-foreground">
+                {description}
+              </p>
+            </div>
           </div>
-        </div>
-        <div className="flex shrink-0 flex-col items-end gap-1.5">
-          <Badge className="bg-blue-50 text-[10px] text-blue-700 dark:bg-blue-950/50 dark:text-blue-200">
-            {visualLabel}
-          </Badge>
-          <div
-            className={cn(
-              'flex items-center gap-1.5',
-              resolvedKind === 'line'
-                ? 'min-w-[15.875rem] flex-row flex-nowrap justify-end'
-                : 'max-w-full flex-col items-end',
-            )}
-            data-dashboard-trend-controls={resolvedKind === 'line' || undefined}
-            dir={resolvedKind === 'line' ? 'rtl' : undefined}
-          >
-            {currencySeries.length ? (
-              <Select
-                value={activeCurrencyCode ?? currencySeries[0]?.currencyCode ?? ''}
-                onValueChange={setSelectedCurrencyCode}
-              >
-                <SelectTrigger
-                  aria-label={`واحد پول نمودار ${title}`}
-                  className="h-7 min-w-28 border-border/80 bg-background px-2 text-[10px] font-bold"
-                  data-dashboard-visual-currency-selector
+          <div className="flex shrink-0 flex-col items-end gap-1.5">
+            <Badge className="bg-blue-50 text-[10px] text-blue-700 dark:bg-blue-950/50 dark:text-blue-200">
+              {visualLabel}
+            </Badge>
+            <div
+              className={cn(
+                'flex items-center gap-1.5',
+                resolvedKind === 'line'
+                  ? 'min-w-[15.875rem] flex-row flex-nowrap justify-end'
+                  : 'max-w-full flex-col items-end',
+              )}
+              data-dashboard-trend-controls={
+                resolvedKind === 'line' || undefined
+              }
+              dir={resolvedKind === 'line' ? 'rtl' : undefined}
+            >
+              {currencySeries.length ? (
+                <Select
+                  value={
+                    activeCurrencyCode ?? currencySeries[0]?.currencyCode ?? ''
+                  }
+                  onValueChange={setSelectedCurrencyCode}
                 >
-                  <CircleDollarSign aria-hidden="true" className="size-3.5" />
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {currencySeries.map((series) => {
-                    const symbol = currencySymbols[series.currencyCode] ??
-                      series.currencyCode;
-                    return (
+                  <SelectTrigger
+                    aria-label={`واحد پول نمودار ${title}`}
+                    className="h-7 min-w-28 border-border/80 bg-background px-2 text-[10px] font-bold"
+                    data-dashboard-visual-currency-selector
+                  >
+                    <CircleDollarSign aria-hidden="true" className="size-3.5" />
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {currencySeries.map((series) => {
+                      const symbol =
+                        currencySymbols[series.currencyCode] ??
+                        series.currencyCode;
+                      return (
+                        <SelectItem
+                          className="data-[highlighted]:bg-primary data-[highlighted]:text-primary-foreground"
+                          key={series.currencyCode}
+                          value={series.currencyCode}
+                        >
+                          <bdi dir="ltr">{`${symbol} ${series.currencyCode}`}</bdi>
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
+              ) : null}
+              {resolvedKind === 'line' ? (
+                <Select
+                  value={trendCalendarSystem}
+                  onValueChange={(value) =>
+                    onTrendCalendarSystemChange(value as TrendCalendarSystem)
+                  }
+                >
+                  <SelectTrigger
+                    aria-label="تقویم برچسب‌های محور زمان"
+                    className="h-8 w-[9.5rem] shrink-0 whitespace-nowrap border-border/80 bg-background px-2.5 text-[10px] font-bold"
+                  >
+                    <CalendarDays
+                      aria-hidden="true"
+                      className="size-4 shrink-0 text-primary"
+                      strokeWidth={2.5}
+                    />
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {trendCalendarOptions.map(([value, label]) => (
                       <SelectItem
                         className="data-[highlighted]:bg-primary data-[highlighted]:text-primary-foreground"
-                        key={series.currencyCode}
-                        value={series.currencyCode}
+                        key={value}
+                        value={value}
                       >
-                        <bdi dir="ltr">{`${symbol} ${series.currencyCode}`}</bdi>
+                        {label}
                       </SelectItem>
-                    );
-                  })}
-                </SelectContent>
-              </Select>
-            ) : null}
-            {resolvedKind === 'line' ? (
-              <Select
-                value={trendCalendarSystem}
-                onValueChange={(value) =>
-                  onTrendCalendarSystemChange(value as TrendCalendarSystem)
-                }
-              >
-                <SelectTrigger
-                  aria-label="تقویم برچسب‌های محور زمان"
-                  className="h-8 w-[9.5rem] shrink-0 whitespace-nowrap border-border/80 bg-background px-2.5 text-[10px] font-bold"
-                >
-                  <CalendarDays
-                    aria-hidden="true"
-                    className="size-4 shrink-0 text-primary"
-                    strokeWidth={2.5}
-                  />
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {trendCalendarOptions.map(([value, label]) => (
-                    <SelectItem
-                      className="data-[highlighted]:bg-primary data-[highlighted]:text-primary-foreground"
-                      key={value}
-                      value={value}
-                    >
-                      {label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            ) : null}
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : null}
+            </div>
           </div>
         </div>
-      </div>
-      <div className="relative flex-1 p-3.5">
-        {displayData?.currencyCode ? (
-          <span className="mb-2 block text-[11px] font-semibold text-muted-foreground">
-            مبلغ فروش · <bdi dir="ltr">{displayData.currencyCode}</bdi>
-          </span>
-        ) : null}
-        {displayData?.values.length ? (
-          isEmployeeComparison ? (
-            <EmployeePerformanceBars
-              labels={displayData.labels}
-              title={title}
-              values={displayData.values}
+        <div className="relative flex-1 p-3.5">
+          {displayData?.currencyCode ? (
+            <span className="mb-2 block text-[11px] font-semibold text-muted-foreground">
+              مبلغ فروش · <bdi dir="ltr">{displayData.currencyCode}</bdi>
+            </span>
+          ) : null}
+          {loading ? (
+            <Skeleton
+              aria-label="در حال دریافت دادهٔ نمودار"
+              className="h-52 w-full rounded-xl"
             />
-          ) : resolvedKind === 'table' || resolvedKind === 'queue' ? (
-            <OperationalDataTable
-              kind={resolvedKind}
-              labels={displayData.labels}
-              title={title}
-              values={displayData.values}
-            />
-          ) : (
-            <DashboardChart
-              kind={kind}
-              labels={displayData.labels}
-              range={range}
-              title={title}
-              trendCalendarSystem={trendCalendarSystem}
-              values={displayData.values}
-            />
-          )
-        ) : (
-          <>
-            <EmptyVisualCanvas kind={kind} />
-            <p className="sr-only">دادهٔ تأییدشده برای نمایش موجود نیست</p>
-          </>
-        )}
-        {displayData?.values.length ? (
-          <>
-            {kind === 'donut' && resolvedKind !== 'donut' ? (
-              <p className="mt-2 text-[11px] text-muted-foreground">
-                به‌دلیل تعداد یا ماهیت دسته‌ها، سهم‌ها به‌صورت میله‌ای نمایش
-                داده شده‌اند.
-              </p>
-            ) : null}
-            {resolvedKind === 'table' || resolvedKind === 'queue' ? null : (
-              <VisualDataSummary
+          ) : displayData?.values.length ? (
+            isEmployeeComparison ? (
+              <EmployeePerformanceBars
                 labels={displayData.labels}
                 title={title}
-                trend={
-                  resolvedKind === 'line'
-                    ? {
-                        calendarSystem: trendCalendarSystem,
-                        grain: trendTemporalGrain(range, displayData.labels),
-                      }
-                    : undefined
-                }
+                unit={displayUnit}
                 values={displayData.values}
               />
-            )}
-          </>
-        ) : null}
-      </div>
-      <div
-        className="flex flex-wrap items-center gap-2 border-t border-border/80 bg-muted/20 px-4 py-3"
-        dir="rtl"
-      >
-        {canOpenVisualDetails ? (
+            ) : resolvedKind === 'table' || resolvedKind === 'queue' ? (
+              <OperationalDataTable
+                kind={resolvedKind}
+                labels={displayData.labels}
+                title={title}
+                values={displayData.values}
+              />
+            ) : (
+              <DashboardChart
+                kind={kind}
+                labels={displayData.labels}
+                range={range}
+                title={title}
+                trendCalendarSystem={trendCalendarSystem}
+                unit={displayUnit}
+                values={displayData.values}
+                series={data?.series}
+              />
+            )
+          ) : (
+            <>
+              <EmptyVisualCanvas kind={kind} />
+              <p className="sr-only">دادهٔ تأییدشده برای نمایش موجود نیست</p>
+            </>
+          )}
+          {displayData?.values.length ? (
+            <>
+              {kind === 'donut' && resolvedKind !== 'donut' ? (
+                <p className="mt-2 text-[11px] text-muted-foreground">
+                  به‌دلیل تعداد یا ماهیت دسته‌ها، سهم‌ها به‌صورت میله‌ای نمایش
+                  داده شده‌اند.
+                </p>
+              ) : null}
+              {resolvedKind === 'table' || resolvedKind === 'queue' ? null : (
+                <VisualDataSummary
+                  labels={displayData.labels}
+                  title={title}
+                  trend={
+                    resolvedKind === 'line'
+                      ? {
+                          calendarSystem: trendCalendarSystem,
+                          grain: trendTemporalGrain(range, displayData.labels),
+                        }
+                      : undefined
+                  }
+                  unit={displayUnit}
+                  values={displayData.values}
+                />
+              )}
+            </>
+          ) : null}
+        </div>
+        <div
+          className="flex flex-wrap items-center gap-2 border-t border-border/80 bg-muted/20 px-4 py-3"
+          dir="rtl"
+        >
+          {canOpenVisualDetails ? (
+            <Button
+              aria-controls={`dashboard-visual-definition-panel-${visualId}`}
+              aria-expanded={isVisualDetailsOpen}
+              onClick={() => setIsVisualDetailsOpen(true)}
+              size="sm"
+              type="button"
+              variant="outline"
+            >
+              <Info aria-hidden="true" className="size-3.5" />
+              جزئیات نمودار
+            </Button>
+          ) : null}
+          {decision ? (
+            <Badge className="bg-amber-100 text-[10px] text-amber-800 dark:bg-amber-950 dark:text-amber-200">
+              {decision}
+            </Badge>
+          ) : null}
           <Button
-            aria-controls={`dashboard-visual-definition-panel-${visualId}`}
-            aria-expanded={isVisualDetailsOpen}
-            onClick={() => setIsVisualDetailsOpen(true)}
+            className="ms-auto"
+            disabled={!report}
+            onClick={() => {
+              if (report) onOpenReportConfiguration(report.code);
+            }}
             size="sm"
             type="button"
             variant="outline"
           >
-            <Info aria-hidden="true" className="size-3.5" />
-            جزئیات نمودار
+            {report ? 'بررسی گزارش مرتبط' : 'گزارش مرتبط در کاتالوگ موجود نیست'}
           </Button>
-        ) : null}
-        {decision ? (
-          <Badge className="bg-amber-100 text-[10px] text-amber-800 dark:bg-amber-950 dark:text-amber-200">
-            {decision}
-          </Badge>
-        ) : null}
-        <Button
-          className="ms-auto"
-          disabled={!report}
-          onClick={() => {
-            if (report) onOpenReportConfiguration(report.code);
-          }}
-          size="sm"
-          type="button"
-          variant="outline"
-        >
-          {report ? 'بررسی گزارش مرتبط' : 'گزارش مرتبط در کاتالوگ موجود نیست'}
-        </Button>
-      </div>
+        </div>
       </Card>
       {isVisualDetailsOpen ? (
         <VisualDetailsPanel
@@ -3672,7 +3825,9 @@ function DashboardSidebar({
                           key={value}
                           value={value}
                         >
-                          <span className="block w-full text-right">{label}</span>
+                          <span className="block w-full text-right">
+                            {label}
+                          </span>
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -3762,6 +3917,10 @@ export function DashboardWorkspace() {
   );
   const [trendCalendarSystem, setTrendCalendarSystem] =
     useState<TrendCalendarSystem>('persian');
+  const preservedViewportRef = useRef<{
+    left: number;
+    top: number;
+  } | null>(null);
   const legalEntity = useLegalEntityContext();
   const selection = legalEntity.context?.selection ?? null;
   const activePage =
@@ -3804,20 +3963,59 @@ export function DashboardWorkspace() {
     staleTime: 30_000,
   });
 
-  const updateFilters = (patch: Partial<DashboardFilters>) => {
-    const params = dashboardFiltersToSearchParams({ ...filters, ...patch });
-    router.replace(params.size ? `${pathname}?${params}` : pathname, {
+  const preserveDashboardViewport = () => {
+    preservedViewportRef.current = {
+      left: window.scrollX,
+      top: window.scrollY,
+    };
+  };
+
+  const replaceDashboardSearchParams = (params: URLSearchParams) => {
+    const nextSearch = params.toString();
+    if (nextSearch === searchParams.toString()) return;
+
+    preserveDashboardViewport();
+    router.replace(nextSearch ? `${pathname}?${nextSearch}` : pathname, {
       scroll: false,
     });
+  };
+
+  useLayoutEffect(() => {
+    const position = preservedViewportRef.current;
+    if (!position) return;
+
+    const restoreViewport = () => window.scrollTo(position.left, position.top);
+    restoreViewport();
+    const navigationFrame = window.requestAnimationFrame(restoreViewport);
+    let settledFrame: number | undefined;
+
+    if (!query.isFetching) {
+      settledFrame = window.requestAnimationFrame(() => {
+        restoreViewport();
+        if (preservedViewportRef.current === position) {
+          preservedViewportRef.current = null;
+        }
+      });
+    }
+
+    return () => {
+      window.cancelAnimationFrame(navigationFrame);
+      if (settledFrame !== undefined) {
+        window.cancelAnimationFrame(settledFrame);
+      }
+    };
+  }, [filters, query.isFetching]);
+
+  const updateFilters = (patch: Partial<DashboardFilters>) => {
+    const params = dashboardFiltersToSearchParams({ ...filters, ...patch });
+    replaceDashboardSearchParams(params);
   };
   const resetFilters = () => {
     const params = dashboardFiltersToSearchParams({
       ...defaultDashboardFilters,
       page: activePage.id,
     });
-    router.replace(params.size ? `${pathname}?${params}` : pathname, {
-      scroll: false,
-    });
+    replaceDashboardSearchParams(params);
   };
   const toggleNavigationGroup = (pageId: string) => {
     setExpandedGroups((current) => {
@@ -3849,22 +4047,30 @@ export function DashboardWorkspace() {
   const openReportConfiguration = (reportCode: string) => {
     setReportConfigurationCode(reportCode);
   };
+  const refreshDashboard = () => {
+    preserveDashboardViewport();
+    void query.refetch();
+  };
+  const reportConfigurationState = reportConfigurationCode
+    ? dashboardFiltersToReportFilterState(
+        filters,
+        reportConfigurationCode,
+        selection,
+      )
+    : null;
   return (
-    <div className="min-w-0 space-y-5 pb-8" data-dashboard-workspace>
+    <div
+      className="min-w-0 space-y-5 pb-8"
+      data-dashboard-workspace
+      style={{ overflowAnchor: 'none' }}
+    >
       <section aria-live="polite">
-        {query.isPending ? (
-          <div className="grid gap-3 sm:grid-cols-3">
-            <Skeleton className="h-28" />
-            <Skeleton className="h-28" />
-            <Skeleton className="h-28" />
-          </div>
-        ) : null}
         {query.isError ? (
           <ErrorState
             title="خطا در دریافت Dashboard"
             description="هیچ دادهٔ قدیمی یا حدسی نمایش داده نمی‌شود."
             action={
-              <Button onClick={() => void query.refetch()} variant="outline">
+              <Button onClick={refreshDashboard} variant="outline">
                 تلاش دوباره
               </Button>
             }
@@ -3919,7 +4125,7 @@ export function DashboardWorkspace() {
           onFiltersReset={resetFilters}
           onGroupToggle={toggleNavigationGroup}
           onPageSelect={selectPage}
-          onRefresh={() => void query.refetch()}
+          onRefresh={refreshDashboard}
         />
 
         <div className="min-w-0 space-y-5">
@@ -4007,6 +4213,7 @@ export function DashboardWorkspace() {
                       key={item.id}
                       definition={item}
                       featured
+                      loading={query.isPending}
                       metric={query.data?.metrics[item.id]}
                       selected={filters.widget === item.id}
                       onSelect={() =>
@@ -4036,15 +4243,16 @@ export function DashboardWorkspace() {
                       key={visualization.id}
                       kind={visualization.kind}
                       title={visualization.title}
-                       description={visualization.description}
-                       decision={visualization.openDecision}
-                       drilldown={visualization.drilldown}
-                       onOpenReportConfiguration={openReportConfiguration}
-                       onTrendCalendarSystemChange={setTrendCalendarSystem}
-                       permission={visualization.permission}
-                       range={filters.range}
-                       source={visualization.source}
-                       trendCalendarSystem={trendCalendarSystem}
+                      description={visualization.description}
+                      decision={visualization.openDecision}
+                      drilldown={visualization.drilldown}
+                      onOpenReportConfiguration={openReportConfiguration}
+                      onTrendCalendarSystemChange={setTrendCalendarSystem}
+                      permission={visualization.permission}
+                      range={filters.range}
+                      loading={query.isPending}
+                      source={visualization.source}
+                      trendCalendarSystem={trendCalendarSystem}
                       data={query.data?.visuals[visualization.id]}
                     />
                   ))}
@@ -4062,18 +4270,11 @@ export function DashboardWorkspace() {
             />
           ) : null}
 
-          {reportConfigurationCode ? (
+          {reportConfigurationState ? (
             <ReportingWorkspace
               configurationOnly
-              initialFilterState={{
-                reportCode: reportConfigurationCode,
-                fromDate: '',
-                toDate: '',
-                legalEntity: 'ALL',
-                currency: 'ALL',
-                filterValues: {},
-              }}
-              key={reportConfigurationCode}
+              initialFilterState={reportConfigurationState}
+              key={JSON.stringify(reportConfigurationState)}
               onConfigurationOpenChange={(open) => {
                 if (!open) setReportConfigurationCode(null);
               }}

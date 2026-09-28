@@ -42,6 +42,8 @@ export interface DashboardMetricSnapshot {
   value: string;
   unit: string;
   detail: string;
+  metricId?: string;
+  aggregation?: string;
   comparison?: DashboardComparisonSnapshot;
   comparisonSeries?: readonly DashboardCurrencyComparisonSnapshot[];
   trend?: DashboardTrendSnapshot;
@@ -51,15 +53,23 @@ export interface DashboardVisualCurrencySeriesSnapshot {
   currencyCode: string;
   labels: readonly string[];
   values: readonly number[];
+  unit?: string;
   comparison?: DashboardComparisonSnapshot;
   trend?: DashboardTrendSnapshot;
+}
+
+export interface DashboardVisualSeriesSnapshot {
+  label: string;
+  values: readonly number[];
 }
 
 export interface DashboardVisualSnapshot {
   labels: readonly string[];
   values: readonly number[];
+  unit?: string;
   currencyCode?: string;
   currencySeries?: readonly DashboardVisualCurrencySeriesSnapshot[];
+  series?: readonly DashboardVisualSeriesSnapshot[];
   comparison?: DashboardComparisonSnapshot;
   trend?: DashboardTrendSnapshot;
 }
@@ -81,9 +91,7 @@ export interface DashboardProjectionSnapshot {
   metadata: DashboardMetadata | null;
   filterOptions?: DashboardFilterOptions;
   metrics: Readonly<Record<string, DashboardMetricSnapshot>>;
-  visuals: Readonly<
-    Record<string, DashboardVisualSnapshot>
-  >;
+  visuals: Readonly<Record<string, DashboardVisualSnapshot>>;
 }
 
 export interface DashboardProjectionClient {

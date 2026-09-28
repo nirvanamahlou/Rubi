@@ -58,9 +58,9 @@ describe('dashboard calendar ranges', () => {
       to: now,
     });
     expect(yearBuckets).toHaveLength(6);
-    expect(yearBuckets.every((bucket) => bucket.getTime() < now.getTime())).toBe(
-      true,
-    );
+    expect(
+      yearBuckets.every((bucket) => bucket.getTime() < now.getTime()),
+    ).toBe(true);
     expect(yearBuckets.map(dashboardPersianDateParts)).toEqual(
       expect.arrayContaining([expect.objectContaining({ day: 1 })]),
     );
@@ -73,9 +73,9 @@ describe('dashboard calendar ranges', () => {
     const quarter = dashboardCalendarRangeStart(now, 'quarter');
 
     const intervals = (buckets: readonly Date[]) =>
-      buckets.slice(1).map((bucket, index) =>
-        bucket.getTime() - buckets[index]!.getTime(),
-      );
+      buckets
+        .slice(1)
+        .map((bucket, index) => bucket.getTime() - buckets[index]!.getTime());
 
     expect(
       intervals(

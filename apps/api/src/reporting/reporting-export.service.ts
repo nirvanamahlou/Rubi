@@ -78,6 +78,53 @@ function groupedDecimal(value: string) {
   return `${sign}${grouped}${fraction === undefined ? '' : `.${fraction}`}`;
 }
 
+function localizedTwoDigits(value: number) {
+  return value.toLocaleString('fa-IR', {
+    minimumIntegerDigits: 2,
+    useGrouping: false,
+  });
+}
+
+function datePart(parts: Intl.DateTimeFormatPart[], type: string) {
+  const value = parts.find((part) => part.type === type)?.value;
+  if (!value) throw new Error(`بخش ${type} زمان تولید گزارش معتبر نیست.`);
+  return Number(value);
+}
+
+function reportGeneratedAtTehran(value: string) {
+  const instant = new Date(value);
+  const persianDate = new Intl.DateTimeFormat('en-US-u-ca-persian-nu-latn', {
+    timeZone: 'Asia/Tehran',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(instant);
+  const tehranTime = new Intl.DateTimeFormat('en-US-u-ca-gregory-nu-latn', {
+    timeZone: 'Asia/Tehran',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hourCycle: 'h23',
+  }).formatToParts(instant);
+
+  return {
+    date: [
+      datePart(persianDate, 'year'),
+      datePart(persianDate, 'month'),
+      datePart(persianDate, 'day'),
+    ]
+      .map(localizedTwoDigits)
+      .join('/'),
+    time: [
+      datePart(tehranTime, 'hour'),
+      datePart(tehranTime, 'minute'),
+      datePart(tehranTime, 'second'),
+    ]
+      .map(localizedTwoDigits)
+      .join(':'),
+  };
+}
+
 function exportFilterEntries(result: TravelReportResultV1): [string, string][] {
   const snapshot = result.filterSnapshot;
   const entries: [string, string][] = [];
@@ -110,25 +157,50 @@ function datasetCell(
   return { value: text, style: 4, numeric: true };
 }
 
+function excelTableColumnNames(
+  columns: TravelReportResultV1['columns'],
+): string[] {
+  const used = new Set<string>();
+
+  return columns.map((column, index) => {
+    const base = (column.label.trim() || `ستون ${index + 1}`).slice(0, 250);
+    let suffix = 1;
+    let name = base;
+    while (used.has(name.toLocaleLowerCase('fa-IR'))) {
+      suffix += 1;
+      name = `${base.slice(0, 250 - String(suffix).length - 3)} (${suffix})`;
+    }
+    used.add(name.toLocaleLowerCase('fa-IR'));
+    return name;
+  });
+}
+
 function xlsx(result: TravelReportResultV1, reportName: string) {
   const filters = exportFilterEntries(result);
+  const generatedAt = reportGeneratedAtTehran(result.generatedAtUtc);
+  const tableColumnNames = excelTableColumnNames(result.columns);
   const rows: ExcelCell[][] = [
-    ['نام گزارش', reportName, 'زمان تولید UTC', result.generatedAtUtc].map(
-      (value) => ({ value, style: 1 }),
-    ),
-    [],
+    [{ value: reportName, style: 5 }],
+    [{ value: 'زمان تولید گزارش', style: 1 }],
+    [
+      { value: 'تاریخ شمسی', style: 2 },
+      { value: 'ساعت خروجی گرفتن', style: 2 },
+    ],
+    [
+      { value: generatedAt.date, style: 3 },
+      { value: generatedAt.time, style: 3 },
+    ],
     filters.map(([label]) => ({ value: label, style: 2 })),
     filters.map(([, value]) => ({ value, style: 3 })),
-    [],
-    result.columns.map((column) => ({ value: column.label, style: 2 })),
+    tableColumnNames.map((label) => ({ value: label, style: 2 })),
     ...result.rows.map((row) =>
       result.columns.map((column) => datasetCell(column, row[column.key])),
     ),
   ];
-  const columnCount = Math.max(4, filters.length, result.columns.length);
+  const columnCount = Math.max(2, filters.length, result.columns.length);
   const columnWidths = Array.from({ length: columnCount }, (_, index) => {
     const longest = Math.max(
-      ...rows.slice(0, 6).map((row) => row[index]?.value.length ?? 0),
+      ...rows.map((row) => row[index]?.value.length ?? 0),
     );
     const width = Math.min(42, Math.max(18, Math.ceil(longest * 0.9) + 3));
     return `<col min="${index + 1}" max="${index + 1}" width="${width}" customWidth="1"/>`;
@@ -144,7 +216,7 @@ function xlsx(result: TravelReportResultV1, reportName: string) {
   const sheetRows = rows
     .map(
       (row, rowIndex) =>
-        `<row r="${rowIndex + 1}"${rowIndex === 3 ? ` ht="${filterRowHeight}" customHeight="1"` : ''}>${row
+        `<row r="${rowIndex + 1}"${rowIndex === 5 ? ` ht="${filterRowHeight}" customHeight="1"` : ''}>${row
           .map((cell, columnIndex) => {
             const address = `${excelColumn(columnIndex)}${rowIndex + 1}`;
             const style = cell.style === undefined ? '' : ` s="${cell.style}"`;
@@ -169,16 +241,28 @@ function xlsx(result: TravelReportResultV1, reportName: string) {
       '<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>',
     ),
     'xl/styles.xml': strToU8(
-      '<?xml version="1.0"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><numFmts count="1"><numFmt numFmtId="164" formatCode="#,##0.##########"/></numFmts><fonts count="3"><font><sz val="11"/><name val="Arial"/></font><font><b/><sz val="11"/><color rgb="FFFFFFFF"/><name val="Arial"/></font><font><b/><sz val="12"/><color rgb="FF17396D"/><name val="Arial"/></font></fonts><fills count="4"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FF17396D"/><bgColor indexed="64"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFEAF2FB"/><bgColor indexed="64"/></patternFill></fill></fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="5"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/><xf numFmtId="0" fontId="2" fillId="0" borderId="0" applyFont="1"/><xf numFmtId="0" fontId="1" fillId="2" borderId="0" applyFont="1" applyFill="1"/><xf numFmtId="0" fontId="0" fillId="3" borderId="0" applyFill="1" applyAlignment="1"><alignment wrapText="1" vertical="center"/></xf><xf numFmtId="164" fontId="0" fillId="0" borderId="0" applyNumberFormat="1"/></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles><tableStyles count="0" defaultTableStyle="TableStyleMedium2" defaultPivotStyle="PivotStyleLight16"/></styleSheet>',
+      [
+      '<?xml version="1.0"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><numFmts count="1"><numFmt numFmtId="164" formatCode="#,##0.##########"/></numFmts><fonts count="3"><font><sz val="11"/><name val="Arial"/></font><font><b/><sz val="11"/><color rgb="FFFFFFFF"/><name val="Arial"/></font><font><b/><sz val="12"/><color rgb="FF17396D"/><name val="Arial"/></font></fonts><fills count="4"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FF17396D"/><bgColor indexed="64"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFEAF2FB"/><bgColor indexed="64"/></patternFill></fill></fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="5"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf><xf numFmtId="0" fontId="2" fillId="0" borderId="0" applyFont="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf><xf numFmtId="0" fontId="1" fillId="2" borderId="0" applyFont="1" applyFill="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf><xf numFmtId="0" fontId="0" fillId="3" borderId="0" applyFill="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf><xf numFmtId="164" fontId="0" fillId="0" borderId="0" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles><tableStyles count="0" defaultTableStyle="TableStyleMedium2" defaultPivotStyle="PivotStyleLight16"/></styleSheet>',
+      ]
+        .join('')
+        .replace(
+          '<fonts count="3"><font><sz val="11"/><name val="Arial"/></font><font><b/><sz val="11"/><color rgb="FFFFFFFF"/><name val="Arial"/></font><font><b/><sz val="12"/><color rgb="FF17396D"/><name val="Arial"/></font></fonts>',
+          '<fonts count="4"><font><sz val="11"/><name val="Arial"/></font><font><b/><sz val="11"/><color rgb="FFFFFFFF"/><name val="Arial"/></font><font><b/><sz val="12"/><color rgb="FF17396D"/><name val="Arial"/></font><font><b/><sz val="16"/><color rgb="FF17396D"/><name val="Arial"/></font></fonts>',
+        )
+        .replace(
+          '</cellXfs>',
+          '<xf numFmtId="0" fontId="3" fillId="0" borderId="0" applyFont="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf></cellXfs>',
+        )
+        .replace('<cellXfs count="5">', '<cellXfs count="6">'),
     ),
     'xl/worksheets/sheet1.xml': strToU8(
-      `<?xml version="1.0" encoding="UTF-8"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheetViews><sheetView rightToLeft="1" workbookViewId="0"><pane ySplit="6" topLeftCell="A7" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><cols>${columnWidths}</cols><sheetData>${sheetRows}</sheetData><tableParts count="1"><tablePart r:id="rId1"/></tableParts></worksheet>`,
+      `<?xml version="1.0" encoding="UTF-8"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheetViews><sheetView rightToLeft="1" showGridLines="0" workbookViewId="0"><pane ySplit="7" topLeftCell="A8" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><cols>${columnWidths}</cols><sheetData>${sheetRows}</sheetData><mergeCells count="2"><mergeCell ref="A1:${excelColumn(columnCount - 1)}1"/><mergeCell ref="A2:B2"/></mergeCells><tableParts count="1"><tablePart r:id="rId1"/></tableParts></worksheet>`,
     ),
     'xl/worksheets/_rels/sheet1.xml.rels': strToU8(
       '<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/table" Target="../tables/table1.xml"/></Relationships>',
     ),
     'xl/tables/table1.xml': strToU8(
-      `<?xml version="1.0" encoding="UTF-8"?><table xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" id="1" name="ReportData" displayName="ReportData" ref="A6:${excelColumn(result.columns.length - 1)}${rows.length}" totalsRowShown="0"><autoFilter ref="A6:${excelColumn(result.columns.length - 1)}${rows.length}"/><tableColumns count="${result.columns.length}">${result.columns.map((column, index) => `<tableColumn id="${index + 1}" name="${escapeXml(column.label)}"/>`).join('')}</tableColumns><tableStyleInfo name="TableStyleMedium2" showFirstColumn="0" showLastColumn="0" showRowStripes="1" showColumnStripes="0"/></table>`,
+      `<?xml version="1.0" encoding="UTF-8"?><table xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" id="1" name="ReportData" displayName="ReportData" ref="A7:${excelColumn(result.columns.length - 1)}${rows.length}" totalsRowShown="0"><autoFilter ref="A7:${excelColumn(result.columns.length - 1)}${rows.length}"/><tableColumns count="${result.columns.length}">${tableColumnNames.map((name, index) => `<tableColumn id="${index + 1}" name="${escapeXml(name)}"/>`).join('')}</tableColumns><tableStyleInfo name="TableStyleMedium2" showFirstColumn="0" showLastColumn="0" showRowStripes="1" showColumnStripes="0"/></table>`,
     ),
   };
   return Buffer.from(zipSync(files, { level: 6 }));

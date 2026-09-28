@@ -835,6 +835,10 @@ const descendingFirstColumns = new Set<ReportSort['column']>([
   'pendingReservationActions',
 ]);
 
+export function reportUsesPendingReservationActions(reportCode: string) {
+  return reportCode === 'paid_not_issued';
+}
+
 export function nextReportSort(
   column: ReportSort['column'],
   current: ReportSort,
@@ -1036,10 +1040,12 @@ export function ReportResultPanel({
         (row) => typeof row.settlementBalance === 'string',
       ),
       pendingReservationActions: rows.some(
-        (row) => typeof row.pendingReservationActions === 'number',
+        (row) =>
+          reportUsesPendingReservationActions(report.code) &&
+          typeof row.pendingReservationActions === 'number',
       ),
     };
-  }, [result]);
+  }, [report.code, result]);
 
   return (
     <Card
@@ -2378,13 +2384,6 @@ export function ReportingWorkspace({
                 </div>
               </div>
               <dl className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-                <div className="rounded-xl border bg-surface px-3 py-2">
-                  <dt className="text-[11px] text-muted-foreground">گزارش</dt>
-                  <dd className="mt-1 truncate text-xs font-semibold" dir="ltr">
-                    {selected.code}@v
-                    {result?.reportVersion ?? (connectedReportSelected ? 2 : 1)}
-                  </dd>
-                </div>
                 {filterSnapshot.map((item) => (
                   <div
                     className={
