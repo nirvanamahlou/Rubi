@@ -1,9 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
+import { createHash } from 'node:crypto';
 
 import type {
   AuthenticatedActor,
   CustomerAffairsLeadInput,
 } from '@nora/contracts';
+import { Prisma } from '@nora/database';
 import { CustomerAffairsService } from './customer-affairs.service';
 
 const actor = {
@@ -41,6 +43,84 @@ const lead: CustomerAffairsLeadInput = {
 };
 
 describe('CustomerAffairsService safety invariants', () => {
+  const duplicateSource = () =>
+    new Prisma.PrismaClientKnownRequestError('Duplicate lead source', {
+      code: 'P2002',
+      clientVersion: 'test',
+    });
+
+  it('returns 409 rather than the previous lead for a different request with the same source', async () => {
+    const repository = {
+      findLeadCommand: vi.fn().mockResolvedValue(null),
+      transaction: vi.fn().mockRejectedValue(duplicateSource()),
+    };
+    await expect(
+      service(repository).createLead(
+        { ...lead, queueCode: 'front-office' },
+        actor,
+        undefined,
+        'new-request-key',
+      ),
+    ).rejects.toMatchObject({
+      status: 409,
+      response: expect.objectContaining({
+        code: 'LEAD_SOURCE_REFERENCE_CONFLICT',
+      }),
+    });
+    expect(repository.findLeadCommand).toHaveBeenCalledTimes(2);
+  });
+
+  it('replays a completed request only when its key and payload fingerprint match', async () => {
+    const input = { ...lead, queueCode: 'front-office' };
+    const completed = {
+      resultEntityId: '44444444-4444-4444-8444-444444444444',
+      requestFingerprint: createHash('sha256')
+        .update(JSON.stringify(input))
+        .digest('hex'),
+    };
+    const repository = {
+      findLeadCommand: vi
+        .fn()
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce(completed),
+      transaction: vi.fn().mockRejectedValue(duplicateSource()),
+    };
+    const subject = service(repository);
+    const getLead = vi.spyOn(subject, 'getLead').mockResolvedValue({
+      data: { id: completed.resultEntityId, branchId: actor.branchIds[0] },
+    } as never);
+    await subject.createLead(input, actor, undefined, 'same-request-key');
+    expect(getLead).toHaveBeenCalledWith(completed.resultEntityId, actor);
+  });
+
+  it('does not replay the same key into a different authorized branch', async () => {
+    const otherBranch = '55555555-5555-4555-8555-555555555555';
+    const input = { ...lead, queueCode: 'front-office' };
+    const repository = {
+      findLeadCommand: vi.fn().mockResolvedValue({
+        resultEntityId: '44444444-4444-4444-8444-444444444444',
+        requestFingerprint: createHash('sha256')
+          .update(JSON.stringify(input))
+          .digest('hex'),
+      }),
+    };
+    const subject = service(repository);
+    vi.spyOn(subject, 'getLead').mockResolvedValue({
+      data: { branchId: actor.branchIds[0] },
+    } as never);
+    await expect(
+      subject.createLead(
+        input,
+        {
+          ...actor,
+          branchIds: ['33333333-3333-4333-8333-333333333333', otherBranch],
+        },
+        otherBranch,
+        'same-key',
+      ),
+    ).rejects.toMatchObject({ status: 409 });
+  });
+
   it('builds a permission-aware dashboard without querying forbidden domains', async () => {
     const repository = {
       dashboard: vi.fn().mockResolvedValue({

@@ -356,7 +356,9 @@ export class CustomerAffairsService {
     const prior = await this.repository.findLeadCommand(actor.userId, key);
     if (prior) {
       if (prior.requestFingerprint !== hash) throw conflict();
-      return this.getLead(prior.resultEntityId, actor);
+      const replay = await this.getLead(prior.resultEntityId, actor);
+      if (replay.data.branchId !== branchId) throw conflict();
+      return replay;
     }
     if (!input.assigneeUserId && !input.queueCode?.trim())
       throw new BadRequestException({
@@ -433,15 +435,20 @@ export class CustomerAffairsService {
         error instanceof Prisma.PrismaClientKnownRequestError &&
         error.code === 'P2002'
       ) {
-        const existing = await this.repository.findLeadBySource(
-          branchId,
-          input.sourceReference,
+        const completed = await this.repository.findLeadCommand(
+          actor.userId,
+          key,
         );
-        if (existing)
-          return {
-            data: await this.presentLead(existing, actor),
-            meta: { idempotentReplay: true },
-          };
+        if (completed?.requestFingerprint === hash) {
+          const replay = await this.getLead(completed.resultEntityId, actor);
+          if (replay.data.branchId !== branchId) throw conflict();
+          return replay;
+        }
+        throw new ConflictException({
+          code: 'LEAD_SOURCE_REFERENCE_CONFLICT',
+          message:
+            'شناسه منبع این درخواست قبلاً برای درخواست دیگری ثبت شده است.',
+        });
       }
       throw error;
     }

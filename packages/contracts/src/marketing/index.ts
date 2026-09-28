@@ -13,6 +13,7 @@ export const MARKETING_PERMISSION_CODES = [
   'marketing.campaign.cancel',
   'marketing.audience.read',
   'marketing.audience.manage',
+  'marketing.content.manage',
   'marketing.offer.manage',
   'marketing.budget.read',
   'marketing.budget.manage',
@@ -25,6 +26,31 @@ export const MARKETING_PERMISSION_CODES = [
 
 export type MarketingPermissionCode =
   (typeof MARKETING_PERMISSION_CODES)[number];
+
+export const MARKETING_CONTENT_ASSET_KINDS = [
+  'campaign-banner',
+  'brochure',
+  'catalog',
+  'landing-asset',
+  'brand-identity',
+  'media-plan',
+] as const;
+export type MarketingContentAssetKind =
+  (typeof MARKETING_CONTENT_ASSET_KINDS)[number];
+
+export interface MarketingContentAssetV1 {
+  documentId: string;
+  title: string;
+  description: string | null;
+  branchId: string;
+  kind: MarketingContentAssetKind;
+  archiveCode: string;
+  fileName: string;
+  mimeType: string;
+  sizeBytes: number;
+  scanStatus: string;
+  createdAt: string;
+}
 
 export type MarketingProcessStageKey =
   | 'STRATEGY'

@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type {
+  CustomerAffairsLeadInput,
   CustomerAffairsLeadView,
   CustomerAffairsTicketView,
 } from '@nora/contracts';
@@ -17,6 +18,26 @@ afterEach(() => {
 });
 
 describe('customer affairs operational API client', () => {
+  it('forwards the stable idempotency key supplied by a lead form attempt', async () => {
+    process.env.NEXT_PUBLIC_API_BASE_URL = 'http://localhost:4190/api/v1';
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ data: { id: 'lead-id' } }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    await customerAffairsApi.createLead(
+      {
+        title: 'درخواست سفر',
+        sourceReference: 'manual-request-1',
+      } as CustomerAffairsLeadInput,
+      undefined,
+      'request-1',
+    );
+    expect(fetchMock.mock.calls[0]![1].headers['idempotency-key']).toBe(
+      'request-1',
+    );
+  });
+
   it('passes website filters and persists Sales handoff responses through existing contracts', async () => {
     process.env.NEXT_PUBLIC_API_BASE_URL = 'http://localhost:4190/api/v1';
     const fetchMock = vi

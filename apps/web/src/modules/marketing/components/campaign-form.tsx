@@ -457,7 +457,9 @@ export function CampaignForm({ campaign, mode }: CampaignFormProps) {
             ) : (
               <Alert title="اعتبارسنجی پیش‌نمایش موفق" />
             )}
-            {submitted ? <Alert title="پیش‌نویس آماده شد" /> : null}
+            {submitted ? (
+              <Alert title="پیش‌نمایش آماده است؛ کمپین ذخیره نشده است" />
+            ) : null}
           </div>
         ) : null}
       </Card>

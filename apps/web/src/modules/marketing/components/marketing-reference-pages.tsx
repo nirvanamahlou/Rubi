@@ -37,12 +37,8 @@ import {
   X,
   type LucideIcon,
 } from 'lucide-react';
-import type {
-  DocumentDetailV1,
-  DocumentOptionsResponseV1,
-} from '@nora/contracts';
-import { useRouter } from 'next/navigation';
-import { useMemo, useState } from 'react';
+import type { MarketingContentAssetV1 } from '@nora/contracts';
+import { useEffect, useMemo, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
@@ -76,9 +72,11 @@ import {
 } from '@/components/ui/surfaces';
 import { cn } from '@/lib/utils';
 import {
-  documentsApi,
-  DocumentsApiError,
-} from '@/modules/documents/api/client';
+  MarketingAssetScanBlockedError,
+  marketingAssetStatusLabel,
+  marketingContentAssetsApi,
+  type MarketingContentAssetOptions,
+} from '../api/content-assets-client';
 import { campaignStatusLabels, type CampaignPreview } from '../model/marketing';
 import {
   marketingSectionTabs,
@@ -1087,7 +1085,11 @@ function SegmentBuilder({
               </Button>
               <Button
                 disabled={!rules.length}
-                onClick={() => onNotice('قواعد سگمنت ذخیره شدند.')}
+                onClick={() =>
+                  onNotice(
+                    'قواعد سگمنت فقط در این پیش‌نمایش دیده می‌شوند؛ ذخیره‌سازی هنوز فعال نیست.',
+                  )
+                }
                 size="sm"
               >
                 ذخیره سگمنت
@@ -1218,7 +1220,9 @@ function SegmentBuilder({
                 occurredAt: '2026-09-05',
                 statusIndex: 6,
               });
-              onNotice(`سگمنت «${segmentName.trim()}» ایجاد شد.`);
+              onNotice(
+                `سگمنت «${segmentName.trim()}» فقط به پیش‌نمایش اضافه شد؛ در سامانه ذخیره نشده است.`,
+              );
               setDialogOpen(false);
               setSegmentName('');
             }}
@@ -1572,8 +1576,8 @@ function LeadScoringPage({ onNotice }: { onNotice: NoticeHandler }) {
               }
               onNotice(
                 editor.id
-                  ? 'قانون امتیازدهی ویرایش شد.'
-                  : 'قانون امتیازدهی ایجاد شد.',
+                  ? 'قانون امتیازدهی فقط در پیش‌نمایش ویرایش شد؛ ذخیره‌سازی فعال نیست.'
+                  : 'قانون امتیازدهی فقط به پیش‌نمایش اضافه شد؛ ذخیره‌سازی فعال نیست.',
               );
               setEditor((current) => ({ ...current, open: false }));
             }}
@@ -2321,9 +2325,7 @@ function MessageComposer({ onNotice }: { onNotice: NoticeHandler }) {
               return;
             }
             onNotice(
-              sendMode === 'scheduled'
-                ? `پیام برای تاریخ ${scheduledDate} زمان‌بندی شد.`
-                : 'نیت ارسال پیام ثبت شد.',
+              'ثبت و ارسال پیام هنوز در دسترس نیست؛ هیچ پیام یا زمان‌بندی ذخیره نشد.',
             );
           }}
         >
@@ -2428,7 +2430,11 @@ function MessageComposer({ onNotice }: { onNotice: NoticeHandler }) {
           </div>
           <div className="flex flex-wrap gap-2 border-t border-border pt-4 md:col-span-2">
             <Button
-              onClick={() => onNotice('پیش‌نویس پیام ذخیره شد.')}
+              onClick={() =>
+                onNotice(
+                  'ذخیره پیش‌نویس پیام هنوز در دسترس نیست؛ متن فقط در این صفحه باقی می‌ماند.',
+                )
+              }
               type="button"
               variant="outline"
             >
@@ -2864,21 +2870,10 @@ const contentTableRows = {
   ],
 } satisfies Record<string, readonly PreviewRow[]>;
 
-type MarketingAsset = {
-  title: string;
-  meta: string;
-  icon: LucideIcon;
-  documentId?: string;
-};
-
 const marketingAssetKinds = [
   ['campaign-banner', 'بنر کمپین'],
   ['brochure', 'بروشور'],
   ['catalog', 'کاتالوگ'],
-  ['video', 'ویدئوی تبلیغاتی'],
-  ['audio', 'فایل صوتی'],
-  ['email-template', 'قالب ایمیل'],
-  ['message-template', 'قالب پیام'],
   ['landing-asset', 'دارایی صفحه فرود'],
   ['brand-identity', 'لوگو و هویت بصری'],
   ['media-plan', 'برنامه رسانه‌ای'],
@@ -2898,49 +2893,18 @@ function MarketingAssetUploadDialog({
   onSubmit,
 }: {
   open: boolean;
-  options: DocumentOptionsResponseV1['data'];
+  options: MarketingContentAssetOptions;
   submitting: boolean;
   error: string;
   onOpenChange: (open: boolean) => void;
   onSubmit: (form: FormData) => Promise<boolean>;
 }) {
-  const brandTypes = options.documentTypes.filter(
-    (type) => type.domain === 'BRAND',
-  );
   const [file, setFile] = useState<File | null>(null);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [assetKind, setAssetKind] = useState<string>(marketingAssetKinds[0][0]);
-  const [marketingBranch, setMarketingBranch] = useState<string>(
-    marketingBranches[0][0],
-  );
-  const documentTypeId =
-    brandTypes.find((type) => type.code === 'BRAND_ASSET_TEMPLATE')?.id ??
-    brandTypes[0]?.id ??
-    '';
-  const [categoryId, setCategoryId] = useState(
-    options.categories.find((category) => category.code === 'BRAND_ASSETS')
-      ?.id ??
-      options.categories[0]?.id ??
-      '',
-  );
-  const [ownerUserId, setOwnerUserId] = useState(
-    options.currentUserId || options.owners[0]?.id || '',
-  );
-  const [confidentiality, setConfidentiality] = useState('INTERNAL');
+  const [branchId, setBranchId] = useState(options.branches[0]?.id ?? '');
   const [validationError, setValidationError] = useState('');
-  const selectedType = brandTypes.find((type) => type.id === documentTypeId);
-  const selectedAssetKind = marketingAssetKinds.find(
-    ([value]) => value === assetKind,
-  );
-  const selectedMarketingBranch = marketingBranches.find(
-    ([value]) => value === marketingBranch,
-  );
-  const branchIndex = marketingBranches.findIndex(
-    ([value]) => value === marketingBranch,
-  );
-  const branchId =
-    options.branches[branchIndex]?.id ?? options.branches[0]?.id ?? '';
 
   return (
     <Dialog onOpenChange={onOpenChange} open={open}>
@@ -2965,40 +2929,23 @@ function MarketingAssetUploadDialog({
               setValidationError('عنوان فایل را کامل وارد کنید.');
               return;
             }
-            if (!documentTypeId || !categoryId || !branchId || !ownerUserId) {
-              setValidationError('نوع سند، دسته‌بندی، شعبه و مالک الزامی است.');
+            if (!branchId) {
+              setValidationError('شعبه فایل را انتخاب کنید.');
               return;
             }
             const form = new FormData();
             form.set('file', file);
             form.set('title', title.trim());
             if (description.trim()) form.set('description', description.trim());
-            form.set('documentTypeId', documentTypeId);
-            form.set('categoryId', categoryId);
             form.set('branchId', branchId);
-            form.set('ownerUserId', ownerUserId);
-            form.set('confidentiality', confidentiality);
-            form.set('sourceModule', 'marketing');
-            form.set('sourceEntityType', 'content-asset');
-            form.set(
-              'sourceEntityId',
-              `marketing-asset-${file.lastModified}-${file.size}`,
-            );
-            form.set(
-              'sourceDisplayLabel',
-              `${selectedAssetKind?.[1] ?? 'دارایی مارکتینگ'} «${title.trim()}» — ${selectedMarketingBranch?.[1] ?? 'مارکتینگ'}`,
-            );
-            form.set(
-              'versionNote',
-              `ثبت از کتابخانه محتوای مارکتینگ برای ${selectedMarketingBranch?.[1] ?? 'شعبه مارکتینگ'}`,
-            );
+            form.set('kind', assetKind);
             void onSubmit(form);
           }}
         >
           <div className="sm:col-span-2">
             <FormField id="marketing-asset-file" label="فایل" required>
               <Input
-                accept={selectedType?.allowedMimeTypes.join(',')}
+                accept={options.allowedMimeTypesByKind[assetKind]?.join(',')}
                 id="marketing-asset-file"
                 onChange={(event) => {
                   setFile(event.target.files?.[0] ?? null);
@@ -3029,44 +2976,14 @@ function MarketingAssetUploadDialog({
               value={assetKind}
             />
           </FormField>
-          <FormField id="marketing-asset-category" label="دسته‌بندی" required>
-            <SimpleSelect
-              ariaLabel="دسته‌بندی سند مارکتینگ"
-              onChange={setCategoryId}
-              options={options.categories.map(
-                (category) => [category.id, category.name] as const,
-              )}
-              value={categoryId}
-            />
-          </FormField>
           <FormField id="marketing-asset-branch" label="شعبه" required>
             <SimpleSelect
               ariaLabel="شعبه مالک فایل مارکتینگ"
-              onChange={setMarketingBranch}
-              options={marketingBranches}
-              value={marketingBranch}
-            />
-          </FormField>
-          <FormField id="marketing-asset-owner" label="مالک فایل" required>
-            <SimpleSelect
-              ariaLabel="مالک فایل مارکتینگ"
-              onChange={setOwnerUserId}
-              options={options.owners.map(
-                (owner) => [owner.id, owner.displayName] as const,
+              onChange={setBranchId}
+              options={options.branches.map(
+                (branch) => [branch.id, branch.name] as const,
               )}
-              value={ownerUserId}
-            />
-          </FormField>
-          <FormField id="marketing-asset-confidentiality" label="محرمانگی">
-            <SimpleSelect
-              ariaLabel="محرمانگی فایل مارکتینگ"
-              onChange={setConfidentiality}
-              options={[
-                ['PUBLIC', 'عمومی'],
-                ['INTERNAL', 'داخلی'],
-                ['CONFIDENTIAL', 'محرمانه'],
-              ]}
-              value={confidentiality}
+              value={branchId}
             />
           </FormField>
           <div className="sm:col-span-2">
@@ -3116,31 +3033,74 @@ function ContentPage({
   onOpen: (item: MarketingPreviewItem) => void;
   onNotice: NoticeHandler;
 }) {
-  const router = useRouter();
-  const [uploadedAssets, setUploadedAssets] = useState<MarketingAsset[]>([]);
+  const [uploadedAssets, setUploadedAssets] = useState<
+    MarketingContentAssetV1[]
+  >([]);
+  const [loadingAssets, setLoadingAssets] = useState(true);
+  const [assetPage, setAssetPage] = useState(1);
+  const [assetTotalPages, setAssetTotalPages] = useState(1);
+  const [listError, setListError] = useState('');
   const [uploadOpen, setUploadOpen] = useState(false);
   const [loadingOptions, setLoadingOptions] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState('');
-  const [documentOptions, setDocumentOptions] = useState<
-    DocumentOptionsResponseV1['data'] | null
-  >(null);
+  const [documentOptions, setDocumentOptions] =
+    useState<MarketingContentAssetOptions | null>(null);
+
+  useEffect(() => {
+    if (tab !== 'library') return;
+    let active = true;
+    void marketingContentAssetsApi
+      .list()
+      .then((result) => {
+        if (active) {
+          setUploadedAssets([...result.data]);
+          setAssetPage(result.meta.page);
+          setAssetTotalPages(result.meta.totalPages);
+          setListError('');
+        }
+      })
+      .catch((caught: unknown) => {
+        if (active)
+          setListError(
+            caught instanceof Error
+              ? caught.message
+              : 'دریافت کتابخانه محتوا ناموفق بود.',
+          );
+      })
+      .finally(() => {
+        if (active) setLoadingAssets(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [tab]);
+
+  const loadMoreAssets = async () => {
+    setLoadingAssets(true);
+    try {
+      const result = await marketingContentAssetsApi.list(assetPage + 1);
+      setUploadedAssets((items) => [...items, ...result.data]);
+      setAssetPage(result.meta.page);
+      setAssetTotalPages(result.meta.totalPages);
+      setListError('');
+    } catch (caught) {
+      setListError(
+        caught instanceof Error
+          ? caught.message
+          : 'دریافت فایل‌های بیشتر ناموفق بود.',
+      );
+    } finally {
+      setLoadingAssets(false);
+    }
+  };
 
   const openUpload = async () => {
     setLoadingOptions(true);
     setUploadError('');
     try {
-      const response = await documentsApi.options();
-      const hasBrandType = response.data.documentTypes.some(
-        (type) => type.domain === 'BRAND',
-      );
-      if (!hasBrandType) {
-        throw new DocumentsApiError(
-          'نوع سند دارایی برند در دسترسی فعلی شما موجود نیست.',
-          403,
-        );
-      }
-      setDocumentOptions(response.data);
+      const response = await marketingContentAssetsApi.options();
+      setDocumentOptions(response);
       setUploadOpen(true);
     } catch (caught) {
       const message =
@@ -3158,26 +3118,22 @@ function ContentPage({
     setUploading(true);
     setUploadError('');
     try {
-      const response = await documentsApi.upload(form);
-      const document: DocumentDetailV1 = response.data;
-      const extension = document.currentVersion.extension
-        ? document.currentVersion.extension.toUpperCase()
-        : 'فایل';
-      setUploadedAssets((items) => [
-        {
-          title: document.title,
-          meta: `${extension} · v${document.version.toLocaleString('fa-IR')} · ${document.archiveCode}`,
-          icon: FileText,
-          documentId: document.id,
-        },
-        ...items,
-      ]);
+      const asset = await marketingContentAssetsApi.upload(form);
+      setUploadedAssets((items) => [asset, ...items]);
       setUploadOpen(false);
       onNotice(
-        `«${document.title}» بارگذاری شد و در بخش اسناد و فایل‌ها نیز ثبت شد.`,
+        asset.scanStatus === 'CLEAN'
+          ? `«${asset.title}» در کتابخانه محتوا و اسناد ثبت شد.`
+          : `«${asset.title}» دریافت شد؛ دریافت فایل تا پایان اسکن امنیتی مسدود است.`,
       );
       return true;
     } catch (caught) {
+      if (caught instanceof MarketingAssetScanBlockedError) {
+        setUploadedAssets((items) => [caught.asset, ...items]);
+        setUploadOpen(false);
+        onNotice(caught.message);
+        return false;
+      }
       setUploadError(
         caught instanceof Error ? caught.message : 'بارگذاری فایل ناموفق بود.',
       );
@@ -3187,17 +3143,13 @@ function ContentPage({
     }
   };
 
-  const downloadAsset = async (asset: MarketingAsset) => {
-    if (!asset.documentId) {
-      onNotice(`دانلود آزمایشی «${asset.title}» آماده شد.`);
-      return;
-    }
+  const downloadAsset = async (asset: MarketingContentAssetV1) => {
     try {
-      const response = await documentsApi.download(asset.documentId);
-      const url = URL.createObjectURL(response.blob);
+      const blob = await marketingContentAssetsApi.download(asset.documentId);
+      const url = URL.createObjectURL(blob);
       const anchor = document.createElement('a');
       anchor.href = url;
-      anchor.download = asset.title;
+      anchor.download = asset.fileName;
       anchor.click();
       URL.revokeObjectURL(url);
       onNotice(`دانلود «${asset.title}» آغاز شد.`);
@@ -3211,17 +3163,6 @@ function ContentPage({
   };
 
   if (tab === 'library') {
-    const assets: readonly MarketingAsset[] = [
-      ...uploadedAssets,
-      { title: 'بنر اروپا — دسکتاپ', meta: 'تصویر · v4', icon: FileImage },
-      { title: 'ویدئوی هتل دبی', meta: 'ویدئو · v2', icon: FileImage },
-      { title: 'راهنمای سفر استانبول', meta: 'PDF · v3', icon: FileText },
-      { title: 'بنر نوروز سازمانی', meta: 'تصویر · v1', icon: FileImage },
-      { title: 'قالب ایمیل تابستان', meta: 'HTML · v5', icon: Mail },
-      { title: 'QR بروشور نمایشگاه', meta: 'تصویر · v2', icon: Target },
-      { title: 'لوگوی کمپین اروپا', meta: 'SVG · v1', icon: FileImage },
-      { title: 'فایل بودجه رسانه', meta: 'Excel · v6', icon: FileText },
-    ];
     return (
       <>
         <Panel
@@ -3233,35 +3174,66 @@ function ContentPage({
           }
           title="کتابخانه محتوا"
         >
+          {loadingAssets ? <p className="p-5">در حال دریافت فایل‌ها…</p> : null}
+          {listError ? (
+            <p className="p-5 text-destructive" role="alert">
+              {listError}
+            </p>
+          ) : null}
+          {!loadingAssets && !listError && uploadedAssets.length === 0 ? (
+            <p className="p-5 text-muted-foreground">
+              هنوز فایلی ثبت نشده است.
+            </p>
+          ) : null}
           <div className="grid gap-4 p-5 sm:grid-cols-2 xl:grid-cols-4">
-            {assets.map(({ title, meta, icon: Icon, documentId }, index) => (
-              <Card className="overflow-hidden" key={documentId ?? title}>
+            {uploadedAssets.map((asset) => (
+              <Card className="overflow-hidden" key={asset.documentId}>
                 <div className="grid h-28 place-items-center bg-gradient-to-br from-blue-50 to-violet-50 dark:from-blue-950/40 dark:to-violet-950/40">
-                  <Icon aria-hidden="true" className="size-10 text-primary" />
+                  {asset.mimeType.startsWith('image/') ? (
+                    <FileImage
+                      aria-hidden="true"
+                      className="size-10 text-primary"
+                    />
+                  ) : (
+                    <FileText
+                      aria-hidden="true"
+                      className="size-10 text-primary"
+                    />
+                  )}
                 </div>
                 <div className="p-4">
-                  <strong>{title}</strong>
+                  <strong>{asset.title}</strong>
                   <small className="mt-1 block text-muted-foreground">
-                    {meta} · تأییدشده
+                    {asset.fileName} · {asset.archiveCode} ·{' '}
+                    {marketingAssetStatusLabel(asset.scanStatus)}
                   </small>
                   <div className="mt-3 flex gap-1">
                     <Button
-                      aria-label={`مشاهده ${title}`}
+                      aria-label={`مشاهده ${asset.title}`}
                       onClick={() =>
-                        documentId
-                          ? router.push(
-                              `/documents?document=${encodeURIComponent(documentId)}`,
-                            )
-                          : onOpen({
-                              id: `preview-asset-${index}`,
+                        void marketingContentAssetsApi
+                          .detail(asset.documentId)
+                          .then((detail) =>
+                            onOpen({
+                              id: `preview-${detail.documentId}`,
                               section: 'content',
                               tab,
-                              title,
-                              description: meta,
-                              status: 'تأییدشده',
-                              meta,
-                              updatedAt: '2026-09-03T08:30:00.000Z',
-                            })
+                              title: detail.title,
+                              description: detail.description ?? '',
+                              status: marketingAssetStatusLabel(
+                                detail.scanStatus,
+                              ),
+                              meta: detail.fileName,
+                              updatedAt: detail.createdAt,
+                            }),
+                          )
+                          .catch((caught: unknown) =>
+                            onNotice(
+                              caught instanceof Error
+                                ? caught.message
+                                : 'مشاهده فایل ناموفق بود.',
+                            ),
+                          )
                       }
                       size="icon"
                       variant="outline"
@@ -3269,26 +3241,19 @@ function ContentPage({
                       <Eye aria-hidden="true" className="size-4" />
                     </Button>
                     <Button
-                      aria-label={`دانلود ${title}`}
-                      onClick={() =>
-                        void downloadAsset({
-                          title,
-                          meta,
-                          icon: Icon,
-                          ...(documentId ? { documentId } : {}),
-                        })
-                      }
+                      aria-label={`دانلود ${asset.title}`}
+                      disabled={asset.scanStatus !== 'CLEAN'}
+                      onClick={() => void downloadAsset(asset)}
                       size="icon"
                       variant="outline"
                     >
                       <Download aria-hidden="true" className="size-4" />
                     </Button>
                     <Button
-                      aria-label={`غیرفعال‌سازی ${title}`}
-                      className="border-destructive/35 text-destructive hover:bg-destructive/10 hover:text-destructive"
-                      onClick={() => onNotice(`«${title}» غیرفعال شد.`)}
+                      aria-label={`غیرفعال‌سازی ${asset.title}؛ نیازمند API غیرفعال‌سازی`}
+                      disabled
                       size="icon"
-                      title="غیرفعال‌سازی"
+                      title="نیازمند API غیرفعال‌سازی"
                       variant="outline"
                     >
                       <Power aria-hidden="true" className="size-4" />
@@ -3298,11 +3263,22 @@ function ContentPage({
               </Card>
             ))}
           </div>
+          {assetPage < assetTotalPages ? (
+            <div className="p-5 pt-0">
+              <Button
+                disabled={loadingAssets}
+                onClick={() => void loadMoreAssets()}
+                variant="outline"
+              >
+                {loadingAssets ? 'در حال دریافت…' : 'نمایش فایل‌های بیشتر'}
+              </Button>
+            </div>
+          ) : null}
         </Panel>
         {uploadOpen && documentOptions ? (
           <MarketingAssetUploadDialog
             error={uploadError}
-            key={`${documentOptions.currentUserId}-${uploadOpen ? 'open' : 'closed'}`}
+            key={`${documentOptions.branches[0]?.id ?? 'none'}-${uploadOpen ? 'open' : 'closed'}`}
             onOpenChange={(open) => {
               setUploadOpen(open);
               if (!open) setUploadError('');
@@ -4271,7 +4247,11 @@ function JourneyBuilder({ onNotice }: { onNotice: NoticeHandler }) {
               <Pencil aria-hidden="true" className="size-4" /> ویرایش اتوماسیون
             </Button>
             <Button
-              onClick={() => onNotice('پیش‌نویس سفر مشتری ذخیره شد.')}
+              onClick={() =>
+                onNotice(
+                  'پیش‌نویس سفر مشتری فقط در این پیش‌نمایش است؛ ذخیره‌سازی فعال نیست.',
+                )
+              }
               variant="outline"
             >
               <Save aria-hidden="true" className="size-4" /> ذخیره پیش‌نویس
@@ -5265,7 +5245,9 @@ function SettingsPage({
     <Panel
       actions={
         <Button
-          onClick={() => onNotice('تغییرات تنظیمات عمومی در Preview ذخیره شد.')}
+          onClick={() =>
+            onNotice('تنظیمات عمومی فقط پیش‌نمایش است؛ تغییری ذخیره نشد.')
+          }
         >
           <Save aria-hidden="true" className="size-4" /> ذخیره تغییرات
         </Button>
@@ -5824,9 +5806,9 @@ export function MarketingReferenceSection({
             onNotice(
               formKind === 'offer'
                 ? target
-                  ? `«${name}» برای مخاطب هدف «${target.label}» ذخیره شد.`
-                  : `«${name}» بدون مخاطب هدف مشخص ذخیره شد.`
-                : `«${name}» ذخیره شد.`,
+                  ? `«${name}» با مخاطب «${target.label}» فقط در پیش‌نمایش آماده شد؛ ذخیره‌سازی فعال نیست.`
+                  : `«${name}» فقط در پیش‌نمایش آماده شد؛ ذخیره‌سازی فعال نیست.`
+                : `«${name}» فقط در پیش‌نمایش آماده شد؛ ذخیره‌سازی فعال نیست.`,
             );
           }}
           open

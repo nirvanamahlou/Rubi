@@ -19,7 +19,8 @@ describe('simplified creation and row-list return', () => {
     expect(leadForm).not.toContain('name="sourceReference"');
     expect(leadForm).not.toContain('name="queueCode"');
     expect(leadForm).not.toContain('label="صف مسئول"');
-    expect(leadForm).toContain("sourceReference: 'ثبت مستقیم در امور مشتریان'");
+    expect(leadForm).toContain('sourceReference: attempt.sourceReference');
+    expect(leadForm).toContain('attempt.idempotencyKey');
     expect(leadForm).toContain("queueCode: 'customer-affairs-front-office'");
     expect(leadForm).toContain('name="specialPreferences"');
     expect(leadForm).toContain('grid items-start gap-4');

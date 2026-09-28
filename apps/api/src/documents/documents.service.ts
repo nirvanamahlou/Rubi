@@ -30,7 +30,10 @@ import type {
   DocumentOptionsResponseV1,
   DocumentSortCode,
   DocumentVersionV1,
+  MarketingContentAssetV1,
+  MarketingContentAssetKind,
 } from '@nora/contracts';
+import { MARKETING_CONTENT_ASSET_KINDS } from '@nora/contracts';
 
 import type {
   DocumentAccessGrantDto,
@@ -66,6 +69,45 @@ export interface DocumentRequestMetadata {
   userAgent?: string;
   sensitiveReason?: string;
   accessGrantToken?: string;
+}
+
+const marketingAssetKindMimeTypes: Record<
+  MarketingContentAssetKind,
+  readonly string[]
+> = {
+  'campaign-banner': ['image/png', 'image/jpeg'],
+  brochure: ['application/pdf'],
+  catalog: ['application/pdf'],
+  'landing-asset': ['image/png', 'image/jpeg'],
+  'brand-identity': ['image/png', 'image/jpeg'],
+  'media-plan': [
+    'application/pdf',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  ],
+};
+
+function marketingAssetKind(note: string): MarketingContentAssetKind | null {
+  const kind = note.startsWith('marketing-kind:') ? note.slice(15) : '';
+  return MARKETING_CONTENT_ASSET_KINDS.find((value) => value === kind) ?? null;
+}
+
+function mapMarketingAsset(row: DocumentListRow): MarketingContentAssetV1 {
+  if (!row.currentVersion) throw new ConflictException('نسخه فایل معتبر نیست.');
+  const kind = marketingAssetKind(row.currentVersion.versionNote);
+  if (!kind) throw new ConflictException('نوع فایل مارکتینگ معتبر نیست.');
+  return {
+    documentId: row.id,
+    title: row.title,
+    description: row.description,
+    branchId: row.branchId,
+    kind,
+    archiveCode: row.archiveCode,
+    fileName: row.currentVersion.originalFileName,
+    mimeType: row.currentVersion.detectedMimeType,
+    sizeBytes: Number(row.currentVersion.sizeBytes),
+    scanStatus: row.currentVersion.scanStatus,
+    createdAt: row.createdAt.toISOString(),
+  };
 }
 
 export interface MasterDataLogoDocumentResult {
@@ -457,6 +499,201 @@ export class DocumentsService {
       id: uploaded.data.id,
       scanStatus: uploaded.data.currentVersion.scanStatus,
     };
+  }
+
+  /** Marketing may only create and retrieve its own BRAND content assets. */
+  async uploadMarketingContentAsset(
+    input: {
+      branchId: string;
+      title: string;
+      description?: string;
+      kind: MarketingContentAssetKind;
+    },
+    file: UploadedDocumentFile | undefined,
+    actor: AuthenticatedActor,
+    metadata: DocumentRequestMetadata,
+  ): Promise<MarketingContentAssetV1> {
+    this.assertPermission(actor.permissions, 'marketing.content.manage');
+    if (!actor.branchIds.includes(input.branchId))
+      throw new ForbiddenException('شعبه فایل خارج از دسترسی شما است.');
+    if (!MARKETING_CONTENT_ASSET_KINDS.includes(input.kind))
+      throw new BadRequestException('نوع محتوای مارکتینگ معتبر نیست.');
+    if (
+      !input.title.trim() ||
+      input.title.trim().length > 240 ||
+      (input.description?.length ?? 0) > 1000
+    )
+      throw new BadRequestException('عنوان یا توضیح فایل معتبر نیست.');
+    if (
+      !file ||
+      file.size < 1 ||
+      file.size > 25 * 1024 * 1024 ||
+      file.buffer.length !== file.size ||
+      !marketingAssetKindMimeTypes[input.kind].includes(file.mimetype)
+    )
+      throw new BadRequestException('فایل محتوای مارکتینگ معتبر نیست.');
+
+    const values = await this.repository.options(actor.branchIds, ['BRAND']);
+    const branch = values.branches.find(({ id }) => id === input.branchId);
+    const owner = values.owners.find(({ id }) => id === actor.userId);
+    const documentType = values.documentTypes.find(
+      ({ code, domain }) =>
+        code === 'BRAND_ASSET_TEMPLATE' && domain === 'BRAND',
+    );
+    const category = values.categories.find(
+      ({ code }) => code === 'BRAND_ASSETS',
+    );
+    if (!branch) throw new ForbiddenException('شعبه فایل فعال یا مجاز نیست.');
+    if (!owner || !documentType || !category)
+      throw new BadRequestException('تنظیمات سند دارایی برند کامل نیست.');
+    const scopedActor: AuthenticatedActor = {
+      ...actor,
+      permissions: [...actor.permissions, 'documents.brand.read'],
+    };
+    const uploaded = await this.uploadCore(
+      {
+        title: input.title.trim(),
+        ...(input.description?.trim()
+          ? { description: input.description.trim() }
+          : {}),
+        documentTypeId: documentType.id,
+        categoryId: category.id,
+        branchId: branch.id,
+        ownerUserId: owner.id,
+        confidentiality: 'INTERNAL',
+        sourceModule: 'MARKETING',
+        sourceEntityType: 'MarketingContentAsset',
+        sourceEntityId: randomUUID(),
+        sourceDisplayLabel: input.title.trim(),
+        versionNote: `marketing-kind:${input.kind}`,
+      },
+      file,
+      scopedActor,
+      metadata,
+      true,
+    );
+    return this.readMarketingContentAsset(uploaded.data.id, {
+      ...actor,
+      permissions: [...actor.permissions, 'marketing.read'],
+    });
+  }
+
+  async listMarketingContentAssets(actor: AuthenticatedActor, page = 1) {
+    this.assertPermission(actor.permissions, 'marketing.read');
+    const boundedPage =
+      Number.isSafeInteger(page) && page > 0 ? Math.min(page, 10000) : 1;
+    const { rows, total } = await this.repository.listMarketingContentAssets(
+      actor.branchIds,
+      boundedPage,
+      25,
+    );
+    return {
+      data: rows
+        .filter((row) => this.isMarketingContentAsset(row))
+        .map(mapMarketingAsset),
+      meta: {
+        page: boundedPage,
+        pageSize: 25,
+        total,
+        totalPages: Math.max(1, Math.ceil(total / 25)),
+      },
+    };
+  }
+
+  async marketingContentAssetOptions(actor: AuthenticatedActor) {
+    this.assertPermission(actor.permissions, 'marketing.content.manage');
+    const values = await this.repository.options(actor.branchIds, ['BRAND']);
+    const configured =
+      values.documentTypes.some(
+        ({ code, domain }) =>
+          code === 'BRAND_ASSET_TEMPLATE' && domain === 'BRAND',
+      ) &&
+      values.categories.some(({ code }) => code === 'BRAND_ASSETS') &&
+      values.owners.some(({ id }) => id === actor.userId);
+    if (!configured)
+      throw new BadRequestException('تنظیمات سند دارایی برند کامل نیست.');
+    return {
+      branches: values.branches,
+      kinds: MARKETING_CONTENT_ASSET_KINDS,
+      allowedMimeTypesByKind: marketingAssetKindMimeTypes,
+    };
+  }
+
+  async readMarketingContentAsset(
+    id: string,
+    actor: AuthenticatedActor,
+  ): Promise<MarketingContentAssetV1> {
+    this.assertPermission(actor.permissions, 'marketing.read');
+    const row = await this.repository.findDetail(id, actor.branchIds);
+    if (!row || !this.isMarketingContentAsset(row))
+      throw new ForbiddenException('دسترسی به این فایل مارکتینگ مجاز نیست.');
+    await this.repository.appendAudit({
+      documentId: row.id,
+      ...(row.currentVersion ? { versionId: row.currentVersion.id } : {}),
+      actorUserId: actor.userId,
+      actorBranchId: row.branchId,
+      action: 'documents.marketing.metadata.view',
+      outcome: 'SUCCESS',
+      reason: null,
+      ipSummary: '',
+      userAgentSummary: '',
+    });
+    return mapMarketingAsset(row);
+  }
+
+  async downloadMarketingContentAsset(
+    id: string,
+    actor: AuthenticatedActor,
+    metadata: DocumentRequestMetadata,
+  ): Promise<DocumentFileDelivery> {
+    this.assertPermission(actor.permissions, 'marketing.read');
+    const row = await this.repository.findDetail(id, actor.branchIds);
+    if (!row || !this.isMarketingContentAsset(row))
+      throw new ForbiddenException('دسترسی به این فایل مارکتینگ مجاز نیست.');
+    const clean = row.currentVersion?.scanStatus === 'CLEAN';
+    await this.repository.appendAudit({
+      documentId: row.id,
+      ...(row.currentVersion ? { versionId: row.currentVersion.id } : {}),
+      actorUserId: actor.userId,
+      actorBranchId: row.branchId,
+      action: 'documents.marketing.download',
+      outcome: clean ? 'SUCCESS' : 'FAILURE',
+      reason: clean ? null : 'MARKETING_ASSET_SCAN_BLOCKED',
+      ipSummary: summarizeIp(metadata.ipAddress),
+      userAgentSummary: summarizeUserAgent(metadata.userAgent),
+    });
+    if (!clean || !row.currentVersion)
+      throw new ConflictException(
+        'فایل تا پایان اسکن امنیتی قابل دریافت نیست.',
+      );
+    return {
+      stream: await this.storage.openQuarantined(
+        row.currentVersion.storageObjectKey,
+        Number(row.currentVersion.sizeBytes),
+      ),
+      fileName: row.currentVersion.safeDownloadName,
+      mimeType: row.currentVersion.detectedMimeType,
+      sizeBytes: Number(row.currentVersion.sizeBytes),
+    };
+  }
+
+  private isMarketingContentAsset(row: DocumentListRow): boolean {
+    return (
+      row.sourceModule === 'MARKETING' &&
+      row.sourceEntityType === 'MarketingContentAsset' &&
+      /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu.test(
+        row.sourceEntityId ?? '',
+      ) &&
+      row.documentType.code === 'BRAND_ASSET_TEMPLATE' &&
+      row.documentType.domain === 'BRAND' &&
+      row.category?.code === 'BRAND_ASSETS' &&
+      row.confidentiality === 'INTERNAL' &&
+      row.archiveStatus === 'ACTIVE' &&
+      row.deletedAt === null &&
+      !row.requiresStepUpVerification &&
+      !!row.currentVersion &&
+      marketingAssetKind(row.currentVersion.versionNote) !== null
+    );
   }
 
   /**
@@ -1378,6 +1615,16 @@ export class DocumentsService {
     actor: AuthenticatedActor,
     metadata: DocumentRequestMetadata,
   ): Promise<{ data: DocumentDetailV1 }> {
+    return this.uploadCore(dto, file, actor, metadata, false);
+  }
+
+  private async uploadCore(
+    dto: DocumentUploadDto,
+    file: UploadedDocumentFile | undefined,
+    actor: AuthenticatedActor,
+    metadata: DocumentRequestMetadata,
+    trustedMarketing: boolean,
+  ): Promise<{ data: DocumentDetailV1 }> {
     if (!file) throw new BadRequestException('انتخاب فایل الزامی است.');
     if (!actor.branchIds.includes(dto.branchId)) {
       throw new ForbiddenException('شعبه انتخاب‌شده خارج از دسترسی کاربر است.');
@@ -1440,6 +1687,14 @@ export class DocumentsService {
             sourceEntityId: dto.sourceEntityId?.trim() ?? '',
             displayLabel: dto.sourceDisplayLabel?.trim() ?? '',
           });
+    if (
+      !trustedMarketing &&
+      sourceReference.sourceModule === 'MARKETING' &&
+      sourceReference.sourceEntityType === 'MarketingContentAsset'
+    )
+      throw new ForbiddenException(
+        'این مرجع فقط از مسیر محتوای مارکتینگ ایجاد می‌شود.',
+      );
     if (
       sourceReference.sourceModule === 'HUMAN_RESOURCES' &&
       sourceReference.sourceEntityType === 'Employee'

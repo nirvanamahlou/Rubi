@@ -13,6 +13,7 @@ export const PERMISSION_SEED_DATA = [
   ['marketing.campaign.cancel', 'marketing', 'لغو کمپین مارکتینگ'],
   ['marketing.audience.read', 'marketing', 'مشاهده مخاطبان مارکتینگ'],
   ['marketing.audience.manage', 'marketing', 'مدیریت تعریف مخاطبان مارکتینگ'],
+  ['marketing.content.manage', 'marketing', 'مدیریت فایل‌های محتوای مارکتینگ'],
   ['marketing.offer.manage', 'marketing', 'مدیریت نیت پیشنهاد مارکتینگ'],
   ['marketing.budget.read', 'marketing', 'مشاهده بودجه کمپین'],
   ['marketing.budget.manage', 'marketing', 'مدیریت بودجه کمپین'],

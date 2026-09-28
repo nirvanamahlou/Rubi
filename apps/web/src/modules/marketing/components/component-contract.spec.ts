@@ -268,9 +268,12 @@ describe('marketing workspace component contract', () => {
     expect(referencePagesSource).toContain('role="switch"');
     expect(referencePagesSource).toContain('onClick={() => onNotice');
     expect(referencePagesSource).toContain('محتوای جدید');
-    expect(referencePagesSource).toContain('documentsApi.upload');
+    expect(referencePagesSource).toContain('marketingContentAssetsApi.upload');
+    expect(referencePagesSource).toContain("form.set('kind', assetKind)");
+    expect(referencePagesSource).not.toContain('documentsApi.upload');
+    expect(referencePagesSource).toContain('marketingContentAssetsApi.list');
     expect(referencePagesSource).toContain(
-      "form.set('sourceModule', 'marketing')",
+      'marketingContentAssetsApi.download',
     );
     expect(referencePagesSource).toContain('ثبت در محتوا و اسناد');
     expect(referencePagesSource).toContain('افزودن مخاطبان کمپین');
@@ -284,6 +287,10 @@ describe('marketing workspace component contract', () => {
     expect(referencePagesSource).not.toContain('MoreHorizontal');
     expect(referencePagesSource).toContain('downloadRowsAsExcel');
     expect(referencePagesSource).toContain('غیرفعال‌سازی');
+    expect(referencePagesSource).toContain(
+      'ثبت و ارسال پیام هنوز در دسترس نیست',
+    );
+    expect(referencePagesSource).not.toContain('نیت ارسال پیام ثبت شد');
     expect(referencePagesSource).toContain('segmentFieldOptions');
     expect(referencePagesSource).toContain('LeadScoringPage');
     for (const journeyMarker of [
@@ -305,9 +312,8 @@ describe('marketing workspace component contract', () => {
       'بنر کمپین',
       'بروشور',
       'کاتالوگ',
-      'فایل صوتی',
-      'قالب ایمیل',
-      'قالب پیام',
+      'دارایی صفحه فرود',
+      'لوگو و هویت بصری',
       'نیایش سیر سحر',
       'جهان باستان',
     ]) {

@@ -352,6 +352,49 @@ export class DocumentsRepository {
     return { rows, total };
   }
 
+  /** Narrow Marketing-owned catalogue; callers cannot select another source. */
+  async listMarketingContentAssets(
+    branchIds: readonly string[],
+    page: number,
+    pageSize: number,
+  ) {
+    if (!branchIds.length) return { rows: [] as DocumentListRow[], total: 0 };
+    const where: Prisma.DocumentWhereInput = {
+      branchId: { in: [...branchIds] },
+      sourceModule: 'MARKETING',
+      sourceEntityType: 'MarketingContentAsset',
+      documentType: { code: 'BRAND_ASSET_TEMPLATE', domain: 'BRAND' },
+      category: { code: 'BRAND_ASSETS' },
+      confidentiality: 'INTERNAL',
+      requiresStepUpVerification: false,
+      archiveStatus: 'ACTIVE',
+      deletedAt: null,
+      currentVersion: {
+        versionNote: {
+          in: [
+            'marketing-kind:campaign-banner',
+            'marketing-kind:brochure',
+            'marketing-kind:catalog',
+            'marketing-kind:landing-asset',
+            'marketing-kind:brand-identity',
+            'marketing-kind:media-plan',
+          ],
+        },
+      },
+    };
+    const [total, rows] = await this.database.client.$transaction([
+      this.database.client.document.count({ where }),
+      this.database.client.document.findMany({
+        where,
+        include: documentListInclude,
+        orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      }),
+    ]);
+    return { rows, total };
+  }
+
   findDetail(id: string, branchIds: readonly string[]) {
     return this.database.client.document.findFirst({
       where: {

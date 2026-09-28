@@ -53,6 +53,10 @@ import { AssigneePicker } from './assignee-picker';
 import { RecordOperations, ticketCategories } from './record-operations';
 import { SalesHandoffResponse } from './sales-handoff-response';
 import { LeadCustomerConversion } from './lead-customer-conversion';
+import {
+  resolveLeadIntakeAttempt,
+  type LeadIntakeAttempt,
+} from './lead-intake-attempt';
 import { TicketSms } from './ticket-sms';
 import { AffairsFormField as FormField } from './affairs-form-field';
 import s from './customer-affairs-nora.module.css';
@@ -144,19 +148,26 @@ export function LeadForm({
   const [customer, setCustomer] = useState<CustomerSummary | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const attemptRef = useRef<LeadIntakeAttempt | null>(null);
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setBusy(true);
     setError('');
     const data = new FormData(event.currentTarget);
+    const signature = JSON.stringify({
+      fields: Array.from(data.entries()),
+      customerId: customer?.id ?? null,
+    });
+    const attempt = resolveLeadIntakeAttempt(signature, attemptRef.current);
+    attemptRef.current = attempt;
     const passengers = Number(data.get('passengerCount'));
     const input: CustomerAffairsLeadInput = {
       title: String(data.get('title')),
-      sourceReference: 'ثبت مستقیم در امور مشتریان',
+      sourceReference: attempt.sourceReference,
       inboundChannel: String(
         data.get('channel'),
       ) as CustomerAffairsLeadInput['inboundChannel'],
-      contactOccurredAt: new Date().toISOString(),
+      contactOccurredAt: attempt.contactOccurredAt,
       travelNeed: String(data.get('travelNeed')),
       destinationReference: String(data.get('destination')) || null,
       datePrecision: data.get('travelStart') ? 'EXACT' : 'UNKNOWN',
@@ -188,7 +199,11 @@ export function LeadForm({
       nextActionAt: new Date(String(data.get('nextActionAt'))).toISOString(),
     };
     try {
-      const response = await customerAffairsApi.createLead(input);
+      const response = await customerAffairsApi.createLead(
+        input,
+        undefined,
+        attempt.idempotencyKey,
+      );
       onCreated(response.data);
     } catch (cause) {
       setError(

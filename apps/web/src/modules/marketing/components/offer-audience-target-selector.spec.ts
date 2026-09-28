@@ -21,7 +21,9 @@ describe('marketing offer audience target contract', () => {
     expect(selectorSource).toContain("['customer', 'مشتریان']");
     expect(selectorSource).toContain("['agency', 'آژانس‌ها']");
     expect(referencePagesSource).toContain("formKind === 'offer'");
-    expect(referencePagesSource).toContain('«${name}» ذخیره شد.');
+    expect(referencePagesSource).toContain(
+      '«${name}» فقط در پیش‌نمایش آماده شد؛ ذخیره‌سازی فعال نیست.',
+    );
   });
 
   it('reads customer and agency references only through their public clients', () => {
