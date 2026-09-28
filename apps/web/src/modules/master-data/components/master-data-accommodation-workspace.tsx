@@ -54,7 +54,6 @@ import {
   Card,
   EmptyState,
   ErrorState,
-  FilterBar,
   PageHeader,
   PaginationShell,
   Skeleton,
@@ -66,6 +65,7 @@ import {
 } from '../api/client';
 import { MasterDataDeleteButton } from './master-data-delete-button';
 import { MasterDataFilterActions } from './master-data-filter-actions';
+import { MasterDataFilterBar } from './master-data-filter-bar';
 import { getMasterDataDefinition } from '../model/catalog';
 import {
   HotelImportPanel,
@@ -1401,7 +1401,7 @@ export function MasterDataAccommodationWorkspace() {
         <MasterDataKpiGrid items={kpis} label={`شاخص‌های ${current.title}`} />
       ) : null}
       {showFilters ? (
-        <FilterBar className="grid sm:grid-cols-2 xl:grid-cols-6">
+        <MasterDataFilterBar>
           {columnFilterControls}
           <MasterDataDateRangeFilter
             idPrefix="accommodation-created"
@@ -1459,7 +1459,7 @@ export function MasterDataAccommodationWorkspace() {
             }}
             onRefresh={() => void Promise.all([load(), loadSummary()])}
           />
-        </FilterBar>
+        </MasterDataFilterBar>
       ) : null}
       {content}
       {showFilters ? (

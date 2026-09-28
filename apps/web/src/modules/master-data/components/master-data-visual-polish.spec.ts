@@ -76,7 +76,7 @@ describe('Master Data visual polish contract', () => {
     for (const fileName of sectionFiles) {
       const workspace = source(fileName);
       const kpiStart = workspace.indexOf('<MasterDataKpiGrid');
-      const filtersStart = workspace.indexOf('<FilterBar', kpiStart);
+      const filtersStart = workspace.indexOf('<MasterDataFilterBar', kpiStart);
 
       expect(kpiStart, `${fileName}: KPI grid`).toBeGreaterThanOrEqual(0);
       expect(

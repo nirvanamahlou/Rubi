@@ -4312,3 +4312,10 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 ## 2026-09-28 — WORKBENCH-SEPTEMBER-INTEGRATION-0928 — PC-B — IN_PROGRESS
 
 - `COMPUTER_ID=PC-B`؛ شاخهٔ `codex/pc-b-workbench-september-integration` از `origin/develop`. محدوده: یکپارچه‌سازی هفت تغییر اخیر میزکار و اسناد متعلق به PC-B، رفع تعارض اسناد وضعیت و تحویل در یک PR به `develop`. بدون Migration، قرارداد API، Dependency/Lockfile یا تغییر دادهٔ عملیاتی.
+
+## 2026-09-28 — MASTER-DATA-COMPACT-FILTERS-0928 — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک: فیلدهای فیلتر در همه صفحه‌های اطلاعات پایه کوچک‌تر و در دسکتاپ در یک ردیف چیده شوند؛ در عرض کمتر بدون بریدگی یا خروج از کادر بازچینی شوند.
+- شاخه `codex/pc-b-master-data-compact-filters-0928` از `origin/develop@97c5ca37`؛ محدوده فقط کامپوننت‌های FilterBar اطلاعات پایه، استایل/تست مرتبط و همین ثبت وضعیت است. دکمه‌های پاک‌کردن و تازه‌سازی در ردیف پایین و سمت چپ می‌مانند.
+- بدون Migration، API/Contract، Dependency/Lockfile، داده یا تغییر در Workspaceهای دیگر.
+- نتیجه: ده Workspace تخصصی/عمومی از چیدمان مشترک استفاده می‌کنند؛ کنترل‌ها ۳۶ پیکسل و با متن کوچک‌تر هستند، فیلتر تاریخ فشرده شده و فیلدها از عرض دسکتاپ به‌صورت یک ردیف استفاده می‌کنند. در عرض کوچک‌تر grid تطبیقی است و عملیات فیلتر در ردیف پایین باقی می‌ماند. ۳۶۲ تست Master Data، lint، typecheck و build تولیدی Web با ۵۳ مسیر موفق‌اند.

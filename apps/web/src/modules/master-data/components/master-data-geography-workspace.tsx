@@ -51,7 +51,6 @@ import {
   Card,
   EmptyState,
   ErrorState,
-  FilterBar,
   PageHeader,
   PaginationShell,
   Skeleton,
@@ -66,6 +65,7 @@ import {
 import { MasterDataTerminalForm } from './master-data-terminal-form';
 import { MasterDataDeleteButton } from './master-data-delete-button';
 import { MasterDataFilterActions } from './master-data-filter-actions';
+import { MasterDataFilterBar } from './master-data-filter-bar';
 import {
   getMasterDataDefinition,
   type MasterDataResourceKey,
@@ -950,7 +950,7 @@ export function MasterDataGeographyWorkspace() {
         label={`شاخص‌های ${isLocationView ? 'شهرها و استان‌ها' : definition.label}`}
       />
 
-      <FilterBar className="grid min-w-0 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-[minmax(13rem,1fr)_10rem_10rem_repeat(2,minmax(10rem,12rem))_auto]">
+      <MasterDataFilterBar>
         {columnFilterControls}
         <MasterDataDateRangeFilter
           idPrefix="geography-created"
@@ -1145,7 +1145,7 @@ export function MasterDataGeographyWorkspace() {
           }}
           onRefresh={() => void load()}
         />
-      </FilterBar>
+      </MasterDataFilterBar>
 
       {requestState === 'loading' ? (
         <div aria-label="در حال بارگذاری" className="space-y-3">

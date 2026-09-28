@@ -3732,3 +3732,7 @@ Calendar event creation now uses an authorized branch from the authenticated Wor
 ## 2026-09-28 — WORKBENCH-DOCUMENT-RETURN-0928 — READY_FOR_REVIEW
 
 بازکردن سند از خانه، فایل‌های من، ستاره‌دارها یا تقویم میزکار و بستن جزئیات آن اکنون کاربر را به همان تب میزکار برمی‌گرداند. بازگشت به چهار مقصد مجاز محدود است. ۹ آزمون هدفمند، lint، typecheck و build Web موفق‌اند.
+
+## 2026-09-28 — MASTER-DATA-COMPACT-FILTERS-0928 — PC-B — READY_FOR_REVIEW
+
+چیدمان فیلترهای تمام صفحات اطلاعات پایه با یک نوار مشترک، کنترل‌های کوتاه‌تر و عرض منعطف یکدست شد. فیلدها در دسکتاپ در یک ردیف و در عرض‌های کوچک‌تر بدون سرریز بازچینی می‌شوند؛ دکمه‌های پاک‌کردن و تازه‌سازی در ردیف پایین باقی می‌مانند. ۳۶۲ تست اطلاعات پایه، lint، typecheck و build تولیدی Web با ۵۳ مسیر موفق‌اند. بدون Migration، API/Contract یا تغییر داده.
