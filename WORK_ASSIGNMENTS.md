@@ -4,6 +4,10 @@
 - Validation: 11 targeted tests, scoped ESLint, Web typecheck and production build (53 routes) passed. Bounded implementation/docs locks RELEASED after commit. Authenticated browser click remains unverified; runtime update needs owner approval.
 - Fix payment-method interaction and surface option errors/retry; retain existing persisted seat/unit pricing and partial-payment API. No migration, dependency, shared contract, permission, operational data or runtime replacement. Bounded Central Docs Owner: PC-A/FINANCE-TICKET-PAYMENT-0928.
 
+## MANIFEST-TRANSPORT-FORMAT-0928 — PC-A — READY_FOR_REVIEW
+
+- COMPUTER_ID=PC-A; base origin/develop@e4eb048c; branch codex/pc-a-manifest-transport-format-0928, reuse clean isolated manifest worktree. Reserve Reservations default XLSX/service and Web cards, Sales reservation handoff ground-service metadata and focused tests, bounded status/task docs and additive optional transportType in Travel card contract. Producer Reservations and consumer Web owned PC-A; missing transportType stays FLIGHT for v1 compatibility. Ground services use existing BUS/TRAIN Sales snapshots, assigned passengers and existing finance/permission/history gates. No migration/schema/dependency/lockfile changes; no active overlapping owner in this scope. Bounded Central Docs/Travel contract owner PC-A for this unit. Original dirty checkout and current runtime preserved during implementation. Result: blue/LTR/destination/mr-mrs flight default and BUS/TRAIN contract-backed exports complete. 34 API tests and Web test, scoped lint/typechecks and production builds passed; bounded docs/Travel contract locks RELEASED. No migration.
+
 ## MANIFEST-DEFAULT-TEMPLATE-0928 — PC-A — READY_FOR_REVIEW
 
 - Owner request: every ticket without an assigned manifest template exports a default XLSX with contract, separate passenger names, flight date/ticket/airline, age, nationality, birth date, gender, cabin and national ID; international routes additionally include passport number/expiry. Ticket management ends with a searchable template selector, defaulting to «پیش‌فرض»; named options use airline and destination.

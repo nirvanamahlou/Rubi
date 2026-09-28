@@ -17,6 +17,7 @@ import {
   StreamableFile,
   UseGuards,
 } from '@nestjs/common';
+import { manifestJourneys, type ManifestJourney } from './manifest-journeys';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { strFromU8, strToU8, unzipSync, zipSync } from 'fflate';
@@ -39,6 +40,7 @@ import { TravelWorkflowService } from './travel-workflow.service';
 import { TicketPublicService } from '../ticket-catalog/ticket-public.service';
 import {
   buildDefaultManifest,
+  defaultManifestAge,
   type DefaultManifestRow,
 } from './default-manifest';
 
@@ -211,7 +213,7 @@ export class ReservationManifestService {
     snapshot: ReservationIntakeV1['snapshot'],
     offerId: string,
   ) {
-    const flight = snapshot.ticketSelections?.find(
+    const flight = manifestJourneys(snapshot).find(
       (ticket) => ticket.offerId === offerId,
     );
     const assignments = snapshot.passengerAssignments ?? [];
@@ -251,16 +253,14 @@ export class ReservationManifestService {
     const groups = new Map<
       string,
       {
-        ticket: NonNullable<
-          ReservationIntakeV1['snapshot']['ticketSelections']
-        >[number];
+        ticket: ManifestJourney;
         rows: Awaited<ReturnType<ReservationManifestService['latestIntakes']>>;
       }
     >();
     for (const row of await this.latestIntakes(actor)) {
       const snapshot =
         row.snapshot as unknown as ReservationIntakeV1['snapshot'];
-      for (const ticket of snapshot.ticketSelections ?? []) {
+      for (const ticket of manifestJourneys(snapshot)) {
         const day = tehranDay(ticket.departureAt);
         if (day < input.fromDate || day > input.toDate) continue;
         const group = groups.get(ticket.offerId) ?? { ticket, rows: [] };
@@ -283,12 +283,27 @@ export class ReservationManifestService {
     for (const group of await this.ticketGroups(input, actor)) {
       const ticket = group.ticket;
       const [origin, destination, selection] = await Promise.all([
-        this.directory.cityReference(ticket.originId),
-        this.directory.cityReference(ticket.destinationId),
-        this.selectedTemplate(
-          ticket.offerId,
-          actor,
-          tehranDay(ticket.departureAt),
+        ticket.originId
+          ? this.directory.cityReference(ticket.originId)
+          : Promise.resolve({
+              name: ticket.originName ?? '',
+              englishName: '',
+              countryId: null,
+            }),
+        ticket.destinationId
+          ? this.directory.cityReference(ticket.destinationId)
+          : Promise.resolve({
+              name: ticket.destinationName ?? '',
+              englishName: '',
+              countryId: null,
+            }),
+        (ticket.transportType === 'FLIGHT'
+          ? this.selectedTemplate(
+              ticket.offerId,
+              actor,
+              tehranDay(ticket.departureAt),
+            )
+          : Promise.resolve(null)
         )
           .then((template) => ({ template, reason: null }))
           .catch((error: unknown) => ({
@@ -302,11 +317,14 @@ export class ReservationManifestService {
       const template = selection.template;
       cards.push({
         offerId: ticket.offerId,
+        transportType: ticket.transportType,
+        departureTimeKnown: ticket.departureTimeKnown ?? true,
         direction: ticket.direction,
         carrierName: ticket.carrierNameSnapshot,
         serviceNumber: ticket.serviceNumberSnapshot,
-        originName: origin.englishName || origin.name,
-        destinationName: destination.englishName || destination.name,
+        originName: ticket.originName || origin.englishName || origin.name,
+        destinationName:
+          ticket.destinationName || destination.englishName || destination.name,
         departureAt: ticket.departureAt,
         arrivalAt: ticket.arrivalAt,
         contractCount: group.rows.length,
@@ -434,9 +452,10 @@ export class ReservationManifestService {
     actor: AuthenticatedActor,
     offerId: string,
     international: boolean,
+    destinationName: string,
     traceId?: string,
   ): Promise<DefaultManifestRow[]> {
-    const flight = intake.snapshot.ticketSelections?.find(
+    const flight = manifestJourneys(intake.snapshot).find(
       (ticket) => ticket.offerId === offerId,
     );
     if (!flight) throw new BadRequestException('بلیط در قرارداد ثبت نشده است.');
@@ -464,6 +483,7 @@ export class ReservationManifestService {
         intake.workflow.ageOverrides[customerId] ?? assignment?.ageCategory;
       rows.push({
         contractName: intake.snapshot.contractNumber,
+        destination: destinationName,
         firstName: international
           ? required(customer, 'passportFirstName', 'نام لاتین پاسپورت')
           : customer.firstName?.trim() ||
@@ -477,18 +497,15 @@ export class ReservationManifestService {
         flightDate: tehranDay(flight.departureAt),
         ticket: flight.serviceNumberSnapshot,
         airline: flight.carrierNameSnapshot,
-        ageCategory:
-          age === 'INF' || age === 'INFANT'
-            ? 'نوزاد'
-            : age === 'CHD' || age === 'CHILD'
-              ? 'کودک'
-              : age === 'ADT' || age === 'ADULT'
-                ? 'بزرگسال'
-                : '',
+        ageCategory: defaultManifestAge(
+          age,
+          customer.birthDate,
+          tehranDay(flight.departureAt),
+        ),
         nationality: customer.nationalityCode?.trim() ?? '',
         birthDate: customer.birthDate ?? '',
         gender:
-          customer.gender === 'M' ? 'مرد' : customer.gender === 'F' ? 'زن' : '',
+          customer.gender === 'M' ? 'mr' : customer.gender === 'F' ? 'mrs' : '',
         cabinClass: flight.cabinClassCode,
         nationalId: customer.nationalId?.trim() ?? '',
         passportNumber: international
@@ -519,11 +536,14 @@ export class ReservationManifestService {
     if (!group)
       throw new BadRequestException('بلیط انتخاب‌شده در این بازه وجود ندارد.');
     const ticket = group.ticket;
-    const template = await this.selectedTemplate(
-      offerId,
-      actor,
-      tehranDay(ticket.departureAt),
-    );
+    const template =
+      ticket.transportType === 'FLIGHT'
+        ? await this.selectedTemplate(
+            offerId,
+            actor,
+            tehranDay(ticket.departureAt),
+          )
+        : null;
     if (template && !this.documents)
       throw new BadRequestException('سرویس فایل قالب MANIFEST آماده نیست.');
 
@@ -559,6 +579,17 @@ export class ReservationManifestService {
           where: {
             intakeId: { in: candidates.map((row) => row.id) },
             outboundDepartureAt: new Date(ticket.departureAt),
+            ...(ticket.transportType !== 'FLIGHT'
+              ? {
+                  export: {
+                    idempotencyKey: { startsWith: 'ticket:' + offerId + ':' },
+                  },
+                }
+              : {
+                  export: {
+                    idempotencyKey: { not: { startsWith: 'ticket:ground-' } },
+                  },
+                }),
           },
           select: { intakeId: true },
           distinct: ['intakeId'],
@@ -608,14 +639,33 @@ export class ReservationManifestService {
       passengerCount = rows.length;
     } else {
       const [origin, destination] = await Promise.all([
-        this.directory.cityReference(ticket.originId),
-        this.directory.cityReference(ticket.destinationId),
+        ticket.originId
+          ? this.directory.cityReference(ticket.originId)
+          : Promise.resolve({
+              name: ticket.originName ?? '',
+              englishName: '',
+              countryId: null,
+            }),
+        ticket.destinationId
+          ? this.directory.cityReference(ticket.destinationId)
+          : Promise.resolve({
+              name: ticket.destinationName ?? '',
+              englishName: '',
+              countryId: null,
+            }),
       ]);
-      if (!origin.countryId || !destination.countryId)
+      if (
+        ticket.transportType === 'FLIGHT' &&
+        (!origin.countryId || !destination.countryId)
+      )
         throw new BadRequestException(
           'کشور مبدأ و مقصد برای تهیه منیفست مشخص نیست.',
         );
-      const international = origin.countryId !== destination.countryId;
+      const international = Boolean(
+        origin.countryId &&
+        destination.countryId &&
+        origin.countryId !== destination.countryId,
+      );
       const rows: DefaultManifestRow[] = [];
       for (const row of selected) {
         const intake = await this.workflow.detail(row.id, actor.branchIds);
@@ -625,11 +675,14 @@ export class ReservationManifestService {
             actor,
             offerId,
             international,
+            ticket.destinationName ||
+              destination.englishName ||
+              destination.name,
             traceId,
           )),
         );
       }
-      bytes = buildDefaultManifest(rows, international);
+      bytes = buildDefaultManifest(rows, international, ticket.transportType);
       passengerCount = rows.length;
     }
 
