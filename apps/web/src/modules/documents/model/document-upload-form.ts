@@ -32,6 +32,29 @@ export const emptyDocumentUploadValues: DocumentUploadValues = {
   requiresStepUpVerification: false,
 };
 
+export function documentUploadBranchChoices(
+  options: DocumentOptionsResponseV1['data'] | null,
+  branches: readonly BranchReference[],
+): { id: string; branchId: string; name: string }[] {
+  const allowed = options?.branches ?? branches;
+  const organization = (options?.organizationBranches ?? []).filter((record) =>
+    allowed.some((branch) => branch.id === record.branchId),
+  );
+  return [
+    ...organization,
+    ...allowed
+      .filter(
+        (branch) =>
+          !organization.some((record) => record.branchId === branch.id),
+      )
+      .map((branch) => ({
+        id: branch.id,
+        branchId: branch.id,
+        name: branch.name,
+      })),
+  ];
+}
+
 export function hydrateDocumentUploadDefaults(
   values: DocumentUploadValues,
   options: DocumentOptionsResponseV1['data'],

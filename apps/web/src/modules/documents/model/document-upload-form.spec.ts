@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   emptyDocumentUploadValues,
+  documentUploadBranchChoices,
   hydrateDocumentUploadDefaults,
   validateDocumentUpload,
 } from './document-upload-form';
@@ -31,6 +32,23 @@ const options = {
 };
 
 describe('Documents upload form state', () => {
+  it('keeps both HR organizations even when they share one IAM branch', () => {
+    expect(
+      documentUploadBranchChoices(
+        {
+          ...options,
+          organizationBranches: [
+            { id: 'hr-a', branchId: 'branch-1', name: 'جهان باستان' },
+            { id: 'hr-b', branchId: 'branch-1', name: 'نیایش سیر' },
+          ],
+        },
+        options.branches,
+      ),
+    ).toEqual([
+      { id: 'hr-a', branchId: 'branch-1', name: 'جهان باستان' },
+      { id: 'hr-b', branchId: 'branch-1', name: 'نیایش سیر' },
+    ]);
+  });
   it('hydrates controlled dropdown values from one authenticated options response', () => {
     expect(
       hydrateDocumentUploadDefaults(

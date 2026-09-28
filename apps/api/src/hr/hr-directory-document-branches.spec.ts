@@ -8,9 +8,9 @@ import { HrDirectoryService } from './hr-directory.service';
 describe('HrDirectoryService document branch names', () => {
   it('reads only active HR branches in the actor scope and maps their names', async () => {
     const findMany = vi.fn().mockResolvedValue([
-      { branchId: 'branch-a', values: [' نیایش سیر '] },
-      { branchId: 'branch-a', values: ['نام قدیمی'] },
-      { branchId: 'branch-b', values: ['جهان باستان'] },
+      { id: 'hr-a', branchId: 'branch-a', values: [' نیایش سیر '] },
+      { id: 'hr-b', branchId: 'branch-a', values: ['جهان باستان'] },
+      { id: 'hr-c', branchId: 'branch-b', values: ['شعبه سوم'] },
     ]);
     const service = new HrDirectoryService(
       { client: { hrRecord: { findMany } } } as unknown as DatabaseService,
@@ -19,12 +19,11 @@ describe('HrDirectoryService document branch names', () => {
     );
     const actor = { branchIds: ['branch-a', 'branch-b'] } as AuthenticatedActor;
 
-    expect(await service.documentBranchNames(actor)).toEqual(
-      new Map([
-        ['branch-a', 'نیایش سیر'],
-        ['branch-b', 'جهان باستان'],
-      ]),
-    );
+    expect(await service.documentBranches(actor)).toEqual([
+      { id: 'hr-a', branchId: 'branch-a', name: 'نیایش سیر' },
+      { id: 'hr-b', branchId: 'branch-a', name: 'جهان باستان' },
+      { id: 'hr-c', branchId: 'branch-b', name: 'شعبه سوم' },
+    ]);
     expect(findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: {
