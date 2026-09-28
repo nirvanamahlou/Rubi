@@ -59,7 +59,10 @@ describe('source package generator archive', () => {
   });
 
   it('registers both Istanbul artworks and the matching Excel price columns', () => {
-    const templates = readFileSync(resolve(sourceRoot, 'istanbul-templates.js'), 'utf8');
+    const templates = readFileSync(
+      resolve(sourceRoot, 'istanbul-templates.js'),
+      'utf8',
+    );
     const app = readFileSync(resolve(sourceRoot, 'app.js'), 'utf8');
     const parser = readFileSync(resolve(sourceRoot, 'pkj.js'), 'utf8');
     const html = readFileSync(resolve(sourceRoot, 'index.html'), 'utf8');
@@ -70,13 +73,17 @@ describe('source package generator archive', () => {
     ] as const) {
       expect(templates).toContain(`TEMPLATES['${templateId}']`);
       expect(templates).toContain(`image:'${artwork}'`);
-      expect(statSync(resolve(sourceRoot, artwork)).size).toBeGreaterThan(100 * 1024);
+      expect(statSync(resolve(sourceRoot, artwork)).size).toBeGreaterThan(
+        100 * 1024,
+      );
       expect(app).toContain(`'${templateId}'`);
     }
     expect(templates).toContain('columns:[31,18,12,12,13,14]');
     expect(templates).toContain('columns:[30,19,17,17,17]');
     expect(parser).toContain("cols.extra?'istanbul-3':'istanbul-4'");
-    expect(parser).toContain("if(istanbul&&!cols.service)cols.service=cols.room");
+    expect(parser).toContain(
+      'if(istanbul&&!cols.service)cols.service=cols.room',
+    );
     expect(parser).toContain("'chwbed'");
     expect(html).toContain('istanbul-templates.js');
     expect(html).toContain('istanbul.css');
