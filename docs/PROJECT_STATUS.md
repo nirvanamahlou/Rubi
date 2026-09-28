@@ -1,3 +1,7 @@
+## 2026-09-28 — FINANCE-TICKET-PAYMENT-0928 — PC-A — READY_FOR_REVIEW
+
+Payment-method selection uses a native accessible control with explicit failed/empty-list feedback and retry. Existing seat-count × unit-cost capture remains persisted; the invoice preview now uses exact four-decimal arithmetic. The payment dialog explains repeated partial payments and shows the invoice amount as initial remaining balance. Eleven targeted Web tests, scoped lint, Web typecheck and production build (53 routes) passed. No new migration, shared contract, dependency, permissions or operational data changes. Branch: codex/pc-a-finance-ticket-payment-0928 from origin/develop@e4eb048c. Original edits and Web3100/API4000 are unchanged; reviewed integration/runtime update remains subject to approval. See docs/tasks/FINANCE-TICKET-PAYMENT-0928.md.
+
 ## 2026-09-28 — MANIFEST-TRANSPORT-FORMAT-0928 — PC-A
 
 خروجی دیفالت منیفست هدر آبی FF1D4ED8 با متن سفید، جهت چپ‌به‌راست، ستون مقصد و جنسیت mr/mrs دارد. ردهٔ سنی تخصیص و override حفظ و fallback سن در تاریخ سفر برای دادهٔ قدیمی افزوده شد. اتوبوس و قطار از snapshot خدمات تأییدشدهٔ فروش و با همان گیت مالی/مجوز/تخصیص مسافر، کارت و XLSX دیفالت مناسب دارند. ۳۴ تست API، تست Web، lint، typecheck و build هر دو بخش (۵۳ مسیر) موفق‌اند؛ بدون Migration یا Dependency. جزئیات و محدودیت snapshotهای قدیمی در docs/tasks/MANIFEST-TRANSPORT-FORMAT-0928.md. قفل محدود اسناد/قرارداد آزاد است.
