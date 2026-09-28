@@ -4246,6 +4246,15 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 - شاخهٔ مستقل `codex/pc-a-ticket-pair-destination-date-0928` از `origin/develop@36453e1c`؛ محدودهٔ رزرو فقط فرم تعریف بلیط رفت‌وبرگشت و کارت‌های قیمت بلیط در Web و آزمون‌های مستقیم است.
 - مقصد رفت‌وبرگشت کنار مشخصات مسیر برجسته می‌شود؛ در قیمت‌های جفتی نیز مقصد و تاریخ دو پا مشخص است. تاریخ و ساعت در کارت قیمت یک‌طرفه بزرگ‌تر و در ستون چپ نمایش داده می‌شوند. بدون تغییر API، دیتابیس، قراردادهای قبلی، مجوز یا وابستگی.
 
+## TOUR-MANAGEMENT-0928 — PC-A — READY_FOR_REVIEW
+
+- Owner requests current-tour presentation, KPI summary and persisted package editing. COMPUTER_ID=PC-A; branch codex/pc-a-tour-management-0928 in managed isolated worktree; task commit rebased onto origin/develop@e4eb048c after preserving newer module and assignment changes. Existing primary checkout changes remain untouched.
+- Reserve Ticket Catalog TourWorkspace/new module-local list/model/tests, tours client, TourController/TourPublicService/tests and bounded entries in WORK_ASSIGNMENTS.md / docs/PROJECT_STATUS.md. No schema/migration/dependency lock, shared contracts or other module changes.
+- Additive PATCH package API is produced and consumed by PC-A Ticket Catalog only: existing input plus expectedVersion; existing create/list clients remain compatible. Branch authorization and optimistic concurrency required. Core route and attached services cannot change after a departure exists; existing capacity and bookings are retained.
+- Central docs lock: PC-A/TOUR-MANAGEMENT-0928 for this entry and bounded status entry only. Migration/Dependency locks not acquired.
+- Result: four KPI cards, current/upcoming departure cards, Persian dates, live per-departure capacity, search/status filters and prefilled package editor connected to additive PATCH are implemented. Preserve latest definition/departure mode split, pricing navigation, hotel-rate links and existing client tests. 53 API + 11 Web tests, scoped lint and full API/Web typechecks pass. API and Web production builds passed (53 Web routes). Synthetic desktop/mobile/browser QA passed; no operational database writes or Web3100 changes. Bounded central-doc locks RELEASED on final commit; no migration/dependency locks acquired. Review via PR to develop; no automatic merge.
+- بررسی پیش از merge با تأیید مالک: تست متن محدوده تاریخ مستقل از فاصله‌گذاری JSX شد و Router برای رندر قیمت‌گذاری تور در تست mock شد؛ دو تست مربوطه و lint موفق‌اند. اصلاح فقط محیط/انتظار تست است.
+
 ## 2026-09-28 — TICKET-SUPPLY-REPEAT-0928 — PC-A — READY_FOR_REVIEW
 
 - شاخه `codex/pc-a-ticket-supply-repeat-0928` از `origin/develop@e4eb048c`؛ محدوده: گزینه‌های تامین فرم/فیلتر، ثبت قابل بازیابی نوبت‌های تکرارشونده و عملیات مستقل در Web، محدوده تابع archiveExpired در ticket-public.service.ts و تست مستقیم آن، و وضعیت.

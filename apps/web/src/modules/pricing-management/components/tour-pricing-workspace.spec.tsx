@@ -1,6 +1,8 @@
 import { renderToStaticMarkup } from 'react-dom/server';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { TourPricingWorkspace } from './tour-pricing-workspace';
+
+vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn() }) }));
 
 describe('tour package pricing workspace', () => {
   it('shows real draft and publication actions under Sales, disabled until a tour is selected', () => {

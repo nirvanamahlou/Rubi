@@ -77,6 +77,20 @@ export const toursApi = {
       '/tours/packages',
       post(input, branch, key),
     ),
+  updatePackage: (
+    id: string,
+    input: TourPackageInputV1,
+    expectedVersion: number,
+    branch: string,
+  ) =>
+    request<{ data: TourPackageV1 }>(
+      `/tours/packages/${encodeURIComponent(id)}`,
+      {
+        method: 'PATCH',
+        headers: { 'x-branch-id': branch },
+        body: JSON.stringify({ ...input, expectedVersion }),
+      },
+    ),
   createDeparture: (input: TourDepartureInputV1, branch: string, key: string) =>
     request<{ data: TourDepartureV1 }>(
       '/tours/departures',
