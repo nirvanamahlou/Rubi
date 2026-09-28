@@ -4160,3 +4160,9 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 - شاخهٔ مستقل `codex/pc-b-workbench-note-stars-0928` از `origin/develop@f52a567b`. محدوده: `note-drafts.ts`، `workbench-notes.tsx`، `workbench-favorites.tsx`، آزمون‌های هدفمند و ثبت وضعیت. مالک Workbench، PC-B است.
 - از فیلد پایدار موجود `WorkbenchNote.pinned` برای وضعیت ستاره و مرتب‌سازی استفاده می‌شود؛ API و قرارداد فعلی حفظ می‌شوند. بدون Schema/Migration، Permission، قفل Dependency/Lockfile، تغییر فایل‌های مرکزی دیگر یا دادهٔ عملیاتی.
 - دکمهٔ ستاره در کارت یادداشت‌های ذخیره‌شده فعال است و فهرست یادداشت‌های ستاره‌دار مستقل از دسترسی اسناد در تب «ستاره‌دارها» بارگذاری می‌شود. قالب‌های آماده، تا وقتی توسط کاربر ذخیره نشده‌اند، وضعیت ستارهٔ دائمی ندارند. ۱۳ تست هدفمند Web، lint، typecheck و build تولیدی Web با ۵۳ مسیر موفق‌اند.
+## 2026-09-28 — WORKBENCH-CALENDAR-FILTER-0928 — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک: انتخاب‌گر فیلتر اولویت از «تقویم من» حذف شود.
+- شاخهٔ مستقل `codex/pc-b-workbench-calendar-filter-0928` از `origin/develop@f52a567b`؛ محدوده فقط مدل فیلتر تقویم، رابط تقویم، آزمون متمرکز و ثبت وضعیت است. مالک Workbench، PC-B است.
+- اولویت خود رویداد و فرم افزودن/ویرایش حفظ می‌شود؛ تنها محدودکردن فهرست بر اساس اولویت حذف می‌شود. بدون API، Schema/Migration، قرارداد، Permission، داده یا Dependency/Lockfile.
+- اعتبارسنجی: ۷ آزمون هدفمند تقویم، lint، typecheck و build تولیدی Web با ۵۳ مسیر موفق‌اند.
