@@ -450,19 +450,33 @@ export class TicketPublicService {
     )
       throw new BadRequestException('شناسه یا نسخه بلیط معتبر نیست.');
     return this.database.client.$transaction(async (tx) => {
+      await tx.$queryRaw(
+        Prisma.sql`SELECT "id" FROM "TicketPublishedOffer" WHERE "id" = ${id}::uuid FOR UPDATE`,
+      );
+      const now = new Date();
       const updated = await tx.ticketPublishedOffer.updateMany({
         where: {
           id,
           branchId: { in: actor.branchIds },
           version: expectedVersion,
           audit: { none: { action: 'ticket.offer.archived' } },
-          departureAt: { lte: new Date() },
+          OR: [
+            { departureAt: { lte: now } },
+            {
+              capacityAllocations: { none: { status: 'ACTIVE' } },
+              capacityHolds: {
+                none: { status: 'ACTIVE', expiresAt: { gt: now } },
+              },
+              tourOutboundDepartures: { none: {} },
+              tourReturnDepartures: { none: {} },
+            },
+          ],
         },
         data: { status: 'PAUSED', version: { increment: 1 } },
       });
       if (updated.count !== 1)
         throw new ConflictException(
-          'فقط بلیط تاریخ‌گذشتهٔ مجاز و بدون تغییر هم‌زمان قابل حذف است.',
+          'بلیط تغییر کرده یا به قرارداد، رزرو ظرفیت یا تور متصل است؛ فهرست را تازه کنید و ارتباط‌ها را تعیین تکلیف کنید.',
         );
       const [standalonePrices, roundTripPrices] = await Promise.all([
         tx.ticketOfferStandaloneSalePrice.deleteMany({
