@@ -118,7 +118,8 @@ describe('ticket workspace entry points', () => {
     expect(source).toContain('publishExistingFlights(');
     expect(source).toContain('`ticket-catalog:${product.id}`');
     expect(source).toContain('backfillStarted.current');
-    expect(source).toContain('repeatDefinition(');
+    expect(source).toContain('repeatedDefinitions(');
+    expect(source).toContain('publishRepeatedProducts(');
     expect(source).toContain('setRepeat(');
     expect(source).toContain('قیمت فروش یک‌طرفه');
     expect(source).toContain('قیمت فروش رفت‌وبرگشت');

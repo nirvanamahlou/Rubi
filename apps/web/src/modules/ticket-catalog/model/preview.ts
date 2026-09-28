@@ -14,10 +14,19 @@ export const statusLabels = {
 } as const;
 export const supplyLabels = {
   company: 'ظرفیت شرکت',
-  allotment: 'سهمیه',
-  charter: 'چارتر',
-  supplier: 'تأمین‌کننده / API',
+  allotment: 'شناوری',
+  charter: 'شناوری',
+  supplier: 'API',
 } as const;
+// Existing allotment/charter snapshots remain readable; new floating tickets use allotment.
+export const supplyOptions = {
+  allotment: 'شناوری',
+  company: 'ظرفیت شرکت',
+  supplier: 'API',
+} as const;
+export function selectableSupply(value: string) {
+  return value === 'charter' ? 'allotment' : value;
+}
 export const transportLabels = {
   flight: 'هواپیما',
   train: 'قطار',
@@ -489,7 +498,8 @@ export function queryProducts(
           .includes(search) &&
         (query.status === 'all' || product.status === query.status) &&
         (query.supply === 'all' ||
-          product.definition.supplyType === query.supply) &&
+          selectableSupply(product.definition.supplyType) ===
+            selectableSupply(query.supply)) &&
         (query.transport === 'all' ||
           product.definition.transport === query.transport) &&
         (!query.airline || segment.airlineId === query.airline) &&

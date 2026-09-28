@@ -20,7 +20,12 @@ import {
   type Segment,
   type TransportType,
 } from '../model/catalog';
-import { emptyInput, supplyLabels, transportLabels } from '../model/preview';
+import {
+  emptyInput,
+  supplyOptions,
+  selectableSupply,
+  transportLabels,
+} from '../model/preview';
 import styles from './ticket-form.module.css';
 import { ReferencePicker } from './reference-picker';
 import { TicketDatePicker } from './ticket-date-picker';
@@ -1088,24 +1093,10 @@ export function TicketForm({
         ) : null}
         <section className="space-y-4">
           <h3 className="font-bold text-primary">۴. تأمین و ظرفیت</h3>
-          <label className="flex items-center gap-2 text-sm font-semibold">
-            <input
-              type="checkbox"
-              checked={input.companyOwned}
-              onChange={(event) =>
-                updateInput({
-                  ...input,
-                  companyOwned: event.target.checked,
-                  supplyType: event.target.checked ? 'company' : 'supplier',
-                })
-              }
-            />
-            ظرفیت متعلق به شرکت است
-          </label>
           <div className={styles.fields}>
             <FormField label="نوع تأمین" id="ticket-supply">
               <Select
-                value={input.supplyType}
+                value={selectableSupply(input.supplyType)}
                 onValueChange={(supplyType) =>
                   updateInput({
                     ...input,
@@ -1118,7 +1109,7 @@ export function TicketForm({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent dir="rtl">
-                  {Object.entries(supplyLabels).map(([key, label]) => (
+                  {Object.entries(supplyOptions).map(([key, label]) => (
                     <SelectItem value={key} key={key}>
                       {label}
                     </SelectItem>
