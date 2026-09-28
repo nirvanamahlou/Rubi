@@ -144,57 +144,83 @@ export function LeadForm({
   const [customer, setCustomer] = useState<CustomerSummary | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const submission = useRef<{
+    key: string;
+    sourceReference: string;
+    occurredAt: string;
+  } | null>(null);
+  const submitting = useRef(false);
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (submitting.current) return;
+    submitting.current = true;
     setBusy(true);
     setError('');
-    const data = new FormData(event.currentTarget);
-    const passengers = Number(data.get('passengerCount'));
-    const input: CustomerAffairsLeadInput = {
-      title: String(data.get('title')),
-      sourceReference: 'ثبت مستقیم در امور مشتریان',
-      inboundChannel: String(
-        data.get('channel'),
-      ) as CustomerAffairsLeadInput['inboundChannel'],
-      contactOccurredAt: new Date().toISOString(),
-      travelNeed: String(data.get('travelNeed')),
-      destinationReference: String(data.get('destination')) || null,
-      datePrecision: data.get('travelStart') ? 'EXACT' : 'UNKNOWN',
-      travelStart: data.get('travelStart')
-        ? new Date(String(data.get('travelStart'))).toISOString()
-        : null,
-      travelEnd: data.get('travelEnd')
-        ? new Date(String(data.get('travelEnd'))).toISOString()
-        : null,
-      originReference: String(data.get('origin')) || null,
-      passengerCount: passengers,
-      passengerComposition: { adults: passengers, children: 0, infants: 0 },
-      requestedServices: data.getAll('services').map(String),
-      budget: data.get('budgetAmount')
-        ? {
-            maximum: String(data.get('budgetAmount')),
-            currencyCode: String(data.get('currency')),
-            basis: 'TOTAL',
-          }
-        : { unknownReason: 'در تماس اولیه اعلام نشد' },
-      specialPreferences: String(data.get('specialPreferences') || '') || null,
-      assigneeUserId: String(data.get('assigneeUserId') || '') || null,
-      customerId: customer?.id ?? null,
-      priority: String(
-        data.get('priority'),
-      ) as CustomerAffairsLeadInput['priority'],
-      queueCode: 'customer-affairs-front-office',
-      nextAction: String(data.get('nextAction')),
-      nextActionAt: new Date(String(data.get('nextActionAt'))).toISOString(),
+    submission.current ??= {
+      key: crypto.randomUUID(),
+      sourceReference: `manual-${crypto.randomUUID()}`,
+      occurredAt: new Date().toISOString(),
     };
+    const identity = submission.current;
     try {
-      const response = await customerAffairsApi.createLead(input);
+      const data = new FormData(event.currentTarget);
+      const passengers = Number(data.get('passengerCount'));
+      const input: CustomerAffairsLeadInput = {
+        title: String(data.get('title')),
+        sourceReference: identity.sourceReference,
+        inboundChannel: String(
+          data.get('channel'),
+        ) as CustomerAffairsLeadInput['inboundChannel'],
+        contactOccurredAt: identity.occurredAt,
+        travelNeed: String(data.get('travelNeed')),
+        destinationReference: String(data.get('destination')) || null,
+        datePrecision: data.get('travelStart') ? 'EXACT' : 'UNKNOWN',
+        travelStart: data.get('travelStart')
+          ? new Date(String(data.get('travelStart'))).toISOString()
+          : null,
+        travelEnd: data.get('travelEnd')
+          ? new Date(String(data.get('travelEnd'))).toISOString()
+          : null,
+        originReference: String(data.get('origin')) || null,
+        passengerCount: passengers,
+        passengerComposition: { adults: passengers, children: 0, infants: 0 },
+        requestedServices: data.getAll('services').map(String),
+        budget: data.get('budgetAmount')
+          ? {
+              maximum: String(data.get('budgetAmount')),
+              currencyCode: String(data.get('currency')),
+              basis: 'TOTAL',
+            }
+          : { unknownReason: 'در تماس اولیه اعلام نشد' },
+        specialPreferences:
+          String(data.get('specialPreferences') || '') || null,
+        assigneeUserId: String(data.get('assigneeUserId') || '') || null,
+        customerId: customer?.id ?? null,
+        priority: String(
+          data.get('priority'),
+        ) as CustomerAffairsLeadInput['priority'],
+        queueCode: 'customer-affairs-front-office',
+        nextAction: String(data.get('nextAction')),
+        nextActionAt: new Date(String(data.get('nextActionAt'))).toISOString(),
+      };
+      const response = await customerAffairsApi.createLead(
+        input,
+        undefined,
+        identity.key,
+      );
       onCreated(response.data);
     } catch (cause) {
+      if (!(cause instanceof CustomerAffairsApiError) || cause.status < 500)
+        submission.current = null;
       setError(
-        cause instanceof Error ? cause.message : 'ثبت درخواست انجام نشد.',
+        cause instanceof RangeError
+          ? 'تاریخ واردشده معتبر نیست.'
+          : cause instanceof Error
+            ? cause.message
+            : 'ثبت درخواست انجام نشد.',
       );
     } finally {
+      submitting.current = false;
       setBusy(false);
     }
   }
@@ -358,41 +384,63 @@ export function TicketForm({
   const [customer, setCustomer] = useState<CustomerSummary | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const submission = useRef<{ key: string; occurredAt: string } | null>(null);
+  const submitting = useRef(false);
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (submitting.current) return;
+    submitting.current = true;
     setBusy(true);
     setError('');
-    const data = new FormData(event.currentTarget);
-    const input: CustomerAffairsTicketInput = {
-      subject: String(data.get('subject')),
-      description: String(data.get('description')),
-      channel: String(
-        data.get('channel'),
-      ) as CustomerAffairsTicketInput['channel'],
-      contactOccurredAt: new Date().toISOString(),
-      category: String(data.get('category')),
-      impact: String(
-        data.get('impact'),
-      ) as CustomerAffairsTicketInput['impact'],
-      urgency: String(
-        data.get('urgency'),
-      ) as CustomerAffairsTicketInput['urgency'],
-      priority: String(
-        data.get('priority'),
-      ) as CustomerAffairsTicketInput['priority'],
-      customerId: customer?.id ?? null,
-      references: [],
-      customerOwnerUserId:
-        String(data.get('customerOwnerUserId') || '') || null,
-      nextAction: String(data.get('nextAction')),
-      nextActionAt: new Date(String(data.get('nextActionAt'))).toISOString(),
+    submission.current ??= {
+      key: crypto.randomUUID(),
+      occurredAt: new Date().toISOString(),
     };
+    const identity = submission.current;
     try {
-      const response = await customerAffairsApi.createTicket(input);
+      const data = new FormData(event.currentTarget);
+      const input: CustomerAffairsTicketInput = {
+        subject: String(data.get('subject')),
+        description: String(data.get('description')),
+        channel: String(
+          data.get('channel'),
+        ) as CustomerAffairsTicketInput['channel'],
+        contactOccurredAt: identity.occurredAt,
+        category: String(data.get('category')),
+        impact: String(
+          data.get('impact'),
+        ) as CustomerAffairsTicketInput['impact'],
+        urgency: String(
+          data.get('urgency'),
+        ) as CustomerAffairsTicketInput['urgency'],
+        priority: String(
+          data.get('priority'),
+        ) as CustomerAffairsTicketInput['priority'],
+        customerId: customer?.id ?? null,
+        references: [],
+        customerOwnerUserId:
+          String(data.get('customerOwnerUserId') || '') || null,
+        nextAction: String(data.get('nextAction')),
+        nextActionAt: new Date(String(data.get('nextActionAt'))).toISOString(),
+      };
+      const response = await customerAffairsApi.createTicket(
+        input,
+        undefined,
+        identity.key,
+      );
       onCreated(response.data);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'ثبت تیکت انجام نشد.');
+      if (!(cause instanceof CustomerAffairsApiError) || cause.status < 500)
+        submission.current = null;
+      setError(
+        cause instanceof RangeError
+          ? 'تاریخ واردشده معتبر نیست.'
+          : cause instanceof Error
+            ? cause.message
+            : 'ثبت تیکت انجام نشد.',
+      );
     } finally {
+      submitting.current = false;
       setBusy(false);
     }
   }

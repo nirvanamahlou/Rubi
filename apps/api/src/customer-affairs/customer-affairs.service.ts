@@ -433,15 +433,26 @@ export class CustomerAffairsService {
         error instanceof Prisma.PrismaClientKnownRequestError &&
         error.code === 'P2002'
       ) {
-        const existing = await this.repository.findLeadBySource(
-          branchId,
-          input.sourceReference,
-        );
-        if (existing)
+        const replay = await this.repository.findLeadCommand(actor.userId, key);
+        if (replay) {
+          if (replay.requestFingerprint !== hash) throw conflict();
           return {
-            data: await this.presentLead(existing, actor),
+            ...(await this.getLead(replay.resultEntityId, actor)),
             meta: { idempotentReplay: true },
           };
+        }
+        // A source reference identifies one intake, not every request from that
+        // source. Never report an unrelated existing lead as a successful create.
+        if (
+          await this.repository.findLeadBySource(
+            branchId,
+            input.sourceReference,
+          )
+        )
+          throw new ConflictException({
+            code: 'LEAD_SOURCE_REFERENCE_EXISTS',
+            message: 'شناسهٔ منبع درخواست قبلاً ثبت شده است.',
+          });
       }
       throw error;
     }
