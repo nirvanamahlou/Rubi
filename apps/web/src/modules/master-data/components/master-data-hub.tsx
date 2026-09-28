@@ -10,7 +10,7 @@ import {
   ShieldCheck,
   type LucideIcon,
 } from 'lucide-react';
-import Link from 'next/link';
+import Link from '@/components/access-link';
 
 import { Card, PageHeader } from '@/components/ui/surfaces';
 import { cn } from '@/lib/utils';

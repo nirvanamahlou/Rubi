@@ -1,5 +1,5 @@
 import { ArrowUpLeft, ChevronLeft } from 'lucide-react';
-import Link from 'next/link';
+import Link from '@/components/access-link';
 import {
   frappeWorkspaces,
   getFrappeWorkspace,

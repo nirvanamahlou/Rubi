@@ -1,6 +1,12 @@
 'use client';
 
 import {
+  AccessProvider,
+  RouteAccessGuard,
+  useRouteAccess,
+} from '@/modules/iam/access-context';
+
+import {
   Check,
   ChevronDown,
   ChevronLeft,
@@ -129,6 +135,13 @@ function Navigation({
   const { language } = useSystemPreferences();
   const english = language === 'en';
   const pathname = usePathname();
+  const canNavigate = useRouteAccess();
+  const visibleGroups = groupedNavigationItems
+    .map((group) => ({
+      ...group,
+      items: group.items.filter((item) => canNavigate(item.href)),
+    }))
+    .filter((group) => group.items.length > 0);
   const groupId = useId();
   const [closedGroups, setClosedGroups] = useState<string[]>(() =>
     groupedNavigationItems
@@ -152,6 +165,7 @@ function Navigation({
     title: string;
     secondary?: boolean;
   }) {
+    if (!canNavigate(href)) return null;
     const displayTitle = english ? englishNavigationTitle(href, title) : title;
     const active = secondary
       ? pathname === href || pathname.startsWith(`${href}/`)
@@ -234,8 +248,8 @@ function Navigation({
       )}
     >
       {compact
-        ? groupedNavigationItems.flatMap(renderGroupEntries)
-        : groupedNavigationItems.map((group) => (
+        ? visibleGroups.flatMap(renderGroupEntries)
+        : visibleGroups.map((group) => (
             <section
               key={group.id}
               aria-label={
@@ -298,16 +312,18 @@ function SearchDialog() {
   const { language } = useSystemPreferences();
   const english = language === 'en';
   const messages = english ? enMessages : faMessages;
+  const canSearchRoute = useRouteAccess();
   const [query, setQuery] = useState('');
   const results = useMemo(
     () =>
       navigationItems.filter((item) => {
+        if (!canSearchRoute(item.href)) return false;
         const title = english ? englishNavigation[item.href].title : item.title;
         return title
           .toLocaleLowerCase()
           .includes(query.trim().toLocaleLowerCase());
       }),
-    [english, query],
+    [english, query, canSearchRoute],
   );
 
   useEffect(() => {
@@ -667,9 +683,13 @@ function AppShellContent({ children }: { children: ReactNode }) {
           id="main-content"
           tabIndex={-1}
         >
-          <HrConnectionsVisibilityProvider>
-            {children}
-          </HrConnectionsVisibilityProvider>
+          <Suspense fallback={<p role="status">در حال بررسی دسترسی…</p>}>
+            <RouteAccessGuard>
+              <HrConnectionsVisibilityProvider>
+                {children}
+              </HrConnectionsVisibilityProvider>
+            </RouteAccessGuard>
+          </Suspense>
         </main>
       </div>
     </div>
@@ -678,10 +698,12 @@ function AppShellContent({ children }: { children: ReactNode }) {
 
 export function AppShell({ children }: { children: ReactNode }) {
   return (
-    <LegalEntityProvider>
-      <PageBreadcrumbProvider>
-        <AppShellContent>{children}</AppShellContent>
-      </PageBreadcrumbProvider>
-    </LegalEntityProvider>
+    <AccessProvider>
+      <LegalEntityProvider>
+        <PageBreadcrumbProvider>
+          <AppShellContent>{children}</AppShellContent>
+        </PageBreadcrumbProvider>
+      </LegalEntityProvider>
+    </AccessProvider>
   );
 }

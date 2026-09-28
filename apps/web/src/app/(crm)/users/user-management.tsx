@@ -1,27 +1,26 @@
 'use client';
-
-import { ShieldPlus, UserPlus } from 'lucide-react';
-import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useState } from 'react';
-
-import { Button } from '@/components/ui/button';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  FormField,
-  Input,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/form-controls';
+  USER_ACCESS_GROUPS,
+  USER_ACCESS_SCREENS,
+  USER_JOB_TITLES,
+  screenPermission,
+  canViewScreen,
+  type AuthenticatedActor,
+} from '@nora/contracts';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/form-controls';
 import { getPublicApiBaseUrl } from '@/lib/environment';
-
+import { refreshAuthenticatedSession } from '@/lib/auth-session';
+interface Permission {
+  id: string;
+  code: string;
+  name: string;
+  module: string;
+}
 interface Option {
   id: string;
   name: string;
-}
-interface PermissionOption extends Option {
-  code: string;
 }
 interface UserRow {
   id: string;
@@ -29,367 +28,495 @@ interface UserRow {
   username: string;
   email: string | null;
   status: string;
-  roles: Array<{ role: Option }>;
+  roles: Array<{
+    role: {
+      id: string;
+      name: string;
+      code: string;
+      isActive: boolean;
+      permissions: Array<{ permission: { id: string; code: string } }>;
+    };
+  }>;
   branches: Array<{ branch: Option }>;
 }
-interface AccessOptions {
-  roles: Option[];
+interface Options {
+  permissions: Permission[];
   branches: Option[];
-  permissions: PermissionOption[];
 }
-
-async function apiRequest(path: string, init?: RequestInit) {
-  const api = getPublicApiBaseUrl();
-  if (!api) throw new Error('API_NOT_CONFIGURED');
-  return fetch(`${api}${path}`, { credentials: 'include', ...init });
+async function request(path: string, init?: RequestInit) {
+  const base = getPublicApiBaseUrl();
+  if (!base) throw Error('نشانی سرور تنظیم نشده است.');
+  let response = await fetch(base + path, {
+    credentials: 'include',
+    cache: 'no-store',
+    ...init,
+  });
+  if (response.status === 401 && (await refreshAuthenticatedSession(base)))
+    response = await fetch(base + path, {
+      credentials: 'include',
+      cache: 'no-store',
+      ...init,
+    });
+  if (!response.ok) {
+    const body = await response.json().catch(() => null);
+    throw Error(
+      typeof body?.message === 'string'
+        ? body.message
+        : typeof body?.error?.message === 'string'
+          ? body.error.message
+          : 'دریافت یا ذخیره اطلاعات انجام نشد.',
+    );
+  }
+  return response.json();
 }
-
-function AccessEditor({
-  branches,
-  onChanged,
-  roles,
-  user,
+function Check({
+  checked,
+  mixed = false,
+  onChange,
+  disabled = false,
+  label,
 }: {
-  branches: Option[];
-  onChanged: () => Promise<void>;
-  roles: Option[];
-  user: UserRow;
+  checked: boolean;
+  mixed?: boolean;
+  onChange: (checked: boolean) => void;
+  disabled?: boolean;
+  label: string;
 }) {
-  const [roleId, setRoleId] = useState(user.roles[0]?.role.id ?? '');
-  const [branchId, setBranchId] = useState(user.branches[0]?.branch.id ?? '');
-  const [saving, setSaving] = useState(false);
-  async function saveAccess() {
-    setSaving(true);
-    const response = await apiRequest(`/iam/users/${user.id}/access`, {
-      method: 'PATCH',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({
-        roleIds: roleId ? [roleId] : [],
-        branchIds: branchId ? [branchId] : [],
-      }),
-    });
-    if (response.ok) await onChanged();
-    setSaving(false);
-  }
-  async function toggleStatus() {
-    setSaving(true);
-    const response = await apiRequest(`/iam/users/${user.id}/status`, {
-      method: 'PATCH',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({
-        status: user.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE',
-      }),
-    });
-    if (response.ok) await onChanged();
-    setSaving(false);
-  }
   return (
-    <div className="grid min-w-56 gap-2">
-      <Select onValueChange={setRoleId} value={roleId}>
-        <SelectTrigger className="h-9">
-          <SelectValue placeholder="نقش" />
-        </SelectTrigger>
-        <SelectContent>
-          {roles.map((role) => (
-            <SelectItem key={role.id} value={role.id}>
-              {role.name}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-      <Select onValueChange={setBranchId} value={branchId}>
-        <SelectTrigger className="h-9">
-          <SelectValue placeholder="شعبه" />
-        </SelectTrigger>
-        <SelectContent>
-          {branches.map((branch) => (
-            <SelectItem key={branch.id} value={branch.id}>
-              {branch.name}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-      <div className="flex gap-2">
-        <Button
-          loading={saving}
-          onClick={() => void saveAccess()}
-          size="sm"
-          type="button"
-          variant="outline"
-        >
-          ثبت دسترسی
-        </Button>
-        <Button
-          disabled={saving}
-          onClick={() => void toggleStatus()}
-          size="sm"
-          type="button"
-          variant={user.status === 'ACTIVE' ? 'destructive' : 'secondary'}
-        >
-          {user.status === 'ACTIVE' ? 'غیرفعال' : 'فعال‌سازی'}
-        </Button>
-      </div>
-    </div>
+    <label className="flex items-center gap-2 text-sm">
+      <input
+        type="checkbox"
+        checked={checked}
+        disabled={disabled}
+        aria-checked={mixed ? 'mixed' : checked}
+        ref={(node) => {
+          if (node) node.indeterminate = mixed;
+        }}
+        onChange={(e) => onChange(e.target.checked)}
+      />
+      {label}
+    </label>
   );
 }
-
 export function UserManagement() {
-  const router = useRouter();
-  const [users, setUsers] = useState<UserRow[]>([]);
-  const [options, setOptions] = useState<AccessOptions>({
-    roles: [],
-    branches: [],
-    permissions: [],
-  });
-  const [roleId, setRoleId] = useState('');
-  const [branchId, setBranchId] = useState('');
-  const [selectedPermissions, setSelectedPermissions] = useState<string[]>([]);
-  const [message, setMessage] = useState('');
-
+  const [users, setUsers] = useState<UserRow[]>([]),
+    [options, setOptions] = useState<Options>({
+      permissions: [],
+      branches: [],
+    }),
+    [actor, setActor] = useState<AuthenticatedActor | null>(null);
+  const [selected, setSelected] = useState<UserRow | null>(null),
+    [search, setSearch] = useState(''),
+    [title, setTitle] = useState<string>(USER_JOB_TITLES[1]),
+    [permissionIds, setPermissionIds] = useState<string[]>([]),
+    [screenIds, setScreenIds] = useState<string[]>([]),
+    [branchIds, setBranchIds] = useState<string[]>([]),
+    [message, setMessage] = useState(''),
+    [busy, setBusy] = useState(false),
+    [loading, setLoading] = useState(true);
+  const saving = useRef(false),
+    form = useRef<HTMLFormElement>(null);
   const load = useCallback(async () => {
-    const [userResponse, optionResponse] = await Promise.all([
-      apiRequest('/iam/users'),
-      apiRequest('/iam/access-options'),
-    ]);
-    if (userResponse.status === 401) {
-      router.replace('/login');
-      return;
+    try {
+      const [rows, choices, access] = await Promise.all([
+        request('/iam/users'),
+        request('/iam/users/access-options'),
+        request('/iam/auth/access'),
+      ]);
+      setUsers(rows);
+      setOptions(choices);
+      setActor(access);
+      setMessage('');
+    } catch (error) {
+      setMessage(
+        error instanceof Error ? error.message : 'اطلاعات دریافت نشد.',
+      );
+    } finally {
+      setLoading(false);
     }
-    if (userResponse.ok) setUsers((await userResponse.json()) as UserRow[]);
-    if (optionResponse.ok) {
-      const next = (await optionResponse.json()) as AccessOptions;
-      setOptions(next);
-      setRoleId((value) => value || next.roles[0]?.id || '');
-      setBranchId((value) => value || next.branches[0]?.id || '');
-    }
-  }, [router]);
-
+  }, []);
   useEffect(() => {
-    const timeoutId = window.setTimeout(() => void load(), 0);
-    return () => window.clearTimeout(timeoutId);
+    const timer = window.setTimeout(() => void load(), 0);
+    return () => window.clearTimeout(timer);
   }, [load]);
-
-  async function createUser(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const data = new FormData(event.currentTarget);
-    const response = await apiRequest('/iam/users', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({
-        email: data.get('email'),
-        username: data.get('username'),
-        displayName: data.get('displayName'),
-        password: data.get('password'),
-        roleIds: roleId ? [roleId] : [],
-        branchIds: branchId ? [branchId] : [],
-      }),
-    });
-    setMessage(
-      response.ok
-        ? 'کاربر با موفقیت ساخته شد.'
-        : 'ایجاد کاربر انجام نشد؛ ورودی و مجوز را بررسی کنید.',
+  const canManage = actor?.permissions.includes('iam.users.manage') ?? false;
+  function edit(user: UserRow | null) {
+    setSelected(user);
+    setMessage('');
+    form.current?.reset();
+    const roles =
+      user?.roles.filter((r) => r.role.isActive).map((r) => r.role) ?? [];
+    setTitle(
+      USER_JOB_TITLES.includes(
+        roles[0]?.name as (typeof USER_JOB_TITLES)[number],
+      )
+        ? roles[0]!.name
+        : roles.some((role) => role.code === 'administrator')
+          ? USER_JOB_TITLES[0]
+          : USER_JOB_TITLES[1],
     );
-    if (response.ok) {
-      event.currentTarget.reset();
+    const codes = roles.flatMap((r) =>
+      r.permissions.map((p) => p.permission.code),
+    );
+    setPermissionIds(
+      roles.flatMap((r) =>
+        r.permissions
+          .filter((p) =>
+            options.permissions.some((option) => option.id === p.permission.id),
+          )
+          .map((p) => p.permission.id),
+      ),
+    );
+    setScreenIds(
+      (user
+        ? codes.includes('ui.profile')
+          ? USER_ACCESS_SCREENS.filter((s) =>
+              codes.includes(screenPermission(s.id)),
+            ).map((s) => s.id)
+          : USER_ACCESS_SCREENS.map((s) => s.id)
+        : []
+      ).filter((id) => actor && canViewScreen(actor.permissions, id)),
+    );
+    setBranchIds(user?.branches.map((b) => b.branch.id) ?? []);
+    if (user && !codes.includes('ui.profile'))
+      setMessage(
+        'این حساب از نقش قدیمی استفاده می‌کند؛ ذخیره، دسترسی آن را با انتخاب‌های این فرم جایگزین می‌کند. فقط مجوزهای قابل واگذاری شما انتخاب شده‌اند.',
+      );
+  }
+  const change = (items: string[], ids: string[], checked: boolean) =>
+    checked
+      ? [...new Set([...items, ...ids])]
+      : items.filter((id) => !ids.includes(id));
+  async function save(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (saving.current || !canManage) return;
+    saving.current = true;
+    setBusy(true);
+    setMessage('');
+    const fields = new FormData(event.currentTarget);
+    const access = {
+      accessTitle: title,
+      permissionIds,
+      screenIds,
+      branchIds,
+      roleIds: [],
+    };
+    try {
+      await request(
+        selected ? '/iam/users/' + selected.id + '/access' : '/iam/users',
+        {
+          method: selected ? 'PATCH' : 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(
+            selected
+              ? access
+              : {
+                  ...access,
+                  displayName: fields.get('displayName'),
+                  username: fields.get('username'),
+                  ...(fields.get('email')
+                    ? { email: fields.get('email') }
+                    : {}),
+                  password: fields.get('password'),
+                },
+          ),
+        },
+      );
       await load();
+      if (!selected) edit(null);
+      setMessage(selected ? 'دسترسی کاربر ذخیره شد.' : 'کاربر ایجاد شد.');
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'ذخیره انجام نشد.');
+    } finally {
+      setBusy(false);
+      saving.current = false;
     }
   }
-
-  async function createRole(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const data = new FormData(event.currentTarget);
-    const response = await apiRequest('/iam/access-options', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({
-        code: data.get('code'),
-        name: data.get('name'),
-        permissionIds: selectedPermissions,
-      }),
-    });
-    setMessage(
-      response.ok
-        ? 'نقش و مجوزهای آن ساخته شد.'
-        : 'ایجاد نقش انجام نشد؛ کد و مجوزها را بررسی کنید.',
-    );
-    if (response.ok) {
-      event.currentTarget.reset();
-      setSelectedPermissions([]);
+  async function status(user: UserRow) {
+    if (saving.current || !canManage) return;
+    saving.current = true;
+    setBusy(true);
+    try {
+      await request('/iam/users/' + user.id + '/status', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          status: user.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE',
+        }),
+      });
       await load();
+    } catch (error) {
+      setMessage(
+        error instanceof Error ? error.message : 'تغییر وضعیت انجام نشد.',
+      );
+    } finally {
+      setBusy(false);
+      saving.current = false;
     }
   }
-
   return (
-    <div className="grid gap-6 xl:grid-cols-[1fr_23rem]">
-      <section className="rounded-2xl border bg-surface p-5 shadow-sm">
-        <h1 className="text-xl font-black">کاربران، نقش‌ها و دسترسی‌ها</h1>
-        <div className="mt-5 overflow-x-auto">
-          <table className="w-full min-w-[880px] text-sm">
-            <thead>
-              <tr className="border-b text-right text-muted-foreground">
-                <th className="p-3">کاربر</th>
-                <th className="p-3">وضعیت</th>
-                <th className="p-3">نقش‌ها</th>
-                <th className="p-3">شعب</th>
-                <th className="p-3">ویرایش دسترسی</th>
-              </tr>
-            </thead>
-            <tbody>
-              {users.map((user) => (
-                <tr className="border-b align-top last:border-0" key={user.id}>
-                  <td className="p-3">
-                    <strong className="block">{user.displayName}</strong>
-                    <span className="block text-muted-foreground" dir="ltr">
-                      @{user.username}
-                    </span>
-                    {user.email ? (
-                      <span className="text-xs text-muted-foreground" dir="ltr">
-                        {user.email}
-                      </span>
-                    ) : null}
-                  </td>
-                  <td className="p-3">
-                    {user.status === 'ACTIVE' ? 'فعال' : 'غیرفعال/قفل'}
-                  </td>
-                  <td className="p-3">
-                    {user.roles.map(({ role }) => role.name).join('، ') || '—'}
-                  </td>
-                  <td className="p-3">
-                    {user.branches
-                      .map(({ branch }) => branch.name)
-                      .join('، ') || '—'}
-                  </td>
-                  <td className="p-3">
-                    <AccessEditor
-                      branches={options.branches}
-                      onChanged={load}
-                      roles={options.roles}
-                      user={user}
-                    />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
-      <aside className="grid content-start gap-6">
-        <section className="rounded-2xl border bg-surface p-5 shadow-sm">
-          <h2 className="flex items-center gap-2 font-black">
-            <UserPlus className="size-5" />
-            کاربر جدید
-          </h2>
-          <form className="mt-5 grid gap-4" onSubmit={createUser}>
-            <FormField label="نام نمایشی">
-              <Input name="displayName" required />
-            </FormField>
-            <FormField label="نام کاربری">
-              <Input
-                dir="ltr"
-                minLength={3}
-                name="username"
-                pattern="[a-zA-Z0-9._-]+"
-                required
-              />
-            </FormField>
-            <FormField label="ایمیل (اختیاری)">
-              <Input dir="ltr" name="email" type="email" />
-            </FormField>
-            <FormField
-              description="حداقل ۱۰ نویسه شامل بزرگ، کوچک، رقم و نویسه ویژه"
-              label="رمز اولیه"
-            >
-              <Input
-                dir="ltr"
-                minLength={10}
-                name="password"
-                required
-                type="password"
-              />
-            </FormField>
-            <FormField label="نقش">
-              <Select onValueChange={setRoleId} value={roleId}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {options.roles.map((role) => (
-                    <SelectItem key={role.id} value={role.id}>
-                      {role.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </FormField>
-            <FormField label="شعبه اصلی">
-              <Select onValueChange={setBranchId} value={branchId}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {options.branches.map((branch) => (
-                    <SelectItem key={branch.id} value={branch.id}>
-                      {branch.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </FormField>
-            <Button type="submit">ایجاد کاربر</Button>
-          </form>
-        </section>
-        <section className="rounded-2xl border bg-surface p-5 shadow-sm">
-          <h2 className="flex items-center gap-2 font-black">
-            <ShieldPlus className="size-5" />
-            نقش جدید
-          </h2>
-          <form className="mt-5 grid gap-4" onSubmit={createRole}>
-            <FormField label="نام نقش">
-              <Input name="name" required />
-            </FormField>
-            <FormField
-              description="فقط حروف کوچک لاتین، رقم و خط تیره"
-              label="کد نقش"
-            >
-              <Input dir="ltr" name="code" pattern="[a-z0-9-]+" required />
-            </FormField>
-            <fieldset className="grid gap-2">
-              <legend className="mb-2 text-sm font-semibold">مجوزها</legend>
-              {options.permissions.map((permission) => (
-                <label
-                  className="flex items-center gap-2 text-sm"
-                  key={permission.id}
+    <div className="grid gap-5">
+      <header>
+        <h1 className="text-2xl font-black">مدیریت کاربران</h1>
+        <p className="mt-2 text-sm text-muted-foreground">
+          تعریف حساب، نقش و دسترسی مستقل هر کاربر؛ تیک هر بخش همهٔ زیربخش‌ها را
+          انتخاب می‌کند و می‌توانید هر مورد را جداگانه بردارید.
+        </p>
+      </header>
+      {message && (
+        <p role="alert" className="rounded-xl border p-3">
+          {message}
+        </p>
+      )}
+      {loading ? (
+        <p role="status">در حال دریافت کاربران…</p>
+      ) : (
+        <div className="grid gap-5 lg:grid-cols-[20rem_1fr]">
+          <aside className="grid content-start gap-3 rounded-xl border p-4">
+            <Input
+              aria-label="جست‌وجوی کاربران"
+              placeholder="نام، نام کاربری یا نقش"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+            {canManage && (
+              <Button type="button" onClick={() => edit(null)}>
+                تعریف کاربر جدید
+              </Button>
+            )}
+            {users
+              .filter((u) =>
+                (
+                  u.displayName +
+                  ' ' +
+                  u.username +
+                  ' ' +
+                  u.roles.map((r) => r.role.name).join(' ')
+                ).includes(search),
+              )
+              .map((user) => (
+                <div
+                  key={user.id}
+                  className={
+                    'rounded-lg border p-3 ' +
+                    (selected?.id === user.id ? 'border-primary' : '')
+                  }
                 >
-                  <input
-                    checked={selectedPermissions.includes(permission.id)}
-                    onChange={(event) =>
-                      setSelectedPermissions((current) =>
-                        event.target.checked
-                          ? [...current, permission.id]
-                          : current.filter((id) => id !== permission.id),
-                      )
-                    }
-                    type="checkbox"
-                  />
-                  <span>{permission.name}</span>
-                  <code className="ms-auto text-[10px] text-muted-foreground">
-                    {permission.code}
-                  </code>
-                </label>
+                  <button
+                    type="button"
+                    className="w-full text-start"
+                    onClick={() => edit(user)}
+                  >
+                    <strong>{user.displayName}</strong>
+                    <span className="block text-sm text-muted-foreground">
+                      {user.roles.map((r) => r.role.name).join('، ') ||
+                        'بدون نقش'}
+                    </span>
+                    <span dir="ltr" className="block text-xs">
+                      {user.username}
+                    </span>
+                    <span className="text-xs">
+                      {user.status === 'ACTIVE' ? 'فعال' : 'غیرفعال'}
+                    </span>
+                  </button>
+                  {canManage && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      type="button"
+                      disabled={busy}
+                      onClick={() => void status(user)}
+                    >
+                      {user.status === 'ACTIVE' ? 'غیرفعال‌سازی' : 'فعال‌سازی'}
+                    </Button>
+                  )}
+                </div>
               ))}
-            </fieldset>
-            <Button type="submit">ایجاد نقش</Button>
-          </form>
-        </section>
-        {message ? (
-          <p
-            aria-live="polite"
-            className="rounded-xl border bg-surface p-3 text-sm"
+          </aside>
+          <form
+            ref={form}
+            onSubmit={save}
+            className="grid content-start gap-4 rounded-xl border p-5"
           >
-            {message}
-          </p>
-        ) : null}
-      </aside>
+            <h2 className="font-bold">
+              {selected ? 'دسترسی ' + selected.displayName : 'تعریف کاربر جدید'}
+            </h2>
+            <fieldset disabled={!canManage || busy} className="grid gap-4">
+              {!selected && (
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <label>
+                    نام و نام خانوادگی
+                    <Input required minLength={2} name="displayName" />
+                  </label>
+                  <label>
+                    نام کاربری
+                    <Input
+                      required
+                      minLength={3}
+                      pattern="[a-zA-Z0-9._-]+"
+                      dir="ltr"
+                      name="username"
+                      autoComplete="off"
+                    />
+                  </label>
+                  <label>
+                    ایمیل (اختیاری)
+                    <Input name="email" type="email" dir="ltr" />
+                  </label>
+                  <label>
+                    رمز اولیه
+                    <Input
+                      name="password"
+                      type="password"
+                      minLength={10}
+                      required
+                      autoComplete="new-password"
+                    />
+                    <small>
+                      حداقل ۱۰ نویسه شامل حرف بزرگ، کوچک، رقم و علامت
+                    </small>
+                  </label>
+                </div>
+              )}
+              <label className="grid gap-2">
+                نقش کاربر
+                <select
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  className="rounded-lg border bg-background p-2"
+                >
+                  {USER_JOB_TITLES.map((t) => (
+                    <option key={t} value={t}>
+                      {t}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <fieldset className="grid gap-2">
+                <legend className="font-bold">شعب مجاز</legend>
+                {options.branches.map((branch) => (
+                  <Check
+                    key={branch.id}
+                    label={branch.name}
+                    checked={branchIds.includes(branch.id)}
+                    onChange={(v) =>
+                      setBranchIds(change(branchIds, [branch.id], v))
+                    }
+                  />
+                ))}
+              </fieldset>
+              <div className="grid gap-3">
+                {USER_ACCESS_GROUPS.map((group) => {
+                  const screens = USER_ACCESS_SCREENS.filter(
+                    (s) => s.group === group.id,
+                  );
+                  const permissions = options.permissions.filter((p) =>
+                    group.prefixes.some(
+                      (prefix) =>
+                        p.code.startsWith(prefix + '.') ||
+                        p.code.startsWith(prefix + '-'),
+                    ),
+                  );
+                  const allowedScreens = screens.filter(
+                    (s) => actor && canViewScreen(actor.permissions, s.id),
+                  );
+                  const allowedPermissions = permissions.filter((p) =>
+                    actor?.permissions.some((code) => code === p.code),
+                  );
+                  const total =
+                    allowedScreens.length + allowedPermissions.length;
+                  const count =
+                    allowedScreens.filter((s) => screenIds.includes(s.id))
+                      .length +
+                    allowedPermissions.filter((p) =>
+                      permissionIds.includes(p.id),
+                    ).length;
+                  return (
+                    <details key={group.id} className="rounded-lg border p-3">
+                      <summary className="cursor-pointer font-bold">
+                        {group.title}{' '}
+                        <span className="text-xs font-normal">
+                          {count} از {total}
+                        </span>
+                      </summary>
+                      <div className="mt-3 grid gap-3">
+                        <Check
+                          label={'انتخاب کل بخش ' + group.title}
+                          checked={total > 0 && count === total}
+                          mixed={count > 0 && count < total}
+                          disabled={!total}
+                          onChange={(v) => {
+                            setScreenIds(
+                              change(
+                                screenIds,
+                                allowedScreens.map((s) => s.id),
+                                v,
+                              ),
+                            );
+                            setPermissionIds(
+                              change(
+                                permissionIds,
+                                allowedPermissions.map((p) => p.id),
+                                v,
+                              ),
+                            );
+                          }}
+                        />
+                        <fieldset className="grid gap-2 border-t pt-3">
+                          <legend className="text-sm font-bold">
+                            بخش‌های قابل مشاهده
+                          </legend>
+                          {screens.map((s) => (
+                            <Check
+                              key={s.id}
+                              label={s.title}
+                              checked={screenIds.includes(s.id)}
+                              disabled={
+                                !actor ||
+                                !canViewScreen(actor.permissions, s.id)
+                              }
+                              onChange={(v) =>
+                                setScreenIds(change(screenIds, [s.id], v))
+                              }
+                            />
+                          ))}
+                        </fieldset>
+                        <fieldset className="grid gap-2 border-t pt-3">
+                          <legend className="text-sm font-bold">
+                            مجوزهای عملیات
+                          </legend>
+                          {permissions.map((p) => (
+                            <Check
+                              key={p.id}
+                              label={p.name}
+                              checked={permissionIds.includes(p.id)}
+                              disabled={
+                                !actor?.permissions.some(
+                                  (code) => code === p.code,
+                                )
+                              }
+                              onChange={(v) =>
+                                setPermissionIds(
+                                  change(permissionIds, [p.id], v),
+                                )
+                              }
+                            />
+                          ))}
+                        </fieldset>
+                      </div>
+                    </details>
+                  );
+                })}
+              </div>
+              {canManage && (
+                <Button type="submit" disabled={busy}>
+                  {busy ? 'در حال ذخیره…' : 'ذخیره کاربر و دسترسی‌ها'}
+                </Button>
+              )}
+            </fieldset>
+          </form>
+        </div>
+      )}
     </div>
   );
 }

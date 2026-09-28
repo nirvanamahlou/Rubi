@@ -6,6 +6,9 @@ import {
   DOCUMENT_PERMISSION_CODES,
   IAM_PERMISSION_CODES,
   IAM_PERMISSION_CONTRACT_VERSION,
+  USER_ACCESS_PROFILE_PERMISSION,
+  USER_ACCESS_SCREENS,
+  screenPermission,
   MASTER_DATA_PERMISSION_CODES,
   LEGAL_ENTITY_AUTHENTICATED_BASELINE_PERMISSION_CODES,
   LEGAL_ENTITY_PERMISSION_CODES,
@@ -28,8 +31,8 @@ describe('IAM public permission contract', () => {
       ]),
     );
   });
-  it('publishes the version 11 domain permission catalogs without duplicates', () => {
-    expect(IAM_PERMISSION_CONTRACT_VERSION).toBe(11);
+  it('publishes the version 12 domain permission catalogs without duplicates', () => {
+    expect(IAM_PERMISSION_CONTRACT_VERSION).toBe(12);
     expect(MASTER_DATA_PERMISSION_CODES).toEqual([
       'master_data.read',
       'master_data.create',
@@ -108,4 +111,21 @@ describe('IAM public permission contract', () => {
       'customers.sensitive.read',
     ]);
   });
+});
+
+it('keeps explicit user-screen profiles out of automatic domain grants', () => {
+  expect(IAM_PERMISSION_CODES.some((code) => code.startsWith('ui.'))).toBe(
+    false,
+  );
+  const permissions: AuthenticatedActor['permissions'] = [
+    USER_ACCESS_PROFILE_PERMISSION,
+    screenPermission('system.users'),
+  ];
+  expect(permissions).toEqual(['ui.profile', 'ui.screen.system.users']);
+  expect(
+    USER_ACCESS_SCREENS.find((screen) => screen.id === 'system.users')?.route,
+  ).toBe('/system/users');
+  expect(new Set(USER_ACCESS_SCREENS.map((screen) => screen.id)).size).toBe(
+    USER_ACCESS_SCREENS.length,
+  );
 });
