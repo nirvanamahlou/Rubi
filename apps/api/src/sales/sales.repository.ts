@@ -72,6 +72,26 @@ export class SalesRepository {
     });
   }
 
+  confirmedFinancePayments(
+    branchIds: readonly string[],
+    after: object,
+    take: number,
+    requestId?: string,
+  ) {
+    return this.database.client.salesContractPaymentEntry.findMany({
+      where: {
+        status: 'FINANCE_CONFIRMED',
+        financeConfirmedAt: { not: null },
+        contract: { branchId: { in: [...branchIds] } },
+        ...(requestId ? { id: requestId } : {}),
+        ...after,
+      },
+      include: { contract: { select: { contractNumber: true } } },
+      orderBy: [{ financeConfirmedAt: 'desc' }, { id: 'desc' }],
+      take,
+    });
+  }
+
   pendingFinancePayments(branchIds: readonly string[]) {
     if (!branchIds.length) return Promise.resolve([]);
     return this.database.client.salesContractPaymentEntry.findMany({
