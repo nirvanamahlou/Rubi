@@ -1,0 +1,14 @@
+# MANIFEST-TRANSPORT-FORMAT-0928 — PC-A
+
+Default flight, bus and train manifests use the established Master Data XLSX blue FF1D4ED8 with white bold headers and left-to-right sheet view. Destination is a separate column. Default gender is mr for M and mrs for F; unknown gender remains blank. Contract age assignments and reservation overrides take precedence; legacy ages are derived from birth date on Tehran departure day (under 2 infant, under 12 child), with birthday boundary coverage.
+
+Flight headers remain airline/flight date/cabin. Ground headers use departure date, bus or rail company and corresponding class. Identity/passport columns, inline text safety, frozen/filter header and leading zero preservation remain. Explicit airline workbooks and legacy per-contract/batch formats are unchanged.
+
+Sales handoff enriches BUS/TRAIN service metadata with contract originId/destinationId and travel date only when no service-specific values exist. Reservations reads only its received snapshot plus public Customer/Master/Finance APIs. Ground cards/export use existing ticket-manifest endpoints, with synthetic ground journey identities; shared service references allow grouping, otherwise the contract and service identify the trip to prevent unrelated departures being merged. Existing export history stores genuine intake/contract references; new-only ground queries are restricted to this exact journey. No foreign-table access, schema, migration, permissions or dependencies change.
+
+Optional v1 card transportType and departureTimeKnown are produced by Reservations and consumed by Web; absent type means FLIGHT and absent time flag means exact time for compatibility. Ground rows without a precise time export the supplied travel day; the card hides a manufactured time and shows unrecorded arrival clearly. Historical ground snapshots without route/travel day cannot produce a journey until Sales supplies a new confirmed snapshot. Carrier uses the supplied company name or recorded service title; missing service numbers/classes remain blank rather than inferred from notes. International routes with country-backed city identifiers retain passport requirements.
+
+Validation and publication results are recorded after final checks.
+
+
+Validation: 34 targeted API tests passed (default flight/ground XLSX, passenger scope, finance gate, age/birthday/override, grouping and actual Sales handoff); Web manifest test passed. Scoped API/Web ESLint, API/Web typechecks, Contracts build and API/Web production builds (53 Web routes) passed. Format check and git diff --check passed. No migrations or dependency changes. Unit contract/documentation locks RELEASED after commit. Local rollout follows the user's existing manifest merge/update authorization.
