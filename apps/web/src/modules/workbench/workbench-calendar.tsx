@@ -9,7 +9,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ExternalLink,
-  ImageIcon,
+  FileText,
   Search,
 } from 'lucide-react';
 import {
@@ -47,7 +47,6 @@ import {
   type CalendarEventDraft,
 } from './calendar-event-dialog';
 import { workbenchPersonalApi } from './workbench-personal-api';
-import { uploadWorkbenchAttachments } from './workbench-attachments';
 
 const views = [
   ['month', 'ماه'],
@@ -89,6 +88,9 @@ export function WorkbenchCalendar({
   const [view, setView] = useState<CalendarView>('month');
   const [eventDialogOpen, setEventDialogOpen] = useState(false);
   const [localEntries, setLocalEntries] = useState<CalendarEntry[]>([]);
+  const [availableBranchId, setAvailableBranchId] = useState<
+    string | undefined
+  >();
   const [connectedEntries, setConnectedEntries] = useState<CalendarEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -112,6 +114,7 @@ export function WorkbenchCalendar({
     setError('');
     try {
       const personal = await workbenchPersonalApi.calendar();
+      setAvailableBranchId(personal.availableBranchIds?.[0]);
       setLocalEntries(
         personal.data.map((row) => ({
           id: row.id,
@@ -123,7 +126,7 @@ export function WorkbenchCalendar({
           ...(row.linkUrl ? { linkUrl: row.linkUrl } : {}),
           ...(row.imageDocumentId
             ? {
-                imageName: 'تصویر رویداد',
+                imageName: 'پیوست رویداد',
                 imageDocumentId: row.imageDocumentId,
               }
             : {}),
@@ -158,25 +161,26 @@ export function WorkbenchCalendar({
     return () => window.clearTimeout(timer);
   }, [load]);
   async function createEvent(draft: CalendarEventDraft) {
-    if (!branchId)
+    const eventBranchId = branchId ?? availableBranchId;
+    if (!eventBranchId)
       throw new Error('برای ثبت رویداد باید یک شعبه مجاز داشته باشید.');
     const id = crypto.randomUUID();
-    const imageDocumentIds = await uploadWorkbenchAttachments({
-      entityType: 'WorkbenchCalendarEvent',
-      entityId: id,
-      title: `تصویر رویداد: ${draft.title}`,
-      description: 'تصویر ثبت‌شده از تقویم میزکار',
-      branchId,
-      files: draft.image ? [draft.image] : [],
-    });
+    const attachment = draft.attachment
+      ? await workbenchPersonalApi.uploadCalendarAttachment({
+          eventId: id,
+          branchId: eventBranchId,
+          title: draft.title,
+          file: draft.attachment,
+        })
+      : null;
     const response = await workbenchPersonalApi.createEvent({
       id,
-      branchId,
+      branchId: eventBranchId,
       title: draft.title,
       description: draft.description,
       dueAt: `${draft.date}T12:00:00+03:30`,
       linkUrl: draft.linkUrl || null,
-      imageDocumentId: imageDocumentIds[0] ?? null,
+      imageDocumentId: attachment?.data.id ?? null,
     });
     const row = response.data;
     const entry: CalendarEntry = {
@@ -188,7 +192,7 @@ export function WorkbenchCalendar({
       ...(row.description ? { description: row.description } : {}),
       ...(row.imageDocumentId
         ? {
-            imageName: draft.image?.name ?? 'تصویر رویداد',
+            imageName: draft.attachment?.name ?? 'پیوست رویداد',
             imageDocumentId: row.imageDocumentId,
           }
         : {}),
@@ -258,7 +262,7 @@ export function WorkbenchCalendar({
                   ) : null}
                   {entry.imageName ? (
                     <span className="inline-flex items-center gap-2 rounded-lg bg-primary/10 px-3 py-2 text-xs font-semibold text-primary">
-                      <ImageIcon aria-hidden="true" className="size-4" />
+                      <FileText aria-hidden="true" className="size-4" />
                       {entry.imageName}
                     </span>
                   ) : null}
@@ -278,7 +282,7 @@ export function WorkbenchCalendar({
                     <Link
                       href={`/documents?document=${encodeURIComponent(entry.imageDocumentId)}`}
                     >
-                      مشاهده تصویر
+                      مشاهده پیوست
                     </Link>
                   </Button>
                 ) : null}

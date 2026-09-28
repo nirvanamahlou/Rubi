@@ -3579,3 +3579,6 @@ MANIFEST همچنان فقط پس از تأیید مالی تحویل مدارک
 ## 2026-09-28 — TICKET-ROUTE-TIME-FUTURE-0928 — READY_FOR_REVIEW
 
 مسیرهای بلیط به‌جای کد داخلی شهر، نام اطلاعات پایه را بازخوانی می‌کنند؛ تا زمان بازیابی نیز کد فنی نمایش داده نمی‌شود. ویرایش زمان Published Offer دارای قرارداد فقط در صورت ثابت‌ماندن مسیر، ایرلاین، شماره، کلاس و ظرفیت پذیرفته می‌شود؛ Snapshot قراردادهای قبلی دست‌نخورده است و رزرو موقت/تور همچنان مانع ویرایش‌اند. ۴۶ تست هدفمند، lint، typecheck و build Web/API موفق‌اند. تغییر Schema/Migration، قرارداد عمومی، Permission، Dependency/Lockfile و دادهٔ عملیاتی ندارد؛ پس از PR و Merge، runtime یکپارچهٔ develop باید به‌روز شود.
+## Workbench calendar attachments — 2026-09-28
+
+Calendar event creation now uses an authorized branch from the authenticated Workbench calendar response when active-company loading is unavailable. Event attachments accept PDF, PNG, and JPEG (up to 10 MB) through a scoped Documents service endpoint, with owner and event source reference checked on save. No migration or permission expansion. Targeted API/Web tests, lint, typechecks, and production builds passed.

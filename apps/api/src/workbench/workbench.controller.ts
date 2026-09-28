@@ -29,6 +29,7 @@ import { IamService } from '../iam/iam.service';
 // eslint-disable-next-line @typescript-eslint/consistent-type-imports
 import {
   WorkbenchCalendarDto,
+  WorkbenchCalendarAttachmentDto,
   WorkbenchFolderDto,
   WorkbenchNoteDto,
   WorkbenchProfilePhotoDto,
@@ -162,6 +163,37 @@ export class WorkbenchController {
   @Header('Cache-Control', 'private, no-store')
   calendar(@Req() req: AuthenticatedRequest) {
     return this.service.calendar(req.actor);
+  }
+  @Post('calendar/attachment')
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['file', 'eventId', 'branchId', 'title'],
+      properties: {
+        file: { type: 'string', format: 'binary' },
+        eventId: { type: 'string', format: 'uuid' },
+        branchId: { type: 'string', format: 'uuid' },
+        title: { type: 'string' },
+      },
+    },
+  })
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: { files: 1, fileSize: 10 * 1024 * 1024 },
+    }),
+  )
+  uploadCalendarAttachment(
+    @Body() dto: WorkbenchCalendarAttachmentDto,
+    @UploadedFile() file: UploadedDocumentFile | undefined,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.service.uploadCalendarAttachment(
+      dto,
+      file,
+      req.actor,
+      requestMetadata(req),
+    );
   }
   @Post('calendar')
   createEvent(

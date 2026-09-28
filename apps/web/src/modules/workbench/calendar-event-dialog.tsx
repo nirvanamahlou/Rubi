@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, type FormEvent } from 'react';
-import { CalendarPlus, FileImage, Link2, Paperclip } from 'lucide-react';
+import { CalendarPlus, FileText, Link2, Paperclip } from 'lucide-react';
 
 import {
   Alert,
@@ -14,14 +14,17 @@ import {
   Input,
   Textarea,
 } from '@/components/ui';
-import { calendarImageError, normalizeCalendarLink } from './calendar-model';
+import {
+  calendarAttachmentError,
+  normalizeCalendarLink,
+} from './calendar-model';
 
 export interface CalendarEventDraft {
   title: string;
   date: string;
   description: string;
   linkUrl: string;
-  image: File | null;
+  attachment: File | null;
 }
 
 export function CalendarEventDialog({
@@ -39,7 +42,7 @@ export function CalendarEventDialog({
   const [date, setDate] = useState(initialDate);
   const [description, setDescription] = useState('');
   const [link, setLink] = useState('');
-  const [image, setImage] = useState<File | null>(null);
+  const [attachment, setAttachment] = useState<File | null>(null);
   const [error, setError] = useState('');
   const [pending, setPending] = useState(false);
 
@@ -48,7 +51,7 @@ export function CalendarEventDialog({
     setDate(initialDate);
     setDescription('');
     setLink('');
-    setImage(null);
+    setAttachment(null);
     setError('');
   }
 
@@ -67,9 +70,9 @@ export function CalendarEventDialog({
       setError('لینک باید با http یا https شروع شود.');
       return;
     }
-    const imageError = calendarImageError(image);
-    if (imageError) {
-      setError(imageError);
+    const attachmentError = calendarAttachmentError(attachment);
+    if (attachmentError) {
+      setError(attachmentError);
       return;
     }
     setPending(true);
@@ -79,7 +82,7 @@ export function CalendarEventDialog({
         date,
         description: description.trim(),
         linkUrl: safeLink,
-        image,
+        attachment,
       });
       reset();
       onOpenChange(false);
@@ -189,46 +192,48 @@ export function CalendarEventDialog({
           <section className="space-y-3 rounded-2xl border border-primary/15 bg-primary/5 p-4">
             <label
               className="flex items-center gap-2 text-sm font-semibold"
-              htmlFor="calendar-event-image"
+              htmlFor="calendar-event-attachment"
             >
               <Paperclip aria-hidden="true" className="size-4 text-primary" />
-              تصویر رویداد
+              سند یا تصویر رویداد
             </label>
             <Input
-              id="calendar-event-image"
+              id="calendar-event-attachment"
               type="file"
-              accept="image/png,image/jpeg,image/webp,image/gif"
+              accept="application/pdf,image/png,image/jpeg"
               onChange={(event) => {
                 const file = event.target.files?.[0] ?? null;
-                const nextError = calendarImageError(file);
+                const nextError = calendarAttachmentError(file);
                 if (nextError) {
-                  setImage(null);
+                  setAttachment(null);
                   setError(nextError);
                   event.target.value = '';
                   return;
                 }
-                setImage(file);
+                setAttachment(file);
                 setError('');
               }}
             />
-            {image ? (
+            {attachment ? (
               <div className="flex items-center gap-3 rounded-xl bg-surface px-3 py-2 text-sm">
                 <span className="grid size-9 place-items-center rounded-lg bg-primary/10 text-primary">
-                  <FileImage aria-hidden="true" className="size-5" />
+                  <FileText aria-hidden="true" className="size-5" />
                 </span>
-                <span className="min-w-0 flex-1 truncate">{image.name}</span>
+                <span className="min-w-0 flex-1 truncate">
+                  {attachment.name}
+                </span>
                 <Button
                   type="button"
                   size="sm"
                   variant="ghost"
-                  onClick={() => setImage(null)}
+                  onClick={() => setAttachment(null)}
                 >
                   حذف
                 </Button>
               </div>
             ) : null}
             <p className="text-xs text-muted-foreground">
-              PNG، JPG، WEBP یا GIF تا حجم ۵ مگابایت
+              PDF، PNG یا JPG تا حجم ۱۰ مگابایت
             </p>
           </section>
           {error ? <Alert tone="error" title={error} /> : null}

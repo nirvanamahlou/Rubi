@@ -296,7 +296,23 @@ export class WorkbenchService {
     return {
       data: rows.map(mapEvent),
       sources: { customerAffairs: customerAffairs.data },
+      availableBranchIds: actor.branchIds,
     };
+  }
+
+  async uploadCalendarAttachment(
+    input: { eventId: string; branchId: string; title: string },
+    file: UploadedDocumentFile | undefined,
+    actor: AuthenticatedActor,
+    metadata: DocumentRequestMetadata,
+  ) {
+    const result = await this.documents.uploadOwnWorkbenchCalendarAttachment(
+      input,
+      file,
+      actor,
+      metadata,
+    );
+    return { data: result };
   }
 
   async createEvent(

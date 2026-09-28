@@ -38,14 +38,14 @@ export function normalizeCalendarLink(value: string): string | null {
   }
 }
 
-export function calendarImageError(
+export function calendarAttachmentError(
   file: Pick<File, 'size' | 'type'> | null,
 ): string | null {
   if (!file) return null;
-  if (!file.type.startsWith('image/'))
-    return 'فایل انتخاب‌شده باید تصویر باشد.';
-  if (file.size > 5 * 1024 * 1024)
-    return 'حجم تصویر باید حداکثر ۵ مگابایت باشد.';
+  if (!['application/pdf', 'image/png', 'image/jpeg'].includes(file.type))
+    return 'پیوست باید PDF، PNG یا JPEG باشد.';
+  if (file.size < 1 || file.size > 10 * 1024 * 1024)
+    return 'حجم پیوست باید بین ۱ بایت و ۱۰ مگابایت باشد.';
   return null;
 }
 
