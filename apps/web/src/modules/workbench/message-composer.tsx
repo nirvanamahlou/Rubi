@@ -17,7 +17,13 @@ import {
   Users,
   X,
 } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
 import Link from 'next/link';
 
 import {
@@ -92,6 +98,20 @@ export function MessageComposer({
   const input = useRef<HTMLTextAreaElement>(null);
   const selection = useRef({ start: 0, end: 0 });
   const messageSubmissionId = useRef('');
+  const previousConversationId = useRef<string | null>(null);
+
+  useLayoutEffect(() => {
+    if (activeId === previousConversationId.current) return;
+    previousConversationId.current = activeId;
+    setText('');
+    setAttachments([]);
+    setMessages([]);
+    setPicker(false);
+    setError('');
+    setForwarding(null);
+    messageSubmissionId.current = '';
+    selection.current = { start: 0, end: 0 };
+  }, [activeId]);
 
   const reloadConversations = useCallback(
     async (selected?: string) => {
@@ -481,6 +501,7 @@ export function MessageComposer({
                       }
                       className="h-auto min-h-20 w-full min-w-0 justify-start overflow-hidden border border-white/70 p-3 text-start dark:border-white/10"
                       onClick={() => setActiveId(conversation.id)}
+                      disabled={busy}
                     >
                       <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-surface/20">
                         <Users className="size-5" aria-hidden="true" />
@@ -524,6 +545,7 @@ export function MessageComposer({
                   variant={activeId === conversation.id ? 'primary' : 'ghost'}
                   className="h-auto min-h-20 w-full min-w-0 justify-start overflow-hidden border border-white/70 p-3 text-start dark:border-white/10"
                   onClick={() => setActiveId(conversation.id)}
+                  disabled={busy}
                 >
                   <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-surface/20">
                     <MessageCircleMore className="size-5" aria-hidden="true" />
