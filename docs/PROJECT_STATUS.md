@@ -3684,3 +3684,6 @@ Calendar event creation now uses an authorized branch from the authenticated Wor
 ## 2026-09-28 — WORKBENCH-PASSWORD-VISIBILITY-0928 — READY_FOR_REVIEW
 
 فرم تغییر رمز میزکار برای رمز فعلی، رمز جدید و تکرار آن دکمهٔ مستقل نمایش/پنهان‌سازی دارد. مقدار فیلد با تغییر حالت حفظ می‌شود؛ API و قواعد رمز دست‌نخورده‌اند. lint، typecheck و build Web موفق‌اند.
+## 2026-09-28 — WORKBENCH-FILES-COPY-0928 — READY_FOR_REVIEW
+
+متن توضیحی زیر عنوان «فایل‌های من» حذف شد. نمایش و بارگذاری فایل‌ها بدون تغییر است.
