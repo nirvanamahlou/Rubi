@@ -76,20 +76,17 @@ export function validatePublishDraft(
       message: 'حداقل یک کالا یا خدمت اضافه کنید.',
     };
   for (const item of draft.items) {
-    if (!item.description.trim())
+    if (!item.description?.trim())
       return {
         controlId: `${item.id}-description`,
         message: 'شرح همهٔ اقلام و خدمات را وارد کنید.',
       };
-    if (!item.unit.trim())
+    if (!item.unit?.trim())
       return {
         controlId: `${item.id}-unit`,
         message: 'واحد سنجش همهٔ اقلام و خدمات را انتخاب کنید.',
       };
-    if (
-      !/^\d+(?:\.\d+)?$/.test(item.quantity) ||
-      Number(item.quantity) <= 0
-    )
+    if (!/^\d+(?:\.\d+)?$/.test(item.quantity) || Number(item.quantity) <= 0)
       return {
         controlId: `${item.id}-quantity`,
         message: 'مقدار هر قلم باید عددی مثبت باشد.',
@@ -301,11 +298,7 @@ export function DraftForm({
       )}
     </FormField>
   );
-  const savedChoice = (
-    key: 'category',
-    label: string,
-    required = false,
-  ) => {
+  const savedChoice = (key: 'category', label: string, required = false) => {
     const existing = [
       ...new Set(
         [
@@ -375,21 +368,21 @@ export function DraftForm({
         [
           request?.draft.items
             .find((line) => line.id === item.id)
-            ?.[key].trim() ?? '',
+            ?.[key]?.trim() ?? '',
           ...(savedRequests.data?.items ?? [])
             .filter(
               (saved) =>
                 !draft.branchId || saved.draft.branchId === draft.branchId,
             )
             .flatMap((saved) =>
-              saved.draft.items.map((line) => line[key].trim()),
+              saved.draft.items.map((line) => line[key]?.trim() ?? ''),
             ),
         ].filter(Boolean),
       ),
     ];
     const custom =
       customItemFields[fieldId] ||
-      (item[key] !== '' && !existing.includes(item[key]));
+      ((item[key] ?? '') !== '' && !existing.includes(item[key]));
     const change = (value: string) =>
       update(
         'items',
@@ -560,9 +553,7 @@ export function DraftForm({
             </p>
           </div>
         </div>
-        {error && (
-          <Alert tone="error" title={errorTitle} description={error} />
-        )}
+        {error && <Alert tone="error" title={errorTitle} description={error} />}
         {conflict && baseRequest && (
           <div className="space-y-4 rounded-xl border border-border p-4">
             <Button
@@ -941,9 +932,7 @@ export function DraftForm({
                       key={key}
                       id={`${item.id}-${key}`}
                       label={label}
-                      required={
-                        key === 'description' || key === 'quantity'
-                      }
+                      required={key === 'description' || key === 'quantity'}
                     >
                       <Input
                         id={`${item.id}-${key}`}
