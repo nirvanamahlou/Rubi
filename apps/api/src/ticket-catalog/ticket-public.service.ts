@@ -14,6 +14,7 @@ import type {
   TicketOfferCreateV1,
   TicketOfferSearchV1,
   TicketOfferV1,
+  TicketSaleCommissionUpdateV1,
   TicketRoundTripSalePriceUpdateV1,
   TicketSalePriceTargetCreateV1,
   TicketSalePriceTargetV1,
@@ -22,6 +23,12 @@ import type {
 import { DatabaseService } from '../database/database.service';
 import { ProcurementPublicService } from '../procurement/procurement-public.service';
 import { MasterTravelDirectory } from '../master-data/master-travel-directory';
+
+import {
+  applySaleCommissions,
+  saveTicketSaleCommission,
+  type CommissionRow,
+} from './ticket-sale-commissions';
 
 const uuid = Joi.string().guid();
 const capacityHoldSchema = Joi.object({
@@ -137,6 +144,7 @@ export class TicketPublicService {
     status: string;
     capacityAllocations: readonly { quantity: number }[];
     capacityHolds: readonly { quantity: number }[];
+    saleCommissions?: readonly CommissionRow[];
     standaloneSalePrices: readonly {
       salePriceTargetId: string | null;
       revision: number;
@@ -161,63 +169,69 @@ export class TicketPublicService {
     const directSalePrice = row.standaloneSalePrices.find(
       (price) => !price.salePriceTargetId,
     );
-    return {
-      id: row.id,
-      manifestTemplateId: row.manifestTemplateId ?? null,
-      version: row.version,
-      branchId: row.branchId,
-      originId: row.originId,
-      destinationId: row.destinationId,
-      departureAt: row.departureAt.toISOString(),
-      arrivalAt: row.arrivalAt.toISOString(),
-      carrierName: row.carrierName,
-      serviceNumber: row.serviceNumber,
-      cabinClassCode: row.cabinClassCode as TicketOfferV1['cabinClassCode'],
-      totalCapacity: row.totalCapacity,
-      remainingCapacity:
-        row.totalCapacity -
-        row.capacityAllocations.reduce(
-          (sum, allocation) => sum + allocation.quantity,
-          0,
-        ) -
-        row.capacityHolds.reduce((sum, hold) => sum + hold.quantity, 0),
-      status: row.status as TicketOfferV1['status'],
-      standaloneSalePrice: directSalePrice
-        ? {
-            revision: directSalePrice.revision,
-            amount: directSalePrice.amount.toString(),
-            currencyCode: directSalePrice.currencyCode,
-          }
-        : null,
-      targetedStandaloneSalePrices: [
-        ...new Map(
-          row.standaloneSalePrices
-            .filter((price) => price.salePriceTarget)
-            .map((price) => [
-              price.salePriceTargetId!,
-              {
-                revision: price.revision,
-                amount: price.amount.toString(),
-                currencyCode: price.currencyCode,
-                salePriceTarget: price.salePriceTarget!,
-              },
-            ]),
-        ).values(),
-      ],
-      roundTripSalePrices: [
-        ...new Map(
-          (row.outboundRoundTripSalePrices ?? []).map((price) => [
-            price.returnOfferId,
-            {
-              returnOfferId: price.returnOfferId,
-              revision: price.revision,
-              amount: price.amount.toString(),
-              currencyCode: price.currencyCode,
-            },
-          ]),
-        ).values(),
-      ],
-    };
+    return applySaleCommissions(
+      {
+        id: row.id,
+        manifestTemplateId: row.manifestTemplateId ?? null,
+        version: row.version,
+        branchId: row.branchId,
+        originId: row.originId,
+        destinationId: row.destinationId,
+        departureAt: row.departureAt.toISOString(),
+        arrivalAt: row.arrivalAt.toISOString(),
+        carrierName: row.carrierName,
+        serviceNumber: row.serviceNumber,
+        cabinClassCode: row.cabinClassCode as TicketOfferV1['cabinClassCode'],
+        totalCapacity: row.totalCapacity,
+        remainingCapacity:
+          row.totalCapacity -
+          row.capacityAllocations.reduce(
+            (sum, allocation) => sum + allocation.quantity,
+            0,
+          ) -
+          row.capacityHolds.reduce((sum, hold) => sum + hold.quantity, 0),
+        status: row.status as TicketOfferV1['status'],
+        standaloneSalePrice: directSalePrice
+          ? {
+              revision: directSalePrice.revision,
+              amount: directSalePrice.amount.toString(),
+              currencyCode: directSalePrice.currencyCode,
+            }
+          : null,
+        targetedStandaloneSalePrices: [
+          ...new Map(
+            [...row.standaloneSalePrices]
+              .reverse()
+              .filter((price) => price.salePriceTarget)
+              .map((price) => [
+                price.salePriceTargetId!,
+                {
+                  revision: price.revision,
+                  amount: price.amount.toString(),
+                  currencyCode: price.currencyCode,
+                  salePriceTarget: price.salePriceTarget!,
+                },
+              ]),
+          ).values(),
+        ],
+        roundTripSalePrices: [
+          ...new Map(
+            [...(row.outboundRoundTripSalePrices ?? [])]
+              .reverse()
+              .map((price) => [
+                price.returnOfferId,
+                {
+                  returnOfferId: price.returnOfferId,
+                  revision: price.revision,
+                  amount: price.amount.toString(),
+                  currencyCode: price.currencyCode,
+                },
+              ]),
+          ).values(),
+        ],
+      },
+      row.saleCommissions ?? [],
+    );
   }
 
   private async pauseExpiredOffers(
@@ -282,6 +296,10 @@ export class TicketPublicService {
           orderBy: { revision: 'desc' },
         },
         outboundRoundTripSalePrices: { orderBy: { revision: 'desc' } },
+        saleCommissions: {
+          include: { target: true },
+          orderBy: { revision: 'desc' },
+        },
       },
       orderBy: [{ departureAt: 'asc' }, { id: 'asc' }],
       take: 500,
@@ -340,6 +358,10 @@ export class TicketPublicService {
           orderBy: { revision: 'desc' },
         },
         outboundRoundTripSalePrices: { orderBy: { revision: 'desc' } },
+        saleCommissions: {
+          include: { target: true },
+          orderBy: { revision: 'desc' },
+        },
       },
       orderBy: [{ departureAt: 'asc' }, { id: 'asc' }],
       skip: ((query.page ?? 1) - 1) * 50,
@@ -532,6 +554,14 @@ export class TicketPublicService {
         throw new ConflictException('این کد مقصد قیمت قبلاً ثبت شده است.');
       throw error;
     }
+  }
+
+  async updateSaleCommission(
+    input: TicketSaleCommissionUpdateV1,
+    actor: AuthenticatedActor,
+    key?: string,
+  ) {
+    return saveTicketSaleCommission(this.database, input, actor, key);
   }
 
   async updateStandaloneSalePrice(
