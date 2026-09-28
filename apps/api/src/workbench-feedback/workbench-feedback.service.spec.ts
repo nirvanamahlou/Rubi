@@ -1,4 +1,8 @@
-import { ForbiddenException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
 import type { AuthenticatedActor } from '@nora/contracts';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -22,7 +26,12 @@ const input = {
 };
 
 describe('WorkbenchFeedbackService', () => {
-  const repository = { create: vi.fn(), findById: vi.fn() };
+  const repository = {
+    create: vi.fn(),
+    findById: vi.fn(),
+    listHr: vi.fn(),
+    countHr: vi.fn(),
+  };
   const hrDirectory = { workbenchFeedbackRecipientUserIds: vi.fn() };
   const documents = {
     assertWorkbenchFeedbackAttachments: vi.fn(),
@@ -50,6 +59,8 @@ describe('WorkbenchFeedbackService', () => {
       recipientCount: value.recipientUserIds.length,
     }));
     repository.findById.mockReset();
+    repository.listHr.mockReset();
+    repository.countHr.mockReset();
   });
 
   it('validates linked documents, trims content and routes to the selected unit', async () => {
@@ -87,6 +98,16 @@ describe('WorkbenchFeedbackService', () => {
       ),
     ).rejects.toBeInstanceOf(ForbiddenException);
     expect(repository.create).not.toHaveBeenCalled();
+  });
+
+  it('rejects new feedback addressed outside human resources', async () => {
+    await expect(
+      service.create({ ...input, department: 'management' }, actor),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    expect(repository.create).not.toHaveBeenCalled();
+    expect(
+      hrDirectory.workbenchFeedbackRecipientUserIds,
+    ).not.toHaveBeenCalled();
   });
 
   it('routes an attachment through the narrow Documents owner boundary', async () => {
@@ -167,5 +188,41 @@ describe('WorkbenchFeedbackService', () => {
     await expect(service.detail(input.id, actor)).rejects.toBeInstanceOf(
       NotFoundException,
     );
+  });
+
+  it('lists only authorized branch HR feedback and masks anonymous senders', async () => {
+    hrDirectory.workbenchFeedbackRecipientUserIds.mockResolvedValue([
+      actor.userId,
+    ]);
+    repository.listHr.mockResolvedValue([
+      {
+        id: input.id,
+        trackingNumber: 'WB-444444444444',
+        branchId: input.branchId,
+        subject: 'پیشنهاد کارکنان',
+        body: 'متن نظر',
+        isAnonymous: true,
+        attachmentCount: 0,
+        submittedAt: new Date('2026-09-28T10:00:00Z'),
+        submittedBy: { id: 'sender', displayName: 'نام محرمانه' },
+      },
+    ]);
+    repository.countHr.mockResolvedValue(1);
+    const response = await service.hrInbox(actor, 1, 20);
+    expect(repository.listHr).toHaveBeenCalledWith(actor.branchIds, 1, 20);
+    expect(response.data[0]?.sender).toBeNull();
+    expect(JSON.stringify(response)).not.toContain('نام محرمانه');
+    expect(response.total).toBe(1);
+  });
+
+  it('returns no inbox data when the actor is not an HR recipient', async () => {
+    hrDirectory.workbenchFeedbackRecipientUserIds.mockResolvedValue([]);
+    expect(await service.hrInbox(actor, 1, 20)).toEqual({
+      data: [],
+      page: 1,
+      pageSize: 20,
+      total: 0,
+    });
+    expect(repository.listHr).not.toHaveBeenCalled();
   });
 });

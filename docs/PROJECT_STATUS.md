@@ -1,3 +1,7 @@
+## 2026-09-28 — HR-WORKBENCH-SURVEYS-0928 — READY_FOR_REVIEW
+
+نظرسنجی‌های ارسال‌شده از میزکار با مقصد منابع انسانی از سرویس عمومی Workbench در بخش جدید HR نمایش داده می‌شوند. دسترسی شعبه و گیرنده، ناشناس‌ماندن فرستنده و صفحه‌بندی در API اعمال می‌شوند. بدون Migration یا تغییر داده. ۱۰ تست API و ۵۴ تست HR Web، lint، typecheck و build هر دو بخش موفق‌اند. اجرای مشترک ۳۱۰۰ تغییر نکرده است. جزئیات: docs/tasks/HR-WORKBENCH-SURVEYS-0928.md.
+
 ## 2026-09-27 — WORKBENCH-FEEDBACK-ATTACHMENT-0927 — PC-B — READY_FOR_REVIEW
 
 پیوست نظرسنجی میزکار دیگر از API عمومی اسناد استفاده نمی‌کند؛ endpoint محدود و احراز‌شدهٔ Workbench Feedback فقط PDF/JPEG/PNG تا ۱۰ مگابایت را با مالک، شعبه و reference ثابت همان نظرسنجی ثبت می‌کند. این مسیر هیچ مجوز عمومی اسناد به کاربر اضافه نمی‌کند. Migration افزایشی و idempotent نوع سند «پیوست نظرسنجی» و دستهٔ آرشیو عمومی را برای پایگاه‌های موجود ایجاد می‌کند. lint و typecheck API/Web، Prisma validate، build API، ۱۱ تست API و یک تست Web موفق‌اند. build تولیدی Web به‌دلیل فرآیند build هم‌زمان اجرا نشد و باید در CI یا محیط آزاد تکرار شود؛ Schema و دادهٔ عملیاتی تغییر نکرده‌اند. Migration در پایگاه‌دادهٔ محلی سرویس ۴۰۰۰ اعمال شد و نوع سند و دستهٔ آرشیو فعال‌اند؛ migration status، Prisma validate و تست‌های هدفمند API موفق‌اند.
@@ -3603,9 +3607,53 @@ MANIFEST همچنان فقط پس از تأیید مالی تحویل مدارک
 
 بلیط‌های گذشته هنگام بارگذاری و سپس هر دقیقه از کارت‌های عملیاتی مدیریت بلیط کنار می‌روند؛ پاسخ فهرست مدیریتی API نیز فقط بلیط‌های آینده را بازمی‌گرداند. توقف خودکار فروش در API حفظ می‌شود و هیچ سابقهٔ قرارداد، مالی یا ظرفیت حذف نمی‌شود. دکمهٔ قرمز حذف، آیکون با کنتراست درست دارد. ۲۰ تست وب و ۸ تست API، lint هدفمند، typecheck و build تولیدی Web/API موفق‌اند. بدون Migration، تغییر قرارداد عمومی، مجوز یا وابستگی.
 
+## 2026-09-28 — WORKBENCH-FEEDBACK-HR-LAYOUT-0928 — READY_FOR_REVIEW
+
+نظرسنجی میزکار فقط برای منابع انسانی ارسال می‌شود. مقصد در فرم ثابت است و API نیز مقصد دیگری را برای ارسال جدید نمی‌پذیرد؛ نمایش نظرسنجی‌های قدیمی برای واحدهای دیگر حفظ شده است. ردیف پیوست و دکمهٔ حذف آن برای فاصله‌گذاری درست و نام فایل بلند بازطراحی شدند. ۶ تست سرویس، lint/typecheck و build وب و API موفق‌اند. بدون Schema/Migration، Dependency/Lockfile یا تغییر دادهٔ عملیاتی.
+
+## 2026-09-28 — MESSAGING-DELIVERY-ATTACHMENTS-0928 — READY_FOR_REVIEW
+
+پیوست پیام‌رسان اکنون با مرجع واقعی `MESSAGING` اعتبارسنجی می‌شود؛ خطای نادرست «متعلق به این رکورد نیست» برای فایل تازه‌بارگذاری‌شده رفع شد. متن و نام فایل برای اعضای گفت‌وگو نمایش داده می‌شوند، گیرنده فایل را از مسیر محدود به همان گفت‌وگو دریافت می‌کند و فهرست/پیام‌ها در تب فعال هر ۱۰ ثانیه تازه می‌شوند. لینک اعلان نیز گفت‌وگوی مربوط را باز می‌کند. ۲۲ آزمون API و ۵ آزمون Web، lint/typecheck و build API/Web موفق‌اند؛ آزمون دو حساب واقعی هنوز اجرا نشده است. بدون Schema/Migration، Dependency/Lockfile، Permission grant یا تغییر دادهٔ عملیاتی.
+
+## 2026-09-28 — WORKBENCH-GROUP-CREATE-0928 — READY_FOR_REVIEW
+
+فرم ساخت گروه پیام‌رسان فقط کاربران دارای شعبه مشترک را هم‌زمان انتخاب می‌کند و خطای ساخت را در همان پنجره نشان می‌دهد. دو آزمون هدفمند، lint فایل‌های تغییرکرده، typecheck و build تولیدی وب موفق‌اند. API، IAM، Schema/Migration و داده عملیاتی تغییر نکرده‌اند.
+
+## 2026-09-28 — WORKBENCH-CHAT-DRAFT-RESET-0928 — READY_FOR_REVIEW
+
+هنگام تغییر گفت‌وگو در پیام‌رسان میزکار، متن پیش‌نویس، پیوست انتخاب‌شده و پیام‌های گفت‌وگوی قبلی پیش از نمایش چت تازه پاک می‌شوند. چهار آزمون موجود پیام‌رسان، lint، typecheck و build تولیدی وب موفق‌اند. Backend، Schema/Migration و داده عملیاتی تغییر نکرده‌اند.
+
+## 2026-09-28 — WORKBENCH-OPTIONAL-DOCUMENT-CASE-0928 — READY_FOR_REVIEW
+
+بارگذاری سند از میزکار بدون انتخاب پرونده با مرجع شخصی محدود به کاربر آماده شد. انتخاب پرونده همچنان ممکن است و اعتبارسنجی دسترسی پرونده حفظ می‌شود. ۳۲ تست هدفمند، lint، typecheck و build وب/API موفق‌اند؛ بدون Migration و تغییر قرارداد API.
+
+## 2026-09-28 — WORKBENCH-HR-DOCUMENT-BRANCHES-0928 — READY_FOR_REVIEW
+
+گزینه‌های شعبه در فرم بارگذاری سند به نام‌های فعال ثبت‌شده در منابع انسانی متصل شدند؛ محدوده دسترسی و شناسهٔ اصلی شعبه ثابت ماند. ۲۹ تست API، lint، typecheck و build API/Web موفق‌اند. این تغییر به همان PR #413 افزوده می‌شود.
+
+اصلاح تکمیلی: «جهان باستان» و «نیایش سیر» هر دو رکورد فعال منابع انسانی با یک شناسهٔ دسترسی مشترک‌اند. پاسخ گزینه‌های اسناد اکنون شناسهٔ مستقل هر رکورد سازمانی را به‌صورت فیلد افزوده و سازگار با نسخهٔ قبل ارائه می‌کند تا هر دو در منوی بارگذاری دیده شوند؛ شناسهٔ دسترسی برای مجوز و FK ثابت مانده است. تست رگرسیون، typecheck و build تولیدی API/Web موفق‌اند؛ نسخهٔ یکپارچه روی ۳۱۰۰ و API روی ۴۰۰۰ پاسخ ۲۰۰ می‌دهند.
+
+## 2026-09-28 — DOCUMENT-DETAIL-HIDE-RELATIONS-VERSIONS-0928 — READY_FOR_REVIEW
+
+تب‌ها و محتوای نمایشی «ارتباطات» و «نسخه‌ها» از جزئیات سند حذف شدند؛ داده‌های آرشیو و API دست‌نخورده ماندند. lint، typecheck و build Web موفق‌اند. تغییر در PR #413 برای بازبینی است.
+
+اصلاح ظاهری بعدی: دکمهٔ حذف دائمی در جزئیات سند اکنون از رنگ‌بندی مخرب استاندارد با آیکن سفید استفاده می‌کند تا کنتراست آن روی پس‌زمینهٔ قرمز حفظ شود.
+
+## 2026-09-28 — WORKBENCH-FILES-UPLOADED-ONLY-0928 — READY_FOR_REVIEW
+
+تب «اسناد من» از فایل‌های میزکار حذف و «بارگذاری‌های من» نمای پیش‌فرض شد؛ فهرست اصلی اسناد تغییری نکرد. lint، typecheck و build Web موفق‌اند. تغییر در PR #413 برای بازبینی است.
+## 2026-09-28 — WORKBENCH-NOTE-STARS-0928 — READY_FOR_REVIEW
+
+قابلیت ستاره‌دار کردن یادداشت‌های ذخیره‌شده و نمایش آن‌ها در کنار اسناد ستاره‌دار پیاده شد. ذخیرهٔ وضعیت از فیلد پایدار موجود یادداشت استفاده می‌کند؛ Migration لازم نیست. ۱۳ تست هدفمند Web، lint، typecheck و build تولیدی Web موفق‌اند.
+## 2026-09-28 — WORKBENCH-CALENDAR-FILTER-0928 — READY_FOR_REVIEW
+
+فیلتر اولویت از نمای «تقویم من» حذف شد. اولویت ثبت‌شدهٔ رویدادها و سایر فیلترها حفظ می‌شوند. ۷ آزمون تقویم، lint، typecheck و build تولیدی Web موفق‌اند.
 ## 2026-09-28 — TICKET-ROUTE-TIME-FUTURE-0928 — READY_FOR_REVIEW
 
 مسیرهای بلیط به‌جای کد داخلی شهر، نام اطلاعات پایه را بازخوانی می‌کنند؛ تا زمان بازیابی نیز کد فنی نمایش داده نمی‌شود. ویرایش زمان Published Offer دارای قرارداد فقط در صورت ثابت‌ماندن مسیر، ایرلاین، شماره، کلاس و ظرفیت پذیرفته می‌شود؛ Snapshot قراردادهای قبلی دست‌نخورده است و رزرو موقت/تور همچنان مانع ویرایش‌اند. ۴۶ تست هدفمند، lint، typecheck و build Web/API موفق‌اند. تغییر Schema/Migration، قرارداد عمومی، Permission، Dependency/Lockfile و دادهٔ عملیاتی ندارد؛ پس از PR و Merge، runtime یکپارچهٔ develop باید به‌روز شود.
+## Workbench calendar attachments — 2026-09-28
+
+Calendar event creation now uses an authorized branch from the authenticated Workbench calendar response when active-company loading is unavailable. Event attachments accept PDF, PNG, and JPEG (up to 10 MB) through a scoped Documents service endpoint, with owner and event source reference checked on save. No migration or permission expansion. Targeted API/Web tests, lint, typechecks, and production builds passed.
 
 ## 2026-09-28 — TICKET-PAIR-DESTINATION-DATE-0928 — READY_FOR_REVIEW
 

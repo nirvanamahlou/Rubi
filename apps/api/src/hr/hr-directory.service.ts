@@ -26,6 +26,28 @@ const selection = {
 
 @Injectable()
 export class HrDirectoryService {
+  /** Active organization branches visible within the caller's IAM branch scope. */
+  async documentBranches(
+    actor: AuthenticatedActor,
+  ): Promise<{ id: string; branchId: string; name: string }[]> {
+    const records = await this.database.client.hrRecord.findMany({
+      where: {
+        branchId: { in: actor.branchIds },
+        section: 'organization',
+        tab: 'branches',
+        status: 'فعال',
+        deletedAt: null,
+      },
+      select: { id: true, branchId: true, values: true },
+      orderBy: [{ updatedAt: 'desc' }, { id: 'asc' }],
+    });
+    return records.flatMap((record) => {
+      const name = Array.isArray(record.values) ? record.values[0] : null;
+      return typeof name === 'string' && name.trim()
+        ? [{ id: record.id, branchId: record.branchId, name: name.trim() }]
+        : [];
+    });
+  }
   constructor(
     @Inject(DatabaseService) private readonly database: DatabaseService,
     @Inject(IamService) private readonly iam: IamService,

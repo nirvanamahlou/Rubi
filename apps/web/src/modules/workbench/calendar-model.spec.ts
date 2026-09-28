@@ -8,7 +8,7 @@ import {
   calendarDays,
   entriesInView,
   filterCalendar,
-  calendarImageError,
+  calendarAttachmentError,
   normalizeCalendarLink,
   tehranDay,
   type CalendarEntry,
@@ -73,19 +73,17 @@ describe('Workbench Persian calendar', () => {
     expect(calendarMonthLabel(next, 'persian')).toContain('فروردین');
     expect(calendarDays(next, 'month')).toHaveLength(42);
   });
-  it('combines open status, priority and normalized Persian search', () => {
+  it('combines open status and normalized Persian search without hiding priorities', () => {
     expect(
       filterCalendar(entries, {
         query: 'پيگيري',
         status: 'open',
-        priority: 'urgent',
       }).map((x) => x.id),
     ).toEqual(['a']);
     expect(
       filterCalendar(entries, {
         query: '',
         status: 'open',
-        priority: 'all',
       }).map((x) => x.id),
     ).toEqual(['a', 'b']);
   });
@@ -104,9 +102,14 @@ describe('Workbench Persian calendar', () => {
     );
     expect(normalizeCalendarLink('javascript:alert(1)')).toBeNull();
     expect(normalizeCalendarLink('')).toBe('');
-    expect(calendarImageError({ size: 1024, type: 'image/png' })).toBeNull();
-    expect(calendarImageError({ size: 1024, type: 'application/pdf' })).toBe(
-      'فایل انتخاب‌شده باید تصویر باشد.',
+    expect(
+      calendarAttachmentError({ size: 1024, type: 'image/png' }),
+    ).toBeNull();
+    expect(
+      calendarAttachmentError({ size: 1024, type: 'application/pdf' }),
+    ).toBeNull();
+    expect(calendarAttachmentError({ size: 1024, type: 'text/plain' })).toBe(
+      'پیوست باید PDF، PNG یا JPEG باشد.',
     );
   });
 });

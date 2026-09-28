@@ -50,3 +50,16 @@ export interface WorkbenchFeedbackDetailV1 extends Omit<
 export interface WorkbenchFeedbackDetailResponseV1 {
   data: WorkbenchFeedbackDetailV1;
 }
+
+/** HR's read-only inbox uses the same persisted Workbench submissions. */
+export type WorkbenchFeedbackInboxItemV1 = Omit<
+  WorkbenchFeedbackDetailV1,
+  'isOwn'
+>;
+
+export interface WorkbenchFeedbackInboxResponseV1 {
+  data: WorkbenchFeedbackInboxItemV1[];
+  page: number;
+  pageSize: number;
+  total: number;
+}

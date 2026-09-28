@@ -1,3 +1,7 @@
+## HR-WORKBENCH-SURVEYS-0928 — PC-B — READY_FOR_REVIEW
+
+- User requests a Human Resources survey inbox showing submissions from the Workbench survey form. Reserve the Workbench feedback public read contract/service/repository/controller and focused tests, HR section navigation and inbox UI, own docs. Base origin/develop@7639f2f7 on codex/pc-b-hr-workbench-surveys-0928. Preserve anonymous sender masking, branch scope and existing recipient rule; no schema/migration/dependency or runtime takeover.
+
 ## 2026-09-23 — HEADER-DATE-RTL-0923 — PC-B — READY_FOR_REVIEW
 
 - درخواست مالک: ترتیب و راست‌چینی تاریخ فارسی سربرگ اصلاح شود تا سال، ماه، روز و علائم در نمایش RTL جابه‌جا نشوند.
@@ -4114,11 +4118,95 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 - No merge or localhost:3100 change in this work item; PR to develop after checks.
 - Outcome: expired browser-defined tickets are removed from the operational cards on hydration and every minute; management API lists only future offers and continues to pause departed offers. Contracts, Finance and audit history remain intact. Delete icon is now legible on its red button. Focused Web/API tests (20/8), targeted lint, Web/API typechecks and production builds passed.
 
+## 2026-09-28 — WORKBENCH-FEEDBACK-HR-LAYOUT-0928 — PC-B — READY_FOR_REVIEW
+
+- شاخه `codex/pc-b-workbench-feedback-hr-layout-0928` از `origin/develop@7639f2f7`؛ محدوده: فرم نظرسنجی میزکار، محدودیت مقصد منابع انسانی در API، آزمون‌های هدفمند و ثبت وضعیت. بدون Schema/Migration، Dependency/Lockfile یا تغییر دادهٔ عملیاتی.
+- سازگاری: خواندن نظرسنجی‌های قدیمی برای مقصدهای قبلی حفظ می‌شود؛ فقط ارسال جدید به HR محدود خواهد شد.
+- نتیجه: انتخاب مقصد از فرم حذف و «منابع انسانی» ثابت شد؛ API ارسال جدید به مقصد دیگر را رد می‌کند. دکمه حذف پیوست و فاصله آن از نام فایل اصلاح شد. ۶ آزمون سرویس، lint/typecheck و build وب و API موفق‌اند.
+
+## 2026-09-28 — MESSAGING-DELIVERY-ATTACHMENTS-0928 — PC-B — READY_FOR_REVIEW
+
+- شاخه `codex/pc-b-messaging-delivery-attachments-0928` از `origin/develop@7639f2f7`؛ محدوده: تطبیق مرجع پیوست پیام در Documents، دریافت محدود پیوست برای اعضای گفت‌وگو در Messaging، تازه‌سازی پیام‌ها در Workbench، آزمون‌ها و ثبت وضعیت. بدون Schema/Migration، Dependency/Lockfile، Permission grant یا دادهٔ عملیاتی.
+- قرارداد افزایشی `GET /messaging/conversations/:id/attachments/:documentId` توسط Messaging تولید و Workbench مصرف می‌شود؛ مسیرهای قبلی و دادهٔ پیام‌های موجود حفظ می‌شوند.
+- علت خطا: upload مرجع `MESSAGING/MessagingMessage` می‌نوشت اما lookup پیوست فقط `WORKBENCH` را جست‌وجو می‌کرد. lookup اکنون source module متناظر را بررسی می‌کند و نام فایل اصلی را به پیام می‌دهد. دریافت فایل تنها پس از تأیید عضویت در گفت‌وگو و اتصال فایل به همان پیام انجام می‌شود؛ اسکن امنیتی و audit اسناد حفظ‌اند.
+- رابط گیرنده پیام‌ها و گفت‌وگوها را هر ۱۰ ثانیه در تب فعال تازه می‌کند و لینک اعلان را روی گفت‌وگوی درست باز می‌کند. ۲۲ آزمون هدفمند API و ۵ آزمون Web، lint/typecheck و build API/Web موفق‌اند؛ آزمون زنده با دو حساب واقعی اجرا نشده است.
+
+## 2026-09-28 — WORKBENCH-GROUP-CREATE-0928 — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک: ساخت گروه در پیام‌رسان میزکار کار کند.
+- `COMPUTER_ID=PC-B`؛ شاخه مستقل `codex/pc-b-workbench-group-create-0928` از `origin/develop@7639f2f7`. محدوده: انتخاب اعضای گروه و نمایش خطای ساخت در رابط پیام‌رسان، آزمون هدفمند و ثبت وضعیت. قرارداد API، IAM، Schema/Migration، Permission، Dependency/Lockfile و داده عملیاتی تغییر نمی‌کنند.
+- علت: فرم امکان انتخاب اعضایی بدون شعبه مشترک را می‌داد و رد شدن درخواست توسط سرور را پشت پنجره گروه پنهان می‌کرد.
+- نتیجه: انتخاب عضو ناسازگار غیرفعال است، خطای API داخل پنجره نشان داده می‌شود و پس از موفقیت، گفت‌وگوی گروهی در فهرست انتخاب می‌شود. دو آزمون هدفمند، lint فایل‌های تغییرکرده، typecheck و build تولیدی وب موفق‌اند.
+
+## 2026-09-28 — WORKBENCH-CHAT-DRAFT-RESET-0928 — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک: با بازشدن چت مخاطب تازه، متن چت قبلی در کادر نوشتن دیده نشود.
+- `COMPUTER_ID=PC-B`؛ شاخه مستقل `codex/pc-b-workbench-chat-draft-reset-0928` از `origin/develop@7639f2f7`. محدوده: فقط state رابط پیام‌رسان میزکار، بررسی هدفمند و ثبت وضعیت. API، Schema/Migration، Permission، Dependency/Lockfile و داده عملیاتی تغییر نمی‌کنند.
+- انتخاب گفت‌وگوی متفاوت متن پیش‌نویس، پیوست‌های انتخاب‌شده، شناسه تلاش ارسال و پیام‌های گفت‌وگوی قبلی را پاک می‌کند تا داده چت قبلی به مقصد جدید منتقل یا تا بارگذاری پیام‌ها نمایش داده نشود.
+- چهار آزمون موجود پیام‌رسان، lint فایل تغییرکرده، typecheck و build تولیدی وب موفق‌اند. تعویض گفت‌وگو هنگام ارسال تا پایان همان عملیات غیرفعال است.
+
+## 2026-09-28 — WORKBENCH-OPTIONAL-DOCUMENT-CASE-0928 — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک: ارتباط با پرونده در بارگذاری سندِ میزکار اختیاری باشد.
+- `COMPUTER_ID=PC-B`؛ شاخه `codex/pc-b-workbench-optional-document-case-0928` از `origin/develop@c8b04d6f`. محدوده: فرم بارگذاری مشترک با حالت اختصاصی میزکار، اعتبارسنجی بارگذاری Documents برای مرجع شخصیِ بدون پرونده، تست‌های هدفمند و ثبت وضعیت. قرارداد endpoint موجود حفظ می‌شود؛ Schema/Migration، Permission، Dependency/Lockfile و داده عملیاتی تغییر نمی‌کنند.
+- قرارداد موجود `POST /documents/upload` با همان فیلدهای source fallback مصرف می‌شود. در حالت میزکارِ بدون پرونده، source ثابت `WORKBENCH/WorkbenchPersonalDocument/<actor.userId>` با مالک همان کاربر ثبت می‌شود؛ backend شناسه و مالک را با نشست تطبیق می‌دهد. پرونده انتخاب‌شده همچنان از مسیر معتبر `sourceRelationId` بررسی می‌شود.
+- اعتبارسنجی: ۴ تست وب و ۲۸ تست API، lint فایل‌های تغییرکرده، typecheck و build وب/API موفق. بدون Migration؛ فرم اصلی اسناد همچنان پرونده را اجباری می‌داند.
+
+## 2026-09-28 — WORKBENCH-HR-DOCUMENT-BRANCHES-0928 — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک: در فرم بارگذاری سند میزکار، فهرست شعبه‌ها از شعبه‌های ثبت‌شده در منابع انسانی نمایش داده شود.
+- ادامهٔ شاخهٔ بازبینی `codex/pc-b-workbench-optional-document-case-0928` و PR #413؛ محدوده: public service فهرست شعب HR، گزینه‌های بارگذاری Documents، فرم مشترک بارگذاری و تست‌های هدفمند. هر سه ماژول در مالکیت PC-B هستند. شناسهٔ IAM شعبه برای FK و کنترل دسترسی حفظ می‌شود و فقط نام شعبه از رکورد فعال HR می‌آید؛ در نبود رکورد HR نام اصلی شعبه نمایش داده می‌شود.
+- بدون Schema/Migration، Permission grant، Dependency/Lockfile یا تغییر شکل قرارداد API.
+- اعتبارسنجی: ۲۹ تست هدفمند API، lint فایل‌های متاثر، typecheck و build تولیدی API/Web موفق‌اند. UI همان گزینه‌های API را مصرف می‌کند؛ نمایش نام HR برای رکوردهای فعال و fallback به نام شعبهٔ اصلی پوشش داده شد.
+
+### اصلاح فهرست شعب مشترک
+
+- دو شعبهٔ فعال «جهان باستان» و «نیایش سیر» در دادهٔ منابع انسانی یک IAM branchId مشترک دارند؛ نگاشت قبلیِ `branchId → name` یکی را حذف می‌کرد.
+- API اکنون رکوردهای سازمانی را با شناسهٔ مستقل و `branchId` معتبر به‌صورت فیلد افزوده و اختیاری `organizationBranches` برمی‌گرداند. قرارداد قدیمی `branches` برای مصرف‌کننده‌های فعلی حفظ شده است. فرم، شناسهٔ HR را برای انتخاب یکتا و شناسهٔ IAM را برای مجوز و FK بارگذاری مصرف می‌کند؛ شعبهٔ IAM فاقد رکورد HR همچنان نمایش داده می‌شود.
+- بدون Migration، قفل Dependency یا تغییر داده. Producer و consumer هر دو در همین واحد کار PC-B به‌روزرسانی شده‌اند.
+
+## 2026-09-28 — DOCUMENT-DETAIL-HIDE-RELATIONS-VERSIONS-0928 — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک: بخش‌های «ارتباطات» و «نسخه‌ها» از پنجره مشاهده سند حذف شوند.
+- ادامهٔ شاخهٔ بازبینی `codex/pc-b-workbench-optional-document-case-0928` و PR #413؛ محدوده فقط `apps/web/src/modules/documents/components/document-detail-dialog.tsx` و ثبت وضعیت است. مالک ماژول اسناد PC-B است؛ داده، API، مجوز و امکان دریافت فایل تغییر نمی‌کند.
+- تب‌ها و محتوای «ارتباطات» و «نسخه‌ها» حذف شدند. lint، typecheck و build تولیدی Web با ۵۳ صفحه موفق‌اند.
+
+### اصلاح کنتراست دکمه حذف سند
+
+- در همان پنجرهٔ جزئیات و محدودهٔ PC-B، کلاس رنگ قرمز آیکن که با پس‌زمینهٔ قرمز دکمهٔ مشترک تداخل داشت حذف شد. دکمه از حالت مخرب استاندارد با آیکن سفید استفاده می‌کند. منطق حذف، مجوزها و داده تغییری ندارند.
+
+## 2026-09-28 — WORKBENCH-FILES-UPLOADED-ONLY-0928 — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک: تب «اسناد من» در فایل‌های میزکار حذف شود و «بارگذاری‌های من» باقی بماند.
+- ادامهٔ شاخهٔ بازبینی `codex/pc-b-workbench-optional-document-case-0928` و PR #413؛ محدوده `apps/web/src/modules/workbench/workbench-files.tsx` و ثبت وضعیت. فهرست اسناد اصلی، داده و API تغییر نمی‌کنند.
+- تب «اسناد من» حذف و «بارگذاری‌های من» پیش‌فرض شد. lint، typecheck و build تولیدی Web موفق‌اند.
+
+## 2026-09-28 — WORKBENCH-NOTE-STARS-0928 — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک: یادداشت‌های شخصی قابلیت ستاره‌دار شدن داشته باشند و در تب «ستاره‌دارها» دیده شوند.
+- شاخهٔ مستقل `codex/pc-b-workbench-note-stars-0928` از `origin/develop@f52a567b`. محدوده: `note-drafts.ts`، `workbench-notes.tsx`، `workbench-favorites.tsx`، آزمون‌های هدفمند و ثبت وضعیت. مالک Workbench، PC-B است.
+- از فیلد پایدار موجود `WorkbenchNote.pinned` برای وضعیت ستاره و مرتب‌سازی استفاده می‌شود؛ API و قرارداد فعلی حفظ می‌شوند. بدون Schema/Migration، Permission، قفل Dependency/Lockfile، تغییر فایل‌های مرکزی دیگر یا دادهٔ عملیاتی.
+- دکمهٔ ستاره در کارت یادداشت‌های ذخیره‌شده فعال است و فهرست یادداشت‌های ستاره‌دار مستقل از دسترسی اسناد در تب «ستاره‌دارها» بارگذاری می‌شود. قالب‌های آماده، تا وقتی توسط کاربر ذخیره نشده‌اند، وضعیت ستارهٔ دائمی ندارند. ۱۳ تست هدفمند Web، lint، typecheck و build تولیدی Web با ۵۳ مسیر موفق‌اند.
+
+## 2026-09-28 — WORKBENCH-CALENDAR-FILTER-0928 — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک: انتخاب‌گر فیلتر اولویت از «تقویم من» حذف شود.
+- شاخهٔ مستقل `codex/pc-b-workbench-calendar-filter-0928` از `origin/develop@f52a567b`؛ محدوده فقط مدل فیلتر تقویم، رابط تقویم، آزمون متمرکز و ثبت وضعیت است. مالک Workbench، PC-B است.
+- اولویت خود رویداد و فرم افزودن/ویرایش حفظ می‌شود؛ تنها محدودکردن فهرست بر اساس اولویت حذف می‌شود. بدون API، Schema/Migration، قرارداد، Permission، داده یا Dependency/Lockfile.
+- اعتبارسنجی: ۷ آزمون هدفمند تقویم، lint، typecheck و build تولیدی Web با ۵۳ مسیر موفق‌اند.
+
 ## 2026-09-28 — TICKET-ROUTE-TIME-FUTURE-0928 — PC-A — READY_FOR_REVIEW
 
 - درخواست مالک: کد داخلی شهر در مسیر بلیط دیده نشود و ویرایش زمان بلیط فروخته‌شده، قراردادهای قبلی را تغییر ندهد. شاخهٔ مستقل `codex/pc-a-ticket-route-time-future-0928` از `origin/develop@f52a567b`؛ COMPUTER_ID=PC-A.
 - محدودهٔ رزرو: فقط نمایش و بازیابی نام شهر در Ticket Catalog Web، ویرایش زمان Published Offer در API همان ماژول و تست‌های مستقیم؛ بدون Schema/Migration، قرارداد عمومی، Sales، رزرو ظرفیت/تور، Permission، Dependency/Lockfile یا دادهٔ عملیاتی. قرارداد قبلی Snapshot مسیر و زمان خود را حفظ می‌کند؛ ظرفیت کل، مسیر، ایرلاین، شماره و کلاس بلیطِ فروخته‌شده همچنان قفل‌اند و رزرو موقت/تور نیز همچنان ویرایش را مسدود می‌کند.
 - نتیجه: نام شهر از اطلاعات پایه بازخوانی می‌شود و کد فنی در کارت، فیلتر و جمع مسیر نمایش داده نمی‌شود. زمان Published Offer دارای تخصیص قرارداد برای فروش‌های بعدی نسخه‌دار اصلاح می‌شود؛ تخصیص قبلی همان بلیط/ظرفیت را نگه می‌دارد. ۴۶ تست هدفمند، lint و typecheck Web/API و build تولیدی هر دو موفق‌اند. قفل محدود این واحد با Commit آزاد می‌شود؛ بدون تغییر runtime پورت ۳۱۰۰.
+
+## 2026-09-28 — WORKBENCH-CALENDAR-ATTACHMENT-0928 — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک: ثبت رویداد تقویم عملی شود و سند PDF یا تصویر به رویداد پیوست شود.
+- شاخه `codex/pc-b-workbench-calendar-attachment-0928` از `origin/develop`؛ محدوده: فرم و API تقویم میزکار، مرز عمومی بارگذاری پیوست در Documents، آزمون‌های متمرکز و وضعیت. مالک Workbench و Documents، PC-B است.
+- از نوع سند موجودِ پیوست میزکار و آرشیو عمومی استفاده می‌شود؛ بدون Schema/Migration، قرارداد مشترک، Permission، Dependency/Lockfile یا دادهٔ عملیاتی.
+- نتیجه: تقویم شناسه شعبه مجاز را از نشست دریافت می‌کند حتی اگر کارت شرکت فعال بارگذاری نشود. فرم رویداد PDF/PNG/JPEG تا ۱۰ مگابایت می‌پذیرد و فایل را با مالک و شناسه همان رویداد در اسناد ثبت می‌کند. ۲۲ آزمون هدفمند، lint، typecheck و build تولیدی Web/API موفق‌اند.
 
 ## 2026-09-28 — TICKET-PAIR-DESTINATION-DATE-0928 — PC-A — READY_FOR_REVIEW
 

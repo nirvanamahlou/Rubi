@@ -235,4 +235,11 @@ export class MessagingRepository {
       select: messageSelection,
     });
   }
+
+  attachmentReference(conversationId: string, documentId: string) {
+    return this.database.client.messagingMessageAttachment.findFirst({
+      where: { documentId, message: { conversationId } },
+      select: { messageId: true },
+    });
+  }
 }

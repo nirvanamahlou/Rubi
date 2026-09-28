@@ -32,6 +32,29 @@ export const emptyDocumentUploadValues: DocumentUploadValues = {
   requiresStepUpVerification: false,
 };
 
+export function documentUploadBranchChoices(
+  options: DocumentOptionsResponseV1['data'] | null,
+  branches: readonly BranchReference[],
+): { id: string; branchId: string; name: string }[] {
+  const allowed = options?.branches ?? branches;
+  const organization = (options?.organizationBranches ?? []).filter((record) =>
+    allowed.some((branch) => branch.id === record.branchId),
+  );
+  return [
+    ...organization,
+    ...allowed
+      .filter(
+        (branch) =>
+          !organization.some((record) => record.branchId === branch.id),
+      )
+      .map((branch) => ({
+        id: branch.id,
+        branchId: branch.id,
+        name: branch.name,
+      })),
+  ];
+}
+
 export function hydrateDocumentUploadDefaults(
   values: DocumentUploadValues,
   options: DocumentOptionsResponseV1['data'],
@@ -50,6 +73,7 @@ export function validateDocumentUpload(
   values: DocumentUploadValues,
   hasFile: boolean,
   requiresExpiry: boolean,
+  allowUnlinked = false,
 ): string | null {
   if (!hasFile) return 'ابتدا فایل سند را انتخاب کنید.';
   if (!values.title.trim()) return 'عنوان سند را وارد کنید.';
@@ -57,7 +81,7 @@ export function validateDocumentUpload(
   if (!values.categoryId) return 'دسته‌بندی را انتخاب کنید.';
   if (!values.branchId) return 'شعبه را انتخاب کنید.';
   if (!values.ownerUserId) return 'مالک فایل را انتخاب کنید.';
-  if (!values.sourceRelationId && !values.employeeId)
+  if (!allowUnlinked && !values.sourceRelationId && !values.employeeId)
     return 'پرونده مربوطه را انتخاب کنید.';
   if (values.sourceRelationId && values.employeeId)
     return 'فقط یک پرونده مرجع انتخاب کنید.';

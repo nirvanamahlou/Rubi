@@ -5,6 +5,31 @@ import type { NotificationsService } from '../notifications/notifications.servic
 import { DocumentsRepository } from './documents.repository';
 
 describe('DocumentsRepository source scoping', () => {
+  it('matches message uploads against the MESSAGING source module', async () => {
+    const findMany = vi.fn().mockResolvedValue([]);
+    const repository = new DocumentsRepository(
+      { client: { document: { findMany } } } as unknown as DatabaseService,
+      {} as NotificationsService,
+    );
+    await repository.workbenchOwnedAttachmentIds({
+      documentIds: ['44444444-4444-4444-8444-444444444444'],
+      sourceModule: 'MESSAGING',
+      sourceEntityType: 'MessagingMessage',
+      sourceEntityId: 'message:request-0001',
+      branchId: '33333333-3333-4333-8333-333333333333',
+      ownerUserId: '11111111-1111-4111-8111-111111111111',
+    });
+    expect(findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          sourceModule: 'MESSAGING',
+          sourceEntityType: 'MessagingMessage',
+          sourceEntityId: 'message:request-0001',
+        }),
+      }),
+    );
+  });
+
   it('combines exact primary-case source filtering with branch and domain scope', async () => {
     const count = vi.fn().mockResolvedValue(0);
     const findMany = vi.fn().mockResolvedValue([]);

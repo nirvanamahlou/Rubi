@@ -379,6 +379,8 @@ export class DocumentsService {
     const uniqueIds = [...new Set(documentIds)];
     const matches = await this.repository.workbenchOwnedAttachmentIds({
       documentIds: uniqueIds,
+      sourceModule:
+        sourceEntityType === 'MessagingMessage' ? 'MESSAGING' : 'WORKBENCH',
       sourceEntityType,
       sourceEntityId,
       branchId,
@@ -389,7 +391,10 @@ export class DocumentsService {
         'یک یا چند فایل پیوست متعلق به این رکورد میزکار نیست.',
       );
     }
-    return matches;
+    return matches.map(({ id, title, currentVersion }) => ({
+      id,
+      title: currentVersion?.originalFileName || title,
+    }));
   }
 
   /**
@@ -521,6 +526,62 @@ export class DocumentsService {
     };
   }
 
+  async uploadOwnWorkbenchCalendarAttachment(
+    input: { eventId: string; branchId: string; title: string },
+    file: UploadedDocumentFile | undefined,
+    actor: AuthenticatedActor,
+    metadata: DocumentRequestMetadata,
+  ): Promise<WorkbenchFeedbackAttachmentDocumentResult> {
+    if (!actor.branchIds.includes(input.branchId))
+      throw new ForbiddenException('شعبه پیوست خارج از دسترسی شما است.');
+    if (!file) throw new BadRequestException('انتخاب فایل پیوست الزامی است.');
+    if (!['application/pdf', 'image/png', 'image/jpeg'].includes(file.mimetype))
+      throw new UnsupportedMediaTypeException(
+        'پیوست رویداد باید PDF، PNG یا JPEG باشد.',
+      );
+    if (file.size < 1 || file.size > 10 * 1024 * 1024)
+      throw new BadRequestException('حجم پیوست رویداد حداکثر ۱۰ مگابایت است.');
+    const values = await this.repository.options(actor.branchIds, ['GENERAL']);
+    const branch = values.branches.find(({ id }) => id === input.branchId);
+    const owner = values.owners.find(({ id }) => id === actor.userId);
+    const documentType = values.documentTypes.find(
+      ({ code }) => code === 'WORKBENCH_FEEDBACK_ATTACHMENT',
+    );
+    const category = values.categories.find(
+      ({ code }) => code === 'GENERAL_ARCHIVE',
+    );
+    if (!branch)
+      throw new ForbiddenException('شعبه مجاز برای پیوست رویداد پیدا نشد.');
+    if (!owner || !documentType || !category)
+      throw new ConflictException(
+        'پیش‌نیاز ذخیره پیوست رویداد در آرشیو اسناد کامل نیست.',
+      );
+    const title = `پیوست رویداد: ${input.title.trim()}`.slice(0, 240);
+    const uploaded = await this.upload(
+      {
+        title,
+        description: 'پیوست تقویم میزکار',
+        documentTypeId: documentType.id,
+        categoryId: category.id,
+        branchId: branch.id,
+        ownerUserId: owner.id,
+        confidentiality: 'INTERNAL',
+        sourceModule: 'WORKBENCH',
+        sourceEntityType: 'WorkbenchCalendarEvent',
+        sourceEntityId: input.eventId,
+        sourceDisplayLabel: input.title.trim().slice(0, 240),
+        versionNote: 'پیوست رویداد',
+      },
+      file,
+      actor,
+      metadata,
+    );
+    return {
+      id: uploaded.data.id,
+      scanStatus: uploaded.data.currentVersion.scanStatus,
+    };
+  }
+
   /**
    * Narrow owner-only boundary for an internal message attachment. The caller
    * cannot choose the document type, category, owner or source reference.
@@ -584,6 +645,58 @@ export class DocumentsService {
     return {
       id: uploaded.data.id,
       scanStatus: uploaded.data.currentVersion.scanStatus,
+    };
+  }
+
+  /** Messaging verifies conversation membership and message linkage before this narrow read. */
+  async downloadMessagingAttachment(
+    documentId: string,
+    branchId: string,
+    actor: AuthenticatedActor,
+    metadata: DocumentRequestMetadata,
+  ): Promise<DocumentFileDelivery> {
+    if (!actor.branchIds.includes(branchId))
+      throw new ForbiddenException('شعبه پیوست خارج از دسترسی شما است.');
+    const row = await this.repository.findDetail(documentId, [branchId]);
+    if (!row || !row.currentVersion)
+      throw new NotFoundException('پیوست پیام پیدا نشد.');
+    const allowed =
+      row.branchId === branchId &&
+      row.sourceModule === 'MESSAGING' &&
+      row.sourceEntityType === 'MessagingMessage' &&
+      Boolean(row.sourceEntityId) &&
+      row.documentType.domain === 'GENERAL' &&
+      row.confidentiality === 'INTERNAL' &&
+      row.archiveStatus === 'ACTIVE' &&
+      row.deletedAt === null &&
+      !row.requiresStepUpVerification &&
+      row.currentVersion.scanStatus === 'CLEAN';
+    await this.repository.appendAudit({
+      documentId: row.id,
+      versionId: row.currentVersion.id,
+      actorUserId: actor.userId,
+      actorBranchId: branchId,
+      action: 'documents.messaging.download',
+      outcome: allowed ? 'SUCCESS' : 'FAILURE',
+      reason: allowed ? null : 'MESSAGING_ATTACHMENT_POLICY_DENIED',
+      ipSummary: summarizeIp(metadata.ipAddress),
+      userAgentSummary: summarizeUserAgent(metadata.userAgent),
+    });
+    if (!allowed) {
+      if (row.currentVersion.scanStatus !== 'CLEAN')
+        throw new ConflictException(
+          'فایل تا پایان اسکن امنیتی قابل دریافت نیست.',
+        );
+      throw new ForbiddenException('دریافت این پیوست مجاز نیست.');
+    }
+    return {
+      stream: await this.storage.openQuarantined(
+        row.currentVersion.storageObjectKey,
+        Number(row.currentVersion.sizeBytes),
+      ),
+      fileName: row.currentVersion.safeDownloadName,
+      mimeType: row.currentVersion.detectedMimeType,
+      sizeBytes: Number(row.currentVersion.sizeBytes),
     };
   }
 
@@ -908,10 +1021,13 @@ export class DocumentsService {
   }
 
   async options(actor: AuthenticatedActor): Promise<DocumentOptionsResponseV1> {
-    const values = await this.repository.options(
-      actor.branchIds,
-      allowedDocumentDomains(actor.permissions),
-    );
+    const [values, organizationBranches] = await Promise.all([
+      this.repository.options(
+        actor.branchIds,
+        allowedDocumentDomains(actor.permissions),
+      ),
+      this.hrDirectory.documentBranches(actor),
+    ]);
     const documentTypes = values.documentTypes.map((type) => ({
       id: type.id,
       code: type.code,
@@ -927,6 +1043,9 @@ export class DocumentsService {
       data: {
         currentUserId: actor.userId,
         branches: values.branches,
+        organizationBranches: organizationBranches.filter((branch) =>
+          values.branches.some((allowed) => allowed.id === branch.branchId),
+        ),
         documentTypes,
         categories: values.categories.map(({ id, code, name }) => ({
           id,
@@ -1263,6 +1382,18 @@ export class DocumentsService {
     if (!actor.branchIds.includes(dto.branchId)) {
       throw new ForbiddenException('شعبه انتخاب‌شده خارج از دسترسی کاربر است.');
     }
+    const personalWorkbenchUpload =
+      !dto.sourceRelationId &&
+      dto.sourceModule === 'WORKBENCH' &&
+      dto.sourceEntityType === 'WorkbenchPersonalDocument';
+    if (
+      personalWorkbenchUpload &&
+      (dto.sourceEntityId !== actor.userId || dto.ownerUserId !== actor.userId)
+    ) {
+      throw new ForbiddenException(
+        'سند شخصی باید به حساب خودتان تعلق داشته باشد.',
+      );
+    }
     const references = await this.repository.uploadReferences({
       documentTypeId: dto.documentTypeId,
       categoryId: dto.categoryId,
@@ -1294,12 +1425,21 @@ export class DocumentsService {
         'پرونده انتخاب‌شده معتبر یا در دسترس شما نیست.',
       );
     }
-    const sourceReference = selectedCase ?? {
-      sourceModule: dto.sourceModule?.trim() ?? '',
-      sourceEntityType: dto.sourceEntityType?.trim() ?? '',
-      sourceEntityId: dto.sourceEntityId?.trim() ?? '',
-      displayLabel: dto.sourceDisplayLabel?.trim() ?? '',
-    };
+    const sourceReference =
+      selectedCase ??
+      (personalWorkbenchUpload
+        ? {
+            sourceModule: 'WORKBENCH',
+            sourceEntityType: 'WorkbenchPersonalDocument',
+            sourceEntityId: actor.userId,
+            displayLabel: dto.title.trim(),
+          }
+        : {
+            sourceModule: dto.sourceModule?.trim() ?? '',
+            sourceEntityType: dto.sourceEntityType?.trim() ?? '',
+            sourceEntityId: dto.sourceEntityId?.trim() ?? '',
+            displayLabel: dto.sourceDisplayLabel?.trim() ?? '',
+          });
     if (
       sourceReference.sourceModule === 'HUMAN_RESOURCES' &&
       sourceReference.sourceEntityType === 'Employee'

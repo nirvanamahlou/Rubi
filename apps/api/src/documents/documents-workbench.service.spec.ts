@@ -26,6 +26,58 @@ function service(repository: Record<string, unknown>) {
 }
 
 describe('DocumentsService Workbench contracts', () => {
+  it('lets a conversation member receive only a clean linked message file', async () => {
+    const documentId = '44444444-4444-4444-8444-444444444444';
+    const branchId = actor.branchIds[0]!;
+    const row = {
+      id: documentId,
+      branchId,
+      sourceModule: 'MESSAGING',
+      sourceEntityType: 'MessagingMessage',
+      sourceEntityId: 'message:request-0001',
+      documentType: { domain: 'GENERAL' },
+      confidentiality: 'INTERNAL',
+      archiveStatus: 'ACTIVE',
+      deletedAt: null,
+      requiresStepUpVerification: false,
+      currentVersion: {
+        id: '55555555-5555-4555-8555-555555555555',
+        scanStatus: 'CLEAN',
+        storageObjectKey: 'test-object',
+        sizeBytes: 4n,
+        safeDownloadName: 'receipt.png',
+        detectedMimeType: 'image/png',
+      },
+    };
+    const appendAudit = vi.fn();
+    const openQuarantined = vi.fn().mockResolvedValue('test-stream');
+    const instance = new DocumentsService(
+      { findDetail: vi.fn().mockResolvedValue(row), appendAudit } as never,
+      { openQuarantined } as never,
+      {} as never,
+      {} as never,
+      {} as never,
+    );
+
+    const delivered = await instance.downloadMessagingAttachment(
+      documentId,
+      branchId,
+      { ...actor, userId: '66666666-6666-4666-8666-666666666666' },
+      {},
+    );
+    expect(delivered.fileName).toBe('receipt.png');
+    expect(openQuarantined).toHaveBeenCalledWith('test-object', 4);
+    expect(appendAudit).toHaveBeenCalledWith(
+      expect.objectContaining({ outcome: 'SUCCESS' }),
+    );
+
+    row.sourceModule = 'WORKBENCH';
+    await expect(
+      instance.downloadMessagingAttachment(documentId, branchId, actor, {}),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    expect(openQuarantined).toHaveBeenCalledOnce();
+  });
+
   it('accepts only attachments owned by the Workbench record and user', async () => {
     const id = '44444444-4444-4444-8444-444444444444';
     const lookup = vi.fn().mockResolvedValue([{ id, title: 'پیوست' }]);
@@ -41,6 +93,7 @@ describe('DocumentsService Workbench contracts', () => {
     expect(result).toEqual([{ id, title: 'پیوست' }]);
     expect(lookup).toHaveBeenCalledWith({
       documentIds: [id],
+      sourceModule: 'MESSAGING',
       sourceEntityType: 'MessagingMessage',
       sourceEntityId: 'message:request-1',
       branchId: actor.branchIds[0],
@@ -186,6 +239,61 @@ describe('DocumentsService Workbench contracts', () => {
       id: '88888888-8888-4888-8888-888888888888',
       scanStatus: 'PENDING_SCAN',
     });
+  });
+
+  it('uploads a PDF to the exact calendar event without generic upload permission', async () => {
+    const branchId = actor.branchIds[0]!;
+    const eventId = '55555555-5555-4555-8555-555555555555';
+    const instance = service({
+      options: vi.fn().mockResolvedValue({
+        branches: [{ id: branchId }],
+        owners: [{ id: actor.userId }],
+        documentTypes: [
+          {
+            id: '66666666-6666-4666-8666-666666666666',
+            code: 'WORKBENCH_FEEDBACK_ATTACHMENT',
+          },
+        ],
+        categories: [
+          {
+            id: '77777777-7777-4777-8777-777777777777',
+            code: 'GENERAL_ARCHIVE',
+          },
+        ],
+      }),
+    });
+    const upload = vi.spyOn(instance, 'upload').mockResolvedValue({
+      data: {
+        id: '88888888-8888-4888-8888-888888888888',
+        currentVersion: { scanStatus: 'PENDING_SCAN' },
+      },
+    } as never);
+    const file = {
+      buffer: Buffer.from('%PDF-test'),
+      mimetype: 'application/pdf',
+      originalname: 'agenda.pdf',
+      size: 9,
+    };
+    const result = await instance.uploadOwnWorkbenchCalendarAttachment(
+      { eventId, branchId, title: 'جلسه آزمایشی' },
+      file,
+      actor,
+      {},
+    );
+    expect(upload).toHaveBeenCalledWith(
+      expect.objectContaining({
+        sourceModule: 'WORKBENCH',
+        sourceEntityType: 'WorkbenchCalendarEvent',
+        sourceEntityId: eventId,
+        ownerUserId: actor.userId,
+        branchId,
+      }),
+      file,
+      actor,
+      {},
+    );
+    expect(result.id).toBe('88888888-8888-4888-8888-888888888888');
+    expect(actor.permissions).not.toContain('documents.upload');
   });
 
   it('uploads a message attachment with a server-owned message reference', async () => {

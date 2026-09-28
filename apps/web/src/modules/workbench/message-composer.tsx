@@ -17,8 +17,13 @@ import {
   Users,
   X,
 } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import Link from 'next/link';
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
 
 import {
   Alert,
@@ -39,6 +44,7 @@ import {
   MESSAGE_DRAFT_LIMIT,
 } from './emoji';
 import { MessageUnitIcon } from './message-unit-icon';
+import { canAddGroupMember } from './group-members';
 import { messagingApi, messagingRequestId } from './messaging-api';
 import { messageUnits } from './message-templates';
 
@@ -54,10 +60,12 @@ const messageTime = (value: string) =>
 
 export function MessageComposer({
   currentUserId,
+  initialConversationId,
   initialUnit = 'finance',
   initialSidebarMode = 'units',
 }: {
   currentUserId: string;
+  initialConversationId?: string | null;
   initialUnit?: string;
   initialSidebarMode?: SidebarMode;
 }) {
@@ -87,11 +95,28 @@ export function MessageComposer({
   const [groupOpen, setGroupOpen] = useState(false);
   const [groupTitle, setGroupTitle] = useState('');
   const [groupMembers, setGroupMembers] = useState<string[]>([]);
+  const [groupError, setGroupError] = useState('');
   const [forwarding, setForwarding] = useState<MessagingMessageV1 | null>(null);
   const [attachments, setAttachments] = useState<File[]>([]);
   const input = useRef<HTMLTextAreaElement>(null);
   const selection = useRef({ start: 0, end: 0 });
   const messageSubmissionId = useRef('');
+  const initialConversationIdRef = useRef(initialConversationId);
+  const openedFromLink = useRef<string | null>(null);
+  const previousConversationId = useRef<string | null>(null);
+
+  useLayoutEffect(() => {
+    if (activeId === previousConversationId.current) return;
+    previousConversationId.current = activeId;
+    setText('');
+    setAttachments([]);
+    setMessages([]);
+    setPicker(false);
+    setError('');
+    setForwarding(null);
+    messageSubmissionId.current = '';
+    selection.current = { start: 0, end: 0 };
+  }, [activeId]);
 
   const reloadConversations = useCallback(
     async (selected?: string) => {
@@ -112,7 +137,14 @@ export function MessageComposer({
         if (cancelled) return;
         setContacts(contactResponse.data);
         setConversations(conversationResponse.data);
-        setActiveId(conversationResponse.data[0]?.id ?? null);
+        const linked = conversationResponse.data.find(
+          (item) => item.id === initialConversationIdRef.current,
+        );
+        setActiveId(linked?.id ?? conversationResponse.data[0]?.id ?? null);
+        if (linked) {
+          openedFromLink.current = linked.id;
+          setSidebarMode('conversations');
+        }
       })
       .catch((reason: unknown) => {
         if (!cancelled)
@@ -129,6 +161,18 @@ export function MessageComposer({
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    if (
+      initialConversationId &&
+      openedFromLink.current !== initialConversationId &&
+      conversations.some((item) => item.id === initialConversationId)
+    ) {
+      openedFromLink.current = initialConversationId;
+      setActiveId(initialConversationId);
+      setSidebarMode('conversations');
+    }
+  }, [initialConversationId, conversations]);
 
   useEffect(() => {
     if (!activeId) return;
@@ -157,6 +201,27 @@ export function MessageComposer({
       });
     return () => {
       cancelled = true;
+    };
+  }, [activeId]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const timer = window.setInterval(async () => {
+      if (document.hidden) return;
+      try {
+        const conversationResponse = await messagingApi.conversations();
+        if (!cancelled) setConversations(conversationResponse.data);
+        if (activeId) {
+          const messageResponse = await messagingApi.messages(activeId);
+          if (!cancelled) setMessages(messageResponse.data);
+        }
+      } catch {
+        // The initial loads report errors; a transient polling failure retries.
+      }
+    }, 10000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
     };
   }, [activeId]);
 
@@ -227,7 +292,7 @@ export function MessageComposer({
   async function createGroup() {
     if (busy) return;
     setBusy(true);
-    setError('');
+    setGroupError('');
     try {
       const response = await messagingApi.createGroup({
         title: groupTitle,
@@ -240,7 +305,7 @@ export function MessageComposer({
       setGroupMembers([]);
       setSidebarMode('conversations');
     } catch (reason) {
-      setError(
+      setGroupError(
         reason instanceof Error ? reason.message : 'ساخت گروه انجام نشد.',
       );
     } finally {
@@ -304,6 +369,34 @@ export function MessageComposer({
       );
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function downloadMessageAttachment(
+    conversationId: string,
+    documentId: string,
+    fileName: string,
+  ) {
+    setError('');
+    try {
+      const blob = await messagingApi.downloadAttachment(
+        conversationId,
+        documentId,
+      );
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = fileName;
+      document.body.append(anchor);
+      anchor.click();
+      anchor.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 60000);
+    } catch (reason) {
+      setError(
+        reason instanceof Error
+          ? reason.message
+          : 'دریافت پیوست پیام انجام نشد.',
+      );
     }
   }
 
@@ -461,7 +554,10 @@ export function MessageComposer({
               <Button
                 className="w-full"
                 variant="outline"
-                onClick={() => setGroupOpen(true)}
+                onClick={() => {
+                  setGroupError('');
+                  setGroupOpen(true);
+                }}
                 disabled={!contacts.length}
               >
                 <UserPlus className="size-4" aria-hidden="true" />
@@ -481,6 +577,7 @@ export function MessageComposer({
                       }
                       className="h-auto min-h-20 w-full min-w-0 justify-start overflow-hidden border border-white/70 p-3 text-start dark:border-white/10"
                       onClick={() => setActiveId(conversation.id)}
+                      disabled={busy}
                     >
                       <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-surface/20">
                         <Users className="size-5" aria-hidden="true" />
@@ -524,6 +621,7 @@ export function MessageComposer({
                   variant={activeId === conversation.id ? 'primary' : 'ghost'}
                   className="h-auto min-h-20 w-full min-w-0 justify-start overflow-hidden border border-white/70 p-3 text-start dark:border-white/10"
                   onClick={() => setActiveId(conversation.id)}
+                  disabled={busy}
                 >
                   <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-surface/20">
                     <MessageCircleMore className="size-5" aria-hidden="true" />
@@ -613,9 +711,16 @@ export function MessageComposer({
                         <ul className="mt-2 min-w-0 max-w-full space-y-1">
                           {message.attachments.map((attachment) => (
                             <li key={attachment.documentId}>
-                              <Link
+                              <button
+                                type="button"
                                 className="inline-flex min-w-0 max-w-full items-center gap-2 rounded-lg bg-white/15 px-2 py-1 text-xs hover:underline"
-                                href={`/documents?document=${encodeURIComponent(attachment.documentId)}`}
+                                onClick={() =>
+                                  void downloadMessageAttachment(
+                                    message.conversationId,
+                                    attachment.documentId,
+                                    attachment.title,
+                                  )
+                                }
                               >
                                 <Paperclip
                                   className="size-3"
@@ -624,7 +729,7 @@ export function MessageComposer({
                                 <span className="min-w-0 truncate">
                                   {attachment.title}
                                 </span>
-                              </Link>
+                              </button>
                             </li>
                           ))}
                         </ul>
@@ -862,30 +967,44 @@ export function MessageComposer({
             className="mt-4 max-h-72 space-y-2 overflow-y-auto rounded-xl border border-border p-3"
             aria-label="انتخاب اعضای گروه"
           >
-            {contacts.map((contact) => (
-              <label
-                key={contact.id}
-                className="flex cursor-pointer items-center gap-3 rounded-xl p-2 hover:bg-muted"
-              >
-                <Checkbox
-                  checked={groupMembers.includes(contact.id)}
-                  onCheckedChange={(checked) =>
-                    setGroupMembers((current) =>
-                      checked
-                        ? [...current, contact.id]
-                        : current.filter((id) => id !== contact.id),
-                    )
-                  }
-                />
-                <span>
-                  <strong className="block">{contact.displayName}</strong>
-                  <span className="text-xs text-muted-foreground">
-                    {contact.branches.map((branch) => branch.name).join('، ')}
+            {contacts.map((contact) => {
+              const selected = groupMembers.includes(contact.id);
+              const selectedContacts = contacts.filter((item) =>
+                groupMembers.includes(item.id),
+              );
+              const compatible =
+                selected || canAddGroupMember(selectedContacts, contact);
+              return (
+                <label
+                  key={contact.id}
+                  className={`flex items-center gap-3 rounded-xl p-2 ${compatible ? 'cursor-pointer hover:bg-muted' : 'cursor-not-allowed opacity-50'}`}
+                >
+                  <Checkbox
+                    checked={selected}
+                    disabled={!compatible}
+                    onCheckedChange={(checked) =>
+                      setGroupMembers((current) =>
+                        checked
+                          ? [...new Set([...current, contact.id])]
+                          : current.filter((id) => id !== contact.id),
+                      )
+                    }
+                  />
+                  <span>
+                    <strong className="block">{contact.displayName}</strong>
+                    <span className="text-xs text-muted-foreground">
+                      {contact.branches.map((branch) => branch.name).join('، ')}
+                    </span>
                   </span>
-                </span>
-              </label>
-            ))}
+                </label>
+              );
+            })}
           </div>
+          {groupError && (
+            <div className="mt-3" role="alert">
+              <Alert tone="error" title={groupError} />
+            </div>
+          )}
           <Button
             className="mt-4"
             disabled={

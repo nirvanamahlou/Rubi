@@ -43,6 +43,7 @@ export type HrSectionId =
   | 'fleet'
   | 'documents'
   | 'requests'
+  | 'surveys'
   | 'finance'
   | 'reports'
   | 'payroll'
@@ -187,6 +188,15 @@ export const hrHubCards: readonly HrHubCard[] = [
     tone: 'orange',
     pills: ['کارتابل و درخواست‌های من', 'تأیید مدیر', 'SLA'],
     footer: '۹ زیرصفحه',
+  },
+  {
+    id: 'surveys',
+    title: 'نظرسنجی‌ها و پیشنهادها',
+    description: 'نظرهای ارسال‌شده از میزکار کاربران برای منابع انسانی',
+    icon: ListChecks,
+    tone: 'violet',
+    pills: ['میزکار', 'پیشنهادها', 'پاسخ‌های کارکنان'],
+    footer: 'فهرست نظرسنجی‌ها',
   },
   {
     id: 'finance',
@@ -449,6 +459,10 @@ export const screenMeta: Readonly<
     title: 'مرکز درخواست‌ها',
     description:
       'کارتابل یکپارچه خودخدمتی کارکنان و تأیید مدیران با SLA، مالک و تاریخچه',
+  },
+  surveys: {
+    title: 'نظرسنجی‌ها و پیشنهادها',
+    description: 'نظرسنجی‌های ثبت‌شده در میزکار با مقصد منابع انسانی',
   },
   finance: {
     title: 'ارتباط با مالی',
