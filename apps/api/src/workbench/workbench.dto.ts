@@ -64,3 +64,9 @@ export class WorkbenchProfilePhotoDto {
   @IsUUID() branchId!: string;
   @IsString() @Length(1, 240) title!: string;
 }
+
+export class WorkbenchCalendarAttachmentDto {
+  @IsUUID() eventId!: string;
+  @IsUUID() branchId!: string;
+  @IsString() @Length(1, 120) title!: string;
+}

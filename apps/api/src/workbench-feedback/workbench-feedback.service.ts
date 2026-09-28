@@ -12,6 +12,7 @@ import type {
   WorkbenchFeedbackCreateResponseV1,
   WorkbenchFeedbackDepartment,
   WorkbenchFeedbackDetailResponseV1,
+  WorkbenchFeedbackInboxResponseV1,
 } from '@nora/contracts';
 
 import { DocumentsService } from '../documents/documents.service';
@@ -94,6 +95,11 @@ export class WorkbenchFeedbackService {
     const body = input.body.trim();
     if (!subject || !body) {
       throw new BadRequestException('موضوع و متن نظرسنجی الزامی است.');
+    }
+    if (input.department !== 'hr') {
+      throw new BadRequestException(
+        'نظرسنجی فقط برای منابع انسانی ارسال می‌شود.',
+      );
     }
     const configuration = departmentConfiguration[input.department];
     if (!configuration) {
@@ -189,6 +195,60 @@ export class WorkbenchFeedbackService {
               },
         isOwn,
       },
+    };
+  }
+
+  async hrInbox(
+    actor: AuthenticatedActor,
+    page: number,
+    pageSize: number,
+  ): Promise<WorkbenchFeedbackInboxResponseV1> {
+    if (
+      !Number.isInteger(page) ||
+      page < 1 ||
+      !Number.isInteger(pageSize) ||
+      pageSize < 1 ||
+      pageSize > 100
+    ) {
+      throw new BadRequestException('صفحه‌بندی نظرسنجی معتبر نیست.');
+    }
+    const authorizedBranches: string[] = [];
+    for (const branchId of actor.branchIds) {
+      const recipients =
+        await this.hrDirectory.workbenchFeedbackRecipientUserIds(
+          branchId,
+          departmentConfiguration.hr.terms,
+        );
+      if (recipients.includes(actor.userId)) authorizedBranches.push(branchId);
+    }
+    if (!authorizedBranches.length) {
+      return { data: [], page, pageSize, total: 0 };
+    }
+    const [rows, total] = await Promise.all([
+      this.repository.listHr(authorizedBranches, page, pageSize),
+      this.repository.countHr(authorizedBranches),
+    ]);
+    return {
+      data: rows.map((row) => ({
+        id: row.id,
+        trackingNumber: row.trackingNumber,
+        branchId: row.branchId,
+        department: 'hr' as const,
+        subject: row.subject,
+        body: row.body,
+        anonymous: row.isAnonymous,
+        attachmentCount: row.attachmentCount,
+        submittedAt: row.submittedAt.toISOString(),
+        sender: row.isAnonymous
+          ? null
+          : {
+              id: row.submittedBy.id,
+              displayName: row.submittedBy.displayName,
+            },
+      })),
+      page,
+      pageSize,
+      total,
     };
   }
 }

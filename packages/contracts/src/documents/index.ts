@@ -219,6 +219,12 @@ export interface DocumentOptionsResponseV1 {
   data: {
     currentUserId: string;
     branches: readonly BranchReference[];
+    /** HR organization records may share an IAM branch; id remains unique for selection. */
+    organizationBranches?: readonly {
+      id: string;
+      branchId: string;
+      name: string;
+    }[];
     documentTypes: readonly DocumentTypeOptionV1[];
     categories: readonly DocumentCategoryOptionV1[];
     owners: readonly DocumentOwnerOptionV1[];

@@ -66,6 +66,7 @@ describe('WorkbenchService backend boundaries', () => {
     });
     expect(workbench).toHaveBeenCalledOnce();
     expect(response.sources.customerAffairs).toEqual([referral]);
+    expect(response.availableBranchIds).toEqual(actor.branchIds);
   });
 
   it('rejects a calendar event outside the authenticated branches', async () => {

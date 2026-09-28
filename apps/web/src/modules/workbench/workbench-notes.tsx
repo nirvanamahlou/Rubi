@@ -15,7 +15,12 @@ import {
 } from '@/components/ui';
 import { DatePicker } from '@/components/ui/date-picker';
 import { NoteEditor } from './note-editor';
-import { filterNoteDrafts, noteTemplates, type NoteDraft } from './note-drafts';
+import {
+  filterNoteDrafts,
+  noteTemplates,
+  WORKBENCH_NOTE_FAVORITES_CHANGED,
+  type NoteDraft,
+} from './note-drafts';
 import { workbenchPersonalApi } from './workbench-personal-api';
 
 function noteInput(note: NoteDraft) {
@@ -107,6 +112,8 @@ export function WorkbenchNotes({
           note.id === id ? storedNote(response.data) : note,
         ),
       );
+      if (change.pinned !== undefined)
+        window.dispatchEvent(new Event(WORKBENCH_NOTE_FAVORITES_CHANGED));
     } catch (reason) {
       setError(
         reason instanceof Error ? reason.message : 'ذخیره یادداشت انجام نشد.',
@@ -220,11 +227,31 @@ export function WorkbenchNotes({
                 <span className="rounded-md bg-amber-100/70 px-2 py-1 text-xs text-amber-900 dark:bg-amber-900/40 dark:text-amber-100">
                   • {note.folder}
                 </span>
-                {note.pinned && (
-                  <Star
-                    className="size-5 text-primary"
-                    aria-label="سنجاق‌شده"
-                  />
+                {!note.template && (
+                  <Button
+                    aria-label={
+                      note.pinned
+                        ? 'برداشتن ستاره یادداشت'
+                        : 'ستاره‌دار کردن یادداشت'
+                    }
+                    aria-pressed={note.pinned}
+                    className={
+                      note.pinned
+                        ? 'text-amber-600 hover:text-amber-700'
+                        : 'text-muted-foreground hover:text-amber-600'
+                    }
+                    onClick={() =>
+                      void update(note.id, { pinned: !note.pinned })
+                    }
+                    size="icon"
+                    title={note.pinned ? 'برداشتن ستاره' : 'ستاره‌دار کردن'}
+                    variant="ghost"
+                  >
+                    <Star
+                      aria-hidden="true"
+                      className={note.pinned ? 'size-5 fill-current' : 'size-5'}
+                    />
+                  </Button>
                 )}
               </div>
               <h3 className="mt-5 text-base font-bold">{note.title}</h3>
@@ -277,16 +304,6 @@ export function WorkbenchNotes({
                     onClick={() => edit(note)}
                   >
                     ویرایش
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    aria-pressed={note.pinned}
-                    onClick={() =>
-                      void update(note.id, { pinned: !note.pinned })
-                    }
-                  >
-                    {note.pinned ? 'برداشتن سنجاق' : 'سنجاق'}
                   </Button>
                   <Button
                     size="sm"

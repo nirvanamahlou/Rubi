@@ -38,6 +38,28 @@ export class WorkbenchFeedbackRepository {
     });
   }
 
+  listHr(branchIds: readonly string[], page: number, pageSize: number) {
+    return this.database.client.workbenchFeedback.findMany({
+      where: {
+        branchId: { in: [...branchIds] },
+        department: 'HUMAN_RESOURCES',
+      },
+      include: { submittedBy: { select: { id: true, displayName: true } } },
+      orderBy: [{ submittedAt: 'desc' }, { id: 'desc' }],
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+    });
+  }
+
+  countHr(branchIds: readonly string[]) {
+    return this.database.client.workbenchFeedback.count({
+      where: {
+        branchId: { in: [...branchIds] },
+        department: 'HUMAN_RESOURCES',
+      },
+    });
+  }
+
   async create(
     input: CreateFeedbackRecord,
   ): Promise<WorkbenchFeedbackReceiptV1> {

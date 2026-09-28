@@ -111,7 +111,26 @@ export const workbenchPersonalApi = {
       '/note-folders',
       json('POST', { name }),
     ),
-  calendar: () => request<WorkbenchCalendarResponseV1>('/calendar'),
+  calendar: () =>
+    request<WorkbenchCalendarResponseV1 & { availableBranchIds?: string[] }>(
+      '/calendar',
+    ),
+  uploadCalendarAttachment: (input: {
+    eventId: string;
+    branchId: string;
+    title: string;
+    file: File;
+  }) => {
+    const form = new FormData();
+    form.set('eventId', input.eventId);
+    form.set('branchId', input.branchId);
+    form.set('title', input.title);
+    form.set('file', input.file);
+    return request<{ data: { id: string; scanStatus: string } }>(
+      '/calendar/attachment',
+      { method: 'POST', body: form },
+    );
+  },
   createEvent: (input: WorkbenchCalendarEventInputV1) =>
     request<{ data: WorkbenchCalendarEventV1 }>(
       '/calendar',

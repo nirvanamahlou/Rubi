@@ -1,13 +1,9 @@
 'use client';
 
-import Link from 'next/link';
 import {
   Activity,
-  ArrowUpLeft,
   Copy,
   Download,
-  FileClock,
-  FolderOpen,
   Link2,
   LockKeyhole,
   Pencil,
@@ -18,13 +14,6 @@ import {
 import type { DocumentAuditEventV1, DocumentDetailV1 } from '@nora/contracts';
 import { useState } from 'react';
 
-import {
-  createDocumentConnectionHref,
-  documentRelationSourceLabel,
-  documentRelationTypeLabel,
-  getDocumentConnection,
-  getDocumentRelationConnection,
-} from '../model/document-connections';
 import { DocumentImagePreview } from './document-image-preview';
 import { DocumentStepUpForm } from './document-step-up-form';
 
@@ -32,7 +21,6 @@ import {
   Alert,
   Badge,
   Button,
-  buttonVariants,
   Dialog,
   DialogContent,
   DialogDescription,
@@ -50,15 +38,6 @@ const confidentialityLabel = {
   INTERNAL: 'داخلی',
   CONFIDENTIAL: 'محرمانه',
   RESTRICTED: 'بسیار محدود',
-} as const;
-
-const scanLabel = {
-  PENDING_SCAN: 'در حال اسکن امنیتی',
-  CLEAN: 'پاک و مجاز',
-  INFECTED: 'آلوده',
-  SCAN_FAILED: 'خطای اسکن',
-  QUARANTINED: 'قرنطینه',
-  AWAITING_ANTIVIRUS_ADAPTER: 'نیازمند بررسی امنیتی',
 } as const;
 
 const archiveStatusLabel = {
@@ -178,16 +157,6 @@ export function DocumentDetailDialog({
 }) {
   const [downloadStepUpVisible, setDownloadStepUpVisible] = useState(false);
   const [downloadReason, setDownloadReason] = useState('');
-  const documentConnection = document
-    ? getDocumentConnection(document.type.domain)
-    : null;
-  const documentConnectionHref =
-    document && documentConnection
-      ? createDocumentConnectionHref(documentConnection, {
-          documentId: document.id,
-        })
-      : null;
-
   return (
     <Dialog
       onOpenChange={(nextOpen) => {
@@ -216,11 +185,10 @@ export function DocumentDetailDialog({
                 </Button>
                 <Button
                   aria-label="حذف دائمی سند"
-                  className="text-red-600 hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-950/30"
                   disabled={!document.capabilities.permanentDelete}
                   onClick={() => onDelete(document)}
                   size="icon"
-                  variant="ghost"
+                  variant="destructive"
                 >
                   <Trash2 aria-hidden="true" className="size-4" />
                 </Button>
@@ -271,8 +239,6 @@ export function DocumentDetailDialog({
                   [
                     ['preview', 'پیش‌نمایش'],
                     ['information', 'اطلاعات'],
-                    ['relations', 'ارتباطات'],
-                    ['versions', 'نسخه‌ها'],
                     ['access', 'دسترسی و اشتراک'],
                     ['activity', 'فعالیت و نگهداری'],
                   ] as const
@@ -384,161 +350,6 @@ export function DocumentDetailDialog({
                     ['آخرین به‌روزرسانی', date(document.updatedAt)],
                   ]}
                 />
-              </TabsContent>
-
-              <TabsContent value="relations">
-                <div className="space-y-4">
-                  {documentConnection ? (
-                    <div className="relative overflow-hidden rounded-2xl border border-sky-200 bg-gradient-to-br from-sky-50 via-blue-50 to-indigo-50 p-5 shadow-sm dark:border-sky-400/20 dark:from-sky-950/45 dark:via-blue-950/30 dark:to-indigo-950/25">
-                      <span className="absolute -end-10 -top-10 size-32 rounded-full bg-sky-200/50 blur-3xl dark:bg-sky-500/10" />
-                      <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                        <div className="flex min-w-0 items-start gap-3">
-                          <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-sky-200/75 text-sky-800 dark:bg-sky-400/15 dark:text-sky-200">
-                            <Link2 aria-hidden="true" className="size-5" />
-                          </span>
-                          <div>
-                            <div className="flex flex-wrap items-center gap-2">
-                              <h3 className="font-black">
-                                ارتباط با {documentConnection.moduleLabel}
-                              </h3>
-                              <Badge>
-                                {documentConnection.moduleHref
-                                  ? 'متصل به ماژول'
-                                  : 'داخل آرشیو'}
-                              </Badge>
-                            </div>
-                            <p className="mt-2 max-w-2xl text-sm leading-7 text-muted-foreground">
-                              {documentConnection.description}
-                            </p>
-                          </div>
-                        </div>
-                        {documentConnectionHref ? (
-                          <Link
-                            className={buttonVariants({
-                              className: 'shrink-0',
-                              size: 'sm',
-                            })}
-                            href={documentConnectionHref}
-                          >
-                            رفتن به {documentConnection.moduleLabel}
-                            <ArrowUpLeft
-                              aria-hidden="true"
-                              className="size-4"
-                            />
-                          </Link>
-                        ) : null}
-                      </div>
-                    </div>
-                  ) : null}
-
-                  {document.relations.length ? (
-                    document.relations.map((relation) => {
-                      const relationConnection = getDocumentRelationConnection(
-                        relation,
-                        document.type.domain,
-                      );
-                      const relationHref = createDocumentConnectionHref(
-                        relationConnection,
-                        {
-                          documentId: document.id,
-                          relationId: relation.id,
-                        },
-                      );
-                      return (
-                        <div
-                          className="flex flex-col gap-4 rounded-xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-teal-50/70 p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between dark:border-emerald-400/20 dark:from-emerald-950/35 dark:to-teal-950/25"
-                          key={relation.id}
-                        >
-                          <div className="flex min-w-0 items-start gap-3">
-                            <Link2
-                              className="mt-0.5 size-5 shrink-0 text-emerald-700 dark:text-emerald-300"
-                              aria-hidden="true"
-                            />
-                            <div className="min-w-0">
-                              <p className="break-words font-bold">
-                                {relation.displayLabel}
-                              </p>
-                              <p className="mt-1 text-xs leading-6 text-muted-foreground">
-                                {documentRelationTypeLabel(
-                                  relation.relationType,
-                                )}{' '}
-                                ·{' '}
-                                {documentRelationSourceLabel(
-                                  relation,
-                                  document.type.domain,
-                                )}
-                              </p>
-                            </div>
-                          </div>
-                          {relationHref ? (
-                            <Link
-                              className={buttonVariants({
-                                className: 'shrink-0',
-                                size: 'sm',
-                                variant: 'outline',
-                              })}
-                              href={relationHref}
-                            >
-                              بازکردن بخش مربوطه
-                              <ArrowUpLeft
-                                aria-hidden="true"
-                                className="size-4"
-                              />
-                            </Link>
-                          ) : (
-                            <Badge className="shrink-0">داخل آرشیو</Badge>
-                          )}
-                        </div>
-                      );
-                    })
-                  ) : (
-                    <div className="flex items-start gap-3 rounded-xl border border-dashed border-amber-300 bg-gradient-to-br from-amber-50 to-orange-50/70 p-4 dark:border-amber-400/25 dark:from-amber-950/30 dark:to-orange-950/20">
-                      <FolderOpen
-                        aria-hidden="true"
-                        className="mt-0.5 size-5 shrink-0 text-amber-700 dark:text-amber-300"
-                      />
-                      <div>
-                        <p className="font-bold">
-                          پرونده‌ای برای این فایل ثبت نشده است
-                        </p>
-                        <p className="mt-1 text-xs leading-6 text-muted-foreground">
-                          خود فایل در آرشیو موجود است، اما هنوز ارتباط مشخصی با
-                          یک پرونده مبدأ برای آن ثبت نشده است.
-                        </p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </TabsContent>
-
-              <TabsContent value="versions">
-                <div className="space-y-3">
-                  {document.versions.map((version) => (
-                    <div
-                      className="flex flex-col gap-3 rounded-xl border border-violet-200 bg-gradient-to-br from-violet-50 to-indigo-50/70 p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between dark:border-violet-400/20 dark:from-violet-950/35 dark:to-indigo-950/25"
-                      key={version.id}
-                    >
-                      <div className="flex items-start gap-3">
-                        <FileClock
-                          className="mt-0.5 size-5 text-primary"
-                          aria-hidden="true"
-                        />
-                        <div>
-                          <p className="font-black">
-                            نسخه {version.versionNumber.toLocaleString('fa-IR')}
-                          </p>
-                          <p className="mt-1 text-xs text-muted-foreground">
-                            {version.versionNote} · {date(version.createdAt)} ·{' '}
-                            {version.createdBy.displayName}
-                          </p>
-                        </div>
-                      </div>
-                      <Badge>
-                        {scanLabel[version.scanStatus] ?? version.scanStatus}
-                      </Badge>
-                    </div>
-                  ))}
-                </div>
               </TabsContent>
 
               <TabsContent value="access">
