@@ -3732,3 +3732,7 @@ Calendar event creation now uses an authorized branch from the authenticated Wor
 ## 2026-09-28 — WORKBENCH-DOCUMENT-RETURN-0928 — READY_FOR_REVIEW
 
 بازکردن سند از خانه، فایل‌های من، ستاره‌دارها یا تقویم میزکار و بستن جزئیات آن اکنون کاربر را به همان تب میزکار برمی‌گرداند. بازگشت به چهار مقصد مجاز محدود است. ۹ آزمون هدفمند، lint، typecheck و build Web موفق‌اند.
+
+## 2026-09-28 — FINANCE-HISTORY-SEAT-PRICING-0928 — PC-A
+
+Existing unpaid ticket invoices retain the seat/unit-price editor; count, unit cost and automatic total are visible. Persistent branch-scoped receipt/payment history shows each structured installment, transfer date, account/method/reference and remaining amount, including settled requests, with cursor pagination. Request details and the bottom inbox panel refresh after Finance actions. 23 API and 29 Web tests, strict typechecks, scoped lint and API/Web production builds (53 routes) passed. No migration/data/dependency change. See [handoff](tasks/FINANCE-HISTORY-SEAT-PRICING-0928.md). Bounded Finance contract/docs locks released; owner authorizes develop merge.

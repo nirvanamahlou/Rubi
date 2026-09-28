@@ -4312,3 +4312,9 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 ## 2026-09-28 — WORKBENCH-SEPTEMBER-INTEGRATION-0928 — PC-B — IN_PROGRESS
 
 - `COMPUTER_ID=PC-B`؛ شاخهٔ `codex/pc-b-workbench-september-integration` از `origin/develop`. محدوده: یکپارچه‌سازی هفت تغییر اخیر میزکار و اسناد متعلق به PC-B، رفع تعارض اسناد وضعیت و تحویل در یک PR به `develop`. بدون Migration، قرارداد API، Dependency/Lockfile یا تغییر دادهٔ عملیاتی.
+
+## FINANCE-HISTORY-SEAT-PRICING-0928 — PC-A — READY_FOR_REVIEW
+
+- COMPUTER_ID=PC-A; branch codex/pc-a-finance-history-seat-pricing-0928, isolated clean Finance worktree from origin/develop@099dc40e. Reserve Finance API/Web/history tests, additive Sales public receipt-history and Reservations purchase-descriptor projections, Finance v1 additive history contract and bounded status/task docs. Producer Sales/Finance and consumer Finance API/Web owned PC-A; public boundaries and existing v1 clients preserved. No Procurement implementation, migration/schema/dependency/lockfile/IAM or operational data changes. Bounded Finance contract/Central Docs owner PC-A for this unit; prior Finance locks released. User explicitly authorizes implementation and merge. Preserve unrelated local edits.
+
+- Validation: 23 targeted API and 29 Web tests, scoped lint, API/Web strict typechecks and production builds (53 routes) passed. No migration or data change. Finance contract/bounded docs locks RELEASED with commit. Explicit owner merge authorization; authenticated browser clicks remain unverified.
