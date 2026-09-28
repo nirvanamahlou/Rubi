@@ -3289,7 +3289,7 @@ function ProjectionSlot({
                         series.currencyCode;
                       return (
                         <SelectItem
-                          className="w-full justify-end text-right text-[9px] [&>span:first-child]:block [&>span:first-child]:w-full [&>span:first-child]:text-right data-[highlighted]:bg-primary data-[highlighted]:text-primary-foreground"
+                          className="w-full justify-end text-right text-sm [&>span:first-child]:block [&>span:first-child]:w-full [&>span:first-child]:text-right data-[highlighted]:bg-primary data-[highlighted]:text-primary-foreground"
                           key={series.currencyCode}
                           value={series.currencyCode}
                         >
@@ -3323,7 +3323,7 @@ function ProjectionSlot({
                   <SelectContent align="end" className="text-right" dir="rtl">
                     {trendCalendarOptions.map(([value, label]) => (
                       <SelectItem
-                        className="w-full justify-end text-right text-[9px] [&>span:first-child]:block [&>span:first-child]:w-full [&>span:first-child]:text-right data-[highlighted]:bg-primary data-[highlighted]:text-primary-foreground"
+                        className="w-full justify-end text-right text-sm [&>span:first-child]:block [&>span:first-child]:w-full [&>span:first-child]:text-right data-[highlighted]:bg-primary data-[highlighted]:text-primary-foreground"
                         key={value}
                         value={value}
                       >
