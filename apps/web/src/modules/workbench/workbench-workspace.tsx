@@ -402,7 +402,7 @@ export function WorkbenchWorkspace() {
                                 <li key={file.id}>
                                   <Link
                                     className="block rounded-lg p-2 hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
-                                    href={`/documents?document=${encodeURIComponent(file.id)}`}
+                                    href={`/documents?document=${encodeURIComponent(file.id)}&returnTo=workbench-today`}
                                   >
                                     <span className="font-medium text-sm">
                                       {file.title}
