@@ -6,7 +6,7 @@ import type {
   DocumentCaseOptionV1,
   DocumentOptionsResponseV1,
 } from '@nora/contracts';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import {
   emptyDocumentUploadValues,
@@ -97,14 +97,10 @@ export function DocumentUploadDialog({
           branch.branchId === (options?.branches[0]?.id ?? branches[0]?.id),
       )?.id ?? '',
   );
-  useEffect(() => {
-    if (!selectedBranchChoiceId && uploadBranches.length) {
-      setSelectedBranchChoiceId(
-        uploadBranches.find((branch) => branch.branchId === values.branchId)
-          ?.id ?? uploadBranches[0]!.id,
-      );
-    }
-  }, [selectedBranchChoiceId, uploadBranches, values.branchId]);
+  const effectiveBranchChoiceId =
+    selectedBranchChoiceId ||
+    uploadBranches.find((branch) => branch.branchId === values.branchId)?.id ||
+    '';
 
   function update<K extends keyof DocumentUploadValues>(
     name: K,
@@ -395,7 +391,7 @@ export function DocumentUploadDialog({
                     const branchId = uploadBranches.find(
                       (branch) => branch.id === value,
                     )?.branchId;
-                    if (branchId && value !== selectedBranchChoiceId) {
+                    if (branchId && value !== effectiveBranchChoiceId) {
                       setSelectedBranchChoiceId(value);
                       setSelectedCase(null);
                       setValues((current) => ({
@@ -408,7 +404,7 @@ export function DocumentUploadDialog({
                       setEmployee(null);
                     }
                   }}
-                  value={selectedBranchChoiceId}
+                  value={effectiveBranchChoiceId}
                 >
                   <SelectTrigger aria-label="شعبه" id="document-branch">
                     <SelectValue placeholder="انتخاب شعبه" />
