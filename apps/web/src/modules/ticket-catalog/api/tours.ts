@@ -70,6 +70,11 @@ export const toursApi = {
       '/sale-price-targets',
       post(input, branch, crypto.randomUUID()),
     ),
+  removeSalePriceTarget: (id: string, expectedVersion: number) =>
+    request<{ data: { id: string; isActive: boolean; version: number } }>(
+      `/sale-price-targets/${encodeURIComponent(id)}`,
+      { method: 'DELETE', body: JSON.stringify({ expectedVersion }) },
+    ),
   packages: () => request<{ data: TourPackageV1[] }>('/tours/packages'),
   departures: () => request<{ data: TourDepartureV1[] }>('/tours/departures'),
   createPackage: (input: TourPackageInputV1, branch: string, key: string) =>

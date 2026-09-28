@@ -1,3 +1,7 @@
+import {
+  clearSavedCommissionDrafts,
+  type TicketPriceRow,
+} from './ticket-price-rows';
 import { describe, it, expect } from 'vitest';
 import type { TicketOfferV1 } from '@nora/contracts';
 import {
@@ -115,5 +119,49 @@ describe('commission price preview', () => {
     expect(netTicketPrice('0.0001', '50')).toBe('0.0001');
     expect(netTicketPrice('100', '100')).toBe('0');
     expect(netTicketPrice('100', 'bad')).toBeUndefined();
+  });
+});
+
+describe('saved commission refresh', () => {
+  it('clears upper and lower company drafts after bulk save and preserves other target, branch and unpriced drafts', () => {
+    const source = {
+      id: 'lower',
+      offer: { branchId: 'a' },
+      base: { amount: '100', currencyCode: 'IRR', revision: 1 },
+    } as TicketPriceRow;
+    const rows = [
+      { ...source, id: 'upper' },
+      source,
+      { ...source, id: 'other', offer: { branchId: 'b' } },
+      { ...source, id: 'unpriced', base: undefined },
+    ] as TicketPriceRow[];
+    expect(
+      clearSavedCommissionDrafts(
+        {
+          'upper:direct': '9',
+          'lower:direct': '4',
+          'upper:partner': '3',
+          'other:direct': '8',
+          'unpriced:direct': '7',
+        },
+        rows,
+        source,
+        'direct',
+        true,
+      ),
+    ).toEqual({
+      'upper:partner': '3',
+      'other:direct': '8',
+      'unpriced:direct': '7',
+    });
+    expect(
+      clearSavedCommissionDrafts(
+        { 'upper:direct': '9', 'lower:direct': '4' },
+        rows,
+        source,
+        'direct',
+        false,
+      ),
+    ).toEqual({ 'upper:direct': '9' });
   });
 });

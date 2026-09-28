@@ -95,3 +95,26 @@ export function filterTicketRows(
       .includes(filters.query.trim().toLocaleLowerCase());
   });
 }
+
+/** A saved bulk rule replaces only matching channel drafts, including rows hidden by filters. */
+export function clearSavedCommissionDrafts(
+  drafts: Record<string, string>,
+  rows: readonly TicketPriceRow[],
+  source: TicketPriceRow,
+  targetId: string,
+  copyToAll: boolean,
+) {
+  const replaced = new Set(
+    rows
+      .filter(
+        (item) =>
+          item.base &&
+          item.offer.branchId === source.offer.branchId &&
+          (copyToAll || item.id === source.id),
+      )
+      .map((item) => item.id + ':' + targetId),
+  );
+  return Object.fromEntries(
+    Object.entries(drafts).filter(([key]) => !replaced.has(key)),
+  );
+}

@@ -76,6 +76,43 @@ function setup() {
   };
 }
 describe('commission persistence', () => {
+  it('copies company percentages from a lower pair to the upper single with explicit browser nulls', async () => {
+    const { db, tx } = setup();
+    expect(
+      await saveTicketSaleCommission(
+        db,
+        {
+          ...input,
+          returnOfferId: returnId,
+          salePriceTargetId: null,
+          expectedBaseRevision: 3,
+          copyToAll: true,
+        },
+        actor,
+        'company-copy',
+      ),
+    ).toEqual({ data: { count: 2, revision: 1 } });
+    expect(
+      tx.ticketSaleCommissionRevision.create.mock.calls.map(
+        ([args]) => args.data,
+      ),
+    ).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          offerId,
+          returnOfferId: null,
+          salePriceTargetId: null,
+          percent: new Prisma.Decimal(4),
+        }),
+        expect.objectContaining({
+          offerId,
+          returnOfferId: returnId,
+          salePriceTargetId: null,
+          percent: new Prisma.Decimal(4),
+        }),
+      ]),
+    );
+  });
   it('copies only priced one-way and pair rows in one serializable transaction', async () => {
     const { db, tx, transaction } = setup();
     expect(
