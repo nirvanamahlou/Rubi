@@ -265,31 +265,11 @@ export class TourPublicService {
     if (!row) throw new NotFoundException('نوبت تور در شعبه مجاز پیدا نشد.');
     return departureView(row);
   }
-  async createPackage(
-    raw: unknown,
+  private async validatePackageReferences(
+    input: TourPackageInputV1,
     actor: AuthenticatedActor,
-    branchId?: string,
-    key?: string,
+    branchId: string,
   ) {
-    this.command(actor, branchId, key);
-    const input = validateTourPackage(raw);
-    const hash = fingerprint(branchId, input);
-    const where = {
-      createdByUserId_createKey: {
-        createdByUserId: actor.userId,
-        createKey: key!,
-      },
-    };
-    const previous = await this.database.client.tourPackage.findUnique({
-      where,
-    });
-    if (previous) {
-      if (previous.fingerprint !== hash)
-        throw new ConflictException(
-          'این درخواست قبلاً با اطلاعات دیگری ثبت شده است.',
-        );
-      return { data: packageView(previous) };
-    }
     await this.references.assertTourReferences(input);
     if (input.details?.imageDocumentId) {
       if (
@@ -318,6 +298,99 @@ export class TourPublicService {
           'تصویر باید در همین شعبه، فعال، مجاز و تأییدشده توسط بررسی امنیتی باشد.',
         );
     }
+  }
+
+  async updatePackage(
+    id: string,
+    raw: unknown,
+    actor: AuthenticatedActor,
+    branchId?: string,
+  ) {
+    this.authorize(actor, true, branchId);
+    if (!branchId || !actor.branchIds.includes(branchId))
+      throw new BadRequestException('شعبه لازم است.');
+    const expectedVersion = (raw as { expectedVersion?: unknown } | null)
+      ?.expectedVersion;
+    if (!Number.isSafeInteger(expectedVersion) || Number(expectedVersion) < 1)
+      throw new BadRequestException('نسخه تور لازم است.');
+    const definition = { ...(raw as Record<string, unknown>) };
+    delete definition.expectedVersion;
+    const input = validateTourPackage(definition);
+    // Authorize the existing row before resolving external references.
+    const existing = await this.database.client.tourPackage.findFirst({
+      where: { id, branchId },
+    });
+    if (!existing) throw new NotFoundException('تور در شعبه مجاز یافت نشد.');
+    if (existing.version !== expectedVersion)
+      throw new ConflictException(
+        'نسخه تور تغییر کرده است؛ صفحه را به‌روزرسانی کنید.',
+      );
+    await this.validatePackageReferences(input, actor, branchId);
+    return this.database.client.$transaction(async (tx) => {
+      // Lock the package before checking departures; creation takes the same lock.
+      const changed = await tx.tourPackage.updateMany({
+        where: { id, branchId, version: Number(expectedVersion) },
+        data: { version: { increment: 1 } },
+      });
+      if (changed.count !== 1)
+        throw new ConflictException(
+          'تور توسط کاربر دیگری تغییر کرده است؛ صفحه را به‌روزرسانی کنید.',
+        );
+      const previous = existing.definition as unknown as TourPackageInputV1;
+      const core = (value: TourPackageInputV1) =>
+        JSON.stringify([
+          value.originId,
+          value.destinationId,
+          [...value.hotelIds].sort(),
+          value.insuranceId ?? null,
+          value.transferOutbound,
+          value.transferReturn,
+          value.visa,
+        ]);
+      if (
+        core(previous) !== core(input) &&
+        (await tx.tourDeparture.count({ where: { packageId: id } }))
+      )
+        throw new ConflictException(
+          'این تور نوبت ثبت‌شده دارد؛ برای تغییر مسیر یا خدمات، تور جدید تعریف کنید.',
+        );
+      const row = await tx.tourPackage.update({
+        where: { id },
+        data: {
+          name: input.name,
+          definition: input as unknown as Prisma.InputJsonValue,
+        },
+      });
+      return { data: packageView(row) };
+    });
+  }
+
+  async createPackage(
+    raw: unknown,
+    actor: AuthenticatedActor,
+    branchId?: string,
+    key?: string,
+  ) {
+    this.command(actor, branchId, key);
+    const input = validateTourPackage(raw);
+    const hash = fingerprint(branchId, input);
+    const where = {
+      createdByUserId_createKey: {
+        createdByUserId: actor.userId,
+        createKey: key!,
+      },
+    };
+    const previous = await this.database.client.tourPackage.findUnique({
+      where,
+    });
+    if (previous) {
+      if (previous.fingerprint !== hash)
+        throw new ConflictException(
+          'این درخواست قبلاً با اطلاعات دیگری ثبت شده است.',
+        );
+      return { data: packageView(previous) };
+    }
+    await this.validatePackageReferences(input, actor, branchId);
     const row = await this.database.client.tourPackage.upsert({
       where,
       update: {},
@@ -363,6 +436,10 @@ export class TourPublicService {
     validateTourDeparture(input);
     const row = await this.database.client
       .$transaction(async (tx) => {
+        await tx.tourPackage.updateMany({
+          where: { id: input.packageId, branchId },
+          data: { version: { increment: 0 } },
+        });
         const pack = await tx.tourPackage.findFirst({
           where: { id: input.packageId, branchId },
         });
