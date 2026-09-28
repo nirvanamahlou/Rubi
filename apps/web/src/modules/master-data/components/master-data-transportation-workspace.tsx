@@ -679,7 +679,6 @@ export function MasterDataTransportationWorkspace() {
             <ArrowRight className="size-4" /> همه بخش‌ها
           </Link>
         }
-        description={pageDefinition.description}
         title={pageDefinition.label}
       />
       <div className="flex w-full flex-wrap justify-end gap-2">
@@ -835,7 +834,6 @@ export function MasterDataTransportationWorkspace() {
       ) : null}
       {selected ? (
         <MasterDataProfileDialog
-          description="پروفایل از فهرست اصلی و بدون سکشن یا مسیر جداگانه نمایش داده می‌شود."
           onOpenChange={setProfileOpen}
           open={profileOpen}
           title={`پروفایل ${definition.singularLabel}`}

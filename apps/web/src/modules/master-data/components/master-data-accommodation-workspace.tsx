@@ -1358,7 +1358,6 @@ export function MasterDataAccommodationWorkspace() {
             </Link>
           </>
         }
-        description={current.description}
         title={current.title}
       />
       <div className="flex w-full flex-wrap justify-end gap-2">
@@ -1516,7 +1515,6 @@ export function MasterDataAccommodationWorkspace() {
       ) : null}
       {selected?.resource === 'hotels' ? (
         <MasterDataProfileDialog
-          description="پروفایل هتل از فهرست اصلی و بدون ایجاد سکشن جداگانه نمایش داده می‌شود."
           onOpenChange={setProfileOpen}
           open={profileOpen}
           title="پروفایل هتل"

@@ -19,7 +19,6 @@ import {
   SelectValue,
 } from '@/components/ui/form-controls';
 import {
-  DialogDescription,
   DialogTitle,
   Dialog,
   DialogClose,
@@ -241,7 +240,7 @@ function GenericMasterDataLiveForm({
       <Dialog onOpenChange={onOpenChange} open={open}>
         <DialogContent
           {...focusRestore}
-          {...(!readonly ? { 'aria-describedby': undefined } : {})}
+          aria-describedby={undefined}
           className="start-auto left-1/2 max-h-[calc(100dvh-2rem)] max-w-2xl overflow-y-auto p-6"
         >
           <DialogTitle>
@@ -252,11 +251,6 @@ function GenericMasterDataLiveForm({
                 : 'مشاهده'}{' '}
             {definition.singularLabel}
           </DialogTitle>
-          {readonly ? (
-            <DialogDescription>
-              جزئیات رکورد پایدار و فقط‌خواندنی است.
-            </DialogDescription>
-          ) : null}
           {record ? (
             <div className="mt-4 flex gap-2">
               <Badge>نسخه {record.version.toLocaleString('fa-IR')}</Badge>

@@ -128,11 +128,6 @@ export function MasterDataCurrencyForm({
         if (!saving) onOpenChange(open);
       }}
       title={saved ? `ویرایش ارز ${saved.code}` : 'تعریف ارز'}
-      description={
-        record
-          ? 'مشخصات ارز و ثبت نرخ خرید و فروش؛ نرخ‌ها در تاریخچه مستقل نگهداری می‌شوند.'
-          : 'مشخصات ارز جدید را ثبت کنید.'
-      }
     >
       <div className="space-y-5">
         {notice ? <Alert title="نتیجه عملیات" description={notice} /> : null}
@@ -271,11 +266,6 @@ export function MasterDataCurrencyForm({
             <h2 className="mb-2 flex items-center gap-2 font-black">
               <ArrowLeftRight className="size-5" /> ثبت نرخ خرید و فروش
             </h2>
-            <p className="mb-5 text-sm leading-7 text-muted-foreground">
-              هر ثبت، نرخ جدید می‌سازد و تاریخچه قبلی را تغییر نمی‌دهد. نرخ‌ها
-              دستی و غیرقطعی مالی‌اند؛ تأیید فقط توسط کاربر مجاز دیگری انجام
-              می‌شود.
-            </p>
             {!saved || saved.status !== 'active' ? (
               <Alert
                 title="ابتدا ارز را ذخیره و فعال کنید"

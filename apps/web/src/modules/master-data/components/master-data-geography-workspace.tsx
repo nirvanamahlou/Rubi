@@ -878,11 +878,6 @@ export function MasterDataGeographyWorkspace() {
             همه بخش‌ها
           </Link>
         }
-        description={
-          isLocationView
-            ? 'مدیریت یکپارچه شهرها و استان‌ها/نواحی با حفظ رابطه ساختاری و کشور مرجع.'
-            : definition.description
-        }
         title={isLocationView ? 'شهرها و استان‌ها' : definition.label}
       />
 

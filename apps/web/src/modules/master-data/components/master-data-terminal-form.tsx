@@ -109,7 +109,6 @@ export function MasterDataTerminalForm({
             ? 'ویرایش ترمینال'
             : 'ایجاد ترمینال'
       }
-      description="مشخصات ترمینال، فرودگاه و ساعت فعالیت"
       onOpenChange={(open) => {
         if (!savingRef.current) onOpenChange(open);
       }}

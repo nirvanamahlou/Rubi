@@ -149,10 +149,6 @@ export function HotelImportPanel({
               افزودن گروهی هتل از اکسل
             </h2>
           </div>
-          <p className="mt-1 text-sm text-slate-600">
-            قالب مورد پذیرش دقیقاً HOTEL_IMPORT_V1 با همان ۱۸ ستون فایل بدروم
-            است.
-          </p>
         </div>
         <Badge>HOTEL_IMPORT_V1</Badge>
       </div>

@@ -48,12 +48,30 @@ describe('Master Data visual polish contract', () => {
   it('preserves form behavior, record versions and honest preview disclosure', () => {
     const form = source('master-data-live-form.tsx');
     expect(form).toContain('<DialogTitle>');
-    expect(form).toContain("'aria-describedby': undefined");
+    expect(form).toContain('aria-describedby={undefined}');
     expect(form).toContain('validateMasterDataDraft(definition.key, values)');
     expect(form).toContain('await onPersist(result.values, logoChange)');
     expect(form).toContain("record.version.toLocaleString('fa-IR')");
     expect(source('master-data-form.tsx')).toContain(
       'Blocked by Migration Lock',
+    );
+  });
+
+  it('does not render generic guidance beneath Master Data headings', () => {
+    expect(source('master-data-hub.tsx')).not.toContain(
+      '{section.description}',
+    );
+    expect(source('master-data-live-workspace.tsx')).not.toContain(
+      'definition.description}',
+    );
+    expect(source('master-data-finance-workspace.tsx')).not.toContain(
+      '{copy.description ? (',
+    );
+    expect(source('master-data-profile-dialog.tsx')).not.toContain(
+      '<DialogDescription>',
+    );
+    expect(source('master-data-live-form.tsx')).not.toContain(
+      '<DialogDescription>',
     );
   });
 

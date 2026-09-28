@@ -336,7 +336,6 @@ function GenericMasterDataWorkspace({
             همه بخش‌ها
           </Link>
         }
-        description={section.description}
         title={section.title}
       />
 
@@ -393,11 +392,6 @@ function GenericMasterDataWorkspace({
                   <h2 className="text-xl font-black">{definition.label}</h2>
                   <Badge>{section.title}</Badge>
                 </div>
-                <p className="mt-2 text-sm leading-7 text-muted-foreground">
-                  {isCountryCity
-                    ? 'کشورها و شهرهای وابسته در یک بخش مدیریت می‌شوند؛ هر شهر هنگام ثبت به کشور مرجع متصل می‌شود.'
-                    : definition.description}
-                </p>
               </div>
               <div className="flex flex-col items-end gap-3">
                 {isCountryCity ? (
@@ -731,7 +725,7 @@ export function MasterDataWorkspace({
   section: MasterDataSectionDefinition;
 }) {
   if (section.slug === 'finance')
-    return <MasterDataFinanceWorkspace section={section} />;
+    return <MasterDataFinanceWorkspace />;
   if (section.slug === 'geography') return <MasterDataGeographyWorkspace />;
   if (section.slug === 'organizations-suppliers')
     return <MasterDataSuppliersWorkspace />;

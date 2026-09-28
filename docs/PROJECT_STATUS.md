@@ -3760,3 +3760,7 @@ All English title fields in Master Data forms are optional. API required-field c
 ## 2026-09-28 — Master Data logo display (PC-B)
 
 The uploaded logo ID is now resolved through a narrow authenticated Master Data image endpoint, backed by Documents source-link, active-state, branch and clean-scan checks. Saved logos appear in Master Data forms, relevant lists and profiles; pending scans retry automatically. No live runtime or operational data was changed in this task.
+
+## 2026-09-28 — Master Data heading helper copy (PC-B)
+
+Static guidance immediately beneath titles was removed from the Master Data hub cards, workspace headings, form/profile dialogs and relevant rate/hotel panels. Record metadata, field labels, validation and actionable status messages remain. All 370 Master Data Web tests, scoped lint, Web typecheck and the 53-route production build pass. No API, migration, data or localhost runtime change.

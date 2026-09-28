@@ -973,7 +973,6 @@ export function MasterDataSuppliersWorkspace() {
             <ArrowRight className="size-4" /> همه بخش‌ها
           </Link>
         }
-        description={copy.description}
         title={copy.title}
       />
       <div className="flex w-full flex-wrap justify-end gap-2">
@@ -1118,7 +1117,6 @@ export function MasterDataSuppliersWorkspace() {
       {selected &&
       (selected.resource === 'suppliers' || selected.resource === 'brokers') ? (
         <MasterDataProfileDialog
-          description="پروفایل از همان فهرست اصلی باز شده و بدون خروج از بخش قابل مشاهده است."
           onOpenChange={setProfileOpen}
           open={profileOpen}
           title={

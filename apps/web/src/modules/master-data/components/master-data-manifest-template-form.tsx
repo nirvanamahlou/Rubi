@@ -106,7 +106,6 @@ export function MasterDataManifestTemplateForm({
             ? 'ویرایش قالب منیفست'
             : 'ایجاد قالب منیفست از Excel'
       }
-      description="فایل Excel را انتخاب کنید؛ نام، نسخه، فرمت و وضعیت پیش‌نویس به‌صورت خودکار ثبت می‌شوند."
       onOpenChange={(open) => {
         if (!pending.current) onOpenChange(open);
       }}

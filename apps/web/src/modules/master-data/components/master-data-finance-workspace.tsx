@@ -71,7 +71,6 @@ import {
   getMasterDataDefinition,
   type MasterDataResourceKey,
 } from '../model/catalog';
-import type { MasterDataSectionDefinition } from '../model/sections';
 import {
   MasterDataLiveForm,
   type MasterDataFormMode,
@@ -280,18 +279,11 @@ function FinanceChart({ rates }: { rates: readonly CurrencyRateRow[] }) {
           </circle>
         ))}
       </svg>
-      <p className="mt-2 text-xs text-muted-foreground">
-        Tooltip هر نقطه شامل جفت ارز، نرخ و زمان مشاهده UTC است.
-      </p>
     </div>
   );
 }
 
-export function MasterDataFinanceWorkspace({
-  section,
-}: {
-  section: MasterDataSectionDefinition;
-}) {
+export function MasterDataFinanceWorkspace() {
   const [tab, setTab] = useState<FinanceTab>('currencies');
   const [records, setRecords] = useState<readonly MasterDataRecord[]>([]);
   const [rates, setRates] = useState<readonly CurrencyRateRow[]>([]);
@@ -882,7 +874,6 @@ export function MasterDataFinanceWorkspace({
             همه بخش‌ها
           </Link>
         }
-        description={section.description}
         title={copy.title}
       />
 
@@ -914,11 +905,6 @@ export function MasterDataFinanceWorkspace({
         </div>
       </div>
 
-      {copy.description ? (
-        <p className="text-sm leading-7 text-muted-foreground">
-          {copy.description}
-        </p>
-      ) : null}
 
       <Card className="overflow-x-auto p-2">
         <nav
@@ -1384,7 +1370,6 @@ export function MasterDataFinanceWorkspace({
       ) : null}
       {selectedCurrency ? (
         <MasterDataProfileDialog
-          description="نرخ جاری، نمودار و جدول تاریخچه براساس ارز و جفت نرخ انتخاب‌شده از Backend خوانده می‌شود."
           onOpenChange={setCurrencyProfileOpen}
           open={currencyProfileOpen}
           title={`جزئیات ارز ${selectedCurrency.code}`}
