@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import Link from 'next/link';
-import { KeyRound } from 'lucide-react';
+import { Eye, EyeOff, KeyRound } from 'lucide-react';
 import {
   Alert,
   Button,
@@ -17,6 +17,60 @@ import {
   passwordChangeAvailable,
   submitPasswordChange,
 } from './password-change-api';
+
+function PasswordField({
+  id,
+  name,
+  label,
+  autoComplete,
+  minLength,
+  describedBy,
+}: {
+  id: string;
+  name: string;
+  label: string;
+  autoComplete: string;
+  minLength?: number;
+  describedBy?: string;
+}) {
+  const [visible, setVisible] = useState(false);
+  return (
+    <div className="space-y-2">
+      <label htmlFor={id} className="block text-sm font-semibold">
+        {label}
+      </label>
+      <div className="relative">
+        <Input
+          id={id}
+          name={name}
+          type={visible ? 'text' : 'password'}
+          autoComplete={autoComplete}
+          dir="ltr"
+          required
+          minLength={minLength}
+          maxLength={200}
+          aria-describedby={describedBy}
+          className="pl-12"
+        />
+        <Button
+          type="button"
+          size="icon"
+          variant="ghost"
+          className="absolute left-1 top-1/2 -translate-y-1/2"
+          aria-label={`${visible ? 'پنهان‌کردن' : 'نمایش'} ${label}`}
+          aria-pressed={visible}
+          onClick={() => setVisible((current) => !current)}
+        >
+          {visible ? (
+            <EyeOff className="size-4" aria-hidden="true" />
+          ) : (
+            <Eye className="size-4" aria-hidden="true" />
+          )}
+        </Button>
+      </div>
+    </div>
+  );
+}
 
 export function PasswordChange({
   open,
@@ -136,40 +190,20 @@ export function PasswordChange({
                 className="space-y-4"
                 aria-label="اطلاعات تغییر رمز عبور"
               >
+                <PasswordField
+                  id="workbench-current-password"
+                  name="currentPassword"
+                  label="رمز عبور فعلی"
+                  autoComplete="current-password"
+                />
                 <div className="space-y-2">
-                  <label
-                    htmlFor="workbench-current-password"
-                    className="block text-sm font-semibold"
-                  >
-                    رمز عبور فعلی
-                  </label>
-                  <Input
-                    id="workbench-current-password"
-                    name="currentPassword"
-                    type="password"
-                    autoComplete="current-password"
-                    dir="ltr"
-                    required
-                    maxLength={200}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label
-                    htmlFor="workbench-new-password"
-                    className="block text-sm font-semibold"
-                  >
-                    رمز عبور جدید
-                  </label>
-                  <Input
+                  <PasswordField
                     id="workbench-new-password"
                     name="newPassword"
-                    type="password"
+                    label="رمز عبور جدید"
                     autoComplete="new-password"
-                    dir="ltr"
-                    required
                     minLength={10}
-                    maxLength={200}
-                    aria-describedby="workbench-password-policy"
+                    describedBy="workbench-password-policy"
                   />
                   <p
                     id="workbench-password-policy"
@@ -179,23 +213,12 @@ export function PasswordChange({
                     ویژه.
                   </p>
                 </div>
-                <div className="space-y-2">
-                  <label
-                    htmlFor="workbench-confirm-password"
-                    className="block text-sm font-semibold"
-                  >
-                    تکرار رمز عبور جدید
-                  </label>
-                  <Input
-                    id="workbench-confirm-password"
-                    name="confirmation"
-                    type="password"
-                    autoComplete="new-password"
-                    dir="ltr"
-                    required
-                    maxLength={200}
-                  />
-                </div>
+                <PasswordField
+                  id="workbench-confirm-password"
+                  name="confirmation"
+                  label="تکرار رمز عبور جدید"
+                  autoComplete="new-password"
+                />
               </fieldset>
               {error && <Alert tone="error" title={error} />}
               {!serviceReady && (

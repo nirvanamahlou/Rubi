@@ -4244,3 +4244,8 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 
 - `COMPUTER_ID=PC-B`؛ شاخهٔ `codex/pc-b-workbench-document-return-0928` از `origin/develop`. محدوده: لینک مشاهده اسناد از خانه، فایل‌ها، ستاره‌دارها و تقویم میزکار و بازگشت پس از بستن جزئیات سند به همان تب. مالک Workbench و Documents، PC-B است؛ بدون API، Schema/Migration، Permission، Dependency/Lockfile یا تغییر داده.
 - پارامتر بازگشت فقط به چهار تب مجاز میزکار نگاشت می‌شود و مسیر دلخواه را نمی‌پذیرد. ۹ آزمون هدفمند، lint، typecheck و build تولیدی Web موفق‌اند.
+
+## 2026-09-28 — WORKBENCH-PASSWORD-VISIBILITY-0928 — PC-B — READY_FOR_REVIEW
+
+- `COMPUTER_ID=PC-B`؛ شاخهٔ `codex/pc-b-workbench-password-visibility-0928` از `origin/develop`. محدوده: فقط فرم تغییر رمز میزکار و نمایش/پنهان‌سازی سه فیلد رمز، بررسی و ثبت وضعیت. بدون API/IAM، Schema/Migration، Permission، Dependency/Lockfile یا تغییر دادهٔ عملیاتی.
+- هر دکمهٔ چشم مستقل، از نوع `button` و دارای برچسب و حالت قابل‌خواندن برای صفحه‌خوان است. lint، typecheck و build تولیدی Web موفق‌اند.
