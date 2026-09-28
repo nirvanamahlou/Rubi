@@ -90,11 +90,19 @@ describe('source package generator archive', () => {
   });
 
   it('offers the supplied Istanbul poster in banner mode with four editable hotel cards', () => {
-    const template = readFileSync(resolve(sourceRoot, 'istanbul-banner.js'), 'utf8');
+    const template = readFileSync(
+      resolve(sourceRoot, 'istanbul-banner.js'),
+      'utf8',
+    );
     const loader = readFileSync(resolve(sourceRoot, 'mode-loader.js'), 'utf8');
-    const renderer = readFileSync(resolve(sourceRoot, 'banner-reference.js'), 'utf8');
+    const renderer = readFileSync(
+      resolve(sourceRoot, 'banner-reference.js'),
+      'utf8',
+    );
 
-    expect(statSync(resolve(sourceRoot, 'istanbul-banner.png')).size).toBeGreaterThan(1024 * 1024);
+    expect(
+      statSync(resolve(sourceRoot, 'istanbul-banner.png')).size,
+    ).toBeGreaterThan(1024 * 1024);
     expect(loader).toContain("'istanbul-banner.js?v=20260928b'");
     expect(template).toContain('BANNER_TEMPLATES.istanbul_promo');
     expect(template).toContain("image:'istanbul-banner.png'");
