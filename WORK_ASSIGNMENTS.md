@@ -1,4 +1,4 @@
-## USER-ACCESS-TREE-0928 — PC-A — READY_FOR_REVIEW
+## USER-ACCESS-TREE-0928 — PC-A — COMPLETE
 
 - COMPUTER_ID=PC-A; branch codex/pc-a-user-access-tree-0928 from latest origin/develop. Reserve IAM user DTO/service/controller/tests, additive IAM access-screen contract/catalog and root-export boundary, user management UI, System entry, central AppShell/Links/Tabs access integration and focused tests; bounded docs. Producer IAM, consumer central Web navigation and UI; optional per-user profile fields retain legacy role requests. Explicit user request authorizes central cross-module visibility integration and merge after checks. Use dedicated per-user roles and catalogued screen permission records in existing IAM tables; no schema/migration/dependency/lockfile changes or real-user edits. Migration/Dependency locks not acquired. Preserve existing roles, last-active-administrator protection, anti-escalation, branch scopes and runtime edits. Bounded shared IAM/UI/docs locks owner PC-A.
 

@@ -27,3 +27,7 @@ Visibility applies to sidebar groups/items, search results, direct routes, share
 ## CI follow-up
 
 Initial full CI found the existing System source contract still expecting `/users` and an AuthGuard decorator attached to the inserted access method rather than the following password-capability method. The original password-capability guard is restored, the new access endpoint remains authenticated/no-cache, and HTTP regression covers unauthenticated access, current actor identity and ignored caller-supplied userId. The source contract now expects nested `/system/users`; the old route remains supported. Full checks rerun before merge.
+
+## Review result
+
+PR [#449](https://github.com/nirvanamahlou/Rubi/pull/449) targets develop under the owner's explicit merge authorization. All four full gates (quality, tests, production builds and PostgreSQL 18 migration/seed), for push and PR, passed on `5092e446`. The final account-menu Workbench shortcut uses the same tested visibility-aware Link; its small follow-up is rechecked on the final head before merging. Source work is complete; the shared operational runtime remains unchanged.
