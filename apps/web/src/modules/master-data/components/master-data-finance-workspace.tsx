@@ -113,12 +113,6 @@ const tabs: readonly {
   icon: typeof Coins;
 }[] = [
   { key: 'currencies', label: 'ارزها', resource: 'currencies', icon: Coins },
-  {
-    key: 'approvals',
-    label: 'گردش تأیید نرخ',
-    resource: 'exchange-rates',
-    icon: Workflow,
-  },
   { key: 'banks', label: 'بانک‌ها', resource: 'banks', icon: Landmark },
   {
     key: 'payments',
@@ -884,71 +878,75 @@ export function MasterDataFinanceWorkspace() {
         </nav>
       </Card>
 
-      <MasterDataKpiGrid items={kpis} label={`شاخص‌های ${copy.title}`} />
+      {tab !== 'payments' ? (
+        <MasterDataKpiGrid items={kpis} label={`شاخص‌های ${copy.title}`} />
+      ) : null}
 
-      <MasterDataFilterBar>
-        {columnFilterControls}
-        <MasterDataDateRangeFilter
-          idPrefix="finance-created"
-          {...dateRangeProps}
-        />
-        <FormField id="finance-search" label="جست‌وجو">
-          <div className="relative">
-            <Search className="absolute end-3 top-3.5 size-4 text-muted-foreground" />
-            <Input
-              className="pe-10"
-              id="finance-search"
-              onChange={(event) => {
-                setSearch(event.target.value);
-                setPage(1);
-              }}
-              placeholder={`جست‌وجو در ${copy.title}`}
-              value={search}
-            />
-          </div>
-        </FormField>
-        {isRateTab(tab) ? (
-          <FormField label="وضعیت نرخ">
-            <Select disabled value="DRAFT">
-              <SelectTrigger aria-label="فیلتر وضعیت نرخ">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="DRAFT">پیش‌نویس</SelectItem>
-              </SelectContent>
-            </Select>
+      {tab !== 'payments' ? (
+        <MasterDataFilterBar>
+          {columnFilterControls}
+          <MasterDataDateRangeFilter
+            idPrefix="finance-created"
+            {...dateRangeProps}
+          />
+          <FormField id="finance-search" label="جست‌وجو">
+            <div className="relative">
+              <Search className="absolute end-3 top-3.5 size-4 text-muted-foreground" />
+              <Input
+                className="pe-10"
+                id="finance-search"
+                onChange={(event) => {
+                  setSearch(event.target.value);
+                  setPage(1);
+                }}
+                placeholder={`جست‌وجو در ${copy.title}`}
+                value={search}
+              />
+            </div>
           </FormField>
-        ) : (
-          <FormField label="وضعیت">
-            <Select
-              onValueChange={(value) => {
-                setStatus(value as typeof status);
-                setPage(1);
-              }}
-              value={status}
-            >
-              <SelectTrigger aria-label="فیلتر وضعیت">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">همه وضعیت‌ها</SelectItem>
-                <SelectItem value="active">فعال</SelectItem>
-                <SelectItem value="inactive">غیرفعال</SelectItem>
-              </SelectContent>
-            </Select>
-          </FormField>
-        )}
-        <MasterDataFilterActions
-          onClear={() => {
-            setSearch('');
-            resetColumnFilters();
-            resetDateRange();
-            setStatus('active');
-            setPage(1);
-          }}
-          onRefresh={() => void load()}
-        />
-      </MasterDataFilterBar>
+          {isRateTab(tab) ? (
+            <FormField label="وضعیت نرخ">
+              <Select disabled value="DRAFT">
+                <SelectTrigger aria-label="فیلتر وضعیت نرخ">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="DRAFT">پیش‌نویس</SelectItem>
+                </SelectContent>
+              </Select>
+            </FormField>
+          ) : (
+            <FormField label="وضعیت">
+              <Select
+                onValueChange={(value) => {
+                  setStatus(value as typeof status);
+                  setPage(1);
+                }}
+                value={status}
+              >
+                <SelectTrigger aria-label="فیلتر وضعیت">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">همه وضعیت‌ها</SelectItem>
+                  <SelectItem value="active">فعال</SelectItem>
+                  <SelectItem value="inactive">غیرفعال</SelectItem>
+                </SelectContent>
+              </Select>
+            </FormField>
+          )}
+          <MasterDataFilterActions
+            onClear={() => {
+              setSearch('');
+              resetColumnFilters();
+              resetDateRange();
+              setStatus('active');
+              setPage(1);
+            }}
+            onRefresh={() => void load()}
+          />
+        </MasterDataFilterBar>
+      ) : null}
 
       {requestState === 'loading' ? (
         <div className="space-y-3" aria-live="polite">

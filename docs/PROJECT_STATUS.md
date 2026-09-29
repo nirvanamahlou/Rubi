@@ -1,3 +1,7 @@
+## 2026-09-29 — MASTER-DATA-GEOGRAPHY-FINANCE-CLEANUP-0929 — PC-B — READY_FOR_REVIEW
+
+گردش تأیید نرخ از ناوبری پنهان شد، اما API، داده‌های تاریخی/Audit و Maker/Checker حفظ شدند. کارت KPI و فیلترهای روش پرداخت حذف شدند، نه CRUD. جغرافیا اکنون درخت کشور ← شهر ← فرودگاه ← ترمینال دارد؛ چند شهر/فرودگاه/ترمینال پشتیبانی و فرودگاه/ترمینال اختیاری‌اند. `regionId` در Prisma از قبل nullable بود و الزام create در API کاهش یافت، بدون Migration یا تغییر قرارداد عمومی. Web/API lint و typecheck، API build و Web production build با ۵۳ مسیر موفق‌اند. تست‌های خودکار و گردش احرازشدهٔ مرورگر اجرا نشدند. شاخه `codex/pc-b-master-data-rate-geo-0929` روی PR باز #455 stack شده و برای Review/rebase نیازمند توجه به تعارض والد است؛ ادغام یا تغییر runtime انجام نشده.
+
 ## 2026-09-28 — MASTER-DATA-RECORD-ICON-ACTIONS-0928 — PC-B — READY_FOR_REVIEW
 
 کنترل‌های عملیات رکورد در تمام workspaceهای اطلاعات پایه با الگوی فقط‌آیکون یکسان شدند؛ مشاهده و ویرایش outline و حذف قرمز. نام دسترس‌پذیر و تأیید حذف محفوظ است. ۳۶۴ تست Master Data، lint محدوده، typecheck و build تولیدی Web با ۵۳ مسیر موفق‌اند. این تغییر فقط Web و تست‌های مربوط را در بر می‌گیرد؛ بدون API، داده یا Migration.

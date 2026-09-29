@@ -212,7 +212,7 @@ describe('Master Data visual polish contract', () => {
     }
   });
 
-  it('consolidates currency history and the city/region navigation', () => {
+  it('consolidates currency history and nests cities under countries', () => {
     const finance = source('master-data-finance-workspace.tsx');
     const financeTabs = finance.slice(
       finance.indexOf('const tabs'),
@@ -228,12 +228,11 @@ describe('Master Data visual polish contract', () => {
     expect(finance).toContain('<MasterDataProfileDialog');
     expect(finance).toContain('fromCurrencyId: selectedCurrency.id');
     expect(finance).toContain('toCurrencyId: selectedCurrency.id');
-    expect(geographyTabs).toContain("label: 'شهرها و استان‌ها'");
+    expect(geographyTabs).toContain("label: 'کشورها و شهرها'");
     expect(geographyTabs).not.toContain("resource: 'cities'");
     expect(geography).not.toContain("changeResource('cities')");
-    expect(geography).toContain("openCreate('regions')");
-    expect(geography).toContain("openCreate('cities')");
-    expect(geography).toContain("renderLocationTable('regions'");
-    expect(geography).toContain("renderLocationTable('cities'");
+    expect(geography).toContain("openRelatedCreate('cities', country)");
+    expect(geography).toContain("openRelatedCreate('airports', city)");
+    expect(geography).toMatch(/openRelatedCreate\(\s*'terminals',\s*airport,/);
   });
 });

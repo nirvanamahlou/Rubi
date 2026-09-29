@@ -35,14 +35,21 @@ export function MasterDataTerminalForm({
   actorNames = {},
   onOpenChange,
   onPersist,
+  initialValues,
+  lockedFields = [],
 }: {
   record?: MasterDataRecord;
   mode: 'create' | 'edit' | 'view';
   actorNames?: Readonly<Record<string, string>>;
   onOpenChange: (open: boolean) => void;
   onPersist: (values: Record<string, string>) => Promise<void>;
+  initialValues?: Record<string, string>;
+  lockedFields?: readonly string[];
 }) {
-  const [values, setValues] = useState(() => terminalFormValues(record));
+  const [values, setValues] = useState(() => ({
+    ...terminalFormValues(record),
+    ...initialValues,
+  }));
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   const savingRef = useRef(false);
@@ -177,7 +184,7 @@ export function MasterDataTerminalForm({
             >
               <MasterDataReferenceSelector
                 config={{ target: 'airports', payload: 'id' }}
-                disabled={disabled}
+                disabled={disabled || lockedFields.includes('airportId')}
                 id="terminal-airportId"
                 label="فرودگاه"
                 value={airportId}
