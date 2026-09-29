@@ -625,7 +625,7 @@ export function CustomerAffairsNoraWorkspace() {
                 <section className={s.panel}>
                   <div className={s.panelHead}>
                     <h2>{title}</h2>
-                    <div className={s.actions}>
+                    <div className={`${s.actions} ${s.listToolbar}`}>
                       {(view === 'leads' || view === 'tickets') && (
                         <Button
                           type="button"
@@ -901,21 +901,26 @@ export function CustomerAffairsNoraWorkspace() {
             {report && (
               <>
                 {(view === 'reports' || view === 'satisfaction') && (
-                  <CreatedDateFilter
-                    key={`${createdFrom}:${createdTo}`}
-                    from={createdFrom}
-                    to={createdTo}
-                    onApply={(from, to) => {
-                      const next = new URLSearchParams(params.toString());
-                      if (from) next.set('createdFrom', from);
-                      else next.delete('createdFrom');
-                      if (to) next.set('createdTo', to);
-                      else next.delete('createdTo');
-                      router.replace(`/customer-affairs?${next}`, {
-                        scroll: false,
-                      });
-                    }}
-                  />
+                  <section
+                    className={s.reportFilters}
+                    aria-label="فیلترهای گزارش"
+                  >
+                    <CreatedDateFilter
+                      key={`${createdFrom}:${createdTo}`}
+                      from={createdFrom}
+                      to={createdTo}
+                      onApply={(from, to) => {
+                        const next = new URLSearchParams(params.toString());
+                        if (from) next.set('createdFrom', from);
+                        else next.delete('createdFrom');
+                        if (to) next.set('createdTo', to);
+                        else next.delete('createdTo');
+                        router.replace(`/customer-affairs?${next}`, {
+                          scroll: false,
+                        });
+                      }}
+                    />
+                  </section>
                 )}
                 <AffairsReportPanel
                   report={report}

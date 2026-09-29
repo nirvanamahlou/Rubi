@@ -4554,3 +4554,15 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 - COMPUTER_ID=PC-A; branch `codex/pc-a-shared-ticket-demo-0929` from `origin/develop@049cb912`. Owner confirms all current local tickets and prices are synthetic. Reserve Ticket Catalog-owned portable non-PII fixture, explicit local demo import/preview/clear tool, safety/idempotency tests and scoped docs. No automatic production seed, schema/migration/dependency, IAM account/permissions, passenger/contracts/payments or other module table mutations. Cleanup must be namespace-scoped, preserve external references and roll back as one transaction when in use. Explicit owner authorization includes develop PR merge; never run clear against current data before the owner asks.
 
 - Validation complete: 8 Node safety/lifecycle cases through API Vitest, API build/typecheck/lint, formatting and PostgreSQL rollback-only full lifecycle pass. Source adoption applied: 20 reused, 0 created, 0 archived; only dataset audit markers added. Fixture excludes personal/financial/operational capacity data. PR #484 targets develop; implementation and source adoption complete, scoped ownership released; publish/import/clear handoff in `docs/tasks/SHARED-TICKET-DEMO-0929.md`. Develop merge explicitly authorized by owner.
+
+## CUSTOMER-AFFAIRS-LIST-TOOLBAR-ALIGN-0929 — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک از تصویر ۶۶۱: دکمه‌های «جدولی»، «مرحله‌ای» و «خروجی Excel» در سربرگ فهرست امور مشتریان هم‌خط و هم‌ارتفاع شوند. `COMPUTER_ID=PC-B`؛ شاخه `codex/pc-b-ca-list-toolbar-align-0929` از `origin/develop` در checkout مستقل تمیز.
+- محدوده رزرو: فقط `customer-affairs-nora-workspace.tsx`، CSS ماژول و تست چیدمان همان کامپوننت، همراه مدخل محدود اسناد وضعیت. تغییر UI و واکنش‌گرایی است؛ بدون API، Schema/Migration، داده، Permission، Dependency/Lockfile یا فایل مرکزی. قفل‌های دیگر دست‌نخورده‌اند.
+- استایل اختصاصی سربرگ فاصلهٔ پایین تب‌ها را حذف و ارتفاع کنترل‌ها را یکسان می‌کند؛ در موبایل امکان شکست خط محفوظ است. تست متمرکز ۱۰/۱۰ و typecheck موفق؛ CI و merge در انتظار.
+
+## CUSTOMER-AFFAIRS-REPORT-FILTER-BOX-0929 — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک: فیلترهای گزارش امور مشتریان داخل یک باکس با عرض ۱۰۰٪ محتوای گزارش باشند؛ پس از تست، push و merge به `develop` مجاز است. `COMPUTER_ID=PC-B`، شاخه `codex/pc-b-ca-report-filter-box-0929` از `origin/develop@02ca242b` در checkout تمیز.
+- محدودهٔ رزرو: فقط چیدمان `customer-affairs-nora-workspace.tsx`، CSS ماژول و آزمون متمرکز، همراه ثبت وضعیت. بدون تغییر API، داده، قرارداد، Migration، Permission، Dependency/Lockfile یا runtime پورت ۳۱۰۰.
+- نتیجه: فرم فیلتر تاریخ در یک کارت هم‌عرض محتوای گزارش قرار گرفت. ۱۴ تست متمرکز، lint، typecheck و Prettier موفق‌اند؛ build تولیدی در CI بررسی می‌شود.
