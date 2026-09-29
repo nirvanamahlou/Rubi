@@ -4418,12 +4418,10 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 ## RESERVATION-OPERATION-SUMMARY-0929 — PC-A — READY_FOR_REVIEW
 
 - COMPUTER_ID=PC-A; branch codex/pc-a-reservation-operation-summary-0929 from origin/develop. Reserve Reservations selected-contract header/UI/tests, request and passenger-file controller mutation activity integration and scoped summary endpoint, IAM public audit/name projection methods/tests, additive Travel summary contract and bounded docs. Producer Reservations composes FinanceDeliveryService and IAM public services; consumer Web selected-header. GET operation-summary is additive; existing requests remain compatible. No Finance table query, migration/schema/dependency or operational record mutation. Names limited to responsible actors of authorized intake; no privileged user directory exposure. Preserve original checkout edits and prior role UI. Bounded central Travel/IAM/Reservations/docs locks RELEASED with scoped commit. New reservation work item awaits owner merge authorization after review; prior IAM merge approvals are not generalized.
-<<<<<<< HEAD
 ## 2026-09-29 — PACKAGE-GENERATOR-MALAYSIA-THAILAND-OVERLAY-0929 — PC-B — IN_PROGRESS
 
 - درخواست مالک: پس از ورود دادهٔ اکسل، نوشته‌ها و قیمت‌های قالب‌های مالزی و تایلند داخل کادرهای مرجع بمانند؛ قاب آبی و گوشه‌های گرد تاریخ/زمان و کارت‌های قیمت حفظ شود.
 - شاخهٔ مستقل `codex/pc-b-malaysia-thailand-overlay-0929` از `origin/develop@24f07449`. محدودهٔ رزرو: رندر و CSS استاتیک `apps/web/public/package-generator`، تست مستقیم همان ماژول، سند اختصاصی و مدخل‌های محدود وضعیت. بدون API، قرارداد مشترک، Migration، Prisma، Permission، Dependency/Lockfile یا تغییر دادهٔ عملیاتی. قفل اسناد مرکزی فقط برای همین مدخل و وضعیت این Task نزد PC-B است.
-=======
 
 ## PERMISSION-VISIBILITY-SALES-SCOPE-0929 — PC-A — READY_FOR_REVIEW
 
@@ -4438,4 +4436,3 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 - COMPUTER_ID=PC-A؛ شاخه `codex/pc-a-topbar-company-role-0929` از آخرین `origin/develop` پس از fetch. بنا به درخواست مالک، کنترل شرکت هدر به ظاهر/خوانایی قبلی برمی‌گردد و عنوان نقش‌های واقعی کاربر در منوی بالا کنار نام او نمایش داده می‌شود.
 - رزرو محدود `apps/web/src/modules/legal-entities/components/legal-entity-context.tsx`, هدر کاربر و cache نشست همراه تست‌های موجود، قرارداد IAM، IAM login/refresh و استایل‌های هدر. کنترل شرکت به Radix Select قبلی برمی‌گردد؛ نقش از اتصال نقش‌های فعال IAM خوانده می‌شود؛ سطح دسترسی/انتخاب شرکت تغییر نمی‌کند. قرارداد نقش افزایشی و اختیاری برای کلاینت‌های قدیمی است. بدون Migration، Seed، Dependency/Lockfile یا دست‌کاری داده واقعی.
 - دو انتظار کهنهٔ تست نشست/هدر پس از تغییر ساختار نقش و عرض برچسب شکست خوردند و برای قرارداد فعلی اصلاح شدند؛ کدهای تست تازه‌ای افزوده نشده است. API/Web lint، نوع‌سنجی و build تولیدی (۵۵ مسیر Web) موفق‌اند. CI کامل دوباره اجرا می‌شود.
->>>>>>> origin/develop
