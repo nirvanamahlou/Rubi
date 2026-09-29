@@ -64,9 +64,24 @@ manual replay مجاز و audit است.
 | Accounting | export/journal mapping/status | مرز قانونی و contract باز |
 | Object Storage | file/document binary | MinIO local، production target باز |
 
+## بیمه سامان
+
+Adapter بیمه سامان در موج عملیاتی بیمه، ورودی contract passenger/plan/destination/date را
+از Reservation Operations دریافت می‌کند و `issue`, `cancel`, `refund`, `getStatus` را فقط
+مطابق capability واقعی API ارائه می‌دهد. صدور `Idempotency-Key` و unique external policy
+reference دارد؛ policy number/file خرید Provider و document version را ایجاد می‌کند. جزئیات
+sandbox، authentication، plan mapping، error code و SLA تا حل `DEC-OPEN-014` باز است.
+
+## انتقال Manifest ایرلاین
+
+ساخت و مالکیت Manifest در Reservations است؛ Integration فقط adapter انتقال را فراهم می‌کند.
+قالب هر ایرلاین versioned و شامل column mapping، date/code format، file naming و validation
+است. ارسال email/SFTP/API یا تحویل دستی، acknowledgement و retry مطابق capability ایرلاین
+ثبت می‌شود. نسخه ارسال‌شده immutable است و اصلاح با manifest اصلاحی/الحاقی انجام می‌شود.
+
 ## سناریوی پرداخت موفق/صدور ناموفق
 
-پرداخت verified و journal/outbox حفظ؛ Orders به `ISSUE_PENDING` می‌رود. Worker با status check
+پرداخت verified و journal/outbox حفظ؛ Reservation Operation به `ISSUE_PENDING` می‌رود. Worker با status check
 و retry محدود اقدام می‌کند. پس از threshold، `ISSUE_FAILED`، task فوری، notification و گزینه
 manual follow-up/refund approval ایجاد می‌شود. هیچ retry کور برای issue/refund مجاز نیست.
 

@@ -1,0 +1,137 @@
+import { ConflictException, ForbiddenException } from '@nestjs/common';
+import type {
+  AuthenticatedActor,
+  WorkbenchCalendarEventInputV1,
+  WorkbenchNoteInputV1,
+} from '@nora/contracts';
+import { describe, expect, it, vi } from 'vitest';
+
+import { WorkbenchService } from './workbench.service';
+
+const actor: AuthenticatedActor = {
+  userId: '11111111-1111-4111-8111-111111111111',
+  sessionId: '22222222-2222-4222-8222-222222222222',
+  branchIds: ['33333333-3333-4333-8333-333333333333'],
+  permissions: [],
+};
+
+function service(
+  client: Record<string, unknown>,
+  documents = {},
+  customerAffairs = { workbench: vi.fn().mockResolvedValue({ data: [] }) },
+) {
+  return new WorkbenchService(
+    { client } as never,
+    documents as never,
+    {
+      recordSelfActivity: vi.fn(),
+      personalProfile: vi.fn(),
+      updateOwnProfile: vi.fn(),
+    } as never,
+    customerAffairs as never,
+  );
+}
+
+const event: WorkbenchCalendarEventInputV1 = {
+  branchId: actor.branchIds[0]!,
+  title: 'جلسه پیگیری',
+  description: 'پیگیری درخواست داخلی',
+  dueAt: '2026-09-13T08:00:00.000Z',
+};
+
+describe('WorkbenchService backend boundaries', () => {
+  it('aggregates permitted customer-affairs referrals in the backend calendar', async () => {
+    const referral = {
+      id: '99999999-9999-4999-8999-999999999999',
+      ticketId: '88888888-8888-4888-8888-888888888888',
+      trackingNumber: 'CA-100',
+      ticketSubject: 'پیگیری',
+      title: 'پاسخ واحد',
+      destinationModule: 'finance',
+      destinationUnit: 'مالی',
+      status: 'OPEN',
+      dueAt: '2026-09-14T08:00:00.000Z',
+    };
+    const workbench = vi.fn().mockResolvedValue({ data: [referral] });
+    const response = await service(
+      { workbenchCalendarEvent: { findMany: vi.fn().mockResolvedValue([]) } },
+      {},
+      { workbench },
+    ).calendar({
+      ...actor,
+      permissions: ['customer_affairs.ticket.read'],
+    });
+    expect(workbench).toHaveBeenCalledOnce();
+    expect(response.sources.customerAffairs).toEqual([referral]);
+  });
+
+  it('rejects a calendar event outside the authenticated branches', async () => {
+    const create = vi.fn();
+    await expect(
+      service({ workbenchCalendarEvent: { create } }).createEvent(
+        { ...event, branchId: '44444444-4444-4444-8444-444444444444' },
+        actor,
+      ),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    expect(create).not.toHaveBeenCalled();
+  });
+
+  it('validates calendar images through the public Documents service', async () => {
+    const imageDocumentId = '55555555-5555-4555-8555-555555555555';
+    const assertAttachments = vi
+      .fn()
+      .mockResolvedValue([{ id: imageDocumentId, title: 'تصویر' }]);
+    const now = new Date('2026-09-12T18:00:00.000Z');
+    const create = vi.fn().mockResolvedValue({
+      id: '66666666-6666-4666-8666-666666666666',
+      userId: actor.userId,
+      ...event,
+      dueAt: new Date(event.dueAt),
+      status: 'PLANNED',
+      priority: 'NORMAL',
+      linkUrl: null,
+      imageDocumentId,
+      version: 1,
+      createdAt: now,
+      updatedAt: now,
+    });
+    await service(
+      { workbenchCalendarEvent: { create } },
+      { assertWorkbenchOwnedAttachments: assertAttachments },
+    ).createEvent({ ...event, imageDocumentId }, actor);
+    expect(assertAttachments).toHaveBeenCalledWith(
+      [imageDocumentId],
+      'WorkbenchCalendarEvent',
+      expect.any(String),
+      event.branchId,
+      actor,
+    );
+  });
+
+  it('enforces optimistic concurrency for persisted notes', async () => {
+    const note: WorkbenchNoteInputV1 = {
+      title: 'یادداشت',
+      body: 'متن',
+      folder: 'شخصی',
+      tags: '',
+      items: [],
+      pinned: false,
+      expectedVersion: 2,
+    };
+    const transaction = vi.fn(async (operation: (tx: unknown) => unknown) =>
+      operation({
+        workbenchNoteFolder: { upsert: vi.fn() },
+        workbenchNote: {
+          updateMany: vi.fn().mockResolvedValue({ count: 0 }),
+        },
+      }),
+    );
+    await expect(
+      service({ $transaction: transaction }).updateNote(
+        '77777777-7777-4777-8777-777777777777',
+        note,
+        actor,
+      ),
+    ).rejects.toBeInstanceOf(ConflictException);
+  });
+});

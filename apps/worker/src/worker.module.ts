@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 
 import { environmentValidationSchema } from './config/environment.validation';
 import { WorkerHealthService } from './worker-health.service';
+import { WorkerHealthServer } from './worker-health-server';
 
 @Module({
   imports: [
@@ -16,6 +17,6 @@ import { WorkerHealthService } from './worker-health.service';
       validationSchema: environmentValidationSchema,
     }),
   ],
-  providers: [WorkerHealthService],
+  providers: [WorkerHealthService, WorkerHealthServer],
 })
 export class WorkerModule {}

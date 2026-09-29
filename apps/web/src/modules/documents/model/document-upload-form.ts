@@ -1,0 +1,67 @@
+import type {
+  BranchReference,
+  DocumentOptionsResponseV1,
+} from '@nora/contracts';
+
+export interface DocumentUploadValues {
+  employeeId?: string;
+  title: string;
+  description: string;
+  documentTypeId: string;
+  categoryId: string;
+  branchId: string;
+  ownerUserId: string;
+  sourceRelationId: string;
+  confidentiality: string;
+  validUntil: string;
+  versionNote: string;
+  requiresStepUpVerification: boolean;
+}
+
+export const emptyDocumentUploadValues: DocumentUploadValues = {
+  title: '',
+  description: '',
+  documentTypeId: '',
+  categoryId: '',
+  branchId: '',
+  ownerUserId: '',
+  sourceRelationId: '',
+  confidentiality: '',
+  validUntil: '',
+  versionNote: '',
+  requiresStepUpVerification: false,
+};
+
+export function hydrateDocumentUploadDefaults(
+  values: DocumentUploadValues,
+  options: DocumentOptionsResponseV1['data'],
+  branches: readonly BranchReference[],
+): DocumentUploadValues {
+  return {
+    ...values,
+    documentTypeId: values.documentTypeId || options.documentTypes[0]?.id || '',
+    categoryId: values.categoryId || options.categories[0]?.id || '',
+    ownerUserId: values.ownerUserId || options.owners[0]?.id || '',
+    branchId: values.branchId || branches[0]?.id || '',
+  };
+}
+
+export function validateDocumentUpload(
+  values: DocumentUploadValues,
+  hasFile: boolean,
+  requiresExpiry: boolean,
+): string | null {
+  if (!hasFile) return 'ابتدا فایل سند را انتخاب کنید.';
+  if (!values.title.trim()) return 'عنوان سند را وارد کنید.';
+  if (!values.documentTypeId) return 'نوع سند را انتخاب کنید.';
+  if (!values.categoryId) return 'دسته‌بندی را انتخاب کنید.';
+  if (!values.branchId) return 'شعبه را انتخاب کنید.';
+  if (!values.ownerUserId) return 'مالک فایل را انتخاب کنید.';
+  if (!values.sourceRelationId && !values.employeeId)
+    return 'پرونده مربوطه را انتخاب کنید.';
+  if (values.sourceRelationId && values.employeeId)
+    return 'فقط یک پرونده مرجع انتخاب کنید.';
+  if (requiresExpiry && !values.validUntil)
+    return 'برای این نوع سند، تاریخ اعتبار الزامی است.';
+  return null;
+}
