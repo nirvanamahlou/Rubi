@@ -137,7 +137,10 @@ export function WorkbenchOwnRequests() {
         open={Boolean(selected)}
         onOpenChange={(open) => !open && setSelected(null)}
       >
-        <DialogContent dir="rtl" className="max-w-xl overflow-hidden p-0">
+        <DialogContent
+          dir="rtl"
+          className="max-w-xl overflow-hidden p-0 [&>button]:text-white [&>button:hover]:bg-white/15 [&>button:focus-visible]:ring-white"
+        >
           {selected ? (
             <div className="text-sm">
               <div className="bg-gradient-to-l from-blue-700 via-blue-600 to-violet-600 p-6 pe-14 text-white">

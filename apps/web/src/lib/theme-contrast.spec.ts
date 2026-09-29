@@ -116,24 +116,16 @@ describe('legacy dark surfaces', () => {
   });
 });
 
-it('retains white corporate labels on fixed saturated action backgrounds', () => {
+it('retains readable white corporate labels on fixed blue action backgrounds', () => {
   const corporate = readFileSync(
     'src/modules/organizations/components/corporate-design.css',
     'utf8',
   );
-  for (const selector of [
-    '.btn.primary',
-    '.add-circle',
-    '.score-badge',
-    '.boundary-note',
-  ]) {
-    const start = corporate.indexOf(selector);
-    if (start >= 0) {
-      const block = corporate.slice(start).split('}')[0]!;
-      if (block.includes('color:'))
-        expect(block).not.toContain('color: light-dark(#fff, var(--surface))');
-    }
-  }
+  const primary = corporate.match(/\.btn\.primary\s*\{([^}]+)\}/)![1]!;
+  const blue = corporate.match(/--blue:\s*(#[\da-f]{6})/)![1]!;
+  expect(primary).toContain('color: #fff;');
+  expect(contrast('#ffffff', blue)).toBeGreaterThanOrEqual(4.5);
+  expect(contrast('#ffffff', '#0759bf')).toBeGreaterThanOrEqual(4.5);
   expect(corporate).not.toMatch(
     /color:\s*light-dark\(#fff,\s*var\(--surface\)\)/,
   );
