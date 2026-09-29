@@ -3922,3 +3922,7 @@ Owner-confirmed synthetic local catalog snapshot: 20 offers (11 visible, 9 alrea
 ## 2026-09-29 — LOGIN-COMPANY-CAPTIONS-0929 — PC-A — READY_FOR_REVIEW
 
 نام نمایشی زیر لوگوهای شرکت در صفحه ورود حذف می‌شود؛ خود لوگو، متن جایگزین دسترس‌پذیری و عنوان بخش حفظ شده‌اند. تغییر محدود به Web است؛ بدون API، Migration، داده یا Dependency. اعتبارسنجی CI پیش از merge انجام می‌شود. جزئیات: [LOGIN-COMPANY-CAPTIONS-0929](tasks/LOGIN-COMPANY-CAPTIONS-0929.md).
+
+## 2026-09-29 — CUSTOMER-AFFAIRS-ASSESSMENT-SAVE-0929 — READY_FOR_REVIEW
+
+ارزیابی آمادگی فروش پس از ثبت در پرونده قابل بازخوانی و ویرایش مجدد است؛ دکمه کنار «ثبت ارتباط جدید» و گزارش آخرین نتیجه در پایین پروفایل قرار گرفت. کنترل مرحلهٔ مجاز در API و تفکیک ثبت موفق از شکست بازخوانی افزوده شد. ۲۵ تست Web و ۱۹ تست API، typecheck، lint محدود، build تولیدی و بازبینی مستقل موفق‌اند. آزمون پایگاه دادهٔ زنده و منع مجوز اجرا نشد. بدون Migration/Dependency؛ PR به develop برای بازبینی.

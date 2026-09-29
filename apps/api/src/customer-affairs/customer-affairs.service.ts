@@ -615,13 +615,24 @@ export class CustomerAffairsService {
     actor: AuthenticatedActor,
   ) {
     const current = await this.requireLead(id, actor);
+    if (
+      !['NEW', 'CONTACTED', 'QUALIFYING', 'QUALIFIED'].includes(current.stage)
+    )
+      throw new BadRequestException({
+        code: 'LEAD_QUALIFICATION_STAGE_INVALID',
+        message: 'ارزیابی آمادگی فروش در مرحله فعلی درخواست مجاز نیست.',
+      });
     const qualification = evaluateQualification(
       input,
       new Date().toISOString(),
     );
     const result = await this.repository.transaction(async (tx) => {
       const changed = await tx.customerAffairsLead.updateMany({
-        where: { id, version: input.expectedVersion },
+        where: {
+          id,
+          version: input.expectedVersion,
+          stage: { in: ['NEW', 'CONTACTED', 'QUALIFYING', 'QUALIFIED'] },
+        },
         data: {
           qualification: json({
             ...qualification,
