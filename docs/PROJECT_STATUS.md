@@ -3915,6 +3915,10 @@ Owner-confirmed synthetic local catalog snapshot: 20 offers (11 visible, 9 alrea
 
 جای دکمه‌های ثبت مشتری و تنظیم پیگیری در پروفایل درخواست مطابق علامت‌گذاری تصویر جابه‌جا شد؛ شرط‌های مجازبودن و رفتار فرم‌ها حفظ می‌شوند. ۴۲ تست امور مشتریان، typecheck وب و قالب‌بندی موفق؛ build و CI پیش از ادغام باقی است.
 
+## 2026-09-29 — CUSTOMER-AFFAIRS-DETAIL-ACTIONS-ROW-0929 — READY_FOR_REVIEW
+
+چهار اقدام اصلی پروفایل درخواست امور مشتریان در یک نوار مشترک قرار گرفتند؛ در دسکتاپ هم‌خط و در عرض کم واکنش‌گرا هستند. عملیات، شرط نمایش و فرم‌ها دست‌نخورده‌اند. ۴۲ تست کامپوننت، typecheck، ESLint، Prettier و diff check موفق‌اند؛ Build/CI در PR بررسی می‌شود. برای حفظ `.next` سرویس فعال ۳۱۰۰، build محلی اجرا نشد.
+
 ## 2026-09-29 — LOGIN-COMPANY-CAPTIONS-0929 — PC-A — READY_FOR_REVIEW
 
 نام نمایشی زیر لوگوهای شرکت در صفحه ورود حذف می‌شود؛ خود لوگو، متن جایگزین دسترس‌پذیری و عنوان بخش حفظ شده‌اند. تغییر محدود به Web است؛ بدون API، Migration، داده یا Dependency. اعتبارسنجی CI پیش از merge انجام می‌شود. جزئیات: [LOGIN-COMPANY-CAPTIONS-0929](tasks/LOGIN-COMPANY-CAPTIONS-0929.md).
