@@ -1,4 +1,5 @@
 'use client';
+import { NativeSearchSelect } from '@/components/ui/native-search-select';
 
 import type {
   B2bAgencyWorkspaceV1,
@@ -337,7 +338,7 @@ export function AgencyConnectionsPanel({
       <div className="flex flex-wrap items-end gap-3">
         <label className="min-w-56 flex-1 space-y-2">
           <span className="text-sm font-bold">شعبه عملیاتی</span>
-          <select
+          <NativeSearchSelect
             className="h-11 w-full rounded-xl border border-input bg-surface px-3"
             disabled={pending}
             onChange={(event) => void load(event.target.value)}
@@ -348,7 +349,7 @@ export function AgencyConnectionsPanel({
                 {branch.name}
               </option>
             ))}
-          </select>
+          </NativeSearchSelect>
         </label>
         <Button
           onClick={() => void load(branchId)}
@@ -512,7 +513,7 @@ export function AgencyConnectionsPanel({
                       placeholder="عنوان آدرس؛ دفتر مرکزی"
                       required
                     />
-                    <select
+                    <NativeSearchSelect
                       className="h-11 rounded-xl border border-input bg-surface px-3"
                       name="countryId"
                       onChange={(event) => setCountryId(event.target.value)}
@@ -524,8 +525,8 @@ export function AgencyConnectionsPanel({
                           {optionLabel(country)}
                         </option>
                       ))}
-                    </select>
-                    <select
+                    </NativeSearchSelect>
+                    <NativeSearchSelect
                       className="h-11 rounded-xl border border-input bg-surface px-3"
                       name="cityId"
                       required
@@ -535,7 +536,7 @@ export function AgencyConnectionsPanel({
                           {optionLabel(city)}
                         </option>
                       ))}
-                    </select>
+                    </NativeSearchSelect>
                     <Input
                       name="addressLine"
                       placeholder="نشانی کامل"
@@ -711,7 +712,7 @@ export function AgencyConnectionsPanel({
                   <Input name="notes" placeholder="یادداشت اختیاری" />
                   <label className="space-y-1 text-sm">
                     سند سازمان (اختیاری)
-                    <select
+                    <NativeSearchSelect
                       name="documentReference"
                       key={branchId}
                       className="h-11 w-full rounded-xl border bg-surface px-3"
@@ -728,7 +729,7 @@ export function AgencyConnectionsPanel({
                             {document.title} · {document.archiveCode}
                           </option>
                         ))}
-                    </select>
+                    </NativeSearchSelect>
                   </label>
                   {documentError && (
                     <p className="text-xs text-muted-foreground">
@@ -782,7 +783,7 @@ export function AgencyConnectionsPanel({
                     required
                   />
                   <Input name="rateTitle" placeholder="عنوان نرخ" required />
-                  <select
+                  <NativeSearchSelect
                     className="h-11 rounded-xl border border-input bg-surface px-3"
                     defaultValue="DISCOUNT_PERCENT"
                     name="kind"
@@ -790,7 +791,7 @@ export function AgencyConnectionsPanel({
                     <option value="DISCOUNT_PERCENT">درصد تخفیف</option>
                     <option value="COMMISSION_PERCENT">درصد کمیسیون</option>
                     <option value="FIXED_AMOUNT">مبلغ ثابت</option>
-                  </select>
+                  </NativeSearchSelect>
                   <Input
                     inputMode="decimal"
                     name="rateValue"

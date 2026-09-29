@@ -1,4 +1,6 @@
 'use client';
+import { NativeSearchSelect } from '@/components/ui/native-search-select';
+
 import { useEffect, useState } from 'react';
 import { useRouteAccess } from '@/modules/iam/access-context';
 import dynamic from 'next/dynamic';
@@ -294,7 +296,7 @@ function AccessibleHrSection({
           {!embedded && group.sources.length > 1 ? (
             <label>
               نمایش
-              <select
+              <NativeSearchSelect
                 value={source.tab}
                 onChange={(event) => {
                   setSourceTab(event.target.value);
@@ -306,7 +308,7 @@ function AccessibleHrSection({
                     {item.label}
                   </option>
                 ))}
-              </select>
+              </NativeSearchSelect>
             </label>
           ) : null}
           <label>
@@ -322,7 +324,7 @@ function AccessibleHrSection({
           </label>
           <label>
             شرکت / شعبه
-            <select
+            <NativeSearchSelect
               value={branchId}
               onChange={(event) => {
                 setBranchId(event.target.value);
@@ -336,12 +338,12 @@ function AccessibleHrSection({
                   {branch.name}
                 </option>
               ))}
-            </select>
+            </NativeSearchSelect>
           </label>
           {definition?.employeeRequired ? (
             <label>
               کارمند
-              <select
+              <NativeSearchSelect
                 value={employeeId}
                 onChange={(event) => {
                   setEmployeeId(event.target.value);
@@ -360,12 +362,12 @@ function AccessibleHrSection({
                       {item.name} · {item.personnelCode}
                     </option>
                   ))}
-              </select>
+              </NativeSearchSelect>
             </label>
           ) : null}
           <label>
             وضعیت
-            <select
+            <NativeSearchSelect
               value={status}
               onChange={(event) => {
                 setStatus(event.target.value);
@@ -386,12 +388,12 @@ function AccessibleHrSection({
               ).map((item) => (
                 <option key={item}>{item}</option>
               ))}
-            </select>
+            </NativeSearchSelect>
           </label>
           {section === 'contracts' && source.tab === 'active' ? (
             <label>
               پایان قرارداد
-              <select
+              <NativeSearchSelect
                 value={expiry}
                 onChange={(event) => setExpiry(event.target.value)}
               >
@@ -399,7 +401,7 @@ function AccessibleHrSection({
                 <option value="30">تا ۳۰ روز آینده</option>
                 <option value="90">تا ۹۰ روز آینده</option>
                 <option value="expired">منقضی‌شده</option>
-              </select>
+              </NativeSearchSelect>
             </label>
           ) : null}
           <HrButton

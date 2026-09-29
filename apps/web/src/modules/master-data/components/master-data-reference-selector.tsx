@@ -5,6 +5,7 @@ import { Search } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
+import { SearchCombobox } from '@/components/ui/search-combobox';
 import { Checkbox, Input } from '@/components/ui/form-controls';
 import { Alert, Badge, EmptyState, Skeleton } from '@/components/ui/surfaces';
 import { masterDataApi, MasterDataApiError } from '../api/client';
@@ -32,7 +33,6 @@ export function MasterDataReferenceSelector({
   refreshKey = 0,
   onManage,
   createOnlyWhenEmpty = false,
-  closeOnSelect = false,
   invalid = false,
 }: {
   ariaDescribedby?: string;
@@ -50,14 +50,23 @@ export function MasterDataReferenceSelector({
   closeOnSelect?: boolean;
   invalid?: boolean;
 }) {
-  const [expanded, setExpanded] = useState(true);
+  const [expanded, setExpanded] = useState(false);
   const [query, setQuery] = useState('');
   const [options, setOptions] = useState<readonly MasterDataRecord[]>([]);
   const [savedSelection, setSavedSelection] = useState<MasterDataRecord | null>(
     null,
   );
   const [state, setState] = useState<ReferenceSelectorState>('idle');
-  const lookupState = query.trim() ? state : 'idle';
+  const lookupState = state;
+  const lookupKey = JSON.stringify([
+    config.target,
+    config.requiredRole,
+    config.scopeField,
+    scopeValue,
+    query,
+    refreshKey,
+  ]);
+  const [loadedKey, setLoadedKey] = useState<string | null>(null);
 
   useEffect(() => {
     if (config.multiple || config.payload !== 'id' || !value) return;
@@ -91,7 +100,7 @@ export function MasterDataReferenceSelector({
 
   useEffect(() => {
     if (config.scopeField === 'organizationId' && !scopeValue) return;
-    if (!query.trim()) return;
+    if (!expanded || disabled) return;
     let active = true;
     const timer = window.setTimeout(async () => {
       setState(resolveReferenceSelectorState({ loading: true }));
@@ -111,12 +120,14 @@ export function MasterDataReferenceSelector({
         const compatible = response.data.filter((record) =>
           hasOrganizationRole(record, config.requiredRole),
         );
+        setLoadedKey(lookupKey);
         setOptions(compatible);
         setState(
           resolveReferenceSelectorState({ optionCount: compatible.length }),
         );
       } catch (error) {
         if (!active) return;
+        setLoadedKey(lookupKey);
         setOptions([]);
         setState(
           resolveReferenceSelectorState({
@@ -137,12 +148,17 @@ export function MasterDataReferenceSelector({
     scopeValue,
     refreshKey,
     query,
+    expanded,
+    disabled,
+    lookupKey,
   ]);
 
   const selected = useMemo(
     () =>
       options.find((record) => mapReferenceOption(config, record) === value) ??
-      (savedSelection?.id === value ? savedSelection : undefined),
+      (savedSelection && mapReferenceOption(config, savedSelection) === value
+        ? savedSelection
+        : undefined),
     [config, options, value, savedSelection],
   );
   const selectedValues = useMemo(
@@ -168,7 +184,13 @@ export function MasterDataReferenceSelector({
   function choose(optionValue: string) {
     if (!config.multiple) {
       onChange(optionValue);
-      if (closeOnSelect) setExpanded(false);
+      setSavedSelection(
+        options.find(
+          (record) => mapReferenceOption(config, record) === optionValue,
+        ) ?? null,
+      );
+      setQuery('');
+      setExpanded(false);
       return;
     }
     onChange(
@@ -206,7 +228,13 @@ export function MasterDataReferenceSelector({
     );
 
   return (
-    <div className="space-y-2">
+    <div
+      className="relative space-y-2"
+      onBlur={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget))
+          setExpanded(false);
+      }}
+    >
       {onManage && (canCreateReference || (!config.multiple && selected)) ? (
         <div className="flex flex-wrap items-center justify-end gap-2">
           {canCreateReference ? (
@@ -285,108 +313,151 @@ export function MasterDataReferenceSelector({
           />
         </div>
       ) : null}
-      <div className="relative">
-        <Search
-          aria-hidden="true"
-          className="absolute end-3 top-3.5 size-4 text-muted-foreground"
-        />
-        <Input
-          aria-describedby={ariaDescribedby}
-          aria-autocomplete="list"
-          aria-controls={`${id}-options`}
-          aria-expanded={(!closeOnSelect || expanded) && state === 'ready'}
-          aria-invalid={invalid}
-          aria-required={required || undefined}
-          className="pe-10"
+      {!config.multiple ? (
+        <SearchCombobox
           id={id}
-          onFocus={() => setExpanded(true)}
-          onKeyDown={(event) => {
-            if (event.key === 'Escape' && closeOnSelect && expanded) {
-              event.stopPropagation();
-              setExpanded(false);
-            }
-          }}
-          onChange={(event) => {
-            setQuery(event.target.value);
-            setExpanded(true);
-          }}
-          placeholder={
-            config.target === 'room-types'
-              ? 'نام نوع اتاق را بنویسید'
-              : 'جست‌وجوی عنوان یا کد'
+          label={label}
+          value={value}
+          selectedLabel={selected?.name}
+          required={required}
+          describedBy={ariaDescribedby}
+          invalid={invalid}
+          remote
+          options={options.map((record) => ({
+            value: mapReferenceOption(config, record),
+            label: record.name,
+          }))}
+          onSearchChange={setQuery}
+          onOpenChange={setExpanded}
+          loading={
+            loadedKey !== lookupKey || state === 'loading' || state === 'idle'
           }
-          role="combobox"
-          value={query}
+          error={
+            state === 'forbidden'
+              ? 'مجوز مشاهده اطلاعات پایه ندارید.'
+              : state === 'error'
+                ? 'دریافت اطلاعات پایه ناموفق بود.'
+                : undefined
+          }
+          onValueChange={choose}
         />
-      </div>
-      <div
-        hidden={closeOnSelect && !expanded}
-        aria-multiselectable={config.multiple || undefined}
-        className="max-h-48 overflow-y-auto rounded-xl border border-border p-2"
-        id={`${id}-options`}
-        role="listbox"
-      >
-        {lookupState === 'idle' ? (
-          <p className="px-3 py-4 text-sm text-muted-foreground" role="status">
-            برای نمایش گزینه‌ها، عنوان یا کد را جست‌وجو کنید.
-          </p>
-        ) : lookupState === 'loading' ? (
-          <div aria-label="در حال بارگذاری گزینه‌ها" className="space-y-2">
-            <Skeleton className="h-9 w-full" />
-            <Skeleton className="h-9 w-full" />
+      ) : (
+        <>
+          <div className="relative">
+            <Search
+              aria-hidden="true"
+              className="absolute end-3 top-3.5 size-4 text-muted-foreground"
+            />
+            <Input
+              aria-describedby={ariaDescribedby}
+              aria-autocomplete="list"
+              aria-controls={`${id}-options`}
+              aria-expanded={expanded}
+              aria-invalid={invalid}
+              aria-required={required || undefined}
+              className="pe-10"
+              data-search-select="true"
+              id={id}
+              onFocus={() => setExpanded(true)}
+              onKeyDown={(event) => {
+                if (event.key === 'Escape' && expanded) {
+                  event.stopPropagation();
+                  setExpanded(false);
+                }
+              }}
+              onChange={(event) => {
+                setQuery(event.target.value);
+                setExpanded(true);
+              }}
+              placeholder={
+                config.target === 'room-types'
+                  ? 'نام نوع اتاق را بنویسید'
+                  : 'جست‌وجوی عنوان یا کد'
+              }
+              role="combobox"
+              value={
+                expanded
+                  ? query
+                  : !config.multiple
+                    ? (selected?.name ?? '')
+                    : ''
+              }
+            />
           </div>
-        ) : lookupState === 'forbidden' ? (
-          <Alert
-            description="مجوز master_data.read برای دریافت گزینه‌های این فیلد لازم است."
-            title="دسترسی انتخاب مرجع وجود ندارد"
-            tone="error"
-          />
-        ) : lookupState === 'error' ? (
-          <Alert
-            description="دریافت گزینه‌ها از Backend ناموفق بود؛ جست‌وجو را دوباره تغییر دهید."
-            title="خطای دریافت مرجع"
-            tone="error"
-          />
-        ) : lookupState === 'empty' ? (
-          <EmptyState
-            description="مرجع فعال و سازگار با این فیلد پیدا نشد."
-            title="گزینه‌ای وجود ندارد"
-          />
-        ) : (
-          <div className="grid gap-1">
-            {options.map((record) => {
-              const optionValue = mapReferenceOption(config, record);
-              const optionSelected = config.multiple
-                ? selectedValues.includes(optionValue)
-                : optionValue === value;
-              return (
-                <button
-                  aria-selected={optionSelected}
-                  className="rounded-lg px-3 py-2 text-start text-sm hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring aria-selected:bg-primary aria-selected:text-primary-foreground"
-                  key={record.id}
-                  onClick={() => choose(optionValue)}
-                  role="option"
-                  type="button"
-                >
-                  <span className="font-semibold">{record.name}</span>
-                  {config.target === 'organization-contacts' ? (
-                    <span className="ms-2 text-xs" dir="ltr">
-                      {String(
-                        record.attributes.phoneMasked ||
-                          record.attributes.emailMasked ||
-                          '—',
-                      )}
-                    </span>
-                  ) : null}
-                  <span className="ms-2 font-mono text-xs" dir="ltr">
-                    {record.code}
-                  </span>
-                </button>
-              );
-            })}
+          <div
+            hidden={!expanded}
+            aria-multiselectable={config.multiple || undefined}
+            className="absolute z-50 mt-1 max-h-64 w-full overflow-y-auto rounded-xl border border-border bg-popover p-2 shadow-xl"
+            id={`${id}-options`}
+            role="listbox"
+          >
+            {lookupState === 'idle' ? (
+              <p
+                className="px-3 py-4 text-sm text-muted-foreground"
+                role="status"
+              >
+                برای نمایش گزینه‌ها، عنوان یا کد را جست‌وجو کنید.
+              </p>
+            ) : lookupState === 'loading' ? (
+              <div aria-label="در حال بارگذاری گزینه‌ها" className="space-y-2">
+                <Skeleton className="h-9 w-full" />
+                <Skeleton className="h-9 w-full" />
+              </div>
+            ) : lookupState === 'forbidden' ? (
+              <Alert
+                description="مجوز master_data.read برای دریافت گزینه‌های این فیلد لازم است."
+                title="دسترسی انتخاب مرجع وجود ندارد"
+                tone="error"
+              />
+            ) : lookupState === 'error' ? (
+              <Alert
+                description="دریافت گزینه‌ها از Backend ناموفق بود؛ جست‌وجو را دوباره تغییر دهید."
+                title="خطای دریافت مرجع"
+                tone="error"
+              />
+            ) : lookupState === 'empty' ? (
+              <EmptyState
+                description="مرجع فعال و سازگار با این فیلد پیدا نشد."
+                title="گزینه‌ای وجود ندارد"
+              />
+            ) : (
+              <div className="grid gap-1">
+                {options.slice(0, 6).map((record) => {
+                  const optionValue = mapReferenceOption(config, record);
+                  const optionSelected = config.multiple
+                    ? selectedValues.includes(optionValue)
+                    : optionValue === value;
+                  return (
+                    <button
+                      aria-selected={optionSelected}
+                      className="rounded-lg px-3 py-2 text-start text-sm hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring aria-selected:bg-primary aria-selected:text-primary-foreground"
+                      key={record.id}
+                      onMouseDown={(event) => event.preventDefault()}
+                      onClick={() => choose(optionValue)}
+                      role="option"
+                      type="button"
+                    >
+                      <span className="font-semibold">{record.name}</span>
+                      {config.target === 'organization-contacts' ? (
+                        <span className="ms-2 text-xs" dir="ltr">
+                          {String(
+                            record.attributes.phoneMasked ||
+                              record.attributes.emailMasked ||
+                              '—',
+                          )}
+                        </span>
+                      ) : null}
+                      <span className="ms-2 font-mono text-xs" dir="ltr">
+                        {record.code}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
-        )}
-      </div>
+        </>
+      )}
     </div>
   );
 }

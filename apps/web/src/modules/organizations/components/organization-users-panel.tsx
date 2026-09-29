@@ -1,4 +1,6 @@
 'use client';
+import { NativeSearchSelect } from '@/components/ui/native-search-select';
+
 import { useCallback, useEffect, useState } from 'react';
 import {
   B2B_DOSSIER_SECTIONS,
@@ -309,14 +311,14 @@ export function OrganizationUsersPanel({
           </label>
           <label className="field">
             وضعیت دسترسی
-            <select
+            <NativeSearchSelect
               className="input"
               value={editor.draft.isActive ? 'active' : 'inactive'}
               onChange={(e) => set({ isActive: e.target.value === 'active' })}
             >
               <option value="active">فعال</option>
               <option value="inactive">غیرفعال</option>
-            </select>
+            </NativeSearchSelect>
           </label>
           <fieldset className="sm:col-span-2">
             <legend className="mb-3 font-bold">

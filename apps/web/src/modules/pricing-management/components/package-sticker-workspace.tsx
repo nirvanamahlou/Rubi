@@ -1,4 +1,5 @@
 'use client';
+import { NativeSearchSelect } from '@/components/ui/native-search-select';
 
 import type { TourDepartureV1 } from '@nora/contracts';
 import { FileDown } from 'lucide-react';
@@ -57,14 +58,14 @@ export function PackageStickerWorkspace({ tour }: { tour: TourDepartureV1 }) {
 
         <label className="grid gap-2 text-sm font-bold">
           برند
-          <select
+          <NativeSearchSelect
             className="h-11 rounded-xl border border-input bg-surface px-3"
             onChange={(event) => setBrand(event.target.value as StickerBrand)}
             value={brand}
           >
             <option value="jahan">جهان باستان</option>
             <option value="niayesh">نیایش سیر</option>
-          </select>
+          </NativeSearchSelect>
         </label>
 
         <div className="grid gap-2 text-sm font-bold">

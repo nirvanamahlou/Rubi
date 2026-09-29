@@ -1,4 +1,5 @@
 'use client';
+import { NativeSearchSelect } from '@/components/ui/native-search-select';
 
 import { useState, type FormEvent } from 'react';
 import { DatePicker } from '@/components/ui/date-picker';
@@ -305,7 +306,7 @@ export function NewEmployeeForm({
           </label>
           <label className={styles.fieldLabel} htmlFor="hr-new-employee-type">
             <RequiredFieldLabel required>نوع همکاری</RequiredFieldLabel>
-            <select
+            <NativeSearchSelect
               className={styles.control}
               id="hr-new-employee-type"
               name="employmentType"
@@ -318,7 +319,7 @@ export function NewEmployeeForm({
                   {option}
                 </option>
               ))}
-            </select>
+            </NativeSearchSelect>
           </label>
         </div>
       </fieldset>
@@ -334,7 +335,7 @@ export function NewEmployeeForm({
         <div className={styles.formGrid}>
           <label className={styles.fieldLabel} htmlFor="hr-new-employee-branch">
             <RequiredFieldLabel required>شعبه</RequiredFieldLabel>
-            <select
+            <NativeSearchSelect
               className={styles.control}
               id="hr-new-employee-branch"
               {...errorProps('branch')}
@@ -349,12 +350,12 @@ export function NewEmployeeForm({
                   {option}
                 </option>
               ))}
-            </select>
+            </NativeSearchSelect>
             <FieldError errors={errors} field="branch" />
           </label>
           <label className={styles.fieldLabel} htmlFor="hr-new-employee-unit">
             <RequiredFieldLabel required>واحد</RequiredFieldLabel>
-            <select
+            <NativeSearchSelect
               className={styles.control}
               id="hr-new-employee-unit"
               {...errorProps('unit')}
@@ -373,7 +374,7 @@ export function NewEmployeeForm({
                   {option}
                 </option>
               ))}
-            </select>
+            </NativeSearchSelect>
             <FieldError errors={errors} field="unit" />
           </label>
           <label
@@ -382,7 +383,7 @@ export function NewEmployeeForm({
           >
             <RequiredFieldLabel required>سمت</RequiredFieldLabel>
             {organizationOptions ? (
-              <select
+              <NativeSearchSelect
                 {...errorProps('position')}
                 className={styles.control}
                 id="hr-new-employee-position"
@@ -399,7 +400,7 @@ export function NewEmployeeForm({
                 ).map((option) => (
                   <option key={option}>{option}</option>
                 ))}
-              </select>
+              </NativeSearchSelect>
             ) : (
               <input
                 {...errorProps('position')}
@@ -418,7 +419,7 @@ export function NewEmployeeForm({
           </label>
           <label className={styles.fieldLabel} htmlFor="hr-new-employee-grade">
             <RequiredFieldLabel required>رده شغلی</RequiredFieldLabel>
-            <select
+            <NativeSearchSelect
               {...errorProps('grade')}
               className={styles.control}
               id="hr-new-employee-grade"
@@ -439,7 +440,7 @@ export function NewEmployeeForm({
                   {option}
                 </option>
               ))}
-            </select>
+            </NativeSearchSelect>
             <FieldError errors={errors} field="grade" />
           </label>
           <label
@@ -447,7 +448,7 @@ export function NewEmployeeForm({
             htmlFor="hr-new-employee-manager"
           >
             <RequiredFieldLabel>مدیر مستقیم</RequiredFieldLabel>
-            <select
+            <NativeSearchSelect
               className={styles.control}
               id="hr-new-employee-manager"
               disabled={lockAssignment}
@@ -461,7 +462,7 @@ export function NewEmployeeForm({
                   {manager}
                 </option>
               ))}
-            </select>
+            </NativeSearchSelect>
           </label>
         </div>
       </fieldset>
@@ -472,7 +473,7 @@ export function NewEmployeeForm({
         </legend>
         <label className={styles.fieldLabel} htmlFor="hr-employee-user">
           حساب کاربری سامانه
-          <select
+          <NativeSearchSelect
             className={styles.control}
             id="hr-employee-user"
             disabled={!userOptions}
@@ -495,7 +496,7 @@ export function NewEmployeeForm({
                   {u.label}
                 </option>
               ))}
-          </select>
+          </NativeSearchSelect>
           <small>
             حساب فعال همان شعبه؛ برای دسترسی شخصی، اعلان‌ها و انتخاب مسئول در
             بخش‌های دیگر.
@@ -524,7 +525,7 @@ export function NewEmployeeForm({
           </label>
           <label className={styles.fieldLabel} htmlFor="hr-new-employee-status">
             <RequiredFieldLabel required>وضعیت</RequiredFieldLabel>
-            <select
+            <NativeSearchSelect
               className={styles.control}
               id="hr-new-employee-status"
               name="status"
@@ -537,7 +538,7 @@ export function NewEmployeeForm({
                   {option}
                 </option>
               ))}
-            </select>
+            </NativeSearchSelect>
           </label>
         </div>
       </fieldset>

@@ -1,14 +1,14 @@
 'use client';
 
 import type { CustomerSummary, MasterDataRecord } from '@nora/contracts';
-import { ExternalLink, RefreshCw, Search } from 'lucide-react';
+import { ExternalLink, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useRef } from 'react';
 
 import { Button } from '@/components/ui/button';
+import { SearchCombobox } from '@/components/ui/search-combobox';
 import {
   FormField,
-  Input,
   Select,
   SelectContent,
   SelectItem,
@@ -109,9 +109,16 @@ export function OfferAudienceTargetSelector({
   const [options, setOptions] = useState<AudienceOption[]>([]);
   const [state, setState] = useState<LookupState>('idle');
   const [error, setError] = useState('');
-  const hasSearch = Boolean(search.trim());
+  const [open, setOpen] = useState(false);
+  const generation = useRef(0);
+  const invalidate = useCallback(() => {
+    generation.current++;
+  }, []);
+  const lookupKey = JSON.stringify([kind, search]);
+  const [loadedKey, setLoadedKey] = useState<string | null>(null);
 
   const load = useCallback(async () => {
+    const requestId = ++generation.current;
     if (kind === 'none') {
       setOptions([]);
       setState('idle');
@@ -155,30 +162,27 @@ export function OfferAudienceTargetSelector({
                 })
               ).data,
             );
+      if (requestId !== generation.current) return;
+      setLoadedKey(lookupKey);
       setOptions(nextOptions);
       setState(nextOptions.length ? 'ready' : 'empty');
     } catch (caught) {
+      if (requestId !== generation.current) return;
+      setLoadedKey(lookupKey);
       setOptions([]);
       setError(lookupErrorMessage(caught));
       setState('error');
     }
-  }, [kind, search]);
+  }, [kind, search, lookupKey]);
 
   useEffect(() => {
-    if (kind === 'none' || !search.trim()) return;
+    if (kind === 'none' || !open) return;
     const timer = window.setTimeout(() => void load(), 300);
-    return () => window.clearTimeout(timer);
-  }, [kind, load, search]);
-
-  const searchedOptions = hasSearch ? options : [];
-  const visibleOptions =
-    value && !searchedOptions.some((option) => option.id === value.id)
-      ? [{ id: value.id, label: value.label }, ...searchedOptions]
-      : searchedOptions;
-  const targetOptions: readonly (readonly [string, string])[] = [
-    ['unselected', kind === 'customer' ? 'انتخاب مشتری' : 'انتخاب آژانس'],
-    ...visibleOptions.map((option) => [option.id, option.label] as const),
-  ];
+    return () => {
+      window.clearTimeout(timer);
+      invalidate();
+    };
+  }, [kind, load, search, open, invalidate]);
 
   return (
     <section
@@ -207,31 +211,30 @@ export function OfferAudienceTargetSelector({
 
       {kind !== 'none' ? (
         <>
-          <FormField id="offer-audience-search" label="جست‌وجوی مخاطب">
-            <div className="relative">
-              <Search
-                aria-hidden="true"
-                className="absolute end-3 top-3 size-4 text-muted-foreground"
-              />
-              <Input
-                className="pe-9"
-                id="offer-audience-search"
-                onChange={(event) => setSearch(event.target.value)}
-                placeholder={
-                  kind === 'customer' ? 'نام مشتری' : 'نام یا کد آژانس'
-                }
-                value={search}
-              />
-            </div>
-          </FormField>
           <FormField
             id="offer-audience-reference"
             label={kind === 'customer' ? 'انتخاب مشتری' : 'انتخاب آژانس'}
             required
           >
-            <AudienceSelect
-              ariaLabel="مرجع مخاطب هدف"
-              onChange={(id) => {
+            <SearchCombobox
+              id="offer-audience-reference"
+              label="مرجع مخاطب هدف"
+              value={value?.id ?? ''}
+              selectedLabel={value?.label}
+              options={options.map((option) => ({
+                value: option.id,
+                label: option.label,
+              }))}
+              remote
+              loading={
+                loadedKey !== lookupKey ||
+                state === 'loading' ||
+                state === 'idle'
+              }
+              error={state === 'error' ? error : undefined}
+              onSearchChange={setSearch}
+              onOpenChange={setOpen}
+              onValueChange={(id) => {
                 const selected = options.find((option) => option.id === id);
                 onChange(
                   selected
@@ -239,16 +242,10 @@ export function OfferAudienceTargetSelector({
                     : null,
                 );
               }}
-              options={targetOptions}
-              value={value?.id ?? 'unselected'}
             />
           </FormField>
           <div className="flex min-h-10 items-center gap-2 text-sm sm:self-end">
-            {!hasSearch ? (
-              <span aria-live="polite" className="text-muted-foreground">
-                برای نمایش مخاطبان، نام یا کد را جست‌وجو کنید.
-              </span>
-            ) : state === 'loading' ? (
+            {state === 'loading' ? (
               <span aria-live="polite" className="text-muted-foreground">
                 در حال دریافت مخاطبان…
               </span>
