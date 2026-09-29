@@ -4502,7 +4502,7 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 - قرارداد افزایشی و سازگار؛ producer=Customer Affairs/PC-B، consumer=دو سایت خارجی از طریق site binding موجود. بدون Migration، Dependency/Lockfile، تغییر Permission، ارسال بیرونی یا داده واقعی QA. پیش از merge، تست و بازبینی امنیتی لازم است.
 - ۱۰۶ تست API ماژول و ۵۸ تست Web ماژول، typecheck API/Web، lint متمرکز و build تولیدی هر دو موفق. بازبینی مستقل سه ایراد را یافت؛ هر سه اصلاح و بازبینی مجدد بدون ایراد جدید انجام شد. آزمون اتصال زندهٔ سایت‌ها (نیازمند connector)، PR gate و runtime smoke هنوز در انتظارند.
 
-## 2026-09-29 — PACKAGE-GENERATOR-MALAYSIA-THAILAND-OVERLAY-0929 — PC-B — IN_PROGRESS
+## 2026-09-29 — PACKAGE-GENERATOR-MALAYSIA-THAILAND-OVERLAY-0929 — PC-B — COMPLETE
 
 - درخواست مالک: پس از ورود دادهٔ اکسل، نوشته‌ها و قیمت‌های قالب‌های مالزی و تایلند داخل کادرهای مرجع بمانند؛ قاب آبی و گوشه‌های گرد تاریخ/زمان و کارت‌های قیمت حفظ شود.
 - شاخهٔ مستقل `codex/pc-b-malaysia-thailand-overlay-0929` از `origin/develop@24f07449`. محدودهٔ رزرو: رندر و CSS استاتیک `apps/web/public/package-generator`، تست مستقیم همان ماژول، سند اختصاصی و مدخل‌های محدود وضعیت. بدون API، قرارداد مشترک، Migration، Prisma، Permission، Dependency/Lockfile یا تغییر دادهٔ عملیاتی. قفل اسناد مرکزی فقط برای همین مدخل و وضعیت این Task نزد PC-B است.
@@ -4586,3 +4586,9 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 - درخواست مالک از تصویر ۶۶۲: بازطراحی نمای جزئیات درخواست در امور مشتریان. `COMPUTER_ID=PC-B`؛ شاخه `codex/pc-b-ca-request-profile-redesign-0929` از `origin/develop@c71083b3` در checkout تمیز.
 - محدودهٔ رزرو: چیدمان `DetailPanel` و مشخصات درخواست در `RecordOperations`، CSS و تست‌های همان ماژول، همراه ثبت وضعیت. فقط ارائهٔ UI؛ API، داده، گردش کار، Permission، Migration، Dependency/Lockfile و runtime ۳۱۰۰ تغییر نمی‌کنند.
 - نتیجه: سربرگ و شرح درخواست، خلاصه اقدام بعدی، کارت فیلدهای سفر و تاریخچه ارتباط بازچینی شد. ۴۲ تست کامپوننت امور مشتریان، lint، typecheck و قالب‌بندی موفق‌اند؛ بازبینی build/CI و مشاهده روی runtime هنوز باقی است.
+
+## THAILAND-POSTER-XLSX-0929 — PC-B — READY_FOR_REVIEW
+
+- COMPUTER_ID=PC-B; branch `codex/pc-b-thailand-poster-xlsx-0929` from `origin/develop@049cb912`. Reserve only Thailand Package Generator parser/renderer/template-local CSS, focused tests, dedicated task note, and bounded central status entries. Match Phuket, Pattaya and Bangkok–Phuket poster sections to the three owner-provided XLSX files. No API, shared contract, migration, dependency, lockfile, real customer data or unrelated module changes. Previous Package Generator overlay task is merged and its lock released.
+
+- Validation: three supplied XLSX files rendered in local QA; 36 pricing-management tests, Web lint, typecheck and production build passed. Independent price review confirmed final sale columns and no purchase-price exposure. Bounded code/docs reservation released with commit.
