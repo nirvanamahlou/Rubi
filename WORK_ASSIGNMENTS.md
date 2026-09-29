@@ -4418,6 +4418,7 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 ## RESERVATION-OPERATION-SUMMARY-0929 — PC-A — READY_FOR_REVIEW
 
 - COMPUTER_ID=PC-A; branch codex/pc-a-reservation-operation-summary-0929 from origin/develop. Reserve Reservations selected-contract header/UI/tests, request and passenger-file controller mutation activity integration and scoped summary endpoint, IAM public audit/name projection methods/tests, additive Travel summary contract and bounded docs. Producer Reservations composes FinanceDeliveryService and IAM public services; consumer Web selected-header. GET operation-summary is additive; existing requests remain compatible. No Finance table query, migration/schema/dependency or operational record mutation. Names limited to responsible actors of authorized intake; no privileged user directory exposure. Preserve original checkout edits and prior role UI. Bounded central Travel/IAM/Reservations/docs locks RELEASED with scoped commit. New reservation work item awaits owner merge authorization after review; prior IAM merge approvals are not generalized.
+
 ## 2026-09-29 — PACKAGE-GENERATOR-MALAYSIA-THAILAND-OVERLAY-0929 — PC-B — IN_PROGRESS
 
 - درخواست مالک: پس از ورود دادهٔ اکسل، نوشته‌ها و قیمت‌های قالب‌های مالزی و تایلند داخل کادرهای مرجع بمانند؛ قاب آبی و گوشه‌های گرد تاریخ/زمان و کارت‌های قیمت حفظ شود.
