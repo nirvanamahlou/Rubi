@@ -4605,6 +4605,12 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 - محدودهٔ رزرو: `customer-affairs-workspace.tsx`، CSS ماژول، تست چیدمان همان کامپوننت و ثبت اسناد. شاخه `codex/pc-b-ca-detail-actions-row-0929` از `origin/develop@c22e08a1`. منطق شرط‌ها، عملیات و فرم‌ها بدون تغییر؛ در viewport باریک شکست خط واکنش‌گرا مجاز است. بدون API، داده، قرارداد مشترک، Migration، Permission یا Dependency/Lockfile.
 - نتیجه: هر چهار CTA مستقیماً در یک نوار واحد پروفایل قرار گرفتند؛ در دسکتاپ یک‌ردیفه و در عرض موبایل wrap می‌شوند. تست‌های کامپوننت امور مشتریان ۴۲/۴۲، typecheck، ESLint هدفمند، Prettier و `git diff --check` موفق‌اند. Build و CI از طریق PR بررسی می‌شوند؛ build محلی اجرا نشد چون خروجی `.next` در سرویس Web فعال ۳۱۰۰ مشترک است.
 
+## CUSTOMER-AFFAIRS-ASSESSMENT-SAVE-0929 — PC-B — READY_FOR_REVIEW
+
+- `COMPUTER_ID=PC-B`؛ شاخه `codex/pc-b-ca-assessment-save-0929` از `origin/develop` در worktree مستقل. درخواست مالک: رفع ذخیره‌نشدن ارزیابی آمادگی فروش، انتقال دکمه کنار «ثبت ارتباط جدید»، و نمایش نتیجه ذخیره‌شده در پایین پروفایل درخواست.
+- محدوده رزرو: Web/API اختصاصی Customer Affairs و تست‌های مستقیم همان مسیر، CSS اختصاصی در صورت نیاز و اسناد وضعیت. مالکیت داده و مجوزهای فعلی حفظ می‌شود؛ بدون Migration، Dependency/Lockfile، تغییر ماژول دیگر یا ارسال خارجی. خروجی در PR به `develop` بازبینی می‌شود.
+- نتیجه: ارزیابی مجدد در مرحله `QUALIFIED` ممکن است؛ نتیجهٔ ذخیره‌شده همراه امتیاز، معیارها، احتمال تبدیل و زمان در تاریخچهٔ درخواست نمایش داده می‌شود و دکمه کنار «ثبت ارتباط جدید» است. API ارزیابی مرحله‌های غیرمجاز را پیش از ثبت و در شرط نوشتن نسخه‌دار رد می‌کند؛ شکست بازخوانی پس از ثبت موفق به‌درستی از شکست ثبت جدا می‌شود. Web 25/25 و API 19/19 تست متمرکز، typecheck، lint محدود، build تولیدی و diff check موفق‌اند. تست پایگاه دادهٔ زنده و منع مجوز در این واحد اجرا نشد. بدون Migration/Dependency.
+
 ## TICKET-WEEKDAY-RETURN-WINDOW-0929 — PC-A — READY_FOR_REVIEW
 
 - COMPUTER_ID=PC-A; branch `codex/pc-a-ticket-weekday-window-0929` from `origin/develop@bb4209e0`. Reserve Ticket Catalog creation/model and public offer search/reservation, additive Travel offer fields (producer Ticket Catalog, consumer Sales/load), Sales return picker, two nullable return-day columns with an additive migration, targeted regressions and bounded domain/status docs. No dependency/lockfile lock or operational-data edits.

@@ -3,7 +3,11 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 
 import { CustomerAffairsNoraWorkspace } from './customer-affairs-nora-workspace';
-import { DetailPanel, type Detail } from './customer-affairs-workspace';
+import {
+  DetailPanel,
+  mutateAndRefreshDetail,
+  type Detail,
+} from './customer-affairs-workspace';
 
 const route = vi.hoisted(() => ({ query: '' }));
 vi.mock('next/navigation', () => ({
@@ -12,7 +16,29 @@ vi.mock('next/navigation', () => ({
 }));
 
 describe('Nora Customer Affairs navigation', () => {
-  it('shows a structured request profile without changing its actions', () => {
+  it('distinguishes a committed mutation from a failed detail refresh', async () => {
+    await expect(
+      mutateAndRefreshDetail(
+        vi.fn().mockResolvedValue({ data: { version: 2 } }),
+        vi.fn().mockResolvedValue(undefined),
+      ),
+    ).resolves.toBe(true);
+    const operation = vi.fn().mockResolvedValue({ data: { version: 2 } });
+    const refresh = vi.fn().mockRejectedValue(new Error('GET failed'));
+    await expect(mutateAndRefreshDetail(operation, refresh)).resolves.toBe(
+      false,
+    );
+    expect(operation).toHaveBeenCalledOnce();
+    expect(refresh).toHaveBeenCalledOnce();
+
+    const rejected = vi.fn().mockRejectedValue(new Error('POST failed'));
+    const untouchedRefresh = vi.fn();
+    await expect(
+      mutateAndRefreshDetail(rejected, untouchedRefresh),
+    ).rejects.toThrow('POST failed');
+    expect(untouchedRefresh).not.toHaveBeenCalled();
+  });
+  it('places the assessment beside new communication in a request profile', () => {
     const detail = {
       id: 'request',
       trackingNumber: 'CA-L-1',
@@ -44,11 +70,67 @@ describe('Nora Customer Affairs navigation', () => {
       )?.[1] ?? '';
     expect(actionRow).not.toBe('');
     expect(actionRow).toContain('ثبت مشتری برای درخواست');
-    expect(actionRow).toContain('ارزیابی آمادگی فروش');
+    expect(actionRow).not.toContain('ارزیابی آمادگی فروش');
     expect(actionRow).toContain('ارسال به فروش');
     expect(actionRow).toContain('تنظیم پیگیری بعدی');
     expect(html).toContain('سابقه ارتباط و رسیدگی');
-    expect(html).toContain('ثبت ارتباط جدید');
+    const historyActions =
+      html
+        .slice(html.indexOf('سابقه ارتباط و رسیدگی'))
+        .match(
+          /<div class="[^"]*profileSectionActions[^"]*">([\s\S]*?)<\/div>/,
+        )?.[1] ?? '';
+    expect(historyActions).toContain('ارزیابی آمادگی فروش');
+    expect(historyActions).toContain('ثبت ارتباط جدید');
+  });
+  it('shows the saved assessment report after reload and permits re-evaluation', () => {
+    const detail = {
+      id: 'request',
+      trackingNumber: 'CA-L-2',
+      title: 'سفر کاری',
+      travelNeed: 'نمایشگاه',
+      stage: 'QUALIFIED',
+      priority: 'NORMAL',
+      version: 2,
+      nextAction: 'تحویل به فروش',
+      nextActionAt: '2026-09-29T10:00:00Z',
+      customerId: 'customer',
+      qualification: {
+        state: 'QUALIFIED',
+        score: 85,
+        reasons: ['نیاز سفر تایید شده', 'مقصد مشخص است', 'بودجه بررسی شده'],
+        conversionProbability: 65,
+        evaluatedAt: '2026-09-29T09:00:00Z',
+      },
+      timeline: [
+        { type: 'STATUS_CHANGE', summary: 'ارزیابی با امتیاز 85 ثبت شد.' },
+      ],
+    } as unknown as Detail;
+    const html = renderToStaticMarkup(
+      <DetailPanel
+        detail={detail}
+        tab="leads"
+        onBack={() => {}}
+        onReload={async () => {}}
+      />,
+    );
+    const historyActions =
+      html
+        .slice(html.indexOf('سابقه ارتباط و رسیدگی'))
+        .match(
+          /<div class="[^"]*profileSectionActions[^"]*">([\s\S]*?)<\/div>/,
+        )?.[1] ?? '';
+    expect(historyActions).toContain('ارزیابی آمادگی فروش');
+    expect(historyActions).not.toMatch(/<button[^>]*\sdisabled(?:=""|>)/);
+    expect(html).toContain('آخرین نتیجه ارزیابی آمادگی فروش');
+    expect(html).toContain('آماده تحویل به فروش');
+    expect(html).toContain('امتیاز آمادگی');
+    expect(html).toContain('احتمال تبدیل به فروش');
+    expect(html).toContain('نیاز سفر مشخص و تأیید شده است');
+    expect(html).toContain('مقصد یا گزینه‌های پذیرفتنی مشخص است');
+    expect(html).toContain('درباره بودجه گفتگو شده است');
+    expect(html).toContain('زمان سفر یا انعطاف آن مشخص است');
+    expect(html).toContain('تأیید نشده');
   });
   it.each(['NEW', 'RESOLVED', 'CLOSED'] as const)(
     'only offers ticket actions appropriate to %s',
