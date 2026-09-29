@@ -743,8 +743,7 @@ export function MasterDataWorkspace({
 }: {
   section: MasterDataSectionDefinition;
 }) {
-  if (section.slug === 'finance')
-    return <MasterDataFinanceWorkspace />;
+  if (section.slug === 'finance') return <MasterDataFinanceWorkspace />;
   if (section.slug === 'geography') return <MasterDataGeographyWorkspace />;
   if (section.slug === 'organizations-suppliers')
     return <MasterDataSuppliersWorkspace />;

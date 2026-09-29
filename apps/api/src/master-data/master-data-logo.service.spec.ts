@@ -45,13 +45,11 @@ function setup(current = record()) {
       scanStatus: 'PENDING_SCAN',
     }),
     archiveMasterDataLogo: vi.fn().mockResolvedValue(undefined),
-    previewMasterDataLogo: vi
-      .fn()
-      .mockResolvedValue({
-        stream: 'image-stream',
-        mimeType: 'image/png',
-        sizeBytes: 4,
-      }),
+    previewMasterDataLogo: vi.fn().mockResolvedValue({
+      stream: 'image-stream',
+      mimeType: 'image/png',
+      sizeBytes: 4,
+    }),
   };
   return {
     masterData,

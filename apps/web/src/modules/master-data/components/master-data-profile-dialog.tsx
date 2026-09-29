@@ -2,11 +2,7 @@
 
 import type { ReactNode } from 'react';
 
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-} from '@/components/ui/overlays';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/overlays';
 import { useMasterDataDialogFocusRestore } from './use-master-data-dialog-focus-restore';
 
 interface MasterDataProfileDialogProps {

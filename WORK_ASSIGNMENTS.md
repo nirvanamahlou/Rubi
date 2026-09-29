@@ -4437,6 +4437,7 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 
 - COMPUTER_ID=PC-B; branch `codex/pc-b-master-data-api-form-qa-0928` based on the PC-B bank-profile branch. Reserve only Master Data API/form functional regression tests and bounded corrective fixes proven by isolated tests, plus task/status notes. No operational database changes; isolated synthetic PostgreSQL only. No migration, shared contract, dependency/lockfile or localhost runtime ownership. Preserve all parallel branches and user edits. Financial/auth/tenant behavior requires separate review before acceptance.
 - Result: repaired explicit clearing of a standalone supplier's protected phone without clearing it on unrelated form edits. Updated stale partner form regression and added unit/Web payload tests. Full API suite 1,688 passed/175 skipped; Master Data HTTP 27 passed; isolated PostgreSQL suites 57 unique cases passed, demo suite unrun due its hard 55432 guard and active application DB; Master Data Web 376 passed. API/Web typechecks, scoped lint and production builds passed. Synthetic test container and databases removed; no live data/runtime mutation. Bounded code/docs locks released with commit. See `docs/tasks/MASTER-DATA-API-FORM-QA-0928.md`.
+
 ## CUSTOMER-AFFAIRS-API-FUNCTIONAL-QA-0928 — PC-B — READY_FOR_REVIEW
 
 - درخواست مالک در 2026-09-28: همه endpointهای امور مشتریان/پشتیبانی و حالت‌های مرزی، به‌ویژه ثبت فرم‌ها، با دادهٔ ساختگی ممیزی و ایرادهای قطعی Backend و Web مرتبط رفع شوند.
