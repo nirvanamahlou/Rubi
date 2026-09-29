@@ -1,6 +1,6 @@
-# 2026-09-29 — PERMISSION-VISIBILITY-SALES-SCOPE-0929 — PC-A — IN_PROGRESS
+# 2026-09-29 — PERMISSION-VISIBILITY-SALES-SCOPE-0929 — PC-A — READY_FOR_REVIEW
 
-Visibility requires native module permissions for legacy and managed accounts, alongside managed screen selection. Denied routes render no business content; Sales Excel/PDF/payment controls use explicit native permissions. Effective IAM permissions narrow sales experts to own contracts; the appended sales-manager title recommends branch-wide scope. Initial focused validation: 75 Web tests (including HR) and 20 API tests passed; final checks and CI pending. No migration, operational grant or runtime change. Details: [handoff](tasks/PERMISSION-VISIBILITY-SALES-SCOPE-0929.md).
+Visibility requires native module permissions for legacy and managed accounts, alongside managed screen selection. Denied routes render no business content; Sales Excel/PDF/payment controls use explicit native permissions. Effective IAM permissions narrow sales experts to own contracts; the appended sales-manager title recommends branch-wide scope. Validation: full Web 1775 passed/3 skipped; IAM/Sales 136 passed across the broad suite and isolated HTTP startup recheck. Scoped lint, consumer typechecks and production builds verified; CI full tests/build/PostgreSQL gate passed on 4b94ff93. CI formatting correction is isolated to one test. Draft PR [#468](https://github.com/nirvanamahlou/Rubi/pull/468); latest-develop conflicts are limited to coordination documents and branch integration awaits explicit approval. No migration, operational grant or runtime change. Details: [handoff](tasks/PERMISSION-VISIBILITY-SALES-SCOPE-0929.md).
 
 # 2026-09-29 — SALES-TOUR-DEFINITION-0929 — PC-A — READY_FOR_REVIEW
 

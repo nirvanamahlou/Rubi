@@ -227,13 +227,11 @@ it.each([
   async (name, expectedScope) => {
     const list = vi.fn().mockResolvedValue({ data: [], total: 0 });
     const dashboardRows = vi.fn().mockResolvedValue([]);
-    const findById = vi
-      .fn()
-      .mockResolvedValue({
-        branchId: 'outside',
-        ownerUserId: 'other',
-        assignedUserId: null,
-      });
+    const findById = vi.fn().mockResolvedValue({
+      branchId: 'outside',
+      ownerUserId: 'other',
+      assignedUserId: null,
+    });
     const service = new SalesService(
       { list, dashboardRows, findById } as unknown as SalesRepository,
       {} as SalesCustomersPublicAdapter,

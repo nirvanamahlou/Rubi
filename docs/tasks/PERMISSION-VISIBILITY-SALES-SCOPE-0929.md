@@ -9,3 +9,12 @@ An active role named کارشناس فروش (including legacy sales_staff) narr
 No schema, migration, dependency, seeded/live grants, tenant scope or runtime 3100 change. IAM produces the effective actor/catalog; shared Web/Sales consume the existing contract shape. Existing title indexes stay stable.
 
 Validation results recorded before handoff in PROJECT_STATUS and WORK_ASSIGNMENTS.
+
+
+## Validation and handoff
+
+- Full Web suite: 290 files, 1775 passed/3 pre-existing skipped, bounded workers and 30-second local test timeout. Access/preset tests: 34 passed; isolated HR: 42 passed.
+- IAM/Sales: 24 files/133 tests passed; the HTTP startup exceeded the resource-constrained local 10-second hook budget, then all 3 HTTP tests passed separately with a 60-second startup allowance. Focused effective-permission/scope tests are included in those results.
+- Scoped Web/API lint and Contracts lint/build passed. Standalone Web/API typechecks and production builds checked; current source CI full test suite, full production build and PostgreSQL migration/seed gate passed. One Prettier-only test formatting correction is submitted for fresh quality validation.
+- Draft PR #468, implementation 4b94ff93. Read-only merge analysis reports conflicts only in WORK_ASSIGNMENTS.md and docs/PROJECT_STATUS.md. Preserve both task entries when approved. Auto-review rejected integrating develop because prior merge approval applies to previous work; do not integrate or merge until explicit authorization.
+- Runtime 3100, primary checkout changes and live account grants remain untouched.
