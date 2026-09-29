@@ -4410,6 +4410,7 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 
 - COMPUTER_ID=PC-B; branch `codex/pc-b-master-data-optional-english-0928` based on the unmerged Master Data UI stack. Reserve only Master Data form metadata, validation, API, the four nullable geography columns, one additive migration, focused tests, and bounded task/status docs. Migration Owner = PC-B for this unit; prior PC-A ticket-pricing migration lock is RELEASED. No dependency/lockfile, shared API contract, operational data, or runtime change. Preserve other branches and uncommitted edits.
 - Result: 24 focused API tests and 29 Web tests pass; Prisma validate, API/Web lint, typecheck and production build pass. Additive migration is committed for review but not applied to any live database. Migration and bounded docs locks RELEASED after this scoped delivery.
+
 ## MASTER-DATA-LOGO-DISPLAY-0928 — PC-B — READY_FOR_REVIEW
 
 - COMPUTER_ID=PC-B; branch `codex/pc-b-master-data-logo-display-0928` based on the Master Data optional-English stack. Reserve Master Data logo read endpoint, scoped Documents public read method, shared Web image component/form/list/profile presentation, tests, and bounded task/status docs. Producer Documents and consumer Master Data are PC-B owned; existing document content remains in Documents, with exact source-link and branch checks. No migration, dependency, shared contract, operational data, or localhost runtime change. Other branches and edits remain untouched.
@@ -4419,14 +4420,17 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 
 - COMPUTER_ID=PC-B; branch `codex/pc-b-master-data-remove-helper-copy-0928` based on `codex/pc-b-master-data-logo-display-0928`. Reserve only Master Data Web presentation of static explanatory copy immediately beneath page, card, and section headings, focused UI tests, and bounded task/status docs. Preserve field labels, validation, error/success messages, record metadata and actions. No API, migration, dependency/lockfile, shared contract, data, or localhost runtime change.
 - Result: generic heading captions removed from Master Data hub, workspaces, profile/form dialogs and related hotel/rate panels. The 370 Master Data Web tests, scoped lint, Web typecheck and production build (53 routes) pass. No live 3100 change. Scoped Web/docs reservation RELEASED after this delivery.
+
 ## MASTER-DATA-BANK-BRANCHES-IN-PROFILE-0928 — PC-B — READY_FOR_REVIEW
 
 - COMPUTER_ID=PC-B; branch `codex/pc-b-bank-branches-in-bank-profile-0928` stacked on the PC-B Master Data UI branch. Reserve only Finance Master Data bank/branch presentation, focused Web tests and bounded task/status docs. Branches retain the existing `bankId` relation and API; no migration, shared contract, dependencies, operational data or localhost change. Other active edits/branches remain untouched.
 - Result: standalone branch tab removed; bank profile lists only that bank's paginated branches, supports add/view/edit, and locks `bankId` in the existing branch form. 373 Master Data Web tests, scoped lint, Web typecheck and 53-route production build passed. UI/docs locks released with scoped commit.
+
 ## MASTER-DATA-API-FORM-QA-0928 — PC-B — READY_FOR_REVIEW
 
 - COMPUTER_ID=PC-B; branch `codex/pc-b-master-data-api-form-qa-0928` based on the PC-B bank-profile branch. Reserve only Master Data API/form functional regression tests and bounded corrective fixes proven by isolated tests, plus task/status notes. No operational database changes; isolated synthetic PostgreSQL only. No migration, shared contract, dependency/lockfile or localhost runtime ownership. Preserve all parallel branches and user edits. Financial/auth/tenant behavior requires separate review before acceptance.
 - Result: repaired explicit clearing of a standalone supplier's protected phone without clearing it on unrelated form edits. Updated stale partner form regression and added unit/Web payload tests. Full API suite 1,688 passed/175 skipped; Master Data HTTP 27 passed; isolated PostgreSQL suites 57 unique cases passed, demo suite unrun due its hard 55432 guard and active application DB; Master Data Web 376 passed. API/Web typechecks, scoped lint and production builds passed. Synthetic test container and databases removed; no live data/runtime mutation. Bounded code/docs locks released with commit. See `docs/tasks/MASTER-DATA-API-FORM-QA-0928.md`.
+
 ## CUSTOMER-AFFAIRS-API-FUNCTIONAL-QA-0928 — PC-B — READY_FOR_REVIEW
 
 - درخواست مالک در 2026-09-28: همه endpointهای امور مشتریان/پشتیبانی و حالت‌های مرزی، به‌ویژه ثبت فرم‌ها، با دادهٔ ساختگی ممیزی و ایرادهای قطعی Backend و Web مرتبط رفع شوند.

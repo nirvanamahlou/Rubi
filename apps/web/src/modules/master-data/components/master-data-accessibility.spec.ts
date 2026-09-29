@@ -87,7 +87,9 @@ describe('Master Data accessibility regressions', () => {
     expect(finance).not.toContain(
       'تعریف ارزهای ISO-4217؛ با انتخاب هر ارز، نرخ جاری و تاریخچه واقعی آن نمایش داده می‌شود.',
     );
-    expect(finance).toContain("tab === 'currencies' ? 'space-y-3' : 'space-y-5'");
+    expect(finance).toContain(
+      "tab === 'currencies' ? 'space-y-3' : 'space-y-5'",
+    );
     expect(finance).not.toContain('{copy.description ? (');
   });
 });

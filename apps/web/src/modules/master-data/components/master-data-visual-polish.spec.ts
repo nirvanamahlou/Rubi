@@ -51,7 +51,9 @@ describe('Master Data visual polish contract', () => {
     expect(form).toContain('aria-describedby={undefined}');
     expect(form).toContain('validateMasterDataDraft(definition.key, values)');
     expect(form).toContain('await onPersist(');
-    expect(form).toContain('supplierEditValues(result.values, supplierPhoneTouched)');
+    expect(form).toContain(
+      'supplierEditValues(result.values, supplierPhoneTouched)',
+    );
     expect(form).toContain("record.version.toLocaleString('fa-IR')");
     expect(source('master-data-form.tsx')).toContain(
       'Blocked by Migration Lock',
