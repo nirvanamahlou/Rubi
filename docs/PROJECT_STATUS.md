@@ -3887,6 +3887,11 @@ Each two-target fare box is capped at 22rem (352px), matching the owner's hatche
 ## 2026-09-29 — HEADER-SELECTED-ROLE-TITLE-0929 — PC-A — READY_FOR_REVIEW
 
 نوار بالا فقط عنوان شغلی انتخاب‌شده از نقش‌های فعال IAM را نشان می‌دهد؛ برچسب عمومی مثل `Ramtin full access` یا متن ترکیبی کنار آن دیده نمی‌شود. داده نشست قدیمی نیز پیش از نمایش به یک عنوان معتبر تبدیل می‌شود. typecheck، lint و build تولیدی Web با ۵۵ مسیر موفق‌اند؛ CI پیش از merge اجرا می‌شود. بدون API، Migration، Dependency یا داده عملیاتی. جزئیات: [HEADER-SELECTED-ROLE-TITLE-0929](tasks/HEADER-SELECTED-ROLE-TITLE-0929.md).
+
+## 2026-09-29 — SHARED-TICKET-DEMO-0929 — PC-A — READY_FOR_REVIEW
+
+Owner-confirmed synthetic local catalog snapshot: 20 offers (11 visible, 9 already archived), 4 standalone fares, 4 round-trip fares and 12 commission revisions. Portable fixture plus explicit local-only transactional preview/import/archive CLI, source adoption without duplicate tickets, namespace/branch ownership markers and protected shared price targets. No passenger, contract, payment, identity or credential export; no migration, dependency or other-module mutations. Eight lifecycle/safety tests run through API Vitest, API build/typecheck/lint and real PostgreSQL rollback-only import/reuse/archive lifecycle pass. Original 20 local offers are now marked for later batch removal; no offer was created or archived on the source database. PR #484 targets develop; owner explicitly authorizes merge after CI. Per-computer import/cleanup instructions: [SHARED-TICKET-DEMO-0929](tasks/SHARED-TICKET-DEMO-0929.md).
+
 ## 2026-09-29 — CUSTOMER-AFFAIRS-LIST-TOOLBAR-ALIGN-0929 — READY_FOR_REVIEW
 
 دکمه‌های نمای جدولی/مرحله‌ای و خروجی Excel در سربرگ فهرست‌های امور مشتریان هم‌خط و هم‌ارتفاع شدند؛ فاصلهٔ تب‌ها فقط در این نوار حذف شد و چیدمان موبایل محفوظ است. بدون تغییر رفتار عملیاتی. تست متمرکز ۱۰/۱۰ و typecheck موفق؛ CI و merge در انتظار.
