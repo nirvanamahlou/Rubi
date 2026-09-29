@@ -4,6 +4,10 @@
 
 - Validation and handoff: docs/tasks/TICKET-MANAGEMENT-QA-0929.md. Scoped locks RELEASED with commit; no migration needed.
 
+## ROLE-ACCESS-PRESETS-0929 — PC-A — READY_FOR_REVIEW
+
+- COMPUTER_ID=PC-A; branch codex/pc-a-role-access-presets-0929 from origin/develop. Reserve only Web IAM user form, role recommendation helper/panel/CSS/tests and bounded docs. User clarified role-based suggested grants with confirmation or customization. Suggestions intersect actor-assignable screens/native permissions; preserve branch scopes, existing user grants until explicit application and final save. No API/contracts/schema/migration/dependency or operational user changes. IAM/UI prior locks released; bounded UI/docs locks RELEASED with scoped commit. 32 focused tests and strict types pass; lint/build checked before integration.
+
 ## USER-ACCESS-UI-0929 — PC-A — READY_FOR_REVIEW
 
 - COMPUTER_ID=PC-A; branch `codex/pc-a-user-access-ui-0929` from origin/develop. Reserve only Web IAM user-management UI, module-local CSS and checkbox group component/tests; bounded status/task documentation. User requests polished checkbox-first groups with children revealed by selection. No API/contracts/schema/migration/dependency changes or account mutations. Previous IAM locks released. Preserve original checkout/runtime edits. Bounded UI/docs locks RELEASED with scoped commit. 15 focused tests, strict types and lint pass; build checked before handoff.

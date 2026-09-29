@@ -2,6 +2,10 @@
 
 Server-backed flight cards/counts and fresh-browser editing now match the managed list. Exact identity fixes duplicate-schedule actions; capacity reflects holds. Archive preserves fare/commission history. Synthetic lifecycle and HTTP QA pass; no migration or operational data changes. See [task handoff](tasks/TICKET-MANAGEMENT-QA-0929.md).
 
+## 2026-09-29 — ROLE-ACCESS-PRESETS-0929 — PC-A — READY_FOR_REVIEW
+
+User management recommends role-specific sections/actions with explicit confirm, apply-and-customize or keep-current choices. Role selection alone preserves current grants; pending proposals prevent accidental save. Native suggestions intersect actor grants/options; screen suggestions intersect visibility, unknown roles have no grants and branch scopes stay unchanged. Finance/Reservation staff and managers have distinct policies. 32 focused tests and strict Web typecheck pass; scoped lint, production build and CI checked before integration. No API/contract/schema/dependency or account mutation. Details: [ROLE-ACCESS-PRESETS-0929](tasks/ROLE-ACCESS-PRESETS-0929.md).
+
 ## 2026-09-29 — USER-ACCESS-UI-0929 — PC-A — READY_FOR_REVIEW
 
 User management now uses checkbox-first access cards: parent selection reveals child visibility/action checkboxes; partial grants stay expanded and indeterminate. Responsive compact cards, distinct selected-user styling and sticky save control replace dropdowns and excessive whitespace. Existing grant setters and authorization remain intact. 15 focused Web tests, strict typecheck and scoped lint pass; production build checked before handoff. No schema/API/dependency or operational account edits.

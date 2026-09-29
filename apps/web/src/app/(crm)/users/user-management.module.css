@@ -232,3 +232,66 @@
     padding: 16px;
   }
 }
+.proposal {
+  display: grid;
+  gap: 12px;
+  padding: 18px;
+  border: 1px solid #a7c4f2;
+  border-radius: 16px;
+  background: #f0f6ff;
+  font-size: 13px;
+  line-height: 1.9;
+}
+.proposalHeading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.proposalHeading span {
+  color: #315d9f;
+  font-size: 12px;
+}
+.proposalGroups {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.proposalGroups span {
+  border: 1px solid #c5d9f6;
+  border-radius: 8px;
+  padding: 3px 10px;
+  background: white;
+  color: #17477e;
+  font-size: 12px;
+}
+.proposalPermissions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 5px 16px;
+  max-height: 180px;
+  overflow: auto;
+  padding: 12px 16px;
+  border-radius: 10px;
+  background: #ffffffa8;
+  list-style: inside;
+  font-size: 12px;
+}
+.proposalHint {
+  color: #49617e;
+  font-size: 11px;
+}
+.proposalActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+@media (max-width: 760px) {
+  .proposalPermissions {
+    grid-template-columns: 1fr;
+  }
+  .proposalActions > button {
+    width: 100%;
+  }
+}
