@@ -12,6 +12,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/form-controls';
 import { getPublicApiBaseUrl } from '@/lib/environment';
 import { refreshAuthenticatedSession } from '@/lib/auth-session';
+import { AccessGroupCard } from './access-group-card';
+import styles from './user-management.module.css';
 interface Permission {
   id: string;
   code: string;
@@ -83,7 +85,7 @@ function Check({
   label: string;
 }) {
   return (
-    <label className="flex items-center gap-2 text-sm">
+    <label className={styles.check}>
       <input
         type="checkbox"
         checked={checked}
@@ -255,8 +257,8 @@ export function UserManagement() {
     }
   }
   return (
-    <div className="grid gap-5">
-      <header>
+    <div className={styles.workspace}>
+      <header className={styles.pageHeader}>
         <h1 className="text-2xl font-black">مدیریت کاربران</h1>
         <p className="mt-2 text-sm text-muted-foreground">
           تعریف حساب، نقش و دسترسی مستقل هر کاربر؛ تیک هر بخش همهٔ زیربخش‌ها را
@@ -271,8 +273,8 @@ export function UserManagement() {
       {loading ? (
         <p role="status">در حال دریافت کاربران…</p>
       ) : (
-        <div className="grid gap-5 lg:grid-cols-[20rem_1fr]">
-          <aside className="grid content-start gap-3 rounded-xl border p-4">
+        <div className={styles.layout}>
+          <aside className={styles.userList}>
             <Input
               aria-label="جست‌وجوی کاربران"
               placeholder="نام، نام کاربری یا نقش"
@@ -298,13 +300,14 @@ export function UserManagement() {
                 <div
                   key={user.id}
                   className={
-                    'rounded-lg border p-3 ' +
-                    (selected?.id === user.id ? 'border-primary' : '')
+                    styles.userCard +
+                    ' ' +
+                    (selected?.id === user.id ? styles.selectedUser : '')
                   }
                 >
                   <button
                     type="button"
-                    className="w-full text-start"
+                    className={styles.userButton}
                     onClick={() => edit(user)}
                   >
                     <strong>{user.displayName}</strong>
@@ -333,12 +336,8 @@ export function UserManagement() {
                 </div>
               ))}
           </aside>
-          <form
-            ref={form}
-            onSubmit={save}
-            className="grid content-start gap-4 rounded-xl border p-5"
-          >
-            <h2 className="font-bold">
+          <form ref={form} onSubmit={save} className={styles.editor}>
+            <h2 className={styles.editorTitle}>
               {selected ? 'دسترسی ' + selected.displayName : 'تعریف کاربر جدید'}
             </h2>
             <fieldset disabled={!canManage || busy} className="grid gap-4">
@@ -383,7 +382,7 @@ export function UserManagement() {
                 <select
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  className="rounded-lg border bg-background p-2"
+                  className={styles.roleSelect}
                 >
                   {USER_JOB_TITLES.map((t) => (
                     <option key={t} value={t}>
@@ -392,7 +391,7 @@ export function UserManagement() {
                   ))}
                 </select>
               </label>
-              <fieldset className="grid gap-2">
+              <fieldset className={styles.branches}>
                 <legend className="font-bold">شعب مجاز</legend>
                 {options.branches.map((branch) => (
                   <Check
@@ -405,7 +404,13 @@ export function UserManagement() {
                   />
                 ))}
               </fieldset>
-              <div className="grid gap-3">
+              <div className={styles.accessHeading}>
+                <strong>دسترسی به بخش‌های سامانه</strong>
+                <span>
+                  تیک بخش را بزنید، سپس دسترسی زیربخش‌ها را تنظیم کنید.
+                </span>
+              </div>
+              <div className={styles.accessGrid}>
                 {USER_ACCESS_GROUPS.map((group) => {
                   const screens = USER_ACCESS_SCREENS.filter(
                     (s) => s.group === group.id,
@@ -432,84 +437,77 @@ export function UserManagement() {
                       permissionIds.includes(p.id),
                     ).length;
                   return (
-                    <details key={group.id} className="rounded-lg border p-3">
-                      <summary className="cursor-pointer font-bold">
-                        {group.title}{' '}
-                        <span className="text-xs font-normal">
-                          {count} از {total}
-                        </span>
-                      </summary>
-                      <div className="mt-3 grid gap-3">
-                        <Check
-                          label={'انتخاب کل بخش ' + group.title}
-                          checked={total > 0 && count === total}
-                          mixed={count > 0 && count < total}
-                          disabled={!total}
-                          onChange={(v) => {
-                            setScreenIds(
-                              change(
-                                screenIds,
-                                allowedScreens.map((s) => s.id),
-                                v,
-                              ),
-                            );
-                            setPermissionIds(
-                              change(
-                                permissionIds,
-                                allowedPermissions.map((p) => p.id),
-                                v,
-                              ),
-                            );
-                          }}
-                        />
-                        <fieldset className="grid gap-2 border-t pt-3">
-                          <legend className="text-sm font-bold">
-                            بخش‌های قابل مشاهده
-                          </legend>
-                          {screens.map((s) => (
-                            <Check
-                              key={s.id}
-                              label={s.title}
-                              checked={screenIds.includes(s.id)}
-                              disabled={
-                                !actor ||
-                                !canViewScreen(actor.permissions, s.id)
-                              }
-                              onChange={(v) =>
-                                setScreenIds(change(screenIds, [s.id], v))
-                              }
-                            />
-                          ))}
-                        </fieldset>
-                        <fieldset className="grid gap-2 border-t pt-3">
-                          <legend className="text-sm font-bold">
-                            مجوزهای عملیات
-                          </legend>
-                          {permissions.map((p) => (
-                            <Check
-                              key={p.id}
-                              label={p.name}
-                              checked={permissionIds.includes(p.id)}
-                              disabled={
-                                !actor?.permissions.some(
-                                  (code) => code === p.code,
-                                )
-                              }
-                              onChange={(v) =>
-                                setPermissionIds(
-                                  change(permissionIds, [p.id], v),
-                                )
-                              }
-                            />
-                          ))}
-                        </fieldset>
-                      </div>
-                    </details>
+                    <AccessGroupCard
+                      key={group.id}
+                      id={group.id}
+                      title={group.title}
+                      count={count}
+                      total={total}
+                      onChange={(v) => {
+                        setScreenIds(
+                          change(
+                            screenIds,
+                            allowedScreens.map((s) => s.id),
+                            v,
+                          ),
+                        );
+                        setPermissionIds(
+                          change(
+                            permissionIds,
+                            allowedPermissions.map((p) => p.id),
+                            v,
+                          ),
+                        );
+                      }}
+                    >
+                      <fieldset className={styles.childSection}>
+                        <legend className="text-sm font-bold">
+                          بخش‌های قابل مشاهده
+                        </legend>
+                        {screens.map((s) => (
+                          <Check
+                            key={s.id}
+                            label={s.title}
+                            checked={screenIds.includes(s.id)}
+                            disabled={
+                              !actor || !canViewScreen(actor.permissions, s.id)
+                            }
+                            onChange={(v) =>
+                              setScreenIds(change(screenIds, [s.id], v))
+                            }
+                          />
+                        ))}
+                      </fieldset>
+                      <fieldset className={styles.childSection}>
+                        <legend className="text-sm font-bold">
+                          مجوزهای عملیات
+                        </legend>
+                        {permissions.map((p) => (
+                          <Check
+                            key={p.id}
+                            label={p.name}
+                            checked={permissionIds.includes(p.id)}
+                            disabled={
+                              !actor?.permissions.some(
+                                (code) => code === p.code,
+                              )
+                            }
+                            onChange={(v) =>
+                              setPermissionIds(change(permissionIds, [p.id], v))
+                            }
+                          />
+                        ))}
+                      </fieldset>
+                    </AccessGroupCard>
                   );
                 })}
               </div>
               {canManage && (
-                <Button type="submit" disabled={busy}>
+                <Button
+                  type="submit"
+                  disabled={busy}
+                  className={styles.saveButton}
+                >
                   {busy ? 'در حال ذخیره…' : 'ذخیره کاربر و دسترسی‌ها'}
                 </Button>
               )}

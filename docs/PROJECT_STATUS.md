@@ -1,3 +1,7 @@
+## 2026-09-29 — USER-ACCESS-UI-0929 — PC-A — READY_FOR_REVIEW
+
+User management now uses checkbox-first access cards: parent selection reveals child visibility/action checkboxes; partial grants stay expanded and indeterminate. Responsive compact cards, distinct selected-user styling and sticky save control replace dropdowns and excessive whitespace. Existing grant setters and authorization remain intact. 15 focused Web tests, strict typecheck and scoped lint pass; production build checked before handoff. No schema/API/dependency or operational account edits.
+
 ## 2026-09-28 — USER-ACCESS-TREE-0928 — PC-A — COMPLETE
 
 مدیریت کاربران زیر مدیریت سیستم اضافه شد: ایجاد حساب، عنوان نقش، وضعیت و شعب، دسترسی مستقل به بخش‌ها/زیربخش‌ها و مجوز عملیات، انتخاب همه و حالت انتخاب جزئی. نقش خصوصی هر کاربر از IAM موجود استفاده می‌کند؛ تغییر یک حساب روی حساب دیگر اثر ندارد. منو، جست‌وجو، مسیر مستقیم و تب‌های ثبت‌شده طبق پروفایل پنهان می‌شوند؛ کنترل اختصاصی HR، اطلاعات پایه، حسابداری، مارکتینگ، فروش/قیمت‌گذاری و میزکار متصل است. واگذاری بیش از دسترسی اپراتور و حذف آخرین مدیر فعال ممنوع است. نقش‌های قدیمی تا ذخیره صریح پروفایل سازگار می‌مانند. بدون Migration، Dependency، تغییر کاربر واقعی یا runtime. مالک، merge به develop را صریحاً مجاز کرده است. جزئیات بررسی‌ها و handoff: [USER-ACCESS-TREE-0928](tasks/USER-ACCESS-TREE-0928.md).
