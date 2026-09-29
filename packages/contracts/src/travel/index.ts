@@ -73,7 +73,17 @@ export interface TicketSaleCommissionUpdateV1 {
   copyToAll?: boolean;
 }
 
+export {
+  eligibleTicketReturn,
+  ticketReturnBounds,
+  ticketCalendarDate,
+  validReturnWindow,
+} from './ticket-return-window';
+
 export interface TicketOfferV1 {
+  /** Inclusive stay length in Tehran calendar days; null preserves unrestricted legacy offers. */
+  returnMinDays?: number | null;
+  returnMaxDays?: number | null;
   /** Original direct base, before any direct-sale commission. */
   baseStandaloneSalePrice?: TicketStandaloneSalePriceV1 | null;
   saleCommissions?: readonly TicketSaleCommissionV1[];
@@ -117,6 +127,8 @@ export type TicketOfferCreateV1 = Omit<
   | 'roundTripSalePrices'
 >;
 export interface TicketOfferSearchV1 {
+  /** Restrict reverse-route results to this authorized outbound offer's return window. */
+  outboundOfferId?: string;
   originId: string;
   destinationId: string;
   departureFrom: string;

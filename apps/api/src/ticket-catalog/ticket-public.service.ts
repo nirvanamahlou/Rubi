@@ -7,6 +7,11 @@ import {
   Injectable,
 } from '@nestjs/common';
 import * as Joi from 'joi';
+import {
+  eligibleTicketReturn,
+  ticketReturnBounds,
+  validReturnWindow,
+} from '@nora/contracts';
 import { Prisma } from '@nora/database';
 import type {
   AuthenticatedActor,
@@ -37,6 +42,8 @@ const capacityHoldSchema = Joi.object({
 });
 type CapacityHoldInput = { quantity: number; expiresAt: string };
 const createSchema = Joi.object({
+  returnMinDays: Joi.number().integer().min(0).max(365).allow(null).optional(),
+  returnMaxDays: Joi.number().integer().min(0).max(365).allow(null).optional(),
   manifestTemplateId: uuid.allow(null).optional(),
   originId: uuid.required(),
   destinationId: uuid.invalid(Joi.ref('originId')).required(),
@@ -62,6 +69,10 @@ export function validateTicketOffer(input: unknown): TicketOfferCreateV1 {
   const result = createSchema.validate(input, { convert: false });
   if (result.error) throw new BadRequestException('اطلاعات بلیت معتبر نیست.');
   const value = result.value as TicketOfferCreateV1;
+  if (!validReturnWindow(value.returnMinDays, value.returnMaxDays))
+    throw new BadRequestException(
+      'حداقل روز برگشت نباید از حداکثر بیشتر باشد.',
+    );
   if (new Date(value.arrivalAt) <= new Date(value.departureAt))
     throw new BadRequestException('زمان رسیدن باید پس از حرکت باشد.');
   return value;
@@ -129,6 +140,8 @@ export class TicketPublicService {
   }
 
   private offerView(row: {
+    returnMinDays?: number | null;
+    returnMaxDays?: number | null;
     id: string;
     manifestTemplateId?: string | null;
     version: number;
@@ -172,6 +185,8 @@ export class TicketPublicService {
     return applySaleCommissions(
       {
         id: row.id,
+        returnMinDays: row.returnMinDays ?? null,
+        returnMaxDays: row.returnMaxDays ?? null,
         manifestTemplateId: row.manifestTemplateId ?? null,
         version: row.version,
         branchId: row.branchId,
@@ -325,6 +340,7 @@ export class TicketPublicService {
   async search(input: TicketOfferSearchV1, actor: AuthenticatedActor) {
     this.require(actor, 'ticket_catalog.read');
     const result = Joi.object({
+      outboundOfferId: uuid.optional(),
       originId: uuid.required(),
       destinationId: uuid.required(),
       departureFrom: Joi.string().isoDate().required(),
@@ -338,15 +354,40 @@ export class TicketPublicService {
     const from = new Date(query.departureFrom);
     const now = new Date();
     await this.pauseExpiredOffers(actor, now);
-    const effectiveFrom = from > now ? from : now;
-    const to = query.departureTo
+    let effectiveFrom = from > now ? from : now;
+    let to = query.departureTo
       ? new Date(`${query.departureTo.slice(0, 10)}T23:59:59.999Z`)
       : undefined;
     if (to && to < from)
       throw new BadRequestException('بازه تاریخ نامعتبر است.');
+    let outboundBranch: string | undefined;
+    if (query.outboundOfferId) {
+      const outbound =
+        await this.database.client.ticketPublishedOffer.findFirst({
+          where: {
+            id: query.outboundOfferId,
+            branchId: { in: actor.branchIds },
+            status: 'ACTIVE',
+            departureAt: { gt: now },
+          },
+        });
+      if (!outbound)
+        throw new ForbiddenException('بلیط رفت در شعبه مجاز یافت نشد.');
+      if (
+        query.originId !== outbound.destinationId ||
+        query.destinationId !== outbound.originId
+      )
+        throw new BadRequestException('مسیر برگشت باید معکوس بلیط رفت باشد.');
+      outboundBranch = outbound.branchId;
+      const bounds = ticketReturnBounds(outbound);
+      if (bounds.from > effectiveFrom) effectiveFrom = bounds.from;
+      if (bounds.to && (!to || bounds.to < to)) to = bounds.to;
+      if (to && to < effectiveFrom)
+        return { version: 1 as const, data: [], hasMore: false };
+    }
     const rows = await this.database.client.ticketPublishedOffer.findMany({
       where: {
-        branchId: { in: actor.branchIds },
+        branchId: outboundBranch ?? { in: actor.branchIds },
         status: 'ACTIVE',
         originId: query.originId,
         destinationId: query.destinationId,
@@ -439,6 +480,8 @@ export class TicketPublicService {
       row.serviceNumber === value.serviceNumber &&
       row.cabinClassCode === value.cabinClassCode &&
       row.totalCapacity === value.totalCapacity &&
+      (row.returnMinDays ?? null) === (value.returnMinDays ?? null) &&
+      (row.returnMaxDays ?? null) === (value.returnMaxDays ?? null) &&
       (row.manifestTemplateId ?? null) === (value.manifestTemplateId ?? null);
     if (row.fingerprint !== fingerprint && !sameOffer)
       throw new ConflictException(
@@ -767,6 +810,9 @@ export class TicketPublicService {
               originId: true,
               destinationId: true,
               departureAt: true,
+              arrivalAt: true,
+              returnMinDays: true,
+              returnMaxDays: true,
             },
           });
           const outbound = offers.find((offer) => offer.id === outboundOfferId);
@@ -777,11 +823,7 @@ export class TicketPublicService {
             outbound.branchId !== returning.branchId
           )
             throw new ForbiddenException('جفت بلیط در شعبه مجاز یافت نشد.');
-          if (
-            outbound.originId !== returning.destinationId ||
-            outbound.destinationId !== returning.originId ||
-            returning.departureAt <= outbound.departureAt
-          )
+          if (!eligibleTicketReturn(outbound, returning))
             throw new BadRequestException(
               'بلیط برگشت باید مسیر معکوس و حرکت پس از بلیط رفت داشته باشد.',
             );
@@ -953,7 +995,19 @@ export class TicketPublicService {
       if (row.version !== input.expectedVersion)
         throw new ConflictException('بلیط تغییر کرده؛ فهرست را تازه کنید.');
       const linkedSale = row.capacityAllocations.length > 0;
+      const min =
+        value.returnMinDays === undefined
+          ? row.returnMinDays
+          : value.returnMinDays;
+      const max =
+        value.returnMaxDays === undefined
+          ? row.returnMaxDays
+          : value.returnMaxDays;
+      if (!validReturnWindow(min, max))
+        throw new BadRequestException('بازه روزهای برگشت معتبر نیست.');
       const scheduleOnlyRevision =
+        (row.returnMinDays ?? null) === (min ?? null) &&
+        (row.returnMaxDays ?? null) === (max ?? null) &&
         row.originId === value.originId &&
         row.destinationId === value.destinationId &&
         row.carrierName === value.carrierName &&
@@ -981,6 +1035,8 @@ export class TicketPublicService {
         where: { id },
         data: {
           ...value,
+          returnMinDays: min,
+          returnMaxDays: max,
           manifestTemplateId:
             value.manifestTemplateId === undefined
               ? row.manifestTemplateId
@@ -1046,6 +1102,17 @@ export class TicketPublicService {
         )
         .map(({ id }) => id),
     );
+    const outbound = available.find(
+      (offer) =>
+        offer.id ===
+        selections.find((s) => s.direction === 'OUTBOUND')?.offerId,
+    );
+    const returning = available.find(
+      (offer) =>
+        offer.id === selections.find((s) => s.direction === 'RETURN')?.offerId,
+    );
+    if (outbound && returning && !eligibleTicketReturn(outbound, returning))
+      found.delete(returning.id);
     const unavailableOfferIds = offerIds.filter((id) => !found.has(id));
     return { available: unavailableOfferIds.length === 0, unavailableOfferIds };
   }
@@ -1162,6 +1229,19 @@ export class TicketPublicService {
           return offer.totalCapacity - allocated < seatCount;
         })
         .map(({ offerId }) => offerId);
+      const outbound = byId.get(
+        selections.find((s) => s.direction === 'OUTBOUND')?.offerId ?? '',
+      );
+      const returning = byId.get(
+        selections.find((s) => s.direction === 'RETURN')?.offerId ?? '',
+      );
+      if (
+        outbound &&
+        returning &&
+        !eligibleTicketReturn(outbound, returning) &&
+        !unavailableOfferIds.includes(returning.id)
+      )
+        unavailableOfferIds.push(returning.id);
       if (unavailableOfferIds.length)
         return {
           available: false,
