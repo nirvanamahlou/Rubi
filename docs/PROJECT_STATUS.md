@@ -1,3 +1,7 @@
+## 2026-09-29 — SIDEBAR-ALL-SECTIONS-VISIBLE-0929 — PC-B — READY_FOR_REVIEW
+
+تمام گروه‌های مجاز منوی کناری از ابتدا باز می‌شوند تا لینک‌های رزرواسیون، مالی، سرمایه انسانی، اسناد و تنظیمات کنار فروش دیده شوند. کنترل باز و بسته‌کردن گروه‌ها و بررسی دسترسی هر مسیر بدون تغییر است. دو تست مرتبط، ESLint محدوده، typecheck و build تولیدی Web با ۵۵ مسیر موفق شدند. وب روی ۳۱۰۰ و API روی ۴۰۰۰ پس از راه‌اندازی مجدد پاسخ ۲۰۰ دادند. هیچ مجوز یا داده‌ای تغییر نکرد.
+
 ## 2026-09-29 — ADMIN-SCREEN-VISIBILITY-0929 — PC-A — READY_FOR_REVIEW
 
 Follow-up to the authorized merge/local release: active system administrators receive a derived, unassignable UI marker so all catalogued sections are visible, including pages without native operation grants. Stored markers and role titles cannot confer administrator authority. Native operation/branch guards remain authoritative. Focused API/Web/contracts tests: 13/9/4 passed; scoped lint, typechecks and contracts build checked before release. No schema/migration/dependency changes. Details: [ADMIN-SCREEN-VISIBILITY-0929](tasks/ADMIN-SCREEN-VISIBILITY-0929.md).
