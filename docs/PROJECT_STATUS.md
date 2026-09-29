@@ -3793,3 +3793,6 @@ Shared actor-scoped repository lookups and explicit reference filtering enforce 
 ## 2026-09-29 — ISTANBUL-GENERATOR-3100-ACTIVATION — PC-B — IN_PROGRESS
 
 پیگیری قالب‌های استانبول، assetها و loaderهای Package Generator را در build محلی 3100 فعال می‌کند. تغییر مبنا commit `6c2d203f` است؛ اکنون با `origin/develop` همگام شده و منتظر بررسی‌های CI و PR است. API قیمت‌گذاری، Schema/Migration و دادهٔ عملیاتی تغییر نمی‌کنند.
+# 2026-09-29 — TICKET-ROUNDTRIP-RETURN-DATE-0929 — PC-A — READY_FOR_REVIEW
+
+مدیریت بلیت برای هر نرخ رفت‌وبرگشت، تاریخ و ساعت پرواز برگشت متناظر را کنار مبلغ نشان می‌دهد و با Tooltip شماره پرواز برگشت را هم توضیح می‌دهد. نرخ‌های چند برگشت یک پرواز رفت جداگانه می‌مانند؛ اگر رکورد برگشت در فهرست نباشد، مبلغ حفظ و تاریخ نامشخص اعلام می‌شود. ۶ تست متمرکز، ESLint فایل‌های متاثر، Web typecheck و build تولیدی با ۵۵ مسیر موفق‌اند. بدون تغییر API، قرارداد، Schema/Migration، Permission، Dependency یا دادهٔ عملیاتی. جزئیات: [TICKET-ROUNDTRIP-RETURN-DATE-0929](tasks/TICKET-ROUNDTRIP-RETURN-DATE-0929.md).
