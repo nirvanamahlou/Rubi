@@ -108,7 +108,6 @@ export function MasterDataWorkspace({
             </Button>
           </>
         }
-        description="مدیریت Reference Data و Organizationهای مشترک، با Contract ماژولار و بدون دورزدن قفل Migration."
         eyebrow="MASTER-001 · PC-B"
         title="اطلاعات پایه"
       />
@@ -174,9 +173,6 @@ export function MasterDataWorkspace({
                     بدون persistence
                   </Badge>
                 </div>
-                <p className="mt-2 max-w-3xl text-sm leading-7 text-muted-foreground">
-                  {definition.description}
-                </p>
               </div>
               <div className="flex self-end gap-2">
                 <Button

@@ -320,7 +320,6 @@ export function HotelBaseRateWorkspace() {
       <PageHeader
         eyebrow="اطلاعات پایه · اقامت"
         title="قیمت‌گذاری هتل در بازه"
-        description="شهر و تاریخ اقامت را انتخاب کنید؛ هتل‌های همان شهر در جدول قابل‌ویرایش نمایش داده می‌شوند و هر ذخیره یک نسخه مستقل می‌سازد."
         actions={
           <>
             <Link
@@ -413,9 +412,6 @@ export function HotelBaseRateWorkspace() {
                   <h2 className="font-black">
                     {editing ? `ویرایش ${editing.title}` : 'تعریف بازه جدید'}
                   </h2>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    مبنای قیمت: هر اتاق در هر شب · هر Save یک Version جدید
-                  </p>
                 </div>
                 {editing ? (
                   <Badge>

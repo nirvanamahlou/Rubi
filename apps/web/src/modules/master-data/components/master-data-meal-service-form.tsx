@@ -85,7 +85,6 @@ export function MasterDataMealServiceForm({
             ? 'ویرایش وعده و سرویس'
             : 'ایجاد وعده و سرویس'
       }
-      description="مشخصات و وعده‌های شامل‌شده"
       onOpenChange={(open) => {
         if (!pending.current) onOpenChange(open);
       }}

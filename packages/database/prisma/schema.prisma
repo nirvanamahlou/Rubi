@@ -933,7 +933,7 @@ model MasterCountry {
   id                    String                      @id @default(uuid()) @db.Uuid
   code                  String                      @unique @db.Char(2)
   name                  String                      @db.VarChar(160)
-  englishName           String                      @db.VarChar(160)
+  englishName           String?                     @db.VarChar(160)
   displayOrder          Int                         @default(0)
   isActive              Boolean                     @default(true)
   version               Int                         @default(1)
@@ -967,7 +967,7 @@ model MasterCity {
   regionId                    String?                     @db.Uuid
   code                        String                      @db.VarChar(32)
   name                        String                      @db.VarChar(160)
-  englishName                 String                      @db.VarChar(160)
+  englishName                 String?                     @db.VarChar(160)
   displayOrder                Int                         @default(0)
   isActive                    Boolean                     @default(true)
   version                     Int                         @default(1)
@@ -1007,7 +1007,7 @@ model MasterRegion {
   parentRegionId      String?          @db.Uuid
   code                String           @db.VarChar(32)
   name                String           @db.VarChar(160)
-  englishName         String           @db.VarChar(160)
+  englishName         String?          @db.VarChar(160)
   type                MasterRegionType @default(PROVINCE)
   displayOrder        Int              @default(0)
   isActive            Boolean          @default(true)
@@ -1036,7 +1036,7 @@ model MasterAirport {
   iataCode            String             @unique @db.Char(3)
   icaoCode            String?            @unique @db.Char(4)
   name                String             @db.VarChar(160)
-  englishName         String             @db.VarChar(160)
+  englishName         String?            @db.VarChar(160)
   ianaTimezone        String?            @db.VarChar(80)
   latitude            Decimal?           @db.Decimal(9, 6)
   longitude           Decimal?           @db.Decimal(9, 6)

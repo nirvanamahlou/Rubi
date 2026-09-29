@@ -95,6 +95,14 @@
 - محدوده رزرو: formatter تاریخ سربرگ، markup مستقیم تاریخ/ساعت، تست‌های هدفمند و ثبت وضعیت همین واحد. بدون API، Schema/Migration، Permission، داده یا Dependency/Lockfile.
 - نتیجه: تاریخ فارسی با ترتیب طبیعی «روزهفته روز ماه سال» و راست‌چینی صریح نمایش داده می‌شود و ساعت در محدودهٔ مستقل LTR قرار گرفت. ۹ تست هدفمند، lint، typecheck، build تولیدی Web با ۵۲ مسیر و QA واقعی داشبورد روی `3100` موفق‌اند.
 
+## 2026-09-27 — MASTER-DATA-ICON-ACTIONS-0927 — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک: در ستون «عملیات» تمام بخش‌های اطلاعات پایهٔ PC-B، کنترل‌های مشاهده، ویرایش و حذف فقط با آیکون مشترک نمایش داده شوند و متن کنار آیکون نباشد.
+- شاخهٔ مستقل `codex/pc-b-master-data-icon-actions-0927` از `origin/develop@48c1b6f3`؛ `COMPUTER_ID=PC-B`.
+- محدودهٔ رزرو: ردیف‌های عملیاتی Web در `apps/web/src/modules/master-data/**`، کنترل حذف مشترک همان ماژول، تست‌های مستقیم و ثبت وضعیت. نام عملیات در `aria-label` و tooltip باقی می‌ماند. API، قرارداد، Schema/Migration، داده و Dependency/Lockfile تغییر نمی‌کنند.
+- استثنا: فایل/متن توضیح ایرلاینِ Work Item فعال `MASTER-013-AIRLINE-DESCRIPTION-0919` خارج از این تغییر است.
+- نتیجه: کنترل‌های عملیاتی در همهٔ workspaceهای اطلاعات پایه یکپارچه شدند: مشاهده/ویرایش outline آیکونی و حذف destructive آیکونی؛ عنوان عملیاتی در `aria-label` و `title` باقی است. ۱۵۵ تست کامپوننت، lint محدوده، typecheck و build تولیدی Web با ۵۳ route موفق‌اند. runtime فعلی `3100` متعلق به worktree امور مشتریان است و برای حفظ کار فعال آن جایگزین نشد.
+
 ## 2026-09-22 — MASTER-HOTEL-INLINE-ROOM-TYPES-0922 — PC-B — READY_FOR_REVIEW
 
 - درخواست مالک: سکشن و فرم مستقل «نوع‌های اتاق» از اطلاعات پایه اقامت حذف شود؛ هتل بتواند چند نوع اتاق را مستقیماً در فرم خود دریافت و ذخیره کند و فیلدهای «عنوان فارسی»، «ظرفیت استاندارد» و «توضیح استفاده» دیگر از کاربر خواسته نشوند.
@@ -4387,6 +4395,46 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 - COMPUTER_ID=PC-A; branch codex/pc-a-finance-history-seat-pricing-0928, isolated clean Finance worktree from origin/develop@099dc40e. Reserve Finance API/Web/history tests, additive Sales public receipt-history and Reservations purchase-descriptor projections, Finance v1 additive history contract and bounded status/task docs. Producer Sales/Finance and consumer Finance API/Web owned PC-A; public boundaries and existing v1 clients preserved. No Procurement implementation, migration/schema/dependency/lockfile/IAM or operational data changes. Bounded Finance contract/Central Docs owner PC-A for this unit; prior Finance locks released. User explicitly authorizes implementation and merge. Preserve unrelated local edits.
 
 - Validation: 23 targeted API and 29 Web tests, scoped lint, API/Web strict typechecks and production builds (53 routes) passed. No migration or data change. Finance contract/bounded docs locks RELEASED with commit. Explicit owner merge authorization; authenticated browser clicks remain unverified.
+
+## 2026-09-28 — MASTER-DATA-RECORD-ICON-ACTIONS-0928 — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک: دکمه‌های عملیات همه رکوردهای اطلاعات پایه مطابق نمونه، فقط آیکون باشند؛ حذف قرمز پُر و مشاهده/ویرایش کادر روشن. برچسب دسترس‌پذیر، رفتار و تأیید حذف حفظ می‌شود.
+- شاخه `codex/pc-b-master-data-record-icon-actions-0928` از شاخه فیلترهای فشردهٔ PC-B؛ محدوده رزرو: `apps/web/src/modules/master-data/components/*`، تست‌های همین UI و مدخل محدود اسناد. PR به‌صورت وابسته به PR #444 تحویل می‌شود. بدون API، Migration، قرارداد، داده، Dependency/Lockfile یا تغییر runtime.
+
+## 2026-09-28 — MASTER-DATA-FINANCE-HEADING-SPACING-0928 — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک: متن توضیحی زیر عنوان ارزها حذف و فاصلهٔ عنوان تا فیلترهای جست‌وجو کمتر شود.
+- شاخه `codex/pc-b-finance-heading-spacing-0928` از شاخهٔ عملیات آیکونی PC-B؛ فقط Workspace مالی و پولی، تست مرتبط و مدخل محدود اسناد رزرو است. وابسته به PR #445 و #444؛ بدون API، Migration، قرارداد، داده، Dependency/Lockfile یا تغییر runtime.
+
+## 2026-09-28 — MASTER-DATA-CURRENCY-CREATE-NO-QUOTE-0928 — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک: بخش «ثبت نرخ خرید و فروش» در فرم تعریف ارز جدید نمایش داده نشود؛ ثبت نرخ در ویرایش ارز موجود و تاریخچه فعلی محفوظ بماند.
+- شاخه `codex/pc-b-currency-create-no-quote-0928` از `codex/pc-b-finance-heading-spacing-0928`؛ محدوده فقط کامپوننت فرم ارز، تست مستقیم و مدخل محدود اسناد است. وابسته به PR #446، #445 و #444؛ بدون API، Migration، قرارداد، داده، Dependency/Lockfile یا تغییر runtime.
+
+## MASTER-DATA-OPTIONAL-ENGLISH-0928 — PC-B — READY_FOR_REVIEW
+
+- COMPUTER_ID=PC-B; branch `codex/pc-b-master-data-optional-english-0928` based on the unmerged Master Data UI stack. Reserve only Master Data form metadata, validation, API, the four nullable geography columns, one additive migration, focused tests, and bounded task/status docs. Migration Owner = PC-B for this unit; prior PC-A ticket-pricing migration lock is RELEASED. No dependency/lockfile, shared API contract, operational data, or runtime change. Preserve other branches and uncommitted edits.
+- Result: 24 focused API tests and 29 Web tests pass; Prisma validate, API/Web lint, typecheck and production build pass. Additive migration is committed for review but not applied to any live database. Migration and bounded docs locks RELEASED after this scoped delivery.
+
+## MASTER-DATA-LOGO-DISPLAY-0928 — PC-B — READY_FOR_REVIEW
+
+- COMPUTER_ID=PC-B; branch `codex/pc-b-master-data-logo-display-0928` based on the Master Data optional-English stack. Reserve Master Data logo read endpoint, scoped Documents public read method, shared Web image component/form/list/profile presentation, tests, and bounded task/status docs. Producer Documents and consumer Master Data are PC-B owned; existing document content remains in Documents, with exact source-link and branch checks. No migration, dependency, shared contract, operational data, or localhost runtime change. Other branches and edits remain untouched.
+- Result: 52 focused API tests and 25 Web tests pass; API/Web typechecks, scoped lint and production builds pass. The existing 3100 runtime and live data were not changed. Documents and Master Data implementation locks and bounded docs lock RELEASED after scoped delivery.
+
+## MASTER-DATA-REMOVE-HELPER-COPY-0928 — PC-B — READY_FOR_REVIEW
+
+- COMPUTER_ID=PC-B; branch `codex/pc-b-master-data-remove-helper-copy-0928` based on `codex/pc-b-master-data-logo-display-0928`. Reserve only Master Data Web presentation of static explanatory copy immediately beneath page, card, and section headings, focused UI tests, and bounded task/status docs. Preserve field labels, validation, error/success messages, record metadata and actions. No API, migration, dependency/lockfile, shared contract, data, or localhost runtime change.
+- Result: generic heading captions removed from Master Data hub, workspaces, profile/form dialogs and related hotel/rate panels. The 370 Master Data Web tests, scoped lint, Web typecheck and production build (53 routes) pass. No live 3100 change. Scoped Web/docs reservation RELEASED after this delivery.
+
+## MASTER-DATA-BANK-BRANCHES-IN-PROFILE-0928 — PC-B — READY_FOR_REVIEW
+
+- COMPUTER_ID=PC-B; branch `codex/pc-b-bank-branches-in-bank-profile-0928` stacked on the PC-B Master Data UI branch. Reserve only Finance Master Data bank/branch presentation, focused Web tests and bounded task/status docs. Branches retain the existing `bankId` relation and API; no migration, shared contract, dependencies, operational data or localhost change. Other active edits/branches remain untouched.
+- Result: standalone branch tab removed; bank profile lists only that bank's paginated branches, supports add/view/edit, and locks `bankId` in the existing branch form. 373 Master Data Web tests, scoped lint, Web typecheck and 53-route production build passed. UI/docs locks released with scoped commit.
+
+## MASTER-DATA-API-FORM-QA-0928 — PC-B — READY_FOR_REVIEW
+
+- COMPUTER_ID=PC-B; branch `codex/pc-b-master-data-api-form-qa-0928` based on the PC-B bank-profile branch. Reserve only Master Data API/form functional regression tests and bounded corrective fixes proven by isolated tests, plus task/status notes. No operational database changes; isolated synthetic PostgreSQL only. No migration, shared contract, dependency/lockfile or localhost runtime ownership. Preserve all parallel branches and user edits. Financial/auth/tenant behavior requires separate review before acceptance.
+- Result: repaired explicit clearing of a standalone supplier's protected phone without clearing it on unrelated form edits. Updated stale partner form regression and added unit/Web payload tests. Full API suite 1,688 passed/175 skipped; Master Data HTTP 27 passed; isolated PostgreSQL suites 57 unique cases passed, demo suite unrun due its hard 55432 guard and active application DB; Master Data Web 376 passed. API/Web typechecks, scoped lint and production builds passed. Synthetic test container and databases removed; no live data/runtime mutation. Bounded code/docs locks released with commit. See `docs/tasks/MASTER-DATA-API-FORM-QA-0928.md`.
 
 ## CUSTOMER-AFFAIRS-API-FUNCTIONAL-QA-0928 — PC-B — READY_FOR_REVIEW
 

@@ -1,3 +1,6 @@
+## 2026-09-28 — MASTER-DATA-RECORD-ICON-ACTIONS-0928 — PC-B — READY_FOR_REVIEW
+
+کنترل‌های عملیات رکورد در تمام workspaceهای اطلاعات پایه با الگوی فقط‌آیکون یکسان شدند؛ مشاهده و ویرایش outline و حذف قرمز. نام دسترس‌پذیر و تأیید حذف محفوظ است. ۳۶۴ تست Master Data، lint محدوده، typecheck و build تولیدی Web با ۵۳ مسیر موفق‌اند. این تغییر فقط Web و تست‌های مربوط را در بر می‌گیرد؛ بدون API، داده یا Migration.
 # 2026-09-29 — PERMISSION-VISIBILITY-SALES-SCOPE-0929 — PC-A — READY_FOR_REVIEW
 
 Visibility requires native module permissions for legacy and managed accounts, alongside managed screen selection. Denied routes render no business content; Sales Excel/PDF/payment controls use explicit native permissions. Effective IAM permissions narrow sales experts to own contracts; the appended sales-manager title recommends branch-wide scope. Validation: full Web 1775 passed/3 skipped; IAM/Sales 136 passed across the broad suite and isolated HTTP startup recheck. Scoped lint, consumer typechecks and production builds verified; CI full tests/build/PostgreSQL gate passed on 4b94ff93. CI formatting correction is isolated to one test. Draft PR [#468](https://github.com/nirvanamahlou/Rubi/pull/468); the user explicitly approved develop integration and PR merge; both coordination entries are preserved. No migration, operational grant or runtime change. Details: [handoff](tasks/PERMISSION-VISIBILITY-SALES-SCOPE-0929.md).
@@ -3779,6 +3782,28 @@ Calendar event creation now uses an authorized branch from the authenticated Wor
 ## 2026-09-28 — FINANCE-HISTORY-SEAT-PRICING-0928 — PC-A
 
 Existing unpaid ticket invoices retain the seat/unit-price editor; count, unit cost and automatic total are visible. Persistent branch-scoped receipt/payment history shows each structured installment, transfer date, account/method/reference and remaining amount, including settled requests, with cursor pagination. Request details and the bottom inbox panel refresh after Finance actions. 23 API and 29 Web tests, strict typechecks, scoped lint and API/Web production builds (53 routes) passed. No migration/data/dependency change. See [handoff](tasks/FINANCE-HISTORY-SEAT-PRICING-0928.md). Bounded Finance contract/docs locks released; owner authorizes develop merge.
+## 2026-09-28 — MASTER-DATA-FINANCE-HEADING-SPACING-0928 — PC-B — READY_FOR_REVIEW
+
+متن توضیحی زیر عنوان ارزها حذف و فاصلهٔ عمودی عنوان تا فیلترهای جست‌وجو فشرده شد. شش تست متمرکز، lint، typecheck و build تولیدی Web با ۵۳ مسیر موفق‌اند؛ محدوده فقط Web و تست‌های مربوط است.
+## 2026-09-28 — MASTER-DATA-CURRENCY-CREATE-NO-QUOTE-0928 — PC-B — READY_FOR_REVIEW
+
+بخش ثبت نرخ خرید و فروش از فرم تعریف ارز جدید حذف شد؛ فرم ویرایش ارز موجود و ثبت نرخ آن دست‌نخورده می‌ماند. ۱۷ تست مرتبط، lint، typecheck و build تولیدی Web با ۵۳ مسیر موفق‌اند؛ بدون تغییر API، داده یا Migration.
+## 2026-09-28 — Master Data English titles (PC-B)
+
+All English title fields in Master Data forms are optional. API required-field checks match the forms, cabin classes fall back to their booking code for the internal display name, and country/region/city/airport English-name columns become nullable through an additive migration. No live database migration or localhost runtime change was applied by this task.
+## 2026-09-28 — Master Data logo display (PC-B)
+
+The uploaded logo ID is now resolved through a narrow authenticated Master Data image endpoint, backed by Documents source-link, active-state, branch and clean-scan checks. Saved logos appear in Master Data forms, relevant lists and profiles; pending scans retry automatically. No live runtime or operational data was changed in this task.
+
+## 2026-09-28 — Master Data heading helper copy (PC-B)
+
+Static guidance immediately beneath titles was removed from the Master Data hub cards, workspace headings, form/profile dialogs and relevant rate/hotel panels. Record metadata, field labels, validation and actionable status messages remain. All 370 Master Data Web tests, scoped lint, Web typecheck and the 53-route production build pass. No API, migration, data or localhost runtime change.
+## 2026-09-28 — MASTER-DATA-BANK-BRANCHES-IN-PROFILE-0928 — PC-B — READY_FOR_REVIEW
+
+Bank branches now live in each bank's profile rather than a separate Finance tab. The profile reads branches by the selected bank's real `bankId`, pages results, and provides add/view/edit through the existing branch form with its bank fixed. Existing API/relations and operational records are unchanged. 373 Master Data Web tests, scoped lint, Web typecheck and a 53-route production build passed. No migration, contract, dependency or localhost update.
+## 2026-09-28 — MASTER-DATA-API-FORM-QA-0928 — PC-B — READY_FOR_REVIEW
+
+Functional QA across Master Data API/form paths found a real supplier-phone clear bug: an explicit empty value preserved encrypted/masked phone fields. Backend now clears all protected fields only on explicit clear; Web supplier edit omits untouched masked phone and provides an explicit clear action. The outdated PostgreSQL partner fixture was aligned to the standalone supplier contract. Full API: 1,688 pass/175 opt-in or environment skips; Master Data HTTP: 27 pass; isolated PostgreSQL: 57 unique pass; Master Data Web: 376 pass. API/Web typechecks, scoped lint and builds passed. Demo PostgreSQL suite remains unrun because its guard requires port 55432, currently owned by the live app DB; no guard bypass or operational DB write. Details: `docs/tasks/MASTER-DATA-API-FORM-QA-0928.md`.
 ## 2026-09-28 — CUSTOMER-AFFAIRS-API-FUNCTIONAL-QA-0928 — PC-B — READY_FOR_REVIEW
 
 ثبت درخواست دستی با شناسهٔ منبع ثابت می‌توانست پس از برخورد یکتایی، پروندهٔ قبلی را به‌اشتباه به‌عنوان ثبت موفق برگرداند. فرم‌ها اکنون شناسه/کلید تکرار پایدار در هر ارسال دارند و بک‌اند فقط command یکسان را replay می‌کند؛ برخورد منبع مستقل خطای 409 می‌دهد. تست‌های API ماژول ۱۰۲/۱۰۲ و Web ماژول ۵۷/۵۷، lint، typecheck و build تولیدی API/Web موفق‌اند. دیتابیس ایزوله و ارسال واقعی SMS/وب‌سایت‌ها در این واحد اجرا نشده و هیچ داده/فرآیند ۳۱۰۰ تغییر نکرده است. [گزارش QA](tasks/CUSTOMER-AFFAIRS-API-FUNCTIONAL-QA-0928.md).

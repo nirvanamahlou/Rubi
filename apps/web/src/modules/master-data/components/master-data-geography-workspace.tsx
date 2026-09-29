@@ -828,19 +828,20 @@ export function MasterDataGeographyWorkspace() {
                       <Button
                         aria-label={`مشاهده ${record.name}`}
                         onClick={() => openRecord(record, 'view')}
-                        size="sm"
+                        size="icon"
+                        title={`مشاهده ${record.name}`}
                         variant="outline"
                       >
-                        <Eye aria-hidden="true" className="size-4" /> مشاهده
+                        <Eye aria-hidden="true" className="size-4" />
                       </Button>
                       <Button
                         aria-label={`ویرایش ${record.name}`}
                         onClick={() => openRecord(record, 'edit')}
-                        size="sm"
+                        size="icon"
+                        title={`ویرایش ${record.name}`}
                         variant="outline"
                       >
                         <FilePenLine aria-hidden="true" className="size-4" />
-                        ویرایش
                       </Button>
                       <MasterDataDeleteButton
                         record={record}
@@ -876,11 +877,6 @@ export function MasterDataGeographyWorkspace() {
             <ArrowRight aria-hidden="true" className="size-4" />
             همه بخش‌ها
           </Link>
-        }
-        description={
-          isLocationView
-            ? 'مدیریت یکپارچه شهرها و استان‌ها/نواحی با حفظ رابطه ساختاری و کشور مرجع.'
-            : definition.description
         }
         title={isLocationView ? 'شهرها و استان‌ها' : definition.label}
       />
@@ -1230,20 +1226,20 @@ export function MasterDataGeographyWorkspace() {
                       <Button
                         aria-label={`مشاهده ${record.name}`}
                         onClick={() => openRecord(record, 'view')}
-                        size="sm"
+                        size="icon"
+                        title={`مشاهده ${record.name}`}
                         variant="outline"
                       >
                         <Eye aria-hidden="true" className="size-4" />
-                        مشاهده
                       </Button>
                       <Button
                         aria-label={`ویرایش ${record.name}`}
                         onClick={() => openRecord(record, 'edit')}
-                        size="sm"
+                        size="icon"
+                        title={`ویرایش ${record.name}`}
                         variant="outline"
                       >
                         <FilePenLine aria-hidden="true" className="size-4" />
-                        ویرایش
                       </Button>
                       <MasterDataDeleteButton
                         record={record}

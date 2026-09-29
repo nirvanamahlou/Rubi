@@ -78,9 +78,7 @@ export function MasterDataCurrencyForm({
         onSaved: recordSaved,
       });
       setValues(validated.values);
-      setNotice(
-        'مشخصات ارز ذخیره شد. نرخ جدید را می‌توانید در بخش پایین همین فرم ثبت کنید.',
-      );
+      setNotice('مشخصات ارز ذخیره شد.');
     } catch (error) {
       setErrors({
         form: error instanceof Error ? error.message : 'ذخیره ارز ناموفق بود.',
@@ -130,7 +128,6 @@ export function MasterDataCurrencyForm({
         if (!saving) onOpenChange(open);
       }}
       title={saved ? `ویرایش ارز ${saved.code}` : 'تعریف ارز'}
-      description="مشخصات ارز و ثبت نرخ خرید و فروش؛ نرخ‌ها در تاریخچه مستقل نگهداری می‌شوند."
     >
       <div className="space-y-5">
         {notice ? <Alert title="نتیجه عملیات" description={notice} /> : null}
@@ -264,181 +261,182 @@ export function MasterDataCurrencyForm({
           </form>
         </Card>
 
-        <Card className="p-5">
-          <h2 className="mb-2 flex items-center gap-2 font-black">
-            <ArrowLeftRight className="size-5" /> ثبت نرخ خرید و فروش
-          </h2>
-          <p className="mb-5 text-sm leading-7 text-muted-foreground">
-            هر ثبت، نرخ جدید می‌سازد و تاریخچه قبلی را تغییر نمی‌دهد. نرخ‌ها
-            دستی و غیرقطعی مالی‌اند؛ تأیید فقط توسط کاربر مجاز دیگری انجام
-            می‌شود.
-          </p>
-          {!saved || saved.status !== 'active' ? (
-            <Alert
-              title="ابتدا ارز را ذخیره و فعال کنید"
-              description="ثبت نرخ برای ارز ذخیره‌نشده یا غیرفعال امکان‌پذیر نیست."
-            />
-          ) : null}
-          <form
-            onSubmit={(event) => void saveQuote(event)}
-            className="mt-4 space-y-4"
-          >
-            <fieldset
-              disabled={saving || !saved || saved.status !== 'active'}
-              className="grid min-w-0 gap-4 sm:grid-cols-2 lg:grid-cols-3"
-            >
-              <legend className="sr-only">اطلاعات نرخ ارز جدید</legend>
-              <FormField id="quote-currency" label="ارز">
-                <Input
-                  id="quote-currency"
-                  readOnly
-                  value={
-                    saved ? `${saved.name} (${saved.code})` : 'پس از ذخیره ارز'
-                  }
-                />
-              </FormField>
-              <FormField
-                id="quote-target"
-                label="ارز مقابل نرخ"
-                required
-                {...(rateErrors.toCurrencyCode
-                  ? { error: rateErrors.toCurrencyCode }
-                  : {})}
-              >
-                <MasterDataReferenceSelector
-                  config={{ target: 'currencies', payload: 'code' }}
-                  id="quote-target"
-                  label="ارز مقابل نرخ"
-                  disabled={saving || !saved || saved.status !== 'active'}
-                  value={rateValues.toCurrencyCode ?? ''}
-                  onChange={(value) => updateRate('toCurrencyCode', value)}
-                />
-              </FormField>
-              {(['buyRate', 'sellRate', 'source'] as const).map((key) => (
-                <FormField
-                  id={`quote-${key}`}
-                  key={key}
-                  label={
-                    key === 'buyRate'
-                      ? 'نرخ خرید'
-                      : key === 'sellRate'
-                        ? 'نرخ فروش'
-                        : 'منبع'
-                  }
-                  {...(rateErrors[key] ? { error: rateErrors[key] } : {})}
-                >
-                  {key === 'source' ? (
-                    <Input
-                      id={`quote-${key}`}
-                      aria-invalid={Boolean(rateErrors[key])}
-                      maxLength={160}
-                      value={rateValues[key] ?? ''}
-                      onChange={(event) => updateRate(key, event.target.value)}
-                    />
-                  ) : (
-                    <MasterDataNumberInput
-                      id={`quote-${key}`}
-                      aria-invalid={Boolean(rateErrors[key])}
-                      dir="ltr"
-                      maxLength={25}
-                      value={rateValues[key] ?? ''}
-                      onChange={(value) => updateRate(key, value)}
-                    />
-                  )}
-                </FormField>
-              ))}
-              <FormField id="quote-maker" label="ثبت‌کننده">
-                <Input
-                  id="quote-maker"
-                  readOnly
-                  value="کاربر واردشده — ثبت خودکار توسط سامانه"
-                />
-              </FormField>
-              <FormField id="quote-status" label="وضعیت نرخ">
-                <Input
-                  id="quote-status"
-                  readOnly
-                  value="پیش‌نویس — در انتظار تأیید"
-                />
-              </FormField>
-              <FormField
-                id="quote-correction"
-                label="توضیح اصلاح (اختیاری)"
-                {...(rateErrors.correctionReason
-                  ? { error: rateErrors.correctionReason }
-                  : {})}
-              >
-                <Input
-                  id="quote-correction"
-                  maxLength={500}
-                  value={rateValues.correctionReason ?? ''}
-                  onChange={(event) =>
-                    updateRate('correctionReason', event.target.value)
-                  }
-                />
-              </FormField>
-            </fieldset>
-            {rateErrors.form ? (
+        {record ? (
+          <Card className="p-5">
+            <h2 className="mb-2 flex items-center gap-2 font-black">
+              <ArrowLeftRight className="size-5" /> ثبت نرخ خرید و فروش
+            </h2>
+            {!saved || saved.status !== 'active' ? (
               <Alert
-                title="ثبت نرخ انجام نشد"
-                description={rateErrors.form}
-                tone="error"
+                title="ابتدا ارز را ذخیره و فعال کنید"
+                description="ثبت نرخ برای ارز ذخیره‌نشده یا غیرفعال امکان‌پذیر نیست."
               />
             ) : null}
-            <div className="flex justify-end">
-              <Button
-                type="submit"
-                loading={saving}
-                disabled={!saved || saved.status !== 'active'}
+            <form
+              onSubmit={(event) => void saveQuote(event)}
+              className="mt-4 space-y-4"
+            >
+              <fieldset
+                disabled={saving || !saved || saved.status !== 'active'}
+                className="grid min-w-0 gap-4 sm:grid-cols-2 lg:grid-cols-3"
               >
-                ثبت نرخ جدید در تاریخچه
-              </Button>
-            </div>
-          </form>
-          {submittedRates.length ? (
-            <div className="mt-5 overflow-x-auto">
-              <h3 className="mb-3 font-bold">نرخ‌های ثبت‌شده در این فرم</h3>
-              <table
-                aria-label="نرخ‌های ثبت‌شده ارز"
-                className="w-full min-w-[40rem] text-sm"
-              >
-                <thead>
-                  <tr>
-                    {['ارز', 'نوع', 'نرخ', 'منبع', 'ثبت‌کننده', 'وضعیت'].map(
-                      (label) => (
-                        <th className="p-2 text-start" key={label}>
-                          {label}
-                        </th>
-                      ),
+                <legend className="sr-only">اطلاعات نرخ ارز جدید</legend>
+                <FormField id="quote-currency" label="ارز">
+                  <Input
+                    id="quote-currency"
+                    readOnly
+                    value={
+                      saved
+                        ? `${saved.name} (${saved.code})`
+                        : 'پس از ذخیره ارز'
+                    }
+                  />
+                </FormField>
+                <FormField
+                  id="quote-target"
+                  label="ارز مقابل نرخ"
+                  required
+                  {...(rateErrors.toCurrencyCode
+                    ? { error: rateErrors.toCurrencyCode }
+                    : {})}
+                >
+                  <MasterDataReferenceSelector
+                    config={{ target: 'currencies', payload: 'code' }}
+                    id="quote-target"
+                    label="ارز مقابل نرخ"
+                    disabled={saving || !saved || saved.status !== 'active'}
+                    value={rateValues.toCurrencyCode ?? ''}
+                    onChange={(value) => updateRate('toCurrencyCode', value)}
+                  />
+                </FormField>
+                {(['buyRate', 'sellRate', 'source'] as const).map((key) => (
+                  <FormField
+                    id={`quote-${key}`}
+                    key={key}
+                    label={
+                      key === 'buyRate'
+                        ? 'نرخ خرید'
+                        : key === 'sellRate'
+                          ? 'نرخ فروش'
+                          : 'منبع'
+                    }
+                    {...(rateErrors[key] ? { error: rateErrors[key] } : {})}
+                  >
+                    {key === 'source' ? (
+                      <Input
+                        id={`quote-${key}`}
+                        aria-invalid={Boolean(rateErrors[key])}
+                        maxLength={160}
+                        value={rateValues[key] ?? ''}
+                        onChange={(event) =>
+                          updateRate(key, event.target.value)
+                        }
+                      />
+                    ) : (
+                      <MasterDataNumberInput
+                        id={`quote-${key}`}
+                        aria-invalid={Boolean(rateErrors[key])}
+                        dir="ltr"
+                        maxLength={25}
+                        value={rateValues[key] ?? ''}
+                        onChange={(value) => updateRate(key, value)}
+                      />
                     )}
-                  </tr>
-                </thead>
-                <tbody>
-                  {submittedRates.map((rate) => (
-                    <tr key={rate.id} className="border-t">
-                      <td className="p-2" dir="ltr">
-                        {rate.fromCurrencyCode}/{rate.toCurrencyCode}
-                      </td>
-                      <td className="p-2">
-                        {rate.rateType === 'BUY' ? 'خرید' : 'فروش'}
-                      </td>
-                      <td className="p-2" dir="ltr">
-                        {rate.rate}
-                      </td>
-                      <td className="p-2">{rate.source}</td>
-                      <td className="p-2 font-mono text-xs" dir="ltr">
-                        {rate.createdByUserId}
-                      </td>
-                      <td className="p-2">
-                        <Badge>پیش‌نویس</Badge>
-                      </td>
+                  </FormField>
+                ))}
+                <FormField id="quote-maker" label="ثبت‌کننده">
+                  <Input
+                    id="quote-maker"
+                    readOnly
+                    value="کاربر واردشده — ثبت خودکار توسط سامانه"
+                  />
+                </FormField>
+                <FormField id="quote-status" label="وضعیت نرخ">
+                  <Input
+                    id="quote-status"
+                    readOnly
+                    value="پیش‌نویس — در انتظار تأیید"
+                  />
+                </FormField>
+                <FormField
+                  id="quote-correction"
+                  label="توضیح اصلاح (اختیاری)"
+                  {...(rateErrors.correctionReason
+                    ? { error: rateErrors.correctionReason }
+                    : {})}
+                >
+                  <Input
+                    id="quote-correction"
+                    maxLength={500}
+                    value={rateValues.correctionReason ?? ''}
+                    onChange={(event) =>
+                      updateRate('correctionReason', event.target.value)
+                    }
+                  />
+                </FormField>
+              </fieldset>
+              {rateErrors.form ? (
+                <Alert
+                  title="ثبت نرخ انجام نشد"
+                  description={rateErrors.form}
+                  tone="error"
+                />
+              ) : null}
+              <div className="flex justify-end">
+                <Button
+                  type="submit"
+                  loading={saving}
+                  disabled={!saved || saved.status !== 'active'}
+                >
+                  ثبت نرخ جدید در تاریخچه
+                </Button>
+              </div>
+            </form>
+            {submittedRates.length ? (
+              <div className="mt-5 overflow-x-auto">
+                <h3 className="mb-3 font-bold">نرخ‌های ثبت‌شده در این فرم</h3>
+                <table
+                  aria-label="نرخ‌های ثبت‌شده ارز"
+                  className="w-full min-w-[40rem] text-sm"
+                >
+                  <thead>
+                    <tr>
+                      {['ارز', 'نوع', 'نرخ', 'منبع', 'ثبت‌کننده', 'وضعیت'].map(
+                        (label) => (
+                          <th className="p-2 text-start" key={label}>
+                            {label}
+                          </th>
+                        ),
+                      )}
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : null}
-        </Card>
+                  </thead>
+                  <tbody>
+                    {submittedRates.map((rate) => (
+                      <tr key={rate.id} className="border-t">
+                        <td className="p-2" dir="ltr">
+                          {rate.fromCurrencyCode}/{rate.toCurrencyCode}
+                        </td>
+                        <td className="p-2">
+                          {rate.rateType === 'BUY' ? 'خرید' : 'فروش'}
+                        </td>
+                        <td className="p-2" dir="ltr">
+                          {rate.rate}
+                        </td>
+                        <td className="p-2">{rate.source}</td>
+                        <td className="p-2 font-mono text-xs" dir="ltr">
+                          {rate.createdByUserId}
+                        </td>
+                        <td className="p-2">
+                          <Badge>پیش‌نویس</Badge>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : null}
+          </Card>
+        ) : null}
         <div className="flex justify-end">
           <Button
             disabled={saving}

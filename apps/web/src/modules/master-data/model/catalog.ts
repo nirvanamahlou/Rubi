@@ -108,7 +108,6 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
         label: 'عنوان انگلیسی',
         type: 'text',
         placeholder: 'Iran',
-        required: true,
       },
       {
         key: 'displayOrder',
@@ -145,7 +144,6 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
         label: 'عنوان انگلیسی',
         type: 'text',
         placeholder: 'Tehran Province',
-        required: true,
       },
     ],
     preview: { name: 'تهران', englishName: 'Tehran', type: 'PROVINCE' },
@@ -178,7 +176,6 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
         label: 'عنوان انگلیسی',
         type: 'text',
         placeholder: 'Tehran',
-        required: true,
       },
     ],
     preview: { name: 'تهران', englishName: 'Tehran', countryId: 'country_ir' },
@@ -197,7 +194,6 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
         label: 'عنوان انگلیسی',
         type: 'text',
         placeholder: 'Mehrabad International Airport',
-        required: true,
       },
       {
         key: 'countryId',
@@ -334,7 +330,6 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
         label: 'نام انگلیسی',
         type: 'text',
         placeholder: 'Iranian Rial',
-        required: true,
       },
       { key: 'symbol', label: 'نماد نمایشی', type: 'text', placeholder: '﷼' },
       {
@@ -434,7 +429,6 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
         label: 'نام انگلیسی',
         type: 'text',
         placeholder: 'Bank Mellat',
-        required: true,
       },
       {
         key: 'countryId',
@@ -603,7 +597,6 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
         label: 'نام انگلیسی',
         type: 'text',
         placeholder: 'Insurance Company',
-        required: true,
       },
       {
         key: 'organizationId',
@@ -841,7 +834,6 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
         label: 'نام انگلیسی',
         type: 'text',
         placeholder: 'Economy',
-        required: true,
       },
       {
         key: 'bookingCode',

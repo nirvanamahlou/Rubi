@@ -72,7 +72,6 @@ export function MasterDataTourTypeForm({
     <MasterDataProfileDialog
       open
       title={record ? 'ویرایش نوع تور' : 'ایجاد نوع تور'}
-      description="تعریف عنوان، دامنه و مشخصات نوع تور"
       onOpenChange={(open) => {
         if (!savingRef.current) onOpenChange(open);
       }}
