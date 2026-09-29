@@ -654,24 +654,23 @@ export function DetailPanel({
       <Button onClick={onBack} variant="ghost">
         <ArrowLeft className="size-4" /> بازگشت به فهرست
       </Button>
-      <Card className={s.detail}>
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <p className="text-xs text-muted-foreground">
-              {detail.trackingNumber}
-            </p>
-            <h2 className="mt-1 text-xl font-black">
-              {'title' in detail ? detail.title : detail.subject}
-            </h2>
+      <Card className={`${s.detail} ${s.profileHero}`}>
+        <div className={s.profileHeading}>
+          <div className={s.profileTitle}>
+            <p className={s.profileTracking}>{detail.trackingNumber}</p>
+            <h2>{'title' in detail ? detail.title : detail.subject}</h2>
           </div>
-          <div className="flex gap-2">
+          <div className={s.profileBadges}>
             <Badge>{stageLabel[stage] ?? statusLabel[stage] ?? stage}</Badge>
             <Badge>{priorityLabel[detail.priority] ?? detail.priority}</Badge>
           </div>
         </div>
-        <p className="mt-4 whitespace-pre-wrap text-sm leading-7">
-          {'travelNeed' in detail ? detail.travelNeed : detail.description}
-        </p>
+        <div className={s.profileDescription}>
+          <span>{'travelNeed' in detail ? 'نیاز سفر' : 'شرح درخواست'}</span>
+          <p>
+            {'travelNeed' in detail ? detail.travelNeed : detail.description}
+          </p>
+        </div>
         <dl className={s.recordMeta}>
           <div>
             <dt className="text-muted-foreground">اقدام بعدی</dt>
@@ -687,6 +686,7 @@ export function DetailPanel({
           </div>
         </dl>
         <Button
+          className={s.profileFollowup}
           variant="outline"
           onClick={() => setFollowupOpen((value) => !value)}
         >
@@ -754,7 +754,7 @@ export function DetailPanel({
           </CustomerAffairsFormDialog>
         )}
         {tab === 'leads' ? (
-          <div className="mt-5 flex flex-wrap gap-2">
+          <div className={s.profileActions}>
             <Button
               disabled={busy || stage !== 'QUALIFIED'}
               onClick={() =>
@@ -781,7 +781,7 @@ export function DetailPanel({
             </Button>
           </div>
         ) : (
-          <div className="mt-5 flex flex-wrap gap-2">
+          <div className={s.profileActions}>
             {(
               [
                 { status: 'TRIAGED', label: 'بررسی اولیه', from: ['NEW'] },
@@ -1225,8 +1225,8 @@ export function DetailPanel({
             onReload={onReload}
           />
         )}
-      <Card className={s.detail}>
-        <div className="flex flex-wrap items-center justify-between gap-3">
+      <Card className={`${s.detail} ${s.profileHistory}`}>
+        <div className={s.profileSectionHead}>
           <h3 className="font-black">سابقه ارتباط و رسیدگی</h3>
           <Button
             variant="outline"
@@ -1282,11 +1282,11 @@ export function DetailPanel({
             </form>
           </CustomerAffairsFormDialog>
         )}
-        <ol className="mt-5 space-y-3">
+        <ol className={s.profileTimeline}>
           {detail.timeline?.length ? (
             detail.timeline.map((item, index) => (
               <li
-                className="border-s-2 border-primary/25 ps-4"
+                className={s.profileTimelineItem}
                 key={item.id ?? `${item.type}-${index}`}
               >
                 <div className="flex flex-wrap items-center gap-2">

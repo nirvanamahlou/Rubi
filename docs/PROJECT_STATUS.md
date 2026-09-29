@@ -3894,3 +3894,7 @@ Each two-target fare box is capped at 22rem (352px), matching the owner's hatche
 ## 2026-09-29 — CUSTOMER-AFFAIRS-REPORT-FILTER-BOX-0929 — READY_FOR_REVIEW
 
 فیلتر بازهٔ تاریخ در صفحهٔ گزارش امور مشتریان داخل باکس مستقل تمام‌عرض قرار گرفت؛ منطق فیلتر و گزارش بدون تغییر ماند. ۱۴ تست متمرکز، lint، typecheck و قالب‌بندی موفق‌اند؛ build تولیدی در CI بررسی می‌شود.
+
+## 2026-09-29 — CUSTOMER-AFFAIRS-REQUEST-PROFILE-REDESIGN-0929 — READY_FOR_REVIEW
+
+نمای جزئیات درخواست امور مشتریان با سربرگ روشن، شرح جداگانه، مشخصات سفر برچسب‌دار و ردیف‌های منظم تاریخچه بازطراحی شد. رفتار عملیاتی و داده تغییر نکرده‌اند؛ ۴۲ تست کامپوننت، lint، typecheck و قالب‌بندی موفق‌اند. بازبینی CI و runtime باقی است.

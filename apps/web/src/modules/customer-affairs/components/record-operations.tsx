@@ -13,6 +13,7 @@ import { CustomerPicker } from './customer-picker';
 import { AssigneePicker } from './assignee-picker';
 import type { Detail } from './customer-affairs-workspace';
 import { AffairsFormField as FormField } from './affairs-form-field';
+import s from './customer-affairs-nora.module.css';
 
 export const editableLeadTransitions: Record<string, string[]> = {
   NEW: ['CONTACTED', 'LOST'],
@@ -183,45 +184,76 @@ export function RecordOperations({
         ['serviceType', 'نوع خدمت', false],
         ['executionUnit', 'واحد اجرا', false],
       ] as const);
+  const profileActions = (
+    <div className={s.profileSectionActions}>
+      <Button variant="outline" onClick={() => open('edit')}>
+        ویرایش اطلاعات پرونده
+      </Button>
+      {lead && (editableLeadTransitions[detail.stage]?.length ?? 0) > 0 && (
+        <Button variant="outline" onClick={() => open('stage')}>
+          تغییر مرحله / ثبت شکست
+        </Button>
+      )}
+    </div>
+  );
   return (
     <>
-      <div className="flex flex-wrap gap-2">
-        <Button variant="outline" onClick={() => open('edit')}>
-          ویرایش اطلاعات پرونده
-        </Button>
-        {lead && (editableLeadTransitions[detail.stage]?.length ?? 0) > 0 && (
-          <Button variant="outline" onClick={() => open('stage')}>
-            تغییر مرحله / ثبت شکست
-          </Button>
-        )}
-      </div>
+      {!lead && profileActions}
       {notice && (
         <p role="status" className="text-sm">
           {notice}
         </p>
       )}
       {lead && (
-        <Card className="grid gap-3 p-4 text-sm sm:grid-cols-2">
-          <p>
-            منبع:{' '}
-            {detail.sourceReference?.startsWith('manual-')
-              ? 'ثبت مستقیم در امور مشتریان'
-              : detail.sourceReference || 'نامشخص'}
-          </p>
-          <p>
-            مسیر: {detail.originReference || 'نامشخص'} ←{' '}
-            {detail.destinationReference || 'نامشخص'}
-          </p>
-          <p>تعداد مسافر: {detail.passengerCount?.toLocaleString('fa-IR')}</p>
-          <p>
-            بودجه:{' '}
-            {detail.budget?.maximum || detail.budget?.minimum || 'اعلام نشده'}{' '}
-            {detail.budget?.currencyCode || ''}
-          </p>
-          <p>خدمات: {detail.requestedServices?.join('، ') || 'مشخص نشده'}</p>
-          <p className="whitespace-pre-wrap">
-            توضیحات خاص: {detail.specialPreferences || 'ثبت نشده'}
-          </p>
+        <Card className={s.profileData}>
+          <div className={s.profileSectionHead}>
+            <div>
+              <p className={s.profileEyebrow}>مشخصات درخواست</p>
+              <h3>اطلاعات سفر</h3>
+            </div>
+            {profileActions}
+          </div>
+          <dl className={s.profileDataGrid}>
+            <div>
+              <dt>منبع درخواست</dt>
+              <dd>
+                {detail.sourceReference?.startsWith('manual-')
+                  ? 'ثبت مستقیم در امور مشتریان'
+                  : detail.sourceReference || 'نامشخص'}
+              </dd>
+            </div>
+            <div>
+              <dt>مبدأ</dt>
+              <dd>{detail.originReference || 'نامشخص'}</dd>
+            </div>
+            <div>
+              <dt>مقصد</dt>
+              <dd>{detail.destinationReference || 'نامشخص'}</dd>
+            </div>
+            <div>
+              <dt>تعداد مسافران</dt>
+              <dd>
+                {detail.passengerCount?.toLocaleString('fa-IR') || 'نامشخص'}
+              </dd>
+            </div>
+            <div>
+              <dt>بودجه</dt>
+              <dd>
+                {detail.budget?.maximum ||
+                  detail.budget?.minimum ||
+                  'اعلام نشده'}{' '}
+                {detail.budget?.currencyCode || ''}
+              </dd>
+            </div>
+            <div>
+              <dt>خدمات موردنیاز</dt>
+              <dd>{detail.requestedServices?.join('، ') || 'مشخص نشده'}</dd>
+            </div>
+            <div className={s.profileDataWide}>
+              <dt>توضیحات خاص</dt>
+              <dd>{detail.specialPreferences || 'ثبت نشده'}</dd>
+            </div>
+          </dl>
         </Card>
       )}
       {lead && detail.lostReason && (
