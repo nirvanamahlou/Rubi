@@ -474,11 +474,12 @@ export function UserManagement() {
                         p.code.startsWith(prefix + '-'),
                     ),
                   );
-                  const allowedScreens = screens.filter(
-                    (s) => options.assignableScreenIds.includes(s.id),
+                  const allowedScreens = screens.filter((s) =>
+                    options.assignableScreenIds.includes(s.id),
                   );
-                  const allowedPermissions = permissions.filter((p) =>
-                    options.canAssignAll ||
+                  const allowedPermissions = permissions.filter(
+                    (p) =>
+                      options.canAssignAll ||
                       actor?.permissions.some((code) => code === p.code),
                   );
                   const total =
@@ -542,7 +543,9 @@ export function UserManagement() {
                             checked={permissionIds.includes(p.id)}
                             disabled={
                               !options.canAssignAll &&
-                              !actor?.permissions.some((code) => code === p.code)
+                              !actor?.permissions.some(
+                                (code) => code === p.code,
+                              )
                             }
                             onChange={(v) =>
                               setPermissionIds(change(permissionIds, [p.id], v))

@@ -197,9 +197,7 @@ describe('independent managed user access', () => {
     f.client.role.findUnique.mockResolvedValue({ id: 'admin' } as never);
     f.client.user.findUnique.mockResolvedValue({
       status: 'ACTIVE',
-      roles: [
-        { roleId: 'admin', role: { code: 'administrator' } },
-      ],
+      roles: [{ roleId: 'admin', role: { code: 'administrator' } }],
     } as never);
     await expect(
       f.service.updateUserAccess('first', access, actor, {}),

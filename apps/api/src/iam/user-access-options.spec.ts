@@ -11,7 +11,9 @@ const actor = {
 
 function service(isAdministrator: boolean) {
   const permission = {
-    findMany: vi.fn().mockResolvedValue([{ id: 'customers', code: 'customers.read' }]),
+    findMany: vi
+      .fn()
+      .mockResolvedValue([{ id: 'customers', code: 'customers.read' }]),
   };
   const client = {
     user: {
