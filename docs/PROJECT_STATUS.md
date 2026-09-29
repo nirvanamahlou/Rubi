@@ -3759,9 +3759,9 @@ The Procurement draft form now tolerates older saved item rows without a measure
 
 Full API regression on updated develop: 210 files and 1,701 tests passed; 175 opt-in tests skipped by default. Two confirmed backend defects were repaired: concurrent identical feedback submission now returns the committed receipt, and anonymous/sensitive Workbench attachments no longer leak identifying metadata or appear in another user's Documents catalogue/audit. Feedback creation verifies attachment confidentiality matches anonymity. Focused Workbench/Documents rerun: 118 passed; API lint, typecheck, production build passed. All 100 migrations and three form writes (meal service, facility, train type) with persistence/audit checks passed on a disposable PostgreSQL database. The opt-in PostgreSQL suites timed out in their Docker stdin helper before assertions, so they are not claimed as passing. No schema, migration, shared contract, dependency, operational data, or live runtime change. Details: [task report](tasks/API-FUNCTIONAL-QA-0928.md).
 
-## 2026-09-29 — DOCUMENTS-SENSITIVE-LIST-PRIVACY-0929 — PC-B — IN_PROGRESS
+## 2026-09-29 — DOCUMENTS-SENSITIVE-LIST-PRIVACY-0929 — PC-B — READY_FOR_REVIEW
 
-Independent reviews found remaining ID-based file, audit, mutation and organization-version-reference bypasses in addition to detail and favorites. Shared actor-scoped repository lookups and explicit reference filtering now enforce confidentiality and WorkbenchFeedback owner-only visibility across those paths, including INTERNAL attachments and callers with sensitive-read access. Focused regression validation and a fresh independent review are pending. No schema, migration, API type, dependency or operational-data change.
+Shared actor-scoped repository lookups and explicit reference filtering enforce confidentiality and WorkbenchFeedback owner-only visibility across list/count, detail, favorites, file, audit, mutation, and organization-version-reference paths, including INTERNAL attachments and callers with sensitive-read access. 67 focused Documents tests, API lint/typecheck/build, formatting and full CI gates pass; a fresh independent R3 review approves merge. No schema, migration, API type, dependency or operational-data change.
 
 ## 2026-09-29 — ISTANBUL-GENERATOR-3100-ACTIVATION — PC-B — IN_PROGRESS
 
