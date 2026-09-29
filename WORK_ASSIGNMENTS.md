@@ -4419,6 +4419,11 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 
 - COMPUTER_ID=PC-A; branch codex/pc-a-reservation-operation-summary-0929 from origin/develop. Reserve Reservations selected-contract header/UI/tests, request and passenger-file controller mutation activity integration and scoped summary endpoint, IAM public audit/name projection methods/tests, additive Travel summary contract and bounded docs. Producer Reservations composes FinanceDeliveryService and IAM public services; consumer Web selected-header. GET operation-summary is additive; existing requests remain compatible. No Finance table query, migration/schema/dependency or operational record mutation. Names limited to responsible actors of authorized intake; no privileged user directory exposure. Preserve original checkout edits and prior role UI. Bounded central Travel/IAM/Reservations/docs locks RELEASED with scoped commit. New reservation work item awaits owner merge authorization after review; prior IAM merge approvals are not generalized.
 
+## 2026-09-29 — PACKAGE-GENERATOR-MALAYSIA-THAILAND-OVERLAY-0929 — PC-B — IN_PROGRESS
+
+- درخواست مالک: پس از ورود دادهٔ اکسل، نوشته‌ها و قیمت‌های قالب‌های مالزی و تایلند داخل کادرهای مرجع بمانند؛ قاب آبی و گوشه‌های گرد تاریخ/زمان و کارت‌های قیمت حفظ شود.
+- شاخهٔ مستقل `codex/pc-b-malaysia-thailand-overlay-0929` از `origin/develop@24f07449`. محدودهٔ رزرو: رندر و CSS استاتیک `apps/web/public/package-generator`، تست مستقیم همان ماژول، سند اختصاصی و مدخل‌های محدود وضعیت. بدون API، قرارداد مشترک، Migration، Prisma، Permission، Dependency/Lockfile یا تغییر دادهٔ عملیاتی. قفل اسناد مرکزی فقط برای همین مدخل و وضعیت این Task نزد PC-B است.
+
 ## PERMISSION-VISIBILITY-SALES-SCOPE-0929 — PC-A — READY_FOR_REVIEW
 
 - COMPUTER_ID=PC-A؛ شاخه `codex/pc-a-permission-visibility-sales-scope-0929` از origin/develop. محدوده: IAM access-context و authenticated-permissions/خواندن نقش، قرارداد IAM user-access و تست آن، پوسته/AccessLink/کنترل مشترک Button و Tabs، رابط مدیریت دسترسی کاربران، عملیات Sales و آزمون‌های مستقیم دامنه قرارداد.
@@ -4435,4 +4440,8 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 
 ## TOPBAR-ROLE-NEXT-TO-DATE-0929 — PC-A — READY_FOR_REVIEW
 
-- COMPUTER_ID=PC-A؛ شاخه `codex/pc-a-topbar-role-date-0929` از آخرین `origin/develop` پس از fetch. نقش‌های فعال حساب کاربر در هدر کنار تاریخ نمایش داده می‌شود و از همان نشست احرازشده موجود استفاده می‌کند؛ نمایش نقش از دکمه منوی کاربر به تاریخ منتقل می‌شود. محدوده: HeaderToday، UserMenu، helper نشست و تست‌های متمرکز، به‌علاوه مستندات همین واحد. بدون API، قرارداد، Migration، داده، مجوز، Dependency/Lockfile یا تغییر runtime. تست‌های هدفمند ۱۳ مورد، typecheck، lint هدفمند و سراسری و Web build (۵۵ مسیر) موفق‌اند. قفل محدود UI و Central Docs با commit آزاد می‌شود؛ PR به develop در انتظار CI است.
+- COMPUTER_ID=PC-A؛ شاخه `codex/pc-a-topbar-role-date-0929` از `origin/develop@2d2ea68e`. نقش‌های فعال حساب کاربر کنار تاریخ نمایش داده می‌شود و از همان نشست احرازشده استفاده می‌کند؛ نمایش نقش از دکمه کاربر منتقل شده است. ۱۳ تست هدفمند، typecheck، ESLint و Web build (۵۵ مسیر) موفق‌اند؛ چهار gate CI در PR #473 نیز موفق شدند. قفل‌های محدود UI/Central Docs با commit آزاد می‌شوند. PR با تغییرات هم‌زمان develop به‌روز شد و CI نسخه جدید در انتظار است.
+
+## TICKET-PRICES-READABILITY-XLSX-0929 — PC-A — READY_FOR_REVIEW
+
+- COMPUTER_ID=PC-A; base `origin/develop@020bb818`; latest `origin/develop@686a6947` fetched and fast-forwarded before implementation review; branch `codex/pc-a-ticket-prices-xlsx-0929`, scoped commit `fe1bb633`. Reserve Sales ticket-prices workspace/model and task/status docs. Improve the flight and route summary typography, prevent currency overflow in the base-price control, and add a filtered ticket-price XLSX export matching the Reservations workbook's visual conventions. Each round-trip pair is one spreadsheet row with outbound/return details and its combined base/target prices; export uses the active origin, destination, trip-type, search and date filters. No API/schema/migration/data/dependency/lockfile changes. Pricing/Sales owner PC-A; no active overlapping owner. Bounded Web/Central Docs locks RELEASED with the scoped commit. PR #470 targets develop; CI passed, owner authorized merge.

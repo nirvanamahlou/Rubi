@@ -3806,10 +3806,17 @@ Default entry and home links now open Workbench; successful login starts light a
 
 Selected-contract header now shows read-only financial-delivery approval, responsible name and automatic server time, alongside the latest reservation operator/time. Events no longer displays the operation box. Scoped public Finance/IAM composition, branch/permission checks and native revision/history fallback preserve owner boundaries. No schema/dependency or operational data edits. Validation and limits: [RESERVATION-OPERATION-SUMMARY-0929](tasks/RESERVATION-OPERATION-SUMMARY-0929.md). 45 scoped API tests (including 4 HTTP) and 42 Web tests, strict API/Web types and scoped lint pass; production API build passes and Web build/CI complete before integration; merge authorization for this new reservation work item is separate from prior IAM merges.
 
+## 2026-09-29 — PACKAGE-GENERATOR-MALAYSIA-THAILAND-OVERLAY-0929 — PC-B — IN_PROGRESS
+
+قاب‌های گرد تاریخ و کارت‌های قیمت در هفت قالب مالزی/تایلند پس از ورود داده حفظ می‌شوند؛ متن روزهای طولانی پرواز تایلند در همان کارت می‌پیچد. [گزارش](tasks/PACKAGE-GENERATOR-MALAYSIA-THAILAND-OVERLAY-0929.md). بدون تغییر API، قرارداد، Migration یا دادهٔ عملیاتی.
 ## 2026-09-29 — TOPBAR-COMPANY-ROLE-0929 — PC-A — READY_FOR_REVIEW
 
 انتخاب شرکت هدر به Radix Select قبلی برگشت تا عنوان‌ها و نشان شرکت‌ها در منو دوباره دیده شوند. نام نقش‌های فعال واقعی حساب جاری به‌صورت افزایشی و اختیاری از IAM به منوی هدر می‌رسد و زیر نام کاربر نمایش داده می‌شود؛ مجوزها یا حساب‌ها تغییری ندارند. typecheck، lint و build تولیدی API/Web (۵۵ مسیر) موفق‌اند. تست کامل در انتظار CI. بدون Migration، Seed، داده عملیاتی یا Dependency. جزئیات: [TOPBAR-COMPANY-ROLE-0929](tasks/TOPBAR-COMPANY-ROLE-0929.md).
 
 ## 2026-09-29 — TOPBAR-ROLE-NEXT-TO-DATE-0929 — PC-A — READY_FOR_REVIEW
 
-نقش‌های فعال کاربر از نشست هدر کنار تاریخ نمایش داده می‌شوند و از دکمه کاربر حذف شدند. ۱۳ تست هدفمند، typecheck، lint و build تولیدی ۵۵ مسیر Web موفق‌اند. بدون API، Migration، قرارداد، داده عملیاتی یا Dependency. جزئیات: [TOPBAR-ROLE-NEXT-TO-DATE-0929](tasks/TOPBAR-ROLE-NEXT-TO-DATE-0929.md). PR و CI در انتظار review.
+نقش‌های فعال کاربر از نشست هدر کنار تاریخ نمایش داده می‌شوند و از دکمه کاربر حذف شدند. ۱۳ تست هدفمند، typecheck، lint و build تولیدی ۵۵ مسیر Web موفق‌اند؛ چهار gate CI مربوط به PR #473 نیز موفق شدند. بدون API، Migration، قرارداد، داده عملیاتی یا Dependency. جزئیات: [TOPBAR-ROLE-NEXT-TO-DATE-0929](tasks/TOPBAR-ROLE-NEXT-TO-DATE-0929.md). شاخه دربرگیرندهٔ آخرین develop است و CI نسخه جدید را اجرا می‌کند.
+
+## 2026-09-29 — TICKET-PRICES-READABILITY-XLSX-0929 — PC-A — READY_FOR_REVIEW
+
+خلاصه پرواز و مسیر خواناتر و کنترل ارز جا‌دارتر شد. خروجی اکسل فیلترهای جاری را رعایت می‌کند و هر رفت‌وبرگشت را با جزئیات دو پرواز، قیمت پایه و مبالغ/درصد مقصدها در یک ردیف می‌آورد؛ قالب راست‌به‌چپ از رزواسیون پیروی می‌کند. Web lint، typecheck و build تولیدی (۵۵ مسیر) و تمام CI (build، quality، test و PostgreSQL) موفق‌اند. PR #470 به develop؛ ادغام با مجوز صریح مالک در انتظار انجام است. بدون API، Migration، داده عملیاتی یا Dependency. جزئیات: [TICKET-PRICES-READABILITY-XLSX-0929](tasks/TICKET-PRICES-READABILITY-XLSX-0929.md).

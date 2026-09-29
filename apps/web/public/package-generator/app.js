@@ -58,17 +58,22 @@ const LAYER_GEOMETRY={
  'spain-madrid':{left:[0,0,175,1515],agency:[192,59,180,196],airline:[765,121,173,174],footer:[0,1515,948,144]},
  'spain-combined':{left:[0,0,152,1517],agency:[190,58,180,196],airline:[767,155,171,155],footer:[0,1517,948,142]}
 };
+function cardValueBox(p,slot){
+ if(!/^(malaysia|thailand)-/.test(p.style))return slot.box;
+ const [x,y,w,h]=slot.box;return [x+3,y+3,w-6,h-6];
+}
 function staticArt(){
- const p=profile(),holes=state.data?[p.body,p.date,...p.cardSlots.map(s=>s.box)]:[];holes.push(...(window.PackageEditor?.holes()||[]),...(window.PackageCards?.holes()||[]));if(p.style==='combined'&&(state.data||$('stays').value||['stays','infant','infantLabel','infantValue','infantUnit'].some(k=>window.PackageEditor?.needs(k))))holes.push(p.staysBox,p.infantBox);if(hasCustomTitle())holes.push(p.titleBox);if(p.durationBox&&state.data)holes.push(p.durationHole||p.durationBox);if(servicesText())holes.push(p.servicesBox);if(p.notesBox&&state.data)holes.push(p.notesBox);if(p.adjustmentsBox&&state.data)holes.push(p.adjustmentsBox);if(state.data&&(columns().length!==p.columns.length||window.PackageEditor?.customHeader()))holes.push(headerBox());
+ const p=profile(),holes=state.data?[p.body,p.date,...p.cardSlots.map(s=>cardValueBox(p,s))]:[];holes.push(...(window.PackageEditor?.holes()||[]),...(window.PackageCards?.holes()||[]));if(p.style==='combined'&&(state.data||$('stays').value||['stays','infant','infantLabel','infantValue','infantUnit'].some(k=>window.PackageEditor?.needs(k))))holes.push(p.staysBox,p.infantBox);if(hasCustomTitle())holes.push(p.titleBox);if(p.durationBox&&state.data)holes.push(p.durationHole||p.durationBox);if(servicesText())holes.push(p.servicesBox);if(p.notesBox&&state.data)holes.push(p.notesBox);if(p.adjustmentsBox&&state.data)holes.push(p.adjustmentsBox);if(state.data&&(columns().length!==p.columns.length||window.PackageEditor?.customHeader()))holes.push(headerBox());
  const key=$('template').value+JSON.stringify(holes);if(artworkCache.has(key))return artworkCache.get(key);
  if(p.externalImage){
   const fillFor=box=>{
-   if(p.date&&box===p.date)return '#062b7d';
+   if(p.date&&box===p.date)return p.style.startsWith('malaysia-')?'#06265d':'#062b7d';
    if(p.headerBox&&box===p.headerBox)return '#062b7d';
    return '#fff';
   };
   const svgRect=(w,h,fill,round=0)=>`<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><rect width="${w}" height="${h}" rx="${round}" fill="${fill}"/></svg>`;
-  const result=[{key:'background',label:'زمینهٔ قالب',box:[0,0,p.width,p.height],src:p.image},...holes.map((box,i)=>({key:'mask-'+i,label:'زمینهٔ قابل ویرایش',box,src:'data:image/svg+xml;base64,'+btoa(svgRect(box[2],box[3],fillFor(box),p.style.startsWith('istanbul-')&&box===p.date?25:0))}))];
+  const roundedCards=/^(malaysia|thailand)-/.test(p.style)?new Set(p.cardSlots.map(s=>cardValueBox(p,s).join(','))):new Set();
+  const result=[{key:'background',label:'زمینهٔ قالب',box:[0,0,p.width,p.height],src:p.image},...holes.map((box,i)=>({key:'mask-'+i,label:'زمینهٔ قابل ویرایش',box,src:'data:image/svg+xml;base64,'+btoa(svgRect(box[2],box[3],fillFor(box),box===p.date?(p.style.startsWith('istanbul-')?25:/^(malaysia|thailand)-/.test(p.style)?Math.min(28,box[3]/2):0):roundedCards.has(box.join(','))?6:0))}))];
   artworkCache.set(key,result);return result;
  }
  const geo=LAYER_GEOMETRY[p.style],layers=[{key:'left',label:'عکس چپ و انحنا',box:geo.left},{key:'agency',label:'لوگوی آژانس',box:geo.agency},{key:'airline',label:'لوگوی ایرلاین',box:geo.airline},{key:'city',label:'عنوان شهر',box:p.titleBox},{key:'footer',label:'فوتر اصلی',box:geo.footer}];if(p.noteIconBox)layers.push({key:'noteIcon',label:'آیکون توضیحات',box:p.noteIconBox});if(p.serviceIconBox)layers.push({key:'serviceIcon',label:'آیکون خدمات',box:p.serviceIconBox});
@@ -106,7 +111,7 @@ function makePage(ids,num,total){
  if(state.data||window.PackageEditor?.needs('date'))html+=place('date-slot',p.date,esc(prettyFa($('date').value)||(window.PackageEditor?.hasText('date')?'':'—')));if(p.durationBox&&(state.data||window.PackageEditor?.needs('duration')))html+=place('duration-slot',p.durationBox,esc(prettyFa($('duration').value).replace(/[()]/g,'')));if(hasCustomTitle())html+=place('title-slot',p.titleBox,esc($('title').value));
  if(p.style==='combined'&&(state.data||$('stays').value||['stays','infant','infantLabel','infantValue','infantUnit'].some(k=>window.PackageEditor?.needs(k)))){html+=place('stays-slot',p.staysBox,esc(prettyFa($('stays').value)));html+=place('infant-slot',p.infantBox,`<span>${esc($('infantLabel').value)}:</span> <b>${esc(moneyText($('infantValue').value))}</b> <small>${esc($('infantValue').value?$('infantUnit').value:'')}</small>`);}
  html+=window.PackageCards?.artwork()||'';
- for(const slot of p.cardSlots){if(!state.data&&!window.PackageEditor?.needs('value_'+slot.key)&&!window.PackageEditor?.needs('unit_'+slot.key))continue;const c=state.cards[slot.key]||{};html+=place('value-slot value-'+slot.key,slot.box,`<b>${esc(p.style.startsWith('spain-')?prettyFa(moneyText(c.value)):moneyText(c.value))}</b>${!unavailable(c.value)?`<small>${esc(window.PackageEditor?.hasText('unit_'+slot.key)?(c.unit??''):(c.unit??'تومان'))}</small>`:''}`);}
+ for(const slot of p.cardSlots){if(!state.data&&!window.PackageEditor?.needs('value_'+slot.key)&&!window.PackageEditor?.needs('unit_'+slot.key))continue;const c=state.cards[slot.key]||{};html+=place('value-slot value-'+slot.key,cardValueBox(p,slot),`<b>${esc(p.style.startsWith('spain-')?prettyFa(moneyText(c.value)):moneyText(c.value))}</b>${!unavailable(c.value)?`<small>${esc(window.PackageEditor?.hasText('unit_'+slot.key)?(c.unit??''):(c.unit??'تومان'))}</small>`:''}`);}
  if(servicesText())html+=place('services-slot',p.servicesBox,esc(servicesText()));
  if(p.notesBox&&state.data)html+=place('notes-slot',p.notesBox,esc($('notes').value||'—'));
  if(p.adjustmentsBox&&state.data)html+=place('adjustments-slot',p.adjustmentsBox,esc(prettyFa($('adjustments').value)||'—'));
