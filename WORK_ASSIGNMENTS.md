@@ -4528,3 +4528,9 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 ## TICKET-TARGET-ROWS-0929 — PC-A — READY_FOR_REVIEW
 
 - COMPUTER_ID=PC-A; branch `codex/pc-a-ticket-target-rows-0929` from current origin/develop. Reserve only Sales ticket-prices workspace, module-local target layout CSS and bounded status/task docs. Owner requests compact two-target boxes alongside each other with bounded vertical scrolling and no overlap. Two existing rendering tests, scoped lint, Web typecheck and production build (55 routes) pass. Bounded locks RELEASED with commit; previous ticket-pricing merge authorization applies to this layout follow-up. No API, migration, dependency or data changes.
+
+## TICKET-TARGET-COMPACT-WIDTH-0929 — PC-A — READY_FOR_REVIEW
+
+- COMPUTER_ID=PC-A; branch `codex/pc-a-ticket-target-compact-width-0929` from `origin/develop@cddfcc9d`. Reserve Sales module-local `ticket-price-targets.module.css` and this bounded Work Item/status entry. Shrink each two-target box to the owner's hatched reference width (22rem maximum), preserving adjacent boxes, vertical scrolling and narrow-screen wrapping. Prior target-row work locks are released. No API, calculations, data, migration or dependencies change.
+
+- Validation: two existing page tests, CSS formatting, Web typecheck and production build (55 routes) pass. Bounded CSS/docs locks released with commit. Local visual update is authorized by the screenshot request; develop merge awaits this unit's explicit approval.
