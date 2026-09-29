@@ -1,4 +1,6 @@
 'use client';
+import { NativeSearchSelect } from '@/components/ui/native-search-select';
+
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   b2bSignatoryIssue,
@@ -202,7 +204,7 @@ function SignatoryFields({
       </div>
       <label className="field sm:col-span-2">
         مدرک اختیار امضا
-        <select
+        <NativeSearchSelect
           className="input"
           disabled={!canReadOrganizationDocuments(permissions) || loading}
           value={value.documentId ?? ''}
@@ -238,7 +240,7 @@ function SignatoryFields({
                 : ''}
             </option>
           ))}
-        </select>
+        </NativeSearchSelect>
         <span className="panel-note">
           از مدارک همین پرونده و شعبه انتخاب کنید. برای فعال‌سازی، مدرک باید
           کامل، معتبر و بررسی‌شده باشد.
@@ -382,7 +384,7 @@ export function OrganizationSignatoriesPanel({
           {branches.length > 1 ? (
             <label className="field">
               شعبه داخلی مسئول همکاری
-              <select
+              <NativeSearchSelect
                 className="input"
                 value={branchId}
                 onChange={(event) => setBranchId(event.target.value)}
@@ -392,7 +394,7 @@ export function OrganizationSignatoriesPanel({
                     {branch.name}
                   </option>
                 ))}
-              </select>
+              </NativeSearchSelect>
             </label>
           ) : (
             <p className="panel-note">

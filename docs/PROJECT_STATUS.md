@@ -1,3 +1,26 @@
+# 2026-09-29 — SALES-TOUR-DEFINITION-0929 — PC-A — READY_FOR_REVIEW
+
+تعریف تور از مدیریت بلیت جدا و به‌صورت آخرین گزینهٔ گروه فروش در `/sales/tours` قرار گرفت. فروش با مجوز محدود تور می‌تواند تعریف را بسازد/ویرایش کند و تور بدون نوبت را حذف کند؛ تور دارای نوبت به‌خاطر حفظ سوابق حذف نمی‌شود. ۳۰ تست API، ۵۲ تست Web، lint، typecheck و build هر دو بخش موفق‌اند. تست واقعی PostgreSQL محلی به‌دلیل نبود `TRAVEL_TEST_DATABASE_URL` غیرفعال بود. بدون Migration یا تغییر حساب‌های واقعی؛ PR [#464](https://github.com/nirvanamahlou/Rubi/pull/464)؛ پیاده‌سازی `ce100064` و ادغام develop `bfa4b4ff`. جزئیات: [SALES-TOUR-DEFINITION-0929](tasks/SALES-TOUR-DEFINITION-0929.md).
+# 2026-09-29 — DROPDOWN-SUBSTRING-0929 — PC-A
+
+Dropdown search always includes the displayed name plus aliases/codes and matches at any position before limiting to six results. Persian/English/code substring regressions passed; server Master Data already uses contains/insensitive. No migration or API changes. See [handoff](tasks/DROPDOWN-SUBSTRING-0929.md).
+
+# 2026-09-29 — SEARCHABLE-DROPDOWNS-0929 — PC-A
+
+Shared Web selection controls now search in the primary field, display six initial/matching results, preserve canonical form values and add subtle light/dark contrast. Master Data/Ticket/Marketing reference adapters retain scope and authorization. Browser synthetic interaction/form verification passed; no migration or operational data changes. See [handoff](tasks/SEARCHABLE-DROPDOWNS-0929.md).
+
+# 2026-09-29 — TICKET-MANAGEMENT-QA-0929 — PC-A
+
+Server-backed flight cards/counts and fresh-browser editing now match the managed list. Exact identity fixes duplicate-schedule actions; capacity reflects holds. Archive preserves fare/commission history. Synthetic lifecycle and HTTP QA pass; no migration or operational data changes. See [task handoff](tasks/TICKET-MANAGEMENT-QA-0929.md).
+
+## 2026-09-29 — ROLE-ACCESS-PRESETS-0929 — PC-A — READY_FOR_REVIEW
+
+User management recommends role-specific sections/actions with explicit confirm, apply-and-customize or keep-current choices. Role selection alone preserves current grants; pending proposals prevent accidental save. Native suggestions intersect actor grants/options; screen suggestions intersect visibility, unknown roles have no grants and branch scopes stay unchanged. Finance/Reservation staff and managers have distinct policies. 32 focused tests and strict Web typecheck pass; scoped lint, production build and CI checked before integration. No API/contract/schema/dependency or account mutation. Details: [ROLE-ACCESS-PRESETS-0929](tasks/ROLE-ACCESS-PRESETS-0929.md).
+
+# 2026-09-29 — SALES-HOTEL-ENGLISH-OPTIONS-0929 — PC-A
+
+Sales contracts now open the active hotel list for the selected city, show available English hotel names, and retain text search and destination/tour filters. Canonical hotel id and room-selection behavior are preserved. Four existing picker tests, scoped lint, Web production typecheck and the 54-route build pass. No API/database/data/runtime changes; authenticated browser interaction was not exercised. See [handoff](tasks/SALES-HOTEL-ENGLISH-OPTIONS-0929.md).
+
 ## 2026-09-29 — USER-ACCESS-UI-0929 — PC-A — READY_FOR_REVIEW
 
 User management now uses checkbox-first access cards: parent selection reveals child visibility/action checkboxes; partial grants stay expanded and indeterminate. Responsive compact cards, distinct selected-user styling and sticky save control replace dropdowns and excessive whitespace. Existing grant setters and authorization remain intact. 15 focused Web tests, strict typecheck and scoped lint pass; production build checked before handoff. No schema/API/dependency or operational account edits.
@@ -3770,3 +3793,7 @@ Shared actor-scoped repository lookups and explicit reference filtering enforce 
 ## 2026-09-29 — ISTANBUL-GENERATOR-3100-ACTIVATION — PC-B — IN_PROGRESS
 
 پیگیری قالب‌های استانبول، assetها و loaderهای Package Generator را در build محلی 3100 فعال می‌کند. تغییر مبنا commit `6c2d203f` است؛ اکنون با `origin/develop` همگام شده و منتظر بررسی‌های CI و PR است. API قیمت‌گذاری، Schema/Migration و دادهٔ عملیاتی تغییر نمی‌کنند.
+
+## 2026-09-29 — RESERVATION-OPERATION-SUMMARY-0929 — PC-A — READY_FOR_REVIEW
+
+Selected-contract header now shows read-only financial-delivery approval, responsible name and automatic server time, alongside the latest reservation operator/time. Events no longer displays the operation box. Scoped public Finance/IAM composition, branch/permission checks and native revision/history fallback preserve owner boundaries. No schema/dependency or operational data edits. Validation and limits: [RESERVATION-OPERATION-SUMMARY-0929](tasks/RESERVATION-OPERATION-SUMMARY-0929.md). 45 scoped API tests (including 4 HTTP) and 42 Web tests, strict API/Web types and scoped lint pass; production API build passes and Web build/CI complete before integration; merge authorization for this new reservation work item is separate from prior IAM merges.

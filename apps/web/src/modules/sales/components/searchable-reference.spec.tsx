@@ -55,12 +55,26 @@ describe('Sales searchable country/city reference', () => {
     );
   });
 
-  it('does not populate the menu until the operator enters a search term', () => {
+  it('preserves English hotel labels and searches both names', () => {
+    expect(
+      salesReferenceDisplayName(
+        { name: 'هتل منتخب', attributes: { englishName: 'Selected Hotel' } },
+        true,
+      ),
+    ).toBe('Selected Hotel');
+    expect(
+      salesReferenceDisplayName(
+        { name: 'هتل منتخب', attributes: { englishName: '' } },
+        true,
+      ),
+    ).toBe('هتل منتخب');
+  });
+  it('uses the shared six-result searchable field for initial and filtered options', () => {
     const source = readFileSync(
       new URL('./searchable-reference.tsx', import.meta.url),
       'utf8',
     );
-    expect(source).toContain('const hasSearch = Boolean(search.trim());');
-    expect(source).toContain('برای نمایش گزینه‌ها، نام یا کد را جست‌وجو کنید.');
+    expect(source).toContain('SearchCombobox');
+    expect(source).not.toContain('برای نمایش گزینه‌ها');
   });
 });

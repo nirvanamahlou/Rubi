@@ -133,6 +133,7 @@ export const IAM_PERMISSION_CODES = [
   ...Object.values(CUSTOMER_AFFAIRS_PERMISSIONS),
   'ticket_catalog.read',
   'ticket_catalog.manage',
+  'ticket_catalog.tours.manage',
   'reservations.read',
   'reservations.documents.manage',
   'finance.read',

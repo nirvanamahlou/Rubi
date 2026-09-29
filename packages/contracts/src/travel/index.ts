@@ -80,6 +80,8 @@ export interface TicketOfferV1 {
 
   /** Null/absent uses the built-in default manifest. */
   manifestTemplateId?: string | null;
+  /** Stable source identity exposed by the managed catalog projection. */
+  catalogProductId?: string;
   id: string;
   version: number;
   branchId: string;
@@ -103,6 +105,7 @@ export interface TicketOfferV1 {
 export type TicketOfferCreateV1 = Omit<
   TicketOfferV1,
   | 'id'
+  | 'catalogProductId'
   | 'version'
   | 'branchId'
   | 'remainingCapacity'
@@ -424,4 +427,14 @@ export interface VoucherSettingsV1 {
     birthDate?: string;
     documentNumber?: string;
   }[];
+}
+
+/** Compact, branch-scoped responsibility summary; no financial amounts or identity payloads. */
+export interface ReservationOperationSummaryV1 {
+  delivery: {
+    approved: boolean;
+    updatedAt: string | null;
+    actorName: string | null;
+  };
+  lastOperation: { occurredAt: string; actorName: string | null } | null;
 }

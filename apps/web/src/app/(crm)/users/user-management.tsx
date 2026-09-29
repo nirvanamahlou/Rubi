@@ -1,4 +1,6 @@
 'use client';
+import { NativeSearchSelect } from '@/components/ui/native-search-select';
+
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   USER_ACCESS_GROUPS,
@@ -14,6 +16,8 @@ import { getPublicApiBaseUrl } from '@/lib/environment';
 import { refreshAuthenticatedSession } from '@/lib/auth-session';
 import { AccessGroupCard } from './access-group-card';
 import styles from './user-management.module.css';
+import { recommendRoleAccess } from './role-access-presets';
+import { RoleAccessProposal } from './role-access-proposal';
 interface Permission {
   id: string;
   code: string;
@@ -116,6 +120,24 @@ export function UserManagement() {
     [message, setMessage] = useState(''),
     [busy, setBusy] = useState(false),
     [loading, setLoading] = useState(true);
+  const [proposalOpen, setProposalOpen] = useState(true);
+  const accessGrid = useRef<HTMLDivElement>(null);
+  const proposal = recommendRoleAccess(
+    title,
+    options.permissions,
+    actor?.permissions ?? [],
+  );
+  function applyProposal(customize: boolean) {
+    setScreenIds(proposal.screenIds);
+    setPermissionIds(proposal.permissionIds);
+    setProposalOpen(false);
+    setMessage(
+      customize
+        ? 'پیشنهاد اعمال شد؛ تیک‌های دلخواه را تغییر دهید و سپس ذخیره کنید.'
+        : 'پیشنهاد در فرم اعمال شد؛ برای تغییر حساب کاربر، ذخیره را بزنید.',
+    );
+    if (customize) accessGrid.current?.focus();
+  }
   const saving = useRef(false),
     form = useRef<HTMLFormElement>(null);
   const load = useCallback(async () => {
@@ -144,6 +166,7 @@ export function UserManagement() {
   const canManage = actor?.permissions.includes('iam.users.manage') ?? false;
   function edit(user: UserRow | null) {
     setSelected(user);
+    setProposalOpen(!user);
     setMessage('');
     form.current?.reset();
     const roles =
@@ -191,7 +214,7 @@ export function UserManagement() {
       : items.filter((id) => !ids.includes(id));
   async function save(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (saving.current || !canManage) return;
+    if (saving.current || !canManage || proposalOpen) return;
     saving.current = true;
     setBusy(true);
     setMessage('');
@@ -379,9 +402,12 @@ export function UserManagement() {
               )}
               <label className="grid gap-2">
                 نقش کاربر
-                <select
+                <NativeSearchSelect
                   value={title}
-                  onChange={(e) => setTitle(e.target.value)}
+                  onChange={(e) => {
+                    setTitle(e.target.value);
+                    setProposalOpen(true);
+                  }}
                   className={styles.roleSelect}
                 >
                   {USER_JOB_TITLES.map((t) => (
@@ -389,8 +415,25 @@ export function UserManagement() {
                       {t}
                     </option>
                   ))}
-                </select>
+                </NativeSearchSelect>
               </label>
+              {canManage &&
+                (proposalOpen ? (
+                  <RoleAccessProposal
+                    title={title}
+                    proposal={proposal}
+                    onApply={applyProposal}
+                    onKeep={() => setProposalOpen(false)}
+                  />
+                ) : (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setProposalOpen(true)}
+                  >
+                    نمایش پیشنهاد دسترسی این نقش
+                  </Button>
+                ))}
               <fieldset className={styles.branches}>
                 <legend className="font-bold">شعب مجاز</legend>
                 {options.branches.map((branch) => (
@@ -410,7 +453,12 @@ export function UserManagement() {
                   تیک بخش را بزنید، سپس دسترسی زیربخش‌ها را تنظیم کنید.
                 </span>
               </div>
-              <div className={styles.accessGrid}>
+              <div
+                ref={accessGrid}
+                tabIndex={-1}
+                aria-label="سفارشی‌سازی دسترسی‌ها"
+                className={styles.accessGrid}
+              >
                 {USER_ACCESS_GROUPS.map((group) => {
                   const screens = USER_ACCESS_SCREENS.filter(
                     (s) => s.group === group.id,
@@ -505,7 +553,7 @@ export function UserManagement() {
               {canManage && (
                 <Button
                   type="submit"
-                  disabled={busy}
+                  disabled={busy || proposalOpen}
                   className={styles.saveButton}
                 >
                   {busy ? 'در حال ذخیره…' : 'ذخیره کاربر و دسترسی‌ها'}

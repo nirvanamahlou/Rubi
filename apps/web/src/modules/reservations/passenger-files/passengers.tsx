@@ -1,4 +1,5 @@
 'use client';
+import { NativeSearchSelect } from '@/components/ui/native-search-select';
 
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -207,7 +208,7 @@ export function ReservationPassengers({ id }: { id: string }) {
                   </td>
                   <td>{row.ageCategory ?? 'ثبت نشده'}</td>
                   <td>
-                    <select
+                    <NativeSearchSelect
                       aria-label={`جنسیت مسافر ${index + 1}`}
                       value={row.gender ?? ''}
                       onChange={(event) =>
@@ -218,7 +219,7 @@ export function ReservationPassengers({ id }: { id: string }) {
                       <option value="">انتخاب نشده</option>
                       <option value="M">مرد</option>
                       <option value="F">زن</option>
-                    </select>
+                    </NativeSearchSelect>
                   </td>
                   <td>
                     <DatePicker

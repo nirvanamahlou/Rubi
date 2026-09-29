@@ -1,8 +1,7 @@
 'use client';
 
 import * as CheckboxPrimitive from '@radix-ui/react-checkbox';
-import * as SelectPrimitive from '@radix-ui/react-select';
-import { Check, ChevronDown } from 'lucide-react';
+import { Check } from 'lucide-react';
 import * as React from 'react';
 
 import { cn } from '@/lib/utils';
@@ -53,72 +52,13 @@ export const Checkbox = React.forwardRef<
 ));
 Checkbox.displayName = 'Checkbox';
 
-export const Select = SelectPrimitive.Root;
-export const SelectValue = SelectPrimitive.Value;
-
-export const SelectTrigger = React.forwardRef<
-  React.ElementRef<typeof SelectPrimitive.Trigger>,
-  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Trigger>
->(({ children, className, ...props }, ref) => (
-  <SelectPrimitive.Trigger
-    className={cn(
-      controlClasses,
-      'flex h-11 items-center justify-between gap-2',
-      className,
-    )}
-    ref={ref}
-    {...props}
-  >
-    {children}
-    <SelectPrimitive.Icon>
-      <ChevronDown
-        aria-hidden="true"
-        className="size-4 text-muted-foreground"
-      />
-    </SelectPrimitive.Icon>
-  </SelectPrimitive.Trigger>
-));
-SelectTrigger.displayName = 'SelectTrigger';
-
-export const SelectContent = React.forwardRef<
-  React.ElementRef<typeof SelectPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Content>
->(({ children, className, position = 'popper', ...props }, ref) => (
-  <SelectPrimitive.Portal>
-    <SelectPrimitive.Content
-      className={cn(
-        'z-50 min-w-[var(--radix-select-trigger-width)] overflow-hidden rounded-xl border border-border bg-popover p-1 text-popover-foreground shadow-xl',
-        className,
-      )}
-      position={position}
-      ref={ref}
-      {...props}
-    >
-      <SelectPrimitive.Viewport>{children}</SelectPrimitive.Viewport>
-    </SelectPrimitive.Content>
-  </SelectPrimitive.Portal>
-));
-SelectContent.displayName = 'SelectContent';
-
-export const SelectItem = React.forwardRef<
-  React.ElementRef<typeof SelectPrimitive.Item>,
-  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Item>
->(({ children, className, ...props }, ref) => (
-  <SelectPrimitive.Item
-    className={cn(
-      'relative flex min-h-9 cursor-default select-none items-center rounded-lg py-2 pe-8 ps-3 text-sm outline-none data-[highlighted]:bg-muted data-[disabled]:opacity-50',
-      className,
-    )}
-    ref={ref}
-    {...props}
-  >
-    <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
-    <SelectPrimitive.ItemIndicator className="absolute end-2">
-      <Check aria-hidden="true" className="size-4" />
-    </SelectPrimitive.ItemIndicator>
-  </SelectPrimitive.Item>
-));
-SelectItem.displayName = 'SelectItem';
+export {
+  Select,
+  SelectValue,
+  SelectTrigger,
+  SelectContent,
+  SelectItem,
+} from './search-select-primitives';
 
 interface FormFieldProps {
   id?: string;

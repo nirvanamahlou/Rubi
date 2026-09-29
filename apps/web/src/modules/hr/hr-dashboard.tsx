@@ -1,4 +1,6 @@
 'use client';
+import { NativeSearchSelect } from '@/components/ui/native-search-select';
+
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import {
@@ -238,7 +240,7 @@ export function HrDashboard({
         <div className={ui.filters}>
           <label>
             شرکت / شعبه
-            <select
+            <NativeSearchSelect
               value={branch}
               onChange={(event) => {
                 setBranch(event.target.value);
@@ -251,11 +253,11 @@ export function HrDashboard({
                   {item.name}
                 </option>
               ))}
-            </select>
+            </NativeSearchSelect>
           </label>
           <label>
             واحد
-            <select
+            <NativeSearchSelect
               value={unit}
               onChange={(event) => setUnit(event.target.value)}
             >
@@ -273,7 +275,7 @@ export function HrDashboard({
               ).map((item) => (
                 <option key={item}>{item}</option>
               ))}
-            </select>
+            </NativeSearchSelect>
           </label>
           <HrButton
             onClick={() => {

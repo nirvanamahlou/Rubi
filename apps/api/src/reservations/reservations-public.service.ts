@@ -229,6 +229,43 @@ export class ReservationsPublicService {
     });
   }
 
+  /** Historical fallback from this module's immutable mutation revisions. */
+  async lastRecordedOperation(id: string, branchIds: readonly string[]) {
+    const row = await this.database.client.reservationIntake.findFirst({
+      where: { id, branchId: { in: [...branchIds] } },
+      include: {
+        workflowRevisions: { orderBy: { version: 'desc' }, take: 1 },
+        arrangements: { orderBy: { version: 'desc' }, take: 1 },
+        hotelPurchases: { orderBy: { createdAt: 'desc' }, take: 1 },
+        servicePurchases: { orderBy: { createdAt: 'desc' }, take: 1 },
+      },
+    });
+    if (!row) throw new NotFoundException();
+    const candidates = [
+      ...row.workflowRevisions.map((r) => ({
+        actorUserId: r.actorUserId,
+        occurredAt: r.createdAt,
+      })),
+      ...row.arrangements.map((r) => ({
+        actorUserId: r.updatedByUserId,
+        occurredAt: r.updatedAt,
+      })),
+      ...row.hotelPurchases.map((r) => ({
+        actorUserId: r.actorUserId,
+        occurredAt: r.createdAt,
+      })),
+      ...row.servicePurchases.map((r) => ({
+        actorUserId: r.actorUserId,
+        occurredAt: r.createdAt,
+      })),
+    ];
+    return (
+      candidates.sort(
+        (a, b) => b.occurredAt.getTime() - a.occurredAt.getTime(),
+      )[0] ?? null
+    );
+  }
+
   async list(
     branchIds: readonly string[],
     options: {
