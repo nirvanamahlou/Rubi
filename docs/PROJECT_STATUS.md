@@ -3882,3 +3882,7 @@ Each two-target fare box is capped at 22rem (352px), matching the owner's hatche
 ## 2026-09-29 — CUSTOMER-AFFAIRS-LIST-TOOLBAR-ALIGN-0929 — READY_FOR_REVIEW
 
 دکمه‌های نمای جدولی/مرحله‌ای و خروجی Excel در سربرگ فهرست‌های امور مشتریان هم‌خط و هم‌ارتفاع شدند؛ فاصلهٔ تب‌ها فقط در این نوار حذف شد و چیدمان موبایل محفوظ است. بدون تغییر رفتار عملیاتی. تست متمرکز ۱۰/۱۰ و typecheck موفق؛ CI و merge در انتظار.
+
+## 2026-09-29 — CUSTOMER-AFFAIRS-REPORT-FILTER-BOX-0929 — READY_FOR_REVIEW
+
+فیلتر بازهٔ تاریخ در صفحهٔ گزارش امور مشتریان داخل باکس مستقل تمام‌عرض قرار گرفت؛ منطق فیلتر و گزارش بدون تغییر ماند. ۱۴ تست متمرکز، lint، typecheck و قالب‌بندی موفق‌اند؛ build تولیدی در CI بررسی می‌شود.
