@@ -617,7 +617,7 @@ for (const resource of MASTER_DATA_RESOURCES) {
 const requiredFields: Record<MasterDataResource, readonly string[]> = {
   countries: ['iso2Code', 'name'],
   regions: ['name', 'countryId'],
-  cities: ['name', 'countryId', 'regionId'],
+  cities: ['name', 'countryId'],
   airports: ['name', 'countryId', 'cityId', 'iataCode'],
   terminals: ['name', 'airportId', 'terminalType'],
   currencies: ['code', 'name'],

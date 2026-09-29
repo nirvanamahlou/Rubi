@@ -167,8 +167,8 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
         label: 'استان',
         type: 'text',
         placeholder: '',
-        required: true,
-        hint: 'ابتدا استان را انتخاب یا همان‌جا ایجاد کنید، سپس مشخصات شهر را وارد کنید.',
+        required: false,
+        hint: 'استان/ناحیه اختیاری است؛ شهر مستقیماً به کشور وصل می‌شود.',
       },
       nameField,
       {
