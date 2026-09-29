@@ -1,3 +1,7 @@
+## ROLE-ACCESS-PRESETS-0929 — PC-A — READY_FOR_REVIEW
+
+- COMPUTER_ID=PC-A; branch codex/pc-a-role-access-presets-0929 from origin/develop. Reserve only Web IAM user form, role recommendation helper/panel/CSS/tests and bounded docs. User clarified role-based suggested grants with confirmation or customization. Suggestions intersect actor-assignable screens/native permissions; preserve branch scopes, existing user grants until explicit application and final save. No API/contracts/schema/migration/dependency or operational user changes. IAM/UI prior locks released; bounded UI/docs locks RELEASED with scoped commit. 32 focused tests and strict types pass; lint/build checked before integration.
+
 ## SALES-HOTEL-ENGLISH-OPTIONS-0929 — PC-A — READY_FOR_REVIEW
 
 - Owner request: Sales contract hotel chooser displays registered hotel names in English, opens with eligible hotels ready to choose, and keeps destination filtering and text search.
@@ -4367,3 +4371,16 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 
 - `COMPUTER_ID=PC-B`; branch `codex/pc-b-procurement-form-qa-0928` from `origin/develop@4013211f`. Scope: isolated Procurement API regression audit and the confirmed legacy saved-item rendering defect in `apps/web/src/modules/procurement/draft-form.tsx` with its focused test. No shared contract, migration, dependency/lockfile, operational data, or live runtime changes. The broader API audit work item remains independently owned; this unit does not edit its Backend files.
 - Validation: broad API suite 1,682 passed / 175 skipped by default guards; all 92 focused Procurement API tests passed, including 35 PostgreSQL 18 tests on an isolated migrated test database (draft persistence, atomic publication and workflow boundaries). All 10 draft-form tests passed. API typecheck/build, Web typecheck/build, scoped lint and Prettier passed. Other guarded integration tests and authenticated browser flows remain outside this run. Central-doc reservation for this entry and matching project-status entry released on commit.
+
+## API-FUNCTIONAL-QA-0928 — PC-B — READY_FOR_REVIEW
+
+- `COMPUTER_ID=PC-B`; base `origin/develop@4013211f`; branch `codex/pc-b-api-functional-qa-0928`.
+- Scope: read-only functional/test audit of all API modules; reproduce and repair confirmed PC-B-owned Backend/form submission defects in `apps/api/src/{customer-affairs,procurement,marketing,organizations,hr,workbench-feedback,documents,master-data,dashboard}/**` and focused tests. Coordinate any PC-A-owned defect rather than editing its files.
+- No migration, schema, dependency/lockfile, shared API contract, operational data, or live runtime changes. Central docs reservation is limited to this Work ID entry, its task report, and a matching `docs/PROJECT_STATUS.md` entry; other active reservations stay untouched.
+- Result: feedback replay race fixed; sensitive and anonymous feedback document metadata, catalogue, audit and file access hardened; attachment anonymity validated. Full API suite 1,701 passed/175 optional skipped on updated develop; targeted Workbench/Documents 118 passed; three PostgreSQL form writes and audit checked. Optional PostgreSQL suites remain unverified because the existing Docker stdin helper timed out before assertions. Scoped locks released; see `docs/tasks/API-FUNCTIONAL-QA-0928.md`.
+
+## DOCUMENTS-SENSITIVE-LIST-PRIVACY-0929 — PC-B — READY_FOR_REVIEW
+
+- `COMPUTER_ID=PC-B`; branch `codex/pc-b-api-functional-qa-0928`. Scope: Documents list predicates, direct detail, favorites, detail provenance redaction and regression tests; update the existing API functional QA report. No schema, migration, dependency/lockfile, API type, permission grant, or operational data change.
+- Frozen privacy invariant: without `documents.sensitive.read`, all list rows, list-derived aggregates, direct detail-by-ID, files, audit, mutations, favorites, and organization document-version references exclude CONFIDENTIAL and RESTRICTED documents regardless of filters or known IDs. WorkbenchFeedback attachments remain owner-only on every route, including INTERNAL rows and callers with sensitive-read access. Explicit sensitive confidentiality filters fail closed with zero rows and totals. Conjoin visibility conditions so user filters cannot replace them.
+- Result: shared actor-scoped repository lookups and explicit reference filtering enforce confidentiality and feedback ownership across detail/favorites, files, audit, mutations, and organization-version references. 67 focused Documents tests, API lint/typecheck/build, formatting and `git diff --check` pass. Fresh independent R3 review approved merge; full CI gates pass. No schema/migration/contract/dependency/data change.

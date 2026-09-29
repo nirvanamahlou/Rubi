@@ -109,6 +109,7 @@ export class WorkbenchFeedbackService {
       input.attachmentDocumentIds,
       input.id,
       input.branchId,
+      input.anonymous,
       actor,
     );
     const recipientUserIds =
