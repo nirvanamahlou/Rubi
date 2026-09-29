@@ -3879,3 +3879,6 @@ Each two-target fare box is capped at 22rem (352px), matching the owner's hatche
 ## 2026-09-29 — HEADER-SELECTED-ROLE-TITLE-0929 — PC-A — READY_FOR_REVIEW
 
 نوار بالا فقط عنوان شغلی انتخاب‌شده از نقش‌های فعال IAM را نشان می‌دهد؛ برچسب عمومی مثل `Ramtin full access` یا متن ترکیبی کنار آن دیده نمی‌شود. داده نشست قدیمی نیز پیش از نمایش به یک عنوان معتبر تبدیل می‌شود. typecheck، lint و build تولیدی Web با ۵۵ مسیر موفق‌اند؛ CI پیش از merge اجرا می‌شود. بدون API، Migration، Dependency یا داده عملیاتی. جزئیات: [HEADER-SELECTED-ROLE-TITLE-0929](tasks/HEADER-SELECTED-ROLE-TITLE-0929.md).
+## 2026-09-29 — CUSTOMER-AFFAIRS-LIST-TOOLBAR-ALIGN-0929 — READY_FOR_REVIEW
+
+دکمه‌های نمای جدولی/مرحله‌ای و خروجی Excel در سربرگ فهرست‌های امور مشتریان هم‌خط و هم‌ارتفاع شدند؛ فاصلهٔ تب‌ها فقط در این نوار حذف شد و چیدمان موبایل محفوظ است. بدون تغییر رفتار عملیاتی. تست متمرکز ۱۰/۱۰ و typecheck موفق؛ CI و merge در انتظار.

@@ -625,7 +625,7 @@ export function CustomerAffairsNoraWorkspace() {
                 <section className={s.panel}>
                   <div className={s.panelHead}>
                     <h2>{title}</h2>
-                    <div className={s.actions}>
+                    <div className={`${s.actions} ${s.listToolbar}`}>
                       {(view === 'leads' || view === 'tickets') && (
                         <Button
                           type="button"

@@ -4548,3 +4548,9 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 ## HEADER-SELECTED-ROLE-TITLE-0929 — PC-A — READY_FOR_REVIEW
 
 - COMPUTER_ID=PC-A; base `origin/develop@fdcf783e`; branch `codex/pc-a-header-role-title-0929`. Reserve header session identity and date-adjacent role display plus bounded docs. Display only the selected recognized job title from IAM roles (`مدیر`, `کارشناس فروش`, etc.); for the administrator role show the product title `مدیر`. Never join generic/custom role labels into the header. Web typecheck, scoped lint and production build (55 routes) pass. No IAM permissions/API, migration, dependency, or account data changes. Prior topbar locks are released; same PC-A owner.
+
+## CUSTOMER-AFFAIRS-LIST-TOOLBAR-ALIGN-0929 — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک از تصویر ۶۶۱: دکمه‌های «جدولی»، «مرحله‌ای» و «خروجی Excel» در سربرگ فهرست امور مشتریان هم‌خط و هم‌ارتفاع شوند. `COMPUTER_ID=PC-B`؛ شاخه `codex/pc-b-ca-list-toolbar-align-0929` از `origin/develop` در checkout مستقل تمیز.
+- محدوده رزرو: فقط `customer-affairs-nora-workspace.tsx`، CSS ماژول و تست چیدمان همان کامپوننت، همراه مدخل محدود اسناد وضعیت. تغییر UI و واکنش‌گرایی است؛ بدون API، Schema/Migration، داده، Permission، Dependency/Lockfile یا فایل مرکزی. قفل‌های دیگر دست‌نخورده‌اند.
+- استایل اختصاصی سربرگ فاصلهٔ پایین تب‌ها را حذف و ارتفاع کنترل‌ها را یکسان می‌کند؛ در موبایل امکان شکست خط محفوظ است. تست متمرکز ۱۰/۱۰ و typecheck موفق؛ CI و merge در انتظار.

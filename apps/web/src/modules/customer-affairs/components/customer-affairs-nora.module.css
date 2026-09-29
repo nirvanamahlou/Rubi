@@ -504,6 +504,23 @@
   background: var(--surface);
   color: var(--primary);
 }
+.listToolbar {
+  align-items: center;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+}
+.listToolbar .subtabs {
+  align-items: center;
+  flex-wrap: nowrap;
+  margin-bottom: 0;
+}
+.listToolbar .subtabs button {
+  display: inline-flex;
+  min-height: 40px;
+  align-items: center;
+  justify-content: center;
+  padding-block: 0;
+}
 .filters {
   display: flex;
   align-items: flex-end;
@@ -725,6 +742,9 @@
   }
 }
 @media (max-width: 760px) {
+  .listToolbar {
+    flex-wrap: wrap;
+  }
   .header {
     align-items: flex-start;
     flex-direction: column;
