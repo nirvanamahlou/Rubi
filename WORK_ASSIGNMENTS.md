@@ -4577,6 +4577,10 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 - محدودهٔ رزرو: فقط چیدمان `customer-affairs-nora-workspace.tsx`، CSS ماژول و آزمون متمرکز، همراه ثبت وضعیت. بدون تغییر API، داده، قرارداد، Migration، Permission، Dependency/Lockfile یا runtime پورت ۳۱۰۰.
 - نتیجه: فرم فیلتر تاریخ در یک کارت هم‌عرض محتوای گزارش قرار گرفت. ۱۴ تست متمرکز، lint، typecheck و Prettier موفق‌اند؛ build تولیدی در CI بررسی می‌شود.
 
+## LOGIN-COMPANY-CAPTIONS-0929 — PC-A — READY_FOR_REVIEW
+
+- COMPUTER_ID=PC-A؛ شاخه `codex/pc-a-login-remove-company-captions-0929` از `origin/develop@1ead3c96`. محدوده فقط نمای صفحه ورود و ثبت محدود این Work Item است. نوشته‌های نام شرکت زیر هر دو لوگو در اندازه دسکتاپ و موبایل حذف می‌شوند؛ لوگو، متن جایگزین دسترس‌پذیر، عنوان فهرست شرکت‌ها و رفتار انتخاب شرکت حفظ می‌شوند. بدون تغییر API، Migration، Dependency، داده، Permission یا runtime. قفل محدود اسناد مرکزی برای همین ثبت رزرو شد.
+
 ## CUSTOMER-AFFAIRS-REQUEST-PROFILE-REDESIGN-0929 — PC-B — READY_FOR_REVIEW
 
 - درخواست مالک از تصویر ۶۶۲: بازطراحی نمای جزئیات درخواست در امور مشتریان. `COMPUTER_ID=PC-B`؛ شاخه `codex/pc-b-ca-request-profile-redesign-0929` از `origin/develop@c71083b3` در checkout تمیز.
