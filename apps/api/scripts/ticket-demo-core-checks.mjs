@@ -31,6 +31,7 @@ function database() {
     roundTrips: [],
     commissions: [],
     blocked: new Set(),
+    targetCleanupWhere: null,
   };
   const model = (name) => ({
     async findUnique({ where }) {
@@ -50,7 +51,8 @@ function database() {
       row.version++;
       return row;
     },
-    async updateMany() {
+    async updateMany({ where }) {
+      state.targetCleanupWhere = structuredClone(where);
       return { count: 0 };
     },
     async findMany({ where }) {
@@ -194,6 +196,11 @@ test('clear touches only marked records in the configured branch and preserves i
     clear: true,
   });
   assert.equal(result.archived, 10);
+  assert.equal(state.targetCleanupWhere.isActive, true);
+  assert.equal(
+    state.targetCleanupWhere.commissions.none.OR[1].returnOfferId.notIn.length,
+    19,
+  );
   assert.equal(state.offers[1].status, 'ACTIVE');
   assert.equal(state.standalone.length, 4);
   assert.equal(

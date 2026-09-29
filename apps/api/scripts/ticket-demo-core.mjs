@@ -179,6 +179,7 @@ export async function runTicketDemo(
             where: {
               branchId: config.branchId,
               code: { startsWith: `${dataset}:` },
+              isActive: true,
               prices: {
                 none: { offerId: { notIn: owned.map((row) => row.id) } },
               },
