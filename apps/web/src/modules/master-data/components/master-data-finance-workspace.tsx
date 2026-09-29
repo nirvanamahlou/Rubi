@@ -54,7 +54,6 @@ import {
   Card,
   EmptyState,
   ErrorState,
-  FilterBar,
   PageHeader,
   PaginationShell,
   Skeleton,
@@ -66,6 +65,7 @@ import {
 } from '../api/client';
 import { MasterDataDeleteButton } from './master-data-delete-button';
 import { MasterDataFilterActions } from './master-data-filter-actions';
+import { MasterDataFilterBar } from './master-data-filter-bar';
 import {
   getMasterDataDefinition,
   type MasterDataResourceKey,
@@ -943,7 +943,7 @@ export function MasterDataFinanceWorkspace({
 
       <MasterDataKpiGrid items={kpis} label={`شاخص‌های ${copy.title}`} />
 
-      <FilterBar className="grid sm:grid-cols-2 lg:grid-cols-[minmax(14rem,1fr)_12rem_12rem_auto]">
+      <MasterDataFilterBar>
         {columnFilterControls}
         <MasterDataDateRangeFilter
           idPrefix="finance-created"
@@ -1005,7 +1005,7 @@ export function MasterDataFinanceWorkspace({
           }}
           onRefresh={() => void load()}
         />
-      </FilterBar>
+      </MasterDataFilterBar>
 
       {requestState === 'loading' ? (
         <div className="space-y-3" aria-live="polite">
@@ -1400,7 +1400,7 @@ export function MasterDataFinanceWorkspace({
               ))}
             </Card>
 
-            <FilterBar className="grid sm:grid-cols-2 lg:grid-cols-[minmax(14rem,1fr)_12rem_auto_auto]">
+            <MasterDataFilterBar>
               <FormField label="جفت ارز و نوع نرخ">
                 <Select
                   disabled={!currencyPairs.length}
@@ -1453,7 +1453,7 @@ export function MasterDataFinanceWorkspace({
                 }}
                 onRefresh={() => void loadCurrencyHistory()}
               />
-            </FilterBar>
+            </MasterDataFilterBar>
 
             {currencyHistoryState === 'loading' ? (
               <div className="space-y-3" aria-label="در حال دریافت تاریخچه ارز">

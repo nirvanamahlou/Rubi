@@ -82,23 +82,21 @@ export function MasterDataDateRangeFilter({
   const hasValue = Boolean(fromDate || toDate);
 
   return (
-    <fieldset className="min-w-0 rounded-xl border border-input/80 bg-background/70 px-2 pb-2 pt-1 shadow-xs sm:col-span-2 xl:col-span-2">
+    <fieldset className="min-w-0 rounded-xl border border-input/80 bg-background/70 px-2 pb-1.5 pt-1 shadow-xs">
       <legend className="px-1">
         <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-foreground">
           <CalendarRange aria-hidden="true" className="size-3.5 text-primary" />
           {title}
-          <span className="rounded-md bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
-            شمسی / میلادی
-          </span>
+          <span className="sr-only">شمسی / میلادی</span>
         </span>
       </legend>
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-2 gap-1.5">
         <label className="min-w-0 space-y-1" htmlFor={`${idPrefix}-from-date`}>
           <span className="block text-[11px] font-medium text-muted-foreground">
             از تاریخ
           </span>
           <DatePicker
-            className="[&_button]:h-9 [&_button]:rounded-lg [&_button]:px-2 [&_button]:text-xs"
+            className="[&_button]:h-9 [&_button]:gap-1 [&_button]:rounded-lg [&_button]:px-1.5 [&_button]:text-xs [&_svg]:size-3.5"
             id={`${idPrefix}-from-date`}
             onChange={onFromDateChange}
             placeholder="شروع بازه"
@@ -110,7 +108,7 @@ export function MasterDataDateRangeFilter({
             تا تاریخ
           </span>
           <DatePicker
-            className="[&_button]:h-9 [&_button]:rounded-lg [&_button]:px-2 [&_button]:text-xs"
+            className="[&_button]:h-9 [&_button]:gap-1 [&_button]:rounded-lg [&_button]:px-1.5 [&_button]:text-xs [&_svg]:size-3.5"
             id={`${idPrefix}-to-date`}
             onChange={onToDateChange}
             placeholder="پایان بازه"

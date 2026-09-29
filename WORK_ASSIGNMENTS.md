@@ -4330,6 +4330,13 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 
 - `COMPUTER_ID=PC-B`؛ شاخهٔ `codex/pc-b-workbench-september-integration` از `origin/develop`. محدوده: یکپارچه‌سازی هفت تغییر اخیر میزکار و اسناد متعلق به PC-B، رفع تعارض اسناد وضعیت و تحویل در یک PR به `develop`. بدون Migration، قرارداد API، Dependency/Lockfile یا تغییر دادهٔ عملیاتی.
 
+## 2026-09-28 — MASTER-DATA-COMPACT-FILTERS-0928 — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک: فیلدهای فیلتر در همه صفحه‌های اطلاعات پایه کوچک‌تر و در دسکتاپ در یک ردیف چیده شوند؛ در عرض کمتر بدون بریدگی یا خروج از کادر بازچینی شوند.
+- شاخه `codex/pc-b-master-data-compact-filters-0928` از `origin/develop@97c5ca37`؛ محدوده فقط کامپوننت‌های FilterBar اطلاعات پایه، استایل/تست مرتبط و همین ثبت وضعیت است. دکمه‌های پاک‌کردن و تازه‌سازی در ردیف پایین و سمت چپ می‌مانند.
+- بدون Migration، API/Contract، Dependency/Lockfile، داده یا تغییر در Workspaceهای دیگر.
+- نتیجه: ده Workspace تخصصی/عمومی از چیدمان مشترک استفاده می‌کنند؛ کنترل‌ها ۳۶ پیکسل و با متن کوچک‌تر هستند، فیلتر تاریخ فشرده شده و فیلدها از عرض دسکتاپ به‌صورت یک ردیف استفاده می‌کنند. در عرض کوچک‌تر grid تطبیقی است و عملیات فیلتر در ردیف پایین باقی می‌ماند. ۳۶۲ تست Master Data، lint، typecheck و build تولیدی Web با ۵۳ مسیر موفق‌اند.
+
 ## FINANCE-HISTORY-SEAT-PRICING-0928 — PC-A — READY_FOR_REVIEW
 
 - COMPUTER_ID=PC-A; branch codex/pc-a-finance-history-seat-pricing-0928, isolated clean Finance worktree from origin/develop@099dc40e. Reserve Finance API/Web/history tests, additive Sales public receipt-history and Reservations purchase-descriptor projections, Finance v1 additive history contract and bounded status/task docs. Producer Sales/Finance and consumer Finance API/Web owned PC-A; public boundaries and existing v1 clients preserved. No Procurement implementation, migration/schema/dependency/lockfile/IAM or operational data changes. Bounded Finance contract/Central Docs owner PC-A for this unit; prior Finance locks released. User explicitly authorizes implementation and merge. Preserve unrelated local edits.

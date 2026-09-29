@@ -60,6 +60,6 @@ describe('Master Data accessibility regressions', () => {
   it('keeps geography filters within the content width at desktop breakpoints', () => {
     const geography = source('master-data-geography-workspace.tsx');
     expect(geography).toContain('min-w-0 max-w-full space-y-5');
-    expect(geography).toContain('xl:grid-cols-3 2xl:grid-cols-[');
+    expect(geography).toContain('<MasterDataFilterBar>');
   });
 });
