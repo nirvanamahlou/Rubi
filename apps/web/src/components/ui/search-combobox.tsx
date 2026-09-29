@@ -16,6 +16,7 @@ export type SearchOption = {
   searchText?: string;
   disabled?: boolean;
 };
+const VISIBLE_OPTION_LIMIT = 5;
 export function optionText(node: ReactNode): string {
   if (typeof node === 'string' || typeof node === 'number') return String(node);
   if (Array.isArray(node)) return node.map(optionText).join(' ');
@@ -42,7 +43,16 @@ export function searchOptions(options: readonly SearchOption[], query: string) {
           `${optionText(o.label)} ${o.searchText ?? ''}`,
         ).includes(key),
     )
-    .slice(0, 6);
+    .slice(0, VISIBLE_OPTION_LIMIT);
+}
+export function dropdownBelowPosition(
+  triggerBottom: number,
+  viewportHeight: number,
+) {
+  return {
+    top: triggerBottom + 4,
+    maxHeight: Math.max(40, viewportHeight - triggerBottom - 12),
+  };
 }
 export function SearchCombobox({
   id: suppliedId,
@@ -97,7 +107,9 @@ export function SearchCombobox({
   const [open, setOpen] = useState(false),
     [query, setQuery] = useState(''),
     [active, setActive] = useState(0);
-  const matches = remote ? options.slice(0, 6) : searchOptions(options, query);
+  const matches = remote
+    ? options.slice(0, VISIBLE_OPTION_LIMIT)
+    : searchOptions(options, query);
   const selected = options.find((o) => o.value === value);
   const display = optionText(selectedLabel ?? selected?.label);
   useEffect(() => {
@@ -133,19 +145,24 @@ export function SearchCombobox({
     panel.style.pointerEvents = 'auto';
     const position = () => {
       const rect = input.current!.getBoundingClientRect();
-      const height = panel.getBoundingClientRect().height;
+      const placement = dropdownBelowPosition(rect.bottom, window.innerHeight);
       Object.assign(panel.style, {
         position: 'fixed',
         inset: 'auto',
         margin: '0',
         left: rect.left + 'px',
         width: rect.width + 'px',
-        top:
-          (rect.bottom + height + 6 > window.innerHeight && rect.top > height
-            ? rect.top - height - 4
-            : rect.bottom + 4) + 'px',
+        top: placement.top + 'px',
+        maxHeight: placement.maxHeight + 'px',
+        overflowY: 'auto',
       });
     };
+    if (
+      window.innerHeight - input.current.getBoundingClientRect().bottom <
+      96
+    ) {
+      input.current.scrollIntoView({ block: 'center' });
+    }
     position();
     window.addEventListener('resize', position);
     window.addEventListener('scroll', position, true);

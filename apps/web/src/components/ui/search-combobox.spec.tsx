@@ -1,6 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { SearchCombobox, searchOptions } from './search-combobox';
+import {
+  SearchCombobox,
+  dropdownBelowPosition,
+  searchOptions,
+} from './search-combobox';
 import { NativeSearchSelect } from './native-search-select';
 import {
   Select,
@@ -15,12 +19,25 @@ const options = Array.from({ length: 20 }, (_, i) => ({
   searchText: 'هتل ' + i + ' Hotel ' + i,
 }));
 describe('shared inline searchable selection', () => {
-  it('shows six initial options and searches the entire list before limiting results', () => {
-    expect(searchOptions(options, '')).toHaveLength(6);
+  it('shows five initial options and searches the entire list before limiting results', () => {
+    expect(searchOptions(options, '')).toHaveLength(5);
     expect(searchOptions(options, 'Hotel 19').map((o) => o.value)).toEqual([
       '19',
     ]);
-    expect(searchOptions(options, 'هتل')).toHaveLength(6);
+    expect(searchOptions(options, 'هتل')).toHaveLength(5);
+    expect(searchOptions(options, 'Hotel 15').map((o) => o.value)).toEqual([
+      '15',
+    ]);
+  });
+  it('keeps the suggestion panel below the field at any viewport position', () => {
+    expect(dropdownBelowPosition(200, 800)).toEqual({
+      top: 204,
+      maxHeight: 588,
+    });
+    expect(dropdownBelowPosition(760, 800)).toEqual({
+      top: 764,
+      maxHeight: 40,
+    });
   });
   it('matches text inside the displayed name even when separate search aliases exist', () => {
     const records = [
@@ -61,7 +78,7 @@ describe('shared inline searchable selection', () => {
       searchOptions([{ value: 'canonical', label: 'کیش' }], 'كيش')[0]?.value,
     ).toBe('canonical');
   });
-  it('uses the primary input and retains selected labels outside the first six', () => {
+  it('uses the primary input and retains selected labels outside the first five', () => {
     const html = renderToStaticMarkup(
       <SearchCombobox
         label="هتل"
