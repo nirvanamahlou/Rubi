@@ -4426,6 +4426,11 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 - قرارداد افزایشی و سازگار؛ producer=Customer Affairs/PC-B، consumer=دو سایت خارجی از طریق site binding موجود. بدون Migration، Dependency/Lockfile، تغییر Permission، ارسال بیرونی یا داده واقعی QA. پیش از merge، تست و بازبینی امنیتی لازم است.
 - ۱۰۶ تست API ماژول و ۵۸ تست Web ماژول، typecheck API/Web، lint متمرکز و build تولیدی هر دو موفق. بازبینی مستقل سه ایراد را یافت؛ هر سه اصلاح و بازبینی مجدد بدون ایراد جدید انجام شد. آزمون اتصال زندهٔ سایت‌ها (نیازمند connector)، PR gate و runtime smoke هنوز در انتظارند.
 
+## 2026-09-29 — PACKAGE-GENERATOR-MALAYSIA-THAILAND-OVERLAY-0929 — PC-B — IN_PROGRESS
+
+- درخواست مالک: پس از ورود دادهٔ اکسل، نوشته‌ها و قیمت‌های قالب‌های مالزی و تایلند داخل کادرهای مرجع بمانند؛ قاب آبی و گوشه‌های گرد تاریخ/زمان و کارت‌های قیمت حفظ شود.
+- شاخهٔ مستقل `codex/pc-b-malaysia-thailand-overlay-0929` از `origin/develop@24f07449`. محدودهٔ رزرو: رندر و CSS استاتیک `apps/web/public/package-generator`، تست مستقیم همان ماژول، سند اختصاصی و مدخل‌های محدود وضعیت. بدون API، قرارداد مشترک، Migration، Prisma، Permission، Dependency/Lockfile یا تغییر دادهٔ عملیاتی. قفل اسناد مرکزی فقط برای همین مدخل و وضعیت این Task نزد PC-B است.
+
 ## PERMISSION-VISIBILITY-SALES-SCOPE-0929 — PC-A — READY_FOR_REVIEW
 
 - COMPUTER_ID=PC-A؛ شاخه `codex/pc-a-permission-visibility-sales-scope-0929` از origin/develop. محدوده: IAM access-context و authenticated-permissions/خواندن نقش، قرارداد IAM user-access و تست آن، پوسته/AccessLink/کنترل مشترک Button و Tabs، رابط مدیریت دسترسی کاربران، عملیات Sales و آزمون‌های مستقیم دامنه قرارداد.
