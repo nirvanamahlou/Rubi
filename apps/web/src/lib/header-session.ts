@@ -1,6 +1,7 @@
 import type { LoginResponse } from '@nora/contracts';
 
 const HEADER_SESSION_STORAGE_KEY = 'nora:header-session:v1';
+const HEADER_SESSION_CHANGED_EVENT = 'nora:header-session-changed';
 
 type LoginUser = LoginResponse['user'];
 type HeaderSessionStorage = Pick<Storage, 'getItem' | 'removeItem' | 'setItem'>;
@@ -65,7 +66,26 @@ export function rememberHeaderSession(
   } catch {
     // A blocked Session Storage must not break authentication or navigation.
   }
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new Event(HEADER_SESSION_CHANGED_EVENT));
+  }
   return identity;
+}
+
+export function subscribeHeaderSession(onChange: () => void): () => void {
+  if (typeof window === 'undefined') return () => undefined;
+  window.addEventListener(HEADER_SESSION_CHANGED_EVENT, onChange);
+  window.addEventListener('storage', onChange);
+  return () => {
+    window.removeEventListener(HEADER_SESSION_CHANGED_EVENT, onChange);
+    window.removeEventListener('storage', onChange);
+  };
+}
+
+export function getHeaderRoleLabel(
+  storage: HeaderSessionStorage | null = browserSessionStorage(),
+): string {
+  return readHeaderSession(storage)?.roleNames.join('، ') ?? '';
 }
 
 export function clearHeaderSession(
@@ -75,6 +95,9 @@ export function clearHeaderSession(
     storage?.removeItem(HEADER_SESSION_STORAGE_KEY);
   } catch {
     // A blocked Session Storage must not break secure logout.
+  }
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new Event(HEADER_SESSION_CHANGED_EVENT));
   }
 }
 

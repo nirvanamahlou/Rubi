@@ -40,7 +40,6 @@ type UserIdentityState =
       status: 'ready';
       displayName: string;
       loggedInAt: string;
-      roleNames: string[];
     }
   | { status: 'error'; displayName: typeof PROFILE_USER_FALLBACK };
 
@@ -65,7 +64,6 @@ export function UserMenu() {
         status: 'ready',
         displayName: remembered.displayName,
         loggedInAt: remembered.loggedInAt,
-        roleNames: remembered.roleNames,
       });
     };
     const recovered = (event: Event) =>
@@ -149,15 +147,6 @@ export function UserMenu() {
             <span className="block truncate text-xs font-bold">
               {identity.displayName}
             </span>
-            {identity.status === 'ready' && identity.roleNames.length ? (
-              <span
-                className="block max-w-36 truncate text-[10px] font-medium opacity-80"
-                data-user-role-label
-                title={identity.roleNames.join('، ')}
-              >
-                {identity.roleNames.join('، ')}
-              </span>
-            ) : null}
           </span>
           <ChevronDown
             aria-hidden="true"
