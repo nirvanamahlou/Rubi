@@ -131,3 +131,16 @@ describe('role access recommendations', () => {
     expect(html).not.toContain('type="submit"');
   });
 });
+
+it('recommends branch-wide contracts for the sales manager without global access', () => {
+  const codes = [
+    'sales.contracts.read.branch',
+    'sales.contracts.update.branch',
+    'sales.contracts.read.all',
+  ];
+  const available = codes.map((code) => ({ id: code, code, name: code }));
+  const proposal = recommendRoleAccess('مدیر فروش', available, codes);
+  expect(proposal.permissionIds).toContain('sales.contracts.read.branch');
+  expect(proposal.permissionIds).toContain('sales.contracts.update.branch');
+  expect(proposal.permissionIds).not.toContain('sales.contracts.read.all');
+});

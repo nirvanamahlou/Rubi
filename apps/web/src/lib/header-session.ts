@@ -8,6 +8,7 @@ type HeaderSessionStorage = Pick<Storage, 'getItem' | 'removeItem' | 'setItem'>;
 export interface HeaderSessionIdentity {
   displayName: string;
   loggedInAt: string;
+  roleNames: string[];
 }
 
 function browserSessionStorage(): HeaderSessionStorage | null {
@@ -27,6 +28,9 @@ function isHeaderSessionIdentity(
   return (
     typeof candidate.displayName === 'string' &&
     typeof candidate.loggedInAt === 'string' &&
+    (candidate.roleNames === undefined ||
+      (Array.isArray(candidate.roleNames) &&
+        candidate.roleNames.every((role) => typeof role === 'string'))) &&
     Number.isFinite(Date.parse(candidate.loggedInAt))
   );
 }
@@ -39,7 +43,8 @@ export function readHeaderSession(
     const raw = storage.getItem(HEADER_SESSION_STORAGE_KEY);
     if (!raw) return null;
     const parsed: unknown = JSON.parse(raw);
-    return isHeaderSessionIdentity(parsed) ? parsed : null;
+    if (!isHeaderSessionIdentity(parsed)) return null;
+    return { ...parsed, roleNames: parsed.roleNames ?? [] };
   } catch {
     return null;
   }
@@ -53,6 +58,7 @@ export function rememberHeaderSession(
   const identity: HeaderSessionIdentity = {
     displayName: user.displayName.trim() || 'کاربر سامانه',
     loggedInAt,
+    roleNames: user.roles?.map(({ name }) => name).filter(Boolean) ?? [],
   };
   try {
     storage?.setItem(HEADER_SESSION_STORAGE_KEY, JSON.stringify(identity));

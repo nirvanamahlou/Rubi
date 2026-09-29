@@ -5,16 +5,16 @@ import {
   useContext,
   useEffect,
   useMemo,
-  useRef,
   useState,
   type ReactNode,
 } from 'react';
 
-type Theme = 'light' | 'dark';
+import { resolveThemePreference, type Theme } from '@/lib/theme-preference';
 
 interface ThemeContextValue {
   theme: Theme;
   toggleTheme: () => void;
+  resetTheme: () => void;
 }
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
@@ -22,33 +22,37 @@ const storageKey = 'nora-theme';
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setTheme] = useState<Theme>('light');
-  const initializedTheme = useRef(false);
+  const [initializedTheme, setInitializedTheme] = useState(false);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
-      const savedTheme = window.localStorage.getItem(storageKey);
-      const preferredTheme =
-        savedTheme === 'light' || savedTheme === 'dark'
-          ? savedTheme
-          : window.matchMedia('(prefers-color-scheme: dark)').matches
-            ? 'dark'
-            : 'light';
-      initializedTheme.current = true;
-      setTheme(preferredTheme);
+      let savedTheme: string | null = null;
+      try {
+        savedTheme = window.localStorage.getItem(storageKey);
+      } catch {
+        // Storage may be disabled; the default remains light.
+      }
+      setTheme(resolveThemePreference(savedTheme));
+      setInitializedTheme(true);
     }, 0);
     return () => window.clearTimeout(timer);
   }, []);
 
   useEffect(() => {
-    if (!initializedTheme.current) return;
+    if (!initializedTheme) return;
     document.documentElement.classList.toggle('dark', theme === 'dark');
     document.documentElement.style.colorScheme = theme;
-    window.localStorage.setItem(storageKey, theme);
-  }, [theme]);
+    try {
+      window.localStorage.setItem(storageKey, theme);
+    } catch {
+      // Theme switching still works without persistent browser storage.
+    }
+  }, [theme, initializedTheme]);
 
   const value = useMemo(
     () => ({
       theme,
+      resetTheme: () => setTheme('light'),
       toggleTheme: () =>
         setTheme((current) => (current === 'light' ? 'dark' : 'light')),
     }),

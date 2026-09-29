@@ -8,13 +8,27 @@ import {
   USER_ACCESS_SCREENS,
 } from '@nora/contracts';
 describe('per-user screen visibility', () => {
-  it('preserves legacy role navigation without the managed-profile marker', () => {
+  it('limits legacy navigation to operational grants', () => {
     expect(canViewRoute(['iam.users.read'], '/system')).toBe(true);
-    expect(canViewScreen([], 'ticket-catalog.tab.issued')).toBe(true);
+    expect(canViewRoute([], '/finance')).toBe(false);
+    expect(
+      canViewRoute(['legal-entity.read', 'legal-entity.switch'], '/system'),
+    ).toBe(false);
+    expect(canViewRoute(['sales.contracts.read.own'], '/sales')).toBe(true);
+    expect(
+      canViewRoute(['sales.contracts.read.own'], '/sales/contracts/new'),
+    ).toBe(false);
+    expect(canViewScreen([], 'ticket-catalog.tab.issued')).toBe(false);
   });
   it('hides whole modules with no selected child and permits only the checked children', () => {
     const permissions = [
       USER_ACCESS_PROFILE_PERMISSION,
+      'iam.users.read',
+      'ticket_catalog.read',
+      'sales.contracts.read.own',
+      'package_pricing.read',
+      'hr.read',
+      'reservations.read',
       screenPermission('ticket-catalog.tab.catalog'),
     ];
     expect(canViewRoute(permissions, '/ticket-management')).toBe(true);
@@ -25,6 +39,12 @@ describe('per-user screen visibility', () => {
   it('does not leak a denied deep route through its permitted parent', () => {
     const permissions = [
       USER_ACCESS_PROFILE_PERMISSION,
+      'iam.users.read',
+      'ticket_catalog.read',
+      'sales.contracts.read.own',
+      'package_pricing.read',
+      'hr.read',
+      'reservations.read',
       screenPermission('sales.home'),
     ];
     expect(canViewRoute(permissions, '/sales')).toBe(true);
@@ -34,6 +54,12 @@ describe('per-user screen visibility', () => {
       canViewRoute(
         [
           USER_ACCESS_PROFILE_PERMISSION,
+          'iam.users.read',
+          'ticket_catalog.read',
+          'sales.contracts.read.own',
+          'package_pricing.read',
+          'hr.read',
+          'reservations.read',
           screenPermission('ticket-catalog.tab.tours'),
         ],
         '/sales/tours',
@@ -62,6 +88,12 @@ describe('query route isolation', () => {
     )!;
     const permissions = [
       USER_ACCESS_PROFILE_PERMISSION,
+      'iam.users.read',
+      'ticket_catalog.read',
+      'sales.contracts.read.own',
+      'package_pricing.read',
+      'hr.read',
+      'reservations.read',
       screenPermission(section.id),
     ];
     expect(canViewRoute(permissions, '/hr?section=time')).toBe(true);
@@ -75,7 +107,16 @@ describe('query route isolation', () => {
     );
     expect(
       canViewRoute(
-        [USER_ACCESS_PROFILE_PERMISSION, screenPermission('hr.home')],
+        [
+          USER_ACCESS_PROFILE_PERMISSION,
+          'iam.users.read',
+          'ticket_catalog.read',
+          'sales.contracts.read.own',
+          'package_pricing.read',
+          'hr.read',
+          'reservations.read',
+          screenPermission('hr.home'),
+        ],
         '/hr?section=unknown',
       ),
     ).toBe(false);
@@ -83,10 +124,26 @@ describe('query route isolation', () => {
   it('normalizes the existing users route without allowing other system pages', () => {
     const permissions = [
       USER_ACCESS_PROFILE_PERMISSION,
+      'iam.users.read',
+      'ticket_catalog.read',
+      'sales.contracts.read.own',
+      'package_pricing.read',
+      'hr.read',
+      'reservations.read',
       screenPermission('system.users'),
     ];
     expect(canViewRoute(permissions, '/users')).toBe(true);
     expect(canViewRoute(permissions, '/system/users')).toBe(true);
     expect(canViewRoute(permissions, '/system/operations')).toBe(false);
   });
+});
+
+it('requires operational grants even when a managed screen was selected', () => {
+  const screensOnly = [
+    USER_ACCESS_PROFILE_PERMISSION,
+    screenPermission('finance.home'),
+  ];
+  expect(canViewRoute(screensOnly, '/finance')).toBe(false);
+  expect(canViewScreen(screensOnly, 'finance.home')).toBe(false);
+  expect(canViewRoute([...screensOnly, 'finance.read'], '/finance')).toBe(true);
 });

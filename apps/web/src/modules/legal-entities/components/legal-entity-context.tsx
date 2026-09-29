@@ -3,11 +3,14 @@
 import {
   AlertCircle,
   Building2,
+  Check,
   CheckCircle2,
+  ChevronDown,
   Layers3,
   LoaderCircle,
   RefreshCw,
 } from 'lucide-react';
+import * as SelectPrimitive from '@radix-ui/react-select';
 import Image from 'next/image';
 import {
   createContext,
@@ -27,12 +30,6 @@ import type {
 
 import { Button } from '@/components/ui/button';
 import { useSystemPreferences } from '@/components/system-preferences-provider';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-} from '@/components/ui/form-controls';
 import { Badge } from '@/components/ui/surfaces';
 import { cn } from '@/lib/utils';
 import { legalEntitiesApi } from '../api/client';
@@ -255,17 +252,18 @@ export function LegalEntityContextSelector() {
         className="relative min-w-0 max-w-[210px] sm:min-w-52"
         data-legal-entity-selector
       >
-        <Select
+        <SelectPrimitive.Root
           disabled={state.switching}
           onValueChange={(value) =>
             void state.switchTo(value as LegalEntitySelection)
           }
           value={selection ?? ''}
         >
-          <SelectTrigger
+          <SelectPrimitive.Trigger
             aria-label={english ? 'Select active company' : 'انتخاب شرکت فعال'}
             className={cn(
-              'border-0 bg-muted/70 px-2.5',
+              'flex h-11 w-full items-center justify-between gap-2 rounded-xl border border-input bg-surface px-2.5 text-sm text-foreground shadow-xs outline-none transition focus:border-primary focus:ring-2 focus:ring-ring/30 disabled:cursor-not-allowed disabled:opacity-50',
+              'border-0 bg-muted/70',
               state.error && 'ring-1 ring-destructive',
             )}
           >
@@ -294,27 +292,51 @@ export function LegalEntityContextSelector() {
                 </Badge>
               ) : null}
             </span>
-          </SelectTrigger>
-          <SelectContent>
-            {choices.map((choice) => (
-              <SelectItem key={choice.value} value={choice.value}>
-                <span className="flex items-center gap-2">
-                  {choice.aggregate ? (
-                    <Layers3 className="size-4 text-violet-600" />
-                  ) : (
-                    <Building2 className="size-4 text-primary" />
-                  )}
-                  {english
-                    ? choice.aggregate
-                      ? 'All companies — administrators'
-                      : (choice.entity?.latinName ??
-                        choice.value.replaceAll('_', ' '))
-                    : choice.label}
-                </span>
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+            <SelectPrimitive.Icon>
+              <ChevronDown
+                aria-hidden="true"
+                className="size-4 shrink-0 text-muted-foreground"
+              />
+            </SelectPrimitive.Icon>
+          </SelectPrimitive.Trigger>
+          <SelectPrimitive.Portal>
+            <SelectPrimitive.Content
+              align="end"
+              className="z-50 min-w-[var(--radix-select-trigger-width)] overflow-hidden rounded-xl border border-border bg-popover p-1 text-popover-foreground shadow-xl"
+              position="popper"
+              sideOffset={4}
+            >
+              <SelectPrimitive.Viewport>
+                {choices.map((choice) => (
+                  <SelectPrimitive.Item
+                    className="relative flex min-h-9 cursor-default select-none items-center rounded-lg py-2 pe-8 ps-3 text-sm outline-none data-[highlighted]:bg-muted data-[disabled]:opacity-50"
+                    key={choice.value}
+                    value={choice.value}
+                  >
+                    <SelectPrimitive.ItemText>
+                      <span className="flex items-center gap-2">
+                        {choice.aggregate ? (
+                          <Layers3 className="size-4 text-violet-600" />
+                        ) : (
+                          <Building2 className="size-4 text-primary" />
+                        )}
+                        {english
+                          ? choice.aggregate
+                            ? 'All companies — administrators'
+                            : (choice.entity?.latinName ??
+                              choice.value.replaceAll('_', ' '))
+                          : choice.label}
+                      </span>
+                    </SelectPrimitive.ItemText>
+                    <SelectPrimitive.ItemIndicator className="absolute end-2">
+                      <Check aria-hidden="true" className="size-4" />
+                    </SelectPrimitive.ItemIndicator>
+                  </SelectPrimitive.Item>
+                ))}
+              </SelectPrimitive.Viewport>
+            </SelectPrimitive.Content>
+          </SelectPrimitive.Portal>
+        </SelectPrimitive.Root>
         <span aria-live="polite" className="sr-only">
           {state.switching
             ? english
