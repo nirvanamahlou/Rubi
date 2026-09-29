@@ -277,8 +277,87 @@ export class CustomerAffairsService {
     };
   }
 
-  async report(actor: AuthenticatedActor) {
-    return { data: await this.repository.report(actor.branchIds) };
+  async report(actor: AuthenticatedActor, query: ListQueryDto = {}) {
+    return { data: await this.repository.report(actor.branchIds, query) };
+  }
+
+  async exportRows(
+    kind: 'leads' | 'tickets',
+    query: ListQueryDto,
+    actor: AuthenticatedActor,
+  ) {
+    const branchIds = query.branchId
+      ? [branchScope(actor, query.branchId)]
+      : actor.branchIds;
+    const common = {
+      ...createdDateFilter(query),
+      branchId: { in: branchIds },
+      ...(query.priority ? { priority: query.priority } : {}),
+    };
+    const rows =
+      kind === 'leads'
+        ? await this.repository.exportLeads({
+            ...common,
+            ...(query.stage ? { stage: query.stage } : {}),
+            ...(query.overdueOnly
+              ? {
+                  stage: { in: ACTIVE_LEAD_STAGES },
+                  nextActionAt: { lt: new Date() },
+                }
+              : {}),
+            ...(query.search
+              ? {
+                  OR: [
+                    {
+                      trackingNumber: {
+                        contains: query.search,
+                        mode: 'insensitive',
+                      },
+                    },
+                    { title: { contains: query.search, mode: 'insensitive' } },
+                    {
+                      sourceReference: {
+                        contains: query.search,
+                        mode: 'insensitive',
+                      },
+                    },
+                  ],
+                }
+              : {}),
+          })
+        : await this.repository.exportTickets({
+            ...common,
+            ...(query.sourceSite
+              ? { siteOrigin: { site: { code: query.sourceSite } } }
+              : {}),
+            ...(query.status ? { status: query.status } : {}),
+            ...(query.overdueOnly
+              ? {
+                  status: { in: ACTIVE_TICKET_STATUSES },
+                  nextActionAt: { lt: new Date() },
+                }
+              : {}),
+            ...(query.search
+              ? {
+                  OR: [
+                    {
+                      trackingNumber: {
+                        contains: query.search,
+                        mode: 'insensitive',
+                      },
+                    },
+                    {
+                      subject: { contains: query.search, mode: 'insensitive' },
+                    },
+                  ],
+                }
+              : {}),
+          });
+    if (rows.length > 10000)
+      throw new BadRequestException(
+        'خروجی به ۱۰٬۰۰۰ پرونده محدود است؛ فیلترها را محدودتر کنید.',
+      );
+    return rows as Array<Record<string, unknown>>;
   }
 
   async audit(

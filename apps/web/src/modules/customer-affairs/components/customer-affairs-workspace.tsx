@@ -407,12 +407,8 @@ export function TicketForm({
         ) as CustomerAffairsTicketInput['channel'],
         contactOccurredAt: identity.occurredAt,
         category: String(data.get('category')),
-        impact: String(
-          data.get('impact'),
-        ) as CustomerAffairsTicketInput['impact'],
-        urgency: String(
-          data.get('urgency'),
-        ) as CustomerAffairsTicketInput['urgency'],
+        impact: 'NORMAL',
+        urgency: 'NORMAL',
         priority: String(
           data.get('priority'),
         ) as CustomerAffairsTicketInput['priority'],
@@ -514,28 +510,6 @@ export function TicketForm({
             </AffairsSelect>
           </FormField>
         </div>
-        <FormField label="اثر">
-          <AffairsSelect
-            className="h-11 w-full rounded-xl border border-input bg-surface px-3"
-            name="impact"
-            defaultValue="NORMAL"
-          >
-            <option value="LOW">کم</option>
-            <option value="NORMAL">عادی</option>
-            <option value="HIGH">زیاد</option>
-          </AffairsSelect>
-        </FormField>
-        <FormField label="فوریت">
-          <AffairsSelect
-            className="h-11 w-full rounded-xl border border-input bg-surface px-3"
-            name="urgency"
-            defaultValue="NORMAL"
-          >
-            <option value="LOW">کم</option>
-            <option value="NORMAL">عادی</option>
-            <option value="HIGH">زیاد</option>
-          </AffairsSelect>
-        </FormField>
         <FormField label="اقدام بعدی">
           <Input name="nextAction" defaultValue="بررسی و پاسخ اولیه" required />
         </FormField>
