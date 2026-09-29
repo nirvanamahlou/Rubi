@@ -4592,6 +4592,7 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 - COMPUTER_ID=PC-B; branch `codex/pc-b-thailand-poster-xlsx-0929` from `origin/develop@049cb912`. Reserve only Thailand Package Generator parser/renderer/template-local CSS, focused tests, dedicated task note, and bounded central status entries. Match Phuket, Pattaya and Bangkok–Phuket poster sections to the three owner-provided XLSX files. No API, shared contract, migration, dependency, lockfile, real customer data or unrelated module changes. Previous Package Generator overlay task is merged and its lock released.
 
 - Validation: three supplied XLSX files rendered in local QA; 36 pricing-management tests, Web lint, typecheck and production build passed. Independent price review confirmed final sale columns and no purchase-price exposure. Bounded code/docs reservation released with commit.
+
 ## CUSTOMER-AFFAIRS-REQUEST-ACTIONS-SWAP-0929 — PC-B — READY_FOR_REVIEW
 
 - درخواست مالک از تصویر ۶۶۴: جای دکمه‌های «ثبت مشتری برای درخواست» و «تنظیم پیگیری بعدی» در پروفایل درخواست جابه‌جا شود. تفسیر تصویری: ثبت مشتری در جای دکمهٔ بالایی کنار خلاصه، تنظیم پیگیری در جای دکمهٔ پایین پس از مشخصات سفر.
