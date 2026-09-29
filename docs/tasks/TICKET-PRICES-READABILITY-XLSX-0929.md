@@ -15,4 +15,4 @@
 
 ## اعتبارسنجی و تحویل
 
-Web lint، typecheck و build تولیدی (۵۵ مسیر) موفق شدند. CI پس از ارسال PR اجرا می‌شود. هیچ Migration یا به‌روزرسانی runtime محلی در محدوده نیست؛ وضعیت merge و hash نهایی پس از تکمیل ثبت خواهد شد.
+Web lint، typecheck و build تولیدی (۵۵ مسیر) موفق شدند. CI کامل PR #470 نیز در هر دو اجرا سبز شد: build، quality gate، full test suite و PostgreSQL 18 migration/seed gate. Commit پیاده‌سازی `fe1bb633`; هیچ Migration جدید یا به‌روزرسانی runtime محلی در محدوده نیست. Merge با مجوز صریح مالک انجام می‌شود.
