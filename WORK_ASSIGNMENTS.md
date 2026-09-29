@@ -4419,6 +4419,14 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 
 - COMPUTER_ID=PC-A; branch codex/pc-a-reservation-operation-summary-0929 from origin/develop. Reserve Reservations selected-contract header/UI/tests, request and passenger-file controller mutation activity integration and scoped summary endpoint, IAM public audit/name projection methods/tests, additive Travel summary contract and bounded docs. Producer Reservations composes FinanceDeliveryService and IAM public services; consumer Web selected-header. GET operation-summary is additive; existing requests remain compatible. No Finance table query, migration/schema/dependency or operational record mutation. Names limited to responsible actors of authorized intake; no privileged user directory exposure. Preserve original checkout edits and prior role UI. Bounded central Travel/IAM/Reservations/docs locks RELEASED with scoped commit. New reservation work item awaits owner merge authorization after review; prior IAM merge approvals are not generalized.
 
+## PERMISSION-VISIBILITY-SALES-SCOPE-0929 — PC-A — READY_FOR_REVIEW
+
+- COMPUTER_ID=PC-A؛ شاخه `codex/pc-a-permission-visibility-sales-scope-0929` از origin/develop. محدوده: IAM access-context و authenticated-permissions/خواندن نقش، قرارداد IAM user-access و تست آن، پوسته/AccessLink/کنترل مشترک Button و Tabs، رابط مدیریت دسترسی کاربران، عملیات Sales و آزمون‌های مستقیم دامنه قرارداد.
+- قفل محدود فایل‌های مرکزی یادشده و ورودی این واحد در WORK_ASSIGNMENTS.md و docs/PROJECT_STATUS.md؛ قفل Finance/Travel یا Dependency/Migration اخذ نمی‌شود. Producer IAM و consumer پوسته/Sales مالک PC-A؛ کدهای مجوز و API موجود حفظ می‌شوند، عنوان مدیر فروش افزایشی است و کاربران قدیمی با مجوز عملیاتی معتبر حفظ می‌شوند. فاقد مجوز هیچ گروه/زیربخش قابل مشاهده ندارد؛ محدودیت کارشناس فروش در مجوز مؤثر سرور اعمال می‌شود.
+- بدون تغییر ماژول‌های PC-B، Schema/Migration، Seed/grant عملیاتی، Dependency/Lockfile یا runtime ۳۱۰۰؛ تغییرات محلی اصلی حفظ می‌شوند.
+
+- PERMISSION-VISIBILITY-SALES-SCOPE-0929 validation: Web 1775 passed/3 skipped; IAM/Sales 136 passed including isolated HTTP recheck. Scoped lint, typecheck, contracts and production builds checked. PR #468; source 4b94ff93. Bounded central code locks RELEASED; no migration/dependency lock acquired. User explicitly approved develop integration and PR merge. Preserve both work entries in the WORK_ASSIGNMENTS conflict; incoming code merges unchanged. No runtime rollout performed.
+
 ## TOPBAR-COMPANY-ROLE-0929 — PC-A — READY_FOR_REVIEW
 
 - COMPUTER_ID=PC-A؛ شاخه `codex/pc-a-topbar-company-role-0929` از آخرین `origin/develop` پس از fetch. بنا به درخواست مالک، کنترل شرکت هدر به ظاهر/خوانایی قبلی برمی‌گردد و عنوان نقش‌های واقعی کاربر در منوی بالا کنار نام او نمایش داده می‌شود.

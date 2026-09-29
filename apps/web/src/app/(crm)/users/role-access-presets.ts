@@ -216,6 +216,31 @@ const profiles: Record<
       'مشاهده مسافر و مدارک هویتی و سفر برای پیگیری ویزا؛ بدون تغییر خرید، قرارداد یا مالی.',
   },
 };
+profiles['مدیر فروش'] = {
+  groups: [
+    'workbench',
+    'customers',
+    'sales',
+    'ticket-catalog',
+    'documents',
+    'reports',
+  ],
+  permissions: [
+    ...profiles[USER_JOB_TITLES[1]]!.permissions.filter(
+      (code) =>
+        code !== 'sales.contracts.read.own' &&
+        code !== 'sales.contracts.update.own',
+    ),
+    'sales.contracts.read.branch',
+    'sales.contracts.update.branch',
+    'sales.export',
+    'sales.audit.read',
+    'reporting.read',
+    'reporting.sales.read',
+  ],
+  reason:
+    'مدیریت قراردادهای همه کارشناسان در شعب مجاز، همراه گزارش فروش؛ بدون افزایش خودکار دسترسی خارج از شعب مجاز.',
+};
 export interface AssignablePermission {
   id: string;
   code: string;
