@@ -233,3 +233,7 @@ flowchart TD
 - manifest، voucher، contract و documentهای تحویلی versioned هستند.
 - تغییر حساس reason، actor، UTC timestamp، trace و audit دارد.
 - داده PII غیرضروری در event، log، Excel یا Provider payload ارسال نمی‌شود.
+
+## Selected-contract responsibility summary (2026-09-29)
+
+The Reservations header composes Finance's existing delivery-authorization revision with the latest successful reservation mutation. Finance retains approval ownership and automatic database timestamps. The additive read-only operation-summary API requires reservation visibility and intake branch authorization, and returns only status, responsible display names and UTC times. IAM owns responsibility audit/name projection; Reservations never queries Finance/IAM tables directly. Native immutable revisions preserve original mutation/replay times; successful passenger/file mutation receipts supplement existing histories. Detailed histories and their permissions are unchanged. See [RESERVATION-OPERATION-SUMMARY-0929](tasks/RESERVATION-OPERATION-SUMMARY-0929.md).
