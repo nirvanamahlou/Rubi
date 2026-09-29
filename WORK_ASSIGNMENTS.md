@@ -4534,3 +4534,13 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 - پیگیری مالک از تصویر ۶۶۰: انتخاب «مسئول پاسخ‌گویی/پیگیری» در فرم‌های امور مشتریان باید یک فیلد جست‌وجو/انتخاب باشد، نه کادر جست‌وجو و Select جداگانه. شاخه `codex/pc-b-ca-assignee-combobox-0929` از آخرین `origin/develop` در checkout مستقل؛ فایل‌های checkout اصلی حفظ می‌شوند.
 - محدوده: فقط انتخاب‌گر مسئول، helper گزینه‌های آن، تست‌های مستقیم و قرارداد انتخاب‌گر در `apps/web/src/modules/customer-affairs/components/` و مدخل محدود وضعیت. از SearchCombobox موجود و API عمومی HR directory مصرف می‌شود؛ انتخاب فقط userId کارکنان مجاز، محدود به شعبه و دارای حساب متصل. بدون API/Contract، Schema/Migration، IAM، Dependency/Lockfile یا دادهٔ عملیاتی. بازآرایی runtime ۳۱۰۰ فقط پس از build و smoke ایمن.
 - نتیجه: جست‌وجو و انتخاب در یک کنترل انجام می‌شود؛ پنج کارمند قابل انتخاب در پنل زیر فیلد، دریافت اولیه هنگام بازشدن، جست‌وجوی debounce و حفظ شناسهٔ مسئول موجود. ۶۱ تست Web امور مشتریان، typecheck و lint محدود موفق‌اند؛ build/CI و runtime پس از PR انجام می‌شود.
+
+## TICKET-TARGET-COMPACT-WIDTH-0929 — PC-A — READY_FOR_REVIEW
+
+- COMPUTER_ID=PC-A; branch `codex/pc-a-ticket-target-compact-width-0929` from `origin/develop@cddfcc9d`. Reserve Sales module-local `ticket-price-targets.module.css` and this bounded Work Item/status entry. Shrink each two-target box to the owner's hatched reference width (22rem maximum), preserving adjacent boxes, vertical scrolling and narrow-screen wrapping. Prior target-row work locks are released. No API, calculations, data, migration or dependencies change.
+
+- Validation: two existing page tests, CSS formatting, Web typecheck and production build (55 routes) pass. Bounded CSS/docs locks released with commit. Local visual update is authorized by the screenshot request; Owner explicitly authorized develop merge on 2026-09-29.
+
+## RESERVATION-MANIFEST-ROUTE-FILTERS-0929 — PC-A — READY_FOR_REVIEW
+
+- COMPUTER_ID=PC-A؛ شاخه `codex/pc-a-reservation-manifest-route-filters-0929` از `origin/develop@91952eb2`. فقط فیلترهای مبدا/مقصد و منطق نمایش کارت‌های منیفست در Reservations Web همراه تست‌ها و ثبت وضعیت رزرو شد. گزینه‌ها از بلیط‌های دریافت‌شده برای بازه تاریخ ساخته می‌شوند؛ فیلتر تاریخ موجود و API/خروجی دانلود بدون تغییر می‌ماند. سه تست هدفمند، typecheck، lint و build ۵۵ مسیر Web موفق‌اند. بدون API، قرارداد مشترک، Migration، داده عملیاتی یا Dependency. قفل محدود Reservations و Central Docs با commit آزاد می‌شود؛ PR به develop برای review و CI.
