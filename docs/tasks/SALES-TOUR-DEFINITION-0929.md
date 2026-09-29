@@ -16,3 +16,4 @@
 - تست‌های integration واقعی PostgreSQL در این نشست به‌علت تنظیم‌نبودن `TRAVEL_TEST_DATABASE_URL` اجرا نشدند؛ در CI PostgreSQL gate باید اجرا شود. Migration، دادهٔ عملیاتی و Runtime مشترک تغییر نکردند.
 
 Branch: `codex/pc-a-sales-tour-definition-0929`, base `origin/develop@6f37487c`. قفل‌های Migration و Dependency/Lockfile رزرو نشدند؛ قفل محدود کد و اسناد این Work Item با commit آزاد می‌شود.
+PR #464 targets develop. Implementation commit: ce100064; develop integration: fa4b4ff.
