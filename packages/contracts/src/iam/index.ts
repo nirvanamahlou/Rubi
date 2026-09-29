@@ -171,6 +171,8 @@ export interface LoginResponse {
     displayName: string;
     permissions: IamPermissionCode[];
     branches: BranchReference[];
+    /** Active assigned role labels for the signed-in user; optional for older clients. */
+    roles?: Array<{ code: string; name: string }>;
   };
 }
 
