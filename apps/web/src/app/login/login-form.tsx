@@ -4,15 +4,18 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Eye, EyeOff } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 
+import { useTheme } from '@/components/theme-provider';
 import { Button } from '@/components/ui/button';
 import { FormField, Input } from '@/components/ui/form-controls';
 import { getPublicApiBaseUrl } from '@/lib/environment';
 import { rememberHeaderSession } from '@/lib/header-session';
 import type { LoginResponse } from '@nora/contracts';
+import { loginDestination } from './login-destination';
 import { loginErrorMessage } from './login-error';
 
 export function LoginForm() {
   const router = useRouter();
+  const { resetTheme } = useTheme();
   const search = useSearchParams();
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -44,12 +47,9 @@ export function LoginForm() {
       }
       const session = (await response.json()) as LoginResponse;
       rememberHeaderSession(session.user);
+      resetTheme();
       const target = search.get('next');
-      router.replace(
-        target?.startsWith('/') && !target.startsWith('//')
-          ? target
-          : '/dashboard',
-      );
+      router.replace(loginDestination(target));
       router.refresh();
     } catch {
       setError('ارتباط با سرور برقرار نشد.');

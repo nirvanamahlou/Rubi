@@ -106,7 +106,7 @@ function Brand({ compact = false }: { compact?: boolean }) {
         compact ? 'grid size-11 place-items-center p-1' : 'block w-full',
       )}
       data-active-company-brand={context?.selection ?? 'LOADING'}
-      href="/dashboard"
+      href="/workbench"
     >
       <Image
         alt={brand.alt}
@@ -508,7 +508,7 @@ function Breadcrumb() {
       aria-label={english ? 'Breadcrumb' : 'مسیر صفحه'}
       className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground"
     >
-      <Link className="hover:text-foreground" href="/dashboard">
+      <Link className="hover:text-foreground" href="/workbench">
         {messages.shell.workspace}
       </Link>
       {breadcrumbs.length ? (
