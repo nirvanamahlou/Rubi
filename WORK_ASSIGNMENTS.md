@@ -4330,15 +4330,35 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 
 - `COMPUTER_ID=PC-B`؛ شاخهٔ `codex/pc-b-workbench-september-integration` از `origin/develop`. محدوده: یکپارچه‌سازی هفت تغییر اخیر میزکار و اسناد متعلق به PC-B، رفع تعارض اسناد وضعیت و تحویل در یک PR به `develop`. بدون Migration، قرارداد API، Dependency/Lockfile یا تغییر دادهٔ عملیاتی.
 
+## 2026-09-28 — MASTER-DATA-COMPACT-FILTERS-0928 — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک: فیلدهای فیلتر در همه صفحه‌های اطلاعات پایه کوچک‌تر و در دسکتاپ در یک ردیف چیده شوند؛ در عرض کمتر بدون بریدگی یا خروج از کادر بازچینی شوند.
+- شاخه `codex/pc-b-master-data-compact-filters-0928` از `origin/develop@97c5ca37`؛ محدوده فقط کامپوننت‌های FilterBar اطلاعات پایه، استایل/تست مرتبط و همین ثبت وضعیت است. دکمه‌های پاک‌کردن و تازه‌سازی در ردیف پایین و سمت چپ می‌مانند.
+- بدون Migration، API/Contract، Dependency/Lockfile، داده یا تغییر در Workspaceهای دیگر.
+- نتیجه: ده Workspace تخصصی/عمومی از چیدمان مشترک استفاده می‌کنند؛ کنترل‌ها ۳۶ پیکسل و با متن کوچک‌تر هستند، فیلتر تاریخ فشرده شده و فیلدها از عرض دسکتاپ به‌صورت یک ردیف استفاده می‌کنند. در عرض کوچک‌تر grid تطبیقی است و عملیات فیلتر در ردیف پایین باقی می‌ماند. ۳۶۲ تست Master Data، lint، typecheck و build تولیدی Web با ۵۳ مسیر موفق‌اند.
+
 ## FINANCE-HISTORY-SEAT-PRICING-0928 — PC-A — READY_FOR_REVIEW
 
 - COMPUTER_ID=PC-A; branch codex/pc-a-finance-history-seat-pricing-0928, isolated clean Finance worktree from origin/develop@099dc40e. Reserve Finance API/Web/history tests, additive Sales public receipt-history and Reservations purchase-descriptor projections, Finance v1 additive history contract and bounded status/task docs. Producer Sales/Finance and consumer Finance API/Web owned PC-A; public boundaries and existing v1 clients preserved. No Procurement implementation, migration/schema/dependency/lockfile/IAM or operational data changes. Bounded Finance contract/Central Docs owner PC-A for this unit; prior Finance locks released. User explicitly authorizes implementation and merge. Preserve unrelated local edits.
 
 - Validation: 23 targeted API and 29 Web tests, scoped lint, API/Web strict typechecks and production builds (53 routes) passed. No migration or data change. Finance contract/bounded docs locks RELEASED with commit. Explicit owner merge authorization; authenticated browser clicks remain unverified.
 
+## CUSTOMER-AFFAIRS-API-FUNCTIONAL-QA-0928 — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-28: همه endpointهای امور مشتریان/پشتیبانی و حالت‌های مرزی، به‌ویژه ثبت فرم‌ها، با دادهٔ ساختگی ممیزی و ایرادهای قطعی Backend و Web مرتبط رفع شوند.
+- شاخه `codex/pc-b-ca-api-functional-0928` از `origin/develop@4013211f` در Worktree مستقل `C:\Users\admin\Rubi-ca-api-functional-0928`.
+- محدوده رزرو: `apps/api/src/customer-affairs/**` و تست‌های این ماژول، `apps/web/src/modules/customer-affairs/**` در حد هم‌خوانی فرم/API، سند Task و ورودی محدود در `WORK_ASSIGNMENTS.md` و `docs/PROJECT_STATUS.md`. تغییر Schema/Migration، IAM، قرارداد مشترک، Dependency/Lockfile و runtime عملیاتی فقط پس از بررسی مالکیت و تصمیم جداگانه انجام می‌شود.
+- معیار پذیرش: inventory کامل endpointها، سناریوهای مجوز/اعتبارسنجی/ثبت/تکرار/هم‌زمانی/خطا، تست اجرایی امن، رفع باگ‌های بازتولیدپذیر، lint/typecheck/build و گزارش موارد اجرا‌نشده.
+- نتیجه: برخورد شناسهٔ ثابت منبع در ثبت درخواست که رکورد قبلی را به‌اشتباه موفق نشان می‌داد رفع شد؛ فرم درخواست/تیکت کلید تکرار ثابت و محافظ ارسال دوباره دارد. ۱۰۲ تست API و ۵۷ تست Web، lint/typecheck هدفمند و build تولیدی هر دو بخش موفق‌اند. دیتابیس ایزوله، پیامک واقعی و اتصال سایت‌ها اجرا نشده‌اند؛ جزئیات در `docs/tasks/CUSTOMER-AFFAIRS-API-FUNCTIONAL-QA-0928.md`. قفل محدود اسناد/پیاده‌سازی پس از commit آزاد است.
+
 ## API-FUNCTIONAL-QA-0928 — PC-B — READY_FOR_REVIEW
 
 - `COMPUTER_ID=PC-B`; base `origin/develop@4013211f`; branch `codex/pc-b-api-functional-qa-0928`.
 - Scope: read-only functional/test audit of all API modules; reproduce and repair confirmed PC-B-owned Backend/form submission defects in `apps/api/src/{customer-affairs,procurement,marketing,organizations,hr,workbench-feedback,documents,master-data,dashboard}/**` and focused tests. Coordinate any PC-A-owned defect rather than editing its files.
 - No migration, schema, dependency/lockfile, shared API contract, operational data, or local live runtime changes. Central docs reservation is limited to this Work ID entry, its task report, and a matching `docs/PROJECT_STATUS.md` entry; other active reservations stay untouched.
-- Result: feedback replay race fixed; sensitive and anonymous feedback document metadata, catalogue, audit and file access hardened; attachment anonymity validated. Full API suite 1,701 passed/175 optional skipped on updated develop; targeted Workbench/Documents 118 passed; three real PostgreSQL form writes and audit checked. Optional PostgreSQL suites remain unverified because the existing Docker stdin helper timed out before assertions. Scoped locks RELEASED with commit; see `docs/tasks/API-FUNCTIONAL-QA-0928.md`.
+- Result: feedback replay race fixed; sensitive and anonymous feedback document metadata, catalogue, audit and file access hardened; attachment anonymity validated. Full API suite 1,701 passed/175 optional skipped on updated develop; targeted Workbench/Documents 118 passed; three PostgreSQL form writes and audit checked. Optional PostgreSQL suites remain unverified because the existing Docker stdin helper timed out before assertions. Scoped locks released; see `docs/tasks/API-FUNCTIONAL-QA-0928.md`.
+
+## DOCUMENTS-SENSITIVE-LIST-PRIVACY-0929 — PC-B — IN_PROGRESS
+
+- `COMPUTER_ID=PC-B`; continue on `codex/pc-b-api-functional-qa-0928`. Scope: Documents list repository predicates and regression tests; update this work assignment and its task report/status. No schema, migration, dependency/lockfile, external API contract, permission grant, or operational data change.
+- Contract frozen from independent advice: without `documents.sensitive.read`, every list row and every aggregate derived from its predicate (including count and pagination totals) excludes CONFIDENTIAL and RESTRICTED documents regardless of filters. Explicit sensitive confidentiality filters fail closed with zero results. The anonymous WorkbenchFeedback owner-only exclusion remains a separate invariant. Apply visibility by conjunction so no filter can overwrite it.

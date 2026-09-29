@@ -267,11 +267,15 @@ export const customerAffairsApi = {
         timeline: CustomerAffairsTimelineInput[];
       };
     }>(`/leads/${id}`),
-  createLead: (input: CustomerAffairsLeadInput, branchId?: string) =>
+  createLead: (
+    input: CustomerAffairsLeadInput,
+    branchId?: string,
+    idempotencyKey = crypto.randomUUID(),
+  ) =>
     request<{ data: CustomerAffairsLeadView }>('/leads', {
       method: 'POST',
       headers: {
-        'idempotency-key': crypto.randomUUID(),
+        'idempotency-key': idempotencyKey,
         ...(branchId ? { 'x-branch-id': branchId } : {}),
       },
       body: JSON.stringify(input),
@@ -319,11 +323,15 @@ export const customerAffairsApi = {
         correctiveActions: Array<Record<string, unknown>>;
       };
     }>(`/tickets/${id}`),
-  createTicket: (input: CustomerAffairsTicketInput, branchId?: string) =>
+  createTicket: (
+    input: CustomerAffairsTicketInput,
+    branchId?: string,
+    idempotencyKey = crypto.randomUUID(),
+  ) =>
     request<{ data: CustomerAffairsTicketView }>('/tickets', {
       method: 'POST',
       headers: {
-        'idempotency-key': crypto.randomUUID(),
+        'idempotency-key': idempotencyKey,
         ...(branchId ? { 'x-branch-id': branchId } : {}),
       },
       body: JSON.stringify(input),

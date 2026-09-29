@@ -25,7 +25,6 @@ import {
   Alert,
   Badge,
   Card,
-  FilterBar,
   PageHeader,
   PaginationShell,
 } from '@/components/ui/surfaces';
@@ -44,6 +43,7 @@ import {
 } from '../model/permissions';
 import { MasterDataForm, type MasterDataFormMode } from './master-data-form';
 import { MasterDataFilterActions } from './master-data-filter-actions';
+import { MasterDataFilterBar } from './master-data-filter-bar';
 import {
   MASTER_DATA_BLOCKER_TITLE,
   masterDataStateOptions,
@@ -197,12 +197,12 @@ export function MasterDataWorkspace({
             </div>
           </Card>
 
-          <FilterBar className="grid sm:grid-cols-2 lg:grid-cols-[minmax(14rem,1fr)_12rem_12rem_auto]">
+          <MasterDataFilterBar>
             <FormField id="master-data-search" label="جست‌وجوی سریع">
               <div className="relative">
                 <Search
                   aria-hidden="true"
-                  className="absolute end-3 top-3.5 size-4 text-muted-foreground"
+                  className="absolute end-2.5 top-2.5 size-4 text-muted-foreground"
                 />
                 <Input
                   className="pe-10"
@@ -251,7 +251,7 @@ export function MasterDataWorkspace({
               }}
               onRefresh={() => setPreviewState(initialPreviewState)}
             />
-          </FilterBar>
+          </MasterDataFilterBar>
 
           <Card className="p-4">
             <fieldset>

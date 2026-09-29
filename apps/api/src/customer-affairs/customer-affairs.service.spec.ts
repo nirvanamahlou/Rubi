@@ -4,6 +4,7 @@ import type {
   AuthenticatedActor,
   CustomerAffairsLeadInput,
 } from '@nora/contracts';
+import { Prisma } from '@nora/database';
 import { CustomerAffairsService } from './customer-affairs.service';
 
 const actor = {
@@ -79,6 +80,32 @@ describe('CustomerAffairsService safety invariants', () => {
       response: expect.objectContaining({ code: 'LEAD_ASSIGNMENT_REQUIRED' }),
     });
     expect(repository.findLeadCommand).toHaveBeenCalledOnce();
+  });
+
+  it('does not return another lead as a successful create on source collision', async () => {
+    const repository = {
+      findLeadCommand: vi.fn().mockResolvedValue(null),
+      findLeadBySource: vi.fn().mockResolvedValue({ id: 'existing-lead' }),
+      transaction: vi.fn().mockRejectedValue(
+        new Prisma.PrismaClientKnownRequestError('Unique constraint failed', {
+          code: 'P2002',
+          clientVersion: '7.9.1',
+        }),
+      ),
+    };
+    await expect(
+      service(repository).createLead(
+        { ...lead, queueCode: 'customer-affairs-front-office' },
+        actor,
+        undefined,
+        'new-command',
+      ),
+    ).rejects.toMatchObject({
+      response: expect.objectContaining({
+        code: 'LEAD_SOURCE_REFERENCE_EXISTS',
+      }),
+    });
+    expect(repository.findLeadCommand).toHaveBeenCalledTimes(2);
   });
 
   it('rejects a branch outside the authenticated scope before querying', async () => {

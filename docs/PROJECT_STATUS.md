@@ -3741,9 +3741,21 @@ Calendar event creation now uses an authorized branch from the authenticated Wor
 
 بازکردن سند از خانه، فایل‌های من، ستاره‌دارها یا تقویم میزکار و بستن جزئیات آن اکنون کاربر را به همان تب میزکار برمی‌گرداند. بازگشت به چهار مقصد مجاز محدود است. ۹ آزمون هدفمند، lint، typecheck و build Web موفق‌اند.
 
+## 2026-09-28 — MASTER-DATA-COMPACT-FILTERS-0928 — PC-B — READY_FOR_REVIEW
+
+چیدمان فیلترهای تمام صفحات اطلاعات پایه با یک نوار مشترک، کنترل‌های کوتاه‌تر و عرض منعطف یکدست شد. فیلدها در دسکتاپ در یک ردیف و در عرض‌های کوچک‌تر بدون سرریز بازچینی می‌شوند؛ دکمه‌های پاک‌کردن و تازه‌سازی در ردیف پایین باقی می‌مانند. ۳۶۲ تست اطلاعات پایه، lint، typecheck و build تولیدی Web با ۵۳ مسیر موفق‌اند. بدون Migration، API/Contract یا تغییر داده.
+
 ## 2026-09-28 — FINANCE-HISTORY-SEAT-PRICING-0928 — PC-A
 
 Existing unpaid ticket invoices retain the seat/unit-price editor; count, unit cost and automatic total are visible. Persistent branch-scoped receipt/payment history shows each structured installment, transfer date, account/method/reference and remaining amount, including settled requests, with cursor pagination. Request details and the bottom inbox panel refresh after Finance actions. 23 API and 29 Web tests, strict typechecks, scoped lint and API/Web production builds (53 routes) passed. No migration/data/dependency change. See [handoff](tasks/FINANCE-HISTORY-SEAT-PRICING-0928.md). Bounded Finance contract/docs locks released; owner authorizes develop merge.
+## 2026-09-28 — CUSTOMER-AFFAIRS-API-FUNCTIONAL-QA-0928 — PC-B — READY_FOR_REVIEW
+
+ثبت درخواست دستی با شناسهٔ منبع ثابت می‌توانست پس از برخورد یکتایی، پروندهٔ قبلی را به‌اشتباه به‌عنوان ثبت موفق برگرداند. فرم‌ها اکنون شناسه/کلید تکرار پایدار در هر ارسال دارند و بک‌اند فقط command یکسان را replay می‌کند؛ برخورد منبع مستقل خطای 409 می‌دهد. تست‌های API ماژول ۱۰۲/۱۰۲ و Web ماژول ۵۷/۵۷، lint، typecheck و build تولیدی API/Web موفق‌اند. دیتابیس ایزوله و ارسال واقعی SMS/وب‌سایت‌ها در این واحد اجرا نشده و هیچ داده/فرآیند ۳۱۰۰ تغییر نکرده است. [گزارش QA](tasks/CUSTOMER-AFFAIRS-API-FUNCTIONAL-QA-0928.md).
+
 ## 2026-09-28 — API-FUNCTIONAL-QA-0928 — PC-B — READY_FOR_REVIEW
 
 Full API regression on updated develop: 210 files and 1,701 tests passed; 175 opt-in tests skipped by default. Two confirmed backend defects were repaired: concurrent identical feedback submission now returns the committed receipt, and anonymous/sensitive Workbench attachments no longer leak identifying metadata or appear in another user's Documents catalogue/audit. Feedback creation verifies attachment confidentiality matches anonymity. Focused Workbench/Documents rerun: 118 passed; API lint, typecheck, production build passed. All 100 migrations and three form writes (meal service, facility, train type) with persistence/audit checks passed on a disposable PostgreSQL database. The opt-in PostgreSQL suites timed out in their Docker stdin helper before assertions, so they are not claimed as passing. No schema, migration, shared contract, dependency, operational data, or live runtime change. Details: [task report](tasks/API-FUNCTIONAL-QA-0928.md).
+
+## 2026-09-29 — DOCUMENTS-SENSITIVE-LIST-PRIVACY-0929 — PC-B — IN_PROGRESS
+
+Privacy contract: for callers without `documents.sensitive.read`, all list rows and derived totals exclude CONFIDENTIAL/RESTRICTED documents for every supported filter combination; direct sensitive filters return the same empty/zero result. The anonymous WorkbenchFeedback owner-only predicate stays independent. No schema or migration change is planned.
