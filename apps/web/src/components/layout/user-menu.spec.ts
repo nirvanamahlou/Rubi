@@ -28,7 +28,8 @@ describe('authenticated user menu integration', () => {
     expect(menuSource).toContain('refreshAuthenticatedSession(api)');
     expect(menuSource).toContain('rememberHeaderSession(');
     expect(menuSource).toContain('response.user');
-    expect(menuSource).toContain('max-w-32 truncate');
+    expect(menuSource).toContain('max-w-36');
+    expect(menuSource).toContain('block truncate text-xs font-bold');
     expect(menuSource).toContain('lg:block');
     expect(menuSource).toContain('data-user-menu-trigger');
   });

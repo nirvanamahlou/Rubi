@@ -1,3 +1,7 @@
+# 2026-09-29 — PERMISSION-VISIBILITY-SALES-SCOPE-0929 — PC-A — READY_FOR_REVIEW
+
+Visibility requires native module permissions for legacy and managed accounts, alongside managed screen selection. Denied routes render no business content; Sales Excel/PDF/payment controls use explicit native permissions. Effective IAM permissions narrow sales experts to own contracts; the appended sales-manager title recommends branch-wide scope. Validation: full Web 1775 passed/3 skipped; IAM/Sales 136 passed across the broad suite and isolated HTTP startup recheck. Scoped lint, consumer typechecks and production builds verified; CI full tests/build/PostgreSQL gate passed on 4b94ff93. CI formatting correction is isolated to one test. Draft PR [#468](https://github.com/nirvanamahlou/Rubi/pull/468); the user explicitly approved develop integration and PR merge; both coordination entries are preserved. No migration, operational grant or runtime change. Details: [handoff](tasks/PERMISSION-VISIBILITY-SALES-SCOPE-0929.md).
+
 # 2026-09-29 — SALES-TOUR-DEFINITION-0929 — PC-A — READY_FOR_REVIEW
 
 تعریف تور از مدیریت بلیت جدا و به‌صورت آخرین گزینهٔ گروه فروش در `/sales/tours` قرار گرفت. فروش با مجوز محدود تور می‌تواند تعریف را بسازد/ویرایش کند و تور بدون نوبت را حذف کند؛ تور دارای نوبت به‌خاطر حفظ سوابق حذف نمی‌شود. ۳۰ تست API، ۵۲ تست Web، lint، typecheck و build هر دو بخش موفق‌اند. تست واقعی PostgreSQL محلی به‌دلیل نبود `TRAVEL_TEST_DATABASE_URL` غیرفعال بود. بدون Migration یا تغییر حساب‌های واقعی؛ PR [#464](https://github.com/nirvanamahlou/Rubi/pull/464)؛ پیاده‌سازی `ce100064` و ادغام develop `bfa4b4ff`. جزئیات: [SALES-TOUR-DEFINITION-0929](tasks/SALES-TOUR-DEFINITION-0929.md).
@@ -3794,9 +3798,21 @@ Shared actor-scoped repository lookups and explicit reference filtering enforce 
 
 پیگیری قالب‌های استانبول، assetها و loaderهای Package Generator را در build محلی 3100 فعال می‌کند. تغییر مبنا commit `6c2d203f` است؛ اکنون با `origin/develop` همگام شده و منتظر بررسی‌های CI و PR است. API قیمت‌گذاری، Schema/Migration و دادهٔ عملیاتی تغییر نمی‌کنند.
 
+## 2026-09-29 — WORKBENCH-LIGHT-DARK-0929 — PC-A
+
+Default entry and home links now open Workbench; successful login starts light and manual dark remains available. Legacy panel/gradient/text dark contrast, IAM and System selected surfaces and corporate workspace palette are corrected without changing domain behavior. 250 targeted Web tests pass; lint/typecheck/build and CI checked before owner-authorized merge/local activation. No migration/API/dependency/data changes. Handoff: [WORKBENCH-LIGHT-DARK-0929](tasks/WORKBENCH-LIGHT-DARK-0929.md).
+
 ## 2026-09-29 — RESERVATION-OPERATION-SUMMARY-0929 — PC-A — READY_FOR_REVIEW
 
 Selected-contract header now shows read-only financial-delivery approval, responsible name and automatic server time, alongside the latest reservation operator/time. Events no longer displays the operation box. Scoped public Finance/IAM composition, branch/permission checks and native revision/history fallback preserve owner boundaries. No schema/dependency or operational data edits. Validation and limits: [RESERVATION-OPERATION-SUMMARY-0929](tasks/RESERVATION-OPERATION-SUMMARY-0929.md). 45 scoped API tests (including 4 HTTP) and 42 Web tests, strict API/Web types and scoped lint pass; production API build passes and Web build/CI complete before integration; merge authorization for this new reservation work item is separate from prior IAM merges.
 # 2026-09-29 — CUSTOMER-AFFAIRS-EXPORT-COMMENTS-0929 — READY_FOR_REVIEW
 
 در شاخه مستقل PC-B، متن‌های اضافی و فیلدهای نمایشی اثر/فوریت حذف شدند، فیلترهای فهرست هم‌ردیف شدند، خروجی XLSX فیلترشده برای درخواست/تیکت، دانلود PDF قابل جست‌وجوی گزارش، فیلتر تاریخ گزارش و API امن ثبت کامنت سایت پیاده شدند. بازبینی مستقل سه مورد PDF غیرواقعی، کوئری سنگین Excel و کامنت فقط فاصله را یافت و اصلاح شدند؛ بازبینی مجدد بدون ایراد تازه بود. ۱۰۶ تست API و ۵۸ تست Web، typecheck، lint متمرکز و build تولیدی API/Web موفق‌اند. اتصال زنده به سایت‌ها بدون تنظیم connector/مجوز و آزمون PDF در مرورگر اجرا نشده؛ هیچ پیام یا داده واقعی آزمون نشده است. CI و انتشار در انتظارند.
+
+## 2026-09-29 — TOPBAR-COMPANY-ROLE-0929 — PC-A — READY_FOR_REVIEW
+
+انتخاب شرکت هدر به Radix Select قبلی برگشت تا عنوان‌ها و نشان شرکت‌ها در منو دوباره دیده شوند. نام نقش‌های فعال واقعی حساب جاری به‌صورت افزایشی و اختیاری از IAM به منوی هدر می‌رسد و زیر نام کاربر نمایش داده می‌شود؛ مجوزها یا حساب‌ها تغییری ندارند. typecheck، lint و build تولیدی API/Web (۵۵ مسیر) موفق‌اند. تست کامل در انتظار CI. بدون Migration، Seed، داده عملیاتی یا Dependency. جزئیات: [TOPBAR-COMPANY-ROLE-0929](tasks/TOPBAR-COMPANY-ROLE-0929.md).
+
+## 2026-09-29 — TICKET-PRICES-READABILITY-XLSX-0929 — PC-A — READY_FOR_REVIEW
+
+خلاصه پرواز و مسیر خواناتر و کنترل ارز جا‌دارتر شد. خروجی اکسل فیلترهای جاری را رعایت می‌کند و هر رفت‌وبرگشت را با جزئیات دو پرواز، قیمت پایه و مبالغ/درصد مقصدها در یک ردیف می‌آورد؛ قالب راست‌به‌چپ از رزواسیون پیروی می‌کند. Web lint، typecheck و build تولیدی (۵۵ مسیر) و تمام CI (build، quality، test و PostgreSQL) موفق‌اند. PR #470 به develop؛ ادغام با مجوز صریح مالک در انتظار انجام است. بدون API، Migration، داده عملیاتی یا Dependency. جزئیات: [TICKET-PRICES-READABILITY-XLSX-0929](tasks/TICKET-PRICES-READABILITY-XLSX-0929.md).
