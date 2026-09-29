@@ -748,6 +748,81 @@ describe('DocumentsService security and persistence flow', () => {
     );
   });
 
+  it('scopes ID-based file, audit, and mutation routes to the actor visibility policy', async () => {
+    const protectedActor: AuthenticatedActor = {
+      ...actor,
+      permissions: [
+        ...actor.permissions,
+        'documents.metadata.update',
+        'documents.delete',
+        'documents.restore',
+        'documents.audit.read',
+        'documents.file.read',
+        'documents.download',
+      ],
+    };
+    const documentId = row().id;
+    const actions: Array<[string, () => Promise<unknown>]> = [
+      [
+        'metadata update',
+        () => service.update(documentId, {} as never, protectedActor, {}),
+      ],
+      [
+        'archive',
+        () => service.archive(documentId, {} as never, protectedActor, {}),
+      ],
+      [
+        'restore',
+        () => service.restore(documentId, {} as never, protectedActor, {}),
+      ],
+      [
+        'permanent delete',
+        () =>
+          service.permanentlyDelete(documentId, {} as never, protectedActor),
+      ],
+      ['audit', () => service.audit(documentId, protectedActor)],
+      [
+        'access grant',
+        () =>
+          service.createAccessGrant(
+            documentId,
+            {} as never,
+            protectedActor,
+            {},
+          ),
+      ],
+      ['download', () => service.download(documentId, protectedActor, {})],
+      ['preview', () => service.preview(documentId, protectedActor, {})],
+    ];
+
+    for (const [name, action] of actions) {
+      vi.clearAllMocks();
+      repository.findDetail.mockResolvedValue(null);
+      await expect(action(), name).rejects.toBeInstanceOf(NotFoundException);
+      expect(repository.findDetail).toHaveBeenCalledWith(
+        documentId,
+        protectedActor.branchIds,
+        false,
+        protectedActor.userId,
+      );
+    }
+
+    repository.findDetails.mockResolvedValue([]);
+    await expect(
+      service.bulk(
+        { action: 'ARCHIVE', ids: [documentId], reason: 'review' } as never,
+        protectedActor,
+        {},
+      ),
+    ).rejects.toBeInstanceOf(NotFoundException);
+    expect(repository.findDetails).toHaveBeenCalledWith(
+      [documentId],
+      protectedActor.branchIds,
+      false,
+      protectedActor.userId,
+    );
+  });
+
   it('exchanges a valid TOTP code for a short-lived hashed one-time grant', async () => {
     const protectedActor: AuthenticatedActor = {
       ...actor,

@@ -502,12 +502,29 @@ export class DocumentsRepository {
     }
   }
 
-  findDetails(ids: readonly string[], branchIds: readonly string[]) {
+  findDetails(
+    ids: readonly string[],
+    branchIds: readonly string[],
+    includeSensitive = true,
+    actorUserId?: string,
+  ) {
     return this.database.client.document.findMany({
       where: {
         id: { in: [...ids] },
         branchId: { in: [...branchIds] },
         archiveStatus: { not: 'DELETED' },
+        ...(!includeSensitive
+          ? { confidentiality: { notIn: ['CONFIDENTIAL', 'RESTRICTED'] } }
+          : {}),
+        ...(actorUserId
+          ? {
+              NOT: {
+                sourceModule: 'WORKBENCH',
+                sourceEntityType: 'WorkbenchFeedback',
+                ownerUserId: { not: actorUserId },
+              },
+            }
+          : {}),
       },
       include: documentDetailInclude,
       orderBy: { id: 'asc' },

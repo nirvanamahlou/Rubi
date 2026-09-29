@@ -58,6 +58,58 @@ describe('DocumentsRepository source scoping', () => {
     );
   });
 
+  it('keeps WorkbenchFeedback owner-only even for sensitive readers', async () => {
+    const findFirst = vi.fn().mockResolvedValue(null);
+    const repository = new DocumentsRepository(
+      { client: { document: { findFirst } } } as unknown as DatabaseService,
+      {} as NotificationsService,
+    );
+
+    await repository.findDetail(
+      'feedback-document',
+      ['branch-a'],
+      true,
+      'user-a',
+    );
+
+    expect(findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          id: 'feedback-document',
+          NOT: {
+            sourceModule: 'WORKBENCH',
+            sourceEntityType: 'WorkbenchFeedback',
+            ownerUserId: { not: 'user-a' },
+          },
+        }),
+      }),
+    );
+  });
+
+  it('applies the same visibility rules to bulk ID lookups', async () => {
+    const findMany = vi.fn().mockResolvedValue([]);
+    const repository = new DocumentsRepository(
+      { client: { document: { findMany } } } as unknown as DatabaseService,
+      {} as NotificationsService,
+    );
+
+    await repository.findDetails(['document-a'], ['branch-a'], false, 'user-a');
+
+    expect(findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          id: { in: ['document-a'] },
+          confidentiality: { notIn: ['CONFIDENTIAL', 'RESTRICTED'] },
+          NOT: {
+            sourceModule: 'WORKBENCH',
+            sourceEntityType: 'WorkbenchFeedback',
+            ownerUserId: { not: 'user-a' },
+          },
+        }),
+      }),
+    );
+  });
+
   it('matches message uploads against the MESSAGING source module', async () => {
     const findMany = vi.fn().mockResolvedValue([]);
     const repository = new DocumentsRepository(

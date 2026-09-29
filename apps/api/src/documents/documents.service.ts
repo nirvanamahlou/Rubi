@@ -745,7 +745,7 @@ export class DocumentsService {
     actor: AuthenticatedActor,
     metadata: DocumentRequestMetadata,
   ): Promise<DocumentFileDelivery> {
-    const row = await this.repository.findDetail(documentId, actor.branchIds);
+    const row = await this.findVisibleDetail(documentId, actor);
     const ownsProfileReference = row?.relations.some(
       (relation) =>
         relation.relationType === 'PRIMARY_CASE' &&
@@ -783,15 +783,7 @@ export class DocumentsService {
       await this.repository.setFavorite(actor.userId, id, false);
       return { data: { documentId: id, favorite } };
     }
-    const includeSensitive = actor.permissions.includes(
-      'documents.sensitive.read',
-    );
-    const row = await this.repository.findDetail(
-      id,
-      actor.branchIds,
-      includeSensitive,
-      actor.userId,
-    );
+    const row = await this.findVisibleDetail(id, actor);
     if (
       !row ||
       !allowedDocumentDomains(actor.permissions).includes(
@@ -959,10 +951,7 @@ export class DocumentsService {
     metadata: DocumentRequestMetadata,
   ): Promise<void> {
     this.assertPermission(actor.permissions, 'master_data.update');
-    const row = await this.repository.findDetail(
-      input.documentId,
-      actor.branchIds,
-    );
+    const row = await this.findVisibleDetail(input.documentId, actor);
     if (!row || row.archiveStatus !== 'ACTIVE') return;
     const ownsReference = row.relations.some(
       (relation) =>
@@ -1148,12 +1137,7 @@ export class DocumentsService {
     actor: AuthenticatedActor,
     metadata: DocumentRequestMetadata,
   ): Promise<{ data: DocumentDetailV1 }> {
-    const row = await this.repository.findDetail(
-      id,
-      actor.branchIds,
-      actor.permissions.includes('documents.sensitive.read'),
-      actor.userId,
-    );
+    const row = await this.findVisibleDetail(id, actor);
     if (!row) throw new NotFoundException('سند پیدا نشد.');
     this.assertDomain(row.documentType.domain, actor.permissions);
     await this.repository.appendAudit({
@@ -1223,6 +1207,27 @@ export class DocumentsService {
     }
   }
 
+  private findVisibleDetail(id: string, actor: AuthenticatedActor) {
+    return this.repository.findDetail(
+      id,
+      actor.branchIds,
+      actor.permissions.includes('documents.sensitive.read'),
+      actor.userId,
+    );
+  }
+
+  private findVisibleDetails(
+    ids: readonly string[],
+    actor: AuthenticatedActor,
+  ) {
+    return this.repository.findDetails(
+      ids,
+      actor.branchIds,
+      actor.permissions.includes('documents.sensitive.read'),
+      actor.userId,
+    );
+  }
+
   async update(
     id: string,
     dto: DocumentUpdateDto,
@@ -1230,7 +1235,7 @@ export class DocumentsService {
     metadata: DocumentRequestMetadata,
   ): Promise<{ data: DocumentDetailV1 }> {
     this.assertPermission(actor.permissions, 'documents.metadata.update');
-    const row = await this.repository.findDetail(id, actor.branchIds);
+    const row = await this.findVisibleDetail(id, actor);
     if (!row) throw new NotFoundException('سند پیدا نشد.');
     this.assertDomain(row.documentType.domain, actor.permissions);
     if (
@@ -1288,7 +1293,7 @@ export class DocumentsService {
     metadata: DocumentRequestMetadata,
   ): Promise<{ data: DocumentDetailV1 }> {
     this.assertPermission(actor.permissions, 'documents.delete');
-    const row = await this.repository.findDetail(id, actor.branchIds);
+    const row = await this.findVisibleDetail(id, actor);
     if (!row) throw new NotFoundException('سند پیدا نشد.');
     this.assertDomain(row.documentType.domain, actor.permissions);
     if (row.archiveStatus !== 'ACTIVE') {
@@ -1319,7 +1324,7 @@ export class DocumentsService {
     metadata: DocumentRequestMetadata,
   ): Promise<{ data: DocumentDetailV1 }> {
     this.assertPermission(actor.permissions, 'documents.restore');
-    const row = await this.repository.findDetail(id, actor.branchIds);
+    const row = await this.findVisibleDetail(id, actor);
     if (!row) throw new NotFoundException('سند پیدا نشد.');
     this.assertDomain(row.documentType.domain, actor.permissions);
     if (row.archiveStatus !== 'ARCHIVED') {
@@ -1359,7 +1364,7 @@ export class DocumentsService {
           ? 'documents.restore'
           : 'documents.metadata.update';
     this.assertPermission(actor.permissions, permission);
-    const rows = await this.repository.findDetails(ids, actor.branchIds);
+    const rows = await this.findVisibleDetails(ids, actor);
     if (rows.length !== ids.length) {
       throw new NotFoundException('یک یا چند سند انتخاب‌شده پیدا نشد.');
     }
@@ -1408,7 +1413,7 @@ export class DocumentsService {
     actor: AuthenticatedActor,
   ): Promise<void> {
     this.assertPermission(actor.permissions, 'documents.delete');
-    const row = await this.repository.findDetail(id, actor.branchIds);
+    const row = await this.findVisibleDetail(id, actor);
     if (!row) throw new NotFoundException('سند پیدا نشد.');
     this.assertDomain(row.documentType.domain, actor.permissions);
     if (row.legalHoldActive) {
@@ -1684,7 +1689,7 @@ export class DocumentsService {
   }
 
   async audit(id: string, actor: AuthenticatedActor) {
-    const row = await this.repository.findDetail(id, actor.branchIds);
+    const row = await this.findVisibleDetail(id, actor);
     if (!row) throw new NotFoundException('سند پیدا نشد.');
     this.assertDomain(row.documentType.domain, actor.permissions);
     if (isWorkbenchFeedbackAttachment(row) && row.ownerUserId !== actor.userId)
@@ -1729,7 +1734,7 @@ export class DocumentsService {
     actor: AuthenticatedActor,
     metadata: DocumentRequestMetadata,
   ): Promise<DocumentAccessGrantResponseV1> {
-    const row = await this.repository.findDetail(id, actor.branchIds);
+    const row = await this.findVisibleDetail(id, actor);
     if (!row || !row.currentVersion)
       throw new NotFoundException('سند پیدا نشد.');
     this.assertDomain(row.documentType.domain, actor.permissions);
@@ -1833,7 +1838,7 @@ export class DocumentsService {
     actor: AuthenticatedActor,
     metadata: DocumentRequestMetadata,
   ): Promise<DocumentFileDelivery> {
-    const row = await this.repository.findDetail(id, actor.branchIds);
+    const row = await this.findVisibleDetail(id, actor);
     if (!row || !row.currentVersion)
       throw new NotFoundException('سند پیدا نشد.');
     this.assertDomain(row.documentType.domain, actor.permissions);
@@ -1895,7 +1900,7 @@ export class DocumentsService {
     id: string,
     actor: AuthenticatedActor,
   ): Promise<DocumentFileDelivery> {
-    const row = await this.repository.findDetail(id, actor.branchIds);
+    const row = await this.findVisibleDetail(id, actor);
     if (!row || !row.currentVersion)
       throw new NotFoundException('فایل قالب MANIFEST پیدا نشد.');
     const allowed =
@@ -1939,7 +1944,7 @@ export class DocumentsService {
     actor: AuthenticatedActor,
     metadata: DocumentRequestMetadata,
   ): Promise<DocumentFileDelivery> {
-    const row = await this.repository.findDetail(id, actor.branchIds);
+    const row = await this.findVisibleDetail(id, actor);
     if (!row || !row.currentVersion)
       throw new NotFoundException('سند پیدا نشد.');
     this.assertDomain(row.documentType.domain, actor.permissions);

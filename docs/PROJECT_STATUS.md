@@ -3762,4 +3762,4 @@ Full API regression on updated develop: 210 files and 1,701 tests passed; 175 op
 
 ## 2026-09-29 — DOCUMENTS-SENSITIVE-LIST-PRIVACY-0929 — PC-B — IN_PROGRESS
 
-Independent reviews found direct detail-by-ID and favorites visibility gaps, including non-owner access to INTERNAL WorkbenchFeedback attachments. The invariant now covers list rows/totals, direct details and favorites: hidden IDs return not-found, feedback attachments remain owner-only, and unauthorized callers cannot newly favorite hidden IDs. Repository/service regressions are added. Validation and a fresh independent review are pending. No schema, migration, API type, dependency or operational-data change.
+Independent reviews found remaining ID-based file, audit and mutation bypasses in addition to detail and favorites. Shared actor-scoped repository lookups now enforce confidentiality and WorkbenchFeedback owner-only visibility across those paths, including INTERNAL attachments and callers with sensitive-read access. Focused regression validation and a fresh independent review are pending. No schema, migration, API type, dependency or operational-data change.
