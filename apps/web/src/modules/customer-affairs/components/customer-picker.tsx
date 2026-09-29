@@ -12,7 +12,14 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
-import { useCallback, useEffect, useId, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 
 import { Button } from '@/components/ui/button';
 import { FormField, Input } from '@/components/ui/form-controls';
@@ -28,6 +35,10 @@ import {
   customerAffairsCustomersApi,
   CustomerLookupApiError,
 } from '../api/customers-client';
+import {
+  customerPickerPagination,
+  customerPickerVisibleRecords,
+} from './customer-picker-pagination';
 
 const CustomerCreateDialog = dynamic(
   () =>
@@ -65,7 +76,10 @@ export function CustomerPicker({
   const [records, setRecords] = useState<readonly CustomerSummary[]>([]);
   const [state, setState] = useState<LookupState>('loading');
   const [creating, setCreating] = useState(false);
-  const pageSize = search.trim() ? 10 : 5;
+  const pagination = useMemo(
+    () => customerPickerPagination(search, page),
+    [search, page],
+  );
   const chosen =
     selected ?? (current?.id === initialCustomerId ? current : null);
 
@@ -96,15 +110,19 @@ export function CustomerPicker({
             role: 'all',
             sortBy: 'displayName',
             sortDirection: 'asc',
-            page,
-            pageSize,
+            page: pagination.requestPage,
+            pageSize: pagination.requestPageSize,
           },
           signal,
         );
         if (signal?.aborted) return;
-        setRecords(response.data);
+        const visibleRecords = customerPickerVisibleRecords(
+          response.data,
+          pagination,
+        );
+        setRecords(visibleRecords);
         setTotal(response.meta.total);
-        setState(response.data.length ? 'ready' : 'empty');
+        setState(visibleRecords.length ? 'ready' : 'empty');
       } catch (error) {
         if (signal?.aborted) return;
         if (error instanceof DOMException && error.name === 'AbortError')
@@ -119,7 +137,7 @@ export function CustomerPicker({
         );
       }
     },
-    [search, page, pageSize],
+    [search, pagination],
   );
 
   useEffect(() => {
@@ -181,6 +199,7 @@ export function CustomerPicker({
             className="pe-10"
             disabled={disabled}
             id={`${id}-search`}
+            maxLength={100}
             onChange={(event) => {
               setSearch(event.target.value);
               setPage(1);
@@ -313,7 +332,11 @@ export function CustomerPicker({
           type="button"
           variant="outline"
           size="sm"
-          disabled={disabled || state !== 'ready' || page * pageSize >= total}
+          disabled={
+            disabled ||
+            state !== 'ready' ||
+            page * pagination.displayPageSize >= total
+          }
           onClick={() => {
             setPage((value) => value + 1);
             setState('loading');
@@ -360,7 +383,7 @@ export function CustomerPicker({
           onCreated={(customer) => {
             onSelect(customer);
             setCreating(false);
-            setSearch(customer.displayName);
+            setSearch(customer.displayName.slice(0, 100));
             setPage(1);
             setState('loading');
             setRetry((value) => value + 1);

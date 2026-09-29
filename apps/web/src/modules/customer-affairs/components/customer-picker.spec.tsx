@@ -46,16 +46,18 @@ describe('Customers and passengers picker', () => {
     );
     expect(source).toContain("role: 'all'");
     expect(source).not.toContain("role: 'customer'");
-    expect(source).toContain('const pageSize = search.trim() ? 10 : 5;');
+    expect(source).toContain('customerPickerPagination(search, page)');
+    expect(source).toContain('customerPickerVisibleRecords(');
     expect(source).not.toContain('if (!search.trim()) return;');
     expect(source).toContain(
       "const [state, setState] = useState<LookupState>('loading')",
     );
     expect(source).toContain('response.meta.total');
-    expect(source).toContain('page * pageSize >= total');
+    expect(source).toContain('page * pagination.displayPageSize >= total');
     expect(source).toContain('if (signal?.aborted) return;');
     expect(source).toContain('setPage(1)');
-    expect(source).toContain('setSearch(customer.displayName)');
+    expect(source).toContain('maxLength={100}');
+    expect(source).toContain('setSearch(customer.displayName.slice(0, 100))');
     expect(source).toContain('onSelect(customer)');
     expect(source).toContain('onClose={() => setCreating(false)}');
     expect(source).toContain('ref={createButtonRef}');

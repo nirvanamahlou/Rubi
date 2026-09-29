@@ -71,13 +71,13 @@ describe('customer affairs public Customers adapter', () => {
     expect(fetchMock.mock.calls[0]?.[0]).toContain('role=customer');
   });
 
-  it('requests the first five active records for the initial picker view', async () => {
+  it('requests a contract-valid ten active records for the initial picker view', async () => {
     process.env.NEXT_PUBLIC_API_BASE_URL = 'http://localhost:4000/api/v1';
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({
         data: [],
-        meta: { page: 1, pageSize: 5, total: 0 },
+        meta: { page: 1, pageSize: 10, total: 0 },
       }),
     });
     vi.stubGlobal('fetch', fetchMock);
@@ -88,12 +88,12 @@ describe('customer affairs public Customers adapter', () => {
       sortBy: 'displayName',
       sortDirection: 'asc',
       page: 1,
-      pageSize: 5,
+      pageSize: 10,
     });
     const url = new URL(fetchMock.mock.calls[0]![0]);
     expect(url.searchParams.get('search')).toBe('');
     expect(url.searchParams.get('role')).toBe('all');
-    expect(url.searchParams.get('pageSize')).toBe('5');
+    expect(url.searchParams.get('pageSize')).toBe('10');
   });
 
   it.each([
