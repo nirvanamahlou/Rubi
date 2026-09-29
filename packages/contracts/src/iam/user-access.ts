@@ -10,6 +10,7 @@ export const USER_JOB_TITLES = [
   'مالی',
   'منابع انسانی',
   'تیم ویزا',
+  'مدیر فروش',
 ] as const;
 export const USER_ACCESS_GROUPS = [
   {
@@ -2194,10 +2195,38 @@ export const screenPermission = (id: string): `ui.screen.${string}` =>
 export function hasManagedAccess(permissions: readonly string[]) {
   return permissions.includes(USER_ACCESS_PROFILE_PERMISSION);
 }
-export function canViewScreen(permissions: readonly string[], id: string) {
+function hasGroupPermission(permissions: readonly string[], groupId: string) {
+  const group = USER_ACCESS_GROUPS.find((item) => item.id === groupId);
   return (
-    !hasManagedAccess(permissions) || permissions.includes(screenPermission(id))
+    !!group &&
+    permissions.some(
+      (code) =>
+        !['legal-entity.read', 'legal-entity.switch'].includes(code) &&
+        group.prefixes.some(
+          (prefix) => code === prefix || code.startsWith(prefix + '.'),
+        ),
+    )
   );
+}
+export function canViewScreen(permissions: readonly string[], id: string) {
+  const screen = USER_ACCESS_SCREENS.find((item) => item.id === id);
+  if (!screen || !hasGroupPermission(permissions, screen.group)) return false;
+  if (
+    hasManagedAccess(permissions) &&
+    !permissions.includes(screenPermission(id))
+  )
+    return false;
+  if (id === 'sales.home')
+    return ['own', 'branch', 'all'].some((scope) =>
+      permissions.includes('sales.contracts.read.' + scope),
+    );
+  if (id === 'sales.new-contract')
+    return permissions.includes('sales.contracts.create');
+  if (id === 'ticket-catalog.tab.issued')
+    return permissions.includes('reservations.read');
+  if (id.startsWith('sales.pricing') || id === 'sales.ticket-prices')
+    return permissions.includes('package_pricing.read');
+  return true;
 }
 export function screenForTab(
   route: string,
@@ -2246,7 +2275,17 @@ export function canViewRoute(permissions: readonly string[], href: string) {
   };
   const group = accessGroupForRoute(url.pathname);
   if (!group) return true;
-  if (!hasManagedAccess(permissions)) return true;
+  if (!hasGroupPermission(permissions, group.id)) return false;
+  if (
+    url.pathname === '/sales/contracts/new' &&
+    !permissions.includes('sales.contracts.create')
+  )
+    return false;
+  if (!hasManagedAccess(permissions)) {
+    if (url.pathname === '/sales/contracts/new')
+      return permissions.includes('sales.contracts.create');
+    if (!hasGroupPermission(permissions, group.id)) return false;
+  }
   const route = url.pathname === '/hr' ? '/human-resources' : url.pathname;
   const candidates = USER_ACCESS_SCREENS.filter(
     (s) =>
