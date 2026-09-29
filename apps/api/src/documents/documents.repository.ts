@@ -379,12 +379,29 @@ export class DocumentsRepository {
     return { rows, total };
   }
 
-  findDetail(id: string, branchIds: readonly string[]) {
+  findDetail(
+    id: string,
+    branchIds: readonly string[],
+    includeSensitive = true,
+    actorUserId?: string,
+  ) {
     return this.database.client.document.findFirst({
       where: {
         id,
         branchId: { in: [...branchIds] },
         archiveStatus: { not: 'DELETED' },
+        ...(!includeSensitive
+          ? { confidentiality: { notIn: ['CONFIDENTIAL', 'RESTRICTED'] } }
+          : {}),
+        ...(actorUserId
+          ? {
+              NOT: {
+                sourceModule: 'WORKBENCH',
+                sourceEntityType: 'WorkbenchFeedback',
+                ownerUserId: { not: actorUserId },
+              },
+            }
+          : {}),
       },
       include: documentDetailInclude,
     });
@@ -442,6 +459,8 @@ export class DocumentsRepository {
     userId: string,
     branchIds: readonly string[],
     domains: readonly string[],
+    includeSensitive = true,
+    actorUserId?: string,
   ) {
     return this.database.client.document.findMany({
       where: {
@@ -450,6 +469,18 @@ export class DocumentsRepository {
         deletedAt: null,
         documentType: { domain: { in: [...domains] as never[] } },
         favorites: { some: { userId } },
+        ...(!includeSensitive
+          ? { confidentiality: { notIn: ['CONFIDENTIAL', 'RESTRICTED'] } }
+          : {}),
+        ...(actorUserId
+          ? {
+              NOT: {
+                sourceModule: 'WORKBENCH',
+                sourceEntityType: 'WorkbenchFeedback',
+                ownerUserId: { not: actorUserId },
+              },
+            }
+          : {}),
       },
       include: documentListInclude,
       orderBy: [{ updatedAt: 'desc' }, { id: 'asc' }],

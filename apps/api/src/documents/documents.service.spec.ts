@@ -145,6 +145,8 @@ describe('DocumentsService security and persistence flow', () => {
     createAccessGrant: vi.fn(),
     consumeAccessGrant: vi.fn(),
     audit: vi.fn(),
+    favoriteDocuments: vi.fn(),
+    setFavorite: vi.fn(),
   };
   const storage = {
     putQuarantined: vi.fn(),
@@ -703,6 +705,47 @@ describe('DocumentsService security and persistence flow', () => {
 
     expect(denied.data.capabilities.viewFile).toBe(false);
     expect(allowed.data.capabilities.viewFile).toBe(true);
+  });
+
+  it('uses a visibility-scoped lookup for sensitive details', async () => {
+    repository.findDetail.mockResolvedValue(null);
+
+    await expect(service.detail(row().id, actor, {})).rejects.toBeInstanceOf(
+      NotFoundException,
+    );
+
+    expect(repository.findDetail).toHaveBeenCalledWith(
+      row().id,
+      actor.branchIds,
+      false,
+      actor.userId,
+    );
+  });
+
+  it('passes sensitive-read visibility to favorites and blocks favoriting a hidden ID', async () => {
+    repository.findDetail.mockResolvedValue(null);
+
+    await expect(
+      service.setFavorite(row().id, true, actor),
+    ).rejects.toBeInstanceOf(NotFoundException);
+
+    expect(repository.findDetail).toHaveBeenCalledWith(
+      row().id,
+      actor.branchIds,
+      false,
+      actor.userId,
+    );
+    expect(repository.setFavorite).not.toHaveBeenCalled();
+
+    repository.favoriteDocuments.mockResolvedValue([]);
+    await service.favorites(actor);
+    expect(repository.favoriteDocuments).toHaveBeenCalledWith(
+      actor.userId,
+      actor.branchIds,
+      ['GENERAL', 'SALES'],
+      false,
+      actor.userId,
+    );
   });
 
   it('exchanges a valid TOTP code for a short-lived hashed one-time grant', async () => {

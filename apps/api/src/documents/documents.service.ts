@@ -772,19 +772,33 @@ export class DocumentsService {
       actor.userId,
       actor.branchIds,
       allowedDocumentDomains(actor.permissions),
+      actor.permissions.includes('documents.sensitive.read'),
+      actor.userId,
     );
     return { data: rows.map((row) => mapListItem(row, actor)) };
   }
 
   async setFavorite(id: string, favorite: boolean, actor: AuthenticatedActor) {
-    const row = await this.repository.findDetail(id, actor.branchIds);
+    if (!favorite) {
+      await this.repository.setFavorite(actor.userId, id, false);
+      return { data: { documentId: id, favorite } };
+    }
+    const includeSensitive = actor.permissions.includes(
+      'documents.sensitive.read',
+    );
+    const row = await this.repository.findDetail(
+      id,
+      actor.branchIds,
+      includeSensitive,
+      actor.userId,
+    );
     if (
       !row ||
       !allowedDocumentDomains(actor.permissions).includes(
         row.documentType.domain,
       )
     )
-      throw new ForbiddenException('سند در محدوده دسترسی شما نیست.');
+      throw new NotFoundException('سند پیدا نشد.');
     await this.repository.setFavorite(actor.userId, id, favorite);
     return { data: { documentId: id, favorite } };
   }
@@ -1134,7 +1148,12 @@ export class DocumentsService {
     actor: AuthenticatedActor,
     metadata: DocumentRequestMetadata,
   ): Promise<{ data: DocumentDetailV1 }> {
-    const row = await this.repository.findDetail(id, actor.branchIds);
+    const row = await this.repository.findDetail(
+      id,
+      actor.branchIds,
+      actor.permissions.includes('documents.sensitive.read'),
+      actor.userId,
+    );
     if (!row) throw new NotFoundException('سند پیدا نشد.');
     this.assertDomain(row.documentType.domain, actor.permissions);
     await this.repository.appendAudit({

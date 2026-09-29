@@ -5,6 +5,59 @@ import type { NotificationsService } from '../notifications/notifications.servic
 import { DocumentsRepository } from './documents.repository';
 
 describe('DocumentsRepository source scoping', () => {
+  it('hides sensitive documents from direct detail lookup when not authorized', async () => {
+    const findFirst = vi.fn().mockResolvedValue(null);
+    const repository = new DocumentsRepository(
+      { client: { document: { findFirst } } } as unknown as DatabaseService,
+      {} as NotificationsService,
+    );
+
+    await repository.findDetail('document-a', ['branch-a'], false, 'user-a');
+
+    expect(findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          id: 'document-a',
+          confidentiality: { notIn: ['CONFIDENTIAL', 'RESTRICTED'] },
+          NOT: {
+            sourceModule: 'WORKBENCH',
+            sourceEntityType: 'WorkbenchFeedback',
+            ownerUserId: { not: 'user-a' },
+          },
+        }),
+      }),
+    );
+  });
+
+  it('hides sensitive documents from favorites without sensitive-read permission', async () => {
+    const findMany = vi.fn().mockResolvedValue([]);
+    const repository = new DocumentsRepository(
+      { client: { document: { findMany } } } as unknown as DatabaseService,
+      {} as NotificationsService,
+    );
+
+    await repository.favoriteDocuments(
+      'user-a',
+      ['branch-a'],
+      ['GENERAL'],
+      false,
+      'user-a',
+    );
+
+    expect(findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          confidentiality: { notIn: ['CONFIDENTIAL', 'RESTRICTED'] },
+          NOT: {
+            sourceModule: 'WORKBENCH',
+            sourceEntityType: 'WorkbenchFeedback',
+            ownerUserId: { not: 'user-a' },
+          },
+        }),
+      }),
+    );
+  });
+
   it('matches message uploads against the MESSAGING source module', async () => {
     const findMany = vi.fn().mockResolvedValue([]);
     const repository = new DocumentsRepository(
