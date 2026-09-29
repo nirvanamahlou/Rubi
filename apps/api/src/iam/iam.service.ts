@@ -1667,6 +1667,65 @@ export class IamService implements IamStepUpPort {
       },
     };
   }
+  /** Trusted Reservations boundary: only responsibility metadata for an authorized intake. */
+  async reservationResponsibilityNames(
+    ids: readonly string[],
+    branchId: string,
+    actor: AuthenticatedActor,
+  ) {
+    if (
+      !actor.permissions.includes('reservations.read') ||
+      !actor.branchIds.includes(branchId)
+    )
+      throw new ForbiddenException();
+    const unique = [...new Set(ids)].slice(0, 3);
+    if (!unique.length) return new Map<string, string>();
+    const users = await this.database.client.user.findMany({
+      where: { id: { in: unique } },
+      select: { id: true, displayName: true },
+    });
+    return new Map(users.map((user) => [user.id, user.displayName]));
+  }
+  async recordReservationOperation(
+    intakeId: string,
+    branchId: string,
+    actor: AuthenticatedActor,
+    operation: string,
+  ) {
+    if (!actor.branchIds.includes(branchId)) throw new ForbiddenException();
+    await this.database.client.auditEvent.create({
+      data: {
+        actorUserId: actor.userId,
+        action: operation.slice(0, 120),
+        entityType: 'reservation_operation',
+        entityId: intakeId,
+        outcome: 'SUCCESS',
+        metadata: { branchId },
+      },
+    });
+  }
+  async latestReservationOperation(
+    intakeId: string,
+    branchId: string,
+    actor: AuthenticatedActor,
+  ) {
+    if (
+      !actor.permissions.includes('reservations.read') ||
+      !actor.branchIds.includes(branchId)
+    )
+      throw new ForbiddenException();
+    return this.database.client.auditEvent.findFirst({
+      where: {
+        entityType: 'reservation_operation',
+        entityId: intakeId,
+        outcome: 'SUCCESS',
+        metadata: { path: ['branchId'], equals: branchId },
+      },
+      orderBy: [{ occurredAt: 'desc' }, { id: 'desc' }],
+      select: { actorUserId: true, occurredAt: true },
+    });
+  }
+
   private audit(
     actorUserId: string | null,
     action: string,

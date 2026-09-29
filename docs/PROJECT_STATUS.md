@@ -1,3 +1,7 @@
+## 2026-09-29 — RESERVATION-OPERATION-SUMMARY-0929 — PC-A — READY_FOR_REVIEW
+
+Selected-contract header now shows read-only financial-delivery approval, responsible name and automatic server time, alongside the latest reservation operator/time. Events no longer displays the operation box. Scoped public Finance/IAM composition, branch/permission checks and native revision/history fallback preserve owner boundaries. No schema/dependency or operational data edits. Validation and limits: [RESERVATION-OPERATION-SUMMARY-0929](tasks/RESERVATION-OPERATION-SUMMARY-0929.md). 45 scoped API tests (including 4 HTTP) and 42 Web tests, strict API/Web types and scoped lint pass; production API build passes and Web build/CI complete before integration; merge authorization for this new reservation work item is separate from prior IAM merges.
+
 # 2026-09-29 — SEARCHABLE-DROPDOWNS-0929 — PC-A
 
 Shared Web selection controls now search in the primary field, display six initial/matching results, preserve canonical form values and add subtle light/dark contrast. Master Data/Ticket/Marketing reference adapters retain scope and authorization. Browser synthetic interaction/form verification passed; no migration or operational data changes. See [handoff](tasks/SEARCHABLE-DROPDOWNS-0929.md).

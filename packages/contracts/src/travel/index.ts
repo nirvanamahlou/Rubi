@@ -428,3 +428,13 @@ export interface VoucherSettingsV1 {
     documentNumber?: string;
   }[];
 }
+
+/** Compact, branch-scoped responsibility summary; no financial amounts or identity payloads. */
+export interface ReservationOperationSummaryV1 {
+  delivery: {
+    approved: boolean;
+    updatedAt: string | null;
+    actorName: string | null;
+  };
+  lastOperation: { occurredAt: string; actorName: string | null } | null;
+}
