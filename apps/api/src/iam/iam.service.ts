@@ -1650,6 +1650,8 @@ export class IamService implements IamStepUpPort {
     displayName: string;
     roles: Array<{
       role: {
+        code: string;
+        name: string;
         isActive: boolean;
         permissions: Array<{ permission: { code: string } }>;
       };
@@ -1664,6 +1666,9 @@ export class IamService implements IamStepUpPort {
         displayName: user.displayName,
         permissions: this.permissionCodes(user),
         branches: user.branches.map(({ branch }) => branch),
+        roles: user.roles
+          .filter(({ role }) => role.isActive)
+          .map(({ role }) => ({ code: role.code, name: role.name })),
       },
     };
   }

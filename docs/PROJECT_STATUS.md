@@ -3797,3 +3797,7 @@ Shared actor-scoped repository lookups and explicit reference filtering enforce 
 ## 2026-09-29 — RESERVATION-OPERATION-SUMMARY-0929 — PC-A — READY_FOR_REVIEW
 
 Selected-contract header now shows read-only financial-delivery approval, responsible name and automatic server time, alongside the latest reservation operator/time. Events no longer displays the operation box. Scoped public Finance/IAM composition, branch/permission checks and native revision/history fallback preserve owner boundaries. No schema/dependency or operational data edits. Validation and limits: [RESERVATION-OPERATION-SUMMARY-0929](tasks/RESERVATION-OPERATION-SUMMARY-0929.md). 45 scoped API tests (including 4 HTTP) and 42 Web tests, strict API/Web types and scoped lint pass; production API build passes and Web build/CI complete before integration; merge authorization for this new reservation work item is separate from prior IAM merges.
+
+## 2026-09-29 — TOPBAR-COMPANY-ROLE-0929 — PC-A — READY_FOR_REVIEW
+
+انتخاب شرکت هدر به Radix Select قبلی برگشت تا عنوان‌ها و نشان شرکت‌ها در منو دوباره دیده شوند. نام نقش‌های فعال واقعی حساب جاری به‌صورت افزایشی و اختیاری از IAM به منوی هدر می‌رسد و زیر نام کاربر نمایش داده می‌شود؛ مجوزها یا حساب‌ها تغییری ندارند. typecheck، lint و build تولیدی API/Web (۵۵ مسیر) موفق‌اند. تست کامل در انتظار CI. بدون Migration، Seed، داده عملیاتی یا Dependency. جزئیات: [TOPBAR-COMPANY-ROLE-0929](tasks/TOPBAR-COMPANY-ROLE-0929.md).
