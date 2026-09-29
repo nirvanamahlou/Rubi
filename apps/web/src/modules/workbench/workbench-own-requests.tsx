@@ -140,7 +140,7 @@ export function WorkbenchOwnRequests() {
         <DialogContent dir="rtl" className="max-w-xl overflow-hidden p-0">
           {selected ? (
             <div className="text-sm">
-              <div className="bg-gradient-to-l from-primary via-blue-600 to-violet-600 p-6 pe-14 text-primary-foreground">
+              <div className="bg-gradient-to-l from-blue-700 via-blue-600 to-violet-600 p-6 pe-14 text-white">
                 <div className="flex items-start gap-3">
                   <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-white/15 ring-1 ring-white/25">
                     <FileText className="size-6" aria-hidden="true" />
@@ -149,7 +149,7 @@ export function WorkbenchOwnRequests() {
                     <DialogTitle className="truncate text-xl font-black">
                       {selected.subject}
                     </DialogTitle>
-                    <DialogDescription className="mt-1 truncate text-primary-foreground/80">
+                    <DialogDescription className="mt-1 truncate text-white">
                       {selected.trackingNumber}
                     </DialogDescription>
                   </div>

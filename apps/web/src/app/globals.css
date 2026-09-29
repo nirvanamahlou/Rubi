@@ -402,3 +402,831 @@ select {
   background-color: var(--selection-surface);
   border-color: color-mix(in srgb, var(--input) 88%, var(--primary));
 }
+
+/* Legacy light utility surfaces without a component-specific dark variant. */
+@layer utilities {
+  @media screen {
+    :where(.dark) :where([class~='bg-blue-50']):not([class*='dark:bg-']),
+    :where(.dark) :where([class~='bg-blue-100']):not([class*='dark:bg-']),
+    :where(.dark) :where([class~='bg-blue-200']):not([class*='dark:bg-']) {
+      background-color: #172b46;
+    }
+    :where(.dark)
+      :where([class~='text-blue-600']):not([class*='dark:text-']):not(
+        :where(.bg-primary, .bg-primary *)
+      ),
+    :where(.dark)
+      :where([class~='text-blue-700']):not([class*='dark:text-']):not(
+        :where(.bg-primary, .bg-primary *)
+      ),
+    :where(.dark)
+      :where([class~='text-blue-800']):not([class*='dark:text-']):not(
+        :where(.bg-primary, .bg-primary *)
+      ),
+    :where(.dark)
+      :where([class~='text-blue-900']):not([class*='dark:text-']):not(
+        :where(.bg-primary, .bg-primary *)
+      ),
+    :where(.dark)
+      :where([class~='text-blue-950']):not([class*='dark:text-']):not(
+        :where(.bg-primary, .bg-primary *)
+      ) {
+      color: #bfdbfe;
+    }
+    :where(.dark) :where([class~='from-blue-50']):not([class*='dark:from-']),
+    :where(.dark) :where([class~='from-blue-100']):not([class*='dark:from-']),
+    :where(.dark) :where([class~='from-blue-200']):not([class*='dark:from-']) {
+      --tw-gradient-from: #172b46;
+    }
+    :where(.dark) :where([class~='via-blue-50']):not([class*='dark:via-']),
+    :where(.dark) :where([class~='via-blue-100']):not([class*='dark:via-']),
+    :where(.dark) :where([class~='via-blue-200']):not([class*='dark:via-']) {
+      --tw-gradient-via: #172b46;
+    }
+    :where(.dark) :where([class~='to-blue-50']):not([class*='dark:to-']),
+    :where(.dark) :where([class~='to-blue-100']):not([class*='dark:to-']),
+    :where(.dark) :where([class~='to-blue-200']):not([class*='dark:to-']) {
+      --tw-gradient-to: #172b46;
+    }
+    :where(.dark) :where([class~='bg-sky-50']):not([class*='dark:bg-']),
+    :where(.dark) :where([class~='bg-sky-100']):not([class*='dark:bg-']),
+    :where(.dark) :where([class~='bg-sky-200']):not([class*='dark:bg-']) {
+      background-color: #142e3a;
+    }
+    :where(.dark)
+      :where([class~='text-sky-600']):not([class*='dark:text-']):not(
+        :where(.bg-primary, .bg-primary *)
+      ),
+    :where(.dark)
+      :where([class~='text-sky-700']):not([class*='dark:text-']):not(
+        :where(.bg-primary, .bg-primary *)
+      ),
+    :where(.dark)
+      :where([class~='text-sky-800']):not([class*='dark:text-']):not(
+        :where(.bg-primary, .bg-primary *)
+      ),
+    :where(.dark)
+      :where([class~='text-sky-900']):not([class*='dark:text-']):not(
+        :where(.bg-primary, .bg-primary *)
+      ),
+    :where(.dark)
+      :where([class~='text-sky-950']):not([class*='dark:text-']):not(
+        :where(.bg-primary, .bg-primary *)
+      ) {
+      color: #bae6fd;
+    }
+    :where(.dark) :where([class~='from-sky-50']):not([class*='dark:from-']),
+    :where(.dark) :where([class~='from-sky-100']):not([class*='dark:from-']),
+    :where(.dark) :where([class~='from-sky-200']):not([class*='dark:from-']) {
+      --tw-gradient-from: #142e3a;
+    }
+    :where(.dark) :where([class~='via-sky-50']):not([class*='dark:via-']),
+    :where(.dark) :where([class~='via-sky-100']):not([class*='dark:via-']),
+    :where(.dark) :where([class~='via-sky-200']):not([class*='dark:via-']) {
+      --tw-gradient-via: #142e3a;
+    }
+    :where(.dark) :where([class~='to-sky-50']):not([class*='dark:to-']),
+    :where(.dark) :where([class~='to-sky-100']):not([class*='dark:to-']),
+    :where(.dark) :where([class~='to-sky-200']):not([class*='dark:to-']) {
+      --tw-gradient-to: #142e3a;
+    }
+    :where(.dark) :where([class~='bg-cyan-50']):not([class*='dark:bg-']),
+    :where(.dark) :where([class~='bg-cyan-100']):not([class*='dark:bg-']),
+    :where(.dark) :where([class~='bg-cyan-200']):not([class*='dark:bg-']) {
+      background-color: #123039;
+    }
+    :where(.dark)
+      :where([class~='text-cyan-600']):not([class*='dark:text-']):not(
+        :where(.bg-primary, .bg-primary *)
+      ),
+    :where(.dark)
+      :where([class~='text-cyan-700']):not([class*='dark:text-']):not(
+        :where(.bg-primary, .bg-primary *)
+      ),
+    :where(.dark)
+      :where([class~='text-cyan-800']):not([class*='dark:text-']):not(
+        :where(.bg-primary, .bg-primary *)
+      ),
+    :where(.dark)
+      :where([class~='text-cyan-900']):not([class*='dark:text-']):not(
+        :where(.bg-primary, .bg-primary *)
+      ),
+    :where(.dark)
+      :where([class~='text-cyan-950']):not([class*='dark:text-']):not(
+        :where(.bg-primary, .bg-primary *)
+      ) {
+      color: #a5f3fc;
+    }
+    :where(.dark) :where([class~='from-cyan-50']):not([class*='dark:from-']),
+    :where(.dark) :where([class~='from-cyan-100']):not([class*='dark:from-']),
+    :where(.dark) :where([class~='from-cyan-200']):not([class*='dark:from-']) {
+      --tw-gradient-from: #123039;
+    }
+    :where(.dark) :where([class~='via-cyan-50']):not([class*='dark:via-']),
+    :where(.dark) :where([class~='via-cyan-100']):not([class*='dark:via-']),
+    :where(.dark) :where([class~='via-cyan-200']):not([class*='dark:via-']) {
+      --tw-gradient-via: #123039;
+    }
+    :where(.dark) :where([class~='to-cyan-50']):not([class*='dark:to-']),
+    :where(.dark) :where([class~='to-cyan-100']):not([class*='dark:to-']),
+    :where(.dark) :where([class~='to-cyan-200']):not([class*='dark:to-']) {
+      --tw-gradient-to: #123039;
+    }
+    :where(.dark) :where([class~='bg-indigo-50']):not([class*='dark:bg-']),
+    :where(.dark) :where([class~='bg-indigo-100']):not([class*='dark:bg-']),
+    :where(.dark) :where([class~='bg-indigo-200']):not([class*='dark:bg-']) {
+      background-color: #242744;
+    }
+    :where(.dark)
+      :where([class~='text-indigo-600']):not([class*='dark:text-']):not(
+        :where(.bg-primary, .bg-primary *)
+      ),
+    :where(.dark)
+      :where([class~='text-indigo-700']):not([class*='dark:text-']):not(
+        :where(.bg-primary, .bg-primary *)
+      ),
+    :where(.dark)
+      :where([class~='text-indigo-800']):not([class*='dark:text-']):not(
+        :where(.bg-primary, .bg-primary *)
+      ),
+    :where(.dark)
+      :where([class~='text-indigo-900']):not([class*='dark:text-']):not(
+        :where(.bg-primary, .bg-primary *)
+      ),
+    :where(.dark)
+      :where([class~='text-indigo-950']):not([class*='dark:text-']):not(
+        :where(.bg-primary, .bg-primary *)
+      ) {
+      color: #c7d2fe;
+    }
+    :where(.dark) :where([class~='from-indigo-50']):not([class*='dark:from-']),
+    :where(.dark) :where([class~='from-indigo-100']):not([class*='dark:from-']),
+    :where(.dark)
+      :where([class~='from-indigo-200']):not([class*='dark:from-']) {
+      --tw-gradient-from: #242744;
+    }
+    :where(.dark) :where([class~='via-indigo-50']):not([class*='dark:via-']),
+    :where(.dark) :where([class~='via-indigo-100']):not([class*='dark:via-']),
+    :where(.dark) :where([class~='via-indigo-200']):not([class*='dark:via-']) {
+      --tw-gradient-via: #242744;
+    }
+    :where(.dark) :where([class~='to-indigo-50']):not([class*='dark:to-']),
+    :where(.dark) :where([class~='to-indigo-100']):not([class*='dark:to-']),
+    :where(.dark) :where([class~='to-indigo-200']):not([class*='dark:to-']) {
+      --tw-gradient-to: #242744;
+    }
+    :where(.dark) :where([class~='bg-violet-50']):not([class*='dark:bg-']),
+    :where(.dark) :where([class~='bg-violet-100']):not([class*='dark:bg-']),
+    :where(.dark) :where([class~='bg-violet-200']):not([class*='dark:bg-']) {
+      background-color: #2e2345;
+    }
+    :where(.dark)
+      :where([class~='text-violet-600']):not([class*='dark:text-']):not(
+        :where(.bg-primary, .bg-primary *)
+      ),
+    :where(.dark)
+      :where([class~='text-violet-700']):not([class*='dark:text-']):not(
+        :where(.bg-primary, .bg-primary *)
+      ),
+    :where(.dark)
+      :where([class~='text-violet-800']):not([class*='dark:text-']):not(
+        :where(.bg-primary, .bg-primary *)
+      ),
+    :where(.dark)
+      :where([class~='text-violet-900']):not([class*='dark:text-']):not(
+        :where(.bg-primary, .bg-primary *)
+      ),
+    :where(.dark)
+      :where([class~='text-violet-950']):not([class*='dark:text-']):not(
+        :where(.bg-primary, .bg-primary *)
+      ) {
+      color: #ddd6fe;
+    }
+    :where(.dark) :where([class~='from-violet-50']):not([class*='dark:from-']),
+    :where(.dark) :where([class~='from-violet-100']):not([class*='dark:from-']),
+    :where(.dark)
+      :where([class~='from-violet-200']):not([class*='dark:from-']) {
+      --tw-gradient-from: #2e2345;
+    }
+    :where(.dark) :where([class~='via-violet-50']):not([class*='dark:via-']),
+    :where(.dark) :where([class~='via-violet-100']):not([class*='dark:via-']),
+    :where(.dark) :where([class~='via-violet-200']):not([class*='dark:via-']) {
+      --tw-gradient-via: #2e2345;
+    }
+    :where(.dark) :where([class~='to-violet-50']):not([class*='dark:to-']),
+    :where(.dark) :where([class~='to-violet-100']):not([class*='dark:to-']),
+    :where(.dark) :where([class~='to-violet-200']):not([class*='dark:to-']) {
+      --tw-gradient-to: #2e2345;
+    }
+    :where(.dark) :where([class~='bg-purple-50']):not([class*='dark:bg-']),
+    :where(.dark) :where([class~='bg-purple-100']):not([class*='dark:bg-']),
+    :where(.dark) :where([class~='bg-purple-200']):not([class*='dark:bg-']) {
+      background-color: #322344;
+    }
+    :where(.dark)
+      :where([class~='text-purple-600']):not([class*='dark:text-']):not(
+        :where(.bg-primary, .bg-primary *)
+      ),
+    :where(.dark)
+      :where([class~='text-purple-700']):not([class*='dark:text-']):not(
+        :where(.bg-primary, .bg-primary *)
+      ),
+    :where(.dark)
+      :where([class~='text-purple-800']):not([class*='dark:text-']):not(
+        :where(.bg-primary, .bg-primary *)
+      ),
+    :where(.dark)
+      :where([class~='text-purple-900']):not([class*='dark:text-']):not(
+        :where(.bg-primary, .bg-primary *)
+      ),
+    :where(.dark)
+      :where([class~='text-purple-950']):not([class*='dark:text-']):not(
+        :where(.bg-primary, .bg-primary *)
+      ) {
+      color: #e9d5ff;
+    }
+    :where(.dark) :where([class~='from-purple-50']):not([class*='dark:from-']),
+    :where(.dark) :where([class~='from-purple-100']):not([class*='dark:from-']),
+    :where(.dark)
+      :where([class~='from-purple-200']):not([class*='dark:from-']) {
+      --tw-gradient-from: #322344;
+    }
+    :where(.dark) :where([class~='via-purple-50']):not([class*='dark:via-']),
+    :where(.dark) :where([class~='via-purple-100']):not([class*='dark:via-']),
+    :where(.dark) :where([class~='via-purple-200']):not([class*='dark:via-']) {
+      --tw-gradient-via: #322344;
+    }
+    :where(.dark) :where([class~='to-purple-50']):not([class*='dark:to-']),
+    :where(.dark) :where([class~='to-purple-100']):not([class*='dark:to-']),
+    :where(.dark) :where([class~='to-purple-200']):not([class*='dark:to-']) {
+      --tw-gradient-to: #322344;
+    }
+    :where(.dark) :where([class~='bg-emerald-50']):not([class*='dark:bg-']),
+    :where(.dark) :where([class~='bg-emerald-100']):not([class*='dark:bg-']),
+    :where(.dark) :where([class~='bg-emerald-200']):not([class*='dark:bg-']) {
+      background-color: #16332b;
+    }
+    :where(.dark)
+      :where([class~='text-emerald-600']):not([class*='dark:text-']):not(
+        :where(.bg-primary, .bg-primary *)
+      ),
+    :where(.dark)
+      :where([class~='text-emerald-700']):not([class*='dark:text-']):not(
+        :where(.bg-primary, .bg-primary *)
+      ),
+    :where(.dark)
+      :where([class~='text-emerald-800']):not([class*='dark:text-']):not(
+        :where(.bg-primary, .bg-primary *)
+      ),
+    :where(.dark)
+      :where([class~='text-emerald-900']):not([class*='dark:text-']):not(
+        :where(.bg-primary, .bg-primary *)
+      ),
+    :where(.dark)
+      :where([class~='text-emerald-950']):not([class*='dark:text-']):not(
+        :where(.bg-primary, .bg-primary *)
+      ) {
+      color: #a7f3d0;
+    }
+    :where(.dark) :where([class~='from-emerald-50']):not([class*='dark:from-']),
+    :where(.dark)
+      :where([class~='from-emerald-100']):not([class*='dark:from-']),
+    :where(.dark)
+      :where([class~='from-emerald-200']):not([class*='dark:from-']) {
+      --tw-gradient-from: #16332b;
+    }
+    :where(.dark) :where([class~='via-emerald-50']):not([class*='dark:via-']),
+    :where(.dark) :where([class~='via-emerald-100']):not([class*='dark:via-']),
+    :where(.dark) :where([class~='via-emerald-200']):not([class*='dark:via-']) {
+      --tw-gradient-via: #16332b;
+    }
+    :where(.dark) :where([class~='to-emerald-50']):not([class*='dark:to-']),
+    :where(.dark) :where([class~='to-emerald-100']):not([class*='dark:to-']),
+    :where(.dark) :where([class~='to-emerald-200']):not([class*='dark:to-']) {
+      --tw-gradient-to: #16332b;
+    }
+    :where(.dark) :where([class~='bg-green-50']):not([class*='dark:bg-']),
+    :where(.dark) :where([class~='bg-green-100']):not([class*='dark:bg-']),
+    :where(.dark) :where([class~='bg-green-200']):not([class*='dark:bg-']) {
+      background-color: #1c3224;
+    }
+    :where(.dark)
+      :where([class~='text-green-600']):not([class*='dark:text-']):not(
+        :where(.bg-primary, .bg-primary *)
+      ),
+    :where(.dark)
+      :where([class~='text-green-700']):not([class*='dark:text-']):not(
+        :where(.bg-primary, .bg-primary *)
+      ),
+    :where(.dark)
+      :where([class~='text-green-800']):not([class*='dark:text-']):not(
+        :where(.bg-primary, .bg-primary *)
+      ),
+    :where(.dark)
+      :where([class~='text-green-900']):not([class*='dark:text-']):not(
+        :where(.bg-primary, .bg-primary *)
+      ),
+    :where(.dark)
+      :where([class~='text-green-950']):not([class*='dark:text-']):not(
+        :where(.bg-primary, .bg-primary *)
+      ) {
+      color: #bbf7d0;
+    }
+    :where(.dark) :where([class~='from-green-50']):not([class*='dark:from-']),
+    :where(.dark) :where([class~='from-green-100']):not([class*='dark:from-']),
+    :where(.dark) :where([class~='from-green-200']):not([class*='dark:from-']) {
+      --tw-gradient-from: #1c3224;
+    }
+    :where(.dark) :where([class~='via-green-50']):not([class*='dark:via-']),
+    :where(.dark) :where([class~='via-green-100']):not([class*='dark:via-']),
+    :where(.dark) :where([class~='via-green-200']):not([class*='dark:via-']) {
+      --tw-gradient-via: #1c3224;
+    }
+    :where(.dark) :where([class~='to-green-50']):not([class*='dark:to-']),
+    :where(.dark) :where([class~='to-green-100']):not([class*='dark:to-']),
+    :where(.dark) :where([class~='to-green-200']):not([class*='dark:to-']) {
+      --tw-gradient-to: #1c3224;
+    }
+    :where(.dark) :where([class~='bg-teal-50']):not([class*='dark:bg-']),
+    :where(.dark) :where([class~='bg-teal-100']):not([class*='dark:bg-']),
+    :where(.dark) :where([class~='bg-teal-200']):not([class*='dark:bg-']) {
+      background-color: #15312e;
+    }
+    :where(.dark)
+      :where([class~='text-teal-600']):not([class*='dark:text-']):not(
+        :where(.bg-primary, .bg-primary *)
+      ),
+    :where(.dark)
+      :where([class~='text-teal-700']):not([class*='dark:text-']):not(
+        :where(.bg-primary, .bg-primary *)
+      ),
+    :where(.dark)
+      :where([class~='text-teal-800']):not([class*='dark:text-']):not(
+        :where(.bg-primary, .bg-primary *)
+      ),
+    :where(.dark)
+      :where([class~='text-teal-900']):not([class*='dark:text-']):not(
+        :where(.bg-primary, .bg-primary *)
+      ),
+    :where(.dark)
+      :where([class~='text-teal-950']):not([class*='dark:text-']):not(
+        :where(.bg-primary, .bg-primary *)
+      ) {
+      color: #99f6e4;
+    }
+    :where(.dark) :where([class~='from-teal-50']):not([class*='dark:from-']),
+    :where(.dark) :where([class~='from-teal-100']):not([class*='dark:from-']),
+    :where(.dark) :where([class~='from-teal-200']):not([class*='dark:from-']) {
+      --tw-gradient-from: #15312e;
+    }
+    :where(.dark) :where([class~='via-teal-50']):not([class*='dark:via-']),
+    :where(.dark) :where([class~='via-teal-100']):not([class*='dark:via-']),
+    :where(.dark) :where([class~='via-teal-200']):not([class*='dark:via-']) {
+      --tw-gradient-via: #15312e;
+    }
+    :where(.dark) :where([class~='to-teal-50']):not([class*='dark:to-']),
+    :where(.dark) :where([class~='to-teal-100']):not([class*='dark:to-']),
+    :where(.dark) :where([class~='to-teal-200']):not([class*='dark:to-']) {
+      --tw-gradient-to: #15312e;
+    }
+    :where(.dark) :where([class~='bg-amber-50']):not([class*='dark:bg-']),
+    :where(.dark) :where([class~='bg-amber-100']):not([class*='dark:bg-']),
+    :where(.dark) :where([class~='bg-amber-200']):not([class*='dark:bg-']) {
+      background-color: #362a17;
+    }
+    :where(.dark)
+      :where([class~='text-amber-600']):not([class*='dark:text-']):not(
+        :where(.bg-primary, .bg-primary *)
+      ),
+    :where(.dark)
+      :where([class~='text-amber-700']):not([class*='dark:text-']):not(
+        :where(.bg-primary, .bg-primary *)
+      ),
+    :where(.dark)
+      :where([class~='text-amber-800']):not([class*='dark:text-']):not(
+        :where(.bg-primary, .bg-primary *)
+      ),
+    :where(.dark)
+      :where([class~='text-amber-900']):not([class*='dark:text-']):not(
+        :where(.bg-primary, .bg-primary *)
+      ),
+    :where(.dark)
+      :where([class~='text-amber-950']):not([class*='dark:text-']):not(
+        :where(.bg-primary, .bg-primary *)
+      ) {
+      color: #fde68a;
+    }
+    :where(.dark) :where([class~='from-amber-50']):not([class*='dark:from-']),
+    :where(.dark) :where([class~='from-amber-100']):not([class*='dark:from-']),
+    :where(.dark) :where([class~='from-amber-200']):not([class*='dark:from-']) {
+      --tw-gradient-from: #362a17;
+    }
+    :where(.dark) :where([class~='via-amber-50']):not([class*='dark:via-']),
+    :where(.dark) :where([class~='via-amber-100']):not([class*='dark:via-']),
+    :where(.dark) :where([class~='via-amber-200']):not([class*='dark:via-']) {
+      --tw-gradient-via: #362a17;
+    }
+    :where(.dark) :where([class~='to-amber-50']):not([class*='dark:to-']),
+    :where(.dark) :where([class~='to-amber-100']):not([class*='dark:to-']),
+    :where(.dark) :where([class~='to-amber-200']):not([class*='dark:to-']) {
+      --tw-gradient-to: #362a17;
+    }
+    :where(.dark) :where([class~='bg-yellow-50']):not([class*='dark:bg-']),
+    :where(.dark) :where([class~='bg-yellow-100']):not([class*='dark:bg-']),
+    :where(.dark) :where([class~='bg-yellow-200']):not([class*='dark:bg-']) {
+      background-color: #332d18;
+    }
+    :where(.dark)
+      :where([class~='text-yellow-600']):not([class*='dark:text-']):not(
+        :where(.bg-primary, .bg-primary *)
+      ),
+    :where(.dark)
+      :where([class~='text-yellow-700']):not([class*='dark:text-']):not(
+        :where(.bg-primary, .bg-primary *)
+      ),
+    :where(.dark)
+      :where([class~='text-yellow-800']):not([class*='dark:text-']):not(
+        :where(.bg-primary, .bg-primary *)
+      ),
+    :where(.dark)
+      :where([class~='text-yellow-900']):not([class*='dark:text-']):not(
+        :where(.bg-primary, .bg-primary *)
+      ),
+    :where(.dark)
+      :where([class~='text-yellow-950']):not([class*='dark:text-']):not(
+        :where(.bg-primary, .bg-primary *)
+      ) {
+      color: #fef08a;
+    }
+    :where(.dark) :where([class~='from-yellow-50']):not([class*='dark:from-']),
+    :where(.dark) :where([class~='from-yellow-100']):not([class*='dark:from-']),
+    :where(.dark)
+      :where([class~='from-yellow-200']):not([class*='dark:from-']) {
+      --tw-gradient-from: #332d18;
+    }
+    :where(.dark) :where([class~='via-yellow-50']):not([class*='dark:via-']),
+    :where(.dark) :where([class~='via-yellow-100']):not([class*='dark:via-']),
+    :where(.dark) :where([class~='via-yellow-200']):not([class*='dark:via-']) {
+      --tw-gradient-via: #332d18;
+    }
+    :where(.dark) :where([class~='to-yellow-50']):not([class*='dark:to-']),
+    :where(.dark) :where([class~='to-yellow-100']):not([class*='dark:to-']),
+    :where(.dark) :where([class~='to-yellow-200']):not([class*='dark:to-']) {
+      --tw-gradient-to: #332d18;
+    }
+    :where(.dark) :where([class~='bg-orange-50']):not([class*='dark:bg-']),
+    :where(.dark) :where([class~='bg-orange-100']):not([class*='dark:bg-']),
+    :where(.dark) :where([class~='bg-orange-200']):not([class*='dark:bg-']) {
+      background-color: #3a271c;
+    }
+    :where(.dark)
+      :where([class~='text-orange-600']):not([class*='dark:text-']):not(
+        :where(.bg-primary, .bg-primary *)
+      ),
+    :where(.dark)
+      :where([class~='text-orange-700']):not([class*='dark:text-']):not(
+        :where(.bg-primary, .bg-primary *)
+      ),
+    :where(.dark)
+      :where([class~='text-orange-800']):not([class*='dark:text-']):not(
+        :where(.bg-primary, .bg-primary *)
+      ),
+    :where(.dark)
+      :where([class~='text-orange-900']):not([class*='dark:text-']):not(
+        :where(.bg-primary, .bg-primary *)
+      ),
+    :where(.dark)
+      :where([class~='text-orange-950']):not([class*='dark:text-']):not(
+        :where(.bg-primary, .bg-primary *)
+      ) {
+      color: #fed7aa;
+    }
+    :where(.dark) :where([class~='from-orange-50']):not([class*='dark:from-']),
+    :where(.dark) :where([class~='from-orange-100']):not([class*='dark:from-']),
+    :where(.dark)
+      :where([class~='from-orange-200']):not([class*='dark:from-']) {
+      --tw-gradient-from: #3a271c;
+    }
+    :where(.dark) :where([class~='via-orange-50']):not([class*='dark:via-']),
+    :where(.dark) :where([class~='via-orange-100']):not([class*='dark:via-']),
+    :where(.dark) :where([class~='via-orange-200']):not([class*='dark:via-']) {
+      --tw-gradient-via: #3a271c;
+    }
+    :where(.dark) :where([class~='to-orange-50']):not([class*='dark:to-']),
+    :where(.dark) :where([class~='to-orange-100']):not([class*='dark:to-']),
+    :where(.dark) :where([class~='to-orange-200']):not([class*='dark:to-']) {
+      --tw-gradient-to: #3a271c;
+    }
+    :where(.dark) :where([class~='bg-red-50']):not([class*='dark:bg-']),
+    :where(.dark) :where([class~='bg-red-100']):not([class*='dark:bg-']),
+    :where(.dark) :where([class~='bg-red-200']):not([class*='dark:bg-']) {
+      background-color: #3c2326;
+    }
+    :where(.dark)
+      :where([class~='text-red-600']):not([class*='dark:text-']):not(
+        :where(.bg-primary, .bg-primary *)
+      ),
+    :where(.dark)
+      :where([class~='text-red-700']):not([class*='dark:text-']):not(
+        :where(.bg-primary, .bg-primary *)
+      ),
+    :where(.dark)
+      :where([class~='text-red-800']):not([class*='dark:text-']):not(
+        :where(.bg-primary, .bg-primary *)
+      ),
+    :where(.dark)
+      :where([class~='text-red-900']):not([class*='dark:text-']):not(
+        :where(.bg-primary, .bg-primary *)
+      ),
+    :where(.dark)
+      :where([class~='text-red-950']):not([class*='dark:text-']):not(
+        :where(.bg-primary, .bg-primary *)
+      ) {
+      color: #fecaca;
+    }
+    :where(.dark) :where([class~='from-red-50']):not([class*='dark:from-']),
+    :where(.dark) :where([class~='from-red-100']):not([class*='dark:from-']),
+    :where(.dark) :where([class~='from-red-200']):not([class*='dark:from-']) {
+      --tw-gradient-from: #3c2326;
+    }
+    :where(.dark) :where([class~='via-red-50']):not([class*='dark:via-']),
+    :where(.dark) :where([class~='via-red-100']):not([class*='dark:via-']),
+    :where(.dark) :where([class~='via-red-200']):not([class*='dark:via-']) {
+      --tw-gradient-via: #3c2326;
+    }
+    :where(.dark) :where([class~='to-red-50']):not([class*='dark:to-']),
+    :where(.dark) :where([class~='to-red-100']):not([class*='dark:to-']),
+    :where(.dark) :where([class~='to-red-200']):not([class*='dark:to-']) {
+      --tw-gradient-to: #3c2326;
+    }
+    :where(.dark) :where([class~='bg-rose-50']):not([class*='dark:bg-']),
+    :where(.dark) :where([class~='bg-rose-100']):not([class*='dark:bg-']),
+    :where(.dark) :where([class~='bg-rose-200']):not([class*='dark:bg-']) {
+      background-color: #3c222b;
+    }
+    :where(.dark)
+      :where([class~='text-rose-600']):not([class*='dark:text-']):not(
+        :where(.bg-primary, .bg-primary *)
+      ),
+    :where(.dark)
+      :where([class~='text-rose-700']):not([class*='dark:text-']):not(
+        :where(.bg-primary, .bg-primary *)
+      ),
+    :where(.dark)
+      :where([class~='text-rose-800']):not([class*='dark:text-']):not(
+        :where(.bg-primary, .bg-primary *)
+      ),
+    :where(.dark)
+      :where([class~='text-rose-900']):not([class*='dark:text-']):not(
+        :where(.bg-primary, .bg-primary *)
+      ),
+    :where(.dark)
+      :where([class~='text-rose-950']):not([class*='dark:text-']):not(
+        :where(.bg-primary, .bg-primary *)
+      ) {
+      color: #fecdd3;
+    }
+    :where(.dark) :where([class~='from-rose-50']):not([class*='dark:from-']),
+    :where(.dark) :where([class~='from-rose-100']):not([class*='dark:from-']),
+    :where(.dark) :where([class~='from-rose-200']):not([class*='dark:from-']) {
+      --tw-gradient-from: #3c222b;
+    }
+    :where(.dark) :where([class~='via-rose-50']):not([class*='dark:via-']),
+    :where(.dark) :where([class~='via-rose-100']):not([class*='dark:via-']),
+    :where(.dark) :where([class~='via-rose-200']):not([class*='dark:via-']) {
+      --tw-gradient-via: #3c222b;
+    }
+    :where(.dark) :where([class~='to-rose-50']):not([class*='dark:to-']),
+    :where(.dark) :where([class~='to-rose-100']):not([class*='dark:to-']),
+    :where(.dark) :where([class~='to-rose-200']):not([class*='dark:to-']) {
+      --tw-gradient-to: #3c222b;
+    }
+    :where(.dark) :where([class~='bg-pink-50']):not([class*='dark:bg-']),
+    :where(.dark) :where([class~='bg-pink-100']):not([class*='dark:bg-']),
+    :where(.dark) :where([class~='bg-pink-200']):not([class*='dark:bg-']) {
+      background-color: #392337;
+    }
+    :where(.dark)
+      :where([class~='text-pink-600']):not([class*='dark:text-']):not(
+        :where(.bg-primary, .bg-primary *)
+      ),
+    :where(.dark)
+      :where([class~='text-pink-700']):not([class*='dark:text-']):not(
+        :where(.bg-primary, .bg-primary *)
+      ),
+    :where(.dark)
+      :where([class~='text-pink-800']):not([class*='dark:text-']):not(
+        :where(.bg-primary, .bg-primary *)
+      ),
+    :where(.dark)
+      :where([class~='text-pink-900']):not([class*='dark:text-']):not(
+        :where(.bg-primary, .bg-primary *)
+      ),
+    :where(.dark)
+      :where([class~='text-pink-950']):not([class*='dark:text-']):not(
+        :where(.bg-primary, .bg-primary *)
+      ) {
+      color: #fbcfe8;
+    }
+    :where(.dark) :where([class~='from-pink-50']):not([class*='dark:from-']),
+    :where(.dark) :where([class~='from-pink-100']):not([class*='dark:from-']),
+    :where(.dark) :where([class~='from-pink-200']):not([class*='dark:from-']) {
+      --tw-gradient-from: #392337;
+    }
+    :where(.dark) :where([class~='via-pink-50']):not([class*='dark:via-']),
+    :where(.dark) :where([class~='via-pink-100']):not([class*='dark:via-']),
+    :where(.dark) :where([class~='via-pink-200']):not([class*='dark:via-']) {
+      --tw-gradient-via: #392337;
+    }
+    :where(.dark) :where([class~='to-pink-50']):not([class*='dark:to-']),
+    :where(.dark) :where([class~='to-pink-100']):not([class*='dark:to-']),
+    :where(.dark) :where([class~='to-pink-200']):not([class*='dark:to-']) {
+      --tw-gradient-to: #392337;
+    }
+    :where(.dark) :where([class~='bg-slate-50']):not([class*='dark:bg-']),
+    :where(.dark) :where([class~='bg-slate-100']):not([class*='dark:bg-']),
+    :where(.dark) :where([class~='bg-slate-200']):not([class*='dark:bg-']) {
+      background-color: #27272b;
+    }
+    :where(.dark)
+      :where([class~='text-slate-600']):not([class*='dark:text-']):not(
+        :where(.bg-primary, .bg-primary *)
+      ),
+    :where(.dark)
+      :where([class~='text-slate-700']):not([class*='dark:text-']):not(
+        :where(.bg-primary, .bg-primary *)
+      ),
+    :where(.dark)
+      :where([class~='text-slate-800']):not([class*='dark:text-']):not(
+        :where(.bg-primary, .bg-primary *)
+      ),
+    :where(.dark)
+      :where([class~='text-slate-900']):not([class*='dark:text-']):not(
+        :where(.bg-primary, .bg-primary *)
+      ),
+    :where(.dark)
+      :where([class~='text-slate-950']):not([class*='dark:text-']):not(
+        :where(.bg-primary, .bg-primary *)
+      ) {
+      color: #e4e4e7;
+    }
+    :where(.dark) :where([class~='from-slate-50']):not([class*='dark:from-']),
+    :where(.dark) :where([class~='from-slate-100']):not([class*='dark:from-']),
+    :where(.dark) :where([class~='from-slate-200']):not([class*='dark:from-']) {
+      --tw-gradient-from: #27272b;
+    }
+    :where(.dark) :where([class~='via-slate-50']):not([class*='dark:via-']),
+    :where(.dark) :where([class~='via-slate-100']):not([class*='dark:via-']),
+    :where(.dark) :where([class~='via-slate-200']):not([class*='dark:via-']) {
+      --tw-gradient-via: #27272b;
+    }
+    :where(.dark) :where([class~='to-slate-50']):not([class*='dark:to-']),
+    :where(.dark) :where([class~='to-slate-100']):not([class*='dark:to-']),
+    :where(.dark) :where([class~='to-slate-200']):not([class*='dark:to-']) {
+      --tw-gradient-to: #27272b;
+    }
+    :where(.dark) :where([class~='bg-gray-50']):not([class*='dark:bg-']),
+    :where(.dark) :where([class~='bg-gray-100']):not([class*='dark:bg-']),
+    :where(.dark) :where([class~='bg-gray-200']):not([class*='dark:bg-']) {
+      background-color: #27272b;
+    }
+    :where(.dark)
+      :where([class~='text-gray-600']):not([class*='dark:text-']):not(
+        :where(.bg-primary, .bg-primary *)
+      ),
+    :where(.dark)
+      :where([class~='text-gray-700']):not([class*='dark:text-']):not(
+        :where(.bg-primary, .bg-primary *)
+      ),
+    :where(.dark)
+      :where([class~='text-gray-800']):not([class*='dark:text-']):not(
+        :where(.bg-primary, .bg-primary *)
+      ),
+    :where(.dark)
+      :where([class~='text-gray-900']):not([class*='dark:text-']):not(
+        :where(.bg-primary, .bg-primary *)
+      ),
+    :where(.dark)
+      :where([class~='text-gray-950']):not([class*='dark:text-']):not(
+        :where(.bg-primary, .bg-primary *)
+      ) {
+      color: #e4e4e7;
+    }
+    :where(.dark) :where([class~='from-gray-50']):not([class*='dark:from-']),
+    :where(.dark) :where([class~='from-gray-100']):not([class*='dark:from-']),
+    :where(.dark) :where([class~='from-gray-200']):not([class*='dark:from-']) {
+      --tw-gradient-from: #27272b;
+    }
+    :where(.dark) :where([class~='via-gray-50']):not([class*='dark:via-']),
+    :where(.dark) :where([class~='via-gray-100']):not([class*='dark:via-']),
+    :where(.dark) :where([class~='via-gray-200']):not([class*='dark:via-']) {
+      --tw-gradient-via: #27272b;
+    }
+    :where(.dark) :where([class~='to-gray-50']):not([class*='dark:to-']),
+    :where(.dark) :where([class~='to-gray-100']):not([class*='dark:to-']),
+    :where(.dark) :where([class~='to-gray-200']):not([class*='dark:to-']) {
+      --tw-gradient-to: #27272b;
+    }
+    :where(.dark) :where([class~='bg-zinc-50']):not([class*='dark:bg-']),
+    :where(.dark) :where([class~='bg-zinc-100']):not([class*='dark:bg-']),
+    :where(.dark) :where([class~='bg-zinc-200']):not([class*='dark:bg-']) {
+      background-color: #27272b;
+    }
+    :where(.dark)
+      :where([class~='text-zinc-600']):not([class*='dark:text-']):not(
+        :where(.bg-primary, .bg-primary *)
+      ),
+    :where(.dark)
+      :where([class~='text-zinc-700']):not([class*='dark:text-']):not(
+        :where(.bg-primary, .bg-primary *)
+      ),
+    :where(.dark)
+      :where([class~='text-zinc-800']):not([class*='dark:text-']):not(
+        :where(.bg-primary, .bg-primary *)
+      ),
+    :where(.dark)
+      :where([class~='text-zinc-900']):not([class*='dark:text-']):not(
+        :where(.bg-primary, .bg-primary *)
+      ),
+    :where(.dark)
+      :where([class~='text-zinc-950']):not([class*='dark:text-']):not(
+        :where(.bg-primary, .bg-primary *)
+      ) {
+      color: #e4e4e7;
+    }
+    :where(.dark) :where([class~='from-zinc-50']):not([class*='dark:from-']),
+    :where(.dark) :where([class~='from-zinc-100']):not([class*='dark:from-']),
+    :where(.dark) :where([class~='from-zinc-200']):not([class*='dark:from-']) {
+      --tw-gradient-from: #27272b;
+    }
+    :where(.dark) :where([class~='via-zinc-50']):not([class*='dark:via-']),
+    :where(.dark) :where([class~='via-zinc-100']):not([class*='dark:via-']),
+    :where(.dark) :where([class~='via-zinc-200']):not([class*='dark:via-']) {
+      --tw-gradient-via: #27272b;
+    }
+    :where(.dark) :where([class~='to-zinc-50']):not([class*='dark:to-']),
+    :where(.dark) :where([class~='to-zinc-100']):not([class*='dark:to-']),
+    :where(.dark) :where([class~='to-zinc-200']):not([class*='dark:to-']) {
+      --tw-gradient-to: #27272b;
+    }
+    :where(.dark) :where([class~='bg-neutral-50']):not([class*='dark:bg-']),
+    :where(.dark) :where([class~='bg-neutral-100']):not([class*='dark:bg-']),
+    :where(.dark) :where([class~='bg-neutral-200']):not([class*='dark:bg-']) {
+      background-color: #27272b;
+    }
+    :where(.dark)
+      :where([class~='text-neutral-600']):not([class*='dark:text-']):not(
+        :where(.bg-primary, .bg-primary *)
+      ),
+    :where(.dark)
+      :where([class~='text-neutral-700']):not([class*='dark:text-']):not(
+        :where(.bg-primary, .bg-primary *)
+      ),
+    :where(.dark)
+      :where([class~='text-neutral-800']):not([class*='dark:text-']):not(
+        :where(.bg-primary, .bg-primary *)
+      ),
+    :where(.dark)
+      :where([class~='text-neutral-900']):not([class*='dark:text-']):not(
+        :where(.bg-primary, .bg-primary *)
+      ),
+    :where(.dark)
+      :where([class~='text-neutral-950']):not([class*='dark:text-']):not(
+        :where(.bg-primary, .bg-primary *)
+      ) {
+      color: #e4e4e7;
+    }
+    :where(.dark) :where([class~='from-neutral-50']):not([class*='dark:from-']),
+    :where(.dark)
+      :where([class~='from-neutral-100']):not([class*='dark:from-']),
+    :where(.dark)
+      :where([class~='from-neutral-200']):not([class*='dark:from-']) {
+      --tw-gradient-from: #27272b;
+    }
+    :where(.dark) :where([class~='via-neutral-50']):not([class*='dark:via-']),
+    :where(.dark) :where([class~='via-neutral-100']):not([class*='dark:via-']),
+    :where(.dark) :where([class~='via-neutral-200']):not([class*='dark:via-']) {
+      --tw-gradient-via: #27272b;
+    }
+    :where(.dark) :where([class~='to-neutral-50']):not([class*='dark:to-']),
+    :where(.dark) :where([class~='to-neutral-100']):not([class*='dark:to-']),
+    :where(.dark) :where([class~='to-neutral-200']):not([class*='dark:to-']) {
+      --tw-gradient-to: #27272b;
+    }
+    :where(.dark) :where(.bg-white):not([class*='dark:bg-']) {
+      background-color: var(--surface);
+    }
+    :where(.dark) :where(.text-black):not([class*='dark:text-']) {
+      color: var(--foreground);
+    }
+    :where(.dark) :where(.from-white):not([class*='dark:from-']) {
+      --tw-gradient-from: var(--surface);
+    }
+    :where(.dark) :where(.via-white):not([class*='dark:via-']) {
+      --tw-gradient-via: var(--surface);
+    }
+    :where(.dark) :where(.to-white):not([class*='dark:to-']) {
+      --tw-gradient-to: var(--surface);
+    }
+  }
+}

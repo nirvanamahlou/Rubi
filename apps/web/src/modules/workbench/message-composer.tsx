@@ -406,7 +406,7 @@ export function MessageComposer({
   );
   return (
     <Card className="overflow-hidden border-primary/20 bg-gradient-to-br from-sky-50/80 via-surface to-violet-50/80 shadow-lg shadow-primary/5 dark:from-sky-950/25 dark:to-violet-950/20">
-      <div className="relative overflow-hidden bg-gradient-to-l from-primary via-blue-600 to-violet-600 p-5 text-primary-foreground">
+      <div className="relative overflow-hidden bg-gradient-to-l from-blue-700 via-blue-600 to-violet-600 p-5 text-white">
         <span className="absolute -start-8 -top-10 size-28 rounded-full bg-white/10" />
         <h2 className="relative flex items-center gap-3 text-xl font-black">
           <span className="grid size-11 place-items-center rounded-2xl bg-white/15 ring-1 ring-white/25">
