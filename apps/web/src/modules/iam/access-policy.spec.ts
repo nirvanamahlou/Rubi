@@ -29,6 +29,21 @@ describe('per-user screen visibility', () => {
     ];
     expect(canViewRoute(permissions, '/sales')).toBe(true);
     expect(canViewRoute(permissions, '/sales/ticket-prices')).toBe(false);
+    expect(canViewRoute(permissions, '/sales/tours')).toBe(false);
+    expect(
+      canViewRoute(
+        [
+          USER_ACCESS_PROFILE_PERMISSION,
+          screenPermission('ticket-catalog.tab.tours'),
+        ],
+        '/sales/tours',
+      ),
+    ).toBe(true);
+    expect(
+      USER_ACCESS_SCREENS.find(
+        (screen) => screen.id === 'ticket-catalog.tab.tours',
+      ),
+    ).toMatchObject({ group: 'sales', route: '/sales/tours' });
   });
   it('matches actual tab keys and uses unique stable screen identifiers', () => {
     expect(screenForTab('/ticket-management', 'catalog')?.id).toBe(

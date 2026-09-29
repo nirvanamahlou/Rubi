@@ -228,14 +228,20 @@ function Navigation({
     );
   }
   function renderGroupEntries(group: (typeof groupedNavigationItems)[number]) {
-    return group.items.flatMap((item) => [
+    const entries = group.items.flatMap((item) => [
       renderItem(item),
       ...(group.id === 'sales' && item.href === '/sales'
-        ? salesSubsections.map((section) =>
-            renderItem({ ...section, secondary: true }),
-          )
+        ? salesSubsections
+            .slice(0, -1)
+            .map((section) => renderItem({ ...section, secondary: true }))
         : []),
     ]);
+    if (group.id === 'sales') {
+      const finalSection = salesSubsections.at(-1);
+      if (finalSection)
+        entries.push(renderItem({ ...finalSection, secondary: true }));
+    }
+    return entries;
   }
   return (
     <nav

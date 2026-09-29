@@ -24,6 +24,7 @@ const codes = [
   'reservations.arrangements.update',
   'reservations.hotel_purchase.write',
   'ticket_catalog.read',
+  'ticket_catalog.tours.manage',
   'ticket_catalog.manage',
   'hr.read',
   'hr.manage',
@@ -53,6 +54,7 @@ describe('role access recommendations', () => {
     const result = proposal('کارشناس فروش');
     expect(result.permissionIds).toContain('sales.contracts.read.own');
     expect(result.permissionIds).toContain('sales.contracts.create');
+    expect(result.permissionIds).toContain('ticket_catalog.tours.manage');
     expect(result.permissionIds).not.toContain('sales.contracts.read.all');
     expect(result.permissionIds).not.toContain('finance.receipt.approve');
     expect(result.permissionIds).not.toContain('iam.users.manage');

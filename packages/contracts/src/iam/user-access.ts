@@ -52,7 +52,7 @@ export const USER_ACCESS_GROUPS = [
     id: 'sales',
     title: 'قراردادها و فروش',
     route: '/sales',
-    prefixes: ['sales', 'package_pricing'],
+    prefixes: ['sales', 'package_pricing', 'ticket_catalog.tours'],
   },
   {
     id: 'procurement',
@@ -661,10 +661,9 @@ export const USER_ACCESS_SCREENS: readonly UserAccessScreen[] = [
   },
   {
     id: 'ticket-catalog.tab.tours',
-    group: 'ticket-catalog',
+    group: 'sales',
     title: 'تعریف تور و خدمات',
-    route: '/ticket-management',
-    tab: 'tours',
+    route: '/sales/tours',
   },
   {
     id: 'ticket-catalog.tab.intro',

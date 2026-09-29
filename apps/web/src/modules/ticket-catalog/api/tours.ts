@@ -96,6 +96,15 @@ export const toursApi = {
         body: JSON.stringify({ ...input, expectedVersion }),
       },
     ),
+  deletePackage: (id: string, expectedVersion: number, branch: string) =>
+    request<{ data: { id: string; deleted: true } }>(
+      `/tours/packages/${encodeURIComponent(id)}`,
+      {
+        method: 'DELETE',
+        headers: { 'x-branch-id': branch },
+        body: JSON.stringify({ expectedVersion }),
+      },
+    ),
   createDeparture: (input: TourDepartureInputV1, branch: string, key: string) =>
     request<{ data: TourDepartureV1 }>(
       '/tours/departures',

@@ -38,6 +38,27 @@ describe('tour edit client', () => {
       }),
     );
   });
+  it('sends a branch-scoped DELETE with the expected version', async () => {
+    const fetch = vi.fn(
+      async () =>
+        new Response(JSON.stringify({ data: { id: 'tour', deleted: true } }), {
+          status: 200,
+        }),
+    );
+    vi.stubGlobal('fetch', fetch);
+    await expect(toursApi.deletePackage('tour', 4, 'branch')).resolves.toEqual({
+      data: { id: 'tour', deleted: true },
+    });
+    expect(fetch).toHaveBeenCalledWith(
+      'http://api.test/ticket-catalog/tours/packages/tour',
+      expect.objectContaining({
+        method: 'DELETE',
+        credentials: 'include',
+        headers: expect.objectContaining({ 'x-branch-id': 'branch' }),
+        body: JSON.stringify({ expectedVersion: 4 }),
+      }),
+    );
+  });
   it('surfaces a stale-version conflict to keep the editor open', async () => {
     vi.stubGlobal(
       'fetch',
