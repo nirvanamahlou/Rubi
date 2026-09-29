@@ -38,9 +38,9 @@ export function searchOptions(options: readonly SearchOption[], query: string) {
     .filter(
       (o) =>
         !key ||
-        normalizeOptionSearch(o.searchText ?? optionText(o.label)).includes(
-          key,
-        ),
+        normalizeOptionSearch(
+          `${optionText(o.label)} ${o.searchText ?? ''}`,
+        ).includes(key),
     )
     .slice(0, 6);
 }

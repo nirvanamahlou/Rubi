@@ -1,3 +1,9 @@
+## DROPDOWN-SUBSTRING-0929 — PC-A — READY_FOR_REVIEW
+
+- COMPUTER_ID=PC-A. Owner explicitly requests matching anywhere inside option names/codes and merge. Reserve shared Web search-combobox helper and regression tests, bounded status/task docs. Source: latest origin/develop, isolated reusable worktree. Previous shared UI locks released; no migration/API/dependency changes. Existing Master Data query already uses case-insensitive contains; producer contract unchanged. Preserve original dirty checkout and active unrelated ownership.
+
+- Focused substring regression checks passed. Bounded shared UI locks RELEASED with commit; no backend/migration/dependency change. Handoff: docs/tasks/DROPDOWN-SUBSTRING-0929.md. Explicit user merge authorization retained.
+
 ## SEARCHABLE-DROPDOWNS-0929 — PC-A — READY_FOR_REVIEW
 
 - COMPUTER_ID=PC-A. User explicitly authorizes project-wide inline searchable reference dropdowns, six initial/matching results and subtle selection-field contrast. Reserve shared Web form-control/select components and CSS, reference-picker adapters and bounded consumer UI across modules, focused tests/docs. No API/data/schema/dependency changes. Existing original checkout edits to Sales/Ticket pickers preserved in place; implementation uses isolated worktree from latest develop. No overlapping current active UI owner found; old unrelated reservations retained. Central Web UI lock belongs to this item. Existing task workflow merge/local update authorization retained.
