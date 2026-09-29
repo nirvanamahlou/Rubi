@@ -4456,3 +4456,6 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 ## TICKET-TARGET-ROWS-0929 — PC-A — READY_FOR_REVIEW
 
 - COMPUTER_ID=PC-A; branch `codex/pc-a-ticket-target-rows-0929` from current origin/develop. Reserve only Sales ticket-prices workspace, module-local target layout CSS and bounded status/task docs. Owner requests compact two-target boxes alongside each other with bounded vertical scrolling and no overlap. Two existing rendering tests, scoped lint, Web typecheck and production build (55 routes) pass. Bounded locks RELEASED with commit; previous ticket-pricing merge authorization applies to this layout follow-up. No API, migration, dependency or data changes.
+## RESERVATION-MANIFEST-ROUTE-FILTERS-0929 — PC-A — READY_FOR_REVIEW
+
+- COMPUTER_ID=PC-A؛ شاخه `codex/pc-a-reservation-manifest-route-filters-0929` از `origin/develop@91952eb2`. فقط فیلترهای مبدا/مقصد و منطق نمایش کارت‌های منیفست در Reservations Web همراه تست‌ها و ثبت وضعیت رزرو شد. گزینه‌ها از بلیط‌های دریافت‌شده برای بازه تاریخ ساخته می‌شوند؛ فیلتر تاریخ موجود و API/خروجی دانلود بدون تغییر می‌ماند. سه تست هدفمند، typecheck، lint و build ۵۵ مسیر Web موفق‌اند. بدون API، قرارداد مشترک، Migration، داده عملیاتی یا Dependency. قفل محدود Reservations و Central Docs با commit آزاد می‌شود؛ PR به develop برای review و CI.
