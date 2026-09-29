@@ -1,6 +1,52 @@
 import type { TicketOfferV1 } from '@nora/contracts';
 import type { Product, Reference } from './catalog';
 import { emptyInput } from './preview';
+
+const wallDateTimePattern = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/;
+
+function nextWallDate(value: string) {
+  const date = new Date(`${value.slice(0, 10)}T00:00:00.000Z`);
+  if (!Number.isFinite(date.getTime())) return value;
+  date.setUTCDate(date.getUTCDate() + 1);
+  return date.toISOString().slice(0, 10) + value.slice(10);
+}
+
+export function arrivalWallTimeAfterMidnight(
+  departure: string,
+  arrival: string,
+) {
+  if (
+    !wallDateTimePattern.test(departure) ||
+    !wallDateTimePattern.test(arrival)
+  )
+    return arrival;
+  const departureDate = Date.parse(`${departure.slice(0, 10)}T00:00:00.000Z`);
+  const arrivalDate = Date.parse(`${arrival.slice(0, 10)}T00:00:00.000Z`);
+  const dayDifference = (arrivalDate - departureDate) / 86_400_000;
+  if (dayDifference === -1) {
+    const alignedArrival = departure.slice(0, 10) + arrival.slice(10);
+    return alignedArrival.slice(11) < departure.slice(11)
+      ? nextWallDate(alignedArrival)
+      : alignedArrival;
+  }
+  if (dayDifference !== 0 || arrival.slice(11) >= departure.slice(11))
+    return arrival;
+  return nextWallDate(arrival);
+}
+
+export function arrivalWallTimeAfterDepartureChange(
+  departure: string,
+  arrival: string,
+) {
+  if (
+    wallDateTimePattern.test(departure) &&
+    wallDateTimePattern.test(arrival) &&
+    arrival.slice(0, 10) < departure.slice(0, 10)
+  )
+    arrival = departure.slice(0, 10) + arrival.slice(10);
+  return arrivalWallTimeAfterMidnight(departure, arrival);
+}
+
 export function catalogProductsFromOffers(
   local: readonly Product[],
   offers: readonly TicketOfferV1[],

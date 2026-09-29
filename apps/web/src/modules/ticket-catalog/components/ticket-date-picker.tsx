@@ -2,6 +2,7 @@
 
 import { CalendarDays, ChevronLeft, ChevronRight, Clock3 } from 'lucide-react';
 import * as React from 'react';
+import { createPortal } from 'react-dom';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -11,6 +12,7 @@ import {
   joinDateAndTime,
   moveCalendarMonth,
   parseIsoDate,
+  resolveCalendarPopoverPosition,
   toIsoDate,
   type CalendarSystem,
 } from '@/components/ui/date-picker.utils';
@@ -113,10 +115,17 @@ export function TicketDatePicker({
   const [open, setOpen] = React.useState(false);
   const [calendarView, setCalendarView] =
     React.useState<TicketCalendarView>('days');
+  const [modalHost, setModalHost] = React.useState<HTMLElement | null>(null);
+  const [popoverPosition, setPopoverPosition] =
+    React.useState<React.CSSProperties | null>(null);
   const [anchor, setAnchor] = React.useState(
     () => parseIsoDate(currentValue) ?? new Date(),
   );
   const rootRef = React.useRef<HTMLDivElement>(null);
+  const popoverRef = React.useRef<HTMLDivElement>(null);
+  const triggerRef = React.useRef<HTMLButtonElement>(null);
+  const generatedId = React.useId();
+  const fieldId = id ?? generatedId;
   const selectedDate = currentValue.slice(0, 10);
   const currentParts = calendarParts(anchor, calendarSystem);
   const days = calendarMonthDays(anchor, calendarSystem);
@@ -125,7 +134,11 @@ export function TicketDatePicker({
   React.useEffect(() => {
     if (!open) return;
     const closeOnOutside = (event: PointerEvent) => {
-      if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
+      if (
+        !rootRef.current?.contains(event.target as Node) &&
+        !popoverRef.current?.contains(event.target as Node)
+      )
+        setOpen(false);
     };
     const closeOnEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') setOpen(false);
@@ -137,6 +150,57 @@ export function TicketDatePicker({
       document.removeEventListener('keydown', closeOnEscape);
     };
   }, [open]);
+
+  const positionPopover = React.useCallback(() => {
+    const trigger = triggerRef.current?.getBoundingClientRect();
+    const popover = popoverRef.current;
+    if (!trigger || !popover) return;
+    const position = resolveCalendarPopoverPosition(
+      {
+        bottom: trigger.bottom,
+        height: trigger.height,
+        left: trigger.left,
+        top: trigger.top,
+        width: trigger.width,
+      },
+      { height: popover.scrollHeight, width: popover.offsetWidth },
+      { height: window.innerHeight, width: window.innerWidth },
+    );
+    setPopoverPosition({
+      left: position.left,
+      maxHeight: position.maxHeight,
+      top: position.top,
+    });
+  }, []);
+
+  React.useLayoutEffect(() => {
+    if (!open) return;
+    const popover = popoverRef.current;
+    if (modalHost && popover?.hasAttribute('popover')) {
+      if (!popover.matches(':popover-open')) popover.showPopover();
+    }
+    positionPopover();
+    const observer =
+      typeof ResizeObserver === 'undefined'
+        ? null
+        : new ResizeObserver(positionPopover);
+    if (popover) observer?.observe(popover);
+    if (triggerRef.current) observer?.observe(triggerRef.current);
+    window.addEventListener('resize', positionPopover);
+    window.addEventListener('scroll', positionPopover, true);
+    return () => {
+      observer?.disconnect();
+      window.removeEventListener('resize', positionPopover);
+      window.removeEventListener('scroll', positionPopover, true);
+    };
+  }, [
+    calendarSystem,
+    calendarView,
+    includeTime,
+    modalHost,
+    open,
+    positionPopover,
+  ]);
 
   const emit = (nextValue: string) => {
     if (value === undefined) setInternalValue(nextValue);
@@ -181,9 +245,16 @@ export function TicketDatePicker({
           )}
           data-calendar-theme="dashboard-blue"
           disabled={disabled || readOnly}
-          id={id}
+          id={fieldId}
+          ref={triggerRef}
           onClick={() => {
-            if (!open) setAnchor(parseIsoDate(currentValue) ?? new Date());
+            if (!open) {
+              setAnchor(parseIsoDate(currentValue) ?? new Date());
+              setModalHost(
+                (rootRef.current?.closest('[role="dialog"]') as HTMLElement) ??
+                  null,
+              );
+            }
             setCalendarView('days');
             setOpen((current) => !current);
           }}
@@ -223,215 +294,246 @@ export function TicketDatePicker({
         </div>
       </div>
 
-      {open ? (
-        <div
-          aria-label="انتخاب تاریخ"
-          className="absolute start-0 top-full z-[70] mt-2 w-[min(19rem,calc(100vw-2rem))] rounded-2xl border border-primary/20 bg-popover p-3 text-popover-foreground shadow-2xl"
-          role="dialog"
-        >
-          <div className="flex items-center justify-between rounded-xl bg-primary px-2 py-2 text-primary-foreground">
-            <Button
-              aria-label="بازه قبل"
-              className="size-8 p-0 text-primary-foreground hover:bg-white/15 hover:text-primary-foreground"
-              onClick={() => shiftRange(-1)}
-              type="button"
-              variant="ghost"
+      {open && typeof document !== 'undefined'
+        ? createPortal(
+            <div
+              aria-label="انتخاب تاریخ"
+              className="fixed z-[70] w-[min(19rem,calc(100vw-2rem))] overflow-y-auto overscroll-contain rounded-2xl border border-primary/20 bg-popover p-3 text-popover-foreground shadow-2xl"
+              data-placement={popoverPosition ? 'positioned' : 'hidden'}
+              dir="rtl"
+              onKeyDown={(event) => {
+                if (event.key === 'Escape') {
+                  event.stopPropagation();
+                  setOpen(false);
+                  triggerRef.current?.focus();
+                }
+              }}
+              popover={modalHost ? 'manual' : undefined}
+              ref={popoverRef}
+              role="dialog"
+              style={{
+                margin: 0,
+                right: 'auto',
+                bottom: 'auto',
+                ...(popoverPosition ?? {
+                  left: 16,
+                  top: 16,
+                  visibility: 'hidden',
+                }),
+              }}
             >
-              <ChevronRight className="size-4" />
-            </Button>
-            <div className="flex items-center gap-1 text-sm font-bold">
-              <button
-                aria-label="انتخاب ماه"
-                className="rounded-md px-2 py-1 outline-none transition hover:bg-white/15 focus-visible:ring-2 focus-visible:ring-white/70"
-                dir={calendarSystem === 'gregorian' ? 'ltr' : 'rtl'}
-                onClick={() => setCalendarView('months')}
-                type="button"
-              >
-                {monthLabels[calendarSystem][currentParts.month - 1]}
-              </button>
-              <button
-                aria-label="انتخاب سال"
-                className="rounded-md px-2 py-1 outline-none transition hover:bg-white/15 focus-visible:ring-2 focus-visible:ring-white/70"
-                onClick={() => setCalendarView('years')}
-                type="button"
-              >
-                {formatNumber(currentParts.year)}
-              </button>
-            </div>
-            <Button
-              aria-label="بازه بعد"
-              className="size-8 p-0 text-primary-foreground hover:bg-white/15 hover:text-primary-foreground"
-              onClick={() => shiftRange(1)}
-              type="button"
-              variant="ghost"
-            >
-              <ChevronLeft className="size-4" />
-            </Button>
-          </div>
-
-          {calendarView === 'days' ? (
-            <>
-              <div
-                className="mt-3 grid grid-cols-7 text-center text-[11px] font-semibold text-muted-foreground"
-                dir={calendarSystem === 'gregorian' ? 'ltr' : 'rtl'}
-              >
-                {weekdayLabels[calendarSystem].map((day, index) => (
-                  <span
-                    className={
-                      day === 'ج' || day === 'Fri' ? 'text-destructive' : ''
-                    }
-                    key={`${day}-${index}`}
-                  >
-                    {day}
-                  </span>
-                ))}
-              </div>
-              <div
-                className="mt-1 grid grid-cols-7 gap-0.5"
-                dir={calendarSystem === 'gregorian' ? 'ltr' : 'rtl'}
-              >
-                {days.map((day, index) =>
-                  day.isCurrentMonth ? (
-                    <button
-                      aria-label={`${day.year}/${day.month}/${day.day}`}
-                      aria-pressed={day.isoDate === selectedDate}
-                      className={cn(
-                        'flex size-9 items-center justify-center justify-self-center rounded-lg text-xs font-medium outline-none transition hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-ring',
-                        day.isoDate === selectedDate &&
-                          'bg-primary text-primary-foreground hover:bg-primary',
-                        day.isoDate !== selectedDate &&
-                          day.isToday &&
-                          'border border-primary text-primary',
-                      )}
-                      key={day.isoDate}
-                      onClick={() => selectDay(day.isoDate)}
-                      type="button"
-                    >
-                      {formatNumber(day.day)}
-                    </button>
-                  ) : (
-                    <span aria-hidden="true" key={`empty-${index}`} />
-                  ),
-                )}
-              </div>
-            </>
-          ) : calendarView === 'months' ? (
-            <div className="mt-3 grid grid-cols-3 gap-2" dir="rtl">
-              {monthLabels[calendarSystem].map((label, index) => (
-                <button
-                  aria-pressed={currentParts.month === index + 1}
-                  className={cn(
-                    'min-h-11 rounded-xl border border-primary/10 px-2 py-2 text-xs font-semibold outline-none transition hover:border-primary/40 hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-ring',
-                    currentParts.month === index + 1 &&
-                      'border-primary bg-primary text-primary-foreground hover:bg-primary',
-                  )}
-                  dir={calendarSystem === 'gregorian' ? 'ltr' : 'rtl'}
-                  key={label}
-                  onClick={() => {
-                    setAnchor((current) =>
-                      moveToCalendarMonth(
-                        current,
-                        currentParts.year,
-                        index + 1,
-                        calendarSystem,
-                      ),
-                    );
-                    setCalendarView('days');
-                  }}
-                  type="button"
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-          ) : (
-            <div className="mt-3 grid grid-cols-3 gap-2">
-              {Array.from(
-                { length: 12 },
-                (_, index) => currentParts.year - 5 + index,
-              ).map((year) => (
-                <button
-                  aria-pressed={currentParts.year === year}
-                  className={cn(
-                    'min-h-11 rounded-xl border border-primary/10 px-2 py-2 text-sm font-semibold outline-none transition hover:border-primary/40 hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-ring',
-                    currentParts.year === year &&
-                      'border-primary bg-primary text-primary-foreground hover:bg-primary',
-                  )}
-                  key={year}
-                  onClick={() => {
-                    setAnchor((current) =>
-                      moveToCalendarMonth(
-                        current,
-                        year,
-                        currentParts.month,
-                        calendarSystem,
-                      ),
-                    );
-                    setCalendarView('months');
-                  }}
-                  type="button"
-                >
-                  {formatNumber(year)}
-                </button>
-              ))}
-            </div>
-          )}
-
-          {includeTime && calendarView === 'days' ? (
-            <div className="mt-3 flex items-center gap-2 rounded-xl border border-primary/20 bg-primary/5 p-2">
-              <Clock3 aria-hidden="true" className="size-4 text-primary" />
-              <label className="text-xs font-semibold" htmlFor={`${id}-time`}>
-                ساعت
-              </label>
-              <input
-                className="h-9 min-w-0 flex-1 rounded-lg border border-input bg-surface px-2 text-center text-sm outline-none focus:border-primary focus:ring-2 focus:ring-ring/30"
-                id={`${id}-time`}
-                onChange={(event) => {
-                  const date = selectedDate || today;
-                  emit(`${date}T${event.target.value}`);
-                }}
-                type="time"
-                value={/T(\d{2}:\d{2})/.exec(currentValue)?.[1] ?? '00:00'}
-              />
-              <Button onClick={() => setOpen(false)} size="sm" type="button">
-                تأیید
-              </Button>
-            </div>
-          ) : null}
-
-          {calendarView === 'days' ? (
-            <div className="mt-3 flex items-center justify-between border-t border-border pt-2">
-              <Button
-                onClick={() => {
-                  emit(joinDateAndTime(today, currentValue, includeTime));
-                  if (!includeTime) setOpen(false);
-                }}
-                size="sm"
-                type="button"
-                variant="secondary"
-              >
-                امروز
-              </Button>
-              {currentValue && !required ? (
+              <div className="flex items-center justify-between rounded-xl bg-primary px-2 py-2 text-primary-foreground">
                 <Button
-                  onClick={() => {
-                    emit('');
-                    setOpen(false);
-                  }}
-                  size="sm"
+                  aria-label="بازه قبل"
+                  className="size-8 p-0 text-primary-foreground hover:bg-white/15 hover:text-primary-foreground"
+                  onClick={() => shiftRange(-1)}
                   type="button"
                   variant="ghost"
                 >
-                  پاک‌کردن
+                  <ChevronRight className="size-4" />
                 </Button>
+                <div className="flex items-center gap-1 text-sm font-bold">
+                  <button
+                    aria-label="انتخاب ماه"
+                    className="rounded-md px-2 py-1 outline-none transition hover:bg-white/15 focus-visible:ring-2 focus-visible:ring-white/70"
+                    dir={calendarSystem === 'gregorian' ? 'ltr' : 'rtl'}
+                    onClick={() => setCalendarView('months')}
+                    type="button"
+                  >
+                    {monthLabels[calendarSystem][currentParts.month - 1]}
+                  </button>
+                  <button
+                    aria-label="انتخاب سال"
+                    className="rounded-md px-2 py-1 outline-none transition hover:bg-white/15 focus-visible:ring-2 focus-visible:ring-white/70"
+                    onClick={() => setCalendarView('years')}
+                    type="button"
+                  >
+                    {formatNumber(currentParts.year)}
+                  </button>
+                </div>
+                <Button
+                  aria-label="بازه بعد"
+                  className="size-8 p-0 text-primary-foreground hover:bg-white/15 hover:text-primary-foreground"
+                  onClick={() => shiftRange(1)}
+                  type="button"
+                  variant="ghost"
+                >
+                  <ChevronLeft className="size-4" />
+                </Button>
+              </div>
+
+              {calendarView === 'days' ? (
+                <>
+                  <div
+                    className="mt-3 grid grid-cols-7 text-center text-[11px] font-semibold text-muted-foreground"
+                    dir={calendarSystem === 'gregorian' ? 'ltr' : 'rtl'}
+                  >
+                    {weekdayLabels[calendarSystem].map((day, index) => (
+                      <span
+                        className={
+                          day === 'ج' || day === 'Fri' ? 'text-destructive' : ''
+                        }
+                        key={`${day}-${index}`}
+                      >
+                        {day}
+                      </span>
+                    ))}
+                  </div>
+                  <div
+                    className="mt-1 grid grid-cols-7 gap-0.5"
+                    dir={calendarSystem === 'gregorian' ? 'ltr' : 'rtl'}
+                  >
+                    {days.map((day, index) =>
+                      day.isCurrentMonth ? (
+                        <button
+                          aria-label={`${day.year}/${day.month}/${day.day}`}
+                          aria-pressed={day.isoDate === selectedDate}
+                          className={cn(
+                            'flex size-9 items-center justify-center justify-self-center rounded-lg text-xs font-medium outline-none transition hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-ring',
+                            day.isoDate === selectedDate &&
+                              'bg-primary text-primary-foreground hover:bg-primary',
+                            day.isoDate !== selectedDate &&
+                              day.isToday &&
+                              'border border-primary text-primary',
+                          )}
+                          key={day.isoDate}
+                          onClick={() => selectDay(day.isoDate)}
+                          type="button"
+                        >
+                          {formatNumber(day.day)}
+                        </button>
+                      ) : (
+                        <span aria-hidden="true" key={`empty-${index}`} />
+                      ),
+                    )}
+                  </div>
+                </>
+              ) : calendarView === 'months' ? (
+                <div className="mt-3 grid grid-cols-3 gap-2" dir="rtl">
+                  {monthLabels[calendarSystem].map((label, index) => (
+                    <button
+                      aria-pressed={currentParts.month === index + 1}
+                      className={cn(
+                        'min-h-11 rounded-xl border border-primary/10 px-2 py-2 text-xs font-semibold outline-none transition hover:border-primary/40 hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-ring',
+                        currentParts.month === index + 1 &&
+                          'border-primary bg-primary text-primary-foreground hover:bg-primary',
+                      )}
+                      dir={calendarSystem === 'gregorian' ? 'ltr' : 'rtl'}
+                      key={label}
+                      onClick={() => {
+                        setAnchor((current) =>
+                          moveToCalendarMonth(
+                            current,
+                            currentParts.year,
+                            index + 1,
+                            calendarSystem,
+                          ),
+                        );
+                        setCalendarView('days');
+                      }}
+                      type="button"
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <div className="mt-3 grid grid-cols-3 gap-2">
+                  {Array.from(
+                    { length: 12 },
+                    (_, index) => currentParts.year - 5 + index,
+                  ).map((year) => (
+                    <button
+                      aria-pressed={currentParts.year === year}
+                      className={cn(
+                        'min-h-11 rounded-xl border border-primary/10 px-2 py-2 text-sm font-semibold outline-none transition hover:border-primary/40 hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-ring',
+                        currentParts.year === year &&
+                          'border-primary bg-primary text-primary-foreground hover:bg-primary',
+                      )}
+                      key={year}
+                      onClick={() => {
+                        setAnchor((current) =>
+                          moveToCalendarMonth(
+                            current,
+                            year,
+                            currentParts.month,
+                            calendarSystem,
+                          ),
+                        );
+                        setCalendarView('months');
+                      }}
+                      type="button"
+                    >
+                      {formatNumber(year)}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {includeTime && calendarView === 'days' ? (
+                <div className="mt-3 flex items-center gap-2 rounded-xl border border-primary/20 bg-primary/5 p-2">
+                  <Clock3 aria-hidden="true" className="size-4 text-primary" />
+                  <label
+                    className="text-xs font-semibold"
+                    htmlFor={`${fieldId}-time`}
+                  >
+                    ساعت
+                  </label>
+                  <input
+                    className="h-9 min-w-0 flex-1 rounded-lg border border-input bg-surface px-2 text-center text-sm outline-none focus:border-primary focus:ring-2 focus:ring-ring/30"
+                    id={`${fieldId}-time`}
+                    onChange={(event) => {
+                      const date = selectedDate || today;
+                      emit(`${date}T${event.target.value}`);
+                    }}
+                    type="time"
+                    value={/T(\d{2}:\d{2})/.exec(currentValue)?.[1] ?? '00:00'}
+                  />
+                  <Button
+                    onClick={() => setOpen(false)}
+                    size="sm"
+                    type="button"
+                  >
+                    تأیید
+                  </Button>
+                </div>
               ) : null}
-            </div>
-          ) : null}
-          {required ? (
-            <span className="sr-only">انتخاب تاریخ الزامی است.</span>
-          ) : null}
-        </div>
-      ) : null}
+
+              {calendarView === 'days' ? (
+                <div className="mt-3 flex items-center justify-between border-t border-border pt-2">
+                  <Button
+                    onClick={() => {
+                      emit(joinDateAndTime(today, currentValue, includeTime));
+                      if (!includeTime) setOpen(false);
+                    }}
+                    size="sm"
+                    type="button"
+                    variant="secondary"
+                  >
+                    امروز
+                  </Button>
+                  {currentValue && !required ? (
+                    <Button
+                      onClick={() => {
+                        emit('');
+                        setOpen(false);
+                      }}
+                      size="sm"
+                      type="button"
+                      variant="ghost"
+                    >
+                      پاک‌کردن
+                    </Button>
+                  ) : null}
+                </div>
+              ) : null}
+              {required ? (
+                <span className="sr-only">انتخاب تاریخ الزامی است.</span>
+              ) : null}
+            </div>,
+            modalHost ?? document.body,
+          )
+        : null}
     </div>
   );
 }

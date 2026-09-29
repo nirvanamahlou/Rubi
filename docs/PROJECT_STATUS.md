@@ -3815,6 +3815,11 @@ Selected-contract header now shows read-only financial-delivery approval, respon
 ## 2026-09-29 — PACKAGE-GENERATOR-MALAYSIA-THAILAND-OVERLAY-0929 — PC-B — IN_PROGRESS
 
 قاب‌های گرد تاریخ و کارت‌های قیمت در هفت قالب مالزی/تایلند پس از ورود داده حفظ می‌شوند؛ متن روزهای طولانی پرواز تایلند در همان کارت می‌پیچد. [گزارش](tasks/PACKAGE-GENERATOR-MALAYSIA-THAILAND-OVERLAY-0929.md). بدون تغییر API، قرارداد، Migration یا دادهٔ عملیاتی.
+
+## 2026-09-29 — TICKET-TIME-VALIDATION-PICKER-0929 — PC-A — READY_FOR_REVIEW
+
+ویرایش بلیت منتشرشده حالا رسیدن در روز بعد از حرکت را برای عبور از نیمه‌شب درست می‌کند؛ با تغییر تاریخ حرکت، روز رسیدن نیز همگام می‌شود و تبدیل ساعت تهران به UTC ترتیب واقعی را حفظ می‌کند. تقویم ویرایش بلیت به popover ثابت و قابل‌موقعیت‌یابی منتقل شد تا از قاب Dialog بریده نشود و در محدودهٔ صفحه بماند. در شاخهٔ همگام‌شده با `develop@1e262f0b`، تست کامل Web با ۱۷۹۵ موفق/۳ اختیاری skip در ۲۹۲ فایل، ۱۶ تست هدفمند، ESLint محدوده، typecheck و build تولیدی Web با ۵۵ مسیر موفق‌اند. بدون API، Schema/Migration، Dependency یا دادهٔ عملیاتی. QA تعاملی مرورگر احراز‌شده انجام نشد. جزئیات: [گزارش تحویل](tasks/TICKET-TIME-VALIDATION-PICKER-0929.md).
+
 ## 2026-09-29 — TOPBAR-COMPANY-ROLE-0929 — PC-A — READY_FOR_REVIEW
 
 انتخاب شرکت هدر به Radix Select قبلی برگشت تا عنوان‌ها و نشان شرکت‌ها در منو دوباره دیده شوند. نام نقش‌های فعال واقعی حساب جاری به‌صورت افزایشی و اختیاری از IAM به منوی هدر می‌رسد و زیر نام کاربر نمایش داده می‌شود؛ مجوزها یا حساب‌ها تغییری ندارند. typecheck، lint و build تولیدی API/Web (۵۵ مسیر) موفق‌اند. تست کامل در انتظار CI. بدون Migration، Seed، داده عملیاتی یا Dependency. جزئیات: [TOPBAR-COMPANY-ROLE-0929](tasks/TOPBAR-COMPANY-ROLE-0929.md).
