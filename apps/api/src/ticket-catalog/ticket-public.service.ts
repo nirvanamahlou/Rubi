@@ -295,7 +295,14 @@ export class TicketPublicService {
           include: { salePriceTarget: true },
           orderBy: { revision: 'desc' },
         },
-        outboundRoundTripSalePrices: { orderBy: { revision: 'desc' } },
+        outboundRoundTripSalePrices: {
+          where: {
+            returnOffer: {
+              audit: { none: { action: 'ticket.offer.archived' } },
+            },
+          },
+          orderBy: { revision: 'desc' },
+        },
         saleCommissions: {
           include: { target: true },
           orderBy: { revision: 'desc' },
@@ -306,7 +313,12 @@ export class TicketPublicService {
     });
     return {
       version: 1 as const,
-      data: rows.map((row) => this.offerView(row)),
+      data: rows.map((row) => ({
+        ...this.offerView(row),
+        ...(row.createKey?.startsWith('ticket-catalog:')
+          ? { catalogProductId: row.createKey.slice('ticket-catalog:'.length) }
+          : {}),
+      })),
     };
   }
 
@@ -478,16 +490,7 @@ export class TicketPublicService {
         throw new ConflictException(
           'بلیط تغییر کرده یا به قرارداد، رزرو ظرفیت یا تور متصل است؛ فهرست را تازه کنید و ارتباط‌ها را تعیین تکلیف کنید.',
         );
-      const [standalonePrices, roundTripPrices] = await Promise.all([
-        tx.ticketOfferStandaloneSalePrice.deleteMany({
-          where: { offerId: id },
-        }),
-        tx.ticketOfferRoundTripSalePrice.deleteMany({
-          where: {
-            OR: [{ outboundOfferId: id }, { returnOfferId: id }],
-          },
-        }),
-      ]);
+      // Archive visibility only; immutable fare/commission and contract history remains intact.
       await tx.ticketOfferAudit.create({
         data: {
           offerId: id,
@@ -499,7 +502,7 @@ export class TicketPublicService {
       return {
         data: {
           id,
-          removedPriceRevisions: standalonePrices.count + roundTripPrices.count,
+          removedPriceRevisions: 0,
         },
       };
     });
@@ -927,7 +930,11 @@ export class TicketPublicService {
         Prisma.sql`SELECT "id" FROM "TicketPublishedOffer" WHERE "id" = ${id}::uuid FOR UPDATE`,
       );
       const row = await tx.ticketPublishedOffer.findFirst({
-        where: { id, branchId: { in: actor.branchIds } },
+        where: {
+          id,
+          branchId: { in: actor.branchIds },
+          audit: { none: { action: 'ticket.offer.archived' } },
+        },
         include: {
           capacityAllocations: { where: { status: 'ACTIVE' } },
           capacityHolds: {

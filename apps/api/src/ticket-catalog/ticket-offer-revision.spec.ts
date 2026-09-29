@@ -140,7 +140,7 @@ describe('published ticket revision', () => {
       {} as ProcurementPublicService,
     );
     await expect(service.archiveExpired(id, 1, actor)).resolves.toEqual({
-      data: { id, removedPriceRevisions: 5 },
+      data: { id, removedPriceRevisions: 0 },
     });
     expect(updateMany).toHaveBeenCalledWith({
       where: {
@@ -162,14 +162,8 @@ describe('published ticket revision', () => {
       },
       data: { status: 'PAUSED', version: { increment: 1 } },
     });
-    expect(deleteStandalonePrices).toHaveBeenCalledWith({
-      where: { offerId: id },
-    });
-    expect(deleteRoundTripPrices).toHaveBeenCalledWith({
-      where: {
-        OR: [{ outboundOfferId: id }, { returnOfferId: id }],
-      },
-    });
+    expect(deleteStandalonePrices).not.toHaveBeenCalled();
+    expect(deleteRoundTripPrices).not.toHaveBeenCalled();
     expect(tx.$queryRaw).toHaveBeenCalledOnce();
     expect(create).toHaveBeenCalledOnce();
     updateMany.mockResolvedValue({ count: 0 });
@@ -177,8 +171,8 @@ describe('published ticket revision', () => {
       'به قرارداد، رزرو ظرفیت یا تور متصل',
     );
     expect(create).toHaveBeenCalledTimes(1);
-    expect(deleteStandalonePrices).toHaveBeenCalledTimes(1);
-    expect(deleteRoundTripPrices).toHaveBeenCalledTimes(1);
+    expect(deleteStandalonePrices).not.toHaveBeenCalled();
+    expect(deleteRoundTripPrices).not.toHaveBeenCalled();
   });
   it('reactivates an automatically expired flight moved into the future', async () => {
     const { tx, service } = setup({
@@ -228,7 +222,13 @@ describe('published ticket revision', () => {
     );
     expect(tx.ticketOfferAudit.create).toHaveBeenCalledOnce();
     expect(tx.ticketPublishedOffer.findFirst).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { id, branchId: { in: ['branch'] } } }),
+      expect.objectContaining({
+        where: {
+          id,
+          branchId: { in: ['branch'] },
+          audit: { none: { action: 'ticket.offer.archived' } },
+        },
+      }),
     );
   });
   it('rejects stale edits before changing data', async () => {

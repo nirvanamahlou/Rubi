@@ -80,6 +80,8 @@ export interface TicketOfferV1 {
 
   /** Null/absent uses the built-in default manifest. */
   manifestTemplateId?: string | null;
+  /** Stable source identity exposed by the managed catalog projection. */
+  catalogProductId?: string;
   id: string;
   version: number;
   branchId: string;
@@ -103,6 +105,7 @@ export interface TicketOfferV1 {
 export type TicketOfferCreateV1 = Omit<
   TicketOfferV1,
   | 'id'
+  | 'catalogProductId'
   | 'version'
   | 'branchId'
   | 'remainingCapacity'

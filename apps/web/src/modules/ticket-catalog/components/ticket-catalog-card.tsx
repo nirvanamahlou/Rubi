@@ -40,6 +40,7 @@ const accents = {
 type TicketCatalogCardProps = {
   product: Product;
   inventory: Inventory;
+  remainingCapacity?: number | undefined;
   referenceLabel: (
     kind: Reference['kind'],
     id: string,
@@ -55,6 +56,7 @@ type TicketCatalogCardProps = {
 export function TicketCatalogCard({
   product,
   inventory,
+  remainingCapacity,
   referenceLabel,
   onView,
   onEdit,
@@ -184,10 +186,15 @@ export function TicketCatalogCard({
           <div className="rounded-lg bg-emerald-50 px-2 py-1.5 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300">
             <p className="text-xs">مانده</p>
             <p className="mt-0.5 font-black">
-              {capacity.remaining.toLocaleString('fa-IR')} نفر
+              {(remainingCapacity ?? capacity.remaining).toLocaleString(
+                'fa-IR',
+              )}{' '}
+              نفر
             </p>
           </div>
-          <Badge>{supplyLabels[product.definition.supplyType]}</Badge>
+          {product.fares.length ? (
+            <Badge>{supplyLabels[product.definition.supplyType]}</Badge>
+          ) : null}
         </div>
 
         <div className="flex flex-wrap items-center gap-1.5">

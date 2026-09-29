@@ -475,6 +475,7 @@ export const initialQuery: PreviewQuery = {
 export function queryProducts(
   products: readonly Product[],
   query: PreviewQuery,
+  pageSize = 6,
 ) {
   const search = query.search.trim().toLocaleLowerCase('fa-IR');
   const rows = products
@@ -516,19 +517,19 @@ export function queryProducts(
         query.sort === 'title'
           ? p.definition.title
           : query.sort === 'updated'
-            ? p.history.at(-1)!.at
+            ? (p.history.at(-1)?.at ?? p.definition.segments[0]!.departureAt)
             : p.definition.serviceDate || p.definition.segments[0]!.departureAt;
       const comparison =
         value(a).localeCompare(value(b), 'fa') || a.id.localeCompare(b.id);
       return query.direction === 'asc' ? comparison : -comparison;
     });
-  const pages = Math.max(1, Math.ceil(rows.length / 6));
+  const pages = Math.max(1, Math.ceil(rows.length / pageSize));
   const page = Math.max(1, Math.min(pages, query.page));
   return {
     total: rows.length,
     pages,
     page,
-    rows: rows.slice((page - 1) * 6, page * 6),
+    rows: rows.slice((page - 1) * pageSize, page * pageSize),
   };
 }
 

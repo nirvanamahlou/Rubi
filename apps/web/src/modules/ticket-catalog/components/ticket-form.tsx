@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, type FormEvent } from 'react';
+import { useRef, useState, type FormEvent } from 'react';
 import {
   Alert,
   Button,
@@ -658,6 +658,7 @@ export function TicketForm({
   const [reason, setReason] = useState('');
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
+  const submitting = useRef(false);
   const updateInput = (value: ProductInput) => {
     setError('');
     setInput(value);
@@ -761,6 +762,8 @@ export function TicketForm({
   }
   async function submit(event: FormEvent) {
     event.preventDefault();
+    if (submitting.current) return;
+    submitting.current = true;
     setSaving(true);
     try {
       if (!input.serviceDate && !input.segments[0]?.departureAt)
@@ -820,6 +823,7 @@ export function TicketForm({
         problem instanceof Error ? problem.message : 'اطلاعات فرم معتبر نیست.',
       );
     } finally {
+      submitting.current = false;
       setSaving(false);
     }
   }
