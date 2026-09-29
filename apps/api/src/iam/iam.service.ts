@@ -4,6 +4,7 @@ import {
   USER_ACCESS_PROFILE_PERMISSION,
   screenPermission,
   hasManagedAccess,
+  canViewScreen,
 } from '@nora/contracts';
 import {
   createHash,
@@ -513,13 +514,16 @@ export class IamService implements IamStepUpPort {
   }
 
   async listUserAccessOptions(actor: AuthenticatedActor) {
+    const isAdministrator = await this.isSystemAdministrator(actor);
     const [permissions, branches] = await Promise.all([
       this.database.client.permission.findMany({
-        where: {
-          code: {
-            in: actor.permissions.filter((code) => !code.startsWith('ui.')),
-          },
-        },
+        where: isAdministrator
+          ? { NOT: { code: { startsWith: 'ui.' } } }
+          : {
+              code: {
+                in: actor.permissions.filter((code) => !code.startsWith('ui.')),
+              },
+            },
         orderBy: [{ module: 'asc' }, { code: 'asc' }],
         select: { id: true, code: true, name: true, module: true },
       }),
@@ -529,7 +533,16 @@ export class IamService implements IamStepUpPort {
         select: { id: true, name: true },
       }),
     ]);
-    return { permissions, branches };
+    return {
+      permissions,
+      branches,
+      assignableScreenIds: isAdministrator
+        ? USER_ACCESS_SCREENS.map(({ id }) => id)
+        : USER_ACCESS_SCREENS.filter(({ id }) =>
+            canViewScreen(actor.permissions, id),
+          ).map(({ id }) => id),
+      canAssignAll: isAdministrator,
+    };
   }
 
   listRolesAndBranches() {
@@ -1470,7 +1483,9 @@ export class IamService implements IamStepUpPort {
       throw new BadRequestException(
         'نقش، مجوزها و بخش‌های قابل مشاهده را کامل انتخاب کنید.',
       );
-    await this.assertPermissionsAssignable(dto.permissionIds, actor);
+    const isAdministrator = await this.isSystemAdministrator(actor);
+    if (!isAdministrator)
+      await this.assertPermissionsAssignable(dto.permissionIds, actor);
     const permissions = await this.database.client.permission.findMany({
       where: { id: { in: dto.permissionIds } },
       select: { code: true },
@@ -1483,6 +1498,7 @@ export class IamService implements IamStepUpPort {
       if (!USER_ACCESS_SCREENS.some((s) => s.id === id))
         throw new BadRequestException('زیربخش انتخاب‌شده معتبر نیست.');
       if (
+        !isAdministrator &&
         hasManagedAccess(actor.permissions) &&
         !actor.permissions.includes(screenPermission(id))
       )
@@ -1579,6 +1595,20 @@ export class IamService implements IamStepUpPort {
     this.assertPermissionCodesAssignable(
       permissions.map(({ code }) => code),
       actor,
+    );
+  }
+  private async isSystemAdministrator(actor: AuthenticatedActor) {
+    const user = await this.database.client.user.findUnique({
+      where: { id: actor.userId },
+      select: {
+        roles: {
+          where: { role: { isActive: true } },
+          select: { role: { select: { code: true } } },
+        },
+      },
+    });
+    return Boolean(
+      user?.roles.some(({ role }) => role.code === 'administrator'),
     );
   }
   private assertPermissionCodesAssignable(

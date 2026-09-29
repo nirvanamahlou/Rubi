@@ -1,3 +1,7 @@
+## 2026-09-29 — MANAGER-ACCESS-VISIBILITY-0929 — PC-A — READY_FOR_REVIEW
+
+حساب Ramtin که نقش فعال سیستمی `administrator` دارد اکنون در مدیریت کاربران تمام مجوزهای native و همهٔ زیربخش‌های کاتالوگ را برای نقش «مدیر» می‌بیند و می‌تواند انتخاب کند؛ API هنگام ذخیره همین نقش را دوباره کنترل می‌کند. گزینه‌های قابل‌واگذاری کاربران عادی بدون تغییر و محدود به مجوزهای خودشان هستند. ۱۰ تست API و ۲۰ تست پیشنهاد Web، lint و typecheck دو برنامه، و build API/Web (۵۵ مسیر) موفق‌اند. بدون Migration، Dependency یا تغییر حساب/دادهٔ واقعی؛ PR و انتشار محلی هنوز انجام نشده‌اند. جزئیات: [MANAGER-ACCESS-VISIBILITY-0929](tasks/MANAGER-ACCESS-VISIBILITY-0929.md).
+
 ## 2026-09-29 — MASTER-DATA-GEOGRAPHY-FINANCE-CLEANUP-0929 — PC-B — READY_FOR_REVIEW
 
 گردش تأیید نرخ از ناوبری پنهان شد، اما API، داده‌های تاریخی/Audit و Maker/Checker حفظ شدند. کارت KPI و فیلترهای روش پرداخت حذف شدند، نه CRUD. جغرافیا اکنون درخت کشور ← شهر ← فرودگاه ← ترمینال دارد؛ چند شهر/فرودگاه/ترمینال پشتیبانی و فرودگاه/ترمینال اختیاری‌اند. `regionId` در Prisma از قبل nullable بود و الزام create در API کاهش یافت، بدون Migration یا تغییر قرارداد عمومی. Web/API lint و typecheck، API build و Web production build با ۵۳ مسیر موفق‌اند. تست‌های خودکار و گردش احرازشدهٔ مرورگر اجرا نشدند. شاخه `codex/pc-b-master-data-rate-geo-0929` روی PR باز #455 stack شده و برای Review/rebase نیازمند توجه به تعارض والد است؛ ادغام یا تغییر runtime انجام نشده.
@@ -5,6 +9,10 @@
 ## 2026-09-28 — MASTER-DATA-RECORD-ICON-ACTIONS-0928 — PC-B — READY_FOR_REVIEW
 
 کنترل‌های عملیات رکورد در تمام workspaceهای اطلاعات پایه با الگوی فقط‌آیکون یکسان شدند؛ مشاهده و ویرایش outline و حذف قرمز. نام دسترس‌پذیر و تأیید حذف محفوظ است. ۳۶۴ تست Master Data، lint محدوده، typecheck و build تولیدی Web با ۵۳ مسیر موفق‌اند. این تغییر فقط Web و تست‌های مربوط را در بر می‌گیرد؛ بدون API، داده یا Migration.
+# 2026-09-29 — MANAGER-ACCESS-VISIBILITY-0929 — PC-A — IN_PROGRESS
+
+پیگیری محدودیت دسترسی مدیر: حساب دارای نقش فعال سیستمی administrator باید همهٔ مجوزهای native و همهٔ زیربخش‌های کاتالوگ را برای تنظیم نقش «مدیر» ببیند و واگذار کند؛ سایر اپراتورها فقط دسترسی فعلی خود را واگذار می‌کنند. کار روی IAM و فرم مدیریت کاربران رزرو شده است. بدون تغییر کاربر واقعی یا شعب؛ آزمون و handoff پس از اصلاح ثبت می‌شود.
+
 # 2026-09-29 — PERMISSION-VISIBILITY-SALES-SCOPE-0929 — PC-A — READY_FOR_REVIEW
 
 Visibility requires native module permissions for legacy and managed accounts, alongside managed screen selection. Denied routes render no business content; Sales Excel/PDF/payment controls use explicit native permissions. Effective IAM permissions narrow sales experts to own contracts; the appended sales-manager title recommends branch-wide scope. Validation: full Web 1775 passed/3 skipped; IAM/Sales 136 passed across the broad suite and isolated HTTP startup recheck. Scoped lint, consumer typechecks and production builds verified; CI full tests/build/PostgreSQL gate passed on 4b94ff93. CI formatting correction is isolated to one test. Draft PR [#468](https://github.com/nirvanamahlou/Rubi/pull/468); the user explicitly approved develop integration and PR merge; both coordination entries are preserved. No migration, operational grant or runtime change. Details: [handoff](tasks/PERMISSION-VISIBILITY-SALES-SCOPE-0929.md).

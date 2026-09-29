@@ -154,6 +154,24 @@ describe('independent managed user access', () => {
     ).rejects.toBeInstanceOf(ForbiddenException);
     expect(f.client.$transaction).not.toHaveBeenCalled();
   });
+  it('lets an active system administrator grant permissions and sections beyond personal grants', async () => {
+    const f = fixture();
+    f.client.user.findUnique
+      .mockResolvedValueOnce({
+        roles: [{ role: { code: 'administrator' } }],
+      } as never)
+      .mockResolvedValueOnce({ status: 'ACTIVE', roles: [] } as never);
+    await f.service.updateUserAccess(
+      'first',
+      { ...access, permissionIds: ['backup'], screenIds: ['system.users'] },
+      actor,
+      {},
+    );
+    expect(f.grants.get('personal-access-first')).toContain('backup');
+    expect(f.grants.get('personal-access-first')).toContain(
+      screenPermission('system.users'),
+    );
+  });
   it('rejects unknown screen ids and incomplete profiles before mutation', async () => {
     const f = fixture();
     await expect(
@@ -179,7 +197,9 @@ describe('independent managed user access', () => {
     f.client.role.findUnique.mockResolvedValue({ id: 'admin' } as never);
     f.client.user.findUnique.mockResolvedValue({
       status: 'ACTIVE',
-      roles: [{ roleId: 'admin' }],
+      roles: [
+        { roleId: 'admin', role: { code: 'administrator' } },
+      ],
     } as never);
     await expect(
       f.service.updateUserAccess('first', access, actor, {}),

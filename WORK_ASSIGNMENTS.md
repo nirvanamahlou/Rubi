@@ -1,3 +1,8 @@
+## MANAGER-ACCESS-VISIBILITY-0929 — PC-A — READY_FOR_REVIEW
+
+- COMPUTER_ID=PC-A؛ شاخهٔ `codex/pc-a-manager-access-visibility-0929` از `origin/develop@e082d1be`. عیب مشاهده‌شده: مدیر سامانه به‌دلیل فیلترکردن گزینه‌ها به مجوزهای شخصی خودش، نمی‌تواند نقش «مدیر» را برای همهٔ بخش‌ها پیکربندی کند. محدوده: IAM access-options (افزودن اختیاری و سازگار `assignableScreenIds` و `canAssignAll`) و اعتبارسنجی پروفایل فقط برای عضویت فعال نقش سیستمی `administrator`، Web مدیریت کاربران/پیشنهاد مدیر، تست‌های هدفمند و اسناد همین واحد. producer=IAM و consumer=Web مدیریت کاربران؛ کلاینت‌های قدیمی فیلدهای افزوده را نادیده می‌گیرند. administrator می‌تواند تمام مجوزهای native و همهٔ screenهای کاتالوگ را واگذار کند؛ سایر اپراتورها همچنان فقط مجوزهای فعلی خود را واگذار می‌کنند. شعب، مدیریت نقش سنتی، Migration/Schema/Dependency و دادهٔ کاربران واقعی تغییر نمی‌کنند. قفل محدود IAM، UI و Central Docs برای همین واحد رزرو است؛ قفل Migration/Dependency اخذ نشده.
+- تست‌های متمرکز API (۱۰ تست)، پیشنهاد نقش Web (۲۰ تست)، lint API/Web، typecheck API/Web و build API/Web با تولید ۵۵ مسیر موفق‌اند. قفل‌های محدود پس از commit آزاد می‌شوند؛ PR به develop برای review/CI لازم است و merge/runtime rollout هنوز انجام نشده.
+
 ## 2026-09-29 — MASTER-DATA-GEOGRAPHY-FINANCE-CLEANUP-0929 — PC-B — READY_FOR_REVIEW
 
 - `COMPUTER_ID=PC-B`; branch `codex/pc-b-master-data-rate-geo-0929`, stacked on `codex/pc-b-master-data-api-form-qa-0928` (PR #455 parent). Reserve Master Data Finance/Geography Web workspaces, city form metadata, Master Data service create validation, and this bounded task/status record. No Prisma Schema/Migration, shared package contract, dependency/lockfile, seed, operational data or runtime work.
