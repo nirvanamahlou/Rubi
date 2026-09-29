@@ -428,7 +428,9 @@ export function ContractPayments({
           }}
         >
           <DialogTrigger asChild>
-            <Button disabled={!contract}>افزودن پرداخت</Button>
+            <Button permission="sales.payments.create" disabled={!contract}>
+              افزودن پرداخت
+            </Button>
           </DialogTrigger>
           <DialogContent
             dir="rtl"
@@ -606,6 +608,7 @@ export function ContractPayments({
               </div>
               {!savedPaymentId ? (
                 <Button
+                  permission="sales.payments.create"
                   type="submit"
                   loading={busy}
                   disabled={!contract || !validCurrency}

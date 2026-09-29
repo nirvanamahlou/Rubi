@@ -6,6 +6,10 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { LoaderCircle } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
+import {
+  useAccessPermissions,
+  useRouteAccess,
+} from '@/modules/iam/access-context';
 
 export const buttonVariants = cva(
   'inline-flex min-h-10 items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50',
@@ -37,6 +41,7 @@ export interface ButtonProps
     VariantProps<typeof buttonVariants> {
   asChild?: boolean;
   loading?: boolean;
+  permission?: string;
 }
 
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
@@ -47,6 +52,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       className,
       disabled,
       loading,
+      permission,
       size,
       variant,
       'aria-label': ariaLabel,
@@ -55,6 +61,21 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     },
     ref,
   ) => {
+    const permissions = useAccessPermissions();
+    const allowedRoute = useRouteAccess();
+    if (
+      permission &&
+      permissions !== undefined &&
+      !permissions?.includes(permission)
+    )
+      return null;
+    if (
+      asChild &&
+      React.isValidElement<{ href?: unknown }>(children) &&
+      typeof children.props.href === 'string' &&
+      !allowedRoute(children.props.href)
+    )
+      return null;
     const Component = asChild ? Slot : 'button';
     const operationIconOnly =
       typeof ariaLabel === 'string' &&

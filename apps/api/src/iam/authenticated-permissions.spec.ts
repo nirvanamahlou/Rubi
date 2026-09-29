@@ -47,3 +47,59 @@ describe('authenticated legal-entity baseline permissions', () => {
     ]);
   });
 });
+
+describe('sales role scope', () => {
+  it('narrows inherited broad grants for an active sales expert', () => {
+    const expert = {
+      role: {
+        ...role(
+          true,
+          'sales.contracts.read.all',
+          'sales.contracts.update.branch',
+        ).role,
+        code: 'personal-access-123',
+        name: 'کارشناس فروش',
+      },
+    };
+    const permissions = authenticatedPermissionCodes([
+      expert,
+      role(true, 'sales.contracts.read.branch'),
+    ]);
+    expect(permissions).toContain('sales.contracts.read.own');
+    expect(permissions).toContain('sales.contracts.update.own');
+    expect(permissions).not.toContain('sales.contracts.read.all');
+    expect(permissions).not.toContain('sales.contracts.read.branch');
+    expect(permissions).not.toContain('sales.contracts.update.branch');
+  });
+  it('preserves explicitly granted manager scope without granting permissions by title', () => {
+    const manager = {
+      role: {
+        ...role(true, 'sales.contracts.read.branch').role,
+        code: 'personal-access-456',
+        name: 'مدیر فروش',
+      },
+    };
+    expect(authenticatedPermissionCodes([manager])).toContain(
+      'sales.contracts.read.branch',
+    );
+    expect(authenticatedPermissionCodes([manager])).not.toContain(
+      'sales.contracts.read.all',
+    );
+  });
+});
+
+it('ignores an inactive expert role when resolving active manager permissions', () => {
+  const expert = {
+    role: {
+      ...role(false, 'sales.contracts.read.all').role,
+      code: 'sales_staff',
+      name: 'کارشناس فروش',
+    },
+  };
+  expect(
+    authenticatedPermissionCodes([
+      expert,
+      role(true, 'sales.contracts.read.branch'),
+    ]),
+  ).toContain('sales.contracts.read.branch');
+});
