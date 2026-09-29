@@ -5,9 +5,29 @@ import {
   screenForTab,
   screenPermission,
   USER_ACCESS_PROFILE_PERMISSION,
+  USER_ACCESS_ADMIN_PERMISSION,
   USER_ACCESS_SCREENS,
 } from '@nora/contracts';
 describe('per-user screen visibility', () => {
+  it('shows every catalogued screen to a system administrator, including screens without native operations', () => {
+    const permissions = [
+      USER_ACCESS_ADMIN_PERMISSION,
+      USER_ACCESS_PROFILE_PERMISSION,
+    ];
+    expect(
+      USER_ACCESS_SCREENS.every((s) => canViewScreen(permissions, s.id)),
+    ).toBe(true);
+    for (const route of [
+      '/workbench',
+      '/dashboard',
+      '/reports',
+      '/integrations',
+      '/marketing',
+    ]) {
+      expect(canViewRoute(permissions, route)).toBe(true);
+    }
+    expect(canViewScreen(permissions, 'unknown.future.screen')).toBe(false);
+  });
   it('limits legacy navigation to operational grants', () => {
     expect(canViewRoute(['iam.users.read'], '/system')).toBe(true);
     expect(canViewRoute([], '/finance')).toBe(false);

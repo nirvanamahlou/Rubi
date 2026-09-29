@@ -2190,6 +2190,8 @@ export const USER_ACCESS_SCREENS: readonly UserAccessScreen[] = [
   },
 ];
 export const USER_ACCESS_PROFILE_PERMISSION = 'ui.profile' as const;
+/** Derived by IAM from active administrator membership; never stored as a grant. */
+export const USER_ACCESS_ADMIN_PERMISSION = 'ui.administrator' as const;
 export const screenPermission = (id: string): `ui.screen.${string}` =>
   `ui.screen.${id}`;
 export function hasManagedAccess(permissions: readonly string[]) {
@@ -2199,17 +2201,19 @@ function hasGroupPermission(permissions: readonly string[], groupId: string) {
   const group = USER_ACCESS_GROUPS.find((item) => item.id === groupId);
   return (
     !!group &&
-    permissions.some(
-      (code) =>
-        !['legal-entity.read', 'legal-entity.switch'].includes(code) &&
-        group.prefixes.some(
-          (prefix) => code === prefix || code.startsWith(prefix + '.'),
-        ),
-    )
+    (permissions.includes(USER_ACCESS_ADMIN_PERMISSION) ||
+      permissions.some(
+        (code) =>
+          !['legal-entity.read', 'legal-entity.switch'].includes(code) &&
+          group.prefixes.some(
+            (prefix) => code === prefix || code.startsWith(prefix + '.'),
+          ),
+      ))
   );
 }
 export function canViewScreen(permissions: readonly string[], id: string) {
   const screen = USER_ACCESS_SCREENS.find((item) => item.id === id);
+  if (screen && permissions.includes(USER_ACCESS_ADMIN_PERMISSION)) return true;
   if (!screen || !hasGroupPermission(permissions, screen.group)) return false;
   if (
     hasManagedAccess(permissions) &&
