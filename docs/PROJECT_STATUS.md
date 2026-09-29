@@ -1,3 +1,7 @@
+# 2026-09-29 — SALES-HOTEL-ENGLISH-OPTIONS-0929 — PC-A
+
+Sales contracts now open the active hotel list for the selected city, show available English hotel names, and retain text search and destination/tour filters. Canonical hotel id and room-selection behavior are preserved. Four existing picker tests, scoped lint, Web production typecheck and the 54-route build pass. No API/database/data/runtime changes; authenticated browser interaction was not exercised. See [handoff](tasks/SALES-HOTEL-ENGLISH-OPTIONS-0929.md).
+
 ## 2026-09-29 — USER-ACCESS-UI-0929 — PC-A — READY_FOR_REVIEW
 
 User management now uses checkbox-first access cards: parent selection reveals child visibility/action checkboxes; partial grants stay expanded and indeterminate. Responsive compact cards, distinct selected-user styling and sticky save control replace dropdowns and excessive whitespace. Existing grant setters and authorization remain intact. 15 focused Web tests, strict typecheck and scoped lint pass; production build checked before handoff. No schema/API/dependency or operational account edits.

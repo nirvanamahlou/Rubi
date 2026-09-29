@@ -30,7 +30,10 @@ import { masterDataApi } from '@/modules/master-data/api/client';
 import { salesApi } from '../api/client';
 import { TicketOfferPicker } from './ticket-offer-picker';
 import { ContractFlightEditor } from './contract-flight-editor';
-import { SearchableReference } from './searchable-reference';
+import {
+  salesReferenceDisplayName,
+  SearchableReference,
+} from './searchable-reference';
 import { SalesInsurancePicker } from './sales-insurance-picker';
 import { SalesTourPicker } from './sales-tour-picker';
 import {
@@ -193,7 +196,10 @@ export function SalesContractForm() {
         (!state.tour || state.tour.package.hotelIds.includes(hotel.id)),
     );
     return [...hotelsAtDestination].sort((left, right) =>
-      left.name.localeCompare(right.name, 'fa'),
+      salesReferenceDisplayName(left, true).localeCompare(
+        salesReferenceDisplayName(right, true),
+        'en',
+      ),
     );
   }, [references.hotels, state.destinationId, state.tour]);
   const patchState = (patch: Partial<SalesFormState>) =>
@@ -1283,6 +1289,8 @@ export function SalesContractForm() {
                     label="هتل"
                     value={state.hotel.hotelId}
                     options={selectableHotels}
+                    showAllOptionsOnOpen
+                    preferEnglishName
                     onChange={(hotelId) =>
                       patchState({
                         hotel: {

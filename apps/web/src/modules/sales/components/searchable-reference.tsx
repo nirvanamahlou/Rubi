@@ -7,9 +7,15 @@ import { FormField, Input } from '@/components/ui/form-controls';
 import { normalizeRouteSearch } from '../model/sales-form';
 
 export function salesReferenceDisplayName(
-  item: Pick<MasterDataRecord, 'name'>,
+  item: Pick<MasterDataRecord, 'name'> & Partial<MasterDataRecord>,
+  preferEnglishName = false,
 ) {
-  return item.name.trim();
+  const englishName = item.attributes?.englishName;
+  return (
+    (preferEnglishName && typeof englishName === 'string' && englishName.trim()
+      ? englishName.trim()
+      : null) ?? item.name.trim()
+  );
 }
 
 export function SearchableReference({
@@ -18,6 +24,8 @@ export function SearchableReference({
   options,
   onChange,
   disabled = false,
+  showAllOptionsOnOpen = false,
+  preferEnglishName = false,
 }: {
   label: string;
   value: string;
@@ -25,6 +33,8 @@ export function SearchableReference({
     Partial<MasterDataRecord>)[];
   onChange: (value: string) => void;
   disabled?: boolean;
+  showAllOptionsOnOpen?: boolean;
+  preferEnglishName?: boolean;
 }) {
   const id = useId();
   const input = useRef<HTMLInputElement>(null);
@@ -39,7 +49,9 @@ export function SearchableReference({
           `${item.name} ${item.code} ${item.attributes?.englishName ?? ''}`,
         ).includes(normalizeRouteSearch(search)),
       )
-    : [];
+    : showAllOptionsOnOpen
+      ? options
+      : [];
   const choose = (next: string) => {
     onChange(next);
     setOpen(false);
@@ -78,7 +90,7 @@ export function SearchableReference({
               open
                 ? search
                 : selected
-                  ? salesReferenceDisplayName(selected)
+                  ? salesReferenceDisplayName(selected, preferEnglishName)
                   : ''
             }
             onFocus={() => {
@@ -145,20 +157,28 @@ export function SearchableReference({
                   onMouseDown={(event) => event.preventDefault()}
                   onClick={() => choose(item.id)}
                 >
-                  <span>{salesReferenceDisplayName(item)}</span>
+                  <span>
+                    {salesReferenceDisplayName(item, preferEnglishName)}
+                  </span>
                   {item.id === value ? (
                     <Check aria-hidden="true" className="size-4" />
                   ) : null}
                 </li>
               ))}
             </ul>
-            {!hasSearch ? (
+            {!hasSearch && !showAllOptionsOnOpen ? (
               <p role="status" className="p-3 text-sm text-muted-foreground">
                 برای نمایش گزینه‌ها، نام یا کد را جست‌وجو کنید.
               </p>
+            ) : showAllOptionsOnOpen && !hasSearch && matches.length ? (
+              <p role="status" className="p-3 text-sm text-muted-foreground">
+                هتل موردنظر را از فهرست انتخاب کنید یا نام آن را جست‌وجو کنید.
+              </p>
             ) : !matches.length ? (
               <p role="status" className="p-3 text-sm text-muted-foreground">
-                موردی پیدا نشد.
+                {!hasSearch && showAllOptionsOnOpen
+                  ? 'برای این شهر هتل فعالی ثبت نشده است.'
+                  : 'موردی پیدا نشد.'}
               </p>
             ) : null}
           </div>
