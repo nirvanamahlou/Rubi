@@ -12,6 +12,34 @@ vi.mock('next/navigation', () => ({
 }));
 
 describe('Nora Customer Affairs navigation', () => {
+  it('shows a structured request profile without changing its actions', () => {
+    const detail = {
+      id: 'request',
+      trackingNumber: 'CA-L-1',
+      title: 'سفر نمایشگاهی',
+      travelNeed: 'بازدید نمایشگاه',
+      stage: 'NEW',
+      priority: 'LOW',
+      nextAction: 'تماس با مشتری',
+      nextActionAt: '2026-09-29T10:00:00Z',
+      customerId: null,
+      timeline: [],
+    } as unknown as Detail;
+    const html = renderToStaticMarkup(
+      <DetailPanel
+        detail={detail}
+        tab="leads"
+        onBack={() => {}}
+        onReload={async () => {}}
+      />,
+    );
+    expect(html).toContain('CA-L-1');
+    expect(html).toContain('نیاز سفر');
+    expect(html).toContain('تماس با مشتری');
+    expect(html).toContain('تنظیم پیگیری بعدی');
+    expect(html).toContain('سابقه ارتباط و رسیدگی');
+    expect(html).toContain('ثبت ارتباط جدید');
+  });
   it.each(['NEW', 'RESOLVED', 'CLOSED'] as const)(
     'only offers ticket actions appropriate to %s',
     (status) => {

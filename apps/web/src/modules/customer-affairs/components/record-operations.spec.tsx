@@ -40,4 +40,24 @@ describe('Customer Affairs operational forms', () => {
     expect(html).toContain('ثبت نتیجه اقدام اصلاحی');
     expect(html).not.toContain('<form');
   });
+
+  it('groups request travel details in labeled profile fields', () => {
+    const detail = {
+      stage: 'NEW',
+      sourceReference: 'وب‌سایت',
+      originReference: 'تهران',
+      destinationReference: 'شیراز',
+      passengerCount: 2,
+      requestedServices: ['FLIGHT', 'HOTEL'],
+      specialPreferences: 'بازدید نمایشگاهی',
+    } as unknown as Detail;
+    const html = renderToStaticMarkup(
+      <RecordOperations detail={detail} onReload={async () => {}} />,
+    );
+    expect(html).toContain('اطلاعات سفر');
+    expect(html).toContain('مبدأ</dt><dd>تهران');
+    expect(html).toContain('مقصد</dt><dd>شیراز');
+    expect(html).toContain('توضیحات خاص</dt><dd>بازدید نمایشگاهی');
+    expect(html).toContain('ویرایش اطلاعات پرونده');
+  });
 });

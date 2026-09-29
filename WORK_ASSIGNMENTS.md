@@ -4560,3 +4560,9 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 - درخواست مالک: فیلترهای گزارش امور مشتریان داخل یک باکس با عرض ۱۰۰٪ محتوای گزارش باشند؛ پس از تست، push و merge به `develop` مجاز است. `COMPUTER_ID=PC-B`، شاخه `codex/pc-b-ca-report-filter-box-0929` از `origin/develop@02ca242b` در checkout تمیز.
 - محدودهٔ رزرو: فقط چیدمان `customer-affairs-nora-workspace.tsx`، CSS ماژول و آزمون متمرکز، همراه ثبت وضعیت. بدون تغییر API، داده، قرارداد، Migration، Permission، Dependency/Lockfile یا runtime پورت ۳۱۰۰.
 - نتیجه: فرم فیلتر تاریخ در یک کارت هم‌عرض محتوای گزارش قرار گرفت. ۱۴ تست متمرکز، lint، typecheck و Prettier موفق‌اند؛ build تولیدی در CI بررسی می‌شود.
+
+## CUSTOMER-AFFAIRS-REQUEST-PROFILE-REDESIGN-0929 — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک از تصویر ۶۶۲: بازطراحی نمای جزئیات درخواست در امور مشتریان. `COMPUTER_ID=PC-B`؛ شاخه `codex/pc-b-ca-request-profile-redesign-0929` از `origin/develop@c71083b3` در checkout تمیز.
+- محدودهٔ رزرو: چیدمان `DetailPanel` و مشخصات درخواست در `RecordOperations`، CSS و تست‌های همان ماژول، همراه ثبت وضعیت. فقط ارائهٔ UI؛ API، داده، گردش کار، Permission، Migration، Dependency/Lockfile و runtime ۳۱۰۰ تغییر نمی‌کنند.
+- نتیجه: سربرگ و شرح درخواست، خلاصه اقدام بعدی، کارت فیلدهای سفر و تاریخچه ارتباط بازچینی شد. ۴۲ تست کامپوننت امور مشتریان، lint، typecheck و قالب‌بندی موفق‌اند؛ بازبینی build/CI و مشاهده روی runtime هنوز باقی است.
