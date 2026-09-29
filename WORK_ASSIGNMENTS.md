@@ -4604,6 +4604,7 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 - درخواست مالک از تصویر ۶۶۵: چهار اقدام «ثبت مشتری برای درخواست»، «ارزیابی آمادگی فروش»، «ارسال به فروش» و «تنظیم پیگیری بعدی» در پروفایل درخواست در یک نوار/راستای مشترک قرار بگیرند.
 - محدودهٔ رزرو: `customer-affairs-workspace.tsx`، CSS ماژول، تست چیدمان همان کامپوننت و ثبت اسناد. شاخه `codex/pc-b-ca-detail-actions-row-0929` از `origin/develop@c22e08a1`. منطق شرط‌ها، عملیات و فرم‌ها بدون تغییر؛ در viewport باریک شکست خط واکنش‌گرا مجاز است. بدون API، داده، قرارداد مشترک، Migration، Permission یا Dependency/Lockfile.
 - نتیجه: هر چهار CTA مستقیماً در یک نوار واحد پروفایل قرار گرفتند؛ در دسکتاپ یک‌ردیفه و در عرض موبایل wrap می‌شوند. تست‌های کامپوننت امور مشتریان ۴۲/۴۲، typecheck، ESLint هدفمند، Prettier و `git diff --check` موفق‌اند. Build و CI از طریق PR بررسی می‌شوند؛ build محلی اجرا نشد چون خروجی `.next` در سرویس Web فعال ۳۱۰۰ مشترک است.
+
 ## CUSTOMER-AFFAIRS-ASSESSMENT-SAVE-0929 — PC-B — READY_FOR_REVIEW
 
 - `COMPUTER_ID=PC-B`؛ شاخه `codex/pc-b-ca-assessment-save-0929` از `origin/develop` در worktree مستقل. درخواست مالک: رفع ذخیره‌نشدن ارزیابی آمادگی فروش، انتقال دکمه کنار «ثبت ارتباط جدید»، و نمایش نتیجه ذخیره‌شده در پایین پروفایل درخواست.
