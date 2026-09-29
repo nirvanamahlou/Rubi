@@ -115,3 +115,26 @@ describe('legacy dark surfaces', () => {
     }
   });
 });
+
+it('retains white corporate labels on fixed saturated action backgrounds', () => {
+  const corporate = readFileSync(
+    'src/modules/organizations/components/corporate-design.css',
+    'utf8',
+  );
+  for (const selector of [
+    '.btn.primary',
+    '.add-circle',
+    '.score-badge',
+    '.boundary-note',
+  ]) {
+    const start = corporate.indexOf(selector);
+    if (start >= 0) {
+      const block = corporate.slice(start).split('}')[0]!;
+      if (block.includes('color:'))
+        expect(block).not.toContain('color: light-dark(#fff, var(--surface))');
+    }
+  }
+  expect(corporate).not.toMatch(
+    /color:\s*light-dark\(#fff,\s*var\(--surface\)\)/,
+  );
+});

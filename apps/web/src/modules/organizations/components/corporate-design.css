@@ -263,13 +263,13 @@
     box-shadow: 0 6px 14px rgba(17, 76, 151, 0.1);
   }
   .btn.primary {
-    color: light-dark(#fff, var(--surface));
+    color: #fff;
     border-color: transparent;
     background: linear-gradient(135deg, var(--blue), #0759bf);
     box-shadow: 0 7px 16px rgba(22, 116, 232, 0.23);
   }
   .btn.success {
-    color: light-dark(#fff, var(--surface));
+    color: #fff;
     border-color: transparent;
     background: linear-gradient(135deg, #12af82, #078e69);
   }
@@ -585,7 +585,7 @@
   }
   .pages button.active {
     background: var(--blue);
-    color: light-dark(#fff, var(--surface));
+    color: #fff;
   }
   .org-banner {
     border: 1px solid #cfe1f6;
@@ -1050,7 +1050,7 @@
     left: 25px;
     min-width: 280px;
     background: #12356c;
-    color: light-dark(#fff, var(--surface));
+    color: #fff;
     border-radius: 12px;
     padding: 12px 15px;
     box-shadow: 0 12px 30px rgba(10, 42, 91, 0.28);
