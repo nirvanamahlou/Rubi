@@ -104,7 +104,8 @@ describe('tour overview', () => {
       />,
     );
     expect(html).toContain('حذف تور');
-  });  it('renders loading placeholders instead of zero KPIs', () => {
+  });
+  it('renders loading placeholders instead of zero KPIs', () => {
     const html = renderToStaticMarkup(
       <TourOverview
         packages={[]}
