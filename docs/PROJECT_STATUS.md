@@ -1,3 +1,7 @@
+# 2026-09-29 — DROPDOWN-SUBSTRING-0929 — PC-A
+
+Dropdown search always includes the displayed name plus aliases/codes and matches at any position before limiting to six results. Persian/English/code substring regressions passed; server Master Data already uses contains/insensitive. No migration or API changes. See [handoff](tasks/DROPDOWN-SUBSTRING-0929.md).
+
 # 2026-09-29 — SEARCHABLE-DROPDOWNS-0929 — PC-A
 
 Shared Web selection controls now search in the primary field, display six initial/matching results, preserve canonical form values and add subtle light/dark contrast. Master Data/Ticket/Marketing reference adapters retain scope and authorization. Browser synthetic interaction/form verification passed; no migration or operational data changes. See [handoff](tasks/SEARCHABLE-DROPDOWNS-0929.md).

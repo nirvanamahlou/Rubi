@@ -22,6 +22,40 @@ describe('shared inline searchable selection', () => {
     ]);
     expect(searchOptions(options, 'هتل')).toHaveLength(6);
   });
+  it('matches text inside the displayed name even when separate search aliases exist', () => {
+    const records = [
+      {
+        value: 'royal',
+        label: 'هتل رویال گاردن',
+        searchText: 'RHG Royal Garden Resort',
+      },
+    ];
+    expect(
+      searchOptions(records, 'گاردن').map((option) => option.value),
+    ).toEqual(['royal']);
+    expect(
+      searchOptions(records, 'arden').map((option) => option.value),
+    ).toEqual(['royal']);
+    expect(
+      searchOptions(records, 'oyal').map((option) => option.value),
+    ).toEqual(['royal']);
+    expect(searchOptions(records, 'ناموجود')).toEqual([]);
+  });
+  it('matches the middle of codes and case-insensitive aliases beyond the initial six', () => {
+    const records = [
+      ...options,
+      { value: 'airline', label: 'ایرلاین منتخب', searchText: 'AB-4512-XY' },
+    ];
+    expect(
+      searchOptions(records, '4512').map((option) => option.value),
+    ).toEqual(['airline']);
+    expect(
+      searchOptions(records, 'otel 19').map((option) => option.value),
+    ).toEqual(['19']);
+    expect(
+      searchOptions(records, 'ab-451').map((option) => option.value),
+    ).toEqual(['airline']);
+  });
   it('normalizes Arabic/Persian letters and keeps canonical IDs', () => {
     expect(
       searchOptions([{ value: 'canonical', label: 'کیش' }], 'كيش')[0]?.value,
