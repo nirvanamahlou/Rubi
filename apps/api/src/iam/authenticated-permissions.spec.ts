@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { USER_ACCESS_ADMIN_PERMISSION } from '@nora/contracts';
 
 import { authenticatedPermissionCodes } from './authenticated-permissions';
 
@@ -7,6 +8,32 @@ const role = (isActive: boolean, ...codes: string[]) => ({
     isActive,
     permissions: codes.map((code) => ({ permission: { code } })),
   },
+});
+
+describe('administrator screen authority', () => {
+  it('derives the screen marker only from active canonical administrator membership', () => {
+    const admin = { role: { ...role(true).role, code: 'administrator' } };
+    const permissions = authenticatedPermissionCodes([admin]);
+    expect(permissions).toContain(USER_ACCESS_ADMIN_PERMISSION);
+    expect(permissions).not.toContain('sales.contracts.create');
+    expect(
+      authenticatedPermissionCodes([
+        { role: { ...admin.role, isActive: false } },
+      ]),
+    ).not.toContain(USER_ACCESS_ADMIN_PERMISSION);
+  });
+  it('ignores a stored marker or administrator title on a different role', () => {
+    const namedRole = {
+      role: {
+        ...role(true, USER_ACCESS_ADMIN_PERMISSION).role,
+        code: 'custom',
+        name: 'مدیر',
+      },
+    };
+    expect(authenticatedPermissionCodes([namedRole])).not.toContain(
+      USER_ACCESS_ADMIN_PERMISSION,
+    );
+  });
 });
 
 describe('authenticated legal-entity baseline permissions', () => {

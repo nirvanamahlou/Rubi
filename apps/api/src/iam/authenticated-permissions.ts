@@ -1,5 +1,8 @@
 import type { IamPermissionCode } from '@nora/contracts';
-import { LEGAL_ENTITY_AUTHENTICATED_BASELINE_PERMISSION_CODES } from '@nora/contracts';
+import {
+  LEGAL_ENTITY_AUTHENTICATED_BASELINE_PERMISSION_CODES,
+  USER_ACCESS_ADMIN_PERMISSION,
+} from '@nora/contracts';
 
 export interface PermissionBearingRole {
   role: {
@@ -13,6 +16,9 @@ export interface PermissionBearingRole {
 export function authenticatedPermissionCodes(
   roles: readonly PermissionBearingRole[],
 ): IamPermissionCode[] {
+  const administrator = roles.some(
+    ({ role }) => role.isActive && role.code === 'administrator',
+  );
   const salesExpert = roles.some(
     ({ role }) =>
       role.isActive &&
@@ -27,7 +33,9 @@ export function authenticatedPermissionCodes(
           role.permissions.map(
             ({ permission }) => permission.code as IamPermissionCode,
           ),
-        ),
+        )
+        .filter((code) => code !== USER_ACCESS_ADMIN_PERMISSION),
+      ...(administrator ? [USER_ACCESS_ADMIN_PERMISSION] : []),
     ]),
   ];
   if (!salesExpert) return codes;
