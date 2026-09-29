@@ -84,7 +84,7 @@ and tools, not live database state. After clear, import does not restore the off
 ## Validation
 
 ```powershell
-node --test apps/api/scripts/ticket-demo-core.test.mjs
+node --test apps/api/scripts/ticket-demo-core-checks.mjs
 ```
 
 Tests cover the local-only guard, fixture boundaries/privacy, transaction rollback,

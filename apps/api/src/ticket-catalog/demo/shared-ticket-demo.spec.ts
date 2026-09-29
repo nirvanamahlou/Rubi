@@ -8,7 +8,7 @@ describe('shared ticket demo lifecycle and safety', () => {
       process.execPath,
       [
         '--test',
-        resolve(__dirname, '../../../scripts/ticket-demo-core.test.mjs'),
+        resolve(__dirname, '../../../scripts/ticket-demo-core-checks.mjs'),
       ],
       { encoding: 'utf8' },
     );
