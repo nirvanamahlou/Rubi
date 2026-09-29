@@ -5,6 +5,7 @@ import type {
   TourPackageInputV1,
   TourDepartureInputV1,
   TicketOfferV1,
+  TicketSaleCommissionUpdateV1,
   TicketOfferCreateV1,
   TicketRoundTripSalePriceUpdateV1,
   TicketSalePriceTargetCreateV1,
@@ -69,12 +70,31 @@ export const toursApi = {
       '/sale-price-targets',
       post(input, branch, crypto.randomUUID()),
     ),
+  removeSalePriceTarget: (id: string, expectedVersion: number) =>
+    request<{ data: { id: string; isActive: boolean; version: number } }>(
+      `/sale-price-targets/${encodeURIComponent(id)}`,
+      { method: 'DELETE', body: JSON.stringify({ expectedVersion }) },
+    ),
   packages: () => request<{ data: TourPackageV1[] }>('/tours/packages'),
   departures: () => request<{ data: TourDepartureV1[] }>('/tours/departures'),
   createPackage: (input: TourPackageInputV1, branch: string, key: string) =>
     request<{ data: TourPackageV1 }>(
       '/tours/packages',
       post(input, branch, key),
+    ),
+  updatePackage: (
+    id: string,
+    input: TourPackageInputV1,
+    expectedVersion: number,
+    branch: string,
+  ) =>
+    request<{ data: TourPackageV1 }>(
+      `/tours/packages/${encodeURIComponent(id)}`,
+      {
+        method: 'PATCH',
+        headers: { 'x-branch-id': branch },
+        body: JSON.stringify({ ...input, expectedVersion }),
+      },
     ),
   createDeparture: (input: TourDepartureInputV1, branch: string, key: string) =>
     request<{ data: TourDepartureV1 }>(
@@ -107,6 +127,15 @@ export const toursApi = {
       if (!result.hasMore) return data;
     }
   },
+  updateSaleCommission: (input: TicketSaleCommissionUpdateV1, key: string) =>
+    request<{ data: { count: number; revision: number } }>(
+      '/offers/sale-commissions',
+      {
+        method: 'PATCH',
+        headers: { 'idempotency-key': key },
+        body: JSON.stringify(input),
+      },
+    ),
   managedOffers: () =>
     request<{ version: 1; data: TicketOfferV1[] }>('/offers/management'),
   archiveExpiredOffer: (id: string, expectedVersion: number) =>

@@ -1,5 +1,5 @@
 import { ArrowLeft } from 'lucide-react';
-import Link from 'next/link';
+import Link from '@/components/access-link';
 import type { HrBootstrapDto } from '@nora/contracts';
 import { Card, PageHeader } from '@/components/ui/surfaces';
 import { cn } from '@/lib/utils';

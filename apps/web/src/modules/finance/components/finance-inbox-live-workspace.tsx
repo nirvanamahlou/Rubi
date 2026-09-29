@@ -19,6 +19,8 @@ import {
   WalletCards,
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
+import { FinanceHistoryPanel } from './finance-history-panel';
+import { ticketPurchaseTotal } from '../model/ticket-purchase-total';
 import type {
   FinanceInboxItemV1,
   FinanceInboxSource,
@@ -127,6 +129,7 @@ export function FinanceInboxLiveWorkspace() {
   const [methods, setMethods] = useState<
     readonly FinancePaymentMethodOptionV1[]
   >([]);
+  const [methodsError, setMethodsError] = useState('');
   const [banks, setBanks] = useState<readonly FinanceBankOptionV1[]>([]);
   const [actionItem, setActionItem] = useState<FinanceInboxItemV1 | null>(null);
   const [actionKind, setActionKind] = useState<
@@ -163,18 +166,7 @@ export function FinanceInboxLiveWorkspace() {
   const loading = state?.revision !== revision;
   const data = loading ? null : state.data;
   const error = loading ? '' : state.error;
-  const ticketInvoice = useMemo(() => {
-    const seats = Number(ticketSeatCount);
-    const unit = Number(ticketUnitCost);
-    if (
-      !Number.isFinite(seats) ||
-      !Number.isFinite(unit) ||
-      seats < 1 ||
-      unit <= 0
-    )
-      return null;
-    return (seats * unit).toFixed(4).replace(/\.0+$/, '');
-  }, [ticketSeatCount, ticketUnitCost]);
+  const ticketInvoice = ticketPurchaseTotal(ticketSeatCount, ticketUnitCost);
 
   useEffect(() => {
     let active = true;
@@ -202,7 +194,21 @@ export function FinanceInboxLiveWorkspace() {
       if (!active) return;
       if (accountResult.status === 'fulfilled')
         setAccounts(accountResult.value);
-      if (methodResult.status === 'fulfilled') setMethods(methodResult.value);
+      if (methodResult.status === 'fulfilled') {
+        setMethods(methodResult.value);
+        setMethodsError(
+          methodResult.value.length
+            ? ''
+            : 'روش پرداخت خروجی فعالی تعریف نشده است؛ در اطلاعات پایه روش پرداخت را فعال کنید.',
+        );
+      } else {
+        setMethods([]);
+        setMethodsError(
+          methodResult.reason instanceof FinanceInboxApiError
+            ? methodResult.reason.message
+            : 'دریافت روش‌های پرداخت ناموفق بود.',
+        );
+      }
       if (bankResult.status === 'fulfilled') setBanks(bankResult.value);
     });
     return () => {
@@ -471,6 +477,7 @@ export function FinanceInboxLiveWorkspace() {
             : {}),
         });
       }
+      window.dispatchEvent(new Event('finance-transactions-changed'));
       setActionItem(null);
       setActionKind(null);
       setRevision((value) => value + 1);
@@ -913,6 +920,19 @@ export function FinanceInboxLiveWorkspace() {
                       {money(item)}
                     </p>
                   </div>
+                  {item.ticketPurchase ? (
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      تعداد صندلی:{' '}
+                      {item.ticketPurchase.seatCount?.toLocaleString('fa-IR') ??
+                        '—'}{' '}
+                      · قیمت تکی:{' '}
+                      {item.ticketPurchase.unitCost
+                        ? item.ticketPurchase.unitCost +
+                          ' ' +
+                          (item.amount?.currencyCode ?? '')
+                        : 'ثبت نشده'}
+                    </p>
+                  ) : null}
                   <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted-foreground">
                     <bdi className="break-all">
                       {item.contractReference ?? item.sourceReference}
@@ -969,6 +989,14 @@ export function FinanceInboxLiveWorkspace() {
                           selected.ticketPurchase.seatCount?.toLocaleString(
                             'fa-IR',
                           ) ?? 'در انتظار تعیین مالی',
+                        ],
+                        [
+                          'قیمت خرید هر صندلی',
+                          selected.ticketPurchase.unitCost
+                            ? selected.ticketPurchase.unitCost +
+                              ' ' +
+                              (selected.amount?.currencyCode ?? '')
+                            : 'ثبت نشده',
                         ],
                         [
                           'پرداخت‌های ثبت‌شده',
@@ -1043,6 +1071,14 @@ export function FinanceInboxLiveWorkspace() {
                   </div>
                 ) : null}
                 {selected.kind === 'PAYMENT_REQUEST' &&
+                selected.source === 'RESERVATIONS' ? (
+                  <FinanceHistoryPanel
+                    requestId={selected.sourceReference}
+                    source="RESERVATIONS"
+                    compact
+                  />
+                ) : null}
+                {selected.kind === 'PAYMENT_REQUEST' &&
                 selected.source === 'PURCHASES' &&
                 selected.ticketPurchase ? (
                   <div className="space-y-2 rounded-2xl border border-emerald-200 bg-emerald-50/50 p-3 dark:border-emerald-900 dark:bg-emerald-950/20">
@@ -1054,17 +1090,33 @@ export function FinanceInboxLiveWorkspace() {
                     </p>
                     <Button
                       className="w-full"
-                      onClick={() =>
-                        selected.amount
-                          ? openSupplierPayment(selected)
-                          : openTicketCost(selected)
-                      }
+                      variant="outline"
+                      disabled={selected.ticketPurchase.paymentCount > 0}
+                      onClick={() => openTicketCost(selected)}
                     >
-                      <WalletCards className="size-4" />
                       {selected.amount
-                        ? 'ثبت پرداخت خرید بلیت'
-                        : 'ثبت فاکتور خرید بلیت'}
+                        ? 'تکمیل / اصلاح تعداد و قیمت خرید هر صندلی'
+                        : 'ثبت تعداد و قیمت خرید هر صندلی'}
                     </Button>
+                    {selected.ticketPurchase.paymentCount > 0 ? (
+                      <p className="text-xs text-muted-foreground">
+                        قیمت خرید پس از شروع پرداخت قابل اصلاح نیست.
+                      </p>
+                    ) : null}
+                    {selected.amount ? (
+                      <Button
+                        className="w-full"
+                        onClick={() => openSupplierPayment(selected)}
+                      >
+                        <WalletCards className="size-4" />
+                        ثبت پرداخت خرید بلیت
+                      </Button>
+                    ) : null}
+                    <FinanceHistoryPanel
+                      requestId={selected.sourceReference}
+                      source="TICKET"
+                      compact
+                    />
                   </div>
                 ) : null}
               </div>
@@ -1191,21 +1243,37 @@ export function FinanceInboxLiveWorkspace() {
                 </label>
                 <label className="grid gap-2">
                   <span>روش پرداخت</span>
-                  <Select
+                  <select
+                    aria-label="روش پرداخت"
+                    required
+                    className="h-11 w-full rounded-xl border border-border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-primary/30"
                     value={paymentMethodId}
-                    onValueChange={setPaymentMethodId}
+                    onChange={(event) => setPaymentMethodId(event.target.value)}
                   >
-                    <SelectTrigger>
-                      <SelectValue placeholder="حواله، چک، نقد، پوز یا…" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {methods.map((method) => (
-                        <SelectItem key={method.id} value={method.id}>
-                          {method.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    <option value="" disabled>
+                      انتخاب روش پرداخت
+                    </option>
+                    {methods.map((method) => (
+                      <option key={method.id} value={method.id}>
+                        {method.name}
+                      </option>
+                    ))}
+                  </select>
+                  {methodsError ? (
+                    <span role="alert" className="text-sm text-destructive">
+                      {methodsError}
+                    </span>
+                  ) : null}
+                  {methodsError ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setRevision((value) => value + 1)}
+                    >
+                      دریافت مجدد روش‌های پرداخت
+                    </Button>
+                  ) : null}
                 </label>
                 <label className="grid gap-2">
                   <span>مبلغ این پرداخت</span>
@@ -1215,10 +1283,17 @@ export function FinanceInboxLiveWorkspace() {
                     onValueChange={setPaidAmount}
                   />
                   <small className="text-muted-foreground">
-                    مانده فعلی: {actionItem?.settlement?.remainingAmount ?? '—'}{' '}
+                    مانده فعلی:{' '}
+                    {actionItem?.settlement?.remainingAmount ??
+                      actionItem?.amount?.amount ??
+                      '—'}{' '}
                     {actionItem?.amount?.currencyCode}
                   </small>
                 </label>
+                <p className="text-sm text-muted-foreground">
+                  می‌توانید بخشی از مبلغ را پرداخت کنید و مانده را در پرداخت‌های
+                  بعدی ثبت کنید؛ پس از هر ثبت، مانده به‌روز می‌شود.
+                </p>
                 {actionItem?.amount?.currencyCode !== 'IRR' ? (
                   <label className="grid gap-2">
                     <span>نرخ روز ارز به ریال</span>

@@ -1,4 +1,6 @@
 'use client';
+import { useScreenAccess } from '@/modules/iam/access-context';
+import { useSearchParams } from 'next/navigation';
 
 import type {
   MasterDataListQuery,
@@ -39,7 +41,6 @@ import {
   Card,
   EmptyState,
   ErrorState,
-  FilterBar,
   PageHeader,
   PaginationShell,
   Skeleton,
@@ -47,6 +48,7 @@ import {
 import { masterDataApi, MasterDataApiError } from '../api/client';
 import { MasterDataDeleteButton } from './master-data-delete-button';
 import { MasterDataFilterActions } from './master-data-filter-actions';
+import { MasterDataFilterBar } from './master-data-filter-bar';
 import {
   MasterDataDateRangeFilter,
   useMasterDataDateRange,
@@ -78,8 +80,17 @@ function GenericMasterDataWorkspace({
 }: {
   section: MasterDataSectionDefinition;
 }) {
+  const allowedResource = useScreenAccess();
+  const visibleResources = section.resources.filter((key) =>
+    allowedResource('master-data.resource.' + key),
+  );
+  const requestedResource = useSearchParams()?.get(
+    'resource',
+  ) as MasterDataResourceKey | null;
   const [resource, setResource] = useState<MasterDataResourceKey>(
-    section.resources[0] ?? 'currencies',
+    requestedResource && visibleResources.includes(requestedResource)
+      ? requestedResource
+      : (visibleResources[0] ?? 'currencies'),
   );
   const [records, setRecords] = useState<readonly MasterDataRecord[]>([]);
   const [requestState, setRequestState] = useState<RequestState>('loading');
@@ -98,7 +109,7 @@ function GenericMasterDataWorkspace({
     reset: resetDateRange,
   } = useMasterDataDateRange(() => setPage(1));
   const definition = getMasterDataDefinition(resource);
-  const sectionDefinitions = section.resources.map(getMasterDataDefinition);
+  const sectionDefinitions = visibleResources.map(getMasterDataDefinition);
   const isCountryCity = resource === 'countries' || resource === 'cities';
   const activeCount = records.filter(
     (record) => record.status === 'active',
@@ -115,6 +126,11 @@ function GenericMasterDataWorkspace({
   };
 
   const load = useCallback(async () => {
+    if (!allowedResource('master-data.resource.' + resource)) {
+      setRecords([]);
+      setRequestState('forbidden');
+      return;
+    }
     setRequestState('loading');
     try {
       const response = await masterDataApi.list(
@@ -140,7 +156,7 @@ function GenericMasterDataWorkspace({
           : 'error',
       );
     }
-  }, [dateFilters, page, resource, search, sortBy, status]);
+  }, [dateFilters, page, resource, search, sortBy, status, allowedResource]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => void load(), 250);
@@ -148,6 +164,7 @@ function GenericMasterDataWorkspace({
   }, [load]);
 
   function changeResource(next: MasterDataResourceKey) {
+    if (!visibleResources.includes(next)) return;
     if (!section.resources.includes(next)) return;
     setResource(next);
     setSearch('');
@@ -323,6 +340,8 @@ function GenericMasterDataWorkspace({
     );
   }
 
+  if (!allowedResource('master-data.resource.' + resource))
+    return <p role="alert">دسترسی به این زیربخش فعال نیست.</p>;
   return (
     <div className="space-y-5">
       <PageHeader
@@ -461,7 +480,7 @@ function GenericMasterDataWorkspace({
             label={`شاخص‌های ${definition.label}`}
           />
 
-          <FilterBar className="grid sm:grid-cols-2 lg:grid-cols-[minmax(14rem,1fr)_12rem_12rem_auto]">
+          <MasterDataFilterBar>
             <MasterDataDateRangeFilter
               idPrefix="master-data-created"
               {...dateRangeProps}
@@ -470,7 +489,7 @@ function GenericMasterDataWorkspace({
               <div className="relative">
                 <Search
                   aria-hidden="true"
-                  className="absolute end-3 top-3.5 size-4 text-muted-foreground"
+                  className="absolute end-2.5 top-2.5 size-4 text-muted-foreground"
                 />
                 <Input
                   className="pe-10"
@@ -527,7 +546,7 @@ function GenericMasterDataWorkspace({
               }}
               onRefresh={() => void load()}
             />
-          </FilterBar>
+          </MasterDataFilterBar>
 
           {requestState === 'loading' ? (
             <div

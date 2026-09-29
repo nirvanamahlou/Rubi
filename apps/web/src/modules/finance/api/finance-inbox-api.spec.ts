@@ -12,6 +12,30 @@ vi.mock('@/lib/auth-session', () => ({
 afterEach(() => vi.unstubAllGlobals());
 
 describe('Finance inbox API', () => {
+  it('requests persistent installment history with encoded pagination and source filters', async () => {
+    const payload = { version: 1, items: [], nextCursor: null };
+    const fetch = vi
+      .fn()
+      .mockResolvedValue(new Response(JSON.stringify(payload)));
+    vi.stubGlobal('fetch', fetch);
+    await expect(
+      financeInboxApi.history({
+        source: 'TICKET',
+        requestId: 'purchase-1',
+        cursor: 'abc+/=',
+        direction: 'PAYMENT',
+      }),
+    ).resolves.toEqual(payload);
+    const [url, options] = fetch.mock.calls[0]!;
+    const parsed = new URL(url);
+    expect(parsed.pathname).toBe('/api/v1/finance/transaction-history');
+    expect(parsed.searchParams.get('cursor')).toBe('abc+/=');
+    expect(parsed.searchParams.get('requestId')).toBe('purchase-1');
+    expect(options).toMatchObject({
+      credentials: 'include',
+      cache: 'no-store',
+    });
+  });
   it('loads only the authenticated no-cache Finance projection', async () => {
     const payload = {
       version: 1,

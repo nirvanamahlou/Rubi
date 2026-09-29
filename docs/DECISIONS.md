@@ -1,3 +1,9 @@
+## USER-ACCESS-TREE-0928 — per-user IAM access (2026-09-28)
+
+IAM owns a dedicated non-shareable `personal-access-<userId>` role for each managed account. The selected job title labels this role; it does not edit HR employment records or imply grants. Native permissions continue to authorize server operations. Additional `ui.profile` and catalogued `ui.screen.*` permissions control Web route, navigation and tab visibility. A whole-group checkbox selects assignable native permissions and child screens; children can be removed individually.
+
+No schema migration, dependency or operational user change is required. IAM permission contract v12 is additive. Existing roleIds/branchIds clients remain compatible, and legacy navigation is preserved until an account is explicitly saved with a managed profile. Updates replace only that user's dedicated role/memberships transactionally. The last active administrator guard and native/UI anti-escalation checks remain. Future module routes/tabs must be registered in the IAM-owned screen catalog; unknown managed tabs are hidden. API guards remain authoritative for data and operations.
+
 ## MANIFEST-DEFAULT-TEMPLATE-0928 — owner clarification (2026-09-28)
 
 The owner replaces the earlier automatic airline/destination matching and disabled-card fallback for ticket-card exports with an explicit per-ticket template choice. Null/absent selection uses a built-in default XLSX. An explicitly selected published XLSX is revalidated for the Tehran flight day and read through the audited Documents boundary; invalid explicit selections produce an error instead of silently changing format. Legacy per-contract/range Iran Airtour exports remain compatible.
@@ -345,3 +351,7 @@ check-in/check-out و تعداد شب، همه هتل‌های فعال همان
 خارج از شعبه یا با ارز ناسازگار را fail-closed رد می‌کند. مدل خرید واقعی Reservations مستقل
 می‌ماند. این تصمیم blocker هتل را رفع می‌کند و blocker Ticket Catalog یا Renderer را رفع‌شده
 فرض نمی‌کند.
+
+## ADR-TICKET-TARGET-COMMISSION-0928 — accepted by explicit product-owner request
+
+Standalone ticket target pricing changes from manually entered independent absolute amounts to a shared base with a separately saved commission percentage per ticket/round-trip and sales target. The owner explicitly requires net = base minus target commission and copying one percentage to all priced tickets for that target. This applies to standalone ticket sales only; Package Pricing's profit commission rules remain separate. Legacy absolute target prices remain readable until an explicit commission is saved, optional public fields preserve v1 consumers, new contracts use the current effective direct fare and old contract snapshots are immutable. Copy is atomic, branch-scoped, includes both one-way/pair fares regardless of UI filters and excludes unpriced/archived/departed offers. User authorized overlap management and merge to develop on 2026-09-28; preserve Manifest transportType and unrelated Finance work during integration.

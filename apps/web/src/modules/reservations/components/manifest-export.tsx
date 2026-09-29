@@ -1,11 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { requestManifestDownload } from './manifest-download';
 import type {
   ReservationManifestTicketCardV1,
   ReservationManifestTicketListV1,
 } from '@nora/contracts';
-import { ArrowLeft, Plane } from 'lucide-react';
+import { ArrowLeft, Plane, Bus, TrainFront } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
 import { refreshAuthenticatedSession } from '@/lib/auth-session';
@@ -23,14 +24,13 @@ function todayInTehran() {
   return part('year') + '-' + part('month') + '-' + part('day');
 }
 
-function dateTime(value: string) {
+function dateTime(value: string, timeKnown = true) {
   return new Intl.DateTimeFormat('fa-IR', {
     timeZone: 'Asia/Tehran',
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
+    ...(timeKnown ? ({ hour: '2-digit', minute: '2-digit' } as const) : {}),
   }).format(new Date(value));
 }
 
@@ -62,19 +62,6 @@ async function responseError(response: Response, fallback: string) {
       : fallback;
 }
 
-function downloadFile(file: Blob, fileName: string) {
-  const url = URL.createObjectURL(file);
-  const anchor = document.createElement('a');
-  anchor.href = url;
-  anchor.download = fileName;
-  document.body.appendChild(anchor);
-  anchor.click();
-  setTimeout(() => {
-    anchor.remove();
-    URL.revokeObjectURL(url);
-  }, 30000);
-}
-
 export function ManifestExport() {
   const today = todayInTehran();
   const [fromDate, setFromDate] = useState(today);
@@ -88,7 +75,20 @@ export function ManifestExport() {
   const [busy, setBusy] = useState('');
   const [error, setError] = useState('');
   const [result, setResult] = useState('');
-  const [downloadKeys, setDownloadKeys] = useState<Record<string, string>>({});
+  const downloadKeys = useRef(new Map<string, string>());
+  const downloading = useRef(false);
+  const [errorOfferId, setErrorOfferId] = useState('');
+  const [downloadLink, setDownloadLink] = useState<{
+    offerId: string;
+    url: string;
+    fileName: string;
+  } | null>(null);
+  useEffect(
+    () => () => {
+      if (downloadLink) URL.revokeObjectURL(downloadLink.url);
+    },
+    [downloadLink],
+  );
 
   function validate() {
     if (!fromDate || !toDate) return 'بازه تاریخ را کامل کنید.';
@@ -97,6 +97,7 @@ export function ManifestExport() {
   }
 
   async function loadTickets() {
+    setErrorOfferId('');
     const validation = validate();
     const base = getPublicApiBaseUrl();
     if (validation || !base) {
@@ -128,92 +129,65 @@ export function ManifestExport() {
   }
 
   async function download(ticket: ReservationManifestTicketCardV1) {
-    if (!ticket.template || busy) return;
+    if (!ticket.template || busy || downloading.current) return;
+    setErrorOfferId(ticket.offerId);
     const base = getPublicApiBaseUrl();
     if (!base) {
       setError('نشانی سرور تنظیم نشده است.');
       return;
     }
+    downloading.current = true;
+    setErrorOfferId(ticket.offerId);
     setBusy(ticket.offerId);
     setError('');
     setResult('');
     try {
-      const requestScope = [
-        ticket.offerId,
-        fromDate,
-        toDate,
-        includePreviouslyExported ? 'all' : 'new',
-      ].join(':');
-      const idempotencyKey = downloadKeys[requestScope] ?? crypto.randomUUID();
-      if (!downloadKeys[requestScope])
-        setDownloadKeys((current) => ({
-          ...current,
-          [requestScope]: idempotencyKey,
-        }));
-      const exportTicket = (includeAll: boolean) =>
-        authenticatedFetch(
-          base,
-          '/reservations/manifests/tickets/' +
-            encodeURIComponent(ticket.offerId) +
-            '.xlsx',
+      const { file, contracts, passengers, skippedFinance, retriedWithAll } =
+        await requestManifestDownload(
           {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Idempotency-Key': idempotencyKey,
-            },
-            body: JSON.stringify({
-              fromDate,
-              toDate,
-              includePreviouslyExported: includeAll,
-            }),
+            offerId: ticket.offerId,
+            fromDate,
+            toDate,
+            includePreviouslyExported,
           },
+          (path, init) => authenticatedFetch(base, path, init),
+          downloadKeys.current,
         );
-      let response = await exportTicket(includePreviouslyExported);
-      let retriedWithAll = false;
-      if (!response.ok) {
-        const message = await responseError(response, 'MANIFEST آماده نشد.');
-        if (
-          !includePreviouslyExported &&
-          message.includes('قرارداد جدید قابل خروجی')
-        ) {
-          response = await exportTicket(true);
-          retriedWithAll = true;
-        } else {
-          throw new Error(message);
-        }
-      }
-      if (!response.ok)
-        throw new Error(await responseError(response, 'MANIFEST آماده نشد.'));
-      const contracts =
-        response.headers.get('X-Nora-Manifest-Contracts') ?? '—';
-      const passengers =
-        response.headers.get('X-Nora-Manifest-Passengers') ?? '—';
-      const file = await response.blob();
-      if (!file.size)
-        throw new Error('فایل MANIFEST خالی است؛ دوباره تلاش کنید.');
-      downloadFile(
-        file,
+      const fileName =
         'manifest-' +
-          ticket.serviceNumber.replace(/[^A-Za-z0-9_-]/g, '_') +
-          '-' +
-          fromDate +
-          '.xlsx',
-      );
+        (ticket.serviceNumber || ticket.transportType || 'FLIGHT').replace(
+          /[^A-Za-z0-9_-]/g,
+          '_',
+        ) +
+        '-' +
+        fromDate +
+        '.xlsx';
+      const url = URL.createObjectURL(file);
+      setDownloadLink({ offerId: ticket.offerId, url, fileName });
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = fileName;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
       setResult(
         contracts +
           ' قرارداد و ' +
           passengers +
           ' مسافر در قالب «' +
           ticket.template.name +
-          '» دانلود شد' +
-          (retriedWithAll ? '؛ خروجی قبلی نیز بازیابی شد.' : '.'),
+          '» آماده شد' +
+          (retriedWithAll ? '؛ خروجی قبلی نیز بازیابی شد.' : '.') +
+          (Number(skippedFinance) > 0
+            ? ' قراردادهای بدون تأیید مالی از فایل حذف شدند.'
+            : ''),
       );
     } catch (reason) {
       setError(
         reason instanceof Error ? reason.message : 'MANIFEST آماده نشد.',
       );
     } finally {
+      downloading.current = false;
       setBusy('');
     }
   }
@@ -223,14 +197,14 @@ export function ManifestExport() {
       <div>
         <strong>MANIFEST بلیط‌ها</strong>
         <p className="mt-1 text-sm text-muted-foreground">
-          بازه را انتخاب کنید، سپس روی بلیط موردنظر بزنید. خروجی با قالب
-          انتخاب‌شدهٔ بلیط ساخته می‌شود؛ بلیط‌های بدون قالب از «پیش‌فرض» استفاده
-          می‌کنند.
+          بازه را انتخاب کنید، سپس روی بلیط هوایی، اتوبوس یا قطار موردنظر بزنید.
+          خروجی با قالب انتخاب‌شدهٔ بلیط ساخته می‌شود؛ بلیط‌های بدون قالب از
+          «پیش‌فرض» استفاده می‌کنند.
         </p>
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="grid gap-2 text-sm font-medium">
-          از تاریخ پرواز
+          از تاریخ حرکت
           <DatePicker
             value={fromDate}
             onChange={setFromDate}
@@ -239,7 +213,7 @@ export function ManifestExport() {
           />
         </label>
         <label className="grid gap-2 text-sm font-medium">
-          تا تاریخ پرواز
+          تا تاریخ حرکت
           <DatePicker
             value={toDate}
             onChange={setToDate}
@@ -249,6 +223,7 @@ export function ManifestExport() {
         </label>
       </div>
       <Button
+        type="button"
         disabled={!fromDate || !toDate || Boolean(busy)}
         onClick={() => void loadTickets()}
       >
@@ -303,7 +278,13 @@ export function ManifestExport() {
                 <header className="flex items-start justify-between gap-2 border-b bg-muted/35 px-3 py-2">
                   <div className="flex min-w-0 items-center gap-2">
                     <span className="rounded-lg bg-cyan-100 p-1.5 text-cyan-800 dark:bg-cyan-950 dark:text-cyan-200">
-                      <Plane className="size-4" />
+                      {ticket.transportType === 'BUS' ? (
+                        <Bus className="size-4" />
+                      ) : ticket.transportType === 'TRAIN' ? (
+                        <TrainFront className="size-4" />
+                      ) : (
+                        <Plane className="size-4" />
+                      )}
                     </span>
                     <div className="min-w-0">
                       <h3 className="truncate font-bold">
@@ -313,7 +294,12 @@ export function ManifestExport() {
                         dir="ltr"
                         className="text-sm font-semibold text-muted-foreground"
                       >
-                        {ticket.serviceNumber}
+                        {ticket.serviceNumber ||
+                          (ticket.transportType === 'BUS'
+                            ? 'اتوبوس'
+                            : ticket.transportType === 'TRAIN'
+                              ? 'قطار'
+                              : '')}
                       </p>
                     </div>
                   </div>
@@ -335,18 +321,25 @@ export function ManifestExport() {
                       <span className="block text-xs text-muted-foreground">
                         حرکت
                       </span>
-                      {dateTime(ticket.departureAt)}
+                      {dateTime(
+                        ticket.departureAt,
+                        ticket.departureTimeKnown !== false,
+                      )}
                     </div>
                     <div className="rounded-lg bg-muted/50 px-2 py-1.5">
                       <span className="block text-xs text-muted-foreground">
                         رسیدن
                       </span>
-                      {dateTime(ticket.arrivalAt)}
+                      {ticket.transportType &&
+                      ticket.transportType !== 'FLIGHT' &&
+                      ticket.arrivalAt === ticket.departureAt
+                        ? 'ثبت نشده'
+                        : dateTime(ticket.arrivalAt)}
                     </div>
                   </div>
                   <p className="text-xs">
-                    {ticket.contractCount} قرارداد · {ticket.passengerCount}{' '}
-                    مسافر
+                    {ticket.contractCount} قرارداد با تأیید مالی ·{' '}
+                    {ticket.passengerCount} مسافر
                   </p>
                   {ticket.template ? (
                     <p className="rounded-lg bg-emerald-50 px-2 py-1.5 text-xs text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-200">
@@ -362,6 +355,7 @@ export function ManifestExport() {
                     </p>
                   )}
                   <Button
+                    type="button"
                     disabled={!ticket.template || Boolean(busy)}
                     onClick={() => void download(ticket)}
                   >
@@ -371,6 +365,20 @@ export function ManifestExport() {
                         ? 'دانلود MANIFEST این بلیط'
                         : 'خروجی ممکن نیست'}
                   </Button>
+                  {error && errorOfferId === ticket.offerId && (
+                    <p role="alert" className="text-sm text-destructive">
+                      {error}
+                    </p>
+                  )}
+                  {downloadLink?.offerId === ticket.offerId && (
+                    <a
+                      href={downloadLink.url}
+                      download={downloadLink.fileName}
+                      className="text-sm font-semibold text-primary underline"
+                    >
+                      اگر دانلود خودکار شروع نشد، فایل منیفست را دریافت کنید
+                    </a>
+                  )}
                 </div>
               </article>
             ))}
@@ -385,7 +393,7 @@ export function ManifestExport() {
           {result}
         </p>
       )}
-      {error && (
+      {error && !errorOfferId && (
         <p role="alert" className="text-destructive">
           {error}
         </p>

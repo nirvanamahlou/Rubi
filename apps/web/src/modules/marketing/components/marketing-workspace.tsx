@@ -1,4 +1,5 @@
 'use client';
+import { useRouteAccess } from '@/modules/iam/access-context';
 
 import {
   BadgePercent,
@@ -169,6 +170,7 @@ function MarketingHub({
 }: {
   onSelect: (section: MarketingSectionKey) => void;
 }) {
+  const allowed = useRouteAccess();
   return (
     <section
       aria-label="فهرست کارت‌های ماژول مارکتینگ"
@@ -176,69 +178,71 @@ function MarketingHub({
       dir="rtl"
     >
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {marketingSections.map((section) => {
-          const Icon = sectionIcons[section.key];
-          const tone = toneClasses[section.tone];
-          return (
-            <button
-              aria-label={`ورود به بخش ${section.title}`}
-              className="group rounded-2xl text-right outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-              key={section.key}
-              onClick={() => onSelect(section.key)}
-              type="button"
-            >
-              <Card className="relative flex h-full min-h-64 flex-col overflow-hidden p-5 transition duration-200 group-hover:-translate-y-1 group-hover:border-primary/35 group-hover:shadow-[var(--shadow-card)]">
-                <span
-                  aria-hidden="true"
-                  className={cn(
-                    'absolute inset-x-0 top-0 h-24 bg-gradient-to-b to-transparent opacity-80',
-                    tone.glow,
-                  )}
-                />
-                <div className="relative flex h-full flex-col">
-                  <div className="flex items-start gap-4">
-                    <span
-                      className={cn(
-                        'grid size-14 shrink-0 place-items-center rounded-2xl transition group-hover:scale-105',
-                        tone.icon,
-                      )}
-                    >
-                      <Icon aria-hidden="true" className="size-7" />
-                    </span>
-                    <div className="min-w-0 pt-1">
-                      <h3 className="text-base font-black leading-7 text-foreground">
-                        {section.title}
-                      </h3>
-                      <p className="mt-1 text-xs leading-6 text-muted-foreground">
-                        {section.description}
-                      </p>
+        {marketingSections
+          .filter((section) => allowed('/marketing?section=' + section.key))
+          .map((section) => {
+            const Icon = sectionIcons[section.key];
+            const tone = toneClasses[section.tone];
+            return (
+              <button
+                aria-label={`ورود به بخش ${section.title}`}
+                className="group rounded-2xl text-right outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                key={section.key}
+                onClick={() => onSelect(section.key)}
+                type="button"
+              >
+                <Card className="relative flex h-full min-h-64 flex-col overflow-hidden p-5 transition duration-200 group-hover:-translate-y-1 group-hover:border-primary/35 group-hover:shadow-[var(--shadow-card)]">
+                  <span
+                    aria-hidden="true"
+                    className={cn(
+                      'absolute inset-x-0 top-0 h-24 bg-gradient-to-b to-transparent opacity-80',
+                      tone.glow,
+                    )}
+                  />
+                  <div className="relative flex h-full flex-col">
+                    <div className="flex items-start gap-4">
+                      <span
+                        className={cn(
+                          'grid size-14 shrink-0 place-items-center rounded-2xl transition group-hover:scale-105',
+                          tone.icon,
+                        )}
+                      >
+                        <Icon aria-hidden="true" className="size-7" />
+                      </span>
+                      <div className="min-w-0 pt-1">
+                        <h3 className="text-base font-black leading-7 text-foreground">
+                          {section.title}
+                        </h3>
+                        <p className="mt-1 text-xs leading-6 text-muted-foreground">
+                          {section.description}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="mt-5 flex flex-wrap gap-1.5">
+                      {section.highlights.map((highlight) => (
+                        <Badge key={highlight}>{highlight}</Badge>
+                      ))}
+                    </div>
+
+                    <div className="mt-auto flex items-center justify-between border-t border-border/70 pt-4 text-sm">
+                      <span className="font-semibold text-muted-foreground">
+                        {section.highlights.length.toLocaleString('fa-IR')}{' '}
+                        زیرمجموعه
+                      </span>
+                      <span className="flex items-center gap-2 font-bold text-primary">
+                        ورود به بخش
+                        <ChevronLeft
+                          aria-hidden="true"
+                          className="size-4 transition-transform group-hover:-translate-x-1"
+                        />
+                      </span>
                     </div>
                   </div>
-
-                  <div className="mt-5 flex flex-wrap gap-1.5">
-                    {section.highlights.map((highlight) => (
-                      <Badge key={highlight}>{highlight}</Badge>
-                    ))}
-                  </div>
-
-                  <div className="mt-auto flex items-center justify-between border-t border-border/70 pt-4 text-sm">
-                    <span className="font-semibold text-muted-foreground">
-                      {section.highlights.length.toLocaleString('fa-IR')}{' '}
-                      زیرمجموعه
-                    </span>
-                    <span className="flex items-center gap-2 font-bold text-primary">
-                      ورود به بخش
-                      <ChevronLeft
-                        aria-hidden="true"
-                        className="size-4 transition-transform group-hover:-translate-x-1"
-                      />
-                    </span>
-                  </div>
-                </div>
-              </Card>
-            </button>
-          );
-        })}
+                </Card>
+              </button>
+            );
+          })}
       </div>
     </section>
   );

@@ -1,7 +1,7 @@
 'use client';
 
 import { ChevronDown, House, LogOut } from 'lucide-react';
-import Link from 'next/link';
+import Link from '@/components/access-link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 

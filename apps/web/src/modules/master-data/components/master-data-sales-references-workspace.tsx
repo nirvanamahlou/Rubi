@@ -46,7 +46,6 @@ import {
   Card,
   EmptyState,
   ErrorState,
-  FilterBar,
   PageHeader,
   PaginationShell,
   Skeleton,
@@ -54,6 +53,7 @@ import {
 import { masterDataApi, MasterDataApiError } from '../api/client';
 import { MasterDataDeleteButton } from './master-data-delete-button';
 import { MasterDataFilterActions } from './master-data-filter-actions';
+import { MasterDataFilterBar } from './master-data-filter-bar';
 import { getMasterDataDefinition } from '../model/catalog';
 import {
   MasterDataLiveForm,
@@ -480,7 +480,7 @@ export function MasterDataSalesReferencesWorkspace() {
         </nav>
       </Card>
       <MasterDataKpiGrid items={kpis} label={`شاخص‌های ${definition.label}`} />
-      <FilterBar className="grid sm:grid-cols-2 lg:grid-cols-[minmax(14rem,1fr)_12rem_auto]">
+      <MasterDataFilterBar>
         {columnFilterControls}
         <MasterDataDateRangeFilter
           idPrefix="sales-references-created"
@@ -529,7 +529,7 @@ export function MasterDataSalesReferencesWorkspace() {
           }}
           onRefresh={() => void Promise.all([load(), loadSummary()])}
         />
-      </FilterBar>
+      </MasterDataFilterBar>
       {content}
       <div className="flex items-center justify-between gap-3">
         <PaginationShell
