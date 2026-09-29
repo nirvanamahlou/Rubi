@@ -4605,10 +4605,11 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 - محدودهٔ رزرو: `customer-affairs-workspace.tsx`، CSS ماژول، تست چیدمان همان کامپوننت و ثبت اسناد. شاخه `codex/pc-b-ca-detail-actions-row-0929` از `origin/develop@c22e08a1`. منطق شرط‌ها، عملیات و فرم‌ها بدون تغییر؛ در viewport باریک شکست خط واکنش‌گرا مجاز است. بدون API، داده، قرارداد مشترک، Migration، Permission یا Dependency/Lockfile.
 - نتیجه: هر چهار CTA مستقیماً در یک نوار واحد پروفایل قرار گرفتند؛ در دسکتاپ یک‌ردیفه و در عرض موبایل wrap می‌شوند. تست‌های کامپوننت امور مشتریان ۴۲/۴۲، typecheck، ESLint هدفمند، Prettier و `git diff --check` موفق‌اند. Build و CI از طریق PR بررسی می‌شوند؛ build محلی اجرا نشد چون خروجی `.next` در سرویس Web فعال ۳۱۰۰ مشترک است.
 
-## DOCUMENTS-CONFIDENTIAL-CODE-0929 — PC-B — IN_PROGRESS
+## DOCUMENTS-CONFIDENTIAL-CODE-0929 — PC-B — READY_FOR_REVIEW
 
 - COMPUTER_ID=PC-B؛ شاخه `codex/pc-b-documents-confidential-code-0929` از `origin/develop@bb4209e0` در checkout مستقل و پیش از push با `origin/develop@18c09ab1` به‌روز شد. محدودهٔ رزرو: فرم بارگذاری اسناد، اختیاری‌شدن ارتباط پرونده در API/Repository، کنترل دسترسی کد محرمانگی در Documents API/Web/Contract، آزمون‌های امنیتی مستقیم و مدخل محدود اسناد وضعیت. مالک Documents در PC-B است؛ IAM فقط از قرارداد عمومی موجود مصرف می‌شود.
 - رفتار اسناد قدیمی برای سازگاری با دسترسی فعلی حفظ می‌شود؛ بارگذاری تازه با محرمانگی محرمانه کد شش‌رقمی اجباری دارد. کد با scrypt و salt یکتا هش می‌شود؛ API جزئیات/پیش‌نمایش/دانلود را با مجوز موقت متصل به نشست حفاظت و پس از پنج کد اشتباه برای ۱۵ دقیقه قفل می‌کند. ارتباط پرونده اختیاری است. اسناد مرکزی و Documents-owned Prisma/schema/migration نزد همین Work Item قفل‌اند؛ Migration Owner = PC-B/DOCUMENTS-CONFIDENTIAL-CODE-0929؛ قفل Dependency/Lockfile نمی‌گیرد. Migration Owner قبلیِ PC-A/TICKET-WEEKDAY-RETURN-WINDOW-0929 پس از ادغام PR #495 در develop آزاد شد. launcher worker-orchestrator (`.codex/bin/workers.cmd`) در checkout موجود نیست؛ بازبینی امنیتی مستقلِ فقط‌خواندنی برای ادغام هنوز لازم است.
+- نتیجه: commit `d008e1b6` به PR #496 پوش شد؛ چهار gate CI سبز هستند. Migration محلی پس از backup معتبر اعمال و runtime نسخهٔ `d008e1b6` روی پورت ۳۱۰۰ پاسخ ۲۰۰ داد. ادغام PR تا بازبینی امنیتی مستقل نگه داشته می‌شود.
 
 ## TICKET-WEEKDAY-RETURN-WINDOW-0929 — PC-A — READY_FOR_REVIEW
 
