@@ -141,4 +141,22 @@ describe('Nora Customer Affairs navigation', () => {
       /\.listToolbar \.subtabs button\s*\{[^}]*min-height:\s*40px;/,
     );
   });
+
+  it('contains report date filters in a full-width card', () => {
+    const source = readFileSync(
+      new URL('./customer-affairs-nora-workspace.tsx', import.meta.url),
+      'utf8',
+    );
+    const styles = readFileSync(
+      new URL('./customer-affairs-nora.module.css', import.meta.url),
+      'utf8',
+    );
+    expect(source).toMatch(
+      /<section\s+className=\{s\.reportFilters\}[\s\S]*?<CreatedDateFilter/,
+    );
+    expect(styles).toMatch(/\.reportFilters\s*\{[^}]*width:\s*100%;/);
+    expect(styles).toMatch(
+      /\.reportFilters\s*\{[^}]*border:\s*1px solid var\(--border\);/,
+    );
+  });
 });
