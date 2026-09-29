@@ -1,3 +1,9 @@
+## SEARCHABLE-DROPDOWNS-0929 — PC-A — READY_FOR_REVIEW
+
+- COMPUTER_ID=PC-A. User explicitly authorizes project-wide inline searchable reference dropdowns, six initial/matching results and subtle selection-field contrast. Reserve shared Web form-control/select components and CSS, reference-picker adapters and bounded consumer UI across modules, focused tests/docs. No API/data/schema/dependency changes. Existing original checkout edits to Sales/Ticket pickers preserved in place; implementation uses isolated worktree from latest develop. No overlapping current active UI owner found; old unrelated reservations retained. Central Web UI lock belongs to this item. Existing task workflow merge/local update authorization retained.
+
+- Central UI locks RELEASED with scoped commit. Browser fixture interaction/form verification, full Web lint/typecheck/build and regression checks passed; CI gates recorded in PR. Handoff: docs/tasks/SEARCHABLE-DROPDOWNS-0929.md. No migration/dependency changes.
+
 ## TICKET-MANAGEMENT-QA-0929 — PC-A — READY_FOR_REVIEW
 
 - COMPUTER_ID=PC-A; branch codex/pc-a-ticket-management-qa-0929 from origin/develop. User requests matching server/browser ticket counts and full create/edit/delete/status/repeat/hold verification. Reserve Ticket Catalog UI/model/API/controller/service/focused tests and bounded task/status docs; optional catalog source identity in existing Travel projection producer Ticket Catalog/consumer Web. Preserve other modules and original dirty checkout. Previous ticket scope locks released; old capacity reservation implemented/merged; no migration/dependency change. Owner’s existing merge/local-update authorization applies to this corrective follow-up. QA uses only isolated synthetic database/records.

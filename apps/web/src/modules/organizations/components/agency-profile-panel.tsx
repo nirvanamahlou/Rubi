@@ -1,4 +1,6 @@
 'use client';
+import { NativeSearchSelect } from '@/components/ui/native-search-select';
+
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { B2bAgencyProfileDetailsV1 } from '@nora/contracts';
 import { Button } from '@/components/ui/button';
@@ -92,7 +94,7 @@ export function AgencyProfilePanel({
           <label className="field">
             شعبه داخلی مسئول همکاری
             {branches.length > 1 ? (
-              <select
+              <NativeSearchSelect
                 className="input"
                 value={branchId}
                 onChange={(e) => setBranchId(e.target.value)}
@@ -102,7 +104,7 @@ export function AgencyProfilePanel({
                     {branch.name}
                   </option>
                 ))}
-              </select>
+              </NativeSearchSelect>
             ) : (
               <strong>{branches[0]?.name ?? 'در حال دریافت…'}</strong>
             )}
@@ -190,7 +192,7 @@ export function AgencyProfilePanel({
           >
             <label className="field">
               مسئول پیگیری آژانس (مدیر حساب)
-              <select
+              <NativeSearchSelect
                 className="input"
                 value={editor.manager}
                 onChange={(e) =>
@@ -203,7 +205,7 @@ export function AgencyProfilePanel({
                     {user.displayName}
                   </option>
                 ))}
-              </select>
+              </NativeSearchSelect>
             </label>
             <label className="field">
               ترتیب نمایش

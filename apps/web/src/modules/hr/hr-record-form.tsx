@@ -1,4 +1,6 @@
 'use client';
+import { NativeSearchSelect } from '@/components/ui/native-search-select';
+
 import { useRef, useState, type ReactNode } from 'react';
 import {
   getHrResource,
@@ -82,14 +84,17 @@ function HrNodePicker(props: HrRecordFormProps) {
   const picker = (
     <label className={ui.field}>
       <RequiredFieldLabel required>واحد سازمانی</RequiredFieldLabel>
-      <select value={unitId} onChange={(e) => setUnitId(e.target.value)}>
+      <NativeSearchSelect
+        value={unitId}
+        onChange={(e) => setUnitId(e.target.value)}
+      >
         <option value="">انتخاب واحد ثبت‌شده</option>
         {units.map((r) => (
           <option key={r.id} value={r.id}>
             {r.values[0]} · {valueOf(r, 'شعبه')}
           </option>
         ))}
-      </select>
+      </NativeSearchSelect>
     </label>
   );
   if (record)
@@ -396,7 +401,7 @@ function HrRecordFormFields({
           {nodePicker}
           <label className={ui.field}>
             <RequiredFieldLabel required>شرکت / شعبه</RequiredFieldLabel>
-            <select
+            <NativeSearchSelect
               disabled={Boolean(target.parent || (target.record && !isUnit))}
               value={companyId || branchId}
               onChange={(event) => {
@@ -414,12 +419,12 @@ function HrRecordFormFields({
                   {branch.name}
                 </option>
               ))}
-            </select>
+            </NativeSearchSelect>
           </label>
           {definition.employeeRequired ? (
             <label className={ui.field}>
               <RequiredFieldLabel required>کارمند</RequiredFieldLabel>
-              <select
+              <NativeSearchSelect
                 value={employeeId}
                 disabled={Boolean(
                   target.record ||
@@ -437,7 +442,7 @@ function HrRecordFormFields({
                     {employeeLabel(item)}
                   </option>
                 ))}
-              </select>
+              </NativeSearchSelect>
             </label>
           ) : null}
           {definition.parentResources.length ? (
@@ -447,7 +452,7 @@ function HrRecordFormFields({
               >
                 {parentFieldLabel(target.source.section, target.source.tab)}
               </RequiredFieldLabel>
-              <select
+              <NativeSearchSelect
                 disabled={Boolean(
                   target.parent ||
                   (target.record &&
@@ -483,7 +488,7 @@ function HrRecordFormFields({
                       : `${item.values[0]} · ${item.code}`}
                   </option>
                 ))}
-              </select>
+              </NativeSearchSelect>
               {missionExpense && !references.loading && !parents.length ? (
                 <span className={ui.muted}>
                   برای شرکت و کارمند انتخاب‌شده مأموریتی ثبت نشده است. شرکت یا

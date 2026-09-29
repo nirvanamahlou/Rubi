@@ -1,3 +1,7 @@
+# 2026-09-29 — SEARCHABLE-DROPDOWNS-0929 — PC-A
+
+Shared Web selection controls now search in the primary field, display six initial/matching results, preserve canonical form values and add subtle light/dark contrast. Master Data/Ticket/Marketing reference adapters retain scope and authorization. Browser synthetic interaction/form verification passed; no migration or operational data changes. See [handoff](tasks/SEARCHABLE-DROPDOWNS-0929.md).
+
 # 2026-09-29 — TICKET-MANAGEMENT-QA-0929 — PC-A
 
 Server-backed flight cards/counts and fresh-browser editing now match the managed list. Exact identity fixes duplicate-schedule actions; capacity reflects holds. Archive preserves fare/commission history. Synthetic lifecycle and HTTP QA pass; no migration or operational data changes. See [task handoff](tasks/TICKET-MANAGEMENT-QA-0929.md).

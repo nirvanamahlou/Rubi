@@ -1,4 +1,5 @@
 'use client';
+import { NativeSearchSelect } from '@/components/ui/native-search-select';
 
 import { useRef, useState, type FormEvent } from 'react';
 import {
@@ -483,7 +484,7 @@ function ScheduleFields({
         />
       </FormField>
       <FormField label="روز رسیدن" id={prefix + '-arrival-day'}>
-        <select
+        <NativeSearchSelect
           id={prefix + '-arrival-day'}
           className="h-11 w-full rounded-xl border bg-surface px-3"
           value={arrivalDay}
@@ -506,7 +507,7 @@ function ScheduleFields({
           {![0, 1, 2].includes(arrivalDay) ? (
             <option value={arrivalDay}>{arrivalDay} روز اختلاف</option>
           ) : null}
-        </select>
+        </NativeSearchSelect>
       </FormField>
       <p className="col-span-full text-xs leading-6 text-muted-foreground">
         تاریخ بلیط، تاریخ حرکت است. ساعت‌ها به وقت محلی مبدأ و مقصد هستند.

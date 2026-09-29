@@ -15,7 +15,7 @@ describe('Sales theme consistency', () => {
         ]}
       />,
     );
-    expect(html).toMatch(/<button[^>]*role="combobox"/);
+    expect(html).toMatch(/<input[^>]*role="combobox"/);
     expect(html).toContain('همه وضعیت‌های تسویه');
     expect(html).toContain('aria-label="وضعیت تسویه"');
     expect(html).toContain('rounded-xl');

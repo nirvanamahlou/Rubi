@@ -1,4 +1,5 @@
 'use client';
+import { NativeSearchSelect } from '@/components/ui/native-search-select';
 
 import { Info, PencilLine, Trash2 } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
@@ -600,7 +601,7 @@ export function OrganizationCatalogForm({
                   {field.label}
                 </RequiredFieldLabel>
                 {field.type === 'select' ? (
-                  <select
+                  <NativeSearchSelect
                     {...commonProps}
                     onChange={(event) => update(field.key, event.target.value)}
                     value={value[field.key]}
@@ -616,7 +617,7 @@ export function OrganizationCatalogForm({
                         {option}
                       </option>
                     ))}
-                  </select>
+                  </NativeSearchSelect>
                 ) : field.type === 'date' ? (
                   <DatePicker
                     {...commonProps}

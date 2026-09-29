@@ -1,4 +1,6 @@
 'use client';
+import { NativeSearchSelect } from '@/components/ui/native-search-select';
+
 import { useEffect, useState } from 'react';
 import type { DocumentListItemV1 } from '@nora/contracts';
 import { documentsApi } from '../documents/api/client';
@@ -74,7 +76,7 @@ export function HrArchiveDocumentPicker({
               setPage(1);
             }}
           />
-          <select
+          <NativeSearchSelect
             aria-label="سند آرشیوشده منابع انسانی"
             value={value.startsWith('document://') ? value : ''}
             disabled={!current?.documents}
@@ -90,7 +92,7 @@ export function HrArchiveDocumentPicker({
                 {d.title} · {d.archiveCode}
               </option>
             ))}
-          </select>
+          </NativeSearchSelect>
           {!search.trim() ? (
             <span role="status">
               برای نمایش اسناد، عنوان یا کد را جست‌وجو کنید.

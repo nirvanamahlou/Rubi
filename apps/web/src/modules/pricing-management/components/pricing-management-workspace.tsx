@@ -1,4 +1,5 @@
 'use client';
+import { NativeSearchSelect } from '@/components/ui/native-search-select';
 
 import type {
   IamPermissionCode,
@@ -305,7 +306,7 @@ export function PricingManagementWorkspace() {
             </label>
             <label className="text-xs font-bold">
               شعبه
-              <select
+              <NativeSearchSelect
                 className="mt-2 h-11 w-full rounded-xl border border-input bg-surface px-3 text-sm"
                 disabled={!session}
                 onChange={(event) =>
@@ -321,7 +322,7 @@ export function PricingManagementWorkspace() {
                     {branch.name}
                   </option>
                 ))}
-              </select>
+              </NativeSearchSelect>
             </label>
             <div className="flex gap-2">
               <Button
