@@ -9,6 +9,10 @@ const workspace = readFileSync(
   new URL('./customer-affairs-nora-workspace.tsx', import.meta.url),
   'utf8',
 );
+const recordOperations = readFileSync(
+  new URL('./record-operations.tsx', import.meta.url),
+  'utf8',
+);
 
 describe('simplified creation and row-list return', () => {
   it('removes source and queue controls while retaining valid internal intake defaults', () => {
@@ -19,7 +23,12 @@ describe('simplified creation and row-list return', () => {
     expect(leadForm).not.toContain('name="sourceReference"');
     expect(leadForm).not.toContain('name="queueCode"');
     expect(leadForm).not.toContain('label="صف مسئول"');
-    expect(leadForm).toContain("sourceReference: 'ثبت مستقیم در امور مشتریان'");
+    expect(leadForm).toContain(
+      'sourceReference: `manual-${crypto.randomUUID()}`',
+    );
+    expect(leadForm).toContain('sourceReference: identity.sourceReference');
+    expect(recordOperations).toContain("startsWith('manual-')");
+    expect(recordOperations).toContain('ثبت مستقیم در امور مشتریان');
     expect(leadForm).toContain("queueCode: 'customer-affairs-front-office'");
     expect(leadForm).toContain('name="specialPreferences"');
     expect(leadForm).toContain('grid items-start gap-4');
