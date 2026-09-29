@@ -131,8 +131,8 @@ describe('DocumentsRepository source scoping', () => {
     };
 
     await repository.list(query, ['branch-a'], ['GENERAL'], 'reader-a', false);
-    expect(count.mock.calls[0]?.[0].where.confidentiality).toEqual({
-      notIn: ['CONFIDENTIAL', 'RESTRICTED'],
+    expect(count.mock.calls[0]?.[0].where.AND).toContainEqual({
+      confidentiality: { notIn: ['CONFIDENTIAL', 'RESTRICTED'] },
     });
 
     await repository.list(query, ['branch-a'], ['GENERAL'], 'reader-a', true);
@@ -148,6 +148,72 @@ describe('DocumentsRepository source scoping', () => {
     expect(denied).toEqual({ rows: [], total: 0 });
     expect(count).toHaveBeenCalledTimes(2);
   });
+
+  it.each([
+    ['no filters', {}],
+    ['search', { search: 'agreement' }],
+    ['owner', { ownerUserId: 'another-user' }],
+    [
+      'source',
+      {
+        sourceModule: 'SALES',
+        sourceEntityType: 'Contract',
+        sourceEntityId: 'contract-a',
+      },
+    ],
+    ['category', { categoryId: 'category-a' }],
+    ['type', { typeCode: 'CONTRACT' }],
+    ['branch', { branchId: 'branch-a' }],
+    ['archive status', { archiveStatus: 'ARCHIVED' }],
+    ['scan status', { scanStatus: 'CLEAN' }],
+    ['validity', { validity: 'EXPIRED' }],
+    ['completion', { completion: 'INCOMPLETE' }],
+    ['attention', { attention: 'INCOMPLETE_OR_EXPIRED' }],
+    ['created range', { createdFrom: '2026-09-01', createdTo: '2026-09-30' }],
+    ['owned personal view', { personalView: 'OWNED' }],
+    ['uploaded personal view', { personalView: 'UPLOADED' }],
+    ['recently viewed personal view', { personalView: 'RECENTLY_VIEWED' }],
+    ['public confidentiality', { confidentiality: 'PUBLIC' }],
+    ['internal confidentiality', { confidentiality: 'INTERNAL' }],
+  ] as const)(
+    'always excludes sensitive documents for %s',
+    async (_name, filter) => {
+      const count = vi.fn().mockResolvedValue(0);
+      const findMany = vi.fn().mockResolvedValue([]);
+      const repository = new DocumentsRepository(
+        {
+          client: {
+            document: { count, findMany },
+            $transaction: (operations: Promise<unknown>[]) =>
+              Promise.all(operations),
+          },
+        } as unknown as DatabaseService,
+        {} as NotificationsService,
+      );
+      const query: Parameters<DocumentsRepository['list']>[0] = {
+        page: 1,
+        pageSize: 25,
+        sortBy: 'updatedAt',
+        sortDirection: 'desc',
+        ...filter,
+      };
+
+      await repository.list(
+        query,
+        ['branch-a', 'branch-b'],
+        ['GENERAL'],
+        'reader-a',
+        false,
+      );
+
+      const countWhere = count.mock.calls[0]?.[0].where;
+      const listWhere = findMany.mock.calls[0]?.[0].where;
+      expect(countWhere).toBe(listWhere);
+      expect(countWhere.AND).toContainEqual({
+        confidentiality: { notIn: ['CONFIDENTIAL', 'RESTRICTED'] },
+      });
+    },
+  );
 
   it('writes the metadata-change notification in the same transaction', async () => {
     const transaction = {

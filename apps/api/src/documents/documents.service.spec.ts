@@ -453,7 +453,10 @@ describe('DocumentsService security and persistence flow', () => {
     expect(detailed.data.versions[0]?.createdBy.id).toBe(
       '00000000-0000-0000-0000-000000000000',
     );
-    expect(detailed.data.relations[0]?.displayLabel).toBe('پرونده محرمانه');
+    expect(detailed.data.sourceModule).toBe('');
+    expect(detailed.data.sourceEntityType).toBeNull();
+    expect(detailed.data.sourceEntityIdMasked).toBeNull();
+    expect(detailed.data.relations).toEqual([]);
   });
 
   it('masks older feedback attachments even when stored as internal', async () => {

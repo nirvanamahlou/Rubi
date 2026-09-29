@@ -350,14 +350,16 @@ export class DocumentsRepository {
           }
         : {}),
     };
-    if (
-      !includeSensitive &&
-      (query.search ||
-        (query.ownerUserId && query.ownerUserId !== actorUserId) ||
-        query.sourceModule) &&
-      !query.confidentiality
-    ) {
-      where.confidentiality = { notIn: ['CONFIDENTIAL', 'RESTRICTED'] };
+    if (!includeSensitive) {
+      const existingConditions = where.AND
+        ? Array.isArray(where.AND)
+          ? where.AND
+          : [where.AND]
+        : [];
+      where.AND = [
+        ...existingConditions,
+        { confidentiality: { notIn: ['CONFIDENTIAL', 'RESTRICTED'] } },
+      ];
     }
     const direction = query.sortDirection;
     const orderBy: Prisma.DocumentOrderByWithRelationInput =

@@ -1166,25 +1166,26 @@ export class DocumentsService {
     const revealMetadata = canRevealDocumentMetadata(row, actor);
     return {
       ...base,
-      sourceModule: row.sourceModule,
-      sourceEntityType: row.sourceEntityType,
+      sourceModule: revealMetadata ? row.sourceModule : '',
+      sourceEntityType: revealMetadata ? row.sourceEntityType : null,
       sourceEntityIdMasked: revealMetadata
         ? maskReference(row.sourceEntityId)
-        : '••••',
+        : null,
       legalHoldActive: row.legalHoldActive,
       versions: row.versions.map((version) =>
         mapVersion(version, revealMetadata, revealMetadata),
       ),
-      relations: row.relations.map((relation) => ({
-        id: relation.id,
-        relationType: relation.relationType,
-        sourceModule: relation.sourceModule,
-        sourceEntityType: relation.sourceEntityType,
-        sourceEntityIdMasked: revealMetadata
-          ? (maskReference(relation.sourceEntityId) ?? '••••')
-          : '••••',
-        displayLabel: revealMetadata ? relation.displayLabel : 'پرونده محرمانه',
-      })),
+      relations: revealMetadata
+        ? row.relations.map((relation) => ({
+            id: relation.id,
+            relationType: relation.relationType,
+            sourceModule: relation.sourceModule,
+            sourceEntityType: relation.sourceEntityType,
+            sourceEntityIdMasked:
+              maskReference(relation.sourceEntityId) ?? '••••',
+            displayLabel: relation.displayLabel,
+          }))
+        : [],
       capabilities: {
         ...base.capabilities,
         download:

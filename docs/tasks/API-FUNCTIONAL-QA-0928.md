@@ -9,7 +9,8 @@
 1. Repeating the same feedback submission ID and payload must return its committed receipt, including when two requests race. A different payload/owner with the same ID remains a conflict. Only the winning transaction creates notifications.
 2. Documents list/detail must not disclose owner, creator, original filename, download filename or version note for sensitive documents without sensitive-read permission. An anonymous Workbench feedback attachment must keep these fields hidden from other users even if they hold sensitive-read permission.
 3. All Workbench feedback attachments, including older records with an inconsistent confidentiality value, are excluded from other users' general Documents catalogue and audit trail. Other users need sensitive-file permissions to preview/download even an older misclassified attachment, and response filenames are neutral. Metadata editing cannot change a feedback attachment's anonymity marker.
-4. Feedback creation validates that every attached document's stored confidentiality matches the submission anonymity flag; a mismatched upload is rejected before persistence. Filtered Documents queries cannot use owner, source or text fields to infer sensitive metadata through result counts.
+4. Feedback creation validates that every attached document's stored confidentiality matches the submission anonymity flag; a mismatched upload is rejected before persistence. For callers without `documents.sensitive.read`, every Documents list row and every aggregate derived from its predicate (including count and pagination totals) excludes CONFIDENTIAL and RESTRICTED documents for every supported filter combination. Explicit sensitive filters fail closed with zero results. The anonymous WorkbenchFeedback owner-only catalogue exclusion remains independent.
+5. For any non-owner viewing an anonymous WorkbenchFeedback attachment, detail responses do not disclose source provenance or relations, regardless of sensitive-read permission. Redacted detail uses empty `sourceModule`, null source entity fields and an empty relations array; authorized owners retain normal provenance.
 
 ## Verification
 
@@ -17,6 +18,7 @@
 - PostgreSQL form suites attempted only against disposable PostgreSQL 18 container `nora-test-apiqa-0928` on loopback port 55439. Both parallel and serial attempts timed out before assertions in the existing Node-to-Docker CLI stdin helper. An independent reproduction confirmed the helper issue; these suites cannot be reported as passed.
 - Direct PostgreSQL smoke on a separate disposable database applied all 100 Prisma migrations, then created meal service, facility, and train type form records through `MasterDataService`; the stored normalized meal status/code, train model, and meal audit event were checked. Seed script timed out starting a transaction, but was not required for this smoke.
 - No schema, migration, shared external contract, dependency/lockfile, operational data or live runtime changes.
+- Privacy follow-up after independent review: 18 list-filter variants verify the same unconditional visibility predicate reaches both `count` and `findMany`; detail tests verify source provenance and relations are hidden for non-owners. The focused repository/service suite passes 56 tests, and API lint, typecheck and production build pass.
 
 ## Limit
 
