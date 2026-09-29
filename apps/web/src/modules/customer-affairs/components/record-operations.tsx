@@ -205,7 +205,7 @@ export function RecordOperations({
           <p>
             منبع:{' '}
             {detail.sourceReference?.startsWith('manual-')
-              ? 'ثبت دستی قدیمی؛ منبع تکمیل نشده'
+              ? 'ثبت مستقیم در امور مشتریان'
               : detail.sourceReference || 'نامشخص'}
           </p>
           <p>

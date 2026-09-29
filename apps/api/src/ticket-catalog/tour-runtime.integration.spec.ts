@@ -25,7 +25,12 @@ describe.skipIf(!process.env.TRAVEL_TEST_DATABASE_URL)(
       assertTourReferences: vi.fn(async () => {}),
     } as unknown as MasterTravelDirectory;
     const procurement = new ProcurementPublicService(database);
-    const service = new TourPublicService(database, references, undefined, procurement);
+    const service = new TourPublicService(
+      database,
+      references,
+      undefined,
+      procurement,
+    );
     const tickets = new TicketPublicService(database, procurement);
     const branchId = randomUUID();
     const actor: AuthenticatedActor = {
@@ -96,11 +101,42 @@ describe.skipIf(!process.env.TRAVEL_TEST_DATABASE_URL)(
         (await service.packages({ ...actor, branchIds: [randomUUID()] })).data,
       ).toEqual([]);
       expect(references.assertTourReferences).toHaveBeenCalled();
+      const revised = await service.updatePackage(
+        first.data.id,
+        {
+          ...definition,
+          name: 'Updated synthetic tour',
+          expectedVersion: first.data.version,
+        },
+        actor,
+        branchId,
+      );
+      expect(revised.data.version).toBe(first.data.version + 1);
+      await expect(
+        service.deletePackage(
+          revised.data.id,
+          { expectedVersion: revised.data.version },
+          actor,
+          branchId,
+        ),
+      ).resolves.toEqual({ data: { id: revised.data.id, deleted: true } });
+      expect((await service.packages(actor)).data).not.toContainEqual(
+        expect.objectContaining({ id: revised.data.id }),
+      );
     });
 
     it('tour and standalone reservations cannot oversell the same offers; repetition preserves old stock', async () => {
+      const salesActor: AuthenticatedActor = {
+        ...actor,
+        permissions: ['ticket_catalog.tours.manage'],
+      };
       const pack = (
-        await service.createPackage(definition, actor, branchId, randomUUID())
+        await service.createPackage(
+          definition,
+          salesActor,
+          branchId,
+          randomUUID(),
+        )
       ).data;
       const publish = async (back: boolean, day: string) =>
         (
@@ -133,9 +169,26 @@ describe.skipIf(!process.env.TRAVEL_TEST_DATABASE_URL)(
         returnOfferId,
       };
       const key = randomUUID();
-      const tour = (await service.createDeparture(input, actor, branchId, key))
-        .data;
+      const tour = (
+        await service.createDeparture(input, salesActor, branchId, key)
+      ).data;
       expect(tour.remainingCapacity).toBe(2);
+      await expect(
+        service.deletePackage(
+          pack.id,
+          { expectedVersion: pack.version },
+          salesActor,
+          branchId,
+        ),
+      ).rejects.toThrow('برای حفظ سوابق قابل حذف نیست');
+      await expect(
+        service.deletePackage(
+          pack.id,
+          { expectedVersion: pack.version },
+          salesActor,
+          branchId,
+        ),
+      ).rejects.toThrow('برای حفظ سوابق قابل حذف نیست');
       const concurrentKey = randomUUID();
       const replays = await Promise.all([
         service.createDeparture(input, actor, branchId, concurrentKey),
@@ -202,7 +255,8 @@ describe.skipIf(!process.env.TRAVEL_TEST_DATABASE_URL)(
         ),
       ).rejects.toThrow();
       expect(
-        (await service.createDeparture(input, actor, branchId, key)).data.id,
+        (await service.createDeparture(input, salesActor, branchId, key)).data
+          .id,
       ).toBe(tour.id);
       await expect(
         service.createDeparture(

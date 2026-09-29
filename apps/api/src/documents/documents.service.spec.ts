@@ -5,6 +5,7 @@ import {
   BadRequestException,
   ConflictException,
   ForbiddenException,
+  NotFoundException,
   UnsupportedMediaTypeException,
 } from '@nestjs/common';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -144,6 +145,8 @@ describe('DocumentsService security and persistence flow', () => {
     createAccessGrant: vi.fn(),
     consumeAccessGrant: vi.fn(),
     audit: vi.fn(),
+    favoriteDocuments: vi.fn(),
+    setFavorite: vi.fn(),
   };
   const storage = {
     putQuarantined: vi.fn(),
@@ -446,11 +449,180 @@ describe('DocumentsService security and persistence flow', () => {
       [branchId],
       ['GENERAL', 'SALES'],
       actor.userId,
+      false,
     );
     expect(result.data[0]).toMatchObject({
       title: 'سند محرمانه ••••••',
       description: null,
+      owner: {
+        id: '00000000-0000-0000-0000-000000000000',
+        displayName: 'محرمانه',
+      },
+      currentVersion: {
+        originalFileName: 'سند محرمانه',
+        safeDownloadName: 'سند محرمانه',
+        createdBy: { id: '00000000-0000-0000-0000-000000000000' },
+      },
     });
+  });
+
+  it('keeps anonymous feedback attachment identity private even from a sensitive document reader', async () => {
+    const attachment = {
+      ...row({ confidentiality: 'RESTRICTED', domain: 'GENERAL' }),
+      sourceModule: 'WORKBENCH',
+      sourceEntityType: 'WorkbenchFeedback',
+      ownerUserId: '99999999-9999-4999-8999-999999999999',
+      owner: {
+        id: '99999999-9999-4999-8999-999999999999',
+        displayName: 'فرستنده ناشناس',
+      },
+    } as DocumentDetailRow;
+    const reader: AuthenticatedActor = {
+      ...actor,
+      permissions: [...actor.permissions, 'documents.sensitive.read'],
+    };
+    repository.list.mockResolvedValue({ rows: [attachment], total: 1 });
+    repository.findDetail.mockResolvedValue(attachment);
+    repository.appendAudit.mockResolvedValue({});
+
+    const listed = await service.list({ page: 1, pageSize: 25 }, reader);
+    const detailed = await service.detail(attachment.id, reader, {});
+
+    for (const item of [listed.data[0]!, detailed.data]) {
+      expect(item.owner.id).toBe('00000000-0000-0000-0000-000000000000');
+      expect(item.currentVersion.originalFileName).toBe('سند محرمانه');
+      expect(item.currentVersion.createdBy.id).toBe(
+        '00000000-0000-0000-0000-000000000000',
+      );
+    }
+    expect(detailed.data.versions[0]?.safeDownloadName).toBe('سند محرمانه');
+    expect(detailed.data.versions[0]?.createdBy.id).toBe(
+      '00000000-0000-0000-0000-000000000000',
+    );
+    expect(detailed.data.sourceModule).toBe('');
+    expect(detailed.data.sourceEntityType).toBeNull();
+    expect(detailed.data.sourceEntityIdMasked).toBeNull();
+    expect(detailed.data.relations).toEqual([]);
+  });
+
+  it('masks older feedback attachments even when stored as internal', async () => {
+    const attachment = {
+      ...row({
+        confidentiality: 'INTERNAL',
+        domain: 'GENERAL',
+        mimeType: 'image/jpeg',
+        scanStatus: 'CLEAN',
+      }),
+      sourceModule: 'WORKBENCH',
+      sourceEntityType: 'WorkbenchFeedback',
+      ownerUserId: '99999999-9999-4999-8999-999999999999',
+    } as DocumentDetailRow;
+    repository.findDetail.mockResolvedValue(attachment);
+    repository.appendAudit.mockResolvedValue({});
+
+    const result = await service.detail(attachment.id, actor, {});
+
+    expect(result.data.owner.id).toBe('00000000-0000-0000-0000-000000000000');
+    expect(result.data.currentVersion.originalFileName).toBe('سند محرمانه');
+
+    const ordinaryReader: AuthenticatedActor = {
+      ...actor,
+      permissions: [
+        ...actor.permissions,
+        'documents.file.read',
+        'documents.download',
+      ],
+    };
+    await expect(
+      service.preview(attachment.id, ordinaryReader, {}),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    await expect(
+      service.download(attachment.id, ordinaryReader, {}),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    expect(storage.openQuarantined).not.toHaveBeenCalled();
+  });
+
+  it('does not expose an anonymous attachment filename in file responses', async () => {
+    const attachment = {
+      ...row({
+        confidentiality: 'RESTRICTED',
+        domain: 'GENERAL',
+        mimeType: 'image/jpeg',
+        scanStatus: 'CLEAN',
+      }),
+      sourceModule: 'WORKBENCH',
+      sourceEntityType: 'WorkbenchFeedback',
+      ownerUserId: '99999999-9999-4999-8999-999999999999',
+    } as DocumentDetailRow;
+    const reader: AuthenticatedActor = {
+      ...actor,
+      permissions: [
+        ...actor.permissions,
+        'documents.file.read',
+        'documents.download',
+        'documents.sensitive.read',
+        'documents.sensitive.download',
+      ],
+    };
+    repository.findDetail.mockResolvedValue(attachment);
+    repository.appendAudit.mockResolvedValue({});
+    storage.openQuarantined.mockResolvedValue(
+      Readable.from(Buffer.from('test')),
+    );
+
+    const preview = await service.preview(attachment.id, reader, {
+      sensitiveReason: 'بررسی پرونده',
+    });
+    const download = await service.download(attachment.id, reader, {
+      sensitiveReason: 'بررسی پرونده',
+    });
+
+    expect(preview.fileName).toBe('protected-file.jpg');
+    expect(download.fileName).toBe('protected-file.jpg');
+  });
+
+  it('does not let another user open an anonymous feedback attachment audit trail', async () => {
+    const attachment = {
+      ...row({ confidentiality: 'RESTRICTED', domain: 'GENERAL' }),
+      sourceModule: 'WORKBENCH',
+      sourceEntityType: 'WorkbenchFeedback',
+      ownerUserId: '99999999-9999-4999-8999-999999999999',
+    } as DocumentDetailRow;
+    repository.findDetail.mockResolvedValue(attachment);
+    repository.audit.mockResolvedValue([]);
+
+    await expect(
+      service.audit(attachment.id, {
+        ...actor,
+        permissions: [...actor.permissions, 'documents.audit.read'],
+      }),
+    ).rejects.toBeInstanceOf(NotFoundException);
+    expect(repository.audit).not.toHaveBeenCalled();
+  });
+
+  it('does not allow document metadata edits to remove feedback anonymity', async () => {
+    const attachment = {
+      ...row({ confidentiality: 'RESTRICTED', domain: 'GENERAL' }),
+      sourceModule: 'WORKBENCH',
+      sourceEntityType: 'WorkbenchFeedback',
+    } as DocumentDetailRow;
+    repository.findDetail.mockResolvedValue(attachment);
+
+    await expect(
+      service.update(
+        attachment.id,
+        {
+          version: 1,
+          title: 'new title',
+          categoryId: attachment.categoryId,
+          ownerUserId: attachment.ownerUserId,
+          confidentiality: 'INTERNAL',
+        } as never,
+        actor,
+        {},
+      ),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    expect(repository.updateMetadata).not.toHaveBeenCalled();
   });
 
   it('normalizes a complete source reference before applying branch and domain scope', async () => {
@@ -474,6 +646,7 @@ describe('DocumentsService security and persistence flow', () => {
       [branchId],
       ['GENERAL', 'SALES'],
       actor.userId,
+      false,
     );
   });
 
@@ -576,6 +749,122 @@ describe('DocumentsService security and persistence flow', () => {
 
     expect(denied.data.capabilities.viewFile).toBe(false);
     expect(allowed.data.capabilities.viewFile).toBe(true);
+  });
+
+  it('uses a visibility-scoped lookup for sensitive details', async () => {
+    repository.findDetail.mockResolvedValue(null);
+
+    await expect(service.detail(row().id, actor, {})).rejects.toBeInstanceOf(
+      NotFoundException,
+    );
+
+    expect(repository.findDetail).toHaveBeenCalledWith(
+      row().id,
+      actor.branchIds,
+      false,
+      actor.userId,
+    );
+  });
+
+  it('passes sensitive-read visibility to favorites and blocks favoriting a hidden ID', async () => {
+    repository.findDetail.mockResolvedValue(null);
+
+    await expect(
+      service.setFavorite(row().id, true, actor),
+    ).rejects.toBeInstanceOf(NotFoundException);
+
+    expect(repository.findDetail).toHaveBeenCalledWith(
+      row().id,
+      actor.branchIds,
+      false,
+      actor.userId,
+    );
+    expect(repository.setFavorite).not.toHaveBeenCalled();
+
+    repository.favoriteDocuments.mockResolvedValue([]);
+    await service.favorites(actor);
+    expect(repository.favoriteDocuments).toHaveBeenCalledWith(
+      actor.userId,
+      actor.branchIds,
+      ['GENERAL', 'SALES'],
+      false,
+      actor.userId,
+    );
+  });
+
+  it('scopes ID-based file, audit, and mutation routes to the actor visibility policy', async () => {
+    const protectedActor: AuthenticatedActor = {
+      ...actor,
+      permissions: [
+        ...actor.permissions,
+        'documents.metadata.update',
+        'documents.delete',
+        'documents.restore',
+        'documents.audit.read',
+        'documents.file.read',
+        'documents.download',
+      ],
+    };
+    const documentId = row().id;
+    const actions: Array<[string, () => Promise<unknown>]> = [
+      [
+        'metadata update',
+        () => service.update(documentId, {} as never, protectedActor, {}),
+      ],
+      [
+        'archive',
+        () => service.archive(documentId, {} as never, protectedActor, {}),
+      ],
+      [
+        'restore',
+        () => service.restore(documentId, {} as never, protectedActor, {}),
+      ],
+      [
+        'permanent delete',
+        () =>
+          service.permanentlyDelete(documentId, {} as never, protectedActor),
+      ],
+      ['audit', () => service.audit(documentId, protectedActor)],
+      [
+        'access grant',
+        () =>
+          service.createAccessGrant(
+            documentId,
+            {} as never,
+            protectedActor,
+            {},
+          ),
+      ],
+      ['download', () => service.download(documentId, protectedActor, {})],
+      ['preview', () => service.preview(documentId, protectedActor, {})],
+    ];
+
+    for (const [name, action] of actions) {
+      vi.clearAllMocks();
+      repository.findDetail.mockResolvedValue(null);
+      await expect(action(), name).rejects.toBeInstanceOf(NotFoundException);
+      expect(repository.findDetail).toHaveBeenCalledWith(
+        documentId,
+        protectedActor.branchIds,
+        false,
+        protectedActor.userId,
+      );
+    }
+
+    repository.findDetails.mockResolvedValue([]);
+    await expect(
+      service.bulk(
+        { action: 'ARCHIVE', ids: [documentId], reason: 'review' } as never,
+        protectedActor,
+        {},
+      ),
+    ).rejects.toBeInstanceOf(NotFoundException);
+    expect(repository.findDetails).toHaveBeenCalledWith(
+      [documentId],
+      protectedActor.branchIds,
+      false,
+      protectedActor.userId,
+    );
   });
 
   it('exchanges a valid TOTP code for a short-lived hashed one-time grant', async () => {

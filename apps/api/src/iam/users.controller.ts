@@ -30,6 +30,11 @@ export class UsersController {
   @Get() @RequirePermissions('iam.users.read') list() {
     return this.iam.listUsers();
   }
+  @Get('access-options')
+  @RequirePermissions('iam.users.read')
+  options(@Req() req: AuthenticatedRequest) {
+    return this.iam.listUserAccessOptions(req.actor);
+  }
   @Post()
   @ApiBody({ type: CreateUserDto })
   @RequirePermissions('iam.users.manage')

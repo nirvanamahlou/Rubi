@@ -406,6 +406,12 @@ export function TourWorkspace({
         loading={loading}
         busy={busy || loading}
         onEdit={showEditor}
+        onDelete={(item) =>
+          void run(async () => {
+            await toursApi.deletePackage(item.id, item.version, item.branchId);
+            setNotice('تور «' + item.name + '» حذف شد.');
+          })
+        }
         onSelect={selectTour}
         onRepeat={repeatTour}
         definitionMode={mode === 'definition'}

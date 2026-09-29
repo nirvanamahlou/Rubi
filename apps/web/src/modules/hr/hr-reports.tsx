@@ -1,4 +1,6 @@
 'use client';
+import { NativeSearchSelect } from '@/components/ui/native-search-select';
+
 import { useEffect, useState } from 'react';
 import type { HrRecordDto } from '@nora/contracts';
 import { allHrRecords, type HrStore } from './hr-store';
@@ -84,7 +86,7 @@ export function HrReports({ store }: { store: HrStore }) {
         <div className={ui.filters}>
           <label>
             موضوع گزارش
-            <select
+            <NativeSearchSelect
               value={topic}
               onChange={(event) => setTopic(event.target.value)}
             >
@@ -97,7 +99,7 @@ export function HrReports({ store }: { store: HrStore }) {
                   {item.label}
                 </option>
               ))}
-            </select>
+            </NativeSearchSelect>
           </label>
         </div>
         {error ? <p role="alert">{error}</p> : null}

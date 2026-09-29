@@ -48,7 +48,7 @@ export function StatusPanel() {
     >
       <div className="space-y-6">
         <div className="flex items-center justify-between gap-4">
-          <Link className="flex items-center gap-3" href="/dashboard">
+          <Link className="flex items-center gap-3" href="/workbench">
             <span className="grid size-11 place-items-center rounded-2xl bg-primary text-lg font-black text-primary-foreground">
               ر
             </span>

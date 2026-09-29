@@ -1,4 +1,6 @@
 'use client';
+import { NativeSearchSelect } from '@/components/ui/native-search-select';
+
 import { useEffect, useState } from 'react';
 import type {
   B2bAgreementTermsV1,
@@ -146,7 +148,7 @@ export function AgreementTermsEditor({
   ) => (
     <label className="field">
       <span>{label}</span>
-      <select
+      <NativeSearchSelect
         className="input"
         value={current}
         onChange={(e) => change(e.target.value as T)}
@@ -156,7 +158,7 @@ export function AgreementTermsEditor({
             {title}
           </option>
         ))}
-      </select>
+      </NativeSearchSelect>
     </label>
   );
   const date = (
@@ -200,7 +202,7 @@ export function AgreementTermsEditor({
           </div>
         ) : null
       ) : organizationId ? (
-        <select
+        <NativeSearchSelect
           className="input"
           value={id ?? ''}
           aria-label={label}
@@ -229,7 +231,7 @@ export function AgreementTermsEditor({
                 : ''}
             </option>
           ))}
-        </select>
+        </NativeSearchSelect>
       ) : null}
       {branchId &&
       permissions.includes('documents.upload') &&

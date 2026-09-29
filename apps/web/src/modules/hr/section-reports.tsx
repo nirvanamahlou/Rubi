@@ -1,4 +1,6 @@
 'use client';
+import { NativeSearchSelect } from '@/components/ui/native-search-select';
+
 import { useState, type ReactNode } from 'react';
 import { ChevronDown, Download, FileChartColumn } from 'lucide-react';
 import type { HrPreviewDataset } from './hr-preview-data';
@@ -68,7 +70,7 @@ export function SectionReports({
             <div className={ui.filters}>
               <label>
                 موضوع گزارش
-                <select
+                <NativeSearchSelect
                   value={selectedId}
                   onChange={(event) => setSelected(event.target.value)}
                 >
@@ -78,7 +80,7 @@ export function SectionReports({
                       {report.title}
                     </option>
                   ))}
-                </select>
+                </NativeSearchSelect>
               </label>
               <label>
                 جست‌وجو در گزارش

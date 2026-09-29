@@ -84,6 +84,21 @@ describe('tour details persistence boundary', () => {
       definition: input,
     });
   });
+  it('allows the Sales-only tour permission to create definitions without general ticket management', async () => {
+    const { service, upsert } = setup();
+    const salesActor: AuthenticatedActor = {
+      ...actor,
+      permissions: ['ticket_catalog.tours.manage'],
+    };
+    const result = await service.createPackage(
+      input,
+      salesActor,
+      id,
+      'sales-create',
+    );
+    expect(result.data.name).toBe('Synthetic tour');
+    expect(upsert).toHaveBeenCalledTimes(1);
+  });
   it('uses public Documents validation before saving an image reference', async () => {
     const { service, detail } = setup();
     await service.createPackage(

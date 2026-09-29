@@ -1,3 +1,4 @@
+import { ReservationOperationInterceptor } from './reservation-operation.interceptor';
 import { ParseUUIDPipe } from '@nestjs/common';
 import { SalesOperationalAmendmentModule } from '../sales/sales-operational-amendment.module';
 import { CustomersModule } from '../customers/customers.module';
@@ -40,6 +41,7 @@ import {
   Req,
   Query,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import type { ReservationArrangementUpdateV1 } from '@nora/contracts';
 import { IamModule } from '../iam/iam.module';
@@ -57,6 +59,7 @@ import {
 
 @Controller('reservations/requests')
 @UseGuards(AuthGuard)
+@UseInterceptors(ReservationOperationInterceptor)
 export class ReservationRequestsController {
   constructor(
     @Inject(ReservationsPublicService)
@@ -92,6 +95,52 @@ export class ReservationRequestsController {
           supplierPurchases: await this.delivery.supplierPurchaseGate(row.id),
         })),
       ),
+    };
+  }
+
+  @Get(':id/operation-summary')
+  @Header('Cache-Control', 'private, no-store')
+  async operationSummary(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    if (!req.actor.permissions.includes('reservations.read'))
+      throw new ForbiddenException();
+    const intake = await this.workflow.detail(id, req.actor.branchIds);
+    const [delivery, recorded, historical] = await Promise.all([
+      this.delivery.read(id),
+      this.iam.latestReservationOperation(id, intake.branchId, req.actor),
+      this.service.lastRecordedOperation(id, req.actor.branchIds),
+    ]);
+    const latest = [recorded, historical]
+      .filter((row) => row !== null)
+      .sort((a, b) => b.occurredAt.getTime() - a.occurredAt.getTime())[0];
+    const ids = [delivery.updatedByUserId, latest?.actorUserId].filter(
+      (value): value is string => typeof value === 'string',
+    );
+    const names = await this.iam.reservationResponsibilityNames(
+      ids,
+      intake.branchId,
+      req.actor,
+    );
+    return {
+      data: {
+        delivery: {
+          approved: delivery.approved,
+          updatedAt: delivery.updatedAt,
+          actorName: delivery.updatedByUserId
+            ? (names.get(delivery.updatedByUserId) ?? null)
+            : null,
+        },
+        lastOperation: latest
+          ? {
+              occurredAt: latest.occurredAt.toISOString(),
+              actorName: latest.actorUserId
+                ? (names.get(latest.actorUserId) ?? null)
+                : null,
+            }
+          : null,
+      },
     };
   }
   @Get(':id/workflow')
@@ -301,6 +350,7 @@ export class ReservationRequestsController {
   ],
   providers: [
     AuthGuard,
+    ReservationOperationInterceptor,
     PermissionGuard,
     ReservationPassengerFilesService,
     TravelWorkflowService,

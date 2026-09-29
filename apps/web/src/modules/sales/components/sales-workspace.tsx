@@ -16,7 +16,7 @@ import {
   LoaderCircle,
   type LucideIcon,
 } from 'lucide-react';
-import Link from 'next/link';
+import Link from '@/components/access-link';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import type {
@@ -296,6 +296,7 @@ export function SalesWorkspace() {
           <Button
             type="button"
             variant="outline"
+            permission="sales.export"
             disabled={loading || !!error || exporting || total === 0}
             onClick={() => void downloadExcel()}
             title="خروجی همه نتایج فیلترشده، نه فقط این صفحه"
@@ -591,6 +592,7 @@ export function SalesWorkspace() {
                     <td className="px-4 py-3 last:pl-5">
                       <div className="grid min-w-72 grid-cols-3 gap-1.5">
                         <Button
+                          permission="sales.payments.read"
                           size="sm"
                           variant="outline"
                           className="h-8 min-w-0 bg-surface px-2 text-xs shadow-sm"

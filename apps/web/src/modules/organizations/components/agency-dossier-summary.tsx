@@ -1,4 +1,6 @@
 'use client';
+import { NativeSearchSelect } from '@/components/ui/native-search-select';
+
 import { useEffect, useState } from 'react';
 import type { B2bCooperationRole } from '@nora/contracts';
 import { masterDataApi } from '@/modules/master-data/api/client';
@@ -98,7 +100,7 @@ export function AgencyDossierSummary({
         </div>
         <label className="field">
           <span>شعبه خلاصه پرونده</span>
-          <select
+          <NativeSearchSelect
             className="input"
             value={branchId}
             onChange={(event) => {
@@ -111,7 +113,7 @@ export function AgencyDossierSummary({
                 {branch.name}
               </option>
             ))}
-          </select>
+          </NativeSearchSelect>
         </label>
       </header>
       <div className="panel-body grid gap-3 sm:grid-cols-2 lg:grid-cols-4">

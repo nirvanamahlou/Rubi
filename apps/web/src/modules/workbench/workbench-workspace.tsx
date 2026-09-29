@@ -22,7 +22,7 @@ import {
   StickyNote,
   UserRound,
 } from 'lucide-react';
-import Link from 'next/link';
+import Link from '@/components/access-link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {

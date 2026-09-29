@@ -24,8 +24,8 @@ describe('system management access', () => {
     expect(systemPageSource).not.toContain('ModuleFoundationWorkspace');
   });
 
-  it('retains user management navigation without the Legal Entity callout', () => {
-    expect(workspaceSource).toContain("href: '/users'");
+  it('exposes user management inside system navigation without the Legal Entity callout', () => {
+    expect(workspaceSource).toContain("href: '/system/users'");
     expect(workspaceSource).not.toContain("href: '/system/legal-entities'");
     expect(workspaceSource).not.toContain("owner: 'Legal Entity'");
     expect(workspaceSource).not.toContain(

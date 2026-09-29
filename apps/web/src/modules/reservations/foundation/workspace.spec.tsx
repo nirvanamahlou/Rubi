@@ -277,6 +277,8 @@ it('protects operation and audit projections independently of visible customer r
     />,
   );
   expect(allowed).toContain('Test audit event');
+  expect(allowed).not.toContain('عملیات قرارداد انتخاب‌شده');
+  expect(allowed).not.toContain('قرارداد انتخاب‌شده');
 });
 
 it('renders workflow colors with readable statuses and accessible arrival alert', () => {

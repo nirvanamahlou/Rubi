@@ -164,7 +164,7 @@ describe('Rendered ticket UI', () => {
     expect(html).toContain('نوع تأمین');
     expect(html).toContain('id="ticket-supply"');
     expect(html).not.toContain('ظرفیت متعلق به شرکت است');
-    expect(html).toContain('انتخاب و جست‌وجوی نوع هواپیما');
+    expect(html).toContain('جست‌وجو و انتخاب…');
     expect(html).toContain('فرودگاه مبدأ');
     expect(html).toContain('ابتدا شهر را انتخاب کنید');
     expect(html).toContain('ذخیره بلیط');
@@ -179,7 +179,7 @@ describe('Rendered ticket UI', () => {
     expect(html).toContain('قیمت فروش در ماژول فروش تعیین می‌شود');
     expect(html).toContain('کشور مبدأ');
     expect(html).toContain('شهر مقصد');
-    expect(html).toContain('انتخاب و جست‌وجوی ایرلاین');
+    expect(html).toContain('جست‌وجو و انتخاب…');
   });
   it('clears stale validation errors after correcting ticket form values', () => {
     const formSource = readFileSync(
@@ -222,9 +222,9 @@ describe('Rendered ticket UI', () => {
         onCancel: () => {},
       }),
     );
-    expect(train).toContain('انتخاب و جست‌وجوی شرکت ریلی');
+    expect(train).toContain('جست‌وجو و انتخاب…');
     expect(train).toContain('ایستگاه مبدأ');
-    expect(bus).toContain('انتخاب و جست‌وجوی شرکت اتوبوس‌رانی');
+    expect(bus).toContain('جست‌وجو و انتخاب…');
     expect(bus).toContain('پایانه مقصد');
   });
   it('renders view mode disabled without a submit operation', () => {

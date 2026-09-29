@@ -1,4 +1,11 @@
 import {
+  USER_JOB_TITLES,
+  USER_ACCESS_SCREENS,
+  USER_ACCESS_PROFILE_PERMISSION,
+  screenPermission,
+  hasManagedAccess,
+} from '@nora/contracts';
+import {
   createHash,
   randomBytes,
   randomUUID,
@@ -344,7 +351,19 @@ export class IamService implements IamStepUpPort {
         status: true,
         lastLoginAt: true,
         roles: {
-          select: { role: { select: { id: true, code: true, name: true } } },
+          select: {
+            role: {
+              select: {
+                id: true,
+                code: true,
+                name: true,
+                isActive: true,
+                permissions: {
+                  select: { permission: { select: { id: true, code: true } } },
+                },
+              },
+            },
+          },
         },
         branches: {
           select: { branch: { select: { id: true, code: true, name: true } } },
@@ -493,10 +512,33 @@ export class IamService implements IamStepUpPort {
     });
   }
 
+  async listUserAccessOptions(actor: AuthenticatedActor) {
+    const [permissions, branches] = await Promise.all([
+      this.database.client.permission.findMany({
+        where: {
+          code: {
+            in: actor.permissions.filter((code) => !code.startsWith('ui.')),
+          },
+        },
+        orderBy: [{ module: 'asc' }, { code: 'asc' }],
+        select: { id: true, code: true, name: true, module: true },
+      }),
+      this.database.client.branch.findMany({
+        where: { isActive: true },
+        orderBy: { name: 'asc' },
+        select: { id: true, name: true },
+      }),
+    ]);
+    return { permissions, branches };
+  }
+
   listRolesAndBranches() {
     return Promise.all([
       this.database.client.role.findMany({
-        where: { isActive: true },
+        where: {
+          isActive: true,
+          NOT: { code: { startsWith: 'personal-access-' } },
+        },
         include: { permissions: { include: { permission: true } } },
         orderBy: { name: 'asc' },
       }),
@@ -505,6 +547,7 @@ export class IamService implements IamStepUpPort {
         orderBy: { name: 'asc' },
       }),
       this.database.client.permission.findMany({
+        where: { NOT: { code: { startsWith: 'ui.' } } },
         orderBy: [{ module: 'asc' }, { code: 'asc' }],
       }),
     ]).then(([roles, branches, permissions]) => ({
@@ -1062,6 +1105,7 @@ export class IamService implements IamStepUpPort {
     actor: AuthenticatedActor,
     metadata: RequestMetadata,
   ) {
+    const profile = await this.managedAccess(dto, actor);
     await this.assertRolesAssignable(dto.roleIds, actor);
     assertStrongPassword(dto.password);
     const username = dto.username.trim().toLowerCase();
@@ -1080,28 +1124,43 @@ export class IamService implements IamStepUpPort {
       timeCost: 3,
       parallelism: 1,
     });
-    const user = await this.database.client.user.create({
-      data: {
-        username,
-        email,
-        displayName: dto.displayName.trim(),
-        passwordHash,
-        roles: { create: dto.roleIds.map((roleId) => ({ roleId })) },
-        branches: {
-          create: dto.branchIds.map((branchId, index) => ({
-            branchId,
-            isPrimary: index === 0,
-          })),
+    const managedUserId = randomUUID();
+    const create = async (
+      transaction: Pick<
+        DatabaseService['client'],
+        'user' | 'permission' | 'role' | 'rolePermission'
+      >,
+    ) => {
+      const assignedRoleIds = profile
+        ? [await this.personalAccessRole(transaction, managedUserId, profile)]
+        : dto.roleIds;
+      return transaction.user.create({
+        data: {
+          ...(profile ? { id: managedUserId } : {}),
+          username,
+          email,
+          displayName: dto.displayName.trim(),
+          passwordHash,
+          roles: { create: assignedRoleIds.map((roleId) => ({ roleId })) },
+          branches: {
+            create: dto.branchIds.map((branchId, index) => ({
+              branchId,
+              isPrimary: index === 0,
+            })),
+          },
         },
-      },
-      select: {
-        id: true,
-        username: true,
-        email: true,
-        displayName: true,
-        status: true,
-      },
-    });
+        select: {
+          id: true,
+          username: true,
+          email: true,
+          displayName: true,
+          status: true,
+        },
+      });
+    };
+    const user = profile
+      ? await this.database.client.$transaction(create)
+      : await create(this.database.client);
     await this.audit(
       actor.userId,
       'iam.user.create',
@@ -1119,6 +1178,7 @@ export class IamService implements IamStepUpPort {
     actor: AuthenticatedActor,
     metadata: RequestMetadata,
   ) {
+    const profile = await this.managedAccess(dto, actor);
     await this.assertRolesAssignable(dto.roleIds, actor);
     await this.database.client.$transaction(async (transaction) => {
       await transaction.$queryRaw`SELECT pg_advisory_xact_lock(hashtext('iam-administrator-membership'))`;
@@ -1150,11 +1210,14 @@ export class IamService implements IamStepUpPort {
             'حذف نقش آخرین مدیر فعال سامانه مجاز نیست.',
           );
       }
+      const assignedRoleIds = profile
+        ? [await this.personalAccessRole(transaction, userId, profile)]
+        : dto.roleIds;
       await transaction.userRole.deleteMany({ where: { userId } });
       await transaction.userBranch.deleteMany({ where: { userId } });
-      if (dto.roleIds.length)
+      if (assignedRoleIds.length)
         await transaction.userRole.createMany({
-          data: dto.roleIds.map((roleId) => ({ userId, roleId })),
+          data: assignedRoleIds.map((roleId) => ({ userId, roleId })),
         });
       if (dto.branchIds.length)
         await transaction.userBranch.createMany({
@@ -1380,6 +1443,106 @@ export class IamService implements IamStepUpPort {
   private tokenHash(value: string) {
     return createHash('sha256').update(value, 'utf8').digest('hex');
   }
+  private async managedAccess(
+    dto: {
+      accessTitle?: string;
+      permissionIds?: string[];
+      screenIds?: string[];
+      roleIds: string[];
+    },
+    actor: AuthenticatedActor,
+  ) {
+    if (
+      dto.accessTitle === undefined &&
+      dto.permissionIds === undefined &&
+      dto.screenIds === undefined
+    )
+      return null;
+    if (
+      !dto.accessTitle ||
+      !USER_JOB_TITLES.includes(
+        dto.accessTitle as (typeof USER_JOB_TITLES)[number],
+      ) ||
+      !Array.isArray(dto.permissionIds) ||
+      !Array.isArray(dto.screenIds) ||
+      dto.roleIds.length
+    )
+      throw new BadRequestException(
+        'نقش، مجوزها و بخش‌های قابل مشاهده را کامل انتخاب کنید.',
+      );
+    await this.assertPermissionsAssignable(dto.permissionIds, actor);
+    const permissions = await this.database.client.permission.findMany({
+      where: { id: { in: dto.permissionIds } },
+      select: { code: true },
+    });
+    if (permissions.some((p) => p.code.startsWith('ui.')))
+      throw new BadRequestException(
+        'مجوز نمایشی از کاتالوگ بخش‌ها انتخاب می‌شود.',
+      );
+    for (const id of dto.screenIds) {
+      if (!USER_ACCESS_SCREENS.some((s) => s.id === id))
+        throw new BadRequestException('زیربخش انتخاب‌شده معتبر نیست.');
+      if (
+        hasManagedAccess(actor.permissions) &&
+        !actor.permissions.includes(screenPermission(id))
+      )
+        throw new ForbiddenException(
+          'واگذاری بخش خارج از دسترسی خودتان مجاز نیست.',
+        );
+    }
+    return {
+      title: dto.accessTitle,
+      permissionIds: dto.permissionIds,
+      screenIds: dto.screenIds,
+    };
+  }
+  private async personalAccessRole(
+    transaction: Pick<
+      DatabaseService['client'],
+      'permission' | 'role' | 'rolePermission'
+    >,
+    userId: string,
+    profile: { title: string; permissionIds: string[]; screenIds: string[] },
+  ) {
+    const viewIds: string[] = [];
+    for (const code of [
+      USER_ACCESS_PROFILE_PERMISSION,
+      ...profile.screenIds.map(screenPermission),
+    ]) {
+      const screen = USER_ACCESS_SCREENS.find(
+        (s) => screenPermission(s.id) === code,
+      );
+      const permission = await transaction.permission.upsert({
+        where: { code },
+        create: {
+          code,
+          module: 'iam-ui',
+          name: screen?.title ?? 'دسترسی مستقل کاربر',
+        },
+        update: {},
+        select: { id: true },
+      });
+      viewIds.push(permission.id);
+    }
+    const role = await transaction.role.upsert({
+      where: { code: 'personal-access-' + userId },
+      create: {
+        code: 'personal-access-' + userId,
+        name: profile.title,
+        isActive: true,
+      },
+      update: { name: profile.title, isActive: true },
+      select: { id: true },
+    });
+    await transaction.rolePermission.deleteMany({ where: { roleId: role.id } });
+    await transaction.rolePermission.createMany({
+      data: [...new Set([...profile.permissionIds, ...viewIds])].map(
+        (permissionId) => ({ roleId: role.id, permissionId }),
+      ),
+    });
+    return role.id;
+  }
+
   private async assertRolesAssignable(
     roleIds: readonly string[],
     actor: AuthenticatedActor,
@@ -1388,11 +1551,16 @@ export class IamService implements IamStepUpPort {
       where: { id: { in: [...roleIds] }, isActive: true },
       select: {
         id: true,
+        code: true,
         permissions: { select: { permission: { select: { code: true } } } },
       },
     });
     if (roles.length !== new Set(roleIds).size)
       throw new BadRequestException('یک یا چند نقش معتبر یا فعال نیست.');
+    if (roles.some((role) => role.code?.startsWith('personal-access-')))
+      throw new BadRequestException(
+        'نقش اختصاصی یک کاربر به کاربر دیگر واگذار نمی‌شود.',
+      );
     const permissionCodes = roles.flatMap((role) =>
       role.permissions.map(({ permission }) => permission.code),
     );
@@ -1482,6 +1650,8 @@ export class IamService implements IamStepUpPort {
     displayName: string;
     roles: Array<{
       role: {
+        code: string;
+        name: string;
         isActive: boolean;
         permissions: Array<{ permission: { code: string } }>;
       };
@@ -1496,9 +1666,71 @@ export class IamService implements IamStepUpPort {
         displayName: user.displayName,
         permissions: this.permissionCodes(user),
         branches: user.branches.map(({ branch }) => branch),
+        roles: user.roles
+          .filter(({ role }) => role.isActive)
+          .map(({ role }) => ({ code: role.code, name: role.name })),
       },
     };
   }
+  /** Trusted Reservations boundary: only responsibility metadata for an authorized intake. */
+  async reservationResponsibilityNames(
+    ids: readonly string[],
+    branchId: string,
+    actor: AuthenticatedActor,
+  ) {
+    if (
+      !actor.permissions.includes('reservations.read') ||
+      !actor.branchIds.includes(branchId)
+    )
+      throw new ForbiddenException();
+    const unique = [...new Set(ids)].slice(0, 3);
+    if (!unique.length) return new Map<string, string>();
+    const users = await this.database.client.user.findMany({
+      where: { id: { in: unique } },
+      select: { id: true, displayName: true },
+    });
+    return new Map(users.map((user) => [user.id, user.displayName]));
+  }
+  async recordReservationOperation(
+    intakeId: string,
+    branchId: string,
+    actor: AuthenticatedActor,
+    operation: string,
+  ) {
+    if (!actor.branchIds.includes(branchId)) throw new ForbiddenException();
+    await this.database.client.auditEvent.create({
+      data: {
+        actorUserId: actor.userId,
+        action: operation.slice(0, 120),
+        entityType: 'reservation_operation',
+        entityId: intakeId,
+        outcome: 'SUCCESS',
+        metadata: { branchId },
+      },
+    });
+  }
+  async latestReservationOperation(
+    intakeId: string,
+    branchId: string,
+    actor: AuthenticatedActor,
+  ) {
+    if (
+      !actor.permissions.includes('reservations.read') ||
+      !actor.branchIds.includes(branchId)
+    )
+      throw new ForbiddenException();
+    return this.database.client.auditEvent.findFirst({
+      where: {
+        entityType: 'reservation_operation',
+        entityId: intakeId,
+        outcome: 'SUCCESS',
+        metadata: { path: ['branchId'], equals: branchId },
+      },
+      orderBy: [{ occurredAt: 'desc' }, { id: 'desc' }],
+      select: { actorUserId: true, occurredAt: true },
+    });
+  }
+
   private audit(
     actorUserId: string | null,
     action: string,

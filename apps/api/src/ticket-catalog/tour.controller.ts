@@ -1,5 +1,6 @@
 import {
   Body,
+  Delete,
   Controller,
   Get,
   Headers,
@@ -26,6 +27,14 @@ export class TourController {
   }
   @Get('departures') departures(@Req() req: AuthenticatedRequest) {
     return this.service.departures(req.actor);
+  }
+  @Delete('packages/:id') deletePackage(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() body: unknown,
+    @Req() req: AuthenticatedRequest,
+    @Headers('x-branch-id') branch?: string,
+  ) {
+    return this.service.deletePackage(id, body, req.actor, branch);
   }
   @Post('packages') createPackage(
     @Body() body: unknown,

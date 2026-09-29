@@ -1,4 +1,6 @@
 'use client';
+import { NativeSearchSelect } from '@/components/ui/native-search-select';
+
 import { useEffect, useState } from 'react';
 import { getHrResource, type HrRecordDto } from '@nora/contracts';
 import { allHrRecords, type HrStore } from './hr-store';
@@ -100,7 +102,7 @@ export function HrInbox({
         <div className={ui.filters}>
           <label>
             وضعیت رسیدگی
-            <select
+            <NativeSearchSelect
               value={status}
               onChange={(event) => setStatus(event.target.value)}
             >
@@ -114,7 +116,7 @@ export function HrInbox({
               ].map((item) => (
                 <option key={item}>{item}</option>
               ))}
-            </select>
+            </NativeSearchSelect>
           </label>
         </div>
         {error ? (
