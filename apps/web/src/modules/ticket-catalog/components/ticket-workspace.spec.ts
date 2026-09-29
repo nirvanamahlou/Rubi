@@ -113,6 +113,8 @@ describe('ticket workspace entry points', () => {
       'utf8',
     );
     expect(source).not.toContain("from './published-offers'");
+    expect(source).not.toContain("from './tour-workspace'");
+    expect(source).not.toContain('value="tours"');
     expect(source).toContain('managedOffers()');
     expect(source).toContain('publishFlights(inputs, createdIds)');
     expect(source).toContain('publishExistingFlights(');

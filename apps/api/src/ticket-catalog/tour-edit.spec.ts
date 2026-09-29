@@ -64,6 +64,20 @@ function setup({
   };
 }
 describe('tour package editing', () => {
+  it('allows the Sales-only tour permission to edit definitions', async () => {
+    const { service } = setup();
+    const salesActor: AuthenticatedActor = {
+      ...actor,
+      permissions: ['ticket_catalog.tours.manage'],
+    };
+    const result = await service.updatePackage(
+      id,
+      { ...input, name: 'Sales update', expectedVersion: 1 },
+      salesActor,
+      id,
+    );
+    expect(result.data.name).toBe('Sales update');
+  });
   it('persists descriptive changes with an atomic version check even when departures exist', async () => {
     const { service, updateMany } = setup({ departures: 2 });
     const result = await service.updatePackage(

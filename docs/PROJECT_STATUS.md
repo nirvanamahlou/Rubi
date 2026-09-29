@@ -1,3 +1,6 @@
+# 2026-09-29 — SALES-TOUR-DEFINITION-0929 — PC-A — READY_FOR_REVIEW
+
+تعریف تور از مدیریت بلیت جدا و به‌صورت آخرین گزینهٔ گروه فروش در `/sales/tours` قرار گرفت. فروش با مجوز محدود تور می‌تواند تعریف را بسازد/ویرایش کند و تور بدون نوبت را حذف کند؛ تور دارای نوبت به‌خاطر حفظ سوابق حذف نمی‌شود. ۳۰ تست API، ۵۲ تست Web، lint، typecheck و build هر دو بخش موفق‌اند. تست واقعی PostgreSQL محلی به‌دلیل نبود `TRAVEL_TEST_DATABASE_URL` غیرفعال بود. بدون Migration یا تغییر حساب‌های واقعی؛ handoff در [SALES-TOUR-DEFINITION-0929](tasks/SALES-TOUR-DEFINITION-0929.md).
 # 2026-09-29 — TICKET-MANAGEMENT-QA-0929 — PC-A
 
 Server-backed flight cards/counts and fresh-browser editing now match the managed list. Exact identity fixes duplicate-schedule actions; capacity reflects holds. Archive preserves fare/commission history. Synthetic lifecycle and HTTP QA pass; no migration or operational data changes. See [task handoff](tasks/TICKET-MANAGEMENT-QA-0929.md).

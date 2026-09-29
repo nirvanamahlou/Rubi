@@ -36,6 +36,7 @@ const profiles: Record<
       'customers.create',
       'customers.update',
       'ticket_catalog.read',
+      'ticket_catalog.tours.manage',
       'master_data.read',
       'sales.contracts.read.own',
       'sales.contracts.create',

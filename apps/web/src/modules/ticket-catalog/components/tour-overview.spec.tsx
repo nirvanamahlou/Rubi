@@ -88,7 +88,23 @@ describe('tour overview', () => {
     expect(html).toContain('aria-valuenow="10"');
     expect(html).toContain('جست‌وجوی تور');
   });
-  it('renders loading placeholders instead of zero KPIs', () => {
+  it('offers deletion only in the standalone tour definition section', () => {
+    const html = renderToStaticMarkup(
+      <TourOverview
+        definitionMode
+        packages={[pack]}
+        departures={[]}
+        cities={[]}
+        loading={false}
+        busy={false}
+        onEdit={() => {}}
+        onDelete={() => {}}
+        onSelect={() => {}}
+        onRepeat={() => {}}
+      />,
+    );
+    expect(html).toContain('حذف تور');
+  });  it('renders loading placeholders instead of zero KPIs', () => {
     const html = renderToStaticMarkup(
       <TourOverview
         packages={[]}
