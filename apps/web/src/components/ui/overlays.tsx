@@ -7,6 +7,7 @@ import * as TooltipPrimitive from '@radix-ui/react-tooltip';
 import { X } from 'lucide-react';
 import * as React from 'react';
 
+import { useTabAccess } from '@/modules/iam/access-context';
 import { faMessages } from '@/messages/fa';
 import { cn } from '@/lib/utils';
 import { Button } from './button';
@@ -124,7 +125,41 @@ export const DropdownMenuItem = React.forwardRef<
 ));
 DropdownMenuItem.displayName = 'DropdownMenuItem';
 
-export const Tabs = TabsPrimitive.Root;
+export function Tabs(
+  props: React.ComponentPropsWithoutRef<typeof TabsPrimitive.Root>,
+) {
+  const allowed = useTabAccess();
+  const values: string[] = [];
+  const collect = (children: React.ReactNode) =>
+    React.Children.forEach(children, (child) => {
+      if (
+        !React.isValidElement<{ value?: string; children?: React.ReactNode }>(
+          child,
+        )
+      )
+        return;
+      if (child.type === TabsTrigger && child.props.value)
+        values.push(child.props.value);
+      else collect(child.props.children);
+    });
+  collect(props.children);
+  const available = values.filter(allowed);
+  const current = props.value ?? props.defaultValue;
+  const next = current && !allowed(current) ? available[0] : current;
+  const { value, onValueChange } = props;
+  React.useEffect(() => {
+    if (value !== undefined && next !== undefined && value !== next)
+      onValueChange?.(next);
+  }, [next, value, onValueChange]);
+  return (
+    <TabsPrimitive.Root
+      {...props}
+      {...(props.value !== undefined
+        ? { value: next ?? '' }
+        : { defaultValue: next ?? '' })}
+    />
+  );
+}
 export const TabsList = React.forwardRef<
   React.ElementRef<typeof TabsPrimitive.List>,
   React.ComponentPropsWithoutRef<typeof TabsPrimitive.List>
@@ -139,18 +174,31 @@ TabsList.displayName = 'TabsList';
 export const TabsTrigger = React.forwardRef<
   React.ElementRef<typeof TabsPrimitive.Trigger>,
   React.ComponentPropsWithoutRef<typeof TabsPrimitive.Trigger>
->(({ className, ...props }, ref) => (
-  <TabsPrimitive.Trigger
-    className={cn(
-      'rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring data-[state=active]:bg-surface data-[state=active]:text-foreground data-[state=active]:shadow-sm',
-      className,
-    )}
-    ref={ref}
-    {...props}
-  />
-));
+>(({ className, ...props }, ref) => {
+  const allowed = useTabAccess();
+  if (!allowed(props.value)) return null;
+  return (
+    <TabsPrimitive.Trigger
+      className={cn(
+        'rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring data-[state=active]:bg-surface data-[state=active]:text-foreground data-[state=active]:shadow-sm',
+        className,
+      )}
+      ref={ref}
+      {...props}
+    />
+  );
+});
 TabsTrigger.displayName = 'TabsTrigger';
-export const TabsContent = TabsPrimitive.Content;
+export const TabsContent = React.forwardRef<
+  React.ElementRef<typeof TabsPrimitive.Content>,
+  React.ComponentPropsWithoutRef<typeof TabsPrimitive.Content>
+>((props, ref) => {
+  const allowed = useTabAccess();
+  return allowed(props.value) ? (
+    <TabsPrimitive.Content {...props} ref={ref} />
+  ) : null;
+});
+TabsContent.displayName = 'TabsContent';
 
 export const TooltipProvider = TooltipPrimitive.Provider;
 export const Tooltip = TooltipPrimitive.Root;

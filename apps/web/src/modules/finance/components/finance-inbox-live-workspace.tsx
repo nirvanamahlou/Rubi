@@ -1,3 +1,4 @@
+import { NativeSearchSelect } from '@/components/ui/native-search-select';
 import {
   ArrowDownLeft,
   ArrowUpRight,
@@ -1243,7 +1244,7 @@ export function FinanceInboxLiveWorkspace() {
                 </label>
                 <label className="grid gap-2">
                   <span>روش پرداخت</span>
-                  <select
+                  <NativeSearchSelect
                     aria-label="روش پرداخت"
                     required
                     className="h-11 w-full rounded-xl border border-border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-primary/30"
@@ -1258,7 +1259,7 @@ export function FinanceInboxLiveWorkspace() {
                         {method.name}
                       </option>
                     ))}
-                  </select>
+                  </NativeSearchSelect>
                   {methodsError ? (
                     <span role="alert" className="text-sm text-destructive">
                       {methodsError}

@@ -1,0 +1,9 @@
+# Searchable dropdowns — PC-A — 2026-09-29
+
+Owner requests project-wide inline searching, six initial/matching suggestions, and subtle selection contrast. Shared selection primitives and native single-select consumers now use a primary editable combobox. Search scans all supplied options before the six-result cap, normalizes Persian/Arabic letters, and preserves English hotel labels and canonical IDs. Server-backed Master Data/Ticket reference fields request initial options on open, debounce queries, retain geographic/role filters, handle authorization errors and discard obsolete requests. Marketing audience references use the same field.
+
+The existing native option consumers are adapted across 49 files (HR, organizations, finance, reservations, pricing, ticket management and system screens). Their real hidden select retains native form submission; existing shared Select wrappers retain canonical named values. Multi-choice controls keep their dedicated behavior. Selection backgrounds use light #f6f9ff and a matching dark surface. Menus use the browser popover layer so overflow containers cannot clip them, with an inline fallback.
+
+Browser verification on an isolated synthetic fixture: six initial results, searching Hotel 19 outside the initial six, Enter selection, reopening suggestions, native airline selection and shared currency selection. Submitted FormData contained hotel=19, airline=18, currency=EUR. No real records, account changes or login required.
+
+Validation: Web production build (54 routes) passed. Full Web lint and typecheck passed. Full suite: 1761 tests passed before the last legacy-policy assertion was updated; the corrected assertion and final focused regressions (14 tests) pass. Final full CI checks are required before merge. No API, schema, migration, dependency or lockfile changes. Original dirty checkout remains untouched.

@@ -40,10 +40,12 @@ describe('header session identity', () => {
     expect(rememberHeaderSession(user, loggedInAt, storage)).toEqual({
       displayName: 'کاربر نمونه',
       loggedInAt,
+      roleNames: [],
     });
     expect(readHeaderSession(storage)).toEqual({
       displayName: 'کاربر نمونه',
       loggedInAt,
+      roleNames: [],
     });
   });
 

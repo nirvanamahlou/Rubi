@@ -1,4 +1,6 @@
 'use client';
+import { NativeSearchSelect } from '@/components/ui/native-search-select';
+
 import { useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
@@ -272,7 +274,7 @@ export function HrEmployees({
           </label>
           <label>
             وضعیت
-            <select
+            <NativeSearchSelect
               value={status}
               onChange={(event) => setStatus(event.target.value)}
             >
@@ -282,11 +284,11 @@ export function HrEmployees({
               ).map((item) => (
                 <option key={item}>{item}</option>
               ))}
-            </select>
+            </NativeSearchSelect>
           </label>
           <label>
             شرکت / شعبه
-            <select
+            <NativeSearchSelect
               value={branch}
               onChange={(event) => {
                 setBranch(event.target.value);
@@ -299,11 +301,11 @@ export function HrEmployees({
                   {item.name}
                 </option>
               ))}
-            </select>
+            </NativeSearchSelect>
           </label>
           <label>
             واحد
-            <select
+            <NativeSearchSelect
               value={unit}
               onChange={(event) => setUnit(event.target.value)}
             >
@@ -321,7 +323,7 @@ export function HrEmployees({
               ).map((item) => (
                 <option key={item}>{item}</option>
               ))}
-            </select>
+            </NativeSearchSelect>
           </label>
           <HrButton
             onClick={() => {

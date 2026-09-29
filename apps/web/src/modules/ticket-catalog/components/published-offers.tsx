@@ -1,4 +1,6 @@
 'use client';
+import { NativeSearchSelect } from '@/components/ui/native-search-select';
+
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import type { MasterDataRecord, TicketOfferCreateV1 } from '@nora/contracts';
 import { Button } from '@/components/ui/button';
@@ -95,7 +97,7 @@ export function PublishedOffers() {
               label={key === 'originId' ? 'مبدأ' : 'مقصد'}
               required
             >
-              <select
+              <NativeSearchSelect
                 className="h-11 rounded-xl border bg-surface px-3"
                 required
                 value={input[key]}
@@ -109,7 +111,7 @@ export function PublishedOffers() {
                     {city.name}
                   </option>
                 ))}
-              </select>
+              </NativeSearchSelect>
             </FormField>
           ))}
           <FormField label="حرکت" required>
@@ -145,7 +147,7 @@ export function PublishedOffers() {
             />
           </FormField>
           <FormField label="کلاس">
-            <select
+            <NativeSearchSelect
               className="h-11 rounded-xl border bg-surface px-3"
               value={input.cabinClassCode}
               onChange={(event) =>
@@ -159,7 +161,7 @@ export function PublishedOffers() {
               <option value="ECONOMY">اکونومی</option>
               <option value="BUSINESS">بیزینس</option>
               <option value="FIRST">فرست</option>
-            </select>
+            </NativeSearchSelect>
           </FormField>
           <FormField label="ظرفیت کل" required>
             <Input

@@ -3,7 +3,7 @@ const $=id=>document.getElementById(id),state={data:null,bytes:null,fileName:'',
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fa=n=>new Intl.NumberFormat('fa-IR').format(n),latin=s=>String(s).replace(/[۰-۹]/g,c=>'۰۱۲۳۴۵۶۷۸۹'.indexOf(c)).replace(/[٠-٩]/g,c=>'٠١٢٣٤٥٦٧٨٩'.indexOf(c)),profile=()=>window.PackageCards?.profile(TEMPLATES[$('template').value])||TEMPLATES[$('template').value];
 const TEMPLATE_COUNTRIES={
- turkey:['combined','kus','antalya','bodrum','nss'],
+ turkey:['combined','kus','antalya','bodrum','nss','istanbul-3','istanbul-4'],
  malaysia:['malaysia-kuala','malaysia-penang','malaysia-singapore','malaysia-langkawi'],
  spain:['spain-barcelona','spain-madrid','spain-combined'],
  thailand:['thailand-phuket','thailand-bangkok-phuket','thailand-pattaya']
@@ -30,7 +30,7 @@ function priceText(c){
  const a=typeof v==='number'?new Intl.NumberFormat('en-US',{minimumFractionDigits:0,maximumFractionDigits:c.decimals??2}).format(v):String(v).trim();const priced=currency?(['€','$'].includes(currency)?currency+' '+a:a+' '+currency):a;return priced+(c.suffix?' '+c.suffix:'');
 }
 function moneyText(v){if(unavailable(v))return '—';const n=PackageSummary.money(v);if(n===null)return String(v).trim();return new Intl.NumberFormat('en-US',{maximumFractionDigits:2}).formatToParts(n).map(p=>p.type==='group'?'.':p.type==='decimal'?'٫':p.value).join('');}
-function defaultServices(){return $('template').value==='nss'?'پرواز رفت و برگشت ایران ایرتور، ترانسفر فرودگاهی، راهنمای فارسی‌زبان، اقامت در هتل با خدمات درج‌شده، بیمه مسافرتی، سیم‌کارت، گشت شهری با ناهار و ترانسفر رفت و برگشت هتل بازار جواهر آنتالیا.':'پرواز رفت و برگشت ایران ایرتور، ترانسفر فرودگاهی، راهنمای فارسی‌زبان، اقامت در هتل با خدمات درج‌شده، بیمه مسافرتی';}
+function defaultServices(){if($('template').value.startsWith('istanbul-'))return 'پرواز رفت و برگشت تابان، ترانسفر فرودگاهی، گشت نیم‌روزی، پرواز داخلی، سیم‌کارت، بیمه مسافرتی، تور لیدر فارسی‌زبان، اقامت در هتل با صبحانه';return $('template').value==='nss'?'پرواز رفت و برگشت ایران ایرتور، ترانسفر فرودگاهی، راهنمای فارسی‌زبان، اقامت در هتل با خدمات درج‌شده، بیمه مسافرتی، سیم‌کارت، گشت شهری با ناهار و ترانسفر رفت و برگشت هتل بازار جواهر آنتالیا.':'پرواز رفت و برگشت ایران ایرتور، ترانسفر فرودگاهی، راهنمای فارسی‌زبان، اقامت در هتل با خدمات درج‌شده، بیمه مسافرتی';}
 function columns(){
  const p=profile(),d=state.data,cols=[{key:'hotel',label:'نام هتل'}];if(p.style==='combined')cols.push({key:'city',label:'شهر'});if(p.style==='spain-combined')cols.push({key:'stars',label:'ستاره'});if((d.hasRoom&&p.style!=='combined')||p.style==='antalya')cols.push({key:'room',label:'نوع اتاق'});cols.push({key:'service',label:'خدمات'});
  for(const key of d.priceKeys)cols.push({key,label:{double:'دوتخته',single:'یک تخت',extra:'اضافه',child:'کودک با تخت',small:p.style.startsWith('malaysia-')?'کودک بدون تخت':'کودک ۲–۶ سال'}[key]});
@@ -38,7 +38,7 @@ function columns(){
 }
 function headerBox(){return profile().headerBox||{combined:[216,271,879,37],antalya:[212,234,879,31],kus:[247,264,849,38],bodrum:[238,286,740,40],nss:[238,282,750,31]}[profile().style];}
 function hasCustomTitle(){return window.PackageEditor?.needs('title')||PKJ.norm($('title').value)!==PKJ.norm(profile().title);}
-function servicesText(){if(profile().style.startsWith('spain-'))return $('services').value;if(window.PackageEditor?.needs('services'))return [$('services').value||((window.PackageEditor?.hasText('services'))?'':defaultServices()),$('notes').value].filter(Boolean).join('\n');return [$('services').value||($('notes').value?defaultServices():''),$('notes').value].filter(Boolean).join('\n');}
+function servicesText(){if(profile().style.startsWith('spain-')||profile().style.startsWith('istanbul-'))return $('services').value;if(window.PackageEditor?.needs('services'))return [$('services').value||((window.PackageEditor?.hasText('services'))?'':defaultServices()),$('notes').value].filter(Boolean).join('\n');return [$('services').value||($('notes').value?defaultServices():''),$('notes').value].filter(Boolean).join('\n');}
 const LAYER_GEOMETRY={
  combined:{left:[0,0,233,1324],agency:[239,10,154,180],airline:[916,8,176,172],footer:[0,1324,1122,78]},
  kus:{left:[0,0,258,1253],agency:[263,10,185,180],airline:[892,8,180,180],footer:[0,1253,1145,121]},
@@ -52,6 +52,8 @@ const LAYER_GEOMETRY={
  'thailand-phuket':{left:[0,0,154,1008],agency:[158,3,151,143],airline:[612,3,149,145],footer:[0,1008,771,72]},
  'thailand-bangkok-phuket':{left:[0,0,151,1008],agency:[154,3,151,143],airline:[614,3,142,145],footer:[0,1008,764,72]},
  'thailand-pattaya':{left:[0,0,137,1021],agency:[141,3,143,142],airline:[568,3,145,143],footer:[0,1021,720,59]},
+ 'istanbul-3':{left:[0,0,194,1352],agency:[233,8,189,188],airline:[874,8,170,197],footer:[0,1352,1092,89]},
+ 'istanbul-4':{left:[0,0,190,1313],agency:[232,8,190,186],airline:[867,8,175,195],footer:[0,1313,1122,89]},
  'spain-barcelona':{left:[0,0,160,1514],agency:[191,55,179,197],airline:[764,135,174,165],footer:[0,1514,948,145]},
  'spain-madrid':{left:[0,0,175,1515],agency:[192,59,180,196],airline:[765,121,173,174],footer:[0,1515,948,144]},
  'spain-combined':{left:[0,0,152,1517],agency:[190,58,180,196],airline:[767,155,171,155],footer:[0,1517,948,142]}
@@ -65,8 +67,8 @@ function staticArt(){
    if(p.headerBox&&box===p.headerBox)return '#062b7d';
    return '#fff';
   };
-  const svgRect=(w,h,fill)=>`<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><rect width="${w}" height="${h}" fill="${fill}"/></svg>`;
-  const result=[{key:'background',label:'زمینهٔ قالب',box:[0,0,p.width,p.height],src:p.image},...holes.map((box,i)=>({key:'mask-'+i,label:'زمینهٔ قابل ویرایش',box,src:'data:image/svg+xml;base64,'+btoa(svgRect(box[2],box[3],fillFor(box)))}))];
+  const svgRect=(w,h,fill,round=0)=>`<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><rect width="${w}" height="${h}" rx="${round}" fill="${fill}"/></svg>`;
+  const result=[{key:'background',label:'زمینهٔ قالب',box:[0,0,p.width,p.height],src:p.image},...holes.map((box,i)=>({key:'mask-'+i,label:'زمینهٔ قابل ویرایش',box,src:'data:image/svg+xml;base64,'+btoa(svgRect(box[2],box[3],fillFor(box),p.style.startsWith('istanbul-')&&box===p.date?25:0))}))];
   artworkCache.set(key,result);return result;
  }
  const geo=LAYER_GEOMETRY[p.style],layers=[{key:'left',label:'عکس چپ و انحنا',box:geo.left},{key:'agency',label:'لوگوی آژانس',box:geo.agency},{key:'airline',label:'لوگوی ایرلاین',box:geo.airline},{key:'city',label:'عنوان شهر',box:p.titleBox},{key:'footer',label:'فوتر اصلی',box:geo.footer}];if(p.noteIconBox)layers.push({key:'noteIcon',label:'آیکون توضیحات',box:p.noteIconBox});if(p.serviceIconBox)layers.push({key:'serviceIcon',label:'آیکون خدمات',box:p.serviceIconBox});

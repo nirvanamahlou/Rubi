@@ -7,9 +7,10 @@ import {
   Layers,
   ArrowLeft,
   Search,
+  Trash2,
 } from 'lucide-react';
 import { useState } from 'react';
-import { Button, Card, Input } from '@/components/ui';
+import { Button, Card, ConfirmDialog, Input } from '@/components/ui';
 
 export const tourDay = (now = new Date()) =>
   new Intl.DateTimeFormat('en-CA', {
@@ -43,6 +44,7 @@ export function TourOverview({
   loading,
   busy,
   onEdit,
+  onDelete,
   onSelect,
   onRepeat,
   definitionMode = false,
@@ -54,6 +56,7 @@ export function TourOverview({
   loading: boolean;
   busy: boolean;
   onEdit: (item: TourPackageV1) => void;
+  onDelete?: (item: TourPackageV1) => void;
   onSelect: (item: TourPackageV1) => void;
   onRepeat: (item: TourDepartureV1) => void;
 }) {
@@ -320,6 +323,20 @@ export function TourOverview({
                 <Button disabled={busy} onClick={() => onSelect(item)}>
                   {definitionMode ? 'مدیریت نوبت' : 'ثبت نوبت'}
                 </Button>
+                {definitionMode && (
+                  <ConfirmDialog
+                    trigger={
+                      <Button variant="destructive" disabled={busy}>
+                        <Trash2 aria-hidden size={15} />
+                        حذف تور
+                      </Button>
+                    }
+                    title="حذف تور"
+                    description="تور فقط وقتی حذف می‌شود که هیچ نوبت ثبت‌شده‌ای نداشته باشد. سوابق سفر حفظ می‌شوند."
+                    destructive
+                    onConfirm={() => onDelete?.(item)}
+                  />
+                )}
               </div>
             </article>
           ))}

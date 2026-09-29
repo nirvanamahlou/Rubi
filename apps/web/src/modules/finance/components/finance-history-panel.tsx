@@ -1,4 +1,6 @@
 'use client';
+import { NativeSearchSelect } from '@/components/ui/native-search-select';
+
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type {
   FinanceHistoryItemV1,
@@ -99,7 +101,7 @@ export function FinanceHistoryPanel({
         <div className="flex flex-wrap items-center gap-3">
           <label>
             نوع عملیات{' '}
-            <select
+            <NativeSearchSelect
               className="rounded-lg border bg-background p-2"
               value={direction ?? ''}
               onChange={(event) =>
@@ -112,7 +114,7 @@ export function FinanceHistoryPanel({
               <option value="">همه</option>
               <option value="RECEIPT">دریافت</option>
               <option value="PAYMENT">پرداخت</option>
-            </select>
+            </NativeSearchSelect>
           </label>
           <p className="text-xs text-muted-foreground">
             هر نوبت جداگانه نمایش داده می‌شود؛ سوابق تسویه‌شده نیز باقی

@@ -49,15 +49,16 @@ describe('cleared Master Data selections', () => {
     expect(checked).toBeGreaterThan(30);
   });
 
-  it('requires a city to remain connected to its province', () => {
+  it('allows a city to remain connected directly to its country', () => {
     const result = validateMasterDataDraft('cities', {
       name: 'شهر آزمایشی',
       englishName: 'Test city',
       countryId: '00000000-0000-4000-8000-000000000001',
       regionId: '',
     });
-    expect(result.success).toBe(false);
-    expect(result.errors.regionId).toBeTruthy();
+    expect(result.success).toBe(true);
+    expect(result.errors.regionId).toBeUndefined();
+    expect(result.values.regionId).toBe('');
     expect(result.values.countryId).toBe(
       '00000000-0000-4000-8000-000000000001',
     );

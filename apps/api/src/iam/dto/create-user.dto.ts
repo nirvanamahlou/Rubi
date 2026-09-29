@@ -53,4 +53,25 @@ export class CreateUserDto {
   @ArrayMaxSize(50)
   @IsUUID('4', { each: true })
   branchIds!: string[];
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  accessTitle?: string;
+
+  @ApiProperty({ type: [String], required: false })
+  @IsOptional()
+  @IsArray()
+  @ArrayUnique()
+  @ArrayMaxSize(1000)
+  @IsUUID('4', { each: true })
+  permissionIds?: string[];
+
+  @ApiProperty({ type: [String], required: false })
+  @IsOptional()
+  @IsArray()
+  @ArrayUnique()
+  @ArrayMaxSize(1000)
+  @IsString({ each: true })
+  screenIds?: string[];
 }

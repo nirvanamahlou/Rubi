@@ -1,4 +1,6 @@
 'use client';
+import { NativeSearchSelect } from '@/components/ui/native-search-select';
+
 import { useEffect, useState } from 'react';
 import type {
   ReservationIntakeV1,
@@ -221,7 +223,7 @@ export function TravelWorkflowForm({
               >
                 جست‌وجوی آژانس
               </Button>
-              <select
+              <NativeSearchSelect
                 aria-label="انتخاب آژانس"
                 className="bg-surface border border-border p-2"
                 value={agencyId}
@@ -233,7 +235,7 @@ export function TravelWorkflowForm({
                     {a.name}
                   </option>
                 ))}
-              </select>
+              </NativeSearchSelect>
             </>
           )}
           <Button
@@ -321,7 +323,7 @@ export function TravelWorkflowForm({
               >
                 بالا
               </Button>
-              <select
+              <NativeSearchSelect
                 aria-label="رده سنی عملیاتی"
                 className="rounded border border-border bg-surface p-2"
                 disabled={closed}
@@ -340,7 +342,7 @@ export function TravelWorkflowForm({
                 <option value="ADULT">بزرگسال</option>
                 <option value="CHILD">کودک</option>
                 <option value="INFANT">نوزاد</option>
-              </select>
+              </NativeSearchSelect>
             </div>
           ))}
         </div>

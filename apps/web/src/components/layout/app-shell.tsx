@@ -1,6 +1,12 @@
 'use client';
 
 import {
+  AccessProvider,
+  RouteAccessGuard,
+  useRouteAccess,
+} from '@/modules/iam/access-context';
+
+import {
   Check,
   ChevronDown,
   ChevronLeft,
@@ -100,7 +106,7 @@ function Brand({ compact = false }: { compact?: boolean }) {
         compact ? 'grid size-11 place-items-center p-1' : 'block w-full',
       )}
       data-active-company-brand={context?.selection ?? 'LOADING'}
-      href="/dashboard"
+      href="/workbench"
     >
       <Image
         alt={brand.alt}
@@ -129,6 +135,13 @@ function Navigation({
   const { language } = useSystemPreferences();
   const english = language === 'en';
   const pathname = usePathname();
+  const canNavigate = useRouteAccess();
+  const visibleGroups = groupedNavigationItems
+    .map((group) => ({
+      ...group,
+      items: group.items.filter((item) => canNavigate(item.href)),
+    }))
+    .filter((group) => group.items.length > 0);
   const groupId = useId();
   const [closedGroups, setClosedGroups] = useState<string[]>(() =>
     groupedNavigationItems
@@ -152,6 +165,7 @@ function Navigation({
     title: string;
     secondary?: boolean;
   }) {
+    if (!canNavigate(href)) return null;
     const displayTitle = english ? englishNavigationTitle(href, title) : title;
     const active = secondary
       ? pathname === href || pathname.startsWith(`${href}/`)
@@ -214,14 +228,20 @@ function Navigation({
     );
   }
   function renderGroupEntries(group: (typeof groupedNavigationItems)[number]) {
-    return group.items.flatMap((item) => [
+    const entries = group.items.flatMap((item) => [
       renderItem(item),
       ...(group.id === 'sales' && item.href === '/sales'
-        ? salesSubsections.map((section) =>
-            renderItem({ ...section, secondary: true }),
-          )
+        ? salesSubsections
+            .slice(0, -1)
+            .map((section) => renderItem({ ...section, secondary: true }))
         : []),
     ]);
+    if (group.id === 'sales') {
+      const finalSection = salesSubsections.at(-1);
+      if (finalSection)
+        entries.push(renderItem({ ...finalSection, secondary: true }));
+    }
+    return entries;
   }
   return (
     <nav
@@ -234,8 +254,8 @@ function Navigation({
       )}
     >
       {compact
-        ? groupedNavigationItems.flatMap(renderGroupEntries)
-        : groupedNavigationItems.map((group) => (
+        ? visibleGroups.flatMap(renderGroupEntries)
+        : visibleGroups.map((group) => (
             <section
               key={group.id}
               aria-label={
@@ -298,16 +318,18 @@ function SearchDialog() {
   const { language } = useSystemPreferences();
   const english = language === 'en';
   const messages = english ? enMessages : faMessages;
+  const canSearchRoute = useRouteAccess();
   const [query, setQuery] = useState('');
   const results = useMemo(
     () =>
       navigationItems.filter((item) => {
+        if (!canSearchRoute(item.href)) return false;
         const title = english ? englishNavigation[item.href].title : item.title;
         return title
           .toLocaleLowerCase()
           .includes(query.trim().toLocaleLowerCase());
       }),
-    [english, query],
+    [english, query, canSearchRoute],
   );
 
   useEffect(() => {
@@ -486,7 +508,7 @@ function Breadcrumb() {
       aria-label={english ? 'Breadcrumb' : 'مسیر صفحه'}
       className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground"
     >
-      <Link className="hover:text-foreground" href="/dashboard">
+      <Link className="hover:text-foreground" href="/workbench">
         {messages.shell.workspace}
       </Link>
       {breadcrumbs.length ? (
@@ -667,9 +689,13 @@ function AppShellContent({ children }: { children: ReactNode }) {
           id="main-content"
           tabIndex={-1}
         >
-          <HrConnectionsVisibilityProvider>
-            {children}
-          </HrConnectionsVisibilityProvider>
+          <Suspense fallback={<p role="status">در حال بررسی دسترسی…</p>}>
+            <RouteAccessGuard>
+              <HrConnectionsVisibilityProvider>
+                {children}
+              </HrConnectionsVisibilityProvider>
+            </RouteAccessGuard>
+          </Suspense>
         </main>
       </div>
     </div>
@@ -678,10 +704,12 @@ function AppShellContent({ children }: { children: ReactNode }) {
 
 export function AppShell({ children }: { children: ReactNode }) {
   return (
-    <LegalEntityProvider>
-      <PageBreadcrumbProvider>
-        <AppShellContent>{children}</AppShellContent>
-      </PageBreadcrumbProvider>
-    </LegalEntityProvider>
+    <AccessProvider>
+      <LegalEntityProvider>
+        <PageBreadcrumbProvider>
+          <AppShellContent>{children}</AppShellContent>
+        </PageBreadcrumbProvider>
+      </LegalEntityProvider>
+    </AccessProvider>
   );
 }

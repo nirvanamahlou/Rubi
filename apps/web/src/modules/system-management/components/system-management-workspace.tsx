@@ -1,4 +1,5 @@
 'use client';
+import { NativeSearchSelect } from '@/components/ui/native-search-select';
 
 import {
   ArrowLeft,
@@ -30,7 +31,7 @@ import {
   X,
   type LucideIcon,
 } from 'lucide-react';
-import Link from 'next/link';
+import Link from '@/components/access-link';
 import {
   useCallback,
   useEffect,
@@ -99,11 +100,10 @@ const globalScope: SettingsScope = {
 const managementAreas: readonly ManagementArea[] = [
   {
     id: 'iam',
-    title: 'کاربران، نقش‌ها و دامنه دسترسی',
-    description:
-      'IAM وضعیت کاربر، نقش و مجوز مؤثر را دوباره اعتبارسنجی می‌کند.',
+    title: 'مدیریت کاربران',
+    description: 'تعریف کاربر، تعیین نقش و انتخاب دسترسی بخش‌ها و زیربخش‌ها.',
     owner: 'IAM',
-    href: '/users',
+    href: '/system/users',
     moduleIds: ['access'],
   },
   {
@@ -976,7 +976,7 @@ export function SystemManagementWorkspace() {
                           ) : null}
                         </span>
                         {field.type === 'select' ? (
-                          <select
+                          <NativeSearchSelect
                             onChange={(event) =>
                               setDraft((value) => ({
                                 ...value,
@@ -992,7 +992,7 @@ export function SystemManagementWorkspace() {
                                   : option}
                               </option>
                             ))}
-                          </select>
+                          </NativeSearchSelect>
                         ) : field.type === 'file' ? (
                           <>
                             <input

@@ -1,4 +1,5 @@
 'use client';
+import { NativeSearchSelect } from '@/components/ui/native-search-select';
 
 import { Building2, Info, PencilLine, Trash2 } from 'lucide-react';
 import {
@@ -395,7 +396,7 @@ export function OrganizationNodeForm({
           </label>
           <label className={styles.fieldLabel} htmlFor="hr-org-kind">
             <RequiredFieldLabel required>نوع گره</RequiredFieldLabel>
-            <select
+            <NativeSearchSelect
               className={styles.control}
               disabled={Boolean(initialNode?.catalogSource)}
               id="hr-org-kind"
@@ -408,11 +409,11 @@ export function OrganizationNodeForm({
             >
               <option value="MANAGEMENT">مدیریت</option>
               <option value="UNIT">واحد سازمانی</option>
-            </select>
+            </NativeSearchSelect>
           </label>
           <label className={styles.fieldLabel} htmlFor="hr-org-status">
             <RequiredFieldLabel required>وضعیت</RequiredFieldLabel>
-            <select
+            <NativeSearchSelect
               className={styles.control}
               id="hr-org-status"
               name="status"
@@ -424,7 +425,7 @@ export function OrganizationNodeForm({
             >
               <option value="فعال">فعال</option>
               <option value="غیرفعال">غیرفعال</option>
-            </select>
+            </NativeSearchSelect>
           </label>
         </div>
       </fieldset>
@@ -434,7 +435,7 @@ export function OrganizationNodeForm({
         <div className={styles.formGrid}>
           <label className={styles.fieldLabel} htmlFor="hr-org-branch">
             <RequiredFieldLabel required>شعبه</RequiredFieldLabel>
-            <select
+            <NativeSearchSelect
               {...errorProps('branch')}
               className={styles.control}
               disabled={initialNode?.catalogSource === 'branch'}
@@ -447,14 +448,14 @@ export function OrganizationNodeForm({
               {branchOptions.map((branch) => (
                 <option key={branch}>{branch}</option>
               ))}
-            </select>
+            </NativeSearchSelect>
             <FieldError errors={errors} field="branch" />
           </label>
           <label className={styles.fieldLabel} htmlFor="hr-org-parent">
             <RequiredFieldLabel required={value.kind === 'UNIT'}>
               واحد والد
             </RequiredFieldLabel>
-            <select
+            <NativeSearchSelect
               {...errorProps('parentId')}
               className={styles.control}
               disabled={value.kind === 'MANAGEMENT'}
@@ -472,12 +473,12 @@ export function OrganizationNodeForm({
                   {node.name}
                 </option>
               ))}
-            </select>
+            </NativeSearchSelect>
             <FieldError errors={errors} field="parentId" />
           </label>
           <label className={styles.fieldLabel} htmlFor="hr-org-manager">
             <RequiredFieldLabel>مسئول / مدیر</RequiredFieldLabel>
-            <select
+            <NativeSearchSelect
               className={styles.control}
               id="hr-org-manager"
               name="manager"
@@ -488,7 +489,7 @@ export function OrganizationNodeForm({
               {managers.map((manager) => (
                 <option key={manager}>{manager}</option>
               ))}
-            </select>
+            </NativeSearchSelect>
           </label>
           <label className={styles.fieldLabel} htmlFor="hr-org-capacity">
             <RequiredFieldLabel required>ظرفیت سمت‌ها</RequiredFieldLabel>

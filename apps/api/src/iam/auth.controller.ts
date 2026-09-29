@@ -4,6 +4,7 @@ import {
   Delete,
   ForbiddenException,
   Get,
+  Header,
   HttpCode,
   Inject,
   Param,
@@ -95,6 +96,14 @@ export class AuthController {
     );
     response.clearCookie(ACCESS_COOKIE, cookieBase());
     response.clearCookie(REFRESH_COOKIE, cookieBase());
+  }
+
+  @UseGuards(AuthGuard)
+  @ApiCookieAuth(ACCESS_COOKIE)
+  @Get('access')
+  @Header('Cache-Control', 'private, no-store')
+  access(@Req() request: AuthenticatedRequest) {
+    return request.actor;
   }
 
   @UseGuards(AuthGuard)

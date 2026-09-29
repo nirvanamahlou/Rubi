@@ -1,5 +1,8 @@
 'use client';
+import { NativeSearchSelect } from '@/components/ui/native-search-select';
+
 import { useEffect, useState } from 'react';
+import { useRouteAccess } from '@/modules/iam/access-context';
 import dynamic from 'next/dynamic';
 import { Plus, RefreshCw } from 'lucide-react';
 import { getHrResource, type HrRecordDto } from '@nora/contracts';
@@ -37,14 +40,16 @@ import { parseSavedHrFilter } from './hr-filters';
 
 export { sourceForRecord } from './hr-record-source';
 
-export function HrUnifiedSection({
+function AccessibleHrSection({
   section,
   initialTab,
   store,
   onForm,
   onSelect,
   embedded = false,
+  permittedGroups,
 }: {
+  permittedGroups: HrGroup[];
   embedded?: boolean;
   section: HrSectionId;
   initialTab?: string | undefined;
@@ -52,19 +57,7 @@ export function HrUnifiedSection({
   onForm: (target: HrFormTarget) => void;
   onSelect: (record: HrRecordDto, source: HrSource) => void;
 }) {
-  const fallback: HrGroup[] = [
-    {
-      id: 'records',
-      label: screenMeta[section].title,
-      sources: (sectionTabs[section] ?? []).map((tab) => ({
-        section,
-        tab: tab.id,
-        label: tab.label,
-        action: `افزودن ${tab.label}`,
-      })),
-    },
-  ];
-  const groups = hrGroups[section] ?? fallback;
+  const groups = permittedGroups;
   const first = resolveHrGroup(
     groups,
     initialTab === 'roster' ? 'shift' : initialTab,
@@ -303,7 +296,7 @@ export function HrUnifiedSection({
           {!embedded && group.sources.length > 1 ? (
             <label>
               نمایش
-              <select
+              <NativeSearchSelect
                 value={source.tab}
                 onChange={(event) => {
                   setSourceTab(event.target.value);
@@ -315,7 +308,7 @@ export function HrUnifiedSection({
                     {item.label}
                   </option>
                 ))}
-              </select>
+              </NativeSearchSelect>
             </label>
           ) : null}
           <label>
@@ -331,7 +324,7 @@ export function HrUnifiedSection({
           </label>
           <label>
             شرکت / شعبه
-            <select
+            <NativeSearchSelect
               value={branchId}
               onChange={(event) => {
                 setBranchId(event.target.value);
@@ -345,12 +338,12 @@ export function HrUnifiedSection({
                   {branch.name}
                 </option>
               ))}
-            </select>
+            </NativeSearchSelect>
           </label>
           {definition?.employeeRequired ? (
             <label>
               کارمند
-              <select
+              <NativeSearchSelect
                 value={employeeId}
                 onChange={(event) => {
                   setEmployeeId(event.target.value);
@@ -369,12 +362,12 @@ export function HrUnifiedSection({
                       {item.name} · {item.personnelCode}
                     </option>
                   ))}
-              </select>
+              </NativeSearchSelect>
             </label>
           ) : null}
           <label>
             وضعیت
-            <select
+            <NativeSearchSelect
               value={status}
               onChange={(event) => {
                 setStatus(event.target.value);
@@ -395,12 +388,12 @@ export function HrUnifiedSection({
               ).map((item) => (
                 <option key={item}>{item}</option>
               ))}
-            </select>
+            </NativeSearchSelect>
           </label>
           {section === 'contracts' && source.tab === 'active' ? (
             <label>
               پایان قرارداد
-              <select
+              <NativeSearchSelect
                 value={expiry}
                 onChange={(event) => setExpiry(event.target.value)}
               >
@@ -408,7 +401,7 @@ export function HrUnifiedSection({
                 <option value="30">تا ۳۰ روز آینده</option>
                 <option value="90">تا ۹۰ روز آینده</option>
                 <option value="expired">منقضی‌شده</option>
-              </select>
+              </NativeSearchSelect>
             </label>
           ) : null}
           <HrButton
@@ -615,5 +608,47 @@ export function HrUnifiedSection({
         />
       ) : null}
     </div>
+  );
+}
+
+export function HrUnifiedSection(
+  props: Omit<Parameters<typeof AccessibleHrSection>[0], 'permittedGroups'>,
+) {
+  const allowed = useRouteAccess();
+  const section = props.section;
+  const fallback: HrGroup[] = [
+    {
+      id: 'records',
+      label: screenMeta[section].title,
+      sources: (sectionTabs[section] ?? []).map((tab) => ({
+        section,
+        tab: tab.id,
+        label: tab.label,
+        action: `افزودن ${tab.label}`,
+      })),
+    },
+  ];
+  const groups = (hrGroups[section] ?? fallback)
+    .map((group) => ({
+      ...group,
+      sources: group.sources.filter((source) =>
+        allowed(`/hr?section=${source.section}&tab=${source.tab}`),
+      ),
+    }))
+    .filter((group) => group.sources.length > 0);
+  if (!groups.length)
+    return <p role="alert">دسترسی به زیربخش‌های این صفحه فعال نیست.</p>;
+  return (
+    <AccessibleHrSection
+      key={groups
+        .map((group) =>
+          group.sources
+            .map((source) => source.section + '.' + source.tab)
+            .join(','),
+        )
+        .join('|')}
+      {...props}
+      permittedGroups={groups}
+    />
   );
 }

@@ -1,4 +1,5 @@
 'use client';
+import { NativeSearchSelect } from '@/components/ui/native-search-select';
 
 import type { MasterDataRecord } from '@nora/contracts';
 import { Download, Eye } from 'lucide-react';
@@ -196,7 +197,7 @@ export function OrganizationFinancePreview({
             <div className="dossier-filter-grid">
               <label className="field">
                 <span>ارز</span>
-                <select
+                <NativeSearchSelect
                   className="input"
                   value={effectiveFilter.currency}
                   onChange={(event) =>
@@ -207,11 +208,11 @@ export function OrganizationFinancePreview({
                   {currencies.map((currency) => (
                     <option key={currency}>{currency}</option>
                   ))}
-                </select>
+                </NativeSearchSelect>
               </label>
               <label className="field">
                 <span>وضعیت</span>
-                <select
+                <NativeSearchSelect
                   className="input"
                   value={effectiveFilter.status}
                   onChange={(event) =>
@@ -222,7 +223,7 @@ export function OrganizationFinancePreview({
                   {statuses.map((status) => (
                     <option key={status}>{status}</option>
                   ))}
-                </select>
+                </NativeSearchSelect>
               </label>
               <div className="field">
                 <span>از تاریخ</span>
