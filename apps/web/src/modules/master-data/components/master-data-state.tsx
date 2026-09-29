@@ -120,13 +120,23 @@ export function MasterDataStatePanel({
           </Badge>
         </div>
         <div className="flex justify-end gap-2">
-          <Button onClick={onView} size="sm" variant="outline">
+          <Button
+            aria-label="مشاهده"
+            onClick={onView}
+            size="icon"
+            title="مشاهده"
+            variant="outline"
+          >
             <Eye aria-hidden="true" className="size-4" />
-            مشاهده
           </Button>
-          <Button onClick={onEdit} size="sm" variant="outline">
+          <Button
+            aria-label="ویرایش"
+            onClick={onEdit}
+            size="icon"
+            title="ویرایش"
+            variant="outline"
+          >
             <FilePenLine aria-hidden="true" className="size-4" />
-            ویرایش
           </Button>
         </div>
       </div>

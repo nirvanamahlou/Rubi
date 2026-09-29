@@ -45,6 +45,11 @@ function setup(current = record()) {
       scanStatus: 'PENDING_SCAN',
     }),
     archiveMasterDataLogo: vi.fn().mockResolvedValue(undefined),
+    previewMasterDataLogo: vi.fn().mockResolvedValue({
+      stream: 'image-stream',
+      mimeType: 'image/png',
+      sizeBytes: 4,
+    }),
   };
   return {
     masterData,
@@ -57,6 +62,26 @@ function setup(current = record()) {
 }
 
 describe('MasterDataLogoService', () => {
+  it('reads only the document currently attached to the selected record', async () => {
+    const { service, documents } = setup(
+      record({ logoFileReference: 'logo-document' }),
+    );
+    await service.preview('airlines', record().id, actor, {});
+    expect(documents.previewMasterDataLogo).toHaveBeenCalledWith(
+      {
+        documentId: 'logo-document',
+        resource: 'airlines',
+        recordId: record().id,
+      },
+      actor,
+      {},
+    );
+    const empty = setup();
+    await expect(
+      empty.service.preview('airlines', record().id, actor, {}),
+    ).rejects.toMatchObject({ status: 404 });
+    expect(empty.documents.previewMasterDataLogo).not.toHaveBeenCalled();
+  });
   it('uploads through Documents and attaches the returned real document id with optimistic version', async () => {
     const { service, masterData, documents } = setup();
     const file = {

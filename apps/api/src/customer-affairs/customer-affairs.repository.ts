@@ -2,6 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import type { Prisma } from '@nora/database';
 
 import { DatabaseService } from '../database/database.service';
+import { createdDateFilter } from './customer-affairs-date-filter';
 
 export const customerAffairsLeadInclude = {
   timeline: { orderBy: { occurredAt: 'desc' as const } },
@@ -67,6 +68,13 @@ export class CustomerAffairsRepository {
   findSiteTicket(siteId: string, externalId: string) {
     return this.database.client.customerAffairsSiteTicket.findUnique({
       where: { siteId_externalId: { siteId, externalId } },
+      include: { ticket: { select: { branchId: true } } },
+    });
+  }
+
+  findTimelineByDeliveryKey(deliveryKey: string) {
+    return this.database.client.customerAffairsTimeline.findUnique({
+      where: { deliveryKey },
     });
   }
   constructor(
@@ -119,6 +127,23 @@ export class CustomerAffairsRepository {
       this.database.client.customerAffairsLead.count({ where }),
     ]);
     return { data, total };
+  }
+
+  exportLeads(where: Prisma.CustomerAffairsLeadWhereInput) {
+    return this.database.client.customerAffairsLead.findMany({
+      where,
+      select: {
+        trackingNumber: true,
+        title: true,
+        stage: true,
+        priority: true,
+        travelNeed: true,
+        nextAction: true,
+        nextActionAt: true,
+      },
+      orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+      take: 10001,
+    });
   }
 
   duplicateLeads(
@@ -174,6 +199,24 @@ export class CustomerAffairsRepository {
       this.database.client.customerAffairsTicket.count({ where }),
     ]);
     return { data, total };
+  }
+
+  exportTickets(where: Prisma.CustomerAffairsTicketWhereInput) {
+    return this.database.client.customerAffairsTicket.findMany({
+      where,
+      select: {
+        trackingNumber: true,
+        subject: true,
+        status: true,
+        priority: true,
+        category: true,
+        nextAction: true,
+        firstResponseDueAt: true,
+        resolutionDueAt: true,
+      },
+      orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+      take: 10001,
+    });
   }
 
   workbenchReferrals(
@@ -308,7 +351,11 @@ export class CustomerAffairsRepository {
     };
   }
 
-  async report(branchIds: string[]) {
+  async report(
+    branchIds: string[],
+    query: { createdFrom?: string; createdBefore?: string } = {},
+  ) {
+    const created = createdDateFilter(query);
     const [
       leadStages,
       ticketStatuses,
@@ -319,35 +366,35 @@ export class CustomerAffairsRepository {
     ] = await Promise.all([
       this.database.client.customerAffairsLead.groupBy({
         by: ['stage'],
-        where: { branchId: { in: branchIds } },
+        where: { branchId: { in: branchIds }, ...created },
         _count: { _all: true },
       }),
       this.database.client.customerAffairsTicket.groupBy({
         by: ['status'],
-        where: { branchId: { in: branchIds } },
+        where: { branchId: { in: branchIds }, ...created },
         _count: { _all: true },
       }),
       this.database.client.customerAffairsTicket.groupBy({
         by: ['priority'],
-        where: { branchId: { in: branchIds } },
+        where: { branchId: { in: branchIds }, ...created },
         _count: { _all: true },
       }),
       this.database.client.customerAffairsTicket.groupBy({
         by: ['category'],
-        where: { branchId: { in: branchIds } },
+        where: { branchId: { in: branchIds }, ...created },
         _count: { _all: true },
       }),
       this.database.client.customerAffairsSatisfaction.aggregate({
         where: {
           submittedByCustomer: true,
-          ticket: { branchId: { in: branchIds } },
+          ticket: { branchId: { in: branchIds }, ...created },
         },
         _avg: { score: true },
         _count: { score: true },
       }),
       this.database.client.customerAffairsCorrectiveAction.groupBy({
         by: ['status'],
-        where: { ticket: { branchId: { in: branchIds } } },
+        where: { ticket: { branchId: { in: branchIds }, ...created } },
         _count: { _all: true },
       }),
     ]);

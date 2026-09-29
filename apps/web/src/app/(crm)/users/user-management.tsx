@@ -7,7 +7,6 @@ import {
   USER_ACCESS_SCREENS,
   USER_JOB_TITLES,
   screenPermission,
-  canViewScreen,
   type AuthenticatedActor,
 } from '@nora/contracts';
 import { Button } from '@/components/ui/button';
@@ -48,6 +47,8 @@ interface UserRow {
 interface Options {
   permissions: Permission[];
   branches: Option[];
+  assignableScreenIds: string[];
+  canAssignAll: boolean;
 }
 async function request(path: string, init?: RequestInit) {
   const base = getPublicApiBaseUrl();
@@ -109,6 +110,8 @@ export function UserManagement() {
     [options, setOptions] = useState<Options>({
       permissions: [],
       branches: [],
+      assignableScreenIds: [],
+      canAssignAll: false,
     }),
     [actor, setActor] = useState<AuthenticatedActor | null>(null);
   const [selected, setSelected] = useState<UserRow | null>(null),
@@ -126,6 +129,7 @@ export function UserManagement() {
     title,
     options.permissions,
     actor?.permissions ?? [],
+    options.canAssignAll,
   );
   function applyProposal(customize: boolean) {
     setScreenIds(proposal.screenIds);
@@ -200,7 +204,7 @@ export function UserManagement() {
             ).map((s) => s.id)
           : USER_ACCESS_SCREENS.map((s) => s.id)
         : []
-      ).filter((id) => actor && canViewScreen(actor.permissions, id)),
+      ).filter((id) => options.assignableScreenIds.includes(id)),
     );
     setBranchIds(user?.branches.map((b) => b.branch.id) ?? []);
     if (user && !codes.includes('ui.profile'))
@@ -470,11 +474,13 @@ export function UserManagement() {
                         p.code.startsWith(prefix + '-'),
                     ),
                   );
-                  const allowedScreens = screens.filter(
-                    (s) => actor && canViewScreen(actor.permissions, s.id),
+                  const allowedScreens = screens.filter((s) =>
+                    options.assignableScreenIds.includes(s.id),
                   );
-                  const allowedPermissions = permissions.filter((p) =>
-                    actor?.permissions.some((code) => code === p.code),
+                  const allowedPermissions = permissions.filter(
+                    (p) =>
+                      options.canAssignAll ||
+                      actor?.permissions.some((code) => code === p.code),
                   );
                   const total =
                     allowedScreens.length + allowedPermissions.length;
@@ -518,7 +524,7 @@ export function UserManagement() {
                             label={s.title}
                             checked={screenIds.includes(s.id)}
                             disabled={
-                              !actor || !canViewScreen(actor.permissions, s.id)
+                              !options.assignableScreenIds.includes(s.id)
                             }
                             onChange={(v) =>
                               setScreenIds(change(screenIds, [s.id], v))
@@ -536,6 +542,7 @@ export function UserManagement() {
                             label={p.name}
                             checked={permissionIds.includes(p.id)}
                             disabled={
+                              !options.canAssignAll &&
                               !actor?.permissions.some(
                                 (code) => code === p.code,
                               )

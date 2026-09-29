@@ -1,8 +1,14 @@
 import { describe, it, expect } from 'vitest';
 import type { TicketOfferV1 } from '@nora/contracts';
 import type { Product } from './catalog';
+import { wallTimeToUtc } from './catalog';
 import { emptyInput, initialQuery, queryProducts } from './preview';
-import { catalogProductsFromOffers, catalogOffer } from './published-catalog';
+import {
+  arrivalWallTimeAfterDepartureChange,
+  arrivalWallTimeAfterMidnight,
+  catalogProductsFromOffers,
+  catalogOffer,
+} from './published-catalog';
 const offers = Array.from(
   { length: 10 },
   (_, index) =>
@@ -37,6 +43,42 @@ const local = Array.from(
     }) as Product,
 );
 describe('authoritative ticket catalog', () => {
+  it('moves an earlier same-day arrival to the next calendar day', () => {
+    expect(
+      arrivalWallTimeAfterMidnight('2026-09-29T23:30', '2026-09-29T01:00'),
+    ).toBe('2026-09-30T01:00');
+    expect(
+      arrivalWallTimeAfterMidnight('2026-09-29T08:00', '2026-09-29T09:00'),
+    ).toBe('2026-09-29T09:00');
+    expect(
+      arrivalWallTimeAfterMidnight('2026-09-29T23:30', '2026-09-30T01:00'),
+    ).toBe('2026-09-30T01:00');
+    expect(
+      arrivalWallTimeAfterMidnight('2026-09-30T00:30', '2026-09-29T23:00'),
+    ).toBe('2026-09-30T23:00');
+
+    const departure = wallTimeToUtc(
+      '2026-09-29T23:30',
+      'Asia/Tehran',
+      '+03:30',
+    );
+    const arrival = wallTimeToUtc(
+      arrivalWallTimeAfterMidnight('2026-09-29T23:30', '2026-09-29T01:00'),
+      'Asia/Tehran',
+      '+03:30',
+    );
+    expect(Date.parse(arrival)).toBeGreaterThan(Date.parse(departure));
+  });
+
+  it('rebases an earlier arrival date when the departure date moves forward', () => {
+    expect(
+      arrivalWallTimeAfterDepartureChange(
+        '2026-10-02T23:30',
+        '2026-10-01T01:00',
+      ),
+    ).toBe('2026-10-03T01:00');
+  });
+
   it('renders ten separate server tickets with four cached definitions, including identical schedules', () => {
     const products = catalogProductsFromOffers(local, offers, []);
     expect(products).toHaveLength(10);

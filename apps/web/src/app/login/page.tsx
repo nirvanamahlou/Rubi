@@ -35,9 +35,6 @@ function CompanyLogos({ compact = false }: { compact?: boolean }) {
             sizes={compact ? '45vw' : '220px'}
             src="/brand/niyayesh-seir-full.png"
           />
-          <span className="pointer-events-none absolute inset-x-0 bottom-0 bg-white/90 px-2 py-2 text-center text-xs font-bold text-primary">
-            نیایش سیر سحر
-          </span>
         </div>
         <div
           className={
@@ -54,9 +51,6 @@ function CompanyLogos({ compact = false }: { compact?: boolean }) {
             sizes={compact ? '45vw' : '220px'}
             src="/brand/jahan-bastan.png"
           />
-          <span className="pointer-events-none absolute inset-x-0 bottom-0 bg-white/90 px-2 py-2 text-center text-xs font-bold text-primary">
-            جهان باستان
-          </span>
         </div>
       </div>
     </div>

@@ -597,6 +597,7 @@ export function MasterDataTravelServicesWorkspace() {
         aria-label={`مشاهده ${record.name}`}
         onClick={() => openProfile(record)}
         size="icon"
+        title={`مشاهده ${record.name}`}
         variant="outline"
       >
         <Eye className="size-4" />
@@ -608,6 +609,7 @@ export function MasterDataTravelServicesWorkspace() {
           setFormMode('edit');
         }}
         size="icon"
+        title={`ویرایش ${record.name}`}
         variant="outline"
       >
         <FilePenLine className="size-4" />
@@ -768,7 +770,6 @@ export function MasterDataTravelServicesWorkspace() {
             <ArrowRight className="size-4" /> همه بخش‌ها
           </Link>
         }
-        description={definition.description}
         title={definition.label}
       />
       <div className="flex w-full flex-wrap justify-end gap-2">
@@ -945,7 +946,6 @@ export function MasterDataTravelServicesWorkspace() {
       ) : null}
       {selected ? (
         <MasterDataProfileDialog
-          description="پروفایل از فهرست اصلی و بدون سکشن یا مسیر مستقل نمایش داده می‌شود."
           onOpenChange={setProfileOpen}
           open={profileOpen}
           title={`پروفایل ${definition.singularLabel}`}

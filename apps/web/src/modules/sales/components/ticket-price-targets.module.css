@@ -1,0 +1,73 @@
+.panel {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, min(100%, 22rem));
+  align-content: start;
+  gap: 0.5rem;
+  min-width: 0;
+  max-height: 12rem;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+  padding-inline-end: 0.25rem;
+}
+
+.group {
+  container-type: inline-size;
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  padding: 0.5rem;
+  background: color-mix(in srgb, var(--muted) 15%, transparent);
+}
+
+.heading {
+  margin-bottom: 0.35rem;
+  font-size: 0.625rem;
+  color: var(--muted-foreground);
+}
+
+.row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 3rem minmax(0, 1fr);
+  align-items: center;
+  gap: 0.35rem;
+  min-width: 0;
+  padding-block: 0.2rem;
+}
+
+.row + .row {
+  border-top: 1px solid var(--border);
+}
+
+.name,
+.price {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: 0.75rem;
+}
+
+.price {
+  font-variant-numeric: tabular-nums;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  grid-column: 1 / -1;
+}
+
+@container (min-width: 320px) {
+  .row {
+    grid-template-columns: minmax(0, 1fr) 3rem minmax(4rem, 1fr) auto;
+  }
+
+  .actions {
+    grid-column: auto;
+  }
+}
+
+@media (min-width: 1024px) and (max-width: 1279px) {
+  .panel {
+    grid-column: 1 / -1;
+  }
+}

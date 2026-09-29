@@ -3,15 +3,17 @@
 import {
   ArrowLeft,
   ClipboardCheck,
+  Download,
   Headphones,
   Smile,
   Users,
 } from 'lucide-react';
-import type { CSSProperties } from 'react';
+import { useState, type CSSProperties } from 'react';
 import type { AffairsReport } from '../api/customer-affairs-client';
 import { stageLabel, statusLabel } from './customer-affairs-workspace';
 import { Button } from '@/components/ui/button';
 import s from './affairs-report-panel.module.css';
+import { downloadAffairsReportPdf } from './customer-affairs-report-pdf';
 
 const number = (value: number) =>
   value.toLocaleString('fa-IR', { maximumFractionDigits: 1 });
@@ -135,12 +137,16 @@ export function AffairsReportPanel({
   showRequests,
   onTickets,
   onRequests,
+  dateRangeLabel = 'همه تاریخ‌ها',
 }: {
   report: AffairsReport;
   showRequests: boolean;
   onTickets: () => void;
   onRequests: () => void;
+  dateRangeLabel?: string;
 }) {
+  const [pdfBusy, setPdfBusy] = useState(false);
+  const [pdfError, setPdfError] = useState('');
   const requests = report.leadStages.map((x) => ({
     key: x.stage,
     count: x._count._all,
@@ -197,9 +203,33 @@ export function AffairsReportPanel({
         <p className={s.timestamp}>
           آخرین دریافت: {new Date(report.generatedAt).toLocaleString('fa-IR')}
           <br />
-          در محدوده دسترسی شما · همه تاریخ‌ها
+          در محدوده دسترسی شما · {dateRangeLabel}
         </p>
+        <Button
+          variant="outline"
+          disabled={pdfBusy}
+          onClick={() => {
+            setPdfBusy(true);
+            setPdfError('');
+            void downloadAffairsReportPdf(report, dateRangeLabel)
+              .catch((error: unknown) =>
+                setPdfError(
+                  error instanceof Error
+                    ? error.message
+                    : 'ساخت PDF انجام نشد.',
+                ),
+              )
+              .finally(() => setPdfBusy(false));
+          }}
+        >
+          <Download size={16} aria-hidden="true" /> خروجی PDF
+        </Button>
       </header>
+      {pdfError && (
+        <p role="alert" className={s.note}>
+          {pdfError}
+        </p>
+      )}
       <div className={s.metrics}>
         {metrics.map(({ label, value, hint, icon: Icon, color }) => (
           <article

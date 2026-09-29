@@ -11,12 +11,14 @@ describe('header date integration', () => {
     const markup = renderToStaticMarkup(createElement(HeaderToday));
     expect(markup).toContain('تاریخ امروز · --:--');
     expect(markup).toContain('data-header-today');
+    expect(markup).toContain('data-header-today-group');
     expect(markup).toContain('dir="rtl"');
     expect(markup).toContain('text-right');
     expect(markup).toContain('<bdi dir="ltr">--:--</bdi>');
     expect(markup).not.toContain('dateTime=');
     expect(markup).not.toContain('datetime=');
     expect(markup).toContain('truncate');
+    expect(markup).not.toContain('data-header-role-label');
   });
 
   it('keeps the date in the header without replacing user, company or notification controls', () => {

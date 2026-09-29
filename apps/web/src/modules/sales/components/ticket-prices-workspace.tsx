@@ -4,6 +4,7 @@ import {
   ArrowLeftRight,
   CircleDollarSign,
   Copy,
+  FileSpreadsheet,
   PencilLine,
   RefreshCw,
   Search,
@@ -46,6 +47,8 @@ import {
   validPercent,
   type TicketPriceRow,
 } from '../model/ticket-price-rows';
+import { ticketPriceExportRows } from '../model/ticket-prices-export';
+import targetStyles from './ticket-price-targets.module.css';
 type Draft = { amount: string; currencyCode: string };
 const DIRECT_TARGET = '__DIRECT__';
 const faDay = new Intl.DateTimeFormat('fa-IR', {
@@ -89,6 +92,7 @@ export function TicketPricesWorkspace() {
     currencyCode: 'IRR',
   });
   const [busy, setBusy] = useState(true);
+  const [exporting, setExporting] = useState(false);
   const [saving, setSaving] = useState('');
   const [notice, setNotice] = useState('');
   const [error, setError] = useState('');
@@ -368,21 +372,58 @@ export function TicketPricesWorkspace() {
         ?.scrollIntoView({ behavior: 'smooth', block: 'start' }),
     );
   }
+  async function exportPrices() {
+    setExporting(true);
+    setError('');
+    try {
+      const exportRows = ticketPriceExportRows(filtered, targets, cities);
+      const { createTicketPricesXlsx } =
+        await import('../model/ticket-prices-xlsx');
+      const bytes = createTicketPricesXlsx(exportRows);
+      const url = URL.createObjectURL(
+        new Blob([bytes], {
+          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        }),
+      );
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `ticket-prices-${new Date().toISOString().slice(0, 10)}.xlsx`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 30000);
+    } catch {
+      setError('خروجی اکسل قیمت بلیت آماده نشد؛ دوباره تلاش کنید.');
+    } finally {
+      setExporting(false);
+    }
+  }
   return (
     <div className="space-y-6" dir="rtl">
       <PageHeader
         eyebrow="فروش"
         title="قیمت بلیط"
         actions={
-          <Button
-            variant="outline"
-            onClick={() => void load()}
-            disabled={!!saving}
-            loading={busy}
-          >
-            <RefreshCw className="size-4" />
-            به‌روزرسانی
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant="outline"
+              onClick={() => void exportPrices()}
+              disabled={busy || exporting || !filtered.length}
+              loading={exporting}
+            >
+              <FileSpreadsheet className="size-4" />
+              خروجی اکسل ({filtered.length.toLocaleString('fa-IR')})
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => void load()}
+              disabled={!!saving || exporting}
+              loading={busy}
+            >
+              <RefreshCw className="size-4" />
+              به‌روزرسانی
+            </Button>
+          </div>
         }
       />
       {error ? <Alert tone="error" title={error} /> : null}
@@ -710,13 +751,13 @@ export function TicketPricesWorkspace() {
                   }
                   className="min-w-0 rounded-xl border border-sky-100 bg-surface p-3 shadow-sm dark:border-sky-400/20"
                 >
-                  <div className="grid min-w-0 items-start gap-3 lg:grid-cols-[minmax(0,1fr)_15rem] xl:grid-cols-[minmax(0,1fr)_14rem_minmax(0,1.6fr)]">
+                  <div className="grid min-w-0 items-start gap-3 lg:grid-cols-[minmax(0,1fr)_15rem] xl:grid-cols-[minmax(0,1fr)_16rem_minmax(0,2.3fr)]">
                     <div className="min-w-0">
                       <div className="mb-2 flex flex-wrap items-center gap-2">
                         <Badge>
                           {row.returnOfferId ? 'رفت‌وبرگشت' : 'یک‌طرفه'}
                         </Badge>
-                        <strong className="text-sm">
+                        <strong className="text-base font-bold">
                           {cities[row.offer.originId] ?? 'مبدأ'} ←{' '}
                           {cities[row.offer.destinationId] ?? 'مقصد'}
                         </strong>
@@ -734,7 +775,7 @@ export function TicketPricesWorkspace() {
                         ) : null}
                       </div>
                     </div>
-                    <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_4.5rem] items-end gap-1.5 rounded-lg border bg-muted/15 p-2 [&_label]:text-xs">
+                    <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_5rem] items-end gap-1.5 rounded-lg border bg-muted/15 p-2 [&_label]:text-xs">
                       <FormField
                         label={
                           row.returnOfferId
@@ -783,42 +824,57 @@ export function TicketPricesWorkspace() {
                       ) : null}
                     </div>
                     {row.base ? (
-                      <div className="grid min-w-0 gap-2 sm:grid-cols-2 lg:col-span-2 xl:col-span-1">
-                        {channels.map((target) => {
-                          const targetId =
-                            target.id === DIRECT_TARGET ? null : target.id;
-                          const current = row.offer.saleCommissions?.find(
-                            (c) =>
-                              c.returnOfferId === row.returnOfferId &&
-                              c.salePriceTargetId === targetId,
-                          );
-                          const legacy =
-                            targetId && !row.returnOfferId
-                              ? row.offer.targetedStandaloneSalePrices?.find(
-                                  (p) => p.salePriceTarget.id === targetId,
-                                )
-                              : undefined;
-                          const fieldKey = row.id + ':' + target.id;
-                          const percent =
-                            percentDrafts[fieldKey] ?? current?.percent ?? '0';
-                          const net =
-                            legacy &&
-                            !current &&
-                            percentDrafts[fieldKey] === undefined
-                              ? legacy.amount
-                              : netTicketPrice(row.base!.amount, percent);
-                          return (
-                            <div
-                              key={target.id}
-                              className="min-w-0 rounded-lg border bg-muted/15 p-2"
-                            >
-                              <div className="grid grid-cols-[minmax(0,1fr)_3.75rem] items-center gap-1.5 [&_label]:text-[10px]">
-                                <strong className="break-words text-xs">
-                                  {target.name}
-                                </strong>
-                                <FormField label="کمیسیون ٪">
+                      <div
+                        className={targetStyles.panel}
+                        aria-label="قیمت مقصدهای فروش"
+                      >
+                        {Array.from(
+                          { length: Math.ceil(channels.length / 2) },
+                          (_, index) =>
+                            channels.slice(index * 2, index * 2 + 2),
+                        ).map((group) => (
+                          <div
+                            key={group[0]!.id}
+                            className={targetStyles.group}
+                          >
+                            <div className={targetStyles.heading}>
+                              مقصد فروش · کمیسیون ٪ · قیمت
+                            </div>
+                            {group.map((target) => {
+                              const targetId =
+                                target.id === DIRECT_TARGET ? null : target.id;
+                              const current = row.offer.saleCommissions?.find(
+                                (c) =>
+                                  c.returnOfferId === row.returnOfferId &&
+                                  c.salePriceTargetId === targetId,
+                              );
+                              const legacy =
+                                targetId && !row.returnOfferId
+                                  ? row.offer.targetedStandaloneSalePrices?.find(
+                                      (p) => p.salePriceTarget.id === targetId,
+                                    )
+                                  : undefined;
+                              const fieldKey = row.id + ':' + target.id;
+                              const percent =
+                                percentDrafts[fieldKey] ??
+                                current?.percent ??
+                                '0';
+                              const net =
+                                legacy &&
+                                !current &&
+                                percentDrafts[fieldKey] === undefined
+                                  ? legacy.amount
+                                  : netTicketPrice(row.base!.amount, percent);
+                              return (
+                                <div
+                                  key={target.id}
+                                  className={targetStyles.row}
+                                >
+                                  <strong className={targetStyles.name}>
+                                    {target.name}
+                                  </strong>
                                   <Input
-                                    className="h-8 rounded-lg px-2 text-xs"
+                                    className="h-8 min-w-0 rounded-lg px-1 text-xs"
                                     aria-label={
                                       'درصد ' + target.name + ' برای ' + row.id
                                     }
@@ -835,62 +891,66 @@ export function TicketPricesWorkspace() {
                                     }
                                     aria-invalid={!validPercent(percent)}
                                   />
-                                </FormField>
-                              </div>
-                              <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
-                                <span className="text-xs text-muted-foreground">
-                                  {legacy &&
-                                  !current &&
-                                  percentDrafts[fieldKey] === undefined
-                                    ? 'قیمت مستقل قبلی'
-                                    : 'قیمت این مقصد'}
-                                </span>
-                                <strong
-                                  dir="ltr"
-                                  className="break-all text-xs tabular-nums"
-                                >
-                                  {net
-                                    ? formatAmount(net) +
-                                      ' ' +
-                                      (legacy &&
-                                      !current &&
-                                      percentDrafts[fieldKey] === undefined
-                                        ? legacy.currencyCode
-                                        : row.base!.currencyCode)
-                                    : 'درصد نامعتبر'}
-                                </strong>
-                              </div>
-                              <div className="mt-2 flex flex-wrap gap-1">
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="min-h-8 px-2"
-                                  onClick={() =>
-                                    void saveCommission(row, target.id, false)
-                                  }
-                                  disabled={!!saving || !validPercent(percent)}
-                                  loading={saving === fieldKey}
-                                >
-                                  ثبت درصد
-                                </Button>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="min-h-8 px-2"
-                                  aria-label="کپی درصد برای این مقصد"
-                                  title="برای تمام بلیت‌های قیمت‌دار همین شعبه، حتی خارج از فیلتر"
-                                  onClick={() =>
-                                    void saveCommission(row, target.id, true)
-                                  }
-                                  disabled={!!saving || !validPercent(percent)}
-                                >
-                                  <Copy className="size-3" />
-                                  کپی درصد
-                                </Button>
-                              </div>
-                            </div>
-                          );
-                        })}
+                                  <strong
+                                    dir="ltr"
+                                    className={targetStyles.price}
+                                  >
+                                    {net
+                                      ? formatAmount(net) +
+                                        ' ' +
+                                        (legacy &&
+                                        !current &&
+                                        percentDrafts[fieldKey] === undefined
+                                          ? legacy.currencyCode
+                                          : row.base!.currencyCode)
+                                      : 'درصد نامعتبر'}
+                                  </strong>
+                                  <div className={targetStyles.actions}>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="min-h-8 px-2"
+                                      aria-label={'ثبت درصد ' + target.name}
+                                      onClick={() =>
+                                        void saveCommission(
+                                          row,
+                                          target.id,
+                                          false,
+                                        )
+                                      }
+                                      disabled={
+                                        !!saving || !validPercent(percent)
+                                      }
+                                      loading={saving === fieldKey}
+                                    >
+                                      ثبت
+                                    </Button>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="min-h-8 px-2"
+                                      aria-label="کپی درصد برای این مقصد"
+                                      title="برای تمام بلیت‌های قیمت‌دار همین شعبه، حتی خارج از فیلتر"
+                                      onClick={() =>
+                                        void saveCommission(
+                                          row,
+                                          target.id,
+                                          true,
+                                        )
+                                      }
+                                      disabled={
+                                        !!saving || !validPercent(percent)
+                                      }
+                                    >
+                                      <Copy className="size-3" />
+                                      کپی
+                                    </Button>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        ))}
                       </div>
                     ) : (
                       <p className="self-center text-xs text-muted-foreground">
@@ -916,17 +976,17 @@ function FlightSummary({
 }) {
   return (
     <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 rounded-lg bg-sky-50/70 px-2 py-1.5 dark:bg-sky-950/25">
-      <span className="text-xs font-bold text-primary">{direction}</span>
+      <span className="text-sm font-bold text-primary">{direction}</span>
       {offer ? (
         <>
-          <p className="break-words text-xs font-semibold">
+          <p className="break-words text-sm font-semibold">
             {offer.carrierName} · <bdi>{offer.serviceNumber}</bdi>
           </p>
-          <p className="text-xs">
+          <p className="text-sm">
             <bdi>{faDay.format(new Date(offer.departureAt))}</bdi> ·{' '}
             <bdi>{faTime.format(new Date(offer.departureAt))}</bdi>
           </p>
-          <p className="text-[10px] text-muted-foreground">
+          <p className="text-xs text-muted-foreground">
             ظرفیت: {offer.remainingCapacity.toLocaleString('fa-IR')}
           </p>
         </>
@@ -950,7 +1010,7 @@ function CurrencySelect({
   return (
     <Select value={value} onValueChange={onChange}>
       <SelectTrigger
-        className={compact ? 'h-8 rounded-lg px-2 text-xs' : undefined}
+        className={compact ? 'h-8 min-w-0 rounded-lg px-2 text-xs' : undefined}
       >
         <SelectValue placeholder="ارز" />
       </SelectTrigger>

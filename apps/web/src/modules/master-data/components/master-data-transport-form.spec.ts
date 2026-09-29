@@ -61,7 +61,7 @@ const expected = {
 };
 
 describe('transport mockup form coverage', () => {
-  it('renders cabin class with a required English title and no Persian title', () => {
+  it('renders cabin class with an optional English title and no Persian title', () => {
     const definition = getMasterDataDefinition('cabin-classes');
     const fields = getMasterDataFormFields(definition);
     const html = renderToStaticMarkup(
@@ -75,10 +75,13 @@ describe('transport mockup form coverage', () => {
     );
 
     expect(fields.map((field) => field.key)).not.toContain('name');
-    expect(fields.find((field) => field.key === 'englishName')).toMatchObject({
-      required: true,
-    });
+    expect(
+      fields.find((field) => field.key === 'englishName')?.required,
+    ).not.toBe(true);
     expect(html).toContain('id="live-cabin-classes-englishName"');
+    expect(html).not.toMatch(
+      /id="live-cabin-classes-englishName"[^>]*required/,
+    );
     expect(html).toContain('required=""');
     expect(html).not.toContain('عنوان فارسی');
   });

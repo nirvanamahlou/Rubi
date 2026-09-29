@@ -12,6 +12,34 @@ vi.mock('next/navigation', () => ({
 }));
 
 describe('Nora Customer Affairs navigation', () => {
+  it('shows a structured request profile without changing its actions', () => {
+    const detail = {
+      id: 'request',
+      trackingNumber: 'CA-L-1',
+      title: 'سفر نمایشگاهی',
+      travelNeed: 'بازدید نمایشگاه',
+      stage: 'NEW',
+      priority: 'LOW',
+      nextAction: 'تماس با مشتری',
+      nextActionAt: '2026-09-29T10:00:00Z',
+      customerId: null,
+      timeline: [],
+    } as unknown as Detail;
+    const html = renderToStaticMarkup(
+      <DetailPanel
+        detail={detail}
+        tab="leads"
+        onBack={() => {}}
+        onReload={async () => {}}
+      />,
+    );
+    expect(html).toContain('CA-L-1');
+    expect(html).toContain('نیاز سفر');
+    expect(html).toContain('تماس با مشتری');
+    expect(html).toContain('تنظیم پیگیری بعدی');
+    expect(html).toContain('سابقه ارتباط و رسیدگی');
+    expect(html).toContain('ثبت ارتباط جدید');
+  });
   it.each(['NEW', 'RESOLVED', 'CLOSED'] as const)(
     'only offers ticket actions appropriate to %s',
     (status) => {
@@ -122,5 +150,41 @@ describe('Nora Customer Affairs navigation', () => {
     expect(html).toContain('منتظر پذیرش فروش');
     expect(html).toContain('پیگیری معوق');
     expect(html).not.toContain('رضایت و اقدام اصلاحی');
+  });
+
+  it('aligns list view controls and Excel export in the same toolbar', () => {
+    const source = readFileSync(
+      new URL('./customer-affairs-nora-workspace.tsx', import.meta.url),
+      'utf8',
+    );
+    const styles = readFileSync(
+      new URL('./customer-affairs-nora.module.css', import.meta.url),
+      'utf8',
+    );
+    expect(source).toContain('className={`${s.actions} ${s.listToolbar}`}');
+    expect(styles).toMatch(
+      /\.listToolbar \.subtabs\s*\{[^}]*margin-bottom:\s*0;/,
+    );
+    expect(styles).toMatch(
+      /\.listToolbar \.subtabs button\s*\{[^}]*min-height:\s*40px;/,
+    );
+  });
+
+  it('contains report date filters in a full-width card', () => {
+    const source = readFileSync(
+      new URL('./customer-affairs-nora-workspace.tsx', import.meta.url),
+      'utf8',
+    );
+    const styles = readFileSync(
+      new URL('./customer-affairs-nora.module.css', import.meta.url),
+      'utf8',
+    );
+    expect(source).toMatch(
+      /<section\s+className=\{s\.reportFilters\}[\s\S]*?<CreatedDateFilter/,
+    );
+    expect(styles).toMatch(/\.reportFilters\s*\{[^}]*width:\s*100%;/);
+    expect(styles).toMatch(
+      /\.reportFilters\s*\{[^}]*border:\s*1px solid var\(--border\);/,
+    );
   });
 });

@@ -32,6 +32,9 @@ import {
   TabsContent,
   TabsList,
   TabsTrigger,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
 } from '@/components/ui';
 import {
   createProduct,
@@ -68,6 +71,7 @@ import {
   repeatedDefinitions,
   publishRepeatedProducts,
 } from '../model/repeat-publication';
+import { roundTripPricesByOutbound } from '../model/round-trip-prices';
 import { TicketCatalogCard } from './ticket-catalog-card';
 import { TicketDetails } from './ticket-details';
 import { TicketForm } from './ticket-form';
@@ -604,21 +608,7 @@ function TicketCatalogWorkspace() {
     kind === 'city'
       ? readableCityName(resolve(kind, id)?.name, fallback)
       : (resolve(kind, id)?.name ?? fallback);
-  const roundTripPriceByOfferId = new Map<
-    string,
-    { amount: string; currencyCode: string; revision: number }
-  >();
-  for (const outboundOffer of publishedOffers) {
-    for (const price of outboundOffer.roundTripSalePrices ?? []) {
-      const current = {
-        amount: price.amount,
-        currencyCode: price.currencyCode,
-        revision: price.revision,
-      };
-      roundTripPriceByOfferId.set(outboundOffer.id, current);
-      roundTripPriceByOfferId.set(price.returnOfferId, current);
-    }
-  }
+  const roundTripPrices = roundTripPricesByOutbound(publishedOffers);
   function rememberReference(value: Reference) {
     setReferences((rows) => [
       ...rows.filter((r) => r.id !== value.id || r.kind !== value.kind),
@@ -1043,9 +1033,45 @@ function TicketCatalogWorkspace() {
                         : 'در فروش قیمت‌گذاری نشده'}
                     </td>
                     <td className="px-4 py-3 tabular-nums">
-                      {roundTripPriceByOfferId.get(offer.id)
-                        ? `${Number(roundTripPriceByOfferId.get(offer.id)!.amount).toLocaleString('fa-IR')} ${roundTripPriceByOfferId.get(offer.id)!.currencyCode}`
-                        : '—'}
+                      {roundTripPrices.get(offer.id)?.length ? (
+                        <div className="flex min-w-48 flex-col items-start gap-1.5">
+                          {roundTripPrices
+                            .get(offer.id)!
+                            .map(({ price, returning }) => {
+                              const fare = `${Number(price.amount).toLocaleString('fa-IR')} ${price.currencyCode}`;
+                              const returnDescription = returning
+                                ? `پرواز برگشت ${returning.serviceNumber}، تاریخ ${displayTime(returning.departureAt, 'Asia/Tehran')}`
+                                : 'پرواز برگشت در فهرست فعلی نیست';
+                              return (
+                                <Tooltip key={price.returnOfferId}>
+                                  <TooltipTrigger asChild>
+                                    <span
+                                      tabIndex={0}
+                                      aria-label={`قیمت رفت‌وبرگشت ${fare}؛ ${returnDescription}`}
+                                      className="inline-flex cursor-help flex-col items-start rounded px-1 py-0.5 text-start hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                                    >
+                                      <span>{fare}</span>
+                                      <span className="text-xs font-normal text-muted-foreground">
+                                        برگشت:{' '}
+                                        {returning
+                                          ? displayTime(
+                                              returning.departureAt,
+                                              'Asia/Tehran',
+                                            )
+                                          : 'تاریخ نامشخص'}
+                                      </span>
+                                    </span>
+                                  </TooltipTrigger>
+                                  <TooltipContent side="top">
+                                    {returnDescription}
+                                  </TooltipContent>
+                                </Tooltip>
+                              );
+                            })}
+                        </div>
+                      ) : (
+                        '—'
+                      )}
                     </td>
                     <td className="px-4 py-3">
                       {new Date(offer.departureAt).getTime() <= catalogNow

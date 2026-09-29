@@ -1,6 +1,7 @@
 import {
   USER_JOB_TITLES,
   USER_ACCESS_PROFILE_PERMISSION,
+  USER_ACCESS_SCREENS,
   screenPermission,
 } from '@nora/contracts';
 import { renderToStaticMarkup } from 'react-dom/server';
@@ -108,6 +109,11 @@ describe('role access recommendations', () => {
     expect(result.permissionIds).toEqual(['iam.users.manage']);
     expect(recommendRoleAccess('مدیر', [], actor).permissionIds).toEqual([]);
   });
+  it('offers every catalogued section and native permission to a system administrator', () => {
+    const result = recommendRoleAccess('مدیر', permissions, [], true);
+    expect(result.screenIds).toHaveLength(USER_ACCESS_SCREENS.length);
+    expect(result.permissionIds).toHaveLength(permissions.length);
+  });
   it('does not give fallback grants to unknown roles and never mutates existing option arrays', () => {
     const before = JSON.stringify(permissions);
     expect(proposal('unknown').permissionIds).toEqual([]);
@@ -130,4 +136,17 @@ describe('role access recommendations', () => {
     expect(html).toContain('تا ذخیره نکنید');
     expect(html).not.toContain('type="submit"');
   });
+});
+
+it('recommends branch-wide contracts for the sales manager without global access', () => {
+  const codes = [
+    'sales.contracts.read.branch',
+    'sales.contracts.update.branch',
+    'sales.contracts.read.all',
+  ];
+  const available = codes.map((code) => ({ id: code, code, name: code }));
+  const proposal = recommendRoleAccess('مدیر فروش', available, codes);
+  expect(proposal.permissionIds).toContain('sales.contracts.read.branch');
+  expect(proposal.permissionIds).toContain('sales.contracts.update.branch');
+  expect(proposal.permissionIds).not.toContain('sales.contracts.read.all');
 });

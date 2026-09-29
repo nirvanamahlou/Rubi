@@ -15,7 +15,11 @@ import {
 import { toursApi } from '../api/tours';
 import { asReference, listReferences } from '../api/references';
 import { wallTimeToUtc, type Reference } from '../model/catalog';
-import { publishedOfferInput } from '../model/published-catalog';
+import {
+  arrivalWallTimeAfterDepartureChange,
+  arrivalWallTimeAfterMidnight,
+  publishedOfferInput,
+} from '../model/published-catalog';
 import { TicketDatePicker } from './ticket-date-picker';
 import { ManifestTemplatePicker } from './manifest-template-picker';
 export function tehranWallTime(instant: string) {
@@ -50,13 +54,32 @@ export function PublishedOfferForm({
   readOnly: boolean;
   onSaved: () => Promise<void>;
 }) {
+  const initialDeparture = tehranWallTime(offer.departureAt);
+  const initialArrival = arrivalWallTimeAfterMidnight(
+    initialDeparture,
+    tehranWallTime(offer.arrivalAt),
+  );
   const [draft, setDraft] = useState(publishedOfferInput(offer));
-  const [departure, setDeparture] = useState(tehranWallTime(offer.departureAt));
-  const [arrival, setArrival] = useState(tehranWallTime(offer.arrivalAt));
+  const [departure, setDeparture] = useState(initialDeparture);
+  const [arrival, setArrival] = useState(initialArrival);
   const [cities, setCities] = useState<Reference[]>([]);
   const [problem, setProblem] = useState('');
   const [saving, setSaving] = useState(false);
   const savingRef = useRef(false);
+
+  function changeDeparture(value: string) {
+    setDeparture(value);
+    setArrival((current) =>
+      arrivalWallTimeAfterDepartureChange(value, current),
+    );
+    setProblem('');
+  }
+
+  function changeArrival(value: string) {
+    setArrival(arrivalWallTimeAfterMidnight(departure, value));
+    setProblem('');
+  }
+
   useEffect(() => {
     let cancelled = false;
     void (async () => {
@@ -93,10 +116,12 @@ export function PublishedOfferForm({
         departure === tehranWallTime(offer.departureAt)
           ? offer.departureAt
           : wallTimeToUtc(departure, 'Asia/Tehran', '+03:30');
+      const adjustedArrival = arrivalWallTimeAfterMidnight(departure, arrival);
+      if (adjustedArrival !== arrival) setArrival(adjustedArrival);
       const arrivalAt =
-        arrival === tehranWallTime(offer.arrivalAt)
+        adjustedArrival === tehranWallTime(offer.arrivalAt)
           ? offer.arrivalAt
-          : wallTimeToUtc(arrival, 'Asia/Tehran', '+03:30');
+          : wallTimeToUtc(adjustedArrival, 'Asia/Tehran', '+03:30');
       await toursApi.reviseOffer(offer.id, offer.version, {
         ...draft,
         departureAt,
@@ -178,7 +203,7 @@ export function PublishedOfferForm({
             readOnly={readOnly}
             disabled={saving}
             required
-            onChange={setDeparture}
+            onChange={changeDeparture}
           />
         </FormField>
         <FormField label="رسیدن — ساعت تهران">
@@ -188,7 +213,7 @@ export function PublishedOfferForm({
             readOnly={readOnly}
             disabled={saving}
             required
-            onChange={setArrival}
+            onChange={changeArrival}
           />
         </FormField>
         <FormField label="ظرفیت کل">

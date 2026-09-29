@@ -28,6 +28,14 @@ describe('MasterDataController permission metadata', () => {
 });
 
 describe('MasterDataLogoController permission metadata', () => {
+  it('requires master_data.read on preview', () => {
+    expect(
+      Reflect.getMetadata(
+        PERMISSIONS_KEY,
+        MasterDataLogoController.prototype.preview,
+      ),
+    ).toEqual(['master_data.read']);
+  });
   it.each(['replace', 'remove'] as const)(
     'requires master_data.update on %s',
     (method) => {

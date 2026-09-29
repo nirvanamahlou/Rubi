@@ -22,6 +22,57 @@ const organization = {
 };
 
 describe('MasterDataService supplier contacts', () => {
+  it('clears every protected phone field only when the supplier explicitly submits an empty phone', async () => {
+    const update = vi
+      .fn()
+      .mockImplementation(
+        async (
+          _resource: string,
+          _id: string,
+          data: Record<string, unknown>,
+        ) => ({
+          id: '55555555-5555-4555-8555-555555555555',
+          code: 'SUP_TEST',
+          name: 'Synthetic supplier',
+          isActive: true,
+          version: 2,
+          createdAt: new Date('2026-09-16T00:00:00.000Z'),
+          updatedAt: new Date('2026-09-16T00:00:00.000Z'),
+          ...data,
+        }),
+      );
+    const service = new MasterDataService({
+      find: vi.fn().mockResolvedValue({ organizationId: null }),
+      update,
+    } as unknown as MasterDataRepository);
+    await service.update(
+      'suppliers',
+      '55555555-5555-4555-8555-555555555555',
+      { primaryPhone: '' },
+      1,
+      actor,
+    );
+    expect(update.mock.calls[0]?.[2]).toMatchObject({
+      primaryPhoneEncrypted: null,
+      primaryPhoneEncryptionIv: null,
+      primaryPhoneEncryptionAuthTag: null,
+      primaryPhoneEncryptionKeyVersion: null,
+      primaryPhoneMasked: null,
+      primaryPhoneFingerprint: null,
+    });
+    expect(update.mock.calls[0]?.[2]).not.toHaveProperty('primaryPhone');
+    await service.update(
+      'suppliers',
+      '55555555-5555-4555-8555-555555555555',
+      { address: 'Unrelated edit' },
+      2,
+      actor,
+    );
+    expect(update.mock.calls[1]?.[2]).not.toHaveProperty(
+      'primaryPhoneEncrypted',
+    );
+  });
+
   it('stores a standalone supplier address and only protected phone fields', async () => {
     const create = vi
       .fn()

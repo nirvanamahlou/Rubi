@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
 import { refreshAuthenticatedSession } from '@/lib/auth-session';
 import { getPublicApiBaseUrl } from '@/lib/environment';
+import { filterManifestTickets } from '../model/manifest-ticket-filters';
 
 function todayInTehran() {
   const parts = new Intl.DateTimeFormat('en-US', {
@@ -71,6 +72,8 @@ export function ManifestExport() {
   const [tickets, setTickets] = useState<
     readonly ReservationManifestTicketCardV1[]
   >([]);
+  const [originFilter, setOriginFilter] = useState('');
+  const [destinationFilter, setDestinationFilter] = useState('');
   const [loaded, setLoaded] = useState(false);
   const [busy, setBusy] = useState('');
   const [error, setError] = useState('');
@@ -118,6 +121,8 @@ export function ManifestExport() {
       const payload =
         (await response.json()) as ReservationManifestTicketListV1;
       setTickets(payload.data);
+      setOriginFilter('');
+      setDestinationFilter('');
       setLoaded(true);
     } catch (reason) {
       setError(
@@ -127,6 +132,21 @@ export function ManifestExport() {
       setBusy('');
     }
   }
+
+  const visibleTickets = filterManifestTickets(tickets, {
+    originName: originFilter,
+    destinationName: destinationFilter,
+  });
+  const origins = Array.from(
+    new Set(tickets.map((ticket) => ticket.originName)),
+  )
+    .filter(Boolean)
+    .sort((left, right) => left.localeCompare(right, 'fa'));
+  const destinations = Array.from(
+    new Set(tickets.map((ticket) => ticket.destinationName)),
+  )
+    .filter(Boolean)
+    .sort((left, right) => left.localeCompare(right, 'fa'));
 
   async function download(ticket: ReservationManifestTicketCardV1) {
     if (!ticket.template || busy || downloading.current) return;
@@ -238,6 +258,45 @@ export function ManifestExport() {
 
       {tickets.length > 0 && (
         <>
+          <div className="grid gap-3 sm:grid-cols-2" aria-label="فیلتر مسیر">
+            <label className="grid gap-2 text-sm font-medium">
+              فیلتر مبدا
+              <select
+                aria-label="فیلتر مبدا"
+                className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                value={originFilter}
+                onChange={(event) => setOriginFilter(event.target.value)}
+              >
+                <option value="">همه مبداها</option>
+                {origins.map((origin) => (
+                  <option key={origin} value={origin}>
+                    {origin}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="grid gap-2 text-sm font-medium">
+              فیلتر مقصد
+              <select
+                aria-label="فیلتر مقصد"
+                className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                value={destinationFilter}
+                onChange={(event) => setDestinationFilter(event.target.value)}
+              >
+                <option value="">همه مقصدها</option>
+                {destinations.map((destination) => (
+                  <option key={destination} value={destination}>
+                    {destination}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+          {visibleTickets.length === 0 && (
+            <p className="rounded-lg border border-dashed p-5 text-center text-sm text-muted-foreground">
+              بلیطی با این مبدا و مقصد پیدا نشد.
+            </p>
+          )}
           <fieldset className="grid gap-2 rounded-lg border border-border p-3">
             <legend className="px-1 text-sm font-semibold">محتوای خروجی</legend>
             <label className="flex cursor-pointer items-start gap-2 text-sm">
@@ -270,7 +329,7 @@ export function ManifestExport() {
             </label>
           </fieldset>
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-            {tickets.map((ticket) => (
+            {visibleTickets.map((ticket) => (
               <article
                 key={ticket.offerId}
                 className="overflow-hidden rounded-xl border border-s-4 border-s-cyan-500 bg-card shadow-sm"

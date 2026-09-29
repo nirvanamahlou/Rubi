@@ -371,6 +371,139 @@
   font-size: 16px;
   font-weight: 800;
 }
+.profileHero {
+  padding: 0;
+  overflow: hidden;
+}
+.profileHeading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px;
+  padding: 22px 24px;
+  border-bottom: 1px solid var(--border);
+  background: linear-gradient(
+    120deg,
+    color-mix(in srgb, var(--primary) 8%, var(--surface)),
+    var(--surface) 65%
+  );
+}
+.profileTitle {
+  min-width: 0;
+}
+.profileTracking,
+.profileEyebrow {
+  color: var(--primary);
+  font-size: 12px;
+  font-weight: 700;
+}
+.profileTitle h2 {
+  margin-top: 4px;
+  font-size: clamp(20px, 2vw, 26px);
+  font-weight: 850;
+  overflow-wrap: anywhere;
+}
+.profileBadges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.profileDescription {
+  margin: 20px 24px 0;
+  padding: 15px 18px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--primary) 4%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--primary) 12%, var(--border));
+}
+.profileDescription span,
+.profileDataGrid dt {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--muted-foreground);
+  font-size: 12px;
+}
+.profileDescription p {
+  white-space: pre-wrap;
+  line-height: 1.8;
+  font-size: 14px;
+}
+.profileHero .recordMeta {
+  margin: 16px 24px 0;
+}
+.profileFollowup {
+  margin: 18px 24px 0;
+}
+.profileActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 10px 24px 22px;
+}
+.profileData {
+  overflow: hidden;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface);
+}
+.profileSectionHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 18px 22px;
+  border-bottom: 1px solid var(--border);
+}
+.profileSectionHead h3 {
+  font-size: 16px;
+  font-weight: 800;
+}
+.profileSectionActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.profileDataGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  padding: 18px 22px 22px;
+}
+.profileDataGrid > div {
+  min-width: 0;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  background: color-mix(in srgb, var(--primary) 2%, var(--surface));
+}
+.profileDataGrid dd {
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+.profileDataWide {
+  grid-column: 1 / -1;
+}
+.profileHistory {
+  padding: 0;
+  overflow: hidden;
+}
+.profileTimeline {
+  display: grid;
+  gap: 12px;
+  padding: 20px 22px;
+}
+.profileTimelineItem {
+  border-inline-start: 3px solid
+    color-mix(in srgb, var(--primary) 35%, var(--border));
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--primary) 2%, var(--surface));
+  padding: 12px 16px;
+}
 .workflowForm {
   display: grid;
   gap: 14px;
@@ -504,13 +637,33 @@
   background: var(--surface);
   color: var(--primary);
 }
+.listToolbar {
+  align-items: center;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+}
+.listToolbar .subtabs {
+  align-items: center;
+  flex-wrap: nowrap;
+  margin-bottom: 0;
+}
+.listToolbar .subtabs button {
+  display: inline-flex;
+  min-height: 40px;
+  align-items: center;
+  justify-content: center;
+  padding-block: 0;
+}
 .filters {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   flex-wrap: wrap;
   gap: 10px;
   padding: 15px 20px;
   border-bottom: 1px solid var(--border);
+}
+.filters > form:last-child {
+  align-items: flex-end;
 }
 .search {
   flex: 1;
@@ -536,6 +689,17 @@
   min-width: 125px;
   max-width: 190px;
   font-size: 13px;
+}
+.reportFilters {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  margin-bottom: 18px;
+  padding: 18px 20px;
+  border: 1px solid var(--border);
+  border-radius: 17px;
+  background: var(--surface);
+  box-shadow: 0 4px 18px color-mix(in srgb, var(--foreground) 3%, transparent);
 }
 .table {
   width: 100%;
@@ -708,6 +872,9 @@
   --ca-amber: #edbd70;
 }
 @media (max-width: 1200px) {
+  .profileDataGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
   .hub {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -722,6 +889,25 @@
   }
 }
 @media (max-width: 760px) {
+  .profileHeading,
+  .profileSectionHead {
+    padding: 16px;
+  }
+  .profileDescription,
+  .profileHero .recordMeta {
+    margin-inline: 16px;
+  }
+  .profileActions,
+  .profileTimeline {
+    padding-inline: 16px;
+  }
+  .profileDataGrid {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 16px;
+  }
+  .listToolbar {
+    flex-wrap: wrap;
+  }
   .header {
     align-items: flex-start;
     flex-direction: column;
@@ -754,6 +940,10 @@
   }
   .detail {
     padding: 16px;
+  }
+  .detail.profileHero,
+  .detail.profileHistory {
+    padding: 0;
   }
   .metric {
     padding: 12px;

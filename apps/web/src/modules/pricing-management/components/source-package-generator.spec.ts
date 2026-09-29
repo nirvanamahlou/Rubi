@@ -124,7 +124,7 @@ describe('source package generator archive', () => {
     expect(templates).toContain('fixedCardSlots:true');
     expect(templates).toContain('tableColumns:2');
     expect(templates).toContain(
-      'bodyColumns:[[140,195,281,593],[423,195,282,593]]',
+      'bodyColumns:[[144,197,278,590],[424,197,277,590]]',
     );
     expect(app).toContain('p.rows*(p.tableColumns||1)');
     expect(app).toContain('splitTableColumns(ids,p.tableColumns||1)');

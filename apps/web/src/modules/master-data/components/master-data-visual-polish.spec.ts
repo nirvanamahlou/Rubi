@@ -11,6 +11,20 @@ function source(fileName: string) {
 }
 
 describe('Master Data visual polish contract', () => {
+  it('shows saved logos in the form and every logo-bearing Master Data workspace', () => {
+    expect(source('master-data-logo-upload.tsx')).toContain(
+      '<MasterDataLogoImage',
+    );
+    for (const file of [
+      'master-data-finance-workspace.tsx',
+      'master-data-insurance-workspace.tsx',
+      'master-data-transportation-workspace.tsx',
+      'master-data-accommodation-workspace.tsx',
+      'master-data-suppliers-workspace.tsx',
+    ]) {
+      expect(source(file), file).toContain('<MasterDataLogoImage');
+    }
+  });
   it('omits technical contract and backend badges throughout the Master Data UI', () => {
     const directory = resolve(
       process.cwd(),
@@ -34,12 +48,33 @@ describe('Master Data visual polish contract', () => {
   it('preserves form behavior, record versions and honest preview disclosure', () => {
     const form = source('master-data-live-form.tsx');
     expect(form).toContain('<DialogTitle>');
-    expect(form).toContain("'aria-describedby': undefined");
+    expect(form).toContain('aria-describedby={undefined}');
     expect(form).toContain('validateMasterDataDraft(definition.key, values)');
-    expect(form).toContain('await onPersist(result.values, logoChange)');
+    expect(form).toContain('await onPersist(');
+    expect(form).toContain(
+      'supplierEditValues(result.values, supplierPhoneTouched)',
+    );
     expect(form).toContain("record.version.toLocaleString('fa-IR')");
     expect(source('master-data-form.tsx')).toContain(
       'Blocked by Migration Lock',
+    );
+  });
+
+  it('does not render generic guidance beneath Master Data headings', () => {
+    expect(source('master-data-hub.tsx')).not.toContain(
+      '{section.description}',
+    );
+    expect(source('master-data-live-workspace.tsx')).not.toContain(
+      'definition.description}',
+    );
+    expect(source('master-data-finance-workspace.tsx')).not.toContain(
+      '{copy.description ? (',
+    );
+    expect(source('master-data-profile-dialog.tsx')).not.toContain(
+      '<DialogDescription>',
+    );
+    expect(source('master-data-live-form.tsx')).not.toContain(
+      '<DialogDescription>',
     );
   });
 
@@ -134,10 +169,6 @@ describe('Master Data visual polish contract', () => {
       'بانک فعال',
       'حساب‌های متصل',
       'نیازمند تکمیل اطلاعات',
-      'کل شعب ثبت‌شده',
-      'شعب فعال',
-      'شهرهای تحت پوشش',
-      'شعب بدون حساب متصل',
       'روش‌های فعال',
       'تراکنش‌های امروز',
       'درگاه‌های متصل',
@@ -145,6 +176,8 @@ describe('Master Data visual polish contract', () => {
     ]) {
       expect(finance).toContain(label);
     }
+    expect(finance).toContain('<MasterDataBankProfile');
+    expect(finance).not.toContain("key: 'branches'");
   });
 
   it('does not draw an underline on section-card hover', () => {
@@ -179,7 +212,7 @@ describe('Master Data visual polish contract', () => {
     }
   });
 
-  it('consolidates currency history and the city/region navigation', () => {
+  it('consolidates currency history and nests cities under countries', () => {
     const finance = source('master-data-finance-workspace.tsx');
     const financeTabs = finance.slice(
       finance.indexOf('const tabs'),
@@ -195,12 +228,11 @@ describe('Master Data visual polish contract', () => {
     expect(finance).toContain('<MasterDataProfileDialog');
     expect(finance).toContain('fromCurrencyId: selectedCurrency.id');
     expect(finance).toContain('toCurrencyId: selectedCurrency.id');
-    expect(geographyTabs).toContain("label: 'شهرها و استان‌ها'");
+    expect(geographyTabs).toContain("label: 'کشورها و شهرها'");
     expect(geographyTabs).not.toContain("resource: 'cities'");
     expect(geography).not.toContain("changeResource('cities')");
-    expect(geography).toContain("openCreate('regions')");
-    expect(geography).toContain("openCreate('cities')");
-    expect(geography).toContain("renderLocationTable('regions'");
-    expect(geography).toContain("renderLocationTable('cities'");
+    expect(geography).toContain("openRelatedCreate('cities', country)");
+    expect(geography).toContain("openRelatedCreate('airports', city)");
+    expect(geography).toMatch(/openRelatedCreate\(\s*'terminals',\s*airport,/);
   });
 });

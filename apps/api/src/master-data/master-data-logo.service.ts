@@ -1,4 +1,9 @@
-import { ConflictException, Inject, Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import type { AuthenticatedActor, MasterDataRecord } from '@nora/contracts';
 
 import {
@@ -46,6 +51,25 @@ export class MasterDataLogoService {
         message: 'رکورد هم‌زمان تغییر کرده است؛ صفحه را تازه کنید.',
       });
     return { resource, record: current.data };
+  }
+
+  async preview(
+    resourceValue: string,
+    id: string,
+    actor: AuthenticatedActor,
+    metadata: DocumentRequestMetadata,
+  ) {
+    const resource = this.masterData.resource(resourceValue);
+    if (!logoResources.has(resource))
+      throw new NotFoundException('این بخش لوگو ندارد.');
+    const record = (await this.masterData.detail(resource, id)).data;
+    const documentId = String(record.attributes.logoFileReference ?? '').trim();
+    if (!documentId) throw new NotFoundException('لوگوی این رکورد پیدا نشد.');
+    return this.documents.previewMasterDataLogo(
+      { documentId, resource, recordId: record.id },
+      actor,
+      metadata,
+    );
   }
 
   async replace(

@@ -29,6 +29,17 @@ describe('Master Data safe deletion UI', () => {
       button.indexOf('finally'),
     );
   });
+  it('uses the shared compact destructive icon trigger while retaining an accessible action name', () => {
+    const trigger = button.slice(
+      button.indexOf('<DialogTrigger'),
+      button.indexOf('</DialogTrigger>'),
+    );
+    expect(trigger).toContain('size="icon"');
+    expect(trigger).toContain('variant="destructive"');
+    expect(trigger).toContain('aria-label={`حذف ${record.name}`}');
+    expect(trigger).toContain('title={`حذف ${record.name}`}');
+    expect(trigger).not.toContain('/> حذف');
+  });
   it.each([
     'finance',
     'geography',

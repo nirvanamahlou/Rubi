@@ -21,7 +21,7 @@ export function CreatedDateFilter({
   const invalid = isCreatedDateRangeInvalid(start, end);
   return (
     <form
-      className="flex flex-wrap items-end gap-3 border-b border-border p-4"
+      className="flex flex-wrap items-end gap-2"
       onSubmit={(event) => {
         event.preventDefault();
         if (!invalid) onApply(start, end);

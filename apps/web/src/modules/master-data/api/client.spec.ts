@@ -13,6 +13,25 @@ afterEach(() => {
 });
 
 describe('master data browser client', () => {
+  it('loads the saved logo as an authenticated image instead of displaying its document id', async () => {
+    process.env.NEXT_PUBLIC_API_BASE_URL = 'http://localhost:4000/api/v1';
+    const image = new Blob(['image'], { type: 'image/png' });
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue({ ok: true, blob: async () => image });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(
+      masterDataApi.previewLogo({
+        resource: 'airlines',
+        recordId: 'airline/id',
+      }),
+    ).resolves.toBe(image);
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://localhost:4000/api/v1/master-data/airlines/airline%2Fid/logo',
+      expect.objectContaining({ credentials: 'include', cache: 'no-store' }),
+    );
+  });
   it('deletes only the requested record with credentials and its expected version', async () => {
     process.env.NEXT_PUBLIC_API_BASE_URL = 'http://localhost:4000/api/v1';
     const response = {

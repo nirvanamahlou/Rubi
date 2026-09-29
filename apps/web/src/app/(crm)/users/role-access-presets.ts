@@ -216,6 +216,31 @@ const profiles: Record<
       'مشاهده مسافر و مدارک هویتی و سفر برای پیگیری ویزا؛ بدون تغییر خرید، قرارداد یا مالی.',
   },
 };
+profiles['مدیر فروش'] = {
+  groups: [
+    'workbench',
+    'customers',
+    'sales',
+    'ticket-catalog',
+    'documents',
+    'reports',
+  ],
+  permissions: [
+    ...profiles[USER_JOB_TITLES[1]]!.permissions.filter(
+      (code) =>
+        code !== 'sales.contracts.read.own' &&
+        code !== 'sales.contracts.update.own',
+    ),
+    'sales.contracts.read.branch',
+    'sales.contracts.update.branch',
+    'sales.export',
+    'sales.audit.read',
+    'reporting.read',
+    'reporting.sales.read',
+  ],
+  reason:
+    'مدیریت قراردادهای همه کارشناسان در شعب مجاز، همراه گزارش فروش؛ بدون افزایش خودکار دسترسی خارج از شعب مجاز.',
+};
 export interface AssignablePermission {
   id: string;
   code: string;
@@ -225,6 +250,7 @@ export function recommendRoleAccess(
   title: string,
   permissions: readonly AssignablePermission[],
   actorPermissions: readonly string[],
+  canAssignAll = false,
 ) {
   const administrator = title === USER_JOB_TITLES[0];
   const profile = profiles[title];
@@ -234,11 +260,11 @@ export function recommendRoleAccess(
   const screens = USER_ACCESS_SCREENS.filter(
     (screen) =>
       groups.includes(screen.group) &&
-      canViewScreen(actorPermissions, screen.id),
+      (canAssignAll || canViewScreen(actorPermissions, screen.id)),
   );
   const native = permissions.filter(
     (permission) =>
-      actorPermissions.includes(permission.code) &&
+      (canAssignAll || actorPermissions.includes(permission.code)) &&
       (administrator || profile?.permissions.includes(permission.code)),
   );
   return {
@@ -249,7 +275,9 @@ export function recommendRoleAccess(
       screens.some((screen) => screen.group === group.id),
     ),
     reason: administrator
-      ? 'مدیریت تمام بخش‌ها، فقط در محدوده مجوزهای قابل واگذاری شما.'
+      ? canAssignAll
+        ? 'پیشنهاد مدیر سامانه: همهٔ بخش‌ها و مجوزهای عملیاتی؛ موارد دلخواه را پیش از ذخیره سفارشی کنید.'
+        : 'مدیریت تمام بخش‌های قابل واگذاری شما؛ دسترسی خارج از اختیارات شما اضافه نمی‌شود.'
       : (profile?.reason ??
         'برای این نقش پیشنهاد ثبت نشده است؛ دسترسی‌ها را دستی انتخاب کنید.'),
   };

@@ -36,7 +36,11 @@ import {
 
 type UserIdentityState =
   | { status: 'loading'; displayName: 'در حال دریافت اطلاعات' }
-  | { status: 'ready'; displayName: string; loggedInAt: string }
+  | {
+      status: 'ready';
+      displayName: string;
+      loggedInAt: string;
+    }
   | { status: 'error'; displayName: typeof PROFILE_USER_FALLBACK };
 
 export function UserMenu() {
@@ -139,8 +143,10 @@ export function UserMenu() {
               initials
             )}
           </span>
-          <span className="hidden min-w-0 max-w-32 truncate text-start text-xs font-bold lg:block">
-            {identity.displayName}
+          <span className="hidden min-w-0 max-w-36 text-start lg:block">
+            <span className="block truncate text-xs font-bold">
+              {identity.displayName}
+            </span>
           </span>
           <ChevronDown
             aria-hidden="true"

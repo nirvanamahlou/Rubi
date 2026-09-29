@@ -80,7 +80,6 @@ export function MasterDataTravelReferenceForm({
     <MasterDataProfileDialog
       open
       title={`${record ? 'ویرایش' : 'ایجاد'} ${definition.singularLabel}`}
-      description="تعریف مشخصات مرجع خدمت"
       onOpenChange={(open) => {
         if (!savingRef.current) onOpenChange(open);
       }}

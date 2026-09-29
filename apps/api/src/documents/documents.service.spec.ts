@@ -395,6 +395,50 @@ describe('DocumentsService security and persistence flow', () => {
     );
   });
 
+  it('previews a logo only when the BRAND document belongs to the exact Master Data record', async () => {
+    const logoRow = row({
+      domain: 'BRAND',
+      confidentiality: 'INTERNAL',
+      scanStatus: 'CLEAN',
+      mimeType: 'image/png',
+    });
+    repository.findDetail.mockResolvedValue({
+      ...logoRow,
+      relations: [
+        {
+          ...logoRow.relations[0]!,
+          sourceModule: 'master-data',
+          sourceEntityType: 'airlines',
+          sourceEntityId: 'airline-1',
+        },
+      ],
+    });
+    storage.openQuarantined.mockResolvedValue(
+      Readable.from([Buffer.from('png')]),
+    );
+    const reader = {
+      ...actor,
+      permissions: ['master_data.read'] as AuthenticatedActor['permissions'],
+    };
+    const input = {
+      documentId: logoRow.id,
+      resource: 'airlines',
+      recordId: 'airline-1',
+    };
+
+    const file = await service.previewMasterDataLogo(input, reader, {});
+    expect(file.mimeType).toBe('image/png');
+    expect(storage.openQuarantined).toHaveBeenCalledOnce();
+    await expect(
+      service.previewMasterDataLogo(
+        { ...input, recordId: 'other-airline' },
+        reader,
+        {},
+      ),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    expect(storage.openQuarantined).toHaveBeenCalledOnce();
+  });
+
   it('applies branch/domain scope server-side and masks sensitive list metadata', async () => {
     repository.list.mockResolvedValue({ rows: [row()], total: 1 });
 
