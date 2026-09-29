@@ -2,6 +2,10 @@
 
 Server-backed flight cards/counts and fresh-browser editing now match the managed list. Exact identity fixes duplicate-schedule actions; capacity reflects holds. Archive preserves fare/commission history. Synthetic lifecycle and HTTP QA pass; no migration or operational data changes. See [task handoff](tasks/TICKET-MANAGEMENT-QA-0929.md).
 
+## 2026-09-29 — USER-ACCESS-UI-0929 — PC-A — READY_FOR_REVIEW
+
+User management now uses checkbox-first access cards: parent selection reveals child visibility/action checkboxes; partial grants stay expanded and indeterminate. Responsive compact cards, distinct selected-user styling and sticky save control replace dropdowns and excessive whitespace. Existing grant setters and authorization remain intact. 15 focused Web tests, strict typecheck and scoped lint pass; production build checked before handoff. No schema/API/dependency or operational account edits.
+
 ## 2026-09-28 — USER-ACCESS-TREE-0928 — PC-A — COMPLETE
 
 مدیریت کاربران زیر مدیریت سیستم اضافه شد: ایجاد حساب، عنوان نقش، وضعیت و شعب، دسترسی مستقل به بخش‌ها/زیربخش‌ها و مجوز عملیات، انتخاب همه و حالت انتخاب جزئی. نقش خصوصی هر کاربر از IAM موجود استفاده می‌کند؛ تغییر یک حساب روی حساب دیگر اثر ندارد. منو، جست‌وجو، مسیر مستقیم و تب‌های ثبت‌شده طبق پروفایل پنهان می‌شوند؛ کنترل اختصاصی HR، اطلاعات پایه، حسابداری، مارکتینگ، فروش/قیمت‌گذاری و میزکار متصل است. واگذاری بیش از دسترسی اپراتور و حذف آخرین مدیر فعال ممنوع است. نقش‌های قدیمی تا ذخیره صریح پروفایل سازگار می‌مانند. بدون Migration، Dependency، تغییر کاربر واقعی یا runtime. مالک، merge به develop را صریحاً مجاز کرده است. جزئیات بررسی‌ها و handoff: [USER-ACCESS-TREE-0928](tasks/USER-ACCESS-TREE-0928.md).
@@ -3759,6 +3763,14 @@ Existing unpaid ticket invoices retain the seat/unit-price editor; count, unit c
 ## 2026-09-28 — PROCUREMENT-FORM-QA-0928 — PC-B — READY_FOR_REVIEW
 
 The Procurement draft form now tolerates older saved item rows without a measurement unit when loading reusable choices, and publish validation shows the required-field error instead of crashing. A regression test reproduced the `undefined.trim()` error before the fix. The broad API suite passed 1,682 tests with 175 skipped by default guards (209 passed / 15 skipped files). An isolated PostgreSQL 18 container with all 100 migrations then enabled all 35 guarded Procurement database tests: all 92 focused Procurement API tests passed, including draft persistence, atomic publication, rollback, idempotency and workflow handoff. All 10 draft-form tests, API/Web typechecks and builds, scoped lint and Prettier passed. Other guarded integration tests and authenticated browser flows were not executed. No Backend, schema, migration, contract, dependency or operational data changed.
+## 2026-09-28 — API-FUNCTIONAL-QA-0928 — PC-B — READY_FOR_REVIEW
+
+Full API regression on updated develop: 210 files and 1,701 tests passed; 175 opt-in tests skipped by default. Two confirmed backend defects were repaired: concurrent identical feedback submission now returns the committed receipt, and anonymous/sensitive Workbench attachments no longer leak identifying metadata or appear in another user's Documents catalogue/audit. Feedback creation verifies attachment confidentiality matches anonymity. Focused Workbench/Documents rerun: 118 passed; API lint, typecheck, production build passed. All 100 migrations and three form writes (meal service, facility, train type) with persistence/audit checks passed on a disposable PostgreSQL database. The opt-in PostgreSQL suites timed out in their Docker stdin helper before assertions, so they are not claimed as passing. No schema, migration, shared contract, dependency, operational data, or live runtime change. Details: [task report](tasks/API-FUNCTIONAL-QA-0928.md).
+
+## 2026-09-29 — DOCUMENTS-SENSITIVE-LIST-PRIVACY-0929 — PC-B — READY_FOR_REVIEW
+
+Shared actor-scoped repository lookups and explicit reference filtering enforce confidentiality and WorkbenchFeedback owner-only visibility across list/count, detail, favorites, file, audit, mutation, and organization-version-reference paths, including INTERNAL attachments and callers with sensitive-read access. 67 focused Documents tests, API lint/typecheck/build, formatting and full CI gates pass; a fresh independent R3 review approves merge. No schema, migration, API type, dependency or operational-data change.
+
 ## 2026-09-29 — ISTANBUL-GENERATOR-3100-ACTIVATION — PC-B — IN_PROGRESS
 
 پیگیری قالب‌های استانبول، assetها و loaderهای Package Generator را در build محلی 3100 فعال می‌کند. تغییر مبنا commit `6c2d203f` است؛ اکنون با `origin/develop` همگام شده و منتظر بررسی‌های CI و PR است. API قیمت‌گذاری، Schema/Migration و دادهٔ عملیاتی تغییر نمی‌کنند.
