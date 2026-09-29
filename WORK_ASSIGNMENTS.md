@@ -4592,3 +4592,15 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 - COMPUTER_ID=PC-B; branch `codex/pc-b-thailand-poster-xlsx-0929` from `origin/develop@049cb912`. Reserve only Thailand Package Generator parser/renderer/template-local CSS, focused tests, dedicated task note, and bounded central status entries. Match Phuket, Pattaya and Bangkok–Phuket poster sections to the three owner-provided XLSX files. No API, shared contract, migration, dependency, lockfile, real customer data or unrelated module changes. Previous Package Generator overlay task is merged and its lock released.
 
 - Validation: three supplied XLSX files rendered in local QA; 36 pricing-management tests, Web lint, typecheck and production build passed. Independent price review confirmed final sale columns and no purchase-price exposure. Bounded code/docs reservation released with commit.
+
+## CUSTOMER-AFFAIRS-REQUEST-ACTIONS-SWAP-0929 — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک از تصویر ۶۶۴: جای دکمه‌های «ثبت مشتری برای درخواست» و «تنظیم پیگیری بعدی» در پروفایل درخواست جابه‌جا شود. تفسیر تصویری: ثبت مشتری در جای دکمهٔ بالایی کنار خلاصه، تنظیم پیگیری در جای دکمهٔ پایین پس از مشخصات سفر.
+- محدودهٔ رزرو: فقط `DetailPanel`، CSS ماژول و تست‌های همان کامپوننت، به‌علاوه اسناد وضعیت. شاخه `codex/pc-b-ca-request-actions-swap-0929` از `origin/develop@9b5539a3`. تغییر محل CTAها؛ منطق نمایش/فرم، API و داده بدون تغییر.
+- نتیجه: دکمهٔ تبدیل مشتری در جای بالایی و دکمهٔ پیگیری کنار مشخصات سفر قرار گرفت؛ فرم پیگیری نیز کنار محرک جدیدش رندر می‌شود. ۴۲ تست ماژول امور مشتریان، typecheck وب، Prettier و `git diff --check` موفق‌اند؛ build و CI پیش از ادغام باقی است.
+
+## CUSTOMER-AFFAIRS-DETAIL-ACTIONS-ROW-0929 — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک از تصویر ۶۶۵: چهار اقدام «ثبت مشتری برای درخواست»، «ارزیابی آمادگی فروش»، «ارسال به فروش» و «تنظیم پیگیری بعدی» در پروفایل درخواست در یک نوار/راستای مشترک قرار بگیرند.
+- محدودهٔ رزرو: `customer-affairs-workspace.tsx`، CSS ماژول، تست چیدمان همان کامپوننت و ثبت اسناد. شاخه `codex/pc-b-ca-detail-actions-row-0929` از `origin/develop@c22e08a1`. منطق شرط‌ها، عملیات و فرم‌ها بدون تغییر؛ در viewport باریک شکست خط واکنش‌گرا مجاز است. بدون API، داده، قرارداد مشترک، Migration، Permission یا Dependency/Lockfile.
+- نتیجه: هر چهار CTA مستقیماً در یک نوار واحد پروفایل قرار گرفتند؛ در دسکتاپ یک‌ردیفه و در عرض موبایل wrap می‌شوند. تست‌های کامپوننت امور مشتریان ۴۲/۴۲، typecheck، ESLint هدفمند، Prettier و `git diff --check` موفق‌اند. Build و CI از طریق PR بررسی می‌شوند؛ build محلی اجرا نشد چون خروجی `.next` در سرویس Web فعال ۳۱۰۰ مشترک است.

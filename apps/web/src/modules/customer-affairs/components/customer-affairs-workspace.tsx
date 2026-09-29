@@ -685,209 +685,161 @@ export function DetailPanel({
             <dd>{detail.customerId ? 'متصل' : 'نامشخص'}</dd>
           </div>
         </dl>
-        <Button
-          className={s.profileFollowup}
-          variant="outline"
-          onClick={() => setFollowupOpen((value) => !value)}
-        >
-          تنظیم پیگیری بعدی
-        </Button>
-        {followupOpen && (
-          <CustomerAffairsFormDialog
-            title="تنظیم پیگیری بعدی"
-            busy={busy}
-            onClose={() => setFollowupOpen(false)}
-          >
-            {operationError && notice && (
-              <Alert
-                title="عملیات انجام نشد"
-                description={notice}
-                tone="error"
+        <div className={s.profileActions}>
+          {'stage' in detail &&
+            !detail.customerId &&
+            !['LOST', 'HANDED_OFF'].includes(detail.stage) && (
+              <LeadCustomerConversion
+                id={detail.id}
+                version={detail.version}
+                onReload={onReload}
               />
             )}
-            <form
-              className={s.workflowForm}
-              onSubmit={async (event) => {
-                event.preventDefault();
-                const data = new FormData(event.currentTarget);
-                const success = await run(
-                  () =>
-                    customerAffairsApi.updateFollowup(
-                      detail,
-                      String(data.get('nextAction')),
-                      new Date(String(data.get('nextActionAt'))).toISOString(),
-                    ),
-                  'پیگیری بعدی ذخیره شد.',
-                );
-                if (success) setFollowupOpen(false);
-              }}
-            >
-              <FormField label="اقدام بعدی">
-                <Input
-                  name="nextAction"
-                  required
-                  minLength={3}
-                  defaultValue={detail.nextAction}
-                />
-              </FormField>
-              <FormField label="موعد پیگیری">
-                <DatePicker
-                  name="nextActionAt"
-                  includeTime
-                  required
-                  defaultValue={localDateValue(new Date(detail.nextActionAt))}
-                />
-              </FormField>
-              <div className={s.actions}>
-                <Button disabled={busy} type="submit">
-                  ذخیره پیگیری
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setFollowupOpen(false)}
-                >
-                  انصراف
-                </Button>
-              </div>
-            </form>
-          </CustomerAffairsFormDialog>
-        )}
-        {tab === 'leads' ? (
-          <div className={s.profileActions}>
-            <Button
-              disabled={busy || stage !== 'QUALIFIED'}
-              onClick={() =>
-                run(
-                  () =>
-                    customerAffairsApi.proposeHandoff(
-                      detail.id,
-                      detail.version,
-                    ),
-                  'بسته نسخه‌دار برای فروش ارسال شد.',
-                )
-              }
-            >
-              <Send className="size-4" /> ارسال به فروش
-            </Button>
-            <Button
-              disabled={
-                busy || !['NEW', 'CONTACTED', 'QUALIFYING'].includes(stage)
-              }
-              onClick={() => setAssessmentOpen((value) => !value)}
-              variant="outline"
-            >
-              <CheckCircle2 className="size-4" /> ارزیابی آمادگی فروش
-            </Button>
-          </div>
-        ) : (
-          <div className={s.profileActions}>
-            {(
-              [
-                { status: 'TRIAGED', label: 'بررسی اولیه', from: ['NEW'] },
-                {
-                  status: 'IN_PROGRESS',
-                  label: 'شروع رسیدگی',
-                  from: [
-                    'TRIAGED',
-                    'REOPENED',
-                    'WAITING_CUSTOMER',
-                    'WAITING_EXTERNAL',
-                  ],
-                },
-                {
-                  status: 'WAITING_CUSTOMER',
-                  label: 'انتظار پاسخ مشتری',
-                  from: ['IN_PROGRESS'],
-                },
-                {
-                  status: 'WAITING_EXTERNAL',
-                  label: 'انتظار واحد تخصصی',
-                  from: ['IN_PROGRESS'],
-                },
-              ] as const
-            )
-              .filter((item) =>
-                (item.from as readonly string[]).includes(stage),
+          {tab === 'leads' ? (
+            <>
+              <Button
+                disabled={busy || stage !== 'QUALIFIED'}
+                onClick={() =>
+                  run(
+                    () =>
+                      customerAffairsApi.proposeHandoff(
+                        detail.id,
+                        detail.version,
+                      ),
+                    'بسته نسخه‌دار برای فروش ارسال شد.',
+                  )
+                }
+              >
+                <Send className="size-4" /> ارسال به فروش
+              </Button>
+              <Button
+                disabled={
+                  busy || !['NEW', 'CONTACTED', 'QUALIFYING'].includes(stage)
+                }
+                onClick={() => setAssessmentOpen((value) => !value)}
+                variant="outline"
+              >
+                <CheckCircle2 className="size-4" /> ارزیابی آمادگی فروش
+              </Button>
+            </>
+          ) : (
+            <>
+              {(
+                [
+                  { status: 'TRIAGED', label: 'بررسی اولیه', from: ['NEW'] },
+                  {
+                    status: 'IN_PROGRESS',
+                    label: 'شروع رسیدگی',
+                    from: [
+                      'TRIAGED',
+                      'REOPENED',
+                      'WAITING_CUSTOMER',
+                      'WAITING_EXTERNAL',
+                    ],
+                  },
+                  {
+                    status: 'WAITING_CUSTOMER',
+                    label: 'انتظار پاسخ مشتری',
+                    from: ['IN_PROGRESS'],
+                  },
+                  {
+                    status: 'WAITING_EXTERNAL',
+                    label: 'انتظار واحد تخصصی',
+                    from: ['IN_PROGRESS'],
+                  },
+                ] as const
               )
-              .map((item) => (
+                .filter((item) =>
+                  (item.from as readonly string[]).includes(stage),
+                )
+                .map((item) => (
+                  <Button
+                    key={item.status}
+                    disabled={busy}
+                    variant="outline"
+                    onClick={() =>
+                      run(
+                        () =>
+                          customerAffairsApi.transitionTicket(
+                            detail.id,
+                            item.status,
+                            detail.version,
+                            item.label,
+                          ),
+                        'وضعیت رسیدگی به‌روز شد.',
+                      )
+                    }
+                  >
+                    {item.label}
+                  </Button>
+                ))}
+              {[
+                'IN_PROGRESS',
+                'WAITING_CUSTOMER',
+                'WAITING_EXTERNAL',
+                'REOPENED',
+              ].includes(stage) && (
                 <Button
-                  key={item.status}
                   disabled={busy}
-                  variant="outline"
-                  onClick={() =>
-                    run(
-                      () =>
-                        customerAffairsApi.transitionTicket(
-                          detail.id,
-                          item.status,
-                          detail.version,
-                          item.label,
-                        ),
-                      'وضعیت رسیدگی به‌روز شد.',
-                    )
-                  }
+                  onClick={() => setPendingAction('resolve')}
                 >
-                  {item.label}
+                  ثبت نتیجه و حل تیکت
                 </Button>
-              ))}
-            {[
-              'IN_PROGRESS',
-              'WAITING_CUSTOMER',
-              'WAITING_EXTERNAL',
-              'REOPENED',
-            ].includes(stage) && (
-              <Button
-                disabled={busy}
-                onClick={() => setPendingAction('resolve')}
-              >
-                ثبت نتیجه و حل تیکت
-              </Button>
-            )}
-            {stage === 'RESOLVED' && (
-              <Button disabled={busy} onClick={() => setPendingAction('close')}>
-                بستن پرونده
-              </Button>
-            )}
-            {['RESOLVED', 'CLOSED', 'CANCELLED'].includes(stage) && (
-              <Button
-                variant="outline"
-                disabled={busy}
-                onClick={() => setPendingAction('reopen')}
-              >
-                بازگشایی پرونده
-              </Button>
-            )}
-            {!['RESOLVED', 'CLOSED', 'CANCELLED'].includes(stage) && (
-              <>
+              )}
+              {stage === 'RESOLVED' && (
+                <Button
+                  disabled={busy}
+                  onClick={() => setPendingAction('close')}
+                >
+                  بستن پرونده
+                </Button>
+              )}
+              {['RESOLVED', 'CLOSED', 'CANCELLED'].includes(stage) && (
                 <Button
                   variant="outline"
                   disabled={busy}
-                  onClick={() => setReferralOpen((value) => !value)}
+                  onClick={() => setPendingAction('reopen')}
                 >
-                  ارجاع داخلی
+                  بازگشایی پرونده
                 </Button>
+              )}
+              {!['RESOLVED', 'CLOSED', 'CANCELLED'].includes(stage) && (
+                <>
+                  <Button
+                    variant="outline"
+                    disabled={busy}
+                    onClick={() => setReferralOpen((value) => !value)}
+                  >
+                    ارجاع داخلی
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    disabled={busy}
+                    onClick={() => setPendingAction('escalate')}
+                  >
+                    <AlertTriangle className="size-4" />
+                    ارجاع به سرپرست
+                  </Button>
+                </>
+              )}
+              {['RESOLVED', 'CLOSED'].includes(stage) && (
                 <Button
-                  variant="ghost"
+                  variant="outline"
                   disabled={busy}
-                  onClick={() => setPendingAction('escalate')}
+                  onClick={createSurveyInvitation}
                 >
-                  <AlertTriangle className="size-4" />
-                  ارجاع به سرپرست
+                  دعوت رضایت‌سنجی
                 </Button>
-              </>
-            )}
-            {['RESOLVED', 'CLOSED'].includes(stage) && (
-              <Button
-                variant="outline"
-                disabled={busy}
-                onClick={createSurveyInvitation}
-              >
-                دعوت رضایت‌سنجی
-              </Button>
-            )}
-          </div>
-        )}
+              )}
+            </>
+          )}
+          <Button
+            variant="outline"
+            onClick={() => setFollowupOpen((value) => !value)}
+          >
+            تنظیم پیگیری بعدی
+          </Button>
+        </div>
         {assessmentOpen && tab === 'leads' && (
           <CustomerAffairsFormDialog
             title="ارزیابی آمادگی فروش"
@@ -1207,6 +1159,63 @@ export function DetailPanel({
         </Card>
       ) : null}
       <RecordOperations detail={detail} onReload={onReload} />
+      {followupOpen && (
+        <CustomerAffairsFormDialog
+          title="تنظیم پیگیری بعدی"
+          busy={busy}
+          onClose={() => setFollowupOpen(false)}
+        >
+          {operationError && notice && (
+            <Alert title="عملیات انجام نشد" description={notice} tone="error" />
+          )}
+          <form
+            className={s.workflowForm}
+            onSubmit={async (event) => {
+              event.preventDefault();
+              const data = new FormData(event.currentTarget);
+              const success = await run(
+                () =>
+                  customerAffairsApi.updateFollowup(
+                    detail,
+                    String(data.get('nextAction')),
+                    new Date(String(data.get('nextActionAt'))).toISOString(),
+                  ),
+                'پیگیری بعدی ذخیره شد.',
+              );
+              if (success) setFollowupOpen(false);
+            }}
+          >
+            <FormField label="اقدام بعدی">
+              <Input
+                name="nextAction"
+                required
+                minLength={3}
+                defaultValue={detail.nextAction}
+              />
+            </FormField>
+            <FormField label="موعد پیگیری">
+              <DatePicker
+                name="nextActionAt"
+                includeTime
+                required
+                defaultValue={localDateValue(new Date(detail.nextActionAt))}
+              />
+            </FormField>
+            <div className={s.actions}>
+              <Button disabled={busy} type="submit">
+                ذخیره پیگیری
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setFollowupOpen(false)}
+              >
+                انصراف
+              </Button>
+            </div>
+          </form>
+        </CustomerAffairsFormDialog>
+      )}
       {'stage' in detail &&
         typeof detail.qualification?.conversionProbability === 'number' && (
           <p className="text-sm text-muted-foreground">
@@ -1216,15 +1225,6 @@ export function DetailPanel({
           </p>
         )}
       {!('stage' in detail) && <TicketSms id={detail.id} onReload={onReload} />}
-      {'stage' in detail &&
-        !detail.customerId &&
-        !['LOST', 'HANDED_OFF'].includes(detail.stage) && (
-          <LeadCustomerConversion
-            id={detail.id}
-            version={detail.version}
-            onReload={onReload}
-          />
-        )}
       <Card className={`${s.detail} ${s.profileHistory}`}>
         <div className={s.profileSectionHead}>
           <h3 className="font-black">سابقه ارتباط و رسیدگی</h3>
