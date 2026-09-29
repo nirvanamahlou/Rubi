@@ -3870,4 +3870,3 @@ Selected-contract header now shows read-only financial-delivery approval, respon
 ## 2026-09-29 — TICKET-TARGET-COMPACT-WIDTH-0929 — PC-A — READY_FOR_REVIEW
 
 Each two-target fare box is capped at 22rem (352px), matching the owner's hatched reference instead of stretching across the row. Auto-fill preserves side-by-side boxes and narrow viewport sizing. Two existing tests, CSS formatting and Web production build/typecheck (55 routes) pass. No calculations, API, migration or dependency changes. Local activation authorized; new PR targets develop and awaits merge approval.
-
