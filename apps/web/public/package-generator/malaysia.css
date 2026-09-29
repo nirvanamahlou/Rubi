@@ -17,3 +17,10 @@
 .package-page.malaysia-langkawi .value-slot b{font-size:18px}
 .package-page.malaysia-langkawi .value-slot small{font-size:11px!important}
 .package-page.malaysia-langkawi .adjustments-slot{font-size:14px;line-height:1.6}
+
+/* Keep imported values inside the printed rounded cards on Malaysia/Thailand posters. */
+.package-page:is([class*="malaysia-"],[class*="thailand-"]) .data-region{overflow:hidden}
+.package-page:is([class*="malaysia-"],[class*="thailand-"]) .date-slot{overflow:hidden}
+.package-page:is([class*="malaysia-"],[class*="thailand-"]) .value-slot{border-radius:6px;overflow:hidden;padding:1px 2px}
+.package-page:is([class*="malaysia-"],[class*="thailand-"]) :is(.duration-slot,.services-slot,.adjustments-slot){overflow:hidden}
+.package-page[class*="thailand-"] .value-flightDays b{white-space:normal;overflow-wrap:anywhere;text-align:center}
