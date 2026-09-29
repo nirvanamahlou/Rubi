@@ -3922,3 +3922,7 @@ Owner-confirmed synthetic local catalog snapshot: 20 offers (11 visible, 9 alrea
 ## 2026-09-29 — LOGIN-COMPANY-CAPTIONS-0929 — PC-A — READY_FOR_REVIEW
 
 نام نمایشی زیر لوگوهای شرکت در صفحه ورود حذف می‌شود؛ خود لوگو، متن جایگزین دسترس‌پذیری و عنوان بخش حفظ شده‌اند. تغییر محدود به Web است؛ بدون API، Migration، داده یا Dependency. اعتبارسنجی CI پیش از merge انجام می‌شود. جزئیات: [LOGIN-COMPANY-CAPTIONS-0929](tasks/LOGIN-COMPANY-CAPTIONS-0929.md).
+
+## 2026-09-29 — CUSTOMER-AFFAIRS-CUSTOMER-CREATE-0929 — PC-B — READY_FOR_REVIEW
+
+فرم‌های درخواست و تیکت امور مشتریان به فهرست مشتریان/مسافران موجود و فرم ایجاد مرجع Customers متصل شدند. پنج گزینهٔ اولیه، جست‌وجو، ثبت مشتری جدید و انتخاب خودکار پروندهٔ ایجادشده فراهم است؛ داده در Customers می‌ماند و امور مشتریان فقط شناسه را ثبت می‌کند. ۲۴ تست متمرکز، typecheck، lint و build وب موفق‌اند. بررسی runtime، CI و review مالک Customers پیش از ادغام باقی است. جزئیات و ریسک پاسخ نامطمئن API: [CUSTOMER-AFFAIRS-CUSTOMER-CREATE-0929](tasks/CUSTOMER-AFFAIRS-CUSTOMER-CREATE-0929.md).
