@@ -12,6 +12,7 @@ import {
   ArrowLeft,
   BarChart3,
   Clock3,
+  Download,
   Headphones,
   Home,
   Inbox,
@@ -226,7 +227,7 @@ export function CustomerAffairsNoraWorkspace() {
             'گزارش‌ها به مجوز مشاهده درخواست‌ها و تیکت‌ها نیاز دارند.',
             403,
           );
-        result.report = (await api.report()).data;
+        result.report = (await api.report({ createdFrom, createdTo })).data;
       } else if (family === 'leads') {
         if (!capabilities.leadsRead)
           throw new CustomerAffairsApiError(
@@ -319,7 +320,6 @@ export function CustomerAffairsNoraWorkspace() {
     <div className={s.workspace} dir="rtl">
       <header className={s.header}>
         <div>
-          <span className={s.eyebrow}>ارتباط با مشتری</span>
           <h1>امور مشتریان</h1>
         </div>
         <div className={s.actions}>
@@ -622,41 +622,56 @@ export function CustomerAffairsNoraWorkspace() {
               view,
             ) && (
               <>
-                {view === 'handoffs' && (
-                  <div className={s.flow}>
-                    {[
-                      'ارزیابی شرایط',
-                      'ارسال درخواست',
-                      'پذیرش فروش',
-                      'ادامه در فروش',
-                    ].map((x, i) => (
-                      <span key={x}>
-                        <b>{number(i + 1)}</b>
-                        {x}
-                        {i < 3 && <ArrowLeft size={14} />}
-                      </span>
-                    ))}
-                  </div>
-                )}
                 <section className={s.panel}>
                   <div className={s.panelHead}>
                     <h2>{title}</h2>
-                    {view === 'leads' && (
-                      <div className={s.subtabs}>
-                        <button
-                          aria-pressed={!board}
-                          onClick={() => change('layout', 'table')}
+                    <div className={s.actions}>
+                      {(view === 'leads' || view === 'tickets') && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => {
+                            const options = {
+                              createdFrom,
+                              createdTo,
+                              sourceSite,
+                            };
+                            const work =
+                              view === 'leads'
+                                ? api.exportLeads(search, {
+                                    ...options,
+                                    stage: filter,
+                                  })
+                                : api.exportTickets(search, filter, options);
+                            void work.catch((error: unknown) =>
+                              setNotice(
+                                error instanceof Error
+                                  ? error.message
+                                  : 'خروجی دریافت نشد.',
+                              ),
+                            );
+                          }}
                         >
-                          جدولی
-                        </button>
-                        <button
-                          aria-pressed={board}
-                          onClick={() => change('layout', 'board')}
-                        >
-                          مرحله‌ای
-                        </button>
-                      </div>
-                    )}
+                          <Download size={16} aria-hidden="true" /> خروجی Excel
+                        </Button>
+                      )}
+                      {view === 'leads' && (
+                        <div className={s.subtabs}>
+                          <button
+                            aria-pressed={!board}
+                            onClick={() => change('layout', 'table')}
+                          >
+                            جدولی
+                          </button>
+                          <button
+                            aria-pressed={board}
+                            onClick={() => change('layout', 'board')}
+                          >
+                            مرحله‌ای
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                   <div className={s.filters}>
                     <form
@@ -718,23 +733,23 @@ export function CustomerAffairsNoraWorkspace() {
                         <option value="nystkt">نیایش · nystkt.ir</option>
                       </AffairsSelect>
                     )}
+                    <CreatedDateFilter
+                      key={`${createdFrom}:${createdTo}`}
+                      from={createdFrom}
+                      to={createdTo}
+                      onApply={(from, to) => {
+                        const next = new URLSearchParams(params.toString());
+                        if (from) next.set('createdFrom', from);
+                        else next.delete('createdFrom');
+                        if (to) next.set('createdTo', to);
+                        else next.delete('createdTo');
+                        next.delete('page');
+                        router.replace(`/customer-affairs?${next}`, {
+                          scroll: false,
+                        });
+                      }}
+                    />
                   </div>
-                  <CreatedDateFilter
-                    key={`${createdFrom}:${createdTo}`}
-                    from={createdFrom}
-                    to={createdTo}
-                    onApply={(from, to) => {
-                      const next = new URLSearchParams(params.toString());
-                      if (from) next.set('createdFrom', from);
-                      else next.delete('createdFrom');
-                      if (to) next.set('createdTo', to);
-                      else next.delete('createdTo');
-                      next.delete('page');
-                      router.replace(`/customer-affairs?${next}`, {
-                        scroll: false,
-                      });
-                    }}
-                  />
                   {view === 'followups' || view === 'queues' ? (
                     <p className={`${s.panelBody} ${s.muted}`}>
                       این نما فقط پرونده‌های معوق را نمایش می‌دهد.
@@ -884,12 +899,36 @@ export function CustomerAffairsNoraWorkspace() {
               </>
             )}
             {report && (
-              <AffairsReportPanel
-                report={report}
-                showRequests={view === 'reports'}
-                onTickets={() => navigate('tickets')}
-                onRequests={() => navigate('leads')}
-              />
+              <>
+                {(view === 'reports' || view === 'satisfaction') && (
+                  <CreatedDateFilter
+                    key={`${createdFrom}:${createdTo}`}
+                    from={createdFrom}
+                    to={createdTo}
+                    onApply={(from, to) => {
+                      const next = new URLSearchParams(params.toString());
+                      if (from) next.set('createdFrom', from);
+                      else next.delete('createdFrom');
+                      if (to) next.set('createdTo', to);
+                      else next.delete('createdTo');
+                      router.replace(`/customer-affairs?${next}`, {
+                        scroll: false,
+                      });
+                    }}
+                  />
+                )}
+                <AffairsReportPanel
+                  report={report}
+                  showRequests={view === 'reports'}
+                  onTickets={() => navigate('tickets')}
+                  onRequests={() => navigate('leads')}
+                  dateRangeLabel={
+                    createdFrom || createdTo
+                      ? `${createdFrom || 'ابتدا'} تا ${createdTo || 'امروز'}`
+                      : 'همه تاریخ‌ها'
+                  }
+                />
+              </>
             )}
           </>
         )}
