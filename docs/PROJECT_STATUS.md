@@ -3809,3 +3809,7 @@ Selected-contract header now shows read-only financial-delivery approval, respon
 ## 2026-09-29 — TOPBAR-COMPANY-ROLE-0929 — PC-A — READY_FOR_REVIEW
 
 انتخاب شرکت هدر به Radix Select قبلی برگشت تا عنوان‌ها و نشان شرکت‌ها در منو دوباره دیده شوند. نام نقش‌های فعال واقعی حساب جاری به‌صورت افزایشی و اختیاری از IAM به منوی هدر می‌رسد و زیر نام کاربر نمایش داده می‌شود؛ مجوزها یا حساب‌ها تغییری ندارند. typecheck، lint و build تولیدی API/Web (۵۵ مسیر) موفق‌اند. تست کامل در انتظار CI. بدون Migration، Seed، داده عملیاتی یا Dependency. جزئیات: [TOPBAR-COMPANY-ROLE-0929](tasks/TOPBAR-COMPANY-ROLE-0929.md).
+
+## 2026-09-29 — TOPBAR-ROLE-NEXT-TO-DATE-0929 — PC-A — READY_FOR_REVIEW
+
+نقش‌های فعال کاربر از نشست هدر کنار تاریخ نمایش داده می‌شوند و از دکمه کاربر حذف شدند. ۱۳ تست هدفمند، typecheck، lint و build تولیدی ۵۵ مسیر Web موفق‌اند. بدون API، Migration، قرارداد، داده عملیاتی یا Dependency. جزئیات: [TOPBAR-ROLE-NEXT-TO-DATE-0929](tasks/TOPBAR-ROLE-NEXT-TO-DATE-0929.md). PR و CI در انتظار review.

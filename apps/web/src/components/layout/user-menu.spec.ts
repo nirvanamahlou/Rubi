@@ -40,6 +40,7 @@ describe('authenticated user menu integration', () => {
     expect(menuSource).not.toContain('href="/profile?tab=preferences"');
     expect(menuSource).not.toContain('href="/profile?tab=security"');
     expect(menuSource).toContain('DropdownMenuTrigger asChild');
+    expect(menuSource).not.toContain('data-user-role-label');
   });
 
   it('uses the existing logout operation and keeps notifications in the shell', () => {
