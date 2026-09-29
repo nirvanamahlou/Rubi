@@ -685,74 +685,15 @@ export function DetailPanel({
             <dd>{detail.customerId ? 'متصل' : 'نامشخص'}</dd>
           </div>
         </dl>
-        <Button
-          className={s.profileFollowup}
-          variant="outline"
-          onClick={() => setFollowupOpen((value) => !value)}
-        >
-          تنظیم پیگیری بعدی
-        </Button>
-        {followupOpen && (
-          <CustomerAffairsFormDialog
-            title="تنظیم پیگیری بعدی"
-            busy={busy}
-            onClose={() => setFollowupOpen(false)}
-          >
-            {operationError && notice && (
-              <Alert
-                title="عملیات انجام نشد"
-                description={notice}
-                tone="error"
-              />
-            )}
-            <form
-              className={s.workflowForm}
-              onSubmit={async (event) => {
-                event.preventDefault();
-                const data = new FormData(event.currentTarget);
-                const success = await run(
-                  () =>
-                    customerAffairsApi.updateFollowup(
-                      detail,
-                      String(data.get('nextAction')),
-                      new Date(String(data.get('nextActionAt'))).toISOString(),
-                    ),
-                  'پیگیری بعدی ذخیره شد.',
-                );
-                if (success) setFollowupOpen(false);
-              }}
-            >
-              <FormField label="اقدام بعدی">
-                <Input
-                  name="nextAction"
-                  required
-                  minLength={3}
-                  defaultValue={detail.nextAction}
-                />
-              </FormField>
-              <FormField label="موعد پیگیری">
-                <DatePicker
-                  name="nextActionAt"
-                  includeTime
-                  required
-                  defaultValue={localDateValue(new Date(detail.nextActionAt))}
-                />
-              </FormField>
-              <div className={s.actions}>
-                <Button disabled={busy} type="submit">
-                  ذخیره پیگیری
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setFollowupOpen(false)}
-                >
-                  انصراف
-                </Button>
-              </div>
-            </form>
-          </CustomerAffairsFormDialog>
-        )}
+        {'stage' in detail &&
+          !detail.customerId &&
+          !['LOST', 'HANDED_OFF'].includes(detail.stage) && (
+            <LeadCustomerConversion
+              id={detail.id}
+              version={detail.version}
+              onReload={onReload}
+            />
+          )}
         {tab === 'leads' ? (
           <div className={s.profileActions}>
             <Button
@@ -1207,6 +1148,71 @@ export function DetailPanel({
         </Card>
       ) : null}
       <RecordOperations detail={detail} onReload={onReload} />
+      <div className={s.profileFollowupFooter}>
+        <Button
+          variant="outline"
+          onClick={() => setFollowupOpen((value) => !value)}
+        >
+          تنظیم پیگیری بعدی
+        </Button>
+      </div>
+      {followupOpen && (
+        <CustomerAffairsFormDialog
+          title="تنظیم پیگیری بعدی"
+          busy={busy}
+          onClose={() => setFollowupOpen(false)}
+        >
+          {operationError && notice && (
+            <Alert title="عملیات انجام نشد" description={notice} tone="error" />
+          )}
+          <form
+            className={s.workflowForm}
+            onSubmit={async (event) => {
+              event.preventDefault();
+              const data = new FormData(event.currentTarget);
+              const success = await run(
+                () =>
+                  customerAffairsApi.updateFollowup(
+                    detail,
+                    String(data.get('nextAction')),
+                    new Date(String(data.get('nextActionAt'))).toISOString(),
+                  ),
+                'پیگیری بعدی ذخیره شد.',
+              );
+              if (success) setFollowupOpen(false);
+            }}
+          >
+            <FormField label="اقدام بعدی">
+              <Input
+                name="nextAction"
+                required
+                minLength={3}
+                defaultValue={detail.nextAction}
+              />
+            </FormField>
+            <FormField label="موعد پیگیری">
+              <DatePicker
+                name="nextActionAt"
+                includeTime
+                required
+                defaultValue={localDateValue(new Date(detail.nextActionAt))}
+              />
+            </FormField>
+            <div className={s.actions}>
+              <Button disabled={busy} type="submit">
+                ذخیره پیگیری
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setFollowupOpen(false)}
+              >
+                انصراف
+              </Button>
+            </div>
+          </form>
+        </CustomerAffairsFormDialog>
+      )}
       {'stage' in detail &&
         typeof detail.qualification?.conversionProbability === 'number' && (
           <p className="text-sm text-muted-foreground">
@@ -1216,15 +1222,6 @@ export function DetailPanel({
           </p>
         )}
       {!('stage' in detail) && <TicketSms id={detail.id} onReload={onReload} />}
-      {'stage' in detail &&
-        !detail.customerId &&
-        !['LOST', 'HANDED_OFF'].includes(detail.stage) && (
-          <LeadCustomerConversion
-            id={detail.id}
-            version={detail.version}
-            onReload={onReload}
-          />
-        )}
       <Card className={`${s.detail} ${s.profileHistory}`}>
         <div className={s.profileSectionHead}>
           <h3 className="font-black">سابقه ارتباط و رسیدگی</h3>

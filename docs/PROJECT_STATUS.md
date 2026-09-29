@@ -3911,6 +3911,9 @@ Owner-confirmed synthetic local catalog snapshot: 20 offers (11 visible, 9 alrea
 ## 2026-09-29 — THAILAND-POSTER-XLSX-0929 — PC-B — READY_FOR_REVIEW
 
 سه اکسل پوکت، پاتایا و بانکوک–پوکت با ستون‌های فروش نهایی و بخش‌های پرواز/خدمات قالب‌های متناظر تطبیق داده شدند. بازبینی تصویری هر سه خروجی و تست نگاشت قیمت انجام شد؛ ۳۶ تست ماژول، lint، typecheck و build تولیدی موفق‌اند؛ PR در جریان است. [جزئیات](tasks/THAILAND-POSTER-XLSX-0929.md). بدون API، Migration، Dependency یا دادهٔ عملیاتی.
+## 2026-09-29 — CUSTOMER-AFFAIRS-REQUEST-ACTIONS-SWAP-0929 — READY_FOR_REVIEW
+
+جای دکمه‌های ثبت مشتری و تنظیم پیگیری در پروفایل درخواست مطابق علامت‌گذاری تصویر جابه‌جا شد؛ شرط‌های مجازبودن و رفتار فرم‌ها حفظ می‌شوند. ۴۲ تست امور مشتریان، typecheck وب و قالب‌بندی موفق؛ build و CI پیش از ادغام باقی است.
 
 ## 2026-09-29 — LOGIN-COMPANY-CAPTIONS-0929 — PC-A — READY_FOR_REVIEW
 
