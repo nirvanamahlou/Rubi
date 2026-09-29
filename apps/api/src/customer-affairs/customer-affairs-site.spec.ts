@@ -222,12 +222,10 @@ describe('Website integration boundary', () => {
   it('rejects a whitespace-only website comment before a timeline write', async () => {
     const repository = {
       findSite: vi.fn().mockResolvedValue({ id: 'site' }),
-      findSiteTicket: vi
-        .fn()
-        .mockResolvedValue({
-          ticketId: 'ticket',
-          ticket: { branchId: 'branch' },
-        }),
+      findSiteTicket: vi.fn().mockResolvedValue({
+        ticketId: 'ticket',
+        ticket: { branchId: 'branch' },
+      }),
       findTimelineByDeliveryKey: vi.fn(),
     };
     const affairs = { addTicketTimeline: vi.fn() };
