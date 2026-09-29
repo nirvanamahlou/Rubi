@@ -41,9 +41,9 @@
   border-color: #83a9e5;
 }
 .selectedUser {
-  border-color: #2563eb;
-  background: #eff6ff;
-  box-shadow: inset -3px 0 #2563eb;
+  border-color: var(--primary);
+  background: var(--secondary);
+  box-shadow: inset -3px 0 var(--primary);
 }
 .userButton {
   display: grid;
@@ -77,7 +77,7 @@
   border: 1px solid var(--border);
   border-radius: 12px;
   background: var(--background);
-  outline-color: #2563eb;
+  outline-color: var(--primary);
 }
 .branches {
   display: flex;
@@ -123,7 +123,7 @@
   cursor: pointer;
 }
 .activeGroup .groupHeader {
-  background: #eff6ff;
+  background: var(--secondary);
 }
 .groupName {
   flex: 1;
@@ -142,14 +142,14 @@
   direction: ltr;
   font-size: 13px;
   font-weight: 700;
-  color: #1d4ed8;
+  color: var(--primary);
   padding: 4px 8px;
   border-radius: 8px;
-  background: #dbeafe;
+  background: var(--secondary);
 }
 .count span {
   font-weight: 400;
-  color: #64748b;
+  color: var(--muted-foreground);
 }
 .groupBody {
   display: grid;
@@ -157,7 +157,7 @@
   max-height: 380px;
   overflow: auto;
   padding: 16px 12px;
-  border-top: 1px solid #c9dcf6;
+  border-top: 1px solid var(--border);
 }
 .childSection {
   display: grid;
@@ -183,7 +183,7 @@
   line-height: 1.7;
 }
 .check:hover {
-  background: #eff6ff;
+  background: var(--secondary);
 }
 .check:has(input:disabled),
 .groupHeader:has(input:disabled) {
@@ -195,12 +195,12 @@
   width: 18px;
   height: 18px;
   flex-shrink: 0;
-  accent-color: #1d5dce;
+  accent-color: var(--primary);
   cursor: inherit;
 }
 .check input:focus-visible,
 .groupHeader input:focus-visible {
-  outline: 2px solid #2563eb;
+  outline: 2px solid var(--primary);
   outline-offset: 3px;
 }
 .saveButton {
@@ -236,9 +236,9 @@
   display: grid;
   gap: 12px;
   padding: 18px;
-  border: 1px solid #a7c4f2;
+  border: 1px solid var(--border);
   border-radius: 16px;
-  background: #f0f6ff;
+  background: var(--secondary);
   font-size: 13px;
   line-height: 1.9;
 }
@@ -250,7 +250,7 @@
   gap: 8px;
 }
 .proposalHeading span {
-  color: #315d9f;
+  color: var(--primary);
   font-size: 12px;
 }
 .proposalGroups {
@@ -259,11 +259,11 @@
   gap: 8px;
 }
 .proposalGroups span {
-  border: 1px solid #c5d9f6;
+  border: 1px solid var(--border);
   border-radius: 8px;
   padding: 3px 10px;
   background: white;
-  color: #17477e;
+  color: var(--foreground);
   font-size: 12px;
 }
 .proposalPermissions {
@@ -274,12 +274,12 @@
   overflow: auto;
   padding: 12px 16px;
   border-radius: 10px;
-  background: #ffffffa8;
+  background: var(--surface);
   list-style: inside;
   font-size: 12px;
 }
 .proposalHint {
-  color: #49617e;
+  color: var(--muted-foreground);
   font-size: 11px;
 }
 .proposalActions {
