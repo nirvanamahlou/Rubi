@@ -137,7 +137,9 @@ export function ManifestExport() {
     originName: originFilter,
     destinationName: destinationFilter,
   });
-  const origins = Array.from(new Set(tickets.map((ticket) => ticket.originName)))
+  const origins = Array.from(
+    new Set(tickets.map((ticket) => ticket.originName)),
+  )
     .filter(Boolean)
     .sort((left, right) => left.localeCompare(right, 'fa'));
   const destinations = Array.from(
