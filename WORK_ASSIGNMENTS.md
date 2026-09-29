@@ -4554,3 +4554,9 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 - درخواست مالک از تصویر ۶۶۱: دکمه‌های «جدولی»، «مرحله‌ای» و «خروجی Excel» در سربرگ فهرست امور مشتریان هم‌خط و هم‌ارتفاع شوند. `COMPUTER_ID=PC-B`؛ شاخه `codex/pc-b-ca-list-toolbar-align-0929` از `origin/develop` در checkout مستقل تمیز.
 - محدوده رزرو: فقط `customer-affairs-nora-workspace.tsx`، CSS ماژول و تست چیدمان همان کامپوننت، همراه مدخل محدود اسناد وضعیت. تغییر UI و واکنش‌گرایی است؛ بدون API، Schema/Migration، داده، Permission، Dependency/Lockfile یا فایل مرکزی. قفل‌های دیگر دست‌نخورده‌اند.
 - استایل اختصاصی سربرگ فاصلهٔ پایین تب‌ها را حذف و ارتفاع کنترل‌ها را یکسان می‌کند؛ در موبایل امکان شکست خط محفوظ است. تست متمرکز ۱۰/۱۰ و typecheck موفق؛ CI و merge در انتظار.
+
+## CUSTOMER-AFFAIRS-REPORT-FILTER-BOX-0929 — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک: فیلترهای گزارش امور مشتریان داخل یک باکس با عرض ۱۰۰٪ محتوای گزارش باشند؛ پس از تست، push و merge به `develop` مجاز است. `COMPUTER_ID=PC-B`، شاخه `codex/pc-b-ca-report-filter-box-0929` از `origin/develop@02ca242b` در checkout تمیز.
+- محدودهٔ رزرو: فقط چیدمان `customer-affairs-nora-workspace.tsx`، CSS ماژول و آزمون متمرکز، همراه ثبت وضعیت. بدون تغییر API، داده، قرارداد، Migration، Permission، Dependency/Lockfile یا runtime پورت ۳۱۰۰.
+- نتیجه: فرم فیلتر تاریخ در یک کارت هم‌عرض محتوای گزارش قرار گرفت. ۱۴ تست متمرکز، lint، typecheck و Prettier موفق‌اند؛ build تولیدی در CI بررسی می‌شود.
