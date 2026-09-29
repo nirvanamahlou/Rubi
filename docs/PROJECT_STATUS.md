@@ -3755,3 +3755,6 @@ Existing unpaid ticket invoices retain the seat/unit-price editor; count, unit c
 ## 2026-09-28 — PROCUREMENT-FORM-QA-0928 — PC-B — READY_FOR_REVIEW
 
 The Procurement draft form now tolerates older saved item rows without a measurement unit when loading reusable choices, and publish validation shows the required-field error instead of crashing. A regression test reproduced the `undefined.trim()` error before the fix. The broad API suite passed 1,682 tests with 175 skipped by default guards (209 passed / 15 skipped files). An isolated PostgreSQL 18 container with all 100 migrations then enabled all 35 guarded Procurement database tests: all 92 focused Procurement API tests passed, including draft persistence, atomic publication, rollback, idempotency and workflow handoff. All 10 draft-form tests, API/Web typechecks and builds, scoped lint and Prettier passed. Other guarded integration tests and authenticated browser flows were not executed. No Backend, schema, migration, contract, dependency or operational data changed.
+## 2026-09-29 — ISTANBUL-GENERATOR-3100-ACTIVATION — PC-B — IN_PROGRESS
+
+پیگیری قالب‌های استانبول، assetها و loaderهای Package Generator را در build محلی 3100 فعال می‌کند. تغییر مبنا commit `6c2d203f` است؛ اکنون با `origin/develop` همگام شده و منتظر بررسی‌های CI و PR است. API قیمت‌گذاری، Schema/Migration و دادهٔ عملیاتی تغییر نمی‌کنند.
