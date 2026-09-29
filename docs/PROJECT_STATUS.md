@@ -3911,3 +3911,7 @@ Owner-confirmed synthetic local catalog snapshot: 20 offers (11 visible, 9 alrea
 ## 2026-09-29 — THAILAND-POSTER-XLSX-0929 — PC-B — READY_FOR_REVIEW
 
 سه اکسل پوکت، پاتایا و بانکوک–پوکت با ستون‌های فروش نهایی و بخش‌های پرواز/خدمات قالب‌های متناظر تطبیق داده شدند. بازبینی تصویری هر سه خروجی و تست نگاشت قیمت انجام شد؛ ۳۶ تست ماژول، lint، typecheck و build تولیدی موفق‌اند؛ PR در جریان است. [جزئیات](tasks/THAILAND-POSTER-XLSX-0929.md). بدون API، Migration، Dependency یا دادهٔ عملیاتی.
+
+## 2026-09-29 — LOGIN-COMPANY-CAPTIONS-0929 — PC-A — READY_FOR_REVIEW
+
+نام نمایشی زیر لوگوهای شرکت در صفحه ورود حذف می‌شود؛ خود لوگو، متن جایگزین دسترس‌پذیری و عنوان بخش حفظ شده‌اند. تغییر محدود به Web است؛ بدون API، Migration، داده یا Dependency. اعتبارسنجی CI پیش از merge انجام می‌شود. جزئیات: [LOGIN-COMPANY-CAPTIONS-0929](tasks/LOGIN-COMPANY-CAPTIONS-0929.md).
