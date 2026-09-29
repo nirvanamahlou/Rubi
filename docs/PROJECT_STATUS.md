@@ -3907,3 +3907,7 @@ Owner-confirmed synthetic local catalog snapshot: 20 offers (11 visible, 9 alrea
 ## 2026-09-29 — CUSTOMER-AFFAIRS-REQUEST-PROFILE-REDESIGN-0929 — READY_FOR_REVIEW
 
 نمای جزئیات درخواست امور مشتریان با سربرگ روشن، شرح جداگانه، مشخصات سفر برچسب‌دار و ردیف‌های منظم تاریخچه بازطراحی شد. رفتار عملیاتی و داده تغییر نکرده‌اند؛ ۴۲ تست کامپوننت، lint، typecheck و قالب‌بندی موفق‌اند. بازبینی CI و runtime باقی است.
+
+## 2026-09-29 — LOGIN-COMPANY-CAPTIONS-0929 — PC-A — READY_FOR_REVIEW
+
+نام نمایشی زیر لوگوهای شرکت در صفحه ورود حذف می‌شود؛ خود لوگو، متن جایگزین دسترس‌پذیری و عنوان بخش حفظ شده‌اند. تغییر محدود به Web است؛ بدون API، Migration، داده یا Dependency. اعتبارسنجی CI پیش از merge انجام می‌شود. جزئیات: [LOGIN-COMPANY-CAPTIONS-0929](tasks/LOGIN-COMPANY-CAPTIONS-0929.md).
