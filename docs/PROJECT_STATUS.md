@@ -3907,3 +3907,7 @@ Owner-confirmed synthetic local catalog snapshot: 20 offers (11 visible, 9 alrea
 ## 2026-09-29 — CUSTOMER-AFFAIRS-REQUEST-PROFILE-REDESIGN-0929 — READY_FOR_REVIEW
 
 نمای جزئیات درخواست امور مشتریان با سربرگ روشن، شرح جداگانه، مشخصات سفر برچسب‌دار و ردیف‌های منظم تاریخچه بازطراحی شد. رفتار عملیاتی و داده تغییر نکرده‌اند؛ ۴۲ تست کامپوننت، lint، typecheck و قالب‌بندی موفق‌اند. بازبینی CI و runtime باقی است.
+
+## 2026-09-29 — THAILAND-POSTER-XLSX-0929 — PC-B — READY_FOR_REVIEW
+
+سه اکسل پوکت، پاتایا و بانکوک–پوکت با ستون‌های فروش نهایی و بخش‌های پرواز/خدمات قالب‌های متناظر تطبیق داده شدند. بازبینی تصویری هر سه خروجی و تست نگاشت قیمت انجام شد؛ ۳۶ تست ماژول، lint، typecheck و build تولیدی موفق‌اند؛ PR در جریان است. [جزئیات](tasks/THAILAND-POSTER-XLSX-0929.md). بدون API، Migration، Dependency یا دادهٔ عملیاتی.
