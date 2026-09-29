@@ -1,4 +1,4 @@
-import type { LoginResponse } from '@nora/contracts';
+import { USER_JOB_TITLES, type LoginResponse } from '@nora/contracts';
 
 const HEADER_SESSION_STORAGE_KEY = 'nora:header-session:v1';
 const HEADER_SESSION_CHANGED_EVENT = 'nora:header-session-changed';
@@ -19,6 +19,14 @@ function browserSessionStorage(): HeaderSessionStorage | null {
   } catch {
     return null;
   }
+}
+
+function selectedHeaderRoleName(roleNames: readonly string[]) {
+  return (
+    roleNames.find((name) =>
+      USER_JOB_TITLES.includes(name as (typeof USER_JOB_TITLES)[number]),
+    ) ?? (roleNames.includes('مدیر سیستم') ? USER_JOB_TITLES[0] : undefined)
+  );
 }
 
 function isHeaderSessionIdentity(
@@ -45,7 +53,8 @@ export function readHeaderSession(
     if (!raw) return null;
     const parsed: unknown = JSON.parse(raw);
     if (!isHeaderSessionIdentity(parsed)) return null;
-    return { ...parsed, roleNames: parsed.roleNames ?? [] };
+    const selectedTitle = selectedHeaderRoleName(parsed.roleNames ?? []);
+    return { ...parsed, roleNames: selectedTitle ? [selectedTitle] : [] };
   } catch {
     return null;
   }
@@ -56,10 +65,18 @@ export function rememberHeaderSession(
   loggedInAt = new Date().toISOString(),
   storage: HeaderSessionStorage | null = browserSessionStorage(),
 ): HeaderSessionIdentity {
+  const assignedRoles = user.roles ?? [];
+  const selectedTitle =
+    assignedRoles.find(({ name }) =>
+      USER_JOB_TITLES.includes(name as (typeof USER_JOB_TITLES)[number]),
+    )?.name ??
+    (assignedRoles.some(({ code }) => code === 'administrator')
+      ? USER_JOB_TITLES[0]
+      : undefined);
   const identity: HeaderSessionIdentity = {
     displayName: user.displayName.trim() || 'کاربر سامانه',
     loggedInAt,
-    roleNames: user.roles?.map(({ name }) => name).filter(Boolean) ?? [],
+    roleNames: selectedTitle ? [selectedTitle] : [],
   };
   try {
     storage?.setItem(HEADER_SESSION_STORAGE_KEY, JSON.stringify(identity));
@@ -85,7 +102,7 @@ export function subscribeHeaderSession(onChange: () => void): () => void {
 export function getHeaderRoleLabel(
   storage: HeaderSessionStorage | null = browserSessionStorage(),
 ): string {
-  return readHeaderSession(storage)?.roleNames.join('، ') ?? '';
+  return readHeaderSession(storage)?.roleNames[0] ?? '';
 }
 
 export function clearHeaderSession(
