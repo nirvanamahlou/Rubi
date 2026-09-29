@@ -115,6 +115,7 @@ describe('public organization document version references', () => {
         document: {
           branchId: 'branch',
           archiveStatus: { not: 'DELETED' },
+          confidentialAccessCodeHash: null,
           confidentiality: { notIn: ['CONFIDENTIAL', 'RESTRICTED'] },
           documentType: { domain: 'ORGANIZATION' },
           relations: {
