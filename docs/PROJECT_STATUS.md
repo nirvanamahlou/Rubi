@@ -3876,3 +3876,6 @@ Each two-target fare box is capped at 22rem (352px), matching the owner's hatche
 ## 2026-09-29 — RESERVATION-MANIFEST-ROUTE-FILTERS-0929 — PC-A — READY_FOR_REVIEW
 
 برای نتایج منیفست بازه تاریخ، فیلترهای مبدا و مقصد مستقل/ترکیبی افزوده شدند. سه تست، typecheck، lint و build تولیدی ۵۵ مسیر Web موفق‌اند. بازه تاریخ، API، منطق مالی و دانلود تغییری نکرده‌اند. جزئیات: [RESERVATION-MANIFEST-ROUTE-FILTERS-0929](tasks/RESERVATION-MANIFEST-ROUTE-FILTERS-0929.md). PR و CI در انتظار review.
+## 2026-09-29 — HEADER-SELECTED-ROLE-TITLE-0929 — PC-A — READY_FOR_REVIEW
+
+نوار بالا فقط عنوان شغلی انتخاب‌شده از نقش‌های فعال IAM را نشان می‌دهد؛ برچسب عمومی مثل `Ramtin full access` یا متن ترکیبی کنار آن دیده نمی‌شود. داده نشست قدیمی نیز پیش از نمایش به یک عنوان معتبر تبدیل می‌شود. typecheck، lint و build تولیدی Web با ۵۵ مسیر موفق‌اند؛ CI پیش از merge اجرا می‌شود. بدون API، Migration، Dependency یا داده عملیاتی. جزئیات: [HEADER-SELECTED-ROLE-TITLE-0929](tasks/HEADER-SELECTED-ROLE-TITLE-0929.md).

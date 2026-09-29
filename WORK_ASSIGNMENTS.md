@@ -4544,3 +4544,7 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 ## RESERVATION-MANIFEST-ROUTE-FILTERS-0929 — PC-A — READY_FOR_REVIEW
 
 - COMPUTER_ID=PC-A؛ شاخه `codex/pc-a-reservation-manifest-route-filters-0929` از `origin/develop@91952eb2`. فقط فیلترهای مبدا/مقصد و منطق نمایش کارت‌های منیفست در Reservations Web همراه تست‌ها و ثبت وضعیت رزرو شد. گزینه‌ها از بلیط‌های دریافت‌شده برای بازه تاریخ ساخته می‌شوند؛ فیلتر تاریخ موجود و API/خروجی دانلود بدون تغییر می‌ماند. سه تست هدفمند، typecheck، lint و build ۵۵ مسیر Web موفق‌اند. بدون API، قرارداد مشترک، Migration، داده عملیاتی یا Dependency. قفل محدود Reservations و Central Docs با commit آزاد می‌شود؛ PR به develop برای review و CI.
+
+## HEADER-SELECTED-ROLE-TITLE-0929 — PC-A — READY_FOR_REVIEW
+
+- COMPUTER_ID=PC-A; base `origin/develop@fdcf783e`; branch `codex/pc-a-header-role-title-0929`. Reserve header session identity and date-adjacent role display plus bounded docs. Display only the selected recognized job title from IAM roles (`مدیر`, `کارشناس فروش`, etc.); for the administrator role show the product title `مدیر`. Never join generic/custom role labels into the header. Web typecheck, scoped lint and production build (55 routes) pass. No IAM permissions/API, migration, dependency, or account data changes. Prior topbar locks are released; same PC-A owner.
