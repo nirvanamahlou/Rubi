@@ -1,6 +1,6 @@
 import { Controller, Get, Inject, Req } from '@nestjs/common';
 import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
-import type { HealthResponse } from '@rubi/contracts';
+import type { HealthResponse } from '@nora/contracts';
 import type { Request } from 'express';
 
 import { getRequestId } from '../common/request-id.middleware';

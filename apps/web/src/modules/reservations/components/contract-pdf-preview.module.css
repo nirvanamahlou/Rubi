@@ -1,0 +1,35 @@
+.preview {
+  display: grid;
+  min-height: min(68dvh, 760px);
+  gap: 12px;
+  place-items: center;
+  margin-top: 16px;
+}
+
+.frame {
+  width: 100%;
+  height: min(68dvh, 760px);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--muted);
+}
+
+.download,
+.error button {
+  border: 1px solid var(--primary);
+  border-radius: 8px;
+  padding: 8px 14px;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  font: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.error {
+  display: grid;
+  gap: 12px;
+  justify-items: center;
+  color: var(--destructive);
+  text-align: center;
+}

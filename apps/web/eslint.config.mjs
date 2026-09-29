@@ -1,3 +1,3 @@
-import nextConfig from '@rubi/eslint-config/next';
+import nextConfig from '@nora/eslint-config/next';
 
 export default nextConfig;
