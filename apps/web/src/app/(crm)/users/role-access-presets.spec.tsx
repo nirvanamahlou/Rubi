@@ -1,6 +1,7 @@
 import {
   USER_JOB_TITLES,
   USER_ACCESS_PROFILE_PERMISSION,
+  USER_ACCESS_SCREENS,
   screenPermission,
 } from '@nora/contracts';
 import { renderToStaticMarkup } from 'react-dom/server';
@@ -107,6 +108,11 @@ describe('role access recommendations', () => {
     expect(result.screenIds).toEqual(['system.users']);
     expect(result.permissionIds).toEqual(['iam.users.manage']);
     expect(recommendRoleAccess('مدیر', [], actor).permissionIds).toEqual([]);
+  });
+  it('offers every catalogued section and native permission to a system administrator', () => {
+    const result = recommendRoleAccess('مدیر', permissions, [], true);
+    expect(result.screenIds).toHaveLength(USER_ACCESS_SCREENS.length);
+    expect(result.permissionIds).toHaveLength(permissions.length);
   });
   it('does not give fallback grants to unknown roles and never mutates existing option arrays', () => {
     const before = JSON.stringify(permissions);

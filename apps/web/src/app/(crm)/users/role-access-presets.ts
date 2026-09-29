@@ -250,6 +250,7 @@ export function recommendRoleAccess(
   title: string,
   permissions: readonly AssignablePermission[],
   actorPermissions: readonly string[],
+  canAssignAll = false,
 ) {
   const administrator = title === USER_JOB_TITLES[0];
   const profile = profiles[title];
@@ -259,11 +260,11 @@ export function recommendRoleAccess(
   const screens = USER_ACCESS_SCREENS.filter(
     (screen) =>
       groups.includes(screen.group) &&
-      canViewScreen(actorPermissions, screen.id),
+      (canAssignAll || canViewScreen(actorPermissions, screen.id)),
   );
   const native = permissions.filter(
     (permission) =>
-      actorPermissions.includes(permission.code) &&
+      (canAssignAll || actorPermissions.includes(permission.code)) &&
       (administrator || profile?.permissions.includes(permission.code)),
   );
   return {
@@ -274,7 +275,9 @@ export function recommendRoleAccess(
       screens.some((screen) => screen.group === group.id),
     ),
     reason: administrator
-      ? 'مدیریت تمام بخش‌ها، فقط در محدوده مجوزهای قابل واگذاری شما.'
+      ? canAssignAll
+        ? 'پیشنهاد مدیر سامانه: همهٔ بخش‌ها و مجوزهای عملیاتی؛ موارد دلخواه را پیش از ذخیره سفارشی کنید.'
+        : 'مدیریت تمام بخش‌های قابل واگذاری شما؛ دسترسی خارج از اختیارات شما اضافه نمی‌شود.'
       : (profile?.reason ??
         'برای این نقش پیشنهاد ثبت نشده است؛ دسترسی‌ها را دستی انتخاب کنید.'),
   };
