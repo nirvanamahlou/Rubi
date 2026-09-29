@@ -3866,3 +3866,6 @@ Selected-contract header now shows read-only financial-delivery approval, respon
 ## 2026-09-29 — TICKET-TARGET-ROWS-0929 — PC-A
 
 مقصدهای قیمت بلیت در باکس‌های دو ردیفی قرار می‌گیرند؛ باکس‌ها متناسب با عرض کنار هم اضافه می‌شوند و بخش مقصدها ارتفاع محدود و اسکرول عمودی دارد. در عرض کم دکمه‌ها به خط مستقل می‌روند تا نام، درصد و قیمت روی هم نیفتند. بدون تغییر API، منطق کمیسیون، Migration یا داده. اعتبارسنجی و تحویل: [TICKET-TARGET-ROWS-0929](tasks/TICKET-TARGET-ROWS-0929.md).
+## 2026-09-29 — RESERVATION-MANIFEST-ROUTE-FILTERS-0929 — PC-A — READY_FOR_REVIEW
+
+برای نتایج منیفست بازه تاریخ، فیلترهای مبدا و مقصد مستقل/ترکیبی افزوده شدند. سه تست، typecheck، lint و build تولیدی ۵۵ مسیر Web موفق‌اند. بازه تاریخ، API، منطق مالی و دانلود تغییری نکرده‌اند. جزئیات: [RESERVATION-MANIFEST-ROUTE-FILTERS-0929](tasks/RESERVATION-MANIFEST-ROUTE-FILTERS-0929.md). PR و CI در انتظار review.
