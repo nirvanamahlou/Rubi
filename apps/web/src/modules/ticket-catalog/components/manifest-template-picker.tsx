@@ -1,9 +1,8 @@
 'use client';
-
 import { useEffect, useState } from 'react';
-import { Button, Input } from '@/components/ui';
+import { Button } from '@/components/ui';
+import { SearchCombobox } from '@/components/ui/search-combobox';
 import { toursApi } from '../api/tours';
-
 export function ManifestTemplatePicker({
   value,
   name,
@@ -15,15 +14,13 @@ export function ManifestTemplatePicker({
   readOnly?: boolean;
   onChange: (id: string | null, name: string) => void;
 }) {
-  const [open, setOpen] = useState(false);
-  const [search, setSearch] = useState('');
-  const [page, setPage] = useState(1);
-  const [attempt, setAttempt] = useState(0);
-  const key = JSON.stringify([search, page, attempt]);
+  const [open, setOpen] = useState(false),
+    [search, setSearch] = useState(''),
+    [attempt, setAttempt] = useState(0);
+  const key = JSON.stringify([search, attempt]);
   const [result, setResult] = useState<{
     key: string;
     data: { id: string; name: string }[];
-    hasMore: boolean;
     error?: string;
   }>();
   useEffect(() => {
@@ -31,16 +28,15 @@ export function ManifestTemplatePicker({
     let active = true;
     const timer = setTimeout(() => {
       void toursApi
-        .manifestTemplates(search, page)
+        .manifestTemplates(search, 1)
         .then((data) => {
-          if (active) setResult({ ...data, key });
+          if (active) setResult({ key, data: data.data });
         })
         .catch((error: unknown) => {
           if (active)
             setResult({
               key,
               data: [],
-              hasMore: false,
               error:
                 error instanceof Error
                   ? error.message
@@ -52,146 +48,49 @@ export function ManifestTemplatePicker({
       active = false;
       clearTimeout(timer);
     };
-  }, [open, readOnly, search, page, key]);
+  }, [open, readOnly, search, key]);
   const current = result?.key === key ? result : undefined;
-  const select = (id: string | null, label: string) => {
-    onChange(id, label);
-    setOpen(false);
-    setSearch('');
-    setPage(1);
-  };
   return (
-    <div
-      className="relative grid gap-2"
-      onBlur={(event) => {
-        if (!event.currentTarget.contains(event.relatedTarget)) setOpen(false);
-      }}
-      onKeyDown={(event) => {
-        if (event.key === 'Escape') {
-          event.preventDefault();
-          setOpen(false);
-          document.getElementById('ticket-manifest-template')?.focus();
-        }
-      }}
-    >
+    <div className="grid gap-2">
       <label htmlFor="ticket-manifest-template" className="text-sm font-medium">
         انتخاب قالب منیفست
       </label>
-      <Button
+      <SearchCombobox
         id="ticket-manifest-template"
-        type="button"
-        variant="outline"
-        className="justify-between"
+        label="قالب‌های منیفست"
+        value={value ?? ''}
+        selectedLabel={value ? name || 'قالب انتخاب‌شده' : 'پیش‌فرض'}
         disabled={readOnly}
-        aria-haspopup="listbox"
-        aria-expanded={open}
-        aria-controls="ticket-manifest-template-choices"
-        onClick={() => setOpen(!open)}
-      >
-        {value ? name || 'قالب انتخاب‌شده' : 'پیش‌فرض'}{' '}
-        <span aria-hidden>▾</span>
-      </Button>
-      {open && !readOnly ? (
-        <div className="grid gap-3 rounded-xl border bg-surface p-3">
-          <Input
-            autoFocus
-            aria-label="جست‌وجوی قالب منیفست"
-            placeholder="جست‌وجوی ایرلاین یا مقصد…"
-            value={search}
-            maxLength={160}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setPage(1);
-            }}
-          />
-          <div
-            id="ticket-manifest-template-choices"
-            role="listbox"
-            aria-label="قالب‌های منیفست"
-            className="max-h-52 overflow-y-auto"
-            onKeyDown={(event) => {
-              const options = Array.from(
-                event.currentTarget.querySelectorAll<HTMLButtonElement>(
-                  'button[role="option"]',
-                ),
-              );
-              const index = options.findIndex(
-                (option) => option === document.activeElement,
-              );
-              const next =
-                event.key === 'ArrowDown'
-                  ? (index + 1) % options.length
-                  : event.key === 'ArrowUp'
-                    ? (index - 1 + options.length) % options.length
-                    : event.key === 'Home'
-                      ? 0
-                      : event.key === 'End'
-                        ? options.length - 1
-                        : undefined;
-              if (next !== undefined) {
-                event.preventDefault();
-                options[next]?.focus();
-              }
-            }}
-          >
-            <button
-              type="button"
-              role="option"
-              aria-selected={!value}
-              className="block w-full rounded-lg px-3 py-2 text-start hover:bg-muted"
-              onClick={() => select(null, 'پیش‌فرض')}
-            >
-              پیش‌فرض
-            </button>
-            {current?.data.map((row) => (
-              <button
-                key={row.id}
-                type="button"
-                role="option"
-                aria-selected={value === row.id}
-                className="block w-full rounded-lg px-3 py-2 text-start hover:bg-muted"
-                onClick={() => select(row.id, row.name)}
-              >
-                {row.name}
-              </button>
-            ))}
-          </div>
-          {!current ? (
-            <p role="status">در حال دریافت قالب‌ها…</p>
-          ) : current.error ? (
-            <div role="alert">
-              <p>{current.error}</p>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setAttempt(attempt + 1)}
-              >
-                تلاش دوباره
-              </Button>
-            </div>
-          ) : !current.data.length ? (
-            <p role="status">قالبی پیدا نشد.</p>
-          ) : null}
-          <div className="flex gap-2">
+        remote
+        loading={!current}
+        error={current?.error}
+        onSearchChange={setSearch}
+        onOpenChange={setOpen}
+        options={[
+          { value: '', label: 'پیش‌فرض' },
+          ...(current?.data ?? []).map((row) => ({
+            value: row.id,
+            label: row.name,
+          })),
+        ]}
+        onValueChange={(id) =>
+          onChange(
+            id || null,
+            current?.data.find((row) => row.id === id)?.name ?? 'پیش‌فرض',
+          )
+        }
+        footer={
+          current?.error ? (
             <Button
               type="button"
-              variant="outline"
-              disabled={page === 1}
-              onClick={() => setPage(page - 1)}
+              variant="ghost"
+              onClick={() => setAttempt((n) => n + 1)}
             >
-              قبلی
+              تلاش دوباره
             </Button>
-            <Button
-              type="button"
-              variant="outline"
-              disabled={!current?.hasMore}
-              onClick={() => setPage(page + 1)}
-            >
-              بعدی
-            </Button>
-          </div>
-        </div>
-      ) : null}
+          ) : undefined
+        }
+      />
     </div>
   );
 }

@@ -1,4 +1,5 @@
 'use client';
+import { NativeSearchSelect } from '@/components/ui/native-search-select';
 
 import {
   AlertTriangle,
@@ -1083,7 +1084,7 @@ function Dashboard({ openAction }: { openAction: (title: string) => void }) {
         }
       />
       <section className={`${styles.panel} ${styles.filterBar}`}>
-        <select
+        <NativeSearchSelect
           aria-label="بازه گزارش"
           className={styles.control}
           onChange={(event) =>
@@ -1097,8 +1098,8 @@ function Dashboard({ openAction }: { openAction: (title: string) => void }) {
           <option value="monthToDate">امروز — ۱۴ شهریور ۱۴۰۵</option>
           <option value="week">۷ روز اخیر</option>
           <option value="month">ماه کامل</option>
-        </select>
-        <select
+        </NativeSearchSelect>
+        <NativeSearchSelect
           aria-label="شعبه"
           className={styles.control}
           onChange={(event) =>
@@ -1112,8 +1113,8 @@ function Dashboard({ openAction }: { openAction: (title: string) => void }) {
           <option value="all">همه شعب</option>
           <option value="niyayeshSeir">نیایش سیر</option>
           <option value="jahanBastan">جهان باستان</option>
-        </select>
-        <select
+        </NativeSearchSelect>
+        <NativeSearchSelect
           aria-label="واحد سازمانی"
           className={styles.control}
           onChange={(event) =>
@@ -1128,7 +1129,7 @@ function Dashboard({ openAction }: { openAction: (title: string) => void }) {
           <option value="operations">عملیات سفر</option>
           <option value="sales">فروش سازمانی</option>
           <option value="finance">مالی</option>
-        </select>
+        </NativeSearchSelect>
         <ActionButton
           onClick={() => {
             setAppliedFilters(draftFilters);
@@ -1409,7 +1410,7 @@ function Employees({
           </label>
           <label className={styles.fieldLabel}>
             <span>وضعیت</span>
-            <select
+            <NativeSearchSelect
               aria-label="وضعیت"
               className={styles.control}
               onChange={(event) => setStatusFilter(event.target.value)}
@@ -1419,11 +1420,11 @@ function Employees({
               <option value="فعال">فعال</option>
               <option value="در حال تکمیل">در حال تکمیل</option>
               <option value="تعلیق‌شده">تعلیق‌شده</option>
-            </select>
+            </NativeSearchSelect>
           </label>
           <label className={styles.fieldLabel}>
             <span>شعبه</span>
-            <select
+            <NativeSearchSelect
               aria-label="شعبه"
               className={styles.control}
               onChange={(event) => setBranchFilter(event.target.value)}
@@ -1432,11 +1433,11 @@ function Employees({
               <option value="all">همه شعب</option>
               <option value="نیایش سیر">نیایش سیر</option>
               <option value="جهان باستان">جهان باستان</option>
-            </select>
+            </NativeSearchSelect>
           </label>
           <label className={styles.fieldLabel}>
             <span>واحد</span>
-            <select
+            <NativeSearchSelect
               aria-label="واحد"
               className={styles.control}
               onChange={(event) => setUnitFilter(event.target.value)}
@@ -1447,7 +1448,7 @@ function Employees({
               <option value="فروش">فروش</option>
               <option value="مالی">مالی</option>
               <option value="عملیات فرودگاهی">عملیات فرودگاهی</option>
-            </select>
+            </NativeSearchSelect>
           </label>
           <ActionButton>
             <Filter size={15} /> فیلتر
@@ -2247,14 +2248,14 @@ function OrganizationSection({
                 className={`${styles.control} ${styles.searchControl}`}
                 placeholder="جست‌وجو در داده نمایشی"
               />
-              <select
+              <NativeSearchSelect
                 aria-label="وضعیت"
                 className={styles.control}
                 defaultValue="all"
               >
                 <option value="all">همه وضعیت‌ها</option>
                 <option value="active">فعال</option>
-              </select>
+              </NativeSearchSelect>
               <ActionButton>
                 <Filter size={15} /> فیلتر
               </ActionButton>
@@ -2342,15 +2343,15 @@ function Requests({
             className={`${styles.control} ${styles.searchControl}`}
             placeholder={`جست‌وجو در ${active?.label ?? 'درخواست‌ها'}`}
           />
-          <select
+          <NativeSearchSelect
             aria-label="کارتابل"
             className={styles.control}
             defaultValue="mine"
           >
             <option value="mine">کارتابل من</option>
             <option value="all">همه موارد مجاز</option>
-          </select>
-          <select
+          </NativeSearchSelect>
+          <NativeSearchSelect
             aria-label="وضعیت درخواست"
             className={styles.control}
             defaultValue="all"
@@ -2358,7 +2359,7 @@ function Requests({
             <option value="all">همه وضعیت‌ها</option>
             <option value="pending">در انتظار</option>
             <option value="completed">تکمیل‌شده</option>
-          </select>
+          </NativeSearchSelect>
           <ActionButton>
             <Filter size={15} /> فیلتر
           </ActionButton>
@@ -2706,14 +2707,14 @@ function TabbedSection({
               className={`${styles.control} ${styles.searchControl}`}
               placeholder="جست‌وجو در داده نمایشی"
             />
-            <select
+            <NativeSearchSelect
               aria-label="وضعیت"
               className={styles.control}
               defaultValue="all"
             >
               <option value="all">همه وضعیت‌ها</option>
               <option value="active">فعال</option>
-            </select>
+            </NativeSearchSelect>
             <ActionButton>
               <Filter size={15} /> فیلتر
             </ActionButton>

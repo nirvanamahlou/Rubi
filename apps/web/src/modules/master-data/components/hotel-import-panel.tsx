@@ -1,4 +1,5 @@
 'use client';
+import { NativeSearchSelect } from '@/components/ui/native-search-select';
 
 import type {
   MasterDataListQuery,
@@ -170,7 +171,7 @@ export function HotelImportPanel({
               setPreview(null);
             }}
           >
-            <select
+            <NativeSearchSelect
               id="hotel-import-country"
               disabled={busy !== null}
               className="h-10 w-full rounded-md border border-slate-300 bg-white px-3"
@@ -187,7 +188,7 @@ export function HotelImportPanel({
                   {country.name}
                 </option>
               ))}
-            </select>
+            </NativeSearchSelect>
           </MasterDataClearableField>
         </FormField>
         <FormField id="hotel-import-city" label="شهر" required>
@@ -201,7 +202,7 @@ export function HotelImportPanel({
               setPreview(null);
             }}
           >
-            <select
+            <NativeSearchSelect
               id="hotel-import-city"
               className="h-10 w-full rounded-md border border-slate-300 bg-white px-3"
               value={cityId}
@@ -217,7 +218,7 @@ export function HotelImportPanel({
                   {city.name}
                 </option>
               ))}
-            </select>
+            </NativeSearchSelect>
           </MasterDataClearableField>
         </FormField>
         <label className="space-y-1 text-sm font-medium text-slate-700">
@@ -337,7 +338,7 @@ export function HotelImportPanel({
                 disabled={busy !== null}
                 onClear={() => setDuplicateBehavior('')}
               >
-                <select
+                <NativeSearchSelect
                   id="hotel-import-duplicates"
                   disabled={busy !== null}
                   className="mr-2 h-9 rounded-md border bg-white px-2"
@@ -351,7 +352,7 @@ export function HotelImportPanel({
                   <option value="">انتخاب کنید</option>
                   <option value="SKIP">رد کردن تکراری‌ها</option>
                   <option value="UPDATE">به‌روزرسانی تکراری‌ها</option>
-                </select>
+                </NativeSearchSelect>
               </MasterDataClearableField>
             </FormField>
             <label className="inline-flex items-center gap-2 text-sm text-slate-700">

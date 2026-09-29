@@ -1,4 +1,5 @@
 'use client';
+import { NativeSearchSelect } from '@/components/ui/native-search-select';
 
 import { ExternalLink, Upload } from 'lucide-react';
 import { useMemo, useState, type FormEvent } from 'react';
@@ -785,7 +786,7 @@ export function ContextualHrForm({
                   {field.label}
                 </RequiredFieldLabel>
                 {field.type === 'select' ? (
-                  <select
+                  <NativeSearchSelect
                     {...commonProps}
                     disabled={readOnly}
                     onChange={(event) => update(field.id, event.target.value)}
@@ -802,7 +803,7 @@ export function ContextualHrForm({
                     ).map((option) => (
                       <option key={option}>{option}</option>
                     ))}
-                  </select>
+                  </NativeSearchSelect>
                 ) : field.type === 'combobox' ? (
                   <>
                     <input

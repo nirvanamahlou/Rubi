@@ -1,4 +1,5 @@
 'use client';
+import { NativeSearchSelect } from '@/components/ui/native-search-select';
 
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import type {
@@ -131,7 +132,7 @@ export function OrganizationAddressesPanel({
         {presentation === 'selector' && rows.length > 0 ? (
           <label className="field" htmlFor={selectorId}>
             شعبه آژانس
-            <select
+            <NativeSearchSelect
               id={selectorId}
               className="input"
               value={selected?.id ?? ''}
@@ -145,7 +146,7 @@ export function OrganizationAddressesPanel({
                   {!row.isActive ? ' · غیرفعال' : ''}
                 </option>
               ))}
-            </select>
+            </NativeSearchSelect>
             <span className="panel-note">
               برای مشاهده نشانی و اطلاعات هر شعبه، آن را انتخاب کنید. شعب جدید
               را با «ثبت شعبه یا آدرس» اضافه کنید.

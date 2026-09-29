@@ -1,4 +1,6 @@
 'use client';
+import { NativeSearchSelect } from '@/components/ui/native-search-select';
+
 import { useRouteAccess } from '@/modules/iam/access-context';
 import dynamic from 'next/dynamic';
 import Link from '@/components/access-link';
@@ -151,7 +153,7 @@ export function HrLiveWorkspace({
         </Link>
         {section !== 'home' ? (
           <label className={ui.sectionPicker}>
-            <select
+            <NativeSearchSelect
               aria-label="انتخاب بخش منابع انسانی"
               value={section === 'employee' ? 'employees' : section}
               onChange={(event) =>
@@ -169,7 +171,7 @@ export function HrLiveWorkspace({
                     {card.id === 'payroll' ? 'حقوق و ارتباط مالی' : card.title}
                   </option>
                 ))}
-            </select>
+            </NativeSearchSelect>
           </label>
         ) : null}
         <HrButton

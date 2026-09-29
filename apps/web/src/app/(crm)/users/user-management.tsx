@@ -1,4 +1,6 @@
 'use client';
+import { NativeSearchSelect } from '@/components/ui/native-search-select';
+
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   USER_ACCESS_GROUPS,
@@ -400,7 +402,7 @@ export function UserManagement() {
               )}
               <label className="grid gap-2">
                 نقش کاربر
-                <select
+                <NativeSearchSelect
                   value={title}
                   onChange={(e) => {
                     setTitle(e.target.value);
@@ -413,7 +415,7 @@ export function UserManagement() {
                       {t}
                     </option>
                   ))}
-                </select>
+                </NativeSearchSelect>
               </label>
               {canManage &&
                 (proposalOpen ? (

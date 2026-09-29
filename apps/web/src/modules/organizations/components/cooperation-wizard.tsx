@@ -1,4 +1,6 @@
 'use client';
+import { NativeSearchSelect } from '@/components/ui/native-search-select';
+
 import type {
   BranchReference,
   IamPermissionCode,
@@ -371,7 +373,7 @@ export function CooperationWizard({
                   {field('code', 'کد سازمان', 32, true)}
                   <label className="field">
                     <span>نقش همکاری</span>
-                    <select
+                    <NativeSearchSelect
                       className="input"
                       value={draft.role}
                       onChange={(event) =>
@@ -384,11 +386,11 @@ export function CooperationWizard({
                     >
                       <option value="AGENCY">آژانس</option>
                       <option value="CORPORATE_CUSTOMER">مشتری سازمانی</option>
-                    </select>
+                    </NativeSearchSelect>
                   </label>
                   <label className="field">
                     <span>نوع شخصیت</span>
-                    <select
+                    <NativeSearchSelect
                       className="input"
                       disabled={mode === 'existing'}
                       value={draft.personType}
@@ -405,7 +407,7 @@ export function CooperationWizard({
                     >
                       <option value="LEGAL">حقوقی</option>
                       <option value="NATURAL">حقیقی</option>
-                    </select>
+                    </NativeSearchSelect>
                   </label>
                   {draft.personType === 'LEGAL' ? (
                     <div className="rounded-xl border border-border bg-white p-3">
@@ -431,7 +433,7 @@ export function CooperationWizard({
                       value={countryQuery}
                       onChange={(event) => setCountryQuery(event.target.value)}
                     />
-                    <select
+                    <NativeSearchSelect
                       className="input"
                       aria-label="کشور نشانی"
                       disabled={!permissions.includes('master_data.update')}
@@ -457,7 +459,7 @@ export function CooperationWizard({
                             {country.name}
                           </option>
                         ))}
-                    </select>
+                    </NativeSearchSelect>
                   </label>
                   <label className="field">
                     <span>وضعیت اولیه فرم</span>
@@ -510,7 +512,7 @@ export function CooperationWizard({
                           value={cityQuery}
                           onChange={(event) => setCityQuery(event.target.value)}
                         />
-                        <select
+                        <NativeSearchSelect
                           className="input"
                           aria-label="شهر نشانی"
                           value={draft.cityId}
@@ -530,7 +532,7 @@ export function CooperationWizard({
                                 {city.name}
                               </option>
                             ))}
-                        </select>
+                        </NativeSearchSelect>
                       </label>
                       {field('addressLine', 'نشانی کامل', 500)}
                     </>
@@ -570,7 +572,7 @@ export function CooperationWizard({
                 ) : null}
                 <label className="field">
                   <span>شعبه قرارداد *</span>
-                  <select
+                  <NativeSearchSelect
                     className="input"
                     value={draft.branchId}
                     onChange={(event) => set('branchId', event.target.value)}
@@ -581,7 +583,7 @@ export function CooperationWizard({
                         {branch.name}
                       </option>
                     ))}
-                  </select>
+                  </NativeSearchSelect>
                 </label>
                 <AgreementTermsEditor
                   onUploadStateChange={setUploading}

@@ -1,4 +1,6 @@
 'use client';
+import { NativeSearchSelect } from '@/components/ui/native-search-select';
+
 import Image from 'next/image';
 import { DatePicker } from '@/components/ui/date-picker';
 import { useEffect, useRef, useState } from 'react';
@@ -343,7 +345,7 @@ export function HrEmployeeProfile({
         <div className={ui.filters}>
           <label>
             نمایش
-            <select
+            <NativeSearchSelect
               value={source.tab}
               onChange={(event) => setTab(event.target.value)}
             >
@@ -352,7 +354,7 @@ export function HrEmployeeProfile({
                   {item.label}
                 </option>
               ))}
-            </select>
+            </NativeSearchSelect>
           </label>
         </div>
         {source.tab === 'summary' ? (

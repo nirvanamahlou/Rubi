@@ -1,4 +1,5 @@
 'use client';
+import { NativeSearchSelect } from '@/components/ui/native-search-select';
 
 import {
   ArrowLeft,
@@ -975,7 +976,7 @@ export function SystemManagementWorkspace() {
                           ) : null}
                         </span>
                         {field.type === 'select' ? (
-                          <select
+                          <NativeSearchSelect
                             onChange={(event) =>
                               setDraft((value) => ({
                                 ...value,
@@ -991,7 +992,7 @@ export function SystemManagementWorkspace() {
                                   : option}
                               </option>
                             ))}
-                          </select>
+                          </NativeSearchSelect>
                         ) : field.type === 'file' ? (
                           <>
                             <input

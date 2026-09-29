@@ -1,4 +1,6 @@
 'use client';
+import { NativeSearchSelect } from '@/components/ui/native-search-select';
+
 import { EnglishHotelName } from './english-hotel-name';
 import { useEffect, useState } from 'react';
 import type {
@@ -38,7 +40,7 @@ function CountSelect({
   return (
     <label className="flex items-center justify-between gap-2 rounded-lg border border-border bg-surface p-2 text-sm">
       <span className="font-bold">{label}</span>
-      <select
+      <NativeSearchSelect
         disabled={disabled}
         className="h-9 min-w-24 rounded-lg border border-input bg-surface px-2"
         value={value}
@@ -49,7 +51,7 @@ function CountSelect({
             {count.toLocaleString('fa-IR')} عدد
           </option>
         ))}
-      </select>
+      </NativeSearchSelect>
     </label>
   );
 }

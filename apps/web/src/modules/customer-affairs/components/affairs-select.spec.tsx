@@ -14,8 +14,10 @@ describe('Nora Customer Affairs dropdowns', () => {
     expect(html).toContain('role="combobox"');
     expect(html).toContain('dir="rtl"');
     expect(html).toContain('name="priority"');
-    // Radix registers options after hydration; SSR only exposes the form bridge.
-    expect(html).toContain('<select aria-hidden="true"');
+    // The inline search input submits the selected canonical value through the form bridge.
+    expect(html).toContain(
+      '<input type="hidden" name="priority" value="NORMAL"',
+    );
     expect(html).toContain('aria-required="true"');
   });
   it('preserves the empty choice and disabled state without an empty Radix item', () => {

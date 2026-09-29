@@ -437,7 +437,7 @@ describe('Purchase draft accessibility and persisted input', () => {
     );
     const trigger = (id: string) =>
       html.match(
-        new RegExp(`<button[^>]*id="${id}"[^>]*>(.*?)</button>`, 's'),
+        new RegExp(`<input[^>]*id="${id}"[^>]*value="([^"]*)"`, 's'),
       )?.[1] ?? '';
     expect(trigger('proc-category')).toContain('ملزومات اداری');
     expect(trigger('item-1-unit')).toContain('ساعت');
