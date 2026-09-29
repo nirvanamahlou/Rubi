@@ -3866,7 +3866,9 @@ Selected-contract header now shows read-only financial-delivery approval, respon
 ## 2026-09-29 — TICKET-TARGET-ROWS-0929 — PC-A
 
 مقصدهای قیمت بلیت در باکس‌های دو ردیفی قرار می‌گیرند؛ باکس‌ها متناسب با عرض کنار هم اضافه می‌شوند و بخش مقصدها ارتفاع محدود و اسکرول عمودی دارد. در عرض کم دکمه‌ها به خط مستقل می‌روند تا نام، درصد و قیمت روی هم نیفتند. بدون تغییر API، منطق کمیسیون، Migration یا داده. اعتبارسنجی و تحویل: [TICKET-TARGET-ROWS-0929](tasks/TICKET-TARGET-ROWS-0929.md).
+## 2026-09-29 — CUSTOMER-AFFAIRS-ASSIGNEE-COMBOBOX-0929 — READY_FOR_REVIEW
 
+دو کنترل جدا در فرم‌های امور مشتریان با یک انتخاب‌گر جست‌وجودار جایگزین شدند. منوی زیر فیلد پنج کارمند دارای حساب متصل از فهرست HR نشان می‌دهد و جست‌وجوی نام/کد/واحد، شناسهٔ مسئول و محدوده شعبه حفظ شد. ۶۱ تست Web، typecheck و lint محدود موفق‌اند؛ build/CI و فعال‌سازی ۳۱۰۰ در انتظارند.
 ## 2026-09-29 — TICKET-TARGET-COMPACT-WIDTH-0929 — PC-A — READY_FOR_REVIEW
 
 Each two-target fare box is capped at 22rem (352px), matching the owner's hatched reference instead of stretching across the row. Auto-fill preserves side-by-side boxes and narrow viewport sizing. Two existing tests, CSS formatting and Web production build/typecheck (55 routes) pass. No calculations, API, migration or dependency changes. Local activation authorized; PR #478 targets develop; owner explicitly authorized merge on 2026-09-29.

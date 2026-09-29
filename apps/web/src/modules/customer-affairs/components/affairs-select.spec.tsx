@@ -33,7 +33,6 @@ describe('Nora Customer Affairs dropdowns', () => {
   });
   it('uses the same wrapper for staff, filters and all record forms', () => {
     for (const file of [
-      'assignee-picker',
       'record-operations',
       'customer-affairs-workspace',
       'customer-affairs-nora-workspace',
@@ -45,5 +44,11 @@ describe('Nora Customer Affairs dropdowns', () => {
       expect(source).not.toMatch(/<select\b/);
       expect(source).toContain('<AffairsSelect');
     }
+    const assignee = readFileSync(
+      'src/modules/customer-affairs/components/assignee-picker.tsx',
+      'utf8',
+    );
+    expect(assignee).not.toMatch(/<select\b/);
+    expect(assignee).toContain('<SearchCombobox');
   });
 });
