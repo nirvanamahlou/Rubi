@@ -60,6 +60,27 @@ describe('public organization document version references', () => {
       ['version'],
       'organization',
       'branch',
+      false,
+    );
+    const sensitiveReader = {
+      ...actor,
+      permissions: [
+        ...actor.permissions,
+        'documents.sensitive.read',
+      ] as AuthenticatedActor['permissions'],
+    };
+    await DocumentsService.prototype.organizationVersionReferences.call(
+      service,
+      ['version'],
+      'organization',
+      'branch',
+      sensitiveReader,
+    );
+    expect(repository.organizationVersionReferences).toHaveBeenLastCalledWith(
+      ['version'],
+      'organization',
+      'branch',
+      true,
     );
     await expect(
       DocumentsService.prototype.organizationVersionReferences.call(
@@ -94,6 +115,7 @@ describe('public organization document version references', () => {
         document: {
           branchId: 'branch',
           archiveStatus: { not: 'DELETED' },
+          confidentiality: { notIn: ['CONFIDENTIAL', 'RESTRICTED'] },
           documentType: { domain: 'ORGANIZATION' },
           relations: {
             some: {
@@ -107,6 +129,15 @@ describe('public organization document version references', () => {
       },
       select: { id: true, documentId: true },
     });
+    await repository.organizationVersionReferences(
+      ['version'],
+      'organization',
+      'branch',
+      true,
+    );
+    expect(
+      findMany.mock.calls[1]?.[0].where.document.confidentiality,
+    ).toBeUndefined();
   });
   it('resolves old pinned versions in deduplicated owner batches without cross-module table access', async () => {
     const lookup = vi.fn(async (ids: string[]) =>
