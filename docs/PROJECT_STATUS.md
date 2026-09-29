@@ -3819,3 +3819,6 @@ Selected-contract header now shows read-only financial-delivery approval, respon
 ## 2026-09-29 — TICKET-PRICES-READABILITY-XLSX-0929 — PC-A — READY_FOR_REVIEW
 
 خلاصه پرواز و مسیر خواناتر و کنترل ارز جا‌دارتر شد. خروجی اکسل فیلترهای جاری را رعایت می‌کند و هر رفت‌وبرگشت را با جزئیات دو پرواز، قیمت پایه و مبالغ/درصد مقصدها در یک ردیف می‌آورد؛ قالب راست‌به‌چپ از رزواسیون پیروی می‌کند. Web lint، typecheck و build تولیدی (۵۵ مسیر) و تمام CI (build، quality، test و PostgreSQL) موفق‌اند. PR #470 به develop؛ ادغام با مجوز صریح مالک در انتظار انجام است. بدون API، Migration، داده عملیاتی یا Dependency. جزئیات: [TICKET-PRICES-READABILITY-XLSX-0929](tasks/TICKET-PRICES-READABILITY-XLSX-0929.md).
+## 2026-09-29 — SHARED-FORM-DROPDOWNS-0929 — READY_FOR_REVIEW
+
+کنترل مشترک dropdown فرم‌ها زیر فیلد باز می‌شود و حداکثر پنج گزینهٔ اولیه یا مطابق جست‌وجو نشان می‌دهد؛ جست‌وجو در تمام گزینه‌ها باقی مانده است. قرارداد انتخاب و ارسال مقدار، API و داده تغییر نکردند. ۱۱ تست هدفمند، lint، typecheck و build تولیدی Web موفق‌اند.
