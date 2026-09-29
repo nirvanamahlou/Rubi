@@ -3922,3 +3922,6 @@ Owner-confirmed synthetic local catalog snapshot: 20 offers (11 visible, 9 alrea
 ## 2026-09-29 — LOGIN-COMPANY-CAPTIONS-0929 — PC-A — READY_FOR_REVIEW
 
 نام نمایشی زیر لوگوهای شرکت در صفحه ورود حذف می‌شود؛ خود لوگو، متن جایگزین دسترس‌پذیری و عنوان بخش حفظ شده‌اند. تغییر محدود به Web است؛ بدون API، Migration، داده یا Dependency. اعتبارسنجی CI پیش از merge انجام می‌شود. جزئیات: [LOGIN-COMPANY-CAPTIONS-0929](tasks/LOGIN-COMPANY-CAPTIONS-0929.md).
+## 2026-09-29 — CUSTOMER-AFFAIRS-FOLLOWUP-OVERVIEW-0929 — PC-B — READY_FOR_REVIEW
+
+در فهرست درخواست‌های امور مشتریان، دکمهٔ ردیفی «پیگیری» پروفایل و مشخصات همان درخواست را باز می‌کند. نمای کلی اکنون «آخرین درخواست‌ها» را مستقل از «منتظر پذیرش فروش» و «پیگیری معوق» از API مجازِ شعبه می‌خواند؛ وضعیت `NEW` دیگر به‌علت فیلتر تحویل فروش حذف نمی‌شود. ۲۸ تست متمرکز، typecheck، lint محدود و build وب موفق‌اند؛ CI و بررسی runtime باقی‌اند. [جزئیات](tasks/CUSTOMER-AFFAIRS-FOLLOWUP-OVERVIEW-0929.md).
