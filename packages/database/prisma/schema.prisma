@@ -4078,6 +4078,8 @@ model TourDeparture {
 }
 
 model TicketPublishedOffer {
+  returnMinDays               Int?
+  returnMaxDays               Int?
   saleCommissions             TicketSaleCommissionRevision[]      @relation("TicketCommissionOutbound")
   returnSaleCommissions       TicketSaleCommissionRevision[]      @relation("TicketCommissionReturn")
   manifestTemplateId          String?                             @db.Uuid

@@ -189,6 +189,22 @@ export function TicketDetails({
         />
         <Detail label="نوع تأمین" value={supplyLabels[definition.supplyType]} />
         <Detail
+          label="Min — حداقل روز تا برگشت"
+          value={
+            definition.returnMinDays == null
+              ? 'بدون محدودیت'
+              : `${definition.returnMinDays} روز`
+          }
+        />
+        <Detail
+          label="Max — حداکثر روز تا برگشت"
+          value={
+            definition.returnMaxDays == null
+              ? 'بدون محدودیت'
+              : `${definition.returnMaxDays} روز`
+          }
+        />
+        <Detail
           label="نرخ خرید"
           value={
             (product.fares.at(-1)?.purchase || '—') +

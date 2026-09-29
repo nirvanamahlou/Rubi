@@ -141,6 +141,36 @@ export function PublishedOfferForm({
     <form onSubmit={(event) => void submit(event)} className="space-y-4">
       {problem ? <Alert tone="error" title={problem} /> : null}
       <div className="grid gap-3 sm:grid-cols-2">
+        {(['returnMinDays', 'returnMaxDays'] as const).map((field) => (
+          <FormField
+            key={field}
+            label={
+              field === 'returnMinDays'
+                ? 'Min — حداقل روز تا برگشت'
+                : 'Max — حداکثر روز تا برگشت'
+            }
+          >
+            <Input
+              type="number"
+              min={0}
+              max={365}
+              step={1}
+              placeholder="بدون محدودیت"
+              value={draft[field] ?? ''}
+              readOnly={readOnly}
+              disabled={saving}
+              onChange={(event) =>
+                setDraft((current) => ({
+                  ...current,
+                  [field]:
+                    event.target.value === ''
+                      ? null
+                      : Number(event.target.value),
+                }))
+              }
+            />
+          </FormField>
+        ))}
         {(['originId', 'destinationId'] as const).map((field) => (
           <FormField key={field} label={field === 'originId' ? 'مبدأ' : 'مقصد'}>
             <Select

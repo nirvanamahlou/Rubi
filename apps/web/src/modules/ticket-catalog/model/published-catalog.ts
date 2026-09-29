@@ -75,6 +75,8 @@ export function catalogProductsFromOffers(
       day: '2-digit',
     }).format(new Date(offer.departureAt));
     definition.totalCapacity = offer.totalCapacity;
+    definition.returnMinDays = offer.returnMinDays ?? null;
+    definition.returnMaxDays = offer.returnMaxDays ?? null;
     definition.manifestTemplateId = offer.manifestTemplateId ?? null;
     definition.display = {
       operator: offer.carrierName,
@@ -126,6 +128,8 @@ export function catalogOffer(
 
 export function publishedOfferInput(offer: TicketOfferV1) {
   return {
+    returnMinDays: offer.returnMinDays ?? null,
+    returnMaxDays: offer.returnMaxDays ?? null,
     originId: offer.originId,
     destinationId: offer.destinationId,
     departureAt: offer.departureAt,

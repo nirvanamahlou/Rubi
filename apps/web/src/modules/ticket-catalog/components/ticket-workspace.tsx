@@ -75,6 +75,7 @@ import { roundTripPricesByOutbound } from '../model/round-trip-prices';
 import { TicketCatalogCard } from './ticket-catalog-card';
 import { TicketDetails } from './ticket-details';
 import { TicketForm } from './ticket-form';
+import { FlightScheduleForm } from './flight-schedule-form';
 import formStyles from './ticket-form.module.css';
 import { TicketDatePicker } from './ticket-date-picker';
 import { ConnectedIssuedTicketsWorkspace } from './issued-tickets-workspace';
@@ -162,6 +163,8 @@ export function flightOfferInput(
     cabinClassCode,
     totalCapacity: definition.totalCapacity,
     manifestTemplateId: definition.manifestTemplateId ?? null,
+    returnMinDays: definition.returnMinDays ?? null,
+    returnMaxDays: definition.returnMaxDays ?? null,
   };
 }
 export function planCatalogPublication(
@@ -442,11 +445,27 @@ function TicketCatalogWorkspace() {
     const session = await refreshAuthenticatedSession(base);
     const branchId = session?.user.branches[0]?.id;
     if (!branchId) throw new Error('شعبه مجاز برای ثبت بلیط پیدا نشد.');
-    await Promise.all(
-      publishable.map(({ input, id }) =>
-        toursApi.publishOffer(input, branchId, `ticket-catalog:${id}`),
-      ),
-    );
+    // Settle each bounded group before exposing a retry; a failed request must
+    // not leave other in-flight writes racing with the next submission.
+    let completed = 0;
+    for (let index = 0; index < publishable.length; index += 8) {
+      const outcomes = await Promise.allSettled(
+        publishable
+          .slice(index, index + 8)
+          .map(({ input, id }) =>
+            toursApi.publishOffer(input, branchId, `ticket-catalog:${id}`),
+          ),
+      );
+      completed += outcomes.filter(
+        (outcome) => outcome.status === 'fulfilled',
+      ).length;
+      const failure = outcomes.find((outcome) => outcome.status === 'rejected');
+      if (failure?.status === 'rejected') {
+        throw new Error(
+          `${completed.toLocaleString('fa-IR')} بلیت ثبت شد؛ ثبت برنامه کامل نشد. برای ادامه بدون تکرار، دوباره با همین مشخصات ثبت کنید. ${failure.reason instanceof Error ? failure.reason.message : ''}`,
+        );
+      }
+    }
     await refreshPublishedOffers();
   };
   const publishExistingFlights = async (
@@ -712,8 +731,8 @@ function TicketCatalogWorkspace() {
     pendingCreate.current = null;
     setProblem('');
     setNotice(
-      inputs.length === 2
-        ? 'دو بلیط مستقل رفت و برگشت ذخیره شد.'
+      inputs.length > 1
+        ? `${inputs.length.toLocaleString('fa-IR')} بلیط مستقل ذخیره شد.`
         : current
           ? 'تغییرات بلیط ذخیره شد.'
           : 'بلیط جدید ذخیره شد.',
@@ -1557,7 +1576,7 @@ function TicketCatalogWorkspace() {
       >
         <DialogContent
           dir="rtl"
-          className={`${formStyles.dialog} start-auto! left-1/2! max-w-4xl`}
+          className={`${formStyles.dialog} ${form?.mode === 'create' && !form.initial ? formStyles.scheduleDialog : 'max-w-4xl'} start-auto! left-1/2!`}
         >
           <DialogTitle className="pe-10">
             {form?.mode === 'view'
@@ -1577,6 +1596,13 @@ function TicketCatalogWorkspace() {
                 <TicketDetails
                   product={form.product}
                   referenceLabel={referenceLabel}
+                />
+              ) : form.mode === 'create' && !form.initial ? (
+                <FlightScheduleForm
+                  references={references}
+                  onReference={rememberReference}
+                  onSave={save}
+                  onCancel={() => setForm(null)}
                 />
               ) : (
                 <TicketForm

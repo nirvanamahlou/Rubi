@@ -36,7 +36,6 @@ revision، actor، زمان UTC، idempotency key و fingerprint نگه می‌�
 خدمت را با حفظ دقیق مجموع، داخل قرارداد snapshot می‌کند؛ تاریخچه قراردادهای قبلی
 بازنویسی نمی‌شود.
 
-
 ## TOUR-HOTEL-PRICING-FLOW-0916 — نوبت و مبالغ چندارزی
 
 Reservations rate packs and immutable batches have nullable restrictive
@@ -52,7 +51,6 @@ one object per currency with exact decimal-string purchase, sale, commission
 and profit. Scalar legacy package totals are populated only for a single
 currency; mixed currencies have no fabricated scalar sum. Hotel purchase/sale
 retain the hotel row currency. No historical price is rewritten or FX inferred.
-
 
 ## PACKAGE-PRICING-001 — نرخ خرید بلیت مالی و قیمت منتشرشده تور (2026-09-15)
 
@@ -144,10 +142,10 @@ B2B owns `B2bOrganizationSignatory`: organization/contact composite restrictive 
 
 The agency branch selector reads existing `MasterOrganizationAddress` records for the selected organization. Selecting an address does not change IAM branch scope or the agency operational profile; existing public Master Data address CRUD persists additions/edits. IAM branch remains the internal organizational scope of the agreement and account manager.
 
-
 ## B2B-CONTRACT-FORMS-002 — payment reference
 
 `B2bAgreementRevision.paymentMethodId` is an optional FK to `MasterPaymentMethod.id` with RESTRICT deletion. `paymentMethodName` snapshots the owner-validated label at revision write. Existing `paymentMethod` retains settlement semantics. Legacy omitted references are preserved, explicit null clears the optional reference, and historical revisions remain immutable. See [B2B-CONTRACT-FORMS-002](tasks/B2B-CONTRACT-FORMS-002.md).
+
 ## TOUR-PACKAGES-0908
 
 Ticket Catalog owns immutable TourPackage definitions and TourDeparture dated occurrences. Each departure has real restrictive foreign keys to its package and outbound/optional return TicketPublishedOffer. Definition JSON contains versioned public reference IDs and included services, not pricing or inventory. Branch, actor, UTC creation time, idempotency key and fingerprint form the append-only creation audit. Package version is checked on occurrence creation. No update/delete API is exposed. Capacity is always derived from existing active TicketOfferCapacityAllocation rows; no separate tour stock is created. Repeating must create new dated ticket occurrences or explicitly link existing ones, never change prior offers.
@@ -555,6 +553,7 @@ Viewهای پیشنهادی: `reporting_sales_contract_facts` (یک ردیف/ق�
 
 واژه‌نامه entityها در [DATA_DICTIONARY.md](DATA_DICTIONARY.md) و KPIها در
 [KPI_DICTIONARY.md](KPI_DICTIONARY.md) است.
+
 # Package Pricing (PACKAGE-PRICING-001)
 
 `package_pricing_packages` ریشه branch-scoped و صادرکننده‌محور است. هر Package چند
@@ -599,3 +598,7 @@ locking و idempotency انجام می‌شود. این نرخ فروش پایه
 ## Ticket sale target commissions (TICKET-CHANNEL-PRICES-0928)
 
 Ticket Catalog owns TicketSaleCommissionRevision: offerId, optional returnOfferId, optional salePriceTargetId (null = direct company sales), scopeKey, revision, percent Decimal(7,4), actor and UTC occurrence time. Real restrictive FKs and unique scope/revision and scope/idempotency keys retain revision history; an append-only trigger rejects update/delete. Net fare is computed from the current direct standalone/pair base with exact Decimal arithmetic, rounded half-up to four decimal places. Bulk copy changes only this target's priced future unarchived offers/pairs in the source branch in one serializable transaction. Historical Sales price snapshots and legacy absolute target revisions remain unchanged.
+
+## 2026-09-29 — Ticket return-day policy
+
+`TicketPublishedOffer.returnMinDays` / `returnMaxDays` are nullable integer limits (0..365, inclusive, Min <= Max when both exist). Null keeps legacy return selection unrestricted. The policy belongs to the outbound Ticket Catalog offer; eligible reverse-route offers are matched by authorized branch and Tehran departure-calendar day difference, with no trip-group restriction and no return before outbound arrival. Sales consumes the public search/reserve service, never reads Ticket Catalog tables directly. Optional public fields preserve old clients; omitted limits on revision preserve stored values. Migration: `20260929120000_ticket_return_window`.

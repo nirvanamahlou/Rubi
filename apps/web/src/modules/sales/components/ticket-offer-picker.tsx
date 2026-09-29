@@ -34,7 +34,10 @@ export function TicketOfferPicker({
   const [hasMore, setHasMore] = useState(false);
   const [busy, setBusy] = useState(true);
   const [error, setError] = useState('');
-  const filters = JSON.stringify(query);
+  const filters = JSON.stringify({
+    ...query,
+    ...(roundTripOutbound ? { outboundOfferId: roundTripOutbound.id } : {}),
+  });
   const page = pagination.filters === filters ? pagination.page : 1;
   useEffect(() => {
     const controller = new AbortController();
@@ -94,6 +97,14 @@ export function TicketOfferPicker({
       <p className="text-[11px] text-muted-foreground">
         ساعت‌ها به وقت تهران · مرتب‌شده از نزدیک‌ترین تاریخ
       </p>
+      {roundTripOutbound &&
+      (roundTripOutbound.returnMinDays != null ||
+        roundTripOutbound.returnMaxDays != null) ? (
+        <p className="text-sm text-primary">
+          فاصله برگشت از رفت: حداقل {roundTripOutbound.returnMinDays ?? 0} روز ·
+          حداکثر {roundTripOutbound.returnMaxDays ?? 'بدون محدودیت'} روز
+        </p>
+      ) : null}
       {busy ? (
         <p>در حال جست‌وجوی بلیط…</p>
       ) : error ? (
