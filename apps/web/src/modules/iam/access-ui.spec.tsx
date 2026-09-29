@@ -9,7 +9,8 @@ vi.mock('next/navigation', () => ({
   usePathname: () => '/ticket-management',
   useSearchParams: () => new URLSearchParams(),
 }));
-import { AccessPermissionsProvider } from './access-context';
+import { Button } from '@/components/ui/button';
+import { AccessPermissionsProvider, RouteAccessGuard } from './access-context';
 import {
   Tabs,
   TabsList,
@@ -27,6 +28,12 @@ describe('rendered access controls', () => {
     const body = render(
       [
         USER_ACCESS_PROFILE_PERMISSION,
+        'iam.users.read',
+        'ticket_catalog.read',
+        'sales.contracts.read.own',
+        'package_pricing.read',
+        'hr.read',
+        'reservations.read',
         screenPermission('ticket-catalog.tab.catalog'),
       ],
       createElement(
@@ -50,6 +57,12 @@ describe('rendered access controls', () => {
   it('hides route links including object href queries for forbidden sections', () => {
     const permissions = [
       USER_ACCESS_PROFILE_PERMISSION,
+      'iam.users.read',
+      'ticket_catalog.read',
+      'sales.contracts.read.own',
+      'package_pricing.read',
+      'hr.read',
+      'reservations.read',
       screenPermission('system.users'),
     ];
     expect(
@@ -75,10 +88,10 @@ describe('rendered access controls', () => {
       ),
     ).toContain('USERS');
   });
-  it('keeps legacy navigation available without the managed marker', () => {
+  it('hides modules without operational grants for legacy accounts', () => {
     expect(
       render([], createElement(AccessLink, { href: '/finance' }, 'FINANCE')),
-    ).toContain('FINANCE');
+    ).not.toContain('FINANCE');
   });
 });
 
@@ -95,7 +108,16 @@ it('does not render application navigation or business content before account pe
 
 it('keeps uncatalogued future tabs hidden for a managed account', () => {
   const markup = render(
-    [USER_ACCESS_PROFILE_PERMISSION, screenPermission('ticket-catalog.home')],
+    [
+      USER_ACCESS_PROFILE_PERMISSION,
+      'iam.users.read',
+      'ticket_catalog.read',
+      'sales.contracts.read.own',
+      'package_pricing.read',
+      'hr.read',
+      'reservations.read',
+      screenPermission('ticket-catalog.home'),
+    ],
     createElement(
       Tabs,
       { defaultValue: 'future' },
@@ -109,4 +131,18 @@ it('keeps uncatalogued future tabs hidden for a managed account', () => {
   );
   expect(markup).not.toContain('FUTURE TAB');
   expect(markup).not.toContain('FUTURE CONTENT');
+});
+
+it('hides operation buttons without the required grant', () => {
+  expect(render([], <Button permission="sales.export">EXPORT</Button>)).toBe(
+    '',
+  );
+  expect(
+    render(['sales.export'], <Button permission="sales.export">EXPORT</Button>),
+  ).toContain('EXPORT');
+});
+it('renders no denied route contents or permission warning', () => {
+  expect(render([], <RouteAccessGuard>PRIVATE CONTENT</RouteAccessGuard>)).toBe(
+    '',
+  );
 });

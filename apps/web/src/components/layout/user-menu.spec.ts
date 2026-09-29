@@ -28,7 +28,8 @@ describe('authenticated user menu integration', () => {
     expect(menuSource).toContain('refreshAuthenticatedSession(api)');
     expect(menuSource).toContain('rememberHeaderSession(');
     expect(menuSource).toContain('response.user');
-    expect(menuSource).toContain('max-w-32 truncate');
+    expect(menuSource).toContain('max-w-36');
+    expect(menuSource).toContain('block truncate text-xs font-bold');
     expect(menuSource).toContain('lg:block');
     expect(menuSource).toContain('data-user-menu-trigger');
   });
@@ -39,6 +40,7 @@ describe('authenticated user menu integration', () => {
     expect(menuSource).not.toContain('href="/profile?tab=preferences"');
     expect(menuSource).not.toContain('href="/profile?tab=security"');
     expect(menuSource).toContain('DropdownMenuTrigger asChild');
+    expect(menuSource).not.toContain('data-user-role-label');
   });
 
   it('uses the existing logout operation and keeps notifications in the shell', () => {

@@ -75,3 +75,58 @@ describe('dark theme readability', () => {
     }
   });
 });
+
+describe('legacy dark surfaces', () => {
+  it('pairs every fallback color surface with readable foreground text', () => {
+    const fallback = css.slice(css.indexOf('/* Legacy light utility'));
+    for (const family of [
+      'blue',
+      'sky',
+      'cyan',
+      'indigo',
+      'violet',
+      'purple',
+      'emerald',
+      'green',
+      'teal',
+      'amber',
+      'yellow',
+      'orange',
+      'red',
+      'rose',
+      'pink',
+      'slate',
+      'gray',
+      'zinc',
+      'neutral',
+    ]) {
+      const bg = fallback
+        .slice(fallback.indexOf(`bg-${family}-50`))
+        .match(/background-color:\s*(#[\da-f]{6})/)![1]!;
+      const fg = fallback
+        .slice(fallback.indexOf(`text-${family}-600`))
+        .match(/color:\s*(#[\da-f]{6})/)![1]!;
+      expect(contrast(fg, bg), family).toBeGreaterThanOrEqual(4.5);
+    }
+  });
+  it('keeps white banner labels readable along the complete blue/violet gradient', () => {
+    for (const color of ['#1d4ed8', '#2563eb', '#7c3aed']) {
+      expect(contrast('#ffffff', color)).toBeGreaterThanOrEqual(4.5);
+    }
+  });
+});
+
+it('retains readable white corporate labels on fixed blue action backgrounds', () => {
+  const corporate = readFileSync(
+    'src/modules/organizations/components/corporate-design.css',
+    'utf8',
+  );
+  const primary = corporate.match(/\.btn\.primary\s*\{([^}]+)\}/)![1]!;
+  const blue = corporate.match(/--blue:\s*(#[\da-f]{6})/)![1]!;
+  expect(primary).toContain('color: #fff;');
+  expect(contrast('#ffffff', blue)).toBeGreaterThanOrEqual(4.5);
+  expect(contrast('#ffffff', '#0759bf')).toBeGreaterThanOrEqual(4.5);
+  expect(corporate).not.toMatch(
+    /color:\s*light-dark\(#fff,\s*var\(--surface\)\)/,
+  );
+});
