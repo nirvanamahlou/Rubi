@@ -10,13 +10,13 @@
 
 ## Validation
 
-- Full Web test suite before the final legacy previous-day edge case: 1,772 passed, 3 optional skips across 290 files.
-- Final targeted tests after that edge case: 16 passed across published-catalog model and shared/ticket date-picker suites.
+- Full Web test suite on the final branch synchronized through `origin/develop@1e262f0b`: 1,795 passed, 3 optional skips across 292 files.
+- Targeted tests after the edge cases: 16 passed across published-catalog model and shared/ticket date-picker suites.
 - Scoped ESLint and strict Web typecheck passed after the final code change.
-- Web production build passed before the final pure date-normalization edge case; final commit CI is required to verify the integrated head.
+- Web production build passed on the final branch, generating all 55 routes.
 - Authenticated live-browser interaction was not run. The attached screenshot was reviewed; the calendar's former local absolute positioning was the clipping source. The shared positioning logic has existing viewport-boundary tests.
 - No migration or data backfill is required; the edit normalizes the wall time before validation/persistence.
 
 ## Handoff
 
-PR targets `develop`. Owner explicitly requested merge. Merge after all required checks on the final PR head pass; then verify the merge commit and update this report, `WORK_ASSIGNMENTS.md`, and `docs/PROJECT_STATUS.md` with the final commit identifiers.
+PR targets `develop`. Owner explicitly requested merge. Push and create the PR, wait for required CI checks, then merge and record the final PR/merge identifiers here and in the central status documents.
