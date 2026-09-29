@@ -103,26 +103,20 @@ describe('reservation mutation responsibility', () => {
 
 function summaryFixture() {
   const detail = vi.fn().mockResolvedValue({ branchId: 'allowed' });
-  const read = vi
-    .fn()
-    .mockResolvedValue({
-      approved: true,
-      updatedAt: '2026-09-29T08:00:00.000Z',
-      updatedByUserId: 'finance',
-      reason: 'never-expose',
-    });
-  const latest = vi
-    .fn()
-    .mockResolvedValue({
-      actorUserId: 'files',
-      occurredAt: new Date('2026-09-29T09:00:00Z'),
-    });
-  const historical = vi
-    .fn()
-    .mockResolvedValue({
-      actorUserId: 'reservation',
-      occurredAt: new Date('2026-09-29T07:00:00Z'),
-    });
+  const read = vi.fn().mockResolvedValue({
+    approved: true,
+    updatedAt: '2026-09-29T08:00:00.000Z',
+    updatedByUserId: 'finance',
+    reason: 'never-expose',
+  });
+  const latest = vi.fn().mockResolvedValue({
+    actorUserId: 'files',
+    occurredAt: new Date('2026-09-29T09:00:00Z'),
+  });
+  const historical = vi.fn().mockResolvedValue({
+    actorUserId: 'reservation',
+    occurredAt: new Date('2026-09-29T07:00:00Z'),
+  });
   const names = vi.fn().mockResolvedValue(
     new Map([
       ['finance', 'Financial responsible'],
