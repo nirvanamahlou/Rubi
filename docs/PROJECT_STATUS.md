@@ -1,3 +1,7 @@
+# 2026-09-29 — TICKET-MANAGEMENT-QA-0929 — PC-A
+
+Server-backed flight cards/counts and fresh-browser editing now match the managed list. Exact identity fixes duplicate-schedule actions; capacity reflects holds. Archive preserves fare/commission history. Synthetic lifecycle and HTTP QA pass; no migration or operational data changes. See [task handoff](tasks/TICKET-MANAGEMENT-QA-0929.md).
+
 ## 2026-09-28 — USER-ACCESS-TREE-0928 — PC-A — COMPLETE
 
 مدیریت کاربران زیر مدیریت سیستم اضافه شد: ایجاد حساب، عنوان نقش، وضعیت و شعب، دسترسی مستقل به بخش‌ها/زیربخش‌ها و مجوز عملیات، انتخاب همه و حالت انتخاب جزئی. نقش خصوصی هر کاربر از IAM موجود استفاده می‌کند؛ تغییر یک حساب روی حساب دیگر اثر ندارد. منو، جست‌وجو، مسیر مستقیم و تب‌های ثبت‌شده طبق پروفایل پنهان می‌شوند؛ کنترل اختصاصی HR، اطلاعات پایه، حسابداری، مارکتینگ، فروش/قیمت‌گذاری و میزکار متصل است. واگذاری بیش از دسترسی اپراتور و حذف آخرین مدیر فعال ممنوع است. نقش‌های قدیمی تا ذخیره صریح پروفایل سازگار می‌مانند. بدون Migration، Dependency، تغییر کاربر واقعی یا runtime. مالک، merge به develop را صریحاً مجاز کرده است. جزئیات بررسی‌ها و handoff: [USER-ACCESS-TREE-0928](tasks/USER-ACCESS-TREE-0928.md).

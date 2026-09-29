@@ -1,3 +1,9 @@
+## TICKET-MANAGEMENT-QA-0929 — PC-A — READY_FOR_REVIEW
+
+- COMPUTER_ID=PC-A; branch codex/pc-a-ticket-management-qa-0929 from origin/develop. User requests matching server/browser ticket counts and full create/edit/delete/status/repeat/hold verification. Reserve Ticket Catalog UI/model/API/controller/service/focused tests and bounded task/status docs; optional catalog source identity in existing Travel projection producer Ticket Catalog/consumer Web. Preserve other modules and original dirty checkout. Previous ticket scope locks released; old capacity reservation implemented/merged; no migration/dependency change. Owner’s existing merge/local-update authorization applies to this corrective follow-up. QA uses only isolated synthetic database/records.
+
+- Validation and handoff: docs/tasks/TICKET-MANAGEMENT-QA-0929.md. Scoped locks RELEASED with commit; no migration needed.
+
 ## USER-ACCESS-TREE-0928 — PC-A — COMPLETE
 
 - COMPUTER_ID=PC-A; branch codex/pc-a-user-access-tree-0928 from latest origin/develop. Reserve IAM user DTO/service/controller/tests, additive IAM access-screen contract/catalog and root-export boundary, user management UI, System entry, central AppShell/Links/Tabs access integration and focused tests; bounded docs. Producer IAM, consumer central Web navigation and UI; optional per-user profile fields retain legacy role requests. Explicit user request authorizes central cross-module visibility integration and merge after checks. Use dedicated per-user roles and catalogued screen permission records in existing IAM tables; no schema/migration/dependency/lockfile changes or real-user edits. Migration/Dependency locks not acquired. Preserve existing roles, last-active-administrator protection, anti-escalation, branch scopes and runtime edits. Bounded shared IAM/UI/docs locks owner PC-A.
