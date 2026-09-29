@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { HrDirectoryResponse } from '@nora/contracts';
-import { assigneeOptions } from './assignee-options';
+import { assigneeOptions, selectableAssigneeOptions } from './assignee-options';
 
 describe('HR assignee options', () => {
   it('retains unlinked employees visibly but never substitutes their ID for a user ID', () => {
@@ -24,5 +24,32 @@ describe('HR assignee options', () => {
   });
   it('keeps empty directory results empty', () => {
     expect(assigneeOptions([])).toEqual([]);
+  });
+  it('offers only linked staff and searches by personnel code', () => {
+    const rows = [
+      {
+        id: 'employee-1',
+        userId: 'user-1',
+        name: 'همکار یک',
+        unit: 'پشتیبانی',
+        position: 'کارشناس',
+        personnelCode: 'P-123',
+      },
+      {
+        id: 'employee-2',
+        userId: null,
+        name: 'همکار دو',
+        unit: 'فروش',
+        position: 'کارشناس',
+        personnelCode: 'P-456',
+      },
+    ] as HrDirectoryResponse['employees'];
+    expect(selectableAssigneeOptions(rows)).toEqual([
+      {
+        value: 'user-1',
+        label: 'همکار یک — پشتیبانی',
+        searchText: 'P-123 کارشناس',
+      },
+    ]);
   });
 });
