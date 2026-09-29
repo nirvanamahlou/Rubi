@@ -51,6 +51,7 @@ function requestMetadata(
   request: AuthenticatedRequest,
   sensitiveReason?: string,
   accessGrantToken?: string,
+  confidentialAccessGrantToken?: string,
 ): DocumentRequestMetadata {
   const userAgent = request.headers['user-agent'];
   let decodedSensitiveReason = sensitiveReason;
@@ -70,6 +71,7 @@ function requestMetadata(
       ? { sensitiveReason: decodedSensitiveReason }
       : {}),
     ...(accessGrantToken ? { accessGrantToken } : {}),
+    ...(confidentialAccessGrantToken ? { confidentialAccessGrantToken } : {}),
   };
 }
 
@@ -148,17 +150,6 @@ export class DocumentsController {
         'categoryId',
         'branchId',
         'ownerUserId',
-      ],
-      oneOf: [
-        { required: ['sourceRelationId'] },
-        {
-          required: [
-            'sourceModule',
-            'sourceEntityType',
-            'sourceEntityId',
-            'sourceDisplayLabel',
-          ],
-        },
       ],
       properties: {
         file: { type: 'string', format: 'binary' },
@@ -271,8 +262,22 @@ export class DocumentsController {
   @Header('Cache-Control', 'private, no-store')
   @Header('Vary', 'Cookie')
   @RequirePermissions('documents.audit.read')
-  audit(@Param('id') id: string, @Req() request: AuthenticatedRequest) {
-    return this.service.audit(id, request.actor);
+  audit(
+    @Param('id') id: string,
+    @Req() request: AuthenticatedRequest,
+    @Headers('x-document-confidential-grant')
+    confidentialAccessGrantToken?: string,
+  ) {
+    return this.service.audit(
+      id,
+      request.actor,
+      requestMetadata(
+        request,
+        undefined,
+        undefined,
+        confidentialAccessGrantToken,
+      ),
+    );
   }
 
   @Post(':id/access-grants')
@@ -306,11 +311,18 @@ export class DocumentsController {
     @Req() request: AuthenticatedRequest,
     @Headers('x-sensitive-read-reason') sensitiveReason?: string,
     @Headers('x-document-access-grant') accessGrantToken?: string,
+    @Headers('x-document-confidential-grant')
+    confidentialAccessGrantToken?: string,
   ) {
     const result = await this.service.download(
       id,
       request.actor,
-      requestMetadata(request, sensitiveReason, accessGrantToken),
+      requestMetadata(
+        request,
+        sensitiveReason,
+        accessGrantToken,
+        confidentialAccessGrantToken,
+      ),
     );
     return new StreamableFile(result.stream, {
       type: result.mimeType,
@@ -334,11 +346,18 @@ export class DocumentsController {
     @Req() request: AuthenticatedRequest,
     @Headers('x-sensitive-read-reason') sensitiveReason?: string,
     @Headers('x-document-access-grant') accessGrantToken?: string,
+    @Headers('x-document-confidential-grant')
+    confidentialAccessGrantToken?: string,
   ) {
     const result = await this.service.preview(
       id,
       request.actor,
-      requestMetadata(request, sensitiveReason, accessGrantToken),
+      requestMetadata(
+        request,
+        sensitiveReason,
+        accessGrantToken,
+        confidentialAccessGrantToken,
+      ),
     );
     return new StreamableFile(result.stream, {
       type: result.mimeType,
@@ -355,11 +374,18 @@ export class DocumentsController {
     @Param('id') id: string,
     @Req() request: AuthenticatedRequest,
     @Headers('x-sensitive-read-reason') sensitiveReason?: string,
+    @Headers('x-document-confidential-grant')
+    confidentialAccessGrantToken?: string,
   ) {
     return this.service.detail(
       id,
       request.actor,
-      requestMetadata(request, sensitiveReason),
+      requestMetadata(
+        request,
+        sensitiveReason,
+        undefined,
+        confidentialAccessGrantToken,
+      ),
     );
   }
 }

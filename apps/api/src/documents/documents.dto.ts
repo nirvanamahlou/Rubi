@@ -202,22 +202,58 @@ export class DocumentUploadDto {
   @IsUUID()
   sourceRelationId?: string;
 
-  @ValidateIf((input: DocumentUploadDto) => !input.sourceRelationId)
+  @ValidateIf(
+    (input: DocumentUploadDto) =>
+      !input.sourceRelationId &&
+      Boolean(
+        input.sourceModule ||
+        input.sourceEntityType ||
+        input.sourceEntityId ||
+        input.sourceDisplayLabel,
+      ),
+  )
   @IsString()
   @Length(2, 80)
   sourceModule?: string;
 
-  @ValidateIf((input: DocumentUploadDto) => !input.sourceRelationId)
+  @ValidateIf(
+    (input: DocumentUploadDto) =>
+      !input.sourceRelationId &&
+      Boolean(
+        input.sourceModule ||
+        input.sourceEntityType ||
+        input.sourceEntityId ||
+        input.sourceDisplayLabel,
+      ),
+  )
   @IsString()
   @Length(2, 120)
   sourceEntityType?: string;
 
-  @ValidateIf((input: DocumentUploadDto) => !input.sourceRelationId)
+  @ValidateIf(
+    (input: DocumentUploadDto) =>
+      !input.sourceRelationId &&
+      Boolean(
+        input.sourceModule ||
+        input.sourceEntityType ||
+        input.sourceEntityId ||
+        input.sourceDisplayLabel,
+      ),
+  )
   @IsString()
   @Length(2, 160)
   sourceEntityId?: string;
 
-  @ValidateIf((input: DocumentUploadDto) => !input.sourceRelationId)
+  @ValidateIf(
+    (input: DocumentUploadDto) =>
+      !input.sourceRelationId &&
+      Boolean(
+        input.sourceModule ||
+        input.sourceEntityType ||
+        input.sourceEntityId ||
+        input.sourceDisplayLabel,
+      ),
+  )
   @IsString()
   @Length(2, 240)
   sourceDisplayLabel?: string;
@@ -226,6 +262,13 @@ export class DocumentUploadDto {
   @Transform(emptyToUndefined)
   @IsEnum(DOCUMENT_CONFIDENTIALITY_CODES)
   confidentiality?: DocumentConfidentialityCode;
+
+  @IsOptional()
+  @Transform(emptyToUndefined)
+  @IsString()
+  @Length(6, 6)
+  @Matches(/^\d{6}$/u)
+  confidentialAccessCode?: string;
 
   @IsOptional()
   @Transform(emptyToUndefined)

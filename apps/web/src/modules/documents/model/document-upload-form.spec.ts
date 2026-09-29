@@ -100,7 +100,7 @@ describe('Documents upload form state', () => {
     ).toBeNull();
   });
 
-  it('allows an unlinked document only in the personal workbench upload mode', () => {
+  it('allows an unlinked document in the main upload form', () => {
     const values = {
       ...hydrateDocumentUploadDefaults(
         { ...emptyDocumentUploadValues },
@@ -109,9 +109,30 @@ describe('Documents upload form state', () => {
       ),
       title: 'یادداشت شخصی',
     };
-    expect(validateDocumentUpload(values, true, false)).toBe(
-      'پرونده مربوطه را انتخاب کنید.',
+    expect(validateDocumentUpload(values, true, false)).toBeNull();
+  });
+
+  it('requires six numeric digits when the upload is confidential', () => {
+    const values = {
+      ...hydrateDocumentUploadDefaults(
+        { ...emptyDocumentUploadValues },
+        options,
+        options.branches,
+      ),
+      title: 'قرارداد محرمانه',
+      sourceRelationId: 'relation-1',
+      confidentiality: 'CONFIDENTIAL',
+    };
+    expect(validateDocumentUpload(values, true, false, true)).toBe(
+      'برای سند محرمانه، کد شش‌رقمی تعیین کنید.',
     );
-    expect(validateDocumentUpload(values, true, false, true)).toBeNull();
+    expect(
+      validateDocumentUpload(
+        { ...values, confidentialAccessCode: '573921' },
+        true,
+        false,
+        true,
+      ),
+    ).toBeNull();
   });
 });

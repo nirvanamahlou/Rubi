@@ -67,7 +67,11 @@ export type DocumentSortCode =
   | 'validUntil'
   | 'sizeBytes';
 
-export const DOCUMENT_ACCESS_PURPOSE_CODES = ['PREVIEW', 'DOWNLOAD'] as const;
+export const DOCUMENT_ACCESS_PURPOSE_CODES = [
+  'PREVIEW',
+  'DOWNLOAD',
+  'CONFIDENTIAL_VIEW',
+] as const;
 export type DocumentAccessPurposeCode =
   (typeof DOCUMENT_ACCESS_PURPOSE_CODES)[number];
 
@@ -164,6 +168,7 @@ export interface DocumentListItemV1 {
   archiveStatus: DocumentArchiveStatusCode;
   isIncomplete: boolean;
   requiresStepUpVerification: boolean;
+  requiresConfidentialAccessCode?: boolean;
   validUntil: string | null;
   version: number;
   currentVersion: DocumentVersionV1;

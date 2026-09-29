@@ -1,4 +1,5 @@
 import { Readable } from 'node:stream';
+import { scryptSync } from 'node:crypto';
 
 import type { AuthenticatedActor } from '@nora/contracts';
 import {
@@ -42,6 +43,8 @@ function row(
     domain: DocumentDetailRow['documentType']['domain'];
     isIncomplete: boolean;
     requiresStepUpVerification: boolean;
+    confidentialAccessCodeHash: string | null;
+    confidentialAccessCodeSalt: string | null;
     legalHoldActive: boolean;
     mimeType: string;
     requiresExpiry: boolean;
@@ -87,6 +90,10 @@ function row(
     currentVersionId: version.id,
     isIncomplete: overrides.isIncomplete ?? false,
     requiresStepUpVerification: overrides.requiresStepUpVerification ?? false,
+    confidentialAccessCodeHash: overrides.confidentialAccessCodeHash ?? null,
+    confidentialAccessCodeSalt: overrides.confidentialAccessCodeSalt ?? null,
+    confidentialAccessFailedAttempts: 0,
+    confidentialAccessLockedUntil: null,
     version: overrides.version ?? 1,
     legalHoldActive: overrides.legalHoldActive ?? false,
     proposedDeletionAt: null,
@@ -143,6 +150,10 @@ describe('DocumentsService security and persistence flow', () => {
     createUploaded: vi.fn(),
     appendAudit: vi.fn(),
     createAccessGrant: vi.fn(),
+    confidentialAccessState: vi.fn(),
+    beginConfidentialAccessAttempt: vi.fn(),
+    resetConfidentialAccessFailures: vi.fn(),
+    hasConfidentialAccessGrant: vi.fn(),
     consumeAccessGrant: vi.fn(),
     audit: vi.fn(),
     favoriteDocuments: vi.fn(),
@@ -914,6 +925,99 @@ describe('DocumentsService security and persistence flow', () => {
     );
   });
 
+  it('verifies a confidential document code and issues a session-bound view grant', async () => {
+    const protectedActor: AuthenticatedActor = {
+      ...actor,
+      permissions: [
+        ...actor.permissions,
+        'documents.file.read',
+        'documents.sensitive.read',
+      ],
+    };
+    const salt = 'a'.repeat(48);
+    const hash = scryptSync('573921', Buffer.from(salt, 'hex'), 64).toString(
+      'hex',
+    );
+    repository.findDetail.mockResolvedValue(
+      row({
+        confidentialAccessCodeHash: hash,
+        confidentialAccessCodeSalt: salt,
+      }),
+    );
+    repository.confidentialAccessState.mockResolvedValue({
+      confidentialAccessCodeHash: hash,
+      confidentialAccessCodeSalt: salt,
+      confidentialAccessLockedUntil: null,
+    });
+    repository.beginConfidentialAccessAttempt.mockResolvedValue(true);
+    repository.createAccessGrant.mockResolvedValue(undefined);
+    repository.appendAudit.mockResolvedValue({});
+
+    const result = await service.createAccessGrant(
+      row().id,
+      { code: '573921', purpose: 'CONFIDENTIAL_VIEW' },
+      protectedActor,
+      {},
+    );
+
+    expect(repository.resetConfidentialAccessFailures).toHaveBeenCalledWith(
+      row().id,
+    );
+    expect(repository.beginConfidentialAccessAttempt).toHaveBeenCalledWith(
+      row().id,
+    );
+    expect(repository.createAccessGrant).toHaveBeenCalledWith(
+      expect.objectContaining({
+        documentId: row().id,
+        actorUserId: protectedActor.userId,
+        actorSessionId: protectedActor.sessionId,
+        purpose: 'CONFIDENTIAL_VIEW',
+      }),
+    );
+    expect(result.data.purpose).toBe('CONFIDENTIAL_VIEW');
+    expect(result.data.token).not.toContain('573921');
+  });
+
+  it('does not disclose a protected document detail before code verification', async () => {
+    repository.findDetail.mockResolvedValue(
+      row({
+        confidentialAccessCodeHash: 'a'.repeat(128),
+        confidentialAccessCodeSalt: 'b'.repeat(48),
+      }),
+    );
+    repository.hasConfidentialAccessGrant.mockResolvedValue(false);
+    repository.appendAudit.mockResolvedValue({});
+
+    await expect(service.detail(row().id, actor, {})).rejects.toMatchObject({
+      response: expect.objectContaining({
+        code: 'DOCUMENT_CONFIDENTIAL_CODE_REQUIRED',
+      }),
+    });
+    expect(repository.appendAudit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        outcome: 'FAILURE',
+        reason: 'CONFIDENTIAL_CODE_REQUIRED',
+      }),
+    );
+  });
+
+  it('also protects confidential document activity behind the same code grant', async () => {
+    repository.findDetail.mockResolvedValue(
+      row({
+        confidentialAccessCodeHash: 'a'.repeat(128),
+        confidentialAccessCodeSalt: 'b'.repeat(48),
+      }),
+    );
+    repository.hasConfidentialAccessGrant.mockResolvedValue(false);
+
+    await expect(service.audit(row().id, actor)).rejects.toMatchObject({
+      response: expect.objectContaining({
+        code: 'DOCUMENT_CONFIDENTIAL_CODE_REQUIRED',
+      }),
+    });
+    expect(repository.audit).not.toHaveBeenCalled();
+  });
+
   it('uses the configured document-link lifetime for access grants', async () => {
     const protectedActor: AuthenticatedActor = {
       ...actor,
@@ -1067,6 +1171,8 @@ describe('DocumentsService security and persistence flow', () => {
       branchId,
       ownerUserId: actor.userId,
       sourceRelationId: '99999999-9999-4999-8999-999999999999',
+      confidentiality: 'CONFIDENTIAL',
+      confidentialAccessCode: '573921',
     } satisfies DocumentUploadDto;
     const buffer = Buffer.from('%PDF-1.7\nreal synthetic test bytes');
     const settings = {
@@ -1116,7 +1222,12 @@ describe('DocumentsService security and persistence flow', () => {
         sourceEntityType: 'contract',
         sourceEntityId: 'SALES-42',
         sourceDisplayLabel: 'قرارداد فروش ۴۲',
+        confidentialAccessCodeHash: expect.stringMatching(/^[a-f0-9]{128}$/u),
+        confidentialAccessCodeSalt: expect.stringMatching(/^[a-f0-9]{48}$/u),
       }),
+    );
+    expect(repository.createUploaded.mock.calls[0]?.[0]).not.toHaveProperty(
+      'confidentialAccessCode',
     );
     expect(result.data.currentVersion.scanStatus).toBe(
       'AWAITING_ANTIVIRUS_ADAPTER',
@@ -1189,6 +1300,97 @@ describe('DocumentsService security and persistence flow', () => {
       ),
     ).rejects.toBeInstanceOf(ForbiddenException);
     expect(repository.createUploaded).not.toHaveBeenCalled();
+  });
+
+  it('accepts an archive upload without a related case and persists no primary relation', async () => {
+    const dto: DocumentUploadDto = {
+      title: 'Standalone archive file',
+      documentTypeId: row().documentTypeId,
+      categoryId: row().categoryId!,
+      branchId,
+      ownerUserId: actor.userId,
+      confidentiality: 'INTERNAL',
+    };
+    const buffer = Buffer.from('%PDF-1.7\nsynthetic standalone document');
+    repository.uploadReferences.mockResolvedValue({
+      documentType: {
+        id: dto.documentTypeId,
+        domain: 'SALES',
+        defaultConfidentiality: 'INTERNAL',
+        allowedMimeTypes: ['application/pdf'],
+        maxFileSizeBytes: 25 * 1024 * 1024,
+        requiresExpiry: false,
+      },
+      category: { id: dto.categoryId },
+      owner: { id: actor.userId },
+      branch: { id: branchId },
+    });
+    repository.createUploaded.mockResolvedValue(
+      row({ confidentiality: 'INTERNAL' }),
+    );
+    await service.upload(
+      dto,
+      {
+        buffer,
+        mimetype: 'application/pdf',
+        originalname: 'standalone.pdf',
+        size: buffer.length,
+      },
+      actor,
+      {},
+    );
+    expect(repository.findCaseReference).not.toHaveBeenCalled();
+    expect(repository.createUploaded).toHaveBeenCalledWith(
+      expect.objectContaining({
+        sourceModule: 'DOCUMENTS',
+        sourceEntityType: null,
+        sourceEntityId: null,
+        sourceDisplayLabel: null,
+      }),
+    );
+  });
+
+  it('requires an access code for newly uploaded confidential documents', async () => {
+    const dto: DocumentUploadDto = {
+      title: 'Confidential archive file',
+      documentTypeId: row().documentTypeId,
+      categoryId: row().categoryId!,
+      branchId,
+      ownerUserId: actor.userId,
+      confidentiality: 'CONFIDENTIAL',
+    };
+    repository.uploadReferences.mockResolvedValue({
+      documentType: {
+        id: dto.documentTypeId,
+        domain: 'SALES',
+        defaultConfidentiality: 'INTERNAL',
+        allowedMimeTypes: ['application/pdf'],
+        maxFileSizeBytes: 25 * 1024 * 1024,
+        requiresExpiry: false,
+      },
+      category: { id: dto.categoryId },
+      owner: { id: actor.userId },
+      branch: { id: branchId },
+    });
+
+    await expect(
+      service.upload(
+        dto,
+        {
+          buffer: Buffer.from('%PDF-1.7\nsynthetic'),
+          mimetype: 'application/pdf',
+          originalname: 'confidential.pdf',
+          size: 18,
+        },
+        actor,
+        {},
+      ),
+    ).rejects.toMatchObject({
+      response: expect.objectContaining({
+        code: 'DOCUMENT_CONFIDENTIAL_CODE_REQUIRED',
+      }),
+    });
+    expect(storage.putQuarantined).not.toHaveBeenCalled();
   });
 
   it('resolves an HR employee through its public service and rejects stale or cross-branch source references before storage', async () => {

@@ -192,6 +192,7 @@ export class DocumentsRepository {
         document: {
           branchId,
           archiveStatus: { not: 'DELETED' },
+          confidentialAccessCodeHash: null,
           ...(!includeSensitive
             ? {
                 confidentiality: {
@@ -580,6 +581,7 @@ export class DocumentsRepository {
         document: {
           branchId: input.branchId,
           archiveStatus: { not: 'DELETED' },
+          confidentialAccessCodeHash: null,
           ...(input.includeSensitive
             ? {}
             : { confidentiality: { in: ['PUBLIC', 'INTERNAL'] } }),
@@ -647,6 +649,7 @@ export class DocumentsRepository {
         document: {
           branchId: input.branchId,
           archiveStatus: { not: 'DELETED' },
+          confidentialAccessCodeHash: null,
           ...(input.includeSensitive
             ? {}
             : { confidentiality: { in: ['PUBLIC', 'INTERNAL'] } }),
@@ -984,11 +987,13 @@ export class DocumentsRepository {
     branchId: string;
     ownerUserId: string;
     sourceModule: string;
-    sourceEntityType: string;
-    sourceEntityId: string;
-    sourceDisplayLabel: string;
+    sourceEntityType: string | null;
+    sourceEntityId: string | null;
+    sourceDisplayLabel: string | null;
     confidentiality: string;
     requiresStepUpVerification: boolean;
+    confidentialAccessCodeHash: string | null;
+    confidentialAccessCodeSalt: string | null;
     validUntil: Date | null;
     originalFileName: string;
     safeDownloadName: string;
@@ -1017,6 +1022,8 @@ export class DocumentsRepository {
           sourceEntityId: input.sourceEntityId,
           confidentiality: input.confidentiality as never,
           requiresStepUpVerification: input.requiresStepUpVerification,
+          confidentialAccessCodeHash: input.confidentialAccessCodeHash,
+          confidentialAccessCodeSalt: input.confidentialAccessCodeSalt,
           validUntil: input.validUntil,
           createdByUserId: input.actorUserId,
           updatedByUserId: input.actorUserId,
@@ -1039,16 +1046,22 @@ export class DocumentsRepository {
           createdByUserId: input.actorUserId,
         },
       });
-      await transaction.documentRelation.create({
-        data: {
-          documentId: input.documentId,
-          relationType: 'PRIMARY_CASE',
-          sourceModule: input.sourceModule,
-          sourceEntityType: input.sourceEntityType,
-          sourceEntityId: input.sourceEntityId,
-          displayLabel: input.sourceDisplayLabel,
-        },
-      });
+      if (
+        input.sourceEntityType &&
+        input.sourceEntityId &&
+        input.sourceDisplayLabel
+      ) {
+        await transaction.documentRelation.create({
+          data: {
+            documentId: input.documentId,
+            relationType: 'PRIMARY_CASE',
+            sourceModule: input.sourceModule,
+            sourceEntityType: input.sourceEntityType,
+            sourceEntityId: input.sourceEntityId,
+            displayLabel: input.sourceDisplayLabel,
+          },
+        });
+      }
       await transaction.documentQuarantine.create({
         data: {
           versionId: input.versionId,
@@ -1127,6 +1140,76 @@ export class DocumentsRepository {
         data: input,
       }),
     ]);
+  }
+
+  confidentialAccessState(documentId: string) {
+    return this.database.client.document.findUnique({
+      where: { id: documentId },
+      select: {
+        confidentialAccessCodeHash: true,
+        confidentialAccessCodeSalt: true,
+        confidentialAccessLockedUntil: true,
+      },
+    });
+  }
+
+  async beginConfidentialAccessAttempt(documentId: string): Promise<boolean> {
+    const rows = await this.database.client.$queryRaw<
+      { allowed: boolean }[]
+    >`WITH attempt AS (
+      UPDATE "documents"
+      SET "confidential_access_failed_attempts" = CASE
+            WHEN "confidential_access_locked_until" IS NOT NULL
+              AND "confidential_access_locked_until" <= NOW() THEN 1
+            ELSE "confidential_access_failed_attempts" + 1
+          END,
+          "confidential_access_locked_until" = CASE
+            WHEN CASE
+              WHEN "confidential_access_locked_until" IS NOT NULL
+                AND "confidential_access_locked_until" <= NOW() THEN 1
+              ELSE "confidential_access_failed_attempts" + 1
+            END >= 5 THEN NOW() + INTERVAL '15 minutes'
+            ELSE NULL
+          END
+      WHERE "id" = ${documentId}::uuid
+        AND (
+          "confidential_access_locked_until" IS NULL
+          OR "confidential_access_locked_until" <= NOW()
+          OR "confidential_access_failed_attempts" < 5
+        )
+      RETURNING 1
+    ) SELECT EXISTS (SELECT 1 FROM attempt) AS allowed`;
+    return rows[0]?.allowed ?? false;
+  }
+
+  async resetConfidentialAccessFailures(documentId: string): Promise<void> {
+    await this.database.client.document.update({
+      where: { id: documentId },
+      data: {
+        confidentialAccessFailedAttempts: 0,
+        confidentialAccessLockedUntil: null,
+      },
+    });
+  }
+
+  async hasConfidentialAccessGrant(input: {
+    tokenHash: string;
+    documentId: string;
+    actorUserId: string;
+    actorSessionId: string;
+  }): Promise<boolean> {
+    const grant = await this.database.client.documentAccessGrant.findFirst({
+      where: {
+        tokenHash: input.tokenHash,
+        documentId: input.documentId,
+        actorUserId: input.actorUserId,
+        actorSessionId: input.actorSessionId,
+        purpose: 'CONFIDENTIAL_VIEW',
+        expiresAt: { gt: new Date() },
+      },
+      select: { id: true },
+    });
+    return Boolean(grant);
   }
 
   async consumeAccessGrant(input: {

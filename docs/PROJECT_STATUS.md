@@ -3922,3 +3922,7 @@ Owner-confirmed synthetic local catalog snapshot: 20 offers (11 visible, 9 alrea
 ## 2026-09-29 — LOGIN-COMPANY-CAPTIONS-0929 — PC-A — READY_FOR_REVIEW
 
 نام نمایشی زیر لوگوهای شرکت در صفحه ورود حذف می‌شود؛ خود لوگو، متن جایگزین دسترس‌پذیری و عنوان بخش حفظ شده‌اند. تغییر محدود به Web است؛ بدون API، Migration، داده یا Dependency. اعتبارسنجی CI پیش از merge انجام می‌شود. جزئیات: [LOGIN-COMPANY-CAPTIONS-0929](tasks/LOGIN-COMPANY-CAPTIONS-0929.md).
+
+## 2026-09-29 — DOCUMENTS-CONFIDENTIAL-CODE-0929 — PC-B — READY_FOR_REVIEW
+
+در فرم بارگذاری، یادداشت نسخه حذف و پرونده مربوطه اختیاری شد. اسناد جدید با محرمانگی «محرمانه» به کد شش‌رقمی نیاز دارند؛ کد خام ذخیره/بازگردانده نمی‌شود، با scrypt و salt یکتا هش می‌شود و پس از پنج تلاش ناموفق، قفل ۱۵ دقیقه‌ای اعمال می‌شود. کد درست مجوز مشاهدهٔ اطلاعات، preview و download متصل به کاربر و نشست را برای پنج دقیقه می‌دهد و دسترسی‌های فعلی IAM/شعبه/اسکن همچنان لازم‌اند. اسناد قدیمیِ بدون کد با سیاست فعلی‌شان کار می‌کنند. API دو suite: ۵۲ تست، Web form: ۶ تست، typecheck API/Web، lint، Prisma validate، build قرارداد/DB/API/Web و diff-check موفق‌اند. Migration افزایشی Documents است؛ پیش از فعال‌سازی محلی backup و سپس migrate لازم است. Push/PR و CI در حال انجام؛ بازبینی امنیتی مستقل با runner/permission مستقل در محیط فعلی فراهم نیست و این محدودیت باید پیش از ادغام ثبت شود.
