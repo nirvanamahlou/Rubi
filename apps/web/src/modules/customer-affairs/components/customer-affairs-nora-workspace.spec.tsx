@@ -37,6 +37,13 @@ describe('Nora Customer Affairs navigation', () => {
     expect(html).toContain('نیاز سفر');
     expect(html).toContain('تماس با مشتری');
     expect(html).toContain('تنظیم پیگیری بعدی');
+    expect(html).toContain('ثبت مشتری برای درخواست');
+    expect(html.indexOf('ثبت مشتری برای درخواست')).toBeLessThan(
+      html.indexOf('اطلاعات سفر'),
+    );
+    expect(html.indexOf('تنظیم پیگیری بعدی')).toBeGreaterThan(
+      html.indexOf('اطلاعات سفر'),
+    );
     expect(html).toContain('سابقه ارتباط و رسیدگی');
     expect(html).toContain('ثبت ارتباط جدید');
   });
