@@ -41,7 +41,6 @@ import {
   Card,
   EmptyState,
   ErrorState,
-  FilterBar,
   PageHeader,
   PaginationShell,
   Skeleton,
@@ -49,6 +48,7 @@ import {
 import { masterDataApi, MasterDataApiError } from '../api/client';
 import { MasterDataDeleteButton } from './master-data-delete-button';
 import { MasterDataFilterActions } from './master-data-filter-actions';
+import { MasterDataFilterBar } from './master-data-filter-bar';
 import {
   MasterDataDateRangeFilter,
   useMasterDataDateRange,
@@ -480,7 +480,7 @@ function GenericMasterDataWorkspace({
             label={`شاخص‌های ${definition.label}`}
           />
 
-          <FilterBar className="grid sm:grid-cols-2 lg:grid-cols-[minmax(14rem,1fr)_12rem_12rem_auto]">
+          <MasterDataFilterBar>
             <MasterDataDateRangeFilter
               idPrefix="master-data-created"
               {...dateRangeProps}
@@ -489,7 +489,7 @@ function GenericMasterDataWorkspace({
               <div className="relative">
                 <Search
                   aria-hidden="true"
-                  className="absolute end-3 top-3.5 size-4 text-muted-foreground"
+                  className="absolute end-2.5 top-2.5 size-4 text-muted-foreground"
                 />
                 <Input
                   className="pe-10"
@@ -546,7 +546,7 @@ function GenericMasterDataWorkspace({
               }}
               onRefresh={() => void load()}
             />
-          </FilterBar>
+          </MasterDataFilterBar>
 
           {requestState === 'loading' ? (
             <div
