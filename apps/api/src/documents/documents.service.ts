@@ -1001,6 +1001,7 @@ export class DocumentsService {
       versionIds,
       organizationId,
       branchId,
+      actor.permissions.includes('documents.sensitive.read'),
     );
   }
 

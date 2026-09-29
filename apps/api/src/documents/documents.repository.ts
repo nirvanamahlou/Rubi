@@ -184,6 +184,7 @@ export class DocumentsRepository {
     versionIds: readonly string[],
     organizationId: string,
     branchId: string,
+    includeSensitive = false,
   ) {
     const rows = await this.database.client.documentVersion.findMany({
       where: {
@@ -191,6 +192,13 @@ export class DocumentsRepository {
         document: {
           branchId,
           archiveStatus: { not: 'DELETED' },
+          ...(!includeSensitive
+            ? {
+                confidentiality: {
+                  notIn: ['CONFIDENTIAL', 'RESTRICTED'],
+                },
+              }
+            : {}),
           documentType: { domain: 'ORGANIZATION' },
           relations: {
             some: {
