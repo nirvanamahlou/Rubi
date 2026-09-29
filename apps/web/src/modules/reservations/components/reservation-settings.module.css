@@ -1,0 +1,119 @@
+.form {
+  display: grid;
+  gap: 16px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px;
+  background: var(--surface);
+}
+
+.formHeader {
+  display: grid;
+  gap: 6px;
+  border-inline-start: 3px solid var(--primary);
+  padding-inline: 12px 0;
+}
+
+.formHeader > span {
+  color: var(--primary);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.formHeader h3 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.formHeader p,
+.passengerHint {
+  margin: 0;
+  color: var(--muted-foreground);
+  font-size: 13px;
+  line-height: 1.8;
+}
+
+.hotelSummary,
+.passengerSummary {
+  margin: 0;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: var(--secondary);
+  color: var(--foreground);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.sectionCard {
+  display: grid;
+  gap: 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px;
+  background: var(--secondary);
+}
+
+.sectionCard h4 {
+  margin: 0;
+  font-size: 14px;
+}
+
+.tableWrap {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+}
+
+.passengerTable {
+  width: 100%;
+  min-width: 1040px;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 13px;
+}
+
+.passengerTable th,
+.passengerTable td {
+  padding: 9px;
+  border-bottom: 1px solid var(--border);
+  text-align: right;
+  vertical-align: middle;
+}
+
+.passengerTable th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--muted);
+  color: var(--muted-foreground);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.passengerTable tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.passengerTable tbody tr:hover td {
+  background: var(--secondary);
+}
+
+.selectTrigger {
+  min-width: 140px;
+  height: 38px;
+  border-radius: 9px;
+  padding-inline: 10px;
+  text-align: right;
+}
+
+@media (max-width: 640px) {
+  .form {
+    padding: 12px;
+  }
+
+  .selectTrigger {
+    min-width: 132px;
+  }
+}

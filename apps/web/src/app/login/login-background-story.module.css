@@ -1,0 +1,35 @@
+.story {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.aviationBackground {
+  position: absolute;
+  inset: -3%;
+  background-image: url('/brand/login-airline-b2.png');
+  background-position: center;
+  background-size: cover;
+}
+
+.story::after {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: linear-gradient(
+    135deg,
+    rgb(8 47 94 / 20%),
+    rgb(13 79 135 / 4%) 46%,
+    rgb(255 255 255 / 8%)
+  );
+  content: '';
+}
+
+@media (max-width: 767px) {
+  .aviationBackground {
+    inset: -2%;
+    background-position: 58% center;
+  }
+}

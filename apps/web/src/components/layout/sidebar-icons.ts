@@ -1,0 +1,50 @@
+import {
+  Archive,
+  Banknote,
+  Building2,
+  ChartColumn,
+  Database,
+  FileText,
+  Headphones,
+  House,
+  Inbox,
+  LayoutGrid,
+  Megaphone,
+  Package,
+  Plug,
+  Send,
+  Settings,
+  Ticket,
+  UserRoundCheck,
+  UsersRound,
+  type LucideIcon,
+} from 'lucide-react';
+import type { NavigationHref } from '@/messages/fa';
+
+/** Sidebar-only icons matching the approved compact navigation reference. */
+export const sidebarIcons: Record<
+  NavigationHref | '/sales/pricing' | '/sales/ticket-prices',
+  LucideIcon
+> = {
+  '/workbench': House,
+  '/dashboard': LayoutGrid,
+  '/sales': FileText,
+  '/sales/pricing': Banknote,
+  '/sales/ticket-prices': Ticket,
+  '/customers': UsersRound,
+  '/customer-affairs': Headphones,
+  '/organizations': Building2,
+  '/marketing': Megaphone,
+  '/reservations': Send,
+  '/reservations/hotel-rates': Building2,
+  '/ticket-management': Ticket,
+  '/purchases': Package,
+  '/finance': Banknote,
+  '/finance/requests': Inbox,
+  '/human-resources': UserRoundCheck,
+  '/documents': Archive,
+  '/reports': ChartColumn,
+  '/master-data': Database,
+  '/integrations': Plug,
+  '/system': Settings,
+};

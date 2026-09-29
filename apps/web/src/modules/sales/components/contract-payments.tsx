@@ -1,0 +1,630 @@
+'use client';
+import { SalesThemedSelect } from './sales-themed-select';
+import { PaymentDocuments } from './payment-documents';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
+import type {
+  MasterDataRecord,
+  SalesBalance,
+  SalesContractDetail,
+  SalesPaymentInput,
+  SalesPaymentMethod,
+} from '@nora/contracts';
+import { Button } from '@/components/ui/button';
+import { SalesDatePicker as DatePicker } from './sales-date-picker';
+import { FormField, Input } from '@/components/ui/form-controls';
+import { MoneyInput, formatSalesMoney } from '@/components/ui/money-input';
+import { Alert } from '@/components/ui/surfaces';
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogDescription,
+  DialogTrigger,
+} from '@/components/ui/overlays';
+import { masterDataApi } from '@/modules/master-data/api/client';
+import { salesApi } from '../api/client';
+import { loadPaymentCurrencies } from '../api/payment-currencies';
+import {
+  defaultSalesCurrency,
+  salesCurrencyOptions,
+  validateSalesCurrencySelection,
+} from './sales-currency-select';
+import { calculateContractPaymentShare } from '../model/contract-payment-share';
+
+const empty: SalesPaymentInput = {
+  amount: '',
+  currencyCode: '',
+  method: 'BANK_TRANSFER',
+  dueAt: '',
+};
+export function ContractPaymentCurrencySelect({
+  currencies,
+  value,
+  onChange,
+}: {
+  currencies: readonly MasterDataRecord[];
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  const options = salesCurrencyOptions(currencies);
+  return (
+    <FormField label="ارز" required>
+      <SalesThemedSelect
+        label="ارز پرداخت"
+        required
+        disabled={!options.length}
+        value={value}
+        onValueChange={onChange}
+        options={[
+          { value: '', label: 'انتخاب ارز' },
+          ...options.map((option) => ({
+            value: option.id,
+            label: option.name,
+          })),
+        ]}
+      />
+      {!options.length ? (
+        <p role="status" className="text-xs text-muted-foreground">
+          فهرست ارزهای فعال در دسترس نیست.
+        </p>
+      ) : null}
+    </FormField>
+  );
+}
+
+const paymentMoney = (amount: string, currencyCode: string) =>
+  `${formatSalesMoney(amount)} ${currencyCode}`;
+
+export function ContractPaymentShareSummary({
+  balances,
+  currencyCode,
+  amount,
+}: {
+  balances: readonly SalesBalance[];
+  currencyCode: string;
+  amount: string;
+}) {
+  const balance = balances.find((item) => item.currencyCode === currencyCode);
+  if (!currencyCode)
+    return (
+      <p className="md:col-span-2 text-sm text-muted-foreground">
+        برای مشاهده سهم پرداخت، ابتدا ارز را انتخاب کنید.
+      </p>
+    );
+  if (!balance)
+    return (
+      <Alert
+        tone="warning"
+        title={`برای ارز ${currencyCode} مبلغی در قرارداد ثبت نشده است.`}
+        className="md:col-span-2"
+      />
+    );
+  const share = calculateContractPaymentShare(balance, amount);
+  return (
+    <section
+      aria-label="خلاصه مبلغ پرداخت"
+      className="md:col-span-2 rounded-2xl border border-primary/20 bg-primary/5 p-4"
+    >
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <strong>خلاصه مبلغ این پرداخت</strong>
+        <span className="text-xs text-muted-foreground">
+          همه مبالغ به {currencyCode}
+        </span>
+      </div>
+      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="rounded-xl bg-background p-3 shadow-sm">
+          <span className="text-xs text-muted-foreground">مبلغ کل قرارداد</span>
+          <p className="mt-1 font-semibold">
+            {paymentMoney(balance.amount, currencyCode)}
+          </p>
+        </div>
+        <div className="rounded-xl bg-background p-3 shadow-sm">
+          <span className="text-xs text-muted-foreground">تأییدشده مالی</span>
+          <p className="mt-1 font-semibold">
+            {paymentMoney(balance.confirmedPaid, currencyCode)}
+          </p>
+          {balance.pendingFinance !== '0' ? (
+            <p className="mt-1 text-xs text-amber-700 dark:text-amber-300">
+              در انتظار مالی:{' '}
+              {paymentMoney(balance.pendingFinance, currencyCode)}
+            </p>
+          ) : null}
+        </div>
+        <div className="rounded-xl bg-background p-3 shadow-sm">
+          <span className="text-xs text-muted-foreground">مبلغ این پرداخت</span>
+          <p className="mt-1 font-semibold">
+            {share.entered === null
+              ? '—'
+              : paymentMoney(share.entered, currencyCode)}
+          </p>
+          <p className="mt-1 text-xs text-primary">
+            {share.percentOfTotal === null
+              ? 'مبلغ را وارد کنید'
+              : `${share.percentOfTotal}٪ از کل قرارداد`}
+          </p>
+        </div>
+        <div className="rounded-xl bg-background p-3 shadow-sm">
+          <span className="text-xs text-muted-foreground">
+            مانده پس از تأیید این پرداخت
+          </span>
+          <p className="mt-1 font-semibold">
+            {paymentMoney(share.remainingAfterConfirmation, currencyCode)}
+          </p>
+          {share.overpayment !== '0' ? (
+            <p role="alert" className="mt-1 text-xs text-destructive">
+              مازاد بر مانده: {paymentMoney(share.overpayment, currencyCode)}
+            </p>
+          ) : null}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+export function ContractPayments({
+  id,
+  onClose,
+  onSaved,
+  onSearchContracts,
+}: {
+  id: string;
+  onClose: () => void;
+  onSaved: () => void;
+  onSearchContracts: (reference: string) => void;
+}) {
+  const [contract, setContract] = useState<SalesContractDetail | null>(null);
+  const [payment, setPayment] = useState(empty);
+  const [banks, setBanks] = useState<readonly MasterDataRecord[]>([]);
+  const [currencies, setCurrencies] = useState<readonly MasterDataRecord[]>([]);
+  const [currencyLoading, setCurrencyLoading] = useState(true);
+  const [currencyError, setCurrencyError] = useState('');
+  const [currencyRetry, setCurrencyRetry] = useState(0);
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [referenceSearch, setReferenceSearch] = useState('');
+  const [receiptPaymentId, setReceiptPaymentId] = useState('');
+  const [adding, setAdding] = useState(false);
+  const [savedPaymentId, setSavedPaymentId] = useState('');
+  const attempt = useRef({ fingerprint: '', key: '' });
+  useEffect(() => {
+    let active = true;
+    void loadPaymentCurrencies()
+      .then((records) => {
+        if (!active) return;
+        setCurrencies(records);
+        setPayment((current) => ({
+          ...current,
+          currencyCode: salesCurrencyOptions(records).some(
+            (option) => option.id === current.currencyCode,
+          )
+            ? current.currencyCode
+            : defaultSalesCurrency(records),
+        }));
+      })
+      .catch(() => {
+        if (active)
+          setCurrencyError('دریافت فهرست ارزها ناموفق بود؛ دوباره تلاش کنید.');
+      })
+      .finally(() => {
+        if (active) setCurrencyLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [id, currencyRetry]);
+  const validCurrency =
+    !currencyLoading &&
+    !currencyError &&
+    salesCurrencyOptions(currencies).some(
+      (option) => option.id === payment.currencyCode,
+    );
+  useEffect(() => {
+    let active = true;
+    void salesApi
+      .detail(id)
+      .then((response) => {
+        if (active) setContract(response.data);
+      })
+      .catch(() => {
+        if (active) setError('دریافت پرداخت‌ها ناموفق بود.');
+      });
+    void masterDataApi
+      .list('banks', {
+        search: '',
+        status: 'active',
+        sortBy: 'name',
+        sortDirection: 'asc',
+        page: 1,
+        pageSize: 100,
+      })
+      .then((response) => {
+        if (active) setBanks(response.data);
+      })
+      .catch(() => {
+        if (active) setError('دریافت بانک‌ها ناموفق بود.');
+      });
+    return () => {
+      active = false;
+    };
+  }, [id]);
+  const submit = async (event: FormEvent) => {
+    event.preventDefault();
+    if (!contract || busy || savedPaymentId) return;
+    setBusy(true);
+    setError('');
+    try {
+      if (!validCurrency)
+        throw new Error('ارز پرداخت را از فهرست ارزهای فعال انتخاب کنید.');
+      validateSalesCurrencySelection(
+        { priceComponents: [], payments: [payment] },
+        currencies,
+      );
+      const input = {
+        ...payment,
+        dueAt: new Date(payment.dueAt).toISOString(),
+        version: contract.version,
+      };
+      const fingerprint = JSON.stringify(input);
+      if (fingerprint !== attempt.current.fingerprint)
+        attempt.current = { fingerprint, key: crypto.randomUUID() };
+      const response = await salesApi.addPayment(
+        id,
+        input,
+        attempt.current.key,
+      );
+      setContract(response.data);
+      const previousIds = new Set(contract.payments.map((item) => item.id));
+      const added = response.data.payments.find(
+        (item) => !previousIds.has(item.id),
+      );
+      if (added) setSavedPaymentId(added.id);
+      onSaved();
+    } catch (reason) {
+      setError(
+        reason instanceof Error ? reason.message : 'ثبت پرداخت ناموفق بود.',
+      );
+    } finally {
+      setBusy(false);
+    }
+  };
+  const patchCheck = (
+    field: 'bankId' | 'secureIdentifier' | 'ownerName' | 'dueDate',
+    value: string,
+  ) =>
+    setPayment({
+      ...payment,
+      check: {
+        bankId: '',
+        secureIdentifier: '',
+        ownerName: '',
+        dueDate: '',
+        ...payment.check,
+        [field]: value,
+      },
+    });
+  return (
+    <Dialog
+      open
+      onOpenChange={(open) => {
+        if (!open && !busy) onClose();
+      }}
+    >
+      <DialogContent
+        dir="rtl"
+        className="grid max-h-[85dvh] gap-4 overflow-y-auto sm:max-w-3xl"
+      >
+        <DialogTitle className="pe-10">
+          پرداخت‌ها و اقساط قرارداد {contract?.contractNumber}
+        </DialogTitle>
+        <DialogDescription>
+          سوابق پرداخت، سررسید اقساط و رسیدهای همین قرارداد
+        </DialogDescription>
+        {error ? <Alert tone="error" title={error} /> : null}
+        {contract?.balances.map((balance) => (
+          <p key={balance.currencyCode}>
+            مانده {balance.currencyCode}: {balance.outstanding} · پرداخت
+            تأییدشده: {balance.confirmedPaid}
+          </p>
+        ))}
+        <form
+          className="flex flex-wrap items-end gap-2"
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (referenceSearch.trim())
+              onSearchContracts(referenceSearch.trim());
+          }}
+        >
+          <div className="min-w-48 flex-1">
+            <FormField label="جست‌وجوی شماره پیگیری در همه قراردادها">
+              <Input
+                value={referenceSearch}
+                maxLength={160}
+                onChange={(event) => setReferenceSearch(event.target.value)}
+              />
+            </FormField>
+          </div>
+          <Button
+            type="submit"
+            variant="outline"
+            disabled={!referenceSearch.trim()}
+          >
+            پیدا کردن قرارداد
+          </Button>
+          <p className="w-full text-xs text-muted-foreground">
+            جست‌وجو بین همهٔ قراردادهای مجاز شما انجام می‌شود، نه فقط این
+            قرارداد؛ نتیجه در فهرست اصلی نمایش داده می‌شود.
+          </p>
+        </form>
+        {!contract && !error ? (
+          <p role="status">در حال دریافت پرداخت‌ها…</p>
+        ) : null}
+        {contract && !contract.payments.length ? (
+          <p>هنوز پرداختی برای این قرارداد ثبت نشده است.</p>
+        ) : null}
+        {contract?.payments.map((item) => (
+          <div key={item.id} className="rounded-xl border p-3">
+            <strong>
+              {item.amount} {item.currencyCode}
+            </strong>{' '}
+            ·{' '}
+            {
+              {
+                FINANCE_CONFIRMED: 'تأییدشده مالی',
+                FINANCE_REJECTED: 'ردشده توسط مالی',
+                SCHEDULED: 'برنامه‌ریزی‌شده',
+                PENDING_FINANCE_CONFIRMATION: 'در انتظار تأیید مالی',
+              }[item.status]
+            }
+            <p>
+              شماره پیگیری: <bdi>{item.paymentReference || 'ثبت نشده'}</bdi>
+            </p>
+            <p>
+              سررسید: {new Date(item.dueAt).toLocaleDateString('fa-IR')}
+              {item.check ? ` · تاریخ چک: ${item.check.dueDate}` : ''}
+            </p>
+            {item.financeDecisionReason ? (
+              <p className="mt-2 rounded-lg bg-amber-50 p-2 text-sm text-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
+                توضیح مالی: {item.financeDecisionReason}
+              </p>
+            ) : null}
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="mt-2"
+              onClick={() => {
+                setReceiptPaymentId(item.id);
+              }}
+            >
+              آپلود رسید / مشاهده مدارک
+            </Button>
+            {receiptPaymentId === item.id && contract ? (
+              <PaymentDocuments
+                key={item.id}
+                contract={contract}
+                paymentId={item.id}
+                expanded
+              />
+            ) : null}
+          </div>
+        ))}
+        <p className="text-sm text-muted-foreground">
+          افزودن ردیف پرداخت به‌تنهایی مانده را کم نمی‌کند؛ تأیید مالی لازم است.
+        </p>
+        <Dialog
+          open={adding}
+          onOpenChange={(open) => {
+            if (busy) return;
+            setAdding(open);
+            if (open) {
+              setSavedPaymentId('');
+              setPayment({
+                ...empty,
+                currencyCode: defaultSalesCurrency(currencies),
+              });
+              attempt.current = { fingerprint: '', key: '' };
+              setError('');
+            }
+          }}
+        >
+          <DialogTrigger asChild>
+            <Button disabled={!contract}>افزودن پرداخت</Button>
+          </DialogTrigger>
+          <DialogContent
+            dir="rtl"
+            className="grid max-h-[85dvh] gap-4 overflow-y-auto sm:max-w-2xl"
+          >
+            <DialogTitle className="pe-10">
+              افزودن پرداخت · {contract?.contractNumber}
+            </DialogTitle>
+            <DialogDescription>
+              اطلاعات پرداخت را ثبت کنید و رسید آن را همین‌جا پیوست کنید.
+            </DialogDescription>
+            {error ? <Alert tone="error" title={error} /> : null}
+            {savedPaymentId ? (
+              <p role="status" className="rounded-xl bg-primary/10 p-3">
+                پرداخت ثبت شد. اکنون می‌توانید رسید را در زیر بارگذاری کنید.
+              </p>
+            ) : null}
+            <form
+              className="grid gap-4 md:grid-cols-2"
+              onSubmit={(event) => void submit(event)}
+            >
+              <ContractPaymentShareSummary
+                balances={contract?.balances ?? []}
+                currencyCode={payment.currencyCode}
+                amount={payment.amount}
+              />
+              <fieldset
+                disabled={busy || !!savedPaymentId}
+                className="contents"
+              >
+                <FormField label="مبلغ" required>
+                  <MoneyInput
+                    required
+                    value={payment.amount}
+                    onValueChange={(amount) =>
+                      setPayment({ ...payment, amount })
+                    }
+                  />
+                </FormField>
+                <div>
+                  {currencyLoading ? (
+                    <p role="status" className="text-sm text-muted-foreground">
+                      در حال دریافت فهرست ارزها…
+                    </p>
+                  ) : (
+                    <ContractPaymentCurrencySelect
+                      currencies={currencies}
+                      value={payment.currencyCode}
+                      onChange={(currencyCode) =>
+                        setPayment({ ...payment, currencyCode })
+                      }
+                    />
+                  )}
+                  {!currencyLoading &&
+                  (currencyError ||
+                    !salesCurrencyOptions(currencies).length) ? (
+                    <div className="mt-2 space-y-2">
+                      {currencyError ? (
+                        <p role="alert" className="text-sm text-destructive">
+                          {currencyError}
+                        </p>
+                      ) : null}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => {
+                          setCurrencyLoading(true);
+                          setCurrencyError('');
+                          setCurrencies([]);
+                          setCurrencyRetry((value) => value + 1);
+                        }}
+                      >
+                        دریافت دوبارهٔ ارزها
+                      </Button>
+                    </div>
+                  ) : null}
+                </div>
+                <FormField label="سررسید پرداخت" required>
+                  <DatePicker
+                    value={payment.dueAt}
+                    onChange={(dueAt) => setPayment({ ...payment, dueAt })}
+                  />
+                </FormField>
+                <FormField label="روش پرداخت">
+                  <SalesThemedSelect
+                    label="روش پرداخت"
+                    value={payment.method}
+                    onValueChange={(method) =>
+                      setPayment({
+                        ...payment,
+                        check: null,
+                        method: method as SalesPaymentMethod,
+                      })
+                    }
+                    options={[
+                      { value: 'BANK_TRANSFER', label: 'حواله بانکی' },
+                      { value: 'CASH', label: 'نقد' },
+                      { value: 'POS', label: 'کارت‌خوان' },
+                      { value: 'ONLINE_GATEWAY', label: 'درگاه' },
+                      { value: 'CHECK', label: 'چک' },
+                    ]}
+                  />
+                </FormField>
+                {payment.method === 'CHECK' ? (
+                  <>
+                    <FormField label="بانک" required>
+                      <SalesThemedSelect
+                        label="بانک"
+                        required
+                        value={payment.check?.bankId ?? ''}
+                        onValueChange={(bankId) => patchCheck('bankId', bankId)}
+                        options={[
+                          { value: '', label: 'انتخاب بانک' },
+                          ...banks.map((bank) => ({
+                            value: bank.id,
+                            label: bank.name,
+                          })),
+                        ]}
+                      />
+                    </FormField>
+                    <FormField label="شناسه چک" required>
+                      <Input
+                        required
+                        value={payment.check?.secureIdentifier ?? ''}
+                        onChange={(event) =>
+                          patchCheck('secureIdentifier', event.target.value)
+                        }
+                      />
+                    </FormField>
+                    <FormField label="صاحب چک" required>
+                      <Input
+                        required
+                        value={payment.check?.ownerName ?? ''}
+                        onChange={(event) =>
+                          patchCheck('ownerName', event.target.value)
+                        }
+                      />
+                    </FormField>
+                    <FormField label="تاریخ چک" required>
+                      <DatePicker
+                        value={payment.check?.dueDate ?? ''}
+                        onChange={(value) => patchCheck('dueDate', value)}
+                      />
+                    </FormField>
+                  </>
+                ) : null}
+                <FormField label="شماره پیگیری پرداخت (اختیاری)">
+                  <Input
+                    dir="ltr"
+                    maxLength={160}
+                    value={payment.paymentReference ?? ''}
+                    onChange={(event) =>
+                      setPayment({
+                        ...payment,
+                        paymentReference: event.target.value,
+                      })
+                    }
+                  />
+                </FormField>
+              </fieldset>
+              <div className="md:col-span-2">
+                {savedPaymentId && contract ? (
+                  <PaymentDocuments
+                    key={savedPaymentId}
+                    contract={contract}
+                    paymentId={savedPaymentId}
+                    expanded
+                  />
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    پس از ثبت پرداخت، بارگذاری تصویر یا PDF رسید زیر شماره
+                    پیگیری فعال می‌شود.
+                  </p>
+                )}
+              </div>
+              {!savedPaymentId ? (
+                <Button
+                  type="submit"
+                  loading={busy}
+                  disabled={!contract || !validCurrency}
+                >
+                  ثبت پرداخت و ادامه برای رسید
+                </Button>
+              ) : (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setAdding(false)}
+                >
+                  بازگشت به سوابق پرداخت
+                </Button>
+              )}
+            </form>
+          </DialogContent>
+        </Dialog>
+      </DialogContent>
+    </Dialog>
+  );
+}

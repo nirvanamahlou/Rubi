@@ -1,0 +1,395 @@
+{
+  "tables": {
+    "master_countries": {
+      "columns": {
+        "id": {
+          "type": "UUID",
+          "nullable": false,
+          "unique": true,
+          "cardinality_estimate": 250
+        },
+        "code": {
+          "type": "VARCHAR(32)",
+          "nullable": false,
+          "cardinality_estimate": 250,
+          "unique": true
+        },
+        "name": {
+          "type": "VARCHAR(160)",
+          "nullable": false,
+          "cardinality_estimate": 240
+        },
+        "englishName": {
+          "type": "VARCHAR(160)",
+          "nullable": false,
+          "cardinality_estimate": 240
+        },
+        "isActive": {
+          "type": "BOOLEAN",
+          "nullable": false,
+          "default": true,
+          "cardinality_estimate": 2
+        },
+        "version": {
+          "type": "INTEGER",
+          "nullable": false,
+          "default": 1,
+          "cardinality_estimate": 20
+        }
+      },
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [
+        [
+          "code"
+        ]
+      ],
+      "indexes": [
+        {
+          "name": "master_countries_isActive_name_idx",
+          "columns": [
+            "isActive",
+            "name"
+          ]
+        }
+      ]
+    },
+    "master_regions": {
+      "columns": {
+        "id": {
+          "type": "UUID",
+          "nullable": false,
+          "unique": true,
+          "cardinality_estimate": 250
+        },
+        "code": {
+          "type": "VARCHAR(32)",
+          "nullable": false,
+          "cardinality_estimate": 250
+        },
+        "name": {
+          "type": "VARCHAR(160)",
+          "nullable": false,
+          "cardinality_estimate": 240
+        },
+        "englishName": {
+          "type": "VARCHAR(160)",
+          "nullable": false,
+          "cardinality_estimate": 240
+        },
+        "isActive": {
+          "type": "BOOLEAN",
+          "nullable": false,
+          "default": true,
+          "cardinality_estimate": 2
+        },
+        "version": {
+          "type": "INTEGER",
+          "nullable": false,
+          "default": 1,
+          "cardinality_estimate": 20
+        },
+        "countryId": {
+          "type": "UUID",
+          "nullable": false,
+          "foreign_key": "master_countries.id",
+          "cardinality_estimate": 250
+        },
+        "parentRegionId": {
+          "type": "UUID",
+          "nullable": true,
+          "foreign_key": "master_regions.id",
+          "cardinality_estimate": 80
+        },
+        "type": {
+          "type": "MasterRegionType",
+          "nullable": false,
+          "cardinality_estimate": 4
+        }
+      },
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [
+        [
+          "countryId",
+          "code"
+        ],
+        [
+          "id",
+          "countryId"
+        ]
+      ],
+      "check_constraints": {
+        "version_positive": "version > 0",
+        "parent_not_self": "parentRegionId IS NULL OR parentRegionId <> id"
+      },
+      "indexes": [
+        {
+          "name": "master_regions_country_type_active_name_idx",
+          "columns": [
+            "countryId",
+            "type",
+            "isActive",
+            "name"
+          ]
+        },
+        {
+          "name": "master_regions_parent_active_name_idx",
+          "columns": [
+            "parentRegionId",
+            "isActive",
+            "name"
+          ]
+        }
+      ]
+    },
+    "master_cities": {
+      "columns": {
+        "id": {
+          "type": "UUID",
+          "nullable": false,
+          "unique": true,
+          "cardinality_estimate": 250
+        },
+        "code": {
+          "type": "VARCHAR(32)",
+          "nullable": false,
+          "cardinality_estimate": 250
+        },
+        "name": {
+          "type": "VARCHAR(160)",
+          "nullable": false,
+          "cardinality_estimate": 240
+        },
+        "englishName": {
+          "type": "VARCHAR(160)",
+          "nullable": false,
+          "cardinality_estimate": 240
+        },
+        "isActive": {
+          "type": "BOOLEAN",
+          "nullable": false,
+          "default": true,
+          "cardinality_estimate": 2
+        },
+        "version": {
+          "type": "INTEGER",
+          "nullable": false,
+          "default": 1,
+          "cardinality_estimate": 20
+        },
+        "countryId": {
+          "type": "UUID",
+          "nullable": false,
+          "foreign_key": "master_countries.id",
+          "cardinality_estimate": 250
+        },
+        "regionId": {
+          "type": "UUID",
+          "nullable": true,
+          "foreign_key": "master_regions.id",
+          "cardinality_estimate": 500
+        }
+      },
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [
+        [
+          "countryId",
+          "code"
+        ]
+      ],
+      "check_constraints": {
+        "version_positive": "version > 0"
+      },
+      "indexes": [
+        {
+          "name": "master_cities_countryId_isActive_name_idx",
+          "columns": [
+            "countryId",
+            "isActive",
+            "name"
+          ]
+        },
+        {
+          "name": "master_cities_regionId_isActive_name_idx",
+          "columns": [
+            "regionId",
+            "isActive",
+            "name"
+          ]
+        }
+      ]
+    },
+    "master_airports": {
+      "columns": {
+        "id": {
+          "type": "UUID",
+          "nullable": false,
+          "unique": true,
+          "cardinality_estimate": 250
+        },
+        "name": {
+          "type": "VARCHAR(160)",
+          "nullable": false,
+          "cardinality_estimate": 240
+        },
+        "englishName": {
+          "type": "VARCHAR(160)",
+          "nullable": false,
+          "cardinality_estimate": 240
+        },
+        "isActive": {
+          "type": "BOOLEAN",
+          "nullable": false,
+          "default": true,
+          "cardinality_estimate": 2
+        },
+        "version": {
+          "type": "INTEGER",
+          "nullable": false,
+          "default": 1,
+          "cardinality_estimate": 20
+        },
+        "cityId": {
+          "type": "UUID",
+          "nullable": false,
+          "foreign_key": "master_cities.id",
+          "cardinality_estimate": 5000
+        },
+        "iataCode": {
+          "type": "CHAR(3)",
+          "nullable": false,
+          "unique": true,
+          "cardinality_estimate": 20000
+        },
+        "icaoCode": {
+          "type": "CHAR(4)",
+          "nullable": false,
+          "unique": true,
+          "cardinality_estimate": 20000
+        },
+        "ianaTimezone": {
+          "type": "VARCHAR(80)",
+          "nullable": false,
+          "cardinality_estimate": 450
+        },
+        "latitude": {
+          "type": "DECIMAL(9,6)",
+          "nullable": false
+        },
+        "longitude": {
+          "type": "DECIMAL(9,6)",
+          "nullable": false
+        }
+      },
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [
+        [
+          "iataCode"
+        ],
+        [
+          "icaoCode"
+        ]
+      ],
+      "check_constraints": {
+        "latitude_range": "latitude BETWEEN -90 AND 90",
+        "longitude_range": "longitude BETWEEN -180 AND 180",
+        "version_positive": "version > 0"
+      },
+      "indexes": [
+        {
+          "name": "master_airports_cityId_isActive_name_idx",
+          "columns": [
+            "cityId",
+            "isActive",
+            "name"
+          ]
+        },
+        {
+          "name": "master_airports_ianaTimezone_isActive_idx",
+          "columns": [
+            "ianaTimezone",
+            "isActive"
+          ]
+        }
+      ]
+    },
+    "master_terminals": {
+      "columns": {
+        "id": {
+          "type": "UUID",
+          "nullable": false,
+          "unique": true,
+          "cardinality_estimate": 250
+        },
+        "code": {
+          "type": "VARCHAR(32)",
+          "nullable": false,
+          "cardinality_estimate": 250
+        },
+        "name": {
+          "type": "VARCHAR(160)",
+          "nullable": false,
+          "cardinality_estimate": 240
+        },
+        "englishName": {
+          "type": "VARCHAR(160)",
+          "nullable": true,
+          "cardinality_estimate": 240
+        },
+        "isActive": {
+          "type": "BOOLEAN",
+          "nullable": false,
+          "default": true,
+          "cardinality_estimate": 2
+        },
+        "version": {
+          "type": "INTEGER",
+          "nullable": false,
+          "default": 1,
+          "cardinality_estimate": 20
+        },
+        "airportId": {
+          "type": "UUID",
+          "nullable": false,
+          "foreign_key": "master_airports.id",
+          "cardinality_estimate": 20000
+        },
+        "terminalType": {
+          "type": "MasterTerminalType",
+          "nullable": false,
+          "cardinality_estimate": 3
+        }
+      },
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [
+        [
+          "airportId",
+          "code"
+        ]
+      ],
+      "check_constraints": {
+        "version_positive": "version > 0"
+      },
+      "indexes": [
+        {
+          "name": "master_terminals_airport_type_active_name_idx",
+          "columns": [
+            "airportId",
+            "terminalType",
+            "isActive",
+            "name"
+          ]
+        }
+      ]
+    }
+  }
+}
