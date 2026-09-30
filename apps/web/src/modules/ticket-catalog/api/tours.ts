@@ -145,14 +145,20 @@ export const toursApi = {
         body: JSON.stringify(input),
       },
     ),
-  managedOffers: async () => {
+  managedOffers: async (includePast = false) => {
     const offers = new Map<string, TicketOfferV1>();
     for (let page = 1; page <= 10000; page++) {
       const result = await request<{
         version: 1;
         data: TicketOfferV1[];
         hasMore?: boolean;
-      }>(page === 1 ? '/offers/management' : `/offers/management?page=${page}`);
+      }>(
+        includePast
+          ? `/offers/management?includePast=true&page=${page}`
+          : page === 1
+            ? '/offers/management'
+            : `/offers/management?page=${page}`,
+      );
       for (const offer of result.data) offers.set(offer.id, offer);
       if (!result.hasMore)
         return { version: 1 as const, data: [...offers.values()] };

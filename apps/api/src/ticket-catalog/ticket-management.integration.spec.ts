@@ -304,4 +304,41 @@ describe.skipIf(!url)('ticket management PostgreSQL lifecycle', () => {
       (await api.get(endpoint + '/management').expect(200)).body.data,
     ).toHaveLength(before.body.data.length);
   }, 60000);
+  it('keeps expired nonarchived capacity visible in management history without exposing it to default future listings', async () => {
+    const published = await service.publish(
+      definition,
+      actor,
+      branchId,
+      'history-' + userId,
+    );
+    const id = published.data.id;
+    await client.ticketPublishedOffer.update({
+      where: { id },
+      data: {
+        departureAt: new Date('2000-01-01T10:00:00Z'),
+        arrivalAt: new Date('2000-01-01T12:00:00Z'),
+      },
+    });
+    expect(
+      (await service.managed(actor)).data.some((row) => row.id === id),
+    ).toBe(false);
+    const history = (await service.managed(actor, 1, true)).data.find(
+      (row) => row.id === id,
+    );
+    expect(history?.status).toBe('PAUSED');
+    expect(history?.totalCapacity).toBe(definition.totalCapacity);
+    const api = request(app.getHttpServer());
+    const endpoint = '/api/v1/ticket-catalog/offers/management';
+    expect(
+      (
+        await api.get(endpoint + '?includePast=true').expect(200)
+      ).body.data.some((row: { id: string }) => row.id === id),
+    ).toBe(true);
+    expect(
+      (await api.get(endpoint).expect(200)).body.data.some(
+        (row: { id: string }) => row.id === id,
+      ),
+    ).toBe(false);
+    await api.get(endpoint + '?includePast=invalid').expect(400);
+  }, 60000);
 });

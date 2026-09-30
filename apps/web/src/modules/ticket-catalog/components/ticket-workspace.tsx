@@ -2,25 +2,14 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { TicketOfferCreateV1, TicketOfferV1 } from '@nora/contracts';
-import {
-  BusFront,
-  Plane,
-  Power,
-  Plus,
-  Ticket,
-  TicketCheck,
-  TrainFront,
-  Trash2,
-} from 'lucide-react';
+import { Power, Plus, Ticket, TicketCheck, Trash2 } from 'lucide-react';
 import {
   Alert,
   Button,
-  Card,
   Dialog,
   DialogContent,
   DialogDescription,
   DialogTitle,
-  EmptyState,
   FormField,
   Input,
   PageHeader,
@@ -39,7 +28,6 @@ import {
   reviseProduct,
   transitionProduct,
   type CatalogStatus,
-  type Inventory,
   type Product,
   type ProductInput,
   type Reference,
@@ -48,27 +36,19 @@ import {
 import {
   activateDraftCatalogProduct,
   catalogStorageKey,
-  countProductsByRoute,
   readableCityName,
   displayTime,
   emptyInput,
-  groupProductsForCards,
-  initialQuery,
   isExpiredCatalogProduct,
   parseCatalogSnapshot,
-  queryProducts,
   replacePreview,
   statusLabels,
-  supplyOptions,
-  transportLabels,
-  type PreviewQuery,
   type RepeatCadence,
 } from '../model/preview';
 import {
   repeatedDefinitions,
   publishRepeatedProducts,
 } from '../model/repeat-publication';
-import { TicketCatalogCard } from './ticket-catalog-card';
 import { TicketDetails } from './ticket-details';
 import { TicketForm } from './ticket-form';
 import { FlightScheduleForm } from './flight-schedule-form';
@@ -89,19 +69,6 @@ import {
 import { PublishedOfferForm } from './published-offer-form';
 
 const actor = 'کاربر جاری';
-const transportIcons = {
-  flight: Plane,
-  train: TrainFront,
-  bus: BusFront,
-};
-
-function availableInventory(product: Product): Inventory {
-  return {
-    total: product.definition.totalCapacity,
-    version: product.version,
-    allocations: [],
-  };
-}
 
 export function flightOfferInput(
   definition: ProductInput,
@@ -225,7 +192,7 @@ export function TicketWorkspace() {
     <>
       <Tabs defaultValue="catalog" dir="rtl" className="space-y-5">
         <TabsList
-          aria-label="انتخاب بخش مدیریت بلیط"
+          aria-label="انتخاب بخش تعریف و ظرفیت پرواز"
           className="grid h-auto w-full grid-cols-1 gap-2 rounded-2xl border border-primary/15 bg-primary/[0.04] p-2 sm:grid-cols-2 lg:w-fit"
         >
           <TabsTrigger
@@ -272,7 +239,6 @@ function TicketCatalogWorkspace() {
   const [products, setProducts] = useState<Product[]>([]);
   const [references, setReferences] = useState<Reference[]>([]);
   const [hydrated, setHydrated] = useState(false);
-  const [query, setQuery] = useState<PreviewQuery>(initialQuery);
   const [form, setForm] = useState<{
     mode: 'create' | 'view' | 'edit';
     product?: Product;
@@ -347,7 +313,7 @@ function TicketCatalogWorkspace() {
     setCatalogNow(new Date().getTime());
     if (announce) setPublishedRefreshing(true);
     try {
-      const result = await toursApi.managedOffers();
+      const result = await toursApi.managedOffers(true);
       setPublishedOffers(result.data);
       setPublishedProblem('');
       if (announce) setPublishedNotice('فهرست بلیت‌ها به‌روز شد.');
@@ -617,13 +583,6 @@ function TicketCatalogWorkspace() {
         });
     }
   }, [hydrated, displayedProducts, references]);
-  const result = queryProducts(displayedProducts, query, 12);
-  const routeCounts = countProductsByRoute(
-    displayedProducts,
-    (id) =>
-      references.find((item) => item.kind === 'city' && item.id === id)?.name,
-  );
-  const cardGroups = groupProductsForCards(result.rows);
   const resolve: ReferenceResolver = (kind, id) =>
     references.find((r) => r.kind === kind && r.id === id);
   const referenceLabel = (
@@ -818,7 +777,6 @@ function TicketCatalogWorkspace() {
         },
         (product) => {
           setProducts((current) => replacePreview(current, product));
-          setQuery({ ...initialQuery, sort: 'updated', direction: 'desc' });
         },
       );
       setNotice(
@@ -928,44 +886,15 @@ function TicketCatalogWorkspace() {
       );
     }
   }
-  const filter = (patch: Partial<PreviewQuery>) =>
-    setQuery({ ...query, ...patch, page: 1 });
-  const counts = {
-    flight: displayedProducts.filter((p) => p.definition.transport === 'flight')
-      .length,
-    train: displayedProducts.filter((p) => p.definition.transport === 'train')
-      .length,
-    bus: displayedProducts.filter((p) => p.definition.transport === 'bus')
-      .length,
-  };
-  const routeOptions = (() => {
-    const origins = new Map<string, string>();
-    const destinations = new Map<string, string>();
-    for (const product of displayedProducts) {
-      const segment = product.definition.segments[0]!;
-      const lastSegment = product.definition.segments.at(-1)!;
-      origins.set(
-        segment.originCityId,
-        referenceLabel(
-          'city',
-          segment.originCityId,
-          product.definition.display?.origin || 'مبدأ نامشخص',
-        ),
-      );
-      destinations.set(
-        lastSegment.destinationCityId,
-        referenceLabel(
-          'city',
-          lastSegment.destinationCityId,
-          product.definition.display?.destination || 'مقصد نامشخص',
-        ),
-      );
-    }
-    return { origins: [...origins], destinations: [...destinations] };
-  })();
-
   const renderOfferActions = (offer: TicketOfferV1) => (
     <div className="flex flex-wrap gap-2">
+      <Button
+        size="sm"
+        variant="outline"
+        onClick={() => setOfferForm({ offer, readOnly: true })}
+      >
+        مشاهده
+      </Button>
       {new Date(offer.departureAt).getTime() <= catalogNow ? (
         <Button
           size="sm"
@@ -1084,7 +1013,7 @@ function TicketCatalogWorkspace() {
   return (
     <div className="space-y-5" dir="rtl">
       <PageHeader
-        title="مدیریت و تعریف بلیط‌ها"
+        title="تعریف و ظرفیت پرواز"
         eyebrow="هواپیما • قطار • اتوبوس"
         actions={
           <Button
@@ -1114,315 +1043,6 @@ function TicketCatalogWorkspace() {
         onRefresh={() => void refreshPublishedOffers(true)}
       />
 
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <Card className="border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100/70 p-5 dark:border-blue-900 dark:from-blue-950/70 dark:to-blue-900/30">
-          <p className="text-sm text-muted-foreground">کل بلیط‌ها</p>
-          <div className="mt-3 flex items-center justify-between">
-            <p className="text-2xl font-black text-blue-800 dark:text-blue-200">
-              {hydrated
-                ? displayedProducts.length.toLocaleString('fa-IR')
-                : '…'}
-            </p>
-            <Ticket className="size-7 text-blue-600" aria-hidden />
-          </div>
-        </Card>
-        {(['flight', 'train', 'bus'] as const).map((transport) => {
-          const Icon = transportIcons[transport];
-          const tone = {
-            flight:
-              'border-cyan-200 bg-gradient-to-br from-cyan-50 to-sky-100/70 dark:border-cyan-900 dark:from-cyan-950/70 dark:to-sky-900/30',
-            train:
-              'border-emerald-200 bg-gradient-to-br from-emerald-50 to-teal-100/70 dark:border-emerald-900 dark:from-emerald-950/70 dark:to-teal-900/30',
-            bus: 'border-amber-200 bg-gradient-to-br from-amber-50 to-orange-100/70 dark:border-amber-900 dark:from-amber-950/70 dark:to-orange-900/30',
-          }[transport];
-          return (
-            <Card
-              className={`flex items-center justify-between p-5 ${tone}`}
-              key={transport}
-            >
-              <div>
-                <p className="text-sm text-muted-foreground">
-                  {transportLabels[transport]}
-                </p>
-                <p className="mt-3 text-2xl font-black text-primary">
-                  {counts[transport].toLocaleString('fa-IR')}
-                </p>
-              </div>
-              <Icon className="size-7 text-primary" aria-hidden />
-            </Card>
-          );
-        })}
-      </div>
-      <Card className="p-4">
-        <h2 className="font-bold">جمع بلیط‌های تعریف‌شده در هر مسیر</h2>
-        {routeCounts.length ? (
-          <div className="mt-3 flex flex-wrap gap-2">
-            {routeCounts.map((route) => (
-              <Button
-                key={route.key}
-                type="button"
-                size="sm"
-                variant={
-                  query.originCityId === route.originCityId &&
-                  query.destinationCityId === route.destinationCityId
-                    ? 'primary'
-                    : 'outline'
-                }
-                onClick={() =>
-                  filter({
-                    originCityId: route.originCityId,
-                    destinationCityId: route.destinationCityId,
-                  })
-                }
-              >
-                {route.origin} ← {route.destination} •{' '}
-                {route.count.toLocaleString('fa-IR')} بلیط
-              </Button>
-            ))}
-          </div>
-        ) : (
-          <p className="mt-2 text-sm text-muted-foreground">
-            پس از تعریف بلیط، جمع هر مسیر اینجا نمایش داده می‌شود.
-          </p>
-        )}
-      </Card>
-      <Card className="space-y-4 p-4">
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          <FormField label="جست‌وجوی بلیط" id="ticket-search">
-            <Input
-              id="ticket-search"
-              value={query.search}
-              placeholder="شماره، شرکت یا مسیر…"
-              onChange={(e) => filter({ search: e.target.value })}
-            />
-          </FormField>
-          <FormField label="نوع وسیله" id="ticket-transport-filter">
-            <Select
-              value={query.transport}
-              onValueChange={(transport) => filter({ transport })}
-            >
-              <SelectTrigger id="ticket-transport-filter">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent dir="rtl">
-                <SelectItem value="all">همه</SelectItem>
-                {Object.entries(transportLabels).map(([key, value]) => (
-                  <SelectItem value={key} key={key}>
-                    {value}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </FormField>
-          <FormField label="وضعیت" id="ticket-status-filter">
-            <Select
-              value={query.status}
-              onValueChange={(status) => filter({ status })}
-            >
-              <SelectTrigger id="ticket-status-filter">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent dir="rtl">
-                <SelectItem value="all">همه وضعیت‌ها</SelectItem>
-                {Object.entries(statusLabels).map(([key, value]) => (
-                  <SelectItem value={key} key={key}>
-                    {value}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </FormField>
-          <FormField label="نوع تأمین" id="ticket-supply-filter">
-            <Select
-              value={query.supply}
-              onValueChange={(supply) => filter({ supply })}
-            >
-              <SelectTrigger id="ticket-supply-filter">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent dir="rtl">
-                <SelectItem value="all">همه انواع</SelectItem>
-                {Object.entries(supplyOptions).map(([key, value]) => (
-                  <SelectItem value={key} key={key}>
-                    {value}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </FormField>
-          <FormField label="مبدأ مسیر" id="ticket-origin-filter">
-            <Select
-              value={query.originCityId}
-              onValueChange={(originCityId) => filter({ originCityId })}
-            >
-              <SelectTrigger id="ticket-origin-filter">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent dir="rtl">
-                <SelectItem value="all">همه مبدأها</SelectItem>
-                {routeOptions.origins.map(([id, name]) => (
-                  <SelectItem value={id} key={id}>
-                    {name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </FormField>
-          <FormField label="مقصد مسیر" id="ticket-destination-filter">
-            <Select
-              value={query.destinationCityId}
-              onValueChange={(destinationCityId) =>
-                filter({ destinationCityId })
-              }
-            >
-              <SelectTrigger id="ticket-destination-filter">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent dir="rtl">
-                <SelectItem value="all">همه مقصدها</SelectItem>
-                {routeOptions.destinations.map(([id, name]) => (
-                  <SelectItem value={id} key={id}>
-                    {name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </FormField>
-          <FormField label="حرکت از تاریخ" id="ticket-filter-from">
-            <TicketDatePicker
-              id="ticket-filter-from"
-              value={query.from}
-              onChange={(from) => filter({ from })}
-            />
-          </FormField>
-          <FormField label="حرکت تا تاریخ" id="ticket-filter-to">
-            <TicketDatePicker
-              id="ticket-filter-to"
-              value={query.to}
-              onChange={(to) => filter({ to })}
-            />
-          </FormField>
-          <FormField label="مرتب‌سازی" id="ticket-sort">
-            <Select
-              value={query.sort}
-              onValueChange={(sort) =>
-                filter({ sort: sort as PreviewQuery['sort'] })
-              }
-            >
-              <SelectTrigger id="ticket-sort">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent dir="rtl">
-                <SelectItem value="departure">تاریخ حرکت</SelectItem>
-                <SelectItem value="title">عنوان خودکار</SelectItem>
-                <SelectItem value="updated">آخرین ویرایش</SelectItem>
-              </SelectContent>
-            </Select>
-          </FormField>
-          <div className="flex items-end gap-2">
-            <Button
-              variant="outline"
-              onClick={() =>
-                filter({
-                  direction: query.direction === 'asc' ? 'desc' : 'asc',
-                })
-              }
-            >
-              {query.direction === 'asc' ? 'صعودی ↑' : 'نزولی ↓'}
-            </Button>
-            <Button variant="ghost" onClick={() => setQuery(initialQuery)}>
-              پاک‌کردن فیلترها
-            </Button>
-          </div>
-        </div>
-      </Card>
-      {!hydrated ? (
-        <EmptyState
-          title="در حال آماده‌سازی فهرست…"
-          description="اطلاعات ذخیره‌شده در حال بارگذاری است."
-        />
-      ) : result.rows.length === 0 ? (
-        <EmptyState
-          title="بلیطی یافت نشد"
-          description="بلیط جدید بسازید یا فیلترها را پاک کنید."
-        />
-      ) : (
-        <>
-          <div className="grid grid-flow-row-dense items-start gap-3 md:grid-cols-2 xl:grid-cols-3">
-            {cardGroups.map((group) => (
-              <div
-                key={group[0]!.definition.tripGroupId ?? group[0]!.id}
-                className={
-                  group.length > 1
-                    ? 'grid gap-3 md:col-span-2 md:grid-cols-2'
-                    : undefined
-                }
-              >
-                {group.map((product) => (
-                  <TicketCatalogCard
-                    key={product.id}
-                    product={product}
-                    inventory={availableInventory(product)}
-                    remainingCapacity={
-                      catalogOffer(product, publishedOffers)?.remainingCapacity
-                    }
-                    referenceLabel={referenceLabel}
-                    onView={() => {
-                      const offer = catalogOffer(product, publishedOffers);
-                      if (offer) setOfferForm({ offer, readOnly: true });
-                      else setForm({ mode: 'view', product });
-                    }}
-                    onEdit={() => {
-                      const offer = catalogOffer(product, publishedOffers);
-                      if (offer) setOfferForm({ offer, readOnly: false });
-                      else setForm({ mode: 'edit', product });
-                    }}
-                    onRepeat={() =>
-                      updateRepeat({
-                        product,
-                        cadence: 'weekly',
-                        count: 1,
-                        startDate: '',
-                      })
-                    }
-                    onDelete={() => setDeleteProduct(product)}
-                    onStatus={(status) => {
-                      setProblem('');
-                      setStatusChange({ product, status });
-                    }}
-                  />
-                ))}
-              </div>
-            ))}
-          </div>
-          <nav
-            aria-label="صفحه‌بندی بلیط‌ها"
-            className="flex flex-wrap items-center justify-between gap-3 text-sm"
-          >
-            <span>
-              {result.total.toLocaleString('fa-IR')} بلیط • صفحه{' '}
-              {result.page.toLocaleString('fa-IR')} از{' '}
-              {result.pages.toLocaleString('fa-IR')}
-            </span>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                disabled={result.page <= 1}
-                onClick={() => setQuery({ ...query, page: result.page - 1 })}
-              >
-                صفحه قبل
-              </Button>
-              <Button
-                variant="outline"
-                disabled={result.page >= result.pages}
-                onClick={() => setQuery({ ...query, page: result.page + 1 })}
-              >
-                صفحه بعد
-              </Button>
-            </div>
-          </nav>
-        </>
-      )}
       <Dialog
         open={Boolean(offerForm)}
         onOpenChange={(open) => {
