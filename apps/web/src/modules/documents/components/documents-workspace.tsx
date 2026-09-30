@@ -11,6 +11,7 @@ import {
   ChevronRight,
   ClockAlert,
   Copy,
+  Eye,
   FileLock2,
   Files,
   FileSearch,
@@ -268,6 +269,54 @@ function Metric({
         </div>
       </div>
     </Card>
+  );
+}
+
+function DocumentRecordActions({
+  document,
+  onDelete,
+  onEdit,
+  onView,
+}: {
+  document: DocumentListItemV1;
+  onDelete: () => void;
+  onEdit: () => void;
+  onView: () => void;
+}) {
+  return (
+    <div className="flex shrink-0 items-center gap-2" dir="ltr">
+      <Button
+        aria-label={`حذف دائمی ${document.title}`}
+        disabled={!document.capabilities.permanentDelete}
+        onClick={onDelete}
+        size="icon"
+        title="حذف دائمی"
+        variant="destructive"
+      >
+        <Trash2 aria-hidden="true" className="size-4" />
+      </Button>
+      <Button
+        aria-label={`ویرایش ${document.title}`}
+        className="border-sky-200 bg-white text-slate-800 hover:bg-sky-50 dark:border-sky-700 dark:bg-slate-900 dark:text-slate-100"
+        disabled={!document.capabilities.editMetadata}
+        onClick={onEdit}
+        size="icon"
+        title="ویرایش"
+        variant="outline"
+      >
+        <Pencil aria-hidden="true" className="size-4" />
+      </Button>
+      <Button
+        aria-label={`مشاهده ${document.title}`}
+        className="border-sky-200 bg-white text-slate-800 hover:bg-sky-50 dark:border-sky-700 dark:bg-slate-900 dark:text-slate-100"
+        onClick={onView}
+        size="icon"
+        title="مشاهده"
+        variant="outline"
+      >
+        <Eye aria-hidden="true" className="size-4" />
+      </Button>
+    </div>
   );
 }
 
@@ -1025,16 +1074,6 @@ export function DocumentsWorkspace() {
                   <td className="px-3 py-4">
                     <div className="flex items-center gap-1">
                       <Button
-                        aria-label={`ویرایش ${document.title}`}
-                        disabled={!document.capabilities.editMetadata}
-                        onClick={() => void openEdit(document)}
-                        size="icon"
-                        title="ویرایش"
-                        variant="ghost"
-                      >
-                        <Pencil aria-hidden="true" className="size-4" />
-                      </Button>
-                      <Button
                         aria-label={
                           document.isIncomplete
                             ? `علامت‌گذاری ${document.title} به‌عنوان کامل`
@@ -1097,17 +1136,12 @@ export function DocumentsWorkspace() {
                           <Archive aria-hidden="true" className="size-4" />
                         )}
                       </Button>
-                      <Button
-                        aria-label={`حذف دائمی ${document.title}`}
-                        className="text-red-600 hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-950/30"
-                        disabled={!document.capabilities.permanentDelete}
-                        onClick={() => openDelete(document)}
-                        size="icon"
-                        title="حذف دائمی"
-                        variant="ghost"
-                      >
-                        <Trash2 aria-hidden="true" className="size-4" />
-                      </Button>
+                      <DocumentRecordActions
+                        document={document}
+                        onDelete={() => openDelete(document)}
+                        onEdit={() => void openEdit(document)}
+                        onView={() => void openDetail(document.id)}
+                      />
                     </div>
                   </td>
                 </tr>
@@ -1638,29 +1672,12 @@ export function DocumentsWorkspace() {
                         )}
                       </p>
                     </div>
-                    <div className="flex shrink-0 gap-1">
-                      <Button
-                        aria-label={`ویرایش ${item.title}`}
-                        disabled={!item.capabilities.editMetadata}
-                        onClick={() => void openEdit(item)}
-                        size="icon"
-                        title="ویرایش"
-                        variant="ghost"
-                      >
-                        <Pencil aria-hidden="true" className="size-4" />
-                      </Button>
-                      <Button
-                        aria-label={`حذف دائمی ${item.title}`}
-                        className="text-red-600 hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-950/30"
-                        disabled={!item.capabilities.permanentDelete}
-                        onClick={() => openDelete(item)}
-                        size="icon"
-                        title="حذف دائمی"
-                        variant="ghost"
-                      >
-                        <Trash2 aria-hidden="true" className="size-4" />
-                      </Button>
-                    </div>
+                    <DocumentRecordActions
+                      document={item}
+                      onDelete={() => openDelete(item)}
+                      onEdit={() => void openEdit(item)}
+                      onView={() => void openDetail(item.id)}
+                    />
                   </div>
                   <div className="mt-4 flex gap-2">
                     <Input
@@ -1780,27 +1797,12 @@ export function DocumentsWorkspace() {
                           کامل
                         </Badge>
                       )}
-                      <Button
-                        aria-label={`ویرایش ${item.title}`}
-                        disabled={!item.capabilities.editMetadata}
-                        onClick={() => void openEdit(item)}
-                        size="icon"
-                        title="ویرایش"
-                        variant="ghost"
-                      >
-                        <Pencil aria-hidden="true" className="size-4" />
-                      </Button>
-                      <Button
-                        aria-label={`حذف دائمی ${item.title}`}
-                        className="text-red-600 hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-950/30"
-                        disabled={!item.capabilities.permanentDelete}
-                        onClick={() => openDelete(item)}
-                        size="icon"
-                        title="حذف دائمی"
-                        variant="ghost"
-                      >
-                        <Trash2 aria-hidden="true" className="size-4" />
-                      </Button>
+                      <DocumentRecordActions
+                        document={item}
+                        onDelete={() => openDelete(item)}
+                        onEdit={() => void openEdit(item)}
+                        onView={() => void openDetail(item.id)}
+                      />
                     </div>
                   ))}
                 </div>
@@ -1850,27 +1852,12 @@ export function DocumentsWorkspace() {
                           >
                             پیگیری
                           </button>
-                          <Button
-                            aria-label={`ویرایش ${item.title}`}
-                            disabled={!item.capabilities.editMetadata}
-                            onClick={() => void openEdit(item)}
-                            size="icon"
-                            title="ویرایش"
-                            variant="ghost"
-                          >
-                            <Pencil aria-hidden="true" className="size-4" />
-                          </Button>
-                          <Button
-                            aria-label={`حذف دائمی ${item.title}`}
-                            className="text-red-600 hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-950/30"
-                            disabled={!item.capabilities.permanentDelete}
-                            onClick={() => openDelete(item)}
-                            size="icon"
-                            title="حذف دائمی"
-                            variant="ghost"
-                          >
-                            <Trash2 aria-hidden="true" className="size-4" />
-                          </Button>
+                          <DocumentRecordActions
+                            document={item}
+                            onDelete={() => openDelete(item)}
+                            onEdit={() => void openEdit(item)}
+                            onView={() => void openDetail(item.id)}
+                          />
                         </div>
                       </div>
                     );
