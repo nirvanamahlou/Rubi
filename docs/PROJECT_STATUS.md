@@ -1,3 +1,7 @@
+## 2026-09-30 — CONTRACT-PDF-DOWNLOAD-0930 — PC-A — READY_FOR_REVIEW
+
+Reservations contract preview now offers an authenticated PDF download with loading/error feedback instead of opening a browser tab. Saved workflow/contract changes refresh the mounted preview; both preview and downloaded PDF continue using the latest authorized Sales output and recorded operational amendments. The agreed-total area is a labeled, light bordered field with readable LTR digits and separate currency units/rows, preserving exact registered amounts. 26 output/amendment/PDF-route/preview tests and scoped lint passed; Web typecheck/build checked before PR. A real synthetic PDF was rendered and visually checked on A4, including two currencies. No migration/API/dependency or real contract-data changes. Primary unrelated PDF edits preserved; owner authorized develop merge.
+
 ## 2026-09-30 — RESERVATION-MONTH-FILTER-0930 — PC-A — READY_FOR_REVIEW
 
 Reservations inbox now defaults to one previous calendar month through today's Tehran date on contract creation date, and shows both bounds in the date controls. Explicit user ranges remain authoritative; clearing filters restores this default. The existing regression test covers the lower boundary, old/future exclusions and custom history selection. 19 focused tests and scoped lint passed; Web typecheck/build verified after refreshing stale contracts outputs. No API, migration, dependencies or operational data changes. Owner authorized develop merge and existing local3100 update after CI.

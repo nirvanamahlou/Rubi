@@ -15,6 +15,12 @@ export function ContractPdfPreview({
   contractNumber: string;
 }) {
   const [attempt, setAttempt] = useState(0);
+  useEffect(() => {
+    const refresh = () => setAttempt((value) => value + 1);
+    window.addEventListener('reservation-workflow-changed', refresh);
+    return () =>
+      window.removeEventListener('reservation-workflow-changed', refresh);
+  }, []);
   if (!contractId)
     return (
       <p className={styles.error} role="alert">
@@ -44,6 +50,38 @@ function ContractPrintLoader({
   const [html, setHtml] = useState('');
   const [ready, setReady] = useState(false);
   const [error, setError] = useState('');
+  const [downloading, setDownloading] = useState(false);
+  async function download() {
+    setDownloading(true);
+    setError('');
+    try {
+      const response = await fetch(contractPdfPath(contractId), {
+        credentials: 'include',
+        cache: 'no-store',
+      });
+      if (
+        !response.ok ||
+        !response.headers.get('content-type')?.includes('application/pdf')
+      ) {
+        const body = (await response.json().catch(() => null)) as {
+          message?: string;
+        } | null;
+        throw new Error(body?.message || 'دانلود PDF قرارداد انجام نشد.');
+      }
+      const url = URL.createObjectURL(await response.blob());
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'contract-' + contractId + '.pdf';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 30000);
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : 'دانلود انجام نشد.');
+    } finally {
+      setDownloading(false);
+    }
+  }
 
   useEffect(() => {
     let active = true;
@@ -77,14 +115,14 @@ function ContractPrintLoader({
   return (
     <div className={styles.preview}>
       {!html && !error && <p role="status">در حال ساخت خروجی قرارداد…</p>}
-      <a
-        href={contractPdfPath(contractId)}
-        target="_blank"
-        rel="noreferrer"
+      <button
+        type="button"
+        onClick={() => void download()}
+        disabled={downloading}
         className={styles.download}
       >
-        باز کردن PDF مستقیم
-      </a>
+        {downloading ? 'در حال دانلود…' : 'دانلود PDF قرارداد'}
+      </button>
       {error && (
         <div className={styles.error} role="alert">
           <p>
