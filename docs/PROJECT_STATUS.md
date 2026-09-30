@@ -3965,3 +3965,6 @@ Owner-confirmed synthetic local catalog snapshot: 20 offers (11 visible, 9 alrea
 ## 2026-09-29 — TICKET-WEEKDAY-RETURN-WINDOW-0929 — PC-A — READY_FOR_REVIEW
 
 تعریف پرواز هفتگی با بازهٔ رفتِ شامل ابتدا و انتها، روزهای تیک‌خورده و عددِ فاصلهٔ برگشت پیاده شد؛ عدد تعداد تکرار نیست. برگشت‌ها خودکار ساخته و تاریخ‌های مشترک یک‌بار ثبت می‌شوند. Min/Max در دیتابیس و قرارداد عمومی ذخیره و در جست‌وجو پیش از صفحه‌بندی، رزرو فروش، انتخاب جفت قیمت و Load تور کنترل می‌شود. Migration فقط روی دیتابیس مصنوعی تست می‌شود؛ لوکال عملیاتی تغییر نکرده است. جزئیات و سازگاری: [TICKET-WEEKDAY-RETURN-WINDOW-0929](tasks/TICKET-WEEKDAY-RETURN-WINDOW-0929.md).
+## 2026-09-30 — DOCUMENTS-010-RECORD-ACTIONS-0930 — PC-B — READY_FOR_REVIEW
+
+اکشن‌های رکوردهای اسناد در نمای کلی، فهرست اصلی و اشتراک‌گذاری به دکمه‌های حذف قرمز با آیکون سفید، ویرایش و مشاهدهٔ کادردار تبدیل شدند. چشم، جزئیات سند را باز می‌کند و محدودیت‌های مجوز و مسیر پیگیری حفظ شده‌اند. ۹ تست هدفمند، lint فایل، Web typecheck، Prettier و Production Build با ۵۵ مسیر موفق‌اند. API/DB/Migration/Dependency تغییر نکرد. Branch `codex/pc-b-documents-record-actions-0930` از `origin/develop@a353bcab` برای PR به `develop` آماده است.
