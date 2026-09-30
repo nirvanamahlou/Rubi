@@ -59,7 +59,7 @@ describe('saved contract payment currency control', () => {
     expect(html).toContain('application/pdf,image/jpeg,image/png');
     expect(html).toContain('تأیید');
   });
-  it('renders a themed button combobox rather than an editable currency textbox', () => {
+  it('renders an inline searchable combobox for registered currencies', () => {
     const currencies = [
       { code: 'IRR', name: 'ریال', status: 'active' },
     ] as MasterDataRecord[];
@@ -72,8 +72,8 @@ describe('saved contract payment currency control', () => {
     );
     expect(html).toContain('role="combobox"');
     expect(html).toContain('aria-label="ارز پرداخت"');
-    expect(html).toContain('<button');
-    expect(html).not.toContain('<input');
+    expect(html).toMatch(/<input[^>]*role="combobox"/);
+    expect(html).toContain('data-search-select="true"');
   });
   it('disables the selector when registered active currencies are unavailable', () => {
     const html = renderToStaticMarkup(

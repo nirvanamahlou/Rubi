@@ -55,7 +55,6 @@ import {
   Card,
   EmptyState,
   ErrorState,
-  FilterBar,
   PageHeader,
   PaginationShell,
   Skeleton,
@@ -75,6 +74,7 @@ import {
 } from '../model/travel-reference-form';
 import { MasterDataDeleteButton } from './master-data-delete-button';
 import { MasterDataFilterActions } from './master-data-filter-actions';
+import { MasterDataFilterBar } from './master-data-filter-bar';
 import { getMasterDataDefinition } from '../model/catalog';
 import {
   MasterDataLiveForm,
@@ -597,6 +597,7 @@ export function MasterDataTravelServicesWorkspace() {
         aria-label={`مشاهده ${record.name}`}
         onClick={() => openProfile(record)}
         size="icon"
+        title={`مشاهده ${record.name}`}
         variant="outline"
       >
         <Eye className="size-4" />
@@ -608,6 +609,7 @@ export function MasterDataTravelServicesWorkspace() {
           setFormMode('edit');
         }}
         size="icon"
+        title={`ویرایش ${record.name}`}
         variant="outline"
       >
         <FilePenLine className="size-4" />
@@ -768,7 +770,6 @@ export function MasterDataTravelServicesWorkspace() {
             <ArrowRight className="size-4" /> همه بخش‌ها
           </Link>
         }
-        description={definition.description}
         title={definition.label}
       />
       <div className="flex w-full flex-wrap justify-end gap-2">
@@ -811,7 +812,7 @@ export function MasterDataTravelServicesWorkspace() {
         </nav>
       </Card>
       <MasterDataKpiGrid items={kpis} label={`شاخص‌های ${definition.label}`} />
-      <FilterBar className="grid sm:grid-cols-2 xl:grid-cols-[minmax(14rem,1fr)_12rem_14rem_auto]">
+      <MasterDataFilterBar>
         {columnFilterControls}
         <MasterDataDateRangeFilter
           idPrefix="travel-services-created"
@@ -882,7 +883,7 @@ export function MasterDataTravelServicesWorkspace() {
           }}
           onRefresh={() => void Promise.all([load(), loadSummary()])}
         />
-      </FilterBar>
+      </MasterDataFilterBar>
       {content}
       <div className="flex items-center justify-between gap-3">
         <PaginationShell
@@ -945,7 +946,6 @@ export function MasterDataTravelServicesWorkspace() {
       ) : null}
       {selected ? (
         <MasterDataProfileDialog
-          description="پروفایل از فهرست اصلی و بدون سکشن یا مسیر مستقل نمایش داده می‌شود."
           onOpenChange={setProfileOpen}
           open={profileOpen}
           title={`پروفایل ${definition.singularLabel}`}

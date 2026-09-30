@@ -1,4 +1,6 @@
 'use client';
+import { NativeSearchSelect } from '@/components/ui/native-search-select';
+
 import { useEffect, useRef, useState } from 'react';
 import {
   hotelNights,
@@ -348,7 +350,7 @@ export function ReservationHotelPurchase({
       {services.length ? (
         <>
           <FormField label="خدمت مورد خرید">
-            <select
+            <NativeSearchSelect
               className="h-11 w-full rounded-xl border border-input bg-surface px-3 text-sm"
               value={selectedService?.clientKey ?? ''}
               onChange={(event) => setSelectedServiceKey(event.target.value)}
@@ -359,7 +361,7 @@ export function ReservationHotelPurchase({
                   {service.titleSnapshot}
                 </option>
               ))}
-            </select>
+            </NativeSearchSelect>
           </FormField>
           {selectedService ? (
             <ServicePurchaseCard

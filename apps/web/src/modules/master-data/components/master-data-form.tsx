@@ -14,7 +14,6 @@ import {
   SelectValue,
 } from '@/components/ui/form-controls';
 import {
-  DialogDescription,
   DialogTitle,
   Dialog,
   DialogClose,
@@ -97,16 +96,12 @@ export function MasterDataForm({
     <Dialog onOpenChange={onOpenChange} open={open}>
       <DialogContent
         {...focusRestore}
+        aria-describedby={undefined}
         className="start-auto left-1/2 max-h-[calc(100dvh-2rem)] max-w-2xl overflow-y-auto p-6"
       >
         <DialogTitle>
           {modeLabels[mode]} {definition.singularLabel}
         </DialogTitle>
-        <DialogDescription>
-          {readonly
-            ? 'نمای فقط‌خواندنی نمونه طراحی؛ این رکورد در Database وجود ندارد.'
-            : 'Validation فعال است، اما submit هیچ داده‌ای را ذخیره نمی‌کند.'}
-        </DialogDescription>
 
         <div className="mt-4 flex flex-wrap gap-2">
           <Badge className="bg-amber-500/10 text-amber-700 dark:text-amber-300">

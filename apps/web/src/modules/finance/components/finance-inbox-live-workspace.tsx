@@ -1,3 +1,4 @@
+import { NativeSearchSelect } from '@/components/ui/native-search-select';
 import {
   ArrowDownLeft,
   ArrowUpRight,
@@ -19,6 +20,7 @@ import {
   WalletCards,
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
+import { FinanceHistoryPanel } from './finance-history-panel';
 import { ticketPurchaseTotal } from '../model/ticket-purchase-total';
 import type {
   FinanceInboxItemV1,
@@ -476,6 +478,7 @@ export function FinanceInboxLiveWorkspace() {
             : {}),
         });
       }
+      window.dispatchEvent(new Event('finance-transactions-changed'));
       setActionItem(null);
       setActionKind(null);
       setRevision((value) => value + 1);
@@ -918,6 +921,19 @@ export function FinanceInboxLiveWorkspace() {
                       {money(item)}
                     </p>
                   </div>
+                  {item.ticketPurchase ? (
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      تعداد صندلی:{' '}
+                      {item.ticketPurchase.seatCount?.toLocaleString('fa-IR') ??
+                        '—'}{' '}
+                      · قیمت تکی:{' '}
+                      {item.ticketPurchase.unitCost
+                        ? item.ticketPurchase.unitCost +
+                          ' ' +
+                          (item.amount?.currencyCode ?? '')
+                        : 'ثبت نشده'}
+                    </p>
+                  ) : null}
                   <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted-foreground">
                     <bdi className="break-all">
                       {item.contractReference ?? item.sourceReference}
@@ -974,6 +990,14 @@ export function FinanceInboxLiveWorkspace() {
                           selected.ticketPurchase.seatCount?.toLocaleString(
                             'fa-IR',
                           ) ?? 'در انتظار تعیین مالی',
+                        ],
+                        [
+                          'قیمت خرید هر صندلی',
+                          selected.ticketPurchase.unitCost
+                            ? selected.ticketPurchase.unitCost +
+                              ' ' +
+                              (selected.amount?.currencyCode ?? '')
+                            : 'ثبت نشده',
                         ],
                         [
                           'پرداخت‌های ثبت‌شده',
@@ -1048,6 +1072,14 @@ export function FinanceInboxLiveWorkspace() {
                   </div>
                 ) : null}
                 {selected.kind === 'PAYMENT_REQUEST' &&
+                selected.source === 'RESERVATIONS' ? (
+                  <FinanceHistoryPanel
+                    requestId={selected.sourceReference}
+                    source="RESERVATIONS"
+                    compact
+                  />
+                ) : null}
+                {selected.kind === 'PAYMENT_REQUEST' &&
                 selected.source === 'PURCHASES' &&
                 selected.ticketPurchase ? (
                   <div className="space-y-2 rounded-2xl border border-emerald-200 bg-emerald-50/50 p-3 dark:border-emerald-900 dark:bg-emerald-950/20">
@@ -1059,17 +1091,33 @@ export function FinanceInboxLiveWorkspace() {
                     </p>
                     <Button
                       className="w-full"
-                      onClick={() =>
-                        selected.amount
-                          ? openSupplierPayment(selected)
-                          : openTicketCost(selected)
-                      }
+                      variant="outline"
+                      disabled={selected.ticketPurchase.paymentCount > 0}
+                      onClick={() => openTicketCost(selected)}
                     >
-                      <WalletCards className="size-4" />
                       {selected.amount
-                        ? 'ثبت پرداخت خرید بلیت'
-                        : 'ثبت فاکتور خرید بلیت'}
+                        ? 'تکمیل / اصلاح تعداد و قیمت خرید هر صندلی'
+                        : 'ثبت تعداد و قیمت خرید هر صندلی'}
                     </Button>
+                    {selected.ticketPurchase.paymentCount > 0 ? (
+                      <p className="text-xs text-muted-foreground">
+                        قیمت خرید پس از شروع پرداخت قابل اصلاح نیست.
+                      </p>
+                    ) : null}
+                    {selected.amount ? (
+                      <Button
+                        className="w-full"
+                        onClick={() => openSupplierPayment(selected)}
+                      >
+                        <WalletCards className="size-4" />
+                        ثبت پرداخت خرید بلیت
+                      </Button>
+                    ) : null}
+                    <FinanceHistoryPanel
+                      requestId={selected.sourceReference}
+                      source="TICKET"
+                      compact
+                    />
                   </div>
                 ) : null}
               </div>
@@ -1196,7 +1244,7 @@ export function FinanceInboxLiveWorkspace() {
                 </label>
                 <label className="grid gap-2">
                   <span>روش پرداخت</span>
-                  <select
+                  <NativeSearchSelect
                     aria-label="روش پرداخت"
                     required
                     className="h-11 w-full rounded-xl border border-border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-primary/30"
@@ -1211,7 +1259,7 @@ export function FinanceInboxLiveWorkspace() {
                         {method.name}
                       </option>
                     ))}
-                  </select>
+                  </NativeSearchSelect>
                   {methodsError ? (
                     <span role="alert" className="text-sm text-destructive">
                       {methodsError}

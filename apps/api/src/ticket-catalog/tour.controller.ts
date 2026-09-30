@@ -1,10 +1,14 @@
 import {
   Body,
+  Delete,
   Controller,
   Get,
   Headers,
   Inject,
   Post,
+  Patch,
+  Param,
+  ParseUUIDPipe,
   Req,
   UseGuards,
 } from '@nestjs/common';
@@ -24,6 +28,14 @@ export class TourController {
   @Get('departures') departures(@Req() req: AuthenticatedRequest) {
     return this.service.departures(req.actor);
   }
+  @Delete('packages/:id') deletePackage(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() body: unknown,
+    @Req() req: AuthenticatedRequest,
+    @Headers('x-branch-id') branch?: string,
+  ) {
+    return this.service.deletePackage(id, body, req.actor, branch);
+  }
   @Post('packages') createPackage(
     @Body() body: unknown,
     @Req() req: AuthenticatedRequest,
@@ -31,6 +43,14 @@ export class TourController {
     @Headers('idempotency-key') key?: string,
   ) {
     return this.service.createPackage(body, req.actor, branch, key);
+  }
+  @Patch('packages/:id') updatePackage(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() body: unknown,
+    @Req() req: AuthenticatedRequest,
+    @Headers('x-branch-id') branch?: string,
+  ) {
+    return this.service.updatePackage(id, body, req.actor, branch);
   }
   @Post('departures') createDeparture(
     @Body() body: unknown,

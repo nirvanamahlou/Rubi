@@ -277,8 +277,87 @@ export class CustomerAffairsService {
     };
   }
 
-  async report(actor: AuthenticatedActor) {
-    return { data: await this.repository.report(actor.branchIds) };
+  async report(actor: AuthenticatedActor, query: ListQueryDto = {}) {
+    return { data: await this.repository.report(actor.branchIds, query) };
+  }
+
+  async exportRows(
+    kind: 'leads' | 'tickets',
+    query: ListQueryDto,
+    actor: AuthenticatedActor,
+  ) {
+    const branchIds = query.branchId
+      ? [branchScope(actor, query.branchId)]
+      : actor.branchIds;
+    const common = {
+      ...createdDateFilter(query),
+      branchId: { in: branchIds },
+      ...(query.priority ? { priority: query.priority } : {}),
+    };
+    const rows =
+      kind === 'leads'
+        ? await this.repository.exportLeads({
+            ...common,
+            ...(query.stage ? { stage: query.stage } : {}),
+            ...(query.overdueOnly
+              ? {
+                  stage: { in: ACTIVE_LEAD_STAGES },
+                  nextActionAt: { lt: new Date() },
+                }
+              : {}),
+            ...(query.search
+              ? {
+                  OR: [
+                    {
+                      trackingNumber: {
+                        contains: query.search,
+                        mode: 'insensitive',
+                      },
+                    },
+                    { title: { contains: query.search, mode: 'insensitive' } },
+                    {
+                      sourceReference: {
+                        contains: query.search,
+                        mode: 'insensitive',
+                      },
+                    },
+                  ],
+                }
+              : {}),
+          })
+        : await this.repository.exportTickets({
+            ...common,
+            ...(query.sourceSite
+              ? { siteOrigin: { site: { code: query.sourceSite } } }
+              : {}),
+            ...(query.status ? { status: query.status } : {}),
+            ...(query.overdueOnly
+              ? {
+                  status: { in: ACTIVE_TICKET_STATUSES },
+                  nextActionAt: { lt: new Date() },
+                }
+              : {}),
+            ...(query.search
+              ? {
+                  OR: [
+                    {
+                      trackingNumber: {
+                        contains: query.search,
+                        mode: 'insensitive',
+                      },
+                    },
+                    {
+                      subject: { contains: query.search, mode: 'insensitive' },
+                    },
+                  ],
+                }
+              : {}),
+          });
+    if (rows.length > 10000)
+      throw new BadRequestException(
+        'خروجی به ۱۰٬۰۰۰ پرونده محدود است؛ فیلترها را محدودتر کنید.',
+      );
+    return rows as Array<Record<string, unknown>>;
   }
 
   async audit(
@@ -433,15 +512,26 @@ export class CustomerAffairsService {
         error instanceof Prisma.PrismaClientKnownRequestError &&
         error.code === 'P2002'
       ) {
-        const existing = await this.repository.findLeadBySource(
-          branchId,
-          input.sourceReference,
-        );
-        if (existing)
+        const replay = await this.repository.findLeadCommand(actor.userId, key);
+        if (replay) {
+          if (replay.requestFingerprint !== hash) throw conflict();
           return {
-            data: await this.presentLead(existing, actor),
+            ...(await this.getLead(replay.resultEntityId, actor)),
             meta: { idempotentReplay: true },
           };
+        }
+        // A source reference identifies one intake, not every request from that
+        // source. Never report an unrelated existing lead as a successful create.
+        if (
+          await this.repository.findLeadBySource(
+            branchId,
+            input.sourceReference,
+          )
+        )
+          throw new ConflictException({
+            code: 'LEAD_SOURCE_REFERENCE_EXISTS',
+            message: 'شناسهٔ منبع درخواست قبلاً ثبت شده است.',
+          });
       }
       throw error;
     }
@@ -525,13 +615,24 @@ export class CustomerAffairsService {
     actor: AuthenticatedActor,
   ) {
     const current = await this.requireLead(id, actor);
+    if (
+      !['NEW', 'CONTACTED', 'QUALIFYING', 'QUALIFIED'].includes(current.stage)
+    )
+      throw new BadRequestException({
+        code: 'LEAD_QUALIFICATION_STAGE_INVALID',
+        message: 'ارزیابی آمادگی فروش در مرحله فعلی درخواست مجاز نیست.',
+      });
     const qualification = evaluateQualification(
       input,
       new Date().toISOString(),
     );
     const result = await this.repository.transaction(async (tx) => {
       const changed = await tx.customerAffairsLead.updateMany({
-        where: { id, version: input.expectedVersion },
+        where: {
+          id,
+          version: input.expectedVersion,
+          stage: { in: ['NEW', 'CONTACTED', 'QUALIFYING', 'QUALIFIED'] },
+        },
         data: {
           qualification: json({
             ...qualification,

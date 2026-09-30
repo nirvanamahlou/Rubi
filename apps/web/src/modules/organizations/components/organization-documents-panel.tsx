@@ -1,4 +1,5 @@
 'use client';
+import { NativeSearchSelect } from '@/components/ui/native-search-select';
 
 import type {
   DocumentListItemV1,
@@ -246,7 +247,7 @@ export function OrganizationDocumentsPanel({
           />
           <label className="space-y-1 text-sm">
             شعبه سند
-            <select
+            <NativeSearchSelect
               aria-label="شعبه سند"
               className="h-11 w-full rounded-xl border bg-surface px-3"
               value={branch}
@@ -262,11 +263,11 @@ export function OrganizationDocumentsPanel({
                   {item.name}
                 </option>
               ))}
-            </select>
+            </NativeSearchSelect>
           </label>
           <label className="space-y-1 text-sm">
             اعتبار زمانی
-            <select
+            <NativeSearchSelect
               aria-label="اعتبار زمانی اسناد"
               className="h-11 w-full rounded-xl border bg-surface px-3"
               value={validity}
@@ -281,7 +282,7 @@ export function OrganizationDocumentsPanel({
               <option value="EXPIRED">منقضی‌شده</option>
               <option value="VALID">معتبر</option>
               <option value="WITHOUT_EXPIRY">بدون انقضا</option>
-            </select>
+            </NativeSearchSelect>
           </label>
           <Button
             variant="outline"
@@ -524,7 +525,7 @@ function OrganizationDocumentUpload({
             </label>
             <label className="field">
               <span>نوع سند *</span>
-              <select
+              <NativeSearchSelect
                 required
                 value={values.documentTypeId}
                 onChange={(event) => {
@@ -538,11 +539,11 @@ function OrganizationDocumentUpload({
                     {item.name}
                   </option>
                 ))}
-              </select>
+              </NativeSearchSelect>
             </label>
             <label className="field">
               <span>دسته‌بندی *</span>
-              <select
+              <NativeSearchSelect
                 required
                 value={values.categoryId}
                 onChange={(event) =>
@@ -555,7 +556,7 @@ function OrganizationDocumentUpload({
                     {item.name}
                   </option>
                 ))}
-              </select>
+              </NativeSearchSelect>
             </label>
             <label className="field">
               <span>

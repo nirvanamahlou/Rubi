@@ -1,4 +1,5 @@
 'use client';
+import { NativeSearchSelect } from '@/components/ui/native-search-select';
 
 import type {
   LoginResponse,
@@ -559,7 +560,7 @@ export function TourPricingWorkspace() {
           <div className="grid max-w-4xl gap-3 sm:grid-cols-2">
             <label className="grid gap-2 text-sm font-bold">
               تور
-              <select
+              <NativeSearchSelect
                 aria-label="انتخاب تور برای قیمت‌گذاری"
                 className="h-11 rounded-xl border border-input bg-surface px-3 text-sm"
                 onChange={(event) => selectTourPackage(event.target.value)}
@@ -571,11 +572,11 @@ export function TourPricingWorkspace() {
                     {tourPackage.name}
                   </option>
                 ))}
-              </select>
+              </NativeSearchSelect>
             </label>
             <label className="grid gap-2 text-sm font-bold">
               نوبت تور
-              <select
+              <NativeSearchSelect
                 aria-label="انتخاب نوبت تور برای قیمت‌گذاری"
                 className="h-11 rounded-xl border border-input bg-surface px-3 text-sm"
                 disabled={!tourPackageId}
@@ -593,7 +594,7 @@ export function TourPricingWorkspace() {
                     {tour.remainingCapacity}
                   </option>
                 ))}
-              </select>
+              </NativeSearchSelect>
             </label>
           </div>
         ) : null}
@@ -633,7 +634,7 @@ export function TourPricingWorkspace() {
           <>
             <label className="grid max-w-2xl gap-2 text-sm font-bold">
               ثبت خرید / بازه
-              <select
+              <NativeSearchSelect
                 className="h-11 rounded-xl border border-input bg-surface px-3 text-sm"
                 onChange={(event) => {
                   const id = event.target.value;
@@ -652,7 +653,7 @@ export function TourPricingWorkspace() {
                     {item.rows.length} هتل
                   </option>
                 ))}
-              </select>
+              </NativeSearchSelect>
             </label>
             <Badge>
               {stayNights} شب اقامت · {batch?.rows.length ?? 0} هتل منتخب این
@@ -729,7 +730,7 @@ export function TourPricingWorkspace() {
                         })}
                         <td className="min-w-64 p-3">
                           <div className="flex gap-1">
-                            <select
+                            <NativeSearchSelect
                               aria-label={'جهت تغییر قیمت ' + row.hotelName}
                               className="h-9 rounded-lg border border-input bg-surface px-1"
                               onChange={(event) =>
@@ -746,8 +747,8 @@ export function TourPricingWorkspace() {
                             >
                               <option value="increase">افزایش</option>
                               <option value="decrease">کاهش</option>
-                            </select>
-                            <select
+                            </NativeSearchSelect>
+                            <NativeSearchSelect
                               aria-label={'نوع تغییر قیمت ' + row.hotelName}
                               className="h-9 rounded-lg border border-input bg-surface px-1"
                               onChange={(event) =>
@@ -766,7 +767,7 @@ export function TourPricingWorkspace() {
                               <option value="fixed">
                                 {row.currencyCode ?? batch.currencyCode}
                               </option>
-                            </select>
+                            </NativeSearchSelect>
                             {adjustment.mode === 'fixed' ? (
                               <MoneyInput
                                 aria-label={'مقدار تغییر قیمت ' + row.hotelName}
@@ -875,7 +876,7 @@ export function TourPricingWorkspace() {
                 placeholder="0"
                 value={adultFlight}
               />
-              <select
+              <NativeSearchSelect
                 aria-label="ارز قیمت فروش پرواز بزرگسال"
                 className="h-11 rounded-xl border border-input bg-surface px-3"
                 value={adultFlightCurrency}
@@ -884,7 +885,7 @@ export function TourPricingWorkspace() {
                 {currencyOptions.map((code) => (
                   <option key={code}>{code}</option>
                 ))}
-              </select>
+              </NativeSearchSelect>
             </div>
           </label>
           <label className="grid gap-2 text-sm font-bold">
@@ -896,7 +897,7 @@ export function TourPricingWorkspace() {
                 placeholder="0"
                 value={childFlight}
               />
-              <select
+              <NativeSearchSelect
                 aria-label="ارز قیمت فروش پرواز کودک"
                 className="h-11 rounded-xl border border-input bg-surface px-3"
                 value={childFlightCurrency}
@@ -905,7 +906,7 @@ export function TourPricingWorkspace() {
                 {currencyOptions.map((code) => (
                   <option key={code}>{code}</option>
                 ))}
-              </select>
+              </NativeSearchSelect>
             </div>
           </label>
           <label className="grid gap-2 text-sm font-bold">
@@ -917,7 +918,7 @@ export function TourPricingWorkspace() {
                 placeholder="0"
                 value={businessIncrease}
               />
-              <select
+              <NativeSearchSelect
                 aria-label="ارز افزایش نرخ بیزینس"
                 className="h-11 rounded-xl border border-input bg-surface px-3"
                 value={businessCurrency}
@@ -926,13 +927,13 @@ export function TourPricingWorkspace() {
                 {currencyOptions.map((code) => (
                   <option key={code}>{code}</option>
                 ))}
-              </select>
+              </NativeSearchSelect>
             </div>
           </label>
           <div className="grid gap-2 text-sm font-bold">
             <span>کمیسیون</span>
             <div className="flex gap-2">
-              <select
+              <NativeSearchSelect
                 aria-label="نوع کمیسیون"
                 className="h-11 rounded-xl border border-input bg-surface px-3"
                 value={commissionMode}
@@ -943,7 +944,7 @@ export function TourPricingWorkspace() {
               >
                 <option value="percent">درصدی</option>
                 <option value="fixed">مبلغ ثابت</option>
-              </select>
+              </NativeSearchSelect>
               {commissionMode === 'fixed' ? (
                 <MoneyInput
                   aria-label="مبلغ ثابت کمیسیون"
@@ -963,7 +964,7 @@ export function TourPricingWorkspace() {
                 />
               )}
               {commissionMode === 'fixed' ? (
-                <select
+                <NativeSearchSelect
                   aria-label="ارز مبلغ ثابت کمیسیون"
                   className="h-11 rounded-xl border border-input bg-surface px-3"
                   value={commissionCurrency}
@@ -974,7 +975,7 @@ export function TourPricingWorkspace() {
                   {currencyOptions.map((code) => (
                     <option key={code}>{code}</option>
                   ))}
-                </select>
+                </NativeSearchSelect>
               ) : (
                 <span className="flex h-11 items-center rounded-xl border border-input px-3">
                   ٪
@@ -1078,7 +1079,7 @@ export function TourPricingWorkspace() {
           </div>
           <label className="grid max-w-xl gap-2 text-sm font-bold">
             نسخهٔ قیمت
-            <select
+            <NativeSearchSelect
               className="h-11 rounded-xl border border-input bg-surface px-3"
               value={publication?.id ?? ''}
               onChange={(event) => setPublicationId(event.target.value)}
@@ -1089,7 +1090,7 @@ export function TourPricingWorkspace() {
                   {new Date(item.publishedAt).toLocaleString('fa-IR')}
                 </option>
               ))}
-            </select>
+            </NativeSearchSelect>
           </label>
           {publication ? (
             <>

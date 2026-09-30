@@ -280,6 +280,7 @@ export class ReservationManifestService {
     if (!actor.permissions.includes('reservations.read'))
       throw new ForbiddenException('مجوز مشاهده بلیط‌های MANIFEST وجود ندارد.');
     const cards: ReservationManifestTicketCardV1[] = [];
+    const approvalCache = new Map<string, boolean>();
     for (const group of await this.ticketGroups(input, actor)) {
       const ticket = group.ticket;
       const [origin, destination, selection] = await Promise.all([
@@ -314,6 +315,20 @@ export class ReservationManifestService {
                 : 'قالب منیفست انتخاب‌شده در دسترس نیست.',
           })),
       ]);
+      const approvedRows = [];
+      for (const row of group.rows) {
+        if (!approvalCache.has(row.contractId))
+          approvalCache.set(
+            row.contractId,
+            await this.financiallyApproved(row.contractId),
+          );
+        if (approvalCache.get(row.contractId)) approvedRows.push(row);
+      }
+      const unavailableReason =
+        selection.reason ||
+        (!approvedRows.length
+          ? 'هیچ قراردادی برای این بلیط تأیید مالی ندارد.'
+          : null);
       const template = selection.template;
       cards.push({
         offerId: ticket.offerId,
@@ -327,25 +342,34 @@ export class ReservationManifestService {
           ticket.destinationName || destination.englishName || destination.name,
         departureAt: ticket.departureAt,
         arrivalAt: ticket.arrivalAt,
-        contractCount: group.rows.length,
-        passengerCount: group.rows.reduce((sum, row) => {
+        contractCount: approvedRows.length,
+        passengerCount: approvedRows.reduce((sum, row) => {
           const snapshot =
             row.snapshot as unknown as ReservationIntakeV1['snapshot'];
           return sum + this.ticketPassengerIds(snapshot, ticket.offerId).length;
         }, 0),
-        template: template
-          ? {
-              id: template.id,
-              name: template.name,
-              versionNumber: template.versionNumber,
-            }
-          : selection.reason
-            ? null
+        template: unavailableReason
+          ? null
+          : template
+            ? {
+                id: template.id,
+                name: template.name,
+                versionNumber: template.versionNumber,
+              }
             : { id: 'default', name: 'پیش‌فرض', versionNumber: 1 },
-        unavailableReason: selection.reason,
+        unavailableReason,
       });
     }
     return cards;
+  }
+
+  private async financiallyApproved(contractId: string) {
+    const approval = await this.delivery.readCustomerContract(contractId);
+    return (
+      approval.approved === true &&
+      (!approval.exceptionExpiresAt ||
+        Date.parse(approval.exceptionExpiresAt) > Date.now())
+    );
   }
 
   private requirePermissions(actor: AuthenticatedActor) {
@@ -601,9 +625,7 @@ export class ReservationManifestService {
     const selected = [];
     let skippedFinanceCount = existing?.skippedFinanceCount ?? 0;
     for (const row of candidates) {
-      if (
-        !(await this.delivery.readCustomerContract(row.contractId)).approved
-      ) {
+      if (!(await this.financiallyApproved(row.contractId))) {
         skippedFinanceCount += 1;
         continue;
       }

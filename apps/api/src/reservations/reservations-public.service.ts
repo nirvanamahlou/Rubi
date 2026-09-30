@@ -210,6 +210,62 @@ export class ReservationsPublicService {
     if (!row) throw new NotFoundException('درخواست در دسترس نیست.');
     return present(row);
   }
+  /** Branch-scoped descriptors, including replaced purchases with payment evidence. */
+  async financeHistoryPurchases(
+    branchIds: readonly string[],
+    requestId?: string,
+  ) {
+    return this.database.client.reservationServicePurchase.findMany({
+      where: {
+        intake: { branchId: { in: [...branchIds] } },
+        ...(requestId ? { id: requestId } : {}),
+      },
+      select: {
+        id: true,
+        currencyCode: true,
+        serviceTitleSnapshot: true,
+        supplierNameSnapshot: true,
+      },
+    });
+  }
+
+  /** Historical fallback from this module's immutable mutation revisions. */
+  async lastRecordedOperation(id: string, branchIds: readonly string[]) {
+    const row = await this.database.client.reservationIntake.findFirst({
+      where: { id, branchId: { in: [...branchIds] } },
+      include: {
+        workflowRevisions: { orderBy: { version: 'desc' }, take: 1 },
+        arrangements: { orderBy: { version: 'desc' }, take: 1 },
+        hotelPurchases: { orderBy: { createdAt: 'desc' }, take: 1 },
+        servicePurchases: { orderBy: { createdAt: 'desc' }, take: 1 },
+      },
+    });
+    if (!row) throw new NotFoundException();
+    const candidates = [
+      ...row.workflowRevisions.map((r) => ({
+        actorUserId: r.actorUserId,
+        occurredAt: r.createdAt,
+      })),
+      ...row.arrangements.map((r) => ({
+        actorUserId: r.updatedByUserId,
+        occurredAt: r.updatedAt,
+      })),
+      ...row.hotelPurchases.map((r) => ({
+        actorUserId: r.actorUserId,
+        occurredAt: r.createdAt,
+      })),
+      ...row.servicePurchases.map((r) => ({
+        actorUserId: r.actorUserId,
+        occurredAt: r.createdAt,
+      })),
+    ];
+    return (
+      candidates.sort(
+        (a, b) => b.occurredAt.getTime() - a.occurredAt.getTime(),
+      )[0] ?? null
+    );
+  }
+
   async list(
     branchIds: readonly string[],
     options: {

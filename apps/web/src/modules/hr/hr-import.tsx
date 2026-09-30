@@ -1,4 +1,6 @@
 'use client';
+import { NativeSearchSelect } from '@/components/ui/native-search-select';
+
 import { useState } from 'react';
 import { getHrResource, type HrRecordDto } from '@nora/contracts';
 import {
@@ -178,7 +180,7 @@ export function HrImport({
         <div className={ui.actions}>
           <label className={ui.field}>
             شرکت / شعبه *
-            <select
+            <NativeSearchSelect
               value={companyId}
               disabled={busy}
               onChange={(event) => {
@@ -192,7 +194,7 @@ export function HrImport({
                   {item.name}
                 </option>
               ))}
-            </select>
+            </NativeSearchSelect>
           </label>
           <HrButton
             onClick={async () => {

@@ -151,7 +151,9 @@ describe('MANIFEST ticket cards', () => {
       {} as never,
       {} as never,
       directory as never,
-      {} as never,
+      {
+        readCustomerContract: vi.fn().mockResolvedValue({ approved: true }),
+      } as never,
       {
         client: {
           reservationIntake: {

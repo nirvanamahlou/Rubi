@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import type {
   DocumentAccessPurposeCode,
+  DocumentConfidentialityCode,
   DocumentDomainCode,
   DocumentListQueryV1,
 } from '@nora/contracts';
@@ -183,6 +184,7 @@ export class DocumentsRepository {
     versionIds: readonly string[],
     organizationId: string,
     branchId: string,
+    includeSensitive = false,
   ) {
     const rows = await this.database.client.documentVersion.findMany({
       where: {
@@ -190,6 +192,13 @@ export class DocumentsRepository {
         document: {
           branchId,
           archiveStatus: { not: 'DELETED' },
+          ...(!includeSensitive
+            ? {
+                confidentiality: {
+                  notIn: ['CONFIDENTIAL', 'RESTRICTED'],
+                },
+              }
+            : {}),
           documentType: { domain: 'ORGANIZATION' },
           relations: {
             some: {
@@ -220,11 +229,19 @@ export class DocumentsRepository {
     branchIds: readonly string[],
     domains: readonly DocumentDomainCode[],
     actorUserId: string,
+    includeSensitive = false,
   ) {
     if (query.domain && !domains.includes(query.domain)) {
       return { rows: [] as DocumentListRow[], total: 0 };
     }
     if (query.branchId && !branchIds.includes(query.branchId)) {
+      return { rows: [] as DocumentListRow[], total: 0 };
+    }
+    if (
+      !includeSensitive &&
+      (query.confidentiality === 'CONFIDENTIAL' ||
+        query.confidentiality === 'RESTRICTED')
+    ) {
       return { rows: [] as DocumentListRow[], total: 0 };
     }
     const now = new Date();
@@ -241,6 +258,13 @@ export class DocumentsRepository {
               : undefined;
     const where: Prisma.DocumentWhereInput = {
       branchId: query.branchId ?? { in: [...branchIds] },
+      // Feedback attachments are visible in the catalogue only to their
+      // owner. This includes older records with inconsistent confidentiality.
+      NOT: {
+        sourceModule: 'WORKBENCH',
+        sourceEntityType: 'WorkbenchFeedback',
+        ownerUserId: { not: actorUserId },
+      },
       documentType: {
         domain: { in: query.domain ? [query.domain] : [...domains] },
         ...(query.typeCode ? { code: query.typeCode } : {}),
@@ -334,6 +358,17 @@ export class DocumentsRepository {
           }
         : {}),
     };
+    if (!includeSensitive) {
+      const existingConditions = where.AND
+        ? Array.isArray(where.AND)
+          ? where.AND
+          : [where.AND]
+        : [];
+      where.AND = [
+        ...existingConditions,
+        { confidentiality: { notIn: ['CONFIDENTIAL', 'RESTRICTED'] } },
+      ];
+    }
     const direction = query.sortDirection;
     const orderBy: Prisma.DocumentOrderByWithRelationInput =
       query.sortBy === 'sizeBytes'
@@ -352,12 +387,29 @@ export class DocumentsRepository {
     return { rows, total };
   }
 
-  findDetail(id: string, branchIds: readonly string[]) {
+  findDetail(
+    id: string,
+    branchIds: readonly string[],
+    includeSensitive = true,
+    actorUserId?: string,
+  ) {
     return this.database.client.document.findFirst({
       where: {
         id,
         branchId: { in: [...branchIds] },
         archiveStatus: { not: 'DELETED' },
+        ...(!includeSensitive
+          ? { confidentiality: { notIn: ['CONFIDENTIAL', 'RESTRICTED'] } }
+          : {}),
+        ...(actorUserId
+          ? {
+              NOT: {
+                sourceModule: 'WORKBENCH',
+                sourceEntityType: 'WorkbenchFeedback',
+                ownerUserId: { not: actorUserId },
+              },
+            }
+          : {}),
       },
       include: documentDetailInclude,
     });
@@ -386,6 +438,7 @@ export class DocumentsRepository {
     sourceEntityId: string;
     branchId: string;
     ownerUserId: string;
+    confidentiality?: DocumentConfidentialityCode;
   }) {
     if (!input.documentIds.length) return Promise.resolve([]);
     return this.database.client.document.findMany({
@@ -393,6 +446,9 @@ export class DocumentsRepository {
         id: { in: [...input.documentIds] },
         branchId: input.branchId,
         ownerUserId: input.ownerUserId,
+        ...(input.confidentiality
+          ? { confidentiality: input.confidentiality }
+          : {}),
         sourceModule: input.sourceModule,
         sourceEntityType: input.sourceEntityType,
         sourceEntityId: input.sourceEntityId,
@@ -411,6 +467,8 @@ export class DocumentsRepository {
     userId: string,
     branchIds: readonly string[],
     domains: readonly string[],
+    includeSensitive = true,
+    actorUserId?: string,
   ) {
     return this.database.client.document.findMany({
       where: {
@@ -419,6 +477,18 @@ export class DocumentsRepository {
         deletedAt: null,
         documentType: { domain: { in: [...domains] as never[] } },
         favorites: { some: { userId } },
+        ...(!includeSensitive
+          ? { confidentiality: { notIn: ['CONFIDENTIAL', 'RESTRICTED'] } }
+          : {}),
+        ...(actorUserId
+          ? {
+              NOT: {
+                sourceModule: 'WORKBENCH',
+                sourceEntityType: 'WorkbenchFeedback',
+                ownerUserId: { not: actorUserId },
+              },
+            }
+          : {}),
       },
       include: documentListInclude,
       orderBy: [{ updatedAt: 'desc' }, { id: 'asc' }],
@@ -440,12 +510,29 @@ export class DocumentsRepository {
     }
   }
 
-  findDetails(ids: readonly string[], branchIds: readonly string[]) {
+  findDetails(
+    ids: readonly string[],
+    branchIds: readonly string[],
+    includeSensitive = true,
+    actorUserId?: string,
+  ) {
     return this.database.client.document.findMany({
       where: {
         id: { in: [...ids] },
         branchId: { in: [...branchIds] },
         archiveStatus: { not: 'DELETED' },
+        ...(!includeSensitive
+          ? { confidentiality: { notIn: ['CONFIDENTIAL', 'RESTRICTED'] } }
+          : {}),
+        ...(actorUserId
+          ? {
+              NOT: {
+                sourceModule: 'WORKBENCH',
+                sourceEntityType: 'WorkbenchFeedback',
+                ownerUserId: { not: actorUserId },
+              },
+            }
+          : {}),
       },
       include: documentDetailInclude,
       orderBy: { id: 'asc' },

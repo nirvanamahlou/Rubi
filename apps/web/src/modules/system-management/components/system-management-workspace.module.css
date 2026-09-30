@@ -33,7 +33,7 @@
   padding: 17px;
   border-radius: 16px;
   color: var(--navy);
-  background: #fff;
+  background: var(--surface);
 }
 .mark {
   display: grid;
@@ -115,8 +115,8 @@
   height: 37px;
   place-items: center;
   border-radius: 12px;
-  color: #174778;
-  background: #e5effc;
+  color: var(--primary);
+  background: var(--secondary);
   font-weight: 700;
 }
 .sideFoot small {
@@ -133,7 +133,7 @@
   gap: 20px;
   padding: 0 32px;
   border-bottom: 1px solid var(--line);
-  background: #fff;
+  background: var(--surface);
 }
 .context {
   display: flex;
@@ -145,7 +145,7 @@
   padding: 8px 12px;
   border: 1px solid var(--line);
   border-radius: 10px;
-  background: #fff;
+  background: var(--surface);
 }
 .iconBox {
   display: grid;
@@ -154,7 +154,7 @@
   place-items: center;
   border-radius: 10px;
   color: var(--blue);
-  background: #f1f7ff;
+  background: var(--secondary);
 }
 .main {
   max-width: 1640px;

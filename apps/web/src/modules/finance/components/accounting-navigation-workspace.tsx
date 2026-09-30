@@ -17,7 +17,12 @@ import {
   ScrollText,
   type LucideIcon,
 } from 'lucide-react';
-import Link from 'next/link';
+import Link from '@/components/access-link';
+import {
+  useRouteAccess,
+  useAccessPermissions,
+} from '@/modules/iam/access-context';
+import { hasManagedAccess } from '@nora/contracts';
 import { usePathname } from 'next/navigation';
 import { useMemo, useState } from 'react';
 
@@ -114,6 +119,8 @@ function AccountingSecondaryNavigation({
   onToggle: () => void;
 }) {
   const pathname = usePathname();
+  const allowed = useRouteAccess();
+  const permissions = useAccessPermissions();
   const [closedGroups, setClosedGroups] = useState<string[]>(() =>
     accountingNavigationGroups.map((group) => group.id),
   );
@@ -156,60 +163,67 @@ function AccountingSecondaryNavigation({
       </div>
 
       <nav aria-label="منوی داخلی حسابداری" className="space-y-2 p-2.5">
-        {accountingNavigationGroups.map((group) => {
-          const GroupIcon = group.icon;
-          const groupClosed = closedGroups.includes(group.id);
-          return (
-            <section className="min-w-0" key={group.id}>
-              <button
-                aria-expanded={!groupClosed}
-                className={cn(
-                  'flex min-h-11 w-full items-center gap-2.5 rounded-xl px-3 text-start text-sm font-black outline-none transition hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring',
-                  collapsed && 'justify-center px-0',
-                )}
-                onClick={() => toggleGroup(group.id)}
-                title={collapsed ? group.title : undefined}
-                type="button"
-              >
-                <GroupIcon className="size-[18px] shrink-0 text-primary" />
-                {!collapsed ? (
-                  <>
-                    <span className="min-w-0 flex-1">{group.title}</span>
-                    {groupClosed ? (
-                      <ChevronLeft className="size-4 shrink-0" />
-                    ) : (
-                      <ChevronDown className="size-4 shrink-0" />
-                    )}
-                  </>
+        {accountingNavigationGroups
+          .filter(
+            (group) =>
+              !permissions ||
+              !hasManagedAccess(permissions) ||
+              group.items.some((item) => allowed(item.href)),
+          )
+          .map((group) => {
+            const GroupIcon = group.icon;
+            const groupClosed = closedGroups.includes(group.id);
+            return (
+              <section className="min-w-0" key={group.id}>
+                <button
+                  aria-expanded={!groupClosed}
+                  className={cn(
+                    'flex min-h-11 w-full items-center gap-2.5 rounded-xl px-3 text-start text-sm font-black outline-none transition hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring',
+                    collapsed && 'justify-center px-0',
+                  )}
+                  onClick={() => toggleGroup(group.id)}
+                  title={collapsed ? group.title : undefined}
+                  type="button"
+                >
+                  <GroupIcon className="size-[18px] shrink-0 text-primary" />
+                  {!collapsed ? (
+                    <>
+                      <span className="min-w-0 flex-1">{group.title}</span>
+                      {groupClosed ? (
+                        <ChevronLeft className="size-4 shrink-0" />
+                      ) : (
+                        <ChevronDown className="size-4 shrink-0" />
+                      )}
+                    </>
+                  ) : null}
+                </button>
+                {!collapsed && !groupClosed && group.items.length > 0 ? (
+                  <div className="mt-1 space-y-1 border-s border-border ps-2">
+                    {group.items.map((item) => {
+                      const ItemIcon = item.icon;
+                      const active = pathname === item.href;
+                      return (
+                        <Link
+                          aria-current={active ? 'page' : undefined}
+                          className={cn(
+                            'flex min-h-10 items-center gap-2 rounded-lg px-3 text-xs font-semibold outline-none transition focus-visible:ring-2 focus-visible:ring-ring',
+                            active
+                              ? 'bg-primary/10 text-primary'
+                              : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+                          )}
+                          href={item.href}
+                          key={item.href}
+                        >
+                          <ItemIcon className="size-4 shrink-0" />
+                          <span>{item.title}</span>
+                        </Link>
+                      );
+                    })}
+                  </div>
                 ) : null}
-              </button>
-              {!collapsed && !groupClosed && group.items.length > 0 ? (
-                <div className="mt-1 space-y-1 border-s border-border ps-2">
-                  {group.items.map((item) => {
-                    const ItemIcon = item.icon;
-                    const active = pathname === item.href;
-                    return (
-                      <Link
-                        aria-current={active ? 'page' : undefined}
-                        className={cn(
-                          'flex min-h-10 items-center gap-2 rounded-lg px-3 text-xs font-semibold outline-none transition focus-visible:ring-2 focus-visible:ring-ring',
-                          active
-                            ? 'bg-primary/10 text-primary'
-                            : 'text-muted-foreground hover:bg-muted hover:text-foreground',
-                        )}
-                        href={item.href}
-                        key={item.href}
-                      >
-                        <ItemIcon className="size-4 shrink-0" />
-                        <span>{item.title}</span>
-                      </Link>
-                    );
-                  })}
-                </div>
-              ) : null}
-            </section>
-          );
-        })}
+              </section>
+            );
+          })}
       </nav>
     </aside>
   );

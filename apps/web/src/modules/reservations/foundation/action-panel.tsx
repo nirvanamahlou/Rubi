@@ -20,6 +20,7 @@ import { TravelWorkflowForm } from '../components/travel-workflow-form';
 import type { RequestView } from './model';
 import { statusLabels } from './model';
 import styles from './action-panel.module.css';
+import { ReservationResponsibility } from './responsibility';
 
 export const contractActionGroups = [
   {
@@ -139,17 +140,22 @@ export function ContractActionPanel({
   return (
     <aside className={styles.panel} aria-label="عملیات قرارداد انتخاب‌شده">
       <div className={styles.selection} aria-live="polite">
-        <span>قرارداد انتخاب‌شده</span>
-        <strong>
-          {request ? request.contractNumber : 'قراردادی انتخاب نشده'}
-        </strong>
-        <span>
-          {request
-            ? request.customerName !== '—'
-              ? request.customerName
-              : (request.passengerNames[0] ?? 'نام مسافر دریافت نشده')
-            : 'روی یک قرارداد از فهرست کلیک کنید.'}
-        </span>
+        <div className={styles.selectionIdentity}>
+          <span>قرارداد انتخاب‌شده</span>
+          <strong>
+            {request ? request.contractNumber : 'قراردادی انتخاب نشده'}
+          </strong>
+          <span>
+            {request
+              ? request.customerName !== '—'
+                ? request.customerName
+                : (request.passengerNames[0] ?? 'نام مسافر دریافت نشده')
+              : 'روی یک قرارداد از فهرست کلیک کنید.'}
+          </span>
+        </div>
+        {request && (
+          <ReservationResponsibility key={request.id} id={request.id} />
+        )}
       </div>
       <div className={styles.groups}>
         {contractActionGroups.map((group, groupIndex) => (

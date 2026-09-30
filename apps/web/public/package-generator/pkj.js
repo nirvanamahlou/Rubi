@@ -17,6 +17,30 @@ function fmtInfo(format){
  const currency=format.includes('€')?'€':(/\$\$|"\$"|\\\$|^\$/.test(format)?'$':format.includes('تومان')?'تومان':format.includes('ریال')?'ریال':'');
  const clean=format.replace(/\[[^\]]*\]|"[^"]*"|\\./g,'');const m=clean.match(/\.(0+)/);return {currency,decimals:m?m[1].length:/[0#]/.test(clean)?0:2};
 }
+function thailandSaleColumns(headers,cols){
+ const find=f=>headers.find(h=>f(h.key))?.col;
+ const last=f=>headers.filter(h=>f(h.key)).at(-1)?.col;
+ const saleDouble=last(k=>['dble','double','doublerate'].includes(k));
+ const saleSingle=last(k=>['single','singlerate'].includes(k));
+ if(saleDouble){
+  if(!saleSingle)throw Error('ستون‌های قیمت نهایی یک‌تخته و دوتخته در اکسل تایلند کامل نیستند.');
+  const finalHeaders=headers.slice(headers.findIndex(h=>h.col===saleDouble)+1);
+  return {
+   double:saleDouble,single:saleSingle,
+   child:finalHeaders.find(h=>['cwb','chdwb','chdwbed'].includes(h.key))?.col,
+   small:finalHeaders.find(h=>['cnb','chdnobed','chdwithoutbed'].includes(h.key))?.col
+  };
+ }
+ const genericDouble=last(k=>k==='dbl'||k.startsWith('dbl'));
+ const genericSingle=last(k=>k==='sgl'||k.startsWith('sgl'));
+ if(saleSingle&&(!genericDouble||!genericSingle))throw Error('ستون‌های قیمت نهایی یک‌تخته و دوتخته در اکسل تایلند کامل نیستند.');
+ return {
+  double:genericDouble||find(k=>k==='dbl')||cols.double,
+  single:genericSingle||cols.single,
+  child:last(k=>['wb','cwb','chd'].includes(k))||cols.child,
+  small:last(k=>['nobed','nobedhkt','cnb'].includes(k))||cols.small
+ };
+}
 function parse(bytes,options={}){
  const sheets=metadata(bytes),name=options.sheetName||choose(sheets);const selected=sheets.find(s=>s.name===name);if(!selected)throw Error('شیت خروجی را از فهرست انتخاب کن.');
  const z=extract(bytes,[selected.path,'xl/sharedStrings.xml','xl/styles.xml']);
@@ -28,27 +52,13 @@ function parse(bytes,options={}){
  const rows=all(d,'row').map(r=>+r.getAttribute('r')).sort((a,b)=>a-b);const rowCells=r=>Array.from(cells).filter(([ref])=>+ref.replace(/\D/g,'')===r);
  const sourceHint=norm((options.fileName||'')+' '+name),thailand=['پوکت','تایلند','بانکوک','پاتایا','phuket','thailand','bangkok','pattaya','hkt','bkk'].some(key=>sourceHint.includes(key));
  const headerRow=rows.find(r=>rowCells(r).some(([,c])=>['نامهتل','هتل','hotel','hotelname','hkt'].includes(norm(c.value))));if(!headerRow)throw Error('ستون نام هتل در شیت انتخاب‌شده پیدا نشد.');
- const headers=rowCells(headerRow).map(([ref,c])=>({col:ref.replace(/\d/g,''),label:String(c.value),key:norm(c.value)}));const find=f=>headers.find(h=>f(h.key))?.col;const findLast=f=>headers.filter(h=>f(h.key)).at(-1)?.col;
- const cols={hotel:find(k=>['نامهتل','هتل','hotel','hotelname','hkt'].includes(k)),room:find(k=>['roomtype','نوعاتاق'].includes(k)),city:find(k=>['شهر','city','loc','location'].includes(k)),stars:find(k=>['درجه','ستاره','stars','star'].includes(k)),service:find(k=>['خدمات','service','board'].includes(k)),double:find(k=>(k.includes('دوتخت')||k.includes('دونفره')))||find(k=>k==='dbl'),single:find(k=>(k.includes('یکتخت')||k.includes('تکتخت')))||find(k=>['sgl','sng'].includes(k)),extra:find(k=>['extra','extraperson','نفراضافه','اضافه'].includes(k)),child:find(k=>k.includes('کودک')&&(k.includes('12')||k.includes('۱۲')))||find(k=>k.includes('کودک')&&k.includes('باتخت'))||find(k=>['cwb','chdwb','chdwbed','chdwbed','chdwbed'].includes(k)),small:find(k=>k.includes('کودک')&&!k.includes('12')&&!k.includes('۱۲')&&!k.includes('باتخت'))||find(k=>['chdnobed','cnb','chdwithoutbed'].includes(k))};
+ const headers=rowCells(headerRow).map(([ref,c])=>({col:ref.replace(/\d/g,''),label:String(c.value),key:norm(c.value)}));const find=f=>headers.find(h=>f(h.key))?.col;
+ const cols={hotel:find(k=>['نامهتل','هتل','hotel','hotelname','hkt'].includes(k)),room:find(k=>['roomtype','نوعاتاق'].includes(k)),city:find(k=>['شهر','city','loc','location'].includes(k)),stars:find(k=>['درجه','ستاره','stars','star'].includes(k)),service:find(k=>['خدمات','service','board'].includes(k)),double:find(k=>(k.includes('دوتخت')||k.includes('دونفره')))||find(k=>k==='dbl'),single:find(k=>(k.includes('یکتخت')||k.includes('تکتخت')))||find(k=>['sgl','sng'].includes(k)),extra:find(k=>['extra','extraperson','نفراضافه','اضافه'].includes(k)),child:find(k=>k.includes('کودک')&&(k.includes('12')||k.includes('۱۲')))||find(k=>k.includes('کودک')&&k.includes('باتخت'))||find(k=>['cwb','chdwb','chdwbed','chwbed'].includes(k)),small:find(k=>k.includes('کودک')&&!k.includes('12')&&!k.includes('۱۲')&&!k.includes('باتخت'))||find(k=>['chdnobed','cnb','chdwithoutbed'].includes(k))};
+ const istanbul=/استانبول|istanbul/i.test(options.fileName||'')&&!!cols.room;
+ if(istanbul&&!cols.service)cols.service=cols.room;
  if(thailand){
-  // Thai supplier sheets often put purchase rates (SGL/DBL/CWB/CNB)
-  // before the final display rates (SINGLE/DBLE/CWB/CNB). Never mix them.
-  const saleDouble=findLast(k=>['dble','double','doublerate'].includes(k));
-  const saleSingle=findLast(k=>['single','singlerate'].includes(k));
-  if(Boolean(saleDouble)!==Boolean(saleSingle))throw Error('ستون‌های قیمت نهایی یک‌تخته و دوتخته در اکسل تایلند کامل نیستند.');
-  if(saleDouble&&saleSingle){
-   cols.double=saleDouble;cols.single=saleSingle;
-   const finalHeaders=headers.slice(headers.findIndex(h=>h.col===saleDouble)+1);
-   cols.child=finalHeaders.find(h=>['cwb','chdwb','chdwbed'].includes(h.key))?.col;
-   cols.small=finalHeaders.find(h=>['cnb','chdnobed','chdwithoutbed'].includes(h.key))?.col;
-  }else{
-   cols.double=find(k=>k==='dbl'||k.startsWith('dbl'))||cols.double;
-   cols.single=findLast(k=>k==='sgl'||k.startsWith('sgl'))||cols.single;
-   cols.child=findLast(k=>k==='wb'||k==='chd')||cols.child;
-   cols.small=findLast(k=>k==='nobed'||k==='nobedhkt')||cols.small;
-  }
-  if(!cols.service&&cols.room)cols.service=cols.room;
-  else if(!cols.service&&cols.stars)cols.service=cols.stars;
+  Object.assign(cols,thailandSaleColumns(headers,cols));
+  if(!cols.service)cols.service=cols.room||cols.stars;
  }
  const thailandCity=thailand?find(k=>k==='bkk'||k.startsWith('bkk')):'';
  if(!cols.service){const sample=rowCells(headerRow+1).find(([,c])=>/^\d\s*[*★]\s*\/?\s*(U?ALL|BB|HB|FB)/i.test(String(c.value)));if(sample)cols.service=sample[0].replace(/\d/g,'');}
@@ -70,14 +80,22 @@ function parse(bytes,options={}){
  if(!groups.length)throw Error('ردیف هتل و قیمت نهایی پیدا نشد.');if(groups.length>300)throw Error('حداکثر ۳۰۰ گزینه پشتیبانی می‌شود.');
  const footer=rows.filter(r=>r>last||r<headerRow).flatMap(r=>rowCells(r).filter(([,c])=>!c.error&&typeof c.value==='string'&&c.value.trim()).map(([ref,c])=>({text:c.value.trim(),ref,header:r<headerRow})));
  const summary=PackageSummary.read(cells,rows,headerRow,last,merges),cards=summary.cards,notes=[],adjustments=[],dateRegex=/[0-9۰-۹]+\s*(فروردین|اردیبهشت|خرداد|تیر|مرداد|شهریور|مهر|آبان|آذر|دی|بهمن|اسفند)/;
+ const flightRates=[];
+ if(thailand)for(const r of rows.filter(r=>r>last)){
+  const entries=rowCells(r).map(([ref,c])=>({ref,...c}));
+  const dates=entries.filter(c=>typeof c.value==='string'&&dateRegex.test(c.value)&&!/(?:افزایش|تاریخ)/.test(c.value));
+  const amounts=entries.filter(c=>typeof c.value==='number'&&c.value>=100000);
+  if(dates.length===1&&amounts.length===1)flightRates.push({date:dates[0].value.trim(),value:amounts[0].value,unit:amounts[0].currency||'تومان',dateRef:dates[0].ref,priceRef:amounts[0].ref});
+ }
  PackageSummary.splitTable(groups,priceKeys,cols,headerRow,summary);
  let date='',duration='',title='',stays='',services='';
  for(const {text,ref,header} of footer){
   const key=norm(text);if(!date&&dateRegex.test(text))date=text.match(dateRegex)[0];if(!duration&&/شب.*روز/.test(text))duration=text.match(/[(（]?[^()]*شب[^()]*روز[)）]?/)?.[0]||text;
   if(text.includes('شب')&&text.includes('+')){stays=text;continue;}
   if(summary.consumed.has(ref))continue;
-  if(thailand&&/افزایش\s*نرخ/.test(text)){adjustments.push(text.trim());continue;}
-  if(thailand&&/(?:قیمت\s*بلی[تط]|کودک\s*زیر\s*[۲2]\s*سال|روزهای\s*پرواز|ساعت\s*(?:رفت|برگشت))/.test(text))continue;
+  if(thailand&&/(?:قیمت\s*بلی[تط]|کودک\s*زیر\s*[۲2]\s*سال)/.test(text))continue;
+  if(thailand&&/^(?:روزهای\s*پرواز|ساعت\s*(?:رفت|برگشت))/.test(text))continue;
+  if(thailand&&/افزایش\s*نرخ/.test(text)){adjustments.push(text.replace(/\s+/g,' ').trim());continue;}
   if(/تاریخ\s*رفت|تاریخ\s*حرکت/.test(text)&&dateRegex.test(text)){
    adjustments.push(text.replace(/\s+/g,' ').replace(/\s+ماه(?=\s|$)/g,'').replace(/([0-9۰-۹][0-9۰-۹.,٬]*)\s+میلیون\s+تومان/g,'$1 تومان').replace(/\s*میباشد/g,' می‌باشد').trim());continue;
   }
@@ -85,9 +103,14 @@ function parse(bytes,options={}){
  }
  const filename=options.fileName||'';if(!date)date=(name+' '+filename).match(dateRegex)?.[0]||'';
  const detect=norm(filename+' '+name+' '+stays),combined=groups.some(g=>g.hotels.length>1),malaysia=detect.includes('کوالا')||detect.includes('kuala');
-  const template=malaysia?(detect.includes('لنگکاوی')||detect.includes('langkawi')?'malaysia-langkawi':detect.includes('سنگاپور')||detect.includes('singapore')?'malaysia-singapore':detect.includes('پنانگ')||detect.includes('penang')?'malaysia-penang':'malaysia-kuala'):thailand?(detect.includes('بانکوک')||detect.includes('bangkok')||detect.includes('bkk')?'thailand-bangkok-phuket':detect.includes('پاتایا')||detect.includes('pattaya')?'thailand-pattaya':'thailand-phuket'):combined?'combined':detect.includes('bodrum')||detect.includes('بدروم')?'bodrum':detect.includes('کوش')||detect.includes('kus')?'kus':detect.includes('آنتالیا')||detect.includes('antalya')?'antalya':'';
+  const template=istanbul?(cols.extra?'istanbul-3':'istanbul-4'):malaysia?(detect.includes('لنگکاوی')||detect.includes('langkawi')?'malaysia-langkawi':detect.includes('سنگاپور')||detect.includes('singapore')?'malaysia-singapore':detect.includes('پنانگ')||detect.includes('penang')?'malaysia-penang':'malaysia-kuala'):thailand?(detect.includes('بانکوک')||detect.includes('bangkok')||detect.includes('bkk')?'thailand-bangkok-phuket':detect.includes('پاتایا')||detect.includes('pattaya')?'thailand-pattaya':'thailand-phuket'):combined?'combined':detect.includes('bodrum')||detect.includes('بدروم')?'bodrum':detect.includes('کوش')||detect.includes('kus')?'kus':detect.includes('آنتالیا')||detect.includes('antalya')?'antalya':'';
   if(combined&&!thailand&&!malaysia){const cities=[...new Set(groups.flatMap(g=>g.hotels.map(h=>h.city)).filter(Boolean))];title=cities.length?cities.join(' + '):'کوش آداسی + ازمیر';}
- if(!title)title=malaysia?'مالزی':template==='thailand-bangkok-phuket'?'بانکوک + پوکت':template==='thailand-pattaya'?'پاتایا':template==='thailand-phuket'?'پوکت':template==='bodrum'?'بدروم':template==='kus'?'کوش آداسی':template==='antalya'?'آنتالیا':'';
+ if(!title)title=istanbul?'استانبول':malaysia?'مالزی':template==='thailand-bangkok-phuket'?'بانکوک + پوکت':template==='thailand-pattaya'?'پاتایا':template==='thailand-phuket'?'پوکت':template==='bodrum'?'بدروم':template==='kus'?'کوش آداسی':template==='antalya'?'آنتالیا':'';
+ if(istanbul){
+  duration=cols.extra?'۳ شب':'۴ شب';date=date||'۷ مهر روزانه';
+  const flight=footer.find(item=>/پرواز\s*تابان/.test(item.text)&&/رفت|برگشت/.test(item.text));
+  if(flight){const outward=flight.text.match(/([0-9۰-۹]{1,2}:[0-9۰-۹]{2})\s*رفت/),inward=flight.text.match(/([0-9۰-۹]{1,2}:[0-9۰-۹]{2})\s*برگشت/);cards.flightSchedule={value:[outward&&'رفت '+outward[1],inward&&'برگشت '+inward[1]].filter(Boolean).join(' | '),unit:'',label:'پرواز تابان',ref:flight.ref,automatic:true};}
+ }
  if(thailand){
    if(template==='thailand-bangkok-phuket')for(const group of groups)if(group.hotels.length>1){const hotels=group.hotels,service=hotels.map(h=>[h.stars,h.service].filter(Boolean).join(' / ')).filter(Boolean).join(' + ');group.hotels=[{...hotels[0],hotel:hotels.map(h=>h.hotel).filter(Boolean).join(' + '),stars:'',service}];}
   const info=footer.find(x=>/شب.*روز/.test(x.text));
@@ -104,7 +127,10 @@ function parse(bytes,options={}){
    const moneyCard=(key,label,re)=>{const item=footer.find(x=>re.test(x.text));if(!item)return;const raw=item.text.match(re)?.[1]||'',value=PackageSummary.money(raw);cards[key]={value:value??'',unit:'تومان',label,ref:item.ref,automatic:true};summary.consumed.add(item.ref);};
    moneyCard('ticket','قیمت بلیط',/قیمت\s*بلی[تط]\s*[:：]?\s*([0-9۰-۹.,٬]+)/);
    moneyCard('childFlight','کودک زیر ۲ سال',/کودک\s*زیر\s*[۲2]\s*سال\s*[:：]?\s*([0-9۰-۹.,٬]+)/);
-   moneyCard('adult','افزایش نرخ',/افزایش\s*نرخ\s*[:：]?\s*([0-9۰-۹.,٬]+)/);
+   if(!cards.ticket&&cards.adult)cards.ticket={...cards.adult,label:'قیمت بلیط'};
+   const increase=adjustments.find(t=>/افزایش\s*نرخ\s*[0-9۰-۹]/.test(t));
+   const amount=increase?.match(/افزایش\s*نرخ\s*([0-9۰-۹.,٬]+)/)?.[1];
+   if(amount)cards.adult={value:PackageSummary.money(amount),unit:'تومان',label:'افزایش نرخ',automatic:true};
   }
   if(services)services=services.replace(/،?\s*کمیسیون.*$/,'').trim();
   const commission=cards.commission;
@@ -118,12 +144,13 @@ function parse(bytes,options={}){
   for(const g of groups){for(const h of g.hotels){h.hotel=h.hotel.replace(/\s*\+\s*/g,' + ').replace(/\s+/g,' ').trim();if(!cols.service)h.service='';}for(const k of priceKeys){const c=g.prices[k];if(c.value==='N/A')c.value='—';if(!c.currency&&!c.error&&!c.missing&&c.value!==''&&c.value!=='—')c.currency='$';}}
  }
  if(thailand){
-  for(const g of groups)for(const k of priceKeys){const c=g.prices[k];if(!c.currency&&!c.error&&!c.missing&&c.value!==''&&c.value!=='—')c.currency='$';}
+  for(const g of groups)for(const k of priceKeys){const c=g.prices[k];if(!c.currency&&!c.error&&!c.missing&&c.value!==''&&c.value!=='—')c.currency='$';if(typeof c.value==='number')c.decimals=0;}
+  date=date.match(/فروردین|اردیبهشت|خرداد|تیر|مرداد|شهریور|مهر|آبان|آذر|دی|بهمن|اسفند/)?.[0]||date;
  }
  const errorCells=Array.from(cells).filter(([,c])=>c.error);
  const errorWarnings=errorCells.length?['سلول‌های خطادار اکسل با «—» نمایش داده می‌شوند: '+errorCells.slice(0,8).map(([ref,c])=>ref+' ('+c.errorValue+')').join('، ')+(errorCells.length>8?'، …':'')]:[];
  const currencies=[...new Set(groups.flatMap(g=>priceKeys.map(k=>g.prices[k].currency)).filter(Boolean))];
- return {groups,priceKeys,hasRoom:!!cols.room,hasCity:!!cols.city,cards,notes:notes.join('\n'),adjustments:adjustments.join('\n'),services,date,duration,stays,title,template,sheetName:name,sheetNames:sheets.map(s=>s.name),currencies,warnings:[...errorWarnings,...summary.warnings.filter(w=>!malaysia&&!thailand||!w.startsWith('واحد «')),...(malaysia?['مدت اقامت و خدمات سفر در اکسل درج نشده‌اند؛ متن پیش‌فرض قالب قابل ویرایش است.']:[]),...(Array.from(cells.values()).some(c=>c.formula)?['نتیجهٔ ذخیره‌شدهٔ فرمول‌ها خوانده شد؛ برنامه محاسبهٔ مجدد انجام نمی‌دهد.']:[])]};
+ return {groups,priceKeys,hasRoom:!!cols.room&&!istanbul&&!thailand,hasCity:!!cols.city,cards,flightRates,notes:istanbul?'':notes.join('\n'),adjustments:adjustments.join('\n'),services,date,duration,stays,title,template,sheetName:name,sheetNames:sheets.map(s=>s.name),currencies,warnings:[...errorWarnings,...summary.warnings.filter(w=>!malaysia&&!thailand||!w.startsWith('واحد «')),...(malaysia?['مدت اقامت و خدمات سفر در اکسل درج نشده‌اند؛ متن پیش‌فرض قالب قابل ویرایش است.']:[]),...(Array.from(cells.values()).some(c=>c.formula)?['نتیجهٔ ذخیره‌شدهٔ فرمول‌ها خوانده شد؛ برنامه محاسبهٔ مجدد انجام نمی‌دهد.']:[])]};
 }
-root.PKJ={parse,list:bytes=>metadata(bytes).map(s=>s.name),choose:names=>choose(names.map(name=>({name}))),norm};
+root.PKJ={parse,list:bytes=>metadata(bytes).map(s=>s.name),choose:names=>choose(names.map(name=>({name}))),norm,thailandSaleColumns};
 })(globalThis);

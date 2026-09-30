@@ -54,7 +54,6 @@ import {
   Card,
   EmptyState,
   ErrorState,
-  FilterBar,
   PageHeader,
   PaginationShell,
   Skeleton,
@@ -66,6 +65,7 @@ import {
 } from '../api/client';
 import { MasterDataDeleteButton } from './master-data-delete-button';
 import { MasterDataFilterActions } from './master-data-filter-actions';
+import { MasterDataFilterBar } from './master-data-filter-bar';
 import { getMasterDataDefinition } from '../model/catalog';
 import {
   HotelImportPanel,
@@ -80,6 +80,7 @@ import {
   type MasterDataKpiItem,
 } from './master-data-kpi-grid';
 import { MasterDataProfileDialog } from './master-data-profile-dialog';
+import { MasterDataLogoImage } from './master-data-logo-image';
 
 type AccommodationTab =
   'hotels' | 'chains' | 'meals' | 'facilities' | 'import' | 'combined';
@@ -688,6 +689,7 @@ export function MasterDataAccommodationWorkspace() {
     return (
       <div className="flex flex-wrap justify-end gap-2">
         <Button
+          aria-label={`مشاهده ${record.name}`}
           onClick={() => {
             if (record.resource === 'hotels') selectProfile(record);
             else {
@@ -695,20 +697,23 @@ export function MasterDataAccommodationWorkspace() {
               setFormMode('view');
             }
           }}
-          size="sm"
+          size="icon"
+          title={`مشاهده ${record.name}`}
           variant="outline"
         >
-          <Eye className="size-4" /> مشاهده
+          <Eye aria-hidden="true" className="size-4" />
         </Button>
         <Button
+          aria-label={`ویرایش ${record.name}`}
           onClick={() => {
             setSelected(record);
             setFormMode('edit');
           }}
-          size="sm"
+          size="icon"
+          title={`ویرایش ${record.name}`}
           variant="outline"
         >
-          <FilePenLine className="size-4" /> ویرایش
+          <FilePenLine aria-hidden="true" className="size-4" />
         </Button>
         <MasterDataDeleteButton record={record} onDeleted={afterDelete} />
         <MasterDataPowerButton record={record} onChanged={afterStatusChange} />
@@ -935,6 +940,7 @@ export function MasterDataAccommodationWorkspace() {
                 {tab === 'hotels' ? (
                   <>
                     <td className="p-4">
+                      <MasterDataLogoImage record={record} />
                       <button
                         className="text-start font-bold text-foreground hover:text-primary focus-visible:rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                         onClick={() => selectProfile(record)}
@@ -989,7 +995,10 @@ export function MasterDataAccommodationWorkspace() {
                   </>
                 ) : tab === 'chains' ? (
                   <>
-                    <td className="p-4 font-semibold">{record.name}</td>
+                    <td className="p-4 font-semibold">
+                      <MasterDataLogoImage record={record} />
+                      {record.name}
+                    </td>
                     <td className="p-4" dir="ltr">
                       {attribute(record, 'englishName')}
                     </td>
@@ -1082,8 +1091,12 @@ export function MasterDataAccommodationWorkspace() {
       <div className="space-y-4">
         <Card className="overflow-hidden">
           <div className="grid gap-5 bg-gradient-to-l from-orange-50 via-background to-sky-50 p-6 dark:from-orange-950/30 dark:to-sky-950/30 md:grid-cols-[7rem_1fr_auto]">
-            <div className="grid size-28 place-items-center rounded-3xl bg-orange-100 text-orange-700 dark:bg-orange-400/15 dark:text-orange-300">
+            <div className="relative grid size-28 place-items-center rounded-3xl bg-orange-100 text-orange-700 dark:bg-orange-400/15 dark:text-orange-300">
               <Hotel className="size-12" />
+              <MasterDataLogoImage
+                className="absolute inset-0 size-28"
+                record={selected}
+              />
             </div>
             <div>
               <h2 className="text-2xl font-black">{selected.name}</h2>
@@ -1345,7 +1358,6 @@ export function MasterDataAccommodationWorkspace() {
             </Link>
           </>
         }
-        description={current.description}
         title={current.title}
       />
       <div className="flex w-full flex-wrap justify-end gap-2">
@@ -1401,7 +1413,7 @@ export function MasterDataAccommodationWorkspace() {
         <MasterDataKpiGrid items={kpis} label={`شاخص‌های ${current.title}`} />
       ) : null}
       {showFilters ? (
-        <FilterBar className="grid sm:grid-cols-2 xl:grid-cols-6">
+        <MasterDataFilterBar>
           {columnFilterControls}
           <MasterDataDateRangeFilter
             idPrefix="accommodation-created"
@@ -1459,7 +1471,7 @@ export function MasterDataAccommodationWorkspace() {
             }}
             onRefresh={() => void Promise.all([load(), loadSummary()])}
           />
-        </FilterBar>
+        </MasterDataFilterBar>
       ) : null}
       {content}
       {showFilters ? (
@@ -1503,7 +1515,6 @@ export function MasterDataAccommodationWorkspace() {
       ) : null}
       {selected?.resource === 'hotels' ? (
         <MasterDataProfileDialog
-          description="پروفایل هتل از فهرست اصلی و بدون ایجاد سکشن جداگانه نمایش داده می‌شود."
           onOpenChange={setProfileOpen}
           open={profileOpen}
           title="پروفایل هتل"

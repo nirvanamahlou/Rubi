@@ -16,8 +16,13 @@ import {
 } from '@/components/ui';
 import {
   calendarAttachmentError,
+  calendarStatusOptions,
   normalizeCalendarLink,
+  tehranDay,
+  type CalendarEntry,
+  type CalendarStatus,
 } from './calendar-model';
+import { WorkbenchSelect } from './workbench-select';
 
 export interface CalendarEventDraft {
   title: string;
@@ -25,32 +30,49 @@ export interface CalendarEventDraft {
   description: string;
   linkUrl: string;
   attachment: File | null;
+  status: CalendarStatus;
 }
 
 export function CalendarEventDialog({
   open,
   onOpenChange,
-  onCreate,
+  onSave,
   initialDate,
+  editingEvent,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onCreate: (draft: CalendarEventDraft) => void | Promise<void>;
+  onSave: (draft: CalendarEventDraft) => void | Promise<void>;
   initialDate: string;
+  editingEvent?: CalendarEntry | null;
 }) {
-  const [title, setTitle] = useState('');
-  const [date, setDate] = useState(initialDate);
-  const [description, setDescription] = useState('');
-  const [link, setLink] = useState('');
+  const [title, setTitle] = useState(editingEvent?.title ?? '');
+  const [date, setDate] = useState(
+    editingEvent?.dueAt
+      ? (tehranDay(editingEvent.dueAt) ?? initialDate)
+      : initialDate,
+  );
+  const [description, setDescription] = useState(
+    editingEvent?.description ?? '',
+  );
+  const [link, setLink] = useState(editingEvent?.linkUrl ?? '');
+  const [status, setStatus] = useState<CalendarStatus>(
+    editingEvent?.status ?? 'planned',
+  );
   const [attachment, setAttachment] = useState<File | null>(null);
   const [error, setError] = useState('');
   const [pending, setPending] = useState(false);
 
   function reset() {
-    setTitle('');
-    setDate(initialDate);
-    setDescription('');
-    setLink('');
+    setTitle(editingEvent?.title ?? '');
+    setDate(
+      editingEvent?.dueAt
+        ? (tehranDay(editingEvent.dueAt) ?? initialDate)
+        : initialDate,
+    );
+    setDescription(editingEvent?.description ?? '');
+    setLink(editingEvent?.linkUrl ?? '');
+    setStatus(editingEvent?.status ?? 'planned');
     setAttachment(null);
     setError('');
   }
@@ -77,12 +99,13 @@ export function CalendarEventDialog({
     }
     setPending(true);
     try {
-      await onCreate({
+      await onSave({
         title: title.trim(),
         date,
         description: description.trim(),
         linkUrl: safeLink,
         attachment,
+        status,
       });
       reset();
       onOpenChange(false);
@@ -109,10 +132,12 @@ export function CalendarEventDialog({
       >
         <DialogTitle className="flex items-center gap-2 pe-10">
           <CalendarPlus aria-hidden="true" className="size-5 text-primary" />
-          افزودن رویداد
+          {editingEvent ? 'ویرایش رویداد' : 'افزودن رویداد'}
         </DialogTitle>
         <DialogDescription>
-          تاریخ، توضیحات و پیوست‌های رویداد را وارد کنید.
+          {editingEvent
+            ? 'اطلاعات و وضعیت رویداد را ویرایش کنید.'
+            : 'تاریخ، توضیحات و پیوست‌های رویداد را وارد کنید.'}
         </DialogDescription>
         <form
           className="mt-5 space-y-5"
@@ -153,6 +178,15 @@ export function CalendarEventDialog({
                 placeholder="انتخاب تاریخ"
               />
             </label>
+          </div>
+          <div className="space-y-2 text-sm font-semibold">
+            <span>وضعیت رویداد</span>
+            <WorkbenchSelect
+              label="وضعیت رویداد"
+              value={status}
+              onValueChange={(value) => setStatus(value as CalendarStatus)}
+              options={calendarStatusOptions}
+            />
           </div>
           <label
             className="block space-y-2 text-sm font-semibold"
@@ -232,6 +266,11 @@ export function CalendarEventDialog({
                 </Button>
               </div>
             ) : null}
+            {editingEvent?.imageDocumentId && !attachment ? (
+              <p className="text-xs text-muted-foreground">
+                پیوست فعلی حفظ می‌شود؛ برای جایگزینی، فایل تازه‌ای انتخاب کنید.
+              </p>
+            ) : null}
             <p className="text-xs text-muted-foreground">
               PDF، PNG یا JPG تا حجم ۱۰ مگابایت
             </p>
@@ -247,7 +286,11 @@ export function CalendarEventDialog({
             </Button>
             <Button type="submit" disabled={pending}>
               <CalendarPlus aria-hidden="true" className="size-4" />
-              {pending ? 'در حال ذخیره…' : 'افزودن به تقویم'}
+              {pending
+                ? 'در حال ذخیره…'
+                : editingEvent
+                  ? 'ذخیره تغییرات'
+                  : 'افزودن به تقویم'}
             </Button>
           </div>
         </form>

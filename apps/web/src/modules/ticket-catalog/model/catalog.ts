@@ -1,3 +1,4 @@
+import { validReturnWindow } from '@nora/contracts';
 // Phase A pure proposal; mirrored in Web until a shared-contract handoff.
 // No persistence, permission grant, provider call or transaction guarantee.
 export type CatalogStatus = 'draft' | 'active' | 'paused' | 'cancelled';
@@ -64,6 +65,10 @@ export interface ProductDisplaySnapshot {
   destination: string;
 }
 export interface ProductInput {
+  economyBaggageKg?: string | null;
+  businessBaggageKg?: string | null;
+  returnMinDays?: number | null;
+  returnMaxDays?: number | null;
   /** Null/absent selects the built-in default manifest. */
   manifestTemplateId?: string | null;
   manifestTemplateName?: string | undefined;
@@ -357,6 +362,10 @@ export function validateProduct(
   ready = false,
 ): void {
   ensure(
+    validReturnWindow(input.returnMinDays, input.returnMaxDays),
+    'حداقل و حداکثر روزهای برگشت باید بین صفر و ۳۶۵ و به ترتیب باشند.',
+  );
+  ensure(
     input.title.trim().length > 0 && input.title.length <= 160,
     'نام بلیط الزامی و حداکثر ۱۶۰ نویسه است.',
   );
@@ -489,7 +498,13 @@ export function validateProduct(
   }
   if (input.transport === 'flight') {
     reference(resolve, 'flightClass', input.flightClassId, ready);
-    reference(resolve, 'baggage', input.baggageId, ready);
+    reference(resolve, 'baggage', input.baggageId, false);
+    for (const weight of [input.economyBaggageKg, input.businessBaggageKg])
+      ensure(
+        weight == null ||
+          (/^\d{1,4}(\.\d{1,2})?$/.test(weight) && Number(weight) <= 9999),
+        'بار مجاز باید بین صفر و ۹۹۹۹ کیلوگرم با حداکثر دو رقم اعشار باشد.',
+      );
   }
   // Purchase pricing is completed later by Finance. A suggested currency may
   // be validated when supplied, but it must never block ticket sale status.
@@ -587,6 +602,14 @@ export function reviseProduct(
         input.supplyType === product.definition.supplyType &&
         input.flightClassId === product.definition.flightClassId &&
         input.baggageId === product.definition.baggageId &&
+        (input.economyBaggageKg ?? null) ===
+          (product.definition.economyBaggageKg ?? null) &&
+        (input.businessBaggageKg ?? null) ===
+          (product.definition.businessBaggageKg ?? null) &&
+        (input.returnMinDays ?? null) ===
+          (product.definition.returnMinDays ?? null) &&
+        (input.returnMaxDays ?? null) ===
+          (product.definition.returnMaxDays ?? null) &&
         input.rules === product.definition.rules,
       'تغییر برنامه تخصیص‌یافته منتظر Handoff رزرواسیون است.',
       'TRANSITION',

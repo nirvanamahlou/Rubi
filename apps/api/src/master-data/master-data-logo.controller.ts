@@ -2,12 +2,15 @@ import {
   Body,
   Controller,
   Delete,
+  Get,
+  Header,
   Headers,
   HttpCode,
   Inject,
   Param,
   Post,
   Req,
+  StreamableFile,
   UploadedFile,
   UseGuards,
   UseInterceptors,
@@ -52,6 +55,31 @@ export class MasterDataLogoController {
     @Inject(MasterDataLogoService)
     private readonly logos: MasterDataLogoService,
   ) {}
+
+  @Get(':resource/:id/logo')
+  @Header('Cache-Control', 'private, no-store')
+  @Header('Vary', 'Cookie')
+  @Header('X-Content-Type-Options', 'nosniff')
+  @Header('Cross-Origin-Resource-Policy', 'same-origin')
+  @Header('Content-Security-Policy', "default-src 'none'; sandbox")
+  @RequirePermissions('master_data.read')
+  async preview(
+    @Param('resource') resource: string,
+    @Param('id') id: string,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    const result = await this.logos.preview(
+      resource,
+      id,
+      request.actor,
+      requestMetadata(request),
+    );
+    return new StreamableFile(result.stream, {
+      type: result.mimeType,
+      length: result.sizeBytes,
+      disposition: 'inline',
+    });
+  }
 
   @Post(':resource/:id/logo')
   @ApiConsumes('multipart/form-data')

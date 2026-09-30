@@ -1,6 +1,8 @@
 import { createHash } from 'node:crypto';
 import {
   Body,
+  BadRequestException,
+  ConflictException,
   Controller,
   Get,
   Header,
@@ -27,6 +29,13 @@ export class SiteTicketDto {
   @Matches(/^[A-Za-z0-9_.:-]{1,160}$/) externalId!: string;
   @IsString() @Length(3, 200) subject!: string;
   @IsString() @Length(3, 2000) description!: string;
+  @IsISO8601({ strict: true }) occurredAt!: string;
+}
+
+/** A public website can append a customer comment only to its own ticket. */
+export class SiteTicketCommentDto {
+  @Matches(/^[A-Za-z0-9_.:-]{1,160}$/) externalCommentId!: string;
+  @IsString() @Length(2, 2000) text!: string;
   @IsISO8601({ strict: true }) occurredAt!: string;
 }
 
@@ -62,9 +71,11 @@ export class CustomerAffairsSiteGuard implements CanActivate {
     )
       throw new UnauthorizedException();
     this.iam.assertPermissions(actor, [
-      request.method === 'POST'
-        ? 'customer_affairs.ticket.create'
-        : 'customer_affairs.ticket.read',
+      request.method === 'GET'
+        ? 'customer_affairs.ticket.read'
+        : request.params.externalId
+          ? 'customer_affairs.ticket.update'
+          : 'customer_affairs.ticket.create',
     ]);
     request.actor = { ...actor, branchIds: [binding.branchId] };
     return true;
@@ -131,6 +142,59 @@ export class CustomerAffairsSiteController {
     if (!origin) throw new NotFoundException();
     const result = await this.affairs.getTicket(origin.ticketId, req.actor);
     return { data: this.publicStatus(result.data) };
+  }
+
+  @Post(':externalId/comments')
+  async comment(
+    @Param('site') code: string,
+    @Param('externalId') externalId: string,
+    @Body() input: SiteTicketCommentDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    if (!/^[A-Za-z0-9_.:-]{1,160}$/.test(externalId))
+      throw new NotFoundException();
+    const site = await this.repository.findSite(code);
+    if (!site) throw new NotFoundException();
+    const origin = await this.repository.findSiteTicket(site.id, externalId);
+    if (!origin) throw new NotFoundException();
+    if (!req.actor.branchIds.includes(origin.ticket.branchId))
+      throw new NotFoundException();
+    const deliveryKey = `site-comment:${createHash('sha256')
+      .update(`${site.id}:${externalId}:${input.externalCommentId}`)
+      .digest('hex')}`;
+    const summary = input.text.trim();
+    if (summary.length < 2)
+      throw new BadRequestException('متن کامنت معتبر نیست.');
+    const existing =
+      await this.repository.findTimelineByDeliveryKey(deliveryKey);
+    if (existing) {
+      if (existing.ticketId !== origin.ticketId || existing.summary !== summary)
+        throw new ConflictException('شناسه کامنت با محتوای دیگری ثبت شده است.');
+      return { data: { accepted: true, replay: true } };
+    }
+    try {
+      await this.affairs.addTicketTimeline(
+        origin.ticketId,
+        {
+          type: 'CUSTOMER_REPLY',
+          summary,
+          channel: 'WEBSITE',
+          customerVisible: true,
+          deliveryKey,
+          occurredAt: input.occurredAt,
+        },
+        req.actor,
+      );
+    } catch (error) {
+      // The unique delivery key also protects concurrent retries.
+      if ((error as { code?: string }).code !== 'P2002') throw error;
+      const replay =
+        await this.repository.findTimelineByDeliveryKey(deliveryKey);
+      if (replay?.ticketId !== origin.ticketId || replay.summary !== summary)
+        throw new ConflictException('شناسه کامنت با محتوای دیگری ثبت شده است.');
+      return { data: { accepted: true, replay: true } };
+    }
+    return { data: { accepted: true, replay: false } };
   }
   private publicStatus(ticket: {
     trackingNumber: string;

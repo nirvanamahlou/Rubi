@@ -1,4 +1,6 @@
 'use client';
+import { NativeSearchSelect } from '@/components/ui/native-search-select';
+
 import { useEffect, useRef, useState } from 'react';
 import type { DocumentListItemV1, HrRecordDto } from '@nora/contracts';
 import { documentsApi } from '../documents/api/client';
@@ -97,7 +99,7 @@ export function HrContractState({
                   <RequiredFieldLabel required>
                     نسخه امضاشده در اسناد
                   </RequiredFieldLabel>
-                  <select
+                  <NativeSearchSelect
                     value={documentId}
                     onChange={(event) => setDocumentId(event.target.value)}
                   >
@@ -107,7 +109,7 @@ export function HrContractState({
                         {item.archiveCode} · {item.title}
                       </option>
                     ))}
-                  </select>
+                  </NativeSearchSelect>
                 </label>
                 <label className={ui.field}>
                   اعتبار فایل جدید در بایگانی

@@ -168,6 +168,7 @@ export function ContractOutputButton({
   return (
     <>
       <Button
+        permission="sales.export"
         size="sm"
         variant="outline"
         className={className}

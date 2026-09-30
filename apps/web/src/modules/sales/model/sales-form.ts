@@ -863,6 +863,14 @@ export function salesPayload(
     state.outboundOffer && state.returnOffer
       ? roundTripPerLegFares(state.outboundOffer, state.returnOffer)
       : undefined;
+  const hasTieredFare = Boolean(
+    state.outboundOffer && state.returnOffer
+      ? state.outboundOffer.roundTripSalePrices?.find(
+          (fare) => fare.returnOfferId === state.returnOffer!.id,
+        )?.tiers?.length
+      : state.outboundOffer?.standaloneSalePrice?.tiers?.length ||
+          state.returnOffer?.standaloneSalePrice?.tiers?.length,
+  );
   const ticketSelections = state.serviceKinds.includes('FLIGHT')
     ? [
         ...(salesDirections(state, 'FLIGHT').includes('OUTBOUND') &&
@@ -884,6 +892,7 @@ export function salesPayload(
                   state.ticket.cabinClassCode,
                 ...(!state.tour &&
                 !state.serviceKinds.includes('HOTEL') &&
+                !hasTieredFare &&
                 (pairedTicketFares || state.outboundOffer?.standaloneSalePrice)
                   ? {
                       quotedPrice: {
@@ -896,7 +905,7 @@ export function salesPayload(
                             .currencyCode,
                       },
                     }
-                  : state.ticket.amount
+                  : state.ticket.amount && !hasTieredFare
                     ? {
                         quotedPrice: {
                           amount: state.ticket.amount,
@@ -927,6 +936,7 @@ export function salesPayload(
                   state.ticket.cabinClassCode,
                 ...(!state.tour &&
                 !state.serviceKinds.includes('HOTEL') &&
+                !hasTieredFare &&
                 (pairedTicketFares || state.returnOffer?.standaloneSalePrice)
                   ? {
                       quotedPrice: {
@@ -938,7 +948,7 @@ export function salesPayload(
                           state.returnOffer!.standaloneSalePrice!.currencyCode,
                       },
                     }
-                  : state.ticket.amount
+                  : state.ticket.amount && !hasTieredFare
                     ? {
                         quotedPrice: {
                           amount: state.ticket.amount,

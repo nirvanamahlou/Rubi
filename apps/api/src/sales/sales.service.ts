@@ -621,6 +621,39 @@ export class SalesService {
       fullySettled: ['SETTLED', 'OVERPAID'].includes(row.settlementStatus),
     };
   }
+  async financeReceiptHistory(
+    actor: AuthenticatedActor,
+    after: object,
+    take: number,
+    requestId?: string,
+  ) {
+    if (!has(actor, 'finance.read'))
+      throw new ForbiddenException('مجوز مشاهده دریافت‌ها وجود ندارد.');
+    const rows = await this.repository.confirmedFinancePayments(
+      actor.branchIds,
+      after,
+      take,
+      requestId,
+    );
+    return rows.map((row) => ({
+      id: row.id,
+      source: 'SALES' as const,
+      requestId: row.id,
+      direction: 'RECEIPT' as const,
+      title: 'دریافت قرارداد ' + row.contract.contractNumber,
+      occurredAt: row.financeConfirmedAt!.toISOString(),
+      amount: row.amount.toString(),
+      currencyCode: row.currencyCode,
+      accountId: row.financeReceiptAccountId,
+      accountTitle: null,
+      method: row.method,
+      reference: row.financePaymentReference ?? row.paymentReference,
+      installment: null,
+      cumulativePaid: null,
+      remainingAmount: null,
+    }));
+  }
+
   async financeInbox(
     actor: AuthenticatedActor,
   ): Promise<readonly SalesFinanceInboxPaymentV1[]> {
@@ -899,6 +932,25 @@ export class SalesService {
           row.branchId,
           row.id,
           seatCount,
+          presented.servicesDetail.some(
+            (service) => service.kind === 'HOTEL' || service.kind === 'TOUR',
+          )
+            ? undefined
+            : Object.fromEntries(
+                presented.servicesDetail
+                  .filter(
+                    (service) =>
+                      service.kind === 'FLIGHT' &&
+                      service.pricing?.[0]?.daySale.basis === 'TOTAL',
+                  )
+                  .map((service) => [
+                    service.clientKey,
+                    {
+                      amount: service.pricing![0]!.daySale.amount,
+                      currencyCode: service.pricing![0]!.currencyCode,
+                    },
+                  ]),
+              ),
         )
       : { available: true, unavailableOfferIds: [], createdAllocationIds: [] };
     if (!ticketCheck.available)

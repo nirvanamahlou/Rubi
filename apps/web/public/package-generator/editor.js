@@ -13,9 +13,11 @@ window.PackageEditor=(()=>{
   'malaysia-penang':{subtitle:[426,204,555,26],phone:[48,1215,275,42],address:[351,1215,632,42],serviceLabel:[908,1077,71,25],duration:[400,103,310,48],labelOffset:30},
   'malaysia-singapore':{subtitle:[421,207,513,25],phone:[43,1215,247,42],address:[319,1215,615,42],serviceLabel:[864,1076,70,25],duration:[400,100,360,48],labelOffset:30},
   'malaysia-langkawi':{subtitle:[329,176,376,23],phone:[35,1025,194,38],address:[250,1025,441,38],serviceLabel:[634,884,67,24],duration:[300,91,280,44],labelOffset:26},
-  'thailand-phuket':{subtitle:[332,128,405,27],phone:[48,1027,194,40],address:[285,1027,453,40],serviceLabel:[674,884,72,26],duration:[335,117,205,43],labelOffset:26},
-  'thailand-bangkok-phuket':{subtitle:[326,132,408,27],phone:[48,1027,194,40],address:[284,1027,448,40],serviceLabel:[660,918,74,26],duration:[350,119,205,43],labelOffset:25},
+  'thailand-phuket':{subtitle:[332,128,405,27],phone:[48,1027,194,40],address:[285,1027,453,40],serviceLabel:[674,950,72,26],duration:[335,117,205,43],labelOffset:26},
+  'thailand-bangkok-phuket':{subtitle:[326,132,408,27],phone:[48,1027,194,40],address:[284,1027,448,40],serviceLabel:[660,934,74,26],duration:[350,119,205,43],labelOffset:25},
   'thailand-pattaya':{subtitle:[315,130,386,27],phone:[47,1028,183,38],address:[274,1028,428,38],serviceLabel:[632,972,68,25],duration:[325,115,180,43],labelOffset:25},
+  'istanbul-3':{subtitle:[492,204,563,38],phone:[120,1362,249,57],address:[448,1362,616,57],serviceLabel:[906,1246,147,37],duration:[602,159,166,55],labelOffset:32},
+  'istanbul-4':{subtitle:[492,200,570,38],phone:[120,1323,249,57],address:[448,1323,644,57],serviceLabel:[940,1197,142,37],duration:[600,156,170,55],labelOffset:32},
   'spain-barcelona':{subtitle:[558,402,375,42],phone:[199,1561,210,52],address:[486,1560,440,55],serviceLabel:[800,1246,123,37],duration:[406,271,319,67],labelOffset:30},
   'spain-madrid':{subtitle:[583,391,345,41],phone:[207,1562,204,52],address:[485,1562,440,55],serviceLabel:[808,1240,120,38],duration:[412,258,319,65],labelOffset:30},
   'spain-combined':{subtitle:[558,441,369,42],phone:[202,1562,206,52],address:[487,1562,439,55],serviceLabel:[806,1232,120,40],duration:[408,289,267,78],labelOffset:30}
@@ -32,7 +34,7 @@ window.PackageEditor=(()=>{
   return '';
  }
  function definitions(){
-  const p=profile(),geo=geometry[p.style],m=model(),cols=state.data?columns():p.columns.map((width,i)=>({key:(p.style==='combined'?['hotel','city','service','double','single','child','small']:p.style==='antalya'?['hotel','room','service','double','single','child']:p.style.startsWith('malaysia-')?['hotel','service','double','single','extra','child','small']:p.style.startsWith('thailand-')?['hotel','service','double','single','child','small']:p.style==='spain-combined'?['hotel','stars','service','double','single','child','small']:p.style.startsWith('spain-')?['hotel','service','double','single','child','small']:['hotel','service','double','single','child'])[i],width}));
+  const p=profile(),geo=geometry[p.style],m=model(),cols=state.data?columns():p.columns.map((width,i)=>({key:(p.style==='combined'?['hotel','city','service','double','single','child','small']:p.style==='antalya'?['hotel','room','service','double','single','child']:p.style==='istanbul-3'?['hotel','service','double','single','extra','child']:p.style==='istanbul-4'?['hotel','service','double','single','child']:p.style.startsWith('malaysia-')?['hotel','service','double','single','extra','child','small']:p.style.startsWith('thailand-')?['hotel','service','double','single','child','small']:p.style==='spain-combined'?['hotel','stars','service','double','single','child','small']:p.style.startsWith('spain-')?['hotel','service','double','single','child','small']:['hotel','service','double','single','child'])[i],width}));
   const titles={city:'شهر',hotel:'نام هتل',stars:'ستاره',room:'نوع اتاق',service:'خدمات',double:'دوتخته',single:'یک تخت',extra:'اضافه',child:'کودک با تخت',small:p.style.startsWith('malaysia-')||p.style.startsWith('thailand-')?'کودک بدون تخت':'کودک ۲–۶ سال'};
   const list=[
    {id:'title',label:'عنوان شهر',box:p.titleBox,kind:'core',size:({combined:66,kus:108,antalya:120,bodrum:92,nss:120})[p.style]||86},

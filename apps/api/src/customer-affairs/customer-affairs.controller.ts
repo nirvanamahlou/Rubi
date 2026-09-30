@@ -11,6 +11,7 @@ import {
   Post,
   Query,
   Req,
+  StreamableFile,
   UseGuards,
 } from '@nestjs/common';
 import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
@@ -44,6 +45,7 @@ import {
   TimelineDto,
 } from './customer-affairs.dto';
 import { CustomerAffairsService } from './customer-affairs.service';
+import { customerAffairsXlsx } from './customer-affairs-xlsx';
 
 @ApiTags('Customer Affairs')
 @ApiCookieAuth('nora_access')
@@ -68,8 +70,8 @@ export class CustomerAffairsController {
     'customer_affairs.lead.read',
     'customer_affairs.ticket.read',
   )
-  report(@Req() req: AuthenticatedRequest) {
-    return this.service.report(req.actor);
+  report(@Query() query: ListQueryDto, @Req() req: AuthenticatedRequest) {
+    return this.service.report(req.actor, query);
   }
 
   @Get('leads/:id/audit')
@@ -97,6 +99,48 @@ export class CustomerAffairsController {
   @RequirePermissions('customer_affairs.lead.read')
   leads(@Query() query: ListQueryDto, @Req() req: AuthenticatedRequest) {
     return this.service.listLeads(query, req.actor);
+  }
+
+  @Get('leads/export/xlsx')
+  @Header('Cache-Control', 'private, no-store')
+  @Header(
+    'Content-Type',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  )
+  @Header(
+    'Content-Disposition',
+    'attachment; filename="customer-requests.xlsx"',
+  )
+  @RequirePermissions('customer_affairs.lead.read')
+  async exportLeads(
+    @Query() query: ListQueryDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    const rows = await this.service.exportRows('leads', query, req.actor);
+    return new StreamableFile(
+      Buffer.from(
+        customerAffairsXlsx('Requests', [
+          [
+            'شماره پیگیری',
+            'عنوان',
+            'مرحله',
+            'اولویت',
+            'نیاز سفر',
+            'اقدام بعدی',
+            'زمان پیگیری',
+          ],
+          ...rows.map((row) => [
+            row.trackingNumber,
+            row.title,
+            row.stage,
+            row.priority,
+            row.travelNeed,
+            row.nextAction,
+            row.nextActionAt,
+          ]),
+        ]),
+      ),
+    );
   }
 
   @Get('leads/:id')
@@ -213,6 +257,47 @@ export class CustomerAffairsController {
   @RequirePermissions('customer_affairs.ticket.read')
   tickets(@Query() query: ListQueryDto, @Req() req: AuthenticatedRequest) {
     return this.service.listTickets(query, req.actor);
+  }
+
+  @Get('tickets/export/xlsx')
+  @Header('Cache-Control', 'private, no-store')
+  @Header(
+    'Content-Type',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  )
+  @Header('Content-Disposition', 'attachment; filename="customer-tickets.xlsx"')
+  @RequirePermissions('customer_affairs.ticket.read')
+  async exportTickets(
+    @Query() query: ListQueryDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    const rows = await this.service.exportRows('tickets', query, req.actor);
+    return new StreamableFile(
+      Buffer.from(
+        customerAffairsXlsx('Tickets', [
+          [
+            'شماره پیگیری',
+            'موضوع',
+            'وضعیت',
+            'اولویت',
+            'دسته',
+            'اقدام بعدی',
+            'مهلت پاسخ',
+            'مهلت حل',
+          ],
+          ...rows.map((row) => [
+            row.trackingNumber,
+            row.subject,
+            row.status,
+            row.priority,
+            row.category,
+            row.nextAction,
+            row.firstResponseDueAt,
+            row.resolutionDueAt,
+          ]),
+        ]),
+      ),
+    );
   }
 
   @Get('tickets/:id')

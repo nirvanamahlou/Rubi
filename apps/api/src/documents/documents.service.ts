@@ -215,19 +215,23 @@ function summarizeUserAgent(value?: string): string {
 
 function mapVersion(
   row: DocumentDetailRow['versions'][number],
+  revealMetadata = true,
+  revealIdentity = true,
 ): DocumentVersionV1 {
   return {
     id: row.id,
     versionNumber: row.versionNumber,
-    originalFileName: row.originalFileName,
-    safeDownloadName: row.safeDownloadName,
+    originalFileName: revealMetadata ? row.originalFileName : 'سند محرمانه',
+    safeDownloadName: revealMetadata ? row.safeDownloadName : 'سند محرمانه',
     detectedMimeType: row.detectedMimeType,
     extension: row.extension,
     sizeBytes: Number(row.sizeBytes),
     sha256Masked: maskHash(row.sha256),
     scanStatus: row.scanStatus,
-    versionNote: row.versionNote,
-    createdBy: row.createdBy,
+    versionNote: revealMetadata ? row.versionNote : 'محرمانه',
+    createdBy: revealIdentity
+      ? row.createdBy
+      : { id: '00000000-0000-0000-0000-000000000000', displayName: 'محرمانه' },
     createdAt: row.createdAt.toISOString(),
   };
 }
@@ -239,6 +243,23 @@ function canReadSensitive(
   return (
     (confidentiality !== 'CONFIDENTIAL' && confidentiality !== 'RESTRICTED') ||
     permissions.includes('documents.sensitive.read')
+  );
+}
+
+function canRevealDocumentMetadata(
+  row: DocumentListRow,
+  actor: AuthenticatedActor,
+): boolean {
+  return (
+    canReadSensitive(row.confidentiality, actor.permissions) &&
+    !(isWorkbenchFeedbackAttachment(row) && row.ownerUserId !== actor.userId)
+  );
+}
+
+function isWorkbenchFeedbackAttachment(row: DocumentListRow): boolean {
+  return (
+    row.sourceModule === 'WORKBENCH' &&
+    row.sourceEntityType === 'WorkbenchFeedback'
   );
 }
 
@@ -269,20 +290,28 @@ export interface DocumentFileDelivery {
 
 function mapListItem(
   row: DocumentListRow,
-  permissions: readonly string[],
+  actor: AuthenticatedActor,
 ): DocumentListItemV1 {
   if (!row.currentVersion) {
     throw new ConflictException('نسخه جاری سند نامعتبر است.');
   }
-  const sensitiveAllowed = canReadSensitive(row.confidentiality, permissions);
+  const permissions = actor.permissions;
+  const sensitiveAllowed =
+    canReadSensitive(row.confidentiality, permissions) &&
+    (!isWorkbenchFeedbackAttachment(row) ||
+      row.ownerUserId === actor.userId ||
+      permissions.includes('documents.sensitive.read'));
+  const revealMetadata = canRevealDocumentMetadata(row, actor);
   return {
     id: row.id,
     archiveCode: row.archiveCode,
-    title: sensitiveAllowed ? row.title : 'سند محرمانه ••••••',
-    description: sensitiveAllowed ? row.description : null,
+    title: revealMetadata ? row.title : 'سند محرمانه ••••••',
+    description: revealMetadata ? row.description : null,
     type: row.documentType,
     category: row.category,
-    owner: row.owner,
+    owner: revealMetadata
+      ? row.owner
+      : { id: '00000000-0000-0000-0000-000000000000', displayName: 'محرمانه' },
     branchId: row.branchId,
     confidentiality: row.confidentiality,
     archiveStatus: row.archiveStatus,
@@ -292,6 +321,8 @@ function mapListItem(
     version: row.version,
     currentVersion: mapVersion(
       row.currentVersion as DocumentDetailRow['versions'][number],
+      revealMetadata,
+      revealMetadata,
     ),
     capabilities: {
       viewFile: permissions.includes('documents.file.read') && sensitiveAllowed,
@@ -300,7 +331,12 @@ function mapListItem(
         permissions.includes('documents.download') &&
         sensitiveAllowed,
       uploadVersion: permissions.includes('documents.version.create'),
-      editMetadata: permissions.includes('documents.metadata.update'),
+      editMetadata:
+        permissions.includes('documents.metadata.update') &&
+        !(
+          row.sourceModule === 'WORKBENCH' &&
+          row.sourceEntityType === 'WorkbenchFeedback'
+        ),
       viewAudit: permissions.includes('documents.audit.read'),
       archive:
         permissions.includes('documents.delete') &&
@@ -355,6 +391,7 @@ export class DocumentsService {
     documentIds: readonly string[],
     feedbackId: string,
     branchId: string,
+    anonymous: boolean,
     actor: AuthenticatedActor,
   ): Promise<void> {
     await this.assertWorkbenchOwnedAttachments(
@@ -363,6 +400,7 @@ export class DocumentsService {
       feedbackId,
       branchId,
       actor,
+      anonymous ? 'RESTRICTED' : 'INTERNAL',
     );
   }
 
@@ -372,6 +410,7 @@ export class DocumentsService {
     sourceEntityId: string,
     branchId: string,
     actor: AuthenticatedActor,
+    confidentiality?: DocumentConfidentialityCode,
   ): Promise<Array<{ id: string; title: string }>> {
     if (!documentIds.length) return [];
     if (!actor.branchIds.includes(branchId))
@@ -385,6 +424,7 @@ export class DocumentsService {
       sourceEntityId,
       branchId,
       ownerUserId: actor.userId,
+      ...(confidentiality ? { confidentiality } : {}),
     });
     if (matches.length !== uniqueIds.length) {
       throw new BadRequestException(
@@ -705,7 +745,7 @@ export class DocumentsService {
     actor: AuthenticatedActor,
     metadata: DocumentRequestMetadata,
   ): Promise<DocumentFileDelivery> {
-    const row = await this.repository.findDetail(documentId, actor.branchIds);
+    const row = await this.findVisibleDetail(documentId, actor);
     const ownsProfileReference = row?.relations.some(
       (relation) =>
         relation.relationType === 'PRIMARY_CASE' &&
@@ -732,19 +772,25 @@ export class DocumentsService {
       actor.userId,
       actor.branchIds,
       allowedDocumentDomains(actor.permissions),
+      actor.permissions.includes('documents.sensitive.read'),
+      actor.userId,
     );
-    return { data: rows.map((row) => mapListItem(row, actor.permissions)) };
+    return { data: rows.map((row) => mapListItem(row, actor)) };
   }
 
   async setFavorite(id: string, favorite: boolean, actor: AuthenticatedActor) {
-    const row = await this.repository.findDetail(id, actor.branchIds);
+    if (!favorite) {
+      await this.repository.setFavorite(actor.userId, id, false);
+      return { data: { documentId: id, favorite } };
+    }
+    const row = await this.findVisibleDetail(id, actor);
     if (
       !row ||
       !allowedDocumentDomains(actor.permissions).includes(
         row.documentType.domain,
       )
     )
-      throw new ForbiddenException('سند در محدوده دسترسی شما نیست.');
+      throw new NotFoundException('سند پیدا نشد.');
     await this.repository.setFavorite(actor.userId, id, favorite);
     return { data: { documentId: id, favorite } };
   }
@@ -898,6 +944,39 @@ export class DocumentsService {
     };
   }
 
+  /** Reads only the active BRAND image attached to this exact Master Data row. */
+  async previewMasterDataLogo(
+    input: { documentId: string; resource: string; recordId: string },
+    actor: AuthenticatedActor,
+    metadata: DocumentRequestMetadata,
+  ): Promise<DocumentFileDelivery> {
+    this.assertPermission(actor.permissions, 'master_data.read');
+    const row = await this.repository.findDetail(
+      input.documentId,
+      actor.branchIds,
+    );
+    const ownsReference = row?.relations.some(
+      (relation) =>
+        relation.relationType === 'PRIMARY_CASE' &&
+        relation.sourceModule === 'master-data' &&
+        relation.sourceEntityType === input.resource &&
+        relation.sourceEntityId === input.recordId,
+    );
+    if (
+      !row ||
+      row.archiveStatus !== 'ACTIVE' ||
+      row.documentType.domain !== 'BRAND' ||
+      row.confidentiality !== 'INTERNAL' ||
+      !ownsReference
+    )
+      throw new ForbiddenException('لوگوی این رکورد قابل مشاهده نیست.');
+    return this.preview(
+      row.id,
+      masterDataLogoActor(actor, 'documents.file.read'),
+      metadata,
+    );
+  }
+
   /** Archives only the BRAND document related to the supplied Master Data row. */
   async archiveMasterDataLogo(
     input: { documentId: string; resource: string; recordId: string },
@@ -905,10 +984,7 @@ export class DocumentsService {
     metadata: DocumentRequestMetadata,
   ): Promise<void> {
     this.assertPermission(actor.permissions, 'master_data.update');
-    const row = await this.repository.findDetail(
-      input.documentId,
-      actor.branchIds,
-    );
+    const row = await this.findVisibleDetail(input.documentId, actor);
     if (!row || row.archiveStatus !== 'ACTIVE') return;
     const ownsReference = row.relations.some(
       (relation) =>
@@ -958,6 +1034,7 @@ export class DocumentsService {
       versionIds,
       organizationId,
       branchId,
+      actor.permissions.includes('documents.sensitive.read'),
     );
   }
 
@@ -1008,9 +1085,10 @@ export class DocumentsService {
       actor.branchIds,
       allowedDocumentDomains(actor.permissions),
       actor.userId,
+      actor.permissions.includes('documents.sensitive.read'),
     );
     return {
-      data: rows.map((row) => mapListItem(row, actor.permissions)),
+      data: rows.map((row) => mapListItem(row, actor)),
       meta: {
         page,
         pageSize,
@@ -1093,7 +1171,7 @@ export class DocumentsService {
     actor: AuthenticatedActor,
     metadata: DocumentRequestMetadata,
   ): Promise<{ data: DocumentDetailV1 }> {
-    const row = await this.repository.findDetail(id, actor.branchIds);
+    const row = await this.findVisibleDetail(id, actor);
     if (!row) throw new NotFoundException('سند پیدا نشد.');
     this.assertDomain(row.documentType.domain, actor.permissions);
     await this.repository.appendAudit({
@@ -1103,43 +1181,48 @@ export class DocumentsService {
       actorBranchId: row.branchId,
       action: 'documents.metadata.view',
       outcome: 'SUCCESS',
-      reason: canReadSensitive(row.confidentiality, actor.permissions)
+      reason: canRevealDocumentMetadata(row, actor)
         ? metadata.sensitiveReason?.trim() || null
         : 'SENSITIVE_METADATA_MASKED',
       ipSummary: summarizeIp(metadata.ipAddress),
       userAgentSummary: summarizeUserAgent(metadata.userAgent),
     });
-    return { data: this.mapDetail(row, actor.permissions) };
+    return { data: this.mapDetail(row, actor) };
   }
 
   private mapDetail(
     row: DocumentDetailRow,
-    permissions: readonly string[],
+    actor: AuthenticatedActor,
   ): DocumentDetailV1 {
-    const base = mapListItem(row, permissions);
+    const permissions = actor.permissions;
+    const base = mapListItem(row, actor);
     const sensitive =
       row.confidentiality === 'CONFIDENTIAL' ||
-      row.confidentiality === 'RESTRICTED';
-    const sensitiveAllowed = canReadSensitive(row.confidentiality, permissions);
+      row.confidentiality === 'RESTRICTED' ||
+      (isWorkbenchFeedbackAttachment(row) && row.ownerUserId !== actor.userId);
+    const revealMetadata = canRevealDocumentMetadata(row, actor);
     return {
       ...base,
-      sourceModule: row.sourceModule,
-      sourceEntityType: row.sourceEntityType,
-      sourceEntityIdMasked: sensitiveAllowed
+      sourceModule: revealMetadata ? row.sourceModule : '',
+      sourceEntityType: revealMetadata ? row.sourceEntityType : null,
+      sourceEntityIdMasked: revealMetadata
         ? maskReference(row.sourceEntityId)
-        : '••••',
+        : null,
       legalHoldActive: row.legalHoldActive,
-      versions: row.versions.map(mapVersion),
-      relations: row.relations.map((relation) => ({
-        id: relation.id,
-        relationType: relation.relationType,
-        sourceModule: relation.sourceModule,
-        sourceEntityType: relation.sourceEntityType,
-        sourceEntityIdMasked: maskReference(relation.sourceEntityId) ?? '••••',
-        displayLabel: sensitiveAllowed
-          ? relation.displayLabel
-          : 'پرونده محرمانه',
-      })),
+      versions: row.versions.map((version) =>
+        mapVersion(version, revealMetadata, revealMetadata),
+      ),
+      relations: revealMetadata
+        ? row.relations.map((relation) => ({
+            id: relation.id,
+            relationType: relation.relationType,
+            sourceModule: relation.sourceModule,
+            sourceEntityType: relation.sourceEntityType,
+            sourceEntityIdMasked:
+              maskReference(relation.sourceEntityId) ?? '••••',
+            displayLabel: relation.displayLabel,
+          }))
+        : [],
       capabilities: {
         ...base.capabilities,
         download:
@@ -1158,6 +1241,27 @@ export class DocumentsService {
     }
   }
 
+  private findVisibleDetail(id: string, actor: AuthenticatedActor) {
+    return this.repository.findDetail(
+      id,
+      actor.branchIds,
+      actor.permissions.includes('documents.sensitive.read'),
+      actor.userId,
+    );
+  }
+
+  private findVisibleDetails(
+    ids: readonly string[],
+    actor: AuthenticatedActor,
+  ) {
+    return this.repository.findDetails(
+      ids,
+      actor.branchIds,
+      actor.permissions.includes('documents.sensitive.read'),
+      actor.userId,
+    );
+  }
+
   async update(
     id: string,
     dto: DocumentUpdateDto,
@@ -1165,9 +1269,15 @@ export class DocumentsService {
     metadata: DocumentRequestMetadata,
   ): Promise<{ data: DocumentDetailV1 }> {
     this.assertPermission(actor.permissions, 'documents.metadata.update');
-    const row = await this.repository.findDetail(id, actor.branchIds);
+    const row = await this.findVisibleDetail(id, actor);
     if (!row) throw new NotFoundException('سند پیدا نشد.');
     this.assertDomain(row.documentType.domain, actor.permissions);
+    if (
+      row.sourceModule === 'WORKBENCH' &&
+      row.sourceEntityType === 'WorkbenchFeedback'
+    ) {
+      throw new ForbiddenException('ویرایش پیوست نظرسنجی مجاز نیست.');
+    }
     if (row.archiveStatus === 'DELETED') {
       throw new ConflictException('سند حذف‌شده قابل ویرایش نیست.');
     }
@@ -1207,7 +1317,7 @@ export class DocumentsService {
         'سند هم‌زمان تغییر کرده است؛ اطلاعات را دوباره باز کنید.',
       );
     }
-    return { data: this.mapDetail(updated, actor.permissions) };
+    return { data: this.mapDetail(updated, actor) };
   }
 
   async archive(
@@ -1217,7 +1327,7 @@ export class DocumentsService {
     metadata: DocumentRequestMetadata,
   ): Promise<{ data: DocumentDetailV1 }> {
     this.assertPermission(actor.permissions, 'documents.delete');
-    const row = await this.repository.findDetail(id, actor.branchIds);
+    const row = await this.findVisibleDetail(id, actor);
     if (!row) throw new NotFoundException('سند پیدا نشد.');
     this.assertDomain(row.documentType.domain, actor.permissions);
     if (row.archiveStatus !== 'ACTIVE') {
@@ -1238,7 +1348,7 @@ export class DocumentsService {
       userAgentSummary: summarizeUserAgent(metadata.userAgent),
     });
     if (!updated) throw new ConflictException('سند هم‌زمان تغییر کرده است.');
-    return { data: this.mapDetail(updated, actor.permissions) };
+    return { data: this.mapDetail(updated, actor) };
   }
 
   async restore(
@@ -1248,7 +1358,7 @@ export class DocumentsService {
     metadata: DocumentRequestMetadata,
   ): Promise<{ data: DocumentDetailV1 }> {
     this.assertPermission(actor.permissions, 'documents.restore');
-    const row = await this.repository.findDetail(id, actor.branchIds);
+    const row = await this.findVisibleDetail(id, actor);
     if (!row) throw new NotFoundException('سند پیدا نشد.');
     this.assertDomain(row.documentType.domain, actor.permissions);
     if (row.archiveStatus !== 'ARCHIVED') {
@@ -1272,7 +1382,7 @@ export class DocumentsService {
       userAgentSummary: summarizeUserAgent(metadata.userAgent),
     });
     if (!updated) throw new ConflictException('سند هم‌زمان تغییر کرده است.');
-    return { data: this.mapDetail(updated, actor.permissions) };
+    return { data: this.mapDetail(updated, actor) };
   }
 
   async bulk(
@@ -1288,7 +1398,7 @@ export class DocumentsService {
           ? 'documents.restore'
           : 'documents.metadata.update';
     this.assertPermission(actor.permissions, permission);
-    const rows = await this.repository.findDetails(ids, actor.branchIds);
+    const rows = await this.findVisibleDetails(ids, actor);
     if (rows.length !== ids.length) {
       throw new NotFoundException('یک یا چند سند انتخاب‌شده پیدا نشد.');
     }
@@ -1337,7 +1447,7 @@ export class DocumentsService {
     actor: AuthenticatedActor,
   ): Promise<void> {
     this.assertPermission(actor.permissions, 'documents.delete');
-    const row = await this.repository.findDetail(id, actor.branchIds);
+    const row = await this.findVisibleDetail(id, actor);
     if (!row) throw new NotFoundException('سند پیدا نشد.');
     this.assertDomain(row.documentType.domain, actor.permissions);
     if (row.legalHoldActive) {
@@ -1552,10 +1662,9 @@ export class DocumentsService {
           documentId,
           actor.branchIds,
         );
-        if (scanned)
-          return { data: this.mapDetail(scanned, actor.permissions) };
+        if (scanned) return { data: this.mapDetail(scanned, actor) };
       }
-      return { data: this.mapDetail(row, actor.permissions) };
+      return { data: this.mapDetail(row, actor) };
     } catch (error) {
       await this.storage
         .removeQuarantined(storageObjectKey)
@@ -1614,9 +1723,11 @@ export class DocumentsService {
   }
 
   async audit(id: string, actor: AuthenticatedActor) {
-    const row = await this.repository.findDetail(id, actor.branchIds);
+    const row = await this.findVisibleDetail(id, actor);
     if (!row) throw new NotFoundException('سند پیدا نشد.');
     this.assertDomain(row.documentType.domain, actor.permissions);
+    if (isWorkbenchFeedbackAttachment(row) && row.ownerUserId !== actor.userId)
+      throw new NotFoundException('سند پیدا نشد.');
     const events = await this.repository.audit(id);
     return {
       data: events.map((event): DocumentAuditEventV1 => ({
@@ -1657,7 +1768,7 @@ export class DocumentsService {
     actor: AuthenticatedActor,
     metadata: DocumentRequestMetadata,
   ): Promise<DocumentAccessGrantResponseV1> {
-    const row = await this.repository.findDetail(id, actor.branchIds);
+    const row = await this.findVisibleDetail(id, actor);
     if (!row || !row.currentVersion)
       throw new NotFoundException('سند پیدا نشد.');
     this.assertDomain(row.documentType.domain, actor.permissions);
@@ -1761,13 +1872,14 @@ export class DocumentsService {
     actor: AuthenticatedActor,
     metadata: DocumentRequestMetadata,
   ): Promise<DocumentFileDelivery> {
-    const row = await this.repository.findDetail(id, actor.branchIds);
+    const row = await this.findVisibleDetail(id, actor);
     if (!row || !row.currentVersion)
       throw new NotFoundException('سند پیدا نشد.');
     this.assertDomain(row.documentType.domain, actor.permissions);
     const sensitive =
       row.confidentiality === 'CONFIDENTIAL' ||
-      row.confidentiality === 'RESTRICTED';
+      row.confidentiality === 'RESTRICTED' ||
+      (isWorkbenchFeedbackAttachment(row) && row.ownerUserId !== actor.userId);
     const baseAllowed =
       actor.permissions.includes('documents.file.read') &&
       actor.permissions.includes('documents.download') &&
@@ -1809,7 +1921,9 @@ export class DocumentsService {
         row.currentVersion.storageObjectKey,
         Number(row.currentVersion.sizeBytes),
       ),
-      fileName: row.currentVersion.safeDownloadName,
+      fileName: canRevealDocumentMetadata(row, actor)
+        ? row.currentVersion.safeDownloadName
+        : `protected-file.${row.currentVersion.extension}`,
       mimeType: row.currentVersion.detectedMimeType,
       sizeBytes: Number(row.currentVersion.sizeBytes),
     };
@@ -1820,7 +1934,7 @@ export class DocumentsService {
     id: string,
     actor: AuthenticatedActor,
   ): Promise<DocumentFileDelivery> {
-    const row = await this.repository.findDetail(id, actor.branchIds);
+    const row = await this.findVisibleDetail(id, actor);
     if (!row || !row.currentVersion)
       throw new NotFoundException('فایل قالب MANIFEST پیدا نشد.');
     const allowed =
@@ -1864,14 +1978,15 @@ export class DocumentsService {
     actor: AuthenticatedActor,
     metadata: DocumentRequestMetadata,
   ): Promise<DocumentFileDelivery> {
-    const row = await this.repository.findDetail(id, actor.branchIds);
+    const row = await this.findVisibleDetail(id, actor);
     if (!row || !row.currentVersion)
       throw new NotFoundException('سند پیدا نشد.');
     this.assertDomain(row.documentType.domain, actor.permissions);
 
     const sensitive =
       row.confidentiality === 'CONFIDENTIAL' ||
-      row.confidentiality === 'RESTRICTED';
+      row.confidentiality === 'RESTRICTED' ||
+      (isWorkbenchFeedbackAttachment(row) && row.ownerUserId !== actor.userId);
     const sensitiveAllowed =
       !sensitive ||
       (actor.permissions.includes('documents.sensitive.read') &&
@@ -1930,7 +2045,9 @@ export class DocumentsService {
         row.currentVersion.storageObjectKey,
         Number(row.currentVersion.sizeBytes),
       ),
-      fileName: row.currentVersion.safeDownloadName,
+      fileName: canRevealDocumentMetadata(row, actor)
+        ? row.currentVersion.safeDownloadName
+        : `protected-file.${row.currentVersion.extension}`,
       mimeType: row.currentVersion.detectedMimeType,
       sizeBytes: Number(row.currentVersion.sizeBytes),
     };

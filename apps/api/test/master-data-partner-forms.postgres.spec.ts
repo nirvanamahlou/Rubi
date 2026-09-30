@@ -186,85 +186,153 @@ describe.skipIf(!enabled)('partner forms on isolated PostgreSQL 18', () => {
       sql('postgres', `DROP DATABASE "${databaseName}" WITH (FORCE);`);
   }, 30000);
 
-  it.each(['suppliers', 'brokers'] as const)(
-    'creates, reads, edits, clears and audits %s without disclosing contacts',
-    async (resource) => {
-      const result = await service.create(
-        resource,
-        {
-          ...(resource === 'brokers' ? { name: 'Test broker' } : {}),
-          organizationId,
-          englishName: 'Test Partner',
-          primaryContactId: contactId,
-          serviceCodes: [serviceCode],
-        },
-        actor,
-      );
-      expect(result.data.attributes).toMatchObject({
+  it('creates, reads, edits, clears and audits brokers without disclosing contacts', async () => {
+    const resource = 'brokers';
+    const result = await service.create(
+      resource,
+      {
+        name: 'Test broker',
+        organizationId,
         englishName: 'Test Partner',
         primaryContactId: contactId,
-        organizationPersonType: 'LEGAL',
-        serviceCodes: serviceCode,
-      });
-      expect(result.data.attributes.primaryPhoneMasked).toContain('•');
-      expect(JSON.stringify(result)).not.toContain(plaintextPhone);
-      const publicList = await service.list(resource, {
-        search: 'Test Partner',
-        status: 'all',
-        sortBy: 'name',
-        sortDirection: 'asc',
-        page: 1,
-        pageSize: 20,
-      });
-      expect(publicList.meta.total).toBe(1);
-      expect(JSON.stringify(publicList)).not.toContain(plaintextPhone);
-      const audits = await client.masterDataAuditEvent.findMany({
-        where: { entityId: result.data.id },
-      });
-      expect(JSON.stringify(audits)).not.toMatch(
-        /phoneEncrypted|phoneFingerprint|phoneEncryptionIv/,
-      );
-      expect(JSON.stringify(audits)).not.toContain(plaintextPhone);
-      const updated = await service.update(
+        serviceCodes: [serviceCode],
+      },
+      actor,
+    );
+    expect(result.data.attributes).toMatchObject({
+      englishName: 'Test Partner',
+      primaryContactId: contactId,
+      organizationPersonType: 'LEGAL',
+      serviceCodes: serviceCode,
+    });
+    expect(result.data.attributes.primaryPhoneMasked).toContain('•');
+    expect(JSON.stringify(result)).not.toContain(plaintextPhone);
+    const publicList = await service.list(resource, {
+      search: 'Test Partner',
+      status: 'all',
+      sortBy: 'name',
+      sortDirection: 'asc',
+      page: 1,
+      pageSize: 20,
+    });
+    expect(publicList.meta.total).toBe(1);
+    expect(JSON.stringify(publicList)).not.toContain(plaintextPhone);
+    const audits = await client.masterDataAuditEvent.findMany({
+      where: { entityId: result.data.id },
+    });
+    expect(JSON.stringify(audits)).not.toMatch(
+      /phoneEncrypted|phoneFingerprint|phoneEncryptionIv/,
+    );
+    expect(JSON.stringify(audits)).not.toContain(plaintextPhone);
+    const updated = await service.update(
+      resource,
+      result.data.id,
+      { englishName: 'Renamed Partner' },
+      1,
+      actor,
+    );
+    expect(updated.data.attributes.primaryContactId).toBe(contactId);
+    await expect(
+      service.update(
         resource,
         result.data.id,
-        { englishName: 'Renamed Partner' },
+        { englishName: 'stale' },
         1,
         actor,
-      );
-      expect(updated.data.attributes.primaryContactId).toBe(contactId);
-      await expect(
-        service.update(
-          resource,
-          result.data.id,
-          { englishName: 'stale' },
-          1,
-          actor,
-        ),
-      ).rejects.toThrow('هم‌زمان');
-      await expect(
-        service.update(
-          resource,
-          result.data.id,
-          { primaryContactId: otherContactId },
-          2,
-          actor,
-        ),
-      ).rejects.toThrow('همان سازمان');
-      const cleared = await service.update(
+      ),
+    ).rejects.toThrow('هم‌زمان');
+    await expect(
+      service.update(
         resource,
         result.data.id,
-        { englishName: '', primaryContactId: '', serviceCodes: '' },
+        { primaryContactId: otherContactId },
         2,
         actor,
-      );
-      expect(cleared.data.attributes).toMatchObject({
-        englishName: null,
-        primaryContactId: null,
-        serviceCodes: '',
-      });
-    },
-  );
+      ),
+    ).rejects.toThrow('همان سازمان');
+    const cleared = await service.update(
+      resource,
+      result.data.id,
+      { englishName: '', primaryContactId: '', serviceCodes: '' },
+      2,
+      actor,
+    );
+    expect(cleared.data.attributes).toMatchObject({
+      englishName: null,
+      primaryContactId: null,
+      serviceCodes: '',
+    });
+  });
+
+  it('persists a standalone supplier and clears its protected phone on edit', async () => {
+    const createdSupplier = await service.create(
+      'suppliers',
+      {
+        name: 'Synthetic supplier',
+        address: 'Test address',
+        primaryPhone: plaintextPhone,
+        organizationId,
+        primaryContactId: contactId,
+        serviceCodes: [serviceCode],
+      },
+      actor,
+    );
+    expect(createdSupplier.data.attributes.primaryPhoneMasked).toContain('•');
+    expect(JSON.stringify(createdSupplier)).not.toContain(plaintextPhone);
+    const stored = await client.masterSupplier.findUniqueOrThrow({
+      where: { id: createdSupplier.data.id },
+    });
+    expect(stored.organizationId).toBeNull();
+    expect(stored.primaryContactId).toBeNull();
+    expect(stored.primaryPhoneEncrypted).not.toBe(plaintextPhone);
+    const listing = await service.list('suppliers', {
+      search: 'Synthetic supplier',
+      status: 'all',
+      sortBy: 'name',
+      sortDirection: 'asc',
+      page: 1,
+      pageSize: 20,
+    });
+    expect(listing.meta.total).toBe(1);
+    expect(JSON.stringify(listing)).not.toContain(plaintextPhone);
+    await service.update(
+      'suppliers',
+      createdSupplier.data.id,
+      { address: 'Updated test address' },
+      1,
+      actor,
+    );
+    const preserved = await client.masterSupplier.findUniqueOrThrow({
+      where: { id: createdSupplier.data.id },
+    });
+    expect(preserved.primaryPhoneEncrypted).toBe(stored.primaryPhoneEncrypted);
+    await service.update(
+      'suppliers',
+      createdSupplier.data.id,
+      { primaryPhone: '' },
+      2,
+      actor,
+    );
+    const updated = await client.masterSupplier.findUniqueOrThrow({
+      where: { id: createdSupplier.data.id },
+    });
+    expect(updated.address).toBe('Updated test address');
+    expect(updated.primaryPhoneEncrypted).toBeNull();
+    expect(updated.primaryPhoneMasked).toBeNull();
+    const audit = await client.masterDataAuditEvent.findMany({
+      where: { entityId: createdSupplier.data.id },
+    });
+    expect(JSON.stringify(audit)).not.toContain(plaintextPhone);
+    await expect(
+      service.update(
+        'suppliers',
+        createdSupplier.data.id,
+        { address: 'Stale edit' },
+        1,
+        actor,
+      ),
+    ).rejects.toThrow('هم‌زمان');
+  });
 
   it('enforces same-organization FK at the database layer and blocks identity transfer/deletion', async () => {
     const broker = await client.masterBroker.findUniqueOrThrow({

@@ -10,7 +10,7 @@ import {
   ShieldCheck,
   type LucideIcon,
 } from 'lucide-react';
-import Link from 'next/link';
+import Link from '@/components/access-link';
 
 import { Card, PageHeader } from '@/components/ui/surfaces';
 import { cn } from '@/lib/utils';
@@ -73,13 +73,7 @@ const toneClasses: Record<
 const visibleSubsections: Partial<
   Record<MasterDataSectionSlug, readonly string[]>
 > = {
-  finance: [
-    'ارزها و تاریخچه نرخ',
-    'گردش تأیید نرخ',
-    'بانک‌ها',
-    'شعب بانک',
-    'روش پرداخت',
-  ],
+  finance: ['ارزها و تاریخچه نرخ', 'گردش تأیید نرخ', 'بانک‌ها', 'روش پرداخت'],
   geography: ['کشورها', 'شهرها و استان‌ها', 'فرودگاه‌ها', 'ترمینال‌ها'],
   'organizations-suppliers': ['تأمین‌کنندگان', 'کارگزاران', 'وضعیت همکاری'],
   accommodation: ['هتل‌ها', 'زنجیره‌های هتل', 'هتل‌های ترکیبی'],
@@ -89,10 +83,7 @@ const visibleSubsections: Partial<
 export function MasterDataHub() {
   return (
     <div className="space-y-6">
-      <PageHeader
-        description="مدیریت یکپارچه داده‌های مرجع سازمان؛ برای ورود به هر حوزه، کارت مربوط را انتخاب کنید."
-        title="اطلاعات پایه"
-      />
+      <PageHeader title="اطلاعات پایه" />
 
       <section aria-labelledby="master-data-sections-title">
         <h2 className="sr-only" id="master-data-sections-title">
@@ -137,9 +128,6 @@ export function MasterDataHub() {
                         <h3 className="text-base font-black leading-7 text-foreground">
                           {section.title}
                         </h3>
-                        <p className="mt-1 text-xs leading-6 text-muted-foreground">
-                          {section.description}
-                        </p>
                       </div>
                     </div>
 

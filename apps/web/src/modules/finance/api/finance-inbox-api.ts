@@ -1,6 +1,8 @@
 'use client';
 
 import type {
+  FinanceHistoryQueryV1,
+  FinanceHistoryV1,
   FinanceBankOptionV1,
   FinanceInboxV1,
   FinancePaymentMethodOptionV1,
@@ -78,6 +80,14 @@ async function apiRequest<T>(
 }
 
 export const financeInboxApi = {
+  history: (query: FinanceHistoryQueryV1 = {}) => {
+    const params = new URLSearchParams();
+    for (const [key, value] of Object.entries(query))
+      if (value) params.set(key, value);
+    return apiRequest<FinanceHistoryV1>(
+      '/finance/transaction-history?' + params.toString(),
+    );
+  },
   list: () => apiRequest<FinanceInboxV1>('/finance/inbox'),
   accounts: async () =>
     (

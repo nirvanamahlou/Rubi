@@ -63,6 +63,8 @@ export interface AffairsReport {
   generatedAt: string;
   leadStages: Array<{ stage: string; _count: { _all: number } }>;
   ticketStatuses: Array<{ status: string; _count: { _all: number } }>;
+  ticketPriorities?: Array<{ priority: string; _count: { _all: number } }>;
+  ticketCategories?: Array<{ category: string; _count: { _all: number } }>;
   satisfaction: { average: number | null; count: number };
   correctiveActions: Array<{ status: string; _count: { _all: number } }>;
 }
@@ -101,7 +103,46 @@ function query(
   return params.toString();
 }
 
+async function downloadXlsx(path: string, filename: string) {
+  const base = getPublicApiBaseUrl();
+  if (!base)
+    throw new CustomerAffairsApiError('نشانی API پیکربندی نشده است.', 0);
+  const response = await fetch(`${base}/customer-affairs${path}`, {
+    credentials: 'include',
+    headers: {
+      accept:
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    },
+  });
+  if (!response.ok)
+    throw new CustomerAffairsApiError(
+      'دریافت خروجی Excel انجام نشد.',
+      response.status,
+    );
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = filename;
+  anchor.click();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
 export const customerAffairsApi = {
+  exportLeads: (search = '', options: AffairsListOptions = {}) =>
+    downloadXlsx(
+      `/leads/export/xlsx?${query(search, undefined, options)}`,
+      'customer-requests.xlsx',
+    ),
+  exportTickets: (
+    search = '',
+    status = 'ALL',
+    options: AffairsListOptions = {},
+  ) =>
+    downloadXlsx(
+      `/tickets/export/xlsx?${query(search, status, options)}`,
+      'customer-tickets.xlsx',
+    ),
   createWorkbenchRequest: (
     input: CustomerAffairsTicketInput,
     branchId: string,
@@ -256,7 +297,10 @@ export const customerAffairsApi = {
       body: JSON.stringify(input),
     }),
   dashboard: () => request<{ data: CustomerAffairsDashboard }>('/dashboard'),
-  report: () => request<{ data: AffairsReport }>('/reports/summary'),
+  report: (options: AffairsListOptions = {}) =>
+    request<{ data: AffairsReport }>(
+      `/reports/summary?${query('', undefined, options)}`,
+    ),
   leads: (search = '', options: AffairsListOptions = {}) =>
     request<CustomerAffairsListResponse<CustomerAffairsLeadView>>(
       `/leads?${query(search, undefined, options)}`,
@@ -267,11 +311,15 @@ export const customerAffairsApi = {
         timeline: CustomerAffairsTimelineInput[];
       };
     }>(`/leads/${id}`),
-  createLead: (input: CustomerAffairsLeadInput, branchId?: string) =>
+  createLead: (
+    input: CustomerAffairsLeadInput,
+    branchId?: string,
+    idempotencyKey = crypto.randomUUID(),
+  ) =>
     request<{ data: CustomerAffairsLeadView }>('/leads', {
       method: 'POST',
       headers: {
-        'idempotency-key': crypto.randomUUID(),
+        'idempotency-key': idempotencyKey,
         ...(branchId ? { 'x-branch-id': branchId } : {}),
       },
       body: JSON.stringify(input),
@@ -319,11 +367,15 @@ export const customerAffairsApi = {
         correctiveActions: Array<Record<string, unknown>>;
       };
     }>(`/tickets/${id}`),
-  createTicket: (input: CustomerAffairsTicketInput, branchId?: string) =>
+  createTicket: (
+    input: CustomerAffairsTicketInput,
+    branchId?: string,
+    idempotencyKey = crypto.randomUUID(),
+  ) =>
     request<{ data: CustomerAffairsTicketView }>('/tickets', {
       method: 'POST',
       headers: {
-        'idempotency-key': crypto.randomUUID(),
+        'idempotency-key': idempotencyKey,
         ...(branchId ? { 'x-branch-id': branchId } : {}),
       },
       body: JSON.stringify(input),

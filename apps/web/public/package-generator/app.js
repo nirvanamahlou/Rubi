@@ -3,7 +3,7 @@ const $=id=>document.getElementById(id),state={data:null,bytes:null,fileName:'',
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fa=n=>new Intl.NumberFormat('fa-IR').format(n),latin=s=>String(s).replace(/[۰-۹]/g,c=>'۰۱۲۳۴۵۶۷۸۹'.indexOf(c)).replace(/[٠-٩]/g,c=>'٠١٢٣٤٥٦٧٨٩'.indexOf(c)),profile=()=>window.PackageCards?.profile(TEMPLATES[$('template').value])||TEMPLATES[$('template').value];
 const TEMPLATE_COUNTRIES={
- turkey:['combined','kus','antalya','bodrum','nss'],
+ turkey:['combined','kus','antalya','bodrum','nss','istanbul-3','istanbul-4'],
  malaysia:['malaysia-kuala','malaysia-penang','malaysia-singapore','malaysia-langkawi'],
  spain:['spain-barcelona','spain-madrid','spain-combined'],
  thailand:['thailand-phuket','thailand-bangkok-phuket','thailand-pattaya']
@@ -30,7 +30,7 @@ function priceText(c){
  const a=typeof v==='number'?new Intl.NumberFormat('en-US',{minimumFractionDigits:0,maximumFractionDigits:c.decimals??2}).format(v):String(v).trim();const priced=currency?(['€','$'].includes(currency)?currency+' '+a:a+' '+currency):a;return priced+(c.suffix?' '+c.suffix:'');
 }
 function moneyText(v){if(unavailable(v))return '—';const n=PackageSummary.money(v);if(n===null)return String(v).trim();return new Intl.NumberFormat('en-US',{maximumFractionDigits:2}).formatToParts(n).map(p=>p.type==='group'?'.':p.type==='decimal'?'٫':p.value).join('');}
-function defaultServices(){return $('template').value==='nss'?'پرواز رفت و برگشت ایران ایرتور، ترانسفر فرودگاهی، راهنمای فارسی‌زبان، اقامت در هتل با خدمات درج‌شده، بیمه مسافرتی، سیم‌کارت، گشت شهری با ناهار و ترانسفر رفت و برگشت هتل بازار جواهر آنتالیا.':'پرواز رفت و برگشت ایران ایرتور، ترانسفر فرودگاهی، راهنمای فارسی‌زبان، اقامت در هتل با خدمات درج‌شده، بیمه مسافرتی';}
+function defaultServices(){if($('template').value.startsWith('istanbul-'))return 'پرواز رفت و برگشت تابان، ترانسفر فرودگاهی، گشت نیم‌روزی، پرواز داخلی، سیم‌کارت، بیمه مسافرتی، تور لیدر فارسی‌زبان، اقامت در هتل با صبحانه';return $('template').value==='nss'?'پرواز رفت و برگشت ایران ایرتور، ترانسفر فرودگاهی، راهنمای فارسی‌زبان، اقامت در هتل با خدمات درج‌شده، بیمه مسافرتی، سیم‌کارت، گشت شهری با ناهار و ترانسفر رفت و برگشت هتل بازار جواهر آنتالیا.':'پرواز رفت و برگشت ایران ایرتور، ترانسفر فرودگاهی، راهنمای فارسی‌زبان، اقامت در هتل با خدمات درج‌شده، بیمه مسافرتی';}
 function columns(){
  const p=profile(),d=state.data,thai=p.style.startsWith('thailand-'),cols=[{key:'hotel',label:'نام هتل'}];if(p.style==='combined')cols.push({key:'city',label:'شهر'});if(p.style==='spain-combined')cols.push({key:'stars',label:'ستاره'});if((d.hasRoom&&p.style!=='combined'&&!thai)||p.style==='antalya')cols.push({key:'room',label:'نوع اتاق'});cols.push({key:'service',label:thai&&d.hasRoom?'درجه / اتاق':'خدمات'});
  for(const key of d.priceKeys)cols.push({key,label:{double:'دوتخته',single:'یک تخت',extra:'اضافه',child:'کودک با تخت',small:p.style.startsWith('malaysia-')||thai?'کودک بدون تخت':'کودک ۲–۶ سال'}[key]});
@@ -38,7 +38,7 @@ function columns(){
 }
 function headerBox(){return profile().headerBox||{combined:[216,271,879,37],antalya:[212,234,879,31],kus:[247,264,849,38],bodrum:[238,286,740,40],nss:[238,282,750,31]}[profile().style];}
 function hasCustomTitle(){return window.PackageEditor?.needs('title')||PKJ.norm($('title').value)!==PKJ.norm(profile().title);}
-function servicesText(){if(profile().style.startsWith('spain-'))return $('services').value;if(window.PackageEditor?.needs('services'))return [$('services').value||((window.PackageEditor?.hasText('services'))?'':defaultServices()),$('notes').value].filter(Boolean).join('\n');return [$('services').value||($('notes').value?defaultServices():''),$('notes').value].filter(Boolean).join('\n');}
+function servicesText(){if(profile().style.startsWith('spain-')||profile().style.startsWith('istanbul-'))return $('services').value;if(window.PackageEditor?.needs('services'))return [$('services').value||((window.PackageEditor?.hasText('services'))?'':defaultServices()),$('notes').value].filter(Boolean).join('\n');return [$('services').value||($('notes').value?defaultServices():''),$('notes').value].filter(Boolean).join('\n');}
 const LAYER_GEOMETRY={
  combined:{left:[0,0,233,1324],agency:[239,10,154,180],airline:[916,8,176,172],footer:[0,1324,1122,78]},
  kus:{left:[0,0,258,1253],agency:[263,10,185,180],airline:[892,8,180,180],footer:[0,1253,1145,121]},
@@ -52,21 +52,28 @@ const LAYER_GEOMETRY={
  'thailand-phuket':{left:[0,0,154,1008],agency:[158,3,151,143],airline:[612,3,149,145],footer:[0,1008,771,72]},
  'thailand-bangkok-phuket':{left:[0,0,151,1008],agency:[154,3,151,143],airline:[614,3,142,145],footer:[0,1008,764,72]},
  'thailand-pattaya':{left:[0,0,137,1021],agency:[141,3,143,142],airline:[568,3,145,143],footer:[0,1021,720,59]},
+ 'istanbul-3':{left:[0,0,194,1352],agency:[233,8,189,188],airline:[874,8,170,197],footer:[0,1352,1092,89]},
+ 'istanbul-4':{left:[0,0,190,1313],agency:[232,8,190,186],airline:[867,8,175,195],footer:[0,1313,1122,89]},
  'spain-barcelona':{left:[0,0,160,1514],agency:[191,55,179,197],airline:[764,135,174,165],footer:[0,1514,948,145]},
  'spain-madrid':{left:[0,0,175,1515],agency:[192,59,180,196],airline:[765,121,173,174],footer:[0,1515,948,144]},
  'spain-combined':{left:[0,0,152,1517],agency:[190,58,180,196],airline:[767,155,171,155],footer:[0,1517,948,142]}
 };
+function cardValueBox(p,slot){
+ if(!/^(malaysia|thailand)-/.test(p.style))return slot.box;
+ const [x,y,w,h]=slot.box,inset=p.style.startsWith('thailand-')?1:3;return [x+inset,y+inset,w-inset*2,h-inset*2];
+}
 function staticArt(){
- const p=profile(),holes=state.data?[p.body,p.date,...p.cardSlots.map(s=>s.box)]:[];holes.push(...(window.PackageEditor?.holes()||[]),...(window.PackageCards?.holes()||[]));if(p.style==='combined'&&(state.data||$('stays').value||['stays','infant','infantLabel','infantValue','infantUnit'].some(k=>window.PackageEditor?.needs(k))))holes.push(p.staysBox,p.infantBox);if(hasCustomTitle())holes.push(p.titleBox);if(p.durationBox&&state.data)holes.push(p.durationHole||p.durationBox);if(servicesText())holes.push(p.servicesBox);if(p.notesBox&&state.data)holes.push(p.notesBox);if(p.adjustmentsBox&&state.data)holes.push(p.adjustmentsBox);if(state.data&&(columns().length!==p.columns.length||window.PackageEditor?.customHeader()))holes.push(headerBox());
+ const p=profile(),holes=state.data?[p.body,p.date,...p.cardSlots.map(s=>cardValueBox(p,s))]:[];holes.push(...(window.PackageEditor?.holes()||[]),...(window.PackageCards?.holes()||[]));if(p.style==='combined'&&(state.data||$('stays').value||['stays','infant','infantLabel','infantValue','infantUnit'].some(k=>window.PackageEditor?.needs(k))))holes.push(p.staysBox,p.infantBox);if(hasCustomTitle())holes.push(p.titleBox);if(p.durationBox&&state.data)holes.push(p.durationHole||p.durationBox);if(servicesText())holes.push(p.servicesBox);if(p.notesBox&&state.data)holes.push(p.notesBox);if(p.adjustmentsBox&&state.data&&!p.style.startsWith('thailand-'))holes.push(p.adjustmentsBox);if(state.data&&(columns().length!==p.columns.length||window.PackageEditor?.customHeader()))holes.push(headerBox());
  const key=$('template').value+JSON.stringify(holes);if(artworkCache.has(key))return artworkCache.get(key);
  if(p.externalImage){
   const fillFor=box=>{
-   if(p.date&&box===p.date)return '#062b7d';
+   if(p.date&&box===p.date)return p.style.startsWith('malaysia-')?'#06265d':'#062b7d';
    if(p.headerBox&&box===p.headerBox)return '#062b7d';
    return '#fff';
   };
-  const svgRect=(w,h,fill)=>`<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><rect width="${w}" height="${h}" fill="${fill}"/></svg>`;
-  const result=[{key:'background',label:'زمینهٔ قالب',box:[0,0,p.width,p.height],src:p.image},...holes.map((box,i)=>({key:'mask-'+i,label:'زمینهٔ قابل ویرایش',box,src:'data:image/svg+xml;base64,'+btoa(svgRect(box[2],box[3],fillFor(box)))}))];
+  const svgRect=(w,h,fill,round=0)=>`<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><rect width="${w}" height="${h}" rx="${round}" fill="${fill}"/></svg>`;
+  const roundedCards=/^(malaysia|thailand)-/.test(p.style)?new Set(p.cardSlots.map(s=>cardValueBox(p,s).join(','))):new Set();
+  const result=[{key:'background',label:'زمینهٔ قالب',box:[0,0,p.width,p.height],src:p.image},...holes.map((box,i)=>({key:'mask-'+i,label:'زمینهٔ قابل ویرایش',box,src:'data:image/svg+xml;base64,'+btoa(svgRect(box[2],box[3],fillFor(box),box===p.date?(p.style.startsWith('istanbul-')?25:/^(malaysia|thailand)-/.test(p.style)?Math.min(28,box[3]/2):0):roundedCards.has(box.join(','))?6:0))}))];
   artworkCache.set(key,result);return result;
  }
  const geo=LAYER_GEOMETRY[p.style],layers=[{key:'left',label:'عکس چپ و انحنا',box:geo.left},{key:'agency',label:'لوگوی آژانس',box:geo.agency},{key:'airline',label:'لوگوی ایرلاین',box:geo.airline},{key:'city',label:'عنوان شهر',box:p.titleBox},{key:'footer',label:'فوتر اصلی',box:geo.footer}];if(p.noteIconBox)layers.push({key:'noteIcon',label:'آیکون توضیحات',box:p.noteIconBox});if(p.serviceIconBox)layers.push({key:'serviceIcon',label:'آیکون خدمات',box:p.serviceIconBox});
@@ -96,6 +103,20 @@ function rowsHTML(ids,minimumRows=profile().rows){
  }html+='</tr>';});}
  const count=ids.reduce((s,i)=>s+state.data.groups[i].hotels.length,0);for(let n=count;n<minimumRows;n++)html+='<tr class="empty-row" aria-hidden="true">'+cols.map(()=>'<td></td>').join('')+'</tr>';return html;
 }
+function thailandSchedule(p){
+ if(!state.data||!p.style.startsWith('thailand-'))return '';
+ if(p.style==='thailand-pattaya'){
+  const days=state.cards.flightDays?.value||'—',out=state.cards.departureTime?.value||'—',back=state.cards.returnTime?.value||'—';
+  const changes=$('adjustments').value.replace(/افزایش\s*نرخ\s*([0-9۰-۹.,٬]+)\s*([0-9۰-۹]+\s*مهر\s*-\s*[0-9۰-۹]+\s*مهر)/g,(_,amount,dates)=>`${dates}: ${moneyText(amount)} تومان`).replace(/([0-9۰-۹-]+)\s*(مهر)\s*([0-9۰-۹]+)\s*میلیون\s*افزایش\s*نرخ/g,(_,dates,month,amount)=>`${dates.replace(/-/g,'، ')} ${month}: ${moneyText(Number(latin(amount))*1000000)} تومان`);
+  return place('thai-increase-slot',[149,879,265,64],esc(prettyFa(changes||'—')))+place('thai-flight-info-slot',[430,879,256,64],`<span>روزهای پرواز: ${esc(prettyFa(days))}</span><span>رفت: ${esc(prettyFa(out))} | برگشت: ${esc(prettyFa(back))}</span>`);
+ }
+ const capacity=p.rateCount||0,all=state.data.flightRates||[],rates=all.length>capacity?all.filter((rate,i)=>all.findIndex(other=>other.date===rate.date&&other.value===rate.value)===i):all;
+ const [left,top,width]=p.adjustmentsBox,y=top+(p.style==='thailand-phuket'?23:26),height=p.style==='thailand-phuket'?55:68;
+ return place('thai-rate-grid',[left+4,y,width-8,height],Array.from({length:capacity},(_,i)=>{
+  const rate=rates[i],price=rate?moneyText(rate.value):'—';
+  return `<div class="thai-rate-slot"><span>${esc(prettyFa(rate?.date||'—'))}</span><b>${esc(price)}</b><small>${esc(rate?.unit||'')}</small></div>`;
+ }).join('')).replace('style="',`style="--rate-count:${capacity};`);
+}
 function makePage(ids,num,total){
  const p=profile(),cols=state.data?columns():[],tableGroups=state.data?splitTableColumns(ids,p.tableColumns||1):[],page=document.createElement('article');page.className='package-page '+p.style;page.style.width=p.width+'px';page.style.height=p.height+'px';page.style.setProperty('--table-color',$('tableColor').value);
  if(state.data&&Math.max(...tableGroups.map(group=>group.reduce((n,i)=>n+state.data.groups[i].hotels.length,0)))>p.rows)page.classList.add('dense-table');
@@ -104,26 +125,26 @@ function makePage(ids,num,total){
  if(state.data||window.PackageEditor?.needs('date'))html+=place('date-slot',p.date,esc(prettyFa($('date').value)||(window.PackageEditor?.hasText('date')?'':'—')));if(p.durationBox&&(state.data||window.PackageEditor?.needs('duration')))html+=place('duration-slot',p.durationBox,esc(prettyFa($('duration').value).replace(/[()]/g,'')));if(hasCustomTitle())html+=place('title-slot',p.titleBox,esc($('title').value));
  if(p.style==='combined'&&(state.data||$('stays').value||['stays','infant','infantLabel','infantValue','infantUnit'].some(k=>window.PackageEditor?.needs(k)))){html+=place('stays-slot',p.staysBox,esc(prettyFa($('stays').value)));html+=place('infant-slot',p.infantBox,`<span>${esc($('infantLabel').value)}:</span> <b>${esc(moneyText($('infantValue').value))}</b> <small>${esc($('infantValue').value?$('infantUnit').value:'')}</small>`);}
  html+=window.PackageCards?.artwork()||'';
- for(const slot of p.cardSlots){if(!state.data&&!window.PackageEditor?.needs('value_'+slot.key)&&!window.PackageEditor?.needs('unit_'+slot.key))continue;const c=state.cards[slot.key]||{};html+=place('value-slot value-'+slot.key,slot.box,`<b>${esc(p.style.startsWith('spain-')?prettyFa(moneyText(c.value)):moneyText(c.value))}</b>${!unavailable(c.value)?`<small>${esc(window.PackageEditor?.hasText('unit_'+slot.key)?(c.unit??''):(c.unit??'تومان'))}</small>`:''}`);}
+ for(const slot of p.cardSlots){if(!state.data&&!window.PackageEditor?.needs('value_'+slot.key)&&!window.PackageEditor?.needs('unit_'+slot.key))continue;const c=state.cards[slot.key]||{},value=p.style.startsWith('thailand-')&&slot.key==='flightDays'?String(c.value||'').replace(/سه\s*شنبه\s*ها?\s*و\s*پنج\s*شنبه\s*ها?/,'سه‌شنبه و پنج‌شنبه').replace(/سه\s*شنبه\s*هر\s*هفته/,'هر سه‌شنبه'):moneyText(c.value);html+=place('value-slot value-'+slot.key,cardValueBox(p,slot),`<b>${esc(p.style.startsWith('spain-')?prettyFa(moneyText(c.value)):value)}</b>${!unavailable(c.value)?`<small>${esc(window.PackageEditor?.hasText('unit_'+slot.key)?(c.unit??''):(c.unit??'تومان'))}</small>`:''}`);}
+ html+=thailandSchedule(p);
  if(servicesText())html+=place('services-slot',p.servicesBox,esc(servicesText()));
  if(p.notesBox&&state.data)html+=place('notes-slot',p.notesBox,esc($('notes').value||'—'));
- if(p.adjustmentsBox&&state.data)html+=place('adjustments-slot',p.adjustmentsBox,esc(prettyFa($('adjustments').value)||'—'));
+ if(p.adjustmentsBox&&state.data&&!p.style.startsWith('thailand-'))html+=place('adjustments-slot',p.adjustmentsBox,esc(prettyFa($('adjustments').value)||'—'));
  if(state.data&&(cols.length!==p.columns.length||window.PackageEditor?.customHeader()))html+=(p.headerBoxes||[headerBox()]).map(box=>place('custom-header',box,cols.map(c=>`<span data-section="header_${c.key}" style="width:${c.width}%">${esc(window.PackageEditor?.text('header_'+c.key,c.label)??c.label)}</span>`).join(''))).join('');
  if(total>1)html+=`<div class="page-stamp">${fa(num)} / ${fa(total)}</div>`;page.innerHTML=html+(window.PackageEditor?.overlays()||'');window.PackageEditor?.decorate(page);return page;
 }
 function fitText(page){
- const region=page.querySelector('.data-region'),table=region?.querySelector('table');
- const rowCount=table?.rows.length||1,tableStyle=table&&getComputedStyle(table),spacing=tableStyle?.borderCollapse==='collapse'?0:parseFloat(tableStyle?.borderSpacing.split(' ').at(-1)||0);
- const rowHeight=region?(region.clientHeight-spacing*(rowCount+1))/rowCount:0,minSize=profile().minFont||8;
+ const minSize=profile().minFont||8;
  for(const el of page.querySelectorAll('.data-table [contenteditable]')){
+  const region=el.closest('.data-region'),table=region.querySelector('table'),rowCount=table.rows.length||1,tableStyle=getComputedStyle(table),spacing=tableStyle.borderCollapse==='collapse'?0:parseFloat(tableStyle.borderSpacing.split(' ').at(-1)||0),rowHeight=(region.clientHeight-spacing*(rowCount+1))/rowCount;
   let size=Number(el.dataset.editorSize||$('fontSize').value);if(el.closest('.room')&&!el.dataset.editorSize)size=Math.min(size,12);el.style.fontSize=size+'px';
   const cell=el.closest('td'),style=getComputedStyle(cell),lineRatio=parseFloat(getComputedStyle(el).lineHeight)/size||1.16,note=cell.querySelector('.city-note');
   const available=rowHeight*cell.rowSpan-parseFloat(style.paddingTop)-parseFloat(style.paddingBottom)-parseFloat(style.borderTopWidth)-parseFloat(style.borderBottomWidth)-(note?.offsetHeight||0);
   size=Math.max(minSize,Math.min(size,Math.floor(available/lineRatio*4)/4));el.style.fontSize=size+'px';
   for(let n=0;n<160&&el.scrollWidth>el.clientWidth+1&&size>minSize;n++){size=Math.max(minSize,size-.25);el.style.fontSize=size+'px';}
  }
- for(const el of page.querySelectorAll('.title-slot,.date-slot,.duration-slot,.stays-slot,.infant-slot,.services-slot,.notes-slot,.adjustments-slot,.value-slot b,.value-slot small,.editor-text,.custom-header span')){let size=parseFloat(getComputedStyle(el).fontSize);for(let n=0;n<65&&(el.scrollWidth>el.clientWidth+2||el.scrollHeight>el.clientHeight+2)&&size>11;n++){size-=1;el.style.fontSize=size+'px';}}
- return [...page.querySelectorAll('.data-region')].every(item=>item.querySelector('table').getBoundingClientRect().height<=item.getBoundingClientRect().height+2)&&[...page.querySelectorAll('.date-slot,.title-slot,.stays-slot,.infant-slot,.services-slot,.notes-slot,.adjustments-slot,.value-slot,.editor-text,.custom-header span')].every(e=>e.scrollWidth<=e.clientWidth+2&&e.scrollHeight<=e.clientHeight+2);
+ for(const el of page.querySelectorAll('.title-slot,.date-slot,.duration-slot,.stays-slot,.infant-slot,.services-slot,.notes-slot,.adjustments-slot,.value-slot b,.value-slot small,.editor-text,.custom-header span,.thai-rate-slot,.thai-increase-slot,.thai-flight-info-slot')){let size=parseFloat(getComputedStyle(el).fontSize);for(let n=0;n<65&&(el.scrollWidth>el.clientWidth+2||el.scrollHeight>el.clientHeight+2)&&size>9;n++){size-=1;el.style.fontSize=size+'px';}}
+ return [...page.querySelectorAll('.data-region')].every(item=>item.querySelector('table').getBoundingClientRect().height<=item.getBoundingClientRect().height+2)&&[...page.querySelectorAll('.date-slot,.title-slot,.stays-slot,.infant-slot,.services-slot,.notes-slot,.adjustments-slot,.value-slot,.editor-text,.custom-header span,.thai-rate-grid,.thai-increase-slot,.thai-flight-info-slot')].every(e=>e.scrollWidth<=e.clientWidth+2&&e.scrollHeight<=e.clientHeight+2);
 }
 function unmarkedPrices(){return state.data?.groups.some(g=>Object.values(g.prices).some(c=>!unavailable(c.value)&&!c.currency&&!/€|\$|تومان|ریال|یورو|دلار/.test(String(c.value))))||false;}
 function updateDownloadNotice(){
@@ -175,7 +196,7 @@ function render(){return ScrollPosition.keep(()=>renderContents());}
   const moved=[];
   while(chunks[ci].length>1){
    const trial=makePage(chunks[ci],1,1);host.append(trial);fitText(trial);
-   const region=trial.querySelector('.data-region');const fits=region.querySelector('table').getBoundingClientRect().height<=region.getBoundingClientRect().height+2;
+   const fits=[...trial.querySelectorAll('.data-region')].every(region=>region.querySelector('table').getBoundingClientRect().height<=region.getBoundingClientRect().height+2);
    trial.remove();if(fits)break;moved.unshift(chunks[ci].pop());
   }
   if(moved.length)chunks.splice(ci+1,0,moved);

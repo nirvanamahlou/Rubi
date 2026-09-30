@@ -647,3 +647,35 @@ export function normalizeFinanceListQuery(
     pageSize,
   };
 }
+
+/** Append-only operational evidence, independent of the pending inbox. */
+export type FinanceHistorySourceV1 =
+  'SALES' | 'TICKET' | 'RESERVATIONS' | 'INVOICE';
+export interface FinanceHistoryQueryV1 {
+  cursor?: string;
+  direction?: 'RECEIPT' | 'PAYMENT';
+  source?: FinanceHistorySourceV1;
+  requestId?: string;
+}
+export interface FinanceHistoryItemV1 {
+  id: string;
+  source: FinanceHistorySourceV1;
+  requestId: string;
+  direction: 'RECEIPT' | 'PAYMENT';
+  title: string;
+  occurredAt: string;
+  amount: string;
+  currencyCode: string;
+  accountId: string | null;
+  accountTitle: string | null;
+  method: string | null;
+  reference: string | null;
+  installment: number | null;
+  cumulativePaid: string | null;
+  remainingAmount: string | null;
+}
+export interface FinanceHistoryV1 {
+  version: 1;
+  items: readonly FinanceHistoryItemV1[];
+  nextCursor: string | null;
+}

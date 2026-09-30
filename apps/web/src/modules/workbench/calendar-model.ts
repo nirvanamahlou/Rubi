@@ -6,6 +6,15 @@ import {
 
 export type CalendarView = 'month' | 'week' | 'agenda' | 'undated';
 export type CalendarStatus = 'planned' | 'active' | 'completed' | 'cancelled';
+export const calendarStatusOptions: readonly {
+  value: CalendarStatus;
+  label: string;
+}[] = [
+  { value: 'planned', label: 'برنامه‌ریزی‌شده' },
+  { value: 'active', label: 'فعال' },
+  { value: 'completed', label: 'تکمیل‌شده' },
+  { value: 'cancelled', label: 'لغوشده' },
+];
 export interface CalendarEntry {
   id: string;
   title: string;
@@ -18,6 +27,8 @@ export interface CalendarEntry {
   imageUrl?: string;
   imageDocumentId?: string;
   linkUrl?: string;
+  branchId?: string;
+  version?: number;
 }
 export interface CalendarFilter {
   query: string;

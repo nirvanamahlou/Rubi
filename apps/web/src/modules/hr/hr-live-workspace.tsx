@@ -1,6 +1,9 @@
 'use client';
+import { NativeSearchSelect } from '@/components/ui/native-search-select';
+
+import { useRouteAccess } from '@/modules/iam/access-context';
 import dynamic from 'next/dynamic';
-import Link from 'next/link';
+import Link from '@/components/access-link';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { LayoutGrid, RefreshCw } from 'lucide-react';
@@ -78,6 +81,7 @@ export function HrLiveWorkspace({
   const tab = location.tab;
   const store = useHrStore();
   const router = useRouter();
+  const allowedRoute = useRouteAccess();
   const [form, setForm] = useState<HrFormTarget | null>(null);
   const [selected, setSelected] = useState<{
     record: HrRecordDto;
@@ -149,7 +153,7 @@ export function HrLiveWorkspace({
         </Link>
         {section !== 'home' ? (
           <label className={ui.sectionPicker}>
-            <select
+            <NativeSearchSelect
               aria-label="انتخاب بخش منابع انسانی"
               value={section === 'employee' ? 'employees' : section}
               onChange={(event) =>
@@ -157,13 +161,17 @@ export function HrLiveWorkspace({
               }
             >
               {hrHubCards
-                .filter((card) => card.id !== 'finance')
+                .filter(
+                  (card) =>
+                    card.id !== 'finance' &&
+                    allowedRoute('/hr?section=' + card.id),
+                )
                 .map((card) => (
                   <option key={card.id} value={card.id}>
                     {card.id === 'payroll' ? 'حقوق و ارتباط مالی' : card.title}
                   </option>
                 ))}
-            </select>
+            </NativeSearchSelect>
           </label>
         ) : null}
         <HrButton

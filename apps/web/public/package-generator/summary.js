@@ -12,7 +12,7 @@ function kind(text){
  if(/بیزینس|بیزنس|business/.test(t))return 'business';
  if(/نوزاد|infant/.test(t))return 'infant';
  if(/بدونتخت|بدونصندلی|cnb|chdno?bed/.test(t))return 'small';
- if(/^کودک(?:[:：]|\d)/.test(t))return 'childFlight';
+ if(/^کودک(?:[:：]|\d|(?:زیر|کمتر)\d+سال)/.test(t))return 'childFlight';
  if((/پرواز|بلی[تط]|airfare|flight|ticket/.test(t))&&/کودک|بچه|child|chd/.test(t))return 'childFlight';
  if(/^(?:نرخ|هزینه|قیمت|مبلغ)?(?:پرواز|بلی[تط])|^(?:adult)?(?:airfare|flight|ticket)/.test(t))return 'adult';
  // Additional labelled charges become editable cards rather than disappearing in notes.

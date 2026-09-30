@@ -2,11 +2,19 @@ import type { SalesReservationRequestV1 } from '../sales';
 
 export const TRAVEL_RUNTIME_VERSION = 1 as const;
 
+/** One immutable seat block in a ticket fare revision, in sale order. */
+export interface TicketSalePriceTierV1 {
+  seatCount: number;
+  amount: string;
+}
+
 /** Catalog owns schedule, capacity and the public fare used for ticket-only sales. */
 export interface TicketStandaloneSalePriceV1 {
   revision: number;
   amount: string;
   currencyCode: string;
+  /** Absent means the legacy flat per-seat amount applies to the whole capacity. */
+  tiers?: readonly TicketSalePriceTierV1[] | undefined;
 }
 
 /** A named destination for a ticket fare, suitable for a future partner API. */
@@ -37,9 +45,15 @@ export interface TicketStandaloneSalePriceUpdateV1 {
   currencyCode: string;
   /** Omitted/null is the internal direct-sale default used by existing Sales flows. */
   salePriceTargetId?: string | null;
+  tiers?: readonly TicketSalePriceTierV1[] | undefined;
 }
 
 export interface TicketRoundTripSalePriceV1 {
+  /** Original pair base before direct-sale commission. */
+  baseAmount?: string;
+  /** Raw tier prices before the direct-sale commission. */
+  baseTiers?: readonly TicketSalePriceTierV1[] | undefined;
+  tiers?: readonly TicketSalePriceTierV1[] | undefined;
   returnOfferId: string;
   revision: number;
   amount: string;
@@ -50,11 +64,55 @@ export interface TicketRoundTripSalePriceUpdateV1 {
   expectedRevision: number;
   amount: string;
   currencyCode: string;
+  tiers?: readonly TicketSalePriceTierV1[] | undefined;
 }
 
+/** Commission rules are versioned independently from the base fare. */
+export interface TicketSaleCommissionV1 {
+  returnOfferId: string | null;
+  salePriceTargetId: string | null;
+  revision: number;
+  percent: string;
+  amount: string;
+  currencyCode: string;
+  tiers?: readonly TicketSalePriceTierV1[] | undefined;
+}
+export interface TicketSaleCommissionUpdateV1 {
+  offerId: string;
+  returnOfferId?: string | null;
+  salePriceTargetId?: string | null;
+  percent: string;
+  expectedRevision: number;
+  expectedBaseRevision: number;
+  copyToAll?: boolean;
+}
+
+export {
+  eligibleTicketReturn,
+  ticketReturnBounds,
+  ticketCalendarDate,
+  validReturnWindow,
+} from './ticket-return-window';
+
 export interface TicketOfferV1 {
+  /** Null/absent means an older offer has not been classified. */
+  supplyType?: 'COMPANY' | 'FLOATING' | 'API' | null;
+  economyBaggageKg?: string | null;
+  businessBaggageKg?: string | null;
+  /** Active allocations and unexpired holds, in seats. */
+  allocatedCapacity?: number;
+  reservedCapacity?: number;
+  /** Inclusive stay length in Tehran calendar days; null preserves unrestricted legacy offers. */
+  returnMinDays?: number | null;
+  returnMaxDays?: number | null;
+  /** Original direct base, before any direct-sale commission. */
+  baseStandaloneSalePrice?: TicketStandaloneSalePriceV1 | null;
+  saleCommissions?: readonly TicketSaleCommissionV1[];
+
   /** Null/absent uses the built-in default manifest. */
   manifestTemplateId?: string | null;
+  /** Stable source identity exposed by the managed catalog projection. */
+  catalogProductId?: string;
   id: string;
   version: number;
   branchId: string;
@@ -78,15 +136,22 @@ export interface TicketOfferV1 {
 export type TicketOfferCreateV1 = Omit<
   TicketOfferV1,
   | 'id'
+  | 'catalogProductId'
   | 'version'
   | 'branchId'
   | 'remainingCapacity'
+  | 'allocatedCapacity'
+  | 'reservedCapacity'
   | 'status'
+  | 'baseStandaloneSalePrice'
+  | 'saleCommissions'
   | 'standaloneSalePrice'
   | 'targetedStandaloneSalePrices'
   | 'roundTripSalePrices'
 >;
 export interface TicketOfferSearchV1 {
+  /** Restrict reverse-route results to this authorized outbound offer's return window. */
+  outboundOfferId?: string;
   originId: string;
   destinationId: string;
   departureFrom: string;
@@ -397,4 +462,14 @@ export interface VoucherSettingsV1 {
     birthDate?: string;
     documentNumber?: string;
   }[];
+}
+
+/** Compact, branch-scoped responsibility summary; no financial amounts or identity payloads. */
+export interface ReservationOperationSummaryV1 {
+  delivery: {
+    approved: boolean;
+    updatedAt: string | null;
+    actorName: string | null;
+  };
+  lastOperation: { occurredAt: string; actorName: string | null } | null;
 }

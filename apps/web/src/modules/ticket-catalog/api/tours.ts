@@ -5,6 +5,7 @@ import type {
   TourPackageInputV1,
   TourDepartureInputV1,
   TicketOfferV1,
+  TicketSaleCommissionUpdateV1,
   TicketOfferCreateV1,
   TicketRoundTripSalePriceUpdateV1,
   TicketSalePriceTargetCreateV1,
@@ -69,12 +70,40 @@ export const toursApi = {
       '/sale-price-targets',
       post(input, branch, crypto.randomUUID()),
     ),
+  removeSalePriceTarget: (id: string, expectedVersion: number) =>
+    request<{ data: { id: string; isActive: boolean; version: number } }>(
+      `/sale-price-targets/${encodeURIComponent(id)}`,
+      { method: 'DELETE', body: JSON.stringify({ expectedVersion }) },
+    ),
   packages: () => request<{ data: TourPackageV1[] }>('/tours/packages'),
   departures: () => request<{ data: TourDepartureV1[] }>('/tours/departures'),
   createPackage: (input: TourPackageInputV1, branch: string, key: string) =>
     request<{ data: TourPackageV1 }>(
       '/tours/packages',
       post(input, branch, key),
+    ),
+  updatePackage: (
+    id: string,
+    input: TourPackageInputV1,
+    expectedVersion: number,
+    branch: string,
+  ) =>
+    request<{ data: TourPackageV1 }>(
+      `/tours/packages/${encodeURIComponent(id)}`,
+      {
+        method: 'PATCH',
+        headers: { 'x-branch-id': branch },
+        body: JSON.stringify({ ...input, expectedVersion }),
+      },
+    ),
+  deletePackage: (id: string, expectedVersion: number, branch: string) =>
+    request<{ data: { id: string; deleted: true } }>(
+      `/tours/packages/${encodeURIComponent(id)}`,
+      {
+        method: 'DELETE',
+        headers: { 'x-branch-id': branch },
+        body: JSON.stringify({ expectedVersion }),
+      },
     ),
   createDeparture: (input: TourDepartureInputV1, branch: string, key: string) =>
     request<{ data: TourDepartureV1 }>(
@@ -107,8 +136,29 @@ export const toursApi = {
       if (!result.hasMore) return data;
     }
   },
-  managedOffers: () =>
-    request<{ version: 1; data: TicketOfferV1[] }>('/offers/management'),
+  updateSaleCommission: (input: TicketSaleCommissionUpdateV1, key: string) =>
+    request<{ data: { count: number; revision: number } }>(
+      '/offers/sale-commissions',
+      {
+        method: 'PATCH',
+        headers: { 'idempotency-key': key },
+        body: JSON.stringify(input),
+      },
+    ),
+  managedOffers: async () => {
+    const offers = new Map<string, TicketOfferV1>();
+    for (let page = 1; page <= 10000; page++) {
+      const result = await request<{
+        version: 1;
+        data: TicketOfferV1[];
+        hasMore?: boolean;
+      }>(page === 1 ? '/offers/management' : `/offers/management?page=${page}`);
+      for (const offer of result.data) offers.set(offer.id, offer);
+      if (!result.hasMore)
+        return { version: 1 as const, data: [...offers.values()] };
+    }
+    throw new Error('تعداد صفحات بلیت از حد مجاز بیشتر است.');
+  },
   archiveExpiredOffer: (id: string, expectedVersion: number) =>
     request<{ data: { id: string; removedPriceRevisions: number } }>(
       `/offers/${id}`,

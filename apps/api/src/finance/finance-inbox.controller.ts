@@ -12,6 +12,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import type {
+  FinanceHistoryQueryV1,
   FinanceReceiptDecisionCommandV1,
   FinanceProcurementInvoiceDecisionCommandV1,
   FinanceProcurementInvoicePaymentCommandV1,
@@ -34,6 +35,16 @@ export class FinanceInboxController {
     @Inject(FinanceInboxService)
     private readonly inbox: FinanceInboxService,
   ) {}
+
+  @Get('transaction-history')
+  @RequirePermissions('finance.read')
+  @Header('Cache-Control', 'private, no-store')
+  history(
+    @Query() query: FinanceHistoryQueryV1,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.inbox.history(query, request.actor);
+  }
 
   @Get('inbox')
   @RequirePermissions('finance.read')
