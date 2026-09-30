@@ -27,6 +27,18 @@ Ticket Catalog owns nullable TicketPublishedOffer.manifestTemplateId with a rest
 
 ## SALES-TICKET-PRICES-0922 — نرخ فروش عمومی بلیت
 
+افزودهٔ `TICKET-SEAT-TIER-PRICING-0930`: هر revision قیمت یک‌طرفه یا جفت
+رفت‌وبرگشت می‌تواند چند `TicketOfferSalePriceTier` داشته باشد. هر ردیف دقیقاً به
+یکی از دو revision با FK محدود متصل است و `tierIndex`، `seatCount` مثبت،
+`amount Decimal(20,4)` مثبت و کد ارز را نگه می‌دارد. جمع تعداد پله‌ها باید در
+فرمان Ticket Catalog برابر ظرفیت بلیت (برای جفت، بیشینهٔ ظرفیت دو بلیت) باشد؛
+پلهٔ اول با مبلغ پایهٔ revision برابر است. ردیف‌های پله پس از ثبت تغییر/حذف
+نمی‌شوند. نبود پله در revisionهای قدیمی به‌معنای نرخ ثابت همهٔ صندلی‌هاست.
+Sales تعداد صندلی‌های تخصیص‌یافته و Hold فعال را از ظرفیت کم می‌کند، قیمت هر
+صندلی تازه را از پلهٔ متناظر می‌گیرد و مجموع را با دقت چهار اعشار در قرارداد
+snapshot می‌کند؛ هنگام رزرو قطعی، Ticket Catalog مبلغ پله‌ای را زیر قفل بلیت
+دوباره کنترل می‌کند. کمیسیون هر پله را جداگانه محاسبه می‌کند.
+
 `TicketOfferStandaloneSalePrice` نسخه‌های append-only مبلغ و ارز فروش یک‌طرفه
 هر `TicketPublishedOffer` را نگه می‌دارد. `TicketOfferRoundTripSalePrice` مبلغ
 واحد هر مسافر برای جفت دقیق `outboundOfferId` و `returnOfferId` را با FK محدود،

@@ -3961,3 +3961,7 @@ Owner-confirmed synthetic local catalog snapshot: 20 offers (11 visible, 9 alrea
 ## 2026-09-29 — TICKET-WEEKDAY-RETURN-WINDOW-0929 — PC-A — READY_FOR_REVIEW
 
 تعریف پرواز هفتگی با بازهٔ رفتِ شامل ابتدا و انتها، روزهای تیک‌خورده و عددِ فاصلهٔ برگشت پیاده شد؛ عدد تعداد تکرار نیست. برگشت‌ها خودکار ساخته و تاریخ‌های مشترک یک‌بار ثبت می‌شوند. Min/Max در دیتابیس و قرارداد عمومی ذخیره و در جست‌وجو پیش از صفحه‌بندی، رزرو فروش، انتخاب جفت قیمت و Load تور کنترل می‌شود. Migration فقط روی دیتابیس مصنوعی تست می‌شود؛ لوکال عملیاتی تغییر نکرده است. جزئیات و سازگاری: [TICKET-WEEKDAY-RETURN-WINDOW-0929](tasks/TICKET-WEEKDAY-RETURN-WINDOW-0929.md).
+
+## 2026-09-30 — TICKET-SEAT-TIER-PRICING-0930 — PC-A — READY_FOR_REVIEW
+
+قیمت‌گذاری پله‌ای صندلی برای بلیت یک‌طرفه و جفت رفت‌وبرگشت در فرم قیمت فروش، revisionهای Ticket Catalog و پیش‌فاکتور قرارداد افزوده شد. نرخ‌های قدیمی بدون پله همچنان ثابت‌اند. جزئیات و آزمون‌ها در [TICKET-SEAT-TIER-PRICING-0930](tasks/TICKET-SEAT-TIER-PRICING-0930.md) ثبت می‌شوند.

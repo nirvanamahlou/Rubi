@@ -3,6 +3,7 @@ import type { TicketOfferV1 } from '@nora/contracts';
 import { emptySalesForm } from './sales-form';
 import {
   repriceStandaloneTicketSelections,
+  seatTierTotal,
   standaloneTicketPricing,
 } from './standalone-ticket-pricing';
 
@@ -24,6 +25,40 @@ const offer = (id: string, amount: string): TicketOfferV1 => ({
 });
 
 describe('standalone ticket pricing', () => {
+  it('adds consecutive seat tiers across a boundary without floating-point rounding', () => {
+    expect(
+      seatTierTotal(
+        '100.25',
+        [
+          { seatCount: 20, amount: '100.25' },
+          { seatCount: 15, amount: '120.5' },
+        ],
+        19,
+        3,
+      ),
+    ).toBe('341.25');
+    expect(seatTierTotal('100.25', undefined, 19, 3)).toBe('300.75');
+  });
+
+  it('quotes the next available tier for an already partly sold offer', () => {
+    const selected = offer('OUT', '100');
+    selected.remainingCapacity = 4;
+    selected.standaloneSalePrice = {
+      revision: 2,
+      amount: '100',
+      currencyCode: 'IRR',
+      tiers: [
+        { seatCount: 15, amount: '100' },
+        { seatCount: 5, amount: '200' },
+      ],
+    };
+    expect(
+      standaloneTicketPricing(emptySalesForm, selected, 'OUTBOUND', 2)[
+        'flight-outbound'
+      ]?.[0]?.agreed.amount,
+    ).toBe('400');
+  });
+
   it('prices outbound and return independently for all seated passengers', () => {
     const outbound = standaloneTicketPricing(
       emptySalesForm,
@@ -101,5 +136,58 @@ describe('standalone ticket pricing', () => {
     );
     expect(prices['flight-outbound']?.[0]?.agreed.amount).toBe('1500001');
     expect(prices['flight-return']?.[0]?.agreed.amount).toBe('1500001');
+  });
+
+  it('keeps legacy per-passenger round-trip splitting for fares without tiers', () => {
+    const outbound = {
+      ...offer('OUT', '1'),
+      roundTripSalePrices: [
+        {
+          returnOfferId: 'RET',
+          revision: 1,
+          amount: '1.0001',
+          currencyCode: 'IRR',
+        },
+      ],
+    };
+    const prices = repriceStandaloneTicketSelections(
+      {
+        ...emptySalesForm,
+        outboundOffer: outbound,
+        returnOffer: offer('RET', '1'),
+      },
+      3,
+    );
+    expect(prices['flight-outbound']?.[0]?.agreed.amount).toBe('1.5');
+    expect(prices['flight-return']?.[0]?.agreed.amount).toBe('1.5003');
+  });
+
+  it('sums crossed round-trip tiers before splitting the two services', () => {
+    const outbound = {
+      ...offer('OUT', '1'),
+      remainingCapacity: 1,
+      roundTripSalePrices: [
+        {
+          returnOfferId: 'RET',
+          revision: 2,
+          amount: '100',
+          currencyCode: 'IRR',
+          tiers: [
+            { seatCount: 19, amount: '100' },
+            { seatCount: 1, amount: '200' },
+          ],
+        },
+      ],
+    };
+    const prices = repriceStandaloneTicketSelections(
+      {
+        ...emptySalesForm,
+        outboundOffer: outbound,
+        returnOffer: offer('RET', '1'),
+      },
+      1,
+    );
+    expect(prices['flight-outbound']?.[0]?.agreed.amount).toBe('100');
+    expect(prices['flight-return']?.[0]?.agreed.amount).toBe('100');
   });
 });

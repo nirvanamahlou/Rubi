@@ -22,6 +22,9 @@ export interface SalesTicketAvailabilityPort {
     branchId: string,
     contractId: string,
     seatCount: number,
+    expectedTicketTotals?: Readonly<
+      Record<string, { amount: string; currencyCode: string }>
+    >,
   ): Promise<{
     available: boolean;
     unavailableOfferIds: readonly string[];
@@ -48,8 +51,17 @@ export class SalesTicketsPublicAdapter implements SalesTicketAvailabilityPort {
     branchId: string,
     contractId: string,
     seatCount: number,
+    expectedTicketTotals?: Readonly<
+      Record<string, { amount: string; currencyCode: string }>
+    >,
   ) {
-    return this.catalog.reserve(selections, branchId, contractId, seatCount);
+    return this.catalog.reserve(
+      selections,
+      branchId,
+      contractId,
+      seatCount,
+      expectedTicketTotals,
+    );
   }
   release(allocationIds: readonly string[]) {
     return this.catalog.release(allocationIds);

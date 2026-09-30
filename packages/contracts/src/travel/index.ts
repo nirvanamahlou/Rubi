@@ -2,11 +2,19 @@ import type { SalesReservationRequestV1 } from '../sales';
 
 export const TRAVEL_RUNTIME_VERSION = 1 as const;
 
+/** One immutable seat block in a ticket fare revision, in sale order. */
+export interface TicketSalePriceTierV1 {
+  seatCount: number;
+  amount: string;
+}
+
 /** Catalog owns schedule, capacity and the public fare used for ticket-only sales. */
 export interface TicketStandaloneSalePriceV1 {
   revision: number;
   amount: string;
   currencyCode: string;
+  /** Absent means the legacy flat per-seat amount applies to the whole capacity. */
+  tiers?: readonly TicketSalePriceTierV1[] | undefined;
 }
 
 /** A named destination for a ticket fare, suitable for a future partner API. */
@@ -37,11 +45,15 @@ export interface TicketStandaloneSalePriceUpdateV1 {
   currencyCode: string;
   /** Omitted/null is the internal direct-sale default used by existing Sales flows. */
   salePriceTargetId?: string | null;
+  tiers?: readonly TicketSalePriceTierV1[] | undefined;
 }
 
 export interface TicketRoundTripSalePriceV1 {
   /** Original pair base before direct-sale commission. */
   baseAmount?: string;
+  /** Raw tier prices before the direct-sale commission. */
+  baseTiers?: readonly TicketSalePriceTierV1[] | undefined;
+  tiers?: readonly TicketSalePriceTierV1[] | undefined;
   returnOfferId: string;
   revision: number;
   amount: string;
@@ -52,6 +64,7 @@ export interface TicketRoundTripSalePriceUpdateV1 {
   expectedRevision: number;
   amount: string;
   currencyCode: string;
+  tiers?: readonly TicketSalePriceTierV1[] | undefined;
 }
 
 /** Commission rules are versioned independently from the base fare. */
@@ -62,6 +75,7 @@ export interface TicketSaleCommissionV1 {
   percent: string;
   amount: string;
   currencyCode: string;
+  tiers?: readonly TicketSalePriceTierV1[] | undefined;
 }
 export interface TicketSaleCommissionUpdateV1 {
   offerId: string;

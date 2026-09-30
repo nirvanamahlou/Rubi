@@ -230,11 +230,23 @@ describe('sale commission projection', () => {
   it('recalculates from current base, preserves the pair base and picks latest percentages', () => {
     const offer = {
       id: offerId,
-      standaloneSalePrice: { amount: '100', currencyCode: 'IRR', revision: 2 },
+      standaloneSalePrice: {
+        amount: '100',
+        currencyCode: 'IRR',
+        revision: 2,
+        tiers: [
+          { seatCount: 20, amount: '100' },
+          { seatCount: 15, amount: '150' },
+        ],
+      },
       roundTripSalePrices: [
         {
           returnOfferId: returnId,
           amount: '250',
+          tiers: [
+            { seatCount: 20, amount: '250' },
+            { seatCount: 15, amount: '300' },
+          ],
           currencyCode: 'IRR',
           revision: 3,
         },
@@ -262,9 +274,16 @@ describe('sale commission projection', () => {
     ]);
     expect(view.baseStandaloneSalePrice?.amount).toBe('100');
     expect(view.standaloneSalePrice?.amount).toBe('96');
+    expect(view.standaloneSalePrice?.tiers?.map((tier) => tier.amount)).toEqual(
+      ['96', '144'],
+    );
     expect(view.roundTripSalePrices?.[0]).toMatchObject({
       baseAmount: '250',
       amount: '240',
+      tiers: [
+        { seatCount: 20, amount: '240' },
+        { seatCount: 15, amount: '288' },
+      ],
     });
     expect(
       applySaleCommissions(
