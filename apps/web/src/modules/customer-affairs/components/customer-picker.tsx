@@ -5,12 +5,21 @@ import {
   Ban,
   ExternalLink,
   LogIn,
+  Plus,
   RefreshCw,
   Search,
   UserRound,
 } from 'lucide-react';
 import Link from 'next/link';
-import { useCallback, useEffect, useId, useState } from 'react';
+import dynamic from 'next/dynamic';
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 
 import { Button } from '@/components/ui/button';
 import { FormField, Input } from '@/components/ui/form-controls';
@@ -26,6 +35,21 @@ import {
   customerAffairsCustomersApi,
   CustomerLookupApiError,
 } from '../api/customers-client';
+import {
+  customerPickerPagination,
+  customerPickerVisibleRecords,
+} from './customer-picker-pagination';
+
+const CustomerCreateDialog = dynamic(
+  () =>
+    import('@/modules/customers/public/entry').then(
+      (module) => module.CustomerCreateDialog,
+    ),
+  {
+    ssr: false,
+    loading: () => <p role="status">در حال آماده‌سازی فرم مشتری…</p>,
+  },
+);
 
 type LookupState =
   | 'idle'
@@ -48,6 +72,7 @@ export function CustomerPicker({
   initialCustomerId?: string | null;
 }) {
   const id = useId();
+  const createButtonRef = useRef<HTMLButtonElement>(null);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
@@ -56,7 +81,8 @@ export function CustomerPicker({
   const [currentError, setCurrentError] = useState(false);
   const [records, setRecords] = useState<readonly CustomerSummary[]>([]);
   const [state, setState] = useState<LookupState>('idle');
-  const lookupState = search.trim() ? state : 'idle';
+  const [creating, setCreating] = useState(false);
+  const pagination = useMemo(() => customerPickerPagination(page), [page]);
   const chosen =
     selected ?? (current?.id === initialCustomerId ? current : null);
 
@@ -87,15 +113,19 @@ export function CustomerPicker({
             role: 'all',
             sortBy: 'displayName',
             sortDirection: 'asc',
-            page,
-            pageSize: 10,
+            page: pagination.requestPage,
+            pageSize: pagination.requestPageSize,
           },
           signal,
         );
         if (signal?.aborted) return;
-        setRecords(response.data);
+        const visibleRecords = customerPickerVisibleRecords(
+          response.data,
+          pagination,
+        );
+        setRecords(visibleRecords);
         setTotal(response.meta.total);
-        setState(response.data.length ? 'ready' : 'empty');
+        setState(visibleRecords.length ? 'ready' : 'empty');
       } catch (error) {
         if (signal?.aborted) return;
         if (error instanceof DOMException && error.name === 'AbortError')
@@ -110,7 +140,7 @@ export function CustomerPicker({
         );
       }
     },
-    [search, page],
+    [search, pagination],
   );
 
   useEffect(() => {
@@ -134,17 +164,31 @@ export function CustomerPicker({
             انتخاب از مشتریان و مسافران
           </h3>
           <p className="mt-1 text-xs text-muted-foreground">
-            مشتری یا مسافر ثبت‌شده را جست‌وجو و به این پرونده متصل کنید.
+            مشتری یا مسافر ثبت‌شده را انتخاب کنید یا پروندهٔ تازه بسازید.
           </p>
         </div>
-        <a
-          href="/customers"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-sm text-primary underline"
-        >
-          بازکردن مشتریان و مسافران
-        </a>
+        <div className="flex flex-wrap items-center gap-3">
+          <Button
+            disabled={disabled}
+            onClick={() => setCreating(true)}
+            permission="customers.create"
+            ref={createButtonRef}
+            size="sm"
+            type="button"
+            variant="outline"
+          >
+            <Plus aria-hidden="true" className="size-4" />
+            ثبت مشتری یا مسافر جدید
+          </Button>
+          <a
+            href="/customers"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm text-primary underline"
+          >
+            بازکردن مشتریان و مسافران
+          </a>
+        </div>
       </div>
       <FormField id={`${id}-search`} label="جست‌وجوی مشتری یا مسافر">
         <div className="relative">
@@ -156,39 +200,42 @@ export function CustomerPicker({
             className="pe-10"
             disabled={disabled}
             id={`${id}-search`}
+            maxLength={100}
             onChange={(event) => {
               setSearch(event.target.value);
               setPage(1);
-              setState('loading');
+              setRecords([]);
+              setTotal(0);
+              setState(event.target.value.trim() ? 'loading' : 'idle');
             }}
             placeholder="نام مشتری یا مسافر"
             value={search}
           />
         </div>
       </FormField>
-      <div aria-busy={lookupState === 'loading'} aria-live="polite">
-        {lookupState === 'idle' ? (
-          <p className="text-sm text-muted-foreground" role="status">
-            برای نمایش مشتریان و مسافران، نام را جست‌وجو کنید.
+      <div aria-busy={state === 'loading'} aria-live="polite">
+        {state === 'idle' ? (
+          <p className="text-sm text-muted-foreground">
+            برای نمایش مشتریان یا مسافران، نام آن‌ها را جست‌وجو کنید.
           </p>
-        ) : lookupState === 'loading' ? (
+        ) : state === 'loading' ? (
           <div aria-label="در حال جست‌وجوی مشتریان" className="space-y-2">
             <Skeleton className="h-14 w-full" />
             <Skeleton className="h-14 w-full" />
           </div>
-        ) : lookupState === 'unauthorized' ? (
+        ) : state === 'unauthorized' ? (
           <EmptyState
             description="نشست معتبر نیست؛ برای جست‌وجوی مشتریان دوباره وارد شوید."
             icon={LogIn}
             title="نیاز به ورود"
           />
-        ) : lookupState === 'forbidden' ? (
+        ) : state === 'forbidden' ? (
           <EmptyState
             description="مجوز customers.read برای این عملیات لازم است."
             icon={Ban}
             title="دسترسی به مشتریان و مسافران مجاز نیست"
           />
-        ) : lookupState === 'error' ? (
+        ) : state === 'error' ? (
           <ErrorState
             action={
               <Button
@@ -204,9 +251,9 @@ export function CustomerPicker({
             description="فهرست مشتریان دریافت نشد؛ دوباره تلاش کنید. انتخاب قبلی حفظ می‌شود."
             title="جست‌وجوی مشتری ناموفق بود"
           />
-        ) : lookupState === 'empty' ? (
+        ) : state === 'empty' ? (
           <EmptyState
-            description="با عبارت فعلی مشتری یا مسافر فعالی پیدا نشد."
+            description={'با عبارت فعلی مشتری یا مسافر فعالی پیدا نشد.'}
             title="نتیجه‌ای وجود ندارد"
           />
         ) : (
@@ -267,13 +314,13 @@ export function CustomerPicker({
           </div>
         )}
       </div>
-      {lookupState !== 'idle' ? (
+      {search.trim() ? (
         <div className="flex items-center justify-between gap-2">
           <Button
             type="button"
             variant="outline"
             size="sm"
-            disabled={disabled || lookupState === 'loading' || page === 1}
+            disabled={disabled || state === 'loading' || page === 1}
             onClick={() => {
               setPage((value) => value - 1);
               setState('loading');
@@ -289,7 +336,11 @@ export function CustomerPicker({
             type="button"
             variant="outline"
             size="sm"
-            disabled={disabled || lookupState !== 'ready' || page * 10 >= total}
+            disabled={
+              disabled ||
+              state !== 'ready' ||
+              page * pagination.displayPageSize >= total
+            }
             onClick={() => {
               setPage((value) => value + 1);
               setState('loading');
@@ -330,6 +381,21 @@ export function CustomerPicker({
           )}
         </p>
       )}
+      {creating ? (
+        <CustomerCreateDialog
+          onClose={() => setCreating(false)}
+          returnFocusRef={createButtonRef}
+          onCreated={(customer) => {
+            onSelect(customer);
+            setCreating(false);
+            setSearch('');
+            setPage(1);
+            setRecords([]);
+            setTotal(0);
+            setState('idle');
+          }}
+        />
+      ) : null}
     </section>
   );
 }
