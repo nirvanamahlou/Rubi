@@ -144,4 +144,55 @@ describe('weekly flight schedule', () => {
     );
     expect(result[0]!.segments[0]!.arrivalAt).toBe('2026-10-04T01:00:00.000Z');
   });
+  it('defaults Max per generated return and preserves explicit manual values or unlimited', () => {
+    const dates = [
+      { outbound: '2026-10-03', returning: '2026-10-05' },
+      { outbound: '2026-10-04', returning: '2026-10-11' },
+    ];
+    const auto = buildWeekdayTickets(
+      dates,
+      outbound,
+      returning,
+      time,
+      time,
+      'batch',
+      utc,
+      true,
+    );
+    expect(
+      auto
+        .filter((p) => p.journeyRole !== 'return')
+        .map((p) => p.returnMaxDays),
+    ).toEqual([3, 8]);
+    const manual = buildWeekdayTickets(
+      dates,
+      { ...outbound, returnMaxDays: 15 },
+      returning,
+      time,
+      time,
+      'batch',
+      utc,
+      false,
+    );
+    expect(
+      manual
+        .filter((p) => p.journeyRole !== 'return')
+        .map((p) => p.returnMaxDays),
+    ).toEqual([15, 15]);
+    const unlimited = buildWeekdayTickets(
+      dates,
+      { ...outbound, returnMaxDays: null },
+      returning,
+      time,
+      time,
+      'batch',
+      utc,
+      false,
+    );
+    expect(
+      unlimited
+        .filter((p) => p.journeyRole !== 'return')
+        .every((p) => p.returnMaxDays === null),
+    ).toBe(true);
+  });
 });

@@ -4,6 +4,10 @@ Read/view presentation redesign covers all Master Data profiles and view-capable
 
 Shared semantic RTL details, inline country children, country-scoped province creation and race-safe guarded terminal parent selection are implemented. All 381 Master Data tests, scoped lint, Web typecheck and the production build with 55 routes pass. Authenticated browser QA remains unverified because the connector failed before opening a browser surface; no operational data or runtime changed. Scoped locks release with the implementation commit owned by the lead.
 
+## 2026-09-30 — MANIFEST-COUNTRY-ROUTE-0930 — PC-A — READY_FOR_REVIEW
+
+Manifest search now has separate country/city origin and destination filters. Country changes reset their corresponding city selection; choices include both ends of known routes, so reverse searches remain available. Cities use real reference names and IDs and countries are resolved through existing public Master Data services, with no direct cross-module table reads. The selected path defines display direction: Antalya → Tehran appears outbound and Tehran → Antalya return, regardless of the original contract direction; export identities/data are unchanged. Old Iran Airtour/Antalya title and Sparta introduction removed. 24 Web and 32 API tests, scoped lint, contracts build and API/Web typecheck/production builds checked before PR. Optional v1 geography preserves legacy clients and unknown countries are not inferred. No migration/dependencies/operational data changes. Owner authorized develop merge after CI.
+
 ## 2026-09-30 — MASTER-DATA-COUNTRY-HIDE-VERSION-0930 — PC-B — READY_FOR_REVIEW
 
 Countries no longer renders the Version column or matching cell. Record versions remain in the API and mutation concurrency controls; other geography tables are unchanged. 14 focused Web tests, scoped ESLint, Prettier and diff check pass. No migration, operational data or localhost runtime change. Branch `codex/pc-b-country-hide-version-0930` for review in develop.
@@ -4061,3 +4065,11 @@ TICKET-LOAD-SEARCH-HOLDS-0930 adds explicit search-gated load tables, valid-date
 ## 2026-09-30 — PC-A — flight capacity view and history
 
 FLIGHT-CAPACITY-HISTORY-0930 renames the module to تعریف و ظرفیت پرواز, adds independent read-only view actions under selected outbound/return legs, and removes the duplicate lower catalog list, filters and pagination. Management supports optional includePast=true under existing branch/permission checks; default consumers remain future-only. Expired non-archived flights remain available in explicit historical searches, while valid dates derive only future or in-progress charter legs by arrival UTC. No schema, migration or dependency changes. 179 Web regressions and three isolated PostgreSQL lifecycle/HTTP tests passed; default future listings and expired Sales exclusion remain intact.
+
+## 2026-09-30 — PC-A — weekly flight return Max default
+
+FLIGHT-RETURN-MAX-DEFAULT-0930 displays automatic Max from the selected return stay and saves each generated outbound with its own stay plus one day, within the existing 365-day ceiling. Manually edited Max remains authoritative, including clearing for unlimited. No API, schema, migration or dependency changes. Twelve schedule regressions cover different weekday stays, explicit manual values and unlimited compatibility.
+
+## 2026-09-30 — PC-A — charter load defaults and destination filters
+
+CHARTER-LOAD-TODAY-DEFAULT-0930 strengthens selection to a full blue row and renames the heading to «لود پرواز چارتر». Valid dates are checked on entry, begin today in Tehran, and end at the latest matching future departure; already-departed flights are excluded from this mode. Explicit search remains required. Country/city controls replace origin/destination, use Master Data destination geography, and leave matched reverse legs visible. Manual historical ranges retain the opposite displayed date and include past legs. No API/schema/migration/dependency changes.

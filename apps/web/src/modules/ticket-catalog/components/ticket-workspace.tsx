@@ -566,6 +566,7 @@ function TicketCatalogWorkspace() {
       );
       if (
         current &&
+        current.countryId &&
         readableCityName(current.name, undefined) !== 'نام شهر نامشخص'
       )
         continue;
@@ -1036,6 +1037,7 @@ function TicketCatalogWorkspace() {
         <Alert tone="error" title={publishedProblem} />
       ) : null}
       <FlightLoadGrid
+        references={references}
         offers={publishedOffers}
         renderActions={renderOfferActions}
         cityName={(id) => referenceLabel('city', id, id)}

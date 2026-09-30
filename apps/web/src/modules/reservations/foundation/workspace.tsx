@@ -105,7 +105,7 @@ const operationContent: Record<
     note: 'اتصال بیمه سامان آماده نیست. هیچ درخواست یا بیمه‌نامه‌ای ایجاد نشده است.',
   },
   manifests: {
-    title: 'MANIFEST ایران ایرتور · آنتالیا',
+    title: 'منیفست',
     fields: [
       'مسیر',
       'تاریخ حرکت',
@@ -116,7 +116,7 @@ const operationContent: Record<
       'زمان ارسال',
     ],
     action: 'آماده‌سازی MANIFEST',
-    note: 'خروجی رسمی اسپارتا برای پروازهای آنتالیای ایران ایرتور؛ اطلاعات هر مسافر از پرونده فروش خوانده می‌شود.',
+    note: '',
   },
   costs: {
     title: 'پیشنهاد هزینه خرید',
@@ -719,7 +719,9 @@ export function ReservationOperationsWorkspace({
                     <span className={styles.badge}>در انتظار اتصال</span>
                   )}
                 </div>
-                <p>{operationContent[section].note}</p>
+                {operationContent[section].note && (
+                  <p>{operationContent[section].note}</p>
+                )}
                 {section !== 'manifests' &&
                   visibleOperations.map((operation) => (
                     <article key={operation.id} aria-label={operation.title}>

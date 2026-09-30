@@ -8,6 +8,7 @@ import { supplyOptions } from '../model/preview';
 import { TicketBaggageFields } from './ticket-baggage-fields';
 import {
   buildWeekdayTickets,
+  defaultReturnMaxDays,
   scheduleDates,
   scheduleWeekdays,
   type ScheduleLeg,
@@ -42,6 +43,7 @@ export function FlightScheduleForm({
 }) {
   const [mode, setMode] = useState<'one-way' | 'round-trip' | null>(null);
   const [advanced, setAdvanced] = useState(false);
+  const [maxEdited, setMaxEdited] = useState(false);
   const [input, setInput] = useState<ProductInput>(() => ({
     ...emptyInput(),
     supplyType: 'company',
@@ -157,6 +159,7 @@ export function FlightScheduleForm({
         returnTime,
         batchId.current,
         scheduleToUtc,
+        !maxEdited,
       ).map((definition) =>
         withDisplaySnapshot(
           {
@@ -533,16 +536,31 @@ export function FlightScheduleForm({
                                 min={0}
                                 max={365}
                                 step={1}
-                                value={input[field] ?? ''}
-                                onChange={(event) =>
+                                value={
+                                  field === 'returnMaxDays' &&
+                                  !maxEdited &&
+                                  weekdays.length > 0 &&
+                                  weekdays.every((w) =>
+                                    Number.isFinite(w.stayDays),
+                                  )
+                                    ? defaultReturnMaxDays(
+                                        Math.max(
+                                          ...weekdays.map((w) => w.stayDays),
+                                        ),
+                                      )
+                                    : (input[field] ?? '')
+                                }
+                                onChange={(event) => {
+                                  if (field === 'returnMaxDays')
+                                    setMaxEdited(true);
                                   setInput((c) => ({
                                     ...c,
                                     [field]:
                                       event.target.value === ''
                                         ? null
                                         : Number(event.target.value),
-                                  }))
-                                }
+                                  }));
+                                }}
                               />
                             )}
                           </td>
@@ -557,7 +575,8 @@ export function FlightScheduleForm({
           <p className={styles.help}>
             ساعت رفت به وقت {segment.departureZone} و رسیدن به وقت{' '}
             {segment.arrivalZone}؛ برای برگشت برعکس. Min و Max فاصلهٔ روزهای
-            مجاز برگشت در فروش هستند.
+            مجاز برگشت در فروش هستند. Max پیش‌فرض برای هر رفت، یک روز بیشتر از
+            فاصلهٔ برگشت است و می‌توانید آن را تغییر دهید.
           </p>
           <div className={styles.options}>
             <FormField label="ظرفیت هر پرواز" id="schedule-capacity" required>

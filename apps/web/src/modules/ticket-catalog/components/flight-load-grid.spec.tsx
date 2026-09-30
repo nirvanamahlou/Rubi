@@ -11,6 +11,7 @@ describe('flight load search entry', () => {
       originId: 'a',
       destinationId: 'b',
       departureAt: '2099-10-01T10:00:00Z',
+      arrivalAt: '2099-10-01T12:00:00Z',
       carrierName: 'Synthetic Air',
     } as TicketOfferV1;
     const html = renderToStaticMarkup(
@@ -23,7 +24,12 @@ describe('flight load search entry', () => {
       />,
     );
     expect(html).toContain('تاریخ‌های معتبر');
+    expect(html).toContain('لود پرواز چارتر');
+    expect(html).toMatch(/type="checkbox" checked=""/);
     expect(html).toContain('جست‌وجو');
+    expect(html).toContain('load-country');
+    expect(html).toContain('شهر');
+    expect(html).not.toContain('load-origin');
     expect(html).not.toContain('<table');
     expect(html).not.toContain('Manage selected flight');
   });

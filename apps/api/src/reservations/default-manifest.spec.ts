@@ -642,7 +642,18 @@ it('keeps return new-only history independent from outbound exports', async () =
 it('loads route choices before search without reading passengers or Finance', async () => {
   const f = fixture();
   await expect(f.service.listRoutes(actor)).resolves.toEqual([
-    { originName: 'origin', destinationName: 'destination' },
+    {
+      originName: 'origin',
+      destinationName: 'destination',
+      originId: 'origin',
+      destinationId: 'destination',
+      originCityName: 'origin',
+      destinationCityName: 'destination',
+      originCountryId: 'ir',
+      destinationCountryId: 'ir',
+      originCountryName: '',
+      destinationCountryName: '',
+    },
   ]);
   expect(f.customers.detail).not.toHaveBeenCalled();
   expect(f.finance.readCustomerContract).not.toHaveBeenCalled();

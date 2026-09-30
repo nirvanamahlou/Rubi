@@ -139,6 +139,7 @@ describe('MANIFEST ticket cards', () => {
       cityReference: vi.fn(async (id: string) => ({
         name: id,
         englishName: id.toUpperCase(),
+        countryId: id === 'tehran' ? 'ir' : 'tr',
       })),
       manifestTemplate: vi.fn(async (carrier: string) =>
         carrier === 'IRAN AIRTOUR'
@@ -168,6 +169,13 @@ describe('MANIFEST ticket cards', () => {
           },
         },
       } as never,
+      undefined,
+      undefined,
+      {
+        detail: vi.fn(async (_kind: string, id: string) => ({
+          data: { name: id === 'ir' ? 'ایران' : 'ترکیه' },
+        })),
+      } as never,
     );
 
     const cards = await service.listTickets(
@@ -182,6 +190,12 @@ describe('MANIFEST ticket cards', () => {
     expect(cards[0]).toMatchObject({
       offerId: 'outbound-offer',
       direction: 'OUTBOUND',
+      originId: 'tehran',
+      destinationId: 'antalya',
+      originCountryId: 'ir',
+      originCountryName: 'ایران',
+      destinationCountryId: 'tr',
+      destinationCountryName: 'ترکیه',
       passengerCount: 2,
       template: { id: 'default', name: 'پیش‌فرض', versionNumber: 1 },
       unavailableReason: null,
@@ -192,6 +206,20 @@ describe('MANIFEST ticket cards', () => {
       template: { id: 'default', name: 'پیش‌فرض', versionNumber: 1 },
     });
     expect(cards[1]?.unavailableReason).toBeNull();
+    const routes = await service.listRoutes({
+      branchIds: ['branch'],
+      permissions: ['reservations.read'],
+    } as never);
+    expect(routes).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          originId: 'tehran',
+          destinationId: 'antalya',
+          originCountryName: 'ایران',
+          destinationCountryName: 'ترکیه',
+        }),
+      ]),
+    );
     expect(directory.manifestTemplate).not.toHaveBeenCalled();
   });
 });
