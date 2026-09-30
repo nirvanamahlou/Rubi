@@ -125,6 +125,7 @@ export function TicketOfferPicker({
                 (price) => price.returnOfferId === offer.id,
               )
             }
+            {...(roundTripOutbound ? { roundTripOutbound } : {})}
             onSelect={onSelect}
             {...(originLabel ? { originLabel } : {})}
             {...(destinationLabel ? { destinationLabel } : {})}

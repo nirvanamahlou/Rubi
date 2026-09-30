@@ -23,6 +23,27 @@ const offer: TicketOfferV1 = {
   status: 'ACTIVE',
 };
 describe('readable sales ticket card', () => {
+  it.each([
+    [2, 12],
+    [12, 2],
+  ])(
+    'limits round trips by both remaining capacities (%s/%s)',
+    (outboundSeats, returnSeats) => {
+      const render = (requiredSeats: number) =>
+        renderToStaticMarkup(
+          <TicketOfferCard
+            offer={{ ...offer, remainingCapacity: returnSeats }}
+            roundTripOutbound={{ ...offer, remainingCapacity: outboundSeats }}
+            selected={false}
+            requiredSeats={requiredSeats}
+            onSelect={vi.fn()}
+          />,
+        );
+      expect(render(3)).toContain('disabled=""');
+      expect(render(3)).toContain('قابل‌فروش رفت‌وبرگشت: ۲ نفر');
+      expect(render(2)).not.toContain('disabled=""');
+    },
+  );
   it('keeps standalone fare validation and shows an available fare', () => {
     const render = (value: TicketOfferV1) =>
       renderToStaticMarkup(

@@ -1,3 +1,7 @@
+## ROUNDTRIP-SALE-CAPACITY-0930 — PC-A — READY_FOR_REVIEW
+
+- COMPUTER_ID=PC-A; branch `codex/pc-a-roundtrip-sale-capacity-0930` from `origin/develop@d21b00bc`. Reserve Sales ticket picker/card and pricing helpers/tests, Ticket Catalog reservation regression tests, bounded status docs. Round-trip sale limit is the lower remaining capacity after allocations and holds. No schema, migration, shared contract, dependency or runtime changes. Previous ticket locks released; preserve all other checkouts. PR to develop only, no merge authorization for this task. Result: picker/card use the lower remaining capacity, invalid round-trip quotes clear both fare entries. 41 focused Web tests and 4 focused API tests (including 2 atomic regressions) passed, including live-hold capacity and zero partial allocations on failure. Bounded implementation/docs locks released with scoped commit.
+
 ## SIDEBAR-ALL-SECTIONS-VISIBLE-0929 — PC-B — READY_FOR_REVIEW
 
 - COMPUTER_ID=PC-B; base `codex/pc-b-istanbul-3100-activation-0929@b1702e5b`, task branch `codex/pc-b-expand-sidebar-0929`. The central Web AppShell and focused navigation-collapse spec were reserved for this work item; lock released after scoped commit. All accessible sidebar groups now start expanded while route permission filtering and manual collapse controls remain unchanged. No IAM/API/schema/dependency/data change. Focused 2 tests, scoped ESLint, Web typecheck and 55-route production build passed. Web3100 and API4000 health returned 200 after restart.
@@ -4432,6 +4436,14 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 
 - Validation: 23 targeted API and 29 Web tests, scoped lint, API/Web strict typechecks and production builds (53 routes) passed. No migration or data change. Finance contract/bounded docs locks RELEASED with commit. Explicit owner merge authorization; authenticated browser clicks remain unverified.
 
+## B2B-API-FUNCTIONAL-QA-0928 — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک: اجرای آزمون‌های API و سناریوهای مرزی، به‌ویژه ثبت فرم‌ها، و اصلاح باگ‌های قطعی Backend.
+- `COMPUTER_ID=PC-B`؛ شاخه مستقل `codex/pc-b-b2b-api-qa-0928` از `origin/develop@4013211f`. Worktreeهای فعال Marketing، Customer Affairs و Workbench دست‌نخورده‌اند.
+- دامنه رزرو: ممیزی سراسری API و اجرای تست‌های موجود؛ اصلاح و تست در Backend B2B و مسیرهای فرم آژانس با مالکیت PC-B. ایرادهای مالک PC-A/PC-C برای هماهنگی گزارش می‌شوند.
+- بدون Schema/Migration، Dependency/Lockfile، قرارداد مشترک، مجوز، داده عملیاتی یا جابه‌جایی runtime مشترک. در صورت نیاز واقعی، قفل و قرارداد مربوط جداگانه رزرو می‌شود.
+- نتیجه روی آخرین `develop`: ۱۶۹۲ تست معمول API موفق و ۱۷۵ تست محیطی skip شدند؛ ۱۲۷ تست B2B پس از اصلاح موفق و ۱۹ تست PostgreSQL آن به‌دلیل توقف سرویس Docker اجرا نشدند. بازپخش requestId قدیمی پس از ایجاد نسخه جدید قرارداد اکنون به‌جای پاسخ موفقِ گمراه‌کننده، تعارض نسخه مشخص برمی‌گرداند. lint، typecheck و build API موفق؛ جزئیات در `docs/tasks/B2B-API-FUNCTIONAL-QA-0928.md`. قفل فایل‌های این واحد با Commit آزاد می‌شود.
+
 ## 2026-09-28 — MASTER-DATA-RECORD-ICON-ACTIONS-0928 — PC-B — READY_FOR_REVIEW
 
 - درخواست مالک: دکمه‌های عملیات همه رکوردهای اطلاعات پایه مطابق نمونه، فقط آیکون باشند؛ حذف قرمز پُر و مشاهده/ویرایش کادر روشن. برچسب دسترس‌پذیر، رفتار و تأیید حذف حفظ می‌شود.
@@ -4678,3 +4690,8 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 
 - COMPUTER_ID=PC-A; branch `codex/pc-a-ticket-load-visible-0930` from current origin/develop. Reserve Ticket Catalog load/workspace Web components, pure load filtering and focused tests, bounded status docs. Owner requests existing tickets visible, old lower published-load table removed and new load background white. Preserve management actions on selected load legs. Legacy unknown-supply offers remain explicitly unknown but readable alongside company capacity; explicit floating/API excluded. No database classification writes, Migration, API/contract, dependency or shared UI changes.
 - Delivered: legacy unknown offers participate in both legs without provenance writes; filters initially unrestricted and date edits clear only the conflicting opposite bound; duplicate published-load table removed and its actions retained in selected-leg details; surface is white in light mode. Ticket Catalog tests, scoped lint, Web typecheck and 55-route production build pass. Bounded locks RELEASED after scoped commit. Merge/local handoff follows CI.
+
+## TICKET-LOAD-LEG-ACTIONS-0930 — PC-A — READY_FOR_REVIEW
+
+- COMPUTER_ID=PC-A; branch `codex/pc-a-ticket-load-leg-actions-0930` from current origin/develop. Reserve only Ticket Catalog flight-load component/CSS and bounded status docs. Owner requests independent selected outbound/return action strips below each details box, visible active/paused status, and a PR. Reuse existing offer-specific edit/archive/status/hold handlers. No API, schema, migration, dependency or operational data changes; deliver PR for review without merge.
+- Scoped lint, Web typecheck, 10 focused load/workspace tests and production Web build (55 routes) passed. Selected legs have separate labeled action footers and their own active/paused status. Bounded locks RELEASED after scoped commit; no local rollout or merge in this delivery.
