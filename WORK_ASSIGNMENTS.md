@@ -4345,6 +4345,13 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 - شاخهٔ مستقل `codex/pc-a-ticket-pair-destination-date-0928` از `origin/develop@36453e1c`؛ محدودهٔ رزرو فقط فرم تعریف بلیط رفت‌وبرگشت و کارت‌های قیمت بلیط در Web و آزمون‌های مستقیم است.
 - مقصد رفت‌وبرگشت کنار مشخصات مسیر برجسته می‌شود؛ در قیمت‌های جفتی نیز مقصد و تاریخ دو پا مشخص است. تاریخ و ساعت در کارت قیمت یک‌طرفه بزرگ‌تر و در ستون چپ نمایش داده می‌شوند. بدون تغییر API، دیتابیس، قراردادهای قبلی، مجوز یا وابستگی.
 
+## PACKAGE-GENERATOR-THAILAND-XLSX-0928 — PC-B — READY_FOR_REVIEW
+
+- Owner request: fit Thailand city Excel data to Phuket, Bangkok+Phuket and Pattaya posters. Branch `codex/pc-b-thailand-generator-data-0928` from `origin/develop@f9c25af1`.
+- Reserved: local Package Generator XLSX import and table projection, its module tests, this work item, bounded project status and task document. No other active Package Generator owner found; PC-B's PR #424 and #434 are separate earlier slices. No Migration, shared contract, API, dependency/lockfile, permission or operational data reservation.
+- Source evidence: user-provided `pattaya update.xlsx` has raw SGL/DBL/CWB/CNB in D–H and final SINGLE/DBLE/CWB/CNB in K–N. Only final prices may reach a poster.
+- Result: final rates, unavailable child cells, room/grade, footer cards and services map to the right poster regions. The actual Pattaya workbook rendered 67 rows on Pattaya (one page), Phuket (two pages) and Bangkok+Phuket (three pages), without clipped regions. Eleven affected tests, Web typecheck and production build passed; static JS syntax and focused lint passed. Bounded central-docs reservation is released with this commit.
+
 ## ISTANBUL-PACKAGE-TEMPLATES-0928 — PC-B — READY_FOR_REVIEW
 
 - درخواست مالک: دو طرح مرجع استانبول برای پکیج‌های ۳ و ۴ شب، با دادهٔ دو فایل اکسل پیوست، در پکیج‌ساز Rubi قابل انتخاب، پیش‌نمایش و خروجی باشند.
