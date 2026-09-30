@@ -7,6 +7,13 @@ import {
   Injectable,
 } from '@nestjs/common';
 import * as Joi from 'joi';
+import { priceTierCreate, validatePriceTiers } from './ticket-sale-tiers';
+import {
+  eligibleTicketReturn,
+  moneyUnits,
+  ticketReturnBounds,
+  validReturnWindow,
+} from '@nora/contracts';
 import { Prisma } from '@nora/database';
 import type {
   AuthenticatedActor,
@@ -26,6 +33,7 @@ import { MasterTravelDirectory } from '../master-data/master-travel-directory';
 
 import {
   applySaleCommissions,
+  commissionAmount,
   saveTicketSaleCommission,
   type CommissionRow,
 } from './ticket-sale-commissions';
@@ -37,6 +45,20 @@ const capacityHoldSchema = Joi.object({
 });
 type CapacityHoldInput = { quantity: number; expiresAt: string };
 const createSchema = Joi.object({
+  supplyType: Joi.string()
+    .valid('COMPANY', 'FLOATING', 'API')
+    .allow(null)
+    .optional(),
+  economyBaggageKg: Joi.string()
+    .pattern(/^\d{1,4}(\.\d{1,2})?$/)
+    .allow(null)
+    .optional(),
+  businessBaggageKg: Joi.string()
+    .pattern(/^\d{1,4}(\.\d{1,2})?$/)
+    .allow(null)
+    .optional(),
+  returnMinDays: Joi.number().integer().min(0).max(365).allow(null).optional(),
+  returnMaxDays: Joi.number().integer().min(0).max(365).allow(null).optional(),
   manifestTemplateId: uuid.allow(null).optional(),
   originId: uuid.required(),
   destinationId: uuid.invalid(Joi.ref('originId')).required(),
@@ -62,6 +84,15 @@ export function validateTicketOffer(input: unknown): TicketOfferCreateV1 {
   const result = createSchema.validate(input, { convert: false });
   if (result.error) throw new BadRequestException('اطلاعات بلیت معتبر نیست.');
   const value = result.value as TicketOfferCreateV1;
+  for (const weight of [value.economyBaggageKg, value.businessBaggageKg])
+    if (weight != null && Number(weight) > 9999)
+      throw new BadRequestException(
+        'بار مجاز باید بین صفر و ۹۹۹۹ کیلوگرم باشد.',
+      );
+  if (!validReturnWindow(value.returnMinDays, value.returnMaxDays))
+    throw new BadRequestException(
+      'حداقل روز برگشت نباید از حداکثر بیشتر باشد.',
+    );
   if (new Date(value.arrivalAt) <= new Date(value.departureAt))
     throw new BadRequestException('زمان رسیدن باید پس از حرکت باشد.');
   return value;
@@ -129,6 +160,11 @@ export class TicketPublicService {
   }
 
   private offerView(row: {
+    supplyType?: string | null;
+    economyBaggageKg?: Prisma.Decimal | null;
+    businessBaggageKg?: Prisma.Decimal | null;
+    returnMinDays?: number | null;
+    returnMaxDays?: number | null;
     id: string;
     manifestTemplateId?: string | null;
     version: number;
@@ -149,6 +185,7 @@ export class TicketPublicService {
       salePriceTargetId: string | null;
       revision: number;
       amount: Prisma.Decimal;
+      tiers?: readonly { seatCount: number; amount: Prisma.Decimal }[];
       currencyCode: string;
       salePriceTarget: {
         id: string;
@@ -163,6 +200,7 @@ export class TicketPublicService {
       returnOfferId: string;
       revision: number;
       amount: Prisma.Decimal;
+      tiers?: readonly { seatCount: number; amount: Prisma.Decimal }[];
       currencyCode: string;
     }[];
   }): TicketOfferV1 {
@@ -172,6 +210,22 @@ export class TicketPublicService {
     return applySaleCommissions(
       {
         id: row.id,
+        supplyType: (row.supplyType ?? null) as Exclude<
+          TicketOfferV1['supplyType'],
+          undefined
+        >,
+        economyBaggageKg: row.economyBaggageKg?.toString() ?? null,
+        businessBaggageKg: row.businessBaggageKg?.toString() ?? null,
+        allocatedCapacity: row.capacityAllocations.reduce(
+          (sum, item) => sum + item.quantity,
+          0,
+        ),
+        reservedCapacity: row.capacityHolds.reduce(
+          (sum, item) => sum + item.quantity,
+          0,
+        ),
+        returnMinDays: row.returnMinDays ?? null,
+        returnMaxDays: row.returnMaxDays ?? null,
         manifestTemplateId: row.manifestTemplateId ?? null,
         version: row.version,
         branchId: row.branchId,
@@ -196,6 +250,14 @@ export class TicketPublicService {
               revision: directSalePrice.revision,
               amount: directSalePrice.amount.toString(),
               currencyCode: directSalePrice.currencyCode,
+              ...(directSalePrice.tiers?.length
+                ? {
+                    tiers: directSalePrice.tiers.map((tier) => ({
+                      seatCount: tier.seatCount,
+                      amount: tier.amount.toString(),
+                    })),
+                  }
+                : {}),
             }
           : null,
         targetedStandaloneSalePrices: [
@@ -209,6 +271,14 @@ export class TicketPublicService {
                   revision: price.revision,
                   amount: price.amount.toString(),
                   currencyCode: price.currencyCode,
+                  ...(price.tiers?.length
+                    ? {
+                        tiers: price.tiers.map((tier) => ({
+                          seatCount: tier.seatCount,
+                          amount: tier.amount.toString(),
+                        })),
+                      }
+                    : {}),
                   salePriceTarget: price.salePriceTarget!,
                 },
               ]),
@@ -225,6 +295,14 @@ export class TicketPublicService {
                   revision: price.revision,
                   amount: price.amount.toString(),
                   currencyCode: price.currencyCode,
+                  ...(price.tiers?.length
+                    ? {
+                        tiers: price.tiers.map((tier) => ({
+                          seatCount: tier.seatCount,
+                          amount: tier.amount.toString(),
+                        })),
+                      }
+                    : {}),
                 },
               ]),
           ).values(),
@@ -272,8 +350,10 @@ export class TicketPublicService {
   }
 
   /** Management and Sales deliberately read the same published offer rows. */
-  async managed(actor: AuthenticatedActor) {
+  async managed(actor: AuthenticatedActor, page = 1) {
     this.require(actor, 'ticket_catalog.manage');
+    if (!Number.isInteger(page) || page < 1 || page > 10000)
+      throw new BadRequestException('Invalid management page');
     const now = new Date();
     await this.pauseExpiredOffers(actor, now);
     const rows = await this.database.client.ticketPublishedOffer.findMany({
@@ -292,7 +372,10 @@ export class TicketPublicService {
           select: { quantity: true },
         },
         standaloneSalePrices: {
-          include: { salePriceTarget: true },
+          include: {
+            salePriceTarget: true,
+            tiers: { orderBy: { tierIndex: 'asc' } },
+          },
           orderBy: { revision: 'desc' },
         },
         outboundRoundTripSalePrices: {
@@ -301,6 +384,7 @@ export class TicketPublicService {
               audit: { none: { action: 'ticket.offer.archived' } },
             },
           },
+          include: { tiers: { orderBy: { tierIndex: 'asc' } } },
           orderBy: { revision: 'desc' },
         },
         saleCommissions: {
@@ -309,11 +393,13 @@ export class TicketPublicService {
         },
       },
       orderBy: [{ departureAt: 'asc' }, { id: 'asc' }],
-      take: 500,
+      take: 501,
+      skip: (page - 1) * 500,
     });
     return {
       version: 1 as const,
-      data: rows.map((row) => ({
+      hasMore: rows.length > 500,
+      data: rows.slice(0, 500).map((row) => ({
         ...this.offerView(row),
         ...(row.createKey?.startsWith('ticket-catalog:')
           ? { catalogProductId: row.createKey.slice('ticket-catalog:'.length) }
@@ -325,6 +411,7 @@ export class TicketPublicService {
   async search(input: TicketOfferSearchV1, actor: AuthenticatedActor) {
     this.require(actor, 'ticket_catalog.read');
     const result = Joi.object({
+      outboundOfferId: uuid.optional(),
       originId: uuid.required(),
       destinationId: uuid.required(),
       departureFrom: Joi.string().isoDate().required(),
@@ -338,15 +425,40 @@ export class TicketPublicService {
     const from = new Date(query.departureFrom);
     const now = new Date();
     await this.pauseExpiredOffers(actor, now);
-    const effectiveFrom = from > now ? from : now;
-    const to = query.departureTo
+    let effectiveFrom = from > now ? from : now;
+    let to = query.departureTo
       ? new Date(`${query.departureTo.slice(0, 10)}T23:59:59.999Z`)
       : undefined;
     if (to && to < from)
       throw new BadRequestException('بازه تاریخ نامعتبر است.');
+    let outboundBranch: string | undefined;
+    if (query.outboundOfferId) {
+      const outbound =
+        await this.database.client.ticketPublishedOffer.findFirst({
+          where: {
+            id: query.outboundOfferId,
+            branchId: { in: actor.branchIds },
+            status: 'ACTIVE',
+            departureAt: { gt: now },
+          },
+        });
+      if (!outbound)
+        throw new ForbiddenException('بلیط رفت در شعبه مجاز یافت نشد.');
+      if (
+        query.originId !== outbound.destinationId ||
+        query.destinationId !== outbound.originId
+      )
+        throw new BadRequestException('مسیر برگشت باید معکوس بلیط رفت باشد.');
+      outboundBranch = outbound.branchId;
+      const bounds = ticketReturnBounds(outbound);
+      if (bounds.from > effectiveFrom) effectiveFrom = bounds.from;
+      if (bounds.to && (!to || bounds.to < to)) to = bounds.to;
+      if (to && to < effectiveFrom)
+        return { version: 1 as const, data: [], hasMore: false };
+    }
     const rows = await this.database.client.ticketPublishedOffer.findMany({
       where: {
-        branchId: { in: actor.branchIds },
+        branchId: outboundBranch ?? { in: actor.branchIds },
         status: 'ACTIVE',
         originId: query.originId,
         destinationId: query.destinationId,
@@ -366,10 +478,16 @@ export class TicketPublicService {
           select: { quantity: true },
         },
         standaloneSalePrices: {
-          include: { salePriceTarget: true },
+          include: {
+            salePriceTarget: true,
+            tiers: { orderBy: { tierIndex: 'asc' } },
+          },
           orderBy: { revision: 'desc' },
         },
-        outboundRoundTripSalePrices: { orderBy: { revision: 'desc' } },
+        outboundRoundTripSalePrices: {
+          include: { tiers: { orderBy: { tierIndex: 'asc' } } },
+          orderBy: { revision: 'desc' },
+        },
         saleCommissions: {
           include: { target: true },
           orderBy: { revision: 'desc' },
@@ -430,6 +548,15 @@ export class TicketPublicService {
     // Legacy fingerprints depended on JSON field order. Compare stored offer facts
     // before rejecting a retried key so semantically identical requests remain safe.
     const sameOffer =
+      (row.supplyType ?? null) === (value.supplyType ?? null) &&
+      (row.economyBaggageKg?.toString() ?? null) ===
+        (value.economyBaggageKg == null
+          ? null
+          : new Prisma.Decimal(value.economyBaggageKg).toString()) &&
+      (row.businessBaggageKg?.toString() ?? null) ===
+        (value.businessBaggageKg == null
+          ? null
+          : new Prisma.Decimal(value.businessBaggageKg).toString()) &&
       row.branchId === branchId &&
       row.originId === value.originId &&
       row.destinationId === value.destinationId &&
@@ -439,6 +566,8 @@ export class TicketPublicService {
       row.serviceNumber === value.serviceNumber &&
       row.cabinClassCode === value.cabinClassCode &&
       row.totalCapacity === value.totalCapacity &&
+      (row.returnMinDays ?? null) === (value.returnMinDays ?? null) &&
+      (row.returnMaxDays ?? null) === (value.returnMaxDays ?? null) &&
       (row.manifestTemplateId ?? null) === (value.manifestTemplateId ?? null);
     if (row.fingerprint !== fingerprint && !sameOffer)
       throw new ConflictException(
@@ -627,6 +756,18 @@ export class TicketPublicService {
         .pattern(/^[A-Z]{3}$/)
         .required(),
       salePriceTargetId: uuid.allow(null).optional(),
+      tiers: Joi.array()
+        .items(
+          Joi.object({
+            seatCount: Joi.number().integer().min(1).required(),
+            amount: Joi.string()
+              .pattern(/^(?:0|[1-9]\d{0,15})(?:\.\d{1,4})?$/)
+              .required(),
+          }),
+        )
+        .min(1)
+        .max(40)
+        .optional(),
     }).validate(input, { convert: false });
     if (validation.error || new Prisma.Decimal(input.amount).lte(0))
       throw new BadRequestException('قیمت فروش تکی یا ارز آن معتبر نیست.');
@@ -641,10 +782,11 @@ export class TicketPublicService {
           );
           const offer = await tx.ticketPublishedOffer.findFirst({
             where: { id: offerId, branchId: { in: actor.branchIds } },
-            select: { id: true, branchId: true },
+            select: { id: true, branchId: true, totalCapacity: true },
           });
           if (!offer)
             throw new ForbiddenException('بلیط در شعبه مجاز یافت نشد.');
+          validatePriceTiers(input.tiers, input.amount, offer.totalCapacity);
           const salePriceTargetId = input.salePriceTargetId ?? null;
           if (salePriceTargetId) {
             const target = await tx.ticketSalePriceTarget.findFirst({
@@ -691,6 +833,13 @@ export class TicketPublicService {
               revision: input.expectedRevision + 1,
               amount: new Prisma.Decimal(input.amount),
               currencyCode: input.currencyCode,
+              ...(input.tiers
+                ? {
+                    tiers: {
+                      create: priceTierCreate(input.tiers, input.currencyCode),
+                    },
+                  }
+                : {}),
               actorUserId: actor.userId,
               commandKey: key,
               fingerprint,
@@ -744,6 +893,18 @@ export class TicketPublicService {
       currencyCode: Joi.string()
         .pattern(/^[A-Z]{3}$/)
         .required(),
+      tiers: Joi.array()
+        .items(
+          Joi.object({
+            seatCount: Joi.number().integer().min(1).required(),
+            amount: Joi.string()
+              .pattern(/^(?:0|[1-9]\d{0,15})(?:\.\d{1,4})?$/)
+              .required(),
+          }),
+        )
+        .min(1)
+        .max(40)
+        .optional(),
     }).validate(input, { convert: false });
     if (validation.error || new Prisma.Decimal(input.amount).lte(0))
       throw new BadRequestException(
@@ -767,6 +928,10 @@ export class TicketPublicService {
               originId: true,
               destinationId: true,
               departureAt: true,
+              arrivalAt: true,
+              returnMinDays: true,
+              returnMaxDays: true,
+              totalCapacity: true,
             },
           });
           const outbound = offers.find((offer) => offer.id === outboundOfferId);
@@ -777,14 +942,15 @@ export class TicketPublicService {
             outbound.branchId !== returning.branchId
           )
             throw new ForbiddenException('جفت بلیط در شعبه مجاز یافت نشد.');
-          if (
-            outbound.originId !== returning.destinationId ||
-            outbound.destinationId !== returning.originId ||
-            returning.departureAt <= outbound.departureAt
-          )
+          if (!eligibleTicketReturn(outbound, returning))
             throw new BadRequestException(
               'بلیط برگشت باید مسیر معکوس و حرکت پس از بلیط رفت داشته باشد.',
             );
+          validatePriceTiers(
+            input.tiers,
+            input.amount,
+            Math.min(outbound.totalCapacity, returning.totalCapacity),
+          );
           const replay = await tx.ticketOfferRoundTripSalePrice.findUnique({
             where: {
               outboundOfferId_returnOfferId_commandKey: {
@@ -822,6 +988,13 @@ export class TicketPublicService {
               revision: input.expectedRevision + 1,
               amount: new Prisma.Decimal(input.amount),
               currencyCode: input.currencyCode,
+              ...(input.tiers
+                ? {
+                    tiers: {
+                      create: priceTierCreate(input.tiers, input.currencyCode),
+                    },
+                  }
+                : {}),
               actorUserId: actor.userId,
               commandKey: key,
               fingerprint,
@@ -953,7 +1126,36 @@ export class TicketPublicService {
       if (row.version !== input.expectedVersion)
         throw new ConflictException('بلیط تغییر کرده؛ فهرست را تازه کنید.');
       const linkedSale = row.capacityAllocations.length > 0;
+      const supplyType =
+        value.supplyType === undefined ? row.supplyType : value.supplyType;
+      const economyBaggageKg =
+        value.economyBaggageKg === undefined
+          ? row.economyBaggageKg
+          : value.economyBaggageKg;
+      const businessBaggageKg =
+        value.businessBaggageKg === undefined
+          ? row.businessBaggageKg
+          : value.businessBaggageKg;
+      const baggageValue = (
+        value: Prisma.Decimal | string | null | undefined,
+      ) => (value == null ? null : new Prisma.Decimal(value).toString());
+      const min =
+        value.returnMinDays === undefined
+          ? row.returnMinDays
+          : value.returnMinDays;
+      const max =
+        value.returnMaxDays === undefined
+          ? row.returnMaxDays
+          : value.returnMaxDays;
+      if (!validReturnWindow(min, max))
+        throw new BadRequestException('بازه روزهای برگشت معتبر نیست.');
       const scheduleOnlyRevision =
+        (row.supplyType ?? null) === (supplyType ?? null) &&
+        baggageValue(row.economyBaggageKg) === baggageValue(economyBaggageKg) &&
+        baggageValue(row.businessBaggageKg) ===
+          baggageValue(businessBaggageKg) &&
+        (row.returnMinDays ?? null) === (min ?? null) &&
+        (row.returnMaxDays ?? null) === (max ?? null) &&
         row.originId === value.originId &&
         row.destinationId === value.destinationId &&
         row.carrierName === value.carrierName &&
@@ -981,6 +1183,11 @@ export class TicketPublicService {
         where: { id },
         data: {
           ...value,
+          supplyType,
+          economyBaggageKg,
+          businessBaggageKg,
+          returnMinDays: min,
+          returnMaxDays: max,
           manifestTemplateId:
             value.manifestTemplateId === undefined
               ? row.manifestTemplateId
@@ -1046,6 +1253,17 @@ export class TicketPublicService {
         )
         .map(({ id }) => id),
     );
+    const outbound = available.find(
+      (offer) =>
+        offer.id ===
+        selections.find((s) => s.direction === 'OUTBOUND')?.offerId,
+    );
+    const returning = available.find(
+      (offer) =>
+        offer.id === selections.find((s) => s.direction === 'RETURN')?.offerId,
+    );
+    if (outbound && returning && !eligibleTicketReturn(outbound, returning))
+      found.delete(returning.id);
     const unavailableOfferIds = offerIds.filter((id) => !found.has(id));
     return { available: unavailableOfferIds.length === 0, unavailableOfferIds };
   }
@@ -1056,6 +1274,9 @@ export class TicketPublicService {
     branchId: string,
     contractId: string,
     seatCount: number,
+    expectedTicketTotals?: Readonly<
+      Record<string, { amount: string; currencyCode: string }>
+    >,
   ) {
     if (!selections.length)
       return {
@@ -1162,12 +1383,155 @@ export class TicketPublicService {
           return offer.totalCapacity - allocated < seatCount;
         })
         .map(({ offerId }) => offerId);
+      const outbound = byId.get(
+        selections.find((s) => s.direction === 'OUTBOUND')?.offerId ?? '',
+      );
+      const returning = byId.get(
+        selections.find((s) => s.direction === 'RETURN')?.offerId ?? '',
+      );
+      if (
+        outbound &&
+        returning &&
+        !eligibleTicketReturn(outbound, returning) &&
+        !unavailableOfferIds.includes(returning.id)
+      )
+        unavailableOfferIds.push(returning.id);
       if (unavailableOfferIds.length)
         return {
           available: false,
           unavailableOfferIds,
           createdAllocationIds: [] as string[],
         };
+      if (expectedTicketTotals) {
+        const quoted = (selection: SalesTicketSelectionInput) =>
+          expectedTicketTotals[selection.serviceClientKey];
+        const verify = (
+          tiers: readonly { seatCount: number; amount: Prisma.Decimal }[],
+          currencyCode: string,
+          commissionPercent: Prisma.Decimal | undefined,
+          consumed: number,
+          selection: SalesTicketSelectionInput,
+          half?: 'OUTBOUND' | 'RETURN',
+        ) => {
+          if (!tiers.length) return;
+          const current = quoted(selection);
+          if (!current)
+            throw new ConflictException(
+              'قیمت پله‌ای بلیت در قرارداد ثبت نشده است؛ قرارداد را تازه کنید.',
+            );
+          let first = 0;
+          let units = 0n;
+          for (const tier of tiers) {
+            const count = Math.max(
+              0,
+              Math.min(consumed + seatCount, first + tier.seatCount) -
+                Math.max(consumed, first),
+            );
+            const net = commissionPercent
+              ? commissionAmount(
+                  tier.amount.toString(),
+                  commissionPercent.toString(),
+                )
+              : tier.amount.toString();
+            units += moneyUnits(net) * BigInt(count);
+            first += tier.seatCount;
+          }
+          if (consumed + seatCount > first)
+            throw new ConflictException(
+              'ظرفیت پله‌های قیمت کافی نیست؛ فهرست را تازه کنید.',
+            );
+          const expectedUnits =
+            half === 'OUTBOUND'
+              ? units / 2n
+              : half === 'RETURN'
+                ? units - units / 2n
+                : units;
+          if (
+            current.currencyCode !== currencyCode ||
+            moneyUnits(current.amount) !== expectedUnits
+          )
+            throw new ConflictException(
+              'قیمت صندلی‌ها تغییر کرده است؛ قیمت قرارداد را تازه کنید.',
+            );
+        };
+        const pairPrice =
+          outbound && returning
+            ? await transaction.ticketOfferRoundTripSalePrice.findFirst({
+                where: {
+                  outboundOfferId: outbound.id,
+                  returnOfferId: returning.id,
+                },
+                orderBy: { revision: 'desc' },
+                include: { tiers: { orderBy: { tierIndex: 'asc' } } },
+              })
+            : null;
+        if (pairPrice?.tiers.length && outbound && returning) {
+          const commission =
+            await transaction.ticketSaleCommissionRevision.findFirst({
+              where: {
+                offerId: outbound.id,
+                returnOfferId: returning.id,
+                salePriceTargetId: null,
+              },
+              orderBy: { revision: 'desc' },
+            });
+          const consumed = Math.max(
+            ...[outbound, returning].map(
+              (offer) =>
+                offer.capacityAllocations.reduce(
+                  (sum, allocation) => sum + allocation.quantity,
+                  0,
+                ) +
+                offer.capacityHolds.reduce(
+                  (sum, hold) => sum + hold.quantity,
+                  0,
+                ),
+            ),
+          );
+          for (const selection of selections)
+            verify(
+              pairPrice.tiers,
+              pairPrice.currencyCode,
+              commission?.percent,
+              consumed,
+              selection,
+              selection.direction,
+            );
+        } else if (!pairPrice) {
+          for (const selection of selections) {
+            const offer = byId.get(selection.offerId)!;
+            const fare =
+              await transaction.ticketOfferStandaloneSalePrice.findFirst({
+                where: { offerId: offer.id, salePriceTargetId: null },
+                orderBy: { revision: 'desc' },
+                include: { tiers: { orderBy: { tierIndex: 'asc' } } },
+              });
+            if (!fare?.tiers.length) continue;
+            const commission =
+              await transaction.ticketSaleCommissionRevision.findFirst({
+                where: {
+                  offerId: offer.id,
+                  returnOfferId: null,
+                  salePriceTargetId: null,
+                },
+                orderBy: { revision: 'desc' },
+              });
+            const consumed =
+              offer.capacityAllocations.reduce(
+                (sum, allocation) => sum + allocation.quantity,
+                0,
+              ) +
+              offer.capacityHolds.reduce((sum, hold) => sum + hold.quantity, 0);
+            verify(
+              fare.tiers,
+              fare.currencyCode,
+              commission?.percent,
+              consumed,
+              selection,
+            );
+          }
+        }
+      }
       const createdAllocationIds: string[] = [];
       for (const selection of selections) {
         if (existingByDirection.has(selection.direction)) continue;

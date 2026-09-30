@@ -22,6 +22,7 @@ import {
 } from '../model/published-catalog';
 import { TicketDatePicker } from './ticket-date-picker';
 import { ManifestTemplatePicker } from './manifest-template-picker';
+import { TicketBaggageFields } from './ticket-baggage-fields';
 export function tehranWallTime(instant: string) {
   const parts = new Intl.DateTimeFormat('en-CA', {
     timeZone: 'Asia/Tehran',
@@ -141,6 +142,66 @@ export function PublishedOfferForm({
     <form onSubmit={(event) => void submit(event)} className="space-y-4">
       {problem ? <Alert tone="error" title={problem} /> : null}
       <div className="grid gap-3 sm:grid-cols-2">
+        <FormField label="نوع تأمین">
+          <select
+            className="h-10 w-full rounded-md border bg-background px-3"
+            value={draft.supplyType ?? ''}
+            disabled={readOnly || saving}
+            onChange={(event) =>
+              setDraft((c) => ({
+                ...c,
+                supplyType: event.target.value as
+                  'COMPANY' | 'FLOATING' | 'API',
+              }))
+            }
+          >
+            <option value="" disabled>
+              نوع تأمین ثبت نشده
+            </option>
+            <option value="COMPANY">ظرفیت شرکت (چارتر)</option>
+            <option value="FLOATING">شناوری</option>
+            <option value="API">API</option>
+          </select>
+        </FormField>
+        <TicketBaggageFields
+          economy={draft.economyBaggageKg}
+          business={draft.businessBaggageKg}
+          readOnly={readOnly}
+          disabled={saving}
+          onChange={(field, value) =>
+            setDraft((c) => ({ ...c, [field]: value }))
+          }
+        />
+        {(['returnMinDays', 'returnMaxDays'] as const).map((field) => (
+          <FormField
+            key={field}
+            label={
+              field === 'returnMinDays'
+                ? 'Min — حداقل روز تا برگشت'
+                : 'Max — حداکثر روز تا برگشت'
+            }
+          >
+            <Input
+              type="number"
+              min={0}
+              max={365}
+              step={1}
+              placeholder="بدون محدودیت"
+              value={draft[field] ?? ''}
+              readOnly={readOnly}
+              disabled={saving}
+              onChange={(event) =>
+                setDraft((current) => ({
+                  ...current,
+                  [field]:
+                    event.target.value === ''
+                      ? null
+                      : Number(event.target.value),
+                }))
+              }
+            />
+          </FormField>
+        ))}
         {(['originId', 'destinationId'] as const).map((field) => (
           <FormField key={field} label={field === 'originId' ? 'مبدأ' : 'مقصد'}>
             <Select

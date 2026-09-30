@@ -306,7 +306,24 @@ export function CustomerAffairsNoraWorkspace() {
     revision,
   ]);
   const reloadDetail = async () => {
-    setRevision((x) => x + 1);
+    if (!id) return;
+    try {
+      const detail = (await (tab === 'tickets' ? api.ticket(id) : api.lead(id)))
+        .data as Detail;
+      setLoaded((current) => ({ ...current, detail }));
+    } catch (cause) {
+      setState(
+        cause instanceof CustomerAffairsApiError && cause.status === 401
+          ? 'unauthorized'
+          : cause instanceof CustomerAffairsApiError && cause.status === 403
+            ? 'forbidden'
+            : 'error',
+      );
+      setMessage(
+        'اقدام ثبت شد، اما بازخوانی پرونده انجام نشد. پیش از اقدام بعدی صفحه را تازه‌سازی کنید.',
+      );
+      throw cause;
+    }
   };
   const title =
     hubs.find((x) => x.view === view)?.title ||
