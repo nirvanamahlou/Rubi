@@ -42,24 +42,22 @@ describe('ticket sale price tiers', () => {
     const tx = {
       $queryRaw: vi.fn(),
       ticketPublishedOffer: {
-        findMany: vi
-          .fn()
-          .mockResolvedValue([
-            {
-              id: offerId,
-              branchId,
-              originId,
-              destinationId,
-              departureAt: new Date(departureAt),
-              arrivalAt: new Date(arrivalAt),
-              cabinClassCode: 'ECONOMY',
-              carrierName: 'Carrier',
-              serviceNumber: '123',
-              totalCapacity: 35,
-              capacityAllocations: [{ quantity: 20 }],
-              capacityHolds: [],
-            },
-          ]),
+        findMany: vi.fn().mockResolvedValue([
+          {
+            id: offerId,
+            branchId,
+            originId,
+            destinationId,
+            departureAt: new Date(departureAt),
+            arrivalAt: new Date(arrivalAt),
+            cabinClassCode: 'ECONOMY',
+            carrierName: 'Carrier',
+            serviceNumber: '123',
+            totalCapacity: 35,
+            capacityAllocations: [{ quantity: 20 }],
+            capacityHolds: [],
+          },
+        ]),
       },
       ticketOfferCapacityAllocation: {
         findMany: vi.fn().mockResolvedValue([]),

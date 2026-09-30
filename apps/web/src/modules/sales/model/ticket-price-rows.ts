@@ -14,7 +14,7 @@ export type TicketPriceRow = {
         amount: string;
         currencyCode: string;
         revision: number;
-    tiers?: readonly TicketSalePriceTierV1[] | undefined;
+        tiers?: readonly TicketSalePriceTierV1[] | undefined;
       }
     | undefined;
 };
