@@ -1,6 +1,5 @@
 'use client';
 import { useMasterDataColumnFilters } from './master-data-column-filters';
-import { MasterDataPowerButton } from './master-data-power-button';
 import {
   MasterDataDateRangeFilter,
   useMasterDataDateRange,
@@ -15,7 +14,6 @@ import {
   ArrowRight,
   CheckCircle2,
   CircleAlert,
-  Database,
   Eye,
   FilePenLine,
   FileSpreadsheet,
@@ -52,6 +50,7 @@ import {
 } from '@/components/ui/surfaces';
 import { masterDataApi, MasterDataApiError } from '../api/client';
 import { MasterDataDeleteButton } from './master-data-delete-button';
+import { MasterDataLogoCell } from './master-data-logo-cell';
 import { MasterDataFilterActions } from './master-data-filter-actions';
 import { MasterDataFilterBar } from './master-data-filter-bar';
 import { getMasterDataDefinition } from '../model/catalog';
@@ -64,6 +63,11 @@ import {
   type MasterDataKpiItem,
 } from './master-data-kpi-grid';
 import { MasterDataProfileDialog } from './master-data-profile-dialog';
+import {
+  MasterDataDetailItem,
+  MasterDataDetailSection,
+  MasterDataProfileIdentity,
+} from './master-data-profile-details';
 
 type RequestState = 'loading' | 'ready' | 'error' | 'forbidden';
 
@@ -77,7 +81,7 @@ const tabs = [
 ] as const satisfies readonly {
   resource: MasterDataResource;
   label: string;
-  icon: typeof Database;
+  icon: typeof UserRoundSearch;
 }[];
 
 type SalesReferenceResource = (typeof tabs)[number]['resource'];
@@ -248,11 +252,6 @@ export function MasterDataSalesReferencesWorkspace() {
     await loadSummary();
   }
 
-  async function afterStatusChange() {
-    setNotice('وضعیت رکورد با موفقیت تغییر کرد.');
-    await Promise.all([load(), loadSummary()]);
-  }
-
   async function downloadExcel() {
     setExporting(true);
     try {
@@ -335,6 +334,7 @@ export function MasterDataSalesReferencesWorkspace() {
             <tr>
               <th className="p-4 text-start">ردیف</th>
               <th className="p-4 text-start">کد</th>
+              <th className="p-4 text-start">لوگو</th>
               <th className="p-4 text-start">عنوان</th>
               <th className="p-4 text-start">توضیحات</th>
               <th className="p-4 text-start">ترتیب نمایش</th>
@@ -356,6 +356,7 @@ export function MasterDataSalesReferencesWorkspace() {
                 <td className="p-4 font-mono text-xs" dir="ltr">
                   {record.code}
                 </td>
+                <MasterDataLogoCell record={record} />
                 <td className="p-4">
                   <button
                     className="flex items-center gap-2 font-bold text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -414,10 +415,6 @@ export function MasterDataSalesReferencesWorkspace() {
                     <MasterDataDeleteButton
                       record={record}
                       onDeleted={afterDelete}
-                    />
-                    <MasterDataPowerButton
-                      record={record}
-                      onChanged={afterStatusChange}
                     />
                   </div>
                 </td>
@@ -576,64 +573,35 @@ export function MasterDataSalesReferencesWorkspace() {
           title={`پروفایل ${definition.singularLabel}`}
         >
           <div className="space-y-4">
-            <Card className="overflow-hidden">
-              <div className="grid gap-5 bg-gradient-to-l from-purple-50 via-background to-rose-50 p-6 dark:from-purple-950/30 dark:to-rose-950/30 md:grid-cols-[6rem_1fr_auto]">
-                <span className="grid size-24 place-items-center rounded-3xl bg-purple-100 text-purple-700 dark:bg-purple-400/15 dark:text-purple-300">
-                  <CurrentIcon className="size-11" />
-                </span>
-                <div>
-                  <h2 className="text-2xl font-black">{selected.name}</h2>
-                  <p className="mt-1 text-muted-foreground" dir="ltr">
-                    {selected.code} · {attribute(selected, 'englishName')}
-                  </p>
-                  <Badge className="mt-3">
-                    {selected.status === 'active' ? 'فعال' : 'غیرفعال'}
-                  </Badge>
-                </div>
-                <div className="text-center">
-                  <small className="text-muted-foreground">Version</small>
-                  <strong className="block text-2xl">
-                    v{selected.version.toLocaleString('fa-IR')}
-                  </strong>
-                </div>
-              </div>
-            </Card>
+            <MasterDataProfileIdentity
+              eyebrow={`پروفایل ${definition.singularLabel}`}
+              record={selected}
+              title={selected.name}
+            />
             <div className="grid gap-4 lg:grid-cols-2">
-              <Card className="p-5">
-                <h3 className="mb-4 flex items-center gap-2 font-black">
-                  <Database className="size-5" /> مشخصات مرجع
-                </h3>
-                <dl className="grid gap-4 sm:grid-cols-2">
-                  <div className="border-b border-border/70 pb-3">
-                    <dt className="text-xs text-muted-foreground">
-                      عنوان فارسی
-                    </dt>
-                    <dd className="mt-1 font-semibold">{selected.name}</dd>
-                  </div>
-                  <div className="border-b border-border/70 pb-3">
-                    <dt className="text-xs text-muted-foreground">
-                      عنوان انگلیسی
-                    </dt>
-                    <dd className="mt-1 font-semibold">
-                      {attribute(selected, 'englishName')}
-                    </dd>
-                  </div>
-                  <div className="border-b border-border/70 pb-3">
-                    <dt className="text-xs text-muted-foreground">
-                      ترتیب نمایش
-                    </dt>
-                    <dd className="mt-1 font-semibold">
-                      {attribute(selected, 'displayOrder', '0')}
-                    </dd>
-                  </div>
-                  <div className="border-b border-border/70 pb-3 sm:col-span-2">
-                    <dt className="text-xs text-muted-foreground">توضیحات</dt>
-                    <dd className="mt-1 font-semibold">
-                      {attribute(selected, 'description')}
-                    </dd>
-                  </div>
-                </dl>
-              </Card>
+              <MasterDataDetailSection title="مشخصات مرجع">
+                <MasterDataDetailItem
+                  label="نسخه"
+                  value={selected.version.toLocaleString('fa-IR')}
+                />
+                <MasterDataDetailItem
+                  label="عنوان فارسی"
+                  value={selected.name}
+                />
+                <MasterDataDetailItem
+                  label="عنوان انگلیسی"
+                  ltr
+                  value={attribute(selected, 'englishName')}
+                />
+                <MasterDataDetailItem
+                  label="ترتیب نمایش"
+                  value={attribute(selected, 'displayOrder', '0')}
+                />
+                <MasterDataDetailItem
+                  label="توضیحات"
+                  value={attribute(selected, 'description')}
+                />
+              </MasterDataDetailSection>
               <Card className="p-5">
                 <h3 className="mb-4 flex items-center gap-2 font-black">
                   <ShieldCheck className="size-5" /> مصرف در ماژول‌های مالک

@@ -284,7 +284,7 @@ function GenericMasterDataLiveForm({
           aria-describedby={undefined}
           className="start-auto left-1/2 max-h-[calc(100dvh-2rem)] max-w-2xl overflow-y-auto p-6"
         >
-          <DialogTitle>
+          <DialogTitle className={readonly ? 'sr-only' : undefined}>
             {mode === 'create'
               ? 'ایجاد'
               : mode === 'edit'
@@ -292,7 +292,7 @@ function GenericMasterDataLiveForm({
                 : 'مشاهده'}{' '}
             {definition.singularLabel}
           </DialogTitle>
-          {record ? (
+          {record && !readonly ? (
             <div className="mt-4 flex gap-2">
               <Badge>نسخه {record.version.toLocaleString('fa-IR')}</Badge>
             </div>

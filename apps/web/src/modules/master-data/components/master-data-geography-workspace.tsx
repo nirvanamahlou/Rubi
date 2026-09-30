@@ -1,6 +1,5 @@
 'use client';
 import { useMasterDataColumnFilters } from './master-data-column-filters';
-import { MasterDataPowerButton } from './master-data-power-button';
 import {
   MasterDataDateRangeFilter,
   useMasterDataDateRange,
@@ -17,7 +16,6 @@ import {
   ArrowRight,
   CheckCircle2,
   ChevronDown,
-  CircleAlert,
   Eye,
   FilePenLine,
   FileSpreadsheet,
@@ -64,6 +62,7 @@ import {
 } from '../model/terminal-form';
 import { MasterDataTerminalForm } from './master-data-terminal-form';
 import { MasterDataDeleteButton } from './master-data-delete-button';
+import { MasterDataLogoCell } from './master-data-logo-cell';
 import { MasterDataFilterActions } from './master-data-filter-actions';
 import { MasterDataFilterBar } from './master-data-filter-bar';
 import { MasterDataProfileDialog } from './master-data-profile-dialog';
@@ -164,6 +163,7 @@ function geographyColumns(resource: GeographyResource): readonly string[] {
   if (resource === 'countries')
     return [
       'کد ISO-2',
+      'لوگو',
       'نام فارسی',
       'نام انگلیسی',
       'ترتیب',
@@ -175,6 +175,7 @@ function geographyColumns(resource: GeographyResource): readonly string[] {
   if (resource === 'regions')
     return [
       'کد',
+      'لوگو',
       'نام فارسی',
       'نام انگلیسی',
       'کشور',
@@ -188,6 +189,7 @@ function geographyColumns(resource: GeographyResource): readonly string[] {
   if (resource === 'cities')
     return [
       'کد',
+      'لوگو',
       'نام فارسی',
       'نام انگلیسی',
       'کشور',
@@ -201,6 +203,7 @@ function geographyColumns(resource: GeographyResource): readonly string[] {
   if (resource === 'airports')
     return [
       'IATA',
+      'لوگو',
       'ICAO',
       'نام فارسی',
       'نام انگلیسی',
@@ -212,7 +215,15 @@ function geographyColumns(resource: GeographyResource): readonly string[] {
       'وضعیت',
       'عملیات',
     ];
-  return ['کد/عنوان', 'شهر', 'نوع ترمینال', 'ساعت فعالیت', 'وضعیت', 'عملیات'];
+  return [
+    'کد/عنوان',
+    'لوگو',
+    'شهر',
+    'نوع ترمینال',
+    'ساعت فعالیت',
+    'وضعیت',
+    'عملیات',
+  ];
 }
 
 function recordCells(
@@ -224,6 +235,7 @@ function recordCells(
       <span className="font-mono font-black" dir="ltr" key="code">
         {attribute(record, 'iso2Code')}
       </span>,
+      <MasterDataLogoCell asCell={false} key="logo" record={record} />,
       record.name,
       attribute(record, 'englishName'),
       attribute(record, 'displayOrder'),
@@ -241,6 +253,7 @@ function recordCells(
       <span className="font-mono text-xs font-black" dir="ltr" key="code">
         {record.code}
       </span>,
+      <MasterDataLogoCell asCell={false} key="logo" record={record} />,
       record.name,
       attribute(record, 'englishName'),
       attribute(record, 'countryName'),
@@ -255,6 +268,7 @@ function recordCells(
       <span className="font-mono text-xs font-black" dir="ltr" key="code">
         {record.code}
       </span>,
+      <MasterDataLogoCell asCell={false} key="logo" record={record} />,
       record.name,
       attribute(record, 'englishName'),
       attribute(record, 'countryName'),
@@ -274,6 +288,7 @@ function recordCells(
       <span className="font-mono font-black" dir="ltr" key="iata">
         {record.code}
       </span>,
+      <MasterDataLogoCell asCell={false} key="logo" record={record} />,
       <span className="font-mono text-xs font-black" dir="ltr" key="icao">
         {attribute(record, 'icaoCode')}
       </span>,
@@ -297,6 +312,7 @@ function recordCells(
         {record.code}
       </p>
     </div>,
+    <MasterDataLogoCell asCell={false} key="logo" record={record} />,
     attribute(record, 'cityName'),
     terminalLabels[attribute(record, 'terminalType')] ??
       attribute(record, 'terminalType'),
@@ -340,6 +356,7 @@ export function MasterDataGeographyWorkspace() {
   const [total, setTotal] = useState(0);
   const [activeTotal, setActiveTotal] = useState(0);
   const [internationalTotal, setInternationalTotal] = useState(0);
+  const [globalCityTotal, setGlobalCityTotal] = useState(0);
   const [locationTotals, setLocationTotals] = useState({
     regions: 0,
     activeRegions: 0,
@@ -506,16 +523,29 @@ export function MasterDataGeographyWorkspace() {
           }),
         );
       } else requests.push(Promise.resolve(undefined));
-      const [listResult, activeResult, internationalResult] =
+      if (resource === 'countries') {
+        requests.push(
+          masterDataApi.listSummary('cities', {
+            search: '',
+            status: 'all',
+            sortBy: 'name',
+            sortDirection: 'asc',
+          }),
+        );
+      } else requests.push(Promise.resolve(undefined));
+      const [listResult, activeResult, internationalResult, citySummary] =
         (await Promise.all(requests)) as [
           Awaited<ReturnType<typeof masterDataApi.list>>,
           Awaited<ReturnType<typeof masterDataApi.list>>,
+          Awaited<ReturnType<typeof masterDataApi.list>> | undefined,
           Awaited<ReturnType<typeof masterDataApi.list>> | undefined,
         ];
       setRecords(listResult.data);
       setTotal(listResult.meta.total);
       setActiveTotal(activeResult.meta.total);
       setInternationalTotal(internationalResult?.meta.total ?? 0);
+      if (resource === 'countries')
+        setGlobalCityTotal(citySummary?.meta.total ?? 0);
       setRequestState('ready');
     } catch (error) {
       setRecords([]);
@@ -700,12 +730,6 @@ export function MasterDataGeographyWorkspace() {
     await refreshExpandedRelations();
   }
 
-  async function afterStatusChange() {
-    setNotice('وضعیت رکورد با موفقیت تغییر کرد.');
-    await load();
-    await refreshExpandedRelations();
-  }
-
   async function refreshExpandedRelations() {
     const refreshes = [
       ...(expandedCountryId ? [loadCountryCities(expandedCountryId)] : []),
@@ -790,11 +814,10 @@ export function MasterDataGeographyWorkspace() {
             hint: 'پس از اتصال قرارداد مقصد',
           },
           {
-            label: 'نیازمند بازبینی',
-            value: inactiveTotal,
-            icon: History,
+            label: 'کل شهرهای مرتبط',
+            value: globalCityTotal,
+            icon: MapPin,
             tone: 'amber',
-            hint: 'رکوردهای غیرفعال در دامنه فعلی',
           },
         ]
       : resource === 'regions' || resource === 'cities'
@@ -844,13 +867,6 @@ export function MasterDataGeographyWorkspace() {
                 icon: MapPin,
                 tone: 'violet',
                 hint: 'در صفحه جاری',
-              },
-              {
-                label: 'ناقص یا نیازمند بررسی',
-                value: inactiveTotal,
-                icon: CircleAlert,
-                tone: 'amber',
-                hint: 'رکوردهای غیرفعال در دامنه فعلی',
               },
             ]
           : [
@@ -1022,10 +1038,6 @@ export function MasterDataGeographyWorkspace() {
                       <MasterDataDeleteButton
                         record={record}
                         onDeleted={afterDelete}
-                      />
-                      <MasterDataPowerButton
-                        record={record}
-                        onChanged={afterStatusChange}
                       />
                     </div>
                   </td>
@@ -1441,10 +1453,6 @@ export function MasterDataGeographyWorkspace() {
                           record={record}
                           onDeleted={afterDelete}
                         />
-                        <MasterDataPowerButton
-                          record={record}
-                          onChanged={afterStatusChange}
-                        />
                         {resource === 'countries' ? (
                           <Button
                             aria-expanded={expandedCountryId === record.id}
@@ -1524,6 +1532,10 @@ export function MasterDataGeographyWorkspace() {
                                           {city.name}
                                         </span>
                                         <Badge>{city.code}</Badge>
+                                        <MasterDataLogoCell
+                                          asCell={false}
+                                          record={city}
+                                        />
                                         {statusBadge(city)}
                                       </div>
                                       <div className="flex items-center gap-2">
@@ -1574,10 +1586,6 @@ export function MasterDataGeographyWorkspace() {
                                           onDeleted={afterDelete}
                                           record={city}
                                         />
-                                        <MasterDataPowerButton
-                                          onChanged={afterStatusChange}
-                                          record={city}
-                                        />
                                       </div>
                                     </div>
                                     {expandedCityId === city.id ? (
@@ -1620,6 +1628,10 @@ export function MasterDataGeographyWorkspace() {
                                                     <Badge>
                                                       {airport.code}
                                                     </Badge>
+                                                    <MasterDataLogoCell
+                                                      asCell={false}
+                                                      record={airport}
+                                                    />
                                                     {statusBadge(airport)}
                                                   </div>
                                                   <div className="flex items-center gap-2">
@@ -1679,12 +1691,6 @@ export function MasterDataGeographyWorkspace() {
                                                       onDeleted={afterDelete}
                                                       record={airport}
                                                     />
-                                                    <MasterDataPowerButton
-                                                      onChanged={
-                                                        afterStatusChange
-                                                      }
-                                                      record={airport}
-                                                    />
                                                   </div>
                                                 </div>
                                                 {expandedAirportId ===
@@ -1715,18 +1721,30 @@ export function MasterDataGeographyWorkspace() {
                                                             className="flex flex-wrap items-center justify-between gap-2 rounded-md bg-muted/30 p-2"
                                                             key={terminal.id}
                                                           >
-                                                            <span>
-                                                              {terminal.name} ·{' '}
-                                                              {terminalLabels[
-                                                                attribute(
-                                                                  terminal,
-                                                                  'terminalType',
-                                                                )
-                                                              ] ??
-                                                                attribute(
-                                                                  terminal,
-                                                                  'terminalType',
-                                                                )}
+                                                            <span className="flex items-center gap-2">
+                                                              <Badge>
+                                                                {terminal.code}
+                                                              </Badge>
+                                                              <MasterDataLogoCell
+                                                                asCell={false}
+                                                                record={
+                                                                  terminal
+                                                                }
+                                                              />
+                                                              <span>
+                                                                {terminal.name}{' '}
+                                                                ·{' '}
+                                                                {terminalLabels[
+                                                                  attribute(
+                                                                    terminal,
+                                                                    'terminalType',
+                                                                  )
+                                                                ] ??
+                                                                  attribute(
+                                                                    terminal,
+                                                                    'terminalType',
+                                                                  )}
+                                                              </span>
                                                             </span>
                                                             <div className="flex items-center gap-2">
                                                               <Button
@@ -1764,14 +1782,6 @@ export function MasterDataGeographyWorkspace() {
                                                               <MasterDataDeleteButton
                                                                 onDeleted={
                                                                   afterDelete
-                                                                }
-                                                                record={
-                                                                  terminal
-                                                                }
-                                                              />
-                                                              <MasterDataPowerButton
-                                                                onChanged={
-                                                                  afterStatusChange
                                                                 }
                                                                 record={
                                                                   terminal
@@ -1863,10 +1873,6 @@ export function MasterDataGeographyWorkspace() {
                           <MasterDataDeleteButton
                             record={record}
                             onDeleted={afterDelete}
-                          />
-                          <MasterDataPowerButton
-                            record={record}
-                            onChanged={afterStatusChange}
                           />
                           <Button
                             aria-expanded={false}

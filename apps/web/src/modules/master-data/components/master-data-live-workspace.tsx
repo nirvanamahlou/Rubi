@@ -18,7 +18,6 @@ import {
   FileSpreadsheet,
   FileText,
   Plus,
-  Power,
   RefreshCw,
   Search,
   XCircle,
@@ -48,6 +47,7 @@ import {
 } from '@/components/ui/surfaces';
 import { masterDataApi, MasterDataApiError } from '../api/client';
 import { MasterDataDeleteButton } from './master-data-delete-button';
+import { MasterDataLogoCell } from './master-data-logo-cell';
 import { MasterDataFilterActions } from './master-data-filter-actions';
 import { MasterDataFilterBar } from './master-data-filter-bar';
 import {
@@ -207,22 +207,6 @@ function GenericMasterDataWorkspace({
     setNotice('رکورد با موفقیت حذف شد.');
     if (records.length === 1 && page > 1) setPage(page - 1);
     else await load();
-  }
-
-  async function toggle(record: MasterDataRecord) {
-    try {
-      const next: MasterDataStatus =
-        record.status === 'active' ? 'inactive' : 'active';
-      await masterDataApi.setStatus(resource, record.id, next, record.version);
-      setNotice(
-        `${definition.singularLabel} ${next === 'active' ? 'فعال' : 'غیرفعال'} شد.`,
-      );
-      await load();
-    } catch (error) {
-      setNotice(
-        error instanceof Error ? error.message : 'تغییر وضعیت ناموفق بود.',
-      );
-    }
   }
 
   async function decideRate(
@@ -589,6 +573,7 @@ function GenericMasterDataWorkspace({
                 <thead className="bg-muted/50 text-muted-foreground">
                   <tr>
                     <th className="p-4 text-start">کد سیستمی</th>
+                    <th className="p-4 text-start">لوگو</th>
                     <th className="p-4 text-start">عنوان</th>
                     <th className="p-4 text-start">وضعیت</th>
                     <th className="p-4 text-start">آخرین تغییر</th>
@@ -601,6 +586,7 @@ function GenericMasterDataWorkspace({
                       <td className="p-4 font-mono text-xs" dir="ltr">
                         {record.code}
                       </td>
+                      <MasterDataLogoCell record={record} />
                       <td className="p-4 font-semibold">{record.name}</td>
                       <td className="p-4">
                         <Badge
@@ -643,15 +629,6 @@ function GenericMasterDataWorkspace({
                             record={record}
                             onDeleted={afterDelete}
                           />
-                          <Button
-                            aria-label={`${record.status === 'active' ? 'غیرفعال‌سازی' : 'فعال‌سازی'} ${record.name}`}
-                            onClick={() => void toggle(record)}
-                            size="icon"
-                            title={`${record.status === 'active' ? 'غیرفعال‌سازی' : 'فعال‌سازی'} ${record.name}`}
-                            variant="outline"
-                          >
-                            <Power aria-hidden="true" className="size-4" />
-                          </Button>{' '}
                           {resource === 'exchange-rates' &&
                           record.attributes.status === 'DRAFT' ? (
                             <>

@@ -4,7 +4,6 @@ import {
   transportColumnValue,
 } from '../model/transport-columns';
 import { useMasterDataColumnFilters } from './master-data-column-filters';
-import { MasterDataPowerButton } from './master-data-power-button';
 import {
   MasterDataDateRangeFilter,
   useMasterDataDateRange,
@@ -28,7 +27,6 @@ import {
   BusFront,
   CheckCircle2,
   CircleAlert,
-  Database,
   Eye,
   FilePenLine,
   FileSpreadsheet,
@@ -41,7 +39,7 @@ import {
   TrainFront,
 } from 'lucide-react';
 import Link from 'next/link';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
 
 import { Button, buttonVariants } from '@/components/ui/button';
 import {
@@ -71,7 +69,7 @@ import {
 } from '../api/client';
 import { MasterDataDeleteButton } from './master-data-delete-button';
 import { MasterDataFilterActions } from './master-data-filter-actions';
-import { MasterDataLogoImage } from './master-data-logo-image';
+import { MasterDataLogoCell } from './master-data-logo-cell';
 import { MasterDataFilterBar } from './master-data-filter-bar';
 import { getMasterDataDefinition } from '../model/catalog';
 import { getMasterDataFormFields } from '../model/form-fields';
@@ -84,6 +82,11 @@ import {
   type MasterDataKpiItem,
 } from './master-data-kpi-grid';
 import { MasterDataProfileDialog } from './master-data-profile-dialog';
+import {
+  MasterDataDetailItem,
+  MasterDataDetailSection,
+  MasterDataProfileIdentity,
+} from './master-data-profile-details';
 import { MasterDataAirlineBaggageEditor } from './master-data-airline-baggage-editor';
 
 type RequestState = 'loading' | 'ready' | 'error' | 'forbidden';
@@ -220,7 +223,6 @@ export function MasterDataTransportationWorkspace() {
   const definition = getMasterDataDefinition(resource);
   const pageDefinition = definition;
   const currentTab = tabs.find((tab) => tab.resource === resource) ?? tabs[0];
-  const CurrentIcon = currentTab.icon;
 
   const { columnFilters, columnFilterControls, resetColumnFilters } =
     useMasterDataColumnFilters(resource, () => setPage(1));
@@ -455,11 +457,6 @@ export function MasterDataTransportationWorkspace() {
     await loadSummary();
   }
 
-  async function afterStatusChange() {
-    setNotice('وضعیت رکورد با موفقیت تغییر کرد.');
-    await Promise.all([load(), loadSummary()]);
-  }
-
   async function downloadExcel() {
     setExporting(true);
     try {
@@ -553,9 +550,12 @@ export function MasterDataTransportationWorkspace() {
             <tr>
               <th className="p-4 text-start">ردیف</th>
               {columns.map(([key, label]) => (
-                <th key={key} className="p-4 text-start whitespace-nowrap">
-                  {label}
-                </th>
+                <Fragment key={key}>
+                  <th className="p-4 text-start whitespace-nowrap">{label}</th>
+                  {key === 'code' ? (
+                    <th className="p-4 text-start">لوگو</th>
+                  ) : null}
+                </Fragment>
               ))}
               <th className="p-4 text-start">وضعیت</th>
               <th className="p-4 text-start">عملیات</th>
@@ -571,47 +571,45 @@ export function MasterDataTransportationWorkspace() {
                   {((page - 1) * 25 + index + 1).toLocaleString('fa-IR')}
                 </td>
                 {columns.map(([key]) => (
-                  <td key={key} className="p-4 min-w-28">
-                    {key === 'name' ||
-                    (resource === 'cabin-classes' && key === 'englishName') ||
-                    (resource === 'aircraft-types' &&
-                      key === 'manufacturerModel') ? (
-                      <>
-                        {[
-                          'airlines',
-                          'rail-companies',
-                          'bus-companies',
-                        ].includes(resource) ? (
-                          <MasterDataLogoImage record={record} />
-                        ) : null}
-                        <button
-                          type="button"
-                          className="text-start font-bold text-primary focus-visible:ring-2 focus-visible:ring-ring"
-                          onClick={() => openProfile(record)}
-                        >
-                          {key === 'name'
-                            ? record.name
-                            : transportColumnValue(record, key)}
-                        </button>
-                        {[
-                          'airlines',
-                          'rail-companies',
-                          'bus-companies',
-                        ].includes(resource) ? (
-                          <p
-                            className="text-xs text-muted-foreground"
-                            dir="ltr"
+                  <Fragment key={key}>
+                    <td className="p-4 min-w-28">
+                      {key === 'name' ||
+                      (resource === 'cabin-classes' && key === 'englishName') ||
+                      (resource === 'aircraft-types' &&
+                        key === 'manufacturerModel') ? (
+                        <>
+                          <button
+                            type="button"
+                            className="text-start font-bold text-primary focus-visible:ring-2 focus-visible:ring-ring"
+                            onClick={() => openProfile(record)}
                           >
-                            {attribute(record, 'englishName')}
-                          </p>
-                        ) : null}
-                      </>
-                    ) : (
-                      <span className={key === 'code' ? 'font-mono' : ''}>
-                        {transportColumnValue(record, key)}
-                      </span>
-                    )}
-                  </td>
+                            {key === 'name'
+                              ? record.name
+                              : transportColumnValue(record, key)}
+                          </button>
+                          {[
+                            'airlines',
+                            'rail-companies',
+                            'bus-companies',
+                          ].includes(resource) ? (
+                            <p
+                              className="text-xs text-muted-foreground"
+                              dir="ltr"
+                            >
+                              {attribute(record, 'englishName')}
+                            </p>
+                          ) : null}
+                        </>
+                      ) : (
+                        <span className={key === 'code' ? 'font-mono' : ''}>
+                          {transportColumnValue(record, key)}
+                        </span>
+                      )}
+                    </td>
+                    {key === 'code' ? (
+                      <MasterDataLogoCell record={record} />
+                    ) : null}
+                  </Fragment>
                 ))}
                 <td className="p-4">
                   <Badge
@@ -654,10 +652,6 @@ export function MasterDataTransportationWorkspace() {
                     <MasterDataDeleteButton
                       record={record}
                       onDeleted={afterDelete}
-                    />
-                    <MasterDataPowerButton
-                      record={record}
-                      onChanged={afterStatusChange}
                     />
                   </div>
                 </td>
@@ -851,64 +845,30 @@ export function MasterDataTransportationWorkspace() {
             {resource === 'airlines' && profileOpen ? (
               <MasterDataAirlineBaggageEditor airline={selected} readOnly />
             ) : null}
-            <Card className="overflow-hidden">
-              <div className="grid gap-5 bg-gradient-to-l from-blue-50 via-background to-cyan-50 p-6 dark:from-blue-950/30 dark:to-cyan-950/30 md:grid-cols-[6rem_1fr_auto]">
-                <span className="relative grid size-24 place-items-center rounded-3xl bg-blue-100 text-blue-700 dark:bg-blue-400/15 dark:text-blue-300">
-                  <CurrentIcon className="size-11" />
-                  <MasterDataLogoImage
-                    className="absolute inset-0 size-24"
-                    record={selected}
-                  />
-                </span>
-                <div>
-                  <h2 className="text-2xl font-black">
-                    {transportDisplayName(selected)}
-                  </h2>
-                  <p className="mt-1 text-muted-foreground" dir="ltr">
-                    {selected.code}
-                    {resource === 'cabin-classes'
-                      ? ''
-                      : ` · ${attribute(selected, 'englishName')}`}
-                  </p>
-                  <Badge className="mt-3">
-                    {selected.attributes.transportStatus === 'UNDER_REVIEW'
-                      ? 'در حال بررسی'
-                      : selected.status === 'active'
-                        ? 'فعال'
-                        : 'غیرفعال'}
-                  </Badge>
-                </div>
-                <div className="text-center">
-                  <small className="text-muted-foreground">Version</small>
-                  <strong className="block text-2xl">
-                    v{selected.version.toLocaleString('fa-IR')}
-                  </strong>
-                </div>
-              </div>
-            </Card>
+            <MasterDataProfileIdentity
+              eyebrow={`پروفایل ${definition.singularLabel}`}
+              record={selected}
+              title={transportDisplayName(selected)}
+            />
             <div className="grid gap-4 lg:grid-cols-2">
-              <Card className="p-5">
-                <h3 className="mb-4 flex items-center gap-2 font-black">
-                  <Database className="size-5" /> مشخصات مرجع
-                </h3>
-                <dl className="grid gap-4 sm:grid-cols-2">
-                  {profileAttributeEntries(selected)
-                    .filter(
-                      ([key, value]) =>
-                        attributeLabels[key] && value !== null && value !== '',
-                    )
-                    .map(([key, value]) => (
-                      <div className="border-b border-border/70 pb-3" key={key}>
-                        <dt className="text-xs text-muted-foreground">
-                          {attributeLabels[key]}
-                        </dt>
-                        <dd className="mt-1 break-words font-semibold">
-                          {String(value)}
-                        </dd>
-                      </div>
-                    ))}
-                </dl>
-              </Card>
+              <MasterDataDetailSection title="مشخصات مرجع">
+                <MasterDataDetailItem
+                  label="نسخه"
+                  value={selected.version.toLocaleString('fa-IR')}
+                />
+                {profileAttributeEntries(selected)
+                  .filter(
+                    ([key, value]) =>
+                      attributeLabels[key] && value !== null && value !== '',
+                  )
+                  .map(([key, value]) => (
+                    <MasterDataDetailItem
+                      key={key}
+                      label={attributeLabels[key] ?? key}
+                      value={String(value)}
+                    />
+                  ))}
+              </MasterDataDetailSection>
               <Card className="p-5">
                 <h3 className="mb-4 flex items-center gap-2 font-black">
                   <ShieldCheck className="size-5" /> مرز قراردادها

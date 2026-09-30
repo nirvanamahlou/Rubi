@@ -22,7 +22,7 @@ describe('Master Data visual polish contract', () => {
       'master-data-accommodation-workspace.tsx',
       'master-data-suppliers-workspace.tsx',
     ]) {
-      expect(source(file), file).toContain('<MasterDataLogoImage');
+      expect(source(file), file).toContain('<MasterDataLogoCell');
     }
   });
   it('omits technical contract and backend badges throughout the Master Data UI', () => {
@@ -47,7 +47,7 @@ describe('Master Data visual polish contract', () => {
 
   it('preserves form behavior, record versions and honest preview disclosure', () => {
     const form = source('master-data-live-form.tsx');
-    expect(form).toContain('<DialogTitle>');
+    expect(form).toContain('<DialogTitle className={readonly');
     expect(form).toContain('aria-describedby={undefined}');
     expect(form).toContain('validateMasterDataDraft(definition.key, values)');
     expect(form).toContain('await onPersist(');
@@ -133,7 +133,7 @@ describe('Master Data visual polish contract', () => {
       'کل کشورها',
       'کشور فعال',
       'کشور دارای مقصد',
-      'نیازمند بازبینی',
+      'کل شهرهای مرتبط',
       'کل شهرها',
       'شهر فعال',
       'کل استان‌ها',
@@ -141,7 +141,6 @@ describe('Master Data visual polish contract', () => {
       'کل فرودگاه‌ها',
       'فرودگاه فعال',
       'شهرهای مرتبط',
-      'ناقص یا نیازمند بررسی',
       'کل ترمینال‌ها',
       'ترمینال فعال',
       'بین‌المللی',

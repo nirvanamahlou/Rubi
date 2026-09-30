@@ -5,13 +5,7 @@ import { Eye, FilePenLine, Plus } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
-import {
-  Alert,
-  Badge,
-  Card,
-  EmptyState,
-  Skeleton,
-} from '@/components/ui/surfaces';
+import { Alert, Card, EmptyState, Skeleton } from '@/components/ui/surfaces';
 import { masterDataApi } from '../api/client';
 import { getMasterDataDefinition } from '../model/catalog';
 import {
@@ -19,7 +13,12 @@ import {
   type MasterDataFormMode,
 } from './master-data-live-form';
 import { MasterDataProfileDialog } from './master-data-profile-dialog';
-import { MasterDataLogoImage } from './master-data-logo-image';
+import {
+  MasterDataDetailItem,
+  MasterDataDetailSection,
+  MasterDataProfileIdentity,
+} from './master-data-profile-details';
+import { MasterDataLogoCell } from './master-data-logo-cell';
 
 const branchDefinition = getMasterDataDefinition('bank-branches');
 
@@ -75,19 +74,12 @@ export function MasterDataBankProfile({
         title={`پروفایل بانک ${bank.name}`}
       >
         <div className="space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex flex-wrap items-center gap-3">
-              <MasterDataLogoImage record={bank} />
-              <Badge>{bank.code}</Badge>
-              <span>{String(bank.attributes.englishName ?? '')}</span>
-              <span>{String(bank.attributes.countryName ?? '')}</span>
-              {bank.attributes.swiftCode ? (
-                <span dir="ltr">
-                  SWIFT: {String(bank.attributes.swiftCode)}
-                </span>
-              ) : null}
-              <Badge>{bank.status === 'active' ? 'فعال' : 'غیرفعال'}</Badge>
-            </div>
+          <MasterDataProfileIdentity
+            eyebrow="پروفایل بانک"
+            record={bank}
+            title={bank.name}
+          />
+          <div className="flex justify-end">
             <Button
               onClick={() => {
                 setSelectedBranch(undefined);
@@ -98,6 +90,26 @@ export function MasterDataBankProfile({
               افزودن شعبه
             </Button>
           </div>
+          <MasterDataDetailSection title="مشخصات بانک">
+            <MasterDataDetailItem
+              label="نام انگلیسی"
+              ltr
+              value={String(bank.attributes.englishName ?? '')}
+            />
+            <MasterDataDetailItem
+              label="کشور"
+              value={String(bank.attributes.countryName ?? '')}
+            />
+            <MasterDataDetailItem
+              label="SWIFT"
+              ltr
+              value={
+                bank.attributes.swiftCode
+                  ? String(bank.attributes.swiftCode)
+                  : ''
+              }
+            />
+          </MasterDataDetailSection>
           <Card className="space-y-3 p-4">
             <h3 className="font-bold">شعب بانک {bank.name}</h3>
             {notice ? <Alert title={notice} /> : null}
@@ -124,6 +136,7 @@ export function MasterDataBankProfile({
                   <thead className="bg-muted/50 text-muted-foreground">
                     <tr>
                       <th className="p-3 text-start">کد شعبه</th>
+                      <th className="p-3 text-start">لوگو</th>
                       <th className="p-3 text-start">نام شعبه</th>
                       <th className="p-3 text-start">شهر</th>
                       <th className="p-3 text-start">نشانی</th>
@@ -138,6 +151,7 @@ export function MasterDataBankProfile({
                         <td className="p-3 font-mono" dir="ltr">
                           {branch.code}
                         </td>
+                        <MasterDataLogoCell record={branch} />
                         <td className="p-3">{branch.name}</td>
                         <td className="p-3">
                           {String(branch.attributes.cityName ?? '—')}

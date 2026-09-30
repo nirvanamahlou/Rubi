@@ -1,6 +1,5 @@
 'use client';
 import { useMasterDataColumnFilters } from './master-data-column-filters';
-import { MasterDataPowerButton } from './master-data-power-button';
 import {
   MasterDataDateRangeFilter,
   useMasterDataDateRange,
@@ -17,7 +16,6 @@ import {
   ArrowRight,
   CheckCircle2,
   CircleAlert,
-  Database,
   Eye,
   FilePenLine,
   FileQuestion,
@@ -37,7 +35,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
 
 import { Button, buttonVariants } from '@/components/ui/button';
 import {
@@ -73,6 +71,7 @@ import {
   visaValidityLabel,
 } from '../model/travel-reference-form';
 import { MasterDataDeleteButton } from './master-data-delete-button';
+import { MasterDataLogoCell } from './master-data-logo-cell';
 import { MasterDataFilterActions } from './master-data-filter-actions';
 import { MasterDataFilterBar } from './master-data-filter-bar';
 import { getMasterDataDefinition } from '../model/catalog';
@@ -85,6 +84,11 @@ import {
   type MasterDataKpiItem,
 } from './master-data-kpi-grid';
 import { MasterDataProfileDialog } from './master-data-profile-dialog';
+import {
+  MasterDataDetailItem,
+  MasterDataDetailSection,
+  MasterDataProfileIdentity,
+} from './master-data-profile-details';
 
 type RequestState = 'loading' | 'ready' | 'error' | 'forbidden';
 
@@ -123,6 +127,7 @@ const rules: Record<TravelResource, { title: string; text: string }> = {
 const headers: Record<TravelResource, readonly string[]> = {
   leaders: [
     'کد',
+    'لوگو',
     'نام فارسی / انگلیسی',
     'کشور و شهر فعالیت',
     'تماس',
@@ -134,6 +139,7 @@ const headers: Record<TravelResource, readonly string[]> = {
   ],
   'tour-types': [
     'کد',
+    'لوگو',
     'عنوان فارسی',
     'عنوان انگلیسی',
     'دامنه',
@@ -145,6 +151,7 @@ const headers: Record<TravelResource, readonly string[]> = {
   ],
   'transfer-types': [
     'کد',
+    'لوگو',
     'عنوان',
     'وسیله',
     'شیوه سرویس',
@@ -156,6 +163,7 @@ const headers: Record<TravelResource, readonly string[]> = {
   ],
   'visa-services': [
     'کد',
+    'لوگو',
     'عنوان',
     'کشور مقصد',
     'نوع ویزا',
@@ -530,11 +538,6 @@ export function MasterDataTravelServicesWorkspace() {
     await loadSummary();
   }
 
-  async function afterStatusChange() {
-    setNotice('وضعیت رکورد با موفقیت تغییر کرد.');
-    await Promise.all([load(), loadSummary()]);
-  }
-
   async function downloadExcel() {
     setExporting(true);
     try {
@@ -615,7 +618,6 @@ export function MasterDataTravelServicesWorkspace() {
         <FilePenLine className="size-4" />
       </Button>
       <MasterDataDeleteButton record={record} onDeleted={afterDelete} />
-      <MasterDataPowerButton record={record} onChanged={afterStatusChange} />
     </div>
   );
 
@@ -707,11 +709,18 @@ export function MasterDataTravelServicesWorkspace() {
               className="border-t border-border transition hover:bg-muted/30"
               key={record.id}
             >
-              {cells(record).map((cell, index) => (
-                <td className="max-w-72 p-4" key={`${record.id}-${index}`}>
-                  {cell}
-                </td>
-              ))}
+              {cells(record).map((cell, index) =>
+                index === 0 ? (
+                  <Fragment key={`${record.id}-${index}`}>
+                    <td className="max-w-72 p-4">{cell}</td>
+                    <MasterDataLogoCell record={record} />
+                  </Fragment>
+                ) : (
+                  <td className="max-w-72 p-4" key={`${record.id}-${index}`}>
+                    {cell}
+                  </td>
+                ),
+              )}
               <td className="p-4">{statusBadge(record)}</td>
               <td className="p-4">{actions(record)}</td>
             </tr>
@@ -951,26 +960,11 @@ export function MasterDataTravelServicesWorkspace() {
           title={`پروفایل ${definition.singularLabel}`}
         >
           <div className="space-y-4">
-            <Card className="overflow-hidden">
-              <div className="grid gap-5 bg-gradient-to-l from-rose-50 via-background to-sky-50 p-6 dark:from-rose-950/30 dark:to-sky-950/30 md:grid-cols-[6rem_1fr_auto]">
-                <span className="grid size-24 place-items-center rounded-3xl bg-rose-100 text-rose-700 dark:bg-rose-400/15 dark:text-rose-300">
-                  <CurrentIcon className="size-11" />
-                </span>
-                <div>
-                  <h2 className="text-2xl font-black">{selected.name}</h2>
-                  <p className="mt-1 font-mono text-muted-foreground" dir="ltr">
-                    {selected.code} · {attribute(selected, 'englishName')}
-                  </p>
-                  <div className="mt-3">{statusBadge(selected)}</div>
-                </div>
-                <div className="text-center">
-                  <small className="text-muted-foreground">Version</small>
-                  <strong className="block text-2xl">
-                    v{selected.version.toLocaleString('fa-IR')}
-                  </strong>
-                </div>
-              </div>
-            </Card>
+            <MasterDataProfileIdentity
+              eyebrow={`پروفایل ${definition.singularLabel}`}
+              record={selected}
+              title={selected.name}
+            />
             {resource === 'leaders' ? (
               <Alert
                 description="شماره‌ها فقط به‌صورت ماسک‌شده نمایش داده می‌شوند؛ سند، آدرس، حساب بانکی و دستمزد در این Aggregate ذخیره نشده‌اند."
@@ -979,52 +973,39 @@ export function MasterDataTravelServicesWorkspace() {
               />
             ) : null}
             <div className="grid gap-4 lg:grid-cols-2">
-              <Card className="p-5">
-                <h3 className="mb-4 flex items-center gap-2 font-black">
-                  <Database className="size-5" /> مشخصات مرجع
-                </h3>
-                <dl className="grid gap-4 sm:grid-cols-2">
-                  {profileFields[resource].map((field) => (
-                    <div
-                      className="border-b border-border/70 pb-3"
-                      key={field.key}
-                    >
-                      <dt className="text-xs text-muted-foreground">
-                        {field.label}
-                      </dt>
-                      <dd className="mt-1 break-words font-semibold">
-                        {resource === 'transfer-types' &&
-                        field.key === 'suggestedCapacity'
-                          ? transferCapacityLabel(selected)
-                          : resource === 'visa-services' &&
-                              field.key === 'referenceValidityDays'
-                            ? visaValidityLabel(selected)
-                            : translated(selected, field.key)}
-                      </dd>
-                    </div>
-                  ))}
-                  {resource === 'tour-types' ? (
-                    <>
-                      <div>
-                        <dt className="text-xs text-muted-foreground">
-                          استفاده
-                        </dt>
-                        <dd className="mt-1 font-semibold">
-                          {tourTypeUsageLabel(selected)}
-                        </dd>
-                      </div>
-                      <div>
-                        <dt className="text-xs text-muted-foreground">
-                          آخرین تغییر
-                        </dt>
-                        <dd className="mt-1 break-words font-semibold">
-                          {tourTypeUpdatedLabel(selected, tourActorNames)}
-                        </dd>
-                      </div>
-                    </>
-                  ) : null}
-                </dl>
-              </Card>
+              <MasterDataDetailSection title="مشخصات مرجع">
+                <MasterDataDetailItem
+                  label="نسخه"
+                  value={selected.version.toLocaleString('fa-IR')}
+                />
+                {profileFields[resource].map((field) => (
+                  <MasterDataDetailItem
+                    key={field.key}
+                    label={field.label}
+                    value={
+                      resource === 'transfer-types' &&
+                      field.key === 'suggestedCapacity'
+                        ? transferCapacityLabel(selected)
+                        : resource === 'visa-services' &&
+                            field.key === 'referenceValidityDays'
+                          ? visaValidityLabel(selected)
+                          : translated(selected, field.key)
+                    }
+                  />
+                ))}
+                {resource === 'tour-types' ? (
+                  <>
+                    <MasterDataDetailItem
+                      label="استفاده"
+                      value={tourTypeUsageLabel(selected)}
+                    />
+                    <MasterDataDetailItem
+                      label="آخرین تغییر"
+                      value={tourTypeUpdatedLabel(selected, tourActorNames)}
+                    />
+                  </>
+                ) : null}
+              </MasterDataDetailSection>
               <Card className="p-5">
                 <h3 className="mb-4 flex items-center gap-2 font-black">
                   {resource === 'leaders' ? (

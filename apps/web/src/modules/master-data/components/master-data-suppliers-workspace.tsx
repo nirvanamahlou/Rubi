@@ -1,6 +1,5 @@
 'use client';
 import { useMasterDataColumnFilters } from './master-data-column-filters';
-import { MasterDataPowerButton } from './master-data-power-button';
 import {
   MasterDataDateRangeFilter,
   useMasterDataDateRange,
@@ -15,7 +14,6 @@ import type {
 import {
   AlertTriangle,
   ArrowRight,
-  Briefcase,
   Building2,
   CheckCircle2,
   Clock3,
@@ -76,7 +74,12 @@ import {
 } from './master-data-live-form';
 import { MasterDataKpiGrid } from './master-data-kpi-grid';
 import { MasterDataProfileDialog } from './master-data-profile-dialog';
-import { MasterDataLogoImage } from './master-data-logo-image';
+import {
+  MasterDataDetailItem,
+  MasterDataDetailSection,
+  MasterDataProfileIdentity,
+} from './master-data-profile-details';
+import { MasterDataLogoCell } from './master-data-logo-cell';
 
 type SupplierTab = 'suppliers' | 'brokers' | 'collaboration';
 type RequestState = 'loading' | 'ready' | 'error' | 'forbidden';
@@ -188,12 +191,7 @@ function ServiceChips({ value }: { value: string }) {
 }
 
 function ProfileData({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="border-b border-border/70 pb-3">
-      <dt className="text-xs text-muted-foreground">{label}</dt>
-      <dd className="mt-1 font-semibold">{value}</dd>
-    </div>
-  );
+  return <MasterDataDetailItem label={label} value={value} />;
 }
 
 function partnerPersonType(record: MasterDataRecord) {
@@ -325,12 +323,6 @@ export function MasterDataSuppliersWorkspace() {
           tone: 'emerald' as const,
         },
         {
-          label: 'طرف قرارداد',
-          value: '—',
-          icon: Briefcase,
-          tone: 'violet' as const,
-        },
-        {
           label: 'متصل به Provider/API',
           value: summary.suppliers.providerConnected,
           icon: Plug,
@@ -446,11 +438,6 @@ export function MasterDataSuppliersWorkspace() {
     await loadSummary();
   }
 
-  async function afterStatusChange() {
-    setNotice('وضعیت رکورد با موفقیت تغییر کرد.');
-    await Promise.all([load(), loadSummary()]);
-  }
-
   async function requestExcel() {
     setExporting(true);
     try {
@@ -513,7 +500,6 @@ export function MasterDataSuppliersWorkspace() {
       >
         <Eye aria-hidden="true" className="size-4" />
       </Button>
-      <MasterDataPowerButton record={record} onChanged={afterStatusChange} />
       {tab !== 'collaboration' ? (
         <>
           <Button
@@ -541,57 +527,38 @@ export function MasterDataSuppliersWorkspace() {
     const serviceNames = text(record, 'serviceNames', '');
     return (
       <div className="space-y-4">
-        <Card className="flex flex-col gap-5 p-5 lg:flex-row lg:items-center">
-          <span className="relative grid size-16 shrink-0 place-items-center rounded-2xl bg-violet-500/10 text-violet-700">
-            {kind === 'supplier' ? (
-              <Building2 className="size-8" />
-            ) : (
-              <Users className="size-8" />
+        <MasterDataProfileIdentity
+          eyebrow={
+            kind === 'supplier' ? 'پروفایل تأمین‌کننده' : 'پروفایل کارگزار'
+          }
+          record={record}
+          title={record.name}
+        />
+        <MasterDataDetailSection title="خلاصه همکاری">
+          <MasterDataDetailItem
+            label="وضعیت همکاری"
+            value={collaborationLabel(
+              record.status === 'inactive'
+                ? 'INACTIVE'
+                : text(record, 'collaborationStatus', 'UNDER_REVIEW'),
             )}
-            <MasterDataLogoImage
-              className="absolute inset-0 size-16"
-              record={record}
-            />
-          </span>
-          <div className="min-w-0 flex-1">
-            <div className="flex flex-wrap items-center gap-2">
-              <h2 className="text-xl font-black">{record.name}</h2>
-              <CollaborationBadge
-                value={
-                  record.status === 'inactive'
-                    ? 'INACTIVE'
-                    : text(record, 'collaborationStatus', 'UNDER_REVIEW')
-                }
-              />
-            </div>
-            <p
-              className="mt-1 font-mono text-xs text-muted-foreground"
-              dir="ltr"
-            >
-              {record.code}
-            </p>
-          </div>
-          <div className="grid grid-cols-3 gap-6 text-center">
-            <div>
-              <strong className="block text-lg">
-                {serviceNames
-                  ? serviceNames.split(',').length.toLocaleString('fa-IR')
-                  : '۰'}
-              </strong>
-              <span className="text-xs text-muted-foreground">خدمات فعال</span>
-            </div>
-            <div>
-              <strong className="block text-lg">—</strong>
-              <span className="text-xs text-muted-foreground">مخاطبان</span>
-            </div>
-            <div>
-              <strong className="block text-lg">
-                {text(record, 'externalProviderReference') === '—' ? '۰' : '۱'}
-              </strong>
-              <span className="text-xs text-muted-foreground">Providerها</span>
-            </div>
-          </div>
-        </Card>
+          />
+          <MasterDataDetailItem
+            label="خدمات فعال"
+            value={
+              serviceNames
+                ? serviceNames.split(',').length.toLocaleString('fa-IR')
+                : '۰'
+            }
+          />
+          <MasterDataDetailItem label="مخاطبان" value="—" />
+          <MasterDataDetailItem
+            label="Providerها"
+            value={
+              text(record, 'externalProviderReference') === '—' ? '۰' : '۱'
+            }
+          />
+        </MasterDataDetailSection>
         <Alert
           description="قرارداد، نرخ خرید، بدهی و تسویه از قرارداد عمومی Procurement/Finance خوانده می‌شود و در Master Data قابل ویرایش نیست. Credential نیز فقط در Integrations نگهداری می‌شود."
           title="مرز دامنه و امنیت"
@@ -682,10 +649,10 @@ export function MasterDataSuppliersWorkspace() {
               <tr>
                 {[
                   'کد',
+                  'لوگو',
                   'تأمین‌کننده',
                   'کشور / شهر',
                   'خدمات قابل ارائه',
-                  'طرف قرارداد',
                   'محدودیت خرید',
                   'Provider ID',
                   'وضعیت همکاری',
@@ -703,8 +670,8 @@ export function MasterDataSuppliersWorkspace() {
                   <td className="p-4 font-mono" dir="ltr">
                     {record.code}
                   </td>
+                  <MasterDataLogoCell record={record} />
                   <td className="p-4 font-semibold">
-                    <MasterDataLogoImage record={record} />
                     <button
                       className="text-start font-semibold text-foreground hover:text-primary focus-visible:rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       onClick={() => openProfile(record)}
@@ -725,7 +692,6 @@ export function MasterDataSuppliersWorkspace() {
                   <td className="p-4">
                     <ServiceChips value={text(record, 'serviceNames', '')} />
                   </td>
-                  <td className="p-4 text-muted-foreground">—</td>
                   <td className="p-4 text-muted-foreground">—</td>
                   <td className="p-4 font-mono" dir="ltr">
                     {text(record, 'externalProviderReference')}
@@ -757,6 +723,7 @@ export function MasterDataSuppliersWorkspace() {
               <tr>
                 {[
                   'کد',
+                  'لوگو',
                   'کارگزار',
                   'سازمان / نوع',
                   'کشور / شهر',
@@ -778,8 +745,8 @@ export function MasterDataSuppliersWorkspace() {
                   <td className="p-4 font-mono" dir="ltr">
                     {record.code}
                   </td>
+                  <MasterDataLogoCell record={record} />
                   <td className="p-4 font-semibold">
-                    <MasterDataLogoImage record={record} />
                     <button
                       className="text-start font-semibold text-foreground hover:text-primary focus-visible:rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       onClick={() => openProfile(record)}
@@ -876,7 +843,18 @@ export function MasterDataSuppliersWorkspace() {
                       >
                         <div className="flex items-start justify-between gap-2">
                           <div>
-                            <MasterDataLogoImage record={record} />
+                            <div className="mb-2 flex items-center gap-2">
+                              <span
+                                className="font-mono text-xs text-muted-foreground"
+                                dir="ltr"
+                              >
+                                {record.code}
+                              </span>
+                              <MasterDataLogoCell
+                                asCell={false}
+                                record={record}
+                              />
+                            </div>
                             <button
                               className="text-start font-bold text-foreground hover:text-primary focus-visible:rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                               onClick={() => openProfile(record)}
@@ -884,12 +862,6 @@ export function MasterDataSuppliersWorkspace() {
                             >
                               {record.name}
                             </button>
-                            <p
-                              className="mt-1 font-mono text-xs text-muted-foreground"
-                              dir="ltr"
-                            >
-                              {record.code}
-                            </p>
                           </div>
                           <Badge>
                             {record.resource === 'suppliers'

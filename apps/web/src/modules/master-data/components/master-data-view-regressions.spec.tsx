@@ -19,6 +19,13 @@ function geographySource() {
   );
 }
 
+function componentSource(fileName: string) {
+  return readFileSync(
+    resolve(process.cwd(), 'src/modules/master-data/components', fileName),
+    'utf8',
+  );
+}
+
 describe('Master Data view and geography follow-up regressions', () => {
   it('renders zero and false as real values while reserving dash for empty data', () => {
     const html = renderToStaticMarkup(
@@ -31,6 +38,18 @@ describe('Master Data view and geography follow-up regressions', () => {
     expect(html).toContain('>0<');
     expect(html).toContain('>خیر<');
     expect(html).toContain('>—<');
+  });
+
+  it('renders long identifiers with explicit LTR direction and safe wrapping', () => {
+    const value = 'https://documents.example.test/reference/'.repeat(8);
+    const html = renderToStaticMarkup(
+      <MasterDataDetailSection title="شناسه‌ها">
+        <MasterDataDetailItem label="مرجع" ltr value={value} />
+      </MasterDataDetailSection>,
+    );
+    expect(html).toContain('dir="ltr"');
+    expect(html).toContain('[overflow-wrap:anywhere]');
+    expect(html).toContain(value);
   });
 
   it('keeps the city province selector scoped by the selected country', () => {
@@ -80,5 +99,65 @@ describe('Master Data view and geography follow-up regressions', () => {
     expect(source).toContain('request !== terminalParentRequest.current');
     expect(source).toContain('terminalParentRequest.current += 1');
     expect(source).toContain("openRelatedCreate('terminals', airport)");
+  });
+
+  it('routes every specialized read profile through the compact shared shell', () => {
+    const specializedProfiles = [
+      'master-data-accommodation-workspace.tsx',
+      'master-data-finance-workspace.tsx',
+      'master-data-insurance-workspace.tsx',
+      'master-data-suppliers-workspace.tsx',
+      'master-data-transportation-workspace.tsx',
+      'master-data-travel-services-workspace.tsx',
+      'master-data-sales-references-workspace.tsx',
+      'master-data-bank-profile.tsx',
+    ];
+    for (const fileName of specializedProfiles) {
+      const profile = componentSource(fileName);
+      expect(profile, fileName).toContain('<MasterDataProfileDialog');
+      expect(profile, `${fileName}: identity`).toContain(
+        '<MasterDataProfileIdentity',
+      );
+    }
+
+    for (const fileName of [
+      'master-data-transportation-workspace.tsx',
+      'master-data-travel-services-workspace.tsx',
+      'master-data-insurance-workspace.tsx',
+      'master-data-sales-references-workspace.tsx',
+    ]) {
+      const profile = componentSource(fileName);
+      expect(profile, `${fileName}: section`).toContain(
+        '<MasterDataDetailSection',
+      );
+      expect(profile, `${fileName}: values`).toContain('<MasterDataDetailItem');
+      expect(profile, `${fileName}: version`).toMatch(
+        /label="نسخه"[\s\S]*selected\.version\.toLocaleString/,
+      );
+    }
+
+    expect(componentSource('master-data-accommodation-workspace.tsx')).toMatch(
+      /label="وضعیت فروش"[\s\S]*<StatusBadge record=\{selected\} saleable/,
+    );
+
+    const shell = componentSource('master-data-profile-dialog.tsx');
+    expect(shell).toContain('overflow-x-hidden');
+    expect(shell).not.toContain('[&_dl]');
+    expect(shell).not.toContain('bg-gradient-to-l');
+  });
+
+  it('keeps terminal presentation fields removed and parent selection intact', () => {
+    const terminal = componentSource('master-data-terminal-form.tsx');
+    expect(terminal).not.toContain('gateCount');
+    expect(terminal).not.toContain('iataCode');
+    expect(terminal).not.toContain('icaoCode');
+    expect(terminal).not.toContain('ianaTimezone');
+    expect(terminal).not.toContain('label="فرودگاه"');
+    expect(terminal).toContain(".detail('airports', airportId)");
+
+    const geography = geographySource();
+    expect(geography).toContain('title="انتخاب فرودگاه ترمینال"');
+    expect(geography).toContain('id="terminal-parent-airport"');
+    expect(geography).not.toContain("'آخرین تغییر', 'عملیات'");
   });
 });

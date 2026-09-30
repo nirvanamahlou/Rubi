@@ -32,7 +32,6 @@ describe('organizations and suppliers workspace', () => {
     for (const label of [
       'کل تأمین‌کنندگان',
       'همکاری فعال',
-      'طرف قرارداد',
       'متصل به Provider/API',
       'کل کارگزاران',
       'پروفایل فعال',
@@ -48,13 +47,12 @@ describe('organizations and suppliers workspace', () => {
   it('uses real APIs and leaves module-owned metrics unknown', () => {
     expect(source).toContain('organizationSupplierSummary');
     expect(source).not.toContain('unmaskOrganizationContact');
-    expect(source).toContain("label: 'طرف قرارداد'");
-    expect(source).toContain("value: '—'");
+    expect(source).not.toContain("label: 'طرف قرارداد'");
     expect(source).not.toContain('سپهر سفر');
     expect(source).not.toContain('CTR-');
   });
 
-  it('keeps collaboration editing in source forms but permits the shared status action', () => {
+  it('keeps collaboration editing in source forms and removes direct status actions', () => {
     expect(source).not.toContain('تعریف وضعیت');
     expect(source).toContain("formMode && tab !== 'collaboration'");
     const actions = source.slice(
@@ -64,9 +62,7 @@ describe('organizations and suppliers workspace', () => {
     const writeGuard = actions.indexOf("tab !== 'collaboration'");
     expect(writeGuard).toBeGreaterThan(actions.indexOf('openProfile(record)'));
     expect(writeGuard).toBeLessThan(actions.indexOf("setFormMode('edit')"));
-    expect(writeGuard).toBeGreaterThan(
-      actions.indexOf('<MasterDataPowerButton'),
-    );
+    expect(actions).not.toContain('<MasterDataPowerButton');
     expect(source).not.toContain('تازه‌سازی وضعیت‌ها');
     expect(source).toContain('onRefresh={() =>');
   });
