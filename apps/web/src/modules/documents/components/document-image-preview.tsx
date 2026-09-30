@@ -23,6 +23,7 @@ type LoadDocumentPreview = (
   sensitiveReason: string | undefined,
   signal: AbortSignal,
   accessGrantToken: string | undefined,
+  confidentialAccessGrantToken: string | undefined,
 ) => Promise<Blob>;
 
 type PreviewLoadState =
@@ -83,9 +84,11 @@ async function createSafePreviewBlob(
 
 export function DocumentImagePreview({
   document,
+  confidentialAccessToken,
   onLoadPreview,
 }: {
   document: DocumentDetailV1;
+  confidentialAccessToken?: string | undefined;
   onLoadPreview: LoadDocumentPreview;
 }) {
   const sensitive = isSensitive(document);
@@ -125,6 +128,7 @@ export function DocumentImagePreview({
       approvedReason || undefined,
       controller.signal,
       accessGrantToken || undefined,
+      confidentialAccessToken,
     )
       .then(async (blob) => {
         if (!previewableImageMimeTypes.has(blob.type)) {
@@ -158,6 +162,7 @@ export function DocumentImagePreview({
     accessGrantToken,
     approvedReason,
     document,
+    confidentialAccessToken,
     onLoadPreview,
     readyToLoad,
     requestVersion,

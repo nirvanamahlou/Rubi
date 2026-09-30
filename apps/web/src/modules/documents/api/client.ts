@@ -73,6 +73,7 @@ async function requestFile(
   sensitiveReason?: string,
   signal?: AbortSignal,
   accessGrantToken?: string,
+  confidentialAccessGrantToken?: string,
   retriedAfterRefresh = false,
 ): Promise<{ blob: Blob; disposition: string | null }> {
   const baseUrl = getPublicApiBaseUrl();
@@ -91,6 +92,9 @@ async function requestFile(
       ...(accessGrantToken
         ? { 'x-document-access-grant': accessGrantToken }
         : {}),
+      ...(confidentialAccessGrantToken
+        ? { 'x-document-confidential-grant': confidentialAccessGrantToken }
+        : {}),
     },
   });
   if (
@@ -98,7 +102,14 @@ async function requestFile(
     !retriedAfterRefresh &&
     (await refreshAuthenticatedSession(baseUrl))
   ) {
-    return requestFile(path, sensitiveReason, signal, accessGrantToken, true);
+    return requestFile(
+      path,
+      sensitiveReason,
+      signal,
+      accessGrantToken,
+      confidentialAccessGrantToken,
+      true,
+    );
   }
   if (!response.ok) {
     const envelope = (await response.json().catch(() => null)) as {
@@ -156,20 +167,45 @@ export const documentsApi = {
       signal ? { signal } : undefined,
     );
   },
-  detail(id: string, sensitiveReason?: string) {
+  detail(
+    id: string,
+    sensitiveReason?: string,
+    confidentialAccessGrantToken?: string,
+  ) {
     return request<DocumentDetailResponseV1>(
       `/${encodeURIComponent(id)}`,
       sensitiveReason
         ? {
             headers: {
               'x-sensitive-read-reason': encodeURIComponent(sensitiveReason),
+              ...(confidentialAccessGrantToken
+                ? {
+                    'x-document-confidential-grant':
+                      confidentialAccessGrantToken,
+                  }
+                : {}),
+            },
+          }
+        : confidentialAccessGrantToken
+          ? {
+              headers: {
+                'x-document-confidential-grant': confidentialAccessGrantToken,
+              },
+            }
+          : undefined,
+    );
+  },
+  audit(id: string, confidentialAccessGrantToken?: string) {
+    return request<DocumentAuditResponseV1>(
+      `/${encodeURIComponent(id)}/audit`,
+      confidentialAccessGrantToken
+        ? {
+            headers: {
+              'x-document-confidential-grant': confidentialAccessGrantToken,
             },
           }
         : undefined,
     );
-  },
-  audit(id: string) {
-    return request<DocumentAuditResponseV1>(`/${encodeURIComponent(id)}/audit`);
   },
   upload(form: FormData) {
     return refreshNotificationsAfter(
@@ -179,47 +215,84 @@ export const documentsApi = {
       }),
     );
   },
-  update(id: string, input: DocumentUpdateInputV1) {
+  update(id: string, input: DocumentUpdateInputV1, confidentialGrant?: string) {
     return refreshNotificationsAfter(
       request<DocumentDetailResponseV1>(`/${encodeURIComponent(id)}`, {
         method: 'PATCH',
-        headers: { 'content-type': 'application/json' },
+        headers: {
+          'content-type': 'application/json',
+          ...(confidentialGrant
+            ? { 'x-document-confidential-grant': confidentialGrant }
+            : {}),
+        },
         body: JSON.stringify(input),
       }),
     );
   },
-  archive(id: string, input: DocumentArchiveActionInputV1) {
+  archive(
+    id: string,
+    input: DocumentArchiveActionInputV1,
+    confidentialGrant?: string,
+  ) {
     return refreshNotificationsAfter(
       request<DocumentDetailResponseV1>(`/${encodeURIComponent(id)}/archive`, {
         method: 'POST',
-        headers: { 'content-type': 'application/json' },
+        headers: {
+          'content-type': 'application/json',
+          ...(confidentialGrant
+            ? { 'x-document-confidential-grant': confidentialGrant }
+            : {}),
+        },
         body: JSON.stringify(input),
       }),
     );
   },
-  restore(id: string, input: DocumentArchiveActionInputV1) {
+  restore(
+    id: string,
+    input: DocumentArchiveActionInputV1,
+    confidentialGrant?: string,
+  ) {
     return refreshNotificationsAfter(
       request<DocumentDetailResponseV1>(`/${encodeURIComponent(id)}/restore`, {
         method: 'POST',
-        headers: { 'content-type': 'application/json' },
+        headers: {
+          'content-type': 'application/json',
+          ...(confidentialGrant
+            ? { 'x-document-confidential-grant': confidentialGrant }
+            : {}),
+        },
         body: JSON.stringify(input),
       }),
     );
   },
-  bulk(input: DocumentBulkActionInputV1) {
+  bulk(input: DocumentBulkActionInputV1, confidentialGrant?: string) {
     return refreshNotificationsAfter(
       request<DocumentBulkActionResponseV1>('/bulk', {
         method: 'POST',
-        headers: { 'content-type': 'application/json' },
+        headers: {
+          'content-type': 'application/json',
+          ...(confidentialGrant
+            ? { 'x-document-confidential-grant': confidentialGrant }
+            : {}),
+        },
         body: JSON.stringify(input),
       }),
     );
   },
-  permanentlyDelete(id: string, input: DocumentDeleteInputV1) {
+  permanentlyDelete(
+    id: string,
+    input: DocumentDeleteInputV1,
+    confidentialGrant?: string,
+  ) {
     return refreshNotificationsAfter(
       request<void>(`/${encodeURIComponent(id)}`, {
         method: 'DELETE',
-        headers: { 'content-type': 'application/json' },
+        headers: {
+          'content-type': 'application/json',
+          ...(confidentialGrant
+            ? { 'x-document-confidential-grant': confidentialGrant }
+            : {}),
+        },
         body: JSON.stringify(input),
       }),
     );
@@ -234,12 +307,18 @@ export const documentsApi = {
       },
     );
   },
-  download(id: string, sensitiveReason?: string, accessGrantToken?: string) {
+  download(
+    id: string,
+    sensitiveReason?: string,
+    accessGrantToken?: string,
+    confidentialAccessGrantToken?: string,
+  ) {
     return requestFile(
       `/${encodeURIComponent(id)}/download`,
       sensitiveReason,
       undefined,
       accessGrantToken,
+      confidentialAccessGrantToken,
     );
   },
   preview(
@@ -247,12 +326,14 @@ export const documentsApi = {
     sensitiveReason?: string,
     signal?: AbortSignal,
     accessGrantToken?: string,
+    confidentialAccessGrantToken?: string,
   ) {
     return requestFile(
       `/${encodeURIComponent(id)}/preview`,
       sensitiveReason,
       signal,
       accessGrantToken,
+      confidentialAccessGrantToken,
     );
   },
 };

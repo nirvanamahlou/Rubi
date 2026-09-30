@@ -118,6 +118,7 @@ function InfoGrid({ rows }: { rows: readonly [string, string][] }) {
 export function DocumentDetailDialog({
   audit,
   document,
+  confidentialAccessToken,
   error,
   loading,
   favorite,
@@ -133,6 +134,7 @@ export function DocumentDetailDialog({
 }: {
   audit: readonly DocumentAuditEventV1[];
   document: DocumentDetailV1 | null;
+  confidentialAccessToken?: string | undefined;
   error: string;
   loading: boolean;
   favorite: boolean;
@@ -141,12 +143,14 @@ export function DocumentDetailDialog({
     document: DocumentDetailV1,
     sensitiveReason?: string,
     accessGrantToken?: string,
+    confidentialAccessGrantToken?: string,
   ) => Promise<void>;
   onLoadPreview: (
     document: DocumentDetailV1,
     sensitiveReason: string | undefined,
     signal: AbortSignal,
     accessGrantToken: string | undefined,
+    confidentialAccessGrantToken: string | undefined,
   ) => Promise<Blob>;
   onOpenChange: (open: boolean) => void;
   onDelete: (document: DocumentDetailV1) => void;
@@ -253,6 +257,7 @@ export function DocumentDetailDialog({
                 <div className="grid gap-4 lg:grid-cols-[1fr_18rem]">
                   <div className="grid min-h-80 place-items-center rounded-2xl border border-dashed border-sky-300 bg-gradient-to-br from-sky-50 via-blue-50/70 to-indigo-50 p-4 text-center shadow-inner sm:p-8 dark:border-sky-400/30 dark:from-sky-950/50 dark:via-blue-950/30 dark:to-indigo-950/30">
                     <DocumentImagePreview
+                      confidentialAccessToken={confidentialAccessToken}
                       document={document}
                       key={document.currentVersion.id}
                       onLoadPreview={onLoadPreview}
@@ -292,6 +297,8 @@ export function DocumentDetailDialog({
                         void onDownload(
                           document,
                           downloadReason.trim() || undefined,
+                          undefined,
+                          confidentialAccessToken,
                         ).catch(() => undefined);
                       }}
                     >
@@ -307,6 +314,7 @@ export function DocumentDetailDialog({
                               document,
                               downloadReason.trim() || undefined,
                               token,
+                              confidentialAccessToken,
                             );
                             setDownloadStepUpVisible(false);
                           }}

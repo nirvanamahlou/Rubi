@@ -192,6 +192,7 @@ export class DocumentsRepository {
         document: {
           branchId,
           archiveStatus: { not: 'DELETED' },
+          confidentialAccessCodeHash: null,
           ...(!includeSensitive
             ? {
                 confidentiality: {
@@ -368,6 +369,23 @@ export class DocumentsRepository {
         ...existingConditions,
         { confidentiality: { notIn: ['CONFIDENTIAL', 'RESTRICTED'] } },
       ];
+    }
+    // A masked row still leaks its raw title, filename or size through
+    // matching, total counts and ordering. Keep coded rows out of those views.
+    if (
+      query.search ||
+      (query.sortBy &&
+        query.sortBy !== 'updatedAt' &&
+        query.sortBy !== 'createdAt') ||
+      query.validity ||
+      query.attention
+    ) {
+      const existingConditions = where.AND
+        ? Array.isArray(where.AND)
+          ? where.AND
+          : [where.AND]
+        : [];
+      where.AND = [...existingConditions, { confidentialAccessCodeHash: null }];
     }
     const direction = query.sortDirection;
     const orderBy: Prisma.DocumentOrderByWithRelationInput =
@@ -580,6 +598,7 @@ export class DocumentsRepository {
         document: {
           branchId: input.branchId,
           archiveStatus: { not: 'DELETED' },
+          confidentialAccessCodeHash: null,
           ...(input.includeSensitive
             ? {}
             : { confidentiality: { in: ['PUBLIC', 'INTERNAL'] } }),
@@ -647,6 +666,7 @@ export class DocumentsRepository {
         document: {
           branchId: input.branchId,
           archiveStatus: { not: 'DELETED' },
+          confidentialAccessCodeHash: null,
           ...(input.includeSensitive
             ? {}
             : { confidentiality: { in: ['PUBLIC', 'INTERNAL'] } }),
@@ -984,11 +1004,13 @@ export class DocumentsRepository {
     branchId: string;
     ownerUserId: string;
     sourceModule: string;
-    sourceEntityType: string;
-    sourceEntityId: string;
-    sourceDisplayLabel: string;
+    sourceEntityType: string | null;
+    sourceEntityId: string | null;
+    sourceDisplayLabel: string | null;
     confidentiality: string;
     requiresStepUpVerification: boolean;
+    confidentialAccessCodeHash: string | null;
+    confidentialAccessCodeSalt: string | null;
     validUntil: Date | null;
     originalFileName: string;
     safeDownloadName: string;
@@ -1017,6 +1039,8 @@ export class DocumentsRepository {
           sourceEntityId: input.sourceEntityId,
           confidentiality: input.confidentiality as never,
           requiresStepUpVerification: input.requiresStepUpVerification,
+          confidentialAccessCodeHash: input.confidentialAccessCodeHash,
+          confidentialAccessCodeSalt: input.confidentialAccessCodeSalt,
           validUntil: input.validUntil,
           createdByUserId: input.actorUserId,
           updatedByUserId: input.actorUserId,
@@ -1039,16 +1063,22 @@ export class DocumentsRepository {
           createdByUserId: input.actorUserId,
         },
       });
-      await transaction.documentRelation.create({
-        data: {
-          documentId: input.documentId,
-          relationType: 'PRIMARY_CASE',
-          sourceModule: input.sourceModule,
-          sourceEntityType: input.sourceEntityType,
-          sourceEntityId: input.sourceEntityId,
-          displayLabel: input.sourceDisplayLabel,
-        },
-      });
+      if (
+        input.sourceEntityType &&
+        input.sourceEntityId &&
+        input.sourceDisplayLabel
+      ) {
+        await transaction.documentRelation.create({
+          data: {
+            documentId: input.documentId,
+            relationType: 'PRIMARY_CASE',
+            sourceModule: input.sourceModule,
+            sourceEntityType: input.sourceEntityType,
+            sourceEntityId: input.sourceEntityId,
+            displayLabel: input.sourceDisplayLabel,
+          },
+        });
+      }
       await transaction.documentQuarantine.create({
         data: {
           versionId: input.versionId,
@@ -1127,6 +1157,85 @@ export class DocumentsRepository {
         data: input,
       }),
     ]);
+  }
+
+  confidentialAccessState(documentId: string) {
+    return this.database.client.document.findUnique({
+      where: { id: documentId },
+      select: {
+        confidentialAccessCodeHash: true,
+        confidentialAccessCodeSalt: true,
+      },
+    });
+  }
+
+  async beginConfidentialAccessAttempt(input: {
+    documentId: string;
+    actorUserId: string;
+    actorBranchId: string;
+    ipSummary: string;
+    userAgentSummary: string;
+  }): Promise<boolean> {
+    return this.database.client.$transaction(async (transaction) => {
+      // Serialize attempts only for this document and actor, across API workers.
+      await transaction.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${input.documentId}), hashtext(${input.actorUserId}))`;
+      const since = new Date(Date.now() - 15 * 60_000);
+      const lastSuccess = await transaction.documentAuditEvent.findFirst({
+        where: {
+          documentId: input.documentId,
+          actorUserId: input.actorUserId,
+          action: 'documents.access_grant.create',
+          outcome: 'SUCCESS',
+          reason: 'CONFIDENTIAL_VIEW',
+          occurredAt: { gte: since },
+        },
+        orderBy: { occurredAt: 'desc' },
+        select: { occurredAt: true },
+      });
+      const attempts = await transaction.documentAuditEvent.count({
+        where: {
+          documentId: input.documentId,
+          actorUserId: input.actorUserId,
+          action: 'documents.access_grant.create',
+          reason: 'CONFIDENTIAL_CODE_ATTEMPT',
+          occurredAt: { gt: lastSuccess?.occurredAt ?? since },
+        },
+      });
+      if (attempts >= 5) return false;
+      await transaction.documentAuditEvent.create({
+        data: {
+          documentId: input.documentId,
+          actorUserId: input.actorUserId,
+          actorBranchId: input.actorBranchId,
+          action: 'documents.access_grant.create',
+          outcome: 'FAILURE',
+          reason: 'CONFIDENTIAL_CODE_ATTEMPT',
+          ipSummary: input.ipSummary,
+          userAgentSummary: input.userAgentSummary,
+        },
+      });
+      return true;
+    });
+  }
+
+  async hasConfidentialAccessGrant(input: {
+    tokenHash: string;
+    documentId: string;
+    actorUserId: string;
+    actorSessionId: string;
+  }): Promise<boolean> {
+    const grant = await this.database.client.documentAccessGrant.findFirst({
+      where: {
+        tokenHash: input.tokenHash,
+        documentId: input.documentId,
+        actorUserId: input.actorUserId,
+        actorSessionId: input.actorSessionId,
+        purpose: 'CONFIDENTIAL_VIEW',
+        expiresAt: { gt: new Date() },
+      },
+      select: { id: true },
+    });
+    return Boolean(grant);
   }
 
   async consumeAccessGrant(input: {
