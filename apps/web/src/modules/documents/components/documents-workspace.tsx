@@ -52,9 +52,7 @@ import {
   type ArchiveToolDefinition,
   type ArchiveToolKey,
 } from '../model/archive-tools';
-import {
-  getDocumentConnection,
-} from '../model/document-connections';
+import { getDocumentConnection } from '../model/document-connections';
 import { DocumentDetailDialog } from './document-detail-dialog';
 import { DocumentBulkActionsDialog } from './document-bulk-actions-dialog';
 import { DocumentDeleteDialog } from './document-delete-dialog';
