@@ -1,10 +1,12 @@
 'use client';
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { ticketCalendarDate, type TicketOfferV1 } from '@nora/contracts';
 import { Button, FormField, Input } from '@/components/ui';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 import {
   companyFlightLegs,
+  changeFlightLoadFilter,
+  isCompanyLoadOffer,
   companyReturnLegs,
   flightLoadTotals,
   type FlightLoadFilter,
@@ -27,7 +29,7 @@ const weekday = (value: string) =>
     weekday: 'long',
   }).format(new Date(value));
 const initial = (): FlightLoadFilter => ({
-  from: ticketCalendarDate(new Date()),
+  from: '',
   to: '',
   origin: '',
   destination: '',
@@ -41,17 +43,19 @@ export function FlightLoadGrid({
   cityName,
   refreshing,
   onRefresh,
+  renderActions,
 }: {
   offers: readonly TicketOfferV1[];
   cityName: (id: string) => string;
   refreshing: boolean;
   onRefresh: () => void;
+  renderActions: (offer: TicketOfferV1) => ReactNode;
 }) {
   const [filter, setFilter] = useState(initial);
   const [outboundId, setOutboundId] = useState(''),
     [returnId, setReturnId] = useState('');
   const [sameClass, setSameClass] = useState(false);
-  const company = offers.filter((offer) => offer.supplyType === 'COMPANY');
+  const company = offers.filter(isCompanyLoadOffer);
   const outbounds = companyFlightLegs(offers, filter);
   const outbound = outbounds.find((offer) => offer.id === outboundId);
   const returns = companyReturnLegs(
@@ -67,7 +71,7 @@ export function FlightLoadGrid({
     ),
   ];
   const change = (field: keyof FlightLoadFilter, value: string) => {
-    setFilter((c) => ({ ...c, [field]: value }));
+    setFilter((c) => changeFlightLoadFilter(c, field, value));
     setOutboundId('');
     setReturnId('');
   };
@@ -241,6 +245,11 @@ export function FlightLoadGrid({
               : offer.businessBaggageKg + ' kg'}
           </p>
           <p>
+            نوع تأمین:{' '}
+            {offer.supplyType === 'COMPANY' ? 'ظرفیت شرکت (چارتر)' : 'ثبت نشده'}
+          </p>
+          {renderActions(offer)}
+          <p>
             قیمت یک‌طرفه:{' '}
             {offer.standaloneSalePrice
               ? offer.standaloneSalePrice.amount +
@@ -370,10 +379,7 @@ export function FlightLoadGrid({
         <p className={styles.help}>تاریخ پایان باید بعد از تاریخ شروع باشد.</p>
       ) : null}
       {!company.length && (
-        <p className={styles.help}>
-          هنوز پرواز ظرفیت شرکت ثبت نشده است. در تعریف یا ویرایش بلیت، نوع تأمین
-          را «ظرفیت شرکت (چارتر)» انتخاب و ثبت کنید.
-        </p>
+        <p className={styles.help}>بلیتی برای نمایش در لود وجود ندارد.</p>
       )}
       <div className={styles.tables}>
         {table(outbounds, false)}
@@ -384,10 +390,11 @@ export function FlightLoadGrid({
         {detail(returning, true)}
       </div>
       <p className={styles.help}>
-        برگشت‌ها از مسیر معکوس همان شعبه و در محدودهٔ Min / Max رفت نمایش داده
-        می‌شوند؛ بازهٔ تاریخ بالا فقط پروازهای رفت را فیلتر می‌کند. تعداد رزرو،
-        Hold فعال و منقضی‌نشده است؛ فروش، صندلی‌های تخصیص‌یافته است. ستون وب
-        برای اطلاعات ثبت‌نشده علامت — دارد.
+        بلیت‌های قدیمی با نوع تأمین ثبت‌نشده نیز نمایش داده می‌شوند؛ نوع تأمین
+        آن‌ها در ویرایش قابل انتخاب است. برگشت‌ها از مسیر معکوس همان شعبه و در
+        محدودهٔ Min / Max رفت نمایش داده می‌شوند؛ بازهٔ تاریخ بالا فقط پروازهای
+        رفت را فیلتر می‌کند. تعداد رزرو، Hold فعال و منقضی‌نشده است؛ فروش،
+        صندلی‌های تخصیص‌یافته است. ستون وب برای اطلاعات ثبت‌نشده علامت — دارد.
       </p>
     </div>
   );

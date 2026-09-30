@@ -32,9 +32,6 @@ import {
   TabsContent,
   TabsList,
   TabsTrigger,
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
 } from '@/components/ui';
 import {
   createProduct,
@@ -71,7 +68,6 @@ import {
   repeatedDefinitions,
   publishRepeatedProducts,
 } from '../model/repeat-publication';
-import { roundTripPricesByOutbound } from '../model/round-trip-prices';
 import { TicketCatalogCard } from './ticket-catalog-card';
 import { TicketDetails } from './ticket-details';
 import { TicketForm } from './ticket-form';
@@ -636,7 +632,6 @@ function TicketCatalogWorkspace() {
     kind === 'city'
       ? readableCityName(resolve(kind, id)?.name, fallback)
       : (resolve(kind, id)?.name ?? fallback);
-  const roundTripPrices = roundTripPricesByOutbound(publishedOffers);
   function rememberReference(value: Reference) {
     setReferences((rows) => [
       ...rows.filter((r) => r.id !== value.id || r.kind !== value.kind),
@@ -967,6 +962,118 @@ function TicketCatalogWorkspace() {
     return { origins: [...origins], destinations: [...destinations] };
   })();
 
+  const renderOfferActions = (offer: TicketOfferV1) => (
+    <div className="flex flex-wrap gap-2">
+      {new Date(offer.departureAt).getTime() <= catalogNow ? (
+        <Button
+          size="sm"
+          variant="outline"
+          aria-label={`حذف بلیط تاریخ‌گذشته ${offer.serviceNumber}`}
+          title="حذف بلیط تاریخ‌گذشته"
+          onClick={async () => {
+            if (
+              !window.confirm(
+                `بلیط ${offer.serviceNumber} از فهرست حذف شود؟ سوابق قرارداد و مالی حفظ می‌شود.`,
+              )
+            )
+              return;
+            try {
+              const result = await toursApi.archiveExpiredOffer(
+                offer.id,
+                offer.version,
+              );
+              await refreshPublishedOffers();
+              if (result.data.removedPriceRevisions)
+                setPublishedNotice(
+                  `${result.data.removedPriceRevisions.toLocaleString('fa-IR')} نسخه قیمت مرتبط نیز حذف شد.`,
+                );
+            } catch (error) {
+              setPublishedProblem(
+                error instanceof Error ? error.message : 'حذف بلیط ناموفق بود.',
+              );
+            }
+          }}
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      ) : (
+        <div className="flex flex-wrap gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              setOfferForm({ offer, readOnly: false });
+            }}
+          >
+            ویرایش
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={async () => {
+              if (
+                !window.confirm(
+                  `بلیط ${offer.serviceNumber} حذف شود؟ سوابق مرتبط حفظ می‌شوند.`,
+                )
+              )
+                return;
+              try {
+                await toursApi.archiveExpiredOffer(offer.id, offer.version);
+                setProducts((rows) =>
+                  rows.filter((item) => item.id !== offer.catalogProductId),
+                );
+                await refreshPublishedOffers();
+                setPublishedNotice('بلیط حذف شد.');
+              } catch (error) {
+                setPublishedProblem(
+                  error instanceof Error
+                    ? error.message
+                    : 'حذف بلیط ناموفق بود.',
+                );
+              }
+            }}
+          >
+            حذف
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={statusSaving === offer.id}
+            onClick={() =>
+              void updatePublishedStatus(
+                offer,
+                offer.status === 'ACTIVE' ? 'PAUSED' : 'ACTIVE',
+              ).catch(() => undefined)
+            }
+          >
+            {statusSaving === offer.id
+              ? 'در حال ثبت…'
+              : offer.status === 'ACTIVE'
+                ? 'توقف فروش'
+                : 'فعال‌کردن'}
+          </Button>
+          {offer.status === 'ACTIVE' ? (
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={offer.remainingCapacity < 1}
+              onClick={() =>
+                updateCapacityHold({
+                  offer,
+                  quantity: 1,
+                  expiresAt: tehranWallTime(
+                    new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+                  ),
+                })
+              }
+            >
+              رزرو ظرفیت
+            </Button>
+          ) : null}
+        </div>
+      )}
+    </div>
+  );
   return (
     <div className="space-y-5" dir="rtl">
       <PageHeader
@@ -988,263 +1095,18 @@ function TicketCatalogWorkspace() {
       {problem && !statusChange && !repeat && !deleteProduct ? (
         <Alert tone="error" title={problem} />
       ) : null}
+      {publishedNotice ? <Alert title={publishedNotice} /> : null}
+      {publishedProblem ? (
+        <Alert tone="error" title={publishedProblem} />
+      ) : null}
       <FlightLoadGrid
         offers={publishedOffers}
+        renderActions={renderOfferActions}
         cityName={(id) => referenceLabel('city', id, id)}
         refreshing={publishedRefreshing}
         onRefresh={() => void refreshPublishedOffers(true)}
       />
-      <Card className="overflow-hidden p-0">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b bg-primary/5 px-4 py-3">
-          <div>
-            <h2 className="font-bold">بلیط‌های ثبت‌شده برای فروش و قرارداد</h2>
-            <p className="mt-1 text-xs text-muted-foreground">
-              این فهرست همان منبع انتخاب بلیط در قرارداد جدید است.
-            </p>
-          </div>
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            disabled={publishedRefreshing}
-            onClick={() => void refreshPublishedOffers(true)}
-          >
-            {publishedRefreshing ? 'در حال به‌روزرسانی…' : 'به‌روزرسانی فهرست'}
-          </Button>
-        </div>
-        {publishedNotice ? (
-          <Alert className="m-4" title={publishedNotice} />
-        ) : null}
-        {publishedProblem ? (
-          <Alert className="m-4" tone="error" title={publishedProblem} />
-        ) : publishedOffers.length ? (
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-sm">
-              <thead className="bg-muted/40 text-xs text-muted-foreground">
-                <tr>
-                  <th className="px-4 py-3 text-start">ایرلاین / پرواز</th>
-                  <th className="px-4 py-3 text-start">مسیر</th>
-                  <th className="px-4 py-3 text-right">حرکت</th>
-                  <th className="px-4 py-3 text-start">ظرفیت قابل فروش</th>
-                  <th className="px-4 py-3 text-start">قیمت فروش یک‌طرفه</th>
-                  <th className="px-4 py-3 text-start">قیمت فروش رفت‌وبرگشت</th>
-                  <th className="px-4 py-3 text-start">وضعیت</th>
-                  <th className="px-4 py-3 text-start">اقدام</th>
-                </tr>
-              </thead>
-              <tbody>
-                {publishedOffers.map((offer) => (
-                  <tr key={offer.id} className="border-t">
-                    <td className="px-4 py-3 font-medium">
-                      {offer.carrierName} ·{' '}
-                      <span dir="ltr">{offer.serviceNumber}</span>
-                    </td>
-                    <td className="px-4 py-3">
-                      {referenceLabel('city', offer.originId, offer.originId)} ←{' '}
-                      {referenceLabel(
-                        'city',
-                        offer.destinationId,
-                        offer.destinationId,
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <time
-                        dateTime={offer.departureAt}
-                        dir="rtl"
-                        lang="fa"
-                        className="block whitespace-nowrap text-right tabular-nums"
-                      >
-                        {displayTime(offer.departureAt, 'Asia/Tehran')}
-                      </time>
-                    </td>
-                    <td className="px-4 py-3">
-                      {offer.remainingCapacity.toLocaleString('fa-IR')} از{' '}
-                      {offer.totalCapacity.toLocaleString('fa-IR')}
-                    </td>
-                    <td className="px-4 py-3 tabular-nums">
-                      {offer.standaloneSalePrice
-                        ? `${Number(offer.standaloneSalePrice.amount).toLocaleString('fa-IR')} ${offer.standaloneSalePrice.currencyCode}`
-                        : 'در فروش قیمت‌گذاری نشده'}
-                    </td>
-                    <td className="px-4 py-3 tabular-nums">
-                      {roundTripPrices.get(offer.id)?.length ? (
-                        <div className="flex min-w-48 flex-col items-start gap-1.5">
-                          {roundTripPrices
-                            .get(offer.id)!
-                            .map(({ price, returning }) => {
-                              const fare = `${Number(price.amount).toLocaleString('fa-IR')} ${price.currencyCode}`;
-                              const returnDescription = returning
-                                ? `پرواز برگشت ${returning.serviceNumber}، تاریخ ${displayTime(returning.departureAt, 'Asia/Tehran')}`
-                                : 'پرواز برگشت در فهرست فعلی نیست';
-                              return (
-                                <Tooltip key={price.returnOfferId}>
-                                  <TooltipTrigger asChild>
-                                    <span
-                                      tabIndex={0}
-                                      aria-label={`قیمت رفت‌وبرگشت ${fare}؛ ${returnDescription}`}
-                                      className="inline-flex cursor-help flex-col items-start rounded px-1 py-0.5 text-start hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                                    >
-                                      <span>{fare}</span>
-                                      <span className="text-xs font-normal text-muted-foreground">
-                                        برگشت:{' '}
-                                        {returning
-                                          ? displayTime(
-                                              returning.departureAt,
-                                              'Asia/Tehran',
-                                            )
-                                          : 'تاریخ نامشخص'}
-                                      </span>
-                                    </span>
-                                  </TooltipTrigger>
-                                  <TooltipContent side="top">
-                                    {returnDescription}
-                                  </TooltipContent>
-                                </Tooltip>
-                              );
-                            })}
-                        </div>
-                      ) : (
-                        '—'
-                      )}
-                    </td>
-                    <td className="px-4 py-3">
-                      {new Date(offer.departureAt).getTime() <= catalogNow
-                        ? 'منقضی'
-                        : offer.status === 'ACTIVE'
-                          ? 'فعال'
-                          : 'غیرفعال'}
-                    </td>
-                    <td className="px-4 py-3">
-                      {new Date(offer.departureAt).getTime() <= catalogNow ? (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          aria-label={`حذف بلیط تاریخ‌گذشته ${offer.serviceNumber}`}
-                          title="حذف بلیط تاریخ‌گذشته"
-                          onClick={async () => {
-                            if (
-                              !window.confirm(
-                                `بلیط ${offer.serviceNumber} از فهرست حذف شود؟ سوابق قرارداد و مالی حفظ می‌شود.`,
-                              )
-                            )
-                              return;
-                            try {
-                              const result = await toursApi.archiveExpiredOffer(
-                                offer.id,
-                                offer.version,
-                              );
-                              await refreshPublishedOffers();
-                              if (result.data.removedPriceRevisions)
-                                setPublishedNotice(
-                                  `${result.data.removedPriceRevisions.toLocaleString('fa-IR')} نسخه قیمت مرتبط نیز حذف شد.`,
-                                );
-                            } catch (error) {
-                              setPublishedProblem(
-                                error instanceof Error
-                                  ? error.message
-                                  : 'حذف بلیط ناموفق بود.',
-                              );
-                            }
-                          }}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      ) : (
-                        <div className="flex flex-wrap gap-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => {
-                              setOfferForm({ offer, readOnly: false });
-                            }}
-                          >
-                            ویرایش
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={async () => {
-                              if (
-                                !window.confirm(
-                                  `بلیط ${offer.serviceNumber} حذف شود؟ سوابق مرتبط حفظ می‌شوند.`,
-                                )
-                              )
-                                return;
-                              try {
-                                await toursApi.archiveExpiredOffer(
-                                  offer.id,
-                                  offer.version,
-                                );
-                                setProducts((rows) =>
-                                  rows.filter(
-                                    (item) =>
-                                      item.id !== offer.catalogProductId,
-                                  ),
-                                );
-                                await refreshPublishedOffers();
-                                setPublishedNotice('بلیط حذف شد.');
-                              } catch (error) {
-                                setPublishedProblem(
-                                  error instanceof Error
-                                    ? error.message
-                                    : 'حذف بلیط ناموفق بود.',
-                                );
-                              }
-                            }}
-                          >
-                            حذف
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            disabled={statusSaving === offer.id}
-                            onClick={() =>
-                              void updatePublishedStatus(
-                                offer,
-                                offer.status === 'ACTIVE' ? 'PAUSED' : 'ACTIVE',
-                              ).catch(() => undefined)
-                            }
-                          >
-                            {statusSaving === offer.id
-                              ? 'در حال ثبت…'
-                              : offer.status === 'ACTIVE'
-                                ? 'توقف فروش'
-                                : 'فعال‌کردن'}
-                          </Button>
-                          {offer.status === 'ACTIVE' ? (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              disabled={offer.remainingCapacity < 1}
-                              onClick={() =>
-                                updateCapacityHold({
-                                  offer,
-                                  quantity: 1,
-                                  expiresAt: tehranWallTime(
-                                    new Date(
-                                      Date.now() + 60 * 60 * 1000,
-                                    ).toISOString(),
-                                  ),
-                                })
-                              }
-                            >
-                              رزرو ظرفیت
-                            </Button>
-                          ) : null}
-                        </div>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <p className="px-4 py-5 text-sm text-muted-foreground">
-            هنوز بلیط قابل فروش ثبت نشده است.
-          </p>
-        )}
-      </Card>
+
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <Card className="border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100/70 p-5 dark:border-blue-900 dark:from-blue-950/70 dark:to-blue-900/30">
           <p className="text-sm text-muted-foreground">کل بلیط‌ها</p>
