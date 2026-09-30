@@ -1,3 +1,9 @@
+## 2026-09-30 — MASTER-DATA-VIEW-DESIGN-0930 — PC-B — READY_FOR_REVIEW
+
+Read/view presentation redesign covers all Master Data profiles and view-capable forms. User follow-ups add inline country-child expansion and terminal-list Last Change column removal; audit/backend remain intact. Existing data, permissions and create/edit workflows remain unchanged. Global Worker Orchestrator bootstrap and configuration stay outside Rubi. No migration, dependency, database or local runtime changes.
+
+Shared semantic RTL details, inline country children, country-scoped province creation and race-safe guarded terminal parent selection are implemented. All 381 Master Data tests, scoped lint, Web typecheck and the production build with 55 routes pass. Authenticated browser QA remains unverified because the connector failed before opening a browser surface; no operational data or runtime changed. Scoped locks release with the implementation commit owned by the lead.
+
 ## 2026-09-30 — MASTER-DATA-COUNTRY-HIDE-VERSION-0930 — PC-B — READY_FOR_REVIEW
 
 Countries no longer renders the Version column or matching cell. Record versions remain in the API and mutation concurrency controls; other geography tables are unchanged. 14 focused Web tests, scoped ESLint, Prettier and diff check pass. No migration, operational data or localhost runtime change. Branch `codex/pc-b-country-hide-version-0930` for review in develop.

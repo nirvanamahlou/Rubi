@@ -5,6 +5,16 @@ import { describe, expect, it, vi } from 'vitest';
 vi.mock('./master-data-profile-dialog', () => ({
   MasterDataProfileDialog: ({ children }: { children: ReactNode }) => children,
 }));
+vi.mock('@/components/ui/overlays', () => {
+  const contents = ({ children }: { children: ReactNode }) => children;
+  return {
+    Dialog: contents,
+    DialogContent: contents,
+    DialogTitle: contents,
+    DialogDescription: contents,
+    DialogClose: contents,
+  };
+});
 import { MasterDataLiveForm } from './master-data-live-form';
 import { getMasterDataDefinition } from '../model/catalog';
 const record: MasterDataRecord = {
@@ -73,6 +83,8 @@ describe('meal/service popup through the shared form entry point', () => {
     const html = render('view');
     expect(html).not.toContain('type="submit"');
     expect(html).not.toContain('aria-label="پاک‌کردن');
-    expect(html).toMatch(/<fieldset[^>]*disabled=""/);
+    expect(html).toContain('<dl');
+    expect(html).not.toContain('<input');
+    expect(html).toContain('صبحانه، وعده قدیمی');
   });
 });

@@ -116,7 +116,9 @@ describe('payment-method form fields', () => {
         resolve(process.cwd(), 'src/modules/master-data/components', file),
         'utf8',
       );
-      expect(source).toContain('getMasterDataFormFields(definition, mode).map');
+      expect(source).toMatch(
+        /(?:getMasterDataFormFields\(definition, mode\)\.map|const fields = getMasterDataFormFields\(definition, mode\))/,
+      );
       expect(source).not.toContain('definition.fields.map');
     }
   });
