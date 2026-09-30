@@ -13,19 +13,19 @@ export const statusLabels = {
   cancelled: 'لغو بلیط',
 } as const;
 export const supplyLabels = {
-  company: 'ظرفیت شرکت',
+  company: 'ظرفیت شرکت (چارتر)',
   allotment: 'شناوری',
-  charter: 'شناوری',
+  charter: 'ظرفیت شرکت (چارتر)',
   supplier: 'API',
 } as const;
-// Existing allotment/charter snapshots remain readable; new floating tickets use allotment.
+// Charter is company capacity; floating tickets use allotment.
 export const supplyOptions = {
   allotment: 'شناوری',
-  company: 'ظرفیت شرکت',
+  company: 'ظرفیت شرکت (چارتر)',
   supplier: 'API',
 } as const;
 export function selectableSupply(value: string) {
-  return value === 'charter' ? 'allotment' : value;
+  return value === 'charter' ? 'company' : value;
 }
 export const transportLabels = {
   flight: 'هواپیما',
@@ -730,7 +730,7 @@ export function parseCatalogSnapshot(
 }
 export function displayTime(value: string, zone = 'Asia/Tehran') {
   if (!value) return 'بدون زمان‌بندی';
-  return new Intl.DateTimeFormat('fa-IR', {
+  return new Intl.DateTimeFormat('en-GB', {
     dateStyle: 'medium',
     timeStyle: 'short',
     timeZone: zone,
@@ -739,7 +739,7 @@ export function displayTime(value: string, zone = 'Asia/Tehran') {
 
 export function displayServiceDate(value?: string) {
   if (!value) return 'بدون تاریخ';
-  return new Intl.DateTimeFormat('fa-IR', {
+  return new Intl.DateTimeFormat('en-GB', {
     dateStyle: 'medium',
     timeZone: 'UTC',
   }).format(new Date(value + 'T00:00:00.000Z'));

@@ -95,6 +95,13 @@ export {
 } from './ticket-return-window';
 
 export interface TicketOfferV1 {
+  /** Null/absent means an older offer has not been classified. */
+  supplyType?: 'COMPANY' | 'FLOATING' | 'API' | null;
+  economyBaggageKg?: string | null;
+  businessBaggageKg?: string | null;
+  /** Active allocations and unexpired holds, in seats. */
+  allocatedCapacity?: number;
+  reservedCapacity?: number;
   /** Inclusive stay length in Tehran calendar days; null preserves unrestricted legacy offers. */
   returnMinDays?: number | null;
   returnMaxDays?: number | null;
@@ -133,6 +140,8 @@ export type TicketOfferCreateV1 = Omit<
   | 'version'
   | 'branchId'
   | 'remainingCapacity'
+  | 'allocatedCapacity'
+  | 'reservedCapacity'
   | 'status'
   | 'baseStandaloneSalePrice'
   | 'saleCommissions'

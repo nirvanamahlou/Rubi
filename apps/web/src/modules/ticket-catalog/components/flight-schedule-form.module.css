@@ -119,6 +119,16 @@
 .table th:nth-child(8) {
   width: 10rem;
 }
+.table th:nth-child(8) {
+  width: 17rem;
+}
+.table td:nth-child(8) label {
+  position: static;
+  width: auto;
+  height: auto;
+  clip-path: none;
+  font-size: 0.65rem;
+}
 .table th:nth-last-child(-n + 2) {
   width: 5rem;
 }

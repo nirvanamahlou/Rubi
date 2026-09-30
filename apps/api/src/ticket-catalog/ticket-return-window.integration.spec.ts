@@ -76,6 +76,9 @@ describe.skipIf(!url)('ticket return window on PostgreSQL', () => {
       serviceNumber: 'QA-OUT',
       cabinClassCode: 'ECONOMY',
       totalCapacity: 50,
+      supplyType: 'COMPANY',
+      economyBaggageKg: '20.5',
+      businessBaggageKg: null,
       returnMinDays: 2,
       returnMaxDays: 16,
     };
@@ -124,6 +127,9 @@ describe.skipIf(!url)('ticket return window on PostgreSQL', () => {
   it('persists limits and filters reverse offers at inclusive Max after browser-independent reload', async () => {
     expect(outbound.returnMinDays).toBe(2);
     expect(outbound.returnMaxDays).toBe(16);
+    expect(outbound.supplyType).toBe('COMPANY');
+    expect(outbound.economyBaggageKg).toBe('20.5');
+    expect(outbound.businessBaggageKg).toBeNull();
     expect(allowed.returnMinDays).toBeNull();
     const result = await service.search(
       {
@@ -166,6 +172,12 @@ describe.skipIf(!url)('ticket return window on PostgreSQL', () => {
       2,
     );
     expect(valid.available).toBe(true);
+    const reloaded = (await service.managed(actor)).data.find(
+      (offer) => offer.id === outbound.id,
+    )!;
+    expect(reloaded.allocatedCapacity).toBe(2);
+    expect(reloaded.reservedCapacity).toBe(0);
+    expect(reloaded.remainingCapacity).toBe(48);
     expect(
       await client.ticketOfferCapacityAllocation.count({
         where: { contractId },
@@ -196,6 +208,42 @@ describe.skipIf(!url)('ticket return window on PostgreSQL', () => {
       client.ticketPublishedOffer.update({
         where: { id: excluded.id },
         data: { returnMinDays: 17, returnMaxDays: 16 },
+      }),
+    ).rejects.toThrow();
+  });
+  it('preserves supply and baggage for an older revision client and enforces SQL baggage constraints', async () => {
+    await service.revise(
+      excluded.id,
+      {
+        expectedVersion: excluded.version,
+        offer: {
+          originId: excluded.originId,
+          destinationId: excluded.destinationId,
+          departureAt: excluded.departureAt,
+          arrivalAt: excluded.arrivalAt,
+          carrierName: excluded.carrierName,
+          serviceNumber: excluded.serviceNumber,
+          cabinClassCode: excluded.cabinClassCode,
+          totalCapacity: excluded.totalCapacity,
+        },
+      },
+      actor,
+    );
+    const reloaded = (await service.managed(actor)).data.find(
+      (offer) => offer.id === excluded.id,
+    )!;
+    expect(reloaded.supplyType).toBe('COMPANY');
+    expect(reloaded.economyBaggageKg).toBe('20.5');
+    await expect(
+      client.ticketPublishedOffer.update({
+        where: { id: excluded.id },
+        data: { businessBaggageKg: -1 },
+      }),
+    ).rejects.toThrow();
+    await expect(
+      client.ticketPublishedOffer.update({
+        where: { id: excluded.id },
+        data: { supplyType: 'CHARTER' },
       }),
     ).rejects.toThrow();
   });

@@ -4,6 +4,8 @@ import { useRef, useState } from 'react';
 import { Alert, Button, FormField, Input } from '@/components/ui';
 import type { ProductInput, Reference, Segment } from '../model/catalog';
 import { emptyInput } from '../model/preview';
+import { supplyOptions } from '../model/preview';
+import { TicketBaggageFields } from './ticket-baggage-fields';
 import {
   buildWeekdayTickets,
   scheduleDates,
@@ -40,7 +42,11 @@ export function FlightScheduleForm({
 }) {
   const [mode, setMode] = useState<'one-way' | 'round-trip' | null>(null);
   const [advanced, setAdvanced] = useState(false);
-  const [input, setInput] = useState<ProductInput>(() => emptyInput());
+  const [input, setInput] = useState<ProductInput>(() => ({
+    ...emptyInput(),
+    supplyType: 'company',
+    companyOwned: true,
+  }));
   const [start, setStart] = useState(''),
     [end, setEnd] = useState('');
   const [weekdays, setWeekdays] = useState<WeekdayStay[]>([]);
@@ -48,6 +54,8 @@ export function FlightScheduleForm({
     flightNumber: '',
     aircraftId: '',
     baggageId: '',
+    economyBaggageKg: null as string | null,
+    businessBaggageKg: null as string | null,
   });
   const [outboundTime, setOutboundTime] = useState<ScheduleLeg>({
     departure: '',
@@ -131,6 +139,8 @@ export function FlightScheduleForm({
         returnMinDays: null,
         returnMaxDays: null,
         baggageId: returnDetails.baggageId,
+        economyBaggageKg: returnDetails.economyBaggageKg,
+        businessBaggageKg: returnDetails.businessBaggageKg,
         segments: [
           {
             ...draft.segments[0]!,
@@ -483,23 +493,28 @@ export function FlightScheduleForm({
                         </select>
                       </td>
                       <td>
-                        {picker(
-                          `schedule-baggage-${direction}`,
-                          `بار ${back ? 'برگشت' : 'رفت'}`,
-                          'baggage-rules',
-                          'baggage',
-                          back ? returnDetails.baggageId : input.baggageId,
-                          (r) =>
+                        <TicketBaggageFields
+                          economy={
+                            back
+                              ? returnDetails.economyBaggageKg
+                              : input.economyBaggageKg
+                          }
+                          business={
+                            back
+                              ? returnDetails.businessBaggageKg
+                              : input.businessBaggageKg
+                          }
+                          suffix={back ? ' برگشت' : ' رفت'}
+                          disabled={saving}
+                          onChange={(field, value) =>
                             back
                               ? setReturnDetails((c) => ({
                                   ...c,
-                                  baggageId: r?.id ?? '',
+                                  [field]: value,
                                 }))
-                              : setInput((c) => ({
-                                  ...c,
-                                  baggageId: r?.id ?? '',
-                                })),
-                        )}
+                              : setInput((c) => ({ ...c, [field]: value }))
+                          }
+                        />
                       </td>
                       {(['returnMinDays', 'returnMaxDays'] as const).map(
                         (field) => (
@@ -580,13 +595,16 @@ export function FlightScheduleForm({
                     supplyType: event.target
                       .value as ProductInput['supplyType'],
                     companyOwned: event.target.value === 'company',
+                    entryMethod:
+                      event.target.value === 'supplier' ? 'api' : 'manual',
                   }))
                 }
               >
-                <option value="supplier">تأمین‌کننده</option>
-                <option value="company">ظرفیت شرکت</option>
-                <option value="allotment">شناوری</option>
-                <option value="charter">چارتر</option>
+                {Object.entries(supplyOptions).map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
               </select>
             </FormField>
             <ManifestTemplatePicker
