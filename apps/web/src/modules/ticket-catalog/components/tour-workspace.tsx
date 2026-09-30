@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { eligibleTicketReturn } from '@nora/contracts';
 import type {
   BranchReference,
   MasterDataRecord,
@@ -406,6 +407,12 @@ export function TourWorkspace({
         loading={loading}
         busy={busy || loading}
         onEdit={showEditor}
+        onDelete={(item) =>
+          void run(async () => {
+            await toursApi.deletePackage(item.id, item.version, item.branchId);
+            setNotice('تور «' + item.name + '» حذف شد.');
+          })
+        }
         onSelect={selectTour}
         onRepeat={repeatTour}
         definitionMode={mode === 'definition'}
@@ -723,12 +730,28 @@ export function TourWorkspace({
                             direction === 'out' ? 'بلیط رفت' : 'بلیط برگشت'
                           }
                           value={direction === 'out' ? outbound : returning}
-                          options={offers[direction].map((offer) => ({
-                            id: offer.id,
-                            name: timeLabel(offer),
-                          }))}
+                          options={offers[direction]
+                            .filter(
+                              (offer) =>
+                                direction === 'out' ||
+                                !outbound ||
+                                (offers.out.find((o) => o.id === outbound) &&
+                                  eligibleTicketReturn(
+                                    offers.out.find((o) => o.id === outbound)!,
+                                    offer,
+                                  )),
+                            )
+                            .map((offer) => ({
+                              id: offer.id,
+                              name: timeLabel(offer),
+                            }))}
                           onChange={
-                            direction === 'out' ? setOutbound : setReturning
+                            direction === 'out'
+                              ? (id) => {
+                                  setOutbound(id);
+                                  setReturning('');
+                                }
+                              : setReturning
                           }
                         />
                         <Button

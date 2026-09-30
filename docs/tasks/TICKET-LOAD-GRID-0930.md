@@ -1,0 +1,15 @@
+# Company flight load — PC-A — 2026-09-30
+
+Ticket management now starts with two independently scrollable leg tables. The outbound filters use inclusive Tehran calendar dates, route, carrier, flight number, weekday and cabin. Selecting an outbound offers reverse-route company flights in the same branch, using the shared inclusive Min/Max return window; a return may fall beyond the outbound filter end. Optional same-cabin filtering applies to returns. Tables expose Gregorian date, carrier, number, time, cabin, total and remaining seats, active holds and allocations, one-way fare availability, Min/Max and weekday. Totals and prices refer to the selected/filtered leg; loading never creates an allocation or changes a price.
+
+Supply is COMPANY (company capacity/charter), FLOATING or API. Existing published rows have nullable supply; they must be classified explicitly before appearing in this load. API identifies provenance only. Economy and optional business baggage are manually entered decimal kilograms, nullable, between 0 and 9999 with up to two decimals. Legacy baggage reference support remains compatible. Omitted revision fields preserve persisted values; revisions of allocated definitions cannot alter their supply or baggage.
+
+The additive migration creates nullable supply and baggage columns with database checks. Travel v1 fields are optional for existing consumers; allocatedCapacity and reservedCapacity are read-only projections. Management pagination adds optional page and hasMore while its Web consumer drains all pages, including Sales price views. Dates in ticket creation, editing and management default to Gregorian and retain calendar switching.
+
+The legacy screenshot web-publication checkbox has no persisted equivalent; the load shows an unknown marker rather than claiming publication. One-way checkboxes describe saved one-way fare availability. No new provider integration or operational data backfill is included.
+
+Validation includes isolated PostgreSQL migration deployment, four return-window/persistence tests, focused supply schema and pagination tests, Ticket Catalog Web tests, typechecks, lint and builds. Operational rollout applies the additive migration before starting the rebuilt API.
+
+## Owner follow-up — visible legacy tickets
+
+The follow-up TICKET-LOAD-VISIBLE-0930 includes unknown legacy supply in both load legs while preserving the null classification and labeling it explicitly in selected-flight details. Explicit FLOATING/API offers remain excluded. Initial date bounds are empty, and an edited date clears an incompatible opposite bound. The duplicate published table is removed; its existing management actions move into selected-leg details. The light-mode load background is white. This supersedes the initial requirement that unknown legacy tickets must be classified before appearing in load; no database backfill occurs.

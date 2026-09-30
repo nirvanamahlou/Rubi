@@ -133,6 +133,7 @@ export const groupedNavigationItems = navigationGroups.map((group) => ({
 export const salesSubsections = [
   { href: '/sales/ticket-prices', title: 'قیمت بلیط' },
   { href: '/sales/pricing', title: 'مدیریت قیمت و پکیج‌ها' },
+  { href: '/sales/tours', title: 'تعریف تور و خدمات' },
 ] as const;
 export const salesPricingSubsection = salesSubsections[1];
 
@@ -144,6 +145,10 @@ export const navigationAliases = {
   '/sales/pricing': {
     parentHref: '/sales',
     title: 'مدیریت قیمت و پکیج‌ها',
+  },
+  '/sales/tours': {
+    parentHref: '/sales',
+    title: 'تعریف تور و خدمات',
   },
   '/sales/contracts/new': {
     parentHref: '/sales',

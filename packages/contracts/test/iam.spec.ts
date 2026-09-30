@@ -31,8 +31,8 @@ describe('IAM public permission contract', () => {
       ]),
     );
   });
-  it('publishes the version 12 domain permission catalogs without duplicates', () => {
-    expect(IAM_PERMISSION_CONTRACT_VERSION).toBe(12);
+  it('publishes the version 13 domain permission catalogs without duplicates', () => {
+    expect(IAM_PERMISSION_CONTRACT_VERSION).toBe(13);
     expect(MASTER_DATA_PERMISSION_CODES).toEqual([
       'master_data.read',
       'master_data.create',

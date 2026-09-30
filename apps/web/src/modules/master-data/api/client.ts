@@ -26,6 +26,7 @@ import type {
 } from '@nora/contracts';
 
 import { getPublicApiBaseUrl } from '../../../lib/environment';
+import { refreshAuthenticatedSession } from '../../../lib/auth-session';
 import { serializeMasterDataListQuery } from './contracts';
 
 export class MasterDataApiError extends Error {
@@ -202,6 +203,46 @@ async function documentsRequest<T>(
 }
 
 export const masterDataApi = {
+  async previewLogo(
+    input: { resource: MasterDataResource; recordId: string },
+    signal?: AbortSignal,
+    retriedAfterRefresh = false,
+  ): Promise<Blob> {
+    const baseUrl = getPublicApiBaseUrl();
+    if (!baseUrl)
+      throw new MasterDataApiError('نشانی API پیکربندی نشده است.', 0);
+    const response = await fetch(
+      `${baseUrl}/master-data/${input.resource}/${encodeURIComponent(input.recordId)}/logo`,
+      {
+        credentials: 'include',
+        cache: 'no-store',
+        ...(signal ? { signal } : {}),
+        headers: { accept: 'image/png,image/jpeg' },
+      },
+    );
+    if (
+      response.status === 401 &&
+      !retriedAfterRefresh &&
+      (await refreshAuthenticatedSession(baseUrl))
+    )
+      return masterDataApi.previewLogo(input, signal, true);
+    if (!response.ok) {
+      const envelope = (await response.json().catch(() => null)) as {
+        error?: { message?: string };
+        message?: string;
+      } | null;
+      throw new MasterDataApiError(
+        envelope?.error?.message ??
+          envelope?.message ??
+          'نمایش لوگو ممکن نیست.',
+        response.status,
+      );
+    }
+    const blob = await response.blob();
+    if (!['image/png', 'image/jpeg'].includes(blob.type))
+      throw new MasterDataApiError('پاسخ لوگو تصویر PNG یا JPEG نیست.', 415);
+    return blob;
+  },
   async uploadLogo(input: {
     file: File;
     resource: MasterDataResource;

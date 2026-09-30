@@ -18,6 +18,7 @@ import {
   FileSpreadsheet,
   FileText,
   Plus,
+  Power,
   RefreshCw,
   Search,
   XCircle,
@@ -41,7 +42,6 @@ import {
   Card,
   EmptyState,
   ErrorState,
-  FilterBar,
   PageHeader,
   PaginationShell,
   Skeleton,
@@ -49,6 +49,7 @@ import {
 import { masterDataApi, MasterDataApiError } from '../api/client';
 import { MasterDataDeleteButton } from './master-data-delete-button';
 import { MasterDataFilterActions } from './master-data-filter-actions';
+import { MasterDataFilterBar } from './master-data-filter-bar';
 import {
   MasterDataDateRangeFilter,
   useMasterDataDateRange,
@@ -354,7 +355,6 @@ function GenericMasterDataWorkspace({
             همه بخش‌ها
           </Link>
         }
-        description={section.description}
         title={section.title}
       />
 
@@ -411,11 +411,6 @@ function GenericMasterDataWorkspace({
                   <h2 className="text-xl font-black">{definition.label}</h2>
                   <Badge>{section.title}</Badge>
                 </div>
-                <p className="mt-2 text-sm leading-7 text-muted-foreground">
-                  {isCountryCity
-                    ? 'کشورها و شهرهای وابسته در یک بخش مدیریت می‌شوند؛ هر شهر هنگام ثبت به کشور مرجع متصل می‌شود.'
-                    : definition.description}
-                </p>
               </div>
               <div className="flex flex-col items-end gap-3">
                 {isCountryCity ? (
@@ -480,7 +475,7 @@ function GenericMasterDataWorkspace({
             label={`شاخص‌های ${definition.label}`}
           />
 
-          <FilterBar className="grid sm:grid-cols-2 lg:grid-cols-[minmax(14rem,1fr)_12rem_12rem_auto]">
+          <MasterDataFilterBar>
             <MasterDataDateRangeFilter
               idPrefix="master-data-created"
               {...dateRangeProps}
@@ -489,7 +484,7 @@ function GenericMasterDataWorkspace({
               <div className="relative">
                 <Search
                   aria-hidden="true"
-                  className="absolute end-3 top-3.5 size-4 text-muted-foreground"
+                  className="absolute end-2.5 top-2.5 size-4 text-muted-foreground"
                 />
                 <Input
                   className="pe-10"
@@ -546,7 +541,7 @@ function GenericMasterDataWorkspace({
               }}
               onRefresh={() => void load()}
             />
-          </FilterBar>
+          </MasterDataFilterBar>
 
           {requestState === 'loading' ? (
             <div
@@ -624,65 +619,69 @@ function GenericMasterDataWorkspace({
                       <td className="p-4">
                         <div className="flex flex-wrap justify-end gap-2">
                           <Button
+                            aria-label={`مشاهده ${record.name}`}
                             onClick={() => openForm('view', record)}
-                            size="sm"
+                            size="icon"
+                            title={`مشاهده ${record.name}`}
                             variant="outline"
                           >
                             <Eye aria-hidden="true" className="size-4" />
-                            مشاهده
                           </Button>
                           <Button
+                            aria-label={`ویرایش ${record.name}`}
                             onClick={() => openForm('edit', record)}
-                            size="sm"
+                            size="icon"
+                            title={`ویرایش ${record.name}`}
                             variant="outline"
                           >
                             <FilePenLine
                               aria-hidden="true"
                               className="size-4"
                             />
-                            ویرایش
                           </Button>
                           <MasterDataDeleteButton
                             record={record}
                             onDeleted={afterDelete}
                           />
                           <Button
+                            aria-label={`${record.status === 'active' ? 'غیرفعال‌سازی' : 'فعال‌سازی'} ${record.name}`}
                             onClick={() => void toggle(record)}
-                            size="sm"
-                            variant="ghost"
+                            size="icon"
+                            title={`${record.status === 'active' ? 'غیرفعال‌سازی' : 'فعال‌سازی'} ${record.name}`}
+                            variant="outline"
                           >
-                            {record.status === 'active'
-                              ? 'غیرفعال‌سازی'
-                              : 'فعال‌سازی'}
+                            <Power aria-hidden="true" className="size-4" />
                           </Button>{' '}
                           {resource === 'exchange-rates' &&
                           record.attributes.status === 'DRAFT' ? (
                             <>
                               <Button
+                                aria-label={`تأیید ${record.name}`}
                                 onClick={() =>
                                   void decideRate(record, 'approve')
                                 }
-                                size="sm"
+                                size="icon"
+                                title={`تأیید ${record.name}`}
                                 variant="outline"
                               >
                                 <CheckCircle2
                                   aria-hidden="true"
                                   className="size-4"
                                 />
-                                تأیید
                               </Button>
                               <Button
+                                aria-label={`رد ${record.name}`}
                                 onClick={() =>
                                   void decideRate(record, 'reject')
                                 }
-                                size="sm"
-                                variant="ghost"
+                                size="icon"
+                                title={`رد ${record.name}`}
+                                variant="outline"
                               >
                                 <XCircle
                                   aria-hidden="true"
                                   className="size-4"
                                 />
-                                رد
                               </Button>
                             </>
                           ) : null}
@@ -744,8 +743,7 @@ export function MasterDataWorkspace({
 }: {
   section: MasterDataSectionDefinition;
 }) {
-  if (section.slug === 'finance')
-    return <MasterDataFinanceWorkspace section={section} />;
+  if (section.slug === 'finance') return <MasterDataFinanceWorkspace />;
   if (section.slug === 'geography') return <MasterDataGeographyWorkspace />;
   if (section.slug === 'organizations-suppliers')
     return <MasterDataSuppliersWorkspace />;

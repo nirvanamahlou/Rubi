@@ -7,7 +7,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { usePathname, useSearchParams } from 'next/navigation';
+import { redirect, usePathname, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
   canViewRoute,
@@ -73,6 +73,7 @@ export function AccessProvider({ children }: { children: ReactNode }) {
     null,
   );
   const [error, setError] = useState(false);
+  const [expired, setExpired] = useState(false);
   useEffect(() => {
     let active = true;
     let loading = false;
@@ -94,6 +95,17 @@ export function AccessProvider({ children }: { children: ReactNode }) {
             credentials: 'include',
             cache: 'no-store',
           });
+        if (response.status === 401) {
+          if (active) setExpired(true);
+          return;
+        }
+        if (response.status === 403) {
+          if (active) {
+            setPermissions([]);
+            setError(false);
+          }
+          return;
+        }
         if (!response.ok) throw Error();
         const actor = (await response.json()) as AuthenticatedActor;
         if (!Array.isArray(actor.permissions)) throw Error();
@@ -122,12 +134,13 @@ export function AccessProvider({ children }: { children: ReactNode }) {
       window.removeEventListener(AUTH_SESSION_RECOVERED_EVENT, refresh);
     };
   }, []);
+  if (expired) redirect('/login');
   return (
     <AccessContext.Provider value={permissions}>
       {permissions === null ? (
         <div role="status" className="p-6 text-center">
           {error
-            ? 'دسترسی حساب دریافت نشد؛ وارد حساب شوید یا صفحه را تازه کنید.'
+            ? 'ارتباط با سامانه برقرار نشد؛ تلاش مجدد به‌صورت خودکار انجام می‌شود.'
             : 'در حال بررسی دسترسی…'}
         </div>
       ) : (
@@ -143,9 +156,9 @@ export function RouteAccessGuard({ children }: { children: ReactNode }) {
   const permissions = useAccessPermissions();
   const group = accessGroupForRoute(route ?? '/');
   const base = route === '/hr' ? '/human-resources' : route;
+  if (!allowed(route + '?' + search.toString())) return null;
   if (
     permissions &&
-    hasManagedAccess(permissions) &&
     group &&
     base === group.route &&
     !search.size &&
@@ -182,11 +195,5 @@ export function RouteAccessGuard({ children }: { children: ReactNode }) {
       </div>
     );
   }
-  return allowed(route + '?' + search.toString()) ? (
-    children
-  ) : (
-    <div role="alert" className="rounded-xl border p-6">
-      دسترسی مشاهده این بخش برای حساب شما فعال نیست.
-    </div>
-  );
+  return allowed(route + '?' + search.toString()) ? children : null;
 }

@@ -1,12 +1,12 @@
 'use client';
 
-import { AffairsSelect } from './affairs-select';
-import { useEffect, useState } from 'react';
 import type { HrDirectoryResponse } from '@nora/contracts';
-import { getPublicApiBaseUrl } from '@/lib/environment';
-import { Input } from '@/components/ui/form-controls';
+import { useEffect, useState } from 'react';
+
 import { Button } from '@/components/ui/button';
-import { assigneeOptions } from './assignee-options';
+import { SearchCombobox } from '@/components/ui/search-combobox';
+import { getPublicApiBaseUrl } from '@/lib/environment';
+import { selectableAssigneeOptions } from './assignee-options';
 
 export function AssigneePicker({
   name,
@@ -18,19 +18,23 @@ export function AssigneePicker({
   branchId?: string;
 }) {
   const [selected, setSelected] = useState(initial);
+  const [selectedLabel, setSelectedLabel] = useState(
+    initial ? 'مسئول انتخاب‌شده فعلی' : '',
+  );
+  const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
-  const [page, setPage] = useState(1);
   const [response, setResponse] = useState<HrDirectoryResponse | null>(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [retry, setRetry] = useState(0);
+
   useEffect(() => {
-    if (!search.trim()) return;
+    if (!open) return;
     const controller = new AbortController();
-    const timer = setTimeout(async () => {
-      setLoading(true);
+    const timer = window.setTimeout(async () => {
       try {
-        const params = new URLSearchParams({ search, page: String(page) });
+        const params = new URLSearchParams();
+        if (search.trim()) params.set('search', search.trim());
         if (branchId) params.set('branchId', branchId);
         const base = getPublicApiBaseUrl();
         if (!base) throw new Error('نشانی سرویس تنظیم نشده است.');
@@ -44,7 +48,9 @@ export function AssigneePicker({
               ? 'دسترسی به فهرست کارکنان ندارید؛ مسئول فعلی حفظ می‌شود.'
               : 'فهرست کارکنان دریافت نشد.',
           );
-        setResponse((await result.json()) as HrDirectoryResponse);
+        const data = (await result.json()) as HrDirectoryResponse;
+        if (controller.signal.aborted) return;
+        setResponse(data);
         setError('');
       } catch (cause) {
         if (controller.signal.aborted) return;
@@ -53,110 +59,76 @@ export function AssigneePicker({
       } finally {
         if (!controller.signal.aborted) setLoading(false);
       }
-    }, 300);
+    }, 250);
     return () => {
-      clearTimeout(timer);
+      window.clearTimeout(timer);
       controller.abort();
     };
-  }, [search, page, branchId, retry]);
+  }, [open, search, branchId, retry]);
+
+  const employees = response?.employees ?? [];
+  const options = selectableAssigneeOptions(employees);
+
   return (
-    <div className="space-y-2 rounded-xl border border-border p-3">
-      <input type="hidden" name={name} value={selected} />
-      <Input
-        aria-label="جست‌وجوی مسئول"
-        placeholder="نام، کد پرسنلی یا واحد کارمند"
-        value={search}
-        onChange={(event) => {
-          setSearch(event.target.value);
-          setPage(1);
-        }}
-      />
-      <AffairsSelect
-        aria-label="انتخاب مسئول"
-        className="h-11 w-full rounded-xl border border-input bg-surface px-3"
-        value={selected}
-        disabled={loading || Boolean(error)}
-        onChange={(event) => {
-          const value = event.target.value;
-          if (
-            !value ||
-            response?.employees.some((employee) => employee.userId === value)
-          )
-            setSelected(value);
-        }}
-      >
-        <option value="">بدون کارشناس مشخص / صف واحد</option>
-        {selected &&
-          !response?.employees.some(
-            (employee) => employee.userId === selected,
-          ) && <option value={selected}>مسئول انتخاب‌شده فعلی</option>}
-        {assigneeOptions(response?.employees ?? []).map((option) => (
-          <option
-            key={option.value}
-            value={option.value}
-            disabled={option.disabled}
-          >
-            {option.label}
-          </option>
-        ))}
-      </AffairsSelect>
-      {loading && (
-        <p role="status" className="text-xs text-muted-foreground">
-          در حال دریافت کارکنان منابع انسانی…
-        </p>
-      )}
-      {error && (
-        <p role="alert" className="text-sm text-destructive">
-          {error}
-        </p>
-      )}
-      {!search.trim() ? (
-        <p className="text-xs text-muted-foreground" role="status">
-          برای نمایش کارکنان، نام، کد پرسنلی یا واحد را جست‌وجو کنید.
-        </p>
-      ) : (
-        !loading &&
-        response &&
-        response.employees.length === 0 && (
-          <p className="text-xs text-muted-foreground">
-            کارمند فعالی مطابق جست‌وجو در محدوده دسترسی شما پیدا نشد.
-          </p>
-        )
-      )}
-      {!loading && response?.employees.some((employee) => !employee.userId) && (
-        <p className="text-xs text-muted-foreground">
-          کارکنان بدون حساب متصل نمایش داده می‌شوند، اما قابل انتخاب نیستند.
-          مدیر منابع انسانی باید حساب کاربری متعلق به هر کارمند را در پرونده او
-          مشخص کند تا بتواند مسئول پاسخگویی باشد.
-        </p>
-      )}
-      {error && (
-        <Button
-          type="button"
-          variant="ghost"
-          onClick={() => setRetry(retry + 1)}
-        >
-          تلاش دوباره
-        </Button>
-      )}
-      <div className="flex gap-2">
-        <Button
-          type="button"
-          variant="ghost"
-          disabled={loading || !search.trim() || page === 1}
-          onClick={() => setPage(page - 1)}
-        >
-          قبلی
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          disabled={loading || !search.trim() || !response?.hasMore}
-          onClick={() => setPage(page + 1)}
-        >
-          بعدی
-        </Button>
-      </div>
-    </div>
+    <SearchCombobox
+      name={name}
+      label="مسئول پاسخ‌گویی"
+      placeholder="نام، کد پرسنلی یا واحد کارمند"
+      className="h-11 w-full rounded-xl border border-input bg-surface px-3"
+      value={selected}
+      selectedLabel={selected ? selectedLabel : undefined}
+      options={options}
+      remote
+      loading={loading}
+      error={error || undefined}
+      onOpenChange={(next) => {
+        setOpen(next);
+        setLoading(next);
+      }}
+      onSearchChange={(query) => {
+        setSearch(query);
+        setResponse(null);
+        setError('');
+        setLoading(true);
+      }}
+      onValueChange={(value) => {
+        const employee = employees.find((item) => item.userId === value);
+        if (!employee) return;
+        setSelected(value);
+        setSelectedLabel(`${employee.name} — ${employee.unit}`);
+      }}
+      footer={
+        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border px-2 py-1 text-xs text-muted-foreground">
+          {error ? (
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => {
+                setLoading(true);
+                setRetry((value) => value + 1);
+              }}
+            >
+              تلاش دوباره
+            </Button>
+          ) : response?.hasMore ? (
+            <span>برای موارد بیشتر نام دقیق‌تر را جست‌وجو کنید.</span>
+          ) : response?.employees.some((employee) => !employee.userId) ? (
+            <span>کارکنان بدون حساب متصل قابل انتخاب نیستند.</span>
+          ) : null}
+          {selected ? (
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => {
+                setSelected('');
+                setSelectedLabel('');
+              }}
+            >
+              حذف مسئول
+            </Button>
+          ) : null}
+        </div>
+      }
+    />
   );
 }

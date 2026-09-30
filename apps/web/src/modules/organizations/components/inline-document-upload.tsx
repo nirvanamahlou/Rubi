@@ -1,4 +1,6 @@
 'use client';
+import { NativeSearchSelect } from '@/components/ui/native-search-select';
+
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { IamPermissionCode, MasterDataRecord } from '@nora/contracts';
 import {
@@ -182,7 +184,7 @@ export function InlineDocumentUpload({
         </label>
         <label className="field">
           <span>نوع مدرک</span>
-          <select
+          <NativeSearchSelect
             className="input"
             value={typeId}
             onChange={(e) => {
@@ -200,11 +202,11 @@ export function InlineDocumentUpload({
                   {t.name}
                 </option>
               ))}
-          </select>
+          </NativeSearchSelect>
         </label>
         <label className="field">
           <span>دسته‌بندی سند</span>
-          <select
+          <NativeSearchSelect
             className="input"
             value={categoryId}
             onChange={(e) => {
@@ -218,7 +220,7 @@ export function InlineDocumentUpload({
                 {c.name}
               </option>
             ))}
-          </select>
+          </NativeSearchSelect>
         </label>
         <div className="field">
           <span>انقضای مدرک {type?.requiresExpiry ? '*' : '(اختیاری)'}</span>

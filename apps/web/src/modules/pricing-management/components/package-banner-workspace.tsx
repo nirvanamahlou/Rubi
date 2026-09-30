@@ -1,4 +1,5 @@
 'use client';
+import { NativeSearchSelect } from '@/components/ui/native-search-select';
 
 import type {
   PackageTourCostGridV1,
@@ -473,7 +474,7 @@ export function PackageBannerWorkspace({
                   <div className="grid gap-3 border-t border-border p-4">
                     <label className="grid gap-2 text-sm font-bold">
                       قالب فعال شعبه
-                      <select
+                      <NativeSearchSelect
                         className="h-11 rounded-xl border border-input bg-surface px-3"
                         onChange={(event) => setTemplateId(event.target.value)}
                         value={templateId}
@@ -483,7 +484,7 @@ export function PackageBannerWorkspace({
                             {item.title} · {item.width}×{item.height}
                           </option>
                         ))}
-                      </select>
+                      </NativeSearchSelect>
                     </label>
                     <div
                       aria-label="گالری قالب‌های بنر"
@@ -704,7 +705,7 @@ export function PackageBannerWorkspace({
                     </label>
                     <label className="grid gap-2 text-sm font-bold">
                       دعوت به اقدام
-                      <select
+                      <NativeSearchSelect
                         className="h-11 rounded-xl border border-input bg-surface px-3"
                         onChange={(event) => setCta(event.target.value)}
                         value={cta}
@@ -712,7 +713,7 @@ export function PackageBannerWorkspace({
                         <option>رزرو تور</option>
                         <option>تماس با ما</option>
                         <option>مشاهده جزئیات</option>
-                      </select>
+                      </NativeSearchSelect>
                     </label>
                     <Button className="w-full" disabled type="button">
                       {output.label}

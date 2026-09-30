@@ -106,7 +106,7 @@ function Brand({ compact = false }: { compact?: boolean }) {
         compact ? 'grid size-11 place-items-center p-1' : 'block w-full',
       )}
       data-active-company-brand={context?.selection ?? 'LOADING'}
-      href="/dashboard"
+      href="/workbench"
     >
       <Image
         alt={brand.alt}
@@ -143,11 +143,7 @@ function Navigation({
     }))
     .filter((group) => group.items.length > 0);
   const groupId = useId();
-  const [closedGroups, setClosedGroups] = useState<string[]>(() =>
-    groupedNavigationItems
-      .filter((group) => group.id !== 'sales')
-      .map((group) => group.id),
-  );
+  const [closedGroups, setClosedGroups] = useState<string[]>([]);
   const isGroupClosed = (id: string) => closedGroups.includes(id);
   function toggleGroup(id: string) {
     setClosedGroups((ids) =>
@@ -228,14 +224,20 @@ function Navigation({
     );
   }
   function renderGroupEntries(group: (typeof groupedNavigationItems)[number]) {
-    return group.items.flatMap((item) => [
+    const entries = group.items.flatMap((item) => [
       renderItem(item),
       ...(group.id === 'sales' && item.href === '/sales'
-        ? salesSubsections.map((section) =>
-            renderItem({ ...section, secondary: true }),
-          )
+        ? salesSubsections
+            .slice(0, -1)
+            .map((section) => renderItem({ ...section, secondary: true }))
         : []),
     ]);
+    if (group.id === 'sales') {
+      const finalSection = salesSubsections.at(-1);
+      if (finalSection)
+        entries.push(renderItem({ ...finalSection, secondary: true }));
+    }
+    return entries;
   }
   return (
     <nav
@@ -502,7 +504,7 @@ function Breadcrumb() {
       aria-label={english ? 'Breadcrumb' : 'مسیر صفحه'}
       className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground"
     >
-      <Link className="hover:text-foreground" href="/dashboard">
+      <Link className="hover:text-foreground" href="/workbench">
         {messages.shell.workspace}
       </Link>
       {breadcrumbs.length ? (

@@ -146,6 +146,11 @@ describe('Purchase draft accessibility and persisted input', () => {
     });
     draft.items[0]!.quantity = '2';
     expect(validatePublishDraft(draft)).toBeNull();
+    Reflect.deleteProperty(draft.items[0]!, 'unit');
+    expect(validatePublishDraft(draft)).toEqual({
+      controlId: 'line-1-unit',
+      message: 'واحد سنجش همهٔ اقلام و خدمات را انتخاب کنید.',
+    });
   });
   it('makes the requester requirement visible before saving a new draft', () => {
     const html = renderToStaticMarkup(
@@ -327,6 +332,69 @@ describe('Purchase draft accessibility and persisted input', () => {
       ),
     ).not.toThrow();
   });
+  it('renders when a historic saved item has no measurement unit', () => {
+    const client = new QueryClient();
+    const legacyDraft = emptyDraft();
+    legacyDraft.branchId = 'branch-1';
+    legacyDraft.items = [
+      {
+        id: 'legacy-line',
+        kind: 'GOODS',
+        description: 'Legacy item',
+        specification: '',
+        quantity: '1',
+        unit: 'عدد',
+        period: '',
+        acceptanceCriteria: '',
+      },
+    ];
+    Reflect.deleteProperty(legacyDraft.items[0]!, 'unit');
+    client.setQueryData(savedRequestFieldOptionsKey, {
+      items: [{ draft: legacyDraft }],
+      page: 1,
+      pageSize: 50,
+      hasMore: false,
+    });
+
+    expect(() =>
+      renderToStaticMarkup(
+        <QueryClientProvider client={client}>
+          <DraftForm
+            bootstrap={bootstrap}
+            request={{
+              id: 'current',
+              number: 'PR-4',
+              version: 1,
+              requesterUserId: 'user',
+              requesterEmployeeId: null,
+              ownerUserId: null,
+              createdAt: '',
+              updatedAt: '',
+              status: 'DRAFT',
+              draft: {
+                ...emptyDraft(),
+                branchId: 'branch-1',
+                items: [
+                  {
+                    id: 'current-line',
+                    kind: 'GOODS',
+                    description: 'Current item',
+                    specification: '',
+                    quantity: '1',
+                    unit: 'عدد',
+                    period: '',
+                    acceptanceCriteria: '',
+                  },
+                ],
+              },
+            }}
+            onClose={() => undefined}
+            onSaved={() => undefined}
+          />
+        </QueryClientProvider>,
+      ),
+    ).not.toThrow();
+  });
   it('shows the persisted choices before the saved-options query finishes', () => {
     const draft = {
       ...emptyDraft(),
@@ -369,7 +437,7 @@ describe('Purchase draft accessibility and persisted input', () => {
     );
     const trigger = (id: string) =>
       html.match(
-        new RegExp(`<button[^>]*id="${id}"[^>]*>(.*?)</button>`, 's'),
+        new RegExp(`<input[^>]*id="${id}"[^>]*value="([^"]*)"`, 's'),
       )?.[1] ?? '';
     expect(trigger('proc-category')).toContain('ملزومات اداری');
     expect(trigger('item-1-unit')).toContain('ساعت');

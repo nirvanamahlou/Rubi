@@ -12,6 +12,7 @@ import {
   ArrowLeft,
   BarChart3,
   Clock3,
+  Download,
   Headphones,
   Home,
   Inbox,
@@ -28,6 +29,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/form-controls';
 import { Alert, ErrorState } from '@/components/ui/surfaces';
 import { useSuppressHrConnections } from '@/modules/hr/hr-connections-visibility';
+import { customerAffairsHref } from './customer-affairs-navigation';
+import { loadCustomerAffairsOverview } from './customer-affairs-overview';
 import {
   customerAffairsApi as api,
   CustomerAffairsApiError,
@@ -117,6 +120,7 @@ const accent = (color: string) =>
 type Loaded = {
   dashboard?: CustomerAffairsDashboard;
   leads: CustomerAffairsLeadView[];
+  recentLeads: CustomerAffairsLeadView[];
   tickets: CustomerAffairsTicketView[];
   total: number;
   report?: AffairsReport;
@@ -161,6 +165,7 @@ export function CustomerAffairsNoraWorkspace() {
   const [form, setForm] = useState<'leads' | 'tickets' | null>(null);
   const [loaded, setLoaded] = useState<Loaded>({
     leads: [],
+    recentLeads: [],
     tickets: [],
     total: 0,
   });
@@ -176,9 +181,7 @@ export function CustomerAffairsNoraWorkspace() {
   const [revision, setRevision] = useState(0);
   const navigate = (next: View, detailId?: string) => {
     setForm(null);
-    const p = new URLSearchParams({ view: next });
-    if (detailId) p.set(next === 'leads' ? 'lead' : 'ticket', detailId);
-    router.push(`/customer-affairs?${p}`);
+    router.push(customerAffairsHref(next, detailId));
   };
   const change = (key: string, value: string) => {
     const p = new URLSearchParams(params.toString());
@@ -189,7 +192,12 @@ export function CustomerAffairsNoraWorkspace() {
   useEffect(() => {
     let current = true;
     async function load() {
-      const result: Loaded = { leads: [], tickets: [], total: 0 };
+      const result: Loaded = {
+        leads: [],
+        recentLeads: [],
+        tickets: [],
+        total: 0,
+      };
       const dashboard = await api.dashboard();
       const capabilities = dashboard.data.access;
       result.dashboard = dashboard.data;
@@ -206,27 +214,18 @@ export function CustomerAffairsNoraWorkspace() {
           await (tab === 'tickets' ? api.ticket(id) : api.lead(id))
         ).data as Detail;
       } else if (view === 'overview') {
-        const [leads, tickets, overdue] = await Promise.all([
-          capabilities.leadsRead
-            ? api.leads('', { stage: 'HANDOFF_PROPOSED', pageSize: 5 })
-            : Promise.resolve({ data: [] as CustomerAffairsLeadView[] }),
-          capabilities.ticketsRead
-            ? api.tickets('', 'ALL', { pageSize: 5 })
-            : Promise.resolve({ data: [] as CustomerAffairsTicketView[] }),
-          capabilities.leadsRead
-            ? api.leads('', { overdueOnly: true, pageSize: 5 })
-            : Promise.resolve({ data: [] as CustomerAffairsLeadView[] }),
-        ]);
-        if (current) setAttention(overdue.data);
-        result.leads = leads.data;
-        result.tickets = tickets.data;
+        const overview = await loadCustomerAffairsOverview(capabilities);
+        if (current) setAttention(overview.overdue);
+        result.leads = overview.handoffs;
+        result.recentLeads = overview.recent;
+        result.tickets = overview.tickets;
       } else if (view === 'reports' || view === 'satisfaction') {
         if (!capabilities.reportsRead)
           throw new CustomerAffairsApiError(
             'گزارش‌ها به مجوز مشاهده درخواست‌ها و تیکت‌ها نیاز دارند.',
             403,
           );
-        result.report = (await api.report()).data;
+        result.report = (await api.report({ createdFrom, createdTo })).data;
       } else if (family === 'leads') {
         if (!capabilities.leadsRead)
           throw new CustomerAffairsApiError(
@@ -305,7 +304,24 @@ export function CustomerAffairsNoraWorkspace() {
     revision,
   ]);
   const reloadDetail = async () => {
-    setRevision((x) => x + 1);
+    if (!id) return;
+    try {
+      const detail = (await (tab === 'tickets' ? api.ticket(id) : api.lead(id)))
+        .data as Detail;
+      setLoaded((current) => ({ ...current, detail }));
+    } catch (cause) {
+      setState(
+        cause instanceof CustomerAffairsApiError && cause.status === 401
+          ? 'unauthorized'
+          : cause instanceof CustomerAffairsApiError && cause.status === 403
+            ? 'forbidden'
+            : 'error',
+      );
+      setMessage(
+        'اقدام ثبت شد، اما بازخوانی پرونده انجام نشد. پیش از اقدام بعدی صفحه را تازه‌سازی کنید.',
+      );
+      throw cause;
+    }
   };
   const title =
     hubs.find((x) => x.view === view)?.title ||
@@ -319,7 +335,6 @@ export function CustomerAffairsNoraWorkspace() {
     <div className={s.workspace} dir="rtl">
       <header className={s.header}>
         <div>
-          <span className={s.eyebrow}>ارتباط با مشتری</span>
           <h1>امور مشتریان</h1>
         </div>
         <div className={s.actions}>
@@ -553,6 +568,7 @@ export function CustomerAffairsNoraWorkspace() {
                             {date(row.nextActionAt)}
                           </time>
                           <Button
+                            aria-label={`پیگیری درخواست ${row.trackingNumber}: ${row.title}`}
                             variant="ghost"
                             onClick={() => navigate('leads', row.id)}
                           >
@@ -562,6 +578,43 @@ export function CustomerAffairsNoraWorkspace() {
                       ))
                     ) : (
                       <p className={s.empty}>پیگیری عقب‌افتاده‌ای ندارید.</p>
+                    )}
+                  </section>
+                ) : null}
+                {access?.leadsRead ? (
+                  <section className={`${s.panel} ${s.recentRequests}`}>
+                    <div className={s.panelHead}>
+                      <h2>آخرین درخواست‌ها</h2>
+                      <Button variant="ghost" onClick={() => navigate('leads')}>
+                        مشاهده همه
+                      </Button>
+                    </div>
+                    {loaded.recentLeads.length ? (
+                      loaded.recentLeads.map((row) => (
+                        <div key={row.id} className={s.listItem}>
+                          <div className={s.grow}>
+                            <button
+                              className={s.titleButton}
+                              onClick={() => navigate('leads', row.id)}
+                            >
+                              {row.title}
+                            </button>
+                            <p className={s.muted}>{row.trackingNumber}</p>
+                          </div>
+                          {badge(stageLabel[row.stage])}
+                          <Button
+                            aria-label={`پیگیری درخواست ${row.trackingNumber}: ${row.title}`}
+                            size="sm"
+                            type="button"
+                            variant="outline"
+                            onClick={() => navigate('leads', row.id)}
+                          >
+                            پیگیری <ArrowLeft size={15} aria-hidden="true" />
+                          </Button>
+                        </div>
+                      ))
+                    ) : (
+                      <p className={s.empty}>هنوز درخواستی ثبت نشده است.</p>
                     )}
                   </section>
                 ) : null}
@@ -622,41 +675,56 @@ export function CustomerAffairsNoraWorkspace() {
               view,
             ) && (
               <>
-                {view === 'handoffs' && (
-                  <div className={s.flow}>
-                    {[
-                      'ارزیابی شرایط',
-                      'ارسال درخواست',
-                      'پذیرش فروش',
-                      'ادامه در فروش',
-                    ].map((x, i) => (
-                      <span key={x}>
-                        <b>{number(i + 1)}</b>
-                        {x}
-                        {i < 3 && <ArrowLeft size={14} />}
-                      </span>
-                    ))}
-                  </div>
-                )}
                 <section className={s.panel}>
                   <div className={s.panelHead}>
                     <h2>{title}</h2>
-                    {view === 'leads' && (
-                      <div className={s.subtabs}>
-                        <button
-                          aria-pressed={!board}
-                          onClick={() => change('layout', 'table')}
+                    <div className={`${s.actions} ${s.listToolbar}`}>
+                      {(view === 'leads' || view === 'tickets') && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => {
+                            const options = {
+                              createdFrom,
+                              createdTo,
+                              sourceSite,
+                            };
+                            const work =
+                              view === 'leads'
+                                ? api.exportLeads(search, {
+                                    ...options,
+                                    stage: filter,
+                                  })
+                                : api.exportTickets(search, filter, options);
+                            void work.catch((error: unknown) =>
+                              setNotice(
+                                error instanceof Error
+                                  ? error.message
+                                  : 'خروجی دریافت نشد.',
+                              ),
+                            );
+                          }}
                         >
-                          جدولی
-                        </button>
-                        <button
-                          aria-pressed={board}
-                          onClick={() => change('layout', 'board')}
-                        >
-                          مرحله‌ای
-                        </button>
-                      </div>
-                    )}
+                          <Download size={16} aria-hidden="true" /> خروجی Excel
+                        </Button>
+                      )}
+                      {view === 'leads' && (
+                        <div className={s.subtabs}>
+                          <button
+                            aria-pressed={!board}
+                            onClick={() => change('layout', 'table')}
+                          >
+                            جدولی
+                          </button>
+                          <button
+                            aria-pressed={board}
+                            onClick={() => change('layout', 'board')}
+                          >
+                            مرحله‌ای
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                   <div className={s.filters}>
                     <form
@@ -718,23 +786,23 @@ export function CustomerAffairsNoraWorkspace() {
                         <option value="nystkt">نیایش · nystkt.ir</option>
                       </AffairsSelect>
                     )}
+                    <CreatedDateFilter
+                      key={`${createdFrom}:${createdTo}`}
+                      from={createdFrom}
+                      to={createdTo}
+                      onApply={(from, to) => {
+                        const next = new URLSearchParams(params.toString());
+                        if (from) next.set('createdFrom', from);
+                        else next.delete('createdFrom');
+                        if (to) next.set('createdTo', to);
+                        else next.delete('createdTo');
+                        next.delete('page');
+                        router.replace(`/customer-affairs?${next}`, {
+                          scroll: false,
+                        });
+                      }}
+                    />
                   </div>
-                  <CreatedDateFilter
-                    key={`${createdFrom}:${createdTo}`}
-                    from={createdFrom}
-                    to={createdTo}
-                    onApply={(from, to) => {
-                      const next = new URLSearchParams(params.toString());
-                      if (from) next.set('createdFrom', from);
-                      else next.delete('createdFrom');
-                      if (to) next.set('createdTo', to);
-                      else next.delete('createdTo');
-                      next.delete('page');
-                      router.replace(`/customer-affairs?${next}`, {
-                        scroll: false,
-                      });
-                    }}
-                  />
                   {view === 'followups' || view === 'queues' ? (
                     <p className={`${s.panelBody} ${s.muted}`}>
                       این نما فقط پرونده‌های معوق را نمایش می‌دهد.
@@ -789,6 +857,9 @@ export function CustomerAffairsNoraWorkspace() {
                               {x}
                             </th>
                           ))}
+                          {family === 'leads' ? (
+                            <th scope="col">پیگیری</th>
+                          ) : null}
                         </tr>
                       </thead>
                       <tbody>
@@ -851,6 +922,20 @@ export function CustomerAffairsNoraWorkspace() {
                                     )}
                               </div>
                             </td>
+                            {'stage' in row ? (
+                              <td data-label="پیگیری">
+                                <Button
+                                  aria-label={`پیگیری درخواست ${row.trackingNumber}: ${row.title}`}
+                                  size="sm"
+                                  type="button"
+                                  variant="outline"
+                                  onClick={() => navigate('leads', row.id)}
+                                >
+                                  پیگیری
+                                  <ArrowLeft size={15} aria-hidden="true" />
+                                </Button>
+                              </td>
+                            ) : null}
                           </tr>
                         ))}
                       </tbody>
@@ -884,12 +969,41 @@ export function CustomerAffairsNoraWorkspace() {
               </>
             )}
             {report && (
-              <AffairsReportPanel
-                report={report}
-                showRequests={view === 'reports'}
-                onTickets={() => navigate('tickets')}
-                onRequests={() => navigate('leads')}
-              />
+              <>
+                {(view === 'reports' || view === 'satisfaction') && (
+                  <section
+                    className={s.reportFilters}
+                    aria-label="فیلترهای گزارش"
+                  >
+                    <CreatedDateFilter
+                      key={`${createdFrom}:${createdTo}`}
+                      from={createdFrom}
+                      to={createdTo}
+                      onApply={(from, to) => {
+                        const next = new URLSearchParams(params.toString());
+                        if (from) next.set('createdFrom', from);
+                        else next.delete('createdFrom');
+                        if (to) next.set('createdTo', to);
+                        else next.delete('createdTo');
+                        router.replace(`/customer-affairs?${next}`, {
+                          scroll: false,
+                        });
+                      }}
+                    />
+                  </section>
+                )}
+                <AffairsReportPanel
+                  report={report}
+                  showRequests={view === 'reports'}
+                  onTickets={() => navigate('tickets')}
+                  onRequests={() => navigate('leads')}
+                  dateRangeLabel={
+                    createdFrom || createdTo
+                      ? `${createdFrom || 'ابتدا'} تا ${createdTo || 'امروز'}`
+                      : 'همه تاریخ‌ها'
+                  }
+                />
+              </>
             )}
           </>
         )}

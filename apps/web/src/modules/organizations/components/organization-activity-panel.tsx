@@ -1,4 +1,6 @@
 'use client';
+import { NativeSearchSelect } from '@/components/ui/native-search-select';
+
 import { useEffect, useMemo, useState } from 'react';
 import type {
   OrganizationActivityEvent,
@@ -166,7 +168,7 @@ export function OrganizationActivityPanel({
         <div className="dossier-filter-grid">
           <label className="field">
             <span>شعبه همکاری نورا</span>
-            <select
+            <NativeSearchSelect
               className="input"
               value={branchId}
               onChange={(e) => setBranchId(e.target.value)}
@@ -176,11 +178,11 @@ export function OrganizationActivityPanel({
                   {b.name}
                 </option>
               ))}
-            </select>
+            </NativeSearchSelect>
           </label>
           <label className="field">
             <span>بخش</span>
-            <select
+            <NativeSearchSelect
               className="input"
               value={filter.category ?? ''}
               onChange={(e) =>
@@ -197,11 +199,11 @@ export function OrganizationActivityPanel({
                   {title}
                 </option>
               ))}
-            </select>
+            </NativeSearchSelect>
           </label>
           <label className="field">
             <span>منبع</span>
-            <select
+            <NativeSearchSelect
               className="input"
               value={filter.source ?? ''}
               onChange={(e) =>
@@ -217,11 +219,11 @@ export function OrganizationActivityPanel({
                   {title}
                 </option>
               ))}
-            </select>
+            </NativeSearchSelect>
           </label>
           <label className="field">
             <span>نتیجه</span>
-            <select
+            <NativeSearchSelect
               className="input"
               value={filter.outcome ?? ''}
               onChange={(e) =>
@@ -231,7 +233,7 @@ export function OrganizationActivityPanel({
               <option value="">همه نتایج</option>
               <option value="SUCCESS">موفق</option>
               <option value="FAILURE">ناموفق</option>
-            </select>
+            </NativeSearchSelect>
           </label>
           <div className="field">
             <span>از تاریخ</span>

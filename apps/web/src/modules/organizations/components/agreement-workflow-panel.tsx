@@ -1,4 +1,6 @@
 'use client';
+import { NativeSearchSelect } from '@/components/ui/native-search-select';
+
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type {
   B2bAgreementCaseV1,
@@ -466,7 +468,7 @@ export function AgreementWorkflowPanel({
             permissions.includes('b2b.credit.manage') ? (
               <label className="field">
                 <span>{formTitle}</span>
-                <select
+                <NativeSearchSelect
                   className="input"
                   value=""
                   disabled={loading || !branchId}
@@ -485,7 +487,7 @@ export function AgreementWorkflowPanel({
                         {r.title}
                       </option>
                     ))}
-                </select>
+                </NativeSearchSelect>
               </label>
             ) : null}
             {canManage && view === 'agreements' ? (
@@ -548,7 +550,7 @@ export function AgreementWorkflowPanel({
         />
         <label className="field">
           <span>شعبه قرارداد</span>
-          <select
+          <NativeSearchSelect
             className="input"
             value={branchId}
             disabled={loading}
@@ -563,7 +565,7 @@ export function AgreementWorkflowPanel({
                 {b.name}
               </option>
             ))}
-          </select>
+          </NativeSearchSelect>
         </label>
         <button
           className="btn"

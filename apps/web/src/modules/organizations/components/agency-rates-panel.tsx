@@ -1,4 +1,6 @@
 'use client';
+import { NativeSearchSelect } from '@/components/ui/native-search-select';
+
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type {
   B2bAgencyAgreedRateV1,
@@ -162,7 +164,7 @@ export function AgencyRatesPanel({
         <div className="dossier-filter-grid">
           <label className="field">
             شعبه نورا
-            <select
+            <NativeSearchSelect
               className="input"
               value={branchId}
               onChange={(e) => setBranchId(e.target.value)}
@@ -172,7 +174,7 @@ export function AgencyRatesPanel({
                   {branch.name}
                 </option>
               ))}
-            </select>
+            </NativeSearchSelect>
           </label>
           <DossierDateFilters
             value={dateRange}
@@ -306,7 +308,7 @@ export function AgencyRatesPanel({
           </label>
           <label className="field">
             خدمت
-            <select
+            <NativeSearchSelect
               className="input"
               value={editor.values.serviceReference}
               onChange={(e) => change({ serviceReference: e.target.value })}
@@ -321,7 +323,7 @@ export function AgencyRatesPanel({
                   {editor.values.serviceReference}
                 </option>
               ) : null}
-            </select>
+            </NativeSearchSelect>
           </label>
           <label className="field">
             {kind === 'FIXED_AMOUNT' ? 'مبلغ توافقی' : 'درصد'}

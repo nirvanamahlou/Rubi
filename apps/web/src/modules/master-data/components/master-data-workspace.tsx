@@ -25,7 +25,6 @@ import {
   Alert,
   Badge,
   Card,
-  FilterBar,
   PageHeader,
   PaginationShell,
 } from '@/components/ui/surfaces';
@@ -44,6 +43,7 @@ import {
 } from '../model/permissions';
 import { MasterDataForm, type MasterDataFormMode } from './master-data-form';
 import { MasterDataFilterActions } from './master-data-filter-actions';
+import { MasterDataFilterBar } from './master-data-filter-bar';
 import {
   MASTER_DATA_BLOCKER_TITLE,
   masterDataStateOptions,
@@ -108,7 +108,6 @@ export function MasterDataWorkspace({
             </Button>
           </>
         }
-        description="مدیریت Reference Data و Organizationهای مشترک، با Contract ماژولار و بدون دورزدن قفل Migration."
         eyebrow="MASTER-001 · PC-B"
         title="اطلاعات پایه"
       />
@@ -174,9 +173,6 @@ export function MasterDataWorkspace({
                     بدون persistence
                   </Badge>
                 </div>
-                <p className="mt-2 max-w-3xl text-sm leading-7 text-muted-foreground">
-                  {definition.description}
-                </p>
               </div>
               <div className="flex self-end gap-2">
                 <Button
@@ -197,12 +193,12 @@ export function MasterDataWorkspace({
             </div>
           </Card>
 
-          <FilterBar className="grid sm:grid-cols-2 lg:grid-cols-[minmax(14rem,1fr)_12rem_12rem_auto]">
+          <MasterDataFilterBar>
             <FormField id="master-data-search" label="جست‌وجوی سریع">
               <div className="relative">
                 <Search
                   aria-hidden="true"
-                  className="absolute end-3 top-3.5 size-4 text-muted-foreground"
+                  className="absolute end-2.5 top-2.5 size-4 text-muted-foreground"
                 />
                 <Input
                   className="pe-10"
@@ -251,7 +247,7 @@ export function MasterDataWorkspace({
               }}
               onRefresh={() => setPreviewState(initialPreviewState)}
             />
-          </FilterBar>
+          </MasterDataFilterBar>
 
           <Card className="p-4">
             <fieldset>

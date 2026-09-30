@@ -196,6 +196,16 @@ describe('CRM navigation', () => {
     ]);
   });
 
+  it('places tour definitions at the end of Sales and keeps a Sales breadcrumb', () => {
+    expect(salesSubsections.at(-1)).toEqual({
+      href: '/sales/tours',
+      title: 'تعریف تور و خدمات',
+    });
+    expect(getNavigationBreadcrumbs('/sales/tours')).toEqual([
+      { href: '/sales', title: 'قرارداد' },
+      { href: '/sales/tours', title: 'تعریف تور و خدمات' },
+    ]);
+  });
   it('combines user administration and settings only at navigation level', () => {
     const hrefs: readonly string[] = navigationItems.map((item) => item.href);
 

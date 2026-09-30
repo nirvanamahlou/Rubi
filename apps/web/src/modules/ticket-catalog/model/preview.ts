@@ -13,19 +13,19 @@ export const statusLabels = {
   cancelled: 'لغو بلیط',
 } as const;
 export const supplyLabels = {
-  company: 'ظرفیت شرکت',
+  company: 'ظرفیت شرکت (چارتر)',
   allotment: 'شناوری',
-  charter: 'شناوری',
+  charter: 'ظرفیت شرکت (چارتر)',
   supplier: 'API',
 } as const;
-// Existing allotment/charter snapshots remain readable; new floating tickets use allotment.
+// Charter is company capacity; floating tickets use allotment.
 export const supplyOptions = {
   allotment: 'شناوری',
-  company: 'ظرفیت شرکت',
+  company: 'ظرفیت شرکت (چارتر)',
   supplier: 'API',
 } as const;
 export function selectableSupply(value: string) {
-  return value === 'charter' ? 'allotment' : value;
+  return value === 'charter' ? 'company' : value;
 }
 export const transportLabels = {
   flight: 'هواپیما',
@@ -475,6 +475,7 @@ export const initialQuery: PreviewQuery = {
 export function queryProducts(
   products: readonly Product[],
   query: PreviewQuery,
+  pageSize = 6,
 ) {
   const search = query.search.trim().toLocaleLowerCase('fa-IR');
   const rows = products
@@ -516,19 +517,19 @@ export function queryProducts(
         query.sort === 'title'
           ? p.definition.title
           : query.sort === 'updated'
-            ? p.history.at(-1)!.at
+            ? (p.history.at(-1)?.at ?? p.definition.segments[0]!.departureAt)
             : p.definition.serviceDate || p.definition.segments[0]!.departureAt;
       const comparison =
         value(a).localeCompare(value(b), 'fa') || a.id.localeCompare(b.id);
       return query.direction === 'asc' ? comparison : -comparison;
     });
-  const pages = Math.max(1, Math.ceil(rows.length / 6));
+  const pages = Math.max(1, Math.ceil(rows.length / pageSize));
   const page = Math.max(1, Math.min(pages, query.page));
   return {
     total: rows.length,
     pages,
     page,
-    rows: rows.slice((page - 1) * 6, page * 6),
+    rows: rows.slice((page - 1) * pageSize, page * pageSize),
   };
 }
 
@@ -729,7 +730,7 @@ export function parseCatalogSnapshot(
 }
 export function displayTime(value: string, zone = 'Asia/Tehran') {
   if (!value) return 'بدون زمان‌بندی';
-  return new Intl.DateTimeFormat('fa-IR', {
+  return new Intl.DateTimeFormat('en-GB', {
     dateStyle: 'medium',
     timeStyle: 'short',
     timeZone: zone,
@@ -738,7 +739,7 @@ export function displayTime(value: string, zone = 'Asia/Tehran') {
 
 export function displayServiceDate(value?: string) {
   if (!value) return 'بدون تاریخ';
-  return new Intl.DateTimeFormat('fa-IR', {
+  return new Intl.DateTimeFormat('en-GB', {
     dateStyle: 'medium',
     timeZone: 'UTC',
   }).format(new Date(value + 'T00:00:00.000Z'));

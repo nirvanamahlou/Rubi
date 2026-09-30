@@ -7,6 +7,11 @@
   overflow-wrap: anywhere;
 }
 
+.scheduleDialog {
+  width: min(80rem, calc(100vw - 2rem));
+  max-width: min(80rem, calc(100vw - 2rem));
+}
+
 .form {
   container-type: inline-size;
   min-inline-size: 0;

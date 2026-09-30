@@ -5,6 +5,7 @@ import {
   CustomerAffairsSiteController,
   CustomerAffairsSiteGuard,
   SiteTicketDto,
+  SiteTicketCommentDto,
 } from './customer-affairs-site.controller';
 import { CustomerAffairsInternalController } from './customer-affairs-internal.controller';
 import { CustomerAffairsService } from './customer-affairs.service';
@@ -89,6 +90,14 @@ describe('Website integration boundary', () => {
       'customer_affairs.ticket.read',
     ]);
   });
+  it('requires update permission when a website posts a comment', async () => {
+    const { guard, request, iam, context } = guardSetup();
+    Object.assign(request.params, { externalId: 'order-1' });
+    await guard.canActivate(context as never);
+    expect(iam.assertPermissions).toHaveBeenCalledWith(actor, [
+      'customer_affairs.ticket.update',
+    ]);
+  });
   it('rejects forged assignment, priority and customer fields at the DTO boundary', async () => {
     const input = plainToInstance(SiteTicketDto, {
       externalId: 'order-1',
@@ -159,6 +168,84 @@ describe('Website integration boundary', () => {
     ).rejects.toThrow();
     expect(repository.findSiteTicket).toHaveBeenCalledWith('site', 'order-1');
     expect(affairs.getTicket).not.toHaveBeenCalled();
+  });
+  it('accepts only validated website comments and replays the same comment once', async () => {
+    const input = plainToInstance(SiteTicketCommentDto, {
+      externalCommentId: 'comment-1',
+      text: 'لطفاً نتیجه را اعلام کنید',
+      occurredAt: '2026-09-29T09:00:00Z',
+      priority: 'CRITICAL',
+    });
+    expect(
+      (
+        await validate(input, { whitelist: true, forbidNonWhitelisted: true })
+      ).map((item) => item.property),
+    ).toContain('priority');
+    const repository = {
+      findSite: vi.fn().mockResolvedValue({ id: 'site' }),
+      findSiteTicket: vi.fn().mockResolvedValue({
+        ticketId: 'ticket',
+        ticket: { branchId: 'branch' },
+      }),
+      findTimelineByDeliveryKey: vi
+        .fn()
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce({
+          ticketId: 'ticket',
+          summary: 'لطفاً نتیجه را اعلام کنید',
+        }),
+    };
+    const affairs = { addTicketTimeline: vi.fn().mockResolvedValue({}) };
+    const controller = new CustomerAffairsSiteController(
+      affairs as never,
+      repository as never,
+    );
+    const payload = {
+      externalCommentId: 'comment-1',
+      text: 'لطفاً نتیجه را اعلام کنید',
+      occurredAt: '2026-09-29T09:00:00Z',
+    };
+    const request = { actor: { ...actor, branchIds: ['branch'] } } as never;
+    expect(
+      await controller.comment('jahanbastan', 'order-1', payload, request),
+    ).toEqual({ data: { accepted: true, replay: false } });
+    expect(
+      await controller.comment('jahanbastan', 'order-1', payload, request),
+    ).toEqual({ data: { accepted: true, replay: true } });
+    expect(affairs.addTicketTimeline).toHaveBeenCalledTimes(1);
+    expect(affairs.addTicketTimeline.mock.calls[0]?.[1]).toMatchObject({
+      type: 'CUSTOMER_REPLY',
+      channel: 'WEBSITE',
+      customerVisible: true,
+    });
+  });
+  it('rejects a whitespace-only website comment before a timeline write', async () => {
+    const repository = {
+      findSite: vi.fn().mockResolvedValue({ id: 'site' }),
+      findSiteTicket: vi.fn().mockResolvedValue({
+        ticketId: 'ticket',
+        ticket: { branchId: 'branch' },
+      }),
+      findTimelineByDeliveryKey: vi.fn(),
+    };
+    const affairs = { addTicketTimeline: vi.fn() };
+    const controller = new CustomerAffairsSiteController(
+      affairs as never,
+      repository as never,
+    );
+    await expect(
+      controller.comment(
+        'jahanbastan',
+        'order-1',
+        {
+          externalCommentId: 'comment-2',
+          text: '   ',
+          occurredAt: '2026-09-29T09:00:00Z',
+        },
+        { actor: { ...actor, branchIds: ['branch'] } } as never,
+      ),
+    ).rejects.toThrow('متن کامنت معتبر نیست');
+    expect(affairs.addTicketTimeline).not.toHaveBeenCalled();
   });
 });
 

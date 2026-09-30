@@ -53,7 +53,6 @@ import {
   Card,
   EmptyState,
   ErrorState,
-  FilterBar,
   PageHeader,
   PaginationShell,
   Skeleton,
@@ -65,6 +64,7 @@ import {
 } from '../api/client';
 import { MasterDataDeleteButton } from './master-data-delete-button';
 import { MasterDataFilterActions } from './master-data-filter-actions';
+import { MasterDataFilterBar } from './master-data-filter-bar';
 import { getMasterDataDefinition } from '../model/catalog';
 import {
   groupSupplierCollaborationRecords,
@@ -76,6 +76,7 @@ import {
 } from './master-data-live-form';
 import { MasterDataKpiGrid } from './master-data-kpi-grid';
 import { MasterDataProfileDialog } from './master-data-profile-dialog';
+import { MasterDataLogoImage } from './master-data-logo-image';
 
 type SupplierTab = 'suppliers' | 'brokers' | 'collaboration';
 type RequestState = 'loading' | 'ready' | 'error' | 'forbidden';
@@ -503,21 +504,29 @@ export function MasterDataSuppliersWorkspace() {
 
   const rowActions = (record: MasterDataRecord) => (
     <div className="flex flex-wrap justify-end gap-2">
-      <Button onClick={() => openProfile(record)} size="sm" variant="outline">
-        <Eye className="size-4" /> مشاهده
+      <Button
+        aria-label={`مشاهده ${record.name}`}
+        onClick={() => openProfile(record)}
+        size="icon"
+        title={`مشاهده ${record.name}`}
+        variant="outline"
+      >
+        <Eye aria-hidden="true" className="size-4" />
       </Button>
       <MasterDataPowerButton record={record} onChanged={afterStatusChange} />
       {tab !== 'collaboration' ? (
         <>
           <Button
+            aria-label={`ویرایش ${record.name}`}
             onClick={() => {
               setSelected(record);
               setFormMode('edit');
             }}
-            size="sm"
+            size="icon"
+            title={`ویرایش ${record.name}`}
             variant="outline"
           >
-            <FilePenLine className="size-4" /> ویرایش
+            <FilePenLine aria-hidden="true" className="size-4" />
           </Button>
           <MasterDataDeleteButton record={record} onDeleted={afterDelete} />
         </>
@@ -533,12 +542,16 @@ export function MasterDataSuppliersWorkspace() {
     return (
       <div className="space-y-4">
         <Card className="flex flex-col gap-5 p-5 lg:flex-row lg:items-center">
-          <span className="grid size-16 shrink-0 place-items-center rounded-2xl bg-violet-500/10 text-violet-700">
+          <span className="relative grid size-16 shrink-0 place-items-center rounded-2xl bg-violet-500/10 text-violet-700">
             {kind === 'supplier' ? (
               <Building2 className="size-8" />
             ) : (
               <Users className="size-8" />
             )}
+            <MasterDataLogoImage
+              className="absolute inset-0 size-16"
+              record={record}
+            />
           </span>
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
@@ -691,6 +704,7 @@ export function MasterDataSuppliersWorkspace() {
                     {record.code}
                   </td>
                   <td className="p-4 font-semibold">
+                    <MasterDataLogoImage record={record} />
                     <button
                       className="text-start font-semibold text-foreground hover:text-primary focus-visible:rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       onClick={() => openProfile(record)}
@@ -765,6 +779,7 @@ export function MasterDataSuppliersWorkspace() {
                     {record.code}
                   </td>
                   <td className="p-4 font-semibold">
+                    <MasterDataLogoImage record={record} />
                     <button
                       className="text-start font-semibold text-foreground hover:text-primary focus-visible:rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       onClick={() => openProfile(record)}
@@ -861,6 +876,7 @@ export function MasterDataSuppliersWorkspace() {
                       >
                         <div className="flex items-start justify-between gap-2">
                           <div>
+                            <MasterDataLogoImage record={record} />
                             <button
                               className="text-start font-bold text-foreground hover:text-primary focus-visible:rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                               onClick={() => openProfile(record)}
@@ -957,7 +973,6 @@ export function MasterDataSuppliersWorkspace() {
             <ArrowRight className="size-4" /> همه بخش‌ها
           </Link>
         }
-        description={copy.description}
         title={copy.title}
       />
       <div className="flex w-full flex-wrap justify-end gap-2">
@@ -1000,7 +1015,7 @@ export function MasterDataSuppliersWorkspace() {
         </nav>
       </Card>
       <MasterDataKpiGrid items={kpis} label={`شاخص‌های ${copy.title}`} />
-      <FilterBar className="grid sm:grid-cols-2 lg:grid-cols-[minmax(14rem,1fr)_12rem_auto]">
+      <MasterDataFilterBar>
         {columnFilterControls}
         <MasterDataDateRangeFilter
           idPrefix="suppliers-created"
@@ -1049,7 +1064,7 @@ export function MasterDataSuppliersWorkspace() {
           }}
           onRefresh={() => void Promise.all([load(), loadSummary()])}
         />
-      </FilterBar>
+      </MasterDataFilterBar>
       {content}
       {tab === 'collaboration' ? (
         <p className="text-sm text-muted-foreground">
@@ -1102,7 +1117,6 @@ export function MasterDataSuppliersWorkspace() {
       {selected &&
       (selected.resource === 'suppliers' || selected.resource === 'brokers') ? (
         <MasterDataProfileDialog
-          description="پروفایل از همان فهرست اصلی باز شده و بدون خروج از بخش قابل مشاهده است."
           onOpenChange={setProfileOpen}
           open={profileOpen}
           title={

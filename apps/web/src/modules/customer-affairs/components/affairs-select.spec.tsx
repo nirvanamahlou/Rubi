@@ -14,8 +14,10 @@ describe('Nora Customer Affairs dropdowns', () => {
     expect(html).toContain('role="combobox"');
     expect(html).toContain('dir="rtl"');
     expect(html).toContain('name="priority"');
-    // Radix registers options after hydration; SSR only exposes the form bridge.
-    expect(html).toContain('<select aria-hidden="true"');
+    // The inline search input submits the selected canonical value through the form bridge.
+    expect(html).toContain(
+      '<input type="hidden" name="priority" value="NORMAL"',
+    );
     expect(html).toContain('aria-required="true"');
   });
   it('preserves the empty choice and disabled state without an empty Radix item', () => {
@@ -31,7 +33,6 @@ describe('Nora Customer Affairs dropdowns', () => {
   });
   it('uses the same wrapper for staff, filters and all record forms', () => {
     for (const file of [
-      'assignee-picker',
       'record-operations',
       'customer-affairs-workspace',
       'customer-affairs-nora-workspace',
@@ -43,5 +44,11 @@ describe('Nora Customer Affairs dropdowns', () => {
       expect(source).not.toMatch(/<select\b/);
       expect(source).toContain('<AffairsSelect');
     }
+    const assignee = readFileSync(
+      'src/modules/customer-affairs/components/assignee-picker.tsx',
+      'utf8',
+    );
+    expect(assignee).not.toMatch(/<select\b/);
+    expect(assignee).toContain('<SearchCombobox');
   });
 });

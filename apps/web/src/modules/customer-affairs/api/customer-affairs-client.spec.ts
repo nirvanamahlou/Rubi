@@ -17,6 +17,29 @@ afterEach(() => {
 });
 
 describe('customer affairs operational API client', () => {
+  it('reuses a form-supplied idempotency key for lead and ticket creation', async () => {
+    process.env.NEXT_PUBLIC_API_BASE_URL = 'http://localhost:4190/api/v1';
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue({ ok: true, json: async () => ({ data: {} }) });
+    vi.stubGlobal('fetch', fetchMock);
+    await customerAffairsApi.createLead(
+      { title: 'درخواست سفر' } as never,
+      undefined,
+      'lead-form-key',
+    );
+    await customerAffairsApi.createTicket(
+      { subject: 'پیگیری سفر' } as never,
+      undefined,
+      'ticket-form-key',
+    );
+    expect(fetchMock.mock.calls[0]![1].headers['idempotency-key']).toBe(
+      'lead-form-key',
+    );
+    expect(fetchMock.mock.calls[1]![1].headers['idempotency-key']).toBe(
+      'ticket-form-key',
+    );
+  });
   it('passes website filters and persists Sales handoff responses through existing contracts', async () => {
     process.env.NEXT_PUBLIC_API_BASE_URL = 'http://localhost:4190/api/v1';
     const fetchMock = vi

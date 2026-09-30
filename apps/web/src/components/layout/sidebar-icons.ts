@@ -23,7 +23,7 @@ import type { NavigationHref } from '@/messages/fa';
 
 /** Sidebar-only icons matching the approved compact navigation reference. */
 export const sidebarIcons: Record<
-  NavigationHref | '/sales/pricing' | '/sales/ticket-prices',
+  NavigationHref | '/sales/pricing' | '/sales/ticket-prices' | '/sales/tours',
   LucideIcon
 > = {
   '/workbench': House,
@@ -31,6 +31,7 @@ export const sidebarIcons: Record<
   '/sales': FileText,
   '/sales/pricing': Banknote,
   '/sales/ticket-prices': Ticket,
+  '/sales/tours': Ticket,
   '/customers': UsersRound,
   '/customer-affairs': Headphones,
   '/organizations': Building2,

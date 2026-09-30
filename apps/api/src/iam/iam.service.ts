@@ -4,6 +4,7 @@ import {
   USER_ACCESS_PROFILE_PERMISSION,
   screenPermission,
   hasManagedAccess,
+  canViewScreen,
 } from '@nora/contracts';
 import {
   createHash,
@@ -513,13 +514,16 @@ export class IamService implements IamStepUpPort {
   }
 
   async listUserAccessOptions(actor: AuthenticatedActor) {
+    const isAdministrator = await this.isSystemAdministrator(actor);
     const [permissions, branches] = await Promise.all([
       this.database.client.permission.findMany({
-        where: {
-          code: {
-            in: actor.permissions.filter((code) => !code.startsWith('ui.')),
-          },
-        },
+        where: isAdministrator
+          ? { NOT: { code: { startsWith: 'ui.' } } }
+          : {
+              code: {
+                in: actor.permissions.filter((code) => !code.startsWith('ui.')),
+              },
+            },
         orderBy: [{ module: 'asc' }, { code: 'asc' }],
         select: { id: true, code: true, name: true, module: true },
       }),
@@ -529,7 +533,16 @@ export class IamService implements IamStepUpPort {
         select: { id: true, name: true },
       }),
     ]);
-    return { permissions, branches };
+    return {
+      permissions,
+      branches,
+      assignableScreenIds: isAdministrator
+        ? USER_ACCESS_SCREENS.map(({ id }) => id)
+        : USER_ACCESS_SCREENS.filter(({ id }) =>
+            canViewScreen(actor.permissions, id),
+          ).map(({ id }) => id),
+      canAssignAll: isAdministrator,
+    };
   }
 
   listRolesAndBranches() {
@@ -1470,7 +1483,9 @@ export class IamService implements IamStepUpPort {
       throw new BadRequestException(
         'نقش، مجوزها و بخش‌های قابل مشاهده را کامل انتخاب کنید.',
       );
-    await this.assertPermissionsAssignable(dto.permissionIds, actor);
+    const isAdministrator = await this.isSystemAdministrator(actor);
+    if (!isAdministrator)
+      await this.assertPermissionsAssignable(dto.permissionIds, actor);
     const permissions = await this.database.client.permission.findMany({
       where: { id: { in: dto.permissionIds } },
       select: { code: true },
@@ -1483,6 +1498,7 @@ export class IamService implements IamStepUpPort {
       if (!USER_ACCESS_SCREENS.some((s) => s.id === id))
         throw new BadRequestException('زیربخش انتخاب‌شده معتبر نیست.');
       if (
+        !isAdministrator &&
         hasManagedAccess(actor.permissions) &&
         !actor.permissions.includes(screenPermission(id))
       )
@@ -1581,6 +1597,20 @@ export class IamService implements IamStepUpPort {
       actor,
     );
   }
+  private async isSystemAdministrator(actor: AuthenticatedActor) {
+    const user = await this.database.client.user.findUnique({
+      where: { id: actor.userId },
+      select: {
+        roles: {
+          where: { role: { isActive: true } },
+          select: { role: { select: { code: true } } },
+        },
+      },
+    });
+    return Boolean(
+      user?.roles.some(({ role }) => role.code === 'administrator'),
+    );
+  }
   private assertPermissionCodesAssignable(
     permissionCodes: readonly string[],
     actor: AuthenticatedActor,
@@ -1650,6 +1680,8 @@ export class IamService implements IamStepUpPort {
     displayName: string;
     roles: Array<{
       role: {
+        code: string;
+        name: string;
         isActive: boolean;
         permissions: Array<{ permission: { code: string } }>;
       };
@@ -1664,9 +1696,71 @@ export class IamService implements IamStepUpPort {
         displayName: user.displayName,
         permissions: this.permissionCodes(user),
         branches: user.branches.map(({ branch }) => branch),
+        roles: user.roles
+          .filter(({ role }) => role.isActive)
+          .map(({ role }) => ({ code: role.code, name: role.name })),
       },
     };
   }
+  /** Trusted Reservations boundary: only responsibility metadata for an authorized intake. */
+  async reservationResponsibilityNames(
+    ids: readonly string[],
+    branchId: string,
+    actor: AuthenticatedActor,
+  ) {
+    if (
+      !actor.permissions.includes('reservations.read') ||
+      !actor.branchIds.includes(branchId)
+    )
+      throw new ForbiddenException();
+    const unique = [...new Set(ids)].slice(0, 3);
+    if (!unique.length) return new Map<string, string>();
+    const users = await this.database.client.user.findMany({
+      where: { id: { in: unique } },
+      select: { id: true, displayName: true },
+    });
+    return new Map(users.map((user) => [user.id, user.displayName]));
+  }
+  async recordReservationOperation(
+    intakeId: string,
+    branchId: string,
+    actor: AuthenticatedActor,
+    operation: string,
+  ) {
+    if (!actor.branchIds.includes(branchId)) throw new ForbiddenException();
+    await this.database.client.auditEvent.create({
+      data: {
+        actorUserId: actor.userId,
+        action: operation.slice(0, 120),
+        entityType: 'reservation_operation',
+        entityId: intakeId,
+        outcome: 'SUCCESS',
+        metadata: { branchId },
+      },
+    });
+  }
+  async latestReservationOperation(
+    intakeId: string,
+    branchId: string,
+    actor: AuthenticatedActor,
+  ) {
+    if (
+      !actor.permissions.includes('reservations.read') ||
+      !actor.branchIds.includes(branchId)
+    )
+      throw new ForbiddenException();
+    return this.database.client.auditEvent.findFirst({
+      where: {
+        entityType: 'reservation_operation',
+        entityId: intakeId,
+        outcome: 'SUCCESS',
+        metadata: { path: ['branchId'], equals: branchId },
+      },
+      orderBy: [{ occurredAt: 'desc' }, { id: 'desc' }],
+      select: { actorUserId: true, occurredAt: true },
+    });
+  }
+
   private audit(
     actorUserId: string | null,
     action: string,

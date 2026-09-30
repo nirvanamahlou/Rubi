@@ -1,6 +1,7 @@
 'use client';
+import { NativeSearchSelect } from '@/components/ui/native-search-select';
 
-import { useState, type FormEvent } from 'react';
+import { useRef, useState, type FormEvent } from 'react';
 import {
   Alert,
   Button,
@@ -30,6 +31,7 @@ import styles from './ticket-form.module.css';
 import { ReferencePicker } from './reference-picker';
 import { TicketDatePicker } from './ticket-date-picker';
 import { ManifestTemplatePicker } from './manifest-template-picker';
+import { TicketBaggageFields } from './ticket-baggage-fields';
 import type { PublishedResource } from '../api/references';
 
 type TicketDefinitionMode = 'one-way' | 'round-trip' | 'combined';
@@ -79,6 +81,8 @@ export function createReturnTicketDraft(source: ProductInput): ProductInput {
     ...source,
     title: '',
     journeyRole: 'return',
+    returnMinDays: null,
+    returnMaxDays: null,
     fare: { ...source.fare },
     segments: [
       {
@@ -235,7 +239,7 @@ export function buildAutomaticTicketTitle(
   const combined = definition.segments.length > 1 ? ' ترکیبی' : '';
   return `${number}${combined} • ${origin} به ${destination}`.slice(0, 160);
 }
-function withDisplaySnapshot(
+export function withDisplaySnapshot(
   definition: ProductInput,
   references: readonly Reference[],
 ): ProductInput {
@@ -354,18 +358,14 @@ function TransportFields({
               onInput({ ...input, flightClassId: ref?.id ?? '' });
             }}
           />
-          <ReferencePicker
-            id={`${prefix}-baggage`}
-            label={`بار مجاز${suffix}`}
-            resource="baggage-rules"
+          <TicketBaggageFields
+            economy={input.economyBaggageKg}
+            business={input.businessBaggageKg}
+            suffix={suffix}
             readOnly={readOnly}
-            value={references.find(
-              (r) => r.kind === 'baggage' && r.id === input.baggageId,
-            )}
-            onSelect={(ref) => {
-              if (ref) onReference?.(ref);
-              onInput({ ...input, baggageId: ref?.id ?? '' });
-            }}
+            onChange={(field, value) =>
+              onInput({ ...input, baggageId: '', [field]: value })
+            }
           />
         </>
       ) : null}
@@ -483,7 +483,7 @@ function ScheduleFields({
         />
       </FormField>
       <FormField label="روز رسیدن" id={prefix + '-arrival-day'}>
-        <select
+        <NativeSearchSelect
           id={prefix + '-arrival-day'}
           className="h-11 w-full rounded-xl border bg-surface px-3"
           value={arrivalDay}
@@ -506,7 +506,7 @@ function ScheduleFields({
           {![0, 1, 2].includes(arrivalDay) ? (
             <option value={arrivalDay}>{arrivalDay} روز اختلاف</option>
           ) : null}
-        </select>
+        </NativeSearchSelect>
       </FormField>
       <p className="col-span-full text-xs leading-6 text-muted-foreground">
         تاریخ بلیط، تاریخ حرکت است. ساعت‌ها به وقت محلی مبدأ و مقصد هستند.
@@ -658,6 +658,7 @@ export function TicketForm({
   const [reason, setReason] = useState('');
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
+  const submitting = useRef(false);
   const updateInput = (value: ProductInput) => {
     setError('');
     setInput(value);
@@ -761,6 +762,8 @@ export function TicketForm({
   }
   async function submit(event: FormEvent) {
     event.preventDefault();
+    if (submitting.current) return;
+    submitting.current = true;
     setSaving(true);
     try {
       if (!input.serviceDate && !input.segments[0]?.departureAt)
@@ -820,6 +823,7 @@ export function TicketForm({
         problem instanceof Error ? problem.message : 'اطلاعات فرم معتبر نیست.',
       );
     } finally {
+      submitting.current = false;
       setSaving(false);
     }
   }
@@ -892,6 +896,41 @@ export function TicketForm({
               رفت‌وبرگشت دو بلیط مستقل می‌سازد. ترکیبی یک بلیط واحد با چند قطعه
               متصل است و همه قطعه‌ها با هم فروخته می‌شوند.
             </p>
+          ) : null}
+          {input.transport === 'flight' ? (
+            <div className={styles.fields}>
+              {(['returnMinDays', 'returnMaxDays'] as const).map((field) => (
+                <FormField
+                  key={field}
+                  label={
+                    field === 'returnMinDays'
+                      ? 'Min — حداقل روز تا برگشت'
+                      : 'Max — حداکثر روز تا برگشت'
+                  }
+                  id={`ticket-${field}`}
+                >
+                  <Input
+                    id={`ticket-${field}`}
+                    type="number"
+                    min={0}
+                    max={365}
+                    step={1}
+                    placeholder="بدون محدودیت"
+                    value={input[field] ?? ''}
+                    readOnly={readOnly}
+                    onChange={(event) =>
+                      setInput((current) => ({
+                        ...current,
+                        [field]:
+                          event.target.value === ''
+                            ? null
+                            : Number(event.target.value),
+                      }))
+                    }
+                  />
+                </FormField>
+              ))}
+            </div>
           ) : null}
         </section>
         {definitionMode !== 'combined' ? (
@@ -1102,6 +1141,7 @@ export function TicketForm({
                     ...input,
                     supplyType: supplyType as ProductInput['supplyType'],
                     companyOwned: supplyType === 'company',
+                    entryMethod: supplyType === 'supplier' ? 'api' : 'manual',
                   })
                 }
               >

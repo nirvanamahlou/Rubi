@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { eligibleTicketReturn } from '@nora/contracts';
 import {
   BadRequestException,
   ConflictException,
@@ -48,6 +49,8 @@ function packageView(row: PackageRow): TourPackageV1 {
 }
 function offerView(row: OfferRow): TicketOfferV1 {
   return {
+    returnMinDays: row.returnMinDays ?? null,
+    returnMaxDays: row.returnMaxDays ?? null,
     id: row.id,
     version: row.version,
     branchId: row.branchId,
@@ -116,10 +119,15 @@ export class TourPublicService {
     manage = false,
     branchId?: string,
   ) {
+    const canManageTours = actor.permissions.some((permission) =>
+      ['ticket_catalog.manage', 'ticket_catalog.tours.manage'].includes(
+        permission,
+      ),
+    );
+    const canReadTours =
+      canManageTours || actor.permissions.includes('ticket_catalog.read');
     if (
-      !actor.permissions.includes(
-        manage ? 'ticket_catalog.manage' : 'ticket_catalog.read',
-      ) ||
+      !(manage ? canManageTours : canReadTours) ||
       (branchId && !actor.branchIds.includes(branchId))
     )
       throw new ForbiddenException(
@@ -365,6 +373,54 @@ export class TourPublicService {
     });
   }
 
+  async deletePackage(
+    id: string,
+    raw: unknown,
+    actor: AuthenticatedActor,
+    branchId?: string,
+  ) {
+    this.authorize(actor, true, branchId);
+    const expectedVersion = (raw as { expectedVersion?: unknown } | null)
+      ?.expectedVersion;
+    if (!branchId || !actor.branchIds.includes(branchId))
+      throw new BadRequestException('شعبه لازم است.');
+    if (!Number.isSafeInteger(expectedVersion) || Number(expectedVersion) < 1)
+      throw new BadRequestException('نسخه تور لازم است.');
+
+    return this.database.client.$transaction(async (tx) => {
+      // Serialize deletion with departure creation and package revision.
+      const locked = await tx.tourPackage.updateMany({
+        where: { id, branchId, version: Number(expectedVersion) },
+        data: { version: { increment: 0 } },
+      });
+      if (locked.count !== 1) {
+        const current = await tx.tourPackage.findFirst({
+          where: { id, branchId },
+          select: { id: true },
+        });
+        if (!current) throw new NotFoundException('تور در شعبه مجاز یافت نشد.');
+        throw new ConflictException(
+          'نسخه تور تغییر کرده است؛ فهرست را تازه‌سازی کنید.',
+        );
+      }
+      const departureCount = await tx.tourDeparture.count({
+        where: { packageId: id, branchId },
+      });
+      if (departureCount)
+        throw new ConflictException(
+          'این تور نوبت ثبت‌شده دارد و برای حفظ سوابق قابل حذف نیست.',
+        );
+      const removed = await tx.tourPackage.deleteMany({
+        where: { id, branchId, version: Number(expectedVersion) },
+      });
+      if (removed.count !== 1)
+        throw new ConflictException(
+          'تور هم‌زمان تغییر کرد؛ فهرست را تازه‌سازی کنید.',
+        );
+      return { data: { id, deleted: true as const } };
+    });
+  }
+
   async createPackage(
     raw: unknown,
     actor: AuthenticatedActor,
@@ -479,7 +535,8 @@ export class TourPublicService {
             returning.originId !== definition.destinationId ||
             returning.destinationId !== definition.originId ||
             day(returning.departureAt) !== input.endsOn ||
-            returning.departureAt <= outbound.arrivalAt)
+            returning.departureAt <= outbound.arrivalAt ||
+            !eligibleTicketReturn(outbound, returning))
         )
           throw new BadRequestException(
             'بلیت برگشت باید از مقصد و در روز پایان تور باشد.',

@@ -4,6 +4,7 @@ import type { LoginResponse } from '@nora/contracts';
 import {
   clearHeaderSession,
   formatHeaderLoginTime,
+  getHeaderRoleLabel,
   readHeaderSession,
   rememberHeaderSession,
 } from './header-session';
@@ -40,10 +41,12 @@ describe('header session identity', () => {
     expect(rememberHeaderSession(user, loggedInAt, storage)).toEqual({
       displayName: 'کاربر نمونه',
       loggedInAt,
+      roleNames: [],
     });
     expect(readHeaderSession(storage)).toEqual({
       displayName: 'کاربر نمونه',
       loggedInAt,
+      roleNames: [],
     });
   });
 
@@ -63,6 +66,17 @@ describe('header session identity', () => {
 
     expect(identity.displayName).toBe('کاربر سامانه');
     expect(JSON.stringify(identity)).not.toContain(user.username);
+  });
+
+  it('exposes assigned role names for the date-adjacent header label', () => {
+    const storage = memoryStorage();
+    rememberHeaderSession(
+      { ...user, roles: [{ code: 'sales', name: 'کارشناس فروش' }] },
+      '2026-09-07T07:32:00.000Z',
+      storage,
+    );
+
+    expect(getHeaderRoleLabel(storage)).toBe('کارشناس فروش');
   });
 
   it('formats a valid login time and safely handles an invalid value', () => {

@@ -1,4 +1,6 @@
 'use client';
+import { NativeSearchSelect } from '@/components/ui/native-search-select';
+
 import { useEffect, useId, useState } from 'react';
 import {
   hrDirectoryLabel,
@@ -119,7 +121,7 @@ export function HrDirectoryPicker({
           setPage(1);
         }}
       />
-      <select
+      <NativeSearchSelect
         aria-label={label}
         className="w-full rounded-lg border border-border bg-surface p-2"
         disabled={disabled || !data}
@@ -137,7 +139,7 @@ export function HrDirectoryPicker({
             {hrDirectoryLabel(e)}
           </option>
         ))}
-      </select>
+      </NativeSearchSelect>
       {!search.trim() ? (
         <p role="status">برای نمایش کارکنان، جست‌وجو کنید.</p>
       ) : error ? (

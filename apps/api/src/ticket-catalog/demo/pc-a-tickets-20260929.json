@@ -1,0 +1,470 @@
+{
+  "dataset": "pc-a-tickets-20260929",
+  "cities": [
+    {
+      "key": "3154e5d0-1b8b-46bd-baaa-fcce6bad3dcd",
+      "name": "آنتالیا",
+      "englishName": "Antalya"
+    },
+    {
+      "key": "30000000-0000-4000-8000-000000000002",
+      "name": "تهران",
+      "englishName": "Tehran"
+    }
+  ],
+  "offers": [
+    {
+      "id": "7279ea18-c0e8-452d-97b1-010c5528dae2",
+      "status": "PAUSED",
+      "archived": true,
+      "originId": "30000000-0000-4000-8000-000000000002",
+      "arrivalAt": "2026-09-10T10:00:00Z",
+      "carrierName": "TEST AIRLINE — آزمایشی",
+      "departureAt": "2026-09-10T07:00:00Z",
+      "destinationId": "3154e5d0-1b8b-46bd-baaa-fcce6bad3dcd",
+      "serviceNumber": "TEST-AYT-01",
+      "totalCapacity": 20,
+      "cabinClassCode": "ECONOMY"
+    },
+    {
+      "id": "199ea095-fac4-43cf-82fd-3c5d429d587d",
+      "status": "ACTIVE",
+      "archived": false,
+      "originId": "30000000-0000-4000-8000-000000000002",
+      "arrivalAt": "2026-10-02T18:51:00Z",
+      "carrierName": "ایران ایرتور",
+      "departureAt": "2026-10-02T17:50:00Z",
+      "destinationId": "3154e5d0-1b8b-46bd-baaa-fcce6bad3dcd",
+      "serviceNumber": "4512",
+      "totalCapacity": 50,
+      "cabinClassCode": "ECONOMY"
+    },
+    {
+      "id": "41b7cc4e-ceb0-47ce-af9a-bada03f5c0ea",
+      "status": "PAUSED",
+      "archived": true,
+      "originId": "30000000-0000-4000-8000-000000000002",
+      "arrivalAt": "2026-09-02T18:51:00Z",
+      "carrierName": "ایران ایرتور",
+      "departureAt": "2026-09-02T17:50:00Z",
+      "destinationId": "3154e5d0-1b8b-46bd-baaa-fcce6bad3dcd",
+      "serviceNumber": "4512",
+      "totalCapacity": 50,
+      "cabinClassCode": "ECONOMY"
+    },
+    {
+      "id": "ffc6f6a4-9232-4a40-8b7e-c8aa53258821",
+      "status": "PAUSED",
+      "archived": true,
+      "originId": "3154e5d0-1b8b-46bd-baaa-fcce6bad3dcd",
+      "arrivalAt": "2026-09-09T17:50:00Z",
+      "carrierName": "ایران ایرتور",
+      "departureAt": "2026-09-09T16:51:00Z",
+      "destinationId": "30000000-0000-4000-8000-000000000002",
+      "serviceNumber": "4513",
+      "totalCapacity": 50,
+      "cabinClassCode": "ECONOMY"
+    },
+    {
+      "id": "041ff67c-8af2-45d7-9901-559ebb9bdc67",
+      "status": "PAUSED",
+      "archived": true,
+      "originId": "30000000-0000-4000-8000-000000000002",
+      "arrivalAt": "2026-09-10T15:00:00Z",
+      "carrierName": "TEST AIRLINE — آزمایشی",
+      "departureAt": "2026-09-10T12:00:00Z",
+      "destinationId": "3154e5d0-1b8b-46bd-baaa-fcce6bad3dcd",
+      "serviceNumber": "TEST-AYT-02",
+      "totalCapacity": 20,
+      "cabinClassCode": "ECONOMY"
+    },
+    {
+      "id": "a7085a07-d934-419d-aa7d-821a90a64dad",
+      "status": "PAUSED",
+      "archived": true,
+      "originId": "3154e5d0-1b8b-46bd-baaa-fcce6bad3dcd",
+      "arrivalAt": "2026-09-17T11:00:00Z",
+      "carrierName": "TEST AIRLINE — آزمایشی",
+      "departureAt": "2026-09-17T08:00:00Z",
+      "destinationId": "30000000-0000-4000-8000-000000000002",
+      "serviceNumber": "TEST-AYT-03",
+      "totalCapacity": 20,
+      "cabinClassCode": "ECONOMY"
+    },
+    {
+      "id": "819bea52-4526-4792-a890-a99c8d21424a",
+      "status": "PAUSED",
+      "archived": true,
+      "originId": "3154e5d0-1b8b-46bd-baaa-fcce6bad3dcd",
+      "arrivalAt": "2026-09-20T12:00:00Z",
+      "carrierName": "TEST AIRLINE — آزمایشی",
+      "departureAt": "2026-09-20T09:00:00Z",
+      "destinationId": "30000000-0000-4000-8000-000000000002",
+      "serviceNumber": "TEST-AYT-04",
+      "totalCapacity": 20,
+      "cabinClassCode": "ECONOMY"
+    },
+    {
+      "id": "cf4b017a-883e-4739-be5d-3f63bef90c3d",
+      "status": "ACTIVE",
+      "archived": false,
+      "originId": "3154e5d0-1b8b-46bd-baaa-fcce6bad3dcd",
+      "arrivalAt": "2026-10-09T17:50:00Z",
+      "carrierName": "ایران ایرتور",
+      "departureAt": "2026-10-09T16:51:00Z",
+      "destinationId": "30000000-0000-4000-8000-000000000002",
+      "serviceNumber": "4513",
+      "totalCapacity": 50,
+      "cabinClassCode": "ECONOMY"
+    },
+    {
+      "id": "fda56907-3c25-4872-a547-18eb6c896ea0",
+      "status": "PAUSED",
+      "archived": true,
+      "originId": "30000000-0000-4000-8000-000000000002",
+      "arrivalAt": "2026-09-25T07:20:00Z",
+      "carrierName": "IRAN AIRTOUR",
+      "departureAt": "2026-09-25T03:30:00Z",
+      "destinationId": "3154e5d0-1b8b-46bd-baaa-fcce6bad3dcd",
+      "serviceNumber": "B9-9101",
+      "totalCapacity": 40,
+      "cabinClassCode": "ECONOMY"
+    },
+    {
+      "id": "8f4827a2-d088-4cf2-bc52-ce4c37578e95",
+      "status": "PAUSED",
+      "archived": true,
+      "originId": "30000000-0000-4000-8000-000000000002",
+      "arrivalAt": "2026-09-26T08:05:00Z",
+      "carrierName": "IRAN AIRTOUR",
+      "departureAt": "2026-09-26T04:15:00Z",
+      "destinationId": "3154e5d0-1b8b-46bd-baaa-fcce6bad3dcd",
+      "serviceNumber": "B9-9102",
+      "totalCapacity": 40,
+      "cabinClassCode": "ECONOMY"
+    },
+    {
+      "id": "6ba540b8-2d81-4405-884c-cfe4c9aba502",
+      "status": "PAUSED",
+      "archived": true,
+      "originId": "30000000-0000-4000-8000-000000000002",
+      "arrivalAt": "2026-09-27T08:50:00Z",
+      "carrierName": "IRAN AIRTOUR",
+      "departureAt": "2026-09-27T05:00:00Z",
+      "destinationId": "3154e5d0-1b8b-46bd-baaa-fcce6bad3dcd",
+      "serviceNumber": "B9-9103",
+      "totalCapacity": 40,
+      "cabinClassCode": "ECONOMY"
+    },
+    {
+      "id": "96d8763d-4596-4c4e-918f-179f9fea6c0a",
+      "status": "ACTIVE",
+      "archived": false,
+      "originId": "30000000-0000-4000-8000-000000000002",
+      "arrivalAt": "2026-10-10T18:51:00Z",
+      "carrierName": "ایران ایرتور",
+      "departureAt": "2026-10-10T17:50:00Z",
+      "destinationId": "3154e5d0-1b8b-46bd-baaa-fcce6bad3dcd",
+      "serviceNumber": "4512",
+      "totalCapacity": 50,
+      "cabinClassCode": "ECONOMY"
+    },
+    {
+      "id": "5289836a-a4d8-4629-b9c5-0ed2a288343b",
+      "status": "ACTIVE",
+      "archived": false,
+      "originId": "3154e5d0-1b8b-46bd-baaa-fcce6bad3dcd",
+      "arrivalAt": "2026-10-17T01:59:00Z",
+      "carrierName": "ایران ایرتور",
+      "departureAt": "2026-10-17T01:23:00Z",
+      "destinationId": "30000000-0000-4000-8000-000000000002",
+      "serviceNumber": "4512",
+      "totalCapacity": 60,
+      "cabinClassCode": "ECONOMY"
+    },
+    {
+      "id": "23887a8d-0761-4bb1-9205-a628705234f8",
+      "status": "ACTIVE",
+      "archived": false,
+      "originId": "30000000-0000-4000-8000-000000000002",
+      "arrivalAt": "2026-10-09T18:51:00Z",
+      "carrierName": "ایران ایرتور",
+      "departureAt": "2026-10-09T17:50:00Z",
+      "destinationId": "3154e5d0-1b8b-46bd-baaa-fcce6bad3dcd",
+      "serviceNumber": "4512",
+      "totalCapacity": 50,
+      "cabinClassCode": "ECONOMY"
+    },
+    {
+      "id": "8ad40218-8c7c-4ea7-ad8e-792465b08fdd",
+      "status": "ACTIVE",
+      "archived": false,
+      "originId": "30000000-0000-4000-8000-000000000002",
+      "arrivalAt": "2026-10-09T18:51:00Z",
+      "carrierName": "ایران ایرتور",
+      "departureAt": "2026-10-09T17:50:00Z",
+      "destinationId": "3154e5d0-1b8b-46bd-baaa-fcce6bad3dcd",
+      "serviceNumber": "4512",
+      "totalCapacity": 50,
+      "cabinClassCode": "ECONOMY"
+    },
+    {
+      "id": "3bb75419-abd2-492e-bb53-8f81509ae858",
+      "status": "ACTIVE",
+      "archived": false,
+      "originId": "30000000-0000-4000-8000-000000000002",
+      "arrivalAt": "2026-10-09T18:51:00Z",
+      "carrierName": "ایران ایرتور",
+      "departureAt": "2026-10-09T17:50:00Z",
+      "destinationId": "3154e5d0-1b8b-46bd-baaa-fcce6bad3dcd",
+      "serviceNumber": "4512",
+      "totalCapacity": 50,
+      "cabinClassCode": "ECONOMY"
+    },
+    {
+      "id": "2e9f0370-7f48-46f1-8b14-4859ee02328c",
+      "status": "ACTIVE",
+      "archived": false,
+      "originId": "30000000-0000-4000-8000-000000000002",
+      "arrivalAt": "2026-10-09T18:51:00Z",
+      "carrierName": "ایران ایرتور",
+      "departureAt": "2026-10-09T17:50:00Z",
+      "destinationId": "3154e5d0-1b8b-46bd-baaa-fcce6bad3dcd",
+      "serviceNumber": "4512",
+      "totalCapacity": 50,
+      "cabinClassCode": "ECONOMY"
+    },
+    {
+      "id": "5ce0dafd-fd40-4715-aed6-330512abca95",
+      "status": "ACTIVE",
+      "archived": false,
+      "originId": "30000000-0000-4000-8000-000000000002",
+      "arrivalAt": "2026-10-09T18:51:00Z",
+      "carrierName": "ایران ایرتور",
+      "departureAt": "2026-10-09T17:50:00Z",
+      "destinationId": "3154e5d0-1b8b-46bd-baaa-fcce6bad3dcd",
+      "serviceNumber": "4512",
+      "totalCapacity": 50,
+      "cabinClassCode": "ECONOMY"
+    },
+    {
+      "id": "546e0b5a-ffa0-467c-95b4-962cf0d7ecf9",
+      "status": "ACTIVE",
+      "archived": false,
+      "originId": "30000000-0000-4000-8000-000000000002",
+      "arrivalAt": "2026-10-09T18:51:00Z",
+      "carrierName": "ایران ایرتور",
+      "departureAt": "2026-10-09T17:50:00Z",
+      "destinationId": "3154e5d0-1b8b-46bd-baaa-fcce6bad3dcd",
+      "serviceNumber": "4512",
+      "totalCapacity": 50,
+      "cabinClassCode": "ECONOMY"
+    },
+    {
+      "id": "9bb10e01-99d5-4990-86f6-3465ed0e3871",
+      "status": "ACTIVE",
+      "archived": false,
+      "originId": "30000000-0000-4000-8000-000000000002",
+      "arrivalAt": "2026-10-01T08:00:00Z",
+      "carrierName": "ایران ایرتور",
+      "departureAt": "2026-10-01T05:00:00Z",
+      "destinationId": "3154e5d0-1b8b-46bd-baaa-fcce6bad3dcd",
+      "serviceNumber": "4520",
+      "totalCapacity": 48,
+      "cabinClassCode": "ECONOMY"
+    }
+  ],
+  "targets": [
+    {
+      "id": "7793a968-d252-42bb-87ae-215196885c4b",
+      "name": "علی بابا",
+      "isActive": true
+    }
+  ],
+  "standalone": [
+    {
+      "id": "f21b110f-2c1f-435a-93a6-66b7c8b2bcab",
+      "amount": "5000000",
+      "offerId": "199ea095-fac4-43cf-82fd-3c5d429d587d",
+      "revision": 1,
+      "occurredAt": "2026-09-26T12:39:43.642Z",
+      "currencyCode": "IRR",
+      "salePriceTargetId": null
+    },
+    {
+      "id": "553bd40b-82a2-44c7-a3d4-0d7c0aa30340",
+      "amount": "5000000",
+      "offerId": "199ea095-fac4-43cf-82fd-3c5d429d587d",
+      "revision": 2,
+      "occurredAt": "2026-09-28T13:06:26.155Z",
+      "currencyCode": "IRR",
+      "salePriceTargetId": null
+    },
+    {
+      "id": "6735a24e-d5a1-4832-8fc5-b86fad37b4f9",
+      "amount": "250",
+      "offerId": "9bb10e01-99d5-4990-86f6-3465ed0e3871",
+      "revision": 1,
+      "occurredAt": "2026-09-29T08:08:36.925Z",
+      "currencyCode": "USD",
+      "salePriceTargetId": null
+    },
+    {
+      "id": "e39e54e3-2b1c-43ec-b99c-aadaa69894ad",
+      "amount": "400",
+      "offerId": "cf4b017a-883e-4739-be5d-3f63bef90c3d",
+      "revision": 1,
+      "occurredAt": "2026-09-29T10:57:56.56Z",
+      "currencyCode": "USD",
+      "salePriceTargetId": null
+    }
+  ],
+  "roundTrips": [
+    {
+      "id": "c8861af6-d262-486e-9778-8abb0662363b",
+      "amount": "250000000",
+      "revision": 1,
+      "occurredAt": "2026-09-27T13:30:38.449Z",
+      "currencyCode": "IRR",
+      "returnOfferId": "cf4b017a-883e-4739-be5d-3f63bef90c3d",
+      "outboundOfferId": "199ea095-fac4-43cf-82fd-3c5d429d587d"
+    },
+    {
+      "id": "da164a53-9270-4bac-8d0b-b3bf8297acb9",
+      "amount": "250000000",
+      "revision": 2,
+      "occurredAt": "2026-09-27T13:30:47.547Z",
+      "currencyCode": "IRR",
+      "returnOfferId": "cf4b017a-883e-4739-be5d-3f63bef90c3d",
+      "outboundOfferId": "199ea095-fac4-43cf-82fd-3c5d429d587d"
+    },
+    {
+      "id": "88d05a52-8c41-400c-ab94-51fa39586f73",
+      "amount": "250000000",
+      "revision": 3,
+      "occurredAt": "2026-09-28T13:26:40.788Z",
+      "currencyCode": "IRR",
+      "returnOfferId": "cf4b017a-883e-4739-be5d-3f63bef90c3d",
+      "outboundOfferId": "199ea095-fac4-43cf-82fd-3c5d429d587d"
+    },
+    {
+      "id": "d5a279e1-7396-42a1-a189-211eaf142d58",
+      "amount": "4500000",
+      "revision": 1,
+      "occurredAt": "2026-09-28T13:26:51.531Z",
+      "currencyCode": "IRR",
+      "returnOfferId": "5289836a-a4d8-4629-b9c5-0ed2a288343b",
+      "outboundOfferId": "199ea095-fac4-43cf-82fd-3c5d429d587d"
+    }
+  ],
+  "commissions": [
+    {
+      "id": "8a7d898b-6c74-456b-9a7b-14cd3d07df1d",
+      "offerId": "199ea095-fac4-43cf-82fd-3c5d429d587d",
+      "percent": "0",
+      "revision": 1,
+      "occurredAt": "2026-09-28T12:47:41.767Z",
+      "returnOfferId": null,
+      "salePriceTargetId": null
+    },
+    {
+      "id": "8eb44930-1f1d-4458-aa4c-a9e9a675c42b",
+      "offerId": "199ea095-fac4-43cf-82fd-3c5d429d587d",
+      "percent": "0",
+      "revision": 1,
+      "occurredAt": "2026-09-28T12:47:41.795Z",
+      "returnOfferId": "cf4b017a-883e-4739-be5d-3f63bef90c3d",
+      "salePriceTargetId": null
+    },
+    {
+      "id": "d006064a-9632-42bd-b837-15fd240db2cc",
+      "offerId": "199ea095-fac4-43cf-82fd-3c5d429d587d",
+      "percent": "2",
+      "revision": 1,
+      "occurredAt": "2026-09-28T13:06:34.238Z",
+      "returnOfferId": null,
+      "salePriceTargetId": "7793a968-d252-42bb-87ae-215196885c4b"
+    },
+    {
+      "id": "f09d1594-17ef-4d9d-b386-6988388dc611",
+      "offerId": "199ea095-fac4-43cf-82fd-3c5d429d587d",
+      "percent": "2",
+      "revision": 1,
+      "occurredAt": "2026-09-28T13:06:34.249Z",
+      "returnOfferId": "cf4b017a-883e-4739-be5d-3f63bef90c3d",
+      "salePriceTargetId": "7793a968-d252-42bb-87ae-215196885c4b"
+    },
+    {
+      "id": "e0322f76-a68f-4c2d-8e2e-bd38ed4f84ff",
+      "offerId": "199ea095-fac4-43cf-82fd-3c5d429d587d",
+      "percent": "3",
+      "revision": 2,
+      "occurredAt": "2026-09-29T08:07:54.621Z",
+      "returnOfferId": null,
+      "salePriceTargetId": null
+    },
+    {
+      "id": "d7e0ff00-a12a-453b-a114-19947ba2d772",
+      "offerId": "199ea095-fac4-43cf-82fd-3c5d429d587d",
+      "percent": "3",
+      "revision": 2,
+      "occurredAt": "2026-09-29T08:07:54.811Z",
+      "returnOfferId": "cf4b017a-883e-4739-be5d-3f63bef90c3d",
+      "salePriceTargetId": null
+    },
+    {
+      "id": "5c54bcbc-c0e9-4ae5-b6b1-377e24bdead8",
+      "offerId": "199ea095-fac4-43cf-82fd-3c5d429d587d",
+      "percent": "3",
+      "revision": 1,
+      "occurredAt": "2026-09-29T08:07:54.86Z",
+      "returnOfferId": "5289836a-a4d8-4629-b9c5-0ed2a288343b",
+      "salePriceTargetId": null
+    },
+    {
+      "id": "9f94e2a8-517c-4a26-9649-bbd7093159e7",
+      "offerId": "199ea095-fac4-43cf-82fd-3c5d429d587d",
+      "percent": "1",
+      "revision": 3,
+      "occurredAt": "2026-09-29T09:57:50.07Z",
+      "returnOfferId": null,
+      "salePriceTargetId": null
+    },
+    {
+      "id": "5ffe15c4-535a-4cc9-820f-b279b5e0a902",
+      "offerId": "199ea095-fac4-43cf-82fd-3c5d429d587d",
+      "percent": "1",
+      "revision": 3,
+      "occurredAt": "2026-09-29T09:57:50.216Z",
+      "returnOfferId": "cf4b017a-883e-4739-be5d-3f63bef90c3d",
+      "salePriceTargetId": null
+    },
+    {
+      "id": "b5cf565f-6b36-4fe1-9df3-d61166ab01ff",
+      "offerId": "199ea095-fac4-43cf-82fd-3c5d429d587d",
+      "percent": "1",
+      "revision": 2,
+      "occurredAt": "2026-09-29T09:57:50.305Z",
+      "returnOfferId": "5289836a-a4d8-4629-b9c5-0ed2a288343b",
+      "salePriceTargetId": null
+    },
+    {
+      "id": "3214a145-fb39-45a0-9763-75840d771f76",
+      "offerId": "9bb10e01-99d5-4990-86f6-3465ed0e3871",
+      "percent": "1",
+      "revision": 1,
+      "occurredAt": "2026-09-29T09:57:50.423Z",
+      "returnOfferId": null,
+      "salePriceTargetId": null
+    },
+    {
+      "id": "f41dae65-5019-450e-9580-d16b3de865a4",
+      "offerId": "199ea095-fac4-43cf-82fd-3c5d429d587d",
+      "percent": "2",
+      "revision": 4,
+      "occurredAt": "2026-09-29T09:58:05.835Z",
+      "returnOfferId": null,
+      "salePriceTargetId": null
+    }
+  ]
+}

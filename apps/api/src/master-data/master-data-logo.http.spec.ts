@@ -1,3 +1,4 @@
+import { Readable } from 'node:stream';
 import type { INestApplication } from '@nestjs/common';
 import { ValidationPipe } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
@@ -21,6 +22,11 @@ const actor: AuthenticatedActor = {
 describe('Master Data logo HTTP boundary', () => {
   let app: INestApplication;
   const logos = {
+    preview: vi.fn().mockImplementation(async () => ({
+      stream: Readable.from([Buffer.from([0x89, 0x50, 0x4e, 0x47])]),
+      mimeType: 'image/png',
+      sizeBytes: 4,
+    })),
     replace: vi.fn().mockResolvedValue({ data: { id: 'record-id' } }),
     remove: vi.fn().mockResolvedValue({ data: { id: 'record-id' } }),
   };
@@ -54,6 +60,25 @@ describe('Master Data logo HTTP boundary', () => {
   afterEach(async () => {
     if (app) await app.close();
     vi.clearAllMocks();
+  });
+
+  it('serves an inline logo through master_data.read without requiring Documents catalogue permissions', async () => {
+    const recordId = '44444444-4444-4444-8444-444444444444';
+    const response = await request(app.getHttpServer())
+      .get(`/api/v1/master-data/airlines/${recordId}/logo`)
+      .set('Cookie', 'nora_access=test')
+      .expect(200);
+    expect(response.headers['content-type']).toMatch(/image\/png/);
+    expect(response.headers['cache-control']).toBe('private, no-store');
+    expect(iam.assertPermissions).toHaveBeenCalledWith(actor, [
+      'master_data.read',
+    ]);
+    expect(logos.preview).toHaveBeenCalledWith(
+      'airlines',
+      recordId,
+      actor,
+      expect.any(Object),
+    );
   });
 
   it('accepts an airline PNG with its optimistic version using only master_data.update', async () => {

@@ -1,10 +1,22 @@
-import { moneyUnits, moneyDecimal, type TicketOfferV1 } from '@nora/contracts';
+import {
+  moneyUnits,
+  moneyDecimal,
+  type TicketOfferV1,
+  type TicketSalePriceTierV1,
+} from '@nora/contracts';
 export type TicketPriceRow = {
   id: string;
   offer: TicketOfferV1;
   returning?: TicketOfferV1 | undefined;
   returnOfferId: string | null;
-  base?: { amount: string; currencyCode: string; revision: number } | undefined;
+  base?:
+    | {
+        amount: string;
+        currencyCode: string;
+        revision: number;
+        tiers?: readonly TicketSalePriceTierV1[] | undefined;
+      }
+    | undefined;
 };
 export function ticketPriceRows(
   offers: readonly TicketOfferV1[],
@@ -26,6 +38,7 @@ export function ticketPriceRows(
         amount: price.baseAmount ?? price.amount,
         currencyCode: price.currencyCode,
         revision: price.revision,
+        tiers: price.baseTiers ?? price.tiers,
       },
     })),
   ]);

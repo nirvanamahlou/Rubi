@@ -59,7 +59,7 @@ describe('Customer Affairs report layout', () => {
       new URL('./affairs-report-panel.tsx', import.meta.url),
       'utf8',
     );
-    expect(source).not.toContain('گزارش امور مشتریان');
+    expect(render(report, true)).not.toContain('گزارش امور مشتریان');
     expect(source).not.toContain(
       'نمای وضعیت درخواست‌ها، رسیدگی و بازخورد مشتریان',
     );

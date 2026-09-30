@@ -46,6 +46,37 @@ function expiryTransaction(
 }
 
 describe('TicketPublicService offer retry', () => {
+  it('pages management offers with a lookahead and rejects invalid pages', async () => {
+    const findMany = vi.fn().mockResolvedValue(
+      Array.from({ length: 501 }, (_, index) => ({
+        ...row,
+        id: `offer-${index}`,
+        standaloneSalePrices: [],
+        capacityAllocations: [],
+        capacityHolds: [],
+      })),
+    );
+    const expiry = expiryTransaction();
+    const service = new TicketPublicService(
+      {
+        client: {
+          $transaction: expiry.transaction,
+          ticketPublishedOffer: { findMany },
+        },
+      } as unknown as DatabaseService,
+      {} as ProcurementPublicService,
+    );
+    const result = await service.managed(actor, 2);
+    expect(result.data).toHaveLength(500);
+    expect(result.hasMore).toBe(true);
+    expect(findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ skip: 500, take: 501 }),
+    );
+    await expect(service.managed(actor, 0)).rejects.toThrow(
+      'Invalid management page',
+    );
+    expect(findMany).toHaveBeenCalledTimes(1);
+  });
   it('persists activation of a future paused offer with a versioned audit', async () => {
     const offerId = '10000000-0000-4000-8000-000000000010';
     const tx = {
@@ -169,6 +200,7 @@ describe('TicketPublicService offer retry', () => {
     );
     await expect(service.managed(actor)).resolves.toEqual({
       version: 1,
+      hasMore: false,
       data: [
         expect.objectContaining({
           id: row.id,
@@ -258,6 +290,7 @@ describe('TicketPublicService offer retry', () => {
             originId: input.originId,
             destinationId: input.destinationId,
             departureAt: new Date('2026-11-01T04:30:00.000Z'),
+            totalCapacity: 50,
           },
           {
             id: returnOfferId,
@@ -265,6 +298,7 @@ describe('TicketPublicService offer retry', () => {
             originId: input.destinationId,
             destinationId: input.originId,
             departureAt: new Date('2026-11-08T04:30:00.000Z'),
+            totalCapacity: 40,
           },
         ]),
       },
@@ -285,7 +319,12 @@ describe('TicketPublicService offer retry', () => {
       service.updateRoundTripSalePrice(
         outboundOfferId,
         returnOfferId,
-        { expectedRevision: 0, amount: '4500000', currencyCode: 'IRR' },
+        {
+          expectedRevision: 0,
+          amount: '4500000',
+          currencyCode: 'IRR',
+          tiers: [{ seatCount: 40, amount: '4500000' }],
+        },
         actor,
         'pair-price-key',
       ),
@@ -300,6 +339,21 @@ describe('TicketPublicService offer retry', () => {
         actorUserId: 'user-1',
       }),
     });
+    await expect(
+      service.updateRoundTripSalePrice(
+        outboundOfferId,
+        returnOfferId,
+        {
+          expectedRevision: 0,
+          amount: '4500000',
+          currencyCode: 'IRR',
+          tiers: [{ seatCount: 50, amount: '4500000' }],
+        },
+        actor,
+        'pair-price-too-many-seats',
+      ),
+    ).rejects.toThrow('پله‌های قیمت');
+    expect(create).toHaveBeenCalledTimes(1);
   });
 
   it('automatically pauses departed offers with a versioned audit', async () => {

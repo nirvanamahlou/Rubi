@@ -107,6 +107,69 @@ export const priorityLabel: Record<string, string> = {
   CRITICAL: 'بحرانی',
 };
 
+const qualificationCriteria = [
+  [
+    'travelNeedConfirmed',
+    'نیاز سفر مشخص و تأیید شده است',
+    'نیاز سفر تایید شده',
+  ],
+  ['destinationKnown', 'مقصد یا گزینه‌های پذیرفتنی مشخص است', 'مقصد مشخص است'],
+  ['timingKnown', 'زمان سفر یا انعطاف آن مشخص است', 'بازه سفر مشخص است'],
+  ['budgetDiscussed', 'درباره بودجه گفتگو شده است', 'بودجه بررسی شده'],
+  [
+    'decisionMakerReachable',
+    'با تصمیم‌گیرنده ارتباط داریم',
+    'تصمیم‌گیرنده در دسترس است',
+  ],
+  ['contactable', 'راه تماس مشتری معتبر است', 'مسیر تماس معتبر است'],
+] as const;
+
+function qualificationReport(value: Record<string, unknown> | null) {
+  if (!value || typeof value.score !== 'number') return null;
+  const reasons = Array.isArray(value.reasons)
+    ? [
+        ...new Set(
+          value.reasons
+            .filter((reason): reason is string => typeof reason === 'string')
+            .map((reason) => reason.trim())
+            .filter(Boolean),
+        ),
+      ]
+    : [];
+  return {
+    score: value.score,
+    state:
+      value.state === 'QUALIFIED'
+        ? 'آماده تحویل به فروش'
+        : value.state === 'NEEDS_REVIEW'
+          ? 'نیازمند تکمیل ارزیابی'
+          : 'فاقد شرایط',
+    reasons,
+    conversionProbability:
+      typeof value.conversionProbability === 'number'
+        ? value.conversionProbability
+        : null,
+    evaluatedAt:
+      typeof value.evaluatedAt === 'string' &&
+      !Number.isNaN(Date.parse(value.evaluatedAt))
+        ? value.evaluatedAt
+        : null,
+  };
+}
+
+export async function mutateAndRefreshDetail(
+  operation: () => Promise<unknown>,
+  refresh: () => Promise<void>,
+): Promise<boolean> {
+  await operation();
+  try {
+    await refresh();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function Summary({
   label,
   value,
@@ -144,57 +207,83 @@ export function LeadForm({
   const [customer, setCustomer] = useState<CustomerSummary | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const submission = useRef<{
+    key: string;
+    sourceReference: string;
+    occurredAt: string;
+  } | null>(null);
+  const submitting = useRef(false);
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (submitting.current) return;
+    submitting.current = true;
     setBusy(true);
     setError('');
-    const data = new FormData(event.currentTarget);
-    const passengers = Number(data.get('passengerCount'));
-    const input: CustomerAffairsLeadInput = {
-      title: String(data.get('title')),
-      sourceReference: 'ثبت مستقیم در امور مشتریان',
-      inboundChannel: String(
-        data.get('channel'),
-      ) as CustomerAffairsLeadInput['inboundChannel'],
-      contactOccurredAt: new Date().toISOString(),
-      travelNeed: String(data.get('travelNeed')),
-      destinationReference: String(data.get('destination')) || null,
-      datePrecision: data.get('travelStart') ? 'EXACT' : 'UNKNOWN',
-      travelStart: data.get('travelStart')
-        ? new Date(String(data.get('travelStart'))).toISOString()
-        : null,
-      travelEnd: data.get('travelEnd')
-        ? new Date(String(data.get('travelEnd'))).toISOString()
-        : null,
-      originReference: String(data.get('origin')) || null,
-      passengerCount: passengers,
-      passengerComposition: { adults: passengers, children: 0, infants: 0 },
-      requestedServices: data.getAll('services').map(String),
-      budget: data.get('budgetAmount')
-        ? {
-            maximum: String(data.get('budgetAmount')),
-            currencyCode: String(data.get('currency')),
-            basis: 'TOTAL',
-          }
-        : { unknownReason: 'در تماس اولیه اعلام نشد' },
-      specialPreferences: String(data.get('specialPreferences') || '') || null,
-      assigneeUserId: String(data.get('assigneeUserId') || '') || null,
-      customerId: customer?.id ?? null,
-      priority: String(
-        data.get('priority'),
-      ) as CustomerAffairsLeadInput['priority'],
-      queueCode: 'customer-affairs-front-office',
-      nextAction: String(data.get('nextAction')),
-      nextActionAt: new Date(String(data.get('nextActionAt'))).toISOString(),
+    submission.current ??= {
+      key: crypto.randomUUID(),
+      sourceReference: `manual-${crypto.randomUUID()}`,
+      occurredAt: new Date().toISOString(),
     };
+    const identity = submission.current;
     try {
-      const response = await customerAffairsApi.createLead(input);
+      const data = new FormData(event.currentTarget);
+      const passengers = Number(data.get('passengerCount'));
+      const input: CustomerAffairsLeadInput = {
+        title: String(data.get('title')),
+        sourceReference: identity.sourceReference,
+        inboundChannel: String(
+          data.get('channel'),
+        ) as CustomerAffairsLeadInput['inboundChannel'],
+        contactOccurredAt: identity.occurredAt,
+        travelNeed: String(data.get('travelNeed')),
+        destinationReference: String(data.get('destination')) || null,
+        datePrecision: data.get('travelStart') ? 'EXACT' : 'UNKNOWN',
+        travelStart: data.get('travelStart')
+          ? new Date(String(data.get('travelStart'))).toISOString()
+          : null,
+        travelEnd: data.get('travelEnd')
+          ? new Date(String(data.get('travelEnd'))).toISOString()
+          : null,
+        originReference: String(data.get('origin')) || null,
+        passengerCount: passengers,
+        passengerComposition: { adults: passengers, children: 0, infants: 0 },
+        requestedServices: data.getAll('services').map(String),
+        budget: data.get('budgetAmount')
+          ? {
+              maximum: String(data.get('budgetAmount')),
+              currencyCode: String(data.get('currency')),
+              basis: 'TOTAL',
+            }
+          : { unknownReason: 'در تماس اولیه اعلام نشد' },
+        specialPreferences:
+          String(data.get('specialPreferences') || '') || null,
+        assigneeUserId: String(data.get('assigneeUserId') || '') || null,
+        customerId: customer?.id ?? null,
+        priority: String(
+          data.get('priority'),
+        ) as CustomerAffairsLeadInput['priority'],
+        queueCode: 'customer-affairs-front-office',
+        nextAction: String(data.get('nextAction')),
+        nextActionAt: new Date(String(data.get('nextActionAt'))).toISOString(),
+      };
+      const response = await customerAffairsApi.createLead(
+        input,
+        undefined,
+        identity.key,
+      );
       onCreated(response.data);
     } catch (cause) {
+      if (!(cause instanceof CustomerAffairsApiError) || cause.status < 500)
+        submission.current = null;
       setError(
-        cause instanceof Error ? cause.message : 'ثبت درخواست انجام نشد.',
+        cause instanceof RangeError
+          ? 'تاریخ واردشده معتبر نیست.'
+          : cause instanceof Error
+            ? cause.message
+            : 'ثبت درخواست انجام نشد.',
       );
     } finally {
+      submitting.current = false;
       setBusy(false);
     }
   }
@@ -358,41 +447,59 @@ export function TicketForm({
   const [customer, setCustomer] = useState<CustomerSummary | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const submission = useRef<{ key: string; occurredAt: string } | null>(null);
+  const submitting = useRef(false);
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (submitting.current) return;
+    submitting.current = true;
     setBusy(true);
     setError('');
-    const data = new FormData(event.currentTarget);
-    const input: CustomerAffairsTicketInput = {
-      subject: String(data.get('subject')),
-      description: String(data.get('description')),
-      channel: String(
-        data.get('channel'),
-      ) as CustomerAffairsTicketInput['channel'],
-      contactOccurredAt: new Date().toISOString(),
-      category: String(data.get('category')),
-      impact: String(
-        data.get('impact'),
-      ) as CustomerAffairsTicketInput['impact'],
-      urgency: String(
-        data.get('urgency'),
-      ) as CustomerAffairsTicketInput['urgency'],
-      priority: String(
-        data.get('priority'),
-      ) as CustomerAffairsTicketInput['priority'],
-      customerId: customer?.id ?? null,
-      references: [],
-      customerOwnerUserId:
-        String(data.get('customerOwnerUserId') || '') || null,
-      nextAction: String(data.get('nextAction')),
-      nextActionAt: new Date(String(data.get('nextActionAt'))).toISOString(),
+    submission.current ??= {
+      key: crypto.randomUUID(),
+      occurredAt: new Date().toISOString(),
     };
+    const identity = submission.current;
     try {
-      const response = await customerAffairsApi.createTicket(input);
+      const data = new FormData(event.currentTarget);
+      const input: CustomerAffairsTicketInput = {
+        subject: String(data.get('subject')),
+        description: String(data.get('description')),
+        channel: String(
+          data.get('channel'),
+        ) as CustomerAffairsTicketInput['channel'],
+        contactOccurredAt: identity.occurredAt,
+        category: String(data.get('category')),
+        impact: 'NORMAL',
+        urgency: 'NORMAL',
+        priority: String(
+          data.get('priority'),
+        ) as CustomerAffairsTicketInput['priority'],
+        customerId: customer?.id ?? null,
+        references: [],
+        customerOwnerUserId:
+          String(data.get('customerOwnerUserId') || '') || null,
+        nextAction: String(data.get('nextAction')),
+        nextActionAt: new Date(String(data.get('nextActionAt'))).toISOString(),
+      };
+      const response = await customerAffairsApi.createTicket(
+        input,
+        undefined,
+        identity.key,
+      );
       onCreated(response.data);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'ثبت تیکت انجام نشد.');
+      if (!(cause instanceof CustomerAffairsApiError) || cause.status < 500)
+        submission.current = null;
+      setError(
+        cause instanceof RangeError
+          ? 'تاریخ واردشده معتبر نیست.'
+          : cause instanceof Error
+            ? cause.message
+            : 'ثبت تیکت انجام نشد.',
+      );
     } finally {
+      submitting.current = false;
       setBusy(false);
     }
   }
@@ -466,28 +573,6 @@ export function TicketForm({
             </AffairsSelect>
           </FormField>
         </div>
-        <FormField label="اثر">
-          <AffairsSelect
-            className="h-11 w-full rounded-xl border border-input bg-surface px-3"
-            name="impact"
-            defaultValue="NORMAL"
-          >
-            <option value="LOW">کم</option>
-            <option value="NORMAL">عادی</option>
-            <option value="HIGH">زیاد</option>
-          </AffairsSelect>
-        </FormField>
-        <FormField label="فوریت">
-          <AffairsSelect
-            className="h-11 w-full rounded-xl border border-input bg-surface px-3"
-            name="urgency"
-            defaultValue="NORMAL"
-          >
-            <option value="LOW">کم</option>
-            <option value="NORMAL">عادی</option>
-            <option value="HIGH">زیاد</option>
-          </AffairsSelect>
-        </FormField>
         <FormField label="اقدام بعدی">
           <Input name="nextAction" defaultValue="بررسی و پاسخ اولیه" required />
         </FormField>
@@ -551,14 +636,33 @@ export function DetailPanel({
   >(null);
   const [operationError, setOperationError] = useState(false);
   const stage = 'stage' in detail ? detail.stage : detail.status;
+  const assessment =
+    'stage' in detail ? qualificationReport(detail.qualification) : null;
+  const confirmedCriteriaCount = assessment
+    ? qualificationCriteria.filter(([, , reason]) =>
+        assessment.reasons.includes(reason),
+      ).length
+    : 0;
+  const additionalAssessmentReasons = assessment
+    ? assessment.reasons.filter(
+        (reason) =>
+          !qualificationCriteria.some(
+            ([, , canonicalReason]) => canonicalReason === reason,
+          ),
+      )
+    : [];
   async function run(operation: () => Promise<unknown>, success: string) {
     setBusy(true);
     setNotice('');
     setOperationError(false);
     try {
-      await operation();
-      setNotice(success);
-      await onReload();
+      const refreshed = await mutateAndRefreshDetail(operation, onReload);
+      setNotice(
+        refreshed
+          ? success
+          : `${success} اما بازخوانی پرونده انجام نشد؛ پیش از اقدام بعدی پرونده را تازه‌سازی کنید.`,
+      );
+      setOperationError(!refreshed);
       return true;
     } catch (cause) {
       setOperationError(true);
@@ -632,24 +736,23 @@ export function DetailPanel({
       <Button onClick={onBack} variant="ghost">
         <ArrowLeft className="size-4" /> بازگشت به فهرست
       </Button>
-      <Card className={s.detail}>
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <p className="text-xs text-muted-foreground">
-              {detail.trackingNumber}
-            </p>
-            <h2 className="mt-1 text-xl font-black">
-              {'title' in detail ? detail.title : detail.subject}
-            </h2>
+      <Card className={`${s.detail} ${s.profileHero}`}>
+        <div className={s.profileHeading}>
+          <div className={s.profileTitle}>
+            <p className={s.profileTracking}>{detail.trackingNumber}</p>
+            <h2>{'title' in detail ? detail.title : detail.subject}</h2>
           </div>
-          <div className="flex gap-2">
+          <div className={s.profileBadges}>
             <Badge>{stageLabel[stage] ?? statusLabel[stage] ?? stage}</Badge>
             <Badge>{priorityLabel[detail.priority] ?? detail.priority}</Badge>
           </div>
         </div>
-        <p className="mt-4 whitespace-pre-wrap text-sm leading-7">
-          {'travelNeed' in detail ? detail.travelNeed : detail.description}
-        </p>
+        <div className={s.profileDescription}>
+          <span>{'travelNeed' in detail ? 'نیاز سفر' : 'شرح درخواست'}</span>
+          <p>
+            {'travelNeed' in detail ? detail.travelNeed : detail.description}
+          </p>
+        </div>
         <dl className={s.recordMeta}>
           <div>
             <dt className="text-muted-foreground">اقدام بعدی</dt>
@@ -664,208 +767,152 @@ export function DetailPanel({
             <dd>{detail.customerId ? 'متصل' : 'نامشخص'}</dd>
           </div>
         </dl>
-        <Button
-          variant="outline"
-          onClick={() => setFollowupOpen((value) => !value)}
-        >
-          تنظیم پیگیری بعدی
-        </Button>
-        {followupOpen && (
-          <CustomerAffairsFormDialog
-            title="تنظیم پیگیری بعدی"
-            busy={busy}
-            onClose={() => setFollowupOpen(false)}
-          >
-            {operationError && notice && (
-              <Alert
-                title="عملیات انجام نشد"
-                description={notice}
-                tone="error"
+        <div className={s.profileActions}>
+          {'stage' in detail &&
+            !detail.customerId &&
+            !['LOST', 'HANDED_OFF'].includes(detail.stage) && (
+              <LeadCustomerConversion
+                id={detail.id}
+                version={detail.version}
+                onReload={onReload}
               />
             )}
-            <form
-              className={s.workflowForm}
-              onSubmit={async (event) => {
-                event.preventDefault();
-                const data = new FormData(event.currentTarget);
-                const success = await run(
-                  () =>
-                    customerAffairsApi.updateFollowup(
-                      detail,
-                      String(data.get('nextAction')),
-                      new Date(String(data.get('nextActionAt'))).toISOString(),
-                    ),
-                  'پیگیری بعدی ذخیره شد.',
-                );
-                if (success) setFollowupOpen(false);
-              }}
-            >
-              <FormField label="اقدام بعدی">
-                <Input
-                  name="nextAction"
-                  required
-                  minLength={3}
-                  defaultValue={detail.nextAction}
-                />
-              </FormField>
-              <FormField label="موعد پیگیری">
-                <DatePicker
-                  name="nextActionAt"
-                  includeTime
-                  required
-                  defaultValue={localDateValue(new Date(detail.nextActionAt))}
-                />
-              </FormField>
-              <div className={s.actions}>
-                <Button disabled={busy} type="submit">
-                  ذخیره پیگیری
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setFollowupOpen(false)}
-                >
-                  انصراف
-                </Button>
-              </div>
-            </form>
-          </CustomerAffairsFormDialog>
-        )}
-        {tab === 'leads' ? (
-          <div className="mt-5 flex flex-wrap gap-2">
-            <Button
-              disabled={busy || stage !== 'QUALIFIED'}
-              onClick={() =>
-                run(
-                  () =>
-                    customerAffairsApi.proposeHandoff(
-                      detail.id,
-                      detail.version,
-                    ),
-                  'بسته نسخه‌دار برای فروش ارسال شد.',
-                )
-              }
-            >
-              <Send className="size-4" /> ارسال به فروش
-            </Button>
-            <Button
-              disabled={
-                busy || !['NEW', 'CONTACTED', 'QUALIFYING'].includes(stage)
-              }
-              onClick={() => setAssessmentOpen((value) => !value)}
-              variant="outline"
-            >
-              <CheckCircle2 className="size-4" /> ارزیابی آمادگی فروش
-            </Button>
-          </div>
-        ) : (
-          <div className="mt-5 flex flex-wrap gap-2">
-            {(
-              [
-                { status: 'TRIAGED', label: 'بررسی اولیه', from: ['NEW'] },
-                {
-                  status: 'IN_PROGRESS',
-                  label: 'شروع رسیدگی',
-                  from: [
-                    'TRIAGED',
-                    'REOPENED',
-                    'WAITING_CUSTOMER',
-                    'WAITING_EXTERNAL',
-                  ],
-                },
-                {
-                  status: 'WAITING_CUSTOMER',
-                  label: 'انتظار پاسخ مشتری',
-                  from: ['IN_PROGRESS'],
-                },
-                {
-                  status: 'WAITING_EXTERNAL',
-                  label: 'انتظار واحد تخصصی',
-                  from: ['IN_PROGRESS'],
-                },
-              ] as const
-            )
-              .filter((item) =>
-                (item.from as readonly string[]).includes(stage),
+          {tab === 'leads' ? (
+            <>
+              <Button
+                disabled={busy || stage !== 'QUALIFIED'}
+                onClick={() =>
+                  run(
+                    () =>
+                      customerAffairsApi.proposeHandoff(
+                        detail.id,
+                        detail.version,
+                      ),
+                    'بسته نسخه‌دار برای فروش ارسال شد.',
+                  )
+                }
+              >
+                <Send className="size-4" /> ارسال به فروش
+              </Button>
+            </>
+          ) : (
+            <>
+              {(
+                [
+                  { status: 'TRIAGED', label: 'بررسی اولیه', from: ['NEW'] },
+                  {
+                    status: 'IN_PROGRESS',
+                    label: 'شروع رسیدگی',
+                    from: [
+                      'TRIAGED',
+                      'REOPENED',
+                      'WAITING_CUSTOMER',
+                      'WAITING_EXTERNAL',
+                    ],
+                  },
+                  {
+                    status: 'WAITING_CUSTOMER',
+                    label: 'انتظار پاسخ مشتری',
+                    from: ['IN_PROGRESS'],
+                  },
+                  {
+                    status: 'WAITING_EXTERNAL',
+                    label: 'انتظار واحد تخصصی',
+                    from: ['IN_PROGRESS'],
+                  },
+                ] as const
               )
-              .map((item) => (
+                .filter((item) =>
+                  (item.from as readonly string[]).includes(stage),
+                )
+                .map((item) => (
+                  <Button
+                    key={item.status}
+                    disabled={busy}
+                    variant="outline"
+                    onClick={() =>
+                      run(
+                        () =>
+                          customerAffairsApi.transitionTicket(
+                            detail.id,
+                            item.status,
+                            detail.version,
+                            item.label,
+                          ),
+                        'وضعیت رسیدگی به‌روز شد.',
+                      )
+                    }
+                  >
+                    {item.label}
+                  </Button>
+                ))}
+              {[
+                'IN_PROGRESS',
+                'WAITING_CUSTOMER',
+                'WAITING_EXTERNAL',
+                'REOPENED',
+              ].includes(stage) && (
                 <Button
-                  key={item.status}
                   disabled={busy}
-                  variant="outline"
-                  onClick={() =>
-                    run(
-                      () =>
-                        customerAffairsApi.transitionTicket(
-                          detail.id,
-                          item.status,
-                          detail.version,
-                          item.label,
-                        ),
-                      'وضعیت رسیدگی به‌روز شد.',
-                    )
-                  }
+                  onClick={() => setPendingAction('resolve')}
                 >
-                  {item.label}
+                  ثبت نتیجه و حل تیکت
                 </Button>
-              ))}
-            {[
-              'IN_PROGRESS',
-              'WAITING_CUSTOMER',
-              'WAITING_EXTERNAL',
-              'REOPENED',
-            ].includes(stage) && (
-              <Button
-                disabled={busy}
-                onClick={() => setPendingAction('resolve')}
-              >
-                ثبت نتیجه و حل تیکت
-              </Button>
-            )}
-            {stage === 'RESOLVED' && (
-              <Button disabled={busy} onClick={() => setPendingAction('close')}>
-                بستن پرونده
-              </Button>
-            )}
-            {['RESOLVED', 'CLOSED', 'CANCELLED'].includes(stage) && (
-              <Button
-                variant="outline"
-                disabled={busy}
-                onClick={() => setPendingAction('reopen')}
-              >
-                بازگشایی پرونده
-              </Button>
-            )}
-            {!['RESOLVED', 'CLOSED', 'CANCELLED'].includes(stage) && (
-              <>
+              )}
+              {stage === 'RESOLVED' && (
+                <Button
+                  disabled={busy}
+                  onClick={() => setPendingAction('close')}
+                >
+                  بستن پرونده
+                </Button>
+              )}
+              {['RESOLVED', 'CLOSED', 'CANCELLED'].includes(stage) && (
                 <Button
                   variant="outline"
                   disabled={busy}
-                  onClick={() => setReferralOpen((value) => !value)}
+                  onClick={() => setPendingAction('reopen')}
                 >
-                  ارجاع داخلی
+                  بازگشایی پرونده
                 </Button>
+              )}
+              {!['RESOLVED', 'CLOSED', 'CANCELLED'].includes(stage) && (
+                <>
+                  <Button
+                    variant="outline"
+                    disabled={busy}
+                    onClick={() => setReferralOpen((value) => !value)}
+                  >
+                    ارجاع داخلی
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    disabled={busy}
+                    onClick={() => setPendingAction('escalate')}
+                  >
+                    <AlertTriangle className="size-4" />
+                    ارجاع به سرپرست
+                  </Button>
+                </>
+              )}
+              {['RESOLVED', 'CLOSED'].includes(stage) && (
                 <Button
-                  variant="ghost"
+                  variant="outline"
                   disabled={busy}
-                  onClick={() => setPendingAction('escalate')}
+                  onClick={createSurveyInvitation}
                 >
-                  <AlertTriangle className="size-4" />
-                  ارجاع به سرپرست
+                  دعوت رضایت‌سنجی
                 </Button>
-              </>
-            )}
-            {['RESOLVED', 'CLOSED'].includes(stage) && (
-              <Button
-                variant="outline"
-                disabled={busy}
-                onClick={createSurveyInvitation}
-              >
-                دعوت رضایت‌سنجی
-              </Button>
-            )}
-          </div>
-        )}
+              )}
+            </>
+          )}
+          <Button
+            variant="outline"
+            onClick={() => setFollowupOpen((value) => !value)}
+          >
+            تنظیم پیگیری بعدی
+          </Button>
+        </div>
         {assessmentOpen && tab === 'leads' && (
           <CustomerAffairsFormDialog
             title="ارزیابی آمادگی فروش"
@@ -933,16 +980,13 @@ export function DetailPanel({
               <p className={s.muted}>
                 فقط مواردی را تأیید کنید که در گفتگو با مشتری بررسی شده‌اند.
               </p>
-              {[
-                ['travelNeedConfirmed', 'نیاز سفر مشخص و تأیید شده است'],
-                ['destinationKnown', 'مقصد یا گزینه‌های پذیرفتنی مشخص است'],
-                ['timingKnown', 'زمان سفر یا انعطاف آن مشخص است'],
-                ['budgetDiscussed', 'درباره بودجه گفتگو شده است'],
-                ['decisionMakerReachable', 'با تصمیم‌گیرنده ارتباط داریم'],
-                ['contactable', 'راه تماس مشتری معتبر است'],
-              ].map(([key, label]) => (
+              {qualificationCriteria.map(([key, label, reason]) => (
                 <label key={key}>
-                  <input type="checkbox" name={key} />
+                  <input
+                    type="checkbox"
+                    name={key}
+                    defaultChecked={assessment?.reasons.includes(reason)}
+                  />
                   {label}
                 </label>
               ))}
@@ -1185,37 +1229,176 @@ export function DetailPanel({
         </Card>
       ) : null}
       <RecordOperations detail={detail} onReload={onReload} />
-      {'stage' in detail &&
-        typeof detail.qualification?.conversionProbability === 'number' && (
-          <p className="text-sm text-muted-foreground">
-            احتمال تبدیل به فروش:{' '}
-            {detail.qualification.conversionProbability.toLocaleString('fa-IR')}
-            ٪ · برآورد کارشناس
-          </p>
-        )}
-      {!('stage' in detail) && <TicketSms id={detail.id} onReload={onReload} />}
-      {'stage' in detail &&
-        !detail.customerId &&
-        !['LOST', 'HANDED_OFF'].includes(detail.stage) && (
-          <LeadCustomerConversion
-            id={detail.id}
-            version={detail.version}
-            onReload={onReload}
-          />
-        )}
-      <Card className={s.detail}>
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <h3 className="font-black">سابقه ارتباط و رسیدگی</h3>
-          <Button
-            variant="outline"
-            onClick={() => {
-              setOperationError(false);
-              setActivityOpen(true);
+      {followupOpen && (
+        <CustomerAffairsFormDialog
+          title="تنظیم پیگیری بعدی"
+          busy={busy}
+          onClose={() => setFollowupOpen(false)}
+        >
+          {operationError && notice && (
+            <Alert title="عملیات انجام نشد" description={notice} tone="error" />
+          )}
+          <form
+            className={s.workflowForm}
+            onSubmit={async (event) => {
+              event.preventDefault();
+              const data = new FormData(event.currentTarget);
+              const success = await run(
+                () =>
+                  customerAffairsApi.updateFollowup(
+                    detail,
+                    String(data.get('nextAction')),
+                    new Date(String(data.get('nextActionAt'))).toISOString(),
+                  ),
+                'پیگیری بعدی ذخیره شد.',
+              );
+              if (success) setFollowupOpen(false);
             }}
           >
-            ثبت ارتباط جدید
-          </Button>
+            <FormField label="اقدام بعدی">
+              <Input
+                name="nextAction"
+                required
+                minLength={3}
+                defaultValue={detail.nextAction}
+              />
+            </FormField>
+            <FormField label="موعد پیگیری">
+              <DatePicker
+                name="nextActionAt"
+                includeTime
+                required
+                defaultValue={localDateValue(new Date(detail.nextActionAt))}
+              />
+            </FormField>
+            <div className={s.actions}>
+              <Button disabled={busy} type="submit">
+                ذخیره پیگیری
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setFollowupOpen(false)}
+              >
+                انصراف
+              </Button>
+            </div>
+          </form>
+        </CustomerAffairsFormDialog>
+      )}
+      {!('stage' in detail) && <TicketSms id={detail.id} onReload={onReload} />}
+      <Card className={`${s.detail} ${s.profileHistory}`}>
+        <div className={s.profileSectionHead}>
+          <h3 className="font-black">سابقه ارتباط و رسیدگی</h3>
+          <div className={s.profileSectionActions}>
+            {tab === 'leads' && (
+              <Button
+                disabled={
+                  busy ||
+                  !['NEW', 'CONTACTED', 'QUALIFYING', 'QUALIFIED'].includes(
+                    stage,
+                  )
+                }
+                onClick={() => {
+                  setOperationError(false);
+                  setAssessmentOpen(true);
+                }}
+                variant="outline"
+              >
+                <CheckCircle2 className="size-4" /> ارزیابی آمادگی فروش
+              </Button>
+            )}
+            <Button
+              variant="outline"
+              onClick={() => {
+                setOperationError(false);
+                setActivityOpen(true);
+              }}
+            >
+              ثبت ارتباط جدید
+            </Button>
+          </div>
         </div>
+        {assessment && (
+          <section
+            className={s.qualificationReport}
+            aria-label="نتیجه ارزیابی آمادگی فروش"
+          >
+            <div className={s.qualificationReportHead}>
+              <div>
+                <p className={s.qualificationReportEyebrow}>گزارش ثبت‌شده</p>
+                <h4>آخرین نتیجه ارزیابی آمادگی فروش</h4>
+              </div>
+              {assessment.evaluatedAt && (
+                <time dateTime={assessment.evaluatedAt}>
+                  {new Date(assessment.evaluatedAt).toLocaleString('fa-IR')}
+                </time>
+              )}
+            </div>
+            <dl className={s.qualificationSummary}>
+              <div>
+                <dt>نتیجه آمادگی</dt>
+                <dd>{assessment.state}</dd>
+              </div>
+              <div>
+                <dt>امتیاز آمادگی</dt>
+                <dd>
+                  <strong>{assessment.score.toLocaleString('fa-IR')}</strong>
+                  <span> از ۱۰۰</span>
+                </dd>
+              </div>
+              <div>
+                <dt>احتمال تبدیل به فروش</dt>
+                <dd>
+                  {assessment.conversionProbability !== null
+                    ? `${assessment.conversionProbability.toLocaleString('fa-IR')}٪`
+                    : 'ثبت نشده'}
+                </dd>
+              </div>
+            </dl>
+            <div className={s.qualificationCriteriaHead}>
+              <h5>معیارهای ارزیابی</h5>
+              <p>
+                {confirmedCriteriaCount.toLocaleString('fa-IR')} از{' '}
+                {qualificationCriteria.length.toLocaleString('fa-IR')} معیار
+                تأیید شده
+              </p>
+            </div>
+            <ul
+              className={s.qualificationCriteria}
+              aria-label="معیارهای ارزیابی"
+            >
+              {qualificationCriteria.map(([key, label, reason]) => {
+                const confirmed = assessment.reasons.includes(reason);
+                return (
+                  <li
+                    className={s.qualificationCriterion}
+                    data-state={confirmed ? 'confirmed' : 'unconfirmed'}
+                    key={key}
+                  >
+                    <span className={s.qualificationCriterionLabel}>
+                      {label}
+                    </span>
+                    <strong className={s.qualificationCriterionStatus}>
+                      <span aria-hidden="true">{confirmed ? '✓' : '—'}</span>
+                      {confirmed ? 'تأیید شده' : 'تأیید نشده'}
+                    </strong>
+                  </li>
+                );
+              })}
+            </ul>
+            {additionalAssessmentReasons.length > 0 && (
+              <div className={s.qualificationExtraReasons}>
+                <h5>دلایل و توضیحات تکمیلی ثبت‌شده</h5>
+                <ul>
+                  {additionalAssessmentReasons.map((reason) => (
+                    <li key={reason}>{reason}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </section>
+        )}
         {activityOpen && (
           <CustomerAffairsFormDialog
             title="ثبت ارتباط"
@@ -1260,11 +1443,11 @@ export function DetailPanel({
             </form>
           </CustomerAffairsFormDialog>
         )}
-        <ol className="mt-5 space-y-3">
+        <ol className={s.profileTimeline}>
           {detail.timeline?.length ? (
             detail.timeline.map((item, index) => (
               <li
-                className="border-s-2 border-primary/25 ps-4"
+                className={s.profileTimelineItem}
                 key={item.id ?? `${item.type}-${index}`}
               >
                 <div className="flex flex-wrap items-center gap-2">

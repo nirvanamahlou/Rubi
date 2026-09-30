@@ -1,4 +1,5 @@
 'use client';
+import { NativeSearchSelect } from '@/components/ui/native-search-select';
 
 import type {
   SystemBackupRequestV1,
@@ -302,7 +303,7 @@ export function SystemOperationsPanel() {
                 <Input defaultValue="default.language" name="key" required />
               </FormField>
               <FormField label="نوع">
-                <select
+                <NativeSearchSelect
                   className="h-11 w-full rounded-xl border border-input bg-surface px-3 text-sm"
                   defaultValue="STRING"
                   name="valueType"
@@ -311,7 +312,7 @@ export function SystemOperationsPanel() {
                   <option>NUMBER</option>
                   <option>BOOLEAN</option>
                   <option>JSON</option>
-                </select>
+                </NativeSearchSelect>
               </FormField>
               <FormField label="مقدار" required>
                 <Input defaultValue="fa" name="value" required />
@@ -386,7 +387,7 @@ export function SystemOperationsPanel() {
           <h3 className="font-black">درخواست پشتیبان</h3>
           <form className="mt-4 grid gap-3" onSubmit={onBackup}>
             <FormField label="نوع Backup">
-              <select
+              <NativeSearchSelect
                 className="h-11 w-full rounded-xl border border-input bg-surface px-3 text-sm"
                 defaultValue="DATABASE"
                 name="type"
@@ -394,7 +395,7 @@ export function SystemOperationsPanel() {
                 <option>DATABASE</option>
                 <option>FILES</option>
                 <option>FULL</option>
-              </select>
+              </NativeSearchSelect>
             </FormField>
             <FormField label="دلیل درخواست" required>
               <Textarea name="reason" required />
@@ -467,7 +468,7 @@ export function SystemOperationsPanel() {
           <h3 className="font-black">پایان نشست</h3>
           <form className="mt-4 grid gap-3" onSubmit={onSession}>
             <FormField label="نشست">
-              <select
+              <NativeSearchSelect
                 className="h-11 w-full rounded-xl border border-input bg-surface px-3 text-sm"
                 name="sessionId"
                 required
@@ -478,7 +479,7 @@ export function SystemOperationsPanel() {
                     {session.ipAddressMasked ?? 'IP ماسک‌شده'}
                   </option>
                 ))}
-              </select>
+              </NativeSearchSelect>
             </FormField>
             <FormField label="دلیل" required>
               <Textarea name="reason" required />

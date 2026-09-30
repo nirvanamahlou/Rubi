@@ -115,6 +115,29 @@ describe('DocumentsService Workbench contracts', () => {
     ).rejects.toBeInstanceOf(BadRequestException);
   });
 
+  it('rejects feedback attachments uploaded with a different anonymity setting', async () => {
+    const id = '44444444-4444-4444-8444-444444444444';
+    const lookup = vi.fn().mockResolvedValue([]);
+    await expect(
+      service({
+        workbenchOwnedAttachmentIds: lookup,
+      }).assertWorkbenchFeedbackAttachments(
+        [id],
+        '55555555-5555-4555-8555-555555555555',
+        actor.branchIds[0]!,
+        true,
+        actor,
+      ),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    expect(lookup).toHaveBeenCalledWith(
+      expect.objectContaining({
+        documentIds: [id],
+        sourceEntityType: 'WorkbenchFeedback',
+        confidentiality: 'RESTRICTED',
+      }),
+    );
+  });
+
   it('uploads a profile photo with a server-owned profile reference', async () => {
     const branchId = actor.branchIds[0]!;
     const instance = service({

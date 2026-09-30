@@ -1,3 +1,4 @@
+import { ReservationOperationInterceptor } from './reservation-operation.interceptor';
 import {
   BadRequestException,
   Body,
@@ -387,6 +388,7 @@ export class ReservationPassengerFilesService {
 }
 @Controller('reservations/requests/:intakeId')
 @UseGuards(AuthGuard, PermissionGuard)
+@UseInterceptors(ReservationOperationInterceptor)
 export class ReservationPassengerFilesController {
   constructor(
     @Inject(ReservationPassengerFilesService)

@@ -6,7 +6,7 @@ import { PACKAGE_PRICING_PERMISSION_CODES } from '../package-pricing';
 import { MARKETING_PERMISSION_CODES } from '../marketing';
 import { SYSTEM_PERMISSION_CODES } from '../system-management';
 
-export const IAM_PERMISSION_CONTRACT_VERSION = 12 as const;
+export const IAM_PERMISSION_CONTRACT_VERSION = 13 as const;
 export const IAM_STEP_UP_CONTRACT_VERSION = 1 as const;
 
 export const IAM_CORE_PERMISSION_CODES = [
@@ -133,6 +133,7 @@ export const IAM_PERMISSION_CODES = [
   ...Object.values(CUSTOMER_AFFAIRS_PERMISSIONS),
   'ticket_catalog.read',
   'ticket_catalog.manage',
+  'ticket_catalog.tours.manage',
   'reservations.read',
   'reservations.documents.manage',
   'finance.read',
@@ -147,7 +148,10 @@ export const IAM_PERMISSION_CODES = [
 ] as const;
 
 export type IamPermissionCode =
-  (typeof IAM_PERMISSION_CODES)[number] | 'ui.profile' | `ui.screen.${string}`;
+  | (typeof IAM_PERMISSION_CODES)[number]
+  | 'ui.profile'
+  | 'ui.administrator'
+  | `ui.screen.${string}`;
 
 export interface AuthenticatedActor {
   userId: string;
@@ -170,6 +174,8 @@ export interface LoginResponse {
     displayName: string;
     permissions: IamPermissionCode[];
     branches: BranchReference[];
+    /** Active assigned role labels for the signed-in user; optional for older clients. */
+    roles?: Array<{ code: string; name: string }>;
   };
 }
 

@@ -60,6 +60,36 @@ describe('Master Data accessibility regressions', () => {
   it('keeps geography filters within the content width at desktop breakpoints', () => {
     const geography = source('master-data-geography-workspace.tsx');
     expect(geography).toContain('min-w-0 max-w-full space-y-5');
-    expect(geography).toContain('xl:grid-cols-3 2xl:grid-cols-[');
+    expect(geography).toContain('<MasterDataFilterBar>');
+  });
+
+  it('keeps record operations icon-only and labelled across PC-B Master Data workspaces', () => {
+    for (const fileName of [
+      'master-data-accommodation-workspace.tsx',
+      'master-data-finance-workspace.tsx',
+      'master-data-geography-workspace.tsx',
+      'master-data-insurance-workspace.tsx',
+      'master-data-live-workspace.tsx',
+      'master-data-sales-references-workspace.tsx',
+      'master-data-suppliers-workspace.tsx',
+      'master-data-transportation-workspace.tsx',
+      'master-data-travel-services-workspace.tsx',
+    ]) {
+      const component = source(fileName);
+      expect(component, fileName).toContain('size="icon"');
+      expect(component, fileName).toContain('aria-label');
+      expect(component, fileName).toContain('title={`');
+    }
+  });
+
+  it('keeps the currencies header compact without the redundant description', () => {
+    const finance = source('master-data-finance-workspace.tsx');
+    expect(finance).not.toContain(
+      'تعریف ارزهای ISO-4217؛ با انتخاب هر ارز، نرخ جاری و تاریخچه واقعی آن نمایش داده می‌شود.',
+    );
+    expect(finance).toContain(
+      "tab === 'currencies' ? 'space-y-3' : 'space-y-5'",
+    );
+    expect(finance).not.toContain('{copy.description ? (');
   });
 });

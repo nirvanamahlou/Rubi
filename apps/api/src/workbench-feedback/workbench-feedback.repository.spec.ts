@@ -109,4 +109,64 @@ describe('WorkbenchFeedbackRepository', () => {
     expect(transaction.workbenchFeedback.create).not.toHaveBeenCalled();
     expect(notifications.createWithinTransaction).not.toHaveBeenCalled();
   });
+
+  it('returns the committed receipt when a concurrent submission wins the unique key', async () => {
+    const existing = {
+      ...record,
+      isAnonymous: true,
+      submittedAt: new Date('2026-09-12T10:00:00.000Z'),
+    };
+    const findUnique = vi.fn().mockResolvedValue(existing);
+    const transaction = {
+      workbenchFeedback: {
+        findUnique: vi.fn().mockResolvedValue(null),
+        create: vi.fn().mockRejectedValue({ code: 'P2002' }),
+      },
+    };
+    const notifications = { createWithinTransaction: vi.fn() };
+    const repository = new WorkbenchFeedbackRepository(
+      {
+        client: {
+          $transaction: (callback: (tx: unknown) => unknown) =>
+            callback(transaction),
+          workbenchFeedback: { findUnique },
+        },
+      } as never,
+      notifications as never,
+    );
+
+    const result = await repository.create(record);
+
+    expect(result.trackingNumber).toBe(existing.trackingNumber);
+    expect(findUnique).toHaveBeenCalledWith({ where: { id: record.id } });
+    expect(notifications.createWithinTransaction).not.toHaveBeenCalled();
+  });
+
+  it('rejects a concurrent submission that reuses an id for different content', async () => {
+    const transaction = {
+      workbenchFeedback: {
+        findUnique: vi.fn().mockResolvedValue(null),
+        create: vi.fn().mockRejectedValue({ code: 'P2002' }),
+      },
+    };
+    const repository = new WorkbenchFeedbackRepository(
+      {
+        client: {
+          $transaction: (callback: (tx: unknown) => unknown) =>
+            callback(transaction),
+          workbenchFeedback: {
+            findUnique: vi.fn().mockResolvedValue({
+              ...record,
+              requestHash: 'b'.repeat(64),
+            }),
+          },
+        },
+      } as never,
+      { createWithinTransaction: vi.fn() } as never,
+    );
+
+    await expect(repository.create(record)).rejects.toMatchObject({
+      status: 409,
+    });
+  });
 });

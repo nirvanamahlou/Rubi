@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { strFromU8, unzipSync } from 'fflate';
 import type { AuthenticatedActor, SalesContractSummary } from '@nora/contracts';
 import { buildSalesXlsx, SALES_EXPORT_LIMIT } from './sales.xlsx';
+import { authenticatedPermissionCodes } from '../iam/authenticated-permissions';
 import { SalesService } from './sales.service';
 import { SalesRepository } from './sales.repository';
 import type {
@@ -211,3 +212,68 @@ describe('Sales XLSX download', () => {
     expect(recordListExport).toHaveBeenCalledWith([sample], 'actor');
   });
 });
+
+it.each([
+  [
+    'کارشناس فروش',
+    {
+      branchId: { in: ['branch'] },
+      OR: [{ ownerUserId: 'actor' }, { assignedUserId: 'actor' }],
+    },
+  ],
+  ['مدیر فروش', { branchId: { in: ['branch'] } }],
+])(
+  'applies effective %s role scope to contract exports',
+  async (name, expectedScope) => {
+    const list = vi.fn().mockResolvedValue({ data: [], total: 0 });
+    const dashboardRows = vi.fn().mockResolvedValue([]);
+    const findById = vi.fn().mockResolvedValue({
+      branchId: 'outside',
+      ownerUserId: 'other',
+      assignedUserId: null,
+    });
+    const service = new SalesService(
+      { list, dashboardRows, findById } as unknown as SalesRepository,
+      {} as SalesCustomersPublicAdapter,
+      {} as SalesTicketAvailabilityPort,
+    );
+    const actor = {
+      userId: 'actor',
+      branchIds: ['branch'],
+      permissions: authenticatedPermissionCodes([
+        {
+          role: {
+            code: 'personal-access-actor',
+            name,
+            isActive: true,
+            permissions: ['sales.export', 'sales.contracts.read.branch'].map(
+              (code) => ({ permission: { code } }),
+            ),
+          },
+        },
+      ]),
+    } as unknown as AuthenticatedActor;
+    await service.exportXlsx({}, actor);
+    await service.dashboard(actor);
+    expect(dashboardRows).toHaveBeenCalledWith(expectedScope);
+    await expect(service.detail('outside-contract', actor)).rejects.toThrow(
+      'قرارداد خارج',
+    );
+    if (name === 'کارشناس فروش') {
+      findById.mockResolvedValue({
+        branchId: 'branch',
+        ownerUserId: 'other',
+        assignedUserId: null,
+      });
+      await expect(service.detail('colleague-contract', actor)).rejects.toThrow(
+        'قرارداد خارج',
+      );
+    }
+    expect(list).toHaveBeenCalledWith(
+      {},
+      expectedScope,
+      false,
+      SALES_EXPORT_LIMIT,
+    );
+  },
+);

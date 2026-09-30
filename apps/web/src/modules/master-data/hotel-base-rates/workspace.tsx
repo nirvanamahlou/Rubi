@@ -1,4 +1,5 @@
 'use client';
+import { NativeSearchSelect } from '@/components/ui/native-search-select';
 
 import {
   MASTER_HOTEL_RATE_FACTOR_KEYS,
@@ -319,7 +320,6 @@ export function HotelBaseRateWorkspace() {
       <PageHeader
         eyebrow="اطلاعات پایه · اقامت"
         title="قیمت‌گذاری هتل در بازه"
-        description="شهر و تاریخ اقامت را انتخاب کنید؛ هتل‌های همان شهر در جدول قابل‌ویرایش نمایش داده می‌شوند و هر ذخیره یک نسخه مستقل می‌سازد."
         actions={
           <>
             <Link
@@ -412,9 +412,6 @@ export function HotelBaseRateWorkspace() {
                   <h2 className="font-black">
                     {editing ? `ویرایش ${editing.title}` : 'تعریف بازه جدید'}
                   </h2>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    مبنای قیمت: هر اتاق در هر شب · هر Save یک Version جدید
-                  </p>
                 </div>
                 {editing ? (
                   <Badge>
@@ -425,7 +422,7 @@ export function HotelBaseRateWorkspace() {
               <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-7">
                 <label className="text-xs font-bold">
                   شعبه
-                  <select
+                  <NativeSearchSelect
                     className="mt-2 h-11 w-full rounded-xl border border-input bg-surface px-3 disabled:opacity-60"
                     disabled={Boolean(editing)}
                     value={branchId}
@@ -436,11 +433,11 @@ export function HotelBaseRateWorkspace() {
                         {branch.name}
                       </option>
                     ))}
-                  </select>
+                  </NativeSearchSelect>
                 </label>
                 <label className="text-xs font-bold">
                   شهر
-                  <select
+                  <NativeSearchSelect
                     className="mt-2 h-11 w-full rounded-xl border border-input bg-surface px-3"
                     value={cityId}
                     onChange={(event) => {
@@ -462,7 +459,7 @@ export function HotelBaseRateWorkspace() {
                         {city.englishName ? `· ${city.englishName}` : ''}
                       </option>
                     ))}
-                  </select>
+                  </NativeSearchSelect>
                 </label>
                 <label className="text-xs font-bold xl:col-span-2">
                   عنوان بازه
@@ -495,7 +492,7 @@ export function HotelBaseRateWorkspace() {
                 </label>
                 <label className="text-xs font-bold">
                   ارز
-                  <select
+                  <NativeSearchSelect
                     className="mt-2 h-11 w-full rounded-xl border border-input bg-surface px-3"
                     value={currencyCode}
                     onChange={(event) => setCurrencyCode(event.target.value)}
@@ -503,7 +500,7 @@ export function HotelBaseRateWorkspace() {
                     {['EUR', 'USD', 'AED', 'TRY', 'IRR'].map((currency) => (
                       <option key={currency}>{currency}</option>
                     ))}
-                  </select>
+                  </NativeSearchSelect>
                 </label>
               </div>
               <div className="mt-4 flex flex-wrap gap-3">

@@ -25,7 +25,6 @@ import {
   FilePenLine,
   FileSpreadsheet,
   Landmark,
-  MapPin,
   Plus,
   RefreshCw,
   Search,
@@ -54,7 +53,6 @@ import {
   Card,
   EmptyState,
   ErrorState,
-  FilterBar,
   PageHeader,
   PaginationShell,
   Skeleton,
@@ -65,12 +63,13 @@ import {
   type MasterDataLogoChange,
 } from '../api/client';
 import { MasterDataDeleteButton } from './master-data-delete-button';
+import { MasterDataLogoImage } from './master-data-logo-image';
 import { MasterDataFilterActions } from './master-data-filter-actions';
+import { MasterDataFilterBar } from './master-data-filter-bar';
 import {
   getMasterDataDefinition,
   type MasterDataResourceKey,
 } from '../model/catalog';
-import type { MasterDataSectionDefinition } from '../model/sections';
 import {
   MasterDataLiveForm,
   type MasterDataFormMode,
@@ -81,9 +80,9 @@ import {
 } from './master-data-kpi-grid';
 import { MasterDataProfileDialog } from './master-data-profile-dialog';
 import { MasterDataCurrencyForm } from './master-data-currency-form';
+import { MasterDataBankProfile } from './master-data-bank-profile';
 
-type FinanceTab =
-  'currencies' | 'approvals' | 'banks' | 'branches' | 'payments';
+type FinanceTab = 'currencies' | 'approvals' | 'banks' | 'payments';
 type RequestState = 'loading' | 'ready' | 'error' | 'forbidden';
 type RateStatus = 'DRAFT' | 'APPROVED' | 'REJECTED' | 'EXPIRED';
 
@@ -114,19 +113,7 @@ const tabs: readonly {
   icon: typeof Coins;
 }[] = [
   { key: 'currencies', label: 'ارزها', resource: 'currencies', icon: Coins },
-  {
-    key: 'approvals',
-    label: 'گردش تأیید نرخ',
-    resource: 'exchange-rates',
-    icon: Workflow,
-  },
   { key: 'banks', label: 'بانک‌ها', resource: 'banks', icon: Landmark },
-  {
-    key: 'branches',
-    label: 'شعب بانک',
-    resource: 'bank-branches',
-    icon: Building2,
-  },
   {
     key: 'payments',
     label: 'روش پرداخت',
@@ -138,8 +125,7 @@ const tabs: readonly {
 const tabCopy: Record<FinanceTab, { title: string; description: string }> = {
   currencies: {
     title: 'ارزها',
-    description:
-      'تعریف ارزهای ISO-4217؛ با انتخاب هر ارز، نرخ جاری و تاریخچه واقعی آن نمایش داده می‌شود.',
+    description: '',
   },
   approvals: {
     title: 'گردش تأیید نرخ',
@@ -150,11 +136,6 @@ const tabCopy: Record<FinanceTab, { title: string; description: string }> = {
     title: 'بانک‌ها',
     description:
       'بانک‌های مرجع مشترک بین شرکت‌ها؛ حساب، مانده و شبا متعلق به Finance است.',
-  },
-  branches: {
-    title: 'شعب بانک',
-    description:
-      'تعریف مستقل شعبه با بانک، شهر، نشانی و تلفن عمومی بدون اطلاعات حساب.',
   },
   payments: {
     title: 'روش‌های پرداخت',
@@ -280,18 +261,11 @@ function FinanceChart({ rates }: { rates: readonly CurrencyRateRow[] }) {
           </circle>
         ))}
       </svg>
-      <p className="mt-2 text-xs text-muted-foreground">
-        Tooltip هر نقطه شامل جفت ارز، نرخ و زمان مشاهده UTC است.
-      </p>
     </div>
   );
 }
 
-export function MasterDataFinanceWorkspace({
-  section,
-}: {
-  section: MasterDataSectionDefinition;
-}) {
+export function MasterDataFinanceWorkspace() {
   const [tab, setTab] = useState<FinanceTab>('currencies');
   const [records, setRecords] = useState<readonly MasterDataRecord[]>([]);
   const [rates, setRates] = useState<readonly CurrencyRateRow[]>([]);
@@ -313,6 +287,7 @@ export function MasterDataFinanceWorkspace({
   const [selectedCurrency, setSelectedCurrency] = useState<
     MasterDataRecord | undefined
   >();
+  const [selectedBank, setSelectedBank] = useState<MasterDataRecord>();
   const [currencyProfileOpen, setCurrencyProfileOpen] = useState(false);
   const [currencyHistoryState, setCurrencyHistoryState] =
     useState<RequestState>('ready');
@@ -526,6 +501,7 @@ export function MasterDataFinanceWorkspace({
     setPage(1);
     setSelected(undefined);
     setSelectedCurrency(undefined);
+    setSelectedBank(undefined);
     setCurrencyProfileOpen(false);
     setAudit([]);
     setAuditRateId(null);
@@ -667,11 +643,6 @@ export function MasterDataFinanceWorkspace({
       tab === 'banks' &&
       (!row.attributes.englishName || !row.attributes.swiftCode),
   ).length;
-  const coveredCities = new Set(
-    records
-      .map((row) => row.attributes.cityName)
-      .filter((value): value is string => typeof value === 'string' && !!value),
-  ).size;
   const kpis: readonly MasterDataKpiItem[] =
     tab === 'currencies'
       ? [
@@ -758,64 +729,35 @@ export function MasterDataFinanceWorkspace({
                 hint: 'در صفحه جاری',
               },
             ]
-          : tab === 'branches'
-            ? [
-                {
-                  label: 'کل شعب ثبت‌شده',
-                  value: total,
-                  icon: Building2,
-                  tone: 'sky',
-                },
-                {
-                  label: 'شعب فعال',
-                  value: activeTotal,
-                  icon: CheckCircle2,
-                  tone: 'emerald',
-                },
-                {
-                  label: 'شهرهای تحت پوشش',
-                  value: coveredCities,
-                  icon: MapPin,
-                  tone: 'violet',
-                  hint: 'در صفحه جاری',
-                },
-                {
-                  label: 'شعب بدون حساب متصل',
-                  value: '—',
-                  icon: WalletCards,
-                  tone: 'amber',
-                  hint: 'پس از اتصال قرارداد Finance',
-                },
-              ]
-            : [
-                {
-                  label: 'روش‌های فعال',
-                  value: activeTotal,
-                  icon: WalletCards,
-                  tone: 'emerald',
-                },
-                {
-                  label: 'تراکنش‌های امروز',
-                  value: '—',
-                  icon: RefreshCw,
-                  tone: 'sky',
-                  hint: 'در مالکیت Finance',
-                },
-                {
-                  label: 'درگاه‌های متصل',
-                  value: '—',
-                  icon: CreditCard,
-                  tone: 'violet',
-                  hint: 'در مالکیت Finance',
-                },
-                {
-                  label: 'نیازمند پیکربندی',
-                  value: '—',
-                  icon: Settings2,
-                  tone: 'amber',
-                  hint: 'پس از اتصال قرارداد Finance',
-                },
-              ];
+          : [
+              {
+                label: 'روش‌های فعال',
+                value: activeTotal,
+                icon: WalletCards,
+                tone: 'emerald',
+              },
+              {
+                label: 'تراکنش‌های امروز',
+                value: '—',
+                icon: RefreshCw,
+                tone: 'sky',
+                hint: 'در مالکیت Finance',
+              },
+              {
+                label: 'درگاه‌های متصل',
+                value: '—',
+                icon: CreditCard,
+                tone: 'violet',
+                hint: 'در مالکیت Finance',
+              },
+              {
+                label: 'نیازمند پیکربندی',
+                value: '—',
+                icon: Settings2,
+                tone: 'amber',
+                hint: 'پس از اتصال قرارداد Finance',
+              },
+            ];
 
   const approvedCurrencyRates = [...selectedCurrencyRates]
     .filter((row) => row.status === 'APPROVED')
@@ -871,7 +813,7 @@ export function MasterDataFinanceWorkspace({
   ];
 
   return (
-    <div className="space-y-5" dir="rtl">
+    <div className={tab === 'currencies' ? 'space-y-3' : 'space-y-5'} dir="rtl">
       <PageHeader
         actions={
           <Link
@@ -882,7 +824,6 @@ export function MasterDataFinanceWorkspace({
             همه بخش‌ها
           </Link>
         }
-        description={section.description}
         title={copy.title}
       />
 
@@ -914,10 +855,6 @@ export function MasterDataFinanceWorkspace({
         </div>
       </div>
 
-      <p className="text-sm leading-7 text-muted-foreground">
-        {copy.description}
-      </p>
-
       <Card className="overflow-x-auto p-2">
         <nav
           aria-label="زیرمجموعه‌های مالی و پولی"
@@ -941,71 +878,75 @@ export function MasterDataFinanceWorkspace({
         </nav>
       </Card>
 
-      <MasterDataKpiGrid items={kpis} label={`شاخص‌های ${copy.title}`} />
+      {tab !== 'payments' ? (
+        <MasterDataKpiGrid items={kpis} label={`شاخص‌های ${copy.title}`} />
+      ) : null}
 
-      <FilterBar className="grid sm:grid-cols-2 lg:grid-cols-[minmax(14rem,1fr)_12rem_12rem_auto]">
-        {columnFilterControls}
-        <MasterDataDateRangeFilter
-          idPrefix="finance-created"
-          {...dateRangeProps}
-        />
-        <FormField id="finance-search" label="جست‌وجو">
-          <div className="relative">
-            <Search className="absolute end-3 top-3.5 size-4 text-muted-foreground" />
-            <Input
-              className="pe-10"
-              id="finance-search"
-              onChange={(event) => {
-                setSearch(event.target.value);
-                setPage(1);
-              }}
-              placeholder={`جست‌وجو در ${copy.title}`}
-              value={search}
-            />
-          </div>
-        </FormField>
-        {isRateTab(tab) ? (
-          <FormField label="وضعیت نرخ">
-            <Select disabled value="DRAFT">
-              <SelectTrigger aria-label="فیلتر وضعیت نرخ">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="DRAFT">پیش‌نویس</SelectItem>
-              </SelectContent>
-            </Select>
+      {tab !== 'payments' ? (
+        <MasterDataFilterBar>
+          {columnFilterControls}
+          <MasterDataDateRangeFilter
+            idPrefix="finance-created"
+            {...dateRangeProps}
+          />
+          <FormField id="finance-search" label="جست‌وجو">
+            <div className="relative">
+              <Search className="absolute end-3 top-3.5 size-4 text-muted-foreground" />
+              <Input
+                className="pe-10"
+                id="finance-search"
+                onChange={(event) => {
+                  setSearch(event.target.value);
+                  setPage(1);
+                }}
+                placeholder={`جست‌وجو در ${copy.title}`}
+                value={search}
+              />
+            </div>
           </FormField>
-        ) : (
-          <FormField label="وضعیت">
-            <Select
-              onValueChange={(value) => {
-                setStatus(value as typeof status);
-                setPage(1);
-              }}
-              value={status}
-            >
-              <SelectTrigger aria-label="فیلتر وضعیت">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">همه وضعیت‌ها</SelectItem>
-                <SelectItem value="active">فعال</SelectItem>
-                <SelectItem value="inactive">غیرفعال</SelectItem>
-              </SelectContent>
-            </Select>
-          </FormField>
-        )}
-        <MasterDataFilterActions
-          onClear={() => {
-            setSearch('');
-            resetColumnFilters();
-            resetDateRange();
-            setStatus('active');
-            setPage(1);
-          }}
-          onRefresh={() => void load()}
-        />
-      </FilterBar>
+          {isRateTab(tab) ? (
+            <FormField label="وضعیت نرخ">
+              <Select disabled value="DRAFT">
+                <SelectTrigger aria-label="فیلتر وضعیت نرخ">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="DRAFT">پیش‌نویس</SelectItem>
+                </SelectContent>
+              </Select>
+            </FormField>
+          ) : (
+            <FormField label="وضعیت">
+              <Select
+                onValueChange={(value) => {
+                  setStatus(value as typeof status);
+                  setPage(1);
+                }}
+                value={status}
+              >
+                <SelectTrigger aria-label="فیلتر وضعیت">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">همه وضعیت‌ها</SelectItem>
+                  <SelectItem value="active">فعال</SelectItem>
+                  <SelectItem value="inactive">غیرفعال</SelectItem>
+                </SelectContent>
+              </Select>
+            </FormField>
+          )}
+          <MasterDataFilterActions
+            onClear={() => {
+              setSearch('');
+              resetColumnFilters();
+              resetDateRange();
+              setStatus('active');
+              setPage(1);
+            }}
+            onRefresh={() => void load()}
+          />
+        </MasterDataFilterBar>
+      ) : null}
 
       {requestState === 'loading' ? (
         <div className="space-y-3" aria-live="polite">
@@ -1067,14 +1008,16 @@ export function MasterDataFinanceWorkspace({
                     <td className="p-4">
                       <div className="flex flex-wrap justify-end gap-2">
                         <Button
+                          aria-label={`مشاهده ${row.fromCurrencyCode}/${row.toCurrencyCode}`}
                           onClick={() => {
                             setSelected(rateRecord(row));
                             setFormMode('view');
                           }}
-                          size="sm"
+                          size="icon"
+                          title={`مشاهده ${row.fromCurrencyCode}/${row.toCurrencyCode}`}
                           variant="outline"
                         >
-                          <Eye className="size-4" /> مشاهده
+                          <Eye aria-hidden="true" className="size-4" />
                         </Button>
                         {row.status === 'DRAFT' ? (
                           <>
@@ -1145,24 +1088,28 @@ export function MasterDataFinanceWorkspace({
                 </p>
                 <div className="mt-4 flex flex-wrap justify-end gap-2 border-t border-border pt-4">
                   <Button
+                    aria-label={`مشاهده ${record.name}`}
                     onClick={() => {
                       setSelected(record);
                       setFormMode('view');
                     }}
-                    size="sm"
+                    size="icon"
+                    title={`مشاهده ${record.name}`}
                     variant="outline"
                   >
-                    <Eye className="size-4" /> مشاهده
+                    <Eye aria-hidden="true" className="size-4" />
                   </Button>
                   <Button
+                    aria-label={`ویرایش ${record.name}`}
                     onClick={() => {
                       setSelected(record);
                       setFormMode('edit');
                     }}
-                    size="sm"
+                    size="icon"
+                    title={`ویرایش ${record.name}`}
                     variant="outline"
                   >
-                    <FilePenLine className="size-4" /> ویرایش
+                    <FilePenLine aria-hidden="true" className="size-4" />
                   </Button>
                   <MasterDataDeleteButton
                     record={record}
@@ -1199,10 +1146,16 @@ export function MasterDataFinanceWorkspace({
                       {record.code}
                     </td>
                     <td className="p-4 font-semibold">
-                      {tab === 'currencies' ? (
+                      {tab === 'banks' ? (
+                        <MasterDataLogoImage record={record} />
+                      ) : null}
+                      {tab === 'currencies' || tab === 'banks' ? (
                         <button
                           className="text-start font-semibold text-foreground hover:text-primary focus-visible:rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                          onClick={() => openCurrencyProfile(record)}
+                          onClick={() => {
+                            if (tab === 'banks') setSelectedBank(record);
+                            else openCurrencyProfile(record);
+                          }}
                           type="button"
                         >
                           {record.name}
@@ -1233,28 +1186,33 @@ export function MasterDataFinanceWorkspace({
                     <td className="p-4">
                       <div className="flex flex-wrap justify-end gap-2">
                         <Button
+                          aria-label={`مشاهده ${record.name}`}
                           onClick={() => {
                             if (tab === 'currencies')
                               openCurrencyProfile(record);
+                            else if (tab === 'banks') setSelectedBank(record);
                             else {
                               setSelected(record);
                               setFormMode('view');
                             }
                           }}
-                          size="sm"
+                          size="icon"
+                          title={`مشاهده ${record.name}`}
                           variant="outline"
                         >
-                          <Eye className="size-4" /> مشاهده
+                          <Eye aria-hidden="true" className="size-4" />
                         </Button>
                         <Button
+                          aria-label={`ویرایش ${record.name}`}
                           onClick={() => {
                             setSelected(record);
                             setFormMode('edit');
                           }}
-                          size="sm"
+                          size="icon"
+                          title={`ویرایش ${record.name}`}
                           variant="outline"
                         >
-                          <FilePenLine className="size-4" /> ویرایش
+                          <FilePenLine aria-hidden="true" className="size-4" />
                         </Button>
                         <MasterDataDeleteButton
                           record={record}
@@ -1367,9 +1325,17 @@ export function MasterDataFinanceWorkspace({
           {...(selected ? { record: selected } : {})}
         />
       ) : null}
+      {selectedBank ? (
+        <MasterDataBankProfile
+          bank={selectedBank}
+          key={selectedBank.id}
+          onOpenChange={(open) => {
+            if (!open) setSelectedBank(undefined);
+          }}
+        />
+      ) : null}
       {selectedCurrency ? (
         <MasterDataProfileDialog
-          description="نرخ جاری، نمودار و جدول تاریخچه براساس ارز و جفت نرخ انتخاب‌شده از Backend خوانده می‌شود."
           onOpenChange={setCurrencyProfileOpen}
           open={currencyProfileOpen}
           title={`جزئیات ارز ${selectedCurrency.code}`}
@@ -1400,7 +1366,7 @@ export function MasterDataFinanceWorkspace({
               ))}
             </Card>
 
-            <FilterBar className="grid sm:grid-cols-2 lg:grid-cols-[minmax(14rem,1fr)_12rem_auto_auto]">
+            <MasterDataFilterBar>
               <FormField label="جفت ارز و نوع نرخ">
                 <Select
                   disabled={!currencyPairs.length}
@@ -1453,7 +1419,7 @@ export function MasterDataFinanceWorkspace({
                 }}
                 onRefresh={() => void loadCurrencyHistory()}
               />
-            </FilterBar>
+            </MasterDataFilterBar>
 
             {currencyHistoryState === 'loading' ? (
               <div className="space-y-3" aria-label="در حال دریافت تاریخچه ارز">
@@ -1534,11 +1500,13 @@ export function MasterDataFinanceWorkspace({
                               />
                             ) : null}
                             <Button
+                              aria-label="مشاهده جزئیات رخداد"
                               onClick={() => void showAudit(row)}
-                              size="sm"
+                              size="icon"
+                              title="مشاهده جزئیات رخداد"
                               variant="ghost"
                             >
-                              مشاهده
+                              <Eye aria-hidden="true" className="size-4" />
                             </Button>
                           </td>
                         </tr>

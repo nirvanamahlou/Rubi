@@ -70,6 +70,7 @@ describe('WorkbenchFeedbackService', () => {
       input.attachmentDocumentIds,
       input.id,
       input.branchId,
+      input.anonymous,
       actor,
     );
     expect(hrDirectory.workbenchFeedbackRecipientUserIds).toHaveBeenCalledWith(
