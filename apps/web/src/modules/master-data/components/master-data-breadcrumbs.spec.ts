@@ -26,9 +26,23 @@ describe('Master Data page navigation', () => {
       ),
       'utf8',
     );
-    expect(source).toContain('<PageHeader');
-    expect(source).not.toMatch(/\beyebrow\s*=/);
+    const pageHeaderTag = source.match(/<PageHeader\b[^>]*>/s)?.[0];
+    expect(pageHeaderTag).toBeDefined();
+    expect(pageHeaderTag).not.toMatch(/\beyebrow\s*=/);
     expect(source).toContain('href="/master-data"');
+  });
+
+  it('allows profile identity eyebrows without restoring PageHeader breadcrumbs', () => {
+    const source = readFileSync(
+      resolve(
+        process.cwd(),
+        'src/modules/master-data/components/master-data-finance-workspace.tsx',
+      ),
+      'utf8',
+    );
+    expect(source).toMatch(/<MasterDataProfileIdentity[\s\S]*?eyebrow=/);
+    const pageHeaderTag = source.match(/<PageHeader\b[^>]*>/s)?.[0];
+    expect(pageHeaderTag).not.toMatch(/\beyebrow\s*=/);
   });
 
   it('retains the title and navigation action without a page description', () => {
