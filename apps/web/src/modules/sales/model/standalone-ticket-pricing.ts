@@ -3,6 +3,7 @@ import {
   moneyUnits,
   type SalesServicePricingV1,
   type TicketOfferV1,
+  type TicketSalePriceTierV1,
 } from '@nora/contracts';
 import type { SalesFormState } from './sales-form';
 
@@ -23,6 +24,30 @@ export function roundTripPerLegFares(
   };
 }
 
+/** Seat blocks follow the published capacity order; a quote may cross blocks. */
+export function seatTierTotal(
+  amount: string,
+  tiers: readonly TicketSalePriceTierV1[] | undefined,
+  consumed: number,
+  seats: number,
+) {
+  if (!tiers?.length) return moneyDecimal(moneyUnits(amount) * BigInt(seats));
+  let first = 0;
+  let total = 0n;
+  for (const tier of tiers) {
+    const count = Math.max(
+      0,
+      Math.min(consumed + seats, first + tier.seatCount) -
+        Math.max(consumed, first),
+    );
+    total += moneyUnits(tier.amount) * BigInt(count);
+    first += tier.seatCount;
+  }
+  if (consumed + seats > first)
+    throw new Error('ظرفیت پله‌های قیمت برای این تعداد صندلی کافی نیست.');
+  return moneyDecimal(total);
+}
+
 export function roundTripTicketPricing(
   state: SalesFormState,
   outbound: TicketOfferV1,
@@ -36,8 +61,27 @@ export function roundTripTicketPricing(
     delete next['flight-return'];
     return next;
   }
+  const pair = outbound.roundTripSalePrices?.find(
+    (fare) => fare.returnOfferId === returning.id,
+  );
+  const pairTotal = seatTierTotal(
+    pair!.amount,
+    pair!.tiers,
+    Math.max(
+      outbound.totalCapacity - outbound.remainingCapacity,
+      returning.totalCapacity - returning.remainingCapacity,
+    ),
+    seats,
+  );
+  const pairUnits = moneyUnits(pairTotal);
+  const outboundTotal = pair?.tiers?.length
+    ? moneyDecimal(pairUnits / 2n)
+    : moneyDecimal(moneyUnits(fares.outboundAmount) * BigInt(seats));
+  const returnTotal = pair?.tiers?.length
+    ? moneyDecimal(pairUnits - pairUnits / 2n)
+    : moneyDecimal(moneyUnits(fares.returnAmount) * BigInt(seats));
   const price = (amount: string): SalesServicePricingV1[] => {
-    const total = moneyDecimal(moneyUnits(amount) * BigInt(seats));
+    const total = amount;
     return [
       {
         version: 1,
@@ -49,8 +93,8 @@ export function roundTripTicketPricing(
   };
   return {
     ...(state.servicePricing ?? {}),
-    'flight-outbound': price(fares.outboundAmount),
-    'flight-return': price(fares.returnAmount),
+    'flight-outbound': price(outboundTotal),
+    'flight-return': price(returnTotal),
   };
 }
 
@@ -69,7 +113,12 @@ export function standaloneTicketPricing(
   )
     return state.servicePricing ?? {};
   const fare = offer.standaloneSalePrice;
-  const total = moneyDecimal(moneyUnits(fare.amount) * BigInt(seats));
+  const total = seatTierTotal(
+    fare.amount,
+    fare.tiers,
+    offer.totalCapacity - offer.remainingCapacity,
+    seats,
+  );
   return {
     ...state.servicePricing,
     [`flight-${direction.toLowerCase()}`]: [

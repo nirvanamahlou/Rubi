@@ -26,7 +26,10 @@ vi.mock('@/modules/ticket-catalog/api/references', () => ({
   listActiveCurrencyReferences: vi.fn(),
   listReferences: vi.fn(),
 }));
-import { TicketPricesWorkspace } from './ticket-prices-workspace';
+import {
+  TicketPricesWorkspace,
+  clampTierSeatCount,
+} from './ticket-prices-workspace';
 describe('ticket price workspace', () => {
   it('renders unified filters and the pair editor before the common list', () => {
     state.values = null;
@@ -103,6 +106,7 @@ describe('ticket price workspace', () => {
       {
         ...base,
         id: 'back',
+        totalCapacity: 45,
         originId: 'antalya',
         destinationId: 'tehran',
         departureAt: '2099-01-08T10:00:00Z',
@@ -125,8 +129,19 @@ describe('ticket price workspace', () => {
       '',
       '',
       {
-        out: { amount: '10000000', currencyCode: 'IRR' },
-        'out:back': { amount: '25000000', currencyCode: 'IRR' },
+        out: {
+          amount: '10000000',
+          currencyCode: 'IRR',
+          tiers: [{ seatCount: 50, amount: '10000000' }],
+        },
+        'out:back': {
+          amount: '25000000',
+          currencyCode: 'IRR',
+          tiers: [
+            { seatCount: 15, amount: '25000000' },
+            { seatCount: 30, amount: '26000000' },
+          ],
+        },
       },
       {},
       ['IRR', 'EUR'],
@@ -155,6 +170,20 @@ describe('ticket price workspace', () => {
     expect(html).toContain('value="4"');
     expect(html).toContain('بلیط برگشت');
     expect(html).toContain('پس از ثبت قیمت پایه');
+    expect(html).toContain('max="15"');
+    expect(html).toContain('max="30"');
+    expect(html).toContain('ظرفیت تکمیل شده');
+    expect(
+      clampTierSeatCount(
+        '46',
+        [
+          { seatCount: 15, amount: '1' },
+          { seatCount: 30, amount: '2' },
+        ],
+        0,
+        45,
+      ),
+    ).toBe(15);
     if (process.env.TICKET_PRICE_VISUAL_QA_PATH)
       writeFileSync(process.env.TICKET_PRICE_VISUAL_QA_PATH, html);
     state.values = null;

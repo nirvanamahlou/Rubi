@@ -58,6 +58,17 @@ export function applySaleCommissions(
             percent: row.percent.toString(),
             amount: commissionAmount(fare.amount, row.percent.toString()),
             currencyCode: fare.currencyCode,
+            ...(fare.tiers?.length
+              ? {
+                  tiers: fare.tiers.map((tier) => ({
+                    seatCount: tier.seatCount,
+                    amount: commissionAmount(
+                      tier.amount,
+                      row.percent.toString(),
+                    ),
+                  })),
+                }
+              : {}),
           },
         ]
       : [];
@@ -78,6 +89,7 @@ export function applySaleCommissions(
         revision: price.revision,
         amount: price.amount,
         currencyCode: price.currencyCode,
+        ...(price.tiers?.length ? { tiers: price.tiers } : {}),
         salePriceTarget: row.target,
       });
   }
@@ -89,14 +101,21 @@ export function applySaleCommissions(
     baseStandaloneSalePrice: base,
     saleCommissions: commissions,
     standaloneSalePrice:
-      base && direct ? { ...base, amount: direct.amount } : base,
+      base && direct
+        ? { ...base, amount: direct.amount, tiers: direct.tiers }
+        : base,
     targetedStandaloneSalePrices: [...targeted.values()].map((price) => {
       const c = commissions.find(
         (c) =>
           !c.returnOfferId && c.salePriceTargetId === price.salePriceTarget.id,
       );
       return c
-        ? { ...price, amount: c.amount, currencyCode: c.currencyCode }
+        ? {
+            ...price,
+            amount: c.amount,
+            currencyCode: c.currencyCode,
+            tiers: c.tiers,
+          }
         : price;
     }),
     roundTripSalePrices: (offer.roundTripSalePrices ?? []).map((price) => {
@@ -106,7 +125,9 @@ export function applySaleCommissions(
       return {
         ...price,
         baseAmount: price.amount,
+        baseTiers: price.tiers,
         amount: c?.amount ?? price.amount,
+        tiers: c?.tiers ?? price.tiers,
       };
     }),
   };

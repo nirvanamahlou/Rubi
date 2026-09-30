@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { eligibleTicketReturn } from '@nora/contracts';
 import {
   BadRequestException,
   ConflictException,
@@ -48,6 +49,8 @@ function packageView(row: PackageRow): TourPackageV1 {
 }
 function offerView(row: OfferRow): TicketOfferV1 {
   return {
+    returnMinDays: row.returnMinDays ?? null,
+    returnMaxDays: row.returnMaxDays ?? null,
     id: row.id,
     version: row.version,
     branchId: row.branchId,
@@ -532,7 +535,8 @@ export class TourPublicService {
             returning.originId !== definition.destinationId ||
             returning.destinationId !== definition.originId ||
             day(returning.departureAt) !== input.endsOn ||
-            returning.departureAt <= outbound.arrivalAt)
+            returning.departureAt <= outbound.arrivalAt ||
+            !eligibleTicketReturn(outbound, returning))
         )
           throw new BadRequestException(
             'بلیت برگشت باید از مقصد و در روز پایان تور باشد.',

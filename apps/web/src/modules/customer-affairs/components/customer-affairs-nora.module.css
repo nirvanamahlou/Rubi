@@ -495,6 +495,44 @@
   padding: 0;
   overflow: hidden;
 }
+.qualificationReport {
+  display: grid;
+  gap: 8px;
+  margin: 20px 22px 0;
+  padding: 16px;
+  border: 1px solid color-mix(in srgb, var(--primary) 22%, var(--border));
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--primary) 4%, var(--surface));
+  font-size: 14px;
+  line-height: 1.8;
+}
+.qualificationReportHead {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.qualificationReportHead h4 {
+  font-weight: 800;
+}
+.qualificationReportHead time {
+  color: var(--muted-foreground);
+  font-size: 12px;
+}
+.qualificationCriteria {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+  gap: 6px 16px;
+  margin-top: 4px;
+}
+.qualificationCriteria li {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+.qualificationCriteria strong {
+  white-space: nowrap;
+}
 .profileTimeline {
   display: grid;
   gap: 12px;

@@ -80,6 +80,8 @@ export function createReturnTicketDraft(source: ProductInput): ProductInput {
     ...source,
     title: '',
     journeyRole: 'return',
+    returnMinDays: null,
+    returnMaxDays: null,
     fare: { ...source.fare },
     segments: [
       {
@@ -236,7 +238,7 @@ export function buildAutomaticTicketTitle(
   const combined = definition.segments.length > 1 ? ' ترکیبی' : '';
   return `${number}${combined} • ${origin} به ${destination}`.slice(0, 160);
 }
-function withDisplaySnapshot(
+export function withDisplaySnapshot(
   definition: ProductInput,
   references: readonly Reference[],
 ): ProductInput {
@@ -897,6 +899,41 @@ export function TicketForm({
               رفت‌وبرگشت دو بلیط مستقل می‌سازد. ترکیبی یک بلیط واحد با چند قطعه
               متصل است و همه قطعه‌ها با هم فروخته می‌شوند.
             </p>
+          ) : null}
+          {input.transport === 'flight' ? (
+            <div className={styles.fields}>
+              {(['returnMinDays', 'returnMaxDays'] as const).map((field) => (
+                <FormField
+                  key={field}
+                  label={
+                    field === 'returnMinDays'
+                      ? 'Min — حداقل روز تا برگشت'
+                      : 'Max — حداکثر روز تا برگشت'
+                  }
+                  id={`ticket-${field}`}
+                >
+                  <Input
+                    id={`ticket-${field}`}
+                    type="number"
+                    min={0}
+                    max={365}
+                    step={1}
+                    placeholder="بدون محدودیت"
+                    value={input[field] ?? ''}
+                    readOnly={readOnly}
+                    onChange={(event) =>
+                      setInput((current) => ({
+                        ...current,
+                        [field]:
+                          event.target.value === ''
+                            ? null
+                            : Number(event.target.value),
+                      }))
+                    }
+                  />
+                </FormField>
+              ))}
+            </div>
           ) : null}
         </section>
         {definitionMode !== 'combined' ? (
