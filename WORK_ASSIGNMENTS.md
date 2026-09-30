@@ -4616,6 +4616,13 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 - محدودهٔ رزرو: `customer-affairs-workspace.tsx`، CSS ماژول، تست چیدمان همان کامپوننت و ثبت اسناد. شاخه `codex/pc-b-ca-detail-actions-row-0929` از `origin/develop@c22e08a1`. منطق شرط‌ها، عملیات و فرم‌ها بدون تغییر؛ در viewport باریک شکست خط واکنش‌گرا مجاز است. بدون API، داده، قرارداد مشترک، Migration، Permission یا Dependency/Lockfile.
 - نتیجه: هر چهار CTA مستقیماً در یک نوار واحد پروفایل قرار گرفتند؛ در دسکتاپ یک‌ردیفه و در عرض موبایل wrap می‌شوند. تست‌های کامپوننت امور مشتریان ۴۲/۴۲، typecheck، ESLint هدفمند، Prettier و `git diff --check` موفق‌اند. Build و CI از طریق PR بررسی می‌شوند؛ build محلی اجرا نشد چون خروجی `.next` در سرویس Web فعال ۳۱۰۰ مشترک است.
 
+## CUSTOMER-AFFAIRS-FOLLOWUP-OVERVIEW-0929 — PC-B — READY_FOR_REVIEW
+
+- `COMPUTER_ID=PC-B`؛ درخواست مالک از تصویر ۶۶۷: در ردیف هر درخواست دکمهٔ «پیگیری» به پروفایل همان درخواست و مشخصات/عملیات آن برود؛ درخواست تازه‌ثبت‌شده در «نمای کلی» نیز دیده شود. شاخه `codex/pc-b-ca-followup-overview-0929` از `origin/develop@bb4209e0`.
+- محدودهٔ رزرو: فقط `apps/web/src/modules/customer-affairs/**`، در صورت نیاز منطق داشبورد خود ماژول در `apps/api/src/customer-affairs/**` و تست‌های هدفمند؛ ثبت وضعیت در اسناد مرکزی به همین Work Item محدود است. مرز دادهٔ Customers، قرارداد مشترک، Migration، Dependency/Lockfile و سرویس زندهٔ ۳۱۰۰ تغییر نمی‌کنند مگر با هماهنگی جداگانه.
+- شاخهٔ موازی `codex/pc-b-ca-customer-create-0929` فقط انتخاب‌گر مشترک را تغییر می‌دهد و در این واحد دست‌کاری نمی‌شود. پذیرش: مسیر دکمهٔ پیگیری برای هر ردیف شناسهٔ درست را باز کند؛ نمای کلی درخواست تازه را بدون اتکا به دادهٔ ثابت و بدون نقض فیلترهای شعبه/بازه نشان دهد؛ تست، typecheck، lint و build بخش متاثر موفق باشند.
+- نتیجه: ستون/دکمهٔ «پیگیری» هر ردیف درخواست به نمای پروفایل همان `leadId` می‌رود. پنل مستقل «آخرین درخواست‌ها» در نمای کلی از API فهرست بدون فیلتر مرحله بارگیری می‌شود تا درخواست تازه با وضعیت `NEW` هم دیده شود؛ پنل «منتظر پذیرش فروش» و پیگیری معوق دست‌نخورده‌اند. ۲۸ تست متمرکز، Web typecheck، lint محدود، build و diff check موفق؛ CI، بازبینی runtime و ادغام هنوز باقی‌اند. [شرح کار](docs/tasks/CUSTOMER-AFFAIRS-FOLLOWUP-OVERVIEW-0929.md).
+
 ## CUSTOMER-AFFAIRS-ASSESSMENT-SAVE-0929 — PC-B — READY_FOR_REVIEW
 
 - `COMPUTER_ID=PC-B`؛ شاخه `codex/pc-b-ca-assessment-save-0929` از `origin/develop` در worktree مستقل. درخواست مالک: رفع ذخیره‌نشدن ارزیابی آمادگی فروش، انتقال دکمه کنار «ثبت ارتباط جدید»، و نمایش نتیجه ذخیره‌شده در پایین پروفایل درخواست.
