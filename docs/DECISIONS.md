@@ -1,3 +1,7 @@
+## MANIFEST-LOAD-SEARCH-0930 — owner policy update (2026-09-30)
+
+The owner explicitly removes Finance approval as a prerequisite for manifest listing and export. Every contract already received by Reservations participates, subject to branch, passenger assignment and sensitive-read permissions. This supersedes the earlier manifest-specific Finance gate; financial delivery authorization for tickets/vouchers remains unchanged. Ticket Catalog exposes a read-only inventory projection through its public service; Reservations does not query its tables. Optional load fields preserve v1 client compatibility.
+
 ## USER-ACCESS-TREE-0928 — per-user IAM access (2026-09-28)
 
 IAM owns a dedicated non-shareable `personal-access-<userId>` role for each managed account. The selected job title labels this role; it does not edit HR employment records or imply grants. Native permissions continue to authorize server operations. Additional `ui.profile` and catalogued `ui.screen.*` permissions control Web route, navigation and tab visibility. A whole-group checkbox selects assignable native permissions and child screens; children can be removed individually.

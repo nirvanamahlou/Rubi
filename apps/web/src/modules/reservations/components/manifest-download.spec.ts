@@ -33,25 +33,29 @@ describe('manifest download', () => {
     vi.stubGlobal('crypto', undefined);
     expect(manifestRequestKey()).toMatch(/^manifest-/);
   });
-  it('uses separate stable keys when new-only falls back to all approved contracts', async () => {
+  it('keeps new-only strict and uses separate stable keys for an explicit all export', async () => {
     const request = vi
       .fn()
       .mockResolvedValueOnce(
         new Response(
           JSON.stringify({
-            error: {
-              message: 'برای این بلیط قرارداد جدید قابل خروجی وجود ندارد.',
-            },
+            message: 'برای این بلیط قرارداد جدید قابل خروجی وجود ندارد.',
           }),
           { status: 400 },
         ),
       )
       .mockImplementation(async () => fileResponse());
     const keys = new Map<string, string>();
-    const result = await requestManifestDownload(input, request, keys);
+    await expect(requestManifestDownload(input, request, keys)).rejects.toThrow(
+      'قرارداد جدید',
+    );
+    expect(request).toHaveBeenCalledTimes(1);
+    const result = await requestManifestDownload(
+      { ...input, includePreviouslyExported: true },
+      request,
+      keys,
+    );
     expect(result.file.size).toBe(4);
-    expect(result.retriedWithAll).toBe(true);
-    expect(result.contracts).toBe('1');
     const first = request.mock.calls[0]![1];
     const second = request.mock.calls[1]![1];
     expect(JSON.parse(first.body).includePreviouslyExported).toBe(false);

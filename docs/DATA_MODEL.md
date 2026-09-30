@@ -623,3 +623,8 @@ Ticket Catalog owns TicketSaleCommissionRevision: offerId, optional returnOfferI
 ## 2026-09-30 — Ticket capacity-hold requester
 
 `TicketOfferCapacityHold.requesterName` is nullable varchar(160), entered manually as reservation attribution. It does not replace `createdByUserId` or its FK. API input is optional for old clients; provided names participate in the idempotency fingerprint. The management form requires quantity and requester name only and supplies an automatic one-hour expiry, preserving the existing temporary hold lifecycle. Migration: `20260930150000_ticket_hold_requester`.
+
+
+## Manifest inclusion policy — 2026-09-30
+
+Owner-approved MANIFEST-LOAD-SEARCH-0930 removes Finance approval from manifest listing and XLSX exports for contracts already received by Reservations. Sensitive passenger permissions, branch scope and ticket-specific assignments remain mandatory. This supersedes previous manifest approval requirements only; financial release of passenger documents outside manifest remains owned by Finance. Inventory is read through Ticket Catalog public projection; no table ownership or schema change.
