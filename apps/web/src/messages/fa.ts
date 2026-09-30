@@ -107,7 +107,7 @@ export const navigationMessages = [
     description: 'ثبت گروهی قیمت خرید هتل در بازه اقامت',
   },
   {
-    title: 'مدیریت و تعریف بلیط‌ها',
+    title: 'تعریف و ظرفیت پرواز',
     href: '/ticket-management',
     description: 'تعریف محصول بلیط، برنامه حرکت، نرخ و ظرفیت',
   },

@@ -18,11 +18,21 @@ export interface FlightLoadFilter {
 export const isCompanyLoadOffer = (offer: TicketOfferV1) =>
   offer.supplyType == null || offer.supplyType === 'COMPANY';
 
+export const currentCompanyLoadOffers = (
+  offers: readonly TicketOfferV1[],
+  now = new Date(),
+) =>
+  offers.filter(
+    (offer) =>
+      isCompanyLoadOffer(offer) && Date.parse(offer.arrivalAt) >= now.getTime(),
+  );
+
 export function validFlightLoadDates(
   offers: readonly TicketOfferV1[],
   filter: FlightLoadFilter,
+  now = new Date(),
 ) {
-  const dates = offers
+  const dates = currentCompanyLoadOffers(offers, now)
     .filter(
       (offer) =>
         isCompanyLoadOffer(offer) &&

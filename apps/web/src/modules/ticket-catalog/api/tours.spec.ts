@@ -88,4 +88,33 @@ describe('tour departure ticket range', () => {
     expect(url).toContain('departureFrom=2026-09-19T20%3A30%3A00.000Z');
     expect(url).toContain('departureTo=2026-09-22');
   });
+  it('preserves the management history flag across every page', async () => {
+    vi.stubEnv('NEXT_PUBLIC_API_BASE_URL', 'http://localhost:4000/api/v1');
+    const fetcher = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          data: [offer('old', '2000-01-01')],
+          hasMore: true,
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          data: [offer('new', '2099-01-01')],
+          hasMore: false,
+        }),
+      });
+    vi.stubGlobal('fetch', fetcher);
+    expect(
+      (await toursApi.managedOffers(true)).data.map((row) => row.id),
+    ).toEqual(['old', 'new']);
+    expect(fetcher.mock.calls[0]?.[0]).toContain(
+      '/management?includePast=true&page=1',
+    );
+    expect(fetcher.mock.calls[1]?.[0]).toContain(
+      '/management?includePast=true&page=2',
+    );
+  });
 });

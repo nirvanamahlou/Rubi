@@ -396,7 +396,7 @@ export class TicketPublicService {
   }
 
   /** Management and Sales deliberately read the same published offer rows. */
-  async managed(actor: AuthenticatedActor, page = 1) {
+  async managed(actor: AuthenticatedActor, page = 1, includePast = false) {
     this.require(actor, 'ticket_catalog.manage');
     if (!Number.isInteger(page) || page < 1 || page > 10000)
       throw new BadRequestException('Invalid management page');
@@ -406,7 +406,7 @@ export class TicketPublicService {
       where: {
         branchId: { in: actor.branchIds },
         audit: { none: { action: 'ticket.offer.archived' } },
-        departureAt: { gt: now },
+        ...(includePast ? {} : { departureAt: { gt: now } }),
       },
       include: {
         capacityAllocations: {
