@@ -1,3 +1,9 @@
+## 2026-09-30 — MASTER-DATA-VIEW-DESIGN-0930 — PC-B — READY_FOR_REVIEW
+
+Read/view presentation redesign covers all Master Data profiles and view-capable forms. User follow-ups add inline country-child expansion and terminal-list Last Change column removal; audit/backend remain intact. Existing data, permissions and create/edit workflows remain unchanged. Global Worker Orchestrator bootstrap and configuration stay outside Rubi. No migration, dependency, database or local runtime changes.
+
+Shared semantic RTL details, inline country children, country-scoped province creation and race-safe guarded terminal parent selection are implemented. All 381 Master Data tests, scoped lint, Web typecheck and the production build with 55 routes pass. Authenticated browser QA remains unverified because the connector failed before opening a browser surface; no operational data or runtime changed. Scoped locks release with the implementation commit owned by the lead.
+
 ## 2026-09-30 — MANIFEST-COUNTRY-ROUTE-0930 — PC-A — READY_FOR_REVIEW
 
 Manifest search now has separate country/city origin and destination filters. Country changes reset their corresponding city selection; choices include both ends of known routes, so reverse searches remain available. Cities use real reference names and IDs and countries are resolved through existing public Master Data services, with no direct cross-module table reads. The selected path defines display direction: Antalya → Tehran appears outbound and Tehran → Antalya return, regardless of the original contract direction; export identities/data are unchanged. Old Iran Airtour/Antalya title and Sparta introduction removed. 24 Web and 32 API tests, scoped lint, contracts build and API/Web typecheck/production builds checked before PR. Optional v1 geography preserves legacy clients and unknown countries are not inferred. No migration/dependencies/operational data changes. Owner authorized develop merge after CI.

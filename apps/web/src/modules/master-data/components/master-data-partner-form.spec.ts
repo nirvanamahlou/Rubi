@@ -102,7 +102,9 @@ describe('real partner form fields', () => {
   });
   it('does not expose editor controls in read-only profiles', () => {
     const html = render('brokers', 'view');
-    expect(html).toContain('value="Test Partner"');
+    expect(html).toContain('Test Partner');
+    expect(html).toContain('<dl');
+    expect(html).not.toContain('<input');
     expect(html).not.toContain('افزودن سازمان');
     expect(html).not.toContain('افزودن مخاطب');
     expect(html).not.toContain('افزودن خدمت');

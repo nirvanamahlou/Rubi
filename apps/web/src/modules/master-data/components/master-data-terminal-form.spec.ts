@@ -43,16 +43,14 @@ function render(mode: 'create' | 'edit' | 'view', existing?: MasterDataRecord) {
   );
 }
 describe('terminal popup', () => {
-  it('covers screenshot columns plus English title and local timezone', () => {
+  it('keeps only the requested terminal fields visible', () => {
     const html = render('edit', record);
     for (const label of [
       'کد',
       'عنوان فارسی',
       'عنوان انگلیسی',
-      'فرودگاه',
       'شهر',
       'نوع ترمینال',
-      'تعداد گیت',
       'ساعت فعالیت',
       'شروع فعالیت',
       'پایان فعالیت',
@@ -63,18 +61,22 @@ describe('terminal popup', () => {
     for (const value of [
       'TERMINAL_TEST',
       'Test terminal',
-      'TST',
-      'TEST',
       'شهر آزمون',
-      'Asia/Tehran',
       'کاربر آزمون',
       '24:00',
     ])
       expect(html).toContain(value);
+    for (const removed of [
+      'تعداد گیت',
+      'کدهای فرودگاه IATA / ICAO',
+      'منطقه زمانی فرودگاه',
+    ])
+      expect(html).not.toContain(removed);
+    expect(html).not.toMatch(/<label[^>]*>فرودگاه/);
   });
-  it('makes linked and audit metadata read-only', () => {
+  it('keeps the retained linked city metadata read-only', () => {
     const html = render('edit', record);
-    for (const key of ['code', 'city', 'airportCodes', 'timezone', 'updated'])
+    for (const key of ['code', 'city', 'updated'])
       expect(html).toMatch(
         new RegExp(`<input[^>]*id="terminal-${key}"[^>]*readOnly=""`, 'i'),
       );
@@ -87,7 +89,8 @@ describe('terminal popup', () => {
   it('opens a read-only popup without a save action for viewing', () => {
     const html = render('view', record);
     expect(html).not.toContain('ذخیره ترمینال');
-    expect(html).toMatch(/<input[^>]*id="terminal-name"[^>]*disabled=""/i);
+    expect(html).toContain('<dl');
+    expect(html).not.toContain('<input');
     expect(html).toContain('بستن');
   });
   it('does not invent data during creation', () => {

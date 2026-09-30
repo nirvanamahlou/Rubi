@@ -232,7 +232,7 @@ describe('Master Data visual polish contract', () => {
     expect(geographyTabs).not.toContain("resource: 'cities'");
     expect(geography).not.toContain("changeResource('cities')");
     expect(geography).toContain("openRelatedCreate('cities', country)");
-    expect(geography).toContain("openRelatedCreate('airports', city)");
+    expect(geography).toMatch(/openRelatedCreate\(\s*'airports',\s*city/);
     expect(geography).toMatch(/openRelatedCreate\(\s*'terminals',\s*airport,/);
   });
 });

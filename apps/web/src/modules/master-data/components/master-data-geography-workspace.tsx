@@ -34,7 +34,7 @@ import {
   SquareStack,
 } from 'lucide-react';
 import Link from 'next/link';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { Button, buttonVariants } from '@/components/ui/button';
 import {
@@ -61,12 +61,13 @@ import { loadTourTypeActorNames as loadActorNames } from '../api/tour-type-actor
 import {
   terminalHoursLabel,
   terminalStatusLabel,
-  terminalUpdatedLabel,
 } from '../model/terminal-form';
 import { MasterDataTerminalForm } from './master-data-terminal-form';
 import { MasterDataDeleteButton } from './master-data-delete-button';
 import { MasterDataFilterActions } from './master-data-filter-actions';
 import { MasterDataFilterBar } from './master-data-filter-bar';
+import { MasterDataProfileDialog } from './master-data-profile-dialog';
+import { MasterDataReferenceSelector } from './master-data-reference-selector';
 import {
   getMasterDataDefinition,
   type MasterDataResourceKey,
@@ -211,23 +212,12 @@ function geographyColumns(resource: GeographyResource): readonly string[] {
       'وضعیت',
       'عملیات',
     ];
-  return [
-    'کد/عنوان',
-    'فرودگاه',
-    'شهر',
-    'نوع ترمینال',
-    'تعداد گیت',
-    'ساعت فعالیت',
-    'آخرین تغییر',
-    'وضعیت',
-    'عملیات',
-  ];
+  return ['کد/عنوان', 'شهر', 'نوع ترمینال', 'ساعت فعالیت', 'وضعیت', 'عملیات'];
 }
 
 function recordCells(
   resource: GeographyResource,
   record: MasterDataRecord,
-  actorNames: Readonly<Record<string, string>> = {},
 ): readonly React.ReactNode[] {
   if (resource === 'countries')
     return [
@@ -307,13 +297,10 @@ function recordCells(
         {record.code}
       </p>
     </div>,
-    `${attribute(record, 'airportIataCode')} · ${attribute(record, 'airportIcaoCode')}`,
     attribute(record, 'cityName'),
     terminalLabels[attribute(record, 'terminalType')] ??
       attribute(record, 'terminalType'),
-    attribute(record, 'gateCount'),
     terminalHoursLabel(record),
-    terminalUpdatedLabel(record, actorNames),
     statusBadge(record),
   ];
 }
@@ -370,6 +357,11 @@ export function MasterDataGeographyWorkspace() {
   const [expandedAirportId, setExpandedAirportId] = useState<string | null>(
     null,
   );
+  const [terminalParentOpen, setTerminalParentOpen] = useState(false);
+  const [terminalParentId, setTerminalParentId] = useState('');
+  const [terminalParentLoading, setTerminalParentLoading] = useState(false);
+  const [terminalParentError, setTerminalParentError] = useState('');
+  const terminalParentRequest = useRef(0);
   const [citiesByCountry, setCitiesByCountry] = useState<
     Record<string, readonly MasterDataRecord[]>
   >({});
@@ -907,7 +899,11 @@ export function MasterDataGeographyWorkspace() {
     setSelected(undefined);
     setFormResource(target);
     setFormMode('create');
-    if (target === 'cities') {
+    if (target === 'regions') {
+      setFormInitialValues({ countryId: parent.id });
+      setLockedFormFields(['countryId']);
+      setFormParent({ kind: 'country', id: parent.id });
+    } else if (target === 'cities') {
       setFormInitialValues({ countryId: parent.id, regionId: '' });
       setLockedFormFields(['countryId']);
       setFormParent({ kind: 'country', id: parent.id });
@@ -932,6 +928,34 @@ export function MasterDataGeographyWorkspace() {
     setFormParent(undefined);
     setFormResource(record.resource as GeographyResource);
     setFormMode(mode);
+  }
+
+  async function continueTerminalCreate() {
+    if (!terminalParentId || terminalParentLoading) return;
+    const selectedAirportId = terminalParentId;
+    const request = ++terminalParentRequest.current;
+    setTerminalParentLoading(true);
+    setTerminalParentError('');
+    try {
+      const { data: airport } = await masterDataApi.detail(
+        'airports',
+        selectedAirportId,
+      );
+      if (request !== terminalParentRequest.current) return;
+      setTerminalParentOpen(false);
+      setTerminalParentId('');
+      openRelatedCreate('terminals', airport);
+    } catch (error) {
+      if (request !== terminalParentRequest.current) return;
+      setTerminalParentError(
+        error instanceof Error
+          ? error.message
+          : 'دریافت فرودگاه انتخاب‌شده ناموفق بود.',
+      );
+    } finally {
+      if (request === terminalParentRequest.current)
+        setTerminalParentLoading(false);
+    }
   }
 
   function renderLocationTable(
@@ -970,13 +994,11 @@ export function MasterDataGeographyWorkspace() {
                   className="border-t border-border transition hover:bg-sky-500/[0.035]"
                   key={record.id}
                 >
-                  {recordCells(target, record, actorNames).map(
-                    (cell, index) => (
-                      <td className="p-4" key={tableColumns[index]}>
-                        {cell}
-                      </td>
-                    ),
-                  )}
+                  {recordCells(target, record).map((cell, index) => (
+                    <td className="p-4" key={tableColumns[index]}>
+                      {cell}
+                    </td>
+                  ))}
                   <td className="p-4">
                     <div className="flex flex-wrap justify-end gap-2">
                       <Button
@@ -1048,8 +1070,13 @@ export function MasterDataGeographyWorkspace() {
                 <Plus aria-hidden="true" className="size-4" /> افزودن شهر
               </Button>
             </>
-          ) : (
+          ) : resource !== 'terminals' ? (
             <Button onClick={() => openCreate(resource)}>
+              <Plus aria-hidden="true" className="size-4" />
+              افزودن {definition.singularLabel}
+            </Button>
+          ) : (
+            <Button onClick={() => setTerminalParentOpen(true)}>
               <Plus aria-hidden="true" className="size-4" />
               افزودن {definition.singularLabel}
             </Button>
@@ -1328,14 +1355,20 @@ export function MasterDataGeographyWorkspace() {
       ) : records.length === 0 ? (
         <EmptyState
           action={
-            <Button
-              onClick={() => {
-                openCreate(resource);
-              }}
-              size="sm"
-            >
-              افزودن {definition.singularLabel}
-            </Button>
+            resource !== 'terminals' ? (
+              <Button
+                onClick={() => {
+                  openCreate(resource);
+                }}
+                size="sm"
+              >
+                افزودن {definition.singularLabel}
+              </Button>
+            ) : (
+              <Button onClick={() => setTerminalParentOpen(true)} size="sm">
+                افزودن {definition.singularLabel}
+              </Button>
+            )
           }
           description="با فیلتر فعلی رکوردی پیدا نشد."
           title={`${definition.label} خالی است`}
@@ -1363,287 +1396,258 @@ export function MasterDataGeographyWorkspace() {
               </tr>
             </thead>
             <tbody>
-              {records.map((record) => (
-                <tr
-                  className="border-t border-border transition hover:bg-sky-500/[0.035]"
-                  key={record.id}
-                >
-                  {recordCells(resource, record, actorNames).map(
-                    (cell, index) => (
+              {records
+                .slice(
+                  0,
+                  resource === 'countries' &&
+                    expandedCountryId &&
+                    records.some((record) => record.id === expandedCountryId)
+                    ? records.findIndex(
+                        (record) => record.id === expandedCountryId,
+                      ) + 1
+                    : records.length,
+                )
+                .map((record) => (
+                  <tr
+                    className="border-t border-border transition hover:bg-sky-500/[0.035]"
+                    key={record.id}
+                  >
+                    {recordCells(resource, record).map((cell, index) => (
                       <td className="p-4" key={columns[index]}>
                         {cell}
                       </td>
-                    ),
-                  )}
-                  <td className="p-4">
-                    <div className="flex flex-wrap justify-end gap-2">
-                      <Button
-                        aria-label={`مشاهده ${record.name}`}
-                        onClick={() => openRecord(record, 'view')}
-                        size="icon"
-                        title={`مشاهده ${record.name}`}
-                        variant="outline"
-                      >
-                        <Eye aria-hidden="true" className="size-4" />
-                      </Button>
-                      <Button
-                        aria-label={`ویرایش ${record.name}`}
-                        onClick={() => openRecord(record, 'edit')}
-                        size="icon"
-                        title={`ویرایش ${record.name}`}
-                        variant="outline"
-                      >
-                        <FilePenLine aria-hidden="true" className="size-4" />
-                      </Button>
-                      <MasterDataDeleteButton
-                        record={record}
-                        onDeleted={afterDelete}
-                      />
-                      <MasterDataPowerButton
-                        record={record}
-                        onChanged={afterStatusChange}
-                      />
-                      {resource === 'countries' ? (
+                    ))}
+                    <td className="p-4">
+                      <div className="flex flex-wrap justify-end gap-2">
                         <Button
-                          aria-expanded={expandedCountryId === record.id}
-                          aria-label={`${expandedCountryId === record.id ? 'بستن' : 'مدیریت'} شهرهای ${record.name}`}
-                          onClick={() => void toggleCountry(record)}
+                          aria-label={`مشاهده ${record.name}`}
+                          onClick={() => openRecord(record, 'view')}
                           size="icon"
-                          title="شهرها و فرودگاه‌های کشور"
+                          title={`مشاهده ${record.name}`}
                           variant="outline"
                         >
-                          <ChevronDown
-                            aria-hidden="true"
-                            className={`size-4 transition-transform ${expandedCountryId === record.id ? 'rotate-180' : ''}`}
-                          />
+                          <Eye aria-hidden="true" className="size-4" />
                         </Button>
-                      ) : null}
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                        <Button
+                          aria-label={`ویرایش ${record.name}`}
+                          onClick={() => openRecord(record, 'edit')}
+                          size="icon"
+                          title={`ویرایش ${record.name}`}
+                          variant="outline"
+                        >
+                          <FilePenLine aria-hidden="true" className="size-4" />
+                        </Button>
+                        <MasterDataDeleteButton
+                          record={record}
+                          onDeleted={afterDelete}
+                        />
+                        <MasterDataPowerButton
+                          record={record}
+                          onChanged={afterStatusChange}
+                        />
+                        {resource === 'countries' ? (
+                          <Button
+                            aria-expanded={expandedCountryId === record.id}
+                            aria-label={`${expandedCountryId === record.id ? 'بستن' : 'مدیریت'} شهرهای ${record.name}`}
+                            onClick={() => void toggleCountry(record)}
+                            size="icon"
+                            title="شهرها و فرودگاه‌های کشور"
+                            variant="outline"
+                          >
+                            <ChevronDown
+                              aria-hidden="true"
+                              className={`size-4 transition-transform ${expandedCountryId === record.id ? 'rotate-180' : ''}`}
+                            />
+                          </Button>
+                        ) : null}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
             </tbody>
-          </table>
-          {resource === 'countries' && expandedCountryId
-            ? (() => {
-                const country = records.find(
-                  (item) => item.id === expandedCountryId,
-                );
-                if (!country) return null;
-                const cities = citiesByCountry[country.id] ?? [];
-                return (
-                  <section
-                    aria-label={`شهرها و فرودگاه‌های ${country.name}`}
-                    className="space-y-3 border-t border-border bg-muted/20 p-4"
-                  >
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <h3 className="font-bold">شهرهای {country.name}</h3>
-                      <Button
-                        onClick={() => openRelatedCreate('cities', country)}
-                        size="sm"
-                      >
-                        <Plus aria-hidden="true" className="size-4" /> افزودن
-                        شهر
-                      </Button>
-                    </div>
-                    {cities.length ? (
-                      cities.map((city) => {
-                        const airports = airportsByCity[city.id] ?? [];
-                        return (
-                          <article
-                            className="space-y-2 rounded-xl border border-border bg-background p-3"
-                            key={city.id}
+            {resource === 'countries' && expandedCountryId
+              ? (() => {
+                  const country = records.find(
+                    (item) => item.id === expandedCountryId,
+                  );
+                  if (!country) return null;
+                  const cities = citiesByCountry[country.id] ?? [];
+                  return (
+                    <tbody>
+                      <tr className="border-t border-border">
+                        <td colSpan={columns.length} className="p-0">
+                          <section
+                            aria-label={`شهرها و فرودگاه‌های ${country.name}`}
+                            className="space-y-3 bg-muted/20 p-4"
                           >
                             <div className="flex flex-wrap items-center justify-between gap-2">
-                              <div className="flex items-center gap-2">
-                                <MapPin
-                                  aria-hidden="true"
-                                  className="size-4 text-sky-600"
-                                />
-                                <span className="font-semibold">
-                                  {city.name}
-                                </span>
-                                <Badge>{city.code}</Badge>
-                                {statusBadge(city)}
-                              </div>
-                              <div className="flex items-center gap-2">
+                              <h3 className="font-bold">
+                                شهرهای {country.name}
+                              </h3>
+                              <div className="flex flex-wrap justify-end gap-2">
                                 <Button
-                                  aria-expanded={expandedCityId === city.id}
-                                  onClick={() => void toggleCity(city)}
+                                  onClick={() =>
+                                    openRelatedCreate('regions', country)
+                                  }
                                   size="sm"
                                   variant="outline"
                                 >
-                                  <PlaneTakeoff
-                                    aria-hidden="true"
-                                    className="size-4"
-                                  />{' '}
-                                  فرودگاه‌ها
-                                  {airportsByCity[city.id]
-                                    ? ` (${airports.length})`
-                                    : ''}
+                                  <Plus aria-hidden="true" className="size-4" />{' '}
+                                  افزودن استان
                                 </Button>
                                 <Button
-                                  aria-label={`مشاهده ${city.name}`}
-                                  onClick={() => openRecord(city, 'view')}
-                                  size="icon"
-                                  variant="outline"
+                                  onClick={() =>
+                                    openRelatedCreate('cities', country)
+                                  }
+                                  size="sm"
                                 >
-                                  <Eye aria-hidden="true" className="size-4" />
+                                  <Plus aria-hidden="true" className="size-4" />{' '}
+                                  افزودن شهر
                                 </Button>
-                                <Button
-                                  aria-label={`ویرایش ${city.name}`}
-                                  onClick={() => openRecord(city, 'edit')}
-                                  size="icon"
-                                  variant="outline"
-                                >
-                                  <FilePenLine
-                                    aria-hidden="true"
-                                    className="size-4"
-                                  />
-                                </Button>
-                                <MasterDataDeleteButton
-                                  onDeleted={afterDelete}
-                                  record={city}
-                                />
-                                <MasterDataPowerButton
-                                  onChanged={afterStatusChange}
-                                  record={city}
-                                />
                               </div>
                             </div>
-                            {expandedCityId === city.id ? (
-                              <div className="space-y-2 border-s-2 border-sky-200 ps-4">
-                                <div className="flex justify-end">
-                                  <Button
-                                    onClick={() =>
-                                      openRelatedCreate('airports', city)
-                                    }
-                                    size="sm"
-                                    variant="outline"
+                            {cities.length ? (
+                              cities.map((city) => {
+                                const airports = airportsByCity[city.id] ?? [];
+                                return (
+                                  <article
+                                    className="space-y-2 rounded-xl border border-border bg-background p-3"
+                                    key={city.id}
                                   >
-                                    <Plus
-                                      aria-hidden="true"
-                                      className="size-4"
-                                    />{' '}
-                                    افزودن فرودگاه
-                                  </Button>
-                                </div>
-                                {airports.length ? (
-                                  airports.map((airport) => {
-                                    const terminals =
-                                      terminalsByAirport[airport.id] ?? [];
-                                    return (
-                                      <div
-                                        className="space-y-2 rounded-lg border border-border p-3"
-                                        key={airport.id}
-                                      >
-                                        <div className="flex flex-wrap items-center justify-between gap-2">
-                                          <div className="flex items-center gap-2">
-                                            <PlaneTakeoff
+                                    <div className="flex flex-wrap items-center justify-between gap-2">
+                                      <div className="flex items-center gap-2">
+                                        <MapPin
+                                          aria-hidden="true"
+                                          className="size-4 text-sky-600"
+                                        />
+                                        <span className="font-semibold">
+                                          {city.name}
+                                        </span>
+                                        <Badge>{city.code}</Badge>
+                                        {statusBadge(city)}
+                                      </div>
+                                      <div className="flex items-center gap-2">
+                                        <Button
+                                          aria-expanded={
+                                            expandedCityId === city.id
+                                          }
+                                          onClick={() => void toggleCity(city)}
+                                          size="sm"
+                                          variant="outline"
+                                        >
+                                          <PlaneTakeoff
+                                            aria-hidden="true"
+                                            className="size-4"
+                                          />{' '}
+                                          فرودگاه‌ها
+                                          {airportsByCity[city.id]
+                                            ? ` (${airports.length})`
+                                            : ''}
+                                        </Button>
+                                        <Button
+                                          aria-label={`مشاهده ${city.name}`}
+                                          onClick={() =>
+                                            openRecord(city, 'view')
+                                          }
+                                          size="icon"
+                                          variant="outline"
+                                        >
+                                          <Eye
+                                            aria-hidden="true"
+                                            className="size-4"
+                                          />
+                                        </Button>
+                                        <Button
+                                          aria-label={`ویرایش ${city.name}`}
+                                          onClick={() =>
+                                            openRecord(city, 'edit')
+                                          }
+                                          size="icon"
+                                          variant="outline"
+                                        >
+                                          <FilePenLine
+                                            aria-hidden="true"
+                                            className="size-4"
+                                          />
+                                        </Button>
+                                        <MasterDataDeleteButton
+                                          onDeleted={afterDelete}
+                                          record={city}
+                                        />
+                                        <MasterDataPowerButton
+                                          onChanged={afterStatusChange}
+                                          record={city}
+                                        />
+                                      </div>
+                                    </div>
+                                    {expandedCityId === city.id ? (
+                                      <div className="space-y-2 border-s-2 border-sky-200 ps-4">
+                                        <div className="flex justify-end">
+                                          <Button
+                                            onClick={() =>
+                                              openRelatedCreate(
+                                                'airports',
+                                                city,
+                                              )
+                                            }
+                                            size="sm"
+                                            variant="outline"
+                                          >
+                                            <Plus
                                               aria-hidden="true"
-                                              className="size-4 text-sky-600"
-                                            />
-                                            <span>{airport.name}</span>
-                                            <Badge>{airport.code}</Badge>
-                                            {statusBadge(airport)}
-                                          </div>
-                                          <div className="flex items-center gap-2">
-                                            <Button
-                                              aria-expanded={
-                                                expandedAirportId === airport.id
-                                              }
-                                              onClick={() =>
-                                                void toggleAirport(airport)
-                                              }
-                                              size="sm"
-                                              variant="outline"
-                                            >
-                                              ترمینال‌ها
-                                              {terminalsByAirport[airport.id]
-                                                ? ` (${terminals.length})`
-                                                : ''}
-                                            </Button>
-                                            <Button
-                                              aria-label={`مشاهده ${airport.name}`}
-                                              onClick={() =>
-                                                openRecord(airport, 'view')
-                                              }
-                                              size="icon"
-                                              variant="outline"
-                                            >
-                                              <Eye
-                                                aria-hidden="true"
-                                                className="size-4"
-                                              />
-                                            </Button>
-                                            <Button
-                                              aria-label={`ویرایش ${airport.name}`}
-                                              onClick={() =>
-                                                openRecord(airport, 'edit')
-                                              }
-                                              size="icon"
-                                              variant="outline"
-                                            >
-                                              <FilePenLine
-                                                aria-hidden="true"
-                                                className="size-4"
-                                              />
-                                            </Button>
-                                            <MasterDataDeleteButton
-                                              onDeleted={afterDelete}
-                                              record={airport}
-                                            />
-                                            <MasterDataPowerButton
-                                              onChanged={afterStatusChange}
-                                              record={airport}
-                                            />
-                                          </div>
+                                              className="size-4"
+                                            />{' '}
+                                            افزودن فرودگاه
+                                          </Button>
                                         </div>
-                                        {expandedAirportId === airport.id ? (
-                                          <div className="space-y-2 border-s-2 border-sky-200 ps-4">
-                                            <div className="flex justify-end">
-                                              <Button
-                                                onClick={() =>
-                                                  openRelatedCreate(
-                                                    'terminals',
-                                                    airport,
-                                                  )
-                                                }
-                                                size="sm"
-                                                variant="outline"
+                                        {airports.length ? (
+                                          airports.map((airport) => {
+                                            const terminals =
+                                              terminalsByAirport[airport.id] ??
+                                              [];
+                                            return (
+                                              <div
+                                                className="space-y-2 rounded-lg border border-border p-3"
+                                                key={airport.id}
                                               >
-                                                <Plus
-                                                  aria-hidden="true"
-                                                  className="size-4"
-                                                />{' '}
-                                                افزودن ترمینال
-                                              </Button>
-                                            </div>
-                                            {terminals.length ? (
-                                              terminals.map((terminal) => (
-                                                <div
-                                                  className="flex flex-wrap items-center justify-between gap-2 rounded-md bg-muted/30 p-2"
-                                                  key={terminal.id}
-                                                >
-                                                  <span>
-                                                    {terminal.name} ·{' '}
-                                                    {terminalLabels[
-                                                      attribute(
-                                                        terminal,
-                                                        'terminalType',
-                                                      )
-                                                    ] ??
-                                                      attribute(
-                                                        terminal,
-                                                        'terminalType',
-                                                      )}
-                                                  </span>
+                                                <div className="flex flex-wrap items-center justify-between gap-2">
+                                                  <div className="flex items-center gap-2">
+                                                    <PlaneTakeoff
+                                                      aria-hidden="true"
+                                                      className="size-4 text-sky-600"
+                                                    />
+                                                    <span>{airport.name}</span>
+                                                    <Badge>
+                                                      {airport.code}
+                                                    </Badge>
+                                                    {statusBadge(airport)}
+                                                  </div>
                                                   <div className="flex items-center gap-2">
                                                     <Button
-                                                      aria-label={`مشاهده ${terminal.name}`}
+                                                      aria-expanded={
+                                                        expandedAirportId ===
+                                                        airport.id
+                                                      }
+                                                      onClick={() =>
+                                                        void toggleAirport(
+                                                          airport,
+                                                        )
+                                                      }
+                                                      size="sm"
+                                                      variant="outline"
+                                                    >
+                                                      ترمینال‌ها
+                                                      {terminalsByAirport[
+                                                        airport.id
+                                                      ]
+                                                        ? ` (${terminals.length})`
+                                                        : ''}
+                                                    </Button>
+                                                    <Button
+                                                      aria-label={`مشاهده ${airport.name}`}
                                                       onClick={() =>
                                                         openRecord(
-                                                          terminal,
+                                                          airport,
                                                           'view',
                                                         )
                                                       }
@@ -1656,10 +1660,10 @@ export function MasterDataGeographyWorkspace() {
                                                       />
                                                     </Button>
                                                     <Button
-                                                      aria-label={`ویرایش ${terminal.name}`}
+                                                      aria-label={`ویرایش ${airport.name}`}
                                                       onClick={() =>
                                                         openRecord(
-                                                          terminal,
+                                                          airport,
                                                           'edit',
                                                         )
                                                       }
@@ -1673,49 +1677,217 @@ export function MasterDataGeographyWorkspace() {
                                                     </Button>
                                                     <MasterDataDeleteButton
                                                       onDeleted={afterDelete}
-                                                      record={terminal}
+                                                      record={airport}
                                                     />
                                                     <MasterDataPowerButton
                                                       onChanged={
                                                         afterStatusChange
                                                       }
-                                                      record={terminal}
+                                                      record={airport}
                                                     />
                                                   </div>
                                                 </div>
-                                              ))
-                                            ) : (
-                                              <p className="text-sm text-muted-foreground">
-                                                ترمینالی ثبت نشده؛ افزودن
-                                                ترمینال اختیاری است.
-                                              </p>
-                                            )}
-                                          </div>
-                                        ) : null}
+                                                {expandedAirportId ===
+                                                airport.id ? (
+                                                  <div className="space-y-2 border-s-2 border-sky-200 ps-4">
+                                                    <div className="flex justify-end">
+                                                      <Button
+                                                        onClick={() =>
+                                                          openRelatedCreate(
+                                                            'terminals',
+                                                            airport,
+                                                          )
+                                                        }
+                                                        size="sm"
+                                                        variant="outline"
+                                                      >
+                                                        <Plus
+                                                          aria-hidden="true"
+                                                          className="size-4"
+                                                        />{' '}
+                                                        افزودن ترمینال
+                                                      </Button>
+                                                    </div>
+                                                    {terminals.length ? (
+                                                      terminals.map(
+                                                        (terminal) => (
+                                                          <div
+                                                            className="flex flex-wrap items-center justify-between gap-2 rounded-md bg-muted/30 p-2"
+                                                            key={terminal.id}
+                                                          >
+                                                            <span>
+                                                              {terminal.name} ·{' '}
+                                                              {terminalLabels[
+                                                                attribute(
+                                                                  terminal,
+                                                                  'terminalType',
+                                                                )
+                                                              ] ??
+                                                                attribute(
+                                                                  terminal,
+                                                                  'terminalType',
+                                                                )}
+                                                            </span>
+                                                            <div className="flex items-center gap-2">
+                                                              <Button
+                                                                aria-label={`مشاهده ${terminal.name}`}
+                                                                onClick={() =>
+                                                                  openRecord(
+                                                                    terminal,
+                                                                    'view',
+                                                                  )
+                                                                }
+                                                                size="icon"
+                                                                variant="outline"
+                                                              >
+                                                                <Eye
+                                                                  aria-hidden="true"
+                                                                  className="size-4"
+                                                                />
+                                                              </Button>
+                                                              <Button
+                                                                aria-label={`ویرایش ${terminal.name}`}
+                                                                onClick={() =>
+                                                                  openRecord(
+                                                                    terminal,
+                                                                    'edit',
+                                                                  )
+                                                                }
+                                                                size="icon"
+                                                                variant="outline"
+                                                              >
+                                                                <FilePenLine
+                                                                  aria-hidden="true"
+                                                                  className="size-4"
+                                                                />
+                                                              </Button>
+                                                              <MasterDataDeleteButton
+                                                                onDeleted={
+                                                                  afterDelete
+                                                                }
+                                                                record={
+                                                                  terminal
+                                                                }
+                                                              />
+                                                              <MasterDataPowerButton
+                                                                onChanged={
+                                                                  afterStatusChange
+                                                                }
+                                                                record={
+                                                                  terminal
+                                                                }
+                                                              />
+                                                            </div>
+                                                          </div>
+                                                        ),
+                                                      )
+                                                    ) : (
+                                                      <p className="text-sm text-muted-foreground">
+                                                        ترمینالی ثبت نشده؛
+                                                        افزودن ترمینال اختیاری
+                                                        است.
+                                                      </p>
+                                                    )}
+                                                  </div>
+                                                ) : null}
+                                              </div>
+                                            );
+                                          })
+                                        ) : (
+                                          <p className="text-sm text-muted-foreground">
+                                            فرودگاهی ثبت نشده؛ افزودن فرودگاه
+                                            اختیاری است.
+                                          </p>
+                                        )}
                                       </div>
-                                    );
-                                  })
-                                ) : (
-                                  <p className="text-sm text-muted-foreground">
-                                    فرودگاهی ثبت نشده؛ افزودن فرودگاه اختیاری
-                                    است.
-                                  </p>
-                                )}
-                              </div>
-                            ) : null}
-                          </article>
-                        );
-                      })
-                    ) : (
-                      <p className="text-sm text-muted-foreground">
-                        شهری ثبت نشده؛ برای این کشور می‌توانید چند شهر اضافه
-                        کنید.
-                      </p>
-                    )}
-                  </section>
-                );
-              })()
-            : null}
+                                    ) : null}
+                                  </article>
+                                );
+                              })
+                            ) : (
+                              <p className="text-sm text-muted-foreground">
+                                شهری ثبت نشده؛ برای این کشور می‌توانید چند شهر
+                                اضافه کنید.
+                              </p>
+                            )}
+                          </section>
+                        </td>
+                      </tr>
+                    </tbody>
+                  );
+                })()
+              : null}
+            {resource === 'countries' &&
+            expandedCountryId &&
+            records.some((record) => record.id === expandedCountryId) ? (
+              <tbody>
+                {records
+                  .slice(
+                    records.findIndex(
+                      (record) => record.id === expandedCountryId,
+                    ) + 1,
+                  )
+                  .map((record) => (
+                    <tr
+                      className="border-t border-border transition hover:bg-sky-500/[0.035]"
+                      key={record.id}
+                    >
+                      {recordCells(resource, record).map((cell, index) => (
+                        <td className="p-4" key={columns[index]}>
+                          {cell}
+                        </td>
+                      ))}
+                      <td className="p-4">
+                        <div className="flex flex-wrap justify-end gap-2">
+                          <Button
+                            aria-label={`مشاهده ${record.name}`}
+                            onClick={() => openRecord(record, 'view')}
+                            size="icon"
+                            title={`مشاهده ${record.name}`}
+                            variant="outline"
+                          >
+                            <Eye aria-hidden="true" className="size-4" />
+                          </Button>
+                          <Button
+                            aria-label={`ویرایش ${record.name}`}
+                            onClick={() => openRecord(record, 'edit')}
+                            size="icon"
+                            title={`ویرایش ${record.name}`}
+                            variant="outline"
+                          >
+                            <FilePenLine
+                              aria-hidden="true"
+                              className="size-4"
+                            />
+                          </Button>
+                          <MasterDataDeleteButton
+                            record={record}
+                            onDeleted={afterDelete}
+                          />
+                          <MasterDataPowerButton
+                            record={record}
+                            onChanged={afterStatusChange}
+                          />
+                          <Button
+                            aria-expanded={false}
+                            aria-label={`مدیریت شهرهای ${record.name}`}
+                            onClick={() => void toggleCountry(record)}
+                            size="icon"
+                            title="شهرها و فرودگاه‌های کشور"
+                            variant="outline"
+                          >
+                            <ChevronDown
+                              aria-hidden="true"
+                              className="size-4 transition-transform"
+                            />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+              </tbody>
+            ) : null}
+          </table>
         </Card>
       )}
 
@@ -1781,6 +1953,57 @@ export function MasterDataGeographyWorkspace() {
           {...(selected ? { record: selected } : {})}
         />
       ) : null}
+      <MasterDataProfileDialog
+        onOpenChange={(open) => {
+          if (!open) terminalParentRequest.current += 1;
+          setTerminalParentOpen(open);
+        }}
+        open={terminalParentOpen}
+        title="انتخاب فرودگاه ترمینال"
+      >
+        <div className="space-y-5">
+          <MasterDataReferenceSelector
+            config={{ target: 'airports', payload: 'id' }}
+            disabled={false}
+            id="terminal-parent-airport"
+            label="فرودگاه"
+            onChange={(value) => {
+              terminalParentRequest.current += 1;
+              setTerminalParentLoading(false);
+              setTerminalParentError('');
+              setTerminalParentId(value);
+            }}
+            required
+            value={terminalParentId}
+          />
+          {terminalParentError ? (
+            <Alert
+              description={terminalParentError}
+              title="دریافت فرودگاه ناموفق بود"
+              tone="error"
+            />
+          ) : null}
+          <div className="flex justify-end gap-2 border-t border-border pt-4">
+            <Button
+              onClick={() => {
+                terminalParentRequest.current += 1;
+                setTerminalParentLoading(false);
+                setTerminalParentOpen(false);
+              }}
+              variant="ghost"
+            >
+              انصراف
+            </Button>
+            <Button
+              disabled={!terminalParentId || terminalParentLoading}
+              loading={terminalParentLoading}
+              onClick={() => void continueTerminalCreate()}
+            >
+              ادامه
+            </Button>
+          </div>
+        </div>
+      </MasterDataProfileDialog>
     </div>
   );
 }

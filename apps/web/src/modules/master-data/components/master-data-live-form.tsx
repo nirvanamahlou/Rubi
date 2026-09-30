@@ -49,6 +49,11 @@ import {
   OrganizationRoleSelector,
 } from './master-data-reference-selector';
 import { useMasterDataDialogFocusRestore } from './use-master-data-dialog-focus-restore';
+import {
+  MasterDataDetailItem,
+  MasterDataDetailSection,
+  MasterDataProfileIdentity,
+} from './master-data-profile-details';
 
 export type MasterDataFormMode = 'create' | 'view' | 'edit';
 
@@ -92,10 +97,12 @@ function valuesFrom(
                     ? [record.attributes.manufacturer, record.attributes.model]
                         .filter(Boolean)
                         .join(' / ')
-                    : field.key === 'transportStatus'
-                      ? (record.attributes.transportStatus ??
-                        (record.status === 'active' ? 'ACTIVE' : 'INACTIVE'))
-                      : record.attributes[field.key];
+                    : field.key === 'includedMeals'
+                      ? record.attributes.includedMealsJson
+                      : field.key === 'transportStatus'
+                        ? (record.attributes.transportStatus ??
+                          (record.status === 'active' ? 'ACTIVE' : 'INACTIVE'))
+                        : record.attributes[field.key];
       return [
         field.key,
         value === null || value === undefined ? '' : String(value),
@@ -107,7 +114,7 @@ function valuesFrom(
 export function MasterDataLiveForm(
   props: Parameters<typeof GenericMasterDataLiveForm>[0],
 ) {
-  if (props.definition.key === 'meal-services')
+  if (props.definition.key === 'meal-services' && props.mode !== 'view')
     return props.open ? (
       <MasterDataMealServiceForm
         mode={props.mode}
@@ -116,7 +123,7 @@ export function MasterDataLiveForm(
         {...(props.record ? { record: props.record } : {})}
       />
     ) : null;
-  if (props.definition.key === 'manifest-templates')
+  if (props.definition.key === 'manifest-templates' && props.mode !== 'view')
     return props.open ? (
       <MasterDataManifestTemplateForm
         mode={props.mode}
@@ -168,6 +175,33 @@ function GenericMasterDataLiveForm({
   const [supplierPhoneTouched, setSupplierPhoneTouched] = useState(false);
   const readonly = mode === 'view';
   const focusRestore = useMasterDataDialogFocusRestore();
+  const fields = getMasterDataFormFields(definition, mode);
+
+  function displayValue(field: (typeof fields)[number], value: string): string {
+    const option = field.options?.find((item) => item.value === value);
+    if (option) return option.label;
+    if (record && (field.key.endsWith('Id') || field.key.endsWith('Ids'))) {
+      const nameKey = field.key.endsWith('Ids')
+        ? `${field.key.slice(0, -3)}Names`
+        : `${field.key.slice(0, -2)}Name`;
+      const relatedName = record.attributes[nameKey];
+      if (relatedName !== null && relatedName !== undefined)
+        return Array.isArray(relatedName)
+          ? relatedName.map(String).join('، ')
+          : String(relatedName);
+    }
+    if (value === 'true') return 'بله';
+    if (value === 'false') return 'خیر';
+    if (value.trim().startsWith('[')) {
+      try {
+        const list = JSON.parse(value) as unknown;
+        if (Array.isArray(list)) return list.map(String).join('، ');
+      } catch {
+        // Preserve non-JSON values exactly as received.
+      }
+    }
+    return value;
+  }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -264,309 +298,350 @@ function GenericMasterDataLiveForm({
             </div>
           ) : null}
 
-          <form
-            className="mt-6 space-y-5"
-            noValidate
-            onSubmit={(event) => void submit(event)}
-          >
-            {definition.key === 'suppliers' && mode === 'create' ? (
-              <Alert
-                title="شناسه تأمین‌کننده خودکار است"
-                description="پس از ذخیره، سامانه یک شناسه یکتا برای تأمین‌کننده ایجاد می‌کند."
-              />
-            ) : null}
-            {isMasterTransportFormResource(definition.key) ? (
-              <MasterDataTransportMetadata
-                resource={definition.key}
+          {readonly ? (
+            <div className="mt-5 space-y-4">
+              <MasterDataProfileIdentity
+                eyebrow={`پروفایل ${definition.singularLabel}`}
                 {...(record ? { record } : {})}
+                title={record?.name ?? definition.singularLabel}
               />
-            ) : null}
-            {getMasterDataFormFields(definition, mode).map((field) => {
-              const error = errors[field.key];
-              const controlId = `live-${definition.key}-${field.key}`;
-              const helpId = `${controlId}-help`;
-              const errorId = `${controlId}-error`;
-              const describedBy = error
-                ? errorId
-                : field.hint
-                  ? helpId
-                  : undefined;
-              const reference = getReferenceFieldConfig(
-                definition.key,
-                field.key,
-              );
-              const updateValue = (value: string) => {
-                if (
-                  definition.key === 'suppliers' &&
-                  field.key === 'primaryPhone'
-                )
-                  setSupplierPhoneTouched(true);
-                setValues((current) => ({
-                  ...current,
-                  [field.key]: value,
-                  ...((definition.key === 'suppliers' ||
-                    definition.key === 'brokers') &&
-                  current[field.key] !== value
-                    ? field.key === 'organizationId'
-                      ? { primaryContactId: '' }
-                      : field.key === 'countryId'
-                        ? { cityId: '' }
-                        : {}
-                    : {}),
-                }));
-              };
-              const canManage =
-                (((definition.key === 'suppliers' ||
-                  definition.key === 'brokers') &&
-                  [
-                    'organizationId',
-                    'primaryContactId',
-                    'serviceCodes',
-                  ].includes(field.key)) ||
-                  (definition.key === 'cities' && field.key === 'regionId') ||
-                  (definition.key === 'hotels' &&
-                    ['mealServiceIds', 'facilityIds', 'roomTypeIds'].includes(
-                      field.key,
-                    ))) &&
-                !readonly &&
-                !saving;
-              const control = reference ? (
-                <MasterDataReferenceSelector
-                  key={`${field.key}-${reference.scopeField ? values[reference.scopeField] : ''}-${referenceRevision}`}
-                  config={reference}
-                  disabled={
-                    readonly || saving || lockedFields.includes(field.key)
-                  }
-                  {...(reference.scopeField
-                    ? { scopeValue: values[reference.scopeField] ?? '' }
-                    : {})}
-                  {...(canManage
-                    ? {
-                        onManage: (
-                          related?: MasterDataRecord,
-                          searchQuery?: string,
-                        ) => {
-                          if (
-                            definition.key === 'hotels' &&
-                            field.key === 'roomTypeIds' &&
-                            !related
-                          ) {
-                            void createHotelRoomType(
-                              field.key,
-                              searchQuery ?? '',
-                            );
-                            return;
-                          }
-                          setReferenceForm({
-                            field: field.key,
-                            definition: getMasterDataDefinition(
-                              reference.target,
-                            ),
-                            ...(related ? { record: related } : {}),
-                            defaults:
-                              reference.target === 'organizations'
-                                ? related
-                                  ? {}
-                                  : {
-                                      roleCodes: reference.requiredRole ?? '',
-                                      ...(searchQuery
-                                        ? { legalName: searchQuery }
-                                        : {}),
-                                    }
-                                : reference.target === 'organization-contacts'
-                                  ? {
-                                      organizationId:
-                                        values.organizationId ?? '',
-                                      ...(related
-                                        ? {}
-                                        : { preferredChannel: 'PHONE' }),
-                                    }
-                                  : reference.target === 'regions'
-                                    ? { countryId: values.countryId ?? '' }
-                                    : {},
-                          });
-                        },
-                      }
-                    : {})}
-                  createOnlyWhenEmpty={
-                    (definition.key === 'suppliers' &&
-                      mode === 'create' &&
-                      field.key === 'organizationId') ||
-                    (definition.key === 'hotels' && field.key === 'roomTypeIds')
-                  }
-                  id={controlId}
-                  {...(describedBy ? { ariaDescribedby: describedBy } : {})}
-                  invalid={Boolean(error)}
-                  label={field.label}
-                  onChange={updateValue}
-                  required={Boolean(field.required)}
-                  value={values[field.key] ?? ''}
+              <MasterDataDetailSection title="مشخصات ثبت‌شده">
+                {fields.map((field) => (
+                  <MasterDataDetailItem
+                    key={field.key}
+                    label={field.label}
+                    ltr={
+                      field.key.toLowerCase().includes('code') ||
+                      field.key.toLowerCase().includes('phone') ||
+                      field.key.toLowerCase().includes('email') ||
+                      field.key.toLowerCase().includes('url')
+                    }
+                    value={displayValue(field, values[field.key] ?? '')}
+                  />
+                ))}
+              </MasterDataDetailSection>
+              {definition.key === 'airlines' ? (
+                <MasterDataAirlineBaggageEditor
+                  {...(record ? { airline: record } : {})}
+                  readOnly
                 />
-              ) : field.key === 'roleCodes' ? (
-                <OrganizationRoleSelector
-                  {...(describedBy ? { ariaDescribedby: describedBy } : {})}
-                  disabled={readonly || saving}
-                  id={controlId}
-                  invalid={Boolean(error)}
-                  onChange={updateValue}
-                  required={Boolean(field.required)}
-                  value={values[field.key] ?? ''}
+              ) : null}
+              <div className="flex justify-end border-t border-border pt-4">
+                <DialogClose asChild>
+                  <Button type="button" variant="outline">
+                    بستن
+                  </Button>
+                </DialogClose>
+              </div>
+            </div>
+          ) : (
+            <form
+              className="mt-6 space-y-5"
+              noValidate
+              onSubmit={(event) => void submit(event)}
+            >
+              {definition.key === 'suppliers' && mode === 'create' ? (
+                <Alert
+                  title="شناسه تأمین‌کننده خودکار است"
+                  description="پس از ذخیره، سامانه یک شناسه یکتا برای تأمین‌کننده ایجاد می‌کند."
                 />
-              ) : field.key === 'logoFileReference' ? (
-                <MasterDataLogoUpload
-                  disabled={readonly || saving}
-                  label={field.label}
-                  onChange={setLogoChange}
-                  {...(logoChange ? { pending: logoChange } : {})}
+              ) : null}
+              {isMasterTransportFormResource(definition.key) ? (
+                <MasterDataTransportMetadata
+                  resource={definition.key}
                   {...(record ? { record } : {})}
-                  value={values[field.key] ?? ''}
                 />
-              ) : field.type === 'select' ? (
-                <Select
-                  disabled={readonly || saving}
-                  onValueChange={updateValue}
-                  required={Boolean(field.required)}
-                  value={values[field.key] ?? ''}
-                >
-                  <SelectTrigger
+              ) : null}
+              {fields.map((field) => {
+                const error = errors[field.key];
+                const controlId = `live-${definition.key}-${field.key}`;
+                const helpId = `${controlId}-help`;
+                const errorId = `${controlId}-error`;
+                const describedBy = error
+                  ? errorId
+                  : field.hint
+                    ? helpId
+                    : undefined;
+                const reference = getReferenceFieldConfig(
+                  definition.key,
+                  field.key,
+                );
+                const updateValue = (value: string) => {
+                  if (
+                    definition.key === 'suppliers' &&
+                    field.key === 'primaryPhone'
+                  )
+                    setSupplierPhoneTouched(true);
+                  setValues((current) => ({
+                    ...current,
+                    [field.key]: value,
+                    ...((definition.key === 'suppliers' ||
+                      definition.key === 'brokers') &&
+                    current[field.key] !== value
+                      ? field.key === 'organizationId'
+                        ? { primaryContactId: '' }
+                        : field.key === 'countryId'
+                          ? { cityId: '' }
+                          : {}
+                      : {}),
+                  }));
+                };
+                const canManage =
+                  (((definition.key === 'suppliers' ||
+                    definition.key === 'brokers') &&
+                    [
+                      'organizationId',
+                      'primaryContactId',
+                      'serviceCodes',
+                    ].includes(field.key)) ||
+                    (definition.key === 'cities' && field.key === 'regionId') ||
+                    (definition.key === 'hotels' &&
+                      ['mealServiceIds', 'facilityIds', 'roomTypeIds'].includes(
+                        field.key,
+                      ))) &&
+                  !readonly &&
+                  !saving;
+                const control = reference ? (
+                  <MasterDataReferenceSelector
+                    key={`${field.key}-${reference.scopeField ? values[reference.scopeField] : ''}-${referenceRevision}`}
+                    config={reference}
+                    disabled={
+                      readonly || saving || lockedFields.includes(field.key)
+                    }
+                    {...(reference.scopeField
+                      ? { scopeValue: values[reference.scopeField] ?? '' }
+                      : {})}
+                    {...(canManage
+                      ? {
+                          onManage: (
+                            related?: MasterDataRecord,
+                            searchQuery?: string,
+                          ) => {
+                            if (
+                              definition.key === 'hotels' &&
+                              field.key === 'roomTypeIds' &&
+                              !related
+                            ) {
+                              void createHotelRoomType(
+                                field.key,
+                                searchQuery ?? '',
+                              );
+                              return;
+                            }
+                            setReferenceForm({
+                              field: field.key,
+                              definition: getMasterDataDefinition(
+                                reference.target,
+                              ),
+                              ...(related ? { record: related } : {}),
+                              defaults:
+                                reference.target === 'organizations'
+                                  ? related
+                                    ? {}
+                                    : {
+                                        roleCodes: reference.requiredRole ?? '',
+                                        ...(searchQuery
+                                          ? { legalName: searchQuery }
+                                          : {}),
+                                      }
+                                  : reference.target === 'organization-contacts'
+                                    ? {
+                                        organizationId:
+                                          values.organizationId ?? '',
+                                        ...(related
+                                          ? {}
+                                          : { preferredChannel: 'PHONE' }),
+                                      }
+                                    : reference.target === 'regions'
+                                      ? { countryId: values.countryId ?? '' }
+                                      : {},
+                            });
+                          },
+                        }
+                      : {})}
+                    createOnlyWhenEmpty={
+                      (definition.key === 'suppliers' &&
+                        mode === 'create' &&
+                        field.key === 'organizationId') ||
+                      (definition.key === 'hotels' &&
+                        field.key === 'roomTypeIds')
+                    }
+                    id={controlId}
+                    {...(describedBy ? { ariaDescribedby: describedBy } : {})}
+                    invalid={Boolean(error)}
+                    label={field.label}
+                    onChange={updateValue}
+                    required={Boolean(field.required)}
+                    value={values[field.key] ?? ''}
+                  />
+                ) : field.key === 'roleCodes' ? (
+                  <OrganizationRoleSelector
+                    {...(describedBy ? { ariaDescribedby: describedBy } : {})}
+                    disabled={readonly || saving}
+                    id={controlId}
+                    invalid={Boolean(error)}
+                    onChange={updateValue}
+                    required={Boolean(field.required)}
+                    value={values[field.key] ?? ''}
+                  />
+                ) : field.key === 'logoFileReference' ? (
+                  <MasterDataLogoUpload
+                    disabled={readonly || saving}
+                    label={field.label}
+                    onChange={setLogoChange}
+                    {...(logoChange ? { pending: logoChange } : {})}
+                    {...(record ? { record } : {})}
+                    value={values[field.key] ?? ''}
+                  />
+                ) : field.type === 'select' ? (
+                  <Select
+                    disabled={readonly || saving}
+                    onValueChange={updateValue}
+                    required={Boolean(field.required)}
+                    value={values[field.key] ?? ''}
+                  >
+                    <SelectTrigger
+                      aria-describedby={describedBy}
+                      aria-invalid={Boolean(error)}
+                      id={controlId}
+                    >
+                      <SelectValue placeholder="انتخاب کنید" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {field.options?.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : field.type === 'datetime-local' ? (
+                  <DatePicker
                     aria-describedby={describedBy}
                     aria-invalid={Boolean(error)}
+                    disabled={readonly || saving}
                     id={controlId}
+                    includeTime={definition.key !== 'baggage-rules'}
+                    onChange={updateValue}
+                    placeholder={field.placeholder}
+                    readOnly={readonly}
+                    required={Boolean(field.required)}
+                    value={values[field.key] ?? ''}
+                  />
+                ) : field.type === 'number' ? (
+                  <MasterDataNumberInput
+                    aria-describedby={describedBy}
+                    aria-invalid={Boolean(error)}
+                    disabled={readonly || saving}
+                    id={controlId}
+                    onChange={updateValue}
+                    placeholder={field.placeholder}
+                    readOnly={readonly}
+                    required={Boolean(field.required)}
+                    value={values[field.key] ?? ''}
+                  />
+                ) : (
+                  <Input
+                    aria-describedby={describedBy}
+                    aria-invalid={Boolean(error)}
+                    disabled={readonly || saving}
+                    dir={
+                      field.key.toLowerCase().includes('code')
+                        ? 'ltr'
+                        : undefined
+                    }
+                    id={controlId}
+                    onChange={(event) => updateValue(event.target.value)}
+                    placeholder={field.placeholder}
+                    readOnly={readonly}
+                    required={Boolean(field.required)}
+                    type={field.type}
+                    value={values[field.key] ?? ''}
+                  />
+                );
+                return (
+                  <FormField
+                    {...(field.hint ? { description: field.hint } : {})}
+                    {...(error ? { error } : {})}
+                    {...(field.required ? { required: true } : {})}
+                    id={controlId}
+                    key={field.key}
+                    label={field.label}
                   >
-                    <SelectValue placeholder="انتخاب کنید" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {field.options?.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              ) : field.type === 'datetime-local' ? (
-                <DatePicker
-                  aria-describedby={describedBy}
-                  aria-invalid={Boolean(error)}
-                  disabled={readonly || saving}
-                  id={controlId}
-                  includeTime={definition.key !== 'baggage-rules'}
-                  onChange={updateValue}
-                  placeholder={field.placeholder}
-                  readOnly={readonly}
-                  required={Boolean(field.required)}
-                  value={values[field.key] ?? ''}
-                />
-              ) : field.type === 'number' ? (
-                <MasterDataNumberInput
-                  aria-describedby={describedBy}
-                  aria-invalid={Boolean(error)}
-                  disabled={readonly || saving}
-                  id={controlId}
-                  onChange={updateValue}
-                  placeholder={field.placeholder}
-                  readOnly={readonly}
-                  required={Boolean(field.required)}
-                  value={values[field.key] ?? ''}
-                />
-              ) : (
-                <Input
-                  aria-describedby={describedBy}
-                  aria-invalid={Boolean(error)}
-                  disabled={readonly || saving}
-                  dir={
-                    field.key.toLowerCase().includes('code') ? 'ltr' : undefined
-                  }
-                  id={controlId}
-                  onChange={(event) => updateValue(event.target.value)}
-                  placeholder={field.placeholder}
-                  readOnly={readonly}
-                  required={Boolean(field.required)}
-                  type={field.type}
-                  value={values[field.key] ?? ''}
-                />
-              );
-              return (
-                <FormField
-                  {...(field.hint ? { description: field.hint } : {})}
-                  {...(error ? { error } : {})}
-                  {...(field.required ? { required: true } : {})}
-                  id={controlId}
-                  key={field.key}
-                  label={field.label}
-                >
-                  {!reference &&
-                  (field.type === 'select' ||
-                    field.type === 'datetime-local') ? (
-                    <MasterDataClearableField
-                      controlId={controlId}
-                      label={field.label}
-                      value={values[field.key] ?? ''}
-                      onClear={() => updateValue('')}
-                      disabled={readonly || saving}
-                    >
-                      {control}
-                    </MasterDataClearableField>
-                  ) : (
-                    control
-                  )}
-                  {definition.key === 'suppliers' &&
-                  field.key === 'primaryPhone' &&
-                  mode === 'edit' &&
-                  record?.attributes.primaryPhoneMasked ? (
-                    <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                      {supplierPhoneTouched ? (
-                        <span>
-                          {values.primaryPhone
-                            ? 'شمارهٔ جدید پس از ذخیره جایگزین می‌شود.'
-                            : 'شمارهٔ فعلی پس از ذخیره پاک می‌شود.'}
-                        </span>
-                      ) : (
-                        <>
+                    {!reference &&
+                    (field.type === 'select' ||
+                      field.type === 'datetime-local') ? (
+                      <MasterDataClearableField
+                        controlId={controlId}
+                        label={field.label}
+                        value={values[field.key] ?? ''}
+                        onClear={() => updateValue('')}
+                        disabled={readonly || saving}
+                      >
+                        {control}
+                      </MasterDataClearableField>
+                    ) : (
+                      control
+                    )}
+                    {definition.key === 'suppliers' &&
+                    field.key === 'primaryPhone' &&
+                    mode === 'edit' &&
+                    record?.attributes.primaryPhoneMasked ? (
+                      <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                        {supplierPhoneTouched ? (
                           <span>
-                            شمارهٔ فعلی:{' '}
-                            {String(record.attributes.primaryPhoneMasked)}
+                            {values.primaryPhone
+                              ? 'شمارهٔ جدید پس از ذخیره جایگزین می‌شود.'
+                              : 'شمارهٔ فعلی پس از ذخیره پاک می‌شود.'}
                           </span>
-                          <Button
-                            onClick={() => updateValue('')}
-                            type="button"
-                            variant="outline"
-                          >
-                            پاک‌کردن شمارهٔ ثبت‌شده
-                          </Button>
-                        </>
-                      )}
-                    </div>
-                  ) : null}
-                </FormField>
-              );
-            })}
-            {definition.key === 'airlines' ? (
-              <MasterDataAirlineBaggageEditor
-                {...(record ? { airline: record } : {})}
-                disabled={saving}
-                readOnly={readonly}
-              />
-            ) : null}
-            {errors.form ? (
-              <Alert
-                description={errors.form}
-                title="ذخیره انجام نشد"
-                tone="error"
-              />
-            ) : null}
-            <div className="flex justify-end gap-2 border-t border-border pt-5">
-              <DialogClose asChild>
-                <Button type="button" variant="ghost">
-                  بستن
-                </Button>
-              </DialogClose>
-              {!readonly ? (
-                <Button loading={saving} type="submit">
-                  ذخیره
-                </Button>
+                        ) : (
+                          <>
+                            <span>
+                              شمارهٔ فعلی:{' '}
+                              {String(record.attributes.primaryPhoneMasked)}
+                            </span>
+                            <Button
+                              onClick={() => updateValue('')}
+                              type="button"
+                              variant="outline"
+                            >
+                              پاک‌کردن شمارهٔ ثبت‌شده
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                    ) : null}
+                  </FormField>
+                );
+              })}
+              {definition.key === 'airlines' ? (
+                <MasterDataAirlineBaggageEditor
+                  {...(record ? { airline: record } : {})}
+                  disabled={saving}
+                  readOnly={readonly}
+                />
               ) : null}
-            </div>
-          </form>
+              {errors.form ? (
+                <Alert
+                  description={errors.form}
+                  title="ذخیره انجام نشد"
+                  tone="error"
+                />
+              ) : null}
+              <div className="flex justify-end gap-2 border-t border-border pt-5">
+                <DialogClose asChild>
+                  <Button type="button" variant="ghost">
+                    بستن
+                  </Button>
+                </DialogClose>
+                {!readonly ? (
+                  <Button loading={saving} type="submit">
+                    ذخیره
+                  </Button>
+                ) : null}
+              </div>
+            </form>
+          )}
         </DialogContent>
       </Dialog>
       {referenceForm ? (
