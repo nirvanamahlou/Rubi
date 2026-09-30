@@ -3978,6 +3978,10 @@ Owner-confirmed synthetic local catalog snapshot: 20 offers (11 visible, 9 alrea
 
 فرم‌های درخواست و تیکت امور مشتریان به جست‌وجوی مشتریان/مسافران موجود و فرم ایجاد مرجع Customers متصل شدند. پیش از جست‌وجو هیچ گزینه‌ای یا درخواست فهرست ندارند؛ سپس نتایج ده‌تایی صفحه‌بندی می‌شوند. ثبت مشتری جدید و انتخاب خودکار پروندهٔ ایجادشده فراهم است؛ داده در Customers می‌ماند و امور مشتریان فقط شناسه را ثبت می‌کند. بررسی runtime، CI و review مالک Customers پیش از ادغام باقی است. جزئیات و ریسک پاسخ نامطمئن API: [CUSTOMER-AFFAIRS-CUSTOMER-CREATE-0929](tasks/CUSTOMER-AFFAIRS-CUSTOMER-CREATE-0929.md).
 
+## 2026-09-30 — CUSTOMER-AFFAIRS-CUSTOMER-CREATE-RUNTIME-0930 — ACTIVE
+
+PR #493 با CI سبز به `develop@5c340730` ادغام شد. build تولیدی Web از همان commit روی پورت ۳۱۱۷ اجرا و درگاه ۳۱۰۰ به آن متصل شد؛ API فعلی ۴۰۰۰ و داده‌ها دست‌نخورده ماندند. هویت runtime، صفحهٔ ورود، هدایت مسیر محافظت‌شده و health API بررسی شدند. برای جلوگیری از ثبت در دادهٔ مشترک، آزمون احرازشدهٔ ساخت مشتری انجام نشد؛ ریسک پاسخ نامطمئنِ POST Customers مطابق [شرح کار](tasks/CUSTOMER-AFFAIRS-CUSTOMER-CREATE-0929.md) باقی است.
+
 ## 2026-09-29 — CUSTOMER-AFFAIRS-FOLLOWUP-OVERVIEW-0929 — PC-B — READY_FOR_REVIEW
 
 در فهرست درخواست‌های امور مشتریان، دکمهٔ ردیفی «پیگیری» پروفایل و مشخصات همان درخواست را باز می‌کند. نمای کلی اکنون «آخرین درخواست‌ها» را مستقل از «منتظر پذیرش فروش» و «پیگیری معوق» از API مجازِ شعبه می‌خواند؛ وضعیت `NEW` دیگر به‌علت فیلتر تحویل فروش حذف نمی‌شود. ۲۸ تست متمرکز، typecheck، lint محدود و build وب موفق‌اند؛ CI و بررسی runtime باقی‌اند. [جزئیات](tasks/CUSTOMER-AFFAIRS-FOLLOWUP-OVERVIEW-0929.md).
