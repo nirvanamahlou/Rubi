@@ -582,7 +582,7 @@ export function ReservationOperationsWorkspace({
                     defaultCalendarSystem="gregorian"
                     gregorianEnglish
                     id="reservation-from"
-                    value={query.fromDate}
+                    value={effectiveQuery.fromDate}
                     onChange={(fromDate) => changeQuery({ fromDate })}
                     aria-invalid={Boolean(result.dateError)}
                     aria-describedby="reservation-date-help"
@@ -594,7 +594,7 @@ export function ReservationOperationsWorkspace({
                     defaultCalendarSystem="gregorian"
                     gregorianEnglish
                     id="reservation-to"
-                    value={query.toDate}
+                    value={effectiveQuery.toDate}
                     onChange={(toDate) => changeQuery({ toDate })}
                     aria-invalid={Boolean(result.dateError)}
                     aria-describedby="reservation-date-help"
@@ -611,7 +611,7 @@ export function ReservationOperationsWorkspace({
                 {result.dateError ??
                   (query.fromDate || query.toDate
                     ? 'بازه شامل تمام روز شروع و پایان است؛ ساعت‌ها بر مبنای تهران محاسبه می‌شوند.'
-                    : 'نمایش پیش‌فرض: قراردادهای سه ماه اخیر. برای دیدن تاریخ‌های قدیمی، بازهٔ تاریخ را انتخاب کنید.')}
+                    : 'نمایش پیش‌فرض: قراردادهای یک ماه اخیر. برای دیدن تاریخ‌های قدیمی، بازهٔ تاریخ را انتخاب کنید.')}
               </p>
               {result.dateError && <p role="alert">{result.dateError}</p>}
               {result.filteredRows.length === 0 ? (

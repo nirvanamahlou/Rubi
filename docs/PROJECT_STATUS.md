@@ -1,3 +1,7 @@
+## 2026-09-30 — RESERVATION-MONTH-FILTER-0930 — PC-A — READY_FOR_REVIEW
+
+Reservations inbox now defaults to one previous calendar month through today's Tehran date on contract creation date, and shows both bounds in the date controls. Explicit user ranges remain authoritative; clearing filters restores this default. The existing regression test covers the lower boundary, old/future exclusions and custom history selection. 19 focused tests and scoped lint passed; Web typecheck/build verified after refreshing stale contracts outputs. No API, migration, dependencies or operational data changes. Owner authorized develop merge and existing local3100 update after CI.
+
 ## 2026-09-30 — RESERVATION-CONTRACT-COLUMNS-0930 — PC-A — READY_FOR_REVIEW
 
 Reservations inbox and Excel now use the requested 46-column order. Visa/flight action and confirmation checkboxes save server time and authenticated actor in existing immutable workflow revisions; correction and cancellation use real Sales contract operations. The Sales public projection supplies age counts and exact per-currency financial totals; costs use Reservations purchase history, and direct-ticket commissions use historical Ticket Catalog revisions. Missing historical tour-pricing links remain unavailable. 65 Web and 17 API tests, both typechecks and production builds passed; full API/Web lint passed. No migration, dependencies or operational-data change. Owner authorized merge to develop after checks. Details: [RESERVATION-CONTRACT-COLUMNS-0930](tasks/RESERVATION-CONTRACT-COLUMNS-0930.md).
