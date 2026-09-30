@@ -76,6 +76,7 @@ import { TicketCatalogCard } from './ticket-catalog-card';
 import { TicketDetails } from './ticket-details';
 import { TicketForm } from './ticket-form';
 import { FlightScheduleForm } from './flight-schedule-form';
+import { FlightLoadGrid } from './flight-load-grid';
 import formStyles from './ticket-form.module.css';
 import { TicketDatePicker } from './ticket-date-picker';
 import { ConnectedIssuedTicketsWorkspace } from './issued-tickets-workspace';
@@ -162,6 +163,14 @@ export function flightOfferInput(
     serviceNumber,
     cabinClassCode,
     totalCapacity: definition.totalCapacity,
+    supplyType:
+      definition.supplyType === 'company' || definition.supplyType === 'charter'
+        ? 'COMPANY'
+        : definition.supplyType === 'allotment'
+          ? 'FLOATING'
+          : 'API',
+    economyBaggageKg: definition.economyBaggageKg ?? null,
+    businessBaggageKg: definition.businessBaggageKg ?? null,
     manifestTemplateId: definition.manifestTemplateId ?? null,
     returnMinDays: definition.returnMinDays ?? null,
     returnMaxDays: definition.returnMaxDays ?? null,
@@ -979,6 +988,12 @@ function TicketCatalogWorkspace() {
       {problem && !statusChange && !repeat && !deleteProduct ? (
         <Alert tone="error" title={problem} />
       ) : null}
+      <FlightLoadGrid
+        offers={publishedOffers}
+        cityName={(id) => referenceLabel('city', id, id)}
+        refreshing={publishedRefreshing}
+        onRefresh={() => void refreshPublishedOffers(true)}
+      />
       <Card className="overflow-hidden p-0">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b bg-primary/5 px-4 py-3">
           <div>

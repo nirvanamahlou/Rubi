@@ -31,6 +31,7 @@ import styles from './ticket-form.module.css';
 import { ReferencePicker } from './reference-picker';
 import { TicketDatePicker } from './ticket-date-picker';
 import { ManifestTemplatePicker } from './manifest-template-picker';
+import { TicketBaggageFields } from './ticket-baggage-fields';
 import type { PublishedResource } from '../api/references';
 
 type TicketDefinitionMode = 'one-way' | 'round-trip' | 'combined';
@@ -357,18 +358,14 @@ function TransportFields({
               onInput({ ...input, flightClassId: ref?.id ?? '' });
             }}
           />
-          <ReferencePicker
-            id={`${prefix}-baggage`}
-            label={`بار مجاز${suffix}`}
-            resource="baggage-rules"
+          <TicketBaggageFields
+            economy={input.economyBaggageKg}
+            business={input.businessBaggageKg}
+            suffix={suffix}
             readOnly={readOnly}
-            value={references.find(
-              (r) => r.kind === 'baggage' && r.id === input.baggageId,
-            )}
-            onSelect={(ref) => {
-              if (ref) onReference?.(ref);
-              onInput({ ...input, baggageId: ref?.id ?? '' });
-            }}
+            onChange={(field, value) =>
+              onInput({ ...input, baggageId: '', [field]: value })
+            }
           />
         </>
       ) : null}
@@ -1144,6 +1141,7 @@ export function TicketForm({
                     ...input,
                     supplyType: supplyType as ProductInput['supplyType'],
                     companyOwned: supplyType === 'company',
+                    entryMethod: supplyType === 'supplier' ? 'api' : 'manual',
                   })
                 }
               >

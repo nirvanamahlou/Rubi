@@ -45,6 +45,18 @@ const capacityHoldSchema = Joi.object({
 });
 type CapacityHoldInput = { quantity: number; expiresAt: string };
 const createSchema = Joi.object({
+  supplyType: Joi.string()
+    .valid('COMPANY', 'FLOATING', 'API')
+    .allow(null)
+    .optional(),
+  economyBaggageKg: Joi.string()
+    .pattern(/^\d{1,4}(\.\d{1,2})?$/)
+    .allow(null)
+    .optional(),
+  businessBaggageKg: Joi.string()
+    .pattern(/^\d{1,4}(\.\d{1,2})?$/)
+    .allow(null)
+    .optional(),
   returnMinDays: Joi.number().integer().min(0).max(365).allow(null).optional(),
   returnMaxDays: Joi.number().integer().min(0).max(365).allow(null).optional(),
   manifestTemplateId: uuid.allow(null).optional(),
@@ -72,6 +84,11 @@ export function validateTicketOffer(input: unknown): TicketOfferCreateV1 {
   const result = createSchema.validate(input, { convert: false });
   if (result.error) throw new BadRequestException('اطلاعات بلیت معتبر نیست.');
   const value = result.value as TicketOfferCreateV1;
+  for (const weight of [value.economyBaggageKg, value.businessBaggageKg])
+    if (weight != null && Number(weight) > 9999)
+      throw new BadRequestException(
+        'بار مجاز باید بین صفر و ۹۹۹۹ کیلوگرم باشد.',
+      );
   if (!validReturnWindow(value.returnMinDays, value.returnMaxDays))
     throw new BadRequestException(
       'حداقل روز برگشت نباید از حداکثر بیشتر باشد.',
@@ -143,6 +160,9 @@ export class TicketPublicService {
   }
 
   private offerView(row: {
+    supplyType?: string | null;
+    economyBaggageKg?: Prisma.Decimal | null;
+    businessBaggageKg?: Prisma.Decimal | null;
     returnMinDays?: number | null;
     returnMaxDays?: number | null;
     id: string;
@@ -190,6 +210,20 @@ export class TicketPublicService {
     return applySaleCommissions(
       {
         id: row.id,
+        supplyType: (row.supplyType ?? null) as Exclude<
+          TicketOfferV1['supplyType'],
+          undefined
+        >,
+        economyBaggageKg: row.economyBaggageKg?.toString() ?? null,
+        businessBaggageKg: row.businessBaggageKg?.toString() ?? null,
+        allocatedCapacity: row.capacityAllocations.reduce(
+          (sum, item) => sum + item.quantity,
+          0,
+        ),
+        reservedCapacity: row.capacityHolds.reduce(
+          (sum, item) => sum + item.quantity,
+          0,
+        ),
         returnMinDays: row.returnMinDays ?? null,
         returnMaxDays: row.returnMaxDays ?? null,
         manifestTemplateId: row.manifestTemplateId ?? null,
@@ -316,8 +350,10 @@ export class TicketPublicService {
   }
 
   /** Management and Sales deliberately read the same published offer rows. */
-  async managed(actor: AuthenticatedActor) {
+  async managed(actor: AuthenticatedActor, page = 1) {
     this.require(actor, 'ticket_catalog.manage');
+    if (!Number.isInteger(page) || page < 1 || page > 10000)
+      throw new BadRequestException('Invalid management page');
     const now = new Date();
     await this.pauseExpiredOffers(actor, now);
     const rows = await this.database.client.ticketPublishedOffer.findMany({
@@ -357,11 +393,13 @@ export class TicketPublicService {
         },
       },
       orderBy: [{ departureAt: 'asc' }, { id: 'asc' }],
-      take: 500,
+      take: 501,
+      skip: (page - 1) * 500,
     });
     return {
       version: 1 as const,
-      data: rows.map((row) => ({
+      hasMore: rows.length > 500,
+      data: rows.slice(0, 500).map((row) => ({
         ...this.offerView(row),
         ...(row.createKey?.startsWith('ticket-catalog:')
           ? { catalogProductId: row.createKey.slice('ticket-catalog:'.length) }
@@ -510,6 +548,15 @@ export class TicketPublicService {
     // Legacy fingerprints depended on JSON field order. Compare stored offer facts
     // before rejecting a retried key so semantically identical requests remain safe.
     const sameOffer =
+      (row.supplyType ?? null) === (value.supplyType ?? null) &&
+      (row.economyBaggageKg?.toString() ?? null) ===
+        (value.economyBaggageKg == null
+          ? null
+          : new Prisma.Decimal(value.economyBaggageKg).toString()) &&
+      (row.businessBaggageKg?.toString() ?? null) ===
+        (value.businessBaggageKg == null
+          ? null
+          : new Prisma.Decimal(value.businessBaggageKg).toString()) &&
       row.branchId === branchId &&
       row.originId === value.originId &&
       row.destinationId === value.destinationId &&
@@ -1079,6 +1126,19 @@ export class TicketPublicService {
       if (row.version !== input.expectedVersion)
         throw new ConflictException('بلیط تغییر کرده؛ فهرست را تازه کنید.');
       const linkedSale = row.capacityAllocations.length > 0;
+      const supplyType =
+        value.supplyType === undefined ? row.supplyType : value.supplyType;
+      const economyBaggageKg =
+        value.economyBaggageKg === undefined
+          ? row.economyBaggageKg
+          : value.economyBaggageKg;
+      const businessBaggageKg =
+        value.businessBaggageKg === undefined
+          ? row.businessBaggageKg
+          : value.businessBaggageKg;
+      const baggageValue = (
+        value: Prisma.Decimal | string | null | undefined,
+      ) => (value == null ? null : new Prisma.Decimal(value).toString());
       const min =
         value.returnMinDays === undefined
           ? row.returnMinDays
@@ -1090,6 +1150,10 @@ export class TicketPublicService {
       if (!validReturnWindow(min, max))
         throw new BadRequestException('بازه روزهای برگشت معتبر نیست.');
       const scheduleOnlyRevision =
+        (row.supplyType ?? null) === (supplyType ?? null) &&
+        baggageValue(row.economyBaggageKg) === baggageValue(economyBaggageKg) &&
+        baggageValue(row.businessBaggageKg) ===
+          baggageValue(businessBaggageKg) &&
         (row.returnMinDays ?? null) === (min ?? null) &&
         (row.returnMaxDays ?? null) === (max ?? null) &&
         row.originId === value.originId &&
@@ -1119,6 +1183,9 @@ export class TicketPublicService {
         where: { id },
         data: {
           ...value,
+          supplyType,
+          economyBaggageKg,
+          businessBaggageKg,
           returnMinDays: min,
           returnMaxDays: max,
           manifestTemplateId:

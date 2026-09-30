@@ -109,7 +109,7 @@ export function TicketDatePicker({
 }: TicketDatePickerProps) {
   const [internalValue, setInternalValue] = React.useState(defaultValue);
   const [internalCalendarSystem, setInternalCalendarSystem] =
-    React.useState<CalendarSystem>('persian');
+    React.useState<CalendarSystem>('gregorian');
   const calendarSystem = controlledCalendarSystem ?? internalCalendarSystem;
   const currentValue = value ?? internalValue;
   const [open, setOpen] = React.useState(false);

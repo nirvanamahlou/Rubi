@@ -4073,6 +4073,9 @@ model TourDeparture {
 }
 
 model TicketPublishedOffer {
+  supplyType                  String?                             @db.VarChar(16)
+  economyBaggageKg            Decimal?                            @db.Decimal(10, 2)
+  businessBaggageKg           Decimal?                            @db.Decimal(10, 2)
   returnMinDays               Int?
   returnMaxDays               Int?
   saleCommissions             TicketSaleCommissionRevision[]      @relation("TicketCommissionOutbound")
