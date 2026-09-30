@@ -98,7 +98,13 @@ describe('Nora Customer Affairs navigation', () => {
       qualification: {
         state: 'QUALIFIED',
         score: 85,
-        reasons: ['نیاز سفر تایید شده', 'مقصد مشخص است', 'بودجه بررسی شده'],
+        reasons: [
+          'نیاز سفر تایید شده',
+          'مقصد مشخص است',
+          'بازه سفر مشخص است',
+          'بودجه بررسی شده',
+          'تصمیم‌گیرنده در دسترس است',
+        ],
         conversionProbability: 65,
         evaluatedAt: '2026-09-29T09:00:00Z',
       },
@@ -126,11 +132,171 @@ describe('Nora Customer Affairs navigation', () => {
     expect(html).toContain('آماده تحویل به فروش');
     expect(html).toContain('امتیاز آمادگی');
     expect(html).toContain('احتمال تبدیل به فروش');
+    const report = html.slice(
+      html.indexOf('آخرین نتیجه ارزیابی آمادگی فروش'),
+      html.indexOf(
+        '</section>',
+        html.indexOf('آخرین نتیجه ارزیابی آمادگی فروش'),
+      ),
+    );
+    expect(report).toMatch(/<dl class="[^"]*qualificationSummary[^"]*">/);
+    expect(report.match(/<dt>/g)).toHaveLength(3);
+    expect(report).toContain('۶ معیار');
+    expect(report.match(/data-state="confirmed"/g)).toHaveLength(5);
+    expect(report.match(/data-state="unconfirmed"/g)).toHaveLength(1);
+    expect(report).toContain('تأیید شده');
+    expect(report).toContain('تأیید نشده');
+    expect(report).not.toContain('دلایل و توضیحات تکمیلی ثبت‌شده');
     expect(html).toContain('نیاز سفر مشخص و تأیید شده است');
     expect(html).toContain('مقصد یا گزینه‌های پذیرفتنی مشخص است');
     expect(html).toContain('درباره بودجه گفتگو شده است');
     expect(html).toContain('زمان سفر یا انعطاف آن مشخص است');
-    expect(html).toContain('تأیید نشده');
+  });
+  it('shows disqualification explanations without repeating canonical or duplicate reasons', () => {
+    const detail = {
+      id: 'request',
+      trackingNumber: 'CA-L-4',
+      title: 'درخواست نامناسب',
+      travelNeed: 'سفر',
+      stage: 'QUALIFYING',
+      priority: 'NORMAL',
+      version: 2,
+      nextAction: 'بررسی نتیجه',
+      nextActionAt: '2026-09-29T10:00:00Z',
+      customerId: null,
+      qualification: {
+        state: 'DISQUALIFIED',
+        score: 0,
+        reasons: [
+          'نیاز سفر تایید شده',
+          'زمان سفر خارج از محدوده خدمات است',
+          ' زمان سفر خارج از محدوده خدمات است ',
+          'مسیر درخواستی ارائه نمی‌شود',
+        ],
+        conversionProbability: null,
+        evaluatedAt: '2026-09-29T09:00:00Z',
+      },
+      timeline: [],
+    } as unknown as Detail;
+    const html = renderToStaticMarkup(
+      <DetailPanel
+        detail={detail}
+        tab="leads"
+        onBack={() => {}}
+        onReload={async () => {}}
+      />,
+    );
+    const explanations =
+      html.match(
+        /<div class="[^"]*qualificationExtraReasons[^"]*">([\s\S]*?)<\/div>/,
+      )?.[1] ?? '';
+    expect(html).toContain('فاقد شرایط');
+    expect(explanations).toContain('دلایل و توضیحات تکمیلی ثبت‌شده');
+    expect(explanations.match(/<li>/g)).toHaveLength(2);
+    expect(explanations).toContain('زمان سفر خارج از محدوده خدمات است');
+    expect(explanations).toContain('مسیر درخواستی ارائه نمی‌شود');
+    expect(explanations).not.toContain('نیاز سفر تایید شده');
+  });
+  it('normalizes persisted reasons for criterion status, count, and explanations', () => {
+    const detail = {
+      id: 'request',
+      trackingNumber: 'CA-L-5',
+      title: 'درخواست نیازمند بررسی',
+      travelNeed: 'سفر',
+      stage: 'QUALIFYING',
+      priority: 'NORMAL',
+      version: 2,
+      nextAction: 'تکمیل ارزیابی',
+      nextActionAt: '2026-09-29T10:00:00Z',
+      customerId: null,
+      qualification: {
+        state: 'NEEDS_REVIEW',
+        score: 25,
+        reasons: [
+          ' نیاز سفر تایید شده ',
+          'نیاز سفر تایید شده',
+          ' دلیل تکمیلی ',
+          'دلیل تکمیلی',
+          '   ',
+        ],
+        conversionProbability: null,
+        evaluatedAt: '2026-09-29T09:00:00Z',
+      },
+      timeline: [],
+    } as unknown as Detail;
+    const html = renderToStaticMarkup(
+      <DetailPanel
+        detail={detail}
+        tab="leads"
+        onBack={() => {}}
+        onReload={async () => {}}
+      />,
+    );
+    const explanations =
+      html.match(
+        /<div class="[^"]*qualificationExtraReasons[^"]*">([\s\S]*?)<\/div>/,
+      )?.[1] ?? '';
+    expect(html).toContain('۱ از ۶ معیار تأیید شده');
+    expect(html.match(/data-state="confirmed"/g)).toHaveLength(1);
+    expect(html.match(/data-state="unconfirmed"/g)).toHaveLength(5);
+    expect(explanations.match(/<li>/g)).toHaveLength(1);
+    expect(explanations).toContain('دلیل تکمیلی');
+    expect(explanations).not.toContain('نیاز سفر تایید شده');
+  });
+  it('shows zero confirmed criteria and an unset probability clearly', () => {
+    const detail = {
+      id: 'request',
+      trackingNumber: 'CA-L-3',
+      title: 'درخواست تازه',
+      travelNeed: 'سفر',
+      stage: 'QUALIFYING',
+      priority: 'NORMAL',
+      version: 2,
+      nextAction: 'تماس مجدد',
+      nextActionAt: '2026-09-29T10:00:00Z',
+      customerId: null,
+      qualification: {
+        state: 'NEEDS_REVIEW',
+        score: 0,
+        reasons: [],
+        conversionProbability: null,
+        evaluatedAt: '2026-09-29T09:00:00Z',
+      },
+      timeline: [],
+    } as unknown as Detail;
+    const html = renderToStaticMarkup(
+      <DetailPanel
+        detail={detail}
+        tab="leads"
+        onBack={() => {}}
+        onReload={async () => {}}
+      />,
+    );
+    const report = html.slice(
+      html.indexOf('آخرین نتیجه ارزیابی آمادگی فروش'),
+      html.indexOf(
+        '</section>',
+        html.indexOf('آخرین نتیجه ارزیابی آمادگی فروش'),
+      ),
+    );
+    expect(report).toContain('نیازمند تکمیل ارزیابی');
+    expect(report).toContain('ثبت نشده');
+    expect(report).toContain('۰ از ۶ معیار');
+    expect(report.match(/data-state="unconfirmed"/g)).toHaveLength(6);
+    expect(report).not.toContain('data-state="confirmed"');
+  });
+  it('limits the report criteria to two desktop columns and one mobile column', () => {
+    const css = readFileSync(
+      new URL('./customer-affairs-nora.module.css', import.meta.url),
+      'utf8',
+    );
+    expect(css).toMatch(
+      /\.qualificationCriteria\s*\{[^}]*grid-template-columns:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\)/s,
+    );
+    expect(css.slice(css.indexOf('@media (max-width: 760px)'))).toMatch(
+      /\.qualificationCriteria\s*\{[^}]*grid-template-columns:\s*minmax\(0,\s*1fr\)/s,
+    );
+    expect(css).toContain(".qualificationCriterion[data-state='confirmed']");
   });
   it.each(['NEW', 'RESOLVED', 'CLOSED'] as const)(
     'only offers ticket actions appropriate to %s',

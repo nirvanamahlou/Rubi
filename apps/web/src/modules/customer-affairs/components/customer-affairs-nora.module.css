@@ -338,6 +338,9 @@
   grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
   gap: 19px;
 }
+.recentRequests {
+  margin-bottom: 22px;
+}
 .attention {
   margin-bottom: 22px;
   overflow: hidden;
@@ -493,42 +496,151 @@
   overflow: hidden;
 }
 .qualificationReport {
-  display: grid;
-  gap: 8px;
   margin: 20px 22px 0;
-  padding: 16px;
-  border: 1px solid color-mix(in srgb, var(--primary) 22%, var(--border));
-  border-radius: 12px;
-  background: color-mix(in srgb, var(--primary) 4%, var(--surface));
-  font-size: 14px;
-  line-height: 1.8;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--primary) 3%, var(--surface));
+  overflow: hidden;
 }
 .qualificationReportHead {
   display: flex;
+  align-items: flex-start;
   justify-content: space-between;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 10px 20px;
+  padding: 18px 20px 16px;
+}
+.qualificationReportEyebrow {
+  margin-bottom: 4px;
+  color: var(--muted-foreground);
+  font-size: 12px;
+  font-weight: 700;
 }
 .qualificationReportHead h4 {
+  font-size: 16px;
   font-weight: 800;
+  line-height: 1.6;
 }
 .qualificationReportHead time {
+  color: var(--muted-foreground);
+  font-size: 12px;
+  line-height: 1.8;
+}
+.qualificationSummary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  padding: 0 20px 18px;
+  border-bottom: 1px solid var(--border);
+}
+.qualificationSummary > div {
+  min-width: 0;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+}
+.qualificationSummary dt {
+  margin-bottom: 5px;
+  color: var(--muted-foreground);
+  font-size: 12px;
+}
+.qualificationSummary dd {
+  color: var(--foreground);
+  font-size: 14px;
+  font-weight: 750;
+  line-height: 1.7;
+}
+.qualificationSummary dd strong {
+  font-size: 20px;
+  font-weight: 850;
+}
+.qualificationSummary dd span {
+  color: var(--muted-foreground);
+  font-size: 12px;
+  font-weight: 600;
+}
+.qualificationCriteriaHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  padding: 16px 20px 10px;
+}
+.qualificationCriteriaHead h5 {
+  font-size: 14px;
+  font-weight: 800;
+}
+.qualificationCriteriaHead p {
   color: var(--muted-foreground);
   font-size: 12px;
 }
 .qualificationCriteria {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
-  gap: 6px 16px;
-  margin-top: 4px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  padding: 0 20px 20px;
 }
-.qualificationCriteria li {
-  display: flex;
-  justify-content: space-between;
-  gap: 8px;
+.qualificationCriterion {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px 12px;
+  min-width: 0;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
 }
-.qualificationCriteria strong {
+.qualificationCriterion[data-state='confirmed'] {
+  border-color: color-mix(in srgb, var(--ca-teal) 43%, var(--border));
+  background: color-mix(in srgb, var(--ca-teal) 7%, var(--surface));
+}
+.qualificationCriterionLabel {
+  min-width: 0;
+  font-size: 13px;
+  line-height: 1.8;
+  overflow-wrap: anywhere;
+}
+.qualificationCriterionStatus {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--foreground);
+  font-size: 11px;
+  font-weight: 750;
   white-space: nowrap;
+}
+.qualificationCriterion[data-state='confirmed'] .qualificationCriterionStatus {
+  border-color: color-mix(in srgb, var(--ca-teal) 43%, var(--border));
+}
+.qualificationExtraReasons {
+  padding: 16px 20px 20px;
+  border-top: 1px solid var(--border);
+}
+.qualificationExtraReasons h5 {
+  font-size: 14px;
+  font-weight: 800;
+}
+.qualificationExtraReasons ul {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+.qualificationExtraReasons li {
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-inline-start: 3px solid var(--primary);
+  border-radius: 8px;
+  background: var(--surface);
+  font-size: 13px;
+  line-height: 1.8;
+  overflow-wrap: anywhere;
 }
 .profileTimeline {
   display: grid;
@@ -927,6 +1039,24 @@
   }
 }
 @media (max-width: 760px) {
+  .qualificationReport {
+    margin: 16px 16px 0;
+  }
+  .qualificationReportHead,
+  .qualificationCriteriaHead {
+    padding-inline: 16px;
+  }
+  .qualificationSummary {
+    grid-template-columns: minmax(0, 1fr);
+    padding-inline: 16px;
+  }
+  .qualificationCriteria {
+    grid-template-columns: minmax(0, 1fr);
+    padding-inline: 16px;
+  }
+  .qualificationExtraReasons {
+    padding-inline: 16px;
+  }
   .profileHeading,
   .profileSectionHead {
     padding: 16px;
@@ -1042,6 +1172,14 @@
   }
   .board {
     grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 420px) {
+  .qualificationCriterion {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .qualificationCriterionStatus {
+    justify-self: start;
   }
 }
 @media (prefers-reduced-motion: reduce) {

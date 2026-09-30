@@ -9,3 +9,7 @@ The additive migration creates nullable supply and baggage columns with database
 The legacy screenshot web-publication checkbox has no persisted equivalent; the load shows an unknown marker rather than claiming publication. One-way checkboxes describe saved one-way fare availability. No new provider integration or operational data backfill is included.
 
 Validation includes isolated PostgreSQL migration deployment, four return-window/persistence tests, focused supply schema and pagination tests, Ticket Catalog Web tests, typechecks, lint and builds. Operational rollout applies the additive migration before starting the rebuilt API.
+
+## Owner follow-up — visible legacy tickets
+
+The follow-up TICKET-LOAD-VISIBLE-0930 includes unknown legacy supply in both load legs while preserving the null classification and labeling it explicitly in selected-flight details. Explicit FLOATING/API offers remain excluded. Initial date bounds are empty, and an edited date clears an incompatible opposite bound. The duplicate published table is removed; its existing management actions move into selected-leg details. The light-mode load background is white. This supersedes the initial requirement that unknown legacy tickets must be classified before appearing in load; no database backfill occurs.

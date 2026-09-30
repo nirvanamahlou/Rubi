@@ -127,9 +127,14 @@ const qualificationCriteria = [
 function qualificationReport(value: Record<string, unknown> | null) {
   if (!value || typeof value.score !== 'number') return null;
   const reasons = Array.isArray(value.reasons)
-    ? value.reasons.filter(
-        (reason): reason is string => typeof reason === 'string',
-      )
+    ? [
+        ...new Set(
+          value.reasons
+            .filter((reason): reason is string => typeof reason === 'string')
+            .map((reason) => reason.trim())
+            .filter(Boolean),
+        ),
+      ]
     : [];
   return {
     score: value.score,
@@ -633,6 +638,19 @@ export function DetailPanel({
   const stage = 'stage' in detail ? detail.stage : detail.status;
   const assessment =
     'stage' in detail ? qualificationReport(detail.qualification) : null;
+  const confirmedCriteriaCount = assessment
+    ? qualificationCriteria.filter(([, , reason]) =>
+        assessment.reasons.includes(reason),
+      ).length
+    : 0;
+  const additionalAssessmentReasons = assessment
+    ? assessment.reasons.filter(
+        (reason) =>
+          !qualificationCriteria.some(
+            ([, , canonicalReason]) => canonicalReason === reason,
+          ),
+      )
+    : [];
   async function run(operation: () => Promise<unknown>, success: string) {
     setBusy(true);
     setNotice('');
@@ -1307,39 +1325,78 @@ export function DetailPanel({
             aria-label="نتیجه ارزیابی آمادگی فروش"
           >
             <div className={s.qualificationReportHead}>
-              <h4>آخرین نتیجه ارزیابی آمادگی فروش</h4>
+              <div>
+                <p className={s.qualificationReportEyebrow}>گزارش ثبت‌شده</p>
+                <h4>آخرین نتیجه ارزیابی آمادگی فروش</h4>
+              </div>
               {assessment.evaluatedAt && (
                 <time dateTime={assessment.evaluatedAt}>
                   {new Date(assessment.evaluatedAt).toLocaleString('fa-IR')}
                 </time>
               )}
             </div>
-            <p>
-              {assessment.state} · امتیاز آمادگی:{' '}
-              {assessment.score.toLocaleString('fa-IR')} از ۱۰۰
-              {assessment.conversionProbability !== null && (
-                <>
-                  {' '}
-                  · احتمال تبدیل به فروش:{' '}
-                  {assessment.conversionProbability.toLocaleString('fa-IR')}٪
-                </>
-              )}
-            </p>
+            <dl className={s.qualificationSummary}>
+              <div>
+                <dt>نتیجه آمادگی</dt>
+                <dd>{assessment.state}</dd>
+              </div>
+              <div>
+                <dt>امتیاز آمادگی</dt>
+                <dd>
+                  <strong>{assessment.score.toLocaleString('fa-IR')}</strong>
+                  <span> از ۱۰۰</span>
+                </dd>
+              </div>
+              <div>
+                <dt>احتمال تبدیل به فروش</dt>
+                <dd>
+                  {assessment.conversionProbability !== null
+                    ? `${assessment.conversionProbability.toLocaleString('fa-IR')}٪`
+                    : 'ثبت نشده'}
+                </dd>
+              </div>
+            </dl>
+            <div className={s.qualificationCriteriaHead}>
+              <h5>معیارهای ارزیابی</h5>
+              <p>
+                {confirmedCriteriaCount.toLocaleString('fa-IR')} از{' '}
+                {qualificationCriteria.length.toLocaleString('fa-IR')} معیار
+                تأیید شده
+              </p>
+            </div>
             <ul
               className={s.qualificationCriteria}
               aria-label="معیارهای ارزیابی"
             >
-              {qualificationCriteria.map(([key, label, reason]) => (
-                <li key={key}>
-                  <span>{label}</span>
-                  <strong>
-                    {assessment.reasons.includes(reason)
-                      ? 'تأیید شده'
-                      : 'تأیید نشده'}
-                  </strong>
-                </li>
-              ))}
+              {qualificationCriteria.map(([key, label, reason]) => {
+                const confirmed = assessment.reasons.includes(reason);
+                return (
+                  <li
+                    className={s.qualificationCriterion}
+                    data-state={confirmed ? 'confirmed' : 'unconfirmed'}
+                    key={key}
+                  >
+                    <span className={s.qualificationCriterionLabel}>
+                      {label}
+                    </span>
+                    <strong className={s.qualificationCriterionStatus}>
+                      <span aria-hidden="true">{confirmed ? '✓' : '—'}</span>
+                      {confirmed ? 'تأیید شده' : 'تأیید نشده'}
+                    </strong>
+                  </li>
+                );
+              })}
             </ul>
+            {additionalAssessmentReasons.length > 0 && (
+              <div className={s.qualificationExtraReasons}>
+                <h5>دلایل و توضیحات تکمیلی ثبت‌شده</h5>
+                <ul>
+                  {additionalAssessmentReasons.map((reason) => (
+                    <li key={reason}>{reason}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </section>
         )}
         {activityOpen && (

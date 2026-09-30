@@ -3969,6 +3969,11 @@ Owner-confirmed synthetic local catalog snapshot: 20 offers (11 visible, 9 alrea
 ## 2026-09-29 — CUSTOMER-AFFAIRS-CUSTOMER-CREATE-0929 — PC-B — READY_FOR_REVIEW
 
 فرم‌های درخواست و تیکت امور مشتریان به جست‌وجوی مشتریان/مسافران موجود و فرم ایجاد مرجع Customers متصل شدند. پیش از جست‌وجو هیچ گزینه‌ای یا درخواست فهرست ندارند؛ سپس نتایج ده‌تایی صفحه‌بندی می‌شوند. ثبت مشتری جدید و انتخاب خودکار پروندهٔ ایجادشده فراهم است؛ داده در Customers می‌ماند و امور مشتریان فقط شناسه را ثبت می‌کند. بررسی runtime، CI و review مالک Customers پیش از ادغام باقی است. جزئیات و ریسک پاسخ نامطمئن API: [CUSTOMER-AFFAIRS-CUSTOMER-CREATE-0929](tasks/CUSTOMER-AFFAIRS-CUSTOMER-CREATE-0929.md).
+
+## 2026-09-29 — CUSTOMER-AFFAIRS-FOLLOWUP-OVERVIEW-0929 — PC-B — READY_FOR_REVIEW
+
+در فهرست درخواست‌های امور مشتریان، دکمهٔ ردیفی «پیگیری» پروفایل و مشخصات همان درخواست را باز می‌کند. نمای کلی اکنون «آخرین درخواست‌ها» را مستقل از «منتظر پذیرش فروش» و «پیگیری معوق» از API مجازِ شعبه می‌خواند؛ وضعیت `NEW` دیگر به‌علت فیلتر تحویل فروش حذف نمی‌شود. ۲۸ تست متمرکز، typecheck، lint محدود و build وب موفق‌اند؛ CI و بررسی runtime باقی‌اند. [جزئیات](tasks/CUSTOMER-AFFAIRS-FOLLOWUP-OVERVIEW-0929.md).
+
 ## 2026-09-29 — CUSTOMER-AFFAIRS-ASSESSMENT-SAVE-0929 — READY_FOR_REVIEW
 
 ارزیابی آمادگی فروش پس از ثبت در پرونده قابل بازخوانی و ویرایش مجدد است؛ دکمه کنار «ثبت ارتباط جدید» و گزارش آخرین نتیجه در پایین پروفایل قرار گرفت. کنترل مرحلهٔ مجاز در API و تفکیک ثبت موفق از شکست بازخوانی افزوده شد. ۲۵ تست Web و ۱۹ تست API، typecheck، lint محدود، build تولیدی و بازبینی مستقل موفق‌اند. آزمون پایگاه دادهٔ زنده و منع مجوز اجرا نشد. بدون Migration/Dependency؛ PR به develop برای بازبینی.
@@ -3985,7 +3990,15 @@ Owner-confirmed synthetic local catalog snapshot: 20 offers (11 visible, 9 alrea
 
 اکشن‌های رکوردهای اسناد در نمای کلی، فهرست اصلی و اشتراک‌گذاری به دکمه‌های حذف قرمز با آیکون سفید، ویرایش و مشاهدهٔ کادردار تبدیل شدند. چشم، جزئیات سند را باز می‌کند و محدودیت‌های مجوز و مسیر پیگیری حفظ شده‌اند. ۹ تست هدفمند، lint فایل، Web typecheck، Prettier و Production Build با ۵۵ مسیر موفق‌اند. API/DB/Migration/Dependency تغییر نکرد. Branch `codex/pc-b-documents-record-actions-0930` از `origin/develop@a353bcab` برای PR به `develop` آماده است.
 
+## 2026-09-30 — CUSTOMER-AFFAIRS-ASSESSMENT-REPORT-DESIGN-0930 — READY_FOR_REVIEW
+
+کارت نتیجهٔ ارزیابی آمادگی فروش در پروفایل درخواست امور مشتریان با خلاصهٔ نتیجه/امتیاز/احتمال تبدیل، معیارهای تأییدشده و تأییدنشده در کارت‌های واکنش‌گرا و توضیحات تکمیلیِ دلایل ذخیره‌شده بازطراحی شد. دلایل دارای فاصلهٔ اضافی یا تکراری برای نمایش یکسان‌سازی می‌شوند. ۱۸ تست هدفمند، lint، typecheck، Prettier و build تولیدی Web موفق‌اند. API، داده، فرم ارزیابی و runtime پورت ۳۱۰۰ تغییر نکردند؛ PR به `develop` برای بازبینی ارسال می‌شود.
+
 ## 2026-09-30 — PC-A — company flight load
 
 TICKET-LOAD-GRID-0930 adds side-by-side outbound/return load tables above Ticket Management, shared Min/Max eligible return selection, capacity totals and prices, Gregorian defaults, three supply choices and persisted manual economy/optional business baggage. An additive nullable migration preserves legacy provenance. Management Web drains paginated offers. Implementation and validation details: `docs/tasks/TICKET-LOAD-GRID-0930.md`. Operational deployment follows CI and merge to develop.
 
+
+## 2026-09-30 — PC-A — visible ticket load follow-up
+
+TICKET-LOAD-VISIBLE-0930 fixes the empty legacy load by reading unknown-provenance offers alongside explicit company capacity, without reclassifying stored tickets. Initial dates are unrestricted; editing a conflicting date clears the opposite bound. The duplicate lower published table is removed; selected-leg details retain edit, archive, activation and hold actions. The load uses a white light-mode surface. Explicit floating/API remain excluded. No API, migration or operational data changes. Ticket Catalog tests, scoped lint/types and 55-route Web build passed.
