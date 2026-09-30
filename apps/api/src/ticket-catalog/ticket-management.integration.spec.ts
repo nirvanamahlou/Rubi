@@ -137,6 +137,23 @@ describe.skipIf(!url)('ticket management PostgreSQL lifecycle', () => {
     expect(
       (await service.managed(actor)).data.find((o) => o.id === id)?.status,
     ).toBe('PAUSED');
+    const pausedSearch = await service.search(
+      {
+        originId: definition.originId,
+        destinationId: definition.destinationId,
+        departureFrom: '2099-10-01',
+      },
+      actor,
+    );
+    expect(pausedSearch.data.some((offer) => offer.id === id)).toBe(false);
+    const pausedReserve = await service.reserve(
+      [{ offerId: id, direction: 'OUTBOUND' }] as never,
+      branchId,
+      randomUUID(),
+      1,
+    );
+    expect(pausedReserve.available).toBe(false);
+    expect(pausedReserve.createdAllocationIds).toHaveLength(0);
     await service.updateStatus(
       id,
       { expectedVersion: 3, status: 'ACTIVE' },
@@ -144,6 +161,7 @@ describe.skipIf(!url)('ticket management PostgreSQL lifecycle', () => {
     );
     const holdInput = {
       quantity: 2,
+      requesterName: 'Synthetic requester',
       expiresAt: new Date(Date.now() + 3600000).toISOString(),
     };
     const hold = await service.holdTemporary(
@@ -154,6 +172,13 @@ describe.skipIf(!url)('ticket management PostgreSQL lifecycle', () => {
       'hold-' + userId,
     );
     expect(
+      (
+        await client.ticketOfferCapacityHold.findUniqueOrThrow({
+          where: { id: hold.data.id },
+        })
+      ).requesterName,
+    ).toBe('Synthetic requester');
+    expect(
       await service.holdTemporary(
         id,
         holdInput,
@@ -162,6 +187,15 @@ describe.skipIf(!url)('ticket management PostgreSQL lifecycle', () => {
         'hold-' + userId,
       ),
     ).toEqual(hold);
+    await expect(
+      service.holdTemporary(
+        id,
+        { ...holdInput, requesterName: 'Other synthetic requester' },
+        actor,
+        branchId,
+        'hold-' + userId,
+      ),
+    ).rejects.toThrow('اطلاعات متفاوت');
     expect(
       (await service.managed(actor)).data.find((o) => o.id === id)
         ?.remainingCapacity,

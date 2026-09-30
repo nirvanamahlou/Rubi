@@ -18,6 +18,24 @@ export interface FlightLoadFilter {
 export const isCompanyLoadOffer = (offer: TicketOfferV1) =>
   offer.supplyType == null || offer.supplyType === 'COMPANY';
 
+export function validFlightLoadDates(
+  offers: readonly TicketOfferV1[],
+  filter: FlightLoadFilter,
+) {
+  const dates = offers
+    .filter(
+      (offer) =>
+        isCompanyLoadOffer(offer) &&
+        (!filter.origin || offer.originId === filter.origin) &&
+        (!filter.destination || offer.destinationId === filter.destination),
+    )
+    .map((offer) => ticketCalendarDate(offer.departureAt))
+    .sort();
+  return { from: dates[0] ?? '', to: dates.at(-1) ?? '' };
+}
+export const canSearchFlightLoad = (filter: FlightLoadFilter) =>
+  Boolean(filter.origin || filter.destination || filter.from || filter.to);
+
 export function changeFlightLoadFilter(
   current: FlightLoadFilter,
   field: keyof FlightLoadFilter,

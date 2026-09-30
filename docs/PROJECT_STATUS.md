@@ -3785,6 +3785,7 @@ Calendar event creation now uses an authorized branch from the authenticated Wor
 ## 2026-09-28 — TICKET-PAIR-DESTINATION-DATE-0928 — READY_FOR_REVIEW
 
 مقصد سفر رفت‌وبرگشت هنگام تعریف بلیط و در فهرست قیمت‌های جفتی به‌روشنی نمایش داده می‌شود؛ تاریخ رفت و برگشت هر جفت نیز مشخص است. تاریخ و ساعت هر بلیط در کارت قیمت یک‌طرفه، در ستون چپ با اندازهٔ خواناتر قرار گرفت. تغییر صرفاً Web است و بر داده یا قراردادهای قبلی اثر ندارد.
+
 ## 2026-09-28 — PACKAGE-GENERATOR-THAILAND-XLSX-0928 — READY_FOR_REVIEW
 
 Thailand Package Generator maps display-rate columns, hotel room/grade and footer details into the three Thailand layouts. The attached Pattaya workbook was read only; its 67 hotel rows fit without overflow on Pattaya (one page), Phuket (two) and Bangkok+Phuket (three). Eleven affected tests, Web typecheck and production build (53 routes) passed. No API, schema, dependency, permission or operational data changed. See `docs/tasks/PACKAGE-GENERATOR-THAILAND-XLSX-0928.md`.
@@ -4023,7 +4024,6 @@ PR #493 با CI سبز به `develop@5c340730` ادغام شد. build تولید
 
 TICKET-LOAD-GRID-0930 adds side-by-side outbound/return load tables above Ticket Management, shared Min/Max eligible return selection, capacity totals and prices, Gregorian defaults, three supply choices and persisted manual economy/optional business baggage. An additive nullable migration preserves legacy provenance. Management Web drains paginated offers. Implementation and validation details: `docs/tasks/TICKET-LOAD-GRID-0930.md`. Operational deployment follows CI and merge to develop.
 
-
 ## 2026-09-30 — PC-A — visible ticket load follow-up
 
 TICKET-LOAD-VISIBLE-0930 fixes the empty legacy load by reading unknown-provenance offers alongside explicit company capacity, without reclassifying stored tickets. Initial dates are unrestricted; editing a conflicting date clears the opposite bound. The duplicate lower published table is removed; selected-leg details retain edit, archive, activation and hold actions. The load uses a white light-mode surface. Explicit floating/API remain excluded. No API, migration or operational data changes. Ticket Catalog tests, scoped lint/types and 55-route Web build passed.
@@ -4031,3 +4031,7 @@ TICKET-LOAD-VISIBLE-0930 fixes the empty legacy load by reading unknown-provenan
 ## 2026-09-30 — PC-A — separate selected-leg actions
 
 TICKET-LOAD-LEG-ACTIONS-0930 places an independent action strip at the bottom of each selected outbound/return details box, including active/paused status and existing offer-specific edit, archive, sale activation and capacity-hold controls. Empty legs expose no actions. No API, migration or operational data changes; delivery is a PR for review.
+
+## 2026-09-30 — PC-A — explicit flight-load search and holds
+
+TICKET-LOAD-SEARCH-HOLDS-0930 adds explicit search-gated load tables, valid-date bounds derived from the selected origin/destination, stronger selected-row borders, gray date/carrier/capacity/remaining/sold/held columns and larger flight details. Paused legs have red end cells; enable/disable uses green/red Power icons, and archive uses a trash icon. Capacity reservation requests only quantity and manual requester name, persists nullable attribution, and retains automatic one-hour temporary expiry. PostgreSQL lifecycle checks cover pause/activate, paused-offer exclusion from Sales search and failed contract capacity allocation. No operational backfill or dependency changes.
