@@ -74,6 +74,33 @@ function validTierDraft(draft: Draft, capacity: number) {
       draft.tiers[0]?.amount === draft.amount)
   );
 }
+export function maxTierSeatCount(
+  tiers: readonly TicketSalePriceTierV1[],
+  index: number,
+  capacity: number,
+) {
+  const assignedToOtherTiers = tiers.reduce(
+    (sum, tier, tierIndex) =>
+      tierIndex === index ? sum : sum + (Number(tier.seatCount) || 0),
+    0,
+  );
+  return Math.max(0, capacity - assignedToOtherTiers);
+}
+export function clampTierSeatCount(
+  value: string,
+  tiers: readonly TicketSalePriceTierV1[],
+  index: number,
+  capacity: number,
+) {
+  if (!value.trim()) return 0;
+  const parsed = Number(value);
+  return Number.isFinite(parsed)
+    ? Math.min(
+        maxTierSeatCount(tiers, index, capacity),
+        Math.max(0, Math.trunc(parsed)),
+      )
+    : 0;
+}
 function TierEditor({
   draft,
   capacity,
@@ -85,6 +112,9 @@ function TierEditor({
 }) {
   const tiers = draft.tiers;
   let first = 1;
+  const assigned =
+    tiers?.reduce((sum, tier) => sum + (Number(tier.seatCount) || 0), 0) ?? 0;
+  const remaining = Math.max(0, capacity - assigned);
   return (
     <div className="col-span-2 space-y-1 text-xs">
       <label className="flex items-center gap-2">
@@ -114,6 +144,7 @@ function TierEditor({
               aria-label={`تعداد صندلی پله ${index + 1}`}
               type="number"
               min="1"
+              max={maxTierSeatCount(tiers, index, capacity)}
               className="h-8 w-16"
               value={tier.seatCount || ''}
               onChange={(e) =>
@@ -121,7 +152,15 @@ function TierEditor({
                   ...draft,
                   tiers: tiers.map((item, i) =>
                     i === index
-                      ? { ...item, seatCount: Number(e.target.value) }
+                      ? {
+                          ...item,
+                          seatCount: clampTierSeatCount(
+                            e.target.value,
+                            tiers,
+                            index,
+                            capacity,
+                          ),
+                        }
                       : item,
                   ),
                 })
@@ -164,27 +203,25 @@ function TierEditor({
             type="button"
             size="sm"
             variant="outline"
+            disabled={
+              remaining === 0 || tiers.length >= 40 || tiers.length >= capacity
+            }
             onClick={() =>
               onChange({
                 ...draft,
                 tiers: [
                   ...tiers,
                   {
-                    seatCount: Math.max(
-                      1,
-                      capacity -
-                        tiers.reduce(
-                          (sum, tier) => sum + (Number(tier.seatCount) || 0),
-                          0,
-                        ),
-                    ),
+                    seatCount: remaining,
                     amount: draft.amount,
                   },
                 ],
               })
             }
           >
-            افزودن پله
+            {remaining > 0 && tiers.length < 40 && tiers.length < capacity
+              ? 'افزودن پله'
+              : 'ظرفیت تکمیل شده'}
           </Button>
           <p>
             جمع:{' '}
@@ -351,7 +388,7 @@ export function TicketPricesWorkspace() {
       !validTierDraft(
         draft,
         row.returning
-          ? Math.max(row.offer.totalCapacity, row.returning.totalCapacity)
+          ? Math.min(row.offer.totalCapacity, row.returning.totalCapacity)
           : row.offer.totalCapacity,
       )
     )
@@ -498,7 +535,7 @@ export function TicketPricesWorkspace() {
     if (
       !validTierDraft(
         pairDraft,
-        Math.max(
+        Math.min(
           outbound.totalCapacity,
           offers.find((o) => o.id === returnId)?.totalCapacity ?? 0,
         ),
@@ -801,7 +838,7 @@ export function TicketPricesWorkspace() {
           {outbound && returnId ? (
             <TierEditor
               draft={pairDraft}
-              capacity={Math.max(
+              capacity={Math.min(
                 outbound.totalCapacity,
                 offers.find((o) => o.id === returnId)?.totalCapacity ?? 0,
               )}
@@ -1165,7 +1202,7 @@ export function TicketPricesWorkspace() {
                       draft={draft}
                       capacity={
                         row.returning
-                          ? Math.max(
+                          ? Math.min(
                               row.offer.totalCapacity,
                               row.returning.totalCapacity,
                             )

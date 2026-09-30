@@ -290,6 +290,7 @@ describe('TicketPublicService offer retry', () => {
             originId: input.originId,
             destinationId: input.destinationId,
             departureAt: new Date('2026-11-01T04:30:00.000Z'),
+            totalCapacity: 50,
           },
           {
             id: returnOfferId,
@@ -297,6 +298,7 @@ describe('TicketPublicService offer retry', () => {
             originId: input.destinationId,
             destinationId: input.originId,
             departureAt: new Date('2026-11-08T04:30:00.000Z'),
+            totalCapacity: 40,
           },
         ]),
       },
@@ -317,7 +319,12 @@ describe('TicketPublicService offer retry', () => {
       service.updateRoundTripSalePrice(
         outboundOfferId,
         returnOfferId,
-        { expectedRevision: 0, amount: '4500000', currencyCode: 'IRR' },
+        {
+          expectedRevision: 0,
+          amount: '4500000',
+          currencyCode: 'IRR',
+          tiers: [{ seatCount: 40, amount: '4500000' }],
+        },
         actor,
         'pair-price-key',
       ),
@@ -332,6 +339,21 @@ describe('TicketPublicService offer retry', () => {
         actorUserId: 'user-1',
       }),
     });
+    await expect(
+      service.updateRoundTripSalePrice(
+        outboundOfferId,
+        returnOfferId,
+        {
+          expectedRevision: 0,
+          amount: '4500000',
+          currencyCode: 'IRR',
+          tiers: [{ seatCount: 50, amount: '4500000' }],
+        },
+        actor,
+        'pair-price-too-many-seats',
+      ),
+    ).rejects.toThrow('پله‌های قیمت');
+    expect(create).toHaveBeenCalledTimes(1);
   });
 
   it('automatically pauses departed offers with a versioned audit', async () => {
