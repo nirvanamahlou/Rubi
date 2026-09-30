@@ -4,6 +4,7 @@ export {
   type CustomerEntryRow,
   type EntryField,
 } from '../components/customer-entry-sheet';
+export { CustomerCreateDialog } from '../components/customer-create-dialog';
 export {
   CustomerCalendarSwitch,
   type CustomerCalendarMode,

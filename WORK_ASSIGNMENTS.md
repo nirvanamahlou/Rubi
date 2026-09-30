@@ -4628,6 +4628,13 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 - محدودهٔ رزرو: `customer-affairs-workspace.tsx`، CSS ماژول، تست چیدمان همان کامپوننت و ثبت اسناد. شاخه `codex/pc-b-ca-detail-actions-row-0929` از `origin/develop@c22e08a1`. منطق شرط‌ها، عملیات و فرم‌ها بدون تغییر؛ در viewport باریک شکست خط واکنش‌گرا مجاز است. بدون API، داده، قرارداد مشترک، Migration، Permission یا Dependency/Lockfile.
 - نتیجه: هر چهار CTA مستقیماً در یک نوار واحد پروفایل قرار گرفتند؛ در دسکتاپ یک‌ردیفه و در عرض موبایل wrap می‌شوند. تست‌های کامپوننت امور مشتریان ۴۲/۴۲، typecheck، ESLint هدفمند، Prettier و `git diff --check` موفق‌اند. Build و CI از طریق PR بررسی می‌شوند؛ build محلی اجرا نشد چون خروجی `.next` در سرویس Web فعال ۳۱۰۰ مشترک است.
 
+## CUSTOMER-AFFAIRS-CUSTOMER-CREATE-0929 — PC-B — READY_FOR_REVIEW
+
+- `COMPUTER_ID=PC-B`؛ درخواست مالک از تصویر ۶۶۶: در فرم درخواست و تیکت امور مشتریان، مشتری/مسافر موجود از فهرست مالک Customers انتخاب شود و ثبت مشتری تازه با فیلدهای همان بخش در همان جریان ممکن باشد. شاخهٔ مستقل `codex/pc-b-ca-customer-create-0929` از `origin/develop@bb4209e0`.
+- محدودهٔ رزرو: انتخاب‌گر و فرم‌های `apps/web/src/modules/customer-affairs/**`، تست‌های هدفمند، و فقط در صورت ضرورت سطح ارائهٔ عمومی `apps/web/src/modules/customers/public/entry.ts` و کامپوننت فرم موجود Customers برای استفادهٔ مجدد. داده و اعتبارسنجی مالک در Customers می‌ماند؛ امور مشتریان تنها شناسهٔ مشتری ساخته‌شده/انتخاب‌شده را به پرونده وصل می‌کند. تغییر عمومی صرفاً افزایشی و سازگار با مصرف‌کنندگان فعلی است.
+- API، Permission، Prisma/Migration، Seed، دادهٔ واقعی مشتری، Dependency/Lockfile و سرویس زندهٔ ۳۱۰۰ در مرحلهٔ پیاده‌سازی تغییر نمی‌کنند. اگر قرارداد تازهٔ Backend یا تغییر مالکیت داده لازم شد، پیش از اجرا هماهنگی جداگانه ثبت می‌شود.
+- نتیجهٔ اصلاح: انتخاب‌گر مشترک درخواست/تیکت تا ورود عبارت جست‌وجو هیچ گزینه‌ای یا درخواست فهرست ندارد؛ نتایج با صفحه‌های ده‌تایی API نمایش می‌یابند. ایجاد پرونده از فرم مرجع Customers انجام و خروجی همان پرونده خودکار انتخاب می‌شود؛ در خطای نامطمئنِ ایجاد، تلاش تکراری تا زمان بستن فرم قفل می‌شود. دکمهٔ ایجاد به `customers.create` وابسته است. مسیر عمومی `customers/public/entry` مرز مجاز UI است؛ بازبینی runtime و review مالک Customers پیش از ادغام باقی است. ریسک idempotency سمت API در [شرح کار](docs/tasks/CUSTOMER-AFFAIRS-CUSTOMER-CREATE-0929.md) ثبت شده است.
+
 ## CUSTOMER-AFFAIRS-FOLLOWUP-OVERVIEW-0929 — PC-B — READY_FOR_REVIEW
 
 - `COMPUTER_ID=PC-B`؛ درخواست مالک از تصویر ۶۶۷: در ردیف هر درخواست دکمهٔ «پیگیری» به پروفایل همان درخواست و مشخصات/عملیات آن برود؛ درخواست تازه‌ثبت‌شده در «نمای کلی» نیز دیده شود. شاخه `codex/pc-b-ca-followup-overview-0929` از `origin/develop@bb4209e0`.
