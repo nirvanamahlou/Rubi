@@ -1,3 +1,7 @@
+## ROUNDTRIP-SALE-CAPACITY-0930 — PC-A — READY_FOR_REVIEW
+
+- COMPUTER_ID=PC-A; branch `codex/pc-a-roundtrip-sale-capacity-0930` from `origin/develop@d21b00bc`. Reserve Sales ticket picker/card and pricing helpers/tests, Ticket Catalog reservation regression tests, bounded status docs. Round-trip sale limit is the lower remaining capacity after allocations and holds. No schema, migration, shared contract, dependency or runtime changes. Previous ticket locks released; preserve all other checkouts. PR to develop only, no merge authorization for this task. Result: picker/card use the lower remaining capacity, invalid round-trip quotes clear both fare entries. 41 focused Web tests and 4 focused API tests (including 2 atomic regressions) passed, including live-hold capacity and zero partial allocations on failure. Bounded implementation/docs locks released with scoped commit.
+
 ## SIDEBAR-ALL-SECTIONS-VISIBLE-0929 — PC-B — READY_FOR_REVIEW
 
 - COMPUTER_ID=PC-B; base `codex/pc-b-istanbul-3100-activation-0929@b1702e5b`, task branch `codex/pc-b-expand-sidebar-0929`. The central Web AppShell and focused navigation-collapse spec were reserved for this work item; lock released after scoped commit. All accessible sidebar groups now start expanded while route permission filtering and manual collapse controls remain unchanged. No IAM/API/schema/dependency/data change. Focused 2 tests, scoped ESLint, Web typecheck and 55-route production build passed. Web3100 and API4000 health returned 200 after restart.
@@ -4341,6 +4345,13 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 - شاخهٔ مستقل `codex/pc-a-ticket-pair-destination-date-0928` از `origin/develop@36453e1c`؛ محدودهٔ رزرو فقط فرم تعریف بلیط رفت‌وبرگشت و کارت‌های قیمت بلیط در Web و آزمون‌های مستقیم است.
 - مقصد رفت‌وبرگشت کنار مشخصات مسیر برجسته می‌شود؛ در قیمت‌های جفتی نیز مقصد و تاریخ دو پا مشخص است. تاریخ و ساعت در کارت قیمت یک‌طرفه بزرگ‌تر و در ستون چپ نمایش داده می‌شوند. بدون تغییر API، دیتابیس، قراردادهای قبلی، مجوز یا وابستگی.
 
+## PACKAGE-GENERATOR-THAILAND-XLSX-0928 — PC-B — READY_FOR_REVIEW
+
+- Owner request: fit Thailand city Excel data to Phuket, Bangkok+Phuket and Pattaya posters. Branch `codex/pc-b-thailand-generator-data-0928` from `origin/develop@f9c25af1`.
+- Reserved: local Package Generator XLSX import and table projection, its module tests, this work item, bounded project status and task document. No other active Package Generator owner found; PC-B's PR #424 and #434 are separate earlier slices. No Migration, shared contract, API, dependency/lockfile, permission or operational data reservation.
+- Source evidence: user-provided `pattaya update.xlsx` has raw SGL/DBL/CWB/CNB in D–H and final SINGLE/DBLE/CWB/CNB in K–N. Only final prices may reach a poster.
+- Result: final rates, unavailable child cells, room/grade, footer cards and services map to the right poster regions. The actual Pattaya workbook rendered 67 rows on Pattaya (one page), Phuket (two pages) and Bangkok+Phuket (three pages), without clipped regions. Eleven affected tests, Web typecheck and production build passed; static JS syntax and focused lint passed. Bounded central-docs reservation is released with this commit.
+
 ## ISTANBUL-PACKAGE-TEMPLATES-0928 — PC-B — READY_FOR_REVIEW
 
 - درخواست مالک: دو طرح مرجع استانبول برای پکیج‌های ۳ و ۴ شب، با دادهٔ دو فایل اکسل پیوست، در پکیج‌ساز Rubi قابل انتخاب، پیش‌نمایش و خروجی باشند.
@@ -4424,6 +4435,14 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 - COMPUTER_ID=PC-A; branch codex/pc-a-finance-history-seat-pricing-0928, isolated clean Finance worktree from origin/develop@099dc40e. Reserve Finance API/Web/history tests, additive Sales public receipt-history and Reservations purchase-descriptor projections, Finance v1 additive history contract and bounded status/task docs. Producer Sales/Finance and consumer Finance API/Web owned PC-A; public boundaries and existing v1 clients preserved. No Procurement implementation, migration/schema/dependency/lockfile/IAM or operational data changes. Bounded Finance contract/Central Docs owner PC-A for this unit; prior Finance locks released. User explicitly authorizes implementation and merge. Preserve unrelated local edits.
 
 - Validation: 23 targeted API and 29 Web tests, scoped lint, API/Web strict typechecks and production builds (53 routes) passed. No migration or data change. Finance contract/bounded docs locks RELEASED with commit. Explicit owner merge authorization; authenticated browser clicks remain unverified.
+
+## B2B-API-FUNCTIONAL-QA-0928 — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک: اجرای آزمون‌های API و سناریوهای مرزی، به‌ویژه ثبت فرم‌ها، و اصلاح باگ‌های قطعی Backend.
+- `COMPUTER_ID=PC-B`؛ شاخه مستقل `codex/pc-b-b2b-api-qa-0928` از `origin/develop@4013211f`. Worktreeهای فعال Marketing، Customer Affairs و Workbench دست‌نخورده‌اند.
+- دامنه رزرو: ممیزی سراسری API و اجرای تست‌های موجود؛ اصلاح و تست در Backend B2B و مسیرهای فرم آژانس با مالکیت PC-B. ایرادهای مالک PC-A/PC-C برای هماهنگی گزارش می‌شوند.
+- بدون Schema/Migration، Dependency/Lockfile، قرارداد مشترک، مجوز، داده عملیاتی یا جابه‌جایی runtime مشترک. در صورت نیاز واقعی، قفل و قرارداد مربوط جداگانه رزرو می‌شود.
+- نتیجه روی آخرین `develop`: ۱۶۹۲ تست معمول API موفق و ۱۷۵ تست محیطی skip شدند؛ ۱۲۷ تست B2B پس از اصلاح موفق و ۱۹ تست PostgreSQL آن به‌دلیل توقف سرویس Docker اجرا نشدند. بازپخش requestId قدیمی پس از ایجاد نسخه جدید قرارداد اکنون به‌جای پاسخ موفقِ گمراه‌کننده، تعارض نسخه مشخص برمی‌گرداند. lint، typecheck و build API موفق؛ جزئیات در `docs/tasks/B2B-API-FUNCTIONAL-QA-0928.md`. قفل فایل‌های این واحد با Commit آزاد می‌شود.
 
 ## 2026-09-28 — MASTER-DATA-RECORD-ICON-ACTIONS-0928 — PC-B — READY_FOR_REVIEW
 
@@ -4616,6 +4635,18 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 - محدودهٔ رزرو: `customer-affairs-workspace.tsx`، CSS ماژول، تست چیدمان همان کامپوننت و ثبت اسناد. شاخه `codex/pc-b-ca-detail-actions-row-0929` از `origin/develop@c22e08a1`. منطق شرط‌ها، عملیات و فرم‌ها بدون تغییر؛ در viewport باریک شکست خط واکنش‌گرا مجاز است. بدون API، داده، قرارداد مشترک، Migration، Permission یا Dependency/Lockfile.
 - نتیجه: هر چهار CTA مستقیماً در یک نوار واحد پروفایل قرار گرفتند؛ در دسکتاپ یک‌ردیفه و در عرض موبایل wrap می‌شوند. تست‌های کامپوننت امور مشتریان ۴۲/۴۲، typecheck، ESLint هدفمند، Prettier و `git diff --check` موفق‌اند. Build و CI از طریق PR بررسی می‌شوند؛ build محلی اجرا نشد چون خروجی `.next` در سرویس Web فعال ۳۱۰۰ مشترک است.
 
+## CUSTOMER-AFFAIRS-CUSTOMER-CREATE-0929 — PC-B — READY_FOR_REVIEW
+
+- `COMPUTER_ID=PC-B`؛ درخواست مالک از تصویر ۶۶۶: در فرم درخواست و تیکت امور مشتریان، مشتری/مسافر موجود از فهرست مالک Customers انتخاب شود و ثبت مشتری تازه با فیلدهای همان بخش در همان جریان ممکن باشد. شاخهٔ مستقل `codex/pc-b-ca-customer-create-0929` از `origin/develop@bb4209e0`.
+- محدودهٔ رزرو: انتخاب‌گر و فرم‌های `apps/web/src/modules/customer-affairs/**`، تست‌های هدفمند، و فقط در صورت ضرورت سطح ارائهٔ عمومی `apps/web/src/modules/customers/public/entry.ts` و کامپوننت فرم موجود Customers برای استفادهٔ مجدد. داده و اعتبارسنجی مالک در Customers می‌ماند؛ امور مشتریان تنها شناسهٔ مشتری ساخته‌شده/انتخاب‌شده را به پرونده وصل می‌کند. تغییر عمومی صرفاً افزایشی و سازگار با مصرف‌کنندگان فعلی است.
+- API، Permission، Prisma/Migration، Seed، دادهٔ واقعی مشتری، Dependency/Lockfile و سرویس زندهٔ ۳۱۰۰ در مرحلهٔ پیاده‌سازی تغییر نمی‌کنند. اگر قرارداد تازهٔ Backend یا تغییر مالکیت داده لازم شد، پیش از اجرا هماهنگی جداگانه ثبت می‌شود.
+- نتیجهٔ اصلاح: انتخاب‌گر مشترک درخواست/تیکت تا ورود عبارت جست‌وجو هیچ گزینه‌ای یا درخواست فهرست ندارد؛ نتایج با صفحه‌های ده‌تایی API نمایش می‌یابند. ایجاد پرونده از فرم مرجع Customers انجام و خروجی همان پرونده خودکار انتخاب می‌شود؛ در خطای نامطمئنِ ایجاد، تلاش تکراری تا زمان بستن فرم قفل می‌شود. دکمهٔ ایجاد به `customers.create` وابسته است. مسیر عمومی `customers/public/entry` مرز مجاز UI است؛ بازبینی runtime و review مالک Customers پیش از ادغام باقی است. ریسک idempotency سمت API در [شرح کار](docs/tasks/CUSTOMER-AFFAIRS-CUSTOMER-CREATE-0929.md) ثبت شده است.
+
+## CUSTOMER-AFFAIRS-CUSTOMER-CREATE-RUNTIME-0930 — PC-B — COMPLETE
+
+- با درخواست صریح مالک، PR #493 پس از حل تعارض و سبزشدن هر چهار gate در `develop@5c340730` ادغام شد. تست محلی Web: ۳۰۶ فایل/۱۸۸۵ تست موفق، ۳ skipped؛ lint، typecheck و build تولیدی ۵۵ مسیر موفق.
+- Web build `unified--Uq6hJYbfm0sJzDs5KwKo` از `develop@5c340730` روی پورت داخلی ۳۱۱۷ فعال و درگاه ۳۱۰۰ به آن وصل شد. Web login=200، مسیر محافظت‌شدهٔ امور مشتریان=307 به login، API ۴۰۰۰ health=200 و endpoint هویت runtime تطابق commit/build را تأیید کردند. وب قبلی ۳۱۱۶ برای rollback روشن ماند؛ API و دادهٔ مشتری تغییر نکردند. آزمون احرازشدهٔ فرم یا ثبت دادهٔ واقعی در این تحویل انجام نشد.
+
 ## CUSTOMER-AFFAIRS-FOLLOWUP-OVERVIEW-0929 — PC-B — READY_FOR_REVIEW
 
 - `COMPUTER_ID=PC-B`؛ درخواست مالک از تصویر ۶۶۷: در ردیف هر درخواست دکمهٔ «پیگیری» به پروفایل همان درخواست و مشخصات/عملیات آن برود؛ درخواست تازه‌ثبت‌شده در «نمای کلی» نیز دیده شود. شاخه `codex/pc-b-ca-followup-overview-0929` از `origin/develop@bb4209e0`.
@@ -4680,3 +4711,8 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 - Producer Reservations/Sales/Finance, consumer Reservations inbox; optional additive fields retain old client compatibility and per-currency totals remain separate. Existing user changes in the primary checkout and runtime are preserved. Prior historical table work is merged; no current reservation-table owner overlaps this slice.
 
 - Delivered all 46 ordered columns in inbox and Excel. Visa/flight flags persist authenticated actor and UTC time with optimistic version checks; correction/cancellation use real Sales operations. Purchase costs and confirmed customer debt remain per currency. Historical missing package-publication links stay unavailable rather than using current rates. Validation: 65 Web tests and 17 API tests passed, API/Web typecheck and production builds passed; full API/Web lint passed. Bounded implementation locks released with scoped commit; merge authorized by owner and waits for CI. Details: `docs/tasks/RESERVATION-CONTRACT-COLUMNS-0930.md`.
+
+## TICKET-LOAD-LEG-ACTIONS-0930 — PC-A — READY_FOR_REVIEW
+
+- COMPUTER_ID=PC-A; branch `codex/pc-a-ticket-load-leg-actions-0930` from current origin/develop. Reserve only Ticket Catalog flight-load component/CSS and bounded status docs. Owner requests independent selected outbound/return action strips below each details box, visible active/paused status, and a PR. Reuse existing offer-specific edit/archive/status/hold handlers. No API, schema, migration, dependency or operational data changes; deliver PR for review without merge.
+- Scoped lint, Web typecheck, 10 focused load/workspace tests and production Web build (55 routes) passed. Selected legs have separate labeled action footers and their own active/paused status. Bounded locks RELEASED after scoped commit; no local rollout or merge in this delivery.

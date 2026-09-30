@@ -2,6 +2,10 @@
 
 Reservations inbox and Excel now use the requested 46-column order. Visa/flight action and confirmation checkboxes save server time and authenticated actor in existing immutable workflow revisions; correction and cancellation use real Sales contract operations. The Sales public projection supplies age counts and exact per-currency financial totals; costs use Reservations purchase history, and direct-ticket commissions use historical Ticket Catalog revisions. Missing historical tour-pricing links remain unavailable. 65 Web and 17 API tests, both typechecks and production builds passed; full API/Web lint passed. No migration, dependencies or operational-data change. Owner authorized merge to develop after checks. Details: [RESERVATION-CONTRACT-COLUMNS-0930](tasks/RESERVATION-CONTRACT-COLUMNS-0930.md).
 
+## 2026-09-30 — ROUNDTRIP-SALE-CAPACITY-0930 — PC-A — READY_FOR_REVIEW
+
+Round-trip ticket selection displays and enforces the lower remaining capacity of both legs. Requests above this limit clear both flight quotes. Existing row-locked server reservation rejects insufficient capacity before creating either allocation; regression tests cover outbound/return limits after allocations and active holds, rejection above the limit and acceptance exactly at it. 41 focused Web tests and 4 focused API tests pass. Scoped lint, Web/API typechecks and production builds pass after regenerating stale local contracts/Prisma outputs. No schema, migration, shared contract, dependency, operational data or local runtime changes. PR to develop for review; no automatic merge.
+
 ## 2026-09-29 — SIDEBAR-ALL-SECTIONS-VISIBLE-0929 — PC-B — READY_FOR_REVIEW
 
 تمام گروه‌های مجاز منوی کناری از ابتدا باز می‌شوند تا لینک‌های رزرواسیون، مالی، سرمایه انسانی، اسناد و تنظیمات کنار فروش دیده شوند. کنترل باز و بسته‌کردن گروه‌ها و بررسی دسترسی هر مسیر بدون تغییر است. دو تست مرتبط، ESLint محدوده، typecheck و build تولیدی Web با ۵۵ مسیر موفق شدند. وب روی ۳۱۰۰ و API روی ۴۰۰۰ پس از راه‌اندازی مجدد پاسخ ۲۰۰ دادند. هیچ مجوز یا داده‌ای تغییر نکرد.
@@ -3781,6 +3785,9 @@ Calendar event creation now uses an authorized branch from the authenticated Wor
 ## 2026-09-28 — TICKET-PAIR-DESTINATION-DATE-0928 — READY_FOR_REVIEW
 
 مقصد سفر رفت‌وبرگشت هنگام تعریف بلیط و در فهرست قیمت‌های جفتی به‌روشنی نمایش داده می‌شود؛ تاریخ رفت و برگشت هر جفت نیز مشخص است. تاریخ و ساعت هر بلیط در کارت قیمت یک‌طرفه، در ستون چپ با اندازهٔ خواناتر قرار گرفت. تغییر صرفاً Web است و بر داده یا قراردادهای قبلی اثر ندارد.
+## 2026-09-28 — PACKAGE-GENERATOR-THAILAND-XLSX-0928 — READY_FOR_REVIEW
+
+Thailand Package Generator maps display-rate columns, hotel room/grade and footer details into the three Thailand layouts. The attached Pattaya workbook was read only; its 67 hotel rows fit without overflow on Pattaya (one page), Phuket (two) and Bangkok+Phuket (three). Eleven affected tests, Web typecheck and production build (53 routes) passed. No API, schema, dependency, permission or operational data changed. See `docs/tasks/PACKAGE-GENERATOR-THAILAND-XLSX-0928.md`.
 
 ## 2026-09-28 — PACKAGE-GENERATOR-READABLE-UI-0928 — READY_FOR_REVIEW
 
@@ -3829,6 +3836,10 @@ Calendar event creation now uses an authorized branch from the authenticated Wor
 ## 2026-09-28 — FINANCE-HISTORY-SEAT-PRICING-0928 — PC-A
 
 Existing unpaid ticket invoices retain the seat/unit-price editor; count, unit cost and automatic total are visible. Persistent branch-scoped receipt/payment history shows each structured installment, transfer date, account/method/reference and remaining amount, including settled requests, with cursor pagination. Request details and the bottom inbox panel refresh after Finance actions. 23 API and 29 Web tests, strict typechecks, scoped lint and API/Web production builds (53 routes) passed. No migration/data/dependency change. See [handoff](tasks/FINANCE-HISTORY-SEAT-PRICING-0928.md). Bounded Finance contract/docs locks released; owner authorizes develop merge.
+
+## 2026-09-28 — B2B-API-FUNCTIONAL-QA-0928 — PC-B
+
+API unit/HTTP suite on latest develop: ۱۶۹۲ passed, ۱۷۵ environment-gated skipped. B2B after fix: ۱۲۷ passed, ۱۹ PostgreSQL skipped because Docker Desktop is stopped and cannot be started in this session. A replay of an old B2B agreement request ID after a newer version now returns a clear 409 instead of misreporting the newer contract as the old command result. Focused regression, lint, typecheck and API build passed. No live data, schema, migration, dependency or shared contract changed. See [task handoff](tasks/B2B-API-FUNCTIONAL-QA-0928.md).
 
 ## 2026-09-28 — MASTER-DATA-FINANCE-HEADING-SPACING-0928 — PC-B — READY_FOR_REVIEW
 
@@ -3970,6 +3981,14 @@ Owner-confirmed synthetic local catalog snapshot: 20 offers (11 visible, 9 alrea
 
 نام نمایشی زیر لوگوهای شرکت در صفحه ورود حذف می‌شود؛ خود لوگو، متن جایگزین دسترس‌پذیری و عنوان بخش حفظ شده‌اند. تغییر محدود به Web است؛ بدون API، Migration، داده یا Dependency. اعتبارسنجی CI پیش از merge انجام می‌شود. جزئیات: [LOGIN-COMPANY-CAPTIONS-0929](tasks/LOGIN-COMPANY-CAPTIONS-0929.md).
 
+## 2026-09-29 — CUSTOMER-AFFAIRS-CUSTOMER-CREATE-0929 — PC-B — READY_FOR_REVIEW
+
+فرم‌های درخواست و تیکت امور مشتریان به جست‌وجوی مشتریان/مسافران موجود و فرم ایجاد مرجع Customers متصل شدند. پیش از جست‌وجو هیچ گزینه‌ای یا درخواست فهرست ندارند؛ سپس نتایج ده‌تایی صفحه‌بندی می‌شوند. ثبت مشتری جدید و انتخاب خودکار پروندهٔ ایجادشده فراهم است؛ داده در Customers می‌ماند و امور مشتریان فقط شناسه را ثبت می‌کند. بررسی runtime، CI و review مالک Customers پیش از ادغام باقی است. جزئیات و ریسک پاسخ نامطمئن API: [CUSTOMER-AFFAIRS-CUSTOMER-CREATE-0929](tasks/CUSTOMER-AFFAIRS-CUSTOMER-CREATE-0929.md).
+
+## 2026-09-30 — CUSTOMER-AFFAIRS-CUSTOMER-CREATE-RUNTIME-0930 — ACTIVE
+
+PR #493 با CI سبز به `develop@5c340730` ادغام شد. build تولیدی Web از همان commit روی پورت ۳۱۱۷ اجرا و درگاه ۳۱۰۰ به آن متصل شد؛ API فعلی ۴۰۰۰ و داده‌ها دست‌نخورده ماندند. هویت runtime، صفحهٔ ورود، هدایت مسیر محافظت‌شده و health API بررسی شدند. برای جلوگیری از ثبت در دادهٔ مشترک، آزمون احرازشدهٔ ساخت مشتری انجام نشد؛ ریسک پاسخ نامطمئنِ POST Customers مطابق [شرح کار](tasks/CUSTOMER-AFFAIRS-CUSTOMER-CREATE-0929.md) باقی است.
+
 ## 2026-09-29 — CUSTOMER-AFFAIRS-FOLLOWUP-OVERVIEW-0929 — PC-B — READY_FOR_REVIEW
 
 در فهرست درخواست‌های امور مشتریان، دکمهٔ ردیفی «پیگیری» پروفایل و مشخصات همان درخواست را باز می‌کند. نمای کلی اکنون «آخرین درخواست‌ها» را مستقل از «منتظر پذیرش فروش» و «پیگیری معوق» از API مجازِ شعبه می‌خواند؛ وضعیت `NEW` دیگر به‌علت فیلتر تحویل فروش حذف نمی‌شود. ۲۸ تست متمرکز، typecheck، lint محدود و build وب موفق‌اند؛ CI و بررسی runtime باقی‌اند. [جزئیات](tasks/CUSTOMER-AFFAIRS-FOLLOWUP-OVERVIEW-0929.md).
@@ -3998,6 +4017,11 @@ Owner-confirmed synthetic local catalog snapshot: 20 offers (11 visible, 9 alrea
 
 TICKET-LOAD-GRID-0930 adds side-by-side outbound/return load tables above Ticket Management, shared Min/Max eligible return selection, capacity totals and prices, Gregorian defaults, three supply choices and persisted manual economy/optional business baggage. An additive nullable migration preserves legacy provenance. Management Web drains paginated offers. Implementation and validation details: `docs/tasks/TICKET-LOAD-GRID-0930.md`. Operational deployment follows CI and merge to develop.
 
+
 ## 2026-09-30 — PC-A — visible ticket load follow-up
 
 TICKET-LOAD-VISIBLE-0930 fixes the empty legacy load by reading unknown-provenance offers alongside explicit company capacity, without reclassifying stored tickets. Initial dates are unrestricted; editing a conflicting date clears the opposite bound. The duplicate lower published table is removed; selected-leg details retain edit, archive, activation and hold actions. The load uses a white light-mode surface. Explicit floating/API remain excluded. No API, migration or operational data changes. Ticket Catalog tests, scoped lint/types and 55-route Web build passed.
+
+## 2026-09-30 — PC-A — separate selected-leg actions
+
+TICKET-LOAD-LEG-ACTIONS-0930 places an independent action strip at the bottom of each selected outbound/return details box, including active/paused status and existing offer-specific edit, archive, sale activation and capacity-hold controls. Empty legs expose no actions. No API, migration or operational data changes; delivery is a PR for review.
