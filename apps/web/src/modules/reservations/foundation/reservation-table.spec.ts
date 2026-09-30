@@ -5,7 +5,11 @@ import {
   queryRows,
   type RequestView,
 } from './model';
-import { reservationCells, reservationExportRows } from './reservation-table';
+import {
+  reservationColumns,
+  reservationCells,
+  reservationExportRows,
+} from './reservation-table';
 import { createReservationXlsx } from './reservation-xlsx';
 import { unzipWorkbook } from '@/modules/organizations/model/organization-xlsx';
 const row = (id: string, branchId = 'allowed'): RequestView => ({
@@ -56,7 +60,7 @@ describe('reservation table and workbook', () => {
       }).filteredRows,
     ).toEqual([]);
   });
-  it('preserves known zero counts, missing suites, Gregorian dates and real flags', () => {
+  it('preserves known zero counts, missing counts, Gregorian dates and real flags', () => {
     const cells = reservationCells({
       ...row('DEMO'),
       checkIn: '2026-09-09',
@@ -66,12 +70,11 @@ describe('reservation table and workbook', () => {
       hotelRequested: true,
       hotelConfirmed: false,
     });
-    expect(cells.slice(3, 12)).toEqual([
+    expect(cells.slice(3, 11)).toEqual([
       '09/09/2026',
       '—',
       '0',
       '2',
-      '—',
       '—',
       '2',
       '✓',
@@ -86,7 +89,7 @@ describe('reservation table and workbook', () => {
     const xml = entries.get('xl/worksheets/sheet1.xml')!;
     expect(xml).toContain('rightToLeft="1"');
     expect(xml).toContain('state="frozen"');
-    expect(xml).toContain('autoFilter ref="A1:T2"');
+    expect(xml).toContain('autoFilter ref="A1:AT2"');
     expect(xml).toContain('t="inlineStr"');
     expect(xml).toContain('=1+1');
     expect(xml).toContain('Hotel &amp; &lt;Test&gt;');
@@ -106,24 +109,94 @@ it('includes additional contract columns in the filtered workbook and keeps unkn
       hotelNotes: 'TWIN BED',
     },
   ]);
-  expect(exported[0]!.slice(14, 19)).toEqual([
+  expect(exported[0]!.slice(13, 17)).toEqual([
     'خدمات',
     'فروشنده',
     'طرف قرارداد',
     'سرویس هتل',
-    'توضیحات هتل',
   ]);
-  expect(exported[1]!.slice(14, 19)).toEqual([
+  expect(exported[1]!.slice(13, 17)).toEqual([
     'Flight، Hotel',
     'Seller',
     'Agency',
     'UALL',
-    'TWIN BED',
   ]);
-  expect(reservationCells(row('EMPTY')).slice(15, 19)).toEqual([
+  expect(reservationCells(row('EMPTY')).slice(14, 18)).toEqual([
     '—',
     '—',
     '—',
     '—',
+  ]);
+});
+
+it('matches the exact column order, keeps ages/zero counts and independent currencies in export', () => {
+  const fields = reservationColumns;
+  expect(fields).toHaveLength(46);
+  expect(fields.slice(8, 13)).toEqual([
+    'تعداد اتاق',
+    'اقدام هتل',
+    'تأیید هتل',
+    'اصلاح',
+    'تاریخ اصلاح',
+  ]);
+  expect(fields.slice(28, 32)).toEqual([
+    'اقدام ویزا',
+    'تأیید ویزا',
+    'اقدام پرواز',
+    'تأیید پرواز',
+  ]);
+  expect(fields.slice(-4)).toEqual([
+    'بدهکار ریالی',
+    'بدهکاری ارزی',
+    'ابطال',
+    'تاریخ ابطال',
+  ]);
+  const summary = {
+    createdAt: '2026-09-01T10:00:00Z',
+    contractVersion: 4,
+    correctedAt: '2026-09-20T10:00:00Z',
+    cancelledAt: null,
+    departureDate: '2026-10-01',
+    returnDate: '2026-10-06',
+    passengerCount: 4,
+    adults: 1,
+    children2To6: 1,
+    children6To12: 1,
+    infants: 1,
+    saleRial: '900',
+    saleForeign: '200 USD / 100 EUR',
+    currencies: 'IRR / USD / EUR',
+    discount: '100 IRR',
+    commission: '3%',
+    debtRial: '600',
+    debtForeign: '200 USD / 100 EUR',
+  };
+  const cells = reservationCells({
+    ...row('TEST'),
+    tableSummary: summary,
+    checkIn: '2026-10-01',
+    checkOut: '2026-10-06',
+    cost: '500 IRR / 150 USD',
+    tableFlags: {
+      visaRequested: {
+        checked: true,
+        updatedAt: '2026-09-20T10:00:00Z',
+        updatedByUserId: 'user',
+      },
+    },
+  });
+  expect(cells.slice(19, 22)).toEqual(['6', '5', '4']);
+  expect(cells.slice(24, 28)).toEqual(['1', '1', '1', '1']);
+  expect(cells[28]).toBe('✓');
+  expect(cells[32]).toBe('01/09/2026');
+  expect(cells.slice(36, 44)).toEqual([
+    '900',
+    '200 USD / 100 EUR',
+    'IRR / USD / EUR',
+    '100 IRR',
+    '3%',
+    '500 IRR / 150 USD',
+    '600',
+    '200 USD / 100 EUR',
   ]);
 });

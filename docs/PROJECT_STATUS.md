@@ -1,3 +1,7 @@
+## 2026-09-30 — RESERVATION-CONTRACT-COLUMNS-0930 — PC-A — READY_FOR_REVIEW
+
+Reservations inbox and Excel now use the requested 46-column order. Visa/flight action and confirmation checkboxes save server time and authenticated actor in existing immutable workflow revisions; correction and cancellation use real Sales contract operations. The Sales public projection supplies age counts and exact per-currency financial totals; costs use Reservations purchase history, and direct-ticket commissions use historical Ticket Catalog revisions. Missing historical tour-pricing links remain unavailable. 65 Web and 17 API tests, both typechecks and production builds passed; full API/Web lint passed. No migration, dependencies or operational-data change. Owner authorized merge to develop after checks. Details: [RESERVATION-CONTRACT-COLUMNS-0930](tasks/RESERVATION-CONTRACT-COLUMNS-0930.md).
+
 ## 2026-09-29 — SIDEBAR-ALL-SECTIONS-VISIBLE-0929 — PC-B — READY_FOR_REVIEW
 
 تمام گروه‌های مجاز منوی کناری از ابتدا باز می‌شوند تا لینک‌های رزرواسیون، مالی، سرمایه انسانی، اسناد و تنظیمات کنار فروش دیده شوند. کنترل باز و بسته‌کردن گروه‌ها و بررسی دسترسی هر مسیر بدون تغییر است. دو تست مرتبط، ESLint محدوده، typecheck و build تولیدی Web با ۵۵ مسیر موفق شدند. وب روی ۳۱۰۰ و API روی ۴۰۰۰ پس از راه‌اندازی مجدد پاسخ ۲۰۰ دادند. هیچ مجوز یا داده‌ای تغییر نکرد.

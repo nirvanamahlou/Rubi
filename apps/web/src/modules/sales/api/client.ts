@@ -95,6 +95,11 @@ function queryString(query: SalesContractListQuery): string {
 }
 
 export const salesApi = {
+  cancel: (id: string, version: number, reason: string) =>
+    request<{ data: SalesContractDetail }>(
+      `/contracts/${encodeURIComponent(id)}/cancel`,
+      { method: 'POST', body: JSON.stringify({ version, reason }) },
+    ),
   exportXlsx: (query: SalesContractListQuery) => {
     // Export the applied list filters, never just the visible page or unsubmitted input.
     const filters: SalesContractListQuery = {

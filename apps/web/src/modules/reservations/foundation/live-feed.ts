@@ -11,6 +11,32 @@ import {
 // Unknown fields are stripped; no shared-contract or intake implementation is copied.
 const id = z.string().min(1).max(160);
 const instant = z.string().datetime({ offset: true });
+const flagSchema = z.object({
+  checked: z.boolean(),
+  updatedAt: instant,
+  updatedByUserId: id,
+  actorName: z.string().nullable().optional(),
+});
+const summarySchema = z.object({
+  createdAt: instant,
+  contractVersion: z.number().int().positive(),
+  correctedAt: instant.nullable(),
+  cancelledAt: instant.nullable(),
+  departureDate: z.string(),
+  returnDate: z.string().nullable(),
+  passengerCount: z.number().int().nonnegative(),
+  adults: z.number().int().nonnegative(),
+  children2To6: z.number().int().nonnegative(),
+  children6To12: z.number().int().nonnegative(),
+  infants: z.number().int().nonnegative(),
+  saleRial: z.string().nullable(),
+  saleForeign: z.string().nullable(),
+  currencies: z.string(),
+  discount: z.string().nullable(),
+  commission: z.string().nullable(),
+  debtRial: z.string().nullable(),
+  debtForeign: z.string().nullable(),
+});
 const snapshotSchema = z.object({
   version: z.literal(1),
   requestId: id,
@@ -95,6 +121,22 @@ const envelopeSchema = z.object({
           .optional(),
         workflow: z
           .object({
+            version: z.number().int().nonnegative().optional(),
+            tableFlags: z
+              .object({
+                visaRequested: flagSchema.optional(),
+                visaConfirmed: flagSchema.optional(),
+                flightRequested: flagSchema.optional(),
+                flightConfirmed: flagSchema.optional(),
+              })
+              .optional(),
+            voucherSettings: z
+              .object({
+                text: z.record(z.string(), z.string()),
+                flags: z.record(z.string(), z.boolean()),
+              })
+              .passthrough()
+              .optional(),
             supplierStatus: z.enum([
               'NEW',
               'REQUESTED',
@@ -105,6 +147,19 @@ const envelopeSchema = z.object({
             reservationNotes: z.array(z.string()).optional(),
           })
           .nullable()
+          .optional(),
+        tableSummary: summarySchema.nullish(),
+        hotelPurchases: z
+          .array(z.object({ amount: z.string(), currencyCode: z.string() }))
+          .optional(),
+        servicePurchases: z
+          .array(
+            z.object({
+              serviceKind: z.string().optional(),
+              amount: z.string(),
+              currencyCode: z.string(),
+            }),
+          )
           .optional(),
         receivedAt: instant,
         snapshot: snapshotSchema,
@@ -165,7 +220,75 @@ export function decodeIntake(
         .map((t) => t.departureAt)
         .sort();
       const travelDate = departures[0] ?? snapshot.hotelSelection?.checkInDate;
+      const metadata = snapshot.serviceSelections.map((s) => s.metadata);
+      const meta = (key: string) =>
+        metadata.find((m) => typeof m?.[key] === 'string')?.[key] as
+          string | undefined;
+      const settings = row.workflow?.voucherSettings;
+      const purchases = new Map<string, bigint>();
+      const costs = [
+        ...(row.servicePurchases ?? []),
+        ...((row.servicePurchases ?? []).some((p) => p.serviceKind === 'HOTEL')
+          ? []
+          : (row.hotelPurchases ?? [])),
+      ];
+      for (const cost of costs) {
+        if (!/^\d+(?:\.\d{1,4})?$/.test(cost.amount)) continue;
+        const [whole, fraction = ''] = cost.amount.split('.');
+        purchases.set(
+          cost.currencyCode,
+          (purchases.get(cost.currencyCode) ?? 0n) +
+            BigInt(whole!) * 10000n +
+            BigInt(fraction.padEnd(4, '0')),
+        );
+      }
       return {
+        tableSummary: row.tableSummary ?? undefined,
+        tableFlags: row.workflow?.tableFlags,
+        workflowVersion: row.workflow?.version,
+        transfer:
+          settings?.text.transferKind ||
+          meta('transferKind') ||
+          (snapshot.serviceSelections.some((s) => s.kind === 'TRANSFER')
+            ? 'دارد'
+            : undefined),
+        guide:
+          settings?.text.leaderName ||
+          meta('tourLeader') ||
+          (settings?.flags.tourLeader ? 'دارد' : undefined),
+        excursion:
+          settings?.text.excursionDescription ||
+          meta('excursion') ||
+          (settings?.flags.excursion ? 'دارد' : undefined),
+        hotelStars: settings?.text.stars || undefined,
+        ticketKind:
+          [
+            ...new Set(
+              snapshot.serviceSelections
+                .filter((s) => ['FLIGHT', 'TRAIN', 'BUS'].includes(s.kind))
+                .map(
+                  (s) =>
+                    ({ FLIGHT: 'هواپیما', TRAIN: 'قطار', BUS: 'اتوبوس' })[
+                      s.kind
+                    ] ?? s.kind,
+                ),
+            ),
+          ].join(' / ') || undefined,
+        cost:
+          [...purchases]
+            .map(([currency, units]) => {
+              const fraction = (units % 10000n)
+                .toString()
+                .padStart(4, '0')
+                .replace(/0+$/, '');
+              return (
+                (units / 10000n).toString() +
+                (fraction ? '.' + fraction : '') +
+                ' ' +
+                currency
+              );
+            })
+            .join(' / ') || undefined,
         id: row.id,
         contractId: row.contractId,
         contractNumber: snapshot.contractNumber,
@@ -217,7 +340,7 @@ export function decodeIntake(
           row.workflow?.supplierStatus ?? '',
         ),
         hotelConfirmed: row.workflow?.voucherIssued === true,
-        correctedAt: row.arrangement?.updatedAt,
+        correctedAt: row.tableSummary?.correctedAt ?? undefined,
         ...(travelDate ? { travelDate } : {}),
         ...(snapshot.hotelSelection
           ? {
@@ -235,6 +358,7 @@ export function decodeIntake(
             }
           : {}),
         status:
+          row.tableSummary?.cancelledAt ||
           row.workflow?.supplierStatus === 'CANCELLED'
             ? 'CANCELLED'
             : row.workflow?.voucherIssued

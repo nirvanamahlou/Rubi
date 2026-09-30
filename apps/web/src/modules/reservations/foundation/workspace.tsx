@@ -1,5 +1,7 @@
 'use client';
 import { useQueueNames } from './queue-names';
+import { TableStatusCheckbox, tableFlagColumns } from './table-status-checkbox';
+import { ContractTableAction } from './contract-table-action';
 import { HotelTableAction } from './hotel-table-action';
 import {
   reservationColumns,
@@ -642,6 +644,7 @@ export function ReservationOperationsWorkspace({
                           data-tone={statusTones[row.status]}
                           data-selected={selected?.id === row.id}
                           aria-selected={selected?.id === row.id}
+                          aria-label={`${row.contractNumber} · ${statusLabels[row.status]}`}
                           tabIndex={0}
                           onClick={() => setSelectedId(row.id)}
                           onKeyDown={(event) => {
@@ -669,14 +672,29 @@ export function ReservationOperationsWorkspace({
                                 >
                                   {value}
                                 </button>
-                              ) : index === 10 || index === 11 ? (
+                              ) : index === 9 || index === 10 ? (
                                 <HotelTableAction
                                   row={row}
-                                  confirmation={index === 11}
+                                  confirmation={index === 10}
                                   canManage={access.permissions.includes(
                                     'reservations.documents.manage',
                                   )}
                                   onSelect={() => setSelectedId(row.id)}
+                                />
+                              ) : tableFlagColumns[index] ? (
+                                <TableStatusCheckbox
+                                  row={row}
+                                  flag={tableFlagColumns[index]!}
+                                  label={reservationColumns[index]!}
+                                  canManage={access.permissions.includes(
+                                    'reservations.documents.manage',
+                                  )}
+                                />
+                              ) : index === 11 || index === 44 ? (
+                                <ContractTableAction
+                                  row={row}
+                                  cancel={index === 44}
+                                  access={access}
                                 />
                               ) : (
                                 <bdi>{value}</bdi>

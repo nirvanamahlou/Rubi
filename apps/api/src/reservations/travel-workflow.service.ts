@@ -159,6 +159,12 @@ export class TravelWorkflowService {
         throw new ConflictException(
           'اطلاعات هم‌زمان تغییر کرده است؛ دوباره بارگذاری کنید.',
         );
+      if (command.action === 'TABLE_STATUS')
+        await this.amendments.assertActive(
+          tx,
+          intake.contractId,
+          actor.branchIds,
+        );
       let next: TravelWorkflowStateV1;
       try {
         next = transitionTravelWorkflow(
@@ -194,6 +200,14 @@ export class TravelWorkflowService {
         throw new BadRequestException('ابتدا سربرگ خروجی را ثبت کنید.');
       next.updatedAt = new Date().toISOString();
       next.updatedByUserId = actor.userId;
+      if (
+        command.action === 'TABLE_STATUS' &&
+        command.tableFlag &&
+        next.tableFlags?.[command.tableFlag]
+      ) {
+        next.tableFlags[command.tableFlag]!.updatedAt = next.updatedAt;
+        next.tableFlags[command.tableFlag]!.updatedByUserId = actor.userId;
+      }
       await tx.reservationWorkflowRevision.create({
         data: {
           intakeId: id,

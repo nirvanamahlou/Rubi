@@ -17,7 +17,7 @@ it('uses the selected hotel for old contracts without a meal selection and expor
   } as unknown as RequestView;
   const mealServiceName = queueMealName(row, { 'hotel-meals:hotel': 'UALL' });
   expect(mealServiceName).toBe('UALL');
-  expect(reservationExportRows([{ ...row, mealServiceName }])[1]?.[17]).toBe(
+  expect(reservationExportRows([{ ...row, mealServiceName }])[1]?.[16]).toBe(
     'UALL',
   );
 });

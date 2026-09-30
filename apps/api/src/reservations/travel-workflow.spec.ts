@@ -176,3 +176,98 @@ it('appends durable notes independently of issuance and preserves the operationa
     transition(state, command(state, 'NOTE', { note: ' ' }), []),
   ).toThrow();
 });
+
+describe('manual table workflow flags', () => {
+  it('requires action before confirmation and preserves independent flags', () => {
+    let state = transition(
+      initialTravelWorkflow(),
+      {
+        action: 'TABLE_STATUS',
+        expectedVersion: 0,
+        note: 'اقدام ویزا',
+        tableFlag: 'visaRequested',
+        checked: true,
+      },
+      [],
+    );
+    state = transition(
+      state,
+      {
+        action: 'TABLE_STATUS',
+        expectedVersion: 1,
+        note: 'تأیید ویزا',
+        tableFlag: 'visaConfirmed',
+        checked: true,
+      },
+      [],
+    );
+    expect(state.tableFlags?.visaConfirmed?.checked).toBe(true);
+    expect(() =>
+      transition(
+        state,
+        {
+          action: 'TABLE_STATUS',
+          expectedVersion: 2,
+          note: 'حذف اقدام',
+          tableFlag: 'visaRequested',
+          checked: false,
+        },
+        [],
+      ),
+    ).toThrow();
+    expect(() =>
+      transition(
+        initialTravelWorkflow(),
+        {
+          action: 'TABLE_STATUS',
+          expectedVersion: 0,
+          note: 'تأیید پرواز',
+          tableFlag: 'flightConfirmed',
+          checked: true,
+        },
+        [],
+      ),
+    ).toThrow();
+  });
+  it('allows flight flags after hotel voucher, rejects cancelled requests and invalid payload', () => {
+    expect(
+      transition(
+        { ...initialTravelWorkflow(), voucherIssued: true },
+        {
+          action: 'TABLE_STATUS',
+          expectedVersion: 0,
+          note: 'اقدام پرواز',
+          tableFlag: 'flightRequested',
+          checked: true,
+        },
+        [],
+      ).tableFlags?.flightRequested?.checked,
+    ).toBe(true);
+    expect(() =>
+      transition(
+        { ...initialTravelWorkflow(), supplierStatus: 'CANCELLED' },
+        {
+          action: 'TABLE_STATUS',
+          expectedVersion: 0,
+          note: 'اقدام پرواز',
+          tableFlag: 'flightRequested',
+          checked: true,
+        },
+        [],
+      ),
+    ).toThrow();
+    expect(() =>
+      transition(
+        initialTravelWorkflow(),
+        {
+          action: 'TABLE_STATUS',
+          expectedVersion: 0,
+          note: 'نامعتبر',
+          tableFlag: 'other',
+          checked: true,
+        } as never,
+        [],
+      ),
+    ).toThrow();
+  });
+});

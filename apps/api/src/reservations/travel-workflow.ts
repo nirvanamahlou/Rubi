@@ -45,9 +45,12 @@ export function transitionTravelWorkflow(
     throw new Error('این درخواست بسته شده است و قابل تغییر نیست.');
   if (
     current.voucherIssued &&
-    !['NOTE', 'VOUCHER_SETTINGS', 'SUPPLIER_FORM_SETTINGS'].includes(
-      command.action,
-    )
+    ![
+      'NOTE',
+      'VOUCHER_SETTINGS',
+      'SUPPLIER_FORM_SETTINGS',
+      'TABLE_STATUS',
+    ].includes(command.action)
   )
     throw new Error('این درخواست بسته شده است و قابل تغییر نیست.');
   const next = {
@@ -56,6 +59,47 @@ export function transitionTravelWorkflow(
     note: command.note.trim(),
   };
   switch (command.action) {
+    case 'TABLE_STATUS': {
+      const keys = [
+        'visaRequested',
+        'visaConfirmed',
+        'flightRequested',
+        'flightConfirmed',
+      ] as const;
+      if (
+        !command.tableFlag ||
+        !keys.includes(command.tableFlag) ||
+        typeof command.checked !== 'boolean'
+      )
+        throw new Error('وضعیت اقدام معتبر نیست.');
+      const requested = command.tableFlag.startsWith('visa')
+        ? 'visaRequested'
+        : 'flightRequested';
+      const confirmed = command.tableFlag.startsWith('visa')
+        ? 'visaConfirmed'
+        : 'flightConfirmed';
+      if (
+        command.tableFlag === confirmed &&
+        command.checked &&
+        !current.tableFlags?.[requested]?.checked
+      )
+        throw new Error('ابتدا تیک اقدام را ثبت کنید.');
+      if (
+        command.tableFlag === requested &&
+        !command.checked &&
+        current.tableFlags?.[confirmed]?.checked
+      )
+        throw new Error('ابتدا تیک تأیید را بردارید.');
+      next.tableFlags = {
+        ...current.tableFlags,
+        [command.tableFlag]: {
+          checked: command.checked,
+          updatedAt: '',
+          updatedByUserId: '',
+        },
+      };
+      break;
+    }
     case 'SUPPLIER_FORM_SETTINGS':
       if (typeof command.applyToContractAndVoucher !== 'boolean')
         throw new Error('مقصد تغییرات را انتخاب کنید.');

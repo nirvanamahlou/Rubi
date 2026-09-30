@@ -1,3 +1,8 @@
+import {
+  SalesReservationTableModule,
+  SalesReservationTableService,
+} from '../sales/sales-reservation-table.module';
+import { Optional } from '@nestjs/common';
 import { ReservationOperationInterceptor } from './reservation-operation.interceptor';
 import { ParseUUIDPipe } from '@nestjs/common';
 import { SalesOperationalAmendmentModule } from '../sales/sales-operational-amendment.module';
@@ -24,6 +29,7 @@ import type {
   FinanceSupplierPaymentCommandV1,
   ReservationServicePurchaseInputV1,
   TravelWorkflowCommandV1,
+  TravelWorkflowStateV1,
 } from '@nora/contracts';
 import {
   Body,
@@ -74,6 +80,9 @@ export class ReservationRequestsController {
     private readonly delivery: FinanceDeliveryService,
     @Inject(CustomerService) private readonly customers: CustomerService,
     @Inject(IamService) private readonly iam: IamService,
+    @Optional()
+    @Inject(SalesReservationTableService)
+    private readonly table?: SalesReservationTableService,
   ) {}
   @Get('delivery-queue')
   @Header('Cache-Control', 'private, no-store')
@@ -273,6 +282,32 @@ export class ReservationRequestsController {
       page,
       contractNumber,
     });
+    const summaries = this.table
+      ? await this.table.read(
+          rows.map((row) => row.contractId),
+          req.actor,
+        )
+      : new Map();
+    const actorNames = new Map<string, string>();
+    const branchActors = new Map<string, Set<string>>();
+    for (const row of rows) {
+      const ids = branchActors.get(row.branchId) ?? new Set<string>();
+      for (const flag of Object.values(
+        (row.workflow as TravelWorkflowStateV1 | null)?.tableFlags ?? {},
+      ))
+        if (flag) ids.add(flag.updatedByUserId);
+      branchActors.set(row.branchId, ids);
+    }
+    for (const [branchId, ids] of branchActors) {
+      const values = [...ids];
+      for (let i = 0; i < values.length; i += 3)
+        for (const [id, name] of await this.iam.reservationResponsibilityNames(
+          values.slice(i, i + 3),
+          branchId,
+          req.actor,
+        ))
+          actorNames.set(id, name);
+    }
     const names = new Map<string, string>();
     if (rows.length && req.actor.permissions.includes('iam.users.read')) {
       const wanted = new Set(rows.map((row) => row.salesOwnerUserId));
@@ -301,6 +336,23 @@ export class ReservationRequestsController {
       version: 1,
       data: rows.map(({ salesOwnerUserId, ...row }) => ({
         ...row,
+        tableSummary: summaries.get(row.contractId) ?? null,
+        workflow: row.workflow
+          ? {
+              ...(row.workflow as TravelWorkflowStateV1),
+              tableFlags: Object.fromEntries(
+                Object.entries(
+                  (row.workflow as TravelWorkflowStateV1).tableFlags ?? {},
+                ).map(([key, flag]) => [
+                  key,
+                  {
+                    ...flag,
+                    actorName: actorNames.get(flag!.updatedByUserId) ?? null,
+                  },
+                ]),
+              ),
+            }
+          : null,
         sellerName: salesOwnerUserId
           ? (names.get(salesOwnerUserId) ?? null)
           : null,
@@ -332,6 +384,7 @@ export class ReservationRequestsController {
 @Module({
   imports: [
     SalesOperationalAmendmentModule,
+    SalesReservationTableModule,
     IamModule,
     CustomersModule,
     DocumentsModule,

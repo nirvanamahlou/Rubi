@@ -347,7 +347,36 @@ export interface TravelBrandingV1 {
   logoFileId: string | null;
   companyCode?: string;
 }
+export type ReservationTableFlagKey =
+  'visaRequested' | 'visaConfirmed' | 'flightRequested' | 'flightConfirmed';
+export interface ReservationTableFlagV1 {
+  checked: boolean;
+  updatedAt: string;
+  updatedByUserId: string;
+  actorName?: string | null | undefined;
+}
+export interface ReservationTableSummaryV1 {
+  createdAt: string;
+  contractVersion: number;
+  correctedAt: string | null;
+  cancelledAt: string | null;
+  departureDate: string;
+  returnDate: string | null;
+  passengerCount: number;
+  adults: number;
+  children2To6: number;
+  children6To12: number;
+  infants: number;
+  saleRial: string | null;
+  saleForeign: string | null;
+  currencies: string;
+  discount: string | null;
+  commission: string | null;
+  debtRial: string | null;
+  debtForeign: string | null;
+}
 export interface TravelWorkflowStateV1 {
+  tableFlags?: Partial<Record<ReservationTableFlagKey, ReservationTableFlagV1>>;
   version: number;
   supplierStatus: 'NEW' | 'REQUESTED' | 'CONFIRMED' | 'CANCELLED';
   supplierReference: string;
@@ -371,6 +400,7 @@ export interface TravelWorkflowStateV1 {
 export interface TravelWorkflowCommandV1 {
   expectedVersion: number;
   action:
+    | 'TABLE_STATUS'
     | 'BRANDING'
     | 'REQUEST_SUPPLIER'
     | 'CONFIRM_SUPPLIER'
@@ -383,6 +413,8 @@ export interface TravelWorkflowCommandV1 {
     | 'VOUCHER_SETTINGS'
     | 'SUPPLIER_FORM_SETTINGS';
   note: string;
+  tableFlag?: ReservationTableFlagKey;
+  checked?: boolean;
   applyToContractAndVoucher?: boolean;
   expectedContractVersion?: number;
   voucherSettings?: VoucherSettingsV1;
