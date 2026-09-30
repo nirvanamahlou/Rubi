@@ -3,6 +3,7 @@ import type { TicketOfferV1 } from '@nora/contracts';
 import { emptySalesForm } from './sales-form';
 import {
   repriceStandaloneTicketSelections,
+  roundTripTicketPricing,
   seatTierTotal,
   standaloneTicketPricing,
 } from './standalone-ticket-pricing';
@@ -190,4 +191,44 @@ describe('standalone ticket pricing', () => {
     expect(prices['flight-outbound']?.[0]?.agreed.amount).toBe('100');
     expect(prices['flight-return']?.[0]?.agreed.amount).toBe('100');
   });
+});
+
+describe('round-trip sale capacity', () => {
+  it.each([
+    [2, 20],
+    [20, 2],
+  ])(
+    'does not quote above the smaller remaining leg (%s/%s)',
+    (outboundSeats, returnSeats) => {
+      const outbound = {
+        ...offer('out', '100'),
+        remainingCapacity: outboundSeats,
+        roundTripSalePrices: [
+          {
+            returnOfferId: 'back',
+            amount: '200',
+            currencyCode: 'IRR',
+            revision: 1,
+          },
+        ],
+      };
+      const returning = {
+        ...offer('back', '100'),
+        remainingCapacity: returnSeats,
+      };
+      const state = { ...emptySalesForm };
+      expect(
+        roundTripTicketPricing(state, outbound, returning, 2)[
+          'flight-outbound'
+        ],
+      ).toBeDefined();
+      const previouslyQuoted = {
+        ...state,
+        servicePricing: roundTripTicketPricing(state, outbound, returning, 2),
+      };
+      expect(
+        roundTripTicketPricing(previouslyQuoted, outbound, returning, 3),
+      ).toEqual({});
+    },
+  );
 });

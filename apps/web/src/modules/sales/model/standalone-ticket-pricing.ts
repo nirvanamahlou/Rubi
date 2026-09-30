@@ -55,7 +55,10 @@ export function roundTripTicketPricing(
   seats: number,
 ): Record<string, SalesServicePricingV1[]> {
   const fares = roundTripPerLegFares(outbound, returning);
-  if (!fares) {
+  if (
+    !fares ||
+    seats > Math.min(outbound.remainingCapacity, returning.remainingCapacity)
+  ) {
     const next = { ...(state.servicePricing ?? {}) };
     delete next['flight-outbound'];
     delete next['flight-return'];

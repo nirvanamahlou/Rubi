@@ -1,3 +1,7 @@
+## 2026-09-30 — ROUNDTRIP-SALE-CAPACITY-0930 — PC-A — READY_FOR_REVIEW
+
+Round-trip ticket selection displays and enforces the lower remaining capacity of both legs. Requests above this limit clear both flight quotes. Existing row-locked server reservation rejects insufficient capacity before creating either allocation; regression tests cover outbound/return limits after allocations and active holds, rejection above the limit and acceptance exactly at it. 41 focused Web tests and 4 focused API tests pass. Scoped lint, Web/API typechecks and production builds pass after regenerating stale local contracts/Prisma outputs. No schema, migration, shared contract, dependency, operational data or local runtime changes. PR to develop for review; no automatic merge.
+
 ## 2026-09-29 — SIDEBAR-ALL-SECTIONS-VISIBLE-0929 — PC-B — READY_FOR_REVIEW
 
 تمام گروه‌های مجاز منوی کناری از ابتدا باز می‌شوند تا لینک‌های رزرواسیون، مالی، سرمایه انسانی، اسناد و تنظیمات کنار فروش دیده شوند. کنترل باز و بسته‌کردن گروه‌ها و بررسی دسترسی هر مسیر بدون تغییر است. دو تست مرتبط، ESLint محدوده، typecheck و build تولیدی Web با ۵۵ مسیر موفق شدند. وب روی ۳۱۰۰ و API روی ۴۰۰۰ پس از راه‌اندازی مجدد پاسخ ۲۰۰ دادند. هیچ مجوز یا داده‌ای تغییر نکرد.
