@@ -3,6 +3,24 @@ import {
   ticketCalendarDate,
   type TicketOfferV1,
 } from '@nora/contracts';
+import type { Reference } from './catalog';
+
+export const countryFlightLoadOffers = (
+  offers: readonly TicketOfferV1[],
+  references: readonly Reference[],
+  country: string,
+) =>
+  offers.filter(
+    (offer) =>
+      !country ||
+      references.some(
+        (ref) =>
+          ref.kind === 'city' &&
+          ref.id === offer.destinationId &&
+          ref.countryId === country,
+      ),
+  );
+
 export interface FlightLoadFilter {
   from: string;
   to: string;
@@ -24,7 +42,8 @@ export const currentCompanyLoadOffers = (
 ) =>
   offers.filter(
     (offer) =>
-      isCompanyLoadOffer(offer) && Date.parse(offer.arrivalAt) >= now.getTime(),
+      isCompanyLoadOffer(offer) &&
+      Date.parse(offer.departureAt) >= now.getTime(),
   );
 
 export function validFlightLoadDates(
@@ -41,7 +60,10 @@ export function validFlightLoadDates(
     )
     .map((offer) => ticketCalendarDate(offer.departureAt))
     .sort();
-  return { from: dates[0] ?? '', to: dates.at(-1) ?? '' };
+  return {
+    from: ticketCalendarDate(now.toISOString()),
+    to: dates.at(-1) ?? '',
+  };
 }
 export const canSearchFlightLoad = (filter: FlightLoadFilter) =>
   Boolean(filter.origin || filter.destination || filter.from || filter.to);
