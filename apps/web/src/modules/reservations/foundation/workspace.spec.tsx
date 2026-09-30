@@ -182,10 +182,11 @@ describe('reservations workspace access and states', () => {
     expect(html).toContain('aria-selected="true"');
     expect(html).not.toContain('قراردادی انتخاب نشده');
   });
-  it('limits an unfiltered inbox to the previous three calendar months', () => {
+  it('limits an unfiltered inbox to the previous calendar month through today', () => {
     const rows = [
-      { ...row('recent'), createdAt: '2026-06-08T09:00:00.000Z' },
-      { ...row('old'), createdAt: '2026-06-07T09:00:00.000Z' },
+      { ...row('recent'), createdAt: '2026-08-08T09:00:00.000Z' },
+      { ...row('old'), createdAt: '2026-08-07T09:00:00.000Z' },
+      { ...row('future'), createdAt: '2026-09-09T09:00:00.000Z' },
     ];
     const defaultWindow = queryRows(
       rows,
@@ -199,8 +200,8 @@ describe('reservations workspace access and states', () => {
       reservationWindowQuery(
         {
           ...defaultQuery,
-          fromDate: '2026-06-01',
-          toDate: '2026-06-07',
+          fromDate: '2026-08-01',
+          toDate: '2026-08-07',
         },
         now,
       ),
@@ -247,6 +248,7 @@ it('protects operation and audit projections independently of visible customer r
     <ReservationOperationsWorkspace
       state="SUCCESS"
       rows={[row()]}
+      now={now}
       access={access}
       operations={operations}
       initialSection="hotels"
@@ -258,6 +260,7 @@ it('protects operation and audit projections independently of visible customer r
     <ReservationOperationsWorkspace
       state="SUCCESS"
       rows={[row()]}
+      now={now}
       access={access}
       timeline={timeline}
       initialSection="timeline"
@@ -268,6 +271,7 @@ it('protects operation and audit projections independently of visible customer r
     <ReservationOperationsWorkspace
       state="SUCCESS"
       rows={[row()]}
+      now={now}
       access={{
         ...access,
         permissions: [...access.permissions, 'reservations.audit.read'],

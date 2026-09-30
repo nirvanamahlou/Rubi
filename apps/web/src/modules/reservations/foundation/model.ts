@@ -135,7 +135,8 @@ export function reservationWindowQuery(query: Query, now: string): Query {
   return {
     ...query,
     dateBasis: 'createdAt',
-    fromDate: subtractCalendarMonths(today, 3),
+    fromDate: subtractCalendarMonths(today, 1),
+    toDate: today,
   };
 }
 export const serviceLabels: Record<RequestView['services'][number], string> = {

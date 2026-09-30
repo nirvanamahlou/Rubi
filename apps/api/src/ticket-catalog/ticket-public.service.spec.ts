@@ -416,16 +416,14 @@ describe('TicketPublicService offer retry', () => {
 });
 
 it('projects branch-scoped manifest inventory from active allocations and unexpired holds', async () => {
-  const findMany = vi
-    .fn()
-    .mockResolvedValue([
-      {
-        id: 'offer',
-        totalCapacity: 50,
-        capacityAllocations: [{ quantity: 12 }],
-        capacityHolds: [{ quantity: 3 }],
-      },
-    ]);
+  const findMany = vi.fn().mockResolvedValue([
+    {
+      id: 'offer',
+      totalCapacity: 50,
+      capacityAllocations: [{ quantity: 12 }],
+      capacityHolds: [{ quantity: 3 }],
+    },
+  ]);
   const service = new TicketPublicService(
     {
       client: { ticketPublishedOffer: { findMany } },
