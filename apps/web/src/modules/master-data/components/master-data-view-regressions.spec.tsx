@@ -1,6 +1,5 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 
@@ -23,29 +22,11 @@ function geographySource() {
 describe('Master Data view and geography follow-up regressions', () => {
   it('renders zero and false as real values while reserving dash for empty data', () => {
     const html = renderToStaticMarkup(
-      createElement(
-        MasterDataDetailSection,
-        {
-          title: 'آزمون',
-        },
-        [
-          createElement(MasterDataDetailItem, {
-            key: 'zero',
-            label: 'صفر',
-            value: 0,
-          }),
-          createElement(MasterDataDetailItem, {
-            key: 'false',
-            label: 'خیر',
-            value: false,
-          }),
-          createElement(MasterDataDetailItem, {
-            key: 'empty',
-            label: 'خالی',
-            value: '',
-          }),
-        ],
-      ),
+      <MasterDataDetailSection title="آزمون">
+        <MasterDataDetailItem label="صفر" value={0} />
+        <MasterDataDetailItem label="خیر" value={false} />
+        <MasterDataDetailItem label="خالی" value="" />
+      </MasterDataDetailSection>,
     );
     expect(html).toContain('>0<');
     expect(html).toContain('>خیر<');
