@@ -3986,6 +3986,10 @@ Owner-confirmed synthetic local catalog snapshot: 20 offers (11 visible, 9 alrea
 
 اکشن‌های رکوردهای اسناد در نمای کلی، فهرست اصلی و اشتراک‌گذاری به دکمه‌های حذف قرمز با آیکون سفید، ویرایش و مشاهدهٔ کادردار تبدیل شدند. چشم، جزئیات سند را باز می‌کند و محدودیت‌های مجوز و مسیر پیگیری حفظ شده‌اند. ۹ تست هدفمند، lint فایل، Web typecheck، Prettier و Production Build با ۵۵ مسیر موفق‌اند. API/DB/Migration/Dependency تغییر نکرد. Branch `codex/pc-b-documents-record-actions-0930` از `origin/develop@a353bcab` برای PR به `develop` آماده است.
 
+## 2026-09-30 — CUSTOMER-AFFAIRS-ASSESSMENT-REPORT-DESIGN-0930 — READY_FOR_REVIEW
+
+کارت نتیجهٔ ارزیابی آمادگی فروش در پروفایل درخواست امور مشتریان با خلاصهٔ نتیجه/امتیاز/احتمال تبدیل، معیارهای تأییدشده و تأییدنشده در کارت‌های واکنش‌گرا و توضیحات تکمیلیِ دلایل ذخیره‌شده بازطراحی شد. دلایل دارای فاصلهٔ اضافی یا تکراری برای نمایش یکسان‌سازی می‌شوند. ۱۸ تست هدفمند، lint، typecheck، Prettier و build تولیدی Web موفق‌اند. API، داده، فرم ارزیابی و runtime پورت ۳۱۰۰ تغییر نکردند؛ PR به `develop` برای بازبینی ارسال می‌شود.
+
 ## 2026-09-30 — PC-A — company flight load
 
 TICKET-LOAD-GRID-0930 adds side-by-side outbound/return load tables above Ticket Management, shared Min/Max eligible return selection, capacity totals and prices, Gregorian defaults, three supply choices and persisted manual economy/optional business baggage. An additive nullable migration preserves legacy provenance. Management Web drains paginated offers. Implementation and validation details: `docs/tasks/TICKET-LOAD-GRID-0930.md`. Operational deployment follows CI and merge to develop.
