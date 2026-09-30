@@ -36,6 +36,7 @@ import type { AuthenticatedRequest } from '../iam/iam.types';
 import { CustomerService } from '../customers/customer.service';
 import { DocumentsService } from '../documents/documents.service';
 import { FinanceDeliveryService } from '../finance/document-delivery/finance-delivery.module';
+import { MasterDataService } from '../master-data/master-data.service';
 import { MasterTravelDirectory } from '../master-data/master-travel-directory';
 import { TravelWorkflowService } from './travel-workflow.service';
 import { TicketPublicService } from '../ticket-catalog/ticket-public.service';
@@ -197,7 +198,52 @@ export class ReservationManifestService {
     @Inject(DocumentsService)
     private readonly documents?: DocumentsService,
     @Inject(TicketPublicService) private readonly tickets?: TicketPublicService,
+    @Optional()
+    @Inject(MasterDataService)
+    private readonly master?: MasterDataService,
   ) {}
+
+  private geographyResolver() {
+    const cities = new Map<
+      string,
+      Promise<{
+        name: string;
+        englishName: string;
+        countryId: string;
+        countryName: string;
+      }>
+    >();
+    const countries = new Map<string, Promise<string>>();
+    return (id: string, fallback = '') => {
+      if (!id)
+        return Promise.resolve({
+          name: fallback,
+          englishName: '',
+          countryId: '',
+          countryName: '',
+        });
+      if (!cities.has(id))
+        cities.set(
+          id,
+          this.directory.cityReference(id).then(async (city) => {
+            const countryId = city.countryId || '';
+            if (countryId && this.master && !countries.has(countryId))
+              countries.set(
+                countryId,
+                this.master
+                  .detail('countries', countryId)
+                  .then(({ data }) => data.name),
+              );
+            return {
+              ...city,
+              countryId,
+              countryName: (await countries.get(countryId)) || '',
+            };
+          }),
+        );
+      return cities.get(id)!;
+    };
+  }
 
   private async selectedTemplate(
     offerId: string,
@@ -280,25 +326,29 @@ export class ReservationManifestService {
     if (!actor.permissions.includes('reservations.read'))
       throw new ForbiddenException('مجوز مشاهده مسیرهای منیفست وجود ندارد.');
     const routes = new Map<string, ReservationManifestRouteV1>();
-    const names = new Map<string, string>();
-    const name = async (id: string, fallback?: string) => {
-      if (fallback) return fallback;
-      if (!names.has(id)) {
-        const city = await this.directory.cityReference(id);
-        names.set(id, city.englishName || city.name);
-      }
-      return names.get(id)!;
-    };
+    const geography = this.geographyResolver();
     for (const row of await this.latestIntakes(actor)) {
       for (const journey of manifestJourneys(
         row.snapshot as unknown as ReservationIntakeV1['snapshot'],
       )) {
+        const [origin, destination] = await Promise.all([
+          geography(journey.originId, journey.originName),
+          geography(journey.destinationId, journey.destinationName),
+        ]);
         const route = {
-          originName: await name(journey.originId, journey.originName),
-          destinationName: await name(
-            journey.destinationId,
-            journey.destinationName,
-          ),
+          originId: journey.originId,
+          originCityName: origin.name,
+          destinationCityName: destination.name,
+          destinationId: journey.destinationId,
+          originName: journey.originName || origin.englishName || origin.name,
+          destinationName:
+            journey.destinationName ||
+            destination.englishName ||
+            destination.name,
+          originCountryId: origin.countryId,
+          originCountryName: origin.countryName,
+          destinationCountryId: destination.countryId,
+          destinationCountryName: destination.countryName,
         };
         routes.set(JSON.stringify(route), route);
       }
@@ -317,6 +367,7 @@ export class ReservationManifestService {
     if (!actor.permissions.includes('reservations.read'))
       throw new ForbiddenException('مجوز مشاهده بلیط‌های MANIFEST وجود ندارد.');
     const cards: ReservationManifestTicketCardV1[] = [];
+    const geography = this.geographyResolver();
     const groups = await this.ticketGroups(input, actor);
     const inventory = this.tickets
       ? await this.tickets.manifestInventory(
@@ -330,20 +381,8 @@ export class ReservationManifestService {
     for (const group of groups) {
       const ticket = group.ticket;
       const [origin, destination, selection] = await Promise.all([
-        ticket.originId
-          ? this.directory.cityReference(ticket.originId)
-          : Promise.resolve({
-              name: ticket.originName ?? '',
-              englishName: '',
-              countryId: null,
-            }),
-        ticket.destinationId
-          ? this.directory.cityReference(ticket.destinationId)
-          : Promise.resolve({
-              name: ticket.destinationName ?? '',
-              englishName: '',
-              countryId: null,
-            }),
+        geography(ticket.originId, ticket.originName),
+        geography(ticket.destinationId, ticket.destinationName),
         (ticket.transportType === 'FLIGHT'
           ? this.selectedTemplate(
               ticket.offerId,
@@ -369,6 +408,14 @@ export class ReservationManifestService {
         transportType: ticket.transportType,
         departureTimeKnown: ticket.departureTimeKnown ?? true,
         direction: ticket.direction,
+        originId: ticket.originId,
+        originCityName: origin.name,
+        destinationCityName: destination.name,
+        destinationId: ticket.destinationId,
+        originCountryId: origin.countryId,
+        originCountryName: origin.countryName,
+        destinationCountryId: destination.countryId,
+        destinationCountryName: destination.countryName,
         carrierName: ticket.carrierNameSnapshot,
         serviceNumber: ticket.serviceNumberSnapshot,
         originName: ticket.originName || origin.englishName || origin.name,

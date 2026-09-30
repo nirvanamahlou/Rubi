@@ -256,11 +256,27 @@ export interface ReservationManifestTicketCardV1 {
   passengerCount: number;
   template: ReservationManifestTicketTemplateV1 | null;
   unavailableReason: string | null;
+  originId?: string;
+  destinationId?: string;
+  originCountryId?: string;
+  originCountryName?: string;
+  destinationCountryId?: string;
+  destinationCountryName?: string;
+  originCityName?: string;
+  destinationCityName?: string;
 }
 
 export interface ReservationManifestRouteV1 {
   originName: string;
   destinationName: string;
+  originId?: string;
+  destinationId?: string;
+  originCountryId?: string;
+  originCountryName?: string;
+  destinationCountryId?: string;
+  destinationCountryName?: string;
+  originCityName?: string;
+  destinationCityName?: string;
 }
 
 export interface ReservationManifestTicketListV1 {

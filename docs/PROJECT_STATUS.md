@@ -1,3 +1,7 @@
+## 2026-09-30 — MANIFEST-COUNTRY-ROUTE-0930 — PC-A — READY_FOR_REVIEW
+
+Manifest search now has separate country/city origin and destination filters. Country changes reset their corresponding city selection; choices include both ends of known routes, so reverse searches remain available. Cities use real reference names and IDs and countries are resolved through existing public Master Data services, with no direct cross-module table reads. The selected path defines display direction: Antalya → Tehran appears outbound and Tehran → Antalya return, regardless of the original contract direction; export identities/data are unchanged. Old Iran Airtour/Antalya title and Sparta introduction removed. 24 Web and 8 API tests, scoped lint, contracts build and API/Web typecheck/production builds checked before PR. Optional v1 geography preserves legacy clients and unknown countries are not inferred. No migration/dependencies/operational data changes. Owner authorized develop merge after CI.
+
 ## 2026-09-30 — MASTER-DATA-COUNTRY-HIDE-VERSION-0930 — PC-B — READY_FOR_REVIEW
 
 Countries no longer renders the Version column or matching cell. Record versions remain in the API and mutation concurrency controls; other geography tables are unchanged. 14 focused Web tests, scoped ESLint, Prettier and diff check pass. No migration, operational data or localhost runtime change. Branch `codex/pc-b-country-hide-version-0930` for review in develop.
